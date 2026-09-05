@@ -39,7 +39,9 @@ const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
 const required = <T>(value: T | null | undefined, message: string): T => {
 	expect(value, message).toBeDefined();
-	if (value === null || value === undefined) throw new Error(message);
+	if (value === null || value === undefined) {
+		throw new Error(message);
+	}
 	return value;
 };
 const elementById = (elements: readonly ServerElement[], id: string): ServerElement =>
@@ -49,7 +51,9 @@ const elementById = (elements: readonly ServerElement[], id: string): ServerElem
 	);
 const linearById = (elements: readonly ServerElement[], id: string): LinearElement => {
 	const element = elementById(elements, id);
-	if (element.type !== "arrow" && element.type !== "line") throw new Error(`${id} is not linear`);
+	if (element.type !== "arrow" && element.type !== "line") {
+		throw new Error(`${id} is not linear`);
+	}
 	return element;
 };
 const pointsOf = (element: LinearElement): readonly (readonly number[])[] => element.points;

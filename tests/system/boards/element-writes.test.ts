@@ -141,7 +141,9 @@ describe("element writes", () => {
 		expect(settled).toBeDefined();
 		expect(settled).toMatch(/^[A-Za-z0-9-]{1,8}$/);
 		expect(settled).not.toBe("a-caption-id-nobody-can-reference");
-		if (!settled) throw new Error("The write did not return the settled element id.");
+		if (!settled) {
+			throw new Error("The write did not return the settled element id.");
+		}
 		const settledRead = await request<WriteBody>(`/api/elements/${settled}?board=blockids`);
 		expect(settledRead.status).toBe(200);
 		const reread = await request<{ elements: Element[] }>("/api/elements?board=blockids");
@@ -254,7 +256,9 @@ describe("element writes", () => {
 			const listed = await request<{ boards: Array<{ key: string }> }>("/api/boards");
 			expect(listed.body.boards.filter((board) => board.key === "atomic")).toHaveLength(1);
 		} finally {
-			if (heldOpen !== undefined) fs.closeSync(heldOpen);
+			if (heldOpen !== undefined) {
+				fs.closeSync(heldOpen);
+			}
 			fs.rmSync(witnessDir, { recursive: true, force: true });
 		}
 	});

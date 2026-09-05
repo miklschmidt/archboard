@@ -62,9 +62,13 @@ function contextCopy(): ArchboardContext {
 }
 
 function expectDeepFrozen(value: unknown): void {
-	if (typeof value !== "object" || value === null) return;
+	if (typeof value !== "object" || value === null) {
+		return;
+	}
 	expect(Object.isFrozen(value)).toBe(true);
-	for (const child of Object.values(value as Record<string, unknown>)) expectDeepFrozen(child);
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		expectDeepFrozen(child);
+	}
 }
 
 function startInput(overrides: Partial<Parameters<typeof createTurnStartParams>[0]> = {}) {
@@ -89,8 +93,9 @@ describe("independent context contract oracle", () => {
 	test("pins every context key in the reviewed order", () => {
 		const context = JSON.parse(encodeCanonicalContext(contextFixture)) as Record<string, unknown>;
 		expect(Object.keys(context)).toEqual([...CONTEXT_KEY_ORACLE.root]);
-		for (const [key, expected] of Object.entries(CONTEXT_KEY_ORACLE).slice(1))
+		for (const [key, expected] of Object.entries(CONTEXT_KEY_ORACLE).slice(1)) {
 			expect(Object.keys(context[key] as Record<string, unknown>)).toEqual([...expected]);
+		}
 	});
 
 	test("pins every known closed domain without inventing pending members", () => {
@@ -170,8 +175,9 @@ describe("closed thread-link and operation tuples", () => {
 				outcome: "outcome_unknown",
 			},
 		] as const;
-		for (const operation of valid)
+		for (const operation of valid) {
 			expect(ArchboardContextSchema.safeParse({ ...contextFixture, operation }).success).toBe(true);
+		}
 		expect(CONTEXT_DOMAIN_ORACLE.operationOutcome).toEqual([
 			"delivered",
 			"not_delivered",
@@ -186,10 +192,11 @@ describe("closed thread-link and operation tuples", () => {
 			{ id: null, kind: "composer_message", rpc: "turn/start", outcome: null },
 			{ id: "operation-1", kind: "composer_message", rpc: "turn/start", outcome: "future" },
 		] as const;
-		for (const operation of invalid)
+		for (const operation of invalid) {
 			expect(ArchboardContextSchema.safeParse({ ...contextFixture, operation }).success).toBe(
 				false,
 			);
+		}
 	});
 
 	test("closes the operation RPC domain and rejects omitted or extra fields", () => {
@@ -408,8 +415,9 @@ describe("public parsed-value immutability", () => {
 		);
 		const standalone = createTextUserInput("standalone");
 
-		for (const value of [context, additional, start, steer, injection, fork, standalone])
+		for (const value of [context, additional, start, steer, injection, fork, standalone]) {
 			expectDeepFrozen(value);
+		}
 		expect(context).not.toBe(contextFixture);
 		expect(context.board).not.toBe(contextFixture.board);
 		const secondContext = ArchboardContextSchema.parse(contextFixture);

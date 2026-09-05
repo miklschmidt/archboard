@@ -29,12 +29,16 @@ async function startInitialPaneServer(): Promise<{
 		server.listen(0, "127.0.0.1", resolve);
 	});
 	const address = server.address();
-	if (address === null || typeof address === "string") throw new Error("Pane server did not bind.");
+	if (address === null || typeof address === "string") {
+		throw new Error("Pane server did not bind.");
+	}
 	return {
 		base: `http://127.0.0.1:${address.port}`,
 		closed,
 		async dispose() {
-			for (const socket of sockets.clients) socket.terminate();
+			for (const socket of sockets.clients) {
+				socket.terminate();
+			}
 			await new Promise<void>((resolve) => sockets.close(() => resolve()));
 			await new Promise<void>((resolve, reject) =>
 				server.close((error) => (error ? reject(error) : resolve())),

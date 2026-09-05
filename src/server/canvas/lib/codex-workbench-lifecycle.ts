@@ -200,7 +200,9 @@ function releaseRegistrations(registrations: GenerationRegistrations, label: str
 	for (const key of CODEX_GENERATION_REGISTRATION_KEYS) {
 		const cleanup = registrations[key];
 		registrations[key] = null;
-		if (cleanup === null) continue;
+		if (cleanup === null) {
+			continue;
+		}
 		try {
 			cleanup();
 		} catch (error) {
@@ -232,7 +234,9 @@ async function settleChildExit(
 			failure = appendFailure(failure, error, "Codex child-exit cleanup failed.");
 		}
 	}
-	if (failure !== null) throw failure;
+	if (failure !== null) {
+		throw failure;
+	}
 }
 
 function installRegistrations(
@@ -295,7 +299,9 @@ export function createCodexWorkbenchGenerationLifecycle(
 	};
 
 	const onNotification: Parameters<CodexTransport["onServerNotification"]>[0] = (event) => {
-		if (!state.active || state.stopped) return;
+		if (!state.active || state.stopped) {
+			return;
+		}
 		state.hooks.onNotification(event);
 		components.session[CODEX_SESSION_CONTROL].onNotification(event);
 		components.coordinator.onNotification(event);
@@ -305,7 +311,9 @@ export function createCodexWorkbenchGenerationLifecycle(
 	};
 	const activeRouter: CodexWorkbenchRequestRouter = {
 		route: (request) => {
-			if (!state.active || state.stopped) return;
+			if (!state.active || state.stopped) {
+				return;
+			}
 			router.route(request);
 		},
 	};
@@ -314,27 +322,35 @@ export function createCodexWorkbenchGenerationLifecycle(
 		const registrations = state.registrations;
 		state.registrations = emptyRegistrations();
 		const failure = releaseRegistrations(registrations, "Retired Codex generation");
-		if (failure !== null) throw failure;
+		if (failure !== null) {
+			throw failure;
+		}
 	};
 	const activate = async (): Promise<void> => {
 		state.assertActivationCurrent();
-		if (state.stopped)
+		if (state.stopped) {
 			throw new CodexWorkbenchCompositionError(
 				"not_started",
 				"A retired Codex generation cannot be activated.",
 			);
-		if (state.active) return;
+		}
+		if (state.active) {
+			return;
+		}
 		state.registrations = installRegistrations(state, activeRouter, onNotification);
 		state.active = true;
-		if (state.initialized) return;
+		if (state.initialized) {
+			return;
+		}
 		try {
 			await state.hooks.initializeSession(components.session, components);
 			state.assertActivationCurrent();
-			if (state.stopped)
+			if (state.stopped) {
 				throw new CodexWorkbenchCompositionError(
 					"not_started",
 					"A retired Codex generation cannot publish initialized readiness.",
 				);
+			}
 			state.initialized = true;
 		} catch (error) {
 			let failure: Error = error instanceof Error ? error : new Error(String(error));
@@ -347,15 +363,21 @@ export function createCodexWorkbenchGenerationLifecycle(
 		}
 	};
 	const retireChild = (exit: CodexTransportExit): Promise<void> => {
-		if (state.childSettlement !== null) return state.childSettlement;
+		if (state.childSettlement !== null) {
+			return state.childSettlement;
+		}
 		const settlement = settleChildExit(state, exit.child, exit.epoch);
 		state.childSettlement = settlement;
 		return settlement;
 	};
 
 	const stop = (reason: CodexWorkbenchStopReason): Promise<void> => {
-		if (state.stopComplete) return Promise.resolve();
-		if (state.stopPromise !== null) return state.stopPromise;
+		if (state.stopComplete) {
+			return Promise.resolve();
+		}
+		if (state.stopPromise !== null) {
+			return state.stopPromise;
+		}
 		state.stopped = true;
 		let failure: Error | null = null;
 		try {
@@ -373,7 +395,9 @@ export function createCodexWorkbenchGenerationLifecycle(
 				}
 			};
 			const childSettlement = state.childSettlement;
-			if (reason === "child_exit" && childSettlement !== null) await attempt(() => childSettlement);
+			if (reason === "child_exit" && childSettlement !== null) {
+				await attempt(() => childSettlement);
+			}
 			await attempt(() => state.hooks.stopBrowser(components.gateway, reason));
 			await attempt(() => state.hooks.stopRealtime(components.realtime));
 			await attempt(() => components.realtime.dispose());
@@ -387,9 +411,15 @@ export function createCodexWorkbenchGenerationLifecycle(
 			await attempt(() => components.semanticDelivery.dispose());
 			await attempt(() => components.coordinatorTools.dispose());
 			await attempt(() => components.dynamicTools.dispose());
-			if (reason === "shutdown") await attempt(() => components.transport.shutdown());
-			if (reason === "shutdown" && childSettlement !== null) await attempt(() => childSettlement);
-			if (failure !== null) throw failure;
+			if (reason === "shutdown") {
+				await attempt(() => components.transport.shutdown());
+			}
+			if (reason === "shutdown" && childSettlement !== null) {
+				await attempt(() => childSettlement);
+			}
+			if (failure !== null) {
+				throw failure;
+			}
 		})().finally(() => {
 			state.stopPromise = null;
 			state.stopComplete = true;
@@ -399,7 +429,9 @@ export function createCodexWorkbenchGenerationLifecycle(
 	};
 
 	const finishStop = (): void => {
-		if (state.finishComplete) return;
+		if (state.finishComplete) {
+			return;
+		}
 		state.finishComplete = true;
 		let failure: Error | null = null;
 		for (const dispose of [() => components.approvals.dispose(), () => components.epoch.close()]) {
@@ -409,7 +441,9 @@ export function createCodexWorkbenchGenerationLifecycle(
 				failure = appendFailure(failure, error, "Codex final cleanup failed.");
 			}
 		}
-		if (failure !== null) throw failure;
+		if (failure !== null) {
+			throw failure;
+		}
 	};
 
 	return Object.freeze({
@@ -537,7 +571,7 @@ function snapshot(
 	runtime: CodexWorkbenchOwnerRuntime,
 ): CodexWorkbenchSnapshot {
 	const current = isCurrentRuntime(published, runtime);
-	if (!current)
+	if (!current) {
 		return (
 			releasedSnapshots.get(runtime) ??
 			Object.freeze({
@@ -549,6 +583,7 @@ function snapshot(
 				failure: null,
 			})
 		);
+	}
 	return Object.freeze({
 		owner: CODEX_WORKBENCH_OWNER,
 		state: published.state,
@@ -560,7 +595,9 @@ function snapshot(
 }
 
 function terminalProcessAcquisitionFailure(current: CodexProcessSnapshot): Error | null {
-	if (current.state !== "terminal_failure") return null;
+	if (current.state !== "terminal_failure") {
+		return null;
+	}
 	return new CodexProcessError({
 		code: current.failure?.code ?? "shutdown_failed",
 		terminal: true,
@@ -574,7 +611,9 @@ function revokePublicDispatch(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
 ): void {
-	if (published.runtime === runtime) published.current = null;
+	if (published.runtime === runtime) {
+		published.current = null;
+	}
 }
 
 function releaseRegistration(
@@ -583,7 +622,9 @@ function releaseRegistration(
 	state: CodexWorkbenchState,
 	failure: string | null,
 ): void {
-	if (runtime.released) return;
+	if (runtime.released) {
+		return;
+	}
 	releasedSnapshots.set(
 		runtime,
 		Object.freeze({
@@ -599,7 +640,9 @@ function releaseRegistration(
 	runtime.exitBridge.handler = null;
 	runtime.identityLedger = null;
 	runtime.transport = null;
-	if (published.runtime !== runtime) return;
+	if (published.runtime !== runtime) {
+		return;
+	}
 	published.state = state;
 	published.failure = failure;
 	published.current = null;
@@ -610,7 +653,9 @@ function stopProcess(
 	local: OwnerLocalState,
 	runtime: CodexWorkbenchOwnerRuntime,
 ): Promise<Error | null> {
-	if (local.processStopPromise !== null) return local.processStopPromise;
+	if (local.processStopPromise !== null) {
+		return local.processStopPromise;
+	}
 	const attempt = (async (): Promise<Error | null> => {
 		try {
 			await runtime.process.stop();
@@ -623,7 +668,9 @@ function stopProcess(
 		// A failed verified stop keeps the process owner reachable. A later
 		// application force pass must perform a fresh TERM/KILL-and-observe
 		// attempt rather than replay the first failure forever.
-		if (result !== null && local.processStopPromise === operation) local.processStopPromise = null;
+		if (result !== null && local.processStopPromise === operation) {
+			local.processStopPromise = null;
+		}
 		return result;
 	});
 	local.processStopPromise = operation;
@@ -688,10 +735,13 @@ function ownsTransaction(
 		published.state !== "starting" ||
 		runtime.exitBridge.event !== null ||
 		!ownsProcessChild(runtime.process, transaction.child)
-	)
+	) {
 		return false;
+	}
 	const transport = transaction.transport;
-	if (transport === null) return true;
+	if (transport === null) {
+		return true;
+	}
 	try {
 		return transport.inspect().state === "open";
 	} catch {
@@ -706,12 +756,15 @@ function assertTransaction(
 	transaction: LifecycleTransaction,
 	message: string,
 ): void {
-	if (!ownsTransaction(published, runtime, local, transaction))
+	if (!ownsTransaction(published, runtime, local, transaction)) {
 		throw new CodexWorkbenchCompositionError("not_started", message);
+	}
 }
 
 function invalidateTransaction(local: OwnerLocalState): void {
-	if (local.transaction !== null) local.transaction.phase = "invalidated";
+	if (local.transaction !== null) {
+		local.transaction.phase = "invalidated";
+	}
 	local.transaction = null;
 }
 
@@ -720,7 +773,9 @@ function ownGeneration(
 	generation: CodexWorkbenchGeneration,
 ): GenerationResource {
 	const existing = local.resources.get(generation);
-	if (existing !== undefined) return existing;
+	if (existing !== undefined) {
+		return existing;
+	}
 	const resource: GenerationResource = { generation, cleanup: null };
 	local.resources.set(generation, resource);
 	return resource;
@@ -732,9 +787,13 @@ function beginGenerationCleanup(
 	reason: CodexWorkbenchStopReason,
 ): Promise<Error | null> {
 	const completed = local.cleanupHistory.get(generation);
-	if (completed !== undefined) return completed;
+	if (completed !== undefined) {
+		return completed;
+	}
 	const resource = ownGeneration(local, generation);
-	if (resource.cleanup !== null) return resource.cleanup;
+	if (resource.cleanup !== null) {
+		return resource.cleanup;
+	}
 	let stop: Promise<void>;
 	try {
 		stop = generation.stop(reason);
@@ -762,16 +821,19 @@ function beginGenerationCleanup(
 }
 
 function attachExitBridge(runtime: CodexWorkbenchOwnerRuntime, transport: CodexTransport): void {
-	if (runtime.transport !== transport)
+	if (runtime.transport !== transport) {
 		throw new CodexWorkbenchCompositionError(
 			"startup_failed",
 			"The retained child-exit bridge does not own the acquired transport.",
 		);
+	}
 	const bridge = runtime.exitBridge;
 	// This is the only process-lifetime listener. Its closure reaches exactly the
 	// terminal latch and replaceable source handler, never lifecycle authority.
 	transport.onExit((event) => {
-		if (bridge.event !== null) return;
+		if (bridge.event !== null) {
+			return;
+		}
 		bridge.event = Object.freeze({ ...event });
 		bridge.handler?.handle(bridge.event);
 	});
@@ -833,7 +895,9 @@ function terminalShutdown(
 	local: OwnerLocalState,
 	priorFailure: Error | null = null,
 ): Promise<CodexWorkbenchSnapshot> {
-	if (local.shutdownPromise !== null) return local.shutdownPromise;
+	if (local.shutdownPromise !== null) {
+		return local.shutdownPromise;
+	}
 	reserveTicket(runtime);
 	invalidateTransaction(local);
 	revokePublicDispatch(published, runtime);
@@ -842,7 +906,9 @@ function terminalShutdown(
 	const processChildUnsubscribe = local.processChildUnsubscribe;
 	local.processChildUnsubscribe = null;
 	processChildUnsubscribe?.();
-	if (isCurrentRuntime(published, runtime)) published.state = "stopping";
+	if (isCurrentRuntime(published, runtime)) {
+		published.state = "stopping";
+	}
 	let synchronousFailure = priorFailure;
 	local.currentGeneration = null;
 	// Each stop call revokes one graph before this function reaches its first await.
@@ -853,24 +919,27 @@ function terminalShutdown(
 		let failure = synchronousFailure;
 		for (const cleanup of graphCleanups) {
 			const cleanupFailure = await cleanup;
-			if (cleanupFailure !== null)
+			if (cleanupFailure !== null) {
 				failure = appendFailure(failure, cleanupFailure, "Codex graph shutdown failed.");
+			}
 		}
 		const processFailure = await stopProcess(local, runtime);
-		if (processFailure !== null)
+		if (processFailure !== null) {
 			failure = appendFailure(failure, processFailure, "Codex process shutdown failed.");
+		}
 		releaseRegistration(
 			published,
 			runtime,
 			failure === null ? "idle" : "failed",
 			failure === null ? null : failureMessage(failure),
 		);
-		if (failure !== null)
+		if (failure !== null) {
 			throw new CodexWorkbenchCompositionError(
 				"shutdown_failed",
 				"The production Codex workbench did not shut down cleanly.",
 				failure,
 			);
+		}
 		return snapshot(published, runtime);
 	})().finally(() => {
 		synchronousFailure = null;
@@ -886,9 +955,13 @@ function observeChildExit(
 	local: OwnerLocalState,
 	exit: CodexTransportExit,
 ): void {
-	if (!isCurrentRuntime(published, runtime) || runtime.exitBridge.event !== exit) return;
+	if (!isCurrentRuntime(published, runtime) || runtime.exitBridge.event !== exit) {
+		return;
+	}
 	const ledger = runtime.identityLedger;
-	if (ledger === null || exit.child !== ledger.childId || exit.epoch !== ledger.epoch) return;
+	if (ledger === null || exit.child !== ledger.childId || exit.epoch !== ledger.epoch) {
+		return;
+	}
 	reserveTicket(runtime);
 	invalidateTransaction(local);
 	revokePublicDispatch(published, runtime);
@@ -916,8 +989,9 @@ function observeChildExit(
 		}
 		for (const cleanup of graphCleanups) {
 			const cleanupFailure = await cleanup;
-			if (cleanupFailure !== null)
+			if (cleanupFailure !== null) {
 				failure = appendFailure(failure, cleanupFailure, "Codex child graph cleanup failed.");
+			}
 		}
 		return failure;
 	})();
@@ -953,11 +1027,12 @@ function publishReadySlots(
 		shutdown: () => terminalShutdown(published, runtime, local),
 		snapshot: () => snapshot(published, runtime),
 		gateway: () => {
-			if (!isCurrentRuntime(published, runtime) || published.state !== "ready")
+			if (!isCurrentRuntime(published, runtime) || published.state !== "ready") {
 				throw new CodexWorkbenchCompositionError(
 					"not_started",
 					"The production Codex workbench browser gateway is not ready.",
 				);
+			}
 			return generation.gateway;
 		},
 	};
@@ -1019,24 +1094,28 @@ export function installCodexWorkbenchOwnerLifecycle(
 	replaceExitHandler(published, runtime, local);
 	local.processChildUnsubscribe = runtime.process.onChild((child) => local.nextChild?.(child));
 	const dispatchSlots = (): CodexWorkbenchOwnerSlots => {
-		if (published.current === null)
+		if (published.current === null) {
 			throw new CodexWorkbenchCompositionError(
 				"not_started",
 				"The production Codex workbench has no active owner dispatch.",
 			);
+		}
 		return published.current;
 	};
 
 	const initialSlots: CodexWorkbenchOwnerSlots = {
 		start: () => {
-			if (local.startPromise !== null) return local.startPromise;
-			if (!isCurrentRuntime(published, runtime))
+			if (local.startPromise !== null) {
+				return local.startPromise;
+			}
+			if (!isCurrentRuntime(published, runtime)) {
 				return Promise.reject(
 					new CodexWorkbenchCompositionError(
 						"not_started",
 						"The Codex workbench source generation cannot start this retired runtime.",
 					),
 				);
+			}
 			const ticket = reserveTicket(runtime);
 			published.state = "starting";
 			published.failure = null;
@@ -1060,17 +1139,20 @@ export function installCodexWorkbenchOwnerLifecycle(
 				});
 				let acceptedChild = false;
 				const receiveChild = (child: CodexProcessChild) => {
-					if (acceptedChild) return;
+					if (acceptedChild) {
+						return;
+					}
 					acceptedChild = true;
 					try {
 						if (
 							!ownsTicket(published, runtime, ticket) ||
 							!ownsProcessChild(runtime.process, child)
-						)
+						) {
 							throw new CodexWorkbenchCompositionError(
 								"not_started",
 								"A retired Codex startup cannot acquire a child kernel.",
 							);
+						}
 						const transaction: LifecycleTransaction = {
 							ticket,
 							child,
@@ -1100,9 +1182,13 @@ export function installCodexWorkbenchOwnerLifecycle(
 				};
 				local.nextChild = receiveChild;
 				const observeProcess = (current: CodexProcessSnapshot): void => {
-					if (!ownsTicket(published, runtime, ticket) || local.nextChild !== receiveChild) return;
+					if (!ownsTicket(published, runtime, ticket) || local.nextChild !== receiveChild) {
+						return;
+					}
 					const failure = terminalProcessAcquisitionFailure(current);
-					if (failure !== null) rejectChild(failure);
+					if (failure !== null) {
+						rejectChild(failure);
+					}
 				};
 				let processSnapshotUnsubscribe: (() => void) | null = null;
 				try {
@@ -1115,7 +1201,9 @@ export function installCodexWorkbenchOwnerLifecycle(
 					void processStart.catch(() => undefined);
 					const { child, transaction, initialIdentity } = await childReady;
 					const recoveryFailure = await local.recoveryBarrier;
-					if (recoveryFailure !== null) throw recoveryFailure;
+					if (recoveryFailure !== null) {
+						throw recoveryFailure;
+					}
 					assertTransaction(
 						published,
 						runtime,
@@ -1146,11 +1234,12 @@ export function installCodexWorkbenchOwnerLifecycle(
 					if (
 						runtime.identityLedger !== candidate.identityLedger ||
 						runtime.transport !== candidate.transport
-					)
+					) {
 						throw new CodexWorkbenchCompositionError(
 							"startup_failed",
 							"The first Codex generation did not adopt its synchronously acquired kernel.",
 						);
+					}
 					assertTransaction(
 						published,
 						runtime,
@@ -1187,13 +1276,16 @@ export function installCodexWorkbenchOwnerLifecycle(
 					let failure = error instanceof Error ? error : new Error(String(error));
 					if (candidate !== null) {
 						const cleanupFailure = await beginGenerationCleanup(local, candidate, "shutdown");
-						if (local.currentGeneration === candidate) local.currentGeneration = null;
-						if (cleanupFailure !== null)
+						if (local.currentGeneration === candidate) {
+							local.currentGeneration = null;
+						}
+						if (cleanupFailure !== null) {
 							failure = appendFailure(
 								failure,
 								cleanupFailure,
 								"Codex startup and cleanup both failed.",
 							);
+						}
 					}
 					if (ownsTicket(published, runtime, ticket)) {
 						runtime.exitBridge.handler = null;
@@ -1202,12 +1294,13 @@ export function installCodexWorkbenchOwnerLifecycle(
 						local.processChildUnsubscribe = null;
 						processChildUnsubscribe?.();
 						const processFailure = await stopProcess(local, runtime);
-						if (processFailure !== null)
+						if (processFailure !== null) {
 							failure = appendFailure(
 								failure,
 								processFailure,
 								"Codex startup process cleanup failed.",
 							);
+						}
 						invalidateTransaction(local);
 						releaseRegistration(published, runtime, "failed", failureMessage(failure));
 					}
@@ -1218,7 +1311,9 @@ export function installCodexWorkbenchOwnerLifecycle(
 					);
 				} finally {
 					processSnapshotUnsubscribe?.();
-					if (local.nextChild === receiveChild) local.nextChild = null;
+					if (local.nextChild === receiveChild) {
+						local.nextChild = null;
+					}
 					local.startPromise = null;
 				}
 			})();
@@ -1236,7 +1331,9 @@ export function installCodexWorkbenchOwnerLifecycle(
 	};
 	published.current = initialSlots;
 	local.restart = () => {
-		if (!isCurrentRuntime(published, runtime) || runtime.released) return;
+		if (!isCurrentRuntime(published, runtime) || runtime.released) {
+			return;
+		}
 		published.current = initialSlots;
 		void initialSlots.start().catch(() => undefined);
 	};

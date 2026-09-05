@@ -30,11 +30,12 @@ describe("comparison limits", () => {
 			{ limit: 2_000_001 },
 			{ attempted: 2_000_002 },
 			{ pass: "record-analysis" },
-		])
+		]) {
 			expect(
 				InspectionFindingSchema.safeParse({ ...limit, details: { ...limit?.details, ...details } })
 					.success,
 			).toBe(false);
+		}
 	});
 
 	test("retains completed findings before the representative terminal stop", () => {

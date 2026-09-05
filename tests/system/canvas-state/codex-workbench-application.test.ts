@@ -56,14 +56,17 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 	let second: PublicSocketClient | null = null;
 	let websocketUrl: string | null = null;
 	const openClient = async (): Promise<PublicSocketClient> => {
-		if (websocketUrl === null) throw new Error("The public WebSocket port is not ready.");
+		if (websocketUrl === null) {
+			throw new Error("The public WebSocket port is not ready.");
+		}
 		const client = new WebSocket(websocketUrl);
 		const pending = new Map<string, (value: Record<string, unknown>) => void>();
 		const events: Record<string, unknown>[] = [];
 		client.on("message", (raw) => {
 			const message = JSON.parse(raw.toString()) as Record<string, unknown>;
-			if (message["type"] === "codex_workbench_event") events.push(message);
-			else if (typeof message["requestId"] === "string") {
+			if (message["type"] === "codex_workbench_event") {
+				events.push(message);
+			} else if (typeof message["requestId"] === "string") {
 				pending.get(message["requestId"])?.(message);
 				pending.delete(message["requestId"]);
 			}
@@ -104,7 +107,9 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 			},
 			now: () => 1_787_682_840_000,
 			onChange: () => {
-				for (const listener of projectionListeners) listener();
+				for (const listener of projectionListeners) {
+					listener();
+				}
 			},
 		});
 		approvals = activeApprovals;
@@ -267,7 +272,9 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 		});
 		await new Promise<void>((resolve) => activeServer.listen(0, "127.0.0.1", resolve));
 		const address = activeServer.address();
-		if (address === null || typeof address === "string") throw new Error("missing public port");
+		if (address === null || typeof address === "string") {
+			throw new Error("missing public port");
+		}
 		websocketUrl = `ws://127.0.0.1:${address.port}`;
 		const activeFirst = await openClient();
 		first = activeFirst;
@@ -335,10 +342,16 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 		activeFirst.client.close();
 		await new Promise<void>((resolve) => activeFirst.client.once("close", resolve));
 		const renewed = await replacement.request("renewLease");
-		expect(renewed).toMatchObject({ ok: true, value: { commandId: replacementLease["commandId"] } });
+		expect(renewed).toMatchObject({
+			ok: true,
+			value: { commandId: replacementLease["commandId"] },
+		});
 		expect(await replacement.request("mediaReady", { ready: true })).toMatchObject({ ok: true });
 
-		const startLease = (await replacement.request("claimLease"))["value"] as Record<string, unknown>;
+		const startLease = (await replacement.request("claimLease"))["value"] as Record<
+			string,
+			unknown
+		>;
 		const start = await replacement.request("command", {
 			command: model.BrowserCommandSchema.parse({
 				kind: "browser_command",
@@ -381,8 +394,9 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 		expect(realtimeCalls.map((call) => call.name)).toEqual(["start", "append", "stop"]);
 		await replacement.request("subscribe");
 		await activeGateway.dispose();
-		for (let attempt = 0; attempt < 20 && replacement.events.length === 0; attempt += 1)
+		for (let attempt = 0; attempt < 20 && replacement.events.length === 0; attempt += 1) {
 			await Bun.sleep(1);
+		}
 		expect(replacement.events).toContainEqual(
 			expect.objectContaining({
 				type: "codex_workbench_event",
@@ -400,13 +414,18 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 	} finally {
 		second?.client.close();
 		first?.client.close();
-		if (sockets !== null) await new Promise<void>((resolve) => sockets?.close(() => resolve()));
-		if (server?.listening)
+		if (sockets !== null) {
+			await new Promise<void>((resolve) => sockets?.close(() => resolve()));
+		}
+		if (server?.listening) {
 			await new Promise<void>((resolve, reject) =>
 				server?.close((error) => (error ? reject(error) : resolve())),
 			);
+		}
 		owner?.dispose();
-		if (gateway !== null) await gateway.dispose();
+		if (gateway !== null) {
+			await gateway.dispose();
+		}
 		approvals?.dispose();
 	}
 });

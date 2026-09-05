@@ -14,7 +14,9 @@ import {
 } from "./delivery-support.ts";
 
 function invokeRelease(release: (() => void) | null, message: string): void {
-	if (release === null) throw new Error(message);
+	if (release === null) {
+		throw new Error(message);
+	}
 	release();
 }
 
@@ -39,7 +41,9 @@ describe("codex thread context delivery", () => {
 		expect(result.reason).toBeNull();
 		expect(result.attempted).toBe(true);
 		expect(harness.received).toHaveLength(1);
-		if (result.payload === null) throw new Error("delivered outcome did not retain its payload");
+		if (result.payload === null) {
+			throw new Error("delivered outcome did not retain its payload");
+		}
 		expect(JSON.stringify(harness.received[0])).toBe(JSON.stringify(result.payload));
 		expect(result.payload?.items).toHaveLength(1);
 		expect(result.payload?.items[0]).toMatchObject({
@@ -97,7 +101,9 @@ describe("codex thread context delivery", () => {
 						reason === "unbound" ? "unknown_provenance" : reason,
 					),
 			);
-			if (reason === "unbound") harness.setLink(unboundLink());
+			if (reason === "unbound") {
+				harness.setLink(unboundLink());
+			}
 			const result = await harness.delivery.deliver(harness.events());
 			expect(result).toMatchObject({ outcome: "not_delivered", reason, attempted: false });
 			expect(harness.received).toHaveLength(0);
@@ -201,8 +207,9 @@ describe("codex thread context delivery", () => {
 		);
 
 		expect(unfocused.outcome).toBe("delivered");
-		if (unfocused.payload === null)
+		if (unfocused.payload === null) {
 			throw new Error("unfocused delivery did not retain its payload");
+		}
 		expect(decodePayloadContext(unfocused.payload).focus.paneId).toBeNull();
 
 		const staleFocusHarness = createHarness({ contextFocusPaneId: PANE_ID });
@@ -399,8 +406,9 @@ describe("codex thread context delivery", () => {
 		);
 
 		expect(result).toMatchObject({ outcome: "delivered", attempted: true, reason: null });
-		if (result.payload === null)
+		if (result.payload === null) {
 			throw new Error("campaign-step delivery did not retain its payload");
+		}
 		const context = decodePayloadContext(result.payload);
 		expect(context.claim.doing).toBe("campaign: payments redesign");
 		expect(JSON.parse(context.semantic.brief)).toMatchObject({

@@ -25,7 +25,9 @@ function freezeArray<T>(values: readonly T[]): readonly T[] {
 
 function freezeTree(value: object): void {
 	for (const child of Object.values(value)) {
-		if (child !== null && typeof child === "object") freezeTree(child);
+		if (child !== null && typeof child === "object") {
+			freezeTree(child);
+		}
 	}
 	Object.freeze(value);
 }
@@ -146,8 +148,12 @@ function semanticCorrelation(
 }
 
 function semanticCapturedAt(event: SemanticSource): number {
-	if (event.kind === "pane_focus") return event.focus.capturedAtMs;
-	if (event.kind === "pane_selection") return event.selectionCapturedAtMs;
+	if (event.kind === "pane_focus") {
+		return event.focus.capturedAtMs;
+	}
+	if (event.kind === "pane_selection") {
+		return event.selectionCapturedAtMs;
+	}
 	return event.freshness.capturedAtMs;
 }
 
@@ -183,9 +189,15 @@ export function normalizeSemanticCallback(
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
 ): CoordinatorSemanticCallback {
 	const base = semanticBase(event, workhorseLink, realtimeGeneration);
-	if (event.kind === "settled_change") return freeze({ ...base, type: "change" });
-	if (event.kind === "pane_focus") return freeze({ ...base, type: "focus" });
-	if (event.kind === "pane_selection") return freeze({ ...base, type: "selection" });
+	if (event.kind === "settled_change") {
+		return freeze({ ...base, type: "change" });
+	}
+	if (event.kind === "pane_focus") {
+		return freeze({ ...base, type: "focus" });
+	}
+	if (event.kind === "pane_selection") {
+		return freeze({ ...base, type: "selection" });
+	}
 	throw new TypeError("Unsupported semantic callback source.");
 }
 
@@ -199,8 +211,9 @@ export function normalizeCoordinatorCallback(
 			event.kind === "settled_change" ||
 			event.kind === "pane_focus" ||
 			event.kind === "pane_selection"
-		)
+		) {
 			return normalizeSemanticCallback(event, workhorseLink, realtimeGeneration);
+		}
 		throw new TypeError("Fresh semantic briefs are not callback sources.");
 	}
 	return normalizeOperationCallback(event, workhorseLink, realtimeGeneration);
@@ -224,19 +237,23 @@ function semanticScope(callback: CoordinatorSemanticCallback): string {
 }
 
 export function coordinatorCallbackKey(callback: CoordinatorCallback): string {
-	if (callback.kind === "operation")
+	if (callback.kind === "operation") {
 		return `operation:${valueOrNull(callback.correlation.operationId)}:${callback.type}`;
+	}
 	const scope = semanticScope(callback);
-	if (callback.type === "change")
+	if (callback.type === "change") {
 		return `semantic:change:${scope}:${callback.semantic.sequence ?? "null"}`;
-	if (callback.type === "focus")
+	}
+	if (callback.type === "focus") {
 		return `semantic:focus:${scope}:${callback.semantic.capturedAtMs}:${callback.semantic.focused ? "1" : "0"}`;
+	}
 	return `semantic:selection:${scope}:${callback.semantic.capturedAtMs}:${JSON.stringify(callback.semantic.selection)}`;
 }
 
 /** Only same-operation lifecycle updates and same-kind semantic telemetry coalesce. */
 export function coordinatorCallbackCoalescingKey(callback: CoordinatorCallback): string {
-	if (callback.kind === "operation")
+	if (callback.kind === "operation") {
 		return `operation:${valueOrNull(callback.correlation.operationId)}:${callback.type}`;
+	}
 	return `semantic:${callback.type}:${semanticScope(callback)}`;
 }

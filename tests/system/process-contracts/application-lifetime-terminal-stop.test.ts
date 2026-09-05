@@ -28,21 +28,26 @@ test("application timeout force-reaps a real process group before stop resolves"
 			detached: true,
 			stdio: ["ignore", "pipe", "pipe"],
 		});
-		if (child.pid === undefined) throw new Error("The process-group fixture has no pid.");
+		if (child.pid === undefined) {
+			throw new Error("The process-group fixture has no pid.");
+		}
 		const group = child.pid;
 		const exited = new Promise<void>((resolve) => child.once("exit", () => resolve()));
 		resources.defer(async () => {
 			try {
 				process.kill(-group, "SIGKILL");
 			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+				if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+					throw error;
+				}
 			}
 			await exited;
-			if (identity !== null)
+			if (identity !== null) {
 				await Promise.allSettled([
 					waitForProcessExit(identity.pid),
 					waitForProcessExit(identity.descendant),
 				]);
+			}
 		});
 		let output = "";
 		identity = await Promise.race([
@@ -51,7 +56,9 @@ test("application timeout force-reaps a real process group before stop resolves"
 				child.stdout.on("data", (chunk: Buffer) => {
 					output += chunk.toString();
 					const newline = output.indexOf("\n");
-					if (newline < 0) return;
+					if (newline < 0) {
+						return;
+					}
 					resolve(JSON.parse(output.slice(0, newline)) as { pid: number; descendant: number });
 				});
 			}),
@@ -123,9 +130,13 @@ test("process-owner setup failures always reap the group and remove the root", a
 					try {
 						process.kill(-pid, "SIGKILL");
 					} catch (error) {
-						if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+						if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+							throw error;
+						}
 					}
-				} else child.kill("SIGKILL");
+				} else {
+					child.kill("SIGKILL");
+				}
 				await closed;
 			});
 
@@ -138,11 +149,14 @@ test("process-owner setup failures always reap the group and remove the root", a
 						child.stdout.on("data", (chunk: Buffer) => {
 							output += chunk.toString();
 							const newline = output.indexOf("\n");
-							if (newline < 0) return;
+							if (newline < 0) {
+								return;
+							}
 							try {
 								const parsed = JSON.parse(output.slice(0, newline)) as { pid?: unknown };
-								if (typeof parsed.pid !== "number")
+								if (typeof parsed.pid !== "number") {
 									throw new Error("Malformed readiness identity.");
+								}
 								resolve({ pid: parsed.pid });
 							} catch (error) {
 								reject(error);
@@ -160,7 +174,9 @@ test("process-owner setup failures always reap the group and remove the root", a
 					expect(identity.pid).toBe(-1);
 				}
 			} finally {
-				if (timeout !== null) clearTimeout(timeout);
+				if (timeout !== null) {
+					clearTimeout(timeout);
+				}
 			}
 		} catch (error) {
 			failure = error;
@@ -168,7 +184,9 @@ test("process-owner setup failures always reap the group and remove the root", a
 			await resources.disposeAsync();
 		}
 		expect(failure).toBeInstanceOf(Error);
-		if (pid !== undefined) expect(processExists(pid)).toBeFalse();
+		if (pid !== undefined) {
+			expect(processExists(pid)).toBeFalse();
+		}
 		expect(existsSync(root)).toBeFalse();
 	}
 }, 10_000);

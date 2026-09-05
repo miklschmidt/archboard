@@ -235,17 +235,19 @@ test(
         `),
 			);
 		const dragFrom = async (point: Point, dx: number, dy: number) => {
-			if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || point.x < 0 || point.y < 0)
+			if (!Number.isFinite(point.x) || !Number.isFinite(point.y) || point.x < 0 || point.y < 0) {
 				throw new Error(`Cannot drive pointer from ${JSON.stringify(point)}.`);
+			}
 			await browser.run(["mouse", "move", String(point.x), String(point.y)]);
 			await browser.run(["mouse", "down"]);
-			for (let step = 1; step <= 4; step += 1)
+			for (let step = 1; step <= 4; step += 1) {
 				await browser.run([
 					"mouse",
 					"move",
 					String(Math.round(point.x + (dx * step) / 4)),
 					String(Math.round(point.y + (dy * step) / 4)),
 				]);
+			}
 			await browser.run(["mouse", "up"]);
 		};
 		const frameElement = async (id: string) => {
@@ -256,8 +258,9 @@ test(
 				body: { scrollToElementIds: [id], viewportZoomFactor: 0.5 },
 				doing: "checking human editing performance",
 			});
-			if (response.status !== 200)
+			if (response.status !== 200) {
 				throw new Error(`Cannot frame ${id}: ${response.status} ${response.body.error ?? ""}`);
+			}
 			return pollUntil(
 				() => pointOf(id),
 				(point) => {

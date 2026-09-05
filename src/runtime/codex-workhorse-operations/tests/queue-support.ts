@@ -45,7 +45,9 @@ export class FakeQueue implements CodexWorkhorseQueue<OperationId> {
 			input: [createTextUserInput(request.prompt)],
 			clientUserMessageId: this.operation.decoder.serializeOperationId(request.operationId),
 		};
-		if (this.nextOutcome === "delivered") this.state = [...this.state, item];
+		if (this.nextOutcome === "delivered") {
+			this.state = [...this.state, item];
+		}
 		return this.result("add", request.operationId);
 	}
 
@@ -90,7 +92,9 @@ export class FakeQueue implements CodexWorkhorseQueue<OperationId> {
 	async start(request: Parameters<CodexWorkhorseQueue<OperationId>["start"]>[0]) {
 		this.calls.push("start");
 		const target = this.target(request.submissionId);
-		if (target === null) throw new Error("missing queue start target");
+		if (target === null) {
+			throw new Error("missing queue start target");
+		}
 		await this.authorize(request.beforeEffect, { operation: "start", target });
 		this.throwNext();
 		this.state = this.state.filter((item) => item.id !== request.submissionId);
@@ -129,7 +133,9 @@ export class FakeQueue implements CodexWorkhorseQueue<OperationId> {
 	}
 
 	private throwNext(): void {
-		if (this.nextError === null) return;
+		if (this.nextError === null) {
+			return;
+		}
 		const error = this.nextError;
 		this.nextError = null;
 		throw error;

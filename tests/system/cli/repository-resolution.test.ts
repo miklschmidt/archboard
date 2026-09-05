@@ -27,8 +27,9 @@ function decodeRepository<T>(result: RepositorySpawn, schema: ZodType<T>): T {
 		throw new Error(`${diagnostic}\nJSON decode: ${(error as Error).message}`, { cause: error });
 	}
 	const parsed = schema.safeParse(decoded);
-	if (!parsed.success)
+	if (!parsed.success) {
 		throw new Error(`${diagnostic}\nschema: ${parsed.error.message}`, { cause: parsed.error });
+	}
 	return parsed.data;
 }
 
@@ -44,7 +45,9 @@ function processGroupExists(pgid: number): boolean {
 		process.kill(-pgid, 0);
 		return true;
 	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code === "ESRCH") return false;
+		if ((cause as NodeJS.ErrnoException).code === "ESRCH") {
+			return false;
+		}
 		throw cause;
 	}
 }
@@ -59,14 +62,18 @@ async function within<T>(promise: Promise<T>, message: string): Promise<T> {
 			}),
 		]);
 	} finally {
-		if (timer !== undefined) clearTimeout(timer);
+		if (timer !== undefined) {
+			clearTimeout(timer);
+		}
 	}
 }
 
 async function waitForProcessAbsence(pid: number): Promise<void> {
 	const deadline = Date.now() + GIT_PROCESS_GROUP_CLEANUP_MS;
 	while (processExists(pid)) {
-		if (Date.now() >= deadline) throw new Error(`process ${pid} survived`);
+		if (Date.now() >= deadline) {
+			throw new Error(`process ${pid} survived`);
+		}
 		await Bun.sleep(GIT_PROCESS_GROUP_POLL_MS);
 	}
 }
@@ -74,7 +81,9 @@ async function waitForProcessAbsence(pid: number): Promise<void> {
 async function waitForGroupAbsence(pgid: number): Promise<void> {
 	const deadline = Date.now() + GIT_PROCESS_GROUP_CLEANUP_MS;
 	while (processGroupExists(pgid)) {
-		if (Date.now() >= deadline) throw new Error(`process group ${pgid} survived`);
+		if (Date.now() >= deadline) {
+			throw new Error(`process group ${pgid} survived`);
+		}
 		await Bun.sleep(GIT_PROCESS_GROUP_POLL_MS);
 	}
 }
@@ -83,7 +92,9 @@ function killGroup(pgid: number): void {
 	try {
 		process.kill(-pgid, "SIGKILL");
 	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") throw cause;
+		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") {
+			throw cause;
+		}
 	}
 }
 describe("repository registry package behavior", () => {
@@ -241,8 +252,11 @@ describe("repository binding resolution", () => {
 			expect(outside.resolved).toBe(false);
 			expect(outside.note).toContain(fixture.nowhere);
 		} finally {
-			if (previous === undefined) delete process.env["ARCHBOARD_REPOS"];
-			else process.env["ARCHBOARD_REPOS"] = previous;
+			if (previous === undefined) {
+				delete process.env["ARCHBOARD_REPOS"];
+			} else {
+				process.env["ARCHBOARD_REPOS"] = previous;
+			}
 		}
 	});
 
@@ -263,8 +277,11 @@ describe("repository binding resolution", () => {
 			expect(unknown).not.toHaveProperty("link");
 			expect(unknown.note).toContain("repo add");
 		} finally {
-			if (previous === undefined) delete process.env["ARCHBOARD_REPOS"];
-			else process.env["ARCHBOARD_REPOS"] = previous;
+			if (previous === undefined) {
+				delete process.env["ARCHBOARD_REPOS"];
+			} else {
+				process.env["ARCHBOARD_REPOS"] = previous;
+			}
 		}
 	});
 
@@ -299,8 +316,11 @@ describe("repository binding resolution", () => {
 			expect(stale.note).toContain(betaIdentity);
 			expect(stale.note).not.toContain(`file://${beta}/src/service.ts`);
 		} finally {
-			if (previous === undefined) delete process.env["ARCHBOARD_REPOS"];
-			else process.env["ARCHBOARD_REPOS"] = previous;
+			if (previous === undefined) {
+				delete process.env["ARCHBOARD_REPOS"];
+			} else {
+				process.env["ARCHBOARD_REPOS"] = previous;
+			}
 		}
 	});
 });
@@ -314,7 +334,9 @@ test("an interrupted repository command reaps its detached Git group", async () 
 	const helperReady = `${marker}.helper-ready`;
 	const releaseLeader = `${marker}.release-leader`;
 	const setsid = Bun.which("setsid");
-	if (!setsid) throw new Error("setsid is required for leader-exited cleanup coverage.");
+	if (!setsid) {
+		throw new Error("setsid is required for leader-exited cleanup coverage.");
+	}
 	mkdirSync(bin);
 	writeFileSync(
 		join(bin, "git"),
@@ -353,7 +375,9 @@ exit 0
 	try {
 		const deadline = Date.now() + 2_000;
 		while (!existsSync(marker)) {
-			if (Date.now() >= deadline) throw new Error("The fake Git child did not start.");
+			if (Date.now() >= deadline) {
+				throw new Error("The fake Git child did not start.");
+			}
 			await Bun.sleep(5);
 		}
 		gitPids = readFileSync(marker, "utf8").trim().split(/\s+/u).map(Number);
@@ -363,8 +387,9 @@ exit 0
 			descendant === undefined ||
 			helper === undefined ||
 			ownerGroup === undefined
-		)
+		) {
 			throw new Error(`Malformed fake Git process record: ${JSON.stringify(gitPids)}`);
+		}
 		expect(
 			processExists(descendant),
 			"the redirected Git descendant must exist before its leader exits",
@@ -400,7 +425,9 @@ exit 0
 			const groups = new Set(
 				[gitPids[2], gitPids[3], child.pid].filter((pid): pid is number => pid !== undefined),
 			);
-			for (const pgid of groups) killGroup(pgid);
+			for (const pgid of groups) {
+				killGroup(pgid);
+			}
 			try {
 				child.kill("SIGKILL");
 			} catch {}
@@ -408,14 +435,18 @@ exit 0
 				Promise.allSettled([child.exited, output]).then(() => undefined),
 				"the interrupted CLI owner did not settle during cleanup",
 			);
-			for (const pgid of groups) await waitForGroupAbsence(pgid);
-			for (const pid of gitPids) await waitForProcessAbsence(pid);
+			for (const pgid of groups) {
+				await waitForGroupAbsence(pgid);
+			}
+			for (const pid of gitPids) {
+				await waitForProcessAbsence(pid);
+			}
 		} catch (cause) {
 			cleanupFailure = cause;
 		}
 	}
 	if (primaryFailure !== undefined) {
-		if (cleanupFailure !== undefined)
+		if (cleanupFailure !== undefined) {
 			throw new AggregateError(
 				[primaryFailure, cleanupFailure],
 				"CLI interrupt failed and cleanup failed",
@@ -423,7 +454,10 @@ exit 0
 					cause: primaryFailure,
 				},
 			);
+		}
 		throw primaryFailure;
 	}
-	if (cleanupFailure !== undefined) throw cleanupFailure;
+	if (cleanupFailure !== undefined) {
+		throw cleanupFailure;
+	}
 }, 10_000);

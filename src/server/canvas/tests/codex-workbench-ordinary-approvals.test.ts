@@ -5,14 +5,16 @@ import { createIdentityAuthority } from "../../../shared/codex-workbench-identit
 import type { BrowserActionContext, BrowserApprovalCommand } from "../../codex-workbench/index.js";
 import { createCanvasOrdinaryApprovalActions } from "../codex-workbench-adapters.js";
 
-for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const)
+for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const) {
 	test(`ordinary approval actions preserve the broker ${outcome} outcome`, async () => {
 		const identity = createIdentityAuthority();
 		const broker = createCodexApprovalBroker({
 			identity,
 			transport: {
 				respond: async () => {
-					if (outcome === "delivered") return;
+					if (outcome === "delivered") {
+						return;
+					}
 					throw outcome === "not_delivered"
 						? { accepted: false, outcome, reason: "backpressure" }
 						: { accepted: true, outcome, reason: "write-error" };
@@ -67,6 +69,7 @@ for (const outcome of ["delivered", "not_delivered", "outcome_unknown"] as const
 			broker.dispose();
 		}
 	});
+}
 
 test("browser disconnect settles and immediately acknowledges its ordinary approvals", async () => {
 	const paneId = "pane-ordinary";

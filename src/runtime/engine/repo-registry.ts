@@ -55,10 +55,16 @@ export function registryPath(): string {
 }
 
 function normalize(entry: unknown): RegisteredRepo | null {
-	if (!entry || typeof entry !== "object") return null;
+	if (!entry || typeof entry !== "object") {
+		return null;
+	}
 	const { repo, root, source, addedAt } = entry as Record<string, unknown>;
-	if (typeof repo !== "string" || !repo) return null;
-	if (typeof root !== "string" || !root) return null;
+	if (typeof repo !== "string" || !repo) {
+		return null;
+	}
+	if (typeof root !== "string" || !root) {
+		return null;
+	}
 	return {
 		repo,
 		root: path.resolve(root),
@@ -78,11 +84,15 @@ export function readRegistry(): RegisteredRepo[] {
 	try {
 		const parsed = JSON.parse(raw);
 		const list = Array.isArray(parsed) ? parsed : parsed?.repos;
-		if (!Array.isArray(list)) return [];
+		if (!Array.isArray(list)) {
+			return [];
+		}
 		const seen = new Map<string, RegisteredRepo>();
 		for (const item of list) {
 			const entry = normalize(item);
-			if (entry) seen.set(entry.repo, entry);
+			if (entry) {
+				seen.set(entry.repo, entry);
+			}
 		}
 		return [...seen.values()].toSorted((a, b) => (a.repo < b.repo ? -1 : a.repo > b.repo ? 1 : 0));
 	} catch {
@@ -136,7 +146,9 @@ function upsert(entry: RegisteredRepo): void {
 /** The checkout for a repository identity, but only while it is still there. */
 export function checkoutFor(repo: string): string | undefined {
 	const entry = readRegistry().find((candidate) => candidate.repo === repo);
-	if (!entry) return undefined;
+	if (!entry) {
+		return undefined;
+	}
 	return isCheckout(entry.root) ? entry.root : undefined;
 }
 
@@ -186,7 +198,9 @@ export async function declareRepo(
 export function rememberRepo(repo: string, root: string): void {
 	const resolved = path.resolve(root);
 	const existing = readRegistry().find((entry) => entry.repo === repo);
-	if (existing && (existing.source === "declared" || isCheckout(existing.root))) return;
+	if (existing && (existing.source === "declared" || isCheckout(existing.root))) {
+		return;
+	}
 	upsert({ repo, root: resolved, source: "observed", addedAt: new Date().toISOString() });
 }
 
@@ -194,7 +208,9 @@ export function rememberRepo(repo: string, root: string): void {
 export function forgetRepo(repo: string): boolean {
 	const entries = readRegistry();
 	const kept = entries.filter((entry) => entry.repo !== repo);
-	if (kept.length === entries.length) return false;
+	if (kept.length === entries.length) {
+		return false;
+	}
 	return write(kept);
 }
 

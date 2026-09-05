@@ -2,7 +2,9 @@ import { CodexExecutableError } from "../../../runtime/codex-process/executable.
 import { CodexProcessError } from "../../../runtime/codex-process/index.js";
 
 function failures(error: unknown): readonly Error[] {
-	if (!(error instanceof Error)) return [];
+	if (!(error instanceof Error)) {
+		return [];
+	}
 	return [
 		error,
 		...(error instanceof AggregateError ? error.errors.flatMap(failures) : []),
@@ -22,7 +24,9 @@ function codexFailure(error: unknown): CodexExecutableError | CodexProcessError 
 /** One bounded, actionable line for the public canvas startup boundary. */
 export function canvasStartupFailureMessage(error: unknown): string {
 	const codex = codexFailure(error);
-	if (codex instanceof CodexExecutableError) return `Codex startup refused. ${codex.message}`;
+	if (codex instanceof CodexExecutableError) {
+		return `Codex startup refused. ${codex.message}`;
+	}
 	if (codex instanceof CodexProcessError) {
 		switch (codex.code) {
 			case "binary_invalid":

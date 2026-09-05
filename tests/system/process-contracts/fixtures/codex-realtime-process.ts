@@ -136,8 +136,9 @@ function sleep(milliseconds: number): Promise<void> {
 export async function waitFor(predicate: () => boolean, timeoutMs = 5_000): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
 	while (!predicate()) {
-		if (Date.now() >= deadline)
+		if (Date.now() >= deadline) {
 			throw new Error("Timed out waiting for the realtime process fixture.");
+		}
 		await sleep(10);
 	}
 }
@@ -152,8 +153,9 @@ function makeBinding(identity: IdentityAuthority): CodexRealtimeBinding {
 	});
 	const linkedThreadId = ids.threadIds[0];
 	const coordinatorThreadId = ids.threadIds[1];
-	if (!linkedThreadId || !coordinatorThreadId)
+	if (!linkedThreadId || !coordinatorThreadId) {
 		throw new Error("Fixture thread identities were not issued.");
+	}
 	return {
 		child: identity.validator.childId,
 		epoch: identity.validator.epoch,
@@ -217,8 +219,9 @@ export async function createHarness(
 	let bridge: PublicChildBridge | null = null;
 	let bridgeExitForwarded = false;
 	const unsubscribeSnapshot = owner.subscribe((snapshot) => {
-		if (!bridge || bridgeExitForwarded || snapshot.pid !== null || snapshot.lastExit === null)
+		if (!bridge || bridgeExitForwarded || snapshot.pid !== null || snapshot.lastExit === null) {
 			return;
+		}
 		bridgeExitForwarded = true;
 		bridge.emit("exit", snapshot.lastExit.code, snapshot.lastExit.signal);
 	});
@@ -276,7 +279,9 @@ export async function createHarness(
 		Object.assign(generation, { ready });
 		void ready.catch(() => undefined);
 		transport.onExit(() => {
-			if (current === generation) current = null;
+			if (current === generation) {
+				current = null;
+			}
 			adapter.dispose();
 			void transport.shutdown().catch(() => undefined);
 		});
@@ -286,7 +291,9 @@ export async function createHarness(
 		const processReady = owner.start();
 		await waitFor(() => generations.length > 0);
 		const generation = generations.at(-1);
-		if (!generation) throw new Error("The Codex process did not publish a generation.");
+		if (!generation) {
+			throw new Error("The Codex process did not publish a generation.");
+		}
 		await generation.ready.catch((error) => {
 			throw new Error(
 				`Fixture session setup failed: ${String(error)}\\n${readFileSync(logPath, "utf8")}`,
@@ -316,10 +323,14 @@ export async function createHarness(
 		);
 	};
 	const close = async (): Promise<void> => {
-		if (closed) return;
+		if (closed) {
+			return;
+		}
 		closed = true;
 		current = null;
-		for (const generation of generations) generation.adapter.dispose();
+		for (const generation of generations) {
+			generation.adapter.dispose();
+		}
 		let stopError: unknown;
 		try {
 			await owner.stop();
@@ -336,17 +347,22 @@ export async function createHarness(
 		expectCleanupOwner(owner, stopError);
 		const cleanupLog = stopError ? readFileSync(logPath, "utf8") : "";
 		rmSync(root, { recursive: true, force: true });
-		if (existsSync(root)) throw new Error("Fixture temporary root survived cleanup.");
-		if (stopError)
+		if (existsSync(root)) {
+			throw new Error("Fixture temporary root survived cleanup.");
+		}
+		if (stopError) {
 			throw new Error(`Fixture cleanup failed: ${String(stopError)}\\n${cleanupLog}`, {
 				cause: stopError,
 			});
+		}
 	};
 	return { root, controlPath, logPath, owner, generations, events, start, setControl, close };
 }
 
 function expectCleanup(generation: Generation): void {
-	if (!generation.readyState.settled) throw new Error("Fixture generation setup did not settle.");
+	if (!generation.readyState.settled) {
+		throw new Error("Fixture generation setup did not settle.");
+	}
 	const inspect = generation.transport.inspect();
 	if (
 		inspect.state !== "closed" ||
@@ -354,20 +370,26 @@ function expectCleanup(generation: Generation): void {
 		inspect.pendingReverseRequests !== 0 ||
 		inspect.queuedFrames !== 0 ||
 		inspect.queuedBytes !== 0
-	)
+	) {
 		throw new Error(`Fixture transport retained work: ${JSON.stringify(inspect)}`);
+	}
 }
 
 function expectCleanupOwner(owner: CodexProcess, stopError: unknown): void {
-	if (owner.currentChild() !== null) throw new Error("Fixture child survived cleanup.");
-	if (stopError) return;
+	if (owner.currentChild() !== null) {
+		throw new Error("Fixture child survived cleanup.");
+	}
+	if (stopError) {
+		return;
+	}
 	const snapshot = owner.snapshot();
 	if (
 		snapshot.state !== "stopped" ||
 		snapshot.nextRestartAtMs !== null ||
 		snapshot.restartDelayMs !== null
-	)
+	) {
 		throw new Error(`Fixture process retained lifecycle state: ${JSON.stringify(snapshot)}`);
+	}
 }
 
 export async function withHarness(
@@ -386,7 +408,9 @@ export async function withHarness(
 export function latestState(harness: RealtimeHarness) {
 	for (let index = harness.events.length - 1; index >= 0; index -= 1) {
 		const event = harness.events[index];
-		if (event?.kind === "state") return event.state;
+		if (event?.kind === "state") {
+			return event.state;
+		}
 	}
 	throw new Error("The realtime harness has not emitted a state.");
 }

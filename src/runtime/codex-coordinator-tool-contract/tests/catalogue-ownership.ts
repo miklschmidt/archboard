@@ -29,7 +29,9 @@ function tokenizeTypeScript(source: string): Token[] {
 		}
 		if (character === "/" && source[index + 1] === "/") {
 			index = source.indexOf("\n", index + 2);
-			if (index < 0) break;
+			if (index < 0) {
+				break;
+			}
 			continue;
 		}
 		if (character === "/" && source[index + 1] === "*") {
@@ -61,12 +63,16 @@ function tokenizeTypeScript(source: string): Token[] {
 				}
 				end += 1;
 			}
-			if (end >= source.length) break;
+			if (end >= source.length) {
+				break;
+			}
 			continue;
 		}
 		if (/[A-Za-z_$]/.test(character)) {
 			let end = index + 1;
-			while (end < source.length && /[A-Za-z0-9_$]/.test(source[end]!)) end += 1;
+			while (end < source.length && /[A-Za-z0-9_$]/.test(source[end]!)) {
+				end += 1;
+			}
 			tokens.push({ kind: "identifier", value: source.slice(index, end) });
 			index = end;
 			continue;
@@ -82,10 +88,14 @@ export function hasTypeScriptCatalogueDefinition(source: string): boolean {
 	const closingBraces = new Map<number, number>();
 	const openBraces: number[] = [];
 	for (const [index, token] of tokens.entries()) {
-		if (token.value === "{") openBraces.push(index);
+		if (token.value === "{") {
+			openBraces.push(index);
+		}
 		if (token.value === "}") {
 			const opening = openBraces.pop();
-			if (opening !== undefined) closingBraces.set(opening, index);
+			if (opening !== undefined) {
+				closingBraces.set(opening, index);
+			}
 		}
 	}
 	for (const [opening, closing] of closingBraces) {
@@ -93,10 +103,18 @@ export function hasTypeScriptCatalogueDefinition(source: string): boolean {
 		const properties = new Map<string, string | true>();
 		for (let index = opening + 1; index < closing; index += 1) {
 			const token = tokens[index]!;
-			if (token.value === "{" || token.value === "[" || token.value === "(") depth += 1;
-			if (token.value === "}" || token.value === "]" || token.value === ")") depth -= 1;
-			if (depth !== 0 || (token.kind !== "identifier" && token.kind !== "string")) continue;
-			if (tokens[index + 1]?.value !== ":") continue;
+			if (token.value === "{" || token.value === "[" || token.value === "(") {
+				depth += 1;
+			}
+			if (token.value === "}" || token.value === "]" || token.value === ")") {
+				depth -= 1;
+			}
+			if (depth !== 0 || (token.kind !== "identifier" && token.kind !== "string")) {
+				continue;
+			}
+			if (tokens[index + 1]?.value !== ":") {
+				continue;
+			}
 			const value = tokens[index + 2];
 			properties.set(token.value, value?.kind === "string" ? value.value : true);
 		}
@@ -106,8 +124,9 @@ export function hasTypeScriptCatalogueDefinition(source: string): boolean {
 		if (
 			(type === "namespace" && typeof name === "string" && NAMESPACE_NAMES.has(name)) ||
 			(typeof namespace === "string" && NAMESPACE_NAMES.has(namespace) && properties.has("tools"))
-		)
+		) {
 			return true;
+		}
 	}
 	return false;
 }
@@ -120,21 +139,27 @@ export function hasJsonCatalogueDefinition(source: string): boolean {
 		return false;
 	}
 	function visit(candidate: unknown): boolean {
-		if (Array.isArray(candidate)) return candidate.some(visit);
-		if (typeof candidate !== "object" || candidate === null) return false;
+		if (Array.isArray(candidate)) {
+			return candidate.some(visit);
+		}
+		if (typeof candidate !== "object" || candidate === null) {
+			return false;
+		}
 		const record = candidate as Record<string, unknown>;
 		if (
 			record["type"] === "namespace" &&
 			typeof record["name"] === "string" &&
 			NAMESPACE_NAMES.has(record["name"])
-		)
+		) {
 			return true;
+		}
 		if (
 			typeof record["namespace"] === "string" &&
 			NAMESPACE_NAMES.has(record["namespace"]) &&
 			Array.isArray(record["tools"])
-		)
+		) {
 			return true;
+		}
 		return Object.values(record).some(visit);
 	}
 	return visit(value);

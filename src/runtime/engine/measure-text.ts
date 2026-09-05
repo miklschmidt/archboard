@@ -58,14 +58,18 @@ function faceFor(
 		for (let i = faces.length - 1; i >= 0; i--) {
 			const descriptor = faces[i] as FaceDescriptor;
 			const ranges = descriptor.ranges;
-			if (ranges !== null && !ranges.some(([a, b]) => codepoint >= a && codepoint <= b)) continue;
+			if (ranges !== null && !ranges.some(([a, b]) => codepoint >= a && codepoint <= b)) {
+				continue;
+			}
 			let loaded: LoadedFace;
 			try {
 				loaded = loadFace(descriptor.file);
 			} catch {
 				continue;
 			}
-			if (loaded.font.cmap.has(codepoint)) return { descriptor, loaded };
+			if (loaded.font.cmap.has(codepoint)) {
+				return { descriptor, loaded };
+			}
 		}
 	}
 	return undefined;
@@ -107,7 +111,9 @@ export interface LineMeasurement {
  */
 export function measureLine(text: string, fontSize: number, fontFamily: number): LineMeasurement {
 	const stack = faceStack(fontFamily);
-	if (stack.length === 0) return { width: 0, missing: Array.from(text) };
+	if (stack.length === 0) {
+		return { width: 0, missing: Array.from(text) };
+	}
 
 	interface Run {
 		face: LoadedFace | undefined;
@@ -118,7 +124,9 @@ export function measureLine(text: string, fontSize: number, fontFamily: number):
 
 	for (const ch of text) {
 		const codepoint = ch.codePointAt(0) as number;
-		if (IGNORABLE.has(codepoint)) continue;
+		if (IGNORABLE.has(codepoint)) {
+			continue;
+		}
 		const isSpace = codepoint === SPACE;
 		if (!word || isSpace || word.isSpace) {
 			word = { runs: [], isSpace };
@@ -156,7 +164,9 @@ export function measureLine(text: string, fontSize: number, fontFamily: number):
 			}
 			const { font, gsub, gpos } = run.face;
 			let glyphs = run.chars.map((ch) => font.cmap.get(ch.codePointAt(0) as number) as number);
-			if (gsub) glyphs = gsub.substitute(glyphs);
+			if (gsub) {
+				glyphs = gsub.substitute(glyphs);
+			}
 			let units = 0;
 			for (const glyph of glyphs) {
 				units += font.advances[glyph] ?? 0;
@@ -169,7 +179,9 @@ export function measureLine(text: string, fontSize: number, fontFamily: number):
 		}
 	}
 	let width = 0;
-	for (const [unitsPerEm, units] of unitsPer) width += (units * fontSize) / unitsPerEm;
+	for (const [unitsPerEm, units] of unitsPer) {
+		width += (units * fontSize) / unitsPerEm;
+	}
 	return { width, missing };
 }
 

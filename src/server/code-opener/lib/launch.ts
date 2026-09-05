@@ -13,7 +13,9 @@ export type ResolvedOpenerCommand =
 
 function executableFile(candidate: string): boolean {
 	try {
-		if (!fs.statSync(candidate).isFile()) return false;
+		if (!fs.statSync(candidate).isFile()) {
+			return false;
+		}
 		fs.accessSync(candidate, fs.constants.X_OK);
 		return true;
 	} catch {
@@ -41,12 +43,16 @@ export function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerComm
 
 export async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 	const resolved = resolveOpenerCommand(command);
-	if (!resolved.ok) return resolved;
+	if (!resolved.ok) {
+		return resolved;
+	}
 	return new Promise((resolve) => {
 		let settled = false;
 		let child: ReturnType<typeof spawn>;
 		const finish = (result: LaunchResult): void => {
-			if (settled) return;
+			if (settled) {
+				return;
+			}
 			settled = true;
 			child.removeListener("spawn", onSpawn);
 			child.removeListener("error", onError);

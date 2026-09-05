@@ -20,8 +20,9 @@ import {
 } from "./support.js";
 
 function record(value: unknown): Record<string, unknown> {
-	if (value === null || typeof value !== "object" || Array.isArray(value))
+	if (value === null || typeof value !== "object" || Array.isArray(value)) {
 		throw new Error("fixture expected an object");
+	}
 	return Object.fromEntries(Object.entries(value));
 }
 
@@ -30,13 +31,15 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 		for (const kind of ["unresolved", "mismatched", "unproven"] as const) {
 			const { authorities, caller } = setupAuthorities();
 			const fixture = optionsFor(authorities, caller);
-			if (kind === "unresolved")
+			if (kind === "unresolved") {
 				fixture.threadAuthority.callerError = Object.assign(new Error("caller disappeared"), {
 					code: "stale_child",
 				});
-			else if (kind === "mismatched")
+			} else if (kind === "mismatched") {
 				fixture.threadAuthority.caller = { ...caller, wireThreadId: "another-thread" };
-			else fixture.threadAuthority.caller = { ...caller, provenance: null };
+			} else {
+				fixture.threadAuthority.caller = { ...caller, provenance: null };
+			}
 
 			const response = await createCodexDynamicTools(fixture.options).dispatch(
 				requestFor(authorities, caller, "create_thread", { prompt: kind }, `caller-${kind}`),
@@ -192,7 +195,9 @@ describe("codex dynamic dispatcher terminal boundaries", () => {
 			requestFor(authorities, caller, "fork_thread", { threadId: otherTarget.wireThreadId }),
 		);
 		const parsed = parseDynamicToolCallResponse("fork_thread", response);
-		if (parsed.envelope.tag !== "ok") throw new Error("promptless fork did not succeed");
+		if (parsed.envelope.tag !== "ok") {
+			throw new Error("promptless fork did not succeed");
+		}
 		const value = record(parsed.envelope.value);
 
 		expect(value).toMatchObject({

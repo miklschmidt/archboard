@@ -45,7 +45,9 @@ function isSessionQueuedSubmission(value: unknown): value is SessionQueuedSubmis
 }
 
 function responseSubmission(value: unknown): SessionQueuedSubmission | null {
-	if (!isRecord(value) || !isRecord(value["queuedSubmission"])) return null;
+	if (!isRecord(value) || !isRecord(value["queuedSubmission"])) {
+		return null;
+	}
 	const candidate = value["queuedSubmission"];
 	return isSessionQueuedSubmission(candidate) ? candidate : null;
 }
@@ -69,19 +71,24 @@ export function expectedAdd(
 		JSON.stringify(added.input) !== JSON.stringify([input]) ||
 		before.some((submission) => submission.id === added.id) ||
 		after.length !== before.length + 1
-	)
+	) {
 		return false;
+	}
 
 	let beforeIndex = 0;
 	let addedCount = 0;
 	for (const submission of after) {
 		if (submission.id === added.id) {
-			if (!sameSubmission(submission, added)) return false;
+			if (!sameSubmission(submission, added)) {
+				return false;
+			}
 			addedCount += 1;
 			continue;
 		}
 		const prior = before[beforeIndex];
-		if (prior === undefined || !sameSubmission(submission, prior)) return false;
+		if (prior === undefined || !sameSubmission(submission, prior)) {
+			return false;
+		}
 		beforeIndex += 1;
 	}
 	return addedCount === 1 && beforeIndex === before.length;
@@ -100,14 +107,18 @@ export function expectedUpdate(
 		updated.id !== submissionId ||
 		JSON.stringify(updated.input) !== JSON.stringify([input]) ||
 		after.length !== before.length
-	)
+	) {
 		return false;
+	}
 	const prior = before.find((submission) => submission.id === submissionId);
-	if (prior === undefined || updated.clientUserMessageId !== prior.clientUserMessageId)
+	if (prior === undefined || updated.clientUserMessageId !== prior.clientUserMessageId) {
 		return false;
+	}
 	return after.every((submission, index) => {
 		const priorAtIndex = before[index];
-		if (priorAtIndex === undefined) return false;
+		if (priorAtIndex === undefined) {
+			return false;
+		}
 		return priorAtIndex.id === submissionId
 			? sameSubmission(submission, updated)
 			: sameSubmission(submission, priorAtIndex);
@@ -120,7 +131,9 @@ export function expectedDelete(
 	response: unknown,
 	submissionId: SessionQueuedSubmission["id"],
 ): boolean {
-	if (!isRecord(response) || typeof response["deleted"] !== "boolean") return false;
+	if (!isRecord(response) || typeof response["deleted"] !== "boolean") {
+		return false;
+	}
 	return response["deleted"]
 		? sameQueue(after, queueWithout(before, submissionId))
 		: sameQueue(after, before);
@@ -131,7 +144,9 @@ export function expectedReorder(
 	after: QueueSnapshot,
 	orderedSubmissionIds: readonly SessionQueuedSubmission["id"][],
 ): boolean {
-	if (after.length !== before.length || orderedSubmissionIds.length !== before.length) return false;
+	if (after.length !== before.length || orderedSubmissionIds.length !== before.length) {
+		return false;
+	}
 	const priorById = new Map(before.map((submission) => [submission.id, submission]));
 	return after.every((submission, index) => {
 		const expectedId = orderedSubmissionIds[index];

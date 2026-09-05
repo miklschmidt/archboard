@@ -57,11 +57,15 @@ export function readinessFor(state: BrowserReadiness["state"], loginId: LoginId)
 		state === "storage_mismatch" ||
 		state === "reconnecting" ||
 		state === "incompatible_contract"
-	)
+	) {
 		return { kind: "readiness", state, reason: "fixture" };
-	if (state === "backoff")
+	}
+	if (state === "backoff") {
 		return { kind: "readiness", state, retryAtMs: CLOCK_START + 1, reason: "fixture" };
-	if (state === "login_pending") return { kind: "readiness", state, loginId };
+	}
+	if (state === "login_pending") {
+		return { kind: "readiness", state, loginId };
+	}
 	return { kind: "readiness", state };
 }
 

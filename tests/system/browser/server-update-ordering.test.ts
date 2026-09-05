@@ -66,7 +66,9 @@ function divergences(server: SnapshotElement[], pane: SnapshotElement[]): string
 		for (const key of keys) {
 			const serverValue = element.fields[key] ?? "<absent>";
 			const paneValue = other.fields[key] ?? "<absent>";
-			if (serverValue === paneValue) continue;
+			if (serverValue === paneValue) {
+				continue;
+			}
 			const widthsAgree =
 				element.type === "text" &&
 				key === "width" &&
@@ -79,8 +81,9 @@ function divergences(server: SnapshotElement[], pane: SnapshotElement[]): string
 		}
 	}
 	for (const [id, element] of theirs) {
-		if (!ours.has(id))
+		if (!ours.has(id)) {
 			found.push(`${elementName(element)}: the pane holds it, the server does not`);
+		}
 	}
 	return found;
 }
@@ -99,8 +102,9 @@ return {
 };
 `),
 	);
-	if (answer.error || !answer.elements)
+	if (answer.error || !answer.elements) {
 		throw new Error(answer.error ?? "pane returned no elements");
+	}
 	return answer.elements;
 }
 
@@ -253,7 +257,9 @@ test("server updates cannot absorb ordered user edits or queued reports", async 
 	const storeLabel = (await held()).find(
 		(element) => element.type === "text" && element.containerId === "store",
 	);
-	if (storeLabel?.type !== "text") throw new Error("store label is not text");
+	if (storeLabel?.type !== "text") {
+		throw new Error("store label is not text");
+	}
 	expect(typeof storeLabel?.id).toBe("string");
 	await duringServerUpdate(
 		"an agent relabels the box a user is typing in",

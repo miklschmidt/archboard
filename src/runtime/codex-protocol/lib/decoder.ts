@@ -53,17 +53,23 @@ function isIssueRecord(value: unknown): value is IssueRecord {
 }
 
 function issuePath(issue: unknown): IssuePath {
-	if (!isIssueRecord(issue) || !Array.isArray(issue["path"])) return [];
+	if (!isIssueRecord(issue) || !Array.isArray(issue["path"])) {
+		return [];
+	}
 	return issue["path"].map((segment) =>
 		typeof segment === "string" || typeof segment === "number" ? segment : String(segment),
 	);
 }
 
 function unionBranches(issue: IssueRecord): unknown[][] | undefined {
-	if (issue["code"] !== "invalid_union" || !Array.isArray(issue["errors"])) return undefined;
+	if (issue["code"] !== "invalid_union" || !Array.isArray(issue["errors"])) {
+		return undefined;
+	}
 	const branches: unknown[][] = [];
 	for (const branch of issue["errors"]) {
-		if (!Array.isArray(branch)) return undefined;
+		if (!Array.isArray(branch)) {
+			return undefined;
+		}
 		branches.push(branch);
 	}
 	return branches;
@@ -74,7 +80,9 @@ function valueAtPath(value: unknown, path: IssuePath): unknown {
 	for (const segment of path) {
 		if (Array.isArray(current)) {
 			const index = typeof segment === "number" ? segment : Number(segment);
-			if (!Number.isInteger(index)) return undefined;
+			if (!Number.isInteger(index)) {
+				return undefined;
+			}
 			current = current[index];
 		} else if (isIssueRecord(current)) {
 			current = current[String(segment)];
@@ -86,10 +94,14 @@ function valueAtPath(value: unknown, path: IssuePath): unknown {
 }
 
 function issuePaths(issue: unknown, prefix: IssuePath = []): IssuePath[] {
-	if (!isIssueRecord(issue)) return [prefix];
+	if (!isIssueRecord(issue)) {
+		return [prefix];
+	}
 	const path = [...prefix, ...issuePath(issue)];
 	const branches = unionBranches(issue);
-	if (!branches?.length) return [path];
+	if (!branches?.length) {
+		return [path];
+	}
 	return branches.flatMap((branch) =>
 		branch.length ? branch.flatMap((child) => issuePaths(child, path)) : [path],
 	);
@@ -120,9 +132,12 @@ function branchScore(
 }
 
 function isBetterBranch(candidate: UnionBranchScore, current: UnionBranchScore): boolean {
-	if (candidate.depth !== current.depth) return candidate.depth > current.depth;
-	if (candidate.inputKeyMatches !== current.inputKeyMatches)
+	if (candidate.depth !== current.depth) {
+		return candidate.depth > current.depth;
+	}
+	if (candidate.inputKeyMatches !== current.inputKeyMatches) {
 		return candidate.inputKeyMatches > current.inputKeyMatches;
+	}
 	return candidate.index > current.index;
 }
 
@@ -154,12 +169,18 @@ function isFunctionCallOutputBodyUnion(issue: IssueRecord): boolean {
 }
 
 function normalizeIssue(issue: unknown, prefix: IssuePath, rootValue: unknown): unknown[] {
-	if (!isIssueRecord(issue)) return [issue];
+	if (!isIssueRecord(issue)) {
+		return [issue];
+	}
 	const path = [...prefix, ...issuePath(issue)];
 	const branches = unionBranches(issue);
-	if (!branches || isFunctionCallOutputBodyUnion(issue)) return [withIssuePath(issue, path)];
+	if (!branches || isFunctionCallOutputBodyUnion(issue)) {
+		return [withIssuePath(issue, path)];
+	}
 	const selected = deepestBranch(branches, valueAtPath(rootValue, path));
-	if (!selected) return [withIssuePath(issue, path)];
+	if (!selected) {
+		return [withIssuePath(issue, path)];
+	}
 	return selected.flatMap((child) => normalizeIssue(child, path, rootValue));
 }
 
@@ -195,7 +216,9 @@ export class ProtocolDecodeError extends Error {
 function formatIssues(issues: readonly unknown[]): string {
 	return issues
 		.map((issue) => {
-			if (!issue || typeof issue !== "object") return String(issue);
+			if (!issue || typeof issue !== "object") {
+				return String(issue);
+			}
 			const candidate = issue as { path?: unknown; message?: unknown };
 			const path = Array.isArray(candidate.path) ? candidate.path.join(".") : "payload";
 			return `${path}: ${String(candidate.message ?? "invalid value")}`;
@@ -220,12 +243,13 @@ function decodeSchema<T extends z.ZodTypeAny>(
 		});
 	}
 	const result = schema.safeParse(normalized);
-	if (!result.success)
+	if (!result.success) {
 		throw new ProtocolDecodeError({
 			method,
 			direction,
 			issues: normalizeIssues(result.error.issues, normalized),
 		});
+	}
 	return result.data;
 }
 
@@ -235,17 +259,20 @@ function methodSchema<T extends Record<string, z.ZodTypeAny>>(
 	direction: ProtocolDirection,
 ) {
 	const schema = schemas[method as keyof T];
-	if (!schema)
+	if (!schema) {
 		throw new ProtocolDecodeError({
 			method,
 			direction,
 			recoveryAction: `${PROTOCOL_RECOVERY_ACTION}; do not handle this unknown method until Codex 0.151.0 is reviewed`,
 		});
+	}
 	return schema;
 }
 
 function methodHint(value: unknown): string {
-	if (!value || typeof value !== "object" || Array.isArray(value)) return "<unknown>";
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return "<unknown>";
+	}
 	const method = (value as { method?: unknown }).method;
 	return typeof method === "string" ? method : "<unknown>";
 }
@@ -272,7 +299,7 @@ export function decodeResponse(method: string, payload: unknown): unknown {
 	const decoded = decodeSchema(method, "response", schema, payload);
 	if (method === "initialize") {
 		const userAgent = (decoded as { userAgent: string }).userAgent;
-		if (!isSupportedCodexUserAgent(userAgent))
+		if (!isSupportedCodexUserAgent(userAgent)) {
 			throw new ProtocolDecodeError({
 				method,
 				direction: "response",
@@ -280,6 +307,7 @@ export function decodeResponse(method: string, payload: unknown): unknown {
 				recoveryAction:
 					"stop the child, run the recorded Codex 0.151.0 binary, and reconnect after reviewing the incompatible payload",
 			});
+		}
 	}
 	return decoded;
 }
@@ -291,7 +319,7 @@ export function decodeLoginAccountParams(value: unknown) {
 		LoginAccountParamsSchema,
 		value,
 	);
-	if (decoded.type === "chatgptDeviceCode" || decoded.type === "chatgptAuthTokens")
+	if (decoded.type === "chatgptDeviceCode" || decoded.type === "chatgptAuthTokens") {
 		throw new ProtocolDecodeError({
 			method: "account/login/start",
 			direction: "client-request",
@@ -299,6 +327,7 @@ export function decodeLoginAccountParams(value: unknown) {
 			recoveryAction:
 				"use hosted ChatGPT login, an API key, or explicit Bedrock credentials through the visual login flow",
 		});
+	}
 	return decoded;
 }
 
@@ -373,7 +402,7 @@ export function decodeServerRequest(value: unknown): DecodedServerRequest {
 	if (
 		envelope.method === "account/chatgptAuthTokens/refresh" ||
 		envelope.method === "attestation/generate"
-	)
+	) {
 		throw new ProtocolDecodeError({
 			method: envelope.method,
 			direction: "server-request",
@@ -383,6 +412,7 @@ export function decodeServerRequest(value: unknown): DecodedServerRequest {
 					? "reply with JSON-RPC -32601 Attestation is not supported by this client"
 					: "reply with JSON-RPC -32601 Client-managed ChatGPT token refresh is not supported",
 		});
+	}
 	return {
 		id: envelope.id,
 		method: envelope.method as ServerRequestMethod,

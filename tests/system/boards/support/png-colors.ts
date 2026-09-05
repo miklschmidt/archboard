@@ -18,13 +18,16 @@ export function pngRgbCounts(bytes: Uint8Array): Map<string, number> {
 	const height = view.getUint32(20);
 	const colorType = bytes[25];
 	const channels = colorType === 6 ? 4 : colorType === 2 ? 3 : 0;
-	if (bytes[24] !== 8 || channels === 0)
+	if (bytes[24] !== 8 || channels === 0) {
 		throw new Error(`Expected an 8-bit RGB/RGBA PNG, received colour type ${String(colorType)}.`);
+	}
 	const chunks: Uint8Array[] = [];
 	for (let offset = 8; offset < bytes.length;) {
 		const length = view.getUint32(offset);
 		const type = String.fromCharCode(...bytes.slice(offset + 4, offset + 8));
-		if (type === "IDAT") chunks.push(bytes.slice(offset + 8, offset + 8 + length));
+		if (type === "IDAT") {
+			chunks.push(bytes.slice(offset + 8, offset + 8 + length));
+		}
 		offset += length + 12;
 	}
 	const compressed = Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));

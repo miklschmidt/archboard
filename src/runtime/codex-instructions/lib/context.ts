@@ -53,8 +53,12 @@ const notDeliveredOutcomeSchema = z.literal(operationOutcomeValues[1]);
 const outcomeUnknownSchema = z.literal(operationOutcomeValues[2]);
 
 function freezeDeep<T>(value: T): T {
-	if (typeof value !== "object" || value === null) return value;
-	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
+	if (typeof value !== "object" || value === null) {
+		return value;
+	}
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		freezeDeep(child);
+	}
 	Object.freeze(value);
 	return value;
 }
@@ -76,20 +80,22 @@ const ArchboardContextRawSchema = z.strictObject({
 			const reasonNullStates = ADDITIONAL_CONTEXT_POLICY.threadLink
 				.reasonNullStates as readonly string[];
 			if (reasonNullStates.includes(value.state)) {
-				if (value.reason !== null)
+				if (value.reason !== null) {
 					refinementContext.addIssue({
 						code: "custom",
 						path: ["reason"],
 						message: `threadLink state ${value.state} requires null reason`,
 					});
+				}
 				return;
 			}
-			if (value.reason === null)
+			if (value.reason === null) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["reason"],
 					message: `threadLink state ${value.state} requires a non-null reason`,
 				});
+			}
 		}),
 	child: z.strictObject({
 		id: NonEmptyStringSchema,
@@ -156,12 +162,15 @@ const ArchboardContextRawSchema = z.strictObject({
 			}),
 		])
 		.superRefine((value, refinementContext) => {
-			if (value.id === null) return;
+			if (value.id === null) {
+				return;
+			}
 			const producer = ADDITIONAL_CONTEXT_POLICY.operation.producers.find(
 				({ kind }) => kind === value.kind,
 			);
-			if (producer !== undefined && (producer.rpcs as readonly string[]).includes(value.rpc))
+			if (producer !== undefined && (producer.rpcs as readonly string[]).includes(value.rpc)) {
 				return;
+			}
 			refinementContext.addIssue({
 				code: "custom",
 				path: ["rpc"],
@@ -177,13 +186,18 @@ export const ArchboardContextSchema = ArchboardContextRawSchema.transform((value
 export type ArchboardContext = z.infer<typeof ArchboardContextSchema>;
 
 function orderedOperation(value: ArchboardContext["operation"]): ArchboardContext["operation"] {
-	if (value.id === null) return { id: null, kind: null, rpc: null, outcome: null };
-	if (value.outcome === null)
+	if (value.id === null) {
+		return { id: null, kind: null, rpc: null, outcome: null };
+	}
+	if (value.outcome === null) {
 		return { id: value.id, kind: value.kind, rpc: value.rpc, outcome: null };
-	if (value.outcome === "delivered")
+	}
+	if (value.outcome === "delivered") {
 		return { id: value.id, kind: value.kind, rpc: value.rpc, outcome: "delivered" };
-	if (value.outcome === "not_delivered")
+	}
+	if (value.outcome === "not_delivered") {
 		return { id: value.id, kind: value.kind, rpc: value.rpc, outcome: "not_delivered" };
+	}
 	return { id: value.id, kind: value.kind, rpc: value.rpc, outcome: "outcome_unknown" };
 }
 
@@ -237,7 +251,9 @@ function orderedContext(value: ArchboardContext): ArchboardContext {
 
 function validateContext(input: unknown): ArchboardContext {
 	const parsed = ArchboardContextSchema.safeParse(input);
-	if (!parsed.success) throw new TypeError(`Invalid Archboard context: ${parsed.error.message}`);
+	if (!parsed.success) {
+		throw new TypeError(`Invalid Archboard context: ${parsed.error.message}`);
+	}
 	return freezeDeep(orderedContext(parsed.data));
 }
 
@@ -247,13 +263,17 @@ export function canonicalContext(input: ArchboardContext): ArchboardContext {
 
 export function encodeCanonicalContext(input: ArchboardContext): string {
 	const encoded = JSON.stringify(canonicalContext(input));
-	if (encoded === undefined) throw new TypeError("Archboard context could not be encoded as JSON.");
+	if (encoded === undefined) {
+		throw new TypeError("Archboard context could not be encoded as JSON.");
+	}
 	return encoded;
 }
 
 /** Parse only the exact compact field order emitted by encodeCanonicalContext. */
 export function decodeCanonicalContext(encoded: string): ArchboardContext {
-	if (typeof encoded !== "string") throw new TypeError("Canonical context must be a string.");
+	if (typeof encoded !== "string") {
+		throw new TypeError("Canonical context must be a string.");
+	}
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(encoded) as unknown;
@@ -261,7 +281,8 @@ export function decodeCanonicalContext(encoded: string): ArchboardContext {
 		throw new TypeError("Canonical context is not valid JSON.", { cause: error });
 	}
 	const context = validateContext(parsed);
-	if (JSON.stringify(context) !== encoded)
+	if (JSON.stringify(context) !== encoded) {
 		throw new TypeError("Canonical context JSON has unexpected whitespace, order, or escaping.");
+	}
 	return context;
 }

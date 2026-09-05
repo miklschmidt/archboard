@@ -26,7 +26,9 @@ describe("semantic context source failures", () => {
 		});
 		const settled: unknown[] = [];
 		publisher.subscribeSettledChange((event) => settled.push(event));
-		if (feedListener === null) throw new Error("The publisher did not subscribe to the feed.");
+		if (feedListener === null) {
+			throw new Error("The publisher did not subscribe to the feed.");
+		}
 
 		expect(() =>
 			feedListener?.({

@@ -66,13 +66,15 @@ export class FakeLifecycle implements DynamicToolLifecyclePort {
 
 	assertCallExecuting(input: Parameters<DynamicToolLifecyclePort["assertCallExecuting"]>[0]): void {
 		this.assertions.push(input.phase);
-		if (this.poisonedEpochs.has(`${String(input.caller.childId)}:${String(input.caller.epoch)}`))
+		if (this.poisonedEpochs.has(`${String(input.caller.childId)}:${String(input.caller.epoch)}`)) {
 			throw new Error("the exact child epoch is poisoned");
+		}
 		if (
 			this.assertionError !== null &&
 			(this.assertionErrorPhase === null || this.assertionErrorPhase === input.phase)
-		)
+		) {
 			throw this.assertionError;
+		}
 	}
 
 	registerWaitOwner(input: { readonly owner: DynamicWaitOwner }): void {
@@ -95,7 +97,9 @@ export class FakeLifecycle implements DynamicToolLifecyclePort {
 		readonly retryTerminalization: () => Promise<DynamicMutationTerminalProof>;
 	}): DynamicMutationQuarantineOwner {
 		this.quarantineInputs.push(input);
-		if (this.poisonError !== null) throw this.poisonError;
+		if (this.poisonError !== null) {
+			throw this.poisonError;
+		}
 		this.poisonedEpochs.add(`${String(input.identity.child)}:${String(input.identity.epoch)}`);
 		let resolveExit!: (value: {
 			readonly child: ChildId;
@@ -124,7 +128,9 @@ export class FakeLifecycle implements DynamicToolLifecyclePort {
 		readonly reason: DynamicFailClosedShutdownReason;
 	}): DynamicFailClosedShutdownOwner {
 		this.shutdownInputs.push(input);
-		if (this.shutdownError !== null) throw this.shutdownError;
+		if (this.shutdownError !== null) {
+			throw this.shutdownError;
+		}
 		let resolveTeardown!: (
 			value: DynamicEpochTeardownProof | PromiseLike<DynamicEpochTeardownProof>,
 		) => void;
@@ -145,19 +151,25 @@ export class FakeLifecycle implements DynamicToolLifecyclePort {
 
 	reportFatalLifecycleFault(fault: DynamicFatalLifecycleFault): void {
 		this.fatalFaults.push(fault);
-		if (this.fatalReportError !== null) throw this.fatalReportError;
+		if (this.fatalReportError !== null) {
+			throw this.fatalReportError;
+		}
 	}
 
 	retryQuarantine(index = 0): Promise<DynamicMutationTerminalProof> {
 		const input = this.quarantineInputs[index];
-		if (input === undefined) throw new Error("missing quarantine owner");
+		if (input === undefined) {
+			throw new Error("missing quarantine owner");
+		}
 		return input.retryTerminalization();
 	}
 
 	exitQuarantine(index = 0): void {
 		const input = this.quarantineInputs[index];
 		const resolve = this.exitResolvers[index];
-		if (input === undefined || resolve === undefined) throw new Error("missing quarantine owner");
+		if (input === undefined || resolve === undefined) {
+			throw new Error("missing quarantine owner");
+		}
 		resolve({
 			child: input.identity.child,
 			epoch: input.identity.epoch,
@@ -167,25 +179,33 @@ export class FakeLifecycle implements DynamicToolLifecyclePort {
 
 	exitQuarantineWith(child: ChildId, epoch: ChildEpoch, index = 0): void {
 		const resolve = this.exitResolvers[index];
-		if (resolve === undefined) throw new Error("missing quarantine owner");
+		if (resolve === undefined) {
+			throw new Error("missing quarantine owner");
+		}
 		resolve({ child, epoch, exited: true });
 	}
 
 	completeShutdown(index = 0): void {
 		const input = this.shutdownInputs[index];
-		if (input === undefined) throw new Error("missing shutdown owner");
+		if (input === undefined) {
+			throw new Error("missing shutdown owner");
+		}
 		this.completeShutdownWith(input.child, input.epoch, index);
 	}
 
 	completeShutdownWith(child: ChildId, epoch: ChildEpoch, index = 0): void {
 		const resolve = this.teardownResolvers[index];
-		if (resolve === undefined) throw new Error("missing shutdown owner");
+		if (resolve === undefined) {
+			throw new Error("missing shutdown owner");
+		}
 		resolve({ child, epoch, sessionClosed: true, transportClosed: true });
 	}
 
 	rejectShutdown(error: unknown, index = 0): void {
 		const reject = this.teardownRejectors[index];
-		if (reject === undefined) throw new Error("missing shutdown owner");
+		if (reject === undefined) {
+			throw new Error("missing shutdown owner");
+		}
 		reject(error);
 	}
 
@@ -196,7 +216,9 @@ export class FakeLifecycle implements DynamicToolLifecyclePort {
 		readonly previousSequence: number;
 	}): Promise<DynamicWaitEvent> {
 		this.waitInputs.push(input);
-		if (this.waitEvent instanceof Error) throw this.waitEvent;
+		if (this.waitEvent instanceof Error) {
+			throw this.waitEvent;
+		}
 		return this.waitEvent;
 	}
 }

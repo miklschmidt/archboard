@@ -33,14 +33,20 @@ function fixedSegmentsAt(
 	id: string,
 	type: string,
 ): PersistedElbowArrow["fixedSegments"] {
-	if (value === null) return null;
-	if (!Array.isArray(value)) fail(context, id, type, "element.fixedSegments");
+	if (value === null) {
+		return null;
+	}
+	if (!Array.isArray(value)) {
+		fail(context, id, type, "element.fixedSegments");
+	}
 	return value.map((candidate, index) => {
 		const path = `element.fixedSegments[${index}]`;
 		const segment = recordAt(candidate, context, id, type, path);
-		for (const key of Object.keys(segment))
-			if (key !== "start" && key !== "end" && key !== "index")
+		for (const key of Object.keys(segment)) {
+			if (key !== "start" && key !== "end" && key !== "index") {
 				fail(context, id, type, `${path}.${key}`);
+			}
+		}
 		return {
 			start: point(segment["start"], context, id, type, `${path}.start`),
 			end: point(segment["end"], context, id, type, `${path}.end`),
@@ -88,7 +94,13 @@ export function buildValidatedElement(
 				fontFamily: finite(initial["fontFamily"], context, id, type, "element.fontFamily"),
 				text: stringAt(initial["text"], context, id, type, "element.text"),
 				textAlign: stringAt(initial["textAlign"], context, id, type, "element.textAlign"),
-				verticalAlign: stringAt(initial["verticalAlign"], context, id, type, "element.verticalAlign"),
+				verticalAlign: stringAt(
+					initial["verticalAlign"],
+					context,
+					id,
+					type,
+					"element.verticalAlign",
+				),
 				containerId: nullableStringAt(
 					initial["containerId"],
 					context,
@@ -131,13 +143,21 @@ export function buildValidatedElement(
 					type,
 					"element.startArrowhead",
 				),
-				endArrowhead: arrowheadAt(initial["endArrowhead"], context, id, type, "element.endArrowhead"),
+				endArrowhead: arrowheadAt(
+					initial["endArrowhead"],
+					context,
+					id,
+					type,
+					"element.endArrowhead",
+				),
 			} satisfies PersistedArm<"line">);
 		case "arrow": {
 			const elbowed = booleanAt(initial["elbowed"], context, id, type, "element.elbowed");
 			if (!elbowed) {
 				for (const field of ["fixedSegments", "startIsSpecial", "endIsSpecial"] as const) {
-					if (field in initial) fail(context, id, type, `element.${field}`);
+					if (field in initial) {
+						fail(context, id, type, `element.${field}`);
+					}
 				}
 			}
 			const linear = {
@@ -161,9 +181,15 @@ export function buildValidatedElement(
 					type,
 					"element.startArrowhead",
 				),
-				endArrowhead: arrowheadAt(initial["endArrowhead"], context, id, type, "element.endArrowhead"),
+				endArrowhead: arrowheadAt(
+					initial["endArrowhead"],
+					context,
+					id,
+					type,
+					"element.endArrowhead",
+				),
 			};
-			if (!elbowed)
+			if (!elbowed) {
 				return finish({
 					...linear,
 					startBinding: pointBindingAt(
@@ -173,10 +199,17 @@ export function buildValidatedElement(
 						type,
 						"element.startBinding",
 					),
-					endBinding: pointBindingAt(initial["endBinding"], context, id, type, "element.endBinding"),
+					endBinding: pointBindingAt(
+						initial["endBinding"],
+						context,
+						id,
+						type,
+						"element.endBinding",
+					),
 					...arrowheads,
 					elbowed: false,
 				} satisfies PersistedNonElbowArrow);
+			}
 			return finish({
 				...linear,
 				startBinding: fixedPointBindingAt(
@@ -240,25 +273,38 @@ export function buildValidatedElement(
 			} satisfies PersistedArm<"freedraw">);
 		case "image": {
 			const fileId = nullableStringAt(initial["fileId"], context, id, type, "element.fileId");
-			if (fileId === "") fail(context, id, type, "element.fileId");
+			if (fileId === "") {
+				fail(context, id, type, "element.fileId");
+			}
 			const status = initial["status"];
-			if (status !== "pending" && status !== "saved" && status !== "error")
+			if (status !== "pending" && status !== "saved" && status !== "error") {
 				fail(context, id, type, "element.status");
+			}
 			const scale = point(initial["scale"], context, id, type, "element.scale");
-			if ((scale[0] !== -1 && scale[0] !== 1) || (scale[1] !== -1 && scale[1] !== 1))
+			if ((scale[0] !== -1 && scale[0] !== 1) || (scale[1] !== -1 && scale[1] !== 1)) {
 				fail(context, id, type, "element.scale");
+			}
 			let crop: PersistedArm<"image">["crop"] = null;
 			if (initial["crop"] !== null) {
 				const record = recordAt(initial["crop"], context, id, type, "element.crop");
 				const allowed = new Set(["x", "y", "width", "height", "naturalWidth", "naturalHeight"]);
-				for (const key of Object.keys(record))
-					if (!allowed.has(key)) fail(context, id, type, `element.crop.${key}`);
+				for (const key of Object.keys(record)) {
+					if (!allowed.has(key)) {
+						fail(context, id, type, `element.crop.${key}`);
+					}
+				}
 				crop = {
 					x: finite(record["x"], context, id, type, "element.crop.x"),
 					y: finite(record["y"], context, id, type, "element.crop.y"),
 					width: finite(record["width"], context, id, type, "element.crop.width"),
 					height: finite(record["height"], context, id, type, "element.crop.height"),
-					naturalWidth: finite(record["naturalWidth"], context, id, type, "element.crop.naturalWidth"),
+					naturalWidth: finite(
+						record["naturalWidth"],
+						context,
+						id,
+						type,
+						"element.crop.naturalWidth",
+					),
 					naturalHeight: finite(
 						record["naturalHeight"],
 						context,
@@ -267,8 +313,11 @@ export function buildValidatedElement(
 						"element.crop.naturalHeight",
 					),
 				};
-				for (const key of ["width", "height", "naturalWidth", "naturalHeight"] as const)
-					if (crop[key] < 0) fail(context, id, type, `element.crop.${key}`);
+				for (const key of ["width", "height", "naturalWidth", "naturalHeight"] as const) {
+					if (crop[key] < 0) {
+						fail(context, id, type, `element.crop.${key}`);
+					}
+				}
 			}
 			return finish({
 				id: baseId,

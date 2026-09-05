@@ -21,15 +21,18 @@ function sha256(value: string): string {
 }
 
 function assertCanonicalTemplate(value: string): void {
-	if (value.includes("\r"))
+	if (value.includes("\r")) {
 		throw new TypeError("The spoken approval classifier must use LF endings.");
-	if (!value.endsWith("\n") || value.endsWith("\n\n"))
+	}
+	if (!value.endsWith("\n") || value.endsWith("\n\n")) {
 		throw new TypeError("The spoken approval classifier must end in exactly one LF.");
+	}
 	const actual = sha256(value);
-	if (actual !== SPOKEN_APPROVAL_CLASSIFIER_SHA256)
+	if (actual !== SPOKEN_APPROVAL_CLASSIFIER_SHA256) {
 		throw new TypeError(
 			`The spoken approval classifier hash drifted. Expected ${SPOKEN_APPROVAL_CLASSIFIER_SHA256}, received ${actual}. Human re-review is required before updating this digest.`,
 		);
+	}
 }
 
 assertCanonicalTemplate(SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE);
@@ -43,8 +46,9 @@ export interface SpokenApprovalClassifierPromptInput {
 
 function oneLine(value: string, label: string): string {
 	const bounded = boundedWireText(256).parse(value);
-	if (bounded.length === 0 || bounded.includes("\r") || bounded.includes("\n"))
+	if (bounded.length === 0 || bounded.includes("\r") || bounded.includes("\n")) {
 		throw new TypeError(`${label} must be a non-empty one-line value.`);
+	}
 	return bounded;
 }
 
@@ -53,8 +57,9 @@ export function createSpokenApprovalClassifierPrompt(
 ): string {
 	const effectSummary = oneLine(input.effectSummary, "effect summary");
 	const finalUserItemId = oneLine(input.finalUserItemId, "final user item id");
-	if (!Number.isSafeInteger(input.finalUserSequence) || input.finalUserSequence < 0)
+	if (!Number.isSafeInteger(input.finalUserSequence) || input.finalUserSequence < 0) {
 		throw new TypeError("final user sequence must be a non-negative safe integer.");
+	}
 	const finalUserText = boundedWireText(16_384).parse(input.finalUserText);
 	const replacements: Readonly<Record<string, string>> = {
 		"<bounded-effect-summary>": effectSummary,

@@ -115,8 +115,9 @@ describe("package inspection JSON", () => {
 			);
 			const note = owner.writeBoard("exact-order-controls", placeholderElements);
 			let bytes = readFileSync(note, "utf8");
-			for (const [value, placeholder] of replacements)
+			for (const [value, placeholder] of replacements) {
 				bytes = bytes.replaceAll(JSON.stringify(placeholder), JSON.stringify(value));
+			}
 			writeFileSync(note, bytes);
 			expect(["\\u0000", "\\u0001", "\\ud800"].every((escape) => bytes.includes(escape))).toBe(
 				true,

@@ -31,7 +31,9 @@ export function createCanvasDynamicOperationIdAdapter(
 		issueCanonicalOperationId: () => authority.issuer.mintOperationId(),
 		validateCurrentUnconsumedOperationId: (operationId: OperationId) => {
 			authority.validator.assertCurrentOperationId(operationId);
-			if (terminal.has(operationId)) throw new Error("The OperationId is already terminal.");
+			if (terminal.has(operationId)) {
+				throw new Error("The OperationId is already terminal.");
+			}
 		},
 		serializeForOwnedWireFields: (operationId: OperationId) =>
 			authority.decoder.serializeOperationId(operationId),
@@ -42,8 +44,9 @@ export function createCanvasDynamicOperationIdAdapter(
 			authority.validator.assertCurrentOperationId(input.operationId);
 			const prior = terminal.get(input.operationId);
 			if (prior !== undefined) {
-				if (prior.disposition !== input.disposition)
+				if (prior.disposition !== input.disposition) {
 					throw new Error("The OperationId already has a different terminal disposition.");
+				}
 				return prior;
 			}
 			const result = Object.freeze({
@@ -126,16 +129,18 @@ export function createCanvasDynamicLifecycleOwner(
 			readonly request: DynamicServerRequest;
 			readonly caller: DynamicCallerAuthority;
 		}) => {
-			if (stopped || !input.caller.executing || input.caller.status !== "active")
+			if (stopped || !input.caller.executing || input.caller.status !== "active") {
 				throw new Error("The logical dynamic call is no longer executing.");
+			}
 		},
 		registerWaitOwner: ({ owner }: { readonly owner: DynamicWaitOwner }) => {
 			const result = options.waitGraph.addEdgeSet({
 				owner: waitOwner(owner),
 				targets: owner.sortedTargetThreadIds,
 			});
-			if (!result.ok)
+			if (!result.ok) {
 				throw new Error(`The wait owner would create a cycle: ${result.cycle.join(" -> ")}`);
+			}
 		},
 		releaseWaitOwner: ({
 			owner,
@@ -154,7 +159,9 @@ export function createCanvasDynamicLifecycleOwner(
 		}: Parameters<DynamicToolLifecyclePort["poisonEpochAndOwnMutationQuarantine"]>[0]) => {
 			const key = quarantineKey(identity);
 			const prior = quarantines.get(key);
-			if (prior !== undefined) return prior.owner;
+			if (prior !== undefined) {
+				return prior.owner;
+			}
 			let resolveExit!: () => void;
 			const childExit = new Promise<{
 				readonly child: ChildId;
@@ -191,7 +198,9 @@ export function createCanvasDynamicLifecycleOwner(
 		reportFatalLifecycleFault: options.onFatal,
 		waitForTargets: (input: Parameters<DynamicToolLifecyclePort["waitForTargets"]>[0]) => {
 			const key = waitKey(input.owner);
-			if (activeWaits.has(key)) throw new Error("The dynamic wait is already active.");
+			if (activeWaits.has(key)) {
+				throw new Error("The dynamic wait is already active.");
+			}
 			const controller = new AbortController();
 			let reject!: (error: Error & { readonly code: string }) => void;
 			const cancellation = new Promise<never>((_resolve, next) => {
@@ -208,8 +217,9 @@ export function createCanvasDynamicLifecycleOwner(
 		if (
 			event.correlation.child !== options.identity.identity.validator.childId ||
 			event.correlation.epoch !== options.identity.identity.validator.epoch
-		)
+		) {
 			return;
+		}
 		const { method, params } = event.notification;
 		for (const active of activeWaits.values()) {
 			const owner = active.owner;
@@ -227,7 +237,9 @@ export function createCanvasDynamicLifecycleOwner(
 				params.threadId === threadId &&
 				params.turn.id === turnId &&
 				params.turn.status === "interrupted";
-			if (!itemCancelled && !turnInterrupted) continue;
+			if (!itemCancelled && !turnInterrupted) {
+				continue;
+			}
 			active.controller.abort();
 			const error = Object.assign(
 				new Error(
@@ -242,7 +254,9 @@ export function createCanvasDynamicLifecycleOwner(
 	};
 	const childExit = async (child: ChildId, epoch: ChildEpoch): Promise<void> => {
 		for (const active of activeWaits.values()) {
-			if (active.owner.child !== child || active.owner.epoch !== epoch) continue;
+			if (active.owner.child !== child || active.owner.epoch !== epoch) {
+				continue;
+			}
 			active.controller.abort();
 			active.reject(
 				Object.assign(new Error("The dynamic wait child disconnected."), {
@@ -251,7 +265,9 @@ export function createCanvasDynamicLifecycleOwner(
 			);
 		}
 		for (const entry of quarantines.values()) {
-			if (entry.identity.child !== child || entry.identity.epoch !== epoch) continue;
+			if (entry.identity.child !== child || entry.identity.epoch !== epoch) {
+				continue;
+			}
 			try {
 				await entry.retry();
 			} finally {
@@ -272,15 +288,20 @@ export function createCanvasDynamicLifecycleOwner(
 		// nothing. Releasing them here would only add a second teardown order to
 		// keep in step with the one child exit already owns.
 		shutdown: async () => {
-			if (stopped) return;
+			if (stopped) {
+				return;
+			}
 			stopped = true;
 			const exits = new Map<string, { child: ChildId; epoch: ChildEpoch }>();
-			for (const entry of quarantines.values())
+			for (const entry of quarantines.values()) {
 				exits.set(`${entry.identity.child}:${entry.identity.epoch}`, {
 					child: entry.identity.child,
 					epoch: entry.identity.epoch,
 				});
-			for (const exit of exits.values()) await childExit(exit.child, exit.epoch);
+			}
+			for (const exit of exits.values()) {
+				await childExit(exit.child, exit.epoch);
+			}
 		},
 	});
 }

@@ -22,8 +22,12 @@ async function waitForMessage(
 	const deadline = Date.now() + 2_000;
 	for (;;) {
 		const message = messages.find((candidate) => candidate["type"] === type);
-		if (message) return message;
-		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${type}.`);
+		if (message) {
+			return message;
+		}
+		if (Date.now() >= deadline) {
+			throw new Error(`Timed out waiting for ${type}.`);
+		}
 		await Bun.sleep(5);
 	}
 }
@@ -41,7 +45,9 @@ test("canvas teardown cancels and reaps delayed GET checkout work", async () => 
 		const pids = await waitForRecordedPids(owner.pids, 2);
 		await canvas.dispose();
 		await request.catch(() => undefined);
-		for (const pid of pids) await expectPidAbsent(pid);
+		for (const pid of pids) {
+			await expectPidAbsent(pid);
+		}
 		await expectRecordedPidsAbsent(owner.pids);
 	} finally {
 		owner.dispose();
@@ -78,7 +84,9 @@ test("opener settings checkout work is canceled by disconnect and awaited by can
 		const pids = await waitForRecordedPids(owner.pids, 2);
 		await canvas.dispose();
 		await stopping;
-		for (const pid of pids) await expectPidAbsent(pid);
+		for (const pid of pids) {
+			await expectPidAbsent(pid);
+		}
 		await expectRecordedPidsAbsent(owner.pids);
 	} finally {
 		owner.dispose();

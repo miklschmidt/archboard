@@ -40,7 +40,9 @@ const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
 const required = <T>(value: T | null | undefined, message: string): T => {
 	expect(value, message).toBeDefined();
-	if (value === null || value === undefined) throw new Error(message);
+	if (value === null || value === undefined) {
+		throw new Error(message);
+	}
 	return value;
 };
 const seedOf = (element: ServerElement): true | undefined =>
@@ -93,8 +95,9 @@ describe("label routes", () => {
 				body,
 				doing: "checking that a label goes where its shape goes",
 			});
-			if ((response.body as { success?: unknown }).success !== true)
+			if ((response.body as { success?: unknown }).success !== true) {
 				throw new Error(`${method} ${url} failed: ${JSON.stringify(response.body)}`);
+			}
 			AcknowledgementRouteResponseSchema.parse(response.body);
 		};
 		const board = "?board=scratch";
@@ -156,7 +159,9 @@ describe("label routes", () => {
 			(await elementsOn()).find((element) => element.id === "wire"),
 			"the wire was not persisted",
 		);
-		if (wire.type !== "arrow" && wire.type !== "line") throw new Error("wire is not linear");
+		if (wire.type !== "arrow" && wire.type !== "line") {
+			throw new Error("wire is not linear");
+		}
 		assert(
 			JSON.stringify(wire.points) !==
 				JSON.stringify([
@@ -214,8 +219,9 @@ describe("label routes", () => {
 			body: { name: "labelled" },
 			doing: "checking that a label goes where its shape goes",
 		});
-		if ((savedResponse.body as { success?: unknown }).success !== true)
+		if ((savedResponse.body as { success?: unknown }).success !== true) {
 			throw new Error(`Saving labelled failed: ${JSON.stringify(savedResponse.body)}`);
+		}
 		const saved = SuccessfulRouteResponseSchema.parse(savedResponse.body);
 		assert(saved.success, `saving the board failed: ${JSON.stringify(saved?.error ?? saved)}`);
 		const reopenedResponse = await request<unknown>("/api/boards/open", {
@@ -223,8 +229,9 @@ describe("label routes", () => {
 			body: { board: "labelled" },
 			doing: "checking that a label goes where its shape goes",
 		});
-		if ((reopenedResponse.body as { success?: unknown }).success !== true)
+		if ((reopenedResponse.body as { success?: unknown }).success !== true) {
 			throw new Error(`Reopening labelled failed: ${JSON.stringify(reopenedResponse.body)}`);
+		}
 		const reopened = SuccessfulRouteResponseSchema.parse(reopenedResponse.body);
 		assert(
 			reopened.success,

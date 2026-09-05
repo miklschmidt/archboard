@@ -95,8 +95,9 @@ export function diagnoseComparisonBudget(
 	comparisonLimit: number,
 ): ComparisonBudgetDiagnostics {
 	const snapshot = snapshotInspectionInput(records);
-	if (snapshot.limit)
+	if (snapshot.limit) {
 		throw new Error("Comparison diagnostics require input below the snapshot limit.");
+	}
 	const detection = detectBoard(
 		decodeRecords(snapshot.records, snapshot.blockedSourceIndexes),
 		inspectBoard([]).policy,
@@ -132,7 +133,9 @@ export function inspectBoardDiagnostics(
 		containerBoundaryCandidateVisits: 0,
 		pathSegmentChecks: 0,
 	});
-	if (snapshot.limit) return { report, work: empty() };
+	if (snapshot.limit) {
+		return { report, work: empty() };
+	}
 	const detection = detectBoard(
 		decodeRecords(snapshot.records, snapshot.blockedSourceIndexes),
 		report.policy,

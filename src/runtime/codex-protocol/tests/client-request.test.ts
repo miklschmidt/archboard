@@ -95,10 +95,12 @@ describe("Codex generated client request params", () => {
 	});
 
 	test("keeps all generated login and refused Bedrock setup variants typed", () => {
-		for (const fixture of LOGIN_ACCOUNT_FIXTURES)
+		for (const fixture of LOGIN_ACCOUNT_FIXTURES) {
 			expect(decodeClientRequestParams("account/login/start", fixture)).toEqual(fixture);
-		for (const fixture of BEDROCK_SETUP_FIXTURES)
+		}
+		for (const fixture of BEDROCK_SETUP_FIXTURES) {
 			expect(BedrockSetupParamsSchema.parse(fixture)).toEqual(fixture);
+		}
 	});
 
 	test("rejects missing required request fields at the method boundary", () => {

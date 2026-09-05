@@ -91,7 +91,9 @@ export class QueueSession implements WorkhorseQueueSessionPort {
 		this.requests.push({ method: "thread/queue/list", params });
 		if (this.pageMap !== null) {
 			const page = this.pageMap.get(params.cursor ?? null);
-			if (page === undefined) throw new Error(`missing page for ${params.cursor ?? "null"}`);
+			if (page === undefined) {
+				throw new Error(`missing page for ${params.cursor ?? "null"}`);
+			}
 			return page;
 		}
 		return { data: this.state, nextCursor: null };
@@ -118,7 +120,9 @@ export class QueueSession implements WorkhorseQueueSessionPort {
 		this.requests.push({ method: "thread/queue/update", params });
 		await this.beforeMutation?.("update");
 		const current = this.state.find((candidate) => candidate.id === params.queuedSubmissionId);
-		if (current === undefined) throw new Error("missing update target");
+		if (current === undefined) {
+			throw new Error("missing update target");
+		}
 		const queuedSubmission = { ...current, input: params.input };
 		this.state = this.state.map((candidate) =>
 			candidate.id === params.queuedSubmissionId ? queuedSubmission : candidate,
@@ -174,7 +178,9 @@ export function fixture(initial: SessionQueueListResult["data"] = []): Fixture {
 	let currentBinding: WorkhorseQueueBinding | null = binding(identity);
 	const operationIds: WorkhorseQueueOperationIdPort<string> = {
 		assertCurrent: (operationId) => {
-			if (operationId === "stale-operation") throw new Error("operation is stale");
+			if (operationId === "stale-operation") {
+				throw new Error("operation is stale");
+			}
 		},
 		serialize: (operationId) => `client-${operationId}`,
 	};
@@ -197,12 +203,16 @@ export function fixture(initial: SessionQueueListResult["data"] = []): Fixture {
 
 export function requestParams(fixtureValue: Fixture, method: string): unknown {
 	const request = fixtureValue.session.requests.find((candidate) => candidate.method === method);
-	if (request === undefined) throw new Error(`missing ${method} request`);
+	if (request === undefined) {
+		throw new Error(`missing ${method} request`);
+	}
 	return request.params;
 }
 
 export async function flush(): Promise<void> {
-	for (let index = 0; index < 8; index += 1) await Promise.resolve();
+	for (let index = 0; index < 8; index += 1) {
+		await Promise.resolve();
+	}
 }
 
 export async function rejected(promise: Promise<unknown>): Promise<unknown> {
@@ -222,7 +232,9 @@ export function deferred(): { readonly promise: Promise<void>; readonly resolve:
 	return {
 		promise,
 		resolve: () => {
-			if (resolvePromise === undefined) throw new Error("deferred promise was not initialized");
+			if (resolvePromise === undefined) {
+				throw new Error("deferred promise was not initialized");
+			}
 			resolvePromise();
 		},
 	};

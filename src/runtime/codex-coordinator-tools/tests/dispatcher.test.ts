@@ -40,8 +40,11 @@ function envelope(response: DynamicToolResponse): Record<string, unknown> {
 }
 
 function validateResponse(response: DynamicToolResponse): void {
-	if (response.success) DynamicToolResponseSchema.parse(response);
-	else UnknownDynamicToolResponseSchema.parse(response);
+	if (response.success) {
+		DynamicToolResponseSchema.parse(response);
+	} else {
+		UnknownDynamicToolResponseSchema.parse(response);
+	}
 }
 
 describe("coordinator dynamic-tool dispatcher", () => {
@@ -79,8 +82,9 @@ describe("coordinator dynamic-tool dispatcher", () => {
 		const steerRequest = h.request("steer_workhorse");
 		const steer = await dispatch(h, steerRequest);
 		const queueCall = h.operations.calls.manageQueue[0];
-		if (queueCall === undefined || queueCall.operation === "list")
+		if (queueCall === undefined || queueCall.operation === "list") {
 			throw new Error("expected one queue mutation call");
+		}
 
 		expect(inspect.attempted).toBe(true);
 		expect(delegate.attempted).toBe(true);

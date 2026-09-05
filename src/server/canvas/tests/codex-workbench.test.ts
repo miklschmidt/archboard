@@ -46,8 +46,9 @@ describe("production Codex owner lifecycle", () => {
 				identity: fixture.components.identity,
 			}),
 			createGeneration: async (input: CodexWorkbenchGenerationInput) => {
-				if (input.kernel === null)
+				if (input.kernel === null) {
 					throw new Error("The integrated generation owner did not acquire its stable kernel.");
+				}
 				return composeCodexWorkbenchGeneration({
 					identityLedger: input.kernel.identityLedger,
 					factories: fixture.factories,
@@ -83,8 +84,9 @@ describe("production Codex owner lifecycle", () => {
 		await owner.start();
 		const shutdown = owner.shutdown();
 		expect(events).toContain("owner:stop:entered");
-		for (const dispatch of [() => owner.start(), () => owner.gateway()])
+		for (const dispatch of [() => owner.start(), () => owner.gateway()]) {
 			expect(dispatch).toThrow("no active owner dispatch");
+		}
 		expect(events.filter((event) => event === "owner:stop:entered")).toHaveLength(1);
 		releaseStop();
 		await shutdown;
@@ -151,7 +153,9 @@ describe("production Codex owner lifecycle", () => {
 		expect(() => owner.gateway()).toThrow("not ready");
 		expect(events).not.toContain("process:stop");
 		process.restart();
-		for (let turn = 0; turn < 30 && !owner.snapshot().ready; turn++) await Promise.resolve();
+		for (let turn = 0; turn < 30 && !owner.snapshot().ready; turn++) {
+			await Promise.resolve();
+		}
 		expect(owner.snapshot()).toMatchObject({ state: "ready", ready: true, generation: 2 });
 		expect((owner.gateway() as unknown as { marker: number }).marker).toBe(2);
 		expect(events.indexOf("generation:1:finish-stop")).toBeLessThan(
@@ -183,8 +187,9 @@ describe("production Codex owner lifecycle", () => {
 			exitChild();
 			process.crash();
 			process.terminal(failure.code, failure.message);
-			for (let turn = 0; turn < 20 && owner.snapshot().state === "starting"; turn++)
+			for (let turn = 0; turn < 20 && owner.snapshot().state === "starting"; turn++) {
 				await Promise.resolve();
+			}
 
 			expect(owner.snapshot()).toMatchObject({
 				state: "failed",

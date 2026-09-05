@@ -10,7 +10,9 @@ import { createIdentityAuthority } from "../../../shared/codex-workbench-identit
 import { fixture, type Fixture } from "./support.js";
 
 function persistence(snapshot: CoordinatorSnapshot): CoordinatorPersistedState {
-	if (snapshot.persistence === null) throw new Error("fixture did not persist coordinator state");
+	if (snapshot.persistence === null) {
+		throw new Error("fixture did not persist coordinator state");
+	}
 	return snapshot.persistence;
 }
 
@@ -27,7 +29,9 @@ function coordinatorRecord(fixtureValue: Fixture, operationId: string): EpochOpe
 	const record = fixtureValue.epoch.records.find(
 		(candidate) => candidate.correlation.operationId === operationId,
 	);
-	if (record === undefined) throw new Error(`missing fake record ${operationId}`);
+	if (record === undefined) {
+		throw new Error(`missing fake record ${operationId}`);
+	}
 	return record;
 }
 

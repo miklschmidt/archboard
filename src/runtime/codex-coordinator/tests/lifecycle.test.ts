@@ -18,7 +18,9 @@ import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
 import { CHECKOUT_ROOT, coordinatorModel, fixture, type Fixture } from "./support.js";
 
 async function flushMicrotasks(): Promise<void> {
-	for (let turn = 0; turn < 8; turn += 1) await Promise.resolve();
+	for (let turn = 0; turn < 8; turn += 1) {
+		await Promise.resolve();
+	}
 }
 
 async function ready(
@@ -31,7 +33,9 @@ async function ready(
 }
 
 function persistence(snapshot: CoordinatorSnapshot) {
-	if (snapshot.persistence === null) throw new Error("fixture did not persist coordinator state");
+	if (snapshot.persistence === null) {
+		throw new Error("fixture did not persist coordinator state");
+	}
 	return snapshot.persistence;
 }
 
@@ -51,9 +55,15 @@ describe("coordinator lifecycle", () => {
 	test("rejects a wrong origin, model, or checkout with the mismatching field named", async () => {
 		for (const field of ["thread.source", "model", "cwd"] as const) {
 			const value = fixture();
-			if (field === "thread.source") Object.assign(value.session.started.thread, { source: "cli" });
-			if (field === "model") Object.assign(value.session.started, { model: "wrong-model" });
-			if (field === "cwd") Object.assign(value.session.started, { cwd: "/other-checkout" });
+			if (field === "thread.source") {
+				Object.assign(value.session.started.thread, { source: "cli" });
+			}
+			if (field === "model") {
+				Object.assign(value.session.started, { model: "wrong-model" });
+			}
+			if (field === "cwd") {
+				Object.assign(value.session.started, { cwd: "/other-checkout" });
+			}
 			const result = await value.coordinator.ensure({ operationId: "mismatched-start" });
 			expect(result.state).toBe("inspect_only");
 			expect(result.reason).toContain(`authored profile: ${field}.`);

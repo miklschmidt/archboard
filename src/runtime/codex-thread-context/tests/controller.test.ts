@@ -5,7 +5,9 @@ import { bindingFor, createHarness, PANE_ID } from "./delivery-support.js";
 
 function controllerHarness() {
 	const harness = createHarness({ controller: true });
-	if (harness.controller === null) throw new Error("controller fixture was not created");
+	if (harness.controller === null) {
+		throw new Error("controller fixture was not created");
+	}
 	return { harness, controller: harness.controller };
 }
 

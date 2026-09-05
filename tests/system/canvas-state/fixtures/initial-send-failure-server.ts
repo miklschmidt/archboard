@@ -17,7 +17,9 @@ type Emit = (this: WebSocketServer, event: string | symbol, ...args: unknown[]) 
 
 let initialSendCount = 0;
 const logPath = process.env["ARCHBOARD_TEST_INITIAL_SEND_LOG"];
-if (!logPath) throw new Error("ARCHBOARD_TEST_INITIAL_SEND_LOG is required.");
+if (!logPath) {
+	throw new Error("ARCHBOARD_TEST_INITIAL_SEND_LOG is required.");
+}
 
 const originalEmit = WebSocketServer.prototype.emit as Emit;
 (WebSocketServer.prototype as unknown as { emit: Emit }).emit = function (event, ...args): boolean {
@@ -44,8 +46,11 @@ const originalEmit = WebSocketServer.prototype.emit as Emit;
 					// Non-JSON WebSocket data follows the real transport path.
 				}
 			}
-			if (typeof options === "function") originalSend(data, options);
-			else originalSend(data, options, callback);
+			if (typeof options === "function") {
+				originalSend(data, options);
+			} else {
+				originalSend(data, options, callback);
+			}
 		};
 	}
 	return originalEmit.call(this, event, ...args);

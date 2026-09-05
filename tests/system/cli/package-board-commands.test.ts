@@ -26,8 +26,9 @@ function decodePackage<T>(result: PackageRunResult, schema: z.ZodType<T>): T {
 		throw new Error(`${diagnostic}\nJSON decode: ${(error as Error).message}`, { cause: error });
 	}
 	const parsed = schema.safeParse(decoded);
-	if (!parsed.success)
+	if (!parsed.success) {
 		throw new Error(`${diagnostic}\nschema: ${parsed.error.message}`, { cause: parsed.error });
+	}
 	return parsed.data;
 }
 
@@ -192,7 +193,7 @@ describe("package board commands", () => {
 			{ name: "add", argv: ["add", "--one", JSON.stringify(element)] },
 			{ name: "update", argv: ["update", element.id, "--set", '{"x":10}'] },
 			{ name: "delete", argv: ["delete", element.id] },
-		])
+		]) {
 			for (const document of [false, true]) {
 				const before = http.requests.length;
 				const doing = `${write.name} contract element`;
@@ -226,6 +227,7 @@ describe("package board commands", () => {
 							: decodePackage(result, DeleteResultSchema);
 				expect("document" in answer, diagnostic).toBe(document);
 			}
+		}
 	});
 
 	test("rejects malformed board-save receipts and preserves server-first staging", async () => {
@@ -387,8 +389,9 @@ describe("package board commands", () => {
 		diagnostic = packageFailure(ids);
 		expect(ids.status, diagnostic).toBe(0);
 		expect(
-			bodyOf(http.requests.slice(before).find((r) => r.url.pathname === "/api/viewport"))
-				["scrollToElementIds"],
+			bodyOf(http.requests.slice(before).find((r) => r.url.pathname === "/api/viewport"))[
+				"scrollToElementIds"
+			],
 			diagnostic,
 		).toEqual(["shape1", "shape2"]);
 		const numericServer = await owner.run(

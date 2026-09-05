@@ -45,8 +45,9 @@ export class BoardPreviewCache {
 		readonly limit = 8,
 		readonly revoke = (url: string): void => URL.revokeObjectURL(url),
 	) {
-		if (!Number.isSafeInteger(limit) || limit < 1)
+		if (!Number.isSafeInteger(limit) || limit < 1) {
 			throw new Error("Preview cache limit must be positive.");
+		}
 	}
 
 	get size(): number {
@@ -56,7 +57,9 @@ export class BoardPreviewCache {
 	get(identity: PreviewCacheIdentity): string | null {
 		const key = cacheKey(identity);
 		const entry = this.#entries.get(key);
-		if (!entry) return null;
+		if (!entry) {
+			return null;
+		}
 		this.#entries.delete(key);
 		this.#entries.set(key, entry);
 		return entry.url;
@@ -77,21 +80,27 @@ export class BoardPreviewCache {
 		const replaced = this.#entries.get(key);
 		if (replaced) {
 			this.#entries.delete(key);
-			if (replaced.url !== url) this.revoke(replaced.url);
+			if (replaced.url !== url) {
+				this.revoke(replaced.url);
+			}
 		}
 		this.#entries.set(key, { ...identity, url });
 		while (this.#entries.size > this.limit) {
 			const oldest = this.#entries.entries().next().value as
 				| [string, PreviewCacheEntry]
 				| undefined;
-			if (!oldest) break;
+			if (!oldest) {
+				break;
+			}
 			this.#entries.delete(oldest[0]);
 			this.revoke(oldest[1].url);
 		}
 	}
 
 	clear(): void {
-		for (const entry of this.#entries.values()) this.revoke(entry.url);
+		for (const entry of this.#entries.values()) {
+			this.revoke(entry.url);
+		}
 		this.#entries.clear();
 	}
 }

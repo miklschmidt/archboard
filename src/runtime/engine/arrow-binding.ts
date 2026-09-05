@@ -64,7 +64,9 @@ export function centreOf(shape: Bindable): Point {
 }
 
 function rotate(point: Point, about: Point, angle: number): Point {
-	if (angle === 0) return point;
+	if (angle === 0) {
+		return point;
+	}
 	const cos = Math.cos(angle);
 	const sin = Math.sin(angle);
 	const dx = point.x - about.x;
@@ -95,14 +97,18 @@ const minus = (a: Point, b: Point): Point => ({ x: a.x - b.x, y: a.y - b.y });
  */
 export function bindingFromRef(ref: unknown): ArrowBinding | null {
 	const id = (ref as { id?: unknown } | null)?.id;
-	if (typeof id !== "string" || id.length === 0) return null;
+	if (typeof id !== "string" || id.length === 0) {
+		return null;
+	}
 	return { elementId: id, focus: 0, gap: BOUND_ARROW_GAP };
 }
 
 /** A stored binding, or null for an end that touches nothing. */
 export function bindingOf(value: unknown): ArrowBinding | null {
 	const raw = value as Partial<ArrowBinding> | null | undefined;
-	if (!raw || typeof raw.elementId !== "string" || raw.elementId.length === 0) return null;
+	if (!raw || typeof raw.elementId !== "string" || raw.elementId.length === 0) {
+		return null;
+	}
 	return {
 		elementId: raw.elementId,
 		focus: num(raw.focus, 0),
@@ -122,7 +128,9 @@ export function bindingOf(value: unknown): ArrowBinding | null {
  */
 export function focusPointOf(shape: Bindable, focus: number, adjacent: Point): Point {
 	const centre = centreOf(shape);
-	if (focus === 0) return centre;
+	if (focus === 0) {
+		return centre;
+	}
 
 	const x = num(shape.x);
 	const y = num(shape.y);
@@ -166,9 +174,15 @@ export function focusPointOf(shape: Bindable, focus: number, adjacent: Point): P
 		beyond(3, 0) && (focus > 0 ? before(0, 1) : before(2, 3)),
 	];
 
-	if (side[0]) return focus > 0 ? c[1] : c[0];
-	if (side[1]) return focus > 0 ? c[2] : c[1];
-	if (side[2]) return focus > 0 ? c[3] : c[2];
+	if (side[0]) {
+		return focus > 0 ? c[1] : c[0];
+	}
+	if (side[1]) {
+		return focus > 0 ? c[2] : c[1];
+	}
+	if (side[2]) {
+		return focus > 0 ? c[3] : c[2];
+	}
 	return focus > 0 ? c[0] : c[3];
 }
 
@@ -187,8 +201,12 @@ const ADAPTIVE_CORNER_RADIUS = 32;
 function rectangleCornerRadius(shape: Bindable): number {
 	const size = Math.min(Math.abs(num(shape.width)), Math.abs(num(shape.height)));
 	const type = shape.roundness?.type;
-	if (type === 1 || type === 2) return size * PROPORTIONAL_CORNER_RADIUS;
-	if (type !== 3) return 0;
+	if (type === 1 || type === 2) {
+		return size * PROPORTIONAL_CORNER_RADIUS;
+	}
+	if (type !== 3) {
+		return 0;
+	}
 	const fixed = num(shape.roundness?.value, ADAPTIVE_CORNER_RADIUS);
 	return size <= fixed / PROPORTIONAL_CORNER_RADIUS ? size * PROPORTIONAL_CORNER_RADIUS : fixed;
 }
@@ -217,7 +235,9 @@ function cornerOffset(corner: Point, centre: Point, gap: number): Point {
 	const x = corner.x - centre.x;
 	const y = corner.y - centre.y;
 	const length = Math.sqrt(x * x + y * y);
-	if (length === 0) return { x: 0, y: 0 };
+	if (length === 0) {
+		return { x: 0, y: 0 };
+	}
 	return { x: (x / length) * gap, y: (y / length) * gap };
 }
 
@@ -261,7 +281,9 @@ function segmentIntersection(first: Segment, second: Segment): Point | null {
 	const a2 = second[1].y - second[0].y;
 	const b2 = second[0].x - second[1].x;
 	const determinant = a1 * b2 - a2 * b1;
-	if (determinant === 0) return null;
+	if (determinant === 0) {
+		return null;
+	}
 	const c1 = a1 * first[0].x + b1 * first[0].y;
 	const c2 = a2 * second[0].x + b2 * second[0].y;
 	const candidate = {
@@ -304,7 +326,9 @@ function curveIntersectsBounds(curve: Cubic, line: Segment): boolean {
 
 /** The pinned two-variable Newton solve for one cubic and one finite segment. */
 function curveSegmentIntersection(curve: Cubic, line: Segment): Point | null {
-	if (!curveIntersectsBounds(curve, line)) return null;
+	if (!curveIntersectsBounds(curve, line)) {
+		return null;
+	}
 	const valueAt = (t: number, s: number): Point => {
 		const onCurve = pointOnCubic(curve, t);
 		return {
@@ -329,14 +353,18 @@ function curveSegmentIntersection(curve: Cubic, line: Segment): Point | null {
 		let error = Infinity;
 		let iteration = 0;
 		while (error >= 1e-3) {
-			if (iteration >= 10) return null;
+			if (iteration >= 10) {
+				return null;
+			}
 			const value = valueAt(t, s);
 			const jacobian = [
 				gradient((point) => point.x, t, s),
 				gradient((point) => point.y, t, s),
 			] as const;
 			const determinant = jacobian[0][0] * jacobian[1][1] - jacobian[0][1] * jacobian[1][0];
-			if (determinant === 0) return null;
+			if (determinant === 0) {
+				return null;
+			}
 			const inverse = [
 				[jacobian[1][1] / determinant, -jacobian[0][1] / determinant],
 				[-jacobian[1][0] / determinant, jacobian[0][0] / determinant],
@@ -358,9 +386,13 @@ function curveSegmentIntersection(curve: Cubic, line: Segment): Point | null {
 		[0.8, 0],
 	] as const) {
 		const solution = solve(initialT, initialS);
-		if (!solution) continue;
+		if (!solution) {
+			continue;
+		}
 		const [t, s] = solution;
-		if (t >= 0 && t <= 1 && s >= 0 && s <= 1) return pointOnCubic(curve, t);
+		if (t >= 0 && t <= 1 && s >= 0 && s <= 1) {
+			return pointOnCubic(curve, t);
+		}
 	}
 	return null;
 }
@@ -429,11 +461,17 @@ function roundedRectangleIntersections(shape: Bindable, line: Segment, gap: numb
 /** Is this point inside the shape's outline, grown by `gap`? */
 function inside(shape: Bindable, local: Point, gap: number): boolean {
 	const { a, b } = halfExtents(shape, gap);
-	if (a <= 0 || b <= 0) return false;
+	if (a <= 0 || b <= 0) {
+		return false;
+	}
 	const px = Math.abs(local.x);
 	const py = Math.abs(local.y);
-	if (shape.type === "ellipse") return (px / a) ** 2 + (py / b) ** 2 <= 1;
-	if (shape.type === "diamond") return px / a + py / b <= 1;
+	if (shape.type === "ellipse") {
+		return (px / a) ** 2 + (py / b) ** 2 <= 1;
+	}
+	if (shape.type === "diamond") {
+		return px / a + py / b <= 1;
+	}
 	return px <= a && py <= b;
 }
 
@@ -447,10 +485,14 @@ function inside(shape: Bindable, local: Point, gap: number): boolean {
  */
 function crossings(shape: Bindable, origin: Point, direction: Point, gap: number): number[] {
 	const { a, b } = halfExtents(shape, gap);
-	if (a <= 0 || b <= 0) return [];
+	if (a <= 0 || b <= 0) {
+		return [];
+	}
 	const found: number[] = [];
 	const keep = (t: number) => {
-		if (Number.isFinite(t) && t >= 0) found.push(t);
+		if (Number.isFinite(t) && t >= 0) {
+			found.push(t);
+		}
 	};
 
 	if (shape.type === "ellipse") {
@@ -458,9 +500,13 @@ function crossings(shape: Bindable, origin: Point, direction: Point, gap: number
 		const qa = (direction.x / a) ** 2 + (direction.y / b) ** 2;
 		const qb = 2 * ((origin.x * direction.x) / a ** 2 + (origin.y * direction.y) / b ** 2);
 		const qc = (origin.x / a) ** 2 + (origin.y / b) ** 2 - 1;
-		if (qa === 0) return [];
+		if (qa === 0) {
+			return [];
+		}
 		const disc = qb * qb - 4 * qa * qc;
-		if (disc < 0) return [];
+		if (disc < 0) {
+			return [];
+		}
 		const root = Math.sqrt(disc);
 		keep((-qb - root) / (2 * qa));
 		keep((-qb + root) / (2 * qa));
@@ -473,7 +519,9 @@ function crossings(shape: Bindable, origin: Point, direction: Point, gap: number
 		];
 		for (let i = 0; i < 4; i++) {
 			const t = alongSegment(origin, direction, vertices[i]!, vertices[(i + 1) % 4]!);
-			if (t !== null) keep(t);
+			if (t !== null) {
+				keep(t);
+			}
 		}
 	} else {
 		// A rectangle, and everything Excalidraw treats as one: an image, a frame,
@@ -483,10 +531,14 @@ function crossings(shape: Bindable, origin: Point, direction: Point, gap: number
 			[origin.x, direction.x, a, origin.y, direction.y, b],
 			[origin.y, direction.y, b, origin.x, direction.x, a],
 		] as const) {
-			if (d === 0) continue;
+			if (d === 0) {
+				continue;
+			}
 			for (const edge of [-half, half]) {
 				const t = (edge - o) / d;
-				if (Math.abs(otherO + t * otherD) <= otherHalf + 1e-9) keep(t);
+				if (Math.abs(otherO + t * otherD) <= otherHalf + 1e-9) {
+					keep(t);
+				}
 			}
 		}
 	}
@@ -498,11 +550,15 @@ function crossings(shape: Bindable, origin: Point, direction: Point, gap: number
 function alongSegment(origin: Point, direction: Point, from: Point, to: Point): number | null {
 	const edge = minus(to, from);
 	const denominator = cross(direction, edge);
-	if (Math.abs(denominator) < 1e-12) return null;
+	if (Math.abs(denominator) < 1e-12) {
+		return null;
+	}
 	const offset = minus(from, origin);
 	const t = cross(offset, edge) / denominator;
 	const u = cross(offset, direction) / denominator;
-	if (u < -1e-9 || u > 1 + 1e-9) return null;
+	if (u < -1e-9 || u > 1 + 1e-9) {
+		return null;
+	}
 	return t;
 }
 
@@ -529,16 +585,22 @@ export function boundEndpoint(
 
 	// The arrow was never pointing into the shape, so it stops at the aim rather
 	// than short of an outline it does not cross.
-	if (binding.gap === 0) return aim;
+	if (binding.gap === 0) {
+		return aim;
+	}
 
 	const localFrom = minus(rotate(adjacent, centre, -angle), centre);
 	const localAim = minus(rotate(aim, centre, -angle), centre);
 	const direction = minus(localAim, localFrom);
-	if (direction.x === 0 && direction.y === 0) return aim;
+	if (direction.x === 0 && direction.y === 0) {
+		return aim;
+	}
 
 	// The path starts inside the shape, so there is no outline between the two
 	// and Excalidraw puts the end on the aim itself.
-	if (inside(shape, localFrom, binding.gap)) return aim;
+	if (inside(shape, localFrom, binding.gap)) {
+		return aim;
+	}
 	if (shape.type === "rectangle" && rectangleCornerRadius(shape) > 0) {
 		const towardAim = minus(aim, adjacent);
 		const magnitude = Math.sqrt(towardAim.x * towardAim.x + towardAim.y * towardAim.y);
@@ -562,14 +624,20 @@ export function boundEndpoint(
 				return leftX * leftX + leftY * leftY - (rightX * rightX + rightY * rightY);
 			},
 		);
-		if (intersections.length > 1) return intersections[0]!;
-		if (intersections.length === 1) return aim;
+		if (intersections.length > 1) {
+			return intersections[0]!;
+		}
+		if (intersections.length === 1) {
+			return aim;
+		}
 		return current;
 	}
 
 	const hits = crossings(shape, localFrom, direction, binding.gap);
 	const nearest = hits[0];
-	if (nearest === undefined) return current;
+	if (nearest === undefined) {
+		return current;
+	}
 
 	return rotate(
 		{

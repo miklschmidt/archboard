@@ -53,7 +53,9 @@ const SERVER_BOOKKEEPING = [
 /** The element as it goes on the wire: ours to describe, the server's to stamp. */
 export function toWire(element: Record<string, unknown>): Record<string, unknown> {
 	const wire: Record<string, unknown> = { ...element };
-	for (const key of SERVER_BOOKKEEPING) delete wire[key];
+	for (const key of SERVER_BOOKKEEPING) {
+		delete wire[key];
+	}
 	return wire;
 }
 
@@ -96,10 +98,14 @@ export function diffAgainstBaseline(
 	const nextBaseline: Baseline = new Map();
 
 	for (const element of scene) {
-		if (!element || typeof element["id"] !== "string" || element["isDeleted"]) continue;
+		if (!element || typeof element["id"] !== "string" || element["isDeleted"]) {
+			continue;
+		}
 		if (withheld.has(element["id"])) {
 			const agreed = baseline.get(element["id"]);
-			if (agreed !== undefined) nextBaseline.set(element["id"], agreed);
+			if (agreed !== undefined) {
+				nextBaseline.set(element["id"], agreed);
+			}
 			continue;
 		}
 		const print = fingerprint(element);
@@ -113,7 +119,9 @@ export function diffAgainstBaseline(
 	// absent from the baseline and so is never named here.
 	const deletes: string[] = [];
 	baseline.forEach((_print, id) => {
-		if (!nextBaseline.has(id)) deletes.push(id);
+		if (!nextBaseline.has(id)) {
+			deletes.push(id);
+		}
 	});
 
 	// A label needs nothing said about it here. It is a text element, so a
@@ -137,7 +145,9 @@ export function diffAgainstBaseline(
 export function baselineFrom(scene: readonly Record<string, unknown>[]): Baseline {
 	const baseline: Baseline = new Map();
 	for (const element of scene) {
-		if (!element || typeof element["id"] !== "string" || element["isDeleted"]) continue;
+		if (!element || typeof element["id"] !== "string" || element["isDeleted"]) {
+			continue;
+		}
 		baseline.set(element["id"], fingerprint(element));
 	}
 	return baseline;

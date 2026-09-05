@@ -75,7 +75,9 @@ function harness(overrides: HarnessOverrides = {}) {
 }
 
 async function flush() {
-	for (let index = 0; index < 10; index += 1) await Promise.resolve();
+	for (let index = 0; index < 10; index += 1) {
+		await Promise.resolve();
+	}
 }
 
 function deferred<T>() {
@@ -95,8 +97,9 @@ test("authorization URLs are HTTPS and malformed input is a closed refusal", () 
 		variant: "chatgpt",
 		loginId: identity.identity.decoder.adoptLoginId("login-safe"),
 	};
-	for (const authUrl of ["not a URL", "http://example.test/login", "javascript:alert(1)"])
+	for (const authUrl of ["not a URL", "http://example.test/login", "javascript:alert(1)"]) {
 		expect(schema.safeParse({ ...pending, authUrl }).success).toBe(false);
+	}
 	expect(schema.safeParse({ ...pending, authUrl: "https://example.test/login" }).success).toBe(
 		true,
 	);

@@ -77,10 +77,13 @@ const own = (value: object, key: PropertyKey): boolean =>
 
 function bridgeCandidate(element: ServerElement): { present: boolean; value?: unknown } {
 	const custom = element.customData;
-	if (!custom || typeof custom !== "object" || Array.isArray(custom)) return { present: false };
-	const archboard = custom.archboard;
-	if (!archboard || typeof archboard !== "object" || Array.isArray(archboard))
+	if (!custom || typeof custom !== "object" || Array.isArray(custom)) {
 		return { present: false };
+	}
+	const archboard = custom.archboard;
+	if (!archboard || typeof archboard !== "object" || Array.isArray(archboard)) {
+		return { present: false };
+	}
 	return own(archboard, "bridge")
 		? { present: true, value: (archboard as Record<string, unknown>)["bridge"] }
 		: { present: false };
@@ -92,7 +95,9 @@ export function hasBridgeMarker(element: ServerElement): boolean {
 
 export function bridgeMetadataOf(element: ServerElement): BridgeMetadata | null {
 	const candidate = bridgeCandidate(element);
-	if (!candidate.present) return null;
+	if (!candidate.present) {
+		return null;
+	}
 	const parsed = BridgeMetadataSchema.safeParse(candidate.value);
 	return parsed.success ? parsed.data : null;
 }
@@ -113,13 +118,20 @@ function supportedConnector(
 		!supportedAngle(element.angle) ||
 		dynamic["curve"] !== undefined ||
 		dynamic["curveKind"] !== undefined
-	)
+	) {
 		return null;
+	}
 	const [record] = decodeRecords([element as unknown as SnapshotRecord]);
-	if (!record?.live || !record.usableId) return null;
+	if (!record?.live || !record.usableId) {
+		return null;
+	}
 	const decoded = decodePath(record);
-	if (!decoded.ok || !decoded.scenePoints || decoded.zeroSegments.length > 0) return null;
-	if (!persistedConnectorPointChainEligibility(record, decoded).eligible) return null;
+	if (!decoded.ok || !decoded.scenePoints || decoded.zeroSegments.length > 0) {
+		return null;
+	}
+	if (!persistedConnectorPointChainEligibility(record, decoded).eligible) {
+		return null;
+	}
 	const segments = decoded.scenePoints.slice(0, -1).map((a, index) => ({
 		connectorId: element.id,
 		sourceIndex,
@@ -152,8 +164,9 @@ function strokeStyleOf(element: ServerElement): StrokeStyle | null {
 
 function normalizeBackground(value: string): string {
 	const normalized = value.toLowerCase();
-	if (!/^#[0-9a-f]{6}$/.test(normalized))
+	if (!/^#[0-9a-f]{6}$/.test(normalized)) {
 		throw new BridgeRefusal("--background must be an opaque six-digit #RRGGBB colour.");
+	}
 	return normalized;
 }
 
@@ -198,23 +211,33 @@ function lineMatches(part: ServerElement, expectedInput: Record<string, unknown>
 				!actualArchboard ||
 				Object.keys(actualArchboard).length !== 1 ||
 				!own(actualArchboard, "bridge")
-			)
+			) {
 				return false;
+			}
 			const actualBridge = BridgeMetadataSchema.safeParse(
 				(actualArchboard as Record<string, unknown>)["bridge"],
 			);
 			if (
 				!actualBridge.success ||
 				JSON.stringify(actualBridge.data) !== JSON.stringify(expectedCustomData.archboard.bridge)
-			)
+			) {
 				return false;
+			}
 			continue;
 		}
-		if (JSON.stringify(actual[key]) !== JSON.stringify(value)) return false;
-	}
-	for (const field of INSPECTION_FIELDS)
-		if (!own(expected, field) && !BRIDGE_VOLATILE_FIELDS.has(field) && actual[field] !== undefined)
+		if (JSON.stringify(actual[key]) !== JSON.stringify(value)) {
 			return false;
+		}
+	}
+	for (const field of INSPECTION_FIELDS) {
+		if (
+			!own(expected, field) &&
+			!BRIDGE_VOLATILE_FIELDS.has(field) &&
+			actual[field] !== undefined
+		) {
+			return false;
+		}
+	}
 	return true;
 }
 
@@ -271,7 +294,7 @@ function crossingCandidates(
 	under: readonly Segment[],
 ): CrossingCandidate[] {
 	const candidates: CrossingCandidate[] = [];
-	for (const overSegment of over)
+	for (const overSegment of over) {
 		for (const underSegment of under) {
 			const hit = intersectSegments(
 				overSegment.a,
@@ -280,9 +303,11 @@ function crossingCandidates(
 				underSegment.b,
 				0.5,
 			);
-			if (hit.kind === "proper")
+			if (hit.kind === "proper") {
 				candidates.push({ over: overSegment, under: underSegment, point: hit.point });
+			}
 		}
+	}
 	return candidates.toSorted(
 		(a, b) =>
 			a.over.index - b.over.index ||
@@ -312,52 +337,64 @@ export interface BridgeCreatePlan {
 }
 
 export function planBridgeCreate(input: PlanBridgeCreateInput): BridgeCreatePlan {
-	if (!input.bridgeId) throw new BridgeRefusal("A bridge ID is required.");
-	if (input.overConnectorId === input.underConnectorId)
+	if (!input.bridgeId) {
+		throw new BridgeRefusal("A bridge ID is required.");
+	}
+	if (input.overConnectorId === input.underConnectorId) {
 		throw new BridgeRefusal("--over and --under must name distinct connectors.");
+	}
 	const byId = new Map(input.elements.map((element) => [element.id, element]));
 	const overElement = byId.get(input.overConnectorId);
 	const underElement = byId.get(input.underConnectorId);
-	if (!overElement)
+	if (!overElement) {
 		throw new BridgeRefusal(`Over-connector ${input.overConnectorId} was not found.`);
-	if (!underElement)
+	}
+	if (!underElement) {
 		throw new BridgeRefusal(`Under-connector ${input.underConnectorId} was not found.`);
+	}
 	const over = supportedConnector(overElement, input.elements.indexOf(overElement));
 	const under = supportedConnector(underElement, input.elements.indexOf(underElement));
-	if (!over || !under)
+	if (!over || !under) {
 		throw new BridgeRefusal(
 			"Both sources must be live arrow/line connectors at zero rotation, without explicit curve fields, with finite non-zero point-chain segments; elbow coordinates must stay within ±1,000,000.",
 		);
+	}
 	const style = strokeStyleOf(overElement);
-	if (!style) throw new BridgeRefusal("The over-connector has an unusable stroke style.");
+	if (!style) {
+		throw new BridgeRefusal("The over-connector has an unusable stroke style.");
+	}
 	const candidates = crossingCandidates(over.segments, under.segments);
-	if (candidates.length === 0)
+	if (candidates.length === 0) {
 		throw new BridgeRefusal("The named connectors have no proper interior intersection.");
+	}
 	const matches = input.at
 		? candidates.filter(
 				(candidate) =>
 					Math.hypot(candidate.point.x - input.at!.x, candidate.point.y - input.at!.y) <= 0.5,
 			)
 		: candidates;
-	if (matches.length !== 1)
+	if (matches.length !== 1) {
 		throw new BridgeRefusal(
 			input.at
 				? "--at must identify exactly one proper intersection within 0.5 px."
 				: "The connectors cross more than once; provide --at x,y to select one.",
 		);
+	}
 	const selected = matches[0]!;
 	const dx = selected.over.b.x - selected.over.a.x;
 	const dy = selected.over.b.y - selected.over.a.y;
 	const length = Math.hypot(dx, dy);
-	if (!Number.isFinite(length) || length < 16)
+	if (!Number.isFinite(length) || length < 16) {
 		throw new BridgeRefusal("The selected over-segment is too short for a bridge.");
+	}
 	const ux = dx / length;
 	const uy = dy / length;
 	const along =
 		(selected.point.x - selected.over.a.x) * ux + (selected.point.y - selected.over.a.y) * uy;
 	const halfSpan = Math.max(6, style.strokeWidth * 2 + 2);
-	if (along < halfSpan || length - along < halfSpan)
+	if (along < halfSpan || length - along < halfSpan) {
 		throw new BridgeRefusal("The selected crossing lacks enough over-segment span for a bridge.");
+	}
 	const a = { x: selected.point.x - ux * halfSpan, y: selected.point.y - uy * halfSpan };
 	const b = { x: selected.point.x + ux * halfSpan, y: selected.point.y + uy * halfSpan };
 	const shared = {
@@ -390,7 +427,9 @@ function structuralPairs(elements: readonly ServerElement[]): {
 	const grouped = new Map<string, BridgePart[]>();
 	for (const element of elements) {
 		const marker = bridgeCandidate(element);
-		if (!marker.present) continue;
+		if (!marker.present) {
+			continue;
+		}
 		const parsed = BridgeMetadataSchema.safeParse(marker.value);
 		if (!parsed.success) {
 			const partial =
@@ -417,31 +456,42 @@ function structuralPairs(elements: readonly ServerElement[]): {
 		const masks = parts.filter((part) => part.metadata.role === "mask");
 		const redraws = parts.filter((part) => part.metadata.role === "redraw");
 		let issue: BridgeIncompleteIssue | null = null;
-		if (parts.some((part) => part.element.type !== "line")) issue = "non-line-part";
-		else if (
+		if (parts.some((part) => part.element.type !== "line")) {
+			issue = "non-line-part";
+		} else if (
 			parts.some(
 				(part) =>
 					part.element.isDeleted ||
 					typeof part.element.id !== "string" ||
 					part.element.id.length === 0,
 			)
-		)
+		) {
 			issue = "malformed-metadata";
-		else if (masks.length === 0) issue = "missing-mask";
-		else if (redraws.length === 0) issue = "missing-redraw";
-		else if (masks.length > 1) issue = "duplicate-mask";
-		else if (redraws.length > 1) issue = "duplicate-redraw";
-		else if (masks[0]!.element.id !== bridgeId) issue = "mask-id-mismatch";
-		else if (masks[0]!.element.id === redraws[0]!.element.id) issue = "conflicting-facts";
-		else if (!sameFacts(masks[0]!.metadata, redraws[0]!.metadata)) issue = "conflicting-facts";
-		if (issue)
+		} else if (masks.length === 0) {
+			issue = "missing-mask";
+		} else if (redraws.length === 0) {
+			issue = "missing-redraw";
+		} else if (masks.length > 1) {
+			issue = "duplicate-mask";
+		} else if (redraws.length > 1) {
+			issue = "duplicate-redraw";
+		} else if (masks[0]!.element.id !== bridgeId) {
+			issue = "mask-id-mismatch";
+		} else if (masks[0]!.element.id === redraws[0]!.element.id) {
+			issue = "conflicting-facts";
+		} else if (!sameFacts(masks[0]!.metadata, redraws[0]!.metadata)) {
+			issue = "conflicting-facts";
+		}
+		if (issue) {
 			invalid.push({
 				bridgeId,
 				reason: "incomplete-decoration",
 				issue,
 				elements: parts.map((part) => part.element),
 			});
-		else valid.push({ bridgeId, mask: masks[0]!, redraw: redraws[0]! });
+		} else {
+			valid.push({ bridgeId, mask: masks[0]!, redraw: redraws[0]! });
+		}
 	}
 	return { valid: valid.toSorted((a, b) => compareIdentity(a.bridgeId, b.bridgeId)), invalid };
 }
@@ -455,35 +505,49 @@ function staleIssue(
 			(part.groupIds?.length ?? 0) !== 0 ||
 			((part.type === "arrow" || part.type === "line") &&
 				(part.startBinding != null || part.endBinding != null))
-		)
+		) {
 			return "geometry-mismatch";
+		}
 	}
 	const byId = new Map(elements.map((element) => [element.id, element]));
 	const facts = pair.mask.metadata;
 	const occurrences = (id: string) => elements.filter((element) => element.id === id);
 	const overMatches = occurrences(facts.overConnectorId);
 	const underMatches = occurrences(facts.underConnectorId);
-	if (overMatches.length === 0 || underMatches.length === 0) return "missing-source";
+	if (overMatches.length === 0 || underMatches.length === 0) {
+		return "missing-source";
+	}
 	if (
 		overMatches.length !== 1 ||
 		underMatches.length !== 1 ||
 		occurrences(pair.mask.element.id).length !== 1 ||
 		occurrences(pair.redraw.element.id).length !== 1
-	)
+	) {
 		return "unsupported-source";
+	}
 	const overElement = byId.get(facts.overConnectorId);
 	const underElement = byId.get(facts.underConnectorId);
-	if (!overElement || !underElement) return "missing-source";
+	if (!overElement || !underElement) {
+		return "missing-source";
+	}
 	const over = supportedConnector(overElement, elements.indexOf(overElement));
 	const under = supportedConnector(underElement, elements.indexOf(underElement));
-	if (!over || !under) return "unsupported-source";
+	if (!over || !under) {
+		return "unsupported-source";
+	}
 	const overSegment = over.segments[facts.overSegmentIndex];
 	const underSegment = under.segments[facts.underSegmentIndex];
-	if (!overSegment || !underSegment) return "crossing-moved";
+	if (!overSegment || !underSegment) {
+		return "crossing-moved";
+	}
 	const hit = intersectSegments(overSegment.a, overSegment.b, underSegment.a, underSegment.b, 0.5);
-	if (hit.kind !== "proper" || !samePoint(hit.point, facts.crossing)) return "crossing-moved";
+	if (hit.kind !== "proper" || !samePoint(hit.point, facts.crossing)) {
+		return "crossing-moved";
+	}
 	const style = strokeStyleOf(overElement);
-	if (!style) return "unsupported-source";
+	if (!style) {
+		return "unsupported-source";
+	}
 	let expected: BridgeCreatePlan;
 	try {
 		expected = planBridgeCreate({
@@ -497,8 +561,12 @@ function staleIssue(
 	} catch {
 		return "crossing-moved";
 	}
-	if (!lineMatches(pair.redraw.element, expected.inputs[1])) return "style-mismatch";
-	if (!lineMatches(pair.mask.element, expected.inputs[0])) return "geometry-mismatch";
+	if (!lineMatches(pair.redraw.element, expected.inputs[1])) {
+		return "style-mismatch";
+	}
+	if (!lineMatches(pair.mask.element, expected.inputs[0])) {
+		return "geometry-mismatch";
+	}
 	const liveOrder = elements
 		.map((element, position) => ({ element, position }))
 		.filter(({ element }) => !element.isDeleted)
@@ -530,8 +598,9 @@ function staleIssue(
 		maskPosition <= overPosition ||
 		maskPosition <= underPosition ||
 		redrawPosition !== maskPosition + 1
-	)
+	) {
 		return "z-order-invalid";
+	}
 	return null;
 }
 
@@ -543,16 +612,20 @@ export function validateBridgeDecorations(elements: readonly ServerElement[]): {
 	const valid: ValidBridgeDecoration[] = [];
 	const invalid = [...structural.invalid];
 	for (const pair of structural.valid) {
-		if (invalid.some((candidate) => candidate.bridgeId === pair.bridgeId)) continue;
+		if (invalid.some((candidate) => candidate.bridgeId === pair.bridgeId)) {
+			continue;
+		}
 		const issue = staleIssue(pair, elements);
-		if (issue)
+		if (issue) {
 			invalid.push({
 				bridgeId: pair.bridgeId,
 				reason: "stale-decoration",
 				issue,
 				elements: [pair.mask.element, pair.redraw.element],
 			});
-		else valid.push(pair);
+		} else {
+			valid.push(pair);
+		}
 	}
 	return { valid, invalid };
 }
@@ -583,9 +656,10 @@ export function planBridgeRemoval(
 	const structural = structuralPairs(elements);
 	const pair = structural.valid.find((candidate) => candidate.bridgeId === bridgeId);
 	const conflicting = structural.invalid.find((candidate) => candidate.bridgeId === bridgeId);
-	if (!pair || conflicting)
+	if (!pair || conflicting) {
 		throw new BridgeRefusal(
 			`Bridge ${bridgeId} does not have exactly one complete mask/redraw provenance pair.`,
 		);
+	}
 	return [pair.mask.element.id, pair.redraw.element.id];
 }

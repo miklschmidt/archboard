@@ -75,8 +75,11 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-	if (priorSettleMs === undefined) delete process.env["ARCHBOARD_SETTLE_MS"];
-	else process.env["ARCHBOARD_SETTLE_MS"] = priorSettleMs;
+	if (priorSettleMs === undefined) {
+		delete process.env["ARCHBOARD_SETTLE_MS"];
+	} else {
+		process.env["ARCHBOARD_SETTLE_MS"] = priorSettleMs;
+	}
 	expect(process.env["ARCHBOARD_SETTLE_MS"]).toBe(priorSettleMs);
 });
 
@@ -99,8 +102,12 @@ describe("change feed", () => {
 		for (let index = 1; index <= 30; index += 1) {
 			elements = elements.map((element) => {
 				const moved = structuredClone(element);
-				if (moved.id === "b") moved.y = index * 50;
-				if (moved.id === "bl") moved.y = index * 50 + 40;
+				if (moved.id === "b") {
+					moved.y = index * 50;
+				}
+				if (moved.id === "bl") {
+					moved.y = index * 50 + 40;
+				}
 				return moved;
 			});
 			changeFeed.record("payments-drag", identity, read, "human");

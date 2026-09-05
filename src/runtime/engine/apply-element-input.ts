@@ -79,7 +79,9 @@ const hasOwn = (value: object, key: PropertyKey): boolean =>
 	Object.prototype.hasOwnProperty.call(value, key);
 
 function mergeCustomData(existing: unknown, incoming: unknown): unknown {
-	if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) return incoming;
+	if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) {
+		return incoming;
+	}
 	const current =
 		existing && typeof existing === "object" && !Array.isArray(existing)
 			? (existing as Record<string, unknown>)
@@ -134,7 +136,8 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 					fontFamily:
 						updates["fontFamily"] !== undefined
 							? normalizeFontFamily(
-									typeof updates["fontFamily"] === "string" || typeof updates["fontFamily"] === "number"
+									typeof updates["fontFamily"] === "string" ||
+										typeof updates["fontFamily"] === "number"
 										? updates["fontFamily"]
 										: undefined,
 								)
@@ -142,8 +145,9 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 				}
 			: {}),
 	};
-	if (hasOwn(updates, "customData"))
+	if (hasOwn(updates, "customData")) {
 		candidate["customData"] = mergeCustomData(existing.customData, updates["customData"]);
+	}
 	delete candidate["label"];
 	delete candidate["start"];
 	delete candidate["end"];
@@ -159,8 +163,9 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 			"autoResize",
 			"lineHeight",
 			"containerId",
-		])
+		]) {
 			delete candidate[key];
+		}
 	}
 	const element = validatePersistedBoardElement(candidate, `element update ${existing.id}`);
 	bumpVersion(element, existing);
@@ -187,7 +192,9 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 	}
 
 	const changed = (key: string) => hasOwn(statement, key);
-	if (changed("points")) sizeFromPath(element);
+	if (changed("points")) {
+		sizeFromPath(element);
+	}
 	const isLinear = element.type === "arrow" || element.type === "line";
 	const mergedStatement = withAgentLabelIntent(
 		{
@@ -217,7 +224,9 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 
 function sizeFromPath(element: ServerElement): boolean {
 	const measured = remeasureLinear(element);
-	if (!measured) return false;
+	if (!measured) {
+		return false;
+	}
 	element.width = measured.width;
 	element.height = measured.height;
 	return true;
@@ -239,12 +248,18 @@ function resolveArrowBindings(
 	inputSquareIds: ReadonlySet<string> = new Set(),
 ): void {
 	const available = new Map(board);
-	for (const element of written) available.set(element.id, element);
+	for (const element of written) {
+		available.set(element.id, element);
+	}
 
 	for (const element of written) {
-		if (element.type !== "arrow" && element.type !== "line") continue;
+		if (element.type !== "arrow" && element.type !== "line") {
+			continue;
+		}
 		const dynamic = element as unknown as Record<string, unknown>;
-		if (dynamic["elbowed"] === true) continue;
+		if (dynamic["elbowed"] === true) {
+			continue;
+		}
 		const startBinding = bindingOf(dynamic["startBinding"]);
 		const endBinding = bindingOf(dynamic["endBinding"]);
 		const inputGeometry = (target: ServerElement | undefined): ServerElement | undefined =>
@@ -253,7 +268,9 @@ function resolveArrowBindings(
 			startBinding ? available.get(startBinding.elementId) : undefined,
 		);
 		const endElement = inputGeometry(endBinding ? available.get(endBinding.elementId) : undefined);
-		if (!startElement && !endElement) continue;
+		if (!startElement && !endElement) {
+			continue;
+		}
 
 		const points = pathOf(element);
 		const last = points.length - 1;
@@ -278,10 +295,14 @@ function resolveArrowBindings(
 function rerouteBoundArrows(movedId: string, board: Map<string, ServerElement>): ServerElement[] {
 	const rerouted: ServerElement[] = [];
 	for (const element of board.values()) {
-		if (element.type !== "arrow" && element.type !== "line") continue;
+		if (element.type !== "arrow" && element.type !== "line") {
+			continue;
+		}
 		const joins = (binding: unknown) => bindingOf(binding)?.elementId === movedId;
 		const dynamic = element as unknown as Record<string, unknown>;
-		if (!joins(dynamic["startBinding"]) && !joins(dynamic["endBinding"])) continue;
+		if (!joins(dynamic["startBinding"]) && !joins(dynamic["endBinding"])) {
+			continue;
+		}
 		resolveArrowBindings([element], board);
 		bumpVersion(element);
 		rerouted.push(element);
@@ -296,7 +317,9 @@ function settleBoundTexts(
 	const moved: ServerElement[] = [];
 	for (const move of recentreBoundTexts([...board.values()], containerIds)) {
 		const text = board.get(move.id);
-		if (!text) continue;
+		if (!text) {
+			continue;
+		}
 		text.x = move.x;
 		text.y = move.y;
 		bumpVersion(text);
@@ -322,7 +345,9 @@ function settleAfterWrite(movedIds: string[], board: Map<string, ServerElement>)
 	const moved = new Map<string, ServerElement>();
 	for (const id of movedIds) {
 		const element = board.get(id);
-		if (!element) continue;
+		if (!element) {
+			continue;
+		}
 		containers.push(id);
 		if (element.type === "text" && element.containerId) {
 			containers.push(element.containerId);
@@ -334,7 +359,9 @@ function settleAfterWrite(movedIds: string[], board: Map<string, ServerElement>)
 			}
 		}
 	}
-	for (const text of settleBoundTexts(containers, board)) moved.set(text.id, text);
+	for (const text of settleBoundTexts(containers, board)) {
+		moved.set(text.id, text);
+	}
 	return [...moved.values()];
 }
 
@@ -344,12 +371,17 @@ function settleDocument(
 ): Pick<AppliedElementInput, "created" | "updated" | "deleted"> {
 	const { alsoDeleted, changed } = settleDeletions(applied.deleted, board);
 	const repaired = repairIndices(board);
-	if (alsoDeleted.length === 0 && changed.length === 0 && repaired.length === 0) return applied;
+	if (alsoDeleted.length === 0 && changed.length === 0 && repaired.length === 0) {
+		return applied;
+	}
 	const created = new Map(applied.created.map((element) => [element.id, element]));
 	const updated = new Map(applied.updated.map((element) => [element.id, element]));
 	for (const element of [...changed, ...repaired]) {
-		if (created.has(element.id)) created.set(element.id, element);
-		else updated.set(element.id, element);
+		if (created.has(element.id)) {
+			created.set(element.id, element);
+		} else {
+			updated.set(element.id, element);
+		}
 	}
 	for (const id of alsoDeleted) {
 		created.delete(id);
@@ -406,10 +438,18 @@ function applyAgentInput(
 			const merge = mergeElementUpdate(existing, raw);
 			const expanded = expandForBoard([merge.statement], board);
 			const element = expanded.find((candidate) => candidate.id === existing.id);
-			if (!element) throw new Error(`Write ingress did not produce element ${existing.id}`);
-			for (const completed of expanded) board.set(completed.id, completed);
-			if (merge.reboundArrow) resolveArrowBindings([element], board);
-			if (merge.geometryChanged || merge.reboundArrow) moved.push(existing.id);
+			if (!element) {
+				throw new Error(`Write ingress did not produce element ${existing.id}`);
+			}
+			for (const completed of expanded) {
+				board.set(completed.id, completed);
+			}
+			if (merge.reboundArrow) {
+				resolveArrowBindings([element], board);
+			}
+			if (merge.geometryChanged || merge.reboundArrow) {
+				moved.push(existing.id);
+			}
 			updated.set(existing.id, element);
 			written.push(element);
 			statements.push(merge.statement);
@@ -423,8 +463,9 @@ function applyAgentInput(
 				statement.type === "ellipse" ||
 				statement.type === "diamond") &&
 			!hasOwn(raw, "roundness")
-		)
+		) {
 			inputSquareIds.add(statement.id);
+		}
 		minted.add(statement.id);
 		statements.push(statement);
 		newStatements.push(statement);
@@ -438,7 +479,9 @@ function applyAgentInput(
 		}
 		for (const statement of newStatements) {
 			const element = board.get(statement.id);
-			if (!element) throw new Error(`Write ingress did not produce element ${statement.id}`);
+			if (!element) {
+				throw new Error(`Write ingress did not produce element ${statement.id}`);
+			}
 			written.push(element);
 		}
 	}
@@ -490,8 +533,9 @@ function applyHumanInput(
 				? incoming["link"]
 				: existing?.link;
 		for (const alias of ["label", "start", "end", "startElementId", "endElementId"]) {
-			if (hasOwn(incoming, alias))
+			if (hasOwn(incoming, alias)) {
 				throw new Error(`Human element ${id} contains input-only ${alias}`);
+			}
 		}
 		if (!existing) {
 			const statement = {
@@ -518,8 +562,9 @@ function applyHumanInput(
 			syncedAt: now,
 			...(timestamp ? { syncTimestamp: timestamp } : {}),
 		};
-		if (hasOwn(incoming, "customData"))
+		if (hasOwn(incoming, "customData")) {
 			candidate["customData"] = mergeCustomData(existing.customData, incoming["customData"]);
+		}
 		const element = validatePersistedBoardElement(candidate, `human write ${id}`);
 		bumpVersion(element, existing, now);
 		board.set(id, element);
@@ -533,8 +578,9 @@ function applyHumanInput(
 			created.push(completed);
 		}
 		for (const statement of newStatements) {
-			if (!board.has(statement.id))
+			if (!board.has(statement.id)) {
 				throw new Error(`Write ingress did not produce human element ${statement.id}`);
+			}
 		}
 	}
 	return { created, updated, namedIds };
@@ -565,7 +611,9 @@ export function applyElementInput(
 				);
 	const deleted: string[] = [];
 	for (const id of deletes) {
-		if (working.delete(id)) deleted.push(id);
+		if (working.delete(id)) {
+			deleted.push(id);
+		}
 	}
 	// Capture what the caller intended before the sole input converter repairs
 	// bindings, dependent elements, ids, and ordering. A pane acknowledgement
@@ -573,7 +621,9 @@ export function applyElementInput(
 	// persisted; otherwise a repair performed below is invisible to that pane.
 	const requested = copyElements(working.values());
 	for (const element of settleAfterWrite(prepared.moved ?? [], working)) {
-		if (working.has(element.id)) prepared.updated.set(element.id, element);
+		if (working.has(element.id)) {
+			prepared.updated.set(element.id, element);
+		}
 	}
 	const settled = settleDocument(
 		{
@@ -593,6 +643,8 @@ export function applyElementInput(
 		...settled,
 	};
 	board.clear();
-	for (const [id, element] of working) board.set(id, element);
+	for (const [id, element] of working) {
+		board.set(id, element);
+	}
 	return applied;
 }

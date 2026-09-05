@@ -20,7 +20,9 @@ export type LabelScene = LabelElement[];
 export class LabelStore extends Map<string, LabelElement> {
 	override get(id: string): LabelElement {
 		const element = super.get(id);
-		if (!element) throw new Error(`Missing label-cycle element ${id}.`);
+		if (!element) {
+			throw new Error(`Missing label-cycle element ${id}.`);
+		}
 		return element;
 	}
 }
@@ -54,7 +56,9 @@ const isServerElement = (value: Record<string, unknown>): value is LabelElement 
 	(() => {
 		try {
 			const { label: _label, start: _start, end: _end, ...native } = value;
-			if (native["type"] !== "text") delete native["text"];
+			if (native["type"] !== "text") {
+				delete native["text"];
+			}
 			validatePersistedBoardElement(native, "label-cycle element");
 			return true;
 		} catch {
@@ -120,7 +124,9 @@ export function expand(elements: readonly LabelElement[]): LabelScene {
 export function dropSpentSeeds(scene: readonly LabelElement[]): LabelScene {
 	const labelled = boundTextsByContainer(scene);
 	return scene.map((element) => {
-		if (!labelled.has(element.id) || !("label" in element)) return copyElement(element);
+		if (!labelled.has(element.id) || !("label" in element)) {
+			return copyElement(element);
+		}
 		const { label: _label, ...rest } = element;
 		return rest;
 	});
@@ -143,14 +149,23 @@ export function blank(
 			element.type === "text" &&
 			typeof element.containerId === "string" &&
 			empties[element.containerId]
-		)
+		) {
 			doomed.add(element.id);
+		}
 	}
-	if (doomed.size === 0) return scene.map(copyElement);
+	if (doomed.size === 0) {
+		return scene.map(copyElement);
+	}
 	return scene.map((element) => {
-		if (doomed.has(element.id)) return { ...element, text: "", isDeleted: true };
-		if (!Array.isArray(element.boundElements)) return copyElement(element);
-		if (!element.boundElements.some((ref) => doomed.has(ref.id))) return copyElement(element);
+		if (doomed.has(element.id)) {
+			return { ...element, text: "", isDeleted: true };
+		}
+		if (!Array.isArray(element.boundElements)) {
+			return copyElement(element);
+		}
+		if (!element.boundElements.some((ref) => doomed.has(ref.id))) {
+			return copyElement(element);
+		}
 		return {
 			...element,
 			boundElements: element.boundElements.filter((ref) => !doomed.has(ref.id)),
@@ -161,7 +176,9 @@ export function blank(
 /** POST /api/elements/changes: upserts are *merged*, so stored fields survive. */
 export function applyUpserts(store: LabelStore, upserts: readonly Record<string, unknown>[]): void {
 	for (const upsert of upserts) {
-		if (typeof upsert["id"] !== "string") continue;
+		if (typeof upsert["id"] !== "string") {
+			continue;
+		}
 		const previous = store.has(upsert["id"]) ? store.get(upsert["id"]) : undefined;
 		if (!previous) {
 			try {
@@ -175,7 +192,9 @@ export function applyUpserts(store: LabelStore, upserts: readonly Record<string,
 			continue;
 		}
 		const merged = { ...previous, ...upsert };
-		if (isServerElement(merged)) store.set(upsert["id"], merged);
+		if (isServerElement(merged)) {
+			store.set(upsert["id"], merged);
+		}
 	}
 }
 
@@ -218,10 +237,14 @@ export function cycle(
 	// A pane agrees only what is on the board; a deleted element is news it has
 	// already delivered, so the next diff must not keep claiming it.
 	for (const element of edited) {
-		if (!element.isDeleted) baseline.set(element.id, fingerprint(element));
+		if (!element.isDeleted) {
+			baseline.set(element.id, fingerprint(element));
+		}
 	}
 	applyUpserts(store, upserts);
-	for (const id of deletes) store.delete(id);
+	for (const id of deletes) {
+		store.delete(id);
+	}
 	return { scene: edited, upserts, deletes };
 }
 
@@ -280,9 +303,15 @@ export function boardOf(elements: readonly LabelInput[], options?: WriteOptions)
 export function seedOf(
 	element: LabelStatement | LabelElement | LegacyElementIngress,
 ): string | undefined {
-	if (element.type === "text") return undefined;
-	if (typeof element.label?.text === "string") return element.label.text;
-	if (typeof element.text === "string") return element.text;
+	if (element.type === "text") {
+		return undefined;
+	}
+	if (typeof element.label?.text === "string") {
+		return element.label.text;
+	}
+	if (typeof element.text === "string") {
+		return element.text;
+	}
 	return undefined;
 }
 
@@ -339,14 +368,17 @@ export const CYCLES = 25;
 export function reopenedRepairedBoard(): LabelStore {
 	const polluted = boardOf(drawn(), { keepSeed: true });
 	const pollutedBaseline = new Map<string, string>();
-	for (let index = 0; index < CYCLES; index += 1)
+	for (let index = 0; index < CYCLES; index += 1) {
 		cycle(polluted, pollutedBaseline, { contain: false });
+	}
 	const plan = planLabelRepair([...polluted.values()]);
 	const doomed = new Set(plan.removeIds);
 	const rebind = new Map(plan.rebind.map((update) => [update.id, update.boundElements]));
 	const reopened = new LabelStore();
 	for (const element of polluted.values()) {
-		if (doomed.has(element.id)) continue;
+		if (doomed.has(element.id)) {
+			continue;
+		}
 		const { label: _label, ...native } = element;
 		reopened.set(
 			element.id,
@@ -356,6 +388,8 @@ export function reopenedRepairedBoard(): LabelStore {
 		);
 	}
 	const baseline = new Map<string, string>();
-	for (let index = 0; index < CYCLES; index += 1) cycle(reopened, baseline, { contain: true });
+	for (let index = 0; index < CYCLES; index += 1) {
+		cycle(reopened, baseline, { contain: true });
+	}
 	return reopened;
 }

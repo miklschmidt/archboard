@@ -120,10 +120,12 @@ describe("Codex app-server test transport cleanup", () => {
 			expect(delivered).toBe(0);
 			flushing.child.stdin.release();
 			await Promise.all([regular, shutdown]);
-			expect(frames(flushing.child).findLast((frame) => frame["id"] === "closing-reverse")).toEqual({
-				id: "closing-reverse",
-				error: { code: -32603, message: "Codex transport is shutting down." },
-			});
+			expect(frames(flushing.child).findLast((frame) => frame["id"] === "closing-reverse")).toEqual(
+				{
+					id: "closing-reverse",
+					error: { code: -32603, message: "Codex transport is shutting down." },
+				},
+			);
 		} finally {
 			await flushing.close();
 		}
@@ -138,7 +140,9 @@ describe("Codex app-server test transport cleanup", () => {
 			transport.onServerRequest((value) => (request = value));
 			sendJson(child, currentTimeRequest("shutdown-substitute"));
 			await flushStreams();
-			if (!request) throw new Error("reverse request was not routed");
+			if (!request) {
+				throw new Error("reverse request was not routed");
+			}
 			const response = transport.respond(request, "codex-session", {
 				result: { currentTimeAt: 0 },
 			});
@@ -164,7 +168,9 @@ describe("Codex app-server test transport cleanup", () => {
 			transport.onServerRequest((value) => (request = value));
 			sendJson(child, currentTimeRequest("write-failure"));
 			await flushStreams();
-			if (!request) throw new Error("reverse request was not routed");
+			if (!request) {
+				throw new Error("reverse request was not routed");
+			}
 			child.stdin.failNext = true;
 			const error = await captureRejection(
 				transport.respond(request, "codex-session", { result: { currentTimeAt: 0 } }),
@@ -194,8 +200,11 @@ describe("Codex app-server test transport cleanup", () => {
 				const before = harness.transport.inspectLateResponses();
 				expect(before).toHaveLength(1);
 				expect(Object.isFrozen(before[0])).toBeTrue();
-				if (terminal === "shutdown") await harness.transport.shutdown();
-				else harness.child.exit(1);
+				if (terminal === "shutdown") {
+					await harness.transport.shutdown();
+				} else {
+					harness.child.exit(1);
+				}
 				await flushStreams();
 				expect(harness.transport.inspectLateResponses()).toEqual(before);
 			} finally {

@@ -129,8 +129,9 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 			env: { ...fixtureEnv(root, vault, "no-vault"), PORT: String(noVaultPort) },
 		});
 		expect(noVault.code).not.toBe(0);
-		for (const text of ["no vault", "install-skill", "ARCHBOARD_VAULT"])
+		for (const text of ["no vault", "install-skill", "ARCHBOARD_VAULT"]) {
 			expect(`${noVault.stdout}${noVault.stderr}`).toContain(text);
+		}
 
 		const cliEnv = sanitizedEnvironment(root, vault);
 		delete cliEnv["ARCHBOARD_VAULT"];

@@ -55,7 +55,9 @@ function canvasHostname(): string {
 // EXPRESS_SERVER_URL actually reach it (e.g. [::1] URLs need an IPv6 bind).
 function spawnBindHost(): string {
 	const hostname = canvasHostname();
-	if (hostname === "localhost") return "127.0.0.1";
+	if (hostname === "localhost") {
+		return "127.0.0.1";
+	}
 	return hostname.replace(/^\[|\]$/g, "");
 }
 
@@ -90,7 +92,9 @@ function waitForPromise<T>(pending: Promise<T>, timeoutMs: number): Promise<T | 
 		let settled = false;
 		const timer = setTimeout(() => finish(null), timeoutMs);
 		const finish = (value: T | null): void => {
-			if (settled) return;
+			if (settled) {
+				return;
+			}
 			settled = true;
 			clearTimeout(timer);
 			resolve(value);
@@ -118,7 +122,9 @@ async function healthOrNull(timeoutMs = 500) {
 }
 
 function heldCanvasError(health: Awaited<ReturnType<typeof healthOrNull>>): Error | null {
-	if (!health?.held_boards || health.held_boards.length === 0) return null;
+	if (!health?.held_boards || health.held_boards.length === 0) {
+		return null;
+	}
 	const boards = health.held_boards.map((hold) => `"${hold.board}"`).join(", ");
 	const error = new Error(
 		[
@@ -234,11 +240,15 @@ export async function ensureCanvasRunning(
 	const cleanupFailedStart = async (failure: Error): Promise<never> => {
 		const groupOperations = createCodexProcessGroupOperations();
 		const signalCanvas = (signal: NodeJS.Signals): void => {
-			if (childExit !== null) return;
+			if (childExit !== null) {
+				return;
+			}
 			try {
 				child.kill(signal);
 			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+				if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+					throw error;
+				}
 			}
 		};
 		const cleanup = await completeFailedCanvasCleanup({
@@ -266,11 +276,14 @@ export async function ensureCanvasRunning(
 			);
 		});
 		cleanupProtocol.destroy();
-		if (readPidFile(canvasPort()) === child.pid) removePidFile(canvasPort());
-		if (cleanup.cleanup !== "proven")
+		if (readPidFile(canvasPort()) === child.pid) {
+			removePidFile(canvasPort());
+		}
+		if (cleanup.cleanup !== "proven") {
 			throw startupRefusal(
 				`${failure.message} ${cleanup.reason} Inspect canvas pid ${String(child.pid)}${cleanup.group === null ? "" : ` and Codex group ${cleanup.group.pgid}`} before retrying.`,
 			);
+		}
 		const terminalMessage = cleanupProtocol.terminalMessage();
 		throw terminalMessage === null ? failure : startupRefusal(terminalMessage);
 	};
@@ -287,12 +300,13 @@ export async function ensureCanvasRunning(
 			);
 			return { url: EXPRESS_SERVER_URL, spawned: true };
 		}
-		if (childFailure !== null || cleanupProtocol.failure() !== null)
+		if (childFailure !== null || cleanupProtocol.failure() !== null) {
 			return cleanupFailedStart(
 				startupRefusal(
 					`Canvas server could not start. ${(childFailure ?? cleanupProtocol.failure())!.message}`,
 				),
 			);
+		}
 		const observedExit = childExit as {
 			readonly code: number | null;
 			readonly signal: NodeJS.Signals | null;
@@ -359,7 +373,9 @@ export async function stopCanvas(): Promise<StopResult> {
 		throw foreignServiceError();
 	}
 	const preflightHold = heldCanvasError(health);
-	if (preflightHold) throw preflightHold;
+	if (preflightHold) {
+		throw preflightHold;
+	}
 
 	try {
 		process.kill(pid, "SIGTERM");
@@ -377,7 +393,9 @@ export async function stopCanvas(): Promise<StopResult> {
 			return { stopped: true, pid, message: `Canvas server (pid ${pid}) stopped.` };
 		}
 		const postSignalHold = heldCanvasError(postSignalHealth);
-		if (postSignalHold) throw postSignalHold;
+		if (postSignalHold) {
+			throw postSignalHold;
+		}
 		await new Promise((resolve) => setTimeout(resolve, 200));
 	}
 

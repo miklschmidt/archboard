@@ -58,8 +58,9 @@ export class FakeSession {
 	): Promise<SessionThreadItemPageResult> {
 		this.record("thread/items/list", params);
 		const result = this.itemPages.get(String(params.turnId));
-		if (result === undefined)
+		if (result === undefined) {
 			throw new Error(`thread/items/list fixture has no page for ${String(params.turnId)}`);
+		}
 		return result;
 	}
 
@@ -70,14 +71,20 @@ export class FakeSession {
 }
 
 function resolve<T>(value: T | Error | null, label: string): T {
-	if (value === null) throw new Error(`${label} fixture was not configured`);
-	if (value instanceof Error) throw value;
+	if (value === null) {
+		throw new Error(`${label} fixture was not configured`);
+	}
+	if (value instanceof Error) {
+		throw value;
+	}
 	return value;
 }
 
 function page<T>(pages: ReadonlyMap<string | null, T>, cursor: string | null, label: string): T {
 	const value = pages.get(cursor);
-	if (value === undefined) throw new Error(`${label} fixture has no page for ${String(cursor)}`);
+	if (value === undefined) {
+		throw new Error(`${label} fixture has no page for ${String(cursor)}`);
+	}
 	return value;
 }
 

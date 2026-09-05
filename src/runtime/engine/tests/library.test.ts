@@ -30,8 +30,11 @@ const { AmbiguousStencilError, UnknownStencilError, chooseStencil, remapElements
 afterAll(() => {
 	resetLibraryCache();
 	fs.rmSync(vault, { recursive: true, force: true });
-	if (previousVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = previousVault;
+	if (previousVault === undefined) {
+		delete process.env["ARCHBOARD_VAULT"];
+	} else {
+		process.env["ARCHBOARD_VAULT"] = previousVault;
+	}
 });
 
 describe("library file parsing", () => {

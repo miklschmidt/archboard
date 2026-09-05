@@ -7,7 +7,9 @@ export function browserBundleSnapshot(repoRoot: string): {
 	size?: number;
 } {
 	const bundle = path.join(repoRoot, "dist/frontend/index.html");
-	if (!fs.existsSync(bundle)) return { exists: false };
+	if (!fs.existsSync(bundle)) {
+		return { exists: false };
+	}
 	const stat = fs.statSync(bundle);
 	return { exists: true, mtimeMs: stat.mtimeMs, size: stat.size };
 }

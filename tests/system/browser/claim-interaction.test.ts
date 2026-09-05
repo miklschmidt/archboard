@@ -244,7 +244,9 @@ test(
 		});
 		expect(claimedWrite.status).toBe(200);
 		const streamedId = claimedWrite.body.elements?.[0]?.id ?? claimedWrite.body.element?.id;
-		if (!streamedId) throw new Error("The claimed agent write returned no element identity");
+		if (!streamedId) {
+			throw new Error("The claimed agent write returned no element identity");
+		}
 		await pollUntil(
 			() => pageElement(browser, streamedId),
 			(element) => element?.x === 820 && element.y === 60,

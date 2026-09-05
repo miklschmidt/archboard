@@ -48,18 +48,30 @@ function workflowRunCommands(workflow: string): { commands: string[]; error?: st
 			error: `the workflow is not valid YAML: ${error instanceof Error ? error.message : String(error)}`,
 		};
 	}
-	if (typeof document !== "object" || document === null) return { commands: [] };
+	if (typeof document !== "object" || document === null) {
+		return { commands: [] };
+	}
 	const jobs = (document as { jobs?: unknown }).jobs;
-	if (typeof jobs !== "object" || jobs === null) return { commands: [] };
+	if (typeof jobs !== "object" || jobs === null) {
+		return { commands: [] };
+	}
 	const commands: string[] = [];
 	for (const job of Object.values(jobs)) {
-		if (typeof job !== "object" || job === null) continue;
+		if (typeof job !== "object" || job === null) {
+			continue;
+		}
 		const steps = (job as { steps?: unknown }).steps;
-		if (!Array.isArray(steps)) continue;
+		if (!Array.isArray(steps)) {
+			continue;
+		}
 		for (const step of steps) {
-			if (typeof step !== "object" || step === null) continue;
+			if (typeof step !== "object" || step === null) {
+				continue;
+			}
 			const run = (step as { run?: unknown }).run;
-			if (typeof run === "string") commands.push(run);
+			if (typeof run === "string") {
+				commands.push(run);
+			}
 		}
 	}
 	return { commands };
@@ -75,7 +87,9 @@ function executableRunScripts(command: string, unique = true): string[] {
 
 export function inspectWorkflow(workflow: string): string[] {
 	const parsed = workflowRunCommands(workflow);
-	if (parsed.error) return [parsed.error];
+	if (parsed.error) {
+		return [parsed.error];
+	}
 	const parserErrors = parsed.commands.flatMap((command) =>
 		executableBunInvocations(command)
 			.filter((invocation) => invocation.error !== undefined)
@@ -84,7 +98,9 @@ export function inspectWorkflow(workflow: string): string[] {
 					`the workflow has an invalid executable Bun invocation: ${invocation.error}`,
 			),
 	);
-	if (parserErrors.length > 0) return parserErrors;
+	if (parserErrors.length > 0) {
+		return parserErrors;
+	}
 	const errors: string[] = [];
 	const canonicalCount = parsed.commands.filter((command) => command === "bun run check").length;
 	if (canonicalCount !== 1) {
@@ -133,8 +149,12 @@ function pushReachability(
 			return;
 		}
 		const command = scripts[name];
-		if (command === undefined) return;
-		for (const child of referencedScripts(command)) visit(child, [...stack, name]);
+		if (command === undefined) {
+			return;
+		}
+		for (const child of referencedScripts(command)) {
+			visit(child, [...stack, name]);
+		}
 	}
 
 	visit(root, []);
@@ -148,23 +168,31 @@ function isTestFile(file: string): boolean {
 function testSelections(command: string): Array<{ selectors: string[]; ignores: string[] }> {
 	const selections: Array<{ selectors: string[]; ignores: string[] }> = [];
 	for (const invocation of executableBunInvocations(command)) {
-		if (invocation.command !== "test" || invocation.error) continue;
+		if (invocation.command !== "test" || invocation.error) {
+			continue;
+		}
 		const selectors: string[] = [];
 		const ignores: string[] = [];
 		const tokens = invocation.args;
 		for (let index = 0; index < tokens.length; index += 1) {
 			const token = tokens[index] ?? "";
-			if (!token) continue;
+			if (!token) {
+				continue;
+			}
 			if (token === "--path-ignore-patterns") {
 				const ignored = tokens[++index];
-				if (ignored) ignores.push(normalize(ignored));
+				if (ignored) {
+					ignores.push(normalize(ignored));
+				}
 				continue;
 			}
 			if (token.startsWith("--path-ignore-patterns=")) {
 				ignores.push(normalize(token.slice("--path-ignore-patterns=".length)));
 				continue;
 			}
-			if (!token.startsWith("-")) selectors.push(normalize(token));
+			if (!token.startsWith("-")) {
+				selectors.push(normalize(token));
+			}
 		}
 		selections.push({ selectors, ignores });
 	}
@@ -173,7 +201,9 @@ function testSelections(command: string): Array<{ selectors: string[]; ignores: 
 
 function adapterFiles(command: string): { files: string[]; error?: string } {
 	const trimmed = command.trim();
-	if (!trimmed.startsWith(`bun ${BROWSER_ADAPTER_PATH}`)) return { files: [] };
+	if (!trimmed.startsWith(`bun ${BROWSER_ADAPTER_PATH}`)) {
+		return { files: [] };
+	}
 	try {
 		return { files: [...validateBrowserSelection(trimmed.split(/\s+/)).files] };
 	} catch (error) {
@@ -198,17 +228,24 @@ export function discoverNativeTests(repoRoot: string): string[] {
 	];
 	const tests: string[] = [];
 	for (const root of roots) {
-		if (!fs.existsSync(root)) continue;
+		if (!fs.existsSync(root)) {
+			continue;
+		}
 		const queue = [root];
 		while (queue.length > 0) {
 			const current = queue.pop();
-			if (!current) continue;
+			if (!current) {
+				continue;
+			}
 			for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
 				const absolute = path.join(current, entry.name);
-				if (entry.isDirectory()) queue.push(absolute);
-				else {
+				if (entry.isDirectory()) {
+					queue.push(absolute);
+				} else {
 					const relative = normalize(path.relative(repoRoot, absolute));
-					if (isTestFile(relative)) tests.push(relative);
+					if (isTestFile(relative)) {
+						tests.push(relative);
+					}
 				}
 			}
 		}
@@ -220,10 +257,11 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 	const parserErrors: string[] = [];
 	for (const [name, command] of Object.entries(input.scripts)) {
 		for (const invocation of executableBunInvocations(command)) {
-			if (invocation.error)
+			if (invocation.error) {
 				parserErrors.push(
 					`package script \`${name}\` has invalid executable Bun invocation: ${invocation.error}`,
 				);
+			}
 		}
 	}
 	if (parserErrors.length > 0) {
@@ -236,10 +274,13 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 	const errors: string[] = [];
 	const pushScript = input.pushScript ?? "check";
 	const reachability = pushReachability(input.scripts, pushScript);
-	for (const cycle of reachability.cycles) errors.push(`package script cycle: ${cycle}`);
+	for (const cycle of reachability.cycles) {
+		errors.push(`package script cycle: ${cycle}`);
+	}
 	for (const script of OPT_IN_PACKAGE_SCRIPTS) {
-		if ((reachability.counts.get(script) ?? 0) > 0)
+		if ((reachability.counts.get(script) ?? 0) > 0) {
 			errors.push(`opt-in package script \`${script}\` is reachable from \`${pushScript}\``);
+		}
 	}
 
 	for (const suiteName of Object.keys(input.scripts).filter((candidate) =>
@@ -253,16 +294,20 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 			);
 		}
 		const count = reachability.counts.get(suiteName) ?? 0;
-		if (normal && count === 0)
+		if (normal && count === 0) {
 			errors.push(`package test lane \`${suiteName}\` is absent from \`${pushScript}\``);
-		if (normal && count > 1)
+		}
+		if (normal && count > 1) {
 			errors.push(`package test lane \`${suiteName}\` is reached ${count} times`);
+		}
 	}
 
 	const scriptOwners = new Map<string, string[]>();
 	for (const [name, command] of Object.entries(input.scripts)) {
 		const adapter = adapterFiles(command);
-		if (adapter.error) errors.push(`browser adapter lane \`${name}\` is invalid: ${adapter.error}`);
+		if (adapter.error) {
+			errors.push(`browser adapter lane \`${name}\` is invalid: ${adapter.error}`);
+		}
 		const occurrences = [...adapter.files];
 		for (const selection of testSelections(command)) {
 			for (const selector of selection.selectors) {
@@ -270,12 +315,15 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 					if (
 						selected(file, selector) &&
 						!selection.ignores.some((ignored) => selected(file, ignored))
-					)
+					) {
 						occurrences.push(file);
+					}
 				}
 			}
 		}
-		if (occurrences.length > 0) scriptOwners.set(name, occurrences);
+		if (occurrences.length > 0) {
+			scriptOwners.set(name, occurrences);
+		}
 	}
 	const nativeLanes = new Map(
 		[...scriptOwners].filter(
@@ -290,7 +338,9 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 				occurrences: files.filter((owned) => owned === file).length,
 			}))
 			.filter((owner) => owner.occurrences > 0);
-		if (owners.length === 0) errors.push(`native test \`${file}\` belongs to no package lane`);
+		if (owners.length === 0) {
+			errors.push(`native test \`${file}\` belongs to no package lane`);
+		}
 		const optInOwners = owners.filter((owner) => OPT_IN_TEST_LANES.has(owner.name));
 		const normalOwners = owners.filter((owner) => NORMAL_TEST_LANES.has(owner.name));
 		if (optInOwners.length > 0 && normalOwners.length > 0) {

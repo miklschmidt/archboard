@@ -41,7 +41,9 @@ const sha256 = (bytes: Buffer): string => createHash("sha256").update(bytes).dig
 
 const versionInOwnedNote = (bytes: Buffer): number => {
 	const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(bytes.toString("utf8"));
-	if (!frontmatter) throw new Error("Owned board note has no literal frontmatter block.");
+	if (!frontmatter) {
+		throw new Error("Owned board note has no literal frontmatter block.");
+	}
 	const versions = frontmatter[1]!.match(/^version:\s*(\d+)\s*$/gm) ?? [];
 	if (versions.length !== 1) {
 		throw new Error(`Owned board note has ${versions.length} literal version fields.`);

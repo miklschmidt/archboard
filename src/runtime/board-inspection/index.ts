@@ -93,19 +93,22 @@ const snapshotIdentity = (record: SnapshotRecord | null, sourceIndex: number) =>
 });
 
 const snapshotEvidence = (record: SnapshotRecord | null) => {
-	if (!record || !finite(record.x) || !finite(record.y)) return null;
+	if (!record || !finite(record.x) || !finite(record.y)) {
+		return null;
+	}
 	if (
 		finite(record.width) &&
 		finite(record.height) &&
 		finite(record.x + Math.max(0, record.width)) &&
 		finite(record.y + Math.max(0, record.height))
-	)
+	) {
 		return box({
 			x: record.x,
 			y: record.y,
 			width: Math.max(0, record.width),
 			height: Math.max(0, record.height),
 		});
+	}
 	return box({ x: record.x, y: record.y, width: 0, height: 0 });
 };
 
@@ -190,8 +193,11 @@ function assembleReport(input: {
 	let warnings = 0;
 	for (const finding of input.findings) {
 		byCode[finding.code] = (byCode[finding.code] ?? 0) + 1;
-		if (finding.severity === "error") errors += 1;
-		else warnings += 1;
+		if (finding.severity === "error") {
+			errors += 1;
+		} else {
+			warnings += 1;
+		}
 	}
 	const coverageReasons = [
 		...new Set(
@@ -288,18 +294,23 @@ export function inspectBoard(
 	const candidates: ServerElement[] = [];
 	const sourceIndexOf = new Map<ServerElement, number>();
 	for (const [sourceIndex, record] of snapshot.records.entries()) {
-		if (!record || snapshot.blockedSourceIndexes.has(sourceIndex)) continue;
+		if (!record || snapshot.blockedSourceIndexes.has(sourceIndex)) {
+			continue;
+		}
 		const element = record as unknown as ServerElement;
 		candidates.push(element);
 		sourceIndexOf.set(element, sourceIndex);
 	}
 	const bridges = validateBridgeDecorations(candidates);
 	const decorationIndexes = new Set(snapshot.blockedSourceIndexes);
-	for (const pair of bridges.valid)
+	for (const pair of bridges.valid) {
 		for (const part of [pair.mask.element, pair.redraw.element]) {
 			const sourceIndex = sourceIndexOf.get(part);
-			if (sourceIndex !== undefined) decorationIndexes.add(sourceIndex);
+			if (sourceIndex !== undefined) {
+				decorationIndexes.add(sourceIndex);
+			}
 		}
+	}
 	const bridgeFindings = bridges.invalid.map((invalid) =>
 		bridgeInvalidFinding(invalid, sourceIndexOf),
 	);

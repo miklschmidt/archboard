@@ -136,6 +136,9 @@ export function recentDoing(board: string): DoingEntry[] {
  */
 export function forgetDoing(board?: string): void {
 	const { byBoard } = store();
-	if (board === undefined) byBoard.clear();
-	else byBoard.delete(normalizeBoardKey(board));
+	if (board === undefined) {
+		byBoard.clear();
+	} else {
+		byBoard.delete(normalizeBoardKey(board));
+	}
 }

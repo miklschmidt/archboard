@@ -6,7 +6,9 @@ import { expandElements } from "./expand-elements.js";
 // Excalidraw's concatBuffers: [4-byte version=1][4-byte len][chunk]...
 function concatBuffers(...bufs: Uint8Array[]): Uint8Array {
 	let total = 4; // version header
-	for (const b of bufs) total += 4 + b.length;
+	for (const b of bufs) {
+		total += 4 + b.length;
+	}
 	const out = new Uint8Array(total);
 	const dv = new DataView(out.buffer);
 	dv.setUint32(0, 1); // CONCAT_BUFFERS_VERSION = 1

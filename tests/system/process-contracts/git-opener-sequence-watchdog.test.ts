@@ -23,7 +23,9 @@ function groupExists(pgid: number): boolean {
 		process.kill(-pgid, 0);
 		return true;
 	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code === "ESRCH") return false;
+		if ((cause as NodeJS.ErrnoException).code === "ESRCH") {
+			return false;
+		}
 		throw cause;
 	}
 }
@@ -31,7 +33,9 @@ function groupExists(pgid: number): boolean {
 async function waitForGroupAbsence(pgid: number, timeoutMs: number): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
 	while (groupExists(pgid)) {
-		if (Date.now() >= deadline) throw new Error(`process group ${pgid} survived`);
+		if (Date.now() >= deadline) {
+			throw new Error(`process group ${pgid} survived`);
+		}
 		await Bun.sleep(GIT_PROCESS_GROUP_POLL_MS);
 	}
 }
@@ -46,7 +50,9 @@ async function within<T>(promise: Promise<T>, timeoutMs: number, message: string
 			}),
 		]);
 	} finally {
-		if (timer !== undefined) clearTimeout(timer);
+		if (timer !== undefined) {
+			clearTimeout(timer);
+		}
 	}
 }
 
@@ -58,7 +64,9 @@ async function cleanupOwnedChild(
 	try {
 		process.kill(-child.pid, "SIGKILL");
 	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") failures.push(cause);
+		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") {
+			failures.push(cause);
+		}
 	}
 	try {
 		child.kill("SIGKILL");
@@ -79,8 +87,9 @@ async function cleanupOwnedChild(
 	} catch (cause) {
 		failures.push(cause);
 	}
-	if (failures.length > 0)
+	if (failures.length > 0) {
 		throw new AggregateError(failures, `process group ${child.pid} cleanup failed`);
+	}
 }
 
 async function runOwnedDetached(
@@ -118,8 +127,9 @@ async function runOwnedDetached(
 			TEST_GIT_OPENER_WATCHDOG_MS,
 			`watchdog expired for process group ${child.pid}`,
 		);
-		if (groupExists(child.pid))
+		if (groupExists(child.pid)) {
 			throw new Error(`process group ${child.pid} survived normal completion`);
+		}
 	} catch (cause) {
 		failed = true;
 		primaryFailure = cause;
@@ -131,15 +141,18 @@ async function runOwnedDetached(
 		}
 	}
 	if (failed) {
-		if (cleanupFailure !== undefined)
+		if (cleanupFailure !== undefined) {
 			throw new AggregateError(
 				[primaryFailure, cleanupFailure],
 				`process group ${child.pid} failed after its primary error`,
 				{ cause: primaryFailure },
 			);
+		}
 		throw primaryFailure;
 	}
-	if (cleanupFailure !== undefined) throw cleanupFailure;
+	if (cleanupFailure !== undefined) {
+		throw cleanupFailure;
+	}
 	return result!;
 }
 
@@ -153,7 +166,9 @@ test(
 		const { out, err } = settled;
 		const output = `${out}\n${err}`;
 		expect(settled.exitCode, `stdout:\n${out}\nstderr:\n${err}`).toBe(0);
-		for (const owner of OWNERS) expect(output).toContain(owner);
+		for (const owner of OWNERS) {
+			expect(output).toContain(owner);
+		}
 	},
 	TEST_GIT_OPENER_CASE_TIMEOUT_MS,
 );

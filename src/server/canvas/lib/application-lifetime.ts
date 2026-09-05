@@ -57,16 +57,21 @@ export class CanvasApplicationBusyError extends Error {
  * a synchronous critical section remains counted until that section returns.
  */
 export function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) {
-	if (!Number.isFinite(options.drainTimeoutMs) || options.drainTimeoutMs < 0)
+	if (!Number.isFinite(options.drainTimeoutMs) || options.drainTimeoutMs < 0) {
 		throw new Error("Canvas mutation drain timeout must be a non-negative finite duration.");
+	}
 
 	let accepting = true;
 	let nextId = 0;
 	const active = new Map<number, CanvasActiveMutation>();
 	const drained = new Set<() => void>();
 	const settle = (): void => {
-		if (active.size !== 0) return;
-		for (const resolve of drained) resolve();
+		if (active.size !== 0) {
+			return;
+		}
+		for (const resolve of drained) {
+			resolve();
+		}
 		drained.clear();
 	};
 	const enter = (entry: CanvasActiveMutation): (() => void) => {
@@ -74,7 +79,9 @@ export function createCanvasMutationAdmission(options: CanvasMutationAdmissionOp
 		active.set(id, entry);
 		let finished = false;
 		return () => {
-			if (finished) return;
+			if (finished) {
+				return;
+			}
 			finished = true;
 			active.delete(id);
 			settle();
@@ -83,14 +90,17 @@ export function createCanvasMutationAdmission(options: CanvasMutationAdmissionOp
 
 	return Object.freeze({
 		admit: (name: string): CanvasMutationLease | null => {
-			if (!accepting) return null;
+			if (!accepting) {
+				return null;
+			}
 			const controller = new AbortController();
 			const finishRequest = enter({ name, kind: "request", startedAt: Date.now() });
 			return Object.freeze({
 				signal: controller.signal,
 				abort: (reason?: unknown): void => {
-					if (!controller.signal.aborted)
+					if (!controller.signal.aborted) {
 						controller.abort(reason ?? new Error(`${name} disconnected.`));
+					}
 					finishRequest();
 				},
 				finish: finishRequest,
@@ -110,7 +120,9 @@ export function createCanvasMutationAdmission(options: CanvasMutationAdmissionOp
 		},
 		quiesce: async (): Promise<void> => {
 			accepting = false;
-			if (active.size === 0) return;
+			if (active.size === 0) {
+				return;
+			}
 
 			let timeout: ReturnType<typeof setTimeout> | null = null;
 			let onDrain!: () => void;
@@ -123,9 +135,13 @@ export function createCanvasMutationAdmission(options: CanvasMutationAdmissionOp
 					timeout = setTimeout(() => resolve(false), options.drainTimeoutMs);
 				}),
 			]);
-			if (timeout !== null) clearTimeout(timeout);
+			if (timeout !== null) {
+				clearTimeout(timeout);
+			}
 			drained.delete(onDrain);
-			if (settled || active.size === 0) return;
+			if (settled || active.size === 0) {
+				return;
+			}
 			throw new CanvasApplicationBusyError(
 				options.drainTimeoutMs,
 				[...active.values()].toSorted((left, right) =>
@@ -215,11 +231,15 @@ const failure = (error: unknown): Error =>
  */
 export function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptions) {
 	for (const resource of options.resources) {
-		if (resource.stopGraceMs === undefined) continue;
-		if (!Number.isFinite(resource.stopGraceMs) || resource.stopGraceMs < 0)
+		if (resource.stopGraceMs === undefined) {
+			continue;
+		}
+		if (!Number.isFinite(resource.stopGraceMs) || resource.stopGraceMs < 0) {
 			throw new Error(`${resource.name} has an invalid stop grace.`);
-		if (resource.forceStop === undefined)
+		}
+		if (resource.forceStop === undefined) {
 			throw new Error(`${resource.name} has a stop grace but no forceStop action.`);
+		}
 	}
 
 	let phase: CanvasApplicationPhase = "idle";
@@ -267,14 +287,18 @@ export function createCanvasApplicationLifetime(options: CanvasApplicationLifeti
 					}),
 				]);
 			} finally {
-				if (timeout !== null) clearTimeout(timeout);
+				if (timeout !== null) {
+					clearTimeout(timeout);
+				}
 			}
 		} else {
 			await graceful;
 		}
 
 		if (!stopSettled || stopFailure !== null) {
-			if (resource.forceStop === undefined) throw stopFailure;
+			if (resource.forceStop === undefined) {
+				throw stopFailure;
+			}
 			emit("force", resource.name);
 			let forceFailure: Error | null = null;
 			try {
@@ -285,13 +309,17 @@ export function createCanvasApplicationLifetime(options: CanvasApplicationLifeti
 			// forceStop terminalizes the resource. The graceful owner still has to
 			// settle so no cleanup work is left running after this boundary.
 			await graceful;
-			if (forceFailure !== null) throw forceFailure;
+			if (forceFailure !== null) {
+				throw forceFailure;
+			}
 			emit("forced", resource.name);
 		}
 	};
 
 	const unwind = (reason: CanvasApplicationStopReason): Promise<void> => {
-		if (unwindPromise !== null) return unwindPromise;
+		if (unwindPromise !== null) {
+			return unwindPromise;
+		}
 		unwindPromise = (async () => {
 			const failures: Error[] = [];
 			for (const resource of entered.toReversed()) {
@@ -305,11 +333,12 @@ export function createCanvasApplicationLifetime(options: CanvasApplicationLifeti
 				}
 			}
 			entered.length = 0;
-			if (failures.length > 0)
+			if (failures.length > 0) {
 				throw new AggregateError(
 					failures,
 					`Canvas application cleanup failed: ${failures.map((item) => item.message).join(" ")}`,
 				);
+			}
 			cleanupProven = true;
 		})();
 		return unwindPromise;
@@ -332,21 +361,27 @@ export function createCanvasApplicationLifetime(options: CanvasApplicationLifeti
 		phase: (): CanvasApplicationPhase => phase,
 		cleanupProven: (): boolean => cleanupProven,
 		start: (): Promise<void> => {
-			if (startPromise !== null) return startPromise;
-			if (phase !== "idle")
+			if (startPromise !== null) {
+				return startPromise;
+			}
+			if (phase !== "idle") {
 				return Promise.reject(new Error(`Canvas application cannot start from ${phase}.`));
+			}
 			setPhase("starting");
 			startPromise = (async () => {
 				try {
 					for (const resource of options.resources) {
-						if (startup.signal.aborted)
+						if (startup.signal.aborted) {
 							throw new CanvasApplicationStartupCancelledError(
 								(startup.signal.reason as CanvasApplicationStopReason | undefined) ?? "test",
 							);
+						}
 						emit("start", resource.name);
 						entered.push(resource);
 						const starting = resource.start?.(startup.signal);
-						if (starting !== undefined) await starting;
+						if (starting !== undefined) {
+							await starting;
+						}
 						emit("started", resource.name);
 					}
 					setPhase("running");
@@ -373,14 +408,23 @@ export function createCanvasApplicationLifetime(options: CanvasApplicationLifeti
 			return startPromise;
 		},
 		stop: (reason: CanvasApplicationStopReason): Promise<void> => {
-			if (stopPromise !== null) return stopPromise;
-			if (phase === "stopped") return Promise.resolve();
-			if (phase === "starting") return stopStarting(reason);
-			if (phase !== "running")
+			if (stopPromise !== null) {
+				return stopPromise;
+			}
+			if (phase === "stopped") {
+				return Promise.resolve();
+			}
+			if (phase === "starting") {
+				return stopStarting(reason);
+			}
+			if (phase !== "running") {
 				return Promise.reject(new Error(`Canvas application cannot stop from ${phase}.`));
+			}
 
 			const preflight = holds();
-			if (preflight.length > 0) return Promise.reject(new CanvasApplicationHeldError(preflight));
+			if (preflight.length > 0) {
+				return Promise.reject(new CanvasApplicationHeldError(preflight));
+			}
 
 			let teardownStarted = false;
 			setPhase("quiescing");
@@ -388,7 +432,9 @@ export function createCanvasApplicationLifetime(options: CanvasApplicationLifeti
 				try {
 					await options.quiesce?.();
 					const authoritative = holds();
-					if (authoritative.length > 0) throw new CanvasApplicationHeldError(authoritative);
+					if (authoritative.length > 0) {
+						throw new CanvasApplicationHeldError(authoritative);
+					}
 					teardownStarted = true;
 					startup.abort(reason);
 					setPhase("stopping");

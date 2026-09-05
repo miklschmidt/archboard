@@ -78,8 +78,9 @@ function sha256(bytes: Uint8Array): string {
 }
 
 function decodeCanonicalBytes(bytes: Buffer, label: string): string {
-	if (bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])))
+	if (bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
 		throw new TypeError(`${label} must be UTF-8 without a BOM.`);
+	}
 
 	let text: string;
 	try {
@@ -87,11 +88,15 @@ function decodeCanonicalBytes(bytes: Buffer, label: string): string {
 	} catch (error) {
 		throw new TypeError(`${label} is not valid UTF-8.`, { cause: error });
 	}
-	if (text.includes("\r")) throw new TypeError(`${label} must use LF line endings.`);
-	if (!text.endsWith("\n") || text.endsWith("\n\n"))
+	if (text.includes("\r")) {
+		throw new TypeError(`${label} must use LF line endings.`);
+	}
+	if (!text.endsWith("\n") || text.endsWith("\n\n")) {
 		throw new TypeError(`${label} must end in exactly one terminal LF.`);
-	if (!Buffer.from(text, "utf8").equals(bytes))
+	}
+	if (!Buffer.from(text, "utf8").equals(bytes)) {
 		throw new TypeError(`${label} contains bytes that do not round-trip as UTF-8.`);
+	}
 	return text;
 }
 
@@ -106,8 +111,12 @@ function parseManifestText(text: string, label: string): CanonicalNamespace {
 }
 
 function deepFreeze<T>(value: T): T {
-	if (typeof value !== "object" || value === null || Object.isFrozen(value)) return value;
-	for (const child of Object.values(value as Record<string, unknown>)) deepFreeze(child);
+	if (typeof value !== "object" || value === null || Object.isFrozen(value)) {
+		return value;
+	}
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		deepFreeze(child);
+	}
 	Object.freeze(value);
 	return value;
 }
@@ -117,23 +126,31 @@ function expectedToolNames(namespace: NamespaceName): readonly string[] {
 }
 
 function assertManifestShape(manifest: CanonicalNamespace, expectedName: NamespaceName): void {
-	if (manifest.type !== "namespace") throw new TypeError(`${expectedName} must be a namespace.`);
-	if (manifest.name !== expectedName)
+	if (manifest.type !== "namespace") {
+		throw new TypeError(`${expectedName} must be a namespace.`);
+	}
+	if (manifest.name !== expectedName) {
 		throw new TypeError(`Expected ${expectedName}, received ${manifest.name}.`);
+	}
 	const expectedNames = expectedToolNames(expectedName);
-	if (manifest.tools.length !== expectedNames.length)
+	if (manifest.tools.length !== expectedNames.length) {
 		throw new TypeError(
 			`${expectedName} must contain exactly ${expectedNames.length} tools; received ${manifest.tools.length}.`,
 		);
+	}
 	for (const [index, tool] of manifest.tools.entries()) {
 		const expectedToolName = expectedNames[index];
-		if (tool.name !== expectedToolName)
+		if (tool.name !== expectedToolName) {
 			throw new TypeError(
 				`${expectedName} tool ${index} must be ${expectedToolName ?? "<missing>"}; received ${tool.name}.`,
 			);
-		if (tool.deferLoading) throw new TypeError(`${expectedName}.${tool.name} must remain eager.`);
-		if (tool.inputSchema["additionalProperties"] !== false)
+		}
+		if (tool.deferLoading) {
+			throw new TypeError(`${expectedName}.${tool.name} must remain eager.`);
+		}
+		if (tool.inputSchema["additionalProperties"] !== false) {
 			throw new TypeError(`${expectedName}.${tool.name} must use a closed input schema.`);
+		}
 	}
 }
 
@@ -149,10 +166,11 @@ function loadManifest(namespace: NamespaceName): LoadedManifest {
 	const text = decodeCanonicalBytes(bytes, label);
 	const actualSha256 = sha256(bytes);
 	const expectedSha256 = MANIFEST_DIGESTS[namespace];
-	if (actualSha256 !== expectedSha256)
+	if (actualSha256 !== expectedSha256) {
 		throw new TypeError(
 			`${label} hash drifted. Expected SHA-256 ${expectedSha256}, received ${actualSha256}. Human re-review is required before updating this digest.`,
 		);
+	}
 	const manifest = parseManifestText(text, label);
 	assertManifestShape(manifest, namespace);
 	return { text, manifest: deepFreeze(manifest), sha256: actualSha256 };
@@ -193,10 +211,11 @@ function parseCandidate(
 	const bytes =
 		typeof candidate === "string" ? Buffer.from(candidate, "utf8") : Buffer.from(candidate);
 	const actualSha256 = sha256(bytes);
-	if (actualSha256 !== expectedDigest(namespace))
+	if (actualSha256 !== expectedDigest(namespace)) {
 		throw new TypeError(
 			`${namespace} manifest hash drifted. Expected SHA-256 ${expectedDigest(namespace)}, received ${actualSha256}.`,
 		);
+	}
 	const text = decodeCanonicalBytes(bytes, `${namespace} manifest`);
 	const manifest = parseManifestText(text, `${namespace} manifest`);
 	assertManifestShape(manifest, namespace);
@@ -211,8 +230,9 @@ export function assertCanonicalManifest(namespace: NamespaceName, candidate: unk
 			? parseCandidate(namespace, candidate)
 			: (CanonicalNamespaceSchema.parse(candidate) as CanonicalNamespace);
 	assertManifestShape(received, namespace);
-	if (JSON.stringify(received) !== JSON.stringify(expected))
+	if (JSON.stringify(received) !== JSON.stringify(expected)) {
 		throw new TypeError(`${namespace} manifest does not match the reviewed snapshot.`);
+	}
 }
 
 /** Re-read both canonical files and verify their fixed reviewed digests. */
@@ -227,6 +247,8 @@ export function canonicalTool(
 	toolName: CoordinatorToolName,
 ): CanonicalTool {
 	const tool = manifestFor(namespace).tools.find((candidate) => candidate.name === toolName);
-	if (!tool) throw new TypeError(`${namespace} does not declare ${toolName}.`);
+	if (!tool) {
+		throw new TypeError(`${namespace} does not declare ${toolName}.`);
+	}
 	return tool;
 }

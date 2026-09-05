@@ -37,7 +37,9 @@ export function createCanvasCodexWorkbenchApplication(
 
 	const shutdown = (): Promise<void> => {
 		shutdownRequested = true;
-		if (shutdownPromise !== null) return shutdownPromise;
+		if (shutdownPromise !== null) {
+			return shutdownPromise;
+		}
 		const preparing = preparePromise;
 		const stoppingOwner = owner;
 		let stopped = false;
@@ -61,17 +63,22 @@ export function createCanvasCodexWorkbenchApplication(
 		shutdownPromise = operation.finally(() => {
 			// A failed verified stop keeps its owner reachable so a force/retry
 			// call can finish reaping it. Successful shutdown stays idempotent.
-			if (!stopped) shutdownPromise = null;
+			if (!stopped) {
+				shutdownPromise = null;
+			}
 		});
 		return shutdownPromise;
 	};
 
 	const prepare = (): Promise<CodexWorkbenchSnapshot> => {
-		if (preparePromise !== null) return preparePromise;
-		if (installed || owner !== null)
+		if (preparePromise !== null) {
+			return preparePromise;
+		}
+		if (installed || owner !== null) {
 			return Promise.reject(
 				new Error("The Codex workbench is already installed; stop it before preparing again."),
 			);
+		}
 		shutdownRequested = false;
 		shutdownPromise = null;
 		preparePromise = (async () => {
@@ -94,13 +101,16 @@ export function createCanvasCodexWorkbenchApplication(
 					}
 					// A failed terminal cleanup keeps its owner reachable for the
 					// stage's force pass; a clean one releases it for a later retry.
-					if (cleanupFailure !== null)
+					if (cleanupFailure !== null) {
 						throw new AggregateError(
 							[error, cleanupFailure],
 							"Codex workbench startup and terminal cleanup both failed.",
 							{ cause: error },
 						);
-					if (!shutdownRequested) owner = null;
+					}
+					if (!shutdownRequested) {
+						owner = null;
+					}
 				}
 				throw error;
 			} finally {

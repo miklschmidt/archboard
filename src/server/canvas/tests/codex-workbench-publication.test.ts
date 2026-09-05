@@ -78,8 +78,9 @@ describe("canvas Codex publication boundary", () => {
 				{ type: "codex_workbench_request", requestId: "failed", action: "snapshot" },
 				{
 					send: (message) => {
-						if ((message as { ok?: unknown }).ok === true)
+						if ((message as { ok?: unknown }).ok === true) {
 							return rejectedSend(new Error("asynchronous socket send failed"));
+						}
 						messages.push(message);
 						return Promise.resolve();
 					},
@@ -136,8 +137,9 @@ describe("canvas Codex publication boundary", () => {
 					(message as { type?: unknown }).type === "codex_workbench_result" &&
 					(message as { action?: unknown }).action === "mediaReady" &&
 					(message as { ok?: unknown }).ok === true
-				)
+				) {
 					return rejectedSend(new Error("media result send failed"));
+				}
 				messages.push(message);
 				return Promise.resolve();
 			},
@@ -203,7 +205,9 @@ describe("canvas Codex publication boundary", () => {
 			refreshProjection: async () => undefined,
 			confirmPublished: (payload: unknown) => {
 				confirmed.push(payload);
-				if (payload === recovered.snapshot) terminalPending = false;
+				if (payload === recovered.snapshot) {
+					terminalPending = false;
+				}
 			},
 			subscribe: (next: (message: BrowserGatewayMessage) => void) => {
 				listeners.add(next);
@@ -231,7 +235,9 @@ describe("canvas Codex publication boundary", () => {
 			);
 			confirmed.length = 0;
 			terminalPending = true;
-			for (const next of listeners) next(event);
+			for (const next of listeners) {
+				next(event);
+			}
 
 			let drainFailure: unknown = null;
 			try {
@@ -305,10 +311,13 @@ describe("canvas Codex publication boundary", () => {
 		let eventSend = 0;
 		const transport = {
 			send: (message: unknown) => {
-				if ((message as { type?: unknown }).type !== "codex_workbench_event")
+				if ((message as { type?: unknown }).type !== "codex_workbench_event") {
 					return Promise.resolve();
+				}
 				const error = eventFailures[eventSend++];
-				if (error === undefined) throw new Error("unexpected event send");
+				if (error === undefined) {
+					throw new Error("unexpected event send");
+				}
 				return rejectedSend(error);
 			},
 		};
@@ -319,7 +328,11 @@ describe("canvas Codex publication boundary", () => {
 				{ type: "codex_workbench_request", requestId: "subscribe", action: "subscribe" },
 				transport,
 			);
-			for (const event of [firstEvent, laterEvent]) for (const next of listeners) next(event);
+			for (const event of [firstEvent, laterEvent]) {
+				for (const next of listeners) {
+					next(event);
+				}
+			}
 			void owner.close(instance, browserId);
 
 			let drainFailure: unknown = null;

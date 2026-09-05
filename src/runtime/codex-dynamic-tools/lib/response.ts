@@ -9,12 +9,16 @@ const OUTCOME_UNKNOWN_MESSAGE =
 	"The request may have taken effect. Inspect authoritative state before another mutation." as const;
 
 function truncateUtf8(value: string, maximum: number): string {
-	if (Buffer.byteLength(value, "utf8") <= maximum) return value;
+	if (Buffer.byteLength(value, "utf8") <= maximum) {
+		return value;
+	}
 	const ellipsis = "…";
 	const budget = maximum - Buffer.byteLength(ellipsis, "utf8");
 	let result = "";
 	for (const character of value) {
-		if (Buffer.byteLength(result + character, "utf8") > budget) break;
+		if (Buffer.byteLength(result + character, "utf8") > budget) {
+			break;
+		}
 		result += character;
 	}
 	return `${result}${ellipsis}`;
@@ -31,12 +35,14 @@ export function dynamicResponse(
 	success = true,
 ): DynamicToolCallResponse {
 	const text = JSON.stringify(envelope);
-	if (text === undefined)
+	if (text === undefined) {
 		throw new TypeError("The dynamic response envelope could not be encoded.");
+	}
 	const parsed = parseToolResultEnvelope(name, text);
 	const canonicalText = JSON.stringify(parsed);
-	if (canonicalText === undefined)
+	if (canonicalText === undefined) {
 		throw new TypeError("The dynamic response could not be encoded.");
+	}
 	const response: DynamicToolCallResponse = {
 		contentItems: [{ type: "inputText", text: canonicalText }],
 		success,

@@ -6,7 +6,9 @@ import { createGatewayHarness, commandTarget, type GatewayHarness } from "./supp
 const openHarnesses: GatewayHarness[] = [];
 
 afterEach(async () => {
-	for (const openHarness of openHarnesses.splice(0)) await openHarness.gateway.dispose();
+	for (const openHarness of openHarnesses.splice(0)) {
+		await openHarness.gateway.dispose();
+	}
 });
 
 function harness(): GatewayHarness {
@@ -93,8 +95,9 @@ describe("Codex workbench browser gateway readiness", () => {
 				"private-gateway-nickname",
 				"private-gateway-role",
 				"private-gateway-custom",
-			])
+			]) {
 				expect(JSON.stringify(projected)).not.toContain(privateDetail);
+			}
 		}
 	});
 
@@ -353,7 +356,7 @@ describe("Codex workbench browser command routing", () => {
 	for (const terminal of [
 		{ name: "expiry", state: "expired", reason: "The approval expired." },
 		{ name: "child exit", state: "stale", reason: "The Codex child exited." },
-	] as const)
+	] as const) {
 		test(`publishes a spontaneous ${terminal.name} terminal exactly once`, () => {
 			const value = harness();
 			const connection = value.gateway.connect(value.browserId, value.paneId);
@@ -372,6 +375,7 @@ describe("Codex workbench browser command routing", () => {
 			expect(JSON.stringify(messages[0])).toContain(`"state":"${terminal.state}"`);
 			expect(connection.snapshot().snapshot.approvals).toEqual([]);
 		});
+	}
 
 	test("retires a spontaneous terminal immediately when no browser can receive it", () => {
 		const value = harness();

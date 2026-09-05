@@ -27,25 +27,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function fieldType(value: unknown): "string" | "number" | "integer" | "boolean" | "enum" | null {
-	if (!isRecord(value)) return null;
-	if (Array.isArray(value["enum"]) && value["enum"].every((entry) => typeof entry === "string"))
+	if (!isRecord(value)) {
+		return null;
+	}
+	if (Array.isArray(value["enum"]) && value["enum"].every((entry) => typeof entry === "string")) {
 		return "enum";
+	}
 	if (
 		Array.isArray(value["oneOf"]) &&
 		value["oneOf"].every((entry) => isRecord(entry) && typeof entry["const"] === "string")
-	)
+	) {
 		return "enum";
+	}
 	if (value["type"] === "array" && isRecord(value["items"])) {
 		if (
 			Array.isArray(value["items"]["enum"]) &&
 			value["items"]["enum"].every((entry) => typeof entry === "string")
-		)
+		) {
 			return "enum";
+		}
 		if (
 			Array.isArray(value["items"]["anyOf"]) &&
-			value["items"]["anyOf"].every((entry) => isRecord(entry) && typeof entry["const"] === "string")
-		)
+			value["items"]["anyOf"].every(
+				(entry) => isRecord(entry) && typeof entry["const"] === "string",
+			)
+		) {
 			return "enum";
+		}
 	}
 	return value["type"] === "string" ||
 		value["type"] === "number" ||
@@ -64,38 +72,49 @@ function numberValue(value: unknown): number | null {
 }
 
 function enumOptions(definition: Record<string, unknown>): readonly string[] | null {
-	if (Array.isArray(definition["enum"]) && definition["enum"].every((entry) => typeof entry === "string"))
+	if (
+		Array.isArray(definition["enum"]) &&
+		definition["enum"].every((entry) => typeof entry === "string")
+	) {
 		return definition["enum"];
-	if (Array.isArray(definition["oneOf"]))
+	}
+	if (Array.isArray(definition["oneOf"])) {
 		return definition["oneOf"].flatMap((entry) =>
 			isRecord(entry) && typeof entry["const"] === "string" ? [entry["const"]] : [],
 		);
+	}
 	if (definition["type"] === "array" && isRecord(definition["items"])) {
 		if (
 			Array.isArray(definition["items"]["enum"]) &&
 			definition["items"]["enum"].every((entry) => typeof entry === "string")
-		)
+		) {
 			return definition["items"]["enum"];
-		if (Array.isArray(definition["items"]["anyOf"]))
+		}
+		if (Array.isArray(definition["items"]["anyOf"])) {
 			return definition["items"]["anyOf"].flatMap((entry) =>
 				isRecord(entry) && typeof entry["const"] === "string" ? [entry["const"]] : [],
 			);
+		}
 	}
 	return null;
 }
 
 function formFields(schema: unknown): BrowserElicitationField[] | null {
-	if (!isRecord(schema) || !isRecord(schema["properties"])) return null;
+	if (!isRecord(schema) || !isRecord(schema["properties"])) {
+		return null;
+	}
 	const required = new Set(
-		Array.isArray(schema["required"]) && schema["required"].every((entry) => typeof entry === "string")
+		Array.isArray(schema["required"]) &&
+			schema["required"].every((entry) => typeof entry === "string")
 			? schema["required"]
 			: [],
 	);
 	const fields: BrowserElicitationField[] = [];
 	for (const [name, definition] of Object.entries(schema["properties"])) {
 		const type = fieldType(definition);
-		if (type === null || !isRecord(definition) || name.length === 0 || name.includes("\0"))
+		if (type === null || !isRecord(definition) || name.length === 0 || name.includes("\0")) {
 			return null;
+		}
 		const secret = definition["secret"] === true;
 		const format =
 			definition["format"] === "email" ||
@@ -105,7 +124,9 @@ function formFields(schema: unknown): BrowserElicitationField[] | null {
 				? definition["format"]
 				: null;
 		const defaultValue = JsonValueSchema.safeParse(definition["default"] ?? null);
-		if (!defaultValue.success) return null;
+		if (!defaultValue.success) {
+			return null;
+		}
 		fields.push({
 			name,
 			type,
@@ -129,8 +150,9 @@ function formFields(schema: unknown): BrowserElicitationField[] | null {
 
 function safeUrl(value: string): string {
 	const parsed = new URL(value);
-	if (parsed.protocol !== "http:" && parsed.protocol !== "https:")
+	if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
 		throw new Error("The approval URL is not safe for browser presentation.");
+	}
 	return value;
 }
 
@@ -142,13 +164,16 @@ function effectiveCommandDecisions(request: OwnerCommandRequest): readonly Comma
 }
 
 function projectCommandDecision(decision: CommandDecision): BrowserCommandDecision {
-	if (typeof decision === "string") return decision;
-	if ("acceptWithExecpolicyAmendment" in decision)
+	if (typeof decision === "string") {
+		return decision;
+	}
+	if ("acceptWithExecpolicyAmendment" in decision) {
 		return {
 			acceptWithExecpolicyAmendment: {
 				execpolicy_amendment: [...decision.acceptWithExecpolicyAmendment.execpolicy_amendment],
 			},
 		};
+	}
 	return {
 		applyNetworkPolicyAmendment: {
 			network_policy_amendment: {
@@ -160,11 +185,19 @@ function projectCommandDecision(decision: CommandDecision): BrowserCommandDecisi
 }
 
 function fileSystemAccesses(value: PermissionFileSystem): readonly CodexFileAccess[] {
-	if (value === null) return [];
+	if (value === null) {
+		return [];
+	}
 	const requested = new Set<CodexFileAccess>();
-	if (value.read !== null) requested.add(BROWSER_FILE_ACCESS_BY_CODEX_ACCESS.read);
-	if (value.write !== null) requested.add(BROWSER_FILE_ACCESS_BY_CODEX_ACCESS.write);
-	for (const entry of value.entries ?? []) requested.add(entry.access);
+	if (value.read !== null) {
+		requested.add(BROWSER_FILE_ACCESS_BY_CODEX_ACCESS.read);
+	}
+	if (value.write !== null) {
+		requested.add(BROWSER_FILE_ACCESS_BY_CODEX_ACCESS.write);
+	}
+	for (const entry of value.entries ?? []) {
+		requested.add(entry.access);
+	}
 	return Object.values(BROWSER_FILE_ACCESS_BY_CODEX_ACCESS).filter((access) =>
 		requested.has(access),
 	);
@@ -172,22 +205,25 @@ function fileSystemAccesses(value: PermissionFileSystem): readonly CodexFileAcce
 
 function projectLifecycle(view: ApprovalOwnerView): BrowserApproval["lifecycle"] {
 	const { state, decision, outcome, reason } = view.snapshot;
-	if (state === "staged" || state === "pending")
+	if (state === "staged" || state === "pending") {
 		return { state, decision: null, outcome: null, reason: null };
-	if (state === "outcome_unknown")
+	}
+	if (state === "outcome_unknown") {
 		return {
 			state,
 			decision: decision ?? "cancelled",
 			outcome: state,
 			reason: reason ?? "The approval outcome is unknown.",
 		};
-	if (state === "settled")
+	}
+	if (state === "settled") {
 		return {
 			state,
 			decision: decision ?? "cancelled",
 			outcome: outcome === "outcome_unknown" ? null : outcome,
 			reason: reason ?? "The approval settled.",
 		};
+	}
 	return {
 		state,
 		decision: "cancelled",

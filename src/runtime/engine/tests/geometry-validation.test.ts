@@ -31,7 +31,9 @@ test("refuses every malformed live render field without mutating caller state", 
 			] satisfies Array<RenderGeometryElement & Record<string, unknown>>;
 			validateRenderGeometry(malformed);
 		} catch (caught) {
-			if (caught instanceof Error) error = caught;
+			if (caught instanceof Error) {
+				error = caught;
+			}
 		}
 		assert(error instanceof Error, "missing and non-finite render geometry should be refused");
 		assert(
@@ -80,7 +82,9 @@ test("refuses every malformed live render field without mutating caller state", 
 				],
 			});
 		} catch (caught) {
-			if (caught instanceof Error) publicError = caught;
+			if (caught instanceof Error) {
+				publicError = caught;
+			}
 		}
 		assert(
 			publicError?.message.includes(

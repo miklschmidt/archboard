@@ -19,7 +19,9 @@ import {
 const openHarnesses: GatewayHarness[] = [];
 
 afterEach(async () => {
-	for (const openHarness of openHarnesses.splice(0)) await openHarness.gateway.dispose();
+	for (const openHarness of openHarnesses.splice(0)) {
+		await openHarness.gateway.dispose();
+	}
 });
 
 function harness(): GatewayHarness {
@@ -57,7 +59,9 @@ describe("Codex workbench browser command owners", () => {
 			(lease) => realtimeCommand(value, lease, "realtimeAppendText"),
 			(lease) => realtimeCommand(value, lease, "realtimeStop"),
 		];
-		for (const factory of factories) await deliver(connection, factory);
+		for (const factory of factories) {
+			await deliver(connection, factory);
+		}
 		expect(value.calls).toEqual([
 			"threadLink.create",
 			"threadLink.refresh",

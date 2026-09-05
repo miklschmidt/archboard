@@ -138,8 +138,9 @@ function projectedQueue(
 		identity.decoder,
 		projectionInput(queue, status, approvals),
 	);
-	if (result.tag !== "projected")
+	if (result.tag !== "projected") {
 		throw new Error(`queue projection was refused: ${result.message}`);
+	}
 	return result.snapshot.queue;
 }
 
@@ -157,8 +158,9 @@ describe("workhorse queue projection", () => {
 	});
 
 	test("an empty queue reads as empty whatever the workhorse is doing", () => {
-		for (const status of ["idle", "active"] as const)
+		for (const status of ["idle", "active"] as const) {
 			expect(projectedQueue(submissions([]), status).status).toBe("empty");
+		}
 	});
 
 	test("carries the Archboard operation that queued each entry, and null for foreign ones", () => {

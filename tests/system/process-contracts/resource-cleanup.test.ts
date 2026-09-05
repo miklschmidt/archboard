@@ -231,7 +231,9 @@ test("static probes roll back earlier exclusive creates after a later collision"
 		try {
 			plantStaticProbes(root, {
 				beforeCreate(path, index) {
-					if (index === 1) writeFileSync(path, "foreign bytes", { flag: "wx" });
+					if (index === 1) {
+						writeFileSync(path, "foreign bytes", { flag: "wx" });
+					}
 				},
 			});
 		} catch (error) {

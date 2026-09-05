@@ -8,17 +8,20 @@ export function queueStartTarget(
 	submissionId: QueuedSubmissionId,
 ): SessionQueuedSubmission {
 	const target = queueMutationTarget(queue, submissionId, "start");
-	if (typeof target.clientUserMessageId !== "string" || target.clientUserMessageId.length === 0)
+	if (typeof target.clientUserMessageId !== "string" || target.clientUserMessageId.length === 0) {
 		throw new CodexWorkhorseQueueError(
 			"invalid_result",
 			"Queue start requires the target's exact client user message identity.",
 			{ operation: "start" },
 		);
+	}
 	return target;
 }
 
 export function queueStartClientUserMessageId(value: string | null): string {
-	if (value !== null) return value;
+	if (value !== null) {
+		return value;
+	}
 	throw new CodexWorkhorseQueueError(
 		"invalid_result",
 		"Queue start lost its validated target identity.",

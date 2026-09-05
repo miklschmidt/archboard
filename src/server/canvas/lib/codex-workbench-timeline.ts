@@ -121,7 +121,9 @@ function boundedText(
 	let sawVisible = false;
 	let truncated = false;
 	for (const character of value) {
-		if (character === "\0") continue;
+		if (character === "\0") {
+			continue;
+		}
 		sawVisible = true;
 		const characterBytes = textEncoder.encode(character).byteLength;
 		if (bytes + characterBytes > maximum) {
@@ -131,14 +133,18 @@ function boundedText(
 		characters.push({ value: character, bytes: characterBytes });
 		bytes += characterBytes;
 	}
-	if (!sawVisible) return { value: fallback, truncated: false };
-	if (!truncated)
+	if (!sawVisible) {
+		return { value: fallback, truncated: false };
+	}
+	if (!truncated) {
 		return {
 			value: characters.map(({ value: character }) => character).join(""),
 			truncated: false,
 		};
-	while (characters.length > 0 && bytes + suffixBytes > maximum)
+	}
+	while (characters.length > 0 && bytes + suffixBytes > maximum) {
 		bytes -= characters.pop()?.bytes ?? 0;
+	}
 	return {
 		value: `${characters.map(({ value: character }) => character).join("")}${suffix}`,
 		truncated: true,
@@ -157,7 +163,9 @@ function userText(item: SessionThreadItem): {
 	readonly value: string | null;
 	readonly truncated: boolean;
 } {
-	if (item.type !== "userMessage") return { value: null, truncated: false };
+	if (item.type !== "userMessage") {
+		return { value: null, truncated: false };
+	}
 	const scanTruncated = item.content.length > TIMELINE_REASONING_PART_LIMIT;
 	for (
 		let index = 0;
@@ -165,11 +173,17 @@ function userText(item: SessionThreadItem): {
 		index += 1
 	) {
 		const content = item.content[index];
-		if (content === undefined) continue;
-		if (content.type !== "text") continue;
+		if (content === undefined) {
+			continue;
+		}
+		if (content.type !== "text") {
+			continue;
+		}
 		const bounded = boundedText(content.text, TIMELINE_SUMMARY_LIMIT, "");
 		const text = normalizedText(bounded.value);
-		if (text.length > 0) return { value: text, truncated: scanTruncated || bounded.truncated };
+		if (text.length > 0) {
+			return { value: text, truncated: scanTruncated || bounded.truncated };
+		}
 	}
 	return {
 		value: item.content.length === 0 ? null : "[media]",
@@ -178,7 +192,9 @@ function userText(item: SessionThreadItem): {
 }
 
 function assistantText(item: SessionThreadItem): string | null {
-	if (item.type !== "agentMessage") return null;
+	if (item.type !== "agentMessage") {
+		return null;
+	}
 	const text = boundedNormalizedText(item.text, TIMELINE_SUMMARY_LIMIT);
 	return text.length === 0 ? null : text;
 }
@@ -192,9 +208,13 @@ function reasoningText(item: Extract<SessionThreadItem, { readonly type: "reason
 	let truncated = values.length > TIMELINE_REASONING_PART_LIMIT;
 	for (let index = 0; index < Math.min(values.length, TIMELINE_REASONING_PART_LIMIT); index += 1) {
 		const value = values[index];
-		if (value === undefined) continue;
+		if (value === undefined) {
+			continue;
+		}
 		const part = boundedNormalizedText(value, TIMELINE_TEXT_LIMIT);
-		if (part.length > 0) parts.push(part);
+		if (part.length > 0) {
+			parts.push(part);
+		}
 	}
 	const bounded = boundedText(parts.join("\n"), TIMELINE_TEXT_LIMIT, "Reasoning");
 	return { value: bounded.value, truncated: truncated || bounded.truncated };
@@ -295,8 +315,9 @@ function approvalFor(
 		view.snapshot.turnId !== turnId ||
 		view.snapshot.itemId !== itemId ||
 		approvalId === null
-	)
+	) {
 		return null;
+	}
 	return {
 		kind: "approval_request",
 		identity: { kind: "item", threadId, turnId, itemId, approvalId },
@@ -312,19 +333,25 @@ function projectTurnData(turn: SessionTurn, maxItems: number): TimelineTurnData 
 	const itemCount = Math.min(turn.items.length, maxItems);
 	for (let index = 0; index < itemCount; index += 1) {
 		const source = turn.items[index];
-		if (source === undefined) continue;
+		if (source === undefined) {
+			continue;
+		}
 		if (user === null) {
 			const projectedUser = userText(source);
 			user = projectedUser.value;
 			truncated ||= projectedUser.truncated;
 		}
 		const nextAssistant = assistantText(source);
-		if (nextAssistant !== null) assistant = nextAssistant;
+		if (nextAssistant !== null) {
+			assistant = nextAssistant;
+		}
 		const projected = projectItem(source);
 		truncated ||= projected.truncated;
 		items.push({ itemId: source.id, item: projected.item });
 	}
-	if (turn.items.length > itemCount) truncated = true;
+	if (turn.items.length > itemCount) {
+		truncated = true;
+	}
 	const summary = boundedText(
 		`${turn.status} · user: ${user ?? "none"} · assistant: ${assistant ?? "none"}`,
 		TIMELINE_SUMMARY_LIMIT,
@@ -357,19 +384,29 @@ function projectTurn(
 		items.push(item);
 	};
 	for (const source of turn.items) {
-		if (source.item !== null) append(source.item);
+		if (source.item !== null) {
+			append(source.item);
+		}
 		for (const [index, approval] of approvals.entries()) {
-			if (matchedApprovals.has(index)) continue;
+			if (matchedApprovals.has(index)) {
+				continue;
+			}
 			const projected = approvalFor(approval, threadId, turn.turn.id, source.itemId);
-			if (projected === null) continue;
+			if (projected === null) {
+				continue;
+			}
 			matchedApprovals.add(index);
 			append(projected);
 		}
 	}
 	for (const [index, approval] of approvals.entries()) {
-		if (matchedApprovals.has(index) || approval.snapshot.itemId === null) continue;
+		if (matchedApprovals.has(index) || approval.snapshot.itemId === null) {
+			continue;
+		}
 		const projected = approvalFor(approval, threadId, turn.turn.id, approval.snapshot.itemId);
-		if (projected === null) continue;
+		if (projected === null) {
+			continue;
+		}
 		matchedApprovals.add(index);
 		append(projected);
 	}
@@ -393,7 +430,9 @@ function timelineBytes(
 }
 
 function markTruncated(turn: CodexTimelineTurnProjectionInput): CodexTimelineTurnProjectionInput {
-	if (turn.presentation.outputs.truncated) return turn;
+	if (turn.presentation.outputs.truncated) {
+		return turn;
+	}
 	return {
 		...turn,
 		presentation: {
@@ -414,8 +453,9 @@ function fitTurn(
 	while (
 		timelineBytes(threadId, turns.concat(fitted), cursor) > maxBytes &&
 		fitted.items.length > 0
-	)
+	) {
 		fitted = Object.assign({}, fitted, { items: fitted.items.slice(0, -1) });
+	}
 	return timelineBytes(threadId, turns.concat(fitted), cursor) <= maxBytes ? fitted : null;
 }
 
@@ -444,7 +484,9 @@ function projectData(
 			break;
 		}
 		const source = data.turns[index];
-		if (source === undefined) continue;
+		if (source === undefined) {
+			continue;
+		}
 		const candidate = projectTurn(data.threadId, source, approvals, budget.maxItemsPerTurn);
 		if (
 			timelineBytes(data.threadId, newestFirst.concat(candidate), data.cursor) <= budget.maxBytes
@@ -453,7 +495,9 @@ function projectData(
 			continue;
 		}
 		const fitted = fitTurn(data.threadId, newestFirst, candidate, data.cursor, budget.maxBytes);
-		if (fitted !== null) newestFirst.push(fitted);
+		if (fitted !== null) {
+			newestFirst.push(fitted);
+		}
 		truncated = true;
 		break;
 	}
@@ -467,7 +511,9 @@ function projectData(
 				continue;
 			}
 			turns.shift();
-			if (turns.length > 0) turns[0] = markTruncated(turns[0]!);
+			if (turns.length > 0) {
+				turns[0] = markTruncated(turns[0]!);
+			}
 		}
 	}
 	return { kind: "codex_timeline", threadId: data.threadId, turns, cursor: data.cursor };
@@ -495,14 +541,17 @@ function bindingKey(
 
 function eventThreadId(event: TransportServerNotification): string | null {
 	const params = event.notification.params;
-	if (isRecord(params) && typeof params.threadId === "string") return params.threadId;
+	if (isRecord(params) && typeof params.threadId === "string") {
+		return params.threadId;
+	}
 	if (
 		event.notification.method === "thread/started" &&
 		isRecord(params) &&
 		isRecord(params.thread) &&
 		typeof params.thread["id"] === "string"
-	)
+	) {
 		return params.thread["id"];
+	}
 	return null;
 }
 
@@ -559,19 +608,28 @@ async function readTurnPages(
 		});
 		const nextCursor = boundedCursor(page.nextCursor);
 		for (const turn of page.data) {
-			if (newestFirst.length >= budget.maxTurns) return settled(true);
+			if (newestFirst.length >= budget.maxTurns) {
+				return settled(true);
+			}
 			const projected = projectTurnData(turn, budget.maxItemsPerTurn);
 			const projectedBytes = textEncoder.encode(JSON.stringify(projected)).byteLength;
 			const nextBytes = retainedBytes + projectedBytes + (newestFirst.length === 0 ? 0 : 1);
-			if (nextBytes > budget.maxBytes) return settled(true);
+			if (nextBytes > budget.maxBytes) {
+				return settled(true);
+			}
 			newestFirst.push(projected);
 			retainedBytes = nextBytes;
 		}
-		if (nextCursor === null) return settled(false);
+		if (nextCursor === null) {
+			return settled(false);
+		}
 		// Stop before fetching history the budget has already spent.
-		if (newestFirst.length >= budget.maxTurns) return settled(true);
-		if (nextCursor === cursor || seenCursors.has(nextCursor))
+		if (newestFirst.length >= budget.maxTurns) {
+			return settled(true);
+		}
+		if (nextCursor === cursor || seenCursors.has(nextCursor)) {
 			throw new Error("The Codex timeline turn cursor repeated before its bound.");
+		}
 		seenCursors.add(nextCursor);
 		cursor = nextCursor;
 	}
@@ -579,9 +637,12 @@ async function readTurnPages(
 }
 
 function boundedCursor(cursor: string | null): string | null {
-	if (cursor === null) return null;
-	if (cursor.includes("\0") || textEncoder.encode(cursor).byteLength > TIMELINE_CURSOR_LIMIT)
+	if (cursor === null) {
+		return null;
+	}
+	if (cursor.includes("\0") || textEncoder.encode(cursor).byteLength > TIMELINE_CURSOR_LIMIT) {
 		throw new Error("The Codex timeline cursor exceeds its browser bound.");
+	}
 	return cursor;
 }
 
@@ -622,7 +683,9 @@ export function createCanvasTimelineOwner(
 		states.get(state.paneId)?.get(state.connection) === state;
 
 	const refresh = (state: TimelinePaneState): void => {
-		if (disposed || !state.ready || state.link.threadId === null || state.refresh !== null) return;
+		if (disposed || !state.ready || state.link.threadId === null || state.refresh !== null) {
+			return;
+		}
 		state.started = true;
 		state.dirty = false;
 		const threadId = state.link.threadId;
@@ -643,16 +706,24 @@ export function createCanvasTimelineOwner(
 		state.refresh = load.then(
 			(data) => {
 				state.refresh = null;
-				if (disposed || !isCurrent(state)) return undefined;
+				if (disposed || !isCurrent(state)) {
+					return undefined;
+				}
 				state.data = data;
 				options.onChange();
-				if (state.dirty) refresh(state);
+				if (state.dirty) {
+					refresh(state);
+				}
 				return undefined;
 			},
 			() => {
 				state.refresh = null;
-				if (disposed || !isCurrent(state)) return undefined;
-				if (state.dirty) refresh(state);
+				if (disposed || !isCurrent(state)) {
+					return undefined;
+				}
+				if (state.dirty) {
+					refresh(state);
+				}
 				return undefined;
 			},
 		);
@@ -688,14 +759,18 @@ export function createCanvasTimelineOwner(
 		} else {
 			state.ready = threadCapable;
 		}
-		if (state.ready && state.link.threadId !== null && !state.started) refresh(state);
+		if (state.ready && state.link.threadId !== null && !state.started) {
+			refresh(state);
+		}
 		return state.data === null || !state.ready
 			? null
 			: projectData(state.data, options.approvals.inspectViews(), budget);
 	};
 
 	const onNotification = (event: TransportServerNotification): void => {
-		if (disposed || !isTimelineNotification(event.notification.method)) return;
+		if (disposed || !isTimelineNotification(event.notification.method)) {
+			return;
+		}
 		const threadId = eventThreadId(event);
 		for (const paneStates of states.values()) {
 			for (const state of paneStates.values()) {
@@ -706,8 +781,9 @@ export function createCanvasTimelineOwner(
 					(state.link.childId !== null &&
 						(event.correlation.child !== state.link.childId ||
 							event.correlation.epoch !== state.link.epoch))
-				)
+				) {
 					continue;
+				}
 				state.dirty = true;
 				refresh(state);
 			}
@@ -717,17 +793,23 @@ export function createCanvasTimelineOwner(
 	const retire = (paneId: string, connection: BrowserConnectionInstance): void => {
 		const paneStates = states.get(paneId);
 		const state = paneStates?.get(connection);
-		if (state === undefined || paneStates === undefined) return;
+		if (state === undefined || paneStates === undefined) {
+			return;
+		}
 		state.ready = false;
 		state.dirty = false;
 		state.data = null;
 		state.refresh = null;
 		paneStates.delete(connection);
-		if (paneStates.size === 0) states.delete(paneId);
+		if (paneStates.size === 0) {
+			states.delete(paneId);
+		}
 	};
 
 	const dispose = (): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		states.clear();
 	};

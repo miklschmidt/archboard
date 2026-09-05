@@ -114,8 +114,11 @@ export function createCodexCoordinatorTools(
 
 	const removeRetainedLogical = (key: string): void => {
 		retainedLogicalCalls.delete(key);
-		for (const [wireKey, wire] of retainedWireCalls)
-			if (wire.logicalKey === key) retainedWireCalls.delete(wireKey);
+		for (const [wireKey, wire] of retainedWireCalls) {
+			if (wire.logicalKey === key) {
+				retainedWireCalls.delete(wireKey);
+			}
+		}
 	};
 
 	const retainWire = (key: string, value: TerminalWireCallState): void => {
@@ -123,7 +126,9 @@ export function createCodexCoordinatorTools(
 		retainedWireCalls.set(key, value);
 		while (retainedWireCalls.size > COORDINATOR_REPLAY_LIMITS.retainedWireCalls) {
 			const oldest = retainedWireCalls.keys().next().value as string | undefined;
-			if (oldest === undefined) break;
+			if (oldest === undefined) {
+				break;
+			}
 			retainedWireCalls.delete(oldest);
 		}
 	};
@@ -133,7 +138,9 @@ export function createCodexCoordinatorTools(
 		retainedLogicalCalls.set(value.key, value);
 		while (retainedLogicalCalls.size > COORDINATOR_REPLAY_LIMITS.retainedLogicalCalls) {
 			const oldest = retainedLogicalCalls.keys().next().value as string | undefined;
-			if (oldest === undefined) break;
+			if (oldest === undefined) {
+				break;
+			}
 			removeRetainedLogical(oldest);
 		}
 	};
@@ -145,10 +152,16 @@ export function createCodexCoordinatorTools(
 
 	const pruneStaleTerminals = (): void => {
 		const current = currentLogicalKey();
-		for (const key of retainedLogicalCalls.keys()) if (key !== current) removeRetainedLogical(key);
-		for (const [wireKey, wire] of retainedWireCalls)
-			if (wire.logicalKey !== null && wire.logicalKey !== current)
+		for (const key of retainedLogicalCalls.keys()) {
+			if (key !== current) {
+				removeRetainedLogical(key);
+			}
+		}
+		for (const [wireKey, wire] of retainedWireCalls) {
+			if (wire.logicalKey !== null && wire.logicalKey !== current) {
 				retainedWireCalls.delete(wireKey);
+			}
+		}
 	};
 
 	const retireWire = (
@@ -156,13 +169,18 @@ export function createCodexCoordinatorTools(
 		terminal: CoordinatorToolDispatchResult,
 		retain: boolean,
 	): void => {
-		if (liveWireCalls.get(state.wireKey) === state) liveWireCalls.delete(state.wireKey);
-		if (!epochClosed && retain)
+		if (liveWireCalls.get(state.wireKey) === state) {
+			liveWireCalls.delete(state.wireKey);
+		}
+		if (!epochClosed && retain) {
 			retainWire(state.wireKey, { logicalKey: state.logicalKey, terminal });
+		}
 	};
 
 	const respondOnce = async (state: CallState, response: DynamicToolResponse): Promise<void> => {
-		if (state.responseAttempted || state.childDisconnected) return;
+		if (state.responseAttempted || state.childDisconnected) {
+			return;
+		}
 		state.responseAttempted = true;
 		try {
 			await options.transport.respond(state.request, COORDINATOR_TOOLS_OWNER, { result: response });
@@ -196,7 +214,9 @@ export function createCodexCoordinatorTools(
 		state: CallState,
 		validated: ValidatedCoordinatorToolCall,
 	): Promise<CoordinatorToolDispatchResult> => {
-		if (state.cancelled !== null || state.childDisconnected || disposed) return unavailable(false);
+		if (state.cancelled !== null || state.childDisconnected || disposed) {
+			return unavailable(false);
+		}
 
 		let operation: IssuedOperationIdentity | null = null;
 		if (validated.namespace === "archboard_workhorse") {
@@ -214,18 +234,23 @@ export function createCodexCoordinatorTools(
 		}
 
 		await Promise.resolve();
-		if (state.cancelled !== null || state.childDisconnected || disposed) return unavailable(false);
+		if (state.cancelled !== null || state.childDisconnected || disposed) {
+			return unavailable(false);
+		}
 
 		state.operationAttempted = true;
 		if (validated.namespace === "archboard_voice") {
 			const input = spokenInput(validated);
 			const spokenOperation = captureSpokenOperationIdentity(options);
 			const result = await options.spokenApproval.resolve(state.request);
-			if (state.childDisconnected) return complete(spokenResponse(result, spokenOperation), true);
+			if (state.childDisconnected) {
+				return complete(spokenResponse(result, spokenOperation), true);
+			}
 			if (state.cancelled !== null) {
-				if (result.tag === "refused")
+				if (result.tag === "refused") {
 					return complete(spokenResponse(result, spokenOperation), true);
-				if (spokenOperation === null)
+				}
+				if (spokenOperation === null) {
 					return complete(
 						refusedResponse(
 							"system_error",
@@ -234,25 +259,30 @@ export function createCodexCoordinatorTools(
 						),
 						true,
 					);
+				}
 				return complete(outcomeUnknownResponse(spokenOperation.wire), true);
 			}
-			if (result.tag === "ok" && input.verdict !== result.value.verdict)
+			if (result.tag === "ok" && input.verdict !== result.value.verdict) {
 				return complete(
 					refusedResponse("invalid_call", "The spoken gate returned a different verdict.", true),
 					true,
 				);
+			}
 			return complete(spokenResponse(result, spokenOperation), true);
 		}
 
-		if (operation === null)
+		if (operation === null) {
 			return complete(
 				refusedResponse("system_error", "The workhorse call has no issued operation identity."),
 				true,
 			);
+		}
 		try {
 			const result = await invokeWorkhorse(options.operations, validated, operation);
 			if (state.cancelled !== null) {
-				if (isMutation(validated)) return complete(outcomeUnknownResponse(operation.wire), true);
+				if (isMutation(validated)) {
+					return complete(outcomeUnknownResponse(operation.wire), true);
+				}
 				return complete(
 					refusedResponse(
 						"invalid_call",
@@ -265,7 +295,9 @@ export function createCodexCoordinatorTools(
 			try {
 				validateCoordinatorToolRequest(options, state.request);
 			} catch (error) {
-				if (isMutation(validated)) return complete(outcomeUnknownResponse(operation.wire), true);
+				if (isMutation(validated)) {
+					return complete(outcomeUnknownResponse(operation.wire), true);
+				}
 				const reason =
 					error instanceof CoordinatorToolValidationError ? error.reason : "unknown_provenance";
 				return complete(refusedResponse(reason, errorMessage(error)), true);
@@ -290,8 +322,11 @@ export function createCodexCoordinatorTools(
 			terminal = await Promise.race([logical.promise!, disconnected]);
 		} else {
 			const settled = await Promise.race([logical.promise!, state.cancellation.then(cancelled)]);
-			if (state.cancelled !== null) terminal = cancelled();
-			else terminal = settled;
+			if (state.cancelled !== null) {
+				terminal = cancelled();
+			} else {
+				terminal = settled;
+			}
 		}
 		state.operationAttempted = terminal.attempted;
 		if (state.childDisconnected) {
@@ -317,9 +352,10 @@ export function createCodexCoordinatorTools(
 		state.logicalKey = key;
 		const live = liveLogicalCalls.get(key);
 		if (live !== undefined) {
-			if (live.inputFingerprint !== validated.inputFingerprint)
+			if (live.inputFingerprint !== validated.inputFingerprint) {
 				return finish(state, mismatchResponse());
-			if (live.acceptedAliases >= COORDINATOR_REPLAY_LIMITS.aliasesPerLiveLogicalCall)
+			}
+			if (live.acceptedAliases >= COORDINATOR_REPLAY_LIMITS.aliasesPerLiveLogicalCall) {
 				return finish(
 					state,
 					refusedResponse(
@@ -328,13 +364,15 @@ export function createCodexCoordinatorTools(
 						true,
 					),
 				);
+			}
 			live.acceptedAliases += 1;
 			return settleWire(state, live);
 		}
 		const retained = retainedLogicalCalls.get(key);
 		if (retained !== undefined) {
-			if (retained.inputFingerprint !== validated.inputFingerprint)
+			if (retained.inputFingerprint !== validated.inputFingerprint) {
 				return finish(state, mismatchResponse());
+			}
 			state.operationAttempted = retained.terminal.attempted;
 			return finish(state, retained.terminal.response);
 		}
@@ -361,12 +399,13 @@ export function createCodexCoordinatorTools(
 				)
 				.then((terminal) => {
 					liveLogicalCalls.delete(key);
-					if (!epochClosed && currentLogicalKey() === key)
+					if (!epochClosed && currentLogicalKey() === key) {
 						retainLogical({
 							key,
 							inputFingerprint: owned.inputFingerprint,
 							terminal,
 						});
+					}
 					return terminal;
 				});
 		}
@@ -376,26 +415,30 @@ export function createCodexCoordinatorTools(
 	const dispatch = (
 		request: CoordinatorToolsServerRequest,
 	): Promise<CoordinatorToolDispatchResult> => {
-		if (disposed || epochClosed)
+		if (disposed || epochClosed) {
 			return Promise.reject(
 				new CodexCoordinatorToolsError(
 					"disposed",
 					"The coordinator dynamic-tool dispatcher has been disposed.",
 				),
 			);
+		}
 		pruneStaleTerminals();
 		const key = callKey(request);
 		const retained = retainedWireCalls.get(key);
-		if (retained !== undefined) return Promise.resolve(retained.terminal);
+		if (retained !== undefined) {
+			return Promise.resolve(retained.terminal);
+		}
 		const existing = liveWireCalls.get(key);
 		if (existing !== undefined) {
-			if (existing.request !== request)
+			if (existing.request !== request) {
 				return Promise.reject(
 					new CodexCoordinatorToolsError(
 						"duplicate",
 						"The dynamic request identity has already been dispatched; no second attempt is allowed.",
 					),
 				);
+			}
 			return existing.promise!;
 		}
 		let wakeCancellation = ignoreCancellation;
@@ -421,7 +464,9 @@ export function createCodexCoordinatorTools(
 	};
 
 	const onServerRequest = (request: TransportServerRequest): void => {
-		if (!isCoordinatorToolRequest(request)) return;
+		if (!isCoordinatorToolRequest(request)) {
+			return;
+		}
 		void dispatch(request).catch(() => undefined);
 	};
 
@@ -435,7 +480,9 @@ export function createCodexCoordinatorTools(
 				candidate.request.epoch === options.identity.validator.epoch &&
 				String(candidate.request.requestId) === String(requestId),
 		);
-		if (state === undefined || state.responseAttempted) return;
+		if (state === undefined || state.responseAttempted) {
+			return;
+		}
 		state.cancelled = Object.freeze({ requestId, cause });
 		state.wakeCancellation();
 	};
@@ -444,8 +491,9 @@ export function createCodexCoordinatorTools(
 		if (
 			exit.child !== options.identity.validator.childId ||
 			exit.epoch !== options.identity.validator.epoch
-		)
+		) {
 			return;
+		}
 		epochClosed = true;
 		for (const state of liveWireCalls.values()) {
 			if (state.request.child === exit.child && state.request.epoch === exit.epoch) {
@@ -464,7 +512,9 @@ export function createCodexCoordinatorTools(
 	};
 
 	const dispose = (): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		epochClosed = true;
 		for (const state of liveWireCalls.values()) {

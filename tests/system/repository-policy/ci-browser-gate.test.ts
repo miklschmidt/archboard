@@ -92,7 +92,9 @@ function runAdapter(
 	fixture: BrowserPreflightFixture;
 } {
 	const fixture = usePreflightFixture(resources);
-	if (options.withAgentBrowser) installFakeAgentBrowser(fixture);
+	if (options.withAgentBrowser) {
+		installFakeAgentBrowser(fixture);
+	}
 	if (options.withStrace) {
 		fs.writeFileSync(
 			path.join(fixture.bin, "strace"),
@@ -101,11 +103,15 @@ function runAdapter(
 		);
 	}
 	const env: Record<string, string> = { PATH: fixture.bin, TMPDIR: fixture.temporary };
-	if (options.executablePath !== undefined)
+	if (options.executablePath !== undefined) {
 		env["AGENT_BROWSER_EXECUTABLE_PATH"] = options.executablePath;
-	if (options.ownerFixture !== undefined)
+	}
+	if (options.ownerFixture !== undefined) {
 		env["ARCHBOARD_TEST_BROWSER_OWNER_FIXTURE"] = options.ownerFixture;
-	if (options.hostedExclusion) Object.assign(env, HOSTED_BROWSER_EXCLUSION);
+	}
+	if (options.hostedExclusion) {
+		Object.assign(env, HOSTED_BROWSER_EXCLUSION);
+	}
 	const focusedFile = options.file ?? BROWSER_TEST_PATHS[0];
 	const result = Bun.spawnSync({
 		cmd: options.packageSelection

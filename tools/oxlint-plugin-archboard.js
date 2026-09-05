@@ -168,13 +168,17 @@ function sourceImportVisitors(onSource) {
 
 function assistantUiOwner(relativePath) {
 	for (const owner of ASSISTANT_UI_OWNERS.keys()) {
-		if (relativePath === owner || relativePath.startsWith(`${owner}/`)) return owner;
+		if (relativePath === owner || relativePath.startsWith(`${owner}/`)) {
+			return owner;
+		}
 	}
 	return undefined;
 }
 
 function assistantUiImportedName(specifier) {
-	if (specifier.type !== "ImportSpecifier") return undefined;
+	if (specifier.type !== "ImportSpecifier") {
+		return undefined;
+	}
 	return specifier.imported?.name ?? specifier.imported?.value;
 }
 
@@ -186,8 +190,9 @@ function unwrapExpression(expression) {
 		expression?.type === "TSSatisfiesExpression" ||
 		expression?.type === "ChainExpression" ||
 		expression?.type === "ParenthesizedExpression"
-	)
+	) {
 		expression = expression.expression;
+	}
 	return expression;
 }
 
@@ -246,7 +251,9 @@ const assistantUiImports = createRule(
 				report(context, node, "noAssistantUiAuxiliaryPackage");
 				return;
 			}
-			if (!source.startsWith("@assistant-ui/")) return;
+			if (!source.startsWith("@assistant-ui/")) {
+				return;
+			}
 			if (!source.startsWith(ASSISTANT_UI_PACKAGE)) {
 				report(context, node, "noAssistantUiAlternatePackage");
 				return;
@@ -298,12 +305,13 @@ const assistantUiImports = createRule(
 					});
 					continue;
 				}
-				if (expectedOwner !== owner)
+				if (expectedOwner !== owner) {
 					context.report({
 						node: specifier,
 						messageId: "noAssistantUiWrongOwner",
 						data: { member: importedName },
 					});
+				}
 				if (specifier.local?.name !== importedName) {
 					context.report({
 						node: specifier,
@@ -315,19 +323,27 @@ const assistantUiImports = createRule(
 
 		function checkNestedMember(node) {
 			const object = unwrapExpression(node.object);
-			if (object?.type !== "Identifier") return;
+			if (object?.type !== "Identifier") {
+				return;
+			}
 			const importedName = localAssistantUiMembers.get(object.name);
-			if (!importedName) return;
+			if (!importedName) {
+				return;
+			}
 			const propertyName = node.computed
 				? node.property?.type === "Literal" && typeof node.property.value === "string"
 					? node.property.value
 					: undefined
 				: node.property?.name;
 			if (!propertyName) {
-				if (node.computed) report(context, node, "noAssistantUiNonLiteral");
+				if (node.computed) {
+					report(context, node, "noAssistantUiNonLiteral");
+				}
 				return;
 			}
-			if (!nestedMembers.get(importedName)?.has(propertyName)) return;
+			if (!nestedMembers.get(importedName)?.has(propertyName)) {
+				return;
+			}
 			context.report({
 				node,
 				messageId: "noAssistantUiNestedMember",
@@ -338,40 +354,58 @@ const assistantUiImports = createRule(
 		return {
 			ImportDeclaration(node) {
 				checkSource(node.source.value, node.source, "import", node.specifiers);
-				if (node.source.value !== ASSISTANT_UI_PACKAGE) return;
+				if (node.source.value !== ASSISTANT_UI_PACKAGE) {
+					return;
+				}
 				for (const specifier of node.specifiers) {
 					const importedName = assistantUiImportedName(specifier);
-					if (importedName && specifier.local?.name)
+					if (importedName && specifier.local?.name) {
 						localAssistantUiMembers.set(specifier.local.name, importedName);
+					}
 				}
 			},
 			ExportNamedDeclaration(node) {
-				if (node.source?.value) checkSource(node.source.value, node.source, "re-export");
+				if (node.source?.value) {
+					checkSource(node.source.value, node.source, "re-export");
+				}
 			},
 			ExportAllDeclaration(node) {
-				if (node.source?.value) checkSource(node.source.value, node.source, "re-export");
+				if (node.source?.value) {
+					checkSource(node.source.value, node.source, "re-export");
+				}
 			},
 			ImportExpression(node) {
-				if (node.source?.type === "Literal" && typeof node.source.value === "string")
+				if (node.source?.type === "Literal" && typeof node.source.value === "string") {
 					checkSource(node.source.value, node.source, "import");
-				else if (owner) report(context, node, "noAssistantUiNonLiteral");
+				} else if (owner) {
+					report(context, node, "noAssistantUiNonLiteral");
+				}
 			},
 			TSImportType(node) {
-				if (node.source?.value && typeof node.source.value === "string")
+				if (node.source?.value && typeof node.source.value === "string") {
 					checkSource(node.source.value, node.source, "import");
+				}
 			},
 			CallExpression(node) {
 				const argument = node.arguments[0];
-				if (node.callee.type !== "Identifier" || node.callee.name !== "require") return;
-				if (argument?.type === "Literal" && typeof argument.value === "string")
+				if (node.callee.type !== "Identifier" || node.callee.name !== "require") {
+					return;
+				}
+				if (argument?.type === "Literal" && typeof argument.value === "string") {
 					checkSource(argument.value, argument, "import");
-				else if (owner) report(context, node, "noAssistantUiNonLiteral");
+				} else if (owner) {
+					report(context, node, "noAssistantUiNonLiteral");
+				}
 			},
 			AssignmentExpression(node) {
 				const right = unwrapExpression(node.right);
-				if (right?.type !== "Identifier") return;
+				if (right?.type !== "Identifier") {
+					return;
+				}
 				const importedName = localAssistantUiMembers.get(right.name);
-				if (!importedName) return;
+				if (!importedName) {
+					return;
+				}
 				if (node.left?.type !== "Identifier") {
 					report(context, node, "noAssistantUiAlias");
 					return;
@@ -381,18 +415,26 @@ const assistantUiImports = createRule(
 			},
 			MemberExpression: checkNestedMember,
 			ChainExpression(node) {
-				if (node.expression?.type === "MemberExpression") checkNestedMember(node.expression);
+				if (node.expression?.type === "MemberExpression") {
+					checkNestedMember(node.expression);
+				}
 			},
 			VariableDeclarator(node) {
 				const init = unwrapExpression(node.init);
-				if (init?.type !== "Identifier") return;
+				if (init?.type !== "Identifier") {
+					return;
+				}
 				const importedName = localAssistantUiMembers.get(init.name);
 				if (node.id?.type === "Identifier" && importedName) {
 					report(context, node, "noAssistantUiAlias");
 					localAssistantUiMembers.set(node.id.name, importedName);
 				}
-				if (node.id?.type === "Identifier") return;
-				if (node.id?.type !== "ObjectPattern" || !importedName) return;
+				if (node.id?.type === "Identifier") {
+					return;
+				}
+				if (node.id?.type !== "ObjectPattern" || !importedName) {
+					return;
+				}
 				for (const property of node.id.properties ?? []) {
 					const key = property.key;
 					const propertyName = key?.name ?? key?.value;
@@ -403,12 +445,13 @@ const assistantUiImports = createRule(
 					if (
 						typeof propertyName === "string" &&
 						nestedMembers.get(importedName)?.has(propertyName)
-					)
+					) {
 						context.report({
 							node: property,
 							messageId: "noAssistantUiNestedMember",
 							data: { member: `${importedName}.${propertyName}` },
 						});
+					}
 				}
 			},
 		};
@@ -623,10 +666,14 @@ const rootImplementationModules = createRule(
 		if (ROOT_SOURCE_ENTRYPOINTS.has(relativePath)) {
 			return {
 				FunctionDeclaration(node) {
-					if (isTopLevelDeclaration(node)) report(context, node, "noEntrypointImplementation");
+					if (isTopLevelDeclaration(node)) {
+						report(context, node, "noEntrypointImplementation");
+					}
 				},
 				ClassDeclaration(node) {
-					if (isTopLevelDeclaration(node)) report(context, node, "noEntrypointImplementation");
+					if (isTopLevelDeclaration(node)) {
+						report(context, node, "noEntrypointImplementation");
+					}
 				},
 				VariableDeclarator(node) {
 					if (
@@ -789,8 +836,12 @@ const moduleEntrypoints = createRule(
 				: undefined;
 		if (placementMessage || untypedMessage) {
 			visitors.Program = (node) => {
-				if (placementMessage) report(context, node, placementMessage);
-				if (untypedMessage) report(context, node, untypedMessage);
+				if (placementMessage) {
+					report(context, node, placementMessage);
+				}
+				if (untypedMessage) {
+					report(context, node, untypedMessage);
+				}
 			};
 		}
 
@@ -868,14 +919,17 @@ const noArchiveReferences = createRule(
 		const archiveSegment = /(?:^|[/\\])legacy(?:[/\\]|$)/u;
 		return {
 			Literal(node) {
-				if (typeof node.value !== "string" || !archiveSegment.test(node.value)) return;
+				if (typeof node.value !== "string" || !archiveSegment.test(node.value)) {
+					return;
+				}
 				// A Vite fs.deny entry prohibits access; it is not an active source reference.
 				if (
 					context.filename.endsWith("/vite.config.js") &&
 					node.parent?.type === "ArrayExpression" &&
 					node.parent.parent?.key?.name === "deny"
-				)
+				) {
 					return;
+				}
 				// A protocol value named legacy is not a filesystem reference.
 				if (node.value === "legacy") {
 					const call = node.parent;
@@ -892,13 +946,16 @@ const noArchiveReferences = createRule(
 							"readFileSync",
 							"file",
 						].includes(name)
-					)
+					) {
 						return;
+					}
 				}
 				context.report({ node, messageId: "archived" });
 			},
 			TemplateElement(node) {
-				if (archiveSegment.test(node.value.raw)) context.report({ node, messageId: "archived" });
+				if (archiveSegment.test(node.value.raw)) {
+					context.report({ node, messageId: "archived" });
+				}
 			},
 		};
 	},

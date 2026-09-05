@@ -72,7 +72,9 @@ describe("Codex session logout readiness", () => {
 		try {
 			let inFlightGate: Promise<unknown> | undefined;
 			fixture.transport.beforeRequest = (method) => {
-				if (method === "account/logout") inFlightGate = rejected(fixture.session.threadStart({}));
+				if (method === "account/logout") {
+					inFlightGate = rejected(fixture.session.threadStart({}));
+				}
 			};
 			const lowerError = Object.assign(new Error("logout response was lost"), {
 				accepted: true,
@@ -87,7 +89,9 @@ describe("Codex session logout readiness", () => {
 				retryEligible: false,
 				cause: lowerError,
 			});
-			if (!inFlightGate) throw new Error("logout did not reach the transport boundary");
+			if (!inFlightGate) {
+				throw new Error("logout did not reach the transport boundary");
+			}
 			expect(await inFlightGate).toMatchObject({
 				outcome: "not_delivered",
 				cause: { code: "not_account_ready" },
@@ -122,7 +126,9 @@ describe("Codex session logout readiness", () => {
 			const page = await fixture.session.threadListPage({});
 			expect(page.data).toHaveLength(1);
 			const listed = page.data[0];
-			if (!listed) throw new Error("thread/list returned no fixture thread");
+			if (!listed) {
+				throw new Error("thread/list returned no fixture thread");
+			}
 			expect(fixture.identity.decoder.serializeCodexIdentity(listed.id)).toBe("thread-1");
 		} finally {
 			fixture.close();

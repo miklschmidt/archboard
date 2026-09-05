@@ -277,7 +277,9 @@ async function emulateMedia(
 	const currentUrl = await browser.eval<string>("location.href");
 	const output = await browser.run(["get", "cdp-url"]);
 	const endpoint = output.match(/ws:\/\/[^\s"']+/)?.[0];
-	if (!endpoint) throw new Error(`agent-browser returned no CDP endpoint: ${output.trim()}`);
+	if (!endpoint) {
+		throw new Error(`agent-browser returned no CDP endpoint: ${output.trim()}`);
+	}
 	const socket = new WebSocket(endpoint);
 	await new Promise<void>((resolve, reject) => {
 		socket.addEventListener("open", () => resolve(), { once: true });
@@ -296,12 +298,19 @@ async function emulateMedia(
 			result?: Record<string, unknown>;
 			error?: { message?: string };
 		};
-		if (message.id === undefined) return;
+		if (message.id === undefined) {
+			return;
+		}
 		const request = pending.get(message.id);
-		if (!request) return;
+		if (!request) {
+			return;
+		}
 		pending.delete(message.id);
-		if (message.error) request.reject(new Error(message.error.message ?? "CDP command failed"));
-		else request.resolve(message.result ?? {});
+		if (message.error) {
+			request.reject(new Error(message.error.message ?? "CDP command failed"));
+		} else {
+			request.resolve(message.result ?? {});
+		}
 	});
 	const command = (
 		method: string,
@@ -319,12 +328,16 @@ async function emulateMedia(
 		targetInfos?: Array<{ targetId: string; type: string; url: string }>;
 	};
 	const page = targets.targetInfos?.find(({ type, url }) => type === "page" && url === currentUrl);
-	if (!page) throw new Error(`CDP browser target has no page for ${currentUrl}`);
+	if (!page) {
+		throw new Error(`CDP browser target has no page for ${currentUrl}`);
+	}
 	const attached = (await command("Target.attachToTarget", {
 		targetId: page.targetId,
 		flatten: true,
 	})) as { sessionId?: string };
-	if (!attached.sessionId) throw new Error("CDP did not attach to the opener page");
+	if (!attached.sessionId) {
+		throw new Error("CDP did not attach to the opener page");
+	}
 	await command(
 		"Emulation.setEmulatedMedia",
 		{
@@ -452,7 +465,9 @@ export async function verifyVisualModes(
 			}
 			expect(snapshot.theme).toBe(theme);
 			expect(snapshot.rootTheme).toBe(theme);
-			if (mode === "normal") expect(snapshot.colors).toEqual(EXPECTED_DIALOG_COLORS[theme]);
+			if (mode === "normal") {
+				expect(snapshot.colors).toEqual(EXPECTED_DIALOG_COLORS[theme]);
+			}
 			expect(snapshot.queries).toEqual({
 				dark: theme === "dark",
 				reducedMotion: mode === "reduced-motion",
@@ -468,8 +483,11 @@ export async function verifyVisualModes(
 			expect(snapshot.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(
 				true,
 			);
-			if (mode === "reduced-motion") expect(snapshot.controlDurationMs).toBeLessThanOrEqual(0.01);
-			else expect(snapshot.controlDurationMs).toBeGreaterThan(0.01);
+			if (mode === "reduced-motion") {
+				expect(snapshot.controlDurationMs).toBeLessThanOrEqual(0.01);
+			} else {
+				expect(snapshot.controlDurationMs).toBeGreaterThan(0.01);
+			}
 		} finally {
 			await restore();
 		}

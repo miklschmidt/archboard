@@ -71,64 +71,74 @@ export const ObstacleRefSchema = z
 	})
 	.superRefine((obstacle, context) => {
 		const elementIds = new Set(obstacle.elementIds);
-		if (!canonicalIdentities(obstacle.elementIds))
+		if (!canonicalIdentities(obstacle.elementIds)) {
 			context.addIssue({
 				code: "custom",
 				path: ["elementIds"],
 				message: "Obstacle elementIds must be unique and in exact UTF-16 order.",
 			});
-		if (!canonicalIdentities(obstacle.groupIds))
+		}
+		if (!canonicalIdentities(obstacle.groupIds)) {
 			context.addIssue({
 				code: "custom",
 				path: ["groupIds"],
 				message: "Obstacle groupIds must be unique and in exact UTF-16 order.",
 			});
-		if (!canonicalIdentities(obstacle.library.map(({ elementId }) => elementId)))
+		}
+		if (!canonicalIdentities(obstacle.library.map(({ elementId }) => elementId))) {
 			context.addIssue({
 				code: "custom",
 				path: ["library"],
 				message: "Obstacle library entries must have unique elementIds in exact UTF-16 order.",
 			});
-		for (const [index, attribution] of obstacle.library.entries())
-			if (!elementIds.has(attribution.elementId))
+		}
+		for (const [index, attribution] of obstacle.library.entries()) {
+			if (!elementIds.has(attribution.elementId)) {
 				context.addIssue({
 					code: "custom",
 					path: ["library", index, "elementId"],
 					message: "Obstacle library attribution must name a constituent elementId.",
 				});
-		if (obstacle.kind === "library-component" && obstacle.library.length === 0)
+			}
+		}
+		if (obstacle.kind === "library-component" && obstacle.library.length === 0) {
 			context.addIssue({
 				code: "custom",
 				path: ["library"],
 				message: "Library-component obstacles require library attribution.",
 			});
-		if (obstacle.kind === "grouped-component" && obstacle.library.length > 0)
+		}
+		if (obstacle.kind === "grouped-component" && obstacle.library.length > 0) {
 			context.addIssue({
 				code: "custom",
 				path: ["library"],
 				message: "Grouped-component obstacles cannot carry library attribution.",
 			});
+		}
 		if (
 			obstacle.kind === "grouped-component" &&
 			(obstacle.elementIds.length < 2 || obstacle.groupIds.length === 0)
-		)
+		) {
 			context.addIssue({
 				code: "custom",
 				path: ["kind"],
 				message: "Grouped-component obstacles require multiple elements and group evidence.",
 			});
-		if (obstacle.elementIds.length > 1 && obstacle.groupIds.length === 0)
+		}
+		if (obstacle.elementIds.length > 1 && obstacle.groupIds.length === 0) {
 			context.addIssue({
 				code: "custom",
 				path: ["groupIds"],
 				message: "Multi-element obstacles require qualifying group evidence.",
 			});
-		if (obstacle.id !== obstacleIdentity(obstacle.elementIds))
+		}
+		if (obstacle.id !== obstacleIdentity(obstacle.elementIds)) {
 			context.addIssue({
 				code: "custom",
 				path: ["id"],
 				message: "Obstacle id must be the deterministic encoding of elementIds.",
 			});
+		}
 	});
 
 const common = {

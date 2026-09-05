@@ -228,7 +228,9 @@ export function createSemanticContextPublisher(
 	};
 
 	const ensureLive = (): void => {
-		if (disposed) throw new Error("The semantic context publisher has been disposed.");
+		if (disposed) {
+			throw new Error("The semantic context publisher has been disposed.");
+		}
 	};
 
 	const subscribe = <Event>(
@@ -239,7 +241,9 @@ export function createSemanticContextPublisher(
 		listeners.add(listener);
 		let active = true;
 		return () => {
-			if (!active) return;
+			if (!active) {
+				return;
+			}
 			active = false;
 			listeners.delete(listener);
 		};
@@ -295,10 +299,18 @@ export function createSemanticContextPublisher(
 	}
 
 	const onSettledChange = (event: SettledChangeSourceEvent): void => {
-		if (disposed) return;
-		if (!validOrigin(event.origin)) fail("change.origin", "is invalid");
-		if (!validSignificance(event.significance)) fail("change.significance", "is invalid");
-		if (event.origin === "agent" || event.significance === "cosmetic") return;
+		if (disposed) {
+			return;
+		}
+		if (!validOrigin(event.origin)) {
+			fail("change.origin", "is invalid");
+		}
+		if (!validSignificance(event.significance)) {
+			fail("change.significance", "is invalid");
+		}
+		if (event.origin === "agent" || event.significance === "cosmetic") {
+			return;
+		}
 		const eventCursor = sourceCursor(event.cursor);
 		const eventBoard = textValue(
 			event.board,
@@ -341,7 +353,9 @@ export function createSemanticContextPublisher(
 			additionalStaleReasons: staleReasons,
 			inputTruncated: eventBoard.truncated || eventAt.truncated || changeText.truncated,
 		});
-		if (fields.cursor === null) fail("change.cursor", "settled changes require a cursor");
+		if (fields.cursor === null) {
+			fail("change.cursor", "settled changes require a cursor");
+		}
 		const published = withKind(fields, "settled_change", {
 			change: {
 				feedId,
@@ -381,7 +395,9 @@ export function createSemanticContextPublisher(
 	}
 
 	function dispose(): void {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		const cleanupErrors = cleanupAll(sourceUnsubscribes);
 		settledListeners.clear();

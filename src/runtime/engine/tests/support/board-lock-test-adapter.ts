@@ -9,7 +9,9 @@ export async function withLockHandoffReadFault<T>(
 	const originalParse = JSON.parse.bind(JSON);
 	let injected = false;
 	const parseSpy = spyOn(JSON, "parse").mockImplementation((text, reviver) => {
-		if (injected || !text.includes(leaseToken)) return originalParse(text, reviver);
+		if (injected || !text.includes(leaseToken)) {
+			return originalParse(text, reviver);
+		}
 		injected = true;
 		const altered =
 			fault === "malformed" ? "{broken" : text.replace(leaseToken, "wrong-lease-token");
@@ -17,7 +19,9 @@ export async function withLockHandoffReadFault<T>(
 	});
 	try {
 		const result = await action();
-		if (!injected) throw new Error(`The ${fault} lock handoff fault was not observed.`);
+		if (!injected) {
+			throw new Error(`The ${fault} lock handoff fault was not observed.`);
+		}
 		return result;
 	} finally {
 		parseSpy.mockRestore();

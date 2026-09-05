@@ -14,7 +14,9 @@ export async function readSemanticAccessibility(
 	const currentUrl = await browser.eval<string>("location.href");
 	const output = await browser.run(["get", "cdp-url"]);
 	const endpoint = output.match(/ws:\/\/[^\s"']+/)?.[0];
-	if (!endpoint) throw new Error(`agent-browser returned no CDP endpoint: ${output.trim()}`);
+	if (!endpoint) {
+		throw new Error(`agent-browser returned no CDP endpoint: ${output.trim()}`);
+	}
 	const socket = new WebSocket(endpoint);
 	await new Promise<void>((resolve, reject) => {
 		socket.addEventListener("open", () => resolve(), { once: true });
@@ -33,12 +35,19 @@ export async function readSemanticAccessibility(
 			result?: Record<string, unknown>;
 			error?: { message?: string };
 		};
-		if (message.id === undefined) return;
+		if (message.id === undefined) {
+			return;
+		}
 		const request = pending.get(message.id);
-		if (!request) return;
+		if (!request) {
+			return;
+		}
 		pending.delete(message.id);
-		if (message.error) request.reject(new Error(message.error.message ?? "CDP command failed"));
-		else request.resolve(message.result ?? {});
+		if (message.error) {
+			request.reject(new Error(message.error.message ?? "CDP command failed"));
+		} else {
+			request.resolve(message.result ?? {});
+		}
 	});
 	const command = (
 		method: string,
@@ -60,20 +69,26 @@ export async function readSemanticAccessibility(
 		const page = targets.targetInfos?.find(
 			({ type, url }) => type === "page" && url === currentUrl,
 		);
-		if (!page) throw new Error(`CDP browser target has no page for ${currentUrl}`);
+		if (!page) {
+			throw new Error(`CDP browser target has no page for ${currentUrl}`);
+		}
 		const attached = (await command("Target.attachToTarget", {
 			targetId: page.targetId,
 			flatten: true,
 		})) as { sessionId?: string };
 		sessionId = attached.sessionId;
-		if (!sessionId) throw new Error("CDP did not attach to the shell page");
+		if (!sessionId) {
+			throw new Error("CDP did not attach to the shell page");
+		}
 		const evaluated = (await command(
 			"Runtime.evaluate",
 			{ expression: 'document.querySelector(".workbench-semantic-announcer")' },
 			sessionId,
 		)) as { result?: { objectId?: string } };
 		const objectId = evaluated.result?.objectId;
-		if (!objectId) throw new Error("semantic announcer is absent from the browser page");
+		if (!objectId) {
+			throw new Error("semantic announcer is absent from the browser page");
+		}
 		const tree = (await command(
 			"Accessibility.getPartialAXTree",
 			{ fetchRelatives: false, objectId },
@@ -87,7 +102,9 @@ export async function readSemanticAccessibility(
 			}>;
 		};
 		const node = tree.nodes?.[0];
-		if (!node) throw new Error("semantic announcer is absent from the accessibility tree");
+		if (!node) {
+			throw new Error("semantic announcer is absent from the accessibility tree");
+		}
 		const property = (name: string): boolean | string | null =>
 			node.properties?.find((candidate) => candidate.name === name)?.value?.value ?? null;
 		return {
@@ -98,7 +115,9 @@ export async function readSemanticAccessibility(
 			role: node.role?.value ?? null,
 		};
 	} finally {
-		if (sessionId) await command("Target.detachFromTarget", { sessionId });
+		if (sessionId) {
+			await command("Target.detachFromTarget", { sessionId });
+		}
 		socket.close();
 	}
 }

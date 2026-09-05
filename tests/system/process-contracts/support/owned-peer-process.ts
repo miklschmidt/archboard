@@ -90,13 +90,18 @@ async function stopChild(child: Child, lifecycle: ReturnType<typeof observeChild
 		await lifecycle.terminal;
 		return;
 	}
-	if (!lifecycle.isExited()) child.kill("SIGTERM");
+	if (!lifecycle.isExited()) {
+		child.kill("SIGTERM");
+	}
 	if (
 		!lifecycle.isExited() &&
 		!(await Promise.race([lifecycle.exit.then(() => true), delay(2_000).then(() => false)]))
-	)
+	) {
 		child.kill("SIGKILL");
-	if (!lifecycle.isExited()) await lifecycle.exit;
+	}
+	if (!lifecycle.isExited()) {
+		await lifecycle.exit;
+	}
 }
 
 export async function startOwnedPeer<T>({
@@ -143,14 +148,16 @@ export async function startOwnedPeer<T>({
 					});
 				}
 				const parsed = readySchema.safeParse(payload);
-				if (!parsed.success)
+				if (!parsed.success) {
 					throw new Error(
 						`Peer readiness failed schema validation: ${JSON.stringify(payload)}\n${parsed.error.message}\nPeer stderr:\n${stderr}`,
 					);
-				if ((parsed.data as { pid?: number }).pid !== child.pid)
+				}
+				if ((parsed.data as { pid?: number }).pid !== child.pid) {
 					throw new Error(
 						`Peer readiness PID ${(parsed.data as { pid?: number }).pid ?? "missing"} did not equal child PID ${child.pid}.\nPeer stderr:\n${stderr}`,
 					);
+				}
 				return {
 					child,
 					pid: child.pid,

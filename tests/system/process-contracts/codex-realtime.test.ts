@@ -152,8 +152,9 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 				"thread/realtime/appendText",
 				"thread/realtime/appendSpeech",
 				"thread/realtime/stop",
-			])
+			]) {
 				expect(requestParams(harness, method)).toHaveLength(1);
+			}
 			expect(JSON.stringify(harness.events)).not.toContain("awaiting_user");
 		},
 	);
@@ -234,8 +235,9 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 			sendSdp(generation.identity, wrongThread, "wrong-thread-current-child");
 			expectPendingOffer(harness, settled);
 			const start = requestParams(harness, "thread/realtime/start")[0];
-			if (typeof start?.["realtimeSessionId"] !== "string")
+			if (typeof start?.["realtimeSessionId"] !== "string") {
 				throw new Error("Pending start identity missing.");
+			}
 			generation.adapter.onNotification(
 				makeNotification(generation.identity, "thread/realtime/started", {
 					threadId: "coordinator-thread",
@@ -383,9 +385,9 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 			});
 			expect(await generation.adapter.recover(browser)).toMatchObject({ outcome: "delivered" });
 			expect(latestState(harness)).toEqual({ phase: "idle", reason: "recovered" });
-			expect(requestParams(harness, "thread/timeline/list").map((params) => params["cursor"])).toEqual(
-				[null, "next"],
-			);
+			expect(
+				requestParams(harness, "thread/timeline/list").map((params) => params["cursor"]),
+			).toEqual([null, "next"]);
 			expect(generation.adapter.transcript()).toHaveLength(2);
 			const itemA = parseRealtimeItemId(generation.identity.decoder.resolveItemId("item-a"));
 			const itemB = parseRealtimeItemId(generation.identity.decoder.resolveItemId("item-b"));
@@ -447,7 +449,9 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 			});
 			await waitForGenerations(harness, 2);
 			const second = harness.generations[1];
-			if (!second) throw new Error("Restart generation missing.");
+			if (!second) {
+				throw new Error("Restart generation missing.");
+			}
 			await second.ready;
 			expect(harness.owner.snapshot()).toMatchObject({
 				state: "running",
@@ -474,8 +478,9 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 			);
 			expectPendingOffer(harness, freshSettled);
 			const freshStart = requestParams(harness, "thread/realtime/start")[2];
-			if (typeof freshStart?.["realtimeSessionId"] !== "string")
+			if (typeof freshStart?.["realtimeSessionId"] !== "string") {
 				throw new Error("Fresh start identity missing.");
+			}
 			const { decoder } = second.identity;
 			const freshThread = decoder.serializeCodexIdentity(second.binding.coordinatorThreadId);
 			second.adapter.onNotification(

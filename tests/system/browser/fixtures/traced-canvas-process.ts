@@ -12,7 +12,9 @@ export function readFsyncTrace(
 	traceFile: string,
 	options: { settled?: boolean } = {},
 ): FsyncTraceEvidence {
-	if (!fs.existsSync(traceFile)) return { calls: [], incomplete: [] };
+	if (!fs.existsSync(traceFile)) {
+		return { calls: [], incomplete: [] };
+	}
 	const text = fs.readFileSync(traceFile, "utf8");
 	const finalNewline = text.lastIndexOf("\n");
 	const hasDeferredTail = !text.endsWith("\n");
@@ -47,14 +49,23 @@ export function readFsyncTrace(
 			const pid = resumed[1]!;
 			const starts = pending.get(pid);
 			const start = starts?.shift();
-			if (!start) incomplete.push(line);
-			else if (resumed[2] === "0") calls.push(`${start} ${line}`);
-			if (starts?.length === 0) pending.delete(pid);
+			if (!start) {
+				incomplete.push(line);
+			} else if (resumed[2] === "0") {
+				calls.push(`${start} ${line}`);
+			}
+			if (starts?.length === 0) {
+				pending.delete(pid);
+			}
 			continue;
 		}
-		if (!lifecycle.test(line) && !terminalTracerNoise.test(line)) incomplete.push(line);
+		if (!lifecycle.test(line) && !terminalTracerNoise.test(line)) {
+			incomplete.push(line);
+		}
 	}
-	for (const starts of pending.values()) incomplete.push(...starts);
+	for (const starts of pending.values()) {
+		incomplete.push(...starts);
+	}
 	if (options.settled && deferredTail && !terminalTracerNoise.test(deferredTail)) {
 		incomplete.push(deferredTail);
 	}
@@ -66,7 +77,9 @@ export function readFsyncTrace(
 
 export function tracerPids(processGroup: number): number[] {
 	return fs.readdirSync("/proc").flatMap((entry) => {
-		if (!/^\d+$/.test(entry)) return [];
+		if (!/^\d+$/.test(entry)) {
+			return [];
+		}
 		const pid = Number(entry);
 		try {
 			const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
@@ -82,9 +95,15 @@ export function tracerPids(processGroup: number): number[] {
 function tracedCanvasMain(): void {
 	const serverEntry = process.env[SERVER_ENTRY_ENV];
 	const traceFile = process.env[TRACE_FILE_ENV];
-	if (!serverEntry) throw new Error(`${SERVER_ENTRY_ENV} is required.`);
-	if (!traceFile) throw new Error(`${TRACE_FILE_ENV} is required.`);
-	if (!process.execve) throw new Error("This runtime does not provide process.execve.");
+	if (!serverEntry) {
+		throw new Error(`${SERVER_ENTRY_ENV} is required.`);
+	}
+	if (!traceFile) {
+		throw new Error(`${TRACE_FILE_ENV} is required.`);
+	}
+	if (!process.execve) {
+		throw new Error("This runtime does not provide process.execve.");
+	}
 	const environment = { ...process.env };
 	delete environment[SERVER_ENTRY_ENV];
 	delete environment[TRACE_FILE_ENV];
@@ -99,7 +118,9 @@ function tracedCanvasMain(): void {
 				return false;
 			}
 		});
-	if (!strace) throw new Error("strace is not executable on PATH.");
+	if (!strace) {
+		throw new Error("strace is not executable on PATH.");
+	}
 	process.execve(
 		strace,
 		[
@@ -117,4 +138,6 @@ function tracedCanvasMain(): void {
 	);
 }
 
-if (import.meta.main) tracedCanvasMain();
+if (import.meta.main) {
+	tracedCanvasMain();
+}

@@ -39,8 +39,9 @@ export function performanceBoard(
 		(nodes[end]!["boundElements"] as RawElement[]).push({ id: edge["id"], type: "arrow" });
 		return edge;
 	});
-	for (let index = 0; index < labelCount; index += 1)
+	for (let index = 0; index < labelCount; index += 1) {
 		(nodes[index]!["boundElements"] as RawElement[]).push({ id: `t${index}`, type: "text" });
+	}
 	return [...nodes, ...connectors, ...labels];
 }
 

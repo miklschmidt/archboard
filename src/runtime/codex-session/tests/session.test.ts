@@ -59,10 +59,11 @@ describe("typed Codex session", () => {
 	test("emits the authored initialize policy and buffers notifications until storage proof", async () => {
 		const fixture = createSessionFixture({ now: () => 12_345 });
 		fixture.transport.beforeRequest = (method) => {
-			if (method === "initialize")
+			if (method === "initialize") {
 				fixture.transport.emitNotification(
 					makeNotification(fixture) as TransportServerNotification,
 				);
+			}
 		};
 		fixture.transport.beforeNotificationWrite = () => {
 			fixture.transport.emitNotification(
