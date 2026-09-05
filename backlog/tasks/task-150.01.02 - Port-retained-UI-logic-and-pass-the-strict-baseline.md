@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-05 01:11'
-updated_date: '2026-09-05 04:44'
+updated_date: '2026-09-05 04:46'
 labels: []
 dependencies:
   - TASK-150.01.01
@@ -64,4 +64,6 @@ The proposed mass lint exclusions remain unapproved. Diagnostic count, annotatio
 Coordinator correction after direct git log verification: the earlier full hashes for the indexed-access and dependency checkpoints contained incorrect tails. Authoritative refs are f9cee0b02405bcd35e488e758a35520541f6eafa and eaad7c73413dc948e4239421269e381e186d2651. The subsequent shared/tooling compiler checkpoint is f9abd7cb95a228887d729c4258b8cdd3dedae019. Use Git-resolved hashes for subsequent reports. All three scoped workers remain responsible for complete applicable lint and physical line bounds, not compiler-only completion. Work proceeds in coherent module checkpoints; architectural decomposition decisions return to Astra coordinator. Shared Codex Zod conformance exact-optional mismatch is routed to the primary shared owner with required/optional key semantics and both conformance directions preserved. Primary owns one refreshed root compiler inventory for all workers and all unassigned runtime modules, including board-inspection. Current authored lint debt and any retained-check failures remain blockers to releasing fresh UI work.
 
 Phase-deferred browser-owner verification recorded by coordinator: tests/system/repository-policy/ci-browser-gate.test.ts keeps its static/preflight assertions active, but two unchanged executable-adapter cases defer to TASK-150.06 because they launch an owner after the frontend build: “canonical owner argv ignores substitution input and receives the configured executable” and “scopes the long agent-browser operation timeout to the human-performance owner.” During quarantine both stop at the intentionally absent frontend/index.html. This is not passing evidence and authorizes no fake entrypoint, skipped assertion, weakened normal gate or permanent exclusion; TASK-150.06 must run both unchanged after reconstruction.
+
+Additional phase-deferred verification: tests/system/boards/server-rendering-failure.test.ts remains active under strict compiler/lint with source and assertions unchanged, but focused execution currently stops at the intentionally absent dist/frontend before its intended missing-Chromium assertion. TASK-150.06 must run the unchanged case after frontend reconstruction. This is not passing evidence and authorizes no fake UI entrypoint or normal skip.
 <!-- SECTION:NOTES:END -->
