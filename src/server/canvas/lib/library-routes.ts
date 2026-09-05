@@ -1,4 +1,5 @@
-import type { Application, Request, Response } from "express";
+import { Router as createRouter } from "express";
+import type { RequestHandler, Router as ExpressRouter } from "express";
 import { z } from "zod";
 import { readLibrary, writeLibrary } from "../../../runtime/engine/library.js";
 import type { LibraryItem } from "../../../runtime/engine/library.js";
@@ -8,7 +9,7 @@ const LibraryStatusSchema = z.enum(["published", "unpublished"]);
 const OptionalLibraryStatusSchema = LibraryStatusSchema.optional();
 const OptionalCreatedSchema = z.number().optional();
 const OptionalNameSchema = z.string().optional();
-const LibraryElementsSchema = z.array(z.any());
+const LibraryElementsSchema = z.array(z.unknown());
 const LibraryWriteItemSchema = z.looseObject({
 	id: z.string(),
 	status: OptionalLibraryStatusSchema,
@@ -19,23 +20,32 @@ const LibraryWriteItemSchema = z.looseObject({
 const LibraryWriteItemsSchema = z.array(LibraryWriteItemSchema);
 const LibraryWriteSchema = z.object({ items: LibraryWriteItemsSchema });
 
+type LibraryNotificationItem = Readonly<Omit<LibraryItem, "elements">> & {
+	readonly elements: readonly unknown[];
+};
+
+type LibraryWriteInput = Readonly<
+	Pick<z.infer<typeof LibraryWriteItemSchema>, "id" | "status" | "created" | "name">
+> & {
+	readonly elements: readonly unknown[];
+};
+
 interface LibraryChangedNotification {
-	type: "library_changed";
-	items: LibraryItem[];
-	timestamp: string;
+	readonly type: "library_changed";
+	readonly items: readonly LibraryNotificationItem[];
+	readonly timestamp: string;
 }
 
 interface LibraryRouteDependencies {
-	// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- Notification must remain assignable to the mutable WebSocket wire contract.
-	notifyLibraryChanged: (notification: Readonly<LibraryChangedNotification>) => void;
+	notifyLibraryChanged: (notification: LibraryChangedNotification) => void;
 }
 
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- Express owns mutable request/response objects.
-function readLibraryRoute(_request: Request, response: Response): void {
+// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- The authoritative Express handler must mutate Response through json/status.
+const readLibraryRoute: RequestHandler = (_request, response): void => {
 	try {
 		const state = readLibrary();
 		response.json({
@@ -50,67 +60,56 @@ function readLibraryRoute(_request: Request, response: Response): void {
 		logger.error("Error reading library:", error);
 		response.status(500).json({ success: false, error: errorMessage(error) });
 	}
-}
+};
 
-function libraryItemFromRequest(
-	// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- Zod's inferred loose-object arrays are mutable at this parsing boundary.
-	item: Readonly<z.infer<typeof LibraryWriteItemSchema>>,
-): LibraryItem {
+function libraryItemFromRequest(item: LibraryWriteInput): LibraryItem {
 	return {
 		id: item.id,
 		status: item.status ?? "published",
-		elements: item.elements,
+		elements: [...item.elements],
 		created: item.created ?? Date.now(),
 		...(item.name === undefined || item.name.length === 0 ? {} : { name: item.name }),
 	};
 }
 
-function writeLibraryRoute(
-	// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- Express owns mutable request state.
-	request: Request,
-	// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- Express owns mutable response state.
-	response: Response,
-	notifyLibraryChanged: LibraryRouteDependencies["notifyLibraryChanged"],
-): void {
-	try {
-		const body = LibraryWriteSchema.parse(request.body ?? {});
-		const state = writeLibrary(body.items.map(libraryItemFromRequest));
-
-		notifyLibraryChanged({
-			type: "library_changed",
-			items: state.items,
-			timestamp: new Date().toISOString(),
-		});
-		response.json({
-			success: true,
-			count: state.items.length,
-			file: state.file,
-			vaultBacked: state.vaultBacked,
-		});
-	} catch (error) {
-		logger.error("Error writing library:", error);
-		response
-			.status(error instanceof z.ZodError ? 400 : 500)
-			.json({ success: false, error: errorMessage(error) });
-	}
-}
-
 /**
- * Register the complete server-side stencil-library HTTP boundary.
+ * Create the complete server-side stencil-library HTTP boundary.
  *
- * @param application Express application that owns the public routes.
  * @param dependencies Narrow notification boundary for successful writes.
+ * @returns Router that owns both library endpoints.
  */
-export function registerLibraryRoutes(
-	// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- Express owns mutable registration state.
-	application: Application,
+function createLibraryRouter(
 	dependencies: Readonly<LibraryRouteDependencies>,
-): void {
-	application.get("/api/library", readLibraryRoute);
-	// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- Express owns mutable request/response objects.
-	application.put("/api/library", (request, response) => {
-		writeLibraryRoute(request, response, dependencies.notifyLibraryChanged);
-	});
+): ExpressRouter {
+	const router = createRouter();
+	router.get("/api/library", readLibraryRoute);
+	// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- The authoritative Express handler must mutate Response through json/status.
+	const writeLibraryRoute: RequestHandler = (request, response): void => {
+		try {
+			const body = LibraryWriteSchema.parse(request.body ?? {});
+			const state = writeLibrary(body.items.map(libraryItemFromRequest));
+
+			dependencies.notifyLibraryChanged({
+				type: "library_changed",
+				items: state.items,
+				timestamp: new Date().toISOString(),
+			});
+			response.json({
+				success: true,
+				count: state.items.length,
+				file: state.file,
+				vaultBacked: state.vaultBacked,
+			});
+		} catch (error) {
+			logger.error("Error writing library:", error);
+			response
+				.status(error instanceof z.ZodError ? 400 : 500)
+				.json({ success: false, error: errorMessage(error) });
+		}
+	};
+	router.put("/api/library", writeLibraryRoute);
+	return router;
 }
 
+export { createLibraryRouter };
 export type { LibraryChangedNotification };

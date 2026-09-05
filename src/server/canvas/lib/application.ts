@@ -177,7 +177,7 @@ import {
 	type CanvasMutationLease,
 } from "./application-lifetime.js";
 import { narrateChange } from "../../../runtime/engine/changes.js";
-import { registerLibraryRoutes } from "./library-routes.js";
+import { createLibraryRouter } from "./library-routes.js";
 import { overlapsRegion } from "../../../runtime/engine/geometry.js";
 import {
 	AgentElementInputSchema,
@@ -4607,7 +4607,19 @@ app.get("/api/boards/compare", (req: Request, res: Response) => {
 // The result is broadcast so the other tabs stop being the stale one.
 // Including the tab that sent it. It recognises its own write by content
 // rather than by a client id, so there is no echo to suppress here.
-registerLibraryRoutes(app, { notifyLibraryChanged: broadcastBoardless });
+app.use(
+	createLibraryRouter({
+		notifyLibraryChanged(notification) {
+			broadcastBoardless({
+				...notification,
+				items: notification.items.map((item) => ({
+					...item,
+					elements: [...item.elements],
+				})),
+			});
+		},
+	}),
+);
 
 // Serve the frontend
 app.get("/", (_req: Request, res: Response) => {
