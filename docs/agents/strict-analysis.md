@@ -73,6 +73,14 @@ All authored code has a 500 physical-line limit, counting comments and blank lin
 Existing complexity 60 remains an additional bound; zero warnings and unused
 suppression reporting are mandatory.
 
+Oxlint 1.80.0 with oxlint-tsgolint 7.0.2001 incorrectly reports an immutable
+branded string when that primitive is nested inside an otherwise readonly
+record. The readonly-parameter rule therefore allows only the seven named
+string aliases at their exact defining source files. Type fixtures enforce that
+each remains a nominal string, while the policy test freezes the source-specific
+allowlist; mutable records and nested protocol collections remain errors.
+Re-audit this narrow analyzer workaround on either pinned linter upgrade.
+
 One pinned formatter conflict is inapplicable: Oxlint 1.80.0
 `unicorn/number-literal-case` requires uppercase hexadecimal digits, while the
 mandatory Oxfmt 0.65.0 pass deterministically restores lowercase and the lint

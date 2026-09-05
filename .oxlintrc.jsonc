@@ -133,6 +133,30 @@
 		"typescript/no-unnecessary-condition": "error",
 		"typescript/no-unnecessary-type-conversion": "error",
 		"typescript/consistent-return": "error",
+		"typescript/prefer-readonly-parameter-types": [
+			"error",
+			{
+				"allow": [
+					{
+						"from": "file",
+						"name": [
+							"ChildId",
+							"ChildEpoch",
+							"ThreadId",
+							"TurnId",
+							"OperationId",
+							"DynamicToolCallId",
+						],
+						"path": "src/shared/codex-workbench-identity/lib/identity.ts",
+					},
+					{
+						"from": "file",
+						"name": "DynamicAuthorityToken",
+						"path": "src/runtime/codex-dynamic-tools/lib/contract.ts",
+					},
+				],
+			},
+		],
 		"archboard/no-archive-references": "error",
 		"jsdoc/require-param-type": "off",
 		"jsdoc/require-property-type": "off",

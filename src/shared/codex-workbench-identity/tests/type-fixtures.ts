@@ -126,6 +126,21 @@ type _OperationIdRemainsOpaque = [
 	AssertFalse<IsAssignable<ApprovalId, OperationId>>,
 ];
 
+type _ReadonlyPrimitiveAllowlistTypesRemainNominalStrings = [
+	Assert<IsAssignable<ChildId, string>>,
+	Assert<IsAssignable<ChildEpoch, string>>,
+	Assert<IsAssignable<ThreadId, string>>,
+	Assert<IsAssignable<TurnId, string>>,
+	Assert<IsAssignable<OperationId, string>>,
+	Assert<IsAssignable<DynamicToolCallId, string>>,
+	AssertFalse<IsAssignable<string, ChildId>>,
+	AssertFalse<IsAssignable<string, ChildEpoch>>,
+	AssertFalse<IsAssignable<string, ThreadId>>,
+	AssertFalse<IsAssignable<string, TurnId>>,
+	AssertFalse<IsAssignable<string, OperationId>>,
+	AssertFalse<IsAssignable<string, DynamicToolCallId>>,
+];
+
 type _BroadIdentityCapabilitiesRemainNarrow = [
 	AssertFalse<"isCurrentOperationId" extends keyof IdentityValidator ? true : false>,
 	AssertFalse<"assertCurrentOperationId" extends keyof IdentityValidator ? true : false>,
@@ -201,6 +216,7 @@ export type IdentityTypeFixture = [
 	_NoLoginRequestCrossAssignment,
 	_OtherIdentitiesRemainOpaque,
 	_OperationIdRemainsOpaque,
+	_ReadonlyPrimitiveAllowlistTypesRemainNominalStrings,
 	_BroadIdentityCapabilitiesRemainNarrow,
 	_ExactCorrelationKeys,
 ];

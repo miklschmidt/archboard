@@ -14,6 +14,11 @@ interface CatalogueRule {
 interface Policy {
 	catalogueRuleCount: number;
 	catalogueSha256: string;
+	readonlyPrimitiveTypeAllowlist: readonly Readonly<{
+		from: "file";
+		name: string | readonly string[];
+		path: string;
+	}>[];
 	excludedPlugins: Record<string, string>;
 	excludedRules: Record<string, string>;
 	vendorDeclarationRules: Record<string, string>;
@@ -34,9 +39,7 @@ const configSchema = z.object({
 const policy: Policy = JSON.parse(
 	readFileSync(join(repoRoot, "docs/agents/strict-analysis-policy.json"), "utf8"),
 );
-const rawConfig: unknown = Bun.JSONC.parse(
-	readFileSync(join(repoRoot, ".oxlintrc.jsonc"), "utf8"),
-);
+const rawConfig: unknown = Bun.JSONC.parse(readFileSync(join(repoRoot, ".oxlintrc.jsonc"), "utf8"));
 const config = configSchema.parse(rawConfig);
 
 test("the full pinned rule catalogue has an explicit applicable or inapplicable disposition", () => {
@@ -100,6 +103,10 @@ test("named rules, zero warnings and 500 physical authored lines cannot regress"
 	expect(config.rules["max-lines"]).toEqual([
 		"error",
 		{ max: 500, skipBlankLines: false, skipComments: false },
+	]);
+	expect(config.rules["typescript/prefer-readonly-parameter-types"]).toEqual([
+		"error",
+		{ allow: policy.readonlyPrimitiveTypeAllowlist },
 	]);
 	expect(config.options).toMatchObject({
 		denyWarnings: true,

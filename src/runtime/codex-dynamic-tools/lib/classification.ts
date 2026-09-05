@@ -13,16 +13,12 @@ import type {
 	DynamicToolName,
 } from "./contract.js";
 
-type Primitive = bigint | boolean | null | number | string | symbol | undefined;
-type DeepReadonly<Value> = Value extends Primitive
-	? Value
-	: Value extends (...arguments_: infer Arguments) => infer Result
-		? (...arguments_: Arguments) => Result
-		: Value extends readonly unknown[]
-			? { readonly [Key in keyof Value]: DeepReadonly<Value[Key]> }
-			: Value extends object
-				? { readonly [Key in keyof Value]: DeepReadonly<Value[Key]> }
-				: Value;
+type PolicyAuthorityView<Authority extends DynamicCallerAuthority | DynamicTargetAuthority> =
+	Readonly<Omit<Authority, "linkClassification" | "threadLinkTarget">> & {
+		readonly linkClassification?: Readonly<
+			Pick<NonNullable<Authority["linkClassification"]>, "link">
+		>;
+	};
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -50,7 +46,7 @@ function stateFailure(state: DynamicEpochState): CodexDynamicToolsError | null {
 	return null;
 }
 
-function isAllowedSource(value: DeepReadonly<DynamicCallerAuthority["source"]>): boolean {
+function isAllowedSource(value: unknown): boolean {
 	return value === "cli" || value === "vscode" || value === "exec" || value === "appServer";
 }
 
@@ -63,8 +59,8 @@ function isAllowedSource(value: DeepReadonly<DynamicCallerAuthority["source"]>):
  */
 function assertMutationTargetAllowed(
 	tool: DynamicMutationToolName,
-	caller: DeepReadonly<DynamicCallerAuthority>,
-	target: DeepReadonly<DynamicTargetAuthority>,
+	caller: PolicyAuthorityView<DynamicCallerAuthority>,
+	target: PolicyAuthorityView<DynamicTargetAuthority>,
 ): DynamicRelation {
 	if (!statusAllowed(target.status)) {
 		throw dynamicError("invalid_call", "The target status is not in the reviewed target table.");
@@ -124,8 +120,8 @@ function assertMutationTargetAllowed(
 }
 
 function assertWaitTargetAllowed(
-	caller: DeepReadonly<DynamicCallerAuthority>,
-	target: DeepReadonly<DynamicTargetAuthority>,
+	caller: PolicyAuthorityView<DynamicCallerAuthority>,
+	target: PolicyAuthorityView<DynamicTargetAuthority>,
 ): DynamicRelation {
 	const stale = stateFailure(target.epochState);
 	if (stale !== null) {
@@ -180,7 +176,9 @@ function isDynamicToolName(value: unknown): value is DynamicToolName {
 
 function isDynamicServerRequest(value: unknown): value is DynamicServerRequest {
 	return (
-		isRecord(value) && value["method"] === "item/tool/call" && value["owner"] === "codex-dynamic-tools"
+		isRecord(value) &&
+		value["method"] === "item/tool/call" &&
+		value["owner"] === "codex-dynamic-tools"
 	);
 }
 
