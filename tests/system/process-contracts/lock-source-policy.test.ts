@@ -20,7 +20,7 @@ test("one module owns lock paths and one application owns broadcasts", () => {
 	};
 	walk(join(repoRoot, "src"));
 	expect(files.filter((sourcePath) => /['"`]locks['"`]/u.test(source(sourcePath)))).toEqual([
-		join(repoRoot, "src/runtime/engine/board-lock.ts"),
+		join(repoRoot, "src/runtime/engine/lib/board-lock-state.ts"),
 	]);
 	expect(
 		files.filter((sourcePath) => /type:\s*['"`]board_lock['"`]/u.test(source(sourcePath))),
@@ -29,14 +29,14 @@ test("one module owns lock paths and one application owns broadcasts", () => {
 		files.filter(
 			(sourcePath) =>
 				!sourcePath.includes("/tests/") &&
-				sourcePath !== join(repoRoot, "src/runtime/engine/board-lock.ts") &&
+				sourcePath !== join(repoRoot, "src/runtime/engine/lib/board-lock-state.ts") &&
 				source(sourcePath).includes("onBoardLockChanged("),
 		),
 	).toEqual([join(repoRoot, "src/server/canvas/lib/application.ts")]);
 	expect(
 		files.filter(
 			(sourcePath) =>
-				sourcePath !== join(repoRoot, "src/runtime/engine/board-lock.ts") &&
+				sourcePath !== join(repoRoot, "src/runtime/engine/lib/board-lock-state.ts") &&
 				/VAULT_STATE_DIR[^\n]*lock/iu.test(source(sourcePath)),
 		),
 	).toEqual([]);
