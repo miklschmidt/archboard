@@ -1,18 +1,20 @@
 import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const moduleRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const moduleRoot = path.resolve(import.meta.dirname, "..");
 
-function sources(): Array<{ readonly file: string; readonly text: string }> {
-	return fs
-		.readdirSync(path.join(moduleRoot, "lib"), { withFileTypes: true })
-		.filter((entry) => entry.isFile() && entry.name.endsWith(".ts"))
-		.map((entry) => ({
-			file: entry.name,
-			text: fs.readFileSync(path.join(moduleRoot, "lib", entry.name), "utf8"),
-		}));
+function sources(): { readonly file: string; readonly text: string }[] {
+	const results: { readonly file: string; readonly text: string }[] = [];
+	for (const entry of fs.readdirSync(path.join(moduleRoot, "lib"), { withFileTypes: true })) {
+		if (entry.isFile() && entry.name.endsWith(".ts")) {
+			results.push({
+				file: entry.name,
+				text: fs.readFileSync(path.join(moduleRoot, "lib", entry.name), "utf8"),
+			});
+		}
+	}
+	return results;
 }
 
 describe("coordinator callback source policy", () => {
@@ -31,8 +33,8 @@ describe("coordinator callback source policy", () => {
 		const text = sources()
 			.map((source) => source.text)
 			.join("\n");
-		expect(text.match(/\.threadInjectItems\(/g)).toHaveLength(1);
-		expect(text.match(/\.realtimeAppendText\(/g)).toHaveLength(1);
+		expect(text.match(/\.threadInjectItems\(/gu)).toHaveLength(1);
+		expect(text.match(/\.realtimeAppendText\(/gu)).toHaveLength(1);
 		for (const source of sources()) {
 			expect(source.text.split("\n").length, source.file).toBeLessThanOrEqual(500);
 		}
