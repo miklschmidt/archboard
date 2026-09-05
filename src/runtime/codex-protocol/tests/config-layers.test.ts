@@ -101,7 +101,7 @@ test("Codex i64 values stay safe JSON numbers and reject bigint", () => {
 test("local shell i64 timeouts use the same safe-number boundary", () => {
 	const safe = localShellNotification(Number.MAX_SAFE_INTEGER);
 
-	expect(JSON.stringify(decodeServerNotification(safe))).toBe(JSON.stringify(safe));
+	expect(decodeServerNotification(safe)).toEqual<unknown>(safe);
 	expect(() =>
 		decodeServerNotification(localShellNotification(Number.MAX_SAFE_INTEGER + 1)),
 	).toThrow(ProtocolDecodeError);
