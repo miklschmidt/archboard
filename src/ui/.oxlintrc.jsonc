@@ -183,6 +183,18 @@
 				"components/toggle.tsx",
 				"components/tooltip.tsx",
 				"components/use-mobile.ts",
+				// TASK-150.05: official assistant-ui base-nova registry source (workbench-thread/README.md)
+				"workbench-thread/markdown-text.tsx",
+				"workbench-thread/reasoning-elements.tsx",
+				"workbench-thread/reasoning.tsx",
+				"workbench-thread/thread.tsx",
+				"workbench-thread/tool-fallback.tsx",
+				"workbench-thread/tool-group.tsx",
+				"workbench-thread/tooltip-icon-button.tsx",
+				"workbench-thread/use-copy-to-clipboard.ts",
+				// TASK-150.05: official LiveKit Agents UI wave renderer and shader host (voice-wave/LICENSE-NOTICE.md)
+				"voice-wave/agent-audio-visualizer-wave.tsx",
+				"voice-wave/react-shader-toy.tsx",
 			],
 			"rules": {
 				"complexity": "off",
