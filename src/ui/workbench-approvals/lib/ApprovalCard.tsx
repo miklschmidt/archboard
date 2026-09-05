@@ -51,7 +51,7 @@ function DisclosureRows({
 			<dl className="m-0">
 				{rows.map((entry) => (
 					<div
-						className="min-w-0 grid grid-cols-[minmax(9rem,0.8fr)_minmax(0,1.2fr)] gap-control border-t border-border-subtle py-compact first:border-t-0"
+						className="grid min-w-0 grid-cols-[minmax(9rem,0.8fr)_minmax(0,1.2fr)] gap-control border-t border-border-subtle py-compact first:border-t-0"
 						data-approval-row={entry.label}
 						key={entry.label}
 					>
@@ -189,7 +189,7 @@ export function ApprovalCard({
 				<DisclosureRows label="Approval broker identity" rows={card.broker} />
 			) : null}
 			{card.kind === "ordinary" && card.links.length > 0 ? (
-				<ul className="m-0 p-0 list-none py-control" data-approval-links="safe">
+				<ul className="m-0 list-none p-0 py-control" data-approval-links="safe">
 					{card.links.map((link) => (
 						<li key={link.href}>
 							<a
@@ -205,7 +205,7 @@ export function ApprovalCard({
 				</ul>
 			) : null}
 			{card.notices.length === 0 ? null : (
-				<ul className="m-0 p-0 list-none" data-approval-notices="true">
+				<ul className="m-0 list-none p-0" data-approval-notices="true">
 					{card.notices.map((notice) => (
 						<li
 							className="border-t border-border-subtle py-compact font-sans text-body text-muted-foreground"
@@ -218,7 +218,7 @@ export function ApprovalCard({
 			)}
 			{fields.length === 0 ? null : (
 				<fieldset
-					className="m-0 min-w-0 p-0 border-0"
+					className="m-0 min-w-0 border-0 p-0"
 					data-approval-fields={decidable && !busy ? "editable" : "read_only"}
 					disabled={!decidable || busy}
 				>

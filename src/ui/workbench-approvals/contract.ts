@@ -5,7 +5,7 @@ import type {
 } from "../../shared/codex-browser-model/index.js";
 import type {
 	BrowserCommandDraft,
-	BrowserWorkbenchCommandTarget,
+	BrowserWorkbenchCommandIntent,
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
 } from "../workbench-transport/index.js";
@@ -237,7 +237,7 @@ export type WorkbenchApprovalDecisionResult =
 /** The transport surface this module uses. It never creates or owns one. */
 export type WorkbenchApprovalsTransport = Pick<
 	BrowserWorkbenchTransport,
-	"capabilities" | "captureCommandTarget" | "command"
+	"capabilities" | "captureCommandIntent" | "executeCommand" | "command"
 >;
 
 export interface WorkbenchApprovalSubmission {
@@ -246,7 +246,7 @@ export interface WorkbenchApprovalSubmission {
 	readonly offerId: string;
 	readonly form: WorkbenchApprovalFormState;
 	/** Captured when the offer was rendered, so navigation cannot retarget it. */
-	readonly target: BrowserWorkbenchCommandTarget | null;
+	readonly target: BrowserWorkbenchCommandIntent | null;
 }
 
 export interface WorkbenchApprovalsProps {

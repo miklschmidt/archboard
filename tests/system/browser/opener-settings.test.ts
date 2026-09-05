@@ -57,7 +57,7 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 	const browser = resources.use(await createAgentBrowser());
 
 	await browser.run(["open", canvas.base]);
-	await browser.run(["set", "viewport", "1440", "900", "1"]);
+	await browser.run(["set", "viewport", "1920", "1080", "1"]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 	await pollUntil(
 		() =>
@@ -84,7 +84,7 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 	await roleAction(browser, "button", "Opener settings");
 	const loading = await pollUntil(
 		() => dialogSnapshot(browser),
-		(value) => value?.description === "Reading opener settings…",
+		(value) => value?.description === "Reading opener settings…" && value.focusInside,
 		"the described opener loading state",
 	);
 	expect(loading).toMatchObject({
@@ -286,7 +286,7 @@ test("the migrated opener dialog keeps its rendered interaction and persistence 
 	expect(flip.dialogWithinViewport).toBe(true);
 	expect(flip.pageOverflow).toBe(false);
 	expect(flip.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(true);
-	await browser.run(["set", "viewport", "1440", "900", "1"]);
+	await browser.run(["set", "viewport", "1920", "1080", "1"]);
 	expect(
 		await browser.eval<boolean>(`(() => {
 			const trigger = window.__openerTrigger;

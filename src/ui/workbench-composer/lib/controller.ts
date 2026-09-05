@@ -119,7 +119,7 @@ function deliveredTurn(plan: DispatchPlan, result: BrowserWorkbenchCommandResult
  * One state owner for every workhorse turn command the composer can send.
  *
  * Every dispatch captures the transport's command target at activation and
- * hands it back to `command()`, so a pane that navigated between composing and
+ * hands it back to `executeCommand()`, so a pane that navigated between composing and
  * sending is refused by the transport rather than silently retargeted. The
  * controller holds no message list and publishes no assistant record: the only
  * turn a person ever sees came from the host snapshot through
@@ -186,7 +186,7 @@ export function createWorkbenchComposerController(
 	): Promise<Settlement> => {
 		let target;
 		try {
-			target = transport.captureCommandTarget();
+			target = transport.captureCommandIntent();
 		} catch (error) {
 			const refused = captureRefusal(error);
 			publish({
@@ -201,7 +201,7 @@ export function createWorkbenchComposerController(
 		});
 		let settled: Settlement;
 		try {
-			const result = await transport.command(plan.draft, target);
+			const result = await transport.executeCommand(plan.draft, target);
 			if (result.code !== null)
 				settled = settlement(
 					result.outcome,

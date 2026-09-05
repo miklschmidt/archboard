@@ -4,6 +4,7 @@ import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchCommandResult,
+	BrowserWorkbenchCommandIntent,
 	BrowserWorkbenchCommandTarget,
 	BrowserWorkbenchState,
 } from "../../workbench-transport/index.js";
@@ -220,18 +221,25 @@ export function commandTarget(
 	};
 }
 
+export function commandIntent(
+	overrides: Partial<BrowserWorkbenchCommandTarget> = {},
+): BrowserWorkbenchCommandIntent {
+	const authority = commandTarget(overrides);
+	return { capturedThreadLink: authority.capturedThreadLink, authority };
+}
+
 export interface RecordedCommand {
 	readonly draft: BrowserCommandDraft;
-	readonly target: BrowserWorkbenchCommandTarget | undefined;
+	readonly target: BrowserWorkbenchCommandIntent | BrowserWorkbenchCommandTarget | undefined;
 }
 
 export interface FakeQueueTransportOptions {
 	readonly state?: BrowserWorkbenchState;
 	readonly capabilities?: BrowserWorkbenchCapabilities;
-	readonly target?: BrowserWorkbenchCommandTarget | (() => BrowserWorkbenchCommandTarget);
+	readonly target?: BrowserWorkbenchCommandIntent | (() => BrowserWorkbenchCommandIntent);
 	readonly onCommand?: (
 		draft: BrowserCommandDraft,
-		target: BrowserWorkbenchCommandTarget | undefined,
+		target: BrowserWorkbenchCommandIntent | undefined,
 	) => Promise<BrowserWorkbenchCommandResult> | BrowserWorkbenchCommandResult;
 	readonly onRefresh?: () => Promise<unknown>;
 	/** The authoritative state a refresh republishes, as the real transport does. */
@@ -271,8 +279,8 @@ export class FakeQueueTransport {
 				this.listeners.add(listener);
 				return () => this.listeners.delete(listener);
 			},
-			captureCommandTarget: () => {
-				const target = this.options.target ?? commandTarget();
+			captureCommandIntent: () => {
+				const target = this.options.target ?? commandIntent();
 				return typeof target === "function" ? target() : target;
 			},
 			refresh: async () => {
@@ -283,7 +291,7 @@ export class FakeQueueTransport {
 					Promise.resolve({ kind: "snapshot", sequence: 1, snapshot: this.current.snapshot }));
 				return result as Awaited<ReturnType<WorkbenchQueueTransport["refresh"]>>;
 			},
-			command: async (draft, target) => {
+			executeCommand: async (draft, target) => {
 				this.commands.push({ draft, target });
 				if (this.options.onCommand !== undefined)
 					return await this.options.onCommand(draft, target);

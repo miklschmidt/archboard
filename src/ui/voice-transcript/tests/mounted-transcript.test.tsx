@@ -198,7 +198,7 @@ describe("mounted voice transcript accessibility", () => {
 		).toBe("available");
 	});
 
-	test("keeps unavailable relationships visible without rendering fragment links", () => {
+	test("omits unavailable relationships and retains only reachable fragment links", () => {
 		const rendered = ui.render(
 			transcript({
 				crossLinkIds: { ...CROSS_LINK_IDS, approvalId: null, callbackId: null },
@@ -215,22 +215,12 @@ describe("mounted voice transcript accessibility", () => {
 			[...rendered.container.querySelectorAll("[data-transcript-cross-link-unavailable]")].map(
 				(node) => [node.getAttribute("data-transcript-cross-link-unavailable"), node.textContent],
 			),
-		).toEqual([
-			["approval", "ApprovalUnavailable"],
-			["callback", "CallbackUnavailable"],
-		]);
+		).toEqual([]);
 		expect(
 			[...rendered.container.querySelectorAll("[data-transcript-relationship-state] li")].map(
 				(relationship) => relationship.textContent,
 			),
-		).toEqual([
-			"Delegation",
-			"Queue",
-			"Steer",
-			"ApprovalUnavailable",
-			"CallbackUnavailable",
-			"Workhorse result",
-		]);
+		).toEqual(["Delegation", "Queue", "Steer", "Workhorse result"]);
 		expect(
 			rendered.container
 				.querySelector("[data-transcript-relationship-state]")
@@ -260,7 +250,7 @@ describe("mounted voice transcript states", () => {
 		expect(user.getByText("Provisional").className).not.toContain("text-primary");
 	});
 
-	test("keeps stale-session identity visible but never mounts its transcript text", () => {
+	test("keeps stale-session identity inspectable but never mounts its transcript text", () => {
 		const stale = transcriptRecord("stale-item", 41, {
 			sessionId: "session-prior" as ReturnType<typeof transcriptRecord>["sessionId"],
 			role: "assistant",
@@ -270,9 +260,9 @@ describe("mounted voice transcript states", () => {
 		const rendered = ui.render(transcript({ records: [stale] }));
 		const row = record(rendered.container, "stale-item");
 
-		expect(row.textContent).toContain("session-prior");
-		expect(row.textContent).toContain("stale-item");
-		expect(row.textContent).toContain("41");
+		expect(row.dataset.transcriptSessionId).toBe("session-prior");
+		expect(row.dataset.transcriptItemId).toBe("stale-item");
+		expect(row.dataset.transcriptSequence).toBe("41");
 		expect(row.textContent).toContain("Assistant");
 		expect(row.textContent).toContain("Interrupted");
 		expect(row.textContent).toContain("belongs to another realtime session");
@@ -315,6 +305,6 @@ describe("mounted voice transcript states", () => {
 		expect(after.innerHTML).toBe(markup);
 		expect(after.innerHTML).not.toContain("dark:");
 		expect(after.innerHTML).not.toMatch(/(?:slate|gray|zinc|neutral|stone|red|blue|green)-[0-9]/);
-		expect(after.querySelectorAll("dd.font-mono")).toHaveLength(3);
+		expect(after.querySelectorAll("[data-transcript-text]")).toHaveLength(1);
 	});
 });

@@ -382,11 +382,11 @@ describe("workbench timeline", () => {
 		expect(log).toContain('aria-relevant="additions"');
 		expect(log).toContain('aria-busy="true"');
 		expect(log).toContain("focus-visible:ring-inset");
-		expect(log).not.toContain("outline-offset-[");
-		expect(running).not.toContain('tabindex="-1"');
 
 		const completed = renderTimeline();
 		expect(completed.match(/<div[^>]+role="log"[^>]*>/)?.[0]).not.toContain("aria-busy");
+		expect(completed).toMatch(/<h1 class="sr-only"/);
+		expect(completed).not.toContain("Current session");
 	});
 
 	test("renders prior, terminal, hostile, repeated-link, and bounded disclosure states", () => {

@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 import type { MountedBoardPreviewScene, PreviewTheme } from "../board-preview";
 import type { BoardIdentity, BoardListing } from "../types";
 import { BoardPreviewCard, type BoardPreviewTarget } from "./BoardPreviewCard";
+import { Button } from "../button";
 import { Icon } from "./Icons";
 
 interface BoardNavigatorProps {
@@ -39,6 +40,41 @@ const entryLabel = (entry: BoardEntry): string =>
 		? "Scratch board"
 		: `${entry.identity.board} · ${entry.identity.variant === "current" ? "Current" : entry.identity.variant}`;
 
+function entryDescription(entry: BoardEntry, selected: boolean): string {
+	const location = entry.onScreen
+		? selected
+			? "Visible in the focused pane."
+			: "Visible in another pane."
+		: entry.open
+			? "Open board."
+			: "Saved board.";
+	return entry.inVault ? location : `${location} Unfiled draft.`;
+}
+
+function EntryMarkers({
+	entry,
+	selected,
+}: {
+	entry: BoardEntry;
+	selected: boolean;
+}): React.JSX.Element | null {
+	const elsewhere = entry.onScreen && !selected;
+	if (!elsewhere && entry.inVault) return null;
+	return (
+		<span className="board-nav-markers" aria-hidden="true">
+			{elsewhere && (
+				<span className="board-nav-on-screen" title="Visible in another pane">
+					<Icon name="split" size={14} />
+				</span>
+			)}
+			{!entry.inVault && <span className="board-nav-state">Draft</span>}
+		</span>
+	);
+}
+
+const NAV_ROW_CLASSES =
+	"board-nav-row w-full justify-between rounded-none border-0 px-region py-control text-left !text-title whitespace-normal";
+
 const scrollsList = (key: string): boolean =>
 	key === "ArrowDown" ||
 	key === "ArrowUp" ||
@@ -61,6 +97,8 @@ export function BoardNavigator({
 	needsName,
 	onName,
 }: BoardNavigatorProps): React.JSX.Element {
+	const descriptionPrefix = useId();
+	const descriptionId = (key: string): string => `${descriptionPrefix}-${encodeURIComponent(key)}`;
 	const navRef = useRef<HTMLElement | null>(null);
 	const focusScrollProtectionRef = useRef<FocusScrollProtection | null>(null);
 	const [preview, setPreview] = useState<PreviewDisclosure | null>(null);
@@ -116,6 +154,8 @@ export function BoardNavigator({
 	useEffect(() => {
 		const row = currentRowRef.current;
 		if (row?.dataset.boardKey === renderedCurrentKey) {
+			const group = row.closest("details");
+			if (group) group.open = true;
 			row.scrollIntoView({ block: "nearest", inline: "nearest" });
 		}
 	}, [renderedCurrentKey]);
@@ -211,8 +251,10 @@ export function BoardNavigator({
 					<span>Boards</span>
 				</div>
 				<div className="board-nav-tools">
-					<button
-						className="icon-btn"
+					<Button
+						tone="secondary"
+						size="icon"
+						className="text-muted-foreground"
 						type="button"
 						onClick={onRefresh}
 						title="Refresh boards"
@@ -220,9 +262,11 @@ export function BoardNavigator({
 						disabled={busy}
 					>
 						<Icon name="refresh" size={16} />
-					</button>
-					<button
-						className="icon-btn"
+					</Button>
+					<Button
+						tone="secondary"
+						size="icon"
+						className="text-muted-foreground"
 						type="button"
 						onClick={onNew}
 						title="New board"
@@ -230,7 +274,7 @@ export function BoardNavigator({
 						disabled={busy}
 					>
 						<Icon name="plus" size={17} />
-					</button>
+					</Button>
 				</div>
 			</div>
 
@@ -243,7 +287,8 @@ export function BoardNavigator({
 			>
 				{!listing && !error && <div className="board-nav-empty">Reading the vault…</div>}
 				{error && (
-					<button
+					<Button
+						tone="quiet"
 						className="board-nav-error"
 						type="button"
 						onClick={onRefresh}
@@ -251,7 +296,7 @@ export function BoardNavigator({
 						disabled={busy}
 					>
 						Could not read the vault. Try again.
-					</button>
+					</Button>
 				)}
 				{listing && groups.length === 0 && (
 					<div className="board-nav-empty">No named boards yet.</div>
@@ -266,75 +311,73 @@ export function BoardNavigator({
 								key={group.board}
 								aria-label={group.board}
 							>
-								<button
+								<Button
+									tone="quiet"
 									type="button"
 									aria-current={selected ? "page" : undefined}
 									aria-label={entryLabel(only)}
-									className={`board-nav-row board-nav-board${selected ? " board-nav-row-current" : ""}`}
+									aria-describedby={descriptionId(only.key)}
+									className={`${NAV_ROW_CLASSES} board-nav-board${selected ? " board-nav-row-current" : ""}`}
 									data-board-key={only.key}
 									disabled={busy}
 									onClick={selectEntry}
 									ref={selected ? currentRowRef : undefined}
-									title={`${only.key}${only.onScreen ? " · on canvas" : only.open ? " · open" : ""}`}
+									title={`${only.key} · ${entryDescription(only, selected)}`}
 									{...previewEvents(only)}
 								>
-									<span className="board-nav-variant">{group.board}</span>
-									<span className="board-nav-markers">
-										{only.onScreen ? (
-											<span className="board-nav-level board-nav-on-screen">on canvas</span>
-										) : (
-											only.open && <span className="board-nav-level board-nav-open">open</span>
-										)}
-										{!only.inVault && <span className="board-nav-state">draft</span>}
+									<span className="sr-only" id={descriptionId(only.key)}>
+										{entryDescription(only, selected)}
 									</span>
-								</button>
+									<span className="board-nav-variant">{group.board}</span>
+									<EntryMarkers entry={only} selected={selected} />
+								</Button>
 							</section>
 						);
 					}
 					return (
-						<section
-							className={`board-group${group.variants.some((entry) => entry.key === currentKey) ? " active-group" : ""}`}
+						<details
+							open
+							className="board-group board-group-variants"
 							key={group.board}
 							aria-label={group.board}
 						>
-							<div className="board-group-name" title={group.board}>
+							<summary className="board-group-name" title={group.board}>
+								<Icon name="chevron" size={14} />
 								<span className="board-group-copy">
 									<strong>{group.board}</strong>
 								</span>
-							</div>
+							</summary>
 							<div className="board-variants">
 								{group.variants.map((entry) => {
 									const selected = entry.key === currentKey;
 									const label =
 										entry.identity.variant === "current" ? "Current" : entry.identity.variant;
 									return (
-										<button
+										<Button
+											tone="quiet"
 											type="button"
-											className={`board-nav-row${selected ? " board-nav-row-current" : ""}`}
+											className={`${NAV_ROW_CLASSES}${selected ? " board-nav-row-current" : ""}`}
 											key={entry.key}
 											disabled={busy}
 											aria-current={selected ? "page" : undefined}
 											aria-label={entryLabel(entry)}
+											aria-describedby={descriptionId(entry.key)}
 											ref={selected ? currentRowRef : undefined}
 											onClick={selectEntry}
 											data-board-key={entry.key}
-											title={`${entry.key}${entry.onScreen ? " · on canvas" : entry.open ? " · open" : ""}`}
+											title={`${entry.key} · ${entryDescription(entry, selected)}`}
 											{...previewEvents(entry)}
 										>
-											<span className="board-nav-variant">{label}</span>
-											<span className="board-nav-markers">
-												{entry.onScreen ? (
-													<span className="board-nav-level board-nav-on-screen">on canvas</span>
-												) : (
-													entry.open && <span className="board-nav-level board-nav-open">open</span>
-												)}
-												{!entry.inVault && <span className="board-nav-state">draft</span>}
+											<span className="sr-only" id={descriptionId(entry.key)}>
+												{entryDescription(entry, selected)}
 											</span>
-										</button>
+											<span className="board-nav-variant">{label}</span>
+											<EntryMarkers entry={entry} selected={selected} />
+										</Button>
 									);
 								})}
 							</div>
-						</section>
+						</details>
 					);
 				})}
 			</div>
@@ -344,27 +387,49 @@ export function BoardNavigator({
 					<span className="board-group-name board-group-name-hidden">scratch</span>
 					<div className="scratch-card">
 						<div className="scratch-entry">
-							<button
+							<Button
+								tone="quiet"
 								type="button"
-								className={`board-nav-row scratch-top${scratch?.key === currentKey ? " board-nav-row-current" : ""}`}
+								className={`${NAV_ROW_CLASSES} scratch-top${scratch?.key === currentKey ? " board-nav-row-current" : ""}`}
 								disabled={busy || !scratch}
 								aria-current={scratch?.key === currentKey ? "page" : undefined}
 								aria-label="Scratch board"
+								aria-describedby={scratch ? descriptionId(scratch.key) : undefined}
 								ref={scratch?.key === currentKey ? currentRowRef : undefined}
 								onClick={selectEntry}
 								data-board-key={scratch?.key}
 								{...(scratch ? previewEvents(scratch) : {})}
 							>
+								{scratch && (
+									<span className="sr-only" id={descriptionId(scratch.key)}>
+										{entryDescription(scratch, scratch.key === currentKey)}
+									</span>
+								)}
 								<span className="board-group-copy">
 									<strong>Scratch board</strong>
 									<small>Unfiled draft</small>
 								</span>
-							</button>
+								{scratch?.onScreen && scratch.key !== currentKey && (
+									<span
+										className="board-nav-on-screen"
+										aria-hidden="true"
+										title="Visible in another pane"
+									>
+										<Icon name="split" size={14} />
+									</span>
+								)}
+							</Button>
 						</div>
 						{needsName && (
-							<button className="name-button" type="button" onClick={onName} disabled={busy}>
+							<Button
+								tone="quiet"
+								className="name-button"
+								type="button"
+								onClick={onName}
+								disabled={busy}
+							>
 								Name this board
-							</button>
+							</Button>
 						)}
 					</div>
 				</section>

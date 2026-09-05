@@ -318,3 +318,38 @@ describe("workbench runtime provider ownership", () => {
 		expect(reconnecting).toContain('data-workbench-state="reconnecting"');
 	});
 });
+
+test("missing history does not revoke a ready executable link or grant authority to other links", () => {
+	const value = snapshot(null);
+	if (value.threadLink.state !== "executable") throw new Error("Expected the executable fixture.");
+	expect(projectWorkbenchRuntime(connected(value))).toEqual({
+		mode: "executable",
+		state: "ready",
+		reason: null,
+		messages: [],
+	});
+	expect(
+		projectWorkbenchRuntime({
+			...connected(value),
+			kind: "readiness",
+			state: "account_ready",
+			connection: "connected",
+			snapshot: { ...value, readiness: { kind: "readiness", state: "account_ready" } },
+			sequence: 1,
+		}),
+	).toMatchObject({ mode: "readonly", state: "account_ready", messages: [] });
+	expect(
+		projectWorkbenchRuntime(
+			connected({
+				...value,
+				threadLink: {
+					...value.threadLink,
+					state: "inspect_only",
+					childId: null,
+					epoch: null,
+					canAcceptDirectInput: false,
+				},
+			}),
+		),
+	).toMatchObject({ mode: "readonly", state: "inspect_only", messages: [] });
+});

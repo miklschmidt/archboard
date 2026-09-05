@@ -1,3 +1,4 @@
+import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
 import { expect, test } from "bun:test";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -18,7 +19,6 @@ import {
 	runCanvasCli,
 } from "./support/agent-browser.ts";
 import {
-	claimRenderedWorkbenchLease,
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
@@ -45,7 +45,7 @@ interface InitialRenderSnapshot {
 	readonly hasCanvas: boolean;
 	readonly paneCount: string | null;
 	readonly board: string | null;
-	readonly status: string | null;
+	readonly elementCount: number;
 }
 
 async function initialRender(
@@ -59,7 +59,7 @@ async function initialRender(
 				hasCanvas: !!canvas,
 				paneCount: frame?.getAttribute('data-pane-count') ?? null,
 				board: document.querySelector('.board-name')?.textContent?.trim() ?? null,
-				status: document.querySelector('.bar-board-meta')?.textContent?.replace(/\\s+/g, ' ').trim() ?? null,
+				elementCount: (${EXCALIDRAW_APP_EXPRESSION})?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted).length ?? 0,
 			};
 		})()`);
 }
@@ -118,10 +118,9 @@ test(
 				value.hasCanvas &&
 				value.paneCount === "1" &&
 				value.board === "workbench" &&
-				value.status?.includes("1 element") === true,
+				value.elementCount === 1,
 			"the seeded canvas and one-pane workbench to render",
 		);
-		await claimRenderedWorkbenchLease(browser);
 
 		await browser.run(["console", "--clear"]);
 		await browser.run(["errors", "--clear"]);
@@ -138,13 +137,12 @@ test(
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`[...document.querySelectorAll('button')]
-					.some(button => button.textContent?.trim() === 'Create a workhorse thread' && !button.disabled)`),
+					.some(button => button.textContent?.trim() === 'Start agent' && !button.disabled)`),
 			Boolean,
 			"the workhorse creation control to become enabled",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 
-		await roleAction(browser, "button", "Create a workhorse thread");
 		await browser.run(["press", "Escape"]);
 		await pollUntil(
 			() =>
@@ -154,16 +152,19 @@ test(
 			Boolean,
 			"Escape to close Agent settings and restore focus to Settings",
 		);
+		await roleAction(browser, "button", "Settings");
+		await browser.run(["screenshot", "/tmp/archboard-149-agent-settings.png"]);
+		await roleAction(browser, "button", "Start agent");
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(
-					`document.querySelector('textarea[aria-label="Message the Codex workhorse"]') !== null`,
+					`!document.querySelector('[data-workbench-settings]') && document.activeElement?.matches('textarea[aria-label="Message the Codex workhorse"]') === true`,
 				),
 			Boolean,
-			"the created workhorse to expose the composer",
+			"starting an agent to close settings and focus the composer",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		await claimRenderedWorkbenchLease(browser);
+		await browser.run(["screenshot", "/tmp/archboard-149-agent-connected.png"]);
 		await fillLabel(browser, "Message the Codex workhorse", "Check the rendered workbench.");
 		await pollUntil(
 			() =>
@@ -216,7 +217,6 @@ test(
 		expect(pending[1]?.text).toContain("Approve this effect");
 		expect(pending[1]?.text).toContain("Decline this effect");
 
-		await claimRenderedWorkbenchLease(browser);
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`[...document.querySelectorAll('button')]
@@ -244,7 +244,7 @@ test(
 			await browser.eval<boolean>(`(() => {
 			const canvas = document.querySelector('.pane .excalidraw');
 			return canvas === window.__codexTextWorkbenchCanvas &&
-				document.querySelector('.bar-board-meta')?.textContent?.includes('1 element') === true;
+				(${EXCALIDRAW_APP_EXPRESSION})?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted).length === 1;
 		})()`),
 		).toBe(true);
 

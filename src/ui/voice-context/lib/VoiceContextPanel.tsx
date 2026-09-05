@@ -137,7 +137,6 @@ export function VoiceContextPanel({
 		>
 			<header className="flex min-h-touch-target items-center justify-between gap-control border-b border-border px-region">
 				<div>
-					<p className="m-0 text-kicker font-semibold text-muted-foreground">Voice evidence</p>
 					<h2 className="m-0 text-title font-semibold" id={headingId}>
 						Voice context
 					</h2>
@@ -160,18 +159,19 @@ export function VoiceContextPanel({
 					)}
 				</div>
 			</header>
-			<output
-				aria-atomic="true"
-				aria-live="polite"
-				className={cn(
-					"block min-h-touch-target border-b border-border-subtle px-region py-control !text-body",
-					copyNotice?.state === "failure" ? "text-destructive" : "text-muted-foreground",
-				)}
-				data-voice-context-copy-status={copyNotice?.state ?? "idle"}
-			>
-				{copyNotice?.text ??
-					"Copy actions preserve the exact canonical strings captured in this ledger."}
-			</output>
+			{copyNotice === null ? null : (
+				<output
+					aria-atomic="true"
+					aria-live="polite"
+					className={cn(
+						"block min-h-touch-target border-b border-border-subtle px-region py-control !text-body",
+						copyNotice?.state === "failure" ? "text-destructive" : "text-muted-foreground",
+					)}
+					data-voice-context-copy-status={copyNotice?.state ?? "idle"}
+				>
+					{copyNotice.text}
+				</output>
+			)}
 			{view.sessions.length === 0 ? (
 				<p className="m-0 px-region py-panel text-body text-muted-foreground">
 					No voice session has captured context yet.

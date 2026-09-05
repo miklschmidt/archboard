@@ -156,7 +156,9 @@ describe("workbench queue commands from the rendered region", () => {
 		expect(draftAt(fake, 0)).toEqual({ command: "queueAdd", prompt: "queue the migration" });
 		// queueAdd names no thread and no submission, so the captured target is the
 		// only thing that keeps it on the link it was composed against.
-		expect(fake.commands[0]?.target).toMatchObject({ childId: "child-a", epoch: "epoch-a" });
+		expect(fake.commands[0]?.target).toMatchObject({
+			capturedThreadLink: { childId: "child-a", epoch: "epoch-a" },
+		});
 		expect(
 			promptField(view.container, "Add a submission to the linked workhorse queue").value,
 		).toBe("");
@@ -187,9 +189,7 @@ describe("workbench queue commands from the rendered region", () => {
 		await view.user.click(named(rowFor(view.container, "s1"), "Cancel submission 1"));
 
 		expect(fake.commands[0]?.target).toMatchObject({
-			commandId: "command-a",
-			childId: "child-a",
-			epoch: "epoch-a",
+			capturedThreadLink: { childId: "child-a", epoch: "epoch-a" },
 		});
 	});
 });

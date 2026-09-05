@@ -76,6 +76,17 @@ export type BrowserCommandDraft = {
 	>;
 }[BrowserCommandName];
 
+/**
+ * A displayed action's link, captured without acquiring command authority.
+ * Capture and execute through the same transport; copied or invented intents
+ * are refused because they cannot prove the socket generation they came from.
+ */
+export interface BrowserWorkbenchCommandIntent {
+	readonly capturedThreadLink: BrowserThreadLink;
+	/** Exact authority, when present, is retained only for request-bound decisions. */
+	readonly authority: BrowserWorkbenchCommandTarget | null;
+}
+
 export interface BrowserWorkbenchCommandTarget {
 	readonly commandId: BrowserCommandLease["commandId"];
 	readonly paneId: BrowserCommandLease["paneId"];
@@ -143,9 +154,11 @@ export interface BrowserWorkbenchCapabilities {
 	readonly canClaimLease: boolean;
 	readonly canRenewLease: boolean;
 	readonly canReleaseLease: boolean;
+	/** The linked workbench can accept a human action and acquire its authority. */
 	readonly canCommand: boolean;
 	readonly canThreadCommands: boolean;
 	readonly canRealtime: boolean;
+	/** Human actions include authority acquisition; realtime start and dynamic responses require an exact lease. */
 	readonly supportsCommand: (command: BrowserCommandName) => boolean;
 }
 
@@ -207,6 +220,12 @@ export interface BrowserWorkbenchTransport {
 		draft: BrowserCommandDraft,
 		target?: BrowserWorkbenchCommandTarget,
 	) => Promise<BrowserWorkbenchCommandResult>;
+	/** Human actions acquire fresh authority once, revalidate their intent, then dispatch once. */
+	readonly executeCommand: (
+		draft: BrowserCommandDraft,
+		intent?: BrowserWorkbenchCommandIntent,
+	) => Promise<BrowserWorkbenchCommandResult>;
+	readonly captureCommandIntent: () => BrowserWorkbenchCommandIntent;
 	readonly captureCommandTarget: () => BrowserWorkbenchCommandTarget;
 	readonly snapshot: () => BrowserSnapshot | null;
 	readonly sequence: () => number | null;

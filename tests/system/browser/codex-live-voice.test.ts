@@ -23,11 +23,11 @@ import {
 	readControlledVoiceMediaAudit,
 } from "./support/codex-live-voice.ts";
 import {
-	claimRenderedWorkbenchLease,
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
 import { seedBoard } from "./support/fullscreen-presentation.ts";
+import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { emulateMedia } from "./support/shell-render-matrix.ts";
 
@@ -92,7 +92,7 @@ interface DockSnapshot {
 
 function focusedButton(browser: AgentBrowserSession) {
 	return browser.eval<readonly [string, string | null, boolean, boolean]>(
-		"[document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent?.trim() ?? '', document.activeElement?.getAttribute('data-voice-command') ?? null, document.activeElement instanceof HTMLButtonElement && document.activeElement.disabled, document.querySelector('[data-voice-command=start]') instanceof HTMLButtonElement && document.querySelector('[data-voice-command=start]').disabled]",
+		"[document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent?.trim() ?? '', document.activeElement?.getAttribute('data-voice-command') ?? null, document.activeElement instanceof HTMLButtonElement && document.activeElement.disabled, !(document.querySelector('[data-voice-command=start]') instanceof HTMLButtonElement) || document.querySelector('[data-voice-command=start]').disabled]",
 	);
 }
 
@@ -227,7 +227,7 @@ test(
 			() =>
 				browser.eval<boolean>(`(() => {
 					const canvas = document.querySelector('.pane .excalidraw');
-					if (!canvas || !document.querySelector('.bar-board-meta')?.textContent?.includes('1 element')) return false;
+					if (!canvas || (${EXCALIDRAW_APP_EXPRESSION})?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted).length !== 1) return false;
 					globalThis.__codexLiveVoiceCanvas = canvas;
 					return document.querySelector('.board-name')?.textContent?.trim() === 'workbench';
 				})()`),
@@ -246,23 +246,21 @@ test(
 			Boolean,
 			"the integrated workbench to expand",
 		);
-		await claimRenderedWorkbenchLease(browser);
 		await roleAction(browser, "button", "Settings");
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`[...document.querySelectorAll('button')]
-					.some(button => button.textContent?.trim() === 'Create a workhorse thread' && !button.disabled)`),
+					.some(button => button.textContent?.trim() === 'Start agent' && !button.disabled)`),
 			Boolean,
 			"the workhorse creation control to become enabled",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		await roleAction(browser, "button", "Create a workhorse thread");
-		await roleAction(browser, "button", "Close agent settings");
+		await roleAction(browser, "button", "Start agent");
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`(() => {
 					const start = document.querySelector('[data-voice-command="start"]');
-					return start instanceof HTMLButtonElement && !start.disabled;
+					return !document.querySelector('[data-workbench-settings]') && start instanceof HTMLButtonElement && !start.disabled;
 				})()`),
 			Boolean,
 			"the production voice registration to expose Start",
@@ -277,13 +275,21 @@ test(
 		expect(desktop.voiceInsideWorkbench).toBe(true);
 		expect(desktop.voiceOverlapsCanvas).toBe(false);
 		expect(desktop.canvasHeight).toBeGreaterThan(desktop.workbenchHeight);
-		const desktopControls = [
-			await workbenchControlOperability(browser, '[data-voice-command="start"]'),
-			await workbenchControlOperability(browser, '[data-voice-command="mute"]'),
-			await workbenchControlOperability(browser, '[data-voice-command="stop"]'),
-		];
-		expect(desktopControls.map(({ operable }) => operable)).toEqual([true, true, true]);
+		expect(
+			(await workbenchControlOperability(browser, '[data-voice-command="start"]')).operable,
+		).toBe(true);
+		expect(
+			await browser.eval<number>(
+				'document.querySelectorAll(\'[data-voice-command="mute"], [data-voice-command="stop"]\').length',
+			),
+		).toBe(0);
 		await browser.run(["press", "Enter"]);
+		await pollUntil(
+			() => voiceSnapshot(browser),
+			(value) => value.state === "listening" && value.sourcePane === "pane-1",
+			"voice to start and make captured evidence available",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
 		await browser.run(["click", "[data-workbench-voice-disclosure] > summary"]);
 		const listening = await pollUntil(
 			() => voiceSnapshot(browser),
@@ -346,11 +352,10 @@ test(
 		expect(flipLive.voiceOverlapsCanvas).toBe(false);
 		expect(flipLive.canvasHeight).toBeGreaterThan(flipLive.workbenchHeight);
 		const flipControls = [
-			await workbenchControlOperability(browser, '[data-voice-command="start"]'),
 			await workbenchControlOperability(browser, '[data-voice-command="unmute"]'),
 			await workbenchControlOperability(browser, '[data-voice-command="stop"]'),
 		];
-		expect(flipControls.map(({ operable }) => operable)).toEqual([true, true, true]);
+		expect(flipControls.map(({ operable }) => operable)).toEqual([true, true]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 
 		await roleAction(browser, "button", "Present Pane A fullscreen");
@@ -443,7 +448,7 @@ test(
 		expect(
 			await browser.eval<boolean>(`document.querySelector('.pane .excalidraw') ===
 				globalThis.__codexLiveVoiceCanvas &&
-				document.querySelector('.bar-board-meta')?.textContent?.includes('1 element') === true`),
+				(${EXCALIDRAW_APP_EXPRESSION})?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted).length === 1`),
 		).toBe(true);
 
 		const records = productionFixtureRecords<FixtureRecord>(fixture);

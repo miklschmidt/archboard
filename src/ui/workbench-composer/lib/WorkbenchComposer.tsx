@@ -52,7 +52,7 @@ function inputLabel(turnId: WorkbenchComposerTurnId | null): string {
 
 function placeholderFor(turnId: WorkbenchComposerTurnId | null): string {
 	return turnId === null
-		? "Ask the workhorse for something."
+		? "Ask about this board or describe a change…"
 		: "Add a correction to the running turn.";
 }
 
@@ -71,7 +71,9 @@ function StatusLine({
 		<output
 			aria-label={COMPOSER_STATUS_LABEL}
 			className={cn(
-				"m-0 block border-t border-border-subtle px-control-inline py-compact font-sans text-body",
+				state === "idle"
+					? "sr-only"
+					: "m-0 block border-t border-border-subtle px-control-inline py-compact font-sans text-body",
 				STATUS_CLASSES[state],
 			)}
 			data-composer-status={state}
@@ -325,12 +327,12 @@ export function WorkbenchComposer({
 	return (
 		<section
 			aria-label="Codex workhorse composer"
-			className={cn("min-w-0 border-t border-border bg-surface", className)}
+			className={cn("min-w-0 bg-surface px-region pb-region", className)}
 			data-workbench-composer="executable"
 		>
 			<ComposerPrimitive.Root
 				aria-busy={pending}
-				className="m-0 min-w-0 p-0 flex items-end gap-control"
+				className="m-0 flex min-w-0 items-end gap-control rounded-control border border-border bg-surface-raised p-0"
 				onSubmit={handleSubmit}
 				ref={formRef}
 			>

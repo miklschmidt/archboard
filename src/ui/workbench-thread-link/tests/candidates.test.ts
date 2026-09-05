@@ -44,7 +44,7 @@ describe("pane thread-link selection", () => {
 		expect(row?.intent).toBe("attach");
 		expect(row?.command).toBe("threadLinkAttach");
 		expect(row?.enabled).toBeTrue();
-		expect(selection.summary).toContain("1 joined record");
+		expect(selection.summary).toContain("1 conversation");
 	});
 
 	test("discloses the stale and prior-epoch reasons before anything is bound", () => {
@@ -59,10 +59,10 @@ describe("pane thread-link selection", () => {
 		]);
 		expect(selection.rows.map((row) => row.reasonLabel)).toEqual([
 			"Stale: this thread belongs to a child that is no longer the current one.",
-			"Prior epoch: this thread was bound in an epoch before the current one.",
+			"This conversation belongs to an earlier agent session.",
 		]);
 		expect(selection.rows.every((row) => row.stateLabel === "Inspect-only")).toBeTrue();
-		expect(selection.summary).toContain("2 inspect-only");
+		expect(selection.summary).toContain("2 conversations");
 	});
 
 	test("shows a reason code the classifier does not publish verbatim", () => {
@@ -108,7 +108,7 @@ describe("pane thread-link selection", () => {
 		// says executable, and this module renders exactly that.
 		const selection = select([record({ status: "active", reason: "prior_epoch" })]);
 		expect(selection.rows[0]?.outcome).toBe("executable");
-		expect(selection.rows[0]?.reasonLabel).toContain("Prior epoch");
+		expect(selection.rows[0]?.reasonLabel).toContain("earlier agent session");
 	});
 
 	test("never loads a not-loaded record and says so on the row", () => {
@@ -128,13 +128,13 @@ describe("pane thread-link selection", () => {
 		expect(selection.rows[1]?.intent).toBe("current");
 		expect(selection.rows[1]?.command).toBeNull();
 		expect(selection.rows[1]?.enabled).toBeFalse();
-		expect(selection.rows[1]?.blockedReason).toBe("This pane is already linked to this thread.");
+		expect(selection.rows[1]?.blockedReason).toBe("This conversation is already connected.");
 	});
 
 	test("disables a row whose command the workbench does not support yet", () => {
 		const selection = select([record()], { capabilities: capabilities({ supported: [] }) });
 		expect(selection.rows[0]?.enabled).toBeFalse();
-		expect(selection.rows[0]?.blockedReason).toContain("active command lease");
+		expect(selection.rows[0]?.blockedReason).toContain("Reconnect and sign in");
 	});
 
 	test("renders unknown, empty, and unavailable inventories as their own disclosed states", () => {
@@ -144,12 +144,12 @@ describe("pane thread-link selection", () => {
 			capabilities: capabilities(),
 		});
 		expect(unknown.state).toBe("unknown");
-		expect(unknown.summary).toContain("Nothing is chosen for you");
+		expect(unknown.summary).toContain("Refresh to load your conversations.");
 		expect(unknown.recovery.intent).toBe("refresh_inventory");
 		expect(unknown.recovery.owner).toBe("transport");
 		const empty = select([]);
 		expect(empty.state).toBe("empty");
-		expect(empty.summary).toContain("discovered no joined thread");
+		expect(empty.summary).toContain("No conversations are available.");
 		const unavailable = projectThreadLinkSelection({
 			inventory: {
 				kind: "thread_candidates",
@@ -167,9 +167,7 @@ describe("pane thread-link selection", () => {
 		expect(unavailable.recovery.owner).toBe("none");
 	});
 
-	test("says when the workbench published only the first page of a longer list", () => {
-		expect(select([record()], { truncated: true }).summary).toContain(
-			"only the first page of a longer list",
-		);
+	test("says when the workbench published Showing the first page.", () => {
+		expect(select([record()], { truncated: true }).summary).toContain("Showing the first page.");
 	});
 });

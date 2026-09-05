@@ -20,8 +20,17 @@ describe("cn public module", () => {
 		).toBe("bg-secondary text-muted-foreground border-border-subtle p-4");
 	});
 
-	test("preserves named semantic radius tokens that the default merger cannot classify", () => {
-		expect(cn("rounded-control rounded-panel")).toBe("rounded-control rounded-panel");
+	test("replaces semantic primitive spacing, radius and type defaults", () => {
+		expect(new Set(cn("gap-region p-panel", "gap-0 p-0").split(" "))).toEqual(
+			new Set(["p-0", "gap-0"]),
+		);
+		expect(cn("px-region py-control", "p-panel")).toBe("p-panel");
+		expect(cn("rounded-control rounded-panel")).toBe("rounded-panel");
+		expect(cn("font-mono font-regular font-semibold", "font-sans")).toBe("font-semibold font-sans");
+		expect(cn("!text-control text-muted-foreground", "!text-title text-primary")).toBe(
+			"!text-title text-primary",
+		);
+		expect(cn("min-h-header min-h-touch-target")).toBe("min-h-touch-target");
 	});
 
 	test("keeps variant conflicts isolated and uses the last class at each variant", () => {

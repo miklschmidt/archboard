@@ -1,4 +1,4 @@
-import { useCallback, useId, useMemo, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useId, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import type { MouseEvent } from "react";
 
 import { Button } from "@/ui/button";
@@ -10,7 +10,6 @@ import { projectThreadLinkPanel } from "./projection.js";
 import type {
 	ThreadLinkActionSnapshot,
 	ThreadLinkController,
-	ThreadLinkReadinessTone,
 	ThreadLinkRecovery,
 	ThreadLinkRecoveryIntent,
 	ThreadLinkRow,
@@ -19,13 +18,6 @@ import type {
 } from "./contract.js";
 
 const NO_HOST_RECOVERY: readonly ThreadLinkRecoveryIntent[] = Object.freeze([]);
-
-const TONE_CLASSES = {
-	ready: "border-status bg-status-subtle text-status-foreground",
-	progress: "border-border bg-surface-subtle text-muted-foreground",
-	blocked: "border-warning bg-warning-subtle text-warning",
-	failed: "border-destructive bg-destructive-subtle text-destructive",
-} as const satisfies Record<ThreadLinkReadinessTone, string>;
 
 const ACTION_CLASSES = {
 	idle: "border-border bg-surface-subtle text-muted-foreground",
@@ -36,18 +28,10 @@ const ACTION_CLASSES = {
 } as const satisfies Record<ThreadLinkActionSnapshot["state"], string>;
 
 const ROW_ACTION_LABELS = {
-	attach: { executable: "Attach", inspect_only: "Attach for inspection" },
-	relink: { executable: "Relink", inspect_only: "Relink for inspection" },
-	current: { executable: "Linked", inspect_only: "Linked" },
+	attach: { executable: "Connect", inspect_only: "View only" },
+	relink: { executable: "Switch", inspect_only: "View only" },
+	current: { executable: "Connected", inspect_only: "Viewing" },
 } as const satisfies Record<ThreadLinkRow["intent"], Record<ThreadLinkRow["outcome"], string>>;
-
-const FACT_LABELS = [
-	["Classification", "stateLabel"],
-	["Source", "sourceLabel"],
-	["Status", "statusLabel"],
-	["Loaded", "loadedLabel"],
-	["Controllability", "controllabilityLabel"],
-] as const satisfies readonly (readonly [string, keyof ThreadLinkRow])[];
 
 interface RecoveryControlProps {
 	readonly recovery: ThreadLinkRecovery;
@@ -103,7 +87,7 @@ function RecoveryList({
 }): ReactNode {
 	if (recoveries.length === 0) return null;
 	return (
-		<ul className="m-0 p-0 flex list-none flex-wrap gap-control pb-control">
+		<ul className="m-0 flex list-none flex-wrap gap-control p-0 pb-control">
 			{recoveries.map((recovery) => (
 				<li className="min-w-0" key={recovery.intent}>
 					<RecoveryControl
@@ -138,7 +122,7 @@ function SelectionRows({
 		[controller, rows],
 	);
 	return (
-		<ul className="m-0 p-0 list-none">
+		<ul className="m-0 list-none p-0">
 			{rows.map((row) => (
 				<li
 					className="grid grid-cols-[minmax(0,1fr)_minmax(9rem,auto)] items-start gap-control-inline border-t border-border-subtle py-control first:border-t-0"
@@ -149,19 +133,16 @@ function SelectionRows({
 				>
 					<div className="min-w-0">
 						<p className="m-0 font-mono text-technical text-foreground">{row.threadId}</p>
-						<dl className="m-0 grid grid-cols-5 gap-control pt-compact">
-							{FACT_LABELS.map(([label, key]) => (
-								<div className="min-w-0" key={label}>
-									<dt className="text-kicker font-semibold text-muted-foreground">{label}</dt>
-									<dd className="m-0 text-body break-words text-foreground">{String(row[key])}</dd>
-								</div>
-							))}
-						</dl>
-						<p className="m-0 pt-compact text-body text-muted-foreground">{row.reasonLabel}</p>
+						<p className="m-0 pt-compact text-body text-muted-foreground">
+							{row.outcome === "inspect_only" ? "Read only" : row.statusLabel}
+						</p>
+						{row.outcome === "inspect_only" ? (
+							<p className="m-0 pt-compact text-body text-muted-foreground">{row.reasonLabel}</p>
+						) : null}
 					</div>
 					<div className="min-w-0">
 						<Button
-							aria-label={`${ROW_ACTION_LABELS[row.intent][row.outcome]} thread ${row.threadId}`}
+							aria-label={`${ROW_ACTION_LABELS[row.intent][row.outcome]} conversation ${row.threadId}`}
 							data-thread-link-bind={row.selectionId}
 							disabled={!row.enabled}
 							onClick={onBind}
@@ -217,6 +198,7 @@ export function WorkbenchThreadLink({
 	const headingId = useId();
 	const readinessId = useId();
 	const selectionId = useId();
+	const [choosing, setChoosing] = useState(false);
 	const accountSectionId = useId();
 	const store = useMemo(() => createWorkbenchRuntimeStore(transport), [transport]);
 	const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
@@ -233,120 +215,111 @@ export function WorkbenchThreadLink({
 		action,
 	});
 	const rows = panel.selection.rows;
+	const unavailableReason =
+		panel.readiness.arm === "thread_capable" ? panel.create.blockedReason : panel.readiness.detail;
+	const readinessRecoveries = useMemo(
+		() =>
+			panel.readiness.recoveries.filter(
+				(recovery) => !["retry_login", "cancel_login"].includes(recovery.intent),
+			),
+		[panel.readiness.recoveries],
+	);
 	const pendingLoginId = panel.account.pendingLoginId;
 	const create = useCallback(() => {
 		void controller.create();
 	}, [controller]);
-	const announcement =
-		panel.action.state === "idle"
-			? "No thread-link action has run in this pane."
-			: panel.action.announcement;
+	const chooseExisting = useCallback(() => {
+		setChoosing((current) => !current);
+		if (!choosing && panel.selection.state === "unknown" && panel.selection.recovery.available)
+			void controller.refreshInventory();
+	}, [choosing, controller, panel.selection.recovery.available, panel.selection.state]);
 	const actionRecovery =
 		panel.action.state === "idle" || panel.action.state === "pending"
 			? null
 			: panel.action.recovery;
 	return (
 		<section
-			aria-describedby={readinessId}
 			aria-labelledby={headingId}
-			className={cn(
-				"min-w-0 border-y border-border bg-surface px-region py-control font-sans text-foreground shadow-flat",
-				className,
-			)}
+			className={cn("min-w-0 px-region py-region font-sans text-foreground", className)}
 			data-thread-link-pane={panel.paneId}
 			data-thread-link-readiness={panel.readiness.arm}
 		>
-			<header className="flex min-h-touch-target items-center justify-between gap-control border-b border-border">
-				<div className="min-w-0">
-					<p className="m-0 text-kicker font-semibold text-muted-foreground">Pane thread link</p>
-					<h2 className="m-0 text-title font-semibold" id={headingId}>
-						{panel.currentLink.label}
-					</h2>
-				</div>
-				<output
-					aria-atomic="true"
-					aria-label={`Codex workbench readiness: ${panel.readiness.label}`}
-					aria-live="polite"
-					className={cn(
-						"shrink-0 rounded-control border px-control py-compact !text-body font-medium",
-						TONE_CLASSES[panel.readiness.tone],
-					)}
-				>
-					{panel.readiness.label}
-				</output>
-			</header>
-			<p className="m-0 py-control text-body text-muted-foreground" id={readinessId}>
-				{panel.currentLink.detail}
-			</p>
-			<p className="m-0 border-t border-border-subtle py-control text-body text-muted-foreground">
-				{panel.readiness.detail}
-				{panel.readiness.retryAtMs === null ? null : (
-					<span className="ml-compact font-mono text-technical">
-						Next start at {panel.readiness.retryAtMs}.
-					</span>
+			<header className="min-w-0 pb-region">
+				<h2 className="sr-only" id={headingId}>
+					Connection
+				</h2>
+				<p className="m-0 text-body text-muted-foreground">{panel.currentLink.detail}</p>
+				{panel.currentLink.threadId === null ? null : (
+					<details className="pt-control">
+						<summary className="flex min-h-touch-target cursor-pointer items-center text-body text-muted-foreground outline-none focus-visible:outline-2 focus-visible:outline-ring">
+							Conversation details
+						</summary>
+						<p className="m-0 pb-control font-mono text-technical break-all">
+							{panel.currentLink.threadId}
+						</p>
+					</details>
 				)}
-			</p>
+			</header>
+			{unavailableReason === null ? null : (
+				<output className="m-0 block pb-control text-body text-muted-foreground" id={readinessId}>
+					{unavailableReason}
+				</output>
+			)}
 			<RecoveryList
 				accountSectionId={accountSectionId}
 				controller={controller}
 				pendingLoginId={pendingLoginId}
-				recoveries={panel.readiness.recoveries}
+				recoveries={readinessRecoveries}
 			/>
-			<output
-				aria-atomic="true"
-				aria-label="Codex thread-link action"
-				aria-live="polite"
-				className={cn(
-					"block rounded-control border px-control py-compact !text-body",
-					ACTION_CLASSES[panel.action.state],
-				)}
-				data-thread-link-action={panel.action.state}
-			>
-				{announcement}
-				{actionRecovery === null ? null : (
-					<span className="mt-compact block">
-						{actionRecovery.label}: {actionRecovery.description}
-					</span>
-				)}
-			</output>
-			<section className="border-t border-border py-control" data-thread-link-create="offer">
-				<div className="flex items-baseline justify-between gap-control">
-					<h3 className="m-0 text-kicker font-semibold text-muted-foreground">
-						Create a workhorse thread
-					</h3>
-					<span className="text-body text-muted-foreground">{panel.create.prerequisite}</span>
-				</div>
-				<div className="flex items-center gap-control pt-control">
-					<Button disabled={!panel.create.enabled} onClick={create} tone="primary" type="button">
-						{panel.create.label}
-					</Button>
-					{panel.create.blockedReason === null ? null : (
-						<span className="text-body text-muted-foreground">{panel.create.blockedReason}</span>
+			{panel.action.state === "idle" ? null : (
+				<output
+					aria-atomic="true"
+					aria-label="Agent connection action"
+					aria-live="polite"
+					className={cn(
+						"mb-control block border-l-2 px-control py-control !text-body",
+						ACTION_CLASSES[panel.action.state],
 					)}
-				</div>
-			</section>
-			<section
-				aria-describedby={selectionId}
-				aria-labelledby={`${selectionId}-heading`}
-				className="border-t border-border py-control"
-				data-thread-link-selection={panel.selection.state}
+					data-thread-link-action={panel.action.state}
+				>
+					{panel.action.announcement}
+					{actionRecovery === null ? null : (
+						<span className="mt-compact block">{actionRecovery.description}</span>
+					)}
+				</output>
+			)}
+			<div
+				className="flex flex-wrap items-center gap-control pb-region"
+				data-thread-link-create="offer"
 			>
-				<div className="flex items-baseline justify-between gap-control">
-					<h3
-						className="m-0 text-kicker font-semibold text-muted-foreground"
-						id={`${selectionId}-heading`}
-					>
-						Attach a listed thread
-					</h3>
-					<span className="text-body text-muted-foreground">
-						Attach and relink are separate commands from create.
-					</span>
-				</div>
-				<p className="m-0 py-control text-body text-muted-foreground" id={selectionId}>
-					{panel.selection.summary}
-				</p>
-				<SelectionRows controller={controller} rows={rows} />
-				<div className="pt-control">
+				<Button
+					aria-describedby={panel.create.blockedReason === null ? undefined : readinessId}
+					disabled={!panel.create.enabled}
+					onClick={create}
+					tone="primary"
+					type="button"
+				>
+					{panel.currentLink.threadId === null ? panel.create.label : "Start new conversation"}
+				</Button>
+				<Button
+					aria-controls={selectionId}
+					aria-expanded={choosing}
+					onClick={chooseExisting}
+					tone="secondary"
+					type="button"
+				>
+					Choose existing conversation
+				</Button>
+			</div>
+			<section
+				hidden={!choosing}
+				aria-label="Existing conversations"
+				className="border-t border-border py-region"
+				data-thread-link-selection={panel.selection.state}
+				id={selectionId}
+			>
+				<div className="flex min-h-touch-target items-center justify-between gap-control pb-control">
+					<h3 className="m-0 text-body font-semibold">Existing conversations</h3>
 					<RecoveryControl
 						accountSectionId={accountSectionId}
 						controller={controller}
@@ -354,10 +327,9 @@ export function WorkbenchThreadLink({
 						recovery={panel.selection.recovery}
 						tone="quiet"
 					/>
-					<span className="mt-compact block text-body text-muted-foreground">
-						{panel.selection.recovery.description}
-					</span>
 				</div>
+				<p className="m-0 pb-control text-body text-muted-foreground">{panel.selection.summary}</p>
+				<SelectionRows controller={controller} rows={rows} />
 			</section>
 			<AccountSection
 				account={panel.account}

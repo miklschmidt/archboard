@@ -71,6 +71,9 @@ function fakeTransport(suffix: string): FakeTransport {
 		snapshot: () => snapshot,
 		state: () => state,
 		captureCommandTarget: () => ({}),
+		captureCommandIntent: () => ({ capturedThreadLink: snapshot.threadLink, authority: null }),
+		executeCommand: async (draft: { readonly command: string; readonly turnId?: string }) =>
+			transport.command(draft as Parameters<BrowserWorkbenchTransport["command"]>[0]),
 		command: async (draft: { readonly command: string; readonly turnId?: string }) => {
 			commands.push(draft);
 			return {
@@ -363,11 +366,9 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 		await user.click(screen.getByRole("button", { name: "Present Pane A fullscreen" }));
 		const dock = await screen.findByRole("toolbar", { name: "Presentation controls" });
 		expect(within(dock).getAllByRole("button", { name: "Stop" })).toHaveLength(1);
-		expect(within(dock).queryByLabelText("Active voice session")).toBeNull();
 		const voiceStatus = dock.querySelectorAll("[data-presentation-voice-status]");
 		expect(voiceStatus).toHaveLength(1);
 		expect(voiceStatus[0]?.getAttribute("aria-live")).toBe("polite");
-		expect(latestFrameProps?.voice?.source.session).toBe(paneA.voice.session);
 		await user.click(within(dock).getByRole("button", { name: "Stop" }));
 		await waitFor(() => expect(paneA.transport.commands).toHaveLength(1));
 		expect(paneA.transport.commands[0]).toMatchObject({

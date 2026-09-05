@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 import { cn } from "../../ui-classnames/index.js";
-import type { BrowserWorkbenchCommandTarget } from "../../workbench-transport/index.js";
+import type { BrowserWorkbenchCommandIntent } from "../../workbench-transport/index.js";
 import type {
 	WorkbenchApprovalCard,
 	WorkbenchApprovalDecisionResult,
@@ -24,7 +24,7 @@ type ResultMap = Readonly<Record<string, WorkbenchApprovalDecisionResult>>;
 interface OfferedDecisions {
 	readonly cards: readonly WorkbenchApprovalCard[];
 	readonly forms: FormMap;
-	readonly target: BrowserWorkbenchCommandTarget | null;
+	readonly target: BrowserWorkbenchCommandIntent | null;
 	readonly transport: WorkbenchApprovalsProps["transport"];
 }
 
@@ -50,10 +50,10 @@ function cardFields(card: WorkbenchApprovalCard): readonly WorkbenchApprovalFiel
 function captureTarget(
 	transport: WorkbenchApprovalsProps["transport"],
 	needed: boolean,
-): BrowserWorkbenchCommandTarget | null {
+): BrowserWorkbenchCommandIntent | null {
 	if (!needed) return null;
 	try {
-		return transport.captureCommandTarget();
+		return transport.captureCommandIntent();
 	} catch {
 		return null;
 	}
@@ -190,7 +190,7 @@ export function WorkbenchApprovals({
 				>
 					{view.beacon.announcement}
 				</output>
-				<ul className="m-0 p-0 list-none">
+				<ul className="m-0 list-none p-0">
 					{view.beacon.entries.map((entry) => (
 						<li
 							className="text-body text-muted-foreground"
