@@ -13,11 +13,15 @@ import {
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const ownerPath = "tests/system/repository-policy/ui-aesthetic-guidance.test.ts";
 const agentsPath = path.join(repoRoot, "AGENTS.md");
-const guidePath = "docs/design/archboard-ui-aesthetics.md";
-const requiredGuideReference = `\`${guidePath}\``;
+const referencePaths = [
+	"docs/design/operator-canvas-shell.md",
+	"docs/design/assets/operator-canvas-shell.png",
+	"docs/design/assets/operator-sidebar-reference.png",
+] as const;
+const trackedReferencePaths = referencePaths.slice(0, 2);
 const authorityHeading = "## UI visual authority";
 
-type GuideState = {
+type ReferenceState = {
 	isFile: boolean;
 	isTracked: boolean;
 };
@@ -43,41 +47,54 @@ function uiWorkerInstruction(section: string | undefined): string | undefined {
 	return section.slice(start, end < 0 ? section.length : end);
 }
 
-function guidanceFailures(source: string, guide: GuideState): string[] {
+function guidanceFailures(
+	source: string,
+	references: Readonly<Record<(typeof referencePaths)[number], ReferenceState>>,
+): string[] {
 	const instruction = uiWorkerInstruction(authoritySection(source));
 	const failures: string[] = [];
-	if (!instruction?.includes(requiredGuideReference)) {
-		failures.push(
-			`AGENTS.md's ${authorityHeading} section must require UI workers to read the exact guide path \`${guidePath}\` inside the UI-worker instruction.`,
-		);
-	}
-	if (!guide.isFile) {
-		failures.push(
-			`The required UI aesthetic guide is missing at the tracked path \`${guidePath}\`; restore that file before changing rendered UI.`,
-		);
-	}
-	if (!guide.isTracked) {
-		failures.push(
-			`The required UI aesthetic guide must be tracked at the exact path \`${guidePath}\`; add that path to the repository before changing rendered UI.`,
-		);
+	for (const referencePath of referencePaths) {
+		if (!instruction?.includes(`\`${referencePath}\``)) {
+			failures.push(
+				`AGENTS.md's ${authorityHeading} section must name the approved UI reference \`${referencePath}\` inside the UI-worker instruction.`,
+			);
+		}
+		if (!references[referencePath].isFile) {
+			failures.push(`The approved UI reference is missing at \`${referencePath}\`.`);
+		}
+		if (trackedReferencePaths.includes(referencePath)) {
+			if (references[referencePath].isTracked) continue;
+			failures.push(`The approved UI reference must be tracked at \`${referencePath}\`.`);
+		}
 	}
 	return failures;
 }
 
-function guideIsTracked(): boolean {
-	const result = spawnSync("git", ["ls-files", "--cached", "--error-unmatch", "--", guidePath], {
-		cwd: repoRoot,
-		encoding: "utf8",
-	});
-	return result.status === 0 && result.stdout.trim() === guidePath;
+function referenceIsTracked(referencePath: string): boolean {
+	const result = spawnSync(
+		"git",
+		["ls-files", "--cached", "--error-unmatch", "--", referencePath],
+		{
+			cwd: repoRoot,
+			encoding: "utf8",
+		},
+	);
+	return result.status === 0 && result.stdout.trim() === referencePath;
 }
 
-function guideState(): GuideState {
-	const absolutePath = path.join(repoRoot, guidePath);
-	return {
-		isFile: fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile(),
-		isTracked: guideIsTracked(),
-	};
+function referenceState(): Record<(typeof referencePaths)[number], ReferenceState> {
+	return Object.fromEntries(
+		referencePaths.map((referencePath) => {
+			const absolutePath = path.join(repoRoot, referencePath);
+			return [
+				referencePath,
+				{
+					isFile: fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile(),
+					isTracked: referenceIsTracked(referencePath),
+				},
+			];
+		}),
+	) as Record<(typeof referencePaths)[number], ReferenceState>;
 }
 
 function moveInstructionOutsideAuthority(source: string): string {
@@ -101,40 +118,50 @@ function realInventory(): InventoryInput {
 }
 
 describe("UI aesthetic guidance repository policy", () => {
-	test("requires the exact guide path in the UI-worker instruction and the guide file", () => {
+	test("requires the approved references in the UI-worker instruction", () => {
 		const source = fs.readFileSync(agentsPath, "utf8");
-		const failures = guidanceFailures(source, guideState());
+		const failures = guidanceFailures(source, referenceState());
 		expect(failures, failures.join("\n")).toEqual([]);
 	});
 
-	test("rejects a UI-worker instruction with a different guide path", () => {
+	test("rejects a UI-worker instruction with a different reference path", () => {
+		const references = referenceState();
+		const referencePath = referencePaths[0];
 		const source = fs
 			.readFileSync(agentsPath, "utf8")
-			.replace(requiredGuideReference, "`docs/design/other-guide.md`");
-		expect(guidanceFailures(source, { isFile: true, isTracked: true })).toEqual([
-			`AGENTS.md's ${authorityHeading} section must require UI workers to read the exact guide path \`${guidePath}\` inside the UI-worker instruction.`,
+			.replace(`\`${referencePath}\``, "`docs/design/other-reference.md`");
+		expect(guidanceFailures(source, references)).toEqual([
+			`AGENTS.md's ${authorityHeading} section must name the approved UI reference \`${referencePath}\` inside the UI-worker instruction.`,
 		]);
 	});
 
-	test("rejects a missing guide file without changing the instruction fixture", () => {
+	test("rejects a missing reference file without changing the instruction fixture", () => {
+		const references = referenceState();
+		const referencePath = referencePaths[1];
+		references[referencePath] = { isFile: false, isTracked: true };
 		const source = fs.readFileSync(agentsPath, "utf8");
-		expect(guidanceFailures(source, { isFile: false, isTracked: true })).toEqual([
-			`The required UI aesthetic guide is missing at the tracked path \`${guidePath}\`; restore that file before changing rendered UI.`,
+		expect(guidanceFailures(source, references)).toEqual([
+			`The approved UI reference is missing at \`${referencePath}\`.`,
 		]);
 	});
 
-	test("rejects an untracked guide replacement", () => {
+	test("rejects an untracked reference replacement", () => {
+		const references = referenceState();
+		const referencePath = referencePaths[0];
+		references[referencePath] = { isFile: true, isTracked: false };
 		const source = fs.readFileSync(agentsPath, "utf8");
-		expect(guidanceFailures(source, { isFile: true, isTracked: false })).toEqual([
-			`The required UI aesthetic guide must be tracked at the exact path \`${guidePath}\`; add that path to the repository before changing rendered UI.`,
+		expect(guidanceFailures(source, references)).toEqual([
+			`The approved UI reference must be tracked at \`${referencePath}\`.`,
 		]);
 	});
 
 	test("rejects the relationship when it is moved outside the authority section", () => {
 		const source = moveInstructionOutsideAuthority(fs.readFileSync(agentsPath, "utf8"));
-		expect(guidanceFailures(source, { isFile: true, isTracked: true })).toEqual([
-			`AGENTS.md's ${authorityHeading} section must require UI workers to read the exact guide path \`${guidePath}\` inside the UI-worker instruction.`,
-		]);
+		const failures = guidanceFailures(source, referenceState());
+		expect(failures).toHaveLength(referencePaths.length);
+		expect(failures.every((failure) => failure.includes("inside the UI-worker instruction"))).toBe(
+			true,
+		);
 	});
 
 	test("is reached once through check and the repository lane", () => {
