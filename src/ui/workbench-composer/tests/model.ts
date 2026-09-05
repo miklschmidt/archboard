@@ -228,6 +228,7 @@ export function commandResult(
 		outcome: "delivered",
 		code: null,
 		message: null,
+		turnId: TURN,
 		snapshot: snapshot({ timeline: timeline([[TURN, "inProgress"]]) }),
 		...overrides,
 	};

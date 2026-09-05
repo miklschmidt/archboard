@@ -1,11 +1,11 @@
 ---
 id: TASK-149
 title: Simplify the operator shell for live diagram and voice work
-status: Done
+status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-04 22:09'
-updated_date: '2026-09-05 01:31'
+updated_date: '2026-09-05 01:58'
 labels: []
 dependencies: []
 references:
@@ -23,9 +23,9 @@ Before the real voice acceptance smoke, the user found decorative sidebar groups
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [x] #1 Board and variant navigation has stable ordering across navigation and writes, with compact meaningful rows.
-- [x] #2 The agent drawer presents one clear conversation and composer with persistent voice controls; necessary configuration is available in an accessible settings modal and empty administrative panels are absent.
+- [ ] #2 The agent drawer presents one clear conversation and composer with persistent voice controls; necessary configuration is available in an accessible settings modal and empty administrative panels are absent.
 - [x] #3 Claims and current agent activity remain clear, board updates remain live, and agent work does not steal the user viewport.
-- [x] #4 Rendered desktop light and dark, split panes, fullscreen voice controls and relevant automated checks verify the result.
+- [ ] #4 Rendered desktop light and dark, split panes, fullscreen voice controls and relevant automated checks verify the result.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -48,6 +48,8 @@ Simplify the signed-out account flow, make ChatGPT first and default, widen Agen
 Repair ChatGPT sign-in continuation: reproduce missing authorization URL through the gateway and misleading request-completed UI, preserve a reachable pending login continuation, and verify cancellation and authoritative account completion before rebuilding the smoke worktree.
 
 Diagnose real coordinator thread/start profile mismatch with redacted predicate evidence, correct the exact response contract and fake fixture, verify real startup and workhorse eligibility, and integrate into the smoke worktree without weakening validation.
+
+Diagnose actual first-message rejection from the signed-in smoke instance; capture the underlying non-secret error, reproduce it at the production boundary, correct the contract, and verify a real text response before completion. Inspect the separately observed failed realtime negotiation after text delivery works.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -106,6 +108,10 @@ Real signed-in smoke failure reproduced with a redacted thread/start predicate p
 Real Start agent verification exposed a second independent blocker: new root was readable, idle, input-capable and appeared exactly once in thread/loaded/list, but thread/list returned no rows. Pinned Codex history listing intentionally omits threads without a preview. Production browser fixture now models empty new roots separately from persisted history; the existing browser owner fails at creation/composer focus before the fix. Narrow positive proof for current-epoch owned roots is being added; arbitrary attachment must retain missing-thread refusal.
 
 Resolved real signed-in startup and empty-history failures. Pinned session origin is vscode, with exact profile checks retained across start/reuse/cleanup and field-specific rejection diagnostics. Newly created empty roots use exact live read plus current committed thread/start ownership and loaded membership; epoch/proof/membership are rechecked and persisted evidence remains false. Failed coordinator status is explicit and successful Refresh status is quiet. Post-message attachment exposed stale process-wide semantic context; projection now requires the exact current pane and binding while preserving delivery history and strict schema. Real signed-in smoke Start agent closes settings, focuses composer and exposes Voice ready without a first message. Final validation: 2557 module tests, 13 production/system tests, shell/text/voice browser owners, lint/format/both TypeScript projects and 124 repository checks pass. Independent Astra review clear. Temporary probes removed.
+
+Actual first send failed before turn/start because includeTurns hydration returned JSON-RPC -32601 list_turns is not supported yet. Text actions now use exact metadata state and Codex expectedTurnId preconditions; accepted turn identity travels through the command result so fast completed replies do not become falsely unknown. Real Hey message now gets a reply and accepted settlement. Voice negotiation returned valid answer but browser rejected its CRLF suffix; SDP-specific validation preserves bytes and keeps size/NUL/identity checks. Real negotiation now reaches microphone acquisition, which fails because configured default PreSonus AudioBox is absent. User asked which microphone to use. 2565 module tests, 13 production tests, controlled text/voice browser owners, lint/format/both TypeScript projects and 124 repository checks pass; independent review clear. Investigating restart-control visibility after clean failed-session stop while waiting for microphone choice.
+
+Final text/voice follow-up verification: actual Hey request produces the assistant reply and accepted composer settlement. Real SDP negotiation passes; microphone acquisition is the remaining failure, and wpctl cannot resolve a default audio source. Stop now cleanly closes the realtime session and retains an enabled Start control on the same real pane. Fixed both frame filtering and CanvasPane stopped-vs-replaced publication; ended evidence stays hidden. Final 2565 module tests, 13 production/system tests, shell/text/voice browser owners (including post-stop Start), lint/format/both TypeScript projects and 124 repository checks pass. Independent review clear. Source probes removed. Keeping task open pending real microphone selection/reconnection; no system audio settings changed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

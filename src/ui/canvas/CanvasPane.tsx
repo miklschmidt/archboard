@@ -157,7 +157,7 @@ function createVoicePresentation(
 		const view = session.view();
 		if (view.status === "stopped" || view.failure?.code === "replaced") {
 			retained = null;
-			return RETIRED_VOICE_PRESENTATION;
+			return view.status === "stopped" ? AVAILABLE_VOICE_PRESENTATION : RETIRED_VOICE_PRESENTATION;
 		}
 		if (view.binding === null) {
 			retained = null;

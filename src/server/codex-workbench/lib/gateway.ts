@@ -938,6 +938,9 @@ export function createCodexWorkbenchGateway(
 				code,
 				message,
 				snapshot: nextSnapshot,
+				...(command.command === "start" && outcome === "delivered" && actionResult?.turnId
+					? { turnId: actionResult.turnId }
+					: {}),
 				...(command.command === "realtimeStart" && actionResult?.realtimeAnswer
 					? { realtimeAnswer: actionResult.realtimeAnswer }
 					: {}),

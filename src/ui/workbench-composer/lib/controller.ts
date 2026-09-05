@@ -19,7 +19,7 @@ import type {
 } from "../contract.js";
 import { composerDraftDisposition } from "./draft.js";
 import { composerRefusal, planComposerInterrupt, planComposerSubmit } from "./intent.js";
-import { readComposerLink, readComposerTurn } from "./link.js";
+import { readComposerLink } from "./link.js";
 import {
 	LATE_RESULT_REASON,
 	OUTCOME_MESSAGES,
@@ -29,8 +29,7 @@ import {
 	transportRefusalMessage,
 } from "./vocabulary.js";
 
-const NO_TURN_REASON =
-	"Codex reported delivery, but published no single authoritative in-progress turn.";
+const NO_TURN_REASON = "Codex reported delivery without identifying the accepted turn.";
 
 const IDLE_STATUS: WorkbenchComposerStatus = Object.freeze({
 	role: "status",
@@ -102,17 +101,15 @@ function captureRefusal(error: unknown): Settlement {
 
 /**
  * The turn a delivered command may claim. A steer names the turn it steered,
- * which the host already re-proved as `expectedTurnId`. A start has no id of
- * its own, so the id comes from the authoritative snapshot the host answered
- * with; when that snapshot shows no single in-progress turn, the composer says
- * the outcome is unknown rather than inventing one.
+ * which Codex accepted under its `expectedTurnId` precondition. A start has no id of
+ * its own, so its id comes from the accepted command response. The turn may
+ * already be completed by the time the accompanying snapshot is published.
  */
 function deliveredTurn(plan: DispatchPlan, result: BrowserWorkbenchCommandResult): Settlement {
 	if (plan.action !== "start")
 		return settlement("delivered", OUTCOME_MESSAGES.delivered, plan.draft.turnId);
-	const turn = readComposerTurn(result.snapshot);
-	if (turn.kind !== "active") return settlement("outcome_unknown", NO_TURN_REASON);
-	return settlement("delivered", OUTCOME_MESSAGES.delivered, turn.turnId);
+	if (result.turnId === undefined) return settlement("outcome_unknown", NO_TURN_REASON);
+	return settlement("delivered", OUTCOME_MESSAGES.delivered, result.turnId);
 }
 
 /**
