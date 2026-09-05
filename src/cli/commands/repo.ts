@@ -119,7 +119,7 @@ const repoListContract = defineCommand({
 		if (!input.text) {
 			return { result: { success: true as const, registry: registryPath(), repos } };
 		}
-		if (!repos.length) {
+		if (repos.length === 0) {
 			return {
 				result:
 					"No repository is registered on this machine yet.\nRun `repo add` inside a checkout, or bind with absolute paths and archboard will learn as it goes.",
@@ -259,7 +259,7 @@ const repoForgetContract = defineCommand({
 		const known = forgotten ? [] : listRepos().map((entry) => entry.repo);
 		const diagnostic = forgotten
 			? `Forgot where "${input.identity}" is checked out. Bindings that already name it keep their address; they just have nothing to resolve to until it is registered again.`
-			: `"${input.identity}" was not registered, so nothing changed.${known.length ? ` Registered here: ${known.join(", ")}.` : ""}`;
+			: `"${input.identity}" was not registered, so nothing changed.${known.length > 0 ? ` Registered here: ${known.join(", ")}.` : ""}`;
 		return {
 			result: { success: true as const, repo: input.identity, forgotten, registry: registryPath() },
 			diagnostics: [diagnostic],

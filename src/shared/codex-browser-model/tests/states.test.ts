@@ -103,7 +103,7 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 	}
 	for (const sourcePresentation of ["cli", "review", "future"]) {
 		expect(
-			model.BrowserDtoSchema.safeParse({ ...inspectState, sourcePresentation } as unknown).success,
+			model.BrowserDtoSchema.safeParse({ ...inspectState, sourcePresentation }).success,
 		).toBeFalse();
 	}
 });

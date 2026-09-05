@@ -96,7 +96,7 @@ function exhaustive(element: PersistedBoardElement): string {
 
 test("the supported union has eight exhaustive writable JSON arms", () => {
 	expect(writablePoint).toEqual([3, 4]);
-	expect(exhaustive as (element: PersistedBoardElement) => string).toBeFunction();
+	expect(exhaustive).toBeFunction();
 });
 
 export {

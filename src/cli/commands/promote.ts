@@ -23,13 +23,13 @@ import { boardWriteRefusals } from "../command-contract/common.js";
 function targetElements(ids: string[], board: ServerElement[]): ServerElement[] {
 	const byId = new Map(board.map((element) => [element.id, element]));
 	const missing = ids.filter((id) => !byId.has(id));
-	if (missing.length) {
+	if (missing.length > 0) {
 		throw new Error(`No element on the board with id ${missing.join(", ")}`);
 	}
 	return ids.map((id) => byId.get(id)!);
 }
 async function applyUpdates(updates: ElementUpdate[]): Promise<void> {
-	if (updates.length) {
+	if (updates.length > 0) {
 		await applyElementChanges({ upserts: updates as (Partial<ServerElement> & { id: string })[] });
 	}
 }
@@ -123,7 +123,7 @@ const PromotionIdsStageSchema = z.string().transform((value, context) => {
 		.split(",")
 		.map((id) => id.trim())
 		.filter(Boolean);
-	if (!ids.length) {
+	if (ids.length === 0) {
 		context.addIssue({ code: "custom", message: "--ids was empty" });
 		return z.NEVER;
 	}

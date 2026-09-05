@@ -4,7 +4,6 @@ import type {
 	CommandOutcomeDeclaration,
 	CommandContext,
 	OutputCase,
-	PendingArtifact,
 } from "../contract.js";
 import { CliUsageError } from "../contract.js";
 import { HoldReportSchema } from "../schemas.js";
@@ -87,7 +86,7 @@ export async function executeCommand(
 	const artifact = outputCase.artifact
 		? outputCase.artifact.parse(execution.pendingArtifact)
 		: z.undefined().parse(execution.pendingArtifact);
-	commitArtifact(outputCase, artifact as PendingArtifact | undefined);
+	commitArtifact(outputCase, artifact);
 	presentResult({
 		outputCase,
 		result: validatedResult,
