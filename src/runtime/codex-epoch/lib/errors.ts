@@ -1,14 +1,12 @@
-import { CodexEpochError, type CodexEpochErrorCode } from "./contract.js";
+import { CodexEpochError } from "./contract.js";
+import type { CodexEpochErrorCode } from "./contract.js";
 import { DurableStorageError } from "./storage.js";
 
-export function mapLockError(error: unknown): CodexEpochError {
-	if (error instanceof Error && error.message === "epoch lock is already held") {
-		return epochError("locked", "another epoch writer holds the durable lock", error);
-	}
-	return mapStorageError(error, "unable to acquire the epoch lock");
+function epochError(code: CodexEpochErrorCode, message: string, cause?: unknown): CodexEpochError {
+	return new CodexEpochError(code, message, cause);
 }
 
-export function mapStorageError(error: unknown, message: string): CodexEpochError {
+function mapStorageError(error: unknown, message: string): CodexEpochError {
 	if (error instanceof CodexEpochError) {
 		return error;
 	}
@@ -18,6 +16,11 @@ export function mapStorageError(error: unknown, message: string): CodexEpochErro
 	return epochError("storage_failure", message, error);
 }
 
-function epochError(code: CodexEpochErrorCode, message: string, cause?: unknown): CodexEpochError {
-	return new CodexEpochError(code, message, cause);
+function mapLockError(error: unknown): CodexEpochError {
+	if (error instanceof Error && error.message === "epoch lock is already held") {
+		return epochError("locked", "another epoch writer holds the durable lock", error);
+	}
+	return mapStorageError(error, "unable to acquire the epoch lock");
 }
+
+export { mapLockError, mapStorageError };
