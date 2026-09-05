@@ -14,6 +14,23 @@ import type {
 
 const state = { phase: "ready", active: false, jobs: 0 };
 
+type RendererElements = Parameters<typeof exportToBlob>[0]["elements"];
+type RendererFiles = Parameters<typeof exportToBlob>[0]["files"];
+
+function rendererElements(elements: BoardRenderJob["snapshot"]["elements"]): RendererElements {
+	// Excalidraw's nominal Radians/point brands have no runtime representation. Board I/O has
+	// already validated every persisted field before this renderer-only type restoration.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+	return elements as unknown as RendererElements;
+}
+
+function rendererFiles(files: BoardRenderJob["snapshot"]["files"]): RendererFiles {
+	// File ids and MIME values are validated at board I/O; Excalidraw's nominal brands disappear
+	// from the persisted JSON representation and are restored only at this renderer boundary.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+	return files as unknown as RendererFiles;
+}
+
 const fontNames = new Map<number, string>([
 	[1, "Virgil"],
 	[2, "Helvetica"],
@@ -125,24 +142,32 @@ async function renderOutput(
 		exportBackground: spec.background,
 		exportScale: spec.scale,
 	};
-	const focused = spec.kind === "focus";
 	const options = {
-		elements: job.snapshot.elements,
-		files: job.snapshot.files,
+		elements: rendererElements(job.snapshot.elements),
+		files: rendererFiles(job.snapshot.files),
 		appState,
-		exportPadding: focused ? 0 : spec.padding,
-		...(focused
-			? {
-					exportingFrame: findingFrame(spec),
-					getDimensions: () => ({ width: spec.width, height: spec.height, scale: spec.scale }),
-				}
-			: {}),
 	};
 	if (spec.format === "png") {
-		const png = await pngBase64(await exportToBlob({ ...options, mimeType: "image/png" }));
+		const png = await pngBase64(
+			await exportToBlob(
+				spec.kind === "focus"
+					? {
+							...options,
+							exportPadding: 0,
+							exportingFrame: findingFrame(spec),
+							getDimensions: () => ({
+								width: spec.width,
+								height: spec.height,
+								scale: spec.scale,
+							}),
+							mimeType: "image/png",
+						}
+					: { ...options, exportPadding: spec.padding, mimeType: "image/png" },
+			),
+		);
 		return { id: spec.id, format: "png", ...png };
 	}
-	const svg = await exportToSvg(options);
+	const svg = await exportToSvg({ ...options, exportPadding: spec.padding });
 	return {
 		id: spec.id,
 		format: "svg",

@@ -12,6 +12,7 @@ import {
 	rmSync,
 	symlinkSync,
 	unlinkSync,
+	writeFileSync,
 } from "node:fs";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,7 +25,7 @@ const versionsRoot = join(generatedRoot, "versions");
 const currentRoot = join(generatedRoot, "current");
 const expectedCodexVersion = "0.151.0";
 // Bump when this tracked recipe changes the generated layout or Codex arguments.
-const generationRecipeRevision = 1;
+const generationRecipeRevision = 2;
 const versionName = `version-${expectedCodexVersion}-recipe-${generationRecipeRevision}`;
 const versionRoot = join(versionsRoot, versionName);
 const codexPackageRoot = join(repositoryRoot, "node_modules/@openai/codex");
@@ -191,6 +192,33 @@ function generatedFiles(root: string, directory = ""): string[] {
 	return files;
 }
 
+const generatedCorrections = [
+	{
+		file: join("v2", "ThreadRealtimeStartParams.ts"),
+		upstream: "prompt?: string | null | null",
+		corrected: "prompt?: string | null",
+	},
+	{
+		file: join("v2", "ThreadForkParams.ts"),
+		upstream: "serviceTier?: string | null | null",
+		corrected: "serviceTier?: string | null",
+	},
+] as const;
+
+function applyGeneratedCorrections(root: string): void {
+	for (const correction of generatedCorrections) {
+		const target = join(root, correction.file);
+		const upstream = readFileSync(target, "utf8");
+		const occurrences = upstream.split(correction.upstream).length - 1;
+		if (occurrences !== 1) {
+			throw new Error(
+				`Pinned Codex generated ${correction.file} did not contain exactly one approved duplicate-null shape`,
+			);
+		}
+		writeFileSync(target, upstream.replace(correction.upstream, correction.corrected));
+	}
+}
+
 function publicationOrder(left: string, right: string): number {
 	const leftIndex = basename(left) === "index.ts";
 	const rightIndex = basename(right) === "index.ts";
@@ -304,6 +332,7 @@ async function generateContract(codexEntry: string): Promise<void> {
 		if (!existsSync(join(stagingRoot, "index.ts"))) {
 			throw new Error("Codex app-server type generation produced no index.ts");
 		}
+		applyGeneratedCorrections(stagingRoot);
 
 		const installed = installStableTarget(stagingRoot);
 		publishCurrent();

@@ -5,9 +5,14 @@ import { join, resolve } from "node:path";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const generated =
-	"src/shared/codex-app-server-contract/generated/versions/version-0.151.0-recipe-1";
+	"src/shared/codex-app-server-contract/generated/versions/version-0.151.0-recipe-2";
 
-test("the structural exception contains only untouched pinned vendor declarations", () => {
+const corrections = new Map<string, readonly [string, string]>([
+	["v2/ThreadRealtimeStartParams.ts", ["prompt?: string | null | null", "prompt?: string | null"]],
+	["v2/ThreadForkParams.ts", ["serviceTier?: string | null | null", "serviceTier?: string | null"]],
+]);
+
+test("the structural exception contains the pinned output with only approved corrections", () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-vendor-declarations-"));
 	try {
 		const result = Bun.spawnSync(
@@ -31,10 +36,13 @@ test("the structural exception contains only untouched pinned vendor declaration
 			actual,
 			"Regenerate with bun run generate:codex-contract; do not hand-edit vendor declarations",
 		).toEqual(files);
-		for (const file of files)
-			expect(readFileSync(join(repoRoot, generated, file)), file).toEqual(
-				readFileSync(join(root, file)),
-			);
+		for (const file of files) {
+			const raw = readFileSync(join(root, file), "utf8");
+			const correction = corrections.get(file);
+			const expected = correction ? raw.replace(correction[0], correction[1]) : raw;
+			if (correction) expect(raw.split(correction[0]).length - 1, file).toBe(1);
+			expect(readFileSync(join(repoRoot, generated, file), "utf8"), file).toBe(expected);
+		}
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}

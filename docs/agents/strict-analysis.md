@@ -29,10 +29,27 @@ cannot silently miss a gate: the failure names its path. Dist, dependencies and 
 inert local archive are not authored repository source. No generated source class
 is excluded. Imported declarations remain checked with `skipLibCheck: false`.
 
+Excalidraw 0.18.1 ships several authoritative declaration trees behind stale
+package names and omits type-only locale/style targets. Exact TypeScript path
+mappings resolve the shipped math, utility, transform and browser-fs-access
+declarations without changing runtime resolution. The registered Bun patch adds
+the missing declaration assets and changes only three relative import literals
+in two `.d.ts` files. Its locale is the exact `v0.18.1` source from commit
+`a2ec2889babf7d2295469c6d90ebe77fae57df84`, SHA-256
+`c8c9c8a50a14cd2d5c53703a273ce134608712f84335d9c4e2613b6d3b5bb6f5`.
+Root-level placement of that locale and two stylesheet companions works around
+Bun 1.4.0's new-patch-directory mode bug; no JavaScript or runtime CSS changes.
+The offline repository owner locks the patch paths, import edits, package
+integrity, locale hash and declaration contents.
+
 `analysis-safety.test.ts` proves a passing typed consumer and a failing consumer of
 an imported declaration through the pinned engine. `generated-declarations.test.ts`
 regenerates the pinned upstream contract into a disposable directory and compares
-its entire file set and bytes against the exempt files. It does not repair them.
+its entire file set against the exempt files. Recipe 2 applies exactly two
+shape-checked, semantics-preserving corrections: it collapses duplicated `null`
+constituents in `ThreadRealtimeStartParams.prompt` and
+`ThreadForkParams.serviceTier`. Every other byte must match raw Codex 0.151.0
+output, and generation rejects either source shape if it changes.
 
 ## Catalogue and exceptions
 

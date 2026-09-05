@@ -2,7 +2,7 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"lib": ["ES2023", "DOM", "DOM.Iterable"],
-		"types": ["node", "bun", "vite/client"]
+		"types": ["node", "vite/client"]
 	},
 	"include": [
 		"frontend/**/*.ts",
@@ -15,5 +15,5 @@
 		"src/ui/**/*.mts",
 		"src/ui/**/*.cts"
 	],
-	"exclude": ["node_modules", "dist", "legacy"]
+	"exclude": ["node_modules", "dist", "legacy", "src/ui/**/tests/**", "src/ui/**/*.test.ts"]
 }
