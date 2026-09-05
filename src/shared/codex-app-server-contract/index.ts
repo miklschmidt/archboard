@@ -80,7 +80,7 @@ type CodexServerRequest = CodexJsonWire<GeneratedServerRequest>;
 type CodexServerNotification = CodexJsonWire<GeneratedServerNotification>;
 
 type OptionalKeys<Value extends object> = {
-	[Key in keyof Value]-?: object extends Pick<Value, Key> ? Key : never;
+	[Key in keyof Value]-?: {} extends Pick<Value, Key> ? Key : never;
 }[keyof Value];
 
 /** Makes `undefined` irrelevant only when an object key is already optional. */
