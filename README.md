@@ -168,7 +168,6 @@ shared-daemon and control-socket paths are unavailable.
 - [TESTING.md](TESTING.md) — run the complete Codex, voice, and canvas loop.
 - [DESIGN.md](DESIGN.md) — product design, constraints, and roadmap.
 - [CONTEXT.md](CONTEXT.md) — the domain language used by the CLI and docs.
-- [FLIP_WHITEBOARD.md](FLIP_WHITEBOARD.md) — large-touchscreen setup.
 - [docs/adr/](docs/adr/) — architectural decisions and their consequences.
 - [AGENTS.md](AGENTS.md) — contributor and development instructions.
 

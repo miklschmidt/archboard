@@ -77,7 +77,7 @@ can be orphaned by; and the person, at any moment.
 
 **A person can always take it back.** The lock excludes writers from each other.
 It does not lock somebody out of their own wall, and no agent may make a
-75-inch display stop responding to the person standing at it. The agent is told
+canvas stop responding to the person standing at it. The agent is told
 it has lost the board, and it stops rather than fighting for it.
 
 **Taking it back is one deliberate content act, and not any touch at all** (TASK-080, TASK-118).

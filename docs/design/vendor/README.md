@@ -3,9 +3,15 @@
 Not compiled, not imported, not shipped. Source read while making a decision,
 kept so the decision can be checked against what was actually read.
 
+The `.ts.txt` and `.tsx.txt` suffixes make this non-executable status explicit.
+TASK-150 changed only the filenames, preserving the reading bytes. The shadcn
+copies are `shadcn-base/button.tsx.txt` and `shadcn-base/dialog.tsx.txt`; their
+pinned upstream commit and SHA-256 values are recorded in the
+[adoption research](../tailwind-base-ui-adoption-research.md).
+
 ## ExcalidrawData.ts
 
-`docs/design/vendor/ExcalidrawData.ts` is a reading copy of the Obsidian
+`docs/design/vendor/ExcalidrawData.ts.txt` is a reading copy of the Obsidian
 Excalidraw plugin source used by [ADR 0017](../../adr/0017-a-note-keeps-its-own-record-of-where-its-images-went.md).
 
 ### Pinned provenance

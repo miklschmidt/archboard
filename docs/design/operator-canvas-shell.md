@@ -19,7 +19,6 @@ the canvas.
 
 Archboard’s shell is desktop-only. Do not plan, implement, or gate phone/narrow
 responsive layouts unless the user explicitly reverses this decision.
-Desktop-sized touch interaction for the Samsung Flip remains supported.
 
 ## Visual direction to preserve
 
