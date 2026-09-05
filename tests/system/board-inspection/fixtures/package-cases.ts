@@ -1,6 +1,6 @@
-export type PackageElement = Record<string, unknown>;
+type PackageElement = Readonly<Record<string, unknown>>;
 
-export const connector = (overrides: PackageElement = {}): PackageElement => ({
+const connector = (overrides: PackageElement = {}): PackageElement => ({
 	id: "edge",
 	type: "arrow",
 	x: 0,
@@ -40,10 +40,10 @@ const boundLabel = (overrides: PackageElement = {}): PackageElement => ({
 	...overrides,
 });
 
-export const cleanScene = (): PackageElement[] => [
+const cleanScene = (): PackageElement[] => [
 	{ id: "clean", type: "rectangle", x: 0, y: 0, width: 10, height: 10 },
 ];
-export const warningScene = (): PackageElement[] => [
+const warningScene = (): PackageElement[] => [
 	{
 		id: "font",
 		type: "text",
@@ -55,7 +55,7 @@ export const warningScene = (): PackageElement[] => [
 		text: "warning",
 	},
 ];
-export const errorScene = (): PackageElement[] => [
+const errorScene = (): PackageElement[] => [
 	connector({
 		width: 11,
 		points: [
@@ -64,12 +64,12 @@ export const errorScene = (): PackageElement[] => [
 		],
 	}),
 ];
-export const indeterminateScene = (): PackageElement[] => [connector({ angle: 1 })];
-export const malformedScene = (): PackageElement[] => [
+const indeterminateScene = (): PackageElement[] => [connector({ angle: 1 })];
+const malformedScene = (): PackageElement[] => [
 	{ type: "arrow", x: 0, y: 0, width: null, height: 0, points: null },
 ];
 
-export const duplicateLabelScene = (): PackageElement[] => [
+const duplicateLabelScene = (): PackageElement[] => [
 	labelContainer({ id: "owner", boundElements: [] }),
 	boundLabel({
 		id: "new",
@@ -83,7 +83,7 @@ export const duplicateLabelScene = (): PackageElement[] => [
 	}),
 ];
 
-export const unmarkedBridgeScene = (): PackageElement[] => [
+const unmarkedBridgeScene = (): PackageElement[] => [
 	connector({ id: "over", type: "line", y: 50, index: "a0" }),
 	connector({
 		id: "under",
@@ -98,7 +98,7 @@ export const unmarkedBridgeScene = (): PackageElement[] => [
 	}),
 ];
 
-export const groupApplicabilityScene = (mode: "identity" | "coverage"): PackageElement[] => [
+const groupApplicabilityScene = (mode: "identity" | "coverage"): PackageElement[] => [
 	{
 		...(mode === "coverage" ? { id: "group-coverage" } : {}),
 		type: "rectangle",
@@ -107,6 +107,19 @@ export const groupApplicabilityScene = (mode: "identity" | "coverage"): PackageE
 		width: 10,
 		height: 10,
 		angle: mode === "coverage" ? 0.5 : 0,
-		groupIds: Array.from({ length: 1_000 }, (_, index) => (index === 0 ? "g" : null)),
+		groupIds: Array.from({ length: 1000 }, (_, index) => (index === 0 ? "g" : null)),
 	},
 ];
+
+export {
+	cleanScene,
+	connector,
+	duplicateLabelScene,
+	errorScene,
+	groupApplicabilityScene,
+	indeterminateScene,
+	malformedScene,
+	type PackageElement,
+	unmarkedBridgeScene,
+	warningScene,
+};
