@@ -258,13 +258,13 @@ function applyBlock(existing: string, block: string): string {
 	const start = existing.indexOf(BLOCK_BEGIN);
 	const end = existing.indexOf(BLOCK_END);
 	if (start !== -1 && end > start) {
-		const after = existing.slice(end + BLOCK_END.length).replace(/^\n/, "");
+		const after = existing.slice(end + BLOCK_END.length).replace(/^\n/u, "");
 		return existing.slice(0, start) + block + after;
 	}
 	if (!existing.trim()) {
 		return block;
 	}
-	return existing.replace(/\n*$/, "\n\n") + block;
+	return existing.replace(/\n*$/u, "\n\n") + block;
 }
 
 function gitIgnores(repo: string, target: string): boolean {

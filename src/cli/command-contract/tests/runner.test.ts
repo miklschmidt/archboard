@@ -41,7 +41,7 @@ describe("command-contract runner", () => {
 				.filter((event) => !event.startsWith("artifact:"))
 				.map((event) =>
 					event
-						.replace(/^stdout:|^stderr:/, "")
+						.replace(/^stdout:|^stderr:/u, "")
 						.replaceAll("{{ARTIFACT}}", artifactPath)
 						.replaceAll("{{STDOUT}}", expectedStdout),
 				)

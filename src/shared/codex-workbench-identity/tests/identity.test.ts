@@ -215,7 +215,7 @@ describe("codex workbench identities", () => {
 			);
 		}
 		const hostRequest = issuer.mintJsonRpcRequestId();
-		expect(decoder.serializeCodexIdentity(hostRequest)).toMatch(/^[a-f0-9]{32}$/);
+		expect(decoder.serializeCodexIdentity(hostRequest)).toMatch(/^[a-f0-9]{32}$/u);
 		expect(decoder.adoptThreadId(rawValues[0]!)).toBe(threadId);
 	});
 

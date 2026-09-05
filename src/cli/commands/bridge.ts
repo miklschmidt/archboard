@@ -15,7 +15,7 @@ const opaqueBackground = z
 	.string()
 	.trim()
 	.transform((value) => value.toLowerCase())
-	.pipe(z.string().regex(/^#[0-9a-f]{6}$/, "--background must be opaque #RRGGBB"));
+	.pipe(z.string().regex(/^#[0-9a-f]{6}$/u, "--background must be opaque #RRGGBB"));
 
 const atPoint = z.string().transform((value, context) => {
 	const pieces = value.split(",");

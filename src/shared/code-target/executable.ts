@@ -4,6 +4,6 @@ export function isAbsoluteOrBareOpenerExecutable(value: string): boolean {
 		!hasSeparator ||
 		value.startsWith("/") ||
 		value.startsWith("\\") ||
-		/^[A-Za-z]:[\\/]/.test(value)
+		/^[A-Za-z]:[\\/]/u.test(value)
 	);
 }

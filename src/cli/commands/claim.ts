@@ -21,7 +21,7 @@ const ClaimDurationInputSchema = z
 		if (said === undefined) {
 			return undefined;
 		}
-		const match = /^(\d+(?:\.\d+)?)\s*(s|m|h)$/i.exec(said.trim());
+		const match = /^(\d+(?:\.\d+)?)\s*(s|m|h)$/iu.exec(said.trim());
 		if (!match) {
 			context.addIssue({
 				code: "custom",
@@ -125,11 +125,11 @@ const claimContract = defineCommand({
 			...(input.for !== undefined ? { forMs: input.for } : {}),
 		});
 		const until = new Date(result.claim.expires).toTimeString().slice(0, 5);
-		const diagnostic =
-			(result.created
+		const diagnostic = `${
+			result.created
 				? `"${result.board}" is yours until ${until}, or until you release it.`
-				: `Your claim on "${result.board}" now runs to ${until}.`) +
-			` Every write you make to it goes under the claim, and nobody else writes to it meanwhile. The person at the canvas can take it back at any moment — you will be told, and what you have already written stays. Leave the board sensible after each write, or work on a variant and swap. Release it with \`archboard release --board ${result.board}\`.`;
+				: `Your claim on "${result.board}" now runs to ${until}.`
+		} Every write you make to it goes under the claim, and nobody else writes to it meanwhile. The person at the canvas can take it back at any moment — you will be told, and what you have already written stays. Leave the board sensible after each write, or work on a variant and swap. Release it with \`archboard release --board ${result.board}\`.`;
 		return { result: ClaimResultSchema.parse(result), diagnostics: [diagnostic] };
 	},
 });

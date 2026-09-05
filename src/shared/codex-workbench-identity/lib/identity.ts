@@ -2,17 +2,20 @@ const WIRE_PREFIX = "archboard";
 const WIRE_TOKEN_LIMIT = 8193;
 const RAW_ID_LIMIT_BYTES = 4096;
 const CANONICAL_ITEM_ID_MAX_LENGTH = `${WIRE_PREFIX}:item:`.length + WIRE_TOKEN_LIMIT;
-const TOKEN_PATTERN = new RegExp(`^[A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}}$`);
+const TOKEN_PATTERN = new RegExp(`^[A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}}$`, "u");
 const WIRE_PATTERN = new RegExp(
 	`^${WIRE_PREFIX}:([a-z-]+):([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
+	"u",
 );
 const EPOCH_TOKEN_PATTERN = new RegExp(
 	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})$`,
+	"u",
 );
 const OPERATION_ID_MAX_BYTES = 128 as const;
 const OPERATION_ID_MAX_ISSUE_ATTEMPTS = 16 as const;
 const OPERATION_TOKEN_PATTERN = new RegExp(
 	`^([A-Za-z0-9][A-Za-z0-9._~-]{0,${WIRE_TOKEN_LIMIT - 1}})\\.(h[0-9a-f]{32})$`,
+	"u",
 );
 const OPERATION_NONCE_PATTERN = /^[0-9a-f]{32}$/u;
 const TEXT_LIMIT = 256;

@@ -66,7 +66,7 @@ function requestFor(
 		kind: "dynamic_approval_request" as const,
 		identity: approvalIdentity,
 		effect: approvalEffect,
-		effectHash: "sha256:" + "0".repeat(64),
+		effectHash: `sha256:${"0".repeat(64)}`,
 		createdAtMs: 1_787_682_840_000,
 		expiresAtMs: 1_787_682_930_000,
 	};

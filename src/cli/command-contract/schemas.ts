@@ -161,7 +161,7 @@ const PendingArtifactSchema = z.discriminatedUnion("encoding", [
 			encoding: z.literal("files"),
 			files: z.array(
 				z.strictObject({
-					name: z.string().regex(/^[^/\\]+$/),
+					name: z.string().regex(/^[^/\\]+$/u),
 					content: z.instanceof(Uint8Array),
 				}),
 			),
