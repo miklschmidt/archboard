@@ -1,9 +1,13 @@
 import { chmodSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import path from "node:path";
 
 import { extendFixture } from "./codex-workbench-lifecycle.ts";
 
-/** Adds deterministic mutation-result controls to the exact production process fixture. */
+/**
+ * Adds deterministic mutation-result controls to the exact production process fixture.
+ * @param root - Disposable fixture directory.
+ * @returns Path to the extended fixture.
+ */
 export function extendOutcomeFixture(root: string): string {
 	const base = extendFixture(root);
 	const source = readFileSync(base, "utf8");
@@ -70,10 +74,11 @@ const emitMutationScenario = (scenario: MutationScenario): void => {
 		withThreadOutcomes === withSupport ||
 		withTurnOutcomes === withThreadOutcomes ||
 		withControl === withTurnOutcomes
-	)
+	) {
 		throw new Error("The controlled mutation outcome injection point drifted.");
-	const path = join(root, "fake-codex-outcomes.ts");
-	writeFileSync(path, withControl);
-	chmodSync(path, 0o700);
-	return path;
+	}
+	const fixturePath = path.join(root, "fake-codex-outcomes.ts");
+	writeFileSync(fixturePath, withControl);
+	chmodSync(fixturePath, 0o700);
+	return fixturePath;
 }

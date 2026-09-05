@@ -14,20 +14,23 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
+const repoRoot = path.resolve(import.meta.dir, "..");
 const source = path.join(repoRoot, "skills");
 const agentSkills = path.join(repoRoot, ".agents", "skills");
 const claudeSkills = path.join(repoRoot, ".claude", "skills");
 
 function discover(sourceDir: string): string[] {
-	if (!fs.existsSync(sourceDir)) return [];
-	return fs
-		.readdirSync(sourceDir, { withFileTypes: true })
-		.filter((entry) => entry.isDirectory())
-		.filter((entry) => fs.existsSync(path.join(sourceDir, entry.name, "SKILL.md")))
-		.map((entry) => entry.name);
+	if (!fs.existsSync(sourceDir)) {
+		return [];
+	}
+	const names: string[] = [];
+	for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
+		if (entry.isDirectory() && fs.existsSync(path.join(sourceDir, entry.name, "SKILL.md"))) {
+			names.push(entry.name);
+		}
+	}
+	return names;
 }
 
 fs.mkdirSync(agentSkills, { recursive: true });
@@ -37,7 +40,9 @@ const names = discover(source);
 
 const retiredNames = ["excalidraw-skill"];
 for (const name of retiredNames) {
-	if (names.includes(name)) continue;
+	if (names.includes(name)) {
+		continue;
+	}
 	fs.rmSync(path.join(agentSkills, name), { recursive: true, force: true });
 	fs.rmSync(path.join(claudeSkills, name), { recursive: true, force: true });
 }
@@ -54,20 +59,22 @@ for (const name of names) {
 	let ok = false;
 	try {
 		ok = fs.readlinkSync(link) === wanted;
-	} catch {}
+	} catch {
+		// A missing or non-symlink target is replaced below.
+	}
 	if (!ok) {
 		fs.rmSync(link, { recursive: true, force: true });
 		fs.symlinkSync(wanted, link);
 	}
 
-	console.log(`  ${name}`);
+	process.stdout.write(`  ${name}\n`);
 }
 
 if (names.length === 0) {
-	console.error("No skills found. Expected SKILL.md under skills/*.");
+	process.stderr.write("No skills found. Expected SKILL.md under skills/*.\n");
 	process.exit(1);
 }
 
-console.log(
-	`Synced ${names.length} authored skill(s) into .agents/skills/ with .claude/skills/ symlinks.`,
+process.stdout.write(
+	`Synced ${names.length} authored skill(s) into .agents/skills/ with .claude/skills/ symlinks.\n`,
 );
