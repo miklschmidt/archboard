@@ -75,10 +75,11 @@ suppression reporting are mandatory.
 
 Oxlint 1.80.0 with oxlint-tsgolint 7.0.2001 incorrectly reports an immutable
 branded string when that primitive is nested inside an otherwise readonly
-record. The readonly-parameter rule therefore allows only the eight named
+record. The readonly-parameter rule therefore allows only the nine named
 string aliases at their exact defining source files. Request correlation exposes
 the same analyzer defect through its nested `JsonRpcRequestId`, so that exact
-nominal string alias is the eighth allowed type. Type fixtures enforce that
+nominal string alias is allowed, as is the exact `ItemId` nested throughout
+otherwise readonly retained thread data. Type fixtures enforce that
 each remains a nominal string, while the policy test freezes the source-specific
 allowlist; mutable records and nested protocol collections remain errors.
 Re-audit this narrow analyzer workaround on either pinned linter upgrade.

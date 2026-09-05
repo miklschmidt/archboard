@@ -132,6 +132,7 @@ type _ReadonlyPrimitiveAllowlistTypesRemainNominalStrings = [
 	Assert<IsAssignable<OperationId, string>>,
 	Assert<IsAssignable<DynamicToolCallId, string>>,
 	Assert<IsAssignable<JsonRpcRequestId, string>>,
+	Assert<IsAssignable<ItemId, string>>,
 	AssertFalse<IsAssignable<string, ChildId>>,
 	AssertFalse<IsAssignable<string, ChildEpoch>>,
 	AssertFalse<IsAssignable<string, ThreadId>>,
@@ -139,6 +140,7 @@ type _ReadonlyPrimitiveAllowlistTypesRemainNominalStrings = [
 	AssertFalse<IsAssignable<string, OperationId>>,
 	AssertFalse<IsAssignable<string, DynamicToolCallId>>,
 	AssertFalse<IsAssignable<string, JsonRpcRequestId>>,
+	AssertFalse<IsAssignable<string, ItemId>>,
 ];
 
 type _BroadIdentityCapabilitiesRemainNarrow = [
