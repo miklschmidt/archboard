@@ -1,10 +1,10 @@
 ---
 id: TASK-150.01.02.01
 title: Repair strict Codex runtime contracts
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-05 04:35'
-updated_date: '2026-09-05 13:58'
+updated_date: '2026-09-05 14:27'
 labels: []
 dependencies: []
 references:
@@ -25,8 +25,8 @@ Deferred to TASK-151. Preserve all committed and uncommitted corrections in this
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Existing corrections remain intact.
-- [ ] #2 Remaining non-UI adoption is owned by TASK-151; this historical leaf does not block TASK-150 UI construction.
+- [x] #1 Existing corrections remain intact.
+- [x] #2 Remaining non-UI adoption is owned by TASK-151; this historical leaf does not block TASK-150 UI construction.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -44,3 +44,9 @@ Continuation checkpoint on shared HEAD f9abd7cb: primary shared JSON conformance
 
 Approved cleanup-only extraction implemented: new codex-process/lib/process-group-cleanup.ts owns proof-aware TERM/KILL settlement and canonical deadline waits through injected existing sanitized failure capabilities; process.ts retains generation/readiness/restart/storage/publication plus sole group promise dedup and group-set mutation. Full codex-process module tests pass 51/51. process.ts reduced 1435 -> 1282 lines; helper is 260 lines, so <=500 remains explicitly incomplete. New helper still has strict lint work and is not frozen for commit.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Deferred to TASK-151 by user decision; existing corrections are preserved in commit a7fef61d and do not block UI construction.
+<!-- SECTION:FINAL_SUMMARY:END -->
