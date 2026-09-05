@@ -116,7 +116,7 @@ function realpathOrNull(candidate: string): string | null {
  * when it actually resolves to this build. Otherwise return the absolute
  * path of the entry point that is running right now, which always works.
  */
-export function resolveInvocation(): { command: string; onPath: boolean } {
+function resolveInvocation(): { command: string; onPath: boolean } {
 	const root = packageRoot();
 	const wrapper = path.join(root, "bin", "canvas");
 	const entry = path.join(root, "src", "bin.ts");
@@ -162,7 +162,7 @@ function findRepoRoot(from: string): string {
  * one alongside is how a repo ends up with two agent docs that disagree, so it
  * never happens: a repo with neither gets the one matching the skill target.
  */
-export function chooseDoc(repo: string, targetSpec: string): { file: string; existed: boolean } {
+function chooseDoc(repo: string, targetSpec: string): { file: string; existed: boolean } {
 	for (const name of ["CLAUDE.md", "AGENTS.md"]) {
 		const candidate = path.join(repo, name);
 		if (fs.existsSync(candidate)) {
@@ -253,7 +253,7 @@ function renderBlock(options: {
 }
 
 /** Replace the managed block in place, or append it when there is none. */
-export function applyBlock(existing: string, block: string): string {
+function applyBlock(existing: string, block: string): string {
 	const start = existing.indexOf(BLOCK_BEGIN);
 	const end = existing.indexOf(BLOCK_END);
 	if (start !== -1 && end > start) {
@@ -275,7 +275,7 @@ function gitIgnores(repo: string, target: string): boolean {
 	}
 }
 
-export const InstallSkillInputSchema = z.object({
+const InstallSkillInputSchema = z.object({
 	dir: z.string().optional(),
 	target: z.string().optional(),
 	agent: z.string().optional(),
@@ -287,8 +287,8 @@ export const InstallSkillInputSchema = z.object({
 	yes: z.boolean().default(false),
 	tail: z.array(z.string()).default([]),
 });
-export type InstallSkillInput = z.infer<typeof InstallSkillInputSchema>;
-export const InstallSkillRequestSchema = InstallSkillInputSchema.superRefine((input, context) => {
+type InstallSkillInput = z.infer<typeof InstallSkillInputSchema>;
+const InstallSkillRequestSchema = InstallSkillInputSchema.superRefine((input, context) => {
 	const destinations = [input.dir, input.target, input.agent].filter(
 		(value) => value !== undefined,
 	);
@@ -320,9 +320,9 @@ export const InstallSkillRequestSchema = InstallSkillInputSchema.superRefine((in
 		});
 	}
 });
-export type InstallSkillRequest = z.infer<typeof InstallSkillRequestSchema>;
+type InstallSkillRequest = z.infer<typeof InstallSkillRequestSchema>;
 
-export const InstallSkillSetupResultSchema = z.object({
+const InstallSkillSetupResultSchema = z.object({
 	repo: z.string(),
 	vault: z.string(),
 	vaultCreated: z.boolean(),
@@ -333,9 +333,9 @@ export const InstallSkillSetupResultSchema = z.object({
 	command: z.string(),
 	onPath: z.boolean(),
 });
-export type InstallSkillSetupResult = z.infer<typeof InstallSkillSetupResultSchema>;
+type InstallSkillSetupResult = z.infer<typeof InstallSkillSetupResultSchema>;
 
-export const InstallSkillResultSchema = z.union([
+const InstallSkillResultSchema = z.union([
 	z.object({
 		success: z.literal(true),
 		skill: z.literal(SKILL_NAME),
@@ -352,7 +352,7 @@ export const InstallSkillResultSchema = z.union([
 		setup: InstallSkillSetupResultSchema.optional(),
 	}),
 ]);
-export type InstallSkillResult = z.infer<typeof InstallSkillResultSchema>;
+type InstallSkillResult = z.infer<typeof InstallSkillResultSchema>;
 
 async function executeInstallSkill(
 	input: InstallSkillInput,
@@ -573,7 +573,7 @@ async function writeSetup(options: {
 	};
 }
 
-export const installSkillContract = defineCommand({
+const installSkillContract = defineCommand({
 	path: ["install-skill"],
 	summary: "Install the bundled agent skill and write the setup into this repo",
 	usage: [
@@ -693,3 +693,18 @@ export const installSkillContract = defineCommand({
 		return { result: await executeInstallSkill(input, context) };
 	},
 });
+
+export {
+	resolveInvocation,
+	chooseDoc,
+	applyBlock,
+	InstallSkillInputSchema,
+	type InstallSkillInput,
+	InstallSkillRequestSchema,
+	type InstallSkillRequest,
+	InstallSkillSetupResultSchema,
+	type InstallSkillSetupResult,
+	InstallSkillResultSchema,
+	type InstallSkillResult,
+	installSkillContract,
+};

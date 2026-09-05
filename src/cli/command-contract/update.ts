@@ -4,7 +4,7 @@ import { defineCommand, type CommandContext } from "./contract.js";
 import { BoardFingerprintSchema, HoldReportSchema, ServerElementSchema } from "./schemas.js";
 import { commonRefusals, tail, WRITE_ANSWER } from "./lib/common.js";
 
-export const UpdateInputSchema = z.object({
+const UpdateInputSchema = z.object({
 	id: z.preprocess(
 		(value) => value ?? "",
 		z.string().min(1, { error: 'Usage: update <id> --set \'{"backgroundColor": "#ffc9c9"}\'' }),
@@ -14,7 +14,7 @@ export const UpdateInputSchema = z.object({
 	set: z.string().optional(),
 	document: z.boolean().default(false),
 });
-export type UpdateInput = z.infer<typeof UpdateInputSchema>;
+type UpdateInput = z.infer<typeof UpdateInputSchema>;
 
 const updatesSchema = z.record(z.string(), z.unknown());
 const jsonUpdatesSchema = (source: "inline" | "stream") =>
@@ -48,7 +48,7 @@ const jsonUpdatesSchema = (source: "inline" | "stream") =>
 			return parsed as Record<string, unknown>;
 		})
 		.pipe(updatesSchema);
-export const UpdateResultSchema = z.object({
+const UpdateResultSchema = z.object({
 	success: z.literal(true),
 	element: ServerElementSchema,
 	elements: z.array(ServerElementSchema),
@@ -56,7 +56,7 @@ export const UpdateResultSchema = z.object({
 	document: z.array(ServerElementSchema).optional(),
 	held: HoldReportSchema.optional(),
 });
-export type UpdateResult = z.infer<typeof UpdateResultSchema>;
+type UpdateResult = z.infer<typeof UpdateResultSchema>;
 
 async function updateInput(input: UpdateInput, context: CommandContext) {
 	if (input.set !== undefined) {
@@ -69,7 +69,7 @@ async function updateInput(input: UpdateInput, context: CommandContext) {
 	return context.parse(jsonUpdatesSchema("stream"), raw);
 }
 
-export const updateContract = defineCommand({
+const updateContract = defineCommand({
 	path: ["update"],
 	summary: "Update one element",
 	usage: [
@@ -197,4 +197,11 @@ export const updateContract = defineCommand({
 	},
 });
 
+export {
+	UpdateInputSchema,
+	type UpdateInput,
+	UpdateResultSchema,
+	type UpdateResult,
+	updateContract,
+};
 export { WRITE_ANSWER } from "./lib/common.js";

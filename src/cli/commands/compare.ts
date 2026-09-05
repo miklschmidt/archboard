@@ -3,15 +3,15 @@ import { compareBoardsOnCanvas } from "../../runtime/engine/canvas-client.js";
 import { defineCommand } from "../command-contract/contract.js";
 import { BoardAddressSchema, HoldReportSchema } from "../command-contract/schemas.js";
 
-export const CompareInputSchema = z.object({
+const CompareInputSchema = z.object({
 	fromOption: z.string().optional(),
 	toOption: z.string().optional(),
 	from: z.string().optional(),
 	to: z.string().optional(),
 	tail: z.array(z.string()).default([]),
 });
-export type CompareInput = z.infer<typeof CompareInputSchema>;
-export const CompareRequestStageSchema = z
+type CompareInput = z.infer<typeof CompareInputSchema>;
+const CompareRequestStageSchema = z
 	.object({
 		fromOption: z.string().optional(),
 		toOption: z.string().optional(),
@@ -37,7 +37,7 @@ export const CompareRequestStageSchema = z
 		}
 		return { from, to: input.toOption ?? input.to };
 	});
-export type CompareRequestStage = z.infer<typeof CompareRequestStageSchema>;
+type CompareRequestStage = z.infer<typeof CompareRequestStageSchema>;
 const CompareSideSchema = z.looseObject({
 	board: z.string(),
 	identity: BoardAddressSchema,
@@ -46,7 +46,7 @@ const CompareSideSchema = z.looseObject({
 	edgeCount: z.number().int().nonnegative(),
 	plainCount: z.number().int().nonnegative(),
 });
-export const CompareResultSchema = z.looseObject({
+const CompareResultSchema = z.looseObject({
 	success: z.literal(true),
 	from: CompareSideSchema,
 	to: CompareSideSchema,
@@ -84,9 +84,9 @@ export const CompareResultSchema = z.looseObject({
 	warnings: z.array(z.string()),
 	held: HoldReportSchema.optional(),
 });
-export type CompareResult = z.infer<typeof CompareResultSchema>;
+type CompareResult = z.infer<typeof CompareResultSchema>;
 
-export const compareContract = defineCommand({
+const compareContract = defineCommand({
 	path: ["compare"],
 	summary: "Structured semantic diff between two variants of a board",
 	usage: "compare <from> [to]",
@@ -174,3 +174,13 @@ export const compareContract = defineCommand({
 		};
 	},
 });
+
+export {
+	CompareInputSchema,
+	type CompareInput,
+	CompareRequestStageSchema,
+	type CompareRequestStage,
+	CompareResultSchema,
+	type CompareResult,
+	compareContract,
+};

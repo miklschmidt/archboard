@@ -152,7 +152,7 @@ function browserEffect(effect: DynamicApprovalEffect): BrowserDynamicApprovalEff
 	});
 }
 
-export function approvalFor(
+function approvalFor(
 	request: DynamicApprovalRequest,
 	state: BrowserDynamicApproval["state"],
 	decision: BrowserDynamicApproval["decision"],
@@ -184,7 +184,7 @@ export function approvalFor(
 	});
 }
 
-export function decisionFor(
+function decisionFor(
 	request: DynamicApprovalRequest,
 	outcome: DynamicApprovalDecision["outcome"],
 	cause: string,
@@ -213,7 +213,7 @@ const response: BrowserDynamicApprovalResponse = model.BrowserDynamicApprovalRes
 	decision: "approve",
 });
 
-export function createDynamicFixture() {
+function createDynamicFixture() {
 	return {
 		authorities,
 		model,
@@ -229,3 +229,5 @@ export function createDynamicFixture() {
 		epoch,
 	};
 }
+
+export { approvalFor, decisionFor, createDynamicFixture };

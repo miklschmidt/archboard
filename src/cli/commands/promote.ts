@@ -80,7 +80,7 @@ const output = {
 	select: (input: { text: boolean }) => (input.text ? "text" : "json"),
 };
 
-export const PromoteInputSchema = z.object({
+const PromoteInputSchema = z.object({
 	ids: z.string({
 		error: "--ids is required; use `browser selection --pane <spec>` to inspect a live selection",
 	}),
@@ -97,8 +97,8 @@ export const PromoteInputSchema = z.object({
 	text: z.boolean().default(false),
 	tail,
 });
-export type PromoteInput = z.infer<typeof PromoteInputSchema>;
-export const PromotionDeclarationStageSchema = PromoteInputSchema.transform((input, context) => {
+type PromoteInput = z.infer<typeof PromoteInputSchema>;
+const PromotionDeclarationStageSchema = PromoteInputSchema.transform((input, context) => {
 	if (!input.kind) {
 		context.addIssue({
 			code: "custom",
@@ -117,8 +117,8 @@ export const PromotionDeclarationStageSchema = PromoteInputSchema.transform((inp
 		return z.NEVER;
 	}
 });
-export type PromotionDeclarationStage = z.infer<typeof PromotionDeclarationStageSchema>;
-export const PromotionIdsStageSchema = z.string().transform((value, context) => {
+type PromotionDeclarationStage = z.infer<typeof PromotionDeclarationStageSchema>;
+const PromotionIdsStageSchema = z.string().transform((value, context) => {
 	const ids = value
 		.split(",")
 		.map((id) => id.trim())
@@ -129,8 +129,8 @@ export const PromotionIdsStageSchema = z.string().transform((value, context) => 
 	}
 	return ids;
 });
-export type PromotionIdsStage = z.infer<typeof PromotionIdsStageSchema>;
-export const PromotionBindingStageSchema = z
+type PromotionIdsStage = z.infer<typeof PromotionIdsStageSchema>;
+const PromotionBindingStageSchema = z
 	.object({
 		path: z.string().optional(),
 		repo: z.string().optional(),
@@ -145,7 +145,7 @@ export const PromotionBindingStageSchema = z
 			});
 		}
 	});
-export type PromotionBindingStage = z.infer<typeof PromotionBindingStageSchema>;
+type PromotionBindingStage = z.infer<typeof PromotionBindingStageSchema>;
 const PromotionNodeSchema = z.object({
 	node: z.string(),
 	kind: z.enum(KINDS),
@@ -168,17 +168,17 @@ const DemotionNodeSchema = z.object({
 	name: z.string().optional(),
 	elementIds: z.array(z.string()),
 });
-export const PromoteJsonResultSchema = z.looseObject({
+const PromoteJsonResultSchema = z.looseObject({
 	success: z.literal(true),
 	summary: z.string(),
 	nodes: z.array(PromotionNodeSchema),
 	elementsUpdated: z.number().int().nonnegative(),
 	held: HoldReportSchema.optional(),
 });
-export type PromoteJsonResult = z.infer<typeof PromoteJsonResultSchema>;
-export const PromoteResultSchema = z.union([PromoteJsonResultSchema, z.string()]);
-export type PromoteResult = z.infer<typeof PromoteResultSchema>;
-export const promoteContract = defineCommand({
+type PromoteJsonResult = z.infer<typeof PromoteJsonResultSchema>;
+const PromoteResultSchema = z.union([PromoteJsonResultSchema, z.string()]);
+type PromoteResult = z.infer<typeof PromoteResultSchema>;
+const promoteContract = defineCommand({
 	path: ["promote"],
 	summary: "Declare named elements a node: kind, identity, binding",
 	usage: "promote --kind <kind> --ids a,b,c [--path file] [--text]",
@@ -352,25 +352,25 @@ export const promoteContract = defineCommand({
 	},
 });
 
-export const DemoteInputSchema = z.object({
+const DemoteInputSchema = z.object({
 	ids: z.string({
 		error: "--ids is required; use `browser selection --pane <spec>` to inspect a live selection",
 	}),
 	text: z.boolean().default(false),
 	tail,
 });
-export type DemoteInput = z.infer<typeof DemoteInputSchema>;
-export const DemoteJsonResultSchema = z.looseObject({
+type DemoteInput = z.infer<typeof DemoteInputSchema>;
+const DemoteJsonResultSchema = z.looseObject({
 	success: z.literal(true),
 	summary: z.string(),
 	nodes: z.array(DemotionNodeSchema),
 	elementsUpdated: z.number().int().nonnegative(),
 	held: HoldReportSchema.optional(),
 });
-export type DemoteJsonResult = z.infer<typeof DemoteJsonResultSchema>;
-export const DemoteResultSchema = z.union([DemoteJsonResultSchema, z.string()]);
-export type DemoteResult = z.infer<typeof DemoteResultSchema>;
-export const demoteContract = defineCommand({
+type DemoteJsonResult = z.infer<typeof DemoteJsonResultSchema>;
+const DemoteResultSchema = z.union([DemoteJsonResultSchema, z.string()]);
+type DemoteResult = z.infer<typeof DemoteResultSchema>;
+const demoteContract = defineCommand({
 	path: ["demote"],
 	summary: "Turn nodes back into plain elements",
 	usage: "demote --ids a,b,c [--text]",
@@ -422,3 +422,26 @@ export const demoteContract = defineCommand({
 		};
 	},
 });
+
+export {
+	PromoteInputSchema,
+	type PromoteInput,
+	PromotionDeclarationStageSchema,
+	type PromotionDeclarationStage,
+	PromotionIdsStageSchema,
+	type PromotionIdsStage,
+	PromotionBindingStageSchema,
+	type PromotionBindingStage,
+	PromoteJsonResultSchema,
+	type PromoteJsonResult,
+	PromoteResultSchema,
+	type PromoteResult,
+	promoteContract,
+	DemoteInputSchema,
+	type DemoteInput,
+	DemoteJsonResultSchema,
+	type DemoteJsonResult,
+	DemoteResultSchema,
+	type DemoteResult,
+	demoteContract,
+};

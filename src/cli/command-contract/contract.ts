@@ -1,14 +1,14 @@
 import type { z } from "zod";
 
-export class CliUsageError extends Error {
+class CliUsageError extends Error {
 	readonly exitCode = 2;
 }
 
-export type TokenRecord = Record<string, string | boolean | string[] | undefined>;
+type TokenRecord = Record<string, string | boolean | string[] | undefined>;
 
-export type TokenParameter = OptionParameter | PositionalParameter;
+type TokenParameter = OptionParameter | PositionalParameter;
 
-export interface OptionParameter {
+interface OptionParameter {
 	kind: "option";
 	key: string;
 	spellings: readonly [string, ...string[]];
@@ -18,7 +18,7 @@ export interface OptionParameter {
 	route?: "value" | "stdin-or-file" | "pass-through" | "staged-tokens";
 }
 
-export interface PositionalParameter {
+interface PositionalParameter {
 	kind: "positional";
 	key: string;
 	name: string;
@@ -27,7 +27,7 @@ export interface PositionalParameter {
 	route?: "value" | "stdin-or-file" | "pass-through" | "staged-tokens";
 }
 
-export interface InputStage {
+interface InputStage {
 	name: string;
 	when: "before-server" | "after-server" | "after-browser" | "after-read";
 	description: string;
@@ -35,14 +35,14 @@ export interface InputStage {
 	schema: z.ZodType;
 }
 
-export interface CommandInput<Shape extends z.ZodRawShape> {
+interface CommandInput<Shape extends z.ZodRawShape> {
 	ingress: z.ZodObject<Shape>;
 	stages?: readonly InputStage[];
 }
 
-export type Prerequisite = "server" | "browser" | "board" | "doing" | "claim";
-export type RuntimePrerequisite = Extract<Prerequisite, "server" | "browser">;
-export type CommandEffect =
+type Prerequisite = "server" | "browser" | "board" | "doing" | "claim";
+type RuntimePrerequisite = Extract<Prerequisite, "server" | "browser">;
+type CommandEffect =
 	| "read"
 	| "write"
 	| "server-state-write"
@@ -50,29 +50,29 @@ export type CommandEffect =
 	| "local-read"
 	| "local-write";
 
-export interface RefusalContract {
+interface RefusalContract {
 	code: string;
 	exit: number;
 	stream: "stderr" | "stdout-and-stderr";
 	description: string;
 }
 
-export interface RestRelationship {
+interface RestRelationship {
 	method: "GET" | "POST" | "PUT" | "DELETE";
 	path: string;
 	cardinality: "none" | "one" | "conditional" | "parallel";
 	description: string;
 }
 
-export type HeldPolicy = "none" | "stderr-note" | "object-field-and-stderr-note";
-export type OutputMode = "json" | "text" | "raw" | "file-receipt";
+type HeldPolicy = "none" | "stderr-note" | "object-field-and-stderr-note";
+type OutputMode = "json" | "text" | "raw" | "file-receipt";
 
-export interface OutputCondition {
+interface OutputCondition {
 	key?: string;
 	present?: boolean;
 }
 
-export interface OutputCase {
+interface OutputCase {
 	id: string;
 	when: OutputCondition;
 	mode: OutputMode;
@@ -82,16 +82,16 @@ export interface OutputCase {
 	artifact?: z.ZodType<PendingArtifact>;
 }
 
-export interface OutputPolicy<Input> {
+interface OutputPolicy<Input> {
 	cases: readonly [OutputCase, ...OutputCase[]];
 	select(input: Input): string;
 }
 
-export type OutcomeStreamPolicy = "stdout-only" | "stderr-only" | "stdout-and-stderr";
-export type OutcomePresentationStep = "diagnostics" | "result" | "held-note" | "continuation";
+type OutcomeStreamPolicy = "stdout-only" | "stderr-only" | "stdout-and-stderr";
+type OutcomePresentationStep = "diagnostics" | "result" | "held-note" | "continuation";
 
 /** A public, declared nonzero command result. Ordinary success is always exit 0. */
-export interface CommandOutcomeDeclaration {
+interface CommandOutcomeDeclaration {
 	id: string;
 	exit: number;
 	description: string;
@@ -100,7 +100,7 @@ export interface CommandOutcomeDeclaration {
 	presentation: readonly [OutcomePresentationStep, ...OutcomePresentationStep[]];
 }
 
-export type PendingArtifact =
+type PendingArtifact =
 	| { path: string; content: string; encoding: "utf8" }
 	| { path: string; content: Uint8Array; encoding: "binary" }
 	| {
@@ -110,7 +110,7 @@ export type PendingArtifact =
 			manifest: { name: "manifest.json"; content: string };
 	  };
 
-export interface CommandExecution<Result> {
+interface CommandExecution<Result> {
 	result: Result;
 	/** Selects one public declaration; it carries no policy of its own. */
 	outcome?: string;
@@ -119,7 +119,7 @@ export interface CommandExecution<Result> {
 	pendingArtifact?: unknown;
 }
 
-export interface CommandContext {
+interface CommandContext {
 	readonly signal: AbortSignal;
 	require(prerequisite: RuntimePrerequisite, description: string): Promise<void>;
 	readStdin(): Promise<string>;
@@ -132,7 +132,7 @@ export interface CommandContext {
 	diagnostic(message: string): void;
 }
 
-export interface CommandContract<Shape extends z.ZodRawShape, Result> {
+interface CommandContract<Shape extends z.ZodRawShape, Result> {
 	path: readonly [string, ...string[]];
 	summary: string;
 	usage: string;
@@ -153,7 +153,7 @@ export interface CommandContract<Shape extends z.ZodRawShape, Result> {
 	): Promise<CommandExecution<Result>>;
 }
 
-export function defineCommand<Shape extends z.ZodRawShape, Result>(
+function defineCommand<Shape extends z.ZodRawShape, Result>(
 	contract: CommandContract<Shape, Result>,
 ): CommandContract<Shape, Result> {
 	const inputKeys = new Set(Object.keys(contract.input.ingress.shape));
@@ -219,4 +219,33 @@ export function defineCommand<Shape extends z.ZodRawShape, Result>(
 	return contract;
 }
 
-export type AnyCommandContract = CommandContract<z.ZodRawShape, unknown>;
+type AnyCommandContract = CommandContract<z.ZodRawShape, unknown>;
+
+export {
+	CliUsageError,
+	type TokenRecord,
+	type TokenParameter,
+	type OptionParameter,
+	type PositionalParameter,
+	type InputStage,
+	type CommandInput,
+	type Prerequisite,
+	type RuntimePrerequisite,
+	type CommandEffect,
+	type RefusalContract,
+	type RestRelationship,
+	type HeldPolicy,
+	type OutputMode,
+	type OutputCondition,
+	type OutputCase,
+	type OutputPolicy,
+	type OutcomeStreamPolicy,
+	type OutcomePresentationStep,
+	type CommandOutcomeDeclaration,
+	type PendingArtifact,
+	type CommandExecution,
+	type CommandContext,
+	type CommandContract,
+	defineCommand,
+	type AnyCommandContract,
+};

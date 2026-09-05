@@ -13,38 +13,38 @@ const BrowserRealtimeIdentitySchemas = {
 		.brand<"BrowserRealtimeItemId">(),
 };
 
-export type RealtimeSessionId = z.infer<typeof BrowserRealtimeIdentitySchemas.session>;
-export type RealtimeCorrelationId = z.infer<typeof BrowserRealtimeIdentitySchemas.correlation>;
-export type RealtimeItemId = z.infer<typeof BrowserRealtimeIdentitySchemas.item>;
+type RealtimeSessionId = z.infer<typeof BrowserRealtimeIdentitySchemas.session>;
+type RealtimeCorrelationId = z.infer<typeof BrowserRealtimeIdentitySchemas.correlation>;
+type RealtimeItemId = z.infer<typeof BrowserRealtimeIdentitySchemas.item>;
 
-export function parseRealtimeSessionId(value: unknown): RealtimeSessionId {
+function parseRealtimeSessionId(value: unknown): RealtimeSessionId {
 	return BrowserRealtimeIdentitySchemas.session.parse(value);
 }
 
-export function parseRealtimeCorrelationId(value: unknown): RealtimeCorrelationId {
+function parseRealtimeCorrelationId(value: unknown): RealtimeCorrelationId {
 	return BrowserRealtimeIdentitySchemas.correlation.parse(value);
 }
 
-export function parseRealtimeItemId(value: unknown): RealtimeItemId {
+function parseRealtimeItemId(value: unknown): RealtimeItemId {
 	return BrowserRealtimeIdentitySchemas.item.parse(value);
 }
 
-export interface RealtimeCorrelation {
+interface RealtimeCorrelation {
 	readonly sessionId: RealtimeSessionId;
 	readonly correlationId: RealtimeCorrelationId;
 }
-export interface CreateOfferSdp extends RealtimeCorrelation {
+interface CreateOfferSdp extends RealtimeCorrelation {
 	readonly sdp: string;
 }
-export interface AnswerSdp extends RealtimeCorrelation {
+interface AnswerSdp extends RealtimeCorrelation {
 	readonly sdp: string;
 }
-export interface RemoteMediaAttachment extends RealtimeCorrelation {
+interface RemoteMediaAttachment extends RealtimeCorrelation {
 	readonly attachTo: (element: HTMLMediaElement) => void;
 }
-export type RealtimeUnsubscribe = () => void;
+type RealtimeUnsubscribe = () => void;
 
-export type RealtimePhase =
+type RealtimePhase =
 	| "idle"
 	| "requesting_permission"
 	| "negotiating"
@@ -56,7 +56,7 @@ export type RealtimePhase =
 	| "recoverable_error"
 	| "terminal_error"
 	| "closed";
-export type RealtimeRecoverableErrorReason =
+type RealtimeRecoverableErrorReason =
 	| "permission_denied"
 	| "device_unavailable"
 	| "device_lost"
@@ -71,12 +71,12 @@ export type RealtimeRecoverableErrorReason =
 	| "append_failed"
 	| "recovery_failed"
 	| "stop_failed";
-export type RealtimeTerminalErrorReason =
+type RealtimeTerminalErrorReason =
 	| "unsupported_browser"
 	| "invalid_session"
 	| "protocol_error"
 	| "fatal_error";
-export type RealtimeState =
+type RealtimeState =
 	| { readonly phase: "idle"; readonly reason: "created" | "recovered" }
 	| {
 			readonly phase: "requesting_permission";
@@ -113,18 +113,18 @@ export type RealtimeState =
 			readonly message: string;
 	  }
 	| { readonly phase: "closed"; readonly reason: "stopped" | "disposed" };
-export type RealtimeTransitionReason = RealtimeState["reason"];
+type RealtimeTransitionReason = RealtimeState["reason"];
 
-export type RealtimeTranscriptRole = "user" | "assistant";
-export type RealtimeTranscriptStatus = "provisional" | "final" | "interrupted";
-export interface RealtimeTranscriptRecord extends RealtimeCorrelation {
+type RealtimeTranscriptRole = "user" | "assistant";
+type RealtimeTranscriptStatus = "provisional" | "final" | "interrupted";
+interface RealtimeTranscriptRecord extends RealtimeCorrelation {
 	readonly itemId: RealtimeItemId;
 	readonly sequence: number;
 	readonly role: RealtimeTranscriptRole;
 	readonly status: RealtimeTranscriptStatus;
 	readonly text: string;
 }
-export type RealtimeDiagnosticCode =
+type RealtimeDiagnosticCode =
 	| "permission"
 	| "device"
 	| "sdp"
@@ -135,7 +135,7 @@ export type RealtimeDiagnosticCode =
 	| "app_server"
 	| "coordinator"
 	| "protocol";
-export type RealtimeSemanticEvent =
+type RealtimeSemanticEvent =
 	| {
 			readonly kind: "state";
 			readonly sessionId: RealtimeSessionId;
@@ -150,24 +150,24 @@ export type RealtimeSemanticEvent =
 			readonly code: RealtimeDiagnosticCode;
 			readonly message: string;
 	  };
-export type RealtimeSemanticEventListener = (event: RealtimeSemanticEvent) => void;
+type RealtimeSemanticEventListener = (event: RealtimeSemanticEvent) => void;
 
-export interface AppendTextRequest extends RealtimeCorrelation {
+interface AppendTextRequest extends RealtimeCorrelation {
 	readonly text: string;
 }
-export interface AppendSpeechRequest extends RealtimeCorrelation {
+interface AppendSpeechRequest extends RealtimeCorrelation {
 	readonly text: string;
 }
-export interface RealtimeCommandRequest extends RealtimeCorrelation {}
-export type StopRequest = RealtimeCommandRequest;
-export type RecoveryRequest = RealtimeCommandRequest;
-export type AppendNotDeliveredReason = "rejected" | "not_ready" | "stale_session" | "cancelled";
-export type AppendOutcomeUnknownReason = "transport_failure" | "response_lost";
-export type CommandNotDeliveredReason = "rejected" | "not_ready" | "stale_session" | "cancelled";
-export type CommandOutcomeUnknownReason = "transport_failure" | "response_lost";
-export type AppendOutcomeReason = AppendNotDeliveredReason | AppendOutcomeUnknownReason;
-export type CommandOutcomeReason = CommandNotDeliveredReason | CommandOutcomeUnknownReason;
-export type AppendOutcome =
+interface RealtimeCommandRequest extends RealtimeCorrelation {}
+type StopRequest = RealtimeCommandRequest;
+type RecoveryRequest = RealtimeCommandRequest;
+type AppendNotDeliveredReason = "rejected" | "not_ready" | "stale_session" | "cancelled";
+type AppendOutcomeUnknownReason = "transport_failure" | "response_lost";
+type CommandNotDeliveredReason = "rejected" | "not_ready" | "stale_session" | "cancelled";
+type CommandOutcomeUnknownReason = "transport_failure" | "response_lost";
+type AppendOutcomeReason = AppendNotDeliveredReason | AppendOutcomeUnknownReason;
+type CommandOutcomeReason = CommandNotDeliveredReason | CommandOutcomeUnknownReason;
+type AppendOutcome =
 	| (RealtimeCorrelation & { readonly outcome: "delivered" })
 	| (RealtimeCorrelation & {
 			readonly outcome: "not_delivered";
@@ -177,7 +177,7 @@ export type AppendOutcome =
 			readonly outcome: "outcome_unknown";
 			readonly reason: AppendOutcomeUnknownReason;
 	  });
-export type CommandOutcome =
+type CommandOutcome =
 	| (RealtimeCorrelation & { readonly outcome: "delivered" })
 	| (RealtimeCorrelation & {
 			readonly outcome: "not_delivered";
@@ -187,7 +187,7 @@ export type CommandOutcome =
 			readonly outcome: "outcome_unknown";
 			readonly reason: CommandOutcomeUnknownReason;
 	  });
-export interface RealtimeHost {
+interface RealtimeHost {
 	readonly createOffer: (offer: CreateOfferSdp) => Promise<AnswerSdp>;
 	readonly attachRemoteMedia: (attachment: RemoteMediaAttachment) => void;
 	readonly onSemanticEvent: (listener: RealtimeSemanticEventListener) => RealtimeUnsubscribe;
@@ -196,3 +196,42 @@ export interface RealtimeHost {
 	readonly stop: (request: StopRequest) => Promise<CommandOutcome>;
 	readonly recover: (request: RecoveryRequest) => Promise<CommandOutcome>;
 }
+
+export {
+	type RealtimeSessionId,
+	type RealtimeCorrelationId,
+	type RealtimeItemId,
+	parseRealtimeSessionId,
+	parseRealtimeCorrelationId,
+	parseRealtimeItemId,
+	type RealtimeCorrelation,
+	type CreateOfferSdp,
+	type AnswerSdp,
+	type RemoteMediaAttachment,
+	type RealtimeUnsubscribe,
+	type RealtimePhase,
+	type RealtimeRecoverableErrorReason,
+	type RealtimeTerminalErrorReason,
+	type RealtimeState,
+	type RealtimeTransitionReason,
+	type RealtimeTranscriptRole,
+	type RealtimeTranscriptStatus,
+	type RealtimeTranscriptRecord,
+	type RealtimeDiagnosticCode,
+	type RealtimeSemanticEvent,
+	type RealtimeSemanticEventListener,
+	type AppendTextRequest,
+	type AppendSpeechRequest,
+	type RealtimeCommandRequest,
+	type StopRequest,
+	type RecoveryRequest,
+	type AppendNotDeliveredReason,
+	type AppendOutcomeUnknownReason,
+	type CommandNotDeliveredReason,
+	type CommandOutcomeUnknownReason,
+	type AppendOutcomeReason,
+	type CommandOutcomeReason,
+	type AppendOutcome,
+	type CommandOutcome,
+	type RealtimeHost,
+};

@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { cliContractRegistry } from "../commands/run.js";
 import { introspectContracts } from "./introspection.js";
 
-export const CLI_CONTRACT_ARTIFACT_NAMES = [
+const CLI_CONTRACT_ARTIFACT_NAMES = [
 	"cli-command-audit.md",
 	"command-contract-proof.json",
 	"command-contract-proof.md",
@@ -60,7 +60,7 @@ function format(root: string, name: string, content: string): string {
 	return formatted.stdout.toString();
 }
 
-export async function renderCliContractArtifacts(root: string) {
+async function renderCliContractArtifacts(root: string) {
 	const audit = JSON.parse(
 		fs.readFileSync(join(root, "docs", "design", "cli-command-audit.json"), "utf8"),
 	) as CliAudit;
@@ -168,3 +168,5 @@ export async function renderCliContractArtifacts(root: string) {
 	);
 	return { artifacts, audit, proof, registry, routes };
 }
+
+export { CLI_CONTRACT_ARTIFACT_NAMES, renderCliContractArtifacts };

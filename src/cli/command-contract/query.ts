@@ -4,16 +4,16 @@ import { defineCommand } from "./contract.js";
 import { ServerElementSchema } from "./schemas.js";
 import { commonRefusals, tail } from "./lib/common.js";
 
-export const QueryInputSchema = z.object({
+const QueryInputSchema = z.object({
 	type: z.string().optional(),
 	bbox: z.string().optional(),
 	filter: z.array(z.string()).default([]),
 	filterJson: z.string().optional(),
 	tail,
 });
-export type QueryInput = z.infer<typeof QueryInputSchema>;
-export const QueryResultSchema = z.array(ServerElementSchema);
-export type QueryResult = z.infer<typeof QueryResultSchema>;
+type QueryInput = z.infer<typeof QueryInputSchema>;
+const QueryResultSchema = z.array(ServerElementSchema);
+type QueryResult = z.infer<typeof QueryResultSchema>;
 
 const bboxSchema = z.string().transform((value, context) => {
 	const parts = value.split(",").map((part) => Number(part.trim()));
@@ -69,7 +69,7 @@ function lookupPath(value: unknown, dotPath: string): unknown {
 	}, value);
 }
 
-export const queryContract = defineCommand({
+const queryContract = defineCommand({
 	path: ["query"],
 	summary: "Query elements (server + typed client-side filters)",
 	usage:
@@ -206,3 +206,5 @@ export const queryContract = defineCommand({
 		return { result: QueryResultSchema.parse(results) };
 	},
 });
+
+export { QueryInputSchema, type QueryInput, QueryResultSchema, type QueryResult, queryContract };

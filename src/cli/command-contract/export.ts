@@ -5,13 +5,13 @@ import { CliUsageError, defineCommand, type PendingArtifact } from "./contract.j
 import { HoldReportSchema, PendingArtifactSchema } from "./schemas.js";
 import { commonRefusals, tail } from "./lib/common.js";
 
-export const ExportInputSchema = z.object({
+const ExportInputSchema = z.object({
 	out: z.string().optional(),
 	format: z.string().optional(),
 	force: z.boolean().default(false),
 	tail,
 });
-export type ExportInput = z.infer<typeof ExportInputSchema>;
+type ExportInput = z.infer<typeof ExportInputSchema>;
 
 const exportFormatSchema = z.enum(["json", "obsidian"], {
 	error: "--format must be json or obsidian",
@@ -21,20 +21,20 @@ const resolvedExportFormatSchema = z
 	.transform(({ format, out }) => format ?? (out?.endsWith(".md") ? "obsidian" : "json"))
 	.pipe(exportFormatSchema)
 	.describe("Use the explicit format, otherwise infer obsidian for .md output and json elsewhere.");
-export const ExportReceiptSchema = z.object({
+const ExportReceiptSchema = z.object({
 	success: z.literal(true),
 	file: z.string(),
 	elements: z.number().int().nonnegative(),
 	format: exportFormatSchema,
 	held: HoldReportSchema.optional(),
 });
-export type ExportReceipt = z.infer<typeof ExportReceiptSchema>;
-export const ExportContentSchema = z.string();
-export type ExportContent = z.infer<typeof ExportContentSchema>;
-export const ExportResultSchema = z.union([ExportContentSchema, ExportReceiptSchema]);
-export type ExportResult = z.infer<typeof ExportResultSchema>;
+type ExportReceipt = z.infer<typeof ExportReceiptSchema>;
+const ExportContentSchema = z.string();
+type ExportContent = z.infer<typeof ExportContentSchema>;
+const ExportResultSchema = z.union([ExportContentSchema, ExportReceiptSchema]);
+type ExportResult = z.infer<typeof ExportResultSchema>;
 
-export const exportContract = defineCommand({
+const exportContract = defineCommand({
 	path: ["export"],
 	summary: "Export the scene as .excalidraw JSON or Obsidian .excalidraw.md",
 	usage:
@@ -164,3 +164,15 @@ export const exportContract = defineCommand({
 		};
 	},
 });
+
+export {
+	ExportInputSchema,
+	type ExportInput,
+	ExportReceiptSchema,
+	type ExportReceipt,
+	ExportContentSchema,
+	type ExportContent,
+	ExportResultSchema,
+	type ExportResult,
+	exportContract,
+};

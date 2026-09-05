@@ -1,6 +1,6 @@
 import type { RealtimePhase, RealtimeState } from "./contract.js";
 
-export const REALTIME_PHASES = Object.freeze([
+const REALTIME_PHASES = Object.freeze([
 	"idle",
 	"requesting_permission",
 	"negotiating",
@@ -22,7 +22,7 @@ type TransitionTable = Readonly<{
 	>;
 }>;
 
-export const REALTIME_TRANSITIONS: TransitionTable = Object.freeze({
+const REALTIME_TRANSITIONS: TransitionTable = Object.freeze({
 	idle: Object.freeze({
 		requesting_permission: Object.freeze(["start_requested", "recovery_requested"] as const),
 		stopping: Object.freeze(["dispose_requested"] as const),
@@ -131,17 +131,17 @@ export const REALTIME_TRANSITIONS: TransitionTable = Object.freeze({
 	closed: Object.freeze({}),
 });
 
-export const INITIAL_REALTIME_STATE: RealtimeState = Object.freeze({
+const INITIAL_REALTIME_STATE: RealtimeState = Object.freeze({
 	phase: "idle",
 	reason: "created",
 });
 function reasons(from: RealtimePhase, to: RealtimePhase): readonly string[] {
 	return REALTIME_TRANSITIONS[from][to] ?? [];
 }
-export function canTransitionRealtimeState(current: RealtimeState, next: RealtimeState): boolean {
+function canTransitionRealtimeState(current: RealtimeState, next: RealtimeState): boolean {
 	return reasons(current.phase, next.phase).includes(next.reason);
 }
-export function assertRealtimeTransition(current: RealtimeState, next: RealtimeState): void {
+function assertRealtimeTransition(current: RealtimeState, next: RealtimeState): void {
 	if (canTransitionRealtimeState(current, next)) {
 		return;
 	}
@@ -154,10 +154,16 @@ export function assertRealtimeTransition(current: RealtimeState, next: RealtimeS
 		`Illegal realtime transition from ${current.phase} to ${next.phase} for reason ${next.reason}.${suffix}`,
 	);
 }
-export function transitionRealtimeState(
-	current: RealtimeState,
-	next: RealtimeState,
-): RealtimeState {
+function transitionRealtimeState(current: RealtimeState, next: RealtimeState): RealtimeState {
 	assertRealtimeTransition(current, next);
 	return Object.freeze({ ...next });
 }
+
+export {
+	REALTIME_PHASES,
+	REALTIME_TRANSITIONS,
+	INITIAL_REALTIME_STATE,
+	canTransitionRealtimeState,
+	assertRealtimeTransition,
+	transitionRealtimeState,
+};

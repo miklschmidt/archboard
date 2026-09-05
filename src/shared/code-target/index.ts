@@ -1,6 +1,6 @@
 import { z } from "zod";
-export { isAbsoluteOrBareOpenerExecutable } from "./executable.js";
-export const PATH_TOKEN = "{path}";
+
+const PATH_TOKEN = "{path}";
 const MAX_ARGV = 32;
 const MAX_ARG_BYTES = 16 * 1024;
 const NonemptyString = z.string().trim().min(1);
@@ -44,17 +44,17 @@ const CustomSelectionSchema = z
 			});
 		}
 	});
-export const OpenerSelectionSchema = z.discriminatedUnion("kind", [
+const OpenerSelectionSchema = z.discriminatedUnion("kind", [
 	PlatformSelectionSchema,
 	PresetSelectionSchema,
 	CustomSelectionSchema,
 ]);
-export type OpenerSelection = z.infer<typeof OpenerSelectionSchema>;
-export const OpenerCommandSchema = z
+type OpenerSelection = z.infer<typeof OpenerSelectionSchema>;
+const OpenerCommandSchema = z
 	.object({ executable: NonemptyString, argv: z.array(z.string()).max(MAX_ARGV) })
 	.strict();
-export type OpenerCommand = z.infer<typeof OpenerCommandSchema>;
-export const CodeBindingSchema = z
+type OpenerCommand = z.infer<typeof OpenerCommandSchema>;
+const CodeBindingSchema = z
 	.object({
 		repo: NonemptyString,
 		path: z.string(),
@@ -63,16 +63,16 @@ export const CodeBindingSchema = z
 		confirmedAt: NonemptyString.optional(),
 	})
 	.strict();
-export type CodeBinding = z.infer<typeof CodeBindingSchema>;
-export const CodeTargetOpenRequestSchema = z
+type CodeBinding = z.infer<typeof CodeBindingSchema>;
+const CodeTargetOpenRequestSchema = z
 	.object({ board: NonemptyString, element: NonemptyString })
 	.strict();
-export type CodeTargetOpenRequest = z.infer<typeof CodeTargetOpenRequestSchema>;
+type CodeTargetOpenRequest = z.infer<typeof CodeTargetOpenRequestSchema>;
 
-export const OpenerSettingsTestRequestSchema = z
+const OpenerSettingsTestRequestSchema = z
 	.object({ selection: OpenerSelectionSchema, repository: NonemptyString })
 	.strict();
-export type OpenerSettingsTestRequest = z.infer<typeof OpenerSettingsTestRequestSchema>;
+type OpenerSettingsTestRequest = z.infer<typeof OpenerSettingsTestRequestSchema>;
 
 const CheckoutChoiceSchema = z
 	.object({
@@ -82,7 +82,7 @@ const CheckoutChoiceSchema = z
 		identityMatches: z.boolean(),
 	})
 	.strict();
-export const OpenerAvailabilitySchema = z.discriminatedUnion("available", [
+const OpenerAvailabilitySchema = z.discriminatedUnion("available", [
 	z.object({ available: z.literal(true) }).strict(),
 	z
 		.object({
@@ -92,7 +92,7 @@ export const OpenerAvailabilitySchema = z.discriminatedUnion("available", [
 		})
 		.strict(),
 ]);
-export const OpenerSettingsReplySchema = z
+const OpenerSettingsReplySchema = z
 	.object({
 		success: z.literal(true),
 		selection: OpenerSelectionSchema,
@@ -107,22 +107,22 @@ export const OpenerSettingsReplySchema = z
 		repositories: z.array(CheckoutChoiceSchema),
 	})
 	.strict();
-export type OpenerSettingsReply = z.infer<typeof OpenerSettingsReplySchema>;
+type OpenerSettingsReply = z.infer<typeof OpenerSettingsReplySchema>;
 
-export const OpenerSelectionReplySchema = z
+const OpenerSelectionReplySchema = z
 	.object({ success: z.literal(true), selection: OpenerSelectionSchema })
 	.strict();
-export type OpenerSelectionReply = z.infer<typeof OpenerSelectionReplySchema>;
-export const OpenerTestReplySchema = z
+type OpenerSelectionReply = z.infer<typeof OpenerSelectionReplySchema>;
+const OpenerTestReplySchema = z
 	.object({
 		success: z.literal(true),
 		code: z.literal("OPENER_TESTED"),
 		repository: NonemptyString,
 	})
 	.strict();
-export type OpenerTestReply = z.infer<typeof OpenerTestReplySchema>;
+type OpenerTestReply = z.infer<typeof OpenerTestReplySchema>;
 
-export const CodeTargetFailureCodeSchema = z.enum([
+const CodeTargetFailureCodeSchema = z.enum([
 	"CROSS_ORIGIN_REFUSED",
 	"REQUEST_INVALID",
 	"BOARD_NOT_FOUND",
@@ -138,26 +138,26 @@ export const CodeTargetFailureCodeSchema = z.enum([
 	"OPENER_SPAWN_FAILED",
 	"RESPONSE_INVALID",
 ]);
-export type CodeTargetFailureCode = z.infer<typeof CodeTargetFailureCodeSchema>;
+type CodeTargetFailureCode = z.infer<typeof CodeTargetFailureCodeSchema>;
 
-export const GitHubHttpsUrlSchema = z
+const GitHubHttpsUrlSchema = z
 	.string()
 	.url()
 	.refine((value) => {
 		const url = new URL(value);
 		return url.protocol === "https:" && url.hostname === "github.com";
 	}, "GitHub actions require an https://github.com URL");
-export type GitHubHttpsUrl = z.infer<typeof GitHubHttpsUrlSchema>;
+type GitHubHttpsUrl = z.infer<typeof GitHubHttpsUrlSchema>;
 
-export const CodeTargetNoticeActionSchema = z.discriminatedUnion("kind", [
+const CodeTargetNoticeActionSchema = z.discriminatedUnion("kind", [
 	z.object({ kind: z.literal("settings"), label: z.literal("Opener settings") }).strict(),
 	z
 		.object({ kind: z.literal("github"), label: NonemptyString, href: GitHubHttpsUrlSchema })
 		.strict(),
 ]);
-export type CodeTargetNoticeAction = z.infer<typeof CodeTargetNoticeActionSchema>;
+type CodeTargetNoticeAction = z.infer<typeof CodeTargetNoticeActionSchema>;
 
-export const CodeTargetOpenSuccessSchema = z
+const CodeTargetOpenSuccessSchema = z
 	.object({
 		success: z.literal(true),
 		code: z.literal("CODE_TARGET_OPENED"),
@@ -166,9 +166,9 @@ export const CodeTargetOpenSuccessSchema = z
 		kind: z.enum(["file", "directory"]),
 	})
 	.strict();
-export type CodeTargetOpenSuccess = z.infer<typeof CodeTargetOpenSuccessSchema>;
+type CodeTargetOpenSuccess = z.infer<typeof CodeTargetOpenSuccessSchema>;
 
-export const CodeTargetOpenFailureSchema = z
+const CodeTargetOpenFailureSchema = z
 	.object({
 		success: z.literal(false),
 		code: CodeTargetFailureCodeSchema,
@@ -176,26 +176,26 @@ export const CodeTargetOpenFailureSchema = z
 		actions: z.array(CodeTargetNoticeActionSchema).optional(),
 	})
 	.strict();
-export type CodeTargetOpenFailure = z.infer<typeof CodeTargetOpenFailureSchema>;
-export const CodeTargetOpenReplySchema = z.discriminatedUnion("success", [
+type CodeTargetOpenFailure = z.infer<typeof CodeTargetOpenFailureSchema>;
+const CodeTargetOpenReplySchema = z.discriminatedUnion("success", [
 	CodeTargetOpenSuccessSchema,
 	CodeTargetOpenFailureSchema,
 ]);
-export type CodeTargetOpenReply = z.infer<typeof CodeTargetOpenReplySchema>;
+type CodeTargetOpenReply = z.infer<typeof CodeTargetOpenReplySchema>;
 
-export interface CodeTargetNotice {
+interface CodeTargetNotice {
 	kind: "error";
 	message: string;
 	actions: readonly CodeTargetNoticeAction[];
 }
 
-export function buildInternalCodeTargetUrl(request: CodeTargetOpenRequest): string {
+function buildInternalCodeTargetUrl(request: CodeTargetOpenRequest): string {
 	const parsed = CodeTargetOpenRequestSchema.parse(request);
 	const query = new URLSearchParams({ board: parsed.board, element: parsed.element });
 	return `/api/code-targets/open?${query.toString()}`;
 }
 
-export function parseInternalCodeTargetUrl(value: string): CodeTargetOpenRequest | null {
+function parseInternalCodeTargetUrl(value: string): CodeTargetOpenRequest | null {
 	if (
 		!value.startsWith("/") ||
 		value.startsWith("//") ||
@@ -223,3 +223,40 @@ export function parseInternalCodeTargetUrl(value: string): CodeTargetOpenRequest
 	});
 	return result.success ? result.data : null;
 }
+
+export {
+	PATH_TOKEN,
+	OpenerSelectionSchema,
+	type OpenerSelection,
+	OpenerCommandSchema,
+	type OpenerCommand,
+	CodeBindingSchema,
+	type CodeBinding,
+	CodeTargetOpenRequestSchema,
+	type CodeTargetOpenRequest,
+	OpenerSettingsTestRequestSchema,
+	type OpenerSettingsTestRequest,
+	OpenerAvailabilitySchema,
+	OpenerSettingsReplySchema,
+	type OpenerSettingsReply,
+	OpenerSelectionReplySchema,
+	type OpenerSelectionReply,
+	OpenerTestReplySchema,
+	type OpenerTestReply,
+	CodeTargetFailureCodeSchema,
+	type CodeTargetFailureCode,
+	GitHubHttpsUrlSchema,
+	type GitHubHttpsUrl,
+	CodeTargetNoticeActionSchema,
+	type CodeTargetNoticeAction,
+	CodeTargetOpenSuccessSchema,
+	type CodeTargetOpenSuccess,
+	CodeTargetOpenFailureSchema,
+	type CodeTargetOpenFailure,
+	CodeTargetOpenReplySchema,
+	type CodeTargetOpenReply,
+	type CodeTargetNotice,
+	buildInternalCodeTargetUrl,
+	parseInternalCodeTargetUrl,
+};
+export { isAbsoluteOrBareOpenerExecutable } from "./executable.js";

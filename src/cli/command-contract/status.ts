@@ -8,8 +8,8 @@ import { ServerStateSchema } from "./schemas.js";
 
 const tail = z.array(z.string()).default([]);
 
-export const StatusInputSchema = z.object({ tail });
-export type StatusInput = z.infer<typeof StatusInputSchema>;
+const StatusInputSchema = z.object({ tail });
+type StatusInput = z.infer<typeof StatusInputSchema>;
 
 const StaleSourceSchema = z.object({
 	startedAt: z.string(),
@@ -18,17 +18,17 @@ const StaleSourceSchema = z.object({
 	says: z.string(),
 });
 
-export const StatusUnavailableResultSchema = ServerStateSchema.extend({
+const StatusUnavailableResultSchema = ServerStateSchema.extend({
 	running: z.literal(false),
 });
-export type StatusUnavailableResult = z.infer<typeof StatusUnavailableResultSchema>;
+type StatusUnavailableResult = z.infer<typeof StatusUnavailableResultSchema>;
 
-export const StatusForeignServiceResultSchema = StatusUnavailableResultSchema.extend({
+const StatusForeignServiceResultSchema = StatusUnavailableResultSchema.extend({
 	conflict: z.string(),
 });
-export type StatusForeignServiceResult = z.infer<typeof StatusForeignServiceResultSchema>;
+type StatusForeignServiceResult = z.infer<typeof StatusForeignServiceResultSchema>;
 
-export const StatusRunningResultSchema = z.looseObject({
+const StatusRunningResultSchema = z.looseObject({
 	running: z.literal(true),
 	url: z.string(),
 	pid: z.number().int().optional(),
@@ -36,14 +36,14 @@ export const StatusRunningResultSchema = z.looseObject({
 	browserClients: z.number().int().nonnegative(),
 	stale: StaleSourceSchema.optional(),
 });
-export type StatusRunningResult = z.infer<typeof StatusRunningResultSchema>;
+type StatusRunningResult = z.infer<typeof StatusRunningResultSchema>;
 
-export const StatusResultSchema = z.union([
+const StatusResultSchema = z.union([
 	StatusUnavailableResultSchema,
 	StatusForeignServiceResultSchema,
 	StatusRunningResultSchema,
 ]);
-export type StatusResult = z.infer<typeof StatusResultSchema>;
+type StatusResult = z.infer<typeof StatusResultSchema>;
 
 const clock = (at: string): string => new Date(at).toLocaleTimeString();
 
@@ -65,7 +65,7 @@ function staleSource(health: Awaited<ReturnType<typeof getHealth>>) {
 	};
 }
 
-export const statusContract = defineCommand({
+const statusContract = defineCommand({
 	path: ["status"],
 	summary: "Canvas health, element count, browser clients",
 	usage: "status",
@@ -168,3 +168,17 @@ export const statusContract = defineCommand({
 		};
 	},
 });
+
+export {
+	StatusInputSchema,
+	type StatusInput,
+	StatusUnavailableResultSchema,
+	type StatusUnavailableResult,
+	StatusForeignServiceResultSchema,
+	type StatusForeignServiceResult,
+	StatusRunningResultSchema,
+	type StatusRunningResult,
+	StatusResultSchema,
+	type StatusResult,
+	statusContract,
+};

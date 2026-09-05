@@ -4,10 +4,10 @@ import { defineCommand } from "./contract.js";
 import { BoardAddressSchema, BoardWriteConflictSchema, HoldReportSchema } from "./schemas.js";
 import { boardWriteRefusals } from "./lib/common.js";
 
-export const BoardSaveInputSchema = z.object({ tokens: z.array(z.string()).default([]) });
-export type BoardSaveInput = z.infer<typeof BoardSaveInputSchema>;
+const BoardSaveInputSchema = z.object({ tokens: z.array(z.string()).default([]) });
+type BoardSaveInput = z.infer<typeof BoardSaveInputSchema>;
 
-export const BoardSaveStageSchema = z.array(z.string()).transform((tokens, context) => {
+const BoardSaveStageSchema = z.array(z.string()).transform((tokens, context) => {
 	const result: { as?: string; variant?: string; level?: string; force?: true } = {};
 	for (let index = 0; index < tokens.length; index += 1) {
 		const token = tokens[index]!;
@@ -45,9 +45,9 @@ export const BoardSaveStageSchema = z.array(z.string()).transform((tokens, conte
 	}
 	return result;
 });
-export type BoardSaveStage = z.infer<typeof BoardSaveStageSchema>;
+type BoardSaveStage = z.infer<typeof BoardSaveStageSchema>;
 
-export const BoardSaveSuccessResultSchema = z.looseObject({
+const BoardSaveSuccessResultSchema = z.looseObject({
 	success: z.literal(true),
 	board: z.string(),
 	identity: BoardAddressSchema,
@@ -56,20 +56,20 @@ export const BoardSaveSuccessResultSchema = z.looseObject({
 	file: z.string().optional(),
 	held: HoldReportSchema.optional(),
 });
-export type BoardSaveSuccessResult = z.infer<typeof BoardSaveSuccessResultSchema>;
+type BoardSaveSuccessResult = z.infer<typeof BoardSaveSuccessResultSchema>;
 
-export const BoardSaveConflictResultSchema = z.object({
+const BoardSaveConflictResultSchema = z.object({
 	success: z.literal(false),
 	conflict: BoardWriteConflictSchema,
 	held: HoldReportSchema.optional(),
 });
-export type BoardSaveConflictResult = z.infer<typeof BoardSaveConflictResultSchema>;
+type BoardSaveConflictResult = z.infer<typeof BoardSaveConflictResultSchema>;
 
-export const BoardSaveResultSchema = z.union([
+const BoardSaveResultSchema = z.union([
 	BoardSaveSuccessResultSchema,
 	BoardSaveConflictResultSchema,
 ]);
-export type BoardSaveResult = z.infer<typeof BoardSaveResultSchema>;
+type BoardSaveResult = z.infer<typeof BoardSaveResultSchema>;
 
 function successDiagnostics(result: Awaited<ReturnType<typeof saveBoard>>): string[] {
 	const diagnostics: string[] = [];
@@ -101,7 +101,7 @@ function successDiagnostics(result: Awaited<ReturnType<typeof saveBoard>>): stri
 	return diagnostics;
 }
 
-export const boardSaveContract = defineCommand({
+const boardSaveContract = defineCommand({
 	path: ["board", "save"],
 	summary: "Save one named board note without moving proposal panes",
 	usage: "board save --board <key> [--as <name>] [--variant v] [--level l] [--force]",
@@ -193,3 +193,17 @@ export const boardSaveContract = defineCommand({
 		}
 	},
 });
+
+export {
+	BoardSaveInputSchema,
+	type BoardSaveInput,
+	BoardSaveStageSchema,
+	type BoardSaveStage,
+	BoardSaveSuccessResultSchema,
+	type BoardSaveSuccessResult,
+	BoardSaveConflictResultSchema,
+	type BoardSaveConflictResult,
+	BoardSaveResultSchema,
+	type BoardSaveResult,
+	boardSaveContract,
+};

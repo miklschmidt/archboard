@@ -1,24 +1,6 @@
 import type { ElementBinding, NativeBoardElement } from "./lib/vendor-types.js";
 
-export type {
-	ArrowElement,
-	BoundElement,
-	DiamondElement,
-	ElbowArrowElement,
-	ElementBinding,
-	EllipseElement,
-	FreeDrawElement,
-	ImageElement,
-	JsonWritable,
-	LineElement,
-	NativeBoardElement,
-	NonElbowArrowElement,
-	RectangleElement,
-	TextElement,
-	WritableVendorElement,
-} from "./lib/vendor-types.js";
-
-export const BOARD_ELEMENT_TYPES = [
+const BOARD_ELEMENT_TYPES = [
 	"rectangle",
 	"ellipse",
 	"diamond",
@@ -29,9 +11,9 @@ export const BOARD_ELEMENT_TYPES = [
 	"image",
 ] as const satisfies readonly NativeBoardElement["type"][];
 
-export type BoardElementType = (typeof BOARD_ELEMENT_TYPES)[number];
+type BoardElementType = (typeof BOARD_ELEMENT_TYPES)[number];
 
-export interface LogicalAddress {
+interface LogicalAddress {
 	repo?: string;
 	path: string;
 	branch?: string;
@@ -40,7 +22,7 @@ export interface LogicalAddress {
 }
 
 /** Semantic Archboard data. Runtime tracking keys are reserved and filtered. */
-export interface ArchboardElementMetadata {
+interface ArchboardElementMetadata {
 	node?: string;
 	kind?: string;
 	name?: string;
@@ -50,7 +32,7 @@ export interface ArchboardElementMetadata {
 	[key: string]: unknown;
 }
 
-export interface RuntimeElementTracking {
+interface RuntimeElementTracking {
 	createdAt?: string;
 	updatedAt?: string;
 	syncedAt?: string;
@@ -58,7 +40,7 @@ export interface RuntimeElementTracking {
 	syncTimestamp?: string;
 }
 
-export type PersistedArchboardEnvelope = ArchboardElementMetadata & RuntimeElementTracking;
+type PersistedArchboardEnvelope = ArchboardElementMetadata & RuntimeElementTracking;
 
 type CustomData = Record<string, unknown> & {
 	archboard?: PersistedArchboardEnvelope;
@@ -69,7 +51,7 @@ type WithArchboardMetadata<Element extends NativeBoardElement> = Element extends
 	: never;
 
 /** Obsidian Excalidraw adds rawText only to persisted text elements. */
-export interface ObsidianRawText {
+interface ObsidianRawText {
 	rawText?: string;
 }
 
@@ -77,9 +59,9 @@ type WithObsidianText<Element> = Element extends { type: "text" }
 	? Element & ObsidianRawText
 	: Element;
 
-export type PersistedBoardElement = WithObsidianText<WithArchboardMetadata<NativeBoardElement>>;
+type PersistedBoardElement = WithObsidianText<WithArchboardMetadata<NativeBoardElement>>;
 
-export type RuntimeBoardElement = PersistedBoardElement extends infer Element
+type RuntimeBoardElement = PersistedBoardElement extends infer Element
 	? Element extends unknown
 		? Element & RuntimeElementTracking
 		: never
@@ -117,6 +99,36 @@ type PartialNativeArm<Element extends NativeBoardElement> = Element extends unkn
  * The one intentionally incomplete native shape. Defaults are completed only
  * by the write-ingress converter; trusted note reads never accept this type.
  */
-export type LegacyElementIngress = PartialNativeArm<NativeBoardElement> &
+type LegacyElementIngress = PartialNativeArm<NativeBoardElement> &
 	InputAliases &
 	RuntimeElementTracking & { id: string };
+
+export {
+	BOARD_ELEMENT_TYPES,
+	type BoardElementType,
+	type LogicalAddress,
+	type ArchboardElementMetadata,
+	type RuntimeElementTracking,
+	type PersistedArchboardEnvelope,
+	type ObsidianRawText,
+	type PersistedBoardElement,
+	type RuntimeBoardElement,
+	type LegacyElementIngress,
+};
+export type {
+	ArrowElement,
+	BoundElement,
+	DiamondElement,
+	ElbowArrowElement,
+	ElementBinding,
+	EllipseElement,
+	FreeDrawElement,
+	ImageElement,
+	JsonWritable,
+	LineElement,
+	NativeBoardElement,
+	NonElbowArrowElement,
+	RectangleElement,
+	TextElement,
+	WritableVendorElement,
+} from "./lib/vendor-types.js";

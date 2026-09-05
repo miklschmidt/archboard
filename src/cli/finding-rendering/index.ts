@@ -14,13 +14,13 @@ import { findingRasterDimensions } from "../../shared/finding-raster/index.js";
 const HEX_SHA256 = /^[0-9a-f]{64}$/;
 const FILE_NAME = /^\d{4,}-[A-Z_]+-[0-9a-f]{12}\.png$/;
 
-export const FindingRenderFailureSchema = z.enum([
+const FindingRenderFailureSchema = z.enum([
 	"focus-unavailable",
 	"source-not-renderable",
 	"renderer-failed",
 	"invalid-png",
 ]);
-export type FindingRenderFailure = z.infer<typeof FindingRenderFailureSchema>;
+type FindingRenderFailure = z.infer<typeof FindingRenderFailureSchema>;
 
 const entryCommon = {
 	findingIndex: z.number().int().nonnegative(),
@@ -28,7 +28,7 @@ const entryCommon = {
 	findingDigest: z.string().regex(HEX_SHA256),
 };
 
-export const RenderedFindingEntrySchema = z.strictObject({
+const RenderedFindingEntrySchema = z.strictObject({
 	...entryCommon,
 	status: z.literal("rendered"),
 	file: z.string().regex(FILE_NAME),
@@ -37,18 +37,18 @@ export const RenderedFindingEntrySchema = z.strictObject({
 	sha256: z.string().regex(HEX_SHA256),
 });
 
-export const FailedFindingEntrySchema = z.strictObject({
+const FailedFindingEntrySchema = z.strictObject({
 	...entryCommon,
 	status: z.literal("failed"),
 	failure: FindingRenderFailureSchema,
 });
 
-export const FindingRenderEntrySchema = z.discriminatedUnion("status", [
+const FindingRenderEntrySchema = z.discriminatedUnion("status", [
 	RenderedFindingEntrySchema,
 	FailedFindingEntrySchema,
 ]);
 
-export const FindingRenderManifestSchema = z
+const FindingRenderManifestSchema = z
 	.strictObject({
 		schemaVersion: z.literal(3),
 		board: z.string().min(1),
@@ -127,15 +127,15 @@ export const FindingRenderManifestSchema = z
 		}
 	});
 
-export type FindingRenderManifest = z.infer<typeof FindingRenderManifestSchema>;
+type FindingRenderManifest = z.infer<typeof FindingRenderManifestSchema>;
 
-export interface RendererFindingResult {
+interface RendererFindingResult {
 	findingIndex: number;
 	data?: string;
 	failure?: "renderer-failed";
 }
 
-export interface FindingRenderServerResult {
+interface FindingRenderServerResult {
 	board: string;
 	sourceFingerprint: string;
 	report: InspectionReport;
@@ -143,22 +143,22 @@ export interface FindingRenderServerResult {
 	results: readonly RendererFindingResult[];
 }
 
-export interface FindingArtifactSet {
+interface FindingArtifactSet {
 	path: string;
 	encoding: "files";
 	files: Array<{ name: string; content: Uint8Array }>;
 	manifest: { name: "manifest.json"; content: string };
 }
 
-export function findingDigest(finding: InspectionFinding): string {
+function findingDigest(finding: InspectionFinding): string {
 	return createHash("sha256").update(JSON.stringify(finding)).digest("hex");
 }
 
-export function findingFileName(index: number, finding: InspectionFinding): string {
+function findingFileName(index: number, finding: InspectionFinding): string {
 	return `${String(index + 1).padStart(4, "0")}-${finding.code}-${findingDigest(finding).slice(0, 12)}.png`;
 }
 
-export function readPngDimensions(bytes: Uint8Array): { width: number; height: number } | null {
+function readPngDimensions(bytes: Uint8Array): { width: number; height: number } | null {
 	if (bytes.length < 24) {
 		return null;
 	}
@@ -180,7 +180,7 @@ export function readPngDimensions(bytes: Uint8Array): { width: number; height: n
 
 const sha256 = (bytes: Uint8Array): string => createHash("sha256").update(bytes).digest("hex");
 
-export function assembleFindingArtifacts(
+function assembleFindingArtifacts(
 	server: FindingRenderServerResult,
 	outDirectory: string,
 ): { manifest: FindingRenderManifest; artifact: FindingArtifactSet } {
@@ -249,3 +249,20 @@ export function assembleFindingArtifacts(
 		},
 	};
 }
+
+export {
+	FindingRenderFailureSchema,
+	type FindingRenderFailure,
+	RenderedFindingEntrySchema,
+	FailedFindingEntrySchema,
+	FindingRenderEntrySchema,
+	FindingRenderManifestSchema,
+	type FindingRenderManifest,
+	type RendererFindingResult,
+	type FindingRenderServerResult,
+	type FindingArtifactSet,
+	findingDigest,
+	findingFileName,
+	readPngDimensions,
+	assembleFindingArtifacts,
+};

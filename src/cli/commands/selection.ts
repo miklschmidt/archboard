@@ -55,9 +55,9 @@ const outputs = {
 	select: (input: { text: boolean }) => (input.text ? "text" : "json"),
 };
 
-export const SelectionInputSchema = inputSchema;
-export type SelectionInput = z.infer<typeof SelectionInputSchema>;
-export const SelectionJsonResultSchema = z.looseObject({
+const SelectionInputSchema = inputSchema;
+type SelectionInput = z.infer<typeof SelectionInputSchema>;
+const SelectionJsonResultSchema = z.looseObject({
 	board: z.string(),
 	elementIds: z.array(z.string()),
 	count: z.number().int().nonnegative(),
@@ -70,11 +70,11 @@ export const SelectionJsonResultSchema = z.looseObject({
 	summary: z.string(),
 	held: HoldReportSchema.optional(),
 });
-export type SelectionJsonResult = z.infer<typeof SelectionJsonResultSchema>;
-export const SelectionResultSchema = z.union([SelectionJsonResultSchema, z.string()]);
-export type SelectionResult = z.infer<typeof SelectionResultSchema>;
+type SelectionJsonResult = z.infer<typeof SelectionJsonResultSchema>;
+const SelectionResultSchema = z.union([SelectionJsonResultSchema, z.string()]);
+type SelectionResult = z.infer<typeof SelectionResultSchema>;
 
-export const selectionContract = defineCommand({
+const selectionContract = defineCommand({
 	path: ["browser", "selection"],
 	summary: "What a human currently has selected on the board",
 	usage: "browser selection --pane <spec> [--text]",
@@ -107,8 +107,8 @@ export const selectionContract = defineCommand({
 	},
 });
 
-export const PanesInputSchema = reportInputSchema;
-export type PanesInput = z.infer<typeof PanesInputSchema>;
+const PanesInputSchema = reportInputSchema;
+type PanesInput = z.infer<typeof PanesInputSchema>;
 const RectSchema = z.object({
 	x: z.number(),
 	y: z.number(),
@@ -124,7 +124,7 @@ const PaneSelectionSchema = z.object({
 	summary: z.string(),
 	at: z.string().nullable(),
 });
-export const PanesJsonResultSchema = z.looseObject({
+const PanesJsonResultSchema = z.looseObject({
 	paneCount: z.number().int().nonnegative(),
 	arrangement: z.enum(["none", "single", "side-by-side", "stacked", "grid", "overlapping"]),
 	focused: z.string().nullable(),
@@ -149,11 +149,11 @@ export const PanesJsonResultSchema = z.looseObject({
 	summary: z.string(),
 	held: HoldReportSchema.optional(),
 });
-export type PanesJsonResult = z.infer<typeof PanesJsonResultSchema>;
-export const PanesResultSchema = z.union([PanesJsonResultSchema, z.string()]);
-export type PanesResult = z.infer<typeof PanesResultSchema>;
+type PanesJsonResult = z.infer<typeof PanesJsonResultSchema>;
+const PanesResultSchema = z.union([PanesJsonResultSchema, z.string()]);
+type PanesResult = z.infer<typeof PanesResultSchema>;
 
-export const panesContract = defineCommand({
+const panesContract = defineCommand({
 	path: ["browser", "panes"],
 	summary: "What the human is currently looking at — pane by pane",
 	usage: "browser panes [--text]",
@@ -179,3 +179,20 @@ export const panesContract = defineCommand({
 		return { result: PanesJsonResultSchema.parse(rest) };
 	},
 });
+
+export {
+	SelectionInputSchema,
+	type SelectionInput,
+	SelectionJsonResultSchema,
+	type SelectionJsonResult,
+	SelectionResultSchema,
+	type SelectionResult,
+	selectionContract,
+	PanesInputSchema,
+	type PanesInput,
+	PanesJsonResultSchema,
+	type PanesJsonResult,
+	PanesResultSchema,
+	type PanesResult,
+	panesContract,
+};

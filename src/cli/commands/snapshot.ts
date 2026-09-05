@@ -15,7 +15,7 @@ import { HoldReportSchema, ServerElementSchema } from "../command-contract/schem
 import { boardWriteRefusals, commonRefusals } from "../command-contract/common.js";
 import type { FlagSpecs } from "../command-contract/route-options.js";
 
-export const SNAPSHOT_FLAG_SPEC = { force: { takesValue: false } } as const satisfies FlagSpecs;
+const SNAPSHOT_FLAG_SPEC = { force: { takesValue: false } } as const satisfies FlagSpecs;
 const snapshotFlagParameters = (): OptionParameter[] =>
 	Object.entries(SNAPSHOT_FLAG_SPEC).map(([name, spec]) => ({
 		kind: "option",
@@ -26,16 +26,16 @@ const snapshotFlagParameters = (): OptionParameter[] =>
 	}));
 const tail = z.array(z.string()).default([]);
 
-export const SnapshotNamespaceInputSchema = z.object({
+const SnapshotNamespaceInputSchema = z.object({
 	force: z.boolean().default(false),
 	action: z.string().optional(),
 	name: z.string().optional(),
 	tail,
 });
-export type SnapshotNamespaceInput = z.infer<typeof SnapshotNamespaceInputSchema>;
-export const SnapshotNamespaceResultSchema = z.never();
-export type SnapshotNamespaceResult = z.infer<typeof SnapshotNamespaceResultSchema>;
-export const snapshotContract = defineCommand({
+type SnapshotNamespaceInput = z.infer<typeof SnapshotNamespaceInputSchema>;
+const SnapshotNamespaceResultSchema = z.never();
+type SnapshotNamespaceResult = z.infer<typeof SnapshotNamespaceResultSchema>;
+const snapshotContract = defineCommand({
 	path: ["snapshot"],
 	summary: "Save / list / restore named canvas snapshots",
 	usage: "snapshot save|list|restore [name] [--force]",
@@ -69,25 +69,25 @@ export const snapshotContract = defineCommand({
 	},
 });
 
-export const SnapshotSaveInputSchema = z.object({
+const SnapshotSaveInputSchema = z.object({
 	force: z.boolean().default(false),
 	name: z.string().optional(),
 	tail,
 });
-export type SnapshotSaveInput = z.infer<typeof SnapshotSaveInputSchema>;
-export const SnapshotSaveStageSchema = z.object({
+type SnapshotSaveInput = z.infer<typeof SnapshotSaveInputSchema>;
+const SnapshotSaveStageSchema = z.object({
 	name: z.string({ error: "Usage: snapshot save <name>" }).min(1),
 });
-export type SnapshotSaveStage = z.infer<typeof SnapshotSaveStageSchema>;
-export const SnapshotSaveResultSchema = z.object({
+type SnapshotSaveStage = z.infer<typeof SnapshotSaveStageSchema>;
+const SnapshotSaveResultSchema = z.object({
 	success: z.literal(true),
 	name: z.string(),
 	elements: z.number().int().nonnegative(),
 	createdAt: z.string(),
 	held: HoldReportSchema.optional(),
 });
-export type SnapshotSaveResult = z.infer<typeof SnapshotSaveResultSchema>;
-export const snapshotSaveContract = defineCommand({
+type SnapshotSaveResult = z.infer<typeof SnapshotSaveResultSchema>;
+const snapshotSaveContract = defineCommand({
 	path: ["snapshot", "save"],
 	summary: "Save a named snapshot of one board",
 	usage: "snapshot save <name>",
@@ -157,17 +157,17 @@ export const snapshotSaveContract = defineCommand({
 	},
 });
 
-export const SnapshotListInputSchema = z.object({ force: z.boolean().default(false), tail });
-export type SnapshotListInput = z.infer<typeof SnapshotListInputSchema>;
-export const SnapshotListItemSchema = z.looseObject({
+const SnapshotListInputSchema = z.object({ force: z.boolean().default(false), tail });
+type SnapshotListInput = z.infer<typeof SnapshotListInputSchema>;
+const SnapshotListItemSchema = z.looseObject({
 	name: z.string(),
 	createdAt: z.string(),
 	elementCount: z.number().int().nonnegative().optional(),
 });
-export type SnapshotListItem = z.infer<typeof SnapshotListItemSchema>;
-export const SnapshotListResultSchema = z.array(SnapshotListItemSchema);
-export type SnapshotListResult = z.infer<typeof SnapshotListResultSchema>;
-export const snapshotListContract = defineCommand({
+type SnapshotListItem = z.infer<typeof SnapshotListItemSchema>;
+const SnapshotListResultSchema = z.array(SnapshotListItemSchema);
+type SnapshotListResult = z.infer<typeof SnapshotListResultSchema>;
+const snapshotListContract = defineCommand({
 	path: ["snapshot", "list"],
 	summary: "List snapshots for one board",
 	usage: "snapshot list",
@@ -212,28 +212,28 @@ export const snapshotListContract = defineCommand({
 	},
 });
 
-export const SnapshotRestoreInputSchema = z.object({
+const SnapshotRestoreInputSchema = z.object({
 	force: z.boolean().default(false),
 	name: z.string().optional(),
 	tail,
 });
-export type SnapshotRestoreInput = z.infer<typeof SnapshotRestoreInputSchema>;
-export const SnapshotRestoreRequestStageSchema = z.object({
+type SnapshotRestoreInput = z.infer<typeof SnapshotRestoreInputSchema>;
+const SnapshotRestoreRequestStageSchema = z.object({
 	name: z.string({ error: "Usage: snapshot restore <name>" }).min(1),
 	force: z.boolean(),
 });
-export type SnapshotRestoreRequestStage = z.infer<typeof SnapshotRestoreRequestStageSchema>;
-export const SnapshotRestoreResultSchema = z.object({
+type SnapshotRestoreRequestStage = z.infer<typeof SnapshotRestoreRequestStageSchema>;
+const SnapshotRestoreResultSchema = z.object({
 	success: z.literal(true),
 	name: z.string(),
 	board: z.string(),
 	restored: z.number().int().nonnegative(),
 	held: HoldReportSchema.optional(),
 });
-export type SnapshotRestoreResult = z.infer<typeof SnapshotRestoreResultSchema>;
-export const SnapshotRestoreDocumentSchema = z.array(ServerElementSchema);
-export type SnapshotRestoreDocument = z.infer<typeof SnapshotRestoreDocumentSchema>;
-export const snapshotRestoreContract = defineCommand({
+type SnapshotRestoreResult = z.infer<typeof SnapshotRestoreResultSchema>;
+const SnapshotRestoreDocumentSchema = z.array(ServerElementSchema);
+type SnapshotRestoreDocument = z.infer<typeof SnapshotRestoreDocumentSchema>;
+const snapshotRestoreContract = defineCommand({
 	path: ["snapshot", "restore"],
 	summary: "Restore a named board snapshot",
 	usage: "snapshot restore <name> [--force]",
@@ -332,3 +332,35 @@ export const snapshotRestoreContract = defineCommand({
 		};
 	},
 });
+
+export {
+	SNAPSHOT_FLAG_SPEC,
+	SnapshotNamespaceInputSchema,
+	type SnapshotNamespaceInput,
+	SnapshotNamespaceResultSchema,
+	type SnapshotNamespaceResult,
+	snapshotContract,
+	SnapshotSaveInputSchema,
+	type SnapshotSaveInput,
+	SnapshotSaveStageSchema,
+	type SnapshotSaveStage,
+	SnapshotSaveResultSchema,
+	type SnapshotSaveResult,
+	snapshotSaveContract,
+	SnapshotListInputSchema,
+	type SnapshotListInput,
+	SnapshotListItemSchema,
+	type SnapshotListItem,
+	SnapshotListResultSchema,
+	type SnapshotListResult,
+	snapshotListContract,
+	SnapshotRestoreInputSchema,
+	type SnapshotRestoreInput,
+	SnapshotRestoreRequestStageSchema,
+	type SnapshotRestoreRequestStage,
+	SnapshotRestoreResultSchema,
+	type SnapshotRestoreResult,
+	SnapshotRestoreDocumentSchema,
+	type SnapshotRestoreDocument,
+	snapshotRestoreContract,
+};

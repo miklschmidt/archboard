@@ -6,19 +6,19 @@ import { HoldReportSchema } from "../command-contract/schemas.js";
 
 const IgnoredTailSchema = z.array(z.string()).default([]);
 
-export const StartInputSchema = z.object({ tail: IgnoredTailSchema });
-export type StartInput = z.infer<typeof StartInputSchema>;
+const StartInputSchema = z.object({ tail: IgnoredTailSchema });
+type StartInput = z.infer<typeof StartInputSchema>;
 
-export const StartResultSchema = z.object({
+const StartResultSchema = z.object({
 	running: z.literal(true),
 	url: z.string(),
 	spawned: z.boolean(),
 	pid: z.number().int().positive().optional(),
 	held: HoldReportSchema.optional(),
 });
-export type StartResult = z.infer<typeof StartResultSchema>;
+type StartResult = z.infer<typeof StartResultSchema>;
 
-export const startContract = defineCommand({
+const startContract = defineCommand({
 	path: ["start"],
 	summary: "Start the canvas server (detached)",
 	usage: "start",
@@ -83,18 +83,18 @@ export const startContract = defineCommand({
 	},
 });
 
-export const StopInputSchema = z.object({ tail: IgnoredTailSchema });
-export type StopInput = z.infer<typeof StopInputSchema>;
+const StopInputSchema = z.object({ tail: IgnoredTailSchema });
+type StopInput = z.infer<typeof StopInputSchema>;
 
-export const StopResultSchema = z.object({
+const StopResultSchema = z.object({
 	stopped: z.boolean(),
 	pid: z.number().int().positive().optional(),
 	message: z.string(),
 	held: HoldReportSchema.optional(),
 });
-export type StopResult = z.infer<typeof StopResultSchema>;
+type StopResult = z.infer<typeof StopResultSchema>;
 
-export const stopContract = defineCommand({
+const stopContract = defineCommand({
 	path: ["stop"],
 	summary: "Stop the canvas server",
 	usage: "stop",
@@ -148,3 +148,16 @@ export const stopContract = defineCommand({
 		return { result: await stopCanvas() };
 	},
 });
+
+export {
+	StartInputSchema,
+	type StartInput,
+	StartResultSchema,
+	type StartResult,
+	startContract,
+	StopInputSchema,
+	type StopInput,
+	StopResultSchema,
+	type StopResult,
+	stopContract,
+};

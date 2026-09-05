@@ -25,12 +25,12 @@ import {
 	serverBrowserRefusals,
 } from "../command-contract/common.js";
 
-export const DescribeInputSchema = z.object({ tail: z.array(z.string()).default([]) });
-export type DescribeInput = z.infer<typeof DescribeInputSchema>;
-export const DescribeResultSchema = z.string();
-export type DescribeResult = z.infer<typeof DescribeResultSchema>;
+const DescribeInputSchema = z.object({ tail: z.array(z.string()).default([]) });
+type DescribeInput = z.infer<typeof DescribeInputSchema>;
+const DescribeResultSchema = z.string();
+type DescribeResult = z.infer<typeof DescribeResultSchema>;
 
-export const describeContract = defineCommand({
+const describeContract = defineCommand({
 	path: ["describe"],
 	summary: "AI-readable scene description (plain text)",
 	usage: "describe",
@@ -86,24 +86,24 @@ export const describeContract = defineCommand({
 	},
 });
 
-export const ScreenshotInputSchema = z.object({
+const ScreenshotInputSchema = z.object({
 	out: z.string().optional(),
 	format: z.enum(["png", "svg"], { error: "--format must be png or svg" }).default("png"),
 	noBackground: z.boolean().default(false),
 	pane: z.string().min(1, "--pane is required"),
 	tail: z.array(z.string()).default([]),
 });
-export type ScreenshotInput = z.infer<typeof ScreenshotInputSchema>;
-export const ScreenshotReceiptSchema = z.object({
+type ScreenshotInput = z.infer<typeof ScreenshotInputSchema>;
+const ScreenshotReceiptSchema = z.object({
 	success: z.literal(true),
 	file: z.string(),
 	format: z.enum(["png", "svg"]),
 	held: HoldReportSchema.optional(),
 });
-export type ScreenshotReceipt = z.infer<typeof ScreenshotReceiptSchema>;
-export const ScreenshotResultSchema = z.union([z.string(), ScreenshotReceiptSchema]);
-export type ScreenshotResult = z.infer<typeof ScreenshotResultSchema>;
-export const screenshotContract = defineCommand({
+type ScreenshotReceipt = z.infer<typeof ScreenshotReceiptSchema>;
+const ScreenshotResultSchema = z.union([z.string(), ScreenshotReceiptSchema]);
+type ScreenshotResult = z.infer<typeof ScreenshotResultSchema>;
+const screenshotContract = defineCommand({
 	path: ["browser", "capture"],
 	summary: "Capture one explicit live pane (needs an open browser tab)",
 	usage: "browser capture --pane <spec> [--out file.png] [--format png|svg] [--no-background]",
@@ -197,7 +197,7 @@ export const screenshotContract = defineCommand({
 	},
 });
 
-export const RenderInputSchema = z.object({
+const RenderInputSchema = z.object({
 	out: z.string().min(1, "render requires --out <file>"),
 	format: z.enum(["png", "svg"], { error: "--format must be png or svg" }).default("png"),
 	noBackground: z.boolean().default(false),
@@ -205,8 +205,8 @@ export const RenderInputSchema = z.object({
 	scale: z.coerce.number().min(0.25).max(4).default(1),
 	tail: z.array(z.string()).default([]),
 });
-export type RenderInput = z.infer<typeof RenderInputSchema>;
-export const RenderResultSchema = z.object({
+type RenderInput = z.infer<typeof RenderInputSchema>;
+const RenderResultSchema = z.object({
 	success: z.literal(true),
 	board: z.string(),
 	file: z.string(),
@@ -219,8 +219,8 @@ export const RenderResultSchema = z.object({
 	backgroundColor: z.string(),
 	sourceFingerprint: z.string(),
 });
-export type RenderResult = z.infer<typeof RenderResultSchema>;
-export const renderContract = defineCommand({
+type RenderResult = z.infer<typeof RenderResultSchema>;
+const renderContract = defineCommand({
 	path: ["render"],
 	summary: "Render one named persisted board to PNG or SVG",
 	usage:
@@ -322,27 +322,27 @@ export const renderContract = defineCommand({
 	},
 });
 
-export const ImportInputSchema = z.object({
+const ImportInputSchema = z.object({
 	file: z.string().optional(),
 	replace: z.boolean().default(false),
 	tail: z.array(z.string()).default([]),
 });
-export type ImportInput = z.infer<typeof ImportInputSchema>;
-export const ImportDocumentStageSchema = z.string().refine((value) => value.trim().length > 0, {
+type ImportInput = z.infer<typeof ImportInputSchema>;
+const ImportDocumentStageSchema = z.string().refine((value) => value.trim().length > 0, {
 	message: "No scene provided (pass a .excalidraw / .excalidraw.md file or pipe JSON to stdin)",
 });
-export type ImportDocumentStage = z.infer<typeof ImportDocumentStageSchema>;
+type ImportDocumentStage = z.infer<typeof ImportDocumentStageSchema>;
 
-export const ImportResultSchema = z.object({
+const ImportResultSchema = z.object({
 	success: z.literal(true),
 	imported: z.number().int().nonnegative(),
 	files: z.number().int().nonnegative(),
 	mode: z.enum(["merge", "replace"]),
 	held: HoldReportSchema.optional(),
 });
-export type ImportResult = z.infer<typeof ImportResultSchema>;
+type ImportResult = z.infer<typeof ImportResultSchema>;
 
-export const importContract = defineCommand({
+const importContract = defineCommand({
 	path: ["import"],
 	summary: "Import a .excalidraw or Obsidian .excalidraw.md file (merge by default)",
 	usage: "import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)",
@@ -436,24 +436,24 @@ export const importContract = defineCommand({
 	},
 });
 
-export const MermaidInputSchema = z.object({
+const MermaidInputSchema = z.object({
 	file: z.string().optional(),
 	tail: z.array(z.string()).default([]),
 });
-export type MermaidInput = z.infer<typeof MermaidInputSchema>;
-export const MermaidDiagramStageSchema = z.string().refine((value) => value.trim().length > 0, {
+type MermaidInput = z.infer<typeof MermaidInputSchema>;
+const MermaidDiagramStageSchema = z.string().refine((value) => value.trim().length > 0, {
 	message: "No Mermaid diagram provided (pass a file or pipe to stdin)",
 });
-export type MermaidDiagramStage = z.infer<typeof MermaidDiagramStageSchema>;
-export const MermaidResultSchema = z.looseObject({
+type MermaidDiagramStage = z.infer<typeof MermaidDiagramStageSchema>;
+const MermaidResultSchema = z.looseObject({
 	success: z.literal(true),
 	board: z.string(),
 	count: z.number().int().positive(),
 	ids: z.array(z.string()).min(1),
 	held: HoldReportSchema.optional(),
 });
-export type MermaidResult = z.infer<typeof MermaidResultSchema>;
-export const mermaidContract = defineCommand({
+type MermaidResult = z.infer<typeof MermaidResultSchema>;
+const mermaidContract = defineCommand({
 	path: ["mermaid"],
 	summary: "Convert Mermaid into one named persisted board",
 	usage: "mermaid [diagram.mmd|-] (or stdin)",
@@ -533,15 +533,15 @@ export const mermaidContract = defineCommand({
 	},
 });
 
-export const ShareInputSchema = z.object({ tail: z.array(z.string()).default([]) });
-export type ShareInput = z.infer<typeof ShareInputSchema>;
-export const ShareResultSchema = z.object({
+const ShareInputSchema = z.object({ tail: z.array(z.string()).default([]) });
+type ShareInput = z.infer<typeof ShareInputSchema>;
+const ShareResultSchema = z.object({
 	success: z.literal(true),
 	url: z.string(),
 	held: HoldReportSchema.optional(),
 });
-export type ShareResult = z.infer<typeof ShareResultSchema>;
-export const shareContract = defineCommand({
+type ShareResult = z.infer<typeof ShareResultSchema>;
+const shareContract = defineCommand({
 	path: ["share"],
 	summary: "Export to a shareable excalidraw.com URL",
 	usage: "share",
@@ -590,19 +590,19 @@ export const shareContract = defineCommand({
 	},
 });
 
-export const ClearInputSchema = z.object({
+const ClearInputSchema = z.object({
 	yes: z.literal(true, { error: "clear wipes the whole canvas; pass --yes to confirm" }),
 	tail: z.array(z.string()).default([]),
 });
-export type ClearInput = z.infer<typeof ClearInputSchema>;
-export const ClearResultSchema = z.object({
+type ClearInput = z.infer<typeof ClearInputSchema>;
+const ClearResultSchema = z.object({
 	success: z.literal(true),
 	cleared: z.number().int().nonnegative(),
 	held: HoldReportSchema.optional(),
 });
-export type ClearResult = z.infer<typeof ClearResultSchema>;
+type ClearResult = z.infer<typeof ClearResultSchema>;
 
-export const clearContract = defineCommand({
+const clearContract = defineCommand({
 	path: ["clear"],
 	summary: "Clear the whole canvas",
 	usage: "clear --yes",
@@ -657,3 +657,47 @@ export const clearContract = defineCommand({
 		return { result: { success: true as const, cleared: result.count ?? 0 } };
 	},
 });
+
+export {
+	DescribeInputSchema,
+	type DescribeInput,
+	DescribeResultSchema,
+	type DescribeResult,
+	describeContract,
+	ScreenshotInputSchema,
+	type ScreenshotInput,
+	ScreenshotReceiptSchema,
+	type ScreenshotReceipt,
+	ScreenshotResultSchema,
+	type ScreenshotResult,
+	screenshotContract,
+	RenderInputSchema,
+	type RenderInput,
+	RenderResultSchema,
+	type RenderResult,
+	renderContract,
+	ImportInputSchema,
+	type ImportInput,
+	ImportDocumentStageSchema,
+	type ImportDocumentStage,
+	ImportResultSchema,
+	type ImportResult,
+	importContract,
+	MermaidInputSchema,
+	type MermaidInput,
+	MermaidDiagramStageSchema,
+	type MermaidDiagramStage,
+	MermaidResultSchema,
+	type MermaidResult,
+	mermaidContract,
+	ShareInputSchema,
+	type ShareInput,
+	ShareResultSchema,
+	type ShareResult,
+	shareContract,
+	ClearInputSchema,
+	type ClearInput,
+	ClearResultSchema,
+	type ClearResult,
+	clearContract,
+};

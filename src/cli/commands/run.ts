@@ -474,7 +474,7 @@ const COMMANDS: Record<string, CommandRoute> = {
  * Every way the CLI can be invoked, as `{ name, subcommands }` — the command
  * table read as data for contract and documentation checks.
  */
-export function cliSurface(): { name: string; subcommands: readonly string[] }[] {
+function cliSurface(): { name: string; subcommands: readonly string[] }[] {
 	return Object.entries(COMMANDS).map(([name, route]) => ({
 		name,
 		subcommands: Object.keys(route.children ?? {}),
@@ -482,7 +482,7 @@ export function cliSurface(): { name: string; subcommands: readonly string[] }[]
 }
 
 /** The one registry projected as all current canonical contract paths. */
-export interface CliRegistryEntry {
+interface CliRegistryEntry {
 	name: string;
 	parent: string | null;
 	classification: "board" | "browser" | "neither";
@@ -574,7 +574,7 @@ function flattenRoute(
 	];
 }
 
-export function cliContractRegistry(): CliRegistryEntry[] {
+function cliContractRegistry(): CliRegistryEntry[] {
 	const entries = Object.entries(COMMANDS).flatMap(([name, route]) =>
 		flattenRoute(name, route, null),
 	);
@@ -585,7 +585,7 @@ export function cliContractRegistry(): CliRegistryEntry[] {
 }
 
 /** Render one help topic from the same route and contract registry used for dispatch. */
-export function commandHelp(topic: readonly string[]): string | null {
+function commandHelp(topic: readonly string[]): string | null {
 	const [name, childName, ...tail] = topic;
 	if (!name || tail.length > 0) {
 		return null;
@@ -855,7 +855,7 @@ async function runInterruptibleCommand(
 	}
 }
 
-export async function runCli(argv: string[]): Promise<void> {
+async function runCli(argv: string[]): Promise<void> {
 	const [name, ...rest] = argv;
 
 	if (!name || name === "help" || name === "--help" || name === "-h") {
@@ -945,3 +945,5 @@ export async function runCli(argv: string[]): Promise<void> {
 		process.exitCode = exitCodeFor(error, selected);
 	}
 }
+
+export { cliSurface, type CliRegistryEntry, cliContractRegistry, commandHelp, runCli };

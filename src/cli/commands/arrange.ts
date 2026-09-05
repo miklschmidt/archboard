@@ -18,7 +18,7 @@ import type { FlagSpecs } from "../command-contract/route-options.js";
 
 const AlignmentInputSchema = z.enum(["left", "center", "right", "top", "middle", "bottom"]);
 const DirectionInputSchema = z.enum(["horizontal", "vertical"]);
-export const ARRANGE_FLAG_SPEC = {
+const ARRANGE_FLAG_SPEC = {
 	ids: { takesValue: true },
 	to: { takesValue: true },
 	group: { takesValue: true },
@@ -86,7 +86,7 @@ function parsedIds(value: string | undefined, usage: string, context: z.Refineme
 		.filter(Boolean);
 }
 
-export const ArrangeAlignStageSchema = z
+const ArrangeAlignStageSchema = z
 	.object({ ids: z.string().optional(), to: z.string().optional() })
 	.transform((input, context) => {
 		const ids = parsedIds(
@@ -107,9 +107,9 @@ export const ArrangeAlignStageSchema = z
 		}
 		return { ids, alignment: alignment.data };
 	});
-export type ArrangeAlignStage = z.infer<typeof ArrangeAlignStageSchema>;
+type ArrangeAlignStage = z.infer<typeof ArrangeAlignStageSchema>;
 
-export const ArrangeDistributeStageSchema = z
+const ArrangeDistributeStageSchema = z
 	.object({ ids: z.string().optional(), to: z.string().optional() })
 	.transform((input, context) => {
 		const ids = parsedIds(
@@ -130,26 +130,26 @@ export const ArrangeDistributeStageSchema = z
 		}
 		return { ids, direction: direction.data };
 	});
-export type ArrangeDistributeStage = z.infer<typeof ArrangeDistributeStageSchema>;
+type ArrangeDistributeStage = z.infer<typeof ArrangeDistributeStageSchema>;
 
 const idsStage = (usage: string) =>
 	z.object({ ids: z.string().optional() }).transform((input, context) => {
 		const ids = parsedIds(input.ids, usage, context);
 		return ids === z.NEVER ? z.NEVER : { ids };
 	});
-export const ArrangeGroupStageSchema = idsStage("Usage: arrange group --ids a,b,c");
-export type ArrangeGroupStage = z.infer<typeof ArrangeGroupStageSchema>;
-export const ArrangeLockStageSchema = idsStage("Usage: arrange lock --ids a,b,c");
-export type ArrangeLockStage = z.infer<typeof ArrangeLockStageSchema>;
-export const ArrangeUnlockStageSchema = idsStage("Usage: arrange unlock --ids a,b,c");
-export type ArrangeUnlockStage = z.infer<typeof ArrangeUnlockStageSchema>;
+const ArrangeGroupStageSchema = idsStage("Usage: arrange group --ids a,b,c");
+type ArrangeGroupStage = z.infer<typeof ArrangeGroupStageSchema>;
+const ArrangeLockStageSchema = idsStage("Usage: arrange lock --ids a,b,c");
+type ArrangeLockStage = z.infer<typeof ArrangeLockStageSchema>;
+const ArrangeUnlockStageSchema = idsStage("Usage: arrange unlock --ids a,b,c");
+type ArrangeUnlockStage = z.infer<typeof ArrangeUnlockStageSchema>;
 
-export const ArrangeUngroupStageSchema = z.object({
+const ArrangeUngroupStageSchema = z.object({
 	group: z.string({ error: "Usage: arrange ungroup --group <groupId>" }).min(1),
 });
-export type ArrangeUngroupStage = z.infer<typeof ArrangeUngroupStageSchema>;
+type ArrangeUngroupStage = z.infer<typeof ArrangeUngroupStageSchema>;
 
-export const ArrangeDuplicateStageSchema = z
+const ArrangeDuplicateStageSchema = z
 	.object({ ids: z.string().optional(), offset: z.string().optional() })
 	.transform((input, context) => {
 		const ids = parsedIds(
@@ -170,7 +170,7 @@ export const ArrangeDuplicateStageSchema = z
 		}
 		return { ids, offsetX: parts[0]!, offsetY: parts[1]! };
 	});
-export type ArrangeDuplicateStage = z.infer<typeof ArrangeDuplicateStageSchema>;
+type ArrangeDuplicateStage = z.infer<typeof ArrangeDuplicateStageSchema>;
 
 const arrangementStage = (name: string, schema: z.ZodType) => ({
 	name,
@@ -180,14 +180,14 @@ const arrangementStage = (name: string, schema: z.ZodType) => ({
 	schema,
 });
 
-export const ArrangeNamespaceInputSchema = z.object({
+const ArrangeNamespaceInputSchema = z.object({
 	...ArrangeInputShape,
 	action: z.string().optional(),
 });
-export type ArrangeNamespaceInput = z.infer<typeof ArrangeNamespaceInputSchema>;
-export const ArrangeNamespaceResultSchema = z.never();
-export type ArrangeNamespaceResult = z.infer<typeof ArrangeNamespaceResultSchema>;
-export const arrangeContract = defineCommand({
+type ArrangeNamespaceInput = z.infer<typeof ArrangeNamespaceInputSchema>;
+const ArrangeNamespaceResultSchema = z.never();
+type ArrangeNamespaceResult = z.infer<typeof ArrangeNamespaceResultSchema>;
+const arrangeContract = defineCommand({
 	path: ["arrange"],
 	summary: "Align, distribute, group, lock, duplicate elements",
 	usage: "arrange align|distribute|group|ungroup|lock|unlock|duplicate ...",
@@ -220,17 +220,17 @@ export const arrangeContract = defineCommand({
 	},
 });
 
-export const ArrangeAlignInputSchema = z.object(ArrangeInputShape);
-export type ArrangeAlignInput = z.infer<typeof ArrangeAlignInputSchema>;
-export const ArrangeAlignResultSchema = z.looseObject({
+const ArrangeAlignInputSchema = z.object(ArrangeInputShape);
+type ArrangeAlignInput = z.infer<typeof ArrangeAlignInputSchema>;
+const ArrangeAlignResultSchema = z.looseObject({
 	aligned: z.boolean(),
 	elementIds: z.array(z.string()),
 	alignment: z.enum(["left", "center", "right", "top", "middle", "bottom"]),
 	successCount: z.number().int().nonnegative(),
 	held: HoldReportSchema.optional(),
 });
-export type ArrangeAlignResult = z.infer<typeof ArrangeAlignResultSchema>;
-export const arrangeAlignContract = defineCommand({
+type ArrangeAlignResult = z.infer<typeof ArrangeAlignResultSchema>;
+const arrangeAlignContract = defineCommand({
 	path: ["arrange", "align"],
 	summary: "Align elements",
 	usage: "arrange align --ids a,b,c --to left|center|right|top|middle|bottom",
@@ -254,17 +254,17 @@ export const arrangeAlignContract = defineCommand({
 	},
 });
 
-export const ArrangeDistributeInputSchema = z.object(ArrangeInputShape);
-export type ArrangeDistributeInput = z.infer<typeof ArrangeDistributeInputSchema>;
-export const ArrangeDistributeResultSchema = z.looseObject({
+const ArrangeDistributeInputSchema = z.object(ArrangeInputShape);
+type ArrangeDistributeInput = z.infer<typeof ArrangeDistributeInputSchema>;
+const ArrangeDistributeResultSchema = z.looseObject({
 	distributed: z.boolean(),
 	elementIds: z.array(z.string()),
 	direction: z.enum(["horizontal", "vertical"]),
 	count: z.number().int().nonnegative(),
 	held: HoldReportSchema.optional(),
 });
-export type ArrangeDistributeResult = z.infer<typeof ArrangeDistributeResultSchema>;
-export const arrangeDistributeContract = defineCommand({
+type ArrangeDistributeResult = z.infer<typeof ArrangeDistributeResultSchema>;
+const arrangeDistributeContract = defineCommand({
 	path: ["arrange", "distribute"],
 	summary: "Distribute elements",
 	usage: "arrange distribute --ids a,b,c --to horizontal|vertical",
@@ -288,16 +288,16 @@ export const arrangeDistributeContract = defineCommand({
 	},
 });
 
-export const ArrangeGroupInputSchema = z.object(ArrangeInputShape);
-export type ArrangeGroupInput = z.infer<typeof ArrangeGroupInputSchema>;
-export const ArrangeGroupResultSchema = z.looseObject({
+const ArrangeGroupInputSchema = z.object(ArrangeInputShape);
+type ArrangeGroupInput = z.infer<typeof ArrangeGroupInputSchema>;
+const ArrangeGroupResultSchema = z.looseObject({
 	groupId: z.string(),
 	elementIds: z.array(z.string()),
 	successCount: z.number().int().nonnegative(),
 	held: HoldReportSchema.optional(),
 });
-export type ArrangeGroupResult = z.infer<typeof ArrangeGroupResultSchema>;
-export const arrangeGroupContract = defineCommand({
+type ArrangeGroupResult = z.infer<typeof ArrangeGroupResultSchema>;
+const arrangeGroupContract = defineCommand({
 	path: ["arrange", "group"],
 	summary: "Group elements",
 	usage: "arrange group --ids a,b,c",
@@ -321,17 +321,17 @@ export const arrangeGroupContract = defineCommand({
 	},
 });
 
-export const ArrangeUngroupInputSchema = z.object(ArrangeInputShape);
-export type ArrangeUngroupInput = z.infer<typeof ArrangeUngroupInputSchema>;
-export const ArrangeUngroupResultSchema = z.looseObject({
+const ArrangeUngroupInputSchema = z.object(ArrangeInputShape);
+type ArrangeUngroupInput = z.infer<typeof ArrangeUngroupInputSchema>;
+const ArrangeUngroupResultSchema = z.looseObject({
 	groupId: z.string(),
 	ungrouped: z.boolean(),
 	elementIds: z.array(z.string()),
 	successCount: z.number().int().nonnegative(),
 	held: HoldReportSchema.optional(),
 });
-export type ArrangeUngroupResult = z.infer<typeof ArrangeUngroupResultSchema>;
-export const arrangeUngroupContract = defineCommand({
+type ArrangeUngroupResult = z.infer<typeof ArrangeUngroupResultSchema>;
+const arrangeUngroupContract = defineCommand({
 	path: ["arrange", "ungroup"],
 	summary: "Ungroup elements",
 	usage: "arrange ungroup --group <groupId>",
@@ -362,11 +362,11 @@ const lockResult = (key: "locked" | "unlocked") =>
 		successCount: z.number().int().nonnegative(),
 		held: HoldReportSchema.optional(),
 	});
-export const ArrangeLockInputSchema = z.object(ArrangeInputShape);
-export type ArrangeLockInput = z.infer<typeof ArrangeLockInputSchema>;
-export const ArrangeLockResultSchema = lockResult("locked");
-export type ArrangeLockResult = z.infer<typeof ArrangeLockResultSchema>;
-export const arrangeLockContract = defineCommand({
+const ArrangeLockInputSchema = z.object(ArrangeInputShape);
+type ArrangeLockInput = z.infer<typeof ArrangeLockInputSchema>;
+const ArrangeLockResultSchema = lockResult("locked");
+type ArrangeLockResult = z.infer<typeof ArrangeLockResultSchema>;
+const arrangeLockContract = defineCommand({
 	path: ["arrange", "lock"],
 	summary: "Lock elements",
 	usage: "arrange lock --ids a,b,c",
@@ -395,11 +395,11 @@ export const arrangeLockContract = defineCommand({
 	},
 });
 
-export const ArrangeUnlockInputSchema = z.object(ArrangeInputShape);
-export type ArrangeUnlockInput = z.infer<typeof ArrangeUnlockInputSchema>;
-export const ArrangeUnlockResultSchema = lockResult("unlocked");
-export type ArrangeUnlockResult = z.infer<typeof ArrangeUnlockResultSchema>;
-export const arrangeUnlockContract = defineCommand({
+const ArrangeUnlockInputSchema = z.object(ArrangeInputShape);
+type ArrangeUnlockInput = z.infer<typeof ArrangeUnlockInputSchema>;
+const ArrangeUnlockResultSchema = lockResult("unlocked");
+type ArrangeUnlockResult = z.infer<typeof ArrangeUnlockResultSchema>;
+const arrangeUnlockContract = defineCommand({
 	path: ["arrange", "unlock"],
 	summary: "Unlock elements",
 	usage: "arrange unlock --ids a,b,c",
@@ -428,9 +428,9 @@ export const arrangeUnlockContract = defineCommand({
 	},
 });
 
-export const ArrangeDuplicateInputSchema = z.object(ArrangeInputShape);
-export type ArrangeDuplicateInput = z.infer<typeof ArrangeDuplicateInputSchema>;
-export const ArrangeDuplicateResultSchema = z.looseObject({
+const ArrangeDuplicateInputSchema = z.object(ArrangeInputShape);
+type ArrangeDuplicateInput = z.infer<typeof ArrangeDuplicateInputSchema>;
+const ArrangeDuplicateResultSchema = z.looseObject({
 	success: z.literal(true),
 	count: z.number().int().nonnegative(),
 	offsetX: z.number(),
@@ -438,8 +438,8 @@ export const ArrangeDuplicateResultSchema = z.looseObject({
 	elements: z.array(z.looseObject({ id: z.string() })).nullable(),
 	held: HoldReportSchema.optional(),
 });
-export type ArrangeDuplicateResult = z.infer<typeof ArrangeDuplicateResultSchema>;
-export const arrangeDuplicateContract = defineCommand({
+type ArrangeDuplicateResult = z.infer<typeof ArrangeDuplicateResultSchema>;
+const arrangeDuplicateContract = defineCommand({
 	path: ["arrange", "duplicate"],
 	summary: "Duplicate elements",
 	usage: "arrange duplicate --ids a,b,c [--offset 20,20]",
@@ -471,3 +471,61 @@ export const arrangeDuplicateContract = defineCommand({
 		};
 	},
 });
+
+export {
+	ARRANGE_FLAG_SPEC,
+	ArrangeAlignStageSchema,
+	type ArrangeAlignStage,
+	ArrangeDistributeStageSchema,
+	type ArrangeDistributeStage,
+	ArrangeGroupStageSchema,
+	type ArrangeGroupStage,
+	ArrangeLockStageSchema,
+	type ArrangeLockStage,
+	ArrangeUnlockStageSchema,
+	type ArrangeUnlockStage,
+	ArrangeUngroupStageSchema,
+	type ArrangeUngroupStage,
+	ArrangeDuplicateStageSchema,
+	type ArrangeDuplicateStage,
+	ArrangeNamespaceInputSchema,
+	type ArrangeNamespaceInput,
+	ArrangeNamespaceResultSchema,
+	type ArrangeNamespaceResult,
+	arrangeContract,
+	ArrangeAlignInputSchema,
+	type ArrangeAlignInput,
+	ArrangeAlignResultSchema,
+	type ArrangeAlignResult,
+	arrangeAlignContract,
+	ArrangeDistributeInputSchema,
+	type ArrangeDistributeInput,
+	ArrangeDistributeResultSchema,
+	type ArrangeDistributeResult,
+	arrangeDistributeContract,
+	ArrangeGroupInputSchema,
+	type ArrangeGroupInput,
+	ArrangeGroupResultSchema,
+	type ArrangeGroupResult,
+	arrangeGroupContract,
+	ArrangeUngroupInputSchema,
+	type ArrangeUngroupInput,
+	ArrangeUngroupResultSchema,
+	type ArrangeUngroupResult,
+	arrangeUngroupContract,
+	ArrangeLockInputSchema,
+	type ArrangeLockInput,
+	ArrangeLockResultSchema,
+	type ArrangeLockResult,
+	arrangeLockContract,
+	ArrangeUnlockInputSchema,
+	type ArrangeUnlockInput,
+	ArrangeUnlockResultSchema,
+	type ArrangeUnlockResult,
+	arrangeUnlockContract,
+	ArrangeDuplicateInputSchema,
+	type ArrangeDuplicateInput,
+	ArrangeDuplicateResultSchema,
+	type ArrangeDuplicateResult,
+	arrangeDuplicateContract,
+};

@@ -4,7 +4,7 @@ import { defineCommand } from "./contract.js";
 import { HoldReportSchema } from "./schemas.js";
 import { serverRefusal, tail } from "./lib/common.js";
 
-export const ViewportInputSchema = z
+const ViewportInputSchema = z
 	.object({
 		fit: z.boolean().default(false),
 		ids: z.string().optional(),
@@ -38,7 +38,7 @@ export const ViewportInputSchema = z
 			});
 		}
 	});
-export type ViewportInput = z.infer<typeof ViewportInputSchema>;
+type ViewportInput = z.infer<typeof ViewportInputSchema>;
 
 const finiteNumber = (flag: string) =>
 	z.string().transform((value, context) => {
@@ -60,14 +60,14 @@ const viewportIdsSchema = z
 	)
 	.describe("Split comma-separated ids, trim whitespace, and discard empty ids.");
 
-export const ViewportResultSchema = z.object({
+const ViewportResultSchema = z.object({
 	success: z.boolean(),
 	message: z.string(),
 	held: HoldReportSchema.optional(),
 });
-export type ViewportResult = z.infer<typeof ViewportResultSchema>;
+type ViewportResult = z.infer<typeof ViewportResultSchema>;
 
-export const viewportContract = defineCommand({
+const viewportContract = defineCommand({
 	path: ["browser", "viewport"],
 	summary: "Point a pane's camera: fit, centre, or zoom (needs a browser tab)",
 	usage: [
@@ -228,3 +228,11 @@ export const viewportContract = defineCommand({
 		return { result };
 	},
 });
+
+export {
+	ViewportInputSchema,
+	type ViewportInput,
+	ViewportResultSchema,
+	type ViewportResult,
+	viewportContract,
+};

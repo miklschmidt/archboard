@@ -22,7 +22,7 @@ import type { IdentityContext, IdentitySchemas } from "./scalars.js";
 import { createBrowserSpokenApprovalSchema } from "./spoken-approval.js";
 
 const TimestampSchema = z.number().int().nonnegative();
-export const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
+const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
 /**
  * The most joined thread candidates one snapshot publishes. The list is bounded
  * here rather than trimmed by the snapshot fitter, which owns timeline and
@@ -31,18 +31,18 @@ export const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outc
  * leaving those histories to trim; a longer list is published
  * truncated rather than crowding history out.
  */
-export const BROWSER_THREAD_CANDIDATE_LIMIT = 40;
+const BROWSER_THREAD_CANDIDATE_LIMIT = 40;
 /** Exact callback JSON is retained up to the callback encoder's wire contract. */
-export const BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES = 32_768;
-export const BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES = 8_192;
-export const BROWSER_VOICE_CONTEXT_ENTRY_LIMIT = 64;
-export const BROWSER_PERMISSION_FILE_ACCESS = {
+const BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES = 32_768;
+const BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES = 8_192;
+const BROWSER_VOICE_CONTEXT_ENTRY_LIMIT = 64;
+const BROWSER_PERMISSION_FILE_ACCESS = {
 	deny: "deny",
 	read: "read",
 	write: "write",
 } as const;
 
-export interface BrowserSnapshotRelationshipIssue {
+interface BrowserSnapshotRelationshipIssue {
 	readonly path: readonly string[];
 	readonly message: string;
 }
@@ -59,7 +59,7 @@ interface BrowserSnapshotRelationshipFields {
 }
 
 /** Checks relationships between fields after each field has passed its own schema. */
-export function browserSnapshotRelationshipIssues(
+function browserSnapshotRelationshipIssues(
 	value: BrowserSnapshotRelationshipFields,
 ): readonly BrowserSnapshotRelationshipIssue[] {
 	const issues: BrowserSnapshotRelationshipIssue[] = [];
@@ -104,7 +104,7 @@ function addContextIssue(context: z.RefinementCtx, error: unknown, path: string[
 	});
 }
 
-export function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContext) {
+function createBrowserSchemas(identity: IdentitySchemas, context: IdentityContext) {
 	const {
 		ApprovalIdSchema,
 		BrowserCommandIdSchema,
@@ -1186,29 +1186,65 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 	};
 }
 
-export type BrowserSchemas = ReturnType<typeof createBrowserSchemas>;
-export type BrowserReadiness = z.infer<BrowserSchemas["BrowserReadinessSchema"]>;
-export type BrowserAccount = z.infer<BrowserSchemas["BrowserAccountSchema"]>;
-export type BrowserLogin = z.infer<BrowserSchemas["BrowserLoginSchema"]>;
-export type BrowserThreadLinkSourcePresentation = z.infer<
+type BrowserSchemas = ReturnType<typeof createBrowserSchemas>;
+type BrowserReadiness = z.infer<BrowserSchemas["BrowserReadinessSchema"]>;
+type BrowserAccount = z.infer<BrowserSchemas["BrowserAccountSchema"]>;
+type BrowserLogin = z.infer<BrowserSchemas["BrowserLoginSchema"]>;
+type BrowserThreadLinkSourcePresentation = z.infer<
 	BrowserSchemas["BrowserThreadLinkSourcePresentationSchema"]
 >;
-export type BrowserThreadLink = z.infer<BrowserSchemas["BrowserThreadLinkSchema"]>;
-export type BrowserThreadCandidate = z.infer<BrowserSchemas["BrowserThreadCandidateSchema"]>;
-export type BrowserThreadCandidates = z.infer<BrowserSchemas["BrowserThreadCandidatesSchema"]>;
-export type BrowserTimeline = z.infer<BrowserSchemas["BrowserTimelineSchema"]>;
-export type BrowserQueue = z.infer<BrowserSchemas["BrowserQueueSchema"]>;
-export type BrowserSettings = z.infer<BrowserSchemas["BrowserSettingsSchema"]>;
-export type BrowserApproval = z.infer<BrowserSchemas["BrowserApprovalSchema"]>;
-export type BrowserTextCommand = z.infer<BrowserSchemas["BrowserTextCommandSchema"]>;
-export type BrowserSemanticDelivery = z.infer<BrowserSchemas["BrowserSemanticDeliverySchema"]>;
-export type BrowserCoordinator = z.infer<BrowserSchemas["BrowserCoordinatorSchema"]>;
-export type BrowserVoice = z.infer<BrowserSchemas["BrowserVoiceSchema"]>;
-export type BrowserSpokenApproval = z.infer<BrowserSchemas["BrowserSpokenApprovalSchema"]>;
-export type BrowserVoiceContext = z.infer<BrowserSchemas["BrowserVoiceContextSchema"]>;
-export type BrowserCommandLease = z.infer<BrowserSchemas["BrowserCommandLeaseSchema"]>;
-export type BrowserOperationOutcome = z.infer<BrowserSchemas["BrowserOperationOutcomeSchema"]>;
-export type BrowserCommand = z.infer<BrowserSchemas["BrowserCommandSchema"]>;
-export type BrowserSnapshot = z.infer<BrowserSchemas["BrowserSnapshotSchema"]>;
-export type BrowserDto = z.infer<BrowserSchemas["BrowserDtoSchema"]>;
-export type DeliveryOutcome = z.infer<typeof DeliveryOutcomeSchema>;
+type BrowserThreadLink = z.infer<BrowserSchemas["BrowserThreadLinkSchema"]>;
+type BrowserThreadCandidate = z.infer<BrowserSchemas["BrowserThreadCandidateSchema"]>;
+type BrowserThreadCandidates = z.infer<BrowserSchemas["BrowserThreadCandidatesSchema"]>;
+type BrowserTimeline = z.infer<BrowserSchemas["BrowserTimelineSchema"]>;
+type BrowserQueue = z.infer<BrowserSchemas["BrowserQueueSchema"]>;
+type BrowserSettings = z.infer<BrowserSchemas["BrowserSettingsSchema"]>;
+type BrowserApproval = z.infer<BrowserSchemas["BrowserApprovalSchema"]>;
+type BrowserTextCommand = z.infer<BrowserSchemas["BrowserTextCommandSchema"]>;
+type BrowserSemanticDelivery = z.infer<BrowserSchemas["BrowserSemanticDeliverySchema"]>;
+type BrowserCoordinator = z.infer<BrowserSchemas["BrowserCoordinatorSchema"]>;
+type BrowserVoice = z.infer<BrowserSchemas["BrowserVoiceSchema"]>;
+type BrowserSpokenApproval = z.infer<BrowserSchemas["BrowserSpokenApprovalSchema"]>;
+type BrowserVoiceContext = z.infer<BrowserSchemas["BrowserVoiceContextSchema"]>;
+type BrowserCommandLease = z.infer<BrowserSchemas["BrowserCommandLeaseSchema"]>;
+type BrowserOperationOutcome = z.infer<BrowserSchemas["BrowserOperationOutcomeSchema"]>;
+type BrowserCommand = z.infer<BrowserSchemas["BrowserCommandSchema"]>;
+type BrowserSnapshot = z.infer<BrowserSchemas["BrowserSnapshotSchema"]>;
+type BrowserDto = z.infer<BrowserSchemas["BrowserDtoSchema"]>;
+type DeliveryOutcome = z.infer<typeof DeliveryOutcomeSchema>;
+
+export {
+	DeliveryOutcomeSchema,
+	BROWSER_THREAD_CANDIDATE_LIMIT,
+	BROWSER_VOICE_CONTEXT_BODY_MAX_UTF8_BYTES,
+	BROWSER_VOICE_CONTEXT_BRIEF_MAX_UTF8_BYTES,
+	BROWSER_VOICE_CONTEXT_ENTRY_LIMIT,
+	BROWSER_PERMISSION_FILE_ACCESS,
+	type BrowserSnapshotRelationshipIssue,
+	browserSnapshotRelationshipIssues,
+	createBrowserSchemas,
+	type BrowserSchemas,
+	type BrowserReadiness,
+	type BrowserAccount,
+	type BrowserLogin,
+	type BrowserThreadLinkSourcePresentation,
+	type BrowserThreadLink,
+	type BrowserThreadCandidate,
+	type BrowserThreadCandidates,
+	type BrowserTimeline,
+	type BrowserQueue,
+	type BrowserSettings,
+	type BrowserApproval,
+	type BrowserTextCommand,
+	type BrowserSemanticDelivery,
+	type BrowserCoordinator,
+	type BrowserVoice,
+	type BrowserSpokenApproval,
+	type BrowserVoiceContext,
+	type BrowserCommandLease,
+	type BrowserOperationOutcome,
+	type BrowserCommand,
+	type BrowserSnapshot,
+	type BrowserDto,
+	type DeliveryOutcome,
+};
