@@ -11,68 +11,73 @@ type HolderKind = "human" | "agent";
  * renewal because refusals answer when the hold began, not its latest beat.
  */
 interface LockHolder {
-	id: string;
-	kind: HolderKind;
-	since: string;
-	until: string;
-	process: string;
-	reason?: string;
-	claimed?: boolean;
+	readonly id: string;
+	readonly kind: HolderKind;
+	readonly since: string;
+	readonly until: string;
+	readonly process: string;
+	readonly reason?: string;
+	readonly claimed?: boolean;
 }
 
 interface LockRecord extends LockHolder {
 	/** Unique acquisition proof; pid alone cannot distinguish two attempts. */
-	token: string;
+	readonly token: string;
 	/** Exact note hash committed inside this lease; never exposed as holder state. */
-	committedHash?: string;
+	readonly committedHash?: string;
 }
 
 /** One-use commit proof left by a released writer for its observed successor. */
 interface LockHandoff {
-	id: string;
-	process: string;
-	since: string;
-	token: string;
-	hash: string;
+	readonly id: string;
+	readonly process: string;
+	readonly since: string;
+	readonly token: string;
+	readonly hash: string;
 }
 
 interface LockHold {
-	holder: LockHolder;
+	readonly holder: Readonly<LockHolder>;
 	/** Disk lease identity used only to stamp a successful note commit. */
-	leaseToken: string;
+	readonly leaseToken: string;
 	/** Exact committed hash of the immediately preceding lease this waiter saw. */
-	predecessorHash?: string;
+	readonly predecessorHash?: string;
 	/** False when this call merely joined a reentrant hold it must not release. */
-	created: boolean;
+	readonly created: boolean;
 }
 
 interface LockRequest {
 	/** Normalized by the acquisition owner so aliases name one mutex. */
-	board: string;
-	holder: { id: string; kind: HolderKind; reason?: string; claimed?: boolean };
+	readonly board: string;
+	readonly holder: Readonly<{
+		id: string;
+		kind: HolderKind;
+		reason?: string;
+		claimed?: boolean;
+	}>;
 	/** Bounded wait; zero asks once. Human gesture holds use a shorter cap. */
-	waitMs?: number;
+	readonly waitMs?: number;
 	/** Lease duration, distinct from a claim's campaign deadline. */
-	leaseMs?: number;
+	readonly leaseMs?: number;
 	/** Only a human content hold sets this, and it revokes claims, never writes. */
-	revokeClaim?: boolean;
+	readonly revokeClaim?: boolean;
 	/** Cancels waiting, never a synchronous write already inside the boundary. */
-	signal?: AbortSignal;
+	readonly signal?: Readonly<AbortSignal>;
 }
 
-type LockSink = (board: string, holder: LockHolder | null) => void;
+type LockSink = (board: string, holder: Readonly<LockHolder> | null) => void;
 
 interface Claim {
-	board: string;
-	holder: LockHolder;
+	readonly board: string;
+	readonly holder: Readonly<LockHolder>;
 	/** Claim campaign deadline, independent from the renewable short lease. */
-	expires: string;
+	readonly expires: string;
 }
 
 /** A claim taken back, retained until the affected agent is told exactly once. */
 interface ClaimRevocation {
-	claim: Claim;
-	by: LockHolder | null;
+	readonly claim: Readonly<Claim>;
+	readonly by: Readonly<LockHolder> | null;
 }
 
 interface ClaimEntry {
@@ -94,7 +99,11 @@ function clock(iso: string): string {
 	return Number.isNaN(at.getTime()) ? iso : at.toTimeString().slice(0, 8);
 }
 
-function describeHold(board: string, holder: LockHolder | null, waitedMs: number): string {
+function describeHold(
+	board: string,
+	holder: Readonly<LockHolder> | null,
+	waitedMs: number,
+): string {
 	const waited = `Waited ${seconds(waitedMs)}.`;
 	if (!holder) {
 		return `Board "${board}" is being written by somebody else and did not come free. ${waited}`;
@@ -112,13 +121,14 @@ function describeHold(board: string, holder: LockHolder | null, waitedMs: number
 	return `Board "${board}" is held by ${who}${where}, since ${clock(holder.since)} (${held}). ${waited}`;
 }
 
+/** A bounded lock wait ended while another holder still owned the board. */
 class BoardHeldError extends Error {
-	readonly code = "BOARD_HELD";
-	readonly board: string;
-	readonly holder: LockHolder | null;
-	readonly waitedMs: number;
+	public readonly code = "BOARD_HELD";
+	public readonly board: string;
+	public readonly holder: Readonly<LockHolder> | null;
+	public readonly waitedMs: number;
 
-	constructor(board: string, holder: LockHolder | null, waitedMs: number) {
+	public constructor(board: string, holder: Readonly<LockHolder> | null, waitedMs: number) {
 		super(describeHold(board, holder, waitedMs));
 		this.name = "BoardHeldError";
 		this.board = board;
