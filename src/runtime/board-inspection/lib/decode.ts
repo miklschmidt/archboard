@@ -57,8 +57,8 @@ export function decodeRecords(
 			value && typeof value === "object" && !Array.isArray(value)
 				? (value as Readonly<Record<string, unknown>>)
 				: null;
-		if (raw?.isDeleted === true || typeof raw?.id !== "string" || raw.id.length === 0) continue;
-		idCounts.set(raw.id, (idCounts.get(raw.id) ?? 0) + 1);
+		if (raw?.["isDeleted"] === true || typeof raw?.["id"] !== "string" || raw["id"].length === 0) continue;
+		idCounts.set(raw["id"], (idCounts.get(raw["id"]) ?? 0) + 1);
 	}
 	return records.map((value, sourceIndex) => {
 		const raw = value;

@@ -42,7 +42,7 @@ describe("server-minted ids", () => {
 			],
 		});
 		const { scene: built } = buildScene([...inputBoard.values()]);
-		const elements = built.elements as ServerElement[];
+		const elements = built["elements"] as ServerElement[];
 		const minted = elements.map((element) => element.id);
 
 		expect(minted).toHaveLength(5);

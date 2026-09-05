@@ -90,7 +90,7 @@ export function buildCodexChildEnvironment(input: {
 		child[key] = value;
 	}
 
-	child.CODEX_HOME = codexHome;
-	child.CODEX_SQLITE_HOME = sqliteHome;
+	child["CODEX_HOME"] = codexHome;
+	child["CODEX_SQLITE_HOME"] = sqliteHome;
 	return Object.freeze(child);
 }

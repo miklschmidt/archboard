@@ -96,7 +96,7 @@ describe("semantic board changes", () => {
 		expect(comparison.to.nodeCount).toBe(0);
 		expect(comparison.to.plainCount).toBe(1);
 		expect(comparison.plain.to.unidentified).toHaveLength(0);
-		expect(comparison.plain.to.labelled[0]?.foreignCustomData?.kind).toBe("service");
+		expect(comparison.plain.to.labelled[0]?.foreignCustomData?.["kind"]).toBe("service");
 
 		const change = diff([], flat);
 		expect(change.nodes.added[0]).toMatchObject({ anonymous: true });

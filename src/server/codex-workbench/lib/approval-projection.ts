@@ -28,30 +28,30 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function fieldType(value: unknown): "string" | "number" | "integer" | "boolean" | "enum" | null {
 	if (!isRecord(value)) return null;
-	if (Array.isArray(value.enum) && value.enum.every((entry) => typeof entry === "string"))
+	if (Array.isArray(value["enum"]) && value["enum"].every((entry) => typeof entry === "string"))
 		return "enum";
 	if (
-		Array.isArray(value.oneOf) &&
-		value.oneOf.every((entry) => isRecord(entry) && typeof entry.const === "string")
+		Array.isArray(value["oneOf"]) &&
+		value["oneOf"].every((entry) => isRecord(entry) && typeof entry["const"] === "string")
 	)
 		return "enum";
-	if (value.type === "array" && isRecord(value.items)) {
+	if (value["type"] === "array" && isRecord(value["items"])) {
 		if (
-			Array.isArray(value.items.enum) &&
-			value.items.enum.every((entry) => typeof entry === "string")
+			Array.isArray(value["items"]["enum"]) &&
+			value["items"]["enum"].every((entry) => typeof entry === "string")
 		)
 			return "enum";
 		if (
-			Array.isArray(value.items.anyOf) &&
-			value.items.anyOf.every((entry) => isRecord(entry) && typeof entry.const === "string")
+			Array.isArray(value["items"]["anyOf"]) &&
+			value["items"]["anyOf"].every((entry) => isRecord(entry) && typeof entry["const"] === "string")
 		)
 			return "enum";
 	}
-	return value.type === "string" ||
-		value.type === "number" ||
-		value.type === "integer" ||
-		value.type === "boolean"
-		? value.type
+	return value["type"] === "string" ||
+		value["type"] === "number" ||
+		value["type"] === "integer" ||
+		value["type"] === "boolean"
+		? value["type"]
 		: null;
 }
 
@@ -64,62 +64,62 @@ function numberValue(value: unknown): number | null {
 }
 
 function enumOptions(definition: Record<string, unknown>): readonly string[] | null {
-	if (Array.isArray(definition.enum) && definition.enum.every((entry) => typeof entry === "string"))
-		return definition.enum;
-	if (Array.isArray(definition.oneOf))
-		return definition.oneOf.flatMap((entry) =>
-			isRecord(entry) && typeof entry.const === "string" ? [entry.const] : [],
+	if (Array.isArray(definition["enum"]) && definition["enum"].every((entry) => typeof entry === "string"))
+		return definition["enum"];
+	if (Array.isArray(definition["oneOf"]))
+		return definition["oneOf"].flatMap((entry) =>
+			isRecord(entry) && typeof entry["const"] === "string" ? [entry["const"]] : [],
 		);
-	if (definition.type === "array" && isRecord(definition.items)) {
+	if (definition["type"] === "array" && isRecord(definition["items"])) {
 		if (
-			Array.isArray(definition.items.enum) &&
-			definition.items.enum.every((entry) => typeof entry === "string")
+			Array.isArray(definition["items"]["enum"]) &&
+			definition["items"]["enum"].every((entry) => typeof entry === "string")
 		)
-			return definition.items.enum;
-		if (Array.isArray(definition.items.anyOf))
-			return definition.items.anyOf.flatMap((entry) =>
-				isRecord(entry) && typeof entry.const === "string" ? [entry.const] : [],
+			return definition["items"]["enum"];
+		if (Array.isArray(definition["items"]["anyOf"]))
+			return definition["items"]["anyOf"].flatMap((entry) =>
+				isRecord(entry) && typeof entry["const"] === "string" ? [entry["const"]] : [],
 			);
 	}
 	return null;
 }
 
 function formFields(schema: unknown): BrowserElicitationField[] | null {
-	if (!isRecord(schema) || !isRecord(schema.properties)) return null;
+	if (!isRecord(schema) || !isRecord(schema["properties"])) return null;
 	const required = new Set(
-		Array.isArray(schema.required) && schema.required.every((entry) => typeof entry === "string")
-			? schema.required
+		Array.isArray(schema["required"]) && schema["required"].every((entry) => typeof entry === "string")
+			? schema["required"]
 			: [],
 	);
 	const fields: BrowserElicitationField[] = [];
-	for (const [name, definition] of Object.entries(schema.properties)) {
+	for (const [name, definition] of Object.entries(schema["properties"])) {
 		const type = fieldType(definition);
 		if (type === null || !isRecord(definition) || name.length === 0 || name.includes("\0"))
 			return null;
-		const secret = definition.secret === true;
+		const secret = definition["secret"] === true;
 		const format =
-			definition.format === "email" ||
-			definition.format === "uri" ||
-			definition.format === "date" ||
-			definition.format === "date-time"
-				? definition.format
+			definition["format"] === "email" ||
+			definition["format"] === "uri" ||
+			definition["format"] === "date" ||
+			definition["format"] === "date-time"
+				? definition["format"]
 				: null;
-		const defaultValue = JsonValueSchema.safeParse(definition.default ?? null);
+		const defaultValue = JsonValueSchema.safeParse(definition["default"] ?? null);
 		if (!defaultValue.success) return null;
 		fields.push({
 			name,
 			type,
 			required: required.has(name),
 			secret,
-			title: stringValue(definition.title),
-			description: stringValue(definition.description),
+			title: stringValue(definition["title"]),
+			description: stringValue(definition["description"]),
 			format,
-			minimum: numberValue(definition.minimum),
-			maximum: numberValue(definition.maximum),
-			minLength: numberValue(definition.minLength),
-			maxLength: numberValue(definition.maxLength),
-			minimumItems: numberValue(definition.minItems),
-			maximumItems: numberValue(definition.maxItems),
+			minimum: numberValue(definition["minimum"]),
+			maximum: numberValue(definition["maximum"]),
+			minLength: numberValue(definition["minLength"]),
+			maxLength: numberValue(definition["maxLength"]),
+			minimumItems: numberValue(definition["minItems"]),
+			maximumItems: numberValue(definition["maxItems"]),
 			options: enumOptions(definition)?.slice() ?? null,
 			defaultValue: secret ? null : defaultValue.data,
 		});

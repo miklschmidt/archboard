@@ -132,7 +132,7 @@ function assertManifestShape(manifest: CanonicalNamespace, expectedName: Namespa
 				`${expectedName} tool ${index} must be ${expectedToolName ?? "<missing>"}; received ${tool.name}.`,
 			);
 		if (tool.deferLoading) throw new TypeError(`${expectedName}.${tool.name} must remain eager.`);
-		if (tool.inputSchema.additionalProperties !== false)
+		if (tool.inputSchema["additionalProperties"] !== false)
 			throw new TypeError(`${expectedName}.${tool.name} must use a closed input schema.`);
 	}
 }

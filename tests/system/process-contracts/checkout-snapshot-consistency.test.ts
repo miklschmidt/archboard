@@ -54,7 +54,7 @@ async function waitForMessage(
 ): Promise<Record<string, unknown>> {
 	const deadline = Date.now() + 2_000;
 	for (;;) {
-		const message = messages.find((candidate) => candidate.type === type);
+		const message = messages.find((candidate) => candidate["type"] === type);
 		if (message) return message;
 		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${type}.`);
 		await Bun.sleep(5);
@@ -146,7 +146,7 @@ test("first-open presents the exact note load whose checkout authority it captur
 		const opened = await opening;
 		expect(opened.status, JSON.stringify(opened.body)).toBe(200);
 		const switched = await waitForPaneMessage(pane, start, "board_switched");
-		const elements = (switched?.elements as Array<{ id: string; link?: string }> | undefined) ?? [];
+		const elements = (switched?.["elements"] as Array<{ id: string; link?: string }> | undefined) ?? [];
 		expect(elements.find((element) => element.id === "oldbound")?.link).toBe(
 			"/api/code-targets/open?board=first-open-race&element=oldbound",
 		);
@@ -219,7 +219,7 @@ test("held-board reload presents disk bytes with authority from the same prepare
 		const reloaded = await reloading;
 		expect(reloaded.status, JSON.stringify(reloaded.body)).toBe(200);
 		const switched = await waitForPaneMessage(pane, start, "board_switched");
-		const elements = (switched?.elements as Array<{ id: string; link?: string }> | undefined) ?? [];
+		const elements = (switched?.["elements"] as Array<{ id: string; link?: string }> | undefined) ?? [];
 		expect(elements.find((element) => element.id === "diskbound")?.link).toBe(
 			"/api/code-targets/open?board=held-reload-authority&element=diskbound",
 		);
@@ -284,7 +284,7 @@ test("concurrent first opens pair the installed scene with recaptured authority"
 		expect(first.status, JSON.stringify(first.body)).toBe(200);
 		expect(first.body.source).toBe("vault");
 		const firstSwitched = await waitForPaneMessage(firstPane, firstStart, "board_switched");
-		const firstElements = (firstSwitched?.elements as Array<{ id: string }> | undefined) ?? [];
+		const firstElements = (firstSwitched?.["elements"] as Array<{ id: string }> | undefined) ?? [];
 		expect(firstElements.some((element) => element.id === "oldbound")).toBeTrue();
 
 		writeBoundBoard(owner.vault, board, {
@@ -304,7 +304,7 @@ test("concurrent first opens pair the installed scene with recaptured authority"
 		expect(second.body.source).toBe("memory");
 		const secondSwitched = await waitForPaneMessage(secondPane, secondStart, "board_switched");
 		const elements =
-			(secondSwitched?.elements as Array<{ id: string; link?: string }> | undefined) ?? [];
+			(secondSwitched?.["elements"] as Array<{ id: string; link?: string }> | undefined) ?? [];
 		expect(elements.find((element) => element.id === "oldbound")?.link).toBe(
 			"/api/code-targets/open?board=concurrent-first-open&element=oldbound",
 		);

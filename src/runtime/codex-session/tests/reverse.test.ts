@@ -53,7 +53,7 @@ describe("Codex session current-time reverse request", () => {
 
 			const frames = fixture.frames();
 			for (const [id] of invalid) {
-				expect(frames.filter((frame) => frame.id === id)).toEqual([
+				expect(frames.filter((frame) => frame["id"] === id)).toEqual([
 					{
 						id,
 						error: { code: -32602, message: "Reverse request params were invalid." },

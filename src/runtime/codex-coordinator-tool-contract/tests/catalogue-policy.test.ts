@@ -147,7 +147,7 @@ describe("dynamic wire envelopes and metadata", () => {
 					callerRole,
 					requiredLinks,
 					successFields: Object.keys(
-						successResult.valueSchema.properties as Record<string, unknown>,
+						successResult.valueSchema["properties"] as Record<string, unknown>,
 					),
 					refusalErrors,
 				}),

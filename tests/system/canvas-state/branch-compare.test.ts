@@ -200,11 +200,11 @@ describe.serial("branch comparison", () => {
 			edgesRemoved: 0,
 			edgesUnchanged: 2,
 		});
-		expect(branched.nodes.added!.map(({ node }) => node)).toEqual(["orders-cache"]);
-		expect(branched.edges.added!.map(({ from, to }) => [from, to])).toEqual([
+		expect(branched.nodes["added"]!.map(({ node }) => node)).toEqual(["orders-cache"]);
+		expect(branched.edges["added"]!.map(({ from, to }) => [from, to])).toEqual([
 			["orders-service", "orders-cache"],
 		]);
-		expect(branched.edges.unchanged!.map(({ from, to }) => [from, to])).toEqual([
+		expect(branched.edges["unchanged"]!.map(({ from, to }) => [from, to])).toEqual([
 			["api-gateway", "orders-service"],
 			["orders-service", "orders-postgres"],
 		]);
@@ -313,7 +313,7 @@ describe.serial("branch comparison", () => {
 			await request<CompareBody>("/api/boards/compare?from=storage&to=storage@option-a")
 		).body;
 		expect(storage.summary).toMatchObject({ sharedNodes: 2, nodesAdded: 1, nodesRemoved: 0 });
-		expect(storage.nodes.unchanged!.map(({ node }) => node)).toContain("ledger-db");
+		expect(storage.nodes["unchanged"]!.map(({ node }) => node)).toContain("ledger-db");
 		expect(storage.edges.unresolved?.to ?? []).toEqual([]);
 
 		await create("wiring");

@@ -62,10 +62,10 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 		const events: Record<string, unknown>[] = [];
 		client.on("message", (raw) => {
 			const message = JSON.parse(raw.toString()) as Record<string, unknown>;
-			if (message.type === "codex_workbench_event") events.push(message);
-			else if (typeof message.requestId === "string") {
-				pending.get(message.requestId)?.(message);
-				pending.delete(message.requestId);
+			if (message["type"] === "codex_workbench_event") events.push(message);
+			else if (typeof message["requestId"] === "string") {
+				pending.get(message["requestId"])?.(message);
+				pending.delete(message["requestId"]);
 			}
 		});
 		await new Promise<void>((resolve, reject) => {
@@ -274,7 +274,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 		await activeFirst.request("connect");
 		await activeFirst.request("subscribe");
 		const claimed = await activeFirst.request("claimLease");
-		const lease = claimed.value as Record<string, unknown>;
+		const lease = claimed["value"] as Record<string, unknown>;
 		const approvalRequest = {
 			child: childId,
 			epoch,
@@ -303,7 +303,7 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 		} as TransportServerRequest;
 		activeApprovals.receive(approvalRequest);
 		const snapshot = await activeFirst.request("snapshot");
-		const approval = (snapshot.value as { snapshot: { approvals: unknown[] } }).snapshot
+		const approval = (snapshot["value"] as { snapshot: { approvals: unknown[] } }).snapshot
 			.approvals[0] as Record<string, unknown>;
 		expect(approval).toMatchObject({
 			kind: "approval",
@@ -314,52 +314,52 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 		const approvalCommand = model.BrowserCommandSchema.parse({
 			kind: "browser_command",
 			command: "approvalRespond",
-			commandId: lease.commandId,
-			paneId: lease.paneId,
-			childId: lease.childId,
-			epoch: lease.epoch,
+			commandId: lease["commandId"],
+			paneId: lease["paneId"],
+			childId: lease["childId"],
+			epoch: lease["epoch"],
 			requestId,
 			approvalId,
 			response: { approvalKind: "command_execution", decision: "accept" },
 		});
 		const firstApproval = await activeFirst.request("command", { command: approvalCommand });
 		const duplicateApproval = await activeFirst.request("command", { command: approvalCommand });
-		expect(firstApproval.value).toEqual(duplicateApproval.value);
+		expect(firstApproval["value"]).toEqual(duplicateApproval["value"]);
 		expect(reverseResponses).toHaveLength(1);
 
 		const replacement = await openClient();
 		second = replacement;
 		await replacement.request("connect");
 		const replacementLeaseResult = await replacement.request("claimLease");
-		const replacementLease = replacementLeaseResult.value as Record<string, unknown>;
+		const replacementLease = replacementLeaseResult["value"] as Record<string, unknown>;
 		activeFirst.client.close();
 		await new Promise<void>((resolve) => activeFirst.client.once("close", resolve));
 		const renewed = await replacement.request("renewLease");
-		expect(renewed).toMatchObject({ ok: true, value: { commandId: replacementLease.commandId } });
+		expect(renewed).toMatchObject({ ok: true, value: { commandId: replacementLease["commandId"] } });
 		expect(await replacement.request("mediaReady", { ready: true })).toMatchObject({ ok: true });
 
-		const startLease = (await replacement.request("claimLease")).value as Record<string, unknown>;
+		const startLease = (await replacement.request("claimLease"))["value"] as Record<string, unknown>;
 		const start = await replacement.request("command", {
 			command: model.BrowserCommandSchema.parse({
 				kind: "browser_command",
 				command: "realtimeStart",
-				commandId: startLease.commandId,
-				paneId: startLease.paneId,
-				childId: startLease.childId,
-				epoch: startLease.epoch,
+				commandId: startLease["commandId"],
+				paneId: startLease["paneId"],
+				childId: startLease["childId"],
+				epoch: startLease["epoch"],
 				threadId,
 				sdp: "v=0\r\na=public-offer",
 			}),
 		});
-		const startValue = start.value as Record<string, unknown>;
+		const startValue = start["value"] as Record<string, unknown>;
 		expect(startValue).toMatchObject({
 			outcome: "delivered",
-			realtimeSessionHandle: startLease.commandId,
+			realtimeSessionHandle: startLease["commandId"],
 			realtimeAnswer: { sdp: "v=0\r\na=public-answer" },
 		});
-		const handle = startValue.realtimeSessionHandle;
+		const handle = startValue["realtimeSessionHandle"];
 		for (const command of ["realtimeAppendText", "realtimeStop"] as const) {
-			const currentLease = (await replacement.request("claimLease")).value as Record<
+			const currentLease = (await replacement.request("claimLease"))["value"] as Record<
 				string,
 				unknown
 			>;
@@ -367,10 +367,10 @@ test("the live canvas socket crosses the real gateway and approval broker exactl
 				command: model.BrowserCommandSchema.parse({
 					kind: "browser_command",
 					command,
-					commandId: currentLease.commandId,
-					paneId: currentLease.paneId,
-					childId: currentLease.childId,
-					epoch: currentLease.epoch,
+					commandId: currentLease["commandId"],
+					paneId: currentLease["paneId"],
+					childId: currentLease["childId"],
+					epoch: currentLease["epoch"],
 					threadId,
 					realtimeSessionHandle: handle,
 					...(command === "realtimeAppendText" ? { text: "same public session" } : {}),

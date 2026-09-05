@@ -74,11 +74,11 @@ describe.serial("board version client state", () => {
 				vault,
 			});
 			prior = new Map(environmentKeys.map((key) => [key, process.env[key]]));
-			process.env.EXPRESS_SERVER_URL = canvas.base;
-			process.env.ENABLE_CANVAS_SYNC = "true";
-			process.env.EXCALIDRAW_NO_AUTOSTART = "1";
-			process.env.ARCHBOARD_VAULT = canvas.vault;
-			process.env.LOG_FILE_PATH = join(root, "canvas-client.log");
+			process.env["EXPRESS_SERVER_URL"] = canvas.base;
+			process.env["ENABLE_CANVAS_SYNC"] = "true";
+			process.env["EXCALIDRAW_NO_AUTOSTART"] = "1";
+			process.env["ARCHBOARD_VAULT"] = canvas.vault;
+			process.env["LOG_FILE_PATH"] = join(root, "canvas-client.log");
 
 			client = await import("../../../src/runtime/engine/canvas-client.ts");
 			const request = createRequester(canvas);

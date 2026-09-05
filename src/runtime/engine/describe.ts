@@ -63,18 +63,18 @@ function formatBinding(v: unknown): string | undefined {
 	if (typeof v === "string") return v.trim() || undefined;
 	if (!v || typeof v !== "object") return undefined;
 	const b = v as Record<string, unknown>;
-	const path = typeof b.path === "string" ? b.path : undefined;
-	if (!path && !b.repo) return pairs(b) || undefined;
-	const repo = typeof b.repo === "string" ? `${b.repo}:` : "";
-	const branch = typeof b.branch === "string" ? `@${b.branch}` : "";
-	const commit = typeof b.commit === "string" ? ` (${b.commit.slice(0, 7)})` : "";
+	const path = typeof b["path"] === "string" ? b["path"] : undefined;
+	if (!path && !b["repo"]) return pairs(b) || undefined;
+	const repo = typeof b["repo"] === "string" ? `${b["repo"]}:` : "";
+	const branch = typeof b["branch"] === "string" ? `@${b["branch"]}` : "";
+	const commit = typeof b["commit"] === "string" ? ` (${b["commit"].slice(0, 7)})` : "";
 	return `${repo}${path ?? "?"}${branch}${commit}`;
 }
 
 function bindingPathOf(v: unknown): string | undefined {
 	if (typeof v === "string") return v.trim() || undefined;
-	if (v && typeof v === "object" && typeof (v as Record<string, unknown>).path === "string")
-		return (v as Record<string, unknown>).path as string;
+	if (v && typeof v === "object" && typeof (v as Record<string, unknown>)["path"] === "string")
+		return (v as Record<string, unknown>)["path"] as string;
 	return undefined;
 }
 
@@ -232,10 +232,10 @@ function foldNodes(items: Item[]): NodeFold {
 
 function bindingOf(el: unknown, end: "start" | "end"): string | undefined {
 	const record = el && typeof el === "object" ? (el as Record<string, unknown>) : {};
-	const binding = end === "start" ? record.startBinding : record.endBinding;
+	const binding = end === "start" ? record["startBinding"] : record["endBinding"];
 	const bindingRecord =
 		binding && typeof binding === "object" ? (binding as Record<string, unknown>) : {};
-	const id = bindingRecord.elementId;
+	const id = bindingRecord["elementId"];
 	return typeof id === "string" ? id : undefined;
 }
 

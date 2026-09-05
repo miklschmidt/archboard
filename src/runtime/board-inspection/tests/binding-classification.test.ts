@@ -260,12 +260,12 @@ describe("binding classification", () => {
 					const connectorId = `${prefix}-edge`;
 					const candidateId = `${prefix}-candidate`;
 					const edge: Record<string, unknown> = { type: "arrow", ...geometry, angle: 0 };
-					if (rawPoints !== undefined) edge.points = rawPoints;
-					if (endpointBinding !== undefined) edge.startBinding = endpointBinding;
-					if (identity === "valid") edge.id = connectorId;
-					else if (identity !== "missing") edge.id = rawId;
+					if (rawPoints !== undefined) edge["points"] = rawPoints;
+					if (endpointBinding !== undefined) edge["startBinding"] = endpointBinding;
+					if (identity === "valid") edge["id"] = connectorId;
+					else if (identity !== "missing") edge["id"] = rawId;
 					if (endpoint === "readable")
-						edge.startBinding = { ...endpointBinding, elementId: candidateId };
+						edge["startBinding"] = { ...endpointBinding, elementId: candidateId };
 					const labelId = `${prefix}-label`;
 					const ownerAId = `${prefix}-owner-a`;
 					const ownerBId = `${prefix}-owner-b`;

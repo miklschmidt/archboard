@@ -11,14 +11,14 @@ function isRecord(value: unknown): value is JsonRecord {
 }
 
 function issuePath(issue: unknown): string[] {
-	if (!isRecord(issue) || !Array.isArray(issue.path)) return [];
-	return issue.path.map((segment) => String(segment));
+	if (!isRecord(issue) || !Array.isArray(issue["path"])) return [];
+	return issue["path"].map((segment) => String(segment));
 }
 
 function nestedIssuePaths(issue: unknown, prefix: JsonPath = []): string[][] {
 	if (!isRecord(issue)) return [];
 	const path = [...prefix, ...issuePath(issue)];
-	const nested = issue.errors;
+	const nested = issue["errors"];
 	if (!Array.isArray(nested)) return [path];
 	return [
 		path,

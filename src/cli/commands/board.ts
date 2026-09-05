@@ -138,7 +138,7 @@ export const BoardListStageSchema = z
 		parseStage(value, { repo: "value", here: "flag", text: "flag" }, context),
 	)
 	.superRefine((stage, context) => {
-		if (stage.flags.here && typeof stage.flags.repo === "string") {
+		if (stage.flags["here"] && typeof stage.flags["repo"] === "string") {
 			context.addIssue({
 				code: "custom",
 				message: "--here and --repo say the same thing twice; pick one.",
@@ -214,10 +214,10 @@ export const boardListContract = defineCommand({
 		await context.require("server", "board list");
 		const stage = context.parse(BoardListStageSchema, input.tokens);
 		let repo: string | undefined;
-		if (stage.flags.here) {
+		if (stage.flags["here"]) {
 			repo = await repoIdentityHere(context.signal);
 			context.diagnostic(`Standing in ${repo}.`);
-		} else if (typeof stage.flags.repo === "string") repo = stage.flags.repo;
+		} else if (typeof stage.flags["repo"] === "string") repo = stage.flags["repo"];
 		const result = await listBoardsOnCanvas(repo);
 		if (repo && !result.repo)
 			throw new Error(
@@ -232,7 +232,7 @@ export const boardListContract = defineCommand({
 				`"${entry.key}" is the address of ${(entry.collidesWith?.length ?? 0) + 1} notes that differ only in casing or accents: ${[entry.file, ...(entry.collidesWith ?? [])].join(", ")}. Board names are case-insensitive, so only ${entry.file} is reachable. Rename or delete the others.`,
 			);
 		}
-		if (stage.flags.text) return { result: boardListText(result), diagnostics };
+		if (stage.flags["text"]) return { result: boardListText(result), diagnostics };
 		return {
 			result: BoardListJsonResultSchema.parse({
 				success: true as const,
@@ -395,8 +395,8 @@ export const boardNewContract = defineCommand({
 		const stage = context.parse(BoardNewStageSchema, input.tokens);
 		const result = await newBoard({
 			board: stage.name,
-			...(typeof stage.flags.variant === "string" ? { variant: stage.flags.variant } : {}),
-			...(typeof stage.flags.level === "string" ? { level: stage.flags.level } : {}),
+			...(typeof stage.flags["variant"] === "string" ? { variant: stage.flags["variant"] } : {}),
+			...(typeof stage.flags["level"] === "string" ? { level: stage.flags["level"] } : {}),
 		});
 		return {
 			result: BoardNewResultSchema.parse(result),
@@ -418,7 +418,7 @@ export const BrowserShowStageSchema = z
 			context.addIssue({ code: "custom", message: "browser show needs a board name" });
 			return z.NEVER;
 		}
-		if (typeof stage.flags.pane !== "string" || !stage.flags.pane.trim()) {
+		if (typeof stage.flags["pane"] !== "string" || !stage.flags["pane"].trim()) {
 			context.addIssue({ code: "custom", message: "browser show requires --pane <spec>" });
 			return z.NEVER;
 		}
@@ -486,10 +486,10 @@ export const browserShowContract = defineCommand({
 		await context.require("browser", "browser show");
 		const result = await openBoard({
 			board: stage.name,
-			...(typeof stage.flags.variant === "string" ? { variant: stage.flags.variant } : {}),
-			...(typeof stage.flags.level === "string" ? { level: stage.flags.level } : {}),
-			...(stage.flags.reload ? { reload: true } : {}),
-			pane: stage.flags.pane as string,
+			...(typeof stage.flags["variant"] === "string" ? { variant: stage.flags["variant"] } : {}),
+			...(typeof stage.flags["level"] === "string" ? { level: stage.flags["level"] } : {}),
+			...(stage.flags["reload"] ? { reload: true } : {}),
+			pane: stage.flags["pane"] as string,
 		});
 		const diagnostics = [
 			result.pane

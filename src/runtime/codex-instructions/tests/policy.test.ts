@@ -144,8 +144,8 @@ describe("additional-context policy contract", () => {
 
 	test("rejects every reviewed policy mutation in the test oracle", () => {
 		const mutations = [
-			(policy: Record<string, unknown>) => delete policy.schema,
-			(policy: Record<string, unknown>) => (policy.unreviewed = true),
+			(policy: Record<string, unknown>) => delete policy["schema"],
+			(policy: Record<string, unknown>) => (policy["unreviewed"] = true),
 			(policy: Record<string, unknown>) => {
 				const entries = Object.entries(policy);
 				[entries[0], entries[1]] = [entries[1]!, entries[0]!];
@@ -153,16 +153,16 @@ describe("additional-context policy contract", () => {
 				for (const [field, value] of entries) policy[field] = value;
 			},
 			(policy: Record<string, unknown>) => {
-				const threadLink = policy.threadLink as Record<string, unknown>;
-				threadLink.inferThreadFromRecency = true;
+				const threadLink = policy["threadLink"] as Record<string, unknown>;
+				threadLink["inferThreadFromRecency"] = true;
 			},
 			(policy: Record<string, unknown>) => {
-				const operation = policy.operation as Record<string, unknown>;
-				operation.retryAfterOutcomeUnknown = true;
+				const operation = policy["operation"] as Record<string, unknown>;
+				operation["retryAfterOutcomeUnknown"] = true;
 			},
 			(policy: Record<string, unknown>) => {
-				const operation = policy.operation as Record<string, unknown>;
-				(operation.turnEvidence as Record<string, unknown>[])[0]!.rpcs = [
+				const operation = policy["operation"] as Record<string, unknown>;
+				(operation["turnEvidence"] as Record<string, unknown>[])[0]!["rpcs"] = [
 					"turn/start",
 					"turn/steer",
 				];

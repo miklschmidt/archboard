@@ -64,10 +64,10 @@ export const target = (result: WorkbenchResult): Record<string, unknown> => {
 	if (!result.ok || result.value === undefined)
 		throw new Error(result.error ?? "The workbench lease failed.");
 	return {
-		commandId: result.value.commandId,
-		paneId: result.value.paneId,
-		childId: result.value.childId,
-		epoch: result.value.epoch,
+		commandId: result.value["commandId"],
+		paneId: result.value["paneId"],
+		childId: result.value["childId"],
+		epoch: result.value["epoch"],
 	};
 };
 export const pane = (clientId: string) => ({
@@ -423,7 +423,7 @@ export async function approveOrdinary(
 	approval: Record<string, unknown>,
 ) {
 	const lease = await socket.request("claimLease");
-	const kind = String(approval.approvalKind);
+	const kind = String(approval["approvalKind"]);
 	const responses: Record<string, Record<string, unknown>> = {
 		command_execution: { approvalKind: kind, decision: "accept" },
 		file_change: { approvalKind: kind, decision: "accept" },
@@ -447,8 +447,8 @@ export async function approveOrdinary(
 			kind: "browser_command",
 			command: "approvalRespond",
 			...target(lease),
-			requestId: approval.requestId,
-			approvalId: approval.approvalId,
+			requestId: approval["requestId"],
+			approvalId: approval["approvalId"],
 			response,
 		},
 	});
@@ -460,15 +460,15 @@ export async function resolveDynamic(
 	decision: "approve" | "decline" = "approve",
 ) {
 	const lease = await socket.request("claimLease");
-	const binding = approval.binding as Record<string, unknown>;
+	const binding = approval["binding"] as Record<string, unknown>;
 	return socket.request("command", {
 		command: {
 			kind: "browser_command",
 			command: "dynamicApprovalRespond",
 			...target(lease),
-			capturedLink: binding.capturedLink,
-			identity: approval.identity,
-			effectHash: approval.effectHash,
+			capturedLink: binding["capturedLink"],
+			identity: approval["identity"],
+			effectHash: approval["effectHash"],
 			decision,
 		},
 	});

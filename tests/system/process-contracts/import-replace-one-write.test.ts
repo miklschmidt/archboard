@@ -165,15 +165,15 @@ test("image replace persists one canonical batch before its frames", async () =>
 		const frames = pane.seen.slice(start);
 		const deltas = frames.filter((frame) => frame.type === "elements_changed");
 		expect(deltas).toHaveLength(1);
-		expect(deltas[0]?.deleted).toEqual(expect.arrayContaining(["old", "old-image"]));
-		expect(deltas[0]?.created).toBeArray();
+		expect(deltas[0]?.["deleted"]).toEqual(expect.arrayContaining(["old", "old-image"]));
+		expect(deltas[0]?.["created"]).toBeArray();
 		expect(noteAtDelta).toContain("data:image/png;base64,bmV3");
 		expect(noteAtDelta).not.toContain("data:image/png;base64,b2xk");
 		expect(noteAtDelta).not.toContain("data:image/png;base64,b3JwaGFu");
 		expect(noteAtDelta).not.toMatch(/\^(?:old|old-image)\b/);
 		const fileFrames = frames.filter((frame) => frame.type === "files_replaced");
 		expect(fileFrames).toHaveLength(1);
-		expect(fileFrames[0]?.files).toEqual([
+		expect(fileFrames[0]?.["files"]).toEqual([
 			{
 				id: "reused-file",
 				dataURL: "data:image/png;base64,bmV3",

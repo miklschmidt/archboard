@@ -96,15 +96,15 @@ export function diffAgainstBaseline(
 	const nextBaseline: Baseline = new Map();
 
 	for (const element of scene) {
-		if (!element || typeof element.id !== "string" || element.isDeleted) continue;
-		if (withheld.has(element.id)) {
-			const agreed = baseline.get(element.id);
-			if (agreed !== undefined) nextBaseline.set(element.id, agreed);
+		if (!element || typeof element["id"] !== "string" || element["isDeleted"]) continue;
+		if (withheld.has(element["id"])) {
+			const agreed = baseline.get(element["id"]);
+			if (agreed !== undefined) nextBaseline.set(element["id"], agreed);
 			continue;
 		}
 		const print = fingerprint(element);
-		nextBaseline.set(element.id, print);
-		if (baseline.get(element.id) !== print) {
+		nextBaseline.set(element["id"], print);
+		if (baseline.get(element["id"]) !== print) {
 			upserts.push(toWire(element));
 		}
 	}
@@ -137,8 +137,8 @@ export function diffAgainstBaseline(
 export function baselineFrom(scene: readonly Record<string, unknown>[]): Baseline {
 	const baseline: Baseline = new Map();
 	for (const element of scene) {
-		if (!element || typeof element.id !== "string" || element.isDeleted) continue;
-		baseline.set(element.id, fingerprint(element));
+		if (!element || typeof element["id"] !== "string" || element["isDeleted"]) continue;
+		baseline.set(element["id"], fingerprint(element));
 	}
 	return baseline;
 }

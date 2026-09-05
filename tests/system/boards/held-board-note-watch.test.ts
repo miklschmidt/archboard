@@ -157,7 +157,7 @@ describe("held board note watch", () => {
 			if (arrivalNotes.length === 0) await Bun.sleep(TEST_NOTE_WATCH_MESSAGE_POLL_MS);
 		}
 		expect(arrivalNotes.length).toBeGreaterThan(0);
-		expect(arrivalNotes.at(-1)?.writtenElsewhere).toBeNull();
+		expect(arrivalNotes.at(-1)?.["writtenElsewhere"]).toBeNull();
 
 		const file = (await request<BoardInfo>("/api/boards/info?board=watched")).body.file;
 		const start = pane.since();
@@ -170,18 +170,18 @@ describe("held board note watch", () => {
 				.find(
 					(message) =>
 						message.type === "board_note" &&
-						(message.writtenElsewhere as WrittenElsewhere | null)?.reason === "changed",
+						(message["writtenElsewhere"] as WrittenElsewhere | null)?.reason === "changed",
 				);
 			if (!changed) await Bun.sleep(TEST_NOTE_WATCH_MESSAGE_POLL_MS);
 		}
 		expect(changed).toBeDefined();
-		const writtenElsewhere = changed?.writtenElsewhere as WrittenElsewhere | null | undefined;
+		const writtenElsewhere = changed?.["writtenElsewhere"] as WrittenElsewhere | null | undefined;
 		expect(writtenElsewhere?.reason).toBe("changed");
 		expect(writtenElsewhere?.board).toBe("watched");
 		expect(
 			pane.seen
 				.slice(start)
-				.filter((message) => message.type === "board_note" && message.writtenElsewhere !== null),
+				.filter((message) => message.type === "board_note" && message["writtenElsewhere"] !== null),
 		).toHaveLength(1);
 		expect(pane.seen.slice(start).some((message) => message.type === "board_hold")).toBeFalse();
 		expect(writtenElsewhere?.outcomes).toBeUndefined();
@@ -189,7 +189,7 @@ describe("held board note watch", () => {
 		const locks = pane.seen
 			.slice(start)
 			.filter((message) => message.type === "board_lock" && message.board === "watched");
-		expect(locks.at(-1)?.held).toBeFalse();
+		expect(locks.at(-1)?.["held"]).toBeFalse();
 
 		await request("/api/boards/open", {
 			method: "POST",
@@ -200,14 +200,14 @@ describe("held board note watch", () => {
 			Date.now() < clearedDeadline &&
 			!pane.seen
 				.slice(start)
-				.some((message) => message.type === "board_note" && message.writtenElsewhere === null)
+				.some((message) => message.type === "board_note" && message["writtenElsewhere"] === null)
 		) {
 			await Bun.sleep(TEST_PANE_MESSAGE_POLL_MS);
 		}
 		expect(
 			pane.seen
 				.slice(start)
-				.some((message) => message.type === "board_note" && message.writtenElsewhere === null),
+				.some((message) => message.type === "board_note" && message["writtenElsewhere"] === null),
 		).toBeTrue();
 	});
 });

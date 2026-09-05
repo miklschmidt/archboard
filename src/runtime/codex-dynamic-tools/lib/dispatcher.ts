@@ -173,7 +173,7 @@ async function assertCallExecuting(
 		await options.lifecycle.assertCallExecuting({ request, caller, phase });
 	} catch (error) {
 		if (error instanceof CodexDynamicToolsError) throw error;
-		const code = isRecord(error) && typeof error.code === "string" ? error.code : null;
+		const code = isRecord(error) && typeof error["code"] === "string" ? error["code"] : null;
 		if (
 			code === "stale_child" ||
 			code === "prior_epoch" ||
@@ -247,7 +247,7 @@ function boundaryForFork(
 
 function boundaryAuthorityError(error: unknown, message: string): CodexDynamicToolsError {
 	if (error instanceof CodexDynamicToolsError) return error;
-	const code = isRecord(error) && typeof error.code === "string" ? error.code : null;
+	const code = isRecord(error) && typeof error["code"] === "string" ? error["code"] : null;
 	if (
 		code === "stale_child" ||
 		code === "prior_epoch" ||
@@ -264,14 +264,14 @@ function effectArguments(
 	name: DynamicMutationToolName,
 	argumentsValue: Readonly<Record<string, unknown>>,
 ): DynamicImmutableEffect["arguments"] {
-	if (name === "create_thread") return { prompt: String(argumentsValue.prompt) };
+	if (name === "create_thread") return { prompt: String(argumentsValue["prompt"]) };
 	if (name === "send_message_to_thread")
-		return { threadId: String(argumentsValue.threadId), prompt: String(argumentsValue.prompt) };
+		return { threadId: String(argumentsValue["threadId"]), prompt: String(argumentsValue["prompt"]) };
 	return {
-		threadId: String(argumentsValue.threadId),
+		threadId: String(argumentsValue["threadId"]),
 		beforeTurnId:
-			typeof argumentsValue.beforeTurnId === "string" ? argumentsValue.beforeTurnId : null,
-		prompt: typeof argumentsValue.prompt === "string" ? argumentsValue.prompt : null,
+			typeof argumentsValue["beforeTurnId"] === "string" ? argumentsValue["beforeTurnId"] : null,
+		prompt: typeof argumentsValue["prompt"] === "string" ? argumentsValue["prompt"] : null,
 	};
 }
 async function revalidateMutation(

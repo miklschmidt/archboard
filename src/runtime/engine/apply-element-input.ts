@@ -119,7 +119,7 @@ interface ElementMerge {
 
 function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): ElementMerge {
 	const statement = wellFormAgentStatement(raw, existing.type);
-	if (statement.type !== undefined && statement.type !== existing.type) {
+	if (statement["type"] !== undefined && statement["type"] !== existing.type) {
 		throw new Error(`Element ${existing.id} cannot change type from ${existing.type}`);
 	}
 	const { board: _boardField, ...updates } = UpdateElementSchema.parse({
@@ -132,10 +132,10 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 		...(existing.type === "text"
 			? {
 					fontFamily:
-						updates.fontFamily !== undefined
+						updates["fontFamily"] !== undefined
 							? normalizeFontFamily(
-									typeof updates.fontFamily === "string" || typeof updates.fontFamily === "number"
-										? updates.fontFamily
+									typeof updates["fontFamily"] === "string" || typeof updates["fontFamily"] === "number"
+										? updates["fontFamily"]
 										: undefined,
 								)
 							: existing.fontFamily,
@@ -143,10 +143,10 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 			: {}),
 	};
 	if (hasOwn(updates, "customData"))
-		candidate.customData = mergeCustomData(existing.customData, updates.customData);
-	delete candidate.label;
-	delete candidate.start;
-	delete candidate.end;
+		candidate["customData"] = mergeCustomData(existing.customData, updates["customData"]);
+	delete candidate["label"];
+	delete candidate["start"];
+	delete candidate["end"];
 	spendArrowRefs(candidate, statement);
 	if (existing.type !== "text") {
 		for (const key of [
@@ -168,7 +168,7 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 	const hasTextUpdate = hasOwn(statement, "text");
 	const hasOriginalTextUpdate = hasOwn(statement, "originalText");
 	if (element.type === "text" && hasTextUpdate && !hasOriginalTextUpdate) {
-		const incomingText = updates.text ?? "";
+		const incomingText = updates["text"] ?? "";
 		const existingText = existing.type === "text" ? existing.text : "";
 		const existingOriginalText = existing.type === "text" ? existing.originalText : "";
 		const existingOriginalHasBr = /<\s*b\s*r\s*\/?\s*>/i.test(existingOriginalText);
@@ -244,9 +244,9 @@ function resolveArrowBindings(
 	for (const element of written) {
 		if (element.type !== "arrow" && element.type !== "line") continue;
 		const dynamic = element as unknown as Record<string, unknown>;
-		if (dynamic.elbowed === true) continue;
-		const startBinding = bindingOf(dynamic.startBinding);
-		const endBinding = bindingOf(dynamic.endBinding);
+		if (dynamic["elbowed"] === true) continue;
+		const startBinding = bindingOf(dynamic["startBinding"]);
+		const endBinding = bindingOf(dynamic["endBinding"]);
 		const inputGeometry = (target: ServerElement | undefined): ServerElement | undefined =>
 			target && inputSquareIds.has(target.id) ? { ...target, roundness: null } : target;
 		const startElement = inputGeometry(
@@ -281,7 +281,7 @@ function rerouteBoundArrows(movedId: string, board: Map<string, ServerElement>):
 		if (element.type !== "arrow" && element.type !== "line") continue;
 		const joins = (binding: unknown) => bindingOf(binding)?.elementId === movedId;
 		const dynamic = element as unknown as Record<string, unknown>;
-		if (!joins(dynamic.startBinding) && !joins(dynamic.endBinding)) continue;
+		if (!joins(dynamic["startBinding"]) && !joins(dynamic["endBinding"])) continue;
 		resolveArrowBindings([element], board);
 		bumpVersion(element);
 		rerouted.push(element);
@@ -399,7 +399,7 @@ function applyAgentInput(
 			presentation && existing
 				? {
 						...stripped,
-						link: canonicalLinkAfterPresentationEcho(existing, stripped.link, presentation),
+						link: canonicalLinkAfterPresentationEcho(existing, stripped["link"], presentation),
 					}
 				: stripped;
 		if (existing) {
@@ -485,9 +485,9 @@ function applyHumanInput(
 		const existing = board.get(id);
 		const presentation = presentationLinks.get(id);
 		const canonicalLink = presentation
-			? canonicalLinkAfterPresentationEcho(existing, incoming.link, presentation)
-			: typeof incoming.link === "string" || incoming.link === null
-				? incoming.link
+			? canonicalLinkAfterPresentationEcho(existing, incoming["link"], presentation)
+			: typeof incoming["link"] === "string" || incoming["link"] === null
+				? incoming["link"]
 				: existing?.link;
 		for (const alias of ["label", "start", "end", "startElementId", "endElementId"]) {
 			if (hasOwn(incoming, alias))
@@ -519,7 +519,7 @@ function applyHumanInput(
 			...(timestamp ? { syncTimestamp: timestamp } : {}),
 		};
 		if (hasOwn(incoming, "customData"))
-			candidate.customData = mergeCustomData(existing.customData, incoming.customData);
+			candidate["customData"] = mergeCustomData(existing.customData, incoming["customData"]);
 		const element = validatePersistedBoardElement(candidate, `human write ${id}`);
 		bumpVersion(element, existing, now);
 		board.set(id, element);

@@ -21,7 +21,7 @@ async function waitForMessage(
 ): Promise<Record<string, unknown>> {
 	const deadline = Date.now() + 2_000;
 	for (;;) {
-		const message = messages.find((candidate) => candidate.type === type);
+		const message = messages.find((candidate) => candidate["type"] === type);
 		if (message) return message;
 		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${type}.`);
 		await Bun.sleep(5);
@@ -157,9 +157,9 @@ test("a delayed WebSocket receives a fresh initial scene before any concurrent d
 		expect(messages).toEqual([]);
 		owner.release();
 		const initial = await waitForMessage(messages, "initial_elements");
-		expect(messages[0]?.type).toBe("initial_elements");
+		expect(messages[0]?.["type"]).toBe("initial_elements");
 		expect(
-			(initial.elements as Array<{ id: string; link?: string }>).some(
+			(initial["elements"] as Array<{ id: string; link?: string }>).some(
 				(element) =>
 					element.id === "concurrent" &&
 					element.link === "/api/code-targets/open?board=scratch&element=concurrent",

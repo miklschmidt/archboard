@@ -82,7 +82,7 @@ function bridgeCandidate(element: ServerElement): { present: boolean; value?: un
 	if (!archboard || typeof archboard !== "object" || Array.isArray(archboard))
 		return { present: false };
 	return own(archboard, "bridge")
-		? { present: true, value: (archboard as Record<string, unknown>).bridge }
+		? { present: true, value: (archboard as Record<string, unknown>)["bridge"] }
 		: { present: false };
 }
 
@@ -111,8 +111,8 @@ function supportedConnector(
 		(element.type !== "arrow" && element.type !== "line") ||
 		element.isDeleted ||
 		!supportedAngle(element.angle) ||
-		dynamic.curve !== undefined ||
-		dynamic.curveKind !== undefined
+		dynamic["curve"] !== undefined ||
+		dynamic["curveKind"] !== undefined
 	)
 		return null;
 	const [record] = decodeRecords([element as unknown as SnapshotRecord]);
@@ -174,7 +174,7 @@ function canonicalBridgeLine(
 	partId: string,
 	expectedInput: Record<string, unknown>,
 ): Record<string, unknown> {
-	const points = expectedInput.points as [[number, number], [number, number]];
+	const points = expectedInput["points"] as [[number, number], [number, number]];
 	return {
 		...expectedInput,
 		id: partId,
@@ -201,7 +201,7 @@ function lineMatches(part: ServerElement, expectedInput: Record<string, unknown>
 			)
 				return false;
 			const actualBridge = BridgeMetadataSchema.safeParse(
-				(actualArchboard as Record<string, unknown>).bridge,
+				(actualArchboard as Record<string, unknown>)["bridge"],
 			);
 			if (
 				!actualBridge.success ||
@@ -399,8 +399,8 @@ function structuralPairs(elements: readonly ServerElement[]): {
 					: null;
 			invalid.push({
 				bridgeId:
-					typeof partial?.bridgeId === "string" && partial.bridgeId.length > 0
-						? partial.bridgeId
+					typeof partial?.["bridgeId"] === "string" && partial["bridgeId"].length > 0
+						? partial["bridgeId"]
 						: null,
 				reason: "incomplete-decoration",
 				issue: "malformed-metadata",

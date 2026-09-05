@@ -80,10 +80,10 @@ function isReason(value: unknown): value is string | null {
 
 function statusOutcomePairIsValid(record: Record<string, unknown>): boolean {
 	return (
-		(record.status === "staged" && record.outcome === "pending") ||
-		(record.status === "committed" && record.outcome === "delivered") ||
-		(record.status === "rolled_back" && record.outcome === "not_delivered") ||
-		(record.status === "inspect_only" && record.outcome === "outcome_unknown")
+		(record["status"] === "staged" && record["outcome"] === "pending") ||
+		(record["status"] === "committed" && record["outcome"] === "delivered") ||
+		(record["status"] === "rolled_back" && record["outcome"] === "not_delivered") ||
+		(record["status"] === "inspect_only" && record["outcome"] === "outcome_unknown")
 	);
 }
 
@@ -104,9 +104,9 @@ export function isEpochOperationRecord(value: unknown): value is EpochOperationR
 	) {
 		return false;
 	}
-	const correlation = value.correlation;
-	const operation = value.operation;
-	const provenance = value.provenance;
+	const correlation = value["correlation"];
+	const operation = value["operation"];
+	const provenance = value["provenance"];
 	if (!isRecord(correlation) || !isRecord(operation) || !isRecord(provenance)) return false;
 	if (
 		!hasExactKeys(correlation, ["childId", "epoch", "operationId"]) ||
@@ -126,43 +126,43 @@ export function isEpochOperationRecord(value: unknown): value is EpochOperationR
 		return false;
 	}
 	if (
-		!isCanonicalIdentity(correlation.childId, "child") ||
-		!isCanonicalIdentity(correlation.epoch, "epoch") ||
-		!epochBelongsToChild(correlation.epoch, correlation.childId) ||
-		!isBoundedToken(correlation.operationId) ||
-		!isBoundedToken(operation.id) ||
-		operation.id !== correlation.operationId ||
-		!isBoundedToken(operation.kind) ||
-		!isNullableString(operation.rpc) ||
-		(operation.rpc !== null && !isBoundedToken(operation.rpc)) ||
+		!isCanonicalIdentity(correlation["childId"], "child") ||
+		!isCanonicalIdentity(correlation["epoch"], "epoch") ||
+		!epochBelongsToChild(correlation["epoch"], correlation["childId"]) ||
+		!isBoundedToken(correlation["operationId"]) ||
+		!isBoundedToken(operation["id"]) ||
+		operation["id"] !== correlation["operationId"] ||
+		!isBoundedToken(operation["kind"]) ||
+		!isNullableString(operation["rpc"]) ||
+		(operation["rpc"] !== null && !isBoundedToken(operation["rpc"])) ||
 		!statusOutcomePairIsValid(value) ||
-		!isCanonicalIdentity(provenance.childId, "child") ||
-		!isCanonicalIdentity(provenance.epoch, "epoch") ||
-		!epochBelongsToChild(provenance.epoch, provenance.childId) ||
-		provenance.childId !== correlation.childId ||
-		provenance.epoch !== correlation.epoch ||
-		(provenance.threadId !== null && !isCanonicalIdentity(provenance.threadId, "thread")) ||
-		(provenance.turnId !== null && !isCanonicalIdentity(provenance.turnId, "turn")) ||
-		!isNullableString(provenance.threadId) ||
-		!isNullableString(provenance.turnId) ||
-		!isNullableString(provenance.threadSource) ||
-		(provenance.threadSource !== null && !isBoundedToken(provenance.threadSource)) ||
-		!isCanonicalAbsolutePath(provenance.workspaceRoot) ||
-		!isHash(provenance.instructionHash) ||
-		!isHash(provenance.manifestHash) ||
-		(provenance.confirmedAtMs !== null && !isTimestamp(provenance.confirmedAtMs)) ||
-		!isReason(value.reason) ||
-		!isTimestamp(value.createdAtMs) ||
-		!isTimestamp(value.updatedAtMs) ||
-		value.updatedAtMs < value.createdAtMs ||
-		(value.status === "staged" &&
-			(value.reason !== null ||
-				provenance.threadId !== null ||
-				provenance.turnId !== null ||
-				provenance.threadSource !== null ||
-				provenance.confirmedAtMs !== null)) ||
-		(value.status !== "staged" && value.reason === null) ||
-		(value.status === "committed" && provenance.confirmedAtMs === null)
+		!isCanonicalIdentity(provenance["childId"], "child") ||
+		!isCanonicalIdentity(provenance["epoch"], "epoch") ||
+		!epochBelongsToChild(provenance["epoch"], provenance["childId"]) ||
+		provenance["childId"] !== correlation["childId"] ||
+		provenance["epoch"] !== correlation["epoch"] ||
+		(provenance["threadId"] !== null && !isCanonicalIdentity(provenance["threadId"], "thread")) ||
+		(provenance["turnId"] !== null && !isCanonicalIdentity(provenance["turnId"], "turn")) ||
+		!isNullableString(provenance["threadId"]) ||
+		!isNullableString(provenance["turnId"]) ||
+		!isNullableString(provenance["threadSource"]) ||
+		(provenance["threadSource"] !== null && !isBoundedToken(provenance["threadSource"])) ||
+		!isCanonicalAbsolutePath(provenance["workspaceRoot"]) ||
+		!isHash(provenance["instructionHash"]) ||
+		!isHash(provenance["manifestHash"]) ||
+		(provenance["confirmedAtMs"] !== null && !isTimestamp(provenance["confirmedAtMs"])) ||
+		!isReason(value["reason"]) ||
+		!isTimestamp(value["createdAtMs"]) ||
+		!isTimestamp(value["updatedAtMs"]) ||
+		value["updatedAtMs"] < value["createdAtMs"] ||
+		(value["status"] === "staged" &&
+			(value["reason"] !== null ||
+				provenance["threadId"] !== null ||
+				provenance["turnId"] !== null ||
+				provenance["threadSource"] !== null ||
+				provenance["confirmedAtMs"] !== null)) ||
+		(value["status"] !== "staged" && value["reason"] === null) ||
+		(value["status"] === "committed" && provenance["confirmedAtMs"] === null)
 	) {
 		return false;
 	}
@@ -171,12 +171,12 @@ export function isEpochOperationRecord(value: unknown): value is EpochOperationR
 
 export function isEpochExecutionProof(value: unknown): value is EpochExecutionProof {
 	if (!isRecord(value) || !hasExactKeys(value, ["record", "manifestRevision"])) return false;
-	const revision = value.manifestRevision;
+	const revision = value["manifestRevision"];
 	return (
 		typeof revision === "number" &&
 		Number.isSafeInteger(revision) &&
 		revision >= 0 &&
-		isEpochOperationRecord(value.record)
+		isEpochOperationRecord(value["record"])
 	);
 }
 

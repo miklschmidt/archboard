@@ -53,16 +53,16 @@ function isIssueRecord(value: unknown): value is IssueRecord {
 }
 
 function issuePath(issue: unknown): IssuePath {
-	if (!isIssueRecord(issue) || !Array.isArray(issue.path)) return [];
-	return issue.path.map((segment) =>
+	if (!isIssueRecord(issue) || !Array.isArray(issue["path"])) return [];
+	return issue["path"].map((segment) =>
 		typeof segment === "string" || typeof segment === "number" ? segment : String(segment),
 	);
 }
 
 function unionBranches(issue: IssueRecord): unknown[][] | undefined {
-	if (issue.code !== "invalid_union" || !Array.isArray(issue.errors)) return undefined;
+	if (issue["code"] !== "invalid_union" || !Array.isArray(issue["errors"])) return undefined;
 	const branches: unknown[][] = [];
-	for (const branch of issue.errors) {
+	for (const branch of issue["errors"]) {
 		if (!Array.isArray(branch)) return undefined;
 		branches.push(branch);
 	}

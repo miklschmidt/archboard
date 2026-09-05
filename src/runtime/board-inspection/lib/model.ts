@@ -121,11 +121,11 @@ export function classifyBoundElements(value: unknown): BoundElementsClassificati
 		let issue: BoundElementIssue | null = null;
 		if (!item) issue = "entry-not-object";
 		else if (!("id" in item)) issue = "missing-id";
-		else if (item.id === "") issue = "empty-id";
-		else if (typeof item.id !== "string") issue = "non-string-id";
+		else if (item["id"] === "") issue = "empty-id";
+		else if (typeof item["id"] !== "string") issue = "non-string-id";
 		else if (!("type" in item)) issue = "missing-type";
-		else if (item.type !== "text" && item.type !== "arrow") issue = "invalid-type";
-		else readableEntries.push({ id: item.id, type: item.type });
+		else if (item["type"] !== "text" && item["type"] !== "arrow") issue = "invalid-type";
+		else readableEntries.push({ id: item["id"], type: item["type"] });
 		if (issue) problems.push({ issue, entryIndex });
 	});
 	return { readableEntries, problems };
@@ -156,11 +156,11 @@ export function boundElementTargetCompatible(
 }
 
 export function archboardMetadata(record: DecodedRecord): Readonly<Record<string, unknown>> | null {
-	return object(object(record.raw?.customData)?.archboard);
+	return object(object(record.raw?.customData)?.["archboard"]);
 }
 
 export function nodeId(record: DecodedRecord): string | null {
-	const value = archboardMetadata(record)?.node;
+	const value = archboardMetadata(record)?.["node"];
 	return typeof value === "string" && value.length > 0 ? value : null;
 }
 
@@ -178,26 +178,26 @@ export function libraryAttribution(record: DecodedRecord): {
 } | null {
 	const custom = object(record.raw?.customData);
 	if (!custom || !("library" in custom)) return null;
-	const library = object(custom.library);
+	const library = object(custom["library"]);
 	if (!library) return { valid: false, issues: ["library must be an object"] };
 	const item =
-		typeof library.itemId === "string" && library.itemId.length > 0
-			? library.itemId
-			: typeof library.item === "string" && library.item.length > 0
-				? library.item
+		typeof library["itemId"] === "string" && library["itemId"].length > 0
+			? library["itemId"]
+			: typeof library["item"] === "string" && library["item"].length > 0
+				? library["item"]
 				: undefined;
 	const issues: string[] = [];
 	if (!item) issues.push("itemId or item must be a nonempty string");
 	if (
-		library.source !== undefined &&
-		(typeof library.source !== "string" || library.source.length === 0)
+		library["source"] !== undefined &&
+		(typeof library["source"] !== "string" || library["source"].length === 0)
 	)
 		issues.push("source must be a nonempty string");
 	return {
 		valid: issues.length === 0,
 		...(item ? { item } : {}),
-		...(typeof library.source === "string" && library.source.length > 0
-			? { source: library.source }
+		...(typeof library["source"] === "string" && library["source"].length > 0
+			? { source: library["source"] }
 			: {}),
 		issues,
 	};

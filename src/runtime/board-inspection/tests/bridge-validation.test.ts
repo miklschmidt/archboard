@@ -279,7 +279,7 @@ describe("bridge validation", () => {
 			{ ...metadata, extra: true },
 			{
 				...metadata,
-				crossing: { ...(metadata.crossing as object), extra: true },
+				crossing: { ...(metadata["crossing"] as object), extra: true },
 			},
 		])
 			expect(BridgeMetadataSchema.safeParse(candidate).success).toBe(false);

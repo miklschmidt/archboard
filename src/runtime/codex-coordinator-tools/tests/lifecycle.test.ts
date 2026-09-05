@@ -247,7 +247,7 @@ describe("coordinator dynamic-tool lifecycle", () => {
 			new Set([firstRequest, secondRequest]),
 		);
 		expect(responseEnvelope(second.response)).toMatchObject({
-			operationId: responseEnvelope(first.response).operationId,
+			operationId: responseEnvelope(first.response)["operationId"],
 		});
 	});
 

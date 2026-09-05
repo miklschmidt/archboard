@@ -60,7 +60,7 @@ describe("Codex session storage proof", () => {
 	test("refuses null, missing, aliased, and wrong-origin sqlite configuration", async () => {
 		const nullValue = createSessionFixture();
 		const nullConfig = configFixture(nullValue.storage.sqliteHome, nullValue.storage.configPath);
-		(nullConfig.config as Record<string, unknown>).sqlite_home = null;
+		(nullConfig.config as Record<string, unknown>)["sqlite_home"] = null;
 		nullValue.transport.prependResponse("config/read", nullConfig as never);
 		expect(await rejected(nullValue.session.initialize())).toBeInstanceOf(CodexSessionStorageError);
 		nullValue.close();
@@ -70,7 +70,7 @@ describe("Codex session storage proof", () => {
 			missingValue.storage.sqliteHome,
 			missingValue.storage.configPath,
 		);
-		delete (missingConfig.config as Record<string, unknown>).sqlite_home;
+		delete (missingConfig.config as Record<string, unknown>)["sqlite_home"];
 		missingValue.transport.prependResponse("config/read", missingConfig as never);
 		expect(await rejected(missingValue.session.initialize())).toBeInstanceOf(
 			CodexSessionStorageError,
@@ -91,7 +91,7 @@ describe("Codex session storage proof", () => {
 
 		const wrongOrigin = createSessionFixture();
 		const wrong = configFixture(wrongOrigin.storage.sqliteHome, wrongOrigin.storage.configPath);
-		(wrong.origins.sqlite_home as Record<string, unknown>).name = {
+		(wrong.origins["sqlite_home"] as Record<string, unknown>)["name"] = {
 			type: "user",
 			file: wrongOrigin.storage.configPath,
 			profile: "unexpected",
@@ -175,7 +175,7 @@ describe("Codex session storage proof", () => {
 			wrongFile.storage.sqliteHome,
 			wrongFile.storage.configPath,
 		);
-		(wrongFileConfig.origins.sqlite_home as Record<string, unknown>).name = {
+		(wrongFileConfig.origins["sqlite_home"] as Record<string, unknown>)["name"] = {
 			type: "user",
 			file: path.join(wrongFile.root, "other-config.toml"),
 			profile: null,
@@ -189,7 +189,7 @@ describe("Codex session storage proof", () => {
 			wrongType.storage.sqliteHome,
 			wrongType.storage.configPath,
 		);
-		(wrongTypeConfig.origins.sqlite_home as Record<string, unknown>).name = {
+		(wrongTypeConfig.origins["sqlite_home"] as Record<string, unknown>)["name"] = {
 			type: "system",
 			file: wrongType.storage.configPath,
 		};

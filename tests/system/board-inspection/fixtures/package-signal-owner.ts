@@ -5,7 +5,7 @@ const owner = createPackageInspectionOwner();
 const vault = owner.startVault();
 let capturedSignals = 0;
 try {
-	const delayedStartup = process.env.ARCHBOARD_PACKAGE_SIGNAL_DELAYED_STARTUP === "1";
+	const delayedStartup = process.env["ARCHBOARD_PACKAGE_SIGNAL_DELAYED_STARTUP"] === "1";
 	const startingSentinel = owner.startHttpSentinel({
 		resistTermination: true,
 		...(delayedStartup

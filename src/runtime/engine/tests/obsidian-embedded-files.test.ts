@@ -28,7 +28,7 @@ afterEach(() => {
 
 function pluginNote(section: string, files: Record<string, unknown> = {}): string {
 	const imaged = scene([rectangle, text, imageElement]);
-	imaged.files = files;
+	imaged["files"] = files;
 	return insertBeforeDrawing(wrapSceneAsObsidianMd(imaged), section);
 }
 
@@ -86,7 +86,7 @@ describe("Embedded Files persistence", () => {
 
 	test("covered bytes are omitted while an unrecorded image stays in the Drawing bytes", () => {
 		const covered = scene([rectangle, text, imageElement]);
-		covered.files = {
+		covered["files"] = {
 			abc12345: {
 				id: "abc12345",
 				dataURL: "data:image/png;base64,QUJPQVJEQUFBQQ==",
@@ -100,7 +100,7 @@ describe("Embedded Files persistence", () => {
 		expect(savedCovered).toBe(recorded);
 
 		const other = scene([rectangle, text, { ...imageElement, id: "img-two", fileId: "zz999999" }]);
-		other.files = {
+		other["files"] = {
 			zz999999: {
 				id: "zz999999",
 				dataURL: "data:image/png;base64,QUJPQVJEQkJCQg==",
@@ -136,12 +136,12 @@ describe("vault image resolution", () => {
 		);
 
 		const resolved = resolveEmbeddedImages(note, join(notes, "board.excalidraw.md"), vault);
-		expect(resolved.vault000).toMatchObject({
+		expect(resolved["vault000"]).toMatchObject({
 			id: "vault000",
 			dataURL: `data:image/png;base64,${Buffer.from("vault-image").toString("base64")}`,
 			mimeType: "image/png",
 		});
-		expect(resolved.local000).toMatchObject({
+		expect(resolved["local000"]).toMatchObject({
 			dataURL: `data:image/svg+xml;base64,${Buffer.from("<svg/>").toString("base64")}`,
 			mimeType: "image/svg+xml",
 		});
@@ -152,7 +152,7 @@ describe("vault image resolution", () => {
 		fs.writeFileSync(join(vault, "one", "logo.png"), Buffer.from("one"));
 		const note = pluginNote("## Embedded Files\nabc12345: [[logo.png]]\n\n");
 		expect(
-			resolveEmbeddedImages(note, join(vault, "board.excalidraw.md"), vault).abc12345,
+			resolveEmbeddedImages(note, join(vault, "board.excalidraw.md"), vault)["abc12345"],
 		).toBeDefined();
 
 		fs.mkdirSync(join(vault, "two"), { recursive: true });

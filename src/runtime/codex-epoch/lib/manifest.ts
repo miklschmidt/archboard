@@ -221,20 +221,20 @@ function sha256(value: string): string {
 function validateManifest(value: unknown): EpochManifest {
 	const object = asObject(value, "manifest");
 	assertKeys(object, ["schema", "revision", "activeEpoch", "records", "integrity"], "manifest");
-	if (object.schema !== CODEX_EPOCH_MANIFEST_SCHEMA) {
+	if (object["schema"] !== CODEX_EPOCH_MANIFEST_SCHEMA) {
 		throw new Error("unsupported schema");
 	}
-	if (!isInteger(object.revision) || object.revision < 0) {
+	if (!isInteger(object["revision"]) || object["revision"] < 0) {
 		throw new Error("invalid revision");
 	}
-	const records = asArray(object.records, "records").map((record, index) =>
+	const records = asArray(object["records"], "records").map((record, index) =>
 		validateRecord(record, `records[${index}]`),
 	);
-	const activeEpoch = object.activeEpoch === null ? null : validateActiveEpoch(object.activeEpoch);
-	const integrity = validateIntegrity(object.integrity);
+	const activeEpoch = object["activeEpoch"] === null ? null : validateActiveEpoch(object["activeEpoch"]);
+	const integrity = validateIntegrity(object["integrity"]);
 	const payload: EpochManifestPayload = {
 		schema: CODEX_EPOCH_MANIFEST_SCHEMA,
-		revision: object.revision,
+		revision: object["revision"],
 		activeEpoch,
 		records,
 	};
@@ -249,9 +249,9 @@ function validateActiveEpoch(value: unknown): ActiveEpoch {
 	const object = asObject(value, "activeEpoch");
 	assertKeys(object, ["childId", "epoch", "operationId"], "activeEpoch");
 	return {
-		childId: asChildId(object.childId, "activeEpoch.childId"),
-		epoch: asEpoch(object.epoch, object.childId, "activeEpoch.epoch"),
-		operationId: asToken(object.operationId, "activeEpoch.operationId"),
+		childId: asChildId(object["childId"], "activeEpoch.childId"),
+		epoch: asEpoch(object["epoch"], object["childId"], "activeEpoch.epoch"),
+		operationId: asToken(object["operationId"], "activeEpoch.operationId"),
 	};
 }
 
@@ -271,15 +271,15 @@ function validateRecord(value: unknown, label: string): EpochOperationRecord {
 		],
 		label,
 	);
-	const correlation = validateCorrelation(object.correlation, `${label}.correlation`);
-	const operation = validateOperation(object.operation, `${label}.operation`);
+	const correlation = validateCorrelation(object["correlation"], `${label}.correlation`);
+	const operation = validateOperation(object["operation"], `${label}.operation`);
 	const status = asEnum(
-		object.status,
+		object["status"],
 		["staged", "committed", "rolled_back", "inspect_only"],
 		`${label}.status`,
 	) as EpochOperationStatus;
 	const outcome = asEnum(
-		object.outcome,
+		object["outcome"],
 		["pending", "delivered", "not_delivered", "outcome_unknown"],
 		`${label}.outcome`,
 	) as EpochOperationOutcome;
@@ -291,10 +291,10 @@ function validateRecord(value: unknown, label: string): EpochOperationRecord {
 	) {
 		throw new Error(`${label} has an invalid status/outcome pair`);
 	}
-	const provenance = validateProvenance(object.provenance, `${label}.provenance`);
-	const reason = object.reason === null ? null : asReason(object.reason, `${label}.reason`);
-	const createdAtMs = asTimestamp(object.createdAtMs, `${label}.createdAtMs`);
-	const updatedAtMs = asTimestamp(object.updatedAtMs, `${label}.updatedAtMs`);
+	const provenance = validateProvenance(object["provenance"], `${label}.provenance`);
+	const reason = object["reason"] === null ? null : asReason(object["reason"], `${label}.reason`);
+	const createdAtMs = asTimestamp(object["createdAtMs"], `${label}.createdAtMs`);
+	const updatedAtMs = asTimestamp(object["updatedAtMs"], `${label}.updatedAtMs`);
 	if (updatedAtMs < createdAtMs) {
 		throw new Error(`${label}.updatedAtMs precedes createdAtMs`);
 	}
@@ -343,9 +343,9 @@ function validateCorrelation(value: unknown, label: string): EpochOperationCorre
 	const object = asObject(value, label);
 	assertKeys(object, ["childId", "epoch", "operationId"], label);
 	return {
-		childId: asChildId(object.childId, `${label}.childId`),
-		epoch: asEpoch(object.epoch, object.childId, `${label}.epoch`),
-		operationId: asToken(object.operationId, `${label}.operationId`),
+		childId: asChildId(object["childId"], `${label}.childId`),
+		epoch: asEpoch(object["epoch"], object["childId"], `${label}.epoch`),
+		operationId: asToken(object["operationId"], `${label}.operationId`),
 	};
 }
 
@@ -353,9 +353,9 @@ function validateOperation(value: unknown, label: string): EpochOperationDescrip
 	const object = asObject(value, label);
 	assertKeys(object, ["id", "kind", "rpc"], label);
 	return {
-		id: asToken(object.id, `${label}.id`),
-		kind: asToken(object.kind, `${label}.kind`),
-		rpc: object.rpc === null ? null : asToken(object.rpc, `${label}.rpc`),
+		id: asToken(object["id"], `${label}.id`),
+		kind: asToken(object["kind"], `${label}.kind`),
+		rpc: object["rpc"] === null ? null : asToken(object["rpc"], `${label}.rpc`),
 	};
 }
 
@@ -377,38 +377,38 @@ function validateProvenance(value: unknown, label: string): EpochProvenance {
 		label,
 	);
 	return {
-		childId: asChildId(object.childId, `${label}.childId`),
-		epoch: asEpoch(object.epoch, object.childId, `${label}.epoch`),
+		childId: asChildId(object["childId"], `${label}.childId`),
+		epoch: asEpoch(object["epoch"], object["childId"], `${label}.epoch`),
 		threadId:
-			object.threadId === null
+			object["threadId"] === null
 				? null
-				: (asDomainIdentity(object.threadId, "thread", `${label}.threadId`) as ThreadId),
+				: (asDomainIdentity(object["threadId"], "thread", `${label}.threadId`) as ThreadId),
 		turnId:
-			object.turnId === null
+			object["turnId"] === null
 				? null
-				: (asDomainIdentity(object.turnId, "turn", `${label}.turnId`) as TurnId),
+				: (asDomainIdentity(object["turnId"], "turn", `${label}.turnId`) as TurnId),
 		threadSource:
-			object.threadSource === null ? null : asToken(object.threadSource, `${label}.threadSource`),
-		workspaceRoot: asAbsolutePath(object.workspaceRoot, `${label}.workspaceRoot`),
-		instructionHash: asHash(object.instructionHash, `${label}.instructionHash`),
-		manifestHash: asHash(object.manifestHash, `${label}.manifestHash`),
+			object["threadSource"] === null ? null : asToken(object["threadSource"], `${label}.threadSource`),
+		workspaceRoot: asAbsolutePath(object["workspaceRoot"], `${label}.workspaceRoot`),
+		instructionHash: asHash(object["instructionHash"], `${label}.instructionHash`),
+		manifestHash: asHash(object["manifestHash"], `${label}.manifestHash`),
 		confirmedAtMs:
-			object.confirmedAtMs === null
+			object["confirmedAtMs"] === null
 				? null
-				: asTimestamp(object.confirmedAtMs, `${label}.confirmedAtMs`),
+				: asTimestamp(object["confirmedAtMs"], `${label}.confirmedAtMs`),
 	};
 }
 
 function validateIntegrity(value: unknown): EpochManifest["integrity"] {
 	const object = asObject(value, "integrity");
 	assertKeys(object, ["algorithm", "digest"], "integrity");
-	if (object.algorithm !== "sha256") {
+	if (object["algorithm"] !== "sha256") {
 		throw new Error("unsupported integrity algorithm");
 	}
-	if (typeof object.digest !== "string" || !/^[0-9a-f]{64}$/.test(object.digest)) {
+	if (typeof object["digest"] !== "string" || !/^[0-9a-f]{64}$/.test(object["digest"])) {
 		throw new Error("invalid integrity digest");
 	}
-	return { algorithm: "sha256", digest: object.digest };
+	return { algorithm: "sha256", digest: object["digest"] };
 }
 
 function asObject(value: unknown, label: string): Record<string, unknown> {

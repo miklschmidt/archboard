@@ -26,7 +26,7 @@ const TRACKING_KEYS = [
 export function stripTrackingClaims(value: unknown): unknown {
 	if (!value || typeof value !== "object" || Array.isArray(value)) return value;
 	const custom = value as Record<string, unknown>;
-	const candidate = custom.archboard;
+	const candidate = custom["archboard"];
 	if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return { ...custom };
 	const semantic = Object.fromEntries(
 		Object.entries(candidate).filter(
@@ -34,8 +34,8 @@ export function stripTrackingClaims(value: unknown): unknown {
 		),
 	);
 	const cleaned = { ...custom };
-	if (Object.keys(semantic).length > 0) cleaned.archboard = semantic;
-	else delete cleaned.archboard;
+	if (Object.keys(semantic).length > 0) cleaned["archboard"] = semantic;
+	else delete cleaned["archboard"];
 	return cleaned;
 }
 
@@ -45,7 +45,7 @@ export function stripUntrustedTrackingClaims(
 ): Record<string, unknown> {
 	const cleaned = { ...value };
 	for (const key of TRACKING_KEYS) delete cleaned[key];
-	if ("customData" in cleaned) cleaned.customData = stripTrackingClaims(cleaned.customData);
+	if ("customData" in cleaned) cleaned["customData"] = stripTrackingClaims(cleaned["customData"]);
 	return cleaned;
 }
 
@@ -55,7 +55,7 @@ function customDataOf(element: RuntimeBoardElement): Record<string, unknown> {
 }
 
 function envelopeOf(element: RuntimeBoardElement): PersistedArchboardEnvelope | undefined {
-	const candidate = customDataOf(element).archboard;
+	const candidate = customDataOf(element)["archboard"];
 	return candidate && typeof candidate === "object" && !Array.isArray(candidate)
 		? (candidate as PersistedArchboardEnvelope)
 		: undefined;

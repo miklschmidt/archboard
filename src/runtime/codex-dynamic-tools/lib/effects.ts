@@ -252,12 +252,12 @@ function exactTerminalResult(
 		throw new Error("the terminal operation result shape is not exact");
 	const result = value as Readonly<Record<string, unknown>>;
 	if (
-		result.operationId !== operationId ||
-		(result.disposition !== "consumed" && result.disposition !== "retired") ||
-		result.terminal !== true
+		result["operationId"] !== operationId ||
+		(result["disposition"] !== "consumed" && result["disposition"] !== "retired") ||
+		result["terminal"] !== true
 	)
 		throw new Error("the terminal operation result does not match the issued identity");
-	return Object.freeze({ operationId, disposition: result.disposition, terminal: true });
+	return Object.freeze({ operationId, disposition: result["disposition"], terminal: true });
 }
 
 function readTerminalResult(

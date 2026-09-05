@@ -19,7 +19,7 @@ function run(cwd: string, cmd: string[]): CommandResult {
 		cwd,
 		env: {
 			...process.env,
-			PATH: `${path.join(repoRoot, "node_modules/.bin")}:${process.env.PATH ?? ""}`,
+			PATH: `${path.join(repoRoot, "node_modules/.bin")}:${process.env["PATH"] ?? ""}`,
 		},
 		stdout: "pipe",
 		stderr: "pipe",

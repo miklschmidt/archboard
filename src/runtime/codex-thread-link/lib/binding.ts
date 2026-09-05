@@ -193,10 +193,10 @@ function conflict(paneId: string, revision: number): CodexThreadLinkConflictErro
 function isCurrentEpoch(value: unknown): value is ThreadLinkCurrentEpoch {
 	return (
 		isRecord(value) &&
-		typeof value.childId === "string" &&
-		value.childId.length > 0 &&
-		typeof value.epoch === "string" &&
-		value.epoch.length > 0
+		typeof value["childId"] === "string" &&
+		value["childId"].length > 0 &&
+		typeof value["epoch"] === "string" &&
+		value["epoch"].length > 0
 	);
 }
 

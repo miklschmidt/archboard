@@ -74,7 +74,7 @@ describe("layout board changes", () => {
 		expect(right.nodes.moved.every((node) => "cluster" in node.changes)).toBeTrue();
 		expect(wrong.nodes.moved).toHaveLength(1);
 		expect(wrong.nodes.moved[0]?.changes).not.toHaveProperty("cluster");
-		expect(wrong.nodes.moved[0]?.changes.prominence?.to).toBe("larger");
+		expect(wrong.nodes.moved[0]?.changes["prominence"]?.to).toBe("larger");
 	});
 
 	test("all fixtures keep bound labels on their containers", () => {
@@ -126,7 +126,7 @@ describe("layout board changes", () => {
 		);
 		const change = diff(spread, dragged);
 		expect(regionMoves(change).map((move) => move.node)).toEqual(["bravo"]);
-		expect(change.nodes.moved[0]?.changes.region?.to).toBe("middle-right");
+		expect(change.nodes.moved[0]?.changes["region"]?.to).toBe("middle-right");
 		expect(regionMoves(change).every((move) => move.node === "bravo")).toBeTrue();
 	});
 

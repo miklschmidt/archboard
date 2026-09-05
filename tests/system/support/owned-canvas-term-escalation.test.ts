@@ -8,7 +8,7 @@ import { processExists, startOwnedCanvas } from "./owned-canvas.ts";
 
 const thisFile = import.meta.path;
 
-if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "term-escalation") {
+if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "term-escalation") {
 	const lock = path.join(
 		stateDir(),
 		"codex-workbench",
@@ -26,7 +26,7 @@ if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "term-escalation") {
 	process.on("SIGTERM", () => undefined);
 	Bun.serve({
 		hostname: "127.0.0.1",
-		port: Number(process.env.PORT),
+		port: Number(process.env["PORT"]),
 		fetch(request) {
 			if (new URL(request.url).pathname === "/health") {
 				return Response.json({ pid: process.pid });

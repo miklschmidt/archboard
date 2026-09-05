@@ -843,9 +843,9 @@ function parseWireRequestCorrelationValue(
 	issued: ReadonlyMap<IdentityDomain, ReadonlySet<string>>,
 ): WireRequestCorrelation {
 	const record = requireRecord(value, CORRELATION_KEYS);
-	const child = parseValue(record.child, "child");
-	const parsedEpoch = parseEpochValue(record.epoch, child);
-	const requestId = parseValue(record.requestId, "json-rpc-request");
+	const child = parseValue(record["child"], "child");
+	const parsedEpoch = parseEpochValue(record["epoch"], child);
+	const requestId = parseValue(record["requestId"], "json-rpc-request");
 	assertCurrent(child, parsedEpoch, childId, epoch);
 	assertIssued(child, "child", issued);
 	assertIssued(parsedEpoch, "epoch", issued);
@@ -860,11 +860,11 @@ function parseLogicalToolCallCorrelationValue(
 	issued: ReadonlyMap<IdentityDomain, ReadonlySet<string>>,
 ): LogicalToolCallCorrelation {
 	const record = requireRecord(value, TOOL_CORRELATION_KEYS);
-	const child = parseValue(record.child, "child");
-	const parsedEpoch = parseEpochValue(record.epoch, child);
-	const threadId = parseValue(record.threadId, "thread");
-	const turnId = parseValue(record.turnId, "turn");
-	const callId = parseValue(record.callId, "dynamic-tool-call");
+	const child = parseValue(record["child"], "child");
+	const parsedEpoch = parseEpochValue(record["epoch"], child);
+	const threadId = parseValue(record["threadId"], "thread");
+	const turnId = parseValue(record["turnId"], "turn");
+	const callId = parseValue(record["callId"], "dynamic-tool-call");
 	assertCurrent(child, parsedEpoch, childId, epoch);
 	assertIssued(child, "child", issued);
 	assertIssued(parsedEpoch, "epoch", issued);
@@ -877,9 +877,9 @@ function parseLogicalToolCallCorrelationValue(
 		threadId,
 		turnId,
 		callId,
-		namespace: assertText(record.namespace, "namespace"),
-		tool: assertText(record.tool, "tool"),
-		manifestHash: assertText(record.manifestHash, "manifestHash"),
+		namespace: assertText(record["namespace"], "namespace"),
+		tool: assertText(record["tool"], "tool"),
+		manifestHash: assertText(record["manifestHash"], "manifestHash"),
 	});
 }
 

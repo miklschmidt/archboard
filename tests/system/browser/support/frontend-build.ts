@@ -44,7 +44,7 @@ function sourceFiles(repoRoot: string): string[] {
 }
 
 function buildRequest(repoRoot: string): FrontendBuildRequest {
-	const fixture = process.env.ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE;
+	const fixture = process.env["ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE"];
 	if (fixture && (!isAbsolute(fixture) || !existsSync(fixture))) {
 		throw new Error("ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE must name an existing absolute file.");
 	}
@@ -53,7 +53,7 @@ function buildRequest(repoRoot: string): FrontendBuildRequest {
 		argv: fixture ? [fixture] : ["run", "build"],
 		cwd: repoRoot,
 		env: {
-			PATH: process.env.PATH,
+			PATH: process.env["PATH"],
 			LANG: "C.UTF-8",
 			LC_ALL: "C.UTF-8",
 			NO_COLOR: "1",
@@ -70,7 +70,7 @@ export async function ensureFreshFrontend(
 	const newestInput = inputs.reduce((newest, file) => Math.max(newest, statSync(file).mtimeMs), 0);
 	const builtAt = existsSync(bundle) ? statSync(bundle).mtimeMs : 0;
 	let decision: FrontendFreshness = "current";
-	if (builtAt < newestInput || process.env.ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE) {
+	if (builtAt < newestInput || process.env["ARCHBOARD_TEST_BROWSER_BUILD_FIXTURE"]) {
 		decision = "built";
 		process.stdout.write("# building frontend once for the serial browser lane\n");
 		await runBuild(buildRequest(repoRoot));

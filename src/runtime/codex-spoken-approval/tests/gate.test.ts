@@ -172,7 +172,7 @@ describe("spoken approval state gate", () => {
 		expect(input.text).toContain("user_final_item_id: user-final");
 		expect(input.text).toContain("user_final_sequence: 11");
 		expect(input.text).toContain("user_final_text: yes, run it");
-		expect(params.additionalContext?.archboard?.kind).toBe("application");
+		expect(params.additionalContext?.["archboard"]?.kind).toBe("application");
 		expect(h.gate.snapshot()).toMatchObject({
 			state: "awaiting_resolver",
 			finalUserItemId: "user-final",

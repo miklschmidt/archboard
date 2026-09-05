@@ -99,7 +99,7 @@ function bindingRecord(
 	const record = recordAt(value, context, id, type, path);
 	for (const key of Object.keys(record))
 		if (!allowed.has(key)) fail(context, id, type, `${path}.${key}`);
-	if (typeof record.elementId !== "string" || !record.elementId)
+	if (typeof record["elementId"] !== "string" || !record["elementId"])
 		fail(context, id, type, `${path}.elementId`);
 	return record;
 }
@@ -121,9 +121,9 @@ export function pointBindingAt(
 	);
 	if (!record) return null;
 	return {
-		elementId: record.elementId as string,
-		focus: finite(record.focus, context, id, type, `${path}.focus`),
-		gap: finite(record.gap, context, id, type, `${path}.gap`),
+		elementId: record["elementId"] as string,
+		focus: finite(record["focus"], context, id, type, `${path}.focus`),
+		gap: finite(record["gap"], context, id, type, `${path}.gap`),
 	} satisfies ElementBinding;
 }
 
@@ -144,10 +144,10 @@ export function fixedPointBindingAt(
 	);
 	if (!record) return null;
 	return {
-		elementId: record.elementId as string,
-		focus: finite(record.focus, context, id, type, `${path}.focus`),
-		gap: finite(record.gap, context, id, type, `${path}.gap`),
-		fixedPoint: point(record.fixedPoint, context, id, type, `${path}.fixedPoint`),
+		elementId: record["elementId"] as string,
+		focus: finite(record["focus"], context, id, type, `${path}.focus`),
+		gap: finite(record["gap"], context, id, type, `${path}.gap`),
+		fixedPoint: point(record["fixedPoint"], context, id, type, `${path}.fixedPoint`),
 	} satisfies FixedPointBinding;
 }
 
@@ -252,13 +252,13 @@ export function roundnessAt(
 ): PersistedBase["roundness"] {
 	if (value === null) return null;
 	const record = recordAt(value, context, id, type, "element.roundness");
-	const kind = record.type;
+	const kind = record["type"];
 	if (kind !== 1 && kind !== 2 && kind !== 3) fail(context, id, type, "element.roundness.type");
 	return {
 		type: kind,
-		...(record.value === undefined
+		...(record["value"] === undefined
 			? {}
-			: { value: finite(record.value, context, id, type, "element.roundness.value") }),
+			: { value: finite(record["value"], context, id, type, "element.roundness.value") }),
 	};
 }
 
@@ -273,9 +273,9 @@ export function boundElementsAt(
 	return value.map((raw, index) => {
 		const path = `element.boundElements[${index}]`;
 		const bound = recordAt(raw, context, id, type, path);
-		if (typeof bound.id !== "string" || !bound.id) fail(context, id, type, `${path}.id`);
-		if (bound.type !== "text" && bound.type !== "arrow") fail(context, id, type, `${path}.type`);
-		return { id: bound.id, type: bound.type } satisfies BoundElement;
+		if (typeof bound["id"] !== "string" || !bound["id"]) fail(context, id, type, `${path}.id`);
+		if (bound["type"] !== "text" && bound["type"] !== "arrow") fail(context, id, type, `${path}.type`);
+		return { id: bound["id"], type: bound["type"] } satisfies BoundElement;
 	});
 }
 
@@ -299,7 +299,7 @@ export function customDataAt(
 	for (const [key, entry] of Object.entries(record)) if (key !== "archboard") custom[key] = entry;
 	if ("archboard" in record) {
 		const rawEnvelope = recordAt(
-			record.archboard,
+			record["archboard"],
 			context,
 			id,
 			type,
@@ -325,51 +325,51 @@ export function persistedBase(
 	id: string,
 	type: string,
 ): PersistedBase {
-	const x = finite(initial.x, context, id, type, "element.x");
-	const y = finite(initial.y, context, id, type, "element.y");
-	const width = finite(initial.width, context, id, type, "element.width");
-	const height = finite(initial.height, context, id, type, "element.height");
-	const angle = finite(initial.angle, context, id, type, "element.angle");
+	const x = finite(initial["x"], context, id, type, "element.x");
+	const y = finite(initial["y"], context, id, type, "element.y");
+	const width = finite(initial["width"], context, id, type, "element.width");
+	const height = finite(initial["height"], context, id, type, "element.height");
+	const angle = finite(initial["angle"], context, id, type, "element.angle");
 	return {
 		id,
 		x,
 		y,
-		strokeColor: stringAt(initial.strokeColor, context, id, type, "element.strokeColor"),
+		strokeColor: stringAt(initial["strokeColor"], context, id, type, "element.strokeColor"),
 		backgroundColor: stringAt(
-			initial.backgroundColor,
+			initial["backgroundColor"],
 			context,
 			id,
 			type,
 			"element.backgroundColor",
 		),
-		fillStyle: fillStyleAt(initial.fillStyle, context, id, type),
-		strokeWidth: finite(initial.strokeWidth, context, id, type, "element.strokeWidth"),
-		strokeStyle: strokeStyleAt(initial.strokeStyle, context, id, type),
-		roundness: roundnessAt(initial.roundness, context, id, type),
-		roughness: finite(initial.roughness, context, id, type, "element.roughness"),
-		opacity: finite(initial.opacity, context, id, type, "element.opacity"),
+		fillStyle: fillStyleAt(initial["fillStyle"], context, id, type),
+		strokeWidth: finite(initial["strokeWidth"], context, id, type, "element.strokeWidth"),
+		strokeStyle: strokeStyleAt(initial["strokeStyle"], context, id, type),
+		roundness: roundnessAt(initial["roundness"], context, id, type),
+		roughness: finite(initial["roughness"], context, id, type, "element.roughness"),
+		opacity: finite(initial["opacity"], context, id, type, "element.opacity"),
 		width,
 		height,
 		angle,
-		seed: finite(initial.seed, context, id, type, "element.seed"),
-		version: finite(initial.version, context, id, type, "element.version"),
-		versionNonce: finite(initial.versionNonce, context, id, type, "element.versionNonce"),
+		seed: finite(initial["seed"], context, id, type, "element.seed"),
+		version: finite(initial["version"], context, id, type, "element.version"),
+		versionNonce: finite(initial["versionNonce"], context, id, type, "element.versionNonce"),
 		index:
-			initial.index === null ? null : stringAt(initial.index, context, id, type, "element.index"),
-		isDeleted: booleanAt(initial.isDeleted, context, id, type, "element.isDeleted"),
-		groupIds: Array.isArray(initial.groupIds)
-			? initial.groupIds.map((entry, at) =>
+			initial["index"] === null ? null : stringAt(initial["index"], context, id, type, "element.index"),
+		isDeleted: booleanAt(initial["isDeleted"], context, id, type, "element.isDeleted"),
+		groupIds: Array.isArray(initial["groupIds"])
+			? initial["groupIds"].map((entry, at) =>
 					stringAt(entry, context, id, type, `element.groupIds[${at}]`),
 				)
 			: fail(context, id, type, "element.groupIds"),
-		frameId: nullableStringAt(initial.frameId, context, id, type, "element.frameId"),
-		boundElements: boundElementsAt(initial.boundElements, context, id, type),
-		updated: finite(initial.updated, context, id, type, "element.updated"),
-		link: nullableStringAt(initial.link, context, id, type, "element.link"),
-		locked: booleanAt(initial.locked, context, id, type, "element.locked"),
-		...(initial.customData === undefined
+		frameId: nullableStringAt(initial["frameId"], context, id, type, "element.frameId"),
+		boundElements: boundElementsAt(initial["boundElements"], context, id, type),
+		updated: finite(initial["updated"], context, id, type, "element.updated"),
+		link: nullableStringAt(initial["link"], context, id, type, "element.link"),
+		locked: booleanAt(initial["locked"], context, id, type, "element.locked"),
+		...(initial["customData"] === undefined
 			? {}
-			: { customData: customDataAt(initial.customData, context, id, type) }),
+			: { customData: customDataAt(initial["customData"], context, id, type) }),
 	} satisfies PersistedBase;
 }
 

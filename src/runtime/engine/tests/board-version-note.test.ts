@@ -16,11 +16,11 @@ import type { presentElement as PresentElement } from "../presentation.js";
 import type { ServerElement } from "../types.js";
 import type { completeElement as CompleteElement } from "./support/elements.js";
 
-const callerVault = process.env.ARCHBOARD_VAULT;
+const callerVault = process.env["ARCHBOARD_VAULT"];
 const root = mkdtempSync(join(tmpdir(), "archboard-version-note-"));
 // config.ts snapshots the environment at import time. Give this isolated owner
 // its own vault before any production module in the board graph is evaluated.
-process.env.ARCHBOARD_VAULT = root;
+process.env["ARCHBOARD_VAULT"] = root;
 const ownedKeys = new Set<string>();
 
 let boardModule: typeof BoardModule;
@@ -76,8 +76,8 @@ afterAll(() => {
 		try {
 			rmSync(root, { recursive: true, force: true });
 		} finally {
-			if (callerVault === undefined) delete process.env.ARCHBOARD_VAULT;
-			else process.env.ARCHBOARD_VAULT = callerVault;
+			if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
+			else process.env["ARCHBOARD_VAULT"] = callerVault;
 		}
 	}
 });
@@ -194,12 +194,12 @@ describe.serial("board versions in notes", () => {
 			elements: Array<Record<string, unknown>>;
 		};
 		const legacy = scene.elements[0]!;
-		const custom = legacy.customData as { archboard: Record<string, unknown> };
+		const custom = legacy["customData"] as { archboard: Record<string, unknown> };
 		for (const key of ["createdAt", "updatedAt", "syncedAt", "source", "syncTimestamp"]) {
 			if (custom.archboard[key] !== undefined) legacy[key] = custom.archboard[key];
 			delete custom.archboard[key];
 		}
-		if (Object.keys(custom.archboard).length === 0) delete legacy.customData;
+		if (Object.keys(custom.archboard).length === 0) delete legacy["customData"];
 		const legacyNote = boardModule.renderBoardNote(scene, note, identity);
 		writeFileSync(board.file, legacyNote);
 		storeModule.recordBaseline(
@@ -245,7 +245,7 @@ describe.serial("board versions in notes", () => {
 		const scene = JSON.parse(extractSceneJsonFromObsidianMd(note)) as {
 			elements: Array<Record<string, unknown>>;
 		};
-		delete scene.elements[0]!.angle;
+		delete scene.elements[0]!["angle"];
 		const malformed = boardModule.renderBoardNote(scene, note, identity);
 		writeFileSync(board.file, malformed);
 		const before = readFileSync(board.file);
@@ -289,7 +289,7 @@ describe.serial("board versions in notes", () => {
 			JSON.parse(extractSceneJsonFromObsidianMd(note)) as {
 				elements: Array<Record<string, unknown>>;
 			}
-		).elements.find((element) => element.id === "joined")!;
+		).elements.find((element) => element["id"] === "joined")!;
 		for (const end of ["startBinding", "endBinding"] as const)
 			expect(Object.keys(persisted[end] as object).toSorted()).toEqual([
 				"elementId",

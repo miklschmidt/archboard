@@ -105,22 +105,22 @@ function resolveLocalCodexEntry(): string {
 		);
 	}
 	const packageManifest = manifest as Record<string, unknown>;
-	if (packageManifest.name !== "@openai/codex") {
+	if (packageManifest["name"] !== "@openai/codex") {
 		throw localCodexError(
-			`${relative(repositoryRoot, codexManifestPath)} names ${String(packageManifest.name)}.`,
+			`${relative(repositoryRoot, codexManifestPath)} names ${String(packageManifest["name"])}.`,
 		);
 	}
-	if (packageManifest.version !== expectedCodexVersion) {
+	if (packageManifest["version"] !== expectedCodexVersion) {
 		throw localCodexError(
-			`${relative(repositoryRoot, codexManifestPath)} has version ${String(packageManifest.version)}.`,
+			`${relative(repositoryRoot, codexManifestPath)} has version ${String(packageManifest["version"])}.`,
 		);
 	}
-	const manifestBin = packageManifest.bin;
+	const manifestBin = packageManifest["bin"];
 	if (
 		!manifestBin ||
 		typeof manifestBin !== "object" ||
 		Array.isArray(manifestBin) ||
-		(manifestBin as Record<string, unknown>).codex !== "bin/codex.js"
+		(manifestBin as Record<string, unknown>)["codex"] !== "bin/codex.js"
 	) {
 		throw localCodexError(
 			`${relative(repositoryRoot, codexManifestPath)} does not declare codex at bin/codex.js.`,
