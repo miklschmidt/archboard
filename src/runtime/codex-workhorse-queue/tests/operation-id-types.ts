@@ -1,9 +1,9 @@
-import {
-	createCodexWorkhorseQueue,
-	type WorkhorseQueueBinding,
-	type WorkhorseQueueIdentityPort,
-	type WorkhorseQueueOperationIdPort,
-	type WorkhorseQueueSessionPort,
+import { createCodexWorkhorseQueue } from "../index.ts";
+import type {
+	WorkhorseQueueBinding,
+	WorkhorseQueueIdentityPort,
+	WorkhorseQueueOperationIdPort,
+	WorkhorseQueueSessionPort,
 } from "../index.ts";
 
 declare const operationIdBrand: unique symbol;
@@ -42,7 +42,7 @@ void queue.add({ operationId: "plain-string", prompt: "invalid" });
 type Equal<Left, Right> = [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;
 type Assert<Value extends true> = Value;
 
-export type WorkhorseQueueOperationIdInferenceFixture = [
+type WorkhorseQueueOperationIdInferenceFixture = [
 	Assert<Equal<Parameters<typeof queue.add>[0]["operationId"], CanonicalOperationId>>,
 	Assert<Equal<Parameters<typeof queue.update>[0]["operationId"], CanonicalOperationId>>,
 	Assert<Equal<Parameters<typeof queue.delete>[0]["operationId"], CanonicalOperationId>>,
@@ -52,3 +52,5 @@ export type WorkhorseQueueOperationIdInferenceFixture = [
 
 const explicitlyTypedPort: WorkhorseQueueOperationIdPort<CanonicalOperationId> = operationIds;
 void explicitlyTypedPort;
+
+export type { WorkhorseQueueOperationIdInferenceFixture };
