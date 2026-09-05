@@ -281,7 +281,7 @@ test(
 			elsewhere: string | null;
 			metas: Array<string | null>;
 		}>(`(() => ({
-			metas: [...document.querySelectorAll(".bar-identity .meta")].map(node => node.textContent),
+			metas: [...document.querySelectorAll('[aria-label="Board status"] .meta')].map(node => node.textContent),
 			elsewhere: document.querySelector(".chip-elsewhere")?.textContent ?? null,
 		}))()`);
 		expect(saving.elsewhere).toBeNull();

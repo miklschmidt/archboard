@@ -153,12 +153,19 @@ export function VoiceControls({
 	);
 
 	const view = projectVoiceControls({ view: sessionView, pending });
+	const toolbarActions = view.actions.filter((action) => {
+		if (view.state === "unavailable") return false;
+		if (view.state === "ready" || view.state === "stopped") return action.command === "start";
+		if (action.command === "start") return action.enabled || pending === "start";
+		return action.command !== "mute" || view.transport.active;
+	});
+	const actions = variant === "toolbar" ? toolbarActions : view.actions;
 
 	return (
 		<section
 			aria-label="Live voice"
 			className={cn(
-				"min-w-0 flex border-border-subtle font-sans text-body text-foreground",
+				"flex min-w-0 border-border-subtle font-sans text-body text-foreground",
 				variant === "toolbar"
 					? view.recovery === null
 						? "items-center gap-control-inline"
@@ -171,8 +178,8 @@ export function VoiceControls({
 			data-voice-meter-allowed={view.meter ? "" : undefined}
 			data-voice-state={view.state}
 		>
-			<header className="min-w-0 flex flex-wrap items-center gap-control-inline">
-				<span className="min-w-0 flex items-center gap-control">
+			<header className="flex min-w-0 flex-wrap items-center gap-control-inline">
+				<span className="flex min-w-0 items-center gap-control">
 					<VoiceGlyph className="shrink-0 text-muted-foreground" name={view.glyph} />
 					<span className="text-control font-semibold" data-voice-label="">
 						{view.label}
@@ -206,20 +213,27 @@ export function VoiceControls({
 
 			{/* A fieldset, not a div with role="group": the grouping is real, and the
 			    repository lint prefers the semantic tag over the role. */}
-			<fieldset
-				aria-label="Voice commands"
-				className="p-0 flex flex-wrap items-center gap-control border-0"
-				data-voice-commands=""
-			>
-				{view.actions.map((action) => (
-					<CommandButton
-						action={action}
-						key={action.command}
-						onRun={run}
-						reasonId={`${ids}-${action.command}`}
-					/>
-				))}
-			</fieldset>
+			{actions.length === 0 ? null : (
+				<fieldset
+					aria-label="Voice commands"
+					className="flex flex-wrap items-center gap-control border-0 p-0"
+					data-voice-commands=""
+				>
+					{actions.map((action) => (
+						<CommandButton
+							action={action}
+							key={action.command}
+							onRun={run}
+							reasonId={`${ids}-${action.command}`}
+						/>
+					))}
+				</fieldset>
+			)}
+			{variant === "toolbar" && view.state === "unavailable" ? (
+				<span className="sr-only" data-voice-unavailable-reason="">
+					{view.detail}
+				</span>
+			) : null}
 			{variant === "toolbar" && view.recovery !== null ? (
 				<p className="m-0 basis-full text-body text-destructive" data-voice-recovery="">
 					{view.detail} <span className="text-muted-foreground">{view.recovery}</span>

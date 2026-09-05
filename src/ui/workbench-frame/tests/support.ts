@@ -233,6 +233,11 @@ function createTransport(
 	let currentState = state;
 	const currentSnapshot = () => currentState.snapshot;
 	const transport: BrowserWorkbenchTransport = {
+		captureCommandIntent: () => {
+			const authority = transport.captureCommandTarget();
+			return { capturedThreadLink: authority.capturedThreadLink, authority };
+		},
+		executeCommand: (draft, intent) => transport.command(draft, intent?.authority ?? undefined),
 		attach: async () => currentState,
 		detach: async () => undefined,
 		close: async () => undefined,

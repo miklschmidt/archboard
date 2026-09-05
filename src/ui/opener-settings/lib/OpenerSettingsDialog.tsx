@@ -1,3 +1,4 @@
+import { RiCloseLine } from "@remixicon/react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -225,7 +226,7 @@ export function OpenerSettingsDialog({
 	const availability = settings?.availability;
 	return (
 		<Dialog open={true} onOpenChange={requestOpenChange}>
-			<DialogContent className="opener-dialog gap-0 p-0 overflow-hidden" initialFocus={cancelRef}>
+			<DialogContent className="opener-dialog gap-0 overflow-hidden p-0" initialFocus={cancelRef}>
 				<header className="flex items-start justify-between gap-region border-b border-border px-panel py-region">
 					<div>
 						<span className="mb-grid-tight block font-sans !text-technical font-semibold text-muted-foreground">
@@ -235,9 +236,9 @@ export function OpenerSettingsDialog({
 					</div>
 					<DialogClose
 						aria-label="Close dialog"
-						className="p-0 size-touch-target min-h-touch-target text-muted-foreground"
+						className="size-touch-target min-h-touch-target p-0 text-muted-foreground"
 					>
-						<span aria-hidden="true">×</span>
+						<RiCloseLine aria-hidden="true" focusable="false" size={20} />
 					</DialogClose>
 				</header>
 
@@ -255,11 +256,11 @@ export function OpenerSettingsDialog({
 						className="opener-summary relative grid grid-cols-2 gap-control rounded-panel border border-border bg-surface-subtle p-control-inline"
 						aria-label="Current opener"
 					>
-						<div className="min-w-0 grid gap-grid-tight">
+						<div className="grid min-w-0 gap-grid-tight">
 							<span className="!text-technical text-muted-foreground">Current selection</span>
 							<strong className="!text-control font-semibold">{currentLabel}</strong>
 						</div>
-						<div className="min-w-0 grid gap-grid-tight">
+						<div className="grid min-w-0 gap-grid-tight">
 							<span className="!text-technical text-muted-foreground">Effective command</span>
 							<code className="truncate font-mono !text-technical text-muted-foreground">
 								{commandText(settings?.effectiveCommand ?? null)}
@@ -275,12 +276,12 @@ export function OpenerSettingsDialog({
 						</span>
 					</div>
 
-					<fieldset className="opener-choices p-0 mt-region grid grid-cols-2 gap-control border-0">
+					<fieldset className="opener-choices mt-region grid grid-cols-2 gap-control border-0 p-0">
 						<legend className="col-span-2 mb-grid-tight font-sans !text-body font-semibold">
 							Open code with
 						</legend>
 						<label
-							className="opener-choice min-w-0 flex cursor-pointer items-start gap-control rounded-control border border-border bg-surface-raised px-control-inline py-control has-checked:border-primary has-checked:bg-primary-subtle"
+							className="opener-choice flex min-w-0 cursor-pointer items-start gap-control rounded-control border border-border bg-surface-raised px-control-inline py-control has-checked:border-primary has-checked:bg-primary-subtle"
 							aria-label="System default opener"
 						>
 							<input
@@ -291,7 +292,7 @@ export function OpenerSettingsDialog({
 								checked={choice === "platform"}
 								onChange={choose}
 							/>
-							<span className="min-w-0 grid gap-grid-tight">
+							<span className="grid min-w-0 gap-grid-tight">
 								<strong className="!text-body font-semibold">System default</strong>
 								<small className="truncate !text-technical text-muted-foreground">
 									{commandText(settings?.platformDefault ?? null)}
@@ -300,7 +301,7 @@ export function OpenerSettingsDialog({
 						</label>
 						{PRESETS.map((preset) => (
 							<label
-								className="opener-choice min-w-0 flex cursor-pointer items-start gap-control rounded-control border border-border bg-surface-raised px-control-inline py-control has-checked:border-primary has-checked:bg-primary-subtle"
+								className="opener-choice flex min-w-0 cursor-pointer items-start gap-control rounded-control border border-border bg-surface-raised px-control-inline py-control has-checked:border-primary has-checked:bg-primary-subtle"
 								aria-label={`${LABELS[preset]} opener`}
 								key={preset}
 							>
@@ -312,7 +313,7 @@ export function OpenerSettingsDialog({
 									checked={choice === preset}
 									onChange={choose}
 								/>
-								<span className="min-w-0 grid gap-grid-tight">
+								<span className="grid min-w-0 gap-grid-tight">
 									<strong className="!text-body font-semibold">{LABELS[preset]}</strong>
 									<small className="truncate !text-technical text-muted-foreground">
 										{commandText(
@@ -323,7 +324,7 @@ export function OpenerSettingsDialog({
 							</label>
 						))}
 						<label
-							className="opener-choice min-w-0 flex cursor-pointer items-start gap-control rounded-control border border-border bg-surface-raised px-control-inline py-control has-checked:border-primary has-checked:bg-primary-subtle"
+							className="opener-choice flex min-w-0 cursor-pointer items-start gap-control rounded-control border border-border bg-surface-raised px-control-inline py-control has-checked:border-primary has-checked:bg-primary-subtle"
 							aria-label="Custom opener"
 						>
 							<input
@@ -334,7 +335,7 @@ export function OpenerSettingsDialog({
 								checked={choice === "custom"}
 								onChange={choose}
 							/>
-							<span className="min-w-0 grid gap-grid-tight">
+							<span className="grid min-w-0 gap-grid-tight">
 								<strong className="!text-body font-semibold">Custom</strong>
 								<small className="truncate !text-technical text-muted-foreground">
 									Executable and ordered arguments
@@ -384,7 +385,7 @@ export function OpenerSettingsDialog({
 											data-argument-id={argument.id}
 											onClick={removeArgument}
 										>
-											×
+											<RiCloseLine aria-hidden="true" focusable="false" size={18} />
 										</Button>
 									</div>
 								))}

@@ -25,7 +25,7 @@ const FIELD_CLASSES = {
 
 function DisclosureField({ item }: { readonly item: WorkbenchCoordinatorField }): ReactNode {
 	return (
-		<div className="min-w-0 grid grid-cols-[minmax(9rem,0.8fr)_minmax(0,1.2fr)] gap-control border-t border-border-subtle py-control first:border-t-0">
+		<div className="grid min-w-0 grid-cols-[minmax(9rem,0.8fr)_minmax(0,1.2fr)] gap-control border-t border-border-subtle py-control first:border-t-0">
 			<dt className="font-sans text-body font-medium text-muted-foreground">{item.label}</dt>
 			<dd className={cn("m-0 min-w-0 font-sans text-body break-words", FIELD_CLASSES[item.state])}>
 				<span>{item.value}</span>

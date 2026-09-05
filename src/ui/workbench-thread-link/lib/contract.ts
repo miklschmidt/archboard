@@ -160,7 +160,6 @@ export interface ThreadLinkCreateOffer {
 		{ readonly command: "threadLinkCreate" }
 	>["command"];
 	readonly label: string;
-	readonly prerequisite: string;
 	readonly enabled: boolean;
 	readonly blockedReason: string | null;
 }

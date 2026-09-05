@@ -2,7 +2,7 @@ import {
 	BrowserWorkbenchTransportError,
 	type BrowserCommandDraft,
 	type BrowserWorkbenchCommandResult,
-	type BrowserWorkbenchCommandTarget,
+	type BrowserWorkbenchCommandIntent,
 } from "../../workbench-transport/index.js";
 
 import type {
@@ -98,10 +98,10 @@ async function send(
 	control: WorkbenchQueueControl,
 	submissionId: WorkbenchQueueSubmissionId | null,
 	draft: BrowserCommandDraft,
-	target: BrowserWorkbenchCommandTarget,
+	target: BrowserWorkbenchCommandIntent,
 ): Promise<WorkbenchQueueSettlement> {
 	try {
-		return settle(control, submissionId, await transport.command(draft, target));
+		return settle(control, submissionId, await transport.executeCommand(draft, target));
 	} catch (error) {
 		return settleFailure(control, submissionId, error);
 	}
@@ -161,19 +161,19 @@ export function createWorkbenchQueueActions(
 }
 
 export type WorkbenchQueueTargetCapture =
-	| Readonly<{ captured: true; target: BrowserWorkbenchCommandTarget }>
+	| Readonly<{ captured: true; target: BrowserWorkbenchCommandIntent }>
 	| Readonly<{ captured: false; reason: string }>;
 
 /**
  * Capture the command target for the queue being rendered. It fails when the
- * pane holds no usable lease or snapshot, which is a disabled-control reason
+ * pane holds no usable snapshot, which is a disabled-control reason
  * rather than an error the person has to read as a failure.
  */
 export function captureWorkbenchQueueTarget(
 	transport: WorkbenchQueueTransport,
 ): WorkbenchQueueTargetCapture {
 	try {
-		return Object.freeze({ captured: true, target: transport.captureCommandTarget() });
+		return Object.freeze({ captured: true, target: transport.captureCommandIntent() });
 	} catch (error) {
 		return Object.freeze({
 			captured: false,

@@ -278,7 +278,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				boardIdentity: board.textContent.trim(), level: level.textContent.trim(), connectionState: connection.textContent.trim(),
 				persistenceState: persistence.textContent.trim(), paneIdentity: pane.textContent.trim(),
 				legacyVaultLineCount: document.querySelectorAll('.vault-name').length,
-				boardLeftAligned: Math.abs(boardRect.left - metaRect.left) < 0.5,
+				headerSectionsAligned: boardRect.right < metaRect.left && Math.abs((boardRect.top + boardRect.height / 2) - (metaRect.top + metaRect.height / 2)) < 0.5,
 				tokens: ['--type-kicker', '--type-tech', '--type-body', '--type-control', '--type-title', '--type-primary']
 					.map(name => shellStyle.getPropertyValue(name).trim()),
 				weightTokens: ['--weight-regular', '--weight-medium', '--weight-semibold', '--weight-bold']

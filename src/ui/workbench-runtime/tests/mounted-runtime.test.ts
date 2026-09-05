@@ -184,6 +184,7 @@ describe("mounted workbench runtime provider", () => {
 			expect(mounted.container.queryByRole("status")?.getAttribute("aria-label")).toBe(
 				"Codex workbench status",
 			);
+			expect(mounted.container.queryByRole("status")?.getAttribute("class")).toBe("sr-only");
 			await act(async () =>
 				transport.publish({
 					kind: "stream",
@@ -198,6 +199,9 @@ describe("mounted workbench runtime provider", () => {
 			);
 			expect(mounted.container.queryByRole("status")?.textContent).toContain(
 				"Wait for a fresh Codex snapshot",
+			);
+			expect(mounted.container.queryByRole("status")?.getAttribute("class")).not.toContain(
+				"sr-only",
 			);
 			await act(async () =>
 				transport.publish({

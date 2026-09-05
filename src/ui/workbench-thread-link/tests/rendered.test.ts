@@ -70,14 +70,14 @@ function render(
 }
 
 describe("rendered pane thread link", () => {
-	test("renders the readiness arm, the current link, and the live action region", () => {
+	test("offers two connection choices without idle diagnostic chrome", () => {
 		const markup = render();
 		expect(markup).toContain('data-thread-link-readiness="thread_capable"');
-		expect(markup).toContain("Ready to create or attach a thread link");
-		expect(markup).toContain("No thread link");
-		expect(markup).toContain('data-thread-link-action="idle"');
-		expect(markup).toContain('aria-live="polite"');
-		expect(markup).toContain("No thread-link action has run in this pane.");
+		expect(markup).toContain("Start agent");
+		expect(markup).toContain("Choose existing conversation");
+		expect(markup).not.toContain('data-thread-link-action="idle"');
+		expect(markup).not.toContain("Pane thread link");
+		expect(markup).not.toContain("command lease");
 	});
 
 	test("renders one row per joined record with every disclosed fact before binding", () => {
@@ -86,13 +86,11 @@ describe("rendered pane thread link", () => {
 		expect(markup).toContain('data-thread-link-outcome="executable"');
 		expect(markup).toContain('data-thread-link-intent="attach"');
 		expect(markup).toContain(threadA);
-		for (const label of ["Classification", "Source", "Status", "Loaded", "Controllability"])
-			expect(markup).toContain(label);
-		expect(markup).toContain("Standard app-server thread");
-		expect(markup).toContain("Accepts direct input");
-		expect(markup).toContain("1 joined record, 1 executable, 0 inspect-only.");
-		expect(markup).toContain(">Attach<");
-		expect(markup).toContain(`aria-label="Attach thread ${threadA}"`);
+		expect(markup).toContain("Idle");
+		expect(markup).not.toContain("Classification");
+		expect(markup).toContain("1 conversation.");
+		expect(markup).toContain(">Connect<");
+		expect(markup).toContain(`aria-label="Connect conversation ${threadA}"`);
 	});
 
 	test("renders an inspect-only row with its reason and its inspection-only action", () => {
@@ -100,10 +98,8 @@ describe("rendered pane thread link", () => {
 			inventory: listed([record({ state: "inspect_only", reason: "prior_epoch" })]),
 		});
 		expect(markup).toContain('data-thread-link-outcome="inspect_only"');
-		expect(markup).toContain(
-			"Prior epoch: this thread was bound in an epoch before the current one.",
-		);
-		expect(markup).toContain("Attach for inspection");
+		expect(markup).toContain("This conversation belongs to an earlier agent session.");
+		expect(markup).toContain("View only");
 	});
 
 	test("renders one row per published record with the refresh path beside them", () => {
@@ -115,36 +111,36 @@ describe("rendered pane thread link", () => {
 		});
 		expect(markup).toContain('data-thread-link-row="first"');
 		expect(markup).toContain('data-thread-link-row="second"');
-		expect(markup).toContain("2 joined records");
+		expect(markup).toContain("2 conversations");
 		expect(markup).toContain('data-thread-link-recovery="refresh_inventory"');
-		expect(markup).toContain("Refresh the thread list");
+		expect(markup).toContain("Refresh conversations");
 	});
 
 	test("renders the undiscovered inventory as its own state with a refresh path", () => {
 		const markup = render({ inventory: undefined, undiscovered: true });
 		expect(markup).toContain('data-thread-link-selection="unknown"');
-		expect(markup).toContain("Nothing is chosen for you");
+		expect(markup).toContain("Refresh to load your conversations.");
 		expect(markup).toContain('data-thread-link-recovery="refresh_inventory"');
 	});
 
 	test("renders the empty inventory as its own state rather than a blank list", () => {
 		const markup = render({ inventory: listed([]) });
 		expect(markup).toContain('data-thread-link-selection="empty"');
-		expect(markup).toContain("discovered no joined thread");
+		expect(markup).toContain("No conversations are available.");
 	});
 
 	test("keeps create separate from attach and states its own prerequisite", () => {
 		const markup = render();
 		expect(markup).toContain('data-thread-link-create="offer"');
-		expect(markup).toContain("Create a workhorse thread");
-		expect(markup).toContain("No thread list is required.");
-		expect(markup).toContain("Attach and relink are separate commands from create.");
+		expect(markup).toContain("Start agent");
+		expect(markup).toContain("Choose existing conversation");
+		expect(markup).toContain('aria-expanded="false"');
 	});
 
 	test("disables both commands with a stated reason before the pane is ready", () => {
 		const markup = render({ supported: [] });
-		expect(markup).toContain("Create is unavailable. It needs:");
-		expect(markup).toContain("active command lease");
+		expect(markup).toContain("Refresh the connection and try again.");
+		expect(markup).not.toContain("command lease");
 		expect(markup).toContain("disabled");
 	});
 
@@ -185,20 +181,26 @@ describe("rendered pane thread link", () => {
 			},
 			hostRecoveryIntents: [],
 		});
-		expect(markup).toContain("Next start at 1700000000000.");
-		expect(markup).toContain("has no owner for that action");
+		expect(markup).toContain("waiting before its next start");
+		expect(markup).toContain("Do this where Archboard is running.");
 	});
 
 	test("points a sign-in retry at the account section rather than at a dead control", () => {
-		const markup = render({ readiness: { kind: "readiness", state: "signed_out" } });
-		expect(markup).toMatch(/<a [^>]*data-thread-link-recovery="retry_login"[^>]*href="#/u);
+		const markup = render({
+			readiness: { kind: "readiness", state: "signed_out" },
+			account: { kind: "account", state: "signed_out" },
+		});
+		expect(markup).toContain('data-thread-link-account="signed_out"');
+		expect(markup).toContain(">Sign in<");
+		expect(markup).toContain("<details open");
 	});
 
 	test("offers cancelling a pending sign-in from the readiness arm", () => {
 		const markup = render({
 			readiness: { kind: "readiness", state: "login_pending", loginId: loginA },
+			account: { kind: "account", state: "login_pending", loginId: loginA, variant: "chatgpt" },
 		});
-		expect(markup).toContain('data-thread-link-recovery="cancel_login"');
+		expect(markup).toContain(">Cancel sign-in<");
 	});
 
 	test("renders supported sign-in forms and keeps unsupported methods in help while signed out", () => {
@@ -251,8 +253,8 @@ describe("rendered pane thread link", () => {
 
 	test("names the pane already holding a link rather than offering it again", () => {
 		const markup = render({ threadLink: executableLink(threadA) });
-		expect(markup).toContain("Executable link");
+		expect(markup).toContain("This conversation can work on the board.");
 		expect(markup).toContain('data-thread-link-intent="current"');
-		expect(markup).toContain("This pane is already linked to this thread.");
+		expect(markup).toContain("This conversation is already connected.");
 	});
 });

@@ -1735,7 +1735,6 @@ export function Shell(): React.JSX.Element {
 			<BoardBar
 				identity={identity}
 				boardKey={boardKey}
-				elementCount={status?.elementCount ?? 0}
 				connected={status?.connected ?? false}
 				claimedBy={claimedBy}
 				hold={hold}

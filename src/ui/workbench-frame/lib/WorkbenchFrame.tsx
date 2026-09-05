@@ -169,7 +169,11 @@ function readableState(value: string): string {
 }
 
 function agentConnectionLabel(value: string): string {
-	return value === "notLoaded" || value === "unbound" ? "No agent linked" : readableState(value);
+	return value === "notLoaded" || value === "unbound"
+		? "No agent linked"
+		: value === "idle"
+			? "Ready"
+			: readableState(value);
 }
 
 function AgentConnection({ pane }: { readonly pane: WorkbenchFramePane }) {
@@ -177,21 +181,21 @@ function AgentConnection({ pane }: { readonly pane: WorkbenchFramePane }) {
 	const value =
 		state.kind === "readiness" ? (state.snapshot.threadLink.status ?? state.state) : state.state;
 	const label = agentConnectionLabel(value);
+	const linked =
+		state.kind === "readiness" &&
+		state.snapshot.threadLink.state === "executable" &&
+		(state.snapshot.threadLink.status === "idle" || state.snapshot.threadLink.status === "active");
 	return (
 		<output
 			aria-label={`Agent connection: ${label}`}
 			aria-live="polite"
-			className="min-w-0 inline-flex items-center gap-control border-l border-border pl-region font-sans text-body text-muted-foreground"
+			className="inline-flex min-w-0 items-center gap-control border-l border-border pl-region font-sans text-body text-muted-foreground"
 			data-workbench-connection-state={state.state}
+			data-workbench-agent-linked={linked ? "true" : "false"}
 		>
-			<span
-				aria-hidden="true"
-				className={
-					state.connection === "connected"
-						? "size-status-dot rounded-round bg-status"
-						: "size-status-dot rounded-round bg-offline"
-				}
-			/>
+			{linked ? (
+				<span aria-hidden="true" className="size-status-dot rounded-round bg-status" />
+			) : null}
 			<span className="truncate">{label}</span>
 		</output>
 	);
@@ -247,12 +251,11 @@ function FrameHeader({
 					ref={captureTitle}
 					tabIndex={-1}
 				>
-					<span aria-hidden="true" className="size-status-dot rounded-round bg-status" />
 					Agent
 				</p>
 			</div>
 			{ready === null ? null : ready.panes.length > 1 ? (
-				<nav aria-label="Workbench panes" className="min-w-0 flex flex-1 items-center gap-control">
+				<nav aria-label="Workbench panes" className="flex min-w-0 flex-1 items-center gap-control">
 					{ready.panes.map((pane) => (
 						<PaneControl
 							active={pane.identity.id === ready.activePaneId}
@@ -268,7 +271,11 @@ function FrameHeader({
 				</span>
 			)}
 			{activePane === null ? null : <AgentConnection pane={activePane} />}
-			{voiceSource === null || voiceView === null ? null : voiceSourceIssue !== null ? (
+			{voiceSource === null ||
+			voiceView === null ||
+			(voiceView.status === "unavailable" &&
+				voiceView.binding === null &&
+				activePane?.timeline === null) ? null : voiceSourceIssue !== null ? (
 				<span
 					className="ml-auto font-sans text-body text-destructive"
 					data-workbench-voice-source-mismatch=""
@@ -277,7 +284,7 @@ function FrameHeader({
 					Voice unavailable
 				</span>
 			) : (
-				<div className="min-w-0 ml-auto flex shrink-0 items-center gap-control">
+				<div className="ml-auto flex min-w-0 shrink-0 items-center gap-control">
 					{activePane === null || samePaneIdentity(activePane.identity, voiceSource.pane) ? null : (
 						<span
 							className="font-sans text-body text-muted-foreground"
@@ -332,7 +339,9 @@ interface ActivePaneProps {
 function hasQueue(state: BrowserWorkbenchState): boolean {
 	return (
 		state.snapshot !== null &&
-		(state.snapshot.threadLink.threadId !== null || state.snapshot.queue.entries.length > 0)
+		(state.snapshot.queue.entries.length > 0 ||
+			(state.snapshot.threadLink.threadId !== null &&
+				state.snapshot.queue.status !== "unavailable"))
 	);
 }
 
@@ -348,6 +357,12 @@ function QueueDisclosure({
 	readonly queueId: string;
 }) {
 	const queue = projectWorkbenchQueue({ state, capabilities: pane.transport.capabilities() });
+	if (
+		state.snapshot?.threadLink.state === "executable" &&
+		queue.state === "unavailable" &&
+		queue.entries.length === 0
+	)
+		return <WorkbenchQueue crossLinks={crossLinks} transport={pane.transport} />;
 	if (!hasQueue(state)) return null;
 	const summary =
 		queue.entries.length === 0
@@ -395,21 +410,25 @@ function ActivePane({
 	return (
 		<section
 			aria-label={`${pane.identity.label} agent conversation`}
-			className="min-h-0 min-w-0 [&>[data-workbench-runtime]]:min-h-0 [&>[data-workbench-runtime]]:min-w-0 flex h-full w-full flex-col overflow-hidden bg-surface [&>[data-workbench-runtime]]:flex [&>[data-workbench-runtime]]:w-full [&>[data-workbench-runtime]]:flex-1 [&>[data-workbench-runtime]]:flex-col [&>[data-workbench-runtime]]:overflow-hidden"
+			className="flex h-full min-h-0 w-full min-w-0 flex-col overflow-hidden bg-surface [&>[data-workbench-runtime]]:flex [&>[data-workbench-runtime]]:min-h-0 [&>[data-workbench-runtime]]:w-full [&>[data-workbench-runtime]]:min-w-0 [&>[data-workbench-runtime]]:flex-1 [&>[data-workbench-runtime]]:flex-col [&>[data-workbench-runtime]]:overflow-hidden"
 			data-workbench-region="conversation"
 		>
 			<WorkbenchBoardStatus {...pane.boardStatus} paneLabel={pane.identity.label} />
 			{pane.timeline === null ? (
 				<div
-					className="min-h-0 flex flex-1 flex-col items-center justify-center gap-control px-panel py-region text-center"
+					className="flex min-h-0 flex-1 items-center gap-panel px-region py-region"
 					data-workbench-timeline="unbound"
 				>
-					<p className="m-0 font-sans text-title font-semibold">Connect an agent to this pane</p>
-					<p className="m-0 max-w-prose font-sans text-body text-muted-foreground">
-						Create a workhorse or attach an existing thread to start a conversation.
-					</p>
+					<div className="min-w-0">
+						<p className="m-0 font-sans text-title font-semibold">
+							Work on this board with an agent
+						</p>
+						<p className="m-0 pt-compact font-sans text-body text-muted-foreground">
+							Start a conversation or continue an existing one.
+						</p>
+					</div>
 					<Button onClick={onOpenSettings} tone="primary" type="button">
-						Open Agent settings
+						Connect agent
 					</Button>
 				</div>
 			) : (
@@ -417,7 +436,7 @@ function ActivePane({
 					onSubmit={pane.composerController.submit}
 					transport={pane.transport}
 				>
-					<div className="min-h-0 min-w-0 flex flex-1 flex-col overflow-hidden">
+					<div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 						<div
 							className="min-h-0 flex-1 overflow-y-auto"
 							data-workbench-target-pane={pane.identity.id}
@@ -493,13 +512,13 @@ function AppGlobalRequestSurface({
 			data-workbench-target-pane={sourcePaneId}
 			id={id}
 		>
-			<header className="top-0 sticky z-10 flex min-h-touch-target items-center justify-between gap-control bg-surface px-region">
+			<header className="sticky top-0 z-10 flex min-h-touch-target items-center justify-between gap-control bg-surface px-region">
 				<div className="min-w-0">
 					<p className="m-0 text-kicker font-semibold text-muted-foreground">Application-wide</p>
 					<p className="m-0 font-sans text-title font-semibold">Approval and input requests</p>
 				</div>
 				{sourceLabel === undefined ? null : (
-					<dl className="m-0 min-w-0 flex items-baseline gap-control">
+					<dl className="m-0 flex min-w-0 items-baseline gap-control">
 						<dt className="font-sans text-body text-muted-foreground">Source pane</dt>
 						<dd className="m-0 max-w-full truncate font-sans text-body font-medium">
 							{sourceLabel}
@@ -628,6 +647,11 @@ function WorkbenchFrameLayout({
 	}, []);
 	const openSettings = useCallback(() => setSettingsView("connection"), []);
 	const closeSettings = useCallback(() => setSettingsView(null), []);
+	const onDisclosureChange = props.onDisclosureChange;
+	const connectedFromSettings = useCallback(() => {
+		setSettingsView(null);
+		onDisclosureChange("expanded");
+	}, [onDisclosureChange]);
 	const openRelatedSettings = useCallback(
 		(event: MouseEvent<HTMLElement>) => {
 			if (!(event.target instanceof Element)) return;
@@ -701,7 +725,7 @@ function WorkbenchFrameLayout({
 		<section
 			aria-labelledby={titleId}
 			className={cn(
-				"min-h-0 min-w-0 flex h-full max-h-full flex-col overflow-hidden border-y border-border bg-background font-sans text-foreground shadow-flat transition-colors duration-control ease-control forced-color-adjust-auto forced-colors:border-current",
+				"flex h-full max-h-full min-h-0 min-w-0 flex-col overflow-hidden border-y border-border bg-background font-sans text-foreground shadow-flat transition-colors duration-control ease-control forced-color-adjust-auto forced-colors:border-current",
 				props.className,
 			)}
 			data-pane-count={ready?.panes.length ?? 0}
@@ -728,26 +752,17 @@ function WorkbenchFrameLayout({
 			<div className="min-h-0 min-w-0 flex-1 overflow-hidden" data-workbench-work-area="">
 				{contentVisible ? (
 					<div
-						className="min-h-0 min-w-0 flex h-full flex-col overflow-hidden"
+						className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
 						data-workbench-content="expanded"
 						onBlurCapture={onContentBlur}
 						onFocusCapture={onContentFocus}
 					>
 						{voice === null || voiceView === null ? null : (
-							<details
-								className="group max-h-1/2 min-h-touch-target shrink-0 overflow-y-auto overscroll-contain border-b border-border bg-surface-raised"
-								data-workbench-voice-disclosure=""
-							>
-								<summary className="flex min-h-touch-target cursor-pointer items-center justify-between gap-control px-region font-sans text-body outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-									<span className="font-medium">Voice · {voice.source.pane.label}</span>
-									<span className="text-muted-foreground">Transcript and context</span>
-								</summary>
-								<VoiceComposition
-									crossLinkIds={voiceCrossLinkIds}
-									sessionView={voiceView}
-									voice={voice}
-								/>
-							</details>
+							<VoiceComposition
+								crossLinkIds={voiceCrossLinkIds}
+								sessionView={voiceView}
+								voice={voice}
+							/>
 						)}
 						{props.view.state !== "ready" ? (
 							<div className="min-h-0 flex-1 overflow-y-auto">
@@ -758,7 +773,7 @@ function WorkbenchFrameLayout({
 								<InvalidReadyState detail={issue} />
 							</div>
 						) : activePane !== null && activePaneState !== null ? (
-							<div className="min-h-0 min-w-0 flex flex-1 overflow-hidden">
+							<div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
 								<ActivePane
 									approvalsId={approvalsId}
 									coordinatorId={coordinatorId}
@@ -788,6 +803,8 @@ function WorkbenchFrameLayout({
 			{ready !== null && issue === null ? (
 				<WorkbenchSettingsDialog
 					open={settingsView !== null}
+					onConnected={connectedFromSettings}
+					conversationId={timelineId}
 					coordinatorId={coordinatorId}
 					showCoordinator={settingsView === "coordinator"}
 					activePaneId={ready.activePaneId}

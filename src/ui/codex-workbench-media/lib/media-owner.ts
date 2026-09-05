@@ -249,14 +249,18 @@ export function createBrowserWorkbenchMediaOwner(
 			requireCurrent(active);
 			const handle = active.handle;
 			if (handle === null) return { ...request, outcome: "not_delivered", reason: "stale_session" };
-			await claim(active);
-			requireCurrent(active);
-			const value = await active.transport.command({
-				command: "realtimeAppendText",
-				threadId: executableThread(active.transport),
-				realtimeSessionHandle: handle,
-				text: request.text,
-			} as BrowserCommandDraft);
+			// Keep the session and displayed link while authority waits behind any
+			// pending work. Claiming separately could lose the lease before dispatch.
+			const intent = active.transport.captureCommandIntent();
+			const value = await active.transport.executeCommand(
+				{
+					command: "realtimeAppendText",
+					threadId: executableThread(active.transport),
+					realtimeSessionHandle: handle,
+					text: request.text,
+				} as BrowserCommandDraft,
+				intent,
+			);
 			requireCurrent(active);
 			return value.outcome === "delivered"
 				? { ...request, outcome: "delivered" }
@@ -271,13 +275,17 @@ export function createBrowserWorkbenchMediaOwner(
 			requireCurrent(active);
 			const handle = active.handle;
 			if (handle === null) return { ...request, outcome: "not_delivered", reason: "stale_session" };
-			await claim(active);
-			requireCurrent(active);
-			const value = await active.transport.command({
-				command: "realtimeStop",
-				threadId: executableThread(active.transport),
-				realtimeSessionHandle: handle,
-			} as BrowserCommandDraft);
+			// Keep the session and displayed link while authority waits behind any
+			// pending work. Claiming separately could lose the lease before dispatch.
+			const intent = active.transport.captureCommandIntent();
+			const value = await active.transport.executeCommand(
+				{
+					command: "realtimeStop",
+					threadId: executableThread(active.transport),
+					realtimeSessionHandle: handle,
+				} as BrowserCommandDraft,
+				intent,
+			);
 			requireCurrent(active);
 			if (value.outcome === "delivered") {
 				active.handle = null;

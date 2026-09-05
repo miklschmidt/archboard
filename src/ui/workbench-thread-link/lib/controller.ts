@@ -2,7 +2,7 @@ import type { LoginId, ThreadId } from "../../../shared/codex-workbench-identity
 import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchCommandResult,
-	BrowserWorkbenchCommandTarget,
+	BrowserWorkbenchCommandIntent,
 	BrowserWorkbenchTransportErrorCode,
 } from "../../workbench-transport/index.js";
 
@@ -63,14 +63,15 @@ function uncertain(error: unknown): boolean {
 
 function captureTarget(
 	pane: ThreadLinkPaneCapture,
-	captured: BrowserWorkbenchCommandTarget,
+	captured: BrowserWorkbenchCommandIntent,
 	threadId: ThreadId | null,
 ): ThreadLinkActionTarget {
 	return Object.freeze({
 		paneId: pane.paneId,
-		childId: captured.childId,
-		epoch: captured.epoch,
-		commandId: captured.commandId,
+		childId: captured.authority?.childId ?? null,
+		epoch: captured.authority?.epoch ?? null,
+		// The action has not acquired its own command identity yet.
+		commandId: null,
 		threadId,
 		capturedLinkState: captured.capturedThreadLink.state,
 		capturedLinkThreadId: captured.capturedThreadLink.threadId,
@@ -145,7 +146,7 @@ function classify(
 		};
 	return {
 		state: "succeeded",
-		announcement: `${action} bound pane ${target.paneId} to executable thread ${link.threadId}.`,
+		announcement: "Agent connected.",
 	};
 }
 
@@ -189,7 +190,7 @@ export function createThreadLinkController(
 		try {
 			// Captured once, here. Nothing downstream reads the pane again, so a
 			// focus change after this point cannot move where the command lands.
-			const captured = pane.transport.captureCommandTarget();
+			const captured = pane.transport.captureCommandIntent();
 			target = captureTarget(pane, captured, threadId);
 			publish({
 				state: "pending",
@@ -207,7 +208,8 @@ export function createThreadLinkController(
 					announcement: `The workbench is not ready for ${draft.command}. It arrived before this pane reached the state that command needs.`,
 					recovery: recoveryFor(pane, "not_ready"),
 				});
-			const result = await pane.transport.command(draft, captured);
+			const result = await pane.transport.executeCommand(draft, captured);
+			target = Object.freeze({ ...target, commandId: result.commandId });
 			const settlement = classify(action, result, target);
 			return settle(operationRevision, {
 				state: settlement.state,

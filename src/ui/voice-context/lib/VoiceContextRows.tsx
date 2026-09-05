@@ -290,7 +290,7 @@ export function VoiceContextSessionRegion({
 				<dl className="m-0 grid grid-cols-2 border-b border-border">
 					{session.fields.map((field) => (
 						<div
-							className="min-w-0 grid grid-cols-2 gap-control border-b border-border-subtle px-control py-control"
+							className="grid min-w-0 grid-cols-2 gap-control border-b border-border-subtle px-control py-control"
 							key={field.label}
 						>
 							<dt className="text-body font-medium text-muted-foreground">{field.label}</dt>
@@ -394,7 +394,7 @@ export function VoiceContextSessionRegion({
 							: "No later delivery has been recorded for this exact session."}
 					</p>
 				) : (
-					<ol aria-label="Later voice context deliveries" className="m-0 p-0 list-none">
+					<ol aria-label="Later voice context deliveries" className="m-0 list-none p-0">
 						{session.entries.map((entry) => (
 							<EntryRow
 								entry={entry}

@@ -40,7 +40,7 @@ function EvidenceRows({
 			<dl className="m-0">
 				{rows.map((row) => (
 					<div
-						className="min-w-0 grid grid-cols-2 gap-control border-t border-border-subtle py-compact first:border-t-0"
+						className="grid min-w-0 grid-cols-2 gap-control border-t border-border-subtle py-compact first:border-t-0"
 						data-spoken-evidence-row={row.label}
 						key={row.label}
 					>

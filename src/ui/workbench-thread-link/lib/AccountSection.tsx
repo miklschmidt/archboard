@@ -11,11 +11,11 @@ import type {
 } from "./contract.js";
 
 const STATE_CLASSES = {
-	unknown: "border-border bg-surface-subtle text-muted-foreground",
-	signed_out: "border-warning bg-warning-subtle text-warning",
-	login_pending: "border-border bg-surface-subtle text-muted-foreground",
-	ready: "border-status bg-status-subtle text-status-foreground",
-	failed: "border-destructive bg-destructive-subtle text-destructive",
+	unknown: "text-muted-foreground",
+	signed_out: "text-warning",
+	login_pending: "text-muted-foreground",
+	ready: "text-muted-foreground",
+	failed: "text-destructive",
 } as const satisfies Record<ThreadLinkAccountDisclosure["state"], string>;
 
 const FIELD_CLASSES =
@@ -80,34 +80,30 @@ export function AccountSection({
 	}, [controller]);
 	const signedIn = account.state === "ready";
 	return (
-		<section
+		<details
+			open={!signedIn}
 			aria-labelledby={headingId}
 			className="min-w-0 border-t border-border pt-control"
 			data-thread-link-account={account.state}
 			id={sectionId}
 		>
-			<header className="flex min-h-touch-target items-center justify-between gap-control">
-				<h3 className="m-0 text-kicker font-semibold text-muted-foreground" id={headingId}>
-					Codex account
+			<summary className="flex min-h-touch-target cursor-pointer items-center justify-between gap-control outline-none focus-visible:outline-2 focus-visible:outline-ring">
+				<h3 className="m-0 text-body font-medium" id={headingId}>
+					Account
 				</h3>
 				<output
 					aria-atomic="true"
 					aria-label={`Codex account: ${account.label}`}
 					aria-live="polite"
-					className={cn(
-						"shrink-0 rounded-control border px-control py-compact !text-body font-medium",
-						STATE_CLASSES[account.state],
-					)}
+					className={cn("shrink-0 !text-body", STATE_CLASSES[account.state])}
 				>
 					{account.label}
 				</output>
-			</header>
+			</summary>
 			<p className="m-0 pb-control text-body text-muted-foreground">{account.detail}</p>
 			{signedIn ? null : (
-				<fieldset aria-describedby={groupId} className="m-0 p-0 border-0">
-					<legend className="text-kicker font-semibold text-muted-foreground">
-						Supported sign-in forms
-					</legend>
+				<fieldset aria-describedby={groupId} className="m-0 border-0 p-0">
+					<legend className="text-kicker font-semibold text-muted-foreground">Sign in with</legend>
 					<p className="m-0 pb-control text-body text-muted-foreground" id={groupId}>
 						{form.description}
 					</p>
@@ -205,6 +201,6 @@ export function AccountSection({
 					</dl>
 				</details>
 			)}
-		</section>
+		</details>
 	);
 }

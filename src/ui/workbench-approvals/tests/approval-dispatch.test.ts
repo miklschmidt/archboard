@@ -30,7 +30,7 @@ import {
 import {
 	approvalsInput,
 	CHILD,
-	commandTarget,
+	commandIntent,
 	connected,
 	EPOCH,
 	fakeTransport,
@@ -68,7 +68,7 @@ async function send(
 		card,
 		offerId,
 		form,
-		target: commandTarget(),
+		target: commandIntent(),
 	});
 	return { outcome, sent: transport.sent };
 }
@@ -85,7 +85,7 @@ describe("ordinary approval payloads", () => {
 			approvalId: card.request.approvalId,
 			response: { approvalKind: "command_execution", decision: "decline" },
 		});
-		expect(sent[0]?.target).toEqual(commandTarget());
+		expect(sent[0]?.target).toEqual(commandIntent());
 	});
 
 	test("sends a file change session grant only when the host offered it", async () => {
@@ -252,7 +252,7 @@ describe("dynamic approval dispatch", () => {
 			effectHash: HASH,
 			decision: "approve",
 		});
-		expect(sent[0]?.target).toEqual(commandTarget());
+		expect(sent[0]?.target).toEqual(commandIntent().authority);
 	});
 
 	test("sends a decline and refuses any other decision", async () => {
@@ -302,7 +302,7 @@ describe("captured-target refusals and reconciliation", () => {
 				card,
 				offerId: "decision:0",
 				form: seeded(card),
-				target: commandTarget(),
+				target: commandIntent(),
 			});
 
 			expect(outcome.status === "refused" && outcome.code).toBe(code);
@@ -323,7 +323,7 @@ describe("captured-target refusals and reconciliation", () => {
 			card,
 			offerId: "approve",
 			form: initialApprovalForm([]),
-			target: commandTarget(),
+			target: commandIntent(),
 		});
 
 		expect(outcome.status === "refused" && outcome.code).toBe("dynamic_approval_not_pending");
@@ -339,7 +339,7 @@ describe("captured-target refusals and reconciliation", () => {
 				card,
 				offerId: "decision:0",
 				form: seeded(card),
-				target: commandTarget(),
+				target: commandIntent(),
 			});
 
 			expect(outcome.status === "sent" && outcome.outcome).toBe(outcomeValue);
@@ -356,7 +356,7 @@ describe("captured-target refusals and reconciliation", () => {
 			card,
 			offerId: "decision:0",
 			form: seeded(card),
-			target: commandTarget(),
+			target: commandIntent(),
 		});
 
 		expect(outcome.status === "refused" && outcome.code).toBe("not_ready");
@@ -371,7 +371,7 @@ describe("captured-target refusals and reconciliation", () => {
 			card,
 			offerId: "decision:0",
 			form: seeded(card),
-			target: commandTarget(),
+			target: commandIntent(),
 		});
 
 		expect(outcome.status === "refused" && outcome.code).toBe("gateway_error");

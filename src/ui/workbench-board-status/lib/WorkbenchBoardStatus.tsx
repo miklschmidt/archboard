@@ -90,6 +90,8 @@ export function WorkbenchBoardStatus({
 	const actionLabel =
 		effectiveTakeBack === "failure" ? "Try Take back control again" : snapshot.takeBack.label;
 	const contextNeedsAttention = !["unavailable", "fresh"].includes(snapshot.semanticContext.state);
+	if (!claimed && latest === null && !contextNeedsAttention && !snapshot.takeBack.announcement)
+		return <SemanticAnnouncement snapshot={snapshot} />;
 
 	return (
 		<section
@@ -101,31 +103,31 @@ export function WorkbenchBoardStatus({
 			data-take-back={snapshot.takeBack.state}
 		>
 			<SemanticAnnouncement snapshot={snapshot} />
-			<div className="min-w-0 flex min-h-touch-target items-center gap-region">
+			<div className="flex min-h-touch-target min-w-0 items-center gap-region">
 				<output
 					aria-atomic="true"
 					aria-live="polite"
-					className="min-w-0 flex flex-1 items-center gap-region overflow-hidden"
+					className="flex min-w-0 flex-1 items-center gap-region overflow-hidden"
 				>
-					<span className="inline-flex shrink-0 items-center gap-control text-body font-medium">
-						<span
-							aria-hidden="true"
-							className={
-								connection === "connected"
-									? "size-status-dot animate-status rounded-round bg-status"
-									: "size-status-dot rounded-round bg-offline"
-							}
-						/>
-						{claimed ? "Agent working" : snapshot.connection.label}
-					</span>
-					<span aria-hidden="true" className="h-4 w-rule shrink-0 bg-border" />
+					{claimed ? (
+						<span className="inline-flex shrink-0 items-center gap-control text-body font-medium">
+							<span
+								aria-hidden="true"
+								className={
+									connection === "connected"
+										? "size-status-dot animate-status rounded-round bg-status"
+										: "size-status-dot rounded-round bg-offline"
+								}
+							/>
+							Agent working
+						</span>
+					) : null}
 					<span
 						aria-label={`Current agent action: ${latest?.doing ?? "No current board change"}`}
 						className="min-w-0 flex-1 truncate text-body"
 						data-agent-current=""
 						title={latest?.doing}
 					>
-						<span className="mr-control text-muted-foreground">Current</span>
 						<strong className="font-medium">{latest?.doing ?? "No current board change"}</strong>
 					</span>
 					{claimed ? (

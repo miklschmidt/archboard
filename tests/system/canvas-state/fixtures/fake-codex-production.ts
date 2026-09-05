@@ -335,6 +335,16 @@ const handle = (frame: WireFrame): void => {
 		case "thread/read":
 			respond(frame as never, { thread: threads.get(String(params.threadId)) });
 			return;
+		case "thread/queue/list":
+			respond(frame as never, { data: [], nextCursor: null });
+			return;
+		case "thread/timeline/list":
+			respond(frame as never, {
+				data: [],
+				nextCursor: null,
+				activeRealtimeSessionAtPageStart: null,
+			});
+			return;
 		case "thread/turns/list": {
 			const thread = threads.get(String(params.threadId));
 			respond(frame as never, {

@@ -9,6 +9,7 @@ export type {
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchCommandResult,
 	BrowserWorkbenchCommandTarget,
+	BrowserWorkbenchCommandIntent,
 	BrowserWorkbenchDeltaMessage,
 	BrowserWorkbenchGatewayMessage,
 	BrowserWorkbenchSnapshotDelta,

@@ -42,7 +42,7 @@ const TWO_PANE_B_VIEW = {
 
 function voiceSlot(
 	fake: VoiceSessionFake,
-	records: WorkbenchFrameVoiceSlot["transcript"]["records"] = Object.freeze([]),
+	records: WorkbenchFrameVoiceSlot["transcript"]["records"] = Object.freeze([transcriptRecord()]),
 ): WorkbenchFrameVoiceSlot {
 	return {
 		source: captureWorkbenchFrameVoiceSource(PANE_A_PORT, fake.session),
@@ -89,33 +89,15 @@ function frame(
 	);
 }
 
-test("keeps voice controls persistent while transcript and context stay disclosed", () => {
-	const slot = voiceSlot(createSessionFake(voiceView("ready")));
+test("keeps ready voice actionable without empty evidence panels", () => {
+	const slot = voiceSlot(createSessionFake(voiceView("ready")), []);
 	render(frame(slot));
-
-	const voice = screen.getByRole("region", { name: "Pane A live voice" });
-	const transcriptLog = within(voice).getByRole("log", { name: "Voice transcript" });
-	const conversation = screen.getByRole("region", { name: "Pane A agent conversation" });
-	expect(voice.getAttribute("data-workbench-voice-source-pane")).toBe(PANE_A.id);
-	expect(document.querySelector('[data-workbench-voice-source-label=""]')).toBeNull();
-	expect(
-		screen.getByRole("region", { name: "Live voice" }).getAttribute("data-voice-controls-variant"),
-	).toBe("toolbar");
-	expect(within(voice).getByRole("region", { name: "Voice transcript" })).toBeTruthy();
-	expect(within(voice).getByRole("region", { name: "Voice context" })).toBeTruthy();
-	expect(screen.queryByText("No workhorse thread is bound before Start.")).toBeNull();
-	expect(transcriptLog.getAttribute("tabindex")).toBe("0");
-	expect(
-		voice.compareDocumentPosition(conversation) & Node.DOCUMENT_POSITION_FOLLOWING,
-	).toBeTruthy();
-	expect(screen.getByRole("log", { name: "Agent activity" })).toBeTruthy();
-	expect(screen.getByRole("region", { name: "Pane A board activity" })).toBeTruthy();
-	expect(document.querySelector('[data-workbench-queue=""]')).toBeNull();
-	expect(document.querySelector('[data-thread-link-pane="pane-a"]')).toBeNull();
-	expect(document.querySelector('[data-coordinator-disclosure="read-only"]')).toBeNull();
+	expect(screen.getByRole("button", { name: /Start voice on/ })).toBeTruthy();
+	expect(screen.queryByRole("button", { name: /Stop voice on/ })).toBeNull();
+	expect(document.querySelector("[data-workbench-voice-disclosure]")).toBeNull();
+	expect(document.querySelector("[data-voice-context]")).toBeNull();
+	expect(screen.getByRole("region", { name: "Pane A agent conversation" })).toBeTruthy();
 	expect(document.querySelector("[data-workbench-composer]")).toBeTruthy();
-	expect(screen.queryByRole("region", { name: "Application-wide Codex requests" })).toBeNull();
-	expect(screen.getByRole("button", { name: /Stop voice on/ })).toBeTruthy();
 });
 
 test("routes controls only through the supplied voice-session adapter", async () => {
@@ -251,14 +233,7 @@ test("keeps non-empty transcript evidence while its source relationships unmount
 		"listening",
 	);
 	expect(transcriptLinkKinds()).toEqual([]);
-	expect(unavailableRelationshipLabels()).toEqual([
-		"DelegationUnavailable",
-		"QueueUnavailable",
-		"SteerUnavailable",
-		"ApprovalUnavailable",
-		"CallbackUnavailable",
-		"Workhorse resultUnavailable",
-	]);
+	expect(unavailableRelationshipLabels()).toEqual([]);
 
 	result.rerender(
 		frame(
@@ -279,14 +254,7 @@ test("keeps non-empty transcript evidence while its source relationships unmount
 		"listening",
 	);
 	expect(transcriptLinkKinds()).toEqual([]);
-	expect(unavailableRelationshipLabels()).toEqual([
-		"DelegationUnavailable",
-		"QueueUnavailable",
-		"SteerUnavailable",
-		"ApprovalUnavailable",
-		"CallbackUnavailable",
-		"Workhorse resultUnavailable",
-	]);
+	expect(unavailableRelationshipLabels()).toEqual([]);
 });
 
 test("removes only the approval relationship when its request source drifts", () => {
@@ -327,9 +295,7 @@ test("removes only the approval relationship when its request source drifts", ()
 			?.hasAttribute("data-workbench-target-pane"),
 	).toBe(false);
 	expect(approvalTranscriptLink()).toBeNull();
-	expect(
-		document.querySelector('[data-transcript-cross-link-unavailable="approval"]'),
-	).toBeTruthy();
+	expect(document.querySelector('[data-transcript-cross-link-unavailable="approval"]')).toBeNull();
 	const remainingLinks = document.querySelectorAll<HTMLAnchorElement>(
 		"[data-transcript-cross-link]",
 	);

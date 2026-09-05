@@ -18,6 +18,12 @@ type ElementProps = Record<string, unknown>;
 type TestElement = ReactElement<ElementProps>;
 type TestComponent = (props: ElementProps) => TestElement;
 
+function classTokens(element: TestElement | undefined): Set<string> {
+	const value = element?.props.className;
+	if (typeof value !== "string") throw new Error("Expected an element with static class tokens.");
+	return new Set(value.split(/\s+/u));
+}
+
 const stateCells: StateCell[] = [];
 const effects: EffectCallback[] = [];
 const refCells: Array<RefObject<unknown>> = [];
@@ -250,7 +256,9 @@ describe("opener settings public consumer", () => {
 		expect(callbacks.cancel).toBe(1);
 
 		const content = elements(root).find((element) => element.type === DialogContent);
-		expect(content?.props.className).toBe("opener-dialog gap-0 p-0 overflow-hidden");
+		expect(classTokens(content)).toEqual(
+			new Set(["opener-dialog", "gap-0", "p-0", "overflow-hidden"]),
+		);
 		expect(findByText(root, DialogTitle, "Opener settings")).toBeDefined();
 		expect(findByText(root, DialogDescription, "Reading opener settings…")).toBeDefined();
 		const cancel = findByText(root, DialogClose, "Cancel");
@@ -261,8 +269,8 @@ describe("opener settings public consumer", () => {
 		const close = elements(root).find(
 			(element) => element.type === DialogClose && element.props["aria-label"] === "Close dialog",
 		);
-		expect(close?.props.className).toBe(
-			"p-0 size-touch-target min-h-touch-target text-muted-foreground",
+		expect(classTokens(close)).toEqual(
+			new Set(["p-0", "size-touch-target", "min-h-touch-target", "text-muted-foreground"]),
 		);
 	});
 
@@ -415,12 +423,31 @@ describe("opener settings public consumer", () => {
 		const summary = elements(root).find(
 			(element) => element.props["aria-label"] === "Current opener",
 		);
-		expect(summary?.props.className).toBe(
-			"opener-summary relative grid grid-cols-2 gap-control rounded-panel border border-border bg-surface-subtle p-control-inline",
+		expect(classTokens(summary)).toEqual(
+			new Set([
+				"opener-summary",
+				"relative",
+				"grid",
+				"grid-cols-2",
+				"gap-control",
+				"rounded-panel",
+				"border",
+				"border-border",
+				"bg-surface-subtle",
+				"p-control-inline",
+			]),
 		);
 		const choices = elements(root).find((element) => element.type === "fieldset");
-		expect(choices?.props.className).toBe(
-			"opener-choices p-0 mt-region grid grid-cols-2 gap-control border-0",
+		expect(classTokens(choices)).toEqual(
+			new Set([
+				"opener-choices",
+				"p-0",
+				"mt-region",
+				"grid",
+				"grid-cols-2",
+				"gap-control",
+				"border-0",
+			]),
 		);
 
 		expect(source).toContain('from "@/ui/dialog"');

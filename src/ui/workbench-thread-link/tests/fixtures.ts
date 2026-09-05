@@ -200,6 +200,14 @@ function refuse(code: "link_changed" | "lease_required", message: string): never
  * retargeted onto whatever the pane moved to.
  */
 export class FakeTransport implements BrowserWorkbenchTransport {
+	captureCommandIntent = () => ({
+		capturedThreadLink: this.current.snapshot!.threadLink,
+		authority: this.leased ? this.captureCommandTarget() : null,
+	});
+	executeCommand: BrowserWorkbenchTransport["executeCommand"] = (draft, intent) => {
+		this.leased = true;
+		return this.command(draft, intent?.authority ?? this.captureCommandTarget());
+	};
 	readonly commands: RecordedCommand[] = [];
 	refreshes = 0;
 	accountReads = 0;

@@ -12,7 +12,7 @@ import {
 
 import { Button } from "../../button/index.js";
 import { cn } from "../../ui-classnames/index.js";
-import type { BrowserWorkbenchCommandTarget } from "../../workbench-transport/index.js";
+import type { BrowserWorkbenchCommandIntent } from "../../workbench-transport/index.js";
 
 import { createWorkbenchQueueActions } from "./actions.js";
 import type {
@@ -95,7 +95,7 @@ export function WorkbenchQueue({
 		async (
 			control: WorkbenchQueuePending["control"],
 			submissionId: WorkbenchQueueSubmissionId | null,
-			send: (target: BrowserWorkbenchCommandTarget) => Promise<WorkbenchQueueSettlement>,
+			send: (target: BrowserWorkbenchCommandIntent) => Promise<WorkbenchQueueSettlement>,
 		): Promise<WorkbenchQueueSettlement | null> => {
 			if (!capture.captured) return null;
 			setPending({ control, submissionId });
@@ -214,6 +214,29 @@ export function WorkbenchQueue({
 		[handleDropAt, view.entries.length],
 	);
 
+	if (view.state === "unavailable" && view.entries.length === 0)
+		return (
+			<section
+				aria-label="Queue recovery"
+				className={cn("shrink-0 px-region font-sans text-body", className)}
+				data-queue-state={view.state}
+				data-workbench-queue=""
+			>
+				<Button
+					data-queue-control="list"
+					disabled={!view.list.enabled || pending !== null}
+					onClick={handleRefresh}
+					title={view.list.reason ?? "Queued requests could not be loaded."}
+					tone="quiet"
+				>
+					{pending === null ? "Retry queue" : "Loading queue…"}
+				</Button>
+				{settlement !== null && settlement.state !== "reconciled" ? (
+					<QueueSettlementOutput pending={pending} settlement={settlement} />
+				) : null}
+			</section>
+		);
+
 	return (
 		<section
 			aria-describedby={detailId}
@@ -276,7 +299,7 @@ export function WorkbenchQueue({
 			) : (
 				<ol
 					aria-label="Queued submissions, in the order the host is holding them"
-					className="m-0 p-0 list-none border-t border-border-subtle"
+					className="m-0 list-none border-t border-border-subtle p-0"
 					data-queue-list=""
 				>
 					{view.entries.map((entry) => (

@@ -188,6 +188,8 @@
 	--radius-dialog: var(--arch-radius-dialog);
 	--radius-round: var(--arch-radius-round);
 
+	/* Zero resets remain available without restoring Tailwind's numeric scale. */
+	--spacing-0: 0px;
 	--spacing-rule: var(--arch-space-rule);
 	--spacing-compact: var(--arch-space-compact);
 	--spacing-grid-tight: var(--arch-space-tight);
@@ -213,5 +215,5 @@
 }
 
 .agent-settings-dialog {
-	width: min(42rem, calc(100vw - 2 * var(--arch-space-panel)));
+	width: min(32rem, calc(100vw - 2 * var(--arch-space-panel)));
 }

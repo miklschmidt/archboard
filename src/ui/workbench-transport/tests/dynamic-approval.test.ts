@@ -339,7 +339,7 @@ test("changing every dynamic identity, binding, state, or expiry component sends
 	}
 });
 
-test("lease expiry makes account, thread, queue, approval, dynamic, renew, and release paths inert", async () => {
+test("lease expiry disables exact authority while ordinary actions can acquire fresh authority", async () => {
 	for (const clock of [200_000, 200_001]) {
 		const transport = createBrowserWorkbenchTransport({ now: () => clock });
 		transports.push(transport);
@@ -350,15 +350,12 @@ test("lease expiry makes account, thread, queue, approval, dynamic, renew, and r
 			snapshot({ lease: lease(200_000), dynamicApprovals: [pending] }),
 		);
 		const capabilities = transport.capabilities();
-		for (const command of [
-			"accountLogout",
-			"start",
-			"queueAdd",
-			"approvalRespond",
-			"dynamicApprovalRespond",
-		] as const)
+		for (const command of ["approvalRespond", "dynamicApprovalRespond"] as const)
 			expect(capabilities.supportsCommand(command)).toBeFalse();
-		expect(capabilities.canCommand).toBeFalse();
+		for (const command of ["accountLogout", "start", "queueAdd"] as const)
+			expect(capabilities.supportsCommand(command)).toBeTrue();
+		expect(capabilities.canCommand).toBeTrue();
+		expect(capabilities.canRealtime).toBeFalse();
 		expect(capabilities.canRenewLease).toBeFalse();
 		expect(capabilities.canReleaseLease).toBeFalse();
 		const drafts = [

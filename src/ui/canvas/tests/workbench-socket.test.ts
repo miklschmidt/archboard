@@ -80,6 +80,12 @@ interface FakeTransportOptions {
 }
 
 class FakeTransport implements BrowserWorkbenchTransport {
+	captureCommandIntent(): never {
+		throw new Error("Prepared actions are outside this owner.");
+	}
+	executeCommand(): never {
+		throw new Error("Prepared actions are outside this owner.");
+	}
 	readonly attachCount = { value: 0 };
 	readonly subscribeCount = { value: 0 };
 	disposeCount = 0;

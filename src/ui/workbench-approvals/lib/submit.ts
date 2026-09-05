@@ -63,7 +63,13 @@ export async function submitApprovalDecision(
 	if (!built.ok) return Object.freeze({ status: "invalid", errors: built.errors });
 	if (input.target === null) return refused("link_required", "not_delivered", NO_TARGET);
 	try {
-		const result = await input.transport.command(built.draft, input.target);
+		const authority = input.target.authority;
+		if (input.card.kind === "dynamic" && authority === null)
+			return refused("lease_required", "not_delivered", NO_TARGET);
+		const result =
+			input.card.kind === "dynamic"
+				? await input.transport.command(built.draft, authority ?? undefined)
+				: await input.transport.executeCommand(built.draft, input.target);
 		if (result.code !== null) return refused(result.code, result.outcome, result.message);
 		return Object.freeze({
 			status: "sent",

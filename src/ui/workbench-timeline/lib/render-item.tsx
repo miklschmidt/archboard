@@ -290,7 +290,7 @@ function RawDetails({ value }: { readonly value: unknown }) {
 			<summary className="flex min-h-touch-target cursor-pointer items-center text-muted-foreground focus-visible:rounded-hairline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
 				Raw details
 			</summary>
-			<pre className="m-0 max-h-80 overflow-auto font-mono text-technical break-all whitespace-pre-wrap text-muted-foreground">
+			<pre className="max-h-80 m-0 overflow-auto font-mono text-technical break-all whitespace-pre-wrap text-muted-foreground">
 				{details.text}
 				{details.omitted > 0 ? `\n[${details.omitted} characters omitted]` : ""}
 			</pre>
@@ -313,7 +313,7 @@ export function RenderTimelineItem({ item }: { readonly item: TimelineItem }) {
 			data-item-key={item.identity}
 			data-item-type={item.type}
 		>
-			<header className="min-w-0 mb-compact flex items-baseline justify-between gap-control">
+			<header className="mb-compact flex min-w-0 items-baseline justify-between gap-control">
 				<h3 className="m-0 text-kicker font-semibold text-muted-foreground">{item.label}</h3>
 				<span
 					className="min-w-0 truncate font-mono text-technical text-faint-foreground"
