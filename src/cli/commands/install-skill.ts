@@ -404,9 +404,9 @@ async function executeInstallSkill(
 	const setup = input.noDoc
 		? undefined
 		: await writeSetup({
-				repoSpec: input.repo,
-				vaultSpec: input.vault,
-				docSpec: input.doc,
+				...(input.repo === undefined ? {} : { repoSpec: input.repo }),
+				...(input.vault === undefined ? {} : { vaultSpec: input.vault }),
+				...(input.doc === undefined ? {} : { docSpec: input.doc }),
 				targetSpec: explicitRoot ? "dir" : (agentTarget?.targetSpec ?? targetSpec),
 				skill: target,
 				assumeYes: input.yes,
@@ -504,7 +504,13 @@ async function writeSetup(options: {
 		process.env["EXPRESS_SERVER_URL"] && process.env["EXPRESS_SERVER_URL"] !== DEFAULT_CANVAS_URL
 			? process.env["EXPRESS_SERVER_URL"]
 			: undefined;
-	const block = renderBlock({ vault, command, onPath, skill: options.skill, canvasUrl });
+	const block = renderBlock({
+		vault,
+		command,
+		onPath,
+		skill: options.skill,
+		...(canvasUrl === undefined ? {} : { canvasUrl }),
+	});
 
 	fs.mkdirSync(path.dirname(chosen.file), { recursive: true });
 	fs.writeFileSync(chosen.file, applyBlock(existing, block), "utf-8");

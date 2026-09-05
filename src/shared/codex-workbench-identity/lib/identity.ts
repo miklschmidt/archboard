@@ -154,7 +154,7 @@ export type IdentityValidationCode =
 
 export class IdentityValidationError extends Error {
 	readonly code: IdentityValidationCode;
-	readonly domain?: IdentityDomain;
+	readonly domain: IdentityDomain | undefined;
 
 	constructor(code: IdentityValidationCode, message: string, domain?: IdentityDomain) {
 		super(message);
