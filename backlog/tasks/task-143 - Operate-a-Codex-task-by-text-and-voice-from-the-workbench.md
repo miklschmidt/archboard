@@ -1,10 +1,10 @@
 ---
 id: TASK-143
 title: Operate Codex threads by text and voice from the workbench
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-30 11:43'
-updated_date: '2026-09-02 01:44'
+updated_date: '2026-09-05 03:45'
 labels: []
 dependencies:
   - TASK-140
@@ -37,3 +37,9 @@ Deliver one coherent Codex workbench on merged TASK-140 and TASK-144 only after 
 - [ ] #4 TASK-143.08 completes before feature work resumes, redundant tests and validation paths are absent, mandatory startup failures are actionable and leak-free, and final module, process, repository, and serial-browser owners plus clean real text and voice smokes pass.
 - [ ] #5 Each Archboard server owns at most one live or starting package-local codex app-server instance; reload preserves that instance and any crash recovery is a serialized replacement after the prior process group is fully gone.
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Closed at the user’s explicit request after integration of the smoke worktree and completion of the implementation leaves. Validation at 75a1cd22: 2565 module tests, 13 production/system tests, shell/text/controlled-voice browser owners, lint, format, TypeScript and 124 repository checks passed. Current runbook verification additionally passed 147 focused module tests and both workbench browser owners. Real text delivery and SDP negotiation were observed. Full real-audio acceptance remains unverified because the configured default microphone was absent; no unchecked aggregate criterion is relabelled as a proven pass. TASK-150 separately owns strict-lint restoration and the fresh UI rebuild.
+<!-- SECTION:FINAL_SUMMARY:END -->

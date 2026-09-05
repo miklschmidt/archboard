@@ -1,11 +1,11 @@
 ---
 id: TASK-143.04.09
 title: Run the clean-process real voice acceptance smoke
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-09-05 03:44'
+updated_date: '2026-09-05 03:45'
 labels: []
 dependencies:
   - TASK-143.01.15
@@ -56,3 +56,9 @@ Independent review of a2c6e171..30aacfda reported no findings. Reviewer reran th
 
 Runbook reviewed against 75a1cd22 on 2026-09-05: corrected ChatGPT sign-in labels and continuation, frontend build prerequisite, empty pre-message history, current voice controls, reduced-motion meter behavior, microphone default-device recovery and shutdown evidence. Focused module owners: 61 pass (6.21s), 86 pass (0.83s). Production text browser: pass (3.27s); controlled voice browser: pass (2.94s). Earlier real text delivery and SDP negotiation succeeded; actual microphone capture stopped at Requested device not found. Real audio, voice board write, voice queue/callback, spoken approval and audible restart remain unverified.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Closed at the user’s explicit request after merging the reviewed real-voice runbook. Focused module owners (147 tests) and production text/controlled-voice browser owners pass. Real ChatGPT text delivery and SDP negotiation were observed. Full microphone/speaker acceptance was not completed: the configured default input was absent (Requested device not found). Voice board mutation, spoken queue/callback, spoken approval and audible restart remain unverified; their acceptance criteria are intentionally unchecked. The runbook retains these manual checks.
+<!-- SECTION:FINAL_SUMMARY:END -->
