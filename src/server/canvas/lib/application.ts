@@ -268,13 +268,16 @@ function trackCheckoutWork<T>(
 	externalSignal: AbortSignal | undefined,
 	work: (signal: AbortSignal) => Promise<T>,
 ): Promise<T> {
-	if (!acceptingCheckoutWork)
+	if (!acceptingCheckoutWork) {
 		return Promise.reject(new Error(`Canvas checkout work is stopping; ${name} was not admitted.`));
+	}
 	const controller = new AbortController();
 	const cancel = (): void =>
 		controller.abort(externalSignal?.reason ?? new Error(`${name} canceled.`));
 	externalSignal?.addEventListener("abort", cancel, { once: true });
-	if (externalSignal?.aborted) cancel();
+	if (externalSignal?.aborted) {
+		cancel();
+	}
 	const owner: CheckoutWork = { controller, promise: null };
 	activeCheckoutWork.add(owner);
 	const promise = (async (): Promise<T> => {
@@ -310,8 +313,9 @@ async function trackRequestCheckoutWork<T>(
 
 function quiesceCheckoutWork(): void {
 	acceptingCheckoutWork = false;
-	for (const owner of activeCheckoutWork)
+	for (const owner of activeCheckoutWork) {
 		owner.controller.abort(new Error("Canvas checkout work stopped."));
+	}
 }
 
 async function stopCheckoutWork(): Promise<void> {
@@ -326,7 +330,9 @@ function trackMutationWork<T>(
 	work: (signal: AbortSignal) => Promise<T> | T,
 ): Promise<T> {
 	const lease = admittedMutations.get(req);
-	if (!lease) return Promise.reject(new Error(`${req.method} ${req.path} has no mutation lease.`));
+	if (!lease) {
+		return Promise.reject(new Error(`${req.method} ${req.path} has no mutation lease.`));
+	}
 	return lease.track(name, work);
 }
 
@@ -344,7 +350,9 @@ function asyncEndpoint(
 		void trackMutationWork(req, `${req.method} ${req.path} handler`, (signal) =>
 			handler(req, res, next, signal),
 		).catch((error) => {
-			if (req.aborted || res.destroyed) return;
+			if (req.aborted || res.destroyed) {
+				return;
+			}
 			setImmediate(next, error);
 		});
 	};
@@ -388,7 +396,9 @@ app.use(cors());
 // lease so disconnecting the response cannot make unfinished mutation work
 // disappear from shutdown's authoritative drain.
 app.use((req: Request, res: Response, next: NextFunction) => {
-	if (req.method === "GET" || req.method === "HEAD" || !req.path.startsWith("/api/")) return next();
+	if (req.method === "GET" || req.method === "HEAD" || !req.path.startsWith("/api/")) {
+		return next();
+	}
 	const name = `${req.method} ${req.path}`;
 	const lease = mutationAdmission.admit(name);
 	if (lease === null) {
@@ -406,8 +416,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	req.once("aborted", () => lease.abort(new Error(`${name} request body was aborted.`)));
 	res.once("finish", lease.finish);
 	res.once("close", () => {
-		if (res.writableFinished) lease.finish();
-		else lease.abort(new Error(`${name} response disconnected.`));
+		if (res.writableFinished) {
+			lease.finish();
+		} else {
+			lease.abort(new Error(`${name} response disconnected.`));
+		}
 	});
 	next();
 });
@@ -443,7 +456,9 @@ function codeBindingsInValue(value: unknown): CodeBinding[] {
 	const seen = new Set<object>();
 	while (pending.length > 0) {
 		const candidate = pending.pop();
-		if (!candidate || typeof candidate !== "object" || seen.has(candidate)) continue;
+		if (!candidate || typeof candidate !== "object" || seen.has(candidate)) {
+			continue;
+		}
 		seen.add(candidate);
 		if (!Array.isArray(candidate)) {
 			const custom = (candidate as Record<string, unknown>)["customData"];
@@ -453,7 +468,9 @@ function codeBindingsInValue(value: unknown): CodeBinding[] {
 					const parsed = CodeBindingSchema.safeParse(
 						(archboard as Record<string, unknown>)["binding"],
 					);
-					if (parsed.success) bindings.push(parsed.data);
+					if (parsed.success) {
+						bindings.push(parsed.data);
+					}
 				}
 			}
 		}
@@ -469,12 +486,16 @@ interface PreparedBoardOpen {
 }
 
 function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
-	if (req.method !== "POST" || req.path !== "/api/boards/open") return [];
+	if (req.method !== "POST" || req.path !== "/api/boards/open") {
+		return [];
+	}
 	const parsed = BoardAddressSchema.extend({
 		reload: z.boolean().optional(),
 		pane: z.string().optional(),
 	}).safeParse(req.body ?? {});
-	if (!parsed.success) return [];
+	if (!parsed.success) {
+		return [];
+	}
 	try {
 		const identity = identityFromParams({
 			board: parsed.data.board,
@@ -482,7 +503,9 @@ function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
 			...(parsed.data.level === undefined ? {} : { level: parsed.data.level }),
 		});
 		const key = boardKey(identity);
-		if (boards.has(key) && !parsed.data.reload) return [];
+		if (boards.has(key) && !parsed.data.reload) {
+			return [];
+		}
 		const resolution = resolveBoardNote(key, "Opening a board");
 		res.locals["preparedBoardOpen"] = {
 			key,
@@ -523,22 +546,28 @@ async function prepareCheckoutSnapshot(
 	res: Response,
 	next: NextFunction,
 ): Promise<void> {
-	if (!req.path.startsWith("/api/")) return next();
+	if (!req.path.startsWith("/api/")) {
+		return next();
+	}
 	if (
 		req.path === "/api/render/board" ||
 		req.path === "/api/export/findings" ||
 		req.path === "/api/elements/from-mermaid"
-	)
+	) {
 		return next();
-	if (req.method !== "GET" && PROCESS_FREE_HUMAN_ROUTES.has(req.path)) return next();
+	}
+	if (req.method !== "GET" && PROCESS_FREE_HUMAN_ROUTES.has(req.path)) {
+		return next();
+	}
 	if (
 		req.method === "POST" &&
 		req.path === "/api/elements/changes" &&
 		(!req.body ||
 			typeof req.body !== "object" ||
 			(req.body as Record<string, unknown>)["origin"] !== "agent")
-	)
+	) {
 		return next();
+	}
 	if (req.path.startsWith("/api/settings/opener") || req.path === "/api/code-targets/open") {
 		return next();
 	}
@@ -566,7 +595,9 @@ async function prepareCheckoutSnapshot(
 		for (;;) {
 			res.locals["checkoutSnapshot"] = await capture(installedBindings);
 			const refreshed = codeBindingsOf(readBoardContent(installed).elements.values());
-			if (JSON.stringify(refreshed) === JSON.stringify(installedBindings)) break;
+			if (JSON.stringify(refreshed) === JSON.stringify(installedBindings)) {
+				break;
+			}
 			installedBindings = refreshed;
 		}
 	}
@@ -577,7 +608,9 @@ app.use(createCodeOpenerPreguard());
 
 const globalJson = express.json({ limit: "10mb" });
 app.use((req: Request, res: Response, next: NextFunction) => {
-	if (isCodeOpenerBodyRoute(req.method, req.path)) return next();
+	if (isCodeOpenerBodyRoute(req.method, req.path)) {
+		return next();
+	}
 	globalJson(req, res, next);
 });
 
@@ -603,7 +636,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 			: req.body && typeof req.body === "object" && typeof req.body.board === "string"
 				? req.body.board
 				: "";
-	if (!asked.trim()) return next();
+	if (!asked.trim()) {
+		return next();
+	}
 	const key = normalizeBoardKey(asked);
 	const send = res.json.bind(res);
 	res.json = (body: unknown) => {
@@ -714,7 +749,9 @@ function boardsOnScreen(): Array<{ paneId: string; place: string; board: string 
 function socketsFor(clientId: string): WebSocket[] {
 	const found: WebSocket[] = [];
 	clientIds.forEach((id, socket) => {
-		if (id === clientId && socket.readyState === WebSocket.OPEN) found.push(socket);
+		if (id === clientId && socket.readyState === WebSocket.OPEN) {
+			found.push(socket);
+		}
 	});
 	return found;
 }
@@ -915,7 +952,9 @@ function broadcastBoardless(message: WebSocketMessage): void {
 	const data = JSON.stringify(message);
 	clients.forEach((client) => {
 		try {
-			if (client.readyState === WebSocket.OPEN) client.send(data);
+			if (client.readyState === WebSocket.OPEN) {
+				client.send(data);
+			}
 		} catch {
 			logger.warn("Failed to send to client, removing");
 			clients.delete(client);
@@ -944,8 +983,9 @@ function boardElementCount(board: BoardState): number {
 	} catch (error) {
 		// A malformed persisted scratch note is still an open board address. Keep
 		// board listings and health usable while its pane carries the actual error.
-		if (error instanceof RenderGeometryError || error instanceof NativeElementValidationError)
+		if (error instanceof RenderGeometryError || error instanceof NativeElementValidationError) {
 			return 0;
+		}
 		throw error;
 	}
 }
@@ -962,7 +1002,9 @@ function releaseBoardHold(
 	outcome: "reload" | "overwrite" | "elsewhere",
 ): HoldReport | null {
 	const hold = clearHold(key);
-	if (!hold) return null;
+	if (!hold) {
+		return null;
+	}
 	const report = reportHold(key, hold);
 	logger.info(`Board "${key}" is saving again (${outcome}), after ${hold.writes} held change(s).`);
 	broadcast({ type: "board_released", hold: report, outcome } as WebSocketMessage, key);
@@ -989,7 +1031,9 @@ function boardTargetFromRequest(req: Request, what?: string): BoardWriteTarget {
 	const prepared = (req as Request & { resolvedBoardWrite?: ResolvedBoard }).resolvedBoardWrite;
 	const asked = boardOfRequest(req);
 	const key = asked ? boardKey(parseBoardKey(asked)) : "";
-	if (prepared && prepared.key === key) return { key: prepared.key, board: prepared.board };
+	if (prepared && prepared.key === key) {
+		return { key: prepared.key, board: prepared.board };
+	}
 	const { key: resolvedKey, board } = resolveInstalledBoard(asked, what, { write: true });
 	return { key: resolvedKey, board };
 }
@@ -1008,22 +1052,40 @@ function boardOfRequest(req: Request): string | undefined {
 // A board that was not named, or whose address cannot resolve, is a client
 // error rather than a server fault.
 function boardErrorStatus(error: unknown): number {
-	if (error instanceof z.ZodError) return 400;
-	if (error instanceof BoardRequiredError) return error.status;
-	if (error instanceof BoardResolutionError) return error.status;
-	if (error instanceof BoardMutationError) return error.status;
-	if (error instanceof BoardRendererError) return 503;
-	if (error instanceof RenderGeometryError) return 400;
-	if (error instanceof NativeElementValidationError) return 400;
+	if (error instanceof z.ZodError) {
+		return 400;
+	}
+	if (error instanceof BoardRequiredError) {
+		return error.status;
+	}
+	if (error instanceof BoardResolutionError) {
+		return error.status;
+	}
+	if (error instanceof BoardMutationError) {
+		return error.status;
+	}
+	if (error instanceof BoardRendererError) {
+		return 503;
+	}
+	if (error instanceof RenderGeometryError) {
+		return 400;
+	}
+	if (error instanceof NativeElementValidationError) {
+		return 400;
+	}
 	// A refused write is not a fault, it is the other outcome the write always
 	// had (ADR 0006). Every route that writes can now produce it, because every
 	// write goes to the note (ADR 0015), so it is answered here once rather than
 	// in each of them.
-	if (error instanceof BoardWriteConflictError) return 409;
+	if (error instanceof BoardWriteConflictError) {
+		return 409;
+	}
 	// Somebody else is writing this board and did not finish inside the wait
 	// (ADR 0016). The same 409 as a conflict, because it is the same shape of
 	// answer: the write did not happen and here is what stood in its way.
-	if (error instanceof BoardHeldError) return 409;
+	if (error instanceof BoardHeldError) {
+		return 409;
+	}
 	return /is not open|Invalid board name|Invalid variant|Invalid level|No vault configured|outside the vault|No pane called|matches \d+ panes|No pane is open|needs a pane/.test(
 		(error as Error).message,
 	)
@@ -1037,7 +1099,9 @@ function refusalDocument(
 	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
 ): { document: ServerElement[]; version: number | null } {
 	const state = boards.get(board);
-	if (!state) throw new Error(`Board "${board}" is not open`);
+	if (!state) {
+		throw new Error(`Board "${board}" is not open`);
+	}
 	const content = readBoardContent(state);
 	return {
 		document: presentElements(content.elements.values(), { boardKey: board, checkoutSnapshot }),
@@ -1088,13 +1152,19 @@ function boardErrorBody(
 			...document,
 		};
 	}
-	if (error instanceof BoardRendererError) return { ...base, code: error.code };
-	if (error instanceof BoardMutationError && error.code) return { ...base, code: error.code };
+	if (error instanceof BoardRendererError) {
+		return { ...base, code: error.code };
+	}
+	if (error instanceof BoardMutationError && error.code) {
+		return { ...base, code: error.code };
+	}
 	return base;
 }
 
 function answerBoardError(res: Response, error: unknown, what?: string): void {
-	if (what) logger.error(what, error);
+	if (what) {
+		logger.error(what, error);
+	}
 	res.status(boardErrorStatus(error)).json(boardErrorBody(error, checkoutSnapshotFor(res)));
 }
 
@@ -1142,7 +1212,9 @@ function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void
  */
 function boardForNewPane(clientId: string): string {
 	const remembered = paneBoards.get(clientId);
-	if (remembered && boards.has(remembered)) return remembered;
+	if (remembered && boards.has(remembered)) {
+		return remembered;
+	}
 	const existing = Array.from(panes.values());
 	const reference =
 		existing.find((pane) => pane.primary) ?? existing.find((pane) => pane.focused) ?? existing[0];
@@ -1172,12 +1244,14 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		// Exact Codex cleanup is safe for a replaced socket. Client-id keyed canvas
 		// state is not: a replacement may already own that pane identity.
 		if (closingId) {
-			if (latestSocketAcceptanceByClient.get(closingId) === acceptanceToken)
+			if (latestSocketAcceptanceByClient.get(closingId) === acceptanceToken) {
 				latestSocketAcceptanceByClient.delete(closingId);
-			if (closingCodexInstance !== undefined)
+			}
+			if (closingCodexInstance !== undefined) {
 				void wiring.codex
 					.closeBrowser?.(closingCodexInstance, closingId)
 					.catch((error) => logger.error("Codex browser cleanup failed:", error));
+			}
 			if (currentSocketsByClient.get(closingId) !== ws) {
 				syncLockWatch();
 				logger.info(`Replaced WebSocket connection closed (client ${closingId})`);
@@ -1186,7 +1260,9 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 			currentSocketsByClient.delete(closingId);
 			selectionState.byClient.delete(closingId);
 			const held = paneBoards.get(closingId);
-			if (held) releaseHold(held, closingId);
+			if (held) {
+				releaseHold(held, closingId);
+			}
 			panes.delete(closingId);
 			notePaneClosed(closingId);
 		}
@@ -1219,8 +1295,9 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		snapshotContent = readBoardContent(board);
 		renderError = null;
 	} catch (error) {
-		if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError))
+		if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError)) {
 			throw error;
+		}
 		snapshotContent = emptyContent();
 		renderError = error;
 	}
@@ -1233,7 +1310,9 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 			checkoutController.signal,
 			(signal) => snapshotCheckoutAccess({ signal, bindings }),
 		);
-		if (ws.readyState !== WebSocket.OPEN) return;
+		if (ws.readyState !== WebSocket.OPEN) {
+			return;
+		}
 		// Reads and broadcasts share this event loop. Once the binding set is
 		// stable across the async checkout capture, read, send, authority transfer,
 		// and broadcast admission form one synchronous sequence with no lost delta.
@@ -1241,13 +1320,18 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 			content = readBoardContent(board);
 			renderError = null;
 		} catch (error) {
-			if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError))
+			if (
+				!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError)
+			) {
 				throw error;
+			}
 			content = emptyContent();
 			renderError = error;
 		}
 		const refreshedBindings = codeBindingsOf(content.elements.values());
-		if (JSON.stringify(refreshedBindings) === JSON.stringify(bindings)) break;
+		if (JSON.stringify(refreshedBindings) === JSON.stringify(bindings)) {
+			break;
+		}
 		bindings = refreshedBindings;
 	}
 	const initialMessage: InitialElementsMessage & {
@@ -1270,7 +1354,9 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 			reject(error);
 		}
 	});
-	if (ws.readyState !== WebSocket.OPEN) return;
+	if (ws.readyState !== WebSocket.OPEN) {
+		return;
+	}
 	if (clientId) {
 		if (latestSocketAcceptanceByClient.get(clientId) !== acceptanceToken) {
 			ws.terminate();
@@ -1279,7 +1365,9 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		const previous = currentSocketsByClient.get(clientId);
 		paneBoards.set(clientId, startingKey);
 		currentSocketsByClient.set(clientId, ws);
-		if (previous !== undefined && previous !== ws) previous.terminate();
+		if (previous !== undefined && previous !== ws) {
+			previous.terminate();
+		}
 	}
 	// Ownership is registered before the checkout await, but content admission
 	// begins only after the initial scene is on the wire. A concurrent delta can
@@ -1310,7 +1398,9 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 	// And where its lock stands. A broadcast only reaches panes that were already
 	// connected, so a tab that has just arrived — or come back from a dropped
 	// socket — is told outright rather than left assuming the board is free.
-	if (clientId) tellPaneAboutLock(clientId, startingKey);
+	if (clientId) {
+		tellPaneAboutLock(clientId, startingKey);
+	}
 
 	const codexTransport = createCanvasCodexBrowserSocketSend(ws);
 	ws.on("message", (raw) => {
@@ -1325,8 +1415,9 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 			message === null ||
 			!("type" in message) ||
 			message.type !== "codex_workbench_request"
-		)
+		) {
 			return;
+		}
 		const requestId =
 			"requestId" in message && typeof message.requestId === "string" ? message.requestId : null;
 		const action =
@@ -1432,7 +1523,9 @@ function holderFromRequest(req: Request, board: string): { id: string; kind: "hu
 		body["origin"] === "agent" || typeof body["clientId"] !== "string" ? "agent" : "human";
 	if (kind === "agent") {
 		const claimed = claimWriterId(board);
-		if (claimed) return { id: claimed, kind };
+		if (claimed) {
+			return { id: claimed, kind };
+		}
 	}
 	const id =
 		typeof body["clientId"] === "string" && body["clientId"]
@@ -1457,7 +1550,9 @@ function holderFromRequest(req: Request, board: string): { id: string; kind: "hu
  */
 function refuseRevokedClaim(res: Response, board: string): boolean {
 	const lost = takeClaimRevocation(board);
-	if (!lost) return false;
+	if (!lost) {
+		return false;
+	}
 	const who = lost.by?.kind === "human" ? "The person at the canvas" : "Somebody";
 	res.status(409).json({
 		success: false,
@@ -1486,34 +1581,42 @@ interface PreparedMermaidConversion {
 const PREPARED_MERMAID = Symbol("prepared-mermaid");
 
 function freezeObjectGraph(value: unknown, seen = new Set<object>()): void {
-	if (!value || typeof value !== "object" || seen.has(value)) return;
+	if (!value || typeof value !== "object" || seen.has(value)) {
+		return;
+	}
 	seen.add(value);
-	for (const key of Reflect.ownKeys(value)) freezeObjectGraph(Reflect.get(value, key), seen);
+	for (const key of Reflect.ownKeys(value)) {
+		freezeObjectGraph(Reflect.get(value, key), seen);
+	}
 	Object.freeze(value);
 }
 
 function canonicalMermaidResult(rendered: MermaidRenderJobResult): PreparedMermaidConversion {
-	if (rendered.error)
+	if (rendered.error) {
 		throw new BoardMutationError(
 			422,
 			`Mermaid conversion failed: ${rendered.error}`,
 			"MERMAID_INVALID",
 		);
-	if (rendered.elements.length === 0)
+	}
+	if (rendered.elements.length === 0) {
 		throw new BoardMutationError(
 			422,
 			"Mermaid conversion returned no elements for non-empty source. The board was not changed.",
 			"MERMAID_EMPTY_RESULT",
 		);
+	}
 	const ids = new Set<string>();
 	for (const element of rendered.elements) {
-		if (typeof element.id !== "string" || element.id.length === 0)
+		if (typeof element.id !== "string" || element.id.length === 0) {
 			throw new BoardMutationError(422, "Mermaid conversion returned an element without an id.");
-		if (ids.has(element.id))
+		}
+		if (ids.has(element.id)) {
 			throw new BoardMutationError(
 				422,
 				`Mermaid conversion returned duplicate element id ${JSON.stringify(element.id)}.`,
 			);
+		}
 		ids.add(element.id);
 	}
 	const prepared: PreparedMermaidConversion = {
@@ -1538,8 +1641,9 @@ function isPreparedMermaid(value: unknown): value is PreparedMermaidConversion {
 
 function preparedMermaidOf(req: Request): PreparedMermaidConversion {
 	const prepared: unknown = Reflect.get(req, PREPARED_MERMAID);
-	if (!isPreparedMermaid(prepared))
+	if (!isPreparedMermaid(prepared)) {
 		throw new Error("Mermaid conversion reached its write without a prepared renderer result.");
+	}
 	return prepared;
 }
 
@@ -1547,7 +1651,9 @@ function preparedMermaidOf(req: Request): PreparedMermaidConversion {
 // let the ordinary write middleware take the board and map ids against its
 // current under-lock note.
 app.use((req: Request, res: Response, next: NextFunction) => {
-	if (req.method !== "POST" || req.path !== "/api/elements/from-mermaid") return next();
+	if (req.method !== "POST" || req.path !== "/api/elements/from-mermaid") {
+		return next();
+	}
 	void trackMutationWork(req, `${req.method} ${req.path} renderer`, async (signal) => {
 		try {
 			const { mermaidDiagram, config } = req.body ?? {};
@@ -1571,8 +1677,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 				signal,
 			);
 			signal.throwIfAborted();
-			if (converted.kind !== "mermaid")
+			if (converted.kind !== "mermaid") {
 				throw new BoardRendererError("Mermaid renderer returned the wrong result shape.", "result");
+			}
 			Object.defineProperty(req, PREPARED_MERMAID, {
 				value: canonicalMermaidResult(converted),
 				configurable: false,
@@ -1581,26 +1688,38 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 			signal.throwIfAborted();
 			next();
 		} catch (error) {
-			if (req.aborted || res.destroyed) return;
+			if (req.aborted || res.destroyed) {
+				return;
+			}
 			answerBoardError(res, error, "Error preparing Mermaid diagram:");
 		}
 	}).catch((error) => {
-		if (req.aborted || res.destroyed) return;
+		if (req.aborted || res.destroyed) {
+			return;
+		}
 		setImmediate(next, error);
 	});
 });
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-	if (req.method === "GET" || req.method === "HEAD") return next();
-	if (!req.path.startsWith("/api/")) return next();
+	if (req.method === "GET" || req.method === "HEAD") {
+		return next();
+	}
+	if (!req.path.startsWith("/api/")) {
+		return next();
+	}
 	// A route that is not a board write writes no note, so there is no version
 	// for a precondition to be about either.
-	if (NOT_A_BOARD_WRITE.some(([pattern]) => pattern.test(req.path))) return next();
+	if (NOT_A_BOARD_WRITE.some(([pattern]) => pattern.test(req.path))) {
+		return next();
+	}
 
 	let key: string;
 	try {
 		const asked = boardOfRequest(req);
-		if (!asked) throw new BoardRequiredError([], "A write");
+		if (!asked) {
+			throw new BoardRequiredError([], "A write");
+		}
 		key = boardKey(parseBoardKey(asked));
 	} catch {
 		// No board named, or the address itself is malformed. The handler refuses
@@ -1613,7 +1732,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	// rather than a note attached to a write that went through.
 	const writer = holderFromRequest(req, key);
 	res.locals["boardWriterKind"] = writer.kind;
-	if (writer.kind === "agent" && refuseRevokedClaim(res, key)) return;
+	if (writer.kind === "agent" && refuseRevokedClaim(res, key)) {
+		return;
+	}
 
 	// Which version this write says it is against (TASK-091). One that is not a
 	// number is refused before the board is taken: it is a malformed request
@@ -1633,8 +1754,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	// on success, beside the `doing` announcement and for the same reason. The
 	// three write-boundary refusals carry their own current document and version.
 	res.on("finish", () => {
-		if (res.statusCode >= 400) return;
-		if (writer.kind !== "agent" || claimWriterId(key) !== writer.id) return;
+		if (res.statusCode >= 400) {
+			return;
+		}
+		if (writer.kind !== "agent" || claimWriterId(key) !== writer.id) {
+			return;
+		}
 		if ("writtenBoardVersion" in res.locals) {
 			rememberVersion(writer.id, res.locals["writtenBoardVersion"] as number | null);
 		} else {
@@ -1649,7 +1774,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	let said: string | null = null;
 	if (writer.kind === "agent") {
 		const check = checkDoing(req.query["doing"]);
-		if (!check.ok) return refuseUndescribedWrite(res, key, req.path, check.problem);
+		if (!check.ok) {
+			return refuseUndescribedWrite(res, key, req.path, check.problem);
+		}
 		said = check.doing;
 	}
 
@@ -1658,7 +1785,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	if (said !== null) {
 		const doing = said;
 		res.on("finish", () => {
-			if (res.statusCode >= 400) return;
+			if (res.statusCode >= 400) {
+				return;
+			}
 			announceDoing(key, {
 				doing,
 				at: new Date().toISOString(),
@@ -1683,7 +1812,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 						: {}),
 				});
 		} catch (error) {
-			if (hold.created) releaseHold(key, hold.holder.id);
+			if (hold.created) {
+				releaseHold(key, hold.holder.id);
+			}
 			answerBoardError(res, error);
 			return;
 		}
@@ -1712,13 +1843,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 				versionConflict: conflict,
 				...refusalDocument(key, checkoutSnapshotFor(res)),
 			});
-			if (hold.created) releaseHold(key, hold.holder.id);
+			if (hold.created) {
+				releaseHold(key, hold.holder.id);
+			}
 			return;
 		}
 		if (hold.created) {
 			let given = false;
 			const give = (): void => {
-				if (given) return;
+				if (given) {
+					return;
+				}
 				given = true;
 				releaseHold(key, hold.holder.id);
 			};
@@ -1730,7 +1865,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 		}
 		next();
 	}).catch((error) => {
-		if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) return;
+		if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) {
+			return;
+		}
 		answerBoardError(res, error);
 	});
 });
@@ -1796,7 +1933,9 @@ app.post("/api/boards/hold", (req: Request, res: Response) => {
 				res.json({ success: true, board: key, holder: hold.holder, created: hold.created }),
 			)
 			.catch((error) => {
-				if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) return;
+				if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) {
+					return;
+				}
 				answerBoardError(res, error);
 			});
 	} catch (error) {
@@ -1864,7 +2003,9 @@ app.post("/api/boards/claim", (req: Request, res: Response) => {
 		}
 		// An agent that lost the board hears that before it is given another one,
 		// or it would claim its way straight back onto a board somebody just took.
-		if (refuseRevokedClaim(res, key)) return;
+		if (refuseRevokedClaim(res, key)) {
+			return;
+		}
 		const reason = body.reason.trim();
 
 		const forMs =
@@ -1889,7 +2030,9 @@ app.post("/api/boards/claim", (req: Request, res: Response) => {
 					: null;
 			res.json({ success: true, board: key, claim, created, version });
 		}).catch((error) => {
-			if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) return;
+			if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) {
+				return;
+			}
 			answerBoardError(res, error);
 		});
 	} catch (error) {
@@ -2000,8 +2143,9 @@ app.post("/api/bridges", (req: Request, res: Response) => {
 							: {}),
 					});
 				} catch (error) {
-					if (error instanceof BridgeRefusal)
+					if (error instanceof BridgeRefusal) {
 						throw new BoardMutationError(400, error.message, error.code);
+					}
 					throw error;
 				}
 				return {
@@ -2047,8 +2191,9 @@ app.delete("/api/bridges/:id", (req: Request, res: Response) => {
 				try {
 					deleted = planBridgeRemoval([...content.elements.values()], bridgeId);
 				} catch (error) {
-					if (error instanceof BridgeRefusal)
+					if (error instanceof BridgeRefusal) {
 						throw new BoardMutationError(400, error.message, error.code);
+					}
 					throw error;
 				}
 				return {
@@ -2136,7 +2281,9 @@ app.put("/api/elements/:id", (req: Request, res: Response) => {
 
 function clearSelectionForBoard(boardKeyToClear: string): void {
 	for (const [clientId] of selectionState.byClient) {
-		if (paneBoards.get(clientId) === boardKeyToClear) selectionState.byClient.delete(clientId);
+		if (paneBoards.get(clientId) === boardKeyToClear) {
+			selectionState.byClient.delete(clientId);
+		}
 	}
 	const owner = selectionState.current?.clientId;
 	if (owner && paneBoards.get(owner) === boardKeyToClear) {
@@ -2371,34 +2518,39 @@ function mermaidElementInput(
 	const used = new Set(existingIds);
 	const ids = new Map<string, string>();
 	for (const element of elements) {
-		if (typeof element.id !== "string" || element.id.length === 0)
+		if (typeof element.id !== "string" || element.id.length === 0) {
 			throw new BoardMutationError(422, "Mermaid conversion returned an element without an id.");
+		}
 		const id = derivedId(`mermaid:${element.id}`, used);
 		used.add(id);
 		ids.set(element.id, id);
 	}
 	const endpoint = (value: unknown): { id: string } | undefined => {
-		if (!value || typeof value !== "object" || typeof Reflect.get(value, "id") !== "string")
+		if (!value || typeof value !== "object" || typeof Reflect.get(value, "id") !== "string") {
 			return undefined;
+		}
 		const sourceId = Reflect.get(value, "id");
 		const id = ids.get(sourceId);
-		if (!id)
+		if (!id) {
 			throw new BoardMutationError(
 				422,
 				`Mermaid conversion referred to missing endpoint ${JSON.stringify(sourceId)}.`,
 			);
+		}
 		return { id };
 	};
 	return elements.map((element) => {
 		const sourceId = element.id;
-		if (typeof sourceId !== "string")
+		if (typeof sourceId !== "string") {
 			throw new BoardMutationError(422, "Mermaid conversion returned an element without an id.");
+		}
 		const id = ids.get(sourceId);
-		if (!id)
+		if (!id) {
 			throw new BoardMutationError(
 				422,
 				`Mermaid conversion lost element id ${JSON.stringify(sourceId)} before the write.`,
 			);
+		}
 		const start = "start" in element ? endpoint(element.start) : undefined;
 		const end = "end" in element ? endpoint(element.end) : undefined;
 		return AgentElementInputSchema.parse({
@@ -2526,7 +2678,9 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 			ElementChangesSchema.parse(req.body ?? {});
 		const presentationLinks = new Map(
 			upserts.flatMap((upsert) => {
-				if (typeof upsert["id"] !== "string") return [];
+				if (typeof upsert["id"] !== "string") {
+					return [];
+				}
 				const context = presentationContextFromElement(upsert, source.key);
 				return context ? ([[upsert["id"], context]] as const) : [];
 			}),
@@ -2641,7 +2795,9 @@ app.get("/api/changes", (req: Request, res: Response) => {
 		const coalesce = req.query["coalesce"] === "1" || req.query["coalesce"] === "true";
 		// A caller reading the feed wants the board as it is, not as it was 1.2s
 		// ago, so pending settle work is completed before answering.
-		if (req.query["settle"] !== "0") changeFeed.settle(board);
+		if (req.query["settle"] !== "0") {
+			changeFeed.settle(board);
+		}
 
 		// A cursor ahead of the feed's own is not "nothing has happened": it came
 		// from a previous canvas process, since the board lives in memory and the
@@ -2763,8 +2919,11 @@ app.post("/api/selection", (req: Request, res: Response) => {
 	// Per pane, an empty selection is a fact about that pane rather than the
 	// absence of one: the human deselected *there* while another pane may still
 	// hold something.
-	if (elementIds.length === 0) selectionState.byClient.delete(clientId);
-	else selectionState.byClient.set(clientId, { elementIds, clientId, at });
+	if (elementIds.length === 0) {
+		selectionState.byClient.delete(clientId);
+	} else {
+		selectionState.byClient.set(clientId, { elementIds, clientId, at });
+	}
 
 	logger.info(`Selection from ${clientId}: ${elementIds.length} element(s)`);
 	broadcastSelection();
@@ -2781,7 +2940,9 @@ app.post("/api/selection", (req: Request, res: Response) => {
 app.get("/api/selection", (req: Request, res: Response) => {
 	try {
 		const pane = paneFromRequest(req.query["pane"]);
-		if (!pane) return res.status(503).json(noBrowserBody("Reading a live selection"));
+		if (!pane) {
+			return res.status(503).json(noBrowserBody("Reading a live selection"));
+		}
 		const key = paneBoards.get(pane.clientId) ?? pane.board;
 		const board = boards.get(key);
 		const report = buildSelectionReport(
@@ -2875,7 +3036,9 @@ app.post("/api/panes", (req: Request, res: Response) => {
 	panes.set(registration.clientId, registration);
 	// A pane that was asked for has arrived. Registration is the acknowledgement
 	// — see the pane layout section below for why it is that and not a reply.
-	if (isNew) notePaneOpened(registration);
+	if (isNew) {
+		notePaneOpened(registration);
+	}
 	res.json({ success: true, registered: true, paneCount: panes.size, staleFrontend });
 
 	return undefined;
@@ -2936,7 +3099,9 @@ const pendingPaneCloses = new Set<PendingPaneClose>();
 
 function notePaneOpened(registration: PaneRegistration): void {
 	for (const pending of pendingPaneOpens) {
-		if (pending.known.has(registration.clientId)) continue;
+		if (pending.known.has(registration.clientId)) {
+			continue;
+		}
 		pendingPaneOpens.delete(pending);
 		clearTimeout(pending.timeout);
 		pending.resolve(registration);
@@ -2945,7 +3110,9 @@ function notePaneOpened(registration: PaneRegistration): void {
 
 function notePaneClosed(clientId: string): void {
 	for (const pending of pendingPaneCloses) {
-		if (pending.clientId !== clientId) continue;
+		if (pending.clientId !== clientId) {
+			continue;
+		}
 		pendingPaneCloses.delete(pending);
 		clearTimeout(pending.timeout);
 		pending.resolve();
@@ -2974,7 +3141,9 @@ async function settleAfterLayout(askedAt: string): Promise<void> {
 	const deadline = Date.now() + PANE_SETTLE_CAP_MS;
 	while (Date.now() < deadline) {
 		const all = Array.from(panes.values());
-		if (all.length > 0 && all.every((pane) => pane.at > askedAt)) return;
+		if (all.length > 0 && all.every((pane) => pane.at > askedAt)) {
+			return;
+		}
 		await sleep(50);
 	}
 }
@@ -2988,7 +3157,9 @@ app.post(
 	"/api/panes/open",
 	asyncEndpoint(async (_req: Request, res: Response) => {
 		const answering = primaryPane();
-		if (!answering) return res.status(503).json(noBrowserBody("Opening a pane"));
+		if (!answering) {
+			return res.status(503).json(noBrowserBody("Opening a pane"));
+		}
 
 		if (panes.size >= MAX_PANES) {
 			const showing = panesInOrder(Array.from(panes.values()))
@@ -3060,7 +3231,9 @@ app.post(
 		const spec = typeof req.body?.pane === "string" ? req.body.pane.trim() : "";
 		const registrations = Array.from(panes.values());
 
-		if (registrations.length === 0) return res.status(503).json(noBrowserBody("Closing a pane"));
+		if (registrations.length === 0) {
+			return res.status(503).json(noBrowserBody("Closing a pane"));
+		}
 
 		if (registrations.length === 1) {
 			return res.status(409).json({
@@ -3167,7 +3340,9 @@ app.post("/api/files", (req: Request, res: Response) => {
 				const accepted = fileList
 					.map((file) => usableEmbeddedFile(file))
 					.filter((file): file is ExcalidrawFile => file !== null);
-				for (const file of accepted) content.files.set(file.id, file);
+				for (const file of accepted) {
+					content.files.set(file.id, file);
+				}
 				// A note keeps only images an element on this board draws (TASK-060).
 				const drawn = drawnFileIds(content.elements.values());
 				const orphaned = accepted.filter((file) => !drawn.has(file.id)).map((file) => file.id);
@@ -3239,19 +3414,21 @@ app.post(
 	asyncEndpoint(async (req: Request, res: Response, _next: NextFunction, signal: AbortSignal) => {
 		try {
 			const asked = boardOfRequest(req);
-			if (!asked)
+			if (!asked) {
 				throw new BoardRequiredError(
 					listBoards().map((entry) => entry.key),
 					"Rendering a board",
 				);
+			}
 			const options = boardRenderRequestSchema.parse(req.body ?? {});
 			const snapshot = readBoardInspectionSnapshot(asked);
-			if (!snapshot.renderScene)
+			if (!snapshot.renderScene) {
 				throw new BoardMutationError(
 					422,
 					`Board "${snapshot.board}" has persisted elements that cannot be rendered. Correct the note and try again.`,
 					"BOARD_NOT_RENDERABLE",
 				);
+			}
 			const rendered = await boardRenderer.execute(
 				{
 					kind: "render",
@@ -3270,8 +3447,9 @@ app.post(
 				signal,
 			);
 			if (rendered.kind !== "render" || rendered.outputs.length !== 1) {
-				if (rendered.kind === "render" && rendered.error)
+				if (rendered.kind === "render" && rendered.error) {
 					throw new BoardMutationError(422, rendered.error, "BOARD_NOT_RENDERABLE");
+				}
 				throw new BoardRendererError("Board renderer returned the wrong result shape.", "result");
 			}
 			const output = rendered.outputs[0]!;
@@ -3317,7 +3495,9 @@ app.post(
 				report,
 				sourceRenderable: snapshot.renderScene !== null,
 			};
-			if (!snapshot.renderScene || requests.length === 0) return res.json({ ...base, results: [] });
+			if (!snapshot.renderScene || requests.length === 0) {
+				return res.json({ ...base, results: [] });
+			}
 			const rendered = await boardRenderer.execute(
 				{
 					kind: "render",
@@ -3336,15 +3516,17 @@ app.post(
 				},
 				signal,
 			);
-			if (rendered.kind !== "render")
+			if (rendered.kind !== "render") {
 				throw new BoardRendererError("Finding renderer returned the wrong result shape.", "result");
-			if (rendered.error)
+			}
+			if (rendered.error) {
 				return res.json({
 					...base,
 					sourceRenderable: false,
 					results: [],
 					error: rendered.error,
 				});
+			}
 			const byId = new Map(rendered.outputs.map((output) => [output.id, output]));
 			const results = requests.map(({ findingIndex }) => {
 				const output = byId.get(String(findingIndex));
@@ -3352,9 +3534,13 @@ app.post(
 					? { findingIndex, data: output.data }
 					: { findingIndex, failure: "renderer-failed" as const };
 			});
-			if (!res.destroyed) res.json({ ...base, results });
+			if (!res.destroyed) {
+				res.json({ ...base, results });
+			}
 		} catch (error) {
-			if (!res.destroyed) answerBoardError(res, error, "Error rendering board findings");
+			if (!res.destroyed) {
+				answerBoardError(res, error, "Error rendering board findings");
+			}
 		}
 
 		return undefined;
@@ -3898,7 +4084,9 @@ function switchPaneTo(
 	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
 ): BoardState {
 	const board = boards.get(key);
-	if (!board) throw new Error(`Board "${key}" is not open`);
+	if (!board) {
+		throw new Error(`Board "${key}" is not open`);
+	}
 	// One read, for the two things that need the board: the feed's new baseline
 	// and the scene the pane receives. Callers that have just read the note pass
 	// it in rather than making this read it again.
@@ -3915,7 +4103,9 @@ function switchPaneTo(
 		changeFeed.reset(key, board.identity, () => boardElements(board));
 	}
 
-	if (!pane) return board;
+	if (!pane) {
+		return board;
+	}
 	paneBoards.set(pane.clientId, key);
 
 	// The selection belonged to the board that pane was showing and means
@@ -3958,7 +4148,9 @@ function switchPaneTo(
  */
 function paneFromRequest(spec: unknown): PaneRegistration | null {
 	const registrations = Array.from(panes.values());
-	if (typeof spec === "string" && spec.trim()) return resolvePaneSpec(registrations, spec);
+	if (typeof spec === "string" && spec.trim()) {
+		return resolvePaneSpec(registrations, spec);
+	}
 	return soloPane(registrations);
 }
 
@@ -4092,11 +4284,15 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 			prepared?.key === key && !alreadyRegistered
 				? materializeResolvedBoard(prepared.resolution, installOptions)
 				: resolveInstalledBoard(key, "Opening a board", installOptions);
-		if (asked.level) board.identity = { ...board.identity, level: asked.level };
+		if (asked.level) {
+			board.identity = { ...board.identity, level: asked.level };
+		}
 		const pane = paneFromRequest(params.pane);
 		// The bytes just read are what the panes are about to be shown, so they are
 		// the baseline the next write is checked against.
-		if (!board.file || !content.hash) throw new Error(`Board "${key}" has no persisted note.`);
+		if (!board.file || !content.hash) {
+			throw new Error(`Board "${key}" has no persisted note.`);
+		}
 		recordBaseline(board, board.file, content.hash, content.version ?? null);
 		board.loadedAt = new Date().toISOString();
 		// ADR 0006's first outcome: take the note, discard the canvas. It is the
@@ -4111,8 +4307,12 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 		// edit, which is the reload undone by the next user edit.
 		if (params.reload) {
 			for (const other of panes.values()) {
-				if (other.clientId === pane?.clientId) continue;
-				if ((paneBoards.get(other.clientId) ?? other.board) !== key) continue;
+				if (other.clientId === pane?.clientId) {
+					continue;
+				}
+				if ((paneBoards.get(other.clientId) ?? other.board) !== key) {
+					continue;
+				}
 				switchPaneTo(other, key, content, checkoutSnapshotFor(res));
 			}
 		}
@@ -4159,7 +4359,9 @@ app.post("/api/boards/new", (req: Request, res: Response) => {
 				});
 			})
 			.catch((error) => {
-				if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) return;
+				if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) {
+					return;
+				}
 				answerBoardError(res, error, "Error creating board:");
 			});
 	} catch (error) {
@@ -4250,7 +4452,9 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 				);
 			},
 			answer: ({ content, written }) => {
-				if (!written) throw new Error(`Saving "${targetKey}" did not write its note.`);
+				if (!written) {
+					throw new Error(`Saving "${targetKey}" did not write its note.`);
+				}
 				return {
 					success: true,
 					...identityResponse(targetKey, savedBoard, content),
@@ -4536,7 +4740,9 @@ app.get("/api/sync/status", (_req: Request, res: Response) => {
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 	logger.error("Unhandled error:", err);
-	if (res.headersSent || res.destroyed) return;
+	if (res.headersSent || res.destroyed) {
+		return;
+	}
 	res.status(500).json({
 		success: false,
 		error: "Internal server error",
@@ -4559,7 +4765,9 @@ function canConnect(host: string, port: number): Promise<boolean> {
 		const socket = net.createConnection({ host, port });
 
 		const finish = (isOpen: boolean): void => {
-			if (settled) return;
+			if (settled) {
+				return;
+			}
 			settled = true;
 			socket.destroy();
 			resolve(isOpen);
@@ -4598,8 +4806,9 @@ function isRecoverableCanvasStopError(error: unknown): boolean {
 
 function reportCanvasStopError(error: unknown): void {
 	const message = `Canvas shutdown refused or failed: ${(error as Error).message}`;
-	if (isRecoverableCanvasStopError(error)) logger.error(message);
-	else {
+	if (isRecoverableCanvasStopError(error)) {
+		logger.error(message);
+	} else {
 		process.stderr.write(message + "\n");
 		process.exitCode = 1;
 	}
@@ -4643,9 +4852,13 @@ function adoptScratchBoard(): void {
 			// Two canvases may start against one fresh vault together. The scratch
 			// note is an idempotent startup prerequisite: the exclusive creator
 			// still decides its bytes, and the loser adopts those exact bytes.
-			if (!(error instanceof BoardResolutionError) || error.reason !== "conflicting") throw error;
+			if (!(error instanceof BoardResolutionError) || error.reason !== "conflicting") {
+				throw error;
+			}
 			loaded = readBoardFile(identity);
-			if (!loaded) throw error;
+			if (!loaded) {
+				throw error;
+			}
 		}
 	}
 	board.file = loaded.file;
@@ -4661,8 +4874,9 @@ function adoptScratchBoard(): void {
 			`Scratch board picked up where it was left: ${count} element(s) from ${loaded.file}`,
 		);
 	} catch (error) {
-		if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError))
+		if (!(error instanceof RenderGeometryError || error instanceof NativeElementValidationError)) {
 			throw error;
+		}
 		logger.warn(
 			`Scratch note cannot be rendered and was left unchanged: ${error.message} ` +
 				"The canvas will start so the pane can show this error.",
@@ -4681,8 +4895,9 @@ function canonicalContextFromBrief(
 	paneId: string,
 	operation: ArchboardContext["operation"],
 ): ArchboardContext {
-	if (brief.child.id === null || brief.child.epoch === null)
+	if (brief.child.id === null || brief.child.epoch === null) {
 		throw new Error("Canonical Codex context requires the active child epoch.");
+	}
 	return ArchboardContextSchema.parse({
 		schema: 1,
 		paneId,
@@ -4727,14 +4942,16 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 					candidate.paneId === exactPaneId &&
 					(paneBoards.get(candidate.clientId) ?? candidate.board) === contextBoard,
 			) ?? null;
-		if (pane === null)
+		if (pane === null) {
 			throw new Error(
 				`The Codex context board has no authoritative browser pane: ${contextBoard}.`,
 			);
+		}
 		const paneId = pane.paneId;
 		const board = boards.get(contextBoard);
-		if (board === undefined)
+		if (board === undefined) {
 			throw new Error(`The Codex context board is not open: ${contextBoard}.`);
+		}
 		let description: string;
 		let version: number | null;
 		let stale = false;
@@ -4814,13 +5031,16 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 
 	const waitForTargets: CanvasCodexWorkbenchHost["waitForTargets"] = async (input) => {
 		const workbench = active;
-		if (workbench === null) throw new Error("The Codex workbench is not ready to observe targets.");
+		if (workbench === null) {
+			throw new Error("The Codex workbench is not ready to observe targets.");
+		}
 		const deadline = Date.now() + input.timeoutMs;
 		do {
-			if (input.signal.aborted)
+			if (input.signal.aborted) {
 				throw Object.assign(new Error("The dynamic wait was cancelled."), {
 					code: "cancellation",
 				});
+			}
 			for (const threadId of input.owner.sortedTargetThreadIds) {
 				const wireThreadId = workbench.identity.identity.decoder.serializeCodexIdentity(threadId);
 				const pendingApproval = workbench.approvals.inspect().some((snapshot) => {
@@ -4829,7 +5049,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 						identity.kind === "legacy" ? identity.conversationId : identity.threadId;
 					return snapshot.state === "pending" && targetThreadId === threadId;
 				});
-				if (pendingApproval)
+				if (pendingApproval) {
 					return {
 						event: "attention",
 						threadId: wireThreadId,
@@ -4837,24 +5057,29 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 						cursor: input.cursor,
 						targetOwned: true,
 					};
+				}
 				const result = await workbench.session.threadRead({ threadId, includeTurns: false });
-				if (result.thread.status.type === "systemError")
+				if (result.thread.status.type === "systemError") {
 					return {
 						event: "attention",
 						threadId: wireThreadId,
 						sequence: input.previousSequence + 1,
 						cursor: input.cursor,
 					};
-				if (result.thread.status.type === "idle")
+				}
+				if (result.thread.status.type === "idle") {
 					return {
 						event: "completed",
 						threadId: wireThreadId,
 						sequence: input.previousSequence + 1,
 						cursor: input.cursor,
 					};
+				}
 			}
 			const remaining = deadline - Date.now();
-			if (remaining > 0) await sleepFor(Math.min(remaining, CODEX_WAIT_TARGET_POLL_MS));
+			if (remaining > 0) {
+				await sleepFor(Math.min(remaining, CODEX_WAIT_TARGET_POLL_MS));
+			}
 		} while (Date.now() < deadline);
 		return {
 			event: "timeout",
@@ -4901,12 +5126,15 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 					: { ...operation, outcome: null },
 			),
 		contextForOperation: (authority, operation) => {
-			if (active === null) throw new Error("The Codex workbench context is not ready.");
+			if (active === null) {
+				throw new Error("The Codex workbench context is not ready.");
+			}
 			const pane = Array.from(panes.values()).find(
 				(candidate) => candidate.paneId === authority.paneId,
 			);
-			if (pane === undefined)
+			if (pane === undefined) {
 				throw new Error(`The Codex context pane is not open: ${authority.paneId}.`);
+			}
 			const exactBoardKey = paneBoards.get(pane.clientId) ?? pane.board;
 			const binding = active.threadLink.read(authority.paneId);
 			if (
@@ -4915,8 +5143,9 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				binding.link.childId !== authority.childId ||
 				binding.link.epoch !== authority.epoch ||
 				(authority.linkRevision !== undefined && binding.revision !== authority.linkRevision)
-			)
+			) {
 				throw new Error("The lease-bound Codex pane context changed before capture.");
+			}
 			const exactInput = semanticInput(exactBoardKey, null, authority.paneId);
 			return canonicalContextFromBrief(
 				active.semanticPublisher.freshBriefFor(exactInput),
@@ -4933,11 +5162,14 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			installedIdentity = identity;
 		},
 		installLifecycleSignals: (components) => {
-			if (installedIdentity !== components.identity)
+			if (installedIdentity !== components.identity) {
 				throw new Error("The installed identity decoders do not match the active graph.");
+			}
 			active = components;
 			return () => {
-				if (active === components) active = null;
+				if (active === components) {
+					active = null;
+				}
 			};
 		},
 		installBrowserGateway: (gateway) => {
@@ -4960,7 +5192,9 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			try {
 				for (const [browserId, socket] of currentSocketsByClient) {
 					const instance = codexSocketInstances.get(socket);
-					if (instance !== undefined) socketOwner.accept(instance, browserId);
+					if (instance !== undefined) {
+						socketOwner.accept(instance, browserId);
+					}
 				}
 			} catch (error) {
 				remove();
@@ -4971,7 +5205,9 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 		stopBrowser: (gateway) => gateway.dispose(),
 		stopRealtime: async (realtime) => {
 			const generation = realtime.generation();
-			if (generation === null) return;
+			if (generation === null) {
+				return;
+			}
 			await realtime.stop({
 				sessionId: generation.browserSessionId,
 				correlationId: generation.browserCorrelationId,
@@ -5000,7 +5236,9 @@ async function stopCodexWorkbench(): Promise<void> {
 		return;
 	}
 	await application.shutdown();
-	if (codexApplication === application) codexApplication = null;
+	if (codexApplication === application) {
+		codexApplication = null;
+	}
 	resetCodexWorkbenchWiring();
 }
 
@@ -5009,7 +5247,9 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 		import("../codex-workbench-application.js"),
 		import("../codex-workbench-production.js"),
 	]);
-	if (signal.aborted) throw new Error("Codex startup was canceled before installation.");
+	if (signal.aborted) {
+		throw new Error("Codex startup was canceled before installation.");
+	}
 	const application = applicationModule.createCanvasCodexWorkbenchApplication({
 		module: productionModule,
 		installation: () =>
@@ -5022,7 +5262,9 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	signal.addEventListener("abort", cancel, { once: true });
 	try {
 		const preparing = application.prepare();
-		if (signal.aborted) cancel();
+		if (signal.aborted) {
+			cancel();
+		}
 		await preparing;
 	} finally {
 		signal.removeEventListener("abort", cancel);
@@ -5031,8 +5273,12 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 
 let httpClosePromise: Promise<void> | null = null;
 function closeHttpServer(): Promise<void> {
-	if (httpClosePromise !== null) return httpClosePromise;
-	if (!server.listening) return Promise.resolve();
+	if (httpClosePromise !== null) {
+		return httpClosePromise;
+	}
+	if (!server.listening) {
+		return Promise.resolve();
+	}
 	httpClosePromise = new Promise((resolve, reject) => {
 		server.close((error) => (error ? reject(error) : resolve()));
 	});
@@ -5045,7 +5291,9 @@ async function forceCloseHttpServer(): Promise<void> {
 }
 
 function startWebSocketServer(): void {
-	if (wss !== null) throw new Error("The WebSocket server is already installed.");
+	if (wss !== null) {
+		throw new Error("The WebSocket server is already installed.");
+	}
 	const owner = new WebSocketServer({ server });
 	owner.on("connection", (socket, request) => {
 		acceptedSockets.add(socket);
@@ -5060,7 +5308,9 @@ function startWebSocketServer(): void {
 
 function closeWebSocketServer(): Promise<void> {
 	const owner = wss;
-	if (owner === null) return Promise.resolve();
+	if (owner === null) {
+		return Promise.resolve();
+	}
 	return new Promise((resolve, reject) => {
 		owner.close((error) => {
 			if (error) {
@@ -5068,7 +5318,9 @@ function closeWebSocketServer(): Promise<void> {
 				return;
 			}
 			owner.removeAllListeners();
-			if (wss === owner) wss = null;
+			if (wss === owner) {
+				wss = null;
+			}
 			resolve();
 		});
 	});
@@ -5079,14 +5331,20 @@ async function closeBrowserOwners(): Promise<void> {
 	const retainedFailures = new Set<unknown>();
 	const retainFailure = (error: unknown): void => {
 		if (error instanceof AggregateError) {
-			for (const nested of error.errors) retainFailure(nested);
+			for (const nested of error.errors) {
+				retainFailure(nested);
+			}
 			return;
 		}
-		if (retainedFailures.has(error)) return;
+		if (retainedFailures.has(error)) {
+			return;
+		}
 		retainedFailures.add(error);
 		cleanupFailures.push(error);
 	};
-	for (const socket of acceptedSockets) socket.terminate();
+	for (const socket of acceptedSockets) {
+		socket.terminate();
+	}
 	const closeBrowser = wiring.codex.closeBrowser;
 	if (closeBrowser !== null) {
 		const settled = await Promise.allSettled(
@@ -5095,7 +5353,11 @@ async function closeBrowserOwners(): Promise<void> {
 				return browserId ? closeBrowser(instance, browserId) : Promise.resolve();
 			}),
 		);
-		for (const result of settled) if (result.status === "rejected") retainFailure(result.reason);
+		for (const result of settled) {
+			if (result.status === "rejected") {
+				retainFailure(result.reason);
+			}
+		}
 	}
 	try {
 		await wiring.codex.drainBrowsers?.();
@@ -5112,7 +5374,9 @@ async function closeBrowserOwners(): Promise<void> {
 	}
 	for (const pending of pendingBrowserCaptures.values()) {
 		clearTimeout(pending.timeout);
-		if (pending.collectionTimeout !== null) clearTimeout(pending.collectionTimeout);
+		if (pending.collectionTimeout !== null) {
+			clearTimeout(pending.collectionTimeout);
+		}
 		pending.reject(new Error("Canvas stopped before the browser capture completed."));
 	}
 	for (const pending of pendingViewports.values()) {
@@ -5149,7 +5413,9 @@ async function startServer(): Promise<void> {
 	let cleanupProven = cleanupProvenBeforeResourceAcquisition;
 	let terminalReported = false;
 	const reportStartupTerminal = (message: string | null = null): void => {
-		if (terminalReported) return;
+		if (terminalReported) {
+			return;
+		}
 		terminalReported = true;
 		writeCanvasStartupProtocolRecord(
 			canvasStartupTerminalRecord({
@@ -5203,18 +5469,24 @@ async function startServer(): Promise<void> {
 		} catch (error) {
 			reportCanvasStopError(error);
 		} finally {
-			if (lifetime.phase() === "running") runtimeServerStop = null;
+			if (lifetime.phase() === "running") {
+				runtimeServerStop = null;
+			}
 		}
 	};
 	const stopAfterServerError = (error: NodeJS.ErrnoException): void => {
 		logHttpServerError(error);
-		if (runtimeServerStop !== null) return;
+		if (runtimeServerStop !== null) {
+			return;
+		}
 		runtimeServerStop = stopCanvasAfterHttpError();
 	};
 	const stopCanvasAfterSignal = async (signal: NodeJS.Signals): Promise<void> => {
 		try {
 			await lifetime.stop(signal);
-			if (process.exitCode === undefined) process.exitCode = 0;
+			if (process.exitCode === undefined) {
+				process.exitCode = 0;
+			}
 		} catch (error) {
 			reportCanvasStopError(error);
 		} finally {
@@ -5228,7 +5500,9 @@ async function startServer(): Promise<void> {
 	const onTerm = (): void => shutdown("SIGTERM");
 	const onInterrupt = (): void => shutdown("SIGINT");
 	const onExit = (): void => {
-		if (ownsPidFile) removePidFile(PORT);
+		if (ownsPidFile) {
+			removePidFile(PORT);
+		}
 	};
 	lifetime = createCanvasApplicationLifetime({
 		heldBoards: heldBoardKeys,
@@ -5243,9 +5517,14 @@ async function startServer(): Promise<void> {
 		observe: ({ action, resource }) => {
 			// The logger cannot report its own terminal transition after its
 			// writable stream has ended.
-			if (resource === null || resource === "logger-transports") return;
-			if (action === "force") logger.warn(`Canvas lifetime forcing stop: ${resource}`);
-			else logger.debug(`Canvas lifetime ${action}: ${resource}`);
+			if (resource === null || resource === "logger-transports") {
+				return;
+			}
+			if (action === "force") {
+				logger.warn(`Canvas lifetime forcing stop: ${resource}`);
+			} else {
+				logger.debug(`Canvas lifetime ${action}: ${resource}`);
+			}
 		},
 		resources: [
 			{
@@ -5318,20 +5597,26 @@ async function startServer(): Promise<void> {
 							);
 						};
 						const settleStart = (error?: Error): void => {
-							if (settled) return;
+							if (settled) {
+								return;
+							}
 							settled = true;
 							signal.removeEventListener("abort", cancelListen);
 							server.off("close", onClose);
 							if (error) {
 								httpPhase = "failed";
 								reject(error);
-							} else resolve();
+							} else {
+								resolve();
+							}
 						};
 						httpErrorListener = (error) => {
 							if (httpPhase === "starting") {
 								logHttpServerError(error);
 								settleStart(error);
-							} else if (httpPhase === "running") stopAfterServerError(error);
+							} else if (httpPhase === "running") {
+								stopAfterServerError(error);
+							}
 						};
 						server.on("error", httpErrorListener);
 						server.once("close", onClose);
@@ -5343,7 +5628,9 @@ async function startServer(): Promise<void> {
 						}
 						try {
 							server.listen({ port: PORT, host: HOST, signal: listenController.signal }, () => {
-								if (settled || signal.aborted) return;
+								if (settled || signal.aborted) {
+									return;
+								}
 								httpPhase = "running";
 								const hostForUrl = formatHostForUrl(HOST);
 								logger.info(`POC server running on http://${hostForUrl}:${PORT}`);
@@ -5358,9 +5645,13 @@ async function startServer(): Promise<void> {
 					return httpStartPromise;
 				},
 				stop: async () => {
-					if (httpPhase === "running") httpPhase = "stopping";
+					if (httpPhase === "running") {
+						httpPhase = "stopping";
+					}
 					await closeHttpServer();
-					if (httpStartPromise !== null) await httpStartPromise.catch(() => undefined);
+					if (httpStartPromise !== null) {
+						await httpStartPromise.catch(() => undefined);
+					}
 					httpPhase = "stopping";
 					if (httpErrorListener !== null) {
 						server.off("error", httpErrorListener);
