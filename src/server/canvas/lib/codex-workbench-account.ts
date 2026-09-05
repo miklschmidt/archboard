@@ -54,6 +54,10 @@ export function createCanvasBrowserAccountOwner(input: {
 	let cancelling = false;
 	let loggingOut = false;
 	let earlyCompletion: TransportServerNotification | null = null;
+	// The transport error behind a failed read. A read Codex accepted but never
+	// answered carries `outcome_unknown`; the browser must hear that, not a
+	// generic failure, so the original error is what a reader throws.
+	let readFailure: unknown = null;
 
 	const refresh = async (expectedRevision: number): Promise<void> => {
 		const request = ++readRevision;
@@ -62,6 +66,7 @@ export function createCanvasBrowserAccountOwner(input: {
 		try {
 			const response = await components.session.accountRead();
 			if (!current()) return;
+			readFailure = null;
 			state.account = { kind: "codex_account_response", response };
 			if (response.account !== null && pending.state === "pending" && state.login === pending)
 				state.login = { kind: "login", state: "completed", loginId: pending.loginId };
@@ -77,8 +82,9 @@ export function createCanvasBrowserAccountOwner(input: {
 				}
 				if (current()) publish();
 			}
-		} catch {
+		} catch (error) {
 			if (!current()) return;
+			readFailure = error;
 			state.account = {
 				kind: "account",
 				state: "failed",
@@ -134,8 +140,9 @@ export function createCanvasBrowserAccountOwner(input: {
 	const actions: BrowserWorkbenchActions["account"] = {
 		read: async () => {
 			await refresh(revision);
-			if (state.account.kind === "account" && state.account.state === "failed")
-				throw new Error(state.account.reason);
+			if (state.account.kind === "account" && state.account.state === "failed") {
+				throw readFailure ?? new Error(state.account.reason);
+			}
 			return { outcome: "delivered" };
 		},
 		login: async (command) => {

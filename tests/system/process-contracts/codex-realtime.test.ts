@@ -101,6 +101,10 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 				voice: "breeze",
 			});
 			expect(start!["realtimeSessionId"]).toMatch(/^archboard:realtime-session:h[a-f0-9]{32}$/);
+			// The fixture emits the after-start item events on timers after answering start.
+			await waitFor(() =>
+				generation.adapter.transcript().some((segment) => segment.status === "final"),
+			);
 			expect(generation.adapter.transcript()).toEqual([
 				expect.objectContaining({
 					itemId: parseRealtimeItemId(generation.identity.decoder.resolveItemId("assistant-item")),

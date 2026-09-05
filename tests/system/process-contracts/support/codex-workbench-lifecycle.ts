@@ -202,6 +202,10 @@ export async function startCanvas(options: {
 
 export function extendFixture(root: string, storageMode?: StorageMode): string {
 	const source = readFileSync(fixtureSource, "utf8")
+		.replaceAll(
+			"./fake-codex-production-data.ts",
+			join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production-data.ts"),
+		)
 		.replace(
 			'import { appendFileSync, readFileSync } from "node:fs";',
 			'import { appendFileSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";',
@@ -239,12 +243,12 @@ const managedRequirements = (sqliteHome: string) => ({
 const configResponse = () => ({`,
 		)
 		.replace(
-			"config: { ...configFixture, sqlite_home: process.env.CODEX_SQLITE_HOME },",
+			'config: { ...configFixture, sqlite_home: process.env["CODEX_SQLITE_HOME"] },',
 			'config: { ...configFixture, ...(storageMode === "env-only" ? {} : { sqlite_home: storageMode === "null" ? null : redirectedSqliteHome }) },',
 		)
 		.replace(
-			"codexHome: process.env.CODEX_HOME,",
-			'codexHome: storageMode === "redirected" ? process.env.CODEX_SQLITE_HOME : process.env.CODEX_HOME,',
+			'codexHome: process.env["CODEX_HOME"],',
+			'codexHome: storageMode === "redirected" ? process.env["CODEX_SQLITE_HOME"] : process.env["CODEX_HOME"],',
 		)
 		.replace(
 			"respond(frame as never, { requirements: null });",
@@ -379,16 +383,16 @@ const invalidateStale = (): void => {
 		`${extraRequests}\nconst handle = (frame: WireFrame): void => {`,
 	);
 	const withGeneralList = withRequests.replace(
-		"data: [...threads.values()],",
-		'data: params.limit === 10 ? [threads.get("thread-3")].filter(Boolean) : [...threads.values()],',
+		"data: [...threads.values()].filter(",
+		'data: params["limit"] === 10 ? [threads.get("thread-3")].filter(Boolean) : [...threads.values()].filter(',
 	);
 	const withGeneralItems = withGeneralList.replace(
 		"items: isWorkhorse ? [dynamicItem] : [],",
 		"items: isWorkhorse ? [dynamicItem, ...generalQueryItems] : [],",
 	);
 	const withEmission = withGeneralItems.replace(
-		"if (isWorkhorse) setTimeout(emitReverseRequests, 10);",
-		"if (isWorkhorse) { setTimeout(emitReverseRequests, 10); setTimeout(emitLifecycleRequests, 10); }",
+		"\t\t\t\tsetTimeout(emitReverseRequests, 10);",
+		"\t\t\t\tsetTimeout(emitReverseRequests, 10);\n\t\t\t\tsetTimeout(emitLifecycleRequests, 10);",
 	);
 	const withFork = withEmission.replace(
 		'\t\tcase "thread/start": {',
@@ -399,8 +403,8 @@ const invalidateStale = (): void => {
 		'\t\trecord({ kind: "reverse_response", frame });\n\t\tfor (const thread of threads.values()) for (const turn of thread.turns) for (const item of (turn.items as Record<string, unknown>[] | undefined) ?? []) if (item.id === frame.id) { const returned = frame.result as { contentItems?: unknown; success?: unknown } | undefined; Object.assign(item, { status: "completed", contentItems: returned?.contentItems ?? [], success: returned?.success ?? false, durationMs: 1 }); }\n\t\tif (frame.id === "coordinator-inspect") { const coordinator = threads.get("thread-1"); if (coordinator !== undefined) { coordinator.status = { type: "idle" }; coordinator.turns = []; } }\n\t\treturn;',
 	);
 	const withShutdown = withCoordinatorRetirement.replace(
-		"if (control.exit === true) process.exit(17);",
-		'if ((control as { emit?: unknown }).emit === "list") emitGeneralQuery("list_threads");\n\t\tif ((control as { emit?: unknown }).emit === "read") emitGeneralQuery("read_thread");\n\t\tif ((control as { emit?: unknown }).emit === "wait") emitGeneralQuery("wait_threads");\n\t\tif ((control as { emit?: unknown }).emit === "fork") emitFork();\n\t\tif ((control as { emit?: unknown }).emit === "send") emitSend();\n\t\tif ((control as { emit?: unknown }).emit === "coordinator") emitCoordinatorCall();\n\t\tif ((control as { emit?: unknown }).emit === "decline") emitDecline();\n\t\tif ((control as { emit?: unknown }).emit === "stale") emitStale();\n\t\tif ((control as { emit?: unknown }).emit === "invalidate_stale") invalidateStale();\n\t\tif ((control as { emit?: unknown }).emit === "shutdown") emitShutdownBatch();\n\t\tif ((control as { emit?: unknown }).emit === "disconnect") emitDisconnectBatch();\n\t\tif (control.exit === true) process.exit(17);',
+		"\t\tif (control.exit === true) {",
+		'if ((control as { emit?: unknown }).emit === "list") emitGeneralQuery("list_threads");\n\t\tif ((control as { emit?: unknown }).emit === "read") emitGeneralQuery("read_thread");\n\t\tif ((control as { emit?: unknown }).emit === "wait") emitGeneralQuery("wait_threads");\n\t\tif ((control as { emit?: unknown }).emit === "fork") emitFork();\n\t\tif ((control as { emit?: unknown }).emit === "send") emitSend();\n\t\tif ((control as { emit?: unknown }).emit === "coordinator") emitCoordinatorCall();\n\t\tif ((control as { emit?: unknown }).emit === "decline") emitDecline();\n\t\tif ((control as { emit?: unknown }).emit === "stale") emitStale();\n\t\tif ((control as { emit?: unknown }).emit === "invalidate_stale") invalidateStale();\n\t\tif ((control as { emit?: unknown }).emit === "shutdown") emitShutdownBatch();\n\t\tif ((control as { emit?: unknown }).emit === "disconnect") emitDisconnectBatch();\n\t\tif (control.exit === true) {',
 	);
 	if (
 		withRequests === source ||
