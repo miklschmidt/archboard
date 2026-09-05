@@ -1,0 +1,269 @@
+// The board dialogs as one piece of state: which dialog is open, for which
+// pane, what is in flight and what failed. Every submission is one board
+// command; the outcome closes the dialog, keeps it open with the error, or
+// hands over to the conflict dialogs (ADR 0006).
+
+import { useCallback, useMemo, useState } from "react";
+
+import {
+	SERVER_API,
+	runBoardDialogRequest,
+	runClear,
+	runConflictOutcome,
+	type BoardCommandApi,
+	type BoardCommandContext,
+	type BoardCommandOutcome,
+} from "@/ui/application/board-commands";
+import type {
+	BoardDialogDraft,
+	BoardDialogMode,
+	BoardDialogRequest,
+	ConflictOutcome,
+	DialogError,
+	ElsewhereOutcome,
+} from "@/ui/board-dialogs";
+import type { BoardHold, BoardWriteConflict } from "@/ui/types";
+
+/** Which dialog is open, and for which pane. */
+type OpenDialog =
+	| { readonly kind: "none" }
+	| {
+			readonly kind: "board";
+			readonly mode: BoardDialogMode;
+			readonly initial: BoardDialogDraft;
+			/** The pane the request acts for, captured when the dialog opened. */
+			readonly context: BoardCommandContext;
+	  }
+	| { readonly kind: "confirm-clear"; readonly context: BoardCommandContext }
+	| { readonly kind: "confirm-close"; readonly paneId: string; readonly writes: number }
+	| {
+			readonly kind: "conflict";
+			readonly conflict: BoardWriteConflict;
+			readonly hold: BoardHold | null;
+			readonly context: BoardCommandContext;
+	  }
+	| { readonly kind: "elsewhere"; readonly context: BoardCommandContext };
+
+/** The dialogs' state. */
+interface BoardDialogState {
+	readonly open: OpenDialog;
+	readonly busy: boolean;
+	/** The conflict outcome in flight, or null. */
+	readonly busyOutcome: ConflictOutcome | null;
+	readonly error: DialogError | null;
+}
+
+/** What the dialogs report to the application. */
+interface BoardDialogEvents {
+	/** A command finished; the words are for a notice, when there are any. */
+	readonly onDone: (message: string | null) => void;
+	/** The person confirmed closing a pane that held work. */
+	readonly onClosePane: (paneId: string) => void;
+}
+
+/** The dialogs' state and the moves. */
+interface BoardDialogs {
+	readonly state: BoardDialogState;
+	readonly openBoardDialog: (
+		mode: BoardDialogMode,
+		initial: BoardDialogDraft,
+		context: BoardCommandContext,
+	) => void;
+	readonly openConfirmClear: (context: BoardCommandContext) => void;
+	readonly openConfirmClose: (paneId: string, writes: number) => void;
+	readonly openConflict: (
+		conflict: BoardWriteConflict,
+		hold: BoardHold | null,
+		context: BoardCommandContext,
+	) => void;
+	readonly openElsewhere: (context: BoardCommandContext) => void;
+	readonly close: () => void;
+	readonly submitBoard: (request: BoardDialogRequest) => void;
+	readonly confirm: () => void;
+	readonly chooseConflictOutcome: (outcome: ConflictOutcome) => void;
+	readonly chooseElsewhereOutcome: (outcome: ElsewhereOutcome) => void;
+}
+
+const NONE: OpenDialog = Object.freeze({ kind: "none" });
+
+const CLOSED: BoardDialogState = Object.freeze({
+	open: NONE,
+	busy: false,
+	busyOutcome: null,
+	error: null,
+});
+
+const EMPTY_DRAFT: BoardDialogDraft = Object.freeze({ board: "", variant: "", level: null });
+
+/**
+ * The board dialogs.
+ * @param events What the dialogs report.
+ * @param api The server, injectable for checks.
+ * @returns The state and the moves.
+ */
+function useBoardDialogs(
+	events: BoardDialogEvents,
+	api: BoardCommandApi = SERVER_API,
+): BoardDialogs {
+	const [state, setState] = useState<BoardDialogState>(CLOSED);
+
+	const show = useCallback((open: OpenDialog): void => {
+		setState({ open, busy: false, busyOutcome: null, error: null });
+	}, []);
+	const close = useCallback((): void => setState(CLOSED), []);
+
+	/**
+	 * Apply a command's outcome: close on success, keep the error, or move to
+	 * the conflict dialog.
+	 */
+	const settle = useCallback(
+		(outcome: BoardCommandOutcome, context: BoardCommandContext): void => {
+			switch (outcome.kind) {
+				case "done":
+					setState(CLOSED);
+					events.onDone(outcome.message);
+					return;
+				case "conflict":
+					show({ kind: "conflict", conflict: outcome.conflict, hold: outcome.hold, context });
+					return;
+				default:
+					setState((current) => ({
+						...current,
+						busy: false,
+						busyOutcome: null,
+						error: outcome.error,
+					}));
+			}
+		},
+		[events, show],
+	);
+
+	const submitBoard = useCallback(
+		(request: BoardDialogRequest): void => {
+			const { open } = state;
+			if (open.kind !== "board" || state.busy) {
+				return;
+			}
+			setState((current) => ({ ...current, busy: true, error: null }));
+			void runBoardDialogRequest(api, request, open.context).then((outcome) =>
+				settle(outcome, open.context),
+			);
+		},
+		[api, settle, state],
+	);
+
+	const confirm = useCallback((): void => {
+		const { open } = state;
+		if (open.kind === "confirm-close") {
+			setState(CLOSED);
+			events.onClosePane(open.paneId);
+			return;
+		}
+		if (open.kind !== "confirm-clear" || state.busy) {
+			return;
+		}
+		setState((current) => ({ ...current, busy: true, error: null }));
+		void runClear(api, open.context).then((outcome) => settle(outcome, open.context));
+	}, [api, events, settle, state]);
+
+	const chooseConflictOutcome = useCallback(
+		(outcome: ConflictOutcome): void => {
+			const { open } = state;
+			if (open.kind !== "conflict" || state.busyOutcome !== null) {
+				return;
+			}
+			if (outcome === "elsewhere") {
+				show({ kind: "board", mode: "save-as", initial: EMPTY_DRAFT, context: open.context });
+				return;
+			}
+			setState((current) => ({ ...current, busyOutcome: outcome, error: null }));
+			void runConflictOutcome(api, outcome, open.context).then((result) =>
+				settle(result, open.context),
+			);
+		},
+		[api, settle, show, state],
+	);
+
+	const chooseElsewhereOutcome = useCallback(
+		(outcome: ElsewhereOutcome): void => {
+			const { open } = state;
+			if (open.kind !== "elsewhere" || state.busyOutcome !== null) {
+				return;
+			}
+			if (outcome === "keep") {
+				setState(CLOSED);
+				return;
+			}
+			if (outcome === "elsewhere") {
+				show({ kind: "board", mode: "save-as", initial: EMPTY_DRAFT, context: open.context });
+				return;
+			}
+			setState((current) => ({ ...current, busyOutcome: "reload", error: null }));
+			void runConflictOutcome(api, "reload", open.context).then((result) =>
+				settle(result, open.context),
+			);
+		},
+		[api, settle, show, state],
+	);
+
+	const openBoardDialog = useCallback(
+		(mode: BoardDialogMode, initial: BoardDialogDraft, context: BoardCommandContext): void =>
+			show({ kind: "board", mode, initial, context }),
+		[show],
+	);
+	const openConfirmClear = useCallback(
+		(context: BoardCommandContext): void => show({ kind: "confirm-clear", context }),
+		[show],
+	);
+	const openConfirmClose = useCallback(
+		(paneId: string, writes: number): void => show({ kind: "confirm-close", paneId, writes }),
+		[show],
+	);
+	const openConflict = useCallback(
+		(conflict: BoardWriteConflict, hold: BoardHold | null, context: BoardCommandContext): void =>
+			show({ kind: "conflict", conflict, hold, context }),
+		[show],
+	);
+	const openElsewhere = useCallback(
+		(context: BoardCommandContext): void => show({ kind: "elsewhere", context }),
+		[show],
+	);
+
+	return useMemo(
+		() => ({
+			state,
+			openBoardDialog,
+			openConfirmClear,
+			openConfirmClose,
+			openConflict,
+			openElsewhere,
+			close,
+			submitBoard,
+			confirm,
+			chooseConflictOutcome,
+			chooseElsewhereOutcome,
+		}),
+		[
+			state,
+			openBoardDialog,
+			openConfirmClear,
+			openConfirmClose,
+			openConflict,
+			openElsewhere,
+			close,
+			submitBoard,
+			confirm,
+			chooseConflictOutcome,
+			chooseElsewhereOutcome,
+		],
+	);
+}
+
+export {
+	EMPTY_DRAFT,
+	useBoardDialogs,
+	type BoardDialogEvents,
+	type BoardDialogState,
+	type BoardDialogs,
+	type OpenDialog,
+};

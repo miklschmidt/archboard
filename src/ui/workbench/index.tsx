@@ -52,15 +52,18 @@ function Workbench(props: WorkbenchProps): React.JSX.Element {
 }
 
 export { Workbench, type WorkbenchProps };
-export type {
-	ApprovalChoice,
-	ComposerIntent,
-	DynamicApprovalVerdict,
-	WorkbenchActions,
-	WorkbenchComposerView,
-	WorkbenchQueueActions,
-	WorkbenchSessionView,
-	WorkbenchThreadLinkActions,
-	WorkbenchView,
-	WorkbenchVoiceView,
+export {
+	IDLE_QUEUE_COMMAND,
+	NO_APPROVAL_ERRORS,
+	type ApprovalChoice,
+	type ComposerIntent,
+	type DynamicApprovalVerdict,
+	type WorkbenchActions,
+	type WorkbenchComposerView,
+	type WorkbenchQueueActions,
+	type WorkbenchQueueCommandView,
+	type WorkbenchSessionView,
+	type WorkbenchThreadLinkActions,
+	type WorkbenchView,
+	type WorkbenchVoiceView,
 } from "@/ui/workbench/contracts";

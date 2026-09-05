@@ -21,7 +21,13 @@ import {
 } from "react";
 import type { ComponentType, ReactNode } from "react";
 
-import type { WorkbenchActions, WorkbenchView, WorkbenchVoiceView } from "@/ui/workbench/contracts";
+import {
+	IDLE_QUEUE_COMMAND,
+	NO_APPROVAL_ERRORS,
+	type WorkbenchActions,
+	type WorkbenchView,
+	type WorkbenchVoiceView,
+} from "@/ui/workbench/contracts";
 import { activeTurnId as activeTurnOf } from "@/ui/workbench/session-projection";
 import {
 	createWorkbenchComposerController,
@@ -334,6 +340,9 @@ function useWorkbenchRuntime(
 			session: sessionView(state),
 			composer: { intent: local.intent, queueInstead: local.queueInstead },
 			busyApprovals: local.busyApprovals,
+			// The host composes the queue and approvals controllers' state in.
+			approvalErrors: NO_APPROVAL_ERRORS,
+			queueCommand: IDLE_QUEUE_COMMAND,
 			voice,
 			nowMs: now(),
 			reducedMotion,

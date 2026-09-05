@@ -2,18 +2,11 @@
 // through `ShellView`; everything a person does goes out through
 // `ShellActions`. The shell keeps only presentation state of its own.
 
-import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-
 import type { CodeTargetNoticeAction } from "@/shared/code-target";
+import type { PreviewSource } from "@/ui/board-preview";
 import type { PathFocusOverlay, PathFocusSnapshot } from "@/ui/path-focus";
 import type { SelectionProjection } from "@/ui/selection-inspector";
-import type {
-	BoardIdentity,
-	BoardListing,
-	BoardPreviewSnapshot,
-	LockHolder,
-	PaneStatus,
-} from "@/ui/types";
+import type { BoardIdentity, BoardListing, LockHolder, PaneStatus } from "@/ui/types";
 
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
@@ -28,9 +21,11 @@ type TakeBackState =
 			message: string;
 	  };
 
-/** One canvas pane: what it reports about itself, and who holds its board. */
+/** One canvas pane: what it reports about itself, who holds its board, and its mounted canvas. */
 interface ShellPane {
 	status: PaneStatus;
+	/** The pane's mounted canvas, owned by the application so it never remounts. */
+	canvas: React.ReactNode;
 	/** The board's current lock holder, or null when nobody is writing it. */
 	holder: LockHolder | null;
 	takeBack: TakeBackState;
@@ -96,7 +91,7 @@ interface ShellView {
 	boardsError: string | null;
 	scratch: readonly ScratchBoardEntry[];
 	/** Lazy previews keyed by board key; null until one has been rendered. */
-	previews: Readonly<Record<string, BoardPreviewSnapshot | null>>;
+	previews: Readonly<Record<string, PreviewSource | null>>;
 	selectedBoardKey: string | null;
 	/** One or two panes, in reading order. */
 	panes: readonly ShellPane[];
@@ -134,8 +129,6 @@ interface ShellActions {
 	openCode(elementId: string): void;
 	focusPath(elementId: string): void;
 	exitPathFocus(): void;
-	/** A pane's canvas has mounted and handed over Excalidraw's imperative API. */
-	canvasReady(paneId: string, api: ExcalidrawImperativeAPI): void;
 }
 
 export type {

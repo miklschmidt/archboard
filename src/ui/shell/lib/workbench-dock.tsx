@@ -20,6 +20,10 @@ interface WorkbenchDockProps {
 	/** The pane the dock describes, or null when none is open. */
 	pane: ShellPane | null;
 	paneCount: number;
+	/** The workbench's compact controls, kept reachable while collapsed. */
+	headerControls: React.ReactNode;
+	/** The workbench itself, or null while no workbench rides this pane. */
+	body: React.ReactNode;
 }
 
 /**
@@ -201,6 +205,7 @@ function WorkbenchDock(props: WorkbenchDockProps): React.JSX.Element {
 				<DockActivity pane={pane} paneCount={paneCount} />
 				<span className="flex-1" />
 				<DockCounts pane={pane} paneCount={paneCount} />
+				{props.headerControls}
 				<Button
 					variant="ghost"
 					size="icon-xs"
@@ -215,12 +220,13 @@ function WorkbenchDock(props: WorkbenchDockProps): React.JSX.Element {
 				<div className="border-border border-t">
 					<DoingHistory entries={entries} />
 				</div>
-				<section
-					aria-label="Workbench thread"
-					className="border-border text-muted-foreground flex h-36 items-center justify-center border-t text-sm"
-				>
-					Workbench presentation arrives with the text and voice workbench.
-				</section>
+				<div className="border-border h-80 min-h-0 border-t">
+					{props.body ?? (
+						<p className="text-muted-foreground flex h-full items-center justify-center text-sm">
+							No agent workbench is attached to this pane.
+						</p>
+					)}
+				</div>
 			</CollapsibleContent>
 		</Collapsible>
 	);

@@ -1,23 +1,27 @@
 // The centre: one or two canvases side by side, each under its own claim
-// banner and, while path focus is on, its dimming layer.
+// banner and, while path focus is on, its dimming layer. The same element is
+// the fullscreen root: presenting a pane hides the others rather than
+// remounting anything, so a canvas session never restarts.
 
-import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import { useCallback } from "react";
-
-import { ExcalidrawStage } from "@/ui/canvas/excalidraw-stage";
 import { Separator } from "@/ui/components/separator";
 import type { PathFocusOverlay } from "@/ui/path-focus";
 import { ClaimBanner } from "@/ui/shell/lib/claim-banner";
-import type { ShellActions, ShellPane, ThemeChoice } from "@/ui/shell/lib/contracts";
+import type { ShellActions, ShellPane, ShellPresentation } from "@/ui/shell/lib/contracts";
 import { PathFocusLayer } from "@/ui/shell/lib/path-focus-overlay";
+import { PresentationBar, RecoveryMessage } from "@/ui/shell/lib/presentation";
 
 /** Inputs for the stage row. */
 interface CanvasStagesProps {
 	panes: readonly ShellPane[];
 	activePaneId: string;
-	theme: ThemeChoice;
 	/** Where the focused elements are, or null while focus is off. */
 	overlay: PathFocusOverlay | null;
+	/** The pane presented fullscreen, or null in the workspace. */
+	presentation: ShellPresentation | null;
+	/** Live voice controls for the presentation bar. */
+	voiceControls: React.ReactNode;
+	/** The fullscreen root: the application presents this element. */
+	attachStage: ((element: HTMLDivElement | null) => void) | undefined;
 	actions: ShellActions;
 }
 
@@ -32,24 +36,61 @@ function overlayFor(overlay: PathFocusOverlay | null, paneId: string): PathFocus
 }
 
 /**
- * One or two canvases side by side with a shared one-pixel separator.
- * @param props The panes to mount, the theme they render in and the actions.
- * @returns The stage row.
+ * Whether a pane is hidden by a presentation of another pane, or by recovery.
+ * @param presentation The presentation, or null.
+ * @param paneId The pane asking.
+ * @returns True when the pane must not be shown.
+ */
+function hiddenBy(presentation: ShellPresentation | null, paneId: string): boolean {
+	if (presentation === null) {
+		return false;
+	}
+	return presentation.kind === "recovery" || presentation.paneId !== paneId;
+}
+
+/**
+ * Find a pane by id.
+ * @param panes The panes.
+ * @param paneId The pane wanted.
+ * @returns The pane, or null.
+ */
+function paneById(panes: readonly ShellPane[], paneId: string): ShellPane | null {
+	return panes.find((pane) => pane.status.paneId === paneId) ?? null;
+}
+
+/**
+ * One or two canvases side by side with a shared one-pixel separator, under
+ * the presentation bar while a pane is presented.
+ * @param props The panes to mount, the presentation and the actions.
+ * @returns The stage root.
  */
 function CanvasStages(props: CanvasStagesProps): React.JSX.Element {
+	const { presentation, panes, actions, attachStage, voiceControls, overlay, activePaneId } = props;
+	const presented = presentation ? paneById(panes, presentation.paneId) : null;
 	return (
-		<div className="flex min-h-0 min-w-0 flex-1">
-			{props.panes.map((pane, index) => (
-				<PaneStage
-					key={pane.status.paneId}
-					pane={pane}
-					active={pane.status.paneId === props.activePaneId}
-					theme={props.theme}
-					first={index === 0}
-					overlay={overlayFor(props.overlay, pane.status.paneId)}
-					actions={props.actions}
-				/>
-			))}
+		<div
+			ref={attachStage}
+			data-slot="canvas-stages"
+			data-presenting={presented ? "" : undefined}
+			className="bg-background flex min-h-0 min-w-0 flex-1 flex-col"
+		>
+			{presented && (
+				<PresentationBar pane={presented} voiceControls={voiceControls} actions={actions} />
+			)}
+			{presentation?.kind === "recovery" && <RecoveryMessage message={presentation.message} />}
+			<div className="flex min-h-0 min-w-0 flex-1">
+				{panes.map((pane, index) => (
+					<PaneStage
+						key={pane.status.paneId}
+						pane={pane}
+						active={pane.status.paneId === activePaneId}
+						first={index === 0 || presented !== null}
+						hidden={hiddenBy(presentation, pane.status.paneId)}
+						overlay={overlayFor(overlay, pane.status.paneId)}
+						actions={actions}
+					/>
+				))}
+			</div>
 		</div>
 	);
 }
@@ -58,37 +99,34 @@ function CanvasStages(props: CanvasStagesProps): React.JSX.Element {
 interface PaneStageProps {
 	pane: ShellPane;
 	active: boolean;
-	theme: ThemeChoice;
 	first: boolean;
+	hidden: boolean;
 	overlay: PathFocusOverlay | null;
 	actions: ShellActions;
 }
 
 /**
  * One pane's canvas under its claim banner, with the separator that divides
- * it from the pane before. A disconnected pane is view-only.
- * @param props The pane, the theme, whether it is the first pane and the actions.
+ * it from the pane before. The canvas itself is the application's.
+ * @param props The pane, whether it is first, hidden, its overlay and the actions.
  * @returns The mounted canvas.
  */
 function PaneStage(props: PaneStageProps): React.JSX.Element {
 	const { actions, pane, overlay } = props;
-	const { paneId, connected } = pane.status;
-	const handleApi = useCallback(
-		(api: ExcalidrawImperativeAPI) => actions.canvasReady(paneId, api),
-		[actions, paneId],
-	);
+	const { paneId } = pane.status;
 	return (
 		<>
-			{!props.first && <Separator orientation="vertical" />}
+			{!props.first && !props.hidden && <Separator orientation="vertical" />}
 			<section
 				aria-label={`Pane ${paneId}`}
 				aria-current={props.active ? "true" : undefined}
 				data-active={props.active ? "" : undefined}
+				hidden={props.hidden}
 				className="data-active:ring-primary/60 flex min-h-0 min-w-0 flex-1 flex-col data-active:ring-1 data-active:ring-inset"
 			>
 				<ClaimBanner pane={pane} actions={actions} />
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
-					<ExcalidrawStage theme={props.theme} viewModeEnabled={!connected} onApi={handleApi} />
+					{pane.canvas}
 					{overlay && <PathFocusLayer overlay={overlay} />}
 				</div>
 			</section>

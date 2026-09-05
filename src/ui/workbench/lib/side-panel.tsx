@@ -84,12 +84,13 @@ function SidePanel(props: SidePanelProps): React.JSX.Element {
 					</TabsTrigger>
 				</TabsList>
 				<TabsContent value="queue" className="min-h-0 overflow-y-auto pt-2">
-					<QueuePanel queue={snapshot.queue} actions={actions.queue} />
+					<QueuePanel queue={snapshot.queue} command={view.queueCommand} actions={actions.queue} />
 				</TabsContent>
 				<TabsContent value="approvals" className="min-h-0 overflow-y-auto pt-2">
 					<ApprovalsPanel
 						snapshot={snapshot}
 						busyApprovals={view.busyApprovals}
+						errors={view.approvalErrors}
 						actions={actions}
 					/>
 				</TabsContent>
