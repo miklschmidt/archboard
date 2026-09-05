@@ -237,6 +237,7 @@ import {
 	writeCanvasStartupProtocolRecord,
 } from "../../../shared/canvas-startup-terminal/index.js";
 import { canvasStartupFailureMessage } from "./startup-error.js";
+import { createCheckoutWorkOwner } from "./checkout-work.js";
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -254,74 +255,7 @@ const mutationAdmission = createCanvasMutationAdmission({
 });
 const admittedMutations = new WeakMap<Request, CanvasMutationLease>();
 
-interface CheckoutWork {
-	readonly controller: AbortController;
-	promise: Promise<unknown> | null;
-}
-
-let acceptingCheckoutWork = true;
-const activeCheckoutWork = new Set<CheckoutWork>();
-
-function trackCheckoutWork<T>(
-	name: string,
-	externalSignal: AbortSignal | undefined,
-	work: (signal: AbortSignal) => Promise<T>,
-): Promise<T> {
-	if (!acceptingCheckoutWork) {
-		return Promise.reject(new Error(`Canvas checkout work is stopping; ${name} was not admitted.`));
-	}
-	const controller = new AbortController();
-	const cancel = (): void =>
-		controller.abort(externalSignal?.reason ?? new Error(`${name} canceled.`));
-	externalSignal?.addEventListener("abort", cancel, { once: true });
-	if (externalSignal?.aborted) {
-		cancel();
-	}
-	const owner: CheckoutWork = { controller, promise: null };
-	activeCheckoutWork.add(owner);
-	const promise = (async (): Promise<T> => {
-		try {
-			controller.signal.throwIfAborted();
-			return await work(controller.signal);
-		} finally {
-			externalSignal?.removeEventListener("abort", cancel);
-			activeCheckoutWork.delete(owner);
-		}
-	})();
-	owner.promise = promise;
-	return promise;
-}
-
-async function trackRequestCheckoutWork<T>(
-	req: Request,
-	res: Response,
-	name: string,
-	work: (signal: AbortSignal) => Promise<T>,
-): Promise<T> {
-	const request = new AbortController();
-	const cancel = (): void => request.abort(new Error(`${req.method} ${req.path} disconnected.`));
-	req.once("aborted", cancel);
-	res.once("close", cancel);
-	try {
-		return await trackCheckoutWork(name, request.signal, work);
-	} finally {
-		req.off("aborted", cancel);
-		res.off("close", cancel);
-	}
-}
-
-function quiesceCheckoutWork(): void {
-	acceptingCheckoutWork = false;
-	for (const owner of activeCheckoutWork) {
-		owner.controller.abort(new Error("Canvas checkout work stopped."));
-	}
-}
-
-async function stopCheckoutWork(): Promise<void> {
-	quiesceCheckoutWork();
-	const active = [...activeCheckoutWork];
-	await Promise.allSettled(active.flatMap((owner) => (owner.promise ? [owner.promise] : [])));
-}
+const checkoutWork = createCheckoutWorkOwner();
 
 function trackMutationWork<T>(
 	req: Request,
@@ -573,7 +507,7 @@ async function prepareCheckoutSnapshot(
 	const bindings = requestCheckoutBindings(req, res);
 	const capture = (captureBindings: readonly CodeBinding[]): Promise<CheckoutSnapshot> => {
 		if (req.method === "GET" || req.method === "HEAD") {
-			return trackRequestCheckoutWork(
+			return checkoutWork.trackRequest(
 				req,
 				res,
 				`${req.method} ${req.path} checkout snapshot`,
@@ -581,7 +515,7 @@ async function prepareCheckoutSnapshot(
 			);
 		}
 		return trackMutationWork(req, `${req.method} ${req.path} checkout snapshot`, (signal) =>
-			trackCheckoutWork(`${req.method} ${req.path} checkout snapshot`, signal, (ownedSignal) =>
+			checkoutWork.track(`${req.method} ${req.path} checkout snapshot`, signal, (ownedSignal) =>
 				snapshotCheckoutAccess({ signal: ownedSignal, bindings: captureBindings }),
 			),
 		);
@@ -1304,7 +1238,7 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 	let bindings = codeBindingsOf(content.elements.values());
 	let checkoutSnapshot: CheckoutSnapshot;
 	for (;;) {
-		checkoutSnapshot = await trackCheckoutWork(
+		checkoutSnapshot = await checkoutWork.track(
 			"WebSocket checkout presentation",
 			checkoutController.signal,
 			(signal) => snapshotCheckoutAccess({ signal, bindings }),
@@ -1873,7 +1807,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use(
 	createCodeOpenerRouter({
-		runCheckout: (req, res, name, work) => trackRequestCheckoutWork(req, res, name, work),
+		runCheckout: (req, res, name, work) => {
+			return checkoutWork.trackRequest(req, res, name, work);
+		},
 		runMutation: (req, name, work) => trackMutationWork(req, name, work),
 	}),
 );
@@ -5455,11 +5391,11 @@ async function startServer(): Promise<void> {
 	lifetime = createCanvasApplicationLifetime({
 		heldBoards: heldBoardKeys,
 		quiesce: async () => {
-			quiesceCheckoutWork();
+			checkoutWork.quiesce();
 			await mutationAdmission.quiesce();
 		},
 		resume: () => {
-			acceptingCheckoutWork = true;
+			checkoutWork.resume();
 			mutationAdmission.resume();
 		},
 		observe: ({ action, resource }) => {
@@ -5626,9 +5562,9 @@ async function startServer(): Promise<void> {
 			{
 				name: "checkout-snapshot-work",
 				start: () => {
-					acceptingCheckoutWork = true;
+					checkoutWork.resume();
 				},
-				stop: stopCheckoutWork,
+				stop: checkoutWork.stop,
 			},
 		],
 	});
