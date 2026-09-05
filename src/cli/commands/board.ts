@@ -113,7 +113,7 @@ async function repoIdentityHere(signal: AbortSignal): Promise<string> {
 }
 function boardListText(result: BoardListResponse): string {
 	if (result.repo) {
-		if (!result.boards.length) {
+		if (result.boards.length === 0) {
 			return `No board in ${result.vault} has a node bound to ${result.repo} (${result.scanned ?? 0} board(s) read).`;
 		}
 		const lines = [`Boards describing ${result.repo}:`];
@@ -129,7 +129,7 @@ function boardListText(result: BoardListResponse): string {
 		lines.push(`Show one with \`browser show ${result.boards[0]!.key} --pane <spec>\`.`);
 		return lines.join("\n");
 	}
-	if (!result.boards.length) {
+	if (result.boards.length === 0) {
 		return `No boards in ${result.vault} yet.`;
 	}
 	return [`Boards in ${result.vault}:`, ...result.boards.map((entry) => `  ${entry.key}`)].join(

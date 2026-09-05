@@ -76,7 +76,7 @@ const ApplyPayloadStageSchema = jsonText(
 	const deletes = Array.isArray(record["delete"])
 		? record["delete"].filter((value): value is string => typeof value === "string")
 		: [];
-	if (!create.length && !rawUpdates.length && !deletes.length) {
+	if (create.length === 0 && rawUpdates.length === 0 && deletes.length === 0) {
 		context.addIssue({ code: "custom", message: "Patch has no create/update/delete operations" });
 		return z.NEVER;
 	}
@@ -212,7 +212,7 @@ const applyContract = defineCommand({
 		const patch = context.parse(ApplyPayloadStageSchema, await readJsonText(context, input.file));
 		await context.require("server", "apply");
 		const updates: (Partial<ServerElement> & { id: string })[] = [];
-		if (patch.updates.length || patch.deletes.length) {
+		if (patch.updates.length > 0 || patch.deletes.length > 0) {
 			const onBoard = new Set((await getElements()).map((element) => element.id));
 			for (const normalized of patch.updates) {
 				if (!onBoard.has(normalized.id)) {
@@ -399,7 +399,7 @@ const deleteContract = defineCommand({
 		await context.require("server", "delete");
 		const onBoard = new Set((await getElements()).map((element) => element.id));
 		const missing = input.ids.filter((id) => !onBoard.has(id));
-		if (missing.length) {
+		if (missing.length > 0) {
 			throw new Error(`Element ${missing.join(", ")} not found`);
 		}
 		const result = await applyElementChanges({
