@@ -33,8 +33,9 @@ function run(cwd: string, cmd: string[]): CommandResult {
 function repositoryOxlintConfig(): string {
 	const authored = fs.readFileSync(path.join(repoRoot, ".oxlintrc.jsonc"), "utf8");
 	const relativePlugin = '"./tools/oxlint-plugin-archboard.js"';
-	if (!authored.includes(relativePlugin))
+	if (!authored.includes(relativePlugin)) {
 		throw new Error("repository Oxlint plugin path is missing");
+	}
 	return authored.replace(relativePlugin, JSON.stringify(plugin));
 }
 
@@ -71,7 +72,9 @@ function expectPass(result: CommandResult): void {
 function expectRule(result: CommandResult, rule: string, guidance?: string): void {
 	expect(result.exitCode, result.output).not.toBe(0);
 	expect(result.output).toContain(rule);
-	if (guidance) expect(result.output).toContain(guidance);
+	if (guidance) {
+		expect(result.output).toContain(guidance);
+	}
 }
 
 describe("Archboard boundary plugin in real Oxlint subprocesses", () => {

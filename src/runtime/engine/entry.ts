@@ -13,7 +13,9 @@ function getErrorCode(error: unknown): string | undefined {
 }
 
 export function resolveEntrypointPath(filePath: string | undefined): string | null {
-	if (!filePath) return null;
+	if (!filePath) {
+		return null;
+	}
 
 	try {
 		return fs.realpathSync(filePath);

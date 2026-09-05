@@ -45,13 +45,15 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 				(entry) => entry.kind === "response" && entry.method === "config/read",
 			) as FixtureRecord & { readonly result?: { readonly config?: Record<string, unknown> } };
 			const reported = configRead.result?.config?.["sqlite_home"];
-			if (mode === "env-only")
+			if (mode === "env-only") {
 				expect(configRead.result?.config, mode).not.toHaveProperty("sqlite_home");
-			else if (mode === "null") expect(reported, mode).toBeNull();
-			else if (mode === "redirected")
+			} else if (mode === "null") {
+				expect(reported, mode).toBeNull();
+			} else if (mode === "redirected") {
 				expect(initialization.result?.["codexHome"], mode).toContain("/sqlite-home");
-			else if (mode === "symlink") expect(reported, mode).toContain("/sqlite-alias");
-			else if (mode === "requirements-conflict") {
+			} else if (mode === "symlink") {
+				expect(reported, mode).toContain("/sqlite-alias");
+			} else if (mode === "requirements-conflict") {
 				const requirements = records(fixture.logPath).find(
 					(entry) => entry.kind === "response" && entry.method === "configRequirements/read",
 				) as FixtureRecord & {
@@ -60,7 +62,9 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 				expect(requirements.result?.requirements?.sqliteHome, mode).toContain(
 					"/conflicting-sqlite",
 				);
-			} else expect(reported, mode).toContain("/conflicting-sqlite");
+			} else {
+				expect(reported, mode).toContain("/conflicting-sqlite");
+			}
 			return;
 		}
 		const canvas = startup.canvas;
@@ -87,7 +91,9 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 		const refusal = await waitFor(async () => {
 			const result = await socket.request("snapshot");
 			observed = result;
-			if (!result.ok) return result;
+			if (!result.ok) {
+				return result;
+			}
 			const value = snapshot(result);
 			const readiness = value["readiness"] as Record<string, unknown>;
 			return readiness["state"] === "unavailable" ? readiness : undefined;
@@ -113,8 +119,9 @@ describe.serial("composed Codex process lifecycle", () => {
 			"symlink",
 			"conflicting",
 			"requirements-conflict",
-		] as const)
+		] as const) {
 			await expectStorageRefusal(mode);
+		}
 	}, 45_000);
 
 	test("accepts and preserves the exact managed sqlite requirement", async () => {
@@ -188,7 +195,9 @@ describe.serial("composed Codex process lifecycle", () => {
 			const childPid = records(fixture.logPath).find(
 				(entry) => entry.kind === "app_server_spawn",
 			)?.pid;
-			if (childPid === undefined) throw new Error("The managed-requirement child did not start.");
+			if (childPid === undefined) {
+				throw new Error("The managed-requirement child did not start.");
+			}
 			await canvas.dispose();
 			canvas = null;
 			expect(processExists(childPid)).toBeFalse();
@@ -216,7 +225,9 @@ describe.serial("composed Codex process lifecycle", () => {
 				prepareProductionFixture(resources, extendedSource),
 			] as const;
 			const canvases = await Promise.all(fixtures.map((fixture) => startCanvas(fixture)));
-			for (const canvas of canvases) resources.defer(() => canvas.dispose());
+			for (const canvas of canvases) {
+				resources.defer(() => canvas.dispose());
+			}
 			const childPids = fixtures.map(
 				(fixture) =>
 					records(fixture.logPath).find((entry) => entry.kind === "app_server_spawn")?.pid,

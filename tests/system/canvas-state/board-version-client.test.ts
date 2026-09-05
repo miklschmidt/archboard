@@ -54,8 +54,11 @@ const box = (id: string, x: number) => ({
 function restoreEnvironment(prior: Map<string, string | undefined>): void {
 	for (const key of environmentKeys) {
 		const value = prior.get(key);
-		if (value === undefined) delete process.env[key];
-		else process.env[key] = value;
+		if (value === undefined) {
+			delete process.env[key];
+		} else {
+			process.env[key] = value;
+		}
 	}
 }
 
@@ -198,7 +201,9 @@ describe.serial("board version client state", () => {
 				client.setRequestedBoard(null);
 				client.setWriteDoing(null);
 			}
-			if (prior) restoreEnvironment(prior);
+			if (prior) {
+				restoreEnvironment(prior);
+			}
 			await canvas?.dispose();
 			rmSync(root, { recursive: true, force: true });
 		}

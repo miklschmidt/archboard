@@ -61,29 +61,40 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	const retainCompletedReverseId = (key: string): void => {
 		if (completedReverseIds.size >= CODEX_APP_SERVER_CAPACITY.retention.completedReverseIds) {
 			const oldest = completedReverseIds.values().next().value;
-			if (oldest !== undefined) completedReverseIds.delete(oldest);
+			if (oldest !== undefined) {
+				completedReverseIds.delete(oldest);
+			}
 		}
 		completedReverseIds.add(key);
 	};
 	const retainTombstone = (tombstone: RequestTombstone): void => {
 		if (tombstones.size >= CODEX_APP_SERVER_CAPACITY.retention.requestTombstones) {
 			const oldest = tombstones.keys().next().value;
-			if (oldest !== undefined) tombstones.delete(oldest);
+			if (oldest !== undefined) {
+				tombstones.delete(oldest);
+			}
 		}
 		tombstones.set(tombstone.key, tombstone);
 	};
 	const removePending = (pending: PendingRequest): boolean => {
-		if (pendingRequests.get(pending.key) !== pending) return false;
+		if (pendingRequests.get(pending.key) !== pending) {
+			return false;
+		}
 		pendingRequests.delete(pending.key);
 		pending.settled = true;
-		if (pending.timer !== undefined) clearTimeout(pending.timer);
-		if (pending.signal && pending.abortListener)
+		if (pending.timer !== undefined) {
+			clearTimeout(pending.timer);
+		}
+		if (pending.signal && pending.abortListener) {
 			pending.signal.removeEventListener("abort", pending.abortListener);
+		}
 		return true;
 	};
 
 	const settleFailure = (pending: PendingRequest, reason: CodexRequestFailureReason): void => {
-		if (!removePending(pending)) return;
+		if (!removePending(pending)) {
+			return;
+		}
 		const outcome = pending.accepted ? "outcome_unknown" : "not_delivered";
 		const retryEligible = outcome === "not_delivered" || pending.retryEligible;
 		retainTombstone({
@@ -109,7 +120,9 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	};
 
 	const settleDelivered = (pending: PendingRequest, result: unknown): void => {
-		if (!removePending(pending)) return;
+		if (!removePending(pending)) {
+			return;
+		}
 		retainTombstone({
 			key: pending.key,
 			wireId: pending.wireId,
@@ -132,7 +145,9 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		pending: PendingRequest,
 		rpcError: { readonly code: number; readonly message: string; readonly data?: unknown },
 	): void => {
-		if (!removePending(pending)) return;
+		if (!removePending(pending)) {
+			return;
+		}
 		retainTombstone({
 			key: pending.key,
 			wireId: pending.wireId,
@@ -152,7 +167,9 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	};
 	const removeQueuedJob = (job: FrameWriterJob<WriteJob>): boolean => writer?.remove(job) ?? false;
 	const acceptReverseResponse = (record: ReverseRecord): void => {
-		if (record.responded || reverseRequests.get(record.key) !== record) return;
+		if (record.responded || reverseRequests.get(record.key) !== record) {
+			return;
+		}
 		record.responding = false;
 		record.responded = true;
 		reverseRequests.delete(record.key);
@@ -162,24 +179,33 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	};
 
 	const releaseReverseResponse = (record: ReverseRecord): void => {
-		if (record.responded || reverseRequests.get(record.key) !== record) return;
+		if (record.responded || reverseRequests.get(record.key) !== record) {
+			return;
+		}
 		record.responding = false;
 	};
 	const enqueue = (job: WriteJob, pending?: PendingRequest, lane?: "regular" | "response") => {
-		if (!writer) throw new CodexTransportClosedError("transport-closed");
+		if (!writer) {
+			throw new CodexTransportClosedError("transport-closed");
+		}
 		const actualLane =
 			lane ??
 			(job.kind === "reverse-response" || job.kind === "protocol-error" ? "response" : "regular");
-		if (state !== "open" && !(state === "closing" && actualLane === "response"))
+		if (state !== "open" && !(state === "closing" && actualLane === "response")) {
 			throw new CodexTransportClosedError(state === "closing" ? "shutdown" : "transport-closed");
+		}
 		const queued: FrameWriterJob<WriteJob> = { frame: job.frame, value: job };
-		if (pending) pending.job = queued;
+		if (pending) {
+			pending.job = queued;
+		}
 		writer.enqueue(queued, actualLane);
 		return queued;
 	};
 
 	const enqueueProtocolError = (wireId: WireId, code: number, message: string): boolean => {
-		if (state === "closed" || inputEndStarted) return false;
+		if (state === "closed" || inputEndStarted) {
+			return false;
+		}
 		let frame: Buffer;
 		try {
 			frame = jsonLine(
@@ -206,7 +232,9 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 			});
 			return false;
 		}
-		if (isClosed()) return false;
+		if (isClosed()) {
+			return false;
+		}
 		retainCompletedReverseId(key);
 		return true;
 	};
@@ -240,15 +268,21 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	};
 
 	const resolveShutdownIfWaiting = (): void => {
-		if (!resolveShutdown) return;
+		if (!resolveShutdown) {
+			return;
+		}
 		const resolve = resolveShutdown;
 		resolveShutdown = undefined;
-		if (shutdownTimer !== undefined) clearTimeout(shutdownTimer);
+		if (shutdownTimer !== undefined) {
+			clearTimeout(shutdownTimer);
+		}
 		shutdownTimer = undefined;
 		resolve();
 	};
 	const emitExitOnce = (code: number | null, signal: NodeJS.Signals | null): void => {
-		if (exitEmitted) return;
+		if (exitEmitted) {
+			return;
+		}
 		exitEmitted = true;
 		events.emitExit(
 			Object.freeze({
@@ -268,11 +302,15 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		exit?: { readonly code: number | null; readonly signal: NodeJS.Signals | null },
 	): void => {
 		if (state === "closed") {
-			if (exit !== undefined) emitExitOnce(exit.code, exit.signal);
+			if (exit !== undefined) {
+				emitExitOnce(exit.code, exit.signal);
+			}
 			return;
 		}
 		state = "closed";
-		if (shutdownTimer !== undefined) clearTimeout(shutdownTimer);
+		if (shutdownTimer !== undefined) {
+			clearTimeout(shutdownTimer);
+		}
 		shutdownTimer = undefined;
 		detachInput();
 		if (reason === "frame-too-large") {
@@ -282,23 +320,32 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 				// The child owner remains responsible for terminating the process.
 			}
 		}
-		for (const pending of pendingRequests.values()) settleFailure(pending, reason);
+		for (const pending of pendingRequests.values()) {
+			settleFailure(pending, reason);
+		}
 		writer?.abort(new CodexTransportClosedError(reason));
-		for (const record of reverseRequests.values()) reverseHandles.delete(record.request);
+		for (const record of reverseRequests.values()) {
+			reverseHandles.delete(record.request);
+		}
 		reverseRequests.clear();
 		pendingReverseBytes = 0;
 		clearEpochRetention();
 		resolveShutdownIfWaiting();
-		if (reason !== "shutdown" || exit !== undefined)
+		if (reason !== "shutdown" || exit !== undefined) {
 			emitExitOnce(exit?.code ?? null, exit?.signal ?? null);
+		}
 	};
 
 	const finishShutdown = (): void => {
-		if (state !== "closing" || !shutdownSetupComplete) return;
+		if (state !== "closing" || !shutdownSetupComplete) {
+			return;
+		}
 		const writerState = writer?.inspect();
 		const queuedFrames =
 			(writerState?.queuedFrames ?? 0) + (writerState?.responseQueuedFrames ?? 0);
-		if (writerState?.writeInFlight || queuedFrames > 0) return;
+		if (writerState?.writeInFlight || queuedFrames > 0) {
+			return;
+		}
 		if (!inputEndStarted) {
 			inputEndStarted = true;
 			try {
@@ -311,7 +358,9 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 				inputFinished = true;
 			}
 		}
-		if (!inputFinished) return;
+		if (!inputFinished) {
+			return;
+		}
 		state = "closed";
 		detachInput();
 		writer?.dispose();
@@ -341,13 +390,19 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	};
 
 	const shutdown = (): Promise<void> => {
-		if (state === "closed") return Promise.resolve();
-		if (shutdownPromise) return shutdownPromise;
+		if (state === "closed") {
+			return Promise.resolve();
+		}
+		if (shutdownPromise) {
+			return shutdownPromise;
+		}
 		state = "closing";
 		shutdownPromise = new Promise<void>((resolve) => {
 			resolveShutdown = resolve;
 		});
-		for (const pending of pendingRequests.values()) settleFailure(pending, "shutdown");
+		for (const pending of pendingRequests.values()) {
+			settleFailure(pending, "shutdown");
+		}
 		writer?.drop(() => false, new CodexTransportClosedError("shutdown"));
 		for (const record of Array.from(reverseRequests.values())) {
 			enqueueProtocolError(record.wireId, -32603, PROTOCOL_ERROR_MESSAGE);
@@ -445,18 +500,20 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	});
 
 	const registerDynamicDispatcher = (registration: DynamicDispatcherRegistration): void => {
-		if (state !== "open")
+		if (state !== "open") {
 			throw new CodexTransportClosedError(state === "closing" ? "shutdown" : "transport-closed");
+		}
 		router.registerDynamicDispatcher(registration);
 	};
 	const replaceIdentity = (replacement: IdentityAuthority): void => {
 		if (
 			replacement.validator.childId !== identity.validator.childId ||
 			replacement.validator.epoch !== identity.validator.epoch
-		)
+		) {
 			throw new TypeError(
 				"A Codex transport identity replacement must keep the exact child epoch.",
 			);
+		}
 		identity = replacement;
 	};
 	const ownsPendingReverseRequest = (
@@ -478,9 +535,10 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	child.on("error", onChildError);
 	child.on("exit", onChildExit);
 	childListenersAttached = true;
-	if (child.exitCode !== null || child.signalCode !== null)
+	if (child.exitCode !== null || child.signalCode !== null) {
 		onChildExit(child.exitCode, child.signalCode);
-	if (state === "open")
+	}
+	if (state === "open") {
 		streamAttachment = attachCodexStreamReader(child.stdout, child.stderr, {
 			onLine: router.handleLine,
 			onIssue: events.emitIssue,
@@ -502,10 +560,13 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 					detail: "Codex stderr emitted an error",
 				}),
 		});
+	}
 
-	if (state === "open")
-		for (const registration of options.dynamicDispatchers ?? [])
+	if (state === "open") {
+		for (const registration of options.dynamicDispatchers ?? []) {
 			registerDynamicDispatcher(registration);
+		}
+	}
 
 	return Object.freeze({
 		replaceIdentity,

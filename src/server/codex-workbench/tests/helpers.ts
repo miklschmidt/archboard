@@ -34,13 +34,14 @@ export function accountCommand(
 	command: "accountLogin" | "accountLoginCancel" | "accountLogout",
 ): BrowserCommand {
 	const target = commandTarget(lease);
-	if (command === "accountLogin")
+	if (command === "accountLogin") {
 		return harnessValue.model.BrowserCommandSchema.parse({
 			...target,
 			command,
 			login: { type: "chatgpt" },
 		});
-	if (command === "accountLoginCancel")
+	}
+	if (command === "accountLoginCancel") {
 		return harnessValue.model.BrowserCommandSchema.parse({
 			...target,
 			command,
@@ -48,6 +49,7 @@ export function accountCommand(
 				harnessValue.authorities.identity.decoder.adoptLoginId("gateway-login"),
 			),
 		});
+	}
 	return harnessValue.model.BrowserCommandSchema.parse({ ...target, command });
 }
 
@@ -70,8 +72,9 @@ export function threadLinkCommand(
 	command: "threadLinkCreate" | "threadLinkRefresh" | "threadLinkAttach" | "threadLinkRelink",
 ): BrowserCommand {
 	const target = commandTarget(lease);
-	if (command === "threadLinkCreate" || command === "threadLinkRefresh")
+	if (command === "threadLinkCreate" || command === "threadLinkRefresh") {
 		return harnessValue.model.BrowserCommandSchema.parse({ ...target, command });
+	}
 	return harnessValue.model.BrowserCommandSchema.parse({
 		...target,
 		command,
@@ -114,21 +117,24 @@ export function queueCommand(
 	const submissionId = harnessValue.model.QueuedSubmissionIdSchema.parse(
 		harnessValue.authorities.identity.decoder.adoptQueuedSubmissionId("gateway-submission"),
 	);
-	if (command === "queueAdd")
+	if (command === "queueAdd") {
 		return harnessValue.model.BrowserCommandSchema.parse({
 			...target,
 			command,
 			prompt: "Queue the bounded command",
 		});
-	if (command === "queueUpdate")
+	}
+	if (command === "queueUpdate") {
 		return harnessValue.model.BrowserCommandSchema.parse({
 			...target,
 			command,
 			submissionId,
 			prompt: "Update the bounded command",
 		});
-	if (command === "queueDelete" || command === "queueStart")
+	}
+	if (command === "queueDelete" || command === "queueStart") {
 		return harnessValue.model.BrowserCommandSchema.parse({ ...target, command, submissionId });
+	}
 	return harnessValue.model.BrowserCommandSchema.parse({
 		...target,
 		command,
@@ -143,14 +149,15 @@ export function realtimeCommand(
 	realtimeSessionHandle = lease.commandId,
 ): BrowserCommand {
 	const target = commandTarget(lease);
-	if (command === "realtimeStart")
+	if (command === "realtimeStart") {
 		return harnessValue.model.BrowserCommandSchema.parse({
 			...target,
 			command,
 			threadId: harnessValue.threadId,
 			sdp: "v=0",
 		});
-	if (command === "realtimeAppendText")
+	}
+	if (command === "realtimeAppendText") {
 		return harnessValue.model.BrowserCommandSchema.parse({
 			...target,
 			command,
@@ -158,6 +165,7 @@ export function realtimeCommand(
 			realtimeSessionHandle,
 			text: "bounded speech",
 		});
+	}
 	return harnessValue.model.BrowserCommandSchema.parse({
 		...target,
 		command,

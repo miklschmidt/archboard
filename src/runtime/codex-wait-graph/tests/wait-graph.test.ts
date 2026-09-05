@@ -32,7 +32,9 @@ describe("Codex wait graph", () => {
 		const result = graph.addEdgeSet({ owner: waitOwner, targets });
 
 		expect(result).toMatchObject({ ok: true });
-		if (!result.ok) throw new Error("expected the edge set to be accepted");
+		if (!result.ok) {
+			throw new Error("expected the edge set to be accepted");
+		}
 		expect(result.edges.map((edge) => edge.target)).toEqual([
 			ids.thread("target-a"),
 			ids.thread("target-c"),

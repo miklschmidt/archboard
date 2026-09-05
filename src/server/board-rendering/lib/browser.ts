@@ -48,33 +48,41 @@ class RenderInputError extends Error {}
 async function requireFonts(job: BoardRenderJob): Promise<void> {
 	const wanted = new Map<number, number>();
 	for (const element of job.snapshot.elements) {
-		if (element.type !== "text") continue;
+		if (element.type !== "text") {
+			continue;
+		}
 		const family = Number(element.fontFamily);
 		const size = Number(element.fontSize);
-		if (!fontNames.has(family))
+		if (!fontNames.has(family)) {
 			throw new RenderInputError(
 				`Board render cannot resolve font family ${String(element.fontFamily)}.`,
 			);
-		if (!Number.isFinite(size) || size <= 0)
+		}
+		if (!Number.isFinite(size) || size <= 0) {
 			throw new RenderInputError(
 				`Board render cannot resolve font size ${String(element.fontSize)}.`,
 			);
+		}
 		wanted.set(family, size);
 	}
 	for (const [family, size] of wanted) {
 		const name = fontNames.get(family)!;
 		await document.fonts.load(`${size}px "${name}"`);
-		if (!document.fonts.check(`${size}px "${name}"`))
+		if (!document.fonts.check(`${size}px "${name}"`)) {
 			throw new RenderInputError(`Board render could not load required font "${name}".`);
+		}
 	}
 }
 
 function requireEmbeddedFiles(job: BoardRenderJob): void {
 	for (const element of job.snapshot.elements) {
-		if (element.type !== "image" || element.isDeleted) continue;
+		if (element.type !== "image" || element.isDeleted) {
+			continue;
+		}
 		const id = element.fileId;
-		if (!id || !job.snapshot.files[id]?.dataURL)
+		if (!id || !job.snapshot.files[id]?.dataURL) {
 			throw new RenderInputError(`Board render is missing embedded file "${id ?? "unknown"}".`);
+		}
 	}
 }
 
@@ -115,8 +123,9 @@ function findingFrame(
 async function pngBase64(blob: Blob): Promise<{ data: string; width: number; height: number }> {
 	const bytes = new Uint8Array(await blob.arrayBuffer());
 	let binary = "";
-	for (let offset = 0; offset < bytes.length; offset += 0x8000)
+	for (let offset = 0; offset < bytes.length; offset += 0x8000) {
 		binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+	}
 	const bitmap = await createImageBitmap(blob);
 	try {
 		return { data: btoa(binary), width: bitmap.width, height: bitmap.height };
@@ -128,8 +137,9 @@ async function pngBase64(blob: Blob): Promise<{ data: string; width: number; hei
 function svgSize(svg: SVGSVGElement): { width: number; height: number } {
 	const width = Number.parseFloat(svg.getAttribute("width") ?? "");
 	const height = Number.parseFloat(svg.getAttribute("height") ?? "");
-	if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0)
+	if (!Number.isFinite(width) || width <= 0 || !Number.isFinite(height) || height <= 0) {
 		throw new Error("Board render returned an SVG without finite positive dimensions.");
+	}
 	return { width, height };
 }
 
@@ -177,7 +187,9 @@ async function renderOutput(
 }
 
 async function run(job: BoardRendererJob): Promise<BoardRendererJobResult> {
-	if (state.active) throw new Error("Board renderer received concurrent page work.");
+	if (state.active) {
+		throw new Error("Board renderer received concurrent page work.");
+	}
 	state.active = true;
 	state.jobs += 1;
 	try {
@@ -201,8 +213,9 @@ async function run(job: BoardRendererJob): Promise<BoardRendererJobResult> {
 			requireEmbeddedFiles(job);
 			await requireFonts(job);
 		} catch (error) {
-			if (error instanceof RenderInputError)
+			if (error instanceof RenderInputError) {
 				return { kind: "render", outputs: [], error: error.message };
+			}
 			throw error;
 		}
 		const outputs: BoardRenderOutput[] = [];

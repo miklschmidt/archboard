@@ -17,7 +17,9 @@ import {
 const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
 const required = <T>(value: T | null | undefined, message: string): T => {
-	if (value === null || value === undefined) throw new Error(message);
+	if (value === null || value === undefined) {
+		throw new Error(message);
+	}
 	return value;
 };
 const firstLabel = (labels: ReturnType<typeof boundTextsByContainer>, container: string): string =>
@@ -26,7 +28,9 @@ test("contains hostile pane cycles and preserves human and agent label edits", (
 	{
 		const store = boardOf(drawn(), { keepSeed: true });
 		const baseline = new Map();
-		for (let i = 0; i < CYCLES; i++) cycle(store, baseline, { contain: false });
+		for (let i = 0; i < CYCLES; i++) {
+			cycle(store, baseline, { contain: false });
+		}
 		const elements = [...store.values()];
 		assert(
 			worstLabelCount(elements) > CYCLES / 2,
@@ -45,7 +49,9 @@ test("contains hostile pane cycles and preserves human and agent label edits", (
 		for (let i = 0; i < CYCLES; i++) {
 			const { upserts } = cycle(store, baseline, { contain: true });
 			sizes.push(store.size);
-			if (i > 0 && upserts.length > 0) reports += 1;
+			if (i > 0 && upserts.length > 0) {
+				reports += 1;
+			}
 		}
 		const elements = [...store.values()];
 		const labels = boundTextsByContainer(elements);
@@ -67,7 +73,9 @@ test("contains hostile pane cycles and preserves human and agent label edits", (
 			`a settled board kept reporting changes on ${reports} of ${CYCLES} cycles`,
 		);
 		const arrow = store.get("wire");
-		if (arrow.type !== "arrow" && arrow.type !== "line") throw new Error("wire is not linear");
+		if (arrow.type !== "arrow" && arrow.type !== "line") {
+			throw new Error("wire is not linear");
+		}
 		assert(
 			JSON.stringify(arrow.points) === "[[0,0],[192,0]]",
 			`the input refs did not route the arrow to the two shapes: ${JSON.stringify(arrow.points)}`,
@@ -160,7 +168,9 @@ test("contains hostile pane cycles and preserves human and agent label edits", (
 			`the label's id moved across cycles: ${[...new Set(seen)].join(" -> ")}`,
 		);
 		write(store, [{ id: "svc", label: { text: "IdentityService" } }]);
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		assert(
 			boundTextsByContainer([...store.values()]).get("svc")?.[0] === seen[0],
 			"renaming a label renamed the element carrying it",
@@ -169,13 +179,17 @@ test("contains hostile pane cycles and preserves human and agent label edits", (
 	{
 		const store = boardOf(drawn());
 		const baseline = new Map();
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const before = boundTextsByContainer([...store.values()]);
 		const shapeLabel = firstLabel(before, "svc");
 		const arrowLabel = firstLabel(before, "wire");
 		write(store, [{ id: "svc", label: { text: "IdentityService" } }]);
 		write(store, [{ id: "wire", label: { text: "gRPC" } }]);
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const after = boundTextsByContainer([...store.values()]);
 		assert(
 			after.get("svc")?.length === 1,
@@ -207,7 +221,9 @@ test("contains hostile pane cycles and preserves human and agent label edits", (
 	{
 		const store = boardOf(drawn());
 		const baseline = new Map();
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const before = boundTextsByContainer([...store.values()]);
 		const shapeLabel = firstLabel(before, "svc");
 		const arrowLabel = firstLabel(before, "wire");
@@ -215,7 +231,9 @@ test("contains hostile pane cycles and preserves human and agent label edits", (
 			contain: true,
 			types: { svc: "Ledger", wire: "AMQP" },
 		});
-		for (let i = 0; i < CYCLES; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < CYCLES; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const after = boundTextsByContainer([...store.values()]);
 		assert(
 			store.get(shapeLabel).text === "Ledger",
@@ -270,7 +288,9 @@ test("preserves human clear, retype, and later agent precedence", () => {
 	{
 		const store = boardOf(drawn(), { keepSeed: true });
 		const baseline = new Map();
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const shapeLabel = firstLabel(boundTextsByContainer([...store.values()]), "svc");
 		cycle(store, baseline, { contain: true, types: { svc: "Ledger" } });
 		assert(
@@ -282,7 +302,9 @@ test("preserves human clear, retype, and later agent precedence", () => {
 			"the revert did not put a stale seed on the board",
 		);
 		write(store, [{ id: "svc", x: 40 }], { keepSeed: true });
-		for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 3; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		assert(
 			store.get(shapeLabel).text === "AuthService",
 			"with the seed back the model failed to reproduce the revert, so it is toothless",
@@ -291,11 +313,15 @@ test("preserves human clear, retype, and later agent precedence", () => {
 	{
 		const store = boardOf(drawn());
 		const baseline = new Map();
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const shapeLabel = firstLabel(boundTextsByContainer([...store.values()]), "svc");
 		cycle(store, baseline, { contain: true, types: { svc: "Ledger" } });
 		write(store, [{ id: "svc", x: 40 }]);
-		for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 3; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		assert(
 			store.get(shapeLabel).text === "Ledger",
 			`moving the box reverted its label to ${JSON.stringify(store.get(shapeLabel).text)}`,
@@ -304,12 +330,18 @@ test("preserves human clear, retype, and later agent precedence", () => {
 	{
 		const store = boardOf(drawn());
 		const baseline = new Map();
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const shapeLabel = firstLabel(boundTextsByContainer([...store.values()]), "svc");
 		cycle(store, baseline, { contain: true, types: { svc: "Ledger" } });
-		for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 3; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		write(store, [{ id: "svc", label: { text: "PostingEngine" } }]);
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		assert(
 			store.get(shapeLabel).text === "PostingEngine",
 			`an agent rename after a human edit reads ${JSON.stringify(store.get(shapeLabel).text)}`,
@@ -330,7 +362,9 @@ test("preserves human clear, retype, and later agent precedence", () => {
 	{
 		const store = boardOf(drawn());
 		const baseline = new Map();
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const before = boundTextsByContainer([...store.values()]);
 		const shapeLabel = firstLabel(before, "svc");
 		const arrowLabel = firstLabel(before, "wire");
@@ -344,7 +378,9 @@ test("preserves human clear, retype, and later agent precedence", () => {
 		);
 		assert(!store.has(shapeLabel), "the cleared shape label survived on the server");
 		assert(!store.has(arrowLabel), "the cleared arrow label survived on the server");
-		for (let i = 0; i < CYCLES; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < CYCLES; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const after = boundTextsByContainer([...store.values()]);
 		assert(
 			after.get("svc") === undefined,
@@ -379,7 +415,9 @@ test("preserves human clear, retype, and later agent precedence", () => {
 		);
 		assert(store.size === 4, `reloading a board with cleared labels left ${store.size} elements`);
 		write(store, [{ id: "svc", label: { text: "Ledger" } }]);
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const relabelled = boundTextsByContainer([...store.values()]).get("svc");
 		assert(
 			relabelled?.length === 1,
@@ -393,12 +431,16 @@ test("preserves human clear, retype, and later agent precedence", () => {
 	{
 		const store = boardOf(drawn(), { keepSeed: true });
 		const baseline = new Map();
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const shapeLabel = firstLabel(boundTextsByContainer([...store.values()]), "svc");
 		cycle(store, baseline, { contain: true, empties: { svc: true } });
 		assert(!store.has(shapeLabel), "the model never got the deletion to the server at all");
 		write(store, [{ id: "svc", x: 40 }], { keepSeed: true });
-		for (let i = 0; i < 3; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 3; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const revived = boundTextsByContainer([...store.values()]).get("svc");
 		assert(
 			revived?.length === 1 &&
@@ -441,14 +483,18 @@ test("preserves human clear, retype, and later agent precedence", () => {
 	{
 		const store = boardOf(drawn());
 		const baseline = new Map();
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const shapeLabel = firstLabel(boundTextsByContainer([...store.values()]), "svc");
 		cycle(store, baseline, {
 			contain: true,
 			empties: { gw: true },
 			types: { svc: "Ledger" },
 		});
-		for (let i = 0; i < CYCLES; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < CYCLES; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		assert(
 			store.get(shapeLabel).text === "Ledger",
 			`the retyped label reads ${JSON.stringify(store.get(shapeLabel).text)}`,
@@ -469,7 +515,9 @@ test("preserves human clear, retype, and later agent precedence", () => {
 	{
 		const store = boardOf(drawn());
 		const baseline = new Map();
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		write(store, [
 			{
 				id: "cache",
@@ -481,7 +529,9 @@ test("preserves human clear, retype, and later agent precedence", () => {
 				label: { text: "Cache" },
 			},
 		]);
-		for (let i = 0; i < 5; i++) cycle(store, baseline, { contain: true });
+		for (let i = 0; i < 5; i++) {
+			cycle(store, baseline, { contain: true });
+		}
 		const labels = boundTextsByContainer([...store.values()]);
 		assert(
 			labels.get("cache")?.length === 1,

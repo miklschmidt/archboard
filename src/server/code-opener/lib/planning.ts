@@ -36,7 +36,9 @@ export function validateOpenerSelection(
 	selection: unknown,
 ): OpenerSelection | OpenerSelectionInvalid {
 	const parsed = OpenerSelectionSchema.safeParse(selection);
-	if (!parsed.success) return invalid("The opener selection is invalid.");
+	if (!parsed.success) {
+		return invalid("The opener selection is invalid.");
+	}
 	if (parsed.data.kind === "custom" && !isAbsoluteOrBareOpenerExecutable(parsed.data.executable)) {
 		return invalid("A custom executable must be absolute or a bare PATH name.");
 	}
@@ -49,7 +51,9 @@ export function planOpenerCommand(
 	platform: string = process.platform,
 ): OpenerPlan {
 	const validated = validateOpenerSelection(selection);
-	if ("ok" in validated) return validated;
+	if ("ok" in validated) {
+		return validated;
+	}
 	if (validated.kind === "platform") {
 		const executable = PLATFORM_EXECUTABLES[platform];
 		return executable

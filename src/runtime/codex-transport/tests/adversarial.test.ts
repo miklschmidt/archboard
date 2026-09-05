@@ -33,7 +33,9 @@ function exactTurnResponse(
 	const prefix = `{"id":${JSON.stringify(id)},"result":{"turnId":"`;
 	const suffix = `"}}`;
 	const length = payloadBytes - Buffer.byteLength(prefix + suffix, "utf8");
-	if (length < 0) throw new Error("payload target is smaller than the response envelope");
+	if (length < 0) {
+		throw new Error("payload target is smaller than the response envelope");
+	}
 	const turnId = "x".repeat(length);
 	return { frame: Buffer.from(`${prefix}${turnId}${suffix}`, "utf8"), turnId };
 }
@@ -205,7 +207,9 @@ describe("Codex app-server transport adversarial public contract", () => {
 				},
 			});
 			await flushStreams();
-			if (!request) throw new Error("dynamic request was not routed");
+			if (!request) {
+				throw new Error("dynamic request was not routed");
+			}
 			expect(
 				await captureRejection(
 					transport.respond(request, "codex-coordinator-tools", {
@@ -252,7 +256,9 @@ describe("Codex app-server transport adversarial public contract", () => {
 			shutdownHarness.transport.onServerRequest((value) => (request = value));
 			sendJson(shutdownHarness.child, currentTimeRequest("shutdown-owned"));
 			await flushStreams();
-			if (!request) throw new Error("shutdown request was not routed");
+			if (!request) {
+				throw new Error("shutdown request was not routed");
+			}
 			await shutdownHarness.transport.shutdown();
 			expect(frames(shutdownHarness.child).at(-1)).toMatchObject({
 				id: "shutdown-owned",
@@ -354,7 +360,9 @@ describe("Codex app-server transport adversarial public contract", () => {
 			transport.onServerRequest((value) => (request = value));
 			sendJson(child, currentTimeRequest("priority"));
 			await flushStreams();
-			if (!request) throw new Error("priority request was not routed");
+			if (!request) {
+				throw new Error("priority request was not routed");
+			}
 			const response = transport.respond(request, "codex-session", {
 				result: { currentTimeAt: 0 },
 			});
@@ -383,7 +391,9 @@ describe("Codex app-server transport adversarial public contract", () => {
 				sendJson(second.child, currentTimeRequest(`reserve-${index}`));
 				await flushStreams();
 				const request = requests.at(-1);
-				if (!request) throw new Error("reserve request was not routed");
+				if (!request) {
+					throw new Error("reserve request was not routed");
+				}
 				responses.push(
 					second.transport.respond(request, "codex-session", { result: { currentTimeAt: 0 } }),
 				);
@@ -395,7 +405,9 @@ describe("Codex app-server transport adversarial public contract", () => {
 			sendJson(second.child, currentTimeRequest("reserve-retry"));
 			await flushStreams();
 			const last = requests.at(-1);
-			if (!last) throw new Error("retry request was not routed");
+			if (!last) {
+				throw new Error("retry request was not routed");
+			}
 			const rejected = await captureRejection(
 				second.transport.respond(last, "codex-session", { result: { currentTimeAt: 0 } }),
 			);

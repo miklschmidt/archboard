@@ -18,11 +18,22 @@ export function validatePersistedBoardElement(
 	const initial = recordAt(value, context, undefined, undefined, "element");
 	const id = typeof initial["id"] === "string" ? initial["id"] : undefined;
 	const type = typeof initial["type"] === "string" ? initial["type"] : undefined;
-	if (!id) fail(context, id, type, "element.id");
-	if (!type || !TYPES.has(type)) fail(context, id, type, "element.type");
-	for (const alias of ["label", "start", "end", "startElementId", "endElementId"])
-		if (alias in initial) fail(context, id, type, `element.${alias}`);
-	if (type !== "text" && "rawText" in initial) fail(context, id, type, "element.rawText");
-	if (type === "line" && "elbowed" in initial) fail(context, id, type, "element.elbowed");
+	if (!id) {
+		fail(context, id, type, "element.id");
+	}
+	if (!type || !TYPES.has(type)) {
+		fail(context, id, type, "element.type");
+	}
+	for (const alias of ["label", "start", "end", "startElementId", "endElementId"]) {
+		if (alias in initial) {
+			fail(context, id, type, `element.${alias}`);
+		}
+	}
+	if (type !== "text" && "rawText" in initial) {
+		fail(context, id, type, "element.rawText");
+	}
+	if (type === "line" && "elbowed" in initial) {
+		fail(context, id, type, "element.elbowed");
+	}
 	return buildValidatedElement(initial, context, id, type as PersistedBoardElement["type"]);
 }

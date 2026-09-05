@@ -36,9 +36,12 @@ async function answerPending<Method extends ResponseMethod>(
 	await fixture.settle();
 	const frames = fixture.frames();
 	const index = frames.findIndex(
-		(frame, candidate) => candidate >= from && frame["method"] === method && frame["id"] !== undefined,
+		(frame, candidate) =>
+			candidate >= from && frame["method"] === method && frame["id"] !== undefined,
 	);
-	if (index < 0) throw new Error(`transport did not write ${method}`);
+	if (index < 0) {
+		throw new Error(`transport did not write ${method}`);
+	}
 	const request = frames[index];
 	fixture.send({ id: request?.["id"], result });
 	await fixture.settle();
@@ -117,7 +120,9 @@ describe("Codex session response workflows", () => {
 					authUrl: "https://example.test/login",
 				},
 			);
-			if (login.type !== "chatgpt") throw new Error("hosted login result was not returned");
+			if (login.type !== "chatgpt") {
+				throw new Error("hosted login result was not returned");
+			}
 			expect(fixture.identity.decoder.serializeCodexIdentity(login.loginId)).toBe("hosted-login");
 			await roundTrip(
 				fixture,
@@ -162,7 +167,9 @@ describe("Codex session response workflows", () => {
 				},
 			);
 			const listedThread = listed.data[0];
-			if (!listedThread) throw new Error("thread/list returned no thread");
+			if (!listedThread) {
+				throw new Error("thread/list returned no thread");
+			}
 			const read = await roundTrip(
 				fixture,
 				"thread/read",

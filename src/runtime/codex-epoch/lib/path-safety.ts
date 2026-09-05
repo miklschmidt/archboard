@@ -49,7 +49,9 @@ function canonicalPathWithoutSymlinks(
 			}
 			canonical = realpath(fileSystem, current, label);
 		} catch (error) {
-			if (error instanceof CodexEpochError) throw error;
+			if (error instanceof CodexEpochError) {
+				throw error;
+			}
 			if (!isMissing(error)) {
 				throw new CodexEpochError("storage_failure", `${label} cannot be inspected`, error);
 			}

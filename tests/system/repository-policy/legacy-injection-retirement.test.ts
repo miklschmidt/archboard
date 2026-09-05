@@ -52,8 +52,12 @@ const voiceAction =
 
 function hasPositiveSharedThreadVoiceGuidance(block: string): boolean {
 	return block.split(/(?<=[.!?])\s+/).some((sentence) => {
-		if (!/\bvoice\b/i.test(sentence) || !/\bthread\b/i.test(sentence)) return false;
-		if (!voiceAction.test(sentence) || !/\b(?:same|existing)\b/i.test(sentence)) return false;
+		if (!/\bvoice\b/i.test(sentence) || !/\bthread\b/i.test(sentence)) {
+			return false;
+		}
+		if (!voiceAction.test(sentence) || !/\b(?:same|existing)\b/i.test(sentence)) {
+			return false;
+		}
 		return !(
 			new RegExp(
 				`\\b(?:cannot|do(?:es)? not|never|should not|must not|may not)\\b[^.]{0,32}${voiceAction.source}`,
@@ -68,9 +72,15 @@ const controlSocketAction =
 
 function hasPositiveControlSocketGuidance(block: string): boolean {
 	return block.split(/(?<=[.!?])\s+/).some((sentence) => {
-		if (!/\bcontrol[ -]socket\b/i.test(sentence)) return false;
-		if (/\b(?:retired|unavailable|superseded|removed)\b/i.test(sentence)) return false;
-		if (/\bno\s+control[ -]socket\b/i.test(sentence)) return false;
+		if (!/\bcontrol[ -]socket\b/i.test(sentence)) {
+			return false;
+		}
+		if (/\b(?:retired|unavailable|superseded|removed)\b/i.test(sentence)) {
+			return false;
+		}
+		if (/\bno\s+control[ -]socket\b/i.test(sentence)) {
+			return false;
+		}
 		if (
 			/\bcontrol[ -]socket\b[^.]{0,40}\bnot\s+(?:armed|connected|enabled|opened|run|started|used)\b/i.test(
 				sentence,
@@ -105,8 +115,9 @@ describe("legacy injection retirement policy", () => {
 			"src/runtime/engine/app-server-control.ts",
 			"tests/system/canvas-state/injection.test.ts",
 			"tests/system/canvas-state/support/injection-daemon.ts",
-		])
+		]) {
 			expect(existsSync(path.join(repoRoot, retired)), retired).toBeFalse();
+		}
 
 		const retiredConcepts = [
 			["retired injection route", /\/api\/injection(?:\/|\b)/i],
@@ -120,10 +131,14 @@ describe("legacy injection retirement policy", () => {
 		for await (const file of new Bun.Glob("**/*.{ts,tsx}").scan({
 			cwd: path.join(repoRoot, "src"),
 		})) {
-			if (isTestOwnedSource(file)) continue;
+			if (isTestOwnedSource(file)) {
+				continue;
+			}
 			const source = read(path.join("src", file));
 			for (const [concept, pattern] of retiredConcepts) {
-				if (pattern.test(source)) forbiddenProductionReferences.push(`src/${file}: ${concept}`);
+				if (pattern.test(source)) {
+					forbiddenProductionReferences.push(`src/${file}: ${concept}`);
+				}
 			}
 		}
 		expect(forbiddenProductionReferences).toEqual([]);
@@ -144,8 +159,9 @@ describe("legacy injection retirement policy", () => {
 				"app-server-control",
 				"control.sock",
 				"~/.codex",
-			])
+			]) {
 				expect(source.includes(retired), `${relativePath}: ${retired}`).toBeFalse();
+			}
 
 			const executableBlocks = [...source.matchAll(/```(?:bash|sh|toml)\n([\s\S]*?)```/g)].map(
 				(match) => match[1] ?? "",
@@ -191,8 +207,9 @@ describe("legacy injection retirement policy", () => {
 			"delivered",
 			"not_delivered",
 			"outcome_unknown",
-		])
+		]) {
 			expect(authoritative.includes(identifier), identifier).toBeTrue();
+		}
 		const voiceRelationship = authoritative
 			.split(/\n\n+/)
 			.find((paragraph) => /realtime voice/i.test(paragraph));
@@ -208,8 +225,9 @@ describe("legacy injection retirement policy", () => {
 			"CODEX_SQLITE_HOME",
 			"config.toml",
 			"excalidraw-canvas/codex-workbench",
-		])
+		]) {
 			expect(testing.includes(identifier), identifier).toBeTrue();
+		}
 
 		for (const relativePath of ["AGENTS.md", "README.md", "TESTING.md"] as const) {
 			expect(currentDocuments.get(relativePath), relativePath).toContain(designSectionLink);
@@ -225,7 +243,9 @@ describe("legacy injection retirement policy", () => {
 		const spokenApproval = authoritative
 			.split(/\n\n+/)
 			.find((paragraph) => /spoken approval/i.test(paragraph) && /\barm\b/i.test(paragraph));
-		if (spokenApproval === undefined) throw new Error("The spoken-approval policy is absent.");
+		if (spokenApproval === undefined) {
+			throw new Error("The spoken-approval policy is absent.");
+		}
 
 		const normalized = spokenApproval.replace(/\s+/g, " ");
 		expect(normalized).toMatch(/next matching final user item/i);

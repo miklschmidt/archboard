@@ -33,11 +33,15 @@ function createResolverFixture(): ResolverFixture {
 	mkdirSync(join(root, "state"));
 	writeFileSync(join(checkout, "src", "index.ts"), "export {};\n");
 	const init = Bun.spawnSync(["git", "init", "-q"], { cwd: checkout });
-	if (init.exitCode !== 0) throw new Error(init.stderr.toString());
+	if (init.exitCode !== 0) {
+		throw new Error(init.stderr.toString());
+	}
 	const remote = Bun.spawnSync(["git", "remote", "add", "origin", `https://${repository}.git`], {
 		cwd: checkout,
 	});
-	if (remote.exitCode !== 0) throw new Error(remote.stderr.toString());
+	if (remote.exitCode !== 0) {
+		throw new Error(remote.stderr.toString());
+	}
 	writeFileSync(
 		registry,
 		JSON.stringify([
@@ -52,8 +56,11 @@ beforeEach(() => {
 	process.env["ARCHBOARD_REPOS"] = fixture.registry;
 });
 afterEach(() => {
-	if (previousRegistry === undefined) delete process.env["ARCHBOARD_REPOS"];
-	else process.env["ARCHBOARD_REPOS"] = previousRegistry;
+	if (previousRegistry === undefined) {
+		delete process.env["ARCHBOARD_REPOS"];
+	} else {
+		process.env["ARCHBOARD_REPOS"] = previousRegistry;
+	}
 	fixture.dispose();
 });
 
@@ -120,8 +127,9 @@ test("only marker-backed and request-owned echoes restore the canonical link", a
 			opaqueTarget: internal,
 		}),
 	).toBe(humanLink);
-	for (const incoming of [github, legacy])
+	for (const incoming of [github, legacy]) {
 		expect(canonicalLinkAfterPresentationEcho(canonical, incoming, context)).toBe(incoming);
+	}
 	expect(
 		canonicalLinkAfterPresentationEcho(canonical, opaque, { ...context, opaqueTarget: opaque }),
 	).toBe(humanLink);

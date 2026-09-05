@@ -22,8 +22,9 @@ function assertExpectedTurn(
 	if (
 		classification.workhorse.link.status !== "active" ||
 		activeTurnFromClassification(classification.workhorse) !== request.expectedTurnId
-	)
+	) {
 		throw operationError("busy", "Steer requires the exact currently active workhorse turn.");
+	}
 }
 
 async function revalidateSteer(
@@ -94,8 +95,9 @@ export function createSteer(
 					context.operation.kind !== "steer_workhorse" ||
 					context.operation.rpc !== "turn/steer" ||
 					context.operation.outcome !== null
-				)
+				) {
 					throw new TypeError("steer context does not carry the current operation identity");
+				}
 				params = {
 					threadId: binding.workhorse.threadId,
 					clientUserMessageId: operationIdWire,
@@ -116,8 +118,9 @@ export function createSteer(
 			await revalidateSteer(runtime, request, state, "Steer authority changed before delivery.");
 			try {
 				const response = await runtime.options.session.turnSteer(params);
-				if (response.turnId !== request.expectedTurnId)
+				if (response.turnId !== request.expectedTurnId) {
 					throw new TypeError("turn/steer returned a different turn identity");
+				}
 				await runtime.classify(binding, request.call, "steer_workhorse");
 				const outcome = runtime.settleDurable(state, "delivered", null);
 				if (outcome !== "delivered") {
@@ -145,9 +148,11 @@ export function createSteer(
 				const requested =
 					error instanceof CodexSessionMutationError ? error.outcome : "outcome_unknown";
 				const outcome = runtime.settleDurable(state, requested, messageOf(error));
-				if (outcome === "outcome_unknown")
+				if (outcome === "outcome_unknown") {
 					runtime.emit(state, "outcome_unknown", outcome, [], messageOf(error));
-				else runtime.terminal(state, "failed", [], messageOf(error));
+				} else {
+					runtime.terminal(state, "failed", [], messageOf(error));
+				}
 				return Object.freeze({ turnId: request.expectedTurnId, delivery: outcome });
 			}
 		});

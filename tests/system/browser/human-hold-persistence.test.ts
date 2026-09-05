@@ -189,7 +189,9 @@ const pageFileIds = (browser: AgentBrowserSession): Promise<string[]> =>
 	})()`);
 
 function canonical(value: unknown): unknown {
-	if (Array.isArray(value)) return value.map(canonical);
+	if (Array.isArray(value)) {
+		return value.map(canonical);
+	}
 	if (value && typeof value === "object") {
 		const record = value as Record<string, unknown>;
 		return Object.fromEntries(

@@ -17,8 +17,9 @@ interface TestWallClockReporter {
 let activeDeclaration: TestWallClockDeclaration | undefined;
 
 export function declareTestWallClockBudget(declaration: TestWallClockDeclaration): void {
-	if (activeDeclaration)
+	if (activeDeclaration) {
 		throw new Error("Only one wall-clock declaration may apply to an executing test.");
+	}
 	activeDeclaration = declaration;
 }
 
@@ -45,11 +46,15 @@ export function createTestWallClockReporter(
 			return startedAtMs !== undefined;
 		},
 		finish(test, declaration) {
-			if (startedAtMs === undefined) throw new Error("Test wall-clock reporter was not started.");
+			if (startedAtMs === undefined) {
+				throw new Error("Test wall-clock reporter was not started.");
+			}
 			const elapsedMs = Math.max(0, nowMs() - startedAtMs);
 			startedAtMs = undefined;
 			const budgetMs = declaration?.outerBoundMs ?? defaultBudgetMs;
-			if (elapsedMs <= budgetMs) return;
+			if (elapsedMs <= budgetMs) {
+				return;
+			}
 			throw new Error(
 				`Slow test ${JSON.stringify(test)} took ${elapsedMs.toFixed(2)} ms, above its ${budgetMs} ms wall-clock budget. ` +
 					"Replace production-duration waits with controlled time, or add a source-local declareTestWallClockBudget call as the test body's first statement with its exact name, a reason, TEST_* outer bound, task, and recorded evidence.",

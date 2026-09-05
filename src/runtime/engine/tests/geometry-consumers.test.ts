@@ -11,7 +11,9 @@ import { completeElements } from "./support/elements.ts";
 const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
 const required = <T>(value: T | null | undefined, message: string): T => {
-	if (value === null || value === undefined) throw new Error(message);
+	if (value === null || value === undefined) {
+		throw new Error(message);
+	}
 	return value;
 };
 const near = (a: number, b: number, slack = 0.5): boolean => Math.abs(a - b) <= slack;
@@ -31,13 +33,14 @@ const elementById = (elements: readonly ServerElement[], id: string): ServerElem
 		`Missing fixture element ${id}.`,
 	);
 const trueEdges = (element: ServerElement) => {
-	if (element.type !== "arrow" && element.type !== "line" && element.type !== "freedraw")
+	if (element.type !== "arrow" && element.type !== "line" && element.type !== "freedraw") {
 		return {
 			x0: element.x,
 			y0: element.y,
 			x1: element.x + (element.width || 0),
 			y1: element.y + (element.height || 0),
 		};
+	}
 	const xs = element.points.map(([x]) => element.x + x);
 	const ys = element.points.map(([, y]) => element.y + (y ?? 0));
 	return {
@@ -69,13 +72,15 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 		const maxY = Number(required(captures[4], "missing maximum y"));
 		const outside = [];
 		for (const element of scene) {
-			if (element.type !== "arrow" && element.type !== "line" && element.type !== "freedraw")
+			if (element.type !== "arrow" && element.type !== "line" && element.type !== "freedraw") {
 				continue;
+			}
 			for (const [pointX, pointY] of element.points) {
 				const x = element.x + pointX;
 				const y = element.y + pointY;
-				if (x < minX - 1 || x > maxX + 1 || y < minY - 1 || y > maxY + 1)
+				if (x < minX - 1 || x > maxX + 1 || y < minY - 1 || y > maxY + 1) {
 					outside.push(`${element.id} (${Math.round(x)},${Math.round(y)})`);
+				}
 			}
 		}
 		assert(
@@ -107,8 +112,9 @@ test("feeds measured geometry to compare, promotion, describe, layout, and selec
 				`${element.id}: top-left-plus-size happens to be right here, so this board is not exercising the bug`,
 			);
 			const named = regionName(measured.cx, measured.cy, frame);
-			if (named !== regionName(assumed.cx, assumed.cy, frame))
+			if (named !== regionName(assumed.cx, assumed.cy, frame)) {
 				misnamed.push(`${element.id} is ${named}`);
+			}
 		}
 		assert(
 			misnamed.length > 0,

@@ -33,7 +33,9 @@ const localRepository = "github.com/acme/local";
 
 function git(cwd: string, ...args: string[]): void {
 	const result = Bun.spawnSync(["git", ...args], { cwd, stderr: "pipe" });
-	if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+	if (result.exitCode !== 0) {
+		throw new Error(result.stderr.toString());
+	}
 }
 
 function node(
@@ -286,10 +288,13 @@ test(
 		}
 		let raw = readFileSync(note, "utf8");
 		let stored = new Map(extractSceneElements(raw).map((element) => [element.id, element]));
-		for (const id of ["local-file", "commit"]) expect(stored.get(id)?.link, id).toBeNull();
+		for (const id of ["local-file", "commit"]) {
+			expect(stored.get(id)?.link, id).toBeNull();
+		}
 		expect(stored.get("local-directory")?.link).toBe(exactLegacyDirectory);
-		for (const [id, link] of Object.entries(preservedEchoes))
+		for (const [id, link] of Object.entries(preservedEchoes)) {
 			expect(stored.get(id)?.link, id).toBe(link);
+		}
 		const agentPresented = (await read()).get("commit")!;
 		const agentEcho = await api(`/api/elements/changes?board=targets`, {
 			method: "POST",
@@ -415,12 +420,16 @@ test(
 			pathToFileURL(join(checkout, "src", "index.ts")).href,
 			pathToFileURL(join(checkout, "src", "later.ts")).href,
 		];
-		for (const derived of [...internalCandidates, ...githubCandidates, ...legacyCandidates])
+		for (const derived of [...internalCandidates, ...githubCandidates, ...legacyCandidates]) {
 			expect(raw).not.toContain(`"link": ${JSON.stringify(derived)}`);
-		for (const machineValue of [registry, openerConfig, openerExecutable, ...openerArgv])
+		}
+		for (const machineValue of [registry, openerConfig, openerExecutable, ...openerArgv]) {
 			expect(raw).not.toContain(machineValue);
+		}
 		expect(raw).toContain(exactLegacyDirectory);
-		for (const human of Object.values(preservedEchoes)) expect(raw).toContain(human);
+		for (const human of Object.values(preservedEchoes)) {
+			expect(raw).toContain(human);
+		}
 	},
 	TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS,
 );

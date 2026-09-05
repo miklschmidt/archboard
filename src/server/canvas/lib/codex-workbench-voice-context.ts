@@ -26,8 +26,12 @@ function entryKind(
 	delivery: CoordinatorCallbackDelivery,
 ): BrowserVoiceContext["entries"][number]["kind"] {
 	const callback = delivery.callback;
-	if (callback === null || callback.kind === "operation") return "callback";
-	if (callback.type === "change") return "semantic";
+	if (callback === null || callback.kind === "operation") {
+		return "callback";
+	}
+	if (callback.type === "change") {
+		return "semantic";
+	}
 	return callback.type;
 }
 
@@ -58,7 +62,9 @@ export function projectCanvasVoiceContext(
 	generation: CodexRealtimeGeneration | null,
 	callbacks: Pick<CoordinatorCallbacks, "inspectHistory">,
 ): BrowserVoiceContext | null {
-	if (generation === null) return null;
+	if (generation === null) {
+		return null;
+	}
 	const history = callbacks.inspectHistory({
 		childId: generation.child,
 		epoch: generation.epoch,

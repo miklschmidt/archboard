@@ -15,8 +15,9 @@ import {
 } from "./support.js";
 
 function record(value: unknown): Record<string, unknown> {
-	if (value === null || typeof value !== "object" || Array.isArray(value))
+	if (value === null || typeof value !== "object" || Array.isArray(value)) {
 		throw new Error("fixture expected an object");
+	}
 	return Object.fromEntries(Object.entries(value));
 }
 
@@ -62,13 +63,18 @@ describe("codex dynamic read projection", () => {
 			}),
 		);
 		const parsed = parseDynamicToolCallResponse("read_thread", response);
-		if (parsed.envelope.tag !== "ok") throw new Error("output fixture did not succeed");
+		if (parsed.envelope.tag !== "ok") {
+			throw new Error("output fixture did not succeed");
+		}
 		const value = record(parsed.envelope.value);
-		if (!Array.isArray(value["turns"]) || value["turns"].length !== 1)
+		if (!Array.isArray(value["turns"]) || value["turns"].length !== 1) {
 			throw new Error("output fixture returned an unexpected turn list");
+		}
 		const turnValue = record(value["turns"][0]);
 		const summary = turnValue["summary"];
-		if (typeof summary !== "string") throw new Error("output fixture returned no summary");
+		if (typeof summary !== "string") {
+			throw new Error("output fixture returned no summary");
+		}
 
 		expect(summary).toContain("commandExecution: command output");
 		expect(summary).toContain("fileChange: @@ file output");
@@ -105,9 +111,13 @@ describe("codex dynamic read projection", () => {
 			}),
 		);
 		const parsed = parseDynamicToolCallResponse("read_thread", response);
-		if (parsed.envelope.tag !== "ok") throw new Error("long-base fixture did not succeed");
+		if (parsed.envelope.tag !== "ok") {
+			throw new Error("long-base fixture did not succeed");
+		}
 		const turns = record(parsed.envelope.value)["turns"];
-		if (!Array.isArray(turns) || turns.length !== 1) throw new Error("missing projected turn");
+		if (!Array.isArray(turns) || turns.length !== 1) {
+			throw new Error("missing projected turn");
+		}
 		const turnValue = record(turns[0]);
 		const summary = String(turnValue["summary"]);
 
@@ -135,9 +145,13 @@ describe("codex dynamic read projection", () => {
 			}),
 		);
 		const parsed = parseDynamicToolCallResponse("read_thread", response);
-		if (parsed.envelope.tag !== "ok") throw new Error("multibyte fixture did not succeed");
+		if (parsed.envelope.tag !== "ok") {
+			throw new Error("multibyte fixture did not succeed");
+		}
 		const turns = record(parsed.envelope.value)["turns"];
-		if (!Array.isArray(turns) || turns.length !== 1) throw new Error("missing projected turn");
+		if (!Array.isArray(turns) || turns.length !== 1) {
+			throw new Error("missing projected turn");
+		}
 		const turnValue = record(turns[0]);
 		const summary = String(turnValue["summary"]);
 
@@ -171,9 +185,13 @@ describe("codex dynamic read projection", () => {
 			}),
 		);
 		const parsed = parseDynamicToolCallResponse("read_thread", response);
-		if (parsed.envelope.tag !== "ok") throw new Error("no-output fixture did not succeed");
+		if (parsed.envelope.tag !== "ok") {
+			throw new Error("no-output fixture did not succeed");
+		}
 		const turns = record(parsed.envelope.value)["turns"];
-		if (!Array.isArray(turns) || turns.length !== 1) throw new Error("missing projected turn");
+		if (!Array.isArray(turns) || turns.length !== 1) {
+			throw new Error("missing projected turn");
+		}
 		const turnValue = record(turns[0]);
 		const summary = String(turnValue["summary"]);
 
@@ -229,13 +247,18 @@ describe("codex dynamic read projection", () => {
 			}),
 		);
 		const parsed = parseDynamicToolCallResponse("read_thread", response);
-		if (parsed.envelope.tag !== "ok") throw new Error("truncation fixture did not succeed");
+		if (parsed.envelope.tag !== "ok") {
+			throw new Error("truncation fixture did not succeed");
+		}
 		const value = record(parsed.envelope.value);
-		if (!Array.isArray(value["turns"]) || value["turns"].length !== 1)
+		if (!Array.isArray(value["turns"]) || value["turns"].length !== 1) {
 			throw new Error("truncation fixture returned an unexpected turn list");
+		}
 		const turnValue = record(value["turns"][0]);
 		const summary = turnValue["summary"];
-		if (typeof summary !== "string") throw new Error("truncation fixture returned no summary");
+		if (typeof summary !== "string") {
+			throw new Error("truncation fixture returned no summary");
+		}
 
 		expect(Buffer.byteLength(summary, "utf8")).toBeLessThanOrEqual(512);
 		expect(summary).toContain("…");

@@ -14,9 +14,15 @@ describe("codex workhorse start transaction", () => {
 			const fixture = makeFixture();
 			try {
 				const response = fixture.session.startResult;
-				if (response instanceof Error) throw response;
-				if (field === "thread.source") Object.assign(response.thread, { source: "cli" });
-				if (field === "cwd") Object.assign(response, { cwd: "/other-checkout" });
+				if (response instanceof Error) {
+					throw response;
+				}
+				if (field === "thread.source") {
+					Object.assign(response.thread, { source: "cli" });
+				}
+				if (field === "cwd") {
+					Object.assign(response, { cwd: "/other-checkout" });
+				}
 				const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
 				expect(result.state).toBe("inspect_only");
 				expect(result.reason).toContain(`authored profile: ${field}.`);
@@ -59,7 +65,9 @@ describe("codex workhorse start transaction", () => {
 
 			const target = fixture.link.targets[0];
 			expect(target).toBeDefined();
-			if (target === undefined || result.operationId === null) return;
+			if (target === undefined || result.operationId === null) {
+				return;
+			}
 			expect(target.target.operationId).toBe(result.operationId);
 			expect(target.target.provenance).toMatchObject({
 				record: { correlation: { operationId: result.operationId } },

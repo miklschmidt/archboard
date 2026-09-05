@@ -284,7 +284,9 @@ describe("dedicated Codex storage", () => {
 							let writes = 0;
 							return ((target: string | number | URL, data: string | NodeJS.ArrayBufferView) => {
 								writes += 1;
-								if (writes === 2) throw new Error("injected config write failure");
+								if (writes === 2) {
+									throw new Error("injected config write failure");
+								}
 								return fs.writeFileSync(target, data);
 							}) as typeof fs.writeFileSync;
 						})(),

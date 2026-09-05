@@ -53,9 +53,13 @@ export async function snapshotCheckoutAccess(
 		entries.map(async (entry): Promise<readonly [string, CheckoutInspection]> => {
 			try {
 				const registeredRoot = fs.realpathSync.native(entry.root);
-				if (!fs.statSync(registeredRoot).isDirectory()) return [entry.repo, Object.freeze({})];
+				if (!fs.statSync(registeredRoot).isDirectory()) {
+					return [entry.repo, Object.freeze({})];
+				}
 				const discoveredRoot = await repoRootOf(registeredRoot, options);
-				if (!discoveredRoot) return [entry.repo, Object.freeze({})];
+				if (!discoveredRoot) {
+					return [entry.repo, Object.freeze({})];
+				}
 				const root = fs.realpathSync.native(discoveredRoot);
 				return [
 					entry.repo,
@@ -66,8 +70,9 @@ export async function snapshotCheckoutAccess(
 					}),
 				];
 			} catch {
-				if (options.signal?.aborted)
+				if (options.signal?.aborted) {
 					throw new DOMException("Checkout snapshot cancelled.", "AbortError");
+				}
 				return [entry.repo, Object.freeze({})];
 			}
 		}),
@@ -75,7 +80,9 @@ export async function snapshotCheckoutAccess(
 	const failed = settled.find(
 		(result): result is PromiseRejectedResult => result.status === "rejected",
 	);
-	if (failed) throw failed.reason;
+	if (failed) {
+		throw failed.reason;
+	}
 	const inspected = settled.map(
 		(result) => (result as PromiseFulfilledResult<readonly [string, CheckoutInspection]>).value,
 	);
@@ -86,20 +93,26 @@ export async function snapshotCheckoutAccess(
 	};
 	for (const entry of entries) {
 		const inspection = inspections.get(entry.repo);
-		if (!inspection?.registeredRoot || !inspection.root) continue;
+		if (!inspection?.registeredRoot || !inspection.root) {
+			continue;
+		}
 		remember(entry.root, inspection.registeredRoot, "directory");
 		remember(inspection.registeredRoot, inspection.registeredRoot, "directory");
 		remember(inspection.root, inspection.root, "directory");
 	}
 	for (const binding of options.bindings ?? []) {
 		const inspection = binding.repo ? inspections.get(binding.repo) : undefined;
-		if (!inspection?.root || path.isAbsolute(binding.path)) continue;
+		if (!inspection?.root || path.isAbsolute(binding.path)) {
+			continue;
+		}
 		const lexical = path.resolve(inspection.root, binding.path);
 		try {
 			const realpath = fs.realpathSync.native(lexical);
 			const stats = fs.statSync(realpath);
 			const kind = stats.isFile() ? "file" : stats.isDirectory() ? "directory" : undefined;
-			if (!kind) continue;
+			if (!kind) {
+				continue;
+			}
 			remember(lexical, realpath, kind);
 			remember(realpath, realpath, kind);
 		} catch {
@@ -119,12 +132,16 @@ function dependenciesFor(snapshot: CheckoutSnapshot): ResolverDependencies {
 		readRegistry: () => [...snapshot.entries],
 		realpath: (candidate) => {
 			const inspected = snapshot.path(candidate);
-			if (!inspected) throw new Error("Path was not captured by this checkout snapshot.");
+			if (!inspected) {
+				throw new Error("Path was not captured by this checkout snapshot.");
+			}
 			return inspected.realpath;
 		},
 		stat: (candidate) => {
 			const inspected = snapshot.path(candidate);
-			if (!inspected) throw new Error("Path was not captured by this checkout snapshot.");
+			if (!inspected) {
+				throw new Error("Path was not captured by this checkout snapshot.");
+			}
 			return {
 				isDirectory: () => inspected.kind === "directory",
 				isFile: () => inspected.kind === "file",

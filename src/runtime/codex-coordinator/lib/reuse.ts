@@ -152,7 +152,9 @@ export async function decideCandidate(
 			reason: `The retained coordinator evidence is malformed: ${errorMessage(error)}`,
 		};
 	}
-	if (mismatch !== null) return { kind: "replace", threadId: candidate.threadId, reason: mismatch };
+	if (mismatch !== null) {
+		return { kind: "replace", threadId: candidate.threadId, reason: mismatch };
+	}
 	try {
 		const proof = options.epoch.assertCurrent({
 			childId: candidate.childId,
@@ -243,30 +245,38 @@ function persistenceMismatch(
 	reviewed: CoordinatorReviewHashes,
 	options: CodexCoordinatorOptions,
 ): string | null {
-	if (persistence.settings.configured.model !== configured.model)
+	if (persistence.settings.configured.model !== configured.model) {
 		return "The retained coordinator model does not match the reviewed model.";
-	if (persistence.settings.configured.effort !== configured.effort)
+	}
+	if (persistence.settings.configured.effort !== configured.effort) {
 		return "The retained coordinator effort does not match the reviewed effort.";
-	if (persistence.settings.configured.serviceTier !== configured.serviceTier)
+	}
+	if (persistence.settings.configured.serviceTier !== configured.serviceTier) {
 		return "The retained coordinator service-tier choice is no longer advertised.";
-	if (persistence.review.instructionHash !== reviewed.instructionHash)
+	}
+	if (persistence.review.instructionHash !== reviewed.instructionHash) {
 		return "The retained coordinator instruction hash drifted.";
-	if (persistence.review.catalogueHash !== reviewed.catalogueHash)
+	}
+	if (persistence.review.catalogueHash !== reviewed.catalogueHash) {
 		return "The retained coordinator catalogue hash drifted.";
+	}
 	if (
 		persistence.review.workhorseCatalogueHash !== reviewed.workhorseCatalogueHash ||
 		persistence.review.voiceCatalogueHash !== reviewed.voiceCatalogueHash
-	)
+	) {
 		return "The retained coordinator tool-manifest hash drifted.";
-	if (persistence.review.settingsHash !== hashCoordinatorSettings(persistence.settings))
+	}
+	if (persistence.review.settingsHash !== hashCoordinatorSettings(persistence.settings)) {
 		return "The retained coordinator settings hash is not self-consistent.";
+	}
 	if (
 		persistence.settings.effective.model !== COORDINATOR_MODEL ||
 		persistence.settings.effective.effort !== "medium" ||
 		(configured.serviceTier === "priority" &&
 			persistence.settings.effective.serviceTier !== "priority")
-	)
+	) {
 		return "The retained coordinator effective settings do not match the reviewed selection.";
+	}
 	if (
 		record.operation.id !== persistence.operationId ||
 		record.operation.kind !== COORDINATOR_OPERATION_KIND ||
@@ -281,8 +291,9 @@ function persistenceMismatch(
 		record.provenance.workspaceRoot !== options.checkoutRoot ||
 		record.provenance.instructionHash !== reviewed.instructionHash ||
 		record.provenance.manifestHash !== reviewed.catalogueHash
-	)
+	) {
 		return "The retained coordinator lacks matching durable ownership evidence.";
+	}
 	return null;
 }
 

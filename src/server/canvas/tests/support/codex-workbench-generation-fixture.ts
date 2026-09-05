@@ -120,13 +120,14 @@ export function createCodexWorkbenchGenerationFixture(
 		shutdown: async () => {
 			transportState = "closed";
 			events.push("transport:shutdown");
-			for (const listener of exitListeners)
+			for (const listener of exitListeners) {
 				listener({
 					child: identity.identity.validator.childId,
 					epoch: identity.identity.validator.epoch,
 					code: 0,
 					signal: null,
 				});
+			}
 		},
 	} satisfies CodexWorkbenchComponents["transport"];
 	const baseSession = createCodexSession({

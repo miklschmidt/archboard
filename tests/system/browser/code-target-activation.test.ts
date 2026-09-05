@@ -27,7 +27,9 @@ const repository = "github.com/acme/rendered";
 
 function git(cwd: string, ...args: string[]): void {
 	const result = Bun.spawnSync(["git", ...args], { cwd, stderr: "pipe" });
-	if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+	if (result.exitCode !== 0) {
+		throw new Error(result.stderr.toString());
+	}
 }
 
 async function installRequestLog(browser: AgentBrowserSession): Promise<void> {
@@ -165,8 +167,9 @@ async function changeOpenerCaptureThroughSettings(
 		[3, capture],
 		[4, marker],
 		[5, exits],
-	] as const)
+	] as const) {
 		await browser.run(["fill", `.opener-argument input[aria-label="Argument ${argument}"]`, value]);
+	}
 	await browser.run(["find", "role", "button", "click", "--name", "Save", "--exact"]);
 	await pollUntil(
 		() => browser.eval<boolean>("Boolean(document.querySelector('[role=\"dialog\"]'))"),
@@ -209,8 +212,9 @@ test(
 			firstExits,
 			secondCaptures,
 			secondExits,
-		])
+		]) {
 			mkdirSync(directory, { recursive: true });
+		}
 		writeFileSync(join(checkout, "src", "index.ts"), "export {};\n");
 		git(checkout, "init", "-q");
 		git(checkout, "remote", "add", "origin", `https://${repository}.git`);
@@ -457,9 +461,11 @@ test(
 			secondMarker,
 			"{path}",
 		];
-		for (const raw of rawNotes)
-			for (const privateValue of [...derivedCandidates, ...machineValues])
+		for (const raw of rawNotes) {
+			for (const privateValue of [...derivedCandidates, ...machineValues]) {
 				expect(raw).not.toContain(privateValue);
+			}
+		}
 		expect(rawNotes[0]).toContain(`"repo": "${repository}"`);
 		expect(rawNotes[0]).toContain('"path": "src/index.ts"');
 		expect(rawNotes[1]).toContain('"path": "src/directory"');

@@ -13,7 +13,9 @@ import type { PlacedLabelElement } from "./fixtures/label-cases.ts";
 const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
 const required = <T>(value: T | undefined, message: string): T => {
-	if (value === undefined) throw new Error(message);
+	if (value === undefined) {
+		throw new Error(message);
+	}
 	return value;
 };
 const settle = (elements: PlacedLabelElement[], ids?: readonly string[]): PlacedLabelElement[] => {

@@ -127,7 +127,9 @@ function probeReaders(board: string, file: string): ReaderProbe {
 			ARCHBOARD_TEST_FILE: file,
 		},
 	});
-	if (child.exitCode !== 0) throw new Error(child.stderr.toString());
+	if (child.exitCode !== 0) {
+		throw new Error(child.stderr.toString());
+	}
 	return JSON.parse(child.stdout.toString()) as ReaderProbe;
 }
 
@@ -217,11 +219,16 @@ describe("image persistence hydration", () => {
 		const walk = (directory: string): void => {
 			for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
 				const full = path.join(directory, entry.name);
-				if (entry.isDirectory()) walk(full);
-				else if (entry.name.endsWith(".ts")) {
+				if (entry.isDirectory()) {
+					walk(full);
+				} else if (entry.name.endsWith(".ts")) {
 					for (const line of fs.readFileSync(full, "utf8").split("\n")) {
-						if (!/\bsceneJsonWithEmbeddedImages\s*\(/.test(line)) continue;
-						if (line.trim().startsWith("export function sceneJsonWithEmbeddedImages")) continue;
+						if (!/\bsceneJsonWithEmbeddedImages\s*\(/.test(line)) {
+							continue;
+						}
+						if (line.trim().startsWith("export function sceneJsonWithEmbeddedImages")) {
+							continue;
+						}
 						callers.push(`${path.relative(repoRoot, full)}:${line.trim()}`);
 					}
 				}

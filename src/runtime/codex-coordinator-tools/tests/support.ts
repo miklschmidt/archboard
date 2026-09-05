@@ -170,7 +170,9 @@ export function fixture(
 	let requestNumber = 0;
 	const waitForOperation = async (): Promise<void> => {
 		const barrier = operationBarrier;
-		if (barrier !== null) await barrier;
+		if (barrier !== null) {
+			await barrier;
+		}
 	};
 
 	const operationCalls = {
@@ -240,7 +242,9 @@ export function fixture(
 			nextOperationError = error;
 		},
 		hold: () => {
-			if (operationBarrier !== null) throw new Error("operation barrier is already held");
+			if (operationBarrier !== null) {
+				throw new Error("operation barrier is already held");
+			}
 			operationBarrier = new Promise<void>((resolve) => {
 				releaseOperation = resolve;
 			});
@@ -315,15 +319,20 @@ export function fixture(
 		): Promise<void> => {
 			writes.push({ request, owner, response });
 			timeline.push("transport.respond");
-			if (responseBarrier !== null) await responseBarrier;
-			if (transport.failWrites || failedRequests.has(request.requestId))
+			if (responseBarrier !== null) {
+				await responseBarrier;
+			}
+			if (transport.failWrites || failedRequests.has(request.requestId)) {
 				throw new Error("response write lost");
+			}
 		},
 		failFor: (request: DynamicServerRequest) => {
 			failedRequests.add(request.requestId);
 		},
 		hold: () => {
-			if (responseBarrier !== null) throw new Error("response barrier is already held");
+			if (responseBarrier !== null) {
+				throw new Error("response barrier is already held");
+			}
 			responseBarrier = new Promise<void>((resolve) => {
 				releaseResponse = resolve;
 			});
@@ -426,8 +435,9 @@ export function fixture(
 			manifestHash,
 		});
 		currentCall = call;
-		if (tool === "resolve_spoken_approval")
+		if (tool === "resolve_spoken_approval") {
 			spokenSnapshot = Object.freeze({ ...spokenSnapshot, resolverCallId: callId });
+		}
 		const requestId = identity.decoder.adoptJsonRpcRequestId(`request-${requestNumber++}`);
 		return {
 			child: identity.validator.childId,
@@ -475,14 +485,17 @@ export function copyRequest(request: DynamicServerRequest): DynamicServerRequest
 
 export function responseValue(response: DynamicToolResponse): unknown {
 	const text = response.contentItems[0]?.text;
-	if (text === undefined) throw new Error("response has no inputText item");
+	if (text === undefined) {
+		throw new Error("response has no inputText item");
+	}
 	return JSON.parse(text) as unknown;
 }
 
 export function responseEnvelope(response: DynamicToolResponse): Record<string, unknown> {
 	const value = responseValue(response);
-	if (value === null || typeof value !== "object" || Array.isArray(value))
+	if (value === null || typeof value !== "object" || Array.isArray(value)) {
 		throw new Error("response envelope is not an object");
+	}
 	return value as Record<string, unknown>;
 }
 

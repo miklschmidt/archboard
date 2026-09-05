@@ -70,8 +70,12 @@ export class FakeSession implements WorkhorseSessionPort {
 		this.activeStarts += 1;
 		this.maxActiveStarts = Math.max(this.maxActiveStarts, this.activeStarts);
 		try {
-			if (this.startGate !== null) await this.startGate;
-			if (this.startResult instanceof Error) throw this.startResult;
+			if (this.startGate !== null) {
+				await this.startGate;
+			}
+			if (this.startResult instanceof Error) {
+				throw this.startResult;
+			}
 			return this.startResult;
 		} finally {
 			this.activeStarts -= 1;
@@ -80,7 +84,9 @@ export class FakeSession implements WorkhorseSessionPort {
 
 	async threadRead(params: SessionParams<"thread/read">): Promise<SessionResponse<"thread/read">> {
 		this.readParams.push(params);
-		if (this.readResult instanceof Error) throw this.readResult;
+		if (this.readResult instanceof Error) {
+			throw this.readResult;
+		}
 		return this.readResult;
 	}
 
@@ -88,7 +94,9 @@ export class FakeSession implements WorkhorseSessionPort {
 		params: SessionParams<"thread/delete">,
 	): Promise<SessionResponse<"thread/delete">> {
 		this.deleteParams.push(params);
-		if (this.deleteResult instanceof Error) throw this.deleteResult;
+		if (this.deleteResult instanceof Error) {
+			throw this.deleteResult;
+		}
 		return this.deleteResult;
 	}
 }
@@ -112,7 +120,9 @@ export class FakeThreadLink implements WorkhorseThreadLinkPort {
 		target: Parameters<NonNullable<CodexWorkhorseStartOptions["threadLink"]["classifyAndBind"]>>[2],
 	): Promise<ThreadLinkBindingSnapshot> {
 		this.targets.push({ paneId, target });
-		if (this.outcome instanceof Error) throw this.outcome;
+		if (this.outcome instanceof Error) {
+			throw this.outcome;
+		}
 		return this.outcome;
 	}
 }

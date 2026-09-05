@@ -10,7 +10,9 @@ export function expectGeneralQueryEnvelopes(logPath: string): void {
 		"list_threads",
 		reverseResponses(logPath, "general-list")[0]?.frame?.result,
 	).envelope;
-	if (list.tag !== "ok") throw new Error("The controlled thread list was not successful.");
+	if (list.tag !== "ok") {
+		throw new Error("The controlled thread list was not successful.");
+	}
 	expect(list.operationId).toMatch(operationPattern);
 	expect(list).toEqual({
 		tag: "ok",
@@ -35,7 +37,9 @@ export function expectGeneralQueryEnvelopes(logPath: string): void {
 		"read_thread",
 		reverseResponses(logPath, "general-read")[0]?.frame?.result,
 	).envelope;
-	if (read.tag !== "ok") throw new Error("The controlled thread read was not successful.");
+	if (read.tag !== "ok") {
+		throw new Error("The controlled thread read was not successful.");
+	}
 	expect(read.operationId).toMatch(operationPattern);
 	expect(read).toEqual({
 		tag: "ok",
@@ -58,7 +62,9 @@ export function expectGeneralQueryEnvelopes(logPath: string): void {
 		"wait_threads",
 		reverseResponses(logPath, "general-wait")[0]?.frame?.result,
 	).envelope;
-	if (wait.tag !== "ok") throw new Error("The controlled thread wait was not successful.");
+	if (wait.tag !== "ok") {
+		throw new Error("The controlled thread wait was not successful.");
+	}
 	const waitValue = wait.value as {
 		readonly event: string;
 		readonly threadId: string | null;
@@ -76,7 +82,9 @@ export function expectGeneralQueryEnvelopes(logPath: string): void {
 export function expectGeneralMutationEnvelope(kind: "fork" | "send", result: unknown): void {
 	if (kind === "fork") {
 		const envelope = parseDynamicToolCallResponse("fork_thread", result).envelope;
-		if (envelope.tag !== "ok") throw new Error("The controlled fork was not successful.");
+		if (envelope.tag !== "ok") {
+			throw new Error("The controlled fork was not successful.");
+		}
 		const value = envelope.value as {
 			readonly initialTurn: { readonly operationId: string };
 		};
@@ -99,7 +107,9 @@ export function expectGeneralMutationEnvelope(kind: "fork" | "send", result: unk
 		return;
 	}
 	const envelope = parseDynamicToolCallResponse("send_message_to_thread", result).envelope;
-	if (envelope.tag !== "ok") throw new Error("The controlled send was not successful.");
+	if (envelope.tag !== "ok") {
+		throw new Error("The controlled send was not successful.");
+	}
 	expect(envelope.operationId).toMatch(operationPattern);
 	expect(envelope).toEqual({
 		tag: "ok",

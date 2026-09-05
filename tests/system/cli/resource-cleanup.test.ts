@@ -64,7 +64,9 @@ describe("CLI resource cleanup", () => {
 			'expect(received).toBe(expected)\n\nExpected: "intended assertion failure"\nReceived: "observed in flight"\n',
 		);
 		expect(runPromise).toBeDefined();
-		if (!runPromise) throw new Error("The in-flight package run was not retained.");
+		if (!runPromise) {
+			throw new Error("The in-flight package run was not retained.");
+		}
 		const result = await runPromise;
 		expect(result.status !== null || result.signal !== null, packageFailure(result)).toBeTrue();
 		for (const path of [outside, home, state, log, registry, vault]) {
@@ -117,8 +119,12 @@ describe("CLI resource cleanup", () => {
 		}
 		expect(installRegistered).toBeTrue();
 		expect(repositoryRegistered).toBeTrue();
-		if (!installFixture) throw new Error("The registered install fixture was not retained.");
-		if (!repositoryFixture) throw new Error("The registered repository fixture was not retained.");
+		if (!installFixture) {
+			throw new Error("The registered install fixture was not retained.");
+		}
+		if (!repositoryFixture) {
+			throw new Error("The registered repository fixture was not retained.");
+		}
 		expect(installRoot.length).toBeGreaterThan(0);
 		expect(repositoryRoot.length).toBeGreaterThan(0);
 		expect(installRoot).toBe(installFixture.root);
@@ -159,7 +165,9 @@ describe("CLI resource cleanup", () => {
 			startupError = error;
 		}
 		expect(fixtureRegistered).toBeTrue();
-		if (!retainedFixture) throw new Error("The registered repository fixture was not retained.");
+		if (!retainedFixture) {
+			throw new Error("The registered repository fixture was not retained.");
+		}
 		expect(root.length).toBeGreaterThan(0);
 		expect(root).toBe(retainedFixture.root);
 		expect(missingServer).toBe(join(root, "missing-server.ts"));
@@ -211,8 +219,12 @@ describe("CLI resource cleanup", () => {
 		expect(verifiedRunning).toBeTrue();
 		expect(fixtureRegistered).toBeTrue();
 		expect(canvasDisposerRegistered).toBeTrue();
-		if (!fixture) throw new Error("Verified canvas fixture was not retained.");
-		if (!canvas) throw new Error("Verified canvas handle was not retained.");
+		if (!fixture) {
+			throw new Error("Verified canvas fixture was not retained.");
+		}
+		if (!canvas) {
+			throw new Error("Verified canvas handle was not retained.");
+		}
 		expect(root.length).toBeGreaterThan(0);
 		expect(vault.length).toBeGreaterThan(0);
 		expect(registry.length).toBeGreaterThan(0);

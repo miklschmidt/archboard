@@ -21,8 +21,9 @@ function decodePackage<T>(result: PackageRunResult, schema: z.ZodType<T>): T {
 		throw new Error(`${diagnostic}\nJSON decode: ${(error as Error).message}`, { cause: error });
 	}
 	const parsed = schema.safeParse(decoded);
-	if (!parsed.success)
+	if (!parsed.success) {
 		throw new Error(`${diagnostic}\nschema: ${parsed.error.message}`, { cause: parsed.error });
+	}
 	return parsed.data;
 }
 
@@ -71,7 +72,9 @@ describe("package finding rendering", () => {
 		expect(manifest.entries, diagnostic).toHaveLength(1);
 		const rendered = manifest.entries[0];
 		expect(rendered?.status, diagnostic).toBe("rendered");
-		if (rendered?.status !== "rendered") throw new Error(diagnostic);
+		if (rendered?.status !== "rendered") {
+			throw new Error(diagnostic);
+		}
 		expect(existsSync(join(output, rendered.file)), diagnostic).toBeTrue();
 		expect(result.stdout.includes(output), diagnostic).toBeFalse();
 		expect(readFileSync(join(output, "manifest.json"), "utf8"), diagnostic).toBe(result.stdout);
@@ -191,7 +194,9 @@ describe("package finding rendering", () => {
 		expect(manifest.complete, diagnostic).toBeFalse();
 		const failed = manifest.entries[0];
 		expect(failed?.status, diagnostic).toBe("failed");
-		if (failed?.status !== "failed") throw new Error(diagnostic);
+		if (failed?.status !== "failed") {
+			throw new Error(diagnostic);
+		}
 		expect(failed.failure, diagnostic).toBe("source-not-renderable");
 		expect(readdirSync(unrenderable), diagnostic).toEqual(["manifest.json"]);
 	});

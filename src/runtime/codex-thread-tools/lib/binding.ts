@@ -34,16 +34,21 @@ const EMPTY_DYNAMIC_TOOLS: readonly ArchboardAppNamespaceSpec[] = Object.freeze(
 
 function parseInstallationRequest(value: unknown): ToolInstallationRequest {
 	const parsed = ToolInstallationRequestSchema.safeParse(value);
-	if (!parsed.success)
+	if (!parsed.success) {
 		throw new TypeError(`Invalid dynamic-tool installation boundary: ${parsed.error.message}`);
+	}
 	return parsed.data;
 }
 
 /** Return the immutable binding only for a fresh Archboard-created workhorse start. */
 export function archboardAppToolBindingFor(value: unknown): ArchboardAppToolBinding | null {
 	const request = parseInstallationRequest(value);
-	if (request.lifecycle !== "fresh_workhorse_start") return null;
-	if (request.provenance !== "archboard_created") return null;
+	if (request.lifecycle !== "fresh_workhorse_start") {
+		return null;
+	}
+	if (request.provenance !== "archboard_created") {
+		return null;
+	}
 	return ARCHBOARD_APP_TOOL_BINDING;
 }
 

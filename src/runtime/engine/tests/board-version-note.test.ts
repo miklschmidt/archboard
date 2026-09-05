@@ -69,15 +69,20 @@ beforeAll(async () => {
 afterAll(() => {
 	try {
 		versionModule?.forgetRememberedVersions("board-version-note-");
-		for (const key of ownedKeys) storeModule?.boards.delete(key);
+		for (const key of ownedKeys) {
+			storeModule?.boards.delete(key);
+		}
 		ownedKeys.clear();
 		watchModule?.forgetNoteWatch();
 	} finally {
 		try {
 			rmSync(root, { recursive: true, force: true });
 		} finally {
-			if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-			else process.env["ARCHBOARD_VAULT"] = callerVault;
+			if (callerVault === undefined) {
+				delete process.env["ARCHBOARD_VAULT"];
+			} else {
+				process.env["ARCHBOARD_VAULT"] = callerVault;
+			}
 		}
 	}
 });
@@ -196,10 +201,14 @@ describe.serial("board versions in notes", () => {
 		const legacy = scene.elements[0]!;
 		const custom = legacy["customData"] as { archboard: Record<string, unknown> };
 		for (const key of ["createdAt", "updatedAt", "syncedAt", "source", "syncTimestamp"]) {
-			if (custom.archboard[key] !== undefined) legacy[key] = custom.archboard[key];
+			if (custom.archboard[key] !== undefined) {
+				legacy[key] = custom.archboard[key];
+			}
 			delete custom.archboard[key];
 		}
-		if (Object.keys(custom.archboard).length === 0) delete legacy["customData"];
+		if (Object.keys(custom.archboard).length === 0) {
+			delete legacy["customData"];
+		}
 		const legacyNote = boardModule.renderBoardNote(scene, note, identity);
 		writeFileSync(board.file, legacyNote);
 		storeModule.recordBaseline(
@@ -290,15 +299,18 @@ describe.serial("board versions in notes", () => {
 				elements: Array<Record<string, unknown>>;
 			}
 		).elements.find((element) => element["id"] === "joined")!;
-		for (const end of ["startBinding", "endBinding"] as const)
+		for (const end of ["startBinding", "endBinding"] as const) {
 			expect(Object.keys(persisted[end] as object).toSorted()).toEqual([
 				"elementId",
 				"focus",
 				"gap",
 			]);
+		}
 		const reread = ioModule.readNote(board.file)!.elements.get("joined")!;
 		expect(reread.type).toBe("arrow");
-		if (reread.type !== "arrow") throw new Error("reread did not retain the arrow");
+		if (reread.type !== "arrow") {
+			throw new Error("reread did not retain the arrow");
+		}
 		expect(reread.startBinding).toMatchObject({ elementId: "left", focus: 0, gap: 4 });
 		expect(reread.endBinding).toMatchObject({ elementId: "right", focus: 0.5, gap: 8 });
 	});

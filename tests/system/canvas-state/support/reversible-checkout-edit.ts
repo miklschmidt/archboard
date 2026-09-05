@@ -14,7 +14,9 @@ export interface ReversibleCheckoutEdit {
 
 const status = (cwd: string): string => {
 	const result = spawnSync("git", ["status", "--short"], { cwd, encoding: "utf8" });
-	if (result.status !== 0) throw new Error(result.stderr || "git status failed");
+	if (result.status !== 0) {
+		throw new Error(result.stderr || "git status failed");
+	}
 	return result.stdout;
 };
 
@@ -34,11 +36,15 @@ export function reversibleCheckoutEdit(cwd: string, paths: string[]): Reversible
 	return {
 		edit(path, transform) {
 			const snapshot = snapshots.get(path);
-			if (!snapshot) throw new Error(`No reversible snapshot for ${path}.`);
+			if (!snapshot) {
+				throw new Error(`No reversible snapshot for ${path}.`);
+			}
 			writeFileSync(path, transform(readFileSync(path, "utf8")));
 		},
 		restore() {
-			if (restored) return;
+			if (restored) {
+				return;
+			}
 			const failures: Error[] = [];
 			for (const snapshot of snapshots.values()) {
 				try {

@@ -14,7 +14,9 @@ function identity(pid: number): ProcessIdentity {
 		.trim()
 		.split(/\s+/);
 	const startTime = fields[19];
-	if (!startTime) throw new Error(`Process ${pid} did not expose a start time.`);
+	if (!startTime) {
+		throw new Error(`Process ${pid} did not expose a start time.`);
+	}
 	return { pid, startTime };
 }
 
@@ -33,8 +35,12 @@ async function readLine(reader: ReadableStreamDefaultReader<Uint8Array>): Promis
 		const next = await reader.read();
 		text += decoder.decode(next.value, { stream: !next.done });
 		const newline = text.indexOf("\n");
-		if (newline >= 0) return text.slice(0, newline);
-		if (next.done) throw new Error("Package process descendant exited before readiness.");
+		if (newline >= 0) {
+			return text.slice(0, newline);
+		}
+		if (next.done) {
+			throw new Error("Package process descendant exited before readiness.");
+		}
 	}
 }
 
@@ -50,7 +56,9 @@ if (process.argv[2] === "inherited-descendant") {
 	holdOpen();
 } else {
 	const marker = process.env["ARCHBOARD_PACKAGE_PROCESS_READY"];
-	if (!marker) throw new Error("ARCHBOARD_PACKAGE_PROCESS_READY is required.");
+	if (!marker) {
+		throw new Error("ARCHBOARD_PACKAGE_PROCESS_READY is required.");
+	}
 	const entry = fileURLToPath(import.meta.url);
 	const inheritPipes = process.env["ARCHBOARD_PACKAGE_PROCESS_DESCENDANT_INHERITS_PIPES"] === "1";
 	const descendantMarker = `${marker}.descendant`;
@@ -69,7 +77,9 @@ if (process.argv[2] === "inherited-descendant") {
 	);
 	let descendantIdentity: ProcessIdentity;
 	if (inheritPipes) {
-		while (!existsSync(descendantMarker)) await Bun.sleep(1);
+		while (!existsSync(descendantMarker)) {
+			await Bun.sleep(1);
+		}
 		descendantIdentity = JSON.parse(readFileSync(descendantMarker, "utf8")) as ProcessIdentity;
 	} else {
 		const reader = (descendant.stdout as ReadableStream<Uint8Array>).getReader();

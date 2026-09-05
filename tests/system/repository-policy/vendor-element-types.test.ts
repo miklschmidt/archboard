@@ -91,11 +91,15 @@ function handwrittenViolations(file: string, source: string): Violation[] {
 }
 
 function aliasReadViolations(file: string, source: string): Violation[] {
-	if (inputIngressAllowlist.has(file)) return [];
+	if (inputIngressAllowlist.has(file)) {
+		return [];
+	}
 	// These aliases are board-ingress spellings. Codex/runtime modules use words
 	// such as `start`, `end`, and `label` for unrelated protocols, so inspecting
 	// the entire runtime turns ordinary domain code into false positives.
-	if (!file.startsWith("src/runtime/engine/") && !file.startsWith("src/ui/canvas/")) return [];
+	if (!file.startsWith("src/runtime/engine/") && !file.startsWith("src/ui/canvas/")) {
+		return [];
+	}
 	const patterns = [
 		{
 			reason: "runtime input alias read",
@@ -128,8 +132,12 @@ function productionFiles(root: string): string[] {
 	for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
 		const target = path.join(root, entry.name);
 		if (entry.isDirectory()) {
-			if (entry.name !== "tests") files.push(...productionFiles(target));
-		} else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".d.ts")) files.push(target);
+			if (entry.name !== "tests") {
+				files.push(...productionFiles(target));
+			}
+		} else if (entry.name.endsWith(".ts") && !entry.name.endsWith(".d.ts")) {
+			files.push(target);
+		}
 	}
 	return files;
 }
@@ -142,8 +150,9 @@ describe("vendor-derived board element policy", () => {
 			`type ServerElement = Record<string, unknown> & { id:string; type:string; x:number; y:number; width?:number; height?:number; angle?:number; strokeColor?:string; backgroundColor?:string; fillStyle?:string; strokeWidth?:number; strokeStyle?:string; roughness?:number; opacity?:number }`,
 			`type QuietCopy = { id:string; type:string; isDeleted?:boolean; containerId?:string|null; boundElements?:unknown[]; startBinding?:unknown; endBinding?:unknown }`,
 		];
-		for (const source of cases)
+		for (const source of cases) {
 			expect(handwrittenViolations("synthetic.ts", source)).not.toEqual([]);
+		}
 	});
 
 	test("rejects board-ingress alias reads outside the named ingress owners", () => {
@@ -177,8 +186,9 @@ describe("vendor-derived board element policy", () => {
 			`const family = typeof raw.fontFamily === "string" ? raw.fontFamily : 5;`,
 			`const binding = { ...startBinding, elementId };`,
 			`const mode = binding.mode;`,
-		])
+		]) {
 			expect(aliasReadViolations("src/runtime/engine/consumer.ts", source)).not.toEqual([]);
+		}
 		expect(
 			aliasReadViolations(
 				"src/runtime/engine/lib/agent-element-input.ts",
@@ -201,8 +211,9 @@ describe("vendor-derived board element policy", () => {
 			`type Exact = Extract<VendorElement, { type: "text" }>;`,
 			`type Geometry = Pick<VendorElement, "id" | "type" | "x" | "y" | "width" | "height">;`,
 			`type Update = Partial<Omit<VendorElement, "type">>;`,
-		])
+		]) {
 			expect(handwrittenViolations("synthetic.ts", source)).toEqual([]);
+		}
 	});
 
 	test("production declarations contain no handwritten native copy", () => {
@@ -226,9 +237,9 @@ describe("vendor-derived board element policy", () => {
 		expect(source).toContain(
 			'export type LocalPoint = [x: number, y: number] & {\n    _brand: "excalimath__localpoint";',
 		);
-		expect(source).toContain(
-			'export type Radians = number & {\n    _brand: "excalimath__radian";',
-		);
-		expect(fs.existsSync(path.join(repoRoot, "src/shared/board-elements/vendor-math-0.18.1.d.ts"))).toBeFalse();
+		expect(source).toContain('export type Radians = number & {\n    _brand: "excalimath__radian";');
+		expect(
+			fs.existsSync(path.join(repoRoot, "src/shared/board-elements/vendor-math-0.18.1.d.ts")),
+		).toBeFalse();
 	});
 });

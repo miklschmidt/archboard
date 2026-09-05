@@ -88,8 +88,12 @@ export interface ExpandOptions {
 
 /** Complete one input binding without carrying input-only or unknown keys into the board. */
 function completeBinding(value: unknown, elbowed: boolean): Record<string, unknown> | null {
-	if (value === null || value === undefined) return null;
-	if (!value || typeof value !== "object" || Array.isArray(value)) return { value };
+	if (value === null || value === undefined) {
+		return null;
+	}
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return { value };
+	}
 	const record = value as Record<string, unknown>;
 	return elbowed
 		? {
@@ -124,9 +128,13 @@ function completeLinearFields(
 		rest["endBinding"] !== undefined ? completeBinding(rest["endBinding"], elbowed) : null;
 	base["startArrowhead"] = rest["startArrowhead"] ?? null;
 	base["endArrowhead"] = rest["endArrowhead"] ?? (type === "arrow" ? "arrow" : null);
-	if (type !== "arrow") return;
+	if (type !== "arrow") {
+		return;
+	}
 	base["elbowed"] = elbowed;
-	if (!elbowed) return;
+	if (!elbowed) {
+		return;
+	}
 	base["fixedSegments"] = rest["fixedSegments"] ?? null;
 	base["startIsSpecial"] = rest["startIsSpecial"] ?? null;
 	base["endIsSpecial"] = rest["endIsSpecial"] ?? null;
@@ -141,7 +149,9 @@ const DEFAULT_TEXT_ALIGN = "left"; // for a standalone text; a bound one is cent
 const DEFAULT_VERTICAL_ALIGN = "top";
 const DEFAULT_STROKE_WIDTH = 2;
 const validIndexKey = (key: unknown): key is string => {
-	if (typeof key !== "string") return false;
+	if (typeof key !== "string") {
+		return false;
+	}
 	try {
 		generateKeyBetween(key, null);
 		return true;
@@ -188,7 +198,9 @@ export function fractionalIndex(position: number): string {
  */
 export function indexPosition(key: string): number | null {
 	const width = INDEX_DIGITS.indexOf(key[0] as string) - 36 + 1; // 36 is 'a'
-	if (width < 1 || key.length !== width + 1) return null;
+	if (width < 1 || key.length !== width + 1) {
+		return null;
+	}
 	let offset = 0;
 	let span = INDEX_DIGITS.length;
 	for (let w = 1; w < width; w++) {
@@ -198,7 +210,9 @@ export function indexPosition(key: string): number | null {
 	let value = 0;
 	for (let i = 1; i < key.length; i++) {
 		const digit = INDEX_DIGITS.indexOf(key[i] as string);
-		if (digit < 0) return null;
+		if (digit < 0) {
+			return null;
+		}
 		value = value * INDEX_DIGITS.length + digit;
 	}
 	return offset + value;
@@ -214,7 +228,9 @@ function inZOrder<T extends { index?: string | null }>(elements: T[]): T[] {
 		.toSorted((a, b) => {
 			const ai = typeof a.element.index === "string" ? a.element.index : null;
 			const bi = typeof b.element.index === "string" ? b.element.index : null;
-			if (ai !== null && bi !== null && ai !== bi) return ai < bi ? -1 : 1;
+			if (ai !== null && bi !== null && ai !== bi) {
+				return ai < bi ? -1 : 1;
+			}
 			return a.position - b.position;
 		})
 		.map(({ element }) => element);
@@ -247,7 +263,9 @@ export function settleDeletions(
 	deleted: readonly string[],
 	board: Map<string, ServerElement>,
 ): { alsoDeleted: string[]; changed: ServerElement[] } {
-	if (deleted.length === 0) return { alsoDeleted: [], changed: [] };
+	if (deleted.length === 0) {
+		return { alsoDeleted: [], changed: [] };
+	}
 	const gone = new Set(deleted);
 
 	// A label belongs to its container, so it goes too.
@@ -259,7 +277,9 @@ export function settleDeletions(
 			gone.add(element.id);
 		}
 	}
-	for (const id of alsoDeleted) board.delete(id);
+	for (const id of alsoDeleted) {
+		board.delete(id);
+	}
 
 	const changed: ServerElement[] = [];
 	for (const element of board.values()) {
@@ -280,7 +300,9 @@ export function settleDeletions(
 				: null;
 		const unbindStart = typeof starts?.["elementId"] === "string" && gone.has(starts["elementId"]);
 		const unbindEnd = typeof ends?.["elementId"] === "string" && gone.has(ends["elementId"]);
-		if (!loosened && !unbindStart && !unbindEnd) continue;
+		if (!loosened && !unbindStart && !unbindEnd) {
+			continue;
+		}
 		const repaired = {
 			...element,
 			...(loosened ? { boundElements: kept as ServerElement["boundElements"] } : {}),
@@ -374,9 +396,13 @@ export function repairIndices(board: Map<string, ServerElement>): ServerElement[
 		settled.push(repaired);
 	}
 	const reordered = ordered.some((element, at) => element !== held[at]);
-	if (changed.length === 0 && !reordered) return changed;
+	if (changed.length === 0 && !reordered) {
+		return changed;
+	}
 	board.clear();
-	for (const element of settled) board.set(element.id, element);
+	for (const element of settled) {
+		board.set(element.id, element);
+	}
 	return changed;
 }
 
@@ -396,18 +422,23 @@ const KEY_ORDER = [
 	"fixedPoint",
 ];
 export function canonicalizeKeys(v: unknown): unknown {
-	if (Array.isArray(v)) return v.map(canonicalizeKeys);
+	if (Array.isArray(v)) {
+		return v.map(canonicalizeKeys);
+	}
 	if (v && typeof v === "object") {
 		const record = v as Record<string, unknown>;
 		const keys = Object.keys(record).toSorted((a, b) => {
 			const ia = KEY_ORDER.indexOf(a);
 			const ib = KEY_ORDER.indexOf(b);
-			if (ia !== -1 || ib !== -1)
+			if (ia !== -1 || ib !== -1) {
 				return (ia === -1 ? KEY_ORDER.length : ia) - (ib === -1 ? KEY_ORDER.length : ib);
+			}
 			return a < b ? -1 : 1;
 		});
 		const out: Record<string, unknown> = {};
-		for (const k of keys) out[k] = canonicalizeKeys(record[k]);
+		for (const k of keys) {
+			out[k] = canonicalizeKeys(record[k]);
+		}
 		return out;
 	}
 	return v;
@@ -441,10 +472,14 @@ export function expandElements(
 	const seedFor = (key: string): number =>
 		deterministic ? (fnv1a(key) % 2147483646) + 1 : Math.floor(Math.random() * 2147483647);
 	const updatedFor = (el: Record<string, unknown>): number => {
-		if (!deterministic) return Date.now();
+		if (!deterministic) {
+			return Date.now();
+		}
 		// Prefer a preserved `updated` (re-imported scene) over the server's
 		// updatedAt, so no-op import→export cycles are byte-identical.
-		if (typeof el["updated"] === "number") return el["updated"];
+		if (typeof el["updated"] === "number") {
+			return el["updated"];
+		}
 		const parsed = Date.parse(String(el["updatedAt"] ?? el["createdAt"] ?? ""));
 		return Number.isNaN(parsed) ? 1 : parsed;
 	};
@@ -516,7 +551,9 @@ export function expandElements(
 						sourceElements.some((other) => other.id === record["id"] && other.type === "text"))
 				);
 			});
-		if (!labelText || hasBoundText) return;
+		if (!labelText || hasBoundText) {
+			return;
+		}
 
 		const textId = labelTextIdFor(String(base["id"]), taken);
 		named.add(textId);
@@ -599,13 +636,27 @@ export function expandElements(
 
 		const base = makeBaseElement(el as unknown as Record<string, unknown>, rest);
 		const restoreServerFields = (element: Record<string, unknown>): Record<string, unknown> => {
-			if (!keepServerFields) return element;
-			if (createdAt !== undefined) element["createdAt"] = createdAt;
-			if (updatedAt !== undefined) element["updatedAt"] = updatedAt;
-			if (syncedAt !== undefined) element["syncedAt"] = syncedAt;
-			if (keptSource !== undefined) element["source"] = keptSource;
-			if (syncTimestamp !== undefined) element["syncTimestamp"] = syncTimestamp;
-			if (serverVersion !== undefined) element["version"] = serverVersion;
+			if (!keepServerFields) {
+				return element;
+			}
+			if (createdAt !== undefined) {
+				element["createdAt"] = createdAt;
+			}
+			if (updatedAt !== undefined) {
+				element["updatedAt"] = updatedAt;
+			}
+			if (syncedAt !== undefined) {
+				element["syncedAt"] = syncedAt;
+			}
+			if (keptSource !== undefined) {
+				element["source"] = keptSource;
+			}
+			if (syncTimestamp !== undefined) {
+				element["syncTimestamp"] = syncTimestamp;
+			}
+			if (serverVersion !== undefined) {
+				element["version"] = serverVersion;
+			}
 			// Nothing here restores `label`, `text` on anything that is not a text
 			// element, or an arrow's `start` and `end`. All of them are the seed, and
 			// the seed is an input format: it has been read by now, and what it said
@@ -745,7 +796,9 @@ export function expandElements(
 		const wanted = settledIndices(order);
 		order.forEach((element, at) => {
 			const index = wanted[at];
-			if (index !== null && index !== undefined) element["index"] = index;
+			if (index !== null && index !== undefined) {
+				element["index"] = index;
+			}
 		});
 		cleanedExportElements.length = 0;
 		cleanedExportElements.push(...order);
@@ -785,7 +838,9 @@ export function expandForBoard(
 	written: LegacyElementIngress[],
 	board: ReadonlyMap<string, ServerElement>,
 ): ServerElement[] {
-	if (written.length === 0) return [];
+	if (written.length === 0) {
+		return [];
+	}
 
 	// A container whose label the board already holds keeps it, whichever
 	// direction the binding is recorded in.
@@ -856,16 +911,24 @@ export function relabelBoundTexts(
 	const relabelled: ServerElement[] = [];
 	for (const container of written) {
 		const wanted = container.type === "text" ? undefined : agentLabelIntentOf(container);
-		if (wanted === undefined) continue;
+		if (wanted === undefined) {
+			continue;
+		}
 		const textId = labelled.get(container.id)?.[0];
-		if (!textId) continue;
+		if (!textId) {
+			continue;
+		}
 		const existing = board.get(textId);
-		if (existing?.type !== "text" || existing.text === wanted) continue;
+		if (existing?.type !== "text" || existing.text === wanted) {
+			continue;
+		}
 		const [remeasured] = expandForBoard(
 			[{ ...existing, text: wanted, originalText: wanted } as ServerElement],
 			board,
 		);
-		if (remeasured) relabelled.push(remeasured);
+		if (remeasured) {
+			relabelled.push(remeasured);
+		}
 	}
 	return relabelled;
 }
@@ -886,11 +949,16 @@ export function relabelBoundTexts(
  * whatever the element carries is left alone.
  */
 function sizeText(element: Record<string, unknown>): void {
-	if (element["autoResize"] === false) return;
+	if (element["autoResize"] === false) {
+		return;
+	}
 	const fontFamily =
 		typeof element["fontFamily"] === "number" ? element["fontFamily"] : DEFAULT_FONT_FAMILY;
-	if (!canMeasure(fontFamily)) return;
-	const fontSize = typeof element["fontSize"] === "number" ? element["fontSize"] : DEFAULT_FONT_SIZE;
+	if (!canMeasure(fontFamily)) {
+		return;
+	}
+	const fontSize =
+		typeof element["fontSize"] === "number" ? element["fontSize"] : DEFAULT_FONT_SIZE;
 	const lineHeight = typeof element["lineHeight"] === "number" ? element["lineHeight"] : undefined;
 	const measured = measureText(String(element["text"] ?? ""), fontSize, fontFamily, lineHeight);
 	element["width"] = measured.width;

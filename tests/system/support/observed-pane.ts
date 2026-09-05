@@ -67,7 +67,9 @@ async function bounded<T>(
 }
 
 async function closeSocket(socket: WebSocket, clientId: string, timeoutMs: number): Promise<void> {
-	if (socket.readyState === WebSocket.CLOSED) return;
+	if (socket.readyState === WebSocket.CLOSED) {
+		return;
+	}
 	await new Promise<void>((resolve, reject) => {
 		const cleanup = (): void => {
 			clearTimeout(timer);
@@ -79,7 +81,9 @@ async function closeSocket(socket: WebSocket, clientId: string, timeoutMs: numbe
 		};
 		const timer = setTimeout(() => {
 			cleanup();
-			if (socket.readyState !== WebSocket.CLOSED) socket.terminate();
+			if (socket.readyState !== WebSocket.CLOSED) {
+				socket.terminate();
+			}
 			reject(timeoutError(clientId, "to close its socket", timeoutMs));
 		}, timeoutMs);
 		socket.once("close", onClose);
@@ -87,7 +91,9 @@ async function closeSocket(socket: WebSocket, clientId: string, timeoutMs: numbe
 			socket.close();
 		} catch (error) {
 			cleanup();
-			if (socket.readyState !== WebSocket.CLOSED) socket.terminate();
+			if (socket.readyState !== WebSocket.CLOSED) {
+				socket.terminate();
+			}
 			reject(error as Error);
 		}
 	});
@@ -120,7 +126,9 @@ export async function openObservedPane<Event extends ObservedPaneEvent>(options:
 		TEST_PANE_MESSAGE_TIMEOUT_MS,
 	);
 	const failInitial = (error: Error): void => {
-		if (!initialArrived) rejectInitial(error);
+		if (!initialArrived) {
+			rejectInitial(error);
+		}
 	};
 	const onMessage = (data: RawData): void => {
 		try {
@@ -157,8 +165,9 @@ export async function openObservedPane<Event extends ObservedPaneEvent>(options:
 			record(response.body) &&
 			response.body["success"] === true &&
 			response.body["registered"] === true
-		)
+		) {
 			return;
+		}
 		throw new Error(
 			`Pane ${options.clientId} did not register: HTTP ${response.status}, ${JSON.stringify(response.body)}.`,
 		);
@@ -191,7 +200,9 @@ export async function openObservedPane<Event extends ObservedPaneEvent>(options:
 			const deadline = Date.now() + timeoutMs;
 			do {
 				const found = events.slice(start).find(match);
-				if (found) return found;
+				if (found) {
+					return found;
+				}
 				await sleep(TEST_PANE_MESSAGE_POLL_MS);
 			} while (Date.now() < deadline);
 			return undefined;
@@ -209,7 +220,9 @@ export async function openObservedPane<Event extends ObservedPaneEvent>(options:
 					socket.off("error", onError);
 				};
 				const onPong = (data: Buffer): void => {
-					if (!data.equals(token)) return;
+					if (!data.equals(token)) {
+						return;
+					}
 					cleanup();
 					resolve();
 				};
@@ -242,7 +255,9 @@ export async function openObservedPane<Event extends ObservedPaneEvent>(options:
 			});
 		},
 		async close() {
-			if (closedAndUnregistered) return;
+			if (closedAndUnregistered) {
+				return;
+			}
 			const deadline = Date.now() + TEST_PANE_MESSAGE_TIMEOUT_MS;
 			try {
 				await closeSocket(socket, options.clientId, Math.max(1, deadline - Date.now()));

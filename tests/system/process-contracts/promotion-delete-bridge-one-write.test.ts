@@ -210,8 +210,9 @@ test("promotion, deletion, and bridge intents each use one request", async () =>
 			);
 			const bodyLength = Buffer.from(records[0]!.bodyBase64, "base64").length;
 			let body: unknown;
-			if (records[0]!.method === "DELETE") expect(bodyLength).toBe(0);
-			else {
+			if (records[0]!.method === "DELETE") {
+				expect(bodyLength).toBe(0);
+			} else {
 				const rawBody = Buffer.from(records[0]!.bodyBase64, "base64").toString();
 				body = JSON.parse(rawBody);
 				expect(rawBody).toBe(JSON.stringify(body));

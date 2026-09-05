@@ -33,11 +33,17 @@ const PRESENTATION_MARKER_KEY = "presentationTarget";
 
 function markerOf(element: { customData?: unknown }): PresentationMarker | undefined {
 	const custom = element.customData;
-	if (!custom || typeof custom !== "object" || Array.isArray(custom)) return undefined;
+	if (!custom || typeof custom !== "object" || Array.isArray(custom)) {
+		return undefined;
+	}
 	const archboard = (custom as Record<string, unknown>)["archboard"];
-	if (!archboard || typeof archboard !== "object" || Array.isArray(archboard)) return undefined;
+	if (!archboard || typeof archboard !== "object" || Array.isArray(archboard)) {
+		return undefined;
+	}
 	const marker = (archboard as Record<string, unknown>)[PRESENTATION_MARKER_KEY];
-	if (!marker || typeof marker !== "object" || Array.isArray(marker)) return undefined;
+	if (!marker || typeof marker !== "object" || Array.isArray(marker)) {
+		return undefined;
+	}
 	const { board, element: id, target } = marker as Record<string, unknown>;
 	return typeof board === "string" && typeof id === "string" && typeof target === "string"
 		? { board, element: id, target }
@@ -46,18 +52,30 @@ function markerOf(element: { customData?: unknown }): PresentationMarker | undef
 
 function withoutMarker<T extends object>(element: T): T {
 	const custom = (element as { customData?: unknown }).customData;
-	if (!custom || typeof custom !== "object" || Array.isArray(custom)) return element;
+	if (!custom || typeof custom !== "object" || Array.isArray(custom)) {
+		return element;
+	}
 	const archboard = (custom as Record<string, unknown>)["archboard"];
-	if (!archboard || typeof archboard !== "object" || Array.isArray(archboard)) return element;
-	if (!(PRESENTATION_MARKER_KEY in archboard)) return element;
+	if (!archboard || typeof archboard !== "object" || Array.isArray(archboard)) {
+		return element;
+	}
+	if (!(PRESENTATION_MARKER_KEY in archboard)) {
+		return element;
+	}
 	const nextArchboard = { ...archboard } as Record<string, unknown>;
 	delete nextArchboard[PRESENTATION_MARKER_KEY];
 	const nextCustom = { ...custom } as Record<string, unknown>;
-	if (Object.keys(nextArchboard).length === 0) delete nextCustom["archboard"];
-	else nextCustom["archboard"] = nextArchboard;
+	if (Object.keys(nextArchboard).length === 0) {
+		delete nextCustom["archboard"];
+	} else {
+		nextCustom["archboard"] = nextArchboard;
+	}
 	const result = { ...element } as T & { customData?: Record<string, unknown> };
-	if (Object.keys(nextCustom).length === 0) delete result.customData;
-	else result.customData = nextCustom;
+	if (Object.keys(nextCustom).length === 0) {
+		delete result.customData;
+	} else {
+		result.customData = nextCustom;
+	}
 	return result;
 }
 
@@ -79,7 +97,9 @@ function withLink(
 	link: string | null,
 	boardKey: string,
 ): ReadonlyServerElement {
-	if (link === null) return { ...withoutMarker(element), link };
+	if (link === null) {
+		return { ...withoutMarker(element), link };
+	}
 	const custom = element.customData ?? {};
 	const archboard =
 		custom.archboard && typeof custom.archboard === "object" && !Array.isArray(custom.archboard)
@@ -115,15 +135,20 @@ function isDerivedTarget(
 	incoming: unknown,
 	context: ReadonlyPresentationContext,
 ): boolean {
-	if (typeof incoming !== "string") return false;
-	if (!bindingOf(element)) return false;
+	if (typeof incoming !== "string") {
+		return false;
+	}
+	if (!bindingOf(element)) {
+		return false;
+	}
 	const marker = markerOf(element);
 	if (
 		marker?.board === context.boardKey &&
 		marker.element === element.id &&
 		marker.target === incoming
-	)
+	) {
 		return true;
+	}
 	return targetFor(element, context) === incoming;
 }
 
@@ -148,7 +173,9 @@ export function presentElement(
 	context: PresentationContext,
 ): ServerElement {
 	const binding = bindingOf(element);
-	if (!binding) return element;
+	if (!binding) {
+		return element;
+	}
 	const opaque = targetFor(element, context);
 	const fresh = presentationTargetForBinding(
 		binding,
@@ -173,7 +200,9 @@ export function presentElements(
 ): readonly ReadonlyServerElement[] {
 	const values = Array.from(elements);
 	const bindings = codeBindingsOf(values);
-	if (bindings.length === 0) return values;
+	if (bindings.length === 0) {
+		return values;
+	}
 	const locals = resolveLocalCodeTargets(
 		bindings,
 		context.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT,
@@ -181,7 +210,9 @@ export function presentElements(
 	let index = 0;
 	return values.map((element) => {
 		const binding = bindingOf(element);
-		if (!binding) return element;
+		if (!binding) {
+			return element;
+		}
 		const local = locals[index++]!;
 		const fresh = presentationTargetForBinding(
 			binding,
@@ -218,7 +249,11 @@ export function canonicalLinkAfterPresentationEcho(
 	incoming: unknown,
 	context: PresentationContext,
 ): string | null | undefined {
-	if (!existing) return typeof incoming === "string" || incoming === null ? incoming : undefined;
-	if (isDerivedTarget(existing, incoming, context)) return existing.link;
+	if (!existing) {
+		return typeof incoming === "string" || incoming === null ? incoming : undefined;
+	}
+	if (isDerivedTarget(existing, incoming, context)) {
+		return existing.link;
+	}
 	return typeof incoming === "string" || incoming === null ? incoming : existing.link;
 }

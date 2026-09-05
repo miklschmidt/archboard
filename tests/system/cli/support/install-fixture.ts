@@ -76,8 +76,9 @@ export function createInstallFixture(): InstallFixture {
 	const registry = join(root, "repos.json");
 	const vault = join(root, "vault");
 	const skillRoot = join(root, "skills");
-	for (const directory of [home, state, dirname(log), vault])
+	for (const directory of [home, state, dirname(log), vault]) {
 		mkdirSync(directory, { recursive: true });
+	}
 	const repo = (name: string, files: Readonly<Record<string, string>> = {}) => {
 		const path = join(root, name);
 		mkdirSync(path, { recursive: true });
@@ -142,7 +143,9 @@ export function createInstallFixture(): InstallFixture {
 		run,
 		install(repository, args = [], options = {}) {
 			const result = run(repository, args, options);
-			if (result.status !== 0) throw new Error(installFailure(result));
+			if (result.status !== 0) {
+				throw new Error(installFailure(result));
+			}
 			let decoded: unknown;
 			try {
 				decoded = JSON.parse(result.stdout);
@@ -152,17 +155,21 @@ export function createInstallFixture(): InstallFixture {
 				});
 			}
 			const parsed = installResultSchema.safeParse(decoded);
-			if (!parsed.success)
+			if (!parsed.success) {
 				throw new Error(`${installFailure(result)}\nparse: ${parsed.error.message}`);
+			}
 			return { ...parsed.data, spawn: result };
 		},
 		assertSkillBytes(target) {
 			for (const relative of trackedSkillFiles) {
 				const installed = join(target, relative);
-				if (!existsSync(installed)) throw new Error(`Missing installed skill file ${installed}`);
+				if (!existsSync(installed)) {
+					throw new Error(`Missing installed skill file ${installed}`);
+				}
 				const source = join(checkoutRoot, "skills", "archboard", relative);
-				if (!readFileSync(installed).equals(readFileSync(source)))
+				if (!readFileSync(installed).equals(readFileSync(source))) {
 					throw new Error(`Installed skill bytes differ: ${relative}`);
+				}
 			}
 		},
 		dispose,

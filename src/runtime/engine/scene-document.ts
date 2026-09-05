@@ -27,7 +27,9 @@ export function buildScene(
 	// what belongs in it (TASK-060).
 	const used: Record<string, unknown> = {};
 	for (const id of drawnFileIds(exportElements)) {
-		if (sceneFiles[id]) used[id] = sceneFiles[id];
+		if (sceneFiles[id]) {
+			used[id] = sceneFiles[id];
+		}
 	}
 
 	const scene: Record<string, unknown> = {
@@ -49,7 +51,9 @@ export function buildScene(
 export async function buildSceneFile(): Promise<ExportedScene> {
 	const { getElements, getFiles } = await import("./canvas-client.js");
 	const [elementsResult, filesResult] = await Promise.allSettled([getElements(), getFiles()]);
-	if (elementsResult.status === "rejected") throw elementsResult.reason;
+	if (elementsResult.status === "rejected") {
+		throw elementsResult.reason;
+	}
 	const files = filesResult.status === "fulfilled" ? filesResult.value : {};
 	return buildScene(elementsResult.value, files);
 }
@@ -68,7 +72,9 @@ export async function importScene(options: {
 	const { batchCreateElementsOnCanvas, postFiles, replaceSceneOnCanvas } =
 		await import("./canvas-client.js");
 	let raw = options.data;
-	if (isObsidianExcalidrawMd(raw)) raw = extractSceneJsonFromObsidianMd(raw);
+	if (isObsidianExcalidrawMd(raw)) {
+		raw = extractSceneJsonFromObsidianMd(raw);
+	}
 
 	const sceneData: unknown = JSON.parse(raw);
 	const sceneRecord =
@@ -78,7 +84,9 @@ export async function importScene(options: {
 		: Array.isArray(sceneRecord["elements"])
 			? (sceneRecord["elements"] as ServerElement[])
 			: [];
-	if (elements.length === 0) throw new Error("No elements found in the import data");
+	if (elements.length === 0) {
+		throw new Error("No elements found in the import data");
+	}
 
 	const importFiles = sceneRecord["files"];
 	const files = importFiles && typeof importFiles === "object" ? Object.values(importFiles) : [];
@@ -86,8 +94,9 @@ export async function importScene(options: {
 		options.mode === "replace"
 			? await replaceSceneOnCanvas(elements, files)
 			: await batchCreateElementsOnCanvas(elements);
-	if (!created)
+	if (!created) {
 		throw new Error("Import failed: canvas rejected the batch create (elements were not restored)");
+	}
 
 	let fileCount = options.mode === "replace" ? files.length : 0;
 	if (options.mode === "merge" && files.length > 0) {

@@ -50,7 +50,9 @@ export function readOpenerSelection(): OpenerConfigurationResult {
 
 function writeSelection(selection: unknown): OpenerConfigurationResult {
 	const validated = validateOpenerSelection(selection);
-	if ("ok" in validated) return validated;
+	if ("ok" in validated) {
+		return validated;
+	}
 	const file = openerConfigPath();
 	try {
 		fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -63,7 +65,9 @@ function writeSelection(selection: unknown): OpenerConfigurationResult {
 
 export function saveOpenerSelection(selection: unknown): OpenerConfigurationResult {
 	const current = readOpenerSelection();
-	if (!current.ok) return current;
+	if (!current.ok) {
+		return current;
+	}
 	return writeSelection(selection);
 }
 

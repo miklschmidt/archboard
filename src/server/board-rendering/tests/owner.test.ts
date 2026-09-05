@@ -25,7 +25,9 @@ function renderSnapshot(): BoardRenderSnapshot {
 	);
 	const scene: unknown = JSON.parse(extractSceneJsonFromObsidianMd(note));
 	const snapshot = projectBoardRenderSnapshot(scene);
-	if (!snapshot) throw new Error("Render fixture does not project to a renderer snapshot.");
+	if (!snapshot) {
+		throw new Error("Render fixture does not project to a renderer snapshot.");
+	}
 	return snapshot;
 }
 
@@ -37,7 +39,9 @@ async function loopbackPortIsFree(port: number): Promise<boolean> {
 	} catch {
 		return false;
 	} finally {
-		if (server) await server.stop(true);
+		if (server) {
+			await server.stop(true);
+		}
 	}
 }
 
@@ -73,7 +77,9 @@ describe("board renderer owner", () => {
 					onChromiumStart: (pid) => chromiumStarts.push(pid),
 					onTempRoot: (root) => roots.push(root),
 					adjustSessionCleanup(cleanup) {
-						if (!injectCleanupFailure) return cleanup;
+						if (!injectCleanupFailure) {
+							return cleanup;
+						}
 						injectCleanupFailure = false;
 						return {
 							...cleanup,
@@ -82,7 +88,9 @@ describe("board renderer owner", () => {
 						};
 					},
 					afterCdpDispatch(_job, pid) {
-						if (!pauseNextCdpJob) return;
+						if (!pauseNextCdpJob) {
+							return;
+						}
 						pauseNextCdpJob = false;
 						process.kill(-pid, "SIGSTOP");
 						reportPausedCdp(pid);
@@ -98,8 +106,9 @@ describe("board renderer owner", () => {
 
 			await owner.execute(mermaidJob);
 			const first = owner.status();
-			if (!first.chromiumPid || !first.tempRoot || !first.profile || !first.controlPort)
+			if (!first.chromiumPid || !first.tempRoot || !first.profile || !first.controlPort) {
 				throw new Error("The renderer did not expose its owned resource identity.");
+			}
 			expect(first.profile.startsWith(`${first.tempRoot}/`)).toBeTrue();
 			const failed = await owner
 				.execute({
@@ -137,8 +146,9 @@ describe("board renderer owner", () => {
 
 			await owner.execute(mermaidJob);
 			const replacement = owner.status();
-			if (!replacement.chromiumPid || !replacement.tempRoot)
+			if (!replacement.chromiumPid || !replacement.tempRoot) {
 				throw new Error("The replacement renderer did not expose its owned identity.");
+			}
 			expect(replacement.chromiumPid).not.toBe(first.chromiumPid);
 			expect(replacement.tempRoot).not.toBe(first.tempRoot);
 
@@ -183,7 +193,9 @@ describe("board renderer owner", () => {
 				fixtureClosed: true,
 				errors: [],
 			});
-			for (const root of roots) expect(existsSync(root)).toBeFalse();
+			for (const root of roots) {
+				expect(existsSync(root)).toBeFalse();
+			}
 			expect(owner.lastCleanup()).toEqual(cleanup);
 			expect(await owner.stop()).toEqual(cleanup);
 		},

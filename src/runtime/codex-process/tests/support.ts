@@ -46,10 +46,14 @@ export function waitForState(
 	predicate: (state: CodexProcessState) => boolean,
 ): Promise<CodexProcessSnapshot> {
 	const current = owner.snapshot();
-	if (predicate(current.state)) return Promise.resolve(current);
+	if (predicate(current.state)) {
+		return Promise.resolve(current);
+	}
 	return new Promise((resolve) => {
 		const unsubscribe = owner.subscribe((snapshot) => {
-			if (!predicate(snapshot.state)) return;
+			if (!predicate(snapshot.state)) {
+				return;
+			}
 			unsubscribe();
 			resolve(snapshot);
 		});

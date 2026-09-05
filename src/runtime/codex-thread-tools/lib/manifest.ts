@@ -38,26 +38,35 @@ export type ArchboardAppNamespaceSpec = z.infer<typeof ArchboardAppManifestSchem
 export type ArchboardAppToolSpec = ArchboardAppNamespaceSpec["tools"][number];
 
 function freezeDeep<T>(value: T): T {
-	if (typeof value !== "object" || value === null) return value;
-	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
+	if (typeof value !== "object" || value === null) {
+		return value;
+	}
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		freezeDeep(child);
+	}
 	return Object.freeze(value);
 }
 
 function decodeManifestBytes(bytes: Uint8Array): string {
 	const buffer = Buffer.from(bytes);
-	if (buffer.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])))
+	if (buffer.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
 		throw new TypeError("archboard_app manifest must be UTF-8 without a BOM.");
+	}
 	let text: string;
 	try {
 		text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
 	} catch (error) {
 		throw new TypeError("archboard_app manifest is not valid UTF-8.", { cause: error });
 	}
-	if (text.includes("\r")) throw new TypeError("archboard_app manifest must use LF line endings.");
-	if (!text.endsWith("\n") || text.endsWith("\n\n"))
+	if (text.includes("\r")) {
+		throw new TypeError("archboard_app manifest must use LF line endings.");
+	}
+	if (!text.endsWith("\n") || text.endsWith("\n\n")) {
 		throw new TypeError("archboard_app manifest must end in exactly one terminal LF.");
-	if (!Buffer.from(text, "utf8").equals(buffer))
+	}
+	if (!Buffer.from(text, "utf8").equals(buffer)) {
 		throw new TypeError("archboard_app manifest does not round-trip as UTF-8.");
+	}
 	return text;
 }
 
@@ -72,18 +81,21 @@ function parseManifestBytes(bytes: Uint8Array): {
 } {
 	const text = decodeManifestBytes(bytes);
 	const sha256 = digest(bytes);
-	if (sha256 !== ARCHBOARD_APP_MANIFEST_SHA256)
+	if (sha256 !== ARCHBOARD_APP_MANIFEST_SHA256) {
 		throw new TypeError(
 			`archboard_app manifest hash drifted. Expected ${ARCHBOARD_APP_MANIFEST_SHA256}, received ${sha256}. Human re-review is required before updating this digest.`,
 		);
+	}
 	const parsed = ArchboardAppManifestSchema.safeParse(
 		parseStrictJson(text, "archboard_app manifest"),
 	);
-	if (!parsed.success)
+	if (!parsed.success) {
 		throw new TypeError(`Invalid archboard_app manifest: ${parsed.error.message}`);
+	}
 	const names = parsed.data.tools.map((tool) => tool.name);
-	if (names.some((name, index) => name !== ARCHBOARD_APP_TOOL_NAMES[index]))
+	if (names.some((name, index) => name !== ARCHBOARD_APP_TOOL_NAMES[index])) {
 		throw new TypeError("archboard_app manifest tools are not in the reviewed order.");
+	}
 	return Object.freeze({ text, manifest: freezeDeep(parsed.data), sha256 });
 }
 

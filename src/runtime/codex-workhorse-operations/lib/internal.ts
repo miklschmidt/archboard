@@ -148,14 +148,18 @@ export function messageOf(error: unknown): string {
 }
 
 export function boundedDetail(value: string): string {
-	if (Buffer.byteLength(value, "utf8") <= INPUT_LIMIT_BYTES) return value;
+	if (Buffer.byteLength(value, "utf8") <= INPUT_LIMIT_BYTES) {
+		return value;
+	}
 	const suffix = "...";
 	const budget = INPUT_LIMIT_BYTES - Buffer.byteLength(suffix, "utf8");
 	let bytes = 0;
 	let prefix = "";
 	for (const character of value) {
 		const characterBytes = Buffer.byteLength(character, "utf8");
-		if (bytes + characterBytes > budget) break;
+		if (bytes + characterBytes > budget) {
+			break;
+		}
 		prefix += character;
 		bytes += characterBytes;
 	}
@@ -221,10 +225,18 @@ export function operationRpc(
 	queueOperation?: QueueMutation,
 	rpcOverride?: WorkhorseOperationRpc,
 ): WorkhorseOperationRpc {
-	if (rpcOverride !== undefined) return rpcOverride;
-	if (operation === "delegate_to_workhorse") return "turn/start";
-	if (operation === "steer_workhorse") return "turn/steer";
-	if (queueOperation === undefined) throw new TypeError("queue mutation is required");
+	if (rpcOverride !== undefined) {
+		return rpcOverride;
+	}
+	if (operation === "delegate_to_workhorse") {
+		return "turn/start";
+	}
+	if (operation === "steer_workhorse") {
+		return "turn/steer";
+	}
+	if (queueOperation === undefined) {
+		throw new TypeError("queue mutation is required");
+	}
 	return `thread/queue/${queueOperation}`;
 }
 
@@ -276,25 +288,31 @@ export function queueMutationOutcome(
 	error: unknown,
 	effectStarted = true,
 ): Exclude<WorkhorseOperationDelivery, "pending"> {
-	if (error instanceof CodexWorkhorseOperationsError)
+	if (error instanceof CodexWorkhorseOperationsError) {
 		return effectStarted ? "outcome_unknown" : "not_delivered";
+	}
 	if (
 		error instanceof CodexWorkhorseQueueError &&
 		(error.code === "reconciliation_failed" || error.code === "stale_link")
-	)
+	) {
 		return effectStarted ? "outcome_unknown" : "not_delivered";
-	if (error instanceof CodexWorkhorseQueueError && error.outcome !== null) return error.outcome;
+	}
+	if (error instanceof CodexWorkhorseQueueError && error.outcome !== null) {
+		return error.outcome;
+	}
 	return "not_delivered";
 }
 
 export function validateBoundedInput(value: string, label: string, allowEmpty = false): void {
-	if (typeof value !== "string" || (!allowEmpty && value.length === 0))
+	if (typeof value !== "string" || (!allowEmpty && value.length === 0)) {
 		throw operationError("invalid_input", `${label} must be nonempty text.`);
-	if (Buffer.byteLength(value, "utf8") > INPUT_LIMIT_BYTES)
+	}
+	if (Buffer.byteLength(value, "utf8") > INPUT_LIMIT_BYTES) {
 		throw operationError(
 			"invalid_input",
 			`${label} must be at most ${INPUT_LIMIT_BYTES} UTF-8 bytes.`,
 		);
+	}
 }
 
 export function selectOperationIdentity(
@@ -320,7 +338,9 @@ export function selectOperationIdentity(
 export function activeTurnFromClassification(
 	classification: WorkhorseOperationClassification,
 ): TurnId | null {
-	if (classification.thread === null) return null;
+	if (classification.thread === null) {
+		return null;
+	}
 	const active = classification.thread.turns.filter((turn) => turn.status === "inProgress");
 	return active.length === 1 ? active[0]!.id : null;
 }
@@ -336,7 +356,9 @@ export function turnIdWire(options: WorkhorseOperationOptions, turnId: TurnId): 
 export function turnIdFromRaw(options: WorkhorseOperationOptions, value: string): TurnId {
 	const adopted = options.identity.decoder.adoptCodexResponseIdentities({ turnIds: [value] });
 	const turnId = adopted.turnIds[0];
-	if (turnId === undefined) throw new TypeError("notification did not contain a turn identity");
+	if (turnId === undefined) {
+		throw new TypeError("notification did not contain a turn identity");
+	}
 	return turnId;
 }
 
@@ -389,19 +411,21 @@ export function assertExecutableClassification(
 		!recordMatchesTarget(classification.proof.record, target) ||
 		classification.proof.record.status !== "committed" ||
 		classification.proof.record.outcome !== "delivered"
-	)
+	) {
 		throw operationError(
 			"unknown_provenance",
 			`${label} lost its current executable provenance; inspect the link before retrying.`,
 		);
+	}
 }
 
 export function assertCreatedWorkhorse(classification: ThreadLinkClassification): void {
-	if (!isCreatedWorkhorse(classification))
+	if (!isCreatedWorkhorse(classification)) {
 		throw operationError(
 			"unknown_provenance",
 			"Queue access is restricted to the created Archboard workhorse with proven ownership.",
 		);
+	}
 }
 
 export function isCreatedWorkhorse(classification: ThreadLinkClassification): boolean {

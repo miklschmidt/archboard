@@ -15,7 +15,9 @@ import type { LegacyElementIngress } from "../../../shared/board-elements/index.
 
 const completeElement = (input: LegacyElementIngress): ServerElement => {
 	const [element] = expandElements([input], { deterministic: true, forStore: true });
-	if (!element) throw new Error(`Fixture did not produce ${input.id}`);
+	if (!element) {
+		throw new Error(`Fixture did not produce ${input.id}`);
+	}
 	return element;
 };
 
@@ -232,8 +234,9 @@ describe("bridge creation", () => {
 			{ ...receipt, elements: [{ ...applied.named[0]!, id: "OtherMask" }, applied.named[1]!] },
 			{ ...receipt, elements: [applied.named[0]!, { ...applied.named[1]!, id: "Bridge01" }] },
 		];
-		for (const candidate of inconsistent)
+		for (const candidate of inconsistent) {
 			expect(BridgeResultSchema.safeParse(candidate).success).toBe(false);
+		}
 	});
 
 	test("selects an inclusive 0.5 crossing and refuses outside or identical sources", () => {
@@ -292,7 +295,7 @@ describe("bridge creation", () => {
 			expect(plan.underSegmentIndex).toBe(0);
 			expect(plan.crossing).toEqual({ x: 50, y: 50 });
 		}
-		for (const startIsSpecial of [true, false, null] as const)
+		for (const startIsSpecial of [true, false, null] as const) {
 			for (const endIsSpecial of [true, false, null] as const) {
 				const underMarker: Partial<ArrowInput> = {
 					elbowed: true,
@@ -310,7 +313,8 @@ describe("bridge creation", () => {
 					}),
 				).not.toThrow();
 			}
-		for (const coordinate of [1_000_000, -1_000_000] as const)
+		}
+		for (const coordinate of [1_000_000, -1_000_000] as const) {
 			expect(() =>
 				planBridgeCreate({
 					elements: boundarySources(coordinate),
@@ -320,7 +324,8 @@ describe("bridge creation", () => {
 					background: "#ffffff",
 				}),
 			).not.toThrow();
-		for (const coordinate of [1_000_001, -1_000_001] as const)
+		}
+		for (const coordinate of [1_000_001, -1_000_001] as const) {
 			for (const marker of [
 				{
 					elbowed: true,
@@ -347,6 +352,7 @@ describe("bridge creation", () => {
 					}),
 				).toThrow(unsupportedSourceMessage);
 			}
+		}
 	});
 
 	test("correlates and validates multi-segment rounded and elbowed crossings", () => {
@@ -362,7 +368,9 @@ describe("bridge creation", () => {
 			);
 			expect(crossings).toHaveLength(1);
 			const crossing = crossings[0];
-			if (!crossing) throw new Error("multi-segment crossing fixture did not produce a finding");
+			if (!crossing) {
+				throw new Error("multi-segment crossing fixture did not produce a finding");
+			}
 			const segmentIndexFor = (connectorId: string) =>
 				crossing.details.firstConnectorId === connectorId
 					? crossing.details.firstSegmentIndex

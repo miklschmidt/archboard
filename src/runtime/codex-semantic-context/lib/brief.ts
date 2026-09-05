@@ -101,7 +101,9 @@ function render(context: BriefContext, parts: FitParts): string {
 }
 
 function timestamp(value: number, field: string): number {
-	if (!Number.isFinite(value)) fail(field, "must be finite");
+	if (!Number.isFinite(value)) {
+		fail(field, "must be finite");
+	}
 	return value;
 }
 
@@ -301,14 +303,18 @@ function fitAggregate(
 			},
 		},
 	];
-	for (const slot of slots) slot.set(slot.minimum);
+	for (const slot of slots) {
+		slot.set(slot.minimum);
+	}
 	if (byteLength(render(context, parts)) > SEMANTIC_CONTEXT_LIMITS.briefBytes) {
 		fail(
 			"brief",
 			`qualified cursor identities exceed ${SEMANTIC_CONTEXT_LIMITS.briefBytes} UTF-8 bytes`,
 		);
 	}
-	for (const slot of slots) fitTextSlot(parts, context, slot);
+	for (const slot of slots) {
+		fitTextSlot(parts, context, slot);
+	}
 	fitArray(parts, context, selectionOriginal, (value) => {
 		parts.selection = value;
 	});
@@ -361,7 +367,9 @@ export function buildSemanticBrief(
 		state: observedAtMs < freshUntilMs ? "fresh" : "stale",
 	});
 	const staleReasons = uniqueSorted([...context.staleReasons]);
-	if (freshness.state === "stale") staleReasons.push("semantic freshness window expired");
+	if (freshness.state === "stale") {
+		staleReasons.push("semantic freshness window expired");
+	}
 	const staleness: SemanticStaleness = {
 		state: staleReasons.length > 0 ? "stale" : "current",
 		reasons: staleReasons,

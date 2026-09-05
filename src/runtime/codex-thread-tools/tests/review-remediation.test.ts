@@ -13,8 +13,12 @@ function expectRejected(action: () => unknown): void {
 }
 
 function reverseJsonObjects(value: unknown): unknown {
-	if (Array.isArray(value)) return value.map(reverseJsonObjects);
-	if (typeof value !== "object" || value === null) return value;
+	if (Array.isArray(value)) {
+		return value.map(reverseJsonObjects);
+	}
+	if (typeof value !== "object" || value === null) {
+		return value;
+	}
 	return Object.fromEntries(
 		Object.entries(value as Record<string, unknown>)
 			.toReversed()
@@ -79,9 +83,11 @@ test("keeps refusal envelopes successful except for boundary failures", () => {
 		);
 		const parseBoundaryFailure = () =>
 			parseDynamicToolCallResponse("list_threads", dynamicResponse(text, false));
-		if (reason === "invalid_call" || reason === "unsupported")
+		if (reason === "invalid_call" || reason === "unsupported") {
 			expect(parseBoundaryFailure().success).toBe(false);
-		else expectRejected(parseBoundaryFailure);
+		} else {
+			expectRejected(parseBoundaryFailure);
+		}
 	}
 });
 
@@ -97,8 +103,11 @@ test("enforces list, read, and inputText cardinality boundaries", () => {
 			nextCursor: null,
 		};
 		const parse = () => parseToolResultEnvelope("list_threads", resultText(value));
-		if (count === 100) expect(parse()).toBeTruthy();
-		else expectRejected(parse);
+		if (count === 100) {
+			expect(parse()).toBeTruthy();
+		} else {
+			expectRejected(parse);
+		}
 	}
 
 	const readValue = VALID_OK_VALUES.read_thread as {
@@ -114,8 +123,11 @@ test("enforces list, read, and inputText cardinality boundaries", () => {
 			nextCursor: readValue.nextCursor,
 		};
 		const parse = () => parseToolResultEnvelope("read_thread", resultText(value));
-		if (count === 20) expect(parse()).toBeTruthy();
-		else expectRejected(parse);
+		if (count === 20) {
+			expect(parse()).toBeTruthy();
+		} else {
+			expectRejected(parse);
+		}
 	}
 
 	const exactText = "😀".repeat(16_384);
@@ -174,8 +186,9 @@ test("rejects every mismatched initial-turn identity and state combination", () 
 			initialTurn: { delivery: "not_requested", turnId: null, operationId: null, reason: null },
 		},
 	];
-	for (const value of mutations)
+	for (const value of mutations) {
 		expectRejected(() => parseToolResultEnvelope("create_thread", resultText(value)));
+	}
 
 	const notRequested = {
 		threadId: "thread-2",

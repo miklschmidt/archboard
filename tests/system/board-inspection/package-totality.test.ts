@@ -46,8 +46,9 @@ const writeExactBoard = (
 	) as PackageElement[];
 	const note = owner.writeBoard(board, placeholders);
 	let bytes = readFileSync(note, "utf8");
-	for (const [value, placeholder] of replacements)
+	for (const [value, placeholder] of replacements) {
 		bytes = bytes.replaceAll(JSON.stringify(placeholder), JSON.stringify(value));
+	}
 	writeFileSync(note, bytes);
 };
 
@@ -59,7 +60,9 @@ const findingUses = (finding: InspectionReport["findings"][number], id: string) 
 
 const completeElement = (input: LegacyElementIngress): RuntimeBoardElement => {
 	const [element] = expandElements([input], { deterministic: true, forStore: true });
-	if (!element) throw new Error(`Fixture did not produce ${input.id}`);
+	if (!element) {
+		throw new Error(`Fixture did not produce ${input.id}`);
+	}
 	return element;
 };
 
@@ -193,7 +196,9 @@ describe("package inspection totality", () => {
 					height: 10,
 					angle: 0,
 				};
-				if (label !== "missing") target["type"] = rawType;
+				if (label !== "missing") {
+					target["type"] = rawType;
+				}
 				return [
 					connector({
 						id: `incoming-edge-${label}`,
@@ -248,12 +253,13 @@ describe("package inspection totality", () => {
 					"CONNECTOR_PENETRATES_NODE",
 					"CONNECTOR_PENETRATES_OBSTACLE",
 					"CONNECTOR_INTERSECTION_UNMARKED",
-				] as const)
+				] as const) {
 					expect(
 						collision.findings.some(
 							(finding) => finding.code === code && findingUses(finding, name),
 						),
 					).toBe(true);
+				}
 			}
 			const endpointElements = [true, false, null].flatMap((startIsSpecial, row) =>
 				[true, false, null].map((endIsSpecial, column) =>
@@ -321,10 +327,11 @@ describe("package inspection totality", () => {
 					"CONNECTOR_PENETRATES_NODE",
 					"CONNECTOR_PENETRATES_OBSTACLE",
 					"CONNECTOR_INTERSECTION_UNMARKED",
-				] as const)
+				] as const) {
 					expect(
 						report.findings.some((finding) => finding.code === code && findingUses(finding, id)),
 					).toBe(false);
+				}
 				const controlId = `${id}-control`;
 				owner.writeBoard(
 					controlId,
@@ -346,12 +353,13 @@ describe("package inspection totality", () => {
 					"CONNECTOR_PENETRATES_NODE",
 					"CONNECTOR_PENETRATES_OBSTACLE",
 					"CONNECTOR_INTERSECTION_UNMARKED",
-				] as const)
+				] as const) {
 					expect(
 						control.findings.some(
 							(finding) => finding.code === code && findingUses(finding, controlId),
 						),
 					).toBe(true);
+				}
 			}
 			for (const [name, marker] of [
 				["malformed-elbowed", { elbowed: "bad" }],
@@ -371,10 +379,11 @@ describe("package inspection totality", () => {
 					"CONNECTOR_PENETRATES_NODE",
 					"CONNECTOR_PENETRATES_OBSTACLE",
 					"CONNECTOR_INTERSECTION_UNMARKED",
-				] as const)
+				] as const) {
 					expect(
 						report.findings.some((finding) => finding.code === code && findingUses(finding, name)),
 					).toBe(false);
+				}
 			}
 		} finally {
 			await owner.dispose();
@@ -439,7 +448,7 @@ describe("package inspection totality", () => {
 					["lone-surrogate", ["\ud800", "plain"], "obstacle:plain,\ud800"],
 					["empty-looking-prefix", [",", "\\"], "obstacle:\\,,\\\\"],
 				] as const;
-				for (const [label, ids, expected] of obstacleCases)
+				for (const [label, ids, expected] of obstacleCases) {
 					for (const reverse of [false, true]) {
 						const ordered = reverse ? ids.toReversed() : [...ids];
 						const board = `obstacle-${label}-${reverse}`;
@@ -481,6 +490,7 @@ describe("package inspection totality", () => {
 							).has(expected),
 						).toBe(true);
 					}
+				}
 			} finally {
 				await owner.dispose();
 			}

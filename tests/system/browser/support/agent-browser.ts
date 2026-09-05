@@ -72,7 +72,9 @@ export function runCanvasCli(base: string, vault: string, args: string[]): strin
 			},
 		},
 	);
-	if (result.status !== 0) throw new Error(result.stderr);
+	if (result.status !== 0) {
+		throw new Error(result.stderr);
+	}
 	return result.stdout;
 }
 
@@ -132,7 +134,9 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 	let selected = focusArguments;
 	let testName: string | undefined;
 	if (testNameIndex !== -1) {
-		if (!focused) selectionError("--test-name is valid only with --focus.");
+		if (!focused) {
+			selectionError("--test-name is valid only with --focus.");
+		}
 		if (focusArguments.lastIndexOf("--test-name") !== testNameIndex) {
 			selectionError("Focused browser lane repeats --test-name.");
 		}
@@ -148,15 +152,21 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 			selectionError("--test-name requires exactly one focused browser owner.");
 		}
 	}
-	if (focused && selected.length === 0) selectionError("Focused browser lane is empty.");
+	if (focused && selected.length === 0) {
+		selectionError("Focused browser lane is empty.");
+	}
 	if (selected.some((token) => token.startsWith("-"))) {
 		selectionError("Browser lane accepts no extra flags.");
 	}
 	const indices = selected.map((file) => PATH_INDEX.get(file));
 	const unknown = selected.find((_, index) => indices[index] === undefined);
-	if (unknown) selectionError(`Browser lane names unknown path \`${unknown}\`.`);
+	if (unknown) {
+		selectionError(`Browser lane names unknown path \`${unknown}\`.`);
+	}
 	const duplicate = selected.find((file, index) => selected.indexOf(file) !== index);
-	if (duplicate) selectionError(`Browser lane repeats \`${duplicate}\`.`);
+	if (duplicate) {
+		selectionError(`Browser lane repeats \`${duplicate}\`.`);
+	}
 	const inventory = optIn ? OPT_IN_BROWSER_TEST_PATHS : BROWSER_TEST_PATHS;
 	if (selected.some((file) => !inventory.includes(file as never))) {
 		selectionError(
@@ -199,9 +209,12 @@ export function applyCiBrowserOwnerExclusion(
 	environment: Readonly<Record<string, string | undefined>>,
 ): BrowserSelection {
 	const excluded = environment[CI_EXCLUDED_BROWSER_OWNERS_ENV];
-	if (excluded === undefined) return selection;
-	if (environment["CI"] !== "true")
+	if (excluded === undefined) {
+		return selection;
+	}
+	if (environment["CI"] !== "true") {
 		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} requires CI=true.`);
+	}
 	if (selection.mode !== "package") {
 		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} is valid only for the package browser lane.`);
 	}
@@ -216,7 +229,9 @@ export function applyCiBrowserOwnerExclusion(
 
 function requiredEnvironment(name: (typeof REQUIRED_BROWSER_ENV)[number]): string {
 	const value = process.env[name];
-	if (!value) throw new Error(`Browser owner is missing runner-provided ${name}.`);
+	if (!value) {
+		throw new Error(`Browser owner is missing runner-provided ${name}.`);
+	}
 	return value;
 }
 
@@ -228,8 +243,9 @@ function inside(parent: string, child: string): boolean {
 export function browserTestRoots(): BrowserTestRoots {
 	const laneRoot = process.env["ARCHBOARD_TEST_BROWSER_LANE_ROOT"];
 	const ownerRoot = process.env["ARCHBOARD_TEST_BROWSER_OWNER_ROOT"];
-	if (!laneRoot || !ownerRoot)
+	if (!laneRoot || !ownerRoot) {
 		throw new Error("Browser test must run through run-browser-lane.ts.");
+	}
 	if (!inside(laneRoot, ownerRoot) || laneRoot === ownerRoot) {
 		throw new Error("Browser owner root must be a child of its lane root.");
 	}
@@ -245,7 +261,9 @@ export function browserTestEnvironment(): Record<string, string> {
 		LC_ALL: "C.UTF-8",
 		NO_COLOR: "1",
 	};
-	for (const name of REQUIRED_BROWSER_ENV) env[name] = requiredEnvironment(name);
+	for (const name of REQUIRED_BROWSER_ENV) {
+		env[name] = requiredEnvironment(name);
+	}
 	if (process.env["AGENT_BROWSER_EXECUTABLE_PATH"]) {
 		env["AGENT_BROWSER_EXECUTABLE_PATH"] = process.env["AGENT_BROWSER_EXECUTABLE_PATH"];
 	}
@@ -260,12 +278,17 @@ export function canvasTestEnvironment(
 ): Record<string, string | undefined> {
 	const env: Record<string, string | undefined> = browserTestEnvironment();
 	env["LOG_FILE_PATH"] = join(browserTestRoots().ownerRoot, "canvas.log");
-	for (const name of CLEARED_CANVAS_ENV) env[name] = undefined;
-	for (const name of Object.keys(process.env)) {
-		if (name.startsWith("ARCHBOARD_TEST_") || name.startsWith("AGENT_BROWSER_"))
-			env[name] = undefined;
+	for (const name of CLEARED_CANVAS_ENV) {
+		env[name] = undefined;
 	}
-	for (const [name, value] of Object.entries(values)) env[name] = value;
+	for (const name of Object.keys(process.env)) {
+		if (name.startsWith("ARCHBOARD_TEST_") || name.startsWith("AGENT_BROWSER_")) {
+			env[name] = undefined;
+		}
+	}
+	for (const [name, value] of Object.entries(values)) {
+		env[name] = value;
+	}
 	return env;
 }
 
@@ -289,9 +312,13 @@ export async function pollUntil<T>(
 	let last!: T;
 	for (;;) {
 		last = await read();
-		if (accepts(last)) return last;
+		if (accepts(last)) {
+			return last;
+		}
 		const remainingMs = deadline - Date.now();
-		if (remainingMs <= 0) break;
+		if (remainingMs <= 0) {
+			break;
+		}
 		await Bun.sleep(Math.min(intervalMs, remainingMs));
 	}
 	throw new Error(`Timed out waiting for ${description}; last value: ${valueForDiagnostic(last)}`);
@@ -318,10 +345,14 @@ function ownedProcessIds(namespace: string, session: string): number[] {
 	const wanted = [`AGENT_BROWSER_NAMESPACE=${namespace}`, `AGENT_BROWSER_SESSION=${session}`];
 	const found: number[] = [];
 	for (const entry of readdirSync("/proc", { withFileTypes: true })) {
-		if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
+		if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) {
+			continue;
+		}
 		try {
 			const env = readFileSync(join("/proc", entry.name, "environ"), "utf8").split("\0");
-			if (wanted.some((item) => env.includes(item))) found.push(Number(entry.name));
+			if (wanted.some((item) => env.includes(item))) {
+				found.push(Number(entry.name));
+			}
 		} catch {
 			// A process may exit between listing /proc and reading its environment.
 		}
@@ -330,16 +361,23 @@ function ownedProcessIds(namespace: string, session: string): number[] {
 }
 
 function namespaceArtifacts(socketDir: string): string[] {
-	if (!existsSync(socketDir)) return [];
+	if (!existsSync(socketDir)) {
+		return [];
+	}
 	const found: string[] = [];
 	const queue = [socketDir];
 	while (queue.length > 0) {
 		const directory = queue.pop();
-		if (!directory) continue;
+		if (!directory) {
+			continue;
+		}
 		for (const entry of readdirSync(directory, { withFileTypes: true })) {
 			const absolute = join(directory, entry.name);
-			if (entry.isDirectory()) queue.push(absolute);
-			else found.push(relative(socketDir, absolute));
+			if (entry.isDirectory()) {
+				queue.push(absolute);
+			} else {
+				found.push(relative(socketDir, absolute));
+			}
 		}
 	}
 	return found.toSorted();
@@ -401,7 +439,9 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 				rejectRun(new Error("Cannot run a command after closing the agent-browser session."));
 				return;
 			}
-			if (argv[0] !== "close") used = true;
+			if (argv[0] !== "close") {
+				used = true;
+			}
 			const child = spawn(
 				"agent-browser",
 				["--namespace", namespace, "--session", session, ...argv],
@@ -434,8 +474,9 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 				clearTimeout(graceful);
 				clearTimeout(forced);
 				children.delete(child);
-				if (code === 0 && !timedOut) resolveRun(stdout);
-				else {
+				if (code === 0 && !timedOut) {
+					resolveRun(stdout);
+				} else {
 					const exit = signal ? `signal ${signal}` : `exit ${code ?? "unknown"}`;
 					rejectRun(
 						new Error(
@@ -451,7 +492,9 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 	};
 
 	const cleanup = async (): Promise<void> => {
-		if (disposal) return disposal;
+		if (disposal) {
+			return disposal;
+		}
 		disposal = (async () => {
 			closed = true;
 			let closeFailure: unknown;
@@ -462,7 +505,9 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 					closeFailure = error;
 				}
 			}
-			for (const child of children) child.kill("SIGTERM");
+			for (const child of children) {
+				child.kill("SIGTERM");
+			}
 			await pollUntil(
 				() => ({
 					sockets: namespaceArtifacts(socketDir).filter((entry) => entry.endsWith(".sock")),
@@ -473,7 +518,9 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 				{ timeoutMs: cleanupObservationMs },
 			);
 			rmSync(socketDir, { recursive: true, force: true });
-			if (closeFailure) throw closeFailure;
+			if (closeFailure) {
+				throw closeFailure;
+			}
 		})();
 		return disposal;
 	};

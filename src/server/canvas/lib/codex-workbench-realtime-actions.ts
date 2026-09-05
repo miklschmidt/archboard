@@ -41,14 +41,18 @@ export function createCanvasRealtimeActions(
 	};
 	const stopActive = async (expected?: ActiveRealtime): Promise<void> => {
 		const active = activeRealtime;
-		if (active === null || (expected !== undefined && active !== expected)) return;
+		if (active === null || (expected !== undefined && active !== expected)) {
+			return;
+		}
 		try {
 			await components.realtime.stop({
 				sessionId: active.sessionId,
 				correlationId: active.correlationId,
 			});
 		} finally {
-			if (activeRealtime === active) activeRealtime = null;
+			if (activeRealtime === active) {
+				activeRealtime = null;
+			}
 		}
 	};
 	const requireActive = (handle: string, context: BrowserActionContext): ActiveRealtime => {
@@ -67,15 +71,18 @@ export function createCanvasRealtimeActions(
 			coordinator.threadId !== active.coordinatorThreadId ||
 			coordinator.childId !== active.childId ||
 			coordinator.epoch !== active.epoch
-		)
+		) {
 			throw new Error("The realtime session handle is stale for this exact browser binding.");
+		}
 		return active;
 	};
 
 	const actions: BrowserRealtimeActions = {
 		start: (command, context) =>
 			serialize(async () => {
-				if (activeRealtime !== null) await stopActive();
+				if (activeRealtime !== null) {
+					await stopActive();
+				}
 				const coordinator = components.coordinator.snapshot();
 				const workhorse = components.workhorse.snapshot();
 				if (
@@ -86,8 +93,9 @@ export function createCanvasRealtimeActions(
 					coordinator.epoch !== context.epoch ||
 					workhorse.state !== "ready" ||
 					workhorse.threadId !== context.link.threadId
-				)
+				) {
 					throw new Error("Realtime is unavailable for this exact linked thread.");
+				}
 				const handle = String(command.commandId);
 				const pending = Object.freeze({
 					handle,
@@ -115,7 +123,9 @@ export function createCanvasRealtimeActions(
 						realtimeSessionHandle: handle,
 					};
 				} catch (error) {
-					if (activeRealtime === pending) activeRealtime = null;
+					if (activeRealtime === pending) {
+						activeRealtime = null;
+					}
 					throw error;
 				}
 			}),
@@ -140,10 +150,13 @@ export function createCanvasRealtimeActions(
 				reason !== "browser_disconnected" &&
 				reason !== "child_disconnected" &&
 				reason !== "gateway_shutdown"
-			)
+			) {
 				return;
+			}
 			const active = activeRealtime;
-			if (active === null || active.connection !== context.connection) return;
+			if (active === null || active.connection !== context.connection) {
+				return;
+			}
 			return serialize(() => stopActive(active));
 		},
 	};

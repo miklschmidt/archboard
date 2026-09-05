@@ -175,8 +175,9 @@ describe("Codex approval remediation", () => {
 							);
 				const pending = fixture.broker.receive(request);
 				const view = fixture.broker.view(pending.requestId);
-				if (view.request.family !== "command_execution")
+				if (view.request.family !== "command_execution") {
 					throw new Error("command fixture lost its normalized family");
+				}
 				expect(
 					JSON.stringify(view.request.params.availableDecisions ?? ["accept", "decline", "cancel"]),
 				).toBe(JSON.stringify(entry.expected));

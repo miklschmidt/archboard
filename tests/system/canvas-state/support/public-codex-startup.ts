@@ -20,8 +20,9 @@ export function publicStartEnvironment(
 ): NodeJS.ProcessEnv {
 	const state = join(root, "state");
 	const persistent = join(state, "excalidraw-canvas/codex-workbench");
-	for (const directory of ["home", "config", "cache", "tmp", "vault", "state"])
+	for (const directory of ["home", "config", "cache", "tmp", "vault", "state"]) {
 		mkdirSync(join(root, directory), { recursive: true, mode: 0o700 });
+	}
 	mkdirSync(persistent, { recursive: true, mode: 0o700 });
 	writeFileSync(join(persistent, "pre-existing-sentinel"), "preserve me");
 	return {

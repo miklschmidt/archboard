@@ -71,7 +71,9 @@ const argvFor = (record: CompatibilityRecord, owner: PackageCliOwner) =>
 	);
 
 const prepare = (record: CompatibilityRecord, owner: PackageCliOwner) => {
-	if (record.fixture !== "existing-skill-proc-repo") return;
+	if (record.fixture !== "existing-skill-proc-repo") {
+		return;
+	}
 	const skillRoot = join(owner.outside, "compat-skills");
 	rmSync(skillRoot, { recursive: true, force: true });
 	const installed = join(skillRoot, "archboard");
@@ -117,22 +119,25 @@ const localEffects = (
 	if (
 		record.name === "board-list-here-failure" &&
 		result.stderr.startsWith("Standing in github.com/miklschmidt/archboard.\n")
-	)
+	) {
 		return ["repository-identity-resolved"];
+	}
 	if (
 		record.name === "promote-binding-resolution-failure" &&
 		restEffects.includes("GET /api/boards/info") &&
 		!restEffects.some((effect) => effect.startsWith("POST "))
-	)
+	) {
 		return ["binding-resolution-failed"];
+	}
 	if (record.name === "install-skill-late-failure") {
 		const installed = join(owner.outside, "compat-skills", "archboard");
 		if (
 			!existsSync(join(installed, "old.txt")) &&
 			existsSync(join(installed, "SKILL.md")) &&
 			!existsSync("/proc/AGENTS.md")
-		)
+		) {
 			return ["existing-skill-replaced", "repository-doc-not-written"];
+		}
 	}
 	return [];
 };
@@ -154,9 +159,15 @@ async function runContext(
 	http.setCompatibilityRecord(record.name);
 	const runtime: Runtime = { outside: owner.outside, closedUrl: await closedServerUrl() };
 	let options: PackageRunOptions = { url: http.url };
-	if (record.fixture === "closed-server") options = { url: runtime.closedUrl };
-	if (record.fixture === "mock-server-repo-cwd") options = { url: http.url, cwd: checkoutRoot };
-	if (record.fixture === "existing-skill-proc-repo") options = {};
+	if (record.fixture === "closed-server") {
+		options = { url: runtime.closedUrl };
+	}
+	if (record.fixture === "mock-server-repo-cwd") {
+		options = { url: http.url, cwd: checkoutRoot };
+	}
+	if (record.fixture === "existing-skill-proc-repo") {
+		options = {};
+	}
 	if (record.fixture === "foreign-server") {
 		const foreign = Bun.serve({
 			hostname: "127.0.0.1",

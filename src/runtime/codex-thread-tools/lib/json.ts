@@ -17,11 +17,14 @@ function parseJsonStructure(source: string): void {
 			source[cursor] === "\n" ||
 			source[cursor] === "\r" ||
 			source[cursor] === "\t"
-		)
+		) {
 			cursor++;
+		}
 	};
 	const parseString = (): string => {
-		if (source[cursor] !== '"') return fail("Expected a JSON string");
+		if (source[cursor] !== '"') {
+			return fail("Expected a JSON string");
+		}
 		const start = cursor;
 		cursor++;
 		while (cursor < source.length) {
@@ -57,10 +60,14 @@ function parseJsonStructure(source: string): void {
 			}
 			while (cursor < source.length) {
 				const key = parseString();
-				if (keys.has(key)) return fail(`Duplicate JSON object key ${JSON.stringify(key)}`);
+				if (keys.has(key)) {
+					return fail(`Duplicate JSON object key ${JSON.stringify(key)}`);
+				}
 				keys.add(key);
 				skipWhitespace();
-				if (source[cursor] !== ":") return fail("Expected a JSON object colon");
+				if (source[cursor] !== ":") {
+					return fail("Expected a JSON object colon");
+				}
 				cursor++;
 				parseValue();
 				skipWhitespace();
@@ -68,7 +75,9 @@ function parseJsonStructure(source: string): void {
 					cursor++;
 					return;
 				}
-				if (source[cursor] !== ",") return fail("Expected a JSON object comma");
+				if (source[cursor] !== ",") {
+					return fail("Expected a JSON object comma");
+				}
 				cursor++;
 				skipWhitespace();
 			}
@@ -88,7 +97,9 @@ function parseJsonStructure(source: string): void {
 					cursor++;
 					return;
 				}
-				if (source[cursor] !== ",") return fail("Expected a JSON array comma");
+				if (source[cursor] !== ",") {
+					return fail("Expected a JSON array comma");
+				}
 				cursor++;
 				skipWhitespace();
 			}
@@ -101,13 +112,17 @@ function parseJsonStructure(source: string): void {
 		const literal = source
 			.slice(cursor)
 			.match(/^(?:true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)/u)?.[0];
-		if (!literal) return fail("Expected a JSON value");
+		if (!literal) {
+			return fail("Expected a JSON value");
+		}
 		cursor += literal.length;
 	};
 
 	parseValue();
 	skipWhitespace();
-	if (cursor !== source.length) fail("Unexpected JSON bytes");
+	if (cursor !== source.length) {
+		fail("Unexpected JSON bytes");
+	}
 }
 
 export function parseStrictJson(source: string, label: string): unknown {
@@ -115,8 +130,9 @@ export function parseStrictJson(source: string, label: string): unknown {
 		parseJsonStructure(source);
 		return JSON.parse(source) as unknown;
 	} catch (error) {
-		if (error instanceof CanonicalJsonError)
+		if (error instanceof CanonicalJsonError) {
 			throw new TypeError(`Invalid ${label}: ${error.message}`, { cause: error });
+		}
 		throw new TypeError(
 			`Invalid ${label}: ${error instanceof Error ? error.message : String(error)}`,
 			{

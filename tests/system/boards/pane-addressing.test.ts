@@ -224,7 +224,9 @@ describe("pane addressing", () => {
 		const leftStart = left.since();
 		const rightStart = right.since();
 		const reply = async (message: PaneMessage): Promise<void> => {
-			if (message.type !== "set_viewport") return;
+			if (message.type !== "set_viewport") {
+				return;
+			}
 			await request("/api/viewport/result", {
 				method: "POST",
 				body: { requestId: message.requestId, success: true },
@@ -285,7 +287,9 @@ describe("pane addressing", () => {
 
 		shellPane!.socket.on("message", (data) => {
 			const message = JSON.parse(data.toString()) as PaneMessage;
-			if (message.type === "pane_close") void shellPane!.close();
+			if (message.type === "pane_close") {
+				void shellPane!.close();
+			}
 		});
 		const closed = await request<PaneAction>("/api/panes/close", {
 			method: "POST",

@@ -18,7 +18,9 @@ import {
 
 const harnesses: GateHarness[] = [];
 afterEach(() => {
-	for (const value of harnesses) cleanup(value);
+	for (const value of harnesses) {
+		cleanup(value);
+	}
 	harnesses.length = 0;
 });
 
@@ -164,9 +166,13 @@ describe("spoken approval state gate", () => {
 		h.realtime.emitTranscript(transcript("user", "final", "user-final", 11, "yes, run it"));
 		await flush();
 		const params = h.startParams[0];
-		if (params === undefined) throw new Error("The classifier turn was not started.");
+		if (params === undefined) {
+			throw new Error("The classifier turn was not started.");
+		}
 		const input = params.input[0];
-		if (input?.type !== "text") throw new Error("The classifier prompt was not text input.");
+		if (input?.type !== "text") {
+			throw new Error("The classifier prompt was not text input.");
+		}
 		expect(params.turnTrigger).toBe("archboard");
 		expect(params.clientUserMessageId).toBe("classifier-message");
 		expect(input.text).toContain("user_final_item_id: user-final");
@@ -277,7 +283,9 @@ describe("spoken approval state gate", () => {
 		const pending = deferred.gate.resolve(resolverRequest(deferred));
 		await flush();
 		const release = deferred.resolveTurn;
-		if (release === null) throw new Error("The deferred classifier turn was not captured.");
+		if (release === null) {
+			throw new Error("The deferred classifier turn was not captured.");
+		}
 		release();
 		expect((await pending).tag).toBe("ok");
 

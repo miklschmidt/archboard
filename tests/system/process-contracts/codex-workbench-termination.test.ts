@@ -74,8 +74,12 @@ async function pendingShutdownBatch(resources: AsyncDisposableStack, label: stri
 		const dynamic = state["dynamicApprovals"] as Record<string, unknown>[];
 		return approvals.length === 7 && dynamic.length === 1 ? { approvals, dynamic } : undefined;
 	}, `${label} initial approvals`);
-	if (initial === undefined) throw new Error(`${label} initial approvals did not remain pending.`);
-	for (const approval of initial.approvals) await approveOrdinary(socket, approval);
+	if (initial === undefined) {
+		throw new Error(`${label} initial approvals did not remain pending.`);
+	}
+	for (const approval of initial.approvals) {
+		await approveOrdinary(socket, approval);
+	}
 	await resolveDynamic(socket, initial.dynamic[0]!);
 	await waitFor(
 		() => (reverseResponses(fixture.logPath, "dynamic-request-1").length === 1 ? true : undefined),
@@ -90,7 +94,9 @@ async function pendingShutdownBatch(resources: AsyncDisposableStack, label: stri
 			: undefined;
 	}, `${label} pending shutdown batch`);
 	const childPid = records(fixture.logPath).find((entry) => entry.kind === "app_server_spawn")?.pid;
-	if (childPid === undefined) throw new Error("The pending-shutdown child did not start.");
+	if (childPid === undefined) {
+		throw new Error("The pending-shutdown child did not start.");
+	}
 	return { canvas, childPid, fixture, socket };
 }
 
@@ -106,8 +112,9 @@ describe.serial("composed Codex terminal process lifecycle", () => {
 				await canvas.dispose(signal);
 				expect(processExists(canvas.pid), signal).toBeFalse();
 				expect(processExists(childPid), signal).toBeFalse();
-				for (const id of ["shutdown-ordinary", "shutdown-dynamic", "shutdown-wait"])
+				for (const id of ["shutdown-ordinary", "shutdown-dynamic", "shutdown-wait"]) {
 					expect(reverseResponses(fixture.logPath, id), `${signal}:${id}`).toHaveLength(1);
+				}
 				expect(reverseResponses(fixture.logPath, "shutdown-ordinary")[0]?.frame).toEqual({
 					id: "shutdown-ordinary",
 					result: { decision: "cancel" },
@@ -116,8 +123,9 @@ describe.serial("composed Codex terminal process lifecycle", () => {
 					"create_thread",
 					reverseResponses(fixture.logPath, "shutdown-dynamic")[0]?.frame?.result,
 				).envelope;
-				if (dynamic.tag !== "approval_required")
+				if (dynamic.tag !== "approval_required") {
 					throw new Error(`${signal} did not terminalize the dynamic approval safely.`);
+				}
 				expect(dynamic.summary).toBe("Create thread: This authority must end at shutdown.");
 				expect(reverseResponses(fixture.logPath, "shutdown-wait")[0]?.frame).toEqual({
 					id: "shutdown-wait",

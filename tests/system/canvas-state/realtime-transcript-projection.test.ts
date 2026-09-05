@@ -33,7 +33,9 @@ test("raw realtime transcript identities publish as canonical browser items", as
 	const [linkedThreadId, coordinatorThreadId] = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: [LINKED_THREAD, COORDINATOR_THREAD],
 	}).threadIds;
-	if (!linkedThreadId || !coordinatorThreadId) throw new Error("Missing thread identities.");
+	if (!linkedThreadId || !coordinatorThreadId) {
+		throw new Error("Missing thread identities.");
+	}
 	const starts: SessionParams<"thread/realtime/start">[] = [];
 	const adapter = createCodexRealtimeAdapter({
 		identity,
@@ -61,7 +63,9 @@ test("raw realtime transcript identities publish as canonical browser items", as
 	});
 	let transcriptEvents = 0;
 	adapter.onSemanticEvent((event) => {
-		if (event.kind === "transcript") transcriptEvents++;
+		if (event.kind === "transcript") {
+			transcriptEvents++;
+		}
 	});
 	const browser = {
 		sessionId: parseRealtimeSessionId("projection-browser-session"),
@@ -71,7 +75,9 @@ test("raw realtime transcript identities publish as canonical browser items", as
 		const answer = adapter.createOffer({ ...browser, sdp: "offer" });
 		await Promise.resolve();
 		const wireSessionId = starts[0]?.realtimeSessionId;
-		if (!wireSessionId) throw new Error("Realtime start did not run.");
+		if (!wireSessionId) {
+			throw new Error("Realtime start did not run.");
+		}
 		notify(adapter, identity.validator, "thread/realtime/sdp", {
 			threadId: COORDINATOR_THREAD,
 			sdp: "answer",
@@ -122,7 +128,9 @@ test("raw realtime transcript identities publish as canonical browser items", as
 			}),
 		);
 		expect(projection.tag).toBe("projected");
-		if (projection.tag !== "projected") throw new Error(projection.message);
+		if (projection.tag !== "projected") {
+			throw new Error(projection.message);
+		}
 		expect(projection.snapshot.voice.transcript).toEqual([
 			{
 				itemId: identity.decoder.resolveItemId(TRANSCRIPT_ITEM),

@@ -19,7 +19,9 @@ const RETIRED_LEASE_LIMIT = 64;
 function deepFreeze<T>(value: T): T {
 	if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
 		Object.freeze(value);
-		for (const child of Object.values(value)) deepFreeze(child);
+		for (const child of Object.values(value)) {
+			deepFreeze(child);
+		}
 	}
 	return value;
 }
@@ -77,8 +79,9 @@ function sameLeaseTarget(left: BrowserCommandLease, right: BrowserCommandLease):
 }
 
 function assertTime(value: number): number {
-	if (!Number.isSafeInteger(value) || value < 0)
+	if (!Number.isSafeInteger(value) || value < 0) {
 		throw new Error("the gateway clock returned invalid time");
+	}
 	return value;
 }
 
@@ -108,13 +111,17 @@ export function createBrowserLeaseManager(options: {
 		retired.set(record.lease.commandId, record);
 		while (retired.size > RETIRED_LEASE_LIMIT) {
 			const oldest = retired.keys().next().value;
-			if (oldest === undefined) break;
+			if (oldest === undefined) {
+				break;
+			}
 			retired.delete(oldest);
 		}
 	};
 
 	const clearTimer = (): void => {
-		if (timer !== undefined) clearTimeout(timer);
+		if (timer !== undefined) {
+			clearTimeout(timer);
+		}
 		timer = undefined;
 	};
 
@@ -126,16 +133,22 @@ export function createBrowserLeaseManager(options: {
 			...record,
 			lease: { ...record.lease, state },
 		});
-		if (active?.lease.commandId === record.lease.commandId) setActive(null);
+		if (active?.lease.commandId === record.lease.commandId) {
+			setActive(null);
+		}
 		remember(terminal);
 		clearTimer();
-		if (state === "expired") options.onFinish?.(terminal);
+		if (state === "expired") {
+			options.onFinish?.(terminal);
+		}
 		notify();
 		return terminal;
 	};
 
 	const expireWhenDue = (commandId: BrowserCommandId): void => {
-		if (disposed || active?.lease.commandId !== commandId) return;
+		if (disposed || active?.lease.commandId !== commandId) {
+			return;
+		}
 		if (assertTime(options.now()) < active.lease.expiresAtMs) {
 			schedule(active);
 			return;
@@ -152,11 +165,15 @@ export function createBrowserLeaseManager(options: {
 
 	const requireActive = (commandId: BrowserCommandId): BrowserLeaseRecord => {
 		if (active?.lease.commandId === commandId) {
-			if (assertTime(options.now()) >= active.lease.expiresAtMs) return finish(active, "expired");
+			if (assertTime(options.now()) >= active.lease.expiresAtMs) {
+				return finish(active, "expired");
+			}
 			return active;
 		}
 		const historical = retired.get(commandId);
-		if (historical !== undefined) return historical;
+		if (historical !== undefined) {
+			return historical;
+		}
 		throw new Error("the browser command lease is unknown");
 	};
 
@@ -166,10 +183,15 @@ export function createBrowserLeaseManager(options: {
 		connection: BrowserConnectionInstance,
 		capturedLink: ThreadLinkBindingSnapshot,
 	): BrowserLeaseRecord => {
-		if (disposed) throw new Error("the browser gateway is disposed");
+		if (disposed) {
+			throw new Error("the browser gateway is disposed");
+		}
 		if (active !== null) {
-			if (assertTime(options.now()) >= active.lease.expiresAtMs) finish(active, "expired");
-			else finish(active, "released");
+			if (assertTime(options.now()) >= active.lease.expiresAtMs) {
+				finish(active, "expired");
+			} else {
+				finish(active, "released");
+			}
 		}
 		const commandId = options.identity.identity.issuer.mintBrowserCommandId();
 		const childId = options.identity.identity.validator.childId;
@@ -208,15 +230,20 @@ export function createBrowserLeaseManager(options: {
 		connection: BrowserConnectionInstance,
 		lease: BrowserCommandLease,
 	): BrowserLeaseRecord => {
-		if (disposed) throw new Error("the browser gateway is disposed");
+		if (disposed) {
+			throw new Error("the browser gateway is disposed");
+		}
 		const record = requireActive(lease.commandId);
-		if (record.lease.state !== "active") return record;
+		if (record.lease.state !== "active") {
+			return record;
+		}
 		if (
 			record.binding.browserId !== browserId ||
 			record.binding.connection !== connection ||
 			!sameLeaseTarget(record.lease, lease)
-		)
+		) {
 			throw new Error("the browser command lease belongs to another browser or pane");
+		}
 		const expiresAtMs = assertTime(options.now()) + CODEX_BROWSER_COMMAND_LEASE_MS;
 		const renewed = freezeRecord({ ...record, lease: { ...record.lease, expiresAtMs } });
 		setActive(renewed);
@@ -231,8 +258,12 @@ export function createBrowserLeaseManager(options: {
 		connection: BrowserConnectionInstance,
 		commandId?: BrowserCommandId,
 	): BrowserLeaseRecord | null => {
-		if (active === null) return commandId === undefined ? null : (retired.get(commandId) ?? null);
-		if (assertTime(options.now()) >= active.lease.expiresAtMs) return finish(active, "expired");
+		if (active === null) {
+			return commandId === undefined ? null : (retired.get(commandId) ?? null);
+		}
+		if (assertTime(options.now()) >= active.lease.expiresAtMs) {
+			return finish(active, "expired");
+		}
 		if (
 			active.binding.browserId !== browserId ||
 			active.binding.paneId !== paneId ||
@@ -240,8 +271,9 @@ export function createBrowserLeaseManager(options: {
 		) {
 			return commandId === undefined ? null : (retired.get(commandId) ?? null);
 		}
-		if (commandId !== undefined && active.lease.commandId !== commandId)
+		if (commandId !== undefined && active.lease.commandId !== commandId) {
 			return retired.get(commandId) ?? null;
+		}
 		return finish(active, "released");
 	};
 
@@ -250,24 +282,33 @@ export function createBrowserLeaseManager(options: {
 		epoch: ChildEpoch,
 		state: "expired" | "released" = "released",
 	): BrowserLeaseRecord | null => {
-		if (active === null || active.lease.childId !== childId || active.lease.epoch !== epoch)
+		if (active === null || active.lease.childId !== childId || active.lease.epoch !== epoch) {
 			return null;
+		}
 		return finish(active, state);
 	};
 
 	const dispose = (): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		clearTimer();
-		if (active !== null) finish(active, "released");
+		if (active !== null) {
+			finish(active, "released");
+		}
 		retired.clear();
 	};
 	const detach = (): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		clearTimer();
 	};
-	if (active !== null) schedule(active);
+	if (active !== null) {
+		schedule(active);
+	}
 
 	return Object.freeze({
 		current: () => active,

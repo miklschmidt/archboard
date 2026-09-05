@@ -63,8 +63,9 @@ function run(cwd: string, command: string[]): CommandResult {
 function repositoryOxlintConfig(): string {
 	const authored = fs.readFileSync(path.join(repoRoot, ".oxlintrc.jsonc"), "utf8");
 	const relativePlugin = '"./tools/oxlint-plugin-archboard.js"';
-	if (!authored.includes(relativePlugin))
+	if (!authored.includes(relativePlugin)) {
 		throw new Error("repository Oxlint plugin path is missing");
+	}
 	return authored.replace(relativePlugin, JSON.stringify(plugin));
 }
 async function withProject<T>(
@@ -101,9 +102,13 @@ function resolvePackageJson(name: string, fromDirectory: string): string | undef
 	let directory = fromDirectory;
 	while (true) {
 		const candidate = path.join(directory, "node_modules", name, "package.json");
-		if (fs.existsSync(candidate)) return candidate;
+		if (fs.existsSync(candidate)) {
+			return candidate;
+		}
 		const parent = path.dirname(directory);
-		if (parent === directory) return undefined;
+		if (parent === directory) {
+			return undefined;
+		}
 		directory = parent;
 	}
 }
@@ -113,22 +118,31 @@ function assistantUiDependencyGraph(): Map<string, Record<string, unknown>> {
 	while (pending.length > 0) {
 		const [name, fromDirectory] = pending.shift() as [string, string];
 		const manifestPath = resolvePackageJson(name, fromDirectory);
-		if (!manifestPath) throw new Error(`missing installed assistant-ui dependency ${name}`);
+		if (!manifestPath) {
+			throw new Error(`missing installed assistant-ui dependency ${name}`);
+		}
 		const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
 		const identity = `${String(manifest["name"])}@${String(manifest["version"])}`;
-		if (packages.has(identity)) continue;
+		if (packages.has(identity)) {
+			continue;
+		}
 		packages.set(identity, manifest);
 		const dependencies = manifest["dependencies"];
-		if (typeof dependencies !== "object" || dependencies === null) continue;
-		for (const dependency of Object.keys(dependencies))
+		if (typeof dependencies !== "object" || dependencies === null) {
+			continue;
+		}
+		for (const dependency of Object.keys(dependencies)) {
 			pending.push([dependency, path.dirname(manifestPath)]);
+		}
 	}
 	return packages;
 }
 function directRadixDependencies(packageJson: Record<string, unknown>): string[] {
 	return DEPENDENCY_SECTIONS.flatMap((section) => {
 		const dependencies = packageJson[section];
-		if (typeof dependencies !== "object" || dependencies === null) return [];
+		if (typeof dependencies !== "object" || dependencies === null) {
+			return [];
+		}
 		return Object.keys(dependencies as Record<string, unknown>)
 			.filter((name) => name === "radix-ui" || name.startsWith("@radix-ui/"))
 			.map((name) => `${section}.${name}`);
@@ -165,7 +179,9 @@ describe("assistant-ui dependency and import policy", () => {
 		const graph = assistantUiDependencyGraph();
 		expect(new Set(graph.keys())).toEqual(ASSISTANT_UI_TRANSITIVE_ALLOWLIST);
 		for (const [identity, manifest] of graph) {
-			if (typeof manifest["license"] !== "string") throw new Error(`missing license for ${identity}`);
+			if (typeof manifest["license"] !== "string") {
+				throw new Error(`missing license for ${identity}`);
+			}
 			expect(["MIT", "BSD-3-Clause", "0BSD"], identity).toContain(manifest["license"]);
 		}
 	});
@@ -373,11 +389,12 @@ describe("assistant-ui dependency and import policy", () => {
 					lint(root, "src/ui/workbench-runtime/subpath.ts"),
 					"exact @assistant-ui/react package root",
 				);
-				for (const file of ["query.ts", "hash.ts", "slash.ts"])
+				for (const file of ["query.ts", "hash.ts", "slash.ts"]) {
 					expectRule(
 						lint(root, `src/ui/workbench-runtime/${file}`),
 						"exact @assistant-ui/react package root",
 					);
+				}
 				expectRule(lint(root, "src/ui/workbench-runtime/alternate.ts"), "alternate package");
 				expectRule(
 					lint(root, "src/ui/workbench-runtime/cloud.ts"),

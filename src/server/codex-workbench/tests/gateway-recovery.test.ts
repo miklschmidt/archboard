@@ -6,7 +6,9 @@ import { createGatewayHarness, type GatewayHarness } from "./support.js";
 const openHarnesses: GatewayHarness[] = [];
 
 afterEach(async () => {
-	for (const openHarness of openHarnesses.splice(0)) await openHarness.gateway.dispose();
+	for (const openHarness of openHarnesses.splice(0)) {
+		await openHarness.gateway.dispose();
+	}
 });
 
 function harness(): GatewayHarness {
@@ -239,7 +241,9 @@ describe("Codex workbench browser recovery and delivery", () => {
 			value.authorities.identity.decoder.adoptThreadId("relinked-thread"),
 		);
 		const currentLink = value.binding().link;
-		if (currentLink.state !== "executable") throw new Error("the fixture link must be executable");
+		if (currentLink.state !== "executable") {
+			throw new Error("the fixture link must be executable");
+		}
 		value.setLink({ ...currentLink, threadId: currentThread });
 		const approval = value.makeOrdinaryApproval(currentThread);
 		value.setOrdinaryApproval(approval);

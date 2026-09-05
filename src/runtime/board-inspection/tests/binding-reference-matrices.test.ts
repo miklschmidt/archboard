@@ -17,7 +17,7 @@ describe("binding reference matrices", () => {
 			["nonfinite-gap", { elementId: "node", focus: 0, gap: null }, false],
 			["invalid-fixed-point", { ...complete, fixedPoint: [0] }, false],
 		] as const;
-		for (const end of ["start", "end"] as const)
+		for (const end of ["start", "end"] as const) {
 			for (const [issue, value, classificationBlocked] of cases) {
 				const report = inspectBoard([
 					connector({
@@ -42,6 +42,7 @@ describe("binding reference matrices", () => {
 				).toBe(classificationBlocked);
 				expect(finding?.affectsCoverage).toBe(classificationBlocked);
 			}
+		}
 	});
 
 	test("keeps undefined and null bindings canonical", () => {
@@ -62,7 +63,7 @@ describe("binding reference matrices", () => {
 			["non-string-element-id", { elementId: 1, focus: 0, gap: 0 }],
 		] as const;
 		const endpointSets = [["start"], ["end"], ["start", "end"]] as const;
-		for (const [issue, value] of bindings)
+		for (const [issue, value] of bindings) {
 			for (const ends of endpointSets) {
 				const id = `blocked-${issue}-${ends.join("-")}`;
 				const endpointBindings = Object.fromEntries(ends.map((end) => [`${end}Binding`, value]));
@@ -71,7 +72,7 @@ describe("binding reference matrices", () => {
 					connector({ id, y: 5, ...endpointBindings }),
 				]);
 				expect(report.coverage).toBe("indeterminate");
-				for (const end of ends)
+				for (const end of ends) {
 					expect(
 						report.findings.some(
 							(finding) =>
@@ -84,6 +85,7 @@ describe("binding reference matrices", () => {
 								finding.affectsCoverage,
 						),
 					).toBe(true);
+				}
 				expect(
 					report.findings.some(
 						(finding) =>
@@ -91,6 +93,7 @@ describe("binding reference matrices", () => {
 					),
 				).toBe(false);
 			}
+		}
 	});
 
 	test("maps all seven malformed boundElements forms", () => {
@@ -135,7 +138,7 @@ describe("binding reference matrices", () => {
 			const targetId = `target-${label}`;
 			const ownerId = `owner-${label}`;
 			let target: RawElement;
-			if (actualType === "text")
+			if (actualType === "text") {
 				target = {
 					id: targetId,
 					type: "text",
@@ -146,7 +149,7 @@ describe("binding reference matrices", () => {
 					fontFamily: 5,
 					text: "target",
 				};
-			else if (actualType === "arrow" || actualType === "line")
+			} else if (actualType === "arrow" || actualType === "line") {
 				target = connector({
 					id: targetId,
 					type: actualType,
@@ -160,7 +163,9 @@ describe("binding reference matrices", () => {
 						? { startBinding: { elementId: ownerId, focus: 0, gap: 0 } }
 						: {}),
 				});
-			else target = { id: targetId, type: "rectangle", x: 40, y: 0, width: 10, height: 10 };
+			} else {
+				target = { id: targetId, type: "rectangle", x: 40, y: 0, width: 10, height: 10 };
+			}
 			const report = inspectBoard([
 				semanticNode(ownerId, { boundElements: [{ id: targetId, type: declaredType }] }),
 				target,
@@ -174,10 +179,11 @@ describe("binding reference matrices", () => {
 				expect(report.coverage).toBe("indeterminate");
 			} else {
 				expect(finding).toBeUndefined();
-				if (label === "arrow-to-line")
+				if (label === "arrow-to-line") {
 					expect(
 						report.findings.some((candidate) => candidate.reason === "missing-binding-reciprocal"),
 					).toBe(false);
+				}
 			}
 		}
 	});
@@ -196,7 +202,9 @@ describe("binding reference matrices", () => {
 				width: 10,
 				height: 10,
 			};
-			if (label !== "missing") target["type"] = rawType;
+			if (label !== "missing") {
+				target["type"] = rawType;
+			}
 			const report = inspectBoard([
 				semanticNode(`unknown-owner-${label}`, {
 					boundElements: [{ id: target["id"], type: "text" }],

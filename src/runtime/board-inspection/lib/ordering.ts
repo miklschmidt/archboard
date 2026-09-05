@@ -7,7 +7,9 @@ export function compareIdentity(a: string, b: string): number {
 export function compareIdentityLists(a: readonly string[], b: readonly string[]): number {
 	for (let index = 0; index < Math.min(a.length, b.length); index += 1) {
 		const compared = compareIdentity(a[index]!, b[index]!);
-		if (compared) return compared;
+		if (compared) {
+			return compared;
+		}
 	}
 	return a.length - b.length;
 }
@@ -16,11 +18,15 @@ export function compareIdentityLists(a: readonly string[], b: readonly string[])
 export function obstacleIdentity(values: readonly string[]): string {
 	let encoded = "obstacle:";
 	for (let valueIndex = 0; valueIndex < values.length; valueIndex += 1) {
-		if (valueIndex > 0) encoded += ",";
+		if (valueIndex > 0) {
+			encoded += ",";
+		}
 		const value = values[valueIndex]!;
 		for (let index = 0; index < value.length; index += 1) {
 			const codeUnit = value[index]!;
-			if (codeUnit === "\\" || codeUnit === ",") encoded += "\\";
+			if (codeUnit === "\\" || codeUnit === ",") {
+				encoded += "\\";
+			}
 			encoded += codeUnit;
 		}
 	}

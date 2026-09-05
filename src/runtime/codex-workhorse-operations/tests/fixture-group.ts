@@ -22,7 +22,9 @@ export function useFixtureGroup(): FixtureGroup["create"] {
 	});
 	afterAll(() => group?.cleanup());
 	return (initialStatus = "idle") => {
-		if (group === undefined) throw new Error("fixture group is not prepared");
+		if (group === undefined) {
+			throw new Error("fixture group is not prepared");
+		}
 		return group.create(initialStatus);
 	};
 }
@@ -35,8 +37,9 @@ function createFixtureGroup(): FixtureGroup {
 	const preparedEpochRoot = join(preparedRoot, "epoch");
 	const preparedCodexHome = join(preparedRoot, "codex-home");
 	const preparedSqliteHome = join(preparedRoot, "codex-sqlite");
-	for (const directory of [preparedEpochRoot, preparedCodexHome, preparedSqliteHome])
+	for (const directory of [preparedEpochRoot, preparedCodexHome, preparedSqliteHome]) {
 		mkdirSync(directory, { recursive: true, mode: 0o700 });
+	}
 	const preparedEpoch = createCodexEpochStore({
 		rootDirectory: preparedEpochRoot,
 		codexHome: preparedCodexHome,
@@ -51,22 +54,31 @@ function createFixtureGroup(): FixtureGroup {
 	let closed = false;
 	const liveCases = new Set<() => void>();
 	const cleanup = (): void => {
-		if (closed) return;
+		if (closed) {
+			return;
+		}
 		closed = true;
 		const leakedCases = liveCases.size;
-		for (const cleanupCase of liveCases) cleanupCase();
+		for (const cleanupCase of liveCases) {
+			cleanupCase();
+		}
 		rmSync(parent, { recursive: true, force: true });
-		if (leakedCases !== 0) throw new Error(`fixture group cleaned ${leakedCases} leaked case(s)`);
+		if (leakedCases !== 0) {
+			throw new Error(`fixture group cleaned ${leakedCases} leaked case(s)`);
+		}
 	};
 	return {
 		create: (initialStatus = "idle") => {
-			if (closed) throw new Error("fixture group is closed");
+			if (closed) {
+				throw new Error("fixture group is closed");
+			}
 			const caseRoot = join(parent, `case-${nextCase++}`);
 			const epochRoot = join(caseRoot, "epoch");
 			const codexHome = join(caseRoot, "codex-home");
 			const sqliteHome = join(caseRoot, "codex-sqlite");
-			for (const directory of [epochRoot, codexHome, sqliteHome])
+			for (const directory of [epochRoot, codexHome, sqliteHome]) {
 				mkdirSync(directory, { recursive: true, mode: 0o700 });
+			}
 			copyFileSync(preparedSnapshot.manifestPath, join(epochRoot, "epoch-manifest.json"));
 			copyFileSync(preparedSnapshot.recordsPath, join(epochRoot, "epoch-records.json"));
 			const caseAuthorities = restoreIdentityAuthorities({
@@ -81,7 +93,9 @@ function createFixtureGroup(): FixtureGroup {
 			});
 			let caseClosed = false;
 			const cleanupCase = (): void => {
-				if (caseClosed) return;
+				if (caseClosed) {
+					return;
+				}
 				caseClosed = true;
 				epoch.close();
 				rmSync(caseRoot, { recursive: true, force: true });

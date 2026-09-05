@@ -52,7 +52,9 @@ export async function registerResourceSet(
 			readySchema: RawLockReadySchema,
 		});
 		acquired.defer(() => lock.dispose());
-		if (input.failAfterLock) throw new Error("forced failure after lock acquisition");
+		if (input.failAfterLock) {
+			throw new Error("forced failure after lock acquisition");
+		}
 		const proxy = await startCountingProxy({
 			port: input.proxyPort,
 			upstream: `http://127.0.0.1:${input.upstreamPort}`,
@@ -75,7 +77,9 @@ export async function registerResourceSet(
 
 async function lockMode(): Promise<void> {
 	const repoRoot = process.env["ARCHBOARD_TEST_REPO_ROOT"];
-	if (!repoRoot) throw new Error("ARCHBOARD_TEST_REPO_ROOT is required.");
+	if (!repoRoot) {
+		throw new Error("ARCHBOARD_TEST_REPO_ROOT is required.");
+	}
 	const { holdBoard, releaseHold } = await import(
 		join(repoRoot, "src/runtime/engine/board-lock.ts")
 	);
@@ -89,11 +93,12 @@ async function lockMode(): Promise<void> {
 	const lockFile = join(process.env["ARCHBOARD_VAULT"]!, ".archboard/locks", `${board}.lock`);
 	const port = Number(process.env["ARCHBOARD_TEST_STUBBORN_PORT"]) || undefined;
 	const server = port ? createServer((socket) => socket.end()) : undefined;
-	if (server)
+	if (server) {
 		await new Promise<void>((resolve, reject) => {
 			server.once("error", reject);
 			server.listen(port, "127.0.0.1", resolve);
 		});
+	}
 	// eslint-disable-next-line no-console -- stdout is the peer readiness protocol.
 	console.log(JSON.stringify({ pid: process.pid, lockFile, process: hold.holder.process, port }));
 	const renewal = setInterval(() => {
@@ -106,8 +111,11 @@ async function lockMode(): Promise<void> {
 	const stop = () => {
 		clearInterval(renewal);
 		releaseHold(board, holderId);
-		if (server) server.close(() => process.exit(0));
-		else process.exit(0);
+		if (server) {
+			server.close(() => process.exit(0));
+		} else {
+			process.exit(0);
+		}
 	};
 	process.on("SIGTERM", process.env["ARCHBOARD_TEST_IGNORE_TERM"] === "1" ? () => {} : stop);
 	process.on("SIGINT", stop);
@@ -135,7 +143,9 @@ async function outerMode(): Promise<void> {
 		})();
 		return stopping;
 	};
-	for (const signal of ["SIGTERM", "SIGINT"] as const) process.on(signal, () => void stop());
+	for (const signal of ["SIGTERM", "SIGINT"] as const) {
+		process.on(signal, () => void stop());
+	}
 	try {
 		setup = registerResourceSet(resources, {
 			root,
@@ -146,7 +156,9 @@ async function outerMode(): Promise<void> {
 			failAfterLock: process.env["ARCHBOARD_TEST_FAIL_AFTER_LOCK"] === "1",
 		});
 		const ready = await setup;
-		if (signalRequested) return await stop();
+		if (signalRequested) {
+			return await stop();
+		}
 		// eslint-disable-next-line no-console -- stdout is the peer readiness protocol.
 		console.log(JSON.stringify(ready));
 	} catch (error) {
@@ -155,5 +167,6 @@ async function outerMode(): Promise<void> {
 	}
 }
 
-if (import.meta.main)
+if (import.meta.main) {
 	await (process.env["ARCHBOARD_TEST_RESOURCE_MODE"] === "lock" ? lockMode() : outerMode());
+}

@@ -22,37 +22,43 @@ import {
 export function createWorkhorseValidation(options: WorkhorseOperationOptions): WorkhorseValidation {
 	const currentBinding = (): WorkhorseOperationBinding => {
 		const binding = options.currentBinding();
-		if (binding === null)
+		if (binding === null) {
 			throw operationError(
 				"not_ready",
 				"The coordinator and workhorse must be linked before a workhorse operation.",
 			);
+		}
 		if (
 			binding.coordinator.childId !== binding.childId ||
 			binding.coordinator.epoch !== binding.epoch ||
 			binding.workhorse.childId !== binding.childId ||
 			binding.workhorse.epoch !== binding.epoch
-		)
+		) {
 			throw operationError(
 				"unknown_provenance",
 				"The linked threads do not share the current child epoch.",
 			);
+		}
 		return snapshotBinding(binding);
 	};
 
 	const assertCurrentBinding = (binding: WorkhorseOperationBinding): void => {
 		const current = options.currentBinding();
-		if (current === null)
+		if (current === null) {
 			throw operationError("not_ready", "The workhorse link is no longer available.");
-		if (current.childId !== binding.childId)
+		}
+		if (current.childId !== binding.childId) {
 			throw operationError("stale_child", "The workhorse child was replaced during the operation.");
-		if (current.epoch !== binding.epoch)
+		}
+		if (current.epoch !== binding.epoch) {
 			throw operationError("prior_epoch", "The workhorse link belongs to a prior epoch.");
-		if (!sameBinding(current, binding))
+		}
+		if (!sameBinding(current, binding)) {
 			throw operationError(
 				"stale_link",
 				"The coordinator or workhorse link changed during the operation.",
 			);
+		}
 	};
 
 	const assertCall = (
@@ -72,18 +78,20 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 			parsed.namespace !== ARCHBOARD_WORKHORSE_NAMESPACE.name ||
 			parsed.tool !== tool ||
 			parsed.manifestHash !== ARCHBOARD_WORKHORSE_MANIFEST_SHA256
-		)
+		) {
 			throw operationError("invalid_call", `The coordinator call is not for ${tool}.`);
+		}
 		if (
 			binding !== undefined &&
 			(parsed.child !== binding.childId ||
 				parsed.epoch !== binding.epoch ||
 				parsed.threadId !== binding.coordinator.threadId)
-		)
+		) {
 			throw operationError(
 				"invalid_call",
 				"The coordinator call does not belong to the captured child, epoch, and coordinator thread.",
 			);
+		}
 		let current: WorkhorseCoordinatorCall | null;
 		try {
 			current = options.currentCoordinatorCall();
@@ -92,11 +100,12 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 				cause: error,
 			});
 		}
-		if (current === null || !sameCall(parsed, current))
+		if (current === null || !sameCall(parsed, current)) {
 			throw operationError(
 				"invalid_call",
 				"The coordinator call is no longer the current executing call.",
 			);
+		}
 	};
 
 	const classify = async (
@@ -116,7 +125,9 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 			coordinator = await options.threadLink.classify(binding.coordinator);
 			workhorse = await options.threadLink.classify(binding.workhorse);
 		} catch (error) {
-			if (error instanceof CodexWorkhorseOperationsError) throw error;
+			if (error instanceof CodexWorkhorseOperationsError) {
+				throw error;
+			}
 			throw operationError("transport_failure", "The linked thread classification failed.", {
 				cause: error,
 			});
@@ -124,8 +135,9 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 		assertCurrentBinding(binding);
 		assertCall(call, tool, binding);
 		assertExecutableClassification(coordinator, binding.coordinator, "The coordinator link");
-		if (tool !== "inspect_workhorse")
+		if (tool !== "inspect_workhorse") {
 			assertExecutableClassification(workhorse, binding.workhorse, "The workhorse link");
+		}
 		assertCurrentBinding(binding);
 		assertCall(call, tool, binding);
 		return { binding, coordinator, workhorse };

@@ -36,7 +36,9 @@ beforeAll(async () => {
 afterAll(() => {
 	try {
 		versionModule?.forgetRememberedVersions("board-version-conflict-");
-		for (const key of ownedKeys) storeModule?.boards.delete(key);
+		for (const key of ownedKeys) {
+			storeModule?.boards.delete(key);
+		}
 		ownedKeys.clear();
 		watchModule?.forgetNoteWatch();
 	} finally {

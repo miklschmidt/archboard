@@ -11,7 +11,9 @@ const wireIdentityOwner = path.join(
 const runtimeRoot = path.join(repoRoot, "src/runtime/codex-realtime");
 
 function sourceFiles(root: string): string[] {
-	if (!fs.existsSync(root)) return [];
+	if (!fs.existsSync(root)) {
+		return [];
+	}
 	return fs
 		.readdirSync(root, { recursive: true, withFileTypes: true })
 		.filter((entry) => entry.isFile() && [".ts", ".tsx", ".mts"].includes(path.extname(entry.name)))

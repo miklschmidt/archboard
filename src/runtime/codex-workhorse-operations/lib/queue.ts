@@ -77,8 +77,9 @@ async function mutateQueue(
 	operationId: OperationId,
 	operationIdWire: string,
 ): Promise<ManageWorkhorseQueueResult> {
-	if (binding === null)
+	if (binding === null) {
 		throw operationError("not_ready", "The workhorse link is no longer available.");
+	}
 	assertCreatedWorkhorse(validated.workhorse);
 	const state = runtime.stage({
 		operationId,
@@ -90,7 +91,9 @@ async function mutateQueue(
 		workhorse: validated.workhorse,
 		clientUserMessageId: request.operation === "add" ? operationIdWire : null,
 	});
-	if ("submissionId" in request) state.queuedSubmissionId = request.submissionId;
+	if ("submissionId" in request) {
+		state.queuedSubmissionId = request.submissionId;
+	}
 	let result;
 	let effectStarted = false;
 	try {
@@ -104,12 +107,13 @@ async function mutateQueue(
 					context.operation !== "start" ||
 					context.target === null ||
 					context.target.id !== request.submissionId
-				)
+				) {
 					throw operationError(
 						"outcome_unknown",
 						"Queue start did not preserve its exact baseline target.",
 						{ operation: "manage_workhorse_queue", operationId },
 					);
+				}
 				state.clientUserMessageId = context.target.clientUserMessageId;
 			}
 			const current = await runtime.classify(binding, request.call, "manage_workhorse_queue");
@@ -159,9 +163,11 @@ async function mutateQueue(
 	} catch (error) {
 		const requested = effectStarted ? queueMutationOutcome(error, true) : "not_delivered";
 		const outcome = runtime.settleDurable(state, requested, messageOf(error));
-		if (outcome === "outcome_unknown")
+		if (outcome === "outcome_unknown") {
 			runtime.emit(state, "outcome_unknown", outcome, [], messageOf(error));
-		else runtime.terminal(state, "failed", [], messageOf(error));
+		} else {
+			runtime.terminal(state, "failed", [], messageOf(error));
+		}
 		throw operationError(mutationErrorCode(outcome), "The queue operation was not delivered.", {
 			operation: "manage_workhorse_queue",
 			outcome,
@@ -174,16 +180,20 @@ async function mutateQueue(
 		const matches = result.queue.filter(
 			(submission) => submission.clientUserMessageId === operationIdWire,
 		);
-		if (matches.length === 1) state.queuedSubmissionId = matches[0]!.id;
+		if (matches.length === 1) {
+			state.queuedSubmissionId = matches[0]!.id;
+		}
 	}
-	if (request.operation === "start" && "turnId" in result && result.turnId !== null)
+	if (request.operation === "start" && "turnId" in result && result.turnId !== null) {
 		state.turnId = result.turnId;
+	}
 	if (
 		request.operation === "start" &&
 		"clientUserMessageId" in result &&
 		state.clientUserMessageId !== result.clientUserMessageId
-	)
+	) {
 		state.clientUserMessageId = null;
+	}
 	const hasExactQueueIdentity = state.queuedSubmissionId !== null;
 	const requestedOutcome =
 		request.operation === "start" && state.clientUserMessageId === null
@@ -210,17 +220,20 @@ async function mutateQueue(
 				runtime.emit(state, "queued", outcome, result.queue);
 			}
 		} else if (request.operation === "start") {
-			if (state.turnId === null)
+			if (state.turnId === null) {
 				throw operationError(
 					"outcome_unknown",
 					"Queue start returned no authoritative turn identity.",
 					{ operation: "manage_workhorse_queue", outcome, operationId },
 				);
+			}
 			runtime.correlateTurn(state, state.turnId, result.queue);
-		} else runtime.terminal(state, "completed", result.queue, null);
-	} else if (outcome === "not_delivered")
+		} else {
+			runtime.terminal(state, "completed", result.queue, null);
+		}
+	} else if (outcome === "not_delivered") {
 		runtime.terminal(state, "failed", result.queue, "The queue operation was not delivered.");
-	else
+	} else {
 		runtime.emit(
 			state,
 			"outcome_unknown",
@@ -228,12 +241,14 @@ async function mutateQueue(
 			result.queue,
 			"The queue response was not attributable; inspect before retrying.",
 		);
-	if (outcome !== "delivered")
+	}
+	if (outcome !== "delivered") {
 		throw operationError(mutationErrorCode(outcome), "The queue operation was not delivered.", {
 			operation: "manage_workhorse_queue",
 			outcome,
 			operationId,
 		});
+	}
 	return freeze({ operation: request.operation, queuedSubmissionIds: ids });
 }
 
@@ -242,7 +257,7 @@ export function createManageQueue(
 ): (request: ManageWorkhorseQueueRequest) => Promise<ManageWorkhorseQueueResult> {
 	return (request) => {
 		runtime.assertCall(request.call, "manage_workhorse_queue");
-		if (request.operation === "list")
+		if (request.operation === "list") {
 			return runtime.enqueue(async () => {
 				const binding = runtime.currentBinding();
 				const validated = await runtime.classify(binding, request.call, "manage_workhorse_queue");
@@ -253,6 +268,7 @@ export function createManageQueue(
 				runtime.reconcileUnknownQueue(result.queue);
 				return freeze({ operation: "list", queuedSubmissionIds: queueIds(result.queue) });
 			});
+		}
 
 		let operationIdentity;
 		try {

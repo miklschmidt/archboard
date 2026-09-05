@@ -47,11 +47,15 @@ function readProcStat(pid: number): ProcStat | undefined {
 	try {
 		text = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
 	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+		if ((cause as NodeJS.ErrnoException).code === "ENOENT") {
+			return undefined;
+		}
 		throw cause;
 	}
 	const closingName = text.lastIndexOf(")");
-	if (closingName < 0) throw new Error(`Malformed process stat for pid ${pid}.`);
+	if (closingName < 0) {
+		throw new Error(`Malformed process stat for pid ${pid}.`);
+	}
 	const fields = text
 		.slice(closingName + 2)
 		.trim()
@@ -59,17 +63,19 @@ function readProcStat(pid: number): ProcStat | undefined {
 	const state = fields[0];
 	const pgid = Number(fields[2]);
 	const startTime = fields[19];
-	if (!state || !Number.isSafeInteger(pgid) || pgid < 0 || !startTime)
+	if (!state || !Number.isSafeInteger(pgid) || pgid < 0 || !startTime) {
 		throw new Error(`Incomplete process stat for pid ${pid}.`);
+	}
 	return Object.freeze({ pid, state, pgid, startTime });
 }
 
 function capture(leaderPid: number): CodexProcessGroupIdentity {
-	if (process.platform !== "linux" || !positivePid(leaderPid))
+	if (process.platform !== "linux" || !positivePid(leaderPid)) {
 		throw new CodexProcessGroupError(
 			"capture_failed",
 			"Could not prove a dedicated Codex process group on this platform.",
 		);
+	}
 	let stat: ProcStat | undefined;
 	try {
 		stat = readProcStat(leaderPid);
@@ -79,11 +85,12 @@ function capture(leaderPid: number): CodexProcessGroupIdentity {
 			"Could not inspect the Codex child process group after spawn.",
 		);
 	}
-	if (!stat || stat.pgid !== leaderPid)
+	if (!stat || stat.pgid !== leaderPid) {
 		throw new CodexProcessGroupError(
 			"capture_failed",
 			"The Codex child is not the leader of its own dedicated process group.",
 		);
+	}
 	return Object.freeze({
 		leaderPid,
 		pgid: stat.pgid,
@@ -98,8 +105,9 @@ function inspect(identity: CodexProcessGroupIdentity): CodexProcessGroupInspecti
 		!positivePid(identity.pgid) ||
 		identity.pgid !== identity.leaderPid ||
 		identity.leaderStartTime.length === 0
-	)
+	) {
 		return "unproven";
+	}
 
 	let entries: fs.Dirent[];
 	try {
@@ -114,56 +122,75 @@ function inspect(identity: CodexProcessGroupIdentity): CodexProcessGroupInspecti
 	} catch {
 		return "unproven";
 	}
-	if (leader && (leader.startTime !== identity.leaderStartTime || leader.pgid !== identity.pgid))
+	if (leader && (leader.startTime !== identity.leaderStartTime || leader.pgid !== identity.pgid)) {
 		return "reused";
+	}
 
 	let memberCount = 0;
 	for (const entry of entries) {
-		if (!entry.isDirectory() || !/^\d+$/u.test(entry.name)) continue;
+		if (!entry.isDirectory() || !/^\d+$/u.test(entry.name)) {
+			continue;
+		}
 		const pid = Number(entry.name);
-		if (!positivePid(pid)) continue;
+		if (!positivePid(pid)) {
+			continue;
+		}
 		let stat: ProcStat | undefined;
 		try {
 			stat = readProcStat(pid);
 		} catch {
 			return "unproven";
 		}
-		if (!stat) continue;
-		if (pid === identity.leaderPid && stat.startTime !== identity.leaderStartTime) return "reused";
-		if (stat.pgid === identity.pgid && stat.state !== "Z" && stat.state !== "X") memberCount += 1;
+		if (!stat) {
+			continue;
+		}
+		if (pid === identity.leaderPid && stat.startTime !== identity.leaderStartTime) {
+			return "reused";
+		}
+		if (stat.pgid === identity.pgid && stat.state !== "Z" && stat.state !== "X") {
+			memberCount += 1;
+		}
 	}
 	return memberCount === 0 ? "quiescent" : "owned";
 }
 
 function signal(identity: CodexProcessGroupIdentity, requested: CodexProcessGroupSignal): void {
 	const status = inspect(identity);
-	if (status === "quiescent") return;
-	if (status === "reused")
+	if (status === "quiescent") {
+		return;
+	}
+	if (status === "reused") {
 		throw new CodexProcessGroupError(
 			"reused",
 			"Refusing to signal a process group whose leader identity was reused.",
 		);
-	if (status === "unproven")
+	}
+	if (status === "unproven") {
 		throw new CodexProcessGroupError(
 			"unproven",
 			"Refusing to signal a process group whose ownership could not be proved.",
 		);
+	}
 	try {
 		process.kill(-identity.pgid, requested);
 	} catch (cause) {
 		if ((cause as NodeJS.ErrnoException).code === "ESRCH") {
 			const after = inspect(identity);
-			if (after === "quiescent") return;
-			if (after === "reused")
+			if (after === "quiescent") {
+				return;
+			}
+			if (after === "reused") {
 				throw new CodexProcessGroupError(
 					"reused",
 					"The Codex process group changed while it was being signalled.",
 				);
-			if (after === "unproven")
+			}
+			if (after === "unproven") {
 				throw new CodexProcessGroupError(
 					"unproven",
 					"The Codex process group could not be re-proven after signalling.",
 				);
+			}
 		}
 		throw new CodexProcessGroupError(
 			"signal_failed",

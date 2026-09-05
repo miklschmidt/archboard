@@ -69,7 +69,9 @@ function sha256(value: string | Uint8Array): string {
 }
 
 function stable(value: unknown): string {
-	if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
+	if (Array.isArray(value)) {
+		return `[${value.map(stable).join(",")}]`;
+	}
 	if (value && typeof value === "object") {
 		return `{${Object.entries(value as Record<string, unknown>)
 			.toSorted(([left], [right]) => left.localeCompare(right))
@@ -87,7 +89,9 @@ export async function emulateMedia(
 	const currentUrl = await browser.eval<string>("location.href");
 	const output = await browser.run(["get", "cdp-url"]);
 	const endpoint = output.match(/ws:\/\/[^\s"']+/)?.[0];
-	if (!endpoint) throw new Error(`agent-browser returned no CDP endpoint: ${output.trim()}`);
+	if (!endpoint) {
+		throw new Error(`agent-browser returned no CDP endpoint: ${output.trim()}`);
+	}
 	const socket = new WebSocket(endpoint);
 	await new Promise<void>((resolve, reject) => {
 		socket.addEventListener("open", () => resolve(), { once: true });
@@ -106,12 +110,19 @@ export async function emulateMedia(
 			result?: Record<string, unknown>;
 			error?: { message?: string };
 		};
-		if (message.id === undefined) return;
+		if (message.id === undefined) {
+			return;
+		}
 		const request = pending.get(message.id);
-		if (!request) return;
+		if (!request) {
+			return;
+		}
 		pending.delete(message.id);
-		if (message.error) request.reject(new Error(message.error.message ?? "CDP command failed"));
-		else request.resolve(message.result ?? {});
+		if (message.error) {
+			request.reject(new Error(message.error.message ?? "CDP command failed"));
+		} else {
+			request.resolve(message.result ?? {});
+		}
 	});
 	const command = (
 		method: string,
@@ -129,12 +140,16 @@ export async function emulateMedia(
 		targetInfos?: Array<{ targetId: string; type: string; url: string }>;
 	};
 	const page = targets.targetInfos?.find(({ type, url }) => type === "page" && url === currentUrl);
-	if (!page) throw new Error(`CDP browser target has no page for ${currentUrl}`);
+	if (!page) {
+		throw new Error(`CDP browser target has no page for ${currentUrl}`);
+	}
 	const attached = (await command("Target.attachToTarget", {
 		targetId: page.targetId,
 		flatten: true,
 	})) as { sessionId?: string };
-	if (!attached.sessionId) throw new Error("CDP did not attach to the shell page");
+	if (!attached.sessionId) {
+		throw new Error("CDP did not attach to the shell page");
+	}
 	await command(
 		"Emulation.setEmulatedMedia",
 		{
@@ -165,7 +180,9 @@ async function setTheme(browser: AgentBrowserSession, theme: ShellTheme): Promis
 		button.click();
 		return true;
 	})()`);
-	if (!requested) throw new Error(`could not request the ${theme} shell theme`);
+	if (!requested) {
+		throw new Error(`could not request the ${theme} shell theme`);
+	}
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

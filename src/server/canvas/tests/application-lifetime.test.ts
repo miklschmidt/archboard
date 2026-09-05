@@ -114,7 +114,9 @@ describe("canvas application lifetime", () => {
 				name,
 				stop: () => {
 					actions.push(name);
-					if (name !== "codex") throw new Error(`${name} failed`);
+					if (name !== "codex") {
+						throw new Error(`${name} failed`);
+					}
 				},
 			})),
 		});
@@ -161,8 +163,9 @@ describe("canvas application lifetime", () => {
 		const gate = new Promise<void>((resolve) => void (release = resolve));
 		const lifetime = createCanvasApplicationLifetime({
 			observe: ({ action, resource }) => {
-				if (resource !== null && (action === "force" || action === "forced"))
+				if (resource !== null && (action === "force" || action === "forced")) {
 					actions.push(`${action}:${resource}`);
+				}
 			},
 			resources: [
 				{
@@ -238,7 +241,9 @@ describe("canvas application lifetime", () => {
 			heldBoards: () => held,
 			quiesce: () => {
 				quiesces++;
-				if (quiesces === 1) held = ["late-hold"];
+				if (quiesces === 1) {
+					held = ["late-hold"];
+				}
 			},
 			resume: () => {
 				resumes++;
@@ -258,7 +263,9 @@ describe("canvas application lifetime", () => {
 	test("tracks mutation work beyond response settlement", async () => {
 		const admission = createCanvasMutationAdmission({ drainTimeoutMs: 100 });
 		const lease = admission.admit("POST /api/board-write");
-		if (lease === null) throw new Error("The first mutation was not admitted.");
+		if (lease === null) {
+			throw new Error("The first mutation was not admitted.");
+		}
 		let release!: () => void;
 		const gate = new Promise<void>((resolve) => void (release = resolve));
 		const work = lease.track("POST /api/board-write board-lock wait", () => gate);
@@ -276,7 +283,9 @@ describe("canvas application lifetime", () => {
 	test("bounded mutation refusal is shared, named, resumed, and retryable", async () => {
 		const admission = createCanvasMutationAdmission({ drainTimeoutMs: 5 });
 		const lease = admission.admit("POST /api/selection");
-		if (lease === null) throw new Error("The first mutation was not admitted.");
+		if (lease === null) {
+			throw new Error("The first mutation was not admitted.");
+		}
 		const lifetime = createCanvasApplicationLifetime({
 			resources: [{ name: "engine", stop: () => undefined }],
 			quiesce: admission.quiesce,
@@ -302,7 +311,9 @@ describe("canvas application lifetime", () => {
 	test("disconnect aborts waitable work and releases request admission", async () => {
 		const admission = createCanvasMutationAdmission({ drainTimeoutMs: 100 });
 		const lease = admission.admit("POST /api/elements/changes");
-		if (lease === null) throw new Error("The first mutation was not admitted.");
+		if (lease === null) {
+			throw new Error("The first mutation was not admitted.");
+		}
 		let observed: AbortSignal | null = null;
 		const work = lease
 			.track("POST /api/elements/changes board-lock wait", async (signal) => {
@@ -341,7 +352,9 @@ describe("canvas application lifetime", () => {
 			expect(owner.transports).toEqual([]);
 			expect(transport.listenerCount("finish")).toBe(0);
 		} finally {
-			if (!owner.destroyed && !owner.writableFinished) owner.destroy();
+			if (!owner.destroyed && !owner.writableFinished) {
+				owner.destroy();
+			}
 			rmSync(root, { recursive: true, force: true });
 		}
 	});

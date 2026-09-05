@@ -67,7 +67,9 @@ function fakeSession(): FakeSession {
 			},
 			realtimeAppendSpeech: async (params) => {
 				speeches.push(params);
-				if (state.appendSpeechFailure) throw state.appendSpeechFailure;
+				if (state.appendSpeechFailure) {
+					throw state.appendSpeechFailure;
+				}
 				return {};
 			},
 			realtimeStop: async (params) => {
@@ -117,8 +119,9 @@ function harness(): Harness {
 	});
 	const linkedThreadId = adopted.threadIds[0];
 	const coordinatorThreadId = adopted.threadIds[1];
-	if (!linkedThreadId || !coordinatorThreadId)
+	if (!linkedThreadId || !coordinatorThreadId) {
 		throw new Error("Thread identities were not adopted.");
+	}
 	const session = fakeSession();
 	const events: RealtimeSemanticEvent[] = [];
 	const bindingState: { binding: CodexRealtimeBinding | null } = {
@@ -192,7 +195,9 @@ async function started(
 	const answer = h.adapter.createOffer({ ...browser, sdp: "offer-sdp" });
 	await Promise.resolve();
 	const start = h.session.starts[startIndex];
-	if (!start?.realtimeSessionId) throw new Error("Start did not mint a realtime identity.");
+	if (!start?.realtimeSessionId) {
+		throw new Error("Start did not mint a realtime identity.");
+	}
 	notify(h, "thread/realtime/sdp", {
 		threadId: COORDINATOR_WIRE_THREAD_ID,
 		sdp: "answer-sdp",
@@ -217,7 +222,9 @@ describe("Codex realtime adapter", () => {
 		});
 		await Promise.resolve();
 		const start = h.session.starts[0];
-		if (!start?.realtimeSessionId) throw new Error("Start request missing.");
+		if (!start?.realtimeSessionId) {
+			throw new Error("Start request missing.");
+		}
 		expect(start.realtimeStartInstructions).toContain("persistent voice coordinator");
 		expect(start).toEqual({
 			threadId: h.coordinatorThreadId,
@@ -341,11 +348,12 @@ describe("Codex realtime adapter", () => {
 			["live-only", "assistant", "preserved"],
 		] as const) {
 			const item = { id, realtimeSessionId: wireSessionId, type: "transcriptSegment", role, text };
-			for (const method of ["started", "completed"] as const)
+			for (const method of ["started", "completed"] as const) {
 				notify(h, `thread/realtime/item/${method}`, {
 					threadId: COORDINATOR_WIRE_THREAD_ID,
 					item,
 				});
+			}
 		}
 		h.session.timelinePages = [
 			{
@@ -423,8 +431,9 @@ describe("Codex realtime adapter", () => {
 			h.adapter.stop(first.correlation),
 			h.adapter.recover(first.correlation),
 		]);
-		for (const outcome of staleOutcomes)
+		for (const outcome of staleOutcomes) {
 			expect(outcome).toMatchObject({ outcome: "not_delivered" });
+		}
 		await started(h, "-replacement");
 		expect(h.session.starts).toHaveLength(2);
 	});
@@ -476,7 +485,9 @@ describe("Codex realtime adapter", () => {
 		const pending = h.adapter.createOffer({ ...browser, sdp: "offer" });
 		await Promise.resolve();
 		const start = h.session.starts[0];
-		if (!start?.realtimeSessionId) throw new Error("Start request missing.");
+		if (!start?.realtimeSessionId) {
+			throw new Error("Start request missing.");
+		}
 		const other = createIdentityAuthority();
 		h.adapter.onNotification(
 			notificationEvent(

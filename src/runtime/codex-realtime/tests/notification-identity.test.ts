@@ -39,7 +39,9 @@ function harness(): Harness {
 	const [linkedThreadId, coordinatorThreadId] = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: [linkedWireThreadId, coordinatorWireThreadId],
 	}).threadIds;
-	if (!linkedThreadId || !coordinatorThreadId) throw new Error("Missing thread identity.");
+	if (!linkedThreadId || !coordinatorThreadId) {
+		throw new Error("Missing thread identity.");
+	}
 	const initialBinding: CodexRealtimeBinding = {
 		child: identity.validator.childId,
 		epoch: identity.validator.epoch,
@@ -110,7 +112,9 @@ async function begin(h: Harness) {
 	const answer = h.adapter.createOffer({ ...correlation, sdp: "offer" });
 	await Promise.resolve();
 	const wireSessionId = h.starts[0]?.realtimeSessionId;
-	if (!wireSessionId) throw new Error("Start request missing.");
+	if (!wireSessionId) {
+		throw new Error("Start request missing.");
+	}
 	return { answer, correlation, wireSessionId };
 }
 
@@ -128,7 +132,9 @@ describe("Codex realtime notification identity", () => {
 				realtimeSessionId: pending.wireSessionId,
 				version: "v3",
 			});
-			for (let turn = 0; turn < 3; turn++) await Promise.resolve();
+			for (let turn = 0; turn < 3; turn++) {
+				await Promise.resolve();
+			}
 			expect(h.events).toContainEqual(
 				expect.objectContaining({
 					kind: "state",
@@ -180,7 +186,9 @@ describe("Codex realtime notification identity", () => {
 			realtimeSessionId: pending.wireSessionId,
 			version: "v2",
 		});
-		for (let turn = 0; turn < 3; turn++) await Promise.resolve();
+		for (let turn = 0; turn < 3; turn++) {
+			await Promise.resolve();
+		}
 		expect(settled).toBe(false);
 		expect(
 			h.events.some((event) => event.kind === "state" && event.state.phase === "listening"),

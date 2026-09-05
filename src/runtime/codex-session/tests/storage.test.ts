@@ -114,8 +114,9 @@ describe("Codex session storage proof", () => {
 					typeof params !== "object" ||
 					Array.isArray(params) ||
 					(params as { readonly cwd?: unknown }).cwd !== fixture.checkoutRoot
-				)
+				) {
 					return;
+				}
 				fixture.transport.prependResponse(
 					"config/read",
 					configFixture(conflicting.storage.sqliteHome, conflicting.storage.configPath) as never,

@@ -78,7 +78,9 @@ function sentinelLineReader(
 			}
 			const next = await reader.read();
 			text += decoder.decode(next.value, { stream: !next.done });
-			if (next.done) throw new Error("HTTP sentinel exited before publishing its port.");
+			if (next.done) {
+				throw new Error("HTTP sentinel exited before publishing its port.");
+			}
 		}
 	};
 }
@@ -92,7 +94,9 @@ async function readStartupLine(
 		readLine().then((line) => ({ kind: "line" as const, line })),
 		failure.then((error) => ({ kind: "failure" as const, error })),
 	]);
-	if (outcome.kind === "line") return outcome.line;
+	if (outcome.kind === "line") {
+		return outcome.line;
+	}
 	try {
 		await reader.cancel(outcome.error);
 	} catch {
@@ -114,13 +118,19 @@ async function withinSentinelCleanup<T>(promise: Promise<T>): Promise<T | undefi
 			}),
 		]);
 	} finally {
-		if (timer !== undefined) clearTimeout(timer);
+		if (timer !== undefined) {
+			clearTimeout(timer);
+		}
 	}
 }
 
 function throwFailures(primary: Error | undefined, cleanup: Error[]): void {
-	if (primary && cleanup.length === 0) throw primary;
-	if (!primary && cleanup.length === 1) throw cleanup[0];
+	if (primary && cleanup.length === 0) {
+		throw primary;
+	}
+	if (!primary && cleanup.length === 1) {
+		throw cleanup[0];
+	}
 	const failures = [...(primary ? [primary] : []), ...cleanup];
 	if (failures.length > 0) {
 		throw new AggregateError(failures, "HTTP sentinel lifecycle failed.");
@@ -216,32 +226,43 @@ export function startSentinel(options: SentinelStartOptions = {}): SentinelAcqui
 				resolveStartupFailure = resolve;
 			});
 			const failStartup = (error: Error): void => {
-				if (startupFailure) return;
+				if (startupFailure) {
+					return;
+				}
 				startupFailure = error;
 				resolveStartupFailure(error);
 			};
 			const onAbort = (): void =>
 				failStartup(asError(options.signal?.reason ?? "HTTP sentinel startup aborted."));
 			try {
-				if (!identity)
+				if (!identity) {
 					throw primaryFailure ?? new Error("HTTP sentinel identity was not captured.");
+				}
 				reader = stdoutStream.getReader();
 				const readLine = sentinelLineReader(reader);
 				options.signal?.addEventListener("abort", onAbort, { once: true });
-				if (options.signal?.aborted) onAbort();
+				if (options.signal?.aborted) {
+					onAbort();
+				}
 				timeout = setTimeout(
 					() => failStartup(new Error("HTTP sentinel startup timed out")),
 					TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS,
 				);
 				const ownershipLine = await readStartupLine(reader, readLine, startupFailed);
-				if (startupFailure) throw startupFailure;
+				if (startupFailure) {
+					throw startupFailure;
+				}
 				if (ownershipLine !== "owned") {
 					throw new Error(`HTTP sentinel published invalid ownership: ${ownershipLine}`);
 				}
 				resolveOwnership();
 				const portLine = await readStartupLine(reader, readLine, startupFailed);
-				if (startupFailure) throw startupFailure;
-				if (options.failStartup) throw new Error("Injected HTTP sentinel startup failure.");
+				if (startupFailure) {
+					throw startupFailure;
+				}
+				if (options.failStartup) {
+					throw new Error("Injected HTTP sentinel startup failure.");
+				}
 				const port = Number(portLine.trim());
 				if (!Number.isInteger(port) || port <= 0) {
 					throw new Error("HTTP sentinel did not publish a valid port");
@@ -260,17 +281,25 @@ export function startSentinel(options: SentinelStartOptions = {}): SentinelAcqui
 					stdout,
 					stderr,
 				});
-				if (options.failStdout) throw new Error(injectedStdoutFailure);
+				if (options.failStdout) {
+					throw new Error(injectedStdoutFailure);
+				}
 				while (!(await reader.read()).done) {
 					// The sentinel owns no stdout protocol after its readiness line.
 				}
 			} catch (cause) {
 				const error = startupFailure ?? asError(cause);
-				if (!ownershipSettled) rejectOwnership(error);
-				if (!readySettled) rejectReady(error);
+				if (!ownershipSettled) {
+					rejectOwnership(error);
+				}
+				if (!readySettled) {
+					rejectReady(error);
+				}
 				throw error;
 			} finally {
-				if (timeout !== undefined) clearTimeout(timeout);
+				if (timeout !== undefined) {
+					clearTimeout(timeout);
+				}
 				options.signal?.removeEventListener("abort", onAbort);
 				reader?.releaseLock();
 			}
@@ -283,7 +312,9 @@ export function startSentinel(options: SentinelStartOptions = {}): SentinelAcqui
 		stopPromise ??= (async () => {
 			const cleanupFailures: Error[] = [];
 			try {
-				if (!leaderSettled) child.kill("SIGTERM");
+				if (!leaderSettled) {
+					child.kill("SIGTERM");
+				}
 			} catch (cause) {
 				cleanupFailures.push(asError(cause));
 			}
@@ -291,7 +322,9 @@ export function startSentinel(options: SentinelStartOptions = {}): SentinelAcqui
 			let identityLive = identity ? processIdentityExists(identity) : !leaderSettled;
 			if (settled === undefined || identityLive) {
 				try {
-					if (!leaderSettled) child.kill("SIGKILL");
+					if (!leaderSettled) {
+						child.kill("SIGKILL");
+					}
 				} catch (cause) {
 					cleanupFailures.push(asError(cause));
 				}

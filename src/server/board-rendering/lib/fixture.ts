@@ -62,8 +62,12 @@ function rendererFile(
 	canonicalRendererEntry: string,
 	canonicalAssetsRoot: string,
 ): string | null {
-	if (pathname === "/renderer.html") return canonicalRendererEntry;
-	if (!pathname.startsWith("/assets/")) return null;
+	if (pathname === "/renderer.html") {
+		return canonicalRendererEntry;
+	}
+	if (!pathname.startsWith("/assets/")) {
+		return null;
+	}
 	let decoded: string;
 	try {
 		decoded = decodeURIComponent(pathname);
@@ -72,7 +76,9 @@ function rendererFile(
 	}
 	const relative = decoded.slice("/assets/".length);
 	const candidate = resolve(canonicalAssetsRoot, relative);
-	if (!isBelow(canonicalAssetsRoot, candidate)) return null;
+	if (!isBelow(canonicalAssetsRoot, candidate)) {
+		return null;
+	}
 	let canonical: string;
 	try {
 		canonical = realpathSync(candidate);
@@ -92,14 +98,16 @@ export async function createRendererFixture(
 	const canonicalBuildRoot = canonicalTarget(buildRoot, "frontend directory", "directory");
 	const canonicalRendererEntry = canonicalTarget(rendererEntry, "entry", "file");
 	const canonicalAssetsRoot = canonicalTarget(assetsRoot, "asset directory", "directory");
-	if (!isBelow(canonicalBuildRoot, canonicalRendererEntry))
+	if (!isBelow(canonicalBuildRoot, canonicalRendererEntry)) {
 		throw new RendererFixtureError(
 			`The built renderer entry at ${rendererEntry} resolves outside the canonical frontend build ${canonicalBuildRoot}. Rebuild it without an escaping symlink.`,
 		);
-	if (!isBelow(canonicalBuildRoot, canonicalAssetsRoot))
+	}
+	if (!isBelow(canonicalBuildRoot, canonicalAssetsRoot)) {
 		throw new RendererFixtureError(
 			`The built renderer asset directory at ${assetsRoot} resolves outside the canonical frontend build ${canonicalBuildRoot}. Rebuild it without an escaping symlink.`,
 		);
+	}
 	let server: ReturnType<typeof Bun.serve> | null = null;
 	let fixture: RendererFixture | null = null;
 	try {
@@ -113,7 +121,9 @@ export async function createRendererFixture(
 					canonicalRendererEntry,
 					canonicalAssetsRoot,
 				);
-				if (!file) return new Response("Not found", { status: 404 });
+				if (!file) {
+					return new Response("Not found", { status: 404 });
+				}
 				return new Response(Bun.file(file), {
 					headers: {
 						"Content-Type": contentTypes.get(extname(file)) ?? "application/octet-stream",
@@ -123,15 +133,18 @@ export async function createRendererFixture(
 		});
 		const ownedServer = server;
 		const port = ownedServer.port;
-		if (typeof port !== "number" || !Number.isSafeInteger(port) || port <= 0)
+		if (typeof port !== "number" || !Number.isSafeInteger(port) || port <= 0) {
 			throw new Error("The renderer fixture did not receive a loopback port.");
+		}
 		let closed = false;
 		const createdFixture: RendererFixture = Object.freeze({
 			port,
 			url: `http://127.0.0.1:${port}/renderer.html`,
 			listening: () => !closed,
 			close: async () => {
-				if (closed) return;
+				if (closed) {
+					return;
+				}
 				await ownedServer.stop(true);
 				closed = true;
 			},
@@ -140,8 +153,11 @@ export async function createRendererFixture(
 		await testHooks.afterListen?.(createdFixture);
 		return createdFixture;
 	} catch (error) {
-		if (fixture) await fixture.close();
-		else if (server) await server.stop(true);
+		if (fixture) {
+			await fixture.close();
+		} else if (server) {
+			await server.stop(true);
+		}
 		throw error;
 	}
 }

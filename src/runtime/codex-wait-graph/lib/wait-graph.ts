@@ -172,12 +172,16 @@ function findCycle(registrations: Iterable<Registration>): readonly GraphNode[] 
 			const targetState = state.get(target);
 			if (targetState === "visiting") {
 				const start = stackIndex.get(target);
-				if (start === undefined) throw new Error("Wait graph traversal lost its stack index.");
+				if (start === undefined) {
+					throw new Error("Wait graph traversal lost its stack index.");
+				}
 				return [...stack.slice(start), target].map((nodeKey) => nodes.get(nodeKey)!);
 			}
 			if (targetState === undefined) {
 				const cycle = visit(target);
-				if (cycle) return cycle;
+				if (cycle) {
+					return cycle;
+				}
 			}
 		}
 		stack.pop();
@@ -187,9 +191,13 @@ function findCycle(registrations: Iterable<Registration>): readonly GraphNode[] 
 	};
 
 	for (const key of [...nodes.keys()].toSorted(compareText)) {
-		if (state.has(key)) continue;
+		if (state.has(key)) {
+			continue;
+		}
 		const cycle = visit(key);
-		if (cycle) return cycle;
+		if (cycle) {
+			return cycle;
+		}
 	}
 	return null;
 }
@@ -203,7 +211,9 @@ function freezeCycle(nodes: readonly GraphNode[]): {
 	readonly cycle: readonly ThreadId[];
 } {
 	const child = nodes[0]?.child;
-	if (child === undefined) throw new Error("A wait cycle must contain at least one node.");
+	if (child === undefined) {
+		throw new Error("A wait cycle must contain at least one node.");
+	}
 	return {
 		child,
 		cycle: Object.freeze(nodes.map((node) => node.thread)),
@@ -230,7 +240,9 @@ export function createCodexWaitGraph(): CodexWaitGraph {
 		const keys = new Set<string>();
 		if (cleanup.cause === "child-exit") {
 			for (const [key, registration] of registrations) {
-				if (registration.owner.child === cleanup.child) keys.add(key);
+				if (registration.owner.child === cleanup.child) {
+					keys.add(key);
+				}
 			}
 		} else {
 			keys.add(ownerKey(cleanup.owner));
@@ -239,10 +251,14 @@ export function createCodexWaitGraph(): CodexWaitGraph {
 		const removed: WaitEdge[] = [];
 		for (const key of keys) {
 			const registration = registrations.get(key);
-			if (!registration) continue;
+			if (!registration) {
+				continue;
+			}
 			removed.push(...edgesFor(registration));
 		}
-		for (const key of keys) registrations.delete(key);
+		for (const key of keys) {
+			registrations.delete(key);
+		}
 		return freezeEdges(removed);
 	};
 

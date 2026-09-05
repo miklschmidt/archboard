@@ -24,21 +24,30 @@ function sourceFiles(repoRoot: string): string[] {
 	const files: string[] = [];
 	for (const relative of INPUT_DIRECTORIES) {
 		const root = join(repoRoot, relative);
-		if (!existsSync(root)) continue;
+		if (!existsSync(root)) {
+			continue;
+		}
 		const queue = [root];
 		while (queue.length > 0) {
 			const directory = queue.pop();
-			if (!directory) continue;
+			if (!directory) {
+				continue;
+			}
 			for (const entry of readdirSync(directory, { withFileTypes: true })) {
 				const absolute = join(directory, entry.name);
-				if (entry.isDirectory()) queue.push(absolute);
-				else if (entry.isFile()) files.push(absolute);
+				if (entry.isDirectory()) {
+					queue.push(absolute);
+				} else if (entry.isFile()) {
+					files.push(absolute);
+				}
 			}
 		}
 	}
 	for (const relative of INPUT_FILES) {
 		const absolute = join(repoRoot, relative);
-		if (existsSync(absolute)) files.push(absolute);
+		if (existsSync(absolute)) {
+			files.push(absolute);
+		}
 	}
 	return files;
 }
@@ -77,10 +86,13 @@ export async function ensureFreshFrontend(
 	} else {
 		process.stdout.write("# dist/frontend is current for the serial browser lane\n");
 	}
-	if (!existsSync(bundle))
+	if (!existsSync(bundle)) {
 		throw new Error("Frontend build did not create dist/frontend/index.html.");
+	}
 	const finalBuiltAt = statSync(bundle).mtimeMs;
 	const stale = inputs.find((file) => statSync(file).mtimeMs > finalBuiltAt);
-	if (stale) throw new Error(`dist/frontend/index.html is older than ${stale}.`);
+	if (stale) {
+		throw new Error(`dist/frontend/index.html is older than ${stale}.`);
+	}
 	return decision;
 }

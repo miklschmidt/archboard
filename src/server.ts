@@ -4,8 +4,9 @@ import application, { canvasStartupFailureMessage, startServer } from "./server/
 export { startServer };
 export default application;
 
-if (isMainModule(import.meta.url))
+if (isMainModule(import.meta.url)) {
 	void startServer().catch((error: unknown) => {
 		process.stderr.write(`${canvasStartupFailureMessage(error)}\n`);
 		process.exitCode = 1;
 	});
+}

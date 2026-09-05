@@ -53,18 +53,21 @@ test("the production generation creates every owner once before readiness and sh
 	expect(events.indexOf("approval-projection:install")).toBeLessThan(events.indexOf("ready"));
 	expect(events.indexOf("browser:install")).toBeLessThan(events.indexOf("ready"));
 	const route = fixture.requestListeners.at(-1);
-	if (route === undefined) throw new Error("missing private production router");
+	if (route === undefined) {
+		throw new Error("missing private production router");
+	}
 	// The generated union is the authority. A new reverse request fails this
 	// owner at compile time through the satisfies clause and at run time here.
 	expect(Object.keys(ROUTED_OWNERS).toSorted()).toEqual(
 		[...CODEX_SERVER_REQUEST_METHODS].toSorted(),
 	);
 	const routed: string[] = [];
-	for (const [method, owners] of Object.entries(ROUTED_OWNERS))
+	for (const [method, owners] of Object.entries(ROUTED_OWNERS)) {
 		for (const owner of owners) {
 			route({ method, owner } as never);
 			routed.push(`${EVENT_PREFIX[owner]}:${method}`);
 		}
+	}
 	await Promise.resolve();
 	expect(events.filter((event) => routed.includes(event)).toSorted()).toEqual(routed.toSorted());
 	await generation.retireChild({
@@ -78,8 +81,12 @@ test("the production generation creates every owner once before readiness and sh
 	// quarantine owner: this holds before any stop has run.
 	expect(events).toContain("dynamic:child-exit:child:epoch");
 	const stopping = generation.stop("shutdown");
-	for (const listener of fixture.requestListeners) listener({} as never);
-	for (const listener of fixture.notificationListeners) listener({} as never);
+	for (const listener of fixture.requestListeners) {
+		listener({} as never);
+	}
+	for (const listener of fixture.notificationListeners) {
+		listener({} as never);
+	}
 	await stopping;
 	generation.finishStop();
 	expect(events.indexOf("browser:remove")).toBeLessThan(events.indexOf("gateway:dispose"));
@@ -146,7 +153,9 @@ test("dynamic approval expiry settles once at the exact production deadline", as
 		});
 		owner.port.presentImmutableRequest(request);
 		const projected = owner.pending()[0];
-		if (projected === undefined) throw new Error("The approval was not projected.");
+		if (projected === undefined) {
+			throw new Error("The approval was not projected.");
+		}
 		expect(projected.request).not.toBe(request);
 		expect(projected.request.effect.arguments).not.toBe(sourceArguments);
 		expect(projected.binding.paneId).toBe("pane-expiry");

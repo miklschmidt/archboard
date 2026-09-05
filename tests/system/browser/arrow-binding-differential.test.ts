@@ -62,7 +62,9 @@ function strip(element: SceneElement): Record<string, unknown> {
 function requiredElement(elements: readonly SceneElement[], id: string): SceneElement {
 	const element = elements.find((candidate) => candidate.id === id);
 	expect(element).toBeDefined();
-	if (!element) throw new Error(`Scene is missing ${id}.`);
+	if (!element) {
+		throw new Error(`Scene is missing ${id}.`);
+	}
 	return element;
 }
 
@@ -80,7 +82,9 @@ function endpoint(
 	index: number,
 ): { x: number; y: number } | null {
 	const point = element.points?.[index];
-	if (!point || ![element.x, element.y, point[0], point[1]].every(Number.isFinite)) return null;
+	if (!point || ![element.x, element.y, point[0], point[1]].every(Number.isFinite)) {
+		return null;
+	}
 	return { x: element.x + point[0], y: element.y + point[1] };
 }
 

@@ -48,7 +48,9 @@ esac
 async function waitForFile(file: string): Promise<void> {
 	const deadline = Date.now() + TEST_GIT_FIXTURE_START_MS;
 	while (!existsSync(file)) {
-		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${file}.`);
+		if (Date.now() >= deadline) {
+			throw new Error(`Timed out waiting for ${file}.`);
+		}
 		await Bun.sleep(5);
 	}
 }
@@ -59,7 +61,9 @@ function recordedPid(file: string): number {
 
 async function expectPidAbsent(pid: number): Promise<void> {
 	const deadline = Date.now() + 1_000;
-	while (existsSync(`/proc/${pid}`) && Date.now() < deadline) await Bun.sleep(5);
+	while (existsSync(`/proc/${pid}`) && Date.now() < deadline) {
+		await Bun.sleep(5);
+	}
 	expect(existsSync(`/proc/${pid}`), `pid ${pid} must be reaped`).toBeFalse();
 }
 
@@ -73,7 +77,9 @@ async function withFaultingFirstReader<T>(
 	let injected = false;
 	prototype.getReader = function (this: ReadableStream<unknown>) {
 		const reader = original.call(this);
-		if (injected) return reader;
+		if (injected) {
+			return reader;
+		}
 		injected = true;
 		let first = true;
 		return {
@@ -113,7 +119,9 @@ function withStalledFirstReader<T>(work: () => Promise<T>): {
 	});
 	prototype.getReader = function (this: ReadableStream<unknown>) {
 		const reader = original.call(this);
-		if (injected) return reader;
+		if (injected) {
+			return reader;
+		}
 		injected = true;
 		return {
 			get closed() {
@@ -167,7 +175,9 @@ test("Git process owner exits after one result and release", async () => {
 		expect(exited).toEqual({ kind: "exit", exitCode: 0 });
 		expect(messages).toHaveLength(1);
 	} finally {
-		if (owner.exitCode === null) owner.kill("SIGKILL");
+		if (owner.exitCode === null) {
+			owner.kill("SIGKILL");
+		}
 		await owner.exited;
 		await Promise.all([
 			new Response(owner.stdout).arrayBuffer(),
@@ -255,10 +265,14 @@ async function exerciseGitLifecycle(): Promise<void> {
 				(error: unknown) => ({ kind: "rejected" as const, error }),
 			);
 			await childStarted;
-			if (abortFirst) faultController.abort();
+			if (abortFirst) {
+				faultController.abort();
+			}
 			const outcome = await failed;
 			expect(outcome.kind).toBe("rejected");
-			if (outcome.kind === "rejected") expect(outcome.error).toMatchObject({ failure });
+			if (outcome.kind === "rejected") {
+				expect(outcome.error).toMatchObject({ failure });
+			}
 			expect(performance.now() - started).toBeLessThan(1_000);
 			await expectPidAbsent(recordedPid(`${marker}.leader`));
 		}
@@ -300,7 +314,9 @@ test("Git cleanup remains bounded when reader cancellation never settles", async
 			Bun.sleep(3 * GIT_PROCESS_GROUP_CLEANUP_MS).then(() => ({ kind: "deadline" as const })),
 		]);
 		expect(outcome.kind).toBe("rejected");
-		if (outcome.kind === "rejected") expect(outcome.error).toMatchObject({ failure: "timeout" });
+		if (outcome.kind === "rejected") {
+			expect(outcome.error).toMatchObject({ failure: "timeout" });
+		}
 		await expectPidAbsent(recordedPid(`${marker}.leader`));
 	} finally {
 		stalled.release();

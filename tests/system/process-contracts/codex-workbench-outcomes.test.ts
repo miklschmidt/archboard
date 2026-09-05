@@ -92,8 +92,12 @@ describe.serial("composed Codex mutation outcomes", () => {
 				const dynamic = state["dynamicApprovals"] as Record<string, unknown>[];
 				return approvals.length === 7 && dynamic.length === 1 ? { approvals, dynamic } : undefined;
 			}, "initial process approvals");
-			if (initial === undefined) throw new Error("The initial approvals did not remain pending.");
-			for (const approval of initial.approvals) await approveOrdinary(socket, approval);
+			if (initial === undefined) {
+				throw new Error("The initial approvals did not remain pending.");
+			}
+			for (const approval of initial.approvals) {
+				await approveOrdinary(socket, approval);
+			}
 			await resolveDynamic(socket, initial.dynamic[0]!);
 			await waitFor(
 				() =>
@@ -101,7 +105,9 @@ describe.serial("composed Codex mutation outcomes", () => {
 				"confirmed create result",
 			);
 			const confirmed = parsedResponse(fixture.logPath, "dynamic-request-1").envelope;
-			if (confirmed.tag !== "ok") throw new Error("The confirmed create was not successful.");
+			if (confirmed.tag !== "ok") {
+				throw new Error("The confirmed create was not successful.");
+			}
 			const confirmedValue = confirmed.value as {
 				readonly initialTurn: { readonly operationId: string };
 			};
@@ -140,7 +146,9 @@ describe.serial("composed Codex mutation outcomes", () => {
 					>[];
 					return dynamic.length === 1 ? dynamic[0] : undefined;
 				}, `${scenario} approval`);
-				if (approval === undefined) throw new Error(`${scenario} approval did not remain pending.`);
+				if (approval === undefined) {
+					throw new Error(`${scenario} approval did not remain pending.`);
+				}
 				await resolveDynamic(socket, approval);
 				await waitFor(
 					() => (reverseResponses(fixture.logPath, id).length === 1 ? true : undefined),

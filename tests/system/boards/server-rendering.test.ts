@@ -100,7 +100,9 @@ async function expectLoopbackPortReleased(port: number): Promise<void> {
 		});
 		expect(probe.port).toBe(port);
 	} finally {
-		if (probe) await probe.stop(true);
+		if (probe) {
+			await probe.stop(true);
+		}
 	}
 }
 
@@ -111,8 +113,12 @@ async function waitForHealth(
 	const deadline = Date.now() + 1_500;
 	for (;;) {
 		const health = (await request<HealthBody>("/health")).body;
-		if (predicate(health)) return health;
-		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${what}.`);
+		if (predicate(health)) {
+			return health;
+		}
+		if (Date.now() >= deadline) {
+			throw new Error(`Timed out waiting for ${what}.`);
+		}
 		await Bun.sleep(20);
 	}
 }
@@ -194,8 +200,9 @@ describe.serial("server-owned board rendering", () => {
 			const pngBytes = Uint8Array.from(Buffer.from(png.body.data, "base64"));
 			expect(readPngDimensions(pngBytes)).toEqual({ width: 566, height: 417 });
 			const colors = pngRgbCounts(pngBytes);
-			for (const color of ["248,250,252", "219,234,254", "220,252,231", "254,243,199"])
+			for (const color of ["248,250,252", "219,234,254", "220,252,231", "254,243,199"]) {
 				expect(colors.get(color) ?? 0).toBeGreaterThan(100);
+			}
 			expect(svg.body.data).toContain("<svg");
 			expect(svg.body.data).toContain("Service API");
 			expect(svg.body.data).toContain("data:image/png;base64");
@@ -290,7 +297,9 @@ describe.serial("server-owned board rendering", () => {
 			expect(rendered.body.results).toHaveLength(focusCount);
 			for (const result of rendered.body.results) {
 				const focus = rendered.body.report.findings[result.findingIndex]?.focusBBox;
-				if (!focus || !result.data) throw new Error("A focused finding did not return PNG data.");
+				if (!focus || !result.data) {
+					throw new Error("A focused finding did not return PNG data.");
+				}
 				const dimensions = findingRasterDimensions(focus);
 				expect(readPngDimensions(Uint8Array.from(Buffer.from(result.data, "base64")))).toEqual({
 					width: dimensions.width,
@@ -318,12 +327,16 @@ describe.serial("server-owned board rendering", () => {
 			);
 			expect(seed.status).toBe(200);
 			const collision = seed.body.ids[0];
-			if (!collision) throw new Error("The seed conversion returned no stable id.");
+			if (!collision) {
+				throw new Error("The seed conversion returned no stable id.");
+			}
 
 			await request("/api/boards/new", { method: "POST", body: { board: "mermaid" } });
 			const before = await request<{ version: number }>("/api/boards/info?board=mermaid");
 			const renderer = (await request<HealthBody>("/health")).body.renderer;
-			if (!renderer.chromiumPid) throw new Error("The retained renderer has no process id.");
+			if (!renderer.chromiumPid) {
+				throw new Error("The retained renderer has no process id.");
+			}
 			const holder = "mermaid-concurrent-writer";
 			const { converted, held, concurrent, afterConcurrent } = await withStoppedProcessGroup(
 				renderer.chromiumPid,
@@ -477,8 +490,9 @@ describe.serial("server-owned board rendering", () => {
 				!ownedRenderer.profile ||
 				!ownedRenderer.controlPort ||
 				!ownedRenderer.fixturePort
-			)
+			) {
 				throw new Error("The retained renderer did not expose its owned resource identity.");
+			}
 			const { chromiumPid, controlPort, fixturePort, profile, tempRoot } = ownedRenderer;
 			const beforeShutdown = (await request<HealthBody>("/health")).body.renderer;
 			expect(beforeShutdown.chromiumStarts).toBe(1);

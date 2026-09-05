@@ -65,10 +65,14 @@ function decimal(value: number): string {
 
 function translate(command: PathCommand, dx: number, dy: number): void {
 	for (const key of ["x", "x1", "x2"] as const) {
-		if (command[key] !== undefined) command[key] += dx;
+		if (command[key] !== undefined) {
+			command[key] += dx;
+		}
 	}
 	for (const key of ["y", "y1", "y2"] as const) {
-		if (command[key] !== undefined) command[key] += dy;
+		if (command[key] !== undefined) {
+			command[key] += dy;
+		}
 	}
 }
 
@@ -128,7 +132,9 @@ function parseOptions(args: string[]): CliOptions {
 		}
 		if (argument === "--out") {
 			const filename = args[index + 1];
-			if (!filename) throw new Error("--out requires a filename");
+			if (!filename) {
+				throw new Error("--out requires a filename");
+			}
 			outputPath = path.resolve(filename);
 			index += 1;
 			continue;

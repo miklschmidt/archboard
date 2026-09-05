@@ -39,7 +39,9 @@ async function freePort(): Promise<number> {
 		server.listen({ host: "127.0.0.1", port: 0, exclusive: true }, resolve);
 	});
 	const address = server.address();
-	if (address === null || typeof address === "string") throw new Error("No loopback port.");
+	if (address === null || typeof address === "string") {
+		throw new Error("No loopback port.");
+	}
 	await new Promise<void>((resolve, reject) =>
 		server.close((error) => (error ? reject(error) : resolve())),
 	);
@@ -68,8 +70,9 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 			xdgState: join(fixture.root, "first-state"),
 			temporary: join(fixture.root, "first-tmp"),
 		};
-		for (const directory of Object.values(paths))
+		for (const directory of Object.values(paths)) {
 			mkdirSync(directory, { recursive: true, mode: 0o700 });
+		}
 		const canvas = spawn(process.execPath, [wrapper], {
 			cwd: repoRoot,
 			detached: true,
@@ -86,18 +89,24 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 			}),
 			stdio: ["ignore", "pipe", "pipe"],
 		});
-		if (canvas.pid === undefined) throw new Error("The startup-signal canvas has no pid.");
+		if (canvas.pid === undefined) {
+			throw new Error("The startup-signal canvas has no pid.");
+		}
 		const canvasPid = canvas.pid;
 		let output = "";
 		canvas.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));
 		canvas.stderr.on("data", (chunk: Buffer) => (output += chunk.toString()));
 		const canvasExit = new Promise<void>((resolve) => canvas.once("exit", () => resolve()));
 		resources.defer(async () => {
-			if (!processExists(canvasPid)) return;
+			if (!processExists(canvasPid)) {
+				return;
+			}
 			try {
 				process.kill(-canvasPid, "SIGKILL");
 			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+				if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+					throw error;
+				}
 			}
 			await canvasExit;
 		});
@@ -108,7 +117,9 @@ test("SIGTERM before readiness reaps Codex and permits a fresh application start
 			const pid = entries.find((entry) => entry.kind === "app_server_spawn")?.pid;
 			return held && pid !== undefined ? pid : undefined;
 		}, "pre-readiness Codex child");
-		if (childPid === undefined) throw new Error("The pre-readiness Codex child was not observed.");
+		if (childPid === undefined) {
+			throw new Error("The pre-readiness Codex child was not observed.");
+		}
 
 		canvas.kill("SIGTERM");
 		await Promise.race([
@@ -171,9 +182,12 @@ process.stdin.resume(); setInterval(() => {}, 1000);`,
 	let canvas: ProcessIdentity | null = null;
 	try {
 		await waitFor(() => {
-			if (existsSync(marker)) return true;
-			if (launcher.exitCode !== null || launcher.signalCode !== null)
+			if (existsSync(marker)) {
+				return true;
+			}
+			if (launcher.exitCode !== null || launcher.signalCode !== null) {
 				throw new Error(`Public start exited before the Codex group spawned.\n${stderr}`);
+			}
 			return undefined;
 		}, "TERM-resistant Codex group");
 		const pids = JSON.parse(readFileSync(marker, "utf8")) as {
@@ -182,10 +196,13 @@ process.stdin.resume(); setInterval(() => {}, 1000);`,
 		};
 		leader = processIdentity(pids.leader);
 		const descendant = processIdentity(pids.descendant);
-		if (leader === null || descendant === null)
+		if (leader === null || descendant === null) {
 			throw new Error("The exact TERM-resistant Codex identities were not live.");
+		}
 		canvas = processIdentity(leader.parentPid);
-		if (canvas === null) throw new Error("The owning canvas identity was not live.");
+		if (canvas === null) {
+			throw new Error("The owning canvas identity was not live.");
+		}
 		expect(leader.group).toBe(leader.pid);
 		expect(descendant.group).toBe(leader.group);
 		expect(await result).not.toBe(0);
@@ -201,9 +218,15 @@ process.stdin.resume(); setInterval(() => {}, 1000);`,
 		expect(processGroupMembers(leader.group)).toEqual([]);
 		expect(stderr.split(/\r?\n/u).filter(Boolean)).toHaveLength(1);
 	} finally {
-		if (leader !== null) killExactGroup(leader);
-		if (canvas !== null) killExactGroup(canvas);
-		if (launcher.exitCode === null && launcher.signalCode === null) launcher.kill("SIGKILL");
+		if (leader !== null) {
+			killExactGroup(leader);
+		}
+		if (canvas !== null) {
+			killExactGroup(canvas);
+		}
+		if (launcher.exitCode === null && launcher.signalCode === null) {
+			launcher.kill("SIGKILL");
+		}
 		await Promise.race([result, Bun.sleep(5_000)]);
 		rmSync(root, { recursive: true, force: true });
 	}

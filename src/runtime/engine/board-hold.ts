@@ -96,7 +96,9 @@ export function beginHold(
 	content: BoardContent,
 ): BoardHold {
 	const existing = holds.get(key);
-	if (existing) return existing;
+	if (existing) {
+		return existing;
+	}
 	const hold: BoardHold = { conflict, since: new Date().toISOString(), writes: 0, content };
 	holds.set(key, hold);
 	return hold;
@@ -109,10 +111,14 @@ export function holdWrite(
 	fromScreen = false,
 ): BoardHold | undefined {
 	const hold = holds.get(key);
-	if (!hold) return undefined;
+	if (!hold) {
+		return undefined;
+	}
 	hold.content = content;
 	hold.writes += 1;
-	if (fromScreen) hold.fromScreen = true;
+	if (fromScreen) {
+		hold.fromScreen = true;
+	}
 	return hold;
 }
 

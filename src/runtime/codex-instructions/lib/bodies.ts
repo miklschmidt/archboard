@@ -43,8 +43,12 @@ const AdditionalContextEntrySchema = z.strictObject({
 });
 
 function freezeDeep<T>(value: T): T {
-	if (typeof value !== "object" || value === null) return value;
-	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
+	if (typeof value !== "object" || value === null) {
+		return value;
+	}
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		freezeDeep(child);
+	}
 	Object.freeze(value);
 	return value;
 }
@@ -126,18 +130,20 @@ const ThreadForkParamsRawSchema = z
 		excludeTurns: z.literal(true),
 	})
 	.superRefine((value, issueContext) => {
-		if (!isCanonicalCheckoutRoot(value.cwd))
+		if (!isCanonicalCheckoutRoot(value.cwd)) {
 			issueContext.addIssue({
 				code: "custom",
 				path: ["cwd"],
 				message: "cwd must be absolute and lexically canonical for this platform",
 			});
-		if (value.runtimeWorkspaceRoots[0] !== value.cwd)
+		}
+		if (value.runtimeWorkspaceRoots[0] !== value.cwd) {
 			issueContext.addIssue({
 				code: "custom",
 				path: ["runtimeWorkspaceRoots"],
 				message: "runtimeWorkspaceRoots must contain the same checkout as cwd",
 			});
+		}
 	});
 export const ThreadForkParamsSchema = frozenSchema(ThreadForkParamsRawSchema);
 export type ThreadForkParams = z.infer<typeof ThreadForkParamsSchema>;
@@ -148,7 +154,9 @@ function isCanonicalCheckoutRoot(value: string): boolean {
 
 function parseOutput<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
 	const parsed = schema.safeParse(value);
-	if (!parsed.success) throw new TypeError(`Invalid ${label}: ${parsed.error.message}`);
+	if (!parsed.success) {
+		throw new TypeError(`Invalid ${label}: ${parsed.error.message}`);
+	}
 	return freezeDeep(parsed.data);
 }
 
@@ -286,6 +294,8 @@ export function createSelfThreadForkParams(
 
 export function parseCanonicalAdditionalContext(value: unknown): ArchboardContext {
 	const parsed = AdditionalContextSchema.safeParse(value);
-	if (!parsed.success) throw new TypeError(`Invalid additionalContext: ${parsed.error.message}`);
+	if (!parsed.success) {
+		throw new TypeError(`Invalid additionalContext: ${parsed.error.message}`);
+	}
 	return decodeCanonicalContext(parsed.data.archboard.value);
 }

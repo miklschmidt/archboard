@@ -26,8 +26,9 @@ export class FakeOperationIds implements DynamicOperationIdPort {
 
 	issueCanonicalOperationId(): OperationId {
 		this.issueAttempts += 1;
-		if (this.issueErrorAt === this.issueAttempts)
+		if (this.issueErrorAt === this.issueAttempts) {
 			throw new Error("operation identity issuance failed");
+		}
 		const id = this.operation.issuer.mintOperationId();
 		this.issued.push(id);
 		return id;
@@ -35,7 +36,9 @@ export class FakeOperationIds implements DynamicOperationIdPort {
 
 	validateCurrentUnconsumedOperationId(operationId: OperationId): void {
 		this.operation.validator.assertCurrentOperationId(operationId);
-		if (this.terminal.has(operationId)) throw new Error("the operation identity is terminal");
+		if (this.terminal.has(operationId)) {
+			throw new Error("the operation identity is terminal");
+		}
 	}
 
 	serializeForOwnedWireFields(operationId: OperationId): string {
@@ -49,10 +52,13 @@ export class FakeOperationIds implements DynamicOperationIdPort {
 		this.operation.validator.assertCurrentOperationId(input.operationId);
 		this.terminalAttempts.push(input);
 		const fault = this.terminalFaults.shift();
-		if (fault === "before") throw new Error("terminal operation failed before transition");
+		if (fault === "before") {
+			throw new Error("terminal operation failed before transition");
+		}
 		const existing = this.terminal.get(input.operationId);
-		if (existing !== undefined && existing.disposition !== input.disposition)
+		if (existing !== undefined && existing.disposition !== input.disposition) {
 			throw new Error("terminal operation disposition changed");
+		}
 		const result =
 			existing ??
 			Object.freeze({
@@ -62,10 +68,15 @@ export class FakeOperationIds implements DynamicOperationIdPort {
 			});
 		if (existing === undefined) {
 			this.terminal.set(input.operationId, result);
-			if (input.disposition === "consumed") this.consumed.push(input.operationId);
-			else this.retired.push(input.operationId);
+			if (input.disposition === "consumed") {
+				this.consumed.push(input.operationId);
+			} else {
+				this.retired.push(input.operationId);
+			}
 		}
-		if (fault === "after") throw new Error("terminal operation failed after transition");
+		if (fault === "after") {
+			throw new Error("terminal operation failed after transition");
+		}
 		return result;
 	}
 

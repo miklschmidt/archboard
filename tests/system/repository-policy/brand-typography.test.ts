@@ -22,7 +22,9 @@ test("uses Remix Icon for application icons and shadcn generation", () => {
 	expect(config).toMatchObject({ iconLibrary: "remixicon" });
 	expect(pkg).toMatchObject({ dependencies: { "@remixicon/react": expect.any(String) } });
 	for (const filename of new Bun.Glob("src/ui/**/*.tsx").scanSync({ cwd: repoRoot })) {
-		if (filename.includes("/tests/")) continue;
+		if (filename.includes("/tests/")) {
+			continue;
+		}
 		const source = fs.readFileSync(path.join(repoRoot, filename), "utf8");
 		// The wordmark and canvas path overlay are artwork, not interface icons.
 		if (!["src/ui/shell/BoardBar.tsx", "src/ui/canvas/CanvasPane.tsx"].includes(filename)) {
@@ -61,7 +63,9 @@ describe("brand typography assets", () => {
 		}
 
 		const provenance = fs.readFileSync(path.join(fontRoot, "README.md"), "utf8");
-		for (const expectedHash of pinnedFiles.values()) expect(provenance).toContain(expectedHash);
+		for (const expectedHash of pinnedFiles.values()) {
+			expect(provenance).toContain(expectedHash);
+		}
 		expect(provenance).toContain("d0754ee7cddf8ba879f1f8884e3ca2b5e1b100f8");
 		expect(provenance).toContain("57fadabfb200a77de2812540026c249dc3013077");
 		expect(provenance).toContain("ade3d1533e06b2b1462ffcde8e08b129627ca360");

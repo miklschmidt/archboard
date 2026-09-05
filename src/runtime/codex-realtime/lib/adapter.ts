@@ -68,7 +68,9 @@ export function createCodexRealtimeAdapter(
 		session: ActiveRealtimeSession,
 		values: readonly Parameters<typeof state>[1][],
 	) => {
-		for (const value of values) state(session, value);
+		for (const value of values) {
+			state(session, value);
+		}
 	};
 	const finalize = (session: ActiveRealtimeSession): void => {
 		states(session, phase.closingStates(session.state));
@@ -79,7 +81,9 @@ export function createCodexRealtimeAdapter(
 				new Error("Codex closed the realtime session before negotiation completed."),
 			);
 		}
-		if (active === session) active = null;
+		if (active === session) {
+			active = null;
+		}
 	};
 	const bindingIsCurrent = (session: ActiveRealtimeSession): boolean => {
 		const current = options.currentBinding();
@@ -104,7 +108,9 @@ export function createCodexRealtimeAdapter(
 		request.correlationId === session.correlationId;
 
 	const publishTranscript = (session: ActiveRealtimeSession): void => {
-		for (const record of orderedRecords(session)) emit({ kind: "transcript", record });
+		for (const record of orderedRecords(session)) {
+			emit({ kind: "transcript", record });
+		}
 	};
 
 	const settleAnswer = (session: ActiveRealtimeSession): void => {
@@ -114,8 +120,9 @@ export function createCodexRealtimeAdapter(
 			!session.startReturned ||
 			!session.started ||
 			session.answerSdp === null
-		)
+		) {
 			return;
+		}
 		if (!bindingIsCurrent(session)) {
 			session.answerSettled = true;
 			session.rejectAnswer(new Error("The realtime coordinator identity changed during start."));
@@ -132,18 +139,25 @@ export function createCodexRealtimeAdapter(
 	};
 
 	const failStart = (session: ActiveRealtimeSession, error: unknown): void => {
-		if (session.answerSettled) return;
+		if (session.answerSettled) {
+			return;
+		}
 		session.answerSettled = true;
 		emitDiagnostic(session, "app_server", realtimeErrorMessage(error));
 		const failure = phase.appServerFailureState(session.state, realtimeErrorMessage(error));
-		if (failure) state(session, failure);
+		if (failure) {
+			state(session, failure);
+		}
 		session.rejectAnswer(error instanceof Error ? error : new Error(realtimeErrorMessage(error)));
 	};
 
 	const createOffer = (offer: CreateOfferSdp): Promise<AnswerSdp> => {
-		if (disposed) return Promise.reject(new Error("The Codex realtime adapter is disposed."));
-		if (active !== null)
+		if (disposed) {
+			return Promise.reject(new Error("The Codex realtime adapter is disposed."));
+		}
+		if (active !== null) {
 			return Promise.reject(new Error("A Codex realtime session is already active."));
+		}
 		const binding = options.currentBinding();
 		if (
 			binding === null ||
@@ -183,7 +197,9 @@ export function createCodexRealtimeAdapter(
 		state(session, { phase: "negotiating", reason: "offer_created" });
 		void Promise.resolve()
 			.then(() => {
-				if (session.answerSettled) return;
+				if (session.answerSettled) {
+					return;
+				}
 				if (!bindingIsCurrent(session)) {
 					finalize(session);
 					return;
@@ -199,7 +215,9 @@ export function createCodexRealtimeAdapter(
 			})
 			.then(
 				() => {
-					if (session.answerSettled) return;
+					if (session.answerSettled) {
+						return;
+					}
 					session.startReturned = true;
 					return settleAnswer(session);
 				},
@@ -220,9 +238,12 @@ export function createCodexRealtimeAdapter(
 		status: "provisional" | "final",
 		identityMode: "introduce" | "reference",
 	): void => {
-		if (item.realtimeSessionId !== session.wireSessionId || item.type !== "transcriptSegment")
+		if (item.realtimeSessionId !== session.wireSessionId || item.type !== "transcriptSegment") {
 			return;
-		if (item.role === undefined || item.text === undefined) return;
+		}
+		if (item.role === undefined || item.text === undefined) {
+			return;
+		}
 		let itemId;
 		try {
 			itemId =
@@ -234,7 +255,9 @@ export function createCodexRealtimeAdapter(
 			return;
 		}
 		const existing = session.entries.get(itemId);
-		if (identityMode === "reference" && existing === undefined) return;
+		if (identityMode === "reference" && existing === undefined) {
+			return;
+		}
 		session.entries.set(itemId, {
 			itemId,
 			role: item.role,
@@ -242,8 +265,11 @@ export function createCodexRealtimeAdapter(
 			text: item.text,
 			order: existing?.order ?? session.nextLiveOrder++,
 		});
-		if (item.role === "assistant") states(session, phase.assistantStates(session.state, status));
-		else if (status === "final") states(session, phase.inputStates(session.state));
+		if (item.role === "assistant") {
+			states(session, phase.assistantStates(session.state, status));
+		} else if (status === "final") {
+			states(session, phase.inputStates(session.state));
+		}
 		publishTranscript(session);
 	};
 
@@ -253,17 +279,22 @@ export function createCodexRealtimeAdapter(
 			!session ||
 			!exactNotification(session, event, options.identity.decoder) ||
 			!bindingIsCurrent(session)
-		)
+		) {
 			return;
+		}
 		const notification = event.notification;
 		switch (notification.method) {
 			case "thread/realtime/sdp":
-				if (session.answerSettled || session.state.phase !== "negotiating") break;
+				if (session.answerSettled || session.state.phase !== "negotiating") {
+					break;
+				}
 				session.answerSdp = notification.params.sdp;
 				settleAnswer(session);
 				break;
 			case "thread/realtime/started":
-				if (session.answerSettled || session.state.phase !== "negotiating") break;
+				if (session.answerSettled || session.state.phase !== "negotiating") {
+					break;
+				}
 				if (
 					notification.params.realtimeSessionId !== session.wireSessionId ||
 					notification.params.version !== "v3"
@@ -303,8 +334,9 @@ export function createCodexRealtimeAdapter(
 					notification.params.item.type === "realtimeSessionClosed" &&
 					notification.params.item.realtimeSessionId === session.wireSessionId
 				) {
-					if (notification.params.item.outcome === "failed")
+					if (notification.params.item.outcome === "failed") {
 						emitDiagnostic(session, "realtime", "Codex closed the realtime session as failed.");
+					}
 					finalize(session);
 				}
 				break;
@@ -314,9 +346,13 @@ export function createCodexRealtimeAdapter(
 					const failure = phase.realtimeFailureState(session.state, notification.params.message);
 					if (failure) {
 						const ownsPendingStart = !session.answerSettled;
-						if (ownsPendingStart) session.answerSettled = true;
+						if (ownsPendingStart) {
+							session.answerSettled = true;
+						}
 						state(session, failure);
-						if (ownsPendingStart) session.rejectAnswer(new Error(notification.params.message));
+						if (ownsPendingStart) {
+							session.rejectAnswer(new Error(notification.params.message));
+						}
 					}
 				}
 				break;
@@ -371,8 +407,9 @@ export function createCodexRealtimeAdapter(
 
 	const appendText = (request: AppendTextRequest): Promise<AppendOutcome> => {
 		const session = currentFor(request);
-		if (!session)
+		if (!session) {
 			return Promise.resolve({ ...request, outcome: "not_delivered", reason: "not_ready" });
+		}
 		return mutationOutcome(
 			session,
 			request,
@@ -384,15 +421,18 @@ export function createCodexRealtimeAdapter(
 				}),
 			"append",
 		).then((outcome) => {
-			if (outcome.outcome === "delivered") states(session, phase.inputStates(session.state));
+			if (outcome.outcome === "delivered") {
+				states(session, phase.inputStates(session.state));
+			}
 			return outcome;
 		});
 	};
 
 	const appendSpeech = (request: AppendSpeechRequest): Promise<AppendOutcome> => {
 		const session = currentFor(request);
-		if (!session)
+		if (!session) {
 			return Promise.resolve({ ...request, outcome: "not_delivered", reason: "not_ready" });
+		}
 		return mutationOutcome(
 			session,
 			request,
@@ -403,16 +443,22 @@ export function createCodexRealtimeAdapter(
 				}),
 			"append",
 		).then((outcome) => {
-			if (outcome.outcome === "delivered") states(session, phase.inputStates(session.state));
+			if (outcome.outcome === "delivered") {
+				states(session, phase.inputStates(session.state));
+			}
 			return outcome;
 		});
 	};
 
 	const stop: CodexRealtimeAdapter["stop"] = async (request) => {
 		const session = currentFor(request);
-		if (!session) return { ...request, outcome: "not_delivered", reason: "not_ready" };
+		if (!session) {
+			return { ...request, outcome: "not_delivered", reason: "not_ready" };
+		}
 		const stopping = phase.stopState(session.state);
-		if (!stopping) return { ...request, outcome: "not_delivered", reason: "not_ready" };
+		if (!stopping) {
+			return { ...request, outcome: "not_delivered", reason: "not_ready" };
+		}
 		state(session, stopping);
 		const outcome: CommandOutcome = await mutationOutcome(
 			session,
@@ -420,7 +466,9 @@ export function createCodexRealtimeAdapter(
 			() => options.session.realtimeStop({ threadId: session.binding.coordinatorThreadId }),
 			"command",
 		);
-		if (active !== session) return outcome;
+		if (active !== session) {
+			return outcome;
+		}
 		if (outcome.outcome === "delivered") {
 			finalize(session);
 		} else {
@@ -435,9 +483,12 @@ export function createCodexRealtimeAdapter(
 
 	const recover: CodexRealtimeAdapter["recover"] = async (request) => {
 		const session = currentFor(request);
-		if (!session) return { ...request, outcome: "not_delivered", reason: "not_ready" };
-		if (session.state.phase !== "recoverable_error")
+		if (!session) {
 			return { ...request, outcome: "not_delivered", reason: "not_ready" };
+		}
+		if (session.state.phase !== "recoverable_error") {
+			return { ...request, outcome: "not_delivered", reason: "not_ready" };
+		}
 		const cursors = new Set<string>();
 		const transcriptEntries: Array<{
 			readonly id: string;
@@ -448,23 +499,30 @@ export function createCodexRealtimeAdapter(
 		let cursor: string | null = null;
 		try {
 			for (;;) {
-				if (!requestIsCurrent(session, request))
+				if (!requestIsCurrent(session, request)) {
 					return { ...request, outcome: "not_delivered", reason: "stale_session" };
+				}
 				const page = await options.session.timelineListPage({
 					threadId: session.binding.coordinatorThreadId,
 					cursor,
 					limit: TIMELINE_PAGE_LIMIT,
 				});
-				if (!requestIsCurrent(session, request))
+				if (!requestIsCurrent(session, request)) {
 					return { ...request, outcome: "outcome_unknown", reason: "response_lost" };
+				}
 				if (
 					page.activeRealtimeSessionAtPageStart !== null &&
 					page.activeRealtimeSessionAtPageStart !== session.wireSessionId
-				)
+				) {
 					throw new Error("Timeline recovery belongs to another realtime session.");
+				}
 				for (const entry of page.data) {
-					if (entry.type !== "realtime" || entry.item.type !== "transcriptSegment") continue;
-					if (entry.item.realtimeSessionId !== session.wireSessionId) continue;
+					if (entry.type !== "realtime" || entry.item.type !== "transcriptSegment") {
+						continue;
+					}
+					if (entry.item.realtimeSessionId !== session.wireSessionId) {
+						continue;
+					}
 					transcriptEntries.push({
 						id: entry.item.id,
 						role: entry.item.role,
@@ -472,9 +530,12 @@ export function createCodexRealtimeAdapter(
 						position: entry.position,
 					});
 				}
-				if (page.nextCursor === null) break;
-				if (cursors.has(page.nextCursor))
+				if (page.nextCursor === null) {
+					break;
+				}
+				if (cursors.has(page.nextCursor)) {
 					throw new Error("Timeline recovery cursor loop detected.");
+				}
 				cursors.add(page.nextCursor);
 				cursor = page.nextCursor;
 			}
@@ -493,15 +554,20 @@ export function createCodexRealtimeAdapter(
 				});
 			}
 			session.entries.clear();
-			for (const [itemId, entry] of recoveredEntries) session.entries.set(itemId, entry);
+			for (const [itemId, entry] of recoveredEntries) {
+				session.entries.set(itemId, entry);
+			}
 			publishTranscript(session);
 			state(session, { phase: "idle", reason: "recovered" });
 			retainedTranscript = orderedRecords(session);
-			if (active === session) active = null;
+			if (active === session) {
+				active = null;
+			}
 			return { ...request, outcome: "delivered" };
 		} catch (error) {
-			if (!requestIsCurrent(session, request))
+			if (!requestIsCurrent(session, request)) {
 				return { ...request, outcome: "outcome_unknown", reason: "response_lost" };
+			}
 			emitDiagnostic(session, "protocol", realtimeErrorMessage(error));
 			state(session, {
 				phase: "recoverable_error",
@@ -528,9 +594,12 @@ export function createCodexRealtimeAdapter(
 		dispose: () => {
 			disposed = true;
 			listeners.clear();
-			if (active) retainedTranscript = orderedRecords(active);
-			if (active && !active.answerSettled)
+			if (active) {
+				retainedTranscript = orderedRecords(active);
+			}
+			if (active && !active.answerSettled) {
 				failStart(active, new Error("The Codex realtime adapter was disposed."));
+			}
 			active = null;
 		},
 	});

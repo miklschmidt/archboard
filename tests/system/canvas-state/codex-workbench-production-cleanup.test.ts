@@ -43,7 +43,9 @@ interface ProcessRecord {
 }
 
 function processRecords(logPath: string): ProcessRecord[] {
-	if (!existsSync(logPath)) return [];
+	if (!existsSync(logPath)) {
+		return [];
+	}
 	return readFileSync(logPath, "utf8")
 		.split("\n")
 		.filter(Boolean)
@@ -55,13 +57,17 @@ async function assertProcessesStopped(records: readonly ProcessRecord[]): Promis
 		...new Set(records.flatMap((record) => (record.pid === undefined ? [] : [record.pid]))),
 	];
 	for (const pid of pids) {
-		if (processExists(pid)) await waitForProcessExit(pid);
+		if (processExists(pid)) {
+			await waitForProcessExit(pid);
+		}
 		expect(processExists(pid), `pid ${pid}`).toBeFalse();
 	}
 }
 
 async function closeServer(server: Server): Promise<void> {
-	if (!server.listening) return;
+	if (!server.listening) {
+		return;
+	}
 	server.closeAllConnections();
 	await new Promise<void>((resolve, reject) =>
 		server.close((error) =>
@@ -80,8 +86,9 @@ interface LoopbackPeer {
 
 function baseFor(server: NetServer): string {
 	const address = server.address();
-	if (address === null || typeof address === "string")
+	if (address === null || typeof address === "string") {
 		throw new Error("The loopback peer has no TCP port.");
+	}
 	return `http://127.0.0.1:${address.port}`;
 }
 
@@ -102,8 +109,12 @@ async function listenLoopbackPeer(
 		base: baseFor(server),
 		server,
 		close: async () => {
-			for (const socket of sockets) socket.destroy();
-			if (!server.listening) return;
+			for (const socket of sockets) {
+				socket.destroy();
+			}
+			if (!server.listening) {
+				return;
+			}
 			await new Promise<void>((resolve, reject) =>
 				server.close((error) => (error === undefined ? resolve() : reject(error))),
 			);
@@ -144,21 +155,26 @@ describe.serial("production Codex setup cleanup", () => {
 				const base = await closedLoopbackEndpoint();
 				const executable = join(root, "codex");
 				const pidLog = join(root, "child.pid");
-				if (scenario === "non-file") mkdirSync(executable, { mode: 0o700 });
+				if (scenario === "non-file") {
+					mkdirSync(executable, { mode: 0o700 });
+				}
 				if (scenario === "unexecutable") {
 					writeFileSync(executable, "not executable");
 					chmodSync(executable, 0o600);
 				}
-				if (scenario === "wrong-version")
+				if (scenario === "wrong-version") {
 					writePublicCodexExecutable(executable, 'console.log("codex-cli 0.150.0");');
-				if (scenario === "early-exit")
+				}
+				if (scenario === "early-exit") {
 					writePublicCodexExecutable(
 						executable,
 						`if (process.argv.includes("--version")) console.log("codex-cli 0.151.0"); else { require("node:fs").writeFileSync(${JSON.stringify(pidLog)}, String(process.pid)); process.exit(19); }`,
 					);
+				}
 				const environment = publicStartEnvironment(root, base, executable);
-				if (scenario === "verification-timeout")
+				if (scenario === "verification-timeout") {
 					environment["ARCHBOARD_TEST_PUBLIC_CODEX_PROOF_FAILURE"] = "verification_timeout";
+				}
 				const result = runPublicCanvas("start", environment);
 				expect(result.status, scenario).not.toBe(0);
 				const lines = result.stderr.split(/\r?\n/u).filter(Boolean);
@@ -203,14 +219,18 @@ describe.serial("production Codex setup cleanup", () => {
 				runPublicCanvasAsync("start", environment),
 				runPublicCanvasAsync("start", environment),
 			]);
-			for (const start of starts) expect(start.status, start.stderr).toBe(0);
+			for (const start of starts) {
+				expect(start.status, start.stderr).toBe(0);
+			}
 			spawned = processRecords(fixture.logPath).filter(
 				(record) => record.kind === "app_server_spawn",
 			);
 			expect(spawned).toHaveLength(1);
 			expect(runPublicCanvas("stop", environment).status).toBe(0);
 		} finally {
-			if (environment !== null) runPublicCanvas("stop", environment);
+			if (environment !== null) {
+				runPublicCanvas("stop", environment);
+			}
 			await resources.disposeAsync();
 		}
 		await assertProcessesStopped(spawned);
@@ -226,8 +246,9 @@ describe.serial("production Codex setup cleanup", () => {
 			const started = runPublicCanvas("start", environment);
 			expect(started.status).toBe(0);
 			const pidMatch = started.stdout.match(/"pid":\s*(\d+)/u);
-			if (pidMatch?.[1] === undefined)
+			if (pidMatch?.[1] === undefined) {
 				throw new Error(`Public start returned no pid: ${started.stdout}`);
+			}
 			canvasPid = Number(pidMatch[1]);
 			expect(processExists(canvasPid)).toBeTrue();
 			const childPids = canvasChildPids(canvasPid);
@@ -301,8 +322,9 @@ describe.serial("production Codex setup cleanup", () => {
 			).toBeFalse();
 		} finally {
 			await socket?.close();
-			if (environment !== null && canvasPid !== null && processExists(canvasPid))
+			if (environment !== null && canvasPid !== null && processExists(canvasPid)) {
 				runPublicCanvas("stop", environment);
+			}
 			rmSync(root, { recursive: true, force: true });
 		}
 	}, 20_000);
@@ -348,7 +370,9 @@ describe.serial("production Codex setup cleanup", () => {
 			});
 			resources.defer(() => closeServer(blocker!));
 			const address = blocker.address();
-			if (address === null || typeof address === "string") throw new Error("missing blocked port");
+			if (address === null || typeof address === "string") {
+				throw new Error("missing blocked port");
+			}
 			const failure = await startOwnedCanvas({
 				serverPath,
 				port: address.port,
@@ -419,7 +443,9 @@ describe.serial("production Codex setup cleanup", () => {
 					timeoutMs: scenario === "timeout" ? 25 : 2_000,
 					onSocket: (value) => {
 						socket = value;
-						if (scenario === "hook_throw") throw new Error("injected socket hook failure");
+						if (scenario === "hook_throw") {
+							throw new Error("injected socket hook failure");
+						}
 					},
 				}).then(
 					() => null,
@@ -427,12 +453,17 @@ describe.serial("production Codex setup cleanup", () => {
 				);
 				expect(failure, scenario).toBeInstanceOf(Error);
 				const partialSocket = socket as WebSocket | null;
-				if (partialSocket === null) throw new Error("The partial socket was not captured.");
+				if (partialSocket === null) {
+					throw new Error("The partial socket was not captured.");
+				}
 				expect(partialSocket.readyState, scenario).toBe(WebSocket.CLOSED);
-				for (const event of ["message", "open", "error", "close"])
+				for (const event of ["message", "open", "error", "close"]) {
 					expect(partialSocket.listenerCount(event), `${scenario}:${event}`).toBe(0);
+				}
 				await peer?.close();
-				if (peer !== null) expect(peer.server.listening, scenario).toBeFalse();
+				if (peer !== null) {
+					expect(peer.server.listening, scenario).toBeFalse();
+				}
 
 				const recovery = await openApplicationSocket(canvas.base, "bound-client");
 				for (const paneRegistration of [

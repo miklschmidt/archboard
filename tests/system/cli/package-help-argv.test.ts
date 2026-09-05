@@ -141,7 +141,9 @@ describe("package bin and help", () => {
 		const smoke = await owner.run(["help", "browser", "capture"]);
 		expect(smoke, packageFailure(smoke)).toMatchObject({ status: 0, stderr: "" });
 		const expected = commandHelp(["browser", "capture"]);
-		if (expected === null) throw new Error("browser capture help is absent from the CLI registry.");
+		if (expected === null) {
+			throw new Error("browser capture help is absent from the CLI registry.");
+		}
 		expect(smoke.stdout, packageFailure(smoke)).toBe(expected);
 	});
 });
@@ -167,9 +169,11 @@ describe("package argv compatibility", () => {
 					.replaceAll(owner.outside, "{{OUTSIDE}}")
 					.replaceAll(http.url, "{{CANVAS_URL}}");
 				const expected = golden[stream]?.replaceAll("{{VERSION}}", packageRecord.version);
-				if (expected === undefined)
+				if (expected === undefined) {
 					expect(sha256(actual), packageFailure(result)).toBe(golden[`${stream}Sha256`]!);
-				else expect(actual, packageFailure(result)).toBe(expected);
+				} else {
+					expect(actual, packageFailure(result)).toBe(expected);
+				}
 			}
 		}
 	}, 30_000);

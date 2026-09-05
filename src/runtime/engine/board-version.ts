@@ -55,8 +55,12 @@ export type StatedVersionResult =
 
 function noteVersion(content: string): NoteVersion {
 	const raw = readFrontmatterValue(content, FRONTMATTER_VERSION);
-	if (raw === undefined) return { kind: "none" };
-	if (!/^\d+$/.test(raw.trim())) return { kind: "foreign", raw };
+	if (raw === undefined) {
+		return { kind: "none" };
+	}
+	if (!/^\d+$/.test(raw.trim())) {
+		return { kind: "foreign", raw };
+	}
 	return { kind: "at", value: Number(raw.trim()) };
 }
 
@@ -84,8 +88,12 @@ export function versionOfNoteAt(file: string): number | null {
 
 /** Which way a note's count moved since archboard last wrote it. */
 export function versionMove(baseline: number | null | undefined, now: number | null): VersionMove {
-	if (baseline === null || baseline === undefined || now === null) return "unknown";
-	if (now === baseline) return "unchanged";
+	if (baseline === null || baseline === undefined || now === null) {
+		return "unknown";
+	}
+	if (now === baseline) {
+		return "unchanged";
+	}
 	return now > baseline ? "ahead" : "behind";
 }
 
@@ -231,7 +239,9 @@ export function stampBoardVersion(
 	const current = destination
 		? noteVersion(destination.toString("utf-8"))
 		: { kind: "none" as const };
-	if (current.kind === "foreign") return { ...rendered, version: null };
+	if (current.kind === "foreign") {
+		return { ...rendered, version: null };
+	}
 	if (destination && rendered.bytes.equals(destination)) {
 		return { ...rendered, version: current.kind === "at" ? current.value : null };
 	}
@@ -242,8 +252,12 @@ export function stampBoardVersion(
 
 /** Parse the request source. A person's change is never version-checked. */
 export function statedVersion(raw: unknown, writer: "human" | "agent"): StatedVersionResult {
-	if (writer !== "agent") return { ok: true };
-	if (raw === undefined || raw === "") return { ok: true };
+	if (writer !== "agent") {
+		return { ok: true };
+	}
+	if (raw === undefined || raw === "") {
+		return { ok: true };
+	}
 	if (typeof raw !== "string" || !/^\d+$/.test(raw.trim())) {
 		return {
 			ok: false,
@@ -276,7 +290,9 @@ export function forgetRememberedVersion(writer: string): void {
 
 export function forgetRememberedVersions(prefix: string): void {
 	for (const writer of rememberedVersions().keys()) {
-		if (writer.startsWith(prefix)) rememberedVersions().delete(writer);
+		if (writer.startsWith(prefix)) {
+			rememberedVersions().delete(writer);
+		}
 	}
 }
 
@@ -299,12 +315,20 @@ export function checkBoardVersion(input: {
 	stated?: number | null;
 	rememberedBy?: string;
 }): BoardVersionConflict | null {
-	if (!input.writesNote) return null;
+	if (!input.writesNote) {
+		return null;
+	}
 	const expected = expectedVersion(input);
-	if (expected === undefined) return null;
+	if (expected === undefined) {
+		return null;
+	}
 	const actual = input.file ? versionOfNoteAt(input.file) : null;
-	if (actual === expected) return null;
-	if (input.rememberedBy) rememberVersion(input.rememberedBy, actual);
+	if (actual === expected) {
+		return null;
+	}
+	if (input.rememberedBy) {
+		rememberVersion(input.rememberedBy, actual);
+	}
 	return describeVersionConflict({
 		board: input.board,
 		...(input.file ? { file: input.file } : {}),

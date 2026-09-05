@@ -45,8 +45,9 @@ if (
 				return {
 					...application,
 					shutdown: () => {
-						if (shutdownFailure)
+						if (shutdownFailure) {
 							return Promise.reject(new Error("injected workbench cleanup failure"));
+						}
 						delay ??= Bun.sleep(shutdownDelayMs);
 						return delay.then(application.shutdown);
 					},

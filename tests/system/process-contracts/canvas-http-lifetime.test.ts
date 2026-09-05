@@ -33,7 +33,9 @@ async function freePort(): Promise<number> {
 		server.listen({ host: "127.0.0.1", port: 0, exclusive: true }, resolve);
 	});
 	const address = server.address();
-	if (address === null || typeof address === "string") throw new Error("No loopback port.");
+	if (address === null || typeof address === "string") {
+		throw new Error("No loopback port.");
+	}
 	await new Promise<void>((resolve, reject) =>
 		server.close((error) => (error ? reject(error) : resolve())),
 	);
@@ -155,8 +157,9 @@ async function spawnCanvas(
 		xdgState: join(fixture.root, `${mode}-state`),
 		temporary: join(fixture.root, `${mode}-tmp`),
 	};
-	for (const directory of Object.values(paths))
+	for (const directory of Object.values(paths)) {
 		mkdirSync(directory, { recursive: true, mode: 0o700 });
+	}
 	writeFileSync(
 		wrapper,
 		mode === "delayed-listen-cancel"
@@ -178,7 +181,9 @@ async function spawnCanvas(
 		}),
 		stdio: ["ignore", "pipe", "pipe"],
 	});
-	if (child.pid === undefined) throw new Error(`${mode} canvas has no pid.`);
+	if (child.pid === undefined) {
+		throw new Error(`${mode} canvas has no pid.`);
+	}
 	const pid = child.pid;
 	let output = "";
 	child.stdout.on("data", (chunk: Buffer) => (output += chunk.toString()));
@@ -191,7 +196,9 @@ async function spawnCanvas(
 			try {
 				process.kill(-pid, "SIGKILL");
 			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+				if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+					throw error;
+				}
 			}
 		}
 		await exit;
@@ -236,14 +243,17 @@ test(
 			const childPid = records(fixture.logPath).find(
 				(entry) => entry.kind === "app_server_spawn",
 			)?.pid;
-			if (childPid === undefined)
+			if (childPid === undefined) {
 				throw new Error(`The delayed-listen Codex owner never started.\n${canvas.output()}`);
+			}
 			await waitForProcessExit(childPid);
 			expect(processExists(childPid)).toBeFalse();
 
 			const probe = createServer();
 			resources.defer(async () => {
-				if (!probe.listening) return;
+				if (!probe.listening) {
+					return;
+				}
 				await new Promise<void>((resolve, reject) =>
 					probe.close((error) => (error ? reject(error) : resolve())),
 				);
@@ -279,8 +289,9 @@ test(
 			const childPid = records(fixture.logPath).find(
 				(entry) => entry.kind === "app_server_spawn",
 			)?.pid;
-			if (childPid === undefined)
+			if (childPid === undefined) {
 				throw new Error(`The bind-race Codex owner never started.\n${canvas.output()}`);
+			}
 			await waitForProcessExit(childPid);
 			expect(processExists(canvas.pid)).toBeFalse();
 			expect(processExists(childPid)).toBeFalse();
@@ -306,8 +317,9 @@ test(
 						const health = (await response.json()) as { application?: { phase?: unknown } };
 						return health.application?.phase === "running" ? true : undefined;
 					} catch {
-						if (!processExists(canvas.pid))
+						if (!processExists(canvas.pid)) {
 							throw new Error(`Runtime-error canvas exited during startup.\n${canvas.output()}`);
+						}
 						return undefined;
 					}
 				},
@@ -336,7 +348,9 @@ test(
 			const childPid = records(fixture.logPath).find(
 				(entry) => entry.kind === "app_server_spawn",
 			)?.pid;
-			if (childPid === undefined) throw new Error("The runtime-error Codex owner never started.");
+			if (childPid === undefined) {
+				throw new Error("The runtime-error Codex owner never started.");
+			}
 			await waitForProcessExit(childPid);
 			expect(processExists(childPid)).toBeFalse();
 			expect(canvas.output()).toContain("Canvas HTTP server failed");

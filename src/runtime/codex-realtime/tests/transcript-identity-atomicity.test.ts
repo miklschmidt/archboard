@@ -55,7 +55,9 @@ function harness(): Harness {
 	const [linkedThreadId, coordinatorThreadId] = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: ["atomic-recovery-linked", COORDINATOR_THREAD],
 	}).threadIds;
-	if (!linkedThreadId || !coordinatorThreadId) throw new Error("Missing thread identities.");
+	if (!linkedThreadId || !coordinatorThreadId) {
+		throw new Error("Missing thread identities.");
+	}
 	const starts: SessionParams<"thread/realtime/start">[] = [];
 	const timelineRequests: SessionParams<"thread/timeline/list">[] = [];
 	const state: Pick<Harness, "timelinePages"> = { timelinePages: [] };
@@ -79,14 +81,18 @@ function harness(): Harness {
 			timelineListPage: async (params) => {
 				timelineRequests.push(params);
 				const response = state.timelinePages.shift();
-				if (!response) throw new Error("Unexpected timeline request.");
+				if (!response) {
+					throw new Error("Unexpected timeline request.");
+				}
 				return response;
 			},
 		},
 	});
 	const transcriptEvents: RealtimeSemanticEvent[] = [];
 	adapter.onSemanticEvent((event) => {
-		if (event.kind === "transcript") transcriptEvents.push(event);
+		if (event.kind === "transcript") {
+			transcriptEvents.push(event);
+		}
 	});
 	return {
 		adapter,
@@ -124,7 +130,9 @@ async function started(h: Harness, recoverable = true) {
 	const answer = h.adapter.createOffer({ ...browser, sdp: "offer" });
 	await Promise.resolve();
 	const wireSessionId = h.starts[0]?.realtimeSessionId;
-	if (!wireSessionId) throw new Error("Realtime start did not run.");
+	if (!wireSessionId) {
+		throw new Error("Realtime start did not run.");
+	}
 	notify(h, "thread/realtime/sdp", { threadId: COORDINATOR_THREAD, sdp: "answer" });
 	notify(h, "thread/realtime/started", {
 		threadId: COORDINATOR_THREAD,
@@ -172,7 +180,9 @@ function issuedItems(h: Harness): readonly string[] {
 
 async function waitForTimelineRequests(h: Harness, count: number): Promise<void> {
 	for (let attempt = 0; attempt < 20; attempt++) {
-		if (h.timelineRequests.length === count) return;
+		if (h.timelineRequests.length === count) {
+			return;
+		}
 		await Promise.resolve();
 	}
 	throw new Error(`Expected ${count} timeline requests.`);

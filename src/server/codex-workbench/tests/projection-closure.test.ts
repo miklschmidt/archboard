@@ -189,7 +189,9 @@ test("timeline projection maps all seven owner arms and omits private extensions
 		timeline,
 	});
 	expect(result.tag).toBe("projected");
-	if (result.tag !== "projected") throw new Error("timeline projection was refused");
+	if (result.tag !== "projected") {
+		throw new Error("timeline projection was refused");
+	}
 	expect(result.snapshot.timeline).toEqual({
 		kind: "timeline",
 		threadId: timeline.threadId,
@@ -236,8 +238,9 @@ test("timeline projection maps all seven owner arms and omits private extensions
 		"/private/timeline/resolution",
 		"/private/timeline/presentation",
 		"private-realtime-session",
-	])
+	]) {
 		expect(wire).not.toContain(privateValue);
+	}
 	expect(Object.isFrozen(result.snapshot.timeline)).toBe(true);
 	expect(Object.isFrozen(result.snapshot.timeline?.turns)).toBe(true);
 	expect(Object.isFrozen(result.snapshot.timeline?.turns[0])).toBe(true);
@@ -293,7 +296,9 @@ test("settings projection closes loose nested records and refuses secrets", () =
 		],
 	});
 	expect(result.tag).toBe("projected");
-	if (result.tag !== "projected") throw new Error("settings projection was refused");
+	if (result.tag !== "projected") {
+		throw new Error("settings projection was refused");
+	}
 	expect(result.snapshot.account).toEqual({
 		kind: "account",
 		state: "ready",
@@ -317,8 +322,9 @@ test("settings projection closes loose nested records and refuses secrets", () =
 		extends: "base-profile",
 	});
 	const projectedPolicy = result.snapshot.settings[0]?.approvalPolicy;
-	if (projectedPolicy === undefined || typeof projectedPolicy === "string")
+	if (projectedPolicy === undefined || typeof projectedPolicy === "string") {
 		throw new Error("granular approval policy was not projected");
+	}
 	expect(Object.isFrozen(projectedPolicy)).toBe(true);
 	expect(Object.isFrozen(projectedPolicy.granular)).toBe(true);
 	expect(Object.isFrozen(result.snapshot.settings[0]?.activePermissionProfile)).toBe(true);
@@ -331,8 +337,9 @@ test("settings projection closes loose nested records and refuses secrets", () =
 		"/private/settings/granular",
 		"/private/settings/policy",
 		"/private/settings/profile",
-	])
+	]) {
 		expect(wire).not.toContain(privateValue);
+	}
 
 	const secretAccount = { ...input.account, apiKey: "sk-browser-leak" };
 	const secret = projectCodexBrowserState(model, authorities.identity.decoder, {

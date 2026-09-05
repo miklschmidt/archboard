@@ -98,7 +98,9 @@ export function createOrdinaryWireOwners(): OrdinaryWireOwners {
 		run: () => Promise<DynamicToolCallResponse>,
 	): Promise<DynamicToolCallResponse> => {
 		const existing = owners.get(key);
-		if (existing !== undefined) return existing.promise;
+		if (existing !== undefined) {
+			return existing.promise;
+		}
 		const owner = deferred<DynamicToolCallResponse>();
 		owners.set(key, owner);
 		let operation: Promise<DynamicToolCallResponse>;
@@ -109,12 +111,16 @@ export function createOrdinaryWireOwners(): OrdinaryWireOwners {
 		}
 		void operation.then(
 			(response) => {
-				if (owners.get(key) === owner) owners.delete(key);
+				if (owners.get(key) === owner) {
+					owners.delete(key);
+				}
 				owner.resolve(response);
 				return undefined;
 			},
 			(error) => {
-				if (owners.get(key) === owner) owners.delete(key);
+				if (owners.get(key) === owner) {
+					owners.delete(key);
+				}
 				owner.reject(error);
 				return undefined;
 			},
@@ -140,7 +146,9 @@ export function mutationIdentity(
 	let tool: DynamicMutationToolName;
 	try {
 		const call = validateDynamicCall(request, options);
-		if (!isMutationTool(call.name)) return null;
+		if (!isMutationTool(call.name)) {
+			return null;
+		}
 		tool = call.name;
 	} catch {
 		return null;
@@ -168,20 +176,29 @@ export function epochKey(child: unknown, epoch: unknown): string | null {
 }
 
 export function requestEpochKey(value: unknown): string | null {
-	if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
-	if (!("child" in value) || !("epoch" in value)) return null;
+	if (value === null || typeof value !== "object" || Array.isArray(value)) {
+		return null;
+	}
+	if (!("child" in value) || !("epoch" in value)) {
+		return null;
+	}
 	return epochKey(value.child, value.epoch);
 }
 
 export function requestWireKey(value: unknown): string | null {
-	if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
-	if (!("child" in value) || !("epoch" in value) || !("requestId" in value)) return null;
+	if (value === null || typeof value !== "object" || Array.isArray(value)) {
+		return null;
+	}
+	if (!("child" in value) || !("epoch" in value) || !("requestId" in value)) {
+		return null;
+	}
 	if (
 		typeof value.child !== "string" ||
 		typeof value.epoch !== "string" ||
 		typeof value.requestId !== "string"
-	)
+	) {
 		return null;
+	}
 	return JSON.stringify([value.child, value.epoch, value.requestId]);
 }
 
@@ -209,8 +226,9 @@ export function exactPoisonOwner(
 		!value.poisoned ||
 		!(value.childExit instanceof Promise) ||
 		!exactKeys(value, ["child", "childExit", "epoch", "poisoned"])
-	)
+	) {
 		throw new Error("The lifecycle port did not return the exact poisoned epoch owner.");
+	}
 	return value;
 }
 
@@ -227,8 +245,9 @@ export function exactShutdownOwner(
 		!value.shutdownInitiated ||
 		!(value.teardown instanceof Promise) ||
 		!exactKeys(value, ["child", "epoch", "shutdownInitiated", "teardown"])
-	)
+	) {
 		throw new Error("The lifecycle port did not return the exact fail-closed shutdown owner.");
+	}
 	return value;
 }
 

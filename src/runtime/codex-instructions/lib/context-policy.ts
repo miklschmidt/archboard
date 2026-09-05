@@ -5,8 +5,12 @@ type DeepReadonly<Value> = Value extends readonly unknown[]
 		: Value;
 
 function deepFreeze<Value>(value: Value): DeepReadonly<Value> {
-	if (typeof value !== "object" || value === null) return value as DeepReadonly<Value>;
-	for (const child of Object.values(value as Record<string, unknown>)) deepFreeze(child);
+	if (typeof value !== "object" || value === null) {
+		return value as DeepReadonly<Value>;
+	}
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		deepFreeze(child);
+	}
 	return Object.freeze(value) as DeepReadonly<Value>;
 }
 

@@ -242,7 +242,9 @@ export async function withBoardLock<T>(request: LockRequest, write: () => T): Pr
 	try {
 		return write();
 	} finally {
-		if (hold.created) releaseHold(request.board, request.holder.id);
+		if (hold.created) {
+			releaseHold(request.board, request.holder.id);
+		}
 	}
 }
 
@@ -269,10 +271,14 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
 	let attemptsPastDeadline = 0;
 
 	for (;;) {
-		if (request.signal?.aborted) throw new BoardLockCancelledError(request.board);
+		if (request.signal?.aborted) {
+			throw new BoardLockCancelledError(request.board);
+		}
 		const result = await attempt(board, request.holder, leaseMs, request.revokeClaim === true);
 		if (request.signal?.aborted) {
-			if (result.ok && result.created) releaseHold(board, request.holder.id);
+			if (result.ok && result.created) {
+				releaseHold(board, request.holder.id);
+			}
 			throw new BoardLockCancelledError(request.board);
 		}
 		if (result.ok) {
@@ -286,10 +292,14 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
 		}
 		// `null` means the file moved under us rather than that somebody has it:
 		// worth another go, and worth not reporting as a holder.
-		if (result.record) blocker = result.record;
+		if (result.record) {
+			blocker = result.record;
+		}
 
 		if (Date.now() >= deadline) {
-			if (blocker || attemptsPastDeadline >= 2) break;
+			if (blocker || attemptsPastDeadline >= 2) {
+				break;
+			}
 			attemptsPastDeadline += 1;
 			continue;
 		}
@@ -314,7 +324,9 @@ export function recordLockCommit(board: string, leaseToken: string, hash: string
 		key = normalizeBoardKey(board);
 		const file = lockPathFor(key);
 		const current = readRecord(file);
-		if (!current || current.token !== leaseToken || hash.length === 0) return false;
+		if (!current || current.token !== leaseToken || hash.length === 0) {
+			return false;
+		}
 		writeRecord(file, { ...current, committedHash: hash });
 		return true;
 	} catch (error) {
@@ -335,7 +347,9 @@ export function releaseHold(board: string, holderId: string): boolean {
 	const key = normalizeBoardKey(board);
 	const file = lockPathFor(key);
 	const current = readRecord(file);
-	if (!current || current.id !== holderId) return false;
+	if (!current || current.id !== holderId) {
+		return false;
+	}
 	if (current.committedHash) {
 		try {
 			writeHandoff(key, current);
@@ -436,7 +450,9 @@ export async function claimBoard(request: {
 		timer: existing?.timer ?? null,
 	};
 	claims().set(board, entry);
-	if (!entry.timer) entry.timer = startRenewing(board);
+	if (!entry.timer) {
+		entry.timer = startRenewing(board);
+	}
 	return { claim: claimOf(board, entry), created: existing === null };
 }
 
@@ -450,7 +466,9 @@ export async function claimBoard(request: {
 export function releaseClaim(board: string): Claim | null {
 	const key = normalizeBoardKey(board);
 	const entry = claims().get(key);
-	if (!entry) return null;
+	if (!entry) {
+		return null;
+	}
 	dropClaim(key, entry);
 	releaseHold(key, entry.holder.id);
 	return claimOf(key, entry);
@@ -493,7 +511,9 @@ export function claimWriterId(board: string): string | null {
 export function takeClaimRevocation(board: string): ClaimRevocation | null {
 	const key = normalizeBoardKey(board);
 	const lost = revocations().get(key);
-	if (!lost) return null;
+	if (!lost) {
+		return null;
+	}
 	revocations().delete(key);
 	return lost;
 }
@@ -511,8 +531,12 @@ function claimOf(board: string, entry: ClaimEntry): Claim {
 
 function liveClaim(board: string): ClaimEntry | null {
 	const entry = claims().get(board);
-	if (!entry) return null;
-	if (Date.now() < entry.expires) return entry;
+	if (!entry) {
+		return null;
+	}
+	if (Date.now() < entry.expires) {
+		return entry;
+	}
 	// Ran its course. Dropped here rather than only on the renewal tick, so the
 	// answer to "is this board claimed" never depends on when a timer last fired.
 	dropClaim(board, entry);
@@ -541,7 +565,9 @@ function startRenewing(board: string): ReturnType<typeof setInterval> {
 }
 
 function stopRenewing(entry: ClaimEntry): void {
-	if (entry.timer) clearInterval(entry.timer);
+	if (entry.timer) {
+		clearInterval(entry.timer);
+	}
 	entry.timer = null;
 }
 
@@ -553,7 +579,9 @@ function dropClaim(board: string, entry: ClaimEntry): void {
 
 function renewClaim(board: string): void {
 	const entry = liveClaim(board);
-	if (!entry) return;
+	if (!entry) {
+		return;
+	}
 	const renewed = renewRecord(board, entry.holder.id, CLAIM_LEASE_MS);
 	if (renewed) {
 		entry.holder = renewed;
@@ -577,7 +605,9 @@ function renewClaim(board: string): void {
 function renewRecord(board: string, id: string, leaseMs: number): LockHolder | null {
 	const file = lockPathFor(board);
 	const live = liveRecord(readRecord(file));
-	if (!live || live.id !== id) return null;
+	if (!live || live.id !== id) {
+		return null;
+	}
 	const renewed: LockRecord = { ...live, until: stamp(Date.now() + leaseMs) };
 	writeRecord(file, renewed);
 	announceHeld(board, holderOf(renewed));
@@ -593,7 +623,9 @@ function renewRecord(board: string, id: string, leaseMs: number): LockHolder | n
  */
 function noteClaimRevoked(board: string, lost: LockHolder, by: LockHolder | null): void {
 	const entry = claims().get(board);
-	if (!entry || entry.holder.id !== lost.id) return;
+	if (!entry || entry.holder.id !== lost.id) {
+		return;
+	}
 	dropClaim(board, entry);
 	revocations().set(board, { claim: claimOf(board, entry), by });
 }
@@ -624,11 +656,15 @@ export function watchBoardLocks(boards: (() => string[]) | null): void {
 	const watch = watcher();
 	watch.boards = boards;
 	if (!boards) {
-		if (watch.timer) clearInterval(watch.timer);
+		if (watch.timer) {
+			clearInterval(watch.timer);
+		}
 		watch.timer = null;
 		return;
 	}
-	if (watch.timer) return;
+	if (watch.timer) {
+		return;
+	}
 	const timer = setInterval(() => {
 		sweepBoardLocks();
 	}, LOCK_WATCH_MS);
@@ -654,7 +690,9 @@ function sweepBoardLocks(): void {
 		// A board whose release is still lingering is one this canvas is in the
 		// middle of telling the panes about. Saying "free" here would undo the
 		// linger and put every pane back to flickering through an agent's fan-out.
-		if (lingers().has(board)) continue;
+		if (lingers().has(board)) {
+			continue;
+		}
 		announce(board, boardLockState(board));
 	}
 }
@@ -693,10 +731,14 @@ export function onBoardLockChanged(sink: LockSink | null): void {
  * said.
  */
 export function forgetLockAnnouncements(): void {
-	for (const timer of lingers().values()) clearTimeout(timer);
+	for (const timer of lingers().values()) {
+		clearTimeout(timer);
+	}
 	lingers().clear();
 	announced().clear();
-	for (const [board, entry] of claims()) dropClaim(board, entry);
+	for (const [board, entry] of claims()) {
+		dropClaim(board, entry);
+	}
 	revocations().clear();
 	watchBoardLocks(null);
 }
@@ -760,9 +802,13 @@ async function attempt(
 	// canvas is not here to end; that one finds out when its own renewal is
 	// refused, which is the same discovery a renewal interval later.
 	const endsClaimHere = (taker: LockRecord): void => {
-		if (!revoke || who.kind !== "human") return;
+		if (!revoke || who.kind !== "human") {
+			return;
+		}
 		const claimHere = claims().get(board);
-		if (!claimHere || claimHere.holder.id === who.id) return;
+		if (!claimHere || claimHere.holder.id === who.id) {
+			return;
+		}
 		noteClaimRevoked(board, claimHere.holder, holderOf(taker));
 	};
 
@@ -820,7 +866,9 @@ async function attempt(
 			announceHeld(board, holderOf(record));
 			return { ok: true, record, created: true };
 		} catch (error) {
-			if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+			if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+				throw error;
+			}
 			// Somebody created it between our read and our create. Whatever they
 			// wrote is the answer, and if it is already lapsed we fall through and
 			// take it over the same way any other lapsed lease is taken over.
@@ -899,7 +947,9 @@ function readHandoff(file: string): LockHandoff | null {
 }
 
 function writeHandoff(board: string, record: LockRecord): void {
-	if (!record.committedHash) return;
+	if (!record.committedHash) {
+		return;
+	}
 	const file = handoffPathFor(board);
 	writeJsonRecord(file, {
 		id: record.id,
@@ -941,8 +991,12 @@ function readRecord(file: string): LockRecord | null {
 	}
 	try {
 		const parsed = JSON.parse(raw) as Partial<LockRecord>;
-		if (!parsed || typeof parsed.id !== "string" || typeof parsed.until !== "string") return null;
-		if (typeof parsed.token !== "string") return null;
+		if (!parsed || typeof parsed.id !== "string" || typeof parsed.until !== "string") {
+			return null;
+		}
+		if (typeof parsed.token !== "string") {
+			return null;
+		}
 		return parsed as LockRecord;
 	} catch {
 		// Half-written by an older archboard, or something else entirely. Nothing
@@ -985,7 +1039,9 @@ function writeJsonRecord(file: string, record: object, token = newToken()): void
 }
 
 function liveRecord(record: LockRecord | null): LockRecord | null {
-	if (!record) return null;
+	if (!record) {
+		return null;
+	}
 	const until = Date.parse(record.until);
 	return Number.isFinite(until) && until > Date.now() ? record : null;
 }
@@ -1052,7 +1108,9 @@ function announce(board: string, holder: LockHolder | null): void {
 	const stampOf = holder
 		? `${holder.id}|${holder.kind}|${holder.since}|${holder.reason ?? ""}|${holder.claimed ? "claim" : "write"}`
 		: "";
-	if (announced().get(board) === stampOf) return;
+	if (announced().get(board) === stampOf) {
+		return;
+	}
 	announced().set(board, stampOf);
 	sinkHolder().notify?.(board, holder);
 }
@@ -1087,21 +1145,30 @@ export function sleep(ms: number): Promise<void> {
 }
 
 function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promise<void> {
-	if (signal?.aborted) return Promise.reject(new BoardLockCancelledError(board));
+	if (signal?.aborted) {
+		return Promise.reject(new BoardLockCancelledError(board));
+	}
 	return new Promise((resolve, reject) => {
 		let timer: ReturnType<typeof setTimeout> | null = null;
 		const settle = (cancelled: boolean): void => {
-			if (timer === null) return;
+			if (timer === null) {
+				return;
+			}
 			clearTimeout(timer);
 			timer = null;
 			signal?.removeEventListener("abort", onAbort);
-			if (cancelled) reject(new BoardLockCancelledError(board));
-			else resolve();
+			if (cancelled) {
+				reject(new BoardLockCancelledError(board));
+			} else {
+				resolve();
+			}
 		};
 		const onAbort = (): void => settle(true);
 		timer = setTimeout(() => settle(false), ms);
 		signal?.addEventListener("abort", onAbort, { once: true });
-		if (signal?.aborted) settle(true);
+		if (signal?.aborted) {
+			settle(true);
+		}
 	});
 }
 

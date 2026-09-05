@@ -153,8 +153,9 @@ describe("coordinator logical replay ownership", () => {
 			arguments: { operation: "add", prompt },
 		});
 		await dispatch(h, ownerRequest);
-		for (let index = 0; index <= COORDINATOR_REPLAY_LIMITS.retainedWireCalls; index++)
+		for (let index = 0; index <= COORDINATOR_REPLAY_LIMITS.retainedWireCalls; index++) {
 			await dispatch(h, replayRequest(h, ownerRequest, `terminal-alias-${index}`));
+		}
 
 		expect(h.operations.calls.manageQueue).toHaveLength(1);
 		expect(h.dispatcher.replayState()).toEqual({

@@ -54,12 +54,19 @@ const contracts = introspectContracts(registry);
 const auditedPaths = audit.entries.map((entry) => entry.path);
 
 const unconstrained = (schema: unknown): boolean => {
-	if (!schema || typeof schema !== "object" || Array.isArray(schema)) return false;
+	if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
+		return false;
+	}
 	const value = schema as Record<string, unknown>;
 	const keys = Object.keys(value).filter((key) => key !== "$schema");
-	if (keys.length === 0) return true;
-	for (const keyword of ["anyOf", "oneOf", "allOf"])
-		if (Array.isArray(value[keyword]) && value[keyword].some(unconstrained)) return true;
+	if (keys.length === 0) {
+		return true;
+	}
+	for (const keyword of ["anyOf", "oneOf", "allOf"]) {
+		if (Array.isArray(value[keyword]) && value[keyword].some(unconstrained)) {
+			return true;
+		}
+	}
 	return (
 		value["type"] === "object" &&
 		Object.keys((value["properties"] as object) ?? {}).length === 0 &&
@@ -72,14 +79,22 @@ const unconstrained = (schema: unknown): boolean => {
 
 const bookkeepingFields = new Set(["success", "held"]);
 const meaningfulObjectBranches = (schema: unknown): boolean => {
-	if (!schema || typeof schema !== "object" || Array.isArray(schema)) return true;
+	if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
+		return true;
+	}
 	const value = schema as Record<string, unknown>;
 	for (const keyword of ["anyOf", "oneOf"]) {
 		const branches = value[keyword];
-		if (Array.isArray(branches)) return branches.every(meaningfulObjectBranches);
+		if (Array.isArray(branches)) {
+			return branches.every(meaningfulObjectBranches);
+		}
 	}
-	if (Array.isArray(value["allOf"])) return value["allOf"].every(meaningfulObjectBranches);
-	if (value["type"] !== "object") return true;
+	if (Array.isArray(value["allOf"])) {
+		return value["allOf"].every(meaningfulObjectBranches);
+	}
+	if (value["type"] !== "object") {
+		return true;
+	}
 	return ((value["required"] as readonly string[] | undefined) ?? []).some(
 		(field) => !bookkeepingFields.has(field),
 	);
@@ -130,8 +145,9 @@ describe("command contract audit", () => {
 		);
 		for (const entry of audit.entries.filter(
 			(candidate) => !compatibility.publicPaths.includes(candidate.path),
-		))
+		)) {
 			expect(entry.introducedBy?.length ?? entry.changedBy?.length, entry.path).toBeGreaterThan(0);
+		}
 		expect(compatibility.orderedCases.map((record) => record.name).toSorted()).toEqual(
 			[
 				"status-unavailable",
@@ -227,7 +243,9 @@ describe("command contract audit", () => {
 			expect(route?.childDiscovery?.options).toEqual(childDiscoveryOptions(spec));
 		}
 		for (const entry of registry) {
-			if (entry.bare?.kind !== "default") continue;
+			if (entry.bare?.kind !== "default") {
+				continue;
+			}
 			const child = entry.bare.child;
 			expect(
 				registry.some(
@@ -263,7 +281,9 @@ describe("command contract audit", () => {
 			if (structured && !namespace) {
 				expect(unconstrained(contract.result), contract.name).toBeFalse();
 				expect(meaningfulObjectBranches(contract.result), contract.name).toBeTrue();
-			} else expect(!structured || namespace, contract.name).toBeTrue();
+			} else {
+				expect(!structured || namespace, contract.name).toBeTrue();
+			}
 		}
 		for (const [path, fields] of [
 			["board info", ["success", "board", "identity", "elementCount", "version", "placeholder"]],
@@ -346,8 +366,9 @@ describe("command contract audit", () => {
 		expect(contractSource).toMatch(/export interface CommandOutcomeDeclaration\b/);
 		const execution =
 			contractSource.match(/export interface CommandExecution[^{]*\{([\s\S]*?)\n\}/)?.[1] ?? "";
-		for (const forbidden of ["exit:", "stream:", "presentation:", "description:", "held:"])
+		for (const forbidden of ["exit:", "stream:", "presentation:", "description:", "held:"]) {
 			expect(execution).not.toContain(forbidden);
+		}
 		const sourceFiles = visitTs(join(checkoutRoot, "src"));
 		const familySources = sourceFiles
 			.filter(
@@ -407,8 +428,9 @@ describe("command contract audit", () => {
 			"src/cli/commands/util.ts",
 			"src/cli/command-contract/lib/command-definitions.ts",
 			"src/cli/command-contract/testing.ts",
-		])
+		]) {
 			expect(existsSync(join(checkoutRoot, deleted)), deleted).toBe(false);
+		}
 		const sharedSchemas = readFileSync(
 			join(checkoutRoot, "src/cli/command-contract/schemas.ts"),
 			"utf8",
@@ -435,12 +457,14 @@ describe("command contract audit", () => {
 			"GeneratedHandlesSchema",
 			"WriteReceiptSchema",
 			"PendingArtifactSchema",
-		])
+		]) {
 			expect(sharedSchemas.includes(`export const ${schema}`), schema).toBeTrue();
-		for (const type of ["CommandContext", "CommandExecution", "PendingArtifact"])
+		}
+		for (const type of ["CommandContext", "CommandExecution", "PendingArtifact"]) {
 			expect(
 				new RegExp(`export (?:interface|type) ${type}\\b`).test(contractSource),
 				type,
 			).toBeTrue();
+		}
 	});
 });

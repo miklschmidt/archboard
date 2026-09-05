@@ -13,13 +13,15 @@ const encoder = new TextEncoder();
 function requireExactKeys(value: object, expected: readonly string[]): void {
 	const actual = Object.keys(value).toSorted();
 	const keys = [...expected].toSorted();
-	if (actual.length !== keys.length || actual.some((key, index) => key !== keys[index]))
+	if (actual.length !== keys.length || actual.some((key, index) => key !== keys[index])) {
 		throw new TypeError("Callback object does not match its closed schema.");
+	}
 }
 
 function requireAllowedKeys(value: object, allowed: readonly string[]): void {
-	if (Object.keys(value).some((key) => !allowed.includes(key)))
+	if (Object.keys(value).some((key) => !allowed.includes(key))) {
 		throw new TypeError("Callback object contains an unknown key.");
+	}
 }
 
 function utf8(value: string): number {
@@ -27,26 +29,32 @@ function utf8(value: string): number {
 }
 
 function requireString(value: string | null): string | null {
-	if (value !== null && (value.length === 0 || utf8(value) > CALLBACK_MAX_STRING_UTF8_BYTES))
+	if (value !== null && (value.length === 0 || utf8(value) > CALLBACK_MAX_STRING_UTF8_BYTES)) {
 		throw new TypeError("Callback string exceeds its UTF-8 limit.");
+	}
 	return value;
 }
 
 function requireId(value: string | null): string | null {
 	const checked = requireString(value);
-	if (checked !== null && utf8(checked) > CALLBACK_MAX_ID_UTF8_BYTES)
+	if (checked !== null && utf8(checked) > CALLBACK_MAX_ID_UTF8_BYTES) {
 		throw new TypeError("Callback ID exceeds its UTF-8 limit.");
+	}
 	return checked;
 }
 
 function requireArray(values: readonly string[], entryBytes: number): readonly string[] {
-	if (values.length > CALLBACK_MAX_ARRAY_ENTRIES)
+	if (values.length > CALLBACK_MAX_ARRAY_ENTRIES) {
 		throw new TypeError("Callback array exceeds its entry limit.");
+	}
 	return values.map((value) => {
 		const checked = requireString(value);
-		if (checked === null) throw new TypeError("Callback array entries cannot be null.");
-		if (utf8(checked) > entryBytes)
+		if (checked === null) {
+			throw new TypeError("Callback array entries cannot be null.");
+		}
+		if (utf8(checked) > entryBytes) {
 			throw new TypeError("Callback array entry exceeds its UTF-8 limit.");
+		}
 		return checked;
 	});
 }
@@ -100,7 +108,9 @@ function operationRecord(record: EpochOperationRecord) {
 }
 
 function proof(value: ThreadLinkEpochProof | null | undefined) {
-	if (value === null || value === undefined) return null;
+	if (value === null || value === undefined) {
+		return null;
+	}
 	if ("record" in value) {
 		const execution: EpochExecutionProof = value;
 		return {
@@ -139,7 +149,7 @@ function correlation(value: CoordinatorCallbackCorrelation) {
 		"operationId",
 		"provenance",
 	]);
-	if (call !== null)
+	if (call !== null) {
 		requireExactKeys(call, [
 			"child",
 			"epoch",
@@ -150,7 +160,8 @@ function correlation(value: CoordinatorCallbackCorrelation) {
 			"tool",
 			"manifestHash",
 		]);
-	if (generation !== null)
+	}
+	if (generation !== null) {
 		requireExactKeys(generation, [
 			"childId",
 			"epoch",
@@ -159,6 +170,7 @@ function correlation(value: CoordinatorCallbackCorrelation) {
 			"browserSessionId",
 			"browserCorrelationId",
 		]);
+	}
 	return {
 		operationId: requireString(value.operationId),
 		childId: value.childId,
@@ -241,14 +253,16 @@ function callbackDocument(callback: CoordinatorCallback) {
 				"failed",
 				"outcome_unknown",
 			].includes(callback.type)
-		)
+		) {
 			throw new TypeError("Unknown operation callback discriminant.");
+		}
 		if (
 			!["delegate_to_workhorse", "manage_workhorse_queue", "steer_workhorse"].includes(
 				callback.operation,
 			)
-		)
+		) {
 			throw new TypeError("Unknown callback operation.");
+		}
 		const expectedOutcome =
 			callback.type === "accepted"
 				? "pending"
@@ -257,19 +271,23 @@ function callbackDocument(callback: CoordinatorCallback) {
 					: callback.type === "failed"
 						? callback.outcome
 						: "delivered";
-		if (callback.outcome !== expectedOutcome)
+		if (callback.outcome !== expectedOutcome) {
 			throw new TypeError("Operation callback discriminant and outcome do not match.");
+		}
 		if (callback.operation === "manage_workhorse_queue") {
 			const expectedRpc = queueRpc(callback.queueOperation);
-			if (expectedRpc === null || callback.rpc !== expectedRpc)
+			if (expectedRpc === null || callback.rpc !== expectedRpc) {
 				throw new TypeError("Operation callback queue tuple does not match.");
+			}
 		} else if (callback.queueOperation !== null) {
 			throw new TypeError("Non-queue callback has a queue operation.");
 		}
-		if (callback.operation === "delegate_to_workhorse" && callback.rpc !== "turn/start")
+		if (callback.operation === "delegate_to_workhorse" && callback.rpc !== "turn/start") {
 			throw new TypeError("Delegate callback RPC does not match.");
-		if (callback.operation === "steer_workhorse" && callback.rpc !== "turn/steer")
+		}
+		if (callback.operation === "steer_workhorse" && callback.rpc !== "turn/steer") {
 			throw new TypeError("Steer callback RPC does not match.");
+		}
 		return {
 			schema: CALLBACK_SCHEMA,
 			kind: callback.kind,
@@ -291,8 +309,9 @@ function callbackDocument(callback: CoordinatorCallback) {
 		"threadLinkReason",
 		"semantic",
 	]);
-	if (!["change", "focus", "selection"].includes(callback.type))
+	if (!["change", "focus", "selection"].includes(callback.type)) {
 		throw new TypeError("Unknown semantic callback discriminant.");
+	}
 	requireExactKeys(callback.semantic, [
 		"feedId",
 		"sequence",
@@ -329,8 +348,12 @@ function callbackDocument(callback: CoordinatorCallback) {
 }
 
 function canonicalJson(value: unknown): string {
-	if (value === null || typeof value !== "object") return JSON.stringify(value);
-	if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+	if (value === null || typeof value !== "object") {
+		return JSON.stringify(value);
+	}
+	if (Array.isArray(value)) {
+		return `[${value.map(canonicalJson).join(",")}]`;
+	}
 	const entries = Object.entries(value).toSorted(([left], [right]) => left.localeCompare(right));
 	return `{${entries
 		.map(([key, child]) => `${JSON.stringify(key)}:${canonicalJson(child)}`)
@@ -339,7 +362,8 @@ function canonicalJson(value: unknown): string {
 
 export function encodeCoordinatorCallback(callback: CoordinatorCallback): string {
 	const text = canonicalJson(callbackDocument(callback));
-	if (utf8(text) > CALLBACK_MAX_UTF8_BYTES)
+	if (utf8(text) > CALLBACK_MAX_UTF8_BYTES) {
 		throw new TypeError("Callback exceeds its UTF-8 message limit.");
+	}
 	return text;
 }

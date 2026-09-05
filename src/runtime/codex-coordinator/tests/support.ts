@@ -165,7 +165,9 @@ class FakeEpoch implements CoordinatorEpochPort {
 	}
 
 	stageOperation(input: EpochStageInput): EpochTransaction {
-		if (this.stageError !== null) throw this.stageError;
+		if (this.stageError !== null) {
+			throw this.stageError;
+		}
 		const record: EpochOperationRecord = {
 			correlation: {
 				childId: input.childId,
@@ -203,7 +205,9 @@ class FakeEpoch implements CoordinatorEpochPort {
 		transaction: EpochTransaction,
 		confirmation?: EpochConfirmation,
 	): EpochOperationRecord {
-		if (this.commitError !== null) throw this.commitError;
+		if (this.commitError !== null) {
+			throw this.commitError;
+		}
 		const record = this.recordFor(transaction);
 		return this.replace({
 			...record,
@@ -258,7 +262,9 @@ class FakeEpoch implements CoordinatorEpochPort {
 				candidate.status === "committed" &&
 				candidate.outcome === "delivered",
 		);
-		if (record === undefined) throw new Error("fake epoch proof unavailable");
+		if (record === undefined) {
+			throw new Error("fake epoch proof unavailable");
+		}
 		return { record, manifestRevision: this.revision };
 	}
 
@@ -267,7 +273,9 @@ class FakeEpoch implements CoordinatorEpochPort {
 			(candidate) =>
 				candidate.correlation.operationId === transaction.record.correlation.operationId,
 		);
-		if (record === undefined) throw new Error("fake epoch transaction missing");
+		if (record === undefined) {
+			throw new Error("fake epoch transaction missing");
+		}
 		return record;
 	}
 
@@ -275,7 +283,9 @@ class FakeEpoch implements CoordinatorEpochPort {
 		const index = this.records.findIndex(
 			(candidate) => candidate.correlation.operationId === record.correlation.operationId,
 		);
-		if (index < 0) throw new Error("fake epoch record missing");
+		if (index < 0) {
+			throw new Error("fake epoch record missing");
+		}
 		this.records[index] = record;
 		this.revision += 1;
 		return record;
@@ -291,7 +301,9 @@ class FakeThreadLink implements CoordinatorThreadLinkPort {
 		target: CoordinatorThreadLinkTarget,
 	): Promise<CoordinatorThreadLinkClassification> {
 		this.calls.push(target);
-		if (this.outcome instanceof Error) throw this.outcome;
+		if (this.outcome instanceof Error) {
+			throw this.outcome;
+		}
 		return this.outcome;
 	}
 }
@@ -344,7 +356,9 @@ class FakeSession implements CoordinatorSessionPort {
 		params: SessionParams<"thread/start">,
 	): Promise<SessionResponse<"thread/start">> {
 		this.startParams.push(params);
-		if (this.startError !== null) throw this.startError;
+		if (this.startError !== null) {
+			throw this.startError;
+		}
 		return this.started;
 	}
 
@@ -352,7 +366,9 @@ class FakeSession implements CoordinatorSessionPort {
 		params: SessionParams<"thread/settings/update">,
 	): Promise<SessionResponse<"thread/settings/update">> {
 		this.updateParams.push(params);
-		if (this.updateError !== null) throw this.updateError;
+		if (this.updateError !== null) {
+			throw this.updateError;
+		}
 		if (this.deferSettingsUpdate) {
 			await new Promise<void>((resolve) => {
 				this.deferredSettingsUpdateRelease = resolve;
@@ -361,7 +377,9 @@ class FakeSession implements CoordinatorSessionPort {
 		if (this.staleNotificationAuthority !== null) {
 			this.sendSettingsNotification(this.staleNotificationAuthority);
 		}
-		if (this.shouldEmitSettingsNotification) this.sendSettingsNotification(this.authority);
+		if (this.shouldEmitSettingsNotification) {
+			this.sendSettingsNotification(this.authority);
+		}
 		return {};
 	}
 

@@ -118,7 +118,9 @@ export interface BoardContent {
 export function boardFilesMessage(content: BoardContent): {
 	files?: Record<string, ExcalidrawFile>;
 } {
-	if (content.files.size === 0) return {};
+	if (content.files.size === 0) {
+		return {};
+	}
 	return { files: Object.fromEntries(content.files) };
 }
 
@@ -166,7 +168,9 @@ export function ingestScene(
 	const elements = new Map<string, ServerElement>();
 	for (const raw of sceneElements) {
 		const element = validatePersistedBoardElement(raw, context);
-		if (elements.has(element.id)) throw new Error(`${context}: duplicate element id ${element.id}`);
+		if (elements.has(element.id)) {
+			throw new Error(`${context}: duplicate element id ${element.id}`);
+		}
 		elements.set(element.id, element);
 	}
 
@@ -178,9 +182,13 @@ export function ingestScene(
 	const files = new Map<string, ExcalidrawFile>();
 	if (sceneFiles && typeof sceneFiles === "object") {
 		for (const [id, raw] of Object.entries(sceneFiles)) {
-			if (!raw || typeof raw !== "object") continue;
+			if (!raw || typeof raw !== "object") {
+				continue;
+			}
 			const file = raw as Partial<ExcalidrawFile>;
-			if (typeof file.dataURL !== "string") continue;
+			if (typeof file.dataURL !== "string") {
+				continue;
+			}
 			files.set(id, {
 				id,
 				dataURL: file.dataURL,
@@ -236,7 +244,9 @@ export function readNoteFile(file: string, root = requireVaultRoot()): NoteFile 
 		// so decoding is a separate step that cannot get between the two.
 		bytes = fs.readFileSync(file);
 	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+			return null;
+		}
 		throw error;
 	}
 	const raw = bytes.toString("utf-8");
@@ -276,7 +286,9 @@ export function readBoardFile(
 	root = requireVaultRoot(),
 ): LoadedBoard | null {
 	const note = readNoteFile(vaultPathFor(identity, root), root);
-	if (!note) return null;
+	if (!note) {
+		return null;
+	}
 
 	const asked = makeIdentity({ board: identity.board, variant: identity.variant });
 	const declared = identityFromFrontmatter(note.raw);
@@ -304,7 +316,9 @@ export function readBoardFile(
 /** The elements and images a note holds, plus the bytes they came out of. */
 export function readNote(file: string): BoardContent | null {
 	const note = readNoteFile(file);
-	if (!note) return null;
+	if (!note) {
+		return null;
+	}
 	const scene = JSON.parse(note.sceneJson);
 	const { elements, files } = ingestScene(
 		Array.isArray(scene) ? scene : (scene.elements ?? []),
@@ -344,7 +358,9 @@ function contentFromLoadedBoard(loaded: LoadedBoard): BoardContent {
 			version: loaded.version,
 		};
 	} catch (error) {
-		if (error instanceof BoardResolutionError) throw error;
+		if (error instanceof BoardResolutionError) {
+			throw error;
+		}
 		throw new BoardResolutionError(
 			boardKey(loaded.identity),
 			"malformed",
@@ -542,7 +558,9 @@ export function createBoard(identity: BoardIdentity): BoardAccess {
 	try {
 		writeFileAtomicExclusive(file, stamped.bytes);
 	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+		if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+			throw error;
+		}
 		throw new BoardResolutionError(
 			key,
 			"conflicting",
@@ -593,13 +611,17 @@ export function projectBoardRenderSnapshot(scene: unknown): BoardInspectionSnaps
 		: sceneRecord
 			? Reflect.get(sceneRecord, "elements")
 			: undefined;
-	if (!Array.isArray(elements)) return null;
+	if (!Array.isArray(elements)) {
+		return null;
+	}
 	const ids = new Set<string>();
 	const projected: ServerElement[] = [];
 	for (const raw of elements) {
 		try {
 			const element = validatePersistedBoardElement(raw, "inspection scene");
-			if (ids.has(element.id)) return null;
+			if (ids.has(element.id)) {
+				return null;
+			}
 			ids.add(element.id);
 			projected.push(element);
 		} catch {
@@ -612,10 +634,14 @@ export function projectBoardRenderSnapshot(scene: unknown): BoardInspectionSnaps
 		return null;
 	}
 	const rawFiles = sceneRecord ? (Reflect.get(sceneRecord, "files") ?? {}) : {};
-	if (!rawFiles || typeof rawFiles !== "object" || Array.isArray(rawFiles)) return null;
+	if (!rawFiles || typeof rawFiles !== "object" || Array.isArray(rawFiles)) {
+		return null;
+	}
 	const files: Record<string, ExcalidrawFile> = {};
 	for (const [id, raw] of Object.entries(rawFiles)) {
-		if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+		if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+			return null;
+		}
 		const fileId = Reflect.get(raw, "id");
 		const dataURL = Reflect.get(raw, "dataURL");
 		const mimeType = Reflect.get(raw, "mimeType");
@@ -626,8 +652,9 @@ export function projectBoardRenderSnapshot(scene: unknown): BoardInspectionSnaps
 			typeof mimeType !== "string" ||
 			typeof created !== "number" ||
 			!Number.isFinite(created)
-		)
+		) {
 			return null;
+		}
 		files[id] = { id, dataURL, mimeType, created };
 	}
 	const rawAppState = sceneRecord ? Reflect.get(sceneRecord, "appState") : undefined;
@@ -645,18 +672,24 @@ export function projectBoardRenderSnapshot(scene: unknown): BoardInspectionSnaps
 }
 
 function hydratedFileFingerprintProjection(scene: unknown): readonly unknown[] {
-	if (Array.isArray(scene) || !scene || typeof scene !== "object") return [];
+	if (Array.isArray(scene) || !scene || typeof scene !== "object") {
+		return [];
+	}
 	const sceneRecord = scene as Record<string, unknown>;
-	if (!Object.hasOwn(sceneRecord, "files")) return [];
+	if (!Object.hasOwn(sceneRecord, "files")) {
+		return [];
+	}
 	const rawFiles = sceneRecord["files"];
-	if (!rawFiles || typeof rawFiles !== "object" || Array.isArray(rawFiles))
+	if (!rawFiles || typeof rawFiles !== "object" || Array.isArray(rawFiles)) {
 		return [["invalid-files-value", rawFiles]];
+	}
 	return Object.keys(rawFiles)
 		.toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0))
 		.map((id) => {
 			const raw = (rawFiles as Record<string, unknown>)[id];
-			if (!raw || typeof raw !== "object" || Array.isArray(raw))
+			if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
 				return [id, ["invalid-file-value", raw]];
+			}
 			const file = raw as Record<string, unknown>;
 			const field = (name: string) =>
 				Object.hasOwn(file, name) ? ["present", file[name]] : ["missing"];
@@ -722,8 +755,12 @@ export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapsho
  */
 export function readBoardContent(board: BoardState): BoardContent {
 	const hold = holdOn(boardKey(board.identity));
-	if (hold) return copyHeldContent(hold.content);
-	if (!board.file) return emptyContent();
+	if (hold) {
+		return copyHeldContent(hold.content);
+	}
+	if (!board.file) {
+		return emptyContent();
+	}
 	return readNote(board.file) ?? emptyContent();
 }
 
@@ -804,8 +841,12 @@ export function renderContent(
  */
 function settleRawText(content: BoardContent): void {
 	for (const element of content.elements.values()) {
-		if (element.type !== "text" || element.isDeleted) continue;
-		if (typeof element.rawText === "string" && element.rawText !== "") continue;
+		if (element.type !== "text" || element.isDeleted) {
+			continue;
+		}
+		if (typeof element.rawText === "string" && element.rawText !== "") {
+			continue;
+		}
 		element.rawText = element.originalText || element.text;
 	}
 }
@@ -814,7 +855,9 @@ function settleBlockIds(content: BoardContent): void {
 	const foreign = Array.from(content.elements.values()).filter(
 		(element) => element.type === "text" && !element.isDeleted && !isBlockId(element.id),
 	);
-	if (foreign.length === 0) return;
+	if (foreign.length === 0) {
+		return;
+	}
 	const elements = Array.from(content.elements.values());
 	const taken = { has: (id: string) => content.elements.has(id) };
 	for (const element of foreign) {
@@ -844,14 +887,22 @@ function settleBlockIds(content: BoardContent): void {
  */
 function settleBoundArrows(content: BoardContent): void {
 	for (const arrow of content.elements.values()) {
-		if (arrow.type !== "arrow" && arrow.type !== "line") continue;
+		if (arrow.type !== "arrow" && arrow.type !== "line") {
+			continue;
+		}
 		const ends = [arrow.startBinding?.elementId, arrow.endBinding?.elementId];
 		for (const shapeId of ends) {
-			if (typeof shapeId !== "string") continue;
+			if (typeof shapeId !== "string") {
+				continue;
+			}
 			const shape = content.elements.get(shapeId);
-			if (!shape || shape.id === arrow.id) continue;
+			if (!shape || shape.id === arrow.id) {
+				continue;
+			}
 			const bound = Array.isArray(shape.boundElements) ? shape.boundElements : [];
-			if (bound.some((entry) => entry?.id === arrow.id)) continue;
+			if (bound.some((entry) => entry?.id === arrow.id)) {
+				continue;
+			}
 			shape.boundElements = [...bound, { id: arrow.id, type: "arrow" as const }];
 		}
 	}
@@ -933,13 +984,17 @@ export interface ForeignWrite {
  * that is the `unseen` half of the same refusal.
  */
 export function foreignWriteTo(file: string, destination: Buffer | undefined): ForeignWrite | null {
-	if (!destination) return null;
+	if (!destination) {
+		return null;
+	}
 	const actualHash = hashBoardBytes(destination);
 	// Asked of the whole registry rather than of one board, because a baseline
 	// belongs to a path: `board save --as other` writes a file some other open
 	// board is the one that read.
 	const expected = baselineForFile(file);
-	if (expected?.hash === actualHash) return null;
+	if (expected?.hash === actualHash) {
+		return null;
+	}
 	// Read only once the bytes are already known to differ: the version answers
 	// "who wrote this", which is a question that only arises after the hash has
 	// said somebody did. The hash still decides, and this only ever describes.

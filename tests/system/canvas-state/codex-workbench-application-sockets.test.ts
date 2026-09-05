@@ -47,8 +47,12 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 			requestId?: unknown;
 			type?: unknown;
 		};
-		if (message.type === "initial_elements") initial.resolve();
-		if (typeof message.requestId !== "string") return;
+		if (message.type === "initial_elements") {
+			initial.resolve();
+		}
+		if (typeof message.requestId !== "string") {
+			return;
+		}
 		pending.get(message.requestId)?.(message);
 		pending.delete(message.requestId);
 	});
@@ -68,7 +72,9 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 			return result;
 		},
 		async close() {
-			if (socket.readyState === WebSocket.CLOSED) return;
+			if (socket.readyState === WebSocket.CLOSED) {
+				return;
+			}
 			await new Promise<void>((resolveClose) => {
 				socket.once("close", resolveClose);
 				socket.close();
@@ -220,7 +226,9 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 				replacement!.once("close", () => resolveClosed()),
 			);
 			const sendRecords = await waitFor(() => {
-				if (!existsSync(sendLog)) return undefined;
+				if (!existsSync(sendLog)) {
+					return undefined;
+				}
 				const records = readFileSync(sendLog, "utf8").trim().split("\n");
 				return records.length >= 2 ? records : undefined;
 			}, "the replacement initial send attempt");

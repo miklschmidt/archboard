@@ -30,7 +30,9 @@ describe("inspection record decoding", () => {
 		const issues = ["missing-id", "empty-string-id", "non-string-id"] as const;
 		for (const [index, rawId] of [undefined, "", 42].entries()) {
 			const record = connector({ id: rawId });
-			if (rawId === undefined) delete record["id"];
+			if (rawId === undefined) {
+				delete record["id"];
+			}
 			const report = inspectBoard([record]);
 			const finding = report.findings.find((item) => item.reason === "invalid-element-identity");
 			expect(finding?.elements[0]).toEqual({ id: null, type: "arrow", sourceIndex: 0 });
@@ -77,7 +79,8 @@ describe("inspection record decoding", () => {
 			expect(report.findings.some((finding) => finding.reason === reason)).toBe(true);
 			expect(report.coverage).toBe("indeterminate");
 		}
-		for (const binding of [null, false, {}, { elementId: 1 }, { elementId: "missing" }])
+		for (const binding of [null, false, {}, { elementId: 1 }, { elementId: "missing" }]) {
 			expect(() => inspectBoard([connector({ startBinding: binding })])).not.toThrow();
+		}
 	});
 });

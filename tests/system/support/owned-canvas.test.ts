@@ -59,7 +59,9 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "namespace") {
 		hostname: "127.0.0.1",
 		port: Number(process.env["PORT"]),
 		fetch(request) {
-			if (new URL(request.url).pathname === "/health") return Response.json({ pid: process.pid });
+			if (new URL(request.url).pathname === "/health") {
+				return Response.json({ pid: process.pid });
+			}
 			return Response.json({
 				home,
 				xdgConfig,
@@ -91,7 +93,9 @@ if (process.env["ARCHBOARD_FAILED_REAP_CHILD"] === "1") {
 		kill(): boolean {
 			if (this.pid !== 1_002 || allowFailedGenerationExit) {
 				queueMicrotask(() => {
-					if (this.exitCode !== null) return;
+					if (this.exitCode !== null) {
+						return;
+					}
 					this.exitCode = 0;
 					this.emit("exit", 0, null);
 				});
@@ -141,7 +145,9 @@ const { isOwnedCanvasNamespaceRoot, processExists, startOwnedCanvas, waitForProc
 describe("owned canvas direct lifecycle", () => {
 	const emergencyVaults = new Set<string>();
 	afterAll(() => {
-		for (const vault of emergencyVaults) fs.rmSync(vault, { recursive: true, force: true });
+		for (const vault of emergencyVaults) {
+			fs.rmSync(vault, { recursive: true, force: true });
+		}
 	});
 
 	test("only accepts exact disposable namespace roots for emergency removal", () => {
@@ -171,7 +177,9 @@ describe("owned canvas direct lifecycle", () => {
 			await waitForProcessExit(child.pid);
 			expect(await child.exited).toBe(0);
 		} finally {
-			if (child.exitCode === null) child.kill("SIGKILL");
+			if (child.exitCode === null) {
+				child.kill("SIGKILL");
+			}
 			await child.exited;
 		}
 	});
@@ -247,8 +255,9 @@ describe("owned canvas direct lifecycle", () => {
 			xdgState: path.join(callerRoot, "xdg-state"),
 			temporary: path.join(callerRoot, "tmp"),
 		};
-		for (const directory of Object.values(callerPaths))
+		for (const directory of Object.values(callerPaths)) {
 			fs.mkdirSync(directory, { recursive: true });
+		}
 		const sentinel = path.join(callerRoot, "caller-owned");
 		fs.writeFileSync(sentinel, "keep\n");
 		const env = {
@@ -316,10 +325,15 @@ describe("owned canvas direct lifecycle", () => {
 			}
 		} finally {
 			await Promise.allSettled([second?.dispose(), first?.dispose()]);
-			if (priorAmbientSentinel === undefined) delete process.env[ambientSentinelName];
-			else process.env[ambientSentinelName] = priorAmbientSentinel;
+			if (priorAmbientSentinel === undefined) {
+				delete process.env[ambientSentinelName];
+			} else {
+				process.env[ambientSentinelName] = priorAmbientSentinel;
+			}
 		}
-		for (const root of namespaceRoots) expect(fs.existsSync(root)).toBeFalse();
+		for (const root of namespaceRoots) {
+			expect(fs.existsSync(root)).toBeFalse();
+		}
 		expect(fs.existsSync(sentinel)).toBeTrue();
 		fs.rmSync(callerRoot, { recursive: true, force: true });
 	});

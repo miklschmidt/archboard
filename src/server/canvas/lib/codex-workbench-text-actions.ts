@@ -12,8 +12,9 @@ import {
 import type { CodexWorkbenchComponents } from "./codex-workbench.js";
 
 function browserLeaseThreadId(context: BrowserActionContext): ThreadId {
-	if (context.link.threadId === null)
+	if (context.link.threadId === null) {
 		throw new Error("A text command requires the exact executable lease thread.");
+	}
 	return context.link.threadId;
 }
 
@@ -45,12 +46,13 @@ export function createCanvasCanonicalTextActions(options: {
 			// Starting requires authoritative idle metadata, not hydrated history:
 			// the pinned server cannot list turns for a newly created thread.
 			const { thread } = await options.session.threadRead({ threadId, includeTurns: false });
-			if (thread.id !== threadId || thread.status.type !== "idle")
+			if (thread.id !== threadId || thread.status.type !== "idle") {
 				throw new CodexWorkbenchGatewayError(
 					"invalid_command",
 					"Starting a turn requires an idle workhorse; steer the in-progress turn instead.",
 					{ outcome: "not_delivered" },
 				);
+			}
 			const { wire } = issue();
 			const canonical = createTurnStartParams({
 				threadId,
@@ -68,12 +70,13 @@ export function createCanvasCanonicalTextActions(options: {
 		steer: async (command, context) => {
 			const threadId = browserLeaseThreadId(context);
 			const { thread } = await options.session.threadRead({ threadId, includeTurns: false });
-			if (thread.id !== threadId || thread.status.type !== "active")
+			if (thread.id !== threadId || thread.status.type !== "active") {
 				throw new CodexWorkbenchGatewayError(
 					"invalid_command",
 					"Steering requires the exact active workhorse.",
 					{ outcome: "not_delivered" },
 				);
+			}
 			const { wire } = issue();
 			const canonical = createTurnSteerParams({
 				threadId,

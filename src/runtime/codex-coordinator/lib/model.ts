@@ -53,7 +53,9 @@ export async function listCoordinatorModels(
 		}
 		models.push(...page.data);
 		const nextCursor = page.nextCursor;
-		if (nextCursor === null) return Object.freeze([...models]);
+		if (nextCursor === null) {
+			return Object.freeze([...models]);
+		}
 		if (nextCursor === cursor || seenCursors.has(nextCursor)) {
 			throw new CodexCoordinatorError(
 				"repeated_cursor",
@@ -135,16 +137,26 @@ function namespaceForThreadStart(namespace: CanonicalNamespace): ThreadStartName
 }
 
 function coordinatorJsonValue(value: unknown): CoordinatorJsonValue {
-	if (value === null) return null;
-	if (typeof value === "boolean" || typeof value === "string") return value;
+	if (value === null) {
+		return null;
+	}
+	if (typeof value === "boolean" || typeof value === "string") {
+		return value;
+	}
 	if (typeof value === "number") {
-		if (Number.isFinite(value)) return value;
+		if (Number.isFinite(value)) {
+			return value;
+		}
 		throw new TypeError("Coordinator tool schemas must contain finite JSON numbers.");
 	}
-	if (Array.isArray(value)) return value.map(coordinatorJsonValue);
+	if (Array.isArray(value)) {
+		return value.map(coordinatorJsonValue);
+	}
 	if (typeof value === "object") {
 		const object: { [key: string]: CoordinatorJsonValue } = {};
-		for (const [key, child] of Object.entries(value)) object[key] = coordinatorJsonValue(child);
+		for (const [key, child] of Object.entries(value)) {
+			object[key] = coordinatorJsonValue(child);
+		}
 		return object;
 	}
 	throw new TypeError("Coordinator tool schemas must contain JSON values.");

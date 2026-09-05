@@ -66,13 +66,19 @@ function fixture(events: readonly (CanvasStartupProtocolEvent | null)[]) {
 		},
 		signalCanvas: (signal) => {
 			canvasSignals.push(signal);
-			if (signal === "SIGSTOP") canvasStopped = true;
-			if (signal === "SIGKILL") canvasLive = false;
+			if (signal === "SIGSTOP") {
+				canvasStopped = true;
+			}
+			if (signal === "SIGKILL") {
+				canvasLive = false;
+			}
 		},
 		inspectGroup: () => (groupLive ? "owned" : "quiescent"),
 		signalGroup: (_identity, signal) => {
 			groupSignals.push(signal);
-			if (signal === "SIGKILL") groupLive = false;
+			if (signal === "SIGKILL") {
+				groupLive = false;
+			}
 		},
 	};
 	return {
@@ -80,7 +86,9 @@ function fixture(events: readonly (CanvasStartupProtocolEvent | null)[]) {
 		protocol: {
 			next: (maxWaitMs: number) => {
 				const event = pending.shift();
-				if (event !== undefined) return Promise.resolve(event);
+				if (event !== undefined) {
+					return Promise.resolve(event);
+				}
 				now += maxWaitMs;
 				return Promise.resolve(null);
 			},
@@ -204,13 +212,19 @@ describe("failed public canvas cleanup", () => {
 				canvasStopped: () => canvasStopped,
 				waitForCanvasExit: () => Promise.resolve(canvasExited),
 				signalCanvas: (signal) => {
-					if (signal === "SIGSTOP") canvasStopped = true;
-					if (signal === "SIGKILL") canvasExited = true;
+					if (signal === "SIGSTOP") {
+						canvasStopped = true;
+					}
+					if (signal === "SIGKILL") {
+						canvasExited = true;
+					}
 				},
 				inspectGroup: (identity) => (liveGroups.has(identity.pgid) ? "owned" : "quiescent"),
 				signalGroup: (identity, signal) => {
 					signals.push([identity.pgid, signal]);
-					if (signal === "SIGKILL") liveGroups.delete(identity.pgid);
+					if (signal === "SIGKILL") {
+						liveGroups.delete(identity.pgid);
+					}
 				},
 			},
 		});
@@ -251,7 +265,9 @@ describe("failed public canvas cleanup", () => {
 				waitForCanvasExit: () => Promise.resolve(false),
 				signalCanvas: (signal) => {
 					canvasSignals.push(signal);
-					if (signal === "SIGSTOP") canvasStopped = true;
+					if (signal === "SIGSTOP") {
+						canvasStopped = true;
+					}
 				},
 				inspectGroup: (identity) => {
 					inspectedGroups.push(identity.pgid);
@@ -259,8 +275,9 @@ describe("failed public canvas cleanup", () => {
 				},
 				signalGroup: (identity, signal) => {
 					groupSignals.push([identity.pgid, signal]);
-					if (identity === group && signal === "SIGTERM")
+					if (identity === group && signal === "SIGTERM") {
 						throw new Error("injected first-group signalling failure");
+					}
 				},
 			},
 		});
@@ -302,7 +319,9 @@ describe("failed public canvas cleanup", () => {
 				waitForCanvasExit: () => Promise.resolve(false),
 				signalCanvas: (signal) => {
 					canvasSignals.push(signal);
-					if (signal === "SIGSTOP") canvasStopped = true;
+					if (signal === "SIGSTOP") {
+						canvasStopped = true;
+					}
 				},
 				inspectGroup: (identity) => (identity === group ? "reused" : "unproven"),
 				signalGroup: () => {},
@@ -377,7 +396,9 @@ describe("failed public canvas cleanup", () => {
 					inspectGroup: terminalCase.inspect,
 					signalGroup: (_identity, signal) => {
 						groupSignals.push(signal);
-						if (terminalCase.signalError) throw new Error("injected signalling failure");
+						if (terminalCase.signalError) {
+							throw new Error("injected signalling failure");
+						}
 					},
 				},
 			});

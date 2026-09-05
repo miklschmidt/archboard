@@ -62,16 +62,26 @@ function generationReason(
 	epoch: ChildEpoch,
 	target: DeliveryTarget,
 ): CodexThreadContextDeliveryReason | null {
-	if (childId !== target.childId) return "stale_child";
-	if (epoch !== target.epoch) return "prior_epoch";
+	if (childId !== target.childId) {
+		return "stale_child";
+	}
+	if (epoch !== target.epoch) {
+		return "prior_epoch";
+	}
 	return null;
 }
 
 function epochErrorReason(error: unknown): CodexThreadContextDeliveryReason {
 	if (error instanceof CodexEpochError) {
-		if (error.code === "stale_child") return "stale_child";
-		if (error.code === "prior_epoch") return "prior_epoch";
-		if (error.code === "unknown_provenance") return "unknown_provenance";
+		if (error.code === "stale_child") {
+			return "stale_child";
+		}
+		if (error.code === "prior_epoch") {
+			return "prior_epoch";
+		}
+		if (error.code === "unknown_provenance") {
+			return "unknown_provenance";
+		}
 	}
 	return "thread_revalidation_failed";
 }
@@ -81,18 +91,34 @@ function linkReason(link: ThreadLinkSnapshot): CodexThreadContextDeliveryReason 
 }
 
 function sameSource(left: ThreadLink["source"], right: ThreadLink["source"]): boolean {
-	if (typeof left === "string" || typeof right === "string") return left === right;
+	if (typeof left === "string" || typeof right === "string") {
+		return left === right;
+	}
 	return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function sameLink(left: ThreadLinkSnapshot, right: ThreadLinkSnapshot): boolean {
-	if (left.state !== right.state) return false;
-	if (left.state === "unbound" || right.state === "unbound") return true;
-	if (left.threadId !== right.threadId) return false;
-	if (left.source === null || right.source === null) return left.source === right.source;
-	if (!sameSource(left.source, right.source)) return false;
-	if (left.status !== right.status || left.loaded !== right.loaded) return false;
-	if (left.canAcceptDirectInput !== right.canAcceptDirectInput) return false;
+	if (left.state !== right.state) {
+		return false;
+	}
+	if (left.state === "unbound" || right.state === "unbound") {
+		return true;
+	}
+	if (left.threadId !== right.threadId) {
+		return false;
+	}
+	if (left.source === null || right.source === null) {
+		return left.source === right.source;
+	}
+	if (!sameSource(left.source, right.source)) {
+		return false;
+	}
+	if (left.status !== right.status || left.loaded !== right.loaded) {
+		return false;
+	}
+	if (left.canAcceptDirectInput !== right.canAcceptDirectInput) {
+		return false;
+	}
 	if (left.state === "executable" && right.state === "executable") {
 		return left.childId === right.childId && left.epoch === right.epoch;
 	}
@@ -129,9 +155,13 @@ function executionReason(
 	identity: CodexThreadContextDeliveryOptions["identity"],
 	target: DeliveryTarget,
 ): CodexThreadContextDeliveryReason | null {
-	if (execution === null) return "child_exit";
+	if (execution === null) {
+		return "child_exit";
+	}
 	const currentGeneration = generationReason(execution.childId, execution.epoch, target);
-	if (currentGeneration !== null) return currentGeneration;
+	if (currentGeneration !== null) {
+		return currentGeneration;
+	}
 	if (!identity.validator.isCurrentEpoch(execution.childId, execution.epoch)) {
 		return (
 			generationReason(execution.childId, execution.epoch, {
@@ -149,18 +179,30 @@ function targetLinkReason(
 	link: ThreadLinkSnapshot,
 	target: DeliveryTarget,
 ): CodexThreadContextDeliveryReason | null {
-	if (link.state !== "executable") return linkReason(link);
-	if (link.threadId !== target.threadId) return "link_changed";
-	if (link.childId !== target.childId) return "stale_child";
-	if (link.epoch !== target.epoch) return "prior_epoch";
+	if (link.state !== "executable") {
+		return linkReason(link);
+	}
+	if (link.threadId !== target.threadId) {
+		return "link_changed";
+	}
+	if (link.childId !== target.childId) {
+		return "stale_child";
+	}
+	if (link.epoch !== target.epoch) {
+		return "prior_epoch";
+	}
 	return null;
 }
 
 function eventLinkReason(
 	event: SettledSemanticChangeEvent,
 ): CodexThreadContextDeliveryReason | null {
-	if (event.threadLink.state === "executable") return null;
-	if (event.threadLink.state === "unbound") return "unbound";
+	if (event.threadLink.state === "executable") {
+		return null;
+	}
+	if (event.threadLink.state === "unbound") {
+		return "unbound";
+	}
 	return isThreadLinkReasonCode(event.threadLink.reason)
 		? event.threadLink.reason
 		: "unknown_provenance";
@@ -197,13 +239,21 @@ function eventReason(
 	if (event.kind !== "settled_change" || event.source !== "settled_change") {
 		return "invalid_event";
 	}
-	if (event.origin === "agent") return "agent_only";
-	if (event.origin !== "human" && event.origin !== "mixed") return "invalid_event";
-	if (event.change.significance === "cosmetic") return "cosmetic";
+	if (event.origin === "agent") {
+		return "agent_only";
+	}
+	if (event.origin !== "human" && event.origin !== "mixed") {
+		return "invalid_event";
+	}
+	if (event.change.significance === "cosmetic") {
+		return "cosmetic";
+	}
 	if (event.change.significance !== "layout" && event.change.significance !== "structural") {
 		return "invalid_event";
 	}
-	if (event.cursor === null) return "invalid_event";
+	if (event.cursor === null) {
+		return "invalid_event";
+	}
 	if (!Number.isInteger(event.cursor.sequence) || event.cursor.sequence < 0) {
 		return "invalid_event";
 	}
@@ -218,19 +268,33 @@ function eventReason(
 	) {
 		return "invalid_event";
 	}
-	if (event.pane.paneId !== options.paneId) return "invalid_event";
+	if (event.pane.paneId !== options.paneId) {
+		return "invalid_event";
+	}
 	if (event.staleness.state !== "current" || event.freshness.state !== "fresh") {
 		return "stale_event";
 	}
 	const linkReasonValue = eventLinkReason(event);
-	if (linkReasonValue !== null) return linkReasonValue;
-	if (event.child.id === null || event.child.epoch === null) return "unknown_provenance";
-	if (event.workhorse.threadId === null) return "unknown_provenance";
+	if (linkReasonValue !== null) {
+		return linkReasonValue;
+	}
+	if (event.child.id === null || event.child.epoch === null) {
+		return "unknown_provenance";
+	}
+	if (event.workhorse.threadId === null) {
+		return "unknown_provenance";
+	}
 	const target = options.target;
 	const generation = generationReason(event.child.id, event.child.epoch, target);
-	if (generation !== null) return generation;
-	if (event.workhorse.threadId !== target.threadId) return "link_changed";
-	if (event.cursor.sequence <= lastSequence) return "stale_cursor";
+	if (generation !== null) {
+		return generation;
+	}
+	if (event.workhorse.threadId !== target.threadId) {
+		return "link_changed";
+	}
+	if (event.cursor.sequence <= lastSequence) {
+		return "stale_cursor";
+	}
 	return null;
 }
 
@@ -250,7 +314,9 @@ function contextMatchesEvent(
 	target: DeliveryTarget,
 	paneId: string,
 ): boolean {
-	if (event.cursor === null || event.version === null) return false;
+	if (event.cursor === null || event.version === null) {
+		return false;
+	}
 	const cursor = canonicalSemanticCursorToken(event.cursor);
 
 	return (
@@ -300,22 +366,34 @@ function finalReason(
 	highestReservedSequence: () => number,
 ): CodexThreadContextDeliveryReason | null {
 	const identityFailure = eventIdentityReason(state.event, state.id);
-	if (identityFailure !== null) return identityFailure;
+	if (identityFailure !== null) {
+		return identityFailure;
+	}
 	const eventFailure = eventReason(state.event, options, -1);
-	if (eventFailure !== null) return eventFailure;
+	if (eventFailure !== null) {
+		return eventFailure;
+	}
 	const execution = readExecution(options);
 	const currentExecutionReason = executionReason(execution, options.identity, options.target);
-	if (currentExecutionReason !== null) return currentExecutionReason;
+	if (currentExecutionReason !== null) {
+		return currentExecutionReason;
+	}
 	let currentBinding: ThreadLinkBindingSnapshot;
 	try {
 		currentBinding = options.threadLink.read(options.paneId);
 	} catch {
 		return "link_changed";
 	}
-	if (!sameBinding(currentBinding, state.initialBinding)) return "link_changed";
-	if (!sameLink(currentBinding.link, classification.link)) return "link_changed";
+	if (!sameBinding(currentBinding, state.initialBinding)) {
+		return "link_changed";
+	}
+	if (!sameLink(currentBinding.link, classification.link)) {
+		return "link_changed";
+	}
 	const currentLinkReason = targetLinkReason(currentBinding.link, options.target);
-	if (currentLinkReason !== null) return currentLinkReason;
+	if (currentLinkReason !== null) {
+		return currentLinkReason;
+	}
 	if (typeof options.target.operationId !== "string" || options.target.operationId.length === 0) {
 		return "unknown_provenance";
 	}
@@ -340,21 +418,29 @@ function afterAttemptReason(
 ): CodexThreadContextDeliveryReason | null {
 	try {
 		const identityFailure = eventIdentityReason(state.event, state.id);
-		if (identityFailure !== null) return identityFailure;
-		if (eventReason(state.event, options, -1) !== null) return "stale_event";
+		if (identityFailure !== null) {
+			return identityFailure;
+		}
+		if (eventReason(state.event, options, -1) !== null) {
+			return "stale_event";
+		}
 	} catch {
 		return "stale_event";
 	}
 	const execution = readExecution(options);
 	const executionFailure = executionReason(execution, options.identity, options.target);
-	if (executionFailure !== null) return executionFailure;
+	if (executionFailure !== null) {
+		return executionFailure;
+	}
 	let currentBinding: ThreadLinkBindingSnapshot;
 	try {
 		currentBinding = options.threadLink.read(options.paneId);
 	} catch {
 		return "link_changed";
 	}
-	if (!sameBinding(currentBinding, state.initialBinding)) return "link_changed";
+	if (!sameBinding(currentBinding, state.initialBinding)) {
+		return "link_changed";
+	}
 	try {
 		options.epoch.assertCurrent(requestFor(options.target));
 	} catch (error) {
@@ -401,7 +487,9 @@ async function deliverOne(
 	highestReservedSequence: () => number,
 ): Promise<CodexThreadContextDeliveryOutcome> {
 	const reason = eventReason(event, options, lastSequence);
-	if (reason !== null) return outcome(event, options, "not_delivered", reason, false, null);
+	if (reason !== null) {
+		return outcome(event, options, "not_delivered", reason, false, null);
+	}
 
 	const target = options.target;
 	const targetGeneration = generationReason(target.childId, target.epoch, {
@@ -549,9 +637,13 @@ function createDelivery(
 		const id = eventId(event);
 		const key = keyFor(id);
 		const existing = pending.get(key);
-		if (existing !== undefined) return existing;
+		if (existing !== undefined) {
+			return existing;
+		}
 		const settledOutcome = settled.get(key);
-		if (settledOutcome !== undefined) return Promise.resolve(settledOutcome);
+		if (settledOutcome !== undefined) {
+			return Promise.resolve(settledOutcome);
+		}
 
 		firstSeenKeys.push(key);
 		const previousSequence = highestReservedSequence;
@@ -594,7 +686,9 @@ function createDelivery(
 			),
 		get: (event: CodexThreadContextEventId) => settled.get(keyFor(event)),
 		dispose: () => {
-			if (disposed) return;
+			if (disposed) {
+				return;
+			}
 			disposed = true;
 			unsubscribe();
 		},

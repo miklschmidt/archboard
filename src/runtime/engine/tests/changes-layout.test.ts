@@ -87,8 +87,9 @@ describe("layout board changes", () => {
 			],
 			"first bound label": [box("a", 0, 0, "gateway"), label("al", "a", "Gateway", 0, 0)],
 		};
-		for (const elements of Object.values(fixtures))
+		for (const elements of Object.values(fixtures)) {
 			expect(boundTextDrift(elements)).toHaveLength(0);
+		}
 	});
 
 	test("frame changes do not move untouched nodes", () => {

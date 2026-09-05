@@ -18,7 +18,9 @@ import type { LegacyElementIngress } from "../../../shared/board-elements/index.
 
 const completeElement = (input: LegacyElementIngress): ServerElement => {
 	const [element] = expandElements([input], { deterministic: true, forStore: true });
-	if (!element) throw new Error(`Fixture did not produce ${input.id}`);
+	if (!element) {
+		throw new Error(`Fixture did not produce ${input.id}`);
+	}
 	return element;
 };
 
@@ -246,7 +248,7 @@ describe("bridge validation", () => {
 			["label", { text: "unexpected label" }],
 			["text", "unexpected text"],
 		];
-		for (const roleIndex of [0, 1] as const)
+		for (const roleIndex of [0, 1] as const) {
 			for (const [field, value] of fields) {
 				const { sources, parts } = prepared();
 				const mutated = structuredClone(parts);
@@ -269,6 +271,7 @@ describe("bridge validation", () => {
 					mutated.map(({ id }) => id) as [string, string],
 				);
 			}
+		}
 	});
 
 	test("keeps bridge metadata closed at every strict object", () => {
@@ -281,8 +284,9 @@ describe("bridge validation", () => {
 				...metadata,
 				crossing: { ...(metadata["crossing"] as object), extra: true },
 			},
-		])
+		]) {
 			expect(BridgeMetadataSchema.safeParse(candidate).success).toBe(false);
+		}
 	});
 
 	test("removal is provenance-only and the receipt schema is exact", () => {
@@ -302,8 +306,9 @@ describe("bridge validation", () => {
 			{ ...receipt, bridgeId: "OtherBridge" },
 			{ ...receipt, deleted: [removed[1], removed[0]] },
 			{ ...receipt, deleted: ["Bridge01", "Bridge01"] },
-		])
+		]) {
 			expect(BridgeRemoveResultSchema.safeParse(candidate).success).toBe(false);
+		}
 		expect(() => planBridgeRemoval(parts, "missing")).toThrow();
 	});
 });

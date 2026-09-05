@@ -73,7 +73,9 @@ function event(
 }
 
 async function flush(): Promise<void> {
-	for (let index = 0; index < 8; index += 1) await Promise.resolve();
+	for (let index = 0; index < 8; index += 1) {
+		await Promise.resolve();
+	}
 }
 
 test("timeline owner loads typed pages, maps seven arms, and bounds the projection", async () => {
@@ -191,7 +193,9 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 	expect(owner.read("pane-timeline", 1, link, true, connection)).toBeNull();
 	await flush();
 	const projection = owner.read("pane-timeline", 1, link, true, connection);
-	if (projection === null) throw new Error("timeline projection was not loaded");
+	if (projection === null) {
+		throw new Error("timeline projection was not loaded");
+	}
 
 	expect(turnRequests).toEqual([
 		{
@@ -238,7 +242,9 @@ test("timeline owner loads typed pages, maps seven arms, and bounds the projecti
 		state: "pending",
 	});
 	const projectedPlan = projection.turns[0]?.items[7];
-	if (projectedPlan?.kind !== "plan") throw new Error("plan item was not projected");
+	if (projectedPlan?.kind !== "plan") {
+		throw new Error("plan item was not projected");
+	}
 	expect(projectedPlan.item.text.endsWith("…")).toBe(true);
 	expect(projectedPlan.item.text.includes("\0")).toBe(false);
 	expect(new TextEncoder().encode(projectedPlan.item.text).byteLength).toBeLessThanOrEqual(16_384);
@@ -266,7 +272,9 @@ test("timeline owner ignores stale link loads and recovers after a refresh failu
 			params: Parameters<CodexSession["threadTurnsListPage"]>[0],
 		): Promise<SessionThreadTurnPageResult> => {
 			const page = pending.get(params.threadId);
-			if (page === undefined) throw new Error(`unexpected thread ${params.threadId}`);
+			if (page === undefined) {
+				throw new Error(`unexpected thread ${params.threadId}`);
+			}
 			return page;
 		},
 		timelineListPage: async (_params: Parameters<CodexSession["timelineListPage"]>[0]) => ({
@@ -304,7 +312,9 @@ test("timeline owner ignores stale link loads and recovers after a refresh failu
 	});
 	await flush();
 	const projection = owner.read("pane-timeline", 2, secondLink, true, connection);
-	if (projection === null) throw new Error("replacement timeline projection was not loaded");
+	if (projection === null) {
+		throw new Error("replacement timeline projection was not loaded");
+	}
 	expect(changes).toBe(1);
 	expect(projection.threadId).toBe(secondThreadId);
 	expect(projection.turns[0]?.turn.id).toBe(
@@ -383,7 +393,9 @@ test("timeline owner waits for thread capability and refreshes only the current 
 	);
 	await flush();
 	const projection = owner.read("pane-timeline", 1, link, true, connection);
-	if (projection === null) throw new Error("timeline did not recover after notification");
+	if (projection === null) {
+		throw new Error("timeline did not recover after notification");
+	}
 	expect({ calls, changes, threadId: projection.threadId }).toEqual({
 		calls: 2,
 		changes: 1,

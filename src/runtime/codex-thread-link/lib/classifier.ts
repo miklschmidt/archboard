@@ -107,7 +107,9 @@ function currentEpochOf(options: CodexThreadLinkClassifierOptions): ThreadLinkCu
 		if (options.currentEpoch !== undefined) {
 			const value =
 				typeof options.currentEpoch === "function" ? options.currentEpoch() : options.currentEpoch;
-			if (value === null) return null;
+			if (value === null) {
+				return null;
+			}
 			if (!isCurrentEpoch(value)) {
 				throw new Error("the current epoch source returned an invalid child/epoch pair");
 			}
@@ -115,7 +117,9 @@ function currentEpochOf(options: CodexThreadLinkClassifierOptions): ThreadLinkCu
 		}
 		if (options.epoch !== undefined) {
 			const active = options.epoch.snapshot().manifest.activeEpoch;
-			if (active === null) return null;
+			if (active === null) {
+				return null;
+			}
 			if (!isCurrentEpoch(active)) {
 				throw new Error("the epoch store returned an invalid active child/epoch pair");
 			}
@@ -229,7 +233,9 @@ async function exhaustThreadList(session: ThreadListSession): Promise<readonly S
 		try {
 			page = await session.threadListPage(threadListParams(cursor));
 		} catch (error) {
-			if (error instanceof CodexThreadLinkError) throw error;
+			if (error instanceof CodexThreadLinkError) {
+				throw error;
+			}
 			throw new CodexThreadLinkError(
 				"transport_failure",
 				"thread/list could not be exhausted; the thread link was not classified.",
@@ -239,7 +245,9 @@ async function exhaustThreadList(session: ThreadListSession): Promise<readonly S
 		assertThreadPage(page);
 		rows.push(...page.data);
 		const next = page.nextCursor;
-		if (next === null) return rows;
+		if (next === null) {
+			return rows;
+		}
 		if (next === cursor || seenCursors.has(next)) {
 			throw new CodexThreadLinkError(
 				"repeated_cursor",
@@ -260,7 +268,9 @@ async function exhaustLoadedList(session: ThreadListSession): Promise<readonly T
 		try {
 			page = await session.threadLoadedListPage(loadedListParams(cursor));
 		} catch (error) {
-			if (error instanceof CodexThreadLinkError) throw error;
+			if (error instanceof CodexThreadLinkError) {
+				throw error;
+			}
 			throw new CodexThreadLinkError(
 				"transport_failure",
 				"thread/loaded/list could not be exhausted; the thread link was not classified.",
@@ -270,7 +280,9 @@ async function exhaustLoadedList(session: ThreadListSession): Promise<readonly T
 		assertLoadedPage(page);
 		ids.push(...page.data);
 		const next = page.nextCursor;
-		if (next === null) return ids;
+		if (next === null) {
+			return ids;
+		}
 		if (next === cursor || seenCursors.has(next)) {
 			throw new CodexThreadLinkError(
 				"repeated_cursor",
@@ -291,8 +303,12 @@ export function allowedThreadLinkSources(): readonly ThreadLinkAllowedSource[] {
 }
 
 function isThreadLinkSource(value: unknown): value is ThreadLinkSource {
-	if (typeof value === "string") return isAllowedThreadLinkSource(value) || value === "unknown";
-	if (!isRecord(value)) return false;
+	if (typeof value === "string") {
+		return isAllowedThreadLinkSource(value) || value === "unknown";
+	}
+	if (!isRecord(value)) {
+		return false;
+	}
 	return Object.hasOwn(value, "custom") || Object.hasOwn(value, "subAgent");
 }
 
@@ -326,15 +342,21 @@ function observedDirectInput(thread: SessionThread): boolean | null {
 
 function sourceReason(source: ThreadLinkSource): ThreadLinkReason | null {
 	if (typeof source === "object" && source !== null) {
-		if (Object.hasOwn(source, "custom")) return authoredReason("thread_source_is_custom");
-		if (Object.hasOwn(source, "subAgent")) return authoredReason("thread_source_is_subagent");
+		if (Object.hasOwn(source, "custom")) {
+			return authoredReason("thread_source_is_custom");
+		}
+		if (Object.hasOwn(source, "subAgent")) {
+			return authoredReason("thread_source_is_subagent");
+		}
 		return authoredReason("thread_source_is_unknown");
 	}
 	return isAllowedThreadLinkSource(source) ? null : authoredReason("thread_source_is_unknown");
 }
 
 function statusReason(status: SessionThread["status"]["type"]): ThreadLinkReason | null {
-	if (status === "notLoaded") return authoredReason("thread_status_is_not_loaded");
+	if (status === "notLoaded") {
+		return authoredReason("thread_status_is_not_loaded");
+	}
 	if (NON_EXECUTABLE_STATUS_SET.has(status)) {
 		return authoredReason("thread_status_is_system_error");
 	}
@@ -348,11 +370,15 @@ interface SuppliedEvidence {
 
 function suppliedEvidence(target: ThreadLinkTarget): SuppliedEvidence | null {
 	const value = target.provenance;
-	if (value === undefined || value === null) return null;
+	if (value === undefined || value === null) {
+		return null;
+	}
 	if (isEpochExecutionProof(value)) {
 		return { record: value.record, manifestRevision: value.manifestRevision };
 	}
-	if (isEpochOperationRecord(value)) return { record: value, manifestRevision: null };
+	if (isEpochOperationRecord(value)) {
+		return { record: value, manifestRevision: null };
+	}
 	return null;
 }
 
@@ -397,10 +423,15 @@ function reasonForEpochError(
 	error: unknown,
 	record: EpochOperationRecord | null,
 ): ThreadLinkReason {
-	if (!(error instanceof CodexEpochError))
+	if (!(error instanceof CodexEpochError)) {
 		return authoredReason("current_epoch_ownership_is_unproven");
-	if (error.code === "stale_child") return authoredReason("link_child_is_not_current_child");
-	if (error.code === "prior_epoch") return authoredReason("link_or_provenance_epoch_is_prior");
+	}
+	if (error.code === "stale_child") {
+		return authoredReason("link_child_is_not_current_child");
+	}
+	if (error.code === "prior_epoch") {
+		return authoredReason("link_or_provenance_epoch_is_prior");
+	}
 	if (error.code === "inspect_only" && record !== null && isThreadStartOutcomeUnknown(record)) {
 		return authoredReason("thread_start_settlement_was_lost");
 	}
@@ -425,7 +456,9 @@ function durableEvidence(
 ): DurableEvidence {
 	const unknown = authoredReason("current_epoch_ownership_is_unproven");
 	const evidence = suppliedEvidence(target);
-	if (hasMalformedEvidence(target)) return { record: null, proof: null, reason: unknown };
+	if (hasMalformedEvidence(target)) {
+		return { record: null, proof: null, reason: unknown };
+	}
 	if (
 		options.epoch === undefined ||
 		target.operationId === undefined ||
@@ -516,11 +549,18 @@ function epochChangeReason(
 	started: ThreadLinkCurrentEpoch | null,
 	ended: ThreadLinkCurrentEpoch | null,
 ): ThreadLinkReason | null {
-	if (started === null && ended === null) return null;
-	if (started === null || ended === null)
+	if (started === null && ended === null) {
+		return null;
+	}
+	if (started === null || ended === null) {
 		return authoredReason("current_epoch_ownership_is_unproven");
-	if (started.childId !== ended.childId) return authoredReason("link_child_is_not_current_child");
-	if (started.epoch !== ended.epoch) return authoredReason("link_or_provenance_epoch_is_prior");
+	}
+	if (started.childId !== ended.childId) {
+		return authoredReason("link_child_is_not_current_child");
+	}
+	if (started.epoch !== ended.epoch) {
+		return authoredReason("link_or_provenance_epoch_is_prior");
+	}
 	return null;
 }
 
@@ -532,14 +572,24 @@ function ownershipReason(
 	durableReason: ThreadLinkReason | null,
 ): ThreadLinkReason | null {
 	const changed = epochChangeReason(started, ended);
-	if (changed !== null) return changed;
-	if (ended === null) return authoredReason("current_epoch_ownership_is_unproven");
+	if (changed !== null) {
+		return changed;
+	}
+	if (ended === null) {
+		return authoredReason("current_epoch_ownership_is_unproven");
+	}
 	if (target.childId === null || target.epoch === null) {
 		return authoredReason("current_epoch_ownership_is_unproven");
 	}
-	if (target.childId !== ended.childId) return authoredReason("link_child_is_not_current_child");
-	if (target.epoch !== ended.epoch) return authoredReason("link_or_provenance_epoch_is_prior");
-	if (record === null) return authoredReason("current_epoch_ownership_is_unproven");
+	if (target.childId !== ended.childId) {
+		return authoredReason("link_child_is_not_current_child");
+	}
+	if (target.epoch !== ended.epoch) {
+		return authoredReason("link_or_provenance_epoch_is_prior");
+	}
+	if (record === null) {
+		return authoredReason("current_epoch_ownership_is_unproven");
+	}
 	if (record.correlation.childId !== ended.childId || record.provenance.childId !== ended.childId) {
 		return authoredReason("link_child_is_not_current_child");
 	}
@@ -549,7 +599,9 @@ function ownershipReason(
 	if (target.operationId !== undefined && record.correlation.operationId !== target.operationId) {
 		return authoredReason("current_epoch_ownership_is_unproven");
 	}
-	if (durableReason !== null) return durableReason;
+	if (durableReason !== null) {
+		return durableReason;
+	}
 	if (record.provenance.threadId !== target.threadId) {
 		return authoredReason("current_epoch_ownership_is_unproven");
 	}
@@ -622,7 +674,9 @@ function classifyReason(
 		throw new Error("additional-context thread-link policy has an unimplemented refusal condition");
 	}
 	for (const entry of REASON_PRECEDENCE) {
-		if (conditions.get(entry.condition) === true) return entry.reason;
+		if (conditions.get(entry.condition) === true) {
+			return entry.reason;
+		}
 	}
 	return null;
 }
@@ -720,7 +774,9 @@ export function createCodexThreadLinkClassifier(
 		let loaded = await exhaustLoadedList(session);
 		const ownedRoot = await readOwnedCreatedRoot(options, target, persisted, loaded);
 		// A direct read is another await: prove loaded membership again before binding.
-		if (ownedRoot !== null) loaded = await exhaustLoadedList(session);
+		if (ownedRoot !== null) {
+			loaded = await exhaustLoadedList(session);
+		}
 		const ended = currentEpochOf(options);
 		return classifyFromExhausted(options, target, persisted, loaded, started, ended, ownedRoot);
 	};
@@ -737,8 +793,9 @@ async function readOwnedCreatedRoot(
 	if (
 		persisted.some((row) => row.id === target.threadId) ||
 		loaded.filter((id) => id === target.threadId).length !== 1
-	)
+	) {
 		return null;
+	}
 	const evidence = durableEvidence(options, target);
 	const record = evidence.record;
 	const current = currentEpochOf(options);
@@ -752,8 +809,9 @@ async function readOwnedCreatedRoot(
 		record.provenance.threadSource !== CODEX_SESSION_THREAD_SOURCE ||
 		record.provenance.workspaceRoot === null ||
 		ownershipReason(target, current, current, record, evidence.reason) !== null
-	)
+	) {
 		return null;
+	}
 	let thread: SessionThread;
 	try {
 		({ thread } = await options.session.threadRead({
@@ -777,8 +835,9 @@ async function readOwnedCreatedRoot(
 		thread.ephemeral ||
 		thread.parentThreadId !== null ||
 		thread.forkedFromId !== null
-	)
+	) {
 		return null;
+	}
 	return cloneAndFreeze(thread);
 }
 
@@ -838,9 +897,15 @@ function epochFromSnapshot(
 }
 
 function candidateSource(source: ThreadLinkSource): ThreadLinkCandidateSource {
-	if (typeof source === "string") return source;
-	if (Object.hasOwn(source, "custom")) return "custom";
-	if (Object.hasOwn(source, "subAgent")) return "subAgent";
+	if (typeof source === "string") {
+		return source;
+	}
+	if (Object.hasOwn(source, "custom")) {
+		return "custom";
+	}
+	if (Object.hasOwn(source, "subAgent")) {
+		return "subAgent";
+	}
 	return "unknown";
 }
 
@@ -927,7 +992,9 @@ export async function discoverCodexThreadLinkCandidates(
 				exhaustedEpoch,
 			);
 			let selectionId = randomUUID();
-			while (targets.has(selectionId)) selectionId = randomUUID();
+			while (targets.has(selectionId)) {
+				selectionId = randomUUID();
+			}
 			targets.set(
 				selectionId,
 				Object.freeze({

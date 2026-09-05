@@ -150,10 +150,11 @@ describe("board inspection public schema", () => {
 			intersectionTolerance: 0.5,
 			overlapTolerance: 0.5,
 		});
-		for (const value of [-1, Number.NaN, Number.POSITIVE_INFINITY])
+		for (const value of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
 			expect(InspectionPolicyInputSchema.safeParse({ overlapTolerance: value }).success).toBe(
 				false,
 			);
+		}
 	});
 
 	test("fixes reason severity and coverage combinations", () => {
@@ -228,8 +229,9 @@ describe("board inspection public schema", () => {
 			maxSeverity: "error",
 			findings: schemaFindings,
 		});
-		for (const finding of schemaFindings)
+		for (const finding of schemaFindings) {
 			expect(text).toContain(finding.code + "/" + finding.reason);
+		}
 		expect(text).not.toContain("broadPhaseEvents");
 	});
 });

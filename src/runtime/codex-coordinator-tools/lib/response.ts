@@ -17,8 +17,12 @@ export type DynamicToolEnvelope = z.infer<typeof DynamicToolEnvelopeSchema>;
 type DynamicToolValue = z.infer<typeof DynamicToolOkEnvelopeSchema>["value"];
 
 function freezeDeep<T>(value: T): T {
-	if (value === null || typeof value !== "object" || Object.isFrozen(value)) return value;
-	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
+	if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
+		return value;
+	}
+	for (const child of Object.values(value as Record<string, unknown>)) {
+		freezeDeep(child);
+	}
 	return Object.freeze(value);
 }
 
@@ -28,10 +32,11 @@ function boundedMessage(message: string): string {
 }
 
 function requireOperationId(operationId: string | null | undefined): string {
-	if (typeof operationId !== "string" || operationId.length === 0 || operationId.length > 128)
+	if (typeof operationId !== "string" || operationId.length === 0 || operationId.length > 128) {
 		throw new TypeError(
 			"A coordinator tool response requires one host-supplied operation identity.",
 		);
+	}
 	return operationId;
 }
 

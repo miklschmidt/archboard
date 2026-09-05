@@ -92,8 +92,9 @@ test("write ingress builds both vendor-derived arrow arms in canonical field ord
 		{ deterministic: true, forStore: true },
 	);
 	expect(ordinary).toMatchObject({ elbowed: false });
-	if (ordinary?.type !== "arrow" || elbow?.type !== "arrow")
+	if (ordinary?.type !== "arrow" || elbow?.type !== "arrow") {
 		throw new Error("fixtures did not produce arrows");
+	}
 	expect(ordinary?.startBinding).toEqual({ elementId: "left", focus: 0, gap: 4 });
 	expect(elbow).toMatchObject({
 		elbowed: true,
@@ -162,7 +163,9 @@ test("only agent ingress normalizes object points", () => {
 	});
 	const line = board.get("object-points");
 	expect(line?.type).toBe("line");
-	if (line?.type !== "line") throw new Error("fixture did not produce a line");
+	if (line?.type !== "line") {
+		throw new Error("fixture did not produce a line");
+	}
 	expect(line.points).toEqual([
 		[0, 0],
 		[40, 20],

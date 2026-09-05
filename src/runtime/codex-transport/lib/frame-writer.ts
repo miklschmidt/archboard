@@ -68,21 +68,28 @@ export function createFrameWriter<T>(
 	const rejectQueue = (queue: QueuedFrame<T>[], reason: unknown): void => {
 		while (queue.length > 0) {
 			const queued = queue.shift();
-			if (!queued) continue;
+			if (!queued) {
+				continue;
+			}
 			callbacks.onDrop(queued.job, reason);
 		}
 	};
 
 	const pump = (): void => {
-		if (broken || active !== undefined) return;
+		if (broken || active !== undefined) {
+			return;
+		}
 		const fromResponse = responseQueue.length > 0;
 		const queued = fromResponse ? responseQueue.shift() : regularQueue.shift();
 		if (!queued) {
 			callbacks.onIdle();
 			return;
 		}
-		if (fromResponse) responseQueuedBytes -= queued.bytes;
-		else regularQueuedBytes -= queued.bytes;
+		if (fromResponse) {
+			responseQueuedBytes -= queued.bytes;
+		} else {
+			regularQueuedBytes -= queued.bytes;
+		}
 		const current: ActiveWrite<T> = {
 			job: queued.job,
 			lane: fromResponse ? "response" : "regular",
@@ -95,7 +102,9 @@ export function createFrameWriter<T>(
 		active = current;
 
 		const complete = (error?: Error): void => {
-			if (active !== current) return;
+			if (active !== current) {
+				return;
+			}
 			active = undefined;
 			if (error) {
 				broken = true;
@@ -110,18 +119,24 @@ export function createFrameWriter<T>(
 			pump();
 		};
 		const tryComplete = (): void => {
-			if (active !== current || !current.writeReturned || !current.callbackCalled) return;
+			if (active !== current || !current.writeReturned || !current.callbackCalled) {
+				return;
+			}
 			if (current.callbackError) {
 				complete(current.callbackError);
 				return;
 			}
-			if (current.needsDrain && !current.drainSeen) return;
+			if (current.needsDrain && !current.drainSeen) {
+				return;
+			}
 			complete();
 		};
 		try {
 			const accepted = stdin.write(current.job.frame, (error?: Error | null) => {
 				current.callbackCalled = true;
-				if (error) current.callbackError = error;
+				if (error) {
+					current.callbackError = error;
+				}
 				tryComplete();
 			});
 			current.writeReturned = true;
@@ -134,10 +149,14 @@ export function createFrameWriter<T>(
 	};
 
 	const onDrain = (): void => {
-		if (!active) return;
+		if (!active) {
+			return;
+		}
 		active.drainSeen = true;
 		const current = active;
-		if (!current.writeReturned || !current.callbackCalled) return;
+		if (!current.writeReturned || !current.callbackCalled) {
+			return;
+		}
 		if (current.callbackError) {
 			active = undefined;
 			broken = true;
@@ -156,36 +175,40 @@ export function createFrameWriter<T>(
 	stdin.on("drain", onDrain);
 
 	const enqueue = (job: FrameWriterJob<T>, lane: FrameWriterLane = "regular"): void => {
-		if (broken || disposed)
+		if (broken || disposed) {
 			throw new CodexTransportWriteError("write-error", "the stdin writer is unavailable");
+		}
 		const bytes = chargedBytes(job.frame);
 		if (lane === "response") {
-			if (bytes > CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes)
+			if (bytes > CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes) {
 				throw new CodexTransportWriteError(
 					"frame-too-large",
 					`the reverse response exceeds ${CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes} bytes`,
 				);
+			}
 			if (
 				responseQueue.length + (active?.lane === "response" ? 1 : 0) >=
 					CODEX_APP_SERVER_CAPACITY.outbound.responseReservedFrames ||
 				responseQueuedBytes + (active?.lane === "response" ? active.bytes : 0) + bytes >
 					CODEX_APP_SERVER_CAPACITY.outbound.responseReservedBytes
-			)
+			) {
 				throw new CodexTransportWriteError(
 					"backpressure",
 					`the response reserve is limited to ${CODEX_APP_SERVER_CAPACITY.outbound.responseReservedFrames} frames and ${CODEX_APP_SERVER_CAPACITY.outbound.responseReservedBytes} bytes`,
 				);
+			}
 			responseQueue.push({ job, bytes });
 			responseQueuedBytes += bytes;
 		} else {
 			if (
 				regularQueue.length >= CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedFrames ||
 				regularQueuedBytes + bytes > CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedBytes
-			)
+			) {
 				throw new CodexTransportWriteError(
 					"backpressure",
 					`the regular write queue is limited to ${CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedFrames} frames and ${CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedBytes} bytes`,
 				);
+			}
 			regularQueue.push({ job, bytes });
 			regularQueuedBytes += bytes;
 		}
@@ -196,13 +219,19 @@ export function createFrameWriter<T>(
 		const responseIndex = responseQueue.findIndex((queued) => queued.job === job);
 		if (responseIndex >= 0) {
 			const [removed] = responseQueue.splice(responseIndex, 1);
-			if (removed) responseQueuedBytes -= removed.bytes;
+			if (removed) {
+				responseQueuedBytes -= removed.bytes;
+			}
 			return removed !== undefined;
 		}
 		const regularIndex = regularQueue.findIndex((queued) => queued.job === job);
-		if (regularIndex < 0) return false;
+		if (regularIndex < 0) {
+			return false;
+		}
 		const [removed] = regularQueue.splice(regularIndex, 1);
-		if (removed) regularQueuedBytes -= removed.bytes;
+		if (removed) {
+			regularQueuedBytes -= removed.bytes;
+		}
 		return removed !== undefined;
 	};
 
@@ -214,13 +243,20 @@ export function createFrameWriter<T>(
 	): void => {
 		const retained: QueuedFrame<T>[] = [];
 		const dropped: QueuedFrame<T>[] = [];
-		for (const queued of queue) (keep(queued.job) ? retained : dropped).push(queued);
+		for (const queued of queue) {
+			(keep(queued.job) ? retained : dropped).push(queued);
+		}
 		queue.length = 0;
 		queue.push(...retained);
 		const droppedBytes = dropped.reduce((total, queued) => total + queued.bytes, 0);
-		if (lane === "response") responseQueuedBytes -= droppedBytes;
-		else regularQueuedBytes -= droppedBytes;
-		for (const queued of dropped) callbacks.onDrop(queued.job, reason);
+		if (lane === "response") {
+			responseQueuedBytes -= droppedBytes;
+		} else {
+			regularQueuedBytes -= droppedBytes;
+		}
+		for (const queued of dropped) {
+			callbacks.onDrop(queued.job, reason);
+		}
 	};
 
 	const drop = (keep: (job: FrameWriterJob<T>) => boolean, reason: unknown): void => {
@@ -230,7 +266,9 @@ export function createFrameWriter<T>(
 	};
 
 	const dispose = (): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		stdin.removeListener("drain", onDrain);
 	};

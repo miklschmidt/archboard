@@ -57,12 +57,16 @@ describe("Codex process lifecycle", () => {
 			expect(owner.snapshot().ready).toBe(false);
 			expect(settled).toBe(false);
 			const child = owner.currentChild();
-			if (!child) throw new Error("Expected a spawned Codex child.");
+			if (!child) {
+				throw new Error("Expected a spawned Codex child.");
+			}
 			child.lifecycle.markAppServerReady();
 			expect((await started).ready).toBe(true);
 			await driveManual(owner.stop(), lifecycle.clock);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -94,7 +98,9 @@ describe("Codex process lifecycle", () => {
 			expect(stopped.state).toBe("stopped");
 			expect(stopped.failure?.code).toBe("startup_timeout");
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -126,7 +132,9 @@ describe("Codex process lifecycle", () => {
 			expect(owner.snapshot().state).toBe("stopped");
 			expect(owner.currentChild()).toBeNull();
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -154,7 +162,9 @@ describe("Codex process lifecycle", () => {
 			expect(owner.currentChild()).toBeNull();
 			expect((await driveManual(owner.stop(), lifecycle.clock)).state).toBe("stopped");
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -185,7 +195,9 @@ describe("Codex process lifecycle", () => {
 			lifecycle.quiesce();
 			await driveManual(owner.stop(), lifecycle.clock);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -215,7 +227,9 @@ describe("Codex process lifecycle", () => {
 			lifecycle.quiesce();
 			expect((await driveManual(owner.stop(), lifecycle.clock)).state).toBe("stopped");
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -260,7 +274,9 @@ describe("Codex process lifecycle", () => {
 			expect(stopped.state).toBe("stopped");
 			expect(releaseAttempts).toBe(3);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -291,7 +307,9 @@ describe("Codex process lifecycle", () => {
 			const started = owner.start();
 			const cleanup = await new Promise<ReturnType<typeof owner.snapshot>>((resolve) => {
 				const unsubscribe = owner!.subscribe((snapshot) => {
-					if (snapshot.state !== "group_cleanup") return;
+					if (snapshot.state !== "group_cleanup") {
+						return;
+					}
 					unsubscribe();
 					resolve(snapshot);
 				});
@@ -310,10 +328,11 @@ describe("Codex process lifecycle", () => {
 			expect([undefined, "Z", "X"]).toContain(processState(descendantPid));
 		} finally {
 			try {
-				if (owner)
+				if (owner) {
 					await driveManual(owner.stop(), clock, { yieldToProcessEvents: true }).catch(
 						() => undefined,
 					);
+				}
 			} finally {
 				if (descendantPid !== undefined) {
 					try {
@@ -365,7 +384,9 @@ describe("Codex process lifecycle", () => {
 			failure = cause;
 		} finally {
 			try {
-				if (owner) await driveManual(owner.stop(), clock, { yieldToProcessEvents: true });
+				if (owner) {
+					await driveManual(owner.stop(), clock, { yieldToProcessEvents: true });
+				}
 			} finally {
 				if (descendantPid !== undefined) {
 					try {
@@ -381,8 +402,9 @@ describe("Codex process lifecycle", () => {
 		expect(owner?.snapshot().state).toBe("stopped");
 		expect(owner?.currentChild()).toBeNull();
 		expect(leaderOutput?.destroyed).toBe(true);
-		if (leaderPid === undefined || descendantPid === undefined)
+		if (leaderPid === undefined || descendantPid === undefined) {
 			throw new Error("Expected the leader and descendant process ids.");
+		}
 		expect([undefined, "Z", "X"]).toContain(processState(leaderPid));
 		expect([undefined, "Z", "X"]).toContain(processState(descendantPid));
 		expect(fs.existsSync(root)).toBe(false);
@@ -404,7 +426,9 @@ describe("Codex process lifecycle", () => {
 			expect(stopped.state).toBe("stopped");
 			expect(lifecycle.signals).toEqual(["SIGTERM", "SIGKILL"]);
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -425,7 +449,9 @@ describe("Codex process lifecycle", () => {
 			lifecycle.closeChild();
 			expect((await driveManual(stopping, lifecycle.clock)).state).toBe("stopped");
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});
@@ -442,14 +468,18 @@ describe("Codex process lifecycle", () => {
 			});
 			await startReady(owner);
 			const child = owner.currentChild();
-			if (!child) throw new Error("Expected a running Codex child.");
+			if (!child) {
+				throw new Error("Expected a running Codex child.");
+			}
 			child.lifecycle.markTerminalFailure("protocol became terminal");
 			const stopped = await driveManual(owner.stop(), lifecycle.clock);
 			expect(stopped.state).toBe("stopped");
 			expect(stopped.failure?.code).toBe("strict_config_rejected");
 			expect(owner.currentChild()).toBeNull();
 		} finally {
-			if (owner) await owner.stop().catch(() => undefined);
+			if (owner) {
+				await owner.stop().catch(() => undefined);
+			}
 			removeRoot(root);
 		}
 	});

@@ -11,10 +11,14 @@ import {
 } from "./support.js";
 
 function expectDeepFrozen(value: unknown, seen = new Set<object>()): void {
-	if (value === null || typeof value !== "object" || seen.has(value)) return;
+	if (value === null || typeof value !== "object" || seen.has(value)) {
+		return;
+	}
 	seen.add(value);
 	expect(Object.isFrozen(value)).toBe(true);
-	for (const key of Reflect.ownKeys(value)) expectDeepFrozen(Reflect.get(value, key), seen);
+	for (const key of Reflect.ownKeys(value)) {
+		expectDeepFrozen(Reflect.get(value, key), seen);
+	}
 }
 
 function expectSnapshotMutationIsRefused(snapshot: WorkhorseSnapshot): void {

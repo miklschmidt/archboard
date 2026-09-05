@@ -134,7 +134,7 @@ test("owned-process, session, account, and coordinator facts produce every readi
 		"binary_missing",
 		"binary_wrong_version",
 		"strict_config_rejected",
-	] as const)
+	] as const) {
 		expect(
 			readiness({
 				process: processFacts({
@@ -144,6 +144,7 @@ test("owned-process, session, account, and coordinator facts produce every readi
 				}),
 			}),
 		).toEqual({ kind: "readiness", state: "incompatible_contract", reason: "codex 0.150.0" });
+	}
 	expect(readiness({ process: processFacts({ state: "starting", ready: false }) })).toEqual({
 		kind: "readiness",
 		state: "reconnecting",

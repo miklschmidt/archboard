@@ -44,8 +44,9 @@ function createTurnReady(): TurnReadyControls {
 		resolveTurn = resolve;
 		rejectTurn = reject;
 	});
-	if (resolveTurn === undefined || rejectTurn === undefined)
+	if (resolveTurn === undefined || rejectTurn === undefined) {
 		throw new Error("Classifier turn readiness controls were not initialized.");
+	}
 	return { promise, resolve: resolveTurn, reject: rejectTurn, settled: false };
 }
 
@@ -77,7 +78,9 @@ function failReady(
 		ready.settled = true;
 		ready.reject(error);
 	}
-	if (host.isLive(slot)) host.enterFallback(slot, "classifier_lost");
+	if (host.isLive(slot)) {
+		host.enterFallback(slot, "classifier_lost");
+	}
 }
 
 function finishTurn(
@@ -121,7 +124,9 @@ export function startClassifier(
 	slot: ActiveSlot,
 	record: RealtimeTranscriptRecord,
 ): void {
-	if (!host.isLive(slot) || slot.phase !== "awaiting_user") return;
+	if (!host.isLive(slot) || slot.phase !== "awaiting_user") {
+		return;
+	}
 	const coordinator = host.currentCoordinator();
 	if (
 		coordinator === null ||
@@ -171,7 +176,9 @@ export function startClassifier(
 	slot.finalUser = Object.freeze({ ...record });
 	slot.phase = "classifying";
 	host.publish(slot);
-	if (!host.isLive(slot)) return;
+	if (!host.isLive(slot)) {
+		return;
+	}
 	let params: TurnStartParams;
 	try {
 		const prompt = createSpokenApprovalClassifierPrompt({
@@ -220,8 +227,9 @@ async function handleResolver(
 	request: DynamicServerRequest,
 	verdict: "accept" | "decline",
 ): Promise<SpokenApprovalToolResult> {
-	if (!host.isLive(slot))
+	if (!host.isLive(slot)) {
 		return refusal("not_ready", "No spoken approval is awaiting this resolver call.");
+	}
 	const failure = validateResolverCall(host, slot, request, true);
 	if (failure !== null) {
 		host.enterFallback(slot, failure.fallback);
@@ -237,8 +245,9 @@ async function handleResolver(
 		}
 		return refusal("not_ready", "The resolver call is already being settled.");
 	}
-	if (slot.phase !== "awaiting_resolver" && slot.phase !== "classifying")
+	if (slot.phase !== "awaiting_resolver" && slot.phase !== "classifying") {
 		return refusal("not_ready", "The classifier turn is not awaiting a resolver call.");
+	}
 	slot.pendingResolverRequest = null;
 	slot.resolverCallId = request.logicalCall.callId;
 	slot.phase = "resolving";
@@ -252,7 +261,9 @@ async function handleResolver(
 			response: { approvalKind: "command_execution", decision: verdict },
 		});
 	} catch (error) {
-		if (host.isLive(slot)) host.enterFallback(slot, "resolver_lost");
+		if (host.isLive(slot)) {
+			host.enterFallback(slot, "resolver_lost");
+		}
 		const reason =
 			error instanceof CodexApprovalError &&
 			(error.code === "stale_ownership" || error.code === "identity_mismatch")
@@ -260,11 +271,12 @@ async function handleResolver(
 				: "not_ready";
 		return refusal(reason, `The spoken resolver was not accepted: ${safeMessage(error)}`);
 	}
-	if (!host.isLive(slot))
+	if (!host.isLive(slot)) {
 		return refusal(
 			"unknown_provenance",
 			"The spoken approval state became stale during settlement.",
 		);
+	}
 	slot.settlement = settlement;
 	if (settlement.outcome === "delivered" && settlement.state === "settled") {
 		slot.phase = "settled";
@@ -285,8 +297,9 @@ export async function resolveSpokenApproval(
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
 ): Promise<SpokenApprovalToolResult> {
-	if (!host.isLive(slot))
+	if (!host.isLive(slot)) {
 		return refusal("not_ready", "There is no pending spoken approval to resolve.");
+	}
 	const parsed = ResolveSpokenApprovalInputSchema.safeParse(request.params.arguments);
 	if (!parsed.success) {
 		host.enterFallback(slot, "ambiguous");
@@ -314,10 +327,14 @@ export async function resolveSpokenApproval(
 		try {
 			await slot.turnReady.promise;
 		} catch {
-			if (slot.pendingResolverRequest === request) slot.pendingResolverRequest = null;
+			if (slot.pendingResolverRequest === request) {
+				slot.pendingResolverRequest = null;
+			}
 			return refusal("not_ready", "The classifier turn was lost before resolution.");
 		}
-		if (slot.pendingResolverRequest === request) slot.pendingResolverRequest = null;
+		if (slot.pendingResolverRequest === request) {
+			slot.pendingResolverRequest = null;
+		}
 	}
 	return handleResolver(host, slot, request, parsed.data.verdict);
 }

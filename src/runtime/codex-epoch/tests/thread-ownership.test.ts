@@ -59,13 +59,14 @@ describe("codex epoch thread ownership provenance", () => {
 		for (const wrong of [
 			record(attachedThread, "attach", "attached", EPOCH_THREAD_ATTACH_OPERATION.rpc),
 			record(attachedThread, "attach", EPOCH_THREAD_ATTACH_OPERATION.kind, "thread/resume"),
-		])
+		]) {
 			expect(
 				resolveThreadOwnershipProvenance(
 					Object.freeze({ ...emptyManifest(), revision: 1, records: [wrong] }),
 					attachedThread,
 				),
 			).toBeNull();
+		}
 	});
 });
 

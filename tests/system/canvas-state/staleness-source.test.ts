@@ -77,7 +77,9 @@ describe.serial("source staleness", () => {
 			const current = await health();
 			return current.source.stale ? current : undefined;
 		}, "canvas to report touched source");
-		if (!stale) throw new Error("The canvas never returned its stale source state.");
+		if (!stale) {
+			throw new Error("The canvas never returned its stale source state.");
+		}
 		expect(stale.source.newestFile).toBe("src/runtime/engine/compare.ts");
 		expect(stale.pid).toBe(first.pid);
 		const loud = cli();

@@ -58,13 +58,17 @@ export function clusterBoxes<T extends Box>(items: T[], gap = CLUSTER_GAP): T[][
 		b.y - gap < a.y + a.h;
 	for (let i = 0; i < items.length; i++) {
 		for (let j = i + 1; j < items.length; j++) {
-			if (near(items[i]!, items[j]!)) parent[find(j)] = find(i);
+			if (near(items[i]!, items[j]!)) {
+				parent[find(j)] = find(i);
+			}
 		}
 	}
 	const groups = new Map<number, T[]>();
 	items.forEach((item, i) => {
 		const root = find(i);
-		if (!groups.has(root)) groups.set(root, []);
+		if (!groups.has(root)) {
+			groups.set(root, []);
+		}
 		groups.get(root)!.push(item);
 	});
 	return [...groups.values()].toSorted((a, b) => b.length - a.length);
@@ -73,7 +77,9 @@ export function clusterBoxes<T extends Box>(items: T[], gap = CLUSTER_GAP): T[][
 // The box round a set of boxes. Null for an empty set, which is the only
 // honest answer: a frame drawn round nothing has no thirds.
 export function boundingBoxOf(boxes: Box[]): BoundingBox | null {
-	if (boxes.length === 0) return null;
+	if (boxes.length === 0) {
+		return null;
+	}
 	return {
 		minX: Math.min(...boxes.map((b) => b.x)),
 		minY: Math.min(...boxes.map((b) => b.y)),
@@ -104,7 +110,9 @@ export function sameCentre(a: Box, b: Box, tolerance = 1): boolean {
 // boards have, not round everything on each board, so that arriving and
 // departing nodes cannot rename their neighbours' whereabouts.
 const third = (v: number, lo: number, hi: number): number => {
-	if (hi - lo < 1) return 1;
+	if (hi - lo < 1) {
+		return 1;
+	}
 	const t = (v - lo) / (hi - lo);
 	return t < 0.34 ? 0 : t < 0.67 ? 1 : 2;
 };
@@ -114,6 +122,8 @@ export function regionName(cx: number, cy: number, box: BoundingBox): string {
 	const cols = ["left", "centre", "right"];
 	const r = third(cy, box.minY, box.maxY);
 	const c = third(cx, box.minX, box.maxX);
-	if (r === 1 && c === 1) return "centre";
+	if (r === 1 && c === 1) {
+		return "centre";
+	}
 	return `${rows[r]}-${cols[c]}`;
 }

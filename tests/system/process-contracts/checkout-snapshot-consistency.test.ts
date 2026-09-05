@@ -55,8 +55,12 @@ async function waitForMessage(
 	const deadline = Date.now() + 2_000;
 	for (;;) {
 		const message = messages.find((candidate) => candidate["type"] === type);
-		if (message) return message;
-		if (Date.now() >= deadline) throw new Error(`Timed out waiting for ${type}.`);
+		if (message) {
+			return message;
+		}
+		if (Date.now() >= deadline) {
+			throw new Error(`Timed out waiting for ${type}.`);
+		}
 		await Bun.sleep(5);
 	}
 }
@@ -83,7 +87,9 @@ async function openRawWebSocketPeer(base: string, clientId: string): Promise<Soc
 	);
 	await new Promise<void>((resolve, reject) => {
 		const onData = (chunk: Buffer): void => {
-			if (!chunk.toString().includes("101 Switching Protocols")) return;
+			if (!chunk.toString().includes("101 Switching Protocols")) {
+				return;
+			}
 			socket.off("error", reject);
 			socket.off("data", onData);
 			resolve();
@@ -146,7 +152,8 @@ test("first-open presents the exact note load whose checkout authority it captur
 		const opened = await opening;
 		expect(opened.status, JSON.stringify(opened.body)).toBe(200);
 		const switched = await waitForPaneMessage(pane, start, "board_switched");
-		const elements = (switched?.["elements"] as Array<{ id: string; link?: string }> | undefined) ?? [];
+		const elements =
+			(switched?.["elements"] as Array<{ id: string; link?: string }> | undefined) ?? [];
 		expect(elements.find((element) => element.id === "oldbound")?.link).toBe(
 			"/api/code-targets/open?board=first-open-race&element=oldbound",
 		);
@@ -219,7 +226,8 @@ test("held-board reload presents disk bytes with authority from the same prepare
 		const reloaded = await reloading;
 		expect(reloaded.status, JSON.stringify(reloaded.body)).toBe(200);
 		const switched = await waitForPaneMessage(pane, start, "board_switched");
-		const elements = (switched?.["elements"] as Array<{ id: string; link?: string }> | undefined) ?? [];
+		const elements =
+			(switched?.["elements"] as Array<{ id: string; link?: string }> | undefined) ?? [];
 		expect(elements.find((element) => element.id === "diskbound")?.link).toBe(
 			"/api/code-targets/open?board=held-reload-authority&element=diskbound",
 		);
@@ -272,13 +280,15 @@ test("concurrent first opens pair the installed scene with recaptured authority"
 		});
 		const roots = await waitForRecordedPids(owner.pids, 2);
 		const secondRoot = roots.find((pid) => pid !== firstRoot);
-		if (firstRoot === undefined || secondRoot === undefined)
+		if (firstRoot === undefined || secondRoot === undefined) {
 			throw new Error("The two first-open snapshots did not start independently.");
+		}
 		owner.releasePid(firstRoot);
 		const firstCommands = await waitForRecordedPids(owner.pids, 3);
 		const firstRemote = firstCommands.find((pid) => !roots.includes(pid));
-		if (firstRemote === undefined)
+		if (firstRemote === undefined) {
 			throw new Error("The first checkout remote probe did not start.");
+		}
 		owner.releasePid(firstRemote);
 		const first = await firstOpening;
 		expect(first.status, JSON.stringify(first.body)).toBe(200);
@@ -295,8 +305,9 @@ test("concurrent first opens pair the installed scene with recaptured authority"
 		owner.releasePid(secondRoot);
 		const secondCommands = await waitForRecordedPids(owner.pids, 4);
 		const secondRemote = secondCommands.find((pid) => !firstCommands.includes(pid));
-		if (secondRemote === undefined)
+		if (secondRemote === undefined) {
 			throw new Error("The second checkout remote probe did not start.");
+		}
 		owner.releasePid(secondRemote);
 		owner.release();
 		const second = await secondOpening;

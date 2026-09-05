@@ -19,19 +19,27 @@ const bridgeInput = (
 ): LegacyElementIngress => {
 	const number = (key: "x" | "y" | "width" | "height") => {
 		const value = raw[key];
-		if (typeof value !== "number") throw new Error(`bridge fixture has no numeric ${key}`);
+		if (typeof value !== "number") {
+			throw new Error(`bridge fixture has no numeric ${key}`);
+		}
 		return value;
 	};
-	if (typeof raw["id"] !== "string" || typeof raw["index"] !== "string" || !Array.isArray(raw["points"]))
+	if (
+		typeof raw["id"] !== "string" ||
+		typeof raw["index"] !== "string" ||
+		!Array.isArray(raw["points"])
+	) {
 		throw new Error("bridge fixture is incomplete");
+	}
 	const points = raw["points"].map((point) => {
 		if (
 			!Array.isArray(point) ||
 			point.length !== 2 ||
 			typeof point[0] !== "number" ||
 			typeof point[1] !== "number"
-		)
+		) {
 			throw new Error("bridge fixture has an invalid point");
+		}
 		return [point[0], point[1]] as [number, number];
 	});
 	const common = {

@@ -72,7 +72,9 @@ test("Codex application retains a failed stop owner for a force retry", async ()
 					start: async () => ({ state: "running" }) as never,
 					shutdown: async () => {
 						shutdowns++;
-						if (shutdowns === 1) throw new Error("first stop did not prove terminal state");
+						if (shutdowns === 1) {
+							throw new Error("first stop did not prove terminal state");
+						}
 						return { state: "stopped" } as never;
 					},
 				}) as never,
@@ -99,7 +101,9 @@ test("Codex application retains a startup owner whose terminal cleanup failed", 
 					},
 					shutdown: async () => {
 						shutdowns++;
-						if (shutdowns === 1) throw new Error("startup cleanup was not terminal");
+						if (shutdowns === 1) {
+							throw new Error("startup cleanup was not terminal");
+						}
 						return { state: "stopped" } as never;
 					},
 				} as never;
@@ -126,7 +130,9 @@ test("a clean startup failure releases the stage for one later retry", async () 
 				return {
 					start: async () => {
 						events.push(`start:${attempt}`);
-						if (attempt === 1) throw new Error("startup failed");
+						if (attempt === 1) {
+							throw new Error("startup failed");
+						}
 						return { state: "running" } as never;
 					},
 					shutdown: async () => void events.push(`shutdown:${attempt}`) as never,

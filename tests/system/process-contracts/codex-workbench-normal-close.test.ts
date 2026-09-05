@@ -50,7 +50,9 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			expect(seeded.status).toBe(200);
 			const info = await request("/api/boards/info?board=scratch");
 			const note = (info.body as { file?: unknown }).file;
-			if (typeof note !== "string") throw new Error("Scratch did not report its note path.");
+			if (typeof note !== "string") {
+				throw new Error("Scratch did not report its note path.");
+			}
 			appendFileSync(note, "\nforeign edit before shutdown\n");
 
 			const blockerBody = JSON.stringify({ version: 1, kind: "platform" });
@@ -87,7 +89,9 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			await waitFor(async () => {
 				try {
 					const response = await fetch(`${canvas.base}/health`);
-					if (!response.ok) return undefined;
+					if (!response.ok) {
+						return undefined;
+					}
 					const health = (await response.json()) as {
 						application?: { acceptingWrites?: unknown };
 					};
@@ -114,7 +118,9 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			expect(afterRace.held_boards).toEqual([]);
 			await waitFor(async () => {
 				const response = await fetch(`${canvas.base}/health`);
-				if (!response.ok) return undefined;
+				if (!response.ok) {
+					return undefined;
+				}
 				const health = (await response.json()) as {
 					application?: {
 						phase?: unknown;

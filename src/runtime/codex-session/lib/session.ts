@@ -65,12 +65,15 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 }
 
 function requestParams(value: unknown): Readonly<Record<string, unknown>> {
-	if (value === undefined) return {};
-	if (!isRecord(value))
+	if (value === undefined) {
+		return {};
+	}
+	if (!isRecord(value)) {
 		throw new CodexSessionError(
 			"invalid_request",
 			"Codex session request parameters must be a JSON object.",
 		);
+	}
 	return value;
 }
 
@@ -78,12 +81,15 @@ function hasOutcome(
 	value: unknown,
 ): value is { readonly outcome: "not_delivered" | "outcome_unknown" } {
 	return (
-		isRecord(value) && (value["outcome"] === "not_delivered" || value["outcome"] === "outcome_unknown")
+		isRecord(value) &&
+		(value["outcome"] === "not_delivered" || value["outcome"] === "outcome_unknown")
 	);
 }
 
 function mutationFailure(method: string, error: unknown): CodexSessionMutationError {
-	if (error instanceof CodexSessionMutationError) return error;
+	if (error instanceof CodexSessionMutationError) {
+		return error;
+	}
 	const outcome: SessionMutationOutcome = hasOutcome(error)
 		? error.outcome
 		: error instanceof ProtocolDecodeError
@@ -97,7 +103,9 @@ function mutationFailure(method: string, error: unknown): CodexSessionMutationEr
 }
 
 function mutationOutcome(error: unknown): SessionMutationOutcome | undefined {
-	if (error instanceof CodexSessionMutationError) return error.outcome;
+	if (error instanceof CodexSessionMutationError) {
+		return error.outcome;
+	}
 	return hasOutcome(error) ? error.outcome : undefined;
 }
 
@@ -141,8 +149,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		queuedSubmissionId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseQueuedSubmissionId(value)),
 		queuedSubmissionIds: (value: unknown) => {
-			if (!Array.isArray(value))
+			if (!Array.isArray(value)) {
 				throw new TypeError("queuedSubmissionIds must be an array of issued identities.");
+			}
 			return value.map((candidate) =>
 				identity.decoder.serializeCodexIdentity(
 					identity.decoder.parseQueuedSubmissionId(candidate),
@@ -154,7 +163,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		realtimeSessionId: (value: unknown) => identity.decoder.parseRealtimeSessionId(value),
 	} satisfies Record<SessionRequestIdentityField, (value: unknown) => unknown>;
 	const serializeIdentityField = (field: SessionRequestIdentityField, value: unknown): unknown => {
-		if (value === undefined || value === null) return value;
+		if (value === undefined || value === null) {
+			return value;
+		}
 		try {
 			return requestIdentitySerializers[field](value);
 		} catch (error) {
@@ -170,7 +181,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		method: Method,
 		value: unknown,
 	): ClientRequestParams<Method> => {
-		if (isClientRequestMethodWithoutParams(method)) return value as ClientRequestParams<Method>;
+		if (isClientRequestMethodWithoutParams(method)) {
+			return value as ClientRequestParams<Method>;
+		}
 		const params = requestParams(value);
 		const serialized = Object.fromEntries(
 			Object.entries(params).filter(([, fieldValue]) => fieldValue !== undefined),
@@ -186,11 +199,15 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 
 	const setAccountReadiness = (ready: boolean): void => {
 		accountReady = ready;
-		if (phase !== "failed") phase = ready ? "thread-capable" : "login-capable";
+		if (phase !== "failed") {
+			phase = ready ? "thread-capable" : "login-capable";
+		}
 	};
 
 	const deliverNotification = (event: TransportServerNotification): void => {
-		if (!notificationSink) return;
+		if (!notificationSink) {
+			return;
+		}
 		try {
 			notificationSink(event);
 		} catch {
@@ -199,7 +216,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	};
 
 	const onNotification = (event: TransportServerNotification): void => {
-		if (disposed || notificationsStopped) return;
+		if (disposed || notificationsStopped) {
+			return;
+		}
 		if (!notificationsPublished || publishingNotifications) {
 			bufferedNotifications.push(event);
 			return;
@@ -212,27 +231,32 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		publishingNotifications = true;
 		while (bufferedNotifications.length > 0) {
 			const event = bufferedNotifications.shift();
-			if (event !== undefined) deliverNotification(event);
+			if (event !== undefined) {
+				deliverNotification(event);
+			}
 		}
 		publishingNotifications = false;
 	};
 
 	const requireGate = (gate: SessionGate): void => {
-		if (phase === "failed")
+		if (phase === "failed") {
 			throw new CodexSessionError(
 				"not_initialized",
 				"The Codex session failed during initialization and must be replaced.",
 			);
-		if (phase !== "login-capable" && phase !== "thread-capable")
+		}
+		if (phase !== "login-capable" && phase !== "thread-capable") {
 			throw new CodexSessionError(
 				"not_initialized",
 				"The Codex session has not completed initialization and storage proof.",
 			);
-		if (gate === "thread-capable" && !accountReady)
+		}
+		if (gate === "thread-capable" && !accountReady) {
 			throw new CodexSessionError(
 				"not_account_ready",
 				"The Codex account is not ready for thread operations.",
 			);
+		}
 	};
 
 	const requestDecoded = async <Method extends OutboundMethod>(
@@ -245,20 +269,23 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		try {
 			decodedParams = decodeClientRequestParams(method, serializeRequestParams(method, params));
 		} catch (error) {
-			if (mutation)
+			if (mutation) {
 				throw new CodexSessionMutationError(
 					method,
 					"not_delivered",
 					`Codex mutation ${method} was rejected before delivery.`,
 					error,
 				);
+			}
 			throw error;
 		}
 		let response: CodexTransportResponse<Method>;
 		try {
 			response = await transport.request(method, decodedParams, requestOptions);
 		} catch (error) {
-			if (mutation) throw mutationFailure(method, error);
+			if (mutation) {
+				throw mutationFailure(method, error);
+			}
 			throw error;
 		}
 		try {
@@ -269,20 +296,23 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 				`Codex response ${method} is not from the current child epoch.`,
 				error,
 			);
-			if (mutation)
+			if (mutation) {
 				throw new CodexSessionMutationError(
 					method,
 					"outcome_unknown",
 					`Codex mutation ${method} returned with an invalid child correlation.`,
 					failure,
 				);
+			}
 			throw failure;
 		}
 		let decoded: ResponsePayloads[Method];
 		try {
 			decoded = decodeResponse(method, response.result) as ResponsePayloads[Method];
 		} catch (error) {
-			if (mutation) throw mutationFailure(method, error);
+			if (mutation) {
+				throw mutationFailure(method, error);
+			}
 			throw error;
 		}
 		try {
@@ -293,13 +323,14 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 				`Codex response ${method} contains an invalid server identity.`,
 				error,
 			);
-			if (mutation)
+			if (mutation) {
 				throw new CodexSessionMutationError(
 					method,
 					"outcome_unknown",
 					`Codex mutation ${method} returned identities that could not be trusted.`,
 					failure,
 				);
+			}
 			throw failure;
 		}
 	};
@@ -320,27 +351,34 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		prepare: (value: unknown) => unknown = (value) => value,
 	): Promise<SessionResponsePayloads[Method]> => {
 		try {
-			if (gate !== undefined) requireGate(gate);
+			if (gate !== undefined) {
+				requireGate(gate);
+			}
 			return await requestDecoded(method, prepare(params), MUTATION_OPTIONS, true);
 		} catch (error) {
-			if (error instanceof CodexSessionMutationError) throw error;
+			if (error instanceof CodexSessionMutationError) {
+				throw error;
+			}
 			throw mutationFailure(method, error);
 		}
 	};
 
 	const validateLogin = (value: unknown): unknown => {
-		const variant = isRecord(value) && typeof value["type"] === "string" ? value["type"] : undefined;
+		const variant =
+			isRecord(value) && typeof value["type"] === "string" ? value["type"] : undefined;
 		const policy = LOGIN_POLICIES.find((candidate) => candidate.variant === variant);
-		if (policy?.policy === "refused")
+		if (policy?.policy === "refused") {
 			throw new CodexSessionError(
 				"unsupported_login",
 				`The reviewed login variant ${JSON.stringify(variant)} is refused before RPC.`,
 			);
-		if (variant === "profile" || variant === "environment")
+		}
+		if (variant === "profile" || variant === "environment") {
 			throw new CodexSessionError(
 				"unsupported_login",
 				`The reviewed Bedrock ${variant} setup is refused before RPC.`,
 			);
+		}
 		const supported = SupportedLoginAccountParamsSchema.safeParse(value);
 		if (!supported.success) {
 			throw new CodexSessionError(
@@ -355,11 +393,12 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		request: SessionServerRequest,
 		method: SessionServerRequest["method"],
 	): void => {
-		if (request.owner !== "codex-session" || request.method !== method)
+		if (request.owner !== "codex-session" || request.method !== method) {
 			throw new CodexSessionError(
 				"invalid_request",
 				"The reverse request is not owned by this session.",
 			);
+		}
 		try {
 			identity.validator.assertCurrentEpoch(request.child, request.epoch);
 			identity.validator.assertCurrentEpoch(request.correlation.child, request.correlation.epoch);
@@ -376,11 +415,12 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		request: Extract<SessionServerRequest, { method: "currentTime/read" }>,
 	): void => {
 		const threadId = request.params.threadId;
-		if (typeof threadId !== "string" || threadId.length === 0 || threadId.includes("\0"))
+		if (typeof threadId !== "string" || threadId.length === 0 || threadId.includes("\0")) {
 			throw new CodexSessionError(
 				"invalid_identity",
 				"currentTime/read requires a nonempty current ThreadId.",
 			);
+		}
 		try {
 			identity.decoder.parseThreadId(threadId);
 		} catch (error) {
@@ -431,8 +471,12 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	};
 
 	const onServerRequest = (request: TransportServerRequest): void => {
-		if (disposed) return;
-		if (request.owner !== "codex-session") return;
+		if (disposed) {
+			return;
+		}
+		if (request.owner !== "codex-session") {
+			return;
+		}
 		const operation =
 			request.method === "currentTime/read"
 				? respondCurrentTime(request)
@@ -440,16 +484,22 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 					? respondUnsupportedTokenRefresh(request)
 					: respondUnsupportedAttestation(request);
 		void operation.catch((error: unknown) => {
-			if (error instanceof CodexSessionError) respondInvalidReverseRequest(request);
+			if (error instanceof CodexSessionError) {
+				respondInvalidReverseRequest(request);
+			}
 		});
 	};
 
 	const dispose = (): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		notificationsStopped = true;
 		bufferedNotifications.length = 0;
-		for (const unsubscribe of unsubscribers.splice(0).toReversed()) unsubscribe();
+		for (const unsubscribe of unsubscribers.splice(0).toReversed()) {
+			unsubscribe();
+		}
 	};
 
 	if ((options.listenerOwnership ?? "self") === "self") {
@@ -458,11 +508,12 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	}
 
 	const initialize = async (): Promise<SessionResponsePayloads["initialize"]> => {
-		if (phase !== "transport-connected")
+		if (phase !== "transport-connected") {
 			throw new CodexSessionError(
 				"already_initialized",
 				"This Codex session has already started initialization and cannot be initialized again.",
 			);
+		}
 		phase = "initializing";
 		try {
 			const initialized = await requestDecoded(
@@ -527,14 +578,19 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		mutate("account/login/cancel", params, "login-capable");
 	const accountLogout = async () => {
 		const restoreReady = accountReady && phase === "thread-capable";
-		if (restoreReady) setAccountReadiness(false);
+		if (restoreReady) {
+			setAccountReadiness(false);
+		}
 		try {
 			const result = await mutate("account/logout", undefined, "login-capable");
 			setAccountReadiness(false);
 			return result;
 		} catch (error) {
-			if (restoreReady && mutationOutcome(error) === "not_delivered") setAccountReadiness(true);
-			else setAccountReadiness(false);
+			if (restoreReady && mutationOutcome(error) === "not_delivered") {
+				setAccountReadiness(true);
+			} else {
+				setAccountReadiness(false);
+			}
 			throw error;
 		}
 	};

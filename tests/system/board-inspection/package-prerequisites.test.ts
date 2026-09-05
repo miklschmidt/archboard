@@ -44,7 +44,7 @@ describe("persisted package prerequisites", () => {
 				([prefix, declaredType, actualType], index): PackageElement[] => {
 					const targetId = `${prefix}t`;
 					let target: PackageElement;
-					if (actualType === "text")
+					if (actualType === "text") {
 						target = {
 							id: targetId,
 							type: "text",
@@ -55,7 +55,7 @@ describe("persisted package prerequisites", () => {
 							fontFamily: 5,
 							text: "target",
 						};
-					else if (actualType === "arrow" || actualType === "line")
+					} else if (actualType === "arrow" || actualType === "line") {
 						target = connector({
 							id: targetId,
 							type: actualType,
@@ -68,7 +68,7 @@ describe("persisted package prerequisites", () => {
 							],
 							...(prefix === "b8" ? { startBinding: { elementId: "b8ob", focus: 0, gap: 0 } } : {}),
 						});
-					else
+					} else {
 						target = {
 							id: targetId,
 							type: "rectangle",
@@ -77,6 +77,7 @@ describe("persisted package prerequisites", () => {
 							width: 10,
 							height: 10,
 						};
+					}
 					return [
 						semanticNode(`${prefix}o`, {
 							id: `${prefix}ob`,
@@ -285,19 +286,20 @@ describe("persisted package prerequisites", () => {
 				"CONNECTOR_PENETRATES_NODE",
 				"CONNECTOR_PENETRATES_OBSTACLE",
 				"CONNECTOR_INTERSECTION_UNMARKED",
-			])
+			]) {
 				expect(
 					report.findings.some(
 						(finding) => finding.code === code && findingUses(finding, "dupcon"),
 					),
 				).toBe(false);
+			}
 			expect(
 				report.findings
 					.filter((finding) => finding.reason === "bound-element-target-type-mismatch")
 					.map((finding) => finding.details.targetId)
 					.toSorted(),
 			).toEqual(["b1t", "b2t", "b3t", "b4t", "b7t", "mtarget"]);
-			for (const targetId of ["b5t", "b6t", "b8t"])
+			for (const targetId of ["b5t", "b6t", "b8t"]) {
 				expect(
 					report.findings.some(
 						(finding) =>
@@ -305,6 +307,7 @@ describe("persisted package prerequisites", () => {
 							finding.details.targetId === targetId,
 					),
 				).toBe(false);
+			}
 			expect(
 				report.findings.some(
 					(finding) =>
@@ -367,7 +370,7 @@ describe("persisted package prerequisites", () => {
 				"malformed-bound-elements",
 				"invalid-node-metadata",
 				"invalid-code-binding",
-			])
+			]) {
 				expect(
 					report.findings.some(
 						(finding) =>
@@ -376,7 +379,8 @@ describe("persisted package prerequisites", () => {
 							finding.affectedBBox?.x === Number.MAX_VALUE,
 					),
 				).toBe(true);
-			for (const reason of ["rotation", "persisted-seed", "invalid-library-attribution"])
+			}
+			for (const reason of ["rotation", "persisted-seed", "invalid-library-attribution"]) {
 				expect(
 					report.findings.some(
 						(finding) =>
@@ -385,6 +389,7 @@ describe("persisted package prerequisites", () => {
 							finding.affectedBBox?.x === Number.MAX_VALUE,
 					),
 				).toBe(true);
+			}
 			expect(
 				report.findings
 					.filter(
@@ -395,7 +400,7 @@ describe("persisted package prerequisites", () => {
 					.map((finding) => finding.reason)
 					.toSorted(),
 			).toEqual(["invalid-library-attribution", "persisted-seed", "rotation"]);
-			for (const reason of ["rotation", "malformed-start-binding"])
+			for (const reason of ["rotation", "malformed-start-binding"]) {
 				expect(
 					report.findings.some(
 						(finding) =>
@@ -404,6 +409,7 @@ describe("persisted package prerequisites", () => {
 							finding.affectedBBox?.x === Number.MAX_VALUE,
 					),
 				).toBe(true);
+			}
 			expect(
 				report.findings
 					.filter(

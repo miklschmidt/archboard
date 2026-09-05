@@ -81,9 +81,13 @@ function immutableBinding(binding: DynamicApprovalOwnerBinding): DynamicApproval
 }
 
 function freezeGraph(value: unknown, seen = new WeakSet<object>()): void {
-	if (value === null || typeof value !== "object" || seen.has(value)) return;
+	if (value === null || typeof value !== "object" || seen.has(value)) {
+		return;
+	}
 	seen.add(value);
-	for (const key of Reflect.ownKeys(value)) freezeGraph(Reflect.get(value, key), seen);
+	for (const key of Reflect.ownKeys(value)) {
+		freezeGraph(Reflect.get(value, key), seen);
+	}
 	Object.freeze(value);
 }
 
@@ -101,14 +105,18 @@ export function createCanvasDynamicApprovalOwner(
 	const decisions = new Map<string, DynamicToolApprovalDecision>();
 	const listeners = new Set<() => void>();
 	const notify = (): void => {
-		for (const listener of listeners) listener();
+		for (const listener of listeners) {
+			listener();
+		}
 	};
 	const terminal = (
 		entry: PendingDynamicApproval,
 		outcome: DynamicToolApprovalDecision["outcome"],
 		cause: DynamicToolApprovalDecision["cause"],
 	): void => {
-		if (entry.settled) return;
+		if (entry.settled) {
+			return;
+		}
 		entry.settled = true;
 		clearTimeout(entry.timer);
 		pending.delete(keyFor(entry.request));
@@ -126,7 +134,9 @@ export function createCanvasDynamicApprovalOwner(
 	const present = (request: DynamicToolApprovalRequest): void => {
 		const ownedRequest = ownImmutableRequest(request);
 		const key = keyFor(ownedRequest);
-		if (pending.has(key)) throw new Error("The dynamic approval is already pending.");
+		if (pending.has(key)) {
+			throw new Error("The dynamic approval is already pending.");
+		}
 		let resolve!: (decision: DynamicToolApprovalDecision) => void;
 		const decision = new Promise<DynamicToolApprovalDecision>((next) => {
 			resolve = next;
@@ -150,7 +160,9 @@ export function createCanvasDynamicApprovalOwner(
 		presentImmutableRequest: present,
 		awaitOneExactVisualDecision: (request: DynamicToolApprovalRequest) => {
 			const entry = pending.get(keyFor(request));
-			if (entry === undefined) throw new Error("The exact dynamic approval is not pending.");
+			if (entry === undefined) {
+				throw new Error("The exact dynamic approval is not pending.");
+			}
 			return entry.decision;
 		},
 		settleIdentityAndEffectHashOnce: (input: {
@@ -161,12 +173,15 @@ export function createCanvasDynamicApprovalOwner(
 			const key = keyFor(request);
 			const prior = decisions.get(key);
 			if (prior !== undefined) {
-				if (JSON.stringify(prior) !== JSON.stringify(decision))
+				if (JSON.stringify(prior) !== JSON.stringify(decision)) {
 					throw new Error("The dynamic approval already has a different terminal decision.");
+				}
 				return;
 			}
 			const entry = pending.get(key);
-			if (entry === undefined) throw new Error("The exact dynamic approval was never presented.");
+			if (entry === undefined) {
+				throw new Error("The exact dynamic approval was never presented.");
+			}
 			terminal(entry, decision.outcome, decision.cause);
 		},
 	});
@@ -176,15 +191,18 @@ export function createCanvasDynamicApprovalOwner(
 			_context: BrowserActionContext,
 		): Promise<BrowserActionResult> => {
 			const entry = pending.get(keyFor(command));
-			if (entry === undefined) throw new Error("The dynamic approval is no longer pending.");
+			if (entry === undefined) {
+				throw new Error("The dynamic approval is no longer pending.");
+			}
 			if (
 				command.commandId !== entry.binding.commandId ||
 				command.paneId !== entry.binding.paneId ||
 				command.capturedLink.threadId !== entry.binding.capturedLink.threadId ||
 				command.capturedLink.childId !== entry.binding.capturedLink.childId ||
 				command.capturedLink.epoch !== entry.binding.capturedLink.epoch
-			)
+			) {
 				throw new Error("The dynamic approval binding is stale.");
+			}
 			terminal(
 				entry,
 				command.decision === "approve" ? "approved" : "declined",
@@ -194,8 +212,9 @@ export function createCanvasDynamicApprovalOwner(
 		},
 		onBrowserDisconnect: (context: BrowserActionContext, _reason: BrowserDisconnectReason) => {
 			for (const entry of pending.values()) {
-				if (entry.binding.paneId === context.paneId)
+				if (entry.binding.paneId === context.paneId) {
 					terminal(entry, "disconnected", "browser_disconnected");
+				}
 			}
 		},
 		onChange: (listener: () => void) => {
@@ -214,7 +233,9 @@ export function createCanvasDynamicApprovalOwner(
 			),
 		bindLease: (paneId: string, commandId: BrowserCommandId) => {
 			for (const entry of pending.values()) {
-				if (entry.binding.paneId !== paneId || entry.binding.commandId === commandId) continue;
+				if (entry.binding.paneId !== paneId || entry.binding.commandId === commandId) {
+					continue;
+				}
 				entry.binding = immutableBinding({ ...entry.binding, commandId });
 			}
 		},
@@ -223,8 +244,9 @@ export function createCanvasDynamicApprovalOwner(
 			if (
 				event.correlation.child !== options.identity.identity.validator.childId ||
 				event.correlation.epoch !== options.identity.identity.validator.epoch
-			)
+			) {
 				return;
+			}
 			const { method, params } = event.notification;
 			for (const entry of pending.values()) {
 				const identity = entry.request.identity;
@@ -239,8 +261,9 @@ export function createCanvasDynamicApprovalOwner(
 						params.turnId === turnId &&
 						item.type === "dynamicToolCall" &&
 						item.id === options.identity.identity.decoder.serializeCodexIdentity(identity.callId)
-					)
+					) {
 						terminal(entry, "cancelled", "call_cancelled");
+					}
 				} else if (
 					method === "turn/completed" &&
 					params.threadId === threadId &&
@@ -252,11 +275,14 @@ export function createCanvasDynamicApprovalOwner(
 			}
 		},
 		settleAll: (cause: "host_shutdown" | "child_disconnected") => {
-			for (const entry of pending.values())
+			for (const entry of pending.values()) {
 				terminal(entry, cause === "host_shutdown" ? "cancelled" : "disconnected", cause);
+			}
 		},
 		dispose: () => {
-			for (const entry of pending.values()) clearTimeout(entry.timer);
+			for (const entry of pending.values()) {
+				clearTimeout(entry.timer);
+			}
 			pending.clear();
 			decisions.clear();
 			listeners.clear();

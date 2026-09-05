@@ -143,7 +143,9 @@ function bands(values: number[]): number[] {
 	const sorted = [...values].toSorted((a, b) => a - b);
 	const out: number[] = [];
 	for (const value of sorted) {
-		if (out.length === 0 || value - out[out.length - 1]! > BAND) out.push(value);
+		if (out.length === 0 || value - out[out.length - 1]! > BAND) {
+			out.push(value);
+		}
 	}
 	return out;
 }
@@ -151,19 +153,31 @@ function bands(values: number[]): number[] {
 const bandIndex = (edges: number[], value: number): number => {
 	let index = 0;
 	edges.forEach((edge, i) => {
-		if (value - edge > -BAND) index = i;
+		if (value - edge > -BAND) {
+			index = i;
+		}
 	});
 	return index;
 };
 
 function arrangementOf(panes: PaneRegistration[]): Arrangement {
-	if (panes.length === 0) return "none";
-	if (panes.length === 1) return "single";
+	if (panes.length === 0) {
+		return "none";
+	}
+	if (panes.length === 1) {
+		return "single";
+	}
 	const rows = bands(panes.map((p) => p.rect.y)).length;
 	const columns = bands(panes.map((p) => p.rect.x)).length;
-	if (rows === 1 && columns === 1) return "overlapping";
-	if (rows === 1) return "side-by-side";
-	if (columns === 1) return "stacked";
+	if (rows === 1 && columns === 1) {
+		return "overlapping";
+	}
+	if (rows === 1) {
+		return "side-by-side";
+	}
+	if (columns === 1) {
+		return "stacked";
+	}
 	return "grid";
 }
 
@@ -180,13 +194,21 @@ function placeOf(
 		case "single":
 			return "the only pane";
 		case "side-by-side": {
-			if (panes.length === 2) return index === 0 ? "left" : "right";
-			if (panes.length === 3) return COLUMN_NAMES[index]!;
+			if (panes.length === 2) {
+				return index === 0 ? "left" : "right";
+			}
+			if (panes.length === 3) {
+				return COLUMN_NAMES[index]!;
+			}
 			return `column ${index + 1} of ${panes.length}`;
 		}
 		case "stacked": {
-			if (panes.length === 2) return index === 0 ? "top" : "bottom";
-			if (panes.length === 3) return ROW_NAMES[index]!;
+			if (panes.length === 2) {
+				return index === 0 ? "top" : "bottom";
+			}
+			if (panes.length === 3) {
+				return ROW_NAMES[index]!;
+			}
 			return `row ${index + 1} of ${panes.length}`;
 		}
 		case "overlapping":
@@ -283,7 +305,9 @@ export function resolvePaneSpec(registrations: PaneRegistration[], spec: string)
 			(wanted === "primary" && entry.pane.primary),
 	);
 
-	if (matches.length === 1) return matches[0]!.pane;
+	if (matches.length === 1) {
+		return matches[0]!.pane;
+	}
 	if (matches.length > 1) {
 		throw new Error(
 			`"${spec}" matches ${matches.length} panes (${matches.map((m) => m.place).join(", ")}), ` +
@@ -315,8 +339,12 @@ export function resolvePaneSpec(registrations: PaneRegistration[], spec: string)
  */
 export function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
 	const ordered = panesInOrder(registrations);
-	if (ordered.length === 0) return null;
-	if (ordered.length === 1) return ordered[0]!.pane;
+	if (ordered.length === 0) {
+		return null;
+	}
+	if (ordered.length === 1) {
+		return ordered[0]!.pane;
+	}
 	throw new Error(
 		`${ordered.length} panes are open, so this needs a pane as well as a board — ` +
 			`--pane ${ordered.map((entry) => entry.place).join(" | ")}. ` +
@@ -379,8 +407,12 @@ function paneLine(pane: PaneReport): string {
 		`view (${round(view.x)},${round(view.y)}) ${round(view.width)}x${round(view.height)} @${view.zoom.toFixed(2)}x`,
 		pane.selection.count > 0 ? `selected: ${pane.selection.summary}` : "nothing selected",
 	];
-	if (pane.focused) parts.push("focused");
-	if (pane.primary) parts.push("answers screenshots");
+	if (pane.focused) {
+		parts.push("focused");
+	}
+	if (pane.primary) {
+		parts.push("answers screenshots");
+	}
 	return parts.join(" · ");
 }
 
@@ -486,7 +518,9 @@ export function buildPanesReport(
 				`\`--board ${panes[0]!.board}\`, or \`--board ${panes.find((p) => p.board !== panes[0]!.board)!.board}\`.`,
 		);
 	}
-	for (const pane of panes) lines.push(`  ${paneLine(pane)}`);
+	for (const pane of panes) {
+		lines.push(`  ${paneLine(pane)}`);
+	}
 
 	return {
 		paneCount: panes.length,

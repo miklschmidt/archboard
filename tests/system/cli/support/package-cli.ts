@@ -94,8 +94,9 @@ export function createPackageCliOwner(): PackageCliOwner {
 	const log = join(outside, "logs", "archboard.log");
 	const registry = join(outside, "repos.json");
 	const vault = join(outside, "vault");
-	for (const directory of [home, state, dirname(log), vault])
+	for (const directory of [home, state, dirname(log), vault]) {
 		mkdirSync(directory, { recursive: true });
+	}
 	const children = new Set<ChildProcess>();
 	let disposed = false;
 	const environment = (url?: string): NodeJS.ProcessEnv => ({
@@ -115,7 +116,9 @@ export function createPackageCliOwner(): PackageCliOwner {
 		options: PackageRunOptions,
 		stdio: ["pipe", "pipe", "pipe"] | ["ignore", number, number],
 	) => {
-		if (disposed) throw new Error("Package CLI owner is disposed.");
+		if (disposed) {
+			throw new Error("Package CLI owner is disposed.");
+		}
 		const cwd = options.cwd ?? outside;
 		const child = spawn(packageBin, [...args], {
 			cwd,
@@ -187,18 +190,24 @@ export function createPackageCliOwner(): PackageCliOwner {
 		});
 
 	const dispose = async () => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
 		const exits = [...children].map(
 			(child) =>
 				new Promise<void>((resolveExit) => {
-					if (child.exitCode !== null || child.signalCode !== null) return resolveExit();
+					if (child.exitCode !== null || child.signalCode !== null) {
+						return resolveExit();
+					}
 					child.once("close", () => resolveExit());
 					child.kill("SIGKILL");
 				}),
 		);
 		await Promise.allSettled(exits);
-		if (existsSync(outside)) rmSync(outside, { recursive: true, force: true });
+		if (existsSync(outside)) {
+			rmSync(outside, { recursive: true, force: true });
+		}
 	};
 	return {
 		outside,

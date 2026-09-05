@@ -24,8 +24,9 @@ function isRecord(value: unknown): value is RecordValue {
 }
 
 export function parseApprovalResponse(value: unknown): ApprovalResponse {
-	if (!isRecord(value) || typeof value["approvalKind"] !== "string")
+	if (!isRecord(value) || typeof value["approvalKind"] !== "string") {
 		throw new CodexApprovalError("invalid_response", "The approval response is malformed.");
+	}
 
 	const { approvalKind, ...result } = value;
 	const method = (() => {
@@ -52,8 +53,9 @@ export function parseApprovalResponse(value: unknown): ApprovalResponse {
 		}
 	})();
 	const parsed = CodexServerResponseSchema.safeParse({ method, result });
-	if (!parsed.success || !("result" in parsed.data))
+	if (!parsed.success || !("result" in parsed.data)) {
 		throw new CodexApprovalError("invalid_response", "The approval response is malformed.");
+	}
 	return { approvalKind, ...parsed.data.result } as ApprovalResponse;
 }
 
@@ -127,16 +129,24 @@ export function toServerResponse(
 ): ReverseResponse {
 	switch (request.method) {
 		case "item/commandExecution/requestApproval":
-			if (response.approvalKind !== "command_execution") throw familyError(request);
+			if (response.approvalKind !== "command_execution") {
+				throw familyError(request);
+			}
 			return { result: { decision: response.decision } };
 		case "item/fileChange/requestApproval":
-			if (response.approvalKind !== "file_change") throw familyError(request);
+			if (response.approvalKind !== "file_change") {
+				throw familyError(request);
+			}
 			return { result: { decision: response.decision } };
 		case "item/tool/requestUserInput":
-			if (response.approvalKind !== "user_input") throw familyError(request);
+			if (response.approvalKind !== "user_input") {
+				throw familyError(request);
+			}
 			return { result: { answers: response.answers } };
 		case "mcpServer/elicitation/request":
-			if (response.approvalKind !== "elicitation") throw familyError(request);
+			if (response.approvalKind !== "elicitation") {
+				throw familyError(request);
+			}
 			return {
 				result: {
 					action: response.action,
@@ -145,7 +155,9 @@ export function toServerResponse(
 				},
 			};
 		case "item/permissions/requestApproval":
-			if (response.approvalKind !== "permissions") throw familyError(request);
+			if (response.approvalKind !== "permissions") {
+				throw familyError(request);
+			}
 			return {
 				result: {
 					permissions: response.permissions,
@@ -156,10 +168,14 @@ export function toServerResponse(
 				},
 			};
 		case "applyPatchApproval":
-			if (response.approvalKind !== "apply_patch") throw familyError(request);
+			if (response.approvalKind !== "apply_patch") {
+				throw familyError(request);
+			}
 			return { result: { decision: response.decision } };
 		case "execCommandApproval":
-			if (response.approvalKind !== "exec_command") throw familyError(request);
+			if (response.approvalKind !== "exec_command") {
+				throw familyError(request);
+			}
 			return { result: { decision: response.decision } };
 	}
 }
@@ -201,81 +217,108 @@ export function fallbackResponse(
 }
 
 function supportsSpokenFormSchema(schema: unknown): boolean {
-	if (!isRecord(schema) || !isRecord(schema["properties"])) return false;
+	if (!isRecord(schema) || !isRecord(schema["properties"])) {
+		return false;
+	}
 	return Object.entries(schema["properties"]).every(([name, definition]) => {
-		if (name.length === 0 || name.includes("\0") || !isRecord(definition)) return false;
-		if (["string", "number", "integer", "boolean"].includes(String(definition["type"]))) return true;
-		if (Array.isArray(definition["enum"]))
+		if (name.length === 0 || name.includes("\0") || !isRecord(definition)) {
+			return false;
+		}
+		if (["string", "number", "integer", "boolean"].includes(String(definition["type"]))) {
+			return true;
+		}
+		if (Array.isArray(definition["enum"])) {
 			return definition["enum"].every((entry) => typeof entry === "string");
-		if (Array.isArray(definition["oneOf"]))
-			return definition["oneOf"].every((entry) => isRecord(entry) && typeof entry["const"] === "string");
-		if (definition["type"] !== "array" || !isRecord(definition["items"])) return false;
-		if (Array.isArray(definition["items"]["enum"]))
+		}
+		if (Array.isArray(definition["oneOf"])) {
+			return definition["oneOf"].every(
+				(entry) => isRecord(entry) && typeof entry["const"] === "string",
+			);
+		}
+		if (definition["type"] !== "array" || !isRecord(definition["items"])) {
+			return false;
+		}
+		if (Array.isArray(definition["items"]["enum"])) {
 			return definition["items"]["enum"].every((entry) => typeof entry === "string");
+		}
 		return (
 			Array.isArray(definition["items"]["anyOf"]) &&
-			definition["items"]["anyOf"].every((entry) => isRecord(entry) && typeof entry["const"] === "string")
+			definition["items"]["anyOf"].every(
+				(entry) => isRecord(entry) && typeof entry["const"] === "string",
+			)
 		);
 	});
 }
 
 function spokenText(value: unknown): string | null {
-	if (typeof value !== "string") return null;
-	if (value.length === 0 || value.length > 256) return null;
-	if (value.includes("\r") || value.includes("\n")) return null;
+	if (typeof value !== "string") {
+		return null;
+	}
+	if (value.length === 0 || value.length > 256) {
+		return null;
+	}
+	if (value.includes("\r") || value.includes("\n")) {
+		return null;
+	}
 	return value;
 }
 
 function spokenCommandEffectSummary(request: CommandApprovalRequest): string {
-	if (request.params.command === undefined || request.params.command === null)
+	if (request.params.command === undefined || request.params.command === null) {
 		throw new CodexApprovalError(
 			"unsupported_schema",
 			"The command approval has no executable command for spoken presentation.",
 			request.requestId,
 		);
+	}
 	const command = spokenText(request.params.command);
 	const cwd = spokenText(request.params.cwd);
-	if (command === null || cwd === null)
+	if (command === null || cwd === null) {
 		throw new CodexApprovalError(
 			"unsupported_schema",
 			"The command approval has no safe one-line executable effect presentation.",
 			request.requestId,
 		);
-	if (request.params.environmentId !== undefined && request.params.environmentId !== null)
+	}
+	if (request.params.environmentId !== undefined && request.params.environmentId !== null) {
 		throw new CodexApprovalError(
 			"unsupported_schema",
 			"The command approval targets an undisclosed execution environment.",
 			request.requestId,
 		);
+	}
 	if (
 		request.params.networkApprovalContext !== undefined &&
 		request.params.networkApprovalContext !== null
-	)
+	) {
 		throw new CodexApprovalError(
 			"unsupported_schema",
 			"The command approval includes an undisclosed network effect.",
 			request.requestId,
 		);
+	}
 	const summary = `Run ${command} in ${cwd}`;
 	const bounded = spokenText(summary);
-	if (bounded === null)
+	if (bounded === null) {
 		throw new CodexApprovalError(
 			"unsupported_schema",
 			"The command approval has no safe one-line spoken effect presentation.",
 			request.requestId,
 		);
+	}
 	return bounded;
 }
 
 export function toSpokenEffectPresentation(
 	request: ApprovalRequest,
 ): SpokenApprovalEffectPresentation {
-	if (request.family !== "command_execution")
+	if (request.family !== "command_execution") {
 		throw new CodexApprovalError(
 			"unsupported_request",
 			"Only command approvals have a spoken effect presentation.",
 			request.requestId,
 		);
+	}
 	return Object.freeze({
 		requestId: request.requestId,
 		family: request.family,
@@ -299,48 +342,68 @@ export function spokenEligibility(
 	if (
 		request.family === "user_input" &&
 		request.params.questions.some((question) => question.isSecret)
-	)
+	) {
 		return { eligible: false, reason: "secret" };
-	if (facts.secret === true) return { eligible: false, reason: "secret" };
-	if (facts.coordinatorBlocking === true)
+	}
+	if (facts.secret === true) {
+		return { eligible: false, reason: "secret" };
+	}
+	if (facts.coordinatorBlocking === true) {
 		return { eligible: false, reason: "coordinator_blocking" };
-	if (facts.unsupportedSchema === true) return { eligible: false, reason: "unsupported_schema" };
-	if (facts.broaderGrant === true) return { eligible: false, reason: "broader_grant" };
-	if (request.family === "command_execution" && effectPresentation === null)
+	}
+	if (facts.unsupportedSchema === true) {
 		return { eligible: false, reason: "unsupported_schema" };
-	if (!currentBinding) return { eligible: false, reason: "stale_ownership" };
+	}
+	if (facts.broaderGrant === true) {
+		return { eligible: false, reason: "broader_grant" };
+	}
+	if (request.family === "command_execution" && effectPresentation === null) {
+		return { eligible: false, reason: "unsupported_schema" };
+	}
+	if (!currentBinding) {
+		return { eligible: false, reason: "stale_ownership" };
+	}
 
 	switch (request.family) {
 		case "command_execution": {
-			if (request.params.kind !== "command") return { eligible: false, reason: "not_binary" };
+			if (request.params.kind !== "command") {
+				return { eligible: false, reason: "not_binary" };
+			}
 			const available = effectiveCommandDecisions(request);
 			if (
 				request.params.additionalPermissions !== undefined &&
 				request.params.additionalPermissions !== null
-			)
+			) {
 				return { eligible: false, reason: "broader_grant" };
+			}
 			if (
 				(request.params.proposedExecpolicyAmendment?.length ?? 0) > 0 ||
 				(request.params.proposedNetworkPolicyAmendments?.length ?? 0) > 0
-			)
+			) {
 				return { eligible: false, reason: "broader_grant" };
-			if (available.length === 2 && available.includes("accept") && available.includes("decline"))
+			}
+			if (available.length === 2 && available.includes("accept") && available.includes("decline")) {
 				return { eligible: true, reason: "eligible" };
+			}
 			return { eligible: false, reason: "broader_grant" };
 		}
 		case "file_change":
 			return { eligible: false, reason: "broader_grant" };
 		case "user_input":
-			if (request.params.isBlocking) return { eligible: false, reason: "coordinator_blocking" };
-			if (request.params.questions.length !== 1)
+			if (request.params.isBlocking) {
+				return { eligible: false, reason: "coordinator_blocking" };
+			}
+			if (request.params.questions.length !== 1) {
 				return { eligible: false, reason: "multi_question" };
+			}
 			return { eligible: false, reason: "not_binary" };
 		case "elicitation":
 			if (
 				request.params.mode === "openai/form" &&
 				!supportsSpokenFormSchema(request.params.requestedSchema)
-			)
+			) {
 				return { eligible: false, reason: "unsupported_schema" };
+			}
 			return {
 				eligible: false,
 				reason: request.params.mode === "url" ? "url" : "form",
@@ -372,20 +435,31 @@ export function classifyResponseFailure(
 	error: unknown,
 	writeAttempted = true,
 ): "not_delivered" | "outcome_unknown" {
-	if (!writeAttempted) return "not_delivered";
-	if (error instanceof CodexTransportOwnershipError || error instanceof CodexTransportUsageError)
+	if (!writeAttempted) {
 		return "not_delivered";
-	if (!isRecord(error)) return "outcome_unknown";
-	if (error["outcome"] === "not_delivered" || error["outcome"] === "outcome_unknown")
+	}
+	if (error instanceof CodexTransportOwnershipError || error instanceof CodexTransportUsageError) {
+		return "not_delivered";
+	}
+	if (!isRecord(error)) {
+		return "outcome_unknown";
+	}
+	if (error["outcome"] === "not_delivered" || error["outcome"] === "outcome_unknown") {
 		return error["outcome"];
-	if (error["accepted"] === false) return "not_delivered";
-	if (error["accepted"] === true) return "outcome_unknown";
+	}
+	if (error["accepted"] === false) {
+		return "not_delivered";
+	}
+	if (error["accepted"] === true) {
+		return "outcome_unknown";
+	}
 	if (
 		error["reason"] === "backpressure" ||
 		error["reason"] === "frame-too-large" ||
 		error["reason"] === "shutdown" ||
 		error["reason"] === "transport-closed"
-	)
+	) {
 		return "not_delivered";
+	}
 	return "outcome_unknown";
 }

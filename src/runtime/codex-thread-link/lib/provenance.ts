@@ -29,18 +29,27 @@ function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): 
 }
 
 function isCanonicalIdentity(value: unknown, kind: "child" | "epoch" | "thread" | "turn"): boolean {
-	if (!isNonEmptyString(value)) return false;
-	if (kind === "child") return /^archboard:child:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u.test(value);
-	if (kind === "thread")
+	if (!isNonEmptyString(value)) {
+		return false;
+	}
+	if (kind === "child") {
+		return /^archboard:child:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u.test(value);
+	}
+	if (kind === "thread") {
 		return /^archboard:thread:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u.test(value);
-	if (kind === "turn") return /^archboard:turn:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u.test(value);
+	}
+	if (kind === "turn") {
+		return /^archboard:turn:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u.test(value);
+	}
 	return /^archboard:epoch:[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}\.[A-Za-z0-9][A-Za-z0-9._~-]{0,8192}$/u.test(
 		value,
 	);
 }
 
 function epochBelongsToChild(epoch: unknown, child: unknown): boolean {
-	if (!isNonEmptyString(epoch) || !isNonEmptyString(child)) return false;
+	if (!isNonEmptyString(epoch) || !isNonEmptyString(child)) {
+		return false;
+	}
 	const childToken = /^archboard:child:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u.exec(child)?.[1];
 	const epochTokens =
 		/^archboard:epoch:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})\.([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u.exec(
@@ -89,7 +98,9 @@ function statusOutcomePairIsValid(record: Record<string, unknown>): boolean {
 
 /** Validate the complete durable record shape, including its executable invariants. */
 export function isEpochOperationRecord(value: unknown): value is EpochOperationRecord {
-	if (!isRecord(value)) return false;
+	if (!isRecord(value)) {
+		return false;
+	}
 	if (
 		!hasExactKeys(value, [
 			"correlation",
@@ -107,7 +118,9 @@ export function isEpochOperationRecord(value: unknown): value is EpochOperationR
 	const correlation = value["correlation"];
 	const operation = value["operation"];
 	const provenance = value["provenance"];
-	if (!isRecord(correlation) || !isRecord(operation) || !isRecord(provenance)) return false;
+	if (!isRecord(correlation) || !isRecord(operation) || !isRecord(provenance)) {
+		return false;
+	}
 	if (
 		!hasExactKeys(correlation, ["childId", "epoch", "operationId"]) ||
 		!hasExactKeys(operation, ["id", "kind", "rpc"]) ||
@@ -170,7 +183,9 @@ export function isEpochOperationRecord(value: unknown): value is EpochOperationR
 }
 
 export function isEpochExecutionProof(value: unknown): value is EpochExecutionProof {
-	if (!isRecord(value) || !hasExactKeys(value, ["record", "manifestRevision"])) return false;
+	if (!isRecord(value) || !hasExactKeys(value, ["record", "manifestRevision"])) {
+		return false;
+	}
 	const revision = value["manifestRevision"];
 	return (
 		typeof revision === "number" &&
@@ -182,15 +197,23 @@ export function isEpochExecutionProof(value: unknown): value is EpochExecutionPr
 
 /** Structural equality for immutable JSON-like epoch records and proofs. */
 export function deepEqual(left: unknown, right: unknown): boolean {
-	if (Object.is(left, right)) return true;
+	if (Object.is(left, right)) {
+		return true;
+	}
 	if (Array.isArray(left) || Array.isArray(right)) {
-		if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) return false;
+		if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+			return false;
+		}
 		return left.every((value, index) => deepEqual(value, right[index]));
 	}
-	if (!isRecord(left) || !isRecord(right)) return false;
+	if (!isRecord(left) || !isRecord(right)) {
+		return false;
+	}
 	const leftKeys = Object.keys(left).toSorted();
 	const rightKeys = Object.keys(right).toSorted();
-	if (!deepEqual(leftKeys, rightKeys)) return false;
+	if (!deepEqual(leftKeys, rightKeys)) {
+		return false;
+	}
 	return leftKeys.every((key) => deepEqual(left[key], right[key]));
 }
 
@@ -220,7 +243,9 @@ function manifestIntegrityIsValid(manifest: EpochManifest): boolean {
 	if (!isRecord(manifest.integrity) || !hasExactKeys(manifest.integrity, ["algorithm", "digest"])) {
 		return false;
 	}
-	if (manifest.integrity.algorithm !== "sha256" || !isHash(manifest.integrity.digest)) return false;
+	if (manifest.integrity.algorithm !== "sha256" || !isHash(manifest.integrity.digest)) {
+		return false;
+	}
 	const payload = {
 		schema: manifest.schema,
 		revision: manifest.revision,
@@ -236,10 +261,14 @@ function manifestIntegrityIsValid(manifest: EpochManifest): boolean {
 function manifestRecordsAreConsistent(manifest: EpochManifest): boolean {
 	const operationIds = new Set<string>();
 	for (const record of manifest.records) {
-		if (operationIds.has(record.correlation.operationId)) return false;
+		if (operationIds.has(record.correlation.operationId)) {
+			return false;
+		}
 		operationIds.add(record.correlation.operationId);
 	}
-	if (manifest.activeEpoch === null) return true;
+	if (manifest.activeEpoch === null) {
+		return true;
+	}
 	if (
 		!isRecord(manifest.activeEpoch) ||
 		!hasExactKeys(manifest.activeEpoch, ["childId", "epoch", "operationId"]) ||
@@ -268,8 +297,12 @@ export function cloneAndFreeze<T>(value: T): T {
 }
 
 function deepFreeze<T>(value: T): T {
-	if (value === null || typeof value !== "object") return value;
-	for (const child of Object.values(value)) deepFreeze(child);
+	if (value === null || typeof value !== "object") {
+		return value;
+	}
+	for (const child of Object.values(value)) {
+		deepFreeze(child);
+	}
 	Object.freeze(value);
 	return value;
 }

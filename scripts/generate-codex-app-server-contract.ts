@@ -136,7 +136,9 @@ function currentVersionName(): string | undefined {
 	try {
 		current = lstatSync(currentRoot);
 	} catch (error) {
-		if (errorCode(error) === "ENOENT") return undefined;
+		if (errorCode(error) === "ENOENT") {
+			return undefined;
+		}
 		throw error;
 	}
 	if (!current.isSymbolicLink()) {
@@ -155,7 +157,9 @@ function entryExists(target: string): boolean {
 		lstatSync(target);
 		return true;
 	} catch (error) {
-		if (errorCode(error) === "ENOENT") return false;
+		if (errorCode(error) === "ENOENT") {
+			return false;
+		}
 		throw error;
 	}
 }
@@ -222,10 +226,14 @@ function applyGeneratedCorrections(root: string): void {
 function publicationOrder(left: string, right: string): number {
 	const leftIndex = basename(left) === "index.ts";
 	const rightIndex = basename(right) === "index.ts";
-	if (leftIndex !== rightIndex) return leftIndex ? 1 : -1;
+	if (leftIndex !== rightIndex) {
+		return leftIndex ? 1 : -1;
+	}
 	if (leftIndex && rightIndex) {
 		const depthDifference = right.split(sep).length - left.split(sep).length;
-		if (depthDifference !== 0) return depthDifference;
+		if (depthDifference !== 0) {
+			return depthDifference;
+		}
 	}
 	return left.localeCompare(right);
 }
@@ -245,11 +253,15 @@ function requireOwnedDirectory(root: string, relativeDirectory: string): string 
 		try {
 			entry = lstatSync(directory);
 		} catch (error) {
-			if (errorCode(error) !== "ENOENT") throw error;
+			if (errorCode(error) !== "ENOENT") {
+				throw error;
+			}
 			try {
 				mkdirSync(directory);
 			} catch (mkdirError) {
-				if (errorCode(mkdirError) !== "EEXIST") throw mkdirError;
+				if (errorCode(mkdirError) !== "EEXIST") {
+					throw mkdirError;
+				}
 			}
 			try {
 				entry = lstatSync(directory);
@@ -287,14 +299,18 @@ function installStableTarget(stagingRoot: string): boolean {
 		renameSync(stagingRoot, versionRoot);
 		return true;
 	} catch (error) {
-		if (errorCode(error) !== "EEXIST" && errorCode(error) !== "ENOTEMPTY") throw error;
+		if (errorCode(error) !== "EEXIST" && errorCode(error) !== "ENOTEMPTY") {
+			throw error;
+		}
 		repairStableTarget(stagingRoot);
 		return false;
 	}
 }
 
 function publishCurrent(): void {
-	if (currentVersionName() === versionName) return;
+	if (currentVersionName() === versionName) {
+		return;
+	}
 	const pointerCandidate = join(generatedRoot, `.current-${randomUUID()}`);
 	try {
 		symlinkSync(join("versions", versionName), pointerCandidate, "dir");
@@ -303,7 +319,9 @@ function publishCurrent(): void {
 		try {
 			unlinkSync(pointerCandidate);
 		} catch (unlinkError) {
-			if (errorCode(unlinkError) !== "ENOENT") throw unlinkError;
+			if (errorCode(unlinkError) !== "ENOENT") {
+				throw unlinkError;
+			}
 		}
 		throw error;
 	}
@@ -328,7 +346,9 @@ async function generateContract(codexEntry: string): Promise<void> {
 			stderr: "inherit",
 		});
 		const exitCode = await generated.exited;
-		if (exitCode !== 0) throw new Error(`Codex app-server type generation exited ${exitCode}`);
+		if (exitCode !== 0) {
+			throw new Error(`Codex app-server type generation exited ${exitCode}`);
+		}
 		if (!existsSync(join(stagingRoot, "index.ts"))) {
 			throw new Error("Codex app-server type generation produced no index.ts");
 		}
@@ -339,7 +359,9 @@ async function generateContract(codexEntry: string): Promise<void> {
 		if (currentVersionName() !== versionName || !existsSync(join(currentRoot, "index.ts"))) {
 			throw new Error("Generated Codex contract pointer switch did not complete");
 		}
-		if (!installed) removeOwnedStagingDirectory(stagingRoot);
+		if (!installed) {
+			removeOwnedStagingDirectory(stagingRoot);
+		}
 	} catch (error) {
 		if (entryExists(stagingRoot)) {
 			removeOwnedStagingDirectory(stagingRoot);

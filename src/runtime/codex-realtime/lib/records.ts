@@ -31,8 +31,9 @@ export function exactNotification(
 		event.correlation.child !== session.binding.child ||
 		event.correlation.epoch !== session.binding.epoch ||
 		!("threadId" in event.notification.params)
-	)
+	) {
 		return false;
+	}
 	try {
 		return (
 			identity.resolveThreadId(event.notification.params.threadId) ===

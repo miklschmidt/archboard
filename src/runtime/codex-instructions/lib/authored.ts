@@ -29,8 +29,9 @@ function sha256(bytes: Uint8Array): string {
 }
 
 function decodeCanonicalBytes(bytes: Buffer, label: string): string {
-	if (bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])))
+	if (bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
 		throw new TypeError(`${label} must be UTF-8 without a BOM.`);
+	}
 
 	let text: string;
 	try {
@@ -38,11 +39,15 @@ function decodeCanonicalBytes(bytes: Buffer, label: string): string {
 	} catch (error) {
 		throw new TypeError(`${label} is not valid UTF-8.`, { cause: error });
 	}
-	if (text.includes("\r")) throw new TypeError(`${label} must use LF line endings.`);
-	if (!text.endsWith("\n") || text.endsWith("\n\n"))
+	if (text.includes("\r")) {
+		throw new TypeError(`${label} must use LF line endings.`);
+	}
+	if (!text.endsWith("\n") || text.endsWith("\n\n")) {
 		throw new TypeError(`${label} must end in exactly one terminal LF.`);
-	if (!Buffer.from(text, "utf8").equals(bytes))
+	}
+	if (!Buffer.from(text, "utf8").equals(bytes)) {
 		throw new TypeError(`${label} contains bytes that do not round-trip as UTF-8.`);
+	}
 	return text;
 }
 
@@ -53,18 +58,21 @@ function readCanonicalDocument(fileName: string, label: string): { bytes: Buffer
 
 function assertDigest(label: string, bytes: Uint8Array, expected: string): string {
 	const actual = sha256(bytes);
-	if (actual !== expected)
+	if (actual !== expected) {
 		throw new TypeError(
 			`${label} hash drifted. Expected SHA-256 ${expected}, received ${actual}. Human re-review is required before updating this digest.`,
 		);
+	}
 	return actual;
 }
 
 function assertComposition(workhorse: string, extension: string): string {
-	if (!workhorse.endsWith("\n") || workhorse.endsWith("\n\n"))
+	if (!workhorse.endsWith("\n") || workhorse.endsWith("\n\n")) {
 		throw new TypeError("Workhorse instructions must end in exactly one LF before the separator.");
-	if (!extension.endsWith("\n") || extension.startsWith("\n") || extension.endsWith("\n\n"))
+	}
+	if (!extension.endsWith("\n") || extension.startsWith("\n") || extension.endsWith("\n\n")) {
 		throw new TypeError("Coordinator role extension must start immediately and end in one LF.");
+	}
 	const composed = `${workhorse}${COORDINATOR_SEPARATOR}${extension}`;
 	assertDigest(
 		"Coordinator instruction composition",
@@ -108,14 +116,17 @@ export function assertCanonicalInstructionBytes(
 	const bytes =
 		typeof candidate === "string" ? Buffer.from(candidate, "utf8") : Buffer.from(candidate);
 	const text = decodeCanonicalBytes(bytes, expected.label);
-	if (name === "separator" && text !== COORDINATOR_SEPARATOR)
+	if (name === "separator" && text !== COORDINATOR_SEPARATOR) {
 		throw new TypeError("Coordinator separator bytes are not the reviewed literal separator.");
+	}
 	if (name === "composedCoordinator") {
 		const marker = "\n\n--- ARCHBOARD COORDINATOR ROLE ---\n";
-		if (text.match(/\n\n--- ARCHBOARD COORDINATOR ROLE ---\n/g)?.length !== 1)
+		if (text.match(/\n\n--- ARCHBOARD COORDINATOR ROLE ---\n/g)?.length !== 1) {
 			throw new TypeError("Coordinator composition must contain exactly one blank-line marker.");
-		if (!text.includes(marker))
+		}
+		if (!text.includes(marker)) {
 			throw new TypeError("Coordinator composition is missing the reviewed separator.");
+		}
 	}
 	assertDigest(expected.label, bytes, expected.expected);
 }

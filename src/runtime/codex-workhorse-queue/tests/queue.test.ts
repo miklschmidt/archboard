@@ -93,7 +93,9 @@ describe("Codex workhorse queue contract", () => {
 		const fixtureValue = fixture();
 		fixtureValue.session.state = [submission(fixtureValue.identity, "queue-one", "one")];
 		const item = fixtureValue.session.state[0];
-		if (item === undefined) throw new Error("fixture did not contain the queue item");
+		if (item === undefined) {
+			throw new Error("fixture did not contain the queue item");
+		}
 
 		await fixtureValue.queue.update({
 			operationId: "edit-operation",
@@ -256,7 +258,9 @@ describe("Codex workhorse queue contract", () => {
 		const firstAddStarted = deferred();
 		let firstAdd = true;
 		fixtureValue.session.beforeMutation = async (method) => {
-			if (method !== "add" || !firstAdd) return;
+			if (method !== "add" || !firstAdd) {
+				return;
+			}
 			firstAdd = false;
 			firstAddStarted.resolve();
 			await gate.promise;
@@ -290,7 +294,9 @@ describe("Codex workhorse queue contract", () => {
 		const firstAddStarted = deferred();
 		let firstAdd = true;
 		fixtureValue.session.beforeMutation = async (method) => {
-			if (method !== "add" || !firstAdd) return;
+			if (method !== "add" || !firstAdd) {
+				return;
+			}
 			firstAdd = false;
 			firstAddStarted.resolve();
 			await gate.promise;
@@ -320,7 +326,9 @@ describe("Codex workhorse queue contract", () => {
 		fixtureValue.session.state = [existing];
 		fixtureValue.session.addIds = [added];
 		fixtureValue.session.beforeMutation = (method) => {
-			if (method !== "add") return;
+			if (method !== "add") {
+				return;
+			}
 			fixtureValue.session.state = [...fixtureValue.session.state, external];
 			fixtureValue.session.beforeMutation = null;
 		};
@@ -386,7 +394,9 @@ describe("Codex workhorse queue contract", () => {
 
 		const liveFixture = fixture();
 		liveFixture.session.beforeMutation = (method) => {
-			if (method === "add") liveFixture.setBinding(binding(liveFixture.identity, "replacement"));
+			if (method === "add") {
+				liveFixture.setBinding(binding(liveFixture.identity, "replacement"));
+			}
 		};
 		expect(
 			await rejected(

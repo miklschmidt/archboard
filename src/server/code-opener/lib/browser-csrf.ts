@@ -19,10 +19,14 @@ function normalizeHostname(hostname: string): string {
 }
 
 function authorityHostname(value: string | undefined): string | null {
-	if (!value) return null;
+	if (!value) {
+		return null;
+	}
 	try {
 		const url = new URL(`http://${value}`);
-		if (url.username || url.password || url.pathname !== "/" || url.search || url.hash) return null;
+		if (url.username || url.password || url.pathname !== "/" || url.search || url.hash) {
+			return null;
+		}
 		return normalizeHostname(url.hostname);
 	} catch {
 		return null;
@@ -30,12 +34,20 @@ function authorityHostname(value: string | undefined): string | null {
 }
 
 function urlHostname(value: string | undefined, allowLocation: boolean): string | null {
-	if (!value || value === "null") return null;
+	if (!value || value === "null") {
+		return null;
+	}
 	try {
 		const url = new URL(value);
-		if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-		if (url.username || url.password) return null;
-		if (!allowLocation && (url.pathname !== "/" || url.search || url.hash)) return null;
+		if (url.protocol !== "http:" && url.protocol !== "https:") {
+			return null;
+		}
+		if (url.username || url.password) {
+			return null;
+		}
+		if (!allowLocation && (url.pathname !== "/" || url.search || url.hash)) {
+			return null;
+		}
 		return normalizeHostname(url.hostname);
 	} catch {
 		return null;
@@ -53,7 +65,9 @@ export function checkBrowserCsrf(
 	// This protects browsers against CSRF. It does not authenticate a local process
 	// that can forge the accepted loopback headers.
 	const host = authorityHostname(headers.host);
-	if (!host || !LOOPBACK_HOSTS.has(host)) return refused("The request Host is not loopback.");
+	if (!host || !LOOPBACK_HOSTS.has(host)) {
+		return refused("The request Host is not loopback.");
+	}
 	if (headers.secFetchSite !== "same-origin") {
 		return refused("Sec-Fetch-Site must be same-origin.");
 	}

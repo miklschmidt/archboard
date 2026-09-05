@@ -45,7 +45,9 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 		);
 		const fresh = written.find((element) => element.type === "text" && !element["isDeleted"]);
 		assert(fresh !== undefined, "a label with no live text element was not expanded");
-		if (!fresh) throw new Error("The expanded label is missing.");
+		if (!fresh) {
+			throw new Error("The expanded label is missing.");
+		}
 		assert(
 			fresh.id !== labelTextIdFor("svc"),
 			"a re-expanded label took the cleared element’s name",
@@ -84,7 +86,9 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 		]);
 		const board = new Map<string, ServerElement>(completed.map((element) => [element.id, element]));
 		const svc = board.get("svc");
-		if (!svc) throw new Error("The one-way binding fixture lost svc.");
+		if (!svc) {
+			throw new Error("The one-way binding fixture lost svc.");
+		}
 		const written = expandForBoard(
 			[agentStatement({ ...svc, label: { text: "IdentityService" } })],
 			board,

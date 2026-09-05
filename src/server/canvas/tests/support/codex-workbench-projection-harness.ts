@@ -197,7 +197,9 @@ export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionH
 		authorities,
 		operations: components.identity.operation,
 		notifyAccount: (event) => {
-			for (const listener of accountListeners) listener(event);
+			for (const listener of accountListeners) {
+				listener(event);
+			}
 		},
 	};
 }

@@ -18,8 +18,12 @@ const findingUses = (finding: InspectionReport["findings"][number], connectorId:
 	("secondConnectorId" in finding.details && finding.details.secondConnectorId === connectorId);
 
 const segmentIndexFor = (finding: InspectionReport["findings"][number], connectorId: string) => {
-	if ("segmentIndex" in finding.details) return finding.details.segmentIndex;
-	if (finding.code !== "CONNECTOR_INTERSECTION_UNMARKED") return null;
+	if ("segmentIndex" in finding.details) {
+		return finding.details.segmentIndex;
+	}
+	if (finding.code !== "CONNECTOR_INTERSECTION_UNMARKED") {
+		return null;
+	}
 	return finding.details.firstConnectorId === connectorId
 		? finding.details.firstSegmentIndex
 		: finding.details.secondSegmentIndex;
@@ -27,7 +31,9 @@ const segmentIndexFor = (finding: InspectionReport["findings"][number], connecto
 
 const completeElement = (input: LegacyElementIngress): ServerElement => {
 	const [element] = expandElements([input], { deterministic: true, forStore: true });
-	if (!element) throw new Error(`Fixture did not produce ${input.id}`);
+	if (!element) {
+		throw new Error(`Fixture did not produce ${input.id}`);
+	}
 	return element;
 };
 
@@ -170,10 +176,11 @@ describe("unrepresentable geometry", () => {
 				"CONNECTOR_PENETRATES_NODE",
 				"CONNECTOR_PENETRATES_OBSTACLE",
 				"CONNECTOR_INTERSECTION_UNMARKED",
-			] as const)
+			] as const) {
 				expect(
 					report.findings.some((finding) => finding.code === code && findingUses(finding, id)),
 				).toBe(true);
+			}
 			expect(
 				report.findings.some(
 					(finding) =>
@@ -205,10 +212,11 @@ describe("unrepresentable geometry", () => {
 				"CONNECTOR_PENETRATES_NODE",
 				"CONNECTOR_PENETRATES_OBSTACLE",
 				"CONNECTOR_INTERSECTION_UNMARKED",
-			] as const)
+			] as const) {
 				expect(
 					report.findings.some((finding) => finding.code === code && findingUses(finding, id)),
 				).toBe(false);
+			}
 			expect(
 				report.findings.some(
 					(finding) =>
@@ -220,7 +228,7 @@ describe("unrepresentable geometry", () => {
 	});
 
 	test("keeps every persisted elbow endpoint-special chain and the exact coordinate ceiling", () => {
-		for (const startIsSpecial of [true, false, null] as const)
+		for (const startIsSpecial of [true, false, null] as const) {
 			for (const endIsSpecial of [true, false, null] as const) {
 				const diagnostics = inspectBoardDiagnostics([
 					elbowConnector(`special-${String(startIsSpecial)}-${String(endIsSpecial)}`, {
@@ -241,6 +249,7 @@ describe("unrepresentable geometry", () => {
 				expect(diagnostics.work.pathSegmentChecks).toBe(2);
 				expectNoModeRefusal(diagnostics.report);
 			}
+		}
 		for (const coordinate of [1_000_000, -1_000_000] as const) {
 			const report = inspectBoard([
 				elbowConnector(`boundary-${coordinate}`, {
@@ -281,10 +290,11 @@ describe("unrepresentable geometry", () => {
 				"CONNECTOR_PENETRATES_NODE",
 				"CONNECTOR_PENETRATES_OBSTACLE",
 				"CONNECTOR_INTERSECTION_UNMARKED",
-			] as const)
+			] as const) {
 				expect(
 					report.findings.some((finding) => finding.code === code && findingUses(finding, id)),
 				).toBe(false);
+			}
 			const control = completeElement({
 				id: `${id}-control`,
 				type: "arrow",
@@ -303,12 +313,13 @@ describe("unrepresentable geometry", () => {
 				"CONNECTOR_PENETRATES_NODE",
 				"CONNECTOR_PENETRATES_OBSTACLE",
 				"CONNECTOR_INTERSECTION_UNMARKED",
-			] as const)
+			] as const) {
 				expect(
 					controlReport.findings.some(
 						(finding) => finding.code === code && findingUses(finding, `${id}-control`),
 					),
 				).toBe(true);
+			}
 			expect(() =>
 				planBridgeCreate({
 					elements: [rejected, verticalConnector(`${id}-bridge-under`, 50)],
@@ -372,7 +383,9 @@ describe("unrepresentable geometry", () => {
 					(candidate) => candidate.code === code && findingUses(candidate, id),
 				);
 				expect(finding).toBeDefined();
-				if (!finding) continue;
+				if (!finding) {
+					continue;
+				}
 				expect(segmentIndexFor(finding, id)).toBe(segmentIndex);
 			}
 		}

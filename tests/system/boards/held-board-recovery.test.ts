@@ -114,7 +114,9 @@ describe("held board recovery", () => {
 	test("signal shutdown refuses a held board and keeps write admission open", async () => {
 		await stopSaving("hold-stop", "theirs-stop");
 		const canvasPid = canvas.pid;
-		if (canvasPid === null) throw new Error("The held-board canvas has no pid.");
+		if (canvasPid === null) {
+			throw new Error("The held-board canvas has no pid.");
+		}
 		process.kill(canvasPid, "SIGTERM");
 		const health = (await waitFor(async () => {
 			try {

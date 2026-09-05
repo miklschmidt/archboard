@@ -70,7 +70,9 @@ function event(authorities: IdentityAuthorities, threadId: ThreadId): TransportS
 }
 
 async function flush(): Promise<void> {
-	for (let index = 0; index < 8; index += 1) await Promise.resolve();
+	for (let index = 0; index < 8; index += 1) {
+		await Promise.resolve();
+	}
 }
 
 test("retiring a closed pane drops its refresh and notification eligibility", async () => {
@@ -232,7 +234,9 @@ test("ingests bounded source items and takes the cursor from timeline/list", asy
 	owner.read("pane-bounded", 1, timelineLink, true, connection);
 	await flush();
 	const projection = owner.read("pane-bounded", 1, timelineLink, true, connection);
-	if (projection === null) throw new Error("bounded timeline was not loaded");
+	if (projection === null) {
+		throw new Error("bounded timeline was not loaded");
+	}
 	expect(projection.cursor).toBe("timeline-cursor");
 	expect(projection.turns[0]?.items.map((entry) => entry.kind)).toEqual(["agent_message"]);
 	expect(projection.turns[0]?.presentation.outputs.truncated).toBeTrue();
@@ -311,7 +315,9 @@ test("caps final item chronology after matching and unmatched approvals", async 
 	owner.read("pane-approval-cap", 1, timelineLink, true, connection);
 	await flush();
 	const projection = owner.read("pane-approval-cap", 1, timelineLink, true, connection);
-	if (projection === null) throw new Error("approval timeline was not loaded");
+	if (projection === null) {
+		throw new Error("approval timeline was not loaded");
+	}
 	expect(projection.turns[0]?.items.map((entry) => entry.kind)).toEqual([
 		"command_execution",
 		"approval_request",
@@ -365,7 +371,9 @@ test("marks a user summary truncated when text appears beyond its bounded scan",
 	owner.read("pane-delayed-user", 1, timelineLink, true, connection);
 	await flush();
 	const projection = owner.read("pane-delayed-user", 1, timelineLink, true, connection);
-	if (projection === null) throw new Error("delayed user timeline was not loaded");
+	if (projection === null) {
+		throw new Error("delayed user timeline was not loaded");
+	}
 	expect(projection.turns[0]?.presentation.summary).toContain("user: [media]");
 	expect(projection.turns[0]?.presentation.outputs.truncated).toBeTrue();
 	owner.dispose();
@@ -387,10 +395,11 @@ test("accepts exact snapshot budget boundaries and rejects every supplied invali
 		BROWSER_SNAPSHOT_MIN_BYTES + 0.5,
 		Number.NaN,
 		Number.POSITIVE_INFINITY,
-	])
+	]) {
 		expect(() => createCanvasBrowserProjectionBudget({ maxBytes })).toThrow(
 			"browser snapshot budget must be between",
 		);
+	}
 });
 
 test("a budget cut drops the oldest turns and keeps the newest in-progress turn", async () => {
@@ -450,7 +459,9 @@ test("a budget cut drops the oldest turns and keeps the newest in-progress turn"
 	owner.read("pane-truncating", 1, timelineLink, true, connection);
 	await flush();
 	const projection = owner.read("pane-truncating", 1, timelineLink, true, connection);
-	if (projection === null) throw new Error("truncating timeline was not loaded");
+	if (projection === null) {
+		throw new Error("truncating timeline was not loaded");
+	}
 
 	// Newest-first paging is what makes the cut safe.
 	expect(requests.map((request) => request.sortDirection)).toEqual(["desc", "desc"]);

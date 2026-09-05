@@ -18,21 +18,26 @@ const cleanupTimeoutMs = 5_000;
 
 function requirePreflight(): void {
 	for (const file of [fixtureNote, manifest, lockfile, join(fixtureRoot, "diagram.mmd")]) {
-		if (!existsSync(file)) throw new Error(`Emulation preflight failed: ${file} is absent.`);
+		if (!existsSync(file)) {
+			throw new Error(`Emulation preflight failed: ${file} is absent.`);
+		}
 	}
 }
 
 function ownedOutputDirectory(argv: readonly string[]): string {
-	if (argv.length > 0)
+	if (argv.length > 0) {
 		throw new Error(
 			"This proof owns its output. Run without arguments; it creates one disposable report directory under the system temporary root.",
 		);
+	}
 	return mkdtempSync(join(tmpdir(), "archboard-server-rendering-emulation-proof-"));
 }
 
 function exportFiles(files: Record<string, unknown>): BinaryFiles {
 	for (const [id, raw] of Object.entries(files)) {
-		if (!raw || typeof raw !== "object") throw new Error(`Persisted file ${id} is invalid.`);
+		if (!raw || typeof raw !== "object") {
+			throw new Error(`Persisted file ${id} is invalid.`);
+		}
 		const file = raw as Record<string, unknown>;
 		if (
 			file["id"] !== id ||
@@ -40,16 +45,18 @@ function exportFiles(files: Record<string, unknown>): BinaryFiles {
 			typeof file["dataURL"] !== "string" ||
 			!file["dataURL"].startsWith("data:image/png;base64,") ||
 			typeof file["created"] !== "number"
-		)
+		) {
 			throw new Error(`Persisted file ${id} is not a complete PNG export file.`);
+		}
 	}
 	return files as unknown as BinaryFiles;
 }
 
 function fixtureInput(): Record<string, unknown> {
 	const content = readNote(fixtureNote);
-	if (!content)
+	if (!content) {
 		throw new Error(`Cannot read the canonical persisted board fixture: ${fixtureNote}`);
+	}
 	const scene = projectPreviewSnapshot({
 		board: "render-proof",
 		fingerprint: "canonical-fixture",
@@ -60,8 +67,9 @@ function fixtureInput(): Record<string, unknown> {
 		scene.elements.length !== 9 ||
 		Object.keys(scene.files).length !== 1 ||
 		!scene.elements.every((element) => isBlockId(element.id))
-	)
+	) {
 		throw new Error("Canonical board read did not produce the expected block-safe render input.");
+	}
 	return {
 		elements: scene.elements,
 		files: exportFiles(scene.files),
@@ -96,24 +104,33 @@ async function install(directory: string): Promise<{ stdout: string; stderr: str
 			}),
 		]);
 	} catch (error) {
-		if (child.exitCode === null) child.kill("SIGTERM");
+		if (child.exitCode === null) {
+			child.kill("SIGTERM");
+		}
 		await Promise.race([child.exited, Bun.sleep(cleanupTimeoutMs - 1_000)]);
-		if (child.exitCode === null) child.kill("SIGKILL");
+		if (child.exitCode === null) {
+			child.kill("SIGKILL");
+		}
 		await Promise.race([child.exited, Bun.sleep(1_000)]);
 		throw error;
 	} finally {
-		if (timeout) clearTimeout(timeout);
+		if (timeout) {
+			clearTimeout(timeout);
+		}
 	}
 	const output = { stdout: await stdout, stderr: await stderr };
-	if (child.exitCode !== 0)
+	if (child.exitCode !== 0) {
 		throw new Error(`Disposable emulation dependency install failed: ${output.stderr}`);
+	}
 	return output;
 }
 
 function fontFiles(directory: string): string[] {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const path = join(directory, entry.name);
-		if (entry.isDirectory()) return fontFiles(path);
+		if (entry.isDirectory()) {
+			return fontFiles(path);
+		}
 		return path.endsWith(".woff2") ? [path] : [];
 	});
 }
@@ -202,7 +219,9 @@ function installDom(
 	) => Record<string, unknown>;
 	const nativeFor = (element: Record<string, unknown>) => {
 		const present = backing.get(element);
-		if (present) return present;
+		if (present) {
+			return present;
+		}
 		const native = createCanvas(Number(element["width"]) || 300, Number(element["height"]) || 150);
 		Object.assign(native, {
 			setAttribute: () => undefined,
@@ -232,12 +251,13 @@ function installDom(
 	});
 	for (const name of names) {
 		const replacement = window[name];
-		if (replacement !== undefined)
+		if (replacement !== undefined) {
 			Object.defineProperty(globalThis, name, {
 				configurable: true,
 				writable: true,
 				value: replacement,
 			});
+		}
 	}
 	for (const [name, replacement] of Object.entries({
 		Image: canvas["Image"],
@@ -256,8 +276,11 @@ function installDom(
 		installed: [...before.keys()],
 		restore: () => {
 			for (const [name, descriptor] of before) {
-				if (descriptor) Object.defineProperty(globalThis, name, descriptor);
-				else Reflect.deleteProperty(globalThis, name);
+				if (descriptor) {
+					Object.defineProperty(globalThis, name, descriptor);
+				} else {
+					Reflect.deleteProperty(globalThis, name);
+				}
 			}
 			return [...before].every(([name, descriptor]) => {
 				const restored = Object.getOwnPropertyDescriptor(globalThis, name);
@@ -297,10 +320,11 @@ try {
 		removeAll(): void;
 	};
 	const registeredFonts = fonts.filter((font) => fontRegistry.registerFromPath(font, "Excalifont"));
-	if (fonts.length === 0 || registeredFonts.length !== fonts.length)
+	if (fonts.length === 0 || registeredFonts.length !== fonts.length) {
 		throw new Error(
 			`Emulation font preflight failed: discovered ${fonts.length}, registered ${registeredFonts.length}.`,
 		);
+	}
 	report = {
 		status: "running",
 		output: { directory: output, disposable: true },
@@ -349,14 +373,17 @@ try {
 			},
 			mermaid: { validElementCount: valid.elements.length, malformed },
 		};
-		if (png.size < 1 || !svg.includes("Service API") || !svg.includes("data:image/png;base64"))
+		if (png.size < 1 || !svg.includes("Service API") || !svg.includes("data:image/png;base64")) {
 			throw new Error("Emulation did not render the canonical board fixture.");
-		if (valid.elements.length !== 0 || malformed === "accepted")
+		}
+		if (valid.elements.length !== 0 || malformed === "accepted") {
 			throw new Error(
 				`Emulation no longer reproduces the Mermaid gap: ${JSON.stringify(report["mermaid"])}`,
 			);
-		if (runtimeConsole.length > 0)
+		}
+		if (runtimeConsole.length > 0) {
 			throw new Error(`Emulation emitted runtime diagnostics: ${JSON.stringify(runtimeConsole)}`);
+		}
 	} catch (error) {
 		renderFailure = error;
 	} finally {
@@ -366,9 +393,12 @@ try {
 		(report["globals"] as Record<string, unknown>)["restored"] = restored;
 		report["runtimeConsole"] = runtimeConsole.slice(-20);
 	}
-	if (!(report["globals"] as Record<string, unknown>)["restored"])
+	if (!(report["globals"] as Record<string, unknown>)["restored"]) {
 		throw new Error("Emulation did not restore every installed global.");
-	if (renderFailure) throw renderFailure;
+	}
+	if (renderFailure) {
+		throw renderFailure;
+	}
 } catch (error) {
 	failure = error;
 	report = {
@@ -385,7 +415,9 @@ try {
 	await Bun.write(reportPath, JSON.stringify(report, null, 2) + "\n");
 }
 
-if (failure) throw new Error(`Server emulation proof failed. Disposable report: ${reportPath}`);
+if (failure) {
+	throw new Error(`Server emulation proof failed. Disposable report: ${reportPath}`);
+}
 globalThis.process.stdout.write(
 	`Server emulation proof passed. Disposable report: ${reportPath}\n`,
 );

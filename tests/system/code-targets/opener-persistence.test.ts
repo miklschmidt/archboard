@@ -17,19 +17,24 @@ const SYSTEM_OWNER_PATH = "tests/system/code-targets/opener-persistence.test.ts"
 
 function isExcludedFromHostedCi(environment: NodeJS.ProcessEnv): boolean {
 	const excludedOwner = environment[CI_EXCLUDED_SYSTEM_OWNER_ENV];
-	if (excludedOwner === undefined) return false;
-	if (environment["CI"] !== "true")
+	if (excludedOwner === undefined) {
+		return false;
+	}
+	if (environment["CI"] !== "true") {
 		throw new Error(`${CI_EXCLUDED_SYSTEM_OWNER_ENV} requires CI=true.`);
-	if (excludedOwner !== SYSTEM_OWNER_PATH)
+	}
+	if (excludedOwner !== SYSTEM_OWNER_PATH) {
 		throw new Error(
 			`${CI_EXCLUDED_SYSTEM_OWNER_ENV} cannot exclude ${JSON.stringify(excludedOwner)}; only ${SYSTEM_OWNER_PATH} is allowed.`,
 		);
+	}
 	return true;
 }
 
 const excludedFromHostedCi = isExcludedFromHostedCi(process.env);
-if (excludedFromHostedCi)
+if (excludedFromHostedCi) {
 	process.stderr.write(`# CI-only system owner excluded: ${SYSTEM_OWNER_PATH}\n`);
+}
 const persistenceTest = excludedFromHostedCi ? test.skip : test;
 
 async function save(fixture: OpenerFixture, selection: OpenerSelection): Promise<void> {
@@ -59,8 +64,11 @@ describe("machine-wide opener persistence", () => {
 				resources.defer(() => rmSync(vault, { recursive: true }));
 				process.env["ARCHBOARD_VAULT"] = vault;
 				resources.defer(() => {
-					if (previousVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-					else process.env["ARCHBOARD_VAULT"] = previousVault;
+					if (previousVault === undefined) {
+						delete process.env["ARCHBOARD_VAULT"];
+					} else {
+						process.env["ARCHBOARD_VAULT"] = previousVault;
+					}
 				});
 				const { makeIdentity, renderBoardNote } =
 					await import("../../../src/runtime/engine/board.ts");
@@ -178,8 +186,11 @@ describe("machine-wide opener persistence", () => {
 					expect(noteText).not.toContain(forbidden);
 				}
 			}
-			if (previousVault === undefined) expect(process.env["ARCHBOARD_VAULT"]).toBeUndefined();
-			else expect(process.env["ARCHBOARD_VAULT"]).toBe(previousVault);
+			if (previousVault === undefined) {
+				expect(process.env["ARCHBOARD_VAULT"]).toBeUndefined();
+			} else {
+				expect(process.env["ARCHBOARD_VAULT"]).toBe(previousVault);
+			}
 		},
 		TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS,
 	);

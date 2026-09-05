@@ -54,7 +54,9 @@ describe("server-minted ids", () => {
 		expect(idsInNote(note)).toEqual(minted);
 		for (const element of JSON.parse(extractSceneJsonFromObsidianMd(note))
 			.elements as ServerElement[]) {
-			if (element.type !== "text" || !element.containerId) continue;
+			if (element.type !== "text" || !element.containerId) {
+				continue;
+			}
 			expect(minted).toContain(element.containerId);
 			expect(note).toContain(`^${element.id}`);
 		}
@@ -110,7 +112,9 @@ describe("id collisions", () => {
 		const refused: string[] = [];
 		const inUse = {
 			has: (id: string) => {
-				if (refused.length >= 3) return false;
+				if (refused.length >= 3) {
+					return false;
+				}
 				refused.push(id);
 				return true;
 			},

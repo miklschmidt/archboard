@@ -35,7 +35,9 @@ function processGroupExists(group: number): boolean {
 		process.kill(-group, 0);
 		return true;
 	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code === "ESRCH") return false;
+		if ((cause as NodeJS.ErrnoException).code === "ESRCH") {
+			return false;
+		}
 		throw cause;
 	}
 }
@@ -44,11 +46,15 @@ async function forceGroupGone(group: number): Promise<void> {
 	try {
 		process.kill(-group, "SIGKILL");
 	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") throw cause;
+		if ((cause as NodeJS.ErrnoException).code !== "ESRCH") {
+			throw cause;
+		}
 	}
 	const deadline = Date.now() + TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS;
 	while (processGroupExists(group)) {
-		if (Date.now() >= deadline) throw new Error(`Fixture process group ${group} survived cleanup.`);
+		if (Date.now() >= deadline) {
+			throw new Error(`Fixture process group ${group} survived cleanup.`);
+		}
 		await Bun.sleep(TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS);
 	}
 }
@@ -66,8 +72,12 @@ async function readLine(reader: ReadableStreamDefaultReader<Uint8Array>): Promis
 		const next = await reader.read();
 		text += decoder.decode(next.value, { stream: !next.done });
 		const newline = text.indexOf("\n");
-		if (newline >= 0) return text.slice(0, newline);
-		if (next.done) throw new Error("Signal owner exited before publishing a readiness line.");
+		if (newline >= 0) {
+			return text.slice(0, newline);
+		}
+		if (next.done) {
+			throw new Error("Signal owner exited before publishing a readiness line.");
+		}
 	}
 }
 
@@ -92,7 +102,9 @@ test("package inspection timeout reaps its exact process group", async () => {
 	}
 	expect(artifacts).toContain(vault);
 	expect(artifacts).toHaveLength(2);
-	for (const artifact of artifacts) expect(existsSync(artifact)).toBe(false);
+	for (const artifact of artifacts) {
+		expect(existsSync(artifact)).toBe(false);
+	}
 });
 
 test("package inspection reaps and drains a child when ownership capture fails", async () => {
@@ -128,7 +140,9 @@ test("package inspection reaps and drains a child when ownership capture fails",
 		expect([...settled].toSorted()).toEqual(["leader", "stderr", "stdout"]);
 		expectGroupGone(identity!);
 	} finally {
-		if (identity && processGroupExists(identity.group)) await forceGroupGone(identity.group);
+		if (identity && processGroupExists(identity.group)) {
+			await forceGroupGone(identity.group);
+		}
 		await owner.dispose();
 	}
 });
@@ -156,7 +170,9 @@ test("sentinel pipe failure still reaps the process and removes every artifact",
 	expect(processIdentityExists(sentinel.identity)).toBe(false);
 	expect(artifacts).toHaveLength(2);
 	expect(artifacts).toContain(vault);
-	for (const artifact of artifacts) expect(existsSync(artifact)).toBe(false);
+	for (const artifact of artifacts) {
+		expect(existsSync(artifact)).toBe(false);
+	}
 });
 
 test("resistant sentinel startup failure is reaped before start rejects", async () => {
@@ -193,7 +209,9 @@ test("dispose cancels and awaits a delayed resistant sentinel startup", async ()
 	await expect(starting).rejects.toThrow("Package inspection owner disposed.");
 	await disposed;
 	expect(processIdentityExists(identity!)).toBe(false);
-	for (const artifact of artifacts) expect(existsSync(artifact)).toBe(false);
+	for (const artifact of artifacts) {
+		expect(existsSync(artifact)).toBe(false);
+	}
 	expect(owner.artifactPaths()).toEqual([]);
 	expect(existsSync(vault)).toBe(false);
 });
@@ -274,7 +292,9 @@ test(
 					for (;;) {
 						const next = await ownedReader.read();
 						output += decoder.decode(next.value, { stream: !next.done });
-						if (next.done) return output;
+						if (next.done) {
+							return output;
+						}
 					}
 				} finally {
 					if (stdoutReader === ownedReader) {
@@ -294,7 +314,9 @@ test(
 			const [status, shutdownOutput] = await Promise.all([child.exited, remainingStdout, stderr]);
 			expect(status).toBe(143);
 			expect(child.signalCode).toBe("SIGTERM");
-			for (const identity of ready!.identities) expectGroupGone(identity);
+			for (const identity of ready!.identities) {
+				expectGroupGone(identity);
+			}
 			expect(processIdentityExists(ready!.sentinel)).toBe(false);
 			const shutdown = JSON.parse(shutdownOutput.trim()) as {
 				shutdown: boolean;
@@ -314,7 +336,9 @@ test(
 			expect(ready!.artifacts).toHaveLength(2);
 			expect(ready!.artifacts.some((artifact) => artifact.startsWith(ownedVaultPrefix))).toBe(true);
 			expect(ready!.artifacts.some((artifact) => artifact.startsWith(ownedHttpPrefix))).toBe(true);
-			for (const artifact of ready!.artifacts) expect(existsSync(artifact)).toBe(false);
+			for (const artifact of ready!.artifacts) {
+				expect(existsSync(artifact)).toBe(false);
+			}
 		} finally {
 			if (stdoutReader) {
 				const ownedReader = stdoutReader;
@@ -328,9 +352,13 @@ test(
 				}
 			}
 			for (const identity of ready?.identities ?? []) {
-				if (processGroupExists(identity.group)) await forceGroupGone(identity.group);
+				if (processGroupExists(identity.group)) {
+					await forceGroupGone(identity.group);
+				}
 			}
-			if (processGroupExists(child.pid)) await forceGroupGone(child.pid);
+			if (processGroupExists(child.pid)) {
+				await forceGroupGone(child.pid);
+			}
 			await child.exited;
 			for (const artifact of ready?.artifacts ?? []) {
 				if (artifact.startsWith(ownedVaultPrefix) || artifact.startsWith(ownedHttpPrefix)) {
@@ -379,7 +407,9 @@ test(
 					for (;;) {
 						const next = await ownedReader.read();
 						output += decoder.decode(next.value, { stream: !next.done });
-						if (next.done) return output;
+						if (next.done) {
+							return output;
+						}
 					}
 				} finally {
 					if (stdoutReader === ownedReader) {
@@ -403,7 +433,9 @@ test(
 				settlements: [],
 				remainingArtifacts: [],
 			});
-			for (const artifact of ready!.artifacts) expect(existsSync(artifact)).toBe(false);
+			for (const artifact of ready!.artifacts) {
+				expect(existsSync(artifact)).toBe(false);
+			}
 		} finally {
 			if (stdoutReader) {
 				const ownedReader = stdoutReader;
@@ -416,7 +448,9 @@ test(
 					}
 				}
 			}
-			if (processGroupExists(child.pid)) await forceGroupGone(child.pid);
+			if (processGroupExists(child.pid)) {
+				await forceGroupGone(child.pid);
+			}
 			await child.exited;
 			for (const artifact of ready?.artifacts ?? []) {
 				if (artifact.startsWith(ownedVaultPrefix) || artifact.startsWith(ownedHttpPrefix)) {

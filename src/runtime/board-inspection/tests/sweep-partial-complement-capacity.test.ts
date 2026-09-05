@@ -36,8 +36,9 @@ function nestedOwnerLabelBoard(height: number, labelCount: number) {
 
 function partialComplementSweep(count: number, reverse: boolean) {
 	const parents = new Map<string, string | null>();
-	for (let index = 0; index < count; index += 1)
+	for (let index = 0; index < count; index += 1) {
 		parents.set(`chain-${index}`, index === 0 ? null : `chain-${index - 1}`);
+	}
 	parents.set("unrelated", null);
 	return diagnoseSweepCompatibility({
 		left: Array.from({ length: count }, (_, index) =>

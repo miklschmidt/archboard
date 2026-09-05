@@ -58,8 +58,9 @@ export function createOwnedCanvasPaths(): OwnedCanvasPaths {
 		temporary: path.join(root, "tmp"),
 	};
 	try {
-		for (const directory of [paths.home, paths.xdgConfig, paths.xdgState, paths.temporary])
+		for (const directory of [paths.home, paths.xdgConfig, paths.xdgState, paths.temporary]) {
 			fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+		}
 		return paths;
 	} catch (error) {
 		fs.rmSync(root, { recursive: true, force: true });
@@ -81,7 +82,9 @@ export function processExists(pid: number): boolean {
 		return true;
 	} catch (error) {
 		const failure = error as NodeJS.ErrnoException;
-		if (failure.code === "ESRCH") return false;
+		if (failure.code === "ESRCH") {
+			return false;
+		}
 		throw new Error(
 			`Process ${pid} observation failed (${failure.code ?? "unknown"}): ${failure.message}`,
 			{ cause: error },

@@ -34,18 +34,21 @@ export function createReverseResponder(options: ReverseResponderOptions): Revers
 			record.responded ||
 			record.responding ||
 			options.reverseRequests.get(record.key) !== record
-		)
+		) {
 			return Promise.reject(
 				new CodexTransportOwnershipError("the reverse request is unknown or already answered"),
 			);
-		if (owner !== record.request.owner)
+		}
+		if (owner !== record.request.owner) {
 			return Promise.reject(
 				new CodexTransportOwnershipError(
 					`owner ${JSON.stringify(owner)} cannot answer a request owned by ${record.request.owner}`,
 				),
 			);
-		if (!isRecord(response))
+		}
+		if (!isRecord(response)) {
 			return Promise.reject(new CodexTransportUsageError("reverse response must be an object"));
+		}
 		let hasResult: boolean;
 		let canonical: Record<string, unknown>;
 		try {
@@ -56,20 +59,22 @@ export function createReverseResponder(options: ReverseResponderOptions): Revers
 				Reflect.ownKeys(response).some(
 					(key) => typeof key !== "string" || (key !== "result" && key !== "error"),
 				)
-			)
+			) {
 				return Promise.reject(
 					new CodexTransportUsageError("reverse response must contain exactly one result or error"),
 				);
+			}
 			const candidate = hasResult
 				? { method: record.request.method, result: response.result }
 				: { method: record.request.method, error: response.error };
 			const parsed = CodexServerResponseSchema.safeParse(candidate);
-			if (!parsed.success)
+			if (!parsed.success) {
 				return Promise.reject(
 					new CodexTransportUsageError(
 						`reverse response does not match the authored ${record.request.method} result schema`,
 					),
 				);
+			}
 			canonical = cloneAndFreeze(parsed.data) as Record<string, unknown>;
 		} catch {
 			return Promise.reject(new CodexTransportUsageError("reverse response is not JSON-shaped"));

@@ -23,7 +23,9 @@ export interface SnapshotElement {
 }
 
 export function canonicalise(value: unknown): unknown {
-	if (Array.isArray(value)) return value.map(canonicalise);
+	if (Array.isArray(value)) {
+		return value.map(canonicalise);
+	}
 	if (value && typeof value === "object") {
 		const sorted: Record<string, unknown> = {};
 		for (const key of Object.keys(value).toSorted()) {
@@ -40,7 +42,9 @@ export function elementFields(
 ): SnapshotElement {
 	const fields: Record<string, string | undefined> = {};
 	for (const key of Object.keys(element).toSorted()) {
-		if (!ignored.includes(key)) fields[key] = JSON.stringify(canonicalise(element[key]));
+		if (!ignored.includes(key)) {
+			fields[key] = JSON.stringify(canonicalise(element[key]));
+		}
 	}
 	return {
 		id: String(element["id"]),

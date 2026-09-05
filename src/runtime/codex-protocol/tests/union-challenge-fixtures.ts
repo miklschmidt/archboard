@@ -232,11 +232,19 @@ export function generatedBranch(type: string): JsonRecord | undefined {
 }
 
 export function arrayMember(fieldName: string, next: string): unknown {
-	if (fieldName === "activeFlags") return "waitingOnApproval";
-	if (fieldName === "verifications") return "trustedAccessForCyber";
-	if (fieldName === "entries") return { kind: "context", text: "fixture" };
-	if (fieldName === "changes") return { path: "file", kind: { type: "add" }, diff: "" };
-	if (fieldName === "files")
+	if (fieldName === "activeFlags") {
+		return "waitingOnApproval";
+	}
+	if (fieldName === "verifications") {
+		return "trustedAccessForCyber";
+	}
+	if (fieldName === "entries") {
+		return { kind: "context", text: "fixture" };
+	}
+	if (fieldName === "changes") {
+		return { path: "file", kind: { type: "add" }, diff: "" };
+	}
+	if (fieldName === "files") {
 		return {
 			root: "/",
 			path: "file",
@@ -245,13 +253,15 @@ export function arrayMember(fieldName: string, next: string): unknown {
 			score: 0,
 			indices: null,
 		};
-	if (fieldName === "itemTypeResults")
+	}
+	if (fieldName === "itemTypeResults") {
 		return {
 			itemType: "AGENTS_MD",
 			successes: [],
 			failures: [],
 		};
-	if (fieldName === "successes")
+	}
+	if (fieldName === "successes") {
 		return {
 			itemType: "AGENTS_MD",
 			cwd: null,
@@ -259,7 +269,8 @@ export function arrayMember(fieldName: string, next: string): unknown {
 			target: null,
 			title: null,
 		};
-	if (fieldName === "failures")
+	}
+	if (fieldName === "failures") {
 		return {
 			itemType: "AGENTS_MD",
 			errorType: null,
@@ -269,11 +280,16 @@ export function arrayMember(fieldName: string, next: string): unknown {
 			cwd: null,
 			source: null,
 		};
-	if (fieldName === "plan") return { step: "fixture", status: "pending" };
-	if (fieldName === "commandActions")
+	}
+	if (fieldName === "plan") {
+		return { step: "fixture", status: "pending" };
+	}
+	if (fieldName === "commandActions") {
 		return { type: "read", command: "true", name: "fixture", path: "/tmp/archboard" };
-	if (fieldName === "content" || fieldName === "output" || fieldName === "contentItems")
+	}
+	if (fieldName === "content" || fieldName === "output" || fieldName === "contentItems") {
 		return generatedBranch(next) ?? { type: "inputText", text: "fixture" };
+	}
 	return {};
 }
 
@@ -325,6 +341,8 @@ export function nullableMember(fieldName: string): unknown {
 }
 
 export function optionalMember(fieldName: string): unknown {
-	if (fieldName === "phase") return "commentary";
+	if (fieldName === "phase") {
+		return "commentary";
+	}
 	return undefined;
 }

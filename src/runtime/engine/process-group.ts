@@ -43,7 +43,9 @@ export function processIdentityExists(identity: ProcessIdentity): boolean {
 	try {
 		return processIdentity(identity.pid).startTime === identity.startTime;
 	} catch (cause) {
-		if (isMissingProcess(cause)) return false;
+		if (isMissingProcess(cause)) {
+			return false;
+		}
 		throw cause;
 	}
 }
@@ -53,7 +55,9 @@ export function processIdentityOwnsGroup(identity: ProcessIdentity, group: numbe
 		const record = processRecord(identity.pid);
 		return record.identity.startTime === identity.startTime && record.group === group;
 	} catch (cause) {
-		if (isMissingProcess(cause)) return false;
+		if (isMissingProcess(cause)) {
+			return false;
+		}
 		throw cause;
 	}
 }
@@ -73,7 +77,9 @@ export function processGroupExists(group: number): boolean {
 		process.kill(-group, 0);
 		return true;
 	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code === "ESRCH") return false;
+		if ((cause as NodeJS.ErrnoException).code === "ESRCH") {
+			return false;
+		}
 		throw cause;
 	}
 }
@@ -82,7 +88,9 @@ export function signalOwnedProcessGroup(
 	identity: ProcessGroupIdentity,
 	signal: NodeJS.Signals,
 ): boolean {
-	if (!processGroupExists(identity.group)) return false;
+	if (!processGroupExists(identity.group)) {
+		return false;
+	}
 	if (!processIdentityOwnsGroup(identity.leader, identity.group)) {
 		throw new Error(
 			`Refusing to signal process group ${identity.group}: its recorded leader no longer owns that group.`,
@@ -92,7 +100,9 @@ export function signalOwnedProcessGroup(
 		process.kill(-identity.group, signal);
 		return true;
 	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code === "ESRCH") return false;
+		if ((cause as NodeJS.ErrnoException).code === "ESRCH") {
+			return false;
+		}
 		throw cause;
 	}
 }
@@ -104,13 +114,21 @@ export function processGroupHasOtherMember(identity: ProcessGroupIdentity): bool
 		);
 	}
 	for (const entry of readdirSync("/proc", { withFileTypes: true })) {
-		if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
+		if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) {
+			continue;
+		}
 		const pid = Number(entry.name);
-		if (pid === identity.leader.pid) continue;
+		if (pid === identity.leader.pid) {
+			continue;
+		}
 		try {
-			if (processRecord(pid).group === identity.group) return true;
+			if (processRecord(pid).group === identity.group) {
+				return true;
+			}
 		} catch (cause) {
-			if (!isMissingProcess(cause)) throw cause;
+			if (!isMissingProcess(cause)) {
+				throw cause;
+			}
 		}
 	}
 	return false;

@@ -26,7 +26,9 @@ export async function setTheme(browser: AgentBrowserSession, theme: ShellTheme):
 	const current = await browser.eval<string | null>(
 		"document.querySelector('.shell')?.getAttribute('data-theme') ?? null",
 	);
-	if (current !== theme) await roleAction(browser, "button", `Use ${theme} theme`);
+	if (current !== theme) {
+		await roleAction(browser, "button", `Use ${theme} theme`);
+	}
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(

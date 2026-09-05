@@ -24,7 +24,9 @@ const shape = (elements: readonly object[]): string =>
 const assert = (condition: unknown, message: string): void =>
 	expect(Boolean(condition), message).toBeTrue();
 const required = <T>(value: T | undefined, message: string): T => {
-	if (value === undefined) throw new Error(message);
+	if (value === undefined) {
+		throw new Error(message);
+	}
 	return value;
 };
 const expandOne = (element: LegacyElementIngress): ExpandedElement[] =>
@@ -59,7 +61,9 @@ test("applies label input, preserves order, and pins converter output", () => {
 		const label = [...board.values()].find(
 			(element) => element.type === "text" && element.containerId === box.id,
 		);
-		if (label?.type !== "text") throw new Error("the spent label is not text");
+		if (label?.type !== "text") {
+			throw new Error("the spent label is not text");
+		}
 
 		assert(
 			applied.named.length === 2,
@@ -94,7 +98,9 @@ test("applies label input, preserves order, and pins converter output", () => {
 			),
 			"the renamed label is missing",
 		);
-		if (heldLabel.type !== "text") throw new Error("the renamed label is not text");
+		if (heldLabel.type !== "text") {
+			throw new Error("the renamed label is not text");
+		}
 		assert(
 			heldBox.version === beforeVersion + 1 && typeof heldBox.updatedAt === "string",
 			"the entry did not bump the updated element version and updatedAt",
@@ -374,7 +380,9 @@ test("persists bound text alignment through the agent write boundary", () => {
 	const initial = [...board.values()].find(
 		(element) => element.type === "text" && element.containerId === container.id,
 	);
-	if (initial?.type !== "text") throw new Error("the bound text is missing");
+	if (initial?.type !== "text") {
+		throw new Error("the bound text is missing");
+	}
 	assert(
 		initial.x === container.x + (container.width - initial.width) / 2 &&
 			initial.y === container.y + (container.height - initial.height) / 2,
@@ -386,7 +394,9 @@ test("persists bound text alignment through the agent write boundary", () => {
 		upserts: [{ id: initial.id, textAlign: "left", verticalAlign: "top" }],
 	});
 	const aligned = board.get(initial.id);
-	if (aligned?.type !== "text") throw new Error("the aligned bound text is missing");
+	if (aligned?.type !== "text") {
+		throw new Error("the aligned bound text is missing");
+	}
 	assert(
 		aligned.x === container.x + 5 && aligned.y === container.y + 5,
 		`the left/top label was persisted at ${aligned.x},${aligned.y}, not Excalidraw's 105,205`,
@@ -397,7 +407,9 @@ test("persists bound text alignment through the agent write boundary", () => {
 		upserts: [{ id: initial.id, textAlign: "center", verticalAlign: "middle" }],
 	});
 	const centred = board.get(initial.id);
-	if (centred?.type !== "text") throw new Error("the centred bound text is missing");
+	if (centred?.type !== "text") {
+		throw new Error("the centred bound text is missing");
+	}
 	assert(
 		centred.x === container.x + (container.width - centred.width) / 2 &&
 			centred.y === container.y + (container.height - centred.height) / 2,

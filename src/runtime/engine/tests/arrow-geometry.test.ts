@@ -25,7 +25,9 @@ const pointDistance = (
 	expected: { x: number; y: number },
 ): number => Math.hypot(actual.x - expected.x, actual.y - expected.y);
 const required = <T>(value: T | undefined, message: string): T => {
-	if (value === undefined) throw new Error(message);
+	if (value === undefined) {
+		throw new Error(message);
+	}
 	return value;
 };
 const binding = (over: Partial<ArrowBinding> = {}): ArrowBinding => ({

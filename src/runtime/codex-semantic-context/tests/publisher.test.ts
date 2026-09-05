@@ -101,11 +101,15 @@ function sourceHarness(options: HarnessOptions = {}) {
 			feedListeners.add(listener);
 			let active = true;
 			return () => {
-				if (!active) return;
+				if (!active) {
+					return;
+				}
 				active = false;
 				state.feedUnsubscriptions++;
 				feedListeners.delete(listener);
-				if (cleanupShouldFail("feed")) throw new Error("feed cleanup failed");
+				if (cleanupShouldFail("feed")) {
+					throw new Error("feed cleanup failed");
+				}
 			};
 		},
 	};
@@ -118,11 +122,15 @@ function sourceHarness(options: HarnessOptions = {}) {
 			focusListeners.add(listener);
 			let active = true;
 			return () => {
-				if (!active) return;
+				if (!active) {
+					return;
+				}
 				active = false;
 				state.focusUnsubscriptions++;
 				focusListeners.delete(listener);
-				if (cleanupShouldFail("focus")) throw new Error("focus cleanup failed");
+				if (cleanupShouldFail("focus")) {
+					throw new Error("focus cleanup failed");
+				}
 			};
 		},
 		onSelection(listener: (input: SemanticContextInput) => void) {
@@ -133,7 +141,9 @@ function sourceHarness(options: HarnessOptions = {}) {
 			selectionListeners.add(listener);
 			let active = true;
 			return () => {
-				if (!active) return;
+				if (!active) {
+					return;
+				}
 				active = false;
 				state.selectionUnsubscriptions++;
 				selectionListeners.delete(listener);
@@ -170,13 +180,19 @@ function sourceHarness(options: HarnessOptions = {}) {
 			selection: selectionListeners.size,
 		}),
 		emitFeed: (event: SettledChangeSourceEvent) => {
-			for (const listener of feedListeners) listener(event);
+			for (const listener of feedListeners) {
+				listener(event);
+			}
 		},
 		emitFocus: (input: SemanticContextInput) => {
-			for (const listener of focusListeners) listener(input);
+			for (const listener of focusListeners) {
+				listener(input);
+			}
 		},
 		emitSelection: (input: SemanticContextInput) => {
-			for (const listener of selectionListeners) listener(input);
+			for (const listener of selectionListeners) {
+				listener(input);
+			}
 		},
 	};
 }
@@ -280,8 +296,12 @@ describe("semantic context publisher", () => {
 			}),
 		);
 
-		if (event === undefined) throw new Error("expected a settled event");
-		if (event.cursor === null) throw new Error("expected a settled cursor");
+		if (event === undefined) {
+			throw new Error("expected a settled event");
+		}
+		if (event.cursor === null) {
+			throw new Error("expected a settled cursor");
+		}
 		expect(event.cursor).toEqual({ feedId: "feed-1", sequence: 44 });
 		expect(event.change.cursor).toBe(event.cursor);
 		expect(event.staleness).toEqual({ state: "current", reasons: [] });

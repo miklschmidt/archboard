@@ -43,7 +43,9 @@ export function fakeProcess(events: string[]): CodexProcess {
 		start: async () => {
 			events.push("process:start");
 			running = true;
-			for (const listener of listeners) listener(child);
+			for (const listener of listeners) {
+				listener(child);
+			}
 			return snapshot();
 		},
 		stop: async () => {
@@ -55,7 +57,9 @@ export function fakeProcess(events: string[]): CodexProcess {
 		currentChild: () => (running ? child : null),
 		onChild: (listener) => {
 			listeners.add(listener);
-			if (running) listener(child);
+			if (running) {
+				listener(child);
+			}
 			return () => listeners.delete(listener);
 		},
 		subscribe: () => () => undefined,
@@ -78,7 +82,9 @@ export function fakeRestartingProcess(events: string[]): FakeRestartingProcess {
 	let terminalFailure: CodexProcessSnapshot["failure"] = null;
 	const emitChild = (): void => {
 		child = { pid: nextPid++ } as CodexProcessChild;
-		for (const listener of listeners) listener(child);
+		for (const listener of listeners) {
+			listener(child);
+		}
 	};
 	const snapshot = (): CodexProcessSnapshot =>
 		({
@@ -96,7 +102,9 @@ export function fakeRestartingProcess(events: string[]): FakeRestartingProcess {
 		}) as CodexProcessSnapshot;
 	const publish = (): void => {
 		const value = snapshot();
-		for (const listener of snapshotListeners) listener(value);
+		for (const listener of snapshotListeners) {
+			listener(value);
+		}
 	};
 	return {
 		process: {
@@ -120,7 +128,9 @@ export function fakeRestartingProcess(events: string[]): FakeRestartingProcess {
 			currentChild: () => child,
 			onChild: (listener) => {
 				listeners.add(listener);
-				if (child !== null) listener(child);
+				if (child !== null) {
+					listener(child);
+				}
 				return () => listeners.delete(listener);
 			},
 			subscribe: (listener) => {
@@ -204,13 +214,17 @@ export function fakeGeneration(
 		},
 		retireChild: async () => control.retireChild?.(),
 		stop: async (reason) => {
-			if (stopped) return;
+			if (stopped) {
+				return;
+			}
 			stopped = true;
 			await control.stop?.(reason);
 			events.push(`generation:${number}:stop:${reason}`);
 		},
 		finishStop: () => {
-			if (finished) return;
+			if (finished) {
+				return;
+			}
 			finished = true;
 			control.finishStop?.();
 			events.push(`generation:${number}:finish-stop`);
@@ -247,7 +261,9 @@ export function fakeKernelAcquisition(): FakeKernel {
 				code: 1,
 				signal: null,
 			});
-			for (const listener of listeners) listener(event);
+			for (const listener of listeners) {
+				listener(event);
+			}
 		},
 	});
 }
@@ -256,8 +272,9 @@ export function adoptFakeKernel(
 	input: CodexWorkbenchGenerationInput,
 	candidate: CodexWorkbenchGeneration,
 ): CodexWorkbenchGeneration {
-	if (input.kernel === null || input.initialIdentity === null)
+	if (input.kernel === null || input.initialIdentity === null) {
 		throw new Error("The fake initial generation has no acquired kernel.");
+	}
 	Object.assign(candidate, {
 		identityLedger: input.kernel.identityLedger,
 		transport: input.kernel.transport,
@@ -291,7 +308,9 @@ export function installFakeCodexWorkbenchOwner(
 	return Object.freeze({
 		owner,
 		exitChild: () => {
-			if (current === null) throw new Error("The fake owner has no acquired child kernel.");
+			if (current === null) {
+				throw new Error("The fake owner has no acquired child kernel.");
+			}
 			current.exit();
 		},
 	});

@@ -105,17 +105,19 @@ function preflightResponse(
 	record: Record<string, unknown>,
 	compatibilityRecord: string | null,
 ): Response | null {
-	if (method === "POST" && url.pathname === "/api/viewport")
+	if (method === "POST" && url.pathname === "/api/viewport") {
 		return Response.json({ success: true, message: "Viewport updated" });
+	}
 	if (method === "GET" && url.pathname === "/api/boards/info") {
-		if (compatibilityRecord === "promote-binding-resolution-failure")
+		if (compatibilityRecord === "promote-binding-resolution-failure") {
 			return Response.json(
 				{ success: false, error: "unexpected /api/boards/info" },
 				{ status: 404 },
 			);
+		}
 		return Response.json({ success: true, ...boardState });
 	}
-	if (method === "POST" && url.pathname === "/api/boards/new")
+	if (method === "POST" && url.pathname === "/api/boards/new") {
 		return Response.json({
 			success: true,
 			...boardState,
@@ -124,21 +126,24 @@ function preflightResponse(
 			created: true,
 			saved: true,
 		});
-	if (method === "POST" && url.pathname === "/api/boards/open")
+	}
+	if (method === "POST" && url.pathname === "/api/boards/open") {
 		return Response.json({
 			success: true,
 			...boardState,
 			source: "vault",
 			pane: record["pane"] ? paneRef : null,
 		});
-	if (method === "POST" && url.pathname === "/api/panes/open")
+	}
+	if (method === "POST" && url.pathname === "/api/panes/open") {
 		return Response.json({
 			success: true,
 			pane: paneRef,
 			paneCount: 2,
 			onScreen: [{ paneId: paneRef.paneId, place: paneRef.place, board: "contract" }],
 		});
-	if (method === "GET" && url.pathname === "/api/selection")
+	}
+	if (method === "GET" && url.pathname === "/api/selection") {
 		return Response.json({
 			success: true,
 			board: "contract",
@@ -153,6 +158,7 @@ function preflightResponse(
 			summary: "1 element selected",
 			text: "1 element selected",
 		});
+	}
 	return null;
 }
 
@@ -169,12 +175,13 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 			const contact = `${request.method} ${url.pathname}`;
 			contacts.push(contact);
 			observed.push(contact);
-			if (url.pathname === "/health")
+			if (url.pathname === "/health") {
 				return Response.json({
 					service: CANVAS_SERVICE_NAME,
 					status: "ok",
 					websocket_clients: browserClients,
 				});
+			}
 			const text = request.method === "GET" ? "" : await request.text();
 			let body: unknown = null;
 			if (text) {
@@ -194,14 +201,17 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 						? { board: 7, message: false }
 						: undefined;
 			const preflight = preflightResponse(request.method, url, record, compatibilityRecord);
-			if (preflight) return preflight;
+			if (preflight) {
+				return preflight;
+			}
 			if (request.method === "POST" && url.pathname === "/api/boards/save") {
-				if (url.searchParams.get("board") === "false-success")
+				if (url.searchParams.get("board") === "false-success") {
 					return Response.json({
 						success: false,
 						board: "false-success",
 						identity: { board: "false-success", variant: "current" },
 					});
+				}
 				const conflict = {
 					board: "save-conflict",
 					file: "/vault/save-conflict.excalidraw.md",
@@ -229,9 +239,10 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 				);
 			}
 			if (request.method === "POST" && url.pathname === "/api/export/findings") {
-				if (url.searchParams.get("board") === "malformed-render")
+				if (url.searchParams.get("board") === "malformed-render") {
 					return Response.json({ board: 7, report: false });
-				if (url.searchParams.get("board") === "unrenderable")
+				}
+				if (url.searchParams.get("board") === "unrenderable") {
 					return Response.json({
 						board: "unrenderable",
 						sourceFingerprint: "b".repeat(64),
@@ -239,6 +250,7 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 						sourceRenderable: false,
 						results: [],
 					});
+				}
 				return Response.json({
 					board: "contract",
 					sourceFingerprint: "a".repeat(64),
@@ -263,12 +275,13 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 					backgroundColor: "#ffffff",
 				});
 			}
-			if (request.method !== "GET" && !url.searchParams.get("doing"))
+			if (request.method !== "GET" && !url.searchParams.get("doing")) {
 				return Response.json(
 					{ success: false, code: "DOING_REQUIRED", error: "doing required" },
 					{ status: 400 },
 				);
-			if (request.method === "PUT" && url.pathname === "/api/elements/refuse")
+			}
+			if (request.method === "PUT" && url.pathname === "/api/elements/refuse") {
 				return Response.json(
 					{
 						success: false,
@@ -280,17 +293,21 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 					},
 					{ status: 409 },
 				);
-			if (request.method === "GET" && url.pathname === "/api/elements")
+			}
+			if (request.method === "GET" && url.pathname === "/api/elements") {
 				return Response.json({ success: true, elements: document, ...(held ? { held } : {}) });
-			if (request.method === "GET" && url.pathname === "/api/elements/search")
+			}
+			if (request.method === "GET" && url.pathname === "/api/elements/search") {
 				return Response.json({
 					success: true,
 					elements: url.searchParams.get("type") === "ellipse" ? [] : document,
 					...(held ? { held } : {}),
 				});
-			if (request.method === "GET" && url.pathname === "/api/files")
+			}
+			if (request.method === "GET" && url.pathname === "/api/files") {
 				return Response.json({ success: true, files: {}, ...(held ? { held } : {}) });
-			if (request.method === "GET" && url.pathname === "/api/snapshots/package-scene")
+			}
+			if (request.method === "GET" && url.pathname === "/api/snapshots/package-scene") {
 				return Response.json({
 					success: true,
 					snapshot: {
@@ -300,6 +317,7 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 						createdAt: "2026-08-27T00:00:00.000Z",
 					},
 				});
+			}
 			if (request.method === "POST" && url.pathname === "/api/bridges") {
 				const receiptFacts = {
 					...bridgeFacts,
@@ -339,8 +357,9 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 					fingerprint,
 				});
 			}
-			const askedForDocument = url.searchParams.get("document") === "1" || record["document"] === true;
-			if (url.pathname.startsWith("/api/elements"))
+			const askedForDocument =
+				url.searchParams.get("document") === "1" || record["document"] === true;
+			if (url.pathname.startsWith("/api/elements")) {
 				return Response.json({
 					success: true,
 					board: "contract",
@@ -354,6 +373,7 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 					...(held ? { held } : {}),
 					...(askedForDocument ? { document } : {}),
 				});
+			}
 			return Response.json(
 				{ success: false, error: `unexpected ${url.pathname}` },
 				{ status: 404 },

@@ -15,7 +15,9 @@ function hasLoneSurrogate(value: string): boolean {
 		const codeUnit = value.charCodeAt(index);
 		if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
 			const next = value.charCodeAt(index + 1);
-			if (next < 0xdc00 || next > 0xdfff) return true;
+			if (next < 0xdc00 || next > 0xdfff) {
+				return true;
+			}
 			index++;
 		} else if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
 			return true;
@@ -33,11 +35,15 @@ function rawAtMost(value: string, maximum: number): string {
 		for (const character of value) {
 			progressed = true;
 			const characterBytes = encoder.encode(character).byteLength;
-			if (bytes + characterBytes > maximum) return result;
+			if (bytes + characterBytes > maximum) {
+				return result;
+			}
 			result += character;
 			bytes += characterBytes;
 		}
-		if (!progressed) return result;
+		if (!progressed) {
+			return result;
+		}
 	}
 	return result;
 }

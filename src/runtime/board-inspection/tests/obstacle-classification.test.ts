@@ -71,6 +71,8 @@ describe("obstacle classification", () => {
 			[{ ...libraryBody("single"), customData: undefined, groupIds: ["g"] }],
 			[semanticNode("a", { groupIds: ["g"] }), semanticNode("b", { x: 20, groupIds: ["g"] })],
 		];
-		for (const elements of cases) expect(penetrations(elements)).toHaveLength(0);
+		for (const elements of cases) {
+			expect(penetrations(elements)).toHaveLength(0);
+		}
 	});
 });

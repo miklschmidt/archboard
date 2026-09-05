@@ -31,14 +31,18 @@ async function cleanup(): Promise<void> {
 	lock.onBoardLockChanged(null);
 	for (const board of boards) {
 		lock.releaseClaim(board);
-		for (const id of ["first", "user", "later", "patient", "upper", "nested", "departed"])
+		for (const id of ["first", "user", "later", "patient", "upper", "nested", "departed"]) {
 			lock.releaseHold(board, id);
+		}
 	}
 	lock.forgetLockAnnouncements();
 	jest.useRealTimers();
 	logger.warn = originalWarn;
-	if (previousVault === undefined) delete process.env["ARCHBOARD_VAULT"];
-	else process.env["ARCHBOARD_VAULT"] = previousVault;
+	if (previousVault === undefined) {
+		delete process.env["ARCHBOARD_VAULT"];
+	} else {
+		process.env["ARCHBOARD_VAULT"] = previousVault;
+	}
 	rmSync(vault, { recursive: true, force: true });
 }
 
@@ -91,7 +95,9 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		await advanceLockTime(timing.LOCK_WAIT_CAP_MS);
 		const refused = await refusal;
 		expect(refused).toBeInstanceOf(lock.BoardHeldError);
-		if (!(refused instanceof lock.BoardHeldError)) throw new Error("Expected BoardHeldError.");
+		if (!(refused instanceof lock.BoardHeldError)) {
+			throw new Error("Expected BoardHeldError.");
+		}
 		expect(refused.code).toBe("BOARD_HELD");
 		expect(refused.board).toBe(board);
 		expect(refused.holder).toMatchObject({ id: "user", kind: "human" });

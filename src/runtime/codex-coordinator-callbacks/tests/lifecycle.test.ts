@@ -33,7 +33,9 @@ describe("coordinator callback lifecycle", () => {
 		const second = operationEvent(h.ids, "completed");
 		let emitted = false;
 		h.setMutationHook(() => {
-			if (emitted) return;
+			if (emitted) {
+				return;
+			}
 			emitted = true;
 			h.operations.emit(second);
 		});
@@ -73,10 +75,13 @@ describe("coordinator callback lifecycle", () => {
 			...h.options,
 			settledLedgerLimit: 2,
 		});
-		for (const type of ["accepted", "started", "completed"] as const)
+		for (const type of ["accepted", "started", "completed"] as const) {
 			await callbacks.enqueue(operationEvent(h.ids, type));
+		}
 		const generation = h.state.generation;
-		if (generation === null) throw new Error("The callback harness has no realtime generation.");
+		if (generation === null) {
+			throw new Error("The callback harness has no realtime generation.");
+		}
 
 		expect(callbacks.inspectHistory(generation)).toMatchObject({
 			omittedPrefixCount: 1,

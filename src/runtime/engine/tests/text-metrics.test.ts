@@ -104,7 +104,9 @@ describe("text boxes and line heights", () => {
 	] as const)("%s uses Excalidraw's %f line height", (name, lineHeight) => {
 		const family = fontRegistry().get(name);
 		expect(family?.lineHeight).toBe(lineHeight);
-		if (family?.fontFamily !== undefined) expect(lineHeightOf(family.fontFamily)).toBe(lineHeight);
+		if (family?.fontFamily !== undefined) {
+			expect(lineHeightOf(family.fontFamily)).toBe(lineHeight);
+		}
 	});
 });
 

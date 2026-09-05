@@ -34,14 +34,20 @@ describe.serial("frontend staleness", () => {
 			);
 			resources.defer(() => {
 				rmSync(indexFile, { force: true });
-				if (!frontendExisted) rmSync(dirname(indexFile), { recursive: true, force: true });
-				if (!distExisted) rmSync(join(repoRoot, "dist"), { recursive: true, force: true });
+				if (!frontendExisted) {
+					rmSync(dirname(indexFile), { recursive: true, force: true });
+				}
+				if (!distExisted) {
+					rmSync(join(repoRoot, "dist"), { recursive: true, force: true });
+				}
 			});
 		}
 		const expectedBuild = /<script[^>]*type="module"[^>]*src="([^"]+)"/.exec(
 			readFileSync(indexFile, "utf8"),
 		)?.[1];
-		if (!expectedBuild) throw new Error("The owned frontend index names no module bundle.");
+		if (!expectedBuild) {
+			throw new Error("The owned frontend index names no module bundle.");
+		}
 		expect(expectedBuild).toStartWith("/assets/");
 
 		const root = mkdtempSync(join(tmpdir(), "archboard-staleness-frontend-"));

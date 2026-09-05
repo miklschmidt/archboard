@@ -112,10 +112,14 @@ async function releaseWaitOwner(
 	try {
 		await options.lifecycle.releaseWaitOwner({ owner, cause });
 	} catch (error) {
-		if (graphError !== null) throw graphError;
+		if (graphError !== null) {
+			throw graphError;
+		}
 		throw error;
 	}
-	if (graphError !== null) throw graphError;
+	if (graphError !== null) {
+		throw graphError;
+	}
 }
 
 function validateEvent(
@@ -124,8 +128,9 @@ function validateEvent(
 	targetIds: ReadonlySet<string>,
 	targets: ReadonlyMap<string, DynamicTargetAuthority>,
 ): void {
-	if (!isRecord(event) || typeof event.event !== "string")
+	if (!isRecord(event) || typeof event.event !== "string") {
 		throw dynamicError("invalid_call", "The wait authority returned an invalid event.");
+	}
 	const eventKeys =
 		event.event === "timeout"
 			? ["event", "threadId", "sequence", "cursor"]
@@ -152,30 +157,38 @@ function validateEvent(
 				systemErrorAttention &&
 				exactEventKeys(event, ["event", "threadId", "sequence", "cursor", "targetOwned"])
 			))
-	)
+	) {
 		throw dynamicError("invalid_call", "The wait authority returned an invalid event shape.");
-	if (!Number.isSafeInteger(event.sequence) || event.sequence < 0)
+	}
+	if (!Number.isSafeInteger(event.sequence) || event.sequence < 0) {
 		throw dynamicError("invalid_call", "The wait authority returned an invalid event sequence.");
+	}
 	if (
 		event.cursor !== null &&
 		(typeof event.cursor !== "string" || event.cursor.length === 0 || event.cursor.length > 1_024)
-	)
+	) {
 		throw dynamicError("invalid_call", "The wait authority returned an invalid event cursor.");
+	}
 	if (event.event === "timeout") {
-		if (event.threadId !== null || event.sequence !== previousSequence)
+		if (event.threadId !== null || event.sequence !== previousSequence) {
 			throw dynamicError("invalid_call", "A timeout must not deliver a target event.");
+		}
 		return;
 	}
-	if (!targetIds.has(event.threadId))
+	if (!targetIds.has(event.threadId)) {
 		throw dynamicError("invalid_call", "The wait authority returned an event for another thread.");
-	if (event.sequence <= previousSequence)
+	}
+	if (event.sequence <= previousSequence) {
 		throw dynamicError("invalid_call", "The wait authority returned an already-delivered event.");
+	}
 	if (event.event === "attention") {
 		const target = targets.get(event.threadId);
-		if (Object.prototype.hasOwnProperty.call(event, "targetOwned") && event.targetOwned !== true)
+		if (Object.prototype.hasOwnProperty.call(event, "targetOwned") && event.targetOwned !== true) {
 			throw dynamicError("invalid_call", "Attention ownership must be explicitly true.");
-		if (target === undefined || (target.status !== "systemError" && event.targetOwned !== true))
+		}
+		if (target === undefined || (target.status !== "systemError" && event.targetOwned !== true)) {
 			throw dynamicError("invalid_call", "Attention was not proven to belong to a wait target.");
+		}
 	}
 }
 
@@ -203,8 +216,9 @@ export async function waitForDynamicThreads(input: {
 		!Number.isSafeInteger(input.timeoutMs) ||
 		input.timeoutMs < 0 ||
 		input.timeoutMs > 120_000
-	)
+	) {
 		throw dynamicError("invalid_call", "The wait arguments are outside the reviewed bounds.");
+	}
 	if (
 		!isRecord(input.call) ||
 		!exactEventKeys(input.call, ["callId", "namespace", "tool", "manifestHash"]) ||
@@ -213,11 +227,12 @@ export async function waitForDynamicThreads(input: {
 		input.call.namespace !== ARCHBOARD_APP_NAMESPACE.name ||
 		input.call.tool !== "wait_threads" ||
 		input.call.manifestHash !== ARCHBOARD_APP_MANIFEST_SHA256
-	)
+	) {
 		throw dynamicError(
 			"invalid_call",
 			"The wait owner identity is not the reviewed manifest call.",
 		);
+	}
 	const requestedWireIds = sortedUnique(input.threadIds);
 	const cursor = unwrapDynamicCursor(input.cursor, {
 		child: input.caller.childId,
@@ -229,14 +244,16 @@ export async function waitForDynamicThreads(input: {
 	const classified: DynamicTargetAuthority[] = [];
 	for (const threadId of requestedWireIds) {
 		const target = await input.classifyTarget(threadId);
-		if (target.wireThreadId !== threadId)
+		if (target.wireThreadId !== threadId) {
 			throw dynamicError("invalid_call", "The target authority changed a wait ThreadId.");
+		}
 		assertWaitTargetAllowed(input.caller, target);
 		classified.push(target);
 	}
 	const targetIds = sortedUnique(classified.map((target) => target.wireThreadId));
-	if (targetIds.length !== classified.length)
+	if (targetIds.length !== classified.length) {
 		throw dynamicError("invalid_call", "The wait target authority returned duplicate ThreadIds.");
+	}
 	const targetIdentityIds = Object.freeze(
 		classified
 			.map((target) => target.threadId)
@@ -248,7 +265,9 @@ export async function waitForDynamicThreads(input: {
 		owner: graphOwner(owner),
 		targets: targetIdentityIds,
 	});
-	if (!graphResult.ok) throw dynamicError("cycle", "The wait would create a dependency cycle.");
+	if (!graphResult.ok) {
+		throw dynamicError("cycle", "The wait would create a dependency cycle.");
+	}
 	try {
 		await input.options.lifecycle.registerWaitOwner({ owner });
 	} catch (error) {
@@ -267,7 +286,9 @@ export async function waitForDynamicThreads(input: {
 	const releaseOnce = async (
 		cause: "settle" | "cancellation" | "interruption" | "disconnect",
 	): Promise<void> => {
-		if (released) return;
+		if (released) {
+			return;
+		}
 		released = true;
 		await releaseWaitOwner(input.options, owner, cause);
 	};

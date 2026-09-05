@@ -43,8 +43,9 @@ describe("binding classification", () => {
 				boundLabel({ id: "text" }),
 			],
 		] as const;
-		for (const elements of states)
+		for (const elements of states) {
 			expect(InspectionReportSchema.safeParse(inspectBoard([...elements])).success).toBe(true);
+		}
 		expect(inspectBoard([...states[2]]).findings.some((f) => f.reason.includes("binding"))).toBe(
 			false,
 		);
@@ -107,7 +108,9 @@ describe("binding classification", () => {
 				...elements,
 				semanticNode("unrelated", { id: "unrelated-body", x: 50, width: 100, height: 100 }),
 			]);
-			if (indeterminate) expect(report.coverage).toBe("indeterminate");
+			if (indeterminate) {
+				expect(report.coverage).toBe("indeterminate");
+			}
 			expect(
 				report.findings.some(
 					(finding) =>
@@ -249,8 +252,8 @@ describe("binding classification", () => {
 		] as const;
 		const targets = ["matching", "mismatch", "missing", "unknown"] as const;
 		let index = 0;
-		for (const [identity, rawId] of identities)
-			for (const [, geometry, coordinateIndeterminate, locatableOrigin] of coordinates)
+		for (const [identity, rawId] of identities) {
+			for (const [, geometry, coordinateIndeterminate, locatableOrigin] of coordinates) {
 				for (const [, rawPoints, pathIndeterminate] of paths) {
 					const [endpoint, endpointBinding, endpointBlocked] = endpoints[index % endpoints.length]!;
 					const ownership = ownerships[Math.floor(index / endpoints.length) % ownerships.length]!;
@@ -260,12 +263,20 @@ describe("binding classification", () => {
 					const connectorId = `${prefix}-edge`;
 					const candidateId = `${prefix}-candidate`;
 					const edge: Record<string, unknown> = { type: "arrow", ...geometry, angle: 0 };
-					if (rawPoints !== undefined) edge["points"] = rawPoints;
-					if (endpointBinding !== undefined) edge["startBinding"] = endpointBinding;
-					if (identity === "valid") edge["id"] = connectorId;
-					else if (identity !== "missing") edge["id"] = rawId;
-					if (endpoint === "readable")
+					if (rawPoints !== undefined) {
+						edge["points"] = rawPoints;
+					}
+					if (endpointBinding !== undefined) {
+						edge["startBinding"] = endpointBinding;
+					}
+					if (identity === "valid") {
+						edge["id"] = connectorId;
+					} else if (identity !== "missing") {
+						edge["id"] = rawId;
+					}
+					if (endpoint === "readable") {
 						edge["startBinding"] = { ...endpointBinding, elementId: candidateId };
+					}
 					const labelId = `${prefix}-label`;
 					const ownerAId = `${prefix}-owner-a`;
 					const ownerBId = `${prefix}-owner-b`;
@@ -352,21 +363,25 @@ describe("binding classification", () => {
 						targetIndeterminate;
 					const geometryEligible = !identityInvalid && locatableOrigin && !pathIndeterminate;
 					expect(InspectionReportSchema.safeParse(report).success).toBe(true);
-					if (prerequisiteSkipped) expect(report.coverage).toBe("indeterminate");
-					if (!geometryEligible)
+					if (prerequisiteSkipped) {
+						expect(report.coverage).toBe("indeterminate");
+					}
+					if (!geometryEligible) {
 						expect(
 							report.findings.some(
 								(f) => supportedConnectorCodes.has(f.code) && usesConnector(f, connectorId),
 							),
 						).toBe(false);
-					if (endpointBlocked)
+					}
+					if (endpointBlocked) {
 						expect(
 							report.findings.some(
 								(f) =>
 									f.code === "CONNECTOR_PENETRATES_NODE" && f.details.connectorId === connectorId,
 							),
 						).toBe(false);
-					if (ownership === "malformed")
+					}
+					if (ownership === "malformed") {
 						expect(
 							report.findings.some(
 								(f) =>
@@ -375,7 +390,7 @@ describe("binding classification", () => {
 									f.details.labelId === labelId,
 							),
 						).toBe(false);
-					else
+					} else {
 						expect(
 							report.findings.some(
 								(f) =>
@@ -385,7 +400,8 @@ describe("binding classification", () => {
 									f.details.nodeId === `${prefix}-unrelated`,
 							),
 						).toBe(true);
-					if (ownership === "conflicting")
+					}
+					if (ownership === "conflicting") {
 						expect(
 							report.findings.some(
 								(f) =>
@@ -395,8 +411,11 @@ describe("binding classification", () => {
 									[ownerAId, ownerBId].includes(f.details.nodeId),
 							),
 						).toBe(false);
+					}
 					index += 1;
 				}
+			}
+		}
 		expect(index).toBe(80);
 	});
 });

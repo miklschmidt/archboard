@@ -85,7 +85,9 @@ function loadedSourceFiles(): string[] {
 	const registry = moduleRegistry();
 	const prefix = srcDir + path.sep;
 	for (const file of Object.keys(registry ?? {})) {
-		if (file.startsWith(prefix) && file.endsWith(".ts")) loaded.add(file);
+		if (file.startsWith(prefix) && file.endsWith(".ts")) {
+			loaded.add(file);
+		}
 	}
 	return [...loaded];
 }

@@ -80,7 +80,9 @@ describe.serial("composed Codex process lifecycle", () => {
 			const spawned = records(fixture.logPath).filter((entry) => entry.kind === "app_server_spawn");
 			expect(spawned).toHaveLength(1);
 			const childPid = spawned[0]?.pid;
-			if (childPid === undefined) throw new Error("The controlled child did not log its pid.");
+			if (childPid === undefined) {
+				throw new Error("The controlled child did not log its pid.");
+			}
 			expect(processExists(childPid)).toBeTrue();
 
 			const initialLease = await socket.request("claimLease");
@@ -114,7 +116,9 @@ describe.serial("composed Codex process lifecycle", () => {
 				const dynamic = value["dynamicApprovals"] as Record<string, unknown>[];
 				return approvals.length === 7 && dynamic.length === 1 ? { approvals, dynamic } : undefined;
 			}, "all seven ordinary families and one dynamic approval");
-			if (pending === undefined) throw new Error("The approval projection disappeared.");
+			if (pending === undefined) {
+				throw new Error("The approval projection disappeared.");
+			}
 			expect(new Set(pending.approvals.map((approval) => approval["approvalKind"]))).toEqual(
 				new Set([
 					"command_execution",
@@ -126,11 +130,12 @@ describe.serial("composed Codex process lifecycle", () => {
 					"exec_command",
 				]),
 			);
-			for (const approval of pending.approvals)
+			for (const approval of pending.approvals) {
 				expect(await approveOrdinary(socket, approval)).toMatchObject({
 					ok: true,
 					value: { outcome: "delivered" },
 				});
+			}
 			expect(await resolveDynamic(socket, pending.dynamic[0]!)).toMatchObject({
 				ok: true,
 				value: { outcome: "delivered" },
@@ -156,8 +161,9 @@ describe.serial("composed Codex process lifecycle", () => {
 						: undefined,
 				"one response for every routed reverse request",
 			);
-			for (const id of requestIds)
+			for (const id of requestIds) {
 				expect(reverseResponses(fixture.logPath, id), id).toHaveLength(1);
+			}
 			for (const [emit, id] of [
 				["fork", "general-fork"],
 				["send", "general-send"],
@@ -173,7 +179,9 @@ describe.serial("composed Codex process lifecycle", () => {
 						{ cause: error },
 					);
 				});
-				if (approval === undefined) throw new Error(`${id} approval disappeared.`);
+				if (approval === undefined) {
+					throw new Error(`${id} approval disappeared.`);
+				}
 				expect(await resolveDynamic(socket, approval)).toMatchObject({
 					ok: true,
 					value: { outcome: "delivered" },
@@ -216,7 +224,9 @@ describe.serial("composed Codex process lifecycle", () => {
 					const dynamic = value["dynamicApprovals"] as Record<string, unknown>[];
 					return dynamic.length === 1 ? dynamic[0] : undefined;
 				}, `${outcome} visual approval`);
-				if (approval === undefined) throw new Error(`${outcome} approval disappeared.`);
+				if (approval === undefined) {
+					throw new Error(`${outcome} approval disappeared.`);
+				}
 				if (outcome === "stale") {
 					writeFileSync(fixture.controlPath, JSON.stringify({ emit: "invalidate_stale" }));
 					await waitFor(
@@ -291,10 +301,11 @@ describe.serial("composed Codex process lifecycle", () => {
 				.map((entry) => entry.params?.["clientUserMessageId"])
 				.filter((value): value is string => typeof value === "string");
 			expect(operationIds.length).toBeGreaterThan(0);
-			for (const operationId of operationIds)
+			for (const operationId of operationIds) {
 				expect(operationId).toMatch(
 					/^archboard:operation:h[a-f0-9]{32}\.h[a-f0-9]{32}\.h[a-f0-9]{32}$/,
 				);
+			}
 
 			writeFileSync(fixture.controlPath, JSON.stringify({ emit: "disconnect" }));
 			await waitFor(async () => {
@@ -305,11 +316,12 @@ describe.serial("composed Codex process lifecycle", () => {
 					: undefined;
 			}, "browser disconnect approvals");
 			await socket.close();
-			for (const id of ["disconnect-ordinary", "disconnect-dynamic"])
+			for (const id of ["disconnect-ordinary", "disconnect-dynamic"]) {
 				await waitFor(
 					() => (reverseResponses(fixture.logPath, id).length === 1 ? true : undefined),
 					`${id} settlement on browser disconnect`,
 				);
+			}
 			expect(reverseResponses(fixture.logPath, "disconnect-ordinary")[0]?.frame).toEqual({
 				id: "disconnect-ordinary",
 				result: { decision: "cancel" },
@@ -318,8 +330,9 @@ describe.serial("composed Codex process lifecycle", () => {
 				"create_thread",
 				reverseResponses(fixture.logPath, "disconnect-dynamic")[0]?.frame?.result,
 			).envelope;
-			if (disconnectedDynamic.tag !== "approval_required")
+			if (disconnectedDynamic.tag !== "approval_required") {
 				throw new Error("The disconnected dynamic approval did not terminalize safely.");
+			}
 			expect(disconnectedDynamic).toEqual({
 				tag: "approval_required",
 				operationId: disconnectedDynamic.operationId,
@@ -355,7 +368,9 @@ describe.serial("composed Codex process lifecycle", () => {
 			const chosen = (inventory["records"] as readonly Record<string, unknown>[]).find(
 				(row) => row["threadId"] === threadLink["threadId"],
 			);
-			if (chosen === undefined) throw new Error("The created thread is not in the joined list.");
+			if (chosen === undefined) {
+				throw new Error("The created thread is not in the joined list.");
+			}
 			const attachLease = await socket.request("claimLease");
 			expect(
 				await socket.request("command", {

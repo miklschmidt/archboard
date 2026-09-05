@@ -351,7 +351,9 @@ test(
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
 		expect(notice).not.toBeNull();
-		if (!notice) throw new Error("the canvas-contained recovery notice did not render");
+		if (!notice) {
+			throw new Error("the canvas-contained recovery notice did not render");
+		}
 		expect(notice.parentIsPanes).toBe(true);
 		expect(notice.insidePanes).toBe(true);
 		expect(notice.overlapsInspector).toBe(false);

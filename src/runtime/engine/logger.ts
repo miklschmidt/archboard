@@ -99,7 +99,9 @@ export async function closeLogger(target: winston.Logger = logger): Promise<void
 
 /** Terminal fallback for a logger whose normal stream finalization failed. */
 export function forceCloseLogger(target: winston.Logger = logger): void {
-	for (const transport of target.transports) transport.destroy();
+	for (const transport of target.transports) {
+		transport.destroy();
+	}
 	target.destroy();
 	target.close();
 }

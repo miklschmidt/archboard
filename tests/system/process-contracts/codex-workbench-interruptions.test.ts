@@ -38,7 +38,9 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 					const dynamic = state["dynamicApprovals"] as Record<string, unknown>[];
 					return dynamic.length === 1 ? dynamic[0] : undefined;
 				}, `${cause} visual approval`);
-				if (approval === undefined) throw new Error(`${cause} approval did not remain pending.`);
+				if (approval === undefined) {
+					throw new Error(`${cause} approval did not remain pending.`);
+				}
 				await waitFor(
 					() =>
 						records(fixture.logPath).some(
@@ -96,7 +98,7 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 				}
 
 				writeFileSync(fixture.controlPath, JSON.stringify({ terminal: cause }));
-				for (const suffix of ["dynamic", "wait"] as const)
+				for (const suffix of ["dynamic", "wait"] as const) {
 					await waitFor(
 						() =>
 							reverseResponses(fixture.logPath, `${cause}-${suffix}`).length === 1
@@ -104,13 +106,15 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 								: undefined,
 						`${cause} ${suffix} settlement`,
 					);
+				}
 
 				const dynamic = parseDynamicToolCallResponse(
 					"create_thread",
 					reverseResponses(fixture.logPath, `${cause}-dynamic`)[0]?.frame?.result,
 				).envelope;
-				if (dynamic.tag !== "approval_required")
+				if (dynamic.tag !== "approval_required") {
 					throw new Error(`${cause} did not return terminal approval_required.`);
+				}
 				expect(dynamic).toEqual({
 					tag: "approval_required",
 					operationId: dynamic.operationId,
@@ -167,8 +171,9 @@ describe.serial("composed Codex cancellation and child-disconnect lifecycle", ()
 					? { ordinary: ordinary[0]!, dynamic: dynamic[0]! }
 					: undefined;
 			}, "child-exit pending approvals");
-			if (approval === undefined)
+			if (approval === undefined) {
 				throw new Error("The child-exit approvals did not remain pending.");
+			}
 			const heldAccountRead = socket.request("accountRead");
 			await waitFor(
 				() =>

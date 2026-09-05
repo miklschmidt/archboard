@@ -60,8 +60,9 @@ export function createCanvasCodexBrowserSocketSend(
 ): CanvasCodexBrowserSocketSend {
 	return Object.freeze({
 		send: async (message: unknown): Promise<void> => {
-			if (socket.readyState !== WebSocket.OPEN)
+			if (socket.readyState !== WebSocket.OPEN) {
 				throw new Error("The Codex browser WebSocket is not open.");
+			}
 			await new Promise<void>((resolve, reject) => {
 				try {
 					socket.send(JSON.stringify(message), (error) =>
@@ -147,12 +148,17 @@ export function createCanvasCodexBrowserSocketOwner(
 		instance: BrowserConnectionInstance,
 		browserId: string,
 	): BrowserWorkbenchConnection => {
-		if (disposed) throw new Error("The Codex browser socket owner is stopped.");
+		if (disposed) {
+			throw new Error("The Codex browser socket owner is stopped.");
+		}
 		const paneId = options.paneForBrowser(browserId);
-		if (paneId === null)
+		if (paneId === null) {
 			throw new Error("The browser has not registered an authoritative canvas pane.");
+		}
 		const previous = connections.get(instance);
-		if (previous?.paneId === paneId) return previous;
+		if (previous?.paneId === paneId) {
+			return previous;
+		}
 		subscriptions.get(instance)?.();
 		subscriptions.delete(instance);
 		const connection = options.gateway.connect(browserId, paneId, instance);
@@ -161,8 +167,12 @@ export function createCanvasCodexBrowserSocketOwner(
 	};
 
 	const accept = (instance: BrowserConnectionInstance, browserId: string): void => {
-		if (disposed) throw new Error("The Codex browser socket owner is stopped.");
-		if (options.paneForBrowser(browserId) === null) return;
+		if (disposed) {
+			throw new Error("The Codex browser socket owner is stopped.");
+		}
+		if (options.paneForBrowser(browserId) === null) {
+			return;
+		}
 		connectionFor(instance, browserId);
 	};
 
@@ -276,7 +286,9 @@ export function createCanvasCodexBrowserSocketOwner(
 
 	const close = (instance: BrowserConnectionInstance, browserId: string): Promise<void> => {
 		const existing = closePromises.get(instance);
-		if (existing !== undefined) return existing;
+		if (existing !== undefined) {
+			return existing;
+		}
 		const owned = (async (): Promise<void> => {
 			subscriptions.get(instance)?.();
 			subscriptions.delete(instance);
@@ -287,7 +299,9 @@ export function createCanvasCodexBrowserSocketOwner(
 				return;
 			}
 			const paneId = options.paneForBrowser(browserId);
-			if (paneId !== null) await options.gateway.closeConnection(browserId, paneId, instance);
+			if (paneId !== null) {
+				await options.gateway.closeConnection(browserId, paneId, instance);
+			}
 		})();
 		closePromises.set(instance, owned);
 		activeCloses.add(owned);
@@ -302,14 +316,17 @@ export function createCanvasCodexBrowserSocketOwner(
 	};
 
 	const drain = async (): Promise<void> => {
-		while (activeCloses.size > 0 || activePublications.size > 0)
+		while (activeCloses.size > 0 || activePublications.size > 0) {
 			await Promise.allSettled([...activeCloses, ...activePublications]);
+		}
 		const failures = closeFailures.splice(0);
 		if (publicationFailure !== null) {
 			failures.push(publicationFailure);
 			publicationFailure = null;
 		}
-		if (failures.length === 0) return;
+		if (failures.length === 0) {
+			return;
+		}
 		throw new AggregateError(
 			failures,
 			`Codex browser drain failed: ${failures.map(errorMessage).join("; ")}`,
@@ -317,9 +334,13 @@ export function createCanvasCodexBrowserSocketOwner(
 	};
 
 	const dispose = (): void => {
-		if (disposed) return;
+		if (disposed) {
+			return;
+		}
 		disposed = true;
-		for (const unsubscribe of subscriptions.values()) unsubscribe();
+		for (const unsubscribe of subscriptions.values()) {
+			unsubscribe();
+		}
 		subscriptions.clear();
 		connections.clear();
 	};

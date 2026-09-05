@@ -77,22 +77,30 @@ export function createCoordinatorStarter(
 
 	const onNotification: SessionNotificationHandler = (event) => {
 		const pending = pendingSettings;
-		if (pending === null || !isCurrentNotification(event, options)) return;
+		if (pending === null || !isCurrentNotification(event, options)) {
+			return;
+		}
 		const notification = event.notification;
-		if (notification.method !== "thread/settings/updated") return;
+		if (notification.method !== "thread/settings/updated") {
+			return;
+		}
 		let threadId: ThreadId;
 		try {
 			threadId = options.identity.decoder.resolveThreadId(notification.params.threadId);
 		} catch {
 			return;
 		}
-		if (threadId !== pending.threadId) return;
+		if (threadId !== pending.threadId) {
+			return;
+		}
 		const mismatch = settingsMismatch(
 			pending.started,
 			pending.configured,
 			notification.params.threadSettings,
 		);
-		if (mismatch !== null) return;
+		if (mismatch !== null) {
+			return;
+		}
 		pending.cancel();
 		pending.resolve({ kind: "matched", settings: notification.params.threadSettings });
 	};
@@ -313,14 +321,20 @@ export function createCoordinatorStarter(
 			configured,
 			resolve,
 			cancel: () => {
-				if (pendingSettings !== pending) return;
+				if (pendingSettings !== pending) {
+					return;
+				}
 				pendingSettings = null;
-				if (timer !== undefined) clearTimeout(timer);
+				if (timer !== undefined) {
+					clearTimeout(timer);
+				}
 			},
 		};
 		pendingSettings = pending;
 		timer = setTimeout(() => {
-			if (pendingSettings !== pending) return;
+			if (pendingSettings !== pending) {
+				return;
+			}
 			pendingSettings = null;
 			resolve({
 				kind: "expired",
@@ -367,25 +381,36 @@ function settingsMismatch(
 	configured: CoordinatorConfiguredSettings,
 	settings: CoordinatorThreadSettings,
 ): string | null {
-	if (settings.cwd !== started.cwd) return "Coordinator settings changed the checkout root.";
-	if (settings.model !== COORDINATOR_MODEL)
+	if (settings.cwd !== started.cwd) {
+		return "Coordinator settings changed the checkout root.";
+	}
+	if (settings.model !== COORDINATOR_MODEL) {
 		return "Coordinator settings did not confirm gpt-5.6-luna.";
-	if (settings.modelProvider !== started.modelProvider)
+	}
+	if (settings.modelProvider !== started.modelProvider) {
 		return "Coordinator settings changed the provider selected at start.";
-	if (settings.effort !== COORDINATOR_EFFORT)
+	}
+	if (settings.effort !== COORDINATOR_EFFORT) {
 		return "Coordinator settings did not confirm medium effort.";
-	if (settings.serviceTier !== started.serviceTier)
+	}
+	if (settings.serviceTier !== started.serviceTier) {
 		return "Coordinator settings did not confirm the effective service tier.";
-	if (configured.serviceTier === "priority" && settings.serviceTier !== "priority")
+	}
+	if (configured.serviceTier === "priority" && settings.serviceTier !== "priority") {
 		return "Coordinator settings did not confirm advertised priority.";
-	if (!sameValue(settings.approvalPolicy, started.approvalPolicy))
+	}
+	if (!sameValue(settings.approvalPolicy, started.approvalPolicy)) {
 		return "Coordinator settings changed the start approval policy.";
-	if (!sameValue(settings.approvalsReviewer, started.approvalsReviewer))
+	}
+	if (!sameValue(settings.approvalsReviewer, started.approvalsReviewer)) {
 		return "Coordinator settings changed the start approvals reviewer.";
-	if (!sameValue(settings.sandboxPolicy, started.sandbox))
+	}
+	if (!sameValue(settings.sandboxPolicy, started.sandbox)) {
 		return "Coordinator settings changed the start sandbox policy.";
-	if (!sameValue(settings.activePermissionProfile, started.activePermissionProfile))
+	}
+	if (!sameValue(settings.activePermissionProfile, started.activePermissionProfile)) {
 		return "Coordinator settings changed the start permission profile.";
+	}
 	return null;
 }
 

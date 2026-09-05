@@ -164,8 +164,9 @@ function installDynamicRegistrations(transport: CodexTransport): void {
 		namespace: ARCHBOARD_APP_NAMESPACE.name,
 		manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
 	});
-	for (const registration of COORDINATOR_DYNAMIC_DISPATCHERS)
+	for (const registration of COORDINATOR_DYNAMIC_DISPATCHERS) {
 		transport.registerDynamicDispatcher(registration);
+	}
 }
 
 export interface ComposeCodexWorkbenchGenerationOptions {
@@ -265,11 +266,12 @@ function requireComponent<Name extends ComponentName>(
 	name: Name,
 ): CodexWorkbenchComponents[Name] {
 	const value = created[name];
-	if (value === undefined)
+	if (value === undefined) {
 		throw new CodexWorkbenchCompositionError(
 			"startup_failed",
 			`The Codex workbench tried to create ${name} before its dependency was ready.`,
 		);
+	}
 	return created[name]!;
 }
 
@@ -410,7 +412,9 @@ export function createProductionCodexWorkbenchFactories(
 				...dispatcher,
 				dispatch,
 				onServerRequest: (request: TransportServerRequest) => {
-					if (!isCoordinatorToolRequest(request)) return;
+					if (!isCoordinatorToolRequest(request)) {
+						return;
+					}
 					void dispatch(request).catch(() => undefined);
 				},
 			});
@@ -486,7 +490,9 @@ export async function composeCodexWorkbenchGeneration(
 		constructionCleanups.push(() => epoch.close());
 		transport = options.factories.transport(created);
 		created.transport = transport;
-		if (options.ownsTransport !== false) constructionCleanups.push(() => transport.shutdown());
+		if (options.ownsTransport !== false) {
+			constructionCleanups.push(() => transport.shutdown());
+		}
 		session = options.factories.session(created);
 		created.session = session;
 		constructionCleanups.push(() => session[CODEX_SESSION_CONTROL].dispose());
@@ -565,7 +571,9 @@ export async function composeCodexWorkbenchGeneration(
 		hooks: options.hooks,
 		assertActivationCurrent: options.assertActivationCurrent ?? (() => undefined),
 	});
-	if (options.activate !== false) await source.activate();
+	if (options.activate !== false) {
+		await source.activate();
+	}
 	return source;
 }
 
@@ -608,7 +616,9 @@ function productionKernelFactory(
 			...bindings.transport({ identity }),
 			identity: identity.identity,
 		});
-		if (transport.inspect().state === "open") installDynamicRegistrations(transport);
+		if (transport.inspect().state === "open") {
+			installDynamicRegistrations(transport);
+		}
 		return Object.freeze({
 			kernel: Object.freeze({ identityLedger, transport }),
 			identity,

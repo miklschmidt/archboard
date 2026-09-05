@@ -80,13 +80,16 @@ describe("sweep ordering", () => {
 				),
 			);
 			let expected = 0;
-			for (let left = 0; left < intervals.length; left += 1)
-				for (let right = left + 1; right < intervals.length; right += 1)
+			for (let left = 0; left < intervals.length; left += 1) {
+				for (let right = left + 1; right < intervals.length; right += 1) {
 					if (
 						intervals[left]!.min <= intervals[right]!.max &&
 						intervals[right]!.min <= intervals[left]!.max
-					)
+					) {
 						expected += 1;
+					}
+				}
+			}
 			expect(report.broadPhaseComparisons).toBe(expected);
 		}
 	});

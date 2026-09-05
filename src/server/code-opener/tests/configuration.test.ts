@@ -22,8 +22,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-	if (previous === undefined) delete process.env["ARCHBOARD_OPENER_CONFIG"];
-	else process.env["ARCHBOARD_OPENER_CONFIG"] = previous;
+	if (previous === undefined) {
+		delete process.env["ARCHBOARD_OPENER_CONFIG"];
+	} else {
+		process.env["ARCHBOARD_OPENER_CONFIG"] = previous;
+	}
 	rmSync(root, { recursive: true });
 });
 

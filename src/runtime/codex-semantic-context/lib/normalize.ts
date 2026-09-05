@@ -56,7 +56,9 @@ export function byteLength(value: string): number {
 
 function jsonStringPayloadBytes(character: string): number {
 	const codeUnit = character.charCodeAt(0);
-	if (character === '"' || character === "\\") return 2;
+	if (character === '"' || character === "\\") {
+		return 2;
+	}
 	if (codeUnit <= 0x1f) {
 		return codeUnit === 0x08 ||
 			codeUnit === 0x09 ||
@@ -66,14 +68,18 @@ function jsonStringPayloadBytes(character: string): number {
 			? 2
 			: 6;
 	}
-	if (character.length === 1 && codeUnit >= 0xd800 && codeUnit <= 0xdfff) return 6;
+	if (character.length === 1 && codeUnit >= 0xd800 && codeUnit <= 0xdfff) {
+		return 6;
+	}
 	return byteLength(character);
 }
 
 /** UTF-8 bytes occupied by JSON.stringify(value), including its quotes. */
 export function jsonStringByteLength(value: string): number {
 	let bytes = 2;
-	for (const character of value) bytes += jsonStringPayloadBytes(character);
+	for (const character of value) {
+		bytes += jsonStringPayloadBytes(character);
+	}
 	return bytes;
 }
 
@@ -82,19 +88,27 @@ export function clipJsonUtf8(value: string, maximum: number): BoundedValue<strin
 	let encodedBytes = 2;
 	for (const character of value) {
 		encodedBytes += jsonStringPayloadBytes(character);
-		if (encodedBytes > maximum) break;
+		if (encodedBytes > maximum) {
+			break;
+		}
 	}
-	if (encodedBytes <= maximum) return { value, truncated: false };
+	if (encodedBytes <= maximum) {
+		return { value, truncated: false };
+	}
 
 	const suffix = SEMANTIC_CONTEXT_ELLIPSIS;
 	const suffixBytes = jsonStringByteLength(suffix);
-	if (suffixBytes > maximum) return { value: "", truncated: true };
+	if (suffixBytes > maximum) {
+		return { value: "", truncated: true };
+	}
 
 	const kept: string[] = [];
 	encodedBytes = suffixBytes;
 	for (const character of value) {
 		const characterBytes = jsonStringPayloadBytes(character);
-		if (encodedBytes + characterBytes > maximum) break;
+		if (encodedBytes + characterBytes > maximum) {
+			break;
+		}
 		kept.push(character);
 		encodedBytes += characterBytes;
 	}
@@ -116,14 +130,18 @@ export function feedIdValue(value: unknown, field: string): string {
 }
 
 export function clipUtf8(value: string, maximum: number): BoundedValue<string> {
-	if (byteLength(value) <= maximum) return { value, truncated: false };
+	if (byteLength(value) <= maximum) {
+		return { value, truncated: false };
+	}
 	if (byteLength(SEMANTIC_CONTEXT_ELLIPSIS) > maximum) {
 		return { value: "", truncated: true };
 	}
 	let kept = "";
 	for (const character of Array.from(value)) {
 		const candidate = `${kept}${character}${SEMANTIC_CONTEXT_ELLIPSIS}`;
-		if (byteLength(candidate) > maximum) break;
+		if (byteLength(candidate) > maximum) {
+			break;
+		}
 		kept += character;
 	}
 	return {
@@ -138,9 +156,15 @@ export function textValue(
 	maximum: number,
 	required = true,
 ): BoundedValue<string> {
-	if (typeof value !== "string") fail(field, "must be a string");
-	if (value.includes("\0")) fail(field, "must not contain NUL");
-	if (required && value.trim() === "") fail(field, "must not be empty");
+	if (typeof value !== "string") {
+		fail(field, "must be a string");
+	}
+	if (value.includes("\0")) {
+		fail(field, "must not contain NUL");
+	}
+	if (required && value.trim() === "") {
+		fail(field, "must not be empty");
+	}
 	return clipUtf8(value, maximum);
 }
 
@@ -149,7 +173,9 @@ export function nullableTextValue(
 	field: string,
 	maximum: number,
 ): BoundedValue<string | null> {
-	if (value === null) return { value: null, truncated: false };
+	if (value === null) {
+		return { value: null, truncated: false };
+	}
 	const result = textValue(value, field, maximum);
 	return { value: result.value, truncated: result.truncated };
 }
@@ -158,11 +184,15 @@ export function identityValue<Identity extends string>(
 	value: Identity | null | undefined,
 	field: string,
 ): Identity | null {
-	if (value === null || value === undefined) return null;
+	if (value === null || value === undefined) {
+		return null;
+	}
 	if (typeof value !== "string" || value.length === 0) {
 		fail(field, "must be a non-empty identity");
 	}
-	if (value.includes("\0")) fail(field, "must not contain NUL");
+	if (value.includes("\0")) {
+		fail(field, "must not contain NUL");
+	}
 	if (byteLength(value) > SEMANTIC_CONTEXT_LIMITS.identityBytes) {
 		fail(field, `must not exceed ${SEMANTIC_CONTEXT_LIMITS.identityBytes} UTF-8 bytes`);
 	}
@@ -170,7 +200,9 @@ export function identityValue<Identity extends string>(
 }
 
 export function numberValue(value: unknown, field: string): number | null {
-	if (value === null) return null;
+	if (value === null) {
+		return null;
+	}
 	if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
 		fail(field, "must be a non-negative safe integer or null");
 	}
@@ -194,7 +226,9 @@ function exactCursorKeys(value: Record<string, unknown>): void {
 }
 
 function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCursor {
-	if (value === null) return { value: null, staleReason: null };
+	if (value === null) {
+		return { value: null, staleReason: null };
+	}
 	if (typeof value !== "object" || Array.isArray(value)) {
 		fail("cursor", "must be null or {feedId, sequence}");
 	}
@@ -202,7 +236,9 @@ function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCurso
 	exactCursorKeys(record);
 	const feedId = feedIdValue(record["feedId"], "cursor.feedId");
 	const sequence = numberValue(record["sequence"], "cursor.sequence");
-	if (sequence === null) fail("cursor.sequence", "must be a number");
+	if (sequence === null) {
+		fail("cursor.sequence", "must be a number");
+	}
 	const staleReason =
 		feedId === currentFeedId
 			? null
@@ -229,7 +265,9 @@ export function deepFreeze<Value>(value: Value): Value {
 }
 
 function claimHolder(value: unknown): SemanticClaimHolder {
-	if (value === "human" || value === "agent" || value === "none") return value;
+	if (value === "human" || value === "agent" || value === "none") {
+		return value;
+	}
 	fail("claim.holder", "must be human, agent, or none");
 }
 
@@ -241,7 +279,9 @@ function threadLinkState(value: unknown): "executable" | "inspect_only" | "unbou
 }
 
 function booleanValue(value: unknown, field: string): boolean {
-	if (typeof value !== "boolean") fail(field, "must be a boolean");
+	if (typeof value !== "boolean") {
+		fail(field, "must be a boolean");
+	}
 	return value;
 }
 
@@ -317,13 +357,17 @@ export function normalizeContext(
 		currentFeedId,
 	);
 	const cursorReasons = cursor.staleReason === null ? [] : [cursor.staleReason];
-	if (!Array.isArray(input.selection)) fail("selection", "must be an array");
+	if (!Array.isArray(input.selection)) {
+		fail("selection", "must be an array");
+	}
 	const selectionEntries = input.selection.map((id, index) =>
 		textValue(id, `selection[${index}]`, SEMANTIC_CONTEXT_LIMITS.selectionIdBytes),
 	);
 	const selection = uniqueSorted(selectionEntries.map((entry) => entry.value));
 	const ambiguityInput = input.ambiguity ?? [];
-	if (!Array.isArray(ambiguityInput)) fail("ambiguity", "must be an array");
+	if (!Array.isArray(ambiguityInput)) {
+		fail("ambiguity", "must be an array");
+	}
 	const ambiguity = boundedReasons([...ambiguityInput, ...cursorReasons], "ambiguity");
 	if (!Array.isArray(input.staleReasons ?? [])) {
 		fail("staleReasons", "must be an array");

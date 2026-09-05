@@ -419,7 +419,9 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 				lock = acquireDurableLock(fileSystem, lockPath, rootDirectory);
 			} catch (error) {
 				const mapped = mapLockError(error);
-				if (mapped.code === "durability_failed") poisoned = "lock acquisition failed";
+				if (mapped.code === "durability_failed") {
+					poisoned = "lock acquisition failed";
+				}
 				throw mapped;
 			}
 			const current = readDisk();

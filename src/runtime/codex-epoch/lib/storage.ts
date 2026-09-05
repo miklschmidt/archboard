@@ -246,7 +246,9 @@ function recoverExpiredLock(
 		try {
 			recovered = createLock(fileSystem, lockPath, lockDirectory);
 		} catch (error) {
-			if (isAlreadyExists(error)) throw new Error("epoch lock is already held", { cause: error });
+			if (isAlreadyExists(error)) {
+				throw new Error("epoch lock is already held", { cause: error });
+			}
 			throw error;
 		}
 	} catch (error) {
@@ -255,9 +257,13 @@ function recoverExpiredLock(
 	try {
 		guard.release();
 	} catch (error) {
-		if (failure === undefined) failure = error;
+		if (failure === undefined) {
+			failure = error;
+		}
 	}
-	if (failure !== undefined) throw failure;
+	if (failure !== undefined) {
+		throw failure;
+	}
 	return recovered as DurableLock;
 }
 
@@ -266,13 +272,17 @@ function acquireRecoveryGuard(fileSystem: CodexEpochFileSystem, guardPath: strin
 	try {
 		descriptor = fileSystem.openSync(guardPath, "wx", 0o600);
 	} catch (error) {
-		if (isAlreadyExists(error)) throw new Error("epoch lock is already held", { cause: error });
+		if (isAlreadyExists(error)) {
+			throw new Error("epoch lock is already held", { cause: error });
+		}
 		throw new DurableStorageError("temp_open", error);
 	}
 	let released = false;
 	return {
 		release: () => {
-			if (released) return;
+			if (released) {
+				return;
+			}
 			released = true;
 			fileSystem.closeSync(descriptor);
 			fileSystem.unlinkSync(guardPath);

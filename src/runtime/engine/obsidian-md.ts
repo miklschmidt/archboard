@@ -33,19 +33,30 @@ export function isObsidianExcalidrawMd(content: string): boolean {
 	// Raw scene JSON always starts with { or [ — never treat it as markdown,
 	// even when a text element happens to contain the marker strings.
 	const head = content.trimStart();
-	if (head.startsWith("{") || head.startsWith("[")) return false;
+	if (head.startsWith("{") || head.startsWith("[")) {
+		return false;
+	}
 	return content.includes("# Excalidraw Data") || /^---[\s\S]*?excalidraw-plugin:/m.test(content);
 }
 
 export function renameElementId(elements: unknown[], oldId: string, newId: string): void {
 	for (const el of elements) {
-		if (!el || typeof el !== "object") continue;
+		if (!el || typeof el !== "object") {
+			continue;
+		}
 		const record = el as Record<string, unknown>;
-		if (record["id"] === oldId) record["id"] = newId;
+		if (record["id"] === oldId) {
+			record["id"] = newId;
+		}
 		if (Array.isArray(record["boundElements"])) {
 			for (const bound of record["boundElements"]) {
-				if (bound && typeof bound === "object" && (bound as Record<string, unknown>)["id"] === oldId)
+				if (
+					bound &&
+					typeof bound === "object" &&
+					(bound as Record<string, unknown>)["id"] === oldId
+				) {
 					(bound as Record<string, unknown>)["id"] = newId;
+				}
 			}
 		}
 		for (const key of ["startBinding", "endBinding"] as const) {
@@ -54,10 +65,13 @@ export function renameElementId(elements: unknown[], oldId: string, newId: strin
 				binding &&
 				typeof binding === "object" &&
 				(binding as Record<string, unknown>)["elementId"] === oldId
-			)
+			) {
 				(binding as Record<string, unknown>)["elementId"] = newId;
+			}
 		}
-		if (record["containerId"] === oldId) record["containerId"] = newId;
+		if (record["containerId"] === oldId) {
+			record["containerId"] = newId;
+		}
 	}
 }
 
@@ -96,7 +110,9 @@ export type FrontmatterScan =
 
 function frontmatterKey(line: string): string | null {
 	const m = FRONTMATTER_KEY_RE.exec(line);
-	if (!m) return null;
+	if (!m) {
+		return null;
+	}
 	return (m[2] ?? m[3] ?? "").trim().toLowerCase();
 }
 
@@ -106,11 +122,17 @@ function frontmatterKey(line: string): string | null {
 // structure would be worse than not reading it.
 function frontmatterScalar(line: string): string | undefined {
 	const colon = line.indexOf(":");
-	if (colon === -1) return undefined;
+	if (colon === -1) {
+		return undefined;
+	}
 	const raw = line.slice(colon + 1).trim();
-	if (raw === "") return undefined;
+	if (raw === "") {
+		return undefined;
+	}
 	const quoted = /^(["'])([\s\S]*)\1$/.exec(raw);
-	if (quoted) return quoted[2];
+	if (quoted) {
+		return quoted[2];
+	}
 	return raw.replace(/\s+#.*$/, "").trim();
 }
 
@@ -125,7 +147,9 @@ function yamlScalar(value: string): string {
 		/:\s/.test(value) ||
 		/\s#/.test(value) ||
 		/[\r\n]/.test(value);
-	if (!needsQuotes) return value;
+	if (!needsQuotes) {
+		return value;
+	}
 	return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
 }
 
@@ -133,11 +157,17 @@ function yamlScalar(value: string): string {
 // note has no readable frontmatter or the key is absent.
 export function readFrontmatterValue(content: string, key: string): string | undefined {
 	const scan = scanFrontmatter(content);
-	if (scan.kind !== "ok") return undefined;
+	if (scan.kind !== "ok") {
+		return undefined;
+	}
 	const wanted = key.toLowerCase();
 	for (const line of scan.lines) {
-		if (/^\s/.test(line)) continue;
-		if (frontmatterKey(line) === wanted) return frontmatterScalar(line);
+		if (/^\s/.test(line)) {
+			continue;
+		}
+		if (frontmatterKey(line) === wanted) {
+			return frontmatterScalar(line);
+		}
 	}
 	return undefined;
 }
@@ -158,24 +188,32 @@ export function readFrontmatterValue(content: string, key: string): string | und
 // through as the bytes it already was.
 export function setFrontmatterValue(note: string, key: string, value: string): string {
 	const scan = scanFrontmatter(note);
-	if (scan.kind !== "ok") return note;
+	if (scan.kind !== "ok") {
+		return note;
+	}
 	// Where the block ends in the original text, so everything below it is
 	// spliced across as the bytes it already was rather than being split into
 	// lines and joined back up.
 	const close = closingDelimiterEnd(note);
-	if (close === null) return note;
+	if (close === null) {
+		return note;
+	}
 	return renderFrontmatter(upsertFrontmatterLines(scan.lines, [[key, value]])) + note.slice(close);
 }
 
 // The offset just past the newline that ends the frontmatter's closing `---`.
 function closingDelimiterEnd(note: string): number | null {
 	let at = note.indexOf("\n");
-	if (at === -1) return null;
+	if (at === -1) {
+		return null;
+	}
 	while (at !== -1) {
 		const start = at + 1;
 		const next = note.indexOf("\n", start);
 		const line = note.slice(start, next === -1 ? undefined : next);
-		if (/^(---|\.\.\.)[ \t]*\r?$/.test(line)) return next === -1 ? note.length : next + 1;
+		if (/^(---|\.\.\.)[ \t]*\r?$/.test(line)) {
+			return next === -1 ? note.length : next + 1;
+		}
 		at = next;
 	}
 	return null;
@@ -197,11 +235,15 @@ function upsertFrontmatterLines(
 		const rendered = `${key}: ${yamlScalar(value)}`;
 		const at = out.findIndex((line) => !/^\s/.test(line) && frontmatterKey(line) === wanted);
 		if (at !== -1) {
-			if (frontmatterScalar(out[at]!) !== value) out[at] = rendered;
+			if (frontmatterScalar(out[at]!) !== value) {
+				out[at] = rendered;
+			}
 			continue;
 		}
 		let insertAt = out.length;
-		while (insertAt > 0 && out[insertAt - 1]!.trim() === "") insertAt--;
+		while (insertAt > 0 && out[insertAt - 1]!.trim() === "") {
+			insertAt--;
+		}
 		out.splice(insertAt, 0, rendered);
 	}
 	return out;
@@ -225,7 +267,9 @@ function upsertFrontmatterLines(
 export function scanFrontmatter(content: string): FrontmatterScan {
 	const text = content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
 	// Obsidian only honours frontmatter that starts on the very first line.
-	if (!/^---[ \t]*(\r?\n|$)/.test(text)) return { kind: "none" };
+	if (!/^---[ \t]*(\r?\n|$)/.test(text)) {
+		return { kind: "none" };
+	}
 
 	const body: string[] = [];
 	let at = text.indexOf("\n");
@@ -249,9 +293,15 @@ export function scanFrontmatter(content: string): FrontmatterScan {
 	}
 
 	for (const line of body) {
-		if (line.trim() === "") continue;
-		if (/^\s/.test(line)) continue; // continuation / nested block / list item
-		if (line.startsWith("#")) continue; // comment
+		if (line.trim() === "") {
+			continue;
+		}
+		if (/^\s/.test(line)) {
+			continue;
+		} // continuation / nested block / list item
+		if (line.startsWith("#")) {
+			continue;
+		} // comment
 		if (frontmatterKey(line) === null) {
 			return {
 				kind: "malformed",
@@ -266,7 +316,9 @@ export function scanFrontmatter(content: string): FrontmatterScan {
 // Existing lines survive untouched; required keys are appended after the last
 // non-blank line so the block keeps whatever trailing blank line it had.
 function frontmatterLinesFor(existing: string | undefined | null): string[] {
-	if (existing === undefined || existing === null) return [...DEFAULT_FRONTMATTER_LINES];
+	if (existing === undefined || existing === null) {
+		return [...DEFAULT_FRONTMATTER_LINES];
+	}
 	const scan = scanFrontmatter(existing);
 	if (scan.kind === "malformed") {
 		throw new Error(
@@ -274,7 +326,9 @@ function frontmatterLinesFor(existing: string | undefined | null): string[] {
 				"Fix or remove its frontmatter, then export again.",
 		);
 	}
-	if (scan.kind === "none") return [...DEFAULT_FRONTMATTER_LINES];
+	if (scan.kind === "none") {
+		return [...DEFAULT_FRONTMATTER_LINES];
+	}
 
 	const lines = [...scan.lines];
 	const present = new Set(
@@ -284,10 +338,14 @@ function frontmatterLinesFor(existing: string | undefined | null): string[] {
 			.filter((k): k is string => k !== null),
 	);
 	const missing = REQUIRED_FRONTMATTER.filter(([key]) => !present.has(key)).map(([, line]) => line);
-	if (missing.length === 0) return lines;
+	if (missing.length === 0) {
+		return lines;
+	}
 
 	let insertAt = lines.length;
-	while (insertAt > 0 && lines[insertAt - 1]!.trim() === "") insertAt--;
+	while (insertAt > 0 && lines[insertAt - 1]!.trim() === "") {
+		insertAt--;
+	}
 	lines.splice(insertAt, 0, ...missing);
 	return lines;
 }
@@ -340,11 +398,17 @@ function eachLine(text: string): Line[] {
 	for (;;) {
 		let nl = text.indexOf("\n", i);
 		const atEnd = nl === -1;
-		if (atEnd) nl = text.length;
+		if (atEnd) {
+			nl = text.length;
+		}
 		let end = nl;
-		if (end > i && text[end - 1] === "\r") end--;
+		if (end > i && text[end - 1] === "\r") {
+			end--;
+		}
 		out.push({ start: i, text: text.slice(i, end) });
-		if (atEnd) return out;
+		if (atEnd) {
+			return out;
+		}
 		i = nl + 1;
 	}
 }
@@ -391,9 +455,13 @@ function dataHeadingCandidates(text: string): HeadingCandidate[] {
 			fence = fenced[1]!;
 			continue;
 		}
-		if (!DATA_HEADING_RE.test(line)) continue;
+		if (!DATA_HEADING_RE.test(line)) {
+			continue;
+		}
 		let j = i + 1;
-		while (j < lines.length && lines[j]!.text.trim() === "") j++;
+		while (j < lines.length && lines[j]!.text.trim() === "") {
+			j++;
+		}
 		const next = j < lines.length ? lines[j]!.text : "";
 		out.push({
 			offset: lines[i]!.start,
@@ -417,11 +485,15 @@ function drawingRegionStart(text: string, block: DrawingBlock): number {
 function contentAfterFrontmatter(content: string): string {
 	const text = content.replace(/^﻿/, "");
 	const open = /^---[ \t]*(?:\r?\n|$)/.exec(text);
-	if (!open) return text;
+	if (!open) {
+		return text;
+	}
 	const closer = /^(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/gm;
 	closer.lastIndex = open[0].length;
 	const close = closer.exec(text);
-	if (!close) return text; // unclosed: frontmatterLinesFor refuses the write
+	if (!close) {
+		return text;
+	} // unclosed: frontmatterLinesFor refuses the write
 	return text.slice(close.index + close[0].length);
 }
 
@@ -431,8 +503,12 @@ function contentAfterFrontmatter(content: string): string {
 // human deleted the banner on purpose and break losslessness for it.
 function bodyWithBanner(text: string): string {
 	let body = text;
-	if (body !== "" && !body.endsWith("\n")) body += "\n";
-	if (body.includes(BANNER_MARKER)) return body;
+	if (body !== "" && !body.endsWith("\n")) {
+		body += "\n";
+	}
+	if (body.includes(BANNER_MARKER)) {
+		return body;
+	}
 	return body === "" ? DEFAULT_BODY : `${body}\n${DEFAULT_BODY}`;
 }
 
@@ -482,7 +558,9 @@ function readEmbeddedFiles(section: string): EmbeddedFileEntry[] {
 	const out: EmbeddedFileEntry[] = [];
 	for (const { text } of eachLine(section)) {
 		const entry = EMBEDDED_ENTRY_RE.exec(text);
-		if (!entry || entry[1] === "") continue;
+		if (!entry || entry[1] === "") {
+			continue;
+		}
 		const fileId = entry[1]!;
 		const target = entry[2]!.trim();
 		const wikilink = /^!?\[\[([^\]]*)\]\]/.exec(target);
@@ -515,10 +593,14 @@ function embeddedFilesSection(text: string, from: number, to: number): string {
 	const lines = eachLine(text.slice(from, to));
 	let first = 0;
 	for (let i = 0; i < lines.length; i++) {
-		if (BLOCK_REF_RE.test(lines[i]!.text)) first = i + 1;
+		if (BLOCK_REF_RE.test(lines[i]!.text)) {
+			first = i + 1;
+		}
 	}
 	const at = lines.findIndex((line, i) => i >= first && EMBEDDED_HEADING_RE.test(line.text));
-	if (at === -1) return "";
+	if (at === -1) {
+		return "";
+	}
 
 	let last = at;
 	let entries = 0;
@@ -527,18 +609,28 @@ function embeddedFilesSection(text: string, from: number, to: number): string {
 		const line = lines[i]!.text;
 		if (inEquation) {
 			last = i;
-			if (line.includes("$$")) inEquation = false;
+			if (line.includes("$$")) {
+				inEquation = false;
+			}
 			continue;
 		}
-		if (line.trim() === "") continue;
+		if (line.trim() === "") {
+			continue;
+		}
 		const entry = EMBEDDED_ENTRY_RE.exec(line);
-		if (!entry) break;
+		if (!entry) {
+			break;
+		}
 		entries++;
 		last = i;
 		const dollars = (entry[2]!.match(/\$\$/g) ?? []).length;
-		if (dollars % 2 === 1) inEquation = true;
+		if (dollars % 2 === 1) {
+			inEquation = true;
+		}
 	}
-	if (entries === 0) return "";
+	if (entries === 0) {
+		return "";
+	}
 
 	const end = lines[last]!.start + lines[last]!.text.length;
 	return text.slice(from + lines[at]!.start, from + end) + "\n";
@@ -556,7 +648,9 @@ function preservedRegions(existing: string | null | undefined): PreservedRegions
 		return { body: DEFAULT_BODY, embedded: "", trailing: DEFAULT_TRAILING };
 	}
 	const text = contentAfterFrontmatter(existing);
-	if (text.trim() === "") return { body: DEFAULT_BODY, embedded: "", trailing: DEFAULT_TRAILING };
+	if (text.trim() === "") {
+		return { body: DEFAULT_BODY, embedded: "", trailing: DEFAULT_TRAILING };
+	}
 
 	const block = locateDrawingBlock(text);
 	const candidates = dataHeadingCandidates(text).filter(
@@ -570,8 +664,9 @@ function preservedRegions(existing: string | null | undefined): PreservedRegions
 		candidates.find((c) => c.structural) ?? (block ? candidates[candidates.length - 1] : undefined);
 
 	const start = heading ? heading.offset : block ? drawingRegionStart(text, block) : null;
-	if (start === null)
+	if (start === null) {
 		return { body: bodyWithBanner(text), embedded: "", trailing: DEFAULT_TRAILING };
+	}
 	// The data region's markdown runs from its heading to the `%%` (or the
 	// `## Drawing` line) that opens the scene, which is where the section the
 	// plugin owns has to be looked for and nowhere else.
@@ -625,7 +720,9 @@ export function wrapSceneAsObsidianMd(
 	// base64 for it back into the Drawing block would make two records of one
 	// picture — the second of which nothing reads and nothing keeps in step.
 	const wrappedFiles = wrappedRecord["files"] as Record<string, unknown>;
-	for (const entry of readEmbeddedFiles(embedded)) delete wrappedFiles[entry.fileId];
+	for (const entry of readEmbeddedFiles(embedded)) {
+		delete wrappedFiles[entry.fileId];
+	}
 
 	const wrappedElements = wrappedRecord["elements"] as unknown[];
 	const used = new Set<string>(
@@ -637,12 +734,18 @@ export function wrapSceneAsObsidianMd(
 	);
 	const entries: string[] = [];
 	for (const el of wrappedElements) {
-		if (!el || typeof el !== "object") continue;
+		if (!el || typeof el !== "object") {
+			continue;
+		}
 		const record = el as Record<string, unknown>;
-		if (record["type"] !== "text" || record["isDeleted"]) continue;
+		if (record["type"] !== "text" || record["isDeleted"]) {
+			continue;
+		}
 		// Nothing archboard minted lands here. An id that does came from
 		// elsewhere and cannot be written as a block reference as it stands.
-		if (typeof record["id"] !== "string") continue;
+		if (typeof record["id"] !== "string") {
+			continue;
+		}
 		if (!isBlockId(record["id"])) {
 			const newId = derivedId(record["id"], used);
 			used.add(newId);
@@ -652,7 +755,9 @@ export function wrapSceneAsObsidianMd(
 			record["rawText"] && record["rawText"] !== ""
 				? record["rawText"]
 				: (record["originalText"] ?? record["text"] ?? "");
-		if (record["rawText"] !== "") entries.push(`${String(record["rawText"])} ^${record["id"]}`);
+		if (record["rawText"] !== "") {
+			entries.push(`${String(record["rawText"])} ^${record["id"]}`);
+		}
 	}
 
 	const textSection = entries.length ? entries.join("\n\n") + "\n" : "";
@@ -693,7 +798,9 @@ function locateDrawingBlock(md: string): DrawingBlock | null {
 	const compressed = DRAWING_COMPRESSED_RE.exec(md);
 	const plain = compressed ? null : DRAWING_PLAIN_RE.exec(md);
 	const match = compressed ?? plain;
-	if (!match) return null;
+	if (!match) {
+		return null;
+	}
 	return {
 		start: match.index,
 		end: match.index + match[0].length,
@@ -704,13 +811,17 @@ function locateDrawingBlock(md: string): DrawingBlock | null {
 
 export function extractSceneJsonFromObsidianMd(md: string): string {
 	const block = locateDrawingBlock(md);
-	if (!block) throw new Error("No Drawing block found — not an .excalidraw.md file?");
+	if (!block) {
+		throw new Error("No Drawing block found — not an .excalidraw.md file?");
+	}
 	if (!block.compressed) {
 		JSON.parse(block.payload);
 		return block.payload;
 	}
 	const json = decompressFromBase64(block.payload.replace(/\s/g, ""));
-	if (!json) throw new Error("Failed to decompress the Drawing block");
+	if (!json) {
+		throw new Error("Failed to decompress the Drawing block");
+	}
 	JSON.parse(json);
 	return json;
 }
@@ -721,7 +832,9 @@ const keyStrBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012345
 const f = String.fromCharCode;
 
 function decompressFromBase64(input: string): string | null {
-	if (input === "") return null;
+	if (input === "") {
+		return null;
+	}
 	return decompress(input.length, 32, (index) => keyStrBase64.indexOf(input.charAt(index)));
 }
 
@@ -757,7 +870,9 @@ function decompress(
 		return bits;
 	};
 
-	for (let i = 0; i < 3; i += 1) dictionary[i] = i;
+	for (let i = 0; i < 3; i += 1) {
+		dictionary[i] = i;
+	}
 
 	let first: string;
 	switch (readBits(2)) {
@@ -774,7 +889,9 @@ function decompress(
 	w = first;
 	result.push(first);
 	while (true) {
-		if (data.index > length) return "";
+		if (data.index > length) {
+			return "";
+		}
 		switch ((c = readBits(numBits))) {
 			case 0:
 				dictionary[dictSize++] = f(readBits(8));

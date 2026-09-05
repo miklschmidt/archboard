@@ -88,14 +88,17 @@ test("the newest accepted duplicate remains authoritative after reverse initiali
 		newer = await openSocket(canvas.base, clientId, newerMessages);
 		const roots = await waitForRecordedPids(owner.pids, 2);
 		const newerRoot = roots.find((pid) => pid !== olderRoot);
-		if (olderRoot === undefined || newerRoot === undefined)
+		if (olderRoot === undefined || newerRoot === undefined) {
 			throw new Error("Duplicate initializers did not start independently.");
+		}
 
 		const originalClosed = new Promise<void>((resolve) => original!.once("close", () => resolve()));
 		owner.releasePid(newerRoot);
 		const afterNewerRoot = await waitForRecordedPids(owner.pids, 3);
 		const newerRemote = afterNewerRoot.find((pid) => !roots.includes(pid));
-		if (newerRemote === undefined) throw new Error("The newer remote probe did not start.");
+		if (newerRemote === undefined) {
+			throw new Error("The newer remote probe did not start.");
+		}
 		owner.releasePid(newerRemote);
 		await waitForInitial(newerMessages);
 		await originalClosed;
@@ -103,7 +106,9 @@ test("the newest accepted duplicate remains authoritative after reverse initiali
 		owner.releasePid(olderRoot);
 		const afterOlderRoot = await waitForRecordedPids(owner.pids, 4);
 		const olderRemote = afterOlderRoot.find((pid) => !afterNewerRoot.includes(pid));
-		if (olderRemote === undefined) throw new Error("The older remote probe did not start.");
+		if (olderRemote === undefined) {
+			throw new Error("The older remote probe did not start.");
+		}
 		owner.releasePid(olderRemote);
 		await waitFor(
 			() => (older?.readyState === WebSocket.CLOSED ? true : undefined),

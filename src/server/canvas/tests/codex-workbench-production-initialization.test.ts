@@ -57,8 +57,11 @@ function installation(host: Record<string, unknown> = {}) {
 			} as never),
 		};
 	} finally {
-		if (prior === undefined) delete process.env["XDG_STATE_HOME"];
-		else process.env["XDG_STATE_HOME"] = prior;
+		if (prior === undefined) {
+			delete process.env["XDG_STATE_HOME"];
+		} else {
+			process.env["XDG_STATE_HOME"] = prior;
+		}
 	}
 }
 
@@ -137,9 +140,13 @@ describe("production Codex generation ownership", () => {
 			void pending.catch(() => undefined);
 			await Promise.resolve();
 			const start = starts[0];
-			if (start === undefined) throw new Error("The realtime start was not sent.");
+			if (start === undefined) {
+				throw new Error("The realtime start was not sent.");
+			}
 			const exactBrief = start.initialItems?.[0]?.text;
-			if (exactBrief === undefined) throw new Error("The realtime start has no semantic brief.");
+			if (exactBrief === undefined) {
+				throw new Error("The realtime start has no semantic brief.");
+			}
 			expect(JSON.parse(exactBrief).coordinator.realtimeSessionId).toBe(start.realtimeSessionId);
 			expect(adapter.generation()).toMatchObject({
 				wireSessionId: start.realtimeSessionId,
@@ -267,7 +274,9 @@ describe("production Codex generation ownership", () => {
 						(error: unknown) => error,
 					),
 					(async () => {
-						for (let turn = 0; turn < 10; turn++) await Promise.resolve();
+						for (let turn = 0; turn < 10; turn++) {
+							await Promise.resolve();
+						}
 						return "still pending";
 					})(),
 				]),
@@ -280,7 +289,7 @@ describe("production Codex generation ownership", () => {
 });
 
 describe("production Codex activation guards", () => {
-	for (const stage of ["initialize", "account", "coordinator"] as const)
+	for (const stage of ["initialize", "account", "coordinator"] as const) {
 		test(`a retired ${stage} continuation cannot publish readiness`, async () => {
 			const owned = installation();
 			const events: string[] = [];
@@ -307,7 +316,9 @@ describe("production Codex activation guards", () => {
 				},
 				adoptedSession: null,
 				assertActivationCurrent: () => {
-					if (!active) throw new Error("activation retired");
+					if (!active) {
+						throw new Error("activation retired");
+					}
 				},
 				markSessionReady: () => void events.push("session:ready"),
 			} as unknown as CodexWorkbenchGenerationInput;
@@ -315,12 +326,16 @@ describe("production Codex activation guards", () => {
 				initialize: async () => {
 					events.push("session:initialize");
 					initializeEntered();
-					if (stage === "initialize") await initializeGate.promise;
+					if (stage === "initialize") {
+						await initializeGate.promise;
+					}
 				},
 				accountRead: async () => {
 					events.push("session:account-read");
 					accountEntered();
-					if (stage === "account") await accountGate.promise;
+					if (stage === "account") {
+						await accountGate.promise;
+					}
 					return { account: { type: "chatgpt" } };
 				},
 			};
@@ -334,16 +349,24 @@ describe("production Codex activation guards", () => {
 					ensure: async () => {
 						events.push("coordinator:ensure");
 						coordinatorEntered();
-						if (stage === "coordinator") await coordinatorGate.promise;
+						if (stage === "coordinator") {
+							await coordinatorGate.promise;
+						}
 						return { state: "ready" };
 					},
 				},
 			} as unknown as CodexWorkbenchComponents;
 			try {
 				const activation = owned.value.hooks(input).initializeSession(session as never, components);
-				if (stage === "initialize") await initializeStarted;
-				if (stage === "account") await accountStarted;
-				if (stage === "coordinator") await coordinatorStarted;
+				if (stage === "initialize") {
+					await initializeStarted;
+				}
+				if (stage === "account") {
+					await accountStarted;
+				}
+				if (stage === "coordinator") {
+					await coordinatorStarted;
+				}
 				active = false;
 				initializeGate.resolve();
 				accountGate.resolve();
@@ -360,9 +383,12 @@ describe("production Codex activation guards", () => {
 					expect(events).not.toContain("child:app-ready");
 					expect(events).not.toContain("session:account-read");
 				}
-				if (stage === "account") expect(events).not.toContain("coordinator:ensure");
+				if (stage === "account") {
+					expect(events).not.toContain("coordinator:ensure");
+				}
 			} finally {
 				rmSync(owned.root, { recursive: true, force: true });
 			}
 		});
+	}
 });

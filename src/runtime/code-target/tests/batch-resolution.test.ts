@@ -18,8 +18,11 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-	if (previousRegistry === undefined) delete process.env["ARCHBOARD_REPOS"];
-	else process.env["ARCHBOARD_REPOS"] = previousRegistry;
+	if (previousRegistry === undefined) {
+		delete process.env["ARCHBOARD_REPOS"];
+	} else {
+		process.env["ARCHBOARD_REPOS"] = previousRegistry;
+	}
 	fixture.dispose();
 });
 
@@ -75,7 +78,9 @@ test("one change-report batch validates each repository once and every target in
 		["remote", "add", "origin", `https://${secondRepository}.git`],
 	]) {
 		const result = Bun.spawnSync(["git", ...args], { cwd: secondCheckout, stderr: "pipe" });
-		if (result.exitCode !== 0) throw new Error(result.stderr.toString());
+		if (result.exitCode !== 0) {
+			throw new Error(result.stderr.toString());
+		}
 	}
 	const registered = JSON.parse(fs.readFileSync(fixture.registry, "utf8")) as unknown[];
 	fs.writeFileSync(

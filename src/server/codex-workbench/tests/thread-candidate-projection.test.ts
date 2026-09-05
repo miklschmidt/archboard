@@ -82,7 +82,9 @@ test("projects the host thread inventory into the browser vocabulary and bounds 
 			candidates: sources.map((source, index) => candidate(index, source)) as never,
 		},
 	});
-	if (projected.tag !== "projected") throw new Error(projected.message);
+	if (projected.tag !== "projected") {
+		throw new Error(projected.message);
+	}
 	const inventory = projected.snapshot.threadCandidates;
 	expect(inventory.state).toBe("listed");
 	expect(
@@ -107,7 +109,9 @@ test("projects the host thread inventory into the browser vocabulary and bounds 
 			) as never,
 		},
 	});
-	if (overflowing.tag !== "projected") throw new Error(overflowing.message);
+	if (overflowing.tag !== "projected") {
+		throw new Error(overflowing.message);
+	}
 	const bounded = overflowing.snapshot.threadCandidates;
 	expect(bounded.state === "listed" && bounded.records).toHaveLength(
 		BROWSER_THREAD_CANDIDATE_LIMIT,
@@ -122,7 +126,9 @@ test("projects the host thread inventory into the browser vocabulary and bounds 
 			reason: "the persisted list could not be exhausted",
 		},
 	});
-	if (unavailable.tag !== "projected") throw new Error(unavailable.message);
+	if (unavailable.tag !== "projected") {
+		throw new Error(unavailable.message);
+	}
 	expect(unavailable.snapshot.threadCandidates).toMatchObject({
 		state: "unavailable",
 		records: [],

@@ -128,7 +128,9 @@ export class Reader {
 		for (let i = 0; i < 5; i++) {
 			const byte = this.u8();
 			v = (v << 7) | (byte & 0x7f);
-			if ((byte & 0x80) === 0) return v >>> 0;
+			if ((byte & 0x80) === 0) {
+				return v >>> 0;
+			}
 		}
 		throw new Error("UIntBase128 is longer than five bytes");
 	}
@@ -213,7 +215,9 @@ export interface ParsedFont {
 export function parseFont(path: string): ParsedFont {
 	const tables = readWoff2(path);
 	for (const required of ["head", "maxp", "hhea", "hmtx", "cmap"]) {
-		if (!tables[required]) throw new Error(`${path} carries no ${required} table`);
+		if (!tables[required]) {
+			throw new Error(`${path} carries no ${required} table`);
+		}
 	}
 
 	const head = new Reader((tables["head"] as FontTable).buf, 18);
@@ -231,16 +235,22 @@ export function parseFont(path: string): ParsedFont {
 	const hmtx = tables["hmtx"] as FontTable;
 	const hm = new Reader(hmtx.buf);
 	const transformed = hmtx.transformVersion !== 0;
-	if (transformed) hm.u8();
+	if (transformed) {
+		hm.u8();
+	}
 	const advances = Array.from<number>({ length: numGlyphs });
 	let last = 0;
 	for (let i = 0; i < numberOfHMetrics && i < numGlyphs; i++) {
 		last = hm.u16();
-		if (!transformed) hm.i16(); // an untransformed longHorMetric carries lsb too
+		if (!transformed) {
+			hm.i16();
+		} // an untransformed longHorMetric carries lsb too
 		advances[i] = last;
 	}
 	// A monospaced tail: everything past numberOfHMetrics repeats the last advance.
-	for (let i = numberOfHMetrics; i < numGlyphs; i++) advances[i] = last;
+	for (let i = numberOfHMetrics; i < numGlyphs; i++) {
+		advances[i] = last;
+	}
 
 	return {
 		unitsPerEm,
@@ -276,9 +286,13 @@ function parseCmap(buf: Buffer): Map<number, number> {
 					: platformId === 0
 						? 2
 						: 1;
-		if (!best || score > best.score) best = { score, offset };
+		if (!best || score > best.score) {
+			best = { score, offset };
+		}
 	}
-	if (!best) throw new Error("cmap carries no subtable");
+	if (!best) {
+		throw new Error("cmap carries no subtable");
+	}
 
 	const map = new Map<number, number>();
 	const sub = new Reader(buf, best.offset);
@@ -292,15 +306,23 @@ function parseCmap(buf: Buffer): Map<number, number> {
 		sub.u16();
 		sub.u16(); // searchRange, entrySelector, rangeShift
 		const endCodes: number[] = [];
-		for (let i = 0; i < segCount; i++) endCodes.push(sub.u16());
+		for (let i = 0; i < segCount; i++) {
+			endCodes.push(sub.u16());
+		}
 		sub.u16(); // reservedPad
 		const startCodes: number[] = [];
-		for (let i = 0; i < segCount; i++) startCodes.push(sub.u16());
+		for (let i = 0; i < segCount; i++) {
+			startCodes.push(sub.u16());
+		}
 		const idDeltas: number[] = [];
-		for (let i = 0; i < segCount; i++) idDeltas.push(sub.i16());
+		for (let i = 0; i < segCount; i++) {
+			idDeltas.push(sub.i16());
+		}
 		const idRangeAt = sub.p;
 		const idRangeOffsets: number[] = [];
-		for (let i = 0; i < segCount; i++) idRangeOffsets.push(sub.u16());
+		for (let i = 0; i < segCount; i++) {
+			idRangeOffsets.push(sub.u16());
+		}
 		for (let s = 0; s < segCount; s++) {
 			const end = endCodes[s] as number;
 			const start = startCodes[s] as number;
@@ -308,14 +330,21 @@ function parseCmap(buf: Buffer): Map<number, number> {
 			const rangeOffset = idRangeOffsets[s] as number;
 			for (let c = start; c <= end && c !== 0xffff; c++) {
 				let g: number;
-				if (rangeOffset === 0) g = (c + delta) & 0xffff;
-				else {
+				if (rangeOffset === 0) {
+					g = (c + delta) & 0xffff;
+				} else {
 					const at = idRangeAt + s * 2 + rangeOffset + (c - start) * 2;
-					if (at + 1 >= buf.length) continue;
+					if (at + 1 >= buf.length) {
+						continue;
+					}
 					g = buf.readUInt16BE(at);
-					if (g !== 0) g = (g + delta) & 0xffff;
+					if (g !== 0) {
+						g = (g + delta) & 0xffff;
+					}
 				}
-				if (g) map.set(c, g);
+				if (g) {
+					map.set(c, g);
+				}
 			}
 		}
 		return map;
@@ -330,7 +359,9 @@ function parseCmap(buf: Buffer): Map<number, number> {
 			const start = sub.u32();
 			const end = sub.u32();
 			const startGid = sub.u32();
-			for (let c = start; c <= end; c++) map.set(c, startGid + (c - start));
+			for (let c = start; c <= end; c++) {
+				map.set(c, startGid + (c - start));
+			}
 		}
 		return map;
 	}

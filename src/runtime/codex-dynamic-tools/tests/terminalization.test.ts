@@ -40,10 +40,11 @@ describe("codex dynamic host operation terminalization", () => {
 			expect(parsed.envelope.tag).toBe("approval_required");
 			expect(fixture.operationIds.retired).toHaveLength(2);
 			expect(new Set(fixture.operationIds.retired).size).toBe(2);
-			for (const operationId of fixture.operationIds.issued)
+			for (const operationId of fixture.operationIds.issued) {
 				expect(() =>
 					fixture.operationIds.validateCurrentUnconsumedOperationId(operationId),
 				).toThrow(/terminal/);
+			}
 			expect(fixture.operationIds.terminalAttempts).toHaveLength(fault === "before" ? 3 : 2);
 		}
 	});
@@ -84,10 +85,11 @@ describe("codex dynamic host operation terminalization", () => {
 
 		expect(parsed.envelope).toMatchObject({ tag: "refused", reason: "approval_declined" });
 		expect(fixture.operationIds.retired).toHaveLength(2);
-		for (const operationId of fixture.operationIds.issued)
+		for (const operationId of fixture.operationIds.issued) {
 			expect(() => fixture.operationIds.validateCurrentUnconsumedOperationId(operationId)).toThrow(
 				/terminal/,
 			);
+		}
 	});
 
 	test("retains unresolved terminality without returning a response", async () => {
@@ -101,17 +103,20 @@ describe("codex dynamic host operation terminalization", () => {
 			requestFor(authorities, caller, "create_thread", { prompt: "cannot terminalize" }),
 		);
 		for (let index = 0; index < 100; index++) {
-			if (tools.inspectMutationQuarantine().callCount === 1) break;
+			if (tools.inspectMutationQuarantine().callCount === 1) {
+				break;
+			}
 			await Promise.resolve();
 		}
 
 		expect(tools.inspectMutationQuarantine()).toMatchObject({ epochCount: 1, callCount: 1 });
 		expect(fixture.transportResponses).toHaveLength(0);
 		expect(fixture.operationIds.retired).toHaveLength(0);
-		for (const operationId of fixture.operationIds.issued)
+		for (const operationId of fixture.operationIds.issued) {
 			expect(() =>
 				fixture.operationIds.validateCurrentUnconsumedOperationId(operationId),
 			).not.toThrow();
+		}
 		tools.dispose();
 		await expect(pending).rejects.toMatchObject({ code: "system_error", retryEligible: false });
 	});

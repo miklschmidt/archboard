@@ -56,7 +56,9 @@ const PRIVATE_APPROVAL_PATHS = [
 ] as const;
 
 function withFutureNetworkPolicyField(view: ApprovalOwnerView): ApprovalOwnerView {
-	if (view.request.family !== "command_execution") return view;
+	if (view.request.family !== "command_execution") {
+		return view;
+	}
 	const networkPolicyAmendment = {
 		host: "example.test",
 		action: "allow" as const,
@@ -287,7 +289,9 @@ test("the sole public projection owns all seven ordinary approval presentations"
 				projectionInput(withFutureNetworkPolicyField(broker.view(pending.requestId))),
 			);
 			expect(result.tag).toBe("projected");
-			if (result.tag !== "projected") throw new Error("approval projection was refused");
+			if (result.tag !== "projected") {
+				throw new Error("approval projection was refused");
+			}
 			projectedApprovals.push(result.snapshot.approvals[0]!);
 		}
 		expect(projectedApprovals.map((approval) => approval.approvalKind)).toEqual([
@@ -308,7 +312,9 @@ test("the sole public projection owns all seven ordinary approval presentations"
 			},
 		});
 		const wire = JSON.stringify(projectedApprovals);
-		for (const privatePath of PRIVATE_APPROVAL_PATHS) expect(wire).not.toContain(privatePath);
+		for (const privatePath of PRIVATE_APPROVAL_PATHS) {
+			expect(wire).not.toContain(privatePath);
+		}
 	} finally {
 		broker.dispose();
 	}
@@ -366,7 +372,9 @@ test("thread-link projection discloses closed provenance without vendor source d
 				threadCandidates: { kind: "codex_thread_candidates", state: "unknown" },
 			});
 			expect(result.tag).toBe("projected");
-			if (result.tag !== "projected") throw new Error("thread-link projection was refused");
+			if (result.tag !== "projected") {
+				throw new Error("thread-link projection was refused");
+			}
 			expect(result.snapshot.threadLink.sourcePresentation).toBe(source.presentation);
 			const wire = JSON.stringify(result.snapshot.threadLink);
 			for (const privateDetail of [
@@ -375,8 +383,9 @@ test("thread-link projection discloses closed provenance without vendor source d
 				"private-reviewer",
 				"private-role",
 				"private-custom-source",
-			])
+			]) {
 				expect(wire).not.toContain(privateDetail);
+			}
 			expect(wire).not.toContain("agent_path");
 		}
 	} finally {
@@ -415,8 +424,9 @@ test("the production gateway strips permission cwd, paths, and unreviewed vendor
 			"/private/denied",
 			"/private/future",
 			"futurePrivateField",
-		])
+		]) {
 			expect(wire).not.toContain(privateValue);
+		}
 		expect(approval).not.toHaveProperty("cwd");
 	} finally {
 		broker.dispose();

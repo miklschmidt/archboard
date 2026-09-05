@@ -81,10 +81,14 @@ function registryChunk(): { file: string; source: string } {
 		throw new Error(`No Excalidraw bundle at ${EXCALIDRAW_DIST}. Run \`bun install\`.`);
 	}
 	for (const entry of entries) {
-		if (!entry.endsWith(".js")) continue;
+		if (!entry.endsWith(".js")) {
+			continue;
+		}
 		const file = path.join(EXCALIDRAW_DIST, entry);
 		const source = fs.readFileSync(file, "utf-8");
-		if (source.includes("{uri:") && source.includes("lineHeight:")) return { file, source };
+		if (source.includes("{uri:") && source.includes("lineHeight:")) {
+			return { file, source };
+		}
 	}
 	throw new Error(
 		`No font registry in the Excalidraw bundle at ${EXCALIDRAW_DIST}. ` +
@@ -94,7 +98,9 @@ function registryChunk(): { file: string; source: string } {
 
 /** `U+20-7e,U+a0` and friends, as ranges. */
 function parseUnicodeRange(spec: string | undefined): Array<[number, number]> | null {
-	if (!spec) return null;
+	if (!spec) {
+		return null;
+	}
 	const ranges: Array<[number, number]> = [];
 	for (const part of spec.split(/,\s*/)) {
 		const body = part.trim().replace(/^U\+/i, "");
@@ -116,10 +122,13 @@ function objectLiteralAt(source: string, open: number): string {
 	let depth = 0;
 	for (let i = open; i < source.length; i++) {
 		const ch = source[i];
-		if (ch === "{") depth++;
-		else if (ch === "}") {
+		if (ch === "{") {
+			depth++;
+		} else if (ch === "}") {
 			depth--;
-			if (depth === 0) return source.slice(open, i + 1);
+			if (depth === 0) {
+				return source.slice(open, i + 1);
+			}
 		}
 	}
 	throw new Error("unbalanced object literal in the Excalidraw bundle");
@@ -163,14 +172,18 @@ function readRegistry(): Map<string, FamilyDescriptor> {
 			/\{uri:([A-Za-z_$][\w$]*)(?:,descriptors:\{unicodeRange:(?:"([^"]*)"|(\w+)\.(\w+))(?:,\w+:"[^"]*")*\})?\}/g;
 		for (const e of body.matchAll(entry)) {
 			const uri = files.get(e[1] as string);
-			if (!uri) continue;
+			if (!uri) {
+				continue;
+			}
 			const spec = e[2] ?? (e[4] ? sharedRanges.get(e[4] as string) : undefined);
 			faces.push({
 				file: path.join(EXCALIDRAW_DIST, uri.replace(/^\.\//, "")),
 				ranges: parseUnicodeRange(spec),
 			});
 		}
-		if (faces.length > 0) faceLists.set(m[1] as string, faces);
+		if (faces.length > 0) {
+			faceLists.set(m[1] as string, faces);
+		}
 	}
 
 	// `Ie={Virgil:1,Helvetica:2,...}` — the `fontFamily` numbers.
@@ -198,20 +211,28 @@ function readRegistry(): Map<string, FamilyDescriptor> {
 			// A family registered through a variable: `Mn="Xiaolai"`.
 			const varName = m[2] as string;
 			const literal = source.match(new RegExp(`\\b${varName}\\s*=\\s*"([^"]+)"`));
-			if (!literal) continue;
+			if (!literal) {
+				continue;
+			}
 			name = literal[1] as string;
 		}
 		const faces = faceLists.get(m[3] as string);
-		if (!faces) continue;
+		if (!faces) {
+			continue;
+		}
 		const existing = registry.get(name);
-		if (existing && existing.faces.length >= faces.length) continue;
+		if (existing && existing.faces.length >= faces.length) {
+			continue;
+		}
 		const descriptor: FamilyDescriptor = {
 			name,
 			lineHeight: lineHeights.get(name) ?? 1.25,
 			faces,
 		};
 		const number = numbers.get(name);
-		if (number !== undefined) descriptor.fontFamily = number;
+		if (number !== undefined) {
+			descriptor.fontFamily = number;
+		}
 		registry.set(name, descriptor);
 	}
 
@@ -233,7 +254,9 @@ export function fontRegistry(): Map<string, FamilyDescriptor> {
 /** The family a `fontFamily` number names, or undefined for a number nothing uses. */
 export function familyOf(fontFamily: number): FamilyDescriptor | undefined {
 	for (const family of fontRegistry().values()) {
-		if (family.fontFamily === fontFamily) return family;
+		if (family.fontFamily === fontFamily) {
+			return family;
+		}
 	}
 	return undefined;
 }
@@ -250,12 +273,16 @@ export function familyOf(fontFamily: number): FamilyDescriptor | undefined {
  */
 export function faceStack(fontFamily: number): FaceDescriptor[][] {
 	const family = familyOf(fontFamily);
-	if (!family) return [];
+	if (!family) {
+		return [];
+	}
 	const availableFamilies = fontRegistry();
 	const stack = [family.faces];
 	for (const fallback of FALLBACKS[family.name] ?? []) {
 		const next = availableFamilies.get(fallback);
-		if (next) stack.push(next.faces);
+		if (next) {
+			stack.push(next.faces);
+		}
 	}
 	return stack;
 }
@@ -303,7 +330,9 @@ const faceCache = new Map<string, LoadedFace>();
  */
 export function loadFace(file: string): LoadedFace {
 	const already = faceCache.get(file);
-	if (already) return already;
+	if (already) {
+		return already;
+	}
 	const font = parseFont(file);
 	const face: LoadedFace = {
 		font,

@@ -22,9 +22,7 @@ test("the UI reference archive is ignored and absent from both committed and sta
 		stderr: "pipe",
 	});
 	expect(ignored.exitCode).toBe(0);
-	const rawBunfig: unknown = Bun.TOML.parse(
-		readFileSync(join(repoRoot, "bunfig.toml"), "utf8"),
-	);
+	const rawBunfig: unknown = Bun.TOML.parse(readFileSync(join(repoRoot, "bunfig.toml"), "utf8"));
 	const bunfig = z
 		.object({ test: z.object({ pathIgnorePatterns: z.array(z.string()) }) })
 		.parse(rawBunfig);
@@ -33,10 +31,11 @@ test("the UI reference archive is ignored and absent from both committed and sta
 		readFileSync(join(repoRoot, "package.json"), "utf8"),
 	);
 	for (const [name, command] of Object.entries(pkg.scripts)) {
-		if (command.includes("--path-ignore-patterns"))
+		if (command.includes("--path-ignore-patterns")) {
 			expect(command, `${name} overrides Bun's archive ignore`).toContain(
 				`--path-ignore-patterns ${archive} `,
 			);
+		}
 	}
 });
 
@@ -82,9 +81,7 @@ test("ordinary lint rejects archive imports, re-exports, dynamic loads and servi
 	const rawConfig: unknown = Bun.JSONC.parse(
 		readFileSync(join(repoRoot, ".oxlintrc.jsonc"), "utf8"),
 	);
-	const config = z
-		.object({ rules: z.record(z.string(), z.unknown()) })
-		.parse(rawConfig);
+	const config = z.object({ rules: z.record(z.string(), z.unknown()) }).parse(rawConfig);
 	expect(config.rules["archboard/no-archive-references"]).toBe("error");
 });
 
@@ -102,8 +99,9 @@ test("Vite denies the archive while preserving secret-file denials", async () =>
 		".yarnrc.yml",
 		"**/.git/**",
 		`**/${archive}/**`,
-	])
+	]) {
 		expect(config.server.fs.deny).toContain(pattern);
+	}
 });
 
 test("Vite refuses archive bytes even inside an otherwise allowed filesystem root", async () => {
@@ -121,7 +119,9 @@ test("Vite refuses archive bytes even inside an otherwise allowed filesystem roo
 		});
 		await server.listen();
 		const address = server.httpServer?.address();
-		if (!address || typeof address === "string") throw new Error("Vite supplied no TCP address");
+		if (!address || typeof address === "string") {
+			throw new Error("Vite supplied no TCP address");
+		}
 		const response = await fetch(
 			`http://127.0.0.1:${address.port}/@fs/${join(root, archive, "reference.txt")}`,
 		);

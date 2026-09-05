@@ -39,8 +39,9 @@ describe("Codex app-server transport", () => {
 				method: "turn/steer",
 				params: { threadId: "thread-1", turnId: "turn-1", input: [] },
 			});
-			if (typeof requestFrame["id"] !== "string")
+			if (typeof requestFrame["id"] !== "string") {
 				throw new Error("request id was not serialized as text");
+			}
 			const requestId = requestFrame["id"];
 			sendJson(child, { id: requestId, result: { turnId: "turn-1" } });
 			const delivered = await deliveredPromise;
@@ -56,7 +57,10 @@ describe("Codex app-server transport", () => {
 
 			const errorPromise = transport.request("turn/steer", {});
 			const errorFrame = frameAt(child, 1);
-			sendJson(child, { id: errorFrame["id"], error: { code: -32603, message: "fixture failure" } });
+			sendJson(child, {
+				id: errorFrame["id"],
+				error: { code: -32603, message: "fixture failure" },
+			});
 			expect(await captureRejection(errorPromise)).toMatchObject({
 				name: "CodexTransportRemoteError",
 				method: "turn/steer",
@@ -217,7 +221,9 @@ describe("Codex app-server transport", () => {
 				await flushStreams();
 				const request = requests.at(-1);
 				expect(request?.owner).toBe("codex-approvals");
-				if (!request) throw new Error("human request was not routed");
+				if (!request) {
+					throw new Error("human request was not routed");
+				}
 				expect(request.correlation).toMatchObject({
 					child: identity.validator.childId,
 					epoch: identity.validator.epoch,
@@ -261,8 +267,9 @@ describe("Codex app-server transport", () => {
 				await flushStreams();
 				const request = requests.at(-1);
 				expect(request?.owner).toBe(owner);
-				if (!request || !("logicalCall" in request))
+				if (!request || !("logicalCall" in request)) {
 					throw new Error("dynamic request was not routed");
+				}
 				expect(request.logicalCall).toMatchObject({
 					child: identity.validator.childId,
 					epoch: identity.validator.epoch,
@@ -284,8 +291,9 @@ describe("Codex app-server transport", () => {
 			await flushStreams();
 			const currentTime = requests.at(-1);
 			expect(currentTime?.owner).toBe("codex-session");
-			if (currentTime?.method !== "currentTime/read")
+			if (currentTime?.method !== "currentTime/read") {
 				throw new Error("currentTime request was not routed");
+			}
 			expect(currentTime.params.threadId).toBe(identity.decoder.resolveThreadId("thread-1"));
 			await transport.respond(currentTime, "codex-session", { result: { currentTimeAt: 0 } });
 
@@ -303,7 +311,9 @@ describe("Codex app-server transport", () => {
 				await flushStreams();
 				const request = requests.at(-1);
 				expect(request?.owner).toBe("codex-session");
-				if (!request) throw new Error("unsupported request was not routed");
+				if (!request) {
+					throw new Error("unsupported request was not routed");
+				}
 				await transport.respond(request, "codex-session", { error });
 			}
 
@@ -369,7 +379,9 @@ describe("Codex app-server transport", () => {
 			expect((idempotentError as CodexTransportRequestError).outcome).toBe("outcome_unknown");
 			expect((idempotentError as CodexTransportRequestError).accepted).toBeTrue();
 		} finally {
-			if (fakeTimers) jest.useRealTimers();
+			if (fakeTimers) {
+				jest.useRealTimers();
+			}
 			await close();
 		}
 	});
@@ -387,7 +399,9 @@ describe("Codex app-server transport", () => {
 				params: { threadId: "thread-1", turnId: "turn-1", itemId: "item-1", startedAtMs: 1 },
 			});
 			await flushStreams();
-			if (!request) throw new Error("reverse request was not routed");
+			if (!request) {
+				throw new Error("reverse request was not routed");
+			}
 			expect(transport.ownsPendingReverseRequest(request, "codex-approvals")).toBe(true);
 			expect(transport.ownsPendingReverseRequest(request, "codex-session")).toBe(false);
 			expect(transport.ownsPendingReverseRequest({ ...request }, "codex-approvals")).toBe(false);
