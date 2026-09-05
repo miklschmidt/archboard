@@ -41,9 +41,13 @@ const ID_LENGTH = 8;
 // here even though nothing mints them, because ids arriving from elsewhere
 // (Excalidraw's own, a user-edited note) may carry one and are none the worse
 // for it.
-const BLOCK_ID_RE = /^[A-Za-z0-9-]{1,8}$/;
+const BLOCK_ID_RE = /^[A-Za-z0-9-]{1,8}$/u;
 
-/** Can this id be written as an Obsidian block reference as it stands? */
+/**
+ * Can this id be written as an Obsidian block reference as it stands?
+ * @param id - Candidate identifier.
+ * @returns Whether the identifier is directly usable as a block reference.
+ */
 function isBlockId(id: unknown): boolean {
 	return typeof id === "string" && BLOCK_ID_RE.test(id);
 }
@@ -69,7 +73,11 @@ function encode(bits: bigint): string {
 	return id;
 }
 
-/** A fresh id nobody is using. */
+/**
+ * Creates a fresh id nobody is using.
+ * @param inUse - Existing identifiers that the mint must avoid.
+ * @returns A unique block-safe identifier.
+ */
 function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
 	for (;;) {
 		let id = "";
@@ -84,10 +92,11 @@ function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
 
 // FNV-1a 32-bit — a stable positive int from a string.
 function fnv1a(str: string): number {
-	let h = 0x811c9dc5;
+	let h = 0x81_1c_9d_c5;
 	for (let i = 0; i < str.length; i++) {
+		// eslint-disable-next-line unicorn/prefer-code-point -- The persisted FNV identity contract hashes UTF-16 code units for backward stability.
 		h ^= str.charCodeAt(i);
-		h = Math.imul(h, 0x01000193);
+		h = Math.imul(h, 0x01_00_01_93);
 	}
 	return h >>> 0;
 }
@@ -101,6 +110,9 @@ function fnv1a(str: string): number {
  * Deterministic up to collision: the first `sourceKey` to ask gets the plain
  * derivation, and a later one whose derivation is taken gets the next salted
  * attempt.
+ * @param sourceKey - Stable source identity to derive from.
+ * @param inUse - Existing identifiers that the derivation must avoid.
+ * @returns A deterministic block-safe identifier, salted only on collision.
  */
 function derivedId(sourceKey: string, inUse: IdsInUse = NOTHING_IN_USE): string {
 	for (let attempt = 0; ; attempt++) {
