@@ -1,8 +1,5 @@
-import fs from "fs";
-import path from "path";
+import path from "node:path";
 import type { ServerElement } from "./types.js";
-import { inspectCheckout } from "./git.js";
-import { checkoutFor, knownRepoNames, rememberRepo } from "./repo-registry.js";
 import {
 	DEFAULT_FILL_STYLE,
 	DEFAULT_SHAPE_BACKGROUND,
@@ -11,304 +8,42 @@ import {
 	isTransparentBackground,
 } from "../../shared/appearance/appearance.js";
 import { extentOf } from "./geometry.js";
-import { nodeIdOf, nodeIdsOnBoard, readElementMetadata } from "./metadata.js";
+import { archboardBlock, nodeIdOf, nodeIdsOnBoard, readElementMetadata } from "./metadata.js";
 import type { ArchboardBlock, LogicalAddress } from "./metadata.js";
-
-export { archboardBlock, nodeIdOf, nodeIdsOnBoard } from "./metadata.js";
-export type { ArchboardBlock, LogicalAddress } from "./metadata.js";
+import type {
+	BindingOrigin,
+	BindingRequest,
+	BindingSource,
+	ResolvedBinding,
+} from "./lib/promotion-binding.js";
+import { formatAddress, resolveBinding } from "./lib/promotion-binding.js";
+import type { Kind } from "./lib/promotion-identity.js";
+import {
+	KINDS,
+	normalizeKind,
+	PromotionError,
+	slugify,
+	uniqueNodeId,
+	validateNodeId,
+} from "./lib/promotion-identity.js";
 
 const areaOf = (el: ServerElement): number => {
 	const extent = extentOf(el);
 	return extent.width * extent.height;
 };
 
-// Promotion — declaring a set of elements to be a node, giving it a kind and
-// usually a binding in the same act (CONTEXT.md).
-//
-// The interaction this exists for: a user selects boxes and says "map this to
-// the payments service". No element ids are spoken, so the default target is
-// the live selection and everything else is
-// an override.
-//
-// Metadata is written to `customData.archboard` (ADR 0003), merged rather than
-// replaced, so another tool's `customData` keys — and our own fields the caller
-// did not mention — survive.
-//
-// Any element can be promoted, arrows and lines included, and the readers take
-// what an element carries over what it is drawn from (TASK-053). A stencil is
-// an arbitrary set of primitives: the shipped PostgreSQL is seven lines, and
-// 22 of the 111 shipped stencils hold an arrow, so refusing a type here would
-// make promotion depend on which tool an artist reached for. `compare` says so out loud when
-// a promoted connector was joining two other nodes, which is the one case
-// where promoting it costs an edge.
+// Promotion declares selected elements as one semantic node. Metadata is
+// merged under `customData.archboard` so unrelated custom data survives (ADR
+// 0003). Any element may participate because stencils are arbitrary primitive
+// sets, sometimes including connectors (TASK-053).
 
-// ---------------------------------------------------------------------------
-// Kind — a controlled vocabulary that grows deliberately, not free text
-// ---------------------------------------------------------------------------
-
-export const KINDS = ["service", "queue", "datastore", "gateway", "external"] as const;
-export type Kind = (typeof KINDS)[number];
-
-export function normalizeKind(raw: string): Kind {
-	const kind = raw.trim().toLowerCase();
-	if ((KINDS as readonly string[]).includes(kind)) return kind as Kind;
-	throw new PromotionError(
-		`Unknown kind "${raw}". Valid kinds are: ${KINDS.join(", ")}. ` +
-			`The kind vocabulary grows deliberately — add it to CONTEXT.md and KINDS before using it.`,
-	);
-}
-
-export class PromotionError extends Error {}
-
-// ---------------------------------------------------------------------------
-// Node identity — a stable id distinct from the Excalidraw element id
-// ---------------------------------------------------------------------------
-//
-// Element ids are not stable across redraws, mermaid conversion, or variant
-// authoring (ADR 0003), so the node id is the join key that makes two
-// independently authored variants comparable. It is derived from the label so
-// a human can read it aloud and recognise it in a diff.
-
-const NODE_ID_MAX = 48;
-
-export function slugify(text: string): string {
-	const slug = text
-		.normalize("NFKD")
-		.replace(/[\u0300-\u036f]/g, "") // strip combining accents
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, "-")
-		.replace(/^-+|-+$/g, "")
-		.slice(0, NODE_ID_MAX)
-		.replace(/-+$/g, "");
-	return slug;
-}
-
-// Explicit --node values go through the same shape so ids stay comparable
-// across boards; anything that slugifies to nothing is rejected rather than
-// silently renamed.
-export function validateNodeId(raw: string): string {
-	const slug = slugify(raw);
-	if (!slug)
-		throw new PromotionError(`"${raw}" does not make a usable node id (letters and digits only).`);
-	return slug;
-}
-
-// Uniqueness is per board. `taken` is every node id already in use by some
-// *other* node, so re-promoting the same node keeps its identity.
-export function uniqueNodeId(base: string, taken: Set<string>): string {
-	const stem = base || "node";
-	if (!taken.has(stem)) return stem;
-	for (let n = 2; n < 10000; n++) {
-		const candidate = `${stem.slice(0, NODE_ID_MAX - String(n).length - 1)}-${n}`;
-		if (!taken.has(candidate)) return candidate;
-	}
-	throw new PromotionError(`Could not find a free node id based on "${stem}".`);
-}
-
-// ---------------------------------------------------------------------------
-// Binding — a logical address, not a machine path
-// ---------------------------------------------------------------------------
-//
-// The vault spans repositories and is not co-located with any of them (ADR
-// 0004), so a binding names code as repo identity + path, plus the branch and
-// commit at which it was last confirmed — that pair is what lets git history
-// trace a file that later moves. Machine-specific code targets are presentation.
-
-export interface BindingRequest {
-	path: string;
-	repo?: string;
-	branch?: string;
-	commit?: string;
-}
-
-export type BindingSource =
-	| "path" // the caller gave an absolute path
-	| "registry" // the caller named a repository, and it is checked out here
-	| "cwd" // resolved against the caller's working directory
-	| "declared"; // recorded as stated; nothing on this machine to resolve it against
-
-/**
- * Where a *relative* path is allowed to resolve from.
- *
- * There is no default, and that is the whole decision (ADR 0011). A surface
- * with a shell has a working directory the caller chose and can see, so it says
- * so. A caller without one says that instead, and a relative path is refused
- * rather than resolved against the server process's ambient directory.
- */
-export type BindingOrigin = { kind: "cwd"; dir: string } | { kind: "none"; surface: string };
-
-export interface ResolvedBinding {
-	address: LogicalAddress;
-	resolved: boolean; // did we find a real repo?
-	resolvedFrom: BindingSource; // what the address was resolved against, always reported
-	note?: string; // said out loud whenever the answer is not simply what the caller named
-}
-
-/**
- * Resolve a binding request into a logical address.
- *
- * Four ways a path can find its repository, in order of how firmly the caller
- * named it: an absolute path, a repository identity looked up in the checkout
- * registry, the caller's own working directory, or nothing at all. In that last
- * case the address is still recorded, because it is a statement about intent,
- * it just gets no link.
- *
- * Never throws for a path that does not resolve. It throws for a path that
- * *cannot* resolve by intent: a relative path on a surface with no working
- * directory, where any answer would be an accident.
- */
-export async function resolveBinding(
-	request: BindingRequest,
-	origin: BindingOrigin,
-	options: { signal?: AbortSignal } = {},
-): Promise<ResolvedBinding> {
-	const confirmedAt = new Date().toISOString();
-	const raw = request.path.trim();
-	const named =
-		typeof request.repo === "string" && request.repo.trim() ? request.repo.trim() : undefined;
-
-	// The address exactly as the caller stated it: what gets recorded when this
-	// machine has nothing to check it against.
-	const asStated = (): LogicalAddress => ({
-		...(named ? { repo: named } : {}),
-		path: raw.replace(/^\.\//, ""),
-		...(request.branch ? { branch: request.branch } : {}),
-		...(request.commit ? { commit: request.commit } : {}),
-		confirmedAt,
-	});
-
-	let resolvedFrom: BindingSource;
-	let baseDir: string;
-
-	if (path.isAbsolute(raw)) {
-		resolvedFrom = "path";
-		baseDir = path.parse(raw).root;
-	} else if (named) {
-		const checkout = checkoutFor(named);
-		if (!checkout) {
-			return {
-				address: asStated(),
-				resolved: false,
-				resolvedFrom: "declared",
-				note:
-					`"${named}" is not a checkout archboard knows on this machine, so ${raw} was recorded as you ` +
-					`stated it, with no link. Register the checkout by running \`repo add <dir>\` inside it, or bind ` +
-					`with an absolute path. ${registeredHere()}`,
-			};
-		}
-		resolvedFrom = "registry";
-		baseDir = checkout;
-	} else if (origin.kind === "cwd") {
-		resolvedFrom = "cwd";
-		baseDir = origin.dir;
-	} else {
-		throw new PromotionError(
-			`"${raw}" is a relative path and ${origin.surface} has no working directory to resolve it against. ` +
-				"A client without a shell cannot set one, so the only directory available is whichever one this " +
-				"process happened to be started in, which nobody chose (ADR 0011). Name what you mean instead: an " +
-				'absolute path, or a repository plus a path inside it (repo "github.com/acme/payments", path ' +
-				`"src/service.ts"). ${registeredHere()}`,
-		);
-	}
-
-	const absolute = path.resolve(baseDir, raw);
-	const checkout = await inspectCheckout(absolute, options);
-	const exists = fs.existsSync(absolute);
-
-	if (!checkout) {
-		const where = resolvedFrom === "cwd" ? ` (looked in the working directory ${baseDir})` : "";
-		return {
-			address: asStated(),
-			resolved: false,
-			resolvedFrom,
-			note: exists
-				? `${raw} is not inside a git repository${where} — recorded the logical address without a repo identity, and no link.`
-				: `${raw} does not resolve on this machine${where} — recorded the logical address as given, and no link.`,
-		};
-	}
-
-	const { root, identity: found } = checkout;
-
-	// A registry entry that now points at some other repository. The path just
-	// resolved into the wrong checkout, so nothing here is trustworthy: say so
-	// and record the address as stated rather than binding to the wrong file.
-	if (resolvedFrom === "registry" && found !== named) {
-		return {
-			address: asStated(),
-			resolved: false,
-			resolvedFrom: "declared",
-			note:
-				`The checkout registered for "${named}" (${root}) is now ${found}, so ${raw} was recorded as you ` +
-				`stated it, with no link. Re-register it with \`repo add <dir>\` from the right checkout.`,
-		};
-	}
-
-	// What archboard just learned: this identity is checked out here. The
-	// registry fills itself from ordinary work, so the next promotion into this
-	// repo can name it from anywhere.
-	rememberRepo(found, root);
-
-	// The caller's own words still win over git's, because they may be recording
-	// a binding for a repo this checkout is a fork or a mirror of. A disagreement
-	// is still worth saying out loud.
-	const repo = named ?? found;
-	const relative = path.relative(root, absolute) || ".";
-	const branch = request.branch ?? checkout.branch;
-	const commit = request.commit ?? checkout.commit;
-
-	const notes: string[] = [];
-	if (resolvedFrom === "cwd") {
-		notes.push(
-			`Resolved "${raw}" against the working directory ${baseDir}, which is ${found}. ` +
-				"You named no repository, so check that is the one you meant. --repo or an absolute path says it outright.",
-		);
-	}
-	if (named && named !== found) {
-		notes.push(
-			`You said --repo ${named}, but ${absolute} is in ${found}. Recorded ${named}, as asked.`,
-		);
-	}
-	if (!exists) {
-		notes.push(`${relative} does not exist in ${repo} yet — address recorded, no link.`);
-	}
-
-	const address: LogicalAddress = {
-		repo,
-		path: relative,
-		...(branch && branch !== "HEAD" ? { branch } : {}),
-		...(commit ? { commit } : {}),
-		confirmedAt,
-	};
-
-	return {
-		address,
-		resolved: true,
-		resolvedFrom,
-		...(notes.length ? { note: notes.join(" ") } : {}),
-	};
-}
-
-function registeredHere(): string {
-	const known = knownRepoNames();
-	return known.length
-		? `Registered on this machine: ${known.join(", ")}.`
-		: "No repository is registered on this machine yet.";
-}
-
-export function formatAddress(a: LogicalAddress): string {
-	const repo = a.repo ? `${a.repo}:` : "";
-	const branch = a.branch ? `@${a.branch}` : "";
-	const commit = a.commit ? ` (${a.commit.slice(0, 7)})` : "";
-	return `${repo}${a.path}${branch}${commit}`;
-}
-
-// ---------------------------------------------------------------------------
 // Planning a promotion
-// ---------------------------------------------------------------------------
 
-export interface PromotionRequest {
-	targets: ServerElement[]; // the elements to promote (selection or --ids)
-	board: ServerElement[]; // every element on the board, for id uniqueness
+interface PromotionRequest {
+	// The elements to promote (selection or --ids).
+	targets: ServerElement[];
+	// Every board element, used for id uniqueness.
+	board: ServerElement[];
 	kind: Kind;
 	name?: string;
 	nodeId?: string;
@@ -323,10 +58,11 @@ export interface PromotionRequest {
 	// board's own. Nothing has to pass it to be correct.
 	variant?: string;
 	level?: string;
-	each?: boolean; // one node per selected shape instead of one node
+	// Create one node per selected shape instead of one node for the selection.
+	each?: boolean;
 }
 
-export interface PlannedNode {
+interface PlannedNode {
 	node: string;
 	kind: Kind;
 	name: string;
@@ -336,7 +72,7 @@ export interface PlannedNode {
 	level?: string;
 }
 
-export interface ElementUpdate {
+interface ElementUpdate {
 	id: string;
 	customData: Record<string, unknown>;
 	link?: string | null;
@@ -344,20 +80,24 @@ export interface ElementUpdate {
 	fillStyle?: string;
 }
 
-export interface PromotionPlan {
+interface PromotionPlan {
 	nodes: PlannedNode[];
 	updates: ElementUpdate[];
 }
 
-export function labelOf(el: ServerElement, board: ServerElement[]): string | undefined {
+function labelOf(el: ServerElement, board: ServerElement[]): string | undefined {
 	const direct = el.type === "text" ? el.text : undefined;
-	if (direct) return String(direct);
+	if (direct) {
+		return String(direct);
+	}
 	// A labelled shape that came back through a frontend sync carries its label
 	// as a separate bound text element.
 	for (const other of board) {
 		if (other.type === "text" && other.containerId === el.id) {
 			const text = other.text ?? other.originalText;
-			if (text) return String(text);
+			if (text) {
+				return String(text);
+			}
 		}
 	}
 	return undefined;
@@ -389,9 +129,11 @@ function partition(
 			labelsByContainer.set(container, list);
 		}
 	}
-	const isFoldedLabel = (el: ServerElement) => {
-		return el.type === "text" && !!el.containerId && targetIds.has(el.containerId);
-	};
+	const isFoldedLabel = (el: ServerElement): boolean =>
+		el.type === "text" &&
+		typeof el.containerId === "string" &&
+		el.containerId.length > 0 &&
+		targetIds.has(el.containerId);
 	return { shapes: targets.filter((el) => !isFoldedLabel(el)), labelsByContainer };
 }
 
@@ -412,12 +154,16 @@ function fillFor(
 	el: ServerElement,
 	kind: Kind,
 ): Pick<ElementUpdate, "backgroundColor" | "fillStyle"> {
-	if (!FILLABLE_TYPES.has(el.type)) return {};
+	if (!FILLABLE_TYPES.has(el.type)) {
+		return {};
+	}
 	const current =
 		typeof el.backgroundColor === "string" ? el.backgroundColor.toLowerCase() : undefined;
 	const unchosen =
 		isTransparentBackground(el.backgroundColor) || current === DEFAULT_SHAPE_BACKGROUND;
-	if (!unchosen) return {};
+	if (!unchosen) {
+		return {};
+	}
 	return { backgroundColor: backgroundForKind(kind), fillStyle: DEFAULT_FILL_STYLE };
 }
 
@@ -442,14 +188,20 @@ function mergedCustomData(el: ServerElement, block: ArchboardBlock): Record<stri
 // the copy comparable with its origin, and rewriting any of them would sever
 // the join the diff is built on. Elements that were never promoted are
 // returned as they are, and so is every other `customData` key.
-export function restampVariant(elements: ServerElement[], variant: string): ServerElement[] {
+function restampVariant(elements: ServerElement[], variant: string): ServerElement[] {
 	return elements.map((el) => {
 		const block = readElementMetadata(el).archboard;
-		if (!block) return el;
+		if (!block) {
+			return el;
+		}
 		// A node, or something that has been stamped with a variant before.
 		// Anything else is a plain element and has no variant to be wrong about.
-		if (block.node === undefined && block.variant === undefined) return el;
-		if (block.variant === variant) return el;
+		if (block.node === undefined && block.variant === undefined) {
+			return el;
+		}
+		if (block.variant === variant) {
+			return el;
+		}
 		return { ...el, customData: mergedCustomData(el, { variant }) };
 	});
 }
@@ -466,7 +218,7 @@ export function restampVariant(elements: ServerElement[], variant: string): Serv
 // the shared thing is the kind and each shape keeps its own identity. A name
 // or a binding is refused there, because those are per-node and the caller
 // only supplied one.
-export function planPromotion(request: PromotionRequest): PromotionPlan {
+function planPromotion(request: PromotionRequest): PromotionPlan {
 	const { targets, board, kind, binding } = request;
 	if (targets.length === 0) {
 		throw new PromotionError("Nothing to promote — no elements selected and no --ids given.");
@@ -484,17 +236,24 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
 	const variant = request.variant ?? request.boardVariant;
 	// Ids belonging to the nodes we are about to (re)write are not "taken" — a
 	// re-promotion keeps its node id rather than sliding to name-2.
-	const rewriting = new Set(shapes.map(nodeIdOf).filter(Boolean) as string[]);
+	const rewriting = new Set(
+		shapes.map((shape) => nodeIdOf(shape)).filter((id) => id !== undefined),
+	);
 	const taken = new Set([...nodeIdsOnBoard(board)].filter((id) => !rewriting.has(id)));
 
-	const groups: Array<{ elements: ServerElement[]; name: string; nodeId?: string }> = [];
+	const groups: { elements: ServerElement[]; name: string; nodeId?: string }[] = [];
 	if (request.each) {
-		if (request.name) throw new PromotionError("--name promotes one node; drop it or drop --each.");
-		if (request.nodeId) throw new PromotionError("--node names one node; drop it or drop --each.");
-		if (binding)
+		if (request.name) {
+			throw new PromotionError("--name promotes one node; drop it or drop --each.");
+		}
+		if (request.nodeId) {
+			throw new PromotionError("--node names one node; drop it or drop --each.");
+		}
+		if (binding) {
 			throw new PromotionError(
 				"A binding belongs to one node; promote each shape separately, or drop --each.",
 			);
+		}
 		for (const shape of shapes) {
 			const label = labelOf(shape, board);
 			if (!label) {
@@ -523,17 +282,18 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
 			.filter((x) => x.label)
 			.toSorted((a, b) => b.area - a.area);
 		const fromBinding = binding
-			? path.basename(binding.address.path).replace(/\.[^.]+$/, "")
+			? path.basename(binding.address.path).replace(/\.[^.]+$/u, "")
 			: undefined;
 		const declaredAlready = shapes
 			.map((el) => readElementMetadata(el).archboard?.name)
-			.find((n) => typeof n === "string" && n) as string | undefined;
+			.find((name) => typeof name === "string" && name.length > 0);
+		// A previously declared name outranks any inferred name.
 		const name =
 			request.name ??
-			declaredAlready ?? // a name already declared outranks any guess
+			declaredAlready ??
 			labelled[0]?.label ??
 			fromBinding ??
-			shapes.map(nodeIdOf).find(Boolean);
+			shapes.map((shape) => nodeIdOf(shape)).find((id) => id !== undefined);
 		if (!name) {
 			throw new PromotionError(
 				"Cannot name this node: nothing selected has a label, and no --name, --node or --path was given.",
@@ -591,34 +351,38 @@ export function planPromotion(request: PromotionRequest): PromotionPlan {
 	return { nodes, updates };
 }
 
-// ---------------------------------------------------------------------------
 // Demotion — promotion has to be reversible
-// ---------------------------------------------------------------------------
 //
 // A node is a set of elements, so demotion works on whole nodes: select any
 // member and the whole node comes back down. Only the `archboard` block is
 // removed — another tool's `customData` is not ours to delete — and `link` is
 // cleared only when it is the one our binding put there.
 
-export interface DemotionPlan {
-	nodes: Array<{ node?: string; name?: string; elementIds: string[] }>;
+interface DemotionPlan {
+	nodes: { node?: string; name?: string; elementIds: string[] }[];
 	updates: ElementUpdate[];
 }
 
-export function planDemotion(targets: ServerElement[], board: ServerElement[]): DemotionPlan {
+function planDemotion(targets: ServerElement[], board: ServerElement[]): DemotionPlan {
 	if (targets.length === 0) {
 		throw new PromotionError("Nothing to demote — no elements selected and no --ids given.");
 	}
 
-	const nodeIds = new Set(targets.map(nodeIdOf).filter(Boolean) as string[]);
+	const nodeIds = new Set(
+		targets.map((target) => nodeIdOf(target)).filter((id) => id !== undefined),
+	);
 	const byId = new Map<string, ServerElement>();
 	for (const el of targets) {
-		if (readElementMetadata(el).archboard) byId.set(el.id, el);
+		if (readElementMetadata(el).archboard) {
+			byId.set(el.id, el);
+		}
 	}
 	// Pull in the rest of every touched node, wherever those elements sit.
 	for (const el of board) {
 		const id = nodeIdOf(el);
-		if (id && nodeIds.has(id)) byId.set(el.id, el);
+		if (id && nodeIds.has(id)) {
+			byId.set(el.id, el);
+		}
 	}
 
 	if (byId.size === 0) {
@@ -636,7 +400,11 @@ export function planDemotion(targets: ServerElement[], board: ServerElement[]): 
 	const updates: ElementUpdate[] = [];
 	const nodes: DemotionPlan["nodes"] = [];
 	for (const [key, elements] of groups) {
-		const block = readElementMetadata(elements[0]!).archboard;
+		const first = elements.at(0);
+		if (!first) {
+			continue;
+		}
+		const block = readElementMetadata(first).archboard;
 		// What to call it out loud: the declared name if there is one, else the
 		// label the board shows.
 		const spoken =
@@ -663,29 +431,32 @@ export function planDemotion(targets: ServerElement[], board: ServerElement[]): 
 	return { nodes, updates };
 }
 
-// ---------------------------------------------------------------------------
 // Speakable results
-// ---------------------------------------------------------------------------
 
-export function promotionSummary(plan: PromotionPlan, note?: string): string {
+function promotionSummary(plan: PromotionPlan, note?: string): string {
 	const lines: string[] = [];
 	if (plan.nodes.length === 1) {
-		const n = plan.nodes[0]!;
+		const n = plan.nodes.at(0);
+		if (!n) {
+			return "";
+		}
 		const where = n.binding ? `bound to ${formatAddress(n.binding)}` : "unbound";
 		const from = n.elementIds.length === 1 ? "1 element" : `${n.elementIds.length} elements`;
 		lines.push(`Promoted ${from} to the ${n.kind} "${n.name}" (node ${n.node}), ${where}.`);
 	} else {
 		lines.push(
-			`Promoted ${plan.nodes.length} elements to ${plan.nodes[0]?.kind ?? "node"}s: ` +
-				plan.nodes.map((n) => `"${n.name}" (${n.node})`).join(", ") +
-				".",
+			`Promoted ${plan.nodes.length} elements to ${plan.nodes[0]?.kind ?? "node"}s: ${plan.nodes
+				.map((n) => `"${n.name}" (${n.node})`)
+				.join(", ")}.`,
 		);
 	}
-	if (note) lines.push(note);
+	if (note) {
+		lines.push(note);
+	}
 	return lines.join(" ");
 }
 
-export function demotionSummary(plan: DemotionPlan): string {
+function demotionSummary(plan: DemotionPlan): string {
 	const named = plan.nodes.map((n) => `"${n.name ?? n.node ?? "?"}"`).join(", ");
 	const count = plan.updates.length;
 	return (
@@ -693,3 +464,37 @@ export function demotionSummary(plan: DemotionPlan): string {
 		`back to ${count === 1 ? "a plain element" : `${count} plain elements`}.`
 	);
 }
+
+export {
+	archboardBlock,
+	demotionSummary,
+	formatAddress,
+	KINDS,
+	labelOf,
+	nodeIdOf,
+	nodeIdsOnBoard,
+	normalizeKind,
+	planDemotion,
+	planPromotion,
+	PromotionError,
+	promotionSummary,
+	resolveBinding,
+	restampVariant,
+	slugify,
+	uniqueNodeId,
+	validateNodeId,
+};
+export type {
+	ArchboardBlock,
+	BindingOrigin,
+	BindingRequest,
+	BindingSource,
+	DemotionPlan,
+	ElementUpdate,
+	Kind,
+	LogicalAddress,
+	PlannedNode,
+	PromotionPlan,
+	PromotionRequest,
+	ResolvedBinding,
+};
