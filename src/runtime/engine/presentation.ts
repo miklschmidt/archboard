@@ -6,6 +6,7 @@ import {
 	type CheckoutSnapshot,
 } from "../code-target/index.js";
 import { presentationTargetForBinding } from "../code-target/presentation.js";
+import type { ReadonlyBoardData } from "../../shared/board-elements/index.js";
 import { readElementMetadata } from "./metadata.js";
 import { type ServerElement } from "./types.js";
 
@@ -15,6 +16,12 @@ export interface PresentationContext {
 	opaqueTargets?: ReadonlyMap<string, string>;
 	checkoutSnapshot?: CheckoutSnapshot;
 }
+
+export type ReadonlyServerElement = ReadonlyBoardData<ServerElement>;
+
+type ReadonlyPresentationContext = Readonly<Omit<PresentationContext, "checkoutSnapshot">> & {
+	readonly checkoutSnapshot?: Readonly<CheckoutSnapshot>;
+};
 
 interface PresentationMarker {
 	readonly board: string;
@@ -54,11 +61,24 @@ function withoutMarker<T extends object>(element: T): T {
 	return result;
 }
 
-function targetFor(element: ServerElement, context: PresentationContext): string | undefined {
+function targetFor(
+	element: ReadonlyServerElement,
+	context: ReadonlyPresentationContext,
+): string | undefined {
 	return context.opaqueTargets?.get(element.id) ?? context.opaqueTarget;
 }
 
-function withLink(element: ServerElement, link: string | null, boardKey: string): ServerElement {
+function withLink(element: ServerElement, link: string | null, boardKey: string): ServerElement;
+function withLink(
+	element: ReadonlyServerElement,
+	link: string | null,
+	boardKey: string,
+): ReadonlyServerElement;
+function withLink(
+	element: ReadonlyServerElement,
+	link: string | null,
+	boardKey: string,
+): ReadonlyServerElement {
 	if (link === null) return { ...withoutMarker(element), link };
 	const custom = element.customData ?? {};
 	const archboard =
@@ -78,12 +98,12 @@ function withLink(element: ServerElement, link: string | null, boardKey: string)
 	};
 }
 
-function bindingOf(element: ServerElement): CodeBinding | undefined {
+function bindingOf(element: ReadonlyServerElement): CodeBinding | undefined {
 	const parsed = CodeBindingSchema.safeParse(readElementMetadata(element).archboard?.binding);
 	return parsed.success ? parsed.data : undefined;
 }
 
-export function codeBindingsOf(elements: Iterable<ServerElement>): CodeBinding[] {
+export function codeBindingsOf(elements: Iterable<ReadonlyServerElement>): CodeBinding[] {
 	return Array.from(elements).flatMap((element) => {
 		const binding = bindingOf(element);
 		return binding ? [binding] : [];
@@ -91,9 +111,9 @@ export function codeBindingsOf(elements: Iterable<ServerElement>): CodeBinding[]
 }
 
 function isDerivedTarget(
-	element: ServerElement,
+	element: ReadonlyServerElement,
 	incoming: unknown,
-	context: PresentationContext,
+	context: ReadonlyPresentationContext,
 ): boolean {
 	if (typeof incoming !== "string") return false;
 	if (!bindingOf(element)) return false;
@@ -142,7 +162,15 @@ export function presentElement(
 export function presentElements(
 	elements: Iterable<ServerElement>,
 	context: PresentationContext,
-): ServerElement[] {
+): ServerElement[];
+export function presentElements(
+	elements: Iterable<ReadonlyServerElement>,
+	context: ReadonlyPresentationContext,
+): readonly ReadonlyServerElement[];
+export function presentElements(
+	elements: Iterable<ReadonlyServerElement>,
+	context: ReadonlyPresentationContext,
+): readonly ReadonlyServerElement[] {
 	const values = Array.from(elements);
 	const bindings = codeBindingsOf(values);
 	if (bindings.length === 0) return values;

@@ -67,6 +67,13 @@ type RuntimeBoardElement = PersistedBoardElement extends infer Element
 		: never
 	: never;
 
+/** A compile-time borrowing view for inert board data. */
+type ReadonlyBoardData<Value> = Value extends readonly unknown[]
+	? { readonly [Key in keyof Value]: ReadonlyBoardData<Value[Key]> }
+	: Value extends object
+		? { readonly [Key in keyof Value]: ReadonlyBoardData<Value[Key]> }
+		: Value;
+
 interface InputAliases {
 	label?: { text: string };
 	/** A non-text statement's shorthand label, consumed before persistence. */
@@ -113,6 +120,7 @@ export {
 	type ObsidianRawText,
 	type PersistedBoardElement,
 	type RuntimeBoardElement,
+	type ReadonlyBoardData,
 	type LegacyElementIngress,
 };
 export type {
