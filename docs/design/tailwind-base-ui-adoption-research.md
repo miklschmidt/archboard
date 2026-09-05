@@ -168,7 +168,8 @@ module boundary, and product semantics. Do not add every available component or
 overwrite modified files with `add --all --overwrite`.
 
 TASK-144.04 will track the reviewed immutable bytes as implementation inputs
-under `docs/design/vendor/shadcn-base/`: Button SHA-256
+under `docs/design/vendor/shadcn-base/` as reading-only `button.tsx.txt` and
+`dialog.tsx.txt` (TASK-150 preserves their bytes outside executable source): Button SHA-256
 `97bfee456444f0495deee6a321933c24267477645b0bf4bfea67c3c62d425a12`
 and Dialog SHA-256
 `85f9a33d1a8c495b0faecd066dae1581b8feb5d27f912ecf65f814386f6da3a9`.
@@ -357,7 +358,7 @@ return behavior through a browser check.
 
 For every migrated or new interactive surface, browser acceptance should cover a
 keyboard-only path, visible focus in both themes, accessible names, disabled and
-error states, dialog/menu focus return, and supported desktop-sized Samsung Flip
+error states, dialog/menu focus return, and supported desktop
 touch behavior. Existing `jsx-a11y` lint remains useful but cannot observe focus
 order, portal stacking, or the operator's rendered visual hierarchy.
 
@@ -409,7 +410,7 @@ owner may be disabled to admit Tailwind or copied source.
    owner. Any selection/focus presentation remains browser-only and does not write a
    board note.
 6. **Rendered visual gate.** Run the serial browser lane in both themes across the
-   supported desktop one-pane, two-pane, fullscreen, keyboard, and Samsung Flip touch
+   supported desktop one-pane, two-pane, fullscreen, keyboard, and pointer interaction
    workflows. Confirm that the canvas keeps the largest share, the board
    strip/inspector/workbench hierarchy remains legible, the old product actions remain
    reachable, and the result follows the reference's flat dense visual direction.

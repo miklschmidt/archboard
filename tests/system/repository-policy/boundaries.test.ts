@@ -90,14 +90,14 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 				"src/shared/common/index.ts": "export const sharedValue = 1;\n",
 				"src/domain/target/index.ts": "export const domainValue = 1;\n",
 				"src/domain/allowed/index.ts":
-					'import { sharedValue } from "../../shared/common/index.js";\nimport { domainValue } from "../target";\nexport const value = sharedValue + domainValue;\n',
+					'import { sharedValue } from "../../shared/common/index.js";\nimport { domainValue } from "../target";\n\nexport const value = sharedValue + domainValue;\n',
 				"src/domain/tested/index.ts": "export const moduleValue = 1;\n",
 				"src/domain/tested/tests/support.ts": "export const support = 1;\n",
 				"src/domain/tested/tests/widget.spec.ts":
-					'import { moduleValue } from "../index.js";\nimport { support } from "./support.js";\nexport const value = moduleValue + support;\n',
+					'import { moduleValue } from "../index.js";\nimport { support } from "./support.js";\n\nexport const value = moduleValue + support;\n',
 				"tests/system/policy/support.ts": "export const support = 1;\n",
 				"tests/system/policy/system.test.ts":
-					'import { moduleValue } from "../../../src/domain/tested/index.js";\nimport { support } from "./support.js";\nexport const value = moduleValue + support;\n',
+					'import { moduleValue } from "../../../src/domain/tested/index.js";\nimport { support } from "./support.js";\n\nexport const value = moduleValue + support;\n',
 				"src/cli/command-contract/tests/public-runner-fixture.ts":
 					"export const publicRunnerFixture = true;\n",
 			},
@@ -251,7 +251,11 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 					"src/domain/widget/tests/untyped.js",
 					"tests/system/policy/untyped.jsx",
 				]) {
-					expectRule(lint(root, [file]), "archboard(module-entrypoints)", "must be a .ts file");
+					expectRule(
+						lint(root, [file]),
+						"archboard(module-entrypoints)",
+						"must use .ts, .tsx, .mts or .cts",
+					);
 				}
 				for (const file of [
 					"src/domain/widget/tests/oversized.test.ts",
@@ -263,10 +267,8 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 		);
 	});
 
-	// tsconfig.frontend.json is the only TypeScript gate that reads TSX, and it
-	// reads exactly src/ui/**/*.tsx, so a rendered UI owner may be a .tsx file
-	// there and nowhere else. The 500-line cap follows it.
-	test("accepts a rendered .tsx owner only under src/ui and still caps it", async () => {
+	// The root compiler now covers every retained TypeScript source extension.
+	test("accepts compiler-covered TSX owners and still caps them", async () => {
 		await withProject(
 			{
 				"src/ui/widget/index.ts": "export const value = 1;\n",
@@ -277,11 +279,7 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 			},
 			(root) => {
 				expectPass(lint(root, ["src/ui/widget/tests/rendered.test.tsx"]));
-				expectRule(
-					lint(root, ["src/domain/widget/tests/rendered.test.tsx"]),
-					"archboard(module-entrypoints)",
-					"must be a .ts file",
-				);
+				expectPass(lint(root, ["src/domain/widget/tests/rendered.test.tsx"]));
 				expectRule(
 					lint(root, ["src/ui/widget/tests/oversized.test.tsx"]),
 					"eslint(max-lines)",

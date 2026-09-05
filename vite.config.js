@@ -36,6 +36,18 @@ export default defineConfig({
 		},
 	},
 	server: {
+		fs: {
+			// Preserve Vite's default secret-file denials and deny the local UI archive.
+			deny: [
+				".env",
+				".env.*",
+				"*.{crt,pem,key,p12,pfx,cer,der}",
+				".npmrc",
+				".yarnrc.yml",
+				"**/.git/**",
+				"**/legacy/**",
+			],
+		},
 		port: 5173,
 		proxy: {
 			"/api": {

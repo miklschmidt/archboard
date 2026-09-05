@@ -13,4 +13,6 @@
 exact = true
 
 [test]
+# The inert TASK-150 local snapshot is never a test owner.
+pathIgnorePatterns = ["legacy/**"]
 preload = ["./tests/system/repository-policy/support/test-preload.ts"]

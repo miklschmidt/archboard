@@ -3,7 +3,7 @@
 // Excalidraw keeps these in the browser's localStorage. archboard keeps them on
 // the server (ADR 0007), because every other assumption localStorage makes is
 // wrong here: two panes are two localStorages, a second tab is a third, the
-// Flip is a shared appliance whose browser profile gets reset, and an agent
+// Browser profiles may be reset, and an agent
 // cannot read a browser's local storage at all. Boards already live on the
 // server; stencils are the same kind of thing and belong in the same place.
 //

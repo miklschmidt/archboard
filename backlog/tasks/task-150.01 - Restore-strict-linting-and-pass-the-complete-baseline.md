@@ -1,11 +1,11 @@
 ---
 id: TASK-150.01
 title: Restore strict linting and pass the complete baseline
-status: To Do
+status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-05 01:23'
+updated_date: '2026-09-05 03:47'
 labels: []
 dependencies: []
 references:
@@ -43,6 +43,12 @@ Browser-test execution is deferred to TASK-150.06 after all rebuild tasks report
 - [ ] #5 Violations are fixed at owning contracts, generated fixes come from the canonical generator or deterministic transform, and sequential I/O or concurrency limits are preserved rather than replaced mechanically with Promise.all.
 - [ ] #6 Both ordered subtasks are complete. The real lint command proves type-aware diagnostics and coverage of every retained source class. Strict lint, strict compiler checks and applicable retained-logic tests pass without unapproved exceptions. The entire product's build/browser gate is required after reconstruction and is not represented as passing while workflows remain unimplemented. This baseline does not require porting archived UI logic; that separate task follows TASK-150.05 and must keep the baseline passing as files enter active source.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+Execute the two existing ordered children from fixed BASE 0d1706d06b21df1c72910a640dadad35cd37234a. TASK-150.01.01 establishes quarantine and enforced diagnostics using an Astra low visible worker. TASK-150.01.02 repairs retained source using Daybreak low. Coordinator verifies the strict baseline before releasing TASK-150.02. No browser execution or new UI construction in this milestone.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 

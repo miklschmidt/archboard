@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-05 01:43'
+updated_date: '2026-09-05 03:47'
 labels: []
 dependencies: []
 references:
@@ -192,4 +192,6 @@ User deferred all browser-test execution until complete workflow verification af
 User moved UI logic porting after TASK-150.05 and assigned it Astra low. TASK-150.07 now owns copying/repairing archived logic and integrating the finished presentation. TASK-150.01.02 is narrowed to active-source lint repair, not UI porting. Complete workflow verification now depends on TASK-150.07. This supersedes the earlier early-porting plan; implementation has not started.
 
 User retained assistant-ui for the new workbench. Verified existing @assistant-ui/react use and current official Base UI registry support. TASK-150.05 builds fresh assistant-ui presentation; TASK-150.07 ports and repairs the product/runtime adapter. Old headless-only restrictions and custom composer workarounds require contract-based reassessment.
+
+Execution authorized by the user through source task 01a06e76-b1e4-70d3-823d-fe0ad8dbc6a6 on 2026-09-05. Fixed BASE is 0d1706d06b21df1c72910a640dadad35cd37234a, clean isolated checkout /home/msc/.codex/worktrees/2709/archboard, branch codex/task-150-ui-rebuild. This supersedes historical planning-pending statements only; all recorded decisions and phase gates remain. Source checkout and live port-3000 server are protected. No merge, push or publication. Coordinator task 01a06fac-22b4-7830-b6df-01db727d103a owns phase release, test-change decisions and final review.
 <!-- SECTION:NOTES:END -->
