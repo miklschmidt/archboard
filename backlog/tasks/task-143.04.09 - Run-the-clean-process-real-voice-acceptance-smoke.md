@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-08-30 15:37'
-updated_date: '2026-09-04 17:54'
+updated_date: '2026-09-05 03:44'
 labels: []
 dependencies:
   - TASK-143.01.15
@@ -39,7 +39,10 @@ Own the reproducible clean-process human acceptance procedure for exact Codex 0.
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Author docs/design/codex-workbench-voice-acceptance.md as the canonical clean-process runbook, with exact 0.151.0/root proofs, focused deterministic gates, rendered text/reconnect steps, real-audio voice steps, redacted evidence, and cleanup.\n2. Run the cheapest focused process, storage, reconnect, semantic callback, spoken-approval, text-browser, and controlled-voice owners under bounded command lifetimes; record commands and measured runtimes without broad suites.\n3. Prepare a clean disposable vault and one owned Archboard/browser lifecycle, prove the real executable and dedicated storage state without exposing secrets, then advance to the first genuinely human microphone, speaker, sign-in, or observation action.\n4. Record automated evidence, pending or completed human observations, modified files, cleanup, and remaining risk in Backlog; commit the scoped documentation and task metadata, leaving a clean worktree for review.
+1. Author docs/design/codex-workbench-voice-acceptance.md as the canonical clean-process runbook, with exact 0.151.0/root proofs, focused deterministic gates, rendered text/reconnect steps, real-audio voice steps, redacted evidence, and cleanup.
+2. Run the cheapest focused process, storage, reconnect, semantic callback, spoken-approval, text-browser, and controlled-voice owners under bounded command lifetimes; record commands and measured runtimes without broad suites.
+3. Prepare a clean disposable vault and one owned Archboard/browser lifecycle, prove the real executable and dedicated storage state without exposing secrets, then advance to the first genuinely human microphone, speaker, sign-in, or observation action.
+4. Record automated evidence, pending or completed human observations, modified files, cleanup, and remaining risk in Backlog; commit the scoped documentation and task metadata, leaving a clean worktree for review.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -50,4 +53,6 @@ Drafted the canonical clean-process runbook and linked it from TESTING.md. Pre-h
 Live clean-process preparation reached the human boundary: disposable vault and board created, one server and one visible browser connected, dedicated storage proof passed (0700/0700/0600 and exact SQLite selection), and the rendered account state is Signed out. Hosted ChatGPT sign-in, real microphone/speaker observation, and the downstream text/reconnect/board/queue/callback/spoken-approval sequence remain HUMAN_ACTION_REQUIRED. The live surface is intentionally preserved; no credentials, media, account identifiers, process ids, private paths, or raw protocol logs were retained.
 
 Independent review of a2c6e171..30aacfda reported no findings. Reviewer reran the mounted composer owner (18 pass, 5.00s), confirmed the runbook commands and rendered labels against current contracts, found no lint/type weakening, and identified only the explicitly pending human acceptance observations as residual risk. No acceptance criterion is checked yet because the signed-in real-audio sequence has not run.
+
+Runbook reviewed against 75a1cd22 on 2026-09-05: corrected ChatGPT sign-in labels and continuation, frontend build prerequisite, empty pre-message history, current voice controls, reduced-motion meter behavior, microphone default-device recovery and shutdown evidence. Focused module owners: 61 pass (6.21s), 86 pass (0.83s). Production text browser: pass (3.27s); controlled voice browser: pass (2.94s). Earlier real text delivery and SDP negotiation succeeded; actual microphone capture stopped at Requested device not found. Real audio, voice board write, voice queue/callback, spoken approval and audible restart remain unverified.
 <!-- SECTION:NOTES:END -->
