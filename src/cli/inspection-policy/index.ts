@@ -69,7 +69,7 @@ function inspectionPolicyOf(input: InspectionOptionsInput): InspectionPolicyInpu
 		) {
 			throw new CliUsageError("--font-family takes any or one of 1, 2, 3, 5, 6, 7, 8");
 		}
-		allowedFontFamilies = values as Array<1 | 2 | 3 | 5 | 6 | 7 | 8>;
+		allowedFontFamilies = values as (1 | 2 | 3 | 5 | 6 | 7 | 8)[];
 	}
 	return {
 		...(allowedFontFamilies === undefined ? {} : { allowedFontFamilies }),

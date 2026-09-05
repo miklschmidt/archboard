@@ -7,7 +7,6 @@ import {
 import type { ServerElement } from "../../runtime/engine/types.js";
 import {
 	KINDS,
-	type ElementUpdate,
 	demotionSummary,
 	normalizeKind,
 	planDemotion,
@@ -16,6 +15,7 @@ import {
 	resolveBinding,
 	validateNodeId,
 } from "../../runtime/engine/promote.js";
+import type { ElementUpdate } from "../../runtime/engine/promote.js";
 import { defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
 import { boardWriteRefusals } from "../command-contract/common.js";

@@ -4,10 +4,11 @@ import {
 	batchCreateElementsStrict,
 	getElementStrict,
 	getElements,
-	type ElementInput,
 } from "../../runtime/engine/canvas-client.js";
+import type { ElementInput } from "../../runtime/engine/canvas-client.js";
 import type { ServerElement } from "../../runtime/engine/types.js";
-import { defineCommand, type CommandContext } from "../command-contract/contract.js";
+import { defineCommand } from "../command-contract/contract.js";
+import type { CommandContext } from "../command-contract/contract.js";
 import {
 	BoardFingerprintSchema,
 	HoldReportSchema,
@@ -79,7 +80,7 @@ const ApplyPayloadStageSchema = jsonText(
 		context.addIssue({ code: "custom", message: "Patch has no create/update/delete operations" });
 		return z.NEVER;
 	}
-	const updates: Array<{ id: string; updates: Record<string, unknown> }> = [];
+	const updates: { id: string; updates: Record<string, unknown> }[] = [];
 	for (const value of rawUpdates) {
 		if (!value || typeof value !== "object" || Array.isArray(value)) {
 			context.addIssue({

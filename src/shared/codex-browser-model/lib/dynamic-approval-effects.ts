@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { boundedText, type IdentityContext, type IdentitySchemas } from "./scalars.js";
+import { boundedText } from "./scalars.js";
+import type { IdentityContext, IdentitySchemas } from "./scalars.js";
 
 const DYNAMIC_APPROVAL_NAMESPACE = "archboard_app" as const;
 const DYNAMIC_APPROVAL_TOOLS = ["create_thread", "fork_thread", "send_message_to_thread"] as const;

@@ -1,9 +1,7 @@
 import { z } from "zod";
 
-import {
-	BridgeMetadataSchema,
-	type BridgeMetadata,
-} from "../../runtime/board-inspection/bridge.js";
+import { BridgeMetadataSchema } from "../../runtime/board-inspection/bridge.js";
+import type { BridgeMetadata } from "../../runtime/board-inspection/bridge.js";
 import { createBridge, removeBridge } from "../../runtime/engine/canvas-client.js";
 import { defineCommand } from "../command-contract/contract.js";
 import {

@@ -1,12 +1,12 @@
 import { z } from "zod";
 
 import {
-	type CodexCommandExecutionApprovalDecision,
 	CodexFileChangeApprovalDecisionSchema,
 	CodexThreadStatusTypeSchema,
 	CodexTurnStatusSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,
 } from "../../codex-app-server-contract/index.js";
+import type { CodexCommandExecutionApprovalDecision } from "../../codex-app-server-contract/index.js";
 import { parseRealtimeSessionId as parseBrowserRealtimeSessionId } from "../../codex-realtime-host/index.js";
 
 import { createDynamicApprovalSchemas } from "./dynamic-approval.js";

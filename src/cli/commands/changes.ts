@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { getChanges, type ChangeFeedResponse } from "../../runtime/engine/canvas-client.js";
+import { getChanges } from "../../runtime/engine/canvas-client.js";
+import type { ChangeFeedResponse } from "../../runtime/engine/canvas-client.js";
 import { defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
 import { commonRefusals } from "../command-contract/common.js";
