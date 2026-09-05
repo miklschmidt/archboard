@@ -1,5 +1,9 @@
 export { createCodexSession } from "./lib/session.js";
-export { CODEX_SESSION_CONTROL, SESSION_METHODS } from "./lib/contract.js";
+export {
+	CODEX_SESSION_CONTROL,
+	CODEX_SESSION_THREAD_SOURCE,
+	SESSION_METHODS,
+} from "./lib/contract.js";
 export {
 	CodexSessionError,
 	CodexSessionMutationError,

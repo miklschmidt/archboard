@@ -90,7 +90,7 @@ export interface WorkhorseStartFacts {
 	readonly cwd: string;
 	readonly runtimeWorkspaceRoots: readonly string[];
 	readonly historyMode: "paginated";
-	readonly source: "appServer";
+	readonly source: typeof CODEX_SESSION_THREAD_SOURCE;
 	readonly threadSource: "archboard";
 	readonly model: string;
 	readonly modelProvider: string;
@@ -136,3 +136,4 @@ export interface CodexWorkhorseStart {
 	readonly start: (input: WorkhorseStartInput) => Promise<WorkhorseSnapshot>;
 	readonly snapshot: () => WorkhorseSnapshot;
 }
+import type { CODEX_SESSION_THREAD_SOURCE } from "../../codex-session/index.js";

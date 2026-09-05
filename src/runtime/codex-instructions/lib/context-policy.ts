@@ -17,6 +17,8 @@ const reasonPrecedence = [
 	{ reason: "prior_epoch", condition: "link_or_provenance_epoch_is_prior" },
 	{ reason: "thread_start_outcome_unknown", condition: "thread_start_settlement_was_lost" },
 	{ reason: "unknown_provenance", condition: "current_epoch_ownership_is_unproven" },
+	// Empty owned roots may be proved by an exact live read plus current committed
+	// thread/start and loaded-membership evidence; their list membership stays false.
 	{ reason: "thread_list_missing", condition: "persisted_target_row_is_missing" },
 	{ reason: "thread_list_ambiguous", condition: "persisted_target_rows_conflict" },
 	{

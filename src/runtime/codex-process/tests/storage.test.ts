@@ -33,6 +33,7 @@ describe("Codex child environment", () => {
 			PWD: "poisoned-pwd",
 			CODEX_HOME: "poisoned-home",
 			CODEX_SQLITE_HOME: "poisoned-sqlite",
+			CODEX_INTERNAL_ORIGINATOR_OVERRIDE: "poisoned-originator",
 			OPENAI_API_KEY: "poisoned-secret",
 			AWS_PROFILE: "poisoned-aws",
 			ELECTRON_RUN_AS_NODE: "poisoned-electron",

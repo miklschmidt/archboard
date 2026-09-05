@@ -1,4 +1,5 @@
 import type { ChildEpoch, ChildId } from "../../../shared/codex-workbench-identity/index.js";
+import { CODEX_SESSION_THREAD_SOURCE } from "../../codex-session/index.js";
 import {
 	CodexCoordinatorError,
 	type CodexCoordinatorOptions,
@@ -193,7 +194,7 @@ export async function decideCandidate(
 		});
 		if (
 			classification.link.state === "executable" &&
-			classification.link.source === "appServer" &&
+			classification.link.source === CODEX_SESSION_THREAD_SOURCE &&
 			classification.link.threadId === candidate.threadId &&
 			classification.link.childId === candidate.childId &&
 			classification.link.epoch === candidate.epoch &&
@@ -275,7 +276,7 @@ function persistenceMismatch(
 		record.provenance.childId !== persistence.childId ||
 		record.provenance.epoch !== persistence.epoch ||
 		record.provenance.threadId !== persistence.threadId ||
-		record.provenance.threadSource !== "appServer" ||
+		record.provenance.threadSource !== CODEX_SESSION_THREAD_SOURCE ||
 		record.provenance.confirmedAtMs === null ||
 		record.provenance.workspaceRoot !== options.checkoutRoot ||
 		record.provenance.instructionHash !== reviewed.instructionHash ||

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-04 22:09'
-updated_date: '2026-09-05 00:58'
+updated_date: '2026-09-05 01:31'
 labels: []
 dependencies: []
 references:
@@ -46,6 +46,8 @@ Before the real voice acceptance smoke, the user found decorative sidebar groups
 Simplify the signed-out account flow, make ChatGPT first and default, widen Agent settings, and verify provider selection and reachable account actions through the rendered dialog before rebuilding the smoke worktree.
 
 Repair ChatGPT sign-in continuation: reproduce missing authorization URL through the gateway and misleading request-completed UI, preserve a reachable pending login continuation, and verify cancellation and authoritative account completion before rebuilding the smoke worktree.
+
+Diagnose real coordinator thread/start profile mismatch with redacted predicate evidence, correct the exact response contract and fake fixture, verify real startup and workhorse eligibility, and integrate into the smoke worktree without weakening validation.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -98,10 +100,18 @@ Inspection against the official base-nova registry confirms local Dialog and But
 Account follow-up complete: 640px dialog, ChatGPT first/default, state-specific account actions, full-width credential fields and no generic unsupported-method help dump. Removed forced legacy typography from shared Dialog/Button and tiny settings copy; restored standard Tailwind text-sm and text-base tokens rather than a local font override. Removed the legacy chip font override exposed by the broader control check. Rendered 1920x1080 checks verify first/default ChatGPT, provider switching, no idle Cancel/Sign out, 14px account copy, width and overflow. Shell, navigation, opener settings, text workbench, fullscreen and controlled voice browser owners pass. 90 focused tests plus chip test, lint/format/both TypeScript projects and 124 repository checks pass; independent Astra review clear. Full native-component and legacy-style migration remains TASK-150 with strict lint restoration first.
 
 ChatGPT sign-in integration repaired after real smoke screenshot. Production adapter dropped authUrl and lacked completion-notification routing; UI confused command delivery with successful authentication. Added validated HTTPS continuation through pending login, explicit Continue to ChatGPT link, truthful status, and existing notification fan-out handling with login/child/epoch/cancellation/disposal guards and authoritative account re-read. Browser regression failed with a missing continuation then passed signed-out login through controlled completion, agent creation and text actions; final shell/text/voice browser owners pass. Module suite 2539 passed before final focused additions, final 26 backend and 29 UI focused tests pass, 13 production/application/socket system tests pass, lint/format/both TypeScript projects and 124 repository tests pass. Independent review clear. Old pending login must restart after smoke backend reload; real authentication remains the human step.
+
+Real signed-in smoke failure reproduced with a redacted thread/start predicate probe: only response.thread.source differed (actual vscode, expected appServer); model/provider/tier/cwd/roots/historyMode/threadSource/ephemeral/id checks all matched. Production text browser regression reproduces disabled Start agent after changing its fixture source to the actual response. Temporary smoke instrumentation removed; correcting owned thread origin across creation, reuse and cleanup without weakening remaining profile guards.
+
+Real Start agent verification exposed a second independent blocker: new root was readable, idle, input-capable and appeared exactly once in thread/loaded/list, but thread/list returned no rows. Pinned Codex history listing intentionally omits threads without a preview. Production browser fixture now models empty new roots separately from persisted history; the existing browser owner fails at creation/composer focus before the fix. Narrow positive proof for current-epoch owned roots is being added; arbitrary attachment must retain missing-thread refusal.
+
+Resolved real signed-in startup and empty-history failures. Pinned session origin is vscode, with exact profile checks retained across start/reuse/cleanup and field-specific rejection diagnostics. Newly created empty roots use exact live read plus current committed thread/start ownership and loaded membership; epoch/proof/membership are rechecked and persisted evidence remains false. Failed coordinator status is explicit and successful Refresh status is quiet. Post-message attachment exposed stale process-wide semantic context; projection now requires the exact current pane and binding while preserving delivery history and strict schema. Real signed-in smoke Start agent closes settings, focuses composer and exposes Voice ready without a first message. Final validation: 2557 module tests, 13 production/system tests, shell/text/voice browser owners, lint/format/both TypeScript projects and 124 repository checks pass. Independent Astra review clear. Temporary probes removed.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
 Polished stable 280px navigation, separated header status and ownership, replaced shell controls with shared Button and application icons with Remix, and simplified Agent settings and the conversation drawer. Fixed missing Tailwind zero utilities, semantic class merging, command authority preparation and false inspect-only empty history. Verified all normal check components and rendered desktop text/voice, focus, claims and camera behavior. Full legacy CSS replacement remains the separate user-requested UI rework.
+
+Real smoke connection follow-up fixes two incorrect Codex assumptions: session origin is vscode, and history starts only after the first message. Verified real agent creation before any message, and automated post-message attachment with correctly scoped semantic context. All focused integration, browser, module and policy checks pass.
 <!-- SECTION:FINAL_SUMMARY:END -->

@@ -106,6 +106,7 @@ export type ThreadLinkReadinessArm =
 	| "signed_out"
 	| "login_pending"
 	| "login_failed"
+	| "coordinator_failed"
 	| "account_ready"
 	| "thread_capable";
 

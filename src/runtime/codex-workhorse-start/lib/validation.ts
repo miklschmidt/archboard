@@ -38,29 +38,33 @@ export function validateWorkhorseStartResponse(
 	options: CodexWorkhorseStartOptions,
 ): ValidatedWorkhorseStart {
 	const threadId = options.identity.decoder.parseThreadId(response.thread.id);
-	if (
-		response.thread.id !== threadId ||
-		response.model.length === 0 ||
-		response.modelProvider.length === 0 ||
-		response.thread.modelProvider !== response.modelProvider ||
-		response.serviceTier?.length === 0 ||
-		response.cwd !== options.checkoutRoot ||
-		response.runtimeWorkspaceRoots.length !== 1 ||
-		response.runtimeWorkspaceRoots[0] !== options.checkoutRoot ||
-		response.thread.cwd !== options.checkoutRoot ||
-		response.thread.historyMode !== "paginated" ||
-		response.thread.source !== WORKHORSE_THREAD_SOURCE ||
-		response.thread.threadSource !== WORKHORSE_THREAD_SOURCE_TAG ||
-		response.thread.ephemeral ||
-		response.approvalPolicy === undefined ||
-		response.approvalPolicy === null ||
-		response.approvalsReviewer === undefined ||
-		response.approvalsReviewer === null ||
-		response.sandbox === undefined ||
-		response.sandbox === null ||
-		!Object.hasOwn(response, "activePermissionProfile")
-	) {
-		throw new Error("The workhorse thread/start response does not match the authored profile.");
+	const mismatches = Object.entries({
+		"thread.id": response.thread.id !== threadId,
+		model: response.model.length === 0,
+		modelProvider: response.modelProvider.length === 0,
+		"thread.modelProvider": response.thread.modelProvider !== response.modelProvider,
+		serviceTier: response.serviceTier?.length === 0,
+		cwd: response.cwd !== options.checkoutRoot,
+		runtimeWorkspaceRoots:
+			response.runtimeWorkspaceRoots.length !== 1 ||
+			response.runtimeWorkspaceRoots[0] !== options.checkoutRoot,
+		"thread.cwd": response.thread.cwd !== options.checkoutRoot,
+		"thread.historyMode": response.thread.historyMode !== "paginated",
+		"thread.source": response.thread.source !== WORKHORSE_THREAD_SOURCE,
+		"thread.threadSource": response.thread.threadSource !== WORKHORSE_THREAD_SOURCE_TAG,
+		"thread.ephemeral": response.thread.ephemeral,
+		approvalPolicy: response.approvalPolicy === undefined || response.approvalPolicy === null,
+		approvalsReviewer:
+			response.approvalsReviewer === undefined || response.approvalsReviewer === null,
+		sandbox: response.sandbox === undefined || response.sandbox === null,
+		activePermissionProfile: !Object.hasOwn(response, "activePermissionProfile"),
+	})
+		.filter(([, mismatched]) => mismatched)
+		.map(([field]) => field);
+	if (mismatches.length > 0) {
+		throw new Error(
+			`The workhorse thread/start response does not match the authored profile: ${mismatches.join(", ")}.`,
+		);
 	}
 
 	const facts: WorkhorseStartFacts = cloneAndFreeze({

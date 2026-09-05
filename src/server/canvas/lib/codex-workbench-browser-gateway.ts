@@ -394,14 +394,26 @@ export function createCanvasBrowserGatewayOptions(input: {
 				dynamicApprovals.bindLease(context.paneId, context.lease.commandId);
 			const coordinator = components.coordinator.snapshot();
 			const workhorse = components.workhorse.snapshot();
-			const semantic = components.semanticDelivery.inspect().at(-1);
+			const latestSemantic = components.semanticDelivery.inspect().at(-1);
 			const semanticBinding = components.semanticDelivery.snapshot().binding;
+			// Delivery history is process-wide; only the exact current binding may
+			// publish its result and freshness into this pane's snapshot.
+			const semantic =
+				semanticBinding !== null &&
+				semanticBinding.paneId === context.paneId &&
+				semanticBinding.link.revision === context.binding.revision &&
+				semanticBinding.target.threadId === context.binding.link.threadId &&
+				semanticBinding.target.childId === context.binding.link.childId &&
+				semanticBinding.target.epoch === context.binding.link.epoch &&
+				latestSemantic?.paneId === context.paneId &&
+				latestSemantic.targetThreadId === semanticBinding.target.threadId &&
+				latestSemantic.targetChildId === semanticBinding.target.childId &&
+				latestSemantic.targetEpoch === semanticBinding.target.epoch &&
+				latestSemantic.targetOperationId === semanticBinding.target.operationId
+					? latestSemantic
+					: undefined;
 			const freshSemantic =
-				semantic?.targetThreadId === undefined ||
-				semantic.targetThreadId === null ||
-				semanticBinding === null
-					? null
-					: components.semanticPublisher.freshBrief();
+				semantic === undefined ? null : components.semanticPublisher.freshBrief();
 			const realtimeGeneration = components.realtime.generation();
 			const voiceContext = projectCanvasVoiceContext(realtimeGeneration, components.callbacks);
 			const readiness = projectCanvasBrowserReadiness({

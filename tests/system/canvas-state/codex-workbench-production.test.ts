@@ -164,96 +164,6 @@ describe.serial("actual production Codex composition", () => {
 			});
 			expect(typeof (linked.coordinator as Record<string, unknown>).threadId).toBe("string");
 
-			// Nothing is discovered until the browser asks. The refresh exhausts the
-			// real persisted and loaded lists and publishes the joined inventory.
-			expect(linked.threadCandidates).toMatchObject({ state: "unknown", records: [] });
-			const refreshLease = await current.request("claimLease");
-			expect(
-				await current.request("command", {
-					command: {
-						kind: "browser_command",
-						command: "threadLinkRefresh",
-						...leaseTarget(refreshLease),
-					},
-				}),
-			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
-			const discovered = snapshots(await current.request("snapshot"));
-			const inventory = discovered.threadCandidates as Record<string, unknown>;
-			expect(inventory).toMatchObject({ state: "listed", truncated: false });
-			const rows = inventory.records as readonly Record<string, unknown>[];
-			expect(rows.length).toBeGreaterThan(0);
-			const createdRow = rows.find((row) => row.threadId === threadLink.threadId);
-			expect(createdRow).toMatchObject({
-				kind: "thread_candidate",
-				state: "executable",
-				sourcePresentation: "standard",
-				loaded: true,
-			});
-			expect(typeof createdRow?.selectionId).toBe("string");
-			expect(new Set(rows.map((row) => row.selectionId)).size).toBe(rows.length);
-
-			// A persisted thread this workbench never created has no ownership
-			// record, so attaching it must record one before the link can become
-			// executable. This is the path a created thread never takes.
-			const foreignThreadId = String(
-				createIdentityAuthorities().identity.decoder.adoptThreadId(FOREIGN_FIXTURE_THREAD_ID),
-			);
-			const foreignRow = rows.find((row) => row.threadId === foreignThreadId);
-			if (foreignRow === undefined)
-				throw new Error("The foreign persisted thread is not in the joined list.");
-			expect(foreignRow).toMatchObject({ state: "inspect_only", reason: "unknown_provenance" });
-			const attachLease = await current.request("claimLease");
-			expect(
-				await current.request("command", {
-					command: {
-						kind: "browser_command",
-						command: "threadLinkAttach",
-						...leaseTarget(attachLease),
-						selectionId: foreignRow.selectionId,
-						threadId: foreignThreadId,
-					},
-				}),
-			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
-			const attached = snapshots(await current.request("snapshot"));
-			expect(attached.threadLink).toMatchObject({
-				state: "executable",
-				threadId: foreignThreadId,
-				loaded: true,
-				canAcceptDirectInput: true,
-			});
-			// Relinking back to the created thread proves the same route both ways.
-			const relinkList = await current.request("claimLease");
-			expect(
-				await current.request("command", {
-					command: {
-						kind: "browser_command",
-						command: "threadLinkRefresh",
-						...leaseTarget(relinkList),
-					},
-				}),
-			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
-			const relinkRows = (
-				snapshots(await current.request("snapshot")).threadCandidates as Record<string, unknown>
-			).records as readonly Record<string, unknown>[];
-			const createdAgain = relinkRows.find((row) => row.threadId === threadLink.threadId);
-			if (createdAgain === undefined) throw new Error("The created thread left the joined list.");
-			const relinkLease = await current.request("claimLease");
-			expect(
-				await current.request("command", {
-					command: {
-						kind: "browser_command",
-						command: "threadLinkRelink",
-						...leaseTarget(relinkLease),
-						selectionId: createdAgain.selectionId,
-						threadId: threadLink.threadId,
-					},
-				}),
-			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
-			expect(snapshots(await current.request("snapshot")).threadLink).toMatchObject({
-				state: "executable",
-				threadId: threadLink.threadId,
-			});
-
 			expect(await current.request("mediaReady", { ready: true })).toMatchObject({ ok: true });
 			expect(snapshots(await current.request("snapshot")).voice).toMatchObject({ state: "ready" });
 			expect(await current.request("mediaReady", { ready: false })).toMatchObject({ ok: true });
@@ -437,6 +347,107 @@ describe.serial("actual production Codex composition", () => {
 				throw new Error(
 					`The approved dynamic create did not start its thread.\n${readFileSync(logPath, "utf8")}`,
 				);
+
+			// History exists after the first message; finish that turn before switching conversations.
+			writeFileSync(controlPath, JSON.stringify({ completeWorkhorseTurn: true }));
+			await waitFor(
+				async () =>
+					(snapshots(await current.request("snapshot")).threadLink as Record<string, unknown>)
+						.status === "idle",
+				"the workhorse turn to finish",
+			);
+			// Nothing is discovered until the browser asks. The refresh exhausts the
+			// real persisted and loaded lists and publishes the joined inventory.
+			expect(snapshots(await current.request("snapshot")).threadCandidates).toMatchObject({
+				state: "unknown",
+				records: [],
+			});
+			const refreshLease = await current.request("claimLease");
+			expect(
+				await current.request("command", {
+					command: {
+						kind: "browser_command",
+						command: "threadLinkRefresh",
+						...leaseTarget(refreshLease),
+					},
+				}),
+			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+			const discovered = snapshots(await current.request("snapshot"));
+			const inventory = discovered.threadCandidates as Record<string, unknown>;
+			expect(inventory).toMatchObject({ state: "listed", truncated: false });
+			const rows = inventory.records as readonly Record<string, unknown>[];
+			expect(rows.length).toBeGreaterThan(0);
+			const createdRow = rows.find((row) => row.threadId === threadLink.threadId);
+			expect(createdRow).toMatchObject({
+				kind: "thread_candidate",
+				state: "executable",
+				sourcePresentation: "standard",
+				loaded: true,
+			});
+			expect(typeof createdRow?.selectionId).toBe("string");
+			expect(new Set(rows.map((row) => row.selectionId)).size).toBe(rows.length);
+
+			// A persisted thread this workbench never created has no ownership
+			// record, so attaching it must record one before the link can become
+			// executable. This is the path a created thread never takes.
+			const foreignThreadId = String(
+				createIdentityAuthorities().identity.decoder.adoptThreadId(FOREIGN_FIXTURE_THREAD_ID),
+			);
+			const foreignRow = rows.find((row) => row.threadId === foreignThreadId);
+			if (foreignRow === undefined)
+				throw new Error("The foreign persisted thread is not in the joined list.");
+			expect(foreignRow).toMatchObject({ state: "inspect_only", reason: "unknown_provenance" });
+			const attachLease = await current.request("claimLease");
+			expect(
+				await current.request("command", {
+					command: {
+						kind: "browser_command",
+						command: "threadLinkAttach",
+						...leaseTarget(attachLease),
+						selectionId: foreignRow.selectionId,
+						threadId: foreignThreadId,
+					},
+				}),
+			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+			const attached = snapshots(await current.request("snapshot"));
+			expect(attached.threadLink).toMatchObject({
+				state: "executable",
+				threadId: foreignThreadId,
+				loaded: true,
+				canAcceptDirectInput: true,
+			});
+			// Relinking back to the created thread proves the same route both ways.
+			const relinkList = await current.request("claimLease");
+			expect(
+				await current.request("command", {
+					command: {
+						kind: "browser_command",
+						command: "threadLinkRefresh",
+						...leaseTarget(relinkList),
+					},
+				}),
+			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+			const relinkRows = (
+				snapshots(await current.request("snapshot")).threadCandidates as Record<string, unknown>
+			).records as readonly Record<string, unknown>[];
+			const createdAgain = relinkRows.find((row) => row.threadId === threadLink.threadId);
+			if (createdAgain === undefined) throw new Error("The created thread left the joined list.");
+			const relinkLease = await current.request("claimLease");
+			expect(
+				await current.request("command", {
+					command: {
+						kind: "browser_command",
+						command: "threadLinkRelink",
+						...leaseTarget(relinkLease),
+						selectionId: createdAgain.selectionId,
+						threadId: threadLink.threadId,
+					},
+				}),
+			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
+			expect(snapshots(await current.request("snapshot")).threadLink).toMatchObject({
+				state: "executable",
+				threadId: threadLink.threadId,
+			});
 
 			const childPid = records(logPath).find((entry) => entry.kind === "app_server_spawn")?.pid;
 			if (childPid === undefined) throw new Error("The controlled app-server pid was not logged.");
