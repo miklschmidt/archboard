@@ -62,7 +62,7 @@ test("the full pinned rule catalogue has an explicit applicable or inapplicable 
 	const vendor = config.overrides[0];
 	expect(config.overrides).toHaveLength(1);
 	expect(vendor?.files).toEqual([
-		"src/shared/codex-app-server-contract/generated/versions/version-0.151.0-recipe-1/**/*.ts",
+		"src/shared/codex-app-server-contract/generated/versions/version-0.151.0-recipe-2/**/*.ts",
 		"src/shared/codex-app-server-contract/generated/current/**/*.ts",
 	]);
 	expect(Object.keys(vendor?.rules ?? {}).toSorted()).toEqual(
