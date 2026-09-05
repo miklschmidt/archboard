@@ -32,10 +32,8 @@ Desktop-sized touch interaction for the Samsung Flip remains supported.
 Every UI-design or UI-implementation worker must read
 `docs/design/operator-canvas-shell.md` and inspect
 `docs/design/assets/operator-canvas-shell.png` before changing rendered Archboard
-UI. For board navigation, also inspect the approved sidebar reference at
-`docs/design/assets/operator-sidebar-reference.png`. These references are the
-visual authority. Keep UI code boundaries and verification requirements in their
-existing documents.
+UI. These references are the visual authority. Keep UI code boundaries and
+verification requirements in their existing documents.
 
 ## Upstream
 

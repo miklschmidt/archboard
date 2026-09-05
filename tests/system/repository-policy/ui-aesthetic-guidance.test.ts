@@ -16,9 +16,7 @@ const agentsPath = path.join(repoRoot, "AGENTS.md");
 const referencePaths = [
 	"docs/design/operator-canvas-shell.md",
 	"docs/design/assets/operator-canvas-shell.png",
-	"docs/design/assets/operator-sidebar-reference.png",
 ] as const;
-const trackedReferencePaths = referencePaths.slice(0, 2);
 const authorityHeading = "## UI visual authority";
 
 type ReferenceState = {
@@ -49,21 +47,25 @@ function uiWorkerInstruction(section: string | undefined): string | undefined {
 
 function guidanceFailures(
 	source: string,
-	references: Readonly<Record<(typeof referencePaths)[number], ReferenceState>>,
+	references: ReadonlyMap<(typeof referencePaths)[number], ReferenceState>,
 ): string[] {
 	const instruction = uiWorkerInstruction(authoritySection(source));
 	const failures: string[] = [];
 	for (const referencePath of referencePaths) {
+		const reference = references.get(referencePath);
+		if (!reference) {
+			failures.push(`The approved UI reference state is missing for \`${referencePath}\`.`);
+			continue;
+		}
 		if (!instruction?.includes(`\`${referencePath}\``)) {
 			failures.push(
 				`AGENTS.md's ${authorityHeading} section must name the approved UI reference \`${referencePath}\` inside the UI-worker instruction.`,
 			);
 		}
-		if (!references[referencePath].isFile) {
+		if (!reference.isFile) {
 			failures.push(`The approved UI reference is missing at \`${referencePath}\`.`);
 		}
-		if (trackedReferencePaths.includes(referencePath)) {
-			if (references[referencePath].isTracked) continue;
+		if (!reference.isTracked) {
 			failures.push(`The approved UI reference must be tracked at \`${referencePath}\`.`);
 		}
 	}
@@ -82,8 +84,8 @@ function referenceIsTracked(referencePath: string): boolean {
 	return result.status === 0 && result.stdout.trim() === referencePath;
 }
 
-function referenceState(): Record<(typeof referencePaths)[number], ReferenceState> {
-	return Object.fromEntries(
+function referenceState(): Map<(typeof referencePaths)[number], ReferenceState> {
+	return new Map(
 		referencePaths.map((referencePath) => {
 			const absolutePath = path.join(repoRoot, referencePath);
 			return [
@@ -94,7 +96,7 @@ function referenceState(): Record<(typeof referencePaths)[number], ReferenceStat
 				},
 			];
 		}),
-	) as Record<(typeof referencePaths)[number], ReferenceState>;
+	);
 }
 
 function moveInstructionOutsideAuthority(source: string): string {
@@ -138,7 +140,7 @@ describe("UI aesthetic guidance repository policy", () => {
 	test("rejects a missing reference file without changing the instruction fixture", () => {
 		const references = referenceState();
 		const referencePath = referencePaths[1];
-		references[referencePath] = { isFile: false, isTracked: true };
+		references.set(referencePath, { isFile: false, isTracked: true });
 		const source = fs.readFileSync(agentsPath, "utf8");
 		expect(guidanceFailures(source, references)).toEqual([
 			`The approved UI reference is missing at \`${referencePath}\`.`,
@@ -148,7 +150,7 @@ describe("UI aesthetic guidance repository policy", () => {
 	test("rejects an untracked reference replacement", () => {
 		const references = referenceState();
 		const referencePath = referencePaths[0];
-		references[referencePath] = { isFile: true, isTracked: false };
+		references.set(referencePath, { isFile: true, isTracked: false });
 		const source = fs.readFileSync(agentsPath, "utf8");
 		expect(guidanceFailures(source, references)).toEqual([
 			`The approved UI reference must be tracked at \`${referencePath}\`.`,
