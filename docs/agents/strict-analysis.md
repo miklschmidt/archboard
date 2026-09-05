@@ -84,6 +84,14 @@ each remains a nominal string, while the policy test freezes the source-specific
 allowlist; mutable records and nested protocol collections remain errors.
 Re-audit this narrow analyzer workaround on either pinned linter upgrade.
 
+The retained Zod record branch in `codex-session/lib/response-contract.ts` keeps
+one statement-local `typescript/consistent-indexed-object-style` suppression.
+With pinned TypeScript 7.0.2, replacing that recursive readonly mapping with
+`Readonly<Record<...>>` causes excessive-instantiation failures at all three
+consumers of recursive MCP JSON; reverting only that syntax clears them. Re-audit
+the exact site on a TypeScript upgrade and remove the suppression when the
+equivalent indexed-object spelling compiles.
+
 One pinned formatter conflict is inapplicable: Oxlint 1.80.0
 `unicorn/number-literal-case` requires uppercase hexadecimal digits, while the
 mandatory Oxfmt 0.65.0 pass deterministically restores lowercase and the lint
