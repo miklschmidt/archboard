@@ -3,6 +3,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { z } from "zod";
+
 import { stateDir } from "../../../src/runtime/engine/state-dir.ts";
 import { processExists, startOwnedCanvas } from "./owned-canvas.ts";
 
@@ -23,18 +25,23 @@ if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "term-escalation") {
 		stdout: "ignore",
 		stderr: "ignore",
 	});
-	process.on("SIGTERM", () => undefined);
+	process.on("SIGTERM", () => {
+		// This fixture intentionally resists ordinary termination.
+	});
 	Bun.serve({
 		hostname: "127.0.0.1",
 		port: Number(process.env["PORT"]),
-		fetch(request) {
+		fetch(...args: readonly [{ readonly url: string }]) {
+			const [request] = args;
 			if (new URL(request.url).pathname === "/health") {
 				return Response.json({ pid: process.pid });
 			}
 			return Response.json({ descendant: descendant.pid, lock });
 		},
 	});
-	await new Promise(() => undefined);
+	await new Promise<never>(() => {
+		// The process remains alive until the owner escalates termination.
+	});
 }
 
 test("ordinary TERM escalation completes forced canvas cleanup", async () => {
@@ -44,9 +51,10 @@ test("ordinary TERM escalation completes forced canvas cleanup", async () => {
 		vault,
 		env: { ARCHBOARD_LIFECYCLE_SERVER: "term-escalation" },
 	});
-	const state = (await fetch(`${canvas.base}/cleanup-state`).then((response) =>
-		response.json(),
-	)) as { descendant: number; lock: string };
+	const stateResponse = await fetch(`${canvas.base}/cleanup-state`);
+	const state = z
+		.object({ descendant: z.number().int().positive(), lock: z.string() })
+		.parse(await stateResponse.json());
 	let disposalFailure: unknown;
 	try {
 		await canvas.dispose();
@@ -57,11 +65,22 @@ test("ordinary TERM escalation completes forced canvas cleanup", async () => {
 			try {
 				process.kill(-state.descendant, "SIGKILL");
 			} catch (error) {
-				if ((error as NodeJS.ErrnoException).code !== "ESRCH") disposalFailure ??= error;
+				const code =
+					typeof error === "object" && error !== null && "code" in error
+						? error.code
+						: undefined;
+				if (code !== "ESRCH") {
+					disposalFailure ??= error;
+				}
 			}
 		}
 	}
-	if (disposalFailure !== undefined) throw disposalFailure;
+	if (disposalFailure instanceof Error) {
+		throw disposalFailure;
+	}
+	if (disposalFailure !== undefined) {
+		throw new Error("Canvas cleanup failed with a non-error value.", { cause: disposalFailure });
+	}
 	expect(processExists(state.descendant)).toBeFalse();
 	expect(fs.existsSync(state.lock)).toBeFalse();
 	expect(fs.existsSync(canvas.paths.root)).toBeFalse();
