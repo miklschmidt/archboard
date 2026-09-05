@@ -1,9 +1,13 @@
 import { chmodSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import path from "node:path";
 
 import { extendFixture } from "./codex-workbench-lifecycle.ts";
 
-/** Adds deterministic cancellation, held-RPC, queue, and ownership controls. */
+/**
+ * Adds deterministic cancellation, held-RPC, queue, and ownership controls.
+ * @param root - Disposable fixture directory.
+ * @returns Path to the extended fixture.
+ */
 export function extendTerminalFixture(root: string): string {
 	const base = extendFixture(root);
 	const source = readFileSync(base, "utf8");
@@ -166,10 +170,11 @@ const emitBoundedTime = (): void => {
 		withQueue === withHeldAccountRead ||
 		withControls === withQueue ||
 		withCoordinatorRetirement === withControls
-	)
+	) {
 		throw new Error("The controlled terminal fixture injection point drifted.");
-	const path = join(root, "fake-codex-terminal-controls.ts");
-	writeFileSync(path, withCoordinatorRetirement);
-	chmodSync(path, 0o700);
-	return path;
+	}
+	const fixturePath = path.join(root, "fake-codex-terminal-controls.ts");
+	writeFileSync(fixturePath, withCoordinatorRetirement);
+	chmodSync(fixturePath, 0o700);
+	return fixturePath;
 }

@@ -9,16 +9,14 @@ import {
 	parseRealtimeSessionId,
 } from "../../../src/shared/codex-realtime-host/index.js";
 import { createIdentityAuthorities } from "../../../src/shared/codex-workbench-identity/index.js";
-import {
-	projectCodexBrowserState,
-	type BrowserProjectionInput,
-} from "../../../src/server/codex-workbench/index.js";
+import { projectCodexBrowserState } from "../../../src/server/codex-workbench/index.js";
+import type { BrowserProjectionInput } from "../../../src/server/codex-workbench/index.js";
 
 const NOW = 1_700_000_000_000;
 
 test("a real unknown owner settlement remains unknown through the browser projection", async () => {
 	const authorities = createIdentityAuthorities();
-	const identity = authorities.identity;
+	const { identity } = authorities;
 	const threadId = identity.decoder.adoptThreadId("spoken-terminal-workhorse");
 	const coordinatorThreadId = identity.decoder.adoptThreadId("spoken-terminal-coordinator");
 	const turnId = identity.decoder.adoptTurnId("spoken-terminal-turn");
@@ -59,7 +57,13 @@ test("a real unknown owner settlement remains unknown through the browser projec
 		listenerOwnership: "composition",
 		now: () => NOW,
 		transport: {
-			respond: () => Promise.reject({ accepted: true, outcome: "outcome_unknown" }),
+			respond: async () => {
+				const error = Object.assign(new Error("Approval owner outcome is unknown."), {
+					accepted: true,
+					outcome: "outcome_unknown",
+				});
+				await Promise.reject(error);
+			},
 		},
 	});
 	try {
@@ -148,7 +152,9 @@ test("a real unknown owner settlement remains unknown through the browser projec
 		const model = createCodexBrowserModel(authorities);
 		const projected = projectCodexBrowserState(model, identity.decoder, projectionInput);
 		expect(projected.tag).toBe("projected");
-		if (projected.tag !== "projected") throw new Error(projected.message);
+		if (projected.tag !== "projected") {
+			throw new Error(projected.message);
+		}
 		expect(projected.snapshot.spokenApproval.state).toBe("outcome_unknown");
 	} finally {
 		broker.dispose();

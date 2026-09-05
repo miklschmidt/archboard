@@ -1,4 +1,4 @@
-export const configFixture = {
+const configFixture = {
 	model: null,
 	review_model: null,
 	model_context_window: null,
@@ -26,7 +26,7 @@ export const configFixture = {
 	computer_use: null,
 	desktop: null,
 };
-export const modelFixture = {
+const modelFixture = {
 	id: "gpt-5.6-luna",
 	model: "gpt-5.6-luna",
 	upgrade: null,
@@ -46,3 +46,5 @@ export const modelFixture = {
 	defaultServiceTier: null,
 	isDefault: true,
 };
+
+export { configFixture, modelFixture };

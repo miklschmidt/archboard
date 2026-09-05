@@ -1,24 +1,34 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import path from "node:path";
 
-interface EvalContract {
-	id: number;
-	graded_by: string;
-	expected_output: string;
-	files: string[];
-}
+import { z } from "zod";
 
-const repoRoot = resolve(import.meta.dir, "../../..");
-const evals = (
-	JSON.parse(readFileSync(join(repoRoot, "skills/archboard/evals/evals.json"), "utf8")) as {
-		evals: EvalContract[];
+const EvalContractSchema = z.object({
+	id: z.number(),
+	graded_by: z.string(),
+	expected_output: z.string(),
+	files: z.array(z.string()),
+});
+type EvalContract = z.infer<typeof EvalContractSchema>;
+const repoRoot = path.resolve(import.meta.dir, "../../..");
+const evalPath = path.join(repoRoot, "skills/archboard/evals/evals.json");
+const evalBytes = readFileSync(evalPath, "utf8");
+const parsedEvalBytes: unknown = JSON.parse(evalBytes);
+const { evals } = z.object({ evals: z.array(EvalContractSchema) }).parse(parsedEvalBytes);
+
+function evaluationById(id: number): EvalContract | undefined {
+	for (const evaluation of evals) {
+		if (evaluation.id === id) {
+			return evaluation;
+		}
 	}
-).evals;
+	return undefined;
+}
 
 describe("variant eval contracts", () => {
 	test("eval 5 names its native branch-comparison owner", () => {
-		const evaluation = evals.find(({ id }) => id === 5);
+		const evaluation = evaluationById(5);
 		expect(evaluation).toBeDefined();
 		expect(evaluation?.graded_by).toBe("tests/system/canvas-state/branch-compare.test.ts");
 		expect(evaluation?.files).toEqual([]);
@@ -29,7 +39,7 @@ describe("variant eval contracts", () => {
 	});
 
 	test("eval 7 keeps human grading backed by the live-session owners", () => {
-		const evaluation = evals.find(({ id }) => id === 7);
+		const evaluation = evaluationById(7);
 		expect(evaluation).toBeDefined();
 		expect(evaluation?.graded_by).toBe("human");
 		expect(evaluation?.files).toEqual([
