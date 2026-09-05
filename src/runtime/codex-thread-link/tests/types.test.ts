@@ -4,9 +4,11 @@ import {
 	createCodexThreadLink,
 	createCodexThreadLinkBinding,
 	createCodexThreadLinkClassifier,
-	type CodexThreadLinkClassifierOptions,
-	type CodexThreadLinkOptions,
-	type ThreadLinkEpochAuthority,
+} from "../index.ts";
+import type {
+	CodexThreadLinkClassifierOptions,
+	CodexThreadLinkOptions,
+	ThreadLinkEpochAuthority,
 } from "../index.ts";
 
 declare const session: CodexThreadLinkClassifierOptions["session"];
@@ -21,7 +23,7 @@ function observationOnlyConstruction(): void {
 
 	const observationOnlyOptions = {
 		session,
-		currentEpoch: () => null,
+		currentEpoch: (): null => null,
 	} satisfies CodexThreadLinkClassifierOptions;
 	const observationWithAuthorityOptions = {
 		session,
@@ -35,7 +37,7 @@ function rejectedConstruction(): void {
 	// @ts-expect-error A bind-capable port must require its live epoch authority.
 	createCodexThreadLink({ session });
 	// @ts-expect-error A current-epoch callback cannot replace the durable authority for a port.
-	createCodexThreadLink({ session, currentEpoch: () => null });
+	createCodexThreadLink({ session, currentEpoch: (): null => null });
 	const snapshotOnly: Pick<ThreadLinkEpochAuthority, "snapshot"> = epoch;
 	const staticSnapshotOptions = { session, epoch: snapshotOnly };
 	// @ts-expect-error A static snapshot is not a live epoch authority.
@@ -44,8 +46,9 @@ function rejectedConstruction(): void {
 	createCodexThreadLink({ session, epoch, binding: createCodexThreadLinkBinding() });
 	// @ts-expect-error The standalone binding factory has no authority-taking option.
 	createCodexThreadLinkBinding({ epoch });
-	// @ts-expect-error Public bindings cannot adopt executable links through bind.
-	publicBinding.bind("pane-a", null, undefined);
+	type PublicBindingHasNoBind = "bind" extends keyof typeof publicBinding ? never : true;
+	const publicBindingHasNoBind: PublicBindingHasNoBind = true;
+	void publicBindingHasNoBind;
 }
 
 void observationOnlyConstruction;
