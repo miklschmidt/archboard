@@ -84,6 +84,7 @@ interface OutputCase {
 
 interface OutputPolicy<Input> {
 	cases: readonly [OutputCase, ...OutputCase[]];
+	// eslint-disable-next-line typescript/method-signature-style -- Method bivariance lets concrete command inputs inhabit the erased registry contract.
 	select(input: Input): string;
 }
 
@@ -106,7 +107,7 @@ type PendingArtifact =
 	| {
 			path: string;
 			encoding: "files";
-			files: Array<{ name: string; content: Uint8Array }>;
+			files: { name: string; content: Uint8Array }[];
 			manifest: { name: "manifest.json"; content: string };
 	  };
 
@@ -121,15 +122,15 @@ interface CommandExecution<Result> {
 
 interface CommandContext {
 	readonly signal: AbortSignal;
-	require(prerequisite: RuntimePrerequisite, description: string): Promise<void>;
-	readStdin(): Promise<string>;
-	readTextFile(path: string): string;
-	readOptionalTextFile(path: string): string | undefined;
-	resolvePath(path: string): string;
-	prompt(question: string, fallback: string): Promise<string>;
-	parse<T>(schema: z.ZodType<T>, value: unknown): T;
+	readonly require: (prerequisite: RuntimePrerequisite, description: string) => Promise<void>;
+	readonly readStdin: () => Promise<string>;
+	readonly readTextFile: (path: string) => string;
+	readonly readOptionalTextFile: (path: string) => string | undefined;
+	readonly resolvePath: (path: string) => string;
+	readonly prompt: (question: string, fallback: string) => Promise<string>;
+	readonly parse: <T>(schema: z.ZodType<T>, value: unknown) => T;
 	/** The sole lane that may write a diagnostic before public result validation. */
-	diagnostic(message: string): void;
+	readonly diagnostic: (message: string) => void;
 }
 
 interface CommandContract<Shape extends z.ZodRawShape, Result> {
@@ -147,6 +148,7 @@ interface CommandContract<Shape extends z.ZodRawShape, Result> {
 	effects: readonly CommandEffect[];
 	refusals: readonly RefusalContract[];
 	relationships: readonly RestRelationship[];
+	// eslint-disable-next-line typescript/method-signature-style -- Method bivariance preserves the heterogeneous command registry without unsafe casts.
 	handler(
 		input: z.output<z.ZodObject<Shape>>,
 		context: CommandContext,

@@ -1,6 +1,6 @@
-import fs from "fs";
-import path from "path";
-import readline from "readline/promises";
+import fs from "node:fs";
+import path from "node:path";
+import readline from "node:readline/promises";
 import { boardHoldSeen } from "../../../runtime/engine/canvas-client.js";
 import { writeFileAtomicExclusive } from "../../../runtime/engine/atomic-write.js";
 import type { PendingArtifact } from "../contract.js";

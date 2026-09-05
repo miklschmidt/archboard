@@ -65,7 +65,7 @@ type CodexJsonWire<T> = unknown extends T
 	: T extends bigint
 		? CodexSafeI64
 		: T extends readonly (infer Item)[]
-			? Array<CodexJsonWire<Item>>
+			? CodexJsonWire<Item>[]
 			: T extends object
 				? {
 						[Key in keyof T]: CodexJsonWire<
@@ -87,7 +87,7 @@ type OptionalKeys<Value extends object> = {
 type NormalizeOptionalValues<Value> = Value extends string | number | boolean | bigint | symbol
 	? Value
 	: Value extends readonly (infer Item)[]
-		? Array<NormalizeOptionalValues<Item>>
+		? NormalizeOptionalValues<Item>[]
 		: Value extends object
 			? {
 					[Key in keyof Value]: NormalizeOptionalValues<

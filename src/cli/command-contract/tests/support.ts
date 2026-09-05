@@ -12,7 +12,8 @@ import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
-import { defineCommand, type AnyCommandContract, type PendingArtifact } from "../contract.js";
+import { defineCommand } from "../contract.js";
+import type { AnyCommandContract, PendingArtifact } from "../contract.js";
 import { runCommand } from "../runner.js";
 import { PendingArtifactSchema } from "../schemas.js";
 
@@ -21,7 +22,7 @@ const heldCompatibility = JSON.parse(
 ) as {
 	fixedBase: string;
 	held: { board: string; message: string; writes: number };
-	cases: Array<{
+	cases: {
 		name: string;
 		path: string;
 		outputCase: string;
@@ -30,7 +31,7 @@ const heldCompatibility = JSON.parse(
 		stdout: string;
 		stderr: string;
 		events: string[];
-	}>;
+	}[];
 };
 
 const temporaryDirectories: string[] = [];

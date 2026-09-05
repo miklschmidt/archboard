@@ -177,7 +177,7 @@ const queryContract = defineCommand({
 		}
 
 		let results = query.size > 0 ? await searchElements(query) : await getElements();
-		const predicates: Array<(element: unknown) => boolean> = [];
+		const predicates: ((element: unknown) => boolean)[] = [];
 		for (const value of input.filter) {
 			const { key, raw, coerced } = context.parse(filterPairSchema, value);
 			predicates.push((element) => {

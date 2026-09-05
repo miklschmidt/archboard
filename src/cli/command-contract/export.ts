@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { buildSceneFile } from "../../runtime/engine/scene-document.js";
 import { isObsidianExcalidrawMd, wrapSceneAsObsidianMd } from "../../runtime/engine/obsidian-md.js";
-import { CliUsageError, defineCommand, type PendingArtifact } from "./contract.js";
+import { CliUsageError, defineCommand } from "./contract.js";
+import type { PendingArtifact } from "./contract.js";
 import { HoldReportSchema, PendingArtifactSchema } from "./schemas.js";
 import { commonRefusals, tail } from "./lib/common.js";
 

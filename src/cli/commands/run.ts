@@ -1,4 +1,5 @@
-import { CliUsageError, type AnyCommandContract } from "../command-contract/contract.js";
+import { CliUsageError } from "../command-contract/contract.js";
+import type { AnyCommandContract } from "../command-contract/contract.js";
 import { exportContract } from "../command-contract/export.js";
 import { queryContract } from "../command-contract/query.js";
 import { updateContract, WRITE_ANSWER } from "../command-contract/update.js";
