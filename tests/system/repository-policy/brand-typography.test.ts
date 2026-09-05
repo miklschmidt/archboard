@@ -26,8 +26,9 @@ test("uses Remix Icon for application icons and shadcn generation", () => {
 			continue;
 		}
 		const source = fs.readFileSync(path.join(repoRoot, filename), "utf8");
-		// The wordmark and canvas path overlay are artwork, not interface icons.
-		if (!["src/ui/shell/BoardBar.tsx", "src/ui/canvas/CanvasPane.tsx"].includes(filename)) {
+		// The canvas path-focus overlay is artwork, not an interface icon; the
+		// wordmark is a CSS mask and needs no exemption.
+		if (filename !== "src/ui/shell/lib/path-focus-overlay.tsx") {
 			expect(source, `${filename}: use Remix Icon instead of custom SVG icons`).not.toMatch(
 				/<svg\b/,
 			);
