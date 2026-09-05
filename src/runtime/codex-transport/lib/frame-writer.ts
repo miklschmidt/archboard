@@ -3,14 +3,14 @@ import type { Writable } from "node:stream";
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 import { CodexTransportWriteError } from "./errors.js";
 
-export type FrameWriterLane = "regular" | "response";
+type FrameWriterLane = "regular" | "response";
 
-export interface FrameWriterJob<T> {
+interface FrameWriterJob<T> {
 	readonly frame: Buffer;
 	readonly value: T;
 }
 
-export interface FrameWriterCallbacks<T> {
+interface FrameWriterCallbacks<T> {
 	readonly onAccepted?: (job: FrameWriterJob<T>) => void;
 	readonly onComplete: (job: FrameWriterJob<T>) => void;
 	readonly onError: (job: FrameWriterJob<T>, error: Error, writeReturned: boolean) => void;
@@ -18,7 +18,7 @@ export interface FrameWriterCallbacks<T> {
 	readonly onIdle: () => void;
 }
 
-export interface FrameWriter<T> {
+interface FrameWriter<T> {
 	readonly enqueue: (job: FrameWriterJob<T>, lane?: FrameWriterLane) => void;
 	readonly remove: (job: FrameWriterJob<T>) => boolean;
 	readonly drop: (keep: (job: FrameWriterJob<T>) => boolean, reason: unknown) => void;
@@ -53,10 +53,7 @@ function chargedBytes(frame: Buffer): number {
 	return Math.max(0, frame.byteLength - 1);
 }
 
-export function createFrameWriter<T>(
-	stdin: Writable,
-	callbacks: FrameWriterCallbacks<T>,
-): FrameWriter<T> {
+function createFrameWriter<T>(stdin: Writable, callbacks: FrameWriterCallbacks<T>): FrameWriter<T> {
 	const regularQueue: QueuedFrame<T>[] = [];
 	const responseQueue: QueuedFrame<T>[] = [];
 	let regularQueuedBytes = 0;
@@ -303,3 +300,11 @@ export function createFrameWriter<T>(
 			}),
 	});
 }
+
+export {
+	type FrameWriterLane,
+	type FrameWriterJob,
+	type FrameWriterCallbacks,
+	type FrameWriter,
+	createFrameWriter,
+};

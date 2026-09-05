@@ -5,7 +5,7 @@ import {
 	type WorkhorseQueueMutation,
 } from "./contract.js";
 
-export function queueMutationTarget(
+function queueMutationTarget(
 	queue: QueueSnapshot,
 	submissionId: SessionQueuedSubmission["id"],
 	operation: WorkhorseQueueMutation,
@@ -21,7 +21,7 @@ export function queueMutationTarget(
 	);
 }
 
-export function assertCompleteOrder(
+function assertCompleteOrder(
 	queue: QueueSnapshot,
 	orderedSubmissionIds: readonly SessionQueuedSubmission["id"][],
 ): void {
@@ -42,3 +42,5 @@ export function assertCompleteOrder(
 		);
 	}
 }
+
+export { queueMutationTarget, assertCompleteOrder };

@@ -1,9 +1,9 @@
 import type { ChildEpoch, ChildId } from "../../../shared/codex-workbench-identity/index.js";
 import { CodexDynamicToolsError } from "./contract.js";
 
-export type DynamicCursorDirection = "asc" | "desc" | "event";
+type DynamicCursorDirection = "asc" | "desc" | "event";
 
-export interface DynamicCursorBinding {
+interface DynamicCursorBinding {
 	readonly schema: 1;
 	readonly child: string;
 	readonly epoch: string;
@@ -131,7 +131,7 @@ function validateBinding(value: unknown): DynamicCursorBinding {
 	});
 }
 
-export function encodeDynamicCursor(
+function encodeDynamicCursor(
 	input: Omit<DynamicCursorBinding, "schema" | "query"> & {
 		readonly query: unknown;
 	},
@@ -173,7 +173,7 @@ export function encodeDynamicCursor(
 	return encoded;
 }
 
-export function decodeDynamicCursor(value: string): DynamicCursorBinding {
+function decodeDynamicCursor(value: string): DynamicCursorBinding {
 	if (typeof value !== "string" || value.length === 0 || value.length > 1_024) {
 		throw failure("The cursor must be a bounded non-empty string.");
 	}
@@ -200,11 +200,11 @@ export function decodeDynamicCursor(value: string): DynamicCursorBinding {
 	return binding;
 }
 
-export function cursorQuery(value: unknown): string {
+function cursorQuery(value: unknown): string {
 	return canonicalQuery(value);
 }
 
-export function unwrapDynamicCursor(
+function unwrapDynamicCursor(
 	value: string | undefined,
 	expected: {
 		readonly child: ChildId;
@@ -229,3 +229,12 @@ export function unwrapDynamicCursor(
 	}
 	return Object.freeze({ cursor: binding.cursor, sequence: binding.sequence });
 }
+
+export {
+	type DynamicCursorDirection,
+	type DynamicCursorBinding,
+	encodeDynamicCursor,
+	decodeDynamicCursor,
+	cursorQuery,
+	unwrapDynamicCursor,
+};

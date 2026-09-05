@@ -1,5 +1,5 @@
 /** Clone JSON-shaped data so one public listener cannot poison another. */
-export function cloneAndFreeze<T>(value: T): T {
+function cloneAndFreeze<T>(value: T): T {
 	const seen = new WeakMap<object, unknown>();
 	const copy = (current: unknown): unknown => {
 		if (current === null || typeof current !== "object") {
@@ -32,7 +32,9 @@ export function cloneAndFreeze<T>(value: T): T {
 	return copy(value) as T;
 }
 
-export function jsonByteLength(value: unknown): number {
+function jsonByteLength(value: unknown): number {
 	const encoded = JSON.stringify(value);
 	return encoded === undefined ? 0 : Buffer.byteLength(encoded, "utf8");
 }
+
+export { cloneAndFreeze, jsonByteLength };

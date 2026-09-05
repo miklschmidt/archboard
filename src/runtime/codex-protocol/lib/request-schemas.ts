@@ -20,13 +20,13 @@ import {
 import { JsonValueSchema, RequestIdSchema, looseObject } from "./scalars.js";
 import { codexIngressSchemas } from "./vendor-schema.js";
 
-export const ClientInfoSchema = z.strictObject({
+const ClientInfoSchema = z.strictObject({
 	name: z.string(),
 	title: z.string().nullable(),
 	version: z.string(),
 });
 
-export const LoginAccountParamsSchema = z.discriminatedUnion("type", [
+const LoginAccountParamsSchema = z.discriminatedUnion("type", [
 	z.strictObject({ type: z.literal("apiKey"), apiKey: z.string() }),
 	z.strictObject({
 		type: z.literal("chatgpt"),
@@ -51,11 +51,11 @@ export const LoginAccountParamsSchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
-export const CancelLoginAccountParamsSchema = z.strictObject({ loginId: z.string() });
-export const AccountReadParamsSchema = z.strictObject({ refreshToken: z.boolean().optional() });
+const CancelLoginAccountParamsSchema = z.strictObject({ loginId: z.string() });
+const AccountReadParamsSchema = z.strictObject({ refreshToken: z.boolean().optional() });
 
 /** Approval prompts are closed so an unrecognized permission cannot be acted on. */
-export const CommandExecutionRequestApprovalParamsSchema = z.strictObject({
+const CommandExecutionRequestApprovalParamsSchema = z.strictObject({
 	kind: z.enum(["command", "writeStdin"]),
 	threadId: z.string(),
 	turnId: z.string(),
@@ -74,7 +74,7 @@ export const CommandExecutionRequestApprovalParamsSchema = z.strictObject({
 	availableDecisions: z.array(CommandExecutionApprovalDecisionSchema).nullable().optional(),
 });
 
-export const FileChangeRequestApprovalParamsSchema = z.strictObject({
+const FileChangeRequestApprovalParamsSchema = z.strictObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	itemId: z.string(),
@@ -92,7 +92,7 @@ const UserInputQuestionSchema = looseObject({
 	options: z.array(looseObject({ label: z.string(), description: z.string() })).nullable(),
 });
 
-export const ToolRequestUserInputParamsSchema = looseObject({
+const ToolRequestUserInputParamsSchema = looseObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	itemId: z.string(),
@@ -102,7 +102,7 @@ export const ToolRequestUserInputParamsSchema = looseObject({
 });
 
 /** Filesystem/network permission requests are closed at the request boundary. */
-export const PermissionsRequestApprovalParamsSchema = z.strictObject({
+const PermissionsRequestApprovalParamsSchema = z.strictObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	itemId: z.string(),
@@ -113,7 +113,7 @@ export const PermissionsRequestApprovalParamsSchema = z.strictObject({
 	permissions: RequestPermissionProfileSchema,
 });
 
-export const DynamicToolCallParamsSchema = looseObject({
+const DynamicToolCallParamsSchema = looseObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	callId: z.string(),
@@ -123,14 +123,14 @@ export const DynamicToolCallParamsSchema = looseObject({
 	arguments: JsonValueSchema,
 });
 
-export const ChatgptAuthTokensRefreshParamsSchema = looseObject({
+const ChatgptAuthTokensRefreshParamsSchema = looseObject({
 	reason: z.literal("unauthorized"),
 	previousAccountId: z.string().nullable().optional(),
 });
-export const AttestationGenerateParamsSchema = z.strictObject({});
-export const CurrentTimeReadParamsSchema = looseObject({ threadId: z.string() });
+const AttestationGenerateParamsSchema = z.strictObject({});
+const CurrentTimeReadParamsSchema = looseObject({ threadId: z.string() });
 
-export const SERVER_REQUEST_SCHEMAS = codexIngressSchemas<
+const SERVER_REQUEST_SCHEMAS = codexIngressSchemas<
 	Pick<CodexServerRequestParamsByMethod, ServerRequestMethod>
 >()({
 	"item/commandExecution/requestApproval": CommandExecutionRequestApprovalParamsSchema,
@@ -146,13 +146,13 @@ export const SERVER_REQUEST_SCHEMAS = codexIngressSchemas<
 	execCommandApproval: ExecCommandApprovalParamsSchema,
 } as const);
 
-export const CLIENT_NOTIFICATION_SCHEMAS = codexIngressSchemas<
+const CLIENT_NOTIFICATION_SCHEMAS = codexIngressSchemas<
 	Pick<CodexClientNotificationByMethod, ClientNotificationMethod>
 >()({
 	initialized: z.strictObject({ method: z.literal("initialized") }),
 } as const);
 
-export const JsonRpcErrorSchema = z.strictObject({
+const JsonRpcErrorSchema = z.strictObject({
 	id: RequestIdSchema,
 	result: z.never().optional(),
 	error: z.strictObject({
@@ -163,7 +163,7 @@ export const JsonRpcErrorSchema = z.strictObject({
 	}),
 });
 
-export const JSON_RPC_ERROR_CODES = Object.freeze({
+const JSON_RPC_ERROR_CODES = Object.freeze({
 	parseError: -32700,
 	invalidRequest: -32600,
 	methodNotFound: -32601,
@@ -171,5 +171,26 @@ export const JSON_RPC_ERROR_CODES = Object.freeze({
 	internalError: -32603,
 });
 
-export type ServerRequestSchemas = typeof SERVER_REQUEST_SCHEMAS;
-export type ClientNotificationSchemas = typeof CLIENT_NOTIFICATION_SCHEMAS;
+type ServerRequestSchemas = typeof SERVER_REQUEST_SCHEMAS;
+type ClientNotificationSchemas = typeof CLIENT_NOTIFICATION_SCHEMAS;
+
+export {
+	ClientInfoSchema,
+	LoginAccountParamsSchema,
+	CancelLoginAccountParamsSchema,
+	AccountReadParamsSchema,
+	CommandExecutionRequestApprovalParamsSchema,
+	FileChangeRequestApprovalParamsSchema,
+	ToolRequestUserInputParamsSchema,
+	PermissionsRequestApprovalParamsSchema,
+	DynamicToolCallParamsSchema,
+	ChatgptAuthTokensRefreshParamsSchema,
+	AttestationGenerateParamsSchema,
+	CurrentTimeReadParamsSchema,
+	SERVER_REQUEST_SCHEMAS,
+	CLIENT_NOTIFICATION_SCHEMAS,
+	JsonRpcErrorSchema,
+	JSON_RPC_ERROR_CODES,
+	type ServerRequestSchemas,
+	type ClientNotificationSchemas,
+};

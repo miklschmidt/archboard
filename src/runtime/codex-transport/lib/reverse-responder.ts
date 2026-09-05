@@ -6,7 +6,7 @@ import { hasOwn, isRecord, jsonLine } from "./wire.js";
 import { cloneAndFreeze } from "./public-values.js";
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 
-export interface ReverseResponderOptions {
+interface ReverseResponderOptions {
 	readonly reverseRequests: Map<string, ReverseRecord>;
 	readonly reverseHandles: WeakMap<TransportServerRequest, ReverseRecord>;
 	readonly removePendingBytes: (bytes: number) => void;
@@ -14,7 +14,7 @@ export interface ReverseResponderOptions {
 	readonly enqueue: (job: WriteJob, lane: "response") => void;
 }
 
-export interface ReverseResponder {
+interface ReverseResponder {
 	readonly respond: (
 		request: TransportServerRequest,
 		owner: ResponseOwner,
@@ -22,7 +22,7 @@ export interface ReverseResponder {
 	) => Promise<void>;
 }
 
-export function createReverseResponder(options: ReverseResponderOptions): ReverseResponder {
+function createReverseResponder(options: ReverseResponderOptions): ReverseResponder {
 	const respond = (
 		request: TransportServerRequest,
 		owner: ResponseOwner,
@@ -118,3 +118,5 @@ export function createReverseResponder(options: ReverseResponderOptions): Revers
 
 	return Object.freeze({ respond });
 }
+
+export { type ReverseResponderOptions, type ReverseResponder, createReverseResponder };

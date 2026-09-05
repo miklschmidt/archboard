@@ -6,9 +6,7 @@ import type { TrustedIdentityDecoder } from "../../../shared/codex-workbench-ide
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import type { ActiveRealtimeSession } from "./state.js";
 
-export function orderedRecords(
-	session: ActiveRealtimeSession,
-): readonly RealtimeTranscriptRecord[] {
+function orderedRecords(session: ActiveRealtimeSession): readonly RealtimeTranscriptRecord[] {
 	return [...session.entries.values()]
 		.toSorted((left, right) => left.order - right.order || left.itemId.localeCompare(right.itemId))
 		.map((entry, sequence) => ({
@@ -22,7 +20,7 @@ export function orderedRecords(
 		}));
 }
 
-export function exactNotification(
+function exactNotification(
 	session: ActiveRealtimeSession,
 	event: TransportServerNotification,
 	identity: TrustedIdentityDecoder,
@@ -43,3 +41,5 @@ export function exactNotification(
 		return false;
 	}
 }
+
+export { orderedRecords, exactNotification };

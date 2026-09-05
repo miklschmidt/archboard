@@ -13,10 +13,10 @@ import { COORDINATOR_MODEL } from "./model.js";
 import { hashCoordinatorSettings } from "./review.js";
 import { errorMessage } from "./state.js";
 
-export const COORDINATOR_OPERATION_KIND = "coordinator_start" as const;
-export const COORDINATOR_RPC = "thread/start" as const;
+const COORDINATOR_OPERATION_KIND = "coordinator_start" as const;
+const COORDINATOR_RPC = "thread/start" as const;
 
-export type CandidateDecision =
+type CandidateDecision =
 	| { readonly kind: "reuse"; readonly persistence: CoordinatorPersistedState }
 	| {
 			readonly kind: "replace";
@@ -30,7 +30,7 @@ export type CandidateDecision =
 			readonly operationId: string | null;
 	  };
 
-export function assertCurrentEpoch(
+function assertCurrentEpoch(
 	snapshot: CoordinatorEpochSnapshot,
 	options: CodexCoordinatorOptions,
 ): void {
@@ -47,7 +47,7 @@ export function assertCurrentEpoch(
 	}
 }
 
-export async function decideCandidate(
+async function decideCandidate(
 	candidate: CoordinatorPersistedState | null,
 	configured: CoordinatorConfiguredSettings,
 	reviewed: CoordinatorReviewHashes,
@@ -308,3 +308,11 @@ function inspectDecision(
 		reason,
 	};
 }
+
+export {
+	COORDINATOR_OPERATION_KIND,
+	COORDINATOR_RPC,
+	type CandidateDecision,
+	assertCurrentEpoch,
+	decideCandidate,
+};

@@ -5,31 +5,26 @@ import type {
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
 
-export interface WaitOwner {
+interface WaitOwner {
 	readonly child: ChildId;
 	readonly caller: ThreadId;
 	readonly turn: TurnId;
 	readonly call: DynamicToolCallId;
 }
 
-export interface WaitEdgeSetInput {
+interface WaitEdgeSetInput {
 	readonly owner: WaitOwner;
 	readonly targets: readonly ThreadId[];
 }
 
-export interface WaitEdge {
+interface WaitEdge {
 	readonly owner: WaitOwner;
 	readonly target: ThreadId;
 }
 
-export type OwnedWaitCleanupCause =
-	| "settle"
-	| "decline"
-	| "cancellation"
-	| "interruption"
-	| "disconnect";
+type OwnedWaitCleanupCause = "settle" | "decline" | "cancellation" | "interruption" | "disconnect";
 
-export type WaitCleanup =
+type WaitCleanup =
 	| {
 			readonly cause: OwnedWaitCleanupCause;
 			readonly owner: WaitOwner;
@@ -39,7 +34,7 @@ export type WaitCleanup =
 			readonly child: ChildId;
 	  };
 
-export type WaitEdgeSetResult =
+type WaitEdgeSetResult =
 	| {
 			readonly ok: true;
 			readonly edges: readonly WaitEdge[];
@@ -52,7 +47,7 @@ export type WaitEdgeSetResult =
 			readonly cycle: readonly ThreadId[];
 	  };
 
-export interface CodexWaitGraph {
+interface CodexWaitGraph {
 	/** Add or atomically replace one dynamic operation's outgoing edges. */
 	readonly addEdgeSet: (input: WaitEdgeSetInput) => WaitEdgeSetResult;
 	/** Remove the exact owner, or every owner belonging to one exited child. */
@@ -220,7 +215,7 @@ function freezeCycle(nodes: readonly GraphNode[]): {
 	};
 }
 
-export function createCodexWaitGraph(): CodexWaitGraph {
+function createCodexWaitGraph(): CodexWaitGraph {
 	const registrations = new Map<string, Registration>();
 
 	const addEdgeSet = (input: WaitEdgeSetInput): WaitEdgeSetResult => {
@@ -266,3 +261,14 @@ export function createCodexWaitGraph(): CodexWaitGraph {
 
 	return Object.freeze({ addEdgeSet, release, inspect });
 }
+
+export {
+	type WaitOwner,
+	type WaitEdgeSetInput,
+	type WaitEdge,
+	type OwnedWaitCleanupCause,
+	type WaitCleanup,
+	type WaitEdgeSetResult,
+	type CodexWaitGraph,
+	createCodexWaitGraph,
+};

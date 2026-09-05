@@ -155,7 +155,7 @@ acceptExactRequestIdentities("thread/read", ["threadId", "turnId"] as const);
 // @ts-expect-error each identity-bearing request property must appear exactly once.
 acceptExactRequestIdentities("thread/read", ["threadId", "threadId"] as const);
 
-export type SessionResponseIdentityFixture = [
+type SessionResponseIdentityFixture = [
 	Assert<Equal<HostedLogin["loginId"], LoginId>>,
 	Assert<Equal<ThreadStart["thread"]["id"], ThreadId>>,
 	Assert<Equal<ThreadStart["thread"]["turns"][number]["id"], TurnId>>,
@@ -175,7 +175,7 @@ export type SessionResponseIdentityFixture = [
 	Assert<Equal<Extract<Timeline["data"][number], { type: "turnStarted" }>["turnId"], string>>,
 ];
 
-export type SessionResponseShapeFixture = [
+type SessionResponseShapeFixture = [
 	Assert<Equal<SessionThread["preview"], RawThread["preview"]>>,
 	Assert<Equal<SessionTurn["status"], RawTurn["status"]>>,
 	Assert<Equal<SessionAgentMessageItem["text"], RawAgentMessage["text"]>>,
@@ -187,9 +187,10 @@ export type SessionResponseShapeFixture = [
 	>,
 ];
 
-export type SessionPageParameterFixture = [
-	typeof turns,
-	typeof items,
-	typeof queue,
-	typeof timeline,
-];
+type SessionPageParameterFixture = [typeof turns, typeof items, typeof queue, typeof timeline];
+
+export {
+	type SessionResponseIdentityFixture,
+	type SessionResponseShapeFixture,
+	type SessionPageParameterFixture,
+};

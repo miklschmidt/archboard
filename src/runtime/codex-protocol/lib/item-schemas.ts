@@ -11,7 +11,7 @@ import { FiniteNumberSchema, JsonValueSchema, looseObject } from "./scalars.js";
 
 const HookPromptFragmentSchema = looseObject({ text: z.string(), hookRunId: z.string() });
 
-export const CommandActionSchema = z.discriminatedUnion("type", [
+const CommandActionSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("read"), command: z.string(), name: z.string(), path: z.string() }),
 	looseObject({ type: z.literal("listFiles"), command: z.string(), path: z.string().nullable() }),
 	looseObject({
@@ -23,7 +23,7 @@ export const CommandActionSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("unknown"), command: z.string() }),
 ]);
 
-export const FileChangeSchema = z.discriminatedUnion("type", [
+const FileChangeSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("add"), content: z.string() }),
 	looseObject({ type: z.literal("delete"), content: z.string() }),
 	looseObject({
@@ -33,7 +33,7 @@ export const FileChangeSchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
-export const FileUpdateChangeSchema = looseObject({
+const FileUpdateChangeSchema = looseObject({
 	path: z.string(),
 	kind: z.discriminatedUnion("type", [
 		looseObject({ type: z.literal("add") }),
@@ -43,7 +43,7 @@ export const FileUpdateChangeSchema = looseObject({
 	diff: z.string(),
 });
 
-export const DynamicToolCallOutputContentItemSchema = z.discriminatedUnion("type", [
+const DynamicToolCallOutputContentItemSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("inputText"), text: z.string() }),
 	looseObject({ type: z.literal("inputImage"), imageUrl: z.string() }),
 	looseObject({ type: z.literal("inputAudio"), audioUrl: z.string() }),
@@ -118,7 +118,7 @@ const CollabAgentStateSchema = looseObject({
 	message: z.string().nullable(),
 });
 
-export const ThreadItemSchema = z.discriminatedUnion("type", [
+const ThreadItemSchema = z.discriminatedUnion("type", [
 	looseObject({
 		type: z.literal("userMessage"),
 		id: z.string(),
@@ -250,26 +250,38 @@ export const ThreadItemSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("contextCompaction"), id: z.string() }),
 ]);
 
-export const ThreadItemEntrySchema = looseObject({
+const ThreadItemEntrySchema = looseObject({
 	turnId: z.string(),
 	item: ThreadItemSchema,
 });
 
-export const QueuedSubmissionSchema = looseObject({
+const QueuedSubmissionSchema = looseObject({
 	id: z.string(),
 	input: z.array(UserInputSchema),
 	clientUserMessageId: z.string(),
 });
 
-export const RealtimeInitialItemSchema = looseObject({
+const RealtimeInitialItemSchema = looseObject({
 	role: ConversationTextRoleSchema,
 	text: z.string(),
 });
 
-export const RealtimeOutputAudioDeltaSchema = looseObject({
+const RealtimeOutputAudioDeltaSchema = looseObject({
 	data: z.string(),
 	sampleRate: FiniteNumberSchema,
 	numChannels: FiniteNumberSchema,
 	samplesPerChannel: FiniteNumberSchema.nullable(),
 	itemId: z.string().nullable(),
 });
+
+export {
+	CommandActionSchema,
+	FileChangeSchema,
+	FileUpdateChangeSchema,
+	DynamicToolCallOutputContentItemSchema,
+	ThreadItemSchema,
+	ThreadItemEntrySchema,
+	QueuedSubmissionSchema,
+	RealtimeInitialItemSchema,
+	RealtimeOutputAudioDeltaSchema,
+};

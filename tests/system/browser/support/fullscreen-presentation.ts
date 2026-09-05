@@ -9,19 +9,19 @@ type PanesBody = PanesReport & { success: boolean };
 type Request = ReturnType<typeof createJsonRequester>;
 type PaneIdentity = Pick<PaneReport, "paneId" | "clientId" | "board" | "selection">;
 
-export function paneIdentities(report: PanesBody): PaneIdentity[] {
+function paneIdentities(report: PanesBody): PaneIdentity[] {
 	return report.panes
 		.map(({ paneId, clientId, board, selection }) => ({ paneId, clientId, board, selection }))
 		.toSorted((left, right) => left.paneId.localeCompare(right.paneId));
 }
 
-export function paneRects(report: PanesBody): Array<{ paneId: string; rect: Rect }> {
+function paneRects(report: PanesBody): Array<{ paneId: string; rect: Rect }> {
 	return report.panes
 		.map(({ paneId, rect }) => ({ paneId, rect }))
 		.toSorted((left, right) => left.paneId.localeCompare(right.paneId));
 }
 
-export async function seedBoard(request: Request, board: string, elementId: string): Promise<void> {
+async function seedBoard(request: Request, board: string, elementId: string): Promise<void> {
 	expect(
 		(await request("/api/boards/new", { method: "POST", body: { board, level: "service" } }))
 			.status,
@@ -40,7 +40,7 @@ export async function seedBoard(request: Request, board: string, elementId: stri
 	expect((await request("/api/boards/save", { method: "POST", body: { board } })).status).toBe(200);
 }
 
-export async function waitForPanes(
+async function waitForPanes(
 	request: Request,
 	accepts: (report: PanesBody) => boolean,
 	description: string,
@@ -53,7 +53,7 @@ export async function waitForPanes(
 	);
 }
 
-export async function paneAppAction(
+async function paneAppAction(
 	browser: AgentBrowserSession,
 	label: string,
 	elementId: string,
@@ -85,7 +85,7 @@ export async function paneAppAction(
 	})()`);
 }
 
-export async function readPageView(browser: AgentBrowserSession) {
+async function readPageView(browser: AgentBrowserSession) {
 	return browser.eval<{
 		fullscreen: boolean;
 		chromeHidden: boolean;
@@ -133,7 +133,7 @@ export async function readPageView(browser: AgentBrowserSession) {
 	})()`);
 }
 
-export async function readExitButton(browser: AgentBrowserSession) {
+async function readExitButton(browser: AgentBrowserSession) {
 	return browser.eval<{ display: string; height: number; text: string | null }>(`(() => {
 		const button = document.querySelector('.presentation-exit');
 		const rect = button.getBoundingClientRect();
@@ -145,9 +145,9 @@ export async function readExitButton(browser: AgentBrowserSession) {
 	})()`);
 }
 
-export const PERSISTENT_NOTICE_TEXT = "Persistent actionable notice survives presentation.";
+const PERSISTENT_NOTICE_TEXT = "Persistent actionable notice survives presentation.";
 
-export function publishActionableNotice(browser: AgentBrowserSession): Promise<boolean> {
+function publishActionableNotice(browser: AgentBrowserSession): Promise<boolean> {
 	return browser.eval<boolean>(`(() => {
 		const pane = document.querySelector('.pane');
 		const key = pane && Object.keys(pane).find(candidate => candidate.startsWith('__reactFiber$'));
@@ -163,7 +163,7 @@ export function publishActionableNotice(browser: AgentBrowserSession): Promise<b
 	})()`);
 }
 
-export function readShellNotice(browser: AgentBrowserSession) {
+function readShellNotice(browser: AgentBrowserSession) {
 	return browser.eval<{ text: string | null; action: string | null; visible: boolean }>(`(() => {
 		const notice = document.querySelector('.notice-shell');
 		return {
@@ -173,3 +173,16 @@ export function readShellNotice(browser: AgentBrowserSession) {
 		};
 	})()`);
 }
+
+export {
+	paneIdentities,
+	paneRects,
+	seedBoard,
+	waitForPanes,
+	paneAppAction,
+	readPageView,
+	readExitButton,
+	PERSISTENT_NOTICE_TEXT,
+	publishActionableNotice,
+	readShellNotice,
+};

@@ -3,7 +3,7 @@ import type { QueuedSubmissionId } from "../../../shared/codex-workbench-identit
 import { CodexWorkhorseQueueError, type QueueSnapshot } from "./contract.js";
 import { queueMutationTarget } from "./input-validation.js";
 
-export function queueStartTarget(
+function queueStartTarget(
 	queue: QueueSnapshot,
 	submissionId: QueuedSubmissionId,
 ): SessionQueuedSubmission {
@@ -18,7 +18,7 @@ export function queueStartTarget(
 	return target;
 }
 
-export function queueStartClientUserMessageId(value: string | null): string {
+function queueStartClientUserMessageId(value: string | null): string {
 	if (value !== null) {
 		return value;
 	}
@@ -28,3 +28,5 @@ export function queueStartClientUserMessageId(value: string | null): string {
 		{ operation: "start", outcome: "outcome_unknown" },
 	);
 }
+
+export { queueStartTarget, queueStartClientUserMessageId };

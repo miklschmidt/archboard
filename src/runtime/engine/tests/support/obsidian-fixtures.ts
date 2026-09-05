@@ -1,6 +1,6 @@
-export type TestElement = Record<string, unknown> & { id: string; type: string };
+type TestElement = Record<string, unknown> & { id: string; type: string };
 
-export const rectangle: TestElement = {
+const rectangle: TestElement = {
 	id: "rect-one",
 	type: "rectangle",
 	x: 10,
@@ -10,7 +10,7 @@ export const rectangle: TestElement = {
 	customData: { archboard: { node: "probe", kind: "service" } },
 };
 
-export const text: TestElement = {
+const text: TestElement = {
 	id: "text-one",
 	type: "text",
 	x: 10,
@@ -21,7 +21,7 @@ export const text: TestElement = {
 	originalText: "AuthService",
 };
 
-export const impostorText: TestElement = {
+const impostorText: TestElement = {
 	id: "text-two",
 	type: "text",
 	x: 0,
@@ -32,7 +32,7 @@ export const impostorText: TestElement = {
 	originalText: "# Excalidraw Data\n## Text Elements",
 };
 
-export const imageElement: TestElement = {
+const imageElement: TestElement = {
 	id: "img-one",
 	type: "image",
 	x: 300,
@@ -42,7 +42,7 @@ export const imageElement: TestElement = {
 	fileId: "abc12345",
 };
 
-export function scene(elements: TestElement[] = []): Record<string, unknown> {
+function scene(elements: TestElement[] = []): Record<string, unknown> {
 	return {
 		type: "excalidraw",
 		version: 2,
@@ -53,9 +53,9 @@ export function scene(elements: TestElement[] = []): Record<string, unknown> {
 	};
 }
 
-export const board = scene([rectangle, text]);
+const board = scene([rectangle, text]);
 
-export const FRESH_NOTE = `---
+const FRESH_NOTE = `---
 
 excalidraw-plugin: parsed
 tags: [excalidraw]
@@ -110,10 +110,9 @@ AuthService ^text-one
 \`\`\`
 %%`;
 
-export const PROSE =
-	"## Why this shape\n\nWe split payments out because billing kept blocking on it.\n";
-export const TAIL = "\n\n## Follow-ups\n\nThe queue box is a guess.\n";
-export const QUOTED_HEADINGS = [
+const PROSE = "## Why this shape\n\nWe split payments out because billing kept blocking on it.\n";
+const TAIL = "\n\n## Follow-ups\n\nThe queue box is a guess.\n";
+const QUOTED_HEADINGS = [
 	"## Note format",
 	"",
 	"A drawing note looks like this:",
@@ -128,7 +127,7 @@ export const QUOTED_HEADINGS = [
 	"",
 ].join("\n");
 
-export const EMBEDDED_FILES = [
+const EMBEDDED_FILES = [
 	"## Embedded Files",
 	"abc12345: [[attachments/diagram.png]]",
 	"",
@@ -139,9 +138,9 @@ export const EMBEDDED_FILES = [
 	"",
 ].join("\n");
 
-export const ELEMENT_LINKS = "## Element Links\nrect-one: [[Payments]]\n\n";
+const ELEMENT_LINKS = "## Element Links\nrect-one: [[Payments]]\n\n";
 
-export function insertBeforeDrawing(note: string, sections: string): string {
+function insertBeforeDrawing(note: string, sections: string): string {
 	const marker = "\n%%\n## Drawing\n";
 	const at = note.indexOf(marker);
 	if (at < 0) {
@@ -149,3 +148,20 @@ export function insertBeforeDrawing(note: string, sections: string): string {
 	}
 	return `${note.slice(0, at)}\n${sections}${note.slice(at + 1)}`;
 }
+
+export {
+	type TestElement,
+	rectangle,
+	text,
+	impostorText,
+	imageElement,
+	scene,
+	board,
+	FRESH_NOTE,
+	PROSE,
+	TAIL,
+	QUOTED_HEADINGS,
+	EMBEDDED_FILES,
+	ELEMENT_LINKS,
+	insertBeforeDrawing,
+};

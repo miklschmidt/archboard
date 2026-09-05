@@ -16,7 +16,7 @@ import {
 	target,
 } from "./codex-workbench-lifecycle.ts";
 
-export async function startLinkedWorkbench(
+async function startLinkedWorkbench(
 	resources: AsyncDisposableStack,
 	label: string,
 	executableSource: string,
@@ -84,8 +84,10 @@ export async function startLinkedWorkbench(
 	return { canvas, childPid, fixture, link, request, socket };
 }
 
-export function mutationCount(logPath: string): number {
+function mutationCount(logPath: string): number {
 	return records(logPath).filter(
 		(entry) => entry.kind === "frame" && entry.method === "thread/start",
 	).length;
 }
+
+export { startLinkedWorkbench, mutationCount };

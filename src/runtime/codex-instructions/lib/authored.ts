@@ -1,24 +1,24 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-export const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 =
+const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 =
 	"257b4ab944737418ee0713b4a748405446f8bc009d0dfc4557b099cd2c1038e6" as const;
-export const COORDINATOR_ROLE_EXTENSION_SHA256 =
+const COORDINATOR_ROLE_EXTENSION_SHA256 =
 	"c187f85f75515bf07091904f96fee503080f23ce84afb606674e040c80e2d87b" as const;
-export const COORDINATOR_SEPARATOR = "\n--- ARCHBOARD COORDINATOR ROLE ---\n" as const;
-export const COORDINATOR_SEPARATOR_SHA256 =
+const COORDINATOR_SEPARATOR = "\n--- ARCHBOARD COORDINATOR ROLE ---\n" as const;
+const COORDINATOR_SEPARATOR_SHA256 =
 	"e64743b591f47a59eea6118686fc5b9f0bcca3e2d4e6af2dd8acfe55fe97653a" as const;
-export const COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256 =
+const COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256 =
 	"de6b52ca41c65ea73cdf24e2ecaf9fa0c1c2ea68178119c252f266f8ac90b61c" as const;
 
-export interface AuthoredInstructionIntegrity {
+interface AuthoredInstructionIntegrity {
 	readonly workhorseSha256: string;
 	readonly coordinatorExtensionSha256: string;
 	readonly separatorSha256: string;
 	readonly composedCoordinatorSha256: string;
 }
 
-export type AuthoredInstructionName =
+type AuthoredInstructionName =
 	| "workhorse"
 	| "coordinatorExtension"
 	| "separator"
@@ -108,7 +108,7 @@ function expectedDigestFor(name: AuthoredInstructionName): {
 }
 
 /** Validate a candidate against a fixed reviewed instruction digest. */
-export function assertCanonicalInstructionBytes(
+function assertCanonicalInstructionBytes(
 	name: AuthoredInstructionName,
 	candidate: string | Uint8Array,
 ): void {
@@ -158,23 +158,23 @@ function loadAuthoredInstructions(): {
 
 const AUTHORED_INSTRUCTIONS = loadAuthoredInstructions();
 
-export const WORKHORSE_DEVELOPER_INSTRUCTIONS = AUTHORED_INSTRUCTIONS.workhorse.text;
-export const COORDINATOR_ROLE_EXTENSION = AUTHORED_INSTRUCTIONS.coordinatorExtension.text;
-export const COORDINATOR_DEVELOPER_INSTRUCTIONS = AUTHORED_INSTRUCTIONS.composed;
+const WORKHORSE_DEVELOPER_INSTRUCTIONS = AUTHORED_INSTRUCTIONS.workhorse.text;
+const COORDINATOR_ROLE_EXTENSION = AUTHORED_INSTRUCTIONS.coordinatorExtension.text;
+const COORDINATOR_DEVELOPER_INSTRUCTIONS = AUTHORED_INSTRUCTIONS.composed;
 
-export const AUTHORED_INSTRUCTION_DIGESTS = Object.freeze({
+const AUTHORED_INSTRUCTION_DIGESTS = Object.freeze({
 	workhorse: WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
 	coordinatorExtension: COORDINATOR_ROLE_EXTENSION_SHA256,
 	separator: COORDINATOR_SEPARATOR_SHA256,
 	composedCoordinator: COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256,
 });
 
-export function composeCoordinatorInstructions(): string {
+function composeCoordinatorInstructions(): string {
 	return COORDINATOR_DEVELOPER_INSTRUCTIONS;
 }
 
 /** Re-read the tracked documents and verify every reviewed byte digest. */
-export function verifyAuthoredInstructionIntegrity(): AuthoredInstructionIntegrity {
+function verifyAuthoredInstructionIntegrity(): AuthoredInstructionIntegrity {
 	const workhorse = readCanonicalDocument(
 		"workhorse-developer-instructions.txt",
 		"Workhorse developer instructions",
@@ -199,3 +199,20 @@ export function verifyAuthoredInstructionIntegrity(): AuthoredInstructionIntegri
 		composedCoordinatorSha256,
 	});
 }
+
+export {
+	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
+	COORDINATOR_ROLE_EXTENSION_SHA256,
+	COORDINATOR_SEPARATOR,
+	COORDINATOR_SEPARATOR_SHA256,
+	COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256,
+	type AuthoredInstructionIntegrity,
+	type AuthoredInstructionName,
+	assertCanonicalInstructionBytes,
+	WORKHORSE_DEVELOPER_INSTRUCTIONS,
+	COORDINATOR_ROLE_EXTENSION,
+	COORDINATOR_DEVELOPER_INSTRUCTIONS,
+	AUTHORED_INSTRUCTION_DIGESTS,
+	composeCoordinatorInstructions,
+	verifyAuthoredInstructionIntegrity,
+};

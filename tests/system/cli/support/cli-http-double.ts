@@ -15,13 +15,13 @@ const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
 	]),
 );
 
-export interface RecordedRequest {
+interface RecordedRequest {
 	method: string;
 	url: URL;
 	body: unknown;
 }
 
-export interface CliHttpDouble {
+interface CliHttpDouble {
 	readonly url: string;
 	readonly requests: readonly RecordedRequest[];
 	readonly contacts: readonly string[];
@@ -162,7 +162,7 @@ function preflightResponse(
 	return null;
 }
 
-export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
+function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 	const requests: RecordedRequest[] = [];
 	const contacts: string[] = [];
 	let browserClients = 1;
@@ -402,3 +402,5 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 		[Symbol.asyncDispose]: dispose,
 	};
 }
+
+export { type RecordedRequest, type CliHttpDouble, createCliHttpDouble };

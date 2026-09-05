@@ -29,20 +29,20 @@ import { TEST_OPENER_LIFECYCLE } from "../../../../src/shared/timing/timing.ts";
 
 const FAKE_OPENER = join(import.meta.dir, "../fixtures/fake-opener.ts");
 
-export interface JsonResult {
+interface JsonResult {
 	status: number;
 	body: unknown;
 	headers: Headers;
 }
 
-export interface OpenerCapture {
+interface OpenerCapture {
 	pid: number;
 	target: string;
 	extra: string[];
 	argv: string[];
 }
 
-export interface Invocation {
+interface Invocation {
 	selection: OpenerSelection;
 	captureDirectory: string;
 	releaseFile: string;
@@ -53,7 +53,7 @@ export interface Invocation {
 	releaseAndWaitForNonrunning(): Promise<void>;
 }
 
-export interface OpenerFixture {
+interface OpenerFixture {
 	readonly root: string;
 	readonly checkout: string;
 	readonly repository: string;
@@ -67,7 +67,7 @@ export interface OpenerFixture {
 	dispose(): Promise<void>;
 }
 
-export interface OpenerFixtureOptions {
+interface OpenerFixtureOptions {
 	defaultDependencies?: boolean;
 	routeDependencies?: Partial<CodeOpenerRouteDependencies>;
 }
@@ -153,23 +153,23 @@ async function readCompleteCaptureBefore(file: string, deadline: number): Promis
 	}
 }
 
-export async function readCompleteCapture(
+async function readCompleteCapture(
 	file: string,
 	timeoutMs: number = TEST_OPENER_LIFECYCLE.timeoutMs,
 ): Promise<OpenerCapture> {
 	return readCompleteCaptureBefore(file, Date.now() + timeoutMs);
 }
 
-export interface LinuxProcessStatEvidence {
+interface LinuxProcessStatEvidence {
 	pid: number;
 	state: string;
 	processGroup: number;
 	running: boolean;
 }
 
-export type ProcessCompletion = "absent" | "nonrunning";
+type ProcessCompletion = "absent" | "nonrunning";
 
-export function processCompletionObserved(
+function processCompletionObserved(
 	evidence: LinuxProcessStatEvidence | null,
 	completion: ProcessCompletion,
 ): boolean {
@@ -189,7 +189,7 @@ function invalidLinuxProcessStat(pid: number, diagnostic: string): Error {
 	);
 }
 
-export function parseLinuxProcessStat(pid: number, stat: string): LinuxProcessStatEvidence {
+function parseLinuxProcessStat(pid: number, stat: string): LinuxProcessStatEvidence {
 	linuxProcessStatPath(pid);
 	const delimiter = stat.lastIndexOf(") ");
 	const opening = stat.indexOf(" (");
@@ -244,7 +244,7 @@ export function parseLinuxProcessStat(pid: number, stat: string): LinuxProcessSt
 	return { pid, state, processGroup, running: true };
 }
 
-export function readLinuxProcessStatEvidence(pid: number): LinuxProcessStatEvidence | null {
+function readLinuxProcessStatEvidence(pid: number): LinuxProcessStatEvidence | null {
 	const statPath = linuxProcessStatPath(pid);
 	let stat: string;
 	try {
@@ -262,7 +262,7 @@ export function readLinuxProcessStatEvidence(pid: number): LinuxProcessStatEvide
 	return parseLinuxProcessStat(pid, stat);
 }
 
-export function processExistsEvidence(pid: number): boolean {
+function processExistsEvidence(pid: number): boolean {
 	if (process.platform === "linux") {
 		return readLinuxProcessStatEvidence(pid)?.running ?? false;
 	}
@@ -303,16 +303,14 @@ async function waitForProcessCompletion(
 	}
 }
 
-export async function waitForProcessAbsence(
+async function waitForProcessAbsence(
 	pid: number,
 	timeoutMs: number = TEST_OPENER_LIFECYCLE.timeoutMs,
 ): Promise<void> {
 	await waitForProcessCompletion(pid, Date.now() + timeoutMs, "absent");
 }
 
-export async function createOpenerFixture(
-	options: OpenerFixtureOptions = {},
-): Promise<OpenerFixture> {
+async function createOpenerFixture(options: OpenerFixtureOptions = {}): Promise<OpenerFixture> {
 	const root = mkdtempSync(join(tmpdir(), "archboard-opener-system-"));
 	const checkout = join(root, "checkout");
 	const state = join(root, "state");
@@ -513,6 +511,24 @@ export async function createOpenerFixture(
 	};
 }
 
-export function jsonBody(value: unknown): string {
+function jsonBody(value: unknown): string {
 	return JSON.stringify(value);
 }
+
+export {
+	type JsonResult,
+	type OpenerCapture,
+	type Invocation,
+	type OpenerFixture,
+	type OpenerFixtureOptions,
+	readCompleteCapture,
+	type LinuxProcessStatEvidence,
+	type ProcessCompletion,
+	processCompletionObserved,
+	parseLinuxProcessStat,
+	readLinuxProcessStatEvidence,
+	processExistsEvidence,
+	waitForProcessAbsence,
+	createOpenerFixture,
+	jsonBody,
+};

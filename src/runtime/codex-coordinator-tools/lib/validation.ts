@@ -42,14 +42,14 @@ import {
 	type WorkhorseOperationBinding,
 } from "../../codex-workhorse-operations/index.js";
 
-export type CoordinatorToolInput =
+type CoordinatorToolInput =
 	| InspectWorkhorseInput
 	| DelegateToWorkhorseInput
 	| ManageWorkhorseQueueInput
 	| SteerWorkhorseInput
 	| ResolveSpokenApprovalInput;
 
-export interface ValidatedCoordinatorToolCall {
+interface ValidatedCoordinatorToolCall {
 	readonly namespace: NamespaceName;
 	readonly tool: CoordinatorToolName;
 	readonly call: WorkhorseCoordinatorCall;
@@ -115,7 +115,7 @@ function inputFingerprint(
 		.digest("hex");
 }
 
-export class CoordinatorToolValidationError extends Error {
+class CoordinatorToolValidationError extends Error {
 	override readonly name = "CoordinatorToolValidationError";
 	readonly reason:
 		| "invalid_call"
@@ -372,7 +372,7 @@ function parseInput(
 	}
 }
 
-export function validateCoordinatorToolRequest(
+function validateCoordinatorToolRequest(
 	options: CodexCoordinatorToolsOptions,
 	request: DynamicServerRequest,
 ): ValidatedCoordinatorToolCall {
@@ -430,16 +430,26 @@ export function validateCoordinatorToolRequest(
 	});
 }
 
-export function isCoordinatorToolRequest(
+function isCoordinatorToolRequest(
 	request: TransportServerRequest,
 ): request is CoordinatorToolsServerRequest {
 	return request.owner === COORDINATOR_TOOLS_OWNER && request.method === "item/tool/call";
 }
 
-export function callKey(request: DynamicServerRequest): string {
+function callKey(request: DynamicServerRequest): string {
 	return `${request.child}\u0000${request.epoch}\u0000${String(request.requestId)}`;
 }
 
-export function logicalCallKey(call: LogicalToolCallCorrelation): string {
+function logicalCallKey(call: LogicalToolCallCorrelation): string {
 	return logicalToolCallKey(call);
 }
+
+export {
+	type CoordinatorToolInput,
+	type ValidatedCoordinatorToolCall,
+	CoordinatorToolValidationError,
+	validateCoordinatorToolRequest,
+	isCoordinatorToolRequest,
+	callKey,
+	logicalCallKey,
+};

@@ -14,7 +14,7 @@ import type {
 	CoordinatorCallbackRealtimeRequest,
 } from "./contract.js";
 
-export interface CallbackDeliveryEvidence {
+interface CallbackDeliveryEvidence {
 	readonly sourceOrder: number;
 	readonly capturedAtMs: number;
 	readonly freshUntilMs: number;
@@ -28,7 +28,7 @@ function deliveryKind(): "coordinator_callback_delivery" {
 	return "coordinator_callback_delivery";
 }
 
-export function makeDelivery(
+function makeDelivery(
 	callback: CoordinatorCallback | null,
 	evidence: CallbackDeliveryEvidence,
 	input: {
@@ -203,7 +203,7 @@ function sessionFailure(error: unknown): {
 	return { outcome: "outcome_unknown", reason: "response_lost" };
 }
 
-export async function deliverOne(
+async function deliverOne(
 	callback: CoordinatorCallback,
 	options: CoordinatorCallbackOptions,
 	isDisposed: () => boolean,
@@ -320,3 +320,5 @@ export async function deliverOne(
 		payload,
 	});
 }
+
+export { type CallbackDeliveryEvidence, makeDelivery, deliverOne };

@@ -231,5 +231,7 @@ async function run(job: BoardRendererJob): Promise<BoardRendererJobResult> {
 	}
 }
 
-export const browserRenderer: BrowserRendererEntry = { state, run };
+const browserRenderer: BrowserRendererEntry = { state, run };
 window.archboardBoardRenderer = browserRenderer;
+
+export { browserRenderer };

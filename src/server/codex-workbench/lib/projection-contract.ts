@@ -41,12 +41,12 @@ import type {
 import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
 import type { SpokenApprovalSnapshot } from "../../../runtime/codex-spoken-approval/index.js";
 
-export interface CodexAccountProjectionInput {
+interface CodexAccountProjectionInput {
 	readonly kind: "codex_account_response";
 	readonly response: CodexResponseByMethod["account/read"];
 }
 
-export type BrowserAccountProjectionInput =
+type BrowserAccountProjectionInput =
 	| CodexAccountProjectionInput
 	| Extract<
 			BrowserAccount,
@@ -56,7 +56,7 @@ export type BrowserAccountProjectionInput =
 type CodexThreadSettings =
 	CodexServerNotificationParamsByMethod["thread/settings/updated"]["threadSettings"];
 
-export interface CodexSettingsProjectionInput {
+interface CodexSettingsProjectionInput {
 	readonly kind: "codex_thread_settings";
 	readonly owner: BrowserSettings["owner"];
 	readonly settings: Pick<
@@ -81,14 +81,14 @@ export interface CodexSettingsProjectionInput {
  * is a submission Archboard did not queue, and this pane has no authority to
  * reorder it.
  */
-export interface CodexQueuedSubmissionProjectionInput extends Pick<
+interface CodexQueuedSubmissionProjectionInput extends Pick<
 	SessionQueuedSubmission,
 	"id" | "input"
 > {
 	readonly operationId: OperationId | null;
 }
 
-export interface CodexQueueProjectionInput {
+interface CodexQueueProjectionInput {
 	readonly kind: "codex_queue";
 	readonly submissions: readonly CodexQueuedSubmissionProjectionInput[] | null;
 }
@@ -151,7 +151,7 @@ interface CodexTimelineApprovalProjectionInput extends Readonly<Record<string, u
 }
 
 /** Independent readonly owner presentation; the sole adapter chooses browser media arms. */
-export type CodexTimelineItemProjectionInput =
+type CodexTimelineItemProjectionInput =
 	| CodexTimelineAgentMessageProjectionInput
 	| CodexTimelineToolProjectionInput
 	| CodexTimelineCommandProjectionInput
@@ -168,7 +168,7 @@ interface CodexTimelineTurnPresentation extends Readonly<Record<string, unknown>
 	}>;
 }
 
-export interface CodexTimelineTurnProjectionInput extends Readonly<Record<string, unknown>> {
+interface CodexTimelineTurnProjectionInput extends Readonly<Record<string, unknown>> {
 	readonly turn: DeepReadonly<Pick<SessionTurn, "id" | "status">> &
 		Readonly<Record<string, unknown>>;
 	readonly items: readonly CodexTimelineItemProjectionInput[];
@@ -176,7 +176,7 @@ export interface CodexTimelineTurnProjectionInput extends Readonly<Record<string
 }
 
 /** Readonly owner view; TASK-143.01.10 owns the live producer. */
-export interface CodexTimelineProjectionInput extends Readonly<Record<string, unknown>> {
+interface CodexTimelineProjectionInput extends Readonly<Record<string, unknown>> {
 	readonly kind: "codex_timeline";
 	readonly threadId: ThreadId;
 	readonly turns: readonly CodexTimelineTurnProjectionInput[];
@@ -188,7 +188,7 @@ export interface CodexTimelineProjectionInput extends Readonly<Record<string, un
  * classifier published it. The gateway maps it to the browser vocabulary and
  * bounds it; it never reclassifies a record or joins the lists a second time.
  */
-export type CodexThreadCandidatesProjectionInput =
+type CodexThreadCandidatesProjectionInput =
 	| { readonly kind: "codex_thread_candidates"; readonly state: "unknown" }
 	| {
 			readonly kind: "codex_thread_candidates";
@@ -201,7 +201,7 @@ export type CodexThreadCandidatesProjectionInput =
 			readonly reason: string;
 	  };
 
-export interface CodexSemanticProjectionInput {
+interface CodexSemanticProjectionInput {
 	readonly kind: "codex_semantic";
 	readonly outcome: {
 		readonly targetThreadId: BrowserSemanticDelivery["threadId"] | null;
@@ -214,7 +214,7 @@ export interface CodexSemanticProjectionInput {
 	} | null;
 }
 
-export interface CodexCoordinatorProjectionInput {
+interface CodexCoordinatorProjectionInput {
 	readonly kind: "codex_coordinator";
 	readonly state: BrowserCoordinator["state"] | "inspect_only";
 	readonly threadId: BrowserCoordinator["threadId"];
@@ -230,7 +230,7 @@ export interface CodexCoordinatorProjectionInput {
 	readonly reason: string | null;
 }
 
-export interface CodexVoiceProjectionInput {
+interface CodexVoiceProjectionInput {
 	readonly kind: "codex_voice";
 	readonly mediaReady: boolean;
 	readonly generation: { readonly browserSessionId: string } | null;
@@ -241,7 +241,7 @@ export interface CodexVoiceProjectionInput {
 	>[];
 }
 
-export interface DynamicApprovalOwnerBinding {
+interface DynamicApprovalOwnerBinding {
 	readonly commandId: BrowserCommandId;
 	readonly paneId: string;
 	readonly capturedLink: {
@@ -252,14 +252,14 @@ export interface DynamicApprovalOwnerBinding {
 }
 
 /** The dynamic owner exposes authoritative state; browser presentation is projected elsewhere. */
-export type DynamicApprovalOwnerRequest = DeepReadonly<DynamicToolApprovalRequest>;
+type DynamicApprovalOwnerRequest = DeepReadonly<DynamicToolApprovalRequest>;
 
-export interface DynamicApprovalOwnerView {
+interface DynamicApprovalOwnerView {
 	readonly request: DynamicApprovalOwnerRequest;
 	readonly binding: DynamicApprovalOwnerBinding;
 }
 
-export interface BrowserProjectionInput {
+interface BrowserProjectionInput {
 	readonly readiness: BrowserReadiness;
 	readonly account: BrowserAccountProjectionInput;
 	readonly login: BrowserLogin;
@@ -279,7 +279,7 @@ export interface BrowserProjectionInput {
 	readonly operation: BrowserOperationOutcome | null;
 }
 
-export type BrowserProjectionResult =
+type BrowserProjectionResult =
 	| { readonly tag: "projected"; readonly snapshot: BrowserSnapshot }
 	| {
 			readonly tag: "refused";
@@ -287,7 +287,25 @@ export type BrowserProjectionResult =
 			readonly message: string;
 	  };
 
-export type BrowserOwnerProjection = Omit<
-	BrowserProjectionInput,
-	"threadLink" | "lease" | "operation"
->;
+type BrowserOwnerProjection = Omit<BrowserProjectionInput, "threadLink" | "lease" | "operation">;
+
+export {
+	type CodexAccountProjectionInput,
+	type BrowserAccountProjectionInput,
+	type CodexSettingsProjectionInput,
+	type CodexQueuedSubmissionProjectionInput,
+	type CodexQueueProjectionInput,
+	type CodexTimelineItemProjectionInput,
+	type CodexTimelineTurnProjectionInput,
+	type CodexTimelineProjectionInput,
+	type CodexThreadCandidatesProjectionInput,
+	type CodexSemanticProjectionInput,
+	type CodexCoordinatorProjectionInput,
+	type CodexVoiceProjectionInput,
+	type DynamicApprovalOwnerBinding,
+	type DynamicApprovalOwnerRequest,
+	type DynamicApprovalOwnerView,
+	type BrowserProjectionInput,
+	type BrowserProjectionResult,
+	type BrowserOwnerProjection,
+};

@@ -3,19 +3,19 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { WebSocket } from "ws";
 
-export interface WorkbenchResult {
+interface WorkbenchResult {
 	readonly ok: boolean;
 	readonly value?: Record<string, unknown>;
 	readonly error?: string;
 }
 
-export interface ApplicationSocket {
+interface ApplicationSocket {
 	readonly socket: WebSocket;
 	request(action: string, extra?: Record<string, unknown>): Promise<WorkbenchResult>;
 	close(): Promise<void>;
 }
 
-export interface ProductionFixture {
+interface ProductionFixture {
 	readonly root: string;
 	readonly logPath: string;
 	readonly controlPath: string;
@@ -23,9 +23,9 @@ export interface ProductionFixture {
 	readonly vault: string;
 }
 
-export type FixtureSetupFailure = "root_setup" | "fixture_setup";
+type FixtureSetupFailure = "root_setup" | "fixture_setup";
 
-export function prepareProductionFixture(
+function prepareProductionFixture(
 	resources: AsyncDisposableStack,
 	executableSource: string,
 	options: {
@@ -114,7 +114,7 @@ function socketError(value: unknown): Error {
 	return new Error("The production workbench socket failed.", { cause: value });
 }
 
-export async function openApplicationSocket(
+async function openApplicationSocket(
 	base: string,
 	clientId: string,
 	options: {
@@ -221,3 +221,12 @@ export async function openApplicationSocket(
 		},
 	};
 }
+
+export {
+	type WorkbenchResult,
+	type ApplicationSocket,
+	type ProductionFixture,
+	type FixtureSetupFailure,
+	prepareProductionFixture,
+	openApplicationSocket,
+};

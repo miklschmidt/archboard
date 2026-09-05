@@ -4,7 +4,7 @@ import type { LabelledElement } from "../../labels.ts";
 import type { LegacyElementIngress } from "../../../../shared/board-elements/index.ts";
 import { agentStatement } from "../support/elements.ts";
 
-export const ExpandedElementSchema = z.looseObject({
+const ExpandedElementSchema = z.looseObject({
 	id: z.string(),
 	type: z.enum(["rectangle", "ellipse", "diamond", "arrow", "text", "line", "freedraw", "image"]),
 	x: z.number(),
@@ -28,19 +28,19 @@ export const ExpandedElementSchema = z.looseObject({
 	containerId: z.string().nullable().optional(),
 });
 
-export type ExpandedElement = z.infer<typeof ExpandedElementSchema>;
+type ExpandedElement = z.infer<typeof ExpandedElementSchema>;
 
-export type LabelElement = LabelledElement & Record<string, unknown>;
-export type PlacedLabelElement = LabelElement & {
+type LabelElement = LabelledElement & Record<string, unknown>;
+type PlacedLabelElement = LabelElement & {
 	x: number;
 	y: number;
 	width: number;
 	height: number;
 };
 
-export const CYCLE_COUNT = 25;
+const CYCLE_COUNT = 25;
 
-export function drawnLabels(): LegacyElementIngress[] {
+function drawnLabels(): LegacyElementIngress[] {
 	return [
 		{
 			id: "svc",
@@ -78,7 +78,7 @@ export function drawnLabels(): LegacyElementIngress[] {
 	].map((element) => agentStatement(element as LegacyElementIngress));
 }
 
-export function placedLabels(): PlacedLabelElement[] {
+function placedLabels(): PlacedLabelElement[] {
 	return [
 		{ id: "svc", type: "rectangle", x: 0, y: 0, width: 200, height: 80 },
 		{
@@ -116,7 +116,7 @@ export function placedLabels(): PlacedLabelElement[] {
 	];
 }
 
-export function pollutedLabels(): LegacyElementIngress[] {
+function pollutedLabels(): LegacyElementIngress[] {
 	const containers = [
 		{ id: "svc", text: "AuthService", x: 0 },
 		{ id: "gw", text: "Gateway", x: 400 },
@@ -158,3 +158,14 @@ export function pollutedLabels(): LegacyElementIngress[] {
 		},
 	]);
 }
+
+export {
+	ExpandedElementSchema,
+	type ExpandedElement,
+	type LabelElement,
+	type PlacedLabelElement,
+	CYCLE_COUNT,
+	drawnLabels,
+	placedLabels,
+	pollutedLabels,
+};

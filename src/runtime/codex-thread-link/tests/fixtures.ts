@@ -13,13 +13,13 @@ import type {
 } from "../../codex-session/index.js";
 import type { ThreadLinkCurrentEpoch, ThreadLinkStatus, ThreadLinkTarget } from "../index.js";
 
-export interface ThreadOptions {
+interface ThreadOptions {
 	readonly source?: SessionThreadSource;
 	readonly status?: ThreadLinkStatus;
 	readonly canAcceptDirectInput?: boolean | null;
 }
 
-export function thread(
+function thread(
 	authority: IdentityAuthority,
 	rawId: string,
 	options: ThreadOptions = {},
@@ -33,14 +33,14 @@ export function thread(
 	} as unknown as SessionThread;
 }
 
-export function threadPage(
+function threadPage(
 	data: readonly SessionThread[],
 	nextCursor: string | null = null,
 ): SessionThreadPageResult {
 	return { data, nextCursor, backwardsCursor: null } as SessionThreadPageResult;
 }
 
-export function loadedPage(
+function loadedPage(
 	data: readonly string[],
 	nextCursor: string | null = null,
 ): SessionLoadedThreadPageResult {
@@ -50,11 +50,11 @@ export function loadedPage(
 type ThreadPageResponse = SessionThreadPageResult | Error;
 type LoadedPageResponse = SessionLoadedThreadPageResult | Error;
 
-export async function unavailableThreadRead(): Promise<never> {
+async function unavailableThreadRead(): Promise<never> {
 	throw new Error("This inventory-only fixture must not read an unproved target.");
 }
 
-export class ScriptedSession {
+class ScriptedSession {
 	readonly threadRead = unavailableThreadRead;
 	readonly threadListRequests: Array<SessionParams<"thread/list"> | undefined> = [];
 	readonly loadedListRequests: Array<SessionParams<"thread/loaded/list"> | undefined> = [];
@@ -92,18 +92,18 @@ function resolvePage<Page>(
 	return page;
 }
 
-export function session(
+function session(
 	threads: ReadonlyMap<string | null, ThreadPageResponse>,
 	loaded: ReadonlyMap<string | null, LoadedPageResponse>,
 ): ScriptedSession {
 	return new ScriptedSession(threads, loaded);
 }
 
-export function currentEpoch(authority: IdentityAuthority): ThreadLinkCurrentEpoch {
+function currentEpoch(authority: IdentityAuthority): ThreadLinkCurrentEpoch {
 	return { childId: authority.validator.childId, epoch: authority.validator.epoch };
 }
 
-export interface RecordOptions {
+interface RecordOptions {
 	readonly kind?: string;
 	readonly rpc?: string | null;
 	readonly status?: EpochOperationStatus;
@@ -111,7 +111,7 @@ export interface RecordOptions {
 	readonly provenanceThreadId?: string | null;
 }
 
-export function operationRecord(
+function operationRecord(
 	authority: IdentityAuthority,
 	threadId: ReturnType<IdentityAuthority["decoder"]["adoptThreadId"]> | null,
 	operationId: string,
@@ -148,7 +148,7 @@ export function operationRecord(
 	};
 }
 
-export function target(
+function target(
 	authority: IdentityAuthority,
 	rawThreadId: string,
 	options: {
@@ -167,3 +167,17 @@ export function target(
 		...(options.provenance === undefined ? {} : { provenance: options.provenance }),
 	};
 }
+
+export {
+	type ThreadOptions,
+	thread,
+	threadPage,
+	loadedPage,
+	unavailableThreadRead,
+	ScriptedSession,
+	session,
+	currentEpoch,
+	type RecordOptions,
+	operationRecord,
+	target,
+};

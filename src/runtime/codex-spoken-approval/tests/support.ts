@@ -44,17 +44,17 @@ import {
 	type SpokenApprovalEffectPrompt,
 } from "../index.js";
 
-export const REALTIME = Object.freeze({
+const REALTIME = Object.freeze({
 	sessionId: parseRealtimeSessionId("browser-session"),
 	correlationId: parseRealtimeCorrelationId("browser-correlation"),
 });
 
-export const PROMPT: SpokenApprovalEffectPrompt = Object.freeze({
+const PROMPT: SpokenApprovalEffectPrompt = Object.freeze({
 	itemId: parseRealtimeItemId("assistant-effect"),
 	sequence: 10,
 });
 
-export function transcript(
+function transcript(
 	role: RealtimeTranscriptRecord["role"],
 	status: RealtimeTranscriptRecord["status"],
 	itemId: string,
@@ -72,7 +72,7 @@ export function transcript(
 	};
 }
 
-export class FakeRealtime {
+class FakeRealtime {
 	private readonly listeners = new Set<RealtimeSemanticEventListener>();
 	private recordsValue: readonly RealtimeTranscriptRecord[];
 
@@ -101,7 +101,7 @@ export class FakeRealtime {
 	}
 }
 
-export interface HarnessOptions {
+interface HarnessOptions {
 	readonly records?: readonly RealtimeTranscriptRecord[];
 	readonly command?: string | null;
 	readonly omitCommand?: boolean;
@@ -110,7 +110,7 @@ export interface HarnessOptions {
 	readonly settlementFailure?: "not_delivered" | "outcome_unknown";
 }
 
-export interface GateHarness {
+interface GateHarness {
 	readonly identity: IdentityAuthority;
 	readonly broker: CodexApprovalBroker;
 	readonly port: ApprovalResponsePort & { readonly responses: unknown[] };
@@ -219,7 +219,7 @@ function classifierContext(
 	};
 }
 
-export function makeHarness(options: HarnessOptions = {}): GateHarness {
+function makeHarness(options: HarnessOptions = {}): GateHarness {
 	const identity = createIdentityAuthority();
 	const responses: unknown[] = [];
 	const port = {
@@ -351,7 +351,7 @@ export function makeHarness(options: HarnessOptions = {}): GateHarness {
 	};
 }
 
-export function resolverRequest(
+function resolverRequest(
 	harness: GateHarness,
 	verdict: "accept" | "decline" = "accept",
 	options: {
@@ -401,7 +401,7 @@ export function resolverRequest(
 	};
 }
 
-export function stateEvent(harness: GateHarness, phase: "idle" | "closed"): RealtimeSemanticEvent {
+function stateEvent(harness: GateHarness, phase: "idle" | "closed"): RealtimeSemanticEvent {
 	return {
 		kind: "state",
 		sessionId: harness.realtimeCorrelation.sessionId,
@@ -413,7 +413,7 @@ export function stateEvent(harness: GateHarness, phase: "idle" | "closed"): Real
 	};
 }
 
-export function turnEvent(
+function turnEvent(
 	harness: GateHarness,
 	method: "turn/started" | "turn/completed",
 ): TransportServerNotification {
@@ -444,7 +444,21 @@ export function turnEvent(
 	};
 }
 
-export function cleanup(harness: GateHarness): void {
+function cleanup(harness: GateHarness): void {
 	harness.gate.dispose();
 	harness.broker.dispose();
 }
+
+export {
+	REALTIME,
+	PROMPT,
+	transcript,
+	FakeRealtime,
+	type HarnessOptions,
+	type GateHarness,
+	makeHarness,
+	resolverRequest,
+	stateEvent,
+	turnEvent,
+	cleanup,
+};

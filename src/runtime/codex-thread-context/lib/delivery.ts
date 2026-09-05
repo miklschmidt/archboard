@@ -46,7 +46,7 @@ interface DeliveryState {
 }
 
 /** The opaque board cursor carried by the canonical context for one feed event. */
-export function canonicalSemanticCursorToken(cursor: SemanticCursor): string {
+function canonicalSemanticCursorToken(cursor: SemanticCursor): string {
 	return `${cursor.feedId}:${cursor.sequence}`;
 }
 
@@ -695,15 +695,21 @@ function createDelivery(
 	});
 }
 
-export function createCodexThreadContextDelivery(
+function createCodexThreadContextDelivery(
 	options: CodexThreadContextDeliveryOptions,
 ): CodexThreadContextDelivery {
 	return createDelivery(options, true);
 }
 
 /** Module-internal leaf for the process-lifetime binding controller's sole subscription. */
-export function createUnsubscribedCodexThreadContextDelivery(
+function createUnsubscribedCodexThreadContextDelivery(
 	options: CodexThreadContextDeliveryOptions,
 ): CodexThreadContextDelivery {
 	return createDelivery(options, false);
 }
+
+export {
+	canonicalSemanticCursorToken,
+	createCodexThreadContextDelivery,
+	createUnsubscribedCodexThreadContextDelivery,
+};

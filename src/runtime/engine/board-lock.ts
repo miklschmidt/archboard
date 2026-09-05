@@ -81,7 +81,7 @@ import {
 } from "../../shared/timing/timing.js";
 
 /** A person at the canvas, or an agent writing to it. */
-export type HolderKind = "human" | "agent";
+type HolderKind = "human" | "agent";
 
 /**
  * Who has a board, and until when.
@@ -92,7 +92,7 @@ export type HolderKind = "human" | "agent";
  * user edit's hold covers the write that follows it, and how twenty writes fit
  * inside one claim with no gap between them.
  */
-export interface LockHolder {
+interface LockHolder {
 	id: string;
 	kind: HolderKind;
 	/** When this holder took it. Not moved by a renewal: "since when" is the question a refusal answers. */
@@ -142,7 +142,7 @@ interface LockHandoff {
  * as data so a surface can act on it rather than parse the sentence, and a
  * sentence so a voice session has something to say instead of going silent.
  */
-export class BoardHeldError extends Error {
+class BoardHeldError extends Error {
 	readonly code = "BOARD_HELD";
 	readonly board: string;
 	readonly holder: LockHolder | null;
@@ -158,7 +158,7 @@ export class BoardHeldError extends Error {
 }
 
 /** A request disconnected before its wait could enter the write boundary. */
-export class BoardLockCancelledError extends Error {
+class BoardLockCancelledError extends Error {
 	readonly code = "BOARD_LOCK_CANCELLED";
 
 	constructor(readonly board: string) {
@@ -168,7 +168,7 @@ export class BoardLockCancelledError extends Error {
 }
 
 /** What `holdBoard` gives back: who holds it, and whether this call is what took it. */
-export interface LockHold {
+interface LockHold {
 	holder: LockHolder;
 	/** The disk lease identity, used only to stamp a successful note commit before release. */
 	leaseToken: string;
@@ -183,7 +183,7 @@ export interface LockHold {
 	created: boolean;
 }
 
-export interface LockRequest {
+interface LockRequest {
 	/** The board key. Normalised here, so two spellings of one board are one lock. */
 	board: string;
 	holder: { id: string; kind: HolderKind; reason?: string; claimed?: boolean };
@@ -219,7 +219,7 @@ export interface LockRequest {
 }
 
 /** Where the news goes: the board, and who holds it now, or null for free. */
-export type LockSink = (board: string, holder: LockHolder | null) => void;
+type LockSink = (board: string, holder: LockHolder | null) => void;
 
 // ── The one call ──────────────────────────────────────────────────────────
 
@@ -237,7 +237,7 @@ export type LockSink = (board: string, holder: LockHolder | null) => void;
  * own cycle — which is the thing the whole read-modify-write shape is built to
  * make impossible.
  */
-export async function withBoardLock<T>(request: LockRequest, write: () => T): Promise<T> {
+async function withBoardLock<T>(request: LockRequest, write: () => T): Promise<T> {
 	const hold = await holdBoard(request);
 	try {
 		return write();
@@ -258,7 +258,7 @@ export async function withBoardLock<T>(request: LockRequest, write: () => T): Pr
  * renewing against — see `claimBoard`, which is the only thing that should make
  * one.
  */
-export async function holdBoard(request: LockRequest): Promise<LockHold> {
+async function holdBoard(request: LockRequest): Promise<LockHold> {
 	const board = normalizeBoardKey(request.board);
 	const leaseMs = request.leaseMs ?? LOCK_LEASE_MS;
 	const waitMs = request.waitMs ?? LOCK_WAIT_CAP_MS;
@@ -318,7 +318,7 @@ export async function holdBoard(request: LockRequest): Promise<LockHold> {
 }
 
 /** Best-effort attachment of a successful note commit to the exact lease that enclosed it. */
-export function recordLockCommit(board: string, leaseToken: string, hash: string): boolean {
+function recordLockCommit(board: string, leaseToken: string, hash: string): boolean {
 	let key = board;
 	try {
 		key = normalizeBoardKey(board);
@@ -343,7 +343,7 @@ export function recordLockCommit(board: string, leaseToken: string, hash: string
  * board somebody is editing. Returns whether anything was released, which is
  * how a pane's release tells "I gave it back" from "it had already lapsed".
  */
-export function releaseHold(board: string, holderId: string): boolean {
+function releaseHold(board: string, holderId: string): boolean {
 	const key = normalizeBoardKey(board);
 	const file = lockPathFor(key);
 	const current = readRecord(file);
@@ -369,7 +369,7 @@ export function releaseHold(board: string, holderId: string): boolean {
 }
 
 /** Who holds this board right now, or null. A lapsed lease reads as free. */
-export function boardLockState(board: string): LockHolder | null {
+function boardLockState(board: string): LockHolder | null {
 	return liveHolder(readRecord(lockPathFor(normalizeBoardKey(board))));
 }
 
@@ -398,7 +398,7 @@ export function boardLockState(board: string): LockHolder | null {
 // person is the third bound, at any moment, from the pane.
 
 /** An agent's claim on a board: who holds it, why, and when it runs out. */
-export interface Claim {
+interface Claim {
 	board: string;
 	holder: LockHolder;
 	/** When the claim itself ends, whatever the lease says. */
@@ -406,7 +406,7 @@ export interface Claim {
 }
 
 /** A claim that was taken back, and by whom. */
-export interface ClaimRevocation {
+interface ClaimRevocation {
 	claim: Claim;
 	by: LockHolder | null;
 }
@@ -424,7 +424,7 @@ export interface ClaimRevocation {
  * `BoardHeldError` if they are still there. Claiming is not a way past the
  * person at the canvas.
  */
-export async function claimBoard(request: {
+async function claimBoard(request: {
 	board: string;
 	reason: string;
 	forMs?: number;
@@ -463,7 +463,7 @@ export async function claimBoard(request: {
  * a claim that has already expired or been taken back is not an error, it is an
  * agent doing the right thing a moment late.
  */
-export function releaseClaim(board: string): Claim | null {
+function releaseClaim(board: string): Claim | null {
 	const key = normalizeBoardKey(board);
 	const entry = claims().get(key);
 	if (!entry) {
@@ -475,7 +475,7 @@ export function releaseClaim(board: string): Claim | null {
 }
 
 /** The claim this canvas holds on a board, or null. An expired one reads as none. */
-export function claimOn(board: string): Claim | null {
+function claimOn(board: string): Claim | null {
 	const key = normalizeBoardKey(board);
 	const entry = liveClaim(key);
 	return entry ? claimOf(key, entry) : null;
@@ -493,7 +493,7 @@ export function claimOn(board: string): Claim | null {
  * ordinary per-write hold and gives it back, rather than restoring the claim
  * while the person who revoked it is still editing.
  */
-export function claimWriterId(board: string): string | null {
+function claimWriterId(board: string): string | null {
 	return liveClaim(normalizeBoardKey(board))?.holder.id ?? null;
 }
 
@@ -508,7 +508,7 @@ export function claimWriterId(board: string): string | null {
  * the ADR forbids. So the next thing it does — a write, or a fresh claim —
  * fails once and says what happened, and what it does after that is ordinary.
  */
-export function takeClaimRevocation(board: string): ClaimRevocation | null {
+function takeClaimRevocation(board: string): ClaimRevocation | null {
 	const key = normalizeBoardKey(board);
 	const lost = revocations().get(key);
 	if (!lost) {
@@ -652,7 +652,7 @@ function noteClaimRevoked(board: string, lost: LockHolder, by: LockHolder | null
  * copy of it is a board watched after it left the screen. Pass null to stop:
  * with nothing rendering there is no pane to be wrong.
  */
-export function watchBoardLocks(boards: (() => string[]) | null): void {
+function watchBoardLocks(boards: (() => string[]) | null): void {
 	const watch = watcher();
 	watch.boards = boards;
 	if (!boards) {
@@ -708,7 +708,7 @@ function sweepBoardLocks(): void {
  * So the sweep hands each board to one passenger and stays ignorant of what it
  * does with it: this module knows about locks, and a note is not a lock.
  */
-export function onBoardSweep(sink: ((board: string) => void) | null): void {
+function onBoardSweep(sink: ((board: string) => void) | null): void {
 	sweepHolder().also = sink;
 }
 
@@ -719,7 +719,7 @@ export function onBoardSweep(sink: ((board: string) => void) | null): void {
  * A sink rather than an import because the module must not know what a pane is,
  * and because a check can watch the news without standing a browser up.
  */
-export function onBoardLockChanged(sink: LockSink | null): void {
+function onBoardLockChanged(sink: LockSink | null): void {
 	sinkHolder().notify = sink;
 }
 
@@ -730,7 +730,7 @@ export function onBoardLockChanged(sink: LockSink | null): void {
  * board is `releaseHold`; this only drops what *this process* remembers having
  * said.
  */
-export function forgetLockAnnouncements(): void {
+function forgetLockAnnouncements(): void {
 	for (const timer of lingers().values()) {
 		clearTimeout(timer);
 	}
@@ -1138,7 +1138,7 @@ const watcher = (): typeof processWatcher => processWatcher;
 
 // ── Small things ──────────────────────────────────────────────────────────
 
-export function sleep(ms: number): Promise<void> {
+function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => {
 		setTimeout(resolve, ms);
 	});
@@ -1223,3 +1223,30 @@ function clock(iso: string): string {
 	const at = new Date(iso);
 	return Number.isNaN(at.getTime()) ? iso : at.toTimeString().slice(0, 8);
 }
+
+export {
+	type HolderKind,
+	type LockHolder,
+	BoardHeldError,
+	BoardLockCancelledError,
+	type LockHold,
+	type LockRequest,
+	type LockSink,
+	withBoardLock,
+	holdBoard,
+	recordLockCommit,
+	releaseHold,
+	boardLockState,
+	type Claim,
+	type ClaimRevocation,
+	claimBoard,
+	releaseClaim,
+	claimOn,
+	claimWriterId,
+	takeClaimRevocation,
+	watchBoardLocks,
+	onBoardSweep,
+	onBoardLockChanged,
+	forgetLockAnnouncements,
+	sleep,
+};

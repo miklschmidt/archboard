@@ -23,7 +23,7 @@ import { type BoardIdentity, extractSceneElements, listBoards, requireVaultRoot 
 import { archboardBlock } from "./promote.js";
 
 /** One node on a board, bound to the repository being asked about. */
-export interface BoundNode {
+interface BoundNode {
 	node: string;
 	kind?: string;
 	/** What the board calls it: the declared name, else the label it shows. */
@@ -33,7 +33,7 @@ export interface BoundNode {
 	commit?: string;
 }
 
-export interface RepoBoard {
+interface RepoBoard {
 	key: string;
 	identity: BoardIdentity;
 	/** Where this was read from: the note on disk, or the copy open on the canvas. */
@@ -42,7 +42,7 @@ export interface RepoBoard {
 	nodes: BoundNode[];
 }
 
-export interface RepoBoardsResult {
+interface RepoBoardsResult {
 	repo: string;
 	boards: RepoBoard[];
 	/** How many boards were looked at, so an empty answer is distinguishable from an empty vault. */
@@ -52,7 +52,7 @@ export interface RepoBoardsResult {
 }
 
 /** A board this process holds in memory, which may hold work no note has yet. */
-export interface OpenBoard {
+interface OpenBoard {
 	key: string;
 	identity: BoardIdentity;
 	elements: ServerElement[];
@@ -81,7 +81,7 @@ function labelOf(el: ServerElement, elements: ServerElement[]): string | undefin
  * Deduplicated by node id, because a node is a set of elements and every one of
  * them carries the same block: a labelled box is two elements and one node.
  */
-export function nodesBoundTo(elements: ServerElement[], repo: string): BoundNode[] {
+function nodesBoundTo(elements: ServerElement[], repo: string): BoundNode[] {
 	const byNode = new Map<string, BoundNode>();
 	for (const el of elements) {
 		const block = archboardBlock(el);
@@ -114,7 +114,7 @@ export function nodesBoundTo(elements: ServerElement[], repo: string): BoundNode
  * the same rule `compare` uses, for the same reason: the canvas is where the
  * work is.
  */
-export function boardsForRepo(
+function boardsForRepo(
 	repo: string,
 	open: OpenBoard[] = [],
 	root = requireVaultRoot(),
@@ -168,7 +168,7 @@ export function boardsForRepo(
 }
 
 /** The same answer as prose, for a caller narrating it rather than parsing it. */
-export function repoBoardsText(result: RepoBoardsResult): string {
+function repoBoardsText(result: RepoBoardsResult): string {
 	if (result.boards.length === 0) {
 		return `No board in the vault has a node bound to ${result.repo} (${result.scanned} board(s) read).`;
 	}
@@ -189,3 +189,13 @@ export function repoBoardsText(result: RepoBoardsResult): string {
 	}
 	return lines.join("\n");
 }
+
+export {
+	type BoundNode,
+	type RepoBoard,
+	type RepoBoardsResult,
+	type OpenBoard,
+	nodesBoundTo,
+	boardsForRepo,
+	repoBoardsText,
+};

@@ -26,13 +26,13 @@ import type {
 import type { DynamicServerRequest } from "../../codex-transport/index.js";
 import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "../../../shared/timing/timing.js";
 
-export interface CoordinatorIdentity {
+interface CoordinatorIdentity {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly threadId: ThreadId;
 }
 
-export interface ValidationHost {
+interface ValidationHost {
 	readonly approvalBroker: Pick<
 		CodexApprovalBroker,
 		"get" | "spokenEligibility" | "spokenEffectPresentation"
@@ -44,7 +44,7 @@ export interface ValidationHost {
 	readonly transcript: () => readonly RealtimeTranscriptRecord[];
 }
 
-export type ArmValidationResult =
+type ArmValidationResult =
 	| { readonly ok: false; readonly reason: SpokenApprovalFallbackReason }
 	| {
 			readonly ok: true;
@@ -63,15 +63,15 @@ function invalid(reason: SpokenApprovalFallbackReason): ArmValidationResult {
 	return { ok: false, reason };
 }
 
-export function sameRealtime(left: RealtimeCorrelation, right: RealtimeCorrelation): boolean {
+function sameRealtime(left: RealtimeCorrelation, right: RealtimeCorrelation): boolean {
 	return left.sessionId === right.sessionId && left.correlationId === right.correlationId;
 }
 
-export function recordKey(record: RealtimeTranscriptRecord): string {
+function recordKey(record: RealtimeTranscriptRecord): string {
 	return `${record.sessionId}\u0000${record.correlationId}\u0000${record.itemId}`;
 }
 
-export function sameBinding(
+function sameBinding(
 	left: ApprovalSnapshot["binding"],
 	right: ApprovalSnapshot["binding"],
 ): boolean {
@@ -101,11 +101,11 @@ function sameSpokenEffectPresentation(
 	);
 }
 
-export function safeErrorMessage(error: unknown): string {
+function safeErrorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-export function oneLine(value: unknown, label: string): string {
+function oneLine(value: unknown, label: string): string {
 	if (
 		typeof value !== "string" ||
 		value.length === 0 ||
@@ -120,11 +120,11 @@ export function oneLine(value: unknown, label: string): string {
 	return value;
 }
 
-export function validSequence(value: unknown): value is number {
+function validSequence(value: unknown): value is number {
 	return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
-export interface CallValidationFailure {
+interface CallValidationFailure {
 	readonly fallback: SpokenApprovalFallbackReason;
 	readonly refusal: DynamicToolRefusalReason;
 	readonly message: string;
@@ -162,10 +162,7 @@ function failureForIdentity(error: unknown): CallValidationFailure {
 	);
 }
 
-export function validateArm(
-	host: ValidationHost,
-	input: SpokenApprovalArmInput,
-): ArmValidationResult {
+function validateArm(host: ValidationHost, input: SpokenApprovalArmInput): ArmValidationResult {
 	let effectSummary: string;
 	let operationId: string;
 	let clientUserMessageId: string;
@@ -329,7 +326,7 @@ function validateArmContext(
 	};
 }
 
-export function validateResolverCall(
+function validateResolverCall(
 	host: Omit<ValidationHost, "transcript">,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
@@ -501,3 +498,18 @@ export function validateResolverCall(
 	}
 	return null;
 }
+
+export {
+	type CoordinatorIdentity,
+	type ValidationHost,
+	type ArmValidationResult,
+	sameRealtime,
+	recordKey,
+	sameBinding,
+	safeErrorMessage,
+	oneLine,
+	validSequence,
+	type CallValidationFailure,
+	validateArm,
+	validateResolverCall,
+};

@@ -844,7 +844,7 @@ function wrapPageCursor(
 	});
 }
 
-export function createCodexDynamicTools(options: CodexDynamicToolsOptions): CodexDynamicTools {
+function createCodexDynamicTools(options: CodexDynamicToolsOptions): CodexDynamicTools {
 	if (options.checkoutRoot.length === 0) {
 		throw new CodexDynamicToolsError("invalid_call", "Dynamic tools require a checkout root.");
 	}
@@ -919,4 +919,6 @@ export function createCodexDynamicTools(options: CodexDynamicToolsOptions): Code
 	});
 }
 
-export const createCodexDynamicToolDispatcher = createCodexDynamicTools;
+const createCodexDynamicToolDispatcher = createCodexDynamicTools;
+
+export { createCodexDynamicTools, createCodexDynamicToolDispatcher };

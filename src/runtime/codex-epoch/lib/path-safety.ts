@@ -3,7 +3,7 @@ import { isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 import { CodexEpochError } from "./contract.js";
 import type { CodexEpochFileSystem } from "./storage.js";
 
-export function assertSafeStorageRoots(
+function assertSafeStorageRoots(
 	fileSystem: CodexEpochFileSystem,
 	epochRoot: string,
 	...codexRoots: readonly string[]
@@ -82,3 +82,5 @@ function isWithin(child: string, parent: string): boolean {
 function isMissing(error: unknown): boolean {
 	return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
+
+export { assertSafeStorageRoots };

@@ -1,27 +1,23 @@
 import fs from "node:fs";
 
-export type CodexProcessGroupSignal = "SIGTERM" | "SIGKILL";
-export type CodexProcessGroupInspection = "quiescent" | "owned" | "reused" | "unproven";
+type CodexProcessGroupSignal = "SIGTERM" | "SIGKILL";
+type CodexProcessGroupInspection = "quiescent" | "owned" | "reused" | "unproven";
 
-export interface CodexProcessGroupIdentity {
+interface CodexProcessGroupIdentity {
 	readonly leaderPid: number;
 	readonly pgid: number;
 	readonly leaderStartTime: string;
 }
 
-export interface CodexProcessGroupOperations {
+interface CodexProcessGroupOperations {
 	readonly capture: (leaderPid: number) => CodexProcessGroupIdentity;
 	readonly inspect: (identity: CodexProcessGroupIdentity) => CodexProcessGroupInspection;
 	readonly signal: (identity: CodexProcessGroupIdentity, signal: CodexProcessGroupSignal) => void;
 }
 
-export type CodexProcessGroupFailureCode =
-	| "capture_failed"
-	| "unproven"
-	| "reused"
-	| "signal_failed";
+type CodexProcessGroupFailureCode = "capture_failed" | "unproven" | "reused" | "signal_failed";
 
-export class CodexProcessGroupError extends Error {
+class CodexProcessGroupError extends Error {
 	readonly code: CodexProcessGroupFailureCode;
 
 	constructor(code: CodexProcessGroupFailureCode, message: string) {
@@ -199,6 +195,16 @@ function signal(identity: CodexProcessGroupIdentity, requested: CodexProcessGrou
 	}
 }
 
-export function createCodexProcessGroupOperations(): CodexProcessGroupOperations {
+function createCodexProcessGroupOperations(): CodexProcessGroupOperations {
 	return Object.freeze({ capture, inspect, signal });
 }
+
+export {
+	type CodexProcessGroupSignal,
+	type CodexProcessGroupInspection,
+	type CodexProcessGroupIdentity,
+	type CodexProcessGroupOperations,
+	type CodexProcessGroupFailureCode,
+	CodexProcessGroupError,
+	createCodexProcessGroupOperations,
+};

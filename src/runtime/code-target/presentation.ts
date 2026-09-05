@@ -14,7 +14,7 @@ function encodeField(value: string): string {
 	return encodeURIComponent(value);
 }
 
-export function githubUrlForBinding(binding: CodeBinding): GitHubHttpsUrl | undefined {
+function githubUrlForBinding(binding: CodeBinding): GitHubHttpsUrl | undefined {
 	const parsed = CodeBindingSchema.safeParse(binding);
 	if (!parsed.success) {
 		return undefined;
@@ -45,10 +45,12 @@ export function githubUrlForBinding(binding: CodeBinding): GitHubHttpsUrl | unde
 	return validated.success ? validated.data : undefined;
 }
 
-export function presentationTargetForBinding(
+function presentationTargetForBinding(
 	binding: CodeBinding,
 	identity: CodeTargetOpenRequest,
 	local: LocalCodeTargetResult,
 ): string | undefined {
 	return local.ok ? buildInternalCodeTargetUrl(identity) : githubUrlForBinding(binding);
 }
+
+export { githubUrlForBinding, presentationTargetForBinding };

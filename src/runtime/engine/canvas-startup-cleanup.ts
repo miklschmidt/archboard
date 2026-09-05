@@ -10,14 +10,14 @@ import type {
 } from "../codex-process/process-group.js";
 import { CODEX_COMPOSED_SHUTDOWN_MS, CODEX_TERM_GRACE_MS } from "../../shared/timing/timing.js";
 
-export interface FailedCanvasCleanupTiming {
+interface FailedCanvasCleanupTiming {
 	readonly shutdownDeadlineMs: number;
 	readonly applicationGraceMs: number;
 	readonly pollMs: number;
 }
 
 /** Production policy. Tests replace this function through a preload-only partial mock. */
-export function failedCanvasCleanupTiming(): FailedCanvasCleanupTiming {
+function failedCanvasCleanupTiming(): FailedCanvasCleanupTiming {
 	return Object.freeze({
 		shutdownDeadlineMs: CODEX_COMPOSED_SHUTDOWN_MS,
 		applicationGraceMs: CODEX_TERM_GRACE_MS,
@@ -25,20 +25,18 @@ export function failedCanvasCleanupTiming(): FailedCanvasCleanupTiming {
 	});
 }
 
-export interface FailedCanvasCleanupProtocol {
+interface FailedCanvasCleanupProtocol {
 	/** Null means no protocol event arrived within this slice of the one cleanup deadline. */
 	readonly next: (maxWaitMs: number) => Promise<CanvasStartupProtocolEvent | null>;
 }
 
-export interface CanvasStartupProtocolReader extends FailedCanvasCleanupProtocol {
+interface CanvasStartupProtocolReader extends FailedCanvasCleanupProtocol {
 	readonly failure: () => Error | null;
 	readonly terminalMessage: () => string | null;
 	readonly destroy: () => void;
 }
 
-export function createCanvasStartupProtocolReader(
-	stream: Readable | null,
-): CanvasStartupProtocolReader {
+function createCanvasStartupProtocolReader(stream: Readable | null): CanvasStartupProtocolReader {
 	const events: CanvasStartupProtocolEvent[] = [];
 	let buffer = "";
 	let closed = stream === null;
@@ -134,7 +132,7 @@ export function createCanvasStartupProtocolReader(
 	};
 }
 
-export interface FailedCanvasCleanupOperations {
+interface FailedCanvasCleanupOperations {
 	readonly now: () => number;
 	readonly wait: (ms: number) => Promise<void>;
 	readonly canvasExited: () => boolean;
@@ -150,7 +148,7 @@ export interface FailedCanvasCleanupOperations {
 	) => void;
 }
 
-export type FailedCanvasCleanupResult =
+type FailedCanvasCleanupResult =
 	| {
 			readonly cleanup: "proven";
 			readonly owner: "application" | "launcher";
@@ -163,7 +161,7 @@ export type FailedCanvasCleanupResult =
 			readonly reason: string;
 	  };
 
-export interface CompleteFailedCanvasCleanupOptions {
+interface CompleteFailedCanvasCleanupOptions {
 	readonly canvasPid: number;
 	readonly protocol: FailedCanvasCleanupProtocol;
 	readonly operations: FailedCanvasCleanupOperations;
@@ -363,7 +361,7 @@ async function takeCleanupOwnership(
  * The canvas owns cleanup until it proves completion or the launcher freezes it.
  * After SIGSTOP, only the launcher signals the transferred exact Codex group.
  */
-export async function completeFailedCanvasCleanup(
+async function completeFailedCanvasCleanup(
 	options: CompleteFailedCanvasCleanupOptions,
 ): Promise<FailedCanvasCleanupResult> {
 	validateTiming(options.timing);
@@ -439,3 +437,15 @@ export async function completeFailedCanvasCleanup(
 					: `${transferReason} No exact Codex group identity was transferred.`,
 	};
 }
+
+export {
+	type FailedCanvasCleanupTiming,
+	failedCanvasCleanupTiming,
+	type FailedCanvasCleanupProtocol,
+	type CanvasStartupProtocolReader,
+	createCanvasStartupProtocolReader,
+	type FailedCanvasCleanupOperations,
+	type FailedCanvasCleanupResult,
+	type CompleteFailedCanvasCleanupOptions,
+	completeFailedCanvasCleanup,
+};

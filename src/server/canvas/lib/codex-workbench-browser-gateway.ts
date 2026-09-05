@@ -44,7 +44,7 @@ import {
  * results. Readiness is never stored: it is derived from the live owned
  * process, session, account, and coordinator facts on every projection read.
  */
-export interface CanvasBrowserBindingState {
+interface CanvasBrowserBindingState {
 	account: BrowserAccountProjectionInput;
 	login: BrowserOwnerProjection["login"];
 	queue: CodexQueueProjectionInput;
@@ -101,7 +101,7 @@ function visibleApprovalViews(approvals: CodexApprovalBroker) {
 }
 
 /** Bind all seven ordinary approval families to one exact pane lifecycle. */
-export function createCanvasOrdinaryApprovalActions(
+function createCanvasOrdinaryApprovalActions(
 	approvals: CodexApprovalBroker,
 ): BrowserOrdinaryApprovalActions {
 	const actions: BrowserOrdinaryApprovalActions = {
@@ -176,7 +176,7 @@ export function createCanvasOrdinaryApprovalActions(
 }
 
 /** Closed browser projection/actions over the already-created runtime owners. */
-export function createCanvasBrowserGatewayOptions(input: {
+function createCanvasBrowserGatewayOptions(input: {
 	readonly components: Omit<CodexWorkbenchComponents, "gateway">;
 	readonly dynamicApprovals: CanvasDynamicApprovalOwner;
 	readonly state: CanvasBrowserBindingState;
@@ -547,3 +547,9 @@ export function createCanvasBrowserGatewayOptions(input: {
 		snapshotMaxBytes: input.budget.maxBytes,
 	};
 }
+
+export {
+	type CanvasBrowserBindingState,
+	createCanvasOrdinaryApprovalActions,
+	createCanvasBrowserGatewayOptions,
+};

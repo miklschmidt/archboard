@@ -84,18 +84,18 @@ function removeExactStorageLock(storageLock: string, canvasPid: number): void {
 	}
 }
 
-export type ForcedCanvasParentOutcome =
+type ForcedCanvasParentOutcome =
 	| { readonly exited: true }
 	| { readonly exited: false; readonly failure: Error };
 
-export interface CompleteCapturedCanvasCleanupOptions {
+interface CompleteCapturedCanvasCleanupOptions {
 	readonly groups: readonly CodexProcessGroupIdentity[];
 	readonly operations: Pick<CodexProcessGroupOperations, "inspect" | "signal">;
 	readonly parent: ForcedCanvasParentOutcome;
 	readonly removeStorageLock: () => void;
 }
 
-export async function completeCapturedCanvasCleanup(
+async function completeCapturedCanvasCleanup(
 	options: CompleteCapturedCanvasCleanupOptions,
 ): Promise<void> {
 	const failures: unknown[] = options.parent.exited ? [] : [options.parent.failure];
@@ -124,12 +124,12 @@ export async function completeCapturedCanvasCleanup(
 	}
 }
 
-export interface ForcedCanvasCleanup {
+interface ForcedCanvasCleanup {
 	complete(parent: ForcedCanvasParentOutcome): Promise<void>;
 }
 
 /** Capture exact child ownership before SIGKILL makes the parent process tree unavailable. */
-export function captureForcedCanvasCleanup(options: {
+function captureForcedCanvasCleanup(options: {
 	canvasPid: number;
 	xdgState: string;
 }): ForcedCanvasCleanup {
@@ -153,3 +153,11 @@ export function captureForcedCanvasCleanup(options: {
 		},
 	};
 }
+
+export {
+	type ForcedCanvasParentOutcome,
+	type CompleteCapturedCanvasCleanupOptions,
+	completeCapturedCanvasCleanup,
+	type ForcedCanvasCleanup,
+	captureForcedCanvasCleanup,
+};

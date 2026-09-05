@@ -29,7 +29,7 @@ import type {
 } from "./errors.js";
 
 /** The subset of the Node child-process contract that the transport needs. */
-export type CodexTransportChild = Pick<
+type CodexTransportChild = Pick<
 	ChildProcessWithoutNullStreams,
 	"stdin" | "stdout" | "stderr" | "exitCode" | "signalCode"
 > & {
@@ -43,15 +43,15 @@ export type CodexTransportChild = Pick<
 	): CodexTransportChild;
 };
 
-export type ResponseOwner =
+type ResponseOwner =
 	| "codex-approvals"
 	| "codex-dynamic-tools"
 	| "codex-coordinator-tools"
 	| "codex-session";
 
-export type DynamicDispatcherOwner = Exclude<ResponseOwner, "codex-approvals" | "codex-session">;
+type DynamicDispatcherOwner = Exclude<ResponseOwner, "codex-approvals" | "codex-session">;
 
-export const HUMAN_APPROVAL_METHODS = Object.freeze([
+const HUMAN_APPROVAL_METHODS = Object.freeze([
 	"item/commandExecution/requestApproval",
 	"item/fileChange/requestApproval",
 	"item/tool/requestUserInput",
@@ -61,29 +61,29 @@ export const HUMAN_APPROVAL_METHODS = Object.freeze([
 	"execCommandApproval",
 ] as const);
 
-export type HumanApprovalMethod = (typeof HUMAN_APPROVAL_METHODS)[number];
+type HumanApprovalMethod = (typeof HUMAN_APPROVAL_METHODS)[number];
 
-export const SESSION_SERVER_REQUEST_METHODS = Object.freeze([
+const SESSION_SERVER_REQUEST_METHODS = Object.freeze([
 	"currentTime/read",
 	"account/chatgptAuthTokens/refresh",
 	"attestation/generate",
 ] as const);
 
-export type SessionServerRequestMethod = (typeof SESSION_SERVER_REQUEST_METHODS)[number];
+type SessionServerRequestMethod = (typeof SESSION_SERVER_REQUEST_METHODS)[number];
 
-export interface DynamicDispatcherRegistration {
+interface DynamicDispatcherRegistration {
 	readonly owner: DynamicDispatcherOwner;
 	readonly namespace: string;
 	readonly manifestHash: string;
 }
 
-export type TransportFrameCorrelation = {
+type TransportFrameCorrelation = {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly requestId: JsonRpcRequestId | null;
 };
 
-export interface TransportServerNotification {
+interface TransportServerNotification {
 	readonly correlation: TransportFrameCorrelation;
 	readonly notification: DecodedServerNotification;
 }
@@ -135,7 +135,7 @@ type SessionServerRequest =
 			>;
 	  }[Exclude<SessionServerRequestMethod, "currentTime/read">];
 
-export type DynamicServerRequest = Omit<
+type DynamicServerRequest = Omit<
 	ServerRequestEnvelope<"item/tool/call", DynamicDispatcherOwner>,
 	"params"
 > & {
@@ -143,16 +143,13 @@ export type DynamicServerRequest = Omit<
 	readonly logicalCall: LogicalToolCallCorrelation;
 };
 
-export type TransportServerRequest =
-	| HumanServerRequest
-	| SessionServerRequest
-	| DynamicServerRequest;
+type TransportServerRequest = HumanServerRequest | SessionServerRequest | DynamicServerRequest;
 
-export type ReverseResponse =
+type ReverseResponse =
 	| { readonly result: unknown; readonly error?: never }
 	| { readonly error: CodexRemoteError; readonly result?: never };
 
-export interface CodexTransportRequestOptions {
+interface CodexTransportRequestOptions {
 	readonly signal?: AbortSignal;
 	/** Compatibility metadata; it never changes delivered-versus-unknown settlement. */
 	readonly idempotent?: boolean;
@@ -160,30 +157,30 @@ export interface CodexTransportRequestOptions {
 	readonly retryEligible?: boolean;
 }
 
-export interface CodexTransportResponse<Method extends ResponseMethod> {
+interface CodexTransportResponse<Method extends ResponseMethod> {
 	readonly method: Method;
 	readonly correlation: WireRequestCorrelation;
 	readonly result: ResponsePayloads[Method];
 }
 
-export type TransportServerRequestListener = (request: TransportServerRequest) => void;
-export type TransportServerNotificationListener = (event: TransportServerNotification) => void;
+type TransportServerRequestListener = (request: TransportServerRequest) => void;
+type TransportServerNotificationListener = (event: TransportServerNotification) => void;
 
-export interface TransportStderrChunk {
+interface TransportStderrChunk {
 	readonly text: string;
 	readonly bytes: number;
 	readonly retainedBytes: number;
 	readonly truncated: boolean;
 }
 
-export interface TransportExit {
+interface TransportExit {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly code: number | null;
 	readonly signal: NodeJS.Signals | null;
 }
 
-export type TransportIssueKind =
+type TransportIssueKind =
 	| "malformed-frame"
 	| "duplicate-key"
 	| "oversized-frame"
@@ -199,7 +196,7 @@ export type TransportIssueKind =
 	| "listener-error"
 	| "shutdown-timeout";
 
-export interface TransportIssue {
+interface TransportIssue {
 	readonly kind: TransportIssueKind;
 	readonly detail: string;
 	readonly direction?:
@@ -213,8 +210,8 @@ export interface TransportIssue {
 	readonly requestId?: string | number;
 }
 
-export type LateResponseKind = "result" | "error" | "malformed" | "redacted";
-export type LateResponseOutcome = "outcome_unknown" | "duplicate";
+type LateResponseKind = "result" | "error" | "malformed" | "redacted";
+type LateResponseOutcome = "outcome_unknown" | "duplicate";
 
 type TransportLateResponseContext<Method extends ResponseMethod> = {
 	readonly outcome: LateResponseOutcome;
@@ -243,24 +240,24 @@ type TransportRedactedLateResponse<Method extends ResponseMethod> =
 		readonly requestId?: JsonRpcRequestId;
 	};
 
-export interface TransportLateMalformedPayload {
+interface TransportLateMalformedPayload {
 	readonly reason: "response-schema";
 }
 
-export interface TransportLateRedactedPayload {
+interface TransportLateRedactedPayload {
 	readonly reason: "retained-size";
 	readonly byteLength: number;
 }
 
-export type TransportLateResponseFor<Method extends ResponseMethod> =
+type TransportLateResponseFor<Method extends ResponseMethod> =
 	| TransportCorrelatedLateResponse<Method>
 	| TransportRedactedLateResponse<Method>;
 
-export type TransportLateResponse = {
+type TransportLateResponse = {
 	[Method in ResponseMethod]: TransportLateResponseFor<Method>;
 }[ResponseMethod];
 
-export interface TransportSnapshot {
+interface TransportSnapshot {
 	readonly state: "open" | "closing" | "closed";
 	readonly pendingRequests: number;
 	readonly pendingReverseRequests: number;
@@ -278,22 +275,22 @@ export interface TransportSnapshot {
 	readonly maxPendingReverseBytes: number;
 }
 
-export interface TransportStderrSnapshot {
+interface TransportStderrSnapshot {
 	readonly text: string;
 	readonly retainedBytes: number;
 	readonly totalBytes: number;
 	readonly truncated: boolean;
 }
 
-export type TransportIssueListener = (issue: TransportIssue) => void;
-export type TransportStderrListener = (chunk: TransportStderrChunk) => void;
-export type TransportExitListener = (exit: TransportExit) => void;
-export type Unsubscribe = () => void;
+type TransportIssueListener = (issue: TransportIssue) => void;
+type TransportStderrListener = (chunk: TransportStderrChunk) => void;
+type TransportExitListener = (exit: TransportExit) => void;
+type Unsubscribe = () => void;
 
-export type CodexTransportRequestParams<Method extends ResponseMethod> =
+type CodexTransportRequestParams<Method extends ResponseMethod> =
 	Method extends ClientRequestMethodWithoutParams ? undefined : unknown;
 
-export interface CodexTransportRequest {
+interface CodexTransportRequest {
 	<Method extends ResponseMethod>(
 		method: Method,
 		params: CodexTransportRequestParams<Method>,
@@ -301,7 +298,7 @@ export interface CodexTransportRequest {
 	): Promise<CodexTransportResponse<Method>>;
 }
 
-export interface CodexTransport {
+interface CodexTransport {
 	/** Replace source-generation identity capabilities over the same child ledger. */
 	readonly replaceIdentity: (identity: IdentityAuthority) => void;
 	readonly request: CodexTransportRequest;
@@ -330,13 +327,54 @@ export interface CodexTransport {
 	readonly shutdown: () => Promise<void>;
 }
 
-export type TransportRequestFailure =
+type TransportRequestFailure =
 	| CodexTransportRequestError
 	| CodexTransportRemoteError
 	| CodexTransportWriteError;
 
-export interface CodexTransportOptions {
+interface CodexTransportOptions {
 	readonly child: CodexTransportChild;
 	readonly identity: IdentityAuthority;
 	readonly dynamicDispatchers?: readonly DynamicDispatcherRegistration[];
 }
+
+export {
+	type CodexTransportChild,
+	type ResponseOwner,
+	type DynamicDispatcherOwner,
+	HUMAN_APPROVAL_METHODS,
+	type HumanApprovalMethod,
+	SESSION_SERVER_REQUEST_METHODS,
+	type SessionServerRequestMethod,
+	type DynamicDispatcherRegistration,
+	type TransportFrameCorrelation,
+	type TransportServerNotification,
+	type DynamicServerRequest,
+	type TransportServerRequest,
+	type ReverseResponse,
+	type CodexTransportRequestOptions,
+	type CodexTransportResponse,
+	type TransportServerRequestListener,
+	type TransportServerNotificationListener,
+	type TransportStderrChunk,
+	type TransportExit,
+	type TransportIssueKind,
+	type TransportIssue,
+	type LateResponseKind,
+	type LateResponseOutcome,
+	type TransportLateMalformedPayload,
+	type TransportLateRedactedPayload,
+	type TransportLateResponseFor,
+	type TransportLateResponse,
+	type TransportSnapshot,
+	type TransportStderrSnapshot,
+	type TransportIssueListener,
+	type TransportStderrListener,
+	type TransportExitListener,
+	type Unsubscribe,
+	type CodexTransportRequestParams,
+	type CodexTransportRequest,
+	type CodexTransport,
+	type TransportRequestFailure,
+	type CodexTransportOptions,
+};

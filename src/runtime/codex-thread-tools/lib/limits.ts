@@ -2,13 +2,13 @@ import { z } from "zod";
 
 import { CODEX_BROWSER_COMMAND_LEASE_MS } from "../../../shared/timing/timing.js";
 
-export const WAIT_THREADS_TIMEOUT_MAX_MS = 120_000 as const;
+const WAIT_THREADS_TIMEOUT_MAX_MS = 120_000 as const;
 
 if (WAIT_THREADS_TIMEOUT_MAX_MS >= CODEX_BROWSER_COMMAND_LEASE_MS) {
 	throw new TypeError("wait_threads timeout maximum must stay below the browser command lease.");
 }
 
-export const JsonValueSchema = z.json();
+const JsonValueSchema = z.json();
 
 function isWellFormedUnicode(value: string): boolean {
 	for (let index = 0; index < value.length; index++) {
@@ -27,7 +27,7 @@ function isWellFormedUnicode(value: string): boolean {
 }
 
 /** Enforce the JSON Schema string length in Unicode code points. */
-export const boundedText = (maximum: number) =>
+const boundedText = (maximum: number) =>
 	z
 		.string()
 		.min(1)
@@ -41,7 +41,7 @@ export const boundedText = (maximum: number) =>
 		});
 
 /** Enforce an explicit UTF-8 byte ceiling without imposing a second code-point limit. */
-export const boundedUtf8Text = (maximum: number) =>
+const boundedUtf8Text = (maximum: number) =>
 	z
 		.string()
 		.min(1)
@@ -54,5 +54,14 @@ export const boundedUtf8Text = (maximum: number) =>
 			}
 		});
 
-export const nullableText = (maximum: number) => boundedText(maximum).nullable();
-export const nullableUtf8Text = (maximum: number) => boundedUtf8Text(maximum).nullable();
+const nullableText = (maximum: number) => boundedText(maximum).nullable();
+const nullableUtf8Text = (maximum: number) => boundedUtf8Text(maximum).nullable();
+
+export {
+	WAIT_THREADS_TIMEOUT_MAX_MS,
+	JsonValueSchema,
+	boundedText,
+	boundedUtf8Text,
+	nullableText,
+	nullableUtf8Text,
+};

@@ -3,7 +3,7 @@ import type { Measurable } from "../../geometry.ts";
 import type { LegacyElementIngress } from "../../../../shared/board-elements/index.ts";
 import { expandElements } from "../../expand-elements.ts";
 
-export const directionalArrows = {
+const directionalArrows = {
 	"right and down": {
 		type: "arrow",
 		x: 200,
@@ -42,7 +42,7 @@ export const directionalArrows = {
 	},
 } satisfies Record<string, Measurable & { type: "arrow" }>;
 
-export const capturedFocusedNode = {
+const capturedFocusedNode = {
 	type: "rectangle",
 	x: 1066.8104451025551,
 	y: 1060.7409025475235,
@@ -52,12 +52,12 @@ export const capturedFocusedNode = {
 	roundness: { type: 3 },
 } satisfies Bindable;
 
-export const capturedArrowStart = { x: 1400, y: 1120 } satisfies Point;
-export const capturedBrowserEndpoint = {
+const capturedArrowStart = { x: 1400, y: 1120 } satisfies Point;
+const capturedBrowserEndpoint = {
 	x: 1279.2940245092134,
 	y: 1150.128871410794,
 } satisfies Point;
-export const pinnedSolverEndpoint = {
+const pinnedSolverEndpoint = {
 	x: 1279.2940245092384,
 	y: 1150.1288714106531,
 } satisfies Point;
@@ -149,7 +149,16 @@ const geometryConsumerInputs = [
 	},
 ] satisfies LegacyElementIngress[];
 
-export const geometryConsumerScene = expandElements(geometryConsumerInputs, {
+const geometryConsumerScene = expandElements(geometryConsumerInputs, {
 	deterministic: true,
 	forStore: true,
 });
+
+export {
+	directionalArrows,
+	capturedFocusedNode,
+	capturedArrowStart,
+	capturedBrowserEndpoint,
+	pinnedSolverEndpoint,
+	geometryConsumerScene,
+};

@@ -2,11 +2,11 @@ import { createHash } from "node:crypto";
 
 import { boundedWireText } from "../../../shared/codex-browser-model/index.js";
 
-export const SPOKEN_APPROVAL_CLASSIFIER_SHA256 =
+const SPOKEN_APPROVAL_CLASSIFIER_SHA256 =
 	"215bd565500a9188f5e8f0d920a078113937f36296535054c56d7f12d74d1c6f";
 
 /** The reviewed template, including its one terminal LF. */
-export const SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE =
+const SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE =
 	"Classify one spoken binary approval for Archboard. The host has already bound the request identity; do not infer or mention another request.\n\n" +
 	"<spoken_approval>\n" +
 	"effect: <bounded-effect-summary>\n" +
@@ -37,7 +37,7 @@ function assertCanonicalTemplate(value: string): void {
 
 assertCanonicalTemplate(SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE);
 
-export interface SpokenApprovalClassifierPromptInput {
+interface SpokenApprovalClassifierPromptInput {
 	readonly effectSummary: string;
 	readonly finalUserItemId: string;
 	readonly finalUserSequence: number;
@@ -52,9 +52,7 @@ function oneLine(value: string, label: string): string {
 	return bounded;
 }
 
-export function createSpokenApprovalClassifierPrompt(
-	input: SpokenApprovalClassifierPromptInput,
-): string {
+function createSpokenApprovalClassifierPrompt(input: SpokenApprovalClassifierPromptInput): string {
 	const effectSummary = oneLine(input.effectSummary, "effect summary");
 	const finalUserItemId = oneLine(input.finalUserItemId, "final user item id");
 	if (!Number.isSafeInteger(input.finalUserSequence) || input.finalUserSequence < 0) {
@@ -73,7 +71,15 @@ export function createSpokenApprovalClassifierPrompt(
 	);
 }
 
-export function verifySpokenApprovalClassifierIntegrity(): string {
+function verifySpokenApprovalClassifierIntegrity(): string {
 	assertCanonicalTemplate(SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE);
 	return sha256(SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE);
 }
+
+export {
+	SPOKEN_APPROVAL_CLASSIFIER_SHA256,
+	SPOKEN_APPROVAL_CLASSIFIER_TEMPLATE,
+	type SpokenApprovalClassifierPromptInput,
+	createSpokenApprovalClassifierPrompt,
+	verifySpokenApprovalClassifierIntegrity,
+};

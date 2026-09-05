@@ -12,7 +12,7 @@ import type {
 	TransportServerRequest,
 } from "../../../runtime/codex-transport/server-requests.js";
 
-export interface CodexWorkbenchRequestOwners {
+interface CodexWorkbenchRequestOwners {
 	readonly approvals: Pick<CodexApprovalBroker, "receive">;
 	readonly dynamicTools: Pick<CodexDynamicTools, "dispatch">;
 	readonly coordinatorTools: Pick<CoordinatorToolDispatcher, "onServerRequest">;
@@ -22,7 +22,7 @@ export interface CodexWorkbenchRequestOwners {
 	>;
 }
 
-export interface CodexWorkbenchRequestRouter {
+interface CodexWorkbenchRequestRouter {
 	readonly route: (request: TransportServerRequest) => void;
 }
 
@@ -47,7 +47,7 @@ function routeDynamicRequest(
 }
 
 /** Route every generated app-server request to its sole response owner. */
-export function createCodexWorkbenchRequestRouter(
+function createCodexWorkbenchRequestRouter(
 	owners: CodexWorkbenchRequestOwners,
 ): CodexWorkbenchRequestRouter {
 	return Object.freeze({
@@ -80,3 +80,9 @@ export function createCodexWorkbenchRequestRouter(
 		},
 	});
 }
+
+export {
+	type CodexWorkbenchRequestOwners,
+	type CodexWorkbenchRequestRouter,
+	createCodexWorkbenchRequestRouter,
+};

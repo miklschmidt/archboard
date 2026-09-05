@@ -9,7 +9,7 @@ import type {
 } from "../../../shared/codex-workbench-identity/index.js";
 
 /** The only queue operations exposed to Archboard callers. */
-export const WORKHORSE_QUEUE_OPERATIONS = Object.freeze([
+const WORKHORSE_QUEUE_OPERATIONS = Object.freeze([
 	"list",
 	"add",
 	"update",
@@ -18,11 +18,11 @@ export const WORKHORSE_QUEUE_OPERATIONS = Object.freeze([
 	"start",
 ] as const);
 
-export type WorkhorseQueueOperation = (typeof WORKHORSE_QUEUE_OPERATIONS)[number];
-export type WorkhorseQueueMutation = Exclude<WorkhorseQueueOperation, "list">;
+type WorkhorseQueueOperation = (typeof WORKHORSE_QUEUE_OPERATIONS)[number];
+type WorkhorseQueueMutation = Exclude<WorkhorseQueueOperation, "list">;
 
 /** The exact child/epoch and two thread links a queue request is allowed to use. */
-export interface WorkhorseQueueBinding {
+interface WorkhorseQueueBinding {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly coordinatorThreadId: ThreadId;
@@ -30,9 +30,9 @@ export interface WorkhorseQueueBinding {
 }
 
 /** The composition root owns the live link and can revoke it between calls. */
-export type CurrentWorkhorseQueueBinding = () => WorkhorseQueueBinding | null;
+type CurrentWorkhorseQueueBinding = () => WorkhorseQueueBinding | null;
 
-export interface WorkhorseQueueIdentityPort {
+interface WorkhorseQueueIdentityPort {
 	readonly validator: Pick<IdentityValidator, "isCurrentEpoch">;
 }
 
@@ -43,70 +43,70 @@ export interface WorkhorseQueueIdentityPort {
  * eventual shared OperationId authority supplies this capability at the
  * composition boundary.
  */
-export interface WorkhorseQueueOperationIdPort<OperationIdValue extends string> {
+interface WorkhorseQueueOperationIdPort<OperationIdValue extends string> {
 	readonly assertCurrent: (operationId: OperationIdValue) => void;
 	readonly serialize: (operationId: OperationIdValue) => string;
 }
 
-export type WorkhorseQueueSessionPort = Pick<
+type WorkhorseQueueSessionPort = Pick<
 	CodexSession,
 	"queueAdd" | "queueListPage" | "queueUpdate" | "queueDelete" | "queueReorder" | "queueStart"
 >;
 
-export interface WorkhorseQueueOptions<OperationIdValue extends string> {
+interface WorkhorseQueueOptions<OperationIdValue extends string> {
 	readonly session: WorkhorseQueueSessionPort;
 	readonly currentBinding: CurrentWorkhorseQueueBinding;
 	readonly identity: WorkhorseQueueIdentityPort;
 	readonly operationIds: WorkhorseQueueOperationIdPort<OperationIdValue>;
 }
 
-export interface QueueListResult {
+interface QueueListResult {
 	readonly operation: "list";
 	readonly queue: QueueSnapshot;
 }
 
-export interface QueueEffectContext {
+interface QueueEffectContext {
 	readonly operation: WorkhorseQueueMutation;
 	readonly target: SessionQueuedSubmission | null;
 }
 
-export type QueueBeforeEffect = (context: QueueEffectContext) => void | Promise<void>;
+type QueueBeforeEffect = (context: QueueEffectContext) => void | Promise<void>;
 
-export interface QueueAddRequest<OperationIdValue extends string> {
+interface QueueAddRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly prompt: string;
 	readonly beforeEffect?: QueueBeforeEffect;
 }
 
-export interface QueueUpdateRequest<OperationIdValue extends string> {
+interface QueueUpdateRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
 	readonly prompt: string;
 	readonly beforeEffect?: QueueBeforeEffect;
 }
 
-export interface QueueDeleteRequest<OperationIdValue extends string> {
+interface QueueDeleteRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
 	readonly beforeEffect?: QueueBeforeEffect;
 }
 
-export interface QueueReorderRequest<OperationIdValue extends string> {
+interface QueueReorderRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly orderedSubmissionIds: readonly QueuedSubmissionId[];
 	readonly beforeEffect?: QueueBeforeEffect;
 }
 
-export interface QueueStartRequest<OperationIdValue extends string> {
+interface QueueStartRequest<OperationIdValue extends string> {
 	readonly operationId: OperationIdValue;
 	readonly submissionId: QueuedSubmissionId;
 	readonly beforeEffect?: QueueBeforeEffect;
 }
 
-export type QueueSnapshot = readonly SessionQueuedSubmission[];
-export type QueueMutationOutcome = "delivered" | "not_delivered" | "outcome_unknown";
+type QueueSnapshot = readonly SessionQueuedSubmission[];
+type QueueMutationOutcome = "delivered" | "not_delivered" | "outcome_unknown";
 
-export interface QueueMutationResult<
+interface QueueMutationResult<
 	Operation extends WorkhorseQueueMutation,
 	OperationIdValue extends string,
 > {
@@ -116,23 +116,20 @@ export interface QueueMutationResult<
 	readonly queue: QueueSnapshot;
 }
 
-export type QueueAddResult<OperationIdValue extends string> = QueueMutationResult<
-	"add",
-	OperationIdValue
->;
-export type QueueUpdateResult<OperationIdValue extends string> = QueueMutationResult<
+type QueueAddResult<OperationIdValue extends string> = QueueMutationResult<"add", OperationIdValue>;
+type QueueUpdateResult<OperationIdValue extends string> = QueueMutationResult<
 	"update",
 	OperationIdValue
 >;
-export type QueueDeleteResult<OperationIdValue extends string> = QueueMutationResult<
+type QueueDeleteResult<OperationIdValue extends string> = QueueMutationResult<
 	"delete",
 	OperationIdValue
 >;
-export type QueueReorderResult<OperationIdValue extends string> = QueueMutationResult<
+type QueueReorderResult<OperationIdValue extends string> = QueueMutationResult<
 	"reorder",
 	OperationIdValue
 >;
-export type QueueStartResult<OperationIdValue extends string> = QueueMutationResult<
+type QueueStartResult<OperationIdValue extends string> = QueueMutationResult<
 	"start",
 	OperationIdValue
 > & {
@@ -140,7 +137,7 @@ export type QueueStartResult<OperationIdValue extends string> = QueueMutationRes
 	readonly turnId: TurnId | null;
 };
 
-export type WorkhorseQueueResult<OperationIdValue extends string> =
+type WorkhorseQueueResult<OperationIdValue extends string> =
 	| QueueListResult
 	| QueueAddResult<OperationIdValue>
 	| QueueUpdateResult<OperationIdValue>
@@ -148,7 +145,7 @@ export type WorkhorseQueueResult<OperationIdValue extends string> =
 	| QueueReorderResult<OperationIdValue>
 	| QueueStartResult<OperationIdValue>;
 
-export type WorkhorseQueueErrorCode =
+type WorkhorseQueueErrorCode =
 	| "closed"
 	| "not_ready"
 	| "stale_link"
@@ -159,7 +156,7 @@ export type WorkhorseQueueErrorCode =
 	| "transport_failure"
 	| "reconciliation_failed";
 
-export class CodexWorkhorseQueueError extends Error {
+class CodexWorkhorseQueueError extends Error {
 	override readonly name = "CodexWorkhorseQueueError";
 	readonly code: WorkhorseQueueErrorCode;
 	readonly operation: WorkhorseQueueOperation | null;
@@ -186,7 +183,7 @@ export class CodexWorkhorseQueueError extends Error {
 	}
 }
 
-export interface CodexWorkhorseQueue<OperationIdValue extends string> {
+interface CodexWorkhorseQueue<OperationIdValue extends string> {
 	readonly list: () => Promise<QueueListResult>;
 	readonly add: (
 		request: QueueAddRequest<OperationIdValue>,
@@ -206,3 +203,35 @@ export interface CodexWorkhorseQueue<OperationIdValue extends string> {
 	/** Close admission and wait for every operation accepted before this call. */
 	readonly shutdown: () => Promise<void>;
 }
+
+export {
+	WORKHORSE_QUEUE_OPERATIONS,
+	type WorkhorseQueueOperation,
+	type WorkhorseQueueMutation,
+	type WorkhorseQueueBinding,
+	type CurrentWorkhorseQueueBinding,
+	type WorkhorseQueueIdentityPort,
+	type WorkhorseQueueOperationIdPort,
+	type WorkhorseQueueSessionPort,
+	type WorkhorseQueueOptions,
+	type QueueListResult,
+	type QueueEffectContext,
+	type QueueBeforeEffect,
+	type QueueAddRequest,
+	type QueueUpdateRequest,
+	type QueueDeleteRequest,
+	type QueueReorderRequest,
+	type QueueStartRequest,
+	type QueueSnapshot,
+	type QueueMutationOutcome,
+	type QueueMutationResult,
+	type QueueAddResult,
+	type QueueUpdateResult,
+	type QueueDeleteResult,
+	type QueueReorderResult,
+	type QueueStartResult,
+	type WorkhorseQueueResult,
+	type WorkhorseQueueErrorCode,
+	CodexWorkhorseQueueError,
+	type CodexWorkhorseQueue,
+};

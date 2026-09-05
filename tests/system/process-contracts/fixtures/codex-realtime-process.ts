@@ -45,7 +45,7 @@ const DEFAULTS = {
 	drop: [],
 };
 
-export type FixtureControl = {
+type FixtureControl = {
 	readonly startEvents?: readonly {
 		readonly method: string;
 		readonly params: unknown;
@@ -62,7 +62,7 @@ export type FixtureControl = {
 	readonly drop?: readonly string[];
 };
 
-export interface Generation {
+interface Generation {
 	readonly identity: IdentityAuthority;
 	readonly binding: CodexRealtimeBinding;
 	readonly transport: CodexTransport;
@@ -72,7 +72,7 @@ export interface Generation {
 	readonly readyState: { settled: boolean };
 }
 
-export interface RealtimeHarness {
+interface RealtimeHarness {
 	readonly root: string;
 	readonly controlPath: string;
 	readonly logPath: string;
@@ -133,7 +133,7 @@ function sleep(milliseconds: number): Promise<void> {
 	return new Promise((done) => setTimeout(done, milliseconds));
 }
 
-export async function waitFor(predicate: () => boolean, timeoutMs = 5_000): Promise<void> {
+async function waitFor(predicate: () => boolean, timeoutMs = 5_000): Promise<void> {
 	const deadline = Date.now() + timeoutMs;
 	while (!predicate()) {
 		if (Date.now() >= deadline) {
@@ -164,7 +164,7 @@ function makeBinding(identity: IdentityAuthority): CodexRealtimeBinding {
 	};
 }
 
-export function makeNotification(
+function makeNotification(
 	identity: IdentityAuthority,
 	method: string,
 	params: unknown,
@@ -192,7 +192,7 @@ function writeFakeExecutable(
 	return executable;
 }
 
-export async function createHarness(
+async function createHarness(
 	control: FixtureControl = {},
 	options: { readonly version?: string } = {},
 ): Promise<RealtimeHarness> {
@@ -392,7 +392,7 @@ function expectCleanupOwner(owner: CodexProcess, stopError: unknown): void {
 	}
 }
 
-export async function withHarness(
+async function withHarness(
 	control: FixtureControl,
 	operation: (harness: RealtimeHarness, generation: Generation) => Promise<void>,
 ): Promise<void> {
@@ -405,7 +405,7 @@ export async function withHarness(
 	}
 }
 
-export function latestState(harness: RealtimeHarness) {
+function latestState(harness: RealtimeHarness) {
 	for (let index = harness.events.length - 1; index >= 0; index -= 1) {
 		const event = harness.events[index];
 		if (event?.kind === "state") {
@@ -415,10 +415,23 @@ export function latestState(harness: RealtimeHarness) {
 	throw new Error("The realtime harness has not emitted a state.");
 }
 
-export async function waitForState(harness: RealtimeHarness): Promise<void> {
+async function waitForState(harness: RealtimeHarness): Promise<void> {
 	await waitFor(() => latestState(harness).phase === "recoverable_error");
 }
 
-export async function waitForGenerations(harness: RealtimeHarness, count: number): Promise<void> {
+async function waitForGenerations(harness: RealtimeHarness, count: number): Promise<void> {
 	await waitFor(() => harness.generations.length === count);
 }
+
+export {
+	type FixtureControl,
+	type Generation,
+	type RealtimeHarness,
+	waitFor,
+	makeNotification,
+	createHarness,
+	withHarness,
+	latestState,
+	waitForState,
+	waitForGenerations,
+};

@@ -2,7 +2,7 @@ import { QueuedSubmissionSchema } from "../../codex-protocol/index.js";
 import type { SessionQueuedSubmission } from "../../codex-session/index.js";
 import type { QueueSnapshot, WorkhorseQueueBinding } from "./contract.js";
 
-export function sameBinding(left: WorkhorseQueueBinding, right: WorkhorseQueueBinding): boolean {
+function sameBinding(left: WorkhorseQueueBinding, right: WorkhorseQueueBinding): boolean {
 	return (
 		left.childId === right.childId &&
 		left.epoch === right.epoch &&
@@ -52,11 +52,11 @@ function responseSubmission(value: unknown): SessionQueuedSubmission | null {
 	return isSessionQueuedSubmission(candidate) ? candidate : null;
 }
 
-export function snapshot(data: readonly SessionQueuedSubmission[]): QueueSnapshot {
+function snapshot(data: readonly SessionQueuedSubmission[]): QueueSnapshot {
 	return Object.freeze(data.slice());
 }
 
-export function expectedAdd(
+function expectedAdd(
 	before: QueueSnapshot,
 	after: QueueSnapshot,
 	response: unknown,
@@ -94,7 +94,7 @@ export function expectedAdd(
 	return addedCount === 1 && beforeIndex === before.length;
 }
 
-export function expectedUpdate(
+function expectedUpdate(
 	before: QueueSnapshot,
 	after: QueueSnapshot,
 	response: unknown,
@@ -125,7 +125,7 @@ export function expectedUpdate(
 	});
 }
 
-export function expectedDelete(
+function expectedDelete(
 	before: QueueSnapshot,
 	after: QueueSnapshot,
 	response: unknown,
@@ -139,7 +139,7 @@ export function expectedDelete(
 		: sameQueue(after, before);
 }
 
-export function expectedReorder(
+function expectedReorder(
 	before: QueueSnapshot,
 	after: QueueSnapshot,
 	orderedSubmissionIds: readonly SessionQueuedSubmission["id"][],
@@ -155,10 +155,20 @@ export function expectedReorder(
 	});
 }
 
-export function expectedStart(
+function expectedStart(
 	before: QueueSnapshot,
 	after: QueueSnapshot,
 	submissionId: SessionQueuedSubmission["id"],
 ): boolean {
 	return sameQueue(after, queueWithout(before, submissionId));
 }
+
+export {
+	sameBinding,
+	snapshot,
+	expectedAdd,
+	expectedUpdate,
+	expectedDelete,
+	expectedReorder,
+	expectedStart,
+};

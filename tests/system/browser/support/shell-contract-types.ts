@@ -1,13 +1,13 @@
-export type PanesBody = { paneCount?: number; panes?: Array<{ board?: string }> };
+type PanesBody = { paneCount?: number; panes?: Array<{ board?: string }> };
 
-export type ShellMetrics = {
+type ShellMetrics = {
 	family: string;
 	size: number;
 	lineHeight: number;
 	weight: number;
 };
 
-export type DesktopShell = {
+type DesktopShell = {
 	navLeftOfCanvas: boolean;
 	navWidth: number;
 	workbenchBelowPane: boolean;
@@ -16,7 +16,7 @@ export type DesktopShell = {
 	canvasLargest: boolean;
 };
 
-export type ThemeSnapshot = {
+type ThemeSnapshot = {
 	theme: "light" | "dark";
 	wordmark: string;
 	wordmarkMask: string;
@@ -53,7 +53,7 @@ export type ThemeSnapshot = {
 	presentTarget: { width: number; height: number };
 };
 
-export type PaneBarLayout = {
+type PaneBarLayout = {
 	height: number;
 	tabCount: number;
 	tabHeights: number[];
@@ -63,7 +63,7 @@ export type PaneBarLayout = {
 	labels: string[];
 };
 
-export type ActivityLayout = {
+type ActivityLayout = {
 	lineCount: number;
 	linesFit: boolean;
 	panelFits: boolean;
@@ -71,7 +71,7 @@ export type ActivityLayout = {
 	timestampsAlign: boolean;
 };
 
-export type NoticeLayout = {
+type NoticeLayout = {
 	parentIsPanes: boolean;
 	insidePanes: boolean;
 	overlapsInspector: boolean;
@@ -83,7 +83,7 @@ export type NoticeLayout = {
 	text: string;
 };
 
-export type InspectorTypeMetrics = {
+type InspectorTypeMetrics = {
 	family: string;
 	size: number;
 	lineHeight: number;
@@ -91,7 +91,7 @@ export type InspectorTypeMetrics = {
 	transform: string;
 };
 
-export type InspectorContract = {
+type InspectorContract = {
 	sections: string[];
 	titleType: InspectorTypeMetrics;
 	statusType: InspectorTypeMetrics;
@@ -108,7 +108,7 @@ export type InspectorContract = {
 	focusHeight: number;
 };
 
-export type NavigatorContract = {
+type NavigatorContract = {
 	boardCount: number;
 	draftMarkers: string[];
 	humanFonts: Array<{ family: string; lineHeight: number; size: number; transform: string }>;
@@ -119,7 +119,7 @@ export type NavigatorContract = {
 	technicalFonts: string[];
 };
 
-export interface NavigatorPreviewView {
+interface NavigatorPreviewView {
 	board?: string;
 	cardWidth?: number;
 	flat?: boolean;
@@ -130,3 +130,17 @@ export interface NavigatorPreviewView {
 	src?: string;
 	state?: string;
 }
+
+export {
+	type PanesBody,
+	type ShellMetrics,
+	type DesktopShell,
+	type ThemeSnapshot,
+	type PaneBarLayout,
+	type ActivityLayout,
+	type NoticeLayout,
+	type InspectorTypeMetrics,
+	type InspectorContract,
+	type NavigatorContract,
+	type NavigatorPreviewView,
+};

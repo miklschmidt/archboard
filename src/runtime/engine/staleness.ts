@@ -32,7 +32,7 @@ const loaded = new Set<string>();
 const srcDir = path.join(__dirname, "..", "..");
 const repoRoot = path.join(__dirname, "..", "..", "..");
 
-export interface SourceState {
+interface SourceState {
 	/** When the canvas last read its source: process start, or the last reload. */
 	evaluatedAt: string;
 	/** The file that has been written most recently, relative to the repo root. */
@@ -54,7 +54,7 @@ export interface SourceState {
  * Everything outside `src/` is dropped. Editing a dependency is not a thing
  * this is about, and a change under `dist/` is the other half, below.
  */
-export function sourceState(): SourceState {
+function sourceState(): SourceState {
 	let newestFile: string | null = null;
 	let newestMs = 0;
 	for (const file of loadedSourceFiles()) {
@@ -113,7 +113,7 @@ function moduleRegistry(): Record<string, unknown> | null {
 // content. Two tabs on the same bytes name the same file, and a rebuild that
 // changed nothing is not a difference anybody has to hear about.
 
-export interface FrontendState {
+interface FrontendState {
 	/** The entry script the built bundle names now, or null if nothing is built. */
 	current: string | null;
 	/** The entry script the tab reported loading. */
@@ -125,7 +125,7 @@ export interface FrontendState {
 
 const BUILT_ASSET = /^\/assets\//;
 
-export function frontendBuild(): string | null {
+function frontendBuild(): string | null {
 	try {
 		const html = fs.readFileSync(path.join(repoRoot, "dist", "frontend", "index.html"), "utf-8");
 		const match = /<script[^>]*type="module"[^>]*src="([^"]+)"/.exec(html);
@@ -143,7 +143,7 @@ export function frontendBuild(): string | null {
  * a canvas with no `dist/frontend` has nothing to compare against; in both
  * cases the honest answer is nothing at all rather than a guess.
  */
-export function frontendState(loadedBuild: string | null | undefined): FrontendState {
+function frontendState(loadedBuild: string | null | undefined): FrontendState {
 	const current = frontendBuild();
 	const reported = loadedBuild ?? null;
 	const comparable =
@@ -163,3 +163,5 @@ export function frontendState(loadedBuild: string | null | undefined): FrontendS
 			: null,
 	};
 }
+
+export { type SourceState, sourceState, type FrontendState, frontendBuild, frontendState };

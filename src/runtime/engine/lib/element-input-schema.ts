@@ -3,12 +3,12 @@ import { z } from "zod";
 import { EXCALIDRAW_ELEMENT_TYPES } from "../types.js";
 import type { ExcalidrawElementType } from "../types.js";
 
-export const PointSchema = z.union([
+const PointSchema = z.union([
 	z.tuple([z.number(), z.number()]),
 	z.object({ x: z.number(), y: z.number() }),
 ]);
 
-export const BindingInputSchema = z
+const BindingInputSchema = z
 	.object({
 		elementId: z.string(),
 		focus: z.number().optional(),
@@ -78,20 +78,20 @@ const ElementFields = {
 		.optional(),
 };
 
-export const CreateElementSchema = z.looseObject({ id: z.string().optional(), ...ElementFields });
-export const UpdateElementSchema = z.looseObject({
+const CreateElementSchema = z.looseObject({ id: z.string().optional(), ...ElementFields });
+const UpdateElementSchema = z.looseObject({
 	id: z.string(),
 	...Object.fromEntries(
 		Object.entries(ElementFields).map(([name, schema]) => [name, schema.optional()]),
 	),
 });
 
-export type AgentCreateElementInput = z.input<typeof CreateElementSchema>;
-export type AgentUpdateElementInput = z.input<typeof UpdateElementSchema>;
-export const AgentElementInputSchema = z.union([CreateElementSchema, UpdateElementSchema]);
-export type AgentElementInput = z.input<typeof AgentElementInputSchema>;
+type AgentCreateElementInput = z.input<typeof CreateElementSchema>;
+type AgentUpdateElementInput = z.input<typeof UpdateElementSchema>;
+const AgentElementInputSchema = z.union([CreateElementSchema, UpdateElementSchema]);
+type AgentElementInput = z.input<typeof AgentElementInputSchema>;
 
-export const HumanElementChangeSchema = z.looseObject({
+const HumanElementChangeSchema = z.looseObject({
 	id: z.string(),
 	type: z
 		.enum(
@@ -102,7 +102,22 @@ export const HumanElementChangeSchema = z.looseObject({
 		)
 		.optional(),
 });
-export type HumanElementChangeInput = z.input<typeof HumanElementChangeSchema>;
+type HumanElementChangeInput = z.input<typeof HumanElementChangeSchema>;
 
-export const CREATE_ELEMENT_JSON_SCHEMA = z.toJSONSchema(CreateElementSchema);
-export const UPDATE_ELEMENT_JSON_SCHEMA = z.toJSONSchema(UpdateElementSchema);
+const CREATE_ELEMENT_JSON_SCHEMA = z.toJSONSchema(CreateElementSchema);
+const UPDATE_ELEMENT_JSON_SCHEMA = z.toJSONSchema(UpdateElementSchema);
+
+export {
+	PointSchema,
+	BindingInputSchema,
+	CreateElementSchema,
+	UpdateElementSchema,
+	type AgentCreateElementInput,
+	type AgentUpdateElementInput,
+	AgentElementInputSchema,
+	type AgentElementInput,
+	HumanElementChangeSchema,
+	type HumanElementChangeInput,
+	CREATE_ELEMENT_JSON_SCHEMA,
+	UPDATE_ELEMENT_JSON_SCHEMA,
+};

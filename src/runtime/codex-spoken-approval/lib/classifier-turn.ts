@@ -21,7 +21,7 @@ import type { ActiveSlot, TurnReadyControls } from "./state.js";
 import { sameBinding, validateResolverCall, type CallValidationFailure } from "./validation.js";
 import { createSpokenApprovalClassifierPrompt } from "./classifier.js";
 
-export interface ClassifierTurnHost {
+interface ClassifierTurnHost {
 	readonly approvalBroker: CodexSpokenApprovalGateOptions["approvalBroker"];
 	readonly session: CodexSpokenApprovalGateOptions["session"];
 	readonly identity: IdentityAuthority;
@@ -119,7 +119,7 @@ function finishTurn(
 	}
 }
 
-export function startClassifier(
+function startClassifier(
 	host: ClassifierTurnHost,
 	slot: ActiveSlot,
 	record: RealtimeTranscriptRecord,
@@ -292,7 +292,7 @@ async function handleResolver(
 	return success(verdict, settlement);
 }
 
-export async function resolveSpokenApproval(
+async function resolveSpokenApproval(
 	host: ClassifierTurnHost,
 	slot: ActiveSlot,
 	request: DynamicServerRequest,
@@ -338,3 +338,5 @@ export async function resolveSpokenApproval(
 	}
 	return handleResolver(host, slot, request, parsed.data.verdict);
 }
+
+export { type ClassifierTurnHost, startClassifier, resolveSpokenApproval };

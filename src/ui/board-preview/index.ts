@@ -7,24 +7,24 @@ import type { BinaryFiles } from "@excalidraw/excalidraw/types";
 import type { BoardPreviewSnapshot } from "../types";
 import { cleanElementForExcalidraw, elementsForScene } from "../canvas/elements";
 
-export type PreviewTheme = "light" | "dark";
+type PreviewTheme = "light" | "dark";
 
-export interface MountedBoardPreviewScene {
+interface MountedBoardPreviewScene {
 	board: string;
 	elements: readonly ExcalidrawElement[];
 	files: BinaryFiles;
 }
 
-export interface MountedBoardPreviewController {
+interface MountedBoardPreviewController {
 	read(): MountedBoardPreviewScene | null;
 }
 
-export interface PreviewScene {
+interface PreviewScene {
 	elements: readonly NonDeletedExcalidrawElement[];
 	files: BinaryFiles;
 }
 
-export interface PreviewCacheIdentity {
+interface PreviewCacheIdentity {
 	board: string;
 	fingerprint: string;
 	theme: PreviewTheme;
@@ -38,7 +38,7 @@ const cacheKey = ({ board, fingerprint, theme }: PreviewCacheIdentity): string =
 	JSON.stringify([board, fingerprint, theme]);
 
 /** A small LRU of owned Blob URLs. Every removal revokes its URL. */
-export class BoardPreviewCache {
+class BoardPreviewCache {
 	readonly #entries = new Map<string, PreviewCacheEntry>();
 
 	constructor(
@@ -105,13 +105,13 @@ export class BoardPreviewCache {
 	}
 }
 
-export interface PreviewRequestToken {
+interface PreviewRequestToken {
 	readonly board: string;
 	readonly generation: number;
 }
 
 /** Makes late exports inert even when their dependency ignores AbortSignal. */
-export class PreviewRequestGate {
+class PreviewRequestGate {
 	#generation = 0;
 	#current: PreviewRequestToken | null = null;
 
@@ -130,7 +130,7 @@ export class PreviewRequestGate {
 	}
 }
 
-export function projectPreviewSnapshot(snapshot: BoardPreviewSnapshot): PreviewScene {
+function projectPreviewSnapshot(snapshot: BoardPreviewSnapshot): PreviewScene {
 	const elements = elementsForScene(snapshot.elements.map(cleanElementForExcalidraw)).filter(
 		(element) => !element.isDeleted,
 	) as NonDeletedExcalidrawElement[];
@@ -143,10 +143,23 @@ const orderedFiles = (files: BinaryFiles): readonly unknown[] =>
 		.map((id) => [id, files[id]]);
 
 /** A strong content identity for an imperative pane scene. */
-export async function fingerprintMountedPreview(scene: MountedBoardPreviewScene): Promise<string> {
+async function fingerprintMountedPreview(scene: MountedBoardPreviewScene): Promise<string> {
 	const bytes = new TextEncoder().encode(
 		`archboard-mounted-preview-v1\n${JSON.stringify([scene.elements, orderedFiles(scene.files)])}`,
 	);
 	const digest = await crypto.subtle.digest("SHA-256", bytes);
 	return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
+
+export {
+	type PreviewTheme,
+	type MountedBoardPreviewScene,
+	type MountedBoardPreviewController,
+	type PreviewScene,
+	type PreviewCacheIdentity,
+	BoardPreviewCache,
+	type PreviewRequestToken,
+	PreviewRequestGate,
+	projectPreviewSnapshot,
+	fingerprintMountedPreview,
+};

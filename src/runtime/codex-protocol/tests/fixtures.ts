@@ -1,13 +1,13 @@
 import type { ClientNotificationMethod, ResponseMethod, ServerRequestMethod } from "../index.js";
 
-export const threadItemFixture = {
+const threadItemFixture = {
 	type: "userMessage",
 	id: "item-1",
 	clientId: null,
 	content: [{ type: "text", text: "hello", text_elements: [] }],
 };
 
-export const turnFixture = {
+const turnFixture = {
 	id: "turn-1",
 	items: [threadItemFixture],
 	itemsView: "full",
@@ -18,7 +18,7 @@ export const turnFixture = {
 	durationMs: 1,
 };
 
-export const threadFixture = {
+const threadFixture = {
 	id: "thread-1",
 	extra: {},
 	sessionId: "session-1",
@@ -48,7 +48,7 @@ export const threadFixture = {
 	turns: [turnFixture],
 };
 
-export const configFixture = {
+const configFixture = {
 	model: null,
 	review_model: null,
 	model_context_window: null,
@@ -77,7 +77,7 @@ export const configFixture = {
 	desktop: null,
 };
 
-export const modelFixture = {
+const modelFixture = {
 	id: "gpt-5.6-luna",
 	model: "gpt-5.6-luna",
 	upgrade: null,
@@ -98,7 +98,7 @@ export const modelFixture = {
 	isDefault: true,
 };
 
-export const queuedSubmissionFixture = {
+const queuedSubmissionFixture = {
 	id: "queue-1",
 	input: [{ type: "text", text: "queued", text_elements: [] }],
 	clientUserMessageId: "client-queue-1",
@@ -120,7 +120,7 @@ const threadStartResponseFixture = {
 	multiAgentMode: "explicitRequestOnly",
 };
 
-export const responseFixtures: Record<ResponseMethod, unknown> = {
+const responseFixtures: Record<ResponseMethod, unknown> = {
 	initialize: {
 		userAgent: "Codex Desktop/0.151.0",
 		codexHome: "/tmp/codex",
@@ -176,7 +176,7 @@ export const responseFixtures: Record<ResponseMethod, unknown> = {
 	"currentTime/read": { currentTimeAt: 1 },
 };
 
-export const serverRequestFixtures: Record<ServerRequestMethod, unknown> = {
+const serverRequestFixtures: Record<ServerRequestMethod, unknown> = {
 	"item/commandExecution/requestApproval": {
 		kind: "command",
 		threadId: "thread-1",
@@ -247,6 +247,18 @@ export const serverRequestFixtures: Record<ServerRequestMethod, unknown> = {
 	},
 };
 
-export const clientNotificationFixtures: Record<ClientNotificationMethod, unknown> = {
+const clientNotificationFixtures: Record<ClientNotificationMethod, unknown> = {
 	initialized: { method: "initialized" },
+};
+
+export {
+	threadItemFixture,
+	turnFixture,
+	threadFixture,
+	configFixture,
+	modelFixture,
+	queuedSubmissionFixture,
+	responseFixtures,
+	serverRequestFixtures,
+	clientNotificationFixtures,
 };

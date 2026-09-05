@@ -1,4 +1,4 @@
-export type CanvasApplicationPhase =
+type CanvasApplicationPhase =
 	| "idle"
 	| "starting"
 	| "running"
@@ -7,30 +7,26 @@ export type CanvasApplicationPhase =
 	| "stopped"
 	| "failed";
 
-export type CanvasApplicationStopReason =
-	| NodeJS.Signals
-	| "server-error"
-	| "startup-failed"
-	| "test";
+type CanvasApplicationStopReason = NodeJS.Signals | "server-error" | "startup-failed" | "test";
 
-export interface CanvasMutationLease {
+interface CanvasMutationLease {
 	readonly signal: AbortSignal;
 	abort(reason?: unknown): void;
 	finish(): void;
 	track<T>(name: string, work: (signal: AbortSignal) => Promise<T> | T): Promise<T>;
 }
 
-export interface CanvasMutationAdmissionOptions {
+interface CanvasMutationAdmissionOptions {
 	readonly drainTimeoutMs: number;
 }
 
-export interface CanvasActiveMutation {
+interface CanvasActiveMutation {
 	readonly name: string;
 	readonly kind: "request" | "work";
 	readonly startedAt: number;
 }
 
-export class CanvasApplicationBusyError extends Error {
+class CanvasApplicationBusyError extends Error {
 	readonly code = "CANVAS_BUSY";
 
 	constructor(
@@ -56,7 +52,7 @@ export class CanvasApplicationBusyError extends Error {
  * response. A disconnected request aborts waitable work, while work already in
  * a synchronous critical section remains counted until that section returns.
  */
-export function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) {
+function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) {
 	if (!Number.isFinite(options.drainTimeoutMs) || options.drainTimeoutMs < 0) {
 		throw new Error("Canvas mutation drain timeout must be a non-negative finite duration.");
 	}
@@ -160,7 +156,7 @@ export function createCanvasMutationAdmission(options: CanvasMutationAdmissionOp
 	});
 }
 
-export interface CanvasApplicationResource {
+interface CanvasApplicationResource {
 	readonly name: string;
 	/** A resource that starts asynchronously must settle when this signal aborts. */
 	readonly start?: (signal: AbortSignal) => Promise<void> | void;
@@ -172,7 +168,7 @@ export interface CanvasApplicationResource {
 	readonly forceStop?: (reason: CanvasApplicationStopReason) => Promise<void> | void;
 }
 
-export interface CanvasApplicationEvent {
+interface CanvasApplicationEvent {
 	readonly phase: CanvasApplicationPhase;
 	readonly resource: string | null;
 	readonly action:
@@ -186,7 +182,7 @@ export interface CanvasApplicationEvent {
 		| "failed";
 }
 
-export interface CanvasApplicationLifetimeOptions {
+interface CanvasApplicationLifetimeOptions {
 	readonly resources: readonly CanvasApplicationResource[];
 	readonly heldBoards?: () => readonly string[];
 	/** Stop admitting writes and settle every admitted write. */
@@ -196,7 +192,7 @@ export interface CanvasApplicationLifetimeOptions {
 	readonly observe?: (event: CanvasApplicationEvent) => void;
 }
 
-export class CanvasApplicationHeldError extends Error {
+class CanvasApplicationHeldError extends Error {
 	readonly code = "CANVAS_HELD";
 
 	constructor(readonly boards: readonly string[]) {
@@ -210,7 +206,7 @@ export class CanvasApplicationHeldError extends Error {
 	}
 }
 
-export class CanvasApplicationStartupCancelledError extends Error {
+class CanvasApplicationStartupCancelledError extends Error {
 	constructor(readonly reason: CanvasApplicationStopReason) {
 		super(`Canvas application startup was canceled by ${reason}.`);
 		this.name = "CanvasApplicationStartupCancelledError";
@@ -229,7 +225,7 @@ const failure = (error: unknown): Error =>
  * its force action must make the original stop promise settle before teardown
  * advances to the next owner.
  */
-export function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptions) {
+function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptions) {
 	for (const resource of options.resources) {
 		if (resource.stopGraceMs === undefined) {
 			continue;
@@ -459,3 +455,19 @@ export function createCanvasApplicationLifetime(options: CanvasApplicationLifeti
 		},
 	});
 }
+
+export {
+	type CanvasApplicationPhase,
+	type CanvasApplicationStopReason,
+	type CanvasMutationLease,
+	type CanvasMutationAdmissionOptions,
+	type CanvasActiveMutation,
+	CanvasApplicationBusyError,
+	createCanvasMutationAdmission,
+	type CanvasApplicationResource,
+	type CanvasApplicationEvent,
+	type CanvasApplicationLifetimeOptions,
+	CanvasApplicationHeldError,
+	CanvasApplicationStartupCancelledError,
+	createCanvasApplicationLifetime,
+};

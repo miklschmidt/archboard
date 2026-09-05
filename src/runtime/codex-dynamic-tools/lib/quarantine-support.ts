@@ -24,15 +24,15 @@ import type { DynamicOperationSettlement } from "./effects.js";
 import { validateDynamicCall } from "./request-validation.js";
 import { invalidDynamicResponse } from "./response.js";
 
-export const DYNAMIC_QUARANTINE_WIRE_CAP = CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP;
+const DYNAMIC_QUARANTINE_WIRE_CAP = CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP;
 
-export interface Deferred<Value> {
+interface Deferred<Value> {
 	readonly promise: Promise<Value>;
 	readonly resolve: (value: Value) => void;
 	readonly reject: (error: unknown) => void;
 }
 
-export interface OrdinaryWireOwners {
+interface OrdinaryWireOwners {
 	readonly get: (key: string) => Promise<DynamicToolCallResponse> | undefined;
 	readonly own: (
 		key: string,
@@ -42,12 +42,12 @@ export interface OrdinaryWireOwners {
 	readonly clear: () => void;
 }
 
-export interface DispatchCandidate {
+interface DispatchCandidate {
 	readonly response: DynamicToolCallResponse;
 	readonly settlement: DynamicOperationSettlement | null;
 }
 
-export interface QuarantineWireOwner {
+interface QuarantineWireOwner {
 	readonly key: string;
 	readonly requestId: JsonRpcRequestId;
 	readonly request: DynamicServerRequest;
@@ -59,7 +59,7 @@ export interface QuarantineWireOwner {
 	settled: boolean;
 }
 
-export interface QuarantineLogicalOwner {
+interface QuarantineLogicalOwner {
 	readonly key: string;
 	readonly identity: DynamicMutationQuarantineIdentity;
 	readonly response: DynamicToolCallResponse;
@@ -67,7 +67,7 @@ export interface QuarantineLogicalOwner {
 	readonly wireKeys: Set<string>;
 }
 
-export interface EpochQuarantineOwner {
+interface EpochQuarantineOwner {
 	readonly key: string;
 	readonly child: DynamicMutationQuarantineIdentity["child"];
 	readonly epoch: DynamicMutationQuarantineIdentity["epoch"];
@@ -80,7 +80,7 @@ export interface EpochQuarantineOwner {
 	overflowDeferred: Deferred<DynamicToolCallResponse> | null;
 }
 
-export function deferred<Value>(): Deferred<Value> {
+function deferred<Value>(): Deferred<Value> {
 	let resolve!: (value: Value) => void;
 	let reject!: (error: unknown) => void;
 	const promise = new Promise<Value>((accept, decline) => {
@@ -90,7 +90,7 @@ export function deferred<Value>(): Deferred<Value> {
 	return Object.freeze({ promise, resolve, reject });
 }
 
-export function createOrdinaryWireOwners(): OrdinaryWireOwners {
+function createOrdinaryWireOwners(): OrdinaryWireOwners {
 	const owners = new Map<string, Deferred<DynamicToolCallResponse>>();
 	// oxlint-disable-next-line typescript/promise-function-async -- Duplicate wire calls must receive the exact same owned Promise identity.
 	const own = (
@@ -139,7 +139,7 @@ function isMutationTool(value: string): value is DynamicMutationToolName {
 	return value === "create_thread" || value === "fork_thread" || value === "send_message_to_thread";
 }
 
-export function mutationIdentity(
+function mutationIdentity(
 	request: DynamicServerRequest,
 	options: CodexDynamicToolsOptions,
 ): DynamicMutationQuarantineIdentity | null {
@@ -165,17 +165,17 @@ export function mutationIdentity(
 	});
 }
 
-export function logicalKey(identity: DynamicMutationQuarantineIdentity): string {
+function logicalKey(identity: DynamicMutationQuarantineIdentity): string {
 	return logicalToolCallKey(identity);
 }
 
-export function epochKey(child: unknown, epoch: unknown): string | null {
+function epochKey(child: unknown, epoch: unknown): string | null {
 	return typeof child === "string" && typeof epoch === "string"
 		? JSON.stringify([child, epoch])
 		: null;
 }
 
-export function requestEpochKey(value: unknown): string | null {
+function requestEpochKey(value: unknown): string | null {
 	if (value === null || typeof value !== "object" || Array.isArray(value)) {
 		return null;
 	}
@@ -185,7 +185,7 @@ export function requestEpochKey(value: unknown): string | null {
 	return epochKey(value.child, value.epoch);
 }
 
-export function requestWireKey(value: unknown): string | null {
+function requestWireKey(value: unknown): string | null {
 	if (value === null || typeof value !== "object" || Array.isArray(value)) {
 		return null;
 	}
@@ -202,7 +202,7 @@ export function requestWireKey(value: unknown): string | null {
 	return JSON.stringify([value.child, value.epoch, value.requestId]);
 }
 
-export function blockedDynamicResponse(): DynamicToolCallResponse {
+function blockedDynamicResponse(): DynamicToolCallResponse {
 	return invalidDynamicResponse(
 		"invalid_call",
 		"The child epoch cannot accept another dynamic call while mutation recovery is pending.",
@@ -213,7 +213,7 @@ function exactKeys(value: object, keys: readonly string[]): boolean {
 	return Object.keys(value).toSorted().join(",") === [...keys].toSorted().join(",");
 }
 
-export function exactPoisonOwner(
+function exactPoisonOwner(
 	value: DynamicMutationQuarantineOwner,
 	identity: DynamicMutationQuarantineIdentity,
 ): DynamicMutationQuarantineOwner {
@@ -232,7 +232,7 @@ export function exactPoisonOwner(
 	return value;
 }
 
-export function exactShutdownOwner(
+function exactShutdownOwner(
 	value: DynamicFailClosedShutdownOwner,
 	epoch: EpochQuarantineOwner,
 ): DynamicFailClosedShutdownOwner {
@@ -251,7 +251,7 @@ export function exactShutdownOwner(
 	return value;
 }
 
-export function exactTeardownProof(
+function exactTeardownProof(
 	value: DynamicEpochTeardownProof,
 	epoch: EpochQuarantineOwner,
 ): boolean {
@@ -267,3 +267,24 @@ export function exactTeardownProof(
 		exactKeys(value, ["child", "epoch", "sessionClosed", "transportClosed"])
 	);
 }
+
+export {
+	DYNAMIC_QUARANTINE_WIRE_CAP,
+	type Deferred,
+	type OrdinaryWireOwners,
+	type DispatchCandidate,
+	type QuarantineWireOwner,
+	type QuarantineLogicalOwner,
+	type EpochQuarantineOwner,
+	deferred,
+	createOrdinaryWireOwners,
+	mutationIdentity,
+	logicalKey,
+	epochKey,
+	requestEpochKey,
+	requestWireKey,
+	blockedDynamicResponse,
+	exactPoisonOwner,
+	exactShutdownOwner,
+	exactTeardownProof,
+};

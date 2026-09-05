@@ -7,7 +7,7 @@ interface Snapshot {
 	mtimeNs: bigint;
 }
 
-export interface ReversibleCheckoutEdit {
+interface ReversibleCheckoutEdit {
 	edit(path: string, transform: (text: string) => string): void;
 	restore(): void;
 }
@@ -25,7 +25,7 @@ const timestamp = (nanoseconds: bigint): string => {
 	return `@${nanoseconds / billion}.${String(nanoseconds % billion).padStart(9, "0")}`;
 };
 
-export function reversibleCheckoutEdit(cwd: string, paths: string[]): ReversibleCheckoutEdit {
+function reversibleCheckoutEdit(cwd: string, paths: string[]): ReversibleCheckoutEdit {
 	const beforeStatus = status(cwd);
 	const snapshots = new Map<string, Snapshot>();
 	for (const path of paths) {
@@ -98,3 +98,5 @@ export function reversibleCheckoutEdit(cwd: string, paths: string[]): Reversible
 		},
 	};
 }
+
+export { type ReversibleCheckoutEdit, reversibleCheckoutEdit };

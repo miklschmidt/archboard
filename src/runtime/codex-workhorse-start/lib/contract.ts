@@ -27,22 +27,19 @@ import type {
 	TrustedIdentityDecoder,
 } from "../../../shared/codex-workbench-identity/index.js";
 
-export type WorkhorseThreadStartParams = SessionParams<"thread/start">;
-export type WorkhorseStartResponse = SessionResponse<"thread/start">;
-export type WorkhorseThreadReadResponse = SessionResponse<"thread/read">;
-export type WorkhorseThreadDeleteResponse = SessionResponse<"thread/delete">;
+type WorkhorseThreadStartParams = SessionParams<"thread/start">;
+type WorkhorseStartResponse = SessionResponse<"thread/start">;
+type WorkhorseThreadReadResponse = SessionResponse<"thread/read">;
+type WorkhorseThreadDeleteResponse = SessionResponse<"thread/delete">;
 
-export type WorkhorseApprovalPolicy = WorkhorseStartResponse["approvalPolicy"];
-export type WorkhorseApprovalsReviewer = WorkhorseStartResponse["approvalsReviewer"];
-export type WorkhorseSandboxPolicy = WorkhorseStartResponse["sandbox"];
-export type WorkhorsePermissionProfile = WorkhorseStartResponse["activePermissionProfile"];
+type WorkhorseApprovalPolicy = WorkhorseStartResponse["approvalPolicy"];
+type WorkhorseApprovalsReviewer = WorkhorseStartResponse["approvalsReviewer"];
+type WorkhorseSandboxPolicy = WorkhorseStartResponse["sandbox"];
+type WorkhorsePermissionProfile = WorkhorseStartResponse["activePermissionProfile"];
 
-export type WorkhorseSessionPort = Pick<
-	CodexSession,
-	"threadStart" | "threadRead" | "threadDelete"
->;
-export type WorkhorseThreadLinkPort = Pick<CodexThreadLinkPort, "classifyAndBind">;
-export type WorkhorseEpochPort = Pick<
+type WorkhorseSessionPort = Pick<CodexSession, "threadStart" | "threadRead" | "threadDelete">;
+type WorkhorseThreadLinkPort = Pick<CodexThreadLinkPort, "classifyAndBind">;
+type WorkhorseEpochPort = Pick<
 	CodexEpochStore,
 	| "snapshot"
 	| "assertCurrent"
@@ -53,21 +50,21 @@ export type WorkhorseEpochPort = Pick<
 >;
 
 /** The identity half of the authority is used only to validate returned server threads. */
-export interface WorkhorseIdentityPort {
+interface WorkhorseIdentityPort {
 	readonly validator: Pick<IdentityValidator, "childId" | "epoch">;
 	readonly decoder: Pick<TrustedIdentityDecoder, "parseThreadId">;
 }
 
 /** The operation half is the sole host-owned OperationId issuing capability. */
-export type WorkhorseOperationPort = Pick<OperationAuthority, "issuer" | "validator">;
+type WorkhorseOperationPort = Pick<OperationAuthority, "issuer" | "validator">;
 
-export interface WorkhorseStartInput {
+interface WorkhorseStartInput {
 	readonly paneId: string;
 	/** The caller's last pane-binding CAS; null is valid only for an unbound pane. */
 	readonly expected: ThreadLinkCasToken | null;
 }
 
-export interface CodexWorkhorseStartOptions {
+interface CodexWorkhorseStartOptions {
 	readonly session: WorkhorseSessionPort;
 	readonly threadLink: WorkhorseThreadLinkPort;
 	readonly epoch: WorkhorseEpochPort;
@@ -76,16 +73,12 @@ export interface CodexWorkhorseStartOptions {
 	readonly checkoutRoot: string;
 }
 
-export type WorkhorseLifecycleState = "unbound" | "starting" | "ready" | "inspect_only" | "failed";
+type WorkhorseLifecycleState = "unbound" | "starting" | "ready" | "inspect_only" | "failed";
 
-export type WorkhorseSettlementOutcome =
-	| "pending"
-	| "delivered"
-	| "not_delivered"
-	| "outcome_unknown";
+type WorkhorseSettlementOutcome = "pending" | "delivered" | "not_delivered" | "outcome_unknown";
 
 /** The reviewed values returned by thread/start and retained as host evidence. */
-export interface WorkhorseStartFacts {
+interface WorkhorseStartFacts {
 	readonly threadId: ThreadId;
 	readonly cwd: string;
 	readonly runtimeWorkspaceRoots: readonly string[];
@@ -103,14 +96,14 @@ export interface WorkhorseStartFacts {
 	readonly manifestHash: string;
 }
 
-export interface WorkhorseCleanupFacts {
+interface WorkhorseCleanupFacts {
 	readonly operationId: OperationId;
 	readonly threadId: ThreadId;
 	readonly outcome: Exclude<WorkhorseSettlementOutcome, "pending">;
 	readonly reason: string | null;
 }
 
-export interface WorkhorseSnapshot {
+interface WorkhorseSnapshot {
 	readonly kind: "codex_workhorse";
 	readonly state: WorkhorseLifecycleState;
 	readonly paneId: string | null;
@@ -125,15 +118,45 @@ export interface WorkhorseSnapshot {
 	readonly reason: string | null;
 }
 
-export type WorkhorseStartTransaction = EpochTransaction;
-export type WorkhorseEpochSnapshot = EpochSnapshot;
-export type WorkhorseEpochProof = EpochExecutionProof;
-export type WorkhorseEpochRecord = EpochOperationRecord;
-export type WorkhorseThread = SessionThread;
-export type WorkhorseThreadLinkTarget = ThreadLinkTarget;
+type WorkhorseStartTransaction = EpochTransaction;
+type WorkhorseEpochSnapshot = EpochSnapshot;
+type WorkhorseEpochProof = EpochExecutionProof;
+type WorkhorseEpochRecord = EpochOperationRecord;
+type WorkhorseThread = SessionThread;
+type WorkhorseThreadLinkTarget = ThreadLinkTarget;
 
-export interface CodexWorkhorseStart {
+interface CodexWorkhorseStart {
 	readonly start: (input: WorkhorseStartInput) => Promise<WorkhorseSnapshot>;
 	readonly snapshot: () => WorkhorseSnapshot;
 }
 import type { CODEX_SESSION_THREAD_SOURCE } from "../../codex-session/index.js";
+
+export {
+	type WorkhorseThreadStartParams,
+	type WorkhorseStartResponse,
+	type WorkhorseThreadReadResponse,
+	type WorkhorseThreadDeleteResponse,
+	type WorkhorseApprovalPolicy,
+	type WorkhorseApprovalsReviewer,
+	type WorkhorseSandboxPolicy,
+	type WorkhorsePermissionProfile,
+	type WorkhorseSessionPort,
+	type WorkhorseThreadLinkPort,
+	type WorkhorseEpochPort,
+	type WorkhorseIdentityPort,
+	type WorkhorseOperationPort,
+	type WorkhorseStartInput,
+	type CodexWorkhorseStartOptions,
+	type WorkhorseLifecycleState,
+	type WorkhorseSettlementOutcome,
+	type WorkhorseStartFacts,
+	type WorkhorseCleanupFacts,
+	type WorkhorseSnapshot,
+	type WorkhorseStartTransaction,
+	type WorkhorseEpochSnapshot,
+	type WorkhorseEpochProof,
+	type WorkhorseEpochRecord,
+	type WorkhorseThread,
+	type WorkhorseThreadLinkTarget,
+	type CodexWorkhorseStart,
+};

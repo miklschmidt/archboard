@@ -17,11 +17,11 @@ const hasOwn = (value: object, key: PropertyKey): boolean =>
 
 const agentLabelIntent = Symbol("archboard.agent-label-intent");
 
-export type AgentElementStatement = LegacyElementIngress & {
+type AgentElementStatement = LegacyElementIngress & {
 	readonly [agentLabelIntent]?: string;
 };
 
-export function withAgentLabelIntent<T extends object>(value: T, label: unknown): T {
+function withAgentLabelIntent<T extends object>(value: T, label: unknown): T {
 	if (typeof label === "string") {
 		Object.defineProperty(value, agentLabelIntent, { value: label, enumerable: false });
 	}
@@ -29,7 +29,7 @@ export function withAgentLabelIntent<T extends object>(value: T, label: unknown)
 }
 
 /** Read the private label intent spent and owned by this named ingress. */
-export function agentLabelIntentOf(value: object): string | undefined {
+function agentLabelIntentOf(value: object): string | undefined {
 	return (value as AgentElementStatement)[agentLabelIntent];
 }
 
@@ -57,7 +57,7 @@ function normalizePoints(points: unknown): unknown {
 }
 
 /** Spend public aliases before the native completion boundary. */
-export function wellFormAgentStatement(
+function wellFormAgentStatement(
 	raw: Record<string, unknown>,
 	existingType?: string,
 ): Record<string, unknown> {
@@ -106,10 +106,7 @@ export function wellFormAgentStatement(
 	return statement;
 }
 
-export function spendArrowRefs(
-	element: Record<string, unknown>,
-	stated: Record<string, unknown>,
-): void {
+function spendArrowRefs(element: Record<string, unknown>, stated: Record<string, unknown>): void {
 	if (element["type"] !== "arrow" && element["type"] !== "line") {
 		return;
 	}
@@ -129,7 +126,7 @@ export function spendArrowRefs(
 	}
 }
 
-export function buildAgentElement(
+function buildAgentElement(
 	raw: AgentElementInput,
 	inUse: { has(id: string): boolean },
 ): AgentElementStatement {
@@ -165,3 +162,12 @@ export function buildAgentElement(
 	);
 	return withAgentLabelIntent(element, agentLabelIntentOf(statement));
 }
+
+export {
+	type AgentElementStatement,
+	withAgentLabelIntent,
+	agentLabelIntentOf,
+	wellFormAgentStatement,
+	spendArrowRefs,
+	buildAgentElement,
+};

@@ -5,7 +5,7 @@ import { join } from "node:path";
 const repositoryRoot = join(import.meta.dir, "../../../..");
 const publicPreload = join(import.meta.dir, "../fixtures/public-codex-startup-preload.ts");
 
-export function canvasChildPids(pid: number): number[] {
+function canvasChildPids(pid: number): number[] {
 	return readFileSync(`/proc/${pid}/task/${pid}/children`, "utf8")
 		.trim()
 		.split(/\s+/u)
@@ -13,7 +13,7 @@ export function canvasChildPids(pid: number): number[] {
 		.map(Number);
 }
 
-export function publicStartEnvironment(
+function publicStartEnvironment(
 	root: string,
 	base: string,
 	executable?: string,
@@ -39,12 +39,12 @@ export function publicStartEnvironment(
 	};
 }
 
-export function writePublicCodexExecutable(path: string, body: string): void {
+function writePublicCodexExecutable(path: string, body: string): void {
 	writeFileSync(path, `#!${process.execPath}\n${body}\n`);
 	chmodSync(path, 0o700);
 }
 
-export function runPublicCanvas(command: "start" | "stop", environment: NodeJS.ProcessEnv) {
+function runPublicCanvas(command: "start" | "stop", environment: NodeJS.ProcessEnv) {
 	return spawnSync(join(repositoryRoot, "bin/canvas"), [command], {
 		cwd: repositoryRoot,
 		env: environment,
@@ -54,7 +54,7 @@ export function runPublicCanvas(command: "start" | "stop", environment: NodeJS.P
 	});
 }
 
-export function runPublicCanvasAsync(command: "start" | "stop", environment: NodeJS.ProcessEnv) {
+function runPublicCanvasAsync(command: "start" | "stop", environment: NodeJS.ProcessEnv) {
 	return new Promise<{ readonly status: number | null; readonly stderr: string }>(
 		(resolve, reject) => {
 			const child = spawn(join(repositoryRoot, "bin/canvas"), [command], {
@@ -70,7 +70,7 @@ export function runPublicCanvasAsync(command: "start" | "stop", environment: Nod
 	);
 }
 
-export async function loggedRequestFailure(base: string, root: string) {
+async function loggedRequestFailure(base: string, root: string) {
 	const response = await fetch(`${base}/api/elements?board=scratch&doing=probe`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -85,3 +85,12 @@ export async function loggedRequestFailure(base: string, root: string) {
 		),
 	};
 }
+
+export {
+	canvasChildPids,
+	publicStartEnvironment,
+	writePublicCodexExecutable,
+	runPublicCanvas,
+	runPublicCanvasAsync,
+	loggedRequestFailure,
+};

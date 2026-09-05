@@ -4,13 +4,13 @@ import { expandElements } from "./expand-elements.js";
 import { drawnFileIds } from "./embedded-files.js";
 import { extractSceneJsonFromObsidianMd, isObsidianExcalidrawMd } from "./obsidian-md.js";
 
-export interface ExportedScene {
+interface ExportedScene {
 	scene: Record<string, unknown>;
 	elementCount: number;
 }
 
 /** Build one Excalidraw document from the supplied board-shape elements. */
-export function buildScene(
+function buildScene(
 	sceneElements: LegacyElementIngress[],
 	sceneFiles: Record<string, unknown> = {},
 	// A board's own note keeps archboard's bookkeeping, because the note is the
@@ -48,7 +48,7 @@ export function buildScene(
 }
 
 /** Build a file document from the board returned by the canvas server. */
-export async function buildSceneFile(): Promise<ExportedScene> {
+async function buildSceneFile(): Promise<ExportedScene> {
 	const { getElements, getFiles } = await import("./canvas-client.js");
 	const [elementsResult, filesResult] = await Promise.allSettled([getElements(), getFiles()]);
 	if (elementsResult.status === "rejected") {
@@ -58,14 +58,14 @@ export async function buildSceneFile(): Promise<ExportedScene> {
 	return buildScene(elementsResult.value, files);
 }
 
-export interface ImportResult {
+interface ImportResult {
 	count: number;
 	fileCount: number;
 	mode: "replace" | "merge";
 }
 
 /** Import a JSON or Obsidian scene through the server's element-input entry. */
-export async function importScene(options: {
+async function importScene(options: {
 	data: string;
 	mode: "replace" | "merge";
 }): Promise<ImportResult> {
@@ -109,3 +109,5 @@ export async function importScene(options: {
 	}
 	return { count: elements.length, fileCount, mode: options.mode };
 }
+
+export { type ExportedScene, buildScene, buildSceneFile, type ImportResult, importScene };

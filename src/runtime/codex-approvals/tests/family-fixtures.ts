@@ -14,13 +14,13 @@ import {
 	userInputRequest,
 } from "./support.js";
 
-export interface FamilyResponseCase {
+interface FamilyResponseCase {
 	readonly name: string;
 	readonly response: (label: string) => ApprovalResponse;
 	readonly expected: (label: string) => ReverseResponse;
 }
 
-export interface ApprovalFamilyCase {
+interface ApprovalFamilyCase {
 	readonly name: string;
 	readonly family: ApprovalFamily;
 	readonly make: (identity: IdentityAuthority, label: string) => TransportServerRequest;
@@ -32,7 +32,7 @@ function commandRequest(identity: IdentityAuthority, label: string): TransportSe
 	return commandRequestWithAvailableDecisions(identity, label, ["accept", "decline", "cancel"]);
 }
 
-export const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
+const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
 	{
 		name: "command",
 		family: "command_execution",
@@ -221,3 +221,5 @@ export const approvalFamilyCases: readonly ApprovalFamilyCase[] = [
 		fallback: (state) => ({ result: { decision: state === "expired" ? "timed_out" : "abort" } }),
 	},
 ];
+
+export { type FamilyResponseCase, type ApprovalFamilyCase, approvalFamilyCases };

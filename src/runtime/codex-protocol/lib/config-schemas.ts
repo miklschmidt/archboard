@@ -20,15 +20,15 @@ import {
 	looseObject,
 } from "./scalars.js";
 
-export const AutoCompactTokenLimitScopeSchema = z.enum(["total", "body_after_prefix"]);
-export const ForcedLoginMethodSchema = z.enum(["chatgpt", "api"]);
-export const WebSearchModeSchema = z.enum(["disabled", "cached", "indexed", "live"]);
-export const VerbositySchema = z.enum(["low", "medium", "high"]);
-export const CliAuthCredentialsStoreModeSchema = z.enum(["file", "keyring", "auto", "ephemeral"]);
-export const WindowsSandboxSetupModeSchema = z.enum(["elevated", "unelevated"]);
-export const AllowDenyRequirementSchema = z.enum(["allow", "deny"]);
+const AutoCompactTokenLimitScopeSchema = z.enum(["total", "body_after_prefix"]);
+const ForcedLoginMethodSchema = z.enum(["chatgpt", "api"]);
+const WebSearchModeSchema = z.enum(["disabled", "cached", "indexed", "live"]);
+const VerbositySchema = z.enum(["low", "medium", "high"]);
+const CliAuthCredentialsStoreModeSchema = z.enum(["file", "keyring", "auto", "ephemeral"]);
+const WindowsSandboxSetupModeSchema = z.enum(["elevated", "unelevated"]);
+const AllowDenyRequirementSchema = z.enum(["allow", "deny"]);
 
-export const ConfigLayerSourceSchema = z.discriminatedUnion("type", [
+const ConfigLayerSourceSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("packagedDefaults"), file: z.string() }),
 	looseObject({ type: z.literal("mdm"), domain: z.string(), key: z.string() }),
 	looseObject({ type: z.literal("system"), file: z.string() }),
@@ -40,13 +40,13 @@ export const ConfigLayerSourceSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("legacyManagedConfigTomlFromMdm") }),
 ]);
 
-export const ConfigLayerMetadataSchema = looseObject({
+const ConfigLayerMetadataSchema = looseObject({
 	name: ConfigLayerSourceSchema,
 	version: z.string(),
 });
 
 /** A config layer carries the server's intentionally opaque JSON snapshot. */
-export const ConfigLayerSchema = looseObject({
+const ConfigLayerSchema = looseObject({
 	name: ConfigLayerSourceSchema,
 	version: z.string(),
 	config: JsonValueSchema,
@@ -58,27 +58,27 @@ export const ConfigLayerSchema = looseObject({
 		.transform((value) => value ?? null),
 });
 
-export const SandboxWorkspaceWriteSchema = looseObject({
+const SandboxWorkspaceWriteSchema = looseObject({
 	writable_roots: z.array(z.string()),
 	network_access: z.boolean(),
 	exclude_tmpdir_env_var: z.boolean(),
 	exclude_slash_tmp: z.boolean(),
 });
-export const ForcedChatgptWorkspaceIdsSchema = z.union([z.string(), z.array(z.string())]);
+const ForcedChatgptWorkspaceIdsSchema = z.union([z.string(), z.array(z.string())]);
 
-export const WebSearchContextSizeSchema = z.enum(["low", "medium", "high"]);
-export const WebSearchLocationSchema = looseObject({
+const WebSearchContextSizeSchema = z.enum(["low", "medium", "high"]);
+const WebSearchLocationSchema = looseObject({
 	country: z.string().nullable(),
 	region: z.string().nullable(),
 	city: z.string().nullable(),
 	timezone: z.string().nullable(),
 });
-export const WebSearchToolConfigSchema = looseObject({
+const WebSearchToolConfigSchema = looseObject({
 	context_size: WebSearchContextSizeSchema.nullable(),
 	allowed_domains: z.array(z.string()).nullable(),
 	location: WebSearchLocationSchema.nullable(),
 });
-export const ToolsV2Schema = looseObject({ web_search: WebSearchToolConfigSchema.nullable() });
+const ToolsV2Schema = looseObject({ web_search: WebSearchToolConfigSchema.nullable() });
 
 /** Config's generated extension map permits these scalar/JSON values by design. */
 const ConfigExtraValueSchema = z.union([
@@ -91,7 +91,7 @@ const ConfigExtraValueSchema = z.union([
 ]);
 
 /** Analytics keeps documented `enabled` strict and preserves its open config keys. */
-export const AnalyticsConfigSchema = z
+const AnalyticsConfigSchema = z
 	.object({ enabled: z.boolean().nullable() })
 	.catchall(ConfigExtraValueSchema);
 
@@ -119,7 +119,7 @@ const AppConfigEntrySchema = looseObject({
 	tools: AppToolsConfigSchema.nullable(),
 });
 /** App ids are an intentionally open map; each value has a closed config shape. */
-export const AppsConfigSchema = z
+const AppsConfigSchema = z
 	.object({ _default: AppsDefaultConfigSchema.nullable() })
 	.catchall(AppConfigEntrySchema);
 
@@ -129,7 +129,7 @@ const BrowserUseOriginPolicyConfigSchema = looseObject({
 	uploads: AllowDenyRequirementSchema.nullable(),
 	full_cdp_access: AllowDenyRequirementSchema.nullable(),
 });
-export const BrowserUseConfigSchema = looseObject({
+const BrowserUseConfigSchema = looseObject({
 	allow_history_access: z.boolean().nullable(),
 	default_origin_policy: BrowserUseOriginPolicyConfigSchema.nullable(),
 	/** Origin names are generated map keys supplied by the browser policy. */
@@ -151,13 +151,13 @@ const ComputerUseWindowsConfigSchema = looseObject({
 	aumids: z.record(z.string(), AllowDenyRequirementSchema).nullable(),
 	exes: z.array(ComputerUseWindowsExeConfigSchema).nullable(),
 });
-export const ComputerUseConfigSchema = looseObject({
+const ComputerUseConfigSchema = looseObject({
 	default_app_access: AllowDenyRequirementSchema.nullable(),
 	macos: ComputerUseMacosConfigSchema.nullable(),
 	windows: ComputerUseWindowsConfigSchema.nullable(),
 });
 
-export const ConfigSchema = z
+const ConfigSchema = z
 	.object({
 		model: z.string().nullable(),
 		review_model: z.string().nullable(),
@@ -211,7 +211,7 @@ const ComputerUseRequirementsSchema = looseObject({
 	macos: ComputerUseMacosRequirementsSchema.nullable(),
 	windows: ComputerUseWindowsRequirementsSchema.nullable(),
 });
-export const BrowserUseOriginPolicySchema = looseObject({
+const BrowserUseOriginPolicySchema = looseObject({
 	access: AllowDenyRequirementSchema.nullable(),
 	downloads: AllowDenyRequirementSchema.nullable(),
 	uploads: AllowDenyRequirementSchema.nullable(),
@@ -304,7 +304,7 @@ const ModelsRequirementsSchema = looseObject({
 });
 const FeedbackRequirementsSchema = looseObject({ enabled: z.boolean().nullable() });
 
-export const ConfigRequirementsSchema = looseObject({
+const ConfigRequirementsSchema = looseObject({
 	cliAuthCredentialsStore: CliAuthCredentialsStoreModeSchema.nullable(),
 	chatgptBaseUrl: z.string().nullable(),
 	additionalDeveloperInstructions: z.string().nullable(),
@@ -339,12 +339,12 @@ export const ConfigRequirementsSchema = looseObject({
 	windowsSandboxPrivateDesktop: z.boolean().nullable(),
 });
 
-export const ModelServiceTierSchema = looseObject({
+const ModelServiceTierSchema = looseObject({
 	id: z.string(),
 	name: z.string(),
 	description: z.string(),
 });
-export const ReasoningEffortOptionSchema = looseObject({
+const ReasoningEffortOptionSchema = looseObject({
 	reasoningEffort: ReasoningEffortSchema,
 	description: z.string(),
 });
@@ -356,7 +356,7 @@ const ModelUpgradeInfoSchema = looseObject({
 	retirementAt: FiniteNumberSchema.nullable(),
 });
 const ModelAvailabilityNuxSchema = looseObject({ message: z.string() });
-export const ModelSchema = looseObject({
+const ModelSchema = looseObject({
 	id: z.string(),
 	model: z.string(),
 	upgrade: z.string().nullable(),
@@ -385,7 +385,7 @@ const CollaborationModeSchema = looseObject({
 		developer_instructions: z.string().nullable(),
 	}),
 });
-export const ThreadSettingsSchema = looseObject({
+const ThreadSettingsSchema = looseObject({
 	cwd: z.string(),
 	approvalPolicy: AskForApprovalSchema,
 	approvalsReviewer: ApprovalsReviewerSchema,
@@ -401,7 +401,7 @@ export const ThreadSettingsSchema = looseObject({
 	personality: PersonalitySchema.nullable(),
 });
 
-export const TokenUsageBreakdownSchema = looseObject({
+const TokenUsageBreakdownSchema = looseObject({
 	totalTokens: FiniteNumberSchema,
 	inputTokens: FiniteNumberSchema,
 	cachedInputTokens: FiniteNumberSchema,
@@ -409,28 +409,28 @@ export const TokenUsageBreakdownSchema = looseObject({
 	outputTokens: FiniteNumberSchema,
 	reasoningOutputTokens: FiniteNumberSchema,
 });
-export const ThreadTokenUsageSchema = looseObject({
+const ThreadTokenUsageSchema = looseObject({
 	total: TokenUsageBreakdownSchema,
 	last: TokenUsageBreakdownSchema,
 	modelContextWindow: FiniteNumberSchema.nullable(),
 });
-export const RateLimitWindowSchema = looseObject({
+const RateLimitWindowSchema = looseObject({
 	usedPercent: FiniteNumberSchema,
 	windowDurationMins: FiniteNumberSchema.nullable(),
 	resetsAt: FiniteNumberSchema.nullable(),
 });
-export const CreditsSnapshotSchema = looseObject({
+const CreditsSnapshotSchema = looseObject({
 	hasCredits: z.boolean(),
 	unlimited: z.boolean(),
 	balance: z.string().nullable(),
 });
-export const SpendControlLimitSnapshotSchema = looseObject({
+const SpendControlLimitSnapshotSchema = looseObject({
 	limit: z.string(),
 	used: z.string(),
 	remainingPercent: FiniteNumberSchema,
 	resetsAt: FiniteNumberSchema,
 });
-export const RateLimitSnapshotSchema = looseObject({
+const RateLimitSnapshotSchema = looseObject({
 	limitId: z.string().nullable(),
 	limitName: z.string().nullable(),
 	primary: RateLimitWindowSchema.nullable(),
@@ -449,3 +449,39 @@ export const RateLimitSnapshotSchema = looseObject({
 		])
 		.nullable(),
 });
+
+export {
+	AutoCompactTokenLimitScopeSchema,
+	ForcedLoginMethodSchema,
+	WebSearchModeSchema,
+	VerbositySchema,
+	CliAuthCredentialsStoreModeSchema,
+	WindowsSandboxSetupModeSchema,
+	AllowDenyRequirementSchema,
+	ConfigLayerSourceSchema,
+	ConfigLayerMetadataSchema,
+	ConfigLayerSchema,
+	SandboxWorkspaceWriteSchema,
+	ForcedChatgptWorkspaceIdsSchema,
+	WebSearchContextSizeSchema,
+	WebSearchLocationSchema,
+	WebSearchToolConfigSchema,
+	ToolsV2Schema,
+	AnalyticsConfigSchema,
+	AppsConfigSchema,
+	BrowserUseConfigSchema,
+	ComputerUseConfigSchema,
+	ConfigSchema,
+	BrowserUseOriginPolicySchema,
+	ConfigRequirementsSchema,
+	ModelServiceTierSchema,
+	ReasoningEffortOptionSchema,
+	ModelSchema,
+	ThreadSettingsSchema,
+	TokenUsageBreakdownSchema,
+	ThreadTokenUsageSchema,
+	RateLimitWindowSchema,
+	CreditsSnapshotSchema,
+	SpendControlLimitSnapshotSchema,
+	RateLimitSnapshotSchema,
+};

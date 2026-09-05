@@ -95,7 +95,7 @@ function operationBase(
 	};
 }
 
-export function normalizeOperationCallback(
+function normalizeOperationCallback(
 	event: WorkhorseOperationEvent,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
@@ -183,7 +183,7 @@ function semanticBase(
 	};
 }
 
-export function normalizeSemanticCallback(
+function normalizeSemanticCallback(
 	event: SemanticSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
@@ -201,7 +201,7 @@ export function normalizeSemanticCallback(
 	throw new TypeError("Unsupported semantic callback source.");
 }
 
-export function normalizeCoordinatorCallback(
+function normalizeCoordinatorCallback(
 	event: CoordinatorCallbackSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
 	realtimeGeneration: CoordinatorCallbackRealtimeGeneration | null,
@@ -236,7 +236,7 @@ function semanticScope(callback: CoordinatorSemanticCallback): string {
 	]);
 }
 
-export function coordinatorCallbackKey(callback: CoordinatorCallback): string {
+function coordinatorCallbackKey(callback: CoordinatorCallback): string {
 	if (callback.kind === "operation") {
 		return `operation:${valueOrNull(callback.correlation.operationId)}:${callback.type}`;
 	}
@@ -251,9 +251,17 @@ export function coordinatorCallbackKey(callback: CoordinatorCallback): string {
 }
 
 /** Only same-operation lifecycle updates and same-kind semantic telemetry coalesce. */
-export function coordinatorCallbackCoalescingKey(callback: CoordinatorCallback): string {
+function coordinatorCallbackCoalescingKey(callback: CoordinatorCallback): string {
 	if (callback.kind === "operation") {
 		return `operation:${valueOrNull(callback.correlation.operationId)}:${callback.type}`;
 	}
 	return `semantic:${callback.type}:${semanticScope(callback)}`;
 }
+
+export {
+	normalizeOperationCallback,
+	normalizeSemanticCallback,
+	normalizeCoordinatorCallback,
+	coordinatorCallbackKey,
+	coordinatorCallbackCoalescingKey,
+};

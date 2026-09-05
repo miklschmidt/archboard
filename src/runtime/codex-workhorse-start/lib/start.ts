@@ -45,9 +45,7 @@ import {
 } from "./validation.js";
 import { cloneAndFreeze } from "./immutability.js";
 
-export function createCodexWorkhorseStart(
-	options: CodexWorkhorseStartOptions,
-): CodexWorkhorseStart {
+function createCodexWorkhorseStart(options: CodexWorkhorseStartOptions): CodexWorkhorseStart {
 	let latest = emptySnapshot();
 	let tail: Promise<void> = Promise.resolve();
 
@@ -410,3 +408,5 @@ function markUnknown(
 		return false;
 	}
 }
+
+export { createCodexWorkhorseStart };

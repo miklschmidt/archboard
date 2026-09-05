@@ -14,22 +14,22 @@ const NonNegativeCodexSafeI64Schema = CodexSafeI64Schema.refine((value) => value
 
 const PermissionDecisionSchema = z.enum(["allow", "deny"]);
 
-export const NetworkApprovalProtocolSchema = z.enum(["http", "https", "socks5Tcp", "socks5Udp"]);
-export const NetworkApprovalContextSchema = z.strictObject({
+const NetworkApprovalProtocolSchema = z.enum(["http", "https", "socks5Tcp", "socks5Udp"]);
+const NetworkApprovalContextSchema = z.strictObject({
 	host: z.string(),
 	protocol: NetworkApprovalProtocolSchema,
 });
 
-export const NetworkPolicyAmendmentSchema = z.strictObject({
+const NetworkPolicyAmendmentSchema = z.strictObject({
 	host: z.string(),
 	action: PermissionDecisionSchema,
 });
-export const ExecPolicyAmendmentSchema = z.array(z.string());
+const ExecPolicyAmendmentSchema = z.array(z.string());
 
-export const CommandExecutionApprovalDecisionSchema = CodexCommandExecutionApprovalDecisionSchema;
-export const FileChangeApprovalDecisionSchema = CodexFileChangeApprovalDecisionSchema;
+const CommandExecutionApprovalDecisionSchema = CodexCommandExecutionApprovalDecisionSchema;
+const FileChangeApprovalDecisionSchema = CodexFileChangeApprovalDecisionSchema;
 
-export const AdditionalNetworkPermissionsSchema = z.strictObject({
+const AdditionalNetworkPermissionsSchema = z.strictObject({
 	enabled: z.boolean().nullable(),
 });
 
@@ -51,7 +51,7 @@ const FileSystemSandboxEntrySchema = z.strictObject({
 	path: FileSystemPathSchema,
 	access: FileSystemAccessModeSchema,
 });
-export const AdditionalFileSystemPermissionsSchema = z.strictObject({
+const AdditionalFileSystemPermissionsSchema = z.strictObject({
 	read: z.array(z.string()).nullable(),
 	write: z.array(z.string()).nullable(),
 	globScanMaxDepth: NonNegativeIntegerSchema.optional(),
@@ -62,8 +62,8 @@ const PermissionProfileShape = {
 	network: AdditionalNetworkPermissionsSchema.nullable(),
 	fileSystem: AdditionalFileSystemPermissionsSchema.nullable(),
 };
-export const AdditionalPermissionProfileSchema = z.strictObject(PermissionProfileShape);
-export const RequestPermissionProfileSchema = z.strictObject(PermissionProfileShape);
+const AdditionalPermissionProfileSchema = z.strictObject(PermissionProfileShape);
+const RequestPermissionProfileSchema = z.strictObject(PermissionProfileShape);
 
 const McpElicitationStringFormatSchema = z.enum(["email", "uri", "date", "date-time"]);
 const McpElicitationConstOptionSchema = z.strictObject({ const: z.string(), title: z.string() });
@@ -147,7 +147,7 @@ const McpElicitationBaseShape = {
 	turnId: z.string().nullable(),
 	serverName: z.string(),
 };
-export const McpServerElicitationRequestParamsSchema = z.discriminatedUnion("mode", [
+const McpServerElicitationRequestParamsSchema = z.discriminatedUnion("mode", [
 	z.strictObject({
 		...McpElicitationBaseShape,
 		mode: z.literal("form"),
@@ -175,7 +175,7 @@ export const McpServerElicitationRequestParamsSchema = z.discriminatedUnion("mod
 	}),
 ]);
 
-export const ParsedCommandSchema = z.discriminatedUnion("type", [
+const ParsedCommandSchema = z.discriminatedUnion("type", [
 	z.strictObject({ type: z.literal("read"), cmd: z.string(), name: z.string(), path: z.string() }),
 	z.strictObject({ type: z.literal("list_files"), cmd: z.string(), path: z.string().nullable() }),
 	z.strictObject({
@@ -187,7 +187,7 @@ export const ParsedCommandSchema = z.discriminatedUnion("type", [
 	z.strictObject({ type: z.literal("unknown"), cmd: z.string() }),
 ]);
 
-export const ApplyPatchApprovalParamsSchema = z.strictObject({
+const ApplyPatchApprovalParamsSchema = z.strictObject({
 	conversationId: z.string(),
 	callId: z.string(),
 	/** File paths are generated map keys and are supplied by the approval request. */
@@ -196,7 +196,7 @@ export const ApplyPatchApprovalParamsSchema = z.strictObject({
 	grantRoot: z.string().nullable(),
 });
 
-export const ExecCommandApprovalParamsSchema = z.strictObject({
+const ExecCommandApprovalParamsSchema = z.strictObject({
 	conversationId: z.string(),
 	callId: z.string(),
 	approvalId: z.string().nullable(),
@@ -205,3 +205,20 @@ export const ExecCommandApprovalParamsSchema = z.strictObject({
 	reason: z.string().nullable(),
 	parsedCmd: z.array(ParsedCommandSchema),
 });
+
+export {
+	NetworkApprovalProtocolSchema,
+	NetworkApprovalContextSchema,
+	NetworkPolicyAmendmentSchema,
+	ExecPolicyAmendmentSchema,
+	CommandExecutionApprovalDecisionSchema,
+	FileChangeApprovalDecisionSchema,
+	AdditionalNetworkPermissionsSchema,
+	AdditionalFileSystemPermissionsSchema,
+	AdditionalPermissionProfileSchema,
+	RequestPermissionProfileSchema,
+	McpServerElicitationRequestParamsSchema,
+	ParsedCommandSchema,
+	ApplyPatchApprovalParamsSchema,
+	ExecCommandApprovalParamsSchema,
+};

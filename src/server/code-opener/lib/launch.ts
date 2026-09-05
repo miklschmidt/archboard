@@ -4,10 +4,10 @@ import { spawn } from "node:child_process";
 
 import type { OpenerCommand } from "../../../shared/code-target/index.js";
 
-export type LaunchResult =
+type LaunchResult =
 	| { ok: true }
 	| { ok: false; code: "OPENER_UNAVAILABLE" | "OPENER_SPAWN_FAILED"; error: string };
-export type ResolvedOpenerCommand =
+type ResolvedOpenerCommand =
 	| { ok: true; command: OpenerCommand }
 	| { ok: false; code: "OPENER_UNAVAILABLE"; error: string };
 
@@ -30,7 +30,7 @@ function resolveExecutable(executable: string): string | null {
 	return Bun.which(executable) ?? null;
 }
 
-export function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerCommand {
+function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerCommand {
 	const executable = resolveExecutable(command.executable);
 	return executable
 		? { ok: true, command: { executable, argv: command.argv } }
@@ -41,7 +41,7 @@ export function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerComm
 			};
 }
 
-export async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
+async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 	const resolved = resolveOpenerCommand(command);
 	if (!resolved.ok) {
 		return resolved;
@@ -87,3 +87,5 @@ export async function launchOpener(command: OpenerCommand): Promise<LaunchResult
 		}
 	});
 }
+
+export { type LaunchResult, type ResolvedOpenerCommand, resolveOpenerCommand, launchOpener };

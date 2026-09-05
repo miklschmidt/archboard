@@ -2,11 +2,11 @@ import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoc
 import type { ThreadLinkEpochProof } from "../../codex-thread-link/index.js";
 import type { CoordinatorCallback, CoordinatorCallbackCorrelation } from "./contract.js";
 
-export const CALLBACK_MAX_UTF8_BYTES = 32_768;
-export const CALLBACK_MAX_STRING_UTF8_BYTES = 8_192;
-export const CALLBACK_MAX_ARRAY_ENTRIES = 128;
-export const CALLBACK_MAX_ID_UTF8_BYTES = 1_024;
-export const CALLBACK_MAX_SELECTION_ID_UTF8_BYTES = 64;
+const CALLBACK_MAX_UTF8_BYTES = 32_768;
+const CALLBACK_MAX_STRING_UTF8_BYTES = 8_192;
+const CALLBACK_MAX_ARRAY_ENTRIES = 128;
+const CALLBACK_MAX_ID_UTF8_BYTES = 1_024;
+const CALLBACK_MAX_SELECTION_ID_UTF8_BYTES = 64;
 const CALLBACK_SCHEMA = 1;
 const encoder = new TextEncoder();
 
@@ -360,10 +360,19 @@ function canonicalJson(value: unknown): string {
 		.join(",")}}`;
 }
 
-export function encodeCoordinatorCallback(callback: CoordinatorCallback): string {
+function encodeCoordinatorCallback(callback: CoordinatorCallback): string {
 	const text = canonicalJson(callbackDocument(callback));
 	if (utf8(text) > CALLBACK_MAX_UTF8_BYTES) {
 		throw new TypeError("Callback exceeds its UTF-8 message limit.");
 	}
 	return text;
 }
+
+export {
+	CALLBACK_MAX_UTF8_BYTES,
+	CALLBACK_MAX_STRING_UTF8_BYTES,
+	CALLBACK_MAX_ARRAY_ENTRIES,
+	CALLBACK_MAX_ID_UTF8_BYTES,
+	CALLBACK_MAX_SELECTION_ID_UTF8_BYTES,
+	encodeCoordinatorCallback,
+};

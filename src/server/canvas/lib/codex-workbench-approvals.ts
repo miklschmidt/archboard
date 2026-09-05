@@ -29,7 +29,7 @@ interface PendingDynamicApproval {
 	settled: boolean;
 }
 
-export interface CanvasDynamicApprovalOwner {
+interface CanvasDynamicApprovalOwner {
 	readonly port: DynamicToolApprovalPort;
 	readonly browser: BrowserDynamicApprovalActions;
 	readonly pending: () => readonly DynamicApprovalOwnerView[];
@@ -46,7 +46,7 @@ export interface CanvasDynamicApprovalOwner {
 	readonly dispose: () => void;
 }
 
-export interface CanvasDynamicApprovalOwnerOptions {
+interface CanvasDynamicApprovalOwnerOptions {
 	readonly identity: IdentityAuthorities;
 	readonly now: () => number;
 	readonly bindingForCaller: (threadId: ThreadId) => DynamicApprovalOwnerBinding;
@@ -98,7 +98,7 @@ function ownImmutableRequest(request: DynamicToolApprovalRequest): DynamicApprov
 }
 
 /** One real visual-approval owner shared by the dispatcher and browser gateway. */
-export function createCanvasDynamicApprovalOwner(
+function createCanvasDynamicApprovalOwner(
 	options: CanvasDynamicApprovalOwnerOptions,
 ): CanvasDynamicApprovalOwner {
 	const pending = new Map<string, PendingDynamicApproval>();
@@ -289,3 +289,9 @@ export function createCanvasDynamicApprovalOwner(
 		},
 	});
 }
+
+export {
+	type CanvasDynamicApprovalOwner,
+	type CanvasDynamicApprovalOwnerOptions,
+	createCanvasDynamicApprovalOwner,
+};

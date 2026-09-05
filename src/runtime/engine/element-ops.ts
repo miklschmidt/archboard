@@ -19,8 +19,8 @@ import { mintId } from "../../shared/ids/ids.js";
 import { applyElementChanges, batchCreateElementsOnCanvas, getElements } from "./canvas-client.js";
 import { extentOf } from "./geometry.js";
 
-export type Alignment = "left" | "center" | "right" | "top" | "middle" | "bottom";
-export type Direction = "horizontal" | "vertical";
+type Alignment = "left" | "center" | "right" | "top" | "middle" | "bottom";
+type Direction = "horizontal" | "vertical";
 
 /**
  * The elements an operation was aimed at, in the order they were named.
@@ -37,7 +37,7 @@ async function targets(elementIds: string[]): Promise<ServerElement[]> {
 		.filter((element): element is ServerElement => !!element);
 }
 
-export async function alignElements(
+async function alignElements(
 	elementIds: string[],
 	alignment: Alignment,
 ): Promise<{ aligned: boolean; elementIds: string[]; alignment: Alignment; successCount: number }> {
@@ -103,7 +103,7 @@ export async function alignElements(
 	return { aligned: true, elementIds, alignment, successCount: upserts.length };
 }
 
-export async function distributeElements(
+async function distributeElements(
 	elementIds: string[],
 	direction: Direction,
 ): Promise<{ distributed: boolean; elementIds: string[]; direction: Direction; count: number }> {
@@ -154,7 +154,7 @@ export async function distributeElements(
 	return { distributed: true, elementIds, direction, count: elementsToDist.length };
 }
 
-export async function setElementsLocked(
+async function setElementsLocked(
 	elementIds: string[],
 	locked: boolean,
 ): Promise<{ elementIds: string[]; successCount: number }> {
@@ -175,7 +175,7 @@ export async function setElementsLocked(
 // board is the source of truth for who is in a group — `groupIds` is a native
 // Excalidraw field and it round-trips through the note — so every client sees
 // the same groups and a group outlives whatever made it.
-export async function groupElements(
+async function groupElements(
 	elementIds: string[],
 ): Promise<{ groupId: string; elementIds: string[]; successCount: number }> {
 	const groupId = mintId();
@@ -202,7 +202,7 @@ export async function groupElements(
 // only place membership is recorded. It used to accept a seeded member list for
 // groups a caller process had made and remembered; that map is gone, along with
 // the two bugs it caused (TASK-064).
-export async function ungroupElements(
+async function ungroupElements(
 	groupId: string,
 ): Promise<{ groupId: string; ungrouped: boolean; elementIds: string[]; successCount: number }> {
 	const members = (await getElements()).filter((el) => (el.groupIds || []).includes(groupId));
@@ -223,7 +223,7 @@ export async function ungroupElements(
 	return { groupId, ungrouped: true, elementIds, successCount: elementIds.length };
 }
 
-export async function duplicateElements(
+async function duplicateElements(
 	elementIds: string[],
 	offsetX = 20,
 	offsetY = 20,
@@ -272,3 +272,14 @@ export async function duplicateElements(
 	}
 	return { duplicates, canvasElements: canvasElements.elements ?? [], offsetX, offsetY };
 }
+
+export {
+	type Alignment,
+	type Direction,
+	alignElements,
+	distributeElements,
+	setElementsLocked,
+	groupElements,
+	ungroupElements,
+	duplicateElements,
+};

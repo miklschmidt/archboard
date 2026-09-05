@@ -23,7 +23,7 @@ import type { DynamicServerRequest } from "../../../runtime/codex-transport/serv
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 
 /** The shared OperationId authority plus exact once-only terminal disposition. */
-export function createCanvasDynamicOperationIdAdapter(
+function createCanvasDynamicOperationIdAdapter(
 	authority: IdentityAuthorities["operation"],
 ): DynamicOperationIdPort {
 	const terminal = new Map<OperationId, DynamicOperationTerminalResult>();
@@ -81,7 +81,7 @@ function waitKey(owner: DynamicWaitOwner): string {
 	return JSON.stringify([owner.child, owner.epoch, owner.caller, owner.turn, owner.call]);
 }
 
-export interface CanvasDynamicLifecycleOwnerOptions {
+interface CanvasDynamicLifecycleOwnerOptions {
 	readonly identity: IdentityAuthorities;
 	readonly waitGraph: CodexWaitGraph;
 	readonly waitForTargets: (input: {
@@ -95,7 +95,7 @@ export interface CanvasDynamicLifecycleOwnerOptions {
 	readonly onFatal: (fault: DynamicFatalLifecycleFault) => void;
 }
 
-export interface CanvasDynamicLifecycleOwner {
+interface CanvasDynamicLifecycleOwner {
 	readonly port: DynamicToolLifecyclePort;
 	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly childExit: (child: ChildId, epoch: ChildEpoch) => Promise<void>;
@@ -103,7 +103,7 @@ export interface CanvasDynamicLifecycleOwner {
 }
 
 /** Exact executing-call and wait/quarantine owner for the dynamic dispatcher. */
-export function createCanvasDynamicLifecycleOwner(
+function createCanvasDynamicLifecycleOwner(
 	options: CanvasDynamicLifecycleOwnerOptions,
 ): CanvasDynamicLifecycleOwner {
 	const activeWaits = new Map<
@@ -305,3 +305,10 @@ export function createCanvasDynamicLifecycleOwner(
 		},
 	});
 }
+
+export {
+	createCanvasDynamicOperationIdAdapter,
+	type CanvasDynamicLifecycleOwnerOptions,
+	type CanvasDynamicLifecycleOwner,
+	createCanvasDynamicLifecycleOwner,
+};

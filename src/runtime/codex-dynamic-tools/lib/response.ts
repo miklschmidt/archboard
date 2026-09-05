@@ -29,7 +29,7 @@ function messageOf(value: string): string {
 	return truncateUtf8(normalized.length === 0 ? "The dynamic call was refused." : normalized, 512);
 }
 
-export function dynamicResponse(
+function dynamicResponse(
 	name: GeneralThreadToolName,
 	envelope: unknown,
 	success = true,
@@ -50,7 +50,7 @@ export function dynamicResponse(
 	return Object.freeze(response);
 }
 
-export function invalidDynamicResponse(
+function invalidDynamicResponse(
 	reason: Extract<DynamicRefusalReason, "invalid_call" | "unsupported">,
 	message: string,
 ): DynamicToolCallResponse {
@@ -62,7 +62,7 @@ export function invalidDynamicResponse(
 	return Object.freeze(response);
 }
 
-export function refusedDynamicResponse(
+function refusedDynamicResponse(
 	name: GeneralThreadToolName,
 	reason: DynamicRefusalReason,
 	message: string,
@@ -74,7 +74,7 @@ export function refusedDynamicResponse(
 	});
 }
 
-export function approvalRequiredDynamicResponse(
+function approvalRequiredDynamicResponse(
 	name: GeneralThreadToolName,
 	operationId: string,
 	summary: string,
@@ -86,7 +86,7 @@ export function approvalRequiredDynamicResponse(
 	});
 }
 
-export function outcomeUnknownDynamicResponse(
+function outcomeUnknownDynamicResponse(
 	name: GeneralThreadToolName,
 	operationId: string,
 ): DynamicToolCallResponse {
@@ -97,6 +97,15 @@ export function outcomeUnknownDynamicResponse(
 	});
 }
 
-export function outcomeUnknownMessage(): typeof OUTCOME_UNKNOWN_MESSAGE {
+function outcomeUnknownMessage(): typeof OUTCOME_UNKNOWN_MESSAGE {
 	return OUTCOME_UNKNOWN_MESSAGE;
 }
+
+export {
+	dynamicResponse,
+	invalidDynamicResponse,
+	refusedDynamicResponse,
+	approvalRequiredDynamicResponse,
+	outcomeUnknownDynamicResponse,
+	outcomeUnknownMessage,
+};

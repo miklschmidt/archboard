@@ -24,9 +24,9 @@ import { writeFileAtomic } from "./atomic-write.js";
 import { inspectCheckout } from "./git.js";
 import { stateDir } from "./state-dir.js";
 
-export type RepoSource = "declared" | "observed";
+type RepoSource = "declared" | "observed";
 
-export interface RegisteredRepo {
+interface RegisteredRepo {
 	/** Repository identity: host/owner/name, or a directory name for a remoteless repo. */
 	repo: string;
 	/** Absolute path to the checkout on this machine. */
@@ -35,7 +35,7 @@ export interface RegisteredRepo {
 	addedAt: string;
 }
 
-export interface RegisteredRepoStatus extends RegisteredRepo {
+interface RegisteredRepoStatus extends RegisteredRepo {
 	/** Whether the checkout is still there. A stale entry is reported, never silently dropped. */
 	exists: boolean;
 }
@@ -50,7 +50,7 @@ const FILE_NAME = "repos.json";
  * Read at call time rather than at import, so setting the variable in a spawned
  * process, or in a test, actually takes effect.
  */
-export function registryPath(): string {
+function registryPath(): string {
 	return process.env["ARCHBOARD_REPOS"] || path.join(stateDir(), FILE_NAME);
 }
 
@@ -74,7 +74,7 @@ function normalize(entry: unknown): RegisteredRepo | null {
 }
 
 /** Every entry, whether or not its checkout is still on disk. Never throws. */
-export function readRegistry(): RegisteredRepo[] {
+function readRegistry(): RegisteredRepo[] {
 	let raw: string;
 	try {
 		raw = fs.readFileSync(registryPath(), "utf-8");
@@ -103,7 +103,7 @@ export function readRegistry(): RegisteredRepo[] {
 }
 
 /** Every entry plus whether its checkout is still there. */
-export function listRepos(): RegisteredRepoStatus[] {
+function listRepos(): RegisteredRepoStatus[] {
 	return readRegistry().map((entry) =>
 		Object.assign({}, entry, { exists: isCheckout(entry.root) }),
 	);
@@ -144,7 +144,7 @@ function upsert(entry: RegisteredRepo): void {
 }
 
 /** The checkout for a repository identity, but only while it is still there. */
-export function checkoutFor(repo: string): string | undefined {
+function checkoutFor(repo: string): string | undefined {
 	const entry = readRegistry().find((candidate) => candidate.repo === repo);
 	if (!entry) {
 		return undefined;
@@ -152,7 +152,7 @@ export function checkoutFor(repo: string): string | undefined {
 	return isCheckout(entry.root) ? entry.root : undefined;
 }
 
-export class RepoRegistryError extends Error {}
+class RepoRegistryError extends Error {}
 
 /**
  * "This directory is that repository." The deliberate half of the registry.
@@ -161,7 +161,7 @@ export class RepoRegistryError extends Error {}
  * the same clone differently is the one thing that would make the address
  * space useless, and git already has an answer that is the same everywhere.
  */
-export async function declareRepo(
+async function declareRepo(
 	dir: string,
 	options: { signal?: AbortSignal } = {},
 ): Promise<RegisteredRepo> {
@@ -195,7 +195,7 @@ export async function declareRepo(
  * observed entry whose checkout is still on disk, because two clones of one
  * repo should not have the registry flapping between them.
  */
-export function rememberRepo(repo: string, root: string): void {
+function rememberRepo(repo: string, root: string): void {
 	const resolved = path.resolve(root);
 	const existing = readRegistry().find((entry) => entry.repo === repo);
 	if (existing && (existing.source === "declared" || isCheckout(existing.root))) {
@@ -205,7 +205,7 @@ export function rememberRepo(repo: string, root: string): void {
 }
 
 /** Drop an entry. Returns false when there was nothing to drop. */
-export function forgetRepo(repo: string): boolean {
+function forgetRepo(repo: string): boolean {
 	const entries = readRegistry();
 	const kept = entries.filter((entry) => entry.repo !== repo);
 	if (kept.length === entries.length) {
@@ -215,8 +215,23 @@ export function forgetRepo(repo: string): boolean {
 }
 
 /** The identities the caller can name right now, for a message that has to list them. */
-export function knownRepoNames(): string[] {
+function knownRepoNames(): string[] {
 	return listRepos()
 		.filter((entry) => entry.exists)
 		.map((entry) => entry.repo);
 }
+
+export {
+	type RepoSource,
+	type RegisteredRepo,
+	type RegisteredRepoStatus,
+	registryPath,
+	readRegistry,
+	listRepos,
+	checkoutFor,
+	RepoRegistryError,
+	declareRepo,
+	rememberRepo,
+	forgetRepo,
+	knownRepoNames,
+};

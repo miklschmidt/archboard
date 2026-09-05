@@ -21,7 +21,7 @@ import type {
 	SemanticStaleness,
 } from "./types.js";
 
-export interface BriefMetadata {
+interface BriefMetadata {
 	readonly source: SemanticBriefSource;
 	readonly origin: SemanticChangeOrigin | null;
 	readonly capturedAtMs: number;
@@ -334,7 +334,7 @@ function fitAggregate(
 	return { ...parts, brief };
 }
 
-export function buildSemanticBrief(
+function buildSemanticBrief(
 	input: SemanticContextInput,
 	feedId: string,
 	clock: () => number,
@@ -412,3 +412,5 @@ export function buildSemanticBrief(
 		bytes: byteLength(fitted.brief),
 	};
 }
+
+export { type BriefMetadata, buildSemanticBrief };

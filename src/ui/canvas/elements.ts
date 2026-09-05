@@ -28,7 +28,7 @@ import type { ServerElement } from "../types";
 
 // The server's own bookkeeping, which is not board content and which
 // Excalidraw has no field for.
-export const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawElement> => {
+const cleanElementForExcalidraw = (element: ServerElement): Partial<ExcalidrawElement> => {
 	const {
 		createdAt: _createdAt,
 		updatedAt: _updatedAt,
@@ -107,11 +107,11 @@ const validateAndFixBindings = (
  * because every caller means the same thing by it: these are the elements, put
  * them on the canvas.
  */
-export const elementsForScene = (
-	elements: Partial<ExcalidrawElement>[],
-): Partial<ExcalidrawElement>[] => {
+const elementsForScene = (elements: Partial<ExcalidrawElement>[]): Partial<ExcalidrawElement>[] => {
 	if (elements.length === 0) {
 		return [];
 	}
 	return validateAndFixBindings(elements);
 };
+
+export { cleanElementForExcalidraw, elementsForScene };

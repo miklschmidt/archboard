@@ -18,7 +18,7 @@ import {
 import { encodeDynamicCursor, unwrapDynamicCursor } from "./cursors.js";
 import { assertWaitTargetAllowed } from "./classification.js";
 
-export interface WaitProjection {
+interface WaitProjection {
 	readonly event: DynamicWaitEvent["event"];
 	readonly threadId: string | null;
 	readonly cursor: string | null;
@@ -192,7 +192,7 @@ function validateEvent(
 	}
 }
 
-export async function waitForDynamicThreads(input: {
+async function waitForDynamicThreads(input: {
 	readonly threadIds: readonly string[];
 	readonly timeoutMs: number;
 	readonly cursor?: string;
@@ -344,4 +344,6 @@ export async function waitForDynamicThreads(input: {
 	}
 }
 
-export type DynamicWaitChild = ChildId;
+type DynamicWaitChild = ChildId;
+
+export { type WaitProjection, waitForDynamicThreads, type DynamicWaitChild };

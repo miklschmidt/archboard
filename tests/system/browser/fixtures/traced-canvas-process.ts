@@ -3,12 +3,12 @@ import fs from "node:fs";
 const SERVER_ENTRY_ENV = "ARCHBOARD_TEST_SERVER_ENTRY";
 const TRACE_FILE_ENV = "ARCHBOARD_TEST_FSYNC_TRACE";
 
-export interface FsyncTraceEvidence {
+interface FsyncTraceEvidence {
 	readonly calls: readonly string[];
 	readonly incomplete: readonly string[];
 }
 
-export function readFsyncTrace(
+function readFsyncTrace(
 	traceFile: string,
 	options: { settled?: boolean } = {},
 ): FsyncTraceEvidence {
@@ -75,7 +75,7 @@ export function readFsyncTrace(
 	};
 }
 
-export function tracerPids(processGroup: number): number[] {
+function tracerPids(processGroup: number): number[] {
 	return fs.readdirSync("/proc").flatMap((entry) => {
 		if (!/^\d+$/.test(entry)) {
 			return [];
@@ -141,3 +141,5 @@ function tracedCanvasMain(): void {
 if (import.meta.main) {
 	tracedCanvasMain();
 }
+
+export { type FsyncTraceEvidence, readFsyncTrace, tracerPids };

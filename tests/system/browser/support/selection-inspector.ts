@@ -2,9 +2,9 @@ import { PANE_SETTLE_CAP_MS } from "../../../../src/shared/timing/timing.ts";
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 import type { InspectorContract } from "./shell-contract-types.ts";
 
-export type InspectorView = { state: string | null; text: string; pane: string; title: string };
+type InspectorView = { state: string | null; text: string; pane: string; title: string };
 
-export function readInspector(browser: AgentBrowserSession): Promise<InspectorView> {
+function readInspector(browser: AgentBrowserSession): Promise<InspectorView> {
 	return browser.eval<InspectorView>(`(() => {
 		const inspector = document.querySelector('.selection-inspector');
 		return {
@@ -16,7 +16,7 @@ export function readInspector(browser: AgentBrowserSession): Promise<InspectorVi
 	})()`);
 }
 
-export function readInspectorContract(browser: AgentBrowserSession): Promise<InspectorContract> {
+function readInspectorContract(browser: AgentBrowserSession): Promise<InspectorContract> {
 	return browser.eval<InspectorContract>(`(() => {
 		const inspector = document.querySelector('.selection-inspector');
 		const metrics = selector => {
@@ -65,7 +65,7 @@ export function readInspectorContract(browser: AgentBrowserSession): Promise<Ins
 	})()`);
 }
 
-export function waitInspector(
+function waitInspector(
 	browser: AgentBrowserSession,
 	state: string,
 	text: string,
@@ -77,3 +77,5 @@ export function waitInspector(
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 }
+
+export { type InspectorView, readInspector, readInspectorContract, waitInspector };

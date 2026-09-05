@@ -10,14 +10,14 @@ import { validatePersistedBoardElement } from "../../../../src/runtime/engine/na
 import { diffAgainstBaseline, fingerprint } from "../../../../src/ui/canvas/changes.ts";
 import type { Baseline } from "../../../../src/ui/canvas/changes.ts";
 
-export type LabelElement = ServerElement &
+type LabelElement = ServerElement &
 	Record<string, unknown> & {
 		label?: { text?: string };
 		text?: string;
 	};
 
-export type LabelScene = LabelElement[];
-export class LabelStore extends Map<string, LabelElement> {
+type LabelScene = LabelElement[];
+class LabelStore extends Map<string, LabelElement> {
 	override get(id: string): LabelElement {
 		const element = super.get(id);
 		if (!element) {
@@ -27,17 +27,17 @@ export class LabelStore extends Map<string, LabelElement> {
 	}
 }
 
-export interface PaneCycleOptions {
+interface PaneCycleOptions {
 	contain: boolean;
 	types?: Readonly<Record<string, string>>;
 	empties?: Readonly<Record<string, boolean>>;
 }
 
-export interface WriteOptions {
+interface WriteOptions {
 	keepSeed?: boolean;
 }
 
-export interface LabelCycleResult {
+interface LabelCycleResult {
 	scene: LabelScene;
 	upserts: Record<string, unknown>[];
 	deletes: string[];
@@ -66,7 +66,7 @@ const isServerElement = (value: Record<string, unknown>): value is LabelElement 
 		}
 	})();
 
-export const shape = (elements: readonly ServerElement[]): string =>
+const shape = (elements: readonly ServerElement[]): string =>
 	JSON.stringify(
 		elements.map((element) =>
 			Object.fromEntries(
@@ -90,7 +90,7 @@ const freshId = () =>
  * an id it invents, and the container gains a reference to it. It does not
  * look at whether the container already has one — that is the whole bug.
  */
-export function expand(elements: readonly LabelElement[]): LabelScene {
+function expand(elements: readonly LabelElement[]): LabelScene {
 	const out: LabelScene = [];
 	for (const element of elements) {
 		const seed = element.type === "text" ? undefined : (element.label?.text ?? element.text);
@@ -121,7 +121,7 @@ export function expand(elements: readonly LabelElement[]): LabelScene {
  * reported straight back and the loop would be a different loop than the one
  * TASK-024 was.
  */
-export function dropSpentSeeds(scene: readonly LabelElement[]): LabelScene {
+function dropSpentSeeds(scene: readonly LabelElement[]): LabelScene {
 	const labelled = boundTextsByContainer(scene);
 	return scene.map((element) => {
 		if (!labelled.has(element.id) || !("label" in element)) {
@@ -139,7 +139,7 @@ export function dropSpentSeeds(scene: readonly LabelElement[]): LabelScene {
  * scene keeps the deleted element — with its `containerId` — while the live
  * board has neither the text nor the binding.
  */
-export function blank(
+function blank(
 	scene: readonly LabelElement[],
 	empties: Readonly<Record<string, boolean>> = {},
 ): LabelScene {
@@ -174,7 +174,7 @@ export function blank(
 }
 
 /** POST /api/elements/changes: upserts are *merged*, so stored fields survive. */
-export function applyUpserts(store: LabelStore, upserts: readonly Record<string, unknown>[]): void {
+function applyUpserts(store: LabelStore, upserts: readonly Record<string, unknown>[]): void {
 	for (const upsert of upserts) {
 		if (typeof upsert["id"] !== "string") {
 			continue;
@@ -208,7 +208,7 @@ export function applyUpserts(store: LabelStore, upserts: readonly Record<string,
  * second converter, run on every server update, minting a text element for
  * every seed it sees.
  */
-export function cycle(
+function cycle(
 	store: LabelStore,
 	baseline: Baseline,
 	{ contain, types = {}, empties = {} }: PaneCycleOptions,
@@ -265,7 +265,7 @@ export function cycle(
  * TASK-029; with it off, which is the code as it stands, neither has anything
  * to revert to.
  */
-export function write(
+function write(
 	store: LabelStore,
 	statements: readonly LabelInput[],
 	{ keepSeed = false }: WriteOptions = {},
@@ -295,14 +295,12 @@ export function write(
 	return store;
 }
 
-export function boardOf(elements: readonly LabelInput[], options?: WriteOptions): LabelStore {
+function boardOf(elements: readonly LabelInput[], options?: WriteOptions): LabelStore {
 	return write(new LabelStore(), elements, options);
 }
 
 /** What an element's `label`/`text` claims its label reads, if anything. */
-export function seedOf(
-	element: LabelStatement | LabelElement | LegacyElementIngress,
-): string | undefined {
+function seedOf(element: LabelStatement | LabelElement | LegacyElementIngress): string | undefined {
 	if (element.type === "text") {
 		return undefined;
 	}
@@ -316,18 +314,18 @@ export function seedOf(
 }
 
 /** Every element on a board still carrying a seed, which must be none. */
-export function seeded(store: LabelStore): string[] {
+function seeded(store: LabelStore): string[] {
 	return [...store.values()]
 		.filter((element) => seedOf(element) !== undefined)
 		.map((element) => element.id);
 }
 
-export function worstLabelCount(elements: readonly LabelElement[]): number {
+function worstLabelCount(elements: readonly LabelElement[]): number {
 	const counts = [...boundTextsByContainer(elements).values()].map((ids) => ids.length);
 	return counts.length === 0 ? 0 : Math.max(...counts);
 }
 
-export const drawn = (): LegacyElementIngress[] => [
+const drawn = (): LegacyElementIngress[] => [
 	{
 		id: "svc",
 		type: "rectangle",
@@ -363,9 +361,9 @@ export const drawn = (): LegacyElementIngress[] => [
 	},
 ];
 
-export const CYCLES = 25;
+const CYCLES = 25;
 
-export function reopenedRepairedBoard(): LabelStore {
+function reopenedRepairedBoard(): LabelStore {
 	const polluted = boardOf(drawn(), { keepSeed: true });
 	const pollutedBaseline = new Map<string, string>();
 	for (let index = 0; index < CYCLES; index += 1) {
@@ -393,3 +391,26 @@ export function reopenedRepairedBoard(): LabelStore {
 	}
 	return reopened;
 }
+
+export {
+	type LabelElement,
+	type LabelScene,
+	LabelStore,
+	type PaneCycleOptions,
+	type WriteOptions,
+	type LabelCycleResult,
+	shape,
+	expand,
+	dropSpentSeeds,
+	blank,
+	applyUpserts,
+	cycle,
+	write,
+	boardOf,
+	seedOf,
+	seeded,
+	worstLabelCount,
+	drawn,
+	CYCLES,
+	reopenedRepairedBoard,
+};

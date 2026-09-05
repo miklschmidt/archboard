@@ -1,6 +1,6 @@
 import { connector, semanticNode, type RawElement } from "./elements.js";
 
-export function performanceBoard(
+function performanceBoard(
 	nodeCount: number,
 	connectorCount: number,
 	labelCount: number,
@@ -45,11 +45,11 @@ export function performanceBoard(
 	return [...nodes, ...connectors, ...labels];
 }
 
-export function inputBoundaryRecord(idLength: number): RawElement {
+function inputBoundaryRecord(idLength: number): RawElement {
 	return { id: "x".repeat(idLength), type: "rectangle", x: 0, y: 0, width: 1, height: 1 };
 }
 
-export function terminalComparisonBoard(): RawElement[] {
+function terminalComparisonBoard(): RawElement[] {
 	return [
 		...performanceBoard(20, 60, 20),
 		connector({
@@ -62,3 +62,5 @@ export function terminalComparisonBoard(): RawElement[] {
 		}),
 	];
 }
+
+export { performanceBoard, inputBoundaryRecord, terminalComparisonBoard };

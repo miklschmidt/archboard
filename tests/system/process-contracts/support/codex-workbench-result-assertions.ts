@@ -5,7 +5,7 @@ import { reverseResponses } from "./codex-workbench-lifecycle.ts";
 
 const operationPattern = /^archboard:operation:h[a-f0-9]{32}\.h[a-f0-9]{32}\.h[a-f0-9]{32}$/;
 
-export function expectGeneralQueryEnvelopes(logPath: string): void {
+function expectGeneralQueryEnvelopes(logPath: string): void {
 	const list = parseDynamicToolCallResponse(
 		"list_threads",
 		reverseResponses(logPath, "general-list")[0]?.frame?.result,
@@ -79,7 +79,7 @@ export function expectGeneralQueryEnvelopes(logPath: string): void {
 	});
 }
 
-export function expectGeneralMutationEnvelope(kind: "fork" | "send", result: unknown): void {
+function expectGeneralMutationEnvelope(kind: "fork" | "send", result: unknown): void {
 	if (kind === "fork") {
 		const envelope = parseDynamicToolCallResponse("fork_thread", result).envelope;
 		if (envelope.tag !== "ok") {
@@ -117,3 +117,5 @@ export function expectGeneralMutationEnvelope(kind: "fork" | "send", result: unk
 		value: { threadId: "thread-3", delivery: "delivered" },
 	});
 }
+
+export { expectGeneralQueryEnvelopes, expectGeneralMutationEnvelope };

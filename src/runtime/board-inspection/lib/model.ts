@@ -4,7 +4,7 @@ import { aggregateBoxes, contains, type ExactBox } from "./geometry.js";
 import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
 import { compareIdentity, obstacleIdentity } from "./ordering.js";
 
-export interface InspectionNode {
+interface InspectionNode {
 	id: string;
 	members: DecodedRecord[];
 	bodies: DecodedRecord[];
@@ -17,7 +17,7 @@ export interface InspectionNode {
 	ref: NodeRef;
 }
 
-export interface InspectionObstacle {
+interface InspectionObstacle {
 	id: string;
 	kind: "library-component" | "grouped-component";
 	members: DecodedRecord[];
@@ -25,25 +25,25 @@ export interface InspectionObstacle {
 	ref: ObstacleRef;
 }
 
-export interface AggregateCoordinateFailure {
+interface AggregateCoordinateFailure {
 	scope: "semantic-node-body" | "semantic-node-aggregate" | "obstacle-component";
 	subjectId: string;
 	members: DecodedRecord[];
 }
 
-export type BlockingBindingIssue =
+type BlockingBindingIssue =
 	| "not-object"
 	| "array"
 	| "missing-element-id"
 	| "empty-element-id"
 	| "non-string-element-id";
 
-export interface BindingTargetClassification {
+interface BindingTargetClassification {
 	readableTargetId: string | null;
 	blockingIssue: BlockingBindingIssue | null;
 }
 
-export interface ConnectorEndpointClassification {
+interface ConnectorEndpointClassification {
 	nodeAnalysisEligible: boolean;
 	startElement: string | undefined;
 	endElement: string | undefined;
@@ -51,7 +51,7 @@ export interface ConnectorEndpointClassification {
 	endNode: string | undefined;
 }
 
-export interface LabelOwnershipClassification {
+interface LabelOwnershipClassification {
 	labelId: string;
 	forwardOwnerId: string | null;
 	reverseOwnerIds: string[];
@@ -60,7 +60,7 @@ export interface LabelOwnershipClassification {
 	state: "none" | "forward-only" | "reverse-only" | "matching" | "conflicting" | "blocked";
 }
 
-export type BoundElementIssue =
+type BoundElementIssue =
 	| "not-array"
 	| "entry-not-object"
 	| "missing-id"
@@ -69,12 +69,12 @@ export type BoundElementIssue =
 	| "missing-type"
 	| "invalid-type";
 
-export interface BoundElementsClassification {
+interface BoundElementsClassification {
 	readableEntries: Array<{ id: string; type: "text" | "arrow" }>;
 	problems: Array<{ issue: BoundElementIssue; entryIndex: number | null }>;
 }
 
-export interface InspectionModel {
+interface InspectionModel {
 	byId: Map<string, DecodedRecord>;
 	duplicateIds: Set<string>;
 	nodes: Map<string, InspectionNode>;
@@ -111,7 +111,7 @@ function object(value: unknown): Readonly<Record<string, unknown>> | null {
 		: null;
 }
 
-export function classifyBoundElements(value: unknown): BoundElementsClassification {
+function classifyBoundElements(value: unknown): BoundElementsClassification {
 	const readableEntries: BoundElementsClassification["readableEntries"] = [];
 	const problems: BoundElementsClassification["problems"] = [];
 	if (!Array.isArray(value)) {
@@ -142,7 +142,7 @@ export function classifyBoundElements(value: unknown): BoundElementsClassificati
 	return { readableEntries, problems };
 }
 
-export function classifyBindingTarget(value: unknown): BindingTargetClassification {
+function classifyBindingTarget(value: unknown): BindingTargetClassification {
 	if (!value || typeof value !== "object") {
 		return {
 			readableTargetId: null,
@@ -164,25 +164,22 @@ export function classifyBindingTarget(value: unknown): BindingTargetClassificati
 	return { readableTargetId: value.elementId, blockingIssue: null };
 }
 
-export function boundElementTargetCompatible(
-	declaredType: "text" | "arrow",
-	actualType: string,
-): boolean {
+function boundElementTargetCompatible(declaredType: "text" | "arrow", actualType: string): boolean {
 	return declaredType === "text"
 		? actualType === "text"
 		: actualType === "arrow" || actualType === "line";
 }
 
-export function archboardMetadata(record: DecodedRecord): Readonly<Record<string, unknown>> | null {
+function archboardMetadata(record: DecodedRecord): Readonly<Record<string, unknown>> | null {
 	return object(object(record.raw?.customData)?.["archboard"]);
 }
 
-export function nodeId(record: DecodedRecord): string | null {
+function nodeId(record: DecodedRecord): string | null {
 	const value = archboardMetadata(record)?.["node"];
 	return typeof value === "string" && value.length > 0 ? value : null;
 }
 
-export function groupIds(record: DecodedRecord): string[] {
+function groupIds(record: DecodedRecord): string[] {
 	const raw = record.raw?.groupIds;
 	if (!Array.isArray(raw)) {
 		return [];
@@ -190,7 +187,7 @@ export function groupIds(record: DecodedRecord): string[] {
 	return raw.filter((value): value is string => typeof value === "string" && value.length > 0);
 }
 
-export function libraryAttribution(record: DecodedRecord): {
+function libraryAttribution(record: DecodedRecord): {
 	valid: boolean;
 	item?: string;
 	source?: string;
@@ -775,7 +772,7 @@ function buildObstacles(
 	};
 }
 
-export function buildInspectionModel(records: readonly DecodedRecord[]): InspectionModel {
+function buildInspectionModel(records: readonly DecodedRecord[]): InspectionModel {
 	const live = records.filter((record) => Boolean(record.live && record.raw));
 	const byId = new Map<string, DecodedRecord>();
 	const duplicateIds = new Set<string>();
@@ -824,10 +821,7 @@ export function buildInspectionModel(records: readonly DecodedRecord[]): Inspect
 	};
 }
 
-export function semanticParents(
-	model: InspectionModel,
-	startingNodeId: string | undefined,
-): Set<string> {
+function semanticParents(model: InspectionModel, startingNodeId: string | undefined): Set<string> {
 	const found = new Set<string>();
 	let current = startingNodeId ? model.nodes.get(startingNodeId)?.parentId : null;
 	while (current && !found.has(current)) {
@@ -836,3 +830,25 @@ export function semanticParents(
 	}
 	return found;
 }
+
+export {
+	type InspectionNode,
+	type InspectionObstacle,
+	type AggregateCoordinateFailure,
+	type BlockingBindingIssue,
+	type BindingTargetClassification,
+	type ConnectorEndpointClassification,
+	type LabelOwnershipClassification,
+	type BoundElementIssue,
+	type BoundElementsClassification,
+	type InspectionModel,
+	classifyBoundElements,
+	classifyBindingTarget,
+	boundElementTargetCompatible,
+	archboardMetadata,
+	nodeId,
+	groupIds,
+	libraryAttribution,
+	buildInspectionModel,
+	semanticParents,
+};

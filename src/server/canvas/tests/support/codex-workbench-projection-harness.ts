@@ -38,7 +38,7 @@ const archboardContext: ArchboardContext = {
 	operation: { id: null, kind: null, rpc: null, outcome: null },
 };
 
-export function executableLink(authorities: IdentityAuthorities): ThreadLinkSnapshot {
+function executableLink(authorities: IdentityAuthorities): ThreadLinkSnapshot {
 	return {
 		kind: "thread_link",
 		state: "executable",
@@ -53,7 +53,7 @@ export function executableLink(authorities: IdentityAuthorities): ThreadLinkSnap
 	};
 }
 
-export interface ProjectionHarness {
+interface ProjectionHarness {
 	readonly options: ReturnType<typeof createCanvasBrowserGatewayOptions>;
 	readonly state: CanvasBrowserBindingState;
 	readonly context: BrowserProjectionContext;
@@ -70,7 +70,7 @@ export interface ProjectionHarness {
 
 type FixtureComponents = ReturnType<typeof createCodexWorkbenchGenerationFixture>["components"];
 
-export interface HarnessOverrides {
+interface HarnessOverrides {
 	readonly session?: Partial<FixtureComponents["session"]>;
 	readonly coordinator?: Partial<FixtureComponents["coordinator"]>;
 	/** The clock the authoritative re-read floor reads. */
@@ -87,7 +87,7 @@ export interface HarnessOverrides {
 }
 
 /** One production adapter over the generation fixture, with its live sources injectable. */
-export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness {
+function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness {
 	const fixture = createCodexWorkbenchGenerationFixture([]).components;
 	const authorities = fixture.identity;
 	const accountListeners = new Set<(event: TransportServerNotification) => void>();
@@ -203,3 +203,5 @@ export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionH
 		},
 	};
 }
+
+export { executableLink, type ProjectionHarness, type HarnessOverrides, projectionHarness };

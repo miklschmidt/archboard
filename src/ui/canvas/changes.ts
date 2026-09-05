@@ -14,7 +14,7 @@
 // cause.
 
 /** id -> fingerprint of the element as this pane last agreed it stood. */
-export type Baseline = Map<string, string>;
+type Baseline = Map<string, string>;
 
 // Fields that move without the drawing changing: Excalidraw's per-mutation
 // counters and the server's own bookkeeping. Excluding them makes a
@@ -31,7 +31,7 @@ const VOLATILE = new Set([
 	"syncTimestamp",
 ]);
 
-export function fingerprint(element: Record<string, unknown>): string {
+function fingerprint(element: Record<string, unknown>): string {
 	const keys = Object.keys(element)
 		.filter((key) => !VOLATILE.has(key))
 		.toSorted();
@@ -51,7 +51,7 @@ const SERVER_BOOKKEEPING = [
 ];
 
 /** The element as it goes on the wire: ours to describe, the server's to stamp. */
-export function toWire(element: Record<string, unknown>): Record<string, unknown> {
+function toWire(element: Record<string, unknown>): Record<string, unknown> {
 	const wire: Record<string, unknown> = { ...element };
 	for (const key of SERVER_BOOKKEEPING) {
 		delete wire[key];
@@ -59,7 +59,7 @@ export function toWire(element: Record<string, unknown>): Record<string, unknown
 	return wire;
 }
 
-export interface ChangeReport {
+interface ChangeReport {
 	upserts: Record<string, unknown>[];
 	deletes: string[];
 	/**
@@ -69,13 +69,13 @@ export interface ChangeReport {
 	nextBaseline: Baseline;
 }
 
-export function isEmpty(report: ChangeReport): boolean {
+function isEmpty(report: ChangeReport): boolean {
 	return report.upserts.length === 0 && report.deletes.length === 0;
 }
 
 const NOTHING_WITHHELD: ReadonlySet<string> = new Set();
 
-export function diffAgainstBaseline(
+function diffAgainstBaseline(
 	scene: readonly Record<string, unknown>[],
 	baseline: Baseline,
 	/**
@@ -142,7 +142,7 @@ export function diffAgainstBaseline(
  * Record elements that arrived from the server as already agreed, so the next
  * diff does not report them straight back.
  */
-export function baselineFrom(scene: readonly Record<string, unknown>[]): Baseline {
+function baselineFrom(scene: readonly Record<string, unknown>[]): Baseline {
 	const baseline: Baseline = new Map();
 	for (const element of scene) {
 		if (!element || typeof element["id"] !== "string" || element["isDeleted"]) {
@@ -152,3 +152,13 @@ export function baselineFrom(scene: readonly Record<string, unknown>[]): Baselin
 	}
 	return baseline;
 }
+
+export {
+	type Baseline,
+	fingerprint,
+	toWire,
+	type ChangeReport,
+	isEmpty,
+	diffAgainstBaseline,
+	baselineFrom,
+};

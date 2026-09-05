@@ -13,19 +13,19 @@ const contentTypes = new Map([
 	[".woff2", "font/woff2"],
 ]);
 
-export interface RendererFixture {
+interface RendererFixture {
 	readonly port: number;
 	readonly url: string;
 	listening(): boolean;
 	close(): Promise<void>;
 }
 
-export interface RendererFixtureTestHooks {
+interface RendererFixtureTestHooks {
 	buildRoot?: string;
 	afterListen?(fixture: RendererFixture): Promise<void> | void;
 }
 
-export class RendererFixtureError extends Error {
+class RendererFixtureError extends Error {
 	readonly code = "RENDERER_FIXTURE_INVALID_BUILD" as const;
 
 	constructor(message: string, options?: ErrorOptions) {
@@ -89,7 +89,7 @@ function rendererFile(
 }
 
 /** Serve only the built renderer entry and its built runtime assets. */
-export async function createRendererFixture(
+async function createRendererFixture(
 	testHooks: RendererFixtureTestHooks = {},
 ): Promise<RendererFixture> {
 	const buildRoot = resolve(testHooks.buildRoot ?? defaultBuildRoot);
@@ -161,3 +161,10 @@ export async function createRendererFixture(
 		throw error;
 	}
 }
+
+export {
+	type RendererFixture,
+	type RendererFixtureTestHooks,
+	RendererFixtureError,
+	createRendererFixture,
+};

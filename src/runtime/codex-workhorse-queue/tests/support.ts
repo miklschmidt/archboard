@@ -28,7 +28,7 @@ type QueueStartParams = Parameters<WorkhorseQueueSessionPort["queueStart"]>[0];
 type QueueDeleteResponse = Awaited<ReturnType<WorkhorseQueueSessionPort["queueDelete"]>>;
 type QueueReorderResponse = Awaited<ReturnType<WorkhorseQueueSessionPort["queueReorder"]>>;
 
-export function binding(identity: IdentityAuthority, suffix = "one"): WorkhorseQueueBinding {
+function binding(identity: IdentityAuthority, suffix = "one"): WorkhorseQueueBinding {
 	return {
 		childId: identity.validator.childId,
 		epoch: identity.validator.epoch,
@@ -37,7 +37,7 @@ export function binding(identity: IdentityAuthority, suffix = "one"): WorkhorseQ
 	};
 }
 
-export function submission(
+function submission(
 	identity: IdentityAuthority,
 	rawId: string,
 	prompt: string,
@@ -71,7 +71,7 @@ function startedTurn(identity: IdentityAuthority): SessionQueueStartResult["turn
 	};
 }
 
-export class QueueSession implements WorkhorseQueueSessionPort {
+class QueueSession implements WorkhorseQueueSessionPort {
 	readonly requests: Array<{ readonly method: string; readonly params: unknown }> = [];
 	state: SessionQueueListResult["data"] = [];
 	pageMap: ReadonlyMap<string | null, SessionQueueListResult> | null = null;
@@ -163,7 +163,7 @@ export class QueueSession implements WorkhorseQueueSessionPort {
 	}
 }
 
-export interface Fixture {
+interface Fixture {
 	readonly identity: IdentityAuthority;
 	readonly session: QueueSession;
 	readonly operationIds: WorkhorseQueueOperationIdPort<string>;
@@ -171,7 +171,7 @@ export interface Fixture {
 	setBinding: (next: WorkhorseQueueBinding | null) => void;
 }
 
-export function fixture(initial: SessionQueueListResult["data"] = []): Fixture {
+function fixture(initial: SessionQueueListResult["data"] = []): Fixture {
 	const identity = createIdentityAuthority();
 	const session = new QueueSession(identity);
 	session.state = initial;
@@ -201,7 +201,7 @@ export function fixture(initial: SessionQueueListResult["data"] = []): Fixture {
 	};
 }
 
-export function requestParams(fixtureValue: Fixture, method: string): unknown {
+function requestParams(fixtureValue: Fixture, method: string): unknown {
 	const request = fixtureValue.session.requests.find((candidate) => candidate.method === method);
 	if (request === undefined) {
 		throw new Error(`missing ${method} request`);
@@ -209,13 +209,13 @@ export function requestParams(fixtureValue: Fixture, method: string): unknown {
 	return request.params;
 }
 
-export async function flush(): Promise<void> {
+async function flush(): Promise<void> {
 	for (let index = 0; index < 8; index += 1) {
 		await Promise.resolve();
 	}
 }
 
-export async function rejected(promise: Promise<unknown>): Promise<unknown> {
+async function rejected(promise: Promise<unknown>): Promise<unknown> {
 	try {
 		await promise;
 		return new Error("expected the promise to reject");
@@ -224,7 +224,7 @@ export async function rejected(promise: Promise<unknown>): Promise<unknown> {
 	}
 }
 
-export function deferred(): { readonly promise: Promise<void>; readonly resolve: () => void } {
+function deferred(): { readonly promise: Promise<void>; readonly resolve: () => void } {
 	let resolvePromise: (() => void) | undefined;
 	const promise = new Promise<void>((resolve) => {
 		resolvePromise = resolve;
@@ -240,4 +240,15 @@ export function deferred(): { readonly promise: Promise<void>; readonly resolve:
 	};
 }
 
-export { CodexSessionMutationError };
+export {
+	binding,
+	submission,
+	QueueSession,
+	type Fixture,
+	fixture,
+	requestParams,
+	flush,
+	rejected,
+	deferred,
+	CodexSessionMutationError,
+};

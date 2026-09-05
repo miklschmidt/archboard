@@ -48,7 +48,7 @@ function activeTurnId(
 	return current;
 }
 
-export function createInspect(
+function createInspect(
 	runtime: WorkhorseRuntime,
 ): (request: InspectWorkhorseRequest) => Promise<InspectWorkhorseResult> {
 	return (request) =>
@@ -252,7 +252,7 @@ async function mutateQueue(
 	return freeze({ operation: request.operation, queuedSubmissionIds: ids });
 }
 
-export function createManageQueue(
+function createManageQueue(
 	runtime: WorkhorseRuntime,
 ): (request: ManageWorkhorseQueueRequest) => Promise<ManageWorkhorseQueueResult> {
 	return (request) => {
@@ -288,3 +288,5 @@ export function createManageQueue(
 		});
 	};
 }
+
+export { createInspect, createManageQueue };

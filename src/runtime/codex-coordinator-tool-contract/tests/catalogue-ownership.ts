@@ -3,7 +3,7 @@ import path from "node:path";
 
 const NAMESPACE_NAMES = new Set(["archboard_workhorse", "archboard_voice"]);
 
-export function sourceFiles(root: string): string[] {
+function sourceFiles(root: string): string[] {
 	return readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
 		const file = path.join(root, entry.name);
 		return entry.isDirectory()
@@ -83,7 +83,7 @@ function tokenizeTypeScript(source: string): Token[] {
 	return tokens;
 }
 
-export function hasTypeScriptCatalogueDefinition(source: string): boolean {
+function hasTypeScriptCatalogueDefinition(source: string): boolean {
 	const tokens = tokenizeTypeScript(source);
 	const closingBraces = new Map<number, number>();
 	const openBraces: number[] = [];
@@ -131,7 +131,7 @@ export function hasTypeScriptCatalogueDefinition(source: string): boolean {
 	return false;
 }
 
-export function hasJsonCatalogueDefinition(source: string): boolean {
+function hasJsonCatalogueDefinition(source: string): boolean {
 	let value: unknown;
 	try {
 		value = JSON.parse(source) as unknown;
@@ -165,13 +165,13 @@ export function hasJsonCatalogueDefinition(source: string): boolean {
 	return visit(value);
 }
 
-export function hasCatalogueDefinition(fileName: string, source: string): boolean {
+function hasCatalogueDefinition(fileName: string, source: string): boolean {
 	return path.extname(fileName) === ".json"
 		? hasJsonCatalogueDefinition(source)
 		: hasTypeScriptCatalogueDefinition(source);
 }
 
-export function definitionsOutsideOwner(
+function definitionsOutsideOwner(
 	sources: ReadonlyArray<{ fileName: string; source: string }>,
 	ownerRoot: string,
 ): string[] {
@@ -181,12 +181,22 @@ export function definitionsOutsideOwner(
 		.map(({ fileName }) => fileName);
 }
 
-export function ownerOfDefinition(fileName: string, ownerRoot: string): string {
+function ownerOfDefinition(fileName: string, ownerRoot: string): string {
 	return fileName.startsWith(ownerRoot + path.sep) ? ownerRoot : path.dirname(fileName);
 }
 
-export function realCatalogueDefinitions(root: string): string[] {
+function realCatalogueDefinitions(root: string): string[] {
 	return sourceFiles(root).filter((file) =>
 		hasCatalogueDefinition(file, readFileSync(file, "utf8")),
 	);
 }
+
+export {
+	sourceFiles,
+	hasTypeScriptCatalogueDefinition,
+	hasJsonCatalogueDefinition,
+	hasCatalogueDefinition,
+	definitionsOutsideOwner,
+	ownerOfDefinition,
+	realCatalogueDefinitions,
+};

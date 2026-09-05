@@ -12,7 +12,7 @@ import type {
 } from "../../../shared/codex-workbench-identity/index.js";
 import type { CodexRealtimeBinding, CodexRealtimeGeneration } from "./contract.js";
 
-export interface RealtimeTranscriptEntry {
+interface RealtimeTranscriptEntry {
 	readonly itemId: ItemId;
 	role: RealtimeTranscriptRole;
 	status: RealtimeTranscriptRecord["status"];
@@ -20,7 +20,7 @@ export interface RealtimeTranscriptEntry {
 	order: number;
 }
 
-export interface ActiveRealtimeSession {
+interface ActiveRealtimeSession {
 	readonly binding: CodexRealtimeBinding;
 	readonly browserSessionId: BrowserRealtimeSessionId;
 	readonly correlationId: RealtimeCorrelationId;
@@ -38,7 +38,7 @@ export interface ActiveRealtimeSession {
 	nextLiveOrder: number;
 }
 
-export function realtimeGeneration(session: ActiveRealtimeSession): CodexRealtimeGeneration {
+function realtimeGeneration(session: ActiveRealtimeSession): CodexRealtimeGeneration {
 	return Object.freeze({
 		...session.binding,
 		browserSessionId: session.browserSessionId,
@@ -47,3 +47,5 @@ export function realtimeGeneration(session: ActiveRealtimeSession): CodexRealtim
 		semanticBrief: session.semanticBrief,
 	});
 }
+
+export { type RealtimeTranscriptEntry, type ActiveRealtimeSession, realtimeGeneration };

@@ -6,12 +6,12 @@ import type {
 	CoordinatorCallbackRealtimeRequest,
 } from "./contract.js";
 
-export interface CoordinatorCallbackRealtimePortOptions {
+interface CoordinatorCallbackRealtimePortOptions {
 	readonly session: Pick<CodexSession, "realtimeAppendText">;
 	readonly currentGeneration: () => CoordinatorCallbackRealtimeGeneration | null;
 }
 
-export function sameRealtimeGeneration(
+function sameRealtimeGeneration(
 	left: CoordinatorCallbackRealtimeGeneration | null,
 	right: CoordinatorCallbackRealtimeGeneration | null,
 ): boolean {
@@ -39,7 +39,7 @@ function failed(error: unknown): CoordinatorCallbackMutationResult {
 	return { attempted: true, outcome: "outcome_unknown", reason: "response_lost" };
 }
 
-export function createCoordinatorCallbackRealtimePort(
+function createCoordinatorCallbackRealtimePort(
 	options: CoordinatorCallbackRealtimePortOptions,
 ): CoordinatorCallbackRealtimePort {
 	return Object.freeze({
@@ -67,3 +67,9 @@ export function createCoordinatorCallbackRealtimePort(
 		},
 	});
 }
+
+export {
+	type CoordinatorCallbackRealtimePortOptions,
+	sameRealtimeGeneration,
+	createCoordinatorCallbackRealtimePort,
+};

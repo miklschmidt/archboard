@@ -13,16 +13,16 @@ const setupSchema = z.object({
 	vaultCreated: z.boolean(),
 	command: z.string(),
 });
-export const installResultSchema = z.object({
+const installResultSchema = z.object({
 	skill: z.literal("archboard"),
 	mode: z.string(),
 	root: z.string(),
 	target: z.string(),
 	setup: setupSchema.optional(),
 });
-export type InstallResult = z.infer<typeof installResultSchema>;
+type InstallResult = z.infer<typeof installResultSchema>;
 
-export interface InstallSpawn {
+interface InstallSpawn {
 	command: readonly string[];
 	cwd: string;
 	status: number | null;
@@ -31,9 +31,9 @@ export interface InstallSpawn {
 	stderr: string;
 }
 
-export type InstalledResult = InstallResult & { readonly spawn: InstallSpawn };
+type InstalledResult = InstallResult & { readonly spawn: InstallSpawn };
 
-export interface InstallFixture {
+interface InstallFixture {
 	readonly root: string;
 	readonly home: string;
 	readonly state: string;
@@ -49,7 +49,7 @@ export interface InstallFixture {
 	[Symbol.dispose](): void;
 }
 
-export function installFailure(result: InstallSpawn): string {
+function installFailure(result: InstallSpawn): string {
 	return [
 		`command: ${result.command.join(" ")}`,
 		`cwd: ${result.cwd}`,
@@ -68,7 +68,7 @@ const trackedSkillFiles = [
 	"evals/evals.json",
 ] as const;
 
-export function createInstallFixture(): InstallFixture {
+function createInstallFixture(): InstallFixture {
 	const root = mkdtempSync(join(tmpdir(), "archboard-install-"));
 	const home = join(root, "home");
 	const state = join(root, "state");
@@ -176,3 +176,13 @@ export function createInstallFixture(): InstallFixture {
 		[Symbol.dispose]: dispose,
 	};
 }
+
+export {
+	installResultSchema,
+	type InstallResult,
+	type InstallSpawn,
+	type InstalledResult,
+	type InstallFixture,
+	installFailure,
+	createInstallFixture,
+};

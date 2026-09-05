@@ -1,6 +1,6 @@
 import { type ExcalidrawFile, type ServerElement } from "./types.js";
 
-export function usableEmbeddedFile(raw: unknown): ExcalidrawFile | null {
+function usableEmbeddedFile(raw: unknown): ExcalidrawFile | null {
 	if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
 		return null;
 	}
@@ -22,7 +22,7 @@ export function usableEmbeddedFile(raw: unknown): ExcalidrawFile | null {
 	};
 }
 
-export function drawnFileIds(elements: Iterable<ServerElement>): Set<string> {
+function drawnFileIds(elements: Iterable<ServerElement>): Set<string> {
 	const ids = new Set<string>();
 	for (const element of elements) {
 		if (element.type === "image" && typeof element.fileId === "string") {
@@ -32,7 +32,7 @@ export function drawnFileIds(elements: Iterable<ServerElement>): Set<string> {
 	return ids;
 }
 
-export function usableDrawnFiles(
+function usableDrawnFiles(
 	elements: Iterable<ServerElement>,
 	rawFiles: readonly unknown[],
 ): ExcalidrawFile[] {
@@ -46,3 +46,5 @@ export function usableDrawnFiles(
 	}
 	return [...files.values()];
 }
+
+export { usableEmbeddedFile, drawnFileIds, usableDrawnFiles };

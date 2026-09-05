@@ -390,13 +390,13 @@ function createBindingController(
 	});
 }
 
-export function createCodexThreadLinkBindingController(
+function createCodexThreadLinkBindingController(
 	options: ThreadLinkBindingAuthorityOptions,
 ): ThreadLinkBindingController {
 	return createBindingController(options);
 }
 
-export function createCodexThreadLinkBinding(): ThreadLinkBindingStore {
+function createCodexThreadLinkBinding(): ThreadLinkBindingStore {
 	const controller = createBindingController(null);
 	return Object.freeze({
 		snapshot: controller.snapshot,
@@ -405,3 +405,5 @@ export function createCodexThreadLinkBinding(): ThreadLinkBindingStore {
 		clear: controller.clear,
 	});
 }
+
+export { createCodexThreadLinkBindingController, createCodexThreadLinkBinding };

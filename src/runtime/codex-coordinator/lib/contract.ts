@@ -19,27 +19,27 @@ import type {
 	TrustedIdentityDecoder,
 } from "../../../shared/codex-workbench-identity/index.js";
 
-export type CoordinatorModel = SessionResponse<"model/list">["data"][number];
-export type CoordinatorStartResponse = SessionResponse<"thread/start">;
-export type CoordinatorThreadStartParams = SessionParams<"thread/start">;
-export type CoordinatorSettingsUpdateParams = SessionParams<"thread/settings/update">;
-export type CoordinatorApprovalPolicy = CoordinatorStartResponse["approvalPolicy"];
-export type CoordinatorApprovalsReviewer = CoordinatorStartResponse["approvalsReviewer"];
-export type CoordinatorSandboxPolicy = CoordinatorStartResponse["sandbox"];
-export type CoordinatorPermissionProfile = CoordinatorStartResponse["activePermissionProfile"];
+type CoordinatorModel = SessionResponse<"model/list">["data"][number];
+type CoordinatorStartResponse = SessionResponse<"thread/start">;
+type CoordinatorThreadStartParams = SessionParams<"thread/start">;
+type CoordinatorSettingsUpdateParams = SessionParams<"thread/settings/update">;
+type CoordinatorApprovalPolicy = CoordinatorStartResponse["approvalPolicy"];
+type CoordinatorApprovalsReviewer = CoordinatorStartResponse["approvalsReviewer"];
+type CoordinatorSandboxPolicy = CoordinatorStartResponse["sandbox"];
+type CoordinatorPermissionProfile = CoordinatorStartResponse["activePermissionProfile"];
 
-export type CoordinatorSettingsNotification = Extract<
+type CoordinatorSettingsNotification = Extract<
 	TransportServerNotification["notification"],
 	{ readonly method: "thread/settings/updated" }
 >;
-export type CoordinatorThreadSettings = CoordinatorSettingsNotification["params"]["threadSettings"];
+type CoordinatorThreadSettings = CoordinatorSettingsNotification["params"]["threadSettings"];
 
-export type CoordinatorSessionPort = Pick<
+type CoordinatorSessionPort = Pick<
 	CodexSession,
 	"modelList" | "threadStart" | "threadSettingsUpdate"
 >;
-export type CoordinatorThreadLinkPort = Pick<CodexThreadLinkPort, "classify">;
-export type CoordinatorEpochPort = Pick<
+type CoordinatorThreadLinkPort = Pick<CodexThreadLinkPort, "classify">;
+type CoordinatorEpochPort = Pick<
 	CodexEpochStore,
 	| "snapshot"
 	| "assertCurrent"
@@ -48,25 +48,25 @@ export type CoordinatorEpochPort = Pick<
 	| "rollbackOperation"
 	| "markOutcomeUnknown"
 >;
-export interface CoordinatorIdentityPort {
+interface CoordinatorIdentityPort {
 	readonly validator: Pick<IdentityValidator, "childId" | "epoch">;
 	readonly decoder: Pick<TrustedIdentityDecoder, "resolveThreadId">;
 }
 
-export interface CoordinatorConfiguredSettings {
+interface CoordinatorConfiguredSettings {
 	readonly model: "gpt-5.6-luna";
 	readonly effort: "medium";
 	readonly serviceTier: "priority" | null;
 }
 
-export interface CoordinatorEffectiveSettings {
+interface CoordinatorEffectiveSettings {
 	readonly model: string;
 	readonly effort: CoordinatorStartResponse["reasoningEffort"];
 	readonly serviceTier: string | null;
 }
 
 /** Settings are host facts, not a second mutable settings authority. */
-export interface CoordinatorSettings {
+interface CoordinatorSettings {
 	readonly configured: CoordinatorConfiguredSettings;
 	readonly effective: CoordinatorEffectiveSettings;
 	readonly approvalPolicy: CoordinatorApprovalPolicy;
@@ -75,7 +75,7 @@ export interface CoordinatorSettings {
 	readonly activePermissionProfile: CoordinatorPermissionProfile;
 }
 
-export interface CoordinatorReviewHashes {
+interface CoordinatorReviewHashes {
 	readonly instructionHash: string;
 	/** A stable digest over both reviewed dynamic-tool manifest digests. */
 	readonly catalogueHash: string;
@@ -85,7 +85,7 @@ export interface CoordinatorReviewHashes {
 }
 
 /** The serializable evidence the composition root may retain across reload. */
-export interface CoordinatorPersistedState {
+interface CoordinatorPersistedState {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly threadId: ThreadId;
@@ -94,14 +94,9 @@ export interface CoordinatorPersistedState {
 	readonly settings: CoordinatorSettings;
 }
 
-export type CoordinatorLifecycleState =
-	| "unbound"
-	| "starting"
-	| "ready"
-	| "inspect_only"
-	| "failed";
+type CoordinatorLifecycleState = "unbound" | "starting" | "ready" | "inspect_only" | "failed";
 
-export interface CoordinatorCapabilityPolicy {
+interface CoordinatorCapabilityPolicy {
 	readonly web: true;
 	readonly shell: true;
 	readonly repository: true;
@@ -110,7 +105,7 @@ export interface CoordinatorCapabilityPolicy {
 	readonly sustainedWork: "instruction_policy";
 }
 
-export const COORDINATOR_CAPABILITY_POLICY: CoordinatorCapabilityPolicy = Object.freeze({
+const COORDINATOR_CAPABILITY_POLICY: CoordinatorCapabilityPolicy = Object.freeze({
 	web: true,
 	shell: true,
 	repository: true,
@@ -119,7 +114,7 @@ export const COORDINATOR_CAPABILITY_POLICY: CoordinatorCapabilityPolicy = Object
 	sustainedWork: "instruction_policy",
 });
 
-export interface CoordinatorSnapshot {
+interface CoordinatorSnapshot {
 	readonly state: CoordinatorLifecycleState;
 	readonly threadId: ThreadId | null;
 	readonly childId: ChildId | null;
@@ -137,14 +132,14 @@ export interface CoordinatorSnapshot {
 	readonly reason: string | null;
 }
 
-export interface CoordinatorEnsureInput {
+interface CoordinatorEnsureInput {
 	/** A fresh host-issued operation id is required for a new or replacement start. */
 	readonly operationId?: string;
 	/** Undefined uses the coordinator's current retained evidence; null clears it. */
 	readonly persisted?: CoordinatorPersistedState | null;
 }
 
-export interface CodexCoordinatorOptions {
+interface CodexCoordinatorOptions {
 	readonly session: CoordinatorSessionPort;
 	readonly threadLink: CoordinatorThreadLinkPort;
 	readonly epoch: CoordinatorEpochPort;
@@ -153,20 +148,20 @@ export interface CodexCoordinatorOptions {
 	readonly persisted?: CoordinatorPersistedState | null;
 }
 
-export interface CodexCoordinator {
+interface CodexCoordinator {
 	readonly ensure: (input?: CoordinatorEnsureInput) => Promise<CoordinatorSnapshot>;
 	readonly snapshot: () => CoordinatorSnapshot;
 	readonly persisted: () => CoordinatorPersistedState | null;
 	readonly onNotification: (event: TransportServerNotification) => void;
 }
 
-export type CoordinatorThreadLinkClassification = ThreadLinkClassification;
-export type CoordinatorThreadLinkTarget = ThreadLinkTarget;
-export type CoordinatorEpochSnapshot = EpochSnapshot;
-export type CoordinatorEpochRecord = EpochOperationRecord;
-export type CoordinatorEpochTransaction = EpochTransaction;
+type CoordinatorThreadLinkClassification = ThreadLinkClassification;
+type CoordinatorThreadLinkTarget = ThreadLinkTarget;
+type CoordinatorEpochSnapshot = EpochSnapshot;
+type CoordinatorEpochRecord = EpochOperationRecord;
+type CoordinatorEpochTransaction = EpochTransaction;
 
-export type CoordinatorErrorCode =
+type CoordinatorErrorCode =
 	| "invalid_input"
 	| "model_list_failed"
 	| "model_unavailable"
@@ -179,7 +174,7 @@ export type CoordinatorErrorCode =
 	| "settings_mismatch"
 	| "settings_timeout";
 
-export class CodexCoordinatorError extends Error {
+class CodexCoordinatorError extends Error {
 	override readonly name = "CodexCoordinatorError";
 	readonly code: CoordinatorErrorCode;
 	override readonly cause: unknown;
@@ -190,3 +185,39 @@ export class CodexCoordinatorError extends Error {
 		this.cause = cause;
 	}
 }
+
+export {
+	type CoordinatorModel,
+	type CoordinatorStartResponse,
+	type CoordinatorThreadStartParams,
+	type CoordinatorSettingsUpdateParams,
+	type CoordinatorApprovalPolicy,
+	type CoordinatorApprovalsReviewer,
+	type CoordinatorSandboxPolicy,
+	type CoordinatorPermissionProfile,
+	type CoordinatorSettingsNotification,
+	type CoordinatorThreadSettings,
+	type CoordinatorSessionPort,
+	type CoordinatorThreadLinkPort,
+	type CoordinatorEpochPort,
+	type CoordinatorIdentityPort,
+	type CoordinatorConfiguredSettings,
+	type CoordinatorEffectiveSettings,
+	type CoordinatorSettings,
+	type CoordinatorReviewHashes,
+	type CoordinatorPersistedState,
+	type CoordinatorLifecycleState,
+	type CoordinatorCapabilityPolicy,
+	COORDINATOR_CAPABILITY_POLICY,
+	type CoordinatorSnapshot,
+	type CoordinatorEnsureInput,
+	type CodexCoordinatorOptions,
+	type CodexCoordinator,
+	type CoordinatorThreadLinkClassification,
+	type CoordinatorThreadLinkTarget,
+	type CoordinatorEpochSnapshot,
+	type CoordinatorEpochRecord,
+	type CoordinatorEpochTransaction,
+	type CoordinatorErrorCode,
+	CodexCoordinatorError,
+};

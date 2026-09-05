@@ -6,7 +6,7 @@ import { z } from "zod";
 import { CLI_CONTRACT_ARTIFACT_NAMES } from "../../../../src/cli/command-contract/artifacts.js";
 import { checkoutRoot } from "./package-cli.ts";
 
-export const artifactNames = CLI_CONTRACT_ARTIFACT_NAMES;
+const artifactNames = CLI_CONTRACT_ARTIFACT_NAMES;
 
 const spawnSchema = z.object({
 	command: z.array(z.string()),
@@ -16,9 +16,9 @@ const spawnSchema = z.object({
 	stdout: z.string(),
 	stderr: z.string(),
 });
-export type ArtifactSpawn = z.infer<typeof spawnSchema>;
+type ArtifactSpawn = z.infer<typeof spawnSchema>;
 
-export function artifactFailure(result: ArtifactSpawn): string {
+function artifactFailure(result: ArtifactSpawn): string {
 	return [
 		`command: ${result.command.join(" ")}`,
 		`cwd: ${result.cwd}`,
@@ -29,7 +29,7 @@ export function artifactFailure(result: ArtifactSpawn): string {
 	].join("\n");
 }
 
-export interface ArtifactFixture {
+interface ArtifactFixture {
 	readonly root: string;
 	readonly first: string;
 	readonly second: string;
@@ -42,7 +42,7 @@ export interface ArtifactFixture {
 	[Symbol.dispose](): void;
 }
 
-export function createArtifactFixture(): ArtifactFixture {
+function createArtifactFixture(): ArtifactFixture {
 	const root = mkdtempSync(join(tmpdir(), "archboard-contract-artifacts-"));
 	const first = join(root, "first");
 	const second = join(root, "second");
@@ -103,3 +103,11 @@ export function createArtifactFixture(): ArtifactFixture {
 		[Symbol.dispose]: dispose,
 	};
 }
+
+export {
+	artifactNames,
+	type ArtifactSpawn,
+	artifactFailure,
+	type ArtifactFixture,
+	createArtifactFixture,
+};

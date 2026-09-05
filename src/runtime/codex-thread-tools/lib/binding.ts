@@ -14,21 +14,21 @@ import {
 
 assertCanonicalInstructionBytes("workhorse", WORKHORSE_DEVELOPER_INSTRUCTIONS);
 
-export const ARCHBOARD_APP_TOOL_BINDING = Object.freeze({
+const ARCHBOARD_APP_TOOL_BINDING = Object.freeze({
 	namespace: ARCHBOARD_APP_NAMESPACE.name,
 	manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
 	workhorseInstructionsSha256: WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
 	dynamicTools: ARCHBOARD_APP_DYNAMIC_TOOLS,
 });
 
-export type ArchboardAppToolBinding = typeof ARCHBOARD_APP_TOOL_BINDING;
+type ArchboardAppToolBinding = typeof ARCHBOARD_APP_TOOL_BINDING;
 
 const ToolInstallationRequestSchema = z.strictObject({
 	lifecycle: z.enum(["fresh_workhorse_start", "attach", "reconnect"]),
 	provenance: z.enum(["archboard_created", "attached", "foreign", "unknown"]),
 });
 
-export type ToolInstallationRequest = z.infer<typeof ToolInstallationRequestSchema>;
+type ToolInstallationRequest = z.infer<typeof ToolInstallationRequestSchema>;
 
 const EMPTY_DYNAMIC_TOOLS: readonly ArchboardAppNamespaceSpec[] = Object.freeze([]);
 
@@ -41,7 +41,7 @@ function parseInstallationRequest(value: unknown): ToolInstallationRequest {
 }
 
 /** Return the immutable binding only for a fresh Archboard-created workhorse start. */
-export function archboardAppToolBindingFor(value: unknown): ArchboardAppToolBinding | null {
+function archboardAppToolBindingFor(value: unknown): ArchboardAppToolBinding | null {
 	const request = parseInstallationRequest(value);
 	if (request.lifecycle !== "fresh_workhorse_start") {
 		return null;
@@ -53,6 +53,14 @@ export function archboardAppToolBindingFor(value: unknown): ArchboardAppToolBind
 }
 
 /** Attach and reconnect boundaries always receive no dynamic tools. */
-export function archboardAppDynamicToolsFor(value: unknown): readonly ArchboardAppNamespaceSpec[] {
+function archboardAppDynamicToolsFor(value: unknown): readonly ArchboardAppNamespaceSpec[] {
 	return archboardAppToolBindingFor(value)?.dynamicTools ?? EMPTY_DYNAMIC_TOOLS;
 }
+
+export {
+	ARCHBOARD_APP_TOOL_BINDING,
+	type ArchboardAppToolBinding,
+	type ToolInstallationRequest,
+	archboardAppToolBindingFor,
+	archboardAppDynamicToolsFor,
+};

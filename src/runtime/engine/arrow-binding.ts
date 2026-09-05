@@ -22,7 +22,7 @@
 // branches remain the small analytic forms that already match their outlines.
 
 /** As much of a shape as routing an arrow to it requires. */
-export interface Bindable {
+interface Bindable {
 	type?: string;
 	x?: number;
 	y?: number;
@@ -35,9 +35,9 @@ export interface Bindable {
 import type { ElementBinding } from "../../shared/board-elements/index.js";
 
 /** Excalidraw's ordinary point binding, used by the non-elbow router. */
-export type ArrowBinding = ElementBinding;
+type ArrowBinding = ElementBinding;
 
-export interface Point {
+interface Point {
 	x: number;
 	y: number;
 }
@@ -50,13 +50,13 @@ export interface Point {
  * binding says. Two numbers for one distance is what TASK-089's first instance
  * was, and what let TASK-088 record 4 and draw 8.
  */
-export const BOUND_ARROW_GAP = 4;
+const BOUND_ARROW_GAP = 4;
 
 const num = (v: unknown, fallback = 0): number =>
 	typeof v === "number" && Number.isFinite(v) ? v : fallback;
 
 /** The centre of a shape, which is what `focus: 0` means. */
-export function centreOf(shape: Bindable): Point {
+function centreOf(shape: Bindable): Point {
 	return {
 		x: num(shape.x) + num(shape.width) / 2,
 		y: num(shape.y) + num(shape.height) / 2,
@@ -95,7 +95,7 @@ const minus = (a: Point, b: Point): Point => ({ x: a.x - b.x, y: a.y - b.y });
  * else. A person who drags the same end somewhere specific writes their own
  * `focus` and `gap` over these, and the routing reads theirs.
  */
-export function bindingFromRef(ref: unknown): ArrowBinding | null {
+function bindingFromRef(ref: unknown): ArrowBinding | null {
 	const id = (ref as { id?: unknown } | null)?.id;
 	if (typeof id !== "string" || id.length === 0) {
 		return null;
@@ -104,7 +104,7 @@ export function bindingFromRef(ref: unknown): ArrowBinding | null {
 }
 
 /** A stored binding, or null for an end that touches nothing. */
-export function bindingOf(value: unknown): ArrowBinding | null {
+function bindingOf(value: unknown): ArrowBinding | null {
 	const raw = value as Partial<ArrowBinding> | null | undefined;
 	if (!raw || typeof raw.elementId !== "string" || raw.elementId.length === 0) {
 		return null;
@@ -126,7 +126,7 @@ export function bindingOf(value: unknown): ArrowBinding | null {
  * the scaled shape's four corners, chosen by which of them the adjacent point
  * sits beyond.
  */
-export function focusPointOf(shape: Bindable, focus: number, adjacent: Point): Point {
+function focusPointOf(shape: Bindable, focus: number, adjacent: Point): Point {
 	const centre = centreOf(shape);
 	if (focus === 0) {
 		return centre;
@@ -573,7 +573,7 @@ function alongSegment(origin: Point, direction: Point, from: Point, to: Point): 
  * which happens when the adjacent point is on the far side of the shape from
  * the aim.
  */
-export function boundEndpoint(
+function boundEndpoint(
 	shape: Bindable,
 	binding: ArrowBinding,
 	adjacent: Point,
@@ -648,3 +648,15 @@ export function boundEndpoint(
 		angle,
 	);
 }
+
+export {
+	type Bindable,
+	type ArrowBinding,
+	type Point,
+	BOUND_ARROW_GAP,
+	centreOf,
+	bindingFromRef,
+	bindingOf,
+	focusPointOf,
+	boundEndpoint,
+};

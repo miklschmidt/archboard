@@ -30,45 +30,38 @@ import type {
 import type { CodexThreadStatusType } from "../../../shared/codex-app-server-contract/index.js";
 
 /** The only four operations the coordinator may dispatch to its workhorse. */
-export const WORKHORSE_OPERATION_NAMES = Object.freeze([
+const WORKHORSE_OPERATION_NAMES = Object.freeze([
 	"inspect_workhorse",
 	"delegate_to_workhorse",
 	"manage_workhorse_queue",
 	"steer_workhorse",
 ] as const);
-export type WorkhorseOperationName = (typeof WORKHORSE_OPERATION_NAMES)[number];
+type WorkhorseOperationName = (typeof WORKHORSE_OPERATION_NAMES)[number];
 
-export type WorkhorseTurnOperation = "delegate_to_workhorse" | "steer_workhorse";
-export type WorkhorseOperationRpc =
-	| "turn/start"
-	| "turn/steer"
-	| `thread/queue/${WorkhorseQueueMutation}`;
-export type WorkhorseOperationDelivery =
-	| "pending"
-	| "delivered"
-	| "not_delivered"
-	| "outcome_unknown";
+type WorkhorseTurnOperation = "delegate_to_workhorse" | "steer_workhorse";
+type WorkhorseOperationRpc = "turn/start" | "turn/steer" | `thread/queue/${WorkhorseQueueMutation}`;
+type WorkhorseOperationDelivery = "pending" | "delivered" | "not_delivered" | "outcome_unknown";
 
 /** A target supplied by the composition root; callers cannot choose one. */
-export type WorkhorseOperationTarget = ThreadLinkTarget & {
+type WorkhorseOperationTarget = ThreadLinkTarget & {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly operationId: string;
 };
 
 /** The two exact links that every operation revalidates before and after effect. */
-export interface WorkhorseOperationBinding {
+interface WorkhorseOperationBinding {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly coordinator: WorkhorseOperationTarget;
 	readonly workhorse: WorkhorseOperationTarget;
 }
 
-export type CurrentWorkhorseOperationBinding = () => WorkhorseOperationBinding | null;
+type CurrentWorkhorseOperationBinding = () => WorkhorseOperationBinding | null;
 
-export type WorkhorseOperationThreadLinkPort = Pick<CodexThreadLinkPort, "classify">;
-export type WorkhorseOperationSessionPort = Pick<CodexSession, "turnStart" | "turnSteer">;
-export type WorkhorseOperationEpochPort = Pick<
+type WorkhorseOperationThreadLinkPort = Pick<CodexThreadLinkPort, "classify">;
+type WorkhorseOperationSessionPort = Pick<CodexSession, "turnStart" | "turnSteer">;
+type WorkhorseOperationEpochPort = Pick<
 	CodexEpochStore,
 	| "snapshot"
 	| "stageOperation"
@@ -79,16 +72,16 @@ export type WorkhorseOperationEpochPort = Pick<
 >;
 
 /** The coordinator call remains an exact, host-validated logical correlation. */
-export type WorkhorseCoordinatorCall = LogicalToolCallCorrelation;
-export type CurrentWorkhorseCoordinatorCall = () => WorkhorseCoordinatorCall | null;
+type WorkhorseCoordinatorCall = LogicalToolCallCorrelation;
+type CurrentWorkhorseCoordinatorCall = () => WorkhorseCoordinatorCall | null;
 
-export interface WorkhorseOperationContextInput {
+interface WorkhorseOperationContextInput {
 	readonly operationId: OperationId;
 	readonly kind: WorkhorseTurnOperation;
 	readonly rpc: "turn/start" | "turn/steer";
 }
 
-export interface WorkhorseOperationOptions {
+interface WorkhorseOperationOptions {
 	readonly session: WorkhorseOperationSessionPort;
 	readonly threadLink: WorkhorseOperationThreadLinkPort;
 	readonly queue: CodexWorkhorseQueue<OperationId>;
@@ -101,11 +94,11 @@ export interface WorkhorseOperationOptions {
 	readonly contextFor: (input: WorkhorseOperationContextInput) => ArchboardContext;
 }
 
-export interface InspectWorkhorseRequest {
+interface InspectWorkhorseRequest {
 	readonly call: WorkhorseCoordinatorCall;
 }
 
-export interface DelegateToWorkhorseRequest {
+interface DelegateToWorkhorseRequest {
 	readonly call: WorkhorseCoordinatorCall;
 	/** Reuse this host-issued identity when the dispatcher already owns the effect. */
 	readonly operationId?: OperationId;
@@ -136,7 +129,7 @@ type ManageWorkhorseQueueMutationRequest =
 			readonly submissionId: QueuedSubmissionId;
 	  };
 
-export type ManageWorkhorseQueueRequest =
+type ManageWorkhorseQueueRequest =
 	| {
 			readonly call: WorkhorseCoordinatorCall;
 			readonly operation: "list";
@@ -147,7 +140,7 @@ export type ManageWorkhorseQueueRequest =
 			readonly operationId?: OperationId;
 	  });
 
-export interface SteerWorkhorseRequest {
+interface SteerWorkhorseRequest {
 	readonly call: WorkhorseCoordinatorCall;
 	/** Reuse this host-issued identity when the dispatcher already owns the effect. */
 	readonly operationId?: OperationId;
@@ -156,31 +149,31 @@ export interface SteerWorkhorseRequest {
 	readonly input: string;
 }
 
-export interface InspectWorkhorseResult {
+interface InspectWorkhorseResult {
 	readonly threadId: ThreadId;
 	readonly status: CodexThreadStatusType;
 	readonly activeTurnId: TurnId | null;
 	readonly queuedSubmissionIds: readonly QueuedSubmissionId[];
 }
 
-export interface DelegateToWorkhorseResult {
+interface DelegateToWorkhorseResult {
 	readonly mode: "started" | "queued";
 	readonly clientUserMessageId: string;
 	readonly queuedSubmissionId: QueuedSubmissionId | null;
 	readonly turnId: TurnId | null;
 }
 
-export interface ManageWorkhorseQueueResult {
+interface ManageWorkhorseQueueResult {
 	readonly operation: QueueOperation;
 	readonly queuedSubmissionIds: readonly QueuedSubmissionId[];
 }
 
-export interface SteerWorkhorseResult {
+interface SteerWorkhorseResult {
 	readonly turnId: TurnId;
 	readonly delivery: Exclude<WorkhorseOperationDelivery, "pending">;
 }
 
-export interface WorkhorseOperationCorrelation {
+interface WorkhorseOperationCorrelation {
 	readonly operationId: OperationId;
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
@@ -202,7 +195,7 @@ interface WorkhorseOperationEventBase {
 	readonly detail: string | null;
 }
 
-export type WorkhorseOperationEvent =
+type WorkhorseOperationEvent =
 	| (WorkhorseOperationEventBase & { readonly type: "accepted"; readonly outcome: "pending" })
 	| (WorkhorseOperationEventBase & { readonly type: "queued"; readonly outcome: "delivered" })
 	| (WorkhorseOperationEventBase & { readonly type: "started"; readonly outcome: "delivered" })
@@ -218,9 +211,9 @@ export type WorkhorseOperationEvent =
 			readonly outcome: "outcome_unknown";
 	  });
 
-export type WorkhorseOperationEventListener = (event: WorkhorseOperationEvent) => void;
+type WorkhorseOperationEventListener = (event: WorkhorseOperationEvent) => void;
 
-export type WorkhorseOperationErrorCode =
+type WorkhorseOperationErrorCode =
 	| "invalid_call"
 	| "invalid_input"
 	| "not_ready"
@@ -236,7 +229,7 @@ export type WorkhorseOperationErrorCode =
 	| "transaction_failed"
 	| "outcome_unknown";
 
-export class CodexWorkhorseOperationsError extends Error {
+class CodexWorkhorseOperationsError extends Error {
 	override readonly name = "CodexWorkhorseOperationsError";
 	readonly code: WorkhorseOperationErrorCode;
 	readonly operation: WorkhorseOperationName | null;
@@ -263,7 +256,7 @@ export class CodexWorkhorseOperationsError extends Error {
 	}
 }
 
-export interface CodexWorkhorseOperations {
+interface CodexWorkhorseOperations {
 	readonly inspect: (request: InspectWorkhorseRequest) => Promise<InspectWorkhorseResult>;
 	readonly delegate: (request: DelegateToWorkhorseRequest) => Promise<DelegateToWorkhorseResult>;
 	readonly manageQueue: (
@@ -275,9 +268,47 @@ export interface CodexWorkhorseOperations {
 	readonly subscribe: (listener: WorkhorseOperationEventListener) => () => void;
 }
 
-export type WorkhorseOperationClassification = ThreadLinkClassification;
-export type WorkhorseOperationEpochProof = EpochExecutionProof;
-export type WorkhorseOperationTransaction = EpochTransaction;
-export type WorkhorseOperationTurn = SessionTurn;
-export type WorkhorseOperationTurnStartParams = SessionParams<"turn/start">;
-export type WorkhorseOperationTurnSteerParams = SessionParams<"turn/steer">;
+type WorkhorseOperationClassification = ThreadLinkClassification;
+type WorkhorseOperationEpochProof = EpochExecutionProof;
+type WorkhorseOperationTransaction = EpochTransaction;
+type WorkhorseOperationTurn = SessionTurn;
+type WorkhorseOperationTurnStartParams = SessionParams<"turn/start">;
+type WorkhorseOperationTurnSteerParams = SessionParams<"turn/steer">;
+
+export {
+	WORKHORSE_OPERATION_NAMES,
+	type WorkhorseOperationName,
+	type WorkhorseTurnOperation,
+	type WorkhorseOperationRpc,
+	type WorkhorseOperationDelivery,
+	type WorkhorseOperationTarget,
+	type WorkhorseOperationBinding,
+	type CurrentWorkhorseOperationBinding,
+	type WorkhorseOperationThreadLinkPort,
+	type WorkhorseOperationSessionPort,
+	type WorkhorseOperationEpochPort,
+	type WorkhorseCoordinatorCall,
+	type CurrentWorkhorseCoordinatorCall,
+	type WorkhorseOperationContextInput,
+	type WorkhorseOperationOptions,
+	type InspectWorkhorseRequest,
+	type DelegateToWorkhorseRequest,
+	type ManageWorkhorseQueueRequest,
+	type SteerWorkhorseRequest,
+	type InspectWorkhorseResult,
+	type DelegateToWorkhorseResult,
+	type ManageWorkhorseQueueResult,
+	type SteerWorkhorseResult,
+	type WorkhorseOperationCorrelation,
+	type WorkhorseOperationEvent,
+	type WorkhorseOperationEventListener,
+	type WorkhorseOperationErrorCode,
+	CodexWorkhorseOperationsError,
+	type CodexWorkhorseOperations,
+	type WorkhorseOperationClassification,
+	type WorkhorseOperationEpochProof,
+	type WorkhorseOperationTransaction,
+	type WorkhorseOperationTurn,
+	type WorkhorseOperationTurnStartParams,
+	type WorkhorseOperationTurnSteerParams,
+};

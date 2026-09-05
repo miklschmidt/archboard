@@ -1,16 +1,16 @@
 import type { SceneBBox, ScenePoint } from "../schemas.js";
 
-export interface ExactPoint {
+interface ExactPoint {
 	x: number;
 	y: number;
 }
-export interface ExactBox {
+interface ExactBox {
 	x: number;
 	y: number;
 	width: number;
 	height: number;
 }
-export interface Segment {
+interface Segment {
 	connectorId: string;
 	sourceIndex: number;
 	index: number;
@@ -18,27 +18,27 @@ export interface Segment {
 	b: ExactPoint;
 }
 
-export const finite = (value: unknown): value is number =>
+const finite = (value: unknown): value is number =>
 	typeof value === "number" && Number.isFinite(value);
 
-export function normalizeNumber(value: number): number {
+function normalizeNumber(value: number): number {
 	const rounded =
 		Math.abs(value) > Number.MAX_VALUE / 1000 ? value : Math.round(value * 1000) / 1000;
 	return Object.is(rounded, -0) ? 0 : rounded;
 }
 
-export const point = (value: ExactPoint): ScenePoint => ({
+const point = (value: ExactPoint): ScenePoint => ({
 	x: normalizeNumber(value.x),
 	y: normalizeNumber(value.y),
 });
-export const box = (value: ExactBox): SceneBBox => ({
+const box = (value: ExactBox): SceneBBox => ({
 	x: normalizeNumber(value.x),
 	y: normalizeNumber(value.y),
 	width: normalizeNumber(Math.max(0, value.width)),
 	height: normalizeNumber(Math.max(0, value.height)),
 });
 
-export type FocusBoxResult =
+type FocusBoxResult =
 	| { kind: "absent" }
 	| { kind: "representable"; box: SceneBBox }
 	| {
@@ -47,7 +47,7 @@ export type FocusBoxResult =
 	  };
 
 /** Exact 16px finding-focus padding, including the representability of each required delta. */
-export function focusBox(value: SceneBBox | null): FocusBoxResult {
+function focusBox(value: SceneBBox | null): FocusBoxResult {
 	if (value === null) {
 		return { kind: "absent" };
 	}
@@ -74,7 +74,7 @@ export function focusBox(value: SceneBBox | null): FocusBoxResult {
 	return { kind: "representable", box: box({ x, y, width, height }) };
 }
 
-export type AggregateBoxResult =
+type AggregateBoxResult =
 	| { kind: "empty" }
 	| { kind: "representable"; box: ExactBox }
 	| { kind: "unrepresentable"; representative: ExactBox };
@@ -92,7 +92,7 @@ const boxOrder = (a: ExactBox, b: ExactBox): number => {
 };
 
 /** Classify an exact union without conflating no input with an unrepresentable finite span. */
-export function aggregateBoxes(values: readonly ExactBox[]): AggregateBoxResult {
+function aggregateBoxes(values: readonly ExactBox[]): AggregateBoxResult {
 	if (values.length === 0) {
 		return { kind: "empty" };
 	}
@@ -121,7 +121,7 @@ export function aggregateBoxes(values: readonly ExactBox[]): AggregateBoxResult 
 	return { kind: "unrepresentable", representative };
 }
 
-export function pointBox(points: readonly ExactPoint[]): ExactBox | null {
+function pointBox(points: readonly ExactPoint[]): ExactBox | null {
 	if (points.length === 0) {
 		return null;
 	}
@@ -143,7 +143,7 @@ export function pointBox(points: readonly ExactPoint[]): ExactBox | null {
 		: null;
 }
 
-export function overlap(a: ExactBox, b: ExactBox): ExactBox | null {
+function overlap(a: ExactBox, b: ExactBox): ExactBox | null {
 	const x = Math.max(a.x, b.x);
 	const y = Math.max(a.y, b.y);
 	const right = Math.min(a.x + a.width, b.x + b.width);
@@ -151,7 +151,7 @@ export function overlap(a: ExactBox, b: ExactBox): ExactBox | null {
 	return right > x && bottom > y ? { x, y, width: right - x, height: bottom - y } : null;
 }
 
-export function contains(outer: ExactBox, inner: ExactBox): boolean {
+function contains(outer: ExactBox, inner: ExactBox): boolean {
 	return (
 		outer.x <= inner.x &&
 		outer.y <= inner.y &&
@@ -161,7 +161,7 @@ export function contains(outer: ExactBox, inner: ExactBox): boolean {
 }
 
 /** Liang-Barsky clipping. Null means no interior span beyond tolerance. */
-export function segmentInsideBox(
+function segmentInsideBox(
 	a: ExactPoint,
 	b: ExactPoint,
 	target: ExactBox,
@@ -208,14 +208,14 @@ export function segmentInsideBox(
 	return { entry, exit };
 }
 
-export type SegmentIntersection =
+type SegmentIntersection =
 	| { kind: "none" | "contact" }
 	| { kind: "proper"; point: ExactPoint }
 	| { kind: "collinear"; points: [ExactPoint, ExactPoint] };
 
 const cross = (u: ExactPoint, v: ExactPoint) => u.x * v.y - u.y * v.x;
 
-export function intersectSegments(
+function intersectSegments(
 	a: ExactPoint,
 	b: ExactPoint,
 	c: ExactPoint,
@@ -258,3 +258,23 @@ export function intersectSegments(
 	);
 	return endpointDistance <= tolerance ? { kind: "contact" } : { kind: "proper", point: hit };
 }
+
+export {
+	type ExactPoint,
+	type ExactBox,
+	type Segment,
+	finite,
+	normalizeNumber,
+	point,
+	box,
+	type FocusBoxResult,
+	focusBox,
+	type AggregateBoxResult,
+	aggregateBoxes,
+	pointBox,
+	overlap,
+	contains,
+	segmentInsideBox,
+	type SegmentIntersection,
+	intersectSegments,
+};

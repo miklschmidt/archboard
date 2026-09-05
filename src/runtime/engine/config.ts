@@ -4,11 +4,11 @@ import dotenv from "dotenv";
 dotenv.config({ quiet: true });
 
 // Express server configuration
-export const EXPRESS_SERVER_URL = process.env["EXPRESS_SERVER_URL"] || "http://127.0.0.1:3000";
-export const ENABLE_CANVAS_SYNC = process.env["ENABLE_CANVAS_SYNC"] !== "false"; // Default to true
+const EXPRESS_SERVER_URL = process.env["EXPRESS_SERVER_URL"] || "http://127.0.0.1:3000";
+const ENABLE_CANVAS_SYNC = process.env["ENABLE_CANVAS_SYNC"] !== "false"; // Default to true
 
 // Opt out of auto-starting the canvas server from the CLI.
-export const EXCALIDRAW_NO_AUTOSTART = process.env["EXCALIDRAW_NO_AUTOSTART"] === "1";
+const EXCALIDRAW_NO_AUTOSTART = process.env["EXCALIDRAW_NO_AUTOSTART"] === "1";
 
 // The Obsidian vault every board is persisted into (ADR 0004). Deliberately
 // has no default: the vault spans repositories, so guessing at the current
@@ -19,7 +19,7 @@ export const EXCALIDRAW_NO_AUTOSTART = process.env["EXCALIDRAW_NO_AUTOSTART"] ==
 // board may live, so a canvas without one has nowhere to put anything, and a
 // canvas somebody can draw on before discovering the drawing was never
 // anywhere is the worst of the three ways out.
-export const ARCHBOARD_VAULT = process.env["ARCHBOARD_VAULT"] || undefined;
+const ARCHBOARD_VAULT = process.env["ARCHBOARD_VAULT"] || undefined;
 
 /**
  * What a canvas with no vault says, in one place because three surfaces say it:
@@ -32,7 +32,7 @@ export const ARCHBOARD_VAULT = process.env["ARCHBOARD_VAULT"] || undefined;
  * long before anybody starts a canvas. This is the backstop for the run where
  * it has not.
  */
-export function noVaultMessage(): string {
+function noVaultMessage(): string {
 	return [
 		"archboard has no vault, so there is nowhere to put a board and the canvas will not start.",
 		"",
@@ -48,3 +48,11 @@ export function noVaultMessage(): string {
 		"  archboard start",
 	].join("\n");
 }
+
+export {
+	EXPRESS_SERVER_URL,
+	ENABLE_CANVAS_SYNC,
+	EXCALIDRAW_NO_AUTOSTART,
+	ARCHBOARD_VAULT,
+	noVaultMessage,
+};

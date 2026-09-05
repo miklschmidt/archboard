@@ -1,6 +1,6 @@
 import { compareIdentity } from "./ordering.js";
 
-export interface SweepInterval<T> {
+interface SweepInterval<T> {
 	id: string;
 	min: number;
 	max: number;
@@ -8,14 +8,14 @@ export interface SweepInterval<T> {
 	semantics: SweepPartition;
 }
 
-export interface SweepPartition {
+interface SweepPartition {
 	partition: string;
 	excludedPartitions: ReadonlySet<string>;
 	ancestorTargets?: readonly string[];
 	hierarchy?: SweepHierarchy;
 }
 
-export interface SweepWork {
+interface SweepWork {
 	events: number;
 	activeVisits: number;
 	expiryPops: number;
@@ -28,12 +28,12 @@ export interface SweepWork {
 	peakSelections: number;
 }
 
-export interface SweepOptions {
+interface SweepOptions {
 	/** Caller-owned development counters. */
 	work?: SweepWork;
 }
 
-export const emptySweepWork = (): SweepWork => ({
+const emptySweepWork = (): SweepWork => ({
 	events: 0,
 	activeVisits: 0,
 	expiryPops: 0,
@@ -46,7 +46,7 @@ export const emptySweepWork = (): SweepWork => ({
 	peakSelections: 0,
 });
 
-export interface SweepHierarchy {
+interface SweepHierarchy {
 	readonly size: number;
 	position(id: string, step?: () => void): number | undefined;
 	subtree(id: string, step?: () => void): readonly [number, number] | null;
@@ -56,7 +56,7 @@ export interface SweepHierarchy {
 }
 
 /** Build deterministic hierarchy coordinates for semantic exclusion queries. */
-export function buildSweepHierarchy(
+function buildSweepHierarchy(
 	parents: ReadonlyMap<string, string | null | undefined>,
 ): SweepHierarchy {
 	const parentById = new Map<string, string | null>();
@@ -167,7 +167,7 @@ function partitionExcluded(profile: SweepPartition, partition: string, work: Swe
 }
 
 /** Enumerate every semantically permitted closed x-overlap once in stable event order. */
-export function sweepIntervalPairs<A, B>(
+function sweepIntervalPairs<A, B>(
 	left: readonly SweepInterval<A>[],
 	right: readonly SweepInterval<B>[],
 	sameSet: boolean,
@@ -246,3 +246,14 @@ export function sweepIntervalPairs<A, B>(
 	}
 	return work;
 }
+
+export {
+	type SweepInterval,
+	type SweepPartition,
+	type SweepWork,
+	type SweepOptions,
+	emptySweepWork,
+	type SweepHierarchy,
+	buildSweepHierarchy,
+	sweepIntervalPairs,
+};

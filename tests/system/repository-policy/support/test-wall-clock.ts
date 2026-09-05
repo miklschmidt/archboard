@@ -1,6 +1,6 @@
 import { TEST_WALL_CLOCK_BUDGET_MS } from "../../../../src/shared/timing/timing.ts";
 
-export interface TestWallClockDeclaration {
+interface TestWallClockDeclaration {
 	readonly test: string;
 	readonly reason: string;
 	readonly outerBoundMs: number;
@@ -16,24 +16,24 @@ interface TestWallClockReporter {
 
 let activeDeclaration: TestWallClockDeclaration | undefined;
 
-export function declareTestWallClockBudget(declaration: TestWallClockDeclaration): void {
+function declareTestWallClockBudget(declaration: TestWallClockDeclaration): void {
 	if (activeDeclaration) {
 		throw new Error("Only one wall-clock declaration may apply to an executing test.");
 	}
 	activeDeclaration = declaration;
 }
 
-export function clearTestWallClockDeclaration(): void {
+function clearTestWallClockDeclaration(): void {
 	activeDeclaration = undefined;
 }
 
-export function takeTestWallClockDeclaration(): TestWallClockDeclaration | undefined {
+function takeTestWallClockDeclaration(): TestWallClockDeclaration | undefined {
 	const declaration = activeDeclaration;
 	activeDeclaration = undefined;
 	return declaration;
 }
 
-export function createTestWallClockReporter(
+function createTestWallClockReporter(
 	nowMs: () => number,
 	defaultBudgetMs = TEST_WALL_CLOCK_BUDGET_MS,
 ): TestWallClockReporter {
@@ -62,3 +62,11 @@ export function createTestWallClockReporter(
 		},
 	};
 }
+
+export {
+	type TestWallClockDeclaration,
+	declareTestWallClockBudget,
+	clearTestWallClockDeclaration,
+	takeTestWallClockDeclaration,
+	createTestWallClockReporter,
+};

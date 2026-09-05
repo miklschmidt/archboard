@@ -26,7 +26,7 @@ const TextUserInputSchema = z.strictObject({
 	text_elements: z.tuple([]),
 });
 type GeneratedUserInput = z.infer<typeof UserInputSchema>;
-export type TextUserInput = Extract<GeneratedUserInput, { type: "text" }>;
+type TextUserInput = Extract<GeneratedUserInput, { type: "text" }>;
 const CanonicalContextValueSchema = z.string().superRefine((value, issueContext) => {
 	try {
 		decodeCanonicalContext(value);
@@ -60,8 +60,8 @@ function frozenSchema<T extends z.ZodTypeAny>(schema: T) {
 const AdditionalContextRawSchema = z.strictObject({
 	archboard: AdditionalContextEntrySchema,
 });
-export const AdditionalContextSchema = frozenSchema(AdditionalContextRawSchema);
-export type AdditionalContext = z.infer<typeof AdditionalContextSchema>;
+const AdditionalContextSchema = frozenSchema(AdditionalContextRawSchema);
+type AdditionalContext = z.infer<typeof AdditionalContextSchema>;
 
 const TurnStartBuilderInputSchema = z.strictObject({
 	threadId: NonEmptyIdentitySchema,
@@ -84,8 +84,8 @@ const TurnStartParamsRawSchema = z.strictObject({
 	turnTrigger: z.literal("archboard"),
 	additionalContext: AdditionalContextSchema,
 });
-export const TurnStartParamsSchema = frozenSchema(TurnStartParamsRawSchema);
-export type TurnStartParams = z.infer<typeof TurnStartParamsSchema>;
+const TurnStartParamsSchema = frozenSchema(TurnStartParamsRawSchema);
+type TurnStartParams = z.infer<typeof TurnStartParamsSchema>;
 
 const TurnSteerParamsRawSchema = z.strictObject({
 	threadId: NonEmptyIdentitySchema,
@@ -94,8 +94,8 @@ const TurnSteerParamsRawSchema = z.strictObject({
 	additionalContext: AdditionalContextSchema,
 	expectedTurnId: NonEmptyIdentitySchema,
 });
-export const TurnSteerParamsSchema = frozenSchema(TurnSteerParamsRawSchema);
-export type TurnSteerParams = z.infer<typeof TurnSteerParamsSchema>;
+const TurnSteerParamsSchema = frozenSchema(TurnSteerParamsRawSchema);
+type TurnSteerParams = z.infer<typeof TurnSteerParamsSchema>;
 
 const SemanticDeveloperMessageSchema = z.strictObject({
 	type: z.literal("message"),
@@ -109,8 +109,8 @@ const ThreadInjectItemsParamsRawSchema = z.strictObject({
 	threadId: NonEmptyIdentitySchema,
 	items: z.tuple([SemanticDeveloperMessageSchema]),
 });
-export const ThreadInjectItemsParamsSchema = frozenSchema(ThreadInjectItemsParamsRawSchema);
-export type ThreadInjectItemsParams = z.infer<typeof ThreadInjectItemsParamsSchema>;
+const ThreadInjectItemsParamsSchema = frozenSchema(ThreadInjectItemsParamsRawSchema);
+type ThreadInjectItemsParams = z.infer<typeof ThreadInjectItemsParamsSchema>;
 
 const ThreadForkBuilderInputSchema = z.strictObject({
 	threadId: NonEmptyIdentitySchema,
@@ -145,8 +145,8 @@ const ThreadForkParamsRawSchema = z
 			});
 		}
 	});
-export const ThreadForkParamsSchema = frozenSchema(ThreadForkParamsRawSchema);
-export type ThreadForkParams = z.infer<typeof ThreadForkParamsSchema>;
+const ThreadForkParamsSchema = frozenSchema(ThreadForkParamsRawSchema);
+type ThreadForkParams = z.infer<typeof ThreadForkParamsSchema>;
 
 function isCanonicalCheckoutRoot(value: string): boolean {
 	return path.isAbsolute(value) && path.resolve(value) === value;
@@ -160,7 +160,7 @@ function parseOutput<T>(schema: z.ZodType<T>, value: unknown, label: string): T 
 	return freezeDeep(parsed.data);
 }
 
-export function createTextUserInput(text: string): TextUserInput {
+function createTextUserInput(text: string): TextUserInput {
 	return parseOutput(
 		TextUserInputSchema,
 		{ type: "text", text, text_elements: [] },
@@ -168,7 +168,7 @@ export function createTextUserInput(text: string): TextUserInput {
 	) as TextUserInput;
 }
 
-export function createAdditionalContext(context: ArchboardContext): AdditionalContext {
+function createAdditionalContext(context: ArchboardContext): AdditionalContext {
 	const value = encodeCanonicalContext(context);
 	return parseOutput(
 		AdditionalContextSchema,
@@ -177,14 +177,14 @@ export function createAdditionalContext(context: ArchboardContext): AdditionalCo
 	);
 }
 
-export interface TurnStartBuilderInput {
+interface TurnStartBuilderInput {
 	readonly threadId: string;
 	readonly clientUserMessageId: string;
 	readonly prompt: string;
 	readonly context: ArchboardContext;
 }
 
-export function createTurnStartParams(input: TurnStartBuilderInput): TurnStartParams {
+function createTurnStartParams(input: TurnStartBuilderInput): TurnStartParams {
 	const validated = TurnStartBuilderInputSchema.parse(input);
 	return parseOutput(
 		TurnStartParamsSchema,
@@ -199,11 +199,11 @@ export function createTurnStartParams(input: TurnStartBuilderInput): TurnStartPa
 	);
 }
 
-export interface TurnSteerBuilderInput extends TurnStartBuilderInput {
+interface TurnSteerBuilderInput extends TurnStartBuilderInput {
 	readonly expectedTurnId: string;
 }
 
-export function createTurnSteerParams(input: TurnSteerBuilderInput): TurnSteerParams {
+function createTurnSteerParams(input: TurnSteerBuilderInput): TurnSteerParams {
 	const validated = TurnSteerBuilderInputSchema.parse(input);
 	return parseOutput(
 		TurnSteerParamsSchema,
@@ -218,7 +218,7 @@ export function createTurnSteerParams(input: TurnSteerBuilderInput): TurnSteerPa
 	);
 }
 
-export interface ThreadInjectItemsBuilderInput {
+interface ThreadInjectItemsBuilderInput {
 	readonly threadId: string;
 	readonly context: ArchboardContext;
 }
@@ -228,7 +228,7 @@ const ThreadInjectItemsBuilderInputSchema = z.strictObject({
 	context: ArchboardContextSchema,
 });
 
-export function createThreadInjectItemsParams(
+function createThreadInjectItemsParams(
 	input: ThreadInjectItemsBuilderInput,
 ): ThreadInjectItemsParams {
 	const validated = ThreadInjectItemsBuilderInputSchema.parse(input);
@@ -249,13 +249,13 @@ export function createThreadInjectItemsParams(
 	);
 }
 
-export interface ThreadForkBuilderInput {
+interface ThreadForkBuilderInput {
 	readonly threadId: string;
 	readonly cwd: string;
 	readonly beforeTurnId?: string;
 }
 
-export function createThreadForkParams(input: ThreadForkBuilderInput): ThreadForkParams {
+function createThreadForkParams(input: ThreadForkBuilderInput): ThreadForkParams {
 	const validated = ThreadForkBuilderInputSchema.parse(input);
 	return parseOutput(
 		ThreadForkParamsSchema,
@@ -273,7 +273,7 @@ export function createThreadForkParams(input: ThreadForkBuilderInput): ThreadFor
 	);
 }
 
-export function createSelfThreadForkParams(
+function createSelfThreadForkParams(
 	input: Omit<ThreadForkBuilderInput, "beforeTurnId"> & {
 		readonly executingTurnId: string;
 		readonly beforeTurnId?: string;
@@ -292,10 +292,36 @@ export function createSelfThreadForkParams(
 	return createThreadForkParams({ ...selfFork, beforeTurnId: executingTurnId });
 }
 
-export function parseCanonicalAdditionalContext(value: unknown): ArchboardContext {
+function parseCanonicalAdditionalContext(value: unknown): ArchboardContext {
 	const parsed = AdditionalContextSchema.safeParse(value);
 	if (!parsed.success) {
 		throw new TypeError(`Invalid additionalContext: ${parsed.error.message}`);
 	}
 	return decodeCanonicalContext(parsed.data.archboard.value);
 }
+
+export {
+	type TextUserInput,
+	AdditionalContextSchema,
+	type AdditionalContext,
+	TurnStartParamsSchema,
+	type TurnStartParams,
+	TurnSteerParamsSchema,
+	type TurnSteerParams,
+	ThreadInjectItemsParamsSchema,
+	type ThreadInjectItemsParams,
+	ThreadForkParamsSchema,
+	type ThreadForkParams,
+	createTextUserInput,
+	createAdditionalContext,
+	type TurnStartBuilderInput,
+	createTurnStartParams,
+	type TurnSteerBuilderInput,
+	createTurnSteerParams,
+	type ThreadInjectItemsBuilderInput,
+	createThreadInjectItemsParams,
+	type ThreadForkBuilderInput,
+	createThreadForkParams,
+	createSelfThreadForkParams,
+	parseCanonicalAdditionalContext,
+};

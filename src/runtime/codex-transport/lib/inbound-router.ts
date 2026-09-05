@@ -50,7 +50,7 @@ const REVERSE_ERROR_MESSAGES = Object.freeze({
 	unhandled: "No reverse-request handler is available.",
 });
 
-export interface InboundRouterOptions {
+interface InboundRouterOptions {
 	readonly identity: () => IdentityAuthority;
 	readonly state: () => "open" | "closing" | "closed";
 	readonly pendingRequests: Map<string, PendingRequest>;
@@ -82,7 +82,7 @@ export interface InboundRouterOptions {
 	readonly enqueueProtocolError: (wireId: WireId, code: number, message: string) => boolean;
 }
 
-export interface InboundRouter {
+interface InboundRouter {
 	readonly handleLine: (line: Buffer) => void;
 	readonly registerDynamicDispatcher: (registration: DynamicDispatcherRegistration) => void;
 	readonly respond: (
@@ -92,7 +92,7 @@ export interface InboundRouter {
 	) => Promise<void>;
 }
 
-export function createInboundRouter(options: InboundRouterOptions): InboundRouter {
+function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 	const issueReverse = (kind: TransportIssue["kind"], detail: string, rawId?: WireId): void => {
 		options.emitIssue({
 			kind,
@@ -536,3 +536,5 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 
 	return Object.freeze({ handleLine, registerDynamicDispatcher, respond: responder.respond });
 }
+
+export { type InboundRouterOptions, type InboundRouter, createInboundRouter };

@@ -12,7 +12,7 @@ function getErrorCode(error: unknown): string | undefined {
 	return undefined;
 }
 
-export function resolveEntrypointPath(filePath: string | undefined): string | null {
+function resolveEntrypointPath(filePath: string | undefined): string | null {
 	if (!filePath) {
 		return null;
 	}
@@ -34,6 +34,8 @@ export function resolveEntrypointPath(filePath: string | undefined): string | nu
 // True when the module at `moduleUrl` is the process entry point.
 // npm/npx commonly invoke package bins through symlinks; compare real paths so
 // this still holds from those standard install paths (issues #65/#67/#79).
-export function isMainModule(moduleUrl: string): boolean {
+function isMainModule(moduleUrl: string): boolean {
 	return resolveEntrypointPath(fileURLToPath(moduleUrl)) === resolveEntrypointPath(process.argv[1]);
 }
+
+export { resolveEntrypointPath, isMainModule };

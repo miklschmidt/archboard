@@ -28,7 +28,7 @@ import type {
 	ResolveSpokenApprovalInput,
 } from "../../codex-coordinator-tool-contract/index.js";
 
-export type SpokenApprovalGateState =
+type SpokenApprovalGateState =
 	| "idle"
 	| "awaiting_user"
 	| "classifying"
@@ -37,7 +37,7 @@ export type SpokenApprovalGateState =
 	| "settled"
 	| "visual_fallback";
 
-export type SpokenApprovalFallbackReason =
+type SpokenApprovalFallbackReason =
 	| "approval_unavailable"
 	| "not_eligible"
 	| "coordinator_unavailable"
@@ -57,12 +57,12 @@ export type SpokenApprovalFallbackReason =
 	| "child_exit"
 	| "disposed";
 
-export interface SpokenApprovalEffectPrompt {
+interface SpokenApprovalEffectPrompt {
 	readonly itemId: RealtimeItemId;
 	readonly sequence: number;
 }
 
-export interface SpokenApprovalClassifierInput {
+interface SpokenApprovalClassifierInput {
 	/** A host-issued operation identity; this module never mints one. */
 	readonly operationId: string;
 	/** A host-issued client message identity for the ordinary turn. */
@@ -70,7 +70,7 @@ export interface SpokenApprovalClassifierInput {
 	readonly context: ArchboardContext;
 }
 
-export interface SpokenApprovalArmInput {
+interface SpokenApprovalArmInput {
 	readonly requestId: JsonRpcRequestId;
 	/** Must equal the broker-derived presentation for this request. */
 	readonly effectSummary: string;
@@ -79,7 +79,7 @@ export interface SpokenApprovalArmInput {
 	readonly classifier: SpokenApprovalClassifierInput;
 }
 
-export interface SpokenApprovalSnapshot {
+interface SpokenApprovalSnapshot {
 	readonly state: SpokenApprovalGateState;
 	readonly requestId: JsonRpcRequestId | null;
 	readonly approvalId: ApprovalId | null;
@@ -103,7 +103,7 @@ export interface SpokenApprovalSnapshot {
 	readonly reason: SpokenApprovalFallbackReason | null;
 }
 
-export type SpokenApprovalToolResult =
+type SpokenApprovalToolResult =
 	| {
 			readonly tag: "ok";
 			readonly value: {
@@ -117,7 +117,7 @@ export type SpokenApprovalToolResult =
 			readonly message: string;
 	  };
 
-export interface CodexSpokenApprovalGateOptions {
+interface CodexSpokenApprovalGateOptions {
 	readonly approvalBroker: Pick<
 		CodexApprovalBroker,
 		"get" | "spokenEligibility" | "spokenEffectPresentation" | "resolve"
@@ -136,7 +136,7 @@ export interface CodexSpokenApprovalGateOptions {
 	) => void;
 }
 
-export interface CodexSpokenApprovalGate {
+interface CodexSpokenApprovalGate {
 	readonly arm: (input: SpokenApprovalArmInput) => SpokenApprovalSnapshot;
 	readonly snapshot: () => SpokenApprovalSnapshot;
 	readonly onSemanticEvent: (event: RealtimeSemanticEvent) => void;
@@ -146,9 +146,9 @@ export interface CodexSpokenApprovalGate {
 	readonly dispose: () => void;
 }
 
-export type CodexSpokenApprovalErrorCode = "disposed" | "busy";
+type CodexSpokenApprovalErrorCode = "disposed" | "busy";
 
-export class CodexSpokenApprovalError extends Error {
+class CodexSpokenApprovalError extends Error {
 	override readonly name = "CodexSpokenApprovalError";
 	readonly code: CodexSpokenApprovalErrorCode;
 
@@ -158,9 +158,25 @@ export class CodexSpokenApprovalError extends Error {
 	}
 }
 
-export type SpokenApprovalNotification = Extract<
+type SpokenApprovalNotification = Extract<
 	TransportServerNotification["notification"],
 	{ readonly method: "turn/started" | "turn/completed" }
 >;
 
-export type SpokenApprovalTranscript = RealtimeTranscriptRecord;
+type SpokenApprovalTranscript = RealtimeTranscriptRecord;
+
+export {
+	type SpokenApprovalGateState,
+	type SpokenApprovalFallbackReason,
+	type SpokenApprovalEffectPrompt,
+	type SpokenApprovalClassifierInput,
+	type SpokenApprovalArmInput,
+	type SpokenApprovalSnapshot,
+	type SpokenApprovalToolResult,
+	type CodexSpokenApprovalGateOptions,
+	type CodexSpokenApprovalGate,
+	type CodexSpokenApprovalErrorCode,
+	CodexSpokenApprovalError,
+	type SpokenApprovalNotification,
+	type SpokenApprovalTranscript,
+};

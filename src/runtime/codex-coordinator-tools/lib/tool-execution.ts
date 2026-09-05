@@ -19,7 +19,7 @@ import type { CodexCoordinatorToolsOptions, DynamicToolResponse } from "./contra
 import type { ValidatedCoordinatorToolCall } from "./validation.js";
 import { okResponse, outcomeUnknownResponse, refusedResponse } from "./response.js";
 
-export interface IssuedOperationIdentity {
+interface IssuedOperationIdentity {
 	readonly id: OperationId;
 	readonly wire: string;
 }
@@ -33,13 +33,11 @@ function operationIdentity(
 	return Object.freeze({ id, wire: options.operation.decoder.serializeOperationId(id) });
 }
 
-export function issueOperationIdentity(
-	options: CodexCoordinatorToolsOptions,
-): IssuedOperationIdentity {
+function issueOperationIdentity(options: CodexCoordinatorToolsOptions): IssuedOperationIdentity {
 	return operationIdentity(options, options.operation.issuer.mintOperationId());
 }
 
-export function captureSpokenOperationIdentity(
+function captureSpokenOperationIdentity(
 	options: CodexCoordinatorToolsOptions,
 ): IssuedOperationIdentity | null {
 	try {
@@ -85,7 +83,7 @@ function refusalFromError(error: unknown): DynamicToolRefusalReason | null {
 	return null;
 }
 
-export function isMutation(call: ValidatedCoordinatorToolCall): boolean {
+function isMutation(call: ValidatedCoordinatorToolCall): boolean {
 	return (
 		call.tool === "delegate_to_workhorse" ||
 		call.tool === "steer_workhorse" ||
@@ -94,7 +92,7 @@ export function isMutation(call: ValidatedCoordinatorToolCall): boolean {
 	);
 }
 
-export function invokeWorkhorse(
+function invokeWorkhorse(
 	operations: CodexCoordinatorToolsOptions["operations"],
 	validated: ValidatedCoordinatorToolCall,
 	operation: IssuedOperationIdentity,
@@ -134,7 +132,7 @@ export function invokeWorkhorse(
 	}
 }
 
-export function workhorseResponse(
+function workhorseResponse(
 	options: CodexCoordinatorToolsOptions,
 	validated: ValidatedCoordinatorToolCall,
 	operation: IssuedOperationIdentity,
@@ -174,7 +172,7 @@ function errorUsesOperation(
 	}
 }
 
-export function responseForWorkhorseError(
+function responseForWorkhorseError(
 	options: CodexCoordinatorToolsOptions,
 	validated: ValidatedCoordinatorToolCall,
 	error: unknown,
@@ -212,7 +210,7 @@ export function responseForWorkhorseError(
 	return refusedResponse("system_error", `The workhorse tool failed: ${errorMessage(error)}`);
 }
 
-export function spokenResponse(
+function spokenResponse(
 	result: Awaited<ReturnType<CodexCoordinatorToolsOptions["spokenApproval"]["resolve"]>>,
 	operation: IssuedOperationIdentity | null,
 ): DynamicToolResponse {
@@ -231,6 +229,18 @@ export function spokenResponse(
 	});
 }
 
-export function spokenInput(call: ValidatedCoordinatorToolCall): ResolveSpokenApprovalInput {
+function spokenInput(call: ValidatedCoordinatorToolCall): ResolveSpokenApprovalInput {
 	return call.input as ResolveSpokenApprovalInput;
 }
+
+export {
+	type IssuedOperationIdentity,
+	issueOperationIdentity,
+	captureSpokenOperationIdentity,
+	isMutation,
+	invokeWorkhorse,
+	workhorseResponse,
+	responseForWorkhorseError,
+	spokenResponse,
+	spokenInput,
+};

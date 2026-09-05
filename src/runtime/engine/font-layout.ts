@@ -288,12 +288,12 @@ function pairSubtable(buf: Buffer, off: number): PairSubtable {
 	return { lookup: () => undefined };
 }
 
-export interface Kerning {
+interface Kerning {
 	/** The adjustment, in font units, between two adjacent glyphs. */
 	kern(first: number, second: number): number;
 }
 
-export function buildGpos(buf: Buffer): Kerning {
+function buildGpos(buf: Buffer): Kerning {
 	const h = header(buf, SCRIPTS);
 	const lookups: PairSubtable[][] = [];
 	for (const index of lookupsForFeatures(buf, h, ["kern"])) {
@@ -610,12 +610,12 @@ function chainContextSubst(
 	return { apply: () => null };
 }
 
-export interface Substitutions {
+interface Substitutions {
 	/** The glyph run after the default-on features have been applied. */
 	substitute(glyphs: readonly number[]): number[];
 }
 
-export function buildGsub(buf: Buffer): Substitutions {
+function buildGsub(buf: Buffer): Substitutions {
 	const h = header(buf, SCRIPTS);
 	const built = new Map<number, Substitution | null>();
 
@@ -680,3 +680,5 @@ export function buildGsub(buf: Buffer): Substitutions {
 		},
 	};
 }
+
+export { type Kerning, buildGpos, type Substitutions, buildGsub };

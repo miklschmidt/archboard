@@ -40,13 +40,13 @@ import {
 	parseRealtimeSessionId,
 } from "../../../shared/codex-realtime-host/index.js";
 
-export interface ResponseWrite {
+interface ResponseWrite {
 	readonly request: DynamicServerRequest;
 	readonly owner: typeof COORDINATOR_TOOLS_OWNER;
 	readonly response: ReverseResponse;
 }
 
-export interface CoordinatorToolsFixture {
+interface CoordinatorToolsFixture {
 	readonly authorities: IdentityAuthorities;
 	readonly identity: IdentityAuthority;
 	readonly coordinatorThreadId: ThreadId;
@@ -148,7 +148,7 @@ function bindingFor(
 	});
 }
 
-export function fixture(
+function fixture(
 	authorities: IdentityAuthorities = createIdentityAuthorities(),
 ): CoordinatorToolsFixture {
 	const identity = authorities.identity;
@@ -476,14 +476,14 @@ export function fixture(
 	};
 }
 
-export function copyRequest(request: DynamicServerRequest): DynamicServerRequest {
+function copyRequest(request: DynamicServerRequest): DynamicServerRequest {
 	return {
 		...request,
 		params: { ...request.params },
 	};
 }
 
-export function responseValue(response: DynamicToolResponse): unknown {
+function responseValue(response: DynamicToolResponse): unknown {
 	const text = response.contentItems[0]?.text;
 	if (text === undefined) {
 		throw new Error("response has no inputText item");
@@ -491,7 +491,7 @@ export function responseValue(response: DynamicToolResponse): unknown {
 	return JSON.parse(text) as unknown;
 }
 
-export function responseEnvelope(response: DynamicToolResponse): Record<string, unknown> {
+function responseEnvelope(response: DynamicToolResponse): Record<string, unknown> {
 	const value = responseValue(response);
 	if (value === null || typeof value !== "object" || Array.isArray(value)) {
 		throw new Error("response envelope is not an object");
@@ -499,6 +499,16 @@ export function responseEnvelope(response: DynamicToolResponse): Record<string, 
 	return value as Record<string, unknown>;
 }
 
-export function nextMicrotasks(): Promise<void> {
+function nextMicrotasks(): Promise<void> {
 	return Promise.resolve().then(() => undefined);
 }
+
+export {
+	type ResponseWrite,
+	type CoordinatorToolsFixture,
+	fixture,
+	copyRequest,
+	responseValue,
+	responseEnvelope,
+	nextMicrotasks,
+};

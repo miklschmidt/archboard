@@ -41,11 +41,11 @@ import type {
 
 /** The only opaque authority value that may enter a dynamic effect. */
 declare const dynamicAuthorityBrand: unique symbol;
-export type DynamicAuthorityToken = string & {
+type DynamicAuthorityToken = string & {
 	readonly [dynamicAuthorityBrand]: "dynamic-authority";
 };
 
-export interface DynamicAuthorityTokenIssuer {
+interface DynamicAuthorityTokenIssuer {
 	readonly issue: () => DynamicAuthorityToken;
 	readonly owns: (token: DynamicAuthorityToken) => boolean;
 	readonly retire: (token: DynamicAuthorityToken) => void;
@@ -53,7 +53,7 @@ export interface DynamicAuthorityTokenIssuer {
 }
 
 /** Process-local opaque authority; only the owning production adapter can validate it. */
-export function createDynamicAuthorityTokenIssuer(): DynamicAuthorityTokenIssuer {
+function createDynamicAuthorityTokenIssuer(): DynamicAuthorityTokenIssuer {
 	const live = new Set<string>();
 	return Object.freeze({
 		issue: () => {
@@ -67,15 +67,15 @@ export function createDynamicAuthorityTokenIssuer(): DynamicAuthorityTokenIssuer
 	});
 }
 
-export type DynamicToolName = GeneralThreadToolName;
-export type DynamicMutationToolName = "create_thread" | "fork_thread" | "send_message_to_thread";
-export type DynamicReadToolName = "list_threads" | "read_thread";
-export type DynamicStatus = SessionThread["status"]["type"];
-export type DynamicOwnership = "created" | "attached" | "foreign";
-export type DynamicEpochState = "current" | "prior" | "unknown";
-export type DynamicRelation = "self" | "other";
+type DynamicToolName = GeneralThreadToolName;
+type DynamicMutationToolName = "create_thread" | "fork_thread" | "send_message_to_thread";
+type DynamicReadToolName = "list_threads" | "read_thread";
+type DynamicStatus = SessionThread["status"]["type"];
+type DynamicOwnership = "created" | "attached" | "foreign";
+type DynamicEpochState = "current" | "prior" | "unknown";
+type DynamicRelation = "self" | "other";
 
-export type DynamicRefusalReason =
+type DynamicRefusalReason =
 	| "invalid_call"
 	| "not_ready"
 	| "not_loaded"
@@ -90,14 +90,9 @@ export type DynamicRefusalReason =
 	| "expired"
 	| "unsupported";
 
-export type DynamicApprovalOutcome =
-	| "approved"
-	| "declined"
-	| "expired"
-	| "cancelled"
-	| "disconnected";
+type DynamicApprovalOutcome = "approved" | "declined" | "expired" | "cancelled" | "disconnected";
 
-export type DynamicApprovalCause =
+type DynamicApprovalCause =
 	| "person_approved"
 	| "person_declined"
 	| "deadline_reached"
@@ -107,9 +102,9 @@ export type DynamicApprovalCause =
 	| "browser_disconnected"
 	| "child_disconnected";
 
-export type DynamicLifecyclePhase = "before_approval" | "after_approval" | "before_effect";
+type DynamicLifecyclePhase = "before_approval" | "after_approval" | "before_effect";
 
-export type DynamicSessionDependency = Pick<
+type DynamicSessionDependency = Pick<
 	CodexSession,
 	| "threadStart"
 	| "threadFork"
@@ -119,17 +114,14 @@ export type DynamicSessionDependency = Pick<
 	| "threadItemsListPage"
 	| "turnStart"
 >;
-export type DynamicEpochDependency = Pick<
+type DynamicEpochDependency = Pick<
 	CodexEpochStore,
 	"stageOperation" | "snapshot" | "commitOperation" | "rollbackOperation" | "markOutcomeUnknown"
 >;
-export type DynamicThreadLinkDependency = Pick<CodexThreadLinkPort, "classify">;
-export type DynamicTransportDependency = Pick<
-	CodexTransport,
-	"ownsPendingReverseRequest" | "respond"
->;
+type DynamicThreadLinkDependency = Pick<CodexThreadLinkPort, "classify">;
+type DynamicTransportDependency = Pick<CodexTransport, "ownsPendingReverseRequest" | "respond">;
 
-export interface DynamicToolApprovalRequest {
+interface DynamicToolApprovalRequest {
 	readonly identity: DynamicApprovalIdentity;
 	readonly effect: DynamicImmutableEffect;
 	readonly effectHash: string;
@@ -137,11 +129,11 @@ export interface DynamicToolApprovalRequest {
 	readonly expiresAtMs: number;
 }
 
-export interface DynamicApprovalIdentity extends LogicalToolCallCorrelation {
+interface DynamicApprovalIdentity extends LogicalToolCallCorrelation {
 	readonly operationId: string;
 }
 
-export interface DynamicToolApprovalDecision {
+interface DynamicToolApprovalDecision {
 	readonly outcome: DynamicApprovalOutcome;
 	readonly identity: DynamicApprovalIdentity;
 	readonly effectHash: string;
@@ -153,7 +145,7 @@ export interface DynamicToolApprovalDecision {
  * Visual approvals are deliberately not the seven-family app-server broker.
  * A port implementation owns the pending card and its terminal compare-and-set.
  */
-export interface DynamicToolApprovalPort {
+interface DynamicToolApprovalPort {
 	readonly presentImmutableRequest: (request: DynamicToolApprovalRequest) => Promise<void> | void;
 	readonly awaitOneExactVisualDecision: (
 		request: DynamicToolApprovalRequest,
@@ -164,7 +156,7 @@ export interface DynamicToolApprovalPort {
 	}) => Promise<void> | void;
 }
 
-export interface DynamicThreadAuthorityRecord {
+interface DynamicThreadAuthorityRecord {
 	readonly authority: DynamicAuthorityToken;
 	readonly threadId: ThreadId;
 	/** The raw Codex id that is safe to put in a dynamic-tool result. */
@@ -183,7 +175,7 @@ export interface DynamicThreadAuthorityRecord {
 	readonly linkClassification?: ThreadLinkClassification;
 }
 
-export interface DynamicCallerAuthority extends DynamicThreadAuthorityRecord {
+interface DynamicCallerAuthority extends DynamicThreadAuthorityRecord {
 	readonly role: "caller";
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
@@ -192,17 +184,17 @@ export interface DynamicCallerAuthority extends DynamicThreadAuthorityRecord {
 	readonly executing: true;
 }
 
-export interface DynamicTargetAuthority extends DynamicThreadAuthorityRecord {
+interface DynamicTargetAuthority extends DynamicThreadAuthorityRecord {
 	readonly role: "target";
 }
 
-export interface DynamicObservedTarget {
+interface DynamicObservedTarget {
 	readonly thread: SessionThread | null;
 	readonly persistedRows: number;
 	readonly loadedOccurrences: number;
 }
 
-export interface DynamicThreadAuthorityPort {
+interface DynamicThreadAuthorityPort {
 	readonly resolveExactLogicalCaller: (input: {
 		readonly request: DynamicServerRequest;
 	}) => Promise<DynamicCallerAuthority>;
@@ -221,7 +213,7 @@ export interface DynamicThreadAuthorityPort {
 	readonly revalidateTarget: (target: DynamicTargetAuthority) => Promise<DynamicTargetAuthority>;
 }
 
-export interface DynamicContextAuthority {
+interface DynamicContextAuthority {
 	readonly token: DynamicAuthorityToken;
 	readonly paneId: string;
 	readonly childId: ChildId;
@@ -230,7 +222,7 @@ export interface DynamicContextAuthority {
 	readonly turnId: TurnId;
 }
 
-export interface DynamicContextPort {
+interface DynamicContextPort {
 	readonly issueAndRevalidatePaneLinkAuthority: (input: {
 		readonly caller: DynamicCallerAuthority;
 		readonly existing?: DynamicContextAuthority;
@@ -248,15 +240,15 @@ export interface DynamicContextPort {
 	}) => Promise<ArchboardContext>;
 }
 
-export type DynamicOperationTerminalDisposition = "consumed" | "retired";
+type DynamicOperationTerminalDisposition = "consumed" | "retired";
 
-export interface DynamicOperationTerminalResult {
+interface DynamicOperationTerminalResult {
 	readonly operationId: OperationId;
 	readonly disposition: DynamicOperationTerminalDisposition;
 	readonly terminal: true;
 }
 
-export interface DynamicOperationIdPort {
+interface DynamicOperationIdPort {
 	readonly issueCanonicalOperationId: () => OperationId;
 	readonly validateCurrentUnconsumedOperationId: (operationId: OperationId) => void;
 	readonly serializeForOwnedWireFields: (operationId: OperationId) => string;
@@ -275,7 +267,7 @@ export interface DynamicOperationIdPort {
 	) => DynamicOperationTerminalResult | null;
 }
 
-export interface DynamicWaitOwner extends WaitOwner {
+interface DynamicWaitOwner extends WaitOwner {
 	readonly epoch: ChildEpoch;
 	readonly namespace: "archboard_app";
 	readonly tool: "wait_threads";
@@ -284,7 +276,7 @@ export interface DynamicWaitOwner extends WaitOwner {
 	readonly operationId: null;
 }
 
-export interface DynamicMutationQuarantineIdentity {
+interface DynamicMutationQuarantineIdentity {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly threadId: ThreadId;
@@ -295,44 +287,44 @@ export interface DynamicMutationQuarantineIdentity {
 	readonly manifestHash: string;
 }
 
-export interface DynamicMutationTerminalProof {
+interface DynamicMutationTerminalProof {
 	readonly terminal: true;
 	readonly unresolvedOperationCount: 0;
 }
 
-export interface DynamicMutationQuarantineExit {
+interface DynamicMutationQuarantineExit {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly exited: true;
 }
 
-export interface DynamicMutationQuarantineOwner {
+interface DynamicMutationQuarantineOwner {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly poisoned: true;
 	readonly childExit: Promise<DynamicMutationQuarantineExit>;
 }
 
-export type DynamicFailClosedShutdownReason =
+type DynamicFailClosedShutdownReason =
 	| "poison_acquisition_failed"
 	| "wire_capacity_exceeded"
 	| "response_write_failed";
 
-export interface DynamicEpochTeardownProof {
+interface DynamicEpochTeardownProof {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly sessionClosed: true;
 	readonly transportClosed: true;
 }
 
-export interface DynamicFailClosedShutdownOwner {
+interface DynamicFailClosedShutdownOwner {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly shutdownInitiated: true;
 	readonly teardown: Promise<DynamicEpochTeardownProof>;
 }
 
-export interface DynamicFatalLifecycleFault {
+interface DynamicFatalLifecycleFault {
 	readonly child: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly reason: DynamicFailClosedShutdownReason | "invalid_child_exit_proof";
@@ -340,14 +332,14 @@ export interface DynamicFatalLifecycleFault {
 	readonly cause: unknown;
 }
 
-export type DynamicMutationQuarantineState =
+type DynamicMutationQuarantineState =
 	| "poisoning"
 	| "poisoned"
 	| "terminalizing"
 	| "shutdown_pending"
 	| "fatal";
 
-export interface DynamicMutationQuarantineInspection {
+interface DynamicMutationQuarantineInspection {
 	readonly epochCount: number;
 	readonly callCount: number;
 	readonly ordinaryInFlightWireCount: number;
@@ -364,7 +356,7 @@ export interface DynamicMutationQuarantineInspection {
 	}>[];
 }
 
-export type DynamicWaitEvent =
+type DynamicWaitEvent =
 	| {
 			readonly event: "completed" | "attention";
 			readonly threadId: string;
@@ -380,9 +372,9 @@ export type DynamicWaitEvent =
 			readonly cursor: string | null;
 	  };
 
-export type DynamicWaitReleaseCause = Exclude<OwnedWaitCleanupCause, "decline">;
+type DynamicWaitReleaseCause = Exclude<OwnedWaitCleanupCause, "decline">;
 
-export interface DynamicToolLifecyclePort {
+interface DynamicToolLifecyclePort {
 	readonly assertCallExecuting: (input: {
 		readonly request: DynamicServerRequest;
 		readonly caller: DynamicCallerAuthority;
@@ -419,13 +411,13 @@ export interface DynamicToolLifecyclePort {
 	}) => Promise<DynamicWaitEvent>;
 }
 
-export type DynamicForkEffectArguments = Readonly<{
+type DynamicForkEffectArguments = Readonly<{
 	readonly threadId: string;
 	readonly beforeTurnId: string | null;
 	readonly prompt: string | null;
 }>;
 
-export type DynamicImmutableEffect =
+type DynamicImmutableEffect =
 	| Readonly<{
 			readonly tool: "create_thread";
 			readonly arguments: ToolArgument<"create_thread">;
@@ -465,7 +457,7 @@ export type DynamicImmutableEffect =
 
 /* The effect fields are deliberately repeated in each union member: tool and
  * arguments must narrow together at every remote boundary. */
-export type DynamicEffectFields = {
+type DynamicEffectFields = {
 	readonly callerAuthority: DynamicAuthorityToken;
 	readonly targetAuthority: DynamicAuthorityToken | null;
 	readonly contextAuthority: DynamicAuthorityToken;
@@ -478,11 +470,11 @@ export type DynamicEffectFields = {
 	readonly visualSummary: string;
 };
 
-export type DynamicEpochTransaction = EpochTransaction;
-export type DynamicWaitGraphDependency = CodexWaitGraph;
-export type DynamicCatalogueDependency = ArchboardAppNamespaceSpec;
+type DynamicEpochTransaction = EpochTransaction;
+type DynamicWaitGraphDependency = CodexWaitGraph;
+type DynamicCatalogueDependency = ArchboardAppNamespaceSpec;
 
-export interface CodexDynamicToolsOptions {
+interface CodexDynamicToolsOptions {
 	readonly session: DynamicSessionDependency;
 	readonly transport: DynamicTransportDependency;
 	readonly threadLink: DynamicThreadLinkDependency;
@@ -498,19 +490,19 @@ export interface CodexDynamicToolsOptions {
 	readonly now?: () => number;
 }
 
-export interface CodexDynamicTools {
+interface CodexDynamicTools {
 	readonly dispatch: (request: DynamicServerRequest) => Promise<DynamicToolCallResponse>;
 	readonly inspectMutationQuarantine: () => DynamicMutationQuarantineInspection;
 	readonly dispose: () => void;
 }
 
-export type DynamicToolArguments = ToolArguments[DynamicToolName];
-export type DynamicReverseResponse = ReverseResponse;
-export type DynamicToolCallIdValue = DynamicToolCallId;
+type DynamicToolArguments = ToolArguments[DynamicToolName];
+type DynamicReverseResponse = ReverseResponse;
+type DynamicToolCallIdValue = DynamicToolCallId;
 
-export type DynamicDispatchErrorCode = DynamicRefusalReason | "not_delivered" | "outcome_unknown";
+type DynamicDispatchErrorCode = DynamicRefusalReason | "not_delivered" | "outcome_unknown";
 
-export class CodexDynamicToolsError extends Error {
+class CodexDynamicToolsError extends Error {
 	override readonly name = "CodexDynamicToolsError";
 	readonly code: DynamicDispatchErrorCode;
 	override readonly cause: unknown;
@@ -522,7 +514,7 @@ export class CodexDynamicToolsError extends Error {
 	}
 }
 
-export class CodexDynamicOperationTerminalizationError extends CodexDynamicToolsError {
+class CodexDynamicOperationTerminalizationError extends CodexDynamicToolsError {
 	readonly retryEligible = false;
 	readonly operationId: OperationId;
 	readonly disposition: DynamicOperationTerminalDisposition;
@@ -539,10 +531,74 @@ export class CodexDynamicOperationTerminalizationError extends CodexDynamicTools
 	}
 }
 
-export class CodexDynamicEpochQuarantinedError extends CodexDynamicToolsError {
+class CodexDynamicEpochQuarantinedError extends CodexDynamicToolsError {
 	readonly retryEligible = false;
 
 	constructor(message: string, cause?: unknown) {
 		super("system_error", message, cause);
 	}
 }
+
+export {
+	type DynamicAuthorityToken,
+	type DynamicAuthorityTokenIssuer,
+	createDynamicAuthorityTokenIssuer,
+	type DynamicToolName,
+	type DynamicMutationToolName,
+	type DynamicReadToolName,
+	type DynamicStatus,
+	type DynamicOwnership,
+	type DynamicEpochState,
+	type DynamicRelation,
+	type DynamicRefusalReason,
+	type DynamicApprovalOutcome,
+	type DynamicApprovalCause,
+	type DynamicLifecyclePhase,
+	type DynamicSessionDependency,
+	type DynamicEpochDependency,
+	type DynamicThreadLinkDependency,
+	type DynamicTransportDependency,
+	type DynamicToolApprovalRequest,
+	type DynamicApprovalIdentity,
+	type DynamicToolApprovalDecision,
+	type DynamicToolApprovalPort,
+	type DynamicThreadAuthorityRecord,
+	type DynamicCallerAuthority,
+	type DynamicTargetAuthority,
+	type DynamicObservedTarget,
+	type DynamicThreadAuthorityPort,
+	type DynamicContextAuthority,
+	type DynamicContextPort,
+	type DynamicOperationTerminalDisposition,
+	type DynamicOperationTerminalResult,
+	type DynamicOperationIdPort,
+	type DynamicWaitOwner,
+	type DynamicMutationQuarantineIdentity,
+	type DynamicMutationTerminalProof,
+	type DynamicMutationQuarantineExit,
+	type DynamicMutationQuarantineOwner,
+	type DynamicFailClosedShutdownReason,
+	type DynamicEpochTeardownProof,
+	type DynamicFailClosedShutdownOwner,
+	type DynamicFatalLifecycleFault,
+	type DynamicMutationQuarantineState,
+	type DynamicMutationQuarantineInspection,
+	type DynamicWaitEvent,
+	type DynamicWaitReleaseCause,
+	type DynamicToolLifecyclePort,
+	type DynamicForkEffectArguments,
+	type DynamicImmutableEffect,
+	type DynamicEffectFields,
+	type DynamicEpochTransaction,
+	type DynamicWaitGraphDependency,
+	type DynamicCatalogueDependency,
+	type CodexDynamicToolsOptions,
+	type CodexDynamicTools,
+	type DynamicToolArguments,
+	type DynamicReverseResponse,
+	type DynamicToolCallIdValue,
+	type DynamicDispatchErrorCode,
+	CodexDynamicToolsError,
+	CodexDynamicOperationTerminalizationError,
+	CodexDynamicEpochQuarantinedError,
+};

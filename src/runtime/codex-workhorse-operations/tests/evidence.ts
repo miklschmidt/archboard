@@ -3,7 +3,7 @@ import type { IdentityAuthority } from "../../../shared/codex-workbench-identity
 import type { Fixture } from "./support.js";
 import { turn } from "./support.js";
 
-export function rawTurn(
+function rawTurn(
 	identity: IdentityAuthority,
 	rawId: string,
 	status: "inProgress" | "completed" | "interrupted" | "failed",
@@ -12,7 +12,7 @@ export function rawTurn(
 	return { ...turn(identity, rawId, status, clientId), id: rawId };
 }
 
-export function notification(fixtureValue: Fixture, value: unknown): TransportServerNotification {
+function notification(fixtureValue: Fixture, value: unknown): TransportServerNotification {
 	return {
 		correlation: {
 			child: fixtureValue.identity.validator.childId,
@@ -23,7 +23,7 @@ export function notification(fixtureValue: Fixture, value: unknown): TransportSe
 	};
 }
 
-export async function rejected(promise: Promise<unknown>): Promise<unknown> {
+async function rejected(promise: Promise<unknown>): Promise<unknown> {
 	try {
 		await promise;
 		throw new Error("expected rejection");
@@ -32,8 +32,10 @@ export async function rejected(promise: Promise<unknown>): Promise<unknown> {
 	}
 }
 
-export async function flush(): Promise<void> {
+async function flush(): Promise<void> {
 	for (let index = 0; index < 8; index += 1) {
 		await Promise.resolve();
 	}
 }
+
+export { rawTurn, notification, rejected, flush };

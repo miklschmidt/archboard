@@ -13,7 +13,7 @@
 
 import { extentOf, type Measurable } from "./geometry.js";
 
-export interface Box {
+interface Box {
 	x: number;
 	y: number;
 	w: number;
@@ -28,12 +28,12 @@ export interface Box {
 // wrong region and outside the frame — and those signals are what an agent narrates back when a
 // user rearranges the board (TASK-038). `geometry.ts` does the measuring;
 // this is the adapter into Box's vocabulary.
-export function boxOf(element: Measurable | null | undefined): Box {
+function boxOf(element: Measurable | null | undefined): Box {
 	const extent = extentOf(element);
 	return { x: extent.x, y: extent.y, w: extent.width, h: extent.height };
 }
 
-export interface BoundingBox {
+interface BoundingBox {
 	minX: number;
 	minY: number;
 	maxX: number;
@@ -43,12 +43,12 @@ export interface BoundingBox {
 // How close two shapes have to be before a human would call them "together".
 // Roughly one box-width of whitespace: closer than this and the gap reads as
 // layout, wider and it reads as separation.
-export const CLUSTER_GAP = 160;
+const CLUSTER_GAP = 160;
 
 // Connected components under "within CLUSTER_GAP of each other", largest first.
 // Union-find rather than a distance matrix so a chain of near-neighbours reads
 // as one cluster, which is how a human sees a row of boxes.
-export function clusterBoxes<T extends Box>(items: T[], gap = CLUSTER_GAP): T[][] {
+function clusterBoxes<T extends Box>(items: T[], gap = CLUSTER_GAP): T[][] {
 	const parent = items.map((_, i) => i);
 	const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i]!)));
 	const near = (a: T, b: T) =>
@@ -76,7 +76,7 @@ export function clusterBoxes<T extends Box>(items: T[], gap = CLUSTER_GAP): T[][
 
 // The box round a set of boxes. Null for an empty set, which is the only
 // honest answer: a frame drawn round nothing has no thirds.
-export function boundingBoxOf(boxes: Box[]): BoundingBox | null {
+function boundingBoxOf(boxes: Box[]): BoundingBox | null {
 	if (boxes.length === 0) {
 		return null;
 	}
@@ -93,7 +93,7 @@ export function boundingBoxOf(boxes: Box[]): BoundingBox | null {
 // has been assigned, it came from the frame moving and not from the shape.
 // Absolute, and therefore only ever true when the two sides share a coordinate
 // system — which is the case it is for.
-export function sameCentre(a: Box, b: Box, tolerance = 1): boolean {
+function sameCentre(a: Box, b: Box, tolerance = 1): boolean {
 	return (
 		Math.abs(a.x + a.w / 2 - (b.x + b.w / 2)) <= tolerance &&
 		Math.abs(a.y + a.h / 2 - (b.y + b.h / 2)) <= tolerance
@@ -117,7 +117,7 @@ const third = (v: number, lo: number, hi: number): number => {
 	return t < 0.34 ? 0 : t < 0.67 ? 1 : 2;
 };
 
-export function regionName(cx: number, cy: number, box: BoundingBox): string {
+function regionName(cx: number, cy: number, box: BoundingBox): string {
 	const rows = ["top", "middle", "bottom"];
 	const cols = ["left", "centre", "right"];
 	const r = third(cy, box.minY, box.maxY);
@@ -127,3 +127,14 @@ export function regionName(cx: number, cy: number, box: BoundingBox): string {
 	}
 	return `${rows[r]}-${cols[c]}`;
 }
+
+export {
+	type Box,
+	boxOf,
+	type BoundingBox,
+	CLUSTER_GAP,
+	clusterBoxes,
+	boundingBoxOf,
+	sameCentre,
+	regionName,
+};

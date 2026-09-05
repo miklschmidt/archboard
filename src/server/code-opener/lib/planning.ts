@@ -7,19 +7,19 @@ import {
 	type OpenerSelection,
 } from "../../../shared/code-target/index.js";
 
-export interface OpenerPlanSuccess {
+interface OpenerPlanSuccess {
 	ok: true;
 	command: OpenerCommand;
 }
 
-export interface OpenerPlanFailure {
+interface OpenerPlanFailure {
 	ok: false;
 	code: Extract<CodeTargetFailureCode, "OPENER_CONFIG_INVALID" | "OPENER_PLATFORM_UNSUPPORTED">;
 	error: string;
 }
 
-export type OpenerPlan = OpenerPlanSuccess | OpenerPlanFailure;
-export type OpenerSelectionInvalid = OpenerPlanFailure & { code: "OPENER_CONFIG_INVALID" };
+type OpenerPlan = OpenerPlanSuccess | OpenerPlanFailure;
+type OpenerSelectionInvalid = OpenerPlanFailure & { code: "OPENER_CONFIG_INVALID" };
 
 const PRESET_EXECUTABLES = { vscode: "code", cursor: "cursor", zed: "zed" } as const;
 const PLATFORM_EXECUTABLES: Readonly<Record<string, string | undefined>> = {
@@ -32,9 +32,7 @@ function invalid(error: string): OpenerSelectionInvalid {
 	return { ok: false, code: "OPENER_CONFIG_INVALID", error };
 }
 
-export function validateOpenerSelection(
-	selection: unknown,
-): OpenerSelection | OpenerSelectionInvalid {
+function validateOpenerSelection(selection: unknown): OpenerSelection | OpenerSelectionInvalid {
 	const parsed = OpenerSelectionSchema.safeParse(selection);
 	if (!parsed.success) {
 		return invalid("The opener selection is invalid.");
@@ -45,7 +43,7 @@ export function validateOpenerSelection(
 	return parsed.data;
 }
 
-export function planOpenerCommand(
+function planOpenerCommand(
 	selection: OpenerSelection,
 	target: string,
 	platform: string = process.platform,
@@ -78,3 +76,12 @@ export function planOpenerCommand(
 		},
 	};
 }
+
+export {
+	type OpenerPlanSuccess,
+	type OpenerPlanFailure,
+	type OpenerPlan,
+	type OpenerSelectionInvalid,
+	validateOpenerSelection,
+	planOpenerCommand,
+};

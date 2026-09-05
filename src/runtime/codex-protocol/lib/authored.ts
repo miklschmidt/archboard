@@ -20,7 +20,7 @@ function codexIngressSchema<Wire>() {
 	): Schema => schema;
 }
 
-export const INITIALIZE_CAPABILITIES = Object.freeze({
+const INITIALIZE_CAPABILITIES = Object.freeze({
 	experimentalApi: true,
 	requestAttestation: false,
 	mcpServerOpenaiFormElicitation: true,
@@ -28,7 +28,7 @@ export const INITIALIZE_CAPABILITIES = Object.freeze({
 	extensions: Object.freeze({}),
 } as const);
 
-export const InitializeCapabilitiesSchema = codexOutputSchema<CodexInitializeCapabilities>()(
+const InitializeCapabilitiesSchema = codexOutputSchema<CodexInitializeCapabilities>()(
 	z
 		.object({
 			experimentalApi: z.literal(true),
@@ -40,7 +40,7 @@ export const InitializeCapabilitiesSchema = codexOutputSchema<CodexInitializeCap
 		.strict(),
 );
 
-export const LOGIN_VARIANTS = [
+const LOGIN_VARIANTS = [
 	"apiKey",
 	"chatgpt",
 	"chatgptDeviceCode",
@@ -49,9 +49,9 @@ export const LOGIN_VARIANTS = [
 	"amazonBedrockAccessKeys",
 ] as const;
 
-export const LoginVariantSchema = z.enum(LOGIN_VARIANTS);
+const LoginVariantSchema = z.enum(LOGIN_VARIANTS);
 
-export const LOGIN_POLICIES = Object.freeze([
+const LOGIN_POLICIES = Object.freeze([
 	Object.freeze({ variant: "apiKey", policy: "supported" }),
 	Object.freeze({ variant: "chatgpt", policy: "supported" }),
 	Object.freeze({ variant: "chatgptDeviceCode", policy: "refused" }),
@@ -60,7 +60,7 @@ export const LOGIN_POLICIES = Object.freeze([
 	Object.freeze({ variant: "amazonBedrockAccessKeys", policy: "supported" }),
 ] as const);
 
-export const LoginPolicySchema = z
+const LoginPolicySchema = z
 	.object({ variant: LoginVariantSchema, policy: z.enum(["supported", "refused"]) })
 	.strict();
 
@@ -72,7 +72,7 @@ const ExactLoginPolicySchema = <
 	policy: Policy,
 ) => z.object({ variant: z.literal(variant), policy: z.literal(policy) }).strict();
 
-export const LoginPoliciesSchema = z.tuple([
+const LoginPoliciesSchema = z.tuple([
 	ExactLoginPolicySchema("apiKey", "supported"),
 	ExactLoginPolicySchema("chatgpt", "supported"),
 	ExactLoginPolicySchema("chatgptDeviceCode", "refused"),
@@ -109,7 +109,7 @@ const BedrockAccessKeysLoginSchema = z
 	})
 	.strict();
 
-export type LoginAccountParams = CodexLoginAccountParams;
+type LoginAccountParams = CodexLoginAccountParams;
 
 type SupportedLoginVariant = Extract<
 	(typeof LOGIN_POLICIES)[number],
@@ -120,44 +120,65 @@ type SupportedCodexLoginAccountParams = Extract<
 	{ type: SupportedLoginVariant }
 >;
 
-export const SupportedLoginAccountParamsSchema =
-	codexIngressSchema<SupportedCodexLoginAccountParams>()(
-		z.discriminatedUnion("type", [
-			ApiKeyLoginSchema,
-			ChatgptLoginSchema,
-			BedrockApiKeyLoginSchema,
-			BedrockAccessKeysLoginSchema,
-		]),
-	);
-export type SupportedLoginAccountParams = z.infer<typeof SupportedLoginAccountParamsSchema>;
+const SupportedLoginAccountParamsSchema = codexIngressSchema<SupportedCodexLoginAccountParams>()(
+	z.discriminatedUnion("type", [
+		ApiKeyLoginSchema,
+		ChatgptLoginSchema,
+		BedrockApiKeyLoginSchema,
+		BedrockAccessKeysLoginSchema,
+	]),
+);
+type SupportedLoginAccountParams = z.infer<typeof SupportedLoginAccountParamsSchema>;
 
-export const BedrockSetupParamsSchema = z.discriminatedUnion("type", [
+const BedrockSetupParamsSchema = z.discriminatedUnion("type", [
 	z
 		.object({ type: z.literal("profile"), profile: boundedText(256), region: boundedText(256) })
 		.strict(),
 	z.object({ type: z.literal("environment"), region: boundedText(256) }).strict(),
 ]);
-export type BedrockSetupParams = z.infer<typeof BedrockSetupParamsSchema>;
+type BedrockSetupParams = z.infer<typeof BedrockSetupParamsSchema>;
 
-export const BEDROCK_SETUP_POLICIES = [
+const BEDROCK_SETUP_POLICIES = [
 	{ variant: "profile", policy: "refused" },
 	{ variant: "environment", policy: "refused" },
 ] as const;
 
-export const UNSUPPORTED_TOKEN_REFRESH_ERROR = {
+const UNSUPPORTED_TOKEN_REFRESH_ERROR = {
 	code: -32601,
 	message: "Client-managed ChatGPT token refresh is not supported",
 } as const;
 
-export const UNSUPPORTED_ATTESTATION_ERROR = {
+const UNSUPPORTED_ATTESTATION_ERROR = {
 	code: -32601,
 	message: "Attestation is not supported by this client",
 } as const;
 
-export const ProtocolErrorSchema = z
+const ProtocolErrorSchema = z
 	.object({ code: z.literal(-32601), message: boundedText(256), data: JsonValueSchema.optional() })
 	.strict();
 
-export type InitializeCapabilities = z.infer<typeof InitializeCapabilitiesSchema>;
-export type LoginVariant = z.infer<typeof LoginVariantSchema>;
-export type LoginPolicy = z.infer<typeof LoginPolicySchema>;
+type InitializeCapabilities = z.infer<typeof InitializeCapabilitiesSchema>;
+type LoginVariant = z.infer<typeof LoginVariantSchema>;
+type LoginPolicy = z.infer<typeof LoginPolicySchema>;
+
+export {
+	INITIALIZE_CAPABILITIES,
+	InitializeCapabilitiesSchema,
+	LOGIN_VARIANTS,
+	LoginVariantSchema,
+	LOGIN_POLICIES,
+	LoginPolicySchema,
+	LoginPoliciesSchema,
+	type LoginAccountParams,
+	SupportedLoginAccountParamsSchema,
+	type SupportedLoginAccountParams,
+	BedrockSetupParamsSchema,
+	type BedrockSetupParams,
+	BEDROCK_SETUP_POLICIES,
+	UNSUPPORTED_TOKEN_REFRESH_ERROR,
+	UNSUPPORTED_ATTESTATION_ERROR,
+	ProtocolErrorSchema,
+	type InitializeCapabilities,
+	type LoginVariant,
+	type LoginPolicy,
+};

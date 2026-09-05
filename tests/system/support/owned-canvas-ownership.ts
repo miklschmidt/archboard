@@ -7,7 +7,7 @@ import {
 	TEST_CANVAS_HEALTH_POLL_MS,
 } from "../../../src/shared/timing/timing.ts";
 
-export interface OwnedCanvasPaths {
+interface OwnedCanvasPaths {
 	readonly root: string;
 	readonly home: string;
 	readonly xdgConfig: string;
@@ -15,13 +15,13 @@ export interface OwnedCanvasPaths {
 	readonly temporary: string;
 }
 
-export type OwnedCanvasEnvironment = Readonly<Record<string, string | undefined>>;
-export type OwnedCanvasEnvironmentPaths = Pick<
+type OwnedCanvasEnvironment = Readonly<Record<string, string | undefined>>;
+type OwnedCanvasEnvironmentPaths = Pick<
 	OwnedCanvasPaths,
 	"home" | "xdgConfig" | "xdgState" | "temporary"
 >;
 
-export function buildOwnedCanvasEnvironment(options: {
+function buildOwnedCanvasEnvironment(options: {
 	paths: OwnedCanvasEnvironmentPaths;
 	port: number;
 	vault: string;
@@ -48,7 +48,7 @@ const ownedCanvasNamespacePrefix = "archboard-owned-canvas-";
 const ownedCanvasNamespacePattern = /^archboard-owned-canvas-[A-Za-z0-9]{6}$/;
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function createOwnedCanvasPaths(): OwnedCanvasPaths {
+function createOwnedCanvasPaths(): OwnedCanvasPaths {
 	const root = fs.mkdtempSync(path.join(ownedCanvasNamespaceParent, ownedCanvasNamespacePrefix));
 	const paths = {
 		root,
@@ -68,7 +68,7 @@ export function createOwnedCanvasPaths(): OwnedCanvasPaths {
 	}
 }
 
-export function isOwnedCanvasNamespaceRoot(candidate: string): boolean {
+function isOwnedCanvasNamespaceRoot(candidate: string): boolean {
 	const resolved = path.resolve(candidate);
 	return (
 		path.dirname(resolved) === path.resolve(ownedCanvasNamespaceParent) &&
@@ -76,7 +76,7 @@ export function isOwnedCanvasNamespaceRoot(candidate: string): boolean {
 	);
 }
 
-export function processExists(pid: number): boolean {
+function processExists(pid: number): boolean {
 	try {
 		process.kill(pid, 0);
 		return true;
@@ -92,7 +92,7 @@ export function processExists(pid: number): boolean {
 	}
 }
 
-export async function waitForProcessExit(
+async function waitForProcessExit(
 	pid: number,
 	timeoutMs = TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
 ): Promise<void> {
@@ -107,3 +107,14 @@ export async function waitForProcessExit(
 		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
 	}
 }
+
+export {
+	type OwnedCanvasPaths,
+	type OwnedCanvasEnvironment,
+	type OwnedCanvasEnvironmentPaths,
+	buildOwnedCanvasEnvironment,
+	createOwnedCanvasPaths,
+	isOwnedCanvasNamespaceRoot,
+	processExists,
+	waitForProcessExit,
+};

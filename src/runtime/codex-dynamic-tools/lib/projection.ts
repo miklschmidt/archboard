@@ -17,8 +17,8 @@ import {
 	type DynamicTargetAuthority,
 } from "./contract.js";
 
-export const THREAD_SOURCE_KINDS = Object.freeze(["cli", "vscode", "exec", "appServer"] as const);
-export const AUTHORITY_PAGE_LIMIT = 100 as const;
+const THREAD_SOURCE_KINDS = Object.freeze(["cli", "vscode", "exec", "appServer"] as const);
+const AUTHORITY_PAGE_LIMIT = 100 as const;
 
 /**
  * The authored read projection keeps each rendered output entry within 256
@@ -37,7 +37,7 @@ type TargetClassifier = (
 	observed?: DynamicObservedTarget,
 ) => Promise<DynamicTargetAuthority>;
 
-export interface ListedThreadProjection {
+interface ListedThreadProjection {
 	readonly threadId: string;
 	readonly title: string | null;
 	readonly status: SessionThread["status"]["type"];
@@ -48,12 +48,12 @@ export interface ListedThreadProjection {
 	readonly canAcceptDirectInput: boolean | null;
 }
 
-export interface ListProjection {
+interface ListProjection {
 	readonly threads: readonly ListedThreadProjection[];
 	readonly nextCursor: string | null;
 }
 
-export interface ReadTurnProjection {
+interface ReadTurnProjection {
 	readonly turnId: string;
 	readonly status: SessionTurn["status"];
 	readonly summary: string;
@@ -61,7 +61,7 @@ export interface ReadTurnProjection {
 	readonly outputsTruncated: boolean;
 }
 
-export interface ReadProjection {
+interface ReadProjection {
 	readonly threadId: string;
 	readonly turns: readonly ReadTurnProjection[];
 	readonly nextCursor: string | null;
@@ -221,7 +221,7 @@ function observationFor(
 	return Object.freeze({ thread, persistedRows, loadedOccurrences });
 }
 
-export async function projectList(
+async function projectList(
 	input: { readonly cursor: string | null; readonly limit: number },
 	caller: DynamicCallerAuthority,
 	options: {
@@ -438,7 +438,7 @@ function itemForRequestedTurn(value: unknown, requestedTurnId: string): SessionT
 	return value["item"] as SessionThreadItem;
 }
 
-export async function projectRead(
+async function projectRead(
 	input: {
 		readonly targetThreadId: unknown;
 		readonly cursor: string | null;
@@ -546,3 +546,14 @@ export async function projectRead(
 		nextCursor: page.nextCursor,
 	});
 }
+
+export {
+	THREAD_SOURCE_KINDS,
+	AUTHORITY_PAGE_LIMIT,
+	type ListedThreadProjection,
+	type ListProjection,
+	type ReadTurnProjection,
+	type ReadProjection,
+	projectList,
+	projectRead,
+};

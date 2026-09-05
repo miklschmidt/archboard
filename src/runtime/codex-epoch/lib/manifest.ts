@@ -9,7 +9,7 @@ import type {
 } from "../../../shared/codex-workbench-identity/index.js";
 import { assertNoDuplicateKeys } from "./manifest-json.js";
 
-export const CODEX_EPOCH_MANIFEST_SCHEMA = 1 as const;
+const CODEX_EPOCH_MANIFEST_SCHEMA = 1 as const;
 const THREAD_PROVENANCE_KINDS = new Set([
 	"link",
 	"thread_link",
@@ -26,27 +26,27 @@ const THREAD_PROVENANCE_KINDS = new Set([
 	"send_message_to_thread",
 ]);
 
-export function operationRequiresThreadProvenance(kind: string): boolean {
+function operationRequiresThreadProvenance(kind: string): boolean {
 	return THREAD_PROVENANCE_KINDS.has(kind);
 }
 
-export type EpochOperationStatus = "staged" | "committed" | "rolled_back" | "inspect_only";
+type EpochOperationStatus = "staged" | "committed" | "rolled_back" | "inspect_only";
 
-export type EpochOperationOutcome = "pending" | "delivered" | "not_delivered" | "outcome_unknown";
+type EpochOperationOutcome = "pending" | "delivered" | "not_delivered" | "outcome_unknown";
 
-export interface EpochOperationCorrelation {
+interface EpochOperationCorrelation {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly operationId: string;
 }
 
-export interface EpochOperationDescriptor {
+interface EpochOperationDescriptor {
 	readonly id: string;
 	readonly kind: string;
 	readonly rpc: string | null;
 }
 
-export interface EpochProvenance {
+interface EpochProvenance {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly threadId: ThreadId | null;
@@ -58,7 +58,7 @@ export interface EpochProvenance {
 	readonly confirmedAtMs: number | null;
 }
 
-export interface EpochOperationRecord {
+interface EpochOperationRecord {
 	readonly correlation: EpochOperationCorrelation;
 	readonly operation: EpochOperationDescriptor;
 	readonly status: EpochOperationStatus;
@@ -69,9 +69,9 @@ export interface EpochOperationRecord {
 	readonly updatedAtMs: number;
 }
 
-export type EpochThreadOwnership = "created" | "attached";
+type EpochThreadOwnership = "created" | "attached";
 
-export interface EpochThreadOwnershipProvenance {
+interface EpochThreadOwnershipProvenance {
 	readonly ownership: EpochThreadOwnership;
 	readonly record: EpochOperationRecord;
 }
@@ -81,7 +81,7 @@ export interface EpochThreadOwnershipProvenance {
  * did not create. Whoever stages that record uses this descriptor, so a staged
  * operation and the table below cannot drift into a record nothing resolves.
  */
-export const EPOCH_THREAD_ATTACH_OPERATION = {
+const EPOCH_THREAD_ATTACH_OPERATION = {
 	kind: "thread_link",
 	rpc: "thread/read",
 } as const;
@@ -97,7 +97,7 @@ const THREAD_OWNERSHIP_CONTRACTS = [
 }[];
 
 /** Resolve only a canonical operation that establishes ownership of this thread. */
-export function resolveThreadOwnershipProvenance(
+function resolveThreadOwnershipProvenance(
 	manifest: EpochManifest,
 	threadId: ThreadId,
 ): EpochThreadOwnershipProvenance | null {
@@ -121,27 +121,27 @@ export function resolveThreadOwnershipProvenance(
 	return null;
 }
 
-export interface ActiveEpoch {
+interface ActiveEpoch {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly operationId: string;
 }
 
-export interface EpochManifestPayload {
+interface EpochManifestPayload {
 	readonly schema: typeof CODEX_EPOCH_MANIFEST_SCHEMA;
 	readonly revision: number;
 	readonly activeEpoch: ActiveEpoch | null;
 	readonly records: readonly EpochOperationRecord[];
 }
 
-export interface EpochManifest extends EpochManifestPayload {
+interface EpochManifest extends EpochManifestPayload {
 	readonly integrity: {
 		readonly algorithm: "sha256";
 		readonly digest: string;
 	};
 }
 
-export function emptyManifest(): EpochManifest {
+function emptyManifest(): EpochManifest {
 	return buildManifest({
 		schema: CODEX_EPOCH_MANIFEST_SCHEMA,
 		revision: 0,
@@ -150,20 +150,20 @@ export function emptyManifest(): EpochManifest {
 	});
 }
 
-export function buildManifest(payload: EpochManifestPayload): EpochManifest {
+function buildManifest(payload: EpochManifestPayload): EpochManifest {
 	if (payload.schema !== CODEX_EPOCH_MANIFEST_SCHEMA) {
 		throw new Error("unsupported schema");
 	}
 	return withIntegrity(payload);
 }
 
-export function encodeManifest(manifest: EpochManifest): string {
+function encodeManifest(manifest: EpochManifest): string {
 	const payload = payloadOf(manifest);
 	const integrity = integrityOf(payload);
 	return `${JSON.stringify({ ...payload, integrity })}\n`;
 }
 
-export function decodeManifest(raw: string): EpochManifest {
+function decodeManifest(raw: string): EpochManifest {
 	try {
 		assertNoDuplicateKeys(raw);
 		const parsed: unknown = JSON.parse(raw);
@@ -178,11 +178,11 @@ export function decodeManifest(raw: string): EpochManifest {
 	}
 }
 
-export function manifestBytesHash(raw: string): string {
+function manifestBytesHash(raw: string): string {
 	return sha256(raw);
 }
 
-export function manifestPayloadHash(manifest: EpochManifest): string {
+function manifestPayloadHash(manifest: EpochManifest): string {
 	return sha256(`${JSON.stringify(payloadOf(manifest))}\n`);
 }
 
@@ -230,7 +230,8 @@ function validateManifest(value: unknown): EpochManifest {
 	const records = asArray(object["records"], "records").map((record, index) =>
 		validateRecord(record, `records[${index}]`),
 	);
-	const activeEpoch = object["activeEpoch"] === null ? null : validateActiveEpoch(object["activeEpoch"]);
+	const activeEpoch =
+		object["activeEpoch"] === null ? null : validateActiveEpoch(object["activeEpoch"]);
 	const integrity = validateIntegrity(object["integrity"]);
 	const payload: EpochManifestPayload = {
 		schema: CODEX_EPOCH_MANIFEST_SCHEMA,
@@ -388,7 +389,9 @@ function validateProvenance(value: unknown, label: string): EpochProvenance {
 				? null
 				: (asDomainIdentity(object["turnId"], "turn", `${label}.turnId`) as TurnId),
 		threadSource:
-			object["threadSource"] === null ? null : asToken(object["threadSource"], `${label}.threadSource`),
+			object["threadSource"] === null
+				? null
+				: asToken(object["threadSource"], `${label}.threadSource`),
 		workspaceRoot: asAbsolutePath(object["workspaceRoot"], `${label}.workspaceRoot`),
 		instructionHash: asHash(object["instructionHash"], `${label}.instructionHash`),
 		manifestHash: asHash(object["manifestHash"], `${label}.manifestHash`),
@@ -534,3 +537,27 @@ function asEnum(value: unknown, values: readonly string[], label: string): strin
 	}
 	return value;
 }
+
+export {
+	CODEX_EPOCH_MANIFEST_SCHEMA,
+	operationRequiresThreadProvenance,
+	type EpochOperationStatus,
+	type EpochOperationOutcome,
+	type EpochOperationCorrelation,
+	type EpochOperationDescriptor,
+	type EpochProvenance,
+	type EpochOperationRecord,
+	type EpochThreadOwnership,
+	type EpochThreadOwnershipProvenance,
+	EPOCH_THREAD_ATTACH_OPERATION,
+	resolveThreadOwnershipProvenance,
+	type ActiveEpoch,
+	type EpochManifestPayload,
+	type EpochManifest,
+	emptyManifest,
+	buildManifest,
+	encodeManifest,
+	decodeManifest,
+	manifestBytesHash,
+	manifestPayloadHash,
+};

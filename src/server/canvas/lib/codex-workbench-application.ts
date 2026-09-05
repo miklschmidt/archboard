@@ -4,13 +4,13 @@ import type {
 	InstallProductionCodexWorkbenchOptions,
 } from "./codex-workbench.js";
 
-export interface CanvasCodexWorkbenchModule {
+interface CanvasCodexWorkbenchModule {
 	readonly installProductionCodexWorkbench: (
 		options: InstallProductionCodexWorkbenchOptions,
 	) => CodexWorkbenchOwner;
 }
 
-export interface CanvasCodexWorkbenchApplicationOptions {
+interface CanvasCodexWorkbenchApplicationOptions {
 	readonly module: CanvasCodexWorkbenchModule;
 	readonly installation: () => InstallProductionCodexWorkbenchOptions;
 }
@@ -23,9 +23,7 @@ export interface CanvasCodexWorkbenchApplicationOptions {
  * guard `prepare` needs so a second installation cannot start a second child,
  * and it hands `start`/`stop`/`forceStop` straight to the stage.
  */
-export function createCanvasCodexWorkbenchApplication(
-	options: CanvasCodexWorkbenchApplicationOptions,
-): {
+function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchApplicationOptions): {
 	readonly prepare: () => Promise<CodexWorkbenchSnapshot>;
 	readonly shutdown: () => Promise<void>;
 } {
@@ -122,3 +120,9 @@ export function createCanvasCodexWorkbenchApplication(
 
 	return Object.freeze({ prepare, shutdown });
 }
+
+export {
+	type CanvasCodexWorkbenchModule,
+	type CanvasCodexWorkbenchApplicationOptions,
+	createCanvasCodexWorkbenchApplication,
+};

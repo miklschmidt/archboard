@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import type { ProductionFixture } from "../../canvas-state/support/codex-production.ts";
 import type { AgentBrowserSession } from "./agent-browser.ts";
 
-export interface WorkbenchControlOperability {
+interface WorkbenchControlOperability {
 	readonly width: number;
 	readonly height: number;
 	readonly visibleWidth: number;
@@ -14,14 +14,14 @@ export interface WorkbenchControlOperability {
 	readonly operable: boolean;
 }
 
-export function productionFixtureRecords<RecordType>(fixture: ProductionFixture): RecordType[] {
+function productionFixtureRecords<RecordType>(fixture: ProductionFixture): RecordType[] {
 	return readFileSync(fixture.logPath, "utf8")
 		.split("\n")
 		.filter(Boolean)
 		.map((line) => JSON.parse(line) as RecordType);
 }
 
-export function workbenchControlOperability(
+function workbenchControlOperability(
 	browser: AgentBrowserSession,
 	selector: string,
 ): Promise<WorkbenchControlOperability> {
@@ -69,3 +69,5 @@ export function workbenchControlOperability(
 		};
 	})()`);
 }
+
+export { type WorkbenchControlOperability, productionFixtureRecords, workbenchControlOperability };

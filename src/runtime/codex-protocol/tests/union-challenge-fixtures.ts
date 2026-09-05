@@ -1,6 +1,6 @@
-export type JsonRecord = Record<string, unknown>;
+type JsonRecord = Record<string, unknown>;
 
-export function isRecord(value: unknown): value is JsonRecord {
+function isRecord(value: unknown): value is JsonRecord {
 	return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
@@ -152,7 +152,7 @@ function responseItemBranch(type: string): JsonRecord | undefined {
 	return undefined;
 }
 
-export function generatedBranch(type: string): JsonRecord | undefined {
+function generatedBranch(type: string): JsonRecord | undefined {
 	return (
 		threadItemBranch(type) ??
 		responseItemBranch(type) ??
@@ -231,7 +231,7 @@ export function generatedBranch(type: string): JsonRecord | undefined {
 	);
 }
 
-export function arrayMember(fieldName: string, next: string): unknown {
+function arrayMember(fieldName: string, next: string): unknown {
 	if (fieldName === "activeFlags") {
 		return "waitingOnApproval";
 	}
@@ -293,7 +293,7 @@ export function arrayMember(fieldName: string, next: string): unknown {
 	return {};
 }
 
-export function nullableMember(fieldName: string): unknown {
+function nullableMember(fieldName: string): unknown {
 	switch (fieldName) {
 		case "error":
 			return {
@@ -340,9 +340,11 @@ export function nullableMember(fieldName: string): unknown {
 	return {};
 }
 
-export function optionalMember(fieldName: string): unknown {
+function optionalMember(fieldName: string): unknown {
 	if (fieldName === "phase") {
 		return "commentary";
 	}
 	return undefined;
 }
+
+export { type JsonRecord, isRecord, generatedBranch, arrayMember, nullableMember, optionalMember };

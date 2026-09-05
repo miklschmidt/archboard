@@ -42,7 +42,7 @@ const MUTATION_KINDS = {
 	send_message_to_thread: { kind: "send_message_to_thread", rpc: "turn/start" },
 } as const;
 
-export type MutationExecution =
+type MutationExecution =
 	| { readonly kind: "ok"; readonly operationId: string; readonly value: unknown }
 	| { readonly kind: "outcome_unknown"; readonly operationId: string }
 	| { readonly kind: "refused"; readonly reason: DynamicRefusalReason; readonly message: string };
@@ -566,7 +566,7 @@ async function executeInitialTurn(input: {
 	return { delivery: "delivered", turn: result.turn, message: null };
 }
 
-export async function executeCreate(
+async function executeCreate(
 	prepared: PreparedDynamicMutation,
 	request: DynamicServerRequest,
 	caller: DynamicCallerAuthority,
@@ -686,7 +686,7 @@ export async function executeCreate(
 	};
 }
 
-export async function executeFork(
+async function executeFork(
 	prepared: PreparedDynamicMutation,
 	request: DynamicServerRequest,
 	caller: DynamicCallerAuthority,
@@ -828,7 +828,7 @@ export async function executeFork(
 	};
 }
 
-export async function executeSend(
+async function executeSend(
 	prepared: PreparedDynamicMutation,
 	request: DynamicServerRequest,
 	caller: DynamicCallerAuthority,
@@ -919,9 +919,11 @@ export async function executeSend(
 	};
 }
 
-export function effectTargetThreadId(effect: DynamicImmutableEffect): string | null {
+function effectTargetThreadId(effect: DynamicImmutableEffect): string | null {
 	if (effect.tool === "create_thread") {
 		return null;
 	}
 	return effect.arguments.threadId;
 }
+
+export { type MutationExecution, executeCreate, executeFork, executeSend, effectTargetThreadId };

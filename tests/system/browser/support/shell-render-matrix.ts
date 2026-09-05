@@ -30,7 +30,7 @@ type MatrixProbe = {
 	themeSnapshot: ThemeSnapshot;
 };
 
-export type ShellMatrixCell = {
+type ShellMatrixCell = {
 	viewport: "desktop" | "flip-scaled";
 	width: number;
 	height: number;
@@ -51,7 +51,7 @@ export type ShellMatrixCell = {
 	themeSnapshot: ThemeSnapshot;
 };
 
-export type ShellRenderMatrix = {
+type ShellRenderMatrix = {
 	revision: string;
 	artifactRoot: string;
 	cells: ShellMatrixCell[];
@@ -81,7 +81,7 @@ function stable(value: unknown): string {
 	return JSON.stringify(value);
 }
 
-export async function emulateMedia(
+async function emulateMedia(
 	browser: AgentBrowserSession,
 	theme: ShellTheme,
 	mode: MediaMode,
@@ -317,7 +317,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 	})()`);
 }
 
-export async function captureShellRenderMatrix(
+async function captureShellRenderMatrix(
 	browser: AgentBrowserSession,
 	repoRoot: string,
 ): Promise<ShellRenderMatrix> {
@@ -403,3 +403,5 @@ export async function captureShellRenderMatrix(
 	);
 	return { revision, artifactRoot, cells };
 }
+
+export { type ShellMatrixCell, type ShellRenderMatrix, emulateMedia, captureShellRenderMatrix };
