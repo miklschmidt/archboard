@@ -162,11 +162,12 @@ In the browser:
 2. Confirm `Codex account: Signed in`. If it is signed out, choose `Hosted
 ChatGPT`, press `Sign in`, and finish the hosted flow. Do not copy the URL or
    any account detail into evidence.
-3. Confirm the readiness label says `Ready to create or attach a thread link`.
-   That is the product-visible result of the effective storage proof.
-4. Press `Create a workhorse thread`. Expand `Coordinator details` if needed.
-   Record the rendered workhorse and coordinator identities only as `present`;
-   do not copy their opaque values. Close Agent settings to use the conversation.
+3. Confirm `Start agent` is enabled. If it is unavailable, resolve the reason
+   shown in settings before continuing.
+4. Press `Start agent`. Settings closes and the message composer receives focus.
+   Reopen `Settings` and expand `Conversation details` and `Coordinator details`
+   to inspect the linked identities. Record them only as `present`; do not copy
+   their opaque values. Close settings to return to the conversation.
 
 There must be one browser, one pane, one linked workhorse, and one coordinator.
 Do not open a second pane or server.
