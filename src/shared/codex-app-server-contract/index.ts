@@ -79,13 +79,34 @@ export type CodexClientNotification = CodexJsonWire<GeneratedClientNotification>
 export type CodexServerRequest = CodexJsonWire<GeneratedServerRequest>;
 export type CodexServerNotification = CodexJsonWire<GeneratedServerNotification>;
 
-export type CodexIngressConformance<Wire, Input, Output> = [Wire] extends [Input]
-	? [Output] extends [Wire]
+type OptionalKeys<Value extends object> = {
+	[Key in keyof Value]-?: object extends Pick<Value, Key> ? Key : never;
+}[keyof Value];
+
+/** Makes `undefined` irrelevant only when an object key is already optional. */
+type NormalizeOptionalValues<Value> = Value extends string | number | boolean | bigint | symbol
+	? Value
+	: Value extends readonly (infer Item)[]
+		? Array<NormalizeOptionalValues<Item>>
+		: Value extends object
+			? {
+					[Key in keyof Value]: NormalizeOptionalValues<
+						Key extends OptionalKeys<Value> ? Exclude<Value[Key], undefined> : Value[Key]
+					>;
+				}
+			: Value;
+
+export type CodexIngressConformance<Wire, Input, Output> = [NormalizeOptionalValues<Wire>] extends [
+	NormalizeOptionalValues<Input>,
+]
+	? [NormalizeOptionalValues<Output>] extends [NormalizeOptionalValues<Wire>]
 		? unknown
 		: { readonly __schemaOutputMustExtendCodexGeneratedWire: never }
 	: { readonly __codexGeneratedWireMustExtendSchemaInput: never };
 
-export type CodexOutputConformance<Wire, Output> = [Output] extends [Wire]
+export type CodexOutputConformance<Wire, Output> = [NormalizeOptionalValues<Output>] extends [
+	NormalizeOptionalValues<Wire>,
+]
 	? unknown
 	: { readonly __schemaOutputMustExtendCodexGeneratedWire: never };
 
