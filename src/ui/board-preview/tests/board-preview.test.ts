@@ -1,12 +1,53 @@
 import { describe, expect, test } from "bun:test";
 
-import type { BoardPreviewSnapshot } from "../../types";
+import type { BoardPreviewSnapshot, ServerElement } from "@/ui/types";
+import { cleanElementForExcalidraw } from "@/ui/canvas/elements";
 import {
 	BoardPreviewCache,
 	fingerprintMountedPreview,
 	PreviewRequestGate,
 	projectPreviewSnapshot,
-} from "../index";
+} from "@/ui/board-preview";
+
+type ServerRectangle = Extract<ServerElement, { type: "rectangle" }>;
+
+/**
+ * A complete rectangle as the server would send it.
+ * @param id The element id.
+ * @param overrides Fields that differ from the plain rectangle.
+ * @returns A server element carrying runtime tracking.
+ */
+const rectangle = (id: string, overrides: Partial<ServerRectangle> = {}): ServerRectangle => {
+	const base: ServerRectangle = {
+		id,
+		type: "rectangle",
+		x: 0,
+		y: 0,
+		width: 10,
+		height: 10,
+		angle: 0,
+		strokeColor: "#000000",
+		backgroundColor: "transparent",
+		fillStyle: "solid",
+		strokeWidth: 1,
+		strokeStyle: "solid",
+		roughness: 0,
+		opacity: 100,
+		roundness: null,
+		seed: 1,
+		version: 1,
+		versionNonce: 1,
+		index: null,
+		isDeleted: false,
+		groupIds: [],
+		frameId: null,
+		boundElements: null,
+		updated: 0,
+		link: null,
+		locked: false,
+	};
+	return { ...base, ...overrides };
+};
 
 describe("board preview cache", () => {
 	test("bounds Blob URLs by identity, fingerprint and theme and revokes every replacement", () => {
@@ -42,38 +83,52 @@ describe("board preview cache", () => {
 
 describe("board preview projection", () => {
 	test("removes server tracking and deleted elements before Excalidraw export", () => {
-		const snapshot = {
+		const snapshot: BoardPreviewSnapshot = {
 			board: "alpha",
 			fingerprint: "scene-one",
 			files: {},
 			elements: [
-				{
-					id: "live",
-					type: "rectangle",
-					isDeleted: false,
-					createdAt: "server-only",
-					source: "server-only",
-				},
-				{ id: "gone", type: "rectangle", isDeleted: true },
+				rectangle("live", { createdAt: "server-only", source: "server-only" }),
+				rectangle("gone", { isDeleted: true }),
 			],
-		} as unknown as BoardPreviewSnapshot;
+		};
 		const projected = projectPreviewSnapshot(snapshot);
 		expect(projected.elements.map((element) => element.id)).toEqual(["live"]);
 		expect(projected.elements[0]).not.toHaveProperty("createdAt");
 		expect(projected.elements[0]).not.toHaveProperty("source");
 	});
 
+	test("drops bindings and containers that point outside the update", () => {
+		const snapshot: BoardPreviewSnapshot = {
+			board: "alpha",
+			fingerprint: "scene-two",
+			files: {},
+			elements: [
+				rectangle("box", {
+					boundElements: [
+						{ id: "missing", type: "text" },
+						{ id: "peer", type: "arrow" },
+					],
+				}),
+				rectangle("peer", { boundElements: [{ id: "absent", type: "arrow" }] }),
+			],
+		};
+		const [box, peer] = projectPreviewSnapshot(snapshot).elements;
+		expect(box?.boundElements).toEqual([{ id: "peer", type: "arrow" }]);
+		expect(peer?.boundElements).toBeNull();
+	});
+
 	test("fingerprints mounted element and file content rather than pane identity", async () => {
 		const scene = {
 			board: "alpha",
-			elements: [{ id: "shape", version: 1 }] as never,
+			elements: [cleanElementForExcalidraw(rectangle("shape", { versionNonce: 1 }))],
 			files: {},
 		};
 		const first = await fingerprintMountedPreview(scene);
 		const same = await fingerprintMountedPreview({ ...scene, board: "renamed-in-controller" });
 		const changed = await fingerprintMountedPreview({
 			...scene,
-			elements: [{ id: "shape", version: 2 }] as never,
+			elements: [cleanElementForExcalidraw(rectangle("shape", { versionNonce: 2 }))],
 		});
 		expect(same).toBe(first);
 		expect(changed).not.toBe(first);

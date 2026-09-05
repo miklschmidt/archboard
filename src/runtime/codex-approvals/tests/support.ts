@@ -45,10 +45,12 @@ export class FakeApprovalPort implements ApprovalResponsePort {
 	private readonly exitListeners = new Set<
 		(exit: { readonly child: ChildId; readonly epoch: ChildEpoch }) => void
 	>();
-	private deferredSettlement?: {
-		readonly resolve: () => void;
-		readonly reject: (reason: unknown) => void;
-	};
+	private deferredSettlement:
+		| {
+				readonly resolve: () => void;
+				readonly reject: (reason: unknown) => void;
+		  }
+		| undefined;
 
 	constructor(mode: ResponseMode = "delivered") {
 		this.mode = mode;

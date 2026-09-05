@@ -84,7 +84,6 @@ interface OutputCase {
 
 interface OutputPolicy<Input> {
 	cases: readonly [OutputCase, ...OutputCase[]];
-	// eslint-disable-next-line typescript/method-signature-style -- Method bivariance lets concrete command inputs inhabit the erased registry contract.
 	select(input: Input): string;
 }
 
@@ -148,7 +147,6 @@ interface CommandContract<Shape extends z.ZodRawShape, Result> {
 	effects: readonly CommandEffect[];
 	refusals: readonly RefusalContract[];
 	relationships: readonly RestRelationship[];
-	// eslint-disable-next-line typescript/method-signature-style -- Method bivariance preserves the heterogeneous command registry without unsafe casts.
 	handler(
 		input: z.output<z.ZodObject<Shape>>,
 		context: CommandContext,

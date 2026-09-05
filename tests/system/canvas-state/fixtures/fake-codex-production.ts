@@ -1,9 +1,6 @@
 #!/usr/bin/env bun
-
 import { appendFileSync, readFileSync } from "node:fs";
-
 import { configFixture, modelFixture } from "./fake-codex-production-data.ts";
-
 const logPath = "__ARCHBOARD_TEST_CODEX_LOG__";
 const controlPath = "__ARCHBOARD_TEST_CODEX_CONTROL__";
 let signedIn =

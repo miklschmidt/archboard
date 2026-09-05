@@ -961,12 +961,39 @@ const noArchiveReferences = createRule(
 	},
 );
 
+const absoluteImports = createRule(
+	{
+		useAlias:
+			"Use an @/ alias for local imports; relative and filesystem-absolute imports are not allowed.",
+	},
+	(context) =>
+		sourceImportVisitors((source, node) => {
+			if (source.startsWith(".") || source.startsWith("/") || source.startsWith("file:")) {
+				report(context, node, "useAlias");
+			}
+		}),
+);
+
+const typescriptSource = createRule(
+	{
+		useTypeScript:
+			"Author UI source in TypeScript (.ts/.tsx); JavaScript source files are not allowed.",
+	},
+	(context) => ({
+		Program(node) {
+			if (/\.[cm]?jsx?$/.test(context.filename)) report(context, node, "useTypeScript");
+		},
+	}),
+);
+
 const plugin = {
 	meta: {
 		name: "eslint-plugin-archboard",
 		version: "0.0.0",
 	},
 	rules: {
+		"typescript-source": typescriptSource,
+		"absolute-imports": absoluteImports,
 		"no-archive-references": noArchiveReferences,
 		"no-anonymous-jsx-handlers": noAnonymousJsxHandlers,
 		"assistant-ui-imports": assistantUiImports,

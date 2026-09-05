@@ -287,7 +287,9 @@ describe.serial("post-commit pane observers", () => {
 			writeFileSync(boardFile, external);
 			ioModule.materializeResolvedBoard(ioModule.resolveBoardNote(owned.key), {
 				write: true,
-				trustedPredecessorHash: hashMismatch.hold.predecessorHash,
+				...(hashMismatch.hold.predecessorHash === undefined
+					? {}
+					: { trustedPredecessorHash: hashMismatch.hold.predecessorHash }),
 			});
 			expect(owned.board.baseline).toMatchObject(baseline);
 			expect(readFileSync(boardFile, "utf8")).toBe(external);
@@ -322,7 +324,10 @@ describe.serial("post-commit pane observers", () => {
 	test("schedules commit order without waiting for failures or unresolved delivery", async () => {
 		const scheduled: string[] = [];
 		const never = new Promise<void>(() => {});
-		const observe = (message: { type: string; created?: Array<{ id: string }> }) => {
+		const observe = (message: {
+			type: string;
+			created?: Array<{ id: string }>;
+		}): void | Promise<void> => {
 			const id = message.created?.[0]?.id ?? message.type;
 			scheduled.push(id);
 			if (id === "second") return never;

@@ -377,7 +377,7 @@ function makeStore(state: TestState, fileSystem?: CodexEpochFileSystem): CodexEp
 		rootDirectory: state.root,
 		codexHome: state.codexHome,
 		sqliteHome: state.sqliteHome,
-		fileSystem,
+		...(fileSystem === undefined ? {} : { fileSystem }),
 		now: () => 100,
 	});
 }
@@ -397,7 +397,7 @@ function epochInput(
 		workspaceRoot: "/workspace/archboard",
 		instructionHash: INSTRUCTION_HASH,
 		manifestHash: MANIFEST_HASH,
-		expected,
+		...(expected === undefined ? {} : { expected }),
 	};
 }
 

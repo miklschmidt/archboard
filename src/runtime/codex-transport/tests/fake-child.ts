@@ -107,7 +107,11 @@ export function createHarness(
 ): FakeChildHarness {
 	const child = new FakeChild();
 	identity.decoder.adoptThreadId("thread-1");
-	const transport = createCodexTransport({ child, identity, dynamicDispatchers: registrations });
+	const transport = createCodexTransport({
+		child,
+		identity,
+		...(registrations === undefined ? {} : { dynamicDispatchers: registrations }),
+	});
 	const close = async (): Promise<void> => {
 		const shutdown = transport.shutdown();
 		child.releaseBlockedWrite();

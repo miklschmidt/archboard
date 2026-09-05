@@ -51,27 +51,29 @@ describe("coordinator callbacks", () => {
 			"manage_workhorse_queue",
 			"steer_workhorse",
 		];
-		await Promise.all(operations.map(async (operation) => {
-			const h = harness(false);
-			const event = operationEvent(
-				h.ids,
-				operation === "steer_workhorse" ? "attention" : "completed",
-				operation,
-			);
-			const delivery = await h.callbacks.enqueue(event);
-			expect(delivery.outcome).toBe("delivered");
-			expect(delivery.path).toBe("thread_inject_items");
-			expect(h.injections).toHaveLength(1);
-			expect(h.injections[0]?.threadId).toBe(h.ids.coordinator);
-			expect(h.injections[0]?.items).toEqual([
-				{
-					type: "message",
-					role: "developer",
-					content: [{ type: "input_text", text: delivery.text }],
-				},
-			]);
-			close(h);
-		}));
+		await Promise.all(
+			operations.map(async (operation) => {
+				const h = harness(false);
+				const event = operationEvent(
+					h.ids,
+					operation === "steer_workhorse" ? "attention" : "completed",
+					operation,
+				);
+				const delivery = await h.callbacks.enqueue(event);
+				expect(delivery.outcome).toBe("delivered");
+				expect(delivery.path).toBe("thread_inject_items");
+				expect(h.injections).toHaveLength(1);
+				expect(h.injections[0]?.threadId).toBe(h.ids.coordinator);
+				expect(h.injections[0]?.items).toEqual([
+					{
+						type: "message",
+						role: "developer",
+						content: [{ type: "input_text", text: delivery.text }],
+					},
+				]);
+				close(h);
+			}),
+		);
 	});
 
 	test("active callbacks append one developer request with exact generation identities", async () => {

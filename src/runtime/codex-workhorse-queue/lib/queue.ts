@@ -140,7 +140,10 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		throw queueError(
 			"stale_link",
 			"The coordinator or workhorse link changed; re-read the current queue before retrying.",
-			{ operation, outcome },
+			{
+				...(operation === undefined ? {} : { operation }),
+				...(outcome === undefined ? {} : { outcome }),
+			},
 		);
 	};
 
@@ -336,7 +339,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 					operation: "add",
 					operationId: request.operationId,
 					prompt: request.prompt,
-					beforeEffect: request.beforeEffect,
+					...(request.beforeEffect === undefined ? {} : { beforeEffect: request.beforeEffect }),
 				},
 				(rpcBinding, clientUserMessageId) => {
 					if (clientUserMessageId === null)
@@ -368,7 +371,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 					operationId: request.operationId,
 					submissionId: request.submissionId,
 					prompt: request.prompt,
-					beforeEffect: request.beforeEffect,
+					...(request.beforeEffect === undefined ? {} : { beforeEffect: request.beforeEffect }),
 				},
 				(rpcBinding) =>
 					options.session.queueUpdate({
@@ -393,7 +396,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 					operation: "delete",
 					operationId: request.operationId,
 					submissionId: request.submissionId,
-					beforeEffect: request.beforeEffect,
+					...(request.beforeEffect === undefined ? {} : { beforeEffect: request.beforeEffect }),
 				},
 				(rpcBinding) =>
 					options.session.queueDelete({
@@ -416,7 +419,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 					operation: "reorder",
 					operationId: request.operationId,
 					orderedSubmissionIds: request.orderedSubmissionIds,
-					beforeEffect: request.beforeEffect,
+					...(request.beforeEffect === undefined ? {} : { beforeEffect: request.beforeEffect }),
 				},
 				(rpcBinding) =>
 					options.session.queueReorder({
@@ -444,7 +447,7 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 					operation: "start",
 					operationId: request.operationId,
 					submissionId: request.submissionId,
-					beforeEffect: request.beforeEffect,
+					...(request.beforeEffect === undefined ? {} : { beforeEffect: request.beforeEffect }),
 				},
 				async (rpcBinding) => {
 					const response = await options.session.queueStart({

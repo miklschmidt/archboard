@@ -68,9 +68,15 @@ Test-owned source may import support only from the same owner. It imports produc
 module-root entrypoint files, never an implementation subfolder. Product source, scripts, and tools
 never import test-owned source. Bun-discoverable tests outside the two owners are refused.
 
-All JavaScript-like source inside either test owner is TypeScript. Oxlint limits every authored
-TypeScript source file in both owners to 500 physical lines. Put large test data in a named
-non-TypeScript fixture instead of bypassing the limit.
+All JavaScript-like source inside either test owner is TypeScript. The pre-task
+500-physical-line test limit remains outside the UI. TASK-150 applies the approved
+600-physical-line limit to all authored UI source, including tests, comments and
+blank lines. Put large test data in a named non-TypeScript fixture instead.
+
+Local imports in `src/ui` use `@/` aliases, including same-module imports,
+re-exports and dynamic/type imports. The private-module and area rules still
+apply. UI JavaScript source is rejected. Adoption outside the UI is deferred to
+TASK-151; existing non-UI relative imports keep their current policy.
 
 Oxlint also rejects generic `core`, `utils`, `misc`, `migration`, and `compatibility` buckets. Name
 the module for the behavior it owns.

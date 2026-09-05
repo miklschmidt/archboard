@@ -92,7 +92,6 @@ function deferred<Value>(): Deferred<Value> {
 
 function createOrdinaryWireOwners(): OrdinaryWireOwners {
 	const owners = new Map<string, Deferred<DynamicToolCallResponse>>();
-	// oxlint-disable-next-line typescript/promise-function-async -- Duplicate wire calls must receive the exact same owned Promise identity.
 	const own = (
 		key: string,
 		run: () => Promise<DynamicToolCallResponse>,

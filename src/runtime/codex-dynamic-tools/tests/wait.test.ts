@@ -18,7 +18,7 @@ async function waitCall(
 	return waitForDynamicThreads({
 		threadIds,
 		timeoutMs: 250,
-		cursor,
+		...(cursor === undefined ? {} : { cursor }),
 		caller: fixture.threadAuthority.caller,
 		call: {
 			callId: request.logicalCall.callId,

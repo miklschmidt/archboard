@@ -211,7 +211,6 @@ function normalizedArguments(
 }
 
 export function issueMutationOperations(
-	tool: DynamicMutationToolName,
 	options: CodexDynamicToolsOptions,
 	hasInitialTurn: boolean,
 ): DynamicIssuedOperations {

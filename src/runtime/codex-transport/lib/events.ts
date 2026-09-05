@@ -102,7 +102,7 @@ export function createTransportEvents(): TransportEvents {
 			} catch {
 				recordIssue({
 					kind: "listener-error",
-					direction: issue.direction,
+					...(issue.direction === undefined ? {} : { direction: issue.direction }),
 					detail: "A transport issue listener threw",
 				});
 			}
@@ -122,7 +122,7 @@ export function createTransportEvents(): TransportEvents {
 			} catch {
 				emitIssue({
 					kind: "listener-error",
-					direction,
+					...(direction === undefined ? {} : { direction }),
 					detail: "A transport listener threw",
 				});
 			}

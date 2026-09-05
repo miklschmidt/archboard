@@ -61,10 +61,10 @@ describe("server renderer failure", () => {
 				tempRoot: null,
 				profile: null,
 			});
-				const { fixturePort } = health.body.renderer;
-				if (fixturePort === null) {
-					throw new Error("The failed renderer did not expose its fixture port.");
-				}
+			const { fixturePort } = health.body.renderer;
+			if (fixturePort === null) {
+				throw new Error("The failed renderer did not expose its fixture port.");
+			}
 			await canvas.dispose();
 			let probe: ReturnType<typeof Bun.serve> | null = null;
 			try {
@@ -75,9 +75,9 @@ describe("server renderer failure", () => {
 				});
 				expect(probe.port).toBe(fixturePort);
 			} finally {
-					if (probe !== null) {
-						await probe.stop(true);
-					}
+				if (probe !== null) {
+					await probe.stop(true);
+				}
 			}
 		},
 		TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS,

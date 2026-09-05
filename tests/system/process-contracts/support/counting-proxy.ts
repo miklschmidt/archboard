@@ -85,7 +85,6 @@ if (import.meta.main) {
 			response: Readonly<Pick<ServerResponse, "writeHead" | "end">>,
 		) => {
 			const chunks: Buffer[] = [];
-			// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Node supplies byte views retained for native Buffer.concat; the standard library has no immutable byte-view contract accepted by concat.
 			request.on("data", (chunk: Buffer) => {
 				chunks.push(chunk);
 			});

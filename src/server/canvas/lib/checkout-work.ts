@@ -36,14 +36,15 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 	let accepting = true;
 	const active = new Set<ActiveCheckoutWork>();
 
-	// eslint-disable-next-line typescript/promise-function-async -- Preserve the admitted task's exact promise without an async adoption boundary.
 	function track<T>(
 		name: string,
 		externalSignal: CheckoutSignal | undefined,
 		work: CheckoutTask<T>,
 	): Promise<T> {
 		if (!accepting) {
-			return Promise.reject(new Error(`Canvas checkout work is stopping; ${name} was not admitted.`));
+			return Promise.reject(
+				new Error(`Canvas checkout work is stopping; ${name} was not admitted.`),
+			);
 		}
 		const controller = new AbortController();
 		const cancel = (): void => {

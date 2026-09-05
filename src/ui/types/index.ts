@@ -1,8 +1,8 @@
 // Shapes shared between the shell and the canvases it hosts.
 
 import type { BinaryFileData } from "@excalidraw/excalidraw/types";
-export type { RuntimeBoardElement as ServerElement } from "../../shared/board-elements/index.js";
-import type { RuntimeBoardElement as ServerElement } from "../../shared/board-elements/index.js";
+export type { RuntimeBoardElement as ServerElement } from "@/shared/board-elements";
+import type { RuntimeBoardElement as ServerElement } from "@/shared/board-elements";
 
 /** A board's address: what it is called, which variant, and at what level. */
 export interface BoardIdentity {

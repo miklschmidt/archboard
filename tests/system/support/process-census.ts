@@ -46,7 +46,10 @@ function processGroupMembers(group: number): number[] {
 }
 
 function killExactGroup(identity: Readonly<ProcessIdentity>): void {
-	if (!exactProcessExists(identity) || !processGroupMembers(identity.group).includes(identity.pid)) {
+	if (
+		!exactProcessExists(identity) ||
+		!processGroupMembers(identity.group).includes(identity.pid)
+	) {
 		return;
 	}
 	try {
