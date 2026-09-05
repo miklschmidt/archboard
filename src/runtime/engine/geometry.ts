@@ -26,7 +26,7 @@
 //     than wrong until somebody remembers this file.
 
 /** As much of an element as placing it requires. */
-export interface Measurable {
+interface Measurable {
 	x?: unknown;
 	y?: unknown;
 	width?: unknown;
@@ -34,21 +34,23 @@ export interface Measurable {
 	points?: unknown;
 }
 
-export interface RenderGeometryElement extends Measurable {
+interface RenderGeometryElement extends Measurable {
 	id?: unknown;
 	type?: unknown;
 	isDeleted?: unknown;
 }
 
-export interface InvalidRenderGeometry {
+interface InvalidRenderGeometry {
 	id: string;
 	type: string;
-	fields: Array<"x" | "y" | "width" | "height">;
+	fields: ("x" | "y" | "width" | "height")[];
 }
 
 /** A complete document cannot be handed to Excalidraw safely. */
-export class RenderGeometryError extends Error {
-	constructor(readonly invalid: InvalidRenderGeometry[]) {
+class RenderGeometryError extends Error {
+	public readonly invalid: InvalidRenderGeometry[];
+
+	public constructor(invalid: InvalidRenderGeometry[]) {
 		const details = invalid
 			.map((element) => `${element.id} (${element.type}): ${element.fields.join(", ")}`)
 			.join("; ");
@@ -57,11 +59,12 @@ export class RenderGeometryError extends Error {
 				"Every live element needs finite x, y, width and height. Correct the element geometry and try again.",
 		);
 		this.name = "RenderGeometryError";
+		this.invalid = invalid;
 	}
 }
 
 /** An axis-aligned box in scene coordinates, in the element's own vocabulary. */
-export interface Extent {
+interface Extent {
 	x: number;
 	y: number;
 	width: number;
@@ -79,22 +82,24 @@ const finite = (v: unknown): number | undefined =>
  * Tombstones are intentionally ignored. Excalidraw does not render them, and
  * malformed history must not prevent a valid live document from being saved.
  */
-export function validateRenderGeometry(elements: Iterable<RenderGeometryElement>): void {
-	const invalid = collectInvalidRenderGeometry(elements);
-	if (invalid.length > 0) throw new RenderGeometryError(invalid);
-}
-
-/** The pure collection used by strict ingest and read-only inspection alike. */
-export function collectInvalidRenderGeometry(
+/**
+ * @param elements elements to inspect
+ * @returns all live elements with invalid render geometry
+ */
+function collectInvalidRenderGeometry(
 	elements: Iterable<RenderGeometryElement>,
 ): InvalidRenderGeometry[] {
 	const invalid: InvalidRenderGeometry[] = [];
 	for (const element of elements) {
-		if (element.isDeleted === true) continue;
+		if (element.isDeleted === true) {
+			continue;
+		}
 		const fields = (["x", "y", "width", "height"] as const).filter(
 			(field) => finite(element[field]) === undefined,
 		);
-		if (fields.length === 0) continue;
+		if (fields.length === 0) {
+			continue;
+		}
 		invalid.push({
 			id: typeof element.id === "string" && element.id ? element.id : "<unnamed>",
 			type: typeof element.type === "string" && element.type ? element.type : "<unknown>",
@@ -104,41 +109,88 @@ export function collectInvalidRenderGeometry(
 	return invalid;
 }
 
+/**
+ * Refuse a document Excalidraw cannot render without producing a non-finite
+ * camera. Report the whole document in one pass so a caller can repair every
+ * offending element rather than discovering one field per write.
+ *
+ * Tombstones are intentionally ignored. Excalidraw does not render them, and
+ * malformed history must not prevent a valid live document from being saved.
+ *
+ * @param elements complete document to validate
+ */
+function validateRenderGeometry(elements: Iterable<RenderGeometryElement>): void {
+	const invalid = collectInvalidRenderGeometry(elements);
+	if (invalid.length > 0) {
+		throw new RenderGeometryError(invalid);
+	}
+}
+
 /** The default local path for a new straight linear element. */
-export const DEFAULT_LINEAR_POINTS = [
+const DEFAULT_LINEAR_POINTS = [
 	[0, 0],
 	[100, 0],
 ] as const;
 
 /** Valid native point tuples, in the shape used by geometry consumers. */
-export function pointsOf(points: unknown): { x: number; y: number }[] | undefined {
-	if (!Array.isArray(points) || points.length === 0) return undefined;
+/**
+ * @param points candidate native points
+ * @returns valid numeric point tuples, or undefined when none exist
+ */
+function pointsOf(points: unknown): { x: number; y: number }[] | undefined {
+	if (!Array.isArray(points) || points.length === 0) {
+		return undefined;
+	}
 	const normalized: { x: number; y: number }[] = [];
 	for (const point of points) {
-		if (!Array.isArray(point) || point.length !== 2) continue;
+		if (!Array.isArray(point) || point.length !== 2) {
+			continue;
+		}
 		const x = finite(point[0]);
 		const y = finite(point[1]);
-		if (x !== undefined && y !== undefined) normalized.push({ x, y });
+		if (x !== undefined && y !== undefined) {
+			normalized.push({ x, y });
+		}
 	}
 	return normalized.length === 0 ? undefined : normalized;
 }
 
-/** The offsets of a path, dropping anything that is not a pair of numbers. */
+/**
+ * @param points candidate path
+ * @returns path offsets, dropping anything that is not a pair of numbers
+ */
 function pathExtrema(
 	points: unknown,
 ): { minX: number; minY: number; maxX: number; maxY: number } | undefined {
 	const normalized = pointsOf(points);
-	if (!normalized) return undefined;
-	let minX = normalized[0]!.x,
+	if (!normalized) {
+		return undefined;
+	}
+	const first = normalized.at(0);
+	if (first === undefined) {
+		return undefined;
+	}
+	let minX = first.x,
 		maxX = minX,
-		minY = normalized[0]!.y,
+		minY = first.y,
 		maxY = minY;
 	for (let index = 1; index < normalized.length; index += 1) {
-		const current = normalized[index]!;
-		if (current.x < minX) minX = current.x;
-		if (current.x > maxX) maxX = current.x;
-		if (current.y < minY) minY = current.y;
-		if (current.y > maxY) maxY = current.y;
+		const current = normalized[index];
+		if (current === undefined) {
+			continue;
+		}
+		if (current.x < minX) {
+			minX = current.x;
+		}
+		if (current.x > maxX) {
+			maxX = current.x;
+		}
+		if (current.y < minY) {
+			minY = current.y;
+		}
+		if (current.y > maxY) {
+			maxY = current.y;
+		}
 	}
 	return { minX, minY, maxX, maxY };
 }
@@ -151,9 +203,15 @@ function pathExtrema(
  * Undefined when the path says nothing measurable, because a guessed size is
  * worse than the stale one it would replace.
  */
-export function measureLinear(points: unknown): { width: number; height: number } | undefined {
+/**
+ * @param points candidate linear path
+ * @returns measured size, or undefined when the path is not measurable
+ */
+function measureLinear(points: unknown): { width: number; height: number } | undefined {
 	const offsets = pathExtrema(points);
-	if (!offsets) return undefined;
+	if (!offsets) {
+		return undefined;
+	}
 	return {
 		width: offsets.maxX - offsets.minX,
 		height: offsets.maxY - offsets.minY,
@@ -161,7 +219,11 @@ export function measureLinear(points: unknown): { width: number; height: number 
 }
 
 /** Does this element carry a path, and therefore keep its size in it? */
-export function isPathElement(element: Measurable | null | undefined): boolean {
+/**
+ * @param element element to inspect
+ * @returns whether it carries a measurable path
+ */
+function isPathElement(element: Measurable | null | undefined): boolean {
 	return pathExtrema(element?.points) !== undefined;
 }
 
@@ -178,7 +240,11 @@ export function isPathElement(element: Measurable | null | undefined): boolean {
  * excusing itself from the frame is a worse answer than one drawn at the
  * origin.
  */
-export function extentOf(element: Measurable | null | undefined): Extent {
+/**
+ * @param element element to measure
+ * @returns its axis-aligned scene extent
+ */
+function extentOf(element: Measurable | null | undefined): Extent {
 	const x = finite(element?.x) ?? 0;
 	const y = finite(element?.y) ?? 0;
 	const offsets = pathExtrema(element?.points);
@@ -194,7 +260,7 @@ export function extentOf(element: Measurable | null | undefined): Extent {
 }
 
 /** A region of board to ask a question about. Any side may be unbounded. */
-export interface Region {
+interface Region {
 	xMin: number;
 	xMax: number;
 	yMin: number;
@@ -214,7 +280,12 @@ export interface Region {
  * Inclusive on every edge, so an element flush against a boundary is inside
  * it, and a point-sized element is judged the same way a box is.
  */
-export function overlapsRegion(element: Measurable | null | undefined, region: Region): boolean {
+/**
+ * @param element element to measure
+ * @param region region to compare with
+ * @returns whether any part of the element overlaps the region
+ */
+function overlapsRegion(element: Measurable | null | undefined, region: Region): boolean {
 	const extent = extentOf(element);
 	return (
 		extent.x <= region.xMax &&
@@ -233,11 +304,17 @@ export function overlapsRegion(element: Measurable | null | undefined, region: R
  * is not a resize, and bumping an element's version for one wakes the change
  * feed over nothing.
  */
-export function remeasureLinear(
+/**
+ * @param element path element to remeasure
+ * @returns corrected dimensions when the stored size drifted
+ */
+function remeasureLinear(
 	element: Measurable | null | undefined,
 ): { width: number; height: number } | undefined {
 	const measured = measureLinear(element?.points);
-	if (!measured) return undefined;
+	if (!measured) {
+		return undefined;
+	}
 	const width = finite(element?.width);
 	const height = finite(element?.height);
 	if (
@@ -250,3 +327,21 @@ export function remeasureLinear(
 	}
 	return measured;
 }
+
+export {
+	type Measurable,
+	type RenderGeometryElement,
+	type InvalidRenderGeometry,
+	RenderGeometryError,
+	type Extent,
+	validateRenderGeometry,
+	collectInvalidRenderGeometry,
+	DEFAULT_LINEAR_POINTS,
+	pointsOf,
+	measureLinear,
+	isPathElement,
+	extentOf,
+	type Region,
+	overlapsRegion,
+	remeasureLinear,
+};
