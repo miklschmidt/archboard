@@ -1,10 +1,9 @@
-import type { BinaryFileData } from "@excalidraw/excalidraw/types";
 import type { LegacyElementIngress } from "../../../../src/shared/board-elements/index.ts";
 
 /** Archboard's input-only spellings, consumed at the write boundary. */
-export type AuthoredElementInput = LegacyElementIngress;
+type AuthoredElementInput = LegacyElementIngress;
 
-export const fixedPointElements = [
+const fixedPointElements = [
 	{
 		id: "rect1",
 		type: "rectangle",
@@ -112,7 +111,7 @@ export const fixedPointElements = [
 	},
 ] as const satisfies readonly AuthoredElementInput[];
 
-export const humanArrowInput = {
+const humanArrowInput = {
 	id: "human-arrow",
 	type: "arrow",
 	x: 1400,
@@ -127,7 +126,7 @@ export const humanArrowInput = {
 	endBinding: { elementId: "human-node", focus: 0.9, gap: 15 },
 } as const satisfies AuthoredElementInput;
 
-export const legacyTextInput = {
+const legacyTextInput = {
 	id: "helv",
 	type: "text",
 	x: 120,
@@ -139,7 +138,7 @@ export const legacyTextInput = {
 	autoResize: true,
 } as const satisfies AuthoredElementInput;
 
-export const findingElements = [
+const findingElements = [
 	{
 		id: "fover",
 		type: "line",
@@ -177,7 +176,7 @@ export const findingElements = [
 		y: 800,
 		width: 64,
 		height: 64,
-		fileId: "finding-pixel" as BinaryFileData["id"],
+		fileId: "finding-pixel",
 	},
 	{
 		id: "nearimg",
@@ -186,7 +185,7 @@ export const findingElements = [
 		y: 86,
 		width: 6,
 		height: 6,
-		fileId: "finding-pixel" as BinaryFileData["id"],
+		fileId: "finding-pixel",
 	},
 	{
 		id: "redback",
@@ -226,18 +225,28 @@ export const findingElements = [
 	},
 ] as const satisfies readonly AuthoredElementInput[];
 
-export const findingFile = {
-	id: "finding-pixel" as BinaryFileData["id"],
+const findingFile = {
+	id: "finding-pixel",
 	mimeType: "image/svg+xml",
 	dataURL: `data:image/svg+xml;base64,${Buffer.from(
 		'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect width="1" height="1" fill="#0000ff"/></svg>',
-	).toString("base64")}` as BinaryFileData["dataURL"],
-} satisfies Pick<BinaryFileData, "id" | "mimeType" | "dataURL">;
+	).toString("base64")}`,
+} as const;
 
-export const activityLines = [
+const activityLines = [
 	"marking the unverified regional database boundary",
 	"shortening labels and removing arrow crossings",
 	"fitting dense labels inside their boxes",
 	"replacing the four stale bound labels with current names",
 	"recentering the shortened bound labels",
 ] as const;
+
+export {
+	activityLines,
+	type AuthoredElementInput,
+	findingElements,
+	findingFile,
+	fixedPointElements,
+	humanArrowInput,
+	legacyTextInput,
+};
