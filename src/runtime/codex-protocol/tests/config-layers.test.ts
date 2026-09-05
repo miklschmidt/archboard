@@ -8,7 +8,7 @@ import {
 } from "../index.js";
 import { responseFixtures } from "./fixtures.js";
 
-function localShellNotification(timeout_ms: number | bigint) {
+function localShellNotification(timeout_ms: number | bigint): unknown {
 	return {
 		method: "rawResponseItem/completed" as const,
 		params: {
@@ -32,11 +32,7 @@ function localShellNotification(timeout_ms: number | bigint) {
 }
 
 test("config/read accepts Codex 0.151.0 omitting enabled-layer disabledReason", () => {
-	const configResponse = responseFixtures["config/read"] as {
-		readonly config: Record<string, unknown>;
-		readonly origins: Record<string, unknown>;
-		readonly layers: null;
-	};
+	const configResponse = decodeResponse("config/read", responseFixtures["config/read"]);
 	const layer = {
 		name: { type: "system", file: "/etc/codex/config.toml" },
 		version: "sha256:fixture",
@@ -78,11 +74,7 @@ test("browser origin policy keeps the generated seven-field shape", () => {
 });
 
 test("Codex i64 values stay safe JSON numbers and reject bigint", () => {
-	const configResponse = responseFixtures["config/read"] as {
-		readonly config: Record<string, unknown>;
-		readonly origins: Record<string, unknown>;
-		readonly layers: null;
-	};
+	const configResponse = decodeResponse("config/read", responseFixtures["config/read"]);
 	const safe = decodeResponse("config/read", {
 		...configResponse,
 		config: { ...configResponse.config, model_context_window: Number.MAX_SAFE_INTEGER },
@@ -103,17 +95,17 @@ test("Codex i64 values stay safe JSON numbers and reject bigint", () => {
 			...configResponse,
 			config: { ...configResponse.config, model_context_window: 1n },
 		}),
-	).toThrow(/bigint; Codex JSON i64 values must be safe numbers/);
+	).toThrow(/bigint; Codex JSON i64 values must be safe numbers/u);
 });
 
 test("local shell i64 timeouts use the same safe-number boundary", () => {
 	const safe = localShellNotification(Number.MAX_SAFE_INTEGER);
 
-	expect(decodeServerNotification(safe) as unknown).toEqual(safe);
+	expect(JSON.stringify(decodeServerNotification(safe))).toBe(JSON.stringify(safe));
 	expect(() =>
 		decodeServerNotification(localShellNotification(Number.MAX_SAFE_INTEGER + 1)),
 	).toThrow(ProtocolDecodeError);
 	expect(() => decodeServerNotification(localShellNotification(1n))).toThrow(
-		/bigint; Codex JSON i64 values must be safe numbers/,
+		/bigint; Codex JSON i64 values must be safe numbers/u,
 	);
 });
