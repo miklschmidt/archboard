@@ -21,7 +21,7 @@ import {
 	type DynamicMutationToolName,
 } from "./contract.js";
 import type { DynamicOperationSettlement } from "./effects.js";
-import { validateDynamicCall } from "./classification.js";
+import { validateDynamicCall } from "./request-validation.js";
 import { invalidDynamicResponse } from "./response.js";
 
 export const DYNAMIC_QUARANTINE_WIRE_CAP = CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP;
@@ -92,6 +92,7 @@ export function deferred<Value>(): Deferred<Value> {
 
 export function createOrdinaryWireOwners(): OrdinaryWireOwners {
 	const owners = new Map<string, Deferred<DynamicToolCallResponse>>();
+	// oxlint-disable-next-line typescript/promise-function-async -- Duplicate wire calls must receive the exact same owned Promise identity.
 	const own = (
 		key: string,
 		run: () => Promise<DynamicToolCallResponse>,
