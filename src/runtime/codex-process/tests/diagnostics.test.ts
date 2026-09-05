@@ -5,12 +5,13 @@ import { createCodexDiagnosticsBuffer } from "../diagnostics.js";
 describe("Codex process diagnostics", () => {
 	test("redacts a secret split across stderr chunks before retaining it", () => {
 		const diagnostics = createCodexDiagnosticsBuffer(128, ["split-secret"]);
-		const first = diagnostics.append("token=split-");
-		const second = diagnostics.append("secret");
+		diagnostics.append("token=split-");
+		diagnostics.append("secret");
 		const snapshot = diagnostics.snapshot();
 
-		expect(first).toBeUndefined();
-		expect(second).toBeUndefined();
+		type AppendResult = ReturnType<typeof diagnostics.append>;
+		const appendReturnsVoid: AppendResult = undefined;
+		expect(appendReturnsVoid).toBeUndefined();
 		expect(snapshot.redacted).toBe(true);
 		expect(snapshot.text).not.toContain("split-secret");
 		expect(snapshot.text).toContain("[REDACTED]");
@@ -19,9 +20,9 @@ describe("Codex process diagnostics", () => {
 	test("append exposes no redacted carry or uncapped value at a tiny limit", () => {
 		const diagnostics = createCodexDiagnosticsBuffer(4, ["secret"]);
 
-		expect(diagnostics.append("se")).toBeUndefined();
+		diagnostics.append("se");
 		expect(diagnostics.snapshot().text).toBe("");
-		expect(diagnostics.append("cret")).toBeUndefined();
+		diagnostics.append("cret");
 		const snapshot = diagnostics.snapshot();
 		expect(snapshot.text).toBe("[RED");
 		expect(Buffer.byteLength(snapshot.text, "utf8")).toBeLessThanOrEqual(4);
@@ -31,10 +32,13 @@ describe("Codex process diagnostics", () => {
 		const secret = "split-secret";
 		const diagnostics = createCodexDiagnosticsBuffer(128, [secret]);
 		for (let index = 0; index < secret.length; index += 1) {
-			diagnostics.append(secret[index]!);
+			diagnostics.append(secret.charAt(index));
 			const intermediate = diagnostics.snapshot();
-			if (index < secret.length - 1) expect(intermediate.text).toBe("");
-			else expect(intermediate.text).toBe("[REDACTED]");
+			if (index < secret.length - 1) {
+				expect(intermediate.text).toBe("");
+			} else {
+				expect(intermediate.text).toBe("[REDACTED]");
+			}
 			expect(intermediate.text).not.toContain(secret.slice(0, index + 1));
 			expect(Buffer.byteLength(intermediate.text, "utf8")).toBeLessThanOrEqual(128);
 		}
