@@ -28,7 +28,7 @@ const CompareRequestStageSchema = z
 			});
 			return z.NEVER;
 		}
-		if (input.tail.length) {
+		if (input.tail.length > 0) {
 			context.addIssue({
 				code: "custom",
 				message: "compare takes two boards; pass them one at a time",

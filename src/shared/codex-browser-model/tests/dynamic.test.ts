@@ -46,7 +46,7 @@ describe("dynamic coordination approval browser contract", () => {
 				fixture.model.BrowserDynamicApprovalSchema.safeParse({
 					...browserApproval,
 					effect: { ...browserApproval.effect, [field]: "secret" },
-				} as unknown).success,
+				}).success,
 			).toBeFalse();
 		}
 		expect(fixture.model.BrowserDtoSchema.safeParse(request as unknown).success).toBeFalse();
@@ -54,7 +54,7 @@ describe("dynamic coordination approval browser contract", () => {
 			fixture.model.BrowserDynamicApprovalSchema.safeParse({
 				...browserApproval,
 				approvalKind: "command_execution",
-			} as unknown).success,
+			}).success,
 		).toBeFalse();
 	});
 
@@ -127,7 +127,7 @@ describe("dynamic coordination approval browser contract", () => {
 				fixture.model.BrowserDynamicApprovalSchema.safeParse({
 					...cancelled,
 					...mutation,
-				} as unknown).success,
+				}).success,
 			).toBeFalse();
 		}
 	});
@@ -159,7 +159,7 @@ describe("dynamic coordination approval browser contract", () => {
 			fixture.model.DynamicApprovalRequestSchema.safeParse({
 				...request,
 				approvalKind: "command_execution",
-			} as unknown).success,
+			}).success,
 		).toBeFalse();
 	});
 
@@ -206,7 +206,7 @@ describe("dynamic coordination approval browser contract", () => {
 				fixture.model.BrowserDynamicApprovalResponseSchema.safeParse({
 					...response,
 					...mutation,
-				} as unknown).success,
+				}).success,
 			).toBeFalse();
 		}
 		for (const extra of [
@@ -218,7 +218,7 @@ describe("dynamic coordination approval browser contract", () => {
 				fixture.model.BrowserDynamicApprovalResponseSchema.safeParse({
 					...response,
 					...extra,
-				} as unknown).success,
+				}).success,
 			).toBeFalse();
 		}
 		const terminal = approvalFor(
@@ -322,13 +322,13 @@ describe("dynamic coordination approval browser contract", () => {
 			fixture.model.DynamicApprovalIdentitySchema.safeParse({
 				...request.identity,
 				operationId: fixture.authorities.identity.issuer.mintBrowserCommandId(),
-			} as unknown).success,
+			}).success,
 		).toBeFalse();
 		expect(
 			fixture.model.DynamicApprovalIdentitySchema.safeParse({
 				...request.identity,
 				callId: fixture.authorities.identity.issuer.mintBrowserCommandId(),
-			} as unknown).success,
+			}).success,
 		).toBeFalse();
 	});
 });
