@@ -37,7 +37,7 @@ interface OwnedPeer<T> {
 	readonly ready: T;
 	readonly stderr: string;
 	readonly exit: Promise<Exit>;
-	dispose(): Promise<void>;
+	readonly dispose: () => Promise<void>;
 }
 
 interface PeerOptions<T> {
