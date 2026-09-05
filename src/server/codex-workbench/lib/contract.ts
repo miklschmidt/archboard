@@ -12,6 +12,7 @@ import type {
 	ChildId,
 	IdentityAuthorities,
 	JsonRpcRequestId,
+	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
 import type {
 	CodexThreadLinkPort,
@@ -183,6 +184,7 @@ export type BrowserDisconnectReason =
 export type BrowserActionResult = void | {
 	readonly outcome: DeliveryOutcome;
 	readonly message?: string;
+	readonly turnId?: TurnId;
 	/** The browser applies this answer to its local peer and owns remote media attachment. */
 	readonly realtimeAnswer?: AnswerSdp;
 	/** Stable opaque handle returned by start and echoed by append/stop. */

@@ -84,6 +84,23 @@ test("rejects a command result whose identity differs from the frozen target", a
 	expect(socket.sent.map((request) => request.action)).toEqual(["subscribe", "command"]);
 });
 
+test("retains the accepted turn identity independently of the reply snapshot", async () => {
+	const transport = track(createBrowserWorkbenchTransport());
+	const socket = new FakeSocket();
+	const current = snapshot({ lease: lease() });
+	await attachWithSnapshot(transport, socket, current);
+	socket.onRequest = (request, activeSocket) => {
+		if (request.action === "command")
+			activeSocket.reply(request, { ...commandResult(current), turnId: "accepted-turn" });
+		else if (request.action === "snapshot")
+			activeSocket.reply(request, snapshotMessage(1, current));
+	};
+	expect(await transport.command(startDraft())).toMatchObject({
+		outcome: "delivered",
+		turnId: "accepted-turn",
+	});
+});
+
 test("rejects renew and release results that change the lease target", async () => {
 	for (const action of ["renewLease", "releaseLease"] as const) {
 		const activeLease = lease();

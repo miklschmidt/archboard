@@ -44,7 +44,7 @@ const evidenceInputs: Array<{
 let firstActiveSessionId = "voice-first";
 let firstDirectSnapshotAvailable = true;
 let firstConnection: "connected" | "reconnecting" = "connected";
-let firstVoiceState: "listening" | "failed" | "closed" = "listening";
+let firstVoiceState: "listening" | "failed" | "stopped" | "closed" = "listening";
 let secondVoiceReplaced = false;
 const transportEvidenceListeners = new WeakMap<BrowserWorkbenchTransport, Set<() => void>>();
 
@@ -132,10 +132,19 @@ function voiceView(sessionId: string): VoiceSessionView {
 	const state =
 		sessionId === "voice-first" ? firstVoiceState : secondVoiceReplaced ? "replaced" : "listening";
 	const closed = state === "closed";
+	const stopped = state === "stopped";
 	const failure = state === "failed" || state === "replaced";
 	const detached = !closed && !failure && sessionId === "voice-first" && currentTransport === null;
 	return {
-		status: closed ? "ready" : failure ? "failed" : detached ? "unavailable" : "listening",
+		status: closed
+			? "ready"
+			: stopped
+				? "stopped"
+				: failure
+					? "failed"
+					: detached
+						? "unavailable"
+						: "listening",
 		label: closed ? "Ready" : failure ? "Failed" : detached ? "Unavailable" : "Listening",
 		detail: failure
 			? "Voice session failed."
@@ -154,10 +163,10 @@ function voiceView(sessionId: string): VoiceSessionView {
 			? { kind: "terminal", label: "Close voice", recovery: "Close the failed session." }
 			: { kind: "none" },
 		controls: {
-			canStart: closed,
-			canMute: !closed && !failure && !detached,
+			canStart: closed || stopped,
+			canMute: !closed && !stopped && !failure && !detached,
 			canUnmute: false,
-			canStop: !closed && !failure && !detached,
+			canStop: !closed && !stopped && !failure && !detached,
 			canRestart: false,
 			canClose: failure,
 		},
@@ -430,6 +439,12 @@ test("publishes each production pane transport once, clears before replacement, 
 	expect(publications.at(-1)).toEqual(["pane-1", FIRST_TRANSPORT]);
 	expect(voiceCreations).toHaveLength(1);
 	expect(voicePublications).toHaveLength(1);
+	firstVoiceState = "stopped";
+	expect(firstRegistration.session.view()).toMatchObject({
+		status: "stopped",
+		controls: { canStart: true },
+	});
+	expect(firstRegistration.presentation()).toEqual({ state: "none", frame: "available" });
 	firstVoiceState = "failed";
 	expect(firstRegistration.presentation()).toMatchObject({
 		state: "active",

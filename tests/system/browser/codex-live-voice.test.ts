@@ -441,9 +441,11 @@ test(
 			() =>
 				browser.eval<boolean>(`document.fullscreenElement === null &&
 					document.querySelector('[data-workbench-voice]') === null &&
-					document.querySelector('[data-workbench-frame]') !== null`),
+					document.querySelector('[data-workbench-frame]') !== null &&
+					document.querySelector('[data-voice-command="start"]') instanceof HTMLButtonElement &&
+					!document.querySelector('[data-voice-command="start"]').disabled`),
 			Boolean,
-			"authoritative stop to restore the text-only workbench",
+			"authoritative stop to clear voice evidence and retain an enabled Start control",
 		);
 		expect(
 			await browser.eval<boolean>(`document.querySelector('.pane .excalidraw') ===

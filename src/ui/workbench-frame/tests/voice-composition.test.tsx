@@ -419,9 +419,8 @@ test("places spoken evidence immediately above the unchanged ordinary approval o
 	expect(document.querySelector('[data-workbench-approvals="surface"]')).toBeTruthy();
 });
 
-function expectTextOnlyFrame(): void {
+function expectTextConversationWithoutVoiceEvidence(): void {
 	expect(document.querySelector("[data-workbench-voice]")).toBeNull();
-	expect(document.querySelector('[data-voice-controls=""]')).toBeNull();
 	expect(document.querySelector('[data-voice-transcript=""]')).toBeNull();
 	expect(document.querySelector('[data-voice-context=""]')).toBeNull();
 	expect(document.querySelector("[data-spoken-approval]")).toBeNull();
@@ -431,18 +430,22 @@ function expectTextOnlyFrame(): void {
 	expect(document.querySelector("[data-workbench-composer]")).toBeTruthy();
 }
 
-test("restores the text-only frame after authoritative stop and caller withdrawal", () => {
+test("keeps Start reachable on the same session after stop, and removes it on caller withdrawal", async () => {
+	const user = userEvent.setup();
 	const fake = createSessionFake(voiceView("listening"));
 	const slot = voiceSlot(fake);
 	const result = render(frame(slot));
 	expect(document.querySelector('[data-workbench-voice="present"]')).toBeTruthy();
 	act(() => fake.setView(voiceView("stopped")));
-	expectTextOnlyFrame();
+	expectTextConversationWithoutVoiceEvidence();
+	await user.click(screen.getByRole("button", { name: /Start voice on/ }));
+	expect(fake.calls).toEqual(["start"]);
 	result.unmount();
 	const withdrawal = render(frame(voiceSlot(createSessionFake(voiceView("listening")))));
 	expect(document.querySelector('[data-workbench-voice="present"]')).toBeTruthy();
 	withdrawal.rerender(frame(null));
-	expectTextOnlyFrame();
+	expectTextConversationWithoutVoiceEvidence();
+	expect(document.querySelector('[data-voice-controls=""]')).toBeNull();
 });
 
 test("keeps the source capture paired with its public session", () => {

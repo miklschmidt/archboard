@@ -47,7 +47,7 @@ export function voiceView(
 			: null,
 		outcome,
 		controls: {
-			canStart: status === "ready",
+			canStart: status === "ready" || status === "stopped",
 			canMute: status === "listening",
 			canUnmute: status === "muted",
 			canStop: running && status !== "stopping",

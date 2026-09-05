@@ -1,5 +1,5 @@
 import type { BrowserSnapshot, DeliveryOutcome } from "../../codex-browser-model/index.js";
-import type { BrowserCommandId } from "../../codex-workbench-identity/index.js";
+import type { BrowserCommandId, TurnId } from "../../codex-workbench-identity/index.js";
 import type { AnswerSdp } from "../../codex-realtime-host/index.js";
 
 /**
@@ -103,6 +103,8 @@ export interface BrowserGatewayCommandResult {
 	readonly code: BrowserGatewayErrorCode | null;
 	readonly message: string | null;
 	readonly snapshot: BrowserSnapshot;
+	/** Accepted turn identity from the command response, independent of later status. */
+	readonly turnId?: TurnId;
 	readonly realtimeAnswer?: AnswerSdp;
 	readonly realtimeSessionHandle?: string;
 }

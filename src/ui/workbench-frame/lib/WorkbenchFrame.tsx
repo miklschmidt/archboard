@@ -689,6 +689,7 @@ function WorkbenchFrameLayout({
 			: workbenchFrameVoiceSourceIssue(voice.source, voiceView);
 	const voiceOwnsMountedPane =
 		voice !== null &&
+		voiceView?.status !== "stopped" &&
 		activePane !== null &&
 		samePaneIdentity(activePane.identity, voice.source.pane);
 	const requestSourceIssue =
@@ -757,7 +758,7 @@ function WorkbenchFrameLayout({
 						onBlurCapture={onContentBlur}
 						onFocusCapture={onContentFocus}
 					>
-						{voice === null || voiceView === null ? null : (
+						{voice === null || voiceView === null || voiceView.status === "stopped" ? null : (
 							<VoiceComposition
 								crossLinkIds={voiceCrossLinkIds}
 								sessionView={voiceView}
@@ -826,14 +827,7 @@ function VoiceSubscribedWorkbenchFrame({
 	readonly voice: WorkbenchFrameVoiceSlot;
 }): ReactNode {
 	const voiceView = useVoiceSession(voice.source.session);
-	const activeVoice = voiceView.status === "stopped" ? null : voice;
-	return (
-		<WorkbenchFrameLayout
-			props={props}
-			voice={activeVoice}
-			voiceView={activeVoice === null ? null : voiceView}
-		/>
-	);
+	return <WorkbenchFrameLayout props={props} voice={voice} voiceView={voiceView} />;
 }
 
 export function WorkbenchFrame(props: WorkbenchFrameProps): ReactNode {

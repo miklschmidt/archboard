@@ -130,7 +130,7 @@ function voiceView(
 					}
 				: { kind: "none" as const },
 		controls: {
-			canStart: status === "ready",
+			canStart: status === "ready" || status === "stopped",
 			canMute: status === "listening",
 			canUnmute: status === "muted",
 			canStop: options.canStop ?? active,
@@ -159,7 +159,7 @@ function fakeVoiceSession(paneId: string, suffix: string): FakeVoiceSession {
 	const presentation = (): CanvasPaneVoicePresentation => {
 		if (current.status === "stopped" || current.failure?.code === "replaced") {
 			retained = null;
-			return { state: "none", frame: "retired" };
+			return { state: "none", frame: current.status === "stopped" ? "available" : "retired" };
 		}
 		if (current.binding === null) {
 			retained = null;
@@ -483,7 +483,7 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 		await waitFor(() => expect(replacement.voice.stops()).toBe(1));
 		expect(paneA.voice.stops()).toBe(1);
 		act(() => replacement.voice.set("stopped", { label: "Stopped" }));
-		await waitFor(() => expect(latestFrameProps?.voice).toBeNull());
+		await waitFor(() => expect(latestFrameProps?.voice?.source.session).toBe(paneB.voice.session));
 		expect(within(dock).queryByLabelText("Active voice session")).toBeNull();
 		expect(stop.hasAttribute("disabled")).toBeTrue();
 		act(() => paneB.voice.set("listening", { label: "Listening" }));
@@ -491,7 +491,7 @@ test("keeps one immutable voice source visible and routes the only fullscreen St
 		await user.click(within(dock).getByRole("button", { name: "Exit" }));
 		await user.click(screen.getByRole("button", { name: "Unsplit" }));
 		await waitFor(() => expect(paneControls.has("pane-2")).toBeFalse());
-		expect(latestFrameProps?.voice).toBeNull();
+		expect(latestFrameProps?.voice?.source.session).toBe(replacement.voice.session);
 		mounted.unmount();
 		expect(paneControls.size).toBe(0);
 	} finally {
