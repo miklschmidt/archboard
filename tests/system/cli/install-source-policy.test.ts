@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { extname, join } from "node:path";
+import path from "node:path";
 import { checkoutRoot } from "./support/package-cli.ts";
+
+const { extname, join } = path;
 
 const textExtensions = new Set([
 	".ts",
@@ -49,20 +51,31 @@ const binaryExtensions = new Set([
 ]);
 
 function sourceFiles(directory: string): string[] {
-	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-		const path = join(directory, entry.name);
-		if (entry.isDirectory()) return sourceFiles(path);
-		if (!entry.isFile()) return [];
+	const files: string[] = [];
+	for (const entry of readdirSync(directory, { withFileTypes: true })) {
+		const sourcePath = join(directory, entry.name);
+		if (entry.isDirectory()) {
+			files.push(...sourceFiles(sourcePath));
+			continue;
+		}
+		if (!entry.isFile()) {
+			continue;
+		}
 		const extension = extname(entry.name).toLowerCase();
-		if (textExtensions.has(extension)) return [path];
-		if (binaryExtensions.has(extension)) return [];
-		throw new Error(`Unclassified regular file under src/: ${path}`);
-	});
+		if (textExtensions.has(extension)) {
+			files.push(sourcePath);
+			continue;
+		}
+		if (!binaryExtensions.has(extension)) {
+			throw new Error(`Unclassified regular file under src/: ${sourcePath}`);
+		}
+	}
+	return files;
 }
 
-const stalePaths = (directory: string) =>
+const stalePaths = (directory: string): string[] =>
 	sourceFiles(directory).filter((file) =>
-		/(?:src\/core\/|frontend\/src\/)/.test(readFileSync(file, "utf8")),
+		/(?:src\/core\/|frontend\/src\/)/u.test(readFileSync(file, "utf8")),
 	);
 
 describe("install source policy", () => {
@@ -79,7 +92,7 @@ describe("install source policy", () => {
 			writeFileSync(css, "/* src/core/old.css */\n");
 			expect(stalePaths(scratch)).toEqual([css]);
 			writeFileSync(join(nested, "fixture.unknown"), "data");
-			expect(() => sourceFiles(scratch)).toThrow(/Unclassified regular file/);
+			expect(() => sourceFiles(scratch)).toThrow(/Unclassified regular file/u);
 		} finally {
 			rmSync(scratch, { recursive: true, force: true });
 		}
@@ -98,9 +111,10 @@ describe("install source policy", () => {
 			"skills/archboard/SKILL.md",
 			"skills/archboard-dev/SKILL.md",
 		];
-		for (const relative of docs)
+		for (const relative of docs) {
 			expect(readFileSync(join(checkoutRoot, relative), "utf8"), relative).not.toMatch(
-				/(?:src\/core\/|frontend\/src\/)/,
+				/(?:src\/core\/|frontend\/src\/)/u,
 			);
+		}
 	});
 });

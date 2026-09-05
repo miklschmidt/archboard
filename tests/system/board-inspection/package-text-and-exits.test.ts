@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { formatInspectionText } from "../../../src/runtime/board-inspection/index.js";
+import {
+	CheckResultSchema,
+	formatInspectionText,
+} from "../../../src/runtime/board-inspection/index.js";
 import {
 	cleanScene,
 	errorScene,
@@ -14,19 +17,26 @@ describe("package inspection text and exits", () => {
 		try {
 			owner.startVault();
 			owner.writeBoard("clean", cleanScene());
-			const json = JSON.parse((await owner.runInspection("clean")).stdout);
-			expect((await owner.runInspection("clean", ["--text"])).stdout).toBe(
-				`${formatInspectionText(json)}\n`,
-			);
-			for (const option of [
+			const jsonResult = await owner.runInspection("clean");
+			const json = CheckResultSchema.parse(JSON.parse(jsonResult.stdout));
+			const textResult = await owner.runInspection("clean", ["--text"]);
+			expect(textResult.stdout).toBe(`${formatInspectionText(json)}\n`);
+			const options = [
 				"--dimension-tolerance",
 				"--intersection-tolerance",
 				"--overlap-tolerance",
-			]) {
-				expect(await owner.runInspection("clean", [option, ""])).toEqual(
-					await owner.runInspection("clean", [option, "0"]),
-				);
-			}
+			] as const;
+			const verifyOption = async (index: number): Promise<void> => {
+				const option = options[index];
+				if (option === undefined) {
+					return;
+				}
+				const blank = await owner.runInspection("clean", [option, ""]);
+				const zero = await owner.runInspection("clean", [option, "0"]);
+				expect(blank).toEqual(zero);
+				await verifyOption(index + 1);
+			};
+			await verifyOption(0);
 		} finally {
 			await owner.dispose();
 		}
@@ -36,17 +46,25 @@ describe("package inspection text and exits", () => {
 		const owner = createPackageInspectionOwner();
 		try {
 			owner.startVault();
-			for (const [board, scene, status] of [
+			const cases = [
 				["warning", warningScene, 6],
 				["error", errorScene, 7],
 				["unknown", indeterminateScene, 8],
-			] as const) {
+			] as const;
+			const verifyCase = async (index: number): Promise<void> => {
+				const current = cases[index];
+				if (current === undefined) {
+					return;
+				}
+				const [board, scene, status] = current;
 				owner.writeBoard(board, scene());
 				const result = await owner.runInspection(board, ["--strict"]);
 				expect(result.status).toBe(status);
 				expect(result.stdout.length).toBeGreaterThan(0);
 				expect(result.stderr).toBe("");
-			}
+				await verifyCase(index + 1);
+			};
+			await verifyCase(0);
 		} finally {
 			await owner.dispose();
 		}
