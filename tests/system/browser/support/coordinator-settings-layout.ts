@@ -1,8 +1,11 @@
 import { expect } from "bun:test";
 
-import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
+import { pollUntil } from "./agent-browser.ts";
+import type { AgentBrowserSession } from "./agent-browser.ts";
 
-export async function assertSignedOutAccount(browser: AgentBrowserSession): Promise<void> {
+type BrowserOperator = Readonly<Pick<AgentBrowserSession, "eval" | "run">>;
+
+async function assertSignedOutAccount(browser: BrowserOperator): Promise<void> {
 	const state = await browser.eval<{
 		options: string[];
 		selected: string | null;
@@ -29,7 +32,9 @@ export async function assertSignedOutAccount(browser: AgentBrowserSession): Prom
 	expect(state.buttons).not.toContain("Sign out");
 	expect(state.width).toBeGreaterThanOrEqual(600);
 	expect(state.overflow).toBe(false);
-	for (const size of state.textSizes) expect(size).toBeGreaterThanOrEqual(14);
+	for (const size of state.textSizes) {
+		expect(size).toBeGreaterThanOrEqual(14);
+	}
 	await browser.run(["find", "role", "radio", "click", "--name", "API key", "--exact"]);
 	expect(
 		await browser.eval<boolean>(`!!document.querySelector('[data-thread-link-field="apiKey"]')`),
@@ -40,17 +45,23 @@ export async function assertSignedOutAccount(browser: AgentBrowserSession): Prom
 	).toBe(false);
 }
 
-/** The expanded settings must remain readable inside the production dialog. */
-export async function assertCoordinatorSettingsLayout(
-	browser: AgentBrowserSession,
+/**
+ * The expanded settings must remain readable inside the production dialog.
+ * @param browser - Browser operator used by the system owner.
+ * @param state - Expected coordinator availability state.
+ */
+async function assertCoordinatorSettingsLayout(
+	browser: BrowserOperator,
 	state: "unavailable" | "priority_fallback",
 ): Promise<void> {
 	await browser.run(["find", "text", "Coordinator details", "click", "--exact"]);
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(
+		async () => {
+			const expanded = await browser.eval<boolean>(
 				`document.querySelector('[data-coordinator-disclosure]')?.closest('details')?.open === true`,
-			),
+			);
+			return expanded;
+		},
 		Boolean,
 		"expanded coordinator settings",
 	);
@@ -76,8 +87,15 @@ export async function assertCoordinatorSettingsLayout(
 	expect(layout.state).toBe(state);
 	expect(layout.insideViewport).toBe(true);
 	expect(layout.overflow).toBe(false);
-	for (const width of layout.valueWidths) expect(width).toBeGreaterThanOrEqual(200);
-	if (state === "unavailable") expect(layout.height).toBeLessThan(300);
-	else expect(layout.valueWidths.length).toBeGreaterThan(0);
+	for (const width of layout.valueWidths) {
+		expect(width).toBeGreaterThanOrEqual(200);
+	}
+	if (state === "unavailable") {
+		expect(layout.height).toBeLessThan(300);
+	} else {
+		expect(layout.valueWidths.length).toBeGreaterThan(0);
+	}
 	await browser.run(["screenshot", `/tmp/archboard-149-coordinator-${state}.png`]);
 }
+
+export { assertCoordinatorSettingsLayout, assertSignedOutAccount };
