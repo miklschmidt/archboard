@@ -30,7 +30,10 @@ import type {
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { captureShellRenderMatrix } from "./support/shell-render-matrix.ts";
 import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
-import { assertCoordinatorSettingsLayout } from "./support/coordinator-settings-layout.ts";
+import {
+	assertCoordinatorSettingsLayout,
+	assertSignedOutAccount,
+} from "./support/coordinator-settings-layout.ts";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
@@ -182,7 +185,7 @@ test(
 			expect(snapshot.titleType).toMatchObject({ size: 14, lineHeight: 20, weight: 600 });
 			expect(snapshot.bodyType).toMatchObject({ size: 12, lineHeight: 16, weight: 400 });
 			expect(snapshot.kickerType).toMatchObject({ size: 9, lineHeight: 12, weight: 500 });
-			expect(snapshot.controlType).toMatchObject({ size: 13, lineHeight: 18, weight: 500 });
+			expect(snapshot.controlType).toMatchObject({ size: 14, lineHeight: 20, weight: 500 });
 			expect(snapshot.paneType).toMatchObject({ size: 13, lineHeight: 18, weight: 600 });
 			expect(snapshot.titleType.family).toContain("archboard onest");
 			expect(snapshot.bodyType.family).toContain("archboard onest");
@@ -359,6 +362,7 @@ test(
 		expect(notice.dismissHeight).toBeGreaterThanOrEqual(43.5);
 		expect(notice.flat).toBe(true);
 		await roleAction(browser, "button", "Settings");
+		await assertSignedOutAccount(browser);
 		await assertCoordinatorSettingsLayout(browser, "unavailable");
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS * 2,

@@ -168,6 +168,10 @@
 	--font-weight-semibold: var(--arch-weight-semibold);
 	--font-weight-bold: var(--arch-weight-bold);
 	--tracking-wordmark: var(--arch-wordmark-tracking);
+	--text-sm: 0.875rem;
+	--text-sm--line-height: 1.25rem;
+	--text-base: 1rem;
+	--text-base--line-height: 1.5rem;
 	--text-kicker: var(--arch-text-kicker-size);
 	--text-kicker--line-height: var(--arch-text-kicker-line);
 	--text-technical: var(--arch-text-technical-size);
@@ -215,5 +219,5 @@
 }
 
 .agent-settings-dialog {
-	width: min(32rem, calc(100vw - 2 * var(--arch-space-panel)));
+	width: min(40rem, calc(100vw - 2 * var(--arch-space-panel)));
 }

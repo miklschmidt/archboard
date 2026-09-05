@@ -34,6 +34,7 @@ const HOST_INTENTS = [
 function render(
 	overrides: {
 		readonly account?: BrowserSnapshot["account"];
+		readonly login?: BrowserSnapshot["login"];
 		readonly inventory?: ThreadLinkInventory;
 		readonly readiness?: BrowserSnapshot["readiness"];
 		readonly threadLink?: BrowserSnapshot["threadLink"];
@@ -45,6 +46,7 @@ function render(
 ): string {
 	const value = snapshot({
 		...(overrides.account === undefined ? {} : { account: overrides.account }),
+		...(overrides.login === undefined ? {} : { login: overrides.login }),
 		...(overrides.readiness === undefined ? {} : { readiness: overrides.readiness }),
 		...(overrides.threadLink === undefined ? {} : { threadLink: overrides.threadLink }),
 		threadCandidates:
@@ -199,23 +201,28 @@ describe("rendered pane thread link", () => {
 		const markup = render({
 			readiness: { kind: "readiness", state: "login_pending", loginId: loginA },
 			account: { kind: "account", state: "login_pending", loginId: loginA, variant: "chatgpt" },
+			login: { kind: "login", state: "pending", loginId: loginA, variant: "chatgpt" },
 		});
 		expect(markup).toContain(">Cancel sign-in<");
+		expect(markup).not.toContain("data-thread-link-form-option=");
+		expect(markup).not.toContain(">Sign in<");
+		expect(markup).not.toContain(">Sign out<");
 	});
 
-	test("renders supported sign-in forms and keeps unsupported methods in help while signed out", () => {
+	test("defaults to ChatGPT first and omits inactive signed-out actions and policy help", () => {
 		const markup = render({ account: { kind: "account", state: "signed_out" } });
-		for (const id of ["apiKey", "chatgpt", "amazonBedrock", "amazonBedrockAccessKeys"])
-			expect(markup).toContain(`data-thread-link-form-option="${id}"`);
-		for (const id of [
-			"chatgptDeviceCode",
-			"chatgptAuthTokens",
-			"amazonBedrockProfile",
-			"amazonBedrockEnvironment",
-		])
-			expect(markup).toContain(`data-thread-link-unavailable="${id}"`);
-		expect(markup).toContain("Sign-in help");
-		expect(markup).toContain("Unavailable: the device-code flow completes on another device");
+		expect(
+			[...markup.matchAll(/data-thread-link-form-option="([^"]+)"/g)].map((match) => match[1]),
+		).toEqual(["chatgpt", "apiKey", "amazonBedrock", "amazonBedrockAccessKeys"]);
+		expect(markup.match(/<input[^>]*data-thread-link-form-option="chatgpt"[^>]*>/)?.[0]).toContain(
+			"checked",
+		);
+		expect(markup).toContain('data-thread-link-form="chatgpt"');
+		expect(markup).not.toContain("Hosted ChatGPT");
+		expect(markup).not.toContain("Sign-in help");
+		expect(markup).not.toContain("data-thread-link-unavailable=");
+		expect(markup).not.toContain(">Cancel sign-in<");
+		expect(markup).not.toContain(">Sign out<");
 	});
 
 	test("collapses account management to status and sign out while signed in", () => {
@@ -241,14 +248,14 @@ describe("rendered pane thread link", () => {
 		expect(markup).toContain("Session token (optional)");
 	});
 
-	test("renders the hosted ChatGPT form as a fieldless flow", () => {
+	test("renders the ChatGPT form as a fieldless flow", () => {
 		const markup = render({
 			account: { kind: "account", state: "signed_out" },
 			initialAccountForm: "chatgpt",
 		});
 		expect(markup).toContain('data-thread-link-form="chatgpt"');
 		expect(markup).not.toContain("data-thread-link-field=");
-		expect(markup).toContain("Codex opens it and reports progress here");
+		expect(markup).toContain("Continue with your ChatGPT account.");
 	});
 
 	test("names the pane already holding a link rather than offering it again", () => {
