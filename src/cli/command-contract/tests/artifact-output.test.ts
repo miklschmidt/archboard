@@ -70,8 +70,9 @@ describe("command-contract artifact output", () => {
 		const nativeUnlink = fs.unlinkSync.bind(fs);
 		let manifestTempAttempts = 0;
 		const unlink = spyOn(fs, "unlinkSync").mockImplementation((file) => {
-			if (String(file).includes(".manifest.json.") && manifestTempAttempts++ === 0)
+			if (String(file).includes(".manifest.json.") && manifestTempAttempts++ === 0) {
 				throw new Error("synthetic post-link cleanup failure");
+			}
 			return nativeUnlink(file);
 		});
 		let execution;
@@ -157,9 +158,12 @@ describe("command-contract artifact output", () => {
 		const unlink = spyOn(fs, "unlinkSync").mockImplementation((file) => {
 			if (String(file).includes(".manifest.json.")) {
 				manifestTempAttempts++;
-				if (manifestTempAttempts === 2) nativeUnlink(destination);
-				if (manifestTempAttempts <= 2)
+				if (manifestTempAttempts === 2) {
+					nativeUnlink(destination);
+				}
+				if (manifestTempAttempts <= 2) {
 					throw new Error("synthetic persistent post-link cleanup failure");
+				}
 			}
 			return nativeUnlink(file);
 		});
@@ -201,8 +205,9 @@ describe("command-contract artifact output", () => {
 					nativeUnlink(destination);
 					writeFileSync(destination, "foreign\n");
 				}
-				if (manifestTempAttempts <= 2)
+				if (manifestTempAttempts <= 2) {
 					throw new Error("synthetic persistent post-link cleanup failure");
+				}
 			}
 			return nativeUnlink(file);
 		});

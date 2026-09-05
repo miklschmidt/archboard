@@ -117,10 +117,14 @@ export const checkContract = defineCommand({
 	refusals: [],
 	relationships: [],
 	async handler(input) {
-		if (input.tail.length > 0) throw new CliUsageError("check takes no positional arguments");
+		if (input.tail.length > 0) {
+			throw new CliUsageError("check takes no positional arguments");
+		}
 		const policy = inspectionPolicyOf(input);
 		const board = currentRequestedBoard();
-		if (!board) throw new CliUsageError("check requires --board <key>");
+		if (!board) {
+			throw new CliUsageError("check requires --board <key>");
+		}
 		const report = inspectBoard(readRawBoardElementsForInspection(board), policy);
 		const result = CheckResultSchema.parse({ board, ...report });
 		const outcome = !input.strict

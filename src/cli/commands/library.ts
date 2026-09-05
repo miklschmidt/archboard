@@ -288,10 +288,12 @@ export const libraryInsertContract = defineCommand({
 				),
 			};
 		} catch (error) {
-			if (error instanceof AmbiguousStencilError)
+			if (error instanceof AmbiguousStencilError) {
 				throw new CliUsageError(`${error.message} Disambiguate with --source or --id.`);
-			if (error instanceof Error && error.name === "UnknownStencilError")
+			}
+			if (error instanceof Error && error.name === "UnknownStencilError") {
 				throw new CliUsageError(`${error.message} Use "library list" to see what is available.`);
+			}
 			throw error;
 		}
 	},

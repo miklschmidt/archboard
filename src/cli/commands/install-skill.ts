@@ -43,14 +43,22 @@ function findSkillSource(): string {
 }
 
 function expandHome(input: string): string {
-	if (input === "~") return os.homedir();
-	if (input.startsWith(`~${path.sep}`)) return path.join(os.homedir(), input.slice(2));
+	if (input === "~") {
+		return os.homedir();
+	}
+	if (input.startsWith(`~${path.sep}`)) {
+		return path.join(os.homedir(), input.slice(2));
+	}
 	return input;
 }
 
 function resolveSkillsRoot(target: string): string {
-	if (target === "agents") return path.join(os.homedir(), ".agents", "skills");
-	if (target === "claude") return path.join(os.homedir(), ".claude", "skills");
+	if (target === "agents") {
+		return path.join(os.homedir(), ".agents", "skills");
+	}
+	if (target === "claude") {
+		return path.join(os.homedir(), ".claude", "skills");
+	}
 	if (target === "codex") {
 		throw new CliUsageError(
 			"--target codex is obsolete. The default install root is ~/.agents/skills; use --dir <skills-root> for a custom location.",
@@ -83,8 +91,11 @@ function resolveAgent(agent: string): {
 function countFiles(dir: string): number {
 	let count = 0;
 	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-		if (entry.isDirectory()) count += countFiles(path.join(dir, entry.name));
-		else count++;
+		if (entry.isDirectory()) {
+			count += countFiles(path.join(dir, entry.name));
+		} else {
+			count++;
+		}
 	}
 	return count;
 }
@@ -114,12 +125,18 @@ export function resolveInvocation(): { command: string; onPath: boolean } {
 	);
 
 	for (const dir of (process.env["PATH"] ?? "").split(path.delimiter)) {
-		if (!dir) continue;
+		if (!dir) {
+			continue;
+		}
 		const resolved = realpathOrNull(path.join(dir, "archboard"));
-		if (resolved && ours.has(resolved)) return { command: "archboard", onPath: true };
+		if (resolved && ours.has(resolved)) {
+			return { command: "archboard", onPath: true };
+		}
 	}
 
-	if (fs.existsSync(wrapper)) return { command: wrapper, onPath: false };
+	if (fs.existsSync(wrapper)) {
+		return { command: wrapper, onPath: false };
+	}
 	return { command: `bun ${entry}`, onPath: false };
 }
 
@@ -127,9 +144,13 @@ export function resolveInvocation(): { command: string; onPath: boolean } {
 function findRepoRoot(from: string): string {
 	let dir = path.resolve(from);
 	for (;;) {
-		if (fs.existsSync(path.join(dir, ".git"))) return dir;
+		if (fs.existsSync(path.join(dir, ".git"))) {
+			return dir;
+		}
 		const parent = path.dirname(dir);
-		if (parent === dir) return path.resolve(from);
+		if (parent === dir) {
+			return path.resolve(from);
+		}
 		dir = parent;
 	}
 }
@@ -144,7 +165,9 @@ function findRepoRoot(from: string): string {
 export function chooseDoc(repo: string, targetSpec: string): { file: string; existed: boolean } {
 	for (const name of ["CLAUDE.md", "AGENTS.md"]) {
 		const candidate = path.join(repo, name);
-		if (fs.existsSync(candidate)) return { file: candidate, existed: true };
+		if (fs.existsSync(candidate)) {
+			return { file: candidate, existed: true };
+		}
 	}
 	const created = targetSpec === "claude" ? "CLAUDE.md" : "AGENTS.md";
 	return { file: path.join(repo, created), existed: false };
@@ -160,7 +183,9 @@ function renderBlock(options: {
 	const { vault, command, onPath, skill, canvasUrl } = options;
 	const cli = onPath ? "archboard" : command;
 	const env = [`export ARCHBOARD_VAULT=${vault}`];
-	if (canvasUrl) env.push(`export EXPRESS_SERVER_URL=${canvasUrl}`);
+	if (canvasUrl) {
+		env.push(`export EXPRESS_SERVER_URL=${canvasUrl}`);
+	}
 
 	return [
 		BLOCK_BEGIN,
@@ -235,7 +260,9 @@ export function applyBlock(existing: string, block: string): string {
 		const after = existing.slice(end + BLOCK_END.length).replace(/^\n/, "");
 		return existing.slice(0, start) + block + after;
 	}
-	if (!existing.trim()) return block;
+	if (!existing.trim()) {
+		return block;
+	}
 	return existing.replace(/\n*$/, "\n\n") + block;
 }
 
@@ -392,7 +419,9 @@ async function executeInstallSkill(
 			} catch {
 				/* retired install does not exist */
 			}
-			if (retired === target || !retiredExists) continue;
+			if (retired === target || !retiredExists) {
+				continue;
+			}
 			fs.rmSync(retired, { recursive: true, force: true });
 			context.diagnostic(`Removed retired install at ${retired}`);
 		}

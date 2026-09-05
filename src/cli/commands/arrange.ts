@@ -94,7 +94,9 @@ export const ArrangeAlignStageSchema = z
 			"Usage: arrange align --ids a,b,c --to left|center|right|top|middle|bottom",
 			context,
 		);
-		if (ids === z.NEVER) return z.NEVER;
+		if (ids === z.NEVER) {
+			return z.NEVER;
+		}
 		const alignment = AlignmentInputSchema.safeParse(input.to);
 		if (!alignment.success) {
 			context.addIssue({
@@ -115,7 +117,9 @@ export const ArrangeDistributeStageSchema = z
 			"Usage: arrange distribute --ids a,b,c --to horizontal|vertical",
 			context,
 		);
-		if (ids === z.NEVER) return z.NEVER;
+		if (ids === z.NEVER) {
+			return z.NEVER;
+		}
 		const direction = DirectionInputSchema.safeParse(input.to);
 		if (!direction.success) {
 			context.addIssue({
@@ -153,8 +157,12 @@ export const ArrangeDuplicateStageSchema = z
 			"Usage: arrange duplicate --ids a,b,c [--offset 20,20]",
 			context,
 		);
-		if (ids === z.NEVER) return z.NEVER;
-		if (input.offset === undefined) return { ids, offsetX: 20, offsetY: 20 };
+		if (ids === z.NEVER) {
+			return z.NEVER;
+		}
+		if (input.offset === undefined) {
+			return { ids, offsetX: 20, offsetY: 20 };
+		}
 		const parts = input.offset.split(",").map((part) => Number(part.trim()));
 		if (parts.length !== 2 || parts.some(Number.isNaN)) {
 			context.addIssue({ code: "custom", message: '--offset expects "x,y"' });

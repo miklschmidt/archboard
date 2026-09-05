@@ -140,12 +140,13 @@ export function createDynamicApprovalBrowserSchemas(
 		.strict()
 		.superRefine((approval, refinementContext) => {
 			validateIdentityAndBrowserEffect(approval.identity, approval.effect, refinementContext);
-			if (approval.expiresAtMs - approval.createdAtMs !== CODEX_APPROVAL_EXPIRY_MS)
+			if (approval.expiresAtMs - approval.createdAtMs !== CODEX_APPROVAL_EXPIRY_MS) {
 				addIssue(
 					refinementContext,
 					["expiresAtMs"],
 					`approval expiry must be exactly ${CODEX_APPROVAL_EXPIRY_MS}ms after creation`,
 				);
+			}
 			validateDecisionEcho(
 				approval.identity,
 				approval.effectHash,
@@ -184,61 +185,70 @@ export function createDynamicApprovalBrowserSchemas(
 			if (
 				response.identity.child !== response.childId ||
 				response.identity.epoch !== response.epoch
-			)
+			) {
 				addIssue(
 					refinementContext,
 					["identity"],
 					"response identity does not match current child epoch",
 				);
+			}
 			if (
 				response.capturedLink.childId !== response.childId ||
 				response.capturedLink.epoch !== response.epoch
-			)
+			) {
 				addIssue(
 					refinementContext,
 					["capturedLink"],
 					"captured link is not bound to current child epoch",
 				);
-			if (response.capturedLink.threadId !== response.identity.threadId)
+			}
+			if (response.capturedLink.threadId !== response.identity.threadId) {
 				addIssue(
 					refinementContext,
 					["capturedLink", "threadId"],
 					"captured link cannot retarget the caller",
 				);
+			}
 		});
 
 	const createDynamicApprovalResponseSchema = (pending: unknown) => {
 		const pendingApproval = BrowserDynamicApprovalSchema.parse(pending);
-		if (pendingApproval.state !== "pending" || pendingApproval.binding === null)
+		if (pendingApproval.state !== "pending" || pendingApproval.binding === null) {
 			throw new Error("dynamic approval response requires a pending approval with a binding");
+		}
 		const { binding } = pendingApproval;
 		return BrowserDynamicApprovalResponseSchema.superRefine((response, refinementContext) => {
-			if (response.commandId !== binding.commandId)
+			if (response.commandId !== binding.commandId) {
 				addIssue(
 					refinementContext,
 					["commandId"],
 					"response command lease does not match pending approval",
 				);
-			if (response.paneId !== binding.paneId)
+			}
+			if (response.paneId !== binding.paneId) {
 				addIssue(refinementContext, ["paneId"], "response pane does not match pending approval");
-			if (!sameLink(response.capturedLink, binding.capturedLink))
+			}
+			if (!sameLink(response.capturedLink, binding.capturedLink)) {
 				addIssue(
 					refinementContext,
 					["capturedLink"],
 					"response link does not match pending approval",
 				);
-			if (!sameIdentity(response.identity, pendingApproval.identity))
+			}
+			if (!sameIdentity(response.identity, pendingApproval.identity)) {
 				addIssue(
 					refinementContext,
 					["identity"],
 					"response identity does not match pending approval",
 				);
-			if (response.effectHash !== pendingApproval.effectHash)
+			}
+			if (response.effectHash !== pendingApproval.effectHash) {
 				addIssue(
 					refinementContext,
 					["effectHash"],
 					"response effectHash does not match pending approval",
 				);
+			}
 		});
 	};
 	const parseDynamicApprovalResponse = (pending: unknown, response: unknown) =>
@@ -264,48 +274,59 @@ export function createDynamicApprovalBrowserSchemas(
 		approvalEffect: BrowserDynamicApprovalEffectValue,
 		refinementContext: z.RefinementCtx,
 	): void {
-		if (approvalIdentity.tool !== approvalEffect.tool)
+		if (approvalIdentity.tool !== approvalEffect.tool) {
 			addIssue(
 				refinementContext,
 				["effect", "tool"],
 				"effect tool does not match logical call tool",
 			);
-		if (approvalIdentity.operationId !== approvalEffect.mutationOperationId)
+		}
+		if (approvalIdentity.operationId !== approvalEffect.mutationOperationId) {
 			addIssue(
 				refinementContext,
 				["effect", "mutationOperationId"],
 				"mutation OperationId is not the call OperationId",
 			);
-		if (approvalEffect.tool === "create_thread") return;
-		if (approvalEffect.target !== approvalEffect.arguments.threadId)
+		}
+		if (approvalEffect.tool === "create_thread") {
+			return;
+		}
+		if (approvalEffect.target !== approvalEffect.arguments.threadId) {
 			addIssue(refinementContext, ["effect", "target"], "target must echo effect arguments");
+		}
 		if (approvalEffect.tool === "fork_thread") {
 			if (approvalEffect.effectiveBoundary.relation === "self") {
-				if (approvalEffect.arguments.threadId !== approvalIdentity.threadId)
+				if (approvalEffect.arguments.threadId !== approvalIdentity.threadId) {
 					addIssue(
 						refinementContext,
 						["effect", "arguments", "threadId"],
 						"self fork must target its caller",
 					);
-				if (approvalEffect.effectiveBoundary.beforeTurnId !== approvalIdentity.turnId)
+				}
+				if (approvalEffect.effectiveBoundary.beforeTurnId !== approvalIdentity.turnId) {
 					addIssue(
 						refinementContext,
 						["effect", "effectiveBoundary"],
 						"self fork boundary must be caller turn",
 					);
+				}
 			} else {
-				if (approvalEffect.arguments.threadId === approvalIdentity.threadId)
+				if (approvalEffect.arguments.threadId === approvalIdentity.threadId) {
 					addIssue(
 						refinementContext,
 						["effect", "effectiveBoundary"],
 						"other fork cannot target its caller",
 					);
-				if (approvalEffect.effectiveBoundary.beforeTurnId !== approvalEffect.arguments.beforeTurnId)
+				}
+				if (
+					approvalEffect.effectiveBoundary.beforeTurnId !== approvalEffect.arguments.beforeTurnId
+				) {
 					addIssue(
 						refinementContext,
 						["effect", "effectiveBoundary"],
 						"fork boundary must echo beforeTurnId",
 					);
+				}
 			}
 		}
 	}
@@ -316,19 +337,23 @@ export function createDynamicApprovalBrowserSchemas(
 		decisionValue: DynamicApprovalDecisionValue | null,
 		refinementContext: z.RefinementCtx,
 	): void {
-		if (decisionValue === null) return;
-		if (!sameIdentity(decisionValue.identity, approvalIdentity))
+		if (decisionValue === null) {
+			return;
+		}
+		if (!sameIdentity(decisionValue.identity, approvalIdentity)) {
 			addIssue(
 				refinementContext,
 				["decision", "identity"],
 				"terminal decision must echo the full identity",
 			);
-		if (decisionValue.effectHash !== approvalEffectHash)
+		}
+		if (decisionValue.effectHash !== approvalEffectHash) {
 			addIssue(
 				refinementContext,
 				["decision", "effectHash"],
 				"terminal decision must echo effectHash",
 			);
+		}
 	}
 
 	return {

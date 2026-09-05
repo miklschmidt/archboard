@@ -201,17 +201,22 @@ export function parseInternalCodeTargetUrl(value: string): CodeTargetOpenRequest
 		value.startsWith("//") ||
 		value.includes("#") ||
 		value.includes("\\")
-	)
+	) {
 		return null;
+	}
 	let url: URL;
 	try {
 		url = new URL(value, "http://archboard.invalid");
 	} catch {
 		return null;
 	}
-	if (url.pathname !== "/api/code-targets/open") return null;
+	if (url.pathname !== "/api/code-targets/open") {
+		return null;
+	}
 	const keys = [...url.searchParams.keys()];
-	if (keys.length !== 2 || keys[0] !== "board" || keys[1] !== "element") return null;
+	if (keys.length !== 2 || keys[0] !== "board" || keys[1] !== "element") {
+		return null;
+	}
 	const result = CodeTargetOpenRequestSchema.safeParse({
 		board: url.searchParams.get("board"),
 		element: url.searchParams.get("element"),

@@ -18,7 +18,9 @@ export const ClaimDurationInputSchema = z
 	.string()
 	.optional()
 	.transform((said, context) => {
-		if (said === undefined) return undefined;
+		if (said === undefined) {
+			return undefined;
+		}
 		const match = /^(\d+(?:\.\d+)?)\s*(s|m|h)$/i.exec(said.trim());
 		if (!match) {
 			context.addIssue({

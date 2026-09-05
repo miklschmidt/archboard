@@ -99,7 +99,9 @@ export const selectionContract = defineCommand({
 		await context.require("server", "browser selection");
 		await context.require("browser", "browser selection");
 		const report = await getSelection(input.pane);
-		if (input.text) return { result: report.text };
+		if (input.text) {
+			return { result: report.text };
+		}
 		const { success: _success, text: _text, ...rest } = report;
 		return { result: SelectionJsonResultSchema.parse(rest) };
 	},
@@ -170,7 +172,9 @@ export const panesContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "panes");
 		const report = await getPanes();
-		if (input.text) return { result: report.text };
+		if (input.text) {
+			return { result: report.text };
+		}
 		const { success: _success, text: _text, activeBoard: _activeBoard, ...rest } = report;
 		return { result: PanesJsonResultSchema.parse(rest) };
 	},

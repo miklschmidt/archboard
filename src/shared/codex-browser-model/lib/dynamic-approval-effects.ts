@@ -138,34 +138,40 @@ export function createDynamicApprovalEffectSchemas(
 			if (
 				effect.tool === "create_thread" &&
 				effect.initialTurnOperationId === effect.mutationOperationId
-			)
+			) {
 				addIssue(
 					refinementContext,
 					["initialTurnOperationId"],
 					"create initial turn needs its own OperationId",
 				);
-			if (effect.tool !== "fork_thread") return;
-			if (effect.arguments.prompt === null && effect.initialTurnOperationId !== null)
+			}
+			if (effect.tool !== "fork_thread") {
+				return;
+			}
+			if (effect.arguments.prompt === null && effect.initialTurnOperationId !== null) {
 				addIssue(
 					refinementContext,
 					["initialTurnOperationId"],
 					"unprompted fork cannot start a turn",
 				);
-			if (effect.arguments.prompt !== null && effect.initialTurnOperationId === null)
+			}
+			if (effect.arguments.prompt !== null && effect.initialTurnOperationId === null) {
 				addIssue(
 					refinementContext,
 					["initialTurnOperationId"],
 					"prompted fork requires an initial turn",
 				);
+			}
 			if (
 				effect.initialTurnOperationId !== null &&
 				effect.initialTurnOperationId === effect.mutationOperationId
-			)
+			) {
 				addIssue(
 					refinementContext,
 					["initialTurnOperationId"],
 					"fork initial turn needs its own OperationId",
 				);
+			}
 		});
 
 	const BrowserDynamicApprovalEffectSchema = z
@@ -208,39 +214,45 @@ export function createDynamicApprovalEffectSchemas(
 			if (
 				effect.tool === "create_thread" &&
 				effect.initialTurnOperationId === effect.mutationOperationId
-			)
+			) {
 				addIssue(
 					refinementContext,
 					["initialTurnOperationId"],
 					"create initial turn needs its own OperationId",
 				);
+			}
 			if (effect.tool === "fork_thread") {
-				if (effect.target !== effect.arguments.threadId)
+				if (effect.target !== effect.arguments.threadId) {
 					addIssue(refinementContext, ["target"], "target must echo fork arguments.threadId");
-				if (effect.arguments.prompt === null && effect.initialTurnOperationId !== null)
+				}
+				if (effect.arguments.prompt === null && effect.initialTurnOperationId !== null) {
 					addIssue(
 						refinementContext,
 						["initialTurnOperationId"],
 						"unprompted fork cannot start a turn",
 					);
-				if (effect.arguments.prompt !== null && effect.initialTurnOperationId === null)
+				}
+				if (effect.arguments.prompt !== null && effect.initialTurnOperationId === null) {
 					addIssue(
 						refinementContext,
 						["initialTurnOperationId"],
 						"prompted fork requires an initial turn",
 					);
+				}
 				if (
 					effect.initialTurnOperationId !== null &&
 					effect.initialTurnOperationId === effect.mutationOperationId
-				)
+				) {
 					addIssue(
 						refinementContext,
 						["initialTurnOperationId"],
 						"fork initial turn needs its own OperationId",
 					);
+				}
 			}
-			if (effect.tool === "send_message_to_thread" && effect.target !== effect.arguments.threadId)
+			if (effect.tool === "send_message_to_thread" && effect.target !== effect.arguments.threadId) {
 				addIssue(refinementContext, ["target"], "target must echo send arguments.threadId");
+			}
 		});
 
 	return {

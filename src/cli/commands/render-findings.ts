@@ -28,8 +28,9 @@ function requireEmptyDirectory(directory: string): void {
 	} catch {
 		throw new CliUsageError(`--out must name an existing empty directory: ${directory}`);
 	}
-	if (!stat.isDirectory() || fs.readdirSync(directory).length > 0)
+	if (!stat.isDirectory() || fs.readdirSync(directory).length > 0) {
 		throw new CliUsageError(`--out must name an existing empty directory: ${directory}`);
+	}
 }
 
 export const renderFindingsContract = defineCommand({
@@ -88,10 +89,13 @@ export const renderFindingsContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		if (input.tail.length > 0)
+		if (input.tail.length > 0) {
 			throw new CliUsageError("render-findings takes no positional arguments");
+		}
 		const board = currentRequestedBoard();
-		if (!board) throw new CliUsageError("render-findings requires --board <key>");
+		if (!board) {
+			throw new CliUsageError("render-findings requires --board <key>");
+		}
 		const out = context.resolvePath(input.out);
 		requireEmptyDirectory(out);
 		const policy = inspectionPolicyOf(input);

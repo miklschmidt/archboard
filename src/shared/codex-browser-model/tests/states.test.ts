@@ -94,15 +94,18 @@ test("browser DTOs cover reachable progress, partial, failure, and recovery stat
 			message: "unknown",
 		},
 	] as const;
-	for (const state of states)
+	for (const state of states) {
 		expect(model.BrowserDtoSchema.safeParse(state as unknown).success).toBeTrue();
+	}
 	const inspectState = states[4];
-	if (inspectState?.kind !== "thread_link")
+	if (inspectState?.kind !== "thread_link") {
 		throw new Error("fixture is missing inspect-only state");
-	for (const sourcePresentation of ["cli", "review", "future"])
+	}
+	for (const sourcePresentation of ["cli", "review", "future"]) {
 		expect(
 			model.BrowserDtoSchema.safeParse({ ...inspectState, sourcePresentation } as unknown).success,
 		).toBeFalse();
+	}
 });
 
 test("the thread-candidate inventory is a bounded, deduplicated, browser-safe list", () => {
@@ -137,8 +140,9 @@ test("the thread-candidate inventory is a bounded, deduplicated, browser-safe li
 			truncated: false,
 			reason: "the thread list could not be exhausted",
 		},
-	])
+	]) {
 		expect(model.BrowserThreadCandidatesSchema.safeParse(arm).success).toBeTrue();
+	}
 
 	// One selection cannot appear twice, an undiscovered arm cannot smuggle rows,
 	// and the list cannot outgrow the bound the snapshot fitter does not trim.
@@ -235,7 +239,7 @@ test("voice-context delivery attempts are a closed wire union with ordered timin
 		{ attempted: false, attemptedAtMs: 150, outcome: "not_delivered" },
 		{ attempted: true, attemptedAtMs: null, outcome: "delivered" },
 		{ attempted: true, attemptedAtMs: 99, outcome: "delivered" },
-	])
+	]) {
 		expect(
 			model.BrowserVoiceContextSchema.safeParse({
 				kind: "voice_context",
@@ -247,6 +251,7 @@ test("voice-context delivery attempts are a closed wire union with ordered timin
 				entries: [{ ...shared, ...incoherent }],
 			}).success,
 		).toBeFalse();
+	}
 	expect(
 		model.BrowserVoiceContextSchema.safeParse({
 			kind: "voice_context",

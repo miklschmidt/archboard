@@ -503,7 +503,9 @@ const sessionRelationships = [
 ];
 
 function commandClassification(command: AnyCommandContract): CliRegistryEntry["classification"] {
-	if (command.path[0] === "browser") return "browser";
+	if (command.path[0] === "browser") {
+		return "browser";
+	}
 	if (command.prerequisites.includes("board") || boardNamespaces.has(command.path[0] ?? "")) {
 		return "board";
 	}
@@ -576,20 +578,30 @@ export function cliContractRegistry(): CliRegistryEntry[] {
 	const entries = Object.entries(COMMANDS).flatMap(([name, route]) =>
 		flattenRoute(name, route, null),
 	);
-	for (const entry of entries) assertCommandArchitecture(entry);
+	for (const entry of entries) {
+		assertCommandArchitecture(entry);
+	}
 	return entries;
 }
 
 /** Render one help topic from the same route and contract registry used for dispatch. */
 export function commandHelp(topic: readonly string[]): string | null {
 	const [name, childName, ...tail] = topic;
-	if (!name || tail.length > 0) return null;
+	if (!name || tail.length > 0) {
+		return null;
+	}
 	const root = COMMANDS[name];
-	if (!root) return null;
+	if (!root) {
+		return null;
+	}
 	const route = childName ? root.children?.[childName] : root;
-	if (!route) return null;
+	if (!route) {
+		return null;
+	}
 	const base = `Usage: archboard ${commandUsage(route)}\n  ${commandSummary(route)}\n`;
-	if (!childName) return base;
+	if (!childName) {
+		return base;
+	}
 	const prerequisites = route.owner.contract.prerequisites.join(", ") || "none";
 	const effects = route.owner.contract.effects.join(", ") || "none";
 	return (
@@ -608,7 +620,9 @@ function dispatchedCommand(
 	argv: string[];
 } | null {
 	const root = COMMANDS[name];
-	if (!root) return null;
+	if (!root) {
+		return null;
+	}
 	let selectedRoute = root;
 	let childIndex: number | undefined;
 	const direct = rest[0] ? root.children?.[rest[0]] : undefined;
@@ -628,8 +642,12 @@ function dispatchedCommand(
 			}
 			const [spelling, inlineValue] = token.slice(2).split("=", 2);
 			const option = root.childDiscovery.options[spelling!];
-			if (!option) break;
-			if (option === "value" && inlineValue === undefined) index += 1;
+			if (!option) {
+				break;
+			}
+			if (option === "value" && inlineValue === undefined) {
+				index += 1;
+			}
 		}
 	}
 	if (childIndex === undefined && !root.childDiscovery && root.bare?.kind === "namespace-refusal") {
@@ -698,20 +716,32 @@ function printHelp(): void {
 }
 
 function exitCodeFor(error: unknown, command?: RouteOwner): number {
-	if (error instanceof CliUsageError) return 2;
+	if (error instanceof CliUsageError) {
+		return 2;
+	}
 	const code = (error as Error & { code?: string }).code;
 	if (command && code !== undefined) {
 		const declared = command.contract.refusals.find((refusal) => refusal.code === code);
-		if (declared) return declared.exit;
+		if (declared) {
+			return declared.exit;
+		}
 	}
-	if (code === "CANVAS_UNREACHABLE") return 3;
-	if (code === "BROWSER_REQUIRED") return 4;
+	if (code === "CANVAS_UNREACHABLE") {
+		return 3;
+	}
+	if (code === "BROWSER_REQUIRED") {
+		return 4;
+	}
 	// Every refusal leaves the board unwritten, so they share the exit status a
 	// script already watches for. The attached body says whether another holder,
 	// a revoked claim, a moved version or a changed note stopped it.
-	if (code === "BOARD_CONFLICT" || (code !== undefined && BOARD_REFUSAL_CODES.has(code))) return 5;
+	if (code === "BOARD_CONFLICT" || (code !== undefined && BOARD_REFUSAL_CODES.has(code))) {
+		return 5;
+	}
 	// A missing board is a mistake at the keyboard, like any other usage error.
-	if (code === "BOARD_REQUIRED") return 2;
+	if (code === "BOARD_REQUIRED") {
+		return 2;
+	}
 	return 1;
 }
 
@@ -757,7 +787,9 @@ function takeDoingFlag(argv: string[]): string | null {
  */
 function takeExpectVersionFlag(argv: string[]): number | null {
 	const raw = takeGlobalFlag(argv, "expect-version");
-	if (raw === null) return null;
+	if (raw === null) {
+		return null;
+	}
 	if (!/^\d+$/.test(raw.trim())) {
 		throw new CliUsageError(
 			`--expect-version takes a whole number — the version your last write reported, or the one ` +
@@ -772,7 +804,9 @@ function takeGlobalFlag(argv: string[], name: string): string | null {
 		const token = argv[i]!;
 		if (token === `--${name}`) {
 			const value = argv[i + 1];
-			if (value === undefined) throw new CliUsageError(`Flag --${name} requires a value`);
+			if (value === undefined) {
+				throw new CliUsageError(`Flag --${name} requires a value`);
+			}
 			argv.splice(i, 2);
 			return value;
 		}
@@ -796,7 +830,9 @@ async function runInterruptibleCommand(
 		process.off("SIGTERM", interrupt);
 	};
 	const interrupt = (signal: NodeJS.Signals): void => {
-		if (interrupted) return;
+		if (interrupted) {
+			return;
+		}
 		interrupted = signal;
 		controller.abort(new Error(`CLI interrupted by ${signal}.`));
 		forceTimer = setTimeout(() => {
@@ -810,8 +846,12 @@ async function runInterruptibleCommand(
 		await runCommand(commandContract, argv, controller.signal);
 	} finally {
 		remove();
-		if (forceTimer !== undefined) clearTimeout(forceTimer);
-		if (interrupted) process.kill(process.pid, interrupted);
+		if (forceTimer !== undefined) {
+			clearTimeout(forceTimer);
+		}
+		if (interrupted) {
+			process.kill(process.pid, interrupted);
+		}
 	}
 }
 

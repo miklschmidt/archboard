@@ -154,7 +154,9 @@ export const exportContract = defineCommand({
 			format === "obsidian"
 				? wrapSceneAsObsidianMd(scene, existing)
 				: JSON.stringify(scene, null, 2);
-		if (!resolved) return { result: content };
+		if (!resolved) {
+			return { result: content };
+		}
 		const artifact: PendingArtifact = { path: resolved, content, encoding: "utf8" };
 		return {
 			result: { success: true as const, file: resolved, elements: elementCount, format },

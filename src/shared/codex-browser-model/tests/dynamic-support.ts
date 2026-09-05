@@ -119,7 +119,7 @@ const sendEffect = model.DynamicApprovalEffectSchema.parse({
 const sendRequest = requestFor(sendIdentity, sendEffect);
 
 function browserEffect(effect: DynamicApprovalEffect): BrowserDynamicApprovalEffect {
-	if (effect.tool === "create_thread")
+	if (effect.tool === "create_thread") {
 		return model.BrowserDynamicApprovalEffectSchema.parse({
 			tool: effect.tool,
 			arguments: effect.arguments,
@@ -129,7 +129,8 @@ function browserEffect(effect: DynamicApprovalEffect): BrowserDynamicApprovalEff
 			initialTurnOperationId: effect.initialTurnOperationId,
 			visualSummary: effect.visualSummary,
 		});
-	if (effect.tool === "fork_thread")
+	}
+	if (effect.tool === "fork_thread") {
 		return model.BrowserDynamicApprovalEffectSchema.parse({
 			tool: effect.tool,
 			arguments: effect.arguments,
@@ -139,6 +140,7 @@ function browserEffect(effect: DynamicApprovalEffect): BrowserDynamicApprovalEff
 			initialTurnOperationId: effect.initialTurnOperationId,
 			visualSummary: effect.visualSummary,
 		});
+	}
 	return model.BrowserDynamicApprovalEffectSchema.parse({
 		tool: effect.tool,
 		arguments: effect.arguments,
