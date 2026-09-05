@@ -13,14 +13,16 @@ const group = (pid: number): CodexProcessGroupIdentity => ({
 });
 
 describe("owned canvas forced cleanup", () => {
-	test("attempts later captured child groups after an earlier group fails", async () => {
+	test("attempts later captured child groups after an earlier group fails", () => {
 		const first = group(101);
 		const second = group(202);
 		const signals: number[] = [];
 		let lockRemovalAttempts = 0;
 		const operations: Pick<CodexProcessGroupOperations, "inspect" | "signal"> = {
 			inspect(identity) {
-				if (identity === first) return "reused";
+				if (identity === first) {
+					return "reused";
+				}
 				return signals.includes(identity.pgid) ? "quiescent" : "owned";
 			},
 			signal(identity) {
@@ -28,7 +30,7 @@ describe("owned canvas forced cleanup", () => {
 			},
 		};
 
-		await expect(
+		expect(
 			completeCapturedCanvasCleanup({
 				groups: [first, second],
 				operations,
@@ -49,9 +51,11 @@ describe("owned canvas forced cleanup", () => {
 		try {
 			await completeCapturedCanvasCleanup({
 				groups: [],
-				operations: {
-					inspect: () => "quiescent",
-					signal() {},
+					operations: {
+						inspect: () => "quiescent",
+						signal() {
+							// No group exists in this parent-only failure case.
+						},
 				},
 				parent: { exited: false, failure: parentFailure },
 				removeStorageLock() {
@@ -78,9 +82,11 @@ describe("owned canvas forced cleanup", () => {
 				operations: {
 					inspect() {
 						descendantInspections += 1;
-						return "unproven";
-					},
-					signal() {},
+							return "unproven";
+						},
+						signal() {
+							// An unproven identity must never be signalled.
+						},
 				},
 				parent: { exited: false, failure: parentFailure },
 				removeStorageLock() {
@@ -92,8 +98,11 @@ describe("owned canvas forced cleanup", () => {
 		}
 
 		expect(surfaced).toBeInstanceOf(AggregateError);
-		expect((surfaced as AggregateError).errors[0]).toBe(parentFailure);
-		expect((surfaced as AggregateError).errors[1]).toMatchObject({
+		if (!(surfaced instanceof AggregateError)) {
+			throw new Error("Expected forced cleanup failures to aggregate.");
+		}
+		expect(surfaced.errors[0]).toBe(parentFailure);
+		expect(surfaced.errors[1]).toMatchObject({
 			message:
 				"Owned canvas child group 303 did not become quiescent after forced canvas death (unproven).",
 		});
