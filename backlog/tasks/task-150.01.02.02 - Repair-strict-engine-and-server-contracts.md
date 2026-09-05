@@ -1,10 +1,10 @@
 ---
 id: TASK-150.01.02.02
 title: Repair strict engine and server contracts
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-05 04:35'
-updated_date: '2026-09-05 13:58'
+updated_date: '2026-09-05 14:27'
 labels: []
 dependencies: []
 references:
@@ -29,8 +29,8 @@ Deferred to TASK-151. Preserve all committed and uncommitted corrections in this
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Existing corrections remain intact.
-- [ ] #2 Remaining non-UI adoption is owned by TASK-151; this historical leaf does not block TASK-150 UI construction.
+- [x] #1 Existing corrections remain intact.
+- [x] #2 Remaining non-UI adoption is owned by TASK-151; this historical leaf does not block TASK-150 UI construction.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,3 +49,9 @@ Scoped type-aware lint inventory /tmp/task-150-engine-server-lint-current.json r
 Approved describe cluster decomposition implemented: describe.ts public API/narration orchestration is 455 lines; private describe-scene-model.ts is 287 lines and owns projection/folding/scene facts; private describe-lines.ts is 295 lines and owns text formatting. Public describe/selection owners pass 8/8, repository boundary/strict-policy owners pass 10/10, and max-lines is zero for the cluster. Remaining cluster lint is 376 diagnostics and remains active.
 Read-only audit of the unsupported combined-owner failure found `/home/msc/Work/Platform-Architecture/architecture-vault/.archboard/locks/proof-external.lock` and no matching proof/observer note or other named fixture. No cleanup or live-vault mutation was performed; canonical isolated module-owner commands remain authoritative.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Deferred to TASK-151 by user decision; existing corrections are preserved in commit a7fef61d and do not block UI construction.
+<!-- SECTION:FINAL_SUMMARY:END -->

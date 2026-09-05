@@ -1,10 +1,10 @@
 ---
 id: TASK-150.01.01
 title: Quarantine the old UI and restore strict enforcement
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-09-05 01:10'
-updated_date: '2026-09-05 13:58'
+updated_date: '2026-09-05 14:27'
 labels: []
 dependencies: []
 parent_task_id: TASK-150.01
@@ -21,10 +21,10 @@ Preserve the established ignored UI reference archive and the already-written ap
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The retired UI reference remains ignored and absent from active imports, builds and commits.
-- [ ] #2 The approved UI lint configuration is in place, with the pre-task non-UI policy retained.
-- [ ] #3 Strict compiler safety and current corrections are preserved without a separate UI TypeScript project.
-- [ ] #4 User test deletions remain deleted; no synthetic toolchain or configuration-test work is required.
+- [x] #1 The retired UI reference remains ignored and absent from active imports, builds and commits.
+- [x] #2 The approved UI lint configuration is in place, with the pre-task non-UI policy retained.
+- [x] #3 Strict compiler safety and current corrections are preserved without a separate UI TypeScript project.
+- [x] #4 User test deletions remain deleted; no synthetic toolchain or configuration-test work is required.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -77,3 +77,9 @@ Preserved work: original coordinator notes retained and authorized for commit; s
 
 Coordinator-requested evidence refinements: tracked quarantine record now keeps compact per-owner required/obsolete dispositions and restoration owners; raw reproducible import/case extraction is only /tmp/task-150-work/retired.json and /tmp/task-150-work/raw-import-case-inventory.md. Pinned Jest/Vitest exclusion now cites the exact upstream 1.80.0 binding collector limitation for imported bun:test (Bun is Jest-compatible). Machine-readable ordinary lint result: /tmp/task-150-lint.json, 35539 diagnostics; command/exit stderr /tmp/task-150-lint-json-command.log. Final text diagnostics /tmp/task-150-lint-complete.log; final compiler diagnostics /tmp/task-150-types-complete.log; grouped dependency inventory /tmp/task-150-evidence.txt. Coverage inputs /tmp/task-150-coverage.txt; repository /tmp/task-150-final-repository.log; retained owners /tmp/task-150-retained.log; archive direct proof /tmp/task-150-archive-complete.log; formatting /tmp/task-150-fmt-complete.log.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Quarantine (ignored legacy/, zero tracked archive bytes) and the approved UI lint configuration were in place at handoff and are preserved through commit a7fef61d; no separate UI tsconfig; user test deletions untouched.
+<!-- SECTION:FINAL_SUMMARY:END -->
