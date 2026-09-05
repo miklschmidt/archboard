@@ -43,9 +43,7 @@ const installHoldRecorder = async (browser: Readonly<AgentBrowserSession>): Prom
 	return result;
 };
 
-const readHoldCounters = async (
-	browser: Readonly<AgentBrowserSession>,
-): Promise<HoldCounters> => {
+const readHoldCounters = async (browser: Readonly<AgentBrowserSession>): Promise<HoldCounters> => {
 	const result = await browser.eval<HoldCounters>(`(() => ({
 		holdDone: window.__holdPersistence.holdDone,
 		holds: window.__holdPersistence.holds,

@@ -64,14 +64,7 @@ const LIVE_HUMAN_MOVES = ["move", "resize", "retype", "delete"] as const;
 
 const LIVE_SUBJECTS = ["auth", "queue", "store"] as const;
 
-const LIVE_PALETTE = [
-	"#ffec99",
-	"#b2f2bb",
-	"#a5d8ff",
-	"#ffc9c9",
-	"#d0bfff",
-	"#ffd8a8",
-] as const;
+const LIVE_PALETTE = ["#ffec99", "#b2f2bb", "#a5d8ff", "#ffc9c9", "#d0bfff", "#ffd8a8"] as const;
 
 export {
 	LIVE_AGENT_MOVES,

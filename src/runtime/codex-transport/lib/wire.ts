@@ -9,7 +9,7 @@ export type JsonFrameDecodeFailureKind = "malformed-json" | "duplicate-key";
 export class JsonFrameDecodeError extends Error {
 	override readonly name = "JsonFrameDecodeError";
 	readonly kind: JsonFrameDecodeFailureKind;
-	readonly wireId?: WireId;
+	readonly wireId: WireId | undefined;
 	readonly methodPresent: boolean;
 
 	constructor(kind: JsonFrameDecodeFailureKind, wireId?: WireId, methodPresent = false) {

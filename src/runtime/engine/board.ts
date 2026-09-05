@@ -326,10 +326,11 @@ export function identityFromFrontmatter(content: string): BoardIdentity | null {
 	const board = readFrontmatterValue(content, FRONTMATTER_BOARD);
 	if (!board) return null;
 	try {
+		const level = readFrontmatterValue(content, FRONTMATTER_LEVEL);
 		return makeIdentity({
 			board,
 			variant: readFrontmatterValue(content, FRONTMATTER_VARIANT) ?? CURRENT_VARIANT,
-			level: readFrontmatterValue(content, FRONTMATTER_LEVEL),
+			...(level === undefined ? {} : { level }),
 		});
 	} catch {
 		return null;

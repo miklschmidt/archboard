@@ -349,7 +349,6 @@ try {
 		const { parseMermaidToExcalidraw } = await import("@excalidraw/mermaid-to-excalidraw");
 		const rawInput = fixtureInput();
 		// The persisted fixture is fully validated above; this boundary restores Excalidraw's nominal element brands after deserialization.
-		// eslint-disable-next-line typescript/no-unsafe-type-assertion -- Runtime fixture validation establishes the renderer contract before the vendor call.
 		const input = rawInput as Parameters<typeof exportToBlob>[0] &
 			Parameters<typeof exportToSvg>[0];
 		const png = await exportToBlob({ ...input, mimeType: "image/png" });

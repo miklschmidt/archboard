@@ -60,7 +60,6 @@ function contextualBoardErrorBody(
  * @param error Failure being mapped.
  * @param what Optional operation context logged with the failure.
  */
-// eslint-disable-next-line typescript/prefer-readonly-parameter-types -- The authoritative Express response must be mutated through status/json.
 function answerBoardError(response: Response, error: unknown, what?: string): void {
 	if (what !== undefined && what.length > 0) {
 		logger.error(what, error);

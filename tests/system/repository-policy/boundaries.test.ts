@@ -78,13 +78,24 @@ function expectRule(result: CommandResult, rule: string, guidance?: string): voi
 }
 
 describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
-	test("pins the diagnostic formatter in the owned Oxlint argv", () => {
-		expect(lintCommand(["src/domain/widget/index.ts"])).toEqual([
-			oxlint,
-			"--config=.oxlintrc.jsonc",
-			"--format=default",
-			"src/domain/widget/index.ts",
-		]);
+	test("local source uses aliases and TypeScript", async () => {
+		await withProject(
+			{
+				".oxlintrc.jsonc": JSON.stringify({
+					categories: { correctness: "off" },
+					jsPlugins: [plugin],
+					rules: { "archboard/absolute-imports": "error", "archboard/typescript-source": "error" },
+				}),
+				"src/ui/source/allowed.ts": 'import "@/shared/source";',
+				"src/ui/source/relative.ts": 'import "./allowed";',
+				"src/ui/source/javascript.js": "export const value = 1;",
+			},
+			(root) => {
+				expectPass(lint(root, ["src/ui/source/allowed.ts"]));
+				expectRule(lint(root, ["src/ui/source/relative.ts"]), "archboard(absolute-imports)");
+				expectRule(lint(root, ["src/ui/source/javascript.js"]), "archboard(typescript-source)");
+			},
+		);
 	});
 
 	test("allows root entrypoints, documented dependency directions, and flat test owners", async () => {

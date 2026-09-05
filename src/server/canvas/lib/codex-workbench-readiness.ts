@@ -70,8 +70,6 @@ function accountReadiness(input: CanvasReadinessInput): BrowserReadiness {
 		case "unknown":
 			return { kind: "readiness", state: "initialized" };
 	}
-	const unhandled: never = account;
-	return unhandled;
 }
 
 /**
@@ -152,6 +150,4 @@ export function projectCanvasBrowserReadiness(input: CanvasReadinessInput): Brow
 						reason: "The Codex app-server session is initializing.",
 					};
 	}
-	const unhandled: never = process.state;
-	return unhandled;
 }

@@ -40,7 +40,7 @@ export function createJsonRequester(canvas: OwnedCanvas) {
 			canvas,
 			fetch(url, {
 				method,
-				signal: options.signal,
+				...(options.signal === undefined ? {} : { signal: options.signal }),
 				...(options.body === undefined
 					? {}
 					: {

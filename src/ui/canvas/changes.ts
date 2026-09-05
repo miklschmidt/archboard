@@ -31,6 +31,11 @@ const VOLATILE = new Set([
 	"syncTimestamp",
 ]);
 
+/**
+ * A stable identity for an element's drawn shape, independent of its history.
+ * @param element Any scene element as a plain record.
+ * @returns A string that changes only when a non-volatile field changes.
+ */
 function fingerprint(element: Record<string, unknown>): string {
 	const keys = Object.keys(element)
 		.filter((key) => !VOLATILE.has(key))
@@ -50,7 +55,11 @@ const SERVER_BOOKKEEPING = [
 	"syncTimestamp",
 ];
 
-/** The element as it goes on the wire: ours to describe, the server's to stamp. */
+/**
+ * The element as it goes on the wire: ours to describe, the server's to stamp.
+ * @param element A scene element as a plain record.
+ * @returns A copy without the server's bookkeeping fields.
+ */
 function toWire(element: Record<string, unknown>): Record<string, unknown> {
 	const wire: Record<string, unknown> = { ...element };
 	for (const key of SERVER_BOOKKEEPING) {
@@ -69,48 +78,76 @@ interface ChangeReport {
 	nextBaseline: Baseline;
 }
 
+/**
+ * Whether a report carries nothing the server needs to hear.
+ * @param report A computed change report.
+ * @returns True when there are no upserts and no deletes.
+ */
 function isEmpty(report: ChangeReport): boolean {
 	return report.upserts.length === 0 && report.deletes.length === 0;
 }
 
 const NOTHING_WITHHELD: ReadonlySet<string> = new Set();
 
+/**
+ * The id of an element that is part of the drawn scene.
+ * @param element Any scene element as a plain record.
+ * @returns Its id, or null when it has no string id or is deleted.
+ */
+function liveId(element: Record<string, unknown>): string | null {
+	return typeof element["id"] === "string" && !element["isDeleted"] ? element["id"] : null;
+}
+
+/**
+ * Keep a withheld element's agreed print so its pending edit is reported later.
+ *
+ * Withheld is not the same as agreed. An element already in the baseline
+ * keeps the print it had, so the edit remains pending and goes out on the
+ * first report after the editor closes; one the server has never seen stays
+ * out of the baseline entirely and is reported as new then.
+ * @param id The withheld element's id.
+ * @param baseline What this pane last agreed with the server.
+ * @param nextBaseline The baseline being built for this report.
+ */
+function carryAgreedPrint(id: string, baseline: Baseline, nextBaseline: Baseline): void {
+	const agreed = baseline.get(id);
+	if (agreed !== undefined) {
+		nextBaseline.set(id, agreed);
+	}
+}
+
+/**
+ * Compute what a pane may tell the server about its scene.
+ * @param scene Every element currently on the canvas.
+ * @param baseline The fingerprints this pane last agreed with the server.
+ * @param withheld Elements this pane is deliberately not telling the server
+ * about yet, by id. One thing goes in here: the text element a person has an
+ * editor open on (TASK-098). Reporting it is what gets it renamed, because its
+ * id is the 21-character nanoid Excalidraw minted and a note can only hold
+ * eight characters, and a rename appears in the scene as five typed characters
+ * vanishing with no error (`src/shared/ids/ids.ts`).
+ * @returns The upserts and deletes to send, and the baseline they would establish.
+ */
 function diffAgainstBaseline(
 	scene: readonly Record<string, unknown>[],
 	baseline: Baseline,
-	/**
-	 * Elements this pane is deliberately not telling the server about yet, by id.
-	 *
-	 * One thing goes in here: the text element a person has an editor open on
-	 * (TASK-098). Reporting it is what gets it renamed, because its id is the
-	 * 21-character nanoid Excalidraw minted and a note can only hold eight
-	 * characters, and a rename appears in the scene as five typed characters
-	 * vanishing with no error (`src/shared/ids/ids.ts`).
-	 *
-	 * Withheld is not the same as agreed. An element already in the baseline
-	 * keeps the print it had, so the edit remains pending and goes out on the
-	 * first report after the editor closes; one the server has never seen stays
-	 * out of the baseline entirely and is reported as new then.
-	 */
 	withheld: ReadonlySet<string> = NOTHING_WITHHELD,
 ): ChangeReport {
 	const upserts: Record<string, unknown>[] = [];
 	const nextBaseline: Baseline = new Map();
 
 	for (const element of scene) {
-		if (!element || typeof element["id"] !== "string" || element["isDeleted"]) {
+		const id = liveId(element);
+		if (id === null) {
 			continue;
 		}
-		if (withheld.has(element["id"])) {
-			const agreed = baseline.get(element["id"]);
-			if (agreed !== undefined) {
-				nextBaseline.set(element["id"], agreed);
-			}
+		if (withheld.has(id)) {
+			carryAgreedPrint(id, baseline, nextBaseline);
 			continue;
 		}
 		const print = fingerprint(element);
-		nextBaseline.set(element["id"], print);
-		if (baseline.get(element["id"]) !== print) {
+		nextBaseline.set(id, print);
+		if (baseline.get(id) !== print) {
 			upserts.push(toWire(element));
 		}
 	}
@@ -141,14 +178,16 @@ function diffAgainstBaseline(
 /**
  * Record elements that arrived from the server as already agreed, so the next
  * diff does not report them straight back.
+ * @param scene The elements the server just sent.
+ * @returns A baseline holding each live element's fingerprint.
  */
 function baselineFrom(scene: readonly Record<string, unknown>[]): Baseline {
 	const baseline: Baseline = new Map();
 	for (const element of scene) {
-		if (!element || typeof element["id"] !== "string" || element["isDeleted"]) {
-			continue;
+		const id = liveId(element);
+		if (id !== null) {
+			baseline.set(id, fingerprint(element));
 		}
-		baseline.set(element["id"], fingerprint(element));
 	}
 	return baseline;
 }

@@ -51,7 +51,7 @@ export async function openPaneSession(
 	const pane = await openObservedPane<PaneEvent>({
 		base,
 		clientId: options.clientId,
-		preferredBoard: options.board,
+		...(options.board === undefined ? {} : { preferredBoard: options.board }),
 		register: (board, signal) =>
 			request("/api/panes", {
 				method: "POST",

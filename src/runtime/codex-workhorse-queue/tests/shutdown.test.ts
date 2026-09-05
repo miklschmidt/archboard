@@ -6,8 +6,10 @@ test("shutdown closes admission and drains the accepted command tail", async () 
 	const fixtureValue = fixture();
 	const gate = deferred();
 	const started = deferred();
-	fixtureValue.session.beforeMutation = async (method) => {
-		if (method !== "add") return;
+	fixtureValue.session.beforeMutation = async (method): Promise<void> => {
+		if (method !== "add") {
+			return;
+		}
 		started.resolve();
 		await gate.promise;
 	};

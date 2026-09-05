@@ -2,10 +2,9 @@
 id: TASK-150.05
 title: Build the fresh text and voice workbench
 status: To Do
-assignee:
-  - '@codex'
+assignee: []
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-05 01:36'
+updated_date: '2026-09-05 13:58'
 labels: []
 dependencies:
   - TASK-150.03
@@ -20,11 +19,11 @@ ordinal: 295000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-The text and voice workbench repeats controls and styling while its product-specific timeline and authority contracts must remain intact. Recompose its visible controls with the shared shadcn system without adding a second runtime or synthetic chat state. All grunt UI work and verification must run in visible gpt-6-astra tasks with low reasoning. Do not start an independent reviewer loop until every TASK-150 implementation child reports complete.
+The text and voice workbench repeats controls and styling while its product-specific timeline and authority contracts must remain intact. Recompose its visible controls with the shared shadcn system without adding a second runtime or synthetic chat state.  Do not start an independent reviewer loop until every TASK-150 implementation child reports complete.
 
 Runs after TASK-150.03. Build presentation and typed inputs/action callbacks from actual product contracts. Archived runtime implementations are copied, repaired and connected only in TASK-150.07 after this task. Do not copy old WorkbenchFrame, composer or control JSX, CSS tokens or layout-specific state. Legacy reference files remain untracked and cannot be imported.
 
-Browser-test execution is deferred to TASK-150.06 after all rebuild tasks report ready. Do not run browser suites, individual browser tests, browser smoke tests or aggregate commands that invoke them in this task. Continue strict lint/type checks and appropriate non-browser checks. Existing browser tests must not dictate the new UI. Any proposed browser-test replacement, behavioral/interaction rewrite, deletion or transfer to another test owner requires prior case-by-case approval by the orchestrating Astra agent, with the protected product contract and replacement evidence recorded. This is not a worker self-approval or an interim independent review.
+Browser-test execution is deferred to TASK-150.06 after all rebuild tasks report ready. Do not run browser suites, individual browser tests, browser smoke tests or aggregate commands that invoke them in this task. Continue strict lint/type checks and appropriate non-browser checks. Existing browser tests must not dictate the new UI. Any proposed browser-test replacement, behavioral/interaction rewrite, deletion or transfer to another test owner requires prior case-by-case approval by the implementation coordinator, with the protected product contract and replacement evidence recorded. This is not a worker self-approval or an interim independent review.
 
 Retain assistant-ui as the explicit foundation for the new workbench. Use fresh official assistant-ui chat component source and primitives, its Base UI registry flavor, the approved shadcn theme and shared controls, rather than porting Archboard's old workbench JSX or rebuilding available chat components. Configure the style-aware @assistant-ui registry https://r.assistant-ui.com/styles/{style}/{name}.json with base-nova; verify source compatibility with the pinned @assistant-ui/react version and keep reproducible source provenance. Use shared shadcn dependencies and Remix icons without installing a parallel application control/theme system. Install only chat components needed by actual workflows.
 
@@ -46,3 +45,16 @@ Build the wave presentation in TASK-150.05 with typed model-output level and lif
 - [ ] #6 Known steer/queue and voice ownership constraints are represented in the integration contract. Any departure from suitable official assistant-ui component behavior is justified by an actual product requirement and decided by the orchestrating agent, not inherited automatically from old headless-only rules or workarounds.
 - [ ] #7 Voice presentation uses the official LiveKit wave renderer with typed model-output inputs, approved theme and accessible static/status presentation. It does not use microphone amplitude or introduce a LiveKit session; the narrow integration adaptation is documented and actual media wiring waits for TASK-150.07.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+5. Build the fresh assistant-ui text and voice workbench. TASK-150.05.
+Depends on TASK-150.03. coordinator UI workers.
+Use shared shadcn controls for composer, queue operations, approval choices, thread/coordinator/account settings, voice controls and disclosure. Select official Field/Textarea/InputGroup/Select/Checkbox/RadioGroup components as the real input contracts require. Use official assistant-ui thread/message/content/composer components where they fit the actual workflows, built on the shared shadcn Base UI controls and theme. Install fresh upstream source rather than porting old workbench presentation. Keep assistant-ui's supported primitives for necessary product-specific composition; do not reinvent components available upstream or add a second authoritative product runtime.
+Keep product-specific projections for messages, approvals, queue, captured context, transcript and lifecycle. Preserve the one private app-server session, explicit thread link, separate workhorse/coordinator and visible authority/recovery. Keep live voice mute/stop reachable when collapsed and in fullscreen.
+Build new workbench/transcript/queue/approval/voice presentation with typed inputs/action callbacks grounded in actual message, approval, queue and lifecycle contracts. Copying and connecting archived implementations waits for TASK-150.07. Do not copy old frame/composer/control JSX or styles; do not expose a feature-flagged legacy view.
+Exit: composer, queue, approvals, connection/recovery, context/transcript, mute and fullscreen-stop presentation is implemented with strict and appropriate non-browser checks passing. The complete presentation is ready for TASK-150.07 porting and integration; no working end-to-end product claim is made. Controlled text/voice browser execution and rendered proof wait for TASK-150.06.
+
+Current execution constraints: preserve all completed corrections and the user's test deletions. Do not restore deleted tests or add repository-policy suites, configuration snapshots, dependency/version mirrors, tests of upstream tooling, or tests of test helpers. Use the existing lint/compiler commands and meaningful existing product checks. New strict lint adoption is limited to src/ui; remaining non-UI adoption is TASK-151. UI uses the existing root TypeScript project; do not create src/ui/tsconfig.json. Run analysis sequentially and keep the repository project guard on all lint/fix paths. No callbacks to previous tasks, fixed agent assignments, or extra interim review loops.
+<!-- SECTION:PLAN:END -->

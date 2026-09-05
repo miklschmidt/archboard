@@ -64,9 +64,10 @@ describe("codex dynamic confirmed-effect settlement", () => {
 			value: { threadId: otherTarget.wireThreadId, delivery: "delivered" },
 		});
 		expect(fixture.session.calls.map(({ method }) => method)).toEqual(["turn/start"]);
-		expect(fixture.epoch.commitConfirmations).toEqual([
-			expect.objectContaining({ threadId: otherTarget.threadId, turnId: sentTurn.id }),
-		]);
+		expect(fixture.epoch.commitConfirmations).toHaveLength(1);
+		const [confirmation] = fixture.epoch.commitConfirmations;
+		expect(confirmation?.threadId).toBe(otherTarget.threadId);
+		expect(confirmation?.turnId).toBe(sentTurn.id);
 		expect(fixture.operationIds.consumed).toHaveLength(1);
 		expect(fixture.operationIds.retired).toHaveLength(0);
 	});

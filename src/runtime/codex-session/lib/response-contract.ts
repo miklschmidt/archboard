@@ -74,8 +74,7 @@ type ProtocolOutput<Schema, Retained extends boolean = false> =
 					: ProtocolOutput<Element, Retained>[]
 				: Schema extends z.ZodRecord<infer Key, infer Value>
 					? Retained extends true
-						? // oxlint-disable-next-line typescript/consistent-indexed-object-style -- TypeScript 7.0.2 exceeds its instantiation depth when Readonly<Record> recursively contains protocol JSON.
-							{
+						? {
 								readonly [RecordKey in z.output<Key> & PropertyKey]: ProtocolOutput<
 									Value,
 									Retained

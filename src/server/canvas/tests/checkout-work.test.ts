@@ -1,9 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createCheckoutWorkOwner } from "../index.js";
 
-async function waitForAbort(
-	signal: Readonly<AbortSignal>,
-): Promise<string> {
+async function waitForAbort(signal: Readonly<AbortSignal>): Promise<string> {
 	await new Promise<void>((resolve) => {
 		const onAbort = (): void => {
 			resolve();

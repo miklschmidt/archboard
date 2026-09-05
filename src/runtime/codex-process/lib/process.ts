@@ -13,7 +13,6 @@ import {
 	CODEX_PROCESS_RESTART_BASE_MS,
 	CODEX_PROCESS_RESTART_MAX_MS,
 	CODEX_REQUEST_SETTLEMENT_MS,
-	CODEX_TERM_GRACE_MS,
 } from "../../../shared/timing/timing.js";
 import {
 	buildCodexChildEnvironment,
@@ -29,9 +28,9 @@ import { createCodexDiagnosticsBuffer, type BoundedCodexDiagnostics } from "./di
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
-	type CodexProcessGroupInspection,
 	type CodexProcessGroupOperations,
 } from "./process-group.js";
+import { createProcessGroupCleanup } from "./process-group-cleanup.js";
 import {
 	CodexStorageError,
 	prepareCodexStorage,
@@ -338,8 +337,8 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 		strictHint: boolean;
 		strictTail: string;
 		groupQuiescent: boolean;
-		readinessTimer?: Timer;
-		groupCleanup?: Promise<void>;
+		readinessTimer: Timer | undefined;
+		groupCleanup: Promise<void> | undefined;
 		error?: Error;
 	}
 
@@ -432,6 +431,12 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 			message: publicDiagnostic(message),
 		});
 	}
+
+	const processGroupCleanup = createProcessGroupCleanup(
+		processGroup,
+		{ now, schedule, cancel: cancelTimer },
+		{ failure: shutdownError, safeCauseMessage },
+	);
 
 	function rejectPendingStart(error: Error): void {
 		const reject = rejectStart;
@@ -606,182 +611,9 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 		}
 	}
 
-	function groupInspection(record: ChildRecord): CodexProcessGroupInspection {
-		try {
-			return processGroup.inspect(record.group);
-		} catch {
-			return "unproven";
-		}
-	}
-
 	function markGroupQuiescent(record: ChildRecord): void {
 		record.groupQuiescent = true;
 		if (record.closedHandled) groups.delete(record);
-	}
-
-	function groupFailure(status: CodexProcessGroupInspection, action: string): CodexProcessError {
-		const detail =
-			status === "reused" ? "its leader identity was reused" : "its ownership could not be proved";
-		return shutdownError(
-			`Could not ${action}: the Codex process group is ${detail}. Recovery: keep the owner terminal and retry after inspecting the remaining process group.`,
-		);
-	}
-
-	function waitUntil(deadlineAtMs: number): Promise<void> {
-		const delayMs = Math.max(0, deadlineAtMs - now());
-		if (delayMs === 0) return Promise.resolve();
-		return new Promise<void>((resolve, reject) => {
-			let timer: Timer | undefined;
-			let settled = false;
-			const finish = (): void => {
-				if (settled) return;
-				settled = true;
-				cancelTimer(timer);
-				resolve();
-			};
-			try {
-				timer = schedule(finish, delayMs);
-				if (settled) cancelTimer(timer);
-			} catch (cause) {
-				if (settled) return;
-				settled = true;
-				reject(cause);
-			}
-		});
-	}
-
-	function waitForClosedOrAt(
-		record: Pick<ChildRecord, "closed"> | UnprovenChild,
-		deadlineAtMs: number,
-	): Promise<"closed" | "time"> {
-		const delayMs = Math.max(0, deadlineAtMs - now());
-		if (delayMs === 0) return Promise.resolve("time");
-		return new Promise<"closed" | "time">((resolve, reject) => {
-			let timer: Timer | undefined;
-			let settled = false;
-			const finish = (result: "closed" | "time"): void => {
-				if (settled) return;
-				settled = true;
-				cancelTimer(timer);
-				resolve(result);
-			};
-			void record.closed.then(() => finish("closed"));
-			try {
-				timer = schedule(() => finish("time"), delayMs);
-				if (settled) cancelTimer(timer);
-			} catch (cause) {
-				if (settled) return;
-				settled = true;
-				reject(cause);
-			}
-		});
-	}
-
-	async function settleBeforeDeadline(
-		work: readonly Promise<void>[],
-		deadlineAtMs: number,
-	): Promise<PromiseSettledResult<void>[]> {
-		const all = Promise.allSettled(work);
-		let timer: Timer | undefined;
-		let settled = false;
-		const deadline = new Promise<never>((_resolve, reject) => {
-			const fail = (): void => {
-				if (settled) return;
-				settled = true;
-				reject(
-					shutdownError(
-						"The composed Codex shutdown deadline expired. Recovery: inspect retained process ownership and retry stop.",
-					),
-				);
-			};
-			try {
-				timer = schedule(fail, Math.max(0, deadlineAtMs - now()));
-				if (settled) cancelTimer(timer);
-			} catch (cause) {
-				if (settled) return;
-				settled = true;
-				reject(
-					shutdownError(
-						`Could not schedule the composed Codex shutdown deadline: ${safeCauseMessage(cause)}.`,
-					),
-				);
-			}
-		});
-		try {
-			return await Promise.race([all, deadline]);
-		} finally {
-			settled = true;
-			cancelTimer(timer);
-		}
-	}
-
-	async function cleanupGroup(record: ChildRecord, deadlineAtMs: number): Promise<void> {
-		if (record.groupQuiescent) return;
-		let status = groupInspection(record);
-		if (status === "quiescent") {
-			markGroupQuiescent(record);
-			return;
-		}
-		if (status !== "owned") throw groupFailure(status, "clean up the Codex process group");
-		try {
-			processGroup.signal(record.group, "SIGTERM");
-		} catch (cause) {
-			throw shutdownError(
-				`Could not send TERM to the Codex process group. Recovery: ${safeCauseMessage(cause)}.`,
-			);
-		}
-
-		const termAtMs = Math.min(deadlineAtMs, now() + CODEX_TERM_GRACE_MS);
-		const firstEvent = await waitForClosedOrAt(record, termAtMs);
-		status = groupInspection(record);
-		if (status === "quiescent") {
-			markGroupQuiescent(record);
-			return;
-		}
-		if (status !== "owned")
-			throw groupFailure(status, "finish TERM cleanup of the Codex process group");
-		if (firstEvent === "closed" && now() < termAtMs) await waitUntil(termAtMs);
-		if (now() < termAtMs) await waitUntil(termAtMs);
-
-		status = groupInspection(record);
-		if (status === "quiescent") {
-			markGroupQuiescent(record);
-			return;
-		}
-		if (status !== "owned") throw groupFailure(status, "escalate the Codex process group");
-		try {
-			processGroup.signal(record.group, "SIGKILL");
-		} catch (cause) {
-			throw shutdownError(
-				`Could not send KILL to the Codex process group. Recovery: ${safeCauseMessage(cause)}.`,
-			);
-		}
-		status = groupInspection(record);
-		if (status === "quiescent") {
-			markGroupQuiescent(record);
-			return;
-		}
-		if (status !== "owned")
-			throw groupFailure(status, "verify KILL cleanup of the Codex process group");
-		if (now() < deadlineAtMs) {
-			const killEvent = await waitForClosedOrAt(record, deadlineAtMs);
-			if (killEvent === "closed") {
-				status = groupInspection(record);
-				if (status === "quiescent") {
-					markGroupQuiescent(record);
-					return;
-				}
-				if (status !== "owned")
-					throw groupFailure(status, "verify KILL cleanup of the Codex process group");
-			}
-			if (now() < deadlineAtMs) await waitUntil(deadlineAtMs);
-		}
-		status = groupInspection(record);
-		if (status === "quiescent") {
-			markGroupQuiescent(record);
-			return;
-		}
-		throw groupFailure(status, "complete composed Codex shutdown");
 	}
 
 	function ensureGroupCleanup(record: ChildRecord, deadlineAtMs: number): Promise<void> {
@@ -790,11 +622,18 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 			return Promise.resolve();
 		}
 		if (record.groupCleanup) return record.groupCleanup;
-		const pending = cleanupGroup(record, deadlineAtMs);
-		record.groupCleanup = pending;
-		void pending.catch(() => {
-			if (record.groupCleanup === pending) record.groupCleanup = undefined;
+		const pending = processGroupCleanup.cleanup({
+			identity: record.group,
+			childClosed: record.closed,
+			deadlineAtMs,
 		});
+		record.groupCleanup = pending;
+		void pending.then(
+			() => markGroupQuiescent(record),
+			() => {
+				if (record.groupCleanup === pending) record.groupCleanup = undefined;
+			},
+		);
 		return pending;
 	}
 
@@ -1033,9 +872,14 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 		}
 		if (!storage) {
 			try {
-				storage = prepareStorage(storageInput, { fileSystem: dependencies.fileSystem });
+				storage = prepareStorage(
+					storageInput,
+					dependencies.fileSystem === undefined ? {} : { fileSystem: dependencies.fileSystem },
+				);
 				environment = buildCodexChildEnvironment({
-					ambient: options.ambientEnvironment,
+					...(options.ambientEnvironment === undefined
+						? {}
+						: { ambient: options.ambientEnvironment }),
 					codexHome: storage.codexHome,
 					sqliteHome: storage.sqliteHome,
 				});
@@ -1164,6 +1008,8 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 			strictHint: false,
 			strictTail: "",
 			groupQuiescent: false,
+			readinessTimer: undefined,
+			groupCleanup: undefined,
 		};
 		current = record;
 		groups.add(record);
@@ -1322,7 +1168,7 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 					(async () => {
 						await ensureGroupCleanup(owned, deadlineAtMs);
 						if (owned.closedHandled) return;
-						const result = await waitForClosedOrAt(owned, deadlineAtMs);
+						const result = await processGroupCleanup.waitForClosedOrAt(owned.closed, deadlineAtMs);
 						if (result === "time")
 							throw shutdownError(
 								"The Codex child did not close before the composed shutdown deadline. Recovery: inspect the retained process group and retry stop.",
@@ -1340,14 +1186,17 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 								`Could not kill the Codex child whose process group was unavailable: ${safeCauseMessage(cause)}. Recovery: inspect the retained child and retry stop.`,
 							);
 						}
-						if ((await waitForClosedOrAt(unproven, deadlineAtMs)) === "time")
+						if (
+							(await processGroupCleanup.waitForClosedOrAt(unproven.closed, deadlineAtMs)) ===
+							"time"
+						)
 							throw shutdownError(
 								"The Codex child whose process group was unavailable did not close before the composed shutdown deadline. Recovery: inspect the retained child and retry stop.",
 							);
 					})(),
 				);
 			}
-			const results = await settleBeforeDeadline(work, deadlineAtMs);
+			const results = await processGroupCleanup.settleBeforeDeadline(work, deadlineAtMs);
 			const failed = results.find(
 				(result): result is PromiseRejectedResult => result.status === "rejected",
 			);

@@ -2,10 +2,9 @@
 id: TASK-150.01.01
 title: Quarantine the old UI and restore strict enforcement
 status: In Progress
-assignee:
-  - '@codex'
+assignee: []
 created_date: '2026-09-05 01:10'
-updated_date: '2026-09-05 04:17'
+updated_date: '2026-09-05 13:58'
 labels: []
 dependencies: []
 parent_task_id: TASK-150.01
@@ -17,27 +16,32 @@ ordinal: 297000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Maintainers should not spend strict-lint repair effort on presentation code being discarded. Establish strict enforcement for retained repository code and isolate the old UI as a local, ignored archive that cannot enter the application, tests, builds or commits. This is planning only. Future grunt execution uses visible gpt-6-astra tasks at low reasoning. No independent review until all TASK-150 implementation work reports complete.
-
-Browser-test execution is deferred to TASK-150.06 after all rebuild tasks report ready. Do not run browser suites, individual browser tests, browser smoke tests or aggregate commands that invoke them in this task. Continue strict lint/type checks and appropriate non-browser checks. Existing browser tests must not dictate the new UI. Any proposed browser-test replacement, behavioral/interaction rewrite, deletion or transfer to another test owner requires prior case-by-case approval by the orchestrating Astra agent, with the protected product contract and replacement evidence recorded. This is not a worker self-approval or an interim independent review.
-
-User-approved archive dependency policy: tests and diagnostic probes that depend exclusively on retired UI may join its ignored, uncommitted local legacy/ snapshot. Inventory their imports and record each protected product behavior, whether the old assertion is obsolete or still required, and the task responsible for restoring required coverage. This includes UI-dependent files outside src/ui; directory location does not decide whether code is retired. Independently useful tests, scripts and active product code stay under full strict checks. Do not archive mixed-use code or difficult active code merely to pass checks; resolve its retained contract explicitly. Remove archived owners from active compiler/test inventories coherently and keep an explicit record of deferred coverage. This temporary retirement does not count as passing product verification and does not authorize skipped tests or weakened final gates. Restore required behavior coverage against the rebuilt implementation in TASK-150.07 or TASK-150.06 as appropriate. Any affected browser-test retirement/replacement remains subject to the orchestrating Astra agent's recorded case-by-case approval. Every deferred behavior must be accounted for before final acceptance; obsolete implementation-only assertions may be retired with a recorded reason.
+Preserve the established ignored UI reference archive and the already-written approved lint configuration. Do not replay the former full-catalogue rollout. This historical enforcement leaf is retained for traceability; remaining UI repairs belong to TASK-150.01.02.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Record the user's committed starting revision as BASE before retirement. The local legacy/ archive contains the old UI as a reference snapshot; its contents are ignored, never staged or committed, and recoverable from BASE for another checkout without committing an archive.
-- [ ] #2 Tracked retired UI is removed from the active tree. Application, tests, scripts and build entrypoints cannot import, re-export, dynamically load or serve archive content. Approved font and wordmark assets remain active without preserving the old styling implementation.
-- [ ] #3 Only the inert local legacy/ archive is exempt from lint and TypeScript program coverage. Retained source and any product logic copied into src/ui receive the full applicable policy, including the agreed generated/shadcn exceptions; no active logic is placed in the archive to evade checks.
-- [ ] #4 Normal pinned Oxlint type-aware enforcement is enabled, the policy banning it is replaced with real diagnostic proof, every applicable rule and compiler option is audited, and the 500-line authored-code limit is enabled. Fixes and passing strict-baseline acceptance belong to the subsequent repair task.
-- [ ] #5 Cheap repository checks reject tracked or staged legacy/ content and active references to it. Preserve behavioral verification requirements; do not disable browser tests merely to report a passing complete product gate while the UI is absent.
-- [ ] #6 Exclusively retired-UI-dependent tests and probes are archived with the UI rather than left with broken imports. Each protected behavior has a recorded disposition and restoration owner; independently useful source remains active and strict. Affected browser-test retirement has individual orchestrator approval.
+- [ ] #1 The retired UI reference remains ignored and absent from active imports, builds and commits.
+- [ ] #2 The approved UI lint configuration is in place, with the pre-task non-UI policy retained.
+- [ ] #3 Strict compiler safety and current corrections are preserved without a separate UI TypeScript project.
+- [ ] #4 User test deletions remain deleted; no synthetic toolchain or configuration-test work is required.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Inventory BASE UI files, external imports and dependent owners; record required deferred behaviors and request individual coordinator decisions for browser changes and mixed-use seams. 2. Snapshot retired UI locally under ignored legacy/, retain official assets and independently useful source, disconnect rendering entry, and record precise dispositions. 3. Restore pinned ordinary type-aware Oxlint, audit catalogue and strict compiler/source coverage, enable 500 physical lines and approved precise exceptions, and add narrow archive guards in repository checks. 4. Install dependencies and validate serially through ordinary lint/compiler and focused non-browser repository checks, preserving diagnostics for TASK-150.01.02. 5. Audit preserved work and tracked/staged trees, commit owned scope only, record implementation evidence and callback to coordinator; leave terminal reconciliation and browser verification pending.
+Approved lint policy (already written)
+Canonical configuration: src/ui/.oxlintrc.jsonc; repository baseline: .oxlintrc.jsonc; all lint/fix entrypoints use scripts/lint.ts.
+- Keep Archboard rules. Enable correctness, suspicious and perf at error. Leave style, pedantic, restriction and the overall nursery category off.
+- Enable these nursery rules at error: import/named; import/export; eslint/no-restricted-exports with defaultFrom, direct, named, namedFrom and namespaceFrom all true; promise/no-return-in-finally; typescript/no-unnecessary-condition; eslint/no-unreachable-loop; unicorn/no-useless-iterator-to-array; typescript/prefer-optional-chain.
+- Classic cyclomatic complexity is 6; max-lines is 600 physical lines including comments and blanks. Local UI imports use @/ aliases and retain module boundaries. UI source is TypeScript only.
+- Plugins: eslint, typescript, unicorn, react, react-perf, import, jsdoc, jsx-a11y and promise.
+- JSDoc uses flat/recommended-typescript plus require-description at error: concise function-purpose, parameter and return descriptions, without duplicate TypeScript types. Keep native jsdoc names where supported; jsdoc-extra supplies missing upstream rules. Require documentation on named functions, arrows, function expressions and methods.
+- Keep noPropertyAccessFromIndexSignature. There is no separate UI TypeScript project. Keep the existing frontend compiler configuration for its browser entrypoints.
+- New strict adoption outside src/ui is deferred to TASK-151; preserve previous corrections and the pre-task non-UI lint policy. Existing non-UI JavaScript tooling and generated declarations remain in that deferred adoption scope.
+
+Current execution constraints: preserve all completed corrections and the user's test deletions. Do not restore deleted tests or add repository-policy suites, configuration snapshots, dependency/version mirrors, tests of upstream tooling, or tests of test helpers. Use the existing lint/compiler commands and meaningful existing product checks. New strict lint adoption is limited to src/ui; remaining non-UI adoption is TASK-151. UI uses the existing root TypeScript project; do not create src/ui/tsconfig.json. Run analysis sequentially and keep the repository project guard on all lint/fix paths. No callbacks to previous tasks, fixed agent assignments, or extra interim review loops.
+Quarantine and configuration are implemented. Preserve archive isolation and current changes; do not rebuild deleted repository-policy tests.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -49,7 +53,7 @@ Browser decision 1, tests/system/browser/fixed-point-document.test.ts: retain th
 
 Browser decision 2, tests/system/browser/codex-live-voice.test.ts: approve removal of Samsung/Flip wording and mechanical flipDock-to-scaledDock identifier renaming only. Preserve viewport 1920x1080 at devicePixelRatio 2, active-session identity, Stop operability, inside-viewport/workbench-avoidance/source-fit and all focus, targets, live regions, reduced-motion and forced-colors assertions. These exercise generic desktop scaling rather than a dedicated device. TASK-150.06 owns actual execution and any later individual behavioral/selector replacement decision. No browser tests run now.
 
-Orchestrator decision 2026-09-05: approve byte-preserving .ts.txt/.tsx.txt names for the three docs/design/vendor reading copies (ExcalidrawData and shadcn-base button/dialog), updating local references and preserving provenance. Their README already forbids compilation/import/shipping; they are research evidence with incomplete external context, not active TS program source. Remove the blanket vendor lint ignore. This does not authorize renaming active executable code or importing these texts into application code.
+Orchestrator decision 2026-09-05: approve byte-preserving.ts.txt/.tsx.txt names for the three docs/design/vendor reading copies (ExcalidrawData and shadcn-base button/dialog), updating local references and preserving provenance. Their README already forbids compilation/import/shipping; they are research evidence with incomplete external context, not active TS program source. Remove the blanket vendor lint ignore. This does not authorize renaming active executable code or importing these texts into application code.
 
 Orchestrator decision 2026-09-05: for codex-workbench-application-sockets, spoken-approval-terminal-projection and voice-context-producer-contract system owners, preserve independently useful backend assertions and archive only UI-dependent cases with exact recorded dispositions/restoration under TASK-150.07. The production socket ownership/replacement cases remain active; the UI media registration case may be deferred. Unknown-outcome propagation through spoken/visual cards and exact canonical-brief display/copy remain mandatory integration contracts. Avoid adding duplicate backend tests solely to retain a fragment.
 
@@ -61,7 +65,7 @@ Orchestrator decision 2026-09-05: do not introduce a dormant src/ui/components w
 
 IMPLEMENTED — TASK-150.01.01 quarantine/enforcement only; formal acceptance/status reconciliation remains with the coordinator after final review. BASE 0d1706d06b21df1c72910a640dadad35cd37234a. Canonical dispositions: docs/design/task-150-quarantine.md. Canonical full 870-rule catalogue audit and exact exclusions: docs/agents/strict-analysis.md and strict-analysis-policy.json.
 
-Retired frontend entry and old UI into ignored local legacy/. All 281 snapshot files match BASE bytes; zero legacy tracked/staged entries. Retained approved pure preview/elements/changes/types closure, focused preview owner and all official fonts/licenses/provenance/wordmark. Kept independent renderer probes and label-round-trip coverage. Mixed system owners split per coordinator decisions; required deferred cases have restoration owners. Browser inventory remains unchanged; only approved hardware wording/identifier cleanup and three runSelection no-await-in-loop comments changed. Dedicated-display guidance/install listing removed. Reading-only vendor files renamed to .txt without byte changes.
+Retired frontend entry and old UI into ignored local legacy/. All 281 snapshot files match BASE bytes; zero legacy tracked/staged entries. Retained approved pure preview/elements/changes/types closure, focused preview owner and all official fonts/licenses/provenance/wordmark. Kept independent renderer probes and label-round-trip coverage. Mixed system owners split per coordinator decisions; required deferred cases have restoration owners. Browser inventory remains unchanged; only approved hardware wording/identifier cleanup and three runSelection no-await-in-loop comments changed. Dedicated-display guidance/install listing removed. Reading-only vendor files renamed to.txt without byte changes.
 
 Pinned oxlint 1.80.0 + oxlint-tsgolint 7.0.2001, one ordinary type-aware command, every applicable category, seven named rules, 500 physical authored lines and strict sequential compiler programs are enforced. Actual lint inputs: 1710 = 890 authored + 820 generated; zero archive. Independent physical-source coverage check passes. Explicit generated file arguments are required because directory traversal still honors Git ignores. Auto-fix remains authored-only and then runs complete lint. No dormant shadcn wildcard; actual official files/provenance and approved narrow exemptions are owned by TASK-150.02. Generated byte comparison against fresh pinned upstream output passes.
 

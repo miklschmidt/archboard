@@ -133,7 +133,7 @@ export function setExpectedVersion(version: number | null): void {
 /** What this process would send: what it was told, unless the caller overrode it. */
 export function currentExpectedVersion(): number | null | undefined {
 	return expectedVersion({
-		stated: statedVersion,
+		...(statedVersion === undefined ? {} : { stated: statedVersion }),
 		...(requestedBoard ? { rememberedBy: clientVersionWriter(requestedBoard) } : {}),
 	});
 }
@@ -347,7 +347,8 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	// stopped it.
 	if (data && typeof data === "object") {
 		const body = data as Record<string, unknown>;
-		heldBoard = body["held"] && typeof body["held"] === "object" ? (body["held"] as HoldReport) : null;
+		heldBoard =
+			body["held"] && typeof body["held"] === "object" ? (body["held"] as HoldReport) : null;
 	}
 	// And which version of it this process has now been told about, for the same
 	// reason: read off every answer including the refusals (TASK-091).

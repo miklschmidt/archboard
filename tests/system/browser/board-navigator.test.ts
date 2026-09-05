@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import type { PanesReport } from "../../../src/runtime/engine/panes.ts";
 import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -15,12 +13,13 @@ import {
 } from "./support/agent-browser.ts";
 import type { NavigatorContract, NavigatorPreviewView } from "./support/shell-contract-types.ts";
 import { createBoard, addBox } from "./support/navigator-fixture.ts";
-type PanesBody = PanesReport & { success: boolean };
-type HealthBody = { websocket_clients: number };
-type ElementsBody = { elements: unknown[] };
-type ChangesBody = { cursor: number };
-const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
-const serverPath = join(repoRoot, "src/server.ts");
+import {
+	serverPath,
+	type ChangesBody,
+	type ElementsBody,
+	type HealthBody,
+	type PanesBody,
+} from "./support/navigator-support.ts";
 test("the operator strip keeps empty, loading, retry, and scratch naming states actionable", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();

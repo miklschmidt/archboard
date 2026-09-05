@@ -37,9 +37,11 @@ export function createRequester(canvas: RequestCanvas) {
 		try {
 			const response = await fetch(url, {
 				method,
-				signal: options.signal,
+				...(options.signal === undefined ? {} : { signal: options.signal }),
 				...(options.body === undefined
-					? { headers: options.headers }
+					? options.headers === undefined
+						? {}
+						: { headers: options.headers }
 					: {
 							headers: { "Content-Type": "application/json", ...options.headers },
 							body: JSON.stringify(options.body),

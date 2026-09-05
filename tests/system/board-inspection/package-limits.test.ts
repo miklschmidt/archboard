@@ -25,9 +25,7 @@ describe("package inspection limits", () => {
 			}
 			expect(foundInputCeiling).toBe(true);
 			const textResult = await owner.runInspection("input-limit", ["--text"]);
-			expect(textResult.stdout).toBe(
-				`${formatInspectionText(report)}\n`,
-			);
+			expect(textResult.stdout).toBe(`${formatInspectionText(report)}\n`);
 		} finally {
 			await owner.dispose();
 		}

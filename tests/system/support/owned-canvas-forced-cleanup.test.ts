@@ -51,11 +51,11 @@ describe("owned canvas forced cleanup", () => {
 		try {
 			await completeCapturedCanvasCleanup({
 				groups: [],
-					operations: {
-						inspect: () => "quiescent",
-						signal() {
-							// No group exists in this parent-only failure case.
-						},
+				operations: {
+					inspect: () => "quiescent",
+					signal() {
+						// No group exists in this parent-only failure case.
+					},
 				},
 				parent: { exited: false, failure: parentFailure },
 				removeStorageLock() {
@@ -82,11 +82,11 @@ describe("owned canvas forced cleanup", () => {
 				operations: {
 					inspect() {
 						descendantInspections += 1;
-							return "unproven";
-						},
-						signal() {
-							// An unproven identity must never be signalled.
-						},
+						return "unproven";
+					},
+					signal() {
+						// An unproven identity must never be signalled.
+					},
 				},
 				parent: { exited: false, failure: parentFailure },
 				removeStorageLock() {

@@ -243,9 +243,7 @@ describe("package output and refusals", () => {
 		diagnostic = packageFailure(inferred);
 		expect(inferred.status, diagnostic).toBe(0);
 		expect(decodePackage(inferred, ExportReceiptSchema).format, diagnostic).toBe("obsidian");
-		expect(readFileSync(inferredPath, "utf8"), diagnostic).toMatch(
-			/^---\n.*excalidraw-plugin:/su,
-		);
+		expect(readFileSync(inferredPath, "utf8"), diagnostic).toMatch(/^---\n.*excalidraw-plugin:/su);
 	});
 
 	test("keeps format and overwrite refusals local and leaves targets unchanged", async () => {

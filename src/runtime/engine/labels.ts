@@ -77,12 +77,13 @@ export type BoundRef = RuntimeBoardElement["boundElements"] extends readonly (in
  * — server elements, Excalidraw elements and elements parsed out of a saved
  * `.excalidraw` file all satisfy it, and none of them need converting first.
  */
+type OptionalIngress<T> = { [Key in keyof T]?: T[Key] | undefined };
 type LabelCommon = Pick<WritableVendorElement, "id" | "type"> &
-	Partial<Pick<WritableVendorElement, "isDeleted" | "x" | "y" | "width" | "height">> & {
-		createdAt?: RuntimeBoardElement["createdAt"];
-		boundElements?: readonly Readonly<BoundRef>[] | null;
+	OptionalIngress<Pick<WritableVendorElement, "isDeleted" | "x" | "y" | "width" | "height">> & {
+		createdAt?: RuntimeBoardElement["createdAt"] | undefined;
+		boundElements?: readonly Readonly<BoundRef>[] | null | undefined;
 	};
-type LabelTextFields = Partial<
+type LabelTextFields = OptionalIngress<
 	Pick<
 		Extract<WritableVendorElement, { type: "text" }>,
 		"containerId" | "text" | "textAlign" | "verticalAlign"
@@ -92,7 +93,7 @@ type LabelPoint = Extract<
 	WritableVendorElement,
 	{ type: "arrow" | "line" | "freedraw" }
 >["points"][number];
-type LabelPathFields = { points?: readonly Readonly<LabelPoint>[] };
+type LabelPathFields = { points?: readonly Readonly<LabelPoint>[] | undefined };
 export type LabelledElement = LabelCommon & LabelTextFields & LabelPathFields;
 
 function isText(element: LabelledElement | undefined): boolean {

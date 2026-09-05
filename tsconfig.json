@@ -8,9 +8,15 @@
 		"paths": {
 			"@/*": ["./src/*"],
 			"@excalidraw/math": ["./node_modules/@excalidraw/excalidraw/dist/types/math/index.d.ts"],
-			"@excalidraw/utils/export": ["./node_modules/@excalidraw/excalidraw/dist/types/utils/export.d.ts"],
-			"@excalidraw/utils/withinBounds": ["./node_modules/@excalidraw/excalidraw/dist/types/utils/withinBounds.d.ts"],
-			"@excalidraw/excalidraw/element/transform": ["./node_modules/@excalidraw/excalidraw/dist/types/excalidraw/data/transform.d.ts"],
+			"@excalidraw/utils/export": [
+				"./node_modules/@excalidraw/excalidraw/dist/types/utils/export.d.ts"
+			],
+			"@excalidraw/utils/withinBounds": [
+				"./node_modules/@excalidraw/excalidraw/dist/types/utils/withinBounds.d.ts"
+			],
+			"@excalidraw/excalidraw/element/transform": [
+				"./node_modules/@excalidraw/excalidraw/dist/types/excalidraw/data/transform.d.ts"
+			],
 			"browser-fs-access": ["./node_modules/browser-fs-access/index.d.ts"]
 		},
 		"allowImportingTsExtensions": true,

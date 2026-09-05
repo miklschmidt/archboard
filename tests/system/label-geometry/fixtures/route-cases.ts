@@ -292,7 +292,10 @@ export const geometryWireElements = (): RouteElementRequest[] =>
 		},
 	]);
 
-export const capturedFocusedNode = RectangleRouteRequestSchema.parse({
+export const capturedFocusedNode = RectangleRouteRequestSchema.required({
+	angle: true,
+	roundness: true,
+}).parse({
 	type: "rectangle",
 	x: 1066.8104451025551,
 	y: 1060.7409025475235,

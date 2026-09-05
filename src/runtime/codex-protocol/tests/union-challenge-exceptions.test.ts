@@ -42,9 +42,7 @@ function issuePath(issue: unknown): string[] {
 }
 
 function issueCode(issue: unknown): unknown {
-	return typeof issue === "object" && issue !== null && "code" in issue
-		? issue.code
-		: undefined;
+	return typeof issue === "object" && issue !== null && "code" in issue ? issue.code : undefined;
 }
 
 describe("protocol union diagnostics", () => {

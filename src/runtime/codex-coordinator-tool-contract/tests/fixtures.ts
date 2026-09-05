@@ -99,13 +99,6 @@ const VOICE_MANIFEST_SNAPSHOT = {
 	],
 } as const;
 
-const QUEUE_OPERATION_SNAPSHOT = [
-	"list",
-	"add",
-	"update",
-	"delete",
-	"reorder",
-	"start",
-] as const;
+const QUEUE_OPERATION_SNAPSHOT = ["list", "add", "update", "delete", "reorder", "start"] as const;
 
 export { QUEUE_OPERATION_SNAPSHOT, VOICE_MANIFEST_SNAPSHOT, WORKHORSE_MANIFEST_SNAPSHOT };

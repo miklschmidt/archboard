@@ -19,8 +19,14 @@ test("browser start and steer emit canonical authored bodies from lease-bound co
 			starts.push(params);
 			return { turn: { id: turnId } } as never;
 		},
-		threadRead: async (params: { includeTurns?: boolean }) => {
-			if (params.includeTurns) throw new Error("list_turns is not supported yet");
+		threadRead: async (params: unknown) => {
+			if (
+				typeof params === "object" &&
+				params !== null &&
+				"includeTurns" in params &&
+				params.includeTurns
+			)
+				throw new Error("list_turns is not supported yet");
 			return {
 				thread: {
 					id: threadId,

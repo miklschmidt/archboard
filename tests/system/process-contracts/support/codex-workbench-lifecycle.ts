@@ -191,7 +191,7 @@ export async function startCanvas(options: {
 				}
 			},
 			"production canvas readiness",
-			{ timeoutMs: options.readinessTimeoutMs },
+			options.readinessTimeoutMs === undefined ? {} : { timeoutMs: options.readinessTimeoutMs },
 		);
 	} catch (error) {
 		await canvas.dispose();

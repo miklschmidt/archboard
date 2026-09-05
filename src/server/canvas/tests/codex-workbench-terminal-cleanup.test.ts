@@ -34,18 +34,20 @@ describe("production Codex owner terminal cleanup", () => {
 						: baseProcess,
 				createGeneration: async ({ generation }) =>
 					fakeGeneration(events, generation, {
-						stop:
-							stage === "graph"
-								? async () => {
+						...(stage === "graph"
+							? {
+									stop: async () => {
 										throw new Error("graph cleanup failed");
-									}
-								: undefined,
-						finishStop:
-							stage === "final"
-								? () => {
+									},
+								}
+							: {}),
+						...(stage === "final"
+							? {
+									finishStop: () => {
 										throw new Error("final cleanup failed");
-									}
-								: undefined,
+									},
+								}
+							: {}),
 					}),
 			});
 			await owner.start();

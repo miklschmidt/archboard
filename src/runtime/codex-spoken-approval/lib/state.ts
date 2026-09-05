@@ -21,10 +21,7 @@ import type {
 	SpokenApprovalSnapshot,
 } from "./contract.js";
 
-type LiveGateState = Exclude<
-	SpokenApprovalGateState,
-	"idle" | "settled" | "visual_fallback"
->;
+type LiveGateState = Exclude<SpokenApprovalGateState, "idle" | "settled" | "visual_fallback">;
 type TerminalGateState = Exclude<SpokenApprovalGateState, "idle" | LiveGateState>;
 
 interface TurnReadyControls {

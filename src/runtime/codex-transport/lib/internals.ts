@@ -7,7 +7,7 @@ import type {
 } from "../../../shared/codex-workbench-identity/index.js";
 import type { CodexRequestFailureReason } from "./errors.js";
 
-export interface PendingRequest {
+interface PendingRequest {
 	readonly key: string;
 	readonly wireId: JsonRpcRequestId;
 	readonly method: ResponseMethod;
@@ -15,15 +15,15 @@ export interface PendingRequest {
 	readonly retryEligible: boolean;
 	readonly resolve: (value: unknown) => void;
 	readonly reject: (reason: unknown) => void;
-	readonly signal?: AbortSignal;
+	readonly signal: AbortSignal | undefined;
 	abortListener?: () => void;
 	timer?: ReturnType<typeof setTimeout>;
-	job?: FrameWriterJob<WriteJob>;
+	job: FrameWriterJob<WriteJob> | undefined;
 	accepted: boolean;
 	settled: boolean;
 }
 
-export interface RequestTombstone {
+interface RequestTombstone {
 	readonly key: string;
 	readonly wireId: JsonRpcRequestId;
 	readonly method: ResponseMethod;
@@ -34,7 +34,7 @@ export interface RequestTombstone {
 	reason?: CodexRequestFailureReason;
 }
 
-export interface ReverseRecord {
+interface ReverseRecord {
 	readonly key: string;
 	readonly wireId: string | number;
 	readonly request: TransportServerRequest;
@@ -43,13 +43,13 @@ export interface ReverseRecord {
 	responding: boolean;
 }
 
-export interface RequestJob {
+interface RequestJob {
 	readonly kind: "request";
 	readonly frame: Buffer;
 	readonly pending: PendingRequest;
 }
 
-export interface NotificationJob {
+interface NotificationJob {
 	readonly kind: "notification";
 	readonly frame: Buffer;
 	readonly resolve: () => void;
@@ -57,7 +57,7 @@ export interface NotificationJob {
 	settled: boolean;
 }
 
-export interface ReverseResponseJob {
+interface ReverseResponseJob {
 	readonly kind: "reverse-response";
 	readonly frame: Buffer;
 	readonly record: ReverseRecord;
@@ -66,10 +66,21 @@ export interface ReverseResponseJob {
 	settled: boolean;
 }
 
-export interface ProtocolErrorJob {
+interface ProtocolErrorJob {
 	readonly kind: "protocol-error";
 	readonly frame: Buffer;
 	readonly key: string;
 }
 
-export type WriteJob = RequestJob | NotificationJob | ReverseResponseJob | ProtocolErrorJob;
+type WriteJob = RequestJob | NotificationJob | ReverseResponseJob | ProtocolErrorJob;
+
+export type {
+	NotificationJob,
+	PendingRequest,
+	ProtocolErrorJob,
+	RequestJob,
+	RequestTombstone,
+	ReverseRecord,
+	ReverseResponseJob,
+	WriteJob,
+};

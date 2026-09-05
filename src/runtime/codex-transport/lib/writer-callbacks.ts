@@ -1,13 +1,10 @@
-import {
-	CodexTransportClosedError,
-	CodexTransportWriteError,
-	type CodexRequestFailureReason,
-} from "./errors.js";
+import { CodexTransportClosedError, CodexTransportWriteError } from "./errors.js";
+import type { CodexRequestFailureReason } from "./errors.js";
 import type { FrameWriterCallbacks, FrameWriterJob } from "./frame-writer.js";
 import type { PendingRequest, ReverseRecord, WriteJob } from "./internals.js";
 import type { TransportIssue } from "./types.js";
 
-export interface TransportWriterCallbacksOptions {
+interface TransportWriterCallbacksOptions {
 	readonly emitIssue: (issue: TransportIssue) => void;
 	readonly settleFailure: (pending: PendingRequest, reason: CodexRequestFailureReason) => void;
 	readonly acceptReverseResponse: (record: ReverseRecord) => void;
@@ -27,13 +24,15 @@ function isSettledJob(
 	return job.kind === "notification" || job.kind === "reverse-response";
 }
 
-export function createTransportWriterCallbacks(
+function createTransportWriterCallbacks(
 	options: TransportWriterCallbacksOptions,
 ): FrameWriterCallbacks<WriteJob> {
 	const onAccepted = (queued: FrameWriterJob<WriteJob>): void => {
-		if (queued.value.kind === "request") queued.value.pending.accepted = true;
-		else if (queued.value.kind === "reverse-response")
+		if (queued.value.kind === "request") {
+			queued.value.pending.accepted = true;
+		} else if (queued.value.kind === "reverse-response") {
 			options.acceptReverseResponse(queued.value.record);
+		}
 	};
 
 	const onComplete = (queued: FrameWriterJob<WriteJob>): void => {
@@ -57,7 +56,7 @@ export function createTransportWriterCallbacks(
 		options.emitIssue({
 			kind: "write-error",
 			direction: "write",
-			method: job.kind === "request" ? job.pending.method : undefined,
+			...(job.kind === "request" ? { method: job.pending.method } : {}),
 			detail: "Codex stdin rejected a frame",
 		});
 		if (job.kind === "request") {
@@ -81,12 +80,13 @@ export function createTransportWriterCallbacks(
 		const job = queued.value;
 		if (job.kind === "request") {
 			job.pending.job = undefined;
-			const failureReason =
-				reason instanceof CodexTransportWriteError
-					? reason.reason
-					: reason instanceof CodexTransportClosedError
-						? reason.reason
-						: "shutdown";
+			let failureReason: CodexRequestFailureReason = "shutdown";
+			if (
+				reason instanceof CodexTransportWriteError ||
+				reason instanceof CodexTransportClosedError
+			) {
+				failureReason = reason.reason;
+			}
 			options.settleFailure(job.pending, failureReason);
 		} else if (job.kind === "reverse-response") {
 			options.releaseReverseResponse(job.record);
@@ -108,3 +108,6 @@ export function createTransportWriterCallbacks(
 		onIdle: options.finishShutdown,
 	};
 }
+
+export { createTransportWriterCallbacks };
+export type { TransportWriterCallbacksOptions };

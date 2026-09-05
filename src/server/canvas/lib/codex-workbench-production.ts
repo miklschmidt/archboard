@@ -484,7 +484,7 @@ export function createCanvasCodexWorkbenchInstallation(
 							childId: workhorse.childId,
 							epoch: workhorse.epoch,
 							threadId: workhorse.threadId,
-							linkRevision: workhorse.binding?.revision,
+							...(workhorse.binding ? { linkRevision: workhorse.binding.revision } : {}),
 						},
 						{
 							id: operation.operationId,

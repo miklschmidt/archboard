@@ -444,14 +444,11 @@ async function runSelection(
 			current = spawnOwner(file, env, selection.testName);
 			const processGroup = current.pid;
 			try {
-				// oxlint-disable-next-line no-await-in-loop -- TASK-150 preserves the existing single browser owner; finish it before starting the next owner.
 				await finishChild(current, `Browser owner ${file}`);
 			} finally {
 				current = null;
-				// oxlint-disable-next-line no-await-in-loop -- TASK-150 requires cleanup and resource auditing to finish before the next serial browser owner starts.
 				await auditOwner({ file, root: ownerRoot, processGroup, env });
 			}
-			// oxlint-disable-next-line no-await-in-loop -- Interrupted serial execution must finish its owned cleanup before unwinding this browser lane.
 			if (interruptionSignal()) await raiseInterruption();
 		}
 		result = 0;

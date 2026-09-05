@@ -56,12 +56,7 @@ function effectFingerprint(params: unknown): string {
 	return createHash("sha256").update(stableJson(params), "utf8").digest("hex");
 }
 
-function adopt<T>(
-	authority: IdentityAuthority,
-	raw: unknown,
-	parse: (value: unknown) => T,
-	adoptRaw: (value: unknown) => T,
-): T {
+function adopt<T>(raw: unknown, parse: (value: unknown) => T, adoptRaw: (value: unknown) => T): T {
 	try {
 		return parse(raw);
 	} catch {
@@ -71,12 +66,7 @@ function adopt<T>(
 
 function optionalApprovalId(authority: IdentityAuthority, raw: unknown): ApprovalId | null {
 	if (raw === null || raw === undefined) return null;
-	return adopt(
-		authority,
-		raw,
-		authority.decoder.parseApprovalId,
-		authority.decoder.adoptApprovalId,
-	);
+	return adopt(raw, authority.decoder.parseApprovalId, authority.decoder.adoptApprovalId);
 }
 
 function itemIdentity(
@@ -91,23 +81,12 @@ function itemIdentity(
 	readonly identity: Extract<ApprovalRequestIdentity, { readonly kind: "item" }>;
 } {
 	const threadId = adopt(
-		authority,
 		params.threadId,
 		authority.decoder.parseThreadId,
 		authority.decoder.adoptThreadId,
 	);
-	const turnId = adopt(
-		authority,
-		params.turnId,
-		authority.decoder.parseTurnId,
-		authority.decoder.adoptTurnId,
-	);
-	const itemId = adopt(
-		authority,
-		params.itemId,
-		authority.decoder.parseItemId,
-		authority.decoder.adoptItemId,
-	);
+	const turnId = adopt(params.turnId, authority.decoder.parseTurnId, authority.decoder.adoptTurnId);
+	const itemId = adopt(params.itemId, authority.decoder.parseItemId, authority.decoder.adoptItemId);
 	const adoptedApprovalId = optionalApprovalId(authority, approvalId);
 	return {
 		threadId,
@@ -207,7 +186,6 @@ function identityFor(authority: IdentityAuthority, request: HumanRequest): Appro
 		}
 		case "mcpServer/elicitation/request": {
 			const threadId = adopt(
-				authority,
 				request.params.threadId,
 				authority.decoder.parseThreadId,
 				authority.decoder.adoptThreadId,
@@ -216,7 +194,6 @@ function identityFor(authority: IdentityAuthority, request: HumanRequest): Appro
 				request.params.turnId === null
 					? null
 					: adopt(
-							authority,
 							request.params.turnId,
 							authority.decoder.parseTurnId,
 							authority.decoder.adoptTurnId,
@@ -232,13 +209,11 @@ function identityFor(authority: IdentityAuthority, request: HumanRequest): Appro
 		case "applyPatchApproval":
 		case "execCommandApproval": {
 			const conversationId = adopt(
-				authority,
 				request.params.conversationId,
 				authority.decoder.parseThreadId,
 				authority.decoder.adoptThreadId,
 			);
 			const callId = adopt(
-				authority,
 				request.params.callId,
 				authority.decoder.parseDynamicToolCallId,
 				authority.decoder.adoptDynamicToolCallId,
@@ -250,7 +225,6 @@ function identityFor(authority: IdentityAuthority, request: HumanRequest): Appro
 			return Object.freeze({ kind: "legacy", conversationId, callId, approvalId });
 		}
 	}
-	throw new CodexApprovalError("invalid_request", "The approval method is not supported.");
 }
 
 function targetFor(identity: ApprovalRequestIdentity): string {
@@ -472,7 +446,6 @@ export function normalizeApprovalRequest(
 			return deepFreeze(result);
 		}
 	}
-	throw new CodexApprovalError("invalid_request", "The approval method is not supported.");
 }
 
 export function rebindApprovalRequest(

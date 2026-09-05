@@ -22,9 +22,7 @@ const { join } = path;
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
 
-function replacementCensusSource(
-	resources: Readonly<Pick<AsyncDisposableStack, "defer">>,
-): string {
+function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, "defer">>): string {
 	const root = mkdtempSync(join(tmpdir(), "archboard-replacement-census-"));
 	resources.defer(() => {
 		rmSync(root, { recursive: true, force: true });
@@ -103,7 +101,10 @@ test("production crash revokes dispatch and replaces only after the exact prior 
 		const initialIdentity = initial;
 		expect(initialIdentity.group).toBe(initialIdentity.pid);
 
-		writeFileSync(fixture.controlPath, JSON.stringify({ exit: true, priorGroup: initialIdentity.group }));
+		writeFileSync(
+			fixture.controlPath,
+			JSON.stringify({ exit: true, priorGroup: initialIdentity.group }),
+		);
 		await waitFor(
 			() => !exactProcessExists(initialIdentity) || undefined,
 			"the exact crashed Codex child to exit",

@@ -1,12 +1,11 @@
 import { z } from "zod";
-import {
-	createPackageCliOwner,
-	packageFailure,
-} from "./package-cli.ts";
+import { createPackageCliOwner, packageFailure } from "./package-cli.ts";
 import type { PackageRunResult } from "./package-cli.ts";
 
 interface DecodingSchema<T> {
-	readonly safeParse: (value: unknown) =>
+	readonly safeParse: (
+		value: unknown,
+	) =>
 		| { readonly success: true; readonly data: T }
 		| { readonly success: false; readonly error: Error };
 }

@@ -1,8 +1,39 @@
 import type { BrowserWorkbenchActions } from "../../codex-workbench/index.js";
 import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
+import type { SessionLoginParams } from "../../../runtime/codex-session/index.js";
 import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
 import type { CanvasBrowserBindingState } from "./codex-workbench-browser-gateway.js";
 import type { CodexWorkbenchComponents } from "./codex-workbench.js";
+
+function sessionLoginParams(
+	login: Parameters<BrowserWorkbenchActions["account"]["login"]>[0]["login"],
+): SessionLoginParams {
+	switch (login.type) {
+		case "apiKey":
+			return { type: login.type, apiKey: login.apiKey };
+		case "chatgpt":
+			return {
+				type: login.type,
+				...(login.codexStreamlinedLogin === undefined
+					? {}
+					: { codexStreamlinedLogin: login.codexStreamlinedLogin }),
+				...(login.useHostedLoginSuccessPage === undefined
+					? {}
+					: { useHostedLoginSuccessPage: login.useHostedLoginSuccessPage }),
+				...(login.appBrand === undefined ? {} : { appBrand: login.appBrand }),
+			};
+		case "amazonBedrock":
+			return { type: login.type, apiKey: login.apiKey, region: login.region };
+		case "amazonBedrockAccessKeys":
+			return {
+				type: login.type,
+				accessKeyId: login.accessKeyId,
+				secretAccessKey: login.secretAccessKey,
+				...(login.sessionToken === undefined ? {} : { sessionToken: login.sessionToken }),
+				region: login.region,
+			};
+	}
+}
 
 /** Account facts and sign-in continuations belong to this private child generation. */
 export function createCanvasBrowserAccountOwner(input: {
@@ -112,7 +143,7 @@ export function createCanvasBrowserAccountOwner(input: {
 			starting = true;
 			earlyCompletion = null;
 			try {
-				const result = await components.session.accountLogin(command.login);
+				const result = await components.session.accountLogin(sessionLoginParams(command.login));
 				if (disposed || attempt !== revision) return { outcome: "delivered" };
 				starting = false;
 				if ("loginId" in result) {

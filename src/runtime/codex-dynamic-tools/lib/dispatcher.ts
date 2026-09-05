@@ -851,7 +851,6 @@ function createCodexDynamicTools(options: CodexDynamicToolsOptions): CodexDynami
 	let disposed = false;
 	const responses = new WeakMap<object, Promise<DynamicToolCallResponse>>();
 	const quarantine = createDynamicQuarantineDispatcher(options);
-	// oxlint-disable-next-line typescript/promise-function-async -- Duplicate wire calls must receive the exact same owned Promise identity.
 	const dispatch = (request: DynamicServerRequest): Promise<DynamicToolCallResponse> => {
 		const cacheKey = isRecord(request) ? request : null;
 		if (cacheKey !== null) {

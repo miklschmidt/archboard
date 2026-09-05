@@ -76,7 +76,7 @@ export function makeStore(state: TestState, fileSystem?: CodexEpochFileSystem) {
 		rootDirectory: state.root,
 		codexHome: state.codexHome,
 		sqliteHome: state.sqliteHome,
-		fileSystem,
+		...(fileSystem === undefined ? {} : { fileSystem }),
 		now: () => 100,
 	});
 }
@@ -96,7 +96,7 @@ export function input(
 		workspaceRoot: "/workspace/archboard",
 		instructionHash: INSTRUCTION_HASH,
 		manifestHash: MANIFEST_HASH,
-		expected,
+		...(expected === undefined ? {} : { expected }),
 	};
 }
 

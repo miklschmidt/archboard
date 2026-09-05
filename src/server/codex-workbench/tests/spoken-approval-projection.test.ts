@@ -47,8 +47,6 @@ function expectedBrowserState(reason: SpokenApprovalFallbackReason) {
 		case "disposed":
 			return "visual_fallback";
 	}
-	const unhandled: never = reason;
-	return unhandled;
 }
 
 function settlement(

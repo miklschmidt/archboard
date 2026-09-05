@@ -42,9 +42,10 @@ test("the pinned Excalidraw patch repairs only missing declaration assets", () =
 	expect(patch).toContain('-import "./css/styles.scss";');
 	expect(patch).toContain('+import "./styles.scss";');
 	for (const companion of companions) {
-		expect(readFileSync(path.join(packageRoot, declarationRoot, companion), "utf8"), companion).toBe(
-			"export {};\n",
-		);
+		expect(
+			readFileSync(path.join(packageRoot, declarationRoot, companion), "utf8"),
+			companion,
+		).toBe("export {};\n");
 	}
 	const locale = readFileSync(path.join(packageRoot, declarationRoot, "en.json"));
 	expect(createHash("sha256").update(locale).digest("hex")).toBe(localeHash);

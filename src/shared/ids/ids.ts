@@ -94,7 +94,6 @@ function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
 function fnv1a(str: string): number {
 	let h = 0x81_1c_9d_c5;
 	for (let i = 0; i < str.length; i++) {
-		// eslint-disable-next-line unicorn/prefer-code-point -- The persisted FNV identity contract hashes UTF-16 code units for backward stability.
 		h ^= str.charCodeAt(i);
 		h = Math.imul(h, 0x01_00_01_93);
 	}

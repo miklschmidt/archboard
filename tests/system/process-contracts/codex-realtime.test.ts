@@ -1,12 +1,9 @@
-import { readFileSync } from "node:fs";
-
 import { expect, test } from "bun:test";
 
 import {
 	createHarness,
 	latestState,
 	makeNotification,
-	type RealtimeHarness,
 	waitFor,
 	waitForGenerations,
 	waitForState,
@@ -14,45 +11,17 @@ import {
 } from "./fixtures/codex-realtime-process.ts";
 import { composeCoordinatorInstructions } from "../../../src/runtime/codex-instructions/index.ts";
 import { createIdentityAuthority } from "../../../src/shared/codex-workbench-identity/index.ts";
+import { parseRealtimeItemId } from "../../../src/shared/codex-realtime-host/index.ts";
 import {
-	parseRealtimeCorrelationId,
-	parseRealtimeItemId,
-	parseRealtimeSessionId,
-} from "../../../src/shared/codex-realtime-host/index.ts";
+	browserCorrelation,
+	expectPendingOffer,
+	readRecords,
+	requestParams,
+	waitForDiagnostic,
+} from "./support/codex-realtime-assertions.ts";
 
 const REALTIME_END_INSTRUCTIONS =
 	"Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.";
-
-function browserCorrelation(suffix = "") {
-	return {
-		sessionId: parseRealtimeSessionId(`process-browser-session${suffix}`),
-		correlationId: parseRealtimeCorrelationId(`process-browser-correlation${suffix}`),
-	};
-}
-
-function readRecords(harness: RealtimeHarness): Record<string, unknown>[] {
-	return readFileSync(harness.logPath, "utf8")
-		.split("\n")
-		.filter(Boolean)
-		.map((line) => JSON.parse(line) as Record<string, unknown>);
-}
-
-function requestParams(harness: RealtimeHarness, method: string): Record<string, unknown>[] {
-	return readRecords(harness)
-		.filter((entry) => entry["kind"] === "request" && entry["method"] === method)
-		.map((entry) => entry["params"] as Record<string, unknown>);
-}
-
-function expectPendingOffer(harness: RealtimeHarness, settled: boolean): void {
-	expect(settled).toBeFalse();
-	expect(latestState(harness)).toEqual({ phase: "negotiating", reason: "offer_created" });
-}
-
-async function waitForDiagnostic(harness: RealtimeHarness, count: number): Promise<void> {
-	await waitFor(
-		() => harness.events.filter((event) => event.kind === "diagnostic").length === count,
-	);
-}
 
 test("real process proves the exact realtime envelope, gates, transcript, and one-attempt commands", async () => {
 	await withHarness(

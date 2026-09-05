@@ -43,9 +43,9 @@ interface ApprovalRecord {
 	outcome: ApprovalOutcome | null;
 	reason: string | null;
 	decision: ApprovalDecision | null;
-	timer?: ReturnType<typeof setTimeout>;
+	timer: ReturnType<typeof setTimeout> | undefined;
 	settlementPromise?: Promise<ApprovalSettlement>;
-	settlementResolve?: (settlement: ApprovalSettlement) => void;
+	settlementResolve: ((settlement: ApprovalSettlement) => void) | undefined;
 	terminalClaimed: boolean;
 	terminalDelivery: ApprovalTerminalDelivery;
 }
@@ -339,6 +339,8 @@ export function createCodexApprovalBroker(
 			outcome: null,
 			reason: null,
 			decision: null,
+			timer: undefined,
+			settlementResolve: undefined,
 			terminalClaimed: false,
 			terminalDelivery: null,
 		};

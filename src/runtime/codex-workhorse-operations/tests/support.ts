@@ -378,7 +378,6 @@ function input(
 		workspaceRoot: "/workspace/archboard",
 		instructionHash: INSTRUCTION_HASH,
 		manifestHash: MANIFEST_HASH,
-		expected: undefined,
 	};
 }
 

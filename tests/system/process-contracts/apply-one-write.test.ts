@@ -28,7 +28,7 @@ type ApplyReceiptView = {
 	deleted: number;
 	elements: ElementIdView[];
 	fingerprint: { note: string; elements: number };
-	document?: ElementIdView[];
+	document?: ElementIdView[] | undefined;
 };
 const ElementIdViewSchema: z.ZodType<ElementIdView> = z.object({ id: z.string() }).passthrough();
 const ApplySchema: z.ZodType<ApplyReceiptView> = z.object({

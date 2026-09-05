@@ -9,8 +9,10 @@ import {
 	WORKHORSE_MANIFEST_HASH,
 	createWorkhorseThreadStartParams,
 } from "../index.js";
-import { ARCHBOARD_APP_NAMESPACE } from "../../codex-thread-tools/index.js";
-import { ARCHBOARD_APP_MANIFEST_SHA256 } from "../../codex-thread-tools/index.js";
+import {
+	ARCHBOARD_APP_MANIFEST_SHA256,
+	ARCHBOARD_APP_NAMESPACE,
+} from "../../codex-thread-tools/index.js";
 
 const CHECKOUT_ROOT = "/workspace/archboard";
 
@@ -65,7 +67,9 @@ describe("codex workhorse start profile", () => {
 			"selectedCapabilityRoots",
 			"mockExperimentalField",
 		];
-		for (const field of intentionallyOmitted) expect(Object.hasOwn(params, field)).toBe(false);
+		for (const field of intentionallyOmitted) {
+			expect(Object.hasOwn(params, field)).toBe(false);
+		}
 	});
 
 	test("keeps the reviewed instruction and catalogue hashes at the module boundary", () => {

@@ -34,17 +34,17 @@ const RETAINED_ENVIRONMENT_KEYS = [
 	"SSH_AUTH_SOCK",
 ] as const;
 
-export const CODEX_RETAINED_ENVIRONMENT_KEYS: readonly string[] = Object.freeze([
+const CODEX_RETAINED_ENVIRONMENT_KEYS: readonly string[] = Object.freeze([
 	...RETAINED_ENVIRONMENT_KEYS,
 ]);
 
-export type CodexAmbientEnvironment = Readonly<Record<string, string | undefined>>;
-export type CodexChildEnvironment = Readonly<Record<string, string>>;
+type CodexAmbientEnvironment = Readonly<Record<string, string | undefined>>;
+type CodexChildEnvironment = Readonly<Record<string, string>>;
 
-export class CodexEnvironmentError extends Error {
-	readonly key?: string;
+class CodexEnvironmentError extends Error {
+	public readonly key: string | undefined;
 
-	constructor(message: string, key?: string, cause?: unknown) {
+	public constructor(message: string, key?: string, cause?: unknown) {
 		super(message, { cause });
 		this.name = "CodexEnvironmentError";
 		this.key = key;
@@ -52,12 +52,14 @@ export class CodexEnvironmentError extends Error {
 }
 
 function requirePath(value: string, name: string): string {
-	if (typeof value !== "string" || value.length === 0 || value.includes("\0"))
+	if (typeof value !== "string" || value.length === 0 || value.includes("\0")) {
 		throw new CodexEnvironmentError(`${name} must be a nonempty NUL-free absolute path.`);
-	if (!path.isAbsolute(value))
+	}
+	if (!path.isAbsolute(value)) {
 		throw new CodexEnvironmentError(
 			`${name} must be an absolute path, received ${JSON.stringify(value)}.`,
 		);
+	}
 	return value;
 }
 
@@ -65,8 +67,11 @@ function requirePath(value: string, name: string): string {
  * Build the child environment from the reviewed allowlist. The two Codex
  * roots are assigned last so ambient values can never win by insertion order
  * or precedence.
+ *
+ * @param input - Canonical private Codex roots and an optional reviewed ambient environment.
+ * @returns The frozen allowlisted environment for the owned app-server child.
  */
-export function buildCodexChildEnvironment(input: {
+function buildCodexChildEnvironment(input: {
 	readonly ambient?: CodexAmbientEnvironment;
 	readonly codexHome: string;
 	readonly sqliteHome: string;
@@ -77,16 +82,22 @@ export function buildCodexChildEnvironment(input: {
 	const child: Record<string, string> = {};
 
 	for (const key of RETAINED_ENVIRONMENT_KEYS) {
-		if (!Object.prototype.hasOwnProperty.call(ambient, key)) continue;
+		if (!Object.hasOwn(ambient, key)) {
+			continue;
+		}
 		const value = ambient[key];
-		if (value === undefined) continue;
-		if (typeof value !== "string")
+		if (value === undefined) {
+			continue;
+		}
+		if (typeof value !== "string") {
 			throw new CodexEnvironmentError(
 				`Retained environment key ${key} must have a string value.`,
 				key,
 			);
-		if (value.includes("\0"))
+		}
+		if (value.includes("\0")) {
 			throw new CodexEnvironmentError(`Retained environment key ${key} contains a NUL byte.`, key);
+		}
 		child[key] = value;
 	}
 
@@ -94,3 +105,6 @@ export function buildCodexChildEnvironment(input: {
 	child["CODEX_SQLITE_HOME"] = sqliteHome;
 	return Object.freeze(child);
 }
+
+export { CODEX_RETAINED_ENVIRONMENT_KEYS, CodexEnvironmentError, buildCodexChildEnvironment };
+export type { CodexAmbientEnvironment, CodexChildEnvironment };

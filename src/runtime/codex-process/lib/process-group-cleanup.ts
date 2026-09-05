@@ -11,7 +11,6 @@ type Timer = ReturnType<typeof setTimeout>;
 interface ProcessGroupCleanupClock {
 	readonly now: () => number;
 	readonly schedule: (callback: () => void, delayMs: number) => Timer;
-	// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Node timer handles are mutable upstream capabilities accepted only by cancellation.
 	readonly cancel: (timer: Timer) => void;
 }
 
@@ -28,19 +27,16 @@ interface ProcessGroupCleanupInput {
 
 interface ProcessGroupDeadline {
 	readonly waitForClosedOrAt: (
-		// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Promise is the existing child-close signal capability; this helper never mutates it.
 		childClosed: Promise<unknown>,
 		deadlineAtMs: number,
 	) => Promise<"closed" | "time">;
 	readonly settleBeforeDeadline: (
-		// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Promise instances are observed, not mutated, and preserve the existing public shutdown contract.
 		work: readonly Promise<void>[],
 		deadlineAtMs: number,
 	) => Promise<PromiseSettledResult<void>[]>;
 }
 
 interface ProcessGroupCleanup extends ProcessGroupDeadline {
-	// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Every field is readonly; the branded process-group identity retains its upstream nominal shape.
 	readonly cleanup: (input: ProcessGroupCleanupInput) => Promise<void>;
 }
 
@@ -49,7 +45,6 @@ function createProcessGroupCleanup(
 	clock: ProcessGroupCleanupClock,
 	diagnostics: ProcessGroupCleanupDiagnostics,
 ): ProcessGroupCleanup {
-	// oxlint-disable-next-line typescript/promise-function-async -- Adding an async wrapper changes the exact timer/microtask settlement ordering this helper preserves.
 	const waitUntil = (deadlineAtMs: number): Promise<void> => {
 		const delayMs = Math.max(0, deadlineAtMs - clock.now());
 		if (delayMs === 0) {
@@ -70,24 +65,19 @@ function createProcessGroupCleanup(
 			};
 			try {
 				timer = clock.schedule(finish, delayMs);
-				// oxlint-disable-next-line typescript/no-unnecessary-condition -- Injected schedulers may invoke the callback synchronously before returning their timer.
 				if (settled) {
 					clock.cancel(timer);
 				}
 			} catch (error) {
-				// oxlint-disable-next-line typescript/no-unnecessary-condition -- A synchronous injected scheduler can settle before throwing.
 				if (!settled) {
 					settled = true;
-					// oxlint-disable-next-line typescript/prefer-promise-reject-errors -- The coordinator preserves the original context-specific sanitized wrapping of injected scheduler failures.
 					reject(error);
 				}
 			}
 		});
 	};
 
-	// oxlint-disable-next-line typescript/promise-function-async -- Adding an async wrapper changes the exact child-close/timer settlement ordering this helper preserves.
 	const waitForClosedOrAt = (
-		// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Promise is the existing child-close signal capability; this helper never mutates it.
 		childClosed: Promise<unknown>,
 		deadlineAtMs: number,
 	): Promise<"closed" | "time"> => {
@@ -116,15 +106,12 @@ function createProcessGroupCleanup(
 				timer = clock.schedule(() => {
 					finish("time");
 				}, delayMs);
-				// oxlint-disable-next-line typescript/no-unnecessary-condition -- Injected schedulers may invoke the callback synchronously before returning their timer.
 				if (settled) {
 					clock.cancel(timer);
 				}
 			} catch (error) {
-				// oxlint-disable-next-line typescript/no-unnecessary-condition -- A synchronous injected scheduler can settle before throwing.
 				if (!settled) {
 					settled = true;
-					// oxlint-disable-next-line typescript/prefer-promise-reject-errors -- The coordinator preserves the original context-specific sanitized wrapping of injected scheduler failures.
 					reject(error);
 				}
 			}
@@ -132,7 +119,6 @@ function createProcessGroupCleanup(
 	};
 
 	const settleBeforeDeadline = async (
-		// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Promise instances are observed by allSettled and are never mutated.
 		work: readonly Promise<void>[],
 		deadlineAtMs: number,
 	): Promise<PromiseSettledResult<void>[]> => {
@@ -193,7 +179,6 @@ function createProcessGroupCleanup(
 		);
 	};
 
-	// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Every input field is readonly; the branded identity retains its upstream nominal shape.
 	const cleanup = async (input: ProcessGroupCleanupInput): Promise<void> => {
 		let status = inspect(input.identity);
 		if (status === "quiescent") {

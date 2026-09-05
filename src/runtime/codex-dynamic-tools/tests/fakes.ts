@@ -393,7 +393,9 @@ export function setupAuthorities(): {
 		threadId: caller.threadId,
 		wireThreadId: caller.wireThreadId,
 		status: "active",
-		linkClassification: caller.linkClassification,
+		...(caller.linkClassification === undefined
+			? {}
+			: { linkClassification: caller.linkClassification }),
 		provenance: caller.provenance,
 		threadLinkTarget: caller.threadLinkTarget,
 	});

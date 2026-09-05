@@ -1,11 +1,7 @@
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 import { decodeJsonRpcError, decodeResponseEnvelope } from "../../codex-protocol/index.js";
 import type { RequestTombstone } from "./internals.js";
-import type {
-	TransportIssue,
-	TransportLateResponse,
-	TransportLateResponseFor,
-} from "./types.js";
+import type { TransportIssue, TransportLateResponse, TransportLateResponseFor } from "./types.js";
 import type { ResponseMethod } from "../../codex-protocol/index.js";
 import { cloneAndFreeze, jsonByteLength } from "./public-values.js";
 
@@ -28,15 +24,13 @@ function redactError(error: {
 			error.message.length > maximum
 				? `${error.message.slice(0, maximum - suffix.length)}${suffix}`
 				: error.message,
-	dataPresent: Object.hasOwn(error, "data"),
+		dataPresent: Object.hasOwn(error, "data"),
 	});
 }
 
 interface LateResponseStore {
 	readonly values: readonly TransportLateResponse[];
-	// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- Method preserves the request/response payload correlation checked during retention.
 	readonly retain: <Method extends ResponseMethod>(
-		// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- The tombstone is shallow-readonly plus a readonly branded correlation; this store only copies it.
 		tombstone: RetainedTombstone & { readonly method: Method },
 		value: Readonly<Record<string, unknown>>,
 	) => void;
@@ -47,9 +41,7 @@ function createLateResponseStore(
 ): LateResponseStore {
 	const values: TransportLateResponse[] = [];
 
-	// oxlint-disable-next-line typescript/no-unnecessary-type-parameters -- Method preserves the request/response payload correlation checked during retention.
 	const retain = <Method extends ResponseMethod>(
-		// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- The tombstone is shallow-readonly plus a readonly branded correlation; this function only projects it.
 		tombstone: RetainedTombstone & { readonly method: Method },
 		value: Readonly<Record<string, unknown>>,
 	): void => {
@@ -71,11 +63,11 @@ function createLateResponseStore(
 				const resultBytes = jsonByteLength(result);
 				late =
 					resultBytes > CODEX_APP_SERVER_CAPACITY.retention.lateResponseRecordBytes
-						? ({
+						? {
 								...common,
 								kind: "redacted",
 								payload: { reason: "retained-size", byteLength: resultBytes },
-							})
+							}
 						: { ...common, kind: "result", payload: result };
 			} catch {
 				late = {
@@ -121,7 +113,6 @@ function createLateResponseStore(
 		}
 		// `late` is already checked as the exact method-indexed member; TypeScript cannot
 		// collapse that generic member back into the equivalent mapped union.
-		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Bridges only that distributive-union limitation after method-specific construction.
 		values.push(cloneAndFreeze(late) as TransportLateResponse);
 		emitIssue({
 			kind: "duplicate-response",

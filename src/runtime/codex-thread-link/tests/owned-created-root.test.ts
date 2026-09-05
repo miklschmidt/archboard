@@ -41,7 +41,7 @@ describe("owned roots before their first user message", () => {
 			const sessionFixture = {
 				threadListPage: async () => threadPage([]),
 				threadLoadedListPage: async () => loadedPage([row.id]),
-				threadRead: async (params: { threadId: string; includeTurns?: boolean }) => {
+				threadRead: async (params: { threadId: string; includeTurns?: boolean | undefined }) => {
 					reads.push(params);
 					return { thread: row };
 				},
@@ -147,6 +147,15 @@ describe("owned roots before their first user message", () => {
 				async (fixture) => {
 					const row = createdRoot(fixture);
 					let reads = 0;
+					const target =
+						mode === "unproved"
+							? {
+									threadId: fixture.target.threadId,
+									childId: fixture.target.childId,
+									epoch: fixture.target.epoch,
+									provenance: null,
+								}
+							: fixture.target;
 					const result = await classifyCodexThreadLink(
 						{
 							epoch: fixture.store,
@@ -161,8 +170,7 @@ describe("owned roots before their first user message", () => {
 							},
 						},
 						{
-							...fixture.target,
-							...(mode === "unproved" ? { operationId: undefined, provenance: null } : {}),
+							...target,
 							...(mode === "stale" ? { epoch: createIdentityAuthority().validator.epoch } : {}),
 						},
 					);

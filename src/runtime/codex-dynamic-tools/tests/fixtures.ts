@@ -418,9 +418,10 @@ export function requestFor(
 			callId: `call-${callSuffix}`,
 			namespace: ARCHBOARD_APP_NAMESPACE.name,
 			tool,
-			arguments: argumentsValue,
+			arguments: z.json().parse(argumentsValue),
 		},
 		owner: "codex-dynamic-tools",
 		logicalCall,
 	};
 }
+import { z } from "zod";

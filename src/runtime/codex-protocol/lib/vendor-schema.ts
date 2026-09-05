@@ -5,7 +5,11 @@ import type { CodexIngressConformance } from "../../../shared/codex-app-server-c
 type SchemaConformance<Wire, Schema extends z.ZodType> = Schema &
 	CodexIngressConformance<Wire, z.input<Schema>, z.output<Schema>>;
 
-/** Proves every handwritten ingress schema against its normalized generated wire type. */
+/**
+ * Proves every handwritten ingress schema against its normalized generated wire type.
+ *
+ * @returns An identity validator whose parameter enforces every method's wire conformance.
+ */
 export function codexIngressSchemas<WireByMethod extends object>() {
 	return <Schemas extends { [Method in keyof WireByMethod]: z.ZodType }>(
 		schemas: Schemas & {

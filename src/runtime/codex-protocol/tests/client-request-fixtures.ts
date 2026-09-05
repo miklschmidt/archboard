@@ -281,8 +281,4 @@ const BEDROCK_SETUP_FIXTURES = [
 	{ type: "environment", region: "eu-west-1" },
 ] satisfies readonly BedrockSetupParams[];
 
-export {
-	BEDROCK_SETUP_FIXTURES,
-	COMPLETE_CLIENT_REQUEST_FIXTURES,
-	LOGIN_ACCOUNT_FIXTURES,
-};
+export { BEDROCK_SETUP_FIXTURES, COMPLETE_CLIENT_REQUEST_FIXTURES, LOGIN_ACCOUNT_FIXTURES };

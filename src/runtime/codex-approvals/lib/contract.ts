@@ -349,7 +349,7 @@ export type CodexApprovalErrorCode =
 export class CodexApprovalError extends Error {
 	override readonly name = "CodexApprovalError";
 	readonly code: CodexApprovalErrorCode;
-	readonly requestId?: JsonRpcRequestId;
+	readonly requestId: JsonRpcRequestId | undefined;
 
 	constructor(code: CodexApprovalErrorCode, message: string, requestId?: JsonRpcRequestId) {
 		super(message);

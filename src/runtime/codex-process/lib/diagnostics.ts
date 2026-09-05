@@ -1,7 +1,7 @@
 const REDACTION_MARKER = "[REDACTED]";
 const MIN_SECRET_LENGTH = 1;
 
-export interface BoundedCodexDiagnostics {
+interface BoundedCodexDiagnostics {
 	/** Public diagnostics are redacted before they cross the process boundary. */
 	readonly redacted: true;
 	readonly text: string;
@@ -11,9 +11,9 @@ export interface BoundedCodexDiagnostics {
 	readonly droppedBytes: number;
 }
 
-export interface CodexDiagnosticsBuffer {
+interface CodexDiagnosticsBuffer {
 	/** Append raw bytes; only bounded committed redacted bytes become observable via snapshot. */
-	readonly append: (chunk: Uint8Array | string) => void;
+	readonly append: (chunk: Readonly<Uint8Array> | string) => void;
 	/** Commit the bounded redacted carry when the owning child reaches a terminal boundary. */
 	readonly finalize: () => void;
 	readonly redact: (text: string) => string;
@@ -26,6 +26,15 @@ function uniqueSecrets(secrets: readonly string[]): readonly string[] {
 			(left, right) => right.length - left.length,
 		),
 	);
+}
+
+function matchingSecret(prefix: string, secrets: readonly string[]): string | undefined {
+	for (const candidate of secrets) {
+		if (prefix.startsWith(candidate)) {
+			return candidate;
+		}
+	}
+	return undefined;
 }
 
 function createRedactor(secrets: readonly string[]): {
@@ -43,7 +52,9 @@ function createRedactor(secrets: readonly string[]): {
 
 	const redact = (text: string): string => {
 		let redacted = text;
-		for (const secret of knownSecrets) redacted = redacted.split(secret).join(REDACTION_MARKER);
+		for (const secret of knownSecrets) {
+			redacted = redacted.split(secret).join(REDACTION_MARKER);
+		}
 		return redacted;
 	};
 
@@ -56,13 +67,15 @@ function createRedactor(secrets: readonly string[]): {
 			return stable;
 		}
 		while (pending.length > 0) {
-			const secret = knownSecrets.find((candidate) => pending.startsWith(candidate));
+			const secret = matchingSecret(pending, knownSecrets);
 			if (secret !== undefined) {
 				stable += REDACTION_MARKER;
 				pending = pending.slice(secret.length);
 				continue;
 			}
-			if (pending.length < maxSecretLength) break;
+			if (pending.length < maxSecretLength) {
+				break;
+			}
 			stable += pending[0];
 			pending = pending.slice(1);
 		}
@@ -85,18 +98,25 @@ function createRedactor(secrets: readonly string[]): {
 function copyPrefix(text: string, limitBytes: number): Buffer {
 	const bytes = Buffer.from(text, "utf8");
 	let end = Math.min(bytes.byteLength, limitBytes);
-	while (end > 0 && end < bytes.byteLength && (bytes[end]! & 0xc0) === 0x80) end -= 1;
+	while (end > 0 && end < bytes.byteLength) {
+		const byte = bytes[end];
+		if (byte === undefined || (byte & 0xc0) !== 0x80) {
+			break;
+		}
+		end -= 1;
+	}
 	return Buffer.from(bytes.subarray(0, end));
 }
 
-export function createCodexDiagnosticsBuffer(
+function createCodexDiagnosticsBuffer(
 	limitBytes: number,
 	secrets: readonly string[] = [],
 ): CodexDiagnosticsBuffer {
-	if (!Number.isInteger(limitBytes) || limitBytes < 1)
+	if (!Number.isInteger(limitBytes) || limitBytes < 1) {
 		throw new Error(
 			`Codex stderr diagnostic limit must be a positive integer, received ${limitBytes}.`,
 		);
+	}
 	const redactor = createRedactor(secrets);
 	const chunks: Buffer[] = [];
 	let retainedBytes = 0;
@@ -106,15 +126,20 @@ export function createCodexDiagnosticsBuffer(
 	const commit = (text: string): void => {
 		const bytes = Buffer.byteLength(text, "utf8");
 		redactedBytes += bytes;
-		if (retainedBytes >= limitBytes || bytes === 0) return;
+		if (retainedBytes >= limitBytes || bytes === 0) {
+			return;
+		}
 		const retained = copyPrefix(text, limitBytes - retainedBytes);
-		if (retained.byteLength === 0) return;
+		if (retained.byteLength === 0) {
+			return;
+		}
 		chunks.push(retained);
 		retainedBytes += retained.byteLength;
 	};
 
-	const append = (chunk: Uint8Array | string): void => {
-		const bytes = typeof chunk === "string" ? Buffer.from(chunk, "utf8") : Buffer.from(chunk);
+	const append = (chunk: Readonly<Uint8Array> | string): void => {
+		const bytes =
+			typeof chunk === "string" ? Buffer.from(chunk, "utf8") : Buffer.from(new Uint8Array(chunk));
 		const text = bytes.toString("utf8");
 		totalBytes += bytes.byteLength;
 		commit(redactor.append(text));
@@ -131,7 +156,9 @@ export function createCodexDiagnosticsBuffer(
 		const completeRedactedBytes = redactedBytes + pending.byteLength;
 		let offset = 0;
 		for (const chunk of chunks) {
-			if (offset >= visible.byteLength) break;
+			if (offset >= visible.byteLength) {
+				break;
+			}
 			const amount = Math.min(chunk.byteLength, visible.byteLength - offset);
 			chunk.copy(visible, offset, 0, amount);
 			offset += amount;
@@ -148,3 +175,6 @@ export function createCodexDiagnosticsBuffer(
 
 	return Object.freeze({ append, finalize, redact: redactor.redact, snapshot });
 }
+
+export { createCodexDiagnosticsBuffer };
+export type { BoundedCodexDiagnostics, CodexDiagnosticsBuffer };

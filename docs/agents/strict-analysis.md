@@ -1,137 +1,105 @@
-# Strict analysis policy
+# Analysis policy
 
-TASK-150 restores an enforced baseline for maintainers and agents: every retained
-TypeScript source class is discoverable, compiler checked and type-aware linted.
-The quarantined frontend is deliberately incomplete. Diagnostic enforcement is
-not a claim that the strict baseline or complete product gate passes.
+TASK-150 applies the maintainer-approved lint policy to `src/ui/**`, so the UI
+rebuild does not depend on a repository-wide style migration. Existing source
+corrections and compiler safety improvements are retained. TASK-151 owns adoption
+outside the UI; the earlier full-catalogue requirement is superseded.
 
-## Ordinary commands and source inventory
+## Ordinary commands and repository boundary
 
-`bun run lint` invokes pinned Oxlint 1.80.0 with oxlint-tsgolint 7.0.2001 once.
-It uses `--type-aware`, checks the normal authored tree, and supplies explicit
-physical generated declaration file arguments. Oxlint directory traversal honors
-Git ignores even with `--no-ignore`; removing the old config ignore alone did not
-include generated declarations. The explicit arguments address that measured gap.
-`bun run fix` fixes authored source only, then verifies all source through the
-ordinary lint command. It never auto-fixes vendor declarations.
+`bun run lint` runs the repository baseline and approved UI policy sequentially.
+Both commands, and both stages of `bun run fix`, enter through `scripts/lint.ts`.
+This small preflight delegates analysis to ordinary pinned Oxlint; it does not
+implement an analyzer, compiler supervisor, or parallel worker lane.
 
-The root TypeScript program includes TS, TSX, MTS, CTS and declarations throughout
-the retained repository, including root configuration, tests, fixtures, scripts,
-tooling and locally generated source. The frontend program extends the same
-strict options and supplies browser libraries. Both compiler invocations remain
-ordinary and sequential, and either failure propagates. No analyzer supervisor,
-per-slice compiler, parallel compiler orchestration or alternative engine exists.
+Every invocation explicitly selects the repository `tsconfig.json` for native
+import resolution. Before any type-aware analysis, the preflight compares the
+actual Oxlint target inventory with the repository TypeScript program's declared
+roots. It refuses unmatched targets, conflicting nested projects and undeclared
+stdin inputs before starting tsgolint or applying fixes. Paths must match after
+normalization; sharing a realpath is insufficient for the pinned backend.
 
-The repository coverage owner independently discovers physical TypeScript files
-and compares them with `tsc --showConfig` roots and the actual normal lint command's
-`--debug files` output. A new source extension/location or generated directory depth
-cannot silently miss a gate: the failure names its path. Dist, dependencies and the
-inert local archive are not authored repository source. No generated source class
-is excluded. Imported declarations remain checked with `skipLibCheck: false`.
+This protects all lint scopes, not only the UI. It prevents ancestor/inferred
+project fallback; imported dependency declarations remain available for checking
+repository code. New type-aware source inventories must satisfy the same guard.
+UI lint uses the existing repository TypeScript project, with no separate UI
+project. `--tsconfig` alone is not a typed-project boundary, and the tested
+`disableSolutionSearching` option does not block the unmatched-file case.
 
-Excalidraw 0.18.1 ships several authoritative declaration trees behind stale
-package names and omits type-only locale/style targets. Exact TypeScript path
-mappings resolve the shipped math, utility, transform and browser-fs-access
-declarations without changing runtime resolution. The registered Bun patch adds
-the missing declaration assets and changes only three relative import literals
-in two `.d.ts` files. Its locale is the exact `v0.18.1` source from commit
-`a2ec2889babf7d2295469c6d90ebe77fae57df84`, SHA-256
-`c8c9c8a50a14cd2d5c53703a273ce134608712f84335d9c4e2613b6d3b5bb6f5`.
-Root-level placement of that locale and two stylesheet companions works around
-Bun 1.4.0's new-patch-directory mode bug; no JavaScript or runtime CSS changes.
-The offline repository owner locks the patch paths, import edits, package
-integrity, locale hash and declaration contents.
+`lint:repository` uses the pre-task repository policy and archive guard with nested
+lint configuration disabled. It excludes `src/ui/**`. `lint:ui` uses the approved
+UI lint configuration, type-aware analysis and one worker. The coverage check
+verifies the two actual inventories without gaps or overlapping ownership.
+Generated Codex declarations retain their pre-task lint exclusion until TASK-151;
+they remain compiler checked. Root and frontend compiler safety improvements remain,
+including `noPropertyAccessFromIndexSignature`: only index-signature properties
+require brackets, while explicitly declared properties allow dots.
 
-`analysis-safety.test.ts` proves a passing typed consumer and a failing consumer of
-an imported declaration through the pinned engine. `generated-declarations.test.ts`
-regenerates the pinned upstream contract into a disposable directory and compares
-its entire file set against the exempt files. Recipe 2 applies exactly two
-shape-checked, semantics-preserving corrections: it collapses duplicated `null`
-constituents in `ThreadRealtimeStartParams.prompt` and
-`ThreadForkParams.serviceTier`. Every other byte must match raw Codex 0.151.0
-output, and generation rejects either source shape if it changes.
+## Approved UI policy
 
-## Catalogue and exceptions
+Keep existing Archboard rules. Enable `correctness`, `suspicious`, and `perf` at
+error. Leave `style`, `pedantic`, `restriction`, and overall `nursery` off. Select
+only these nursery rules:
 
-[strict-analysis-policy.json](strict-analysis-policy.json) is the authored audit
-record for the full pinned catalogue, including its normalized digest, every
-inactive plugin/rule reason, and each vendor structural/style exception. All seven
-categories are enabled. Bun is Jest-compatible, but the pinned analyzer's
-[import/global binding collector](https://raw.githubusercontent.com/oxc-project/oxc/oxlint_v1.80.0/crates/oxc_linter/src/utils/jest.rs)
-recognizes `@jest/globals`, `vitest`, `vite-plus/test` and `@effect/vitest`, not
-the repository's imported `bun:test` bindings. Its unresolved-global fallback
-does not select those imports either. This concrete detection limitation is the
-Jest/Vitest plugin exclusion; unused Next.js/Vue frameworks are also inapplicable.
-JSDoc checks are enabled, with
-TypeScript signatures authoritative rather than duplicated JSDoc type spellings.
+- `import/named`
+- `import/export`
+- `no-restricted-exports`, with every default-export form restricted: `defaultFrom`,
+  `direct`, `named`, `namedFrom`, and `namespaceFrom`
+- `promise/no-return-in-finally`
+- `typescript/no-unnecessary-condition`
+- `no-unreachable-loop`
+- `unicorn/no-useless-iterator-to-array`
+- `typescript/prefer-optional-chain`
 
-The seven named rules are explicit errors: `no-await-in-loop`,
-`typescript/no-unsafe-type-assertion`, `typescript/no-unnecessary-type-assertion`,
-`typescript/no-base-to-string`, `typescript/no-unnecessary-condition`,
-`typescript/no-unnecessary-type-conversion`, and `typescript/consistent-return`.
-All authored code has a 500 physical-line limit, counting comments and blank lines.
-Existing complexity 60 remains an additional bound; zero warnings and unused
-suppression reporting are mandatory.
+Classic cyclomatic complexity is limited to **6**. Authored UI source is limited
+to **600 physical lines**, including blanks and comments. Local imports,
+re-exports, dynamic imports and imported types use `@/` aliases. Package imports
+remain package imports; aliases never bypass private-module boundaries. UI source
+uses TypeScript, and `.js`, `.jsx`, `.mjs`, and `.cjs` are rejected. Existing
+non-UI JavaScript tooling remains in the deferred scope.
 
-Oxlint 1.80.0 with oxlint-tsgolint 7.0.2001 incorrectly reports an immutable
-branded string when that primitive is nested inside an otherwise readonly
-record. The readonly-parameter rule therefore allows only the nine named
-string aliases at their exact defining source files. Request correlation exposes
-the same analyzer defect through its nested `JsonRpcRequestId`, so that exact
-nominal string alias is allowed, as is the exact `ItemId` nested throughout
-otherwise readonly retained thread data. Type fixtures enforce that
-each remains a nominal string, while the policy test freezes the source-specific
-allowlist; mutable records and nested protocol collections remain errors.
-Re-audit this narrow analyzer workaround on either pinned linter upgrade.
+Enable `eslint`, `typescript`, `unicorn`, `react`, `react-perf`, `import`, `jsdoc`,
+`jsx-a11y`, and `promise`. The automatic JSX runtime retains its existing
+`react/react-in-jsx-scope` exception. Warnings and unused suppressions fail the gate.
+The approved selection is recorded in `strict-analysis-policy.json`.
 
-The retained Zod record branch in `codex-session/lib/response-contract.ts` keeps
-one statement-local `typescript/consistent-indexed-object-style` suppression.
-With pinned TypeScript 7.0.2, replacing that recursive readonly mapping with
-`Readonly<Record<...>>` causes excessive-instantiation failures at all three
-consumers of recursive MCP JSON; reverting only that syntax clears them. Re-audit
-the exact site on a TypeScript upgrade and remove the suppression when the
-equivalent indexed-object spelling compiles.
+## Documentation for exploration
 
-One pinned formatter conflict is inapplicable: Oxlint 1.80.0
-`unicorn/number-literal-case` requires uppercase hexadecimal digits, while the
-mandatory Oxfmt 0.65.0 pass deterministically restores lowercase and the lint
-rule has no configuration. Oxfmt therefore owns literal case. Re-audit this
-single disposition on either tool upgrade; `unicorn/numeric-separators-style`
-and every other applicable literal rule remain enforced.
+Use the pinned `eslint-plugin-jsdoc` `flat/recommended-typescript` preset at error,
+plus `require-description`. Require documentation for named function declarations,
+arrow functions, function expressions and methods. Keep concise descriptions of
+function purpose, parameters and returned values. Explain why the function exists
+when its role is not apparent from its name; do not just repeat the signature.
+TypeScript owns parameter, property and return types: do not duplicate them in JSDoc.
 
-Only exact pinned vendor declaration paths receive the enumerated authored
-spelling/layout/structural exemptions. Type-aware checks are never exempt. The
-previous blanket generated/vendor ignores and script-wide console exemptions are
-removed. Verified reading-only research copies use `.txt` extensions, preserve
-original bytes/provenance, and cannot become an executable vendor loophole.
+Native JSDoc rules retain their normal names, including
+`jsdoc/require-param-description`. The upstream plugin supplies only rules absent
+from Oxlint under the `jsdoc-extra` alias. These rules check TypeScript too; the
+alias does not authorize JavaScript source. No second ESLint command runs.
+Lint enforces documentation presence and structure. Review must assess whether
+the prose explains the purpose; a word count cannot establish that.
 
-There is no active official shadcn component after quarantine and no dormant
-wildcard exemption. TASK-150.02 must identify the actual pinned official files,
-record provenance, and add only individually classified authored style,
-module-layout and file-length exemptions. Compiler, type-aware safety, React
-correctness and accessibility remain enabled. Product-specific compositions,
-adapters, generators and tests receive the full policy.
+## OOM evidence and validation
 
-The existing browser runner has exactly three newly documented statement-level
-`no-await-in-loop` suppressions in `runSelection`: finish an owner, audit/clean it,
-and complete interrupted cleanup. All other sequential operations remain subject
-to the rule and the task's narrow required-semantics/false-positive decision policy.
-No rule is disabled for an entire file or browser directory. Other pre-existing
-suppression sites remain visible diagnostics/audit work for TASK-150.01.02;
-the unexplained consistent-function-scoping suppression in the browser gateway
-needs its owning contract repaired or a concrete approved explanation.
+The discarded autofix experiment started two overlapping tsgolint instances. One
+reached about 38 GiB. A capped single-worker reproduction found the underlying
+scope explosion: three targets excluded from the copied repository program made
+tsgolint discover an unrelated `/tmp/tsconfig.json`, whose default scope was the
+entire temporary tree. The repository program completed; constructing that second
+program hit the 2 GiB limit. This did not prove dependency declarations themselves
+were defective. The stray `/tmp/tsconfig.json`, `/tmp/package.json`, and
+`/tmp/bun.lock` were removed with user authorization after preserving evidence.
 
-## Quarantine boundary
+Retain full process/session metadata and wait for the owned command to finish
+before launching another. Analyzer probes use separately named systemd user scopes
+with a memory limit, no swap and `OOMPolicy=kill`, outside the desktop app's scope.
+Resource limits protect the machine; target-membership checks prevent this scope
+failure. Never accept results from overlapping fixer runs on one source copy.
 
-[The quarantine record](../design/task-150-quarantine.md) owns the exact retained
-seams, archived test behaviors, deferred owners and individual browser decisions.
-The archive is locally ignored and never committed. Repository checks inspect both
-HEAD and the index. The active lint graph rejects archive imports, re-exports,
-dynamic loads and literal filesystem/serving paths. Vite denies the archive through
-its filesystem policy while preserving default secret-file denials. The production
-server serves only its existing build/vendor asset roots. Bun's archive exclusion
-is repeated where a CLI ignore list replaces `bunfig.toml` defaults.
-
-Full `bun run check` still requires the rebuilt frontend and normal browser lane.
-It was not run or weakened to manufacture a pass during quarantine. Browser
-execution belongs only to TASK-150.06 after implementation and integration are ready.
+The engine contracts are in the [versioned CLI source](https://github.com/oxc-project/oxc/blob/oxlint_v1.80.0/apps/oxlint/src/command/lint.rs#L154-L161)
+and [typed resolver](https://github.com/oxc-project/tsgolint/blob/v7.0.2001/internal/utils/find_tsconfig.go#L176-L191).
+The complete product/browser gate remains TASK-150.06 after reconstruction and
+integration; it has not passed during quarantine. Archive imports, serving and
+commits remain forbidden. Official shadcn source retains the previously approved,
+explicit style/structure exceptions and compiler, type-aware safety, React
+correctness and accessibility checks.

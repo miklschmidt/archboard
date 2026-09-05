@@ -135,8 +135,6 @@ function projectSandbox(
 				network: policy.networkAccess ? "enabled" : "restricted",
 			};
 	}
-	const unhandled: never = policy;
-	return unhandled;
 }
 
 /**
@@ -220,8 +218,6 @@ function projectTimelineApprovalStatus(
 		case "cancelled":
 			return "cancelled";
 	}
-	const unhandled: never = state;
-	return unhandled;
 }
 
 function projectTimelineItem(item: CodexTimelineItemProjectionInput): BrowserTimelineItem {
@@ -256,8 +252,6 @@ function projectTimelineItem(item: CodexTimelineItemProjectionInput): BrowserTim
 				status: projectTimelineApprovalStatus(item.state),
 			};
 	}
-	const unhandled: never = item;
-	return unhandled;
 }
 
 function projectTimeline(input: BrowserProjectionInput["timeline"]): BrowserTimeline | null {
@@ -306,13 +300,10 @@ function projectThreadLinkSource(
 			case "unknown":
 				return "unknown";
 		}
-		const unhandled: never = source;
-		return unhandled;
 	}
 	if ("custom" in source) return "custom";
 	if ("subAgent" in source) return "subagent";
-	const unhandled: never = source;
-	return unhandled;
+	return "unknown";
 }
 
 /**
@@ -580,8 +571,6 @@ function browserFallbackState(
 		case "disposed":
 			return "visual_fallback";
 	}
-	const unhandled: never = reason;
-	return unhandled;
 }
 
 function projectSpokenApproval(
@@ -676,8 +665,6 @@ function projectSpokenApproval(
 			return parse(state, snapshot.reason);
 		}
 	}
-	const unhandled: never = snapshot.state;
-	return unhandled;
 }
 
 type DynamicProjectionModel = Pick<

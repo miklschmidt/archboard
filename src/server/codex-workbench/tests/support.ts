@@ -293,7 +293,7 @@ export function createGatewayHarness(
 			projectionListeners.add(listener);
 			return () => projectionListeners.delete(listener);
 		},
-		onBrowserDisconnect: onProjectionDisconnect,
+		...(onProjectionDisconnect ? { onBrowserDisconnect: onProjectionDisconnect } : {}),
 	};
 	const threadLink = { read: (pane: string) => bindingFor(pane, revision, link) };
 	const gateway = createCodexWorkbenchGateway({
@@ -301,8 +301,10 @@ export function createGatewayHarness(
 		projection,
 		threadLink,
 		actions,
-		lifecycle,
-		snapshotMaxBytes: options.snapshotMaxBytes,
+		...(lifecycle ? { lifecycle } : {}),
+		...(options.snapshotMaxBytes === undefined
+			? {}
+			: { snapshotMaxBytes: options.snapshotMaxBytes }),
 		now: () => clock,
 	});
 

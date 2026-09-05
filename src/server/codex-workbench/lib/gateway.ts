@@ -106,7 +106,7 @@ function sameWireValue(left: unknown, right: unknown): boolean {
 	return JSON.stringify(left) === JSON.stringify(right);
 }
 
-function fingerprintCommand(command: BrowserCommand): string {
+function fingerprintCommand(command: OwnedBrowserCommand): string {
 	return createHash("sha256").update(JSON.stringify(command)).digest("hex");
 }
 
@@ -187,12 +187,12 @@ function assertOpaqueName(value: string, field: string): void {
 		throw new CodexWorkbenchGatewayError("invalid_input", `${field} is invalid.`);
 }
 
-function commandThreadId(command: BrowserCommand): string | null {
+function commandThreadId(command: OwnedBrowserCommand): string | null {
 	if ("threadId" in command && typeof command.threadId === "string") return command.threadId;
 	return null;
 }
 
-function isAccountCommand(command: BrowserCommand): boolean {
+function isAccountCommand(command: OwnedBrowserCommand): boolean {
 	return (
 		command.command === "accountLogin" ||
 		command.command === "accountLoginCancel" ||
@@ -200,7 +200,7 @@ function isAccountCommand(command: BrowserCommand): boolean {
 	);
 }
 
-function isThreadLinkCommand(command: BrowserCommand): boolean {
+function isThreadLinkCommand(command: OwnedBrowserCommand): boolean {
 	return (
 		command.command === "threadLinkCreate" ||
 		command.command === "threadLinkRefresh" ||
@@ -209,12 +209,14 @@ function isThreadLinkCommand(command: BrowserCommand): boolean {
 	);
 }
 
-function isOrdinaryApprovalCommand(command: BrowserCommand): command is BrowserApprovalCommand {
+function isOrdinaryApprovalCommand(
+	command: OwnedBrowserCommand,
+): command is BrowserApprovalCommand {
 	return command.command === "approvalRespond";
 }
 
 function isDynamicApprovalCommand(
-	command: BrowserCommand,
+	command: OwnedBrowserCommand,
 ): command is BrowserDynamicApprovalResponse {
 	return command.command === "dynamicApprovalRespond";
 }
@@ -730,7 +732,7 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
-	const validateThreadTarget = (command: BrowserCommand, snapshot: BrowserSnapshot): void => {
+	const validateThreadTarget = (command: OwnedBrowserCommand, snapshot: BrowserSnapshot): void => {
 		const link = executableLink(snapshot);
 		const target = commandThreadId(command);
 		if (target !== null && target !== link.threadId)
@@ -964,7 +966,8 @@ export function createCodexWorkbenchGateway(
 		instance?: BrowserConnectionInstance,
 	): Promise<BrowserGatewayCommandResult> => {
 		const paneId =
-			paneIdOverride ?? (isRecord(value) && typeof value["paneId"] === "string" ? value["paneId"] : null);
+			paneIdOverride ??
+			(isRecord(value) && typeof value["paneId"] === "string" ? value["paneId"] : null);
 		if (paneId === null)
 			throw new CodexWorkbenchGatewayError(
 				"invalid_input",

@@ -108,7 +108,6 @@ function linkEvidenceMatches(
 			"The live thread-link proof is not the durable proof supplied by the authority.",
 		);
 	}
-	// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 	if (link.link.state !== "executable" && link.link.state !== "inspect_only") {
 		throw dynamicError(
 			"unknown_provenance",
@@ -130,9 +129,7 @@ function linkEvidenceMatches(
 			link.link.epoch !== record.epoch ||
 			link.link.source !== record.source ||
 			link.link.status !== record.status ||
-			// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 			!link.link.loaded ||
-			// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 			!link.link.canAcceptDirectInput)
 	) {
 		throw dynamicError(
@@ -204,18 +201,15 @@ function assertAuthorityShape(authority: AuthorityShape, role: "caller" | "targe
 			(typeof authority.epoch !== "string" || authority.epoch.length === 0)) ||
 		(authority.epochState !== "current" &&
 			authority.epochState !== "prior" &&
-			// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 			authority.epochState !== "unknown") ||
 		(authority.ownership !== "created" &&
 			authority.ownership !== "attached" &&
-			// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 			authority.ownership !== "foreign") ||
 		typeof authority.loaded !== "boolean" ||
 		(authority.directInput !== null && typeof authority.directInput !== "boolean") ||
 		(authority.status !== "notLoaded" &&
 			authority.status !== "idle" &&
 			authority.status !== "systemError" &&
-			// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 			authority.status !== "active") ||
 		!isRecord(authority.threadLinkTarget) ||
 		authority.threadLinkTarget.threadId !== authority.threadId
@@ -295,9 +289,7 @@ async function resolveCaller(
 		throw dynamicError("invalid_call", "The caller authority returned an invalid turn identity.");
 	}
 	if (
-		// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 		caller.role !== "caller" ||
-		// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 		!caller.executing ||
 		caller.threadId !== request.logicalCall.threadId ||
 		caller.turnId !== request.logicalCall.turnId ||
@@ -311,7 +303,6 @@ async function resolveCaller(
 	assertCallerState(caller);
 	const link = await linkFor(caller, options.threadLink);
 	linkEvidenceMatches(caller, link, false);
-	// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 	if (link.link.state !== "executable" || !link.link.canAcceptDirectInput) {
 		throw dynamicError("not_controllable", "The dynamic caller thread-link is not executable.");
 	}
@@ -336,7 +327,6 @@ async function resolveTarget(
 	}
 	assertAuthorityShape(target, "target");
 	if (
-		// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 		target.role !== "target" ||
 		typeof target.wireThreadId !== "string" ||
 		target.wireThreadId.length === 0
@@ -387,7 +377,6 @@ async function revalidateCaller(
 		throw dynamicError("invalid_call", "The caller authority token changed during revalidation.");
 	}
 	if (
-		// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 		fresh.role !== "caller" ||
 		fresh.threadId !== caller.threadId ||
 		fresh.turnId !== caller.turnId ||
@@ -395,7 +384,6 @@ async function revalidateCaller(
 		fresh.wireTurnId !== caller.wireTurnId ||
 		fresh.childId !== caller.childId ||
 		fresh.epoch !== caller.epoch ||
-		// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 		!fresh.executing
 	) {
 		throw dynamicError("invalid_call", "The logical caller changed during revalidation.");
@@ -403,7 +391,6 @@ async function revalidateCaller(
 	assertCallerState(fresh);
 	const link = await linkFor(fresh, options.threadLink, false);
 	linkEvidenceMatches(fresh, link, false);
-	// oxlint-disable-next-line typescript/no-unnecessary-condition -- The production host adapter freezes executable link facts, but this runtime refusal protects JavaScript port implementations before effects.
 	if (link.link.state !== "executable" || !link.link.canAcceptDirectInput) {
 		throw dynamicError("not_controllable", "The caller thread-link is no longer executable.");
 	}
@@ -427,7 +414,6 @@ async function revalidateTarget(
 	if (
 		fresh.threadId !== target.threadId ||
 		fresh.wireThreadId !== target.wireThreadId ||
-		// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 		fresh.role !== "target"
 	) {
 		throw dynamicError("invalid_call", "The target identity changed during revalidation.");
