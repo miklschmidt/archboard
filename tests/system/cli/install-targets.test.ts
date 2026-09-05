@@ -9,10 +9,11 @@ import {
 	symlinkSync,
 	writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import path from "node:path";
 import { createInstallFixture, installFailure } from "./support/install-fixture.ts";
 
 const begin = "<!-- archboard:begin -->";
+const { join } = path;
 
 describe("install targets", () => {
 	test("defaults to the isolated shared agent skill root", () => {
@@ -31,7 +32,9 @@ describe("install targets", () => {
 			docCreated: true,
 		});
 		expect(existsSync(join(repo, "CLAUDE.md")), diagnostic).toBe(false);
-		expect(() => fixture.assertSkillBytes(join(root, "archboard")), diagnostic).not.toThrow();
+		expect(() => {
+			fixture.assertSkillBytes(join(root, "archboard"));
+		}, diagnostic).not.toThrow();
 	});
 
 	test("keeps Claude and skills.sh selectors explicit", () => {
@@ -80,12 +83,15 @@ describe("install targets", () => {
 			expect(result.status, installFailure(result)).toBe(2);
 			expect(result.stdout, installFailure(result)).toBe("");
 			expect(result.stderr, installFailure(result)).toContain(refusal);
-			if (remediation) expect(result.stderr, installFailure(result)).toContain(remediation);
-			if (name === "obsolete")
+			if (remediation) {
+				expect(result.stderr, installFailure(result)).toContain(remediation);
+			}
+			if (name === "obsolete") {
 				expect(
 					existsSync(join(fixture.home, ".codex", "skills", "archboard")),
 					installFailure(result),
 				).toBe(false);
+			}
 		}
 	});
 
@@ -100,7 +106,9 @@ describe("install targets", () => {
 			root: custom,
 			target: join(custom, "archboard"),
 		});
-		expect(() => fixture.assertSkillBytes(join(custom, "archboard")), diagnostic).not.toThrow();
+		expect(() => {
+			fixture.assertSkillBytes(join(custom, "archboard"));
+		}, diagnostic).not.toThrow();
 		const linkedRepo = fixture.repo("linked");
 		const linkedRoot = join(fixture.root, "linked-root");
 		mkdirSync(linkedRoot);
@@ -126,7 +134,9 @@ describe("install targets", () => {
 			vault: fixture.vault,
 			vaultCreated: false,
 		});
-		if (!first.setup) throw new Error(firstDiagnostic);
+		if (!first.setup) {
+			throw new Error(firstDiagnostic);
+		}
 		expect(first.skill, firstDiagnostic).toBe("archboard");
 		expect(first.target, firstDiagnostic).toBe(join(fixture.skillRoot, "archboard"));
 		const setupBytes = readFileSync(doc);

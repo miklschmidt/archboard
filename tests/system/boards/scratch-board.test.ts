@@ -4,7 +4,8 @@ import os from "node:os";
 import path from "node:path";
 
 import { makeIdentity, renderBoardNote } from "../../../src/runtime/engine/board.ts";
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import type { OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 
 interface BoardBody {
@@ -19,7 +20,7 @@ interface BoardBody {
 
 interface ElementsBody {
 	count?: number;
-	elements?: Array<{ type: string; width?: number; height?: number; text?: string }>;
+	elements?: readonly Readonly<{ type: string; width?: number; height?: number; text?: string }>[];
 	error?: string;
 }
 
@@ -49,7 +50,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await canvas.dispose();
 });
 
 describe("scratch board", () => {
@@ -105,7 +106,7 @@ describe("scratch board", () => {
 		expect(saved.status).toBe(200);
 		expect(saved.body.file).toBe(scratchNote);
 		expect(fs.existsSync(scratchNote)).toBeTrue();
-		const list = await request<{ boards: Array<{ key: string }>; open?: unknown }>("/api/boards");
+		const list = await request<{ boards: { key: string }[]; open?: unknown }>("/api/boards");
 		expect(list.body.boards).toEqual([]);
 		expect(list.body.open).toBeUndefined();
 	});

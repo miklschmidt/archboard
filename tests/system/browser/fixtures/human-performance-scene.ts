@@ -1,13 +1,13 @@
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
-export const HUMAN_PERFORMANCE_FIXTURE_SIZE = 10_000;
+const HUMAN_PERFORMANCE_FIXTURE_SIZE = 10_000;
 
-export type HumanPerformanceElement = Pick<
+type HumanPerformanceElement = Pick<
 	ExcalidrawElement,
 	"id" | "type" | "x" | "y" | "width" | "height" | "backgroundColor" | "fillStyle"
 >;
 
-export function humanPerformanceScene(): HumanPerformanceElement[] {
+function humanPerformanceScene(): HumanPerformanceElement[] {
 	const elements: HumanPerformanceElement[] = [
 		{
 			id: "drag",
@@ -54,3 +54,5 @@ export function humanPerformanceScene(): HumanPerformanceElement[] {
 	}
 	return elements;
 }
+
+export { HUMAN_PERFORMANCE_FIXTURE_SIZE, humanPerformanceScene, type HumanPerformanceElement };

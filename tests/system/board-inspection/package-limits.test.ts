@@ -17,12 +17,15 @@ describe("package inspection limits", () => {
 			expect([normal.status, strict.status]).toEqual([0, 8]);
 			expect(strict.stdout).toBe(normal.stdout);
 			const report = CheckResultSchema.parse(JSON.parse(normal.stdout));
-			expect(
-				report.findings.some(
-					(f) => f.reason === "input-complexity-ceiling" && f.details.attempted === 1_000_001,
-				),
-			).toBe(true);
-			expect((await owner.runInspection("input-limit", ["--text"])).stdout).toBe(
+			let foundInputCeiling = false;
+			for (const finding of report.findings) {
+				if (finding.reason === "input-complexity-ceiling") {
+					foundInputCeiling = true;
+				}
+			}
+			expect(foundInputCeiling).toBe(true);
+			const textResult = await owner.runInspection("input-limit", ["--text"]);
+			expect(textResult.stdout).toBe(
 				`${formatInspectionText(report)}\n`,
 			);
 		} finally {

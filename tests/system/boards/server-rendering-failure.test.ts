@@ -1,13 +1,15 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { copyFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import path from "node:path";
 
-import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
-import { createJsonRequester } from "./support/http.ts";
 import { TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { startOwnedCanvas } from "../support/owned-canvas.ts";
+import type { OwnedCanvas } from "../support/owned-canvas.ts";
+import { createJsonRequester } from "./support/http.ts";
 
-const root = resolve(import.meta.dir, "../../..");
+const { join } = path;
+const root = path.resolve(import.meta.dir, "../../..");
 const vault = mkdtempSync(join(tmpdir(), "archboard-server-rendering-failure-"));
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
@@ -26,7 +28,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-	await canvas?.dispose();
+	await canvas.dispose();
 });
 
 describe("server renderer failure", () => {
@@ -59,9 +61,10 @@ describe("server renderer failure", () => {
 				tempRoot: null,
 				profile: null,
 			});
-			const fixturePort = health.body.renderer.fixturePort;
-			if (fixturePort === null)
-				throw new Error("The failed renderer did not expose its fixture port.");
+				const { fixturePort } = health.body.renderer;
+				if (fixturePort === null) {
+					throw new Error("The failed renderer did not expose its fixture port.");
+				}
 			await canvas.dispose();
 			let probe: ReturnType<typeof Bun.serve> | null = null;
 			try {
@@ -72,7 +75,9 @@ describe("server renderer failure", () => {
 				});
 				expect(probe.port).toBe(fixturePort);
 			} finally {
-				if (probe) await probe.stop(true);
+					if (probe !== null) {
+						await probe.stop(true);
+					}
 			}
 		},
 		TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS,

@@ -1,4 +1,4 @@
-export const replaceScene = {
+const replaceScene = {
 	type: "excalidraw",
 	version: 2,
 	elements: [
@@ -61,13 +61,13 @@ export const replaceScene = {
 	},
 };
 
-export const mergeScene = {
+const mergeScene = {
 	type: "excalidraw",
 	version: 2,
 	elements: [{ id: "merge-addition", type: "ellipse", x: 700, y: 300, width: 60, height: 60 }],
 };
 
-export const heldReplaceScene = {
+const heldReplaceScene = {
 	...replaceScene,
 	elements: [
 		{ id: "held-new", type: "diamond", x: 90, y: 90, width: 70, height: 70 },
@@ -82,3 +82,5 @@ export const heldReplaceScene = {
 		},
 	],
 };
+
+export { heldReplaceScene, mergeScene, replaceScene };
