@@ -21,20 +21,20 @@ import type {
 	SpokenApprovalSnapshot,
 } from "./contract.js";
 
-export type LiveGateState = Exclude<
+type LiveGateState = Exclude<
 	SpokenApprovalGateState,
 	"idle" | "settled" | "visual_fallback"
 >;
-export type TerminalGateState = Exclude<SpokenApprovalGateState, "idle" | LiveGateState>;
+type TerminalGateState = Exclude<SpokenApprovalGateState, "idle" | LiveGateState>;
 
-export interface TurnReadyControls {
+interface TurnReadyControls {
 	readonly promise: Promise<TurnId>;
 	readonly resolve: (turnId: TurnId) => void;
 	readonly reject: (reason: unknown) => void;
 	settled: boolean;
 }
 
-export interface ActiveSlot {
+interface ActiveSlot {
 	readonly requestId: JsonRpcRequestId;
 	readonly approvalId: ApprovalId | null;
 	readonly approvalFamily: "command_execution";
@@ -66,7 +66,7 @@ export interface ActiveSlot {
 	timer: ReturnType<typeof setTimeout> | null;
 }
 
-export const EMPTY_SPOKEN_APPROVAL_SNAPSHOT: SpokenApprovalSnapshot = Object.freeze({
+const EMPTY_SPOKEN_APPROVAL_SNAPSHOT: SpokenApprovalSnapshot = Object.freeze({
 	state: "idle",
 	requestId: null,
 	approvalId: null,
@@ -89,3 +89,6 @@ export const EMPTY_SPOKEN_APPROVAL_SNAPSHOT: SpokenApprovalSnapshot = Object.fre
 	settlement: null,
 	reason: null,
 });
+
+export { EMPTY_SPOKEN_APPROVAL_SNAPSHOT };
+export type { ActiveSlot, LiveGateState, TerminalGateState, TurnReadyControls };

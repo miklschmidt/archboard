@@ -19,7 +19,7 @@ const collaborationMode = {
 	},
 } as const;
 
-export const COMPLETE_CLIENT_REQUEST_FIXTURES = {
+const COMPLETE_CLIENT_REQUEST_FIXTURES = {
 	initialize: {
 		clientInfo: { name: "archboard", title: "archboard canvas", version: "0.1.0" },
 		capabilities: {
@@ -251,7 +251,7 @@ export const COMPLETE_CLIENT_REQUEST_FIXTURES = {
 	"thread/timeline/list": { threadId: "thread-1", cursor: "timeline-cursor", limit: 50 },
 } satisfies ClientRequestPayloads;
 
-export const LOGIN_ACCOUNT_FIXTURES = [
+const LOGIN_ACCOUNT_FIXTURES = [
 	{ type: "apiKey", apiKey: "api-key" },
 	{
 		type: "chatgpt",
@@ -276,7 +276,13 @@ export const LOGIN_ACCOUNT_FIXTURES = [
 	},
 ] satisfies readonly ClientRequestParams<"account/login/start">[];
 
-export const BEDROCK_SETUP_FIXTURES = [
+const BEDROCK_SETUP_FIXTURES = [
 	{ type: "profile", profile: "archboard", region: "eu-west-1" },
 	{ type: "environment", region: "eu-west-1" },
 ] satisfies readonly BedrockSetupParams[];
+
+export {
+	BEDROCK_SETUP_FIXTURES,
+	COMPLETE_CLIENT_REQUEST_FIXTURES,
+	LOGIN_ACCOUNT_FIXTURES,
+};
