@@ -557,14 +557,10 @@ function isJavaScriptLikeSource(relativePath) {
 
 /**
  * A test owner's source must be checked by one of the two TypeScript gates.
- * tsconfig.json covers `src/**\/*.ts` and `tests/system/**\/*.ts`;
- * tsconfig.frontend.json is the only gate that reads TSX, and it reads exactly
- * `src/ui/**\/*.tsx`. A rendered UI owner may therefore be a .tsx file there,
- * and nowhere else.
+ * The root program covers all retained TS, TSX, MTS and CTS source.
  */
 function isTypedTestSource(relativePath) {
-	if (relativePath.endsWith(".ts")) return true;
-	return relativePath.startsWith("src/ui/") && relativePath.endsWith(".tsx");
+	return /\.(?:ts|tsx|mts|cts)$/u.test(relativePath);
 }
 
 function isTopLevelDeclaration(node) {
@@ -738,7 +734,7 @@ const moduleEntrypoints = createRule(
 		testsThroughEntrypoints:
 			"Tests must import product modules through module-root entrypoint files; implementation subfolders are private.",
 		untypedTestSource:
-			"Test-owned JavaScript-like source must be a .ts file. Convert it to TypeScript so the root tsconfig checks it.",
+			"Test-owned JavaScript-like source must use .ts, .tsx, .mts or .cts. Convert it to TypeScript so the root tsconfig checks it.",
 	},
 	(context) => {
 		const relativePath = getRepoRelativePath(context);
@@ -863,12 +859,58 @@ const noCompatibilityIdentifiers = createRule(
 	},
 );
 
+const noArchiveReferences = createRule(
+	{
+		archived:
+			"The local UI archive is inert. Restore required code into an active module under strict checks; never import, load, build or serve the archive.",
+	},
+	(context) => {
+		const archiveSegment = /(?:^|[/\\])legacy(?:[/\\]|$)/u;
+		return {
+			Literal(node) {
+				if (typeof node.value !== "string" || !archiveSegment.test(node.value)) return;
+				// A Vite fs.deny entry prohibits access; it is not an active source reference.
+				if (
+					context.filename.endsWith("/vite.config.js") &&
+					node.parent?.type === "ArrayExpression" &&
+					node.parent.parent?.key?.name === "deny"
+				)
+					return;
+				// A protocol value named legacy is not a filesystem reference.
+				if (node.value === "legacy") {
+					const call = node.parent;
+					const callee = call?.callee;
+					const name = callee?.type === "Identifier" ? callee.name : callee?.property?.name;
+					if (
+						![
+							"join",
+							"resolve",
+							"URL",
+							"static",
+							"sendFile",
+							"readFile",
+							"readFileSync",
+							"file",
+						].includes(name)
+					)
+						return;
+				}
+				context.report({ node, messageId: "archived" });
+			},
+			TemplateElement(node) {
+				if (archiveSegment.test(node.value.raw)) context.report({ node, messageId: "archived" });
+			},
+		};
+	},
+);
+
 const plugin = {
 	meta: {
 		name: "eslint-plugin-archboard",
 		version: "0.0.0",
 	},
 	rules: {
+		"no-archive-references": noArchiveReferences,
 		"no-anonymous-jsx-handlers": noAnonymousJsxHandlers,
 		"assistant-ui-imports": assistantUiImports,
 		"no-catch-all-exports": noCatchAllExports,

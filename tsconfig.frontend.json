@@ -1,40 +1,19 @@
 {
-	// Vite builds the frontend with esbuild, which strips types without checking
-	// them — which is how the shell's predecessor accumulated import paths that
-	// resolved to `any`. This config exists so `bun run type-check` covers the
-	// browser half too. It emits nothing; the build is still vite's job.
+	"extends": "./tsconfig.json",
 	"compilerOptions": {
-		"target": "ES2023",
 		"lib": ["ES2023", "DOM", "DOM.Iterable"],
-		"module": "ESNext",
-		"moduleDetection": "force",
-		"moduleResolution": "bundler",
-		"paths": {
-			"@/*": ["./src/*"]
-		},
-		"allowImportingTsExtensions": true,
-		"jsx": "react-jsx",
-		"strict": true,
-		"noFallthroughCasesInSwitch": true,
-		"noUncheckedIndexedAccess": true,
-		"noImplicitOverride": true,
-		"noEmit": true,
-		"skipLibCheck": true,
-		"esModuleInterop": true,
-		"allowSyntheticDefaultImports": true,
-		"resolveJsonModule": true,
-		"isolatedModules": true,
-		"verbatimModuleSyntax": true,
-		"noUnusedLocals": false,
-		"noUnusedParameters": false,
-		"noPropertyAccessFromIndexSignature": false,
-		"forceConsistentCasingInFileNames": true,
-		"types": ["node", "vite/client"]
+		"types": ["node", "bun", "vite/client"]
 	},
 	"include": [
-		"frontend/main.tsx",
+		"frontend/**/*.ts",
+		"frontend/**/*.tsx",
+		"frontend/**/*.mts",
+		"frontend/**/*.cts",
 		"src/server/board-rendering/browser.ts",
 		"src/ui/**/*.ts",
-		"src/ui/**/*.tsx"
-	]
+		"src/ui/**/*.tsx",
+		"src/ui/**/*.mts",
+		"src/ui/**/*.cts"
+	],
+	"exclude": ["node_modules", "dist", "legacy"]
 }

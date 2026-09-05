@@ -535,7 +535,7 @@ An agent that knows it is about to redraw a board claims it with a reason and an
 expected duration, renews while it works, loses it in seconds if it dies, and
 loses it immediately if a human touches the board. A lock excludes writers from
 each other; it must not lock a person out of their own wall. The pane shows who
-holds it and why, because a 75-inch display that stops responding for minutes
+holds it and why, because the canvas that stops responding for minutes
 with no explanation is worse than one that is visibly busy. TASK-081 teaches the
 skill when to claim, which is judgement the code cannot supply: claim for a
 redraw, do not claim to move one box.
@@ -624,7 +624,7 @@ in, which is TASK-081's to teach.
 The same task narrowed "a touch revokes the claim" to one deliberate act on the
 pane. A held board still pans and zooms, so watching an agent redraw it would
 otherwise end the redraw, and since nothing is put back, a hand resting on a
-75-inch display would leave a half-finished restructure with nobody having
+canvas would leave a half-finished restructure with nobody having
 decided anything.
 
 ## Where the ten open tasks land

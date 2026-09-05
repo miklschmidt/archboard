@@ -25,7 +25,7 @@
 //
 // ── One line, and a few of them ───────────────────────────────────
 //
-// A list of one-liners is glanceable from two metres away on a 75-inch
+// A list of one-liners makes current work easy to scan on the
 // display. A list of paragraphs is a log nobody reads, and a transcript is
 // worse. So the line is capped and the list is short, and both caps are here
 // rather than in the middleware, the pane and the injector separately.

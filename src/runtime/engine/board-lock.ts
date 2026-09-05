@@ -209,7 +209,7 @@ export interface LockRequest {
 	 * thing this whole file exists instead of.
 	 *
 	 * A claim is different because it may run for minutes, and no agent may make
-	 * a 75-inch display stop responding to the person standing at it (ADR 0016).
+	 * the canvas stop responding to the person standing at it (ADR 0016).
 	 * The agent is told at its next act; nothing it has already written is
 	 * touched, because a write is in the note and revoking is not undoing.
 	 */

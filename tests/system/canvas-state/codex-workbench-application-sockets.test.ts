@@ -4,13 +4,6 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { WebSocket } from "ws";
 
-import { createBrowserWorkbenchMediaOwner } from "../../../src/ui/codex-workbench-media/index.js";
-import type { BrowserWorkbenchSocket } from "../../../src/ui/workbench-transport/index.js";
-import {
-	attachCanvasWorkbenchAfterRegistration,
-	createCanvasPaneRegistration,
-	createCanvasWorkbenchSocketOwner,
-} from "../../../src/ui/canvas/workbench-socket.js";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 
@@ -39,45 +32,6 @@ interface ApplicationSocket {
 	readonly socket: WebSocket;
 	request(action: string, extra?: Record<string, unknown>): Promise<WorkbenchResult>;
 	close(): Promise<void>;
-}
-
-class TransportSocketAdapter extends EventTarget implements BrowserWorkbenchSocket {
-	private readonly socket: WebSocket;
-	readonly sent: Record<string, unknown>[];
-
-	constructor(socket: WebSocket, sent: Record<string, unknown>[]) {
-		super();
-		this.socket = socket;
-		this.sent = sent;
-		socket.on("message", this.onMessage);
-		socket.on("close", this.onClose);
-		socket.on("open", this.onOpen);
-	}
-
-	get readyState(): number {
-		return this.socket.readyState;
-	}
-
-	send(raw: string): void {
-		this.sent.push(JSON.parse(raw) as Record<string, unknown>);
-		this.socket.send(raw);
-	}
-
-	dispose(): void {
-		this.socket.off("message", this.onMessage);
-		this.socket.off("close", this.onClose);
-		this.socket.off("open", this.onOpen);
-	}
-
-	private readonly onMessage = (raw: WebSocket.RawData): void => {
-		this.dispatchEvent(new MessageEvent("message", { data: raw.toString() }));
-	};
-	private readonly onClose = (): void => {
-		this.dispatchEvent(new Event("close"));
-	};
-	private readonly onOpen = (): void => {
-		this.dispatchEvent(new Event("open"));
-	};
 }
 
 async function openApplicationSocket(base: string, clientId: string): Promise<ApplicationSocket> {
@@ -281,135 +235,6 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 		} finally {
 			await original?.close();
 			replacement?.terminate();
-			await canvas.dispose();
-			rmSync(root, { recursive: true, force: true });
-		}
-	}, 60_000);
-
-	test("the production canvas socket composes one transport reducer with media behavior", async () => {
-		const root = mkdtempSync(join(tmpdir(), "archboard-codex-composed-socket-"));
-		const canvas = await startOwnedCanvas({
-			serverPath: join(repoRoot, "src/server.ts"),
-			vault: join(root, "vault"),
-		});
-		const request = createRequester(canvas);
-		const clientId = "composed-codex-pane";
-		let application: ApplicationSocket | null = null;
-		let adapter: TransportSocketAdapter | null = null;
-		let stopCount = 0;
-		const media = createBrowserWorkbenchMediaOwner({
-			createMediaSession: () =>
-				({
-					getSnapshot: () =>
-						({
-							correlation: null,
-							state: { phase: "listening", reason: "negotiation_succeeded" },
-							inputLevel: 0,
-						}) as never,
-					subscribe: () => () => undefined,
-					start: async () => ({}) as never,
-					appendText: async () => ({}) as never,
-					stop: async () => {
-						stopCount += 1;
-						return {} as never;
-					},
-					dispose: async () => undefined,
-				}) as never,
-		});
-		const owner = createCanvasWorkbenchSocketOwner({ media });
-		const sent: Record<string, unknown>[] = [];
-		try {
-			application = await openApplicationSocket(canvas.base, clientId);
-			const socketAdapter = new TransportSocketAdapter(application.socket, sent);
-			adapter = socketAdapter;
-			const registrationGate = createCanvasPaneRegistration(socketAdapter, 1);
-			let attachCount = 0;
-			const attachPromise = attachCanvasWorkbenchAfterRegistration({
-				registration: registrationGate,
-				isCurrent: () => true,
-				attach: () => {
-					attachCount += 1;
-					return owner.attach(socketAdapter);
-				},
-			});
-			// A real canvas socket is open before the first pane report. The production
-			// gate is already waiting, but the workbench owner must remain silent until
-			// that authoritative registration succeeds.
-			await Bun.sleep(0);
-			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(0);
-			expect(owner.current()).toBeNull();
-			// A failed authoritative acknowledgement does not settle the attach gate;
-			// the same generation can recover on the next pane report.
-			expect(registrationGate.acknowledge(false)).toBeFalse();
-			await Bun.sleep(0);
-			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(0);
-			const registrationReply = await request<{ registered: boolean }>("/api/panes", {
-				method: "POST",
-				doing: false,
-				body: {
-					clientId,
-					paneId: clientId,
-					primary: true,
-					focused: true,
-					elementCount: 0,
-					board: "scratch",
-					rect: { x: 0, y: 0, width: 1280, height: 800 },
-					viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
-				},
-			});
-			expect(registrationReply.body.registered).toBeTrue();
-			expect(registrationGate.acknowledge(registrationReply.body.registered)).toBeTrue();
-			expect(await attachPromise).toMatchObject({ kind: "readiness", connection: "connected" });
-			expect(attachCount).toBe(1);
-			const generation = owner.current();
-			if (generation === null)
-				throw new Error("the canvas socket owner did not retain a generation");
-			const transport = generation.transport;
-			expect(sent.filter((message) => message.action === "connect")).toHaveLength(0);
-			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
-			// Later health reports must not reopen the attach path: the latch is
-			// deliberately one-shot even though useCanvasSession reports health again.
-			expect(registrationGate.acknowledge(false)).toBeFalse();
-			expect(registrationGate.acknowledge(true)).toBeFalse();
-			expect(attachCount).toBe(1);
-			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
-			expect(transport.snapshot()).not.toBeNull();
-			// A second authoritative pane registration on the same generation is a
-			// no-op for the retained production transport; the ordering rules that
-			// decide which response may change health are owned by the pane-report
-			// sequencer's own tests, not simulated again here.
-			const secondRegistrationReply = await request<{ registered: boolean }>("/api/panes", {
-				method: "POST",
-				doing: false,
-				body: {
-					clientId,
-					paneId: clientId,
-					primary: true,
-					focused: true,
-					elementCount: 0,
-					board: "scratch",
-					rect: { x: 0, y: 0, width: 1280, height: 800 },
-					viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
-				},
-			});
-			expect(secondRegistrationReply.body.registered).toBeTrue();
-			expect(attachCount).toBe(1);
-			expect(sent.filter((message) => message.action === "subscribe")).toHaveLength(1);
-			expect(owner.current()?.transport).toBe(transport);
-			const baselineSequence = transport.sequence();
-			await transport.setMediaReady(true);
-			await transport.setMediaReady(false);
-			await Bun.sleep(0);
-			expect(transport.sequence()).toBeGreaterThan(baselineSequence ?? -1);
-			expect(transport.snapshot()?.voice.state).toBe("unavailable");
-			expect(stopCount).toBe(1);
-			expect(application.socket.readyState).toBe(WebSocket.OPEN);
-			await owner.dispose();
-			expect(application.socket.readyState).toBe(WebSocket.OPEN);
-		} finally {
-			await owner.dispose();
-			adapter?.dispose();
-			await application?.close();
 			await canvas.dispose();
 			rmSync(root, { recursive: true, force: true });
 		}

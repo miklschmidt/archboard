@@ -6,7 +6,6 @@
 	"trailingComma": "all",
 	"endOfLine": "lf",
 	"sortTailwindcss": {
-		"stylesheet": "src/ui/theme/app.css",
 		"functions": ["cn"],
 		"preserveDuplicates": true,
 	},

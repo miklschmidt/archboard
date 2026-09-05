@@ -15,10 +15,10 @@ axis this app is used along:
 - **Two panes are one library.** Split the shell and both canvases are the same
   human at the same wall. Two Excalidraw instances would otherwise keep two
   copies, and whichever wrote last would silently delete the other's stencils.
-- **A second tab is a second machine's problem in miniature.** The Flip and a
+- **A second tab is a second machine's problem in miniature.** A desktop browser and a
   laptop reach the same canvas server; a stencil added on one has to be there on
   the other, because it is the same canvas.
-- **The Flip is a shared appliance.** Its browser profile gets reset, cleared and
+- **Browser profiles are disposable.** A browser profile may be reset, cleared and
   re-provisioned as a matter of routine. A library that dies with the profile is
   a library nobody invests in.
 - **An agent cannot read a browser's local storage.** Boards are on the server

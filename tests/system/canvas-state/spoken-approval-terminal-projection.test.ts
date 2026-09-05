@@ -13,12 +13,10 @@ import {
 	projectCodexBrowserState,
 	type BrowserProjectionInput,
 } from "../../../src/server/codex-workbench/index.js";
-import { projectVoiceSpokenApproval } from "../../../src/ui/voice-spoken-approval/index.js";
-import { projectWorkbenchApprovals } from "../../../src/ui/workbench-approvals/index.js";
 
 const NOW = 1_700_000_000_000;
 
-test("a real unknown owner settlement remains unknown through the spoken UI", async () => {
+test("a real unknown owner settlement remains unknown through the browser projection", async () => {
 	const authorities = createIdentityAuthorities();
 	const identity = authorities.identity;
 	const threadId = identity.decoder.adoptThreadId("spoken-terminal-workhorse");
@@ -152,32 +150,6 @@ test("a real unknown owner settlement remains unknown through the spoken UI", as
 		expect(projected.tag).toBe("projected");
 		if (projected.tag !== "projected") throw new Error(projected.message);
 		expect(projected.snapshot.spokenApproval.state).toBe("outcome_unknown");
-
-		const approvals = projectWorkbenchApprovals({
-			state: {
-				kind: "readiness",
-				state: "thread_capable",
-				connection: "connected",
-				snapshot: projected.snapshot,
-				sequence: 1,
-			},
-			nowMs: NOW,
-			canCommand: true,
-			canRespondOrdinary: true,
-			canRespondDynamic: true,
-		});
-		const card = approvals.cards[0];
-		expect(card?.status.phase).toBe("outcome_unknown");
-		if (card?.kind !== "ordinary") throw new Error("Expected one ordinary approval card.");
-		expect(card.request.lifecycle.state).toBe("outcome_unknown");
-		expect(card.spoken).toMatchObject({ eligible: false, detail: expect.any(String) });
-		const spokenView = projectVoiceSpokenApproval({
-			card,
-			spokenApproval: projected.snapshot.spokenApproval,
-		});
-		expect(spokenView.state).toBe("outcome_unknown");
-		expect(spokenView.reason).toBe("resolver_lost");
-		expect(spokenView.visualCardPreserved).toBe(true);
 	} finally {
 		broker.dispose();
 	}

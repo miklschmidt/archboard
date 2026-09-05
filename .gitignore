@@ -48,3 +48,6 @@ src/shared/codex-app-server-contract/generated/
 
 # Agent worktrees, created per subagent run and removed after.
 .claude/worktrees/
+
+# TASK-150 local reference snapshot; never stage or import it.
+/legacy/

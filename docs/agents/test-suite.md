@@ -338,7 +338,7 @@ context, and transcript visible. It then mutes the session, carries the same
 identity into the fullscreen dock, and stops it there before checking text-only
 cleanup and the unchanged mounted Excalidraw pane.
 
-The owner checks desktop and Samsung Flip scaled geometry, target size, focus
+The owner checks desktop and desktop scaled geometry, target size, focus
 order, live-region semantics, reduced motion, forced colors, browser errors,
 and resource cleanup. Focused realtime, media, session, transcript, context,
 spoken-approval, frame, and shell owners keep their exhaustive state and

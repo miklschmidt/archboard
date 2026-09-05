@@ -397,26 +397,26 @@ test(
 		await releaseNormalAgain();
 
 		await browser.run(["set", "viewport", "1920", "1080", "2"]);
-		const flipDock = await pollUntil(
+		const scaledDock = await pollUntil(
 			() => dockSnapshot(browser),
 			(value) => value.fullscreen && value.sessionId === desktopDock.sessionId,
-			"the same active voice source at the Samsung Flip scaled viewport",
+			"the same active voice source at the desktop scaled viewport",
 		);
 		expect(
 			await browser.eval<readonly [number, number, number]>(
 				"[innerWidth, innerHeight, devicePixelRatio]",
 			),
 		).toEqual([1920, 1080, 2]);
-		expect(flipDock.stop.sessionId).toBe(desktopDock.sessionId);
+		expect(scaledDock.stop.sessionId).toBe(desktopDock.sessionId);
 		expect(await workbenchControlOperability(browser, ".presentation-stop")).toMatchObject({
 			clipped: false,
 			requestOverlap: false,
 			centerHit: true,
 			operable: true,
 		});
-		expect(flipDock.insideViewport).toBe(true);
-		expect(flipDock.avoidsWorkbench).toBe(true);
-		expect(flipDock.sourceFits).toBe(true);
+		expect(scaledDock.insideViewport).toBe(true);
+		expect(scaledDock.avoidsWorkbench).toBe(true);
+		expect(scaledDock.sourceFits).toBe(true);
 
 		await roleAction(browser, "button", "Stop");
 		await pollUntil(
