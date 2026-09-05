@@ -14,10 +14,8 @@ describe("Codex app-server no-parameter requests", () => {
 	test("omits params for the exact generated methods and rejects invented objects", async () => {
 		const { child, transport, close } = createHarness();
 		try {
-			const requirementsPromise = Reflect.apply(transport.request, transport, [
-				"configRequirements/read",
-				undefined,
-			]);
+			// oxlint-disable-next-line unicorn/no-useless-undefined -- The public transport contract requires an explicit undefined params argument for generated no-parameter methods; only the serialized wire envelope omits params.
+			const requirementsPromise = transport.request("configRequirements/read", undefined);
 			const requirementsFrame = frameAt(child, 0);
 			expect(requirementsFrame).toEqual({
 				id: expect.any(String),
@@ -27,10 +25,8 @@ describe("Codex app-server no-parameter requests", () => {
 			const requirementsResponse = await requirementsPromise;
 			expect(requirementsResponse.result).toEqual({ requirements: null });
 
-			const logoutPromise = Reflect.apply(transport.request, transport, [
-				"account/logout",
-				undefined,
-			]);
+			// oxlint-disable-next-line unicorn/no-useless-undefined -- The public transport contract requires an explicit undefined params argument for generated no-parameter methods; only the serialized wire envelope omits params.
+			const logoutPromise = transport.request("account/logout", undefined);
 			const logoutFrame = frameAt(child, 1);
 			expect(logoutFrame).toEqual({ id: expect.any(String), method: "account/logout" });
 			sendJson(child, { id: logoutFrame["id"], result: {} });
