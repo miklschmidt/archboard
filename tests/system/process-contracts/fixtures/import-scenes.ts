@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 const replaceScene = {
 	type: "excalidraw",
 	version: 2,
@@ -83,4 +85,54 @@ const heldReplaceScene = {
 	],
 };
 
-export { heldReplaceScene, mergeScene, replaceScene };
+const ConflictSchema = z
+	.object({
+		board: z.string(),
+		file: z.string(),
+		reason: z.enum(["changed", "unseen"]),
+		expectedHash: z.string().optional(),
+		actualHash: z.string(),
+		lastReadAt: z.string().optional(),
+		fileModifiedAt: z.string().optional(),
+		versionMove: z.enum(["unchanged", "behind", "ahead", "unknown"]),
+		expectedVersion: z.number().optional(),
+		actualVersion: z.number().optional(),
+		outcomes: z.object({ reload: z.string(), overwrite: z.string(), saveAs: z.string() }).strict(),
+		message: z.string(),
+	})
+	.strict();
+const HeldSchema = z
+	.object({
+		board: z.string(),
+		since: z.string(),
+		writes: z.number().int().nonnegative(),
+		fromScreen: z.boolean(),
+		conflict: ConflictSchema,
+		message: z.string(),
+	})
+	.strict();
+const MergeReceiptSchema = z
+	.object({
+		success: z.literal(true),
+		imported: z.number().int().nonnegative(),
+		files: z.number().int().nonnegative(),
+		mode: z.literal("merge"),
+	})
+	.strict();
+const HeldReplaceReceiptSchema = z
+	.object({
+		success: z.literal(true),
+		imported: z.number().int().nonnegative(),
+		files: z.number().int().nonnegative(),
+		mode: z.literal("replace"),
+		held: HeldSchema,
+	})
+	.strict();
+
+export {
+	HeldReplaceReceiptSchema,
+	MergeReceiptSchema,
+	heldReplaceScene,
+	mergeScene,
+	replaceScene,
+};
