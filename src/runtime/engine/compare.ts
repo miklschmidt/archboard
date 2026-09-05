@@ -132,7 +132,7 @@ const bindingField = (binding: string | undefined): { binding: string } | Record
 
 const plainLabels = (model: BoardModel): Set<string> =>
 	new Set(
-		model.plain.labelled.map((element) => element.label).filter((label) => label !== undefined),
+		model.plain.labelled.map((labelled) => labelled.label).filter((label) => label !== undefined),
 	);
 
 const LAYOUT_METHOD: Record<string, string> = {

@@ -282,20 +282,19 @@ describe("Archboard boundary plugin in real Oxlint subprocesses", () => {
 	});
 
 	// The root compiler now covers every retained TypeScript source extension.
+	// src/ui is owned by the separate UI policy (600 physical lines), so the
+	// repository baseline's 500-line cap is proven on a non-UI area.
 	test("accepts compiler-covered TSX owners and still caps them", async () => {
 		await withProject(
 			{
-				"src/ui/widget/index.ts": "export const value = 1;\n",
-				"src/ui/widget/tests/rendered.test.tsx": "export const rendered = true;\n",
-				"src/ui/widget/tests/oversized.test.tsx": "// fixture\n".repeat(501),
 				"src/domain/widget/index.ts": "export const value = 1;\n",
 				"src/domain/widget/tests/rendered.test.tsx": "export const rendered = true;\n",
+				"src/domain/widget/tests/oversized.test.tsx": "// fixture\n".repeat(501),
 			},
 			(root) => {
-				expectPass(lint(root, ["src/ui/widget/tests/rendered.test.tsx"]));
 				expectPass(lint(root, ["src/domain/widget/tests/rendered.test.tsx"]));
 				expectRule(
-					lint(root, ["src/ui/widget/tests/oversized.test.tsx"]),
+					lint(root, ["src/domain/widget/tests/oversized.test.tsx"]),
 					"eslint(max-lines)",
 					"Maximum allowed is 500",
 				);
