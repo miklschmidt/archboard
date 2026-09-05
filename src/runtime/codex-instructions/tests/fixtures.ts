@@ -1,6 +1,6 @@
 import type { AdditionalContextPolicy, ArchboardContext } from "../index.js";
 
-export const contextFixture: ArchboardContext = {
+const contextFixture: ArchboardContext = {
 	schema: 1,
 	paneId: "pane-1",
 	board: {
@@ -52,7 +52,7 @@ export const contextFixture: ArchboardContext = {
 };
 
 /** Independent byte/shape oracle copied from the reviewed e9fd214 manifest. */
-export const reviewedAdditionalContextPolicy = {
+const reviewedAdditionalContextPolicy = {
 	schema: 1,
 	threadLink: {
 		classificationTarget: "target_thread_id",
@@ -222,8 +222,8 @@ export const reviewedAdditionalContextPolicy = {
 	},
 } as const satisfies AdditionalContextPolicy;
 
-export const instructionByteMutations = {
-	bom: (value: string) => `\ufeff${value}`,
+const instructionByteMutations = {
+	bom: (value: string) => `\uFEFF${value}`,
 	crlf: (value: string) => value.replaceAll("\n", "\r\n"),
 	missingTerminalLf: (value: string) => value.slice(0, -1),
 	extraTerminalLf: (value: string) => `${value}\n`,
@@ -231,3 +231,5 @@ export const instructionByteMutations = {
 	wrongSeparator: (value: string) =>
 		value.replace("--- ARCHBOARD COORDINATOR ROLE ---", "--- COORDINATOR ROLE ---"),
 } as const;
+
+export { contextFixture, instructionByteMutations, reviewedAdditionalContextPolicy };

@@ -1,5 +1,5 @@
 /** Independent reviewed snapshots: this file intentionally does not import the catalogue. */
-export const WORKHORSE_MANIFEST_SNAPSHOT = {
+const WORKHORSE_MANIFEST_SNAPSHOT = {
 	type: "namespace",
 	name: "archboard_workhorse",
 	description:
@@ -47,7 +47,7 @@ export const WORKHORSE_MANIFEST_SNAPSHOT = {
 						enum: ["list", "add", "update", "delete", "reorder", "start"],
 					},
 					submissionId: { type: "string", minLength: 1, maxLength: 128 },
-					prompt: { type: "string", minLength: 1, maxLength: 16384 },
+					prompt: { type: "string", minLength: 1, maxLength: 16_384 },
 					orderedSubmissionIds: {
 						type: "array",
 						minItems: 1,
@@ -77,7 +77,7 @@ export const WORKHORSE_MANIFEST_SNAPSHOT = {
 	],
 } as const;
 
-export const VOICE_MANIFEST_SNAPSHOT = {
+const VOICE_MANIFEST_SNAPSHOT = {
 	type: "namespace",
 	name: "archboard_voice",
 	description:
@@ -99,7 +99,7 @@ export const VOICE_MANIFEST_SNAPSHOT = {
 	],
 } as const;
 
-export const QUEUE_OPERATION_SNAPSHOT = [
+const QUEUE_OPERATION_SNAPSHOT = [
 	"list",
 	"add",
 	"update",
@@ -107,3 +107,5 @@ export const QUEUE_OPERATION_SNAPSHOT = [
 	"reorder",
 	"start",
 ] as const;
+
+export { QUEUE_OPERATION_SNAPSHOT, VOICE_MANIFEST_SNAPSHOT, WORKHORSE_MANIFEST_SNAPSHOT };

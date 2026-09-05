@@ -46,11 +46,13 @@ const LocalShellActionSchema = looseObject({
 	user: z.string().nullable(),
 });
 
+const OptionalStringArraySchema = z.array(z.string()).optional();
+
 const WebSearchActionSchema = z.discriminatedUnion("type", [
 	looseObject({
 		type: z.literal("search"),
 		query: z.string().optional(),
-		queries: z.array(z.string()).optional(),
+		queries: OptionalStringArraySchema,
 	}),
 	looseObject({ type: z.literal("open_page"), url: z.string().optional() }),
 	looseObject({
@@ -64,7 +66,7 @@ const WebSearchActionSchema = z.discriminatedUnion("type", [
 /** The Responses API leaves tool-search arguments open by generated contract. */
 const OpenToolSearchValueSchema = JsonValueSchema;
 
-export const ResponseItemSchema = z.discriminatedUnion("type", [
+const ResponseItemSchema = z.discriminatedUnion("type", [
 	looseObject({
 		type: z.literal("message"),
 		id: z.string().optional(),
@@ -109,7 +111,7 @@ export const ResponseItemSchema = z.discriminatedUnion("type", [
 		name: z.string(),
 		namespace: z.string().optional(),
 		arguments: z.string(),
-		encrypted_function_args: z.array(z.string()).optional(),
+		encrypted_function_args: OptionalStringArraySchema,
 		call_id: z.string(),
 		internal_chat_message_metadata_passthrough:
 			InternalChatMessageMetadataPassthroughSchema.optional(),
@@ -200,4 +202,6 @@ export const ResponseItemSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("other") }),
 ]);
 
-export const ResponseUsageMetadataSchema = looseObject({ amount: z.string().nullable() });
+const ResponseUsageMetadataSchema = looseObject({ amount: z.string().nullable() });
+
+export { ResponseItemSchema, ResponseUsageMetadataSchema };
