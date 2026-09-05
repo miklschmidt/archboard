@@ -116,12 +116,15 @@ export const repoListContract = defineCommand({
 	relationships: [],
 	async handler(input) {
 		const repos = listRepos();
-		if (!input.text) return { result: { success: true as const, registry: registryPath(), repos } };
-		if (!repos.length)
+		if (!input.text) {
+			return { result: { success: true as const, registry: registryPath(), repos } };
+		}
+		if (!repos.length) {
 			return {
 				result:
 					"No repository is registered on this machine yet.\nRun `repo add` inside a checkout, or bind with absolute paths and archboard will learn as it goes.",
 			};
+		}
 		return {
 			result: repos
 				.map(
@@ -187,7 +190,9 @@ export const repoAddContract = defineCommand({
 				signal: context.signal,
 			});
 		} catch (error) {
-			if (error instanceof RepoRegistryError) throw new CliUsageError(error.message);
+			if (error instanceof RepoRegistryError) {
+				throw new CliUsageError(error.message);
+			}
 			throw error;
 		}
 		return {

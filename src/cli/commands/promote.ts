@@ -23,12 +23,15 @@ import { boardWriteRefusals } from "../command-contract/common.js";
 function targetElements(ids: string[], board: ServerElement[]): ServerElement[] {
 	const byId = new Map(board.map((element) => [element.id, element]));
 	const missing = ids.filter((id) => !byId.has(id));
-	if (missing.length) throw new Error(`No element on the board with id ${missing.join(", ")}`);
+	if (missing.length) {
+		throw new Error(`No element on the board with id ${missing.join(", ")}`);
+	}
 	return ids.map((id) => byId.get(id)!);
 }
 async function applyUpdates(updates: ElementUpdate[]): Promise<void> {
-	if (updates.length)
+	if (updates.length) {
 		await applyElementChanges({ upserts: updates as (Partial<ServerElement> & { id: string })[] });
+	}
 }
 const tail = z.array(z.string()).default([]);
 const commonParameters = [
@@ -331,7 +334,9 @@ export const promoteContract = defineCommand({
 		});
 		await applyUpdates(plan.updates);
 		const summary = promotionSummary(plan, binding?.note);
-		if (input.text) return { result: summary };
+		if (input.text) {
+			return { result: summary };
+		}
 		return {
 			result: PromoteJsonResultSchema.parse({
 				success: true as const,

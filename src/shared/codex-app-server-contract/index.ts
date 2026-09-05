@@ -309,9 +309,13 @@ export type CodexJsonValue =
 	| { [key: string]: CodexJsonValue };
 
 function normalizeValue(value: unknown, path: string): CodexJsonValue {
-	if (value === null || typeof value === "string" || typeof value === "boolean") return value;
+	if (value === null || typeof value === "string" || typeof value === "boolean") {
+		return value;
+	}
 	if (typeof value === "number") {
-		if (!Number.isFinite(value)) throw new TypeError(`${path} is not a finite JSON number`);
+		if (!Number.isFinite(value)) {
+			throw new TypeError(`${path} is not a finite JSON number`);
+		}
 		return value;
 	}
 	if (typeof value === "bigint") {
@@ -320,7 +324,9 @@ function normalizeValue(value: unknown, path: string): CodexJsonValue {
 	if (Array.isArray(value)) {
 		return value.map((entry, index) => normalizeValue(entry, `${path}[${index}]`));
 	}
-	if (typeof value !== "object") throw new TypeError(`${path} is not a JSON value`);
+	if (typeof value !== "object") {
+		throw new TypeError(`${path} is not a JSON value`);
+	}
 	const prototype = Object.getPrototypeOf(value);
 	if (prototype !== Object.prototype && prototype !== null) {
 		throw new TypeError(`${path} is not a plain JSON object`);
@@ -332,6 +338,8 @@ function normalizeValue(value: unknown, path: string): CodexJsonValue {
 
 /** Normalizes untrusted app-server JSON before any handwritten ingress parser runs. */
 export function normalizeCodexJsonWire(value: unknown): CodexJsonValue | undefined {
-	if (value === undefined) return undefined;
+	if (value === undefined) {
+		return undefined;
+	}
 	return normalizeValue(value, "$codex");
 }

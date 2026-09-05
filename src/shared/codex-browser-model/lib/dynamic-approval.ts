@@ -91,23 +91,28 @@ type DynamicApprovalEffectValue = z.infer<
 function canonicalArguments(
 	argumentsValue: DynamicApprovalCanonicalEffect["arguments"],
 ): DynamicApprovalCanonicalEffect["arguments"] {
-	if ("beforeTurnId" in argumentsValue)
+	if ("beforeTurnId" in argumentsValue) {
 		return {
 			threadId: argumentsValue.threadId,
 			beforeTurnId: argumentsValue.beforeTurnId,
 			prompt: argumentsValue.prompt,
 		};
-	if ("threadId" in argumentsValue)
+	}
+	if ("threadId" in argumentsValue) {
 		return { threadId: argumentsValue.threadId, prompt: argumentsValue.prompt };
+	}
 	return { prompt: argumentsValue.prompt };
 }
 
 function canonicalBoundary(
 	boundary: DynamicApprovalCanonicalEffect["effectiveBoundary"],
 ): DynamicApprovalCanonicalEffect["effectiveBoundary"] {
-	if (boundary === null) return null;
-	if (boundary.relation === "self")
+	if (boundary === null) {
+		return null;
+	}
+	if (boundary.relation === "self") {
 		return { relation: "self", beforeTurnId: boundary.beforeTurnId };
+	}
 	return { relation: "other", beforeTurnId: boundary.beforeTurnId };
 }
 
@@ -116,54 +121,63 @@ function validateIdentityAndEffect(
 	approvalEffect: DynamicApprovalEffectValue,
 	refinementContext: z.RefinementCtx,
 ): void {
-	if (approvalIdentity.tool !== approvalEffect.tool)
+	if (approvalIdentity.tool !== approvalEffect.tool) {
 		refinementContext.addIssue({
 			code: "custom",
 			path: ["effect", "tool"],
 			message: "effect tool does not match logical call tool",
 		});
-	if (approvalIdentity.operationId !== approvalEffect.mutationOperationId)
+	}
+	if (approvalIdentity.operationId !== approvalEffect.mutationOperationId) {
 		refinementContext.addIssue({
 			code: "custom",
 			path: ["effect", "mutationOperationId"],
 			message: "mutation OperationId must be the call OperationId",
 		});
+	}
 	if (approvalEffect.tool === "create_thread") {
-		if (approvalEffect.targetAuthority !== null)
+		if (approvalEffect.targetAuthority !== null) {
 			refinementContext.addIssue({
 				code: "custom",
 				path: ["effect", "targetAuthority"],
 				message: "create has no target authority",
 			});
+		}
 		return;
 	}
-	if (approvalEffect.tool !== "fork_thread") return;
+	if (approvalEffect.tool !== "fork_thread") {
+		return;
+	}
 	if (approvalEffect.effectiveBoundary.relation === "self") {
-		if (approvalEffect.arguments.threadId !== approvalIdentity.threadId)
+		if (approvalEffect.arguments.threadId !== approvalIdentity.threadId) {
 			refinementContext.addIssue({
 				code: "custom",
 				path: ["effect", "arguments", "threadId"],
 				message: "self fork must target its caller",
 			});
-		if (approvalEffect.effectiveBoundary.beforeTurnId !== approvalIdentity.turnId)
+		}
+		if (approvalEffect.effectiveBoundary.beforeTurnId !== approvalIdentity.turnId) {
 			refinementContext.addIssue({
 				code: "custom",
 				path: ["effect", "effectiveBoundary"],
 				message: "self fork boundary must be caller turn",
 			});
+		}
 	} else {
-		if (approvalEffect.arguments.threadId === approvalIdentity.threadId)
+		if (approvalEffect.arguments.threadId === approvalIdentity.threadId) {
 			refinementContext.addIssue({
 				code: "custom",
 				path: ["effect", "effectiveBoundary"],
 				message: "other fork cannot target its caller",
 			});
-		if (approvalEffect.effectiveBoundary.beforeTurnId !== approvalEffect.arguments.beforeTurnId)
+		}
+		if (approvalEffect.effectiveBoundary.beforeTurnId !== approvalEffect.arguments.beforeTurnId) {
 			refinementContext.addIssue({
 				code: "custom",
 				path: ["effect", "effectiveBoundary"],
 				message: "fork boundary must echo beforeTurnId",
 			});
+		}
 	}
 }
 
@@ -218,20 +232,22 @@ export function createDynamicApprovalSchemas(identity: IdentitySchemas, context:
 		.strict()
 		.superRefine((request, refinementContext) => {
 			validateIdentityAndEffect(request.identity, request.effect, refinementContext);
-			if (request.expiresAtMs - request.createdAtMs !== CODEX_APPROVAL_EXPIRY_MS)
+			if (request.expiresAtMs - request.createdAtMs !== CODEX_APPROVAL_EXPIRY_MS) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["expiresAtMs"],
 					message: `expiry must be exactly ${CODEX_APPROVAL_EXPIRY_MS}ms after creation`,
 				});
+			}
 			if (
 				request.effectHash !== effectHashFor(canonicalHashInput(request.identity, request.effect))
-			)
+			) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["effectHash"],
 					message: "effectHash does not match identity and effect",
 				});
+			}
 		});
 
 	const browserSchemas = createDynamicApprovalBrowserSchemas(identity, context, effectSchemas);

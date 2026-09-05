@@ -148,79 +148,91 @@ export function createBrowserSpokenApprovalSchema(identity: IdentitySchemas) {
 					value.capturedUserFinal !== null ||
 					value.settlement !== null ||
 					value.reason !== null
-				)
+				) {
 					context.addIssue({
 						code: "custom",
 						path: ["state"],
 						message: "an idle spoken approval cannot retain request state",
 					});
+				}
 				return;
 			}
-			if (CORE_STATES.has(value.state as never) && (value.approval === null || value.gate === null))
+			if (
+				CORE_STATES.has(value.state as never) &&
+				(value.approval === null || value.gate === null)
+			) {
 				context.addIssue({
 					code: "custom",
 					path: ["state"],
 					message: "this spoken approval state requires an exact approval and gate identity",
 				});
+			}
 			if (
 				(value.state === "resolving" ||
 					value.state === "settled" ||
 					value.state === "outcome_unknown") &&
 				value.capturedUserFinal === null
-			)
+			) {
 				context.addIssue({
 					code: "custom",
 					path: ["capturedUserFinal"],
 					message: "this spoken approval state requires the exact captured final user item",
 				});
-			if (value.state === "armed" && value.capturedUserFinal !== null)
+			}
+			if (value.state === "armed" && value.capturedUserFinal !== null) {
 				context.addIssue({
 					code: "custom",
 					path: ["capturedUserFinal"],
 					message: "an armed spoken approval has not captured its user item yet",
 				});
-			if (value.state === "settled" && value.settlement === null)
+			}
+			if (value.state === "settled" && value.settlement === null) {
 				context.addIssue({
 					code: "custom",
 					path: ["settlement"],
 					message: "a settled spoken approval requires its ordinary approval settlement",
 				});
-			if (value.state === "expired" && value.reason !== "timeout")
+			}
+			if (value.state === "expired" && value.reason !== "timeout") {
 				context.addIssue({
 					code: "custom",
 					path: ["reason"],
 					message: "only the runtime timeout reason produces an expired spoken approval",
 				});
+			}
 			if (
 				value.state === "outcome_unknown" &&
 				(value.reason !== "resolver_lost" || !resolverOutcomeUnknown)
-			)
+			) {
 				context.addIssue({
 					code: "custom",
 					path: ["reason"],
 					message:
 						"only a lost resolver result without a known settlement produces an unknown spoken outcome",
 				});
+			}
 			if (
 				value.state === "stale_session" &&
 				value.reason !== "changed_effect" &&
 				value.reason !== "stale_realtime_session" &&
 				value.reason !== "stale_state"
-			)
+			) {
 				context.addIssue({
 					code: "custom",
 					path: ["reason"],
 					message: "a stale spoken approval requires an identity or realtime mismatch",
 				});
-			if (value.reason === "timeout" && value.state !== "expired")
+			}
+			if (value.reason === "timeout" && value.state !== "expired") {
 				context.addIssue({
 					code: "custom",
 					path: ["state"],
 					message: "the runtime timeout reason must be presented as expired",
 				});
+			}
 			if (value.reason === "resolver_lost") {
 				const expectedState = resolverOutcomeUnknown ? "outcome_unknown" : "visual_fallback";
-				if (value.state !== expectedState)
+				if (value.state !== expectedState) {
 					context.addIssue({
 						code: "custom",
 						path: ["state"],
@@ -228,39 +240,44 @@ export function createBrowserSpokenApprovalSchema(identity: IdentitySchemas) {
 							? "a lost resolver without a known settlement must be presented as outcome unknown"
 							: "a lost resolver with a known settlement must preserve that truth as visual fallback",
 					});
-				if (value.approval === null || value.gate === null || value.capturedUserFinal === null)
+				}
+				if (value.approval === null || value.gate === null || value.capturedUserFinal === null) {
 					context.addIssue({
 						code: "custom",
 						path: ["reason"],
 						message: "a lost resolver requires its exact approval, gate, and captured user item",
 					});
+				}
 			}
 			if (
 				(value.reason === "changed_effect" ||
 					value.reason === "stale_realtime_session" ||
 					value.reason === "stale_state") &&
 				value.state !== "stale_session"
-			)
+			) {
 				context.addIssue({
 					code: "custom",
 					path: ["state"],
 					message: "an identity or realtime mismatch must be presented as stale",
 				});
-			if (value.state === "visual_fallback" && value.reason === null)
+			}
+			if (value.state === "visual_fallback" && value.reason === null) {
 				context.addIssue({
 					code: "custom",
 					path: ["reason"],
 					message: "a visual spoken fallback requires the runtime reason",
 				});
+			}
 			if (
 				(value.state === "armed" || value.state === "resolving" || value.state === "settled") &&
 				value.reason !== null
-			)
+			) {
 				context.addIssue({
 					code: "custom",
 					path: ["reason"],
 					message: "a live or settled spoken approval cannot carry a fallback reason",
 				});
+			}
 		});
 }
 

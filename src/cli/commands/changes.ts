@@ -40,24 +40,30 @@ export type ChangesResult = z.infer<typeof ChangesResultSchema>;
 
 function textReport(report: ChangeFeedResponse, coalesce: boolean): string {
 	const lines: string[] = [];
-	if (report.truncated) lines.push(report.message ?? "The feed no longer reaches back that far.");
-	else if (coalesce) {
+	if (report.truncated) {
+		lines.push(report.message ?? "The feed no longer reaches back that far.");
+	} else if (coalesce) {
 		const net = report.coalesced;
-		if (!net || net["significance"] === "none")
+		if (!net || net["significance"] === "none") {
 			lines.push(`Nothing has changed on "${String(report.board)}" since then.`);
-		else {
+		} else {
 			lines.push(`${String(report.board)}: ${String(net["headline"])}`);
-			if (typeof net["text"] === "string") lines.push(net["text"]);
+			if (typeof net["text"] === "string") {
+				lines.push(net["text"]);
+			}
 		}
-	} else if (report.events.length === 0)
+	} else if (report.events.length === 0) {
 		lines.push(`Nothing has changed on "${report.board}" since then.`);
-	else
+	} else {
 		for (const event of report.events) {
 			lines.push(
 				`[${String(event["cursor"])}] ${String(event["at"])} — ${String(event["origin"])} ${String(event["significance"])}: ${String(event["headline"])}`,
 			);
-			if (typeof event["text"] === "string") lines.push(event["text"]);
+			if (typeof event["text"] === "string") {
+				lines.push(event["text"]);
+			}
 		}
+	}
 	lines.push(`(cursor ${report.cursor}${report.feedId ? `, feed ${report.feedId}` : ""})`);
 	return lines.join("\n");
 }

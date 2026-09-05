@@ -169,12 +169,13 @@ export const PendingArtifactSchema = z.discriminatedUnion("encoding", [
 		})
 		.superRefine((artifact, context) => {
 			const names = artifact.files.map(({ name }) => name);
-			if (new Set(names).size !== names.length)
+			if (new Set(names).size !== names.length) {
 				context.addIssue({
 					code: "custom",
 					path: ["files"],
 					message: "Artifact file names must be unique.",
 				});
+			}
 		}),
 ]);
 export type PendingArtifactValue = z.infer<typeof PendingArtifactSchema>;

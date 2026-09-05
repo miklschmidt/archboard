@@ -47,8 +47,9 @@ const filterPairSchema = z.string().transform((value, context) => {
 const filterJsonSchema = z.string().transform((value, context) => {
 	try {
 		const parsed: unknown = JSON.parse(value);
-		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
 			throw new Error("expected object");
+		}
 		return parsed as Record<string, unknown>;
 	} catch (error) {
 		context.addIssue({
@@ -61,7 +62,9 @@ const filterJsonSchema = z.string().transform((value, context) => {
 
 function lookupPath(value: unknown, dotPath: string): unknown {
 	return dotPath.split(".").reduce((current, key) => {
-		if (!current || typeof current !== "object") return undefined;
+		if (!current || typeof current !== "object") {
+			return undefined;
+		}
 		return (current as Record<string, unknown>)[key];
 	}, value);
 }
@@ -162,7 +165,9 @@ export const queryContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "Querying elements");
 		const query = new URLSearchParams();
-		if (input.type !== undefined) query.set("type", input.type);
+		if (input.type !== undefined) {
+			query.set("type", input.type);
+		}
 		if (input.bbox !== undefined) {
 			const [xMin, yMin, xMax, yMax] = context.parse(bboxSchema, input.bbox);
 			query.set("x_min", String(xMin));
@@ -177,8 +182,9 @@ export const queryContract = defineCommand({
 			const { key, raw, coerced } = context.parse(filterPairSchema, value);
 			predicates.push((element) => {
 				const actual = lookupPath(element, key);
-				if (Array.isArray(actual))
+				if (Array.isArray(actual)) {
 					return actual.some((candidate) => candidate === raw || candidate === coerced);
+				}
 				return actual === raw || actual === coerced;
 			});
 		}
@@ -194,8 +200,9 @@ export const queryContract = defineCommand({
 				});
 			}
 		}
-		if (predicates.length > 0)
+		if (predicates.length > 0) {
 			results = results.filter((element) => predicates.every((test) => test(element)));
+		}
 		return { result: QueryResultSchema.parse(results) };
 	},
 });

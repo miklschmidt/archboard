@@ -37,8 +37,9 @@ export function sha256(value: string): string {
 
 	for (let offset = 0; offset < padded.byteLength; offset += 64) {
 		const words = new Uint32Array(64);
-		for (let index = 0; index < 16; index++)
+		for (let index = 0; index < 16; index++) {
 			words[index] = view.getUint32(offset + index * 4, false);
+		}
 		for (let index = 16; index < 64; index++) {
 			const first = words[index - 15]!;
 			const second = words[index - 2]!;

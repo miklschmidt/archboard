@@ -12,7 +12,9 @@ const recordSchema = z.object({
 });
 
 const fixturePath = process.argv[2];
-if (!fixturePath) throw new Error("public runner fixture needs a record path");
+if (!fixturePath) {
+	throw new Error("public runner fixture needs a record path");
+}
 const record = recordSchema.parse(JSON.parse(readFileSync(fixturePath, "utf8")));
 
 const server = Bun.serve({
@@ -46,9 +48,13 @@ try {
 		]);
 	await getBoardInfo();
 	const source = cliContractRegistry().find((entry) => entry.name === record.path)?.contract;
-	if (!source) throw new Error(`missing contract ${record.path}`);
+	if (!source) {
+		throw new Error(`missing contract ${record.path}`);
+	}
 	const outputCase = source.output.cases.find((candidate) => candidate.id === record.outputCase);
-	if (!outputCase) throw new Error(`missing output case ${record.path}:${record.outputCase}`);
+	if (!outputCase) {
+		throw new Error(`missing output case ${record.path}:${record.outputCase}`);
+	}
 	await runCommand(
 		defineCommand({
 			...source,

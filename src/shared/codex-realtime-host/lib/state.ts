@@ -142,7 +142,9 @@ export function canTransitionRealtimeState(current: RealtimeState, next: Realtim
 	return reasons(current.phase, next.phase).includes(next.reason);
 }
 export function assertRealtimeTransition(current: RealtimeState, next: RealtimeState): void {
-	if (canTransitionRealtimeState(current, next)) return;
+	if (canTransitionRealtimeState(current, next)) {
+		return;
+	}
 	const allowed = reasons(current.phase, next.phase);
 	const suffix =
 		allowed.length > 0

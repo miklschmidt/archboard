@@ -214,11 +214,16 @@ export const applyContract = defineCommand({
 		if (patch.updates.length || patch.deletes.length) {
 			const onBoard = new Set((await getElements()).map((element) => element.id));
 			for (const normalized of patch.updates) {
-				if (!onBoard.has(normalized.id)) throw new Error(`Element ${normalized.id} not found`);
+				if (!onBoard.has(normalized.id)) {
+					throw new Error(`Element ${normalized.id} not found`);
+				}
 				updates.push({ ...normalized.updates, id: normalized.id });
 			}
-			for (const id of patch.deletes)
-				if (!onBoard.has(id)) throw new Error(`Element ${id} not found`);
+			for (const id of patch.deletes) {
+				if (!onBoard.has(id)) {
+					throw new Error(`Element ${id} not found`);
+				}
+			}
 		}
 		const result = await applyElementChanges({
 			upserts: [...patch.create, ...updates],
@@ -393,7 +398,9 @@ export const deleteContract = defineCommand({
 		await context.require("server", "delete");
 		const onBoard = new Set((await getElements()).map((element) => element.id));
 		const missing = input.ids.filter((id) => !onBoard.has(id));
-		if (missing.length) throw new Error(`Element ${missing.join(", ")} not found`);
+		if (missing.length) {
+			throw new Error(`Element ${missing.join(", ")} not found`);
+		}
 		const result = await applyElementChanges({
 			deletes: input.ids,
 			...documentAsked(input.document),

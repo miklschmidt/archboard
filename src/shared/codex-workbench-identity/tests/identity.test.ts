@@ -15,7 +15,9 @@ function errorCode(action: () => unknown): string {
 	try {
 		action();
 	} catch (error) {
-		if (error instanceof IdentityValidationError) return error.code;
+		if (error instanceof IdentityValidationError) {
+			return error.code;
+		}
 		throw error;
 	}
 	throw new Error("expected the action to fail");
@@ -48,7 +50,9 @@ describe("codex workbench identities", () => {
 			...serverIds,
 		];
 		expect(new Set(values).size).toBe(values.length);
-		for (const value of values) expect(JSON.parse(JSON.stringify(value))).toBe(value);
+		for (const value of values) {
+			expect(JSON.parse(JSON.stringify(value))).toBe(value);
+		}
 		expect(decoder.parseBrowserCommandId(browserCommand)).toBe(browserCommand);
 		expect(decoder.parseThreadId(threadId)).toBe(threadId);
 		expect(validator.isCurrentEpoch(validator.childId, validator.epoch)).toBeTrue();
@@ -250,7 +254,9 @@ describe("codex workbench identities", () => {
 			queuedSubmissionIds: ["same-queue", "same-queue"],
 			loginIds: ["same-login", "same-login"],
 		});
-		for (const values of Object.values(adopted)) expect(values[0]).toBe(values[1]);
+		for (const values of Object.values(adopted)) {
+			expect(values[0]).toBe(values[1]);
+		}
 		expect(decoder.resolveItemId("same-item")).toBe(adopted.itemIds[0]!);
 	});
 

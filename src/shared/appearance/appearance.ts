@@ -34,11 +34,19 @@ export const DEFAULT_FILL_STYLE = "solid";
 
 // Excalidraw's own test: "transparent", or an 8-digit hex with a zero alpha.
 export function isTransparentBackground(color: unknown): boolean {
-	if (typeof color !== "string" || color === "") return true;
+	if (typeof color !== "string" || color === "") {
+		return true;
+	}
 	const c = color.trim().toLowerCase();
-	if (c === "transparent") return true;
-	if (c.length === 5 && c.startsWith("#") && c[4] === "0") return true;
-	if (c.length === 9 && c.startsWith("#") && c.slice(7) === "00") return true;
+	if (c === "transparent") {
+		return true;
+	}
+	if (c.length === 5 && c.startsWith("#") && c[4] === "0") {
+		return true;
+	}
+	if (c.length === 9 && c.startsWith("#") && c.slice(7) === "00") {
+		return true;
+	}
 	return false;
 }
 

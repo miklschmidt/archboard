@@ -9,11 +9,12 @@ const usage =
 	"browser needs a subcommand: panes, open, close, show, selection, viewport, or capture.";
 const tokens = z.array(z.string()).default([]);
 const stagedNoFlags = z.array(z.string()).transform((values, context) => {
-	for (const token of values)
+	for (const token of values) {
 		if (token.startsWith("--")) {
 			context.addIssue({ code: "custom", message: `Unknown flag ${token.split("=", 1)[0]}` });
 			return z.NEVER;
 		}
+	}
 	return values;
 });
 const OnScreenPaneSchema = z.looseObject({

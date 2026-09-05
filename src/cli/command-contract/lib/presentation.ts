@@ -9,14 +9,20 @@ import type {
 import { processCommandHost } from "./host.js";
 
 const heldMessage = (held: unknown): string | null => {
-	if (!held || typeof held !== "object") return null;
+	if (!held || typeof held !== "object") {
+		return null;
+	}
 	const message = (held as { message?: unknown }).message;
 	return typeof message === "string" ? message : null;
 };
 
 export function applyHeld(result: unknown, held: unknown, policy: HeldPolicy): unknown {
-	if (policy !== "object-field-and-stderr-note" || !held) return result;
-	if (!result || typeof result !== "object" || Array.isArray(result)) return result;
+	if (policy !== "object-field-and-stderr-note" || !held) {
+		return result;
+	}
+	if (!result || typeof result !== "object" || Array.isArray(result)) {
+		return result;
+	}
 	return { ...(result as Record<string, unknown>), held };
 }
 
@@ -32,9 +38,13 @@ function emitPublicResult(outputCase: OutputCase, result: unknown): void {
 const emitDiagnostic = (message: string): void => processCommandHost.writeStderr(message + "\n");
 
 function emitContinuation(held: unknown): void {
-	if (!held || typeof held !== "object") return;
+	if (!held || typeof held !== "object") {
+		return;
+	}
 	const board = (held as { board?: unknown }).board;
-	if (typeof board !== "string") return;
+	if (typeof board !== "string") {
+		return;
+	}
 	emitDiagnostic(
 		`"${board}" has stopped saving. Changes from here are held on the canvas ` +
 			"and reach no note until one of those three is run.",
@@ -45,8 +55,12 @@ export function commitArtifact(
 	outputCase: OutputCase,
 	artifact: PendingArtifact | undefined,
 ): void {
-	if (outputCase.mode !== "file-receipt") return;
-	if (!artifact) throw new Error("File output did not provide a pending artifact");
+	if (outputCase.mode !== "file-receipt") {
+		return;
+	}
+	if (!artifact) {
+		throw new Error("File output did not provide a pending artifact");
+	}
 	processCommandHost.writeArtifact(artifact);
 }
 
@@ -64,14 +78,18 @@ export function presentResult(input: {
 	for (const step of steps) {
 		switch (step) {
 			case "diagnostics":
-				for (const diagnostic of input.diagnostics) emitDiagnostic(diagnostic);
+				for (const diagnostic of input.diagnostics) {
+					emitDiagnostic(diagnostic);
+				}
 				break;
 			case "result":
 				emitPublicResult(input.outputCase, input.result);
 				break;
 			case "held-note": {
 				const message = heldMessage(input.held);
-				if (message) emitDiagnostic(message);
+				if (message) {
+					emitDiagnostic(message);
+				}
 				break;
 			}
 			case "continuation":

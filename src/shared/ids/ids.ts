@@ -76,7 +76,9 @@ export function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
 		for (let i = 0; i < ID_LENGTH; i++) {
 			id += ID_ALPHABET[Math.floor(Math.random() * ID_ALPHABET.length)];
 		}
-		if (!inUse.has(id)) return id;
+		if (!inUse.has(id)) {
+			return id;
+		}
 	}
 }
 
@@ -105,6 +107,8 @@ export function derivedId(sourceKey: string, inUse: IdsInUse = NOTHING_IN_USE): 
 		const salted = attempt === 0 ? sourceKey : `${sourceKey}:${attempt}`;
 		const bits = (BigInt(fnv1a(salted)) << 32n) | BigInt(fnv1a(`${salted}#2`));
 		const id = encode(bits);
-		if (!inUse.has(id)) return id;
+		if (!inUse.has(id)) {
+			return id;
+		}
 	}
 }

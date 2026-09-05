@@ -60,7 +60,9 @@ function parseStage(
 			context.addIssue({ code: "custom", message: `Flag --${name} requires a value` });
 			return z.NEVER;
 		}
-		if (inline === undefined) index += 1;
+		if (inline === undefined) {
+			index += 1;
+		}
 		flags[name] = value;
 	}
 	return { positionals, flags };
@@ -102,29 +104,34 @@ export const boardContract = defineCommand({
 
 async function repoIdentityHere(signal: AbortSignal): Promise<string> {
 	const checkout = await inspectCheckout(process.cwd(), { signal });
-	if (!checkout)
+	if (!checkout) {
 		throw new CliUsageError(
 			`${process.cwd()} is not inside a git repository, so there is no repository to look for. Name one with --repo <host/owner/name>, or drop the filter to list every board.`,
 		);
+	}
 	return checkout.identity;
 }
 function boardListText(result: BoardListResponse): string {
 	if (result.repo) {
-		if (!result.boards.length)
+		if (!result.boards.length) {
 			return `No board in ${result.vault} has a node bound to ${result.repo} (${result.scanned ?? 0} board(s) read).`;
+		}
 		const lines = [`Boards describing ${result.repo}:`];
 		for (const entry of result.boards) {
 			const level = entry.identity?.level ? `, ${entry.identity.level}` : "";
 			lines.push(`  ${entry.key} (${entry.identity?.variant ?? "current"}${level})`);
-			for (const node of entry.nodes ?? [])
+			for (const node of entry.nodes ?? []) {
 				lines.push(
 					`    ${node.name ?? node.node}${node.kind ? ` [${node.kind}]` : ""} -> ${node.path}`,
 				);
+			}
 		}
 		lines.push(`Show one with \`browser show ${result.boards[0]!.key} --pane <spec>\`.`);
 		return lines.join("\n");
 	}
-	if (!result.boards.length) return `No boards in ${result.vault} yet.`;
+	if (!result.boards.length) {
+		return `No boards in ${result.vault} yet.`;
+	}
 	return [`Boards in ${result.vault}:`, ...result.boards.map((entry) => `  ${entry.key}`)].join(
 		"\n",
 	);
@@ -217,22 +224,29 @@ export const boardListContract = defineCommand({
 		if (stage.flags["here"]) {
 			repo = await repoIdentityHere(context.signal);
 			context.diagnostic(`Standing in ${repo}.`);
-		} else if (typeof stage.flags["repo"] === "string") repo = stage.flags["repo"];
+		} else if (typeof stage.flags["repo"] === "string") {
+			repo = stage.flags["repo"];
+		}
 		const result = await listBoardsOnCanvas(repo);
-		if (repo && !result.repo)
+		if (repo && !result.repo) {
 			throw new Error(
 				`The canvas server is older than this CLI and ignored the repository filter, so this would have listed every board as though each described ${repo}. Restart it (\`canvas stop\` then \`canvas start\`) and try again.`,
 			);
+		}
 		const diagnostics: string[] = [];
 		const reported = new Set<string>();
 		for (const entry of result.boards.filter((candidate) => candidate.collidesWith?.length)) {
-			if (reported.has(entry.key)) continue;
+			if (reported.has(entry.key)) {
+				continue;
+			}
 			reported.add(entry.key);
 			diagnostics.push(
 				`"${entry.key}" is the address of ${(entry.collidesWith?.length ?? 0) + 1} notes that differ only in casing or accents: ${[entry.file, ...(entry.collidesWith ?? [])].join(", ")}. Board names are case-insensitive, so only ${entry.file} is reachable. Rename or delete the others.`,
 			);
 		}
-		if (stage.flags["text"]) return { result: boardListText(result), diagnostics };
+		if (stage.flags["text"]) {
+			return { result: boardListText(result), diagnostics };
+		}
 		return {
 			result: BoardListJsonResultSchema.parse({
 				success: true as const,
@@ -496,14 +510,16 @@ export const browserShowContract = defineCommand({
 				? `"${result.board}" is showing in ${result.pane.place === "the only pane" ? "the only pane" : `the ${result.pane.place} pane`}. Commands still name it: \`--board ${result.board}\`.`
 				: `"${result.board}" is loaded, but no pane is open, so nothing is showing it.`,
 		];
-		if (result.source === "memory")
+		if (result.source === "memory") {
 			diagnostics.push(
 				`"${result.board}" was already open here, so this only pointed a pane at it. Pass --reload to re-read its address off disk, which is also what un-sticks a board after a write was refused.`,
 			);
-		if (result.declaredKey)
+		}
+		if (result.declaredKey) {
 			diagnostics.push(
 				`Note: this file's frontmatter says it is board "${result.declaredKey}", not "${result.board}". The path is the address, so it opened as the path says; saving rewrites the frontmatter to match.`,
 			);
+		}
 		return { result: BrowserShowResultSchema.parse(result), diagnostics };
 	},
 });

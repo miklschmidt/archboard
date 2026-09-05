@@ -316,10 +316,11 @@ export const snapshotRestoreContract = defineCommand({
 			throw new Error(`Snapshot "${request.name}" not found`);
 		}
 		const current = await getBoardInfo();
-		if (snap.board && snap.board !== current.board && !request.force)
+		if (snap.board && snap.board !== current.board && !request.force) {
 			throw new Error(
 				`Snapshot "${request.name}" was taken on board "${snap.board}", but you named "${current.board}". Restoring would replace "${current.board}" with it. Pass --board ${snap.board} to put it back where it came from, or --force to overwrite this one.`,
 			);
+		}
 		await replaceSceneOnCanvas(snap.elements, []);
 		return {
 			result: {

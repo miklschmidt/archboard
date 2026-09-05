@@ -105,8 +105,9 @@ export const BridgeResultSchema = z
 			JSON.stringify(bridgeFactsWithoutRole(maskMetadata)) !== JSON.stringify(expected) ||
 			JSON.stringify(bridgeFactsWithoutRole(redrawMetadata)) !== JSON.stringify(expected) ||
 			maskMetadata.background !== redrawMetadata.background
-		)
+		) {
 			context.addIssue({ code: "custom", message: "Bridge receipt facts do not agree." });
+		}
 	});
 
 export const bridgeContract = defineCommand({
@@ -197,8 +198,9 @@ export const BridgeRemoveResultSchema = z
 		held: HoldReportSchema.optional(),
 	})
 	.superRefine((result, context) => {
-		if (result.deleted[0] !== result.bridgeId || result.deleted[1] === result.bridgeId)
+		if (result.deleted[0] !== result.bridgeId || result.deleted[1] === result.bridgeId) {
 			context.addIssue({ code: "custom", message: "Bridge removal receipt IDs do not agree." });
+		}
 	});
 
 export const bridgeRemoveContract = defineCommand({

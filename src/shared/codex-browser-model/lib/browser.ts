@@ -67,26 +67,32 @@ export function browserSnapshotRelationshipIssues(
 		["timeline", value.timeline?.threadId],
 		["semantic", value.semantic?.threadId],
 	] as const) {
-		if (threadId !== null && threadId !== undefined && value.threadLink.threadId !== threadId)
+		if (threadId !== null && threadId !== undefined && value.threadLink.threadId !== threadId) {
 			issues.push({
 				path: [name, "threadId"],
 				message: "thread identity contradicts the current thread link",
 			});
+		}
 	}
-	if (value.threadLink.state === "unbound" && (value.timeline !== null || value.semantic !== null))
+	if (
+		value.threadLink.state === "unbound" &&
+		(value.timeline !== null || value.semantic !== null)
+	) {
 		issues.push({
 			path: ["threadLink", "state"],
 			message: "an unbound link cannot publish thread-scoped state",
 		});
+	}
 	if (
 		value.voiceContext !== null &&
 		value.voiceContext !== undefined &&
 		value.voice?.realtimeSessionId !== value.voiceContext.sessionId
-	)
+	) {
 		issues.push({
 			path: ["voiceContext", "sessionId"],
 			message: "voice context identity contradicts the active voice session",
 		});
+	}
 	return issues;
 }
 
@@ -341,12 +347,13 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			.superRefine((value, refinementContext) => {
 				const seen = new Set<string>();
 				for (const record of value.records) {
-					if (seen.has(record.selectionId))
+					if (seen.has(record.selectionId)) {
 						refinementContext.addIssue({
 							code: "custom",
 							path: ["records"],
 							message: "a thread candidate selection appears more than once",
 						});
+					}
 					seen.add(record.selectionId);
 				}
 			}),
@@ -607,28 +614,35 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		})
 		.strict()
 		.superRefine((field, refinementContext) => {
-			if (field.secret && field.defaultValue !== null)
+			if (field.secret && field.defaultValue !== null) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["defaultValue"],
 					message: "secret elicitation defaults are never projected",
 				});
-			if (field.minLength !== null && field.maxLength !== null && field.minLength > field.maxLength)
+			}
+			if (
+				field.minLength !== null &&
+				field.maxLength !== null &&
+				field.minLength > field.maxLength
+			) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["maxLength"],
 					message: "elicitation text bounds are contradictory",
 				});
+			}
 			if (
 				field.minimumItems !== null &&
 				field.maximumItems !== null &&
 				field.minimumItems > field.maximumItems
-			)
+			) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["maximumItems"],
 					message: "elicitation item bounds are contradictory",
 				});
+			}
 		});
 	interface BrowserRequestedPermissionScope {
 		readonly network: boolean | null;
@@ -887,18 +901,20 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 			}),
 		])
 		.superRefine((value, refinementContext) => {
-			if (value.freshUntilMs < value.capturedAtMs)
+			if (value.freshUntilMs < value.capturedAtMs) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["freshUntilMs"],
 					message: "freshness cannot end before capture",
 				});
-			if (value.attempted && value.attemptedAtMs < value.capturedAtMs)
+			}
+			if (value.attempted && value.attemptedAtMs < value.capturedAtMs) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["attemptedAtMs"],
 					message: "attempt timing and delivery outcome are incoherent",
 				});
+			}
 		});
 	const BrowserVoiceContextSchema = z
 		.object({
@@ -912,12 +928,13 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		})
 		.strict()
 		.superRefine((value, refinementContext) => {
-			if (value.entriesTruncated < value.ownerEntriesTruncated)
+			if (value.entriesTruncated < value.ownerEntriesTruncated) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["entriesTruncated"],
 					message: "transport omissions cannot be less than permanent owner omissions",
 				});
+			}
 		});
 	const BrowserCommandLeaseSchema = z
 		.object({
@@ -1113,12 +1130,13 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 		})
 		.strict()
 		.superRefine((value, refinementContext) => {
-			for (const issue of browserSnapshotRelationshipIssues(value))
+			for (const issue of browserSnapshotRelationshipIssues(value)) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: [...issue.path],
 					message: issue.message,
 				});
+			}
 		});
 	const BrowserDtoSchema = z.union([
 		BrowserSnapshotSchema,

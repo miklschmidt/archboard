@@ -7,9 +7,13 @@ import type { PendingArtifact } from "../contract.js";
 
 export const processCommandHost = {
 	async readStdin() {
-		if (process.stdin.isTTY) return "";
+		if (process.stdin.isTTY) {
+			return "";
+		}
 		const chunks: Buffer[] = [];
-		for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+		for await (const chunk of process.stdin) {
+			chunks.push(chunk as Buffer);
+		}
 		return Buffer.concat(chunks).toString("utf8");
 	},
 	readTextFile(file: string) {
@@ -26,7 +30,9 @@ export const processCommandHost = {
 		return path.resolve(file);
 	},
 	async prompt(question: string, fallback: string) {
-		if (!process.stdin.isTTY) return fallback;
+		if (!process.stdin.isTTY) {
+			return fallback;
+		}
 		const rl = readline.createInterface({ input: process.stdin, output: process.stderr });
 		try {
 			const answer = (await rl.question(`${question}\n  [${fallback}]: `)).trim();
@@ -42,8 +48,9 @@ export const processCommandHost = {
 				artifact.manifest.name,
 			]);
 			const unexpected = fs.readdirSync(artifact.path).filter((name) => !expected.has(name));
-			if (unexpected.length > 0)
+			if (unexpected.length > 0) {
 				throw new Error(`Artifact directory changed before commit: ${unexpected.join(", ")}`);
+			}
 			for (const file of artifact.files) {
 				writeFileAtomicExclusive(path.join(artifact.path, file.name), Buffer.from(file.content));
 			}

@@ -65,8 +65,9 @@ export function canvasStartupTerminalRecord(input: {
 
 export function parseCanvasStartupProtocolRecord(line: string): CanvasStartupProtocolRecord {
 	const value = JSON.parse(line) as Partial<CanvasStartupProtocolRecord>;
-	if (value.protocol !== PROTOCOL || !positiveInteger(value.canvasPid))
+	if (value.protocol !== PROTOCOL || !positiveInteger(value.canvasPid)) {
 		throw new Error("The canvas child returned an invalid startup cleanup record.");
+	}
 	if (value.kind === "ownership") {
 		const group = value.codexGroup;
 		if (
@@ -76,16 +77,18 @@ export function parseCanvasStartupProtocolRecord(line: string): CanvasStartupPro
 			group.leaderPid !== group.pgid ||
 			typeof group.leaderStartTime !== "string" ||
 			group.leaderStartTime.length === 0
-		)
+		) {
 			throw new Error("The canvas child returned an invalid startup cleanup ownership record.");
+		}
 		return canvasStartupOwnershipRecord({ canvasPid: value.canvasPid, codexGroup: group });
 	}
 	if (
 		value.kind !== "terminal" ||
 		(value.cleanup !== "proven" && value.cleanup !== "unproven") ||
 		(value.message !== null && typeof value.message !== "string")
-	)
+	) {
 		throw new Error("The canvas child returned an invalid startup cleanup terminal record.");
+	}
 	return Object.freeze({
 		protocol: PROTOCOL,
 		kind: "terminal",
@@ -98,15 +101,20 @@ export function parseCanvasStartupProtocolRecord(line: string): CanvasStartupPro
 /** Report to the exact launcher pipe. A departed launcher is an expected closed reader. */
 export function writeCanvasStartupProtocolRecord(record: CanvasStartupProtocolRecord): void {
 	const descriptor = process.env[CANVAS_STARTUP_TERMINAL_FD_ENV];
-	if (descriptor === undefined) return;
+	if (descriptor === undefined) {
+		return;
+	}
 	const fd = Number(descriptor);
-	if (!Number.isSafeInteger(fd) || fd < 3)
+	if (!Number.isSafeInteger(fd) || fd < 3) {
 		throw new Error(`Invalid ${CANVAS_STARTUP_TERMINAL_FD_ENV} descriptor.`);
+	}
 	try {
 		fs.writeSync(fd, `${JSON.stringify(record)}\n`);
 	} catch (error) {
 		const code = (error as NodeJS.ErrnoException).code;
-		if (code === "EPIPE" || code === "EBADF") return;
+		if (code === "EPIPE" || code === "EBADF") {
+			return;
+		}
 		throw error;
 	}
 }
