@@ -1,9 +1,9 @@
 import type { LegacyElementIngress } from "../../../../src/shared/board-elements/index.ts";
 
-export const LIVE_SESSION_BOARD = "session";
-export const LIVE_SESSION_CYCLES = 42;
+const LIVE_SESSION_BOARD = "session";
+const LIVE_SESSION_CYCLES = 42;
 
-export const LIVE_SESSION_SEED = [
+const LIVE_SESSION_SEED = [
 	{
 		id: "auth",
 		type: "rectangle",
@@ -52,7 +52,7 @@ export const LIVE_SESSION_SEED = [
 	},
 ] as const satisfies readonly LegacyElementIngress[];
 
-export const LIVE_AGENT_MOVES = [
+const LIVE_AGENT_MOVES = [
 	"create-labelled",
 	"create-arrow",
 	"move",
@@ -60,11 +60,11 @@ export const LIVE_AGENT_MOVES = [
 	"relabel",
 ] as const;
 
-export const LIVE_HUMAN_MOVES = ["move", "resize", "retype", "delete"] as const;
+const LIVE_HUMAN_MOVES = ["move", "resize", "retype", "delete"] as const;
 
-export const LIVE_SUBJECTS = ["auth", "queue", "store"] as const;
+const LIVE_SUBJECTS = ["auth", "queue", "store"] as const;
 
-export const LIVE_PALETTE = [
+const LIVE_PALETTE = [
 	"#ffec99",
 	"#b2f2bb",
 	"#a5d8ff",
@@ -72,3 +72,13 @@ export const LIVE_PALETTE = [
 	"#d0bfff",
 	"#ffd8a8",
 ] as const;
+
+export {
+	LIVE_AGENT_MOVES,
+	LIVE_HUMAN_MOVES,
+	LIVE_PALETTE,
+	LIVE_SESSION_BOARD,
+	LIVE_SESSION_CYCLES,
+	LIVE_SESSION_SEED,
+	LIVE_SUBJECTS,
+};
