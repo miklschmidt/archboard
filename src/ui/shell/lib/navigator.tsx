@@ -1,9 +1,13 @@
 // The left navigator: one collapsible group per board with its variants, a
-// separate group for scratch boards, and the "New board" action.
+// separate group for scratch boards, the listing's refresh and error line,
+// and the "New board" action.
 
-import { RiAddLine, RiArrowDownSLine } from "@remixicon/react";
-import { useCallback, useState } from "react";
+import { RiAddLine, RiArrowDownSLine, RiRefreshLine } from "@remixicon/react";
+import { useCallback, useMemo, useState } from "react";
 
+import { BoardPreviewCache, PreviewRequestGate } from "@/ui/board-preview";
+import { PreviewCard } from "@/ui/board-preview/preview-card";
+import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/components/collapsible";
 import {
@@ -11,6 +15,7 @@ import {
 	SidebarContent,
 	SidebarFooter,
 	SidebarGroup,
+	SidebarGroupAction,
 	SidebarGroupLabel,
 	SidebarMenu,
 	SidebarMenuButton,
@@ -19,90 +24,102 @@ import {
 	SidebarMenuSubButton,
 	SidebarMenuSubItem,
 } from "@/ui/components/sidebar";
-import type { ScratchBoardEntry, ShellActions, ShellView } from "@/ui/shell/lib/contracts";
-import type { BoardIdentity, BoardPreviewSnapshot } from "@/ui/types";
+import type { ShellActions, ShellView, ThemeChoice } from "@/ui/shell/lib/contracts";
+import {
+	groupBoards,
+	scratchEntries,
+	type NavigatorEntry,
+	type NavigatorGroup,
+} from "@/ui/shell/lib/navigator-entries";
 
-/** One selectable navigator entry. */
-interface NavigatorEntry {
-	key: string;
-	identity: BoardIdentity;
-	preview: BoardPreviewSnapshot | null;
-}
+/** One cache for every preview the navigator shows; it revokes what it drops. */
+const PREVIEW_CACHE = new BoardPreviewCache(16);
 
-/** A named board and its variants, in listing order. */
-interface NavigatorGroup {
-	board: string;
-	variants: NavigatorEntry[];
-}
+/** The focusable navigator parts, for arrow-key movement. */
+const FOCUSABLE = '[data-sidebar="menu-button"], [data-sidebar="menu-sub-button"], button';
 
 /**
- * Group the persisted listing by board name.
- * @param view The shell view holding the listing and the previews.
- * @returns Groups in first-seen order.
+ * Move focus to the previous or next navigator control on ArrowUp/ArrowDown.
+ * Tab order is the official parts' own; this only adds the arrows.
+ * @param event The key event on the sidebar content.
  */
-function groupBoards(view: ShellView): NavigatorGroup[] {
-	const groups = new Map<string, NavigatorGroup>();
-	for (const board of view.boards.boards) {
-		const group = groups.get(board.identity.board) ?? {
-			board: board.identity.board,
-			variants: [],
-		};
-		group.variants.push({
-			key: board.key,
-			identity: board.identity,
-			preview: view.previews[board.key] ?? null,
-		});
-		groups.set(board.identity.board, group);
+function handleArrowKeys(event: React.KeyboardEvent<HTMLDivElement>): void {
+	if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+		return;
 	}
-	return [...groups.values()];
-}
-
-/**
- * Scratch boards as navigator entries.
- * @param view The shell view holding the scratch list and the previews.
- * @returns One entry per scratch board.
- */
-function scratchEntries(view: ShellView): NavigatorEntry[] {
-	return view.scratch.map((entry: ScratchBoardEntry) => ({
-		key: entry.key,
-		identity: entry.identity,
-		preview: view.previews[entry.key] ?? null,
-	}));
-}
-
-/** Inputs for the preview slot. */
-interface PreviewSlotProps {
-	board: string;
-	preview: BoardPreviewSnapshot | null;
-}
-
-/**
- * The lazy preview slot: a bordered 16:9 box that names the board and, once
- * a snapshot exists, its element count. It never invents scene content.
- * @param props The board name and its snapshot, if any.
- * @returns The preview box.
- */
-function PreviewSlot(props: PreviewSlotProps): React.JSX.Element {
-	const { board, preview } = props;
-	return (
-		<span className="border-border bg-background text-muted-foreground flex aspect-video w-full items-end justify-end rounded-sm border p-1 font-mono text-[10px]">
-			<span className="sr-only">
-				{preview ? `Preview of ${board}` : `No preview yet for ${board}`}
-			</span>
-			{preview && `${preview.elements.length} elements`}
-		</span>
-	);
+	const controls = [...event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE)];
+	const index = controls.findIndex((control) => control === document.activeElement);
+	if (index === -1) {
+		return;
+	}
+	const next = controls[index + (event.key === "ArrowDown" ? 1 : -1)];
+	if (next) {
+		event.preventDefault();
+		next.focus();
+	}
 }
 
 /** Inputs shared by the pieces that select an entry. */
 interface SelectableProps {
 	selectedKey: string | null;
-	onSelect: (key: string) => void;
+	theme: ThemeChoice;
+	actions: ShellActions;
+}
+
+/** Inputs for the small markers beside a name. */
+interface EntryMarkersProps {
+	entry: NavigatorEntry;
+}
+
+/**
+ * Draft and on-screen markers.
+ * @param props The entry.
+ * @returns The markers, or nothing when the entry is plain.
+ */
+function EntryMarkers(props: EntryMarkersProps): React.JSX.Element | null {
+	const { draft, onScreen } = props.entry;
+	if (!draft && onScreen === null) {
+		return null;
+	}
+	return (
+		<span className="flex shrink-0 gap-1">
+			{draft && <Badge variant="outline">Draft</Badge>}
+			{onScreen !== null && (
+				<Badge variant="secondary" className="font-mono">
+					<span className="sr-only">on screen in pane </span>
+					{onScreen}
+				</Badge>
+			)}
+		</span>
+	);
+}
+
+/** Inputs for the placeholder affordance. */
+interface NeedsNameProps {
+	entryKey: string;
+	actions: ShellActions;
+}
+
+/**
+ * The affordance for a scratch board that has no name yet.
+ * @param props The entry key and the actions.
+ * @returns A small button.
+ */
+function NeedsName(props: NeedsNameProps): React.JSX.Element {
+	const { entryKey, actions } = props;
+	const handleClick = useCallback(() => actions.nameBoard(entryKey), [actions, entryKey]);
+	return (
+		<Button variant="outline" size="xs" className="self-start" onClick={handleClick}>
+			Needs a name
+		</Button>
+	);
 }
 
 /** Inputs for one variant row. */
 interface VariantRowProps extends SelectableProps {
 	entry: NavigatorEntry;
+	/** The row's name: the variant under a board group, the board name for scratch. */
+	label: string;
 }
 
 /**
@@ -116,16 +133,17 @@ function renderButton(props: React.ComponentPropsWithRef<"button">): React.JSX.E
 }
 
 /**
- * One variant row: the variant name and its preview slot.
- * @param props The entry, the selected key and the select action.
+ * One row: the name, its markers and its lazy preview.
+ * @param props The entry, its label, the selected key, the theme and the actions.
  * @returns The sub-menu row.
  */
 function VariantRow(props: VariantRowProps): React.JSX.Element {
-	const { entry, onSelect } = props;
+	const { entry, actions, theme } = props;
 	const selected = entry.key === props.selectedKey;
-	const handleClick = useCallback(() => onSelect(entry.key), [onSelect, entry.key]);
+	const gate = useMemo(() => new PreviewRequestGate(), []);
+	const handleClick = useCallback(() => actions.selectBoard(entry.key), [actions, entry.key]);
 	return (
-		<SidebarMenuSubItem>
+		<SidebarMenuSubItem className="flex flex-col gap-1">
 			<SidebarMenuSubButton
 				render={renderButton}
 				isActive={selected}
@@ -133,9 +151,19 @@ function VariantRow(props: VariantRowProps): React.JSX.Element {
 				onClick={handleClick}
 				className="data-active:ring-primary h-auto flex-col items-stretch gap-1 py-1 data-active:ring-1"
 			>
-				<span className="line-clamp-2 whitespace-normal!">{entry.identity.variant}</span>
-				<PreviewSlot board={entry.identity.board} preview={entry.preview} />
+				<span className="flex items-start justify-between gap-1">
+					<span className="line-clamp-2 whitespace-normal!">{props.label}</span>
+					<EntryMarkers entry={entry} />
+				</span>
+				<PreviewCard
+					board={entry.identity.board}
+					snapshot={entry.preview}
+					theme={theme}
+					cache={PREVIEW_CACHE}
+					gate={gate}
+				/>
 			</SidebarMenuSubButton>
+			{entry.placeholder && <NeedsName entryKey={entry.key} actions={actions} />}
 		</SidebarMenuSubItem>
 	);
 }
@@ -157,7 +185,7 @@ interface BoardGroupProps extends SelectableProps {
 /**
  * A board group: the plain board name as a collapsible trigger, then its
  * variants indented beneath.
- * @param props The group, the selected key and the select action.
+ * @param props The group, the selected key, the theme and the actions.
  * @returns The group as a menu item.
  */
 function BoardGroup(props: BoardGroupProps): React.JSX.Element {
@@ -179,8 +207,10 @@ function BoardGroup(props: BoardGroupProps): React.JSX.Element {
 							<VariantRow
 								key={entry.key}
 								entry={entry}
+								label={entry.identity.variant}
 								selectedKey={props.selectedKey}
-								onSelect={props.onSelect}
+								theme={props.theme}
+								actions={props.actions}
 							/>
 						))}
 					</SidebarMenuSub>
@@ -197,7 +227,7 @@ interface ScratchGroupProps extends SelectableProps {
 
 /**
  * The scratch group: boards with a note but no chosen name.
- * @param props The entries, the selected key and the select action.
+ * @param props The entries, the selected key, the theme and the actions.
  * @returns The group, or nothing when there is no scratch board.
  */
 function ScratchGroup(props: ScratchGroupProps): React.JSX.Element | null {
@@ -213,11 +243,57 @@ function ScratchGroup(props: ScratchGroupProps): React.JSX.Element | null {
 						<VariantRow
 							key={entry.key}
 							entry={entry}
+							label={entry.identity.board}
 							selectedKey={props.selectedKey}
-							onSelect={props.onSelect}
+							theme={props.theme}
+							actions={props.actions}
 						/>
 					))}
 				</SidebarMenuSub>
+			</SidebarMenu>
+		</SidebarGroup>
+	);
+}
+
+/** Inputs for the boards group. */
+interface BoardsGroupProps extends SelectableProps {
+	groups: NavigatorGroup[];
+	error: string | null;
+}
+
+/**
+ * The persisted boards with the refresh action and, when the listing failed, why.
+ * @param props The groups, the error, the selected key, the theme and the actions.
+ * @returns The group.
+ */
+function BoardsGroup(props: BoardsGroupProps): React.JSX.Element {
+	const { actions } = props;
+	const handleRefresh = useCallback(() => actions.refreshBoards(), [actions]);
+	return (
+		<SidebarGroup>
+			<SidebarGroupLabel>Boards</SidebarGroupLabel>
+			<SidebarGroupAction
+				aria-label="Refresh boards"
+				title="Refresh boards"
+				onClick={handleRefresh}
+			>
+				<RiRefreshLine />
+			</SidebarGroupAction>
+			{props.error !== null && (
+				<p className="text-destructive px-2 py-1 text-xs" aria-live="polite">
+					{props.error}
+				</p>
+			)}
+			<SidebarMenu>
+				{props.groups.map((group) => (
+					<BoardGroup
+						key={group.board}
+						group={group}
+						selectedKey={props.selectedKey}
+						theme={props.theme}
+						actions={actions}
+					/>
+				))}
 			</SidebarMenu>
 		</SidebarGroup>
 	);
@@ -236,28 +312,22 @@ interface NavigatorProps {
  */
 function Navigator(props: NavigatorProps): React.JSX.Element {
 	const { view, actions } = props;
-	const handleSelect = useCallback((key: string) => actions.selectBoard(key), [actions]);
 	const handleNew = useCallback(() => actions.createBoard(), [actions]);
 	return (
 		<Sidebar collapsible="none" className="border-border shrink-0 border-r">
-			<SidebarContent>
-				<SidebarGroup>
-					<SidebarGroupLabel>Boards</SidebarGroupLabel>
-					<SidebarMenu>
-						{groupBoards(view).map((group) => (
-							<BoardGroup
-								key={group.board}
-								group={group}
-								selectedKey={view.selectedBoardKey}
-								onSelect={handleSelect}
-							/>
-						))}
-					</SidebarMenu>
-				</SidebarGroup>
+			<SidebarContent onKeyDown={handleArrowKeys}>
+				<BoardsGroup
+					groups={groupBoards(view)}
+					error={view.boardsError}
+					selectedKey={view.selectedBoardKey}
+					theme={view.theme}
+					actions={actions}
+				/>
 				<ScratchGroup
 					entries={scratchEntries(view)}
 					selectedKey={view.selectedBoardKey}
-					onSelect={handleSelect}
+					theme={view.theme}
+					actions={actions}
 				/>
 			</SidebarContent>
 			<SidebarFooter className="border-border border-t">
@@ -270,4 +340,4 @@ function Navigator(props: NavigatorProps): React.JSX.Element {
 	);
 }
 
-export { Navigator, type NavigatorProps, type NavigatorEntry, type NavigatorGroup };
+export { Navigator, type NavigatorProps };

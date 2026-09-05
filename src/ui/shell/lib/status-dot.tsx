@@ -6,7 +6,7 @@ import { cn } from "cn";
 interface StatusDotProps {
 	/** `live` is the acid-lime accent; `idle` is a muted neutral. */
 	tone: "live" | "idle" | "warning";
-	className?: string;
+	className?: string | undefined;
 }
 
 const TONE_CLASS: Record<StatusDotProps["tone"], string> = {

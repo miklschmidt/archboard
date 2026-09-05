@@ -42,28 +42,15 @@ const COMPATIBILITY_IDENTIFIER_PATTERN = /(?:^|_)(?:compat|compatibility|shim|ba
 const SOURCE_ALIAS_PREFIX = "@/";
 const ASSISTANT_UI_PACKAGE = "@assistant-ui/react";
 const ASSISTANT_UI_AUXILIARY_PACKAGES = new Set(["assistant-cloud", "assistant-stream"]);
-const ASSISTANT_UI_OWNERS = new Map([
-	["src/ui/workbench-runtime/tests/provider-context-observer.ts", new Set(["useAui"])],
-	[
-		"src/ui/workbench-runtime",
-		new Set([
-			"useExternalStoreRuntime",
-			"AssistantRuntimeProvider",
-			"ReadonlyThreadProvider",
-			"MessageNotSentError",
-		]),
-	],
-	[
-		"src/ui/workbench-timeline",
-		new Set(["ThreadPrimitive", "MessagePrimitive", "MessagePartPrimitive"]),
-	],
-	["src/ui/workbench-composer", new Set(["ComposerPrimitive"])],
-]);
-const ASSISTANT_UI_MEMBER_OWNERS = new Map(
-	[...ASSISTANT_UI_OWNERS].flatMap(([owner, members]) =>
-		[...members].map((member) => [member, owner]),
-	),
-);
+// TASK-150.05: assistant-ui is owned by two modules. The thread module holds
+// the official assistant-ui presentation and its product composition; the
+// runtime module holds the provider and external-store adapter over
+// Archboard's own Codex-owned state. Ownership is by module, not by member:
+// the safety rules below forbid the APIs that would introduce a second
+// transport, cloud, thread list, queue, tool or voice owner.
+const ASSISTANT_UI_THREAD_OWNER = "src/ui/workbench-thread";
+const ASSISTANT_UI_MARKDOWN_PACKAGE = "@assistant-ui/react-markdown";
+const ASSISTANT_UI_OWNERS = new Set([ASSISTANT_UI_THREAD_OWNER, "src/ui/workbench-runtime"]);
 const ASSISTANT_UI_FORBIDDEN_APIS = new Set([
 	"AssistantTransport",
 	"useAssistantTransportRuntime",
@@ -84,13 +71,6 @@ const ASSISTANT_UI_FORBIDDEN_APIS = new Set([
 	"MessageQueueDriver",
 	"useExternalStoreMessages",
 	"getExternalStoreMessages",
-	"AssistantState",
-	"useAssistantState",
-	"useAuiState",
-	"useAuiEvent",
-	"useThreadViewport",
-	"useThreadViewportAutoScroll",
-	"useThreadViewportStore",
 	"Tool",
 	"Tools",
 	"tool",
@@ -167,7 +147,7 @@ function sourceImportVisitors(onSource) {
 }
 
 function assistantUiOwner(relativePath) {
-	for (const owner of ASSISTANT_UI_OWNERS.keys()) {
+	for (const owner of ASSISTANT_UI_OWNERS) {
 		if (relativePath === owner || relativePath.startsWith(`${owner}/`)) {
 			return owner;
 		}
@@ -207,7 +187,7 @@ const assistantUiImports = createRule(
 		noDirectRadixImport:
 			"Do not import Radix directly from application source; use the repository's Base UI layer or an Archboard-owned semantic control.",
 		noAssistantUiOwner:
-			"Only src/ui/workbench-runtime, src/ui/workbench-timeline, and src/ui/workbench-composer may import assistant-ui; move the import to its owning module and expose Archboard-owned behavior.",
+			"Only src/ui/workbench-thread and src/ui/workbench-runtime may import assistant-ui; move the import to its owning module and expose Archboard-owned behavior.",
 		noAssistantUiNamedImport:
 			"assistant-ui imports must be named imports from the package root; remove the side-effect, dynamic, or require form.",
 		noAssistantUiDefault:
@@ -216,12 +196,8 @@ const assistantUiImports = createRule(
 			"Do not use a namespace assistant-ui import; import only the explicitly assigned named root members instead.",
 		noAssistantUiReExport:
 			"Do not re-export assistant-ui; keep the assigned named root import private to its owning Archboard module.",
-		noAssistantUiMember:
-			"assistant-ui member '{{member}}' is not in Archboard's assigned allowlist; use an Archboard-owned adapter or one of the exact assigned root members.",
 		noAssistantUiForbiddenApi:
 			"assistant-ui API '{{member}}' is a transport, thread-list, queue, tool, voice, or copied-Element API and is forbidden; keep that behavior in Archboard-owned modules.",
-		noAssistantUiWrongOwner:
-			"assistant-ui member '{{member}}' belongs to a different Archboard module; import it only from its named owner.",
 		noAssistantUiNestedMember:
 			"assistant-ui nested member '{{member}}' is not part of Archboard's contract; use the Archboard-owned composition instead of reaching into primitive internals.",
 		noAssistantUiAlias:
@@ -252,6 +228,14 @@ const assistantUiImports = createRule(
 				return;
 			}
 			if (!source.startsWith("@assistant-ui/")) {
+				return;
+			}
+			if (source === ASSISTANT_UI_MARKDOWN_PACKAGE) {
+				// The official thread renders assistant text through this package;
+				// only the thread module may depend on it.
+				if (owner !== ASSISTANT_UI_THREAD_OWNER) {
+					report(context, node, "noAssistantUiOwner");
+				}
 				return;
 			}
 			if (!source.startsWith(ASSISTANT_UI_PACKAGE)) {
@@ -295,22 +279,6 @@ const assistantUiImports = createRule(
 						data: { member: importedName },
 					});
 					continue;
-				}
-				const expectedOwner = ASSISTANT_UI_MEMBER_OWNERS.get(importedName);
-				if (!expectedOwner) {
-					context.report({
-						node: specifier,
-						messageId: "noAssistantUiMember",
-						data: { member: importedName },
-					});
-					continue;
-				}
-				if (expectedOwner !== owner) {
-					context.report({
-						node: specifier,
-						messageId: "noAssistantUiWrongOwner",
-						data: { member: importedName },
-					});
 				}
 				if (specifier.local?.name !== importedName) {
 					context.report({

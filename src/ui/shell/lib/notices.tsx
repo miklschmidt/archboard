@@ -1,35 +1,102 @@
 // Persistent notices above the canvas. A message that carries a recovery
-// action is never a toast: it stays up until the person chooses.
+// action is never a toast: it stays up until the person chooses or dismisses.
 
+import { RiCloseLine, RiExternalLinkLine } from "@remixicon/react";
 import { useCallback } from "react";
 
+import { GitHubHttpsUrlSchema, type CodeTargetNoticeAction } from "@/shared/code-target";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/ui/components/alert";
-import { Button } from "@/ui/components/button";
+import { Button, buttonVariants } from "@/ui/components/button";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "@/ui/shell/lib/contracts";
 
-/** Inputs for one recovery action. */
-interface NoticeActionButtonProps {
+const LINK_BUTTON_CLASS = buttonVariants({ variant: "outline", size: "xs" });
+
+/** The id a `settings` code target action is reported with. */
+const SETTINGS_ACTION_ID = "settings";
+
+/** Inputs for one action reported by id. */
+interface ReportedActionProps {
+	noticeId: string;
+	actionId: string;
+	label: string;
+	actions: ShellActions;
+}
+
+/**
+ * One recovery action, reported by id when chosen.
+ * @param props The notice, the action id, its label and the shell actions.
+ * @returns A small outline button.
+ */
+function ReportedAction(props: ReportedActionProps): React.JSX.Element {
+	const { noticeId, actionId, actions } = props;
+	const handleClick = useCallback(
+		() => actions.selectNoticeAction(noticeId, actionId),
+		[actions, noticeId, actionId],
+	);
+	return (
+		<Button variant="outline" size="xs" onClick={handleClick}>
+			{props.label}
+		</Button>
+	);
+}
+
+/** Inputs for a GitHub link action. */
+interface GitHubActionProps {
+	action: Extract<CodeTargetNoticeAction, { kind: "github" }>;
+}
+
+/**
+ * A link to GitHub, shown only when the URL is an https://github.com one.
+ * @param props The action with its URL.
+ * @returns The link, or nothing when the URL fails validation.
+ */
+function GitHubAction(props: GitHubActionProps): React.JSX.Element | null {
+	const parsed = GitHubHttpsUrlSchema.safeParse(props.action.href);
+	if (!parsed.success) {
+		return null;
+	}
+	return (
+		<a href={parsed.data} target="_blank" rel="noopener noreferrer" className={LINK_BUTTON_CLASS}>
+			{props.action.label}
+			<RiExternalLinkLine data-icon="inline-end" />
+		</a>
+	);
+}
+
+/** Inputs for one notice action of any kind. */
+interface NoticeActionProps {
 	noticeId: string;
 	action: ShellNoticeAction;
 	actions: ShellActions;
 }
 
 /**
- * One recovery action.
+ * One notice action, by kind.
  * @param props The notice, the action and the shell actions.
- * @returns A small outline button.
+ * @returns The control for that action.
  */
-function NoticeActionButton(props: NoticeActionButtonProps): React.JSX.Element {
+function NoticeAction(props: NoticeActionProps): React.JSX.Element | null {
 	const { noticeId, action, actions } = props;
-	const handleClick = useCallback(
-		() => actions.selectNoticeAction(noticeId, action.id),
-		[actions, noticeId, action.id],
-	);
+	if (action.kind === "github") {
+		return <GitHubAction action={action} />;
+	}
 	return (
-		<Button variant="outline" size="xs" onClick={handleClick}>
-			{action.label}
-		</Button>
+		<ReportedAction
+			noticeId={noticeId}
+			actionId={action.kind === "select" ? action.id : SETTINGS_ACTION_ID}
+			label={action.label}
+			actions={actions}
+		/>
 	);
+}
+
+/**
+ * A key for an action, which the code target shapes do not carry.
+ * @param action The action.
+ * @returns Its id, or its kind and label.
+ */
+function actionKey(action: ShellNoticeAction): string {
+	return action.kind === "select" ? action.id : `${action.kind}:${action.label}`;
 }
 
 /** Inputs for one notice. */
@@ -39,25 +106,34 @@ interface NoticeProps {
 }
 
 /**
- * One persistent notice with its actions.
+ * One persistent notice with its actions and a dismiss control.
  * @param props The notice and the shell actions.
  * @returns The alert.
  */
 function Notice(props: NoticeProps): React.JSX.Element {
-	const { notice } = props;
+	const { notice, actions } = props;
+	const handleDismiss = useCallback(() => actions.dismissNotice(notice.id), [actions, notice.id]);
 	return (
-		<Alert variant={notice.tone} className="rounded-none border-x-0 border-t-0">
+		<Alert variant={notice.tone} className="rounded-none border-x-0 border-t-0 pr-2">
 			<AlertTitle>{notice.title}</AlertTitle>
 			<AlertDescription>{notice.description}</AlertDescription>
-			<AlertAction className="flex gap-1.5">
+			<AlertAction className="flex items-center gap-1.5">
 				{notice.actions.map((action) => (
-					<NoticeActionButton
-						key={action.id}
+					<NoticeAction
+						key={actionKey(action)}
 						noticeId={notice.id}
 						action={action}
-						actions={props.actions}
+						actions={actions}
 					/>
 				))}
+				<Button
+					variant="ghost"
+					size="icon-xs"
+					aria-label={`Dismiss notice: ${notice.title}`}
+					onClick={handleDismiss}
+				>
+					<RiCloseLine />
+				</Button>
 			</AlertAction>
 		</Alert>
 	);
@@ -87,4 +163,4 @@ function Notices(props: NoticesProps): React.JSX.Element | null {
 	);
 }
 
-export { Notices, type NoticesProps };
+export { Notices, SETTINGS_ACTION_ID, type NoticesProps };
