@@ -24,10 +24,43 @@ import {
 } from "../codex-workbench-adapters.js";
 import { processFacts } from "./support/codex-workbench-process-fixture.js";
 import { projectionHarness } from "./support/codex-workbench-projection-harness.js";
+import { createCodexWorkbenchGateway } from "../../codex-workbench/index.js";
 
 const identity = createIdentityAuthorities();
 const readinessSchema = createCodexBrowserModel(identity).BrowserReadinessSchema;
 const loginId = identity.identity.decoder.adoptLoginId("login-readiness");
+
+test("the real gateway delivers the pending ChatGPT authorization URL to the browser", async () => {
+	const harness = projectionHarness();
+	harness.setFacts(processFacts());
+	harness.state.account = { kind: "account", state: "signed_out" };
+	const gateway = createCodexWorkbenchGateway({
+		...harness.options,
+		identity: harness.authorities,
+		threadLink: { read: () => harness.context.binding },
+	});
+	try {
+		const connection = gateway.connect(harness.context.browserId, harness.context.paneId);
+		const lease = connection.claimLease();
+		const result = await connection.command({
+			kind: "browser_command",
+			command: "accountLogin",
+			commandId: lease.commandId,
+			paneId: lease.paneId,
+			childId: lease.childId,
+			epoch: lease.epoch,
+			login: { type: "chatgpt" },
+		});
+		expect(result.outcome).toBe("delivered");
+		expect(result.snapshot.login).toMatchObject({
+			state: "pending",
+			loginId: harness.loginId,
+			authUrl: "https://example.test/login",
+		});
+	} finally {
+		gateway.dispose();
+	}
+});
 
 const signedInAccount = {
 	kind: "codex_account_response",
@@ -139,7 +172,13 @@ test("owned-process, session, account, and coordinator facts produce every readi
 	).toEqual({ kind: "readiness", state: "signed_out" });
 	expect(
 		readiness({
-			login: { kind: "login", state: "pending", loginId, variant: "chatgpt" },
+			login: {
+				kind: "login",
+				state: "pending",
+				loginId,
+				variant: "chatgpt",
+				authUrl: "https://example.test/login",
+			},
 			account: signedInAccount,
 			coordinatorReady: true,
 		}),
@@ -185,7 +224,13 @@ test("the production browser projection derives readiness from its live owners",
 	expect(stateNow()).toBe("initialized");
 	state.account = { kind: "account", state: "signed_out" };
 	expect(stateNow()).toBe("signed_out");
-	state.login = { kind: "login", state: "pending", loginId, variant: "chatgpt" };
+	state.login = {
+		kind: "login",
+		state: "pending",
+		loginId,
+		variant: "chatgpt",
+		authUrl: "https://example.test/login",
+	};
 	expect(stateNow()).toBe("login_pending");
 	state.login = { kind: "login", state: "completed", loginId };
 	state.account = signedInAccount;

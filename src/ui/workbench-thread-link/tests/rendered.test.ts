@@ -197,12 +197,23 @@ describe("rendered pane thread link", () => {
 		expect(markup).toContain("<details open");
 	});
 
-	test("offers cancelling a pending sign-in from the readiness arm", () => {
+	test("offers the published ChatGPT continuation and cancellation while sign-in is pending", () => {
 		const markup = render({
 			readiness: { kind: "readiness", state: "login_pending", loginId: loginA },
 			account: { kind: "account", state: "login_pending", loginId: loginA, variant: "chatgpt" },
-			login: { kind: "login", state: "pending", loginId: loginA, variant: "chatgpt" },
+			login: {
+				kind: "login",
+				state: "pending",
+				loginId: loginA,
+				variant: "chatgpt",
+				authUrl: "https://example.test/login",
+			},
 		});
+		const continuation = markup.match(/<a[^>]*href="https:\/\/example.test\/login"[^>]*>/)?.[0];
+		expect(continuation).toBeDefined();
+		expect(continuation).toContain('target="_blank"');
+		expect(continuation).toContain('rel="noopener noreferrer"');
+		expect(markup).toContain(">Continue to ChatGPT<");
 		expect(markup).toContain(">Cancel sign-in<");
 		expect(markup).not.toContain("data-thread-link-form-option=");
 		expect(markup).not.toContain(">Sign in<");
@@ -223,6 +234,24 @@ describe("rendered pane thread link", () => {
 		expect(markup).not.toContain("data-thread-link-unavailable=");
 		expect(markup).not.toContain(">Cancel sign-in<");
 		expect(markup).not.toContain(">Sign out<");
+	});
+
+	test("retains the current failed sign-in reason beside the signed-out account and retry", () => {
+		const markup = render({
+			account: { kind: "account", state: "signed_out" },
+			login: {
+				kind: "login",
+				state: "failed",
+				loginId: loginA,
+				reason: "ChatGPT sign-in was denied.",
+			},
+		});
+		expect(markup).toContain('data-thread-link-account="signed_out"');
+		expect(markup).toContain('data-thread-link-readiness="login_failed"');
+		expect(markup.match(/ChatGPT sign-in was denied\./g)).toHaveLength(1);
+		expect(markup).toContain(">Sign in<");
+		expect(markup).not.toContain(">Continue to ChatGPT<");
+		expect(markup).not.toContain(">Cancel sign-in<");
 	});
 
 	test("collapses account management to status and sign out while signed in", () => {

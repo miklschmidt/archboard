@@ -90,7 +90,7 @@ export function projectThreadLinkPanel(input: ThreadLinkPanelInput): ThreadLinkP
 			capabilities: input.capabilities,
 		}),
 		account: projectThreadLinkAccount({
-			snapshot: input.state.snapshot,
+			state: input.state,
 			capabilities: input.capabilities,
 		}),
 		action: input.action,

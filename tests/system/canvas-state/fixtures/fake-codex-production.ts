@@ -2,57 +2,13 @@
 
 import { appendFileSync, readFileSync } from "node:fs";
 
-const configFixture = {
-	model: null,
-	review_model: null,
-	model_context_window: null,
-	model_auto_compact_token_limit: null,
-	model_auto_compact_token_limit_scope: null,
-	model_provider: null,
-	approval_policy: null,
-	approvals_reviewer: null,
-	sandbox_mode: null,
-	sandbox_workspace_write: null,
-	forced_chatgpt_workspace_id: null,
-	forced_login_method: null,
-	web_search: null,
-	tools: null,
-	instructions: null,
-	developer_instructions: null,
-	compact_prompt: null,
-	model_reasoning_effort: null,
-	model_reasoning_summary: null,
-	model_verbosity: null,
-	service_tier: null,
-	analytics: null,
-	apps: null,
-	browser_use: null,
-	computer_use: null,
-	desktop: null,
-};
-const modelFixture = {
-	id: "gpt-5.6-luna",
-	model: "gpt-5.6-luna",
-	upgrade: null,
-	upgradeInfo: null,
-	availabilityNux: null,
-	displayName: "Luna",
-	description: "production fixture",
-	modelSpecialty: null,
-	hidden: false,
-	supportedReasoningEfforts: [{ reasoningEffort: "medium", description: "fixture" }],
-	defaultReasoningEffort: "medium",
-	inputModalities: ["text"],
-	supportsPersonality: false,
-	multiAgentVersion: null,
-	additionalSpeedTiers: [],
-	serviceTiers: [],
-	defaultServiceTier: null,
-	isDefault: true,
-};
+import { configFixture, modelFixture } from "./fake-codex-production-data.ts";
 
 const logPath = "__ARCHBOARD_TEST_CODEX_LOG__";
 const controlPath = "__ARCHBOARD_TEST_CODEX_CONTROL__";
+let signedIn =
+	(JSON.parse(readFileSync(controlPath, "utf8")) as { signedOut?: boolean }).signedOut !== true;
+let pendingLogin = false;
 
 const record = (value: unknown): void => appendFileSync(logPath, `${JSON.stringify(value)}\n`);
 const send = (value: unknown): void => void process.stdout.write(`${JSON.stringify(value)}\n`);
@@ -301,9 +257,21 @@ const handle = (frame: WireFrame): void => {
 			return;
 		case "account/read":
 			respond(frame as never, {
-				account: { type: "chatgpt", email: null, planType: "pro" },
+				account: signedIn ? { type: "chatgpt", email: null, planType: "pro" } : null,
 				requiresOpenaiAuth: true,
 			});
+			return;
+		case "account/login/start":
+			pendingLogin = true;
+			respond(frame as never, {
+				type: "chatgpt",
+				loginId: "browser-login",
+				authUrl: "https://example.test/login",
+			});
+			return;
+		case "account/login/cancel":
+			pendingLogin = false;
+			respond(frame as never, { status: "canceled" });
 			return;
 		case "model/list":
 			respond(frame as never, { data: [modelFixture], nextCursor: null });
@@ -484,8 +452,22 @@ process.stdin.resume();
 
 const controlTimer = setInterval(() => {
 	try {
-		const control = JSON.parse(readFileSync(controlPath, "utf8")) as { exit?: unknown };
+		const control = JSON.parse(readFileSync(controlPath, "utf8")) as {
+			exit?: unknown;
+			completeLogin?: boolean;
+		};
 		if (control.exit === true) process.exit(17);
+		if (control.completeLogin === true && pendingLogin) {
+			pendingLogin = false;
+			signedIn = true;
+			notify("account/login/completed", {
+				loginId: "browser-login",
+				success: true,
+				error: null,
+				onboardingEntrypoint: null,
+			});
+			notify("account/updated", { authMode: "chatgpt", planType: "pro" });
+		}
 	} catch {
 		// The controller updates atomically enough for this bounded test-only poll.
 	}

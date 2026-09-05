@@ -142,6 +142,7 @@ test("canvas gateway binds exact connection reads and retires it at disconnect",
 		checkoutRoot: "/repo",
 		contextForOperation: () => archboardContext,
 		onChange: () => () => undefined,
+		onAccountNotification: () => () => undefined,
 	});
 	const context = {
 		browserId: "browser-timeline",

@@ -271,7 +271,8 @@ export function WorkbenchThreadLink({
 				pendingLoginId={pendingLoginId}
 				recoveries={readinessRecoveries}
 			/>
-			{panel.action.state === "idle" ? null : (
+			{panel.action.state === "idle" ||
+			(panel.action.state === "succeeded" && panel.action.action === "login") ? null : (
 				<output
 					aria-atomic="true"
 					aria-label="Agent connection action"

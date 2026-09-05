@@ -1,4 +1,4 @@
-import { useCallback, useId, useState, type ChangeEvent, type ReactNode } from "react";
+import { useCallback, useId, useMemo, useState, type ChangeEvent, type ReactNode } from "react";
 
 import { Button } from "@/ui/button";
 import { cn } from "@/ui/ui-classnames";
@@ -80,6 +80,17 @@ export function AccountSection({
 	}, [controller]);
 	const signedIn = account.state === "ready";
 	const signingIn = account.state === "login_pending";
+	const continuationLink = useMemo(
+		() => (
+			<a
+				aria-label="Continue to ChatGPT"
+				href={account.authUrl ?? undefined}
+				rel="noopener noreferrer"
+				target="_blank"
+			/>
+		),
+		[account.authUrl],
+	);
 	return (
 		<details
 			open={!signedIn}
@@ -165,6 +176,11 @@ export function AccountSection({
 				</p>
 			)}
 			<div className="flex flex-wrap items-center gap-control pb-control">
+				{account.authUrl === null ? null : (
+					<Button nativeButton={false} render={continuationLink} tone="primary">
+						Continue to ChatGPT
+					</Button>
+				)}
 				{signedIn || signingIn ? null : (
 					<Button
 						aria-describedby={validation === null ? undefined : validationId}
