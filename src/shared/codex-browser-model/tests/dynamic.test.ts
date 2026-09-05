@@ -135,7 +135,7 @@ describe("dynamic coordination approval browser contract", () => {
 	test("rejects hash, identity, effect, expiry, state, and seven-family lookalike drift", () => {
 		const fixture = createDynamicFixture();
 		const request = fixture.requests[0]!;
-		const wrongHash = { ...request, effectHash: "sha256:" + "f".repeat(64) };
+		const wrongHash = { ...request, effectHash: `sha256:${"f".repeat(64)}` };
 		expect(fixture.model.DynamicApprovalRequestSchema.safeParse(wrongHash).success).toBeFalse();
 		expect(
 			fixture.model.DynamicApprovalRequestSchema.safeParse({
