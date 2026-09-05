@@ -10,10 +10,9 @@ export {
 	assertWaitTargetAllowed,
 	isDynamicServerRequest,
 	isDynamicToolName,
-	resolveCaller,
-	resolveTarget,
-	validateDynamicCall,
 } from "./lib/classification.js";
+export { resolveCaller, resolveTarget } from "./lib/authority-classification.js";
+export { validateDynamicCall } from "./lib/request-validation.js";
 export { decodeDynamicCursor, encodeDynamicCursor, unwrapDynamicCursor } from "./lib/cursors.js";
 export { waitForDynamicThreads } from "./lib/wait.js";
 export type {
