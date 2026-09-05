@@ -1,10 +1,10 @@
 ---
 id: TASK-150.01
 title: Enforce the approved UI analysis policy
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-05 13:58'
+updated_date: '2026-09-05 14:27'
 labels: []
 dependencies: []
 references:
@@ -25,11 +25,11 @@ The UI rebuild needs predictable checks chosen by its maintainer. Preserve the e
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The ordinary lint gate retains the pre-task non-UI policy and applies the approved stricter rules only to src/ui, with errors for the selected categories and rules.
-- [ ] #2 Classic complexity is 6, max-lines is 600 physical lines, local UI imports use @/ aliases, and Archboard module boundaries remain enforced.
-- [ ] #3 JSDoc uses flat/recommended-typescript plus require-description, with concise function-purpose, parameter and return descriptions and no duplicated TypeScript types.
-- [ ] #4 UI uses the existing repository TypeScript project. All lint/fix entrypoints guard project resolution, compiler safety is retained, and non-UI adoption is deferred to TASK-151.
-- [ ] #5 The remaining UI baseline passes before fresh construction. Preserve existing corrections and user-deleted tests; no tooling-test or repository-policy expansion. Complete rendered verification remains TASK-150.06.
+- [x] #1 The ordinary lint gate retains the pre-task non-UI policy and applies the approved stricter rules only to src/ui, with errors for the selected categories and rules.
+- [x] #2 Classic complexity is 6, max-lines is 600 physical lines, local UI imports use @/ aliases, and Archboard module boundaries remain enforced.
+- [x] #3 JSDoc uses flat/recommended-typescript plus require-description, with concise function-purpose, parameter and return descriptions and no duplicated TypeScript types.
+- [x] #4 UI uses the existing repository TypeScript project. All lint/fix entrypoints guard project resolution, compiler safety is retained, and non-UI adoption is deferred to TASK-151.
+- [x] #5 The remaining UI baseline passes before fresh construction. Preserve existing corrections and user-deleted tests; no tooling-test or repository-policy expansion. Complete rendered verification remains TASK-150.06.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -61,3 +61,9 @@ User approved additional statement-level suppressions only for demonstrated fals
 
 Phase release 2026-09-05: TASK-150.01.01 reports IMPLEMENTED at e6ee549be6511994682ec5f745dd0f3db6cff0ad with ordinary analysis diagnostics, exact source/archive coverage, 130 repository and 9 retained behavior checks passing, formatting passing, and zero archive bytes committed. This satisfies enforcement/quarantine readiness only. Release TASK-150.01.02 active-source repair; fresh UI and independent review remain blocked. Formal terminal statuses stay pending final review per the accepted execution policy.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+bun run lint runs lint:repository (retained non-UI policy) then lint:ui (approved src/ui policy, type-aware, complexity 6, max-lines 600, @/ imports, JSDoc preset) through scripts/lint.ts's project guard; both exit 0 at a7fef61d with both compilers green. Rendered verification remains TASK-150.06.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,11 +1,11 @@
 ---
 id: TASK-150.01.02
 title: Pass the approved UI analysis baseline
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-05 01:11'
-updated_date: '2026-09-05 14:16'
+updated_date: '2026-09-05 14:27'
 labels: []
 dependencies:
   - TASK-150.01.01
@@ -23,11 +23,11 @@ Complete the approved lint baseline for the five retained src/ui source files. P
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Retained src/ui passes the approved lint policy with complexity 6, physical max-lines 600, @/ local imports and concise JSDoc without duplicate types.
-- [ ] #2 Existing compiler checks remain enabled and UI uses the repository project; all lint/fix commands retain the project-resolution guard.
-- [ ] #3 Previously completed corrections and user test deletions are preserved. The old non-UI repair leaves are deferred to TASK-151 and are not prerequisites.
-- [ ] #4 No archived presentation or product logic is ported here. No new tooling tests or policy suites are added.
-- [ ] #5 The UI baseline is ready for TASK-150.02; full product/browser verification remains TASK-150.06 after integration.
+- [x] #1 Retained src/ui passes the approved lint policy with complexity 6, physical max-lines 600, @/ local imports and concise JSDoc without duplicate types.
+- [x] #2 Existing compiler checks remain enabled and UI uses the repository project; all lint/fix commands retain the project-resolution guard.
+- [x] #3 Previously completed corrections and user test deletions are preserved. The old non-UI repair leaves are deferred to TASK-151 and are not prerequisites.
+- [x] #4 No archived presentation or product logic is ported here. No new tooling tests or policy suites are added.
+- [x] #5 The UI baseline is ready for TASK-150.02; full product/browser verification remains TASK-150.06 after integration.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -99,3 +99,9 @@ Safe-autofix measurement approved 2026-09-05 after the remaining 22,536-diagnost
 
 2026-09-05 (Claude takeover): repaired the five retained src/ui files under the approved policy. bun run lint:ui exits 0 with one documented statement-level suppression (the single brand boundary in canvas/elements.ts where the shared JsonWritable element type is re-branded as Excalidraw's; no compliant spelling exists). Bindings repair is now typed on ExcalidrawElement instead of loose records, isNonDeletedElement is a real type guard, complexity split into named helpers, @/ imports everywhere, JSDoc added. Preview owner and label round-trip owners pass (11 tests) in a confined root. Repository lint: oxlint --fix removed one useless spread; 62 unused disable directives (rules no longer enabled by the retained non-UI policy) were removed by a log-driven script; 15 test files over 500 physical lines are being split verbatim by a worker. No rule weakened.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Retained src/ui passes the approved policy (bun run lint:ui exit 0; one documented brand-boundary suppression). Repository lint restored (bun run lint exit 0), both compilers pass (bun run type-check exit 0), fmt:check passes, preview and label round-trip owners pass 11 tests. Non-UI repair leaves remain deferred to TASK-151; no tests restored, no policy suites added. Commit a7fef61d.
+<!-- SECTION:FINAL_SUMMARY:END -->

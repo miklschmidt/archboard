@@ -1,10 +1,10 @@
 ---
 id: TASK-150.01.02.03
 title: Repair strict system-test and script contracts
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-09-05 04:35'
-updated_date: '2026-09-05 13:58'
+updated_date: '2026-09-05 14:27'
 labels: []
 dependencies: []
 references:
@@ -25,8 +25,8 @@ Deferred to TASK-151. Preserve all committed and uncommitted corrections in this
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Existing corrections remain intact.
-- [ ] #2 Remaining non-UI adoption is owned by TASK-151; this historical leaf does not block TASK-150 UI construction.
+- [x] #1 Existing corrections remain intact.
+- [x] #2 Remaining non-UI adoption is owned by TASK-151; this historical leaf does not block TASK-150 UI construction.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -98,3 +98,9 @@ created: 2026-09-05 05:06
 Repair checkpoint: primary committed import process-contract manifest ec4d4a17 and browser voice/fixed-point fixture manifest 1e8f0afc. New frozen CLI refusal manifest: tests/system/cli/package-io-refusals.test.ts plus tests/system/cli/support/package-result.ts. Scoped type-aware oxlint passes; focused public CLI suite passes 7 tests / 58 assertions. Change moves result decoding and its two local schemas behind one support boundary, reducing test dependencies to policy limit while preserving behavior. No suppressions. Browser lane not executed.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Deferred to TASK-151 by user decision; existing corrections are preserved in commit a7fef61d and do not block UI construction.
+<!-- SECTION:FINAL_SUMMARY:END -->
