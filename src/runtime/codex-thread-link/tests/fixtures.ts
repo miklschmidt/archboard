@@ -50,7 +50,12 @@ export function loadedPage(
 type ThreadPageResponse = SessionThreadPageResult | Error;
 type LoadedPageResponse = SessionLoadedThreadPageResult | Error;
 
+export async function unavailableThreadRead(): Promise<never> {
+	throw new Error("This inventory-only fixture must not read an unproved target.");
+}
+
 export class ScriptedSession {
+	readonly threadRead = unavailableThreadRead;
 	readonly threadListRequests: Array<SessionParams<"thread/list"> | undefined> = [];
 	readonly loadedListRequests: Array<SessionParams<"thread/loaded/list"> | undefined> = [];
 

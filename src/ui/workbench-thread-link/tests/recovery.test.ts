@@ -133,6 +133,18 @@ describe("thread-link readiness disclosure", () => {
 		expect(ready.recoveries).toEqual([]);
 	});
 
+	test("reports coordinator setup failure instead of preparation after sign-in", () => {
+		const value = snapshot({
+			readiness: { kind: "readiness", state: "account_ready" },
+			coordinator: { ...snapshot().coordinator, state: "failed", reason: "invalid_start_response" },
+		});
+		const disclosed = readiness(connected(value));
+		expect(disclosed.arm).toBe("coordinator_failed");
+		expect(disclosed.tone).toBe("failed");
+		expect(disclosed.detail).toContain("invalid_start_response");
+		expect(disclosed.detail).not.toContain("preparing");
+	});
+
 	test("a recovery this pane has no owner for is named rather than rendered as a live control", () => {
 		const stopped = withReadiness({
 			kind: "readiness",
@@ -165,7 +177,7 @@ describe("thread-link recovery actions", () => {
 		const controller = createThreadLinkController({ capturePane: () => pane(transport) });
 		await controller.recover("refresh_snapshot");
 		expect(transport.refreshes).toBe(1);
-		expect(controller.snapshot().state).toBe("succeeded");
+		expect(controller.snapshot().state).toBe("idle");
 		await controller.recover("read_account");
 		expect(transport.accountReads).toBe(1);
 		expect(controller.snapshot().state).toBe("succeeded");

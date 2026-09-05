@@ -9,6 +9,25 @@ import {
 import { CHECKOUT_ROOT, inspectOnlyBinding, makeFixture, turnFixture } from "./support.js";
 
 describe("codex workhorse start transaction", () => {
+	test("rejects a wrong origin or checkout without binding or guessing a cleanup target", async () => {
+		for (const field of ["thread.source", "cwd"] as const) {
+			const fixture = makeFixture();
+			try {
+				const response = fixture.session.startResult;
+				if (response instanceof Error) throw response;
+				if (field === "thread.source") Object.assign(response.thread, { source: "cli" });
+				if (field === "cwd") Object.assign(response, { cwd: "/other-checkout" });
+				const result = await fixture.starter.start({ paneId: "pane-1", expected: null });
+				expect(result.state).toBe("inspect_only");
+				expect(result.reason).toContain(`authored profile: ${field}.`);
+				expect(fixture.link.targets).toHaveLength(0);
+				expect(fixture.session.deleteParams).toHaveLength(0);
+			} finally {
+				fixture.dispose();
+			}
+		}
+	});
+
 	test("stages, confirms, and binds with one canonical operation correlation", async () => {
 		const fixture = makeFixture();
 		try {
@@ -21,7 +40,7 @@ describe("codex workhorse start transaction", () => {
 				cwd: CHECKOUT_ROOT,
 				runtimeWorkspaceRoots: [CHECKOUT_ROOT],
 				historyMode: "paginated",
-				source: "appServer",
+				source: "vscode",
 				threadSource: "archboard",
 				model: "gpt-5.6-luna",
 				modelProvider: "openai",
@@ -56,7 +75,7 @@ describe("codex workhorse start transaction", () => {
 				operation: { kind: WORKHORSE_OPERATION_KIND, rpc: WORKHORSE_RPC },
 				provenance: {
 					threadId: fixture.thread.id,
-					threadSource: "appServer",
+					threadSource: "vscode",
 					workspaceRoot: CHECKOUT_ROOT,
 				},
 			});
@@ -186,7 +205,7 @@ describe("codex workhorse start transaction", () => {
 			expect(cleanupRecord).toMatchObject({
 				status: "committed",
 				outcome: "delivered",
-				provenance: { threadId: fixture.thread.id, threadSource: "appServer" },
+				provenance: { threadId: fixture.thread.id, threadSource: "vscode" },
 			});
 			expect(result.cleanup?.operationId).not.toBe(result.operationId);
 		} finally {

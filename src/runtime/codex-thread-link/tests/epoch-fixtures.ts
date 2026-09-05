@@ -27,6 +27,7 @@ export interface RealEpochFixture {
 }
 
 export interface RealEpochOptions {
+	readonly source?: string;
 	readonly operationId?: string;
 	readonly kind?: string;
 	readonly rpc?: string | null;
@@ -76,7 +77,11 @@ export function realEpochFixture(
 		);
 		const record =
 			options.unknownReason === undefined
-				? store.commitOperation(transaction, { threadId, turnId, threadSource: "appServer" })
+				? store.commitOperation(transaction, {
+						threadId,
+						turnId,
+						threadSource: options.source ?? "appServer",
+					})
 				: store.markOutcomeUnknown(transaction, options.unknownReason, { threadId, turnId });
 		const proof =
 			record.status === "committed"

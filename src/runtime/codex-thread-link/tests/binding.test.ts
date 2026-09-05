@@ -1,3 +1,4 @@
+import { unavailableThreadRead } from "./fixtures.js";
 import { CodexEpochError } from "../../codex-epoch/index.ts";
 import { describe, expect, test } from "bun:test";
 
@@ -181,6 +182,7 @@ describe("codex thread-link pane bindings", () => {
 			const port = createCodexThreadLink({
 				epoch: fixture.store,
 				session: {
+					threadRead: unavailableThreadRead,
 					threadListPage: async () => {
 						listPass += 1;
 						return { data: [row], nextCursor: null, backwardsCursor: null };
@@ -208,6 +210,7 @@ describe("codex thread-link pane bindings", () => {
 			const port = createCodexThreadLink({
 				epoch: fixture.store,
 				session: {
+					threadRead: unavailableThreadRead,
 					threadListPage: async () => {
 						listPass += 1;
 						if (listPass === 2) {

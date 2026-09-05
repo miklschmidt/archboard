@@ -12,6 +12,7 @@ import type {
 	SessionThread,
 	SessionThreadPageResult,
 } from "../../codex-session/index.js";
+import { CODEX_SESSION_THREAD_SOURCE } from "../../codex-session/index.js";
 import { CODEX_THREAD_STATUS_TYPES } from "../../../shared/codex-app-server-contract/index.js";
 import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
 import {
@@ -567,6 +568,7 @@ function classifyReason(
 	persistedRows: number,
 	loadedOccurrences: number,
 	thread: SessionThread | null,
+	ownedCreatedRoot: boolean,
 ): ThreadLinkReason | null {
 	const ownership = ownershipReason(target, started, ended, record, durableReason);
 	const source = thread === null ? "unknown" : sourceOf(thread);
@@ -589,7 +591,7 @@ function classifyReason(
 			"current_epoch_ownership_is_unproven",
 			ownership === authoredReason("current_epoch_ownership_is_unproven"),
 		],
-		["persisted_target_row_is_missing", persistedRows === 0],
+		["persisted_target_row_is_missing", persistedRows === 0 && !ownedCreatedRoot],
 		["persisted_target_rows_conflict", persistedRows > 1],
 		["loaded_target_membership_is_duplicate_or_conflicting", loadedOccurrences > 1],
 		["thread_source_is_custom", sourceReason(source) === authoredReason("thread_source_is_custom")],
@@ -642,7 +644,7 @@ function observationFor(
 		});
 	}
 	return Object.freeze({
-		persisted: true,
+		persisted: persistedRows > 0,
 		persistedRows,
 		loaded: loadedOccurrences > 0,
 		loadedOccurrences,
@@ -715,11 +717,69 @@ export function createCodexThreadLinkClassifier(
 		// Both result sets are exhausted before precedence is evaluated. A partial
 		// page can never decide a stable link state.
 		const persisted = await exhaustThreadList(session);
-		const loaded = await exhaustLoadedList(session);
+		let loaded = await exhaustLoadedList(session);
+		const ownedRoot = await readOwnedCreatedRoot(options, target, persisted, loaded);
+		// A direct read is another await: prove loaded membership again before binding.
+		if (ownedRoot !== null) loaded = await exhaustLoadedList(session);
 		const ended = currentEpochOf(options);
-		return classifyFromExhausted(options, target, persisted, loaded, started, ended);
+		return classifyFromExhausted(options, target, persisted, loaded, started, ended, ownedRoot);
 	};
 	return Object.freeze({ classify });
+}
+
+/** Empty roots are hidden by Codex's preview-filtered history list before the first turn. */
+async function readOwnedCreatedRoot(
+	options: CodexThreadLinkClassifierOptions,
+	target: ThreadLinkTarget,
+	persisted: readonly SessionThread[],
+	loaded: readonly ThreadId[],
+): Promise<SessionThread | null> {
+	if (
+		persisted.some((row) => row.id === target.threadId) ||
+		loaded.filter((id) => id === target.threadId).length !== 1
+	)
+		return null;
+	const evidence = durableEvidence(options, target);
+	const record = evidence.record;
+	const current = currentEpochOf(options);
+	if (
+		evidence.reason !== null ||
+		evidence.proof === null ||
+		record === null ||
+		record.operation.rpc !== "thread/start" ||
+		record.status !== "committed" ||
+		record.outcome !== "delivered" ||
+		record.provenance.threadSource !== CODEX_SESSION_THREAD_SOURCE ||
+		record.provenance.workspaceRoot === null ||
+		ownershipReason(target, current, current, record, evidence.reason) !== null
+	)
+		return null;
+	let thread: SessionThread;
+	try {
+		({ thread } = await options.session.threadRead({
+			threadId: target.threadId,
+			includeTurns: false,
+		}));
+	} catch (error) {
+		throw new CodexThreadLinkError(
+			"transport_failure",
+			"The owned thread could not be read; the thread link was not classified.",
+			error,
+		);
+	}
+	if (
+		thread.id !== target.threadId ||
+		thread.source !== CODEX_SESSION_THREAD_SOURCE ||
+		thread.threadSource !== "archboard" ||
+		thread.cwd !== record.provenance.workspaceRoot ||
+		thread.modelProvider.length === 0 ||
+		thread.historyMode !== "paginated" ||
+		thread.ephemeral ||
+		thread.parentThreadId !== null ||
+		thread.forkedFromId !== null
+	)
+		return null;
+	return cloneAndFreeze(thread);
 }
 
 function classifyFromExhausted(
@@ -729,12 +789,13 @@ function classifyFromExhausted(
 	loaded: readonly ThreadId[],
 	started: ThreadLinkCurrentEpoch | null,
 	ended: ThreadLinkCurrentEpoch | null,
+	ownedRoot: SessionThread | null = null,
 ): ThreadLinkClassification {
 	validateTarget(target);
 	const evidence = durableEvidence(options, target);
 	const matchingThreads = persisted.filter((thread) => thread.id === target.threadId);
 	const matchingLoaded = loaded.filter((threadId) => threadId === target.threadId);
-	const thread = matchingThreads.length === 1 ? cloneAndFreeze(matchingThreads[0]!) : null;
+	const thread = matchingThreads.length === 1 ? cloneAndFreeze(matchingThreads[0]!) : ownedRoot;
 	const observation = observationFor(thread, matchingLoaded.length, matchingThreads.length);
 	const refusal = classifyReason(
 		target,
@@ -745,6 +806,7 @@ function classifyFromExhausted(
 		matchingThreads.length,
 		matchingLoaded.length,
 		thread,
+		ownedRoot !== null,
 	);
 	return Object.freeze({
 		link: linkFor(target, ended, observation, refusal),
