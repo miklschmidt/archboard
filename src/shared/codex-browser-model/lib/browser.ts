@@ -54,8 +54,8 @@ interface BrowserSnapshotRelationshipFields {
 	};
 	readonly timeline: { readonly threadId: string } | null;
 	readonly semantic: { readonly threadId: string } | null;
-	readonly voice?: { readonly realtimeSessionId: string | null };
-	readonly voiceContext?: { readonly sessionId: string } | null;
+	readonly voice?: { readonly realtimeSessionId: string | null } | undefined;
+	readonly voiceContext?: { readonly sessionId: string } | null | undefined;
 }
 
 /** Checks relationships between fields after each field has passed its own schema. */

@@ -57,7 +57,7 @@ export function dynamicApprovalResponseDecision(
 	return response.decision;
 }
 
-type _DynamicApprovalStatesAreClosed = Assert<
+export type _DynamicApprovalStatesAreClosed = Assert<
 	Equal<
 		DynamicApprovalState,
 		| "pending"
@@ -73,7 +73,7 @@ type _DynamicApprovalStatesAreClosed = Assert<
 	>
 >;
 
-type _BrowserDtoIsClosed = Assert<
+export type _BrowserDtoIsClosed = Assert<
 	Equal<
 		BrowserDto["kind"],
 		| "snapshot"

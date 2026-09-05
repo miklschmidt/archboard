@@ -175,7 +175,13 @@ export const bridgeContract = defineCommand({
 	],
 	async handler(input, context) {
 		await context.require("server", "bridge");
-		return { result: context.parse(BridgeResultSchema, await createBridge(input)) };
+		const { at, ...required } = input;
+		return {
+			result: context.parse(
+				BridgeResultSchema,
+				await createBridge({ ...required, ...(at === undefined ? {} : { at }) }),
+			),
+		};
 	},
 });
 

@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { z } from "zod";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 interface CatalogueRule {
@@ -17,17 +18,26 @@ interface Policy {
 	excludedRules: Record<string, string>;
 	vendorDeclarationRules: Record<string, string>;
 }
-interface Config {
-	plugins: string[];
-	categories: Record<string, string>;
-	rules: Record<string, unknown>;
-	overrides: { files: string[]; rules: Record<string, unknown> }[];
-	options: { denyWarnings: boolean; maxWarnings: number; reportUnusedDisableDirectives: string };
-}
+const configSchema = z.object({
+	plugins: z.array(z.string()),
+	categories: z.record(z.string(), z.string()),
+	rules: z.record(z.string(), z.unknown()),
+	overrides: z.array(
+		z.object({ files: z.array(z.string()), rules: z.record(z.string(), z.unknown()) }),
+	),
+	options: z.object({
+		denyWarnings: z.boolean(),
+		maxWarnings: z.number(),
+		reportUnusedDisableDirectives: z.string(),
+	}),
+});
 const policy: Policy = JSON.parse(
 	readFileSync(join(repoRoot, "docs/agents/strict-analysis-policy.json"), "utf8"),
 );
-const config: Config = Bun.JSONC.parse(readFileSync(join(repoRoot, ".oxlintrc.jsonc"), "utf8"));
+const rawConfig: unknown = Bun.JSONC.parse(
+	readFileSync(join(repoRoot, ".oxlintrc.jsonc"), "utf8"),
+);
+const config = configSchema.parse(rawConfig);
 
 test("the full pinned rule catalogue has an explicit applicable or inapplicable disposition", () => {
 	const result = Bun.spawnSync(

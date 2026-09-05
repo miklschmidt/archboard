@@ -137,10 +137,11 @@ async function expectPreflightRefusal(
 	await using resources = new AsyncDisposableStack();
 	const fixture = usePreflightFixture(resources);
 	const beforeBundle = browserBundleSnapshot(repoRoot);
+	const executablePath = setup(fixture);
 	const result = runAdapter(
 		{
 			withAgentBrowser: true,
-			executablePath: setup(fixture),
+			...(executablePath === undefined ? {} : { executablePath }),
 		},
 		resources,
 	);

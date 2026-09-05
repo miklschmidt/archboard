@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { z } from "zod";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const archive = ["leg", "acy"].join("");
@@ -21,9 +22,12 @@ test("the UI reference archive is ignored and absent from both committed and sta
 		stderr: "pipe",
 	});
 	expect(ignored.exitCode).toBe(0);
-	const bunfig: { test: { pathIgnorePatterns: string[] } } = Bun.TOML.parse(
+	const rawBunfig: unknown = Bun.TOML.parse(
 		readFileSync(join(repoRoot, "bunfig.toml"), "utf8"),
 	);
+	const bunfig = z
+		.object({ test: z.object({ pathIgnorePatterns: z.array(z.string()) }) })
+		.parse(rawBunfig);
 	expect(bunfig.test.pathIgnorePatterns).toEqual([`${archive}/**`]);
 	const pkg: { scripts: Record<string, string> } = JSON.parse(
 		readFileSync(join(repoRoot, "package.json"), "utf8"),
@@ -75,9 +79,12 @@ test("ordinary lint rejects archive imports, re-exports, dynamic loads and servi
 	} finally {
 		rmSync(root, { recursive: true, force: true });
 	}
-	const config: { rules: Record<string, unknown> } = Bun.JSONC.parse(
+	const rawConfig: unknown = Bun.JSONC.parse(
 		readFileSync(join(repoRoot, ".oxlintrc.jsonc"), "utf8"),
 	);
+	const config = z
+		.object({ rules: z.record(z.string(), z.unknown()) })
+		.parse(rawConfig);
 	expect(config.rules["archboard/no-archive-references"]).toBe("error");
 });
 

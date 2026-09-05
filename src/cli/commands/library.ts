@@ -279,7 +279,11 @@ export const libraryInsertContract = defineCommand({
 			return {
 				result: LibraryInsertResultSchema.parse(
 					await insertStencil({
-						...request,
+						x: request.x,
+						y: request.y,
+						...(request.name === undefined ? {} : { name: request.name }),
+						...(request.source === undefined ? {} : { source: request.source }),
+						...(request.itemId === undefined ? {} : { itemId: request.itemId }),
 					}),
 				),
 			};

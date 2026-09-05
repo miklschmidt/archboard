@@ -757,10 +757,6 @@ class RendererSession {
 		for (const pid of pids) this.#observed.add(pid);
 	}
 
-	private async stdoutText(): Promise<string> {
-		return await (this.#stdout ?? Promise.resolve(""));
-	}
-
 	private async stderrText(): Promise<string> {
 		return await (this.#stderr ?? Promise.resolve(""));
 	}
