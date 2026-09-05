@@ -23,9 +23,9 @@ describe("Codex app-server capacity policy", () => {
 				requestTombstones: 256,
 				completedReverseIds: 256,
 				lateResponses: 128,
-				lateResponseRecordBytes: 4_096,
+				lateResponseRecordBytes: 4096,
 				issues: 256,
-				issueRecordBytes: 2_048,
+				issueRecordBytes: 2048,
 			},
 			listenersPerEvent: 1,
 		});
