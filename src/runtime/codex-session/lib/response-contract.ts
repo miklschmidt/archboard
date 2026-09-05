@@ -43,7 +43,7 @@ type ProtocolObjectFields<
 > = {
 	[
 		Key in keyof Shape as Key extends keyof Output
-			? {} extends Pick<Output, Key>
+			? Pick<Output, never> extends Pick<Output, Key>
 				? never
 				: Key
 			: never
@@ -51,7 +51,7 @@ type ProtocolObjectFields<
 } & {
 	[
 		Key in keyof Shape as Key extends keyof Output
-			? {} extends Pick<Output, Key>
+			? Pick<Output, never> extends Pick<Output, Key>
 				? Key
 				: never
 			: never
@@ -74,7 +74,8 @@ type ProtocolOutput<Schema, Retained extends boolean = false> =
 					: ProtocolOutput<Element, Retained>[]
 				: Schema extends z.ZodRecord<infer Key, infer Value>
 					? Retained extends true
-						? {
+						? // oxlint-disable-next-line typescript/consistent-indexed-object-style -- TypeScript 7.0.2 exceeds its instantiation depth when Readonly<Record> recursively contains protocol JSON.
+							{
 								readonly [RecordKey in z.output<Key> & PropertyKey]: ProtocolOutput<
 									Value,
 									Retained
@@ -354,9 +355,9 @@ interface SessionProtocolMethodDescriptor {
 	readonly responseIdentities: ResponseIdentityKind;
 }
 
-type SessionProtocolMethodTable = Record<ResponseMethod, SessionProtocolMethodDescriptor>;
+type SessionProtocolMethodTable = Readonly<Record<ResponseMethod, SessionProtocolMethodDescriptor>>;
 type ExactSessionProtocolMethodTable<Table extends SessionProtocolMethodTable> = {
-	[Method in ResponseMethod]: Omit<Table[Method], "requestIdentities"> & {
+	readonly [Method in ResponseMethod]: Omit<Table[Method], "requestIdentities"> & {
 		readonly requestIdentities: ExactSessionRequestIdentityTuple<
 			Method,
 			Table[Method]["requestIdentities"]
@@ -366,8 +367,10 @@ type ExactSessionProtocolMethodTable<Table extends SessionProtocolMethodTable> =
 type NoExtraSessionProtocolMethods<Table> =
 	Exclude<keyof Table, ResponseMethod> extends never ? unknown : never;
 function defineSessionProtocolMethods<const Table extends SessionProtocolMethodTable>(
-	table: Table & ExactSessionProtocolMethodTable<Table> & NoExtraSessionProtocolMethods<Table>,
-): Table {
+	table: Readonly<
+		Table & ExactSessionProtocolMethodTable<Table> & NoExtraSessionProtocolMethods<Table>
+	>,
+): Readonly<Table> {
 	return table;
 }
 

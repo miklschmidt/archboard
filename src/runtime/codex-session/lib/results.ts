@@ -47,7 +47,7 @@ interface ResponseIdentityCollection {
 	readonly loginIds: unknown[];
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
@@ -211,10 +211,13 @@ function adoptedMap<Identity>(
 	raw: readonly unknown[],
 	adopted: readonly Identity[],
 ): ReadonlyMap<unknown, Identity> {
-	return new Map(raw.map((value, index) => [value, adopted[index] as Identity]));
+	return new Map(adopted.map((identity, index) => [raw[index], identity]));
 }
 
-function brandThreadItem(value: Record<string, unknown>, maps: ResponseIdentityMaps): unknown {
+function brandThreadItem(
+	value: Readonly<Record<string, unknown>>,
+	maps: ResponseIdentityMaps,
+): unknown {
 	const branded: Record<string, unknown> = { ...value, id: maps.itemIds.get(value["id"]) };
 	if (value["type"] === "agentMessage" && isRecord(value["memoryCitation"])) {
 		const citation = value["memoryCitation"];
@@ -245,12 +248,17 @@ function brandThreadItem(value: Record<string, unknown>, maps: ResponseIdentityM
 	return branded;
 }
 
-function brandTurn(value: Record<string, unknown>, maps: ResponseIdentityMaps): SessionTurn {
+function brandTurn(
+	value: Readonly<Record<string, unknown>>,
+	maps: ResponseIdentityMaps,
+): SessionTurn {
 	return {
 		...value,
 		id: maps.turnIds.get(value["id"]),
 		items: Array.isArray(value["items"])
-			? value["items"].map((item) => brandThreadItem(item as Record<string, unknown>, maps))
+			? value["items"].map((item) =>
+					brandThreadItem(item as Readonly<Record<string, unknown>>, maps),
+				)
 			: value["items"],
 	} as SessionTurn;
 }
@@ -275,7 +283,10 @@ function brandThreadSource(value: unknown, maps: ResponseIdentityMaps): unknown 
 	};
 }
 
-function brandThread(value: Record<string, unknown>, maps: ResponseIdentityMaps): SessionThread {
+function brandThread(
+	value: Readonly<Record<string, unknown>>,
+	maps: ResponseIdentityMaps,
+): SessionThread {
 	return {
 		...value,
 		id: maps.threadIds.get(value["id"]),
@@ -284,23 +295,23 @@ function brandThread(value: Record<string, unknown>, maps: ResponseIdentityMaps)
 			value["parentThreadId"] === null ? null : maps.threadIds.get(value["parentThreadId"]),
 		source: brandThreadSource(value["source"], maps),
 		turns: Array.isArray(value["turns"])
-			? value["turns"].map((turn) => brandTurn(turn as Record<string, unknown>, maps))
+			? value["turns"].map((turn) => brandTurn(turn as Readonly<Record<string, unknown>>, maps))
 			: value["turns"],
 	} as SessionThread;
 }
 
-function brandQueue(value: Record<string, unknown>, maps: ResponseIdentityMaps): unknown {
+function brandQueue(value: Readonly<Record<string, unknown>>, maps: ResponseIdentityMaps): unknown {
 	return { ...value, id: maps.queuedSubmissionIds.get(value["id"]) };
 }
 
 function brandItemEntry(
-	entry: Record<string, unknown>,
+	entry: Readonly<Record<string, unknown>>,
 	maps: ResponseIdentityMaps,
 ): Record<string, unknown> {
 	return {
 		...entry,
 		turnId: maps.turnIds.get(entry["turnId"]),
-		item: brandThreadItem(entry["item"] as Record<string, unknown>, maps),
+		item: brandThreadItem(entry["item"] as Readonly<Record<string, unknown>>, maps),
 	};
 }
 
