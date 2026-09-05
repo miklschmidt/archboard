@@ -12,6 +12,7 @@ import {
 	type ArchboardContext,
 } from "../../../runtime/codex-instructions/index.js";
 import type { CodexProcessGroupIdentity } from "../../../runtime/codex-process/process-group.js";
+import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 import type {
 	SemanticContextPublisherOptions,
 	SettledSemanticChangeEvent,
@@ -97,6 +98,7 @@ interface GenerationOwners {
 	browserState: CanvasBrowserBindingState;
 	approvalProjectionInstalled: boolean;
 	projectionListeners: Set<() => void>;
+	accountListeners: Set<(event: TransportServerNotification) => void>;
 	dynamicProjectionUnsubscribe: (() => void) | null;
 	timeline: CanvasTimelineOwner | null;
 	retired: boolean;
@@ -187,6 +189,7 @@ function retire(owners: GenerationOwners): void {
 	owners.currentCoordinatorCall = null;
 	owners.dynamicProjectionUnsubscribe = null;
 	owners.projectionListeners.clear();
+	owners.accountListeners.clear();
 }
 
 /** Build the one mandatory real production installation used by the canvas application. */
@@ -243,6 +246,7 @@ export function createCanvasCodexWorkbenchInstallation(
 			currentCoordinatorCall: null,
 			approvalProjectionInstalled: false,
 			projectionListeners: new Set(),
+			accountListeners: new Set(),
 			dynamicProjectionUnsubscribe: null,
 			timeline: null,
 			retired: false,
@@ -617,6 +621,10 @@ export function createCanvasCodexWorkbenchInstallation(
 						owners.projectionListeners.add(listener);
 						return () => void owners.projectionListeners.delete(listener);
 					},
+					onAccountNotification: (listener) => {
+						owners.accountListeners.add(listener);
+						return () => void owners.accountListeners.delete(listener);
+					},
 				});
 				return {
 					...options,
@@ -635,6 +643,7 @@ export function createCanvasCodexWorkbenchInstallation(
 				contextForEvent: (event, binding) => host.contextForEvent(event, binding.paneId),
 			},
 			onNotification: (event) => {
+				for (const listener of owners.accountListeners) listener(event);
 				owners.timeline?.onNotification(event);
 				owners.approval?.onNotification(event);
 				owners.lifecycle?.onNotification(event);

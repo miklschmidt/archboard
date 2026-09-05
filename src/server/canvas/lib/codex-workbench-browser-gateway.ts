@@ -11,6 +11,7 @@ import type {
 	CodexWorkbenchGatewayOptions,
 } from "../../codex-workbench/index.js";
 import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
+import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
 import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
 import type {
 	OperationAuthority,
@@ -30,10 +31,10 @@ import {
 	createCanvasThreadLinkActions,
 } from "./codex-workbench-thread-links.js";
 import { createCanvasCanonicalTextActions } from "./codex-workbench-text-actions.js";
+import { createCanvasBrowserAccountOwner } from "./codex-workbench-account.js";
 import { createCanvasRealtimeActions } from "./codex-workbench-realtime-actions.js";
 import { projectCanvasVoiceContext } from "./codex-workbench-voice-context.js";
 import {
-	boundedBrowserReason,
 	projectCanvasBrowserReadiness,
 	type CanvasReadinessProcessFacts,
 } from "./codex-workbench-readiness.js";
@@ -86,10 +87,6 @@ function queueOwnerView(
 			operationId: archboardOperation(submission, operations),
 		})),
 	};
-}
-
-function failureReason(error: unknown, fallback: string): string {
-	return boundedBrowserReason(error instanceof Error ? error.message : null, fallback);
 }
 
 function visibleApprovalViews(approvals: CodexApprovalBroker) {
@@ -180,6 +177,9 @@ export function createCanvasBrowserGatewayOptions(input: {
 	readonly timeline: CanvasTimelineOwner;
 	readonly budget: CanvasBrowserProjectionBudget;
 	readonly onChange: (listener: () => void) => () => void;
+	readonly onAccountNotification: (
+		listener: (event: TransportServerNotification) => void,
+	) => () => void;
 	/** The live owned-process facts behind every child-lifecycle readiness arm. */
 	readonly process: () => CanvasReadinessProcessFacts;
 	readonly checkoutRoot: string;
@@ -285,74 +285,21 @@ export function createCanvasBrowserGatewayOptions(input: {
 		identity: components.identity,
 		checkoutRoot: input.checkoutRoot,
 	});
+	const account = createCanvasBrowserAccountOwner({
+		components,
+		state,
+		clearQueue,
+		onNotification: input.onAccountNotification,
+	});
 	const actions: BrowserWorkbenchActions = {
 		account: {
-			read: async () => {
-				let result: Awaited<ReturnType<typeof components.session.accountRead>>;
-				try {
-					result = await components.session.accountRead();
-				} catch (error) {
-					state.account = {
-						kind: "account",
-						state: "failed",
-						reason: failureReason(error, "The Codex account could not be read."),
-					};
-					throw error;
-				}
-				state.account = { kind: "codex_account_response", response: result };
-				if (result.account !== null && state.login.state === "pending")
-					state.login = { kind: "login", state: "completed", loginId: state.login.loginId };
+			...account.actions,
+			read: async (context) => {
+				const result = await account.actions.read(context);
 				if (components.workhorse.snapshot().state === "ready")
 					updateQueue(await components.queue.list());
-				return { outcome: "delivered" };
+				return result;
 			},
-			login: async (command) => {
-				let result: Awaited<ReturnType<typeof components.session.accountLogin>>;
-				try {
-					result = await components.session.accountLogin(command.login);
-				} catch (error) {
-					state.login = {
-						kind: "login",
-						state: "failed",
-						loginId: null,
-						reason: failureReason(error, "The Codex sign-in failed."),
-					};
-					throw error;
-				}
-				if ("loginId" in result) {
-					state.login = {
-						kind: "login",
-						state: "pending",
-						loginId: result.loginId,
-						variant: command.login.type,
-					};
-					state.account = {
-						kind: "account",
-						state: "login_pending",
-						loginId: result.loginId,
-						variant: command.login.type,
-					};
-				}
-				return { outcome: "delivered" };
-			},
-			loginCancel: (command) =>
-				run(async () => {
-					await components.session.accountLoginCancel({ loginId: command.loginId });
-					state.login = { kind: "login", state: "cancelled", loginId: command.loginId };
-					if (state.account.kind === "account" && state.account.state === "login_pending")
-						state.account = {
-							kind: "account",
-							state: "unknown",
-							reason: "The sign-in was cancelled before an account was read.",
-						};
-				}),
-			logout: () =>
-				run(async () => {
-					await components.session.accountLogout();
-					state.account = { kind: "account", state: "signed_out" };
-					state.login = { kind: "login", state: "idle" };
-					clearQueue();
-				}),
 		},
 		threadLinks: {
 			refresh: (command, context) => threadLinks.refresh(command, context),
@@ -553,7 +500,14 @@ export function createCanvasBrowserGatewayOptions(input: {
 				voiceContext,
 			};
 		},
-		onChange: input.onChange,
+		onChange: (listener) => {
+			const unsubscribe = input.onChange(listener);
+			const unsubscribeAccount = account.subscribe(listener);
+			return () => {
+				unsubscribeAccount();
+				unsubscribe();
+			};
+		},
 		onBrowserDisconnect: ({ paneId, connection }) => input.timeline.retire(paneId, connection),
 	};
 	return {

@@ -106,6 +106,21 @@ interface Settlement {
 	readonly announcement: string;
 }
 
+function loginSettlement(result: BrowserWorkbenchCommandResult): Settlement {
+	const account = result.snapshot.account;
+	if (account.state === "failed") return { state: "failed", announcement: account.reason };
+	if (account.state === "login_pending" || result.snapshot.login.state === "pending")
+		return {
+			state: "succeeded",
+			announcement: "Sign-in started. Complete the sign-in to continue.",
+		};
+	if (account.state === "ready") return { state: "succeeded", announcement: "Signed in." };
+	return {
+		state: "inspect_only",
+		announcement: "Sign-in has not been confirmed. Check the account status before trying again.",
+	};
+}
+
 /**
  * A link command that did not settle into a confirmed executable link for the
  * exact thread it named is inspect-only. It is never retried on its own.
@@ -128,6 +143,7 @@ function classify(
 				result.message ??
 				`The workbench refused ${action.replace("_", " ")} for pane ${target.paneId}.`,
 		};
+	if (action === "login") return loginSettlement(result);
 	if (!linkAction(action))
 		return {
 			state: "succeeded",
@@ -197,7 +213,10 @@ export function createThreadLinkController(
 				revision: operationRevision,
 				action,
 				target,
-				announcement: `${action.replace("_", " ")} started for pane ${target.paneId}.`,
+				announcement:
+					action === "login"
+						? "Starting sign-in…"
+						: `${action.replace("_", " ")} started for pane ${target.paneId}.`,
 			});
 			if (!pane.transport.capabilities().supportsCommand(draft.command))
 				return settle(operationRevision, {

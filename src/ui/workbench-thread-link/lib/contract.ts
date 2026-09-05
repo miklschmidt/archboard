@@ -202,6 +202,8 @@ export interface ThreadLinkAccountDisclosure {
 	readonly label: string;
 	readonly detail: string;
 	readonly pendingLoginId: LoginId | null;
+	/** Host-validated URL for the current pending ChatGPT sign-in only. */
+	readonly authUrl: string | null;
 	readonly forms: readonly ThreadLinkAccountForm[];
 	readonly unavailable: readonly ThreadLinkUnavailableAccountMethod[];
 	readonly canLogin: boolean;

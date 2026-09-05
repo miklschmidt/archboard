@@ -2,6 +2,7 @@ import type { BrowserSnapshot } from "../../../shared/codex-browser-model/index.
 
 import type {
 	BrowserWorkbenchCapabilities,
+	BrowserWorkbenchState,
 	ThreadLinkAccountDisclosure,
 	ThreadLinkAccountFieldValues,
 	ThreadLinkAccountForm,
@@ -208,24 +209,36 @@ function accountDetail(account: BrowserSnapshot["account"]): string {
 }
 
 export function projectThreadLinkAccount(input: {
-	readonly snapshot: BrowserSnapshot | null;
+	readonly state: BrowserWorkbenchState;
 	readonly capabilities: BrowserWorkbenchCapabilities;
 }): ThreadLinkAccountDisclosure {
-	const account = input.snapshot?.account ?? null;
-	const login = input.snapshot?.login ?? null;
+	const account = input.state.snapshot?.account ?? null;
+	const login = input.state.snapshot?.login ?? null;
 	const canLogin = input.capabilities.supportsCommand("accountLogin");
 	const canCancelLogin =
 		input.capabilities.supportsCommand("accountLoginCancel") && login?.state === "pending";
 	const canLogout =
 		input.capabilities.supportsCommand("accountLogout") && account?.state === "ready";
+	const authUrl =
+		input.state.kind === "readiness" &&
+		account?.state === "login_pending" &&
+		account.variant === "chatgpt" &&
+		login?.state === "pending" &&
+		login.variant === "chatgpt" &&
+		login.loginId === account.loginId
+			? login.authUrl
+			: null;
 	return Object.freeze({
 		state: account?.state ?? "unknown",
 		label: ACCOUNT_LABELS[account?.state ?? "unknown"],
 		detail:
 			account === null
 				? "The workbench has published no account facts for this pane yet."
-				: accountDetail(account),
+				: authUrl !== null
+					? "Continue to ChatGPT to finish signing in."
+					: accountDetail(account),
 		pendingLoginId: login?.state === "pending" ? login.loginId : null,
+		authUrl,
 		forms: THREAD_LINK_ACCOUNT_FORMS,
 		unavailable: THREAD_LINK_UNAVAILABLE_ACCOUNT_METHODS,
 		canLogin,

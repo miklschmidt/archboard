@@ -1,6 +1,6 @@
 import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -84,6 +84,7 @@ test(
 	async () => {
 		await using resources = new AsyncDisposableStack();
 		const fixture = prepareProductionFixture(resources, executableSource);
+		writeFileSync(fixture.controlPath, JSON.stringify({ signedOut: true }));
 		const { ownerRoot } = browserTestRoots();
 		const vault = join(ownerRoot, "vault");
 		mkdirSync(vault, { recursive: true });
@@ -135,6 +136,24 @@ test(
 			"the integrated workbench to expand",
 		);
 		await roleAction(browser, "button", "Settings");
+		await roleAction(browser, "button", "Sign in");
+		await pollUntil(
+			() =>
+				browser.eval<boolean>(
+					`!!document.querySelector('[data-thread-link-account="login_pending"]')`,
+				),
+			Boolean,
+			"ChatGPT sign-in to become pending",
+		);
+		const login = await browser.eval<{ href: string | null; text: string }>(`(() => {
+			const account = document.querySelector('[data-thread-link-account="login_pending"]');
+			return { href: account?.querySelector('a')?.getAttribute('href') ?? null,
+				text: document.querySelector('[data-workbench-settings]')?.textContent ?? '' };
+		})()`);
+		expect(login.href).toBe("https://example.test/login");
+		expect(login.text).not.toContain("login completed");
+		await browser.run(["screenshot", "/tmp/archboard-149-chatgpt-pending.png"]);
+		writeFileSync(fixture.controlPath, JSON.stringify({ completeLogin: true }));
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`[...document.querySelectorAll('button')]

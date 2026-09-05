@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import type { BrowserSnapshot } from "../../../shared/codex-browser-model/index.js";
+import type { BrowserWorkbenchState } from "../../workbench-transport/index.js";
 import {
 	buildThreadLinkLogin,
 	projectThreadLinkAccount,
@@ -8,7 +10,7 @@ import {
 	threadLinkAccountForm,
 } from "../index.js";
 import type { ThreadLinkAccountFormId, ThreadLinkLoginParams } from "../index.js";
-import { capabilities, loginA, snapshot } from "./fixtures.js";
+import { capabilities, connected, loginA, snapshot } from "./fixtures.js";
 
 /** The exact supported set, pinned to the type the transport draft admits. */
 const SUPPORTED = [
@@ -22,6 +24,10 @@ function built(id: ThreadLinkAccountFormId, values: Record<string, string>): Thr
 	const result = buildThreadLinkLogin(id, values);
 	if (!result.ok) throw new Error(result.reason);
 	return result.login;
+}
+
+function projectAccount(value: BrowserSnapshot) {
+	return projectThreadLinkAccount({ state: connected(value), capabilities: capabilities() });
 }
 
 describe("Codex account forms", () => {
@@ -122,6 +128,66 @@ describe("Codex account forms", () => {
 });
 
 describe("Codex account disclosure", () => {
+	test("exposes only the continuation for the current pending ChatGPT account", () => {
+		const account: BrowserSnapshot["account"] = {
+			kind: "account",
+			state: "login_pending",
+			loginId: loginA,
+			variant: "chatgpt",
+		};
+		const login: BrowserSnapshot["login"] = {
+			kind: "login",
+			state: "pending",
+			loginId: loginA,
+			variant: "chatgpt",
+			authUrl: "https://example.test/login",
+		};
+		expect(projectAccount(snapshot({ account, login })).authUrl).toBe(login.authUrl);
+		const retained = snapshot({ account, login });
+		const unsynchronizedStates: readonly BrowserWorkbenchState[] = [
+			{
+				kind: "stream",
+				state: "stale_snapshot",
+				connection: "connected",
+				snapshot: retained,
+				sequence: 4,
+				expectedSequence: 5,
+				receivedSequence: 9,
+				reason: "The snapshot sequence skipped.",
+			},
+			{
+				kind: "connection",
+				state: "reconnecting",
+				connection: "reconnecting",
+				snapshot: retained,
+				sequence: 4,
+				reason: "The workbench disconnected.",
+			},
+		];
+		for (const state of unsynchronizedStates) {
+			const disclosure = projectThreadLinkAccount({
+				state,
+				capabilities: capabilities({ supported: [] }),
+			});
+			expect(disclosure.authUrl).toBeNull();
+			expect(disclosure.state).toBe("login_pending");
+			expect(disclosure.pendingLoginId).toBe(loginA);
+		}
+		expect(
+			projectAccount(snapshot({ account, login: { kind: "login", state: "idle" } })).authUrl,
+		).toBeNull();
+		expect(projectAccount(snapshot({ login })).authUrl).toBeNull();
+		expect(
+			projectAccount(snapshot({ account, login: { ...login, variant: "apiKey", authUrl: null } }))
+				.authUrl,
+		).toBeNull();
+		expect(
+			projectAccount(
+				snapshot({ account, login: { ...login, loginId: "another-login" as typeof loginA } }),
+			).authUrl,
+		).toBeNull();
+	});
+
 	test("discloses each account arm with its own detail", () => {
 		const arms = [
 			{ kind: "account", state: "unknown", reason: "Codex did not answer account/read." },
@@ -133,7 +199,7 @@ describe("Codex account disclosure", () => {
 		const details = arms.map(
 			(account) =>
 				projectThreadLinkAccount({
-					snapshot: snapshot({ account }),
+					state: connected(snapshot({ account })),
 					capabilities: capabilities(),
 				}).detail,
 		);
@@ -146,17 +212,25 @@ describe("Codex account disclosure", () => {
 
 	test("offers cancel only while a sign-in is pending and sign-out only while signed in", () => {
 		const pending = projectThreadLinkAccount({
-			snapshot: snapshot({
-				account: { kind: "account", state: "login_pending", loginId: loginA, variant: "apiKey" },
-				login: { kind: "login", state: "pending", loginId: loginA, variant: "apiKey" },
-			}),
+			state: connected(
+				snapshot({
+					account: { kind: "account", state: "login_pending", loginId: loginA, variant: "apiKey" },
+					login: {
+						kind: "login",
+						state: "pending",
+						loginId: loginA,
+						variant: "apiKey",
+						authUrl: null,
+					},
+				}),
+			),
 			capabilities: capabilities(),
 		});
 		expect(pending.pendingLoginId).toBe(loginA);
 		expect(pending.canCancelLogin).toBeTrue();
 		expect(pending.canLogout).toBeFalse();
 		const ready = projectThreadLinkAccount({
-			snapshot: snapshot(),
+			state: connected(),
 			capabilities: capabilities(),
 		});
 		expect(ready.canCancelLogin).toBeFalse();
@@ -166,7 +240,14 @@ describe("Codex account disclosure", () => {
 
 	test("says why signing in is unavailable rather than offering a dead control", () => {
 		const blocked = projectThreadLinkAccount({
-			snapshot: null,
+			state: {
+				kind: "connection",
+				state: "stopped",
+				connection: "stopped",
+				snapshot: null,
+				sequence: null,
+				reason: "The workbench is stopped.",
+			},
 			capabilities: capabilities({ supported: [] }),
 		});
 		expect(blocked.canLogin).toBeFalse();

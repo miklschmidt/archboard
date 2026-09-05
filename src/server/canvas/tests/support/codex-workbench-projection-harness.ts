@@ -1,7 +1,7 @@
 import type { IdentityAuthorities } from "../../../../shared/codex-workbench-identity/index.js";
-import { createIdentityAuthorities } from "../../../../shared/codex-workbench-identity/index.js";
 import type { ThreadLinkSnapshot } from "../../../../runtime/codex-thread-link/index.js";
 import type { ArchboardContext } from "../../../../runtime/codex-instructions/index.js";
+import type { TransportServerNotification } from "../../../../runtime/codex-transport/index.js";
 import type {
 	BrowserActionContext,
 	BrowserProjectionContext,
@@ -65,11 +65,14 @@ export interface ProjectionHarness {
 	readonly authorities: IdentityAuthorities;
 	/** The operation authority the production adapter itself resolves against. */
 	readonly operations: IdentityAuthorities["operation"];
+	readonly notifyAccount: (event: TransportServerNotification) => void;
 }
 
 type FixtureComponents = ReturnType<typeof createCodexWorkbenchGenerationFixture>["components"];
 
 export interface HarnessOverrides {
+	readonly session?: Partial<FixtureComponents["session"]>;
+	readonly coordinator?: Partial<FixtureComponents["coordinator"]>;
 	/** The clock the authoritative re-read floor reads. */
 	readonly now?: () => number;
 	/** A live workhorse and queue, for the paths that read authoritative state. */
@@ -85,10 +88,11 @@ export interface HarnessOverrides {
 
 /** One production adapter over the generation fixture, with its live sources injectable. */
 export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionHarness {
-	const authorities = createIdentityAuthorities();
+	const fixture = createCodexWorkbenchGenerationFixture([]).components;
+	const authorities = fixture.identity;
+	const accountListeners = new Set<(event: TransportServerNotification) => void>();
 	const harnessLoginId = authorities.identity.decoder.adoptLoginId("login-readiness");
 	const harnessCommandId = authorities.identity.issuer.mintBrowserCommandId();
-	const fixture = createCodexWorkbenchGenerationFixture([]).components;
 	let coordinatorReady = false;
 	let facts = processFacts({ state: "starting", ready: false });
 	const voiceContext = overrides.voiceContext?.(authorities);
@@ -102,6 +106,7 @@ export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionH
 				authUrl: "https://example.test/login",
 			}),
 			accountLoginCancel: async () => ({ status: "canceled" as const }),
+			...overrides.session,
 		},
 		coordinator: {
 			...fixture.coordinator,
@@ -109,6 +114,7 @@ export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionH
 				...fixture.coordinator.snapshot(),
 				state: coordinatorReady ? ("ready" as const) : ("starting" as const),
 			}),
+			...overrides.coordinator,
 		},
 		workhorse: { ...fixture.workhorse, ...overrides.workhorse },
 		queue: { ...fixture.queue, ...overrides.queue },
@@ -146,6 +152,10 @@ export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionH
 		...(overrides.now === undefined ? {} : { now: overrides.now }),
 		contextForOperation: () => archboardContext,
 		onChange: () => () => undefined,
+		onAccountNotification: (listener) => {
+			accountListeners.add(listener);
+			return () => void accountListeners.delete(listener);
+		},
 	});
 	const link = executableLink(authorities);
 	return {
@@ -186,5 +196,8 @@ export function projectionHarness(overrides: HarnessOverrides = {}): ProjectionH
 		setCoordinatorReady: (value) => void (coordinatorReady = value),
 		authorities,
 		operations: components.identity.operation,
+		notifyAccount: (event) => {
+			for (const listener of accountListeners) listener(event);
+		},
 	};
 }

@@ -213,6 +213,9 @@ export function createBrowserSchemas(identity: IdentitySchemas, context: Identit
 				state: z.literal("pending"),
 				loginId: LoginIdSchema,
 				variant: SupportedLoginVariantSchema,
+				authUrl: SafeUrlSchema.refine(
+					(value) => URL.canParse(value) && new URL(value).protocol === "https:",
+				).nullable(),
 			})
 			.strict(),
 		z
