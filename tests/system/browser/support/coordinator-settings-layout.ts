@@ -2,6 +2,44 @@ import { expect } from "bun:test";
 
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 
+export async function assertSignedOutAccount(browser: AgentBrowserSession): Promise<void> {
+	const state = await browser.eval<{
+		options: string[];
+		selected: string | null;
+		buttons: string[];
+		width: number;
+		overflow: boolean;
+		textSizes: number[];
+	}>(`(() => {
+		const account = document.querySelector('[data-thread-link-account="signed_out"]');
+		const dialog = document.querySelector('[data-workbench-settings]');
+		if (!account || !dialog) throw new Error('Signed-out account settings are missing');
+		return {
+			options: [...account.querySelectorAll('[data-thread-link-form-option]')].map(node => node.getAttribute('data-thread-link-form-option')),
+			selected: account.querySelector('[data-thread-link-form-option]:checked, [data-thread-link-form-option][aria-checked="true"]')?.getAttribute('data-thread-link-form-option') ?? null,
+			buttons: [...account.querySelectorAll('button')].map(node => node.textContent.trim()),
+			width: dialog.getBoundingClientRect().width,
+			overflow: account.scrollWidth > account.clientWidth,
+			textSizes: [...account.querySelectorAll('p, label, legend, output')].filter(node => node.getBoundingClientRect().height > 0).map(node => parseFloat(getComputedStyle(node).fontSize)),
+		};
+	})()`);
+	expect(state.options[0]).toBe("chatgpt");
+	expect(state.selected).toBe("chatgpt");
+	expect(state.buttons).not.toContain("Cancel sign-in");
+	expect(state.buttons).not.toContain("Sign out");
+	expect(state.width).toBeGreaterThanOrEqual(600);
+	expect(state.overflow).toBe(false);
+	for (const size of state.textSizes) expect(size).toBeGreaterThanOrEqual(14);
+	await browser.run(["find", "role", "radio", "click", "--name", "API key", "--exact"]);
+	expect(
+		await browser.eval<boolean>(`!!document.querySelector('[data-thread-link-field="apiKey"]')`),
+	).toBe(true);
+	await browser.run(["find", "role", "radio", "click", "--name", "ChatGPT", "--exact"]);
+	expect(
+		await browser.eval<boolean>(`!!document.querySelector('[data-thread-link-field="apiKey"]')`),
+	).toBe(false);
+}
+
 /** The expanded settings must remain readable inside the production dialog. */
 export async function assertCoordinatorSettingsLayout(
 	browser: AgentBrowserSession,

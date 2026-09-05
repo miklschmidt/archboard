@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-04 22:09'
-updated_date: '2026-09-05 00:22'
+updated_date: '2026-09-05 00:38'
 labels: []
 dependencies: []
 references:
@@ -42,6 +42,8 @@ Before the real voice acceptance smoke, the user found decorative sidebar groups
 8. Redesign Agent settings as a concise connection flow: start an agent or choose an existing conversation, separate account settings, and replace internal prerequisite prose with one actionable unavailable reason.
 
 9. Repair the command authority bootstrap exposed by settings review at the shared transport boundary, preserving one-shot command identity and explicit selection; verify create and subsequent text actions without private browser lease setup.
+
+Simplify the signed-out account flow, make ChatGPT first and default, widen Agent settings, and verify provider selection and reachable account actions through the rendered dialog before rebuilding the smoke worktree.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -86,6 +88,12 @@ Final follow-up verification: lint, formatting, both TypeScript projects, 2532 m
 User screenshot exposed unreadable expanded Coordinator details: nested columns squeeze values to a few characters and repeat unavailable recovery prose per field. Reopened to simplify unavailable state and verify expanded available and unavailable settings at the actual dialog width.
 
 Expanded Coordinator details repaired after user screenshot: deleted repeated unavailable fields and nested section columns, retained published and partial facts in full-width rows, constrained dialog height with fixed header. The rendered regression failed before the fix with a 25.59px value column; final 1920x1080 unavailable dark and populated light captures pass readability, overflow and viewport checks. Focused shell-layout and production text browser owners pass, 22 coordinator/frame module tests pass, lint, formatting, both TypeScript projects and 124 repository checks pass. Independent Astra review found no actionable issues.
+
+User also reports most dialog text is barely readable. Increase settings typography for body copy, labels and title at normal desktop scale; verify computed rendered sizes instead of relying on token names.
+
+Inspection against the official base-nova registry confirms local Dialog and Button replace shadcn typography with forced custom 12px body, 14px title and 13px controls, while theme reset removes standard Tailwind tokens. User rejects preserving these styles. Remove the proposed scoped font workaround; use standard shadcn typography for touched settings components and retain the separate full-migration strict-lint prerequisite.
+
+Account follow-up complete: 640px dialog, ChatGPT first/default, state-specific account actions, full-width credential fields and no generic unsupported-method help dump. Removed forced legacy typography from shared Dialog/Button and tiny settings copy; restored standard Tailwind text-sm and text-base tokens rather than a local font override. Removed the legacy chip font override exposed by the broader control check. Rendered 1920x1080 checks verify first/default ChatGPT, provider switching, no idle Cancel/Sign out, 14px account copy, width and overflow. Shell, navigation, opener settings, text workbench, fullscreen and controlled voice browser owners pass. 90 focused tests plus chip test, lint/format/both TypeScript projects and 124 repository checks pass; independent Astra review clear. Full native-component and legacy-style migration remains TASK-150 with strict lint restoration first.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

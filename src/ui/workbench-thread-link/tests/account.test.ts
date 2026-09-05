@@ -12,8 +12,8 @@ import { capabilities, loginA, snapshot } from "./fixtures.js";
 
 /** The exact supported set, pinned to the type the transport draft admits. */
 const SUPPORTED = [
-	"apiKey",
 	"chatgpt",
+	"apiKey",
 	"amazonBedrock",
 	"amazonBedrockAccessKeys",
 ] as const satisfies readonly ThreadLinkAccountFormId[];
@@ -29,6 +29,7 @@ describe("Codex account forms", () => {
 		expect(THREAD_LINK_ACCOUNT_FORMS.map((form) => form.id)).toEqual([...SUPPORTED]);
 		expect(threadLinkAccountForm("apiKey").fields.map((field) => field.name)).toEqual(["apiKey"]);
 		expect(threadLinkAccountForm("chatgpt").fields).toEqual([]);
+		expect(threadLinkAccountForm("chatgpt").label).toBe("ChatGPT");
 		expect(threadLinkAccountForm("amazonBedrock").fields.map((field) => field.name)).toEqual([
 			"apiKey",
 			"region",
@@ -138,8 +139,8 @@ describe("Codex account disclosure", () => {
 		);
 		expect(details[0]).toBe("Codex did not answer account/read.");
 		expect(details[1]).toContain("Choose how to sign in.");
-		expect(details[2]).toContain("chatgpt sign-in");
-		expect(details[3]).toContain("Signed in with amazonBedrock.");
+		expect(details[2]).toContain("cancel to choose another method");
+		expect(details[3]).toContain("Signed in with Amazon Bedrock.");
 		expect(details[4]).toBe("Codex rejected the API key.");
 	});
 

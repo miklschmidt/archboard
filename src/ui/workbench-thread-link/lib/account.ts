@@ -18,42 +18,41 @@ import type {
  */
 export const THREAD_LINK_ACCOUNT_FORMS = [
 	{
+		id: "chatgpt",
+		label: "ChatGPT",
+		description: "Continue with your ChatGPT account.",
+		fields: [],
+	},
+	{
 		id: "apiKey",
 		label: "API key",
-		description: "Sign in with an OpenAI API key held by this Codex workbench.",
+		description: "Use an OpenAI API key.",
 		fields: [
 			{
 				name: "apiKey",
 				label: "API key",
-				description: "The OpenAI API key Codex authenticates with.",
+				description: "",
 				required: true,
 				secret: true,
 			},
 		],
 	},
 	{
-		id: "chatgpt",
-		label: "Hosted ChatGPT",
-		description:
-			"Sign in through the hosted ChatGPT flow. Codex opens it and reports progress here; this form has no fields to fill in.",
-		fields: [],
-	},
-	{
 		id: "amazonBedrock",
 		label: "Amazon Bedrock API key",
-		description: "Sign in to Amazon Bedrock with an explicit API key and region.",
+		description: "Enter your Amazon Bedrock API key and region.",
 		fields: [
 			{
 				name: "apiKey",
 				label: "Bedrock API key",
-				description: "The Amazon Bedrock API key.",
+				description: "",
 				required: true,
 				secret: true,
 			},
 			{
 				name: "region",
 				label: "Region",
-				description: "The Amazon Bedrock region, for example us-east-1.",
+				description: "For example, us-east-1.",
 				required: true,
 				secret: false,
 			},
@@ -63,33 +62,33 @@ export const THREAD_LINK_ACCOUNT_FORMS = [
 		id: "amazonBedrockAccessKeys",
 		label: "Amazon Bedrock access keys",
 		description:
-			"Sign in to Amazon Bedrock with explicit access keys. The session token is optional; the region is not.",
+			"Enter your AWS access keys and region. Add a session token for temporary credentials.",
 		fields: [
 			{
 				name: "accessKeyId",
 				label: "Access key ID",
-				description: "The AWS access key ID.",
+				description: "",
 				required: true,
 				secret: false,
 			},
 			{
 				name: "secretAccessKey",
 				label: "Secret access key",
-				description: "The AWS secret access key.",
+				description: "",
 				required: true,
 				secret: true,
 			},
 			{
 				name: "sessionToken",
 				label: "Session token (optional)",
-				description: "The AWS session token, when the credentials are temporary.",
+				description: "",
 				required: false,
 				secret: true,
 			},
 			{
 				name: "region",
 				label: "Region",
-				description: "The Amazon Bedrock region, for example us-east-1.",
+				description: "For example, us-east-1.",
 				required: true,
 				secret: false,
 			},
@@ -106,13 +105,13 @@ export const THREAD_LINK_UNAVAILABLE_ACCOUNT_METHODS = [
 		id: "chatgptDeviceCode",
 		label: "ChatGPT device code",
 		explanation:
-			"Unavailable: the device-code flow completes on another device, so this workbench cannot show or confirm its outcome. Use hosted ChatGPT instead.",
+			"Unavailable: the device-code flow completes on another device, so this workbench cannot show or confirm its outcome. Use ChatGPT instead.",
 	},
 	{
 		id: "chatgptAuthTokens",
 		label: "ChatGPT client tokens",
 		explanation:
-			"Unavailable: supplying access tokens and a workspace id directly would make the browser a credential source for the owned Codex session. Use hosted ChatGPT instead.",
+			"Unavailable: supplying access tokens and a workspace id directly would make the browser a credential source for the owned Codex session. Use ChatGPT instead.",
 	},
 	{
 		id: "amazonBedrockProfile",
@@ -200,9 +199,9 @@ function accountDetail(account: BrowserSnapshot["account"]): string {
 		case "signed_out":
 			return "Choose how to sign in.";
 		case "login_pending":
-			return `Codex is completing a ${account.variant} sign-in. Cancel it to choose another form.`;
+			return "Complete the sign-in in progress, or cancel to choose another method.";
 		case "ready":
-			return `Signed in with ${account.accountType === "chatgpt" ? "ChatGPT" : account.accountType}.`;
+			return `Signed in with ${account.accountType === "chatgpt" ? "ChatGPT" : account.accountType === "apiKey" ? "an OpenAI API key" : "Amazon Bedrock"}.`;
 		case "failed":
 			return account.reason;
 	}

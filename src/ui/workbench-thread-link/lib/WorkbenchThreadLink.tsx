@@ -54,7 +54,7 @@ function RecoveryControl({
 	if (recovery.intent === "retry_login")
 		return (
 			<a
-				className="inline-flex min-h-touch-target items-center !text-control font-medium text-foreground underline decoration-primary"
+				className="inline-flex min-h-touch-target items-center text-sm font-medium text-foreground underline decoration-primary"
 				data-thread-link-recovery={recovery.intent}
 				href={`#${accountSectionId}`}
 			>
@@ -97,7 +97,7 @@ function RecoveryList({
 						recovery={recovery}
 						tone="secondary"
 					/>
-					<span className="mt-compact block text-body text-muted-foreground">
+					<span className="mt-compact block text-sm text-muted-foreground">
 						{recovery.description}
 					</span>
 				</li>
@@ -132,12 +132,12 @@ function SelectionRows({
 					key={row.selectionId}
 				>
 					<div className="min-w-0">
-						<p className="m-0 font-mono text-technical text-foreground">{row.threadId}</p>
-						<p className="m-0 pt-compact text-body text-muted-foreground">
+						<p className="m-0 font-mono text-sm text-foreground">{row.threadId}</p>
+						<p className="m-0 pt-compact text-sm text-muted-foreground">
 							{row.outcome === "inspect_only" ? "Read only" : row.statusLabel}
 						</p>
 						{row.outcome === "inspect_only" ? (
-							<p className="m-0 pt-compact text-body text-muted-foreground">{row.reasonLabel}</p>
+							<p className="m-0 pt-compact text-sm text-muted-foreground">{row.reasonLabel}</p>
 						) : null}
 					</div>
 					<div className="min-w-0">
@@ -152,7 +152,7 @@ function SelectionRows({
 							{ROW_ACTION_LABELS[row.intent][row.outcome]}
 						</Button>
 						{row.blockedReason === null ? null : (
-							<span className="mt-compact block text-body text-muted-foreground">
+							<span className="mt-compact block text-sm text-muted-foreground">
 								{row.blockedReason}
 							</span>
 						)}
@@ -248,20 +248,20 @@ export function WorkbenchThreadLink({
 				<h2 className="sr-only" id={headingId}>
 					Connection
 				</h2>
-				<p className="m-0 text-body text-muted-foreground">{panel.currentLink.detail}</p>
+				<p className="m-0 text-sm text-muted-foreground">{panel.currentLink.detail}</p>
 				{panel.currentLink.threadId === null ? null : (
 					<details className="pt-control">
-						<summary className="flex min-h-touch-target cursor-pointer items-center text-body text-muted-foreground outline-none focus-visible:outline-2 focus-visible:outline-ring">
+						<summary className="flex min-h-touch-target cursor-pointer items-center text-sm text-muted-foreground outline-none focus-visible:outline-2 focus-visible:outline-ring">
 							Conversation details
 						</summary>
-						<p className="m-0 pb-control font-mono text-technical break-all">
+						<p className="m-0 pb-control font-mono text-sm break-all">
 							{panel.currentLink.threadId}
 						</p>
 					</details>
 				)}
 			</header>
 			{unavailableReason === null ? null : (
-				<output className="m-0 block pb-control text-body text-muted-foreground" id={readinessId}>
+				<output className="m-0 block pb-control text-sm text-muted-foreground" id={readinessId}>
 					{unavailableReason}
 				</output>
 			)}
@@ -277,7 +277,7 @@ export function WorkbenchThreadLink({
 					aria-label="Agent connection action"
 					aria-live="polite"
 					className={cn(
-						"mb-control block border-l-2 px-control py-control !text-body",
+						"mb-control block border-l-2 px-control py-control text-sm",
 						ACTION_CLASSES[panel.action.state],
 					)}
 					data-thread-link-action={panel.action.state}
@@ -319,7 +319,7 @@ export function WorkbenchThreadLink({
 				id={selectionId}
 			>
 				<div className="flex min-h-touch-target items-center justify-between gap-control pb-control">
-					<h3 className="m-0 text-body font-semibold">Existing conversations</h3>
+					<h3 className="m-0 text-sm font-semibold">Existing conversations</h3>
 					<RecoveryControl
 						accountSectionId={accountSectionId}
 						controller={controller}
@@ -328,7 +328,7 @@ export function WorkbenchThreadLink({
 						tone="quiet"
 					/>
 				</div>
-				<p className="m-0 pb-control text-body text-muted-foreground">{panel.selection.summary}</p>
+				<p className="m-0 pb-control text-sm text-muted-foreground">{panel.selection.summary}</p>
 				<SelectionRows controller={controller} rows={rows} />
 			</section>
 			<AccountSection

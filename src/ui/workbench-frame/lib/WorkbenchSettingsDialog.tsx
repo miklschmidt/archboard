@@ -139,7 +139,7 @@ export function WorkbenchSettingsDialog({
 				<div className="min-h-0 overflow-y-auto">
 					{panes.length > 1 ? (
 						<fieldset className="m-0 border-0 pb-region">
-							<legend className="p-0 text-kicker font-semibold text-muted-foreground">Pane</legend>
+							<legend className="p-0 text-sm font-semibold text-muted-foreground">Pane</legend>
 							<div className="mt-control flex flex-wrap gap-control">
 								{panes.map((pane) => (
 									<Button
@@ -157,7 +157,7 @@ export function WorkbenchSettingsDialog({
 						</fieldset>
 					) : null}
 					{activePane === null ? (
-						<p className="m-0 py-region text-body text-destructive" role="alert">
+						<p className="m-0 py-region text-sm text-destructive" role="alert">
 							The selected pane is no longer available. Choose another pane.
 						</p>
 					) : (
@@ -177,7 +177,7 @@ export function WorkbenchSettingsDialog({
 							>
 								<summary
 									ref={coordinatorRef}
-									className="flex min-h-touch-target cursor-pointer items-center justify-between text-body font-medium outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+									className="flex min-h-touch-target cursor-pointer items-center justify-between text-sm font-medium outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
 									<span>Coordinator details</span>
 									<RiArrowRightSLine

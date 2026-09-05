@@ -153,8 +153,8 @@ test(
 		})()`);
 		expect(conflictType).toMatchObject({
 			height: 44,
-			copySize: 13,
-			copyLineHeight: 18,
+			copySize: 14,
+			copyLineHeight: 20,
 			timeSize: 10,
 			timeLineHeight: 14,
 		});
