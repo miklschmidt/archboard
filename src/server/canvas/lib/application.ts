@@ -177,8 +177,7 @@ import {
 	type CanvasMutationLease,
 } from "./application-lifetime.js";
 import { narrateChange } from "../../../runtime/engine/changes.js";
-import { readLibrary, writeLibrary } from "../../../runtime/engine/library.js";
-import type { LibraryItem } from "../../../runtime/engine/library.js";
+import { registerLibraryRoutes } from "./library-routes.js";
 import { overlapsRegion } from "../../../runtime/engine/geometry.js";
 import {
 	AgentElementInputSchema,
@@ -4602,76 +4601,13 @@ app.get("/api/boards/compare", (req: Request, res: Response) => {
 // when a human drags it onto a canvas, and by then it has arrived through the
 // ordinary change-report path like anything else they drew.
 
-app.get("/api/library", (_req: Request, res: Response) => {
-	try {
-		const state = readLibrary();
-		res.json({
-			success: true,
-			items: state.items,
-			seeded: state.seeded,
-			origins: state.origins,
-			file: state.file,
-			vaultBacked: state.vaultBacked,
-		});
-	} catch (error) {
-		logger.error("Error reading library:", error);
-		res.status(500).json({ success: false, error: (error as Error).message });
-	}
-});
-
 // Replace the library. The browser sends the whole set because that is what
 // Excalidraw provides it — there is no library delta to be had — and last write
 // wins, which is honest for a palette two tabs are unlikely to edit at once.
 // The result is broadcast so the other tabs stop being the stale one.
-app.put("/api/library", (req: Request, res: Response) => {
-	try {
-		const body = z
-			.object({
-				items: z.array(
-					z.looseObject({
-						id: z.string(),
-						status: z.enum(["published", "unpublished"]).optional(),
-						elements: z.array(z.any()),
-						created: z.number().optional(),
-						name: z.string().optional(),
-					}),
-				),
-			})
-			.parse(req.body ?? {});
-
-		const items: LibraryItem[] = body.items.map((item) =>
-			Object.assign(
-				{
-					id: item.id,
-					status: item.status ?? "published",
-					elements: item.elements,
-					created: item.created ?? Date.now(),
-				},
-				item.name ? { name: item.name } : {},
-			),
-		);
-
-		const state = writeLibrary(items);
-		// Including the tab that sent it. It recognises its own write by content
-		// rather than by a client id, so there is no echo to suppress here.
-		broadcastBoardless({
-			type: "library_changed",
-			items: state.items,
-			timestamp: new Date().toISOString(),
-		});
-		res.json({
-			success: true,
-			count: state.items.length,
-			file: state.file,
-			vaultBacked: state.vaultBacked,
-		});
-	} catch (error) {
-		logger.error("Error writing library:", error);
-		res
-			.status(error instanceof z.ZodError ? 400 : 500)
-			.json({ success: false, error: (error as Error).message });
-	}
-});
+// Including the tab that sent it. It recognises its own write by content
+// rather than by a client id, so there is no echo to suppress here.
+registerLibraryRoutes(app, { notifyLibraryChanged: broadcastBoardless });
 
 // Serve the frontend
 app.get("/", (_req: Request, res: Response) => {
