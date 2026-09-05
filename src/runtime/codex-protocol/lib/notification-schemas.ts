@@ -47,6 +47,8 @@ import { codexIngressSchemas } from "./vendor-schema.js";
 
 const ThreadIdSchema = looseObject({ threadId: z.string() });
 const ThreadTurnSchema = looseObject({ threadId: z.string(), turn: TurnSchema });
+const StringArraySchema = z.array(z.string());
+const TrustedAccessVerificationArraySchema = z.array(z.literal("trustedAccessForCyber"));
 const TextDeltaSchema = looseObject({
 	threadId: z.string(),
 	turnId: z.string(),
@@ -178,7 +180,7 @@ const SERVER_NOTIFICATION_SCHEMAS = codexIngressSchemas<
 	"remoteControl/status/changed": RemoteControlStatusChangedSchema,
 	"externalAgentConfig/import/progress": ExternalAgentConfigImportProgressSchema,
 	"externalAgentConfig/import/completed": ExternalAgentConfigImportCompletedSchema,
-	"fs/changed": looseObject({ watchId: z.string(), changedPaths: z.array(z.string()) }),
+	"fs/changed": looseObject({ watchId: z.string(), changedPaths: StringArraySchema }),
 	"item/reasoning/summaryTextDelta": looseObject({
 		...TextDeltaSchema.shape,
 		summaryIndex: FiniteNumberSchema,
@@ -204,15 +206,15 @@ const SERVER_NOTIFICATION_SCHEMAS = codexIngressSchemas<
 	"model/verification": looseObject({
 		threadId: z.string(),
 		turnId: z.string(),
-		verifications: z.array(z.literal("trustedAccessForCyber")),
+		verifications: TrustedAccessVerificationArraySchema,
 	}),
 	"turn/moderationMetadata": TurnModerationMetadataSchema,
 	"model/safetyBuffering/updated": looseObject({
 		threadId: z.string(),
 		turnId: z.string(),
 		model: z.string(),
-		useCases: z.array(z.string()),
-		reasons: z.array(z.string()),
+		useCases: StringArraySchema,
+		reasons: StringArraySchema,
 		showBufferingUi: z.boolean(),
 		fasterModel: z.string().nullable(),
 	}),
@@ -270,7 +272,7 @@ const SERVER_NOTIFICATION_SCHEMAS = codexIngressSchemas<
 	"thread/realtime/error": looseObject({ threadId: z.string(), message: z.string() }),
 	"thread/realtime/closed": looseObject({ threadId: z.string(), reason: z.string().nullable() }),
 	"windows/worldWritableWarning": looseObject({
-		samplePaths: z.array(z.string()),
+		samplePaths: StringArraySchema,
 		extraCount: FiniteNumberSchema,
 		failedScan: z.boolean(),
 	}),
@@ -282,12 +284,11 @@ const SERVER_NOTIFICATION_SCHEMAS = codexIngressSchemas<
 	"account/login/completed": AccountLoginCompletedSchema,
 } as const);
 
-export { SERVER_NOTIFICATION_SCHEMAS };
-
-export const ServerNotificationEnvelopeSchema = z.strictObject({
+const ServerNotificationEnvelopeSchema = z.strictObject({
 	emittedAtMs: FiniteNumberSchema.optional(),
 	method: z.string(),
 	params: JsonObjectSchema,
 });
 
+export { SERVER_NOTIFICATION_SCHEMAS, ServerNotificationEnvelopeSchema };
 export type ServerNotificationSchemas = typeof SERVER_NOTIFICATION_SCHEMAS;
