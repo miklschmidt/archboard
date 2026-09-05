@@ -8,12 +8,16 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { z } from "zod";
+import path from "node:path";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
-import { heldReplaceScene, mergeScene } from "./fixtures/import-scenes.ts";
+import {
+	HeldReplaceReceiptSchema,
+	MergeReceiptSchema,
+	heldReplaceScene,
+	mergeScene,
+} from "./fixtures/import-scenes.ts";
 import { nonReadRecords, startCountingProxy } from "./support/counting-proxy.ts";
 import {
 	availablePort,
@@ -22,69 +26,33 @@ import {
 	sanitizedEnvironment,
 } from "./support/process-http.ts";
 
-const repoRoot = resolve(import.meta.dir, "../../..");
+const { join } = path;
+const repoRoot = path.resolve(import.meta.dir, "../../..");
 type ElementIdView = Pick<ExcalidrawElement, "id">;
-const ConflictSchema = z
-	.object({
-		board: z.string(),
-		file: z.string(),
-		reason: z.enum(["changed", "unseen"]),
-		expectedHash: z.string().optional(),
-		actualHash: z.string(),
-		lastReadAt: z.string().optional(),
-		fileModifiedAt: z.string().optional(),
-		versionMove: z.enum(["unchanged", "behind", "ahead", "unknown"]),
-		expectedVersion: z.number().optional(),
-		actualVersion: z.number().optional(),
-		outcomes: z.object({ reload: z.string(), overwrite: z.string(), saveAs: z.string() }).strict(),
-		message: z.string(),
-	})
-	.strict();
-const HeldSchema = z
-	.object({
-		board: z.string(),
-		since: z.string(),
-		writes: z.number().int().nonnegative(),
-		fromScreen: z.boolean(),
-		conflict: ConflictSchema,
-		message: z.string(),
-	})
-	.strict();
-const MergeReceiptSchema = z
-	.object({
-		success: z.literal(true),
-		imported: z.number().int().nonnegative(),
-		files: z.number().int().nonnegative(),
-		mode: z.literal("merge"),
-	})
-	.strict();
-const HeldReplaceReceiptSchema = z
-	.object({
-		success: z.literal(true),
-		imported: z.number().int().nonnegative(),
-		files: z.number().int().nonnegative(),
-		mode: z.literal("replace"),
-		held: HeldSchema,
-	})
-	.strict();
 
 test("merge and held replace each use one batch without advancing held persistence", async () => {
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-import-held-"));
-	resources.defer(() => rmSync(root, { recursive: true, force: true }));
+	resources.defer(() => {
+		rmSync(root, { recursive: true, force: true });
+	});
 	const vault = join(root, "vault");
 	const canvas = await startOwnedCanvas({
 		serverPath: join(repoRoot, "src/server.ts"),
 		vault,
 		env: sanitizedEnvironment(root, vault),
 	});
-	resources.defer(() => canvas.dispose());
+	resources.defer(async () => {
+		await canvas.dispose();
+	});
 	const proxy = await startCountingProxy({
 		port: await availablePort(),
 		upstream: canvas.base,
 		env: sanitizedEnvironment(root, vault),
 	});
-	resources.defer(() => proxy.dispose());
+	resources.defer(async () => {
+		await proxy.dispose();
+	});
 	const request = createJsonRequester(canvas);
 	try {
 		await request("/api/boards/new", { method: "POST", body: { board: "held" } });
@@ -111,12 +79,16 @@ test("merge and held replace each use one batch without advancing held persisten
 		});
 		const mergeWrites = nonReadRecords(await proxy.snapshot());
 		expect(mergeWrites).toHaveLength(1);
-		expect(mergeWrites[0]).toMatchObject({
+		const [mergeWrite] = mergeWrites;
+		if (mergeWrite === undefined) {
+			throw new Error("Merge did not produce its expected proxy write.");
+		}
+		expect(mergeWrite).toMatchObject({
 			method: "POST",
 			pathname: "/api/elements/batch",
 			query: "?board=held&doing=merging%20scene",
 		});
-		expect(Buffer.from(mergeWrites[0]!.bodyBase64, "base64").toString()).toBe(
+		expect(Buffer.from(mergeWrite.bodyBase64, "base64").toString()).toBe(
 			JSON.stringify({ elements: mergeScene.elements }),
 		);
 		const afterMerge = await request<{ elements: ElementIdView[] }>("/api/elements?board=held");
@@ -202,12 +174,16 @@ test("merge and held replace each use one batch without advancing held persisten
 		});
 		const replaceWrites = nonReadRecords(await proxy.snapshot());
 		expect(replaceWrites).toHaveLength(1);
-		expect(replaceWrites[0]).toMatchObject({
+		const [replaceWrite] = replaceWrites;
+		if (replaceWrite === undefined) {
+			throw new Error("Held replace did not produce its expected proxy write.");
+		}
+		expect(replaceWrite).toMatchObject({
 			method: "POST",
 			pathname: "/api/elements/batch",
 			query: "?board=held&doing=held%20replace",
 		});
-		expect(Buffer.from(replaceWrites[0]!.bodyBase64, "base64").toString()).toBe(
+		expect(Buffer.from(replaceWrite.bodyBase64, "base64").toString()).toBe(
 			JSON.stringify({
 				elements: heldReplaceScene.elements,
 				files: Object.values(heldReplaceScene.files),
@@ -216,9 +192,8 @@ test("merge and held replace each use one batch without advancing held persisten
 		);
 		expect(readFileSync(info.body.file)).toEqual(bytes);
 		expect(statSync(info.body.file).mtimeMs).toBe(mtime);
-		expect((await request<{ version: number }>("/api/boards/info?board=held")).body.version).toBe(
-			info.body.version,
-		);
+		const finalInfo = await request<{ version: number }>("/api/boards/info?board=held");
+		expect(finalInfo.body.version).toBe(info.body.version);
 		const held = await request<{ elements: ElementIdView[]; held: { writes: number } }>(
 			"/api/elements?board=held",
 		);
