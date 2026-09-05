@@ -1,8 +1,10 @@
 import type { CodexRealtimeBinding } from "./contract.js";
 
-export function sameRealtimeBinding(
-	left: CodexRealtimeBinding,
-	right: CodexRealtimeBinding,
+function sameRealtimeBinding(
+	// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Branded identity fields are immutable capabilities even though the rule cannot prove their nominal internals.
+	left: Readonly<CodexRealtimeBinding>,
+	// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Branded identity fields are immutable capabilities even though the rule cannot prove their nominal internals.
+	right: Readonly<CodexRealtimeBinding>,
 ): boolean {
 	return (
 		left.child === right.child &&
@@ -12,6 +14,8 @@ export function sameRealtimeBinding(
 	);
 }
 
-export function realtimeErrorMessage(error: unknown): string {
+function realtimeErrorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : "The Codex realtime request failed.";
 }
+
+export { realtimeErrorMessage, sameRealtimeBinding };
