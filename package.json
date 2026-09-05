@@ -105,5 +105,8 @@
 	"engines": {
 		"bun": ">=1.4.0"
 	},
-	"packageManager": "bun@1.4.0"
+	"packageManager": "bun@1.4.0",
+	"patchedDependencies": {
+		"@excalidraw/excalidraw@0.18.1": "patches/@excalidraw%2Fexcalidraw@0.18.1.patch"
+	}
 }
