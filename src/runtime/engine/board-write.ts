@@ -1,20 +1,12 @@
-// One request-local path from a board note to the next board note.
-//
 // The write-boundary middleware owns the lease and version precondition (ADR
 // 0016). This module runs synchronously inside that lease: it reads the source
 // note, validates and applies the whole mutation to an isolated copy, writes
 // the destination through board-io, records the change feed, tells the panes,
 // and shapes the HTTP answer. There is deliberately no await between the read
 // and the write (ADR 0015).
-
 import { isDeepStrictEqual } from "node:util";
 
-import {
-	type ExcalidrawFile,
-	type ElementsChangedMessage,
-	type ServerElement,
-	type WebSocketMessage,
-} from "./types.js";
+import { type ExcalidrawFile, type ServerElement, type WebSocketMessage } from "./types.js";
 import {
 	type AppliedElementInput,
 	applyElementInput,
@@ -50,6 +42,12 @@ import {
 import { usableDrawnFiles } from "./embedded-files.js";
 import logger from "./logger.js";
 import { EMPTY_CHECKOUT_SNAPSHOT, type CheckoutSnapshot } from "../code-target/index.js";
+import {
+	notificationDelta,
+	tellPanesAboutWrite,
+	tellPanesBestEffort,
+	type TellPanes,
+} from "./lib/board-write-notifications.js";
 
 export type WrittenNote = ReturnType<typeof writeBoardContent>;
 
@@ -131,53 +129,6 @@ export interface BoardWriteRequest<T> {
 	presentationLinks?: ReadonlyMap<string, PresentationContext>;
 }
 
-export type TellPanes = (message: WebSocketMessage, board: string) => void | PromiseLike<void>;
-
-interface PendingPaneNotification {
-	tellPanes: TellPanes;
-	message: WebSocketMessage;
-}
-
-const paneNotificationQueues = new Map<string, PendingPaneNotification[]>();
-const scheduledPaneNotifications = new Set<string>();
-
-function reportPaneNotificationFailure(board: string, error: unknown): void {
-	logger.warn(`Board "${board}" pane notification failed after the write boundary`, error);
-}
-
-function flushPaneNotifications(board: string): void {
-	scheduledPaneNotifications.delete(board);
-	const pending = paneNotificationQueues.get(board)?.splice(0) ?? [];
-	if (pending.length === 0) {
-		paneNotificationQueues.delete(board);
-		return;
-	}
-	for (const notification of pending) {
-		try {
-			Promise.resolve(notification.tellPanes(notification.message, board)).catch((error) =>
-				reportPaneNotificationFailure(board, error),
-			);
-		} catch (error) {
-			reportPaneNotificationFailure(board, error);
-		}
-	}
-	if ((paneNotificationQueues.get(board)?.length ?? 0) > 0) schedulePaneNotificationFlush(board);
-	else paneNotificationQueues.delete(board);
-}
-
-function schedulePaneNotificationFlush(board: string): void {
-	if (scheduledPaneNotifications.has(board)) return;
-	scheduledPaneNotifications.add(board);
-	queueMicrotask(() => flushPaneNotifications(board));
-}
-
-function tellPanesBestEffort(tellPanes: TellPanes, message: WebSocketMessage, board: string): void {
-	const queue = paneNotificationQueues.get(board) ?? [];
-	if (!paneNotificationQueues.has(board)) paneNotificationQueues.set(board, queue);
-	queue.push({ tellPanes, message });
-	schedulePaneNotificationFlush(board);
-}
-
 export class BoardMutationError extends Error {
 	constructor(
 		readonly status: number,
@@ -223,7 +174,11 @@ export function elementMutation<T>(
 		if (plan.replaceScene) content.files.clear();
 		const applied = applyElementInput(content.elements, {
 			...plan.input,
-			deletes: plan.wholeScene || plan.replaceScene ? [] : plan.input.deletes,
+			...(plan.wholeScene || plan.replaceScene
+				? { deletes: [] }
+				: plan.input.deletes === undefined
+					? {}
+					: { deletes: plan.input.deletes }),
 		});
 		const addedFiles = plan.addFiles
 			? usableDrawnFiles(content.elements.values(), plan.addFiles).filter(
@@ -249,8 +204,9 @@ export function elementMutation<T>(
 			requestedElements: applied.requested,
 			// When wholeScene is present this is a pane report. Empty deltas do not
 			// write, while a full report must replace the held copy even when empty.
-			write: plan.wholeScene === undefined ? undefined : plan.wholeScene || changed,
-			wholeScene: plan.wholeScene,
+			...(plan.wholeScene === undefined
+				? {}
+				: { write: plan.wholeScene || changed, wholeScene: plan.wholeScene }),
 		};
 	};
 }
@@ -291,7 +247,7 @@ function persist<T>(
 	let written: WrittenNote;
 	try {
 		written = writeBoardContent(target.board, content, {
-			force: request.save?.force,
+			...(request.save?.force === undefined ? {} : { force: request.save.force }),
 			saveCommand:
 				target.key === request.source.key ? "board save" : `board save --as ${target.key}`,
 		});
@@ -361,77 +317,6 @@ function releaseSavedHold<T>(
 		{ type: "board_released", hold: report, outcome, ...sourceDocument } as WebSocketMessage,
 		request.source.key,
 	);
-}
-
-function tellPanesAboutWrite(
-	tellPanes: TellPanes,
-	target: BoardWriteTarget,
-	delta: BoardWriteDelta,
-	clientId: string | null,
-	timestamp: string,
-	checkoutSnapshot: CheckoutSnapshot,
-	presentationLinks: ReadonlyMap<string, PresentationContext> | undefined,
-): void {
-	const opaqueTargets = presentationLinks
-		? new Map(
-				[...presentationLinks].flatMap(([id, context]) =>
-					context.opaqueTarget === undefined ? [] : [[id, context.opaqueTarget] as const],
-				),
-			)
-		: undefined;
-	const message: ElementsChangedMessage = {
-		type: "elements_changed",
-		created: presentElements(delta.created, {
-			boardKey: target.key,
-			checkoutSnapshot,
-			opaqueTargets,
-		}),
-		updated: presentElements(delta.updated, {
-			boardKey: target.key,
-			checkoutSnapshot,
-			opaqueTargets,
-		}),
-		deleted: delta.deleted,
-		origin: clientId,
-		timestamp,
-	};
-	tellPanesBestEffort(tellPanes, message, target.key);
-
-	if (delta.filesAdded && delta.filesAdded.length > 0) {
-		tellPanesBestEffort(tellPanes, { type: "files_added", files: delta.filesAdded }, target.key);
-	}
-	if (delta.filesReplaced) {
-		tellPanesBestEffort(
-			tellPanes,
-			{ type: "files_replaced", files: delta.filesReplaced },
-			target.key,
-		);
-	}
-	for (const fileId of delta.filesDeleted ?? []) {
-		tellPanesBestEffort(tellPanes, { type: "file_deleted", fileId }, target.key);
-	}
-}
-
-function notificationDelta(
-	before: ReadonlyMap<string, ServerElement>,
-	after: ReadonlyMap<string, ServerElement>,
-	files: BoardWriteDelta,
-): BoardWriteDelta {
-	const created: ServerElement[] = [];
-	const updated: ServerElement[] = [];
-	for (const [id, element] of after) {
-		const existing = before.get(id);
-		if (!existing) created.push(element);
-		else if (!isDeepStrictEqual(existing, element)) updated.push(element);
-	}
-	return {
-		created,
-		updated,
-		deleted: [...before.keys()].filter((id) => !after.has(id)),
-		...(files.filesAdded ? { filesAdded: files.filesAdded } : {}),
-		...(files.filesDeleted ? { filesDeleted: files.filesDeleted } : {}),
-		...(files.filesReplaced ? { filesReplaced: files.filesReplaced } : {}),
-	};
 }
 
 /**
@@ -611,3 +496,5 @@ function boardFingerprint(
 		version: content.version ?? null,
 	};
 }
+
+export type { TellPanes };

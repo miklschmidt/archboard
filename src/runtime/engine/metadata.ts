@@ -13,6 +13,14 @@ interface ElementMetadata {
 	foreign: Record<string, unknown>;
 }
 
+interface ElementMetadataCarrier {
+	readonly customData?: unknown;
+}
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+	return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
 const TRACKING_KEYS = [
 	"createdAt",
 	"updatedAt",
@@ -65,12 +73,12 @@ function stripUntrustedTrackingClaims(value: Record<string, unknown>): Record<st
 	return cleaned;
 }
 
-function customDataOf(element: RuntimeBoardElement): Record<string, unknown> {
+function customDataOf(element: ElementMetadataCarrier): Readonly<Record<string, unknown>> {
 	const custom = element.customData;
-	return custom && typeof custom === "object" && !Array.isArray(custom) ? custom : {};
+	return isRecord(custom) ? custom : {};
 }
 
-function envelopeOf(element: RuntimeBoardElement): PersistedArchboardEnvelope | undefined {
+function envelopeOf(element: ElementMetadataCarrier): PersistedArchboardEnvelope | undefined {
 	const candidate = customDataOf(element)["archboard"];
 	return candidate && typeof candidate === "object" && !Array.isArray(candidate)
 		? (candidate as PersistedArchboardEnvelope)
@@ -79,7 +87,7 @@ function envelopeOf(element: RuntimeBoardElement): PersistedArchboardEnvelope | 
 
 // ADR 0003 makes the namespace the boundary. Tracking is storage bookkeeping,
 // not semantic metadata, and is deliberately filtered from every caller.
-function readElementMetadata(element: RuntimeBoardElement): ElementMetadata {
+function readElementMetadata(element: ElementMetadataCarrier): ElementMetadata {
 	const values = customDataOf(element);
 	const envelope = envelopeOf(element);
 	let archboard: ArchboardElementMetadata | undefined;
