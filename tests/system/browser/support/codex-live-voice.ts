@@ -1,8 +1,9 @@
 import { writeFileSync } from "node:fs";
 
-import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
+import { pollUntil } from "./agent-browser.ts";
+import type { AgentBrowserSession } from "./agent-browser.ts";
 
-export interface ControlledVoiceMediaAudit {
+interface ControlledVoiceMediaAudit {
 	readonly localTracks: readonly { readonly enabled: boolean; readonly stopCount: number }[];
 	readonly remoteTracks: readonly { readonly stopCount: number }[];
 	readonly peers: readonly { readonly closeCount: number; readonly connectionState: string }[];
@@ -10,6 +11,7 @@ export interface ControlledVoiceMediaAudit {
 	readonly attachedAudioElements: number;
 	readonly playCount: number;
 }
+type BrowserOperator = Readonly<Pick<AgentBrowserSession, "eval" | "run">>;
 
 const CONTROLLED_MEDIA_SOURCE = String.raw`
 (() => {
@@ -148,24 +150,29 @@ const CONTROLLED_MEDIA_SOURCE = String.raw`
 })();
 `;
 
-export async function openWithControlledVoiceMedia(
-	browser: AgentBrowserSession,
+async function openWithControlledVoiceMedia(
+	browser: BrowserOperator,
 	url: string,
 	initScriptPath: string,
 ): Promise<void> {
 	writeFileSync(initScriptPath, CONTROLLED_MEDIA_SOURCE);
 	await browser.run(["--init-script", initScriptPath, "open", url]);
 	await pollUntil(
-		() => browser.eval<boolean>("Boolean(globalThis.__archboardControlledVoiceMedia)"),
+		async () => {
+			const installed = await browser.eval<boolean>(
+				"Boolean(globalThis.__archboardControlledVoiceMedia)",
+			);
+			return installed;
+		},
 		(installed) => installed,
 		"the controlled voice media shim to install before the first document",
 	);
 }
 
-export function readControlledVoiceMediaAudit(
-	browser: AgentBrowserSession,
+async function readControlledVoiceMediaAudit(
+	browser: BrowserOperator,
 ): Promise<ControlledVoiceMediaAudit> {
-	return browser.eval<ControlledVoiceMediaAudit>(`(() => {
+	const audit = await browser.eval<ControlledVoiceMediaAudit>(`(() => {
 		const audit = globalThis.__archboardControlledVoiceMedia;
 		if (!audit) throw new Error('Controlled voice media was not installed.');
 		return {
@@ -177,4 +184,11 @@ export function readControlledVoiceMediaAudit(
 			playCount: audit.playCount,
 		};
 	})()`);
+	return audit;
 }
+
+export {
+	openWithControlledVoiceMedia,
+	readControlledVoiceMediaAudit,
+	type ControlledVoiceMediaAudit,
+};
