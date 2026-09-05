@@ -5,6 +5,10 @@
 @import "shadcn/tailwind.css";
 @import "tw-animate-css";
 
+/* Vite's root is `frontend/`, which is where Tailwind would otherwise look for
+   class names. Every class lives under `src/ui`, one level up from here. */
+@source "../";
+
 /* Excalidraw keeps its vendor CSS. It stays unlayered, so it wins over
    Tailwind's layered preflight and utilities inside the mounted canvas. */
 @import "@excalidraw/excalidraw/index.css";
@@ -84,6 +88,17 @@
 	--radius-2xl: calc(var(--radius) * 1.8);
 	--radius-3xl: calc(var(--radius) * 2.2);
 	--radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* The lowercase wordmark: the one generated Onest path, consumed as a mask so
+   it takes the current text colour in either theme. 85×13 px, as audited. */
+@utility wordmark {
+	display: inline-block;
+	width: 85.7815px;
+	height: 13.209px;
+	background-color: currentColor;
+	-webkit-mask: url("../shell/assets/archboard-wordmark.svg") center / contain no-repeat;
+	mask: url("../shell/assets/archboard-wordmark.svg") center / contain no-repeat;
 }
 
 /* Light: chalk white, pale stone panels, near-black text, cobalt selection. */
