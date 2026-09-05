@@ -10,7 +10,7 @@ import type {
 } from "../../codex-session/index.js";
 import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
 
-export class FakeSession {
+class FakeSession {
 	readonly calls: Array<{ readonly method: string; readonly params: unknown }> = [];
 	readonly threadListPages = new Map<string | null, SessionThreadPageResult>();
 	readonly loadedListPages = new Map<string | null, SessionLoadedThreadPageResult>();
@@ -88,23 +88,25 @@ function page<T>(pages: ReadonlyMap<string | null, T>, cursor: string | null, la
 	return value;
 }
 
-export function threadPage(
+function threadPage(
 	data: readonly SessionThread[],
 	nextCursor: string | null = null,
 ): SessionThreadPageResult {
 	return { data, nextCursor, backwardsCursor: null } as SessionThreadPageResult;
 }
 
-export function loadedPage(
+function loadedPage(
 	data: readonly ThreadId[],
 	nextCursor: string | null = null,
 ): SessionLoadedThreadPageResult {
 	return { data, nextCursor };
 }
 
-export function turnPage(
+function turnPage(
 	data: readonly SessionTurn[],
 	nextCursor: string | null = null,
 ): SessionThreadTurnPageResult {
 	return { data, nextCursor, backwardsCursor: null } as SessionThreadTurnPageResult;
 }
+
+export { FakeSession, threadPage, loadedPage, turnPage };

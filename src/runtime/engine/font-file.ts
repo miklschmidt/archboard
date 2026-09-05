@@ -89,7 +89,7 @@ const KNOWN_TAGS = [
 ];
 
 /** A cursor over big-endian font data. Every table format below is one. */
-export class Reader {
+class Reader {
 	readonly b: Buffer;
 	p: number;
 
@@ -143,13 +143,13 @@ interface DirectoryEntry {
 	transformLength: number | null;
 }
 
-export interface FontTable {
+interface FontTable {
 	buf: Buffer;
 	transformVersion: number;
 }
 
 /** The tables of one woff2 file, decompressed and cut apart. */
-export function readWoff2(path: string): Record<string, FontTable> {
+function readWoff2(path: string): Record<string, FontTable> {
 	const buf = readFileSync(path);
 	if (buf.length < 48 || buf.toString("ascii", 0, 4) !== "wOF2") {
 		throw new Error(`${path} is not a woff2 file`);
@@ -200,7 +200,7 @@ export function readWoff2(path: string): Record<string, FontTable> {
 	return tables;
 }
 
-export interface ParsedFont {
+interface ParsedFont {
 	unitsPerEm: number;
 	numGlyphs: number;
 	/** Advance width in font units, indexed by glyph id. */
@@ -212,7 +212,7 @@ export interface ParsedFont {
 }
 
 /** One font file, reduced to what measuring a string needs. */
-export function parseFont(path: string): ParsedFont {
+function parseFont(path: string): ParsedFont {
 	const tables = readWoff2(path);
 	for (const required of ["head", "maxp", "hhea", "hmtx", "cmap"]) {
 		if (!tables[required]) {
@@ -368,3 +368,5 @@ function parseCmap(buf: Buffer): Map<number, number> {
 
 	throw new Error(`cmap format ${format} is not one this reader knows`);
 }
+
+export { Reader, type FontTable, readWoff2, type ParsedFont, parseFont };

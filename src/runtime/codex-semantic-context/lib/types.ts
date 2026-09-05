@@ -6,28 +6,24 @@ import type {
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
 
-export type SemanticChangeOrigin = "human" | "agent" | "mixed";
-export type SemanticChangeSignificance = "layout" | "structural" | "cosmetic";
-export type SemanticBriefSource =
-	| "settled_change"
-	| "pane_focus"
-	| "pane_selection"
-	| "fresh_brief";
-export type SemanticThreadLinkState = "executable" | "inspect_only" | "unbound";
-export type SemanticClaimHolder = "human" | "agent" | "none";
-export type SemanticPublisherPort = "settled_change" | "pane_focus" | "pane_selection";
+type SemanticChangeOrigin = "human" | "agent" | "mixed";
+type SemanticChangeSignificance = "layout" | "structural" | "cosmetic";
+type SemanticBriefSource = "settled_change" | "pane_focus" | "pane_selection" | "fresh_brief";
+type SemanticThreadLinkState = "executable" | "inspect_only" | "unbound";
+type SemanticClaimHolder = "human" | "agent" | "none";
+type SemanticPublisherPort = "settled_change" | "pane_focus" | "pane_selection";
 
-export type SemanticUnsubscribe = () => void;
+type SemanticUnsubscribe = () => void;
 
-export interface SemanticCursor {
+interface SemanticCursor {
 	readonly feedId: string;
 	readonly sequence: number;
 }
 
-export type SemanticCursorInput = SemanticCursor;
+type SemanticCursorInput = SemanticCursor;
 
 /** The settled fields consumed from the existing change feed. */
-export interface SettledChangeSourceEvent {
+interface SettledChangeSourceEvent {
 	readonly cursor: number;
 	readonly board: string;
 	readonly at: string;
@@ -37,53 +33,53 @@ export interface SettledChangeSourceEvent {
 }
 
 /** The one settled-change callback the existing change feed provides. */
-export interface SettledChangeSource {
+interface SettledChangeSource {
 	readonly onChange: (listener: (event: SettledChangeSourceEvent) => void) => SemanticUnsubscribe;
 }
 
 /** A source adapter for immediate pane telemetry. It owns no settle timer. */
-export interface PaneSignalSource {
+interface PaneSignalSource {
 	readonly onFocus: (listener: (input: SemanticContextInput) => void) => SemanticUnsubscribe;
 	readonly onSelection: (listener: (input: SemanticContextInput) => void) => SemanticUnsubscribe;
 }
 
 /** A board/context reader used only by the on-demand fresh-brief port. */
-export interface FreshBriefSource {
+interface FreshBriefSource {
 	readonly read: () => SemanticContextInput;
 }
 
-export interface SemanticBoardInput {
+interface SemanticBoardInput {
 	readonly key: string;
 	readonly note: string;
 	readonly version: number | null;
 }
 
-export interface SemanticPaneInput {
+interface SemanticPaneInput {
 	readonly paneId: string;
 	readonly focused: boolean;
 }
 
-export interface SemanticThreadLinkInput {
+interface SemanticThreadLinkInput {
 	readonly state: SemanticThreadLinkState;
 	readonly reason: string | null;
 }
 
-export interface SemanticWorkhorseInput {
+interface SemanticWorkhorseInput {
 	readonly threadId: ThreadId | null;
 	readonly turnId: TurnId | null;
 }
 
-export interface SemanticCoordinatorInput {
+interface SemanticCoordinatorInput {
 	readonly threadId: ThreadId | null;
 	readonly realtimeSessionId: RealtimeSessionId | null;
 }
 
-export interface SemanticChildInput {
+interface SemanticChildInput {
 	readonly id: ChildId | null;
 	readonly epoch: ChildEpoch | null;
 }
 
-export interface SemanticClaimInput {
+interface SemanticClaimInput {
 	readonly holder: SemanticClaimHolder;
 	readonly doing: string | null;
 }
@@ -95,7 +91,7 @@ export interface SemanticClaimInput {
  * port. The publisher never receives board elements and never stores a board
  * document.
  */
-export interface SemanticContextInput {
+interface SemanticContextInput {
 	readonly repository: string;
 	readonly child?: SemanticChildInput;
 	readonly threadLink?: SemanticThreadLinkInput;
@@ -113,53 +109,53 @@ export interface SemanticContextInput {
 	readonly staleReasons?: readonly string[];
 }
 
-export interface SemanticBoard {
+interface SemanticBoard {
 	readonly key: string;
 	readonly note: string;
 }
 
-export interface SemanticPane {
+interface SemanticPane {
 	readonly paneId: string;
 	readonly focused: boolean;
 }
 
-export interface SemanticThreadLink {
+interface SemanticThreadLink {
 	readonly state: SemanticThreadLinkState;
 	readonly reason: string | null;
 }
 
-export interface SemanticWorkhorse {
+interface SemanticWorkhorse {
 	readonly threadId: ThreadId | null;
 	readonly turnId: TurnId | null;
 }
 
-export interface SemanticCoordinator {
+interface SemanticCoordinator {
 	readonly threadId: ThreadId | null;
 	readonly realtimeSessionId: RealtimeSessionId | null;
 }
 
-export interface SemanticChild {
+interface SemanticChild {
 	readonly id: ChildId | null;
 	readonly epoch: ChildEpoch | null;
 }
 
-export interface SemanticClaim {
+interface SemanticClaim {
 	readonly holder: SemanticClaimHolder;
 	readonly doing: string | null;
 }
 
-export interface SemanticFreshness {
+interface SemanticFreshness {
 	readonly capturedAtMs: number;
 	readonly freshUntilMs: number;
 	readonly state: "fresh" | "stale";
 }
 
-export interface SemanticStaleness {
+interface SemanticStaleness {
 	readonly state: "current" | "stale";
 	readonly reasons: readonly string[];
 }
 
-export interface SemanticBriefFields {
+interface SemanticBriefFields {
 	readonly source: SemanticBriefSource;
 	readonly origin: SemanticChangeOrigin | null;
 	readonly feedId: string;
@@ -185,7 +181,7 @@ export interface SemanticBriefFields {
 	readonly bytes: number;
 }
 
-export interface SettledSemanticChangeEvent extends SemanticBriefFields {
+interface SettledSemanticChangeEvent extends SemanticBriefFields {
 	readonly kind: "settled_change";
 	readonly change: {
 		readonly feedId: string;
@@ -198,7 +194,7 @@ export interface SettledSemanticChangeEvent extends SemanticBriefFields {
 	};
 }
 
-export interface PaneFocusEvent extends SemanticBriefFields {
+interface PaneFocusEvent extends SemanticBriefFields {
 	readonly kind: "pane_focus";
 	readonly focus: {
 		readonly paneId: string;
@@ -207,16 +203,16 @@ export interface PaneFocusEvent extends SemanticBriefFields {
 	};
 }
 
-export interface PaneSelectionEvent extends SemanticBriefFields {
+interface PaneSelectionEvent extends SemanticBriefFields {
 	readonly kind: "pane_selection";
 	readonly selectionCapturedAtMs: number;
 }
 
-export interface FreshSemanticBrief extends SemanticBriefFields {
+interface FreshSemanticBrief extends SemanticBriefFields {
 	readonly kind: "fresh_brief";
 }
 
-export interface SemanticListenerFailure {
+interface SemanticListenerFailure {
 	readonly port: SemanticPublisherPort;
 	readonly eventKind: SemanticBrief["kind"];
 	readonly listenerIndex: number;
@@ -224,12 +220,12 @@ export interface SemanticListenerFailure {
 	readonly message: string;
 }
 
-export interface SemanticListenerFailureBatch {
+interface SemanticListenerFailureBatch {
 	readonly entries: readonly SemanticListenerFailure[];
 	readonly droppedCount: number;
 }
 
-export interface SemanticListenerDiagnosticPolicy {
+interface SemanticListenerDiagnosticPolicy {
 	/** Maximum number of oldest failure entries retained before a drain. */
 	readonly maxEntries: number;
 	/** Maximum UTF-8 bytes of the JSON string token used for an error name. */
@@ -240,13 +236,13 @@ export interface SemanticListenerDiagnosticPolicy {
 	readonly maxBatchBytes: number;
 }
 
-export type SemanticBrief =
+type SemanticBrief =
 	| SettledSemanticChangeEvent
 	| PaneFocusEvent
 	| PaneSelectionEvent
 	| FreshSemanticBrief;
 
-export interface SemanticContextPublisherOptions {
+interface SemanticContextPublisherOptions {
 	readonly feed: SettledChangeSource;
 	/** Feed identity makes a cursor from one process distinct after restart. */
 	readonly feedId: string;
@@ -257,7 +253,7 @@ export interface SemanticContextPublisherOptions {
 	readonly now?: () => number;
 }
 
-export interface SemanticContextPublisher {
+interface SemanticContextPublisher {
 	readonly subscribeSettledChange: (
 		listener: (event: SettledSemanticChangeEvent) => void,
 	) => SemanticUnsubscribe;
@@ -274,3 +270,47 @@ export interface SemanticContextPublisher {
 	readonly drainListenerFailures: () => SemanticListenerFailureBatch;
 	readonly dispose: () => void;
 }
+
+export {
+	type SemanticChangeOrigin,
+	type SemanticChangeSignificance,
+	type SemanticBriefSource,
+	type SemanticThreadLinkState,
+	type SemanticClaimHolder,
+	type SemanticPublisherPort,
+	type SemanticUnsubscribe,
+	type SemanticCursor,
+	type SemanticCursorInput,
+	type SettledChangeSourceEvent,
+	type SettledChangeSource,
+	type PaneSignalSource,
+	type FreshBriefSource,
+	type SemanticBoardInput,
+	type SemanticPaneInput,
+	type SemanticThreadLinkInput,
+	type SemanticWorkhorseInput,
+	type SemanticCoordinatorInput,
+	type SemanticChildInput,
+	type SemanticClaimInput,
+	type SemanticContextInput,
+	type SemanticBoard,
+	type SemanticPane,
+	type SemanticThreadLink,
+	type SemanticWorkhorse,
+	type SemanticCoordinator,
+	type SemanticChild,
+	type SemanticClaim,
+	type SemanticFreshness,
+	type SemanticStaleness,
+	type SemanticBriefFields,
+	type SettledSemanticChangeEvent,
+	type PaneFocusEvent,
+	type PaneSelectionEvent,
+	type FreshSemanticBrief,
+	type SemanticListenerFailure,
+	type SemanticListenerFailureBatch,
+	type SemanticListenerDiagnosticPolicy,
+	type SemanticBrief,
+	type SemanticContextPublisherOptions,
+	type SemanticContextPublisher,
+};

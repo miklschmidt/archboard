@@ -8,10 +8,7 @@ import {
 	type CoordinatorSnapshot,
 } from "./contract.js";
 
-export function emptySnapshot(
-	state: "unbound" | "failed",
-	reason: string | null,
-): CoordinatorSnapshot {
+function emptySnapshot(state: "unbound" | "failed", reason: string | null): CoordinatorSnapshot {
 	return Object.freeze({
 		state,
 		threadId: null,
@@ -31,7 +28,7 @@ export function emptySnapshot(
 	});
 }
 
-export function startingSnapshot(
+function startingSnapshot(
 	threadId: CoordinatorSnapshot["threadId"],
 	childId: CoordinatorSnapshot["childId"],
 	epoch: CoordinatorSnapshot["epoch"],
@@ -49,14 +46,14 @@ export function startingSnapshot(
 	});
 }
 
-export function failedSnapshot(
+function failedSnapshot(
 	reason: string,
 	configured: CoordinatorConfiguredSettings | null,
 ): CoordinatorSnapshot {
 	return Object.freeze({ ...emptySnapshot("failed", reason), configured });
 }
 
-export function inspectSnapshot(
+function inspectSnapshot(
 	threadId: CoordinatorSnapshot["threadId"],
 	operationId: string | null,
 	configured: CoordinatorConfiguredSettings,
@@ -83,7 +80,7 @@ export function inspectSnapshot(
 	});
 }
 
-export function readySnapshot(persistence: CoordinatorPersistedState): CoordinatorSnapshot {
+function readySnapshot(persistence: CoordinatorPersistedState): CoordinatorSnapshot {
 	return Object.freeze({
 		state: "ready" as const,
 		threadId: persistence.threadId,
@@ -103,11 +100,11 @@ export function readySnapshot(persistence: CoordinatorPersistedState): Coordinat
 	});
 }
 
-export function freezePersistence(value: CoordinatorPersistedState): CoordinatorPersistedState {
+function freezePersistence(value: CoordinatorPersistedState): CoordinatorPersistedState {
 	return deepFreeze(structuredClone(value));
 }
 
-export function sameValue(left: unknown, right: unknown): boolean {
+function sameValue(left: unknown, right: unknown): boolean {
 	if (Object.is(left, right)) {
 		return true;
 	}
@@ -130,11 +127,11 @@ export function sameValue(left: unknown, right: unknown): boolean {
 	return false;
 }
 
-export function errorMessage(error: unknown): string {
+function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : "unknown error";
 }
 
-export function coordinatorError(
+function coordinatorError(
 	error: unknown,
 	code: ConstructorParameters<typeof CodexCoordinatorError>[0],
 	prefix: string,
@@ -158,3 +155,15 @@ function deepFreeze<Value>(value: Value): Value {
 	}
 	return Object.freeze(value);
 }
+
+export {
+	emptySnapshot,
+	startingSnapshot,
+	failedSnapshot,
+	inspectSnapshot,
+	readySnapshot,
+	freezePersistence,
+	sameValue,
+	errorMessage,
+	coordinatorError,
+};

@@ -18,19 +18,19 @@ const packageSchema = z.object({
 	bin: z.object({ archboard: z.string() }),
 });
 
-export const checkoutRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
-export const packageRecord = packageSchema.parse(
+const checkoutRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
+const packageRecord = packageSchema.parse(
 	JSON.parse(readFileSync(join(checkoutRoot, "package.json"), "utf8")),
 );
-export const packageBin = resolve(checkoutRoot, packageRecord.bin.archboard);
+const packageBin = resolve(checkoutRoot, packageRecord.bin.archboard);
 
-export interface PackageRunOptions {
+interface PackageRunOptions {
 	url?: string;
 	input?: string;
 	cwd?: string;
 }
 
-export interface PackageRunResult {
+interface PackageRunResult {
 	command: readonly string[];
 	cwd: string;
 	status: number | null;
@@ -50,7 +50,7 @@ const resultSchema = z.object({
 	events: z.array(z.string()),
 });
 
-export function packageFailure(result: PackageRunResult): string {
+function packageFailure(result: PackageRunResult): string {
 	return [
 		`command: ${result.command.join(" ")}`,
 		`cwd: ${result.cwd}`,
@@ -61,7 +61,7 @@ export function packageFailure(result: PackageRunResult): string {
 	].join("\n");
 }
 
-export interface PackageCliOwner {
+interface PackageCliOwner {
 	readonly outside: string;
 	readonly home: string;
 	readonly state: string;
@@ -87,7 +87,7 @@ const clearedEnvironment = {
 	ARCHBOARD_SETTLE_MAX_MS: undefined,
 } as const;
 
-export function createPackageCliOwner(): PackageCliOwner {
+function createPackageCliOwner(): PackageCliOwner {
 	const outside = mkdtempSync(join(tmpdir(), "archboard-package-cli-"));
 	const home = join(outside, "home");
 	const state = join(outside, "state");
@@ -222,3 +222,14 @@ export function createPackageCliOwner(): PackageCliOwner {
 		[Symbol.asyncDispose]: dispose,
 	};
 }
+
+export {
+	checkoutRoot,
+	packageRecord,
+	packageBin,
+	type PackageRunOptions,
+	type PackageRunResult,
+	packageFailure,
+	type PackageCliOwner,
+	createPackageCliOwner,
+};

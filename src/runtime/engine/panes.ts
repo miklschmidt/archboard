@@ -21,7 +21,7 @@ import { type BoardIdentity, boardKey, parseBoardKey } from "./board.js";
 import { nameSelection } from "./describe.js";
 
 /** A rectangle. Page coordinates for `rect`, scene coordinates for `viewport`. */
-export interface Rect {
+interface Rect {
 	x: number;
 	y: number;
 	width: number;
@@ -36,7 +36,7 @@ export interface Rect {
  * scene rather than a restatement of server state: if a pane were somehow
  * rendering a board the server did not think it had, this would say so.
  */
-export interface PaneRegistration {
+interface PaneRegistration {
 	/** The pane's identity to the server: also its websocket and selection key. */
 	clientId: string;
 	/** Stable within the tab, and what the human sees on the pane tab. */
@@ -61,7 +61,7 @@ export interface PaneRegistration {
 	at: string;
 }
 
-export interface PaneSelection {
+interface PaneSelection {
 	count: number;
 	/** Capped: a select-all must not make this report expensive. */
 	elementIds: string[];
@@ -73,7 +73,7 @@ export interface PaneSelection {
 	at: string | null;
 }
 
-export interface PaneReport {
+interface PaneReport {
 	paneId: string;
 	clientId: string;
 	/** 1-based, in reading order. */
@@ -92,7 +92,7 @@ export interface PaneReport {
 	at: string;
 }
 
-export type Arrangement =
+type Arrangement =
 	| "none"
 	| "single"
 	| "side-by-side"
@@ -105,7 +105,7 @@ export type Arrangement =
 	 */
 	| "overlapping";
 
-export interface PanesReport {
+interface PanesReport {
 	paneCount: number;
 	arrangement: Arrangement;
 	/** paneId of the pane the user last interacted with. */
@@ -118,7 +118,7 @@ export interface PanesReport {
 }
 
 /** What the report needs from the server, without importing the server. */
-export interface PaneContext {
+interface PaneContext {
 	/** The identity the board registry holds for a key, if it holds one. */
 	identity(board: string): BoardIdentity | null;
 	/** The board's elements — used only to name what is selected, never listed. */
@@ -228,7 +228,7 @@ function placeOf(
  * agree about which one "right" is, and they can only be guaranteed to agree
  * by asking the same function.
  */
-export function panesInOrder(
+function panesInOrder(
 	registrations: PaneRegistration[],
 ): Array<{ pane: PaneRegistration; position: number; place: string }> {
 	const ordered = [...registrations].toSorted(readingOrder);
@@ -259,7 +259,7 @@ const PANE_SPECS =
  * because the message that says "no such pane" has to know whether making one
  * is still possible.
  */
-export const MAX_PANES = 2;
+const MAX_PANES = 2;
 
 /**
  * A pane's place, in a sentence.
@@ -267,12 +267,12 @@ export const MAX_PANES = 2;
  * `place` is a phrase, not a word — "left", but also "the only pane" — so
  * dropping it into "in the ... pane" produced "in the the only pane pane".
  */
-export function paneWords(place: string): string {
+function paneWords(place: string): string {
 	return place.startsWith("the ") ? place : `the ${place} pane`;
 }
 
 /** The command that makes a pane, said the same way everywhere it is offered. */
-export const HOW_TO_OPEN_A_PANE =
+const HOW_TO_OPEN_A_PANE =
 	"Open one with `archboard browser open`, which splits the live canvas and answers with the pane it made.";
 
 /**
@@ -283,7 +283,7 @@ export const HOW_TO_OPEN_A_PANE =
  * notice, but so is saying which half, and a canvas that quietly ignores the
  * half you asked for teaches you to stop trusting the flag.
  */
-export function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneRegistration {
+function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneRegistration {
 	const ordered = panesInOrder(registrations);
 	if (ordered.length === 0) {
 		throw new Error(
@@ -337,7 +337,7 @@ export function resolvePaneSpec(registrations: PaneRegistration[], spec: string)
  * No pane at all is not a refusal: nothing is on screen, so a board can be
  * loaded without being shown.
  */
-export function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
+function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
 	const ordered = panesInOrder(registrations);
 	if (ordered.length === 0) {
 		return null;
@@ -421,10 +421,7 @@ function paneLine(pane: PaneReport): string {
  * that has something selected, one pass over its board to name it — not over
  * the elements themselves, which never appear here.
  */
-export function buildPanesReport(
-	registrations: PaneRegistration[],
-	context: PaneContext,
-): PanesReport {
+function buildPanesReport(registrations: PaneRegistration[], context: PaneContext): PanesReport {
 	const ordered = panesInOrder(registrations).map((entry) => entry.pane);
 	const places = panesInOrder(registrations).map((entry) => entry.place);
 	const arrangement = arrangementOf(ordered);
@@ -532,3 +529,20 @@ export function buildPanesReport(
 		text: lines.join("\n"),
 	};
 }
+
+export {
+	type Rect,
+	type PaneRegistration,
+	type PaneSelection,
+	type PaneReport,
+	type Arrangement,
+	type PanesReport,
+	type PaneContext,
+	panesInOrder,
+	MAX_PANES,
+	paneWords,
+	HOW_TO_OPEN_A_PANE,
+	resolvePaneSpec,
+	soloPane,
+	buildPanesReport,
+};

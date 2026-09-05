@@ -12,9 +12,9 @@ import {
 import { ThreadItemSchema } from "./item-schemas.js";
 import { FiniteNumberSchema, looseObject } from "./scalars.js";
 
-export const TurnItemsViewSchema = z.enum(["notLoaded", "summary", "full"]);
+const TurnItemsViewSchema = z.enum(["notLoaded", "summary", "full"]);
 
-export const TurnSchema = z.lazy(() =>
+const TurnSchema = z.lazy(() =>
 	looseObject({
 		id: z.string(),
 		items: z.array(ThreadItemSchema),
@@ -27,7 +27,7 @@ export const TurnSchema = z.lazy(() =>
 	}),
 );
 
-export const ThreadSchema = z.lazy(() =>
+const ThreadSchema = z.lazy(() =>
 	looseObject({
 		id: z.string(),
 		extra: z.strictObject({}).nullable(),
@@ -63,7 +63,7 @@ export const ThreadSchema = z.lazy(() =>
 	}),
 );
 
-export const ThreadTimelineEntrySchema = z.discriminatedUnion("type", [
+const ThreadTimelineEntrySchema = z.discriminatedUnion("type", [
 	looseObject({
 		type: z.literal("item"),
 		position: FiniteNumberSchema,
@@ -93,35 +93,50 @@ export const ThreadTimelineEntrySchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
-export const ThreadRealtimeTimelineStateSchema = looseObject({
+const ThreadRealtimeTimelineStateSchema = looseObject({
 	data: z.array(ThreadTimelineEntrySchema),
 	nextCursor: z.string().nullable(),
 	activeRealtimeSessionAtPageStart: z.string().nullable(),
 });
 
-export const ThreadItemPageSchema = looseObject({
+const ThreadItemPageSchema = looseObject({
 	data: z.array(looseObject({ turnId: z.string(), item: ThreadItemSchema })),
 	nextCursor: z.string().nullable(),
 	backwardsCursor: z.string().nullable(),
 });
 
-export const ThreadTurnPageSchema = looseObject({
+const ThreadTurnPageSchema = looseObject({
 	data: z.array(TurnSchema),
 	nextCursor: z.string().nullable(),
 	backwardsCursor: z.string().nullable(),
 });
 
-export const ThreadPageSchema = looseObject({
+const ThreadPageSchema = looseObject({
 	data: z.array(ThreadSchema),
 	nextCursor: z.string().nullable(),
 	backwardsCursor: z.string().nullable(),
 });
 
-export const LoadedThreadPageSchema = looseObject({
+const LoadedThreadPageSchema = looseObject({
 	data: z.array(z.string()),
 	nextCursor: z.string().nullable(),
 });
 
-export const ThreadReadSchema = looseObject({ thread: ThreadSchema });
-export const TurnStartSchema = looseObject({ turn: TurnSchema });
-export const QueueStartSchema = looseObject({ turn: TurnSchema });
+const ThreadReadSchema = looseObject({ thread: ThreadSchema });
+const TurnStartSchema = looseObject({ turn: TurnSchema });
+const QueueStartSchema = looseObject({ turn: TurnSchema });
+
+export {
+	TurnItemsViewSchema,
+	TurnSchema,
+	ThreadSchema,
+	ThreadTimelineEntrySchema,
+	ThreadRealtimeTimelineStateSchema,
+	ThreadItemPageSchema,
+	ThreadTurnPageSchema,
+	ThreadPageSchema,
+	LoadedThreadPageSchema,
+	ThreadReadSchema,
+	TurnStartSchema,
+	QueueStartSchema,
+};

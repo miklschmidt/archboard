@@ -4,9 +4,9 @@ import { finite, type ExactBox, type ExactPoint } from "./geometry.js";
 import type { SnapshotRecord } from "./input-snapshot.js";
 
 const MAX_ANALYZABLE_SEGMENT_COMPONENT = Math.sqrt(Number.MAX_VALUE) / 2;
-export const ELBOW_POINT_COMPONENT_LIMIT = 1_000_000 as const;
+const ELBOW_POINT_COMPONENT_LIMIT = 1_000_000 as const;
 
-export interface DecodedRecord {
+interface DecodedRecord {
 	readonly raw: SnapshotRecord | null;
 	readonly sourceIndex: number;
 	readonly live: boolean;
@@ -20,7 +20,7 @@ export interface DecodedRecord {
 	readonly extentRepresentable: boolean;
 }
 
-export type ValueKind =
+type ValueKind =
 	| "undefined"
 	| "null"
 	| "array"
@@ -32,7 +32,7 @@ export type ValueKind =
 	| "function"
 	| "object";
 
-export const kindOf = (value: unknown): ValueKind => {
+const kindOf = (value: unknown): ValueKind => {
 	if (value === undefined) {
 		return "undefined";
 	}
@@ -45,7 +45,7 @@ export const kindOf = (value: unknown): ValueKind => {
 	return typeof value as ValueKind;
 };
 
-export function stableDescription(value: unknown): string {
+function stableDescription(value: unknown): string {
 	const kind = kindOf(value);
 	if (kind === "string") {
 		return JSON.stringify(String(value).slice(0, 80));
@@ -56,7 +56,7 @@ export function stableDescription(value: unknown): string {
 	return kind;
 }
 
-export function decodeRecords(
+function decodeRecords(
 	records: readonly (SnapshotRecord | null)[],
 	blockedSourceIndexes: ReadonlySet<number> = new Set(),
 ): DecodedRecord[] {
@@ -126,7 +126,7 @@ export function decodeRecords(
 	});
 }
 
-export type PathDecode =
+type PathDecode =
 	| {
 			ok: true;
 			relativePoints: ExactPoint[];
@@ -160,7 +160,7 @@ export type PathDecode =
 			scenePoints: ExactPoint[];
 	  };
 
-export type PersistedConnectorPointChainEligibility =
+type PersistedConnectorPointChainEligibility =
 	| { readonly eligible: true }
 	| {
 			readonly eligible: false;
@@ -173,7 +173,7 @@ export type PersistedConnectorPointChainEligibility =
 	| { readonly eligible: false; readonly issue: "malformed-elbowed" }
 	| { readonly eligible: false; readonly issue: "fixed-segments-without-elbow" };
 
-export function decodePath(record: DecodedRecord): PathDecode {
+function decodePath(record: DecodedRecord): PathDecode {
 	const raw = record.raw;
 	if (!raw || !("points" in raw) || raw.points === undefined) {
 		return { ok: false, issue: "missing" };
@@ -243,7 +243,7 @@ export function decodePath(record: DecodedRecord): PathDecode {
 	return { ok: true, relativePoints, scenePoints, zeroSegments };
 }
 
-export function persistedConnectorPointChainEligibility(
+function persistedConnectorPointChainEligibility(
 	record: DecodedRecord,
 	decoded: Extract<PathDecode, { ok: true }>,
 ): PersistedConnectorPointChainEligibility {
@@ -279,3 +279,16 @@ export function persistedConnectorPointChainEligibility(
 	}
 	return { eligible: true };
 }
+
+export {
+	ELBOW_POINT_COMPONENT_LIMIT,
+	type DecodedRecord,
+	type ValueKind,
+	kindOf,
+	stableDescription,
+	decodeRecords,
+	type PathDecode,
+	type PersistedConnectorPointChainEligibility,
+	decodePath,
+	persistedConnectorPointChainEligibility,
+};

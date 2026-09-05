@@ -5,7 +5,7 @@ import { dialogSnapshot } from "./opener-settings.ts";
 
 type ShellTheme = "light" | "dark";
 
-export function roleAction(
+function roleAction(
 	browser: AgentBrowserSession,
 	role: string,
 	name: string,
@@ -14,15 +14,11 @@ export function roleAction(
 	return browser.run(["find", "role", role, action, "--name", name, "--exact"]);
 }
 
-export function fillLabel(
-	browser: AgentBrowserSession,
-	label: string,
-	value: string,
-): Promise<string> {
+function fillLabel(browser: AgentBrowserSession, label: string, value: string): Promise<string> {
 	return browser.run(["find", "label", label, "fill", value, "--exact"]);
 }
 
-export async function setTheme(browser: AgentBrowserSession, theme: ShellTheme): Promise<void> {
+async function setTheme(browser: AgentBrowserSession, theme: ShellTheme): Promise<void> {
 	const current = await browser.eval<string | null>(
 		"document.querySelector('.shell')?.getAttribute('data-theme') ?? null",
 	);
@@ -39,9 +35,7 @@ export async function setTheme(browser: AgentBrowserSession, theme: ShellTheme):
 	);
 }
 
-export async function assertDialogClosedAndFocusReturned(
-	browser: AgentBrowserSession,
-): Promise<void> {
+async function assertDialogClosedAndFocusReturned(browser: AgentBrowserSession): Promise<void> {
 	await pollUntil(
 		() => dialogSnapshot(browser),
 		(value) => value === null,
@@ -53,3 +47,5 @@ export async function assertDialogClosedAndFocusReturned(
 		),
 	).toBe(true);
 }
+
+export { roleAction, fillLabel, setTheme, assertDialogClosedAndFocusReturned };

@@ -1,6 +1,6 @@
 import type { ArchboardContext } from "../../../../runtime/codex-instructions/index.js";
 
-export const CODEX_WORKBENCH_COMPONENT_ORDER = [
+const CODEX_WORKBENCH_COMPONENT_ORDER = [
 	"identity",
 	"epoch",
 	"transport",
@@ -21,7 +21,7 @@ export const CODEX_WORKBENCH_COMPONENT_ORDER = [
 	"gateway",
 ] as const;
 
-export const generationContextFixture: ArchboardContext = {
+const generationContextFixture: ArchboardContext = {
 	schema: 1,
 	paneId: "pane-fixture",
 	board: { note: "vault/fixture.md", version: 1, cursor: null },
@@ -41,3 +41,5 @@ export const generationContextFixture: ArchboardContext = {
 	ambiguity: [],
 	operation: { id: null, kind: null, rpc: null, outcome: null },
 };
+
+export { CODEX_WORKBENCH_COMPONENT_ORDER, generationContextFixture };

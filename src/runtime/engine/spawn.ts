@@ -17,7 +17,6 @@ import {
 	markCanvasIdentityVerified,
 } from "./canvas-client.js";
 
-export { foreignServiceError };
 import { readPidFile, removePidFile } from "./pidfile.js";
 import {
 	resolveProjectCodexExecutable,
@@ -34,7 +33,7 @@ import {
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
-export function canvasPort(): number {
+function canvasPort(): number {
 	try {
 		const url = new URL(EXPRESS_SERVER_URL);
 		return parseInt(url.port, 10) || (url.protocol === "https:" ? 443 : 80);
@@ -138,11 +137,11 @@ function heldCanvasError(health: Awaited<ReturnType<typeof healthOrNull>>): Erro
 
 // True only for a /health payload from OUR canvas server (v1.1+ identity
 // marker). Anything else answering the port is a foreign service.
-export function isCanvasHealth(health: { service?: string } | null): boolean {
+function isCanvasHealth(health: { service?: string } | null): boolean {
 	return health?.service === CANVAS_SERVICE_NAME;
 }
 
-export interface EnsureResult {
+interface EnsureResult {
 	url: string;
 	spawned: boolean;
 }
@@ -160,7 +159,7 @@ export interface EnsureResult {
  * the losing process exit, and every caller here only proceeds once /health
  * answers.
  */
-export async function ensureCanvasRunning(
+async function ensureCanvasRunning(
 	options: { timeoutMs?: number; force?: boolean } = {},
 ): Promise<EnsureResult> {
 	const timeoutMs = options.timeoutMs ?? CANVAS_STARTUP_READINESS_MS;
@@ -334,7 +333,7 @@ export async function ensureCanvasRunning(
 	);
 }
 
-export interface StopResult {
+interface StopResult {
 	stopped: boolean;
 	pid?: number;
 	message: string;
@@ -346,7 +345,7 @@ export interface StopResult {
  * as this canvas service. A stale pidfile is cleaned up, never killed —
  * recycled pids and unrelated apps squatting on the port are safe.
  */
-export async function stopCanvas(): Promise<StopResult> {
+async function stopCanvas(): Promise<StopResult> {
 	const port = canvasPort();
 	const filePid = readPidFile(port);
 	const health = await healthOrNull(2000);
@@ -401,3 +400,13 @@ export async function stopCanvas(): Promise<StopResult> {
 
 	throw new Error(`Canvas server (pid ${pid}) did not stop within 5s.`);
 }
+
+export {
+	foreignServiceError,
+	canvasPort,
+	isCanvasHealth,
+	type EnsureResult,
+	ensureCanvasRunning,
+	type StopResult,
+	stopCanvas,
+};

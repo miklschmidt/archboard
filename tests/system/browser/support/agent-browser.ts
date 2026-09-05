@@ -7,9 +7,9 @@ import {
 	TEST_BROWSER_POLL_MS,
 } from "../../../../src/shared/timing/timing.ts";
 
-export const BROWSER_ADAPTER_PATH = "tests/system/browser/run-browser-lane.ts";
+const BROWSER_ADAPTER_PATH = "tests/system/browser/run-browser-lane.ts";
 
-export const BROWSER_TEST_PATHS = [
+const BROWSER_TEST_PATHS = [
 	"tests/system/browser/fixed-point-document.test.ts",
 	"tests/system/browser/malformed-geometry-recovery.test.ts",
 	"tests/system/browser/pane-telemetry-recovery.test.ts",
@@ -30,33 +30,33 @@ export const BROWSER_TEST_PATHS = [
 	"tests/system/browser/codex-live-voice.test.ts",
 ] as const;
 
-export const OPT_IN_BROWSER_TEST_PATHS = [
+const OPT_IN_BROWSER_TEST_PATHS = [
 	"tests/system/browser/human-edit-performance.test.ts",
 	"tests/system/browser/live-session-convergence.test.ts",
 ] as const;
 
-export type BrowserTestPath =
+type BrowserTestPath =
 	| (typeof BROWSER_TEST_PATHS)[number]
 	| (typeof OPT_IN_BROWSER_TEST_PATHS)[number];
-export const HUMAN_PERFORMANCE_BROWSER_OWNER = OPT_IN_BROWSER_TEST_PATHS[0];
-export const CI_EXCLUDED_BROWSER_OWNERS_ENV = "ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS";
+const HUMAN_PERFORMANCE_BROWSER_OWNER = OPT_IN_BROWSER_TEST_PATHS[0];
+const CI_EXCLUDED_BROWSER_OWNERS_ENV = "ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS";
 const CI_EXCLUDED_BROWSER_OWNERS_VALUE = "all";
-export interface BrowserSelection {
+interface BrowserSelection {
 	mode: "package" | "opt-in" | "focus" | "opt-in-focus";
 	files: BrowserTestPath[];
 	testName?: string;
 }
-export interface BrowserTestRoots {
+interface BrowserTestRoots {
 	laneRoot: string;
 	ownerRoot: string;
 }
-export interface PollOptions {
+interface PollOptions {
 	timeoutMs?: number;
 	intervalMs?: number;
 }
-export type TestEnvironment = Readonly<Record<string, string | undefined>>;
+type TestEnvironment = Readonly<Record<string, string | undefined>>;
 
-export function runCanvasCli(base: string, vault: string, args: string[]): string {
+function runCanvasCli(base: string, vault: string, args: string[]): string {
 	const repoRoot = resolve(import.meta.dir, "../../../..");
 	const result = spawnSync(
 		"timeout",
@@ -120,7 +120,7 @@ function selectionError(message: string): never {
 	);
 }
 
-export function validateBrowserSelection(argv: readonly string[]): BrowserSelection {
+function validateBrowserSelection(argv: readonly string[]): BrowserSelection {
 	if (argv[0] !== "bun" || argv[1] !== BROWSER_ADAPTER_PATH) {
 		selectionError(`Browser lane must start with \`bun ${BROWSER_ADAPTER_PATH}\`.`);
 	}
@@ -190,7 +190,7 @@ export function validateBrowserSelection(argv: readonly string[]): BrowserSelect
 	return { mode, files: selected as BrowserTestPath[], ...(testName ? { testName } : {}) };
 }
 
-export function browserOwnerCommandArguments(file: BrowserTestPath, testName?: string): string[] {
+function browserOwnerCommandArguments(file: BrowserTestPath, testName?: string): string[] {
 	const exactPattern = testName
 		? `^${testName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`
 		: undefined;
@@ -204,7 +204,7 @@ export function browserOwnerCommandArguments(file: BrowserTestPath, testName?: s
 	];
 }
 
-export function applyCiBrowserOwnerExclusion(
+function applyCiBrowserOwnerExclusion(
 	selection: BrowserSelection,
 	environment: Readonly<Record<string, string | undefined>>,
 ): BrowserSelection {
@@ -240,7 +240,7 @@ function inside(parent: string, child: string): boolean {
 	return step === "" || (!step.startsWith("..") && !isAbsolute(step));
 }
 
-export function browserTestRoots(): BrowserTestRoots {
+function browserTestRoots(): BrowserTestRoots {
 	const laneRoot = process.env["ARCHBOARD_TEST_BROWSER_LANE_ROOT"];
 	const ownerRoot = process.env["ARCHBOARD_TEST_BROWSER_OWNER_ROOT"];
 	if (!laneRoot || !ownerRoot) {
@@ -255,7 +255,7 @@ export function browserTestRoots(): BrowserTestRoots {
 	return { laneRoot, ownerRoot };
 }
 
-export function browserTestEnvironment(): Record<string, string> {
+function browserTestEnvironment(): Record<string, string> {
 	const env: Record<string, string> = {
 		LANG: "C.UTF-8",
 		LC_ALL: "C.UTF-8",
@@ -273,9 +273,7 @@ export function browserTestEnvironment(): Record<string, string> {
 	return env;
 }
 
-export function canvasTestEnvironment(
-	values: TestEnvironment = {},
-): Record<string, string | undefined> {
+function canvasTestEnvironment(values: TestEnvironment = {}): Record<string, string | undefined> {
 	const env: Record<string, string | undefined> = browserTestEnvironment();
 	env["LOG_FILE_PATH"] = join(browserTestRoots().ownerRoot, "canvas.log");
 	for (const name of CLEARED_CANVAS_ENV) {
@@ -300,7 +298,7 @@ function valueForDiagnostic(value: unknown): string {
 	}
 }
 
-export async function pollUntil<T>(
+async function pollUntil<T>(
 	read: () => T | Promise<T>,
 	accepts: (value: T) => boolean,
 	description: string,
@@ -324,7 +322,7 @@ export async function pollUntil<T>(
 	throw new Error(`Timed out waiting for ${description}; last value: ${valueForDiagnostic(last)}`);
 }
 
-export function browserCleanupObservationMs(idleTimeout: string): number {
+function browserCleanupObservationMs(idleTimeout: string): number {
 	const idleTimeoutMs = Number(idleTimeout);
 	if (!Number.isFinite(idleTimeoutMs) || idleTimeoutMs < 0) {
 		throw new Error(`Invalid owned agent-browser idle timeout: ${idleTimeout}`);
@@ -332,7 +330,7 @@ export function browserCleanupObservationMs(idleTimeout: string): number {
 	return idleTimeoutMs + TEST_BROWSER_POLL_MS;
 }
 
-export function registerCanvasBase(base: string): void {
+function registerCanvasBase(base: string): void {
 	const url = new URL(base);
 	if (url.protocol !== "http:" || url.hostname !== "127.0.0.1" || !url.port) {
 		throw new Error(`Owned canvas base is not an explicit loopback listener: ${base}`);
@@ -383,7 +381,7 @@ function namespaceArtifacts(socketDir: string): string[] {
 	return found.toSorted();
 }
 
-export interface AgentBrowserSession extends AsyncDisposable {
+interface AgentBrowserSession extends AsyncDisposable {
 	readonly session: string;
 	readonly namespace: string;
 	readonly socketDir: string;
@@ -393,12 +391,12 @@ export interface AgentBrowserSession extends AsyncDisposable {
 	close(): Promise<void>;
 }
 
-export interface BrowserCommandOptions {
+interface BrowserCommandOptions {
 	readonly stdin?: string;
 	readonly timeoutMs?: number;
 }
 
-export async function createAgentBrowser(): Promise<AgentBrowserSession> {
+async function createAgentBrowser(): Promise<AgentBrowserSession> {
 	const roots = browserTestRoots();
 	const env = browserTestEnvironment();
 	const session = requiredEnvironment("AGENT_BROWSER_SESSION");
@@ -545,3 +543,29 @@ export async function createAgentBrowser(): Promise<AgentBrowserSession> {
 		[Symbol.asyncDispose]: cleanup,
 	};
 }
+
+export {
+	BROWSER_ADAPTER_PATH,
+	BROWSER_TEST_PATHS,
+	OPT_IN_BROWSER_TEST_PATHS,
+	type BrowserTestPath,
+	HUMAN_PERFORMANCE_BROWSER_OWNER,
+	CI_EXCLUDED_BROWSER_OWNERS_ENV,
+	type BrowserSelection,
+	type BrowserTestRoots,
+	type PollOptions,
+	type TestEnvironment,
+	runCanvasCli,
+	validateBrowserSelection,
+	browserOwnerCommandArguments,
+	applyCiBrowserOwnerExclusion,
+	browserTestRoots,
+	browserTestEnvironment,
+	canvasTestEnvironment,
+	pollUntil,
+	browserCleanupObservationMs,
+	registerCanvasBase,
+	type AgentBrowserSession,
+	type BrowserCommandOptions,
+	createAgentBrowser,
+};

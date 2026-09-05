@@ -1,11 +1,11 @@
 import { readFileSync, readdirSync } from "node:fs";
 
-export interface ProcessIdentity {
+interface ProcessIdentity {
 	readonly pid: number;
 	readonly startTime: string;
 }
 
-export interface ProcessGroupIdentity {
+interface ProcessGroupIdentity {
 	readonly group: number;
 	readonly leader: ProcessIdentity;
 }
@@ -35,11 +35,11 @@ function processRecord(pid: number): ProcessRecord {
 	return { identity: { pid, startTime }, group };
 }
 
-export function processIdentity(pid: number): ProcessIdentity {
+function processIdentity(pid: number): ProcessIdentity {
 	return processRecord(pid).identity;
 }
 
-export function processIdentityExists(identity: ProcessIdentity): boolean {
+function processIdentityExists(identity: ProcessIdentity): boolean {
 	try {
 		return processIdentity(identity.pid).startTime === identity.startTime;
 	} catch (cause) {
@@ -50,7 +50,7 @@ export function processIdentityExists(identity: ProcessIdentity): boolean {
 	}
 }
 
-export function processIdentityOwnsGroup(identity: ProcessIdentity, group: number): boolean {
+function processIdentityOwnsGroup(identity: ProcessIdentity, group: number): boolean {
 	try {
 		const record = processRecord(identity.pid);
 		return record.identity.startTime === identity.startTime && record.group === group;
@@ -62,7 +62,7 @@ export function processIdentityOwnsGroup(identity: ProcessIdentity, group: numbe
 	}
 }
 
-export function captureDetachedProcessGroup(leaderPid: number): ProcessGroupIdentity {
+function captureDetachedProcessGroup(leaderPid: number): ProcessGroupIdentity {
 	const record = processRecord(leaderPid);
 	if (record.group <= 0 || record.group !== leaderPid) {
 		throw new Error(
@@ -72,7 +72,7 @@ export function captureDetachedProcessGroup(leaderPid: number): ProcessGroupIden
 	return { group: record.group, leader: record.identity };
 }
 
-export function processGroupExists(group: number): boolean {
+function processGroupExists(group: number): boolean {
 	try {
 		process.kill(-group, 0);
 		return true;
@@ -84,10 +84,7 @@ export function processGroupExists(group: number): boolean {
 	}
 }
 
-export function signalOwnedProcessGroup(
-	identity: ProcessGroupIdentity,
-	signal: NodeJS.Signals,
-): boolean {
+function signalOwnedProcessGroup(identity: ProcessGroupIdentity, signal: NodeJS.Signals): boolean {
 	if (!processGroupExists(identity.group)) {
 		return false;
 	}
@@ -107,7 +104,7 @@ export function signalOwnedProcessGroup(
 	}
 }
 
-export function processGroupHasOtherMember(identity: ProcessGroupIdentity): boolean {
+function processGroupHasOtherMember(identity: ProcessGroupIdentity): boolean {
 	if (!processIdentityOwnsGroup(identity.leader, identity.group)) {
 		throw new Error(
 			`Process group ${identity.group} lost its recorded leader before membership inspection.`,
@@ -133,3 +130,15 @@ export function processGroupHasOtherMember(identity: ProcessGroupIdentity): bool
 	}
 	return false;
 }
+
+export {
+	type ProcessIdentity,
+	type ProcessGroupIdentity,
+	processIdentity,
+	processIdentityExists,
+	processIdentityOwnsGroup,
+	captureDetachedProcessGroup,
+	processGroupExists,
+	signalOwnedProcessGroup,
+	processGroupHasOtherMember,
+};

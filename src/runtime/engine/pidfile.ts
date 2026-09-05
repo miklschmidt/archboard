@@ -3,13 +3,13 @@ import path from "path";
 import logger from "./logger.js";
 import { stateDir } from "./state-dir.js";
 
-export function pidFilePath(port: number): string {
+function pidFilePath(port: number): string {
 	return path.join(stateDir(), `server-${port}.pid`);
 }
 
 // Written by the canvas server once it is actually listening, so `stop` and
 // stale-process checks work for both auto-spawned and manually started servers.
-export function writePidFile(port: number, pid: number): void {
+function writePidFile(port: number, pid: number): void {
 	try {
 		const file = pidFilePath(port);
 		fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -19,7 +19,7 @@ export function writePidFile(port: number, pid: number): void {
 	}
 }
 
-export function readPidFile(port: number): number | null {
+function readPidFile(port: number): number | null {
 	try {
 		const raw = fs.readFileSync(pidFilePath(port), "utf-8").trim();
 		const pid = parseInt(raw, 10);
@@ -29,10 +29,12 @@ export function readPidFile(port: number): number | null {
 	}
 }
 
-export function removePidFile(port: number): void {
+function removePidFile(port: number): void {
 	try {
 		fs.unlinkSync(pidFilePath(port));
 	} catch {
 		/* already gone */
 	}
 }
+
+export { pidFilePath, writePidFile, readPidFile, removePidFile };

@@ -1,4 +1,4 @@
-export interface ExecutableBunInvocation {
+interface ExecutableBunInvocation {
 	command: "run" | "test";
 	args: string[];
 	error?: string;
@@ -376,7 +376,7 @@ function testInvocation(args: string[]): ExecutableBunInvocation {
 	return { command: "test", args };
 }
 
-export function executableBunInvocations(command: string): ExecutableBunInvocation[] {
+function executableBunInvocations(command: string): ExecutableBunInvocation[] {
 	const sources = [command];
 	const pending = doubleQuotedSubstitutionBodies(command);
 	for (const body of pending) {
@@ -399,3 +399,5 @@ export function executableBunInvocations(command: string): ExecutableBunInvocati
 			.filter((invocation): invocation is ExecutableBunInvocation => invocation !== undefined);
 	});
 }
+
+export { type ExecutableBunInvocation, executableBunInvocations };

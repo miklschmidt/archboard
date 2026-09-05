@@ -4,7 +4,7 @@ import type { AgentBrowserSession } from "./agent-browser.ts";
 
 type PageEvaluator = Pick<AgentBrowserSession, "eval">;
 
-export const IGNORED_FIELDS = [
+const IGNORED_FIELDS = [
 	"version",
 	"versionNonce",
 	"updated",
@@ -15,14 +15,14 @@ export const IGNORED_FIELDS = [
 	"syncTimestamp",
 ] as const;
 
-export interface SnapshotElement {
+interface SnapshotElement {
 	id: string;
 	type: string;
 	text?: string;
 	fields: Record<string, string | undefined>;
 }
 
-export function canonicalise(value: unknown): unknown {
+function canonicalise(value: unknown): unknown {
 	if (Array.isArray(value)) {
 		return value.map(canonicalise);
 	}
@@ -36,7 +36,7 @@ export function canonicalise(value: unknown): unknown {
 	return value;
 }
 
-export function elementFields(
+function elementFields(
 	element: Record<string, unknown>,
 	ignored: readonly string[],
 ): SnapshotElement {
@@ -54,24 +54,24 @@ export function elementFields(
 	};
 }
 
-export const snapshotOf = (elements: readonly ServerElement[]): SnapshotElement[] =>
+const snapshotOf = (elements: readonly ServerElement[]): SnapshotElement[] =>
 	elements
 		.filter((element) => !element.isDeleted)
 		.toSorted((left, right) => (left.id < right.id ? -1 : 1))
 		.map((element) => elementFields(element as unknown as Record<string, unknown>, IGNORED_FIELDS));
 
-export type PageEdit =
+type PageEdit =
 	| { kind: "delete"; id: string }
 	| { kind: "move"; id: string; dx: number; dy: number }
 	| { kind: "resize"; id: string; dw: number; dh: number }
 	| { kind: "retype"; id: string; text: string };
 
-export interface PageSceneSnapshot {
+interface PageSceneSnapshot {
 	error?: string;
 	elements?: Array<Record<string, unknown>>;
 }
 
-export interface ReportStats {
+interface ReportStats {
 	sent: number;
 	done: number;
 	holds: number;
@@ -85,7 +85,7 @@ export interface ReportStats {
 	reportAnswers: number[];
 }
 
-export const EXCALIDRAW_APP_EXPRESSION = `(() => {
+const EXCALIDRAW_APP_EXPRESSION = `(() => {
   const node = document.querySelector('.excalidraw');
   const key = node && Object.keys(node).find(candidate => candidate.startsWith('__reactFiber$'));
   let fiber = key ? node[key] : null;
@@ -98,7 +98,7 @@ export const EXCALIDRAW_APP_EXPRESSION = `(() => {
   return null;
 })()`;
 
-export function inExcalidrawApp(body: string): string {
+function inExcalidrawApp(body: string): string {
 	return `(() => {
   const app = ${EXCALIDRAW_APP_EXPRESSION};
   if (!app) return { error: 'no Excalidraw app instance' };
@@ -106,7 +106,7 @@ export function inExcalidrawApp(body: string): string {
 })()`;
 }
 
-export const READ_PAGE_SCENE_EXPRESSION = inExcalidrawApp(
+const READ_PAGE_SCENE_EXPRESSION = inExcalidrawApp(
 	"return { elements: app.scene.getElementsIncludingDeleted().map(element => ({ ...element })) };",
 );
 
@@ -226,12 +226,12 @@ const INSTALL_SERVER_UPDATE_INJECTOR = inExcalidrawApp(`
   return { installed: true };
 `);
 
-export async function readPageScene(browser: PageEvaluator): Promise<PageSceneSnapshot> {
+async function readPageScene(browser: PageEvaluator): Promise<PageSceneSnapshot> {
 	return browser.eval<PageSceneSnapshot>(READ_PAGE_SCENE_EXPRESSION);
 }
 
 /** Drive the same trusted pointer path as a person dragging a rendered element. */
-export async function dragPageElement(
+async function dragPageElement(
 	browser: AgentBrowserSession,
 	id: string,
 	dx: number,
@@ -258,34 +258,58 @@ export async function dragPageElement(
 	await browser.run(["mouse", "up"]);
 }
 
-export async function installLiveEditSupport(browser: PageEvaluator): Promise<unknown> {
+async function installLiveEditSupport(browser: PageEvaluator): Promise<unknown> {
 	return browser.eval(INSTALL_LIVE_EDIT_SUPPORT);
 }
 
-export async function applyPageEdit(browser: PageEvaluator, edit: PageEdit): Promise<unknown> {
+async function applyPageEdit(browser: PageEvaluator, edit: PageEdit): Promise<unknown> {
 	return browser.eval(`window.__archboardApplyPageEdit(${JSON.stringify(edit)})`);
 }
 
-export async function installReportCounter(browser: PageEvaluator): Promise<unknown> {
+async function installReportCounter(browser: PageEvaluator): Promise<unknown> {
 	return browser.eval(INSTALL_REPORT_COUNTER);
 }
 
-export async function readReportStats(browser: PageEvaluator): Promise<ReportStats> {
+async function readReportStats(browser: PageEvaluator): Promise<ReportStats> {
 	return browser.eval("(() => ({ ...window.__archboardBrowserReports }))()");
 }
 
-export async function delayNextReport(browser: PageEvaluator, milliseconds: number): Promise<void> {
+async function delayNextReport(browser: PageEvaluator, milliseconds: number): Promise<void> {
 	await browser.eval(`window.__archboardDelayNextReport = ${JSON.stringify(milliseconds)}`);
 }
 
-export async function installServerUpdateInjector(browser: PageEvaluator): Promise<unknown> {
+async function installServerUpdateInjector(browser: PageEvaluator): Promise<unknown> {
 	return browser.eval(INSTALL_SERVER_UPDATE_INJECTOR);
 }
 
-export async function armServerUpdateEdit(browser: PageEvaluator, edit: PageEdit): Promise<void> {
+async function armServerUpdateEdit(browser: PageEvaluator, edit: PageEdit): Promise<void> {
 	await browser.eval(`window.__archboardPendingPageEdit = ${JSON.stringify(edit)}`);
 }
 
-export async function injectedPageEditCount(browser: PageEvaluator): Promise<number> {
+async function injectedPageEditCount(browser: PageEvaluator): Promise<number> {
 	return browser.eval("window.__archboardInjectedPageEdits || 0");
 }
+
+export {
+	IGNORED_FIELDS,
+	type SnapshotElement,
+	canonicalise,
+	elementFields,
+	snapshotOf,
+	type PageEdit,
+	type PageSceneSnapshot,
+	type ReportStats,
+	EXCALIDRAW_APP_EXPRESSION,
+	inExcalidrawApp,
+	READ_PAGE_SCENE_EXPRESSION,
+	readPageScene,
+	dragPageElement,
+	installLiveEditSupport,
+	applyPageEdit,
+	installReportCounter,
+	readReportStats,
+	delayNextReport,
+	installServerUpdateInjector,
+	armServerUpdateEdit,
+	injectedPageEditCount,
+};

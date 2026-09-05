@@ -1,15 +1,13 @@
-export type BrowserCsrfKind = "settings-read" | "mutation";
+type BrowserCsrfKind = "settings-read" | "mutation";
 
-export interface BrowserCsrfHeaders {
+interface BrowserCsrfHeaders {
 	host?: string;
 	origin?: string;
 	referer?: string;
 	secFetchSite?: string;
 }
 
-export type BrowserCsrfResult =
-	| { ok: true }
-	| { ok: false; code: "CROSS_ORIGIN_REFUSED"; error: string };
+type BrowserCsrfResult = { ok: true } | { ok: false; code: "CROSS_ORIGIN_REFUSED"; error: string };
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
@@ -58,10 +56,7 @@ function refused(error: string): BrowserCsrfResult {
 	return { ok: false, code: "CROSS_ORIGIN_REFUSED", error };
 }
 
-export function checkBrowserCsrf(
-	kind: BrowserCsrfKind,
-	headers: BrowserCsrfHeaders,
-): BrowserCsrfResult {
+function checkBrowserCsrf(kind: BrowserCsrfKind, headers: BrowserCsrfHeaders): BrowserCsrfResult {
 	// This protects browsers against CSRF. It does not authenticate a local process
 	// that can forge the accepted loopback headers.
 	const host = authorityHostname(headers.host);
@@ -87,3 +82,5 @@ export function checkBrowserCsrf(
 		? { ok: true }
 		: refused("A settings read requires a loopback Origin or Referer.");
 }
+
+export { type BrowserCsrfKind, type BrowserCsrfHeaders, type BrowserCsrfResult, checkBrowserCsrf };

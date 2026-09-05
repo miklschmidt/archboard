@@ -27,7 +27,7 @@ import {
 	type QuarantineWireOwner,
 } from "./quarantine-support.js";
 
-export interface DynamicQuarantineDispatcher {
+interface DynamicQuarantineDispatcher {
 	readonly dispatch: (
 		request: DynamicServerRequest,
 		run: () => Promise<DispatchCandidate>,
@@ -88,7 +88,7 @@ interface LogicalRunOwner {
 	retained: boolean;
 }
 
-export function createDynamicQuarantineDispatcher(
+function createDynamicQuarantineDispatcher(
 	options: CodexDynamicToolsOptions,
 ): DynamicQuarantineDispatcher {
 	let disposed = false;
@@ -575,3 +575,5 @@ export function createDynamicQuarantineDispatcher(
 
 	return Object.freeze({ dispatch, inspect, dispose });
 }
+
+export { type DynamicQuarantineDispatcher, createDynamicQuarantineDispatcher };

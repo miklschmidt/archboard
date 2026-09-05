@@ -8,7 +8,7 @@ import { TokenUsageBreakdownSchema } from "./config-schemas.js";
 import { ResponseItemSchema, ResponseUsageMetadataSchema } from "./response-item-schemas.js";
 import { CodexSafeI64Schema, FiniteNumberSchema, JsonValueSchema, looseObject } from "./scalars.js";
 
-export const HookRunSummarySchema = looseObject({
+const HookRunSummarySchema = looseObject({
 	id: z.string(),
 	eventName: z.enum([
 		"preToolUse",
@@ -106,7 +106,7 @@ const GuardianApprovalReviewActionSchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
-export const AutoApprovalReviewStartedSchema = looseObject({
+const AutoApprovalReviewStartedSchema = looseObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	startedAtMs: FiniteNumberSchema,
@@ -115,7 +115,7 @@ export const AutoApprovalReviewStartedSchema = looseObject({
 	review: GuardianApprovalReviewSchema,
 	action: GuardianApprovalReviewActionSchema,
 });
-export const AutoApprovalReviewCompletedSchema = looseObject({
+const AutoApprovalReviewCompletedSchema = looseObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	startedAtMs: FiniteNumberSchema,
@@ -126,25 +126,25 @@ export const AutoApprovalReviewCompletedSchema = looseObject({
 	review: GuardianApprovalReviewSchema,
 	action: GuardianApprovalReviewActionSchema,
 });
-export const StrictReviewRequiredSchema = looseObject({
+const StrictReviewRequiredSchema = looseObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	startedAtMs: FiniteNumberSchema,
 });
 
-export const CommandExecOutputDeltaSchema = looseObject({
+const CommandExecOutputDeltaSchema = looseObject({
 	processId: z.string(),
 	stream: z.enum(["stdout", "stderr"]),
 	deltaBase64: z.string(),
 	capReached: z.boolean(),
 });
-export const ProcessOutputDeltaSchema = looseObject({
+const ProcessOutputDeltaSchema = looseObject({
 	processHandle: z.string(),
 	stream: z.enum(["stdout", "stderr"]),
 	deltaBase64: z.string(),
 	capReached: z.boolean(),
 });
-export const ProcessExitedSchema = looseObject({
+const ProcessExitedSchema = looseObject({
 	processHandle: z.string(),
 	exitCode: FiniteNumberSchema,
 	stdout: z.string(),
@@ -182,7 +182,7 @@ const AppMetadataSchema = looseObject({
 	firstPartyRequiresInstall: z.boolean().nullable(),
 	showInComposerWhenUnlinked: z.boolean().nullable(),
 });
-export const AppInfoSchema = looseObject({
+const AppInfoSchema = looseObject({
 	id: z.string(),
 	name: z.string(),
 	description: z.string().nullable(),
@@ -235,13 +235,13 @@ const ExternalAgentConfigImportTypeResultSchema = looseObject({
 	successes: z.array(ExternalAgentConfigImportItemTypeSuccessSchema),
 	failures: z.array(ExternalAgentConfigImportItemTypeFailureSchema),
 });
-export const ExternalAgentConfigImportProgressSchema = looseObject({
+const ExternalAgentConfigImportProgressSchema = looseObject({
 	importId: z.string(),
 	itemTypeResults: z.array(ExternalAgentConfigImportTypeResultSchema),
 });
-export const ExternalAgentConfigImportCompletedSchema = ExternalAgentConfigImportProgressSchema;
+const ExternalAgentConfigImportCompletedSchema = ExternalAgentConfigImportProgressSchema;
 
-export const FuzzyFileSearchResultSchema = looseObject({
+const FuzzyFileSearchResultSchema = looseObject({
 	root: z.string(),
 	path: z.string(),
 	match_type: z.enum(["file", "directory"]),
@@ -251,12 +251,12 @@ export const FuzzyFileSearchResultSchema = looseObject({
 });
 
 const TextPositionSchema = looseObject({ line: FiniteNumberSchema, column: FiniteNumberSchema });
-export const TextRangeSchema = looseObject({
+const TextRangeSchema = looseObject({
 	start: TextPositionSchema,
 	end: TextPositionSchema,
 });
 
-export const McpServerEventStreamNotificationSchema = looseObject({
+const McpServerEventStreamNotificationSchema = looseObject({
 	subscriptionId: z.string(),
 	notification: looseObject({
 		method: z.string(),
@@ -264,26 +264,26 @@ export const McpServerEventStreamNotificationSchema = looseObject({
 		params: JsonValueSchema,
 	}),
 });
-export const McpServerStartupStatusUpdatedSchema = looseObject({
+const McpServerStartupStatusUpdatedSchema = looseObject({
 	threadId: z.string().nullable(),
 	name: z.string(),
 	status: z.enum(["starting", "ready", "failed", "cancelled"]),
 	error: z.string().nullable(),
 	failureReason: z.literal("reauthenticationRequired").nullable(),
 });
-export const RemoteControlStatusChangedSchema = looseObject({
+const RemoteControlStatusChangedSchema = looseObject({
 	status: z.enum(["disabled", "connecting", "connected", "errored"]),
 	serverName: z.string(),
 	installationId: z.string(),
 	environmentId: z.string().nullable(),
 });
 
-export const RawResponseItemCompletedSchema = looseObject({
+const RawResponseItemCompletedSchema = looseObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	item: ResponseItemSchema,
 });
-export const RawResponseCompletedSchema = looseObject({
+const RawResponseCompletedSchema = looseObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	responseId: z.string(),
@@ -291,21 +291,44 @@ export const RawResponseCompletedSchema = looseObject({
 	usageMetadata: ResponseUsageMetadataSchema.nullable(),
 });
 
-export const ThreadRealtimeItemAddedSchema = looseObject({
+const ThreadRealtimeItemAddedSchema = looseObject({
 	threadId: z.string(),
 	/** Raw non-audio realtime items are intentionally JsonValue in generated code. */
 	item: JsonValueSchema,
 });
-export const TurnModerationMetadataSchema = looseObject({
+const TurnModerationMetadataSchema = looseObject({
 	threadId: z.string(),
 	turnId: z.string(),
 	/** Moderation metadata is intentionally open JsonValue in generated code. */
 	metadata: JsonValueSchema,
 });
 
-export const AccountLoginCompletedSchema = looseObject({
+const AccountLoginCompletedSchema = looseObject({
 	success: z.boolean(),
 	error: z.string().nullable(),
 	loginId: z.string().nullable(),
 	onboardingEntrypoint: z.literal("life_sciences").nullable(),
 });
+
+export {
+	HookRunSummarySchema,
+	AutoApprovalReviewStartedSchema,
+	AutoApprovalReviewCompletedSchema,
+	StrictReviewRequiredSchema,
+	CommandExecOutputDeltaSchema,
+	ProcessOutputDeltaSchema,
+	ProcessExitedSchema,
+	AppInfoSchema,
+	ExternalAgentConfigImportProgressSchema,
+	ExternalAgentConfigImportCompletedSchema,
+	FuzzyFileSearchResultSchema,
+	TextRangeSchema,
+	McpServerEventStreamNotificationSchema,
+	McpServerStartupStatusUpdatedSchema,
+	RemoteControlStatusChangedSchema,
+	RawResponseItemCompletedSchema,
+	RawResponseCompletedSchema,
+	ThreadRealtimeItemAddedSchema,
+	TurnModerationMetadataSchema,
+	AccountLoginCompletedSchema,
+};

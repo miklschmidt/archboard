@@ -32,9 +32,9 @@ import {
 } from "../../../shared/codex-workbench-identity/index.js";
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 
-export const CHECKOUT_ROOT = "/workspace/archboard";
+const CHECKOUT_ROOT = "/workspace/archboard";
 
-export function coordinatorModel(overrides: Partial<CoordinatorModel> = {}): CoordinatorModel {
+function coordinatorModel(overrides: Partial<CoordinatorModel> = {}): CoordinatorModel {
 	return {
 		id: COORDINATOR_MODEL,
 		model: COORDINATOR_MODEL,
@@ -413,13 +413,13 @@ class FakeSession implements CoordinatorSessionPort {
 	}
 }
 
-export interface FixtureOptions extends FakeSessionOptions {
+interface FixtureOptions extends FakeSessionOptions {
 	readonly stageError?: Error;
 	readonly commitError?: Error;
 	readonly activeEpoch?: ActiveEpoch | null;
 }
 
-export interface Fixture {
+interface Fixture {
 	readonly authority: IdentityAuthority;
 	readonly epoch: FakeEpoch;
 	readonly link: FakeThreadLink;
@@ -427,7 +427,7 @@ export interface Fixture {
 	readonly coordinator: ReturnType<typeof createCodexCoordinator>;
 }
 
-export function fixture(options: FixtureOptions = {}): Fixture {
+function fixture(options: FixtureOptions = {}): Fixture {
 	const authority = createIdentityAuthority();
 	const modelValue = options.model ?? coordinatorModel();
 	const epoch = new FakeEpoch(
@@ -464,3 +464,5 @@ export function fixture(options: FixtureOptions = {}): Fixture {
 	session.notify = coordinator.onNotification;
 	return { authority, epoch, link, session, coordinator };
 }
+
+export { CHECKOUT_ROOT, coordinatorModel, type FixtureOptions, type Fixture, fixture };

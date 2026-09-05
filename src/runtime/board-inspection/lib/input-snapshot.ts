@@ -1,18 +1,18 @@
 import { types as nodeTypes } from "node:util";
 
-export const INSPECTION_INPUT_COMPLEXITY_LIMIT = 1_000_000 as const;
+const INSPECTION_INPUT_COMPLEXITY_LIMIT = 1_000_000 as const;
 
-export type InputUnitKind = "record" | "field" | "array-entry" | "string-code-unit";
-export type InspectionPathToken = string | number;
+type InputUnitKind = "record" | "field" | "array-entry" | "string-code-unit";
+type InspectionPathToken = string | number;
 
-export interface InputStopContext {
+interface InputStopContext {
 	readonly completedRecordCount: number;
 	readonly sourceIndex: number | null;
 	readonly path: readonly InspectionPathToken[];
 	readonly unitKind: InputUnitKind;
 }
 
-export class InputComplexityCeilingReached extends Error {
+class InputComplexityCeilingReached extends Error {
 	readonly limit = INSPECTION_INPUT_COMPLEXITY_LIMIT;
 	readonly attempted = 1_000_001 as const;
 
@@ -45,7 +45,7 @@ class InputComplexityAccumulator {
 	}
 }
 
-export const INSPECTION_FIELDS = [
+const INSPECTION_FIELDS = [
 	"id",
 	"type",
 	"isDeleted",
@@ -111,11 +111,11 @@ export const INSPECTION_FIELDS = [
 	"createdAt",
 ] as const;
 
-export type SnapshotField = (typeof INSPECTION_FIELDS)[number];
-export type SnapshotObject = { readonly [Field in SnapshotField]: unknown };
-export type SnapshotRecord = SnapshotObject;
+type SnapshotField = (typeof INSPECTION_FIELDS)[number];
+type SnapshotObject = { readonly [Field in SnapshotField]: unknown };
+type SnapshotRecord = SnapshotObject;
 
-export type NonDataInputIssue =
+type NonDataInputIssue =
 	| "proxy"
 	| "accessor"
 	| "active-path-cycle"
@@ -125,14 +125,14 @@ export type NonDataInputIssue =
 	| "non-plain-object"
 	| "non-array-root";
 
-export interface SnapshotIssue {
+interface SnapshotIssue {
 	readonly sourceIndex: number | null;
 	readonly path: readonly InspectionPathToken[];
 	readonly issue: NonDataInputIssue;
 	readonly admittedRecord: SnapshotRecord | null;
 }
 
-export interface InspectionInputSnapshot {
+interface InspectionInputSnapshot {
 	readonly records: readonly (SnapshotRecord | null)[];
 	readonly blockedSourceIndexes: ReadonlySet<number>;
 	readonly issues: readonly SnapshotIssue[];
@@ -174,7 +174,7 @@ const stopContext = (
 ): InputStopContext => ({ completedRecordCount, sourceIndex, path, unitKind });
 
 /** Copy the fixed inspection vocabulary without executing caller-owned JavaScript. */
-export function snapshotInspectionInput(input: readonly unknown[]): InspectionInputSnapshot {
+function snapshotInspectionInput(input: readonly unknown[]): InspectionInputSnapshot {
 	const budget = new InputComplexityAccumulator();
 	const records: Array<SnapshotRecord | null> = [];
 	const issues: SnapshotIssue[] = [];
@@ -400,3 +400,19 @@ export function snapshotInspectionInput(input: readonly unknown[]): InspectionIn
 		inputUnits: budget.inputUnits,
 	};
 }
+
+export {
+	INSPECTION_INPUT_COMPLEXITY_LIMIT,
+	type InputUnitKind,
+	type InspectionPathToken,
+	type InputStopContext,
+	InputComplexityCeilingReached,
+	INSPECTION_FIELDS,
+	type SnapshotField,
+	type SnapshotObject,
+	type SnapshotRecord,
+	type NonDataInputIssue,
+	type SnapshotIssue,
+	type InspectionInputSnapshot,
+	snapshotInspectionInput,
+};

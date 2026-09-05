@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { LOCK_LEASE_MS } from "../../../shared/timing/timing.js";
 import { assertNoDuplicateKeys } from "./manifest-json.js";
 
-export interface CodexEpochFileSystem {
+interface CodexEpochFileSystem {
 	readonly openSync: (path: string, flags: nodeFs.OpenMode, mode?: number) => number;
 	readonly writeSync: (fd: number, data: Uint8Array, offset: number, length: number) => number;
 	readonly fsyncSync: (fd: number) => void;
@@ -21,7 +21,7 @@ export interface CodexEpochFileSystem {
 	readonly realpathSync: (path: string) => string;
 }
 
-export const defaultCodexEpochFileSystem: CodexEpochFileSystem = {
+const defaultCodexEpochFileSystem: CodexEpochFileSystem = {
 	openSync: nodeFs.openSync,
 	writeSync: nodeFs.writeSync,
 	fsyncSync: nodeFs.fsyncSync,
@@ -34,7 +34,7 @@ export const defaultCodexEpochFileSystem: CodexEpochFileSystem = {
 	realpathSync: nodeFs.realpathSync,
 };
 
-export type DurableWritePhase =
+type DurableWritePhase =
 	| "target_stat"
 	| "temp_open"
 	| "temp_write"
@@ -45,7 +45,7 @@ export type DurableWritePhase =
 	| "directory_fsync"
 	| "directory_close";
 
-export class DurableStorageError extends Error {
+class DurableStorageError extends Error {
 	readonly phase: DurableWritePhase;
 	override readonly cause: unknown;
 
@@ -57,7 +57,7 @@ export class DurableStorageError extends Error {
 	}
 }
 
-export interface DurableLock {
+interface DurableLock {
 	readonly release: () => void;
 }
 
@@ -68,7 +68,7 @@ interface LockRecord {
 	readonly untilMs: number;
 }
 
-export function ensureEpochDirectory(fileSystem: CodexEpochFileSystem, directory: string): void {
+function ensureEpochDirectory(fileSystem: CodexEpochFileSystem, directory: string): void {
 	try {
 		fileSystem.mkdirSync(directory, { recursive: true, mode: 0o700 });
 		const stats = fileSystem.lstatSync(directory);
@@ -86,7 +86,7 @@ export function ensureEpochDirectory(fileSystem: CodexEpochFileSystem, directory
 	}
 }
 
-export function readUtf8File(fileSystem: CodexEpochFileSystem, filePath: string): string | null {
+function readUtf8File(fileSystem: CodexEpochFileSystem, filePath: string): string | null {
 	try {
 		const stats = fileSystem.lstatSync(filePath);
 		if (stats.isSymbolicLink() || !stats.isFile()) {
@@ -105,7 +105,7 @@ export function readUtf8File(fileSystem: CodexEpochFileSystem, filePath: string)
 	}
 }
 
-export function writeFileAtomicDurable(
+function writeFileAtomicDurable(
 	fileSystem: CodexEpochFileSystem,
 	targetPath: string,
 	temporaryPath: string,
@@ -171,7 +171,7 @@ export function writeFileAtomicDurable(
 	}
 }
 
-export function writeEpochStateDurable(
+function writeEpochStateDurable(
 	fileSystem: CodexEpochFileSystem,
 	rootDirectory: string,
 	manifestPath: string,
@@ -197,7 +197,7 @@ export function writeEpochStateDurable(
 	return temporaryId;
 }
 
-export function acquireDurableLock(
+function acquireDurableLock(
 	fileSystem: CodexEpochFileSystem,
 	lockPath: string,
 	lockDirectory: string,
@@ -501,3 +501,16 @@ function assertPublishTarget(fileSystem: CodexEpochFileSystem, targetPath: strin
 function isMissing(error: unknown): boolean {
 	return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
+
+export {
+	type CodexEpochFileSystem,
+	defaultCodexEpochFileSystem,
+	type DurableWritePhase,
+	DurableStorageError,
+	type DurableLock,
+	ensureEpochDirectory,
+	readUtf8File,
+	writeFileAtomicDurable,
+	writeEpochStateDurable,
+	acquireDurableLock,
+};

@@ -13,10 +13,10 @@ const spawnSchema = z.object({
 	stdout: z.string(),
 	stderr: z.string(),
 });
-export type RepositorySpawn = z.infer<typeof spawnSchema>;
-export type RepositoryServerEnvironment = Readonly<NodeJS.ProcessEnv>;
+type RepositorySpawn = z.infer<typeof spawnSchema>;
+type RepositoryServerEnvironment = Readonly<NodeJS.ProcessEnv>;
 
-export interface RepositoryFixture {
+interface RepositoryFixture {
 	readonly root: string;
 	readonly nowhere: string;
 	readonly home: string;
@@ -31,7 +31,7 @@ export interface RepositoryFixture {
 	[Symbol.dispose](): void;
 }
 
-export function repositoryFailure(result: RepositorySpawn): string {
+function repositoryFailure(result: RepositorySpawn): string {
 	return [
 		`command: ${result.command.join(" ")}`,
 		`cwd: ${result.cwd}`,
@@ -42,7 +42,7 @@ export function repositoryFailure(result: RepositorySpawn): string {
 	].join("\n");
 }
 
-export function createRepositoryFixture(): RepositoryFixture {
+function createRepositoryFixture(): RepositoryFixture {
 	const root = mkdtempSync(join(tmpdir(), "archboard-repositories-"));
 	const nowhere = join(root, "nowhere");
 	const home = join(root, "home");
@@ -128,3 +128,11 @@ export function createRepositoryFixture(): RepositoryFixture {
 		[Symbol.dispose]: dispose,
 	};
 }
+
+export {
+	type RepositorySpawn,
+	type RepositoryServerEnvironment,
+	type RepositoryFixture,
+	repositoryFailure,
+	createRepositoryFixture,
+};

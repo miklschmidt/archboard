@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { compareIdentity, obstacleIdentity } from "./lib/ordering.js";
 
-export const BridgeIncompleteIssueSchema = z.enum([
+const BridgeIncompleteIssueSchema = z.enum([
 	"malformed-metadata",
 	"missing-mask",
 	"missing-redraw",
@@ -12,7 +12,7 @@ export const BridgeIncompleteIssueSchema = z.enum([
 	"mask-id-mismatch",
 	"non-line-part",
 ]);
-export const BridgeStaleIssueSchema = z.enum([
+const BridgeStaleIssueSchema = z.enum([
 	"missing-source",
 	"unsupported-source",
 	"crossing-moved",
@@ -20,10 +20,10 @@ export const BridgeStaleIssueSchema = z.enum([
 	"geometry-mismatch",
 	"z-order-invalid",
 ]);
-export type BridgeIncompleteIssue = z.infer<typeof BridgeIncompleteIssueSchema>;
-export type BridgeStaleIssue = z.infer<typeof BridgeStaleIssueSchema>;
+type BridgeIncompleteIssue = z.infer<typeof BridgeIncompleteIssueSchema>;
+type BridgeStaleIssue = z.infer<typeof BridgeStaleIssueSchema>;
 
-export const COLLISION_PASSES = [
+const COLLISION_PASSES = [
 	"connector-node",
 	"connector-obstacle",
 	"connector-text",
@@ -36,24 +36,24 @@ export const COLLISION_PASSES = [
 const finite = z.number().finite();
 const nonnegative = finite.nonnegative();
 
-export const ScenePointSchema = z.strictObject({ x: finite, y: finite });
-export const SceneBBoxSchema = z.strictObject({
+const ScenePointSchema = z.strictObject({ x: finite, y: finite });
+const SceneBBoxSchema = z.strictObject({
 	x: finite,
 	y: finite,
 	width: nonnegative,
 	height: nonnegative,
 });
-export const ElementRefSchema = z.strictObject({
+const ElementRefSchema = z.strictObject({
 	id: z.string().nullable(),
 	type: z.string().nullable(),
 	sourceIndex: z.number().int().nonnegative(),
 });
-export const NodeRefSchema = z.strictObject({
+const NodeRefSchema = z.strictObject({
 	id: z.string().min(1),
 	elementIds: z.array(z.string().min(1)),
 	labelElementIds: z.array(z.string().min(1)),
 });
-export const LibraryAttributionSchema = z.strictObject({
+const LibraryAttributionSchema = z.strictObject({
 	elementId: z.string().min(1),
 	item: z.string().min(1),
 	source: z.string().min(1).optional(),
@@ -61,7 +61,7 @@ export const LibraryAttributionSchema = z.strictObject({
 
 const canonicalIdentities = (values: readonly string[]): boolean =>
 	values.every((value, index) => index === 0 || compareIdentity(values[index - 1]!, value) < 0);
-export const ObstacleRefSchema = z
+const ObstacleRefSchema = z
 	.strictObject({
 		id: z.string().startsWith("obstacle:"),
 		kind: z.enum(["library-component", "grouped-component"]),
@@ -202,7 +202,7 @@ const idType = z.enum([
 	"array",
 	"object",
 ]);
-export const IntendedRoleSchema = z.enum([
+const IntendedRoleSchema = z.enum([
 	"connector",
 	"semantic-node-member",
 	"valid-library-body",
@@ -625,7 +625,7 @@ const layoutFindings = [
 	}),
 ] as const;
 
-export const InspectionFindingSchema = z.union([
+const InspectionFindingSchema = z.union([
 	...invalidRender,
 	...staleLinear,
 	...brokenReference,
@@ -635,9 +635,9 @@ export const InspectionFindingSchema = z.union([
 	...ambiguous,
 	...layoutFindings,
 ]);
-export type InspectionFinding = z.infer<typeof InspectionFindingSchema>;
+type InspectionFinding = z.infer<typeof InspectionFindingSchema>;
 
-export const FontFamilySchema = z.union([
+const FontFamilySchema = z.union([
 	z.literal(1),
 	z.literal(2),
 	z.literal(3),
@@ -646,19 +646,19 @@ export const FontFamilySchema = z.union([
 	z.literal(7),
 	z.literal(8),
 ]);
-export const InspectionPolicyInputSchema = z.strictObject({
+const InspectionPolicyInputSchema = z.strictObject({
 	allowedFontFamilies: z.union([z.literal("any"), z.array(FontFamilySchema)]).optional(),
 	dimensionTolerance: nonnegative.optional(),
 	intersectionTolerance: nonnegative.optional(),
 	overlapTolerance: nonnegative.optional(),
 });
-export const InspectionPolicySchema = z.strictObject({
+const InspectionPolicySchema = z.strictObject({
 	allowedFontFamilies: z.union([z.literal("any"), z.array(FontFamilySchema)]),
 	dimensionTolerance: nonnegative,
 	intersectionTolerance: nonnegative,
 	overlapTolerance: nonnegative,
 });
-export const FindingCodeSchema = z.enum([
+const FindingCodeSchema = z.enum([
 	"INVALID_RENDER_GEOMETRY",
 	"STALE_LINEAR_DIMENSIONS",
 	"BROKEN_REFERENCE",
@@ -675,7 +675,7 @@ export const FindingCodeSchema = z.enum([
 	"LABEL_OVERLAP",
 	"BRIDGE_PROVENANCE_INVALID",
 ]);
-export const InspectionReportSchema = z.strictObject({
+const InspectionReportSchema = z.strictObject({
 	schemaVersion: z.literal(3),
 	success: z.literal(true),
 	policy: InspectionPolicySchema,
@@ -700,14 +700,46 @@ export const InspectionReportSchema = z.strictObject({
 	coverageReasons: z.array(z.string()),
 	findings: z.array(InspectionFindingSchema),
 });
-export type ScenePoint = z.infer<typeof ScenePointSchema>;
-export type SceneBBox = z.infer<typeof SceneBBoxSchema>;
-export type ElementRef = z.infer<typeof ElementRefSchema>;
-export type NodeRef = z.infer<typeof NodeRefSchema>;
-export type ObstacleRef = z.infer<typeof ObstacleRefSchema>;
-export type InspectionPolicyInput = z.input<typeof InspectionPolicyInputSchema>;
-export type InspectionPolicy = z.infer<typeof InspectionPolicySchema>;
-export type InspectionReport = z.infer<typeof InspectionReportSchema>;
+type ScenePoint = z.infer<typeof ScenePointSchema>;
+type SceneBBox = z.infer<typeof SceneBBoxSchema>;
+type ElementRef = z.infer<typeof ElementRefSchema>;
+type NodeRef = z.infer<typeof NodeRefSchema>;
+type ObstacleRef = z.infer<typeof ObstacleRefSchema>;
+type InspectionPolicyInput = z.input<typeof InspectionPolicyInputSchema>;
+type InspectionPolicy = z.infer<typeof InspectionPolicySchema>;
+type InspectionReport = z.infer<typeof InspectionReportSchema>;
 
-export const CheckResultSchema = InspectionReportSchema.extend({ board: z.string().min(1) });
-export type CheckResult = z.infer<typeof CheckResultSchema>;
+const CheckResultSchema = InspectionReportSchema.extend({ board: z.string().min(1) });
+type CheckResult = z.infer<typeof CheckResultSchema>;
+
+export {
+	BridgeIncompleteIssueSchema,
+	BridgeStaleIssueSchema,
+	type BridgeIncompleteIssue,
+	type BridgeStaleIssue,
+	COLLISION_PASSES,
+	ScenePointSchema,
+	SceneBBoxSchema,
+	ElementRefSchema,
+	NodeRefSchema,
+	LibraryAttributionSchema,
+	ObstacleRefSchema,
+	IntendedRoleSchema,
+	InspectionFindingSchema,
+	type InspectionFinding,
+	FontFamilySchema,
+	InspectionPolicyInputSchema,
+	InspectionPolicySchema,
+	FindingCodeSchema,
+	InspectionReportSchema,
+	type ScenePoint,
+	type SceneBBox,
+	type ElementRef,
+	type NodeRef,
+	type ObstacleRef,
+	type InspectionPolicyInput,
+	type InspectionPolicy,
+	type InspectionReport,
+	CheckResultSchema,
+	type CheckResult,
+};

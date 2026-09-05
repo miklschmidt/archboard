@@ -128,22 +128,6 @@ import {
 	type CodexWorkbenchStopReason,
 } from "./codex-workbench-lifecycle.js";
 
-export { CodexWorkbenchCompositionError, CODEX_WORKBENCH_OWNER };
-export type {
-	CodexWorkbenchComponents,
-	CodexWorkbenchGeneration,
-	CodexWorkbenchGenerationFactory,
-	CodexWorkbenchGenerationHooks,
-	CodexWorkbenchGenerationInput,
-	CodexWorkbenchKernelAcquisition,
-	CodexWorkbenchOwner,
-	CodexWorkbenchOwnerOptions,
-	CodexWorkbenchSnapshot,
-	CodexWorkbenchStableKernel,
-	CodexWorkbenchState,
-	CodexWorkbenchStopReason,
-};
-
 type ComponentName = keyof CodexWorkbenchComponents;
 
 function isCoordinatorToolRequest(
@@ -152,7 +136,7 @@ function isCoordinatorToolRequest(
 	return request.method === "item/tool/call" && request.owner === "codex-coordinator-tools";
 }
 
-export type CodexWorkbenchComponentFactories = {
+type CodexWorkbenchComponentFactories = {
 	readonly [Name in ComponentName]: (
 		created: Readonly<Partial<CodexWorkbenchComponents>>,
 	) => CodexWorkbenchComponents[Name];
@@ -169,7 +153,7 @@ function installDynamicRegistrations(transport: CodexTransport): void {
 	}
 }
 
-export interface ComposeCodexWorkbenchGenerationOptions {
+interface ComposeCodexWorkbenchGenerationOptions {
 	readonly factories: CodexWorkbenchComponentFactories;
 	readonly identityLedger: IdentityLedger;
 	readonly ownsTransport?: boolean;
@@ -180,7 +164,7 @@ export interface ComposeCodexWorkbenchGenerationOptions {
 
 type ComponentBuilder<Value> = (created: Readonly<Partial<CodexWorkbenchComponents>>) => Value;
 
-export interface CodexWorkbenchDynamicAdapterFactories {
+interface CodexWorkbenchDynamicAdapterFactories {
 	readonly approval: ComponentBuilder<DynamicToolApprovalPort>;
 	readonly threadAuthority: ComponentBuilder<DynamicThreadAuthorityPort>;
 	readonly context: ComponentBuilder<DynamicContextPort>;
@@ -188,14 +172,14 @@ export interface CodexWorkbenchDynamicAdapterFactories {
 	readonly lifecycle: ComponentBuilder<DynamicToolLifecyclePort>;
 }
 
-export interface CodexWorkbenchCoordinatorCallOwner {
+interface CodexWorkbenchCoordinatorCallOwner {
 	readonly run: <Value>(
 		request: DynamicServerRequest,
 		operation: () => Promise<Value>,
 	) => Promise<Value>;
 }
 
-export interface ProductionCodexWorkbenchBindings {
+interface ProductionCodexWorkbenchBindings {
 	readonly epoch: ComponentBuilder<CodexEpochStoreOptions>;
 	readonly transport: ComponentBuilder<Omit<CodexTransportOptions, "identity">>;
 	readonly session: ComponentBuilder<
@@ -276,7 +260,7 @@ function requireComponent<Name extends ComponentName>(
 }
 
 /** Bind the reviewed runtime constructors to one production generation. */
-export function createProductionCodexWorkbenchFactories(
+function createProductionCodexWorkbenchFactories(
 	bindings: ProductionCodexWorkbenchBindings,
 	kernel: CodexWorkbenchStableKernel | null = null,
 	adoptedSession: CodexWorkbenchGenerationInput["adoptedSession"] = null,
@@ -456,7 +440,7 @@ export function createProductionCodexWorkbenchFactories(
 }
 
 /** Build and activate the one complete child-generation graph. */
-export async function composeCodexWorkbenchGeneration(
+async function composeCodexWorkbenchGeneration(
 	options: ComposeCodexWorkbenchGenerationOptions,
 ): Promise<CodexWorkbenchGeneration> {
 	type MutableComponents = {
@@ -577,7 +561,7 @@ export async function composeCodexWorkbenchGeneration(
 	return source;
 }
 
-export interface InstallProductionCodexWorkbenchOptions {
+interface InstallProductionCodexWorkbenchOptions {
 	readonly process: CodexProcessOptions;
 	readonly bindings: (input: CodexWorkbenchGenerationInput) => ProductionCodexWorkbenchBindings;
 	readonly hooks: (input: CodexWorkbenchGenerationInput) => CodexWorkbenchGenerationHooks;
@@ -627,7 +611,7 @@ function productionKernelFactory(
 }
 
 /** Install the mandatory production owner for one canvas application lifetime. */
-export function installProductionCodexWorkbench(
+function installProductionCodexWorkbench(
 	options: InstallProductionCodexWorkbenchOptions,
 ): CodexWorkbenchOwner {
 	return installCodexWorkbenchOwner({
@@ -637,8 +621,33 @@ export function installProductionCodexWorkbench(
 	});
 }
 
-export function installCodexWorkbenchOwner(
-	options: CodexWorkbenchOwnerOptions,
-): CodexWorkbenchOwner {
+function installCodexWorkbenchOwner(options: CodexWorkbenchOwnerOptions): CodexWorkbenchOwner {
 	return installCodexWorkbenchOwnerLifecycle(options);
 }
+
+export {
+	CodexWorkbenchCompositionError,
+	CODEX_WORKBENCH_OWNER,
+	type CodexWorkbenchComponents,
+	type CodexWorkbenchGeneration,
+	type CodexWorkbenchGenerationFactory,
+	type CodexWorkbenchGenerationHooks,
+	type CodexWorkbenchGenerationInput,
+	type CodexWorkbenchKernelAcquisition,
+	type CodexWorkbenchOwner,
+	type CodexWorkbenchOwnerOptions,
+	type CodexWorkbenchSnapshot,
+	type CodexWorkbenchStableKernel,
+	type CodexWorkbenchState,
+	type CodexWorkbenchStopReason,
+	type CodexWorkbenchComponentFactories,
+	type ComposeCodexWorkbenchGenerationOptions,
+	type CodexWorkbenchDynamicAdapterFactories,
+	type CodexWorkbenchCoordinatorCallOwner,
+	type ProductionCodexWorkbenchBindings,
+	createProductionCodexWorkbenchFactories,
+	composeCodexWorkbenchGeneration,
+	type InstallProductionCodexWorkbenchOptions,
+	installProductionCodexWorkbench,
+	installCodexWorkbenchOwner,
+};

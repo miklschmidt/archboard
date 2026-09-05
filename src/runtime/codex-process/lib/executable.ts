@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { CODEX_PROTOCOL_BINARY_VERSION } from "../../codex-protocol/index.js";
 import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
 
-export const CODEX_EXECUTABLE_PROOF_MAX_BYTES = 64 * 1024;
+const CODEX_EXECUTABLE_PROOF_MAX_BYTES = 64 * 1024;
 const VERIFICATION_ENVIRONMENT_KEYS = [
 	"PATH",
 	"HOME",
@@ -18,12 +18,12 @@ const VERIFICATION_ENVIRONMENT_KEYS = [
 	"TEMP",
 ] as const;
 
-export interface VerifiedCodexExecutable {
+interface VerifiedCodexExecutable {
 	readonly executablePath: string;
 	readonly version: typeof CODEX_PROTOCOL_BINARY_VERSION;
 }
 
-export type CodexExecutableFailureCode =
+type CodexExecutableFailureCode =
 	| "not_absolute"
 	| "missing"
 	| "not_file"
@@ -33,7 +33,7 @@ export type CodexExecutableFailureCode =
 	| "wrong_version"
 	| "outside_checkout";
 
-export class CodexExecutableError extends Error {
+class CodexExecutableError extends Error {
 	readonly code: CodexExecutableFailureCode;
 	readonly executablePath: string;
 
@@ -98,7 +98,7 @@ function verificationTimedOut(cause: unknown): boolean {
 }
 
 /** Resolve only the package-local wrapper selected by the pinned dependency. */
-export function resolveProjectCodexExecutable(): string {
+function resolveProjectCodexExecutable(): string {
 	const require = createRequire(import.meta.url);
 	const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 	let resolved: string;
@@ -125,7 +125,7 @@ export function resolveProjectCodexExecutable(): string {
 }
 
 /** Verify the exact pinned executable without consulting PATH or ambient args. */
-export function verifyCodexExecutable(
+function verifyCodexExecutable(
 	candidate: string,
 	options: { readonly execFileSync?: typeof execFileSync } = {},
 ): VerifiedCodexExecutable {
@@ -194,3 +194,12 @@ export function verifyCodexExecutable(
 	}
 	return Object.freeze({ executablePath, version: CODEX_PROTOCOL_BINARY_VERSION });
 }
+
+export {
+	CODEX_EXECUTABLE_PROOF_MAX_BYTES,
+	type VerifiedCodexExecutable,
+	type CodexExecutableFailureCode,
+	CodexExecutableError,
+	resolveProjectCodexExecutable,
+	verifyCodexExecutable,
+};

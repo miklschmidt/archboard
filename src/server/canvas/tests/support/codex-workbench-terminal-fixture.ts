@@ -5,7 +5,7 @@ import { createIdentityAuthorities } from "../../../../shared/codex-workbench-id
 import { createCanvasDynamicLifecycleOwner } from "../../codex-workbench-adapters.js";
 
 /** One current child plus one foreign child, with their wire spellings. */
-export function identities() {
+function identities() {
 	const identity = createIdentityAuthorities();
 	const foreign = createIdentityAuthorities();
 	const thread = identity.identity.decoder.adoptThreadId("thread-current");
@@ -25,9 +25,9 @@ export function identities() {
 	};
 }
 
-export type TerminalIdentities = ReturnType<typeof identities>;
+type TerminalIdentities = ReturnType<typeof identities>;
 
-export function waitOwnerFor(h: TerminalIdentities, target: string): DynamicWaitOwner {
+function waitOwnerFor(h: TerminalIdentities, target: string): DynamicWaitOwner {
 	return {
 		child: h.identity.identity.validator.childId,
 		epoch: h.identity.identity.validator.epoch,
@@ -43,7 +43,7 @@ export function waitOwnerFor(h: TerminalIdentities, target: string): DynamicWait
 }
 
 /** One lifecycle owner whose host wait never settles, with its observed counters. */
-export function waitProbe(h: TerminalIdentities, graph: CodexWaitGraph) {
+function waitProbe(h: TerminalIdentities, graph: CodexWaitGraph) {
 	const counters = { hostCalls: 0, aborts: 0 };
 	const owner = createCanvasDynamicLifecycleOwner({
 		identity: h.identity,
@@ -58,3 +58,5 @@ export function waitProbe(h: TerminalIdentities, graph: CodexWaitGraph) {
 	});
 	return { owner, counters };
 }
+
+export { identities, type TerminalIdentities, waitOwnerFor, waitProbe };

@@ -31,7 +31,7 @@ function observeChild(child: Child, onError: (error: Error) => void) {
 	return { terminal, exit, isTerminated: () => terminated, isExited: () => exited };
 }
 
-export interface OwnedPeer<T> {
+interface OwnedPeer<T> {
 	readonly child: Child;
 	readonly pid: number;
 	readonly ready: T;
@@ -40,14 +40,14 @@ export interface OwnedPeer<T> {
 	dispose(): Promise<void>;
 }
 
-export interface PeerOptions<T> {
+interface PeerOptions<T> {
 	argv: string[];
 	env: ChildEnvironment;
 	readySchema: ZodType<T>;
 	readyTimeoutMs?: number;
 }
 
-export async function runOwnedPeerToExit(options: {
+async function runOwnedPeerToExit(options: {
 	argv: string[];
 	env: ChildEnvironment;
 	timeoutMs?: number;
@@ -104,7 +104,7 @@ async function stopChild(child: Child, lifecycle: ReturnType<typeof observeChild
 	}
 }
 
-export async function startOwnedPeer<T>({
+async function startOwnedPeer<T>({
 	argv,
 	env,
 	readySchema,
@@ -183,3 +183,5 @@ export async function startOwnedPeer<T>({
 		throw error;
 	}
 }
+
+export { type OwnedPeer, type PeerOptions, runOwnedPeerToExit, startOwnedPeer };

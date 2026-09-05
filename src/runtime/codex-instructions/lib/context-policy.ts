@@ -203,18 +203,26 @@ const policy = {
 	},
 } as const;
 
-export const ADDITIONAL_CONTEXT_POLICY = deepFreeze(policy);
+const ADDITIONAL_CONTEXT_POLICY = deepFreeze(policy);
 
-export type AdditionalContextPolicy = typeof ADDITIONAL_CONTEXT_POLICY;
-export type ThreadLinkState =
+type AdditionalContextPolicy = typeof ADDITIONAL_CONTEXT_POLICY;
+type ThreadLinkState =
 	| AdditionalContextPolicy["threadLink"]["reasonNullStates"][number]
 	| AdditionalContextPolicy["threadLink"]["reasonRequiredStates"][number];
-export type ThreadLinkReason =
-	AdditionalContextPolicy["threadLink"]["reasonPrecedence"][number]["reason"];
-export type OperationKind = AdditionalContextPolicy["operation"]["producers"][number]["kind"];
-export type OperationRpc =
-	AdditionalContextPolicy["operation"]["producers"][number]["rpcs"][number];
-export type OperationOutcome = Exclude<
+type ThreadLinkReason = AdditionalContextPolicy["threadLink"]["reasonPrecedence"][number]["reason"];
+type OperationKind = AdditionalContextPolicy["operation"]["producers"][number]["kind"];
+type OperationRpc = AdditionalContextPolicy["operation"]["producers"][number]["rpcs"][number];
+type OperationOutcome = Exclude<
 	AdditionalContextPolicy["operation"]["tupleStates"][number]["outcome"],
 	"null"
 >;
+
+export {
+	ADDITIONAL_CONTEXT_POLICY,
+	type AdditionalContextPolicy,
+	type ThreadLinkState,
+	type ThreadLinkReason,
+	type OperationKind,
+	type OperationRpc,
+	type OperationOutcome,
+};

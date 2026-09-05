@@ -26,7 +26,7 @@ function deepFreeze<T>(value: T): T {
 	return value;
 }
 
-export interface BrowserLeaseManager {
+interface BrowserLeaseManager {
 	readonly current: () => BrowserLeaseRecord | null;
 	readonly find: (commandId: BrowserCommandId) => BrowserLeaseRecord | null;
 	readonly claim: (
@@ -56,7 +56,7 @@ export interface BrowserLeaseManager {
 	readonly detach: () => void;
 }
 
-export function createBrowserLeaseLedger(): BrowserLeaseLedger {
+function createBrowserLeaseLedger(): BrowserLeaseLedger {
 	return { active: null, retired: new Map() };
 }
 
@@ -85,7 +85,7 @@ function assertTime(value: number): number {
 	return value;
 }
 
-export function createBrowserLeaseManager(options: {
+function createBrowserLeaseManager(options: {
 	readonly identity: IdentityAuthorities;
 	readonly now: () => number;
 	readonly ledger?: BrowserLeaseLedger;
@@ -322,3 +322,5 @@ export function createBrowserLeaseManager(options: {
 		detach,
 	});
 }
+
+export { type BrowserLeaseManager, createBrowserLeaseLedger, createBrowserLeaseManager };

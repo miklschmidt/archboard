@@ -179,11 +179,9 @@ const ArchboardContextRawSchema = z.strictObject({
 		}),
 });
 
-export const ArchboardContextSchema = ArchboardContextRawSchema.transform((value) =>
-	freezeDeep(value),
-);
+const ArchboardContextSchema = ArchboardContextRawSchema.transform((value) => freezeDeep(value));
 
-export type ArchboardContext = z.infer<typeof ArchboardContextSchema>;
+type ArchboardContext = z.infer<typeof ArchboardContextSchema>;
 
 function orderedOperation(value: ArchboardContext["operation"]): ArchboardContext["operation"] {
 	if (value.id === null) {
@@ -257,11 +255,11 @@ function validateContext(input: unknown): ArchboardContext {
 	return freezeDeep(orderedContext(parsed.data));
 }
 
-export function canonicalContext(input: ArchboardContext): ArchboardContext {
+function canonicalContext(input: ArchboardContext): ArchboardContext {
 	return validateContext(input);
 }
 
-export function encodeCanonicalContext(input: ArchboardContext): string {
+function encodeCanonicalContext(input: ArchboardContext): string {
 	const encoded = JSON.stringify(canonicalContext(input));
 	if (encoded === undefined) {
 		throw new TypeError("Archboard context could not be encoded as JSON.");
@@ -270,7 +268,7 @@ export function encodeCanonicalContext(input: ArchboardContext): string {
 }
 
 /** Parse only the exact compact field order emitted by encodeCanonicalContext. */
-export function decodeCanonicalContext(encoded: string): ArchboardContext {
+function decodeCanonicalContext(encoded: string): ArchboardContext {
 	if (typeof encoded !== "string") {
 		throw new TypeError("Canonical context must be a string.");
 	}
@@ -286,3 +284,11 @@ export function decodeCanonicalContext(encoded: string): ArchboardContext {
 	}
 	return context;
 }
+
+export {
+	ArchboardContextSchema,
+	type ArchboardContext,
+	canonicalContext,
+	encodeCanonicalContext,
+	decodeCanonicalContext,
+};

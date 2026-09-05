@@ -1,6 +1,6 @@
-export type RawElement = Record<string, unknown>;
+type RawElement = Record<string, unknown>;
 
-export function semanticNode(id: string, overrides: RawElement = {}): RawElement {
+function semanticNode(id: string, overrides: RawElement = {}): RawElement {
 	return {
 		id,
 		type: "rectangle",
@@ -14,7 +14,7 @@ export function semanticNode(id: string, overrides: RawElement = {}): RawElement
 	};
 }
 
-export function connector(overrides: RawElement = {}): RawElement {
+function connector(overrides: RawElement = {}): RawElement {
 	return {
 		id: "edge",
 		type: "arrow",
@@ -31,7 +31,7 @@ export function connector(overrides: RawElement = {}): RawElement {
 	};
 }
 
-export function labelContainer(overrides: RawElement = {}): RawElement {
+function labelContainer(overrides: RawElement = {}): RawElement {
 	return {
 		id: "svc",
 		type: "rectangle",
@@ -45,7 +45,7 @@ export function labelContainer(overrides: RawElement = {}): RawElement {
 	};
 }
 
-export function boundLabel(overrides: RawElement = {}): RawElement {
+function boundLabel(overrides: RawElement = {}): RawElement {
 	return {
 		id: "svc-label",
 		type: "text",
@@ -60,7 +60,7 @@ export function boundLabel(overrides: RawElement = {}): RawElement {
 	};
 }
 
-export function libraryBody(id: string, x = 0, groupIds: readonly string[] = []): RawElement {
+function libraryBody(id: string, x = 0, groupIds: readonly string[] = []): RawElement {
 	return {
 		id,
 		type: "rectangle",
@@ -74,7 +74,7 @@ export function libraryBody(id: string, x = 0, groupIds: readonly string[] = [])
 	};
 }
 
-export function crossingConnectors(): [RawElement, RawElement] {
+function crossingConnectors(): [RawElement, RawElement] {
 	return [
 		connector({ id: "over", type: "line", y: 50, index: "a0" }),
 		connector({
@@ -92,7 +92,7 @@ export function crossingConnectors(): [RawElement, RawElement] {
 	];
 }
 
-export function duplicateLabelBoard(reverse = false): RawElement[] {
+function duplicateLabelBoard(reverse = false): RawElement[] {
 	const labels = [
 		boundLabel({ id: "newlbl", containerId: "owner", createdAt: "2026-08-27T02:00:00Z" }),
 		boundLabel({ id: "oldlbl", containerId: "owner", createdAt: "2026-08-27T01:00:00Z" }),
@@ -102,3 +102,14 @@ export function duplicateLabelBoard(reverse = false): RawElement[] {
 		...(reverse ? labels.toReversed() : labels),
 	];
 }
+
+export {
+	type RawElement,
+	semanticNode,
+	connector,
+	labelContainer,
+	boundLabel,
+	libraryBody,
+	crossingConnectors,
+	duplicateLabelBoard,
+};

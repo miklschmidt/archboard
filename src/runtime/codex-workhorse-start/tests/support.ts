@@ -31,9 +31,9 @@ import {
 	type WorkhorseThreadLinkPort,
 } from "../index.js";
 
-export const CHECKOUT_ROOT = "/workspace/archboard";
+const CHECKOUT_ROOT = "/workspace/archboard";
 
-export interface WorkhorseFixture {
+interface WorkhorseFixture {
 	readonly authorities: IdentityAuthorities;
 	readonly epoch: CodexEpochStore;
 	readonly session: FakeSession;
@@ -44,7 +44,7 @@ export interface WorkhorseFixture {
 	readonly dispose: () => void;
 }
 
-export class FakeSession implements WorkhorseSessionPort {
+class FakeSession implements WorkhorseSessionPort {
 	readonly startParams: SessionParams<"thread/start">[] = [];
 	readonly readParams: SessionParams<"thread/read">[] = [];
 	readonly deleteParams: SessionParams<"thread/delete">[] = [];
@@ -101,7 +101,7 @@ export class FakeSession implements WorkhorseSessionPort {
 	}
 }
 
-export class FakeThreadLink implements WorkhorseThreadLinkPort {
+class FakeThreadLink implements WorkhorseThreadLinkPort {
 	readonly targets: Array<{
 		paneId: string;
 		target: Parameters<NonNullable<CodexWorkhorseStartOptions["threadLink"]["classifyAndBind"]>>[2];
@@ -127,7 +127,7 @@ export class FakeThreadLink implements WorkhorseThreadLinkPort {
 	}
 }
 
-export function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseFixture {
+function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseFixture {
 	const parent = mkdtempSync(join("/tmp", "archboard-workhorse-start-"));
 	const epochRoot = join(parent, "epoch");
 	const codexHome = join(parent, "codex-home");
@@ -188,7 +188,7 @@ export function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseF
 	};
 }
 
-export function threadFixture(threadId: ThreadId): SessionThread {
+function threadFixture(threadId: ThreadId): SessionThread {
 	return {
 		id: threadId,
 		extra: {},
@@ -220,7 +220,7 @@ export function threadFixture(threadId: ThreadId): SessionThread {
 	};
 }
 
-export function startResponse(
+function startResponse(
 	thread: SessionThread,
 	overrides: Partial<
 		Pick<SessionResponse<"thread/start">, "approvalPolicy" | "sandbox" | "activePermissionProfile">
@@ -244,7 +244,7 @@ export function startResponse(
 	};
 }
 
-export function turnFixture(authorities: IdentityAuthorities): SessionTurn {
+function turnFixture(authorities: IdentityAuthorities): SessionTurn {
 	return {
 		id: authorities.identity.decoder.adoptTurnId("workhorse-turn-1"),
 		items: [
@@ -264,7 +264,7 @@ export function turnFixture(authorities: IdentityAuthorities): SessionTurn {
 	};
 }
 
-export function executableBinding(
+function executableBinding(
 	paneId: string,
 	revision: number,
 	childId: ChildId,
@@ -297,7 +297,7 @@ export function executableBinding(
 	};
 }
 
-export function inspectOnlyBinding(
+function inspectOnlyBinding(
 	paneId: string,
 	revision: number,
 	threadId: ThreadId,
@@ -327,3 +327,16 @@ export function inspectOnlyBinding(
 		},
 	};
 }
+
+export {
+	CHECKOUT_ROOT,
+	type WorkhorseFixture,
+	FakeSession,
+	FakeThreadLink,
+	makeFixture,
+	threadFixture,
+	startResponse,
+	turnFixture,
+	executableBinding,
+	inspectOnlyBinding,
+};

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-export function browserBundleSnapshot(repoRoot: string): {
+function browserBundleSnapshot(repoRoot: string): {
 	exists: boolean;
 	mtimeMs?: number;
 	size?: number;
@@ -14,7 +14,7 @@ export function browserBundleSnapshot(repoRoot: string): {
 	return { exists: true, mtimeMs: stat.mtimeMs, size: stat.size };
 }
 
-export function createBrowserPreflightFixture(): {
+function createBrowserPreflightFixture(): {
 	root: string;
 	bin: string;
 	temporary: string;
@@ -55,9 +55,7 @@ export function createBrowserPreflightFixture(): {
 	}
 }
 
-export function installFakeAgentBrowser(
-	fixture: ReturnType<typeof createBrowserPreflightFixture>,
-): void {
+function installFakeAgentBrowser(fixture: ReturnType<typeof createBrowserPreflightFixture>): void {
 	const executable = path.join(fixture.bin, "agent-browser");
 	fs.writeFileSync(
 		executable,
@@ -65,3 +63,5 @@ export function installFakeAgentBrowser(
 		{ mode: 0o755 },
 	);
 }
+
+export { browserBundleSnapshot, createBrowserPreflightFixture, installFakeAgentBrowser };

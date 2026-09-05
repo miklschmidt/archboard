@@ -5,7 +5,7 @@ import {
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
 
-export interface ObservedPaneEvent {
+interface ObservedPaneEvent {
 	type: string;
 	board?: string;
 	[key: string]: unknown;
@@ -16,7 +16,7 @@ interface Response {
 	body: unknown;
 }
 
-export interface ObservedPane<Event extends ObservedPaneEvent> {
+interface ObservedPane<Event extends ObservedPaneEvent> {
 	readonly socket: WebSocket;
 	readonly events: Event[];
 	board(): string | undefined;
@@ -99,7 +99,7 @@ async function closeSocket(socket: WebSocket, clientId: string, timeoutMs: numbe
 	});
 }
 
-export async function openObservedPane<Event extends ObservedPaneEvent>(options: {
+async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	base: string;
 	clientId: string;
 	preferredBoard?: string;
@@ -299,3 +299,5 @@ export async function openObservedPane<Event extends ObservedPaneEvent>(options:
 		},
 	};
 }
+
+export { type ObservedPaneEvent, type ObservedPane, openObservedPane };

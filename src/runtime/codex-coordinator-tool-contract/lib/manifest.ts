@@ -2,9 +2,9 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 
-export type JsonSchema = Readonly<Record<string, unknown>>;
+type JsonSchema = Readonly<Record<string, unknown>>;
 
-export interface CanonicalTool {
+interface CanonicalTool {
 	readonly type: "function";
 	readonly name: string;
 	readonly description: string;
@@ -12,19 +12,19 @@ export interface CanonicalTool {
 	readonly deferLoading: false;
 }
 
-export interface CanonicalNamespace {
+interface CanonicalNamespace {
 	readonly type: "namespace";
 	readonly name: NamespaceName;
 	readonly description: string;
 	readonly tools: readonly CanonicalTool[];
 }
 
-export type NamespaceName = "archboard_workhorse" | "archboard_voice";
-export type ManifestName = "workhorse" | "voice";
+type NamespaceName = "archboard_workhorse" | "archboard_voice";
+type ManifestName = "workhorse" | "voice";
 
-export const ARCHBOARD_WORKHORSE_MANIFEST_SHA256 =
+const ARCHBOARD_WORKHORSE_MANIFEST_SHA256 =
 	"fe8dd9bfaf91b37cbae31136ccdfc4eb1106728b40d2bc3ea01036606d6f748f" as const;
-export const ARCHBOARD_VOICE_MANIFEST_SHA256 =
+const ARCHBOARD_VOICE_MANIFEST_SHA256 =
 	"792d6ec96edc2fbffc8400ce0d1304a56662bee5436e95914505cb848356c393" as const;
 
 const MANIFEST_FILES = Object.freeze({
@@ -37,17 +37,17 @@ const MANIFEST_DIGESTS = Object.freeze({
 	archboard_voice: ARCHBOARD_VOICE_MANIFEST_SHA256,
 } satisfies Record<NamespaceName, string>);
 
-export const ARCHBOARD_WORKHORSE_TOOL_NAMES = Object.freeze([
+const ARCHBOARD_WORKHORSE_TOOL_NAMES = Object.freeze([
 	"inspect_workhorse",
 	"delegate_to_workhorse",
 	"manage_workhorse_queue",
 	"steer_workhorse",
 ] as const);
-export const ARCHBOARD_VOICE_TOOL_NAMES = Object.freeze(["resolve_spoken_approval"] as const);
+const ARCHBOARD_VOICE_TOOL_NAMES = Object.freeze(["resolve_spoken_approval"] as const);
 
-export type WorkhorseToolName = (typeof ARCHBOARD_WORKHORSE_TOOL_NAMES)[number];
-export type VoiceToolName = (typeof ARCHBOARD_VOICE_TOOL_NAMES)[number];
-export type CoordinatorToolName = WorkhorseToolName | VoiceToolName;
+type WorkhorseToolName = (typeof ARCHBOARD_WORKHORSE_TOOL_NAMES)[number];
+type VoiceToolName = (typeof ARCHBOARD_VOICE_TOOL_NAMES)[number];
+type CoordinatorToolName = WorkhorseToolName | VoiceToolName;
 
 const EXPECTED_TOOL_NAMES: Readonly<Record<NamespaceName, readonly string[]>> = Object.freeze({
 	archboard_workhorse: ARCHBOARD_WORKHORSE_TOOL_NAMES,
@@ -179,17 +179,17 @@ function loadManifest(namespace: NamespaceName): LoadedManifest {
 const WORKHORSE = loadManifest("archboard_workhorse");
 const VOICE = loadManifest("archboard_voice");
 
-export const ARCHBOARD_WORKHORSE_NAMESPACE = WORKHORSE.manifest;
-export const ARCHBOARD_VOICE_NAMESPACE = VOICE.manifest;
-export const ARCHBOARD_WORKHORSE_MANIFEST_JSON = WORKHORSE.text;
-export const ARCHBOARD_VOICE_MANIFEST_JSON = VOICE.text;
+const ARCHBOARD_WORKHORSE_NAMESPACE = WORKHORSE.manifest;
+const ARCHBOARD_VOICE_NAMESPACE = VOICE.manifest;
+const ARCHBOARD_WORKHORSE_MANIFEST_JSON = WORKHORSE.text;
+const ARCHBOARD_VOICE_MANIFEST_JSON = VOICE.text;
 
-export const COORDINATOR_TOOL_MANIFEST_DIGESTS = Object.freeze({
+const COORDINATOR_TOOL_MANIFEST_DIGESTS = Object.freeze({
 	workhorse: WORKHORSE.sha256,
 	voice: VOICE.sha256,
 });
 
-export interface CoordinatorManifestIntegrity {
+interface CoordinatorManifestIntegrity {
 	readonly workhorseSha256: string;
 	readonly voiceSha256: string;
 }
@@ -223,7 +223,7 @@ function parseCandidate(
 }
 
 /** Validate a reviewed namespace from exact bytes or a closed object snapshot. */
-export function assertCanonicalManifest(namespace: NamespaceName, candidate: unknown): void {
+function assertCanonicalManifest(namespace: NamespaceName, candidate: unknown): void {
 	const expected = manifestFor(namespace);
 	const received =
 		typeof candidate === "string" || candidate instanceof Uint8Array
@@ -236,19 +236,40 @@ export function assertCanonicalManifest(namespace: NamespaceName, candidate: unk
 }
 
 /** Re-read both canonical files and verify their fixed reviewed digests. */
-export function verifyCoordinatorManifestIntegrity(): CoordinatorManifestIntegrity {
+function verifyCoordinatorManifestIntegrity(): CoordinatorManifestIntegrity {
 	const workhorse = loadManifest("archboard_workhorse");
 	const voice = loadManifest("archboard_voice");
 	return Object.freeze({ workhorseSha256: workhorse.sha256, voiceSha256: voice.sha256 });
 }
 
-export function canonicalTool(
-	namespace: NamespaceName,
-	toolName: CoordinatorToolName,
-): CanonicalTool {
+function canonicalTool(namespace: NamespaceName, toolName: CoordinatorToolName): CanonicalTool {
 	const tool = manifestFor(namespace).tools.find((candidate) => candidate.name === toolName);
 	if (!tool) {
 		throw new TypeError(`${namespace} does not declare ${toolName}.`);
 	}
 	return tool;
 }
+
+export {
+	type JsonSchema,
+	type CanonicalTool,
+	type CanonicalNamespace,
+	type NamespaceName,
+	type ManifestName,
+	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
+	ARCHBOARD_VOICE_MANIFEST_SHA256,
+	ARCHBOARD_WORKHORSE_TOOL_NAMES,
+	ARCHBOARD_VOICE_TOOL_NAMES,
+	type WorkhorseToolName,
+	type VoiceToolName,
+	type CoordinatorToolName,
+	ARCHBOARD_WORKHORSE_NAMESPACE,
+	ARCHBOARD_VOICE_NAMESPACE,
+	ARCHBOARD_WORKHORSE_MANIFEST_JSON,
+	ARCHBOARD_VOICE_MANIFEST_JSON,
+	COORDINATOR_TOOL_MANIFEST_DIGESTS,
+	type CoordinatorManifestIntegrity,
+	assertCanonicalManifest,
+	verifyCoordinatorManifestIntegrity,
+	canonicalTool,
+};

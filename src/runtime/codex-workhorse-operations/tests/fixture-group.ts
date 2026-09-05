@@ -10,12 +10,12 @@ import {
 } from "../../../shared/codex-workbench-identity/index.js";
 import { buildFixture, prepareFixture, type Fixture } from "./support.js";
 
-export interface FixtureGroup {
+interface FixtureGroup {
 	readonly create: (initialStatus?: "idle" | "active") => Fixture;
 	readonly cleanup: () => void;
 }
 
-export function useFixtureGroup(): FixtureGroup["create"] {
+function useFixtureGroup(): FixtureGroup["create"] {
 	let group: FixtureGroup | undefined;
 	beforeAll(() => {
 		group = createFixtureGroup();
@@ -112,3 +112,5 @@ function createFixtureGroup(): FixtureGroup {
 		cleanup,
 	};
 }
+
+export { type FixtureGroup, useFixtureGroup };

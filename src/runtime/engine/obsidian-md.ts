@@ -29,7 +29,7 @@
 import { canonicalizeKeys } from "./expand-elements.js";
 import { derivedId, isBlockId } from "../../shared/ids/ids.js";
 
-export function isObsidianExcalidrawMd(content: string): boolean {
+function isObsidianExcalidrawMd(content: string): boolean {
 	// Raw scene JSON always starts with { or [ — never treat it as markdown,
 	// even when a text element happens to contain the marker strings.
 	const head = content.trimStart();
@@ -39,7 +39,7 @@ export function isObsidianExcalidrawMd(content: string): boolean {
 	return content.includes("# Excalidraw Data") || /^---[\s\S]*?excalidraw-plugin:/m.test(content);
 }
 
-export function renameElementId(elements: unknown[], oldId: string, newId: string): void {
+function renameElementId(elements: unknown[], oldId: string, newId: string): void {
 	for (const el of elements) {
 		if (!el || typeof el !== "object") {
 			continue;
@@ -103,7 +103,7 @@ const REQUIRED_FRONTMATTER: ReadonlyArray<[key: string, line: string]> = [
 // scalar key is the entire vocabulary Obsidian frontmatter uses in practice.
 const FRONTMATTER_KEY_RE = /^(?:(["'])(.*?)\1|([^:#\s][^:]*?))\s*:(?:\s|$)/;
 
-export type FrontmatterScan =
+type FrontmatterScan =
 	| { kind: "none" }
 	| { kind: "ok"; lines: string[] }
 	| { kind: "malformed"; reason: string };
@@ -155,7 +155,7 @@ function yamlScalar(value: string): string {
 
 // Read one top-level frontmatter key from a note. Returns undefined when the
 // note has no readable frontmatter or the key is absent.
-export function readFrontmatterValue(content: string, key: string): string | undefined {
+function readFrontmatterValue(content: string, key: string): string | undefined {
 	const scan = scanFrontmatter(content);
 	if (scan.kind !== "ok") {
 		return undefined;
@@ -186,7 +186,7 @@ export function readFrontmatterValue(content: string, key: string): string | und
 // a key that is already right is left untouched and a new one lands where every
 // other new key lands. Everything from the closing `---` down is carried
 // through as the bytes it already was.
-export function setFrontmatterValue(note: string, key: string, value: string): string {
+function setFrontmatterValue(note: string, key: string, value: string): string {
 	const scan = scanFrontmatter(note);
 	if (scan.kind !== "ok") {
 		return note;
@@ -264,7 +264,7 @@ function upsertFrontmatterLines(
 // The empty-document test went with it rather than being made cheaper: a
 // document with nothing in it does not start with `---` either, so the check
 // below already answered it.
-export function scanFrontmatter(content: string): FrontmatterScan {
+function scanFrontmatter(content: string): FrontmatterScan {
 	const text = content.charCodeAt(0) === 0xfeff ? content.slice(1) : content;
 	// Obsidian only honours frontmatter that starts on the very first line.
 	if (!/^---[ \t]*(\r?\n|$)/.test(text)) {
@@ -546,7 +546,7 @@ const EMBEDDED_ENTRY_RE = /^([\w\d]*):[ \t]+(.*)$/;
 // reference is where one ends. Nothing below the last of them is text.
 const BLOCK_REF_RE = / \^\S+[ \t]*$/;
 
-export type EmbeddedFileEntry =
+type EmbeddedFileEntry =
 	| { fileId: string; kind: "wikilink"; target: string }
 	| { fileId: string; kind: "hyperlink"; target: string }
 	| { fileId: string; kind: "other"; target: string };
@@ -682,7 +682,7 @@ function preservedRegions(existing: string | null | undefined): PreservedRegions
 // region split the writer preserves, so reading the section and keeping it
 // across a save can never disagree about which bytes it is — the same reason
 // `locateDrawingBlock` is one locator for both directions.
-export function embeddedFilesIn(note: string): EmbeddedFileEntry[] {
+function embeddedFilesIn(note: string): EmbeddedFileEntry[] {
 	return readEmbeddedFiles(preservedRegions(note).embedded);
 }
 
@@ -690,13 +690,13 @@ export function embeddedFilesIn(note: string): EmbeddedFileEntry[] {
 // one; pass nothing to get the plugin's default frontmatter. Throws when the
 // destination's frontmatter cannot be read safely — callers must treat that as
 // "do not write" rather than falling back to a fresh header.
-export interface WrapOptions {
+interface WrapOptions {
 	// Frontmatter keys to set on the note — board identity, in practice. Upsert
 	// semantics: unchanged values leave their lines untouched.
 	frontmatter?: ReadonlyArray<[key: string, value: string]>;
 }
 
-export function wrapSceneAsObsidianMd(
+function wrapSceneAsObsidianMd(
 	scene: Record<string, unknown>,
 	existing?: string | null,
 	options: WrapOptions = {},
@@ -809,7 +809,7 @@ function locateDrawingBlock(md: string): DrawingBlock | null {
 	};
 }
 
-export function extractSceneJsonFromObsidianMd(md: string): string {
+function extractSceneJsonFromObsidianMd(md: string): string {
 	const block = locateDrawingBlock(md);
 	if (!block) {
 		throw new Error("No Drawing block found — not an .excalidraw.md file?");
@@ -927,3 +927,17 @@ function decompress(
 		}
 	}
 }
+
+export {
+	isObsidianExcalidrawMd,
+	renameElementId,
+	type FrontmatterScan,
+	readFrontmatterValue,
+	setFrontmatterValue,
+	scanFrontmatter,
+	type EmbeddedFileEntry,
+	embeddedFilesIn,
+	type WrapOptions,
+	wrapSceneAsObsidianMd,
+	extractSceneJsonFromObsidianMd,
+};

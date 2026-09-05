@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 import { TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS } from "../../../../src/shared/timing/timing.ts";
 
-export async function waitForRecordedPid(file: string): Promise<number> {
+async function waitForRecordedPid(file: string): Promise<number> {
 	const [pid] = await waitForRecordedPids(file, 1);
 	if (pid === undefined) {
 		throw new Error("Delayed Git process did not start.");
@@ -13,7 +13,7 @@ export async function waitForRecordedPid(file: string): Promise<number> {
 	return pid;
 }
 
-export function recordedPids(file: string): number[] {
+function recordedPids(file: string): number[] {
 	if (!existsSync(file)) {
 		return [];
 	}
@@ -29,7 +29,7 @@ export function recordedPids(file: string): number[] {
 	return [...new Set(pids)];
 }
 
-export async function waitForRecordedPids(file: string, count: number): Promise<number[]> {
+async function waitForRecordedPids(file: string, count: number): Promise<number[]> {
 	const deadline = Date.now() + 2_000;
 	for (;;) {
 		const pids = recordedPids(file);
@@ -43,7 +43,7 @@ export async function waitForRecordedPids(file: string, count: number): Promise<
 	}
 }
 
-export async function expectPidAbsent(pid: number): Promise<void> {
+async function expectPidAbsent(pid: number): Promise<void> {
 	if (!Number.isSafeInteger(pid) || pid <= 0) {
 		throw new Error(`Cannot verify malformed delayed Git PID ${String(pid)}.`);
 	}
@@ -56,7 +56,7 @@ export async function expectPidAbsent(pid: number): Promise<void> {
 	expect(remains, `Git pid ${pid} survived canvas teardown: ${detail}`).toBeFalse();
 }
 
-export async function expectRecordedPidsAbsent(file: string): Promise<void> {
+async function expectRecordedPidsAbsent(file: string): Promise<void> {
 	const pids = recordedPids(file);
 	if (pids.length === 0) {
 		throw new Error("No delayed Git PID was recorded for cleanup proof.");
@@ -72,7 +72,7 @@ export async function expectRecordedPidsAbsent(file: string): Promise<void> {
 	}
 }
 
-export function createDelayedCheckoutOwner(name: string, checkoutCount = 1) {
+function createDelayedCheckoutOwner(name: string, checkoutCount = 1) {
 	const root = join(tmpdir(), `archboard-checkout-lifetime-${name}-${crypto.randomUUID()}`);
 	const vault = join(root, "vault");
 	const checkouts = Array.from({ length: checkoutCount }, (_, index) =>
@@ -138,3 +138,12 @@ esac
 		dispose: () => rmSync(root, { recursive: true, force: true }),
 	};
 }
+
+export {
+	waitForRecordedPid,
+	recordedPids,
+	waitForRecordedPids,
+	expectPidAbsent,
+	expectRecordedPidsAbsent,
+	createDelayedCheckoutOwner,
+};

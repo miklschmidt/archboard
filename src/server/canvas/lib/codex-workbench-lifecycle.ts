@@ -43,13 +43,13 @@ import {
 	type CodexWorkbenchRequestRouter,
 } from "./codex-workbench-routing.js";
 
-export const CODEX_WORKBENCH_OWNER = "archboard-canvas-codex-workbench" as const;
+const CODEX_WORKBENCH_OWNER = "archboard-canvas-codex-workbench" as const;
 
-export type CodexWorkbenchState = "idle" | "starting" | "ready" | "stopping" | "failed";
-export type CodexWorkbenchStopReason = "shutdown" | "child_exit";
-export type CodexTransportExit = Parameters<Parameters<CodexTransport["onExit"]>[0]>[0];
+type CodexWorkbenchState = "idle" | "starting" | "ready" | "stopping" | "failed";
+type CodexWorkbenchStopReason = "shutdown" | "child_exit";
+type CodexTransportExit = Parameters<Parameters<CodexTransport["onExit"]>[0]>[0];
 
-export interface CodexWorkbenchSnapshot {
+interface CodexWorkbenchSnapshot {
 	readonly owner: typeof CODEX_WORKBENCH_OWNER;
 	readonly state: CodexWorkbenchState;
 	readonly generation: number;
@@ -58,7 +58,7 @@ export interface CodexWorkbenchSnapshot {
 	readonly failure: string | null;
 }
 
-export interface CodexWorkbenchComponents {
+interface CodexWorkbenchComponents {
 	readonly identity: IdentityAuthorities;
 	readonly epoch: CodexEpochStore;
 	readonly transport: CodexTransport;
@@ -79,7 +79,7 @@ export interface CodexWorkbenchComponents {
 	readonly gateway: CodexWorkbenchGateway;
 }
 
-export interface CodexWorkbenchGenerationHooks {
+interface CodexWorkbenchGenerationHooks {
 	readonly threadContext: Parameters<CodexThreadContextController["replaceHooks"]>[0];
 	readonly onNotification: Parameters<CodexTransport["onServerNotification"]>[0];
 	readonly installIdentityDecoders: (identity: IdentityAuthorities) => void;
@@ -135,7 +135,7 @@ interface GenerationState {
 	childSettlement: Promise<void> | null;
 }
 
-export interface CodexWorkbenchGeneration {
+interface CodexWorkbenchGeneration {
 	readonly components: CodexWorkbenchComponents;
 	readonly identityLedger: IdentityLedger;
 	readonly transport: CodexTransport;
@@ -147,7 +147,7 @@ export interface CodexWorkbenchGeneration {
 	readonly finishStop: () => void;
 }
 
-export interface CreateCodexWorkbenchGenerationLifecycleOptions {
+interface CreateCodexWorkbenchGenerationLifecycleOptions {
 	readonly components: CodexWorkbenchComponents;
 	readonly identityLedger: IdentityLedger;
 	readonly hooks: CodexWorkbenchGenerationHooks;
@@ -272,7 +272,7 @@ function installRegistrations(
 }
 
 /** Build generation dispatch and teardown around a complete, freshly assembled graph. */
-export function createCodexWorkbenchGenerationLifecycle(
+function createCodexWorkbenchGenerationLifecycle(
 	options: CreateCodexWorkbenchGenerationLifecycleOptions,
 ): CodexWorkbenchGeneration {
 	const components = options.components;
@@ -459,17 +459,17 @@ export function createCodexWorkbenchGenerationLifecycle(
 	});
 }
 
-export interface CodexWorkbenchStableKernel {
+interface CodexWorkbenchStableKernel {
 	readonly identityLedger: IdentityLedger;
 	readonly transport: CodexTransport;
 }
 
-export interface CodexWorkbenchKernelAcquisition {
+interface CodexWorkbenchKernelAcquisition {
 	readonly kernel: CodexWorkbenchStableKernel;
 	readonly identity: IdentityAuthorities;
 }
 
-export interface CodexWorkbenchGenerationInput {
+interface CodexWorkbenchGenerationInput {
 	readonly generation: number;
 	readonly child: CodexProcessChild;
 	readonly process: CodexProcess;
@@ -487,35 +487,35 @@ export interface CodexWorkbenchGenerationInput {
 	readonly shutdownOwner: () => Promise<CodexWorkbenchSnapshot>;
 }
 
-export type CodexWorkbenchGenerationFactory = (
+type CodexWorkbenchGenerationFactory = (
 	input: CodexWorkbenchGenerationInput,
 ) => Promise<CodexWorkbenchGeneration>;
 
-export interface CodexWorkbenchOwnerOptions {
+interface CodexWorkbenchOwnerOptions {
 	readonly createProcess: () => CodexProcess;
 	readonly createKernel: (input: CodexWorkbenchGenerationInput) => CodexWorkbenchKernelAcquisition;
 	readonly createGeneration: CodexWorkbenchGenerationFactory;
 }
 
-export interface CodexWorkbenchOwner {
+interface CodexWorkbenchOwner {
 	readonly start: () => Promise<CodexWorkbenchSnapshot>;
 	readonly snapshot: () => CodexWorkbenchSnapshot;
 	readonly gateway: () => CodexWorkbenchGateway;
 	readonly shutdown: () => Promise<CodexWorkbenchSnapshot>;
 }
 
-export type CodexWorkbenchOwnerSlots = CodexWorkbenchOwner;
+type CodexWorkbenchOwnerSlots = CodexWorkbenchOwner;
 
-export interface CodexWorkbenchExitHandler {
+interface CodexWorkbenchExitHandler {
 	handle: (event: CodexTransportExit) => void;
 }
 
-export interface CodexWorkbenchExitBridge {
+interface CodexWorkbenchExitBridge {
 	event: CodexTransportExit | null;
 	handler: CodexWorkbenchExitHandler | null;
 }
 
-export interface CodexWorkbenchOwnerRuntime {
+interface CodexWorkbenchOwnerRuntime {
 	readonly process: CodexProcess;
 	identityLedger: IdentityLedger | null;
 	transport: CodexTransport | null;
@@ -532,7 +532,7 @@ export interface CodexWorkbenchOwnerRuntime {
  * caller: backend source changes take effect only through a full restart
  * (ADR 0021), so no module replacement ever observes it.
  */
-export interface CodexWorkbenchOwnerPublication {
+interface CodexWorkbenchOwnerPublication {
 	generation: number;
 	state: CodexWorkbenchState;
 	failure: string | null;
@@ -1047,7 +1047,7 @@ function publishReadySlots(
  * dispatches to them is owner-local: nothing outside this call can observe or
  * hand back a previous lifetime's state (ADR 0021).
  */
-export function installCodexWorkbenchOwnerLifecycle(
+function installCodexWorkbenchOwnerLifecycle(
 	options: CodexWorkbenchOwnerOptions,
 ): CodexWorkbenchOwner {
 	const published = emptyPublication();
@@ -1347,3 +1347,28 @@ export function installCodexWorkbenchOwnerLifecycle(
 		gateway: () => dispatchSlots().gateway(),
 	});
 }
+
+export {
+	CODEX_WORKBENCH_OWNER,
+	type CodexWorkbenchState,
+	type CodexWorkbenchStopReason,
+	type CodexTransportExit,
+	type CodexWorkbenchSnapshot,
+	type CodexWorkbenchComponents,
+	type CodexWorkbenchGenerationHooks,
+	type CodexWorkbenchGeneration,
+	type CreateCodexWorkbenchGenerationLifecycleOptions,
+	createCodexWorkbenchGenerationLifecycle,
+	type CodexWorkbenchStableKernel,
+	type CodexWorkbenchKernelAcquisition,
+	type CodexWorkbenchGenerationInput,
+	type CodexWorkbenchGenerationFactory,
+	type CodexWorkbenchOwnerOptions,
+	type CodexWorkbenchOwner,
+	type CodexWorkbenchOwnerSlots,
+	type CodexWorkbenchExitHandler,
+	type CodexWorkbenchExitBridge,
+	type CodexWorkbenchOwnerRuntime,
+	type CodexWorkbenchOwnerPublication,
+	installCodexWorkbenchOwnerLifecycle,
+};

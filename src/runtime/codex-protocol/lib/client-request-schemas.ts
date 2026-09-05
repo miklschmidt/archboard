@@ -339,29 +339,29 @@ const TurnSteerParamsSchema = z.strictObject({
 	expectedTurnId: z.string(),
 });
 const TurnInterruptParamsSchema = z.strictObject({ threadId: z.string(), turnId: z.string() });
-export const ThreadQueueAddParamsSchema = z.strictObject({
+const ThreadQueueAddParamsSchema = z.strictObject({
 	threadId: z.string(),
 	input: z.array(ClientUserInputSchema),
 	clientUserMessageId: z.string(),
 });
-export const ThreadQueueListParamsSchema = z.strictObject({
+const ThreadQueueListParamsSchema = z.strictObject({
 	threadId: z.string(),
 	...NullablePageSchema,
 });
-export const ThreadQueueUpdateParamsSchema = z.strictObject({
+const ThreadQueueUpdateParamsSchema = z.strictObject({
 	threadId: z.string(),
 	queuedSubmissionId: z.string(),
 	input: z.array(ClientUserInputSchema),
 });
-export const ThreadQueueDeleteParamsSchema = z.strictObject({
+const ThreadQueueDeleteParamsSchema = z.strictObject({
 	threadId: z.string(),
 	queuedSubmissionId: z.string(),
 });
-export const ThreadQueueReorderParamsSchema = z.strictObject({
+const ThreadQueueReorderParamsSchema = z.strictObject({
 	threadId: z.string(),
 	queuedSubmissionIds: z.array(z.string()),
 });
-export const ThreadQueueStartParamsSchema = z.strictObject({
+const ThreadQueueStartParamsSchema = z.strictObject({
 	threadId: z.string(),
 	queuedSubmissionId: z.string().nullable().optional(),
 });
@@ -412,7 +412,7 @@ const ThreadTimelineListParamsSchema = z.strictObject({
 });
 
 /** Wire decoder schemas for every generated request the public session can emit. */
-export const CLIENT_REQUEST_PARAM_SCHEMAS = codexIngressSchemas<
+const CLIENT_REQUEST_PARAM_SCHEMAS = codexIngressSchemas<
 	Pick<CodexClientRequestParamsByMethod, ClientRequestMethod>
 >()({
 	initialize: GeneratedInitializeParamsSchema,
@@ -449,23 +449,23 @@ export const CLIENT_REQUEST_PARAM_SCHEMAS = codexIngressSchemas<
 	"thread/timeline/list": ThreadTimelineListParamsSchema,
 } as const);
 
-export type ClientRequestPayloads = {
+type ClientRequestPayloads = {
 	[Method in ClientRequestMethod]: z.infer<(typeof CLIENT_REQUEST_PARAM_SCHEMAS)[Method]>;
 };
-export type ClientRequestParams<Method extends ClientRequestMethod> =
+type ClientRequestParams<Method extends ClientRequestMethod> =
 	Method extends ClientRequestMethodWithoutParams ? undefined : ClientRequestPayloads[Method];
-export type ClientRequestInputPayloads = {
+type ClientRequestInputPayloads = {
 	[Method in ClientRequestMethod]: z.input<(typeof CLIENT_REQUEST_PARAM_SCHEMAS)[Method]>;
 };
-export type ClientRequestInput<Method extends ClientRequestMethod> =
+type ClientRequestInput<Method extends ClientRequestMethod> =
 	Method extends ClientRequestMethodWithoutParams ? undefined : ClientRequestInputPayloads[Method];
 
-export type ThreadQueueAddParams = z.infer<typeof ThreadQueueAddParamsSchema>;
-export type ThreadQueueListParams = z.infer<typeof ThreadQueueListParamsSchema>;
-export type ThreadQueueUpdateParams = z.infer<typeof ThreadQueueUpdateParamsSchema>;
-export type ThreadQueueDeleteParams = z.infer<typeof ThreadQueueDeleteParamsSchema>;
-export type ThreadQueueReorderParams = z.infer<typeof ThreadQueueReorderParamsSchema>;
-export type ThreadQueueStartParams = z.infer<typeof ThreadQueueStartParamsSchema>;
+type ThreadQueueAddParams = z.infer<typeof ThreadQueueAddParamsSchema>;
+type ThreadQueueListParams = z.infer<typeof ThreadQueueListParamsSchema>;
+type ThreadQueueUpdateParams = z.infer<typeof ThreadQueueUpdateParamsSchema>;
+type ThreadQueueDeleteParams = z.infer<typeof ThreadQueueDeleteParamsSchema>;
+type ThreadQueueReorderParams = z.infer<typeof ThreadQueueReorderParamsSchema>;
+type ThreadQueueStartParams = z.infer<typeof ThreadQueueStartParamsSchema>;
 
 type PreserveNullish<Value, Identity> = Identity | Extract<Value, null | undefined>;
 type BrandIdentityField<Key, Value> = Key extends "threadId" | "parentThreadId" | "ancestorThreadId"
@@ -488,7 +488,7 @@ type BrandedRequestParams<Value> = Value extends undefined
 		}>;
 
 type GeneratedTurnSteerParams = BrandedRequestParams<ClientRequestPayloads["turn/steer"]>;
-export type CodexSessionTurnSteerParams = Readonly<{
+type CodexSessionTurnSteerParams = Readonly<{
 	threadId: GeneratedTurnSteerParams["threadId"];
 	clientUserMessageId: NonNullable<GeneratedTurnSteerParams["clientUserMessageId"]>;
 	input: GeneratedTurnSteerParams["input"];
@@ -496,10 +496,33 @@ export type CodexSessionTurnSteerParams = Readonly<{
 	expectedTurnId: GeneratedTurnSteerParams["expectedTurnId"];
 }>;
 
-export type CodexSessionRequestPayloads = {
+type CodexSessionRequestPayloads = {
 	[Method in ClientRequestMethod]: Method extends "turn/steer"
 		? CodexSessionTurnSteerParams
 		: BrandedRequestParams<ClientRequestPayloads[Method]>;
 };
-export type CodexSessionRequestParams<Method extends ClientRequestMethod> =
+type CodexSessionRequestParams<Method extends ClientRequestMethod> =
 	CodexSessionRequestPayloads[Method];
+
+export {
+	ThreadQueueAddParamsSchema,
+	ThreadQueueListParamsSchema,
+	ThreadQueueUpdateParamsSchema,
+	ThreadQueueDeleteParamsSchema,
+	ThreadQueueReorderParamsSchema,
+	ThreadQueueStartParamsSchema,
+	CLIENT_REQUEST_PARAM_SCHEMAS,
+	type ClientRequestPayloads,
+	type ClientRequestParams,
+	type ClientRequestInputPayloads,
+	type ClientRequestInput,
+	type ThreadQueueAddParams,
+	type ThreadQueueListParams,
+	type ThreadQueueUpdateParams,
+	type ThreadQueueDeleteParams,
+	type ThreadQueueReorderParams,
+	type ThreadQueueStartParams,
+	type CodexSessionTurnSteerParams,
+	type CodexSessionRequestPayloads,
+	type CodexSessionRequestParams,
+};

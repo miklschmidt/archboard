@@ -34,7 +34,7 @@
 import type { BoardContent } from "./board-io.js";
 import type { BoardWriteConflict } from "./board-version.js";
 
-export interface BoardHold {
+interface BoardHold {
 	/** The refusal that started it, three outcomes and all (ADR 0006). */
 	conflict: BoardWriteConflict;
 	/** When the board stopped saving. */
@@ -68,16 +68,16 @@ export interface BoardHold {
 // contains work because the held copy exists only in this process.
 const holds = new Map<string, BoardHold>();
 
-export function holdOn(key: string): BoardHold | undefined {
+function holdOn(key: string): BoardHold | undefined {
 	return holds.get(key);
 }
 
-export function isHeld(key: string): boolean {
+function isHeld(key: string): boolean {
 	return holds.has(key);
 }
 
 /** Whether an ordinary write reaches the note rather than the held copy. */
-export function writesBoardNote(key: string): boolean {
+function writesBoardNote(key: string): boolean {
 	return !isHeld(key);
 }
 
@@ -90,11 +90,7 @@ export function writesBoardNote(key: string): boolean {
  * it is the one that describes when the board stopped saving, and the human is
  * being asked to choose about that.
  */
-export function beginHold(
-	key: string,
-	conflict: BoardWriteConflict,
-	content: BoardContent,
-): BoardHold {
+function beginHold(key: string, conflict: BoardWriteConflict, content: BoardContent): BoardHold {
 	const existing = holds.get(key);
 	if (existing) {
 		return existing;
@@ -105,11 +101,7 @@ export function beginHold(
 }
 
 /** Take a write into the held copy rather than into the note. */
-export function holdWrite(
-	key: string,
-	content: BoardContent,
-	fromScreen = false,
-): BoardHold | undefined {
+function holdWrite(key: string, content: BoardContent, fromScreen = false): BoardHold | undefined {
 	const hold = holds.get(key);
 	if (!hold) {
 		return undefined;
@@ -129,14 +121,14 @@ export function holdWrite(
  * was worth: reload threw it away, overwrite wrote it over the note,
  * save-elsewhere wrote it to another one. Nothing chooses on its own.
  */
-export function releaseHold(key: string): BoardHold | undefined {
+function releaseHold(key: string): BoardHold | undefined {
 	const hold = holds.get(key);
 	holds.delete(key);
 	return hold;
 }
 
 /** Every board this canvas has stopped saving, for an answer that lists them. */
-export function heldBoardKeys(): string[] {
+function heldBoardKeys(): string[] {
 	return Array.from(holds.keys()).toSorted();
 }
 
@@ -145,7 +137,7 @@ export function heldBoardKeys(): string[] {
  * riding on it, and the three ways out — the same three, worded the same way,
  * whether they arrive in a browser, a terminal or an API client.
  */
-export interface HoldReport {
+interface HoldReport {
 	board: string;
 	since: string;
 	/** How many writes have landed in the held copy rather than in the note. */
@@ -156,7 +148,7 @@ export interface HoldReport {
 	message: string;
 }
 
-export function reportHold(key: string, hold: BoardHold): HoldReport {
+function reportHold(key: string, hold: BoardHold): HoldReport {
 	return {
 		board: key,
 		since: hold.since,
@@ -180,7 +172,7 @@ const clock = (iso: string): string => {
  * lines and the same order the refusal itself uses, because a person who has
  * seen one has seen the other.
  */
-export function holdMessage(key: string, hold: BoardHold): string {
+function holdMessage(key: string, hold: BoardHold): string {
 	const outcomes = hold.conflict.outcomes;
 	const drawn =
 		hold.writes === 0
@@ -196,3 +188,17 @@ export function holdMessage(key: string, hold: BoardHold): string {
 		"Keep a board open in one editor at a time.",
 	].join("\n");
 }
+
+export {
+	type BoardHold,
+	holdOn,
+	isHeld,
+	writesBoardNote,
+	beginHold,
+	holdWrite,
+	releaseHold,
+	heldBoardKeys,
+	type HoldReport,
+	reportHold,
+	holdMessage,
+};

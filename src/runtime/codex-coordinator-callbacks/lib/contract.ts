@@ -33,18 +33,15 @@ import type {
 	TurnId,
 } from "../../../shared/codex-workbench-identity/index.js";
 
-export type SemanticCallbackSource =
-	| SettledSemanticChangeEvent
-	| PaneFocusEvent
-	| PaneSelectionEvent;
-export type CoordinatorCallbackSource = WorkhorseOperationEvent | SemanticCallbackSource;
+type SemanticCallbackSource = SettledSemanticChangeEvent | PaneFocusEvent | PaneSelectionEvent;
+type CoordinatorCallbackSource = WorkhorseOperationEvent | SemanticCallbackSource;
 
-export interface CoordinatorCallbackLinkCorrelation {
+interface CoordinatorCallbackLinkCorrelation {
 	readonly binding: ThreadLinkBindingSnapshot;
 	readonly target: ThreadLinkTarget;
 }
 
-export interface CoordinatorCallbackCorrelation {
+interface CoordinatorCallbackCorrelation {
 	readonly operationId: OperationId | null;
 	readonly childId: ChildId | null;
 	readonly epoch: ChildEpoch | null;
@@ -70,7 +67,7 @@ interface CoordinatorOperationCallbackBase {
 	readonly detail: string | null;
 }
 
-export type CoordinatorOperationCallback =
+type CoordinatorOperationCallback =
 	| (CoordinatorOperationCallbackBase & { readonly type: "accepted"; readonly outcome: "pending" })
 	| (CoordinatorOperationCallbackBase & { readonly type: "queued"; readonly outcome: "delivered" })
 	| (CoordinatorOperationCallbackBase & { readonly type: "started"; readonly outcome: "delivered" })
@@ -95,7 +92,7 @@ export type CoordinatorOperationCallback =
 			readonly outcome: "outcome_unknown";
 	  });
 
-export interface CoordinatorSemanticCallbackData {
+interface CoordinatorSemanticCallbackData {
 	readonly feedId: string;
 	readonly sequence: number | null;
 	readonly origin: SemanticChangeOrigin | null;
@@ -117,13 +114,13 @@ interface CoordinatorSemanticCallbackBase {
 	readonly semantic: CoordinatorSemanticCallbackData;
 }
 
-export type CoordinatorSemanticCallback =
+type CoordinatorSemanticCallback =
 	| (CoordinatorSemanticCallbackBase & { readonly type: "change" })
 	| (CoordinatorSemanticCallbackBase & { readonly type: "focus" })
 	| (CoordinatorSemanticCallbackBase & { readonly type: "selection" });
-export type CoordinatorCallback = CoordinatorOperationCallback | CoordinatorSemanticCallback;
+type CoordinatorCallback = CoordinatorOperationCallback | CoordinatorSemanticCallback;
 
-export interface CoordinatorCallbackRealtimeGeneration {
+interface CoordinatorCallbackRealtimeGeneration {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly coordinatorThreadId: ThreadId;
@@ -132,43 +129,43 @@ export interface CoordinatorCallbackRealtimeGeneration {
 	readonly browserCorrelationId: RealtimeCorrelationId;
 }
 
-export interface CoordinatorCallbackRealtimeRequest {
+interface CoordinatorCallbackRealtimeRequest {
 	readonly generation: CoordinatorCallbackRealtimeGeneration;
 	readonly params: SessionParams<"thread/realtime/appendText">;
 }
 
-export type CoordinatorCallbackDeliveryOutcome = "delivered" | "not_delivered" | "outcome_unknown";
-export interface CoordinatorCallbackMutationResult {
+type CoordinatorCallbackDeliveryOutcome = "delivered" | "not_delivered" | "outcome_unknown";
+interface CoordinatorCallbackMutationResult {
 	readonly attempted: boolean;
 	readonly outcome: CoordinatorCallbackDeliveryOutcome;
 	readonly reason: "stale_session" | "session_rejected" | "response_lost" | null;
 }
 
-export interface CoordinatorCallbackRealtimePort {
+interface CoordinatorCallbackRealtimePort {
 	readonly appendDeveloper: (
 		request: CoordinatorCallbackRealtimeRequest,
 	) => Promise<CoordinatorCallbackMutationResult>;
 }
 
-export interface CoordinatorCallbackCurrentChild {
+interface CoordinatorCallbackCurrentChild {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 }
 
-export type CoordinatorCallbackReadyCoordinator = CoordinatorSnapshot & {
+type CoordinatorCallbackReadyCoordinator = CoordinatorSnapshot & {
 	readonly state: "ready";
 	readonly threadId: ThreadId;
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 };
 
-export type CoordinatorCallbackDeliveryPath =
+type CoordinatorCallbackDeliveryPath =
 	| "none"
 	| "silent"
 	| "realtime_appendText"
 	| "thread_inject_items";
-export type CallbackBufferOverflowReason = "buffer_overflow" | "coalesced";
-export type CoordinatorCallbackDeliveryReason =
+type CallbackBufferOverflowReason = "buffer_overflow" | "coalesced";
+type CoordinatorCallbackDeliveryReason =
 	| CallbackBufferOverflowReason
 	| "child_exit"
 	| "disposed"
@@ -200,7 +197,7 @@ interface CoordinatorCallbackDeliveryBase {
 	readonly realtimeRequest: CoordinatorCallbackRealtimeRequest | null;
 }
 
-export type CoordinatorCallbackDelivery = CoordinatorCallbackDeliveryBase &
+type CoordinatorCallbackDelivery = CoordinatorCallbackDeliveryBase &
 	(
 		| {
 				readonly attempted: false;
@@ -214,7 +211,7 @@ export type CoordinatorCallbackDelivery = CoordinatorCallbackDeliveryBase &
 		  }
 	);
 
-export interface CoordinatorCallbackOptions {
+interface CoordinatorCallbackOptions {
 	readonly semantic: Pick<
 		SemanticContextPublisher,
 		"subscribeSettledChange" | "subscribePaneFocus" | "subscribePaneSelection"
@@ -235,13 +232,13 @@ export interface CoordinatorCallbackOptions {
 	readonly settledLedgerLimit?: number;
 }
 
-export interface CoordinatorCallbackHistory {
+interface CoordinatorCallbackHistory {
 	readonly deliveries: readonly CoordinatorCallbackDelivery[];
 	/** Records evicted before the retained suffix for this exact realtime generation. */
 	readonly omittedPrefixCount: number;
 }
 
-export interface CoordinatorCallbacks {
+interface CoordinatorCallbacks {
 	readonly enqueue: (event: CoordinatorCallbackSource) => Promise<CoordinatorCallbackDelivery>;
 	readonly flush: () => Promise<void>;
 	readonly inspect: () => readonly CoordinatorCallbackDelivery[];
@@ -253,11 +250,38 @@ export interface CoordinatorCallbacks {
 	readonly dispose: () => void;
 }
 
-export interface CoordinatorCallbacksRetainedState {
+interface CoordinatorCallbacksRetainedState {
 	current: CoordinatorCallbacks | null;
 }
 
-export interface CoordinatorCallbackClassification {
+interface CoordinatorCallbackClassification {
 	readonly captured: CoordinatorCallbackLinkCorrelation;
 	readonly live: ThreadLinkClassification;
 }
+
+export {
+	type SemanticCallbackSource,
+	type CoordinatorCallbackSource,
+	type CoordinatorCallbackLinkCorrelation,
+	type CoordinatorCallbackCorrelation,
+	type CoordinatorOperationCallback,
+	type CoordinatorSemanticCallbackData,
+	type CoordinatorSemanticCallback,
+	type CoordinatorCallback,
+	type CoordinatorCallbackRealtimeGeneration,
+	type CoordinatorCallbackRealtimeRequest,
+	type CoordinatorCallbackDeliveryOutcome,
+	type CoordinatorCallbackMutationResult,
+	type CoordinatorCallbackRealtimePort,
+	type CoordinatorCallbackCurrentChild,
+	type CoordinatorCallbackReadyCoordinator,
+	type CoordinatorCallbackDeliveryPath,
+	type CallbackBufferOverflowReason,
+	type CoordinatorCallbackDeliveryReason,
+	type CoordinatorCallbackDelivery,
+	type CoordinatorCallbackOptions,
+	type CoordinatorCallbackHistory,
+	type CoordinatorCallbacks,
+	type CoordinatorCallbacksRetainedState,
+	type CoordinatorCallbackClassification,
+};

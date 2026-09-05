@@ -15,7 +15,7 @@
 // mistake made at the keyboard, and the moment of the mistake is when the list
 // of boards is worth printing. See ADR 0009.
 
-export class BoardRequiredError extends Error {
+class BoardRequiredError extends Error {
 	readonly code = "BOARD_REQUIRED";
 	readonly status = 400;
 	/** Persisted board keys the caller can choose from. */
@@ -28,10 +28,10 @@ export class BoardRequiredError extends Error {
 	}
 }
 
-export type BoardResolutionFailure = "missing" | "ambiguous" | "malformed" | "conflicting";
+type BoardResolutionFailure = "missing" | "ambiguous" | "malformed" | "conflicting";
 
 /** A named board address that cannot resolve to one valid note in the vault. */
-export class BoardResolutionError extends Error {
+class BoardResolutionError extends Error {
 	readonly code = "BOARD_RESOLUTION_FAILED";
 	readonly status: number;
 
@@ -63,6 +63,8 @@ function boardRequiredMessage(availableBoards: string[], what?: string): string 
 }
 
 /** Is this the refusal, rather than some other failure? */
-export function boardRequiredOf(error: unknown): BoardRequiredError | null {
+function boardRequiredOf(error: unknown): BoardRequiredError | null {
 	return error instanceof BoardRequiredError ? error : null;
 }
+
+export { BoardRequiredError, type BoardResolutionFailure, BoardResolutionError, boardRequiredOf };

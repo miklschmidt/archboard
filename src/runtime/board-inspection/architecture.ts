@@ -9,7 +9,7 @@ import {
 } from "../engine/metadata.js";
 import { withoutValidBridgeDecorations } from "./bridge.js";
 
-export interface ArchitectureNode {
+interface ArchitectureNode {
 	readonly node: string;
 	readonly elements: readonly ServerElement[];
 	readonly bodyElements: readonly ServerElement[];
@@ -20,7 +20,7 @@ export interface ArchitectureNode {
 	readonly metadata: ArchboardBlock;
 }
 
-export interface ArchitectureConnector {
+interface ArchitectureConnector {
 	readonly element: ServerElement;
 	readonly ownerNodeId?: string;
 	readonly startTargetId?: string;
@@ -29,7 +29,7 @@ export interface ArchitectureConnector {
 	readonly endNodeId?: string;
 }
 
-export interface ArchitectureFacts {
+interface ArchitectureFacts {
 	readonly elements: readonly ServerElement[];
 	readonly byId: ReadonlyMap<string, ServerElement>;
 	readonly confirmedBoundLabelIds: ReadonlySet<string>;
@@ -40,12 +40,9 @@ export interface ArchitectureFacts {
 
 const CONNECTOR_TYPES = new Set(["arrow", "line"]);
 
-export const isArchitectureConnectorType = (type: string): boolean => CONNECTOR_TYPES.has(type);
+const isArchitectureConnectorType = (type: string): boolean => CONNECTOR_TYPES.has(type);
 
-export function architectureBindingTarget(
-	element: unknown,
-	end: "start" | "end",
-): string | undefined {
+function architectureBindingTarget(element: unknown, end: "start" | "end"): string | undefined {
 	const record = element && typeof element === "object" ? (element as Record<string, unknown>) : {};
 	const binding = end === "start" ? record["startBinding"] : record["endBinding"];
 	const bindingRecord =
@@ -103,7 +100,7 @@ function mergedMetadata(
  * strict ServerElements and gets only the shared facts that define nodes,
  * labels, connectors, footprints, and endpoint resolution.
  */
-export function architectureFacts(elements: readonly ServerElement[]): ArchitectureFacts {
+function architectureFacts(elements: readonly ServerElement[]): ArchitectureFacts {
 	const all = withoutValidBridgeDecorations(elements.map(semanticElementProjection));
 	const byId = new Map(all.map((element) => [element.id, element]));
 	const confirmedBoundLabelIds = new Set<string>();
@@ -191,10 +188,20 @@ export function architectureFacts(elements: readonly ServerElement[]): Architect
 	};
 }
 
-export function architectureLabel(
+function architectureLabel(
 	element: ServerElement,
 	elements: readonly ServerElement[],
 ): string | undefined {
 	const text = labelOf(element, elements as ServerElement[]);
 	return text ? String(text).replace(/\s+/g, " ").trim() || undefined : undefined;
 }
+
+export {
+	type ArchitectureNode,
+	type ArchitectureConnector,
+	type ArchitectureFacts,
+	isArchitectureConnectorType,
+	architectureBindingTarget,
+	architectureFacts,
+	architectureLabel,
+};

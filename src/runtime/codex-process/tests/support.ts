@@ -7,15 +7,15 @@ import { CODEX_APP_SERVER_ARGUMENTS } from "../process.js";
 import type { CodexProcess, CodexProcessSnapshot, CodexProcessState } from "../process.js";
 import type { CodexProcessTestOptions } from "../testing.js";
 
-export function temporaryRoot(): string {
+function temporaryRoot(): string {
 	return mkdtempSync(path.join(tmpdir(), "archboard-codex-process-test-"));
 }
 
-export function removeRoot(root: string): void {
+function removeRoot(root: string): void {
 	fs.rmSync(root, { recursive: true, force: true });
 }
 
-export function fixture(root: string, body: string, version = "codex-cli 0.151.0"): string {
+function fixture(root: string, body: string, version = "codex-cli 0.151.0"): string {
 	const executable = path.join(root, "codex-fixture");
 	writeFileSync(
 		executable,
@@ -26,7 +26,7 @@ export function fixture(root: string, body: string, version = "codex-cli 0.151.0
 	return executable;
 }
 
-export function processOptions(root: string, executablePath: string): CodexProcessTestOptions {
+function processOptions(root: string, executablePath: string): CodexProcessTestOptions {
 	return {
 		executablePath,
 		checkoutRoot: process.cwd(),
@@ -41,7 +41,7 @@ export function processOptions(root: string, executablePath: string): CodexProce
 	};
 }
 
-export function waitForState(
+function waitForState(
 	owner: CodexProcess,
 	predicate: (state: CodexProcessState) => boolean,
 ): Promise<CodexProcessSnapshot> {
@@ -60,7 +60,9 @@ export function waitForState(
 	});
 }
 
-export function startReady(owner: CodexProcess): Promise<CodexProcessSnapshot> {
+function startReady(owner: CodexProcess): Promise<CodexProcessSnapshot> {
 	owner.onChild((child) => child.lifecycle.markAppServerReady());
 	return owner.start();
 }
+
+export { temporaryRoot, removeRoot, fixture, processOptions, waitForState, startReady };

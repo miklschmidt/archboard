@@ -19,7 +19,7 @@ import type {
 } from "../../codex-workbench-owner.js";
 import { installCodexWorkbenchOwner } from "../../codex-workbench-owner.js";
 
-export function fakeProcess(events: string[]): CodexProcess {
+function fakeProcess(events: string[]): CodexProcess {
 	const child = { pid: 14314 } as CodexProcessChild;
 	const listeners = new Set<(child: CodexProcessChild) => void>();
 	let running = false;
@@ -66,14 +66,14 @@ export function fakeProcess(events: string[]): CodexProcess {
 	};
 }
 
-export interface FakeRestartingProcess {
+interface FakeRestartingProcess {
 	readonly process: CodexProcess;
 	readonly crash: () => void;
 	readonly restart: () => void;
 	readonly terminal: (code: CodexProcessFailureCode, message: string) => void;
 }
 
-export function fakeRestartingProcess(events: string[]): FakeRestartingProcess {
+function fakeRestartingProcess(events: string[]): FakeRestartingProcess {
 	const listeners = new Set<(child: CodexProcessChild) => void>();
 	const snapshotListeners = new Set<(snapshot: CodexProcessSnapshot) => void>();
 	let nextPid = 14314;
@@ -157,7 +157,7 @@ export function fakeRestartingProcess(events: string[]): FakeRestartingProcess {
 	};
 }
 
-export interface FakeGenerationControl {
+interface FakeGenerationControl {
 	readonly activate?: () => Promise<void>;
 	readonly deactivate?: () => void;
 	readonly retireChild?: () => Promise<void>;
@@ -165,7 +165,7 @@ export interface FakeGenerationControl {
 	readonly finishStop?: () => void;
 }
 
-export function fakeGeneration(
+function fakeGeneration(
 	events: string[],
 	number: number,
 	control: FakeGenerationControl = {},
@@ -232,13 +232,13 @@ export function fakeGeneration(
 	};
 }
 
-export interface FakeKernel {
+interface FakeKernel {
 	readonly acquisition: CodexWorkbenchKernelAcquisition;
 	/** Deliver one transport exit for this acquired child, as the real bridge sees it. */
 	readonly exit: () => void;
 }
 
-export function fakeKernelAcquisition(): FakeKernel {
+function fakeKernelAcquisition(): FakeKernel {
 	const source = fakeGeneration([], 0);
 	const ledger = source.identityLedger;
 	const transport = source.transport as unknown as {
@@ -268,7 +268,7 @@ export function fakeKernelAcquisition(): FakeKernel {
 	});
 }
 
-export function adoptFakeKernel(
+function adoptFakeKernel(
 	input: CodexWorkbenchGenerationInput,
 	candidate: CodexWorkbenchGeneration,
 ): CodexWorkbenchGeneration {
@@ -286,13 +286,13 @@ export function adoptFakeKernel(
 	return candidate;
 }
 
-export interface FakeOwnerHandle {
+interface FakeOwnerHandle {
 	readonly owner: CodexWorkbenchOwner;
 	/** Emit a child exit through the transport bridge of the current kernel. */
 	readonly exitChild: () => void;
 }
 
-export function installFakeCodexWorkbenchOwner(
+function installFakeCodexWorkbenchOwner(
 	options: Omit<CodexWorkbenchOwnerOptions, "createKernel">,
 ): FakeOwnerHandle {
 	let current: FakeKernel | null = null;
@@ -315,3 +315,16 @@ export function installFakeCodexWorkbenchOwner(
 		},
 	});
 }
+
+export {
+	fakeProcess,
+	type FakeRestartingProcess,
+	fakeRestartingProcess,
+	type FakeGenerationControl,
+	fakeGeneration,
+	type FakeKernel,
+	fakeKernelAcquisition,
+	adoptFakeKernel,
+	type FakeOwnerHandle,
+	installFakeCodexWorkbenchOwner,
+};

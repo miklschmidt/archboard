@@ -294,11 +294,11 @@ async function exhaustLoadedList(session: ThreadListSession): Promise<readonly T
 	}
 }
 
-export function isAllowedThreadLinkSource(value: unknown): value is ThreadLinkAllowedSource {
+function isAllowedThreadLinkSource(value: unknown): value is ThreadLinkAllowedSource {
 	return typeof value === "string" && ALLOWED_SOURCE_SET.has(value);
 }
 
-export function allowedThreadLinkSources(): readonly ThreadLinkAllowedSource[] {
+function allowedThreadLinkSources(): readonly ThreadLinkAllowedSource[] {
 	return ALLOWED_SOURCES;
 }
 
@@ -317,11 +317,11 @@ function sourceOf(thread: SessionThread): ThreadLinkSource {
 	return isThreadLinkSource(source) ? source : "unknown";
 }
 
-export function isThreadLinkStatus(value: unknown): value is ThreadLinkStatus {
+function isThreadLinkStatus(value: unknown): value is ThreadLinkStatus {
 	return typeof value === "string" && STATUS_VALUES.has(value);
 }
 
-export function isExecutableThreadLinkStatus(value: unknown): value is ThreadLinkExecutableStatus {
+function isExecutableThreadLinkStatus(value: unknown): value is ThreadLinkExecutableStatus {
 	return (
 		isThreadLinkStatus(value) && value !== "notLoaded" && !NON_EXECUTABLE_STATUS_SET.has(value)
 	);
@@ -755,7 +755,7 @@ function linkFor(
 	});
 }
 
-export function createCodexThreadLinkClassifier(
+function createCodexThreadLinkClassifier(
 	options: CodexThreadLinkClassifierOptions,
 ): CodexThreadLinkClassifier {
 	if (options.currentEpoch === undefined && options.epoch === undefined) {
@@ -943,7 +943,7 @@ function assertSameDiscoveryGeneration(
 }
 
 /** Publish one complete persisted/loaded join owned by one durable epoch generation. */
-export async function discoverCodexThreadLinkCandidates(
+async function discoverCodexThreadLinkCandidates(
 	options: CodexThreadLinkClassifierOptions & { readonly epoch: ThreadLinkEpochAuthority },
 ): Promise<ThreadLinkCandidateInventory> {
 	const startedSnapshot = options.epoch.snapshot();
@@ -1030,9 +1030,19 @@ export async function discoverCodexThreadLinkCandidates(
 	});
 }
 
-export async function classifyCodexThreadLink(
+async function classifyCodexThreadLink(
 	options: CodexThreadLinkClassifierOptions,
 	target: ThreadLinkTarget,
 ): Promise<ThreadLinkClassification> {
 	return createCodexThreadLinkClassifier(options).classify(target);
 }
+
+export {
+	isAllowedThreadLinkSource,
+	allowedThreadLinkSources,
+	isThreadLinkStatus,
+	isExecutableThreadLinkStatus,
+	createCodexThreadLinkClassifier,
+	discoverCodexThreadLinkCandidates,
+	classifyCodexThreadLink,
+};

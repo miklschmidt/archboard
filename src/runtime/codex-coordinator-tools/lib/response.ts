@@ -13,7 +13,7 @@ import type { CoordinatorToolValueFor, DynamicToolResponse } from "./contract.js
 import { DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE } from "../../codex-coordinator-tool-contract/index.js";
 import type { z } from "zod";
 
-export type DynamicToolEnvelope = z.infer<typeof DynamicToolEnvelopeSchema>;
+type DynamicToolEnvelope = z.infer<typeof DynamicToolEnvelopeSchema>;
 type DynamicToolValue = z.infer<typeof DynamicToolOkEnvelopeSchema>["value"];
 
 function freezeDeep<T>(value: T): T {
@@ -84,7 +84,7 @@ function responseForEnvelope(envelope: DynamicToolEnvelope, success: boolean): D
 	return freezeDeep(parsed as DynamicToolResponse);
 }
 
-export function okResponse<Name extends CoordinatorToolName>(
+function okResponse<Name extends CoordinatorToolName>(
 	name: Name,
 	operationId: string,
 	value: CoordinatorToolValueFor<Name>,
@@ -101,7 +101,7 @@ export function okResponse<Name extends CoordinatorToolName>(
 	);
 }
 
-export function refusedResponse(
+function refusedResponse(
 	reason: DynamicToolRefusalReason,
 	message: string,
 	outerFailure = false,
@@ -112,10 +112,7 @@ export function refusedResponse(
 	);
 }
 
-export function approvalRequiredResponse(
-	operationId: string,
-	summary: string,
-): DynamicToolResponse {
+function approvalRequiredResponse(operationId: string, summary: string): DynamicToolResponse {
 	return responseForEnvelope(
 		{
 			tag: "approval_required",
@@ -126,7 +123,7 @@ export function approvalRequiredResponse(
 	);
 }
 
-export function outcomeUnknownResponse(operationId: string): DynamicToolResponse {
+function outcomeUnknownResponse(operationId: string): DynamicToolResponse {
 	const envelope = DynamicToolOutcomeUnknownEnvelopeSchema.parse({
 		tag: "outcome_unknown",
 		operationId: requireOperationId(operationId),
@@ -135,9 +132,18 @@ export function outcomeUnknownResponse(operationId: string): DynamicToolResponse
 	return responseForEnvelope(envelope, true);
 }
 
-export function parseResponseText(response: DynamicToolResponse): DynamicToolResponse {
+function parseResponseText(response: DynamicToolResponse): DynamicToolResponse {
 	const parsed = response.success
 		? DynamicToolResponseSchema.parse(response)
 		: UnknownDynamicToolResponseSchema.parse(response);
 	return freezeDeep(parsed as DynamicToolResponse);
 }
+
+export {
+	type DynamicToolEnvelope,
+	okResponse,
+	refusedResponse,
+	approvalRequiredResponse,
+	outcomeUnknownResponse,
+	parseResponseText,
+};

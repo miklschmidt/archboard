@@ -27,18 +27,15 @@ import {
 	type WorkhorseOperationTarget,
 } from "./contract.js";
 
-export const INPUT_LIMIT_BYTES = 4_096;
-export const WORKHORSE_CREATION_KIND = "create_thread";
-export const WORKHORSE_THREAD_SOURCE = "archboard";
-export const ATTENTION_FLAGS: ReadonlySet<string> = new Set([
-	"waitingOnApproval",
-	"waitingOnUserInput",
-]);
+const INPUT_LIMIT_BYTES = 4_096;
+const WORKHORSE_CREATION_KIND = "create_thread";
+const WORKHORSE_THREAD_SOURCE = "archboard";
+const ATTENTION_FLAGS: ReadonlySet<string> = new Set(["waitingOnApproval", "waitingOnUserInput"]);
 
-export type MutationOperation = Exclude<WorkhorseOperationName, "inspect_workhorse">;
-export type QueueMutation = WorkhorseQueueMutation;
+type MutationOperation = Exclude<WorkhorseOperationName, "inspect_workhorse">;
+type QueueMutation = WorkhorseQueueMutation;
 
-export interface OperationState {
+interface OperationState {
 	readonly operationId: OperationId;
 	readonly operationIdWire: string;
 	readonly operation: MutationOperation;
@@ -60,13 +57,13 @@ export interface OperationState {
 	terminalEmitted: boolean;
 }
 
-export type RawNotification = TransportServerNotification["notification"];
-export type TurnNotification = Extract<
+type RawNotification = TransportServerNotification["notification"];
+type TurnNotification = Extract<
 	RawNotification,
 	{ readonly method: "turn/started" | "turn/completed" }
 >;
 
-export interface StageInput {
+interface StageInput {
 	readonly operationId: OperationId;
 	readonly operationIdWire: string;
 	readonly operation: MutationOperation;
@@ -78,7 +75,7 @@ export interface StageInput {
 	readonly clientUserMessageId: string | null;
 }
 
-export interface WorkhorseValidation {
+interface WorkhorseValidation {
 	readonly currentBinding: () => WorkhorseOperationBinding;
 	readonly assertCurrentBinding: (binding: WorkhorseOperationBinding) => void;
 	readonly assertCall: (
@@ -97,7 +94,7 @@ export interface WorkhorseValidation {
 	}>;
 }
 
-export interface WorkhorseEvents {
+interface WorkhorseEvents {
 	readonly operations: Map<string, OperationState>;
 	readonly activeTurns: Map<string, TurnId>;
 	readonly listeners: Set<WorkhorseOperationEventListener>;
@@ -134,20 +131,20 @@ export interface WorkhorseEvents {
 	readonly scheduleQueueReconciliation: () => void;
 }
 
-export interface WorkhorseRuntime extends WorkhorseValidation, WorkhorseEvents {
+interface WorkhorseRuntime extends WorkhorseValidation, WorkhorseEvents {
 	readonly options: WorkhorseOperationOptions;
 	readonly enqueue: <Value>(work: () => Promise<Value>) => Promise<Value>;
 }
 
-export function freeze<T>(value: T): T {
+function freeze<T>(value: T): T {
 	return Object.freeze(value);
 }
 
-export function messageOf(error: unknown): string {
+function messageOf(error: unknown): string {
 	return error instanceof Error ? error.message : "unknown error";
 }
 
-export function boundedDetail(value: string): string {
+function boundedDetail(value: string): string {
 	if (Buffer.byteLength(value, "utf8") <= INPUT_LIMIT_BYTES) {
 		return value;
 	}
@@ -166,7 +163,7 @@ export function boundedDetail(value: string): string {
 	return `${prefix}${suffix}`;
 }
 
-export function sameCall(left: WorkhorseCoordinatorCall, right: WorkhorseCoordinatorCall): boolean {
+function sameCall(left: WorkhorseCoordinatorCall, right: WorkhorseCoordinatorCall): boolean {
 	return (
 		left.child === right.child &&
 		left.epoch === right.epoch &&
@@ -179,10 +176,7 @@ export function sameCall(left: WorkhorseCoordinatorCall, right: WorkhorseCoordin
 	);
 }
 
-export function sameTarget(
-	left: WorkhorseOperationTarget,
-	right: WorkhorseOperationTarget,
-): boolean {
+function sameTarget(left: WorkhorseOperationTarget, right: WorkhorseOperationTarget): boolean {
 	return (
 		left.childId === right.childId &&
 		left.epoch === right.epoch &&
@@ -191,10 +185,7 @@ export function sameTarget(
 	);
 }
 
-export function sameBinding(
-	left: WorkhorseOperationBinding,
-	right: WorkhorseOperationBinding,
-): boolean {
+function sameBinding(left: WorkhorseOperationBinding, right: WorkhorseOperationBinding): boolean {
 	return (
 		left.childId === right.childId &&
 		left.epoch === right.epoch &&
@@ -203,11 +194,11 @@ export function sameBinding(
 	);
 }
 
-export function snapshotTarget(target: WorkhorseOperationTarget): WorkhorseOperationTarget {
+function snapshotTarget(target: WorkhorseOperationTarget): WorkhorseOperationTarget {
 	return freeze({ ...target });
 }
 
-export function snapshotBinding(binding: WorkhorseOperationBinding): WorkhorseOperationBinding {
+function snapshotBinding(binding: WorkhorseOperationBinding): WorkhorseOperationBinding {
 	return freeze({
 		childId: binding.childId,
 		epoch: binding.epoch,
@@ -216,11 +207,11 @@ export function snapshotBinding(binding: WorkhorseOperationBinding): WorkhorseOp
 	});
 }
 
-export function snapshotCall(call: WorkhorseCoordinatorCall): WorkhorseCoordinatorCall {
+function snapshotCall(call: WorkhorseCoordinatorCall): WorkhorseCoordinatorCall {
 	return freeze({ ...call });
 }
 
-export function operationRpc(
+function operationRpc(
 	operation: MutationOperation,
 	queueOperation?: QueueMutation,
 	rpcOverride?: WorkhorseOperationRpc,
@@ -240,7 +231,7 @@ export function operationRpc(
 	return `thread/queue/${queueOperation}`;
 }
 
-export function operationError(
+function operationError(
 	code: ConstructorParameters<typeof CodexWorkhorseOperationsError>[0],
 	message: string,
 	options: ConstructorParameters<typeof CodexWorkhorseOperationsError>[2] = {},
@@ -248,7 +239,7 @@ export function operationError(
 	return new CodexWorkhorseOperationsError(code, message, options);
 }
 
-export function mapLinkReason(
+function mapLinkReason(
 	reason: string,
 ): ConstructorParameters<typeof CodexWorkhorseOperationsError>[0] {
 	switch (reason) {
@@ -278,13 +269,11 @@ export function mapLinkReason(
 	}
 }
 
-export function sessionMutationOutcome(
-	error: unknown,
-): Exclude<WorkhorseOperationDelivery, "pending"> {
+function sessionMutationOutcome(error: unknown): Exclude<WorkhorseOperationDelivery, "pending"> {
 	return error instanceof CodexSessionMutationError ? error.outcome : "outcome_unknown";
 }
 
-export function queueMutationOutcome(
+function queueMutationOutcome(
 	error: unknown,
 	effectStarted = true,
 ): Exclude<WorkhorseOperationDelivery, "pending"> {
@@ -303,7 +292,7 @@ export function queueMutationOutcome(
 	return "not_delivered";
 }
 
-export function validateBoundedInput(value: string, label: string, allowEmpty = false): void {
+function validateBoundedInput(value: string, label: string, allowEmpty = false): void {
 	if (typeof value !== "string" || (!allowEmpty && value.length === 0)) {
 		throw operationError("invalid_input", `${label} must be nonempty text.`);
 	}
@@ -315,7 +304,7 @@ export function validateBoundedInput(value: string, label: string, allowEmpty = 
 	}
 }
 
-export function selectOperationIdentity(
+function selectOperationIdentity(
 	runtime: WorkhorseRuntime,
 	operation: MutationOperation,
 	candidate: OperationId | undefined,
@@ -335,7 +324,7 @@ export function selectOperationIdentity(
 	}
 }
 
-export function activeTurnFromClassification(
+function activeTurnFromClassification(
 	classification: WorkhorseOperationClassification,
 ): TurnId | null {
 	if (classification.thread === null) {
@@ -345,15 +334,15 @@ export function activeTurnFromClassification(
 	return active.length === 1 ? active[0]!.id : null;
 }
 
-export function threadIdWire(options: WorkhorseOperationOptions, threadId: ThreadId): string {
+function threadIdWire(options: WorkhorseOperationOptions, threadId: ThreadId): string {
 	return options.identity.decoder.serializeCodexIdentity(threadId);
 }
 
-export function turnIdWire(options: WorkhorseOperationOptions, turnId: TurnId): string {
+function turnIdWire(options: WorkhorseOperationOptions, turnId: TurnId): string {
 	return options.identity.decoder.serializeCodexIdentity(turnId);
 }
 
-export function turnIdFromRaw(options: WorkhorseOperationOptions, value: string): TurnId {
+function turnIdFromRaw(options: WorkhorseOperationOptions, value: string): TurnId {
 	const adopted = options.identity.decoder.adoptCodexResponseIdentities({ turnIds: [value] });
 	const turnId = adopted.turnIds[0];
 	if (turnId === undefined) {
@@ -362,19 +351,19 @@ export function turnIdFromRaw(options: WorkhorseOperationOptions, value: string)
 	return turnId;
 }
 
-export function userMessageClientIds(turn: TurnNotification["params"]["turn"]): readonly string[] {
+function userMessageClientIds(turn: TurnNotification["params"]["turn"]): readonly string[] {
 	return turn.items.flatMap((item) =>
 		item.type === "userMessage" && item.clientId !== null ? [item.clientId] : [],
 	);
 }
 
-export function queueIds(
+function queueIds(
 	queue: readonly { readonly id: QueuedSubmissionId }[],
 ): readonly QueuedSubmissionId[] {
 	return freeze(queue.map(({ id }) => id));
 }
 
-export function recordMatchesTarget(
+function recordMatchesTarget(
 	record: EpochOperationRecord,
 	target: WorkhorseOperationTarget,
 ): boolean {
@@ -389,7 +378,7 @@ export function recordMatchesTarget(
 	);
 }
 
-export function assertExecutableClassification(
+function assertExecutableClassification(
 	classification: ThreadLinkClassification,
 	target: WorkhorseOperationTarget,
 	label: string,
@@ -419,7 +408,7 @@ export function assertExecutableClassification(
 	}
 }
 
-export function assertCreatedWorkhorse(classification: ThreadLinkClassification): void {
+function assertCreatedWorkhorse(classification: ThreadLinkClassification): void {
 	if (!isCreatedWorkhorse(classification)) {
 		throw operationError(
 			"unknown_provenance",
@@ -428,7 +417,7 @@ export function assertCreatedWorkhorse(classification: ThreadLinkClassification)
 	}
 }
 
-export function isCreatedWorkhorse(classification: ThreadLinkClassification): boolean {
+function isCreatedWorkhorse(classification: ThreadLinkClassification): boolean {
 	return (
 		classification.link.state === "executable" &&
 		classification.link.source === "appServer" &&
@@ -436,3 +425,45 @@ export function isCreatedWorkhorse(classification: ThreadLinkClassification): bo
 		classification.proof.record.provenance.threadSource === WORKHORSE_THREAD_SOURCE
 	);
 }
+
+export {
+	INPUT_LIMIT_BYTES,
+	WORKHORSE_CREATION_KIND,
+	WORKHORSE_THREAD_SOURCE,
+	ATTENTION_FLAGS,
+	type MutationOperation,
+	type QueueMutation,
+	type OperationState,
+	type RawNotification,
+	type TurnNotification,
+	type StageInput,
+	type WorkhorseValidation,
+	type WorkhorseEvents,
+	type WorkhorseRuntime,
+	freeze,
+	messageOf,
+	boundedDetail,
+	sameCall,
+	sameTarget,
+	sameBinding,
+	snapshotTarget,
+	snapshotBinding,
+	snapshotCall,
+	operationRpc,
+	operationError,
+	mapLinkReason,
+	sessionMutationOutcome,
+	queueMutationOutcome,
+	validateBoundedInput,
+	selectOperationIdentity,
+	activeTurnFromClassification,
+	threadIdWire,
+	turnIdWire,
+	turnIdFromRaw,
+	userMessageClientIds,
+	queueIds,
+	recordMatchesTarget,
+	assertExecutableClassification,
+	assertCreatedWorkhorse,
+	isCreatedWorkhorse,
+};

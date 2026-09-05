@@ -19,25 +19,25 @@ import type {
 } from "../../../shared/codex-workbench-identity/index.js";
 
 /** The one exact child capability a delivery is allowed to use. */
-export interface CodexThreadContextExecution {
+interface CodexThreadContextExecution {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 }
 
 /** A durable target captured by the workbench; this port never selects a thread. */
-export type CodexThreadContextTarget = ThreadLinkTarget & {
+type CodexThreadContextTarget = ThreadLinkTarget & {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly operationId: string;
 };
 
-export type CodexThreadContextEventId = Readonly<{
+type CodexThreadContextEventId = Readonly<{
 	readonly feedId: string;
 	readonly sequence: number;
 }>;
 
 /** Stable reasons retained when a semantic event is refused or its response is lost. */
-export type CodexThreadContextDeliveryReason =
+type CodexThreadContextDeliveryReason =
 	| ThreadLinkReasonCode
 	| "agent_only"
 	| "child_exit"
@@ -53,7 +53,7 @@ export type CodexThreadContextDeliveryReason =
 	| "thread_revalidation_failed"
 	| "unbound";
 
-export type CodexThreadContextDeliveryState = "delivered" | "not_delivered" | "outcome_unknown";
+type CodexThreadContextDeliveryState = "delivered" | "not_delivered" | "outcome_unknown";
 
 interface CodexThreadContextDeliveryOutcomeBase {
 	readonly kind: "thread_context_delivery";
@@ -66,7 +66,7 @@ interface CodexThreadContextDeliveryOutcomeBase {
 }
 
 /** The immutable record for one semantic event identity. */
-export type CodexThreadContextDeliveryOutcome =
+type CodexThreadContextDeliveryOutcome =
 	| (CodexThreadContextDeliveryOutcomeBase & {
 			readonly paneId: string;
 			readonly targetThreadId: ThreadId;
@@ -86,7 +86,7 @@ export type CodexThreadContextDeliveryOutcome =
 			readonly payload: null;
 	  });
 
-export interface CodexThreadContextDeliveryOptions {
+interface CodexThreadContextDeliveryOptions {
 	readonly paneId: string;
 	/** The feed identity is fixed for this delivery port; old feeds are stale. */
 	readonly feedId: string;
@@ -103,7 +103,7 @@ export interface CodexThreadContextDeliveryOptions {
 	readonly contextForEvent: (event: SettledSemanticChangeEvent) => ArchboardContext;
 }
 
-export interface CodexThreadContextDelivery {
+interface CodexThreadContextDelivery {
 	/** Deliver an event directly, using the same once-only port as the subscription. */
 	readonly deliver: (
 		event: SettledSemanticChangeEvent,
@@ -114,34 +114,34 @@ export interface CodexThreadContextDelivery {
 	readonly dispose: () => void;
 }
 
-export interface CodexThreadContextBinding {
+interface CodexThreadContextBinding {
 	readonly paneId: string;
 	readonly target: CodexThreadContextTarget;
 	/** Exact pane/link CAS evidence captured by the target-selection action. */
 	readonly link: ThreadLinkBindingSnapshot;
 }
 
-export interface CodexThreadContextBindingToken {
+interface CodexThreadContextBindingToken {
 	readonly revision: number;
 }
 
-export interface CodexThreadContextBindingSnapshot {
+interface CodexThreadContextBindingSnapshot {
 	readonly token: CodexThreadContextBindingToken;
 	readonly binding: CodexThreadContextBinding | null;
 }
 
-export interface CodexThreadContextBindingTransition {
+interface CodexThreadContextBindingTransition {
 	readonly expected: CodexThreadContextBindingToken;
 	readonly next: CodexThreadContextBinding | null;
 }
 
-export type CodexThreadContextControllerErrorCode =
+type CodexThreadContextControllerErrorCode =
 	| "disposed"
 	| "stale_binding"
 	| "duplicate_binding"
 	| "invalid_binding";
 
-export class CodexThreadContextControllerError extends Error {
+class CodexThreadContextControllerError extends Error {
 	override readonly name = "CodexThreadContextControllerError";
 
 	constructor(
@@ -153,14 +153,14 @@ export class CodexThreadContextControllerError extends Error {
 	}
 }
 
-export interface CodexThreadContextControllerHooks {
+interface CodexThreadContextControllerHooks {
 	readonly contextForEvent: (
 		event: SettledSemanticChangeEvent,
 		binding: CodexThreadContextBinding,
 	) => ArchboardContext;
 }
 
-export interface CodexThreadContextControllerOptions extends Omit<
+interface CodexThreadContextControllerOptions extends Omit<
 	CodexThreadContextDeliveryOptions,
 	"paneId" | "target" | "contextForEvent" | "publisher"
 > {
@@ -171,7 +171,7 @@ export interface CodexThreadContextControllerOptions extends Omit<
 }
 
 /** One process-lifetime subscription and event ledger over replaceable exact bindings. */
-export interface CodexThreadContextController extends CodexThreadContextDelivery {
+interface CodexThreadContextController extends CodexThreadContextDelivery {
 	readonly snapshot: () => CodexThreadContextBindingSnapshot;
 	readonly compareAndSwap: (
 		transition: CodexThreadContextBindingTransition,
@@ -180,3 +180,23 @@ export interface CodexThreadContextController extends CodexThreadContextDelivery
 	/** Null execution first, then clear the matching epoch and dispose the owner. */
 	readonly childExit: (child: ChildId, epoch: ChildEpoch) => Promise<void>;
 }
+
+export {
+	type CodexThreadContextExecution,
+	type CodexThreadContextTarget,
+	type CodexThreadContextEventId,
+	type CodexThreadContextDeliveryReason,
+	type CodexThreadContextDeliveryState,
+	type CodexThreadContextDeliveryOutcome,
+	type CodexThreadContextDeliveryOptions,
+	type CodexThreadContextDelivery,
+	type CodexThreadContextBinding,
+	type CodexThreadContextBindingToken,
+	type CodexThreadContextBindingSnapshot,
+	type CodexThreadContextBindingTransition,
+	type CodexThreadContextControllerErrorCode,
+	CodexThreadContextControllerError,
+	type CodexThreadContextControllerHooks,
+	type CodexThreadContextControllerOptions,
+	type CodexThreadContextController,
+};

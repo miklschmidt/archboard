@@ -6,14 +6,14 @@ type FakeChild = ChildProcessByStdio<PassThrough, PassThrough, PassThrough>;
 type TestTimer = ReturnType<typeof setTimeout>;
 type GroupStatus = "owned" | "quiescent" | "reused" | "unproven";
 
-export interface ManualScheduler {
+interface ManualScheduler {
 	readonly now: () => number;
 	readonly schedule: (callback: () => void, delayMs: number) => TestTimer;
 	readonly cancel: (timer: TestTimer) => void;
 	readonly runNext: () => boolean;
 }
 
-export function manualScheduler(): ManualScheduler {
+function manualScheduler(): ManualScheduler {
 	let time = 0;
 	let sequence = 0;
 	const timers = new Map<
@@ -58,7 +58,7 @@ function fakeChild(pid: number, onKill: () => void): FakeChild {
 	return child;
 }
 
-export function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
+function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 	const clock = manualScheduler();
 	let child: FakeChild | undefined;
 	let nextPid = 40_000;
@@ -127,7 +127,7 @@ export function fakeLifecycle(autoSpawn = true, closeOnKill = true) {
 	});
 }
 
-export async function driveManual<T>(
+async function driveManual<T>(
 	promise: Promise<T>,
 	clock: ManualScheduler,
 	options: { readonly yieldToProcessEvents?: boolean } = {},
@@ -160,3 +160,5 @@ export async function driveManual<T>(
 	}
 	return promise;
 }
+
+export { type ManualScheduler, manualScheduler, fakeLifecycle, driveManual };

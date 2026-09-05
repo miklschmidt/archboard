@@ -32,7 +32,7 @@ const textEncoder = new TextEncoder();
 
 type TimelineSession = Pick<CodexSession, "threadTurnsListPage" | "timelineListPage">;
 
-export interface CanvasBrowserProjectionBudget {
+interface CanvasBrowserProjectionBudget {
 	readonly maxTurns: number;
 	readonly maxItemsPerTurn: number;
 	/** Complete encoded BrowserSnapshot bound; the gateway performs the final fit. */
@@ -82,7 +82,7 @@ type TimelineApprovalView = {
 	>;
 };
 
-export interface CanvasTimelineOwner {
+interface CanvasTimelineOwner {
 	readonly read: (
 		paneId: string,
 		revision: number,
@@ -95,7 +95,7 @@ export interface CanvasTimelineOwner {
 	readonly dispose: () => void;
 }
 
-export interface CanvasTimelineOwnerOptions {
+interface CanvasTimelineOwnerOptions {
 	readonly session: TimelineSession;
 	readonly identity: Pick<TrustedIdentityDecoder, "serializeCodexIdentity">;
 	readonly approvals: {
@@ -652,7 +652,7 @@ function boundedBudgetValue(value: number | undefined, fallback: number, maximum
 		: fallback;
 }
 
-export function createCanvasBrowserProjectionBudget(
+function createCanvasBrowserProjectionBudget(
 	input: Partial<CanvasBrowserProjectionBudget> = {},
 ): CanvasBrowserProjectionBudget {
 	const maxBytes = input.maxBytes ?? DEFAULT_BROWSER_PROJECTION_BUDGET.maxBytes;
@@ -673,9 +673,7 @@ export function createCanvasBrowserProjectionBudget(
 	return budget;
 }
 
-export function createCanvasTimelineOwner(
-	options: CanvasTimelineOwnerOptions,
-): CanvasTimelineOwner {
+function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasTimelineOwner {
 	const states = new Map<string, Map<BrowserConnectionInstance, TimelinePaneState>>();
 	const budget = createCanvasBrowserProjectionBudget(options.budget);
 	let disposed = false;
@@ -816,3 +814,11 @@ export function createCanvasTimelineOwner(
 
 	return Object.freeze({ read, onNotification, retire, dispose });
 }
+
+export {
+	type CanvasBrowserProjectionBudget,
+	type CanvasTimelineOwner,
+	type CanvasTimelineOwnerOptions,
+	createCanvasBrowserProjectionBudget,
+	createCanvasTimelineOwner,
+};

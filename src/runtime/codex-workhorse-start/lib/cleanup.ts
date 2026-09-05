@@ -31,7 +31,7 @@ import {
 	type ValidatedWorkhorseStart,
 } from "./validation.js";
 
-export async function compensateAfterBindFailure(
+async function compensateAfterBindFailure(
 	options: CodexWorkhorseStartOptions,
 	input: WorkhorseStartInput,
 	childId: ChildId,
@@ -351,3 +351,5 @@ function markUnknown(
 		return false;
 	}
 }
+
+export { compensateAfterBindFailure };

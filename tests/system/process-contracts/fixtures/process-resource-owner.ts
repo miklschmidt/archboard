@@ -8,20 +8,20 @@ import { startCountingProxy } from "../support/counting-proxy.ts";
 import { startOwnedPeer } from "../support/owned-peer-process.ts";
 import { ReadySchema, sanitizedEnvironment } from "../support/process-http.ts";
 
-export const ResourceReadySchema = ReadySchema.extend({
+const ResourceReadySchema = ReadySchema.extend({
 	upstreamPort: z.number().int().positive(),
 	proxyPort: z.number().int().positive(),
 	lockFile: z.string(),
 	lockProcess: z.string(),
 });
 const HealthResponderReadySchema = ReadySchema.extend({ port: z.number().int().positive() });
-export const RawLockReadySchema = ReadySchema.extend({
+const RawLockReadySchema = ReadySchema.extend({
 	lockFile: z.string(),
 	process: z.string(),
 	port: z.number().int().positive().optional(),
 });
 
-export async function registerResourceSet(
+async function registerResourceSet(
 	resources: AsyncDisposableStack,
 	input: {
 		root: string;
@@ -170,3 +170,5 @@ async function outerMode(): Promise<void> {
 if (import.meta.main) {
 	await (process.env["ARCHBOARD_TEST_RESOURCE_MODE"] === "lock" ? lockMode() : outerMode());
 }
+
+export { ResourceReadySchema, RawLockReadySchema, registerResourceSet };
