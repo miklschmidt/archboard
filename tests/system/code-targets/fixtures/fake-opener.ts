@@ -1,17 +1,27 @@
 import { closeSync, existsSync, openSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import path from "node:path";
 
 import { TEST_OPENER_LIFECYCLE } from "../../../../src/shared/timing/timing.ts";
 
 const [mode, captureDirectory, releaseFile, exitDirectory, target, ...extra] =
 	process.argv.slice(2);
-if (!mode || !captureDirectory || !releaseFile || !exitDirectory || target === undefined) {
+if (
+	mode === undefined ||
+	mode.length === 0 ||
+	captureDirectory === undefined ||
+	captureDirectory.length === 0 ||
+	releaseFile === undefined ||
+	releaseFile.length === 0 ||
+	exitDirectory === undefined ||
+	exitDirectory.length === 0 ||
+	target === undefined
+) {
 	throw new Error(
 		"fake-opener requires mode, capture, release, exit, target, and optional literal argv",
 	);
 }
 
-const captureFile = join(captureDirectory, `${process.pid}.json`);
+const captureFile = path.join(captureDirectory, `${process.pid}.json`);
 const capture = openSync(captureFile, "wx");
 writeFileSync(
 	capture,
@@ -21,12 +31,17 @@ closeSync(capture);
 
 if (mode === "hold") {
 	const started = Date.now();
-	while (!existsSync(releaseFile) && Date.now() - started < TEST_OPENER_LIFECYCLE.timeoutMs) {
+	const waitForRelease = async (): Promise<void> => {
+		if (existsSync(releaseFile) || Date.now() - started >= TEST_OPENER_LIFECYCLE.timeoutMs) {
+			return;
+		}
 		await Bun.sleep(TEST_OPENER_LIFECYCLE.pollMs);
-	}
+		await waitForRelease();
+	};
+	await waitForRelease();
 }
 
-const exit = openSync(join(exitDirectory, `${process.pid}.json`), "wx");
+const exit = openSync(path.join(exitDirectory, `${process.pid}.json`), "wx");
 writeFileSync(
 	exit,
 	JSON.stringify({ pid: process.pid, timedOut: mode === "hold" && !existsSync(releaseFile) }),

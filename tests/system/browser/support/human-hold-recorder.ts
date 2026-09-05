@@ -1,14 +1,14 @@
 import type { AgentBrowserSession } from "./agent-browser.ts";
 
-export interface HoldCounters {
+interface HoldCounters {
 	holdDone: number;
 	holds: number;
 	pending: number;
 	reports: number;
 }
 
-export const installHoldRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
-	browser.eval(`(() => {
+const installHoldRecorder = async (browser: Readonly<AgentBrowserSession>): Promise<unknown> => {
+	const result = await browser.eval(`(() => {
 		window.__holdPersistence = { delay: 0, pending: [], holds: 0, holdDone: 0, reports: 0 };
 		window.__delayHumanHolds = count => { window.__holdPersistence.delay = count; };
 		window.__releaseHumanHold = () => {
@@ -40,17 +40,23 @@ export const installHoldRecorder = (browser: AgentBrowserSession): Promise<unkno
 		};
 		return { installed: true };
 	})()`);
+	return result;
+};
 
-export const readHoldCounters = (browser: AgentBrowserSession): Promise<HoldCounters> =>
-	browser.eval(`(() => ({
+const readHoldCounters = async (
+	browser: Readonly<AgentBrowserSession>,
+): Promise<HoldCounters> => {
+	const result = await browser.eval<HoldCounters>(`(() => ({
 		holdDone: window.__holdPersistence.holdDone,
 		holds: window.__holdPersistence.holds,
 		pending: window.__holdPersistence.pending.length,
 		reports: window.__holdPersistence.reports,
 	}))()`);
+	return result;
+};
 
-export const resetHoldRecorder = (browser: AgentBrowserSession): Promise<boolean> =>
-	browser.eval(`(() => {
+const resetHoldRecorder = async (browser: Readonly<AgentBrowserSession>): Promise<boolean> => {
+	const result = await browser.eval<boolean>(`(() => {
 		const state = window.__holdPersistence;
 		if (!state || state.pending.length !== 0) return false;
 		state.delay = 0;
@@ -59,3 +65,7 @@ export const resetHoldRecorder = (browser: AgentBrowserSession): Promise<boolean
 		state.reports = 0;
 		return true;
 	})()`);
+	return result;
+};
+
+export { installHoldRecorder, readHoldCounters, resetHoldRecorder, type HoldCounters };
