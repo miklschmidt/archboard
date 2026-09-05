@@ -39,6 +39,12 @@ import type {
 } from "./response-contract.js";
 
 type ResponseIdentityKind = (typeof SESSION_PROTOCOL_METHODS)[ResponseMethod]["responseIdentities"];
+type DecodedResponse = {
+	[Method in ResponseMethod]: {
+		readonly kind: (typeof SESSION_PROTOCOL_METHODS)[Method]["responseIdentities"];
+		readonly payload: ResponsePayloads[Method];
+	};
+}[ResponseMethod];
 interface ResponseIdentityCollection {
 	readonly threadIds: unknown[];
 	readonly turnIds: unknown[];
@@ -210,6 +216,10 @@ function collectResponseIdentities(
 		case "raw-realtime": {
 			break;
 		}
+		default: {
+			const checked: never = kind;
+			return checked;
+		}
 	}
 	return identities;
 }
@@ -250,10 +260,9 @@ function brandThreadItem(
 			: value["receiverThreadIds"];
 		if (isRecord(value["agentsStates"])) {
 			branded["agentsStates"] = Object.fromEntries(
-				Object.entries(value["agentsStates"]).map(([threadId, state]) => [
-					maps.threadIds.get(threadId),
-					state,
-				]),
+				Object.entries(value["agentsStates"]).map(
+					([threadId, state]: readonly [string, unknown]) => [maps.threadIds.get(threadId), state],
+				),
 			);
 		}
 	}
@@ -338,70 +347,77 @@ function brandResponse(
 	if (!isRecord(payload)) {
 		return payload;
 	}
-	switch (kind) {
+	const { kind: decodedKind, payload: decodedPayload } = { kind, payload } as DecodedResponse;
+	switch (decodedKind) {
 		case "login": {
-			return Object.hasOwn(payload, "loginId")
-				? { ...payload, loginId: maps.loginIds.get(payload["loginId"]) }
-				: payload;
+			return Object.hasOwn(decodedPayload, "loginId")
+				? { ...decodedPayload, loginId: maps.loginIds.get(decodedPayload.loginId) }
+				: decodedPayload;
 		}
 		case "thread-start":
 		case "thread": {
 			return {
-				...payload,
-				thread: brandThread(payload["thread"] as Record<string, unknown>, maps),
+				...decodedPayload,
+				thread: brandThread(decodedPayload.thread, maps),
 			};
 		}
 		case "thread-page": {
 			return {
-				...payload,
-				data: (payload["data"] as Record<string, unknown>[]).map((thread) =>
+				...decodedPayload,
+				data: decodedPayload.data.map((thread: Readonly<Record<string, unknown>>) =>
 					brandThread(thread, maps),
 				),
 			};
 		}
 		case "loaded-thread-page": {
 			return {
-				...payload,
-				data: (payload["data"] as unknown[]).map((threadId) => maps.threadIds.get(threadId)),
+				...decodedPayload,
+				data: decodedPayload.data.map((threadId: string) => maps.threadIds.get(threadId)),
 			};
 		}
 		case "turn": {
-			return { ...payload, turn: brandTurn(payload["turn"] as Record<string, unknown>, maps) };
+			return { ...decodedPayload, turn: brandTurn(decodedPayload.turn, maps) };
 		}
 		case "turn-page": {
 			return {
-				...payload,
-				data: (payload["data"] as Record<string, unknown>[]).map((turn) => brandTurn(turn, maps)),
+				...decodedPayload,
+				data: decodedPayload.data.map((turn: Readonly<Record<string, unknown>>) =>
+					brandTurn(turn, maps),
+				),
 			};
 		}
 		case "item-page": {
 			return {
-				...payload,
-				data: (payload["data"] as Record<string, unknown>[]).map((entry) =>
+				...decodedPayload,
+				data: decodedPayload.data.map((entry: Readonly<Record<string, unknown>>) =>
 					brandItemEntry(entry, maps),
 				),
 			};
 		}
 		case "turn-id": {
-			return { ...payload, turnId: maps.turnIds.get(payload["turnId"]) };
+			return { ...decodedPayload, turnId: maps.turnIds.get(decodedPayload.turnId) };
 		}
 		case "queue": {
 			return {
-				...payload,
-				queuedSubmission: brandQueue(payload["queuedSubmission"] as Record<string, unknown>, maps),
+				...decodedPayload,
+				queuedSubmission: brandQueue(decodedPayload.queuedSubmission, maps),
 			};
 		}
 		case "queue-page": {
 			return {
-				...payload,
-				data: (payload["data"] as Record<string, unknown>[]).map((queued) =>
+				...decodedPayload,
+				data: decodedPayload.data.map((queued: Readonly<Record<string, unknown>>) =>
 					brandQueue(queued, maps),
 				),
 			};
 		}
 		case "none":
 		case "raw-realtime": {
-			return payload;
+			return decodedPayload;
+		}
+		default: {
+			const checked: never = decodedKind;
+			return checked;
 		}
 	}
 }
