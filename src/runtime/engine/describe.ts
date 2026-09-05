@@ -1,436 +1,72 @@
-import { type ServerElement } from "./types.js";
-import { DEFAULT_SHAPE_BACKGROUND } from "../../shared/appearance/appearance.js";
-import { CLUSTER_GAP, boxOf, clusterBoxes, regionName } from "./layout.js";
-import { readElementMetadata, semanticElementProjection } from "./metadata.js";
-import type { ArchboardBlock } from "./metadata.js";
+import type { ServerElement } from "./types.js";
+import { boxOf } from "./layout.js";
+import { semanticElementProjection } from "./metadata.js";
 import { withoutValidBridgeDecorations } from "../board-inspection/bridge.js";
+import {
+	KIND_ORDER,
+	UNTYPED,
+	bindingOf,
+	clusterNodes,
+	counts,
+	foldBoundText,
+	foldNodes,
+	hasText,
+	isConnector,
+	readingOrder,
+	renderCounts,
+	toItem,
+} from "./lib/describe-scene-model.js";
+import type { Edge, Item } from "./lib/describe-scene-model.js";
+import {
+	appendClusters,
+	appendGraphNotes,
+	appendStats,
+	nodeExtras,
+	nodeLine,
+	plainLine,
+	selectionSummary,
+	summarise,
+} from "./lib/describe-lines.js";
 
 // Build an AI-readable description of the current canvas.
-//
-// The governing constraint (DESIGN.md): the voice model never sees tool
-// results, so whatever an agent reads here it has to re-narrate in one or two
-// spoken sentences, inside a ~2,500 token turn-start budget. So this output is
-// optimised for narratability, not completeness — semantic model first, summary
-// before detail, per-element dumps degraded gracefully on big scenes.
-//
-// Vocabulary is CONTEXT.md's: an element carrying archboard metadata is a
-// NODE (it stands for an architectural unit, has a kind, usually a binding to
-// code, a variant and a level); an arrow between two nodes is an EDGE;
-// everything else is just an element.
-
-// ---------------------------------------------------------------------------
-// Metadata
-// ---------------------------------------------------------------------------
-
-// Kinds in pipeline order — how someone would say them aloud, not alphabetical.
-const KIND_ORDER = ["gateway", "service", "queue", "datastore", "external"];
-
-const UNTYPED = "untyped";
-
-interface Meta {
-	isNode: boolean;
-	node?: string; // stable node identity, distinct from the element id
-	bindingPath?: string; // the raw path inside the binding, for link de-duping
-	kind?: string;
-	binding?: string;
-	variant?: string;
-	level?: string;
-	name?: string;
-	extra: Record<string, unknown>; // other keys inside the archboard block
-	foreign: Record<string, unknown>; // customData that isn't ours at all
-}
-
-function scalarText(v: unknown): string {
-	if (typeof v === "string") return v;
-	if (v === null || v === undefined) return "";
-	try {
-		return JSON.stringify(v) ?? String(v);
-	} catch {
-		return String(v);
-	}
-}
-
-function pairs(o: Record<string, unknown>, max = 160): string {
-	const s = Object.entries(o)
-		.map(([k, v]) => `${k}=${scalarText(v)}`)
-		.join(", ");
-	return s.length > max ? s.slice(0, max - 1) + "…" : s;
-}
-
-// A binding may be a bare path or a logical address (repo + path + branch +
-// commit). Render both as one short string a person can read out.
-function formatBinding(v: unknown): string | undefined {
-	if (typeof v === "string") return v.trim() || undefined;
-	if (!v || typeof v !== "object") return undefined;
-	const b = v as Record<string, unknown>;
-	const path = typeof b["path"] === "string" ? b["path"] : undefined;
-	if (!path && !b["repo"]) return pairs(b) || undefined;
-	const repo = typeof b["repo"] === "string" ? `${b["repo"]}:` : "";
-	const branch = typeof b["branch"] === "string" ? `@${b["branch"]}` : "";
-	const commit = typeof b["commit"] === "string" ? ` (${b["commit"].slice(0, 7)})` : "";
-	return `${repo}${path ?? "?"}${branch}${commit}`;
-}
-
-function bindingPathOf(v: unknown): string | undefined {
-	if (typeof v === "string") return v.trim() || undefined;
-	if (v && typeof v === "object" && typeof (v as Record<string, unknown>)["path"] === "string")
-		return (v as Record<string, unknown>)["path"] as string;
-	return undefined;
-}
-
-function formatMeta(block: ArchboardBlock | undefined, foreign: Record<string, unknown>): Meta {
-	const meta: Meta = { isNode: block !== undefined, extra: {}, foreign };
-	if (!block) return meta;
-
-	for (const [k, v] of Object.entries(block)) {
-		switch (k) {
-			case "node":
-				meta.node = scalarText(v) || undefined;
-				break;
-			case "kind":
-				meta.kind = scalarText(v) || undefined;
-				break;
-			case "variant":
-				meta.variant = scalarText(v) || undefined;
-				break;
-			case "level":
-				meta.level = scalarText(v) || undefined;
-				break;
-			case "name":
-				meta.name = scalarText(v) || undefined;
-				break;
-			case "binding":
-				meta.binding = formatBinding(v);
-				meta.bindingPath = bindingPathOf(v);
-				break;
-			case "path":
-				if (!meta.binding) {
-					meta.binding = formatBinding(v);
-					meta.bindingPath = bindingPathOf(v);
-				}
-				break;
-			default:
-				meta.extra[k] = v;
-		}
-	}
-
-	return meta;
-}
-
-// ---------------------------------------------------------------------------
-// Scene model
-// ---------------------------------------------------------------------------
-
-interface Item {
-	el: ServerElement;
-	meta: Meta;
-	name: string; // what to call it out loud
-	labelText?: string; // label / text / folded bound text
-	isNode: boolean;
-	members: number; // elements making up this node (1 unless folded, below)
-	x: number;
-	y: number;
-	w: number;
-	h: number;
-}
-
-interface Edge {
-	arrow: ServerElement;
-	fromId?: string;
-	toId?: string;
-	fromName: string;
-	toName: string;
-	label?: string;
-}
-
-// A connector is an arrow or a line that nobody promoted. Promotion is an
-// explicit act, so an element carrying a node id is part of that node whatever
-// its type: 74 of the 111 shipped stencils contain a line and 10 are made of
-// nothing else, and a datastore promoted from one of those used to read as no
-// node at all (TASK-053).
-const isConnector = (t: string) => t === "arrow" || t === "line";
-
-// A labelled shape comes back from a frontend sync as a shape plus a separate
-// text element. Fold the text into its container so one node reads as one
-// thing — both for the whole-scene description and for a selection, where the
-// human selected the container and the label lives on the child.
-interface Folded {
-	hidden: Set<string>; // text elements folded away
-	labelOf: Map<string, string>; // container id -> label text
-}
-
-function foldBoundText(all: ServerElement[], byId: Map<string, ServerElement>): Folded {
-	const hidden = new Set<string>();
-	const labelOf = new Map<string, string>();
-	for (const el of all) {
-		if (
-			el.type === "text" &&
-			el.containerId &&
-			byId.has(el.containerId) &&
-			el.containerId !== el.id
-		) {
-			hidden.add(el.id);
-			const text = el.text || el.originalText;
-			if (text) labelOf.set(el.containerId, text);
-		}
-	}
-	return { hidden, labelOf };
-}
-
-function toItem(el: ServerElement, folded: Folded): Item {
-	const metadata = readElementMetadata(el);
-	const meta = formatMeta(metadata.archboard, metadata.foreign);
-	const labelText = (el.type === "text" ? el.text : undefined) ?? folded.labelOf.get(el.id);
-	return {
-		el,
-		meta,
-		labelText,
-		name: labelText || meta.name || el.id,
-		isNode: meta.isNode,
-		members: 1,
-		// Measured rather than read straight off the element: an arrow keeps its
-		// size in its points, and its stored `x, y` is its first point, not its
-		// top-left corner (layout.ts's boxOf).
-		...boxOf(el),
-	};
-}
-
-// A node can be several elements: promoting a multi-element selection gives
-// every element in it the same node id. Fold them the same way bound labels
-// are folded, so the read-back says one node rather than three — the primary
-// is the largest element (the one a human points at) and the rest are its
-// members.
-interface NodeFold {
-	items: Item[]; // members removed
-	hidden: number;
-	primaryOf: Map<string, string>; // any member element id -> primary element id
-}
-
-function foldNodes(items: Item[]): NodeFold {
-	const groups = new Map<string, Item[]>();
-	for (const item of items) {
-		if (!item.isNode || !item.meta.node) continue;
-		const list = groups.get(item.meta.node) ?? [];
-		list.push(item);
-		groups.set(item.meta.node, list);
-	}
-
-	const hidden = new Set<string>();
-	const primaryOf = new Map<string, string>();
-	for (const group of groups.values()) {
-		if (group.length < 2) continue;
-		const primary = [...group].toSorted((a, b) => b.w * b.h - a.w * a.h || readingOrder(a, b))[0]!;
-		primary.members = group.length;
-		for (const member of group) {
-			primaryOf.set(member.el.id, primary.el.id);
-			if (member !== primary) hidden.add(member.el.id);
-		}
-	}
-
-	return { items: items.filter((i) => !hidden.has(i.el.id)), hidden: hidden.size, primaryOf };
-}
-
-function bindingOf(el: unknown, end: "start" | "end"): string | undefined {
-	const record = el && typeof el === "object" ? (el as Record<string, unknown>) : {};
-	const binding = end === "start" ? record["startBinding"] : record["endBinding"];
-	const bindingRecord =
-		binding && typeof binding === "object" ? (binding as Record<string, unknown>) : {};
-	const id = bindingRecord["elementId"];
-	return typeof id === "string" ? id : undefined;
-}
-
-function counts(values: (string | undefined)[]): Record<string, number> {
-	const out: Record<string, number> = {};
-	for (const v of values) {
-		if (v === undefined) continue;
-		out[v] = (out[v] || 0) + 1;
-	}
-	return out;
-}
-
-function renderCounts(c: Record<string, number>, order?: string[]): string {
-	const keys = Object.keys(c).toSorted((a, b) => {
-		const ia = order ? order.indexOf(a) : -1;
-		const ib = order ? order.indexOf(b) : -1;
-		if (ia !== ib) return (ia === -1 ? 1e6 : ia) - (ib === -1 ? 1e6 : ib);
-		return c[b]! - c[a]! || (a < b ? -1 : 1);
-	});
-	return keys.map((k) => `${k}(${c[k]})`).join(", ");
-}
-
-// Reading order: top-to-bottom in coarse rows, then left-to-right.
-const readingOrder = (a: Item, b: Item) => {
-	const row = Math.floor(a.y / 50) - Math.floor(b.y / 50);
-	return row !== 0 ? row : a.x - b.x;
-};
-
-// ---------------------------------------------------------------------------
-// Clustering — proximity is how a human states design intent on the board,
-// so it has to survive into the read-back.
-// ---------------------------------------------------------------------------
-
-// The clustering itself lives in layout.ts, shared with `compare` so the two
-// agree on what "together" means — a cluster the read-back names has to be the
-// same cluster the diff says was split. Only the budget is local: below three
-// nodes there is nothing worth saying, and above four hundred the pairwise pass
-// is not worth its cost inside a description.
-function clusterNodes(nodes: Item[]): Item[][] {
-	if (nodes.length < 3 || nodes.length > 400) return [];
-	return clusterBoxes(nodes, CLUSTER_GAP);
-}
-
-// ---------------------------------------------------------------------------
-// Detail budgets — a 200-element scene must still be readable aloud.
-// ---------------------------------------------------------------------------
-
-const NODE_DETAIL_LIMIT = 60; // above this, nodes lose their extras line
-const NODE_LIST_LIMIT = 120; // above this, nodes are counted, not listed
+// Above this, nodes lose their extras line.
+const NODE_DETAIL_LIMIT = 60;
+// Above this, nodes are counted rather than listed.
+const NODE_LIST_LIMIT = 120;
 const EDGE_LIST_LIMIT = 60;
 const OTHER_LIST_LIMIT = 40;
 
-interface SceneBox {
-	minX: number;
-	minY: number;
-	maxX: number;
-	maxY: number;
+function nodeDetailLines(item: Item, showLevel: boolean, terse: boolean): readonly string[] {
+	const line = `    ${nodeLine(item, showLevel)}`;
+	const extra = terse ? "" : nodeExtras(item);
+	return hasText(extra) ? [line, `        + ${extra}`] : [line];
 }
 
-function appendStats(
-	lines: string[],
-	args: {
-		allElements: ServerElement[];
-		nodes: Item[];
-		edges: Edge[];
-		others: Item[];
-		folded: Folded;
-		nodeFold: NodeFold;
-		kindCounts: Record<string, number>;
-		variantCounts: Record<string, number>;
-		levelCounts: Record<string, number>;
-		typeCounts: Record<string, number>;
-		boundNodes: number;
-		box: SceneBox;
-	},
-): void {
-	const {
-		allElements,
-		nodes,
-		edges,
-		others,
-		folded,
-		nodeFold,
-		kindCounts,
-		variantCounts,
-		levelCounts,
-		typeCounts,
-		boundNodes,
-		box,
-	} = args;
-	const composition = [
-		`${nodes.length} node${nodes.length === 1 ? "" : "s"}`,
-		`${edges.length} edge${edges.length === 1 ? "" : "s"}`,
-		`${others.length} plain`,
-	];
-	if (folded.hidden.size > 0)
-		composition.push(
-			`${folded.hidden.size} bound label${folded.hidden.size === 1 ? "" : "s"} folded in`,
-		);
-	if (nodeFold.hidden > 0)
-		composition.push(`${nodeFold.hidden} node member${nodeFold.hidden === 1 ? "" : "s"} folded in`);
-	lines.push(`Total elements: ${allElements.length} (${composition.join(", ")})`);
-	if (nodes.length > 0) {
-		lines.push(`Kinds: ${renderCounts(kindCounts, KIND_ORDER)}`);
-		const semantic: string[] = [];
-		if (Object.keys(variantCounts).length > 0)
-			semantic.push(`Variants: ${renderCounts(variantCounts, ["current"])}`);
-		if (Object.keys(levelCounts).length > 0) semantic.push(`Levels: ${renderCounts(levelCounts)}`);
-		semantic.push(`Bindings: ${boundNodes}/${nodes.length} bound to code`);
-		lines.push(semantic.join(" | "));
-	}
-	lines.push(`Types: ${renderCounts(typeCounts)}`);
-	lines.push(
-		`Bounding box: (${Math.round(box.minX)}, ${Math.round(box.minY)}) to (${Math.round(box.maxX)}, ${Math.round(box.maxY)}) = ${Math.round(box.maxX - box.minX)}x${Math.round(box.maxY - box.minY)}`,
+function describeScene(inputElements: readonly ServerElement[]): string {
+	const allElements = withoutValidBridgeDecorations(
+		inputElements.map((element) => semanticElementProjection(element)),
 	);
-}
-
-function appendGraphNotes(
-	lines: string[],
-	nodes: Item[],
-	edges: Edge[],
-	degree: Map<string, { in: number; out: number }>,
-): void {
-	if (edges.length >= 3 && nodes.length > 0) {
-		const ranked = nodes
-			.map((n) => ({ n, d: degree.get(n.el.id) ?? { in: 0, out: 0 } }))
-			.filter((r) => r.d.in + r.d.out >= 3)
-			.toSorted((a, b) => b.d.in + b.d.out - (a.d.in + a.d.out))
-			.slice(0, 3);
-		if (ranked.length > 0)
-			lines.push(
-				`Most connected: ${ranked.map((r) => `${r.n.name} (${r.d.in} in, ${r.d.out} out)`).join(", ")}`,
-			);
-	}
-	const isolated = nodes.filter((n) => !degree.has(n.el.id));
-	if (isolated.length > 0 && edges.length > 0) {
-		const shown = isolated
-			.slice(0, 8)
-			.map((n) => n.name)
-			.join(", ");
-		lines.push(
-			`Unconnected nodes (${isolated.length}): ${shown}${isolated.length > 8 ? ", …" : ""}`,
-		);
-	}
-}
-
-function appendClusters(
-	lines: string[],
-	realClusters: Item[][],
-	clusters: Item[][],
-	box: SceneBox,
-): void {
-	if (realClusters.length <= 1) return;
-	lines.push("", `### Clusters (nodes within ${CLUSTER_GAP}px of each other)`);
-	for (const cluster of realClusters.slice(0, 12)) {
-		const cx = cluster.reduce((sum, n) => sum + n.x + n.w / 2, 0) / cluster.length;
-		const cy = cluster.reduce((sum, n) => sum + n.y + n.h / 2, 0) / cluster.length;
-		const kinds = renderCounts(counts(cluster.map((n) => n.meta.kind ?? UNTYPED)), KIND_ORDER);
-		const names = cluster
-			.slice(0, 8)
-			.map((n) => n.name)
-			.join(", ");
-		lines.push(
-			`  ${regionName(cx, cy, box)} (${cluster.length}): ${names}${cluster.length > 8 ? ", …" : ""} — ${kinds}`,
-		);
-	}
-	const loose = clusters.filter((cluster) => cluster.length === 1);
-	if (loose.length > 0)
-		lines.push(
-			`  on their own (${loose.length}): ${loose
-				.slice(0, 8)
-				.map((cluster) => cluster[0]!.name)
-				.join(", ")}${loose.length > 8 ? ", …" : ""}`,
-		);
-}
-
-export function describeScene(allElements: ServerElement[]): string {
-	allElements = withoutValidBridgeDecorations(allElements.map(semanticElementProjection));
 	if (allElements.length === 0) {
 		return "The canvas is empty. No elements to describe.";
 	}
 
 	const byId = new Map<string, ServerElement>();
-	for (const el of allElements) byId.set(el.id, el);
+	for (const el of allElements) {
+		byId.set(el.id, el);
+	}
 
 	const folded = foldBoundText(allElements, byId);
 
 	const allItems: Item[] = [];
 	for (const el of allElements) {
-		if (folded.hidden.has(el.id)) continue;
+		if (folded.hidden.has(el.id)) {
+			continue;
+		}
 		allItems.push(toItem(el, folded));
 	}
 
 	const nodeFold = foldNodes(allItems);
-	const items = nodeFold.items;
+	const { items } = nodeFold;
 
 	const nodes = items.filter((i) => i.isNode).toSorted(readingOrder);
 	const others = items.filter((i) => !i.isNode && !isConnector(i.el.type)).toSorted(readingOrder);
@@ -440,7 +76,8 @@ export function describeScene(allElements: ServerElement[]): string {
 	// Names resolve for every element, folded members included, so an arrow
 	// drawn to a member still names its node.
 	const nameOf = new Map(allItems.map((i) => [i.el.id, i.name]));
-	const primary = (id: string | undefined) => (id ? (nodeFold.primaryOf.get(id) ?? id) : id);
+	const primary = (id: string | undefined): string | undefined =>
+		id === undefined || id.length === 0 ? id : (nodeFold.primaryOf.get(id) ?? id);
 
 	// Bounding box over everything, and over what each element actually covers:
 	// an arrow running leftwards or upwards falls outside its own stored
@@ -463,7 +100,7 @@ export function describeScene(allElements: ServerElement[]): string {
 	const kindCounts = counts(nodes.map((n) => n.meta.kind ?? UNTYPED));
 	const variantCounts = counts(nodes.map((n) => n.meta.variant));
 	const levelCounts = counts(nodes.map((n) => n.meta.level));
-	const boundNodes = nodes.filter((n) => n.meta.binding).length;
+	const boundNodes = nodes.filter((n) => hasText(n.meta.binding)).length;
 	// Edges: arrows resolved to node names. Ids stay so callers that parse them
 	// keep working.
 	const edges: Edge[] = [];
@@ -471,20 +108,30 @@ export function describeScene(allElements: ServerElement[]): string {
 		const el: unknown = item.el;
 		const fromId = primary(bindingOf(el, "start"));
 		const toId = primary(bindingOf(el, "end"));
-		if (!fromId && !toId) continue;
+		if (!hasText(fromId) && !hasText(toId)) {
+			continue;
+		}
+		let label: string | undefined;
+		if (hasText(item.labelText)) {
+			label = item.labelText;
+		} else if (hasText(item.meta.kind)) {
+			label = item.meta.kind;
+		}
 		edges.push({
 			arrow: item.el,
-			fromId,
-			toId,
-			fromName: (fromId && nameOf.get(fromId)) || "?",
-			toName: (toId && nameOf.get(toId)) || "?",
-			label: item.labelText || item.meta.kind,
+			...(hasText(fromId) ? { fromId } : {}),
+			...(hasText(toId) ? { toId } : {}),
+			fromName: hasText(fromId) ? (nameOf.get(fromId) ?? "?") : "?",
+			toName: hasText(toId) ? (nameOf.get(toId) ?? "?") : "?",
+			...(label === undefined ? {} : { label }),
 		});
 	}
 
 	const degree = new Map<string, { in: number; out: number }>();
-	const bump = (id: string | undefined, dir: "in" | "out") => {
-		if (!id) return;
+	const bump = (id: string | undefined, dir: "in" | "out"): void => {
+		if (id === undefined || id.length === 0) {
+			return;
+		}
 		const d = degree.get(id) ?? { in: 0, out: 0 };
 		d[dir]++;
 		degree.set(id, d);
@@ -497,11 +144,9 @@ export function describeScene(allElements: ServerElement[]): string {
 	const clusters = clusterNodes(nodes);
 	const realClusters = clusters.filter((c) => c.length > 1);
 
-	const lines: string[] = [];
-	lines.push("## Canvas Description");
-
 	// --- the narratable sentence ---------------------------------------------
-	lines.push(
+	const lines: string[] = [
+		"## Canvas Description",
 		`Summary: ${summarise({
 			nodes,
 			others,
@@ -512,31 +157,27 @@ export function describeScene(allElements: ServerElement[]): string {
 			boundNodes,
 			total: allElements.length,
 		})}`,
-	);
-
-	appendStats(lines, {
-		allElements,
-		nodes,
-		edges,
-		others,
-		folded,
-		nodeFold,
-		kindCounts,
-		variantCounts,
-		levelCounts,
-		typeCounts,
-		boundNodes,
-		box,
-	});
-
-	appendGraphNotes(lines, nodes, edges, degree);
-
-	appendClusters(lines, realClusters, clusters, box);
+		...appendStats({
+			allElements,
+			nodes,
+			edges,
+			others,
+			folded,
+			nodeFold,
+			kindCounts,
+			variantCounts,
+			levelCounts,
+			typeCounts,
+			boundNodes,
+			box,
+		}),
+		...appendGraphNotes(nodes, edges, degree),
+		...appendClusters(realClusters, clusters, box),
+	];
 
 	// --- nodes ----------------------------------------------------------------
 	if (nodes.length > 0) {
-		lines.push("");
-		lines.push(`### Nodes (${nodes.length})`);
+		lines.push("", `### Nodes (${nodes.length})`);
 		if (nodes.length > NODE_LIST_LIMIT) {
 			lines.push(`  ${nodes.length} nodes — too many to list; use \`query\` for the full set.`);
 			for (const kind of Object.keys(kindCounts).toSorted(
@@ -547,7 +188,7 @@ export function describeScene(allElements: ServerElement[]): string {
 					.slice(0, 6)
 					.map((n) => n.name);
 				lines.push(
-					`  ${kind} (${kindCounts[kind]}): ${sample.join(", ")}${kindCounts[kind]! > 6 ? ", …" : ""}`,
+					`  ${kind} (${kindCounts[kind]}): ${sample.join(", ")}${(kindCounts[kind] ?? 0) > 6 ? ", …" : ""}`,
 				);
 			}
 		} else {
@@ -556,17 +197,15 @@ export function describeScene(allElements: ServerElement[]): string {
 			const kinds = Object.keys(kindCounts).toSorted((a, b) => {
 				const ia = KIND_ORDER.indexOf(a),
 					ib = KIND_ORDER.indexOf(b);
-				if (ia !== ib) return (ia === -1 ? 1e6 : ia) - (ib === -1 ? 1e6 : ib);
+				if (ia !== ib) {
+					return (ia === -1 ? 1e6 : ia) - (ib === -1 ? 1e6 : ib);
+				}
 				return a < b ? -1 : 1;
 			});
 			for (const kind of kinds) {
 				lines.push(`  ${kind} (${kindCounts[kind]}):`);
 				for (const n of nodes.filter((x) => (x.meta.kind ?? UNTYPED) === kind)) {
-					lines.push(`    ${nodeLine(n, showLevel)}`);
-					if (!terse) {
-						const extra = nodeExtras(n);
-						if (extra) lines.push(`        + ${extra}`);
-					}
+					lines.push(...nodeDetailLines(n, showLevel, terse));
 				}
 			}
 		}
@@ -575,10 +214,9 @@ export function describeScene(allElements: ServerElement[]): string {
 	// --- edges ----------------------------------------------------------------
 	const looseConnectors = connectors.length - edges.length;
 	if (edges.length > 0 || looseConnectors > 0) {
-		lines.push("");
-		lines.push(`### Edges (${edges.length})`);
+		lines.push("", `### Edges (${edges.length})`);
 		for (const e of edges.slice(0, EDGE_LIST_LIMIT)) {
-			const arrow = e.label ? `--"${e.label}"-->` : "-->";
+			const arrow = hasText(e.label) ? `--"${e.label}"-->` : "-->";
 			lines.push(
 				`  "${e.fromName}" ${arrow} "${e.toName}"   (${e.fromId ?? "?"} --> ${e.toId ?? "?"}, arrow: ${e.arrow.id})`,
 			);
@@ -595,18 +233,20 @@ export function describeScene(allElements: ServerElement[]): string {
 
 	// --- everything else ------------------------------------------------------
 	if (others.length > 0) {
-		lines.push("");
-		lines.push(`### Other elements (${others.length}) — no archboard metadata`);
+		lines.push("", `### Other elements (${others.length}) — no archboard metadata`);
 		const rest = others;
 		const notable = rest.filter(
-			(o) => o.labelText || o.el.link || Object.keys(o.meta.foreign).length > 0,
+			(o) => hasText(o.labelText) || hasText(o.el.link) || Object.keys(o.meta.foreign).length > 0,
 		);
 		const dull = rest.filter(
-			(o) => !(o.labelText || o.el.link || Object.keys(o.meta.foreign).length > 0),
+			(o) =>
+				!(hasText(o.labelText) || hasText(o.el.link) || Object.keys(o.meta.foreign).length > 0),
 		);
 		const listAll = rest.length <= OTHER_LIST_LIMIT;
 		const listed = listAll ? rest.toSorted(readingOrder) : notable.slice(0, OTHER_LIST_LIMIT);
-		for (const o of listed) lines.push(`  ${plainLine(o)}`);
+		for (const o of listed) {
+			lines.push(`  ${plainLine(o)}`);
+		}
 		const omitted = rest.length - listed.length;
 		if (omitted > 0) {
 			const omittedItems = listAll ? [] : [...notable.slice(OTHER_LIST_LIMIT), ...dull];
@@ -617,17 +257,18 @@ export function describeScene(allElements: ServerElement[]): string {
 	}
 
 	// --- groups (unchanged) ---------------------------------------------------
-	const groupedElements = allElements.filter((el) => el.groupIds && el.groupIds.length > 0);
+	const groupedElements = allElements.filter((el) => el.groupIds.length > 0);
 	if (groupedElements.length > 0) {
 		const groupMap: Record<string, string[]> = {};
 		for (const el of groupedElements) {
-			for (const gid of el.groupIds || []) {
-				if (!groupMap[gid]) groupMap[gid] = [];
-				groupMap[gid]!.push(el.id);
+			for (const gid of el.groupIds) {
+				if (!groupMap[gid]) {
+					groupMap[gid] = [];
+				}
+				groupMap[gid]?.push(el.id);
 			}
 		}
-		lines.push("");
-		lines.push("### Groups:");
+		lines.push("", "### Groups:");
 		for (const [gid, ids] of Object.entries(groupMap)) {
 			lines.push(`  Group ${gid}: [${ids.join(", ")}]`);
 		}
@@ -640,141 +281,14 @@ export function describeScene(allElements: ServerElement[]): string {
 // Line rendering
 // ---------------------------------------------------------------------------
 
-function geometry(i: Item): string {
-	const parts = [`at (${Math.round(i.x)}, ${Math.round(i.y)})`];
-	if (i.w || i.h) parts.push(`size ${Math.round(i.w)}x${Math.round(i.h)}`);
-	return parts.join(" | ");
-}
-
-function nodeLine(n: Item, showLevel: boolean): string {
-	// Node identity leads: it is the join key across variants and boards, and
-	// the only handle that survives a redraw.
-	const parts = [`${n.meta.node ? `<${n.meta.node}>` : `[${n.el.id}]`} "${n.name}"`];
-	if (n.meta.node)
-		parts.push(`element ${n.el.id}${n.members > 1 ? ` +${n.members - 1} more` : ""}`);
-	// The label is what the board shows and what a human points at; a declared
-	// name only earns a mention when the two have diverged.
-	if (n.meta.name && n.labelText && n.meta.name !== n.labelText)
-		parts.push(`declared "${n.meta.name}"`);
-	parts.push(n.meta.binding ? `bound ${n.meta.binding}` : "unbound");
-	if (n.meta.variant && n.meta.variant !== "current") parts.push(`variant ${n.meta.variant}`);
-	if (showLevel && n.meta.level) parts.push(`level ${n.meta.level}`);
-	parts.push(geometry(n));
-	parts.push(n.el.type);
-	if (n.el.locked) parts.push("(locked)");
-	return parts.join(" | ");
-}
-
-// Only the things the main line didn't already say.
-function nodeExtras(n: Item): string {
-	const parts: string[] = [];
-	// The link is only worth a line when it says something the binding didn't:
-	// a `file://` that just re-states the bound path is noise on every node.
-	const link = n.el.link;
-	const echoesBinding =
-		!!link &&
-		((!!n.meta.binding && link.includes(n.meta.binding)) ||
-			(!!n.meta.bindingPath && link.endsWith(n.meta.bindingPath)));
-	if (link && !echoesBinding) parts.push(`link ${link}`);
-	if (Object.keys(n.meta.extra).length > 0) parts.push(pairs(n.meta.extra));
-	if (Object.keys(n.meta.foreign).length > 0)
-		parts.push(`other customData: ${pairs(n.meta.foreign)}`);
-	if (n.el.groupIds && n.el.groupIds.length > 0)
-		parts.push(`groups: [${n.el.groupIds.join(", ")}]`);
-	return parts.join(" | ");
-}
-
-function plainLine(o: Item): string {
-	const el = o.el;
-	const parts = [`[${el.id}] ${el.type}`, geometry(o)];
-	if (el.type === "text" && el.text) parts.push(`text: "${el.text}"`);
-	else if (o.labelText) parts.push(`label: "${o.labelText}"`);
-	// A colour is worth a word only when someone chose it. The default fill is
-	// on nearly every shape now (it is what makes them tappable), so printing it
-	// would add a column of noise to the agent's main read path.
-	if (
-		el.backgroundColor &&
-		el.backgroundColor !== "transparent" &&
-		el.backgroundColor.toLowerCase() !== DEFAULT_SHAPE_BACKGROUND
-	)
-		parts.push(`bg: ${el.backgroundColor}`);
-	if (el.strokeColor && el.strokeColor !== "#000000") parts.push(`stroke: ${el.strokeColor}`);
-	if (el.link) parts.push(`link: ${el.link}`);
-	if (Object.keys(o.meta.foreign).length > 0) parts.push(`customData: ${pairs(o.meta.foreign)}`);
-	if (el.locked) parts.push("(locked)");
-	if (el.groupIds && el.groupIds.length > 0) parts.push(`groups: [${el.groupIds.join(", ")}]`);
-	return parts.join(" | ");
-}
-
-// ---------------------------------------------------------------------------
-// The one sentence an agent can speak verbatim
-// ---------------------------------------------------------------------------
-
-function plural(n: number, word: string): string {
-	const noun = word === "external" ? "external system" : word;
-	if (n === 1) return `1 ${noun}`;
-	return `${n} ${noun}${noun.endsWith("s") ? "" : "s"}`;
-}
-
-function joinList(parts: string[]): string {
-	if (parts.length <= 1) return parts[0] ?? "";
-	return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
-}
-
-function summarise(s: {
-	nodes: Item[];
-	others: Item[];
-	edges: Edge[];
-	kindCounts: Record<string, number>;
-	typeCounts: Record<string, number>;
-	clusters: number;
-	boundNodes: number;
-	total: number;
-}): string {
-	if (s.nodes.length === 0) {
-		const kinds = renderCounts(s.typeCounts);
-		return `no nodes yet — ${s.total} elements (${kinds}). Nothing on this canvas carries archboard metadata.`;
-	}
-
-	const kindOrder = Object.keys(s.kindCounts).toSorted((a, b) => {
-		const ia = KIND_ORDER.indexOf(a),
-			ib = KIND_ORDER.indexOf(b);
-		if (ia !== ib) return (ia === -1 ? 1e6 : ia) - (ib === -1 ? 1e6 : ib);
-		return s.kindCounts[b]! - s.kindCounts[a]!;
-	});
-	const shownKinds = kindOrder.slice(0, 6).map((k) => plural(s.kindCounts[k]!, k));
-	const hidden = kindOrder.length - 6;
-	if (hidden > 0) shownKinds.push(hidden === 1 ? "1 other kind" : `${hidden} other kinds`);
-
-	const clauses: string[] = [joinList(shownKinds)];
-	if (s.clusters > 1) clauses.push(`in ${s.clusters} clusters`);
-	clauses.push(
-		s.edges.length > 0 ? `linked by ${plural(s.edges.length, "edge")}` : "with no edges drawn yet",
-	);
-
-	const notes: string[] = [];
-	const unbound = s.nodes.length - s.boundNodes;
-	if (unbound > 0) notes.push(`${unbound} unbound`);
-	if (s.others.length > 0) notes.push(`${plural(s.others.length, "plain element")} alongside`);
-
-	return `${clauses.join(" ")}${notes.length ? `; ${joinList(notes)}` : ""}.`;
-}
-
-// ---------------------------------------------------------------------------
-// Selection — what a human has picked on the board
-// ---------------------------------------------------------------------------
-//
-// Same read-path discipline as the scene description: an agent has to be able
-// to re-narrate this in one spoken sentence ("you've got the two payment
-// services selected"), so `summary` comes first and the per-element lines are
-// the same ones `describe` uses.
-
-export interface SelectedElement {
+interface SelectedElement {
 	id: string;
 	type: string;
 	label?: string;
-	isNode: boolean; // carries archboard metadata — stands for an architectural unit
-	node?: string; // stable node identity, when promoted
+	// Carries archboard metadata and stands for an architectural unit.
+	isNode: boolean;
+	// Stable node identity, when promoted.
+	node?: string;
 	kind?: string;
 	binding?: string;
 	variant?: string;
@@ -786,31 +300,34 @@ export interface SelectedElement {
 	height: number;
 }
 
-export interface SelectionReport {
+interface SelectionReport {
 	elementIds: string[];
 	count: number;
 	nodeCount: number;
 	elements: SelectedElement[];
-	missingIds: string[]; // selected ids the server has no element for
+	// Selected ids for which the server has no element.
+	missingIds: string[];
 	clientId: string | null;
 	at: string | null;
 	browserClients: number;
-	summary: string; // one line, speakable
-	text: string; // summary + per-element detail
+	// One speakable line.
+	summary: string;
+	// Summary plus per-element detail.
+	text: string;
 }
 
 function selectedElement(item: Item): SelectedElement {
 	return {
 		id: item.el.id,
 		type: item.el.type,
-		...(item.labelText ? { label: item.labelText } : {}),
+		...(hasText(item.labelText) ? { label: item.labelText } : {}),
 		isNode: item.isNode,
-		...(item.meta.node ? { node: item.meta.node } : {}),
-		...(item.meta.kind ? { kind: item.meta.kind } : {}),
-		...(item.meta.binding ? { binding: item.meta.binding } : {}),
-		...(item.meta.variant ? { variant: item.meta.variant } : {}),
-		...(item.meta.level ? { level: item.meta.level } : {}),
-		...(item.el.link ? { link: item.el.link } : {}),
+		...(hasText(item.meta.node) ? { node: item.meta.node } : {}),
+		...(hasText(item.meta.kind) ? { kind: item.meta.kind } : {}),
+		...(hasText(item.meta.binding) ? { binding: item.meta.binding } : {}),
+		...(hasText(item.meta.variant) ? { variant: item.meta.variant } : {}),
+		...(hasText(item.meta.level) ? { level: item.meta.level } : {}),
+		...(hasText(item.el.link) ? { link: item.el.link } : {}),
 		x: item.x,
 		y: item.y,
 		width: item.w,
@@ -818,45 +335,23 @@ function selectedElement(item: Item): SelectedElement {
 	};
 }
 
-function selectionSummary(items: Item[], missing: number): string {
-	if (items.length === 0 && missing === 0) return "Nothing is selected on the board.";
-
-	const nodes = items.filter((i) => i.isNode);
-	const plain = items.filter((i) => !i.isNode);
-	const named = (list: Item[]) =>
-		joinList(list.slice(0, 6).map((i) => `"${i.name}"`)) +
-		(list.length > 6 ? `, and ${list.length - 6} more` : "");
-
-	const clauses: string[] = [];
-	if (nodes.length > 0) {
-		const kinds = renderCounts(counts(nodes.map((n) => n.meta.kind ?? UNTYPED)), KIND_ORDER);
-		clauses.push(`${plural(nodes.length, "node")} (${kinds}) — ${named(nodes)}`);
-	}
-	if (plain.length > 0) {
-		const withLabel = plain.filter((p) => p.labelText);
-		const detail = withLabel.length > 0 ? ` — ${named(withLabel)}` : "";
-		clauses.push(
-			`${plural(plain.length, "plain element")} (${renderCounts(counts(plain.map((p) => p.el.type)))})${detail}`,
-		);
-	}
-	if (missing > 0)
-		clauses.push(`${missing} selected id${missing === 1 ? "" : "s"} not on the canvas`);
-
-	const total = items.length + missing;
-	return `${plural(total, "element")} selected: ${joinList(clauses)}.`;
-}
-
 // Build the selection read-out. `allElements` is the server's current scene —
 // selection is stored as ids only, and the semantic detail is resolved here so
 // the wire payload from the browser stays tiny.
-export function buildSelectionReport(
-	selection: { elementIds: string[]; clientId: string; at: string } | null,
-	allElements: ServerElement[],
+function buildSelectionReport(
+	selection: {
+		readonly elementIds: readonly string[];
+		readonly clientId: string;
+		readonly at: string;
+	} | null,
+	inputElements: readonly ServerElement[],
 	browserClients: number,
 ): SelectionReport {
-	allElements = allElements.map(semanticElementProjection);
+	const allElements = inputElements.map((element) => semanticElementProjection(element));
 	const byId = new Map<string, ServerElement>();
-	for (const el of allElements) byId.set(el.id, el);
+	for (const el of allElements) {
+		byId.set(el.id, el);
+	}
 	const folded = foldBoundText(allElements, byId);
 
 	const ids = selection?.elementIds ?? [];
@@ -872,7 +367,7 @@ export function buildSelectionReport(
 	}
 	// Fold multi-element nodes here too: picking all three pieces of one node
 	// and saying "this" means one thing, and the summary has to agree.
-	const items = foldNodes(selected).items;
+	const { items } = foldNodes(selected);
 	items.toSorted(readingOrder);
 
 	const summary = selectionSummary(items, missingIds.length);
@@ -892,10 +387,10 @@ export function buildSelectionReport(
 	}
 
 	return {
-		elementIds: ids,
+		elementIds: [...ids],
 		count: ids.length,
 		nodeCount: items.filter((i) => i.isNode).length,
-		elements: items.map(selectedElement),
+		elements: items.map((item) => selectedElement(item)),
 		missingIds,
 		clientId: selection?.clientId ?? null,
 		at: selection?.at ?? null,
@@ -910,7 +405,7 @@ export function buildSelectionReport(
 // ---------------------------------------------------------------------------
 
 /** What a selection is, in the fewest words that still identify it. */
-export interface SelectionNames {
+interface SelectionNames {
 	/** Selected ids the board has an element for, after folding. */
 	count: number;
 	nodeCount: number;
@@ -931,14 +426,21 @@ export interface SelectionNames {
  * through the same folding as the full report (bound text into its container, a
  * multi-element node into one thing) so the two never disagree about how many
  * things are selected or what they are called.
+ *
+ * @param ids selected element ids
+ * @param allElements current board elements
+ * @param max maximum number of names to return
+ * @returns a bounded, speakable selection name summary
  */
-export function nameSelection(
-	ids: string[],
-	allElements: ServerElement[],
+function nameSelection(
+	ids: readonly string[],
+	allElements: readonly ServerElement[],
 	max = 4,
 ): SelectionNames {
 	const byId = new Map<string, ServerElement>();
-	for (const el of allElements) byId.set(el.id, el);
+	for (const el of allElements) {
+		byId.set(el.id, el);
+	}
 	const folded = foldBoundText(allElements, byId);
 
 	const selected: Item[] = [];
@@ -952,10 +454,10 @@ export function nameSelection(
 		selected.push(toItem(el, folded));
 	}
 
-	const items = foldNodes(selected).items;
+	const { items } = foldNodes(selected);
 	items.toSorted(readingOrder);
 
-	const named = items.filter((i) => i.labelText || i.meta.name);
+	const named = items.filter((i) => hasText(i.labelText) || hasText(i.meta.name));
 	return {
 		count: items.length,
 		nodeCount: items.filter((i) => i.isNode).length,
@@ -964,3 +466,12 @@ export function nameSelection(
 		missing,
 	};
 }
+
+export {
+	describeScene,
+	type SelectedElement,
+	type SelectionReport,
+	buildSelectionReport,
+	type SelectionNames,
+	nameSelection,
+};
