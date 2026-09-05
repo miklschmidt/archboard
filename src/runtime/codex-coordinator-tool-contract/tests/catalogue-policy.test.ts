@@ -41,19 +41,6 @@ function objectKeys(value: unknown): string[] {
 	return typeof value === "object" && value !== null ? Object.keys(value) : [];
 }
 
-function canonicalJson(value: unknown): string {
-	if (Array.isArray(value)) {
-		return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
-	}
-	if (typeof value === "object" && value !== null) {
-		const entries = Object.keys(value)
-			.toSorted()
-			.map((key) => `${JSON.stringify(key)}:${canonicalJson(Reflect.get(value, key))}`);
-		return `{${entries.join(",")}}`;
-	}
-	return JSON.stringify(value);
-}
-
 describe("dynamic wire envelopes and metadata", () => {
 	test("accepts one canonical envelope and one inputText item", () => {
 		const envelope = { tag: "ok", operationId: "op-1", value: { threadId: "thread-1" } } as const;
@@ -333,9 +320,7 @@ describe("dynamic wire envelopes and metadata", () => {
 
 	test("freezes canonical inputs, metadata, and catalogue aggregate", () => {
 		for (const contract of COORDINATOR_TOOL_CONTRACTS) {
-			expect(canonicalJson(CoordinatorToolContractSchema.parse(contract))).toBe(
-				canonicalJson(contract),
-			);
+			expect(CoordinatorToolContractSchema.parse(contract)).toEqual<unknown>(contract);
 		}
 		for (const value of [
 			ARCHBOARD_WORKHORSE_NAMESPACE,
