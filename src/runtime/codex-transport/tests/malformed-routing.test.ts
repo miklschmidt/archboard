@@ -15,7 +15,7 @@ describe("Codex app-server malformed routing contract", () => {
 		const { child, transport, close } = createHarness();
 		try {
 			const pending = transport.request("turn/steer", {});
-			const id = frameAt(child, 0)["id"];
+			const { id } = frameAt(child, 0);
 			const rejection = captureRejection(pending);
 			sendJson(child, { id });
 			await flushStreams();
@@ -27,17 +27,26 @@ describe("Codex app-server malformed routing contract", () => {
 				outcome: "outcome_unknown",
 			});
 			expect(transport.inspect().pendingRequests).toBe(0);
-			expect(
-				frames(child).some(
-					(frame) =>
-						frame["id"] === id && (frame["error"] as { code?: unknown } | undefined)?.code === -32600,
-				),
-			).toBeFalse();
+			let wroteReverseRequestError = false;
+			for (const frame of frames(child)) {
+				const frameError = frame["error"];
+				if (
+					frame["id"] === id &&
+					typeof frameError === "object" &&
+					frameError !== null &&
+					"code" in frameError &&
+					frameError.code === -32_600
+				) {
+					wroteReverseRequestError = true;
+				}
+			}
+			expect(wroteReverseRequestError).toBeFalse();
 
 			const recovered = transport.request("turn/steer", {});
 			const recoveredId = frameAt(child, 1)["id"];
 			sendJson(child, { id: recoveredId, result: { turnId: "recovered" } });
-			expect((await recovered).result).toEqual({ turnId: "recovered" });
+			const recoveredResponse = await recovered;
+			expect(recoveredResponse.result).toEqual({ turnId: "recovered" });
 		} finally {
 			await close();
 		}

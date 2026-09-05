@@ -12,7 +12,7 @@ interface MutationRequest {
 }
 
 async function runRealtimeMutation(
-	// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- The request is structurally readonly; branded identity values are immutable capabilities whose nominal internals the rule cannot prove.
+	// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- The request is structurally readonly and both identities are Zod-branded primitive strings; the rule cannot prove that primitive representation.
 	request: Readonly<MutationRequest>,
 	invoke: () => Promise<unknown>,
 	isCurrent: () => boolean,
