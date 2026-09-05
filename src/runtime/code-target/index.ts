@@ -34,7 +34,7 @@ interface PathInspection {
 
 /** Immutable, operation-local evidence about the registered checkouts. */
 export interface CheckoutSnapshot {
-	readonly entries: readonly RegisteredRepoStatus[];
+	readonly entries: readonly Readonly<RegisteredRepoStatus>[];
 	inspection(repository: string): Readonly<CheckoutInspection> | undefined;
 	path(candidate: string): Readonly<PathInspection> | undefined;
 }

@@ -77,7 +77,6 @@ import {
 } from "../../../runtime/engine/board-hold.js";
 import type { HoldReport } from "../../../runtime/engine/board-hold.js";
 import {
-	BoardWriteConflictError,
 	boardFilesMessage,
 	createBoard,
 	emptyContent,
@@ -97,7 +96,6 @@ import type {
 	ResolvedBoardNote,
 } from "../../../runtime/engine/board-io.js";
 import {
-	BoardHeldError,
 	BoardLockCancelledError,
 	boardLockState,
 	claimBoard,
@@ -238,6 +236,12 @@ import {
 } from "../../../shared/canvas-startup-terminal/index.js";
 import { canvasStartupFailureMessage } from "./startup-error.js";
 import { createCheckoutWorkOwner } from "./checkout-work.js";
+import {
+	answerBoardError,
+	boardErrorStatus,
+	checkoutSnapshotFor,
+	refusalDocument,
+} from "./board-response.js";
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -357,12 +361,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	});
 	next();
 });
-
-function checkoutSnapshotFor(res: Response): CheckoutSnapshot {
-	return (
-		(res.locals["checkoutSnapshot"] as CheckoutSnapshot | undefined) ?? EMPTY_CHECKOUT_SNAPSHOT
-	);
-}
 
 const PROCESS_FREE_HUMAN_ROUTES = new Set([
 	"/api/boards/hold",
@@ -980,125 +978,6 @@ function boardOfRequest(req: Request): string | undefined {
 			? (req.body.board as string)
 			: undefined;
 	return fromQuery ?? fromBody;
-}
-
-// A board that was not named, or whose address cannot resolve, is a client
-// error rather than a server fault.
-function boardErrorStatus(error: unknown): number {
-	if (error instanceof z.ZodError) {
-		return 400;
-	}
-	if (error instanceof BoardRequiredError) {
-		return error.status;
-	}
-	if (error instanceof BoardResolutionError) {
-		return error.status;
-	}
-	if (error instanceof BoardMutationError) {
-		return error.status;
-	}
-	if (error instanceof BoardRendererError) {
-		return 503;
-	}
-	if (error instanceof RenderGeometryError) {
-		return 400;
-	}
-	if (error instanceof NativeElementValidationError) {
-		return 400;
-	}
-	// A refused write is not a fault, it is the other outcome the write always
-	// had (ADR 0006). Every route that writes can now produce it, because every
-	// write goes to the note (ADR 0015), so it is answered here once rather than
-	// in each of them.
-	if (error instanceof BoardWriteConflictError) {
-		return 409;
-	}
-	// Somebody else is writing this board and did not finish inside the wait
-	// (ADR 0016). The same 409 as a conflict, because it is the same shape of
-	// answer: the write did not happen and here is what stood in its way.
-	if (error instanceof BoardHeldError) {
-		return 409;
-	}
-	return /is not open|Invalid board name|Invalid variant|Invalid level|No vault configured|outside the vault|No pane called|matches \d+ panes|No pane is open|needs a pane/.test(
-		(error as Error).message,
-	)
-		? 400
-		: 500;
-}
-
-/** The note state an agent receives with a write-boundary refusal. */
-function refusalDocument(
-	board: string,
-	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
-): { document: ServerElement[]; version: number | null } {
-	const state = boards.get(board);
-	if (!state) {
-		throw new Error(`Board "${board}" is not open`);
-	}
-	const content = readBoardContent(state);
-	return {
-		document: presentElements(content.elements.values(), { boardKey: board, checkoutSnapshot }),
-		version: content.version ?? null,
-	};
-}
-
-// The refusal, as a body. Carries persisted choices as data so a caller can
-// act on it without parsing the sentence.
-function boardErrorBody(
-	error: unknown,
-	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
-): Record<string, unknown> {
-	const base = {
-		success: false,
-		error:
-			error instanceof z.ZodError
-				? error.issues.map((issue) => issue.message).join("; ")
-				: (error as Error).message,
-	};
-	if (error instanceof BoardRequiredError) {
-		return { ...base, code: error.code, available: error.available };
-	}
-	if (error instanceof BoardResolutionError) {
-		return {
-			...base,
-			code: error.code,
-			board: error.board,
-			reason: error.reason,
-			...(error.files.length > 0 ? { files: error.files } : {}),
-		};
-	}
-	// The three outcomes as data, so a surface offers them rather than rewording
-	// them. Which one the human picks is never archboard's to choose.
-	if (error instanceof BoardWriteConflictError) {
-		return { ...base, conflict: error.conflict };
-	}
-	// Who has the board and since when, as data as well as a sentence, so a voice
-	// session has something to say and a client has something to act on.
-	if (error instanceof BoardHeldError) {
-		const document = boards.has(error.board) ? refusalDocument(error.board, checkoutSnapshot) : {};
-		return {
-			...base,
-			code: error.code,
-			board: error.board,
-			holder: error.holder,
-			waitedMs: error.waitedMs,
-			...document,
-		};
-	}
-	if (error instanceof BoardRendererError) {
-		return { ...base, code: error.code };
-	}
-	if (error instanceof BoardMutationError && error.code) {
-		return { ...base, code: error.code };
-	}
-	return base;
-}
-
-function answerBoardError(res: Response, error: unknown, what?: string): void {
-	if (what) {
-		logger.error(what, error);
-	}
-	res.status(boardErrorStatus(error)).json(boardErrorBody(error, checkoutSnapshotFor(res)));
 }
 
 /** Send one board-write answer and retain the version it already produced. */
