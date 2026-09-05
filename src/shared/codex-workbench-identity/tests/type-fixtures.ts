@@ -43,8 +43,6 @@ declare const toolCall: DynamicToolCallId;
 declare const realtime: RealtimeSessionId;
 declare const approval: ApprovalId;
 declare const operation: OperationId;
-declare const validator: IdentityValidator;
-declare const issuer: IdentityIssuer;
 declare const decoder: TrustedIdentityDecoder;
 declare const identityAuthority: IdentityAuthority;
 declare const operationValidator: OperationIdValidator;
@@ -142,12 +140,17 @@ type _ReadonlyPrimitiveAllowlistTypesRemainNominalStrings = [
 ];
 
 type _BroadIdentityCapabilitiesRemainNarrow = [
+	AssertFalse<"adoptThreadId" extends keyof IdentityValidator ? true : false>,
+	AssertFalse<"parseJsonRpcRequestId" extends keyof IdentityValidator ? true : false>,
+	AssertFalse<"adoptThreadId" extends keyof IdentityIssuer ? true : false>,
 	AssertFalse<"isCurrentOperationId" extends keyof IdentityValidator ? true : false>,
 	AssertFalse<"assertCurrentOperationId" extends keyof IdentityValidator ? true : false>,
 	AssertFalse<"mintOperationId" extends keyof IdentityIssuer ? true : false>,
 	AssertFalse<"parseOperationId" extends keyof TrustedIdentityDecoder ? true : false>,
 	AssertFalse<"serializeOperationId" extends keyof TrustedIdentityDecoder ? true : false>,
 	AssertFalse<"operation" extends keyof IdentityAuthority ? true : false>,
+	AssertFalse<"adoptOperationId" extends keyof OperationIdValidator ? true : false>,
+	AssertFalse<"adoptOperationId" extends keyof TrustedOperationIdDecoder ? true : false>,
 	Assert<Equal<keyof OperationIdValidator, "isCurrentOperationId" | "assertCurrentOperationId">>,
 	Assert<Equal<keyof OperationIdIssuer, "mintOperationId">>,
 	Assert<Equal<keyof TrustedOperationIdDecoder, "parseOperationId" | "serializeOperationId">>,
@@ -165,21 +168,6 @@ type _ExactCorrelationKeys = [
 	>,
 ];
 
-// Ordinary consumers receive this capability, never the trusted decoder.
-// @ts-expect-error IdentityValidator must not expose brand-producing adoption.
-validator.adoptThreadId("thread");
-// @ts-expect-error IdentityValidator must not expose a request parser.
-validator.parseJsonRpcRequestId("request");
-// @ts-expect-error IdentityIssuer must not adopt server-owned identities.
-issuer.adoptThreadId("thread");
-// @ts-expect-error Broad identity validation must not expose operation IDs.
-validator.isCurrentOperationId(operation);
-// @ts-expect-error Broad identity issuance must not expose operation IDs.
-issuer.mintOperationId();
-// @ts-expect-error Broad trusted decoding must not parse operation IDs.
-decoder.parseOperationId(operation);
-// @ts-expect-error Broad trusted decoding must not serialize operation IDs.
-decoder.serializeOperationId(operation);
 // @ts-expect-error Unrelated consumers accepting IdentityAuthority cannot reach operations.
 void identityAuthority.operation;
 
@@ -191,10 +179,6 @@ operationDecoder.parseOperationId(operation);
 operationDecoder.serializeOperationId(operation);
 // @ts-expect-error OperationId cannot be supplied as a plain string.
 operationIssuer.mintOperationId("caller-supplied");
-// @ts-expect-error Validation does not mint or adopt operation identities.
-operationValidator.adoptOperationId("operation");
-// @ts-expect-error Trusted operation decoding has no server-owned adoption.
-operationDecoder.adoptOperationId("operation");
 // @ts-expect-error OperationId is not a server-owned Codex identity.
 decoder.serializeCodexIdentity(operation);
 
