@@ -12,10 +12,9 @@
 // is what turns it into elements, and by then it has stopped being a library
 // item.
 
-import crypto from "crypto";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import { VAULT_STATE_DIR } from "./board.js";
 import { writeFileAtomic } from "./atomic-write.js";
 import { ARCHBOARD_VAULT } from "./config.js";
@@ -24,7 +23,7 @@ import logger from "./logger.js";
 // The v2 library item, which is what both this store and Excalidraw speak.
 // `elements` is deliberately loose: they are Excalidraw elements, we never
 // interpret them, and narrowing the type here would only invite that.
-export interface LibraryItem {
+interface LibraryItem {
 	id: string;
 	status: "published" | "unpublished";
 	elements: unknown[];
@@ -32,7 +31,7 @@ export interface LibraryItem {
 	name?: string;
 }
 
-export interface LibraryState {
+interface LibraryState {
 	items: LibraryItem[];
 	/** Curated sets already offered, by file basename. Seeding never repeats. */
 	seeded: string[];
@@ -57,15 +56,15 @@ export interface LibraryState {
 // reader of that format ignores.
 const LIBRARY_FILE = "library.excalidrawlib";
 
-const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-
 // The curated sets ship in the checkout, not in the frontend bundle: the
 // browser never needs them, because it gets the library from the server like
 // everything else. Resolved from src/runtime/engine/ back to the repo root.
-const CURATED_DIR = path.resolve(moduleDir, "../../../libraries");
+const CURATED_DIR = path.resolve(import.meta.dirname, "../../../libraries");
 
-export function libraryFilePath(): string | null {
-	if (!ARCHBOARD_VAULT) return null;
+function libraryFilePath(): string | null {
+	if (!ARCHBOARD_VAULT) {
+		return null;
+	}
 	return path.join(path.resolve(ARCHBOARD_VAULT), VAULT_STATE_DIR, LIBRARY_FILE);
 }
 
@@ -79,30 +78,29 @@ function deriveId(setName: string, index: number): string {
 	return crypto.createHash("sha256").update(`${setName}:${index}`).digest("hex").slice(0, 20);
 }
 
-export function parseLibraryFile(json: string, setName: string): LibraryItem[] {
-	return parseLibraryDocument(JSON.parse(json), setName);
-}
-
-export function parseLibraryDocument(parsed: unknown, setName: string): LibraryItem[] {
+function parseLibraryDocument(parsed: unknown, setName: string): LibraryItem[] {
 	if (!parsed || typeof parsed !== "object") {
 		throw new Error(`${setName}: not a library file`);
 	}
 	const document = parsed as Record<string, unknown>;
-	const raw: unknown[] = Array.isArray(document["libraryItems"])
-		? document["libraryItems"]
-		: Array.isArray(document["library"])
-			? document["library"]
-			: [];
+	let raw: unknown[] = [];
+	if (Array.isArray(document["libraryItems"])) {
+		raw = document["libraryItems"];
+	} else if (Array.isArray(document["library"])) {
+		raw = document["library"];
+	}
 
 	const items: LibraryItem[] = [];
-	raw.forEach((entry, index) => {
+	for (const [index, entry] of raw.entries()) {
 		// v1: the item *is* its elements.
 		const record =
 			entry && typeof entry === "object" && !Array.isArray(entry)
 				? (entry as Record<string, unknown>)
 				: null;
 		const elements = Array.isArray(entry) ? entry : record?.["elements"];
-		if (!Array.isArray(elements) || elements.length === 0) return;
+		if (!Array.isArray(elements) || elements.length === 0) {
+			continue;
+		}
 		const item: LibraryItem = {
 			// An item's own id is kept when it has one, so that installing the same
 			// library from the site later merges with the seeded copy instead of
@@ -115,14 +113,23 @@ export function parseLibraryDocument(parsed: unknown, setName: string): LibraryI
 			),
 			created: (record && typeof record["created"] === "number" && record["created"]) || Date.now(),
 		};
-		if (record && typeof record["name"] === "string" && record["name"]) item.name = record["name"];
-		if (item.elements.length > 0) items.push(item);
-	});
+		if (record && typeof record["name"] === "string" && record["name"]) {
+			item.name = record["name"];
+		}
+		if (item.elements.length > 0) {
+			items.push(item);
+		}
+	}
 	return items;
 }
 
+function parseLibraryFile(json: string, setName: string): LibraryItem[] {
+	return parseLibraryDocument(JSON.parse(json), setName);
+}
+
 /** The curated sets that ship with archboard, by file basename. */
-export function curatedSets(): Array<{ name: string; items: LibraryItem[] }> {
+/** @returns the curated sets that ship with archboard, by file basename */
+function curatedSets(): { name: string; items: LibraryItem[] }[] {
 	let files: string[];
 	try {
 		files = fs
@@ -133,13 +140,14 @@ export function curatedSets(): Array<{ name: string; items: LibraryItem[] }> {
 		logger.warn(`No curated libraries found at ${CURATED_DIR}`);
 		return [];
 	}
-	const sets: Array<{ name: string; items: LibraryItem[] }> = [];
+	const sets: { name: string; items: LibraryItem[] }[] = [];
 	for (const file of files) {
-		const name = file.replace(/\.excalidrawlib$/, "");
+		const name = file.replace(/\.excalidrawlib$/u, "");
 		try {
+			const contents = fs.readFileSync(path.join(CURATED_DIR, file), "utf8");
 			sets.push({
 				name,
-				items: parseLibraryFile(fs.readFileSync(path.join(CURATED_DIR, file), "utf8"), name),
+				items: parseLibraryFile(contents, name),
 			});
 		} catch (error) {
 			logger.warn(`Skipping curated library ${file}: ${(error as Error).message}`);
@@ -167,7 +175,9 @@ function emptyState(): LibraryState {
 function readFromDisk(
 	file: string,
 ): { items: LibraryItem[]; seeded: string[]; origins: Record<string, string> } | null {
-	if (!fs.existsSync(file)) return null;
+	if (!fs.existsSync(file)) {
+		return null;
+	}
 	try {
 		const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
 		const seeded = Array.isArray(parsed?.archboard?.seeded)
@@ -188,7 +198,9 @@ function readFromDisk(
 }
 
 function persist(state: LibraryState): void {
-	if (!state.file) return;
+	if (!state.file) {
+		return;
+	}
 	const document = {
 		type: "excalidrawlib",
 		version: 2,
@@ -212,8 +224,11 @@ function persist(state: LibraryState): void {
  * Seeded items go in at the end, so a human's own stencils stay at the top of
  * the palette where they put them.
  */
-export function readLibrary(): LibraryState {
-	if (cache.state) return cache.state;
+/** @returns the library after seeding any newly available curated sets */
+function readLibrary(): LibraryState {
+	if (cache.state) {
+		return cache.state;
+	}
 
 	const state = emptyState();
 	if (state.file) {
@@ -228,10 +243,14 @@ export function readLibrary(): LibraryState {
 	const known = new Set(state.items.map((item) => item.id));
 	let added = 0;
 	for (const set of curatedSets()) {
-		if (state.seeded.includes(set.name)) continue;
+		if (state.seeded.includes(set.name)) {
+			continue;
+		}
 		state.seeded.push(set.name);
 		for (const item of set.items) {
-			if (known.has(item.id)) continue;
+			if (known.has(item.id)) {
+				continue;
+			}
 			known.add(item.id);
 			state.items.push(item);
 			state.origins[item.id] = set.name;
@@ -248,7 +267,11 @@ export function readLibrary(): LibraryState {
 }
 
 /** Replace the library with what a browser reports it to now be. */
-export function writeLibrary(items: LibraryItem[]): LibraryState {
+/**
+ * @param items complete library reported by a browser
+ * @returns the persisted library state
+ */
+function writeLibrary(items: LibraryItem[]): LibraryState {
 	const state = readLibrary();
 	state.items = items;
 	// Provenance follows the items. A stencil the human deleted leaves nothing
@@ -262,6 +285,18 @@ export function writeLibrary(items: LibraryItem[]): LibraryState {
 }
 
 /** Test seam: forget what has been read, so the next read hits the disk. */
-export function resetLibraryCache(): void {
+function resetLibraryCache(): void {
 	cache.state = null;
 }
+
+export {
+	type LibraryItem,
+	type LibraryState,
+	libraryFilePath,
+	parseLibraryFile,
+	parseLibraryDocument,
+	curatedSets,
+	readLibrary,
+	writeLibrary,
+	resetLibraryCache,
+};
