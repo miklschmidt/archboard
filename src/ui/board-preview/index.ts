@@ -181,6 +181,27 @@ class PreviewRequestGate {
 	}
 }
 
+/** A preview of a scene a pane holds right now, fingerprinted by the host. */
+interface MountedPreviewSnapshot {
+	kind: "mounted";
+	board: string;
+	fingerprint: string;
+	elements: readonly ExcalidrawElement[];
+	files: BinaryFiles;
+}
+
+/** What a preview card depicts: the server's snapshot, or a mounted pane's scene. */
+type PreviewSource = BoardPreviewSnapshot | MountedPreviewSnapshot;
+
+/**
+ * Whether a preview source is a mounted pane's scene.
+ * @param source The source.
+ * @returns True for a mounted scene.
+ */
+function isMountedPreview(source: PreviewSource): source is MountedPreviewSnapshot {
+	return "kind" in source;
+}
+
 /**
  * Turn a server preview snapshot into the scene Excalidraw's exporter accepts.
  * @param snapshot The canonical scene the server sent for previewing.
@@ -191,6 +212,30 @@ function projectPreviewSnapshot(snapshot: BoardPreviewSnapshot): PreviewScene {
 		isNonDeletedElement,
 	);
 	return { elements, files: snapshot.files };
+}
+
+/**
+ * The exportable scene of either preview source.
+ * @param source The server snapshot or the mounted scene.
+ * @returns Live elements plus the scene's files.
+ */
+function projectPreviewSource(source: PreviewSource): PreviewScene {
+	if (!isMountedPreview(source)) {
+		return projectPreviewSnapshot(source);
+	}
+	return {
+		elements: elementsForScene(source.elements).filter(isNonDeletedElement),
+		files: source.files,
+	};
+}
+
+/**
+ * Whether a preview source has anything to draw.
+ * @param source The source.
+ * @returns True when at least one live element exists.
+ */
+function previewSourceHasContent(source: PreviewSource): boolean {
+	return source.elements.some((element) => !element.isDeleted);
 }
 
 /**
@@ -227,4 +272,9 @@ export {
 	PreviewRequestGate,
 	projectPreviewSnapshot,
 	fingerprintMountedPreview,
+	isMountedPreview,
+	projectPreviewSource,
+	previewSourceHasContent,
+	type MountedPreviewSnapshot,
+	type PreviewSource,
 };

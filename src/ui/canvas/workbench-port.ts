@@ -14,9 +14,13 @@ interface PaneSocket extends EventTarget {
 	readonly send: (data: string) => void;
 }
 
-/** The connection facts every transport state carries; the canvas reads no more. */
+/**
+ * The connection facts every transport state carries; the canvas reads no
+ * more. `stream` is the workbench transport's stale-snapshot state, carried so
+ * the production transport satisfies this port without an adapter.
+ */
 interface WorkbenchTransportState {
-	readonly kind: "connection" | "readiness";
+	readonly kind: "connection" | "readiness" | "stream";
 	readonly state: string;
 	readonly connection: "connected" | "reconnecting" | "stopped";
 	readonly snapshot: unknown;

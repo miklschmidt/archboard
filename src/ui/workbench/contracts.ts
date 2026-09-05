@@ -53,6 +53,33 @@ interface WorkbenchVoiceView {
 	};
 }
 
+/**
+ * How one queue command stands: what is on the wire, how the last one
+ * settled, and who owns each entry. The queue controller
+ * (`src/ui/workbench-queue`) supplies it; the host composes it in.
+ */
+interface WorkbenchQueueCommandView {
+	/** Plain words for the command on the wire, or null while none is. */
+	pending: string | null;
+	/** How the last command settled, until the next one starts. */
+	settlement: {
+		tone: "reconciled" | "refused" | "outcome_unknown";
+		message: string;
+	} | null;
+	/** Ownership marker per submission id: the coordinator's, or foreign. */
+	ownership: Readonly<Record<string, string>>;
+}
+
+/** The queue command view while no controller reports one. */
+const IDLE_QUEUE_COMMAND: WorkbenchQueueCommandView = Object.freeze({
+	pending: null,
+	settlement: null,
+	ownership: Object.freeze({}),
+});
+
+/** No approval decision has failed. */
+const NO_APPROVAL_ERRORS: Readonly<Record<string, string>> = Object.freeze({});
+
 /** What the workbench shows. */
 interface WorkbenchView {
 	session: WorkbenchSessionView;
@@ -62,6 +89,12 @@ interface WorkbenchView {
 	 * an approval's request id, or a dynamic approval's call id.
 	 */
 	busyApprovals: readonly string[];
+	/**
+	 * Error text per approval key: a decision the approvals controller settled
+	 * as invalid or refused, shown on the card until the host's record replaces it.
+	 */
+	approvalErrors: Readonly<Record<string, string>>;
+	queueCommand: WorkbenchQueueCommandView;
 	voice: WorkbenchVoiceView;
 	/** The clock the freshness and expiry text is judged against. */
 	nowMs: number;
@@ -121,15 +154,18 @@ interface WorkbenchActions {
 	voice: VoiceControlsActions;
 }
 
-export type {
-	ApprovalChoice,
-	ComposerIntent,
-	DynamicApprovalVerdict,
-	WorkbenchActions,
-	WorkbenchComposerView,
-	WorkbenchQueueActions,
-	WorkbenchSessionView,
-	WorkbenchThreadLinkActions,
-	WorkbenchView,
-	WorkbenchVoiceView,
+export {
+	IDLE_QUEUE_COMMAND,
+	NO_APPROVAL_ERRORS,
+	type ApprovalChoice,
+	type ComposerIntent,
+	type DynamicApprovalVerdict,
+	type WorkbenchActions,
+	type WorkbenchComposerView,
+	type WorkbenchQueueActions,
+	type WorkbenchQueueCommandView,
+	type WorkbenchSessionView,
+	type WorkbenchThreadLinkActions,
+	type WorkbenchView,
+	type WorkbenchVoiceView,
 };
