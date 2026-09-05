@@ -18,7 +18,7 @@ const EffectHashSchema = z
 	.string()
 	.regex(/^sha256:[0-9a-f]{64}$/u, "effect hash must be sha256 plus 64 lowercase hex characters");
 
-export type DynamicApprovalCanonicalIdentity = {
+type DynamicApprovalCanonicalIdentity = {
 	readonly child: string;
 	readonly epoch: string;
 	readonly threadId: string;
@@ -30,7 +30,7 @@ export type DynamicApprovalCanonicalIdentity = {
 	readonly operationId: string;
 };
 
-export type DynamicApprovalCanonicalEffect =
+type DynamicApprovalCanonicalEffect =
 	| {
 			readonly tool: "create_thread";
 			readonly arguments: { readonly prompt: string };
@@ -71,12 +71,12 @@ export type DynamicApprovalCanonicalEffect =
 			readonly visualSummary: string;
 	  };
 
-export type DynamicApprovalCanonicalInput = {
+type DynamicApprovalCanonicalInput = {
 	readonly identity: DynamicApprovalCanonicalIdentity;
 	readonly effect: DynamicApprovalCanonicalEffect;
 };
 
-export function dynamicApprovalHashForCanonicalJson(value: string): string {
+function dynamicApprovalHashForCanonicalJson(value: string): string {
 	return effectHashFor(value);
 }
 
@@ -181,7 +181,7 @@ function validateIdentityAndEffect(
 	}
 }
 
-export function canonicalDynamicApprovalJson(input: DynamicApprovalCanonicalInput): string {
+function canonicalDynamicApprovalJson(input: DynamicApprovalCanonicalInput): string {
 	const { identity: approvalIdentity, effect: approvalEffect } = input;
 	return JSON.stringify({
 		identity: {
@@ -216,7 +216,7 @@ function canonicalHashInput(
 	return canonicalDynamicApprovalJson({ identity: approvalIdentity, effect: approvalEffect });
 }
 
-export function createDynamicApprovalSchemas(identity: IdentitySchemas, context: IdentityContext) {
+function createDynamicApprovalSchemas(identity: IdentitySchemas, context: IdentityContext) {
 	const effectSchemas = createDynamicApprovalEffectSchemas(identity, context);
 	const { DynamicApprovalIdentitySchema, DynamicApprovalEffectSchema } = effectSchemas;
 
@@ -265,42 +265,54 @@ export function createDynamicApprovalSchemas(identity: IdentitySchemas, context:
 	};
 }
 
-export type DynamicApprovalSchemas = ReturnType<typeof createDynamicApprovalSchemas>;
-export type DynamicApprovalIdentity = z.infer<
-	DynamicApprovalSchemas["DynamicApprovalIdentitySchema"]
->;
-export type DynamicApprovalEffect = z.infer<DynamicApprovalSchemas["DynamicApprovalEffectSchema"]>;
-export type DynamicApprovalRequest = z.infer<
-	DynamicApprovalSchemas["DynamicApprovalRequestSchema"]
->;
-export type DynamicApprovalState = z.infer<DynamicApprovalSchemas["DynamicApprovalStateSchema"]>;
-export type DynamicApprovalDecision = z.infer<
-	DynamicApprovalSchemas["DynamicApprovalDecisionSchema"]
->;
-export type DynamicApprovalToolResult = z.infer<
-	DynamicApprovalSchemas["DynamicApprovalToolResultSchema"]
->;
-export type DynamicApprovalLink = z.infer<DynamicApprovalSchemas["DynamicApprovalLinkSchema"]>;
-export type DynamicApprovalBinding = z.infer<
-	DynamicApprovalSchemas["DynamicApprovalBindingSchema"]
->;
-export type BrowserDynamicApprovalEffect = z.infer<
+type DynamicApprovalSchemas = ReturnType<typeof createDynamicApprovalSchemas>;
+type DynamicApprovalIdentity = z.infer<DynamicApprovalSchemas["DynamicApprovalIdentitySchema"]>;
+type DynamicApprovalEffect = z.infer<DynamicApprovalSchemas["DynamicApprovalEffectSchema"]>;
+type DynamicApprovalRequest = z.infer<DynamicApprovalSchemas["DynamicApprovalRequestSchema"]>;
+type DynamicApprovalState = z.infer<DynamicApprovalSchemas["DynamicApprovalStateSchema"]>;
+type DynamicApprovalDecision = z.infer<DynamicApprovalSchemas["DynamicApprovalDecisionSchema"]>;
+type DynamicApprovalToolResult = z.infer<DynamicApprovalSchemas["DynamicApprovalToolResultSchema"]>;
+type DynamicApprovalLink = z.infer<DynamicApprovalSchemas["DynamicApprovalLinkSchema"]>;
+type DynamicApprovalBinding = z.infer<DynamicApprovalSchemas["DynamicApprovalBindingSchema"]>;
+type BrowserDynamicApprovalEffect = z.infer<
 	DynamicApprovalSchemas["BrowserDynamicApprovalEffectSchema"]
 >;
-export type BrowserDynamicApproval = z.infer<
-	DynamicApprovalSchemas["BrowserDynamicApprovalSchema"]
->;
-export type BrowserDynamicApprovalResponse = z.infer<
+type BrowserDynamicApproval = z.infer<DynamicApprovalSchemas["BrowserDynamicApprovalSchema"]>;
+type BrowserDynamicApprovalResponse = z.infer<
 	DynamicApprovalSchemas["BrowserDynamicApprovalResponseSchema"]
 >;
-export type DynamicApprovalResponse = BrowserDynamicApprovalResponse;
-export type BrowserDynamicApprovalResponseCommand = BrowserDynamicApprovalResponse;
-export type DynamicCoordinationApprovalRequest = DynamicApprovalRequest;
-export type DynamicCoordinationApprovalState = DynamicApprovalState;
-export type DynamicCoordinationApprovalResponse = BrowserDynamicApprovalResponse;
-export type BrowserDynamicCoordinationApproval = BrowserDynamicApproval;
+type DynamicApprovalResponse = BrowserDynamicApprovalResponse;
+type BrowserDynamicApprovalResponseCommand = BrowserDynamicApprovalResponse;
+type DynamicCoordinationApprovalRequest = DynamicApprovalRequest;
+type DynamicCoordinationApprovalState = DynamicApprovalState;
+type DynamicCoordinationApprovalResponse = BrowserDynamicApprovalResponse;
+type BrowserDynamicCoordinationApproval = BrowserDynamicApproval;
 
 export {
+	type DynamicApprovalCanonicalIdentity,
+	type DynamicApprovalCanonicalEffect,
+	type DynamicApprovalCanonicalInput,
+	dynamicApprovalHashForCanonicalJson,
+	canonicalDynamicApprovalJson,
+	createDynamicApprovalSchemas,
+	type DynamicApprovalSchemas,
+	type DynamicApprovalIdentity,
+	type DynamicApprovalEffect,
+	type DynamicApprovalRequest,
+	type DynamicApprovalState,
+	type DynamicApprovalDecision,
+	type DynamicApprovalToolResult,
+	type DynamicApprovalLink,
+	type DynamicApprovalBinding,
+	type BrowserDynamicApprovalEffect,
+	type BrowserDynamicApproval,
+	type BrowserDynamicApprovalResponse,
+	type DynamicApprovalResponse,
+	type BrowserDynamicApprovalResponseCommand,
+	type DynamicCoordinationApprovalRequest,
+	type DynamicCoordinationApprovalState,
+	type DynamicCoordinationApprovalResponse,
+	type BrowserDynamicCoordinationApproval,
 	CODEX_APPROVAL_EXPIRY_MS,
 	DYNAMIC_APPROVAL_DECISIONS,
 	DYNAMIC_APPROVAL_NAMESPACE,

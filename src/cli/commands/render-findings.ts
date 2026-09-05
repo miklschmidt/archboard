@@ -16,7 +16,7 @@ import {
 	FindingRenderManifestSchema,
 } from "../finding-rendering/index.js";
 
-export const RenderFindingsInputSchema = InspectionOptionsInputSchema.extend({
+const RenderFindingsInputSchema = InspectionOptionsInputSchema.extend({
 	out: z.string().min(1, "render-findings requires --out <existing-empty-directory>"),
 	tail: z.array(z.string()).default([]),
 });
@@ -33,7 +33,7 @@ function requireEmptyDirectory(directory: string): void {
 	}
 }
 
-export const renderFindingsContract = defineCommand({
+const renderFindingsContract = defineCommand({
 	path: ["render-findings"],
 	summary: "Render deterministic PNG close-ups for persisted board findings",
 	usage: [
@@ -105,3 +105,5 @@ export const renderFindingsContract = defineCommand({
 		return { result: manifest, pendingArtifact: artifact };
 	},
 });
+
+export { RenderFindingsInputSchema, renderFindingsContract };

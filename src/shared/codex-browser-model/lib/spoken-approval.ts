@@ -8,7 +8,7 @@ import {
 } from "../../codex-realtime-host/index.js";
 import { boundedText, type IdentitySchemas } from "./scalars.js";
 
-export const BROWSER_SPOKEN_APPROVAL_STATES = Object.freeze([
+const BROWSER_SPOKEN_APPROVAL_STATES = Object.freeze([
 	"idle",
 	"armed",
 	"resolving",
@@ -19,7 +19,7 @@ export const BROWSER_SPOKEN_APPROVAL_STATES = Object.freeze([
 	"stale_session",
 ] as const);
 
-export const BROWSER_SPOKEN_APPROVAL_REASONS = Object.freeze([
+const BROWSER_SPOKEN_APPROVAL_REASONS = Object.freeze([
 	"approval_unavailable",
 	"not_eligible",
 	"coordinator_unavailable",
@@ -40,7 +40,7 @@ export const BROWSER_SPOKEN_APPROVAL_REASONS = Object.freeze([
 	"disposed",
 ] as const);
 
-export const BROWSER_IDLE_SPOKEN_APPROVAL = Object.freeze({
+const BROWSER_IDLE_SPOKEN_APPROVAL = Object.freeze({
 	kind: "spoken_approval" as const,
 	state: "idle" as const,
 	approval: null,
@@ -74,7 +74,7 @@ function realtimeIdentity<Identity extends RealtimeItemId | RealtimeSessionId>(
 	});
 }
 
-export function createBrowserSpokenApprovalSchema(identity: IdentitySchemas) {
+function createBrowserSpokenApprovalSchema(identity: IdentitySchemas) {
 	const {
 		ApprovalIdSchema,
 		ChildEpochSchema,
@@ -281,4 +281,12 @@ export function createBrowserSpokenApprovalSchema(identity: IdentitySchemas) {
 		});
 }
 
-export type BrowserSpokenApproval = z.infer<ReturnType<typeof createBrowserSpokenApprovalSchema>>;
+type BrowserSpokenApproval = z.infer<ReturnType<typeof createBrowserSpokenApprovalSchema>>;
+
+export {
+	BROWSER_SPOKEN_APPROVAL_STATES,
+	BROWSER_SPOKEN_APPROVAL_REASONS,
+	BROWSER_IDLE_SPOKEN_APPROVAL,
+	createBrowserSpokenApprovalSchema,
+	type BrowserSpokenApproval,
+};

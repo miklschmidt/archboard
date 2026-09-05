@@ -10,7 +10,7 @@ import type { AnswerSdp } from "../../codex-realtime-host/index.js";
  * transport that consumes it — and `ui` may never import `server`. Copying it
  * into the browser instead is how the two ends drift without a compiler error.
  */
-export const BROWSER_GATEWAY_ACTIONS = [
+const BROWSER_GATEWAY_ACTIONS = [
 	"connect",
 	"snapshot",
 	"claimLease",
@@ -23,9 +23,9 @@ export const BROWSER_GATEWAY_ACTIONS = [
 	"close",
 ] as const;
 
-export type BrowserGatewayAction = (typeof BROWSER_GATEWAY_ACTIONS)[number];
+type BrowserGatewayAction = (typeof BROWSER_GATEWAY_ACTIONS)[number];
 
-export const BROWSER_GATEWAY_ERROR_CODES = [
+const BROWSER_GATEWAY_ERROR_CODES = [
 	"disposed",
 	"invalid_input",
 	"invalid_command",
@@ -46,26 +46,26 @@ export const BROWSER_GATEWAY_ERROR_CODES = [
 	"outcome_unknown",
 ] as const;
 
-export type BrowserGatewayErrorCode = (typeof BROWSER_GATEWAY_ERROR_CODES)[number];
+type BrowserGatewayErrorCode = (typeof BROWSER_GATEWAY_ERROR_CODES)[number];
 
-export interface BrowserGatewaySnapshotMessage {
+interface BrowserGatewaySnapshotMessage {
 	readonly kind: "snapshot";
 	readonly sequence: number;
 	readonly snapshot: BrowserSnapshot;
 }
 
-export type BrowserSnapshotDelta = Partial<Omit<BrowserSnapshot, "kind" | "version">>;
+type BrowserSnapshotDelta = Partial<Omit<BrowserSnapshot, "kind" | "version">>;
 
-export interface BrowserGatewayDeltaMessage {
+interface BrowserGatewayDeltaMessage {
 	readonly kind: "delta";
 	readonly sequence: number;
 	readonly delta: BrowserSnapshotDelta;
 }
 
-export type BrowserGatewayMessage = BrowserGatewaySnapshotMessage | BrowserGatewayDeltaMessage;
+type BrowserGatewayMessage = BrowserGatewaySnapshotMessage | BrowserGatewayDeltaMessage;
 
 /** Every snapshot field a delta may carry, in snapshot order. */
-export const BROWSER_SNAPSHOT_DELTA_KEYS = [
+const BROWSER_SNAPSHOT_DELTA_KEYS = [
 	"readiness",
 	"account",
 	"login",
@@ -85,7 +85,7 @@ export const BROWSER_SNAPSHOT_DELTA_KEYS = [
 	"operation",
 ] as const satisfies readonly (keyof BrowserSnapshotDelta)[];
 
-export type BrowserSnapshotDeltaKey = (typeof BROWSER_SNAPSHOT_DELTA_KEYS)[number];
+type BrowserSnapshotDeltaKey = (typeof BROWSER_SNAPSHOT_DELTA_KEYS)[number];
 
 /**
  * Adding a field to BrowserSnapshot without listing it above is a type error
@@ -94,9 +94,9 @@ export type BrowserSnapshotDeltaKey = (typeof BROWSER_SNAPSHOT_DELTA_KEYS)[numbe
  */
 type Unlisted = Exclude<keyof BrowserSnapshotDelta, BrowserSnapshotDeltaKey>;
 type AssertNoUnlistedKey<Key extends never> = Key;
-export type BrowserSnapshotDeltaKeysAreExhaustive = AssertNoUnlistedKey<Unlisted>;
+type BrowserSnapshotDeltaKeysAreExhaustive = AssertNoUnlistedKey<Unlisted>;
 
-export interface BrowserGatewayCommandResult {
+interface BrowserGatewayCommandResult {
 	readonly kind: "command_result";
 	readonly commandId: BrowserCommandId | null;
 	readonly outcome: DeliveryOutcome;
@@ -109,10 +109,26 @@ export interface BrowserGatewayCommandResult {
 	readonly realtimeSessionHandle?: string;
 }
 
-export interface BrowserGatewayAccountReadResult {
+interface BrowserGatewayAccountReadResult {
 	readonly kind: "account_read";
 	readonly outcome: DeliveryOutcome;
 	readonly code: BrowserGatewayErrorCode | null;
 	readonly message: string | null;
 	readonly snapshot: BrowserSnapshot;
 }
+
+export {
+	BROWSER_GATEWAY_ACTIONS,
+	type BrowserGatewayAction,
+	BROWSER_GATEWAY_ERROR_CODES,
+	type BrowserGatewayErrorCode,
+	type BrowserGatewaySnapshotMessage,
+	type BrowserSnapshotDelta,
+	type BrowserGatewayDeltaMessage,
+	type BrowserGatewayMessage,
+	BROWSER_SNAPSHOT_DELTA_KEYS,
+	type BrowserSnapshotDeltaKey,
+	type BrowserSnapshotDeltaKeysAreExhaustive,
+	type BrowserGatewayCommandResult,
+	type BrowserGatewayAccountReadResult,
+};

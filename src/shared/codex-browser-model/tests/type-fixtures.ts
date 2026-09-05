@@ -3,7 +3,7 @@ import type { BrowserDto, BrowserDynamicApprovalResponse, DynamicApprovalState }
 type Assert<T extends true> = T;
 type Equal<A, B> = [A, B] extends [B, A] ? true : false;
 
-export function exhaustiveBrowserDto(dto: BrowserDto): string {
+function exhaustiveBrowserDto(dto: BrowserDto): string {
 	switch (dto.kind) {
 		case "snapshot":
 		case "readiness":
@@ -31,7 +31,7 @@ export function exhaustiveBrowserDto(dto: BrowserDto): string {
 	}
 }
 
-export function exhaustiveDynamicApprovalState(state: DynamicApprovalState): string {
+function exhaustiveDynamicApprovalState(state: DynamicApprovalState): string {
 	switch (state) {
 		case "pending":
 		case "approved":
@@ -51,13 +51,13 @@ export function exhaustiveDynamicApprovalState(state: DynamicApprovalState): str
 	}
 }
 
-export function dynamicApprovalResponseDecision(
+function dynamicApprovalResponseDecision(
 	response: BrowserDynamicApprovalResponse,
 ): "approve" | "decline" {
 	return response.decision;
 }
 
-export type _DynamicApprovalStatesAreClosed = Assert<
+type _DynamicApprovalStatesAreClosed = Assert<
 	Equal<
 		DynamicApprovalState,
 		| "pending"
@@ -73,7 +73,7 @@ export type _DynamicApprovalStatesAreClosed = Assert<
 	>
 >;
 
-export type _BrowserDtoIsClosed = Assert<
+type _BrowserDtoIsClosed = Assert<
 	Equal<
 		BrowserDto["kind"],
 		| "snapshot"
@@ -96,3 +96,11 @@ export type _BrowserDtoIsClosed = Assert<
 		| "dynamic_approval"
 	>
 >;
+
+export {
+	exhaustiveBrowserDto,
+	exhaustiveDynamicApprovalState,
+	dynamicApprovalResponseDecision,
+	type _DynamicApprovalStatesAreClosed,
+	type _BrowserDtoIsClosed,
+};

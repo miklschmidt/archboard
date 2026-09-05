@@ -4,7 +4,7 @@ import { defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
 import { claimRefusals, commonRefusals } from "../command-contract/common.js";
 
-export const ClaimReasonInputSchema = z
+const ClaimReasonInputSchema = z
 	.string({
 		error:
 			'claim needs --reason: it is what the pane shows the person whose board you have taken. Without it the wall has stopped working for no reason they can see. Say what you are taking it for, in their words: --reason "redrawing the payment path". That is the campaign; --doing on each write is the step.',
@@ -14,7 +14,7 @@ export const ClaimReasonInputSchema = z
 		1,
 		'claim needs --reason: it is what the pane shows the person whose board you have taken. Without it the wall has stopped working for no reason they can see. Say what you are taking it for, in their words: --reason "redrawing the payment path". That is the campaign; --doing on each write is the step.',
 	);
-export const ClaimDurationInputSchema = z
+const ClaimDurationInputSchema = z
 	.string()
 	.optional()
 	.transform((said, context) => {
@@ -35,12 +35,12 @@ export const ClaimDurationInputSchema = z
 	});
 const tail = z.array(z.string()).default([]);
 
-export const ClaimInputSchema = z.object({
+const ClaimInputSchema = z.object({
 	reason: ClaimReasonInputSchema,
 	for: ClaimDurationInputSchema,
 	tail,
 });
-export type ClaimInput = z.infer<typeof ClaimInputSchema>;
+type ClaimInput = z.infer<typeof ClaimInputSchema>;
 const LockHolderSchema = z.looseObject({
 	id: z.string(),
 	kind: z.string(),
@@ -54,15 +54,15 @@ const BoardClaimSchema = z.looseObject({
 	holder: LockHolderSchema,
 	expires: z.string(),
 });
-export const ClaimResultSchema = z.looseObject({
+const ClaimResultSchema = z.looseObject({
 	success: z.boolean(),
 	board: z.string(),
 	created: z.boolean(),
 	claim: BoardClaimSchema,
 	held: HoldReportSchema.optional(),
 });
-export type ClaimResult = z.infer<typeof ClaimResultSchema>;
-export const claimContract = defineCommand({
+type ClaimResult = z.infer<typeof ClaimResultSchema>;
+const claimContract = defineCommand({
 	path: ["claim"],
 	summary: "Take a board for a stretch of work, so twenty writes are one uninterrupted act",
 	usage: "claim --board <key> --reason <reason> [--for 10m]",
@@ -134,17 +134,17 @@ export const claimContract = defineCommand({
 	},
 });
 
-export const ReleaseInputSchema = z.object({ tail });
-export type ReleaseInput = z.infer<typeof ReleaseInputSchema>;
-export const ReleaseResultSchema = z.looseObject({
+const ReleaseInputSchema = z.object({ tail });
+type ReleaseInput = z.infer<typeof ReleaseInputSchema>;
+const ReleaseResultSchema = z.looseObject({
 	success: z.boolean(),
 	board: z.string(),
 	released: z.boolean(),
 	claim: BoardClaimSchema.nullable(),
 	held: HoldReportSchema.optional(),
 });
-export type ReleaseResult = z.infer<typeof ReleaseResultSchema>;
-export const releaseContract = defineCommand({
+type ReleaseResult = z.infer<typeof ReleaseResultSchema>;
+const releaseContract = defineCommand({
 	path: ["release"],
 	summary: "Give back a board you claimed",
 	usage: "release --board <key>",
@@ -195,3 +195,18 @@ export const releaseContract = defineCommand({
 		return { result: ReleaseResultSchema.parse(result), diagnostics: [diagnostic] };
 	},
 });
+
+export {
+	ClaimReasonInputSchema,
+	ClaimDurationInputSchema,
+	ClaimInputSchema,
+	type ClaimInput,
+	ClaimResultSchema,
+	type ClaimResult,
+	claimContract,
+	ReleaseInputSchema,
+	type ReleaseInput,
+	ReleaseResultSchema,
+	type ReleaseResult,
+	releaseContract,
+};

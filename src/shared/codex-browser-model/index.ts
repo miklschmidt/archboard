@@ -11,6 +11,28 @@ import {
 import type { IdentityAuthorities } from "../codex-workbench-identity/index.js";
 import type { IdentityContext } from "./lib/scalars.js";
 
+function createCodexBrowserModel(context: IdentityContext | IdentityAuthorities) {
+	const normalizedContext: IdentityContext =
+		"identity" in context ? { ...context.identity, operation: context.operation } : context;
+	const identity = createIdentitySchemas(normalizedContext);
+	return {
+		...identity,
+		...createBrowserSchemas(identity, normalizedContext),
+	};
+}
+
+type CodexBrowserModel = ReturnType<typeof createCodexBrowserModel>;
+
+export {
+	JsonValueSchema,
+	NonNegativeIntegerSchema,
+	NullableNonNegativeIntegerSchema,
+	SafeUrlSchema,
+	boundedText,
+	boundedWireText,
+	createCodexBrowserModel,
+	type CodexBrowserModel,
+};
 export {
 	BROWSER_SPOKEN_APPROVAL_REASONS,
 	BROWSER_SPOKEN_APPROVAL_STATES,
@@ -27,14 +49,6 @@ export {
 	DeliveryOutcomeSchema,
 } from "./lib/browser.js";
 export {
-	JsonValueSchema,
-	NonNegativeIntegerSchema,
-	NullableNonNegativeIntegerSchema,
-	SafeUrlSchema,
-	boundedText,
-	boundedWireText,
-};
-export {
 	createDynamicApprovalSchemas,
 	canonicalDynamicApprovalJson,
 	dynamicApprovalHashForCanonicalJson,
@@ -44,19 +58,6 @@ export {
 	DYNAMIC_APPROVAL_STATES,
 	DYNAMIC_APPROVAL_TOOLS,
 } from "./lib/dynamic-approval.js";
-
-export function createCodexBrowserModel(context: IdentityContext | IdentityAuthorities) {
-	const normalizedContext: IdentityContext =
-		"identity" in context ? { ...context.identity, operation: context.operation } : context;
-	const identity = createIdentitySchemas(normalizedContext);
-	return {
-		...identity,
-		...createBrowserSchemas(identity, normalizedContext),
-	};
-}
-
-export type CodexBrowserModel = ReturnType<typeof createCodexBrowserModel>;
-
 export type {
 	BrowserAccount,
 	BrowserApproval,
@@ -83,7 +84,6 @@ export type {
 	BrowserSchemas,
 	DeliveryOutcome,
 } from "./lib/browser.js";
-
 export type {
 	BrowserDynamicApproval,
 	BrowserDynamicApprovalEffect,
@@ -107,7 +107,6 @@ export type {
 	DynamicCoordinationApprovalResponse,
 	DynamicCoordinationApprovalState,
 } from "./lib/dynamic-approval.js";
-
 export type {
 	AnyIdentity,
 	CodexIdentity,

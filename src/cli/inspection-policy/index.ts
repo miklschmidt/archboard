@@ -4,15 +4,15 @@ import type { TokenParameter } from "../command-contract/contract.js";
 import { CliUsageError } from "../command-contract/contract.js";
 import type { InspectionPolicyInput } from "../../runtime/board-inspection/index.js";
 
-export const InspectionOptionsInputSchema = z.object({
+const InspectionOptionsInputSchema = z.object({
 	fontFamilies: z.array(z.string()).default([]),
 	dimensionTolerance: z.string().optional(),
 	intersectionTolerance: z.string().optional(),
 	overlapTolerance: z.string().optional(),
 });
-export type InspectionOptionsInput = z.infer<typeof InspectionOptionsInputSchema>;
+type InspectionOptionsInput = z.infer<typeof InspectionOptionsInputSchema>;
 
-export const inspectionOptionParameters: readonly TokenParameter[] = [
+const inspectionOptionParameters: readonly TokenParameter[] = [
 	{
 		kind: "option",
 		key: "fontFamilies",
@@ -55,7 +55,7 @@ const finiteNonnegative = (name: string, value: string | undefined): number | un
 	return parsed;
 };
 
-export function inspectionPolicyOf(input: InspectionOptionsInput): InspectionPolicyInput {
+function inspectionPolicyOf(input: InspectionOptionsInput): InspectionPolicyInput {
 	let allowedFontFamilies: InspectionPolicyInput["allowedFontFamilies"];
 	if (input.fontFamilies.includes("any")) {
 		if (input.fontFamilies.length !== 1) {
@@ -91,3 +91,10 @@ export function inspectionPolicyOf(input: InspectionOptionsInput): InspectionPol
 			: { overlapTolerance: finiteNonnegative("--overlap-tolerance", input.overlapTolerance)! }),
 	};
 }
+
+export {
+	InspectionOptionsInputSchema,
+	type InspectionOptionsInput,
+	inspectionOptionParameters,
+	inspectionPolicyOf,
+};

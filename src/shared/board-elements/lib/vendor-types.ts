@@ -13,7 +13,7 @@ import type {
 type IsAny<T> = 0 extends 1 & T ? true : false;
 
 /** JSON values with vendor readonly and nominal brands removed. */
-export type JsonWritable<T> =
+type JsonWritable<T> =
 	IsAny<T> extends true
 		? unknown
 		: T extends readonly [infer A, infer B]
@@ -40,29 +40,29 @@ type DirectArm<Kind extends VendorElement["type"]> = JsonWritable<
 	Extract<VendorElement, { type: Kind }>
 >;
 
-export type WritableVendorElement = JsonWritable<VendorElement>;
+type WritableVendorElement = JsonWritable<VendorElement>;
 
-export type RectangleElement = DirectArm<"rectangle">;
-export type EllipseElement = DirectArm<"ellipse">;
-export type DiamondElement = DirectArm<"diamond">;
-export type TextElement = JsonWritable<VendorTextElement>;
-export type FreeDrawElement = JsonWritable<VendorFreeDrawElement>;
-export type ImageElement = JsonWritable<VendorImageElement>;
-export type NonElbowArrowElement = JsonWritable<
+type RectangleElement = DirectArm<"rectangle">;
+type EllipseElement = DirectArm<"ellipse">;
+type DiamondElement = DirectArm<"diamond">;
+type TextElement = JsonWritable<VendorTextElement>;
+type FreeDrawElement = JsonWritable<VendorFreeDrawElement>;
+type ImageElement = JsonWritable<VendorImageElement>;
+type NonElbowArrowElement = JsonWritable<
 	Omit<VendorArrowElement, "elbowed"> & { readonly elbowed: false }
 >;
-export type ElbowArrowElement = JsonWritable<VendorElbowArrowElement>;
-export type ArrowElement = NonElbowArrowElement | ElbowArrowElement;
+type ElbowArrowElement = JsonWritable<VendorElbowArrowElement>;
+type ArrowElement = NonElbowArrowElement | ElbowArrowElement;
 
 /** The vendor combines line and arrow in one arm, so only line is normalized. */
-export type LineElement = JsonWritable<
+type LineElement = JsonWritable<
 	Omit<VendorLinearElement, "type"> & {
 		readonly type: "line";
 		readonly elbowed?: never;
 	}
 >;
 
-export type NativeBoardElement =
+type NativeBoardElement =
 	| RectangleElement
 	| EllipseElement
 	| DiamondElement
@@ -72,5 +72,23 @@ export type NativeBoardElement =
 	| FreeDrawElement
 	| ImageElement;
 
-export type ElementBinding = JsonWritable<VendorPointBinding>;
-export type BoundElement = JsonWritable<VendorBoundElement>;
+type ElementBinding = JsonWritable<VendorPointBinding>;
+type BoundElement = JsonWritable<VendorBoundElement>;
+
+export {
+	type JsonWritable,
+	type WritableVendorElement,
+	type RectangleElement,
+	type EllipseElement,
+	type DiamondElement,
+	type TextElement,
+	type FreeDrawElement,
+	type ImageElement,
+	type NonElbowArrowElement,
+	type ElbowArrowElement,
+	type ArrowElement,
+	type LineElement,
+	type NativeBoardElement,
+	type ElementBinding,
+	type BoundElement,
+};

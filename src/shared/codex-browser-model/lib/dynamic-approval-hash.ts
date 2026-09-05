@@ -16,7 +16,7 @@ function rotateRight(value: number, amount: number): number {
 }
 
 /** Hashes canonical compact JSON without making the shared browser model Node-only. */
-export function sha256(value: string): string {
+function sha256(value: string): string {
 	const input = new TextEncoder().encode(value);
 	const blockCount = Math.ceil((input.byteLength + 9) / 64);
 	const padded = new Uint8Array(blockCount * 64);
@@ -87,10 +87,12 @@ export function sha256(value: string): string {
 		.join("");
 }
 
-export function isEffectHash(value: string): boolean {
+function isEffectHash(value: string): boolean {
 	return EFFECT_HASH_PATTERN.test(value);
 }
 
-export function effectHashFor(value: string): string {
+function effectHashFor(value: string): string {
 	return `sha256:${sha256(value)}`;
 }
+
+export { sha256, isEffectHash, effectHashFor };

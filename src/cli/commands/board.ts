@@ -67,11 +67,11 @@ function parseStage(
 	}
 	return { positionals, flags };
 }
-export const BoardNamespaceInputSchema = z.object({ tokens });
-export type BoardNamespaceInput = z.infer<typeof BoardNamespaceInputSchema>;
-export const BoardNamespaceResultSchema = z.never();
-export type BoardNamespaceResult = z.infer<typeof BoardNamespaceResultSchema>;
-export const boardContract = defineCommand({
+const BoardNamespaceInputSchema = z.object({ tokens });
+type BoardNamespaceInput = z.infer<typeof BoardNamespaceInputSchema>;
+const BoardNamespaceResultSchema = z.never();
+type BoardNamespaceResult = z.infer<typeof BoardNamespaceResultSchema>;
+const boardContract = defineCommand({
 	path: ["board"],
 	summary: "Create, inspect, save, and list persisted boards",
 	usage,
@@ -137,9 +137,9 @@ function boardListText(result: BoardListResponse): string {
 	);
 }
 
-export const BoardListInputSchema = z.object({ tokens });
-export type BoardListInput = z.infer<typeof BoardListInputSchema>;
-export const BoardListStageSchema = z
+const BoardListInputSchema = z.object({ tokens });
+type BoardListInput = z.infer<typeof BoardListInputSchema>;
+const BoardListStageSchema = z
 	.array(z.string())
 	.transform((value, context) =>
 		parseStage(value, { repo: "value", here: "flag", text: "flag" }, context),
@@ -152,17 +152,17 @@ export const BoardListStageSchema = z
 			});
 		}
 	});
-export type BoardListStage = z.infer<typeof BoardListStageSchema>;
-export const BoardListJsonResultSchema = z.looseObject({
+type BoardListStage = z.infer<typeof BoardListStageSchema>;
+const BoardListJsonResultSchema = z.looseObject({
 	success: z.literal(true),
 	vault: z.string(),
 	boards: z.array(z.looseObject({ key: z.string() })),
 	held: HoldReportSchema.optional(),
 });
-export type BoardListJsonResult = z.infer<typeof BoardListJsonResultSchema>;
-export const BoardListResultSchema = z.union([BoardListJsonResultSchema, z.string()]);
-export type BoardListResult = z.infer<typeof BoardListResultSchema>;
-export const boardListContract = defineCommand({
+type BoardListJsonResult = z.infer<typeof BoardListJsonResultSchema>;
+const BoardListResultSchema = z.union([BoardListJsonResultSchema, z.string()]);
+type BoardListResult = z.infer<typeof BoardListResultSchema>;
+const boardListContract = defineCommand({
 	path: ["board", "list"],
 	summary: "List boards in the vault or describing one repository",
 	usage: "board list [--repo <host/owner/name> | --here] [--text]",
@@ -260,18 +260,18 @@ export const boardListContract = defineCommand({
 	},
 });
 
-export const BoardInfoInputSchema = z.object({ tokens });
-export type BoardInfoInput = z.infer<typeof BoardInfoInputSchema>;
-export const BoardInfoStageSchema = z
+const BoardInfoInputSchema = z.object({ tokens });
+type BoardInfoInput = z.infer<typeof BoardInfoInputSchema>;
+const BoardInfoStageSchema = z
 	.array(z.string())
 	.transform((value, context) => parseStage(value, {}, context));
-export type BoardInfoStage = z.infer<typeof BoardInfoStageSchema>;
-export const BoardInfoResultSchema = BoardIdentityStateSchema.extend({
+type BoardInfoStage = z.infer<typeof BoardInfoStageSchema>;
+const BoardInfoResultSchema = BoardIdentityStateSchema.extend({
 	success: z.literal(true),
 	held: HoldReportSchema.optional(),
 });
-export type BoardInfoResult = z.infer<typeof BoardInfoResultSchema>;
-export const boardInfoContract = defineCommand({
+type BoardInfoResult = z.infer<typeof BoardInfoResultSchema>;
+const boardInfoContract = defineCommand({
 	path: ["board", "info"],
 	summary: "Report one named board's identity and save state",
 	usage: "board info",
@@ -331,9 +331,9 @@ export const boardInfoContract = defineCommand({
 });
 
 const newAddressSpecs = { variant: "value", level: "value" } as const;
-export const BoardNewInputSchema = z.object({ tokens });
-export type BoardNewInput = z.infer<typeof BoardNewInputSchema>;
-export const BoardNewStageSchema = z
+const BoardNewInputSchema = z.object({ tokens });
+type BoardNewInput = z.infer<typeof BoardNewInputSchema>;
+const BoardNewStageSchema = z
 	.array(z.string())
 	.transform((value, context) => parseStage(value, newAddressSpecs, context))
 	.transform((stage, context) => {
@@ -344,15 +344,15 @@ export const BoardNewStageSchema = z
 		}
 		return { name, flags: stage.flags };
 	});
-export type BoardNewStage = z.infer<typeof BoardNewStageSchema>;
-export const BoardNewResultSchema = BoardIdentityStateSchema.extend({
+type BoardNewStage = z.infer<typeof BoardNewStageSchema>;
+const BoardNewResultSchema = BoardIdentityStateSchema.extend({
 	success: z.literal(true),
 	created: z.literal(true),
 	saved: z.literal(true),
 	held: HoldReportSchema.optional(),
 });
-export type BoardNewResult = z.infer<typeof BoardNewResultSchema>;
-export const boardNewContract = defineCommand({
+type BoardNewResult = z.infer<typeof BoardNewResultSchema>;
+const boardNewContract = defineCommand({
 	path: ["board", "new"],
 	summary: "Start a new empty board",
 	usage: "board new <name> [--variant v] [--level l]",
@@ -419,9 +419,9 @@ export const boardNewContract = defineCommand({
 	},
 });
 
-export const BrowserShowInputSchema = z.object({ tokens });
-export type BrowserShowInput = z.infer<typeof BrowserShowInputSchema>;
-export const BrowserShowStageSchema = z
+const BrowserShowInputSchema = z.object({ tokens });
+type BrowserShowInput = z.infer<typeof BrowserShowInputSchema>;
+const BrowserShowStageSchema = z
 	.array(z.string())
 	.transform((value, context) =>
 		parseStage(value, { variant: "value", level: "value", pane: "value", reload: "flag" }, context),
@@ -438,16 +438,16 @@ export const BrowserShowStageSchema = z
 		}
 		return { name, flags: stage.flags };
 	});
-export type BrowserShowStage = z.infer<typeof BrowserShowStageSchema>;
-export const BrowserShowResultSchema = BoardIdentityStateSchema.extend({
+type BrowserShowStage = z.infer<typeof BrowserShowStageSchema>;
+const BrowserShowResultSchema = BoardIdentityStateSchema.extend({
 	success: z.literal(true),
 	source: z.enum(["vault", "memory"]),
 	pane: PaneRefSchema.nullable(),
 	declaredKey: z.string().optional(),
 	held: HoldReportSchema.optional(),
 });
-export type BrowserShowResult = z.infer<typeof BrowserShowResultSchema>;
-export const browserShowContract = defineCommand({
+type BrowserShowResult = z.infer<typeof BrowserShowResultSchema>;
+const browserShowContract = defineCommand({
 	path: ["browser", "show"],
 	summary: "Show a persisted board in one connected browser pane",
 	usage: "browser show <name[@variant]> --pane <spec> [--variant v] [--reload]",
@@ -523,3 +523,41 @@ export const browserShowContract = defineCommand({
 		return { result: BrowserShowResultSchema.parse(result), diagnostics };
 	},
 });
+
+export {
+	BoardNamespaceInputSchema,
+	type BoardNamespaceInput,
+	BoardNamespaceResultSchema,
+	type BoardNamespaceResult,
+	boardContract,
+	BoardListInputSchema,
+	type BoardListInput,
+	BoardListStageSchema,
+	type BoardListStage,
+	BoardListJsonResultSchema,
+	type BoardListJsonResult,
+	BoardListResultSchema,
+	type BoardListResult,
+	boardListContract,
+	BoardInfoInputSchema,
+	type BoardInfoInput,
+	BoardInfoStageSchema,
+	type BoardInfoStage,
+	BoardInfoResultSchema,
+	type BoardInfoResult,
+	boardInfoContract,
+	BoardNewInputSchema,
+	type BoardNewInput,
+	BoardNewStageSchema,
+	type BoardNewStage,
+	BoardNewResultSchema,
+	type BoardNewResult,
+	boardNewContract,
+	BrowserShowInputSchema,
+	type BrowserShowInput,
+	BrowserShowStageSchema,
+	type BrowserShowStage,
+	BrowserShowResultSchema,
+	type BrowserShowResult,
+	browserShowContract,
+};

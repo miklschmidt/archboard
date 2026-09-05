@@ -55,10 +55,10 @@ import type {
 } from "./generated/current/v2/index.js";
 
 /** JSON representation of one generated ts-rs bigint/i64 field. */
-export const CodexSafeI64Schema = z.number().int().safe().brand<"CodexSafeI64">();
-export type CodexSafeI64 = z.infer<typeof CodexSafeI64Schema>;
+const CodexSafeI64Schema = z.number().int().safe().brand<"CodexSafeI64">();
+type CodexSafeI64 = z.infer<typeof CodexSafeI64Schema>;
 
-export type CodexJsonWire<T> = unknown extends T
+type CodexJsonWire<T> = unknown extends T
 	? keyof T extends never
 		? CodexJsonValue
 		: T
@@ -74,10 +74,10 @@ export type CodexJsonWire<T> = unknown extends T
 					}
 				: T;
 
-export type CodexClientRequest = CodexJsonWire<GeneratedClientRequest>;
-export type CodexClientNotification = CodexJsonWire<GeneratedClientNotification>;
-export type CodexServerRequest = CodexJsonWire<GeneratedServerRequest>;
-export type CodexServerNotification = CodexJsonWire<GeneratedServerNotification>;
+type CodexClientRequest = CodexJsonWire<GeneratedClientRequest>;
+type CodexClientNotification = CodexJsonWire<GeneratedClientNotification>;
+type CodexServerRequest = CodexJsonWire<GeneratedServerRequest>;
+type CodexServerNotification = CodexJsonWire<GeneratedServerNotification>;
 
 type OptionalKeys<Value extends object> = {
 	[Key in keyof Value]-?: object extends Pick<Value, Key> ? Key : never;
@@ -96,7 +96,7 @@ type NormalizeOptionalValues<Value> = Value extends string | number | boolean | 
 				}
 			: Value;
 
-export type CodexIngressConformance<Wire, Input, Output> = [NormalizeOptionalValues<Wire>] extends [
+type CodexIngressConformance<Wire, Input, Output> = [NormalizeOptionalValues<Wire>] extends [
 	NormalizeOptionalValues<Input>,
 ]
 	? [NormalizeOptionalValues<Output>] extends [NormalizeOptionalValues<Wire>]
@@ -104,7 +104,7 @@ export type CodexIngressConformance<Wire, Input, Output> = [NormalizeOptionalVal
 		: { readonly __schemaOutputMustExtendCodexGeneratedWire: never }
 	: { readonly __codexGeneratedWireMustExtendSchemaInput: never };
 
-export type CodexOutputConformance<Wire, Output> = [NormalizeOptionalValues<Output>] extends [
+type CodexOutputConformance<Wire, Output> = [NormalizeOptionalValues<Output>] extends [
 	NormalizeOptionalValues<Wire>,
 ]
 	? unknown
@@ -122,22 +122,22 @@ type WireByMethod<Wire extends { method: string }> = {
 	[Method in Wire["method"]]: Extract<Wire, { method: Method }>;
 };
 
-export type CodexClientRequestParamsByMethod = ParamsByMethod<CodexClientRequest>;
-export type CodexClientNotificationParamsByMethod = ParamsByMethod<CodexClientNotification>;
-export type CodexServerRequestParamsByMethod = ParamsByMethod<CodexServerRequest>;
-export type CodexServerNotificationParamsByMethod = ParamsByMethod<CodexServerNotification>;
-export type CodexClientNotificationByMethod = WireByMethod<CodexClientNotification>;
-export type CodexInitializeCapabilities = NonNullable<
+type CodexClientRequestParamsByMethod = ParamsByMethod<CodexClientRequest>;
+type CodexClientNotificationParamsByMethod = ParamsByMethod<CodexClientNotification>;
+type CodexServerRequestParamsByMethod = ParamsByMethod<CodexServerRequest>;
+type CodexServerNotificationParamsByMethod = ParamsByMethod<CodexServerNotification>;
+type CodexClientNotificationByMethod = WireByMethod<CodexClientNotification>;
+type CodexInitializeCapabilities = NonNullable<
 	CodexClientRequestParamsByMethod["initialize"]["capabilities"]
 >;
-export type CodexLoginAccountParams = CodexClientRequestParamsByMethod["account/login/start"];
-export type CodexThreadStatus = CodexJsonWire<ThreadStatus>;
-export type CodexTurnStatus = CodexJsonWire<TurnStatus>;
-export type CodexCommandExecutionApprovalDecision = CodexJsonWire<CommandExecutionApprovalDecision>;
-export type CodexFileChangeApprovalDecision = CodexJsonWire<FileChangeApprovalDecision>;
+type CodexLoginAccountParams = CodexClientRequestParamsByMethod["account/login/start"];
+type CodexThreadStatus = CodexJsonWire<ThreadStatus>;
+type CodexTurnStatus = CodexJsonWire<TurnStatus>;
+type CodexCommandExecutionApprovalDecision = CodexJsonWire<CommandExecutionApprovalDecision>;
+type CodexFileChangeApprovalDecision = CodexJsonWire<FileChangeApprovalDecision>;
 
 /** Client requests Archboard implements, checked against the generated request union. */
-export const CODEX_CLIENT_REQUEST_METHODS = [
+const CODEX_CLIENT_REQUEST_METHODS = [
 	"initialize",
 	"config/read",
 	"configRequirements/read",
@@ -173,7 +173,7 @@ export const CODEX_CLIENT_REQUEST_METHODS = [
 ] as const satisfies readonly (keyof CodexClientRequestParamsByMethod)[];
 
 /** Reverse requests Archboard implements, checked against the generated request union. */
-export const CODEX_SERVER_REQUEST_METHODS = [
+const CODEX_SERVER_REQUEST_METHODS = [
 	"item/commandExecution/requestApproval",
 	"item/fileChange/requestApproval",
 	"item/tool/requestUserInput",
@@ -187,7 +187,7 @@ export const CODEX_SERVER_REQUEST_METHODS = [
 	"execCommandApproval",
 ] as const satisfies readonly (keyof CodexServerRequestParamsByMethod)[];
 
-export const CodexThreadStatusSchema = z.discriminatedUnion("type", [
+const CodexThreadStatusSchema = z.discriminatedUnion("type", [
 	z.looseObject({ type: z.literal("notLoaded") }),
 	z.looseObject({ type: z.literal("idle") }),
 	z.looseObject({ type: z.literal("systemError") }),
@@ -197,27 +197,27 @@ export const CodexThreadStatusSchema = z.discriminatedUnion("type", [
 	}),
 ]) satisfies z.ZodType<CodexThreadStatus>;
 
-export const CODEX_THREAD_STATUS_TYPES = [
+const CODEX_THREAD_STATUS_TYPES = [
 	"notLoaded",
 	"idle",
 	"systemError",
 	"active",
 ] as const satisfies readonly CodexThreadStatus["type"][];
-export type CodexThreadStatusType = (typeof CODEX_THREAD_STATUS_TYPES)[number];
-export const CodexThreadStatusTypeSchema = z.enum(CODEX_THREAD_STATUS_TYPES);
+type CodexThreadStatusType = (typeof CODEX_THREAD_STATUS_TYPES)[number];
+const CodexThreadStatusTypeSchema = z.enum(CODEX_THREAD_STATUS_TYPES);
 
-export function isCodexThreadStatusType(value: unknown): value is CodexThreadStatusType {
+function isCodexThreadStatusType(value: unknown): value is CodexThreadStatusType {
 	return CODEX_THREAD_STATUS_TYPES.includes(value as CodexThreadStatusType);
 }
 
-export const CodexTurnStatusSchema = z.enum([
+const CodexTurnStatusSchema = z.enum([
 	"completed",
 	"interrupted",
 	"failed",
 	"inProgress",
 ] satisfies readonly CodexTurnStatus[]);
 
-export function createCodexCommandExecutionApprovalDecisionSchema(
+function createCodexCommandExecutionApprovalDecisionSchema(
 	options: {
 		readonly text?: z.ZodType<string>;
 		readonly host?: z.ZodType<string>;
@@ -243,16 +243,16 @@ export function createCodexCommandExecutionApprovalDecisionSchema(
 	]) satisfies z.ZodType<CodexCommandExecutionApprovalDecision>;
 }
 
-export const CodexCommandExecutionApprovalDecisionSchema =
+const CodexCommandExecutionApprovalDecisionSchema =
 	createCodexCommandExecutionApprovalDecisionSchema();
-export const CodexFileChangeApprovalDecisionSchema = z.enum([
+const CodexFileChangeApprovalDecisionSchema = z.enum([
 	"accept",
 	"acceptForSession",
 	"decline",
 	"cancel",
 ] satisfies readonly CodexFileChangeApprovalDecision[]);
 
-export interface CodexResponseByMethod {
+interface CodexResponseByMethod {
 	readonly initialize: CodexJsonWire<InitializeResponse>;
 	readonly "config/read": CodexJsonWire<ConfigReadResponse>;
 	readonly "configRequirements/read": CodexJsonWire<ConfigRequirementsReadResponse>;
@@ -288,7 +288,7 @@ export interface CodexResponseByMethod {
 	readonly "currentTime/read": CodexJsonWire<CurrentTimeReadResponse>;
 }
 
-export interface CodexServerResponseByMethod {
+interface CodexServerResponseByMethod {
 	readonly "item/commandExecution/requestApproval": CodexJsonWire<CommandExecutionRequestApprovalResponse>;
 	readonly "item/fileChange/requestApproval": CodexJsonWire<FileChangeRequestApprovalResponse>;
 	readonly "item/tool/requestUserInput": CodexJsonWire<ToolRequestUserInputResponse>;
@@ -300,7 +300,7 @@ export interface CodexServerResponseByMethod {
 	readonly execCommandApproval: CodexJsonWire<ExecCommandApprovalResponse>;
 }
 
-export type CodexJsonValue =
+type CodexJsonValue =
 	| null
 	| boolean
 	| number
@@ -337,9 +337,47 @@ function normalizeValue(value: unknown, path: string): CodexJsonValue {
 }
 
 /** Normalizes untrusted app-server JSON before any handwritten ingress parser runs. */
-export function normalizeCodexJsonWire(value: unknown): CodexJsonValue | undefined {
+function normalizeCodexJsonWire(value: unknown): CodexJsonValue | undefined {
 	if (value === undefined) {
 		return undefined;
 	}
 	return normalizeValue(value, "$codex");
 }
+
+export {
+	CodexSafeI64Schema,
+	type CodexSafeI64,
+	type CodexJsonWire,
+	type CodexClientRequest,
+	type CodexClientNotification,
+	type CodexServerRequest,
+	type CodexServerNotification,
+	type CodexIngressConformance,
+	type CodexOutputConformance,
+	type CodexClientRequestParamsByMethod,
+	type CodexClientNotificationParamsByMethod,
+	type CodexServerRequestParamsByMethod,
+	type CodexServerNotificationParamsByMethod,
+	type CodexClientNotificationByMethod,
+	type CodexInitializeCapabilities,
+	type CodexLoginAccountParams,
+	type CodexThreadStatus,
+	type CodexTurnStatus,
+	type CodexCommandExecutionApprovalDecision,
+	type CodexFileChangeApprovalDecision,
+	CODEX_CLIENT_REQUEST_METHODS,
+	CODEX_SERVER_REQUEST_METHODS,
+	CodexThreadStatusSchema,
+	CODEX_THREAD_STATUS_TYPES,
+	type CodexThreadStatusType,
+	CodexThreadStatusTypeSchema,
+	isCodexThreadStatusType,
+	CodexTurnStatusSchema,
+	createCodexCommandExecutionApprovalDecisionSchema,
+	CodexCommandExecutionApprovalDecisionSchema,
+	CodexFileChangeApprovalDecisionSchema,
+	type CodexResponseByMethod,
+	type CodexServerResponseByMethod,
+	type CodexJsonValue,
+	normalizeCodexJsonWire,
+};

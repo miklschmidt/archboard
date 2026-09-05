@@ -4,7 +4,7 @@ import { defineCommand } from "../command-contract/contract.js";
 import { HoldReportSchema } from "../command-contract/schemas.js";
 import { commonRefusals } from "../command-contract/common.js";
 
-export const ChangesCursorInputSchema = z
+const ChangesCursorInputSchema = z
 	.string()
 	.optional()
 	.transform((value, context) => {
@@ -18,15 +18,15 @@ export const ChangesCursorInputSchema = z
 		}
 		return cursor;
 	});
-export const ChangesInputSchema = z.object({
+const ChangesInputSchema = z.object({
 	since: ChangesCursorInputSchema,
 	coalesce: z.boolean().default(false),
 	detail: z.boolean().default(false),
 	text: z.boolean().default(false),
 	tail: z.array(z.string()).default([]),
 });
-export type ChangesInput = z.infer<typeof ChangesInputSchema>;
-export const ChangesJsonResultSchema = z.looseObject({
+type ChangesInput = z.infer<typeof ChangesInputSchema>;
+const ChangesJsonResultSchema = z.looseObject({
 	success: z.boolean(),
 	board: z.string(),
 	feedId: z.string().optional(),
@@ -34,9 +34,9 @@ export const ChangesJsonResultSchema = z.looseObject({
 	events: z.array(z.record(z.string(), z.unknown())),
 	held: HoldReportSchema.optional(),
 });
-export type ChangesJsonResult = z.infer<typeof ChangesJsonResultSchema>;
-export const ChangesResultSchema = z.union([ChangesJsonResultSchema, z.string()]);
-export type ChangesResult = z.infer<typeof ChangesResultSchema>;
+type ChangesJsonResult = z.infer<typeof ChangesJsonResultSchema>;
+const ChangesResultSchema = z.union([ChangesJsonResultSchema, z.string()]);
+type ChangesResult = z.infer<typeof ChangesResultSchema>;
 
 function textReport(report: ChangeFeedResponse, coalesce: boolean): string {
 	const lines: string[] = [];
@@ -68,7 +68,7 @@ function textReport(report: ChangeFeedResponse, coalesce: boolean): string {
 	return lines.join("\n");
 }
 
-export const changesContract = defineCommand({
+const changesContract = defineCommand({
 	path: ["changes"],
 	summary: "Semantic changes on the board since a cursor — what it became, not which pixels moved",
 	usage: "changes --board <key> [--since <cursor>] [--coalesce] [--detail] [--text]",
@@ -160,3 +160,14 @@ export const changesContract = defineCommand({
 		};
 	},
 });
+
+export {
+	ChangesCursorInputSchema,
+	ChangesInputSchema,
+	type ChangesInput,
+	ChangesJsonResultSchema,
+	type ChangesJsonResult,
+	ChangesResultSchema,
+	type ChangesResult,
+	changesContract,
+};

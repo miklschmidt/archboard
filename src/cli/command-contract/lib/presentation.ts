@@ -16,7 +16,7 @@ const heldMessage = (held: unknown): string | null => {
 	return typeof message === "string" ? message : null;
 };
 
-export function applyHeld(result: unknown, held: unknown, policy: HeldPolicy): unknown {
+function applyHeld(result: unknown, held: unknown, policy: HeldPolicy): unknown {
 	if (policy !== "object-field-and-stderr-note" || !held) {
 		return result;
 	}
@@ -51,10 +51,7 @@ function emitContinuation(held: unknown): void {
 	);
 }
 
-export function commitArtifact(
-	outputCase: OutputCase,
-	artifact: PendingArtifact | undefined,
-): void {
+function commitArtifact(outputCase: OutputCase, artifact: PendingArtifact | undefined): void {
 	if (outputCase.mode !== "file-receipt") {
 		return;
 	}
@@ -64,7 +61,7 @@ export function commitArtifact(
 	processCommandHost.writeArtifact(artifact);
 }
 
-export function presentResult(input: {
+function presentResult(input: {
 	outputCase: OutputCase;
 	result: unknown;
 	held: unknown;
@@ -98,3 +95,5 @@ export function presentResult(input: {
 		}
 	}
 }
+
+export { applyHeld, commitArtifact, presentResult };

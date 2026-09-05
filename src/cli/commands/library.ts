@@ -11,11 +11,11 @@ import { boardWriteRefusals, serverRefusal } from "../command-contract/common.js
 
 const tail = z.array(z.string()).default([]);
 
-export const LibraryNamespaceInputSchema = z.object({ tail });
-export type LibraryNamespaceInput = z.infer<typeof LibraryNamespaceInputSchema>;
-export const LibraryNamespaceResultSchema = z.never();
-export type LibraryNamespaceResult = z.infer<typeof LibraryNamespaceResultSchema>;
-export const libraryContract = defineCommand({
+const LibraryNamespaceInputSchema = z.object({ tail });
+type LibraryNamespaceInput = z.infer<typeof LibraryNamespaceInputSchema>;
+const LibraryNamespaceResultSchema = z.never();
+type LibraryNamespaceResult = z.infer<typeof LibraryNamespaceResultSchema>;
+const libraryContract = defineCommand({
 	path: ["library"],
 	summary: "What stencils are in the library, and dropping one onto the board",
 	usage:
@@ -49,9 +49,9 @@ export const libraryContract = defineCommand({
 	},
 });
 
-export const LibraryListInputSchema = z.object({ text: z.boolean().default(false), tail });
-export type LibraryListInput = z.infer<typeof LibraryListInputSchema>;
-export const LibraryListJsonResultSchema = z.looseObject({
+const LibraryListInputSchema = z.object({ text: z.boolean().default(false), tail });
+type LibraryListInput = z.infer<typeof LibraryListInputSchema>;
+const LibraryListJsonResultSchema = z.looseObject({
 	count: z.number().int().nonnegative(),
 	seeded: z.array(z.string()),
 	file: z.string().nullable(),
@@ -69,10 +69,10 @@ export const LibraryListJsonResultSchema = z.looseObject({
 	),
 	held: HoldReportSchema.optional(),
 });
-export type LibraryListJsonResult = z.infer<typeof LibraryListJsonResultSchema>;
-export const LibraryListResultSchema = z.union([LibraryListJsonResultSchema, z.string()]);
-export type LibraryListResult = z.infer<typeof LibraryListResultSchema>;
-export const libraryListContract = defineCommand({
+type LibraryListJsonResult = z.infer<typeof LibraryListJsonResultSchema>;
+const LibraryListResultSchema = z.union([LibraryListJsonResultSchema, z.string()]);
+type LibraryListResult = z.infer<typeof LibraryListResultSchema>;
+const libraryListContract = defineCommand({
 	path: ["library", "list"],
 	summary: "List the stencil palette",
 	usage: "library list [--text]",
@@ -131,7 +131,7 @@ export const libraryListContract = defineCommand({
 	},
 });
 
-export const LibraryInsertInputSchema = z.object({
+const LibraryInsertInputSchema = z.object({
 	name: z.string().optional(),
 	x: z.string().optional(),
 	y: z.string().optional(),
@@ -139,8 +139,8 @@ export const LibraryInsertInputSchema = z.object({
 	id: z.string().optional(),
 	tail,
 });
-export type LibraryInsertInput = z.infer<typeof LibraryInsertInputSchema>;
-export const LibraryInsertStageSchema = z
+type LibraryInsertInput = z.infer<typeof LibraryInsertInputSchema>;
+const LibraryInsertStageSchema = z
 	.object({
 		name: z.string().optional(),
 		x: z.string().optional(),
@@ -172,8 +172,8 @@ export const LibraryInsertStageSchema = z
 		}
 		return { name: input.name, source: input.source, itemId: input.id, x, y };
 	});
-export type LibraryInsertStage = z.infer<typeof LibraryInsertStageSchema>;
-export const LibraryInsertResultSchema = z.looseObject({
+type LibraryInsertStage = z.infer<typeof LibraryInsertStageSchema>;
+const LibraryInsertResultSchema = z.looseObject({
 	success: z.literal(true),
 	name: z.string().nullable(),
 	source: z.string().nullable(),
@@ -183,8 +183,8 @@ export const LibraryInsertResultSchema = z.looseObject({
 	elements: z.array(ServerElementSchema),
 	held: HoldReportSchema.optional(),
 });
-export type LibraryInsertResult = z.infer<typeof LibraryInsertResultSchema>;
-export const libraryInsertContract = defineCommand({
+type LibraryInsertResult = z.infer<typeof LibraryInsertResultSchema>;
+const libraryInsertContract = defineCommand({
 	path: ["library", "insert"],
 	summary: "Drop a stencil onto the board",
 	usage: "library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]",
@@ -298,3 +298,25 @@ export const libraryInsertContract = defineCommand({
 		}
 	},
 });
+
+export {
+	LibraryNamespaceInputSchema,
+	type LibraryNamespaceInput,
+	LibraryNamespaceResultSchema,
+	type LibraryNamespaceResult,
+	libraryContract,
+	LibraryListInputSchema,
+	type LibraryListInput,
+	LibraryListJsonResultSchema,
+	type LibraryListJsonResult,
+	LibraryListResultSchema,
+	type LibraryListResult,
+	libraryListContract,
+	LibraryInsertInputSchema,
+	type LibraryInsertInput,
+	LibraryInsertStageSchema,
+	type LibraryInsertStage,
+	LibraryInsertResultSchema,
+	type LibraryInsertResult,
+	libraryInsertContract,
+};

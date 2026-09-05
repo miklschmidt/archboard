@@ -22,9 +22,9 @@ import type {
 	TrustedIdentityDecoder,
 } from "../../codex-workbench-identity/index.js";
 
-export const JsonValueSchema = z.json();
+const JsonValueSchema = z.json();
 
-export const boundedText = (maximum: number) =>
+const boundedText = (maximum: number) =>
 	z
 		.string()
 		.min(1)
@@ -35,7 +35,7 @@ export const boundedText = (maximum: number) =>
 			`text exceeds ${maximum} UTF-8 bytes`,
 		);
 
-export const boundedWireText = (maximum: number) =>
+const boundedWireText = (maximum: number) =>
 	z
 		.string()
 		.max(maximum)
@@ -45,11 +45,11 @@ export const boundedWireText = (maximum: number) =>
 			`text exceeds ${maximum} UTF-8 bytes`,
 		);
 
-export const nullableText = (maximum: number) => boundedText(maximum).nullable();
+const nullableText = (maximum: number) => boundedText(maximum).nullable();
 
-export const optionalNullableText = (maximum: number) => boundedText(maximum).nullable().optional();
+const optionalNullableText = (maximum: number) => boundedText(maximum).nullable().optional();
 
-export const SafeUrlSchema = boundedText(2048).refine((value) => {
+const SafeUrlSchema = boundedText(2048).refine((value) => {
 	try {
 		const url = new URL(value);
 		return url.protocol === "http:" || url.protocol === "https:";
@@ -58,10 +58,10 @@ export const SafeUrlSchema = boundedText(2048).refine((value) => {
 	}
 }, "only http and https URLs are supported");
 
-export const NonNegativeIntegerSchema = z.number().int().nonnegative();
-export const NullableNonNegativeIntegerSchema = NonNegativeIntegerSchema.nullable();
+const NonNegativeIntegerSchema = z.number().int().nonnegative();
+const NullableNonNegativeIntegerSchema = NonNegativeIntegerSchema.nullable();
 
-export interface IdentitySchemas {
+interface IdentitySchemas {
 	readonly ChildIdSchema: z.ZodType<ChildId>;
 	readonly ChildEpochSchema: z.ZodType<ChildEpoch>;
 	readonly BrowserCommandIdSchema: z.ZodType<BrowserCommandId>;
@@ -78,7 +78,7 @@ export interface IdentitySchemas {
 	readonly OpaqueIdentitySchema: z.ZodType<AnyIdentity>;
 }
 
-export type IdentityContext = Pick<IdentityAuthority, "decoder" | "validator"> & {
+type IdentityContext = Pick<IdentityAuthority, "decoder" | "validator"> & {
 	/** Dynamic approval schemas are authority-bound when this capability is supplied. */
 	readonly operation?: Pick<OperationAuthority, "decoder" | "validator">;
 };
@@ -99,7 +99,7 @@ function authorityIdentity<Identity extends string>(
 	});
 }
 
-export function createIdentitySchemas(context: IdentityContext): IdentitySchemas {
+function createIdentitySchemas(context: IdentityContext): IdentitySchemas {
 	const decoder: TrustedIdentityDecoder = context.decoder;
 	const identities = {
 		ChildIdSchema: authorityIdentity(decoder.parseChildId),
@@ -138,12 +138,29 @@ export function createIdentitySchemas(context: IdentityContext): IdentitySchemas
 	};
 }
 
-export function assertCurrentTarget(
+function assertCurrentTarget(
 	context: Pick<IdentityValidator, "assertCurrentEpoch">,
 	value: { childId: ChildId; epoch: ChildEpoch },
 ): void {
 	context.assertCurrentEpoch(value.childId, value.epoch);
 }
 
-export type { AnyIdentity, CodexIdentity };
-export type JsonValue = z.infer<typeof JsonValueSchema>;
+type JsonValue = z.infer<typeof JsonValueSchema>;
+
+export {
+	JsonValueSchema,
+	boundedText,
+	boundedWireText,
+	nullableText,
+	optionalNullableText,
+	SafeUrlSchema,
+	NonNegativeIntegerSchema,
+	NullableNonNegativeIntegerSchema,
+	type IdentitySchemas,
+	type IdentityContext,
+	createIdentitySchemas,
+	assertCurrentTarget,
+	type AnyIdentity,
+	type CodexIdentity,
+	type JsonValue,
+};

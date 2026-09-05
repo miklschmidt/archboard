@@ -62,7 +62,7 @@ const jsonText = (emptyMessage: string, invalidPrefix: string) =>
 		}
 	});
 
-export const ApplyPayloadStageSchema = jsonText(
+const ApplyPayloadStageSchema = jsonText(
 	"No patch provided (pass a file argument or pipe JSON to stdin)",
 	"Invalid JSON patch",
 ).transform((raw, context) => {
@@ -113,9 +113,9 @@ export const ApplyPayloadStageSchema = jsonText(
 	}
 	return { create, updates, deletes };
 });
-export type ApplyPayloadStage = z.infer<typeof ApplyPayloadStageSchema>;
+type ApplyPayloadStage = z.infer<typeof ApplyPayloadStageSchema>;
 
-export const AddPayloadStageSchema = jsonText(
+const AddPayloadStageSchema = jsonText(
 	"No elements provided (pass a file argument or pipe JSON to stdin)",
 	"Invalid JSON elements",
 ).transform((raw) =>
@@ -123,8 +123,8 @@ export const AddPayloadStageSchema = jsonText(
 		Boolean(value && typeof value === "object"),
 	),
 );
-export type AddPayloadStage = z.infer<typeof AddPayloadStageSchema>;
-export const InlineElementStageSchema = z.string().transform((raw, context) => {
+type AddPayloadStage = z.infer<typeof AddPayloadStageSchema>;
+const InlineElementStageSchema = z.string().transform((raw, context) => {
 	try {
 		return [JSON.parse(raw) as ElementInput];
 	} catch (error) {
@@ -135,18 +135,18 @@ export const InlineElementStageSchema = z.string().transform((raw, context) => {
 		return z.NEVER;
 	}
 });
-export type InlineElementStage = z.infer<typeof InlineElementStageSchema>;
+type InlineElementStage = z.infer<typeof InlineElementStageSchema>;
 
 const documentAsked = (document: boolean): { document?: boolean } =>
 	document ? { document: true } : {};
 
-export const ApplyInputSchema = z.object({
+const ApplyInputSchema = z.object({
 	file: z.string().optional(),
 	document: z.boolean().default(false),
 	tail,
 });
-export type ApplyInput = z.infer<typeof ApplyInputSchema>;
-export const ApplyResultSchema = z.looseObject({
+type ApplyInput = z.infer<typeof ApplyInputSchema>;
+const ApplyResultSchema = z.looseObject({
 	success: z.literal(true),
 	created: z.number().int().nonnegative(),
 	updated: z.number().int().nonnegative(),
@@ -156,9 +156,9 @@ export const ApplyResultSchema = z.looseObject({
 	document: z.array(ServerElementSchema).optional(),
 	held: HoldReportSchema.optional(),
 });
-export type ApplyResult = z.infer<typeof ApplyResultSchema>;
+type ApplyResult = z.infer<typeof ApplyResultSchema>;
 
-export const applyContract = defineCommand({
+const applyContract = defineCommand({
 	path: ["apply"],
 	summary: "Apply a {create,update,delete} patch as a single write",
 	usage: "apply [patch.json|-] [--document]",
@@ -244,14 +244,14 @@ export const applyContract = defineCommand({
 	},
 });
 
-export const AddInputSchema = z.object({
+const AddInputSchema = z.object({
 	file: z.string().optional(),
 	one: z.string().optional(),
 	document: z.boolean().default(false),
 	tail,
 });
-export type AddInput = z.infer<typeof AddInputSchema>;
-export const AddResultSchema = z.looseObject({
+type AddInput = z.infer<typeof AddInputSchema>;
+const AddResultSchema = z.looseObject({
 	success: z.literal(true),
 	count: z.number().int().nonnegative(),
 	elements: z.array(ServerElementSchema),
@@ -259,9 +259,9 @@ export const AddResultSchema = z.looseObject({
 	document: z.array(ServerElementSchema).optional(),
 	held: HoldReportSchema.optional(),
 });
-export type AddResult = z.infer<typeof AddResultSchema>;
+type AddResult = z.infer<typeof AddResultSchema>;
 
-export const addContract = defineCommand({
+const addContract = defineCommand({
 	path: ["add"],
 	summary: "Create elements from a JSON array",
 	usage: 'add [elements.json] (or stdin) [--document]\nadd --one \'{"type":"rectangle",...}\'',
@@ -336,12 +336,12 @@ export const addContract = defineCommand({
 	},
 });
 
-export const DeleteInputSchema = z.object({
+const DeleteInputSchema = z.object({
 	ids: z.array(z.string()).min(1, "Usage: delete <id> [<id> ...]"),
 	document: z.boolean().default(false),
 });
-export type DeleteInput = z.infer<typeof DeleteInputSchema>;
-export const DeleteResultSchema = z.looseObject({
+type DeleteInput = z.infer<typeof DeleteInputSchema>;
+const DeleteResultSchema = z.looseObject({
 	success: z.literal(true),
 	deleted: z.number().int().nonnegative(),
 	count: z.number().int().nonnegative(),
@@ -350,9 +350,9 @@ export const DeleteResultSchema = z.looseObject({
 	document: z.array(ServerElementSchema).optional(),
 	held: HoldReportSchema.optional(),
 });
-export type DeleteResult = z.infer<typeof DeleteResultSchema>;
+type DeleteResult = z.infer<typeof DeleteResultSchema>;
 
-export const deleteContract = defineCommand({
+const deleteContract = defineCommand({
 	path: ["delete"],
 	summary: "Delete elements by id",
 	usage: "delete <id> [<id> ...] [--document]",
@@ -418,15 +418,15 @@ export const deleteContract = defineCommand({
 	},
 });
 
-export const GetInputSchema = z.object({
+const GetInputSchema = z.object({
 	id: z.string({ error: "Usage: get <id>" }).min(1, "Usage: get <id>"),
 	tail,
 });
-export type GetInput = z.infer<typeof GetInputSchema>;
-export const GetResultSchema = ServerElementSchema;
-export type GetResult = z.infer<typeof GetResultSchema>;
+type GetInput = z.infer<typeof GetInputSchema>;
+const GetResultSchema = ServerElementSchema;
+type GetResult = z.infer<typeof GetResultSchema>;
 
-export const getContract = defineCommand({
+const getContract = defineCommand({
 	path: ["get"],
 	summary: "Get one element by id",
 	usage: "get <id>",
@@ -467,3 +467,32 @@ export const getContract = defineCommand({
 		return { result: GetResultSchema.parse(await getElementStrict(input.id)) };
 	},
 });
+
+export {
+	ApplyPayloadStageSchema,
+	type ApplyPayloadStage,
+	AddPayloadStageSchema,
+	type AddPayloadStage,
+	InlineElementStageSchema,
+	type InlineElementStage,
+	ApplyInputSchema,
+	type ApplyInput,
+	ApplyResultSchema,
+	type ApplyResult,
+	applyContract,
+	AddInputSchema,
+	type AddInput,
+	AddResultSchema,
+	type AddResult,
+	addContract,
+	DeleteInputSchema,
+	type DeleteInput,
+	DeleteResultSchema,
+	type DeleteResult,
+	deleteContract,
+	GetInputSchema,
+	type GetInput,
+	GetResultSchema,
+	type GetResult,
+	getContract,
+};
