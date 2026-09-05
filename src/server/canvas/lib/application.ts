@@ -413,7 +413,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 function checkoutSnapshotFor(res: Response): CheckoutSnapshot {
-	return (res.locals["checkoutSnapshot"] as CheckoutSnapshot | undefined) ?? EMPTY_CHECKOUT_SNAPSHOT;
+	return (
+		(res.locals["checkoutSnapshot"] as CheckoutSnapshot | undefined) ?? EMPTY_CHECKOUT_SNAPSHOT
+	);
 }
 
 const PROCESS_FREE_HUMAN_ROUTES = new Set([
@@ -474,7 +476,11 @@ function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
 	}).safeParse(req.body ?? {});
 	if (!parsed.success) return [];
 	try {
-		const identity = identityFromParams(parsed.data);
+		const identity = identityFromParams({
+			board: parsed.data.board,
+			...(parsed.data.variant === undefined ? {} : { variant: parsed.data.variant }),
+			...(parsed.data.level === undefined ? {} : { level: parsed.data.level }),
+		});
 		const key = boardKey(identity);
 		if (boards.has(key) && !parsed.data.reload) return [];
 		const resolution = resolveBoardNote(key, "Opening a board");
@@ -1103,7 +1109,7 @@ function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void
 		writeBoard(
 			{
 				...request,
-				sourceLockHolder,
+				...(sourceLockHolder === undefined ? {} : { sourceLockHolder }),
 				checkoutSnapshot: checkoutSnapshotFor(res),
 				afterPersist: (context) => {
 					if (context.written) {
@@ -1422,7 +1428,8 @@ function holderFromRequest(req: Request, board: string): { id: string; kind: "hu
 		typeof raw["clientId"] === "string" || typeof req.query["clientId"] !== "string"
 			? raw
 			: { ...raw, clientId: req.query["clientId"] };
-	const kind = body["origin"] === "agent" || typeof body["clientId"] !== "string" ? "agent" : "human";
+	const kind =
+		body["origin"] === "agent" || typeof body["clientId"] !== "string" ? "agent" : "human";
 	if (kind === "agent") {
 		const claimed = claimWriterId(board);
 		if (claimed) return { id: claimed, kind };
@@ -1688,10 +1695,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 		// any longer than this line.
 		const rememberedBy =
 			writer.kind === "agent" && claimWriterId(key) === writer.id ? writer.id : undefined;
+		const file = (req as Request & { resolvedBoardWrite?: ResolvedBoard }).resolvedBoardWrite?.board
+			.file;
 		const conflict = checkBoardVersion({
 			board: key,
-			file: (req as Request & { resolvedBoardWrite?: ResolvedBoard }).resolvedBoardWrite?.board
-				.file,
+			...(file === undefined ? {} : { file }),
 			writesNote: writesBoardNote(key),
 			...(stated.expected !== undefined ? { stated: stated.expected } : {}),
 			...(rememberedBy ? { rememberedBy } : {}),
@@ -1794,6 +1802,8 @@ app.post("/api/boards/hold", (req: Request, res: Response) => {
 	} catch (error) {
 		answerBoardError(res, error);
 	}
+
+	return undefined;
 });
 
 /**
@@ -1820,6 +1830,8 @@ app.post("/api/boards/hold/release", (req: Request, res: Response) => {
 	} catch (error) {
 		answerBoardError(res, error);
 	}
+
+	return undefined;
 });
 
 /**
@@ -1883,6 +1895,8 @@ app.post("/api/boards/claim", (req: Request, res: Response) => {
 	} catch (error) {
 		answerBoardError(res, error);
 	}
+
+	return undefined;
 });
 
 /**
@@ -2116,6 +2130,8 @@ app.put("/api/elements/:id", (req: Request, res: Response) => {
 	} catch (error) {
 		answerBoardError(res, error, "Error updating element:");
 	}
+
+	return undefined;
 });
 
 function clearSelectionForBoard(boardKeyToClear: string): void {
@@ -2206,6 +2222,8 @@ app.delete("/api/elements/:id", (req: Request, res: Response) => {
 	} catch (error) {
 		answerBoardError(res, error, "Error deleting element:");
 	}
+
+	return undefined;
 });
 
 // Query elements with filters
@@ -2288,6 +2306,8 @@ app.get("/api/elements/:id", (req: Request, res: Response) => {
 	} catch (error) {
 		answerBoardError(res, error, "Error fetching element:");
 	}
+
+	return undefined;
 });
 
 // Batch create elements
@@ -2340,6 +2360,8 @@ app.post("/api/elements/batch", (req: Request, res: Response) => {
 	} catch (error) {
 		answerBoardError(res, error, "Error batch creating elements:");
 	}
+
+	return undefined;
 });
 
 function mermaidElementInput(
@@ -2528,7 +2550,7 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 		answerBoardWrite(res, {
 			source,
 			origin,
-			clientId,
+			...(clientId === undefined ? {} : { clientId }),
 			presentationLinks,
 			mutation: elementMutation<null>(() => {
 				// A pane may send its whole screen only while this board is held. The
@@ -2693,6 +2715,8 @@ app.get("/api/changes", (req: Request, res: Response) => {
 		logger.error("Error reading the change feed:", error);
 		res.status(400).json({ success: false, error: (error as Error).message });
 	}
+
+	return undefined;
 });
 
 // ─── Selection ────────────────────────────────────────────────
@@ -2750,6 +2774,8 @@ app.post("/api/selection", (req: Request, res: Response) => {
 		count: elementIds.length,
 		elementIds,
 	});
+
+	return undefined;
 });
 
 app.get("/api/selection", (req: Request, res: Response) => {
@@ -2772,6 +2798,8 @@ app.get("/api/selection", (req: Request, res: Response) => {
 	} catch (error) {
 		res.status(400).json({ success: false, error: (error as Error).message });
 	}
+
+	return undefined;
 });
 
 // ─── Panes ────────────────────────────────────────────────────
@@ -2829,7 +2857,12 @@ app.post("/api/panes", (req: Request, res: Response) => {
 	}
 	const frontend = frontendState(parsed.data.build);
 	const staleFrontend = frontend.stale ? frontend : undefined;
-	const registration: PaneRegistration = { ...parsed.data, at: new Date().toISOString() };
+	const { build, ...requiredRegistration } = parsed.data;
+	const registration: PaneRegistration = {
+		...requiredRegistration,
+		...(build === undefined ? {} : { build }),
+		at: new Date().toISOString(),
+	};
 	// A pane exists exactly as long as its socket. A report arriving without one
 	// is a pane on its way out — React tears the canvas down in its own order, so
 	// a last change can be reported after the close — and registering it would
@@ -2844,6 +2877,8 @@ app.post("/api/panes", (req: Request, res: Response) => {
 	// — see the pane layout section below for why it is that and not a reply.
 	if (isNew) notePaneOpened(registration);
 	res.json({ success: true, registered: true, paneCount: panes.size, staleFrontend });
+
+	return undefined;
 });
 
 app.get("/api/panes", (_req: Request, res: Response) => {
@@ -2951,7 +2986,7 @@ async function settleAfterLayout(askedAt: string): Promise<void> {
 // stays the one thing that decides which board a pane holds (ADR 0009).
 app.post(
 	"/api/panes/open",
-	asyncEndpoint(async (req: Request, res: Response) => {
+	asyncEndpoint(async (_req: Request, res: Response) => {
 		const answering = primaryPane();
 		if (!answering) return res.status(503).json(noBrowserBody("Opening a pane"));
 
@@ -3009,6 +3044,8 @@ app.post(
 		} catch (error) {
 			res.status(504).json({ success: false, error: (error as Error).message });
 		}
+
+		return undefined;
 	}),
 );
 
@@ -3094,6 +3131,8 @@ app.post(
 		} catch (error) {
 			res.status(504).json({ success: false, error: (error as Error).message });
 		}
+
+		return undefined;
 	}),
 );
 
@@ -3317,6 +3356,8 @@ app.post(
 		} catch (error) {
 			if (!res.destroyed) answerBoardError(res, error, "Error rendering board findings");
 		}
+
+		return undefined;
 	}),
 );
 
@@ -3445,6 +3486,8 @@ app.post("/api/browser/capture", (req: Request, res: Response) => {
 			error: (error as Error).message,
 		});
 	}
+
+	return undefined;
 });
 
 // Browser capture: result (Frontend -> Express -> CLI)
@@ -3496,6 +3539,8 @@ app.post("/api/browser/capture/result", (req: Request, res: Response) => {
 			error: (error as Error).message,
 		});
 	}
+
+	return undefined;
 });
 
 // Viewport control: request (CLI -> Express -> WebSocket -> Frontend)
@@ -3626,6 +3671,8 @@ app.post("/api/viewport", (req: Request, res: Response) => {
 					: (error as Error).message,
 		});
 	}
+
+	return undefined;
 });
 
 // Viewport control: result (Frontend -> Express -> CLI)
@@ -3664,6 +3711,8 @@ app.post("/api/viewport/result", (req: Request, res: Response) => {
 			error: (error as Error).message,
 		});
 	}
+
+	return undefined;
 });
 
 // Snapshots: save
@@ -3705,10 +3754,12 @@ app.post("/api/snapshots", (req: Request, res: Response) => {
 	} catch (error) {
 		answerBoardError(res, error, "Error saving snapshot:");
 	}
+
+	return undefined;
 });
 
 // Snapshots: list
-app.get("/api/snapshots", (req: Request, res: Response) => {
+app.get("/api/snapshots", (_req: Request, res: Response) => {
 	try {
 		const list = Array.from(snapshots.values()).map((s) => ({
 			name: s.name,
@@ -3764,6 +3815,8 @@ app.get("/api/snapshots/:name", (req: Request, res: Response) => {
 			error: (error as Error).message,
 		});
 	}
+
+	return undefined;
 });
 
 // ─── Boards ───────────────────────────────────────────────────
@@ -3976,6 +4029,8 @@ app.get("/api/boards", (req: Request, res: Response) => {
 	} catch (error) {
 		answerBoardError(res, error, "Error listing boards:");
 	}
+
+	return undefined;
 });
 
 // One noninteractive board preview, resolved directly from its note.
@@ -4024,7 +4079,11 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 			reload: z.boolean().optional(),
 			pane: z.string().optional(),
 		}).parse(req.body ?? {});
-		const asked = identityFromParams(params);
+		const asked = identityFromParams({
+			board: params.board,
+			...(params.variant === undefined ? {} : { variant: params.variant }),
+			...(params.level === undefined ? {} : { level: params.level }),
+		});
 		const key = boardKey(asked);
 		const prepared = res.locals["preparedBoardOpen"] as PreparedBoardOpen | undefined;
 		const alreadyRegistered = boards.has(key) && !params.reload;
@@ -4080,7 +4139,11 @@ const BoardNewAddressSchema = BoardAddressSchema.strict();
 app.post("/api/boards/new", (req: Request, res: Response) => {
 	try {
 		const params = BoardNewAddressSchema.parse(req.body ?? {});
-		const identity = identityFromParams(params);
+		const identity = identityFromParams({
+			board: params.board,
+			...(params.variant === undefined ? {} : { variant: params.variant }),
+			...(params.level === undefined ? {} : { level: params.level }),
+		});
 		const key = boardKey(identity);
 		const holder = holderFromRequest(req, key);
 		void trackMutationWork(req, `${req.method} ${req.path} board-create wait`, (signal) =>
@@ -4232,7 +4295,7 @@ function loadSideForCompare(key: string): CompareSideInput {
 		elements: Array.from(resolved.content.elements.values()).filter(
 			(element) => !element.isDeleted,
 		),
-		file: resolved.board.file,
+		...(resolved.board.file === undefined ? {} : { file: resolved.board.file }),
 	};
 }
 
@@ -4322,6 +4385,8 @@ app.get("/api/boards/compare", (req: Request, res: Response) => {
 	} catch (error) {
 		answerBoardError(res, error, "Error comparing boards:");
 	}
+
+	return undefined;
 });
 
 // ─── The library ──────────────────────────────────────────────
@@ -4405,7 +4470,7 @@ app.put("/api/library", (req: Request, res: Response) => {
 });
 
 // Serve the frontend
-app.get("/", (req: Request, res: Response) => {
+app.get("/", (_req: Request, res: Response) => {
 	const htmlFile = path.join(moduleDir, "../dist/frontend/index.html");
 	res.sendFile(htmlFile, (err) => {
 		if (err) {
@@ -4416,7 +4481,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // Health check endpoint
-app.get("/health", (req: Request, res: Response) => {
+app.get("/health", (_req: Request, res: Response) => {
 	res.json({
 		status: "healthy",
 		timestamp: new Date().toISOString(),
@@ -4452,7 +4517,7 @@ app.get("/health", (req: Request, res: Response) => {
 });
 
 // Sync status endpoint
-app.get("/api/sync/status", (req: Request, res: Response) => {
+app.get("/api/sync/status", (_req: Request, res: Response) => {
 	res.json({
 		success: true,
 		boards: boardSummaries(boardElementCount).map((b) => ({
@@ -4469,7 +4534,7 @@ app.get("/api/sync/status", (req: Request, res: Response) => {
 });
 
 // Error handling middleware
-app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 	logger.error("Unhandled error:", err);
 	if (res.headersSent || res.destroyed) return;
 	res.status(500).json({
@@ -4741,7 +4806,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 		const binding = active?.semanticDelivery.snapshot().binding ?? null;
 		return requireExactSemanticPane({
 			bindingPaneId: binding?.paneId ?? null,
-			contextBoard,
+			...(contextBoard === undefined ? {} : { contextBoard }),
 			panes: panes.values(),
 			boardForPane: (pane) => paneBoards.get(pane.clientId) ?? pane.board,
 		});
