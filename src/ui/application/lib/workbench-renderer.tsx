@@ -1,0 +1,75 @@
+// The runtime's renderer: the workbench over the runtime's view and actions,
+// with the queue, approvals and thread-link controllers composed in. Where
+// the runtime already implements an action, the controller that owns the
+// richer settlement wins, so nothing is dispatched twice:
+//   - queue: the queue controller (target capture, pending and settlement);
+//   - approvals: the approvals controller (choice resolution, invalid results);
+//   - thread link: the thread-link controller (settlement feeds agent settings);
+//   - composer, stop, retry, intent, copy, voice: the runtime's own.
+
+import { useContext, useMemo, useSyncExternalStore } from "react";
+
+import { WorkbenchOwnersContext } from "@/ui/application/lib/workbench-context";
+import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
+import { Workbench, type WorkbenchActions, type WorkbenchView } from "@/ui/workbench";
+import type { WorkbenchRuntimeRenderContext } from "@/ui/workbench-runtime";
+
+/**
+ * The runtime's renderer with the controllers composed in.
+ * @param context The runtime's view, actions and status.
+ * @returns The workbench.
+ */
+function WorkbenchRenderer(context: WorkbenchRuntimeRenderContext): React.JSX.Element {
+	const owners = useContext(WorkbenchOwnersContext);
+	if (owners === null) {
+		throw new Error("The workbench renderer needs its owners in context.");
+	}
+	return <ComposedWorkbench owners={owners} context={context} />;
+}
+
+/** Inputs for the composed workbench. */
+interface ComposedWorkbenchProps {
+	owners: WorkbenchOwners;
+	context: WorkbenchRuntimeRenderContext;
+}
+
+/**
+ * The workbench with the controllers' state and actions composed in.
+ * @param props The owners and the runtime's context.
+ * @returns The workbench.
+ */
+function ComposedWorkbench(props: ComposedWorkbenchProps): React.JSX.Element {
+	const { owners, context } = props;
+	const queueCommand = useSyncExternalStore(
+		owners.queueCommand.subscribe,
+		owners.queueCommand.getSnapshot,
+		owners.queueCommand.getSnapshot,
+	);
+	const decisions = useSyncExternalStore(
+		owners.approvalDecisions.subscribe,
+		owners.approvalDecisions.getSnapshot,
+		owners.approvalDecisions.getSnapshot,
+	);
+	const view = useMemo<WorkbenchView>(
+		() => ({
+			...context.view,
+			busyApprovals: decisions.busy,
+			approvalErrors: decisions.errors,
+			queueCommand,
+		}),
+		[context.view, decisions, queueCommand],
+	);
+	const actions = useMemo<WorkbenchActions>(
+		() => ({
+			...context.actions,
+			queue: owners.queue.panelActions,
+			respondToApproval: owners.approvals.panelActions.respondToApproval,
+			respondToDynamicApproval: owners.approvals.panelActions.respondToDynamicApproval,
+			threadLink: owners.threadLinkActions,
+		}),
+		[context.actions, owners],
+	);
+	return <Workbench view={view} actions={actions} />;
+}
+
+export { WorkbenchRenderer };

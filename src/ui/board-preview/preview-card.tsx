@@ -8,16 +8,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	type BoardPreviewCache,
 	type PreviewRequestGate,
+	type PreviewSource,
 	type PreviewTheme,
-	projectPreviewSnapshot,
+	previewSourceHasContent,
+	projectPreviewSource,
 } from "@/ui/board-preview";
-import type { BoardPreviewSnapshot } from "@/ui/types";
 
 /** Inputs for one preview card. */
 interface PreviewCardProps {
 	board: string;
 	/** The scene to depict, or null until the runtime has supplied one. */
-	snapshot: BoardPreviewSnapshot | null;
+	snapshot: PreviewSource | null;
 	theme: PreviewTheme;
 	/** Shared across cards: owns every Blob URL it holds and revokes what it drops. */
 	cache: BoardPreviewCache;
@@ -34,11 +35,8 @@ const EXPORT_PADDING = 8;
  * @param theme Which theme to export in.
  * @returns An owned Blob URL; the caller revokes it or hands it to the cache.
  */
-async function renderPreviewUrl(
-	snapshot: BoardPreviewSnapshot,
-	theme: PreviewTheme,
-): Promise<string> {
-	const scene = projectPreviewSnapshot(snapshot);
+async function renderPreviewUrl(snapshot: PreviewSource, theme: PreviewTheme): Promise<string> {
+	const scene = projectPreviewSource(snapshot);
 	const svg = await exportToSvg({
 		elements: scene.elements,
 		files: scene.files,
@@ -68,15 +66,6 @@ function EmptyBox(props: EmptyBoxProps): React.JSX.Element {
 	);
 }
 
-/**
- * Whether a snapshot has anything to draw.
- * @param snapshot The scene.
- * @returns True when at least one live element exists.
- */
-function hasContent(snapshot: BoardPreviewSnapshot): boolean {
-	return snapshot.elements.some((element) => !element.isDeleted);
-}
-
 /** A failed export leaves the empty box; the next snapshot retries. */
 function ignoreFailure(): void {
 	// Intentionally empty.
@@ -84,7 +73,7 @@ function ignoreFailure(): void {
 
 /** What the export effect needs, so the observer callback closes over one object. */
 interface ExportRequest {
-	snapshot: BoardPreviewSnapshot;
+	snapshot: PreviewSource;
 	theme: PreviewTheme;
 	cache: BoardPreviewCache;
 	gate: PreviewRequestGate;
@@ -158,7 +147,7 @@ function PreviewCard(props: PreviewCardProps): React.JSX.Element {
 	const adopt = useCallback((next: string) => setUrl(next), []);
 	useEffect(() => {
 		const request: ExportRequest | null =
-			snapshot !== null && hasContent(snapshot)
+			snapshot !== null && previewSourceHasContent(snapshot)
 				? { snapshot, theme, cache, gate, setUrl: adopt }
 				: null;
 		return observeAndExport(hostRef.current, request);
@@ -166,7 +155,7 @@ function PreviewCard(props: PreviewCardProps): React.JSX.Element {
 	if (snapshot === null) {
 		return <EmptyBox text={`No preview yet for ${board}`} />;
 	}
-	if (!hasContent(snapshot)) {
+	if (!previewSourceHasContent(snapshot)) {
 		return <EmptyBox text="Empty board" />;
 	}
 	return (

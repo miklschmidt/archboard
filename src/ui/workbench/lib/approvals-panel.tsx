@@ -23,6 +23,8 @@ import type { ApprovalChoice, WorkbenchActions } from "@/ui/workbench/contracts"
 interface ApprovalsPanelProps {
 	snapshot: BrowserSnapshot;
 	busyApprovals: readonly string[];
+	/** Error text per approval key, from the approvals controller. */
+	errors: Readonly<Record<string, string>>;
 	actions: WorkbenchActions;
 }
 
@@ -50,6 +52,8 @@ function DecisionButton(props: DecisionButtonProps): React.JSX.Element {
 /** Inputs for one card. */
 interface CardProps {
 	card: ApprovalCard;
+	/** The controller's error for this card, or null. */
+	error: string | null;
 	onChoose: (choice: ApprovalChoice) => void;
 }
 
@@ -102,6 +106,11 @@ function Card(props: CardProps): React.JSX.Element {
 					))}
 				</div>
 			)}
+			{props.error === null ? null : (
+				<p role="alert" className="text-destructive">
+					{props.error}
+				</p>
+			)}
 			<p className="text-muted-foreground">{card.spokenText}</p>
 		</article>
 	);
@@ -111,6 +120,7 @@ function Card(props: CardProps): React.JSX.Element {
 interface ApprovalItemProps {
 	approval: BrowserApproval;
 	busy: boolean;
+	error: string | null;
 	respond: WorkbenchActions["respondToApproval"];
 }
 
@@ -125,13 +135,20 @@ function ApprovalItem(props: ApprovalItemProps): React.JSX.Element {
 		(choice: ApprovalChoice) => respond(approval, choice),
 		[approval, respond],
 	);
-	return <Card card={projectApproval(approval, props.busy)} onChoose={handleChoose} />;
+	return (
+		<Card
+			card={projectApproval(approval, props.busy)}
+			error={props.error}
+			onChoose={handleChoose}
+		/>
+	);
 }
 
 /** Inputs for one dynamic approval item. */
 interface DynamicApprovalItemProps {
 	approval: BrowserDynamicApproval;
 	busy: boolean;
+	error: string | null;
 	respond: WorkbenchActions["respondToDynamicApproval"];
 }
 
@@ -147,7 +164,13 @@ function DynamicApprovalItem(props: DynamicApprovalItemProps): React.JSX.Element
 			respond(approval, choice.kind === "approve" ? "approve" : "decline"),
 		[approval, respond],
 	);
-	return <Card card={projectDynamicApproval(approval, props.busy)} onChoose={handleChoose} />;
+	return (
+		<Card
+			card={projectDynamicApproval(approval, props.busy)}
+			error={props.error}
+			onChoose={handleChoose}
+		/>
+	);
 }
 
 /**
@@ -175,6 +198,7 @@ function ApprovalsPanel(props: ApprovalsPanelProps): React.JSX.Element {
 					key={approval.requestId}
 					approval={approval}
 					busy={busy.has(approval.requestId)}
+					error={props.errors[approval.requestId] ?? null}
 					respond={actions.respondToApproval}
 				/>
 			))}
@@ -183,6 +207,7 @@ function ApprovalsPanel(props: ApprovalsPanelProps): React.JSX.Element {
 					key={approval.identity.callId}
 					approval={approval}
 					busy={busy.has(approval.identity.callId)}
+					error={props.errors[approval.identity.callId] ?? null}
 					respond={actions.respondToDynamicApproval}
 				/>
 			))}

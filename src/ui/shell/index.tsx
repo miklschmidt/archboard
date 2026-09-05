@@ -1,5 +1,6 @@
 // The desktop frame: header, navigator, canvas centre, inspector and the
-// workbench dock, composed from typed inputs and typed actions.
+// workbench dock, composed from typed inputs and typed actions. The centre is
+// also the fullscreen root, so presenting a pane never remounts a canvas.
 
 import { SidebarProvider } from "@/ui/components/sidebar";
 import { Inspector } from "@/ui/selection-inspector/inspector";
@@ -23,7 +24,6 @@ import { Navigator } from "@/ui/shell/lib/navigator";
 import { Notices } from "@/ui/shell/lib/notices";
 import { PaneBar } from "@/ui/shell/lib/pane-bar";
 import { CanvasStages } from "@/ui/shell/lib/pane-stage";
-import { Presentation } from "@/ui/shell/lib/presentation";
 import { WorkbenchDock } from "@/ui/shell/lib/workbench-dock";
 
 /** The navigator's width; the sidebar reads it from this custom property. */
@@ -33,8 +33,14 @@ const SIDEBAR_STYLE: React.CSSProperties = { "--sidebar-width": "15rem" };
 interface ShellProps {
 	view: ShellView;
 	actions: ShellActions;
-	/** Live voice mute and stop controls for the presentation bar, when the voice workbench supplies them. */
+	/** Live voice controls for the presentation bar, when the voice workbench supplies them. */
 	voiceControls?: React.ReactNode;
+	/** The workbench's compact controls for the dock header. */
+	dockHeader?: React.ReactNode;
+	/** The workbench itself, for the dock body. */
+	dockBody?: React.ReactNode;
+	/** The fullscreen root: the centre stage element. */
+	attachStage?: (element: HTMLDivElement | null) => void;
 }
 
 /**
@@ -48,11 +54,11 @@ function paneById(view: ShellView, paneId: string): ShellPane | null {
 }
 
 /**
- * The workspace: navigator, centre column and inspector under the header.
- * @param props The view and actions.
+ * The application shell: navigator, centre column and inspector under the header.
+ * @param props The view, the actions and the slots.
  * @returns The full frame.
  */
-function Workspace(props: ShellProps): React.JSX.Element {
+function Shell(props: ShellProps): React.JSX.Element {
 	const { view, actions } = props;
 	const active = paneById(view, view.activePaneId);
 	return (
@@ -66,39 +72,23 @@ function Workspace(props: ShellProps): React.JSX.Element {
 					<CanvasStages
 						panes={view.panes}
 						activePaneId={view.activePaneId}
-						theme={view.theme}
 						overlay={view.pathFocusOverlay}
+						presentation={view.presentation}
+						voiceControls={props.voiceControls ?? null}
+						attachStage={props.attachStage}
 						actions={actions}
 					/>
-					<WorkbenchDock pane={active} paneCount={view.panes.length} />
+					<WorkbenchDock
+						pane={active}
+						paneCount={view.panes.length}
+						headerControls={props.dockHeader ?? null}
+						body={props.dockBody ?? null}
+					/>
 				</div>
 				<Inspector selection={view.selection} pathFocus={view.pathFocus} actions={actions} />
 			</SidebarProvider>
 		</div>
 	);
-}
-
-/**
- * The application shell.
- * @param props The view, the actions and the optional voice controls.
- * @returns The workspace, or one pane presented fullscreen.
- */
-function Shell(props: ShellProps): React.JSX.Element {
-	const { view, actions } = props;
-	const { presentation } = view;
-	const presented = presentation ? paneById(view, presentation.paneId) : null;
-	if (presentation && presented) {
-		return (
-			<Presentation
-				presentation={presentation}
-				pane={presented}
-				theme={view.theme}
-				voiceControls={props.voiceControls ?? null}
-				actions={actions}
-			/>
-		);
-	}
-	return <Workspace view={view} actions={actions} />;
 }
 
 export {

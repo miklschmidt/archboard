@@ -3,7 +3,8 @@
 // showing what, and the scratch boards. Pure: no React.
 
 import type { ScratchBoardEntry, ShellView } from "@/ui/shell/lib/contracts";
-import type { BoardIdentity, BoardListing, BoardPreviewSnapshot } from "@/ui/types";
+import type { PreviewSource } from "@/ui/board-preview";
+import type { BoardIdentity, BoardListing } from "@/ui/types";
 
 /** Pane letters in reading order; a third pane would be a number. */
 const PANE_LETTERS = ["A", "B"] as const;
@@ -21,7 +22,7 @@ function paneLetter(index: number): string {
 interface NavigatorEntry {
 	key: string;
 	identity: BoardIdentity;
-	preview: BoardPreviewSnapshot | null;
+	preview: PreviewSource | null;
 	/** Open in the session but not persisted in the vault. */
 	draft: boolean;
 	/** The letter of the pane showing this board, or null when no pane holds it. */

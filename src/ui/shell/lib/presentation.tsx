@@ -1,26 +1,18 @@
-// Fullscreen presentation of one pane: the canvas fills the viewport under a
-// slim bar with the exit control and the slot for the voice workbench's mute
-// and stop controls. A disconnected presentation says so and offers the exit.
+// Fullscreen presentation of one pane: a slim bar with the exit control and
+// the slot for the voice workbench's controls, above the pane's own canvas,
+// which stays mounted where it is. A disconnected presentation says so and
+// offers the exit.
 
-import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { RiFullscreenExitLine } from "@remixicon/react";
 import { useCallback } from "react";
 
 import { Button } from "@/ui/components/button";
-import { ExcalidrawStage } from "@/ui/canvas/excalidraw-stage";
-import type {
-	ShellActions,
-	ShellPane,
-	ShellPresentation,
-	ThemeChoice,
-} from "@/ui/shell/lib/contracts";
+import type { ShellActions, ShellPane } from "@/ui/shell/lib/contracts";
 
-/** Inputs for the presentation layer. */
-interface PresentationProps {
-	presentation: ShellPresentation;
+/** Inputs for the presentation bar. */
+interface PresentationBarProps {
 	pane: ShellPane;
-	theme: ThemeChoice;
-	/** Live voice mute and stop controls, when the voice workbench supplies them. */
+	/** Live voice controls, when the voice workbench supplies them. */
 	voiceControls: React.ReactNode;
 	actions: ShellActions;
 }
@@ -52,17 +44,15 @@ interface VoiceSlotProps {
 }
 
 /**
- * The labelled slot the voice workbench's mute and stop controls occupy.
- * @param props The controls, or nothing until the voice workbench supplies them.
+ * The labelled slot the voice workbench's controls occupy.
+ * @param props The controls, or nothing while no voice workbench is attached.
  * @returns The slot.
  */
 function VoiceSlot(props: VoiceSlotProps): React.JSX.Element {
 	return (
 		<fieldset aria-label="Voice controls" className="m-0 flex items-center gap-1 border-0 p-0">
 			{props.children ?? (
-				<span className="text-muted-foreground text-xs">
-					Mute and stop arrive with the voice workbench.
-				</span>
+				<span className="text-muted-foreground text-xs">No voice workbench on this pane.</span>
 			)}
 		</fieldset>
 	);
@@ -91,37 +81,27 @@ function RecoveryMessage(props: RecoveryMessageProps): React.JSX.Element {
 }
 
 /**
- * One pane, fullscreen.
- * @param props The presentation, the pane, the theme, the voice slot and the actions.
- * @returns The presentation layer.
+ * The bar above a presented pane.
+ * @param props The pane, the voice slot and the actions.
+ * @returns The bar.
  */
-function Presentation(props: PresentationProps): React.JSX.Element {
-	const { actions, presentation, pane } = props;
-	const { paneId, connected } = pane.status;
-	const handleApi = useCallback(
-		(api: ExcalidrawImperativeAPI) => actions.canvasReady(paneId, api),
-		[actions, paneId],
-	);
+function PresentationBar(props: PresentationBarProps): React.JSX.Element {
+	const { actions, pane } = props;
+	const { paneId } = pane.status;
 	return (
-		<div data-slot="presentation" className="bg-background relative flex h-full flex-col">
-			<div className="border-border flex h-9 shrink-0 items-center gap-2 border-b px-2">
-				<ExitControl actions={actions} />
-				<span className="text-muted-foreground text-xs">
-					Pane <span className="font-mono">{paneId}</span>
-					{pane.status.board && ` · ${pane.status.board.board}`}
-				</span>
-				<span className="flex-1" />
-				<VoiceSlot>{props.voiceControls}</VoiceSlot>
-			</div>
-			{presentation.kind === "recovery" ? (
-				<RecoveryMessage message={presentation.message} />
-			) : (
-				<section aria-label={`Pane ${paneId}`} className="flex min-h-0 flex-1 flex-col">
-					<ExcalidrawStage theme={props.theme} viewModeEnabled={!connected} onApi={handleApi} />
-				</section>
-			)}
+		<div
+			data-slot="presentation-bar"
+			className="border-border flex h-9 shrink-0 items-center gap-2 border-b px-2"
+		>
+			<ExitControl actions={actions} />
+			<span className="text-muted-foreground text-xs">
+				Pane <span className="font-mono">{paneId}</span>
+				{pane.status.board && ` · ${pane.status.board.board}`}
+			</span>
+			<span className="flex-1" />
+			<VoiceSlot>{props.voiceControls}</VoiceSlot>
 		</div>
 	);
 }
 
-export { Presentation, type PresentationProps };
+export { PresentationBar, RecoveryMessage, type PresentationBarProps };
