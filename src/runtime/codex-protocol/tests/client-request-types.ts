@@ -1,8 +1,8 @@
-import {
-	type ClientRequestInput,
-	type ClientRequestParams,
-	type CodexSessionRequestParams,
-	type decodeClientRequestParams,
+import type {
+	ClientRequestInput,
+	ClientRequestParams,
+	CodexSessionRequestParams,
+	decodeClientRequestParams,
 } from "../index.js";
 import type {
 	LoginId,
