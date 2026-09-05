@@ -1,14 +1,23 @@
 import { expect } from "bun:test";
 
-import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
+import { pollUntil } from "./agent-browser.ts";
+import type { AgentBrowserSession } from "./agent-browser.ts";
 
-type RecordedRequest = { method: string; path: string; body: unknown };
+interface RecordedRequest {
+	readonly method: string;
+	readonly path: string;
+	readonly body: unknown;
+}
+type BrowserEvaluator = Readonly<Pick<AgentBrowserSession, "eval">>;
 
-export async function requests(browser: AgentBrowserSession): Promise<RecordedRequest[]> {
+async function requests(browser: BrowserEvaluator): Promise<RecordedRequest[]> {
 	return browser.eval<RecordedRequest[]>("window.__openerProbe?.requests ?? []");
 }
 
-export async function setProbeHold(browser: AgentBrowserSession, key: string): Promise<void> {
+async function setProbeHold(
+	browser: BrowserEvaluator,
+	key: string,
+): Promise<void> {
 	expect(
 		await browser.eval<boolean>(
 			`Boolean(window.__openerProbe && (window.__openerProbe.hold(${JSON.stringify(key)}), true))`,
@@ -16,8 +25,8 @@ export async function setProbeHold(browser: AgentBrowserSession, key: string): P
 	).toBe(true);
 }
 
-export async function setNextGet(
-	browser: AgentBrowserSession,
+async function setNextGet(
+	browser: BrowserEvaluator,
 	outcome: "success" | "failure",
 ): Promise<void> {
 	expect(
@@ -27,9 +36,17 @@ export async function setNextGet(
 	).toBe(true);
 }
 
-export async function releaseProbe(browser: AgentBrowserSession, key: string): Promise<void> {
+async function releaseProbe(
+	browser: BrowserEvaluator,
+	key: string,
+): Promise<void> {
 	await pollUntil(
-		() => browser.eval<boolean>(`window.__openerProbe?.pending?.key === ${JSON.stringify(key)}`),
+		async () => {
+			const pending = await browser.eval<boolean>(
+				`window.__openerProbe?.pending?.key === ${JSON.stringify(key)}`,
+			);
+			return pending;
+		},
 		Boolean,
 		`${key} to become pending`,
 	);
@@ -37,3 +54,5 @@ export async function releaseProbe(browser: AgentBrowserSession, key: string): P
 		await browser.eval<boolean>(`window.__openerProbe?.release(${JSON.stringify(key)}) ?? false`),
 	).toBe(true);
 }
+
+export { releaseProbe, requests, setNextGet, setProbeHold, type RecordedRequest };
