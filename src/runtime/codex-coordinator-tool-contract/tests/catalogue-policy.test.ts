@@ -29,8 +29,29 @@ const ownerRoot = path.join(repoRoot, "src/runtime/codex-coordinator-tool-contra
 
 function expectDeepFrozen(value: unknown): void {
 	expect(Object.isFrozen(value)).toBe(true);
-	if (typeof value !== "object" || value === null) return;
-	for (const child of Object.values(value)) expectDeepFrozen(child);
+	if (typeof value !== "object" || value === null) {
+		return;
+	}
+	for (const child of Object.values(value)) {
+		expectDeepFrozen(child);
+	}
+}
+
+function objectKeys(value: unknown): string[] {
+	return typeof value === "object" && value !== null ? Object.keys(value) : [];
+}
+
+function canonicalJson(value: unknown): string {
+	if (Array.isArray(value)) {
+		return `[${value.map((item) => canonicalJson(item)).join(",")}]`;
+	}
+	if (typeof value === "object" && value !== null) {
+		const entries = Object.keys(value)
+			.toSorted()
+			.map((key) => `${JSON.stringify(key)}:${canonicalJson(Reflect.get(value, key))}`);
+		return `{${entries.join(",")}}`;
+	}
+	return JSON.stringify(value);
 }
 
 describe("dynamic wire envelopes and metadata", () => {
@@ -146,9 +167,7 @@ describe("dynamic wire envelopes and metadata", () => {
 					authorityTarget,
 					callerRole,
 					requiredLinks,
-					successFields: Object.keys(
-						successResult.valueSchema["properties"] as Record<string, unknown>,
-					),
+					successFields: objectKeys(successResult.valueSchema["properties"]),
 					refusalErrors,
 				}),
 			),
@@ -313,10 +332,11 @@ describe("dynamic wire envelopes and metadata", () => {
 	});
 
 	test("freezes canonical inputs, metadata, and catalogue aggregate", () => {
-		for (const contract of COORDINATOR_TOOL_CONTRACTS)
-			expect(CoordinatorToolContractSchema.parse(contract)).toEqual(
-				JSON.parse(JSON.stringify(contract)),
+		for (const contract of COORDINATOR_TOOL_CONTRACTS) {
+			expect(canonicalJson(CoordinatorToolContractSchema.parse(contract))).toBe(
+				canonicalJson(contract),
 			);
+		}
 		for (const value of [
 			ARCHBOARD_WORKHORSE_NAMESPACE,
 			ARCHBOARD_VOICE_NAMESPACE,
@@ -325,8 +345,9 @@ describe("dynamic wire envelopes and metadata", () => {
 			ARCHBOARD_VOICE_TOOL_CONTRACTS,
 			COORDINATOR_TOOL_CATALOGUE,
 			DYNAMIC_TOOL_REFUSAL_REASONS,
-		])
+		]) {
 			expectDeepFrozen(value);
+		}
 	});
 });
 
