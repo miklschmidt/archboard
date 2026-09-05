@@ -323,7 +323,11 @@ try {
 		const { exportToBlob, exportToSvg } = await import("@excalidraw/excalidraw");
 		const { DEFAULT_MERMAID_CONFIG } = await import("../src/server/board-rendering/index.js");
 		const { parseMermaidToExcalidraw } = await import("@excalidraw/mermaid-to-excalidraw");
-		const input = fixtureInput();
+		const rawInput = fixtureInput();
+		// The persisted fixture is fully validated above; this boundary restores Excalidraw's nominal element brands after deserialization.
+		// eslint-disable-next-line typescript/no-unsafe-type-assertion -- Runtime fixture validation establishes the renderer contract before the vendor call.
+		const input = rawInput as Parameters<typeof exportToBlob>[0] &
+			Parameters<typeof exportToSvg>[0];
 		const png = await exportToBlob({ ...input, mimeType: "image/png" });
 		const svg = new XMLSerializer().serializeToString(await exportToSvg(input));
 		const diagram = readFileSync(join(fixtureRoot, "diagram.mmd"), "utf8");

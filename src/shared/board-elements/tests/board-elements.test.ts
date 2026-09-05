@@ -18,7 +18,7 @@ type IsAny<T> = 0 extends 1 & T ? true : false;
 type Assert<T extends true> = T;
 type AssertFalse<T extends false> = T;
 
-type _KindsAreNonNever = [
+export type _KindsAreNonNever = [
 	AssertFalse<Equal<RectangleElement, never>>,
 	AssertFalse<Equal<EllipseElement, never>>,
 	AssertFalse<Equal<DiamondElement, never>>,
@@ -28,7 +28,7 @@ type _KindsAreNonNever = [
 	AssertFalse<Equal<FreeDrawElement, never>>,
 	AssertFalse<Equal<ImageElement, never>>,
 ];
-type _ExactDiscriminators = [
+export type _ExactDiscriminators = [
 	Assert<Equal<RectangleElement["type"], "rectangle">>,
 	Assert<Equal<EllipseElement["type"], "ellipse">>,
 	Assert<Equal<DiamondElement["type"], "diamond">>,
@@ -38,7 +38,7 @@ type _ExactDiscriminators = [
 	Assert<Equal<FreeDrawElement["type"], "freedraw">>,
 	Assert<Equal<ImageElement["type"], "image">>,
 ];
-type _ProjectedScalars = [
+export type _ProjectedScalars = [
 	AssertFalse<IsAny<LineElement["points"][number]>>,
 	AssertFalse<IsAny<LineElement["points"][number][0]>>,
 	Assert<Equal<LineElement["angle"], number>>,
@@ -63,8 +63,8 @@ type RawTextOutsideText<T> = T extends { type: "text" }
 	: "rawText" extends keyof T
 		? true
 		: false;
-type _RawTextOnlyText = AssertFalse<RawTextOutsideText<PersistedBoardElement>>;
-type _NoRuntimeOrInputFields = [
+export type _RawTextOnlyText = AssertFalse<RawTextOutsideText<PersistedBoardElement>>;
+export type _NoRuntimeOrInputFields = [
 	AssertFalse<"source" extends keyof PersistedBoardElement ? true : false>,
 	AssertFalse<"createdAt" extends keyof PersistedBoardElement ? true : false>,
 	AssertFalse<"label" extends keyof PersistedBoardElement ? true : false>,
