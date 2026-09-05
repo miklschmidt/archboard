@@ -140,6 +140,15 @@ const PANE_LAYOUT_TIMEOUT_MS = 10_000;
 /** Outer cap for any browser-owned export request. The wait ends on correlation, not delay. */
 const BROWSER_EXPORT_TIMEOUT_MS = 30_000;
 
+/** Delay after refreshing one pane before asking it to capture the presented board. */
+const BROWSER_CAPTURE_DISPATCH_MS = 800;
+
+/** Window in which capture results compete; the largest successful payload wins. */
+const BROWSER_CAPTURE_COLLECTION_MS = 3000;
+
+/** Outer cap for one correlated browser viewport request. */
+const BROWSER_VIEWPORT_SETTLEMENT_MS = 10_000;
+
 // ── Server-owned board rendering (ADR 0020) ──────────────────────────────
 
 /**
@@ -694,6 +703,9 @@ export {
 	PANE_SETTLE_CAP_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
 	BROWSER_EXPORT_TIMEOUT_MS,
+	BROWSER_CAPTURE_DISPATCH_MS,
+	BROWSER_CAPTURE_COLLECTION_MS,
+	BROWSER_VIEWPORT_SETTLEMENT_MS,
 	BOARD_RENDER_JOB_TIMEOUT_MS,
 	BOARD_RENDER_STARTUP_TIMEOUT_MS,
 	BOARD_RENDER_CLEANUP_MS,

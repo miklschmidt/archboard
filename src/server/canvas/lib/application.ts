@@ -159,7 +159,6 @@ import type { CompareSideInput } from "../../../runtime/engine/compare.js";
 import { changeFeed } from "../../../runtime/engine/change-feed.js";
 import type { ChangeEvent } from "../../../runtime/engine/change-feed.js";
 import {
-	BROWSER_EXPORT_TIMEOUT_MS,
 	CANVAS_HTTP_STOP_GRACE_MS,
 	CANVAS_MUTATION_DRAIN_TIMEOUT_MS,
 	CODEX_WAIT_TARGET_POLL_MS,
@@ -236,6 +235,7 @@ import {
 } from "../../../shared/canvas-startup-terminal/index.js";
 import { canvasStartupFailureMessage } from "./startup-error.js";
 import { createCheckoutWorkOwner } from "./checkout-work.js";
+import { createBrowserPresentationOwner } from "../../browser-presentation/index.js";
 import {
 	answerBoardError,
 	boardErrorStatus,
@@ -3361,360 +3361,16 @@ app.post(
 	}),
 );
 
-// Browser capture: request (CLI -> Express -> WebSocket -> Frontend)
-interface PendingBrowserCapture {
-	resolve: (data: { format: string; data: string }) => void;
-	reject: (error: Error) => void;
-	timeout: ReturnType<typeof setTimeout>;
-	collectionTimeout: ReturnType<typeof setTimeout> | null;
-	bestResult: { format: string; data: string } | null;
-}
-const pendingBrowserCaptures = new Map<string, PendingBrowserCapture>();
-
-app.post("/api/browser/capture", (req: Request, res: Response) => {
-	try {
-		const { format, background, pane } = req.body ?? {};
-
-		if (!format || !["png", "svg"].includes(format)) {
-			return res.status(400).json({
-				success: false,
-				error: 'format must be "png" or "svg"',
-			});
-		}
-
-		if (clients.size === 0) {
-			return res.status(503).json(noBrowserBody("Taking a picture of the canvas"));
-		}
-
-		// Which pane is photographed. Resolved before anything is promised, and
-		// named for the same reason the camera is: with a proposal in the second
-		// pane, an agent that can only ever picture the first cannot see the thing
-		// it just drew (TASK-033).
-		const answering =
-			typeof pane === "string" && pane.trim()
-				? resolvePaneSpec(Array.from(panes.values()), pane)
-				: primaryPane();
-		if (!answering) {
-			return res.status(503).json(noBrowserBody("Taking a picture of the canvas"));
-		}
-
-		const requestId = mintId(pendingBrowserCaptures);
-
-		const capturePromise = new Promise<{ format: string; data: string }>((resolve, reject) => {
-			const timeout = setTimeout(() => {
-				const pending = pendingBrowserCaptures.get(requestId);
-				pendingBrowserCaptures.delete(requestId);
-				// If we collected any result during the window, use it
-				if (pending?.bestResult) {
-					resolve(pending.bestResult);
-				} else {
-					reject(new Error("Browser capture timed out after 30 seconds"));
-				}
-			}, BROWSER_EXPORT_TIMEOUT_MS);
-
-			pendingBrowserCaptures.set(requestId, {
-				resolve,
-				reject,
-				timeout,
-				collectionTimeout: null,
-				bestResult: null,
-			});
-		});
-
-		// Re-send the board to the pane that will answer, so a stale tab captures
-		// what the server holds rather than what it last happened to render. Sent
-		// to that pane alone and carrying that pane's own board: broadcasting it
-		// would replace every other pane's scene with this one's board, which is
-		// exactly the yank per-pane boards exist to prevent.
-		const captureKey = paneBoards.get(answering.clientId) ?? answering.board;
-		const captureBoard = boards.get(captureKey);
-		if (!captureBoard) {
-			return res.status(409).json({
-				success: false,
-				error: `The pane being pictured is showing "${captureKey}", which this canvas no longer holds.`,
-			});
-		}
-		const captureContent = readBoardContent(captureBoard);
-		sendToPane(
-			answering.clientId,
-			{
-				type: "initial_elements",
-				board: captureKey,
-				identity: captureBoard.identity,
-				elements: presentElements(captureContent.elements.values(), {
-					boardKey: captureKey,
-					checkoutSnapshot: checkoutSnapshotFor(res),
-				}),
-				...boardFilesMessage(captureContent),
-			} as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> },
-			captureKey,
-		);
-
-		// Give the browser time to process the reload before requesting capture.
-		setTimeout(() => {
-			sendToPane(
-				answering.clientId,
-				{
-					type: "browser_capture_request",
-					requestId,
-					format,
-					background: background ?? true,
-				},
-				captureKey,
-			);
-		}, 800);
-
-		capturePromise
-			.then((result) => {
-				return res.json({
-					success: true,
-					format: result.format,
-					data: result.data,
-				});
-			})
-			.catch((error) => {
-				res.status(500).json({
-					success: false,
-					error: (error as Error).message,
-				});
-			});
-	} catch (error) {
-		logger.error("Error initiating browser capture:", error);
-		// A pane spec that names nothing is the caller's mistake, not a fault.
-		res.status(boardErrorStatus(error)).json({
-			success: false,
-			error: (error as Error).message,
-		});
-	}
-
-	return undefined;
+const browserPresentation = createBrowserPresentationOwner({
+	panes: () => [...panes.values()],
+	browserCount: () => clients.size,
+	boardForPane: (pane) => paneBoards.get(pane.clientId) ?? pane.board,
+	sendToPane,
+	checkoutSnapshotFor,
+	statusForError: boardErrorStatus,
+	browserRequiredBody: noBrowserBody,
 });
-
-// Browser capture: result (Frontend -> Express -> CLI)
-app.post("/api/browser/capture/result", (req: Request, res: Response) => {
-	try {
-		const { requestId, format, data, error } = req.body;
-
-		if (!requestId) {
-			return res.status(400).json({
-				success: false,
-				error: "requestId is required",
-			});
-		}
-
-		const pending = pendingBrowserCaptures.get(requestId);
-		if (!pending) {
-			// Already resolved by another client, or expired — ignore silently
-			return res.json({ success: true });
-		}
-
-		if (error) {
-			// Don't reject on error — another WebSocket client may still succeed.
-			logger.warn(`Browser capture error from one client (requestId=${requestId}): ${error}`);
-			return res.json({ success: true });
-		}
-
-		// Keep the largest response (most complete canvas state wins)
-		if (!pending.bestResult || data.length > pending.bestResult.data.length) {
-			pending.bestResult = { format, data };
-		}
-
-		// Start a short collection window on the first response, then resolve with best
-		if (!pending.collectionTimeout) {
-			pending.collectionTimeout = setTimeout(() => {
-				const p = pendingBrowserCaptures.get(requestId);
-				if (p?.bestResult) {
-					clearTimeout(p.timeout);
-					pendingBrowserCaptures.delete(requestId);
-					p.resolve(p.bestResult);
-				}
-			}, 3000);
-		}
-
-		res.json({ success: true });
-	} catch (error) {
-		logger.error("Error processing browser capture result:", error);
-		res.status(500).json({
-			success: false,
-			error: (error as Error).message,
-		});
-	}
-
-	return undefined;
-});
-
-// Viewport control: request (CLI -> Express -> WebSocket -> Frontend)
-interface PendingViewport {
-	resolve: (data: { success: boolean; message: string }) => void;
-	reject: (error: Error) => void;
-	timeout: ReturnType<typeof setTimeout>;
-}
-const pendingViewports = new Map<string, PendingViewport>();
-
-const viewportRequestSchema = z
-	.object({
-		scrollToContent: z.boolean().optional(),
-		scrollToElementIds: z.array(z.string().min(1)).min(1).optional(),
-		viewportZoomFactor: z.number().positive().max(1).optional(),
-		scrollToElementId: z.string().min(1).optional(),
-		zoom: z.number().min(0.1).max(10).optional(),
-		offsetX: z.number().optional(),
-		offsetY: z.number().optional(),
-		// Which pane's camera. Display, so it defaults where it cannot be wrong: one
-		// pane and it is that one. With two, framing the pane nobody asked for moves
-		// the browser pane the user was viewing, so naming it is how an agent
-		// says which board it means to look at (TASK-033).
-		pane: z.string().min(1).optional(),
-	})
-	.superRefine((params, ctx) => {
-		const modes = [
-			params.scrollToContent === true,
-			params.scrollToElementIds !== undefined,
-			params.scrollToElementId !== undefined,
-			params.zoom !== undefined || params.offsetX !== undefined || params.offsetY !== undefined,
-		].filter(Boolean).length;
-
-		if (modes !== 1) {
-			ctx.addIssue({
-				code: "custom",
-				message:
-					"Specify exactly one viewport mode: scrollToContent, scrollToElementIds, scrollToElementId, or manual zoom/offset",
-			});
-		}
-		if (
-			params.viewportZoomFactor !== undefined &&
-			params.scrollToContent !== true &&
-			params.scrollToElementIds === undefined
-		) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["viewportZoomFactor"],
-				message: "viewportZoomFactor requires scrollToContent or scrollToElementIds",
-			});
-		}
-	});
-
-app.post("/api/viewport", (req: Request, res: Response) => {
-	try {
-		const {
-			scrollToContent,
-			scrollToElementIds,
-			scrollToElementId,
-			viewportZoomFactor,
-			zoom,
-			offsetX,
-			offsetY,
-			pane,
-		} = viewportRequestSchema.parse(req.body);
-
-		if (clients.size === 0) {
-			return res.status(503).json(noBrowserBody("Moving the camera"));
-		}
-
-		// Resolved before anything is promised, so a pane spec that names nothing
-		// comes back as a refusal listing the panes rather than as a timeout.
-		const answering = pane ? resolvePaneSpec(Array.from(panes.values()), pane) : primaryPane();
-		if (!answering) {
-			return res.status(503).json(noBrowserBody("Moving the camera"));
-		}
-
-		const requestId = mintId(pendingViewports);
-
-		const viewportPromise = new Promise<{ success: boolean; message: string }>(
-			(resolve, reject) => {
-				const timeout = setTimeout(() => {
-					pendingViewports.delete(requestId);
-					reject(new Error("Viewport request timed out after 10 seconds"));
-				}, 10000);
-
-				pendingViewports.set(requestId, { resolve, reject, timeout });
-			},
-		);
-
-		// Addressed to one pane, about the board that pane holds: a
-		// scroll-to-element only means anything on the board holding the element.
-		sendToPane(
-			answering.clientId,
-			{
-				type: "set_viewport",
-				requestId,
-				scrollToContent,
-				scrollToElementIds,
-				scrollToElementId,
-				viewportZoomFactor,
-				zoom,
-				offsetX,
-				offsetY,
-			},
-			paneBoards.get(answering.clientId) ?? answering.board,
-		);
-
-		viewportPromise
-			.then((result) => {
-				return res.json(result);
-			})
-			.catch((error) => {
-				res.status(500).json({
-					success: false,
-					error: (error as Error).message,
-				});
-			});
-	} catch (error) {
-		logger.error("Error initiating viewport change:", error);
-		// A pane spec that names nothing is a client error, and boardErrorStatus
-		// is where that judgement already lives.
-		res.status(error instanceof z.ZodError ? 400 : boardErrorStatus(error)).json({
-			success: false,
-			error:
-				error instanceof z.ZodError
-					? error.issues.map((issue) => issue.message).join("; ")
-					: (error as Error).message,
-		});
-	}
-
-	return undefined;
-});
-
-// Viewport control: result (Frontend -> Express -> CLI)
-app.post("/api/viewport/result", (req: Request, res: Response) => {
-	try {
-		const { requestId, success, message, error } = req.body;
-
-		if (!requestId) {
-			return res.status(400).json({
-				success: false,
-				error: "requestId is required",
-			});
-		}
-
-		const pending = pendingViewports.get(requestId);
-		if (!pending) {
-			return res.json({ success: true });
-		}
-
-		if (error || success === false) {
-			clearTimeout(pending.timeout);
-			pendingViewports.delete(requestId);
-			pending.reject(new Error(error || message || "Viewport update failed"));
-			return res.json({ success: true });
-		}
-
-		clearTimeout(pending.timeout);
-		pendingViewports.delete(requestId);
-		pending.resolve({ success: true, message: message || "Viewport updated" });
-
-		res.json({ success: true });
-	} catch (error) {
-		logger.error("Error processing viewport result:", error);
-		res.status(500).json({
-			success: false,
-			error: (error as Error).message,
-		});
-	}
-
-	return undefined;
-});
-
+app.use(browserPresentation.router);
 // Snapshots: save
 app.post("/api/snapshots", (req: Request, res: Response) => {
 	try {
@@ -5135,21 +4791,9 @@ async function closeBrowserOwners(): Promise<void> {
 		clearTimeout(pending.timeout);
 		pending.reject(new Error("Canvas stopped before the pane closed."));
 	}
-	for (const pending of pendingBrowserCaptures.values()) {
-		clearTimeout(pending.timeout);
-		if (pending.collectionTimeout !== null) {
-			clearTimeout(pending.collectionTimeout);
-		}
-		pending.reject(new Error("Canvas stopped before the browser capture completed."));
-	}
-	for (const pending of pendingViewports.values()) {
-		clearTimeout(pending.timeout);
-		pending.reject(new Error("Canvas stopped before the viewport move completed."));
-	}
+	browserPresentation.stop();
 	pendingPaneOpens.clear();
 	pendingPaneCloses.clear();
-	pendingBrowserCaptures.clear();
-	pendingViewports.clear();
 	acceptedSockets.clear();
 	clients.clear();
 	clientIds.clear();
