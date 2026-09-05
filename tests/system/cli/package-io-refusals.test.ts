@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { z } from "zod";
+import path from "node:path";
 import { ExportReceiptSchema } from "../../../src/cli/command-contract/export.ts";
 import { QueryResultSchema } from "../../../src/cli/command-contract/query.ts";
 import { UpdateResultSchema } from "../../../src/cli/command-contract/update.ts";
@@ -10,31 +9,14 @@ import { SnapshotRestoreResultSchema } from "../../../src/cli/commands/snapshot.
 import { createCliHttpDouble } from "./support/cli-http-double.ts";
 import {
 	createPackageCliOwner,
+	decodePackage,
 	packageFailure,
-	type PackageRunResult,
-} from "./support/package-cli.ts";
+	rawExportSchema,
+	unavailableStatusSchema,
+} from "./support/package-result.ts";
 
-function decodePackage<T>(result: PackageRunResult, schema: z.ZodType<T>): T {
-	const diagnostic = packageFailure(result);
-	let decoded: unknown;
-	try {
-		decoded = JSON.parse(result.stdout);
-	} catch (error) {
-		throw new Error(`${diagnostic}\nJSON decode: ${(error as Error).message}`, { cause: error });
-	}
-	const parsed = schema.safeParse(decoded);
-	if (!parsed.success)
-		throw new Error(`${diagnostic}\nschema: ${parsed.error.message}`, { cause: parsed.error });
-	return parsed.data;
-}
+const { join } = path;
 
-const rawExportSchema = z.object({
-	type: z.literal("excalidraw"),
-	version: z.number(),
-	source: z.literal("archboard"),
-	elements: z.array(z.unknown()),
-});
-const unavailableStatusSchema = z.object({ running: z.literal(false) }).passthrough();
 const element = { id: "shape1", type: "rectangle", x: 0, y: 0, width: 100, height: 80 };
 
 async function closedUrl(): Promise<string> {
@@ -107,7 +89,7 @@ describe("package import and replacement", () => {
 			files: 1,
 			mode: "replace",
 		});
-		const write = http.writesSince(before)[0];
+		const [write] = http.writesSince(before);
 		expect(write?.url.pathname, diagnostic).toBe("/api/elements/batch");
 		expect(write?.body, diagnostic).toMatchObject({ mutation: "replace-scene", files: [file] });
 		before = http.requests.length;
@@ -203,7 +185,7 @@ describe("package output and refusals", () => {
 		let diagnostic = packageFailure(doing);
 		expect(doing.status, diagnostic).toBe(1);
 		expect(doing.stdout, diagnostic).toBe("");
-		expect(doing.stderr, diagnostic).toMatch(/Error: doing required/);
+		expect(doing.stderr, diagnostic).toMatch(/Error: doing required/u);
 		const version = await owner.run(
 			[
 				"update",
@@ -228,7 +210,7 @@ describe("package output and refusals", () => {
 		diagnostic = packageFailure(usage);
 		expect(usage.status, diagnostic).toBe(2);
 		expect(usage.stdout, diagnostic).toBe("");
-		expect(usage.stderr, diagnostic).toMatch(/Error:.*\nUsage: archboard delete/s);
+		expect(usage.stderr, diagnostic).toMatch(/Error:.*\nUsage: archboard delete/su);
 		const unavailable = await owner.run(["status"], { url: await closedUrl() });
 		diagnostic = packageFailure(unavailable);
 		expect(unavailable.status, diagnostic).toBe(3);
@@ -261,7 +243,9 @@ describe("package output and refusals", () => {
 		diagnostic = packageFailure(inferred);
 		expect(inferred.status, diagnostic).toBe(0);
 		expect(decodePackage(inferred, ExportReceiptSchema).format, diagnostic).toBe("obsidian");
-		expect(readFileSync(inferredPath, "utf8"), diagnostic).toMatch(/^---\n.*excalidraw-plugin:/s);
+		expect(readFileSync(inferredPath, "utf8"), diagnostic).toMatch(
+			/^---\n.*excalidraw-plugin:/su,
+		);
 	});
 
 	test("keeps format and overwrite refusals local and leaves targets unchanged", async () => {
