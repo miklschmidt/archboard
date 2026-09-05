@@ -1,9 +1,7 @@
 import type { CodexRealtimeBinding } from "./contract.js";
 
 function sameRealtimeBinding(
-	// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Every identity field is a branded primitive string with a readonly brand marker; the rule cannot prove that primitive representation.
 	left: Readonly<CodexRealtimeBinding>,
-	// oxlint-disable-next-line typescript/prefer-readonly-parameter-types -- Every identity field is a branded primitive string with a readonly brand marker; the rule cannot prove that primitive representation.
 	right: Readonly<CodexRealtimeBinding>,
 ): boolean {
 	return (

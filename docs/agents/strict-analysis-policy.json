@@ -3,6 +3,18 @@
 	"tsgolint": "7.0.2001",
 	"catalogueRuleCount": 870,
 	"catalogueSha256": "1211f7b74123ec9311841372bef1a147945a2b8082d83650e6d8bccac8859f3b",
+	"readonlyPrimitiveTypeAllowlist": [
+		{
+			"from": "file",
+			"name": ["ChildId", "ChildEpoch", "ThreadId", "TurnId", "OperationId", "DynamicToolCallId"],
+			"path": "src/shared/codex-workbench-identity/lib/identity.ts"
+		},
+		{
+			"from": "file",
+			"name": "DynamicAuthorityToken",
+			"path": "src/runtime/codex-dynamic-tools/lib/contract.ts"
+		}
+	],
 	"excludedPlugins": {
 		"jest": "Oxlint 1.80.0 collect_ids_referenced_to_import recognizes @jest/globals, vitest, vite-plus/test and @effect/vitest, but not bun:test; unresolved-global detection does not select this repository's imported Bun test bindings. Bun is Jest-compatible; the exclusion is the pinned analyzer's binding-detection limitation.",
 		"vitest": "Oxlint 1.80.0 collect_ids_referenced_to_import recognizes @jest/globals, vitest, vite-plus/test and @effect/vitest, but not bun:test; unresolved-global detection does not select this repository's imported Bun test bindings. Bun is Jest-compatible; the exclusion is the pinned analyzer's binding-detection limitation.",
