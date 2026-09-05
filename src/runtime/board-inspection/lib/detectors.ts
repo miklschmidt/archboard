@@ -1345,7 +1345,8 @@ function incomingReferenceIds(records: readonly DecodedRecord[]): ReadonlySet<st
 		}
 		if (!Array.isArray(raw.boundElements)) continue;
 		for (const entry of raw.boundElements)
-			if (entry && typeof entry === "object" && !Array.isArray(entry)) add((entry as RawRecord)["id"]);
+			if (entry && typeof entry === "object" && !Array.isArray(entry))
+				add((entry as RawRecord)["id"]);
 	}
 	return ids;
 }
@@ -1649,8 +1650,9 @@ function pairSweep<A, B>(
 				counter.pass = pass;
 				return false;
 			}
-			if (b.box.y > a.box.y + a.box.height || b.box.y + b.box.height < a.box.y) return;
+			if (b.box.y > a.box.y + a.box.height || b.box.y + b.box.height < a.box.y) return true;
 			visit(a.value, b.value);
+			return true;
 		},
 		{ work: measured },
 	);

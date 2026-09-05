@@ -148,9 +148,8 @@ describe("bridge validation", () => {
 		expect(JSON.stringify(compareBoards(compared(elements), compared(elements)))).toBe(
 			JSON.stringify(compareBoards(compared(sources), compared(sources))),
 		);
-		const tracked = elements.map((element) => ({
-			...element,
-			customData: element.customData?.archboard
+		const tracked = elements.map((element) => {
+			const customData = element.customData?.archboard
 				? {
 						...element.customData,
 						archboard: {
@@ -159,8 +158,9 @@ describe("bridge validation", () => {
 							updatedAt: "2026-08-29T00:00:01.000Z",
 						},
 					}
-				: element.customData,
-		}));
+				: element.customData;
+			return { ...element, ...(customData === undefined ? {} : { customData }) };
+		});
 		expect(validateBridgeDecorations(tracked).invalid).toEqual([]);
 		expect(
 			inspectBoard(tracked).findings.some((f) => f.reason === "proper-interior-crossing"),
