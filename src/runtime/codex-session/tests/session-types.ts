@@ -60,6 +60,12 @@ type RawCollabAgent = Extract<RawThreadItem, { readonly type: "collabAgentToolCa
 type RawImageGenerationItem = Extract<RawThreadItem, { readonly type: "imageGeneration" }>;
 type RawQueuedSubmission = ResponsePayloads["thread/queue/add"]["queuedSubmission"];
 type SessionImageGenerationItem = Extract<SessionThreadItem, { readonly type: "imageGeneration" }>;
+type SessionMcpToolCallItem = Extract<SessionThreadItem, { readonly type: "mcpToolCall" }>;
+type SessionMcpArgumentsObject = Extract<
+	SessionMcpToolCallItem["arguments"],
+	Readonly<Record<string, unknown>>
+>;
+type SessionMcpNestedArray = Extract<SessionMcpArgumentsObject[string], readonly unknown[]>;
 
 declare const brandedTurn: SessionTurn;
 declare const brandedItem: SessionThreadItem;
@@ -72,6 +78,8 @@ declare const turnResult: SessionTurn;
 declare const threadPage: Result<"threadListPage">;
 declare const citation: NonNullable<SessionAgentMessageItem["memoryCitation"]>;
 declare const collabItem: SessionCollabAgentItem;
+declare const mcpArgumentsObject: SessionMcpArgumentsObject;
+declare const mcpNestedArray: SessionMcpNestedArray;
 
 declare function acceptSessionTurns(value: SessionThread["turns"]): void;
 declare function acceptSessionItems(value: SessionTurn["items"]): void;
@@ -110,6 +118,19 @@ turnResult.items.push(brandedItem);
 threadPage.data.push(threadResult.thread);
 // @ts-expect-error Session citation threadIds are readonly.
 citation.threadIds.push(threadId);
+if (threadResult.thread.status.type === "active") {
+	// @ts-expect-error Session thread active flags are readonly.
+	threadResult.thread.status.activeFlags[0] = "waitingOnApproval";
+}
+// @ts-expect-error Session MCP argument object keys are readonly.
+mcpArgumentsObject["nested"] = [];
+// @ts-expect-error Arrays nested in Session MCP argument objects are readonly.
+mcpNestedArray[0] = null;
+const collabState = collabItem.agentsStates[threadId];
+if (collabState !== undefined) {
+	// @ts-expect-error Session collab state values are recursively readonly.
+	collabState.message = "changed";
+}
 // @ts-expect-error Agent state maps require a branded ThreadId key.
 void collabItem.agentsStates[rawThreadId];
 // @ts-expect-error imageGeneration requires its result field even when optional fields are omitted.
