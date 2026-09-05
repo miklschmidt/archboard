@@ -4,7 +4,9 @@
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 
-import type { CodeBinding } from "@/shared/code-target";
+import type { CodeTargetNoticeAction } from "@/shared/code-target";
+import type { PathFocusOverlay, PathFocusSnapshot } from "@/ui/path-focus";
+import type { SelectionProjection } from "@/ui/selection-inspector";
 import type {
 	BoardIdentity,
 	BoardListing,
@@ -16,47 +18,47 @@ import type {
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
 
+/** Where the take-back operation for one pane's board stands. */
+type TakeBackState =
+	| { kind: "idle" }
+	| { kind: "pending" }
+	| {
+			kind: "failed";
+			/** Plain words for why the board could not be taken back. */
+			message: string;
+	  };
+
 /** One canvas pane: what it reports about itself, and who holds its board. */
 interface ShellPane {
 	status: PaneStatus;
 	/** The board's current lock holder, or null when nobody is writing it. */
 	holder: LockHolder | null;
+	takeBack: TakeBackState;
 }
 
 /** A navigator entry that is not a persisted board: a scratch note. */
 interface ScratchBoardEntry {
 	key: string;
 	identity: BoardIdentity;
+	/** A board with a note but no chosen name, which the navigator asks for. */
+	placeholder: boolean;
 }
 
-/** One row of the inspector's metadata table. */
-interface SelectionMetadataRow {
-	label: string;
-	value: string;
-	/** True for identifiers, paths and times, which are set in the mono face. */
-	technical: boolean;
-}
-
-/**
- * What the inspector shows for the selected element. A projection of the
- * selection, never the element itself: the shell cannot write the board.
- */
-interface SelectionProjection {
-	elementId: string;
-	title: string;
-	elementType: string;
-	metadata: readonly SelectionMetadataRow[];
-	/** The persisted code binding, or null when the element is unbound. */
-	binding: CodeBinding | null;
-}
-
-/** A recovery action a notice offers. Selecting it is reported by id. */
-interface ShellNoticeAction {
+/** A recovery action a notice offers, reported back by id when chosen. */
+interface SelectableNoticeAction {
+	kind: "select";
 	id: string;
 	label: string;
 }
 
-/** A persistent notice: it stays up until its owner clears it. */
+/**
+ * What a notice can offer: a shell action reported by id, or one of the code
+ * target shapes. A `settings` action is reported with the id `settings`; a
+ * `github` action opens its validated URL in a new tab and reports nothing.
+ */
+type ShellNoticeAction = SelectableNoticeAction | CodeTargetNoticeAction;
+
+/** A persistent notice: it stays up until its owner clears it or the person dismisses it. */
 interface ShellNotice {
 	id: string;
 	title: string;
@@ -65,10 +67,21 @@ interface ShellNotice {
 	actions: readonly ShellNoticeAction[];
 }
 
-/** A fullscreen presentation of one pane. */
-interface ShellPresentation {
+/** One pane presented fullscreen. */
+interface LivePresentation {
+	kind: "live";
 	paneId: string;
 }
+
+/** The presented pane has lost its connection; the person is told and can leave. */
+interface RecoveryPresentation {
+	kind: "recovery";
+	paneId: string;
+	message: string;
+}
+
+/** A fullscreen presentation of one pane. */
+type ShellPresentation = LivePresentation | RecoveryPresentation;
 
 /** The settings surfaces the header's menu reaches. */
 type SettingsSurface = "opener" | "agent" | "library";
@@ -79,6 +92,8 @@ interface ShellView {
 	/** The board named in the header: what the active pane is holding. */
 	current: BoardIdentity;
 	boards: BoardListing;
+	/** Why the listing could not be refreshed, or null while it is current. */
+	boardsError: string | null;
 	scratch: readonly ScratchBoardEntry[];
 	/** Lazy previews keyed by board key; null until one has been rendered. */
 	previews: Readonly<Record<string, BoardPreviewSnapshot | null>>;
@@ -87,7 +102,12 @@ interface ShellView {
 	panes: readonly ShellPane[];
 	activePaneId: string;
 	presentation: ShellPresentation | null;
-	selection: SelectionProjection | null;
+	/** The active pane's selection. */
+	selection: SelectionProjection;
+	/** The active pane's path focus. */
+	pathFocus: PathFocusSnapshot;
+	/** Where the focused elements are on their stage, or null while focus is off. */
+	pathFocusOverlay: PathFocusOverlay | null;
 	notices: readonly ShellNotice[];
 }
 
@@ -95,7 +115,10 @@ interface ShellView {
 interface ShellActions {
 	setTheme(theme: ThemeChoice): void;
 	selectBoard(key: string): void;
+	refreshBoards(): void;
 	createBoard(): void;
+	/** Give a placeholder scratch board the name it is missing. */
+	nameBoard(key: string): void;
 	openBoard(): void;
 	saveBoard(): void;
 	clearBoard(): void;
@@ -107,20 +130,24 @@ interface ShellActions {
 	takeBackControl(paneId: string): void;
 	openSettings(surface: SettingsSurface): void;
 	selectNoticeAction(noticeId: string, actionId: string): void;
+	dismissNotice(noticeId: string): void;
 	openCode(elementId: string): void;
 	focusPath(elementId: string): void;
+	exitPathFocus(): void;
 	/** A pane's canvas has mounted and handed over Excalidraw's imperative API. */
 	canvasReady(paneId: string, api: ExcalidrawImperativeAPI): void;
 }
 
 export type {
 	ThemeChoice,
+	TakeBackState,
 	ShellPane,
 	ScratchBoardEntry,
-	SelectionMetadataRow,
-	SelectionProjection,
+	SelectableNoticeAction,
 	ShellNoticeAction,
 	ShellNotice,
+	LivePresentation,
+	RecoveryPresentation,
 	ShellPresentation,
 	SettingsSurface,
 	ShellView,
