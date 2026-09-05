@@ -73,6 +73,13 @@ All authored code has a 500 physical-line limit, counting comments and blank lin
 Existing complexity 60 remains an additional bound; zero warnings and unused
 suppression reporting are mandatory.
 
+One pinned formatter conflict is inapplicable: Oxlint 1.80.0
+`unicorn/number-literal-case` requires uppercase hexadecimal digits, while the
+mandatory Oxfmt 0.65.0 pass deterministically restores lowercase and the lint
+rule has no configuration. Oxfmt therefore owns literal case. Re-audit this
+single disposition on either tool upgrade; `unicorn/numeric-separators-style`
+and every other applicable literal rule remain enforced.
+
 Only exact pinned vendor declaration paths receive the enumerated authored
 spelling/layout/structural exemptions. Type-aware checks are never exempt. The
 previous blanket generated/vendor ignores and script-wide console exemptions are
