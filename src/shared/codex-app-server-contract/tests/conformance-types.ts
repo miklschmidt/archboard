@@ -1,17 +1,18 @@
 import type { CodexIngressConformance, CodexOutputConformance } from "../index.js";
 
-type Equal<Left, Right> =
-	(<Value>() => Value extends Left ? 1 : 2) extends <Value>() => Value extends Right ? 1 : 2
-		? true
-		: false;
+type Equal<Left, Right> = [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;
 type Assert<Value extends true> = Value;
 
 declare const brand: unique symbol;
 type Brand = number & { readonly [brand]: "wire" };
-type OutputFailure = { readonly __schemaOutputMustExtendCodexGeneratedWire: never };
-type InputFailure = { readonly __codexGeneratedWireMustExtendSchemaInput: never };
+interface OutputFailure {
+	readonly __schemaOutputMustExtendCodexGeneratedWire: never;
+}
+interface InputFailure {
+	readonly __codexGeneratedWireMustExtendSchemaInput: never;
+}
 
-export type OptionalObjectValuesAreEquivalent = Assert<
+type OptionalObjectValuesAreEquivalent = Assert<
 	Equal<
 		CodexOutputConformance<
 			{ nested?: { rows: ({ value?: string } | null)[] } },
@@ -21,7 +22,7 @@ export type OptionalObjectValuesAreEquivalent = Assert<
 	>
 >;
 
-export type IngressChecksBothDirections = Assert<
+type IngressChecksBothDirections = Assert<
 	Equal<
 		CodexIngressConformance<
 			{ value?: string },
@@ -32,21 +33,30 @@ export type IngressChecksBothDirections = Assert<
 	>
 >;
 
-export type RequiredKeysRemainRequired = Assert<
+type RequiredKeysRemainRequired = Assert<
 	Equal<CodexOutputConformance<{ value: string }, { value?: string }>, OutputFailure>
 >;
 
-export type RequiredUndefinedRemainsObservable = Assert<
+type RequiredUndefinedRemainsObservable = Assert<
 	Equal<CodexOutputConformance<{ value: string }, { value: string | undefined }>, OutputFailure>
 >;
 
-export type NarrowSchemaInputStillFails = Assert<
+type NarrowSchemaInputStillFails = Assert<
 	Equal<
 		CodexIngressConformance<{ value?: string }, { value: string }, { value: string }>,
 		InputFailure
 	>
 >;
 
-export type BrandsRemainObservable = Assert<
+type BrandsRemainObservable = Assert<
 	Equal<CodexOutputConformance<{ value: Brand }, { value: number }>, OutputFailure>
 >;
+
+export {
+	type OptionalObjectValuesAreEquivalent,
+	type IngressChecksBothDirections,
+	type RequiredKeysRemainRequired,
+	type RequiredUndefinedRemainsObservable,
+	type NarrowSchemaInputStillFails,
+	type BrandsRemainObservable,
+};
