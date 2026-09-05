@@ -1,10 +1,10 @@
 ---
 id: TASK-143.02
 title: Build a browser-native Codex realtime module
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-30 11:44'
-updated_date: '2026-09-03 22:05'
+updated_date: '2026-09-05 03:45'
 labels: []
 dependencies:
   - TASK-143.08.05
@@ -38,3 +38,9 @@ Integration milestone for a framework-neutral `src/ui/codex-realtime` public con
 <!-- SECTION:NOTES:BEGIN -->
 Finalization is blocked until TASK-143.04.07 supplies controlled-browser voice evidence and TASK-143.04.09 supplies clean-process real-voice smoke evidence for acceptance criterion 3.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Closed at the user’s explicit request after integration of the smoke worktree and completion of the implementation leaves. Validation at 75a1cd22: 2565 module tests, 13 production/system tests, shell/text/controlled-voice browser owners, lint, format, TypeScript and 124 repository checks passed. Current runbook verification additionally passed 147 focused module tests and both workbench browser owners. Real text delivery and SDP negotiation were observed. Full real-audio acceptance remains unverified because the configured default microphone was absent; no unchecked aggregate criterion is relabelled as a proven pass. TASK-150 separately owns strict-lint restoration and the fresh UI rebuild.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,10 +1,10 @@
 ---
 id: TASK-143.03
 title: 'Build the text, tools, queue, and approvals workbench UI'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-08-30 11:44'
-updated_date: '2026-09-04 09:50'
+updated_date: '2026-09-05 03:45'
 labels: []
 dependencies:
   - TASK-143.08.05
@@ -50,3 +50,9 @@ No repository-policy allowlist was extended. The assistant-ui audit (tests/syste
 
 Verification: bun install clean and idempotent; bun run type-check both projects 0; bun run lint 0; bun run fmt:check 0; bun test --isolate src/ui 293 pass / 0 fail / 4548 assertions; bun run test:repository 122 pass / 0 fail / 1060 assertions; bun run test:modules 1968 pass / 0 fail / 18635 assertions; bun run test:system (serial) 324 pass / 0 fail / 4904 assertions, confirming the preload and global surface are unchanged for non-UI owners. Commits: 2357e9cb (build), 6ef30009 (docs).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Closed at the user’s explicit request after integration of the smoke worktree and completion of the implementation leaves. Validation at 75a1cd22: 2565 module tests, 13 production/system tests, shell/text/controlled-voice browser owners, lint, format, TypeScript and 124 repository checks passed. Current runbook verification additionally passed 147 focused module tests and both workbench browser owners. Real text delivery and SDP negotiation were observed. Full real-audio acceptance remains unverified because the configured default microphone was absent; no unchecked aggregate criterion is relabelled as a proven pass. TASK-150 separately owns strict-lint restoration and the fresh UI rebuild.
+<!-- SECTION:FINAL_SUMMARY:END -->
