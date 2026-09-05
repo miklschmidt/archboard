@@ -22,7 +22,7 @@ describe("internal code-target URLs", () => {
 		"https://example.test/api/code-targets/open?board=b&element=e",
 		"api/code-targets/open?board=b&element=e",
 		"/api/code-targets/open?board=b&element=e#fragment",
-		"/api\\code-targets\\open?board=b&element=e",
+		String.raw`/api\code-targets\open?board=b&element=e`,
 		"/api/code-targets/open?board=b&element=e&path=/tmp/file",
 		"/api/code-targets/open?board=b&board=c&element=e",
 		"/api/code-targets/open?board=&element=e",
@@ -37,7 +37,7 @@ describe("opener selection", () => {
 	test("shares the absolute-or-bare executable rule with browser validation", () => {
 		expect(isAbsoluteOrBareOpenerExecutable("code")).toBeTrue();
 		expect(isAbsoluteOrBareOpenerExecutable("/opt/editor/bin/editor")).toBeTrue();
-		expect(isAbsoluteOrBareOpenerExecutable("C:\\Editor\\editor.exe")).toBeTrue();
+		expect(isAbsoluteOrBareOpenerExecutable(String.raw`C:\Editor\editor.exe`)).toBeTrue();
 		expect(isAbsoluteOrBareOpenerExecutable("./editor")).toBeFalse();
 		expect(isAbsoluteOrBareOpenerExecutable("bin/editor")).toBeFalse();
 	});
@@ -60,7 +60,7 @@ describe("opener selection", () => {
 		{ version: 1, kind: "custom", executable: "editor", argv: ["{path}", "{path}"] },
 		{ version: 1, kind: "custom", executable: "editor\0bad", argv: ["{path}"] },
 		{ version: 1, kind: "platform", extra: true },
-	])("rejects an unsafe or non-strict selection", (selection) => {
+	])("rejects an unsafe or non-strict selection", (selection: unknown) => {
 		expect(OpenerSelectionSchema.safeParse(selection).success).toBeFalse();
 	});
 });
