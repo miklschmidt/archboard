@@ -1,4 +1,5 @@
 import type {
+	DynamicAuthorityToken,
 	DynamicContextPort,
 	DynamicOperationIdPort,
 	DynamicThreadAuthorityPort,
@@ -8,6 +9,16 @@ import type {
 
 type Equal<Left, Right> = [Left] extends [Right] ? ([Right] extends [Left] ? true : false) : false;
 type Assert<Value extends true> = Value;
+
+type DynamicAuthorityTokenIsNominalString = Assert<
+	Equal<
+		[
+			DynamicAuthorityToken extends string ? true : false,
+			string extends DynamicAuthorityToken ? true : false,
+		],
+		[true, false]
+	>
+>;
 
 type ApprovalPortKeys = Assert<
 	Equal<
@@ -66,6 +77,7 @@ type NoAlternateOperationIssuer = Assert<
 >;
 
 export const dynamicPortContractFixture = Object.freeze({
+	authorityToken: true satisfies DynamicAuthorityTokenIsNominalString,
 	approval: true satisfies ApprovalPortKeys,
 	threadAuthority: true satisfies ThreadAuthorityPortKeys,
 	context: true satisfies ContextPortKeys,

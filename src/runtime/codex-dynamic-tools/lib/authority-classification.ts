@@ -11,6 +11,19 @@ import type {
 import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
 import { isAllowedSource } from "./classification.js";
 
+type AuthorityFacts = Readonly<
+	Omit<DynamicTargetAuthority, "authority" | "role" | "linkClassification" | "threadLinkTarget">
+>;
+type CallerFacts = Readonly<
+	Omit<DynamicCallerAuthority, "linkClassification" | "threadLinkTarget">
+>;
+type LinkEvidence = Readonly<Omit<ThreadLinkClassification, "thread">>;
+type AuthorityShape = Readonly<
+	Omit<DynamicCallerAuthority | DynamicTargetAuthority, "linkClassification" | "threadLinkTarget">
+> & {
+	readonly threadLinkTarget: Readonly<Pick<DynamicTargetAuthority["threadLinkTarget"], "threadId">>;
+};
+
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -23,12 +36,13 @@ function dynamicError(
 	return new CodexDynamicToolsError(code, message, cause);
 }
 
-
 function sameProof(
 	left: DynamicCallerAuthority["provenance"],
 	right: DynamicCallerAuthority["provenance"],
 ): boolean {
-	if (left === null || right === null) {return left === right;}
+	if (left === null || right === null) {
+		return left === right;
+	}
 	try {
 		return (
 			left.manifestRevision === right.manifestRevision &&
@@ -70,41 +84,46 @@ function sameSource(
 }
 
 function linkEvidenceMatches(
-	record: DynamicCallerAuthority | DynamicTargetAuthority,
-	link: ThreadLinkClassification,
+	record: AuthorityFacts,
+	link: LinkEvidence,
 	allowInspectOnlyEpoch: boolean,
 ): void {
-	if (link.link.threadId !== record.threadId)
-		{throw dynamicError("unknown_provenance", "The live thread-link proof names another thread.");}
+	if (link.link.threadId !== record.threadId) {
+		throw dynamicError("unknown_provenance", "The live thread-link proof names another thread.");
+	}
 	if (
 		link.observation.loaded !== record.loaded ||
 		link.observation.canAcceptDirectInput !== record.directInput ||
 		link.observation.status !== record.status ||
 		!sameSource(link.observation.source, record.source)
-	)
-		{throw dynamicError(
+	) {
+		throw dynamicError(
 			"unknown_provenance",
 			"The live thread-link observation changed during dispatch.",
-		);}
-	if (!sameProof(link.proof, record.provenance))
-		{throw dynamicError(
+		);
+	}
+	if (!sameProof(link.proof, record.provenance)) {
+		throw dynamicError(
 			"unknown_provenance",
 			"The live thread-link proof is not the durable proof supplied by the authority.",
-		);}
+		);
+	}
 	// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
-	if (link.link.state !== "executable" && link.link.state !== "inspect_only")
-		{throw dynamicError(
+	if (link.link.state !== "executable" && link.link.state !== "inspect_only") {
+		throw dynamicError(
 			"unknown_provenance",
 			"The live thread-link state is not executable or inspect-only.",
-		);}
+		);
+	}
 	if (
 		link.link.state === "executable" &&
 		(record.epochState !== "current" || link.proof === null || record.provenance === null)
-	)
-		{throw dynamicError(
+	) {
+		throw dynamicError(
 			"unknown_provenance",
 			"An executable thread-link is missing current durable provenance.",
-		);}
+		);
+	}
 	if (
 		link.link.state === "executable" &&
 		(link.link.childId !== record.childId ||
@@ -115,56 +134,62 @@ function linkEvidenceMatches(
 			!link.link.loaded ||
 			// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 			!link.link.canAcceptDirectInput)
-	)
-		{throw dynamicError(
+	) {
+		throw dynamicError(
 			"unknown_provenance",
 			"The executable thread-link identity changed during dispatch.",
-		);}
+		);
+	}
 	if (
 		record.epochState === "current" &&
-		(
-			record.childId === null ||
+		(record.childId === null ||
 			record.epoch === null ||
 			link.currentEpoch === null ||
 			link.currentEpoch.childId !== record.childId ||
-			link.currentEpoch.epoch !== record.epoch
-		)
-	)
-		{throw dynamicError("stale_child", "The target is no longer in the current child epoch.");}
-	if (record.epochState === "prior" && !allowInspectOnlyEpoch)
-		{throw dynamicError("prior_epoch", "The target belongs to a prior child epoch.");}
-	if (record.epochState === "unknown" && !allowInspectOnlyEpoch)
-		{throw dynamicError("unknown_provenance", "The target epoch ownership is unproven.");}
+			link.currentEpoch.epoch !== record.epoch)
+	) {
+		throw dynamicError("stale_child", "The target is no longer in the current child epoch.");
+	}
+	if (record.epochState === "prior" && !allowInspectOnlyEpoch) {
+		throw dynamicError("prior_epoch", "The target belongs to a prior child epoch.");
+	}
+	if (record.epochState === "unknown" && !allowInspectOnlyEpoch) {
+		throw dynamicError("unknown_provenance", "The target epoch ownership is unproven.");
+	}
 }
 
-function assertCallerState(caller: DynamicCallerAuthority): void {
-	if (caller.epochState !== "current")
-		{throw caller.epochState === "prior"
+function assertCallerState(caller: CallerFacts): void {
+	if (caller.epochState !== "current") {
+		throw caller.epochState === "prior"
 			? dynamicError("prior_epoch", "The dynamic caller belongs to a prior epoch.")
-			: dynamicError("stale_child", "The dynamic caller has no current child epoch.");}
-	if (caller.ownership !== "created")
-		{throw dynamicError("unknown_provenance", "The dynamic caller was not created by Archboard.");}
-	if (!isAllowedSource(caller.source))
-		{throw dynamicError(
+			: dynamicError("stale_child", "The dynamic caller has no current child epoch.");
+	}
+	if (caller.ownership !== "created") {
+		throw dynamicError("unknown_provenance", "The dynamic caller was not created by Archboard.");
+	}
+	if (!isAllowedSource(caller.source)) {
+		throw dynamicError(
 			"unknown_provenance",
 			"The dynamic caller source is not executable provenance.",
-		);}
-	if (!caller.loaded || caller.status === "notLoaded")
-		{throw dynamicError("not_loaded", "The dynamic caller is not loaded.");}
-	if (caller.directInput !== true)
-		{throw dynamicError("not_controllable", "The dynamic caller cannot accept direct input.");}
-	if (caller.status !== "active")
-		{throw caller.status === "systemError"
+		);
+	}
+	if (!caller.loaded || caller.status === "notLoaded") {
+		throw dynamicError("not_loaded", "The dynamic caller is not loaded.");
+	}
+	if (caller.directInput !== true) {
+		throw dynamicError("not_controllable", "The dynamic caller cannot accept direct input.");
+	}
+	if (caller.status !== "active") {
+		throw caller.status === "systemError"
 			? dynamicError("system_error", "The dynamic caller is in a system error state.")
-			: dynamicError("invalid_call", "The dynamic caller is not executing an active turn.");}
-	if (caller.provenance === null)
-		{throw dynamicError("unknown_provenance", "The dynamic caller has no durable execution proof.");}
+			: dynamicError("invalid_call", "The dynamic caller is not executing an active turn.");
+	}
+	if (caller.provenance === null) {
+		throw dynamicError("unknown_provenance", "The dynamic caller has no durable execution proof.");
+	}
 }
 
-function assertAuthorityShape(
-	authority: DynamicCallerAuthority | DynamicTargetAuthority,
-	role: "caller" | "target",
-): void {
+function assertAuthorityShape(authority: AuthorityShape, role: "caller" | "target"): void {
 	if (
 		authority.role !== role ||
 		typeof authority.authority !== "string" ||
@@ -194,34 +219,44 @@ function assertAuthorityShape(
 			authority.status !== "active") ||
 		!isRecord(authority.threadLinkTarget) ||
 		authority.threadLinkTarget.threadId !== authority.threadId
-	)
-		{throw dynamicError("invalid_call", `The ${role} authority returned an invalid identity shape.`);}
+	) {
+		throw dynamicError("invalid_call", `The ${role} authority returned an invalid identity shape.`);
+	}
 }
 
 function errorCode(error: unknown): DynamicRefusalReason | undefined {
 	if (isRecord(error) && typeof error["code"] === "string") {
-		const {code} = error;
+		const { code } = error;
 		if (
-			code === "stale_child" || code === "prior_epoch" || code === "unknown_provenance" ||
-			code === "not_loaded" || code === "not_controllable" || code === "system_error"
-		) {return code;}
+			code === "stale_child" ||
+			code === "prior_epoch" ||
+			code === "unknown_provenance" ||
+			code === "not_loaded" ||
+			code === "not_controllable" ||
+			code === "system_error"
+		) {
+			return code;
+		}
 	}
 	return undefined;
 }
 
 function authorityError(error: unknown, message: string): CodexDynamicToolsError {
 	const code = errorCode(error);
-	if (code === "stale_child" || code === "prior_epoch" || code === "unknown_provenance")
-		{return dynamicError(code, message, error);}
-	if (code === "not_loaded" || code === "not_controllable" || code === "system_error")
-		{return dynamicError(code, message, error);}
+	if (code === "stale_child" || code === "prior_epoch" || code === "unknown_provenance") {
+		return dynamicError(code, message, error);
+	}
+	if (code === "not_loaded" || code === "not_controllable" || code === "system_error") {
+		return dynamicError(code, message, error);
+	}
 	return dynamicError("unknown_provenance", message, error);
 }
 
 function lifecycleError(error: unknown, message: string): CodexDynamicToolsError {
 	const code = errorCode(error);
-	if (code === "stale_child" || code === "prior_epoch" || code === "unknown_provenance")
-		{return dynamicError(code, message, error);}
+	if (code === "stale_child" || code === "prior_epoch" || code === "unknown_provenance") {
+		return dynamicError(code, message, error);
+	}
 	return dynamicError("invalid_call", message, error);
 }
 
@@ -230,7 +265,9 @@ async function linkFor(
 	threadLink: Pick<CodexDynamicToolsOptions["threadLink"], "classify">,
 	useEmbedded = true,
 ): Promise<ThreadLinkClassification> {
-	if (useEmbedded && record.linkClassification !== undefined) {return record.linkClassification;}
+	if (useEmbedded && record.linkClassification !== undefined) {
+		return record.linkClassification;
+	}
 	try {
 		return await threadLink.classify(record.threadLinkTarget);
 	} catch (error) {
@@ -254,8 +291,9 @@ async function resolveCaller(
 		caller.turnId.length === 0 ||
 		typeof caller.wireTurnId !== "string" ||
 		caller.wireTurnId.length === 0
-	)
-		{throw dynamicError("invalid_call", "The caller authority returned an invalid turn identity.");}
+	) {
+		throw dynamicError("invalid_call", "The caller authority returned an invalid turn identity.");
+	}
 	if (
 		// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 		caller.role !== "caller" ||
@@ -267,14 +305,16 @@ async function resolveCaller(
 		caller.wireTurnId !== request.params.turnId ||
 		caller.childId !== request.child ||
 		caller.epoch !== request.epoch
-	)
-		{throw dynamicError("invalid_call", "The logical caller is not the executing dynamic call.");}
+	) {
+		throw dynamicError("invalid_call", "The logical caller is not the executing dynamic call.");
+	}
 	assertCallerState(caller);
 	const link = await linkFor(caller, options.threadLink);
 	linkEvidenceMatches(caller, link, false);
 	// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
-	if (link.link.state !== "executable" || !link.link.canAcceptDirectInput)
-		{throw dynamicError("not_controllable", "The dynamic caller thread-link is not executable.");}
+	if (link.link.state !== "executable" || !link.link.canAcceptDirectInput) {
+		throw dynamicError("not_controllable", "The dynamic caller thread-link is not executable.");
+	}
 	return Object.freeze({ ...caller, linkClassification: link });
 }
 
@@ -300,17 +340,20 @@ async function resolveTarget(
 		target.role !== "target" ||
 		typeof target.wireThreadId !== "string" ||
 		target.wireThreadId.length === 0
-	)
-		{throw dynamicError("invalid_call", "The target authority returned an invalid thread identity.");}
-	if (target.wireThreadId !== threadId && target.threadId !== threadId)
-		{throw dynamicError("invalid_call", "The target authority returned a different ThreadId.");}
+	) {
+		throw dynamicError("invalid_call", "The target authority returned an invalid thread identity.");
+	}
+	if (target.wireThreadId !== threadId && target.threadId !== threadId) {
+		throw dynamicError("invalid_call", "The target authority returned a different ThreadId.");
+	}
 	const link = await linkFor(target, options.threadLink);
 	linkEvidenceMatches(target, link, true);
 	if (
 		target.epochState === "current" &&
 		(target.childId !== caller.childId || target.epoch !== caller.epoch)
-	)
-		{throw dynamicError("stale_child", "The target is not in the caller's current child epoch.");}
+	) {
+		throw dynamicError("stale_child", "The target is not in the caller's current child epoch.");
+	}
 	return Object.freeze({ ...target, linkClassification: link });
 }
 
@@ -337,10 +380,12 @@ async function revalidateCaller(
 		fresh.turnId.length === 0 ||
 		typeof fresh.wireTurnId !== "string" ||
 		fresh.wireTurnId.length === 0
-	)
-		{throw dynamicError("invalid_call", "The caller authority returned an invalid turn identity.");}
-	if (fresh.authority !== caller.authority)
-		{throw dynamicError("invalid_call", "The caller authority token changed during revalidation.");}
+	) {
+		throw dynamicError("invalid_call", "The caller authority returned an invalid turn identity.");
+	}
+	if (fresh.authority !== caller.authority) {
+		throw dynamicError("invalid_call", "The caller authority token changed during revalidation.");
+	}
 	if (
 		// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 		fresh.role !== "caller" ||
@@ -352,14 +397,16 @@ async function revalidateCaller(
 		fresh.epoch !== caller.epoch ||
 		// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 		!fresh.executing
-	)
-		{throw dynamicError("invalid_call", "The logical caller changed during revalidation.");}
+	) {
+		throw dynamicError("invalid_call", "The logical caller changed during revalidation.");
+	}
 	assertCallerState(fresh);
 	const link = await linkFor(fresh, options.threadLink, false);
 	linkEvidenceMatches(fresh, link, false);
 	// oxlint-disable-next-line typescript/no-unnecessary-condition -- The production host adapter freezes executable link facts, but this runtime refusal protects JavaScript port implementations before effects.
-	if (link.link.state !== "executable" || !link.link.canAcceptDirectInput)
-		{throw dynamicError("not_controllable", "The caller thread-link is no longer executable.");}
+	if (link.link.state !== "executable" || !link.link.canAcceptDirectInput) {
+		throw dynamicError("not_controllable", "The caller thread-link is no longer executable.");
+	}
 	return Object.freeze({ ...fresh, linkClassification: link });
 }
 
@@ -374,15 +421,17 @@ async function revalidateTarget(
 		throw authorityError(error, "The target authority became stale.");
 	}
 	assertAuthorityShape(fresh, "target");
-	if (fresh.authority !== target.authority)
-		{throw dynamicError("invalid_call", "The target authority token changed during revalidation.");}
+	if (fresh.authority !== target.authority) {
+		throw dynamicError("invalid_call", "The target authority token changed during revalidation.");
+	}
 	if (
 		fresh.threadId !== target.threadId ||
 		fresh.wireThreadId !== target.wireThreadId ||
 		// oxlint-disable-next-line typescript/no-unnecessary-condition -- Defensive validation protects the runtime boundary when an external JavaScript/host threadAuthority port violates its TypeScript contract.
 		fresh.role !== "target"
-	)
-		{throw dynamicError("invalid_call", "The target identity changed during revalidation.");}
+	) {
+		throw dynamicError("invalid_call", "The target identity changed during revalidation.");
+	}
 	const link = await linkFor(fresh, options.threadLink, false);
 	linkEvidenceMatches(fresh, link, false);
 	return Object.freeze({ ...fresh, linkClassification: link });

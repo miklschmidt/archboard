@@ -49,6 +49,10 @@ type ValidatedDynamicCall = {
 	};
 }[DynamicToolName];
 
+type CatalogueOptions = {
+	readonly [Key in keyof Pick<CodexDynamicToolsOptions, "catalogue">]?: unknown;
+};
+
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -115,10 +119,7 @@ function correlatedCall(name: DynamicToolName, rawArguments: unknown): Validated
  * @param options Reviewed dynamic-tool catalogue options.
  * @returns The correlated tool name and validated arguments.
  */
-function validateDynamicCall(
-	request: unknown,
-	options: Readonly<Pick<CodexDynamicToolsOptions, "catalogue">>,
-): ValidatedDynamicCall {
+function validateDynamicCall(request: unknown, options: CatalogueOptions): ValidatedDynamicCall {
 	try {
 		exactCatalogue(options.catalogue);
 	} catch (error) {
