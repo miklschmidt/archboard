@@ -36,7 +36,7 @@ export type ThemeSnapshot = {
 	persistenceState: string;
 	paneIdentity: string;
 	legacyVaultLineCount: number;
-	boardLeftAligned: boolean;
+	headerSectionsAligned: boolean;
 	tokens: string[];
 	weightTokens: string[];
 	wordmarkTracking: string;

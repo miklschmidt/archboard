@@ -16,6 +16,7 @@ import {
 	type BrowserWorkbenchCapabilities,
 	type BrowserWorkbenchCommandResult,
 	type BrowserWorkbenchCommandTarget,
+	type BrowserWorkbenchCommandIntent,
 	type BrowserWorkbenchGatewayMessage,
 	type BrowserWorkbenchSnapshotMessage,
 	type BrowserWorkbenchSocket,
@@ -54,6 +55,11 @@ const THREAD_LINK_COMMANDS = new Set<BrowserCommandName>([
 	"threadLinkAttach",
 	"threadLinkRelink",
 ]);
+// These callers already hold authority bound to a request or realtime session.
+const EXACT_AUTHORITY_COMMANDS = new Set<BrowserCommandName>([
+	"dynamicApprovalRespond",
+	"realtimeStart",
+]);
 const QUEUE_COMMANDS = new Set<BrowserCommandName>([
 	"queueAdd",
 	"queueUpdate",
@@ -88,6 +94,7 @@ interface SocketRun {
 	sequence: number | null;
 	refreshPromise: Promise<BrowserWorkbenchSnapshotMessage> | null;
 	closed: boolean;
+	intentRevision: number;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -312,7 +319,7 @@ function approvalMatchesTarget(
 
 function hasUsableApproval(
 	active: SocketRun,
-	targetLease: BrowserCommandLease | null,
+	targetLease: Pick<BrowserCommandLease, "childId" | "epoch"> | null,
 	now: () => number,
 ): boolean {
 	const snapshot = active.snapshot;
@@ -403,6 +410,12 @@ export function createBrowserWorkbenchTransport(
 	let currentLease: BrowserCommandLease | null = null;
 	let ownerState: BrowserWorkbenchState = initialState();
 	let disposed = false;
+	let commandTail: Promise<void> = Promise.resolve();
+	let preparingCommand = false;
+	const capturedIntents = new WeakMap<
+		BrowserWorkbenchCommandIntent,
+		{ run: SocketRun; revision: number }
+	>();
 	const listeners = new Set<() => void>();
 
 	const notify = (): void => {
@@ -416,6 +429,16 @@ export function createBrowserWorkbenchTransport(
 	};
 
 	const setState = (next: BrowserWorkbenchState): void => {
+		// Even a recovery back to the same link cannot revive an action captured
+		// before readiness or ownership changed.
+		if (
+			activeRun !== null &&
+			(next.kind !== "readiness" ||
+				ownerState.kind !== "readiness" ||
+				next.state !== ownerState.state ||
+				!sameCapturedLink(next.snapshot.threadLink, ownerState.snapshot.threadLink))
+		)
+			activeRun.intentRevision += 1;
 		ownerState = Object.freeze(next);
 		notify();
 	};
@@ -801,6 +824,7 @@ export function createBrowserWorkbenchTransport(
 			sequence: null,
 			refreshPromise: null,
 			closed: false,
+			intentRevision: 0,
 		};
 		return active;
 	};
@@ -850,15 +874,21 @@ export function createBrowserWorkbenchTransport(
 	const leaseUsable = (): boolean =>
 		currentLease?.state === "active" && currentLease.expiresAtMs > now();
 
-	const commandSupported = (active: SocketRun, command: BrowserCommandName): boolean => {
-		if (!accountReady(active) || !leaseUsable()) return false;
+	const commandSupported = (
+		active: SocketRun,
+		command: BrowserCommandName,
+		prepare = false,
+	): boolean => {
+		if (!accountReady(active) || (!prepare && !leaseUsable())) return false;
+		if (prepare && EXACT_AUTHORITY_COMMANDS.has(command)) return false;
 		if (ACCOUNT_COMMANDS.has(command)) return true;
 		if (active.snapshot?.readiness.state !== "thread_capable") return false;
 		if (THREAD_LINK_COMMANDS.has(command)) return true;
 		if (command === "dynamicApprovalRespond")
 			return hasUsableDynamicApproval(active, currentLease, now);
 		if (active.snapshot.threadLink.state !== "executable") return false;
-		if (command === "approvalRespond") return hasUsableApproval(active, currentLease, now);
+		if (command === "approvalRespond")
+			return hasUsableApproval(active, prepare ? active.snapshot.threadLink : currentLease, now);
 		if (QUEUE_COMMANDS.has(command)) return active.snapshot.queue.status !== "unavailable";
 		return true;
 	};
@@ -1061,7 +1091,6 @@ export function createBrowserWorkbenchTransport(
 		const canCommand =
 			connected &&
 			ownerState.kind === "readiness" &&
-			leaseUsable() &&
 			readiness === "thread_capable" &&
 			active?.snapshot?.threadLink.state === "executable";
 		return Object.freeze({
@@ -1073,9 +1102,10 @@ export function createBrowserWorkbenchTransport(
 			canReleaseLease,
 			canCommand,
 			canThreadCommands: canCommand,
-			canRealtime: canCommand,
+			canRealtime: canCommand && leaseUsable(),
 			supportsCommand: (commandName: BrowserCommandName): boolean =>
-				active !== null && commandSupported(active, commandName),
+				active !== null &&
+				commandSupported(active, commandName, !EXACT_AUTHORITY_COMMANDS.has(commandName)),
 		});
 	};
 
@@ -1305,6 +1335,104 @@ export function createBrowserWorkbenchTransport(
 		return result;
 	};
 
+	const captureCommandIntent = (): BrowserWorkbenchCommandIntent => {
+		const active = activeRun;
+		if (active === null || !accountReady(active) || active.snapshot === null)
+			throw transportFailure("not_ready", "The workbench is not ready to capture an action.");
+		const intent = Object.freeze({
+			capturedThreadLink: active.snapshot.threadLink,
+			authority: leaseUsable() ? captureTarget(active) : null,
+		});
+		capturedIntents.set(intent, { run: active, revision: active.intentRevision });
+		return intent;
+	};
+
+	const executeCommand = async (
+		draft: BrowserCommandDraft,
+		requestedIntent?: BrowserWorkbenchCommandIntent,
+	): Promise<BrowserWorkbenchCommandResult> => {
+		if (draft.command === "queueAdd" && requestedIntent === undefined)
+			throw transportFailure(
+				"link_required",
+				"A queued submission must name the conversation it was composed against.",
+			);
+		const intent = requestedIntent ?? captureCommandIntent();
+		const captured = capturedIntents.get(intent);
+		// Clone at activation: edits to a form or reordered array during the claim
+		// cannot change the operation the person requested.
+		const requested = structuredClone(draft);
+		const validateIntent = (): SocketRun => {
+			if (
+				captured === undefined ||
+				!isCurrent(captured.run) ||
+				captured.run.intentRevision !== captured.revision ||
+				captured.run.snapshot === null ||
+				!sameCapturedLink(intent.capturedThreadLink, captured.run.snapshot.threadLink)
+			)
+				throw transportFailure(
+					"link_changed",
+					"The workbench changed since this action was captured. Review the current conversation and act again.",
+				);
+			if (!commandSupported(captured.run, requested.command, true))
+				throw transportFailure("not_ready", "The workbench is not ready for this action.");
+			return captured.run;
+		};
+		validateIntent();
+		const execute = async (): Promise<BrowserWorkbenchCommandResult> => {
+			const active = validateIntent();
+			if (
+				[...active.pending.values()].some(
+					(pending) => pending.kind === "command" || pending.kind === "lease",
+				)
+			)
+				throw transportFailure(
+					"not_ready",
+					"Another browser command is still pending. Wait for it to finish.",
+				);
+			preparingCommand = true;
+			try {
+				let acquired: BrowserCommandLease;
+				try {
+					acquired = await claimLease();
+				} catch (error) {
+					// Authority may be uncertain, but the requested action was never sent.
+					throw transportFailure(
+						error instanceof BrowserWorkbenchTransportError ? error.code : "gateway_error",
+						"The action was not sent because command authority could not be acquired.",
+						undefined,
+						{ outcome: "not_delivered", cause: error },
+					);
+				}
+				validateIntent();
+				if (
+					intent.authority !== null &&
+					(intent.authority.childId !== acquired.childId ||
+						intent.authority.epoch !== acquired.epoch ||
+						intent.authority.paneId !== acquired.paneId)
+				)
+					throw transportFailure(
+						"link_changed",
+						"The command owner changed while acquiring authority. Review the current conversation and act again.",
+					);
+				const target = captureTarget(active);
+				if (!sameLeaseTarget(acquired, target))
+					throw transportFailure(
+						"lease_transferred",
+						"Command authority changed before the action was sent.",
+					);
+				return await command(requested, target);
+			} finally {
+				preparingCommand = false;
+			}
+		};
+		const result = commandTail.then(execute);
+		commandTail = result.then(
+			() => undefined,
+			() => undefined,
+		);
+		return result;
+	};
+
 	const captureCommandTarget = (): BrowserWorkbenchCommandTarget => {
 		const active = activeRun;
 		if (active === null)
@@ -1369,17 +1497,32 @@ export function createBrowserWorkbenchTransport(
 		});
 	};
 
+	// Exact-authority owners must not replace the lease between a prepared
+	// action's acquisition and its one dispatch.
+	const withAvailableAuthority = <T>(operation: () => Promise<T>): Promise<T> =>
+		preparingCommand
+			? Promise.reject(
+					transportFailure(
+						"not_ready",
+						"Another browser command is being prepared. Wait for it to finish.",
+					),
+				)
+			: operation();
+
 	return Object.freeze({
 		attach,
 		detach,
 		close,
 		refresh,
 		setMediaReady,
-		claimLease,
-		renewLease,
-		releaseLease,
+		claimLease: () => withAvailableAuthority(claimLease),
+		renewLease: () => withAvailableAuthority(renewLease),
+		releaseLease: () => withAvailableAuthority(releaseLease),
 		accountRead,
-		command,
+		command: (draft: BrowserCommandDraft, target?: BrowserWorkbenchCommandTarget) =>
+			withAvailableAuthority(() => command(draft, target)),
+		executeCommand,
+		captureCommandIntent,
 		captureCommandTarget,
 		snapshot: () => activeRun?.snapshot ?? null,
 		sequence: () => activeRun?.sequence ?? null,

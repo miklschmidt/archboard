@@ -21,20 +21,20 @@ type HostRecoveryIntent = (typeof HOST_INTENTS)[number];
 
 const RECOVERY_TEXT = {
 	refresh_snapshot: {
-		label: "Refresh workbench state",
-		description: "Ask the workbench for a fresh authoritative snapshot before acting again.",
+		label: "Refresh connection",
+		description: "Refresh the connection, then try again.",
 	},
 	read_account: {
-		label: "Re-read the account",
-		description: "Ask Codex for the current account facts again.",
+		label: "Check sign-in",
+		description: "Check whether Codex is signed in.",
 	},
 	refresh_inventory: {
-		label: "Refresh the thread list",
-		description: "Discover the persisted and current loaded thread lists again.",
+		label: "Refresh conversations",
+		description: "Load the available conversations.",
 	},
 	start_workbench: {
-		label: "Start the Codex workbench",
-		description: "Start the owned Codex app server through its guarded lifecycle, then retry.",
+		label: "Start Codex",
+		description: "Start Codex, then try again.",
 	},
 	choose_binary: {
 		label: "Correct the Codex binary",
@@ -75,13 +75,13 @@ const ARM_LABELS = {
 	storage_mismatch: "The dedicated Codex storage was refused",
 	reconnecting: "Reconnecting to Codex",
 	stale_snapshot: "The workbench snapshot is stale",
-	initialized: "Codex is initialized; account facts are unknown",
-	login_capable: "Codex can sign in",
+	initialized: "Checking sign-in",
+	login_capable: "Sign-in available",
 	signed_out: "Codex is signed out",
 	login_pending: "A Codex sign-in is in progress",
 	login_failed: "The last Codex sign-in failed",
-	account_ready: "Signed in; the workhorse is not thread-capable yet",
-	thread_capable: "Ready to create or attach a thread link",
+	account_ready: "Preparing the agent",
+	thread_capable: "Ready to connect",
 } as const satisfies Record<ThreadLinkReadinessArm, string>;
 
 const ARM_TONES = {
@@ -137,7 +137,7 @@ export function threadLinkRecovery(
 			label: text.label,
 			description: available
 				? text.description
-				: `${text.description} This pane has no owner for that action, so it must be done outside the workbench.`,
+				: `${text.description} Do this where Archboard is running.`,
 			owner: available ? "host" : "none",
 			available,
 		});
@@ -159,7 +159,7 @@ export function threadLinkRecovery(
 		label: text.label,
 		description: available
 			? text.description
-			: `${text.description} The workbench cannot do that in its current state.`,
+			: `${text.description} Reconnect before trying again.`,
 		owner: available ? "transport" : "none",
 		available,
 	});
@@ -209,15 +209,12 @@ function armOf(
 	if (snapshot?.login.state === "failed")
 		return { arm: "login_failed", detail: snapshot.login.reason, retryAtMs: null };
 	const detail = {
-		initialized:
-			"The Codex app server is running. Its account facts have not been read yet, so no thread command is enabled.",
-		login_capable: "Codex is reachable and sign-in is available, but the account is not confirmed.",
-		signed_out: "Codex has no account. Sign in with a supported form before linking a thread.",
-		login_pending: "Codex is waiting for the sign-in you started to finish.",
-		account_ready:
-			"The account is ready. The workhorse is not thread-capable yet, so thread commands stay disabled.",
-		thread_capable:
-			"The workhorse is thread-capable. Create and attach are separate commands with separate prerequisites.",
+		initialized: "Check sign-in before starting an agent.",
+		login_capable: "Sign in below to start an agent.",
+		signed_out: "Sign in below to start an agent.",
+		login_pending: "Finish signing in to continue.",
+		account_ready: "Codex is preparing the agent. Refresh the connection if this continues.",
+		thread_capable: "Ready to start an agent or choose a conversation.",
 	}[readiness.state];
 	return { arm: readiness.state, detail, retryAtMs: null };
 }
@@ -241,10 +238,3 @@ export function projectThreadLinkReadiness(input: {
 		),
 	});
 }
-
-/**
- * The one sentence a command-before-ready refusal says. Create and attach share
- * these prerequisites and nothing else: each is offered on its own.
- */
-export const THREAD_LINK_COMMAND_PREREQUISITE =
-	"Connected, signed in, thread-capable, and holding an active browser command lease.";

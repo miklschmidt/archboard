@@ -73,47 +73,6 @@ function CrossLink({
 	);
 }
 
-function UnavailableRelationship({
-	relationship,
-}: {
-	readonly relationship: VoiceTranscriptRelationshipView;
-}): ReactNode {
-	return (
-		<li
-			className="min-w-0 border-r border-border-subtle last:border-r-0"
-			data-transcript-cross-link-unavailable={relationship.kind}
-		>
-			<span className="flex min-h-touch-target flex-col items-center justify-center px-control text-center text-body text-muted-foreground">
-				<span>{relationship.label}</span>
-				<span className="text-kicker font-medium">Unavailable</span>
-			</span>
-		</li>
-	);
-}
-
-function RecordIdentity({ record }: { readonly record: VoiceTranscriptRecordView }): ReactNode {
-	return (
-		<dl className="m-0 grid grid-cols-3 gap-control border-t border-border-subtle pt-control text-technical">
-			<div className="min-w-0">
-				<dt className="font-sans text-kicker font-medium text-muted-foreground">Session</dt>
-				<dd className="m-0 truncate font-mono text-faint-foreground" title={record.sessionId}>
-					{record.sessionId}
-				</dd>
-			</div>
-			<div className="min-w-0">
-				<dt className="font-sans text-kicker font-medium text-muted-foreground">Item</dt>
-				<dd className="m-0 truncate font-mono text-faint-foreground" title={record.itemId}>
-					{record.itemId}
-				</dd>
-			</div>
-			<div className="min-w-0">
-				<dt className="font-sans text-kicker font-medium text-muted-foreground">Sequence</dt>
-				<dd className="m-0 font-mono text-faint-foreground">{record.sequence}</dd>
-			</div>
-		</dl>
-	);
-}
-
 function TranscriptRecord({ record }: { readonly record: VoiceTranscriptRecordView }): ReactNode {
 	return (
 		<li
@@ -149,7 +108,6 @@ function TranscriptRecord({ record }: { readonly record: VoiceTranscriptRecordVi
 						{record.text}
 					</p>
 				)}
-				<RecordIdentity record={record} />
 			</article>
 		</li>
 	);
@@ -213,7 +171,13 @@ export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 			data-transcript-session-state={view.sessionState}
 			data-voice-transcript=""
 		>
-			<header className="flex items-center justify-between gap-control border-b border-border px-region py-control">
+			<header
+				className={
+					announcementOwner === "external"
+						? "sr-only"
+						: "flex items-center justify-between gap-control border-b border-border px-region py-control"
+				}
+			>
 				<div className="min-w-0">
 					<p className="m-0 text-kicker font-semibold text-muted-foreground">Live voice</p>
 					<h2 className="m-0 text-title font-semibold" id={headingId}>
@@ -249,7 +213,14 @@ export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 					</div>
 				)}
 			</header>
-			<div className="border-b border-border px-region py-control" id={detailId}>
+			<div
+				className={
+					announcementOwner === "external"
+						? "sr-only"
+						: "border-b border-border px-region py-control"
+				}
+				id={detailId}
+			>
 				<p className="m-0 text-body text-muted-foreground">{view.session.detail}</p>
 				{recovery === null ? null : (
 					<p className="m-0 pt-compact text-body text-muted-foreground">{recovery}</p>
@@ -275,38 +246,38 @@ export function VoiceTranscript(props: VoiceTranscriptProps): ReactNode {
 						No transcript items have arrived for this voice session.
 					</p>
 				) : (
-					<ol className="m-0 p-0 list-none" data-transcript-records="">
+					<ol className="m-0 list-none p-0" data-transcript-records="">
 						{view.records.map((record) => (
 							<TranscriptRecord key={record.key} record={record} />
 						))}
 					</ol>
 				),
 			)}
-			<nav
-				aria-label="Related workbench records"
-				className="border-t border-border"
-				data-transcript-relationship-state={
-					availableRelationshipCount === view.relationships.length
-						? "available"
-						: availableRelationshipCount === 0
-							? "unavailable"
-							: "partial"
-				}
-			>
-				<ul className="m-0 p-0 grid list-none grid-cols-6">
-					{view.relationships.map((relationship) =>
-						relationship.targetId === null ? (
-							<UnavailableRelationship key={relationship.kind} relationship={relationship} />
-						) : (
-							<CrossLink
-								key={relationship.kind}
-								relationship={relationship}
-								targetId={relationship.targetId}
-							/>
-						),
-					)}
-				</ul>
-			</nav>
+			{availableRelationshipCount === 0 ? null : (
+				<nav
+					aria-label="Related workbench records"
+					className="border-t border-border"
+					data-transcript-relationship-state={
+						availableRelationshipCount === view.relationships.length
+							? "available"
+							: availableRelationshipCount === 0
+								? "unavailable"
+								: "partial"
+					}
+				>
+					<ul className="m-0 flex list-none flex-wrap p-0">
+						{view.relationships.map((relationship) =>
+							relationship.targetId === null ? null : (
+								<CrossLink
+									key={relationship.kind}
+									relationship={relationship}
+									targetId={relationship.targetId}
+								/>
+							),
+						)}
+					</ul>
+				</nav>
+			)}
 		</section>
 	);
 }

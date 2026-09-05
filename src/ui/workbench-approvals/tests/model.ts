@@ -10,8 +10,10 @@ import type {
 } from "../../../shared/codex-browser-model/index.js";
 import type {
 	BrowserCommandName,
+	BrowserCommandDraft,
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchCommandResult,
+	BrowserWorkbenchCommandIntent,
 	BrowserWorkbenchCommandTarget,
 	BrowserWorkbenchState,
 } from "../../workbench-transport/index.js";
@@ -171,9 +173,16 @@ export function commandTarget(): BrowserWorkbenchCommandTarget {
 	};
 }
 
+export function commandIntent(): BrowserWorkbenchCommandIntent & {
+	readonly authority: BrowserWorkbenchCommandTarget;
+} {
+	const captured = commandTarget();
+	return { capturedThreadLink: captured.capturedThreadLink, authority: captured };
+}
+
 export interface RecordedCommand {
 	readonly draft: unknown;
-	readonly target: BrowserWorkbenchCommandTarget | undefined;
+	readonly target: BrowserWorkbenchCommandIntent | BrowserWorkbenchCommandTarget | undefined;
 }
 
 export interface FakeTransport extends WorkbenchApprovalsTransport {
@@ -190,7 +199,12 @@ export interface FakeTransportOptions {
 
 export function fakeTransport(options: FakeTransportOptions = {}): FakeTransport {
 	const sent: RecordedCommand[] = [];
-	const target = options.target === undefined ? commandTarget() : options.target;
+	const target =
+		options.target === undefined
+			? commandIntent()
+			: options.target === null
+				? null
+				: { capturedThreadLink: options.target.capturedThreadLink, authority: options.target };
 	const canCommand = options.canCommand ?? true;
 	const unsupported = new Set(options.unsupported ?? []);
 	const capabilities = {
@@ -205,25 +219,32 @@ export function fakeTransport(options: FakeTransportOptions = {}): FakeTransport
 		canRealtime: canCommand,
 		supportsCommand: (name: BrowserCommandName): boolean => canCommand && !unsupported.has(name),
 	} satisfies BrowserWorkbenchCapabilities;
-	return {
+	const dispatch = async (
+		draft: BrowserCommandDraft,
+		commandTargetValue?: BrowserWorkbenchCommandIntent | BrowserWorkbenchCommandTarget,
+	): Promise<BrowserWorkbenchCommandResult> => {
+		sent.push({ draft, target: commandTargetValue });
+		if (options.failure !== undefined) throw options.failure;
+		return {
+			kind: "command_result",
+			commandId: COMMAND_ID,
+			outcome: "delivered",
+			code: null,
+			message: null,
+			snapshot: snapshot(),
+			...options.result,
+		};
+	};
+
+	const transport: FakeTransport = {
 		sent,
+		executeCommand: dispatch,
 		capabilities: () => capabilities,
-		captureCommandTarget: () => {
+		captureCommandIntent: () => {
 			if (target === null) throw new Error("A browser command lease is required.");
 			return target;
 		},
-		command: async (draft, commandTargetValue) => {
-			sent.push({ draft, target: commandTargetValue });
-			if (options.failure !== undefined) throw options.failure;
-			return {
-				kind: "command_result",
-				commandId: COMMAND_ID,
-				outcome: "delivered",
-				code: null,
-				message: null,
-				snapshot: snapshot(),
-				...options.result,
-			};
-		},
+		command: dispatch,
 	};
+	return transport;
 }

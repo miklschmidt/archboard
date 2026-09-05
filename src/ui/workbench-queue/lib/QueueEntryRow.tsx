@@ -1,3 +1,4 @@
+import { RiArrowDownLine, RiArrowUpLine } from "@remixicon/react";
 import {
 	useCallback,
 	useId,
@@ -126,7 +127,7 @@ export function QueueEntryRow({
 			    semantics, and the keyboard path stays on the move buttons. */}
 			<div
 				className={cn(
-					"min-w-0 grid grid-cols-[minmax(0,1fr)_auto] gap-control py-control",
+					"grid min-w-0 grid-cols-[minmax(0,1fr)_auto] gap-control py-control",
 					dragging && "bg-surface-subtle",
 				)}
 				data-queue-drag-surface={submissionId}
@@ -188,7 +189,7 @@ export function QueueEntryRow({
 						title={reasonOf(view.moveEarlier)}
 						tone="quiet"
 					>
-						↑
+						<RiArrowUpLine aria-hidden="true" focusable="false" size={18} />
 					</Button>
 					<Button
 						aria-label={`Move submission ${view.position} later`}
@@ -203,7 +204,7 @@ export function QueueEntryRow({
 						title={reasonOf(view.moveLater)}
 						tone="quiet"
 					>
-						↓
+						<RiArrowDownLine aria-hidden="true" focusable="false" size={18} />
 					</Button>
 					<Button
 						aria-label={`Edit submission ${view.position}`}

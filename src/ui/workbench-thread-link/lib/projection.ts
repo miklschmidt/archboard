@@ -2,7 +2,7 @@ import type { BrowserThreadLink } from "../../../shared/codex-browser-model/inde
 
 import { projectThreadLinkAccount } from "./account.js";
 import { projectThreadLinkSelection } from "./candidates.js";
-import { projectThreadLinkReadiness, THREAD_LINK_COMMAND_PREREQUISITE } from "./readiness.js";
+import { projectThreadLinkReadiness } from "./readiness.js";
 import type {
 	ThreadLinkCreateOffer,
 	ThreadLinkInventory,
@@ -35,22 +35,21 @@ function currentLinkDisclosure(link: BrowserThreadLink): ThreadLinkPanelSnapshot
 	if (link.state === "executable")
 		return Object.freeze({
 			state: link.state,
-			label: "Executable link",
-			detail: `This pane is bound to thread ${link.threadId} in the current child epoch, and accepts direct input.`,
+			label: "Agent connected",
+			detail: "This conversation can work on the board.",
 			threadId: link.threadId,
 		});
 	if (link.state === "inspect_only")
 		return Object.freeze({
 			state: link.state,
-			label: "Inspect-only link",
-			detail: `This pane can inspect thread ${link.threadId} but cannot drive it. ${link.reason ?? "The host named no reason."}`,
+			label: "Read-only conversation",
+			detail: `This conversation is read only. ${link.reason ?? "Choose another conversation to work on the board."}`,
 			threadId: link.threadId,
 		});
 	return Object.freeze({
 		state: link.state,
-		label: "No thread link",
-		detail:
-			"This pane is not linked to a Codex thread. Create a workhorse thread, or attach a listed one. Archboard never picks one for you.",
+		label: "No agent connected",
+		detail: "Start an agent for this board or choose an existing conversation.",
 		threadId: null,
 	});
 }
@@ -64,12 +63,13 @@ function createOffer(input: ThreadLinkPanelInput): ThreadLinkCreateOffer {
 	const enabled = input.capabilities.supportsCommand("threadLinkCreate");
 	return Object.freeze({
 		command: "threadLinkCreate",
-		label: "Create a workhorse thread",
-		prerequisite: `${THREAD_LINK_COMMAND_PREREQUISITE} No thread list is required.`,
+		label: "Start agent",
 		enabled,
 		blockedReason: enabled
 			? null
-			: `Create is unavailable. It needs: ${THREAD_LINK_COMMAND_PREREQUISITE.toLowerCase()}`,
+			: input.state.state === "thread_capable"
+				? "Refresh the connection and try again."
+				: projectThreadLinkReadiness(input).detail,
 	});
 }
 

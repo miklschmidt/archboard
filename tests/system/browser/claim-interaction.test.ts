@@ -53,9 +53,10 @@ interface ClaimBody {
 }
 interface ClaimBanner extends WorkbenchSnapshot {
 	view: boolean | null;
+	focusedWorkbenchPane: string | null;
 	connectionLabel: string;
 	headerClaim: {
-		beacon: string;
+		lockIcon: boolean;
 		label: string;
 		id: string;
 		labelType: [string, number, number];
@@ -138,9 +139,10 @@ const readBanner = (browser: AgentBrowserSession): Promise<ClaimBanner> =>
 		return {
 			...${WORKBENCH_SNAPSHOT_EXPRESSION},
 			view: app ? app.state.viewModeEnabled === true : null,
+			focusedWorkbenchPane: document.querySelector('[data-workbench-pane-active="true"]')?.getAttribute('aria-label') ?? null,
 			connectionLabel: document.querySelector('.bar .status')?.textContent?.trim() ?? '',
 			headerClaim: headerClaim && headerLabel && headerId ? {
-				beacon: getComputedStyle(headerClaim.querySelector(".dot")).backgroundColor,
+				lockIcon: headerClaim.querySelector("svg") !== null,
 				label: headerLabel.textContent?.trim() ?? "",
 				id: headerId.textContent?.trim() ?? "",
 				labelType: [getComputedStyle(headerLabel).fontFamily.toLowerCase(),
@@ -198,7 +200,7 @@ test(
 		expect(claimed.takeBackHeight).toBeGreaterThanOrEqual(44);
 		expect(claimed.stripHeight).toBeLessThan(90);
 		expect(claimed.headerClaim).toMatchObject({
-			beacon: "rgb(163, 230, 53)",
+			lockIcon: true,
 			label: "Claimed by",
 			id: claim.body.claim.holder.id,
 			height: 44,
@@ -287,10 +289,10 @@ test(
 		await browser.run(["click", '.pane[aria-label="Pane B"] .excalidraw']);
 		const paneB = await pollUntil(
 			() => readBanner(browser),
-			(value) => value.pane === "Pane B",
+			(value) => value.focusedWorkbenchPane === "Pane B",
 			"the workbench to follow Pane B focus",
 		);
-		expect(paneB).toMatchObject({ state: "ready", what: null, bar: null, steps: [] });
+		expect(paneB).toMatchObject({ state: null, stripHeight: 0, what: null, bar: null, steps: [] });
 		expect(paneB.headerClaim).toBeNull();
 		await browser.run(["click", '.pane[aria-label="Pane A"] .excalidraw']);
 		const paneA = await pollUntil(

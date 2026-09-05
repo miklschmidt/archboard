@@ -14,6 +14,28 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../
 const assetRoot = path.join(repoRoot, "src/ui/shell/assets");
 const fontRoot = path.join(assetRoot, "fonts");
 
+test("uses Remix Icon for application icons and shadcn generation", () => {
+	const config: unknown = JSON.parse(
+		fs.readFileSync(path.join(repoRoot, "components.json"), "utf8"),
+	);
+	const pkg: unknown = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+	expect(config).toMatchObject({ iconLibrary: "remixicon" });
+	expect(pkg).toMatchObject({ dependencies: { "@remixicon/react": expect.any(String) } });
+	for (const filename of new Bun.Glob("src/ui/**/*.tsx").scanSync({ cwd: repoRoot })) {
+		if (filename.includes("/tests/")) continue;
+		const source = fs.readFileSync(path.join(repoRoot, filename), "utf8");
+		// The wordmark and canvas path overlay are artwork, not interface icons.
+		if (!["src/ui/shell/BoardBar.tsx", "src/ui/canvas/CanvasPane.tsx"].includes(filename)) {
+			expect(source, `${filename}: use Remix Icon instead of custom SVG icons`).not.toMatch(
+				/<svg\b/,
+			);
+		}
+		expect(source, `${filename}: use Remix Icon instead of text icon substitutes`).not.toMatch(
+			/[↗›×⏵⌄⌃]/,
+		);
+	}
+});
+
 const pinnedFiles = new Map([
 	["Onest-wght-v1.000.ttf", "3faa4b905661849b2332e394b42f91b5bf5575e553c516caa81811e868a4d589"],
 	["Onest-Medium-v1.000.ttf", WORDMARK_SOURCE_SHA256],
@@ -116,7 +138,7 @@ const curatedShellDeclarations = [
 	[".bar-board-meta", "gap", "12px"],
 	[".chip", "padding", "0 var(--arch-space-control-inline)"],
 	[".board-group", "border-radius", "0"],
-	[".scratch-card", "border-radius", "var(--arch-radius-panel)"],
+	[".scratch-card", "border-radius", "0"],
 	[".btn", "border-radius", "4px"],
 	[".icon-btn,\n.notice-dismiss,\n.modal-close", "border-radius", "4px"],
 	[".present-button", "border-radius", "4px"],
@@ -220,6 +242,13 @@ describe("brand typography assets", () => {
 		]);
 
 		const boardBar = fs.readFileSync(path.join(repoRoot, "src/ui/shell/BoardBar.tsx"), "utf8");
+		for (const component of ["BoardBar", "BoardNavigator"]) {
+			const source = fs.readFileSync(path.join(repoRoot, `src/ui/shell/${component}.tsx`), "utf8");
+			expect(
+				source,
+				`${component} must use the shared Button for consistent interaction styling`,
+			).not.toMatch(/<button\b/);
+		}
 		expect(boardBar).toContain('<svg className="wordmark" aria-label="archboard">');
 		expect(boardBar).toContain("<title>archboard</title>");
 		expect(boardBar).not.toContain("dangerouslySetInnerHTML");
@@ -265,11 +294,7 @@ describe("brand typography assets", () => {
 				"--type-control: var(--arch-text-control-size)/var(--arch-text-control-line);",
 				"--type-control: var(--arch-text-control-size)/var(--arch-text-body-line);",
 			],
-			[
-				"radius",
-				"border-radius: var(--arch-radius-panel);",
-				"border-radius: var(--arch-radius-control);",
-			],
+			["radius", "border-radius: 4px;", "border-radius: 8px;"],
 			["spacing", "gap: 12px;", "gap: var(--arch-space-control-inline);"],
 			[
 				"state",

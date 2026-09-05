@@ -241,3 +241,42 @@ test("forwards realtime publications to subscribers and releases them with each 
 	publish();
 	expect(notifications).toBe(closed);
 });
+
+test("voice Stop stays pending while the transport sequences its captured session action", async () => {
+	const environment = new FakeBrowser();
+	const audio: FakeAudioElement[] = [];
+	const documentDescriptor = installDocument(audio);
+	const transport = new FakeTransport();
+	const owner = createBrowserWorkbenchMediaOwner();
+	const pendingCommand = Promise.withResolvers<void>();
+	try {
+		await owner.attach(transport);
+		await owner.start();
+		const sessionHandle = String(transport.lease()?.commandId);
+		transport.preparedGate = pendingCommand.promise;
+		const stopping = owner.stop();
+		await transport.preparation.promise;
+		expect(transport.prepared).toHaveLength(1);
+		expect(transport.prepared[0]).toMatchObject({
+			draft: {
+				command: "realtimeStop",
+				threadId: "thread-media",
+				realtimeSessionHandle: sessionHandle,
+			},
+			intent: { capturedThreadLink: { threadId: "thread-media" } },
+		});
+		expect(owner.snapshot()?.state.phase).toBe("stopping");
+		expect(transport.commands.map((command) => command.command)).toEqual(["realtimeStart"]);
+		pendingCommand.resolve();
+		expect((await stopping).state).toEqual({ phase: "closed", reason: "stopped" });
+		expect(transport.commands.map((command) => command.command)).toEqual([
+			"realtimeStart",
+			"realtimeStop",
+		]);
+		environment.assertReleased();
+	} finally {
+		pendingCommand.resolve();
+		await owner.dispose();
+		restoreDocument(documentDescriptor);
+	}
+});

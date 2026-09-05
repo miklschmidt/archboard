@@ -41,7 +41,7 @@ export const WORKBENCH_SNAPSHOT_EXPRESSION = `(() => {
 		connection: strip?.getAttribute('data-connection') ?? null,
 		holder: output?.firstElementChild?.textContent?.trim() ?? null,
 		live: output?.getAttribute('aria-live') ?? null,
-		pane: strip?.getAttribute('aria-label')?.replace(/ board activity$/, '') ?? null,
+		pane: strip?.getAttribute('aria-label')?.replace(/ board activity$/, '') ?? document.querySelector('[data-workbench-pane-active="true"]')?.getAttribute('aria-label') ?? null,
 		reason,
 		what: reason,
 		bar,

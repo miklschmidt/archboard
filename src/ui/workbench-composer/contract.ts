@@ -145,12 +145,12 @@ export interface WorkbenchComposerCommandResult {
 /**
  * The three members the composer actually reaches for. `capabilities()` is
  * deliberately absent: the transport re-checks command support inside
- * `command()` and refuses with its own code, so a second capability read here
+ * `executeCommand()` and refuses with its own code, so a second capability read here
  * would only be a way for the two to disagree.
  */
 export type WorkbenchComposerTransport = Pick<
 	BrowserWorkbenchTransport,
-	"captureCommandTarget" | "command" | "state"
+	"captureCommandIntent" | "executeCommand" | "state"
 >;
 
 export interface WorkbenchComposerControllerOptions {

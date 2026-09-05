@@ -92,6 +92,47 @@ test("keeps adding the first queued request reachable from the conversation", as
 	});
 	expect(fake.commands[0]?.target?.paneId).toBe(PANE_A.id);
 });
+
+test("offers compact retry recovery for an unavailable empty linked queue", async () => {
+	const user = userEvent.setup();
+	const fake = requestTransport(PANE_A.id);
+	let refreshes = 0;
+	const transport = {
+		...fake.transport,
+		refresh: async () => {
+			refreshes += 1;
+			throw new Error("Queue read failed. Retry loading it.");
+		},
+	};
+	const state = fake.transport.state();
+	if (state.kind !== "readiness") throw new Error("The queue fixture needs a ready transport.");
+	fake.setState({
+		...state,
+		snapshot: {
+			...state.snapshot,
+			queue: { kind: "queue", status: "unavailable", entries: [] },
+			approvals: [],
+		},
+	});
+	render(
+		<WorkbenchFrame
+			disclosure="expanded"
+			onActivePaneChange={noopPane}
+			onDisclosureChange={noopDisclosure}
+			request={EMPTY_REQUEST}
+			space="workspace"
+			view={onePaneView(framePane(PANE_A, { ...fake, transport }))}
+		/>,
+	);
+	expect(document.querySelector("[data-workbench-queue-disclosure]")).toBeNull();
+	expect(document.querySelector('[data-workbench-composer="executable"] textarea')).toBeTruthy();
+	await user.click(screen.getByRole("button", { name: "Retry queue" }));
+	await waitFor(() => expect(refreshes).toBe(1));
+	expect(screen.getByRole("alert").textContent).toContain("Queue read failed.");
+	await user.click(screen.getByRole("button", { name: "Retry queue" }));
+	await waitFor(() => expect(refreshes).toBe(2));
+});
+
 function linkedVoiceSlot() {
 	return {
 		source: captureWorkbenchFrameVoiceSource(
@@ -133,7 +174,44 @@ test("opens the queue and coordinator destinations from transcript links", async
 	await act(async () => coordinatorLink.click());
 	const dialog = document.querySelector("[data-workbench-settings]");
 	expect(dialog?.getAttribute("role")).toBe("dialog");
-	const coordinator = dialog?.querySelector<HTMLDetailsElement>("details");
+	const coordinator = dialog?.querySelector<HTMLDetailsElement>(
+		`details[id="${coordinatorLink.hash.slice(1)}"]`,
+	);
 	expect(coordinator?.open).toBe(true);
 	expect(coordinator?.id).toBe(coordinatorLink.hash.slice(1));
+});
+
+test("returns a successful connection to the composer when the queue also has an input", async () => {
+	const user = userEvent.setup();
+	const fake = requestTransport(PANE_A.id);
+	const state = fake.transport.state();
+	if (state.kind !== "readiness") throw new Error("A connection needs a ready transport.");
+	fake.setState({
+		...state,
+		snapshot: {
+			...state.snapshot,
+			approvals: [],
+			queue: { kind: "queue", status: "empty", entries: [] },
+		},
+	});
+	const view = onePaneView(framePane(PANE_A, fake));
+	render(
+		<WorkbenchFrame
+			disclosure="expanded"
+			onActivePaneChange={noopPane}
+			onDisclosureChange={noopDisclosure}
+			request={EMPTY_REQUEST}
+			space="workspace"
+			view={view}
+		/>,
+	);
+	const queueInput = document.querySelector("[data-workbench-queue] textarea");
+	const composer = document.querySelector('[data-workbench-composer="executable"] textarea');
+	expect(queueInput).toBeTruthy();
+	expect(composer).toBeTruthy();
+	await user.click(screen.getByRole("button", { name: "Settings" }));
+	await user.click(screen.getByRole("button", { name: "Start new conversation" }));
+	await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	await waitFor(() => expect(document.activeElement).toBe(composer));
+	expect(fake.commands[0]?.draft.command).toBe("threadLinkCreate");
 });

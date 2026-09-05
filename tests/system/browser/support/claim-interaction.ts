@@ -336,12 +336,13 @@ export async function verifyPaneScopedTakeBack(options: {
 	await browser.run(["click", '.pane[aria-label="Pane B"] .excalidraw']);
 	const paneBBeforeSettlement = await pollUntil(
 		readStatus,
-		(value) => value.pane === "Pane B" && value.takeBackState === "idle",
-		"Pane B to expose only its own idle take-back state",
+		(value) => value.pane === "Pane B" && value.takeBackState === null,
+		"Pane B to omit idle activity and Pane A take-back state",
 	);
 	expect(paneBBeforeSettlement).toMatchObject({
 		takeBackAnnouncement: null,
-		takeBackState: "idle",
+		takeBackState: null,
+		stripHeight: 0,
 		what: null,
 	});
 	expect((await browser.eval<{ released: boolean }>("window.__releaseTakeBack()")).released).toBe(
@@ -351,13 +352,14 @@ export async function verifyPaneScopedTakeBack(options: {
 		async () => ({ banner: await readStatus(), counts: await claimCounts(browser) }),
 		(value) =>
 			value.banner.pane === "Pane B" &&
-			value.banner.takeBackState === "idle" &&
+			value.banner.takeBackState === null &&
 			value.counts.takeBackSettled === 1,
 		"Pane B to remain idle after Pane A settles",
 	);
 	expect(paneBAfterSettlement.banner).toMatchObject({
 		takeBackAnnouncement: null,
-		takeBackState: "idle",
+		takeBackState: null,
+		stripHeight: 0,
 		what: null,
 	});
 

@@ -200,7 +200,7 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		),
 	).toBe(true);
 	expect(desktop.humanFonts.every(({ lineHeight, size }) => lineHeight >= size * 1.18)).toBe(true);
-	expect(desktop.technicalFonts.every((family) => family.includes("archboard dm mono"))).toBe(true);
+	expect(desktop.technicalFonts.every((family) => family.includes("archboard onest"))).toBe(true);
 	expect(desktop.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(true);
 	const navigationOrder = () =>
 		browser.eval<string[]>(
@@ -215,6 +215,16 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		option,
 		"secondary",
 	];
+	expect(await navigationOrder()).toEqual(stableOrder);
+	await browser.run(["click", '.board-group[aria-label="primary"] summary']);
+	expect(
+		await browser.eval<boolean>(`(() => {
+		const group = document.querySelector('.board-group[aria-label="primary"]');
+		return group instanceof HTMLDetailsElement && !group.open &&
+			document.querySelector('[data-board-key="${option}"]').checkVisibility() === false;
+	})()`),
+	).toBe(true);
+	await browser.run(["click", '.board-group[aria-label="primary"] summary']);
 	expect(await navigationOrder()).toEqual(stableOrder);
 
 	await browser.run(["click", `[data-board-key="${primary}"]`]);

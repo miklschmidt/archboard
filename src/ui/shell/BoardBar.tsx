@@ -8,12 +8,12 @@
 
 import React, { useCallback } from "react";
 import type { BoardHold, BoardIdentity, LockHolder, NoteWrittenElsewhere } from "../types";
+import { Button } from "../button";
 import { Icon } from "./Icons";
 
 interface BoardBarProps {
 	identity: BoardIdentity | null;
 	boardKey: string | null;
-	elementCount: number;
 	connected: boolean;
 	/** A real cross-write claim, never the transient lock for one write. */
 	claimedBy: LockHolder | null;
@@ -93,7 +93,6 @@ function noteLabel(written: NoteWrittenElsewhere): { copy: string; time?: string
 export function BoardBar({
 	identity,
 	boardKey,
-	elementCount,
 	connected,
 	claimedBy,
 	hold,
@@ -132,56 +131,52 @@ export function BoardBar({
 						<span className="board-name">{boardTitle}</span>
 						{identity?.level && <span className="level-tag">{identity.level}</span>}
 					</div>
-					<div className="bar-board-meta">
-						<span
-							className={`status ${connected ? "status-live" : "status-offline"}`}
-							title={connected ? "Canvas server connected" : "The canvas server is not answering"}
-						>
-							<span className={`dot ${connected ? "dot-live" : "dot-dead"}`} />
-							{connected ? "Live board" : "Offline"}
-						</span>
-						<span className="bar-meta-rule" aria-hidden="true" />
-						<span className="meta">
-							{elementCount} element{elementCount === 1 ? "" : "s"}
-						</span>
-						{!hold && !writtenElsewhere && (
-							<>
-								<span className="bar-meta-rule" aria-hidden="true" />
-								<span className="meta meta-vault">
-									<Icon name="check" size={13} />
-									<span>In the vault</span>
-								</span>
-							</>
-						)}
-					</div>
 				</div>
 
-				{/* A hold outranks the earlier note-changed state, and both outrank a claim. */}
-				{hold ? (
-					<div className="bar-board-state">
-						<button
+				<div className="bar-board-meta" aria-label="Board status">
+					<span
+						className={`status ${connected ? "status-live" : "status-offline"}`}
+						title={connected ? "Canvas server connected" : "The canvas server is not answering"}
+					>
+						<span className={`dot ${connected ? "dot-live" : "dot-dead"}`} />
+						{connected ? "Connected" : "Offline"}
+					</span>
+					{!hold && !writtenElsewhere && (
+						<>
+							<span className="bar-meta-rule" aria-hidden="true" />
+							<span className="meta meta-vault">
+								<Icon name="check" size={13} />
+								<span>In the vault</span>
+							</span>
+						</>
+					)}
+
+					{/* Saving and ownership are independent; a hold must not hide a claim. */}
+					{hold ? (
+						<Button
+							tone="quiet"
 							className="chip chip-held"
 							onClick={onHoldClick}
 							title={`${hold.message}\n\nClick for the three ways out.`}
 						>
 							{holdLabel(hold)}
-						</button>
-					</div>
-				) : writtenElsewhere && writtenLabel ? (
-					<div className="bar-board-state">
-						<button
+						</Button>
+					) : writtenElsewhere && writtenLabel ? (
+						<Button
+							tone="quiet"
 							className="chip chip-elsewhere"
 							onClick={onNoteClick}
 							title={`${writtenElsewhere.message}\n\nClick to see what you can do about it.`}
 						>
 							<span>{writtenLabel.copy}</span>
 							{writtenLabel.time && <time className="chip-time">{writtenLabel.time}</time>}
-						</button>
-					</div>
-				) : claimedBy ? (
-					<div className="bar-board-state">
+						</Button>
+					) : null}
+				</div>
+				{claimedBy ? (
+					<div className="bar-board-state" aria-label="Board ownership">
 						<span className="bar-claim" title={claimedBy.reason || claimedBy.id}>
-							<span className="dot" aria-hidden="true" />
+							<Icon name="lock" size={16} />
 							<span className="claim-label">Claimed by</span>
 							<span className="claim-id">{claimedBy.id}</span>
 						</span>
@@ -190,61 +185,70 @@ export function BoardBar({
 			</div>
 
 			<nav className="bar-actions" aria-label="Board actions">
-				<button
-					className="btn btn-secondary btn-compact"
+				<Button
+					tone="quiet"
+					className="bar-action"
 					onClick={onOpen}
 					disabled={busy}
 					aria-label="Open board"
 				>
 					<Icon name="folder" />
 					<span className="optional-label">Open</span>
-				</button>
+				</Button>
 				{paneCount < 2 ? (
-					<button
-						className="btn btn-secondary btn-compact"
+					<Button
+						tone="quiet"
+						className="bar-action"
 						onClick={onAddPane}
 						title="Open a second pane"
 						aria-label="Split"
 					>
 						<Icon name="split" />
 						<span className="optional-label">Split</span>
-					</button>
+					</Button>
 				) : (
-					<button
-						className="btn btn-secondary btn-compact"
+					<Button
+						tone="quiet"
+						className="bar-action"
 						onClick={onClosePane}
 						title="Back to one pane"
 						aria-label="Unsplit"
 					>
 						<Icon name="split" />
 						<span className="optional-label">Unsplit</span>
-					</button>
+					</Button>
 				)}
-				<button
-					className="btn btn-icon btn-danger-quiet"
+				<Button
+					tone="quiet"
+					size="icon"
+					className="text-muted-foreground hover:text-destructive"
 					onClick={onClear}
 					disabled={busy}
 					title="Clear board"
 					aria-label="Clear board"
 				>
 					<Icon name="trash" />
-				</button>
-				<button
-					className="btn btn-icon"
+				</Button>
+				<Button
+					tone="quiet"
+					size="icon"
+					className="text-muted-foreground"
 					onClick={onOpenOpenerSettings}
 					title="Opener settings"
 					aria-label="Opener settings"
 				>
 					<Icon name="settings" />
-				</button>
-				<button
-					className="btn btn-icon"
+				</Button>
+				<Button
+					tone="quiet"
+					size="icon"
+					className="text-muted-foreground"
 					onClick={toggleTheme}
 					title={theme === "dark" ? "Use light theme" : "Use dark theme"}
 					aria-label={theme === "dark" ? "Use light theme" : "Use dark theme"}
 				>
 					<Icon name={theme === "dark" ? "sun" : "moon"} />
-				</button>
+				</Button>
 			</nav>
 		</header>
 	);

@@ -105,7 +105,7 @@ test("composes one pane as one conversation with configuration outside the drawe
 	);
 
 	expect(screen.getByRole("region", { name: "Pane A agent conversation" })).toBeTruthy();
-	expect(screen.getByRole("region", { name: "Pane A board activity" })).toBeTruthy();
+	expect(screen.queryByRole("region", { name: "Pane A board activity" })).toBeNull();
 	expect(document.querySelector('[data-workbench-queue-disclosure=""]')).toBeNull();
 	expect(document.querySelector('[data-thread-link-pane="pane-a"]')).toBeNull();
 	expect(document.querySelector('[data-coordinator-disclosure="read-only"]')).toBeNull();

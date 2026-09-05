@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 
 import { VoiceContextPanel } from "../../voice-context/index.js";
 import type { VoiceSessionView } from "../../voice-session/index.js";
@@ -25,6 +25,13 @@ export function VoiceComposition({
 	readonly voice: WorkbenchFrameVoiceSlot;
 }): ReactNode {
 	const sourceIssue = workbenchFrameVoiceSourceIssue(voice.source, sessionView);
+	const history = useSyncExternalStore(
+		voice.context.history.subscribe,
+		voice.context.history.snapshot,
+		voice.context.history.snapshot,
+	);
+	const hasTranscript = voice.transcript.records.length > 0;
+	const hasContext = history.sessions.length > 0;
 
 	if (sourceIssue !== null) {
 		return (
@@ -38,29 +45,45 @@ export function VoiceComposition({
 			</section>
 		);
 	}
+	if (!hasTranscript && !hasContext) return null;
 
 	return (
 		<section
 			aria-label={`${voice.source.pane.label} live voice`}
-			className="min-h-touch-target border-b border-border bg-surface-raised"
+			className="group max-h-1/2 min-h-touch-target shrink-0 overflow-y-auto overscroll-contain border-b border-border bg-surface"
 			data-workbench-region="voice"
 			data-workbench-voice="present"
 			data-workbench-voice-source-pane={voice.source.pane.id}
 		>
-			<div className="min-h-0 grid grid-cols-2">
-				<div className="min-h-0 min-w-0 overflow-y-auto border-r border-border">
-					<VoiceTranscript
-						{...voice.transcript}
-						announcementOwner="external"
-						className="min-h-full border-y-0"
-						crossLinkIds={crossLinkIds}
-						session={sessionView}
-					/>
+			<details data-workbench-voice-disclosure="">
+				<summary className="flex min-h-touch-target cursor-pointer items-center justify-between gap-control px-region font-sans text-body outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+					<span className="font-medium">Voice · {voice.source.pane.label}</span>
+					<span className="text-muted-foreground">
+						{hasTranscript ? "Transcript" : "Shared context"}
+					</span>
+				</summary>
+				<div className="min-h-0 border-t border-border">
+					{hasTranscript ? (
+						<div className="min-h-0 min-w-0 overflow-y-auto">
+							<VoiceTranscript
+								{...voice.transcript}
+								announcementOwner="external"
+								className="min-h-full border-y-0"
+								crossLinkIds={crossLinkIds}
+								session={sessionView}
+							/>
+						</div>
+					) : null}
+					{hasContext ? (
+						<details className="min-h-0 min-w-0 border-t border-border">
+							<summary className="flex min-h-touch-target cursor-pointer items-center px-region font-sans text-body text-muted-foreground outline-none focus-visible:outline-2 focus-visible:outline-ring">
+								Shared board context
+							</summary>
+							<VoiceContextPanel {...voice.context} className="min-h-full border-y-0" />
+						</details>
+					) : null}
 				</div>
-				<div className="min-h-0 min-w-0 overflow-y-auto">
-					<VoiceContextPanel {...voice.context} className="min-h-full border-y-0" />
-				</div>
-			</div>
+			</details>
 		</section>
 	);
 }

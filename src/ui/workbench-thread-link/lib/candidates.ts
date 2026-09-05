@@ -19,7 +19,7 @@ import type {
  */
 const REASON_LABELS: Readonly<Record<string, string>> = {
 	stale_child: "Stale: this thread belongs to a child that is no longer the current one.",
-	prior_epoch: "Prior epoch: this thread was bound in an epoch before the current one.",
+	prior_epoch: "This conversation belongs to an earlier agent session.",
 	thread_start_outcome_unknown:
 		"The thread start never settled, so its ownership is unknown. Inspect it rather than retrying.",
 	unknown_provenance: "Current-epoch ownership of this thread is unproven.",
@@ -60,10 +60,10 @@ function refreshInventoryRecovery(capabilities: BrowserWorkbenchCapabilities): T
 	const available = capabilities.supportsCommand("threadLinkRefresh");
 	return Object.freeze({
 		intent: "refresh_inventory",
-		label: "Refresh the thread list",
+		label: "Refresh conversations",
 		description: available
-			? "Ask the workbench to exhaust the persisted and current loaded lists again, then choose a row from the fresh result."
-			: "The workbench cannot discover the thread lists until this pane is connected, signed in, thread-capable, and holding an active command lease.",
+			? "Load the available conversations."
+			: "Reconnect and sign in before refreshing conversations.",
 		owner: available ? "transport" : "none",
 		available,
 	});
@@ -93,10 +93,10 @@ function projectRow(
 	const supported = command !== null && capabilities.supportsCommand(command);
 	const blockedReason =
 		intent === "current"
-			? "This pane is already linked to this thread."
+			? "This conversation is already connected."
 			: supported
 				? null
-				: "This pane cannot run a thread-link command until it is connected, signed in, thread-capable, and holding an active command lease.";
+				: "Reconnect and sign in before connecting this conversation.";
 	return Object.freeze({
 		selectionId: record.selectionId,
 		threadId: record.threadId,
@@ -122,14 +122,8 @@ function projectRow(
 }
 
 function summarize(rows: readonly ThreadLinkRow[], truncated: boolean): string {
-	const executable = rows.filter((row) => row.outcome === "executable").length;
-	const parts = [
-		`${rows.length} joined ${rows.length === 1 ? "record" : "records"}`,
-		`${executable} executable`,
-		`${rows.length - executable} inspect-only`,
-	];
-	if (truncated) parts.push("the workbench published only the first page of a longer list");
-	return `${parts.join(", ")}.`;
+	const count = rows.length;
+	return `${count} ${count === 1 ? "conversation" : "conversations"}.${truncated ? " Showing the first page." : ""}`;
 }
 
 /**
@@ -147,8 +141,7 @@ export function projectThreadLinkSelection(input: {
 	if (input.inventory.state === "unknown")
 		return Object.freeze({
 			state: "unknown",
-			summary:
-				"No thread list has been discovered for this pane. Nothing is chosen for you: refresh the list, or create a workhorse thread.",
+			summary: "Refresh to load your conversations.",
 			rows: Object.freeze([]),
 			recovery,
 		});
@@ -170,7 +163,7 @@ export function projectThreadLinkSelection(input: {
 		state: rows.length === 0 ? "empty" : "listed",
 		summary:
 			rows.length === 0
-				? "The workbench discovered no joined thread. Create a workhorse thread, or refresh the list."
+				? "No conversations are available. Start an agent to begin a new one."
 				: summarize(rows, input.inventory.truncated),
 		rows: Object.freeze(rows),
 		recovery,

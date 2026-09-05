@@ -186,6 +186,11 @@ function fakeTransport(
 	const threadCapable = snapshot.readiness.state === "thread_capable";
 	const executable = snapshot.threadLink.state === "executable";
 	const transport: BrowserWorkbenchTransport = {
+		captureCommandIntent: () => {
+			const authority = transport.captureCommandTarget();
+			return { capturedThreadLink: authority.capturedThreadLink, authority };
+		},
+		executeCommand: (draft, intent) => transport.command(draft, intent?.authority ?? undefined),
 		attach: async () => state,
 		detach: async () => undefined,
 		close: async () => undefined,
@@ -382,15 +387,18 @@ test("keeps a registered thread-capable unbound pane with create and attach choi
 	render(<Shell />);
 	const frame = await screen.findByRole("region", { name: "Agent" });
 	expect(frame.getAttribute("data-pane-count")).toBe("1");
+	const connection = within(frame).getByRole("status", {
+		name: "Agent connection: No agent linked",
+	});
+	expect(connection.querySelector(".bg-status")).toBeNull();
+	expect(frame.querySelector("[data-workbench-title] .bg-status")).toBeNull();
 	await user.click(screen.getByRole("button", { name: "Expand" }));
-	await user.click(screen.getByRole("button", { name: "Open Agent settings" }));
-	const link = screen.getByRole("region", { name: "No thread link" });
+	await user.click(screen.getByRole("button", { name: "Connect agent" }));
+	const link = screen.getByRole("region", { name: "Connection" });
 	expect(
-		within(link)
-			.getByRole("button", { name: "Create a workhorse thread" })
-			.hasAttribute("disabled"),
+		within(link).getByRole("button", { name: "Start agent" }).hasAttribute("disabled"),
 	).toBeFalse();
-	expect(within(link).getByRole("heading", { name: "Attach a listed thread" })).toBeTruthy();
+	expect(within(link).getByRole("button", { name: "Choose existing conversation" })).toBeTruthy();
 });
 
 test("keeps a registered unbound signed-out pane and its recovery in the frame", async () => {
@@ -400,9 +408,9 @@ test("keeps a registered unbound signed-out pane and its recovery in the frame",
 	const frame = await screen.findByRole("region", { name: "Agent" });
 	expect(frame.getAttribute("data-pane-count")).toBe("1");
 	await user.click(screen.getByRole("button", { name: "Expand" }));
-	await user.click(screen.getByRole("button", { name: "Open Agent settings" }));
-	const link = screen.getByRole("region", { name: "No thread link" });
-	expect(within(link).getByRole("link", { name: "Sign in again" })).toBeTruthy();
+	await user.click(screen.getByRole("button", { name: "Connect agent" }));
+	const link = screen.getByRole("region", { name: "Connection" });
+	expect(within(link).getByRole("button", { name: "Sign in" })).toBeTruthy();
 });
 
 test("registers one exact pane source, routes fullscreen Stop, and replaces it without disturbing the canvas", async () => {
@@ -413,7 +421,8 @@ test("registers one exact pane source, routes fullscreen Stop, and replaces it w
 		const frame = await screen.findByRole("region", { name: "Agent" });
 		expect(frame.getAttribute("data-pane-count")).toBe("1");
 		expect(screen.getByText("Excalidraw canvas")).toBeTruthy();
-		expect(screen.getAllByText("7 elements")).toHaveLength(1);
+		expect(screen.queryByText("7 elements")).toBeNull();
+		expect(document.querySelector(".bar-board-meta")?.textContent).toContain("Connected");
 
 		let request = screen.getByRole("region", { name: "Application-wide Codex requests" });
 		expect(request.querySelector("dd")?.textContent).toBe("Pane A");

@@ -4,7 +4,7 @@ import { BrowserWorkbenchTransportError } from "../../workbench-transport/index.
 import { createWorkbenchComposerController } from "../index.js";
 import {
 	commandResult,
-	commandTarget,
+	commandIntent,
 	connected,
 	executableLink,
 	fakeComposerTransport,
@@ -47,7 +47,7 @@ describe("what the composer sends, and what it names", () => {
 			threadId: THREAD,
 			prompt: "Draw the module graph.",
 		});
-		expect(transport.sent[0]?.target).toEqual(commandTarget());
+		expect(transport.sent[0]?.target).toEqual(commandIntent());
 		expect(result).toEqual({ outcome: "delivered", turnId: TURN });
 	});
 
@@ -61,7 +61,7 @@ describe("what the composer sends, and what it names", () => {
 			turnId: TURN,
 			prompt: "Also rename the node.",
 		});
-		expect(transport.sent[0]?.target).toEqual(commandTarget());
+		expect(transport.sent[0]?.target).toEqual(commandIntent());
 		expect(result).toEqual({ outcome: "delivered", turnId: TURN });
 	});
 
@@ -74,18 +74,18 @@ describe("what the composer sends, and what it names", () => {
 			threadId: THREAD,
 			turnId: TURN,
 		});
-		expect(transport.sent[0]?.target).toEqual(commandTarget());
+		expect(transport.sent[0]?.target).toEqual(commandIntent());
 		expect(result.outcome).toBe("delivered");
 	});
 
-	test("a lease this browser cannot capture refuses before anything leaves", async () => {
+	test("an unavailable action target refuses before anything leaves", async () => {
 		const transport = fakeComposerTransport({ target: null });
 		const controller = createWorkbenchComposerController({ transport });
 		const result = await controller.submit({ text: "Hello." });
 		expect(transport.sent).toHaveLength(0);
 		expect(result).toEqual({
 			outcome: "not_delivered",
-			reason: "This browser does not hold the workbench command lease.",
+			reason: "The workbench cannot send workhorse commands in its current state.",
 		});
 		expect(controller.getState().retained).toBeNull();
 	});

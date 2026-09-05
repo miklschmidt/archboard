@@ -186,7 +186,7 @@ export function buildThreadLinkLogin(
 }
 
 const ACCOUNT_LABELS = {
-	unknown: "Account facts unknown",
+	unknown: "Not connected",
 	signed_out: "Signed out",
 	login_pending: "Sign-in in progress",
 	ready: "Signed in",
@@ -198,11 +198,11 @@ function accountDetail(account: BrowserSnapshot["account"]): string {
 		case "unknown":
 			return account.reason;
 		case "signed_out":
-			return "Codex has no account. Choose one of the supported forms below.";
+			return "Choose how to sign in.";
 		case "login_pending":
 			return `Codex is completing a ${account.variant} sign-in. Cancel it to choose another form.`;
 		case "ready":
-			return `Codex is signed in with the ${account.accountType} account type.`;
+			return `Signed in with ${account.accountType === "chatgpt" ? "ChatGPT" : account.accountType}.`;
 		case "failed":
 			return account.reason;
 	}
@@ -234,6 +234,8 @@ export function projectThreadLinkAccount(input: {
 		canLogout,
 		blockedReason: canLogin
 			? null
-			: "Signing in needs a connected workbench whose account state has been read and an active browser command lease.",
+			: account?.state === "login_pending"
+				? "Finish or cancel the current sign-in."
+				: "Reconnect to Codex before signing in.",
 	});
 }

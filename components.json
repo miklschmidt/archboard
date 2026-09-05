@@ -3,6 +3,7 @@
 	"style": "base-nova",
 	"rsc": false,
 	"tsx": true,
+	"iconLibrary": "remixicon",
 	"tailwind": {
 		"config": "",
 		"css": "src/ui/theme/app.css",

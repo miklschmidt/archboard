@@ -9,11 +9,7 @@ export { projectThreadLinkSelection, threadLinkReasonLabel } from "./lib/candida
 export { createThreadLinkController } from "./lib/controller.js";
 export { projectThreadLinkPanel } from "./lib/projection.js";
 export { THREAD_LINK_MODULE_COMMANDS } from "./lib/contract.js";
-export {
-	THREAD_LINK_COMMAND_PREREQUISITE,
-	projectThreadLinkReadiness,
-	threadLinkRecovery,
-} from "./lib/readiness.js";
+export { projectThreadLinkReadiness, threadLinkRecovery } from "./lib/readiness.js";
 export { WorkbenchThreadLink } from "./lib/WorkbenchThreadLink.js";
 
 export type {

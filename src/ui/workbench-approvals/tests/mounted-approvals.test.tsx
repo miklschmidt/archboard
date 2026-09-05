@@ -10,7 +10,7 @@ registerHappyDom();
 const { render, screen, userEvent, waitFor } = await loadRenderedUiTools();
 const { WorkbenchApprovals } = await import("../index.js");
 const { commandApproval, permissionsApproval } = await import("./fixtures.js");
-const { commandTarget, connected, NOW, snapshot } = await import("./model.js");
+const { commandIntent, connected, NOW, snapshot } = await import("./model.js");
 
 afterAll(unregisterHappyDom);
 
@@ -36,7 +36,7 @@ function capabilities(): ReturnType<Transport["capabilities"]> {
 function result(): Awaited<ReturnType<Transport["command"]>> {
 	return {
 		kind: "command_result",
-		commandId: commandTarget().commandId,
+		commandId: commandIntent().authority!.commandId,
 		outcome: "delivered",
 		code: null,
 		message: null,
@@ -47,14 +47,16 @@ function result(): Awaited<ReturnType<Transport["command"]>> {
 const deferred: { resolve: (() => void) | null } = { resolve: null };
 
 const immediateTransport: Transport = {
+	executeCommand: () => immediateTransport.command({ command: "threadLinkCreate" }),
 	capabilities,
-	captureCommandTarget: commandTarget,
+	captureCommandIntent: commandIntent,
 	command: async () => result(),
 };
 
 const deferredTransport: Transport = {
+	executeCommand: () => deferredTransport.command({ command: "threadLinkCreate" }),
 	capabilities,
-	captureCommandTarget: commandTarget,
+	captureCommandIntent: commandIntent,
 	command: async () => {
 		await new Promise<void>((resolve) => {
 			deferred.resolve = resolve;

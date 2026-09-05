@@ -5,14 +5,14 @@ import { captureWorkbenchQueueTarget, createWorkbenchQueueActions } from "../ada
 import type { WorkbenchQueueTransport } from "../contract.ts";
 import {
 	commandResult,
-	commandTarget,
+	commandIntent,
 	FakeQueueTransport,
 	queue,
 	snapshot,
 	submission,
 } from "./support.ts";
 
-const TARGET = commandTarget();
+const TARGET = commandIntent();
 const SEEDS = [{ id: "s1" }, { id: "s2" }] as const;
 
 function transportWith(options: ConstructorParameters<typeof FakeQueueTransport>[0] = {}) {
@@ -193,7 +193,7 @@ describe("workbench queue target capture", () => {
 	test("turns a missing lease into a disabled-control reason, not a thrown error", () => {
 		const transport: WorkbenchQueueTransport = {
 			...new FakeQueueTransport().asTransport(),
-			captureCommandTarget: () => {
+			captureCommandIntent: () => {
 				throw new BrowserWorkbenchTransportError(
 					"lease_required",
 					"A browser command lease is required.",

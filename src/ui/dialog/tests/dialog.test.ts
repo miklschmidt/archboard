@@ -26,8 +26,8 @@ const provenance = fs.readFileSync(new URL("../README.md", import.meta.url), "ut
 
 const POPUP_CLASSES =
 	"fixed top-1/2 left-1/2 z-50 flex max-h-full max-w-full -translate-x-1/2 -translate-y-1/2 flex-col gap-region overflow-auto rounded-dialog border border-border bg-surface-raised p-panel font-sans !text-body text-foreground shadow-flat outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-ring";
-const TITLE_CLASSES = "font-sans !text-title font-semibold text-foreground";
-const DESCRIPTION_CLASSES = "font-sans !text-body text-muted-foreground";
+const TITLE_CLASSES = "m-0 font-sans !text-title font-semibold text-foreground";
+const DESCRIPTION_CLASSES = "m-0 font-sans !text-body text-muted-foreground";
 const RETURN_TRUE = () => true;
 const DO_NOTHING = () => undefined;
 
@@ -47,12 +47,13 @@ function contentParts(element: ReactElement): [ReactElement, ReactElement] {
 }
 
 describe("dialog public module", () => {
-	test("exports only the five owned components at runtime", () => {
+	test("exports the owned dialog composition at runtime", () => {
 		expect(Object.keys(publicApi)).toEqual([
 			"Dialog",
 			"DialogClose",
 			"DialogContent",
 			"DialogDescription",
+			"DialogHeader",
 			"DialogTitle",
 		]);
 		for (const value of Object.values(publicApi)) expect(value).toBeTypeOf("function");
@@ -209,7 +210,6 @@ describe("dialog public module", () => {
 		expect(source.match(/<BaseDialog\.Popup\n/g)).toHaveLength(1);
 		for (const marker of [
 			"DialogTrigger",
-			"DialogHeader",
 			"DialogFooter",
 			"DialogOverlay",
 			"DialogViewport",

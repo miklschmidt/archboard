@@ -1,4 +1,12 @@
-import { useCallback, useRef, useSyncExternalStore, type ReactNode, type RefObject } from "react";
+import { RiCloseLine, RiArrowRightSLine } from "@remixicon/react";
+import {
+	useCallback,
+	useEffect,
+	useRef,
+	useSyncExternalStore,
+	type ReactNode,
+	type RefObject,
+} from "react";
 
 import { Button } from "../../button/index.js";
 import {
@@ -6,6 +14,7 @@ import {
 	DialogClose,
 	DialogContent,
 	DialogDescription,
+	DialogHeader,
 	DialogTitle,
 } from "../../dialog/index.js";
 import { WorkbenchCoordinatorDisclosure } from "../../workbench-coordinator/index.js";
@@ -19,6 +28,8 @@ interface WorkbenchSettingsDialogProps {
 	readonly activePaneId: WorkbenchFramePaneIdentity["id"];
 	readonly onActivePaneChange: (paneId: WorkbenchFramePaneIdentity["id"]) => void;
 	readonly onClose: () => void;
+	readonly onConnected: () => void;
+	readonly conversationId: string;
 	readonly panes: readonly WorkbenchFramePane[];
 	readonly returnFocusRef: RefObject<HTMLButtonElement | null>;
 }
@@ -38,17 +49,59 @@ export function WorkbenchSettingsDialog({
 	activePaneId,
 	onActivePaneChange,
 	onClose,
+	onConnected,
+	conversationId,
 	panes,
 	returnFocusRef,
 }: WorkbenchSettingsDialogProps): ReactNode {
 	const closeRef = useRef<HTMLButtonElement | null>(null);
 	const coordinatorRef = useRef<HTMLElement | null>(null);
+	const connectionCompleted = useRef(false);
+	const observedAction = useRef<{ paneId: string; revision: number } | null>(null);
 	const activePane = panes.find((pane) => pane.identity.id === activePaneId) ?? null;
 	const activeState = useSyncExternalStore(
 		activePane?.transport.subscribe ?? subscribeToAbsentPane,
 		activePane?.transport.state ?? absentPaneState,
 		activePane?.transport.state ?? absentPaneState,
 	);
+	const action = useSyncExternalStore(
+		activePane?.threadLink.controller.subscribe ?? subscribeToAbsentPane,
+		activePane?.threadLink.controller.snapshot ?? absentPaneState,
+		activePane?.threadLink.controller.snapshot ?? absentPaneState,
+	);
+	useEffect(() => {
+		if (!open || activePane === null || action === null) {
+			observedAction.current = null;
+			return;
+		}
+		const observed = observedAction.current;
+		if (observed === null || observed.paneId !== activePane.identity.id) {
+			connectionCompleted.current = false;
+			observedAction.current = { paneId: activePane.identity.id, revision: action.revision };
+			return;
+		}
+		if (
+			action.revision > observed.revision &&
+			action.state === "succeeded" &&
+			["create", "attach", "relink"].includes(action.action)
+		) {
+			observedAction.current = { ...observed, revision: action.revision };
+			connectionCompleted.current = true;
+			onConnected();
+		}
+	}, [action, activePane, onConnected, open]);
+	const finalFocus = useCallback(() => {
+		const conversation = globalThis.document
+			?.getElementById(conversationId)
+			?.closest('[data-workbench-region="conversation"]');
+		return (
+			(connectionCompleted.current
+				? conversation?.querySelector<HTMLTextAreaElement>(
+						'[data-workbench-composer="executable"] textarea:not([readonly]):not([disabled])',
+					)
+				: null) ?? returnFocusRef.current
+		);
+	}, [conversationId, returnFocusRef]);
 	const requestOpenChange = useCallback(
 		(nextOpen: boolean): void => {
 			if (!nextOpen) onClose();
@@ -65,32 +118,28 @@ export function WorkbenchSettingsDialog({
 	return (
 		<Dialog open={open} onOpenChange={requestOpenChange}>
 			<DialogContent
-				className="agent-settings-dialog gap-0 p-0 overflow-hidden"
+				className="agent-settings-dialog overflow-hidden"
 				data-workbench-settings=""
 				initialFocus={showCoordinator ? coordinatorRef : closeRef}
-				finalFocus={returnFocusRef}
+				finalFocus={finalFocus}
 			>
-				<header className="flex items-start justify-between gap-region border-b border-border px-panel py-region">
-					<div className="min-w-0">
-						<DialogTitle>Agent settings</DialogTitle>
-						<DialogDescription className="mt-grid-tight">
-							Choose which pane the agent uses and manage its linked workhorse.
-						</DialogDescription>
-					</div>
-					<DialogClose
-						aria-label="Close agent settings"
-						className="p-0 size-touch-target shrink-0 text-muted-foreground"
-						ref={closeRef}
-					>
-						<span aria-hidden="true">×</span>
-					</DialogClose>
-				</header>
+				<DialogHeader className="pr-touch-target">
+					<DialogTitle>Agent settings</DialogTitle>
+					<DialogDescription>
+						{activePane?.identity.label ?? "Choose a pane"} · Connection and account
+					</DialogDescription>
+				</DialogHeader>
+				<DialogClose
+					aria-label="Close agent settings"
+					className="absolute top-control right-control size-touch-target border-transparent bg-transparent p-0 text-muted-foreground"
+					ref={closeRef}
+				>
+					<RiCloseLine aria-hidden="true" focusable="false" size={20} />
+				</DialogClose>
 				<div className="min-h-0 overflow-y-auto">
 					{panes.length > 1 ? (
-						<fieldset className="m-0 border-0 border-b border-border px-panel py-region">
-							<legend className="p-0 text-kicker font-semibold text-muted-foreground">
-								Agent pane target
-							</legend>
+						<fieldset className="m-0 border-0 pb-region">
+							<legend className="p-0 text-kicker font-semibold text-muted-foreground">Pane</legend>
 							<div className="mt-control flex flex-wrap gap-control">
 								{panes.map((pane) => (
 									<Button
@@ -108,13 +157,13 @@ export function WorkbenchSettingsDialog({
 						</fieldset>
 					) : null}
 					{activePane === null ? (
-						<p className="m-0 px-panel py-region text-body text-destructive" role="alert">
+						<p className="m-0 py-region text-body text-destructive" role="alert">
 							The selected pane is no longer available. Choose another pane.
 						</p>
 					) : (
 						<>
 							<WorkbenchThreadLink
-								className="border-x-0 border-t-0 px-panel py-region"
+								className="p-0"
 								controller={activePane.threadLink.controller}
 								hostRecoveryIntents={activePane.threadLink.hostRecoveryIntents}
 								initialAccountForm={activePane.threadLink.initialAccountForm}
@@ -122,22 +171,25 @@ export function WorkbenchSettingsDialog({
 								transport={activePane.transport}
 							/>
 							<details
-								className="group border-b border-border bg-surface"
+								className="group border-t border-border"
 								id={coordinatorId}
 								open={showCoordinator}
 							>
 								<summary
 									ref={coordinatorRef}
-									className="flex min-h-touch-target cursor-pointer items-center justify-between px-panel text-body font-medium outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+									className="flex min-h-touch-target cursor-pointer items-center justify-between text-body font-medium outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
 								>
 									<span>Coordinator details</span>
-									<span aria-hidden="true" className="text-muted-foreground group-open:rotate-90">
-										›
-									</span>
+									<RiArrowRightSLine
+										aria-hidden="true"
+										focusable="false"
+										size={18}
+										className="text-muted-foreground group-open:rotate-90"
+									/>
 								</summary>
 								{activeState === null ? null : (
 									<WorkbenchCoordinatorDisclosure
-										className="border-x-0 border-b-0 px-panel"
+										className="border-0 bg-transparent px-0"
 										state={activeState}
 									/>
 								)}
@@ -145,9 +197,6 @@ export function WorkbenchSettingsDialog({
 						</>
 					)}
 				</div>
-				<footer className="flex justify-end border-t border-border px-panel py-control">
-					<DialogClose>Close</DialogClose>
-				</footer>
 			</DialogContent>
 		</Dialog>
 	);

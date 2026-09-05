@@ -142,7 +142,7 @@ describe("thread-link readiness disclosure", () => {
 		const recovery = readiness(stopped, []).recoveries[0];
 		expect(recovery?.available).toBeFalse();
 		expect(recovery?.owner).toBe("none");
-		expect(recovery?.description).toContain("has no owner for that action");
+		expect(recovery?.description).toContain("Do this where Archboard is running.");
 	});
 
 	test("a disconnected pane still discloses the connection arm it is in", () => {

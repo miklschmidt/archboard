@@ -2,6 +2,7 @@ import type {
 	BrowserCommandDraft,
 	BrowserWorkbenchCommandResult,
 	BrowserWorkbenchCommandTarget,
+	BrowserWorkbenchCommandIntent,
 	BrowserWorkbenchSnapshotMessage,
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
@@ -44,6 +45,29 @@ function workbenchSnapshot(voice: "ready" | "unavailable" = "ready"): BrowserSna
 }
 
 export class FakeTransport implements BrowserWorkbenchTransport {
+	readonly prepared: {
+		draft: BrowserCommandDraft;
+		intent: BrowserWorkbenchCommandIntent | undefined;
+	}[] = [];
+	preparedGate: Promise<void> | null = null;
+	readonly preparation = Promise.withResolvers<void>();
+	captureCommandIntent(): BrowserWorkbenchCommandIntent {
+		if (this.currentSnapshot === null) throw new Error("No action target.");
+		return {
+			capturedThreadLink: this.currentSnapshot.threadLink,
+			authority: this.currentLease === null ? null : this.captureCommandTarget(),
+		};
+	}
+	async executeCommand(
+		draft: BrowserCommandDraft,
+		intent?: BrowserWorkbenchCommandIntent,
+	): Promise<BrowserWorkbenchCommandResult> {
+		this.prepared.push({ draft, intent });
+		this.preparation.resolve();
+		if (this.preparedGate !== null) await this.preparedGate;
+		await this.claimLease();
+		return this.command(draft);
+	}
 	readonly mediaReady: boolean[] = [];
 	readonly commands: BrowserCommandDraft[] = [];
 	private readonly listeners = new Set<() => void>();

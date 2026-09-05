@@ -250,7 +250,11 @@ function snapshotView(
 ): WorkbenchRuntimeView {
 	const timeline = snapshot.timeline;
 	if (timeline === null) {
-		return { mode: "readonly", state, reason, messages: [] };
+		// History arrives independently of the executable link. Its absence
+		// cannot revoke the input authority already confirmed for this thread.
+		return mode === "executable"
+			? { mode, state: "ready", reason: null, messages: [] }
+			: { mode, state, reason, messages: [] };
 	}
 	try {
 		const messages = mapTimeline(timeline);
@@ -398,7 +402,14 @@ function readonlyRecovery(state: ReadonlyWorkbenchState): string {
 function renderStatus(status: WorkbenchVisibleStatus): ReactNode {
 	return createElement(
 		"p",
-		{ role: status.role, "aria-label": status.label },
+		{
+			role: status.role,
+			"aria-label": status.label,
+			className:
+				status.state === "ready" || status.state === "delivered"
+					? "sr-only"
+					: "m-0 shrink-0 px-region py-control font-sans text-body text-warning",
+		},
 		status.message,
 		status.recovery === null ? null : createElement("span", null, ` ${status.recovery}`),
 	);

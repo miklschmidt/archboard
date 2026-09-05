@@ -1,7 +1,7 @@
 import type { BrowserQueue, BrowserSnapshot } from "../../../shared/codex-browser-model/index.js";
 import type {
 	BrowserWorkbenchCapabilities,
-	BrowserWorkbenchCommandTarget,
+	BrowserWorkbenchCommandIntent,
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
 	BrowserWorkbenchTransportErrorCode,
@@ -181,32 +181,32 @@ export type WorkbenchQueueReorderPlan =
 /** The transport surface this module uses; it never owns or starts one. */
 export type WorkbenchQueueTransport = Pick<
 	BrowserWorkbenchTransport,
-	"capabilities" | "captureCommandTarget" | "command" | "refresh" | "state" | "subscribe"
+	"capabilities" | "captureCommandIntent" | "executeCommand" | "refresh" | "state" | "subscribe"
 >;
 
 export interface WorkbenchQueueActions {
 	readonly list: () => Promise<WorkbenchQueueSettlement>;
 	readonly add: (
 		prompt: string,
-		target: BrowserWorkbenchCommandTarget,
+		target: BrowserWorkbenchCommandIntent,
 	) => Promise<WorkbenchQueueSettlement>;
 	readonly edit: (
 		submissionId: WorkbenchQueueSubmissionId,
 		prompt: string,
-		target: BrowserWorkbenchCommandTarget,
+		target: BrowserWorkbenchCommandIntent,
 	) => Promise<WorkbenchQueueSettlement>;
 	readonly cancel: (
 		submissionId: WorkbenchQueueSubmissionId,
-		target: BrowserWorkbenchCommandTarget,
+		target: BrowserWorkbenchCommandIntent,
 	) => Promise<WorkbenchQueueSettlement>;
 	readonly reorder: (
 		orderedSubmissionIds: readonly WorkbenchQueueSubmissionId[],
-		target: BrowserWorkbenchCommandTarget,
+		target: BrowserWorkbenchCommandIntent,
 		submissionId?: WorkbenchQueueSubmissionId | null,
 	) => Promise<WorkbenchQueueSettlement>;
 	readonly start: (
 		submissionId: WorkbenchQueueSubmissionId,
-		target: BrowserWorkbenchCommandTarget,
+		target: BrowserWorkbenchCommandIntent,
 	) => Promise<WorkbenchQueueSettlement>;
 }
 

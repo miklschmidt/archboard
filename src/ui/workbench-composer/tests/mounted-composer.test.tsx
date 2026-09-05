@@ -79,6 +79,7 @@ describe("the composer's accessible surface", () => {
 			.filter((element) => element.getAttribute("aria-label") === "Codex composer status");
 		expect(announced).toHaveLength(1);
 		expect(announced[0]?.textContent).toContain("The composer is ready.");
+		expect(announced[0]?.className).toBe("sr-only text-muted-foreground");
 	});
 });
 
@@ -98,7 +99,7 @@ describe("the keyboard the composer owns", () => {
 			threadId: support.THREAD,
 			prompt: "Draw the module graph.",
 		});
-		expect(transport.sent[0]?.target).toEqual(support.commandTarget());
+		expect(transport.sent[0]?.target).toEqual(support.commandIntent());
 	});
 
 	test("Enter during a running turn sends the literal steer body with its turn id", async () => {

@@ -137,9 +137,9 @@ describe("Codex account disclosure", () => {
 				}).detail,
 		);
 		expect(details[0]).toBe("Codex did not answer account/read.");
-		expect(details[1]).toContain("Choose one of the supported forms");
+		expect(details[1]).toContain("Choose how to sign in.");
 		expect(details[2]).toContain("chatgpt sign-in");
-		expect(details[3]).toContain("amazonBedrock account type");
+		expect(details[3]).toContain("Signed in with amazonBedrock.");
 		expect(details[4]).toBe("Codex rejected the API key.");
 	});
 
@@ -170,7 +170,7 @@ describe("Codex account disclosure", () => {
 		});
 		expect(blocked.canLogin).toBeFalse();
 		expect(blocked.state).toBe("unknown");
-		expect(blocked.blockedReason).toContain("active browser command lease");
+		expect(blocked.blockedReason).toContain("Reconnect to Codex");
 		expect(blocked.forms).toHaveLength(4);
 		expect(blocked.unavailable).toHaveLength(4);
 	});

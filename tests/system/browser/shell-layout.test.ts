@@ -148,11 +148,11 @@ test(
 			expect(snapshot.visibleFocus).toBe(true);
 			expect(snapshot.boardIdentity).toBe("fixedpoint");
 			expect(snapshot.level.toLowerCase()).toBe("service");
-			expect(snapshot.connectionState).toContain("Live board");
+			expect(snapshot.connectionState).toBe("Connected");
 			expect(snapshot.persistenceState).toContain("In the vault");
 			expect(snapshot.paneIdentity).toContain("fixedpoint");
 			expect(snapshot.legacyVaultLineCount).toBe(0);
-			expect(snapshot.boardLeftAligned).toBe(true);
+			expect(snapshot.headerSectionsAligned).toBe(true);
 			expect(snapshot.tokens).toEqual([
 				"9px/12px",
 				"10px/14px",
@@ -181,7 +181,7 @@ test(
 			expect(snapshot.titleType).toMatchObject({ size: 14, lineHeight: 20, weight: 600 });
 			expect(snapshot.bodyType).toMatchObject({ size: 12, lineHeight: 16, weight: 400 });
 			expect(snapshot.kickerType).toMatchObject({ size: 9, lineHeight: 12, weight: 500 });
-			expect(snapshot.controlType).toMatchObject({ size: 13, lineHeight: 18, weight: 600 });
+			expect(snapshot.controlType).toMatchObject({ size: 13, lineHeight: 18, weight: 500 });
 			expect(snapshot.paneType).toMatchObject({ size: 13, lineHeight: 18, weight: 600 });
 			expect(snapshot.titleType.family).toContain("archboard onest");
 			expect(snapshot.bodyType.family).toContain("archboard onest");
@@ -308,7 +308,7 @@ test(
 		const expandedPaneHeight = await browser.eval<number>(
 			"document.querySelector('.pane').getBoundingClientRect().height",
 		);
-		expect(expandedPaneHeight).toBeLessThan(collapsedPaneHeight - 100);
+		expect(expandedPaneHeight).toBeLessThanOrEqual(collapsedPaneHeight - 44);
 		await roleAction(browser, "button", "Collapse");
 
 		await browser.eval<void>(`{

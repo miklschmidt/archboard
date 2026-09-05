@@ -26,7 +26,7 @@ export interface WorkbenchQueueStore {
 /**
  * The queue's window onto the transport.
  *
- * `capabilities()` and `captureCommandTarget()` both mint a fresh value per
+ * `capabilities()` and `captureCommandIntent()` both mint a fresh value per
  * call, so neither can be a `useSyncExternalStore` snapshot on its own. This
  * takes one observation per transport notification: the identity changes exactly
  * when the transport said something changed, never during a render. The

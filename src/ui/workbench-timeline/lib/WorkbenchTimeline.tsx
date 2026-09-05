@@ -44,7 +44,7 @@ function createRuntimeTextPart(itemId: string): RuntimeTextRenderer {
 				"Assistant message",
 			),
 			createElement(MessagePartPrimitive.Text, {
-				className: "whitespace-pre-wrap font-sans text-body break-words text-foreground",
+				className: "m-0 whitespace-pre-wrap font-sans text-body break-words text-foreground",
 				component: "p",
 				smooth: false,
 			}),
@@ -184,23 +184,14 @@ export function WorkbenchTimeline(props: WorkbenchTimelineProps): ReactNode {
 				"data-history": normalized.priorEpoch ? "prior_epoch" : "current",
 				"data-thread-id": props.threadId,
 			},
-			createElement(
-				"header",
-				{
-					className:
-						"flex min-h-touch-target items-center justify-between gap-control border-b border-border px-region font-sans",
-				},
-				createElement("h1", { className: "m-0 text-title font-semibold", id: headingId }, label),
-				createElement(
-					"span",
-					{
-						className: normalized.priorEpoch
-							? "text-body text-warning"
-							: "text-body text-muted-foreground",
-					},
-					normalized.priorEpoch ? "Prior session history · read only" : "Current session",
-				),
-			),
+			createElement("h1", { className: "sr-only", id: headingId }, label),
+			normalized.priorEpoch
+				? createElement(
+						"p",
+						{ className: "m-0 px-region py-control font-sans text-body text-warning" },
+						"Prior session history · read only",
+					)
+				: null,
 			createElement(
 				ThreadPrimitive.ViewportProvider,
 				{ options: { turnAnchor: "bottom" } },
@@ -208,7 +199,7 @@ export function WorkbenchTimeline(props: WorkbenchTimelineProps): ReactNode {
 					"div",
 					{
 						className:
-							"max-h-full min-h-0 overflow-y-auto bg-surface-raised outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
+							"max-h-full min-h-0 overflow-y-auto outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
 						role: "log",
 						tabIndex: 0,
 						"aria-labelledby": headingId,
@@ -223,7 +214,7 @@ export function WorkbenchTimeline(props: WorkbenchTimelineProps): ReactNode {
 							{
 								className: "m-0 px-region py-panel font-sans text-body text-muted-foreground",
 							},
-							"No Codex activity has arrived for this task.",
+							"Your conversation will appear here.",
 						),
 					),
 					createElement(TimelineMessageList, {

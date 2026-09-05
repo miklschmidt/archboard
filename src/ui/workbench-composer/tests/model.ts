@@ -10,6 +10,7 @@ import type {
 	BrowserCommandName,
 	BrowserWorkbenchCapabilities,
 	BrowserWorkbenchCommandResult,
+	BrowserWorkbenchCommandIntent,
 	BrowserWorkbenchCommandTarget,
 	BrowserWorkbenchState,
 	BrowserWorkbenchTransport,
@@ -198,6 +199,11 @@ export function commandTarget(): BrowserWorkbenchCommandTarget {
 	};
 }
 
+export function commandIntent(): BrowserWorkbenchCommandIntent {
+	const captured = commandTarget();
+	return { capturedThreadLink: captured.capturedThreadLink, authority: captured };
+}
+
 export function capabilities(): BrowserWorkbenchCapabilities {
 	return {
 		connected: true,
@@ -229,7 +235,7 @@ export function commandResult(
 
 export interface RecordedCommand {
 	readonly draft: BrowserCommandDraft;
-	readonly target: BrowserWorkbenchCommandTarget | undefined;
+	readonly target: BrowserWorkbenchCommandIntent | BrowserWorkbenchCommandTarget | undefined;
 }
 
 export interface FakeComposerTransport extends WorkbenchComposerTransport {
@@ -260,15 +266,15 @@ export function fakeComposerTransport(
 			current = next;
 		},
 		state: () => current,
-		captureCommandTarget: () => {
+		captureCommandIntent: () => {
 			if (target === null)
 				throw new BrowserWorkbenchTransportError(
-					"lease_required",
-					"A browser command lease is required.",
+					"not_ready",
+					"The workbench is not ready to capture an action.",
 				);
-			return target;
+			return { capturedThreadLink: target.capturedThreadLink, authority: target };
 		},
-		command: async (draft, commandTargetValue) => {
+		executeCommand: async (draft, commandTargetValue) => {
 			const recorded: RecordedCommand = { draft, target: commandTargetValue };
 			sent.push(recorded);
 			if (options.command !== undefined) return options.command(recorded);
@@ -295,8 +301,10 @@ export function runtimeTransport(fake: FakeComposerTransport): BrowserWorkbenchT
 		renewLease: unsupported,
 		releaseLease: unsupported,
 		accountRead: unsupported,
-		command: fake.command,
-		captureCommandTarget: fake.captureCommandTarget,
+		command: unsupported,
+		captureCommandTarget: unsupported,
+		executeCommand: fake.executeCommand,
+		captureCommandIntent: fake.captureCommandIntent,
 		capabilities,
 		snapshot: () => fake.state().snapshot,
 		sequence: () => fake.state().sequence,

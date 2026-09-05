@@ -178,16 +178,16 @@ describe("thread-link action controller", () => {
 		);
 	});
 
-	test("a pane with no command lease fails before any target exists", async () => {
+	test("a pane with no command lease can start the explicit creation action", async () => {
 		const transport = new FakeTransport();
 		transport.leased = false;
+		transport.nextResult = transport.result({
+			snapshot: snapshot({ threadLink: executableLink(threadA) }),
+		});
 		const controller = controllerFor(transport);
 		await controller.create();
-		expect(transport.commands).toEqual([]);
-		const settled = controller.snapshot();
-		expect(settled.state).toBe("failed");
-		if (settled.state === "failed" && "childId" in settled.target)
-			expect(settled.target.commandId).toBeNull();
+		expect(transport.commands).toHaveLength(1);
+		expect(controller.snapshot().state).toBe("succeeded");
 	});
 
 	test("an ambiguous creation stays inspect-only rather than reporting a link", async () => {
