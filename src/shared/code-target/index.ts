@@ -33,7 +33,7 @@ const CustomSelectionSchema = z
 			});
 		}
 		const tokens = argv.reduce(
-			(total, argument) => total + (argument.match(/\{path\}/g)?.length ?? 0),
+			(total, argument) => total + (argument.match(/\{path\}/gu)?.length ?? 0),
 			0,
 		);
 		if (tokens !== 1) {

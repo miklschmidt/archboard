@@ -107,17 +107,16 @@ async function renderCliContractArtifacts(root: string) {
 		]),
 	].join("\n");
 
-	const proofJson =
-		JSON.stringify(
-			{
-				schemaVersion: 7,
-				generatedFrom: "src/cli/commands/run.ts",
-				routes,
-				contracts: proof,
-			},
-			null,
-			2,
-		) + "\n";
+	const proofJson = `${JSON.stringify(
+		{
+			schemaVersion: 7,
+			generatedFrom: "src/cli/commands/run.ts",
+			routes,
+			contracts: proof,
+		},
+		null,
+		2,
+	)}\n`;
 
 	const proofMarkdown = [
 		"<!-- Generated from the run.ts registry and public CommandContract metadata. -->",
@@ -159,9 +158,9 @@ async function renderCliContractArtifacts(root: string) {
 	}
 
 	const rawArtifacts = new Map<string, string>([
-		["cli-command-audit.md", auditMarkdown + "\n"],
+		["cli-command-audit.md", `${auditMarkdown}\n`],
 		["command-contract-proof.json", proofJson],
-		["command-contract-proof.md", proofMarkdown.join("\n") + "\n"],
+		["command-contract-proof.md", `${proofMarkdown.join("\n")}\n`],
 	]);
 	const artifacts = new Map(
 		[...rawArtifacts].map(([name, content]) => [name, format(root, name, content)]),

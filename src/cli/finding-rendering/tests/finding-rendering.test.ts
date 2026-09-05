@@ -70,7 +70,7 @@ describe("finding rendering", () => {
 	});
 
 	test("finding digests and names are stable and ordered", () => {
-		expect(findingDigest(finding)).toMatch(/^[0-9a-f]{64}$/);
+		expect(findingDigest(finding)).toMatch(/^[0-9a-f]{64}$/u);
 		expect(findingFileName(0, finding)).toBe(
 			`0001-${finding.code}-${findingDigest(finding).slice(0, 12)}.png`,
 		);

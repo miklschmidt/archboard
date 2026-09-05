@@ -13,14 +13,14 @@ function optionFlags(spellings: readonly string[], value: "none" | "required" | 
 
 function commanderUsageError(error: unknown): CliUsageError {
 	const value = error as Error & { code?: string };
-	const message = value.message.replace(/^error:\s*/i, "");
-	const unknown = message.match(/^unknown option '([^']+)'/i);
+	const message = value.message.replace(/^error:\s*/iu, "");
+	const unknown = message.match(/^unknown option '([^']+)'/iu);
 	if (unknown) {
 		return new CliUsageError(`Unknown flag ${unknown[1]?.split("=", 1)[0]}`);
 	}
-	const missing = message.match(/^option '([^']+)' argument missing/i);
+	const missing = message.match(/^option '([^']+)' argument missing/iu);
 	if (missing) {
-		const spelling = missing[1]?.match(/--[a-z0-9-]+/i)?.[0] ?? missing[1];
+		const spelling = missing[1]?.match(/--[a-z0-9-]+/iu)?.[0] ?? missing[1];
 		return new CliUsageError(`Flag ${spelling} requires a value`);
 	}
 	return new CliUsageError(message[0]?.toUpperCase() + message.slice(1));

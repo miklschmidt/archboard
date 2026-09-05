@@ -28,14 +28,14 @@ function applyHeld(result: unknown, held: unknown, policy: HeldPolicy): unknown 
 
 function emitPublicResult(outputCase: OutputCase, result: unknown): void {
 	if (outputCase.mode === "json" || outputCase.mode === "file-receipt") {
-		processCommandHost.writeStdout(JSON.stringify(result, null, 2) + "\n");
+		processCommandHost.writeStdout(`${JSON.stringify(result, null, 2)}\n`);
 	} else {
 		const content = z.union([z.string(), z.instanceof(Uint8Array)]).parse(result);
-		processCommandHost.writeStdout(typeof content === "string" ? content + "\n" : content);
+		processCommandHost.writeStdout(typeof content === "string" ? `${content}\n` : content);
 	}
 }
 
-const emitDiagnostic = (message: string): void => processCommandHost.writeStderr(message + "\n");
+const emitDiagnostic = (message: string): void => processCommandHost.writeStderr(`${message}\n`);
 
 function emitContinuation(held: unknown): void {
 	if (!held || typeof held !== "object") {

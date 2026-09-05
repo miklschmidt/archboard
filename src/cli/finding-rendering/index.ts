@@ -7,8 +7,8 @@ import { FindingCodeSchema, InspectionReportSchema } from "../../runtime/board-i
 import type { InspectionFinding, InspectionReport } from "../../runtime/board-inspection/index.js";
 import { findingRasterDimensions } from "../../shared/finding-raster/index.js";
 
-const HEX_SHA256 = /^[0-9a-f]{64}$/;
-const FILE_NAME = /^\d{4,}-[A-Z_]+-[0-9a-f]{12}\.png$/;
+const HEX_SHA256 = /^[0-9a-f]{64}$/u;
+const FILE_NAME = /^\d{4,}-[A-Z_]+-[0-9a-f]{12}\.png$/u;
 
 const FindingRenderFailureSchema = z.enum([
 	"focus-unavailable",
@@ -234,7 +234,7 @@ function assembleFindingArtifacts(
 		complete: entries.every((entry) => entry.status === "rendered"),
 		entries,
 	});
-	const content = JSON.stringify(manifest, null, 2) + "\n";
+	const content = `${JSON.stringify(manifest, null, 2)}\n`;
 	return {
 		manifest,
 		artifact: {

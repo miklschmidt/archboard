@@ -606,8 +606,7 @@ function commandHelp(topic: readonly string[]): string | null {
 	const prerequisites = route.owner.contract.prerequisites.join(", ") || "none";
 	const effects = route.owner.contract.effects.join(", ") || "none";
 	return (
-		base +
-		`  ${route.owner.contract.description}\n` +
+		`${base}  ${route.owner.contract.description}\n` +
 		`  Prerequisites: ${prerequisites}. Effects: ${effects}.\n`
 	);
 }
@@ -713,7 +712,7 @@ function printHelp(): void {
 		"",
 		"Run `archboard help <command>` for per-command usage.",
 	];
-	process.stdout.write(lines.join("\n") + "\n");
+	process.stdout.write(`${lines.join("\n")}\n`);
 }
 
 function exitCodeFor(error: unknown, command?: RouteOwner): number {
@@ -791,7 +790,7 @@ function takeExpectVersionFlag(argv: string[]): number | null {
 	if (raw === null) {
 		return null;
 	}
-	if (!/^\d+$/.test(raw.trim())) {
+	if (!/^\d+$/u.test(raw.trim())) {
 		throw new CliUsageError(
 			`--expect-version takes a whole number — the version your last write reported, or the one ` +
 				`\`board info\` says. Got ${JSON.stringify(raw)}.`,
@@ -870,7 +869,7 @@ async function runCli(argv: string[]): Promise<void> {
 	}
 
 	if (name === "--version" || name === "-v" || name === "version") {
-		process.stdout.write(packageVersion() + "\n");
+		process.stdout.write(`${packageVersion()}\n`);
 		return;
 	}
 
