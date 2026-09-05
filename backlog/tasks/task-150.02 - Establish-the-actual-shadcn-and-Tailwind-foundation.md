@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-05 14:27'
+updated_date: '2026-09-05 14:32'
 labels: []
 dependencies:
   - TASK-150.01
@@ -68,4 +68,6 @@ Takeover plan 2026-09-05 (Claude orchestrating):
 Browser-generated preset candidate (2026-09-05): https://ui.shadcn.com/create?preset=b3QvqlIdU. Base UI / Nova; Neutral base; Blue theme; Lime chart palette (user selected); Small radius (0.45rem); Default / Solid menus; Subtle menu accent; Remix Icon. Manrope body and heading are preview substitutes because the builder does not offer Onest or DM Mono; retain the approved bundled Onest and DM Mono in implementation. Compared Nova, Mira and Lyra previews; Nova is the proposed starting point. Builder command: bunx --bun shadcn@latest apply --preset b3QvqlIdU. Capture and use a compatible pinned CLI at implementation time, preserving existing project ownership and font assets. This is planning evidence only; no preset applied or UI migration started. Lime charts do not add chart features to scope. Keep live-status color semantic in the coherent theme; chart variables are for data series. Other theme refinements, including cobalt focus indication and touch sizing, remain part of the approved reference adaptation.
 
 User approved preset b3QvqlIdU. The earlier candidate note is now approved; overall planning remains open.
+
+Checkpoint 0a6ee16f: preset applied (shadcn CLI 4.21.0), 25 official base-nova files at src/ui/components with README provenance digests, exact-file lint override (style/layout/length/react-perf/prefer-tag-over-role off; safety, React correctness, a11y on), 8 upstream statements adjusted for retained safety rules, two documented statement-level a11y suppressions (label association via spread props; addon pointer-only focus). app.css is the single stylesheet with reference adaptations. bun run lint, type-check, fmt:check green. Manrope removed; Onest/DM Mono bundled. Frame/entry worker running.
 <!-- SECTION:NOTES:END -->
