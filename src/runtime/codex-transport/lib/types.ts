@@ -98,6 +98,21 @@ type ServerRequestEnvelope<Method extends ServerRequestMethod, Owner extends Res
 	readonly owner: Owner;
 };
 
+type ReadonlyData<Value> = Value extends
+	| bigint
+	| boolean
+	| null
+	| number
+	| string
+	| symbol
+	| undefined
+	? Value
+	: Value extends readonly (infer Item)[]
+		? readonly ReadonlyData<Item>[]
+		: Value extends object
+			? { readonly [Key in keyof Value]: ReadonlyData<Value[Key]> }
+			: Value;
+
 type HumanServerRequest = {
 	[Method in HumanApprovalMethod]: ServerRequestEnvelope<Method, "codex-approvals">;
 }[HumanApprovalMethod];
@@ -120,10 +135,11 @@ type SessionServerRequest =
 			>;
 	  }[Exclude<SessionServerRequestMethod, "currentTime/read">];
 
-export type DynamicServerRequest = ServerRequestEnvelope<
-	"item/tool/call",
-	DynamicDispatcherOwner
+export type DynamicServerRequest = Omit<
+	ServerRequestEnvelope<"item/tool/call", DynamicDispatcherOwner>,
+	"params"
 > & {
+	readonly params: ReadonlyData<ServerRequestPayloads["item/tool/call"]>;
 	readonly logicalCall: LogicalToolCallCorrelation;
 };
 

@@ -6,7 +6,15 @@
 	"readonlyPrimitiveTypeAllowlist": [
 		{
 			"from": "file",
-			"name": ["ChildId", "ChildEpoch", "ThreadId", "TurnId", "OperationId", "DynamicToolCallId"],
+			"name": [
+				"ChildId",
+				"ChildEpoch",
+				"ThreadId",
+				"TurnId",
+				"OperationId",
+				"DynamicToolCallId",
+				"JsonRpcRequestId"
+			],
 			"path": "src/shared/codex-workbench-identity/lib/identity.ts"
 		},
 		{
