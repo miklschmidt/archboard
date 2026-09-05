@@ -6,11 +6,8 @@ import {
 	replaceSceneOnCanvas,
 	saveSnapshot,
 } from "../../runtime/engine/canvas-client.js";
-import {
-	CliUsageError,
-	defineCommand,
-	type OptionParameter,
-} from "../command-contract/contract.js";
+import { CliUsageError, defineCommand } from "../command-contract/contract.js";
+import type { OptionParameter } from "../command-contract/contract.js";
 import { HoldReportSchema, ServerElementSchema } from "../command-contract/schemas.js";
 import { boardWriteRefusals, commonRefusals } from "../command-contract/common.js";
 import type { FlagSpecs } from "../command-contract/route-options.js";

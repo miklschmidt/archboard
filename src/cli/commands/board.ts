@@ -4,8 +4,8 @@ import {
 	listBoardsOnCanvas,
 	newBoard,
 	openBoard,
-	type BoardListResponse,
 } from "../../runtime/engine/canvas-client.js";
+import type { BoardListResponse } from "../../runtime/engine/canvas-client.js";
 import { inspectCheckout } from "../../runtime/engine/git.js";
 import { CliUsageError, defineCommand } from "../command-contract/contract.js";
 import {

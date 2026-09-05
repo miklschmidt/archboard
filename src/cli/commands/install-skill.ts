@@ -1,10 +1,11 @@
-import fs from "fs";
-import path from "path";
-import os from "os";
-import { execFileSync } from "child_process";
-import { fileURLToPath } from "url";
+import fs from "node:fs";
+import path from "node:path";
+import os from "node:os";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { CliUsageError, defineCommand, type CommandContext } from "../command-contract/contract.js";
+import { CliUsageError, defineCommand } from "../command-contract/contract.js";
+import type { CommandContext } from "../command-contract/contract.js";
 
 const SKILL_NAME = "archboard";
 const RETIRED_SKILL_NAMES = ["excalidraw-skill"];

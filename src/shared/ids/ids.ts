@@ -54,7 +54,7 @@ function isBlockId(id: unknown): boolean {
  * building a copy of the keys.
  */
 interface IdsInUse {
-	has(id: string): boolean;
+	readonly has: (id: string) => boolean;
 }
 
 const NOTHING_IN_USE: IdsInUse = { has: () => false };

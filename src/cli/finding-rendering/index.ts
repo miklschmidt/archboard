@@ -3,12 +3,8 @@ import path from "node:path";
 
 import { z } from "zod";
 
-import {
-	FindingCodeSchema,
-	InspectionReportSchema,
-	type InspectionFinding,
-	type InspectionReport,
-} from "../../runtime/board-inspection/index.js";
+import { FindingCodeSchema, InspectionReportSchema } from "../../runtime/board-inspection/index.js";
+import type { InspectionFinding, InspectionReport } from "../../runtime/board-inspection/index.js";
 import { findingRasterDimensions } from "../../shared/finding-raster/index.js";
 
 const HEX_SHA256 = /^[0-9a-f]{64}$/;
@@ -146,7 +142,7 @@ interface FindingRenderServerResult {
 interface FindingArtifactSet {
 	path: string;
 	encoding: "files";
-	files: Array<{ name: string; content: Uint8Array }>;
+	files: { name: string; content: Uint8Array }[];
 	manifest: { name: "manifest.json"; content: string };
 }
 

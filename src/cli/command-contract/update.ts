@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { updateElementStrict } from "../../runtime/engine/canvas-client.js";
-import { defineCommand, type CommandContext } from "./contract.js";
+import { defineCommand } from "./contract.js";
+import type { CommandContext } from "./contract.js";
 import { BoardFingerprintSchema, HoldReportSchema, ServerElementSchema } from "./schemas.js";
 import { commonRefusals, tail, WRITE_ANSWER } from "./lib/common.js";
 
