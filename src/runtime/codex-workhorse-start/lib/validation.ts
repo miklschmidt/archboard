@@ -27,13 +27,13 @@ import type {
 } from "./contract.js";
 import { cloneAndFreeze } from "./immutability.js";
 
-export interface ValidatedWorkhorseStart {
+interface ValidatedWorkhorseStart {
 	readonly thread: WorkhorseThread;
 	readonly threadId: ThreadId;
 	readonly facts: WorkhorseStartFacts;
 }
 
-export function validateWorkhorseStartResponse(
+function validateWorkhorseStartResponse(
 	response: WorkhorseStartResponse,
 	options: CodexWorkhorseStartOptions,
 ): ValidatedWorkhorseStart {
@@ -87,7 +87,7 @@ export function validateWorkhorseStartResponse(
 	return Object.freeze({ thread: cloneAndFreeze(response.thread), threadId, facts });
 }
 
-export function isCommittedStartRecord(
+function isCommittedStartRecord(
 	record: EpochOperationRecord,
 	childId: ChildId,
 	epoch: ChildEpoch,
@@ -115,7 +115,7 @@ export function isCommittedStartRecord(
 	);
 }
 
-export function isCurrentStartProof(
+function isCurrentStartProof(
 	proof: EpochExecutionProof,
 	childId: ChildId,
 	epoch: ChildEpoch,
@@ -126,7 +126,7 @@ export function isCurrentStartProof(
 	return isCommittedStartRecord(proof.record, childId, epoch, operationId, threadId, checkoutRoot);
 }
 
-export function isCommittedCleanupRecord(
+function isCommittedCleanupRecord(
 	record: EpochOperationRecord,
 	childId: ChildId,
 	epoch: ChildEpoch,
@@ -155,7 +155,7 @@ export function isCommittedCleanupRecord(
 }
 
 /** Deletion is permitted only for the exact newly-created, empty, idle root. */
-export function isExactIdleWorkhorseRoot(
+function isExactIdleWorkhorseRoot(
 	thread: WorkhorseThread,
 	started: ValidatedWorkhorseStart,
 ): boolean {
@@ -174,7 +174,7 @@ export function isExactIdleWorkhorseRoot(
 	);
 }
 
-export function isExecutableWorkhorseBinding(
+function isExecutableWorkhorseBinding(
 	binding: ThreadLinkBindingSnapshot,
 	paneId: string,
 	childId: ChildId,
@@ -192,3 +192,13 @@ export function isExecutableWorkhorseBinding(
 		link.canAcceptDirectInput
 	);
 }
+
+export {
+	type ValidatedWorkhorseStart,
+	validateWorkhorseStartResponse,
+	isCommittedStartRecord,
+	isCurrentStartProof,
+	isCommittedCleanupRecord,
+	isExactIdleWorkhorseRoot,
+	isExecutableWorkhorseBinding,
+};

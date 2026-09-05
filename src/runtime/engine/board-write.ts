@@ -49,14 +49,14 @@ import {
 	type TellPanes,
 } from "./lib/board-write-notifications.js";
 
-export type WrittenNote = ReturnType<typeof writeBoardContent>;
+type WrittenNote = ReturnType<typeof writeBoardContent>;
 
-export interface BoardWriteTarget {
+interface BoardWriteTarget {
 	key: string;
 	board: BoardState;
 }
 
-export interface BoardWriteDelta {
+interface BoardWriteDelta {
 	created: ServerElement[];
 	updated: ServerElement[];
 	deleted: string[];
@@ -65,7 +65,7 @@ export interface BoardWriteDelta {
 	filesReplaced?: ExcalidrawFile[];
 }
 
-export interface BoardMutationResult<T> {
+interface BoardMutationResult<T> {
 	value: T;
 	delta?: Partial<BoardWriteDelta>;
 	/** A pane-intended document captured before input repair/settlement. */
@@ -78,12 +78,12 @@ export interface BoardMutationResult<T> {
 	replacementFiles?: readonly unknown[];
 }
 
-export type BoardMutation<T> = (
+type BoardMutation<T> = (
 	content: BoardContent,
 	destinationBefore: BoardContent,
 ) => BoardMutationResult<T>;
 
-export interface ElementMutationPlan<T> {
+interface ElementMutationPlan<T> {
 	input: ElementInputRequest;
 	/** Embedded-file candidates produced with these elements, merged in the same note write. */
 	addFiles?: readonly unknown[];
@@ -94,9 +94,9 @@ export interface ElementMutationPlan<T> {
 	value: (applied: AppliedElementInput, content: BoardContent) => T;
 }
 
-export const SCENE_REPLACEMENT_MARKER = "replace-scene" as const;
+const SCENE_REPLACEMENT_MARKER = "replace-scene" as const;
 
-export interface BoardWriteAnswerContext<T> {
+interface BoardWriteAnswerContext<T> {
 	source: BoardWriteTarget;
 	target: BoardWriteTarget;
 	content: BoardContent;
@@ -109,7 +109,7 @@ export interface BoardWriteAnswerContext<T> {
 	checkoutSnapshot: CheckoutSnapshot;
 }
 
-export interface BoardWriteRequest<T> {
+interface BoardWriteRequest<T> {
 	source: BoardWriteTarget;
 	origin: ChangeOrigin;
 	mutation: BoardMutation<T>;
@@ -129,7 +129,7 @@ export interface BoardWriteRequest<T> {
 	presentationLinks?: ReadonlyMap<string, PresentationContext>;
 }
 
-export class BoardMutationError extends Error {
+class BoardMutationError extends Error {
 	constructor(
 		readonly status: number,
 		message: string,
@@ -165,7 +165,7 @@ function copyContent(content: BoardContent): BoardContent {
  * Build an element mutation without giving a route direct access to the
  * converter. applyElementInput remains one stage inside writeBoard.
  */
-export function elementMutation<T>(
+function elementMutation<T>(
 	prepare: (content: BoardContent) => ElementMutationPlan<T>,
 ): BoardMutation<T> {
 	return (content) => {
@@ -335,7 +335,7 @@ function releaseSavedHold<T>(
  * Run one complete board write. Everything before persist works on a fresh
  * copy, so a mutation that throws cannot leave an earlier upsert applied.
  */
-export function writeBoard<T>(
+function writeBoard<T>(
 	request: BoardWriteRequest<T>,
 	tellPanes: TellPanes,
 ): Record<string, unknown> {
@@ -404,7 +404,7 @@ export function writeBoard<T>(
 	return request.answer(context);
 }
 
-export interface CanonicalCorrections {
+interface CanonicalCorrections {
 	upserts: ServerElement[];
 	deletes: string[];
 }
@@ -417,7 +417,7 @@ export interface CanonicalCorrections {
  * an intentional browser overlay and must not appear as a correction on every
  * drag. A renamed id naturally becomes one delete and one upsert.
  */
-export function canonicalCorrections(
+function canonicalCorrections(
 	submitted: Iterable<ServerElement>,
 	canonical: Iterable<ServerElement>,
 	boardKey: string,
@@ -447,7 +447,7 @@ export function canonicalCorrections(
 }
 
 /** A persisted human report gets a compact canonical acknowledgement. */
-export function humanWriteAnswer(
+function humanWriteAnswer(
 	context: BoardWriteAnswerContext<unknown>,
 	wantsFullDocument: boolean,
 ): Record<string, unknown> {
@@ -472,7 +472,7 @@ export function humanWriteAnswer(
 }
 
 /** What an agent gets after a write, small unless it asked for the document. */
-export function agentWriteAnswer(
+function agentWriteAnswer(
 	boardKey: string,
 	board: BoardState,
 	content: BoardContent,
@@ -513,4 +513,22 @@ function boardFingerprint(
 	};
 }
 
-export type { TellPanes };
+export {
+	type WrittenNote,
+	type BoardWriteTarget,
+	type BoardWriteDelta,
+	type BoardMutationResult,
+	type BoardMutation,
+	type ElementMutationPlan,
+	SCENE_REPLACEMENT_MARKER,
+	type BoardWriteAnswerContext,
+	type BoardWriteRequest,
+	BoardMutationError,
+	elementMutation,
+	writeBoard,
+	type CanonicalCorrections,
+	canonicalCorrections,
+	humanWriteAnswer,
+	agentWriteAnswer,
+	type TellPanes,
+};

@@ -32,7 +32,7 @@ import {
 	parseRealtimeSessionId,
 } from "../../../shared/codex-realtime-host/index.js";
 
-export interface Identities {
+interface Identities {
 	readonly authorities: IdentityAuthorities;
 	readonly child: IdentityAuthorities["identity"]["validator"]["childId"];
 	readonly epoch: IdentityAuthorities["identity"]["validator"]["epoch"];
@@ -47,7 +47,7 @@ export interface Identities {
 	readonly browserCorrelationId: ReturnType<typeof parseRealtimeCorrelationId>;
 }
 
-export function identities(): Identities {
+function identities(): Identities {
 	const childId = "archboard:child:h11111111111111111111111111111111";
 	const authorities = restoreIdentityAuthorities({
 		childId,
@@ -105,7 +105,7 @@ function proof(ids: Identities): EpochExecutionProof {
 	return { record: record(ids), manifestRevision: 7 };
 }
 
-export function link(ids: Identities): CoordinatorCallbackLinkCorrelation {
+function link(ids: Identities): CoordinatorCallbackLinkCorrelation {
 	const executable = {
 		kind: "thread_link",
 		state: "executable",
@@ -152,9 +152,9 @@ function generation(ids: Identities): CoordinatorCallbackRealtimeGeneration {
 	};
 }
 
-export type CallbackSourceType = WorkhorseOperationEvent["type"];
+type CallbackSourceType = WorkhorseOperationEvent["type"];
 
-export function operationEvent(
+function operationEvent(
 	ids: Identities,
 	type: CallbackSourceType,
 	operation:
@@ -221,7 +221,7 @@ function semanticInput(ids: Identities, active: boolean): SemanticContextInput {
 	};
 }
 
-export interface SemanticSources {
+interface SemanticSources {
 	readonly publisher: SemanticContextPublisher;
 	readonly change: SettledSemanticChangeEvent;
 	readonly focus: PaneFocusEvent;
@@ -229,7 +229,7 @@ export interface SemanticSources {
 	readonly dispose: () => void;
 }
 
-export function semanticSources(ids: Identities, active: boolean): SemanticSources {
+function semanticSources(ids: Identities, active: boolean): SemanticSources {
 	let change: SettledSemanticChangeEvent | null = null;
 	const listeners = new Set<(event: SettledChangeSourceEvent) => void>();
 	const input = semanticInput(ids, active);
@@ -268,7 +268,7 @@ export function semanticSources(ids: Identities, active: boolean): SemanticSourc
 
 type MutationMode = "delivered" | "rejected" | "lost";
 
-export interface HarnessState {
+interface HarnessState {
 	child: CoordinatorCallbackCurrentChild | null;
 	coordinator: CoordinatorCallbackReadyCoordinator | null;
 	link: CoordinatorCallbackLinkCorrelation | null;
@@ -276,7 +276,7 @@ export interface HarnessState {
 	classification: ThreadLinkClassification;
 }
 
-export interface Harness {
+interface Harness {
 	readonly ids: Identities;
 	readonly state: HarnessState;
 	readonly semantic: SemanticSources;
@@ -293,7 +293,7 @@ export interface Harness {
 	readonly setMutationHook: (hook: (() => void) | null) => void;
 }
 
-export function harness(active = true): Harness {
+function harness(active = true): Harness {
 	const ids = identities();
 	const capturedLink = link(ids);
 	const classifiedLink = capturedLink.binding.link;
@@ -427,7 +427,21 @@ export function harness(active = true): Harness {
 	};
 }
 
-export function close(value: Harness): void {
+function close(value: Harness): void {
 	value.callbacks.dispose();
 	value.semantic.dispose();
 }
+
+export {
+	type Identities,
+	identities,
+	link,
+	type CallbackSourceType,
+	operationEvent,
+	type SemanticSources,
+	semanticSources,
+	type HarnessState,
+	type Harness,
+	harness,
+	close,
+};

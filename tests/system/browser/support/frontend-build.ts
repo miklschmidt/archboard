@@ -1,16 +1,16 @@
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { isAbsolute, join } from "node:path";
 
-export type FrontendFreshness = "built" | "current";
+type FrontendFreshness = "built" | "current";
 
-export interface FrontendBuildRequest {
+interface FrontendBuildRequest {
 	executable: "bun";
 	argv: string[];
 	cwd: string;
 	env: Record<string, string | undefined>;
 }
 
-export type RunFrontendBuild = (request: FrontendBuildRequest) => Promise<void>;
+type RunFrontendBuild = (request: FrontendBuildRequest) => Promise<void>;
 
 const INPUT_DIRECTORIES = ["frontend", "src"] as const;
 const INPUT_FILES = [
@@ -70,7 +70,7 @@ function buildRequest(repoRoot: string): FrontendBuildRequest {
 	};
 }
 
-export async function ensureFreshFrontend(
+async function ensureFreshFrontend(
 	repoRoot: string,
 	runBuild: RunFrontendBuild,
 ): Promise<FrontendFreshness> {
@@ -96,3 +96,10 @@ export async function ensureFreshFrontend(
 	}
 	return decision;
 }
+
+export {
+	type FrontendFreshness,
+	type FrontendBuildRequest,
+	type RunFrontendBuild,
+	ensureFreshFrontend,
+};

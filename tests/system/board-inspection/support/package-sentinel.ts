@@ -9,7 +9,7 @@ import { processIdentity, processIdentityExists, type ProcessIdentity } from "./
 
 type OwnedOutcome<T> = { status: "fulfilled"; value: T } | { status: "rejected"; error: Error };
 
-export interface Sentinel {
+interface Sentinel {
 	url: string;
 	contacts: () => string;
 	child: ReturnType<typeof Bun.spawn>;
@@ -20,7 +20,7 @@ export interface Sentinel {
 	stderr: Promise<OwnedOutcome<string>>;
 }
 
-export interface SentinelStartOptions {
+interface SentinelStartOptions {
 	resistTermination?: boolean;
 	failStdout?: boolean;
 	failStartup?: boolean;
@@ -28,7 +28,7 @@ export interface SentinelStartOptions {
 	signal?: AbortSignal;
 }
 
-export interface SentinelAcquisition {
+interface SentinelAcquisition {
 	child: ReturnType<typeof Bun.spawn>;
 	log: string;
 	ownership: Promise<void>;
@@ -137,7 +137,7 @@ function throwFailures(primary: Error | undefined, cleanup: Error[]): void {
 	}
 }
 
-export function startSentinel(options: SentinelStartOptions = {}): SentinelAcquisition {
+function startSentinel(options: SentinelStartOptions = {}): SentinelAcquisition {
 	const log = join(
 		tempRoot,
 		`archboard-task-130-05-http-${process.pid}-${crypto.randomUUID()}.log`,
@@ -353,3 +353,5 @@ export function startSentinel(options: SentinelStartOptions = {}): SentinelAcqui
 	});
 	return { child, log, ownership, ready, identity: () => identity, stop };
 }
+
+export { type Sentinel, type SentinelStartOptions, type SentinelAcquisition, startSentinel };

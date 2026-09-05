@@ -3,7 +3,7 @@ import {
 	type RealtimeState,
 } from "../../../shared/codex-realtime-host/index.js";
 
-export function inputStates(current: RealtimeState): readonly RealtimeState[] {
+function inputStates(current: RealtimeState): readonly RealtimeState[] {
 	if (current.phase === "speaking") {
 		return [{ phase: "processing", reason: "user_interrupted" }];
 	}
@@ -13,7 +13,7 @@ export function inputStates(current: RealtimeState): readonly RealtimeState[] {
 	return [];
 }
 
-export function assistantStates(
+function assistantStates(
 	current: RealtimeState,
 	status: "provisional" | "final",
 ): readonly RealtimeState[] {
@@ -38,7 +38,7 @@ export function assistantStates(
 	return [];
 }
 
-export function closingStates(current: RealtimeState): readonly RealtimeState[] {
+function closingStates(current: RealtimeState): readonly RealtimeState[] {
 	if (current.phase === "closed") {
 		return [];
 	}
@@ -53,10 +53,7 @@ export function closingStates(current: RealtimeState): readonly RealtimeState[] 
 	];
 }
 
-export function realtimeFailureState(
-	current: RealtimeState,
-	message: string,
-): RealtimeState | null {
+function realtimeFailureState(current: RealtimeState, message: string): RealtimeState | null {
 	const failure: RealtimeState = {
 		phase: "recoverable_error",
 		reason: "realtime_unavailable",
@@ -65,10 +62,7 @@ export function realtimeFailureState(
 	return canTransitionRealtimeState(current, failure) ? failure : null;
 }
 
-export function appServerFailureState(
-	current: RealtimeState,
-	message: string,
-): RealtimeState | null {
+function appServerFailureState(current: RealtimeState, message: string): RealtimeState | null {
 	const failure: RealtimeState = {
 		phase: "recoverable_error",
 		reason: "app_server_unavailable",
@@ -77,7 +71,16 @@ export function appServerFailureState(
 	return canTransitionRealtimeState(current, failure) ? failure : null;
 }
 
-export function stopState(current: RealtimeState): RealtimeState | null {
+function stopState(current: RealtimeState): RealtimeState | null {
 	const stopping: RealtimeState = { phase: "stopping", reason: "stop_requested" };
 	return canTransitionRealtimeState(current, stopping) ? stopping : null;
 }
+
+export {
+	inputStates,
+	assistantStates,
+	closingStates,
+	realtimeFailureState,
+	appServerFailureState,
+	stopState,
+};

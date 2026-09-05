@@ -41,13 +41,13 @@ import type { HolderKind } from "./board-lock.js";
  * nothing. Long enough for "rerouting orders through the new payment queue",
  * short enough that four of them fit in the corner of a board.
  */
-export const DOING_MAX_CHARS = 140;
+const DOING_MAX_CHARS = 140;
 
 /** How many are kept per board. The last few actions, not a transcript. */
-export const DOING_KEPT = 5;
+const DOING_KEPT = 5;
 
 /** One thing somebody said they were doing, and who said it. */
-export interface DoingEntry {
+interface DoingEntry {
 	/** The line itself, as it was written. */
 	doing: string;
 	/** ISO timestamp of the write it arrived with. */
@@ -72,7 +72,7 @@ const processStore: Store = { byBoard: new Map<string, DoingEntry[]>() };
 const store = (): Store => processStore;
 
 /** A line as it must arrive, or the reason it is refused. */
-export type DoingCheck = { ok: true; doing: string } | { ok: false; problem: string };
+type DoingCheck = { ok: true; doing: string } | { ok: false; problem: string };
 
 /**
  * Is this a line, and is it one line?
@@ -81,7 +81,7 @@ export type DoingCheck = { ok: true; doing: string } | { ok: false; problem: str
  * mistake worth a round trip — but length and emptiness are refusals, because
  * both mean the caller has not actually said anything.
  */
-export function checkDoing(raw: unknown): DoingCheck {
+function checkDoing(raw: unknown): DoingCheck {
 	if (typeof raw !== "string" || !raw.trim()) {
 		return { ok: false, problem: "nothing was said" };
 	}
@@ -111,7 +111,7 @@ export function checkDoing(raw: unknown): DoingCheck {
  * line. That is the cheaper of the two mistakes: the other one is a list that
  * is the same sentence five times, which is what this is for.
  */
-export function recordDoing(board: string, entry: DoingEntry): DoingEntry[] {
+function recordDoing(board: string, entry: DoingEntry): DoingEntry[] {
 	const key = normalizeBoardKey(board);
 	const { byBoard } = store();
 	const existing = byBoard.get(key) ?? [];
@@ -123,7 +123,7 @@ export function recordDoing(board: string, entry: DoingEntry): DoingEntry[] {
 }
 
 /** The last few things said about this board, oldest first. */
-export function recentDoing(board: string): DoingEntry[] {
+function recentDoing(board: string): DoingEntry[] {
 	return store().byBoard.get(normalizeBoardKey(board)) ?? [];
 }
 
@@ -134,7 +134,7 @@ export function recentDoing(board: string): DoingEntry[] {
  * work it describes for as long as somebody might still be looking at the
  * board. It exists for the checks, which run several boards through one canvas.
  */
-export function forgetDoing(board?: string): void {
+function forgetDoing(board?: string): void {
 	const { byBoard } = store();
 	if (board === undefined) {
 		byBoard.clear();
@@ -142,3 +142,14 @@ export function forgetDoing(board?: string): void {
 		byBoard.delete(normalizeBoardKey(board));
 	}
 }
+
+export {
+	DOING_MAX_CHARS,
+	DOING_KEPT,
+	type DoingEntry,
+	type DoingCheck,
+	checkDoing,
+	recordDoing,
+	recentDoing,
+	forgetDoing,
+};

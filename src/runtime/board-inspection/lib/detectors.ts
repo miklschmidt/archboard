@@ -53,7 +53,7 @@ import {
 import { compareIdentity, compareIdentityLists } from "./ordering.js";
 import type { ValidBridgeDecoration } from "../bridge.js";
 
-export const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
+const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
 
 interface DetectionResult {
 	findings: InspectionFinding[];
@@ -2432,7 +2432,7 @@ function terminalFinalizeFindings(findings: readonly InspectionFinding[]): Inspe
 	return orderedFindings(findings.map(canonicalFinding));
 }
 
-export function detectBoard(
+function detectBoard(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
 	initialFindings: readonly InspectionFinding[] = [],
@@ -2481,3 +2481,5 @@ export function detectBoard(
 		},
 	};
 }
+
+export { BROAD_PHASE_COMPARISON_LIMIT, detectBoard };

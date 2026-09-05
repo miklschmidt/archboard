@@ -4,10 +4,7 @@ import { CodexWorkbenchGatewayError } from "../index.js";
 import type { BrowserCommand, BrowserDynamicApprovalResponse } from "../index.js";
 import { commandTarget, type GatewayHarness } from "./support.js";
 
-export function expectGatewayError(
-	action: () => unknown,
-	code: CodexWorkbenchGatewayError["code"],
-): void {
+function expectGatewayError(action: () => unknown, code: CodexWorkbenchGatewayError["code"]): void {
 	expect(action).toThrow(CodexWorkbenchGatewayError);
 	try {
 		action();
@@ -16,7 +13,7 @@ export function expectGatewayError(
 	}
 }
 
-export async function expectRejected(
+async function expectRejected(
 	action: () => Promise<unknown>,
 	code: CodexWorkbenchGatewayError["code"],
 ): Promise<void> {
@@ -28,7 +25,7 @@ export async function expectRejected(
 	}
 }
 
-export function accountCommand(
+function accountCommand(
 	harnessValue: GatewayHarness,
 	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
 	command: "accountLogin" | "accountLoginCancel" | "accountLogout",
@@ -53,7 +50,7 @@ export function accountCommand(
 	return harnessValue.model.BrowserCommandSchema.parse({ ...target, command });
 }
 
-export function startCommand(
+function startCommand(
 	harnessValue: GatewayHarness,
 	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
 	threadId = harnessValue.threadId,
@@ -66,7 +63,7 @@ export function startCommand(
 	});
 }
 
-export function threadLinkCommand(
+function threadLinkCommand(
 	harnessValue: GatewayHarness,
 	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
 	command: "threadLinkCreate" | "threadLinkRefresh" | "threadLinkAttach" | "threadLinkRelink",
@@ -83,7 +80,7 @@ export function threadLinkCommand(
 	});
 }
 
-export function steerCommand(
+function steerCommand(
 	harnessValue: GatewayHarness,
 	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
 ): BrowserCommand {
@@ -96,7 +93,7 @@ export function steerCommand(
 	});
 }
 
-export function interruptCommand(
+function interruptCommand(
 	harnessValue: GatewayHarness,
 	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
 ): BrowserCommand {
@@ -108,7 +105,7 @@ export function interruptCommand(
 	});
 }
 
-export function queueCommand(
+function queueCommand(
 	harnessValue: GatewayHarness,
 	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
 	command: "queueAdd" | "queueUpdate" | "queueDelete" | "queueReorder" | "queueStart",
@@ -142,7 +139,7 @@ export function queueCommand(
 	});
 }
 
-export function realtimeCommand(
+function realtimeCommand(
 	harnessValue: GatewayHarness,
 	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
 	command: "realtimeStart" | "realtimeAppendText" | "realtimeStop",
@@ -174,20 +171,17 @@ export function realtimeCommand(
 	});
 }
 
-export type GatewayConnection = ReturnType<GatewayHarness["gateway"]["connect"]>;
-export type CommandFactory = (
+type GatewayConnection = ReturnType<GatewayHarness["gateway"]["connect"]>;
+type CommandFactory = (
 	lease: ReturnType<GatewayHarness["gateway"]["claimLease"]>,
 ) => BrowserCommand;
 
-export async function deliver(
-	connection: GatewayConnection,
-	factory: CommandFactory,
-): Promise<void> {
+async function deliver(connection: GatewayConnection, factory: CommandFactory): Promise<void> {
 	const result = await connection.command(factory(connection.claimLease()));
 	expect(result.outcome).toBe("delivered");
 }
 
-export function dynamicResponse(
+function dynamicResponse(
 	harnessValue: GatewayHarness,
 	approval: ReturnType<GatewayHarness["makeDynamicApproval"]>,
 	decision: "approve" | "decline" = "approve",
@@ -205,3 +199,19 @@ export function dynamicResponse(
 		decision,
 	});
 }
+
+export {
+	expectGatewayError,
+	expectRejected,
+	accountCommand,
+	startCommand,
+	threadLinkCommand,
+	steerCommand,
+	interruptCommand,
+	queueCommand,
+	realtimeCommand,
+	type GatewayConnection,
+	type CommandFactory,
+	deliver,
+	dynamicResponse,
+};

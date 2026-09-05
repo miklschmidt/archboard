@@ -41,21 +41,21 @@ type BrowserRequest = z.infer<typeof BrowserRequestSchema>;
 
 /** Every gateway action has an ingress arm; an unlisted one fails to compile. */
 type AssertNoUnhandledAction<Action extends never> = Action;
-export type BrowserRequestActionsAreExhaustive = AssertNoUnhandledAction<
+type BrowserRequestActionsAreExhaustive = AssertNoUnhandledAction<
 	Exclude<BrowserGatewayAction, BrowserRequest["action"]>
 >;
 
-export interface CanvasCodexBrowserSocketSend {
+interface CanvasCodexBrowserSocketSend {
 	readonly send: (message: unknown) => Promise<void>;
 }
 
-export interface CanvasCodexBrowserWebSocket {
+interface CanvasCodexBrowserWebSocket {
 	readonly readyState: number;
 	readonly send: (data: string, callback: (error?: Error) => void) => void;
 }
 
 /** Adapt the production callback-based WebSocket into an awaitable send boundary. */
-export function createCanvasCodexBrowserSocketSend(
+function createCanvasCodexBrowserSocketSend(
 	socket: CanvasCodexBrowserWebSocket,
 ): CanvasCodexBrowserSocketSend {
 	return Object.freeze({
@@ -76,13 +76,13 @@ export function createCanvasCodexBrowserSocketSend(
 	});
 }
 
-export interface CanvasCodexBrowserSocketOwnerOptions {
+interface CanvasCodexBrowserSocketOwnerOptions {
 	readonly gateway: CodexWorkbenchGateway;
 	/** Resolve the pane from server-owned socket registration, never request bytes. */
 	readonly paneForBrowser: (browserId: string) => string | null;
 }
 
-export interface CanvasCodexBrowserSocketOwner {
+interface CanvasCodexBrowserSocketOwner {
 	/**
 	 * Establish replacement ownership at socket acceptance, before the retired
 	 * instance can deliver its close event. A first-time pane may still defer
@@ -130,7 +130,7 @@ async function sendPublishedResult(
 }
 
 /** Own the public canvas WebSocket bridge for one installed gateway generation. */
-export function createCanvasCodexBrowserSocketOwner(
+function createCanvasCodexBrowserSocketOwner(
 	options: CanvasCodexBrowserSocketOwnerOptions,
 ): CanvasCodexBrowserSocketOwner {
 	const subscriptions = new Map<BrowserConnectionInstance, () => void>();
@@ -347,3 +347,13 @@ export function createCanvasCodexBrowserSocketOwner(
 
 	return Object.freeze({ accept, handle, close, drain, dispose });
 }
+
+export {
+	type BrowserRequestActionsAreExhaustive,
+	type CanvasCodexBrowserSocketSend,
+	type CanvasCodexBrowserWebSocket,
+	createCanvasCodexBrowserSocketSend,
+	type CanvasCodexBrowserSocketOwnerOptions,
+	type CanvasCodexBrowserSocketOwner,
+	createCanvasCodexBrowserSocketOwner,
+};

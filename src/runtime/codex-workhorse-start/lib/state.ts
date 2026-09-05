@@ -13,7 +13,7 @@ import type {
 	WorkhorseStartFacts,
 } from "./contract.js";
 
-export function emptySnapshot(): WorkhorseSnapshot {
+function emptySnapshot(): WorkhorseSnapshot {
 	return cloneAndFreeze({
 		kind: "codex_workhorse" as const,
 		state: "unbound" as const,
@@ -30,7 +30,7 @@ export function emptySnapshot(): WorkhorseSnapshot {
 	});
 }
 
-export function startingSnapshot(
+function startingSnapshot(
 	paneId: string,
 	childId: ChildId,
 	epoch: ChildEpoch,
@@ -47,7 +47,7 @@ export function startingSnapshot(
 	});
 }
 
-export function failedSnapshot(
+function failedSnapshot(
 	paneId: string,
 	operationId: OperationId,
 	reason: string,
@@ -62,7 +62,7 @@ export function failedSnapshot(
 	});
 }
 
-export interface InspectSnapshotInput {
+interface InspectSnapshotInput {
 	readonly paneId: string;
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
@@ -75,7 +75,7 @@ export interface InspectSnapshotInput {
 	readonly reason: string;
 }
 
-export function inspectSnapshot(input: InspectSnapshotInput): WorkhorseSnapshot {
+function inspectSnapshot(input: InspectSnapshotInput): WorkhorseSnapshot {
 	return cloneAndFreeze({
 		kind: "codex_workhorse" as const,
 		state: "inspect_only" as const,
@@ -92,7 +92,7 @@ export function inspectSnapshot(input: InspectSnapshotInput): WorkhorseSnapshot 
 	});
 }
 
-export function readySnapshot(
+function readySnapshot(
 	paneId: string,
 	childId: ChildId,
 	epoch: ChildEpoch,
@@ -116,7 +116,7 @@ export function readySnapshot(
 	});
 }
 
-export function cleanupFacts(
+function cleanupFacts(
 	operationId: OperationId,
 	threadId: ThreadId,
 	outcome: Exclude<WorkhorseSettlementOutcome, "pending">,
@@ -125,11 +125,11 @@ export function cleanupFacts(
 	return cloneAndFreeze({ operationId, threadId, outcome, reason });
 }
 
-export function errorMessage(error: unknown): string {
+function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : "unknown error";
 }
 
-export function mutationOutcome(error: unknown): "not_delivered" | "outcome_unknown" {
+function mutationOutcome(error: unknown): "not_delivered" | "outcome_unknown" {
 	if (
 		error !== null &&
 		typeof error === "object" &&
@@ -140,3 +140,15 @@ export function mutationOutcome(error: unknown): "not_delivered" | "outcome_unkn
 	}
 	return "outcome_unknown";
 }
+
+export {
+	emptySnapshot,
+	startingSnapshot,
+	failedSnapshot,
+	type InspectSnapshotInput,
+	inspectSnapshot,
+	readySnapshot,
+	cleanupFacts,
+	errorMessage,
+	mutationOutcome,
+};

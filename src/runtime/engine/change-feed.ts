@@ -53,9 +53,9 @@ import { DEFAULT_SETTLE_MAX_MS, DEFAULT_SETTLE_MS } from "../../shared/timing/ti
 import logger from "./logger.js";
 
 /** Who moved. Determined by which surface reported the mutation, not by content. */
-export type ChangeOrigin = "human" | "agent" | "mixed";
+type ChangeOrigin = "human" | "agent" | "mixed";
 
-export interface ChangeEvent {
+interface ChangeEvent {
 	cursor: number;
 	board: string;
 	identity: BoardIdentity;
@@ -388,4 +388,6 @@ class ChangeFeed extends EventEmitter {
 // place, and a per-connection feed would give every reader a different history.
 // Cursors and baselines are what hooks and the semantic publisher hold between
 // turns. A restart deliberately issues a new feed id.
-export const changeFeed = new ChangeFeed();
+const changeFeed = new ChangeFeed();
+
+export { type ChangeOrigin, type ChangeEvent, changeFeed };

@@ -6,14 +6,14 @@ import {
 	optionalMember,
 } from "./union-challenge-fixtures.js";
 
-export interface NotificationUnionChallenge {
+interface NotificationUnionChallenge {
 	readonly name: string;
 	readonly targetPath: readonly string[];
 	readonly prepare: (params: unknown) => unknown;
 	readonly mutate: (params: unknown) => NotificationUnionChallengeMutation;
 }
 
-export interface NotificationUnionChallengeMutation {
+interface NotificationUnionChallengeMutation {
 	readonly params: unknown;
 	readonly targetPath: readonly string[];
 	readonly allowedContainingUnionPaths: readonly (readonly string[])[];
@@ -169,7 +169,7 @@ function prepareGeneratedAt(value: unknown, path: readonly string[], fieldName?:
 	throw new Error(`Generated union challenge path could not reach ${path.join(".")}`);
 }
 
-export function generated(name: string): NotificationUnionChallenge {
+function generated(name: string): NotificationUnionChallenge {
 	const targetPath = name.split(".");
 	return {
 		name,
@@ -185,3 +185,5 @@ export function generated(name: string): NotificationUnionChallenge {
 		},
 	};
 }
+
+export { type NotificationUnionChallenge, type NotificationUnionChallengeMutation, generated };

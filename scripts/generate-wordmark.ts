@@ -8,11 +8,10 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const sourcePath = path.join(repoRoot, "src/ui/shell/assets/fonts/Onest-Medium-v1.000.ttf");
 const defaultOutputPath = path.join(repoRoot, "src/ui/shell/assets/archboard-wordmark.svg");
 
-export const WORDMARK_SOURCE_SHA256 =
-	"c3014cae121488aea22ae5b50b584db332f130189be95217edf57469ef297cec";
-export const WORDMARK_TEXT = "archboard";
-export const WORDMARK_FONT_SIZE_PX = 18.5;
-export const WORDMARK_TRACKING_EM = -0.02027027027;
+const WORDMARK_SOURCE_SHA256 = "c3014cae121488aea22ae5b50b584db332f130189be95217edf57469ef297cec";
+const WORDMARK_TEXT = "archboard";
+const WORDMARK_FONT_SIZE_PX = 18.5;
+const WORDMARK_TRACKING_EM = -0.02027027027;
 
 interface PathCommand {
 	type: string;
@@ -76,7 +75,7 @@ function translate(command: PathCommand, dx: number, dy: number): void {
 	}
 }
 
-export function renderWordmarkSvg(): string {
+function renderWordmarkSvg(): string {
 	const actualHash = sha256(sourcePath);
 	if (actualHash !== WORDMARK_SOURCE_SHA256) {
 		throw new Error(
@@ -144,7 +143,7 @@ function parseOptions(args: string[]): CliOptions {
 	return { check, outputPath };
 }
 
-export function runGenerator(args = process.argv.slice(2)): void {
+function runGenerator(args = process.argv.slice(2)): void {
 	const options = parseOptions(args);
 	const expected = renderWordmarkSvg();
 	if (options.check) {
@@ -165,3 +164,12 @@ export function runGenerator(args = process.argv.slice(2)): void {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 	runGenerator();
 }
+
+export {
+	WORDMARK_SOURCE_SHA256,
+	WORDMARK_TEXT,
+	WORDMARK_FONT_SIZE_PX,
+	WORDMARK_TRACKING_EM,
+	renderWordmarkSvg,
+	runGenerator,
+};

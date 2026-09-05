@@ -1,4 +1,4 @@
-export class CanonicalJsonError extends TypeError {
+class CanonicalJsonError extends TypeError {
 	constructor(message: string) {
 		super(message);
 		this.name = "CanonicalJsonError";
@@ -125,7 +125,7 @@ function parseJsonStructure(source: string): void {
 	}
 }
 
-export function parseStrictJson(source: string, label: string): unknown {
+function parseStrictJson(source: string, label: string): unknown {
 	try {
 		parseJsonStructure(source);
 		return JSON.parse(source) as unknown;
@@ -141,3 +141,5 @@ export function parseStrictJson(source: string, label: string): unknown {
 		);
 	}
 }
+
+export { CanonicalJsonError, parseStrictJson };

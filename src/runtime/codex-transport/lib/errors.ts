@@ -1,7 +1,7 @@
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 import type { WireRequestCorrelation } from "../../../shared/codex-workbench-identity/index.js";
 
-export type CodexRequestFailureReason =
+type CodexRequestFailureReason =
 	| "cancelled"
 	| "timeout"
 	| "child-exit"
@@ -13,9 +13,9 @@ export type CodexRequestFailureReason =
 	| "transport-closed"
 	| "malformed-response";
 
-export type CodexRequestOutcome = "not_delivered" | "outcome_unknown";
+type CodexRequestOutcome = "not_delivered" | "outcome_unknown";
 
-export interface TransportRemoteErrorSummary {
+interface TransportRemoteErrorSummary {
 	readonly code: number;
 	readonly message: string;
 	readonly dataPresent: boolean;
@@ -35,14 +35,14 @@ function redactRemoteError(error: CodexRemoteError): TransportRemoteErrorSummary
 	});
 }
 
-export class CodexTransportError extends Error {
+class CodexTransportError extends Error {
 	constructor(message: string) {
 		super(message);
 		this.name = "CodexTransportError";
 	}
 }
 
-export class CodexTransportClosedError extends CodexTransportError {
+class CodexTransportClosedError extends CodexTransportError {
 	override readonly name = "CodexTransportClosedError";
 	readonly reason: CodexRequestFailureReason;
 
@@ -52,7 +52,7 @@ export class CodexTransportClosedError extends CodexTransportError {
 	}
 }
 
-export class CodexTransportWriteError extends CodexTransportError {
+class CodexTransportWriteError extends CodexTransportError {
 	override readonly name = "CodexTransportWriteError";
 	readonly reason: Extract<
 		CodexRequestFailureReason,
@@ -71,7 +71,7 @@ export class CodexTransportWriteError extends CodexTransportError {
 	}
 }
 
-export class CodexTransportUsageError extends CodexTransportError {
+class CodexTransportUsageError extends CodexTransportError {
 	override readonly name = "CodexTransportUsageError";
 
 	constructor(detail: string) {
@@ -79,7 +79,7 @@ export class CodexTransportUsageError extends CodexTransportError {
 	}
 }
 
-export class CodexTransportOwnershipError extends CodexTransportError {
+class CodexTransportOwnershipError extends CodexTransportError {
 	override readonly name = "CodexTransportOwnershipError";
 
 	constructor(detail: string) {
@@ -87,7 +87,7 @@ export class CodexTransportOwnershipError extends CodexTransportError {
 	}
 }
 
-export class CodexTransportRequestError extends CodexTransportError {
+class CodexTransportRequestError extends CodexTransportError {
 	override readonly name = "CodexTransportRequestError";
 	readonly method: string;
 	readonly correlation: WireRequestCorrelation;
@@ -119,13 +119,13 @@ export class CodexTransportRequestError extends CodexTransportError {
 	}
 }
 
-export interface CodexRemoteError {
+interface CodexRemoteError {
 	readonly code: number;
 	readonly message: string;
 	readonly data?: unknown;
 }
 
-export class CodexTransportRemoteError extends CodexTransportError {
+class CodexTransportRemoteError extends CodexTransportError {
 	override readonly name = "CodexTransportRemoteError";
 	readonly method: string;
 	readonly correlation: WireRequestCorrelation;
@@ -150,3 +150,17 @@ export class CodexTransportRemoteError extends CodexTransportError {
 		this.rpcError = redactRemoteError(input.rpcError);
 	}
 }
+
+export {
+	type CodexRequestFailureReason,
+	type CodexRequestOutcome,
+	type TransportRemoteErrorSummary,
+	CodexTransportError,
+	CodexTransportClosedError,
+	CodexTransportWriteError,
+	CodexTransportUsageError,
+	CodexTransportOwnershipError,
+	CodexTransportRequestError,
+	type CodexRemoteError,
+	CodexTransportRemoteError,
+};

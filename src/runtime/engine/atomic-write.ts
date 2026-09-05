@@ -35,7 +35,7 @@ import path from "node:path";
  * suffix, so nothing that walks a vault by extension can mistake it for a
  * board. The pid keeps two processes writing the same path apart.
  */
-export function tempPathFor(file: string): string {
+function tempPathFor(file: string): string {
 	const dir = path.dirname(file);
 	return path.join(dir, `.${path.basename(file)}.${process.pid}.tmp`);
 }
@@ -47,7 +47,7 @@ export function tempPathFor(file: string): string {
  * so a failure leaves the destination exactly as it was and the directory no
  * untidier than it found it.
  */
-export function writeFileAtomic(file: string, data: string | Buffer): void {
+function writeFileAtomic(file: string, data: string | Buffer): void {
 	const tmp = tempPathFor(file);
 	let handle: number | undefined;
 	try {
@@ -84,7 +84,7 @@ export function writeFileAtomic(file: string, data: string | Buffer): void {
  * for the fully synced temp inode or fails with EEXIST. This is the narrow
  * artifact-set counterpart to the replace-in-place note writer above.
  */
-export function writeFileAtomicExclusive(file: string, data: string | Buffer): void {
+function writeFileAtomicExclusive(file: string, data: string | Buffer): void {
 	const tmp = tempPathFor(file);
 	let handle: number | undefined;
 	let committed = false;
@@ -167,3 +167,5 @@ function fsyncDir(dir: string): void {
 		}
 	}
 }
+
+export { tempPathFor, writeFileAtomic, writeFileAtomicExclusive };

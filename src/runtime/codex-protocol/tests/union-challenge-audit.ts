@@ -36,7 +36,7 @@ function nestedIssuePaths(issue: unknown, prefix: JsonPath = []): string[][] {
 	];
 }
 
-export function changedPaths(left: unknown, right: unknown, path: JsonPath = []): string[][] {
+function changedPaths(left: unknown, right: unknown, path: JsonPath = []): string[][] {
 	if (Object.is(left, right)) {
 		return [];
 	}
@@ -53,11 +53,11 @@ export function changedPaths(left: unknown, right: unknown, path: JsonPath = [])
 	return [path as string[]];
 }
 
-export function pathKey(path: JsonPath): string {
+function pathKey(path: JsonPath): string {
 	return path.join(".");
 }
 
-export function assertChallengeFailure(
+function assertChallengeFailure(
 	error: ProtocolDecodeError,
 	mutation: NotificationUnionChallengeMutation,
 ) {
@@ -76,3 +76,5 @@ export function assertChallengeFailure(
 	}
 	expect(directKey === targetPath || allowedContainingPaths.has(directKey)).toBe(true);
 }
+
+export { changedPaths, pathKey, assertChallengeFailure };

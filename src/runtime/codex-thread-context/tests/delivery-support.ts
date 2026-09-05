@@ -36,8 +36,8 @@ import {
 	type CodexThreadContextTarget,
 } from "../index.ts";
 
-export const PANE_ID = "pane-a";
-export const FEED_ID = "feed-1";
+const PANE_ID = "pane-a";
+const FEED_ID = "feed-1";
 const OPERATION_ID = "operation-1";
 
 type InjectRequest = Parameters<CodexSession["threadInjectItems"]>[0];
@@ -53,7 +53,7 @@ async function flushMicrotasks(): Promise<void> {
 	await Promise.resolve();
 }
 
-export interface EventOptions {
+interface EventOptions {
 	readonly sequence?: number;
 	readonly feedId?: string;
 	readonly cursorFeedId?: string;
@@ -77,7 +77,7 @@ interface HarnessOptions {
 	readonly now?: number;
 }
 
-export interface Harness {
+interface Harness {
 	readonly authority: IdentityAuthority;
 	readonly target: CodexThreadContextTarget;
 	readonly delivery: CodexThreadContextDelivery;
@@ -137,7 +137,7 @@ function proofFor(
 	};
 }
 
-export function executableLink(
+function executableLink(
 	childId: ChildId,
 	epoch: ChildEpoch,
 	threadId: ThreadId,
@@ -156,7 +156,7 @@ export function executableLink(
 	});
 }
 
-export function inspectOnlyLink(
+function inspectOnlyLink(
 	threadId: ThreadId,
 	reason: ThreadLinkReasonCode,
 	status: ThreadLinkStatus = reason === "thread_status_system_error"
@@ -179,7 +179,7 @@ export function inspectOnlyLink(
 	});
 }
 
-export function unboundLink(): ThreadLinkSnapshot {
+function unboundLink(): ThreadLinkSnapshot {
 	return Object.freeze({
 		kind: "thread_link",
 		state: "unbound",
@@ -240,7 +240,7 @@ function baseContext(
 	};
 }
 
-export function createHarness(options: HarnessOptions = {}): Harness {
+function createHarness(options: HarnessOptions = {}): Harness {
 	const authority = createIdentityAuthority();
 	const childId = authority.validator.childId;
 	const epoch = authority.validator.epoch;
@@ -477,10 +477,22 @@ export function createHarness(options: HarnessOptions = {}): Harness {
 	};
 }
 
-export function bindingFor(harness: Harness): CodexThreadContextBinding {
+function bindingFor(harness: Harness): CodexThreadContextBinding {
 	return Object.freeze({
 		paneId: PANE_ID,
 		target: harness.target,
 		link: harness.readLink(),
 	});
 }
+
+export {
+	PANE_ID,
+	FEED_ID,
+	type EventOptions,
+	type Harness,
+	executableLink,
+	inspectOnlyLink,
+	unboundLink,
+	createHarness,
+	bindingFor,
+};

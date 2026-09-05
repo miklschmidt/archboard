@@ -7,7 +7,7 @@ import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 import { readSemanticAccessibility } from "./semantic-accessibility.ts";
 import type { WorkbenchSnapshot } from "./workbench-metrics.ts";
 
-export interface ClaimCounts {
+interface ClaimCounts {
 	holds: number;
 	pending: number;
 	sent: number;
@@ -22,7 +22,7 @@ interface PaneList {
 
 type Request = ReturnType<typeof createJsonRequester>;
 
-export const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
+const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
 	browser.eval(`(() => {
 		window.__claimRecorder = {
 			holds: 0,
@@ -85,7 +85,7 @@ export const installClaimRecorder = (browser: AgentBrowserSession): Promise<unkn
 		return { installed: true };
 	})()`);
 
-export const claimCounts = (browser: AgentBrowserSession): Promise<ClaimCounts> =>
+const claimCounts = (browser: AgentBrowserSession): Promise<ClaimCounts> =>
 	browser.eval(`(() => ({
 		holds: window.__claimRecorder.holds,
 		sent: window.__claimRecorder.sent,
@@ -94,11 +94,11 @@ export const claimCounts = (browser: AgentBrowserSession): Promise<ClaimCounts> 
 		takeBackSettled: window.__claimRecorder.takeBackSettled,
 	}))()`);
 
-export function noteBytes(noteFile: string): Buffer<ArrayBuffer> {
+function noteBytes(noteFile: string): Buffer<ArrayBuffer> {
 	return readFileSync(noteFile);
 }
 
-export function expectNoteUnchanged(noteFile: string, expected: Buffer<ArrayBuffer>): void {
+function expectNoteUnchanged(noteFile: string, expected: Buffer<ArrayBuffer>): void {
 	expect(readFileSync(noteFile)).toEqual(expected);
 }
 
@@ -134,9 +134,7 @@ const readSemanticAnnouncer = (browser: AgentBrowserSession): Promise<SemanticAn
 		};
 	})()`);
 
-export async function verifyCollapsedSemanticAnnouncement(
-	browser: AgentBrowserSession,
-): Promise<void> {
+async function verifyCollapsedSemanticAnnouncement(browser: AgentBrowserSession): Promise<void> {
 	const unavailableText =
 		"Semantic context Unavailable No semantic context delivery is available for this pane.";
 	expect(await readSemanticAnnouncer(browser)).toEqual({
@@ -160,7 +158,7 @@ export async function verifyCollapsedSemanticAnnouncement(
 	});
 }
 
-export async function verifyBoardStatusPresentation(options: {
+async function verifyBoardStatusPresentation(options: {
 	board: string;
 	browser: AgentBrowserSession;
 	noteFile: string;
@@ -275,7 +273,7 @@ export async function verifyBoardStatusPresentation(options: {
 	return before;
 }
 
-export async function verifyPaneScopedTakeBack(options: {
+async function verifyPaneScopedTakeBack(options: {
 	board: string;
 	browser: AgentBrowserSession;
 	primaryClientId: string;
@@ -392,3 +390,14 @@ export async function verifyPaneScopedTakeBack(options: {
 		"the take-back isolation pane to close",
 	);
 }
+
+export {
+	type ClaimCounts,
+	installClaimRecorder,
+	claimCounts,
+	noteBytes,
+	expectNoteUnchanged,
+	verifyCollapsedSemanticAnnouncement,
+	verifyBoardStatusPresentation,
+	verifyPaneScopedTakeBack,
+};

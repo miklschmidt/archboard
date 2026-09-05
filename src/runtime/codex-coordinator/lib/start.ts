@@ -54,13 +54,13 @@ type SettingsNotificationOutcome =
 	| { readonly kind: "matched"; readonly settings: CoordinatorThreadSettings }
 	| { readonly kind: "expired"; readonly error: CodexCoordinatorError };
 
-export interface CoordinatorStartHooks {
+interface CoordinatorStartHooks {
 	readonly setSnapshot: (snapshot: CoordinatorSnapshot) => void;
 	readonly snapshot: () => CoordinatorSnapshot;
 	readonly setPersistence: (persistence: CoordinatorPersistedState | null) => void;
 }
 
-export function createCoordinatorStarter(
+function createCoordinatorStarter(
 	options: CodexCoordinatorOptions,
 	hooks: CoordinatorStartHooks,
 ): {
@@ -479,3 +479,5 @@ function isCurrentNotification(
 		event.correlation.epoch === options.identity.validator.epoch
 	);
 }
+
+export { type CoordinatorStartHooks, createCoordinatorStarter };

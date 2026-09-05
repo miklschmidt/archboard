@@ -7,7 +7,7 @@ type ItemInput<Type extends SessionThreadItem["type"]> = Omit<Item<Type>, "id">;
 const id = (authorities: IdentityAuthorities, raw: string) =>
 	authorities.identity.decoder.adoptItemId(raw);
 
-export function userMessageItem(
+function userMessageItem(
 	authorities: IdentityAuthorities,
 	raw: string,
 	value: ItemInput<"userMessage">,
@@ -15,7 +15,7 @@ export function userMessageItem(
 	return { ...value, id: id(authorities, raw) } satisfies Item<"userMessage">;
 }
 
-export function agentMessageItem(
+function agentMessageItem(
 	authorities: IdentityAuthorities,
 	raw: string,
 	value: ItemInput<"agentMessage">,
@@ -23,7 +23,7 @@ export function agentMessageItem(
 	return { ...value, id: id(authorities, raw) } satisfies Item<"agentMessage">;
 }
 
-export function mcpToolCallItem(
+function mcpToolCallItem(
 	authorities: IdentityAuthorities,
 	raw: string,
 	value: ItemInput<"mcpToolCall">,
@@ -31,7 +31,7 @@ export function mcpToolCallItem(
 	return { ...value, id: id(authorities, raw) } satisfies Item<"mcpToolCall">;
 }
 
-export function dynamicToolCallItem(
+function dynamicToolCallItem(
 	authorities: IdentityAuthorities,
 	raw: string,
 	value: ItemInput<"dynamicToolCall">,
@@ -39,7 +39,7 @@ export function dynamicToolCallItem(
 	return { ...value, id: id(authorities, raw) } satisfies Item<"dynamicToolCall">;
 }
 
-export function commandExecutionItem(
+function commandExecutionItem(
 	authorities: IdentityAuthorities,
 	raw: string,
 	value: ItemInput<"commandExecution">,
@@ -47,7 +47,7 @@ export function commandExecutionItem(
 	return { ...value, id: id(authorities, raw) } satisfies Item<"commandExecution">;
 }
 
-export function fileChangeItem(
+function fileChangeItem(
 	authorities: IdentityAuthorities,
 	raw: string,
 	value: ItemInput<"fileChange">,
@@ -55,7 +55,7 @@ export function fileChangeItem(
 	return { ...value, id: id(authorities, raw) } satisfies Item<"fileChange">;
 }
 
-export function reasoningItem(
+function reasoningItem(
 	authorities: IdentityAuthorities,
 	raw: string,
 	value: ItemInput<"reasoning">,
@@ -63,11 +63,11 @@ export function reasoningItem(
 	return { ...value, id: id(authorities, raw) } satisfies Item<"reasoning">;
 }
 
-export function planItem(authorities: IdentityAuthorities, raw: string, value: ItemInput<"plan">) {
+function planItem(authorities: IdentityAuthorities, raw: string, value: ItemInput<"plan">) {
 	return { ...value, id: id(authorities, raw) } satisfies Item<"plan">;
 }
 
-export function turnFixture(
+function turnFixture(
 	authorities: IdentityAuthorities,
 	raw: string,
 	items: readonly SessionThreadItem[],
@@ -84,3 +84,15 @@ export function turnFixture(
 		durationMs: 1,
 	} satisfies SessionTurn;
 }
+
+export {
+	userMessageItem,
+	agentMessageItem,
+	mcpToolCallItem,
+	dynamicToolCallItem,
+	commandExecutionItem,
+	fileChangeItem,
+	reasoningItem,
+	planItem,
+	turnFixture,
+};

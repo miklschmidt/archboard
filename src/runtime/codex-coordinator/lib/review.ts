@@ -15,15 +15,15 @@ const CATALOGUE_HASH_INPUT = JSON.stringify({
 	voice: COORDINATOR_TOOL_MANIFEST_DIGESTS.voice,
 });
 
-export const COORDINATOR_CATALOGUE_HASH = createHash("sha256")
+const COORDINATOR_CATALOGUE_HASH = createHash("sha256")
 	.update(CATALOGUE_HASH_INPUT, "utf8")
 	.digest("hex");
 
-export function hashCoordinatorSettings(settings: CoordinatorSettings): string {
+function hashCoordinatorSettings(settings: CoordinatorSettings): string {
 	return createHash("sha256").update(canonicalJson(settings), "utf8").digest("hex");
 }
 
-export function reviewedCoordinatorHashes(settingsHash: string): CoordinatorReviewHashes {
+function reviewedCoordinatorHashes(settingsHash: string): CoordinatorReviewHashes {
 	const instruction = verifyAuthoredInstructionIntegrity();
 	const manifests = verifyCoordinatorManifestIntegrity();
 	if (
@@ -70,3 +70,5 @@ function canonicalJson(value: unknown): string {
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
+
+export { COORDINATOR_CATALOGUE_HASH, hashCoordinatorSettings, reviewedCoordinatorHashes };

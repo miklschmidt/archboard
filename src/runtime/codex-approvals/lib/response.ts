@@ -23,7 +23,7 @@ function isRecord(value: unknown): value is RecordValue {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-export function parseApprovalResponse(value: unknown): ApprovalResponse {
+function parseApprovalResponse(value: unknown): ApprovalResponse {
 	if (!isRecord(value) || typeof value["approvalKind"] !== "string") {
 		throw new CodexApprovalError("invalid_response", "The approval response is malformed.");
 	}
@@ -101,7 +101,7 @@ function decisionAllowed(
 	return true;
 }
 
-export function validateApprovalResponse(
+function validateApprovalResponse(
 	request: ApprovalRequest,
 	response: ApprovalResponse,
 	options: { readonly respectAvailableDecisions?: boolean } = {},
@@ -123,10 +123,7 @@ export function validateApprovalResponse(
 	return response;
 }
 
-export function toServerResponse(
-	request: ApprovalRequest,
-	response: ApprovalResponse,
-): ReverseResponse {
+function toServerResponse(request: ApprovalRequest, response: ApprovalResponse): ReverseResponse {
 	switch (request.method) {
 		case "item/commandExecution/requestApproval":
 			if (response.approvalKind !== "command_execution") {
@@ -188,7 +185,7 @@ function familyError(request: ApprovalRequest): CodexApprovalError {
 	);
 }
 
-export function fallbackResponse(
+function fallbackResponse(
 	request: ApprovalRequest,
 	state: TerminalApprovalState,
 ): ApprovalResponse {
@@ -309,9 +306,7 @@ function spokenCommandEffectSummary(request: CommandApprovalRequest): string {
 	return bounded;
 }
 
-export function toSpokenEffectPresentation(
-	request: ApprovalRequest,
-): SpokenApprovalEffectPresentation {
+function toSpokenEffectPresentation(request: ApprovalRequest): SpokenApprovalEffectPresentation {
 	if (request.family !== "command_execution") {
 		throw new CodexApprovalError(
 			"unsupported_request",
@@ -333,7 +328,7 @@ export function toSpokenEffectPresentation(
 	});
 }
 
-export function spokenEligibility(
+function spokenEligibility(
 	request: ApprovalRequest,
 	currentBinding: boolean,
 	facts: SpokenEligibilityFacts,
@@ -416,7 +411,7 @@ export function spokenEligibility(
 	}
 }
 
-export function failedSettlement(
+function failedSettlement(
 	request: ApprovalRequest,
 	state: TerminalApprovalState,
 	outcome: "not_delivered" | "outcome_unknown",
@@ -431,7 +426,7 @@ export function failedSettlement(
 	});
 }
 
-export function classifyResponseFailure(
+function classifyResponseFailure(
 	error: unknown,
 	writeAttempted = true,
 ): "not_delivered" | "outcome_unknown" {
@@ -463,3 +458,14 @@ export function classifyResponseFailure(
 	}
 	return "outcome_unknown";
 }
+
+export {
+	parseApprovalResponse,
+	validateApprovalResponse,
+	toServerResponse,
+	fallbackResponse,
+	toSpokenEffectPresentation,
+	spokenEligibility,
+	failedSettlement,
+	classifyResponseFailure,
+};

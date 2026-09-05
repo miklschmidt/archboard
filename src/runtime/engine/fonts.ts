@@ -31,19 +31,19 @@ import { buildGpos, buildGsub, type Kerning, type Substitutions } from "./font-l
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
 /** Where `@excalidraw/excalidraw` puts its production bundle and its fonts. */
-export const EXCALIDRAW_DIST = path.join(
+const EXCALIDRAW_DIST = path.join(
 	moduleDir,
 	"../../../node_modules/@excalidraw/excalidraw/dist/prod",
 );
 
-export interface FaceDescriptor {
+interface FaceDescriptor {
 	/** Absolute path to the woff2 file. */
 	file: string;
 	/** The `unicode-range` descriptor, parsed. `null` means the whole of unicode. */
 	ranges: Array<[number, number]> | null;
 }
 
-export interface FamilyDescriptor {
+interface FamilyDescriptor {
 	name: string;
 	/** The `fontFamily` number, where the family has one. Fallbacks do not. */
 	fontFamily?: number;
@@ -247,12 +247,12 @@ function readRegistry(): Map<string, FamilyDescriptor> {
 
 /** The registry, read once per process. */
 const registry = readRegistry();
-export function fontRegistry(): Map<string, FamilyDescriptor> {
+function fontRegistry(): Map<string, FamilyDescriptor> {
 	return registry;
 }
 
 /** The family a `fontFamily` number names, or undefined for a number nothing uses. */
-export function familyOf(fontFamily: number): FamilyDescriptor | undefined {
+function familyOf(fontFamily: number): FamilyDescriptor | undefined {
 	for (const family of fontRegistry().values()) {
 		if (family.fontFamily === fontFamily) {
 			return family;
@@ -271,7 +271,7 @@ export function familyOf(fontFamily: number): FamilyDescriptor | undefined {
  * character wins. Flattening would put Xiaolai's 209 subsets in front of
  * Excalifont's Latin.
  */
-export function faceStack(fontFamily: number): FaceDescriptor[][] {
+function faceStack(fontFamily: number): FaceDescriptor[][] {
 	const family = familyOf(fontFamily);
 	if (!family) {
 		return [];
@@ -295,7 +295,7 @@ export function faceStack(fontFamily: number): FaceDescriptor[][] {
  * is not the same thing on two machines. A board carrying it has no honest
  * server-side width, so nothing here invents one.
  */
-export function canMeasure(fontFamily: number): boolean {
+function canMeasure(fontFamily: number): boolean {
 	return faceStack(fontFamily).length > 0;
 }
 
@@ -306,13 +306,13 @@ export function canMeasure(fontFamily: number): boolean {
  * The default is Excalifont's, which is what Excalidraw falls back to for a
  * family it does not recognise.
  */
-export function lineHeightOf(fontFamily: number): number {
+function lineHeightOf(fontFamily: number): number {
 	return familyOf(fontFamily)?.lineHeight ?? 1.25;
 }
 
 // ── The parsed faces ────────────────────────────────────────────────────────
 
-export interface LoadedFace {
+interface LoadedFace {
 	font: ParsedFont;
 	gpos: Kerning | null;
 	gsub: Substitutions | null;
@@ -328,7 +328,7 @@ const faceCache = new Map<string, LoadedFace>();
  * Excalifont's CJK fallback affordable: Xiaolai ships 209 subsets, and a board
  * with no CJK on it parses none of them.
  */
-export function loadFace(file: string): LoadedFace {
+function loadFace(file: string): LoadedFace {
 	const already = faceCache.get(file);
 	if (already) {
 		return already;
@@ -342,3 +342,16 @@ export function loadFace(file: string): LoadedFace {
 	faceCache.set(file, face);
 	return face;
 }
+
+export {
+	EXCALIDRAW_DIST,
+	type FaceDescriptor,
+	type FamilyDescriptor,
+	fontRegistry,
+	familyOf,
+	faceStack,
+	canMeasure,
+	lineHeightOf,
+	type LoadedFace,
+	loadFace,
+};

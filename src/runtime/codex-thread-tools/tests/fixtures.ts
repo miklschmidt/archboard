@@ -1,8 +1,8 @@
 import type { GeneralThreadToolName } from "../index.js";
 
-export const OK_OPERATION_ID = "operation-1";
+const OK_OPERATION_ID = "operation-1";
 
-export const VALID_ARGUMENTS: readonly { name: GeneralThreadToolName; value: unknown }[] = [
+const VALID_ARGUMENTS: readonly { name: GeneralThreadToolName; value: unknown }[] = [
 	{ name: "create_thread", value: { prompt: "Inspect the selected architecture." } },
 	{
 		name: "fork_thread",
@@ -17,7 +17,7 @@ export const VALID_ARGUMENTS: readonly { name: GeneralThreadToolName; value: unk
 	{ name: "wait_threads", value: { threadIds: ["thread-1", "thread-2"], timeoutMs: 120_000 } },
 ];
 
-export const VALID_OK_VALUES: Record<GeneralThreadToolName, unknown> = {
+const VALID_OK_VALUES: Record<GeneralThreadToolName, unknown> = {
 	create_thread: {
 		threadId: "thread-1",
 		state: "executable",
@@ -70,7 +70,7 @@ export const VALID_OK_VALUES: Record<GeneralThreadToolName, unknown> = {
 	wait_threads: { event: "timeout", threadId: null, cursor: "cursor-3" },
 };
 
-export function okEnvelope(name: GeneralThreadToolName): string {
+function okEnvelope(name: GeneralThreadToolName): string {
 	return JSON.stringify({
 		tag: "ok",
 		operationId: OK_OPERATION_ID,
@@ -78,25 +78,36 @@ export function okEnvelope(name: GeneralThreadToolName): string {
 	});
 }
 
-export const REFUSED_ENVELOPE = JSON.stringify({
+const REFUSED_ENVELOPE = JSON.stringify({
 	tag: "refused",
 	reason: "not_controllable",
 	message: "The target is not controllable; inspect the current thread state before retrying.",
 });
 
-export const APPROVAL_REQUIRED_ENVELOPE = JSON.stringify({
+const APPROVAL_REQUIRED_ENVELOPE = JSON.stringify({
 	tag: "approval_required",
 	operationId: "approval-1",
 	summary: "Send one message to thread-1.",
 });
 
-export const OUTCOME_UNKNOWN_ENVELOPE = JSON.stringify({
+const OUTCOME_UNKNOWN_ENVELOPE = JSON.stringify({
 	tag: "outcome_unknown",
 	operationId: "operation-3",
 	message:
 		"The request may have taken effect. Inspect authoritative state before another mutation.",
 });
 
-export function dynamicResponse(text: string, success = true): unknown {
+function dynamicResponse(text: string, success = true): unknown {
 	return { contentItems: [{ type: "inputText", text }], success };
 }
+
+export {
+	OK_OPERATION_ID,
+	VALID_ARGUMENTS,
+	VALID_OK_VALUES,
+	okEnvelope,
+	REFUSED_ENVELOPE,
+	APPROVAL_REQUIRED_ENVELOPE,
+	OUTCOME_UNKNOWN_ENVELOPE,
+	dynamicResponse,
+};

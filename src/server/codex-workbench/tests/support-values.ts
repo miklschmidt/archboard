@@ -11,9 +11,9 @@ import type {
 	ThreadLinkSnapshot,
 } from "../../../runtime/codex-thread-link/index.js";
 
-export const CLOCK_START = 1_787_682_840_000;
+const CLOCK_START = 1_787_682_840_000;
 
-export function executableLink(
+function executableLink(
 	childId: ChildId,
 	epoch: ChildEpoch,
 	threadId: ThreadId,
@@ -32,7 +32,7 @@ export function executableLink(
 	};
 }
 
-export function bindingFor(
+function bindingFor(
 	paneId: string,
 	revision: number,
 	link: ThreadLinkSnapshot,
@@ -51,7 +51,7 @@ export function bindingFor(
 	};
 }
 
-export function readinessFor(state: BrowserReadiness["state"], loginId: LoginId): BrowserReadiness {
+function readinessFor(state: BrowserReadiness["state"], loginId: LoginId): BrowserReadiness {
 	if (
 		state === "stopped" ||
 		state === "storage_mismatch" ||
@@ -69,7 +69,7 @@ export function readinessFor(state: BrowserReadiness["state"], loginId: LoginId)
 	return { kind: "readiness", state };
 }
 
-export const readyAccount = (): BrowserOwnerProjection["account"] => ({
+const readyAccount = (): BrowserOwnerProjection["account"] => ({
 	kind: "codex_account_response",
 	response: {
 		account: { type: "chatgpt", email: "gateway@example.test", planType: "plus" },
@@ -77,7 +77,7 @@ export const readyAccount = (): BrowserOwnerProjection["account"] => ({
 	},
 });
 
-export function commandTarget(lease: {
+function commandTarget(lease: {
 	readonly commandId: BrowserCommandId;
 	readonly paneId: string;
 	readonly childId: ChildId;
@@ -91,3 +91,5 @@ export function commandTarget(lease: {
 		epoch: lease.epoch,
 	};
 }
+
+export { CLOCK_START, executableLink, bindingFor, readinessFor, readyAccount, commandTarget };

@@ -19,11 +19,11 @@ type NoteVersion =
 	| { kind: "at"; value: number }
 	| { kind: "foreign"; raw: string };
 
-export type VersionMove = "unchanged" | "behind" | "ahead" | "unknown";
+type VersionMove = "unchanged" | "behind" | "ahead" | "unknown";
 
-export type BoardConflictReason = "changed" | "unseen";
+type BoardConflictReason = "changed" | "unseen";
 
-export interface BoardWriteConflict {
+interface BoardWriteConflict {
 	board: string;
 	file: string;
 	reason: BoardConflictReason;
@@ -38,7 +38,7 @@ export interface BoardWriteConflict {
 	message: string;
 }
 
-export interface BoardVersionConflict {
+interface BoardVersionConflict {
 	board: string;
 	file?: string;
 	/** What the writer was working from. Null means it last saw no note version. */
@@ -49,9 +49,7 @@ export interface BoardVersionConflict {
 	message: string;
 }
 
-export type StatedVersionResult =
-	| { ok: true; expected?: number | null }
-	| { ok: false; problem: string };
+type StatedVersionResult = { ok: true; expected?: number | null } | { ok: false; problem: string };
 
 function noteVersion(content: string): NoteVersion {
 	const raw = readFrontmatterValue(content, FRONTMATTER_VERSION);
@@ -65,13 +63,13 @@ function noteVersion(content: string): NoteVersion {
 }
 
 /** The count a note carries, or null when it carries none archboard can read. */
-export function versionNumber(content: string): number | null {
+function versionNumber(content: string): number | null {
 	const version = noteVersion(content);
 	return version.kind === "at" ? version.value : null;
 }
 
 /** Read only the note head because the frontmatter precedes a possibly large scene. */
-export function versionOfNoteAt(file: string): number | null {
+function versionOfNoteAt(file: string): number | null {
 	try {
 		const handle = fs.openSync(file, "r");
 		try {
@@ -87,7 +85,7 @@ export function versionOfNoteAt(file: string): number | null {
 }
 
 /** Which way a note's count moved since archboard last wrote it. */
-export function versionMove(baseline: number | null | undefined, now: number | null): VersionMove {
+function versionMove(baseline: number | null | undefined, now: number | null): VersionMove {
 	if (baseline === null || baseline === undefined || now === null) {
 		return "unknown";
 	}
@@ -98,7 +96,7 @@ export function versionMove(baseline: number | null | undefined, now: number | n
 }
 
 /** The sentence shared by the write refusal and the pane's changed-note mark. */
-export function describeVersionMove(
+function describeVersionMove(
 	move: VersionMove,
 	baseline?: number | null,
 	now?: number | null,
@@ -138,7 +136,7 @@ function suggestSaveAsName(
 	return `${boardDisplayName(identity)}@${suffix}`;
 }
 
-export function describeWriteConflict(input: {
+function describeWriteConflict(input: {
 	target: BoardIdentity;
 	file: string;
 	reason: BoardConflictReason;
@@ -232,7 +230,7 @@ function describeVersionConflict(input: {
  * Stamp a rendered note as one edit, unless it is byte-identical to the note
  * already at the destination. A foreign `version` property is preserved.
  */
-export function stampBoardVersion(
+function stampBoardVersion(
 	rendered: { note: string; bytes: Buffer },
 	destination: Buffer | undefined,
 ): { note: string; bytes: Buffer; version: number | null } {
@@ -251,7 +249,7 @@ export function stampBoardVersion(
 }
 
 /** Parse the request source. A person's change is never version-checked. */
-export function statedVersion(raw: unknown, writer: "human" | "agent"): StatedVersionResult {
+function statedVersion(raw: unknown, writer: "human" | "agent"): StatedVersionResult {
 	if (writer !== "agent") {
 		return { ok: true };
 	}
@@ -276,19 +274,19 @@ function rememberedVersions(): Map<string, number | null> {
 	return processRememberedVersions;
 }
 
-export function rememberedVersion(writer: string | undefined): number | null | undefined {
+function rememberedVersion(writer: string | undefined): number | null | undefined {
 	return writer ? rememberedVersions().get(writer) : undefined;
 }
 
-export function rememberVersion(writer: string, version: number | null): void {
+function rememberVersion(writer: string, version: number | null): void {
 	rememberedVersions().set(writer, version);
 }
 
-export function forgetRememberedVersion(writer: string): void {
+function forgetRememberedVersion(writer: string): void {
 	rememberedVersions().delete(writer);
 }
 
-export function forgetRememberedVersions(prefix: string): void {
+function forgetRememberedVersions(prefix: string): void {
 	for (const writer of rememberedVersions().keys()) {
 		if (writer.startsWith(prefix)) {
 			rememberedVersions().delete(writer);
@@ -297,7 +295,7 @@ export function forgetRememberedVersions(prefix: string): void {
 }
 
 /** Stated wins over remembered. The note's current number is not a source. */
-export function expectedVersion(input: {
+function expectedVersion(input: {
 	stated?: number | null;
 	rememberedBy?: string;
 }): number | null | undefined {
@@ -308,7 +306,7 @@ export function expectedVersion(input: {
  * Check one write while its caller holds the board lock. Reading remembered
  * state here means a preceding waiter can update it before this write checks.
  */
-export function checkBoardVersion(input: {
+function checkBoardVersion(input: {
 	board: string;
 	file?: string;
 	writesNote: boolean;
@@ -338,8 +336,30 @@ export function checkBoardVersion(input: {
 }
 
 /** Record the current note version as something this writer has just been told. */
-export function rememberVersionAt(writer: string, file?: string): number | null {
+function rememberVersionAt(writer: string, file?: string): number | null {
 	const version = file ? versionOfNoteAt(file) : null;
 	rememberVersion(writer, version);
 	return version;
 }
+
+export {
+	type VersionMove,
+	type BoardConflictReason,
+	type BoardWriteConflict,
+	type BoardVersionConflict,
+	type StatedVersionResult,
+	versionNumber,
+	versionOfNoteAt,
+	versionMove,
+	describeVersionMove,
+	describeWriteConflict,
+	stampBoardVersion,
+	statedVersion,
+	rememberedVersion,
+	rememberVersion,
+	forgetRememberedVersion,
+	forgetRememberedVersions,
+	expectedVersion,
+	checkBoardVersion,
+	rememberVersionAt,
+};

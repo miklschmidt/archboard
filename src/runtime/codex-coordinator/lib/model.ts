@@ -13,11 +13,11 @@ import {
 	type CoordinatorThreadStartParams,
 } from "./contract.js";
 
-export const COORDINATOR_MODEL = "gpt-5.6-luna" as const;
-export const COORDINATOR_EFFORT = "medium" as const;
-export const COORDINATOR_MODEL_PAGE_LIMIT = 100 as const;
+const COORDINATOR_MODEL = "gpt-5.6-luna" as const;
+const COORDINATOR_EFFORT = "medium" as const;
+const COORDINATOR_MODEL_PAGE_LIMIT = 100 as const;
 
-export interface CoordinatorModelSelection {
+interface CoordinatorModelSelection {
 	readonly model: CoordinatorModel;
 	readonly configuredServiceTier: "priority" | null;
 }
@@ -25,7 +25,7 @@ export interface CoordinatorModelSelection {
 type ModelSessionPort = Pick<CodexSession, "modelList">;
 
 /** Exhaust the authoritative model pages before making a selection. */
-export async function listCoordinatorModels(
+async function listCoordinatorModels(
 	session: ModelSessionPort,
 ): Promise<readonly CoordinatorModel[]> {
 	const models: CoordinatorModel[] = [];
@@ -67,9 +67,7 @@ export async function listCoordinatorModels(
 	}
 }
 
-export function selectCoordinatorModel(
-	models: readonly CoordinatorModel[],
-): CoordinatorModelSelection {
+function selectCoordinatorModel(models: readonly CoordinatorModel[]): CoordinatorModelSelection {
 	const matches = models.filter((model) => model.model === COORDINATOR_MODEL);
 	if (matches.length === 0) {
 		throw new CodexCoordinatorError(
@@ -169,7 +167,7 @@ function coordinatorDynamicTools(): NonNullable<CoordinatorThreadStartParams["dy
 	];
 }
 
-export function createCoordinatorThreadStartParams(
+function createCoordinatorThreadStartParams(
 	checkoutRoot: string,
 	serviceTier: "priority" | null,
 ): CoordinatorThreadStartParams {
@@ -208,7 +206,7 @@ export function createCoordinatorThreadStartParams(
 	} satisfies SessionParams<"thread/start">;
 }
 
-export function createCoordinatorSettingsUpdateParams(
+function createCoordinatorSettingsUpdateParams(
 	threadId: ThreadId,
 	serviceTier: "priority" | null,
 ): CoordinatorSettingsUpdateParams {
@@ -226,3 +224,14 @@ export function createCoordinatorSettingsUpdateParams(
 		effort: COORDINATOR_EFFORT,
 	} satisfies SessionParams<"thread/settings/update">;
 }
+
+export {
+	COORDINATOR_MODEL,
+	COORDINATOR_EFFORT,
+	COORDINATOR_MODEL_PAGE_LIMIT,
+	type CoordinatorModelSelection,
+	listCoordinatorModels,
+	selectCoordinatorModel,
+	createCoordinatorThreadStartParams,
+	createCoordinatorSettingsUpdateParams,
+};

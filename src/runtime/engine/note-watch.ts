@@ -54,7 +54,7 @@ import { type VersionMove, describeVersionMove } from "./board-version.js";
  * their board is not the one in the vault, and no answer they can give involves
  * a sha-256.
  */
-export interface NoteWrittenElsewhere {
+interface NoteWrittenElsewhere {
 	board: string;
 	file: string;
 	/**
@@ -109,7 +109,7 @@ const sinkHolder = () => processSink;
  * yet, and for a board that has stopped saving — that last one because the hold
  * is this state one step further on and says more about it.
  */
-export function noteWrittenElsewhere(board: string): NoteWrittenElsewhere | null {
+function noteWrittenElsewhere(board: string): NoteWrittenElsewhere | null {
 	const key = normalizeBoardKey(board);
 	const state = boards.get(key);
 	if (!state?.file) {
@@ -161,7 +161,7 @@ export function noteWrittenElsewhere(board: string): NoteWrittenElsewhere | null
  * mark, and a mark re-sent every second is a message the socket carries a
  * thousand times an hour for nothing.
  */
-export function refreshNoteWatch(board: string): void {
+function refreshNoteWatch(board: string): void {
 	const key = normalizeBoardKey(board);
 	const written = noteWrittenElsewhere(key);
 	// The stamp rather than the object, so that a note written twice by another
@@ -181,12 +181,12 @@ export function refreshNoteWatch(board: string): void {
  * one: this module must not know what a pane is, and a check must be able to
  * watch without standing a browser up.
  */
-export function onNoteWrittenElsewhere(sink: NoteSink | null): void {
+function onNoteWrittenElsewhere(sink: NoteSink | null): void {
 	sinkHolder().notify = sink;
 }
 
 /** Forget what has been looked at and said. For a check that wants a clean process. */
-export function forgetNoteWatch(): void {
+function forgetNoteWatch(): void {
 	looks().clear();
 	announced().clear();
 }
@@ -247,3 +247,11 @@ function describe(board: string, foreign: ForeignWrite | null): NoteWrittenElsew
 		].join("\n"),
 	};
 }
+
+export {
+	type NoteWrittenElsewhere,
+	noteWrittenElsewhere,
+	refreshNoteWatch,
+	onNoteWrittenElsewhere,
+	forgetNoteWatch,
+};

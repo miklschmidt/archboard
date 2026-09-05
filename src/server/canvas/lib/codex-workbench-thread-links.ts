@@ -27,7 +27,7 @@ import type {
 } from "../../../runtime/codex-thread-context/index.js";
 import type { CodexWorkbenchComponents } from "./codex-workbench.js";
 
-export function bindThreadContextToReadyWorkhorse(
+function bindThreadContextToReadyWorkhorse(
 	workhorse: Pick<CodexWorkhorseStart, "snapshot">,
 	controller: Pick<CodexThreadContextController, "snapshot" | "compareAndSwap">,
 ): void {
@@ -86,7 +86,7 @@ function replaceThreadContextBinding(
 	}).token;
 }
 
-export function clearCanvasThreadContextForLease(
+function clearCanvasThreadContextForLease(
 	controller: Pick<CodexThreadContextController, "snapshot" | "compareAndSwap">,
 	expected: CodexThreadContextBindingToken,
 ): void {
@@ -117,7 +117,7 @@ function expectedBrowserLink(context: BrowserActionContext) {
  * them. That is deliberate: the list describes the child epoch, which is also
  * shared, and a per-pane copy would let two panes disagree about what exists.
  */
-export interface CanvasThreadCandidateInventory {
+interface CanvasThreadCandidateInventory {
 	readonly read: () => CodexThreadCandidatesProjectionInput;
 	readonly refresh: () => Promise<ThreadLinkCandidateDiscovery>;
 	/** The thread a published selection named, or null when the list moved on. */
@@ -138,7 +138,7 @@ function epochGeneration(epoch: EpochGenerationSource): string {
 	return `${cas.revision}:${cas.bytesHash ?? "none"}`;
 }
 
-export function createCanvasThreadCandidateInventory(
+function createCanvasThreadCandidateInventory(
 	threadLink: Pick<CodexThreadLinkPort, "discoverCandidates">,
 	epoch: EpochGenerationSource,
 ): CanvasThreadCandidateInventory {
@@ -184,7 +184,7 @@ export function createCanvasThreadCandidateInventory(
 	});
 }
 
-export function createCanvasThreadLinkActions(options: {
+function createCanvasThreadLinkActions(options: {
 	readonly workhorse: CodexWorkbenchComponents["workhorse"];
 	readonly threadLink: CodexWorkbenchComponents["threadLink"];
 	readonly semanticDelivery: CodexWorkbenchComponents["semanticDelivery"];
@@ -386,3 +386,11 @@ export function createCanvasThreadLinkActions(options: {
 		},
 	} satisfies BrowserThreadLinkActions);
 }
+
+export {
+	bindThreadContextToReadyWorkhorse,
+	clearCanvasThreadContextForLease,
+	type CanvasThreadCandidateInventory,
+	createCanvasThreadCandidateInventory,
+	createCanvasThreadLinkActions,
+};

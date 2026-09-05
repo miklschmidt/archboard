@@ -26,9 +26,9 @@ import {
 const GIT_OUTPUT_LIMIT_BYTES = 64 * 1024;
 const GIT_PROCESS_OWNER = fileURLToPath(new URL("./git-process-owner.ts", import.meta.url));
 
-export type GitFailure = "aborted" | "cleanup" | "exit" | "output" | "signal" | "spawn" | "timeout";
+type GitFailure = "aborted" | "cleanup" | "exit" | "output" | "signal" | "spawn" | "timeout";
 
-export class GitCommandError extends Error {
+class GitCommandError extends Error {
 	constructor(
 		readonly failure: GitFailure,
 		message: string,
@@ -167,7 +167,7 @@ function gitOwnerMessage(message: unknown): GitOwnerResult | undefined {
 }
 
 /** Run one bounded Git command without ever blocking Bun's process supervisor. */
-export async function git(
+async function git(
 	cwd: string,
 	args: readonly string[],
 	options: { signal?: AbortSignal; timeoutMs?: number; executable?: string } = {},
@@ -396,7 +396,7 @@ export async function git(
 // Turn a git remote URL into a stable identity: host/owner/name, with the
 // scheme, credentials, and .git suffix stripped so ssh and https clones of the
 // same repo produce the same string.
-export function repoIdentityFromRemote(remote: string): string {
+function repoIdentityFromRemote(remote: string): string {
 	let url = remote.trim().replace(/\.git$/, "");
 	url = url.replace(/^[a-z+]+:\/\//i, "");
 	url = url.replace(/^[^@/]+@/, ""); // user@ / token@
@@ -406,7 +406,7 @@ export function repoIdentityFromRemote(remote: string): string {
 
 // Deepest existing directory at or above `p`. A binding may legitimately name
 // a file that does not exist yet (a proposal), and we still want the repo.
-export function existingDir(p: string): string | undefined {
+function existingDir(p: string): string | undefined {
 	let dir = fs.existsSync(p) && fs.statSync(p).isDirectory() ? p : path.dirname(p);
 	for (let i = 0; i < 64; i++) {
 		if (fs.existsSync(dir)) {
@@ -422,7 +422,7 @@ export function existingDir(p: string): string | undefined {
 }
 
 /** The git root a path sits in, walking up from the deepest directory that exists. */
-export async function repoRootOf(
+async function repoRootOf(
 	anyPath: string,
 	options: { signal?: AbortSignal } = {},
 ): Promise<string | undefined> {
@@ -448,7 +448,7 @@ export async function repoRootOf(
  * directory name, which is machine-local and therefore weaker. A binding that
  * says which local repo it means still beats one that says nothing.
  */
-export async function repoIdentityAt(
+async function repoIdentityAt(
 	root: string,
 	options: { signal?: AbortSignal } = {},
 ): Promise<string> {
@@ -465,7 +465,7 @@ export async function repoIdentityAt(
 	return remote ? repoIdentityFromRemote(remote) : path.basename(root);
 }
 
-export interface CheckoutGitInspection {
+interface CheckoutGitInspection {
 	readonly root: string;
 	readonly identity: string;
 	readonly branch?: string;
@@ -488,7 +488,7 @@ async function optionalGit(
 }
 
 /** Capture one immutable view of the Git facts a top-level operation consumes. */
-export async function inspectCheckout(
+async function inspectCheckout(
 	anyPath: string,
 	options: { signal?: AbortSignal } = {},
 ): Promise<Readonly<CheckoutGitInspection> | undefined> {
@@ -517,3 +517,15 @@ export async function inspectCheckout(
 		...(commit ? { commit } : {}),
 	});
 }
+
+export {
+	type GitFailure,
+	GitCommandError,
+	git,
+	repoIdentityFromRemote,
+	existingDir,
+	repoRootOf,
+	repoIdentityAt,
+	type CheckoutGitInspection,
+	inspectCheckout,
+};

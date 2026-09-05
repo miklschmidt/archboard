@@ -13,7 +13,7 @@ import {
 } from "./scalars.js";
 import { MisalignmentErrorDetailsSchema } from "./error-schemas.js";
 
-export const PlanTypeSchema = z.enum([
+const PlanTypeSchema = z.enum([
 	"free",
 	"go",
 	"plus",
@@ -33,7 +33,7 @@ export const PlanTypeSchema = z.enum([
 	"unknown",
 ]);
 
-export const AuthModeSchema = z.enum([
+const AuthModeSchema = z.enum([
 	"apikey",
 	"chatgpt",
 	"chatgptAuthTokens",
@@ -45,16 +45,16 @@ export const AuthModeSchema = z.enum([
 ]);
 
 /** Generated `ReasoningEffort` is an open provider-defined string. */
-export const ReasoningEffortSchema = z.string();
-export const ReasoningSummarySchema = z.enum(["auto", "concise", "detailed", "none"]);
-export const PersonalitySchema = z.enum(["none", "friendly", "pragmatic"]);
-export const MessagePhaseSchema = z.enum(["commentary", "final_answer"]);
-export const MultiAgentModeSchema = z.union([
+const ReasoningEffortSchema = z.string();
+const ReasoningSummarySchema = z.enum(["auto", "concise", "detailed", "none"]);
+const PersonalitySchema = z.enum(["none", "friendly", "pragmatic"]);
+const MessagePhaseSchema = z.enum(["commentary", "final_answer"]);
+const MultiAgentModeSchema = z.union([
 	z.enum(["explicitRequestOnly", "proactive"]),
 	looseObject({ custom: z.string() }),
 ]);
 
-export const AskForApprovalSchema = z.union([
+const AskForApprovalSchema = z.union([
 	z.enum(["untrusted", "on-request", "never"]),
 	looseObject({
 		granular: looseObject({
@@ -67,11 +67,11 @@ export const AskForApprovalSchema = z.union([
 	}),
 ]);
 
-export const ApprovalsReviewerSchema = z.enum(["user", "auto_review", "guardian_subagent"]);
-export const SandboxModeSchema = z.enum(["read-only", "workspace-write", "danger-full-access"]);
-export const NetworkAccessSchema = z.enum(["restricted", "enabled"]);
+const ApprovalsReviewerSchema = z.enum(["user", "auto_review", "guardian_subagent"]);
+const SandboxModeSchema = z.enum(["read-only", "workspace-write", "danger-full-access"]);
+const NetworkAccessSchema = z.enum(["restricted", "enabled"]);
 
-export const SandboxPolicySchema = z.discriminatedUnion("type", [
+const SandboxPolicySchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("dangerFullAccess") }),
 	looseObject({ type: z.literal("readOnly"), networkAccess: z.boolean() }),
 	looseObject({ type: z.literal("externalSandbox"), networkAccess: NetworkAccessSchema }),
@@ -84,14 +84,14 @@ export const SandboxPolicySchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
-export const ActivePermissionProfileSchema = looseObject({
+const ActivePermissionProfileSchema = looseObject({
 	id: z.string(),
 	extends: z.string().nullable(),
 });
 
-export const ThreadHistoryModeSchema = z.enum(["legacy", "paginated"]);
-export const ThreadActiveFlagSchema = z.enum(["waitingOnApproval", "waitingOnUserInput"]);
-export const ThreadStatusSchema = CodexThreadStatusSchema;
+const ThreadHistoryModeSchema = z.enum(["legacy", "paginated"]);
+const ThreadActiveFlagSchema = z.enum(["waitingOnApproval", "waitingOnUserInput"]);
+const ThreadStatusSchema = CodexThreadStatusSchema;
 
 const SubAgentSourceSchema = z.union([
 	z.enum(["review", "compact", "memory_consolidation"]),
@@ -107,28 +107,28 @@ const SubAgentSourceSchema = z.union([
 	looseObject({ other: z.string() }),
 ]);
 
-export const SessionSourceSchema = z.union([
+const SessionSourceSchema = z.union([
 	z.enum(["cli", "vscode", "exec", "appServer", "unknown"]),
 	looseObject({ custom: z.string() }),
 	looseObject({ subAgent: SubAgentSourceSchema }),
 ]);
 
-export const ThreadSectionAppearanceSchema = looseObject({
+const ThreadSectionAppearanceSchema = looseObject({
 	icon: z.string().nullable(),
 	color: z.string().nullable(),
 });
-export const ThreadSectionSchema = looseObject({
+const ThreadSectionSchema = looseObject({
 	id: z.string(),
 	name: z.string(),
 	appearance: ThreadSectionAppearanceSchema.nullable(),
 });
-export const GitInfoSchema = looseObject({
+const GitInfoSchema = looseObject({
 	sha: z.string().nullable(),
 	branch: z.string().nullable(),
 	originUrl: z.string().nullable(),
 });
 
-export const ThreadGoalStatusSchema = z.enum([
+const ThreadGoalStatusSchema = z.enum([
 	"active",
 	"paused",
 	"blocked",
@@ -136,7 +136,7 @@ export const ThreadGoalStatusSchema = z.enum([
 	"budgetLimited",
 	"complete",
 ]);
-export const ThreadGoalSchema = looseObject({
+const ThreadGoalSchema = looseObject({
 	threadId: z.string(),
 	objective: z.string(),
 	status: ThreadGoalStatusSchema,
@@ -147,9 +147,9 @@ export const ThreadGoalSchema = looseObject({
 	updatedAt: FiniteNumberSchema,
 });
 
-export const TurnStatusSchema = CodexTurnStatusSchema;
-export const NonSteerableTurnKindSchema = z.enum(["review", "compact"]);
-export const CodexErrorInfoSchema = z.union([
+const TurnStatusSchema = CodexTurnStatusSchema;
+const NonSteerableTurnKindSchema = z.enum(["review", "compact"]);
+const CodexErrorInfoSchema = z.union([
 	z.enum([
 		"contextWindowExceeded",
 		"sessionBudgetExceeded",
@@ -178,25 +178,25 @@ export const CodexErrorInfoSchema = z.union([
 	looseObject({ activeTurnNotSteerable: looseObject({ turnKind: NonSteerableTurnKindSchema }) }),
 ]);
 
-export const TurnErrorSchema = looseObject({
+const TurnErrorSchema = looseObject({
 	message: z.string(),
 	codexErrorInfo: CodexErrorInfoSchema.nullable(),
 	additionalDetails: z.string().nullable(),
 	misalignment: MisalignmentErrorDetailsSchema.nullable(),
 });
 
-export const TurnPlanStepStatusSchema = z.enum(["pending", "inProgress", "completed"]);
-export const TurnPlanStepSchema = looseObject({
+const TurnPlanStepStatusSchema = z.enum(["pending", "inProgress", "completed"]);
+const TurnPlanStepSchema = looseObject({
 	step: z.string(),
 	status: TurnPlanStepStatusSchema,
 });
 
-export const ConversationTextRoleSchema = z.enum(["user", "developer", "assistant"]);
-export const RealtimeConversationVersionSchema = z.enum(["v1", "v2", "v3"]);
-export const RealtimeTranscriptRoleSchema = z.enum(["user", "assistant"]);
-export const RealtimeSessionOutcomeSchema = z.enum(["ended", "failed"]);
-export const RealtimeOutputModalitySchema = z.enum(["text", "audio"]);
-export const RealtimeVoiceSchema = z.enum([
+const ConversationTextRoleSchema = z.enum(["user", "developer", "assistant"]);
+const RealtimeConversationVersionSchema = z.enum(["v1", "v2", "v3"]);
+const RealtimeTranscriptRoleSchema = z.enum(["user", "assistant"]);
+const RealtimeSessionOutcomeSchema = z.enum(["ended", "failed"]);
+const RealtimeOutputModalitySchema = z.enum(["text", "audio"]);
+const RealtimeVoiceSchema = z.enum([
 	"alloy",
 	"arbor",
 	"ash",
@@ -218,13 +218,13 @@ export const RealtimeVoiceSchema = z.enum([
 	"verse",
 ]);
 
-export const ThreadRealtimeBemItemPresentationSchema = z.discriminatedUnion("type", [
+const ThreadRealtimeBemItemPresentationSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("wholeItem") }),
 	looseObject({ type: z.literal("inlineMarkdown") }),
 	looseObject({ type: z.literal("inlineVisualization"), index: NonNegativeIntegerSchema }),
 ]);
 
-export const ThreadRealtimeItemSchema = z.discriminatedUnion("type", [
+const ThreadRealtimeItemSchema = z.discriminatedUnion("type", [
 	looseObject({
 		id: z.string(),
 		realtimeSessionId: z.string(),
@@ -253,7 +253,7 @@ export const ThreadRealtimeItemSchema = z.discriminatedUnion("type", [
 	}),
 ]);
 
-export const ThreadRealtimeAudioChunkSchema = looseObject({
+const ThreadRealtimeAudioChunkSchema = looseObject({
 	data: z.string(),
 	sampleRate: FiniteNumberSchema,
 	numChannels: FiniteNumberSchema,
@@ -261,17 +261,17 @@ export const ThreadRealtimeAudioChunkSchema = looseObject({
 	itemId: z.string().nullable(),
 });
 
-export const ByteRangeSchema = looseObject({
+const ByteRangeSchema = looseObject({
 	start: NonNegativeIntegerSchema,
 	end: NonNegativeIntegerSchema,
 });
-export const TextElementSchema = looseObject({
+const TextElementSchema = looseObject({
 	byteRange: ByteRangeSchema,
 	placeholder: z.string().nullable(),
 });
 
-export const ImageDetailSchema = z.enum(["auto", "low", "high", "original"]);
-export const UserInputSchema = z.discriminatedUnion("type", [
+const ImageDetailSchema = z.enum(["auto", "low", "high", "original"]);
+const UserInputSchema = z.discriminatedUnion("type", [
 	looseObject({
 		type: z.literal("text"),
 		text: z.string(),
@@ -289,7 +289,7 @@ export const UserInputSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("mention"), name: z.string(), path: z.string() }),
 ]);
 
-export const FunctionCallOutputContentItemSchema = z.discriminatedUnion("type", [
+const FunctionCallOutputContentItemSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("input_text"), text: z.string() }),
 	looseObject({
 		type: z.literal("input_image"),
@@ -299,12 +299,12 @@ export const FunctionCallOutputContentItemSchema = z.discriminatedUnion("type", 
 	looseObject({ type: z.literal("input_audio"), audio_url: z.string() }),
 	looseObject({ type: z.literal("encrypted_content"), encrypted_content: z.string() }),
 ]);
-export const FunctionCallOutputBodySchema = z.union([
+const FunctionCallOutputBodySchema = z.union([
 	z.string(),
 	z.array(FunctionCallOutputContentItemSchema),
 ]);
 
-export const AccountSchema = z.discriminatedUnion("type", [
+const AccountSchema = z.discriminatedUnion("type", [
 	looseObject({ type: z.literal("apiKey") }),
 	looseObject({
 		type: z.literal("chatgpt"),
@@ -313,3 +313,50 @@ export const AccountSchema = z.discriminatedUnion("type", [
 	}),
 	looseObject({ type: z.literal("amazonBedrock"), usesCodexManagedCredentials: z.boolean() }),
 ]);
+
+export {
+	PlanTypeSchema,
+	AuthModeSchema,
+	ReasoningEffortSchema,
+	ReasoningSummarySchema,
+	PersonalitySchema,
+	MessagePhaseSchema,
+	MultiAgentModeSchema,
+	AskForApprovalSchema,
+	ApprovalsReviewerSchema,
+	SandboxModeSchema,
+	NetworkAccessSchema,
+	SandboxPolicySchema,
+	ActivePermissionProfileSchema,
+	ThreadHistoryModeSchema,
+	ThreadActiveFlagSchema,
+	ThreadStatusSchema,
+	SessionSourceSchema,
+	ThreadSectionAppearanceSchema,
+	ThreadSectionSchema,
+	GitInfoSchema,
+	ThreadGoalStatusSchema,
+	ThreadGoalSchema,
+	TurnStatusSchema,
+	NonSteerableTurnKindSchema,
+	CodexErrorInfoSchema,
+	TurnErrorSchema,
+	TurnPlanStepStatusSchema,
+	TurnPlanStepSchema,
+	ConversationTextRoleSchema,
+	RealtimeConversationVersionSchema,
+	RealtimeTranscriptRoleSchema,
+	RealtimeSessionOutcomeSchema,
+	RealtimeOutputModalitySchema,
+	RealtimeVoiceSchema,
+	ThreadRealtimeBemItemPresentationSchema,
+	ThreadRealtimeItemSchema,
+	ThreadRealtimeAudioChunkSchema,
+	ByteRangeSchema,
+	TextElementSchema,
+	ImageDetailSchema,
+	UserInputSchema,
+	FunctionCallOutputContentItemSchema,
+	FunctionCallOutputBodySchema,
+	AccountSchema,
+};

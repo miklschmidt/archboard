@@ -32,7 +32,7 @@ const processGroups = createCodexProcessGroupOperations();
 // canvas itself inherited a deeply nested test or launcher TMPDIR.
 const rendererTempParent = process.platform === "linux" ? "/tmp" : tmpdir();
 
-export interface BoardRenderingOwnerOptions {
+interface BoardRenderingOwnerOptions {
 	readonly chromiumPath?: string;
 	readonly setsidPath?: string;
 	readonly jobTimeoutMs?: number;
@@ -42,7 +42,7 @@ export interface BoardRenderingOwnerOptions {
 	readonly testHooks?: BoardRenderingOwnerTestHooks;
 }
 
-export interface BoardRenderingOwnerTestHooks extends RendererFixtureTestHooks {
+interface BoardRenderingOwnerTestHooks extends RendererFixtureTestHooks {
 	beforeRun?(job: BoardRendererJob, signal?: AbortSignal): Promise<void> | void;
 	afterCdpDispatch?(job: BoardRendererJob, pid: number): void;
 	adjustSessionCleanup?(cleanup: RendererSessionCleanup): RendererSessionCleanup;
@@ -54,7 +54,7 @@ type ResolvedOwnerOptions = Required<Omit<BoardRenderingOwnerOptions, "testHooks
 	readonly testHooks: BoardRenderingOwnerTestHooks;
 };
 
-export interface BoardRenderingOwnerStatus {
+interface BoardRenderingOwnerStatus {
 	readonly started: boolean;
 	readonly accepting: boolean;
 	readonly active: boolean;
@@ -67,7 +67,7 @@ export interface BoardRenderingOwnerStatus {
 	readonly fixturePort: number | null;
 }
 
-export interface RendererSessionCleanup {
+interface RendererSessionCleanup {
 	readonly clean: boolean;
 	readonly pids: readonly number[];
 	readonly processesGone: boolean;
@@ -82,11 +82,11 @@ export interface RendererSessionCleanup {
 	readonly errors: readonly string[];
 }
 
-export interface BoardRendererCleanup extends RendererSessionCleanup {
+interface BoardRendererCleanup extends RendererSessionCleanup {
 	readonly fixtureClosed: boolean;
 }
 
-export class BoardRendererError extends Error {
+class BoardRendererError extends Error {
 	readonly code = "BOARD_RENDERER_FAILED";
 
 	constructor(
@@ -846,7 +846,7 @@ class RendererSession {
 	}
 }
 
-export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
+function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 	let chromiumStarts = 0;
 	const configuredHooks = options.testHooks ?? {};
 	const resolved: ResolvedOwnerOptions = {
@@ -1078,3 +1078,13 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 		lastCleanup: (): BoardRendererCleanup | null => lastCleanup,
 	});
 }
+
+export {
+	type BoardRenderingOwnerOptions,
+	type BoardRenderingOwnerTestHooks,
+	type BoardRenderingOwnerStatus,
+	type RendererSessionCleanup,
+	type BoardRendererCleanup,
+	BoardRendererError,
+	createBoardRenderingOwner,
+};

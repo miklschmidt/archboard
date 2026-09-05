@@ -97,7 +97,7 @@ function statusOutcomePairIsValid(record: Record<string, unknown>): boolean {
 }
 
 /** Validate the complete durable record shape, including its executable invariants. */
-export function isEpochOperationRecord(value: unknown): value is EpochOperationRecord {
+function isEpochOperationRecord(value: unknown): value is EpochOperationRecord {
 	if (!isRecord(value)) {
 		return false;
 	}
@@ -182,7 +182,7 @@ export function isEpochOperationRecord(value: unknown): value is EpochOperationR
 	return true;
 }
 
-export function isEpochExecutionProof(value: unknown): value is EpochExecutionProof {
+function isEpochExecutionProof(value: unknown): value is EpochExecutionProof {
 	if (!isRecord(value) || !hasExactKeys(value, ["record", "manifestRevision"])) {
 		return false;
 	}
@@ -196,7 +196,7 @@ export function isEpochExecutionProof(value: unknown): value is EpochExecutionPr
 }
 
 /** Structural equality for immutable JSON-like epoch records and proofs. */
-export function deepEqual(left: unknown, right: unknown): boolean {
+function deepEqual(left: unknown, right: unknown): boolean {
 	if (Object.is(left, right)) {
 		return true;
 	}
@@ -218,7 +218,7 @@ export function deepEqual(left: unknown, right: unknown): boolean {
 }
 
 /** Prove that the epoch proof is the current, singular manifest record. */
-export function proofMatchesManifest(proof: EpochExecutionProof, manifest: EpochManifest): boolean {
+function proofMatchesManifest(proof: EpochExecutionProof, manifest: EpochManifest): boolean {
 	if (
 		!isEpochExecutionProof(proof) ||
 		!isRecord(manifest) ||
@@ -292,7 +292,7 @@ function manifestRecordsAreConsistent(manifest: EpochManifest): boolean {
 }
 
 /** Clone a session/epoch observation and freeze every retained nested value. */
-export function cloneAndFreeze<T>(value: T): T {
+function cloneAndFreeze<T>(value: T): T {
 	return deepFreeze(structuredClone(value));
 }
 
@@ -306,3 +306,11 @@ function deepFreeze<T>(value: T): T {
 	Object.freeze(value);
 	return value;
 }
+
+export {
+	isEpochOperationRecord,
+	isEpochExecutionProof,
+	deepEqual,
+	proofMatchesManifest,
+	cloneAndFreeze,
+};

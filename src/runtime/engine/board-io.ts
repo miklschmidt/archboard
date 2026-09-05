@@ -97,7 +97,7 @@ import { validatePersistedBoardElement } from "./lib/native-element.js";
  * Both are absent when there is nothing at the path yet: a board somebody has
  * just made, or a scratch board in a vault that has never held one.
  */
-export interface BoardContent {
+interface BoardContent {
 	elements: Map<string, ServerElement>;
 	files: Map<string, ExcalidrawFile>;
 	note?: string;
@@ -115,7 +115,7 @@ export interface BoardContent {
  * has none. Every whole-board frame needs these records or image elements
  * render as holes (TASK-060).
  */
-export function boardFilesMessage(content: BoardContent): {
+function boardFilesMessage(content: BoardContent): {
 	files?: Record<string, ExcalidrawFile>;
 } {
 	if (content.files.size === 0) {
@@ -131,7 +131,7 @@ export function boardFilesMessage(content: BoardContent): {
  * knows which board it is working on, and opening one is the act that finds
  * out.
  */
-export interface LoadedBoard extends NoteFile {
+interface LoadedBoard extends NoteFile {
 	identity: BoardIdentity;
 	// What the note's own frontmatter claims, when that is a different board
 	// than the one being opened — a note renamed or moved in Obsidian since it
@@ -143,7 +143,7 @@ export interface LoadedBoard extends NoteFile {
 }
 
 /** A board with nothing in it, for a note that is not there yet. */
-export function emptyContent(): BoardContent {
+function emptyContent(): BoardContent {
 	return { elements: new Map(), files: new Map() };
 }
 
@@ -160,7 +160,7 @@ export function emptyContent(): BoardContent {
  * mattered; now the note is rewritten from what was read, so anything not read
  * back is deleted on the next write (TASK-060).
  */
-export function ingestScene(
+function ingestScene(
 	sceneElements: unknown[],
 	sceneFiles?: Record<string, unknown> | null,
 	context = "scene",
@@ -208,7 +208,7 @@ export function ingestScene(
  * checked against, and the pictures the Obsidian plugin moved out into vault
  * files.
  */
-export interface NoteFile {
+interface NoteFile {
 	file: string;
 	/** The whole note, so a write can put its frontmatter and prose back verbatim. */
 	raw: string;
@@ -237,7 +237,7 @@ export interface NoteFile {
  * `null` for a note that is not there. A board somebody has just made has no
  * file yet and that is not an error.
  */
-export function readNoteFile(file: string, root = requireVaultRoot()): NoteFile | null {
+function readNoteFile(file: string, root = requireVaultRoot()): NoteFile | null {
 	let bytes: Buffer;
 	try {
 		// Read bytes, then decode. The baseline hash has to be of what is on disk,
@@ -281,7 +281,7 @@ export function readNoteFile(file: string, root = requireVaultRoot()): NoteFile 
  * path, and say what the note's own frontmatter claims. The bytes come back
  * exactly as unknown other read gets them.
  */
-export function readBoardFile(
+function readBoardFile(
 	identity: Pick<BoardIdentity, "board" | "variant" | "displayName">,
 	root = requireVaultRoot(),
 ): LoadedBoard | null {
@@ -314,7 +314,7 @@ export function readBoardFile(
 }
 
 /** The elements and images a note holds, plus the bytes they came out of. */
-export function readNote(file: string): BoardContent | null {
+function readNote(file: string): BoardContent | null {
 	const note = readNoteFile(file);
 	if (!note) {
 		return null;
@@ -371,18 +371,18 @@ function contentFromLoadedBoard(loaded: LoadedBoard): BoardContent {
 	}
 }
 
-export interface BoardAccess {
+interface BoardAccess {
 	key: string;
 	board: BoardState;
 	content: BoardContent;
 }
 
-export interface ResolvedBoard extends BoardAccess {
+interface ResolvedBoard extends BoardAccess {
 	/** The exact persisted load used to build content, for same-load lifecycle observers. */
 	loaded: LoadedBoard;
 }
 
-export interface InstallBoardOptions {
+interface InstallBoardOptions {
 	/** Establish a missing baseline from this exact load while the caller holds the board lock. */
 	write?: boolean;
 	/** A waiter may accept only this exact hash from the released lease it observed. */
@@ -402,12 +402,12 @@ function availableBoardKeys(root: string): string[] {
 	}
 }
 
-export interface ResolvedBoardNote {
+interface ResolvedBoardNote {
 	key: string;
 	loaded: LoadedBoard;
 }
 
-export function resolveBoardNote(asked?: string | null, what?: string): ResolvedBoardNote {
+function resolveBoardNote(asked?: string | null, what?: string): ResolvedBoardNote {
 	const root = requireVaultRoot();
 	if (asked === undefined || asked === null || asked.trim() === "") {
 		throw new BoardRequiredError(availableBoardKeys(root), what);
@@ -480,7 +480,7 @@ export function resolveBoardNote(asked?: string | null, what?: string): Resolved
 }
 
 /** Resolve one explicit address to exactly one valid persisted note. */
-export function resolveBoard(asked?: string | null, what?: string): ResolvedBoard {
+function resolveBoard(asked?: string | null, what?: string): ResolvedBoard {
 	const resolution = resolveBoardNote(asked, what);
 	const { key, loaded } = resolution;
 	const content = resolvedBoardContent(key, loaded);
@@ -503,7 +503,7 @@ function resolvedBoardContent(key: string, loaded: LoadedBoard): BoardContent {
 }
 
 /** Install one already-resolved load for explicit open/create/write bookkeeping. */
-export function materializeResolvedBoard(
+function materializeResolvedBoard(
 	resolution: ResolvedBoardNote,
 	options: InstallBoardOptions = {},
 ): ResolvedBoard {
@@ -528,7 +528,7 @@ export function materializeResolvedBoard(
 }
 
 /** Resolve and install a board only for an operation that needs session bookkeeping. */
-export function resolveInstalledBoard(
+function resolveInstalledBoard(
 	asked?: string | null,
 	what?: string,
 	options: InstallBoardOptions = {},
@@ -537,7 +537,7 @@ export function resolveInstalledBoard(
 }
 
 /** Publish and register a canonical empty board without touching browser state. */
-export function createBoard(identity: BoardIdentity): BoardAccess {
+function createBoard(identity: BoardIdentity): BoardAccess {
 	const root = requireVaultRoot();
 	const key = boardKey(identity);
 	const existing = listBoards(root).filter((entry) => entry.key === key);
@@ -592,11 +592,11 @@ export function createBoard(identity: BoardIdentity): BoardAccess {
  * server fields, validate render geometry, deduplicate into a map, register a
  * board, or establish a write baseline.
  */
-export function readRawBoardElementsForInspection(key: string): readonly unknown[] {
+function readRawBoardElementsForInspection(key: string): readonly unknown[] {
 	return readBoardInspectionSnapshot(key).elements;
 }
 
-export interface BoardInspectionSnapshot {
+interface BoardInspectionSnapshot {
 	board: string;
 	elements: readonly unknown[];
 	fingerprint: string;
@@ -604,7 +604,7 @@ export interface BoardInspectionSnapshot {
 }
 
 /** Validate and project one persisted scene for the browser renderer. */
-export function projectBoardRenderSnapshot(scene: unknown): BoardInspectionSnapshot["renderScene"] {
+function projectBoardRenderSnapshot(scene: unknown): BoardInspectionSnapshot["renderScene"] {
 	const sceneRecord = !Array.isArray(scene) && scene && typeof scene === "object" ? scene : null;
 	const elements = Array.isArray(scene)
 		? scene
@@ -705,7 +705,7 @@ function renderSnapshotFingerprint(noteHash: string, scene: unknown): string {
 }
 
 /** One named note read shared by inspection and focused rendering. */
-export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapshot {
+function readBoardInspectionSnapshot(key: string): BoardInspectionSnapshot {
 	const { key: resolvedKey, loaded: note } = resolveBoardNote(key, "Inspecting a board");
 	const file = note.file;
 	const scene = parseLoadedScene(note);
@@ -753,7 +753,7 @@ export function readBoardInspectionSnapshot(key: string): BoardInspectionSnapsho
  * rather than replacing it would still reach through; that is TASK-084 and it
  * is no worse here than on the note.
  */
-export function readBoardContent(board: BoardState): BoardContent {
+function readBoardContent(board: BoardState): BoardContent {
 	const hold = holdOn(boardKey(board.identity));
 	if (hold) {
 		return copyHeldContent(hold.content);
@@ -774,7 +774,7 @@ export function readBoardContent(board: BoardState): BoardContent {
  * `board save --as other` writes a file some other note's frontmatter belongs
  * to.
  */
-export function renderContent(
+function renderContent(
 	identity: BoardState["identity"],
 	content: BoardContent,
 	existingNote: string | null | undefined = content.note,
@@ -913,7 +913,7 @@ function settleBoundArrows(content: BoardContent): void {
  * Keep this order beside the settlement functions it owns. Validation after
  * them proves the document a caller receives is the document persistence sees.
  */
-export function settleBoardContent(content: BoardContent): void {
+function settleBoardContent(content: BoardContent): void {
 	settleBlockIds(content);
 	settleBoundArrows(content);
 	settleRawText(content);
@@ -926,7 +926,7 @@ export function settleBoardContent(content: BoardContent): void {
  * Carries the conflict as data — the three outcomes and which one costs what —
  * so a surface can offer them rather than reword them (ADR 0006).
  */
-export class BoardWriteConflictError extends Error {
+class BoardWriteConflictError extends Error {
 	readonly conflict: BoardWriteConflict;
 	constructor(conflict: BoardWriteConflict) {
 		super(conflict.message);
@@ -942,7 +942,7 @@ export class BoardWriteConflictError extends Error {
  * is the point: one set of facts, and the refusal and the mark are two ways of
  * saying it.
  */
-export interface ForeignWrite {
+interface ForeignWrite {
 	file: string;
 	reason: "changed" | "unseen";
 	expectedHash?: string;
@@ -983,7 +983,7 @@ export interface ForeignWrite {
  * never read are, because it cannot tell what writing over them would delete —
  * that is the `unseen` half of the same refusal.
  */
-export function foreignWriteTo(file: string, destination: Buffer | undefined): ForeignWrite | null {
+function foreignWriteTo(file: string, destination: Buffer | undefined): ForeignWrite | null {
 	if (!destination) {
 		return null;
 	}
@@ -1011,7 +1011,7 @@ export function foreignWriteTo(file: string, destination: Buffer | undefined): F
 	};
 }
 
-export interface WriteOptions {
+interface WriteOptions {
 	/** The human's "overwrite it anyway". Never set by archboard on its own behalf. */
 	force?: boolean;
 	/** What a refusal should tell the caller to type. */
@@ -1041,7 +1041,7 @@ export interface WriteOptions {
  * Nothing is written when the check fails, so a refused write leaves the vault
  * exactly as it found it, empty directories included.
  */
-export function writeBoardContent(
+function writeBoardContent(
 	board: BoardState,
 	content: BoardContent,
 	options: WriteOptions,
@@ -1105,3 +1105,36 @@ export function writeBoardContent(
 	recordBaseline(board, file, hash, version);
 	return { file, hash, note, elementCount, overwrote, version };
 }
+
+export {
+	type BoardContent,
+	boardFilesMessage,
+	type LoadedBoard,
+	emptyContent,
+	ingestScene,
+	type NoteFile,
+	readNoteFile,
+	readBoardFile,
+	readNote,
+	type BoardAccess,
+	type ResolvedBoard,
+	type InstallBoardOptions,
+	type ResolvedBoardNote,
+	resolveBoardNote,
+	resolveBoard,
+	materializeResolvedBoard,
+	resolveInstalledBoard,
+	createBoard,
+	readRawBoardElementsForInspection,
+	type BoardInspectionSnapshot,
+	projectBoardRenderSnapshot,
+	readBoardInspectionSnapshot,
+	readBoardContent,
+	renderContent,
+	settleBoardContent,
+	BoardWriteConflictError,
+	type ForeignWrite,
+	foreignWriteTo,
+	type WriteOptions,
+	writeBoardContent,
+};

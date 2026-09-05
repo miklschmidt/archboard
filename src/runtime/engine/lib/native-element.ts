@@ -6,15 +6,10 @@ import {
 import { buildValidatedElement } from "./native-element-builders.js";
 import { NativeElementValidationError, fail, recordAt } from "./native-element-validation.js";
 
-export { NativeElementValidationError };
-
 const TYPES = new Set<string>(BOARD_ELEMENT_TYPES);
 
 /** Validate a trusted persisted record without completing or rewriting it. */
-export function validatePersistedBoardElement(
-	value: unknown,
-	context: string,
-): RuntimeBoardElement {
+function validatePersistedBoardElement(value: unknown, context: string): RuntimeBoardElement {
 	const initial = recordAt(value, context, undefined, undefined, "element");
 	const id = typeof initial["id"] === "string" ? initial["id"] : undefined;
 	const type = typeof initial["type"] === "string" ? initial["type"] : undefined;
@@ -37,3 +32,5 @@ export function validatePersistedBoardElement(
 	}
 	return buildValidatedElement(initial, context, id, type as PersistedBoardElement["type"]);
 }
+
+export { NativeElementValidationError, validatePersistedBoardElement };

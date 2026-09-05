@@ -7,7 +7,7 @@ const PRELOAD = "./tests/system/repository-policy/support/test-preload.ts";
 const HELPER = "tests/system/repository-policy/support/test-wall-clock.ts";
 const REQUIRED_FIELDS = ["test", "reason", "outerBoundMs", "task", "evidence"] as const;
 
-export interface TestWallClockPolicyInput {
+interface TestWallClockPolicyInput {
 	readonly bunfig: string;
 	readonly sources: ReadonlyMap<string, string>;
 }
@@ -278,7 +278,7 @@ function declarationErrors(file: string, source: string): string[] {
 	return [...new Set(errors)];
 }
 
-export function inspectTestWallClockPolicy(input: TestWallClockPolicyInput): string[] {
+function inspectTestWallClockPolicy(input: TestWallClockPolicyInput): string[] {
 	const errors = preloadErrors(input.bunfig);
 	for (const [file, source] of input.sources) {
 		if (!source.includes(DECLARATION) && !source.includes("test-wall-clock")) {
@@ -288,3 +288,5 @@ export function inspectTestWallClockPolicy(input: TestWallClockPolicyInput): str
 	}
 	return errors;
 }
+
+export { type TestWallClockPolicyInput, inspectTestWallClockPolicy };

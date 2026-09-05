@@ -7,14 +7,14 @@ import {
 } from "../../browser/support/agent-browser.ts";
 import { executableBunInvocations } from "./executable-bun.js";
 
-export interface InventoryInput {
+interface InventoryInput {
 	repoRoot: string;
 	scripts: Record<string, string>;
 	pushScript?: string;
 	nativeTests: string[];
 }
 
-export interface InventoryResult {
+interface InventoryResult {
 	errors: string[];
 	nativeLanes: Map<string, string[]>;
 	reachableScripts: Map<string, number>;
@@ -85,7 +85,7 @@ function executableRunScripts(command: string, unique = true): string[] {
 	return unique ? [...new Set(scripts)] : scripts;
 }
 
-export function inspectWorkflow(workflow: string): string[] {
+function inspectWorkflow(workflow: string): string[] {
 	const parsed = workflowRunCommands(workflow);
 	if (parsed.error) {
 		return [parsed.error];
@@ -220,7 +220,7 @@ function selected(testFile: string, selector: string): boolean {
 	);
 }
 
-export function discoverNativeTests(repoRoot: string): string[] {
+function discoverNativeTests(repoRoot: string): string[] {
 	const roots = [
 		path.join(repoRoot, "src"),
 		path.join(repoRoot, "tests", "system"),
@@ -253,7 +253,7 @@ export function discoverNativeTests(repoRoot: string): string[] {
 	return tests.toSorted();
 }
 
-export function inspectTestInventory(input: InventoryInput): InventoryResult {
+function inspectTestInventory(input: InventoryInput): InventoryResult {
 	const parserErrors: string[] = [];
 	for (const [name, command] of Object.entries(input.scripts)) {
 		for (const invocation of executableBunInvocations(command)) {
@@ -382,3 +382,11 @@ export function inspectTestInventory(input: InventoryInput): InventoryResult {
 
 	return { errors, nativeLanes, reachableScripts: reachability.counts };
 }
+
+export {
+	type InventoryInput,
+	type InventoryResult,
+	inspectWorkflow,
+	discoverNativeTests,
+	inspectTestInventory,
+};

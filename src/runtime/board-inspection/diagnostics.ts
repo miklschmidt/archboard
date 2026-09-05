@@ -10,7 +10,7 @@ import {
 	type SweepWork,
 } from "./lib/interval-sweep.js";
 
-export interface InspectionWorkDiagnostics {
+interface InspectionWorkDiagnostics {
 	inputUnits: number;
 	broadPhaseEvents: number;
 	broadPhaseCompatibleVisits: number;
@@ -26,12 +26,12 @@ export interface InspectionWorkDiagnostics {
 	pathSegmentChecks: number;
 }
 
-export interface BoardInspectionDiagnostics {
+interface BoardInspectionDiagnostics {
 	report: InspectionReport;
 	work: InspectionWorkDiagnostics;
 }
 
-export interface SweepDiagnosticInterval {
+interface SweepDiagnosticInterval {
 	id: string;
 	min: number;
 	max: number;
@@ -40,18 +40,18 @@ export interface SweepDiagnosticInterval {
 	ancestorTargets?: readonly string[];
 }
 
-export interface SweepCompatibilityDiagnostics {
+interface SweepCompatibilityDiagnostics {
 	pairs: readonly (readonly [string, string])[];
 	work: SweepWork;
 }
 
-export interface ComparisonBudgetDiagnostics {
+interface ComparisonBudgetDiagnostics {
 	findings: readonly InspectionFinding[];
 	broadPhaseComparisons: number;
 }
 
 /** Pure development probe for semantic pair enumeration and coarse work scaling. */
-export function diagnoseSweepCompatibility(input: {
+function diagnoseSweepCompatibility(input: {
 	left: readonly SweepDiagnosticInterval[];
 	right: readonly SweepDiagnosticInterval[];
 	sameSet: boolean;
@@ -90,7 +90,7 @@ export function diagnoseSweepCompatibility(input: {
 }
 
 /** Pure development probe for comparison-limit behavior at a representative budget. */
-export function diagnoseComparisonBudget(
+function diagnoseComparisonBudget(
 	records: readonly unknown[],
 	comparisonLimit: number,
 ): ComparisonBudgetDiagnostics {
@@ -112,7 +112,7 @@ export function diagnoseComparisonBudget(
 }
 
 /** Pure module-root development evidence; product report bytes contain no work counters. */
-export function inspectBoardDiagnostics(
+function inspectBoardDiagnostics(
 	records: readonly unknown[],
 	policyInput?: InspectionPolicyInput,
 ): BoardInspectionDiagnostics {
@@ -160,3 +160,14 @@ export function inspectBoardDiagnostics(
 		},
 	};
 }
+
+export {
+	type InspectionWorkDiagnostics,
+	type BoardInspectionDiagnostics,
+	type SweepDiagnosticInterval,
+	type SweepCompatibilityDiagnostics,
+	type ComparisonBudgetDiagnostics,
+	diagnoseSweepCompatibility,
+	diagnoseComparisonBudget,
+	inspectBoardDiagnostics,
+};

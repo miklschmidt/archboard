@@ -16,24 +16,24 @@ type ResolutionFailureCode = Extract<
 	| "TARGET_UNAVAILABLE"
 	| "TARGET_OUTSIDE_CHECKOUT"
 >;
-export interface ResolutionFailure {
+interface ResolutionFailure {
 	ok: false;
 	code: ResolutionFailureCode;
 	error: string;
 }
-export interface RegisteredCheckout {
+interface RegisteredCheckout {
 	ok: true;
 	repository: string;
 	root: string;
 }
-export interface LocalCodeTarget extends RegisteredCheckout {
+interface LocalCodeTarget extends RegisteredCheckout {
 	target: string;
 	path: string;
 	kind: "file" | "directory";
 }
-export type RegisteredCheckoutResult = RegisteredCheckout | ResolutionFailure;
-export type LocalCodeTargetResult = LocalCodeTarget | ResolutionFailure;
-export interface ResolverDependencies {
+type RegisteredCheckoutResult = RegisteredCheckout | ResolutionFailure;
+type LocalCodeTargetResult = LocalCodeTarget | ResolutionFailure;
+interface ResolverDependencies {
 	readRegistry(): RegisteredRepo[];
 	realpath(candidate: string): string;
 	stat(candidate: string): Pick<Stats, "isDirectory" | "isFile">;
@@ -42,11 +42,7 @@ export interface ResolverDependencies {
 }
 type PathContainment = Pick<typeof path, "relative" | "isAbsolute" | "sep">;
 
-export function isPathWithin(
-	root: string,
-	candidate: string,
-	paths: PathContainment = path,
-): boolean {
+function isPathWithin(root: string, candidate: string, paths: PathContainment = path): boolean {
 	const relative = paths.relative(root, candidate);
 	return (
 		!paths.isAbsolute(relative) &&
@@ -141,13 +137,13 @@ function resolveTarget(
 	}
 	return { ...checkout, target, path: binding.path, kind: stats.isFile() ? "file" : "directory" };
 }
-export function resolveRegisteredCheckoutWith(
+function resolveRegisteredCheckoutWith(
 	repository: string,
 	dependencies: ResolverDependencies,
 ): RegisteredCheckoutResult {
 	return resolveCheckout(repository, dependencies.readRegistry(), dependencies);
 }
-export function resolveLocalCodeTargetsWith(
+function resolveLocalCodeTargetsWith(
 	bindings: readonly CodeBinding[],
 	dependencies: ResolverDependencies,
 ): LocalCodeTargetResult[] {
@@ -166,3 +162,15 @@ export function resolveLocalCodeTargetsWith(
 		return resolveTarget(parsed.data, checkout, dependencies);
 	});
 }
+
+export {
+	type ResolutionFailure,
+	type RegisteredCheckout,
+	type LocalCodeTarget,
+	type RegisteredCheckoutResult,
+	type LocalCodeTargetResult,
+	type ResolverDependencies,
+	isPathWithin,
+	resolveRegisteredCheckoutWith,
+	resolveLocalCodeTargetsWith,
+};

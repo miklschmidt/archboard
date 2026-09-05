@@ -1,5 +1,5 @@
 /** Clone protocol-shaped values so callers cannot mutate retained workhorse state. */
-export function cloneAndFreeze<T>(value: T): T {
+function cloneAndFreeze<T>(value: T): T {
 	return deepFreeze(structuredClone(value), new WeakSet<object>());
 }
 
@@ -16,3 +16,5 @@ function deepFreeze<T>(value: T, seen: WeakSet<object>): T {
 	}
 	return Object.freeze(value);
 }
+
+export { cloneAndFreeze };

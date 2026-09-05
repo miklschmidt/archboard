@@ -28,7 +28,7 @@
 import { type ServerElement } from "./types.js";
 import { type BoardIdentity, boardKey, makeIdentity, SCRATCH_BOARD } from "./board.js";
 
-export interface BoardState {
+interface BoardState {
 	identity: BoardIdentity;
 	// Where this board's note is. Every board has one, scratch included
 	// (ADR 0015): the vault is the only place board content may live, so a board
@@ -68,7 +68,7 @@ export interface BoardState {
 
 // The boards this canvas process has open. Which board each pane is holding
 // must not change under somebody at a wall display.
-export const boards = new Map<string, BoardState>();
+const boards = new Map<string, BoardState>();
 
 function newBoardState(identity: BoardIdentity): BoardState {
 	return { identity };
@@ -83,7 +83,7 @@ function newBoardState(identity: BoardIdentity): BoardState {
 // adopts whatever is there when it starts (`adoptScratchBoard` in the server application).
 // The path is not resolved here, because this module is loaded by processes
 // that have no vault and no business demanding one.
-export const SCRATCH_KEY = boardKey(makeIdentity({ board: SCRATCH_BOARD }));
+const SCRATCH_KEY = boardKey(makeIdentity({ board: SCRATCH_BOARD }));
 // Only when it is missing. Setting it again would throw away the note path the
 // server resolved for it at startup.
 if (!boards.has(SCRATCH_KEY)) {
@@ -91,11 +91,11 @@ if (!boards.has(SCRATCH_KEY)) {
 }
 
 /** Every board this canvas has open, for the message that lists them. */
-export function openBoardKeys(): string[] {
+function openBoardKeys(): string[] {
 	return Array.from(boards.keys()).toSorted();
 }
 
-export function getOrCreateBoard(identity: BoardIdentity): { key: string; board: BoardState } {
+function getOrCreateBoard(identity: BoardIdentity): { key: string; board: BoardState } {
 	const key = boardKey(identity);
 	const existing = boards.get(key);
 	if (existing) {
@@ -139,7 +139,7 @@ export function getOrCreateBoard(identity: BoardIdentity): { key: string; board:
  * `boundElements` is how a label belongs to its container, so a shallow copy
  * would leave exactly the parts worth protecting shared.
  */
-export function copyElements(elements: Iterable<ServerElement>): ServerElement[] {
+function copyElements(elements: Iterable<ServerElement>): ServerElement[] {
 	return Array.from(elements, (element) => structuredClone(element));
 }
 
@@ -148,7 +148,7 @@ export function copyElements(elements: Iterable<ServerElement>): ServerElement[]
 // belongs to the path: `board save --as other` writes a file that a different
 // open board may be the one that read it. Where more than one board has a
 // claim, the newest wins — that is the last moment archboard actually looked.
-export function baselineForFile(
+function baselineForFile(
 	file: string,
 ): { hash: string; at: string; version: number | null } | null {
 	let best: { hash: string; at: string; version: number | null } | null = null;
@@ -164,7 +164,7 @@ export function baselineForFile(
 	return best;
 }
 
-export function recordBaseline(
+function recordBaseline(
 	board: BoardState,
 	file: string,
 	hash: string,
@@ -178,7 +178,7 @@ export function recordBaseline(
 // notes is board-io's job. Injected rather than imported, because board-io
 // reads and writes through this registry and a cycle between them would be a
 // worse shape than one argument.
-export function boardSummaries(elementCount: (board: BoardState) => number): Array<{
+function boardSummaries(elementCount: (board: BoardState) => number): Array<{
 	key: string;
 	identity: BoardIdentity;
 	elementCount: number;
@@ -204,3 +204,15 @@ export function boardSummaries(elementCount: (board: BoardState) => number): Arr
 		),
 	);
 }
+
+export {
+	type BoardState,
+	boards,
+	SCRATCH_KEY,
+	openBoardKeys,
+	getOrCreateBoard,
+	copyElements,
+	baselineForFile,
+	recordBaseline,
+	boardSummaries,
+};

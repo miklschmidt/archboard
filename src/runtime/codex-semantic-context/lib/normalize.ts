@@ -13,12 +13,12 @@ import type {
 	SemanticWorkhorse,
 } from "./types.js";
 
-export interface BoundedValue<Value> {
+interface BoundedValue<Value> {
 	readonly value: Value;
 	readonly truncated: boolean;
 }
 
-export interface NormalizedContext {
+interface NormalizedContext {
 	readonly repository: string;
 	readonly child: SemanticChild;
 	readonly threadLink: SemanticThreadLink;
@@ -36,7 +36,7 @@ export interface NormalizedContext {
 	readonly truncated: boolean;
 }
 
-export class SemanticContextInputError extends Error {
+class SemanticContextInputError extends Error {
 	readonly field: string;
 
 	constructor(field: string, message: string) {
@@ -46,11 +46,11 @@ export class SemanticContextInputError extends Error {
 	}
 }
 
-export function fail(field: string, message: string): never {
+function fail(field: string, message: string): never {
 	throw new SemanticContextInputError(field, message);
 }
 
-export function byteLength(value: string): number {
+function byteLength(value: string): number {
 	return new TextEncoder().encode(value).byteLength;
 }
 
@@ -75,7 +75,7 @@ function jsonStringPayloadBytes(character: string): number {
 }
 
 /** UTF-8 bytes occupied by JSON.stringify(value), including its quotes. */
-export function jsonStringByteLength(value: string): number {
+function jsonStringByteLength(value: string): number {
 	let bytes = 2;
 	for (const character of value) {
 		bytes += jsonStringPayloadBytes(character);
@@ -84,7 +84,7 @@ export function jsonStringByteLength(value: string): number {
 }
 
 /** Clips a string by its JSON-encoded UTF-8 size without splitting a code point. */
-export function clipJsonUtf8(value: string, maximum: number): BoundedValue<string> {
+function clipJsonUtf8(value: string, maximum: number): BoundedValue<string> {
 	let encodedBytes = 2;
 	for (const character of value) {
 		encodedBytes += jsonStringPayloadBytes(character);
@@ -115,7 +115,7 @@ export function clipJsonUtf8(value: string, maximum: number): BoundedValue<strin
 	return { value: `${kept.join("")}${suffix}`, truncated: true };
 }
 
-export function feedIdValue(value: unknown, field: string): string {
+function feedIdValue(value: unknown, field: string): string {
 	const result = textValue(value, field, SEMANTIC_CONTEXT_LIMITS.cursorBytes);
 	if (result.truncated) {
 		fail(field, `must not exceed ${SEMANTIC_CONTEXT_LIMITS.cursorBytes} UTF-8 bytes`);
@@ -129,7 +129,7 @@ export function feedIdValue(value: unknown, field: string): string {
 	return result.value;
 }
 
-export function clipUtf8(value: string, maximum: number): BoundedValue<string> {
+function clipUtf8(value: string, maximum: number): BoundedValue<string> {
 	if (byteLength(value) <= maximum) {
 		return { value, truncated: false };
 	}
@@ -150,7 +150,7 @@ export function clipUtf8(value: string, maximum: number): BoundedValue<string> {
 	};
 }
 
-export function textValue(
+function textValue(
 	value: unknown,
 	field: string,
 	maximum: number,
@@ -168,7 +168,7 @@ export function textValue(
 	return clipUtf8(value, maximum);
 }
 
-export function nullableTextValue(
+function nullableTextValue(
 	value: unknown,
 	field: string,
 	maximum: number,
@@ -180,7 +180,7 @@ export function nullableTextValue(
 	return { value: result.value, truncated: result.truncated };
 }
 
-export function identityValue<Identity extends string>(
+function identityValue<Identity extends string>(
 	value: Identity | null | undefined,
 	field: string,
 ): Identity | null {
@@ -199,7 +199,7 @@ export function identityValue<Identity extends string>(
 	return value;
 }
 
-export function numberValue(value: unknown, field: string): number | null {
+function numberValue(value: unknown, field: string): number | null {
 	if (value === null) {
 		return null;
 	}
@@ -249,11 +249,11 @@ function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCurso
 	};
 }
 
-export function uniqueSorted(values: readonly string[]): string[] {
+function uniqueSorted(values: readonly string[]): string[] {
 	return [...new Set(values)].toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0));
 }
 
-export function deepFreeze<Value>(value: Value): Value {
+function deepFreeze<Value>(value: Value): Value {
 	if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
 		return value;
 	}
@@ -285,7 +285,7 @@ function booleanValue(value: unknown, field: string): boolean {
 	return value;
 }
 
-export function boundedReasons(values: readonly unknown[], field: string): BoundedValue<string[]> {
+function boundedReasons(values: readonly unknown[], field: string): BoundedValue<string[]> {
 	const entries = values.map((value, index) =>
 		textValue(value, `${field}[${index}]`, SEMANTIC_CONTEXT_LIMITS.ambiguityBytes),
 	);
@@ -298,7 +298,7 @@ export function boundedReasons(values: readonly unknown[], field: string): Bound
 	};
 }
 
-export function normalizeContext(
+function normalizeContext(
 	input: SemanticContextInput,
 	currentFeedId: string,
 	cursorOverride?: SemanticCursorInput | null,
@@ -415,3 +415,23 @@ export function normalizeContext(
 		truncated,
 	};
 }
+
+export {
+	type BoundedValue,
+	type NormalizedContext,
+	SemanticContextInputError,
+	fail,
+	byteLength,
+	jsonStringByteLength,
+	clipJsonUtf8,
+	feedIdValue,
+	clipUtf8,
+	textValue,
+	nullableTextValue,
+	identityValue,
+	numberValue,
+	uniqueSorted,
+	deepFreeze,
+	boundedReasons,
+	normalizeContext,
+};

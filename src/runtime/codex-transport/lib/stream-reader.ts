@@ -2,7 +2,7 @@ import type { Readable } from "node:stream";
 
 import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
 
-export interface StreamReaderHandlers {
+interface StreamReaderHandlers {
 	readonly onLine: (line: Buffer) => void;
 	readonly onIssue: (issue: {
 		readonly kind: "malformed-frame" | "oversized-frame";
@@ -16,7 +16,7 @@ export interface StreamReaderHandlers {
 	readonly onStderrError: (error: unknown) => void;
 }
 
-export interface StreamReaderAttachment {
+interface StreamReaderAttachment {
 	readonly dispose: () => void;
 }
 
@@ -37,7 +37,7 @@ function toBuffer(chunk: unknown): { readonly buffer: Buffer; readonly text: str
 }
 
 /** Install bounded stdout framing and an independently flowing stderr drain. */
-export function attachCodexStreamReader(
+function attachCodexStreamReader(
 	stdout: Readable,
 	stderr: Readable,
 	handlers: StreamReaderHandlers,
@@ -148,3 +148,5 @@ export function attachCodexStreamReader(
 
 	return Object.freeze({ dispose });
 }
+
+export { type StreamReaderHandlers, type StreamReaderAttachment, attachCodexStreamReader };

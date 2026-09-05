@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-export interface ResolverFixture {
+interface ResolverFixture {
 	root: string;
 	checkout: string;
 	repository: string;
@@ -18,7 +18,7 @@ function git(cwd: string, ...args: string[]): void {
 	}
 }
 
-export function createResolverFixture(): ResolverFixture {
+function createResolverFixture(): ResolverFixture {
 	const root = mkdtempSync(join(tmpdir(), "archboard-code-target-"));
 	const checkout = join(root, "checkout");
 	const outside = join(root, "outside");
@@ -50,3 +50,5 @@ export function createResolverFixture(): ResolverFixture {
 		dispose: () => rmSync(root, { recursive: true }),
 	};
 }
+
+export { type ResolverFixture, createResolverFixture };

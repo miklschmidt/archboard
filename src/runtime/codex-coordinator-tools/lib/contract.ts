@@ -46,10 +46,10 @@ import type {
 } from "../../codex-coordinator-tool-contract/index.js";
 import type { z } from "zod";
 
-export const COORDINATOR_TOOLS_OWNER = "codex-coordinator-tools" as const;
+const COORDINATOR_TOOLS_OWNER = "codex-coordinator-tools" as const;
 
 /** The two registrations that may be installed on the owned app-server link. */
-export const COORDINATOR_DYNAMIC_DISPATCHERS = Object.freeze([
+const COORDINATOR_DYNAMIC_DISPATCHERS = Object.freeze([
 	Object.freeze({
 		owner: COORDINATOR_TOOLS_OWNER,
 		namespace: "archboard_workhorse",
@@ -62,9 +62,9 @@ export const COORDINATOR_DYNAMIC_DISPATCHERS = Object.freeze([
 	}),
 ] as const);
 
-export type CoordinatorDynamicDispatcher = (typeof COORDINATOR_DYNAMIC_DISPATCHERS)[number];
+type CoordinatorDynamicDispatcher = (typeof COORDINATOR_DYNAMIC_DISPATCHERS)[number];
 
-export type CoordinatorToolCoordinatorAuthority = Pick<
+type CoordinatorToolCoordinatorAuthority = Pick<
 	CoordinatorSnapshot,
 	"state" | "childId" | "epoch" | "threadId"
 >;
@@ -73,7 +73,7 @@ export type CoordinatorToolCoordinatorAuthority = Pick<
  * Host facts for the executing coordinator call and its bound workhorse.
  * None of these values are accepted from dynamic-tool arguments.
  */
-export interface CoordinatorToolAuthorityPort {
+interface CoordinatorToolAuthorityPort {
 	readonly currentCoordinator: () => CoordinatorToolCoordinatorAuthority | null;
 	readonly currentWorkhorseBinding: () => WorkhorseOperationBinding | null;
 	readonly currentCall: () => LogicalToolCallCorrelation | null;
@@ -82,7 +82,7 @@ export interface CoordinatorToolAuthorityPort {
 }
 
 /** The only transport capability this module needs. */
-export interface CoordinatorToolResponsePort {
+interface CoordinatorToolResponsePort {
 	readonly respond: (
 		request: DynamicServerRequest,
 		owner: typeof COORDINATOR_TOOLS_OWNER,
@@ -90,7 +90,7 @@ export interface CoordinatorToolResponsePort {
 	) => Promise<void>;
 }
 
-export interface CodexCoordinatorToolsOptions {
+interface CodexCoordinatorToolsOptions {
 	readonly identity: IdentityAuthority;
 	readonly operation: Pick<OperationAuthority, "issuer" | "validator" | "decoder">;
 	readonly authority: CoordinatorToolAuthorityPort;
@@ -102,44 +102,43 @@ export interface CodexCoordinatorToolsOptions {
 	readonly transport: CoordinatorToolResponsePort;
 }
 
-export type CoordinatorToolsServerRequest = DynamicServerRequest & {
+type CoordinatorToolsServerRequest = DynamicServerRequest & {
 	readonly owner: typeof COORDINATOR_TOOLS_OWNER;
 };
 
-export type DynamicToolResponse =
+type DynamicToolResponse =
 	| z.infer<typeof ValidDynamicToolResponseSchema>
 	| z.infer<typeof UnknownDynamicToolResponseSchema>;
 
-export type CoordinatorToolValue =
+type CoordinatorToolValue =
 	| InspectWorkhorseResult
 	| DelegateToWorkhorseResult
 	| ManageWorkhorseQueueResult
 	| SteerWorkhorseResult
 	| ResolveSpokenApprovalResult;
 
-export type CoordinatorToolValueFor<Name extends CoordinatorToolName> =
-	Name extends "inspect_workhorse"
-		? InspectWorkhorseResult
-		: Name extends "delegate_to_workhorse"
-			? DelegateToWorkhorseResult
-			: Name extends "manage_workhorse_queue"
-				? ManageWorkhorseQueueResult
-				: Name extends "steer_workhorse"
-					? SteerWorkhorseResult
-					: ResolveSpokenApprovalResult;
+type CoordinatorToolValueFor<Name extends CoordinatorToolName> = Name extends "inspect_workhorse"
+	? InspectWorkhorseResult
+	: Name extends "delegate_to_workhorse"
+		? DelegateToWorkhorseResult
+		: Name extends "manage_workhorse_queue"
+			? ManageWorkhorseQueueResult
+			: Name extends "steer_workhorse"
+				? SteerWorkhorseResult
+				: ResolveSpokenApprovalResult;
 
-export interface CoordinatorToolDispatchResult {
+interface CoordinatorToolDispatchResult {
 	readonly response: DynamicToolResponse;
 	readonly attempted: boolean;
 }
 
-export const COORDINATOR_REPLAY_LIMITS = Object.freeze({
+const COORDINATOR_REPLAY_LIMITS = Object.freeze({
 	aliasesPerLiveLogicalCall: 8,
 	retainedWireCalls: 128,
 	retainedLogicalCalls: 32,
 });
 
-export interface CoordinatorReplayStateSnapshot {
+interface CoordinatorReplayStateSnapshot {
 	readonly liveWireCount: number;
 	readonly retainedWireCount: number;
 	readonly liveLogicalCount: number;
@@ -147,35 +146,35 @@ export interface CoordinatorReplayStateSnapshot {
 	readonly retainedFingerprintBytes: number;
 }
 
-export type CoordinatorToolLifecycleCause =
+type CoordinatorToolLifecycleCause =
 	| "call_cancelled"
 	| "caller_turn_interrupted"
 	| "host_shutdown"
 	| "browser_disconnect"
 	| "child_disconnect";
 
-export interface CoordinatorToolCancellation {
+interface CoordinatorToolCancellation {
 	readonly requestId: JsonRpcRequestId;
 	readonly cause: CoordinatorToolLifecycleCause;
 }
 
-export type CoordinatorToolNameValue = CoordinatorToolName;
-export type CoordinatorToolRefusal = DynamicToolRefusalReason;
-export type CoordinatorToolCall = WorkhorseCoordinatorCall;
-export type CoordinatorToolCallId = DynamicToolCallId;
-export type CoordinatorToolChild = ChildId;
-export type CoordinatorToolEpoch = ChildEpoch;
-export type CoordinatorToolThread = ThreadId;
-export type CoordinatorToolSpokenResult = SpokenApprovalToolResult;
+type CoordinatorToolNameValue = CoordinatorToolName;
+type CoordinatorToolRefusal = DynamicToolRefusalReason;
+type CoordinatorToolCall = WorkhorseCoordinatorCall;
+type CoordinatorToolCallId = DynamicToolCallId;
+type CoordinatorToolChild = ChildId;
+type CoordinatorToolEpoch = ChildEpoch;
+type CoordinatorToolThread = ThreadId;
+type CoordinatorToolSpokenResult = SpokenApprovalToolResult;
 
-export type CoordinatorToolInput =
+type CoordinatorToolInput =
 	| DelegateToWorkhorseInput
 	| ManageWorkhorseQueueInput
 	| SteerWorkhorseInput
 	| { readonly verdict: "accept" | "decline" }
 	| Record<string, never>;
 
-export interface CoordinatorToolDispatcher {
+interface CoordinatorToolDispatcher {
 	readonly dispatch: (
 		request: CoordinatorToolsServerRequest,
 	) => Promise<CoordinatorToolDispatchResult>;
@@ -190,7 +189,7 @@ export interface CoordinatorToolDispatcher {
 	readonly dispose: () => void;
 }
 
-export class CodexCoordinatorToolsError extends Error {
+class CodexCoordinatorToolsError extends Error {
 	override readonly name = "CodexCoordinatorToolsError";
 	readonly code: "disposed" | "duplicate";
 
@@ -199,3 +198,33 @@ export class CodexCoordinatorToolsError extends Error {
 		this.code = code;
 	}
 }
+
+export {
+	COORDINATOR_TOOLS_OWNER,
+	COORDINATOR_DYNAMIC_DISPATCHERS,
+	type CoordinatorDynamicDispatcher,
+	type CoordinatorToolCoordinatorAuthority,
+	type CoordinatorToolAuthorityPort,
+	type CoordinatorToolResponsePort,
+	type CodexCoordinatorToolsOptions,
+	type CoordinatorToolsServerRequest,
+	type DynamicToolResponse,
+	type CoordinatorToolValue,
+	type CoordinatorToolValueFor,
+	type CoordinatorToolDispatchResult,
+	COORDINATOR_REPLAY_LIMITS,
+	type CoordinatorReplayStateSnapshot,
+	type CoordinatorToolLifecycleCause,
+	type CoordinatorToolCancellation,
+	type CoordinatorToolNameValue,
+	type CoordinatorToolRefusal,
+	type CoordinatorToolCall,
+	type CoordinatorToolCallId,
+	type CoordinatorToolChild,
+	type CoordinatorToolEpoch,
+	type CoordinatorToolThread,
+	type CoordinatorToolSpokenResult,
+	type CoordinatorToolInput,
+	type CoordinatorToolDispatcher,
+	CodexCoordinatorToolsError,
+};
