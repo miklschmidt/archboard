@@ -24,6 +24,7 @@ import {
 } from "./support/codex-workbench-production.ts";
 import { seedBoard } from "./support/fullscreen-presentation.ts";
 import { fillLabel, roleAction } from "./support/opener-settings-interaction.ts";
+import { assertCoordinatorSettingsLayout } from "./support/coordinator-settings-layout.ts";
 
 const serverPath = join(import.meta.dir, "../canvas-state/fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "../canvas-state/fixtures/fake-codex-production.ts");
@@ -143,6 +144,7 @@ test(
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 
+		await assertCoordinatorSettingsLayout(browser, "priority_fallback");
 		await browser.run(["press", "Escape"]);
 		await pollUntil(
 			() =>

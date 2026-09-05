@@ -7,13 +7,12 @@ export type WorkbenchCoordinatorState =
 	| "unavailable"
 	| "priority_fallback";
 
-export type WorkbenchCoordinatorFieldState = "confirmed" | "fallback" | "unavailable";
+export type WorkbenchCoordinatorFieldState = "confirmed" | "fallback";
 
 export interface WorkbenchCoordinatorField {
 	readonly label: string;
 	readonly value: string;
 	readonly state: WorkbenchCoordinatorFieldState;
-	readonly recovery: string | null;
 }
 
 export interface WorkbenchCoordinatorSection {

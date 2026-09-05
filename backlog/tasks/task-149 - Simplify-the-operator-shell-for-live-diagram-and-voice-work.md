@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-04 22:09'
-updated_date: '2026-09-05 00:10'
+updated_date: '2026-09-05 00:22'
 labels: []
 dependencies: []
 references:
@@ -82,6 +82,10 @@ Saved the user-endorsed sidebar study as canonical visual input docs/design/asse
 Final rendered QA found two additional shared causes: the cleared Tailwind theme omitted zero spacing, so m-0/p-0/min-h-0 generated no CSS; and executable links with no timeline were falsely projected as inspect-only. Restore explicit zero spacing and correct empty-history readiness with regressions. Remove idle timeline headers, unavailable empty queue and redundant ready announcements. The controlled production fixture also lacked canonical empty timeline/queue read responses; those are now provided.
 
 Final follow-up verification: lint, formatting, both TypeScript projects, 2532 module tests, 327 system tests, 124 repository tests and the complete normal browser inventory pass. Browser owners were resumed after correcting outdated style selectors, shared-button typography expectations and an early focus observation; all owners have passing final evidence. Exact 1920x1080 settings and connected-drawer captures show compact spacing and an unclipped composer. Shared zero utilities and semantic class merging are covered; queue failure retains a compact Retry queue action. Independent Astra code review and final visual review are clear. No lint/type rules were weakened. This is the completed targeted cleanup; TASK-150 separately plans full legacy CSS removal and strict-lint restoration.
+
+User screenshot exposed unreadable expanded Coordinator details: nested columns squeeze values to a few characters and repeat unavailable recovery prose per field. Reopened to simplify unavailable state and verify expanded available and unavailable settings at the actual dialog width.
+
+Expanded Coordinator details repaired after user screenshot: deleted repeated unavailable fields and nested section columns, retained published and partial facts in full-width rows, constrained dialog height with fixed header. The rendered regression failed before the fix with a 25.59px value column; final 1920x1080 unavailable dark and populated light captures pass readability, overflow and viewport checks. Focused shell-layout and production text browser owners pass, 22 coordinator/frame module tests pass, lint, formatting, both TypeScript projects and 124 repository checks pass. Independent Astra review found no actionable issues.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary

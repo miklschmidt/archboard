@@ -11,43 +11,23 @@ import type {
 	WorkbenchCoordinatorStatus,
 } from "../contract.js";
 
-const RECONNECT_RECOVERY = "Wait for a fresh host snapshot before relying on this value.";
-const SETTINGS_RECOVERY = "Reconnect the Codex workbench so the host can publish it.";
-const SNAPSHOT_RECOVERY = "Wait for the Codex workbench to reconnect and publish a fresh snapshot.";
-const HANDSHAKE_RECOVERY = "Wait for the coordinator settings handshake to finish.";
-const HISTORY_RECOVERY = "Open the coordinator task separately to inspect its history.";
-
-function freezeField(value: WorkbenchCoordinatorField): WorkbenchCoordinatorField {
-	return Object.freeze(value);
-}
+const RECONNECT_RECOVERY = "Wait for updated details before relying on these values.";
+const SETTINGS_RECOVERY = "Reconnect Codex to load the details.";
+const SNAPSHOT_RECOVERY = "Wait for Codex to reconnect.";
 
 function field(
 	label: string,
-	value: string,
+	value: string | null,
 	state: WorkbenchCoordinatorField["state"] = "confirmed",
-	recovery: string | null = null,
-): WorkbenchCoordinatorField {
-	return freezeField({ label, value, state, recovery });
-}
-
-function unavailable(
-	label: string,
-	hostFact: string,
-	recovery = SETTINGS_RECOVERY,
-): WorkbenchCoordinatorField {
-	return field(
-		label,
-		`Unavailable: the host did not publish ${hostFact}.`,
-		"unavailable",
-		recovery,
-	);
+): WorkbenchCoordinatorField | null {
+	return value === null ? null : Object.freeze({ label, value, state });
 }
 
 function section(
 	label: string,
-	fields: readonly WorkbenchCoordinatorField[],
+	fields: readonly (WorkbenchCoordinatorField | null)[],
 ): WorkbenchCoordinatorSection {
-	return Object.freeze({ label, fields: Object.freeze([...fields]) });
+	return Object.freeze({ label, fields: Object.freeze(fields.filter((item) => item !== null)) });
 }
 
 function ownerSettings(
@@ -92,59 +72,23 @@ function permissionProfile(value: BrowserSettings["activePermissionProfile"]): s
 
 function settingsFields(
 	settings: BrowserSettings | null,
-	effective: BrowserSnapshot["coordinator"],
-): readonly WorkbenchCoordinatorField[] {
-	const missingRecovery = effective.state === "starting" ? HANDSHAKE_RECOVERY : SETTINGS_RECOVERY;
-	if (settings === null) {
-		return [
-			effective.configuredModel === null
-				? unavailable("Configured model", "the coordinator's configured model", missingRecovery)
-				: field("Configured model", effective.configuredModel),
-			effective.configuredEffort === null
-				? unavailable(
-						"Configured reasoning effort",
-						"the coordinator's configured reasoning effort",
-						missingRecovery,
-					)
-				: field("Configured reasoning effort", effective.configuredEffort),
-			unavailable("Effective model", "the coordinator's effective model", missingRecovery),
-			unavailable(
-				"Effective reasoning effort",
-				"the coordinator's effective reasoning effort",
-				missingRecovery,
-			),
-			unavailable(
-				"Effective service tier",
-				"the coordinator's effective service tier",
-				missingRecovery,
-			),
-			unavailable("Approval policy", "approvalPolicy", missingRecovery),
-			unavailable("Approvals reviewer", "approvalsReviewer", missingRecovery),
-			unavailable("Sandbox policy", "sandboxPolicy", missingRecovery),
-			unavailable("Active permission profile", "activePermissionProfile", missingRecovery),
-		];
-	}
+	effective: BrowserSnapshot["coordinator"] | null,
+): readonly (WorkbenchCoordinatorField | null)[] {
+	if (effective === null) return [];
+	const configured = [
+		field("Configured model", effective.configuredModel),
+		field("Configured reasoning effort", effective.configuredEffort),
+	];
+	if (settings === null) return configured;
 	return [
-		effective.configuredModel === null
-			? unavailable("Configured model", "the coordinator's configured model")
-			: field("Configured model", effective.configuredModel),
-		effective.configuredEffort === null
-			? unavailable("Configured reasoning effort", "the coordinator's configured reasoning effort")
-			: field("Configured reasoning effort", effective.configuredEffort),
-		effective.model === null
-			? unavailable("Effective model", "the coordinator's effective model")
-			: field("Effective model", effective.model),
-		effective.effort === null
-			? unavailable("Effective reasoning effort", "the coordinator's effective reasoning effort")
-			: field("Effective reasoning effort", effective.effort),
-		effective.serviceTier === null
-			? field(
-					"Effective service tier",
-					"Standard host tier; priority was not advertised",
-					"fallback",
-					"Use the host-selected tier, or choose a model that advertises priority.",
-				)
-			: field("Effective service tier", effective.serviceTier),
+		...configured,
+		field("Effective model", effective.model),
+		field("Effective reasoning effort", effective.effort),
+		field(
+			"Effective service tier",
+			effective.serviceTier ?? "Standard; priority was not advertised",
+			effective.serviceTier === null ? "fallback" : "confirmed",
+		),
 		field("Approval policy", approvalPolicy(settings.approvalPolicy)),
 		field("Approvals reviewer", words(settings.approvalsReviewer)),
 		field("Sandbox policy", sandboxPolicy(settings.sandbox)),
@@ -175,7 +119,7 @@ function disclosureState(
 	if (snapshot === null) {
 		return status(
 			"unavailable",
-			"The coordinator identity and settings are not available from the host.",
+			"Coordinator details are unavailable.",
 			state.connection === "reconnecting" ? SNAPSHOT_RECOVERY : SETTINGS_RECOVERY,
 		);
 	}
@@ -186,21 +130,21 @@ function disclosureState(
 	if (coordinator.state === "starting") {
 		return status(
 			"loading",
-			"The host is starting the read-only voice coordinator and confirming its settings.",
-			"Wait for the settings handshake to finish.",
+			"The voice coordinator is starting.",
+			"Wait for its settings to be confirmed.",
 		);
 	}
 	if (coordinator.state === "reconnecting") {
 		return status(
 			"stale",
-			coordinator.reason ?? "The coordinator is reconnecting with its last confirmed identity.",
+			coordinator.reason ?? "The voice coordinator is reconnecting.",
 			RECONNECT_RECOVERY,
 		);
 	}
 	if (coordinator.state !== "ready" && coordinator.state !== "active") {
 		return status(
 			"unavailable",
-			coordinator.reason ?? "The host has no usable coordinator identity.",
+			coordinator.reason ?? "The voice coordinator is not connected.",
 			SETTINGS_RECOVERY,
 		);
 	}
@@ -209,50 +153,35 @@ function disclosureState(
 		coordinator.configuredModel === null ||
 		coordinator.configuredEffort === null
 	) {
-		return status(
-			"unavailable",
-			"The coordinator is linked, but the host did not publish one confirmed coordinator settings record.",
-			SETTINGS_RECOVERY,
-		);
+		return status("unavailable", "Some coordinator settings are unavailable.", SETTINGS_RECOVERY);
 	}
 	if (coordinator.serviceTier === null) {
 		return status(
 			"priority_fallback",
-			"The host confirmed the coordinator. Its model did not advertise the priority tier, so Codex selected the standard tier.",
+			"The coordinator is using the standard service tier because priority is not available.",
 			null,
 		);
 	}
-	return status(
-		"confirmed",
-		"The host confirmed this coordinator identity and its effective settings.",
-		null,
-	);
+	return status("confirmed", "Coordinator details are up to date.", null);
 }
 
-function workhorseFields(snapshot: BrowserSnapshot | null): readonly WorkbenchCoordinatorField[] {
-	if (snapshot === null) {
-		return [
-			unavailable("Workhorse identity", "the linked workhorse identity"),
-			unavailable("Workhorse history", "the linked workhorse history"),
-			unavailable("Workhorse settings", "the linked workhorse settings"),
-		];
-	}
-	const link = snapshot.threadLink;
+function workhorseFields(
+	snapshot: BrowserSnapshot | null,
+): readonly (WorkbenchCoordinatorField | null)[] {
+	if (snapshot === null) return [];
 	const settings = ownerSettings(snapshot, "workhorse");
-	const history = snapshot.timeline;
 	return [
-		link.threadId === null
-			? unavailable("Workhorse identity", "the linked workhorse identity")
-			: field("Workhorse identity", link.threadId),
-		history === null
-			? field("Workhorse history", "No workhorse activity is loaded")
-			: field("Workhorse history", `Current task activity for ${history.threadId}`),
-		settings === null
-			? unavailable("Workhorse settings", "the linked workhorse settings")
-			: field(
-					"Workhorse settings",
-					`${settings.model}, ${settings.effort ?? "host-default effort"}, ${settings.serviceTier ?? "host-default tier"}`,
-				),
+		field("Workhorse identity", snapshot.threadLink.threadId),
+		field(
+			"Workhorse history",
+			snapshot.timeline === null ? null : `Current task activity for ${snapshot.timeline.threadId}`,
+		),
+		field(
+			"Workhorse settings",
+			settings === null
+				? null
+				: `${settings.model}, ${settings.effort ?? "host-default effort"}, ${settings.serviceTier ?? "host-default tier"}`,
+		),
 	];
 }
 
@@ -261,40 +190,15 @@ export function projectWorkbenchCoordinator(
 ): WorkbenchCoordinatorSnapshot {
 	const snapshot = state.snapshot;
 	const settings = snapshot === null ? null : ownerSettings(snapshot, "coordinator");
-	const identityFields: readonly WorkbenchCoordinatorField[] =
-		snapshot?.coordinator.threadId === null || snapshot?.coordinator.threadId === undefined
-			? [
-					unavailable("Coordinator identity", "the coordinator thread identity"),
-					unavailable("Coordinator history", "the read-only coordinator history", HISTORY_RECOVERY),
-				]
-			: [
-					field("Coordinator identity", snapshot.coordinator.threadId),
-					unavailable("Coordinator history", "the read-only coordinator history", HISTORY_RECOVERY),
-				];
 	return Object.freeze({
 		status: disclosureState(state, snapshot, settings),
-		coordinatorIdentity: section("Coordinator identity and history", identityFields),
+		coordinatorIdentity: section("Coordinator identity", [
+			field("Conversation", snapshot?.coordinator.threadId ?? null),
+		]),
 		coordinatorSettings: section(
 			"Coordinator settings",
-			settingsFields(
-				settings,
-				snapshot?.coordinator ?? {
-					kind: "coordinator",
-					state: "unbound",
-					threadId: null,
-					activeTurnId: null,
-					configuredModel: null,
-					configuredEffort: null,
-					model: null,
-					effort: null,
-					serviceTier: null,
-					reason: null,
-				},
-			),
+			settingsFields(settings, snapshot?.coordinator ?? null),
 		),
-		workhorse: section(
-			"Linked workhorse identity, history, and settings",
-			workhorseFields(snapshot),
-		),
+		workhorse: section("Linked conversation", workhorseFields(snapshot)),
 	});
 }
