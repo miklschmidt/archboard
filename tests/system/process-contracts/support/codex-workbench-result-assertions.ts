@@ -23,7 +23,7 @@ function expectGeneralQueryEnvelopes(logPath: string): void {
 					threadId: "thread-3",
 					title: null,
 					status: "idle",
-					source: "appServer",
+					source: "vscode",
 					epoch: "current",
 					ownership: "created",
 					loaded: true,

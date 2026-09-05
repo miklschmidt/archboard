@@ -53,7 +53,7 @@ const emitMutationScenario = (scenario: MutationScenario): void => {
 		}`,
 	);
 	const withTurnOutcomes = withThreadOutcomes.replace(
-		'\t\tcase "turn/start": {\n\t\t\tconst thread = threads.get(String(params.threadId));',
+		'\t\tcase "turn/start": {\n\t\t\tconst thread = threads.get(String(params["threadId"]));',
 		String.raw`		case "turn/start": {
 			if (pendingInitialScenario !== null) {
 				const scenario = pendingInitialScenario;
@@ -63,11 +63,11 @@ const emitMutationScenario = (scenario: MutationScenario): void => {
 				else send({ id: frame.id, error: { code: -32000, message: "controlled initial turn refusal" } });
 				return;
 			}
-			const thread = threads.get(String(params.threadId));`,
+			const thread = threads.get(String(params["threadId"]));`,
 	);
 	const withControl = withTurnOutcomes.replace(
-		"if (control.exit === true) process.exit(17);",
-		'if (["initial_not_delivered", "initial_unknown", "outer_unknown"].includes(String((control as { scenario?: unknown }).scenario))) emitMutationScenario((control as { scenario: MutationScenario }).scenario);\n\t\tif (control.exit === true) process.exit(17);',
+		"\t\tif (control.exit === true) {",
+		'if (["initial_not_delivered", "initial_unknown", "outer_unknown"].includes(String((control as { scenario?: unknown }).scenario))) emitMutationScenario((control as { scenario: MutationScenario }).scenario);\n\t\tif (control.exit === true) {',
 	);
 	if (
 		withSupport === source ||
