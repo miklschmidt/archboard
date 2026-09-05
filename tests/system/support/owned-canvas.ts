@@ -1,8 +1,6 @@
 import fs from "node:fs";
 import { spawn } from "node:child_process";
-import type { ChildProcessByStdio } from "node:child_process";
 import { createServer } from "node:net";
-import type { Readable } from "node:stream";
 
 import {
 	TEST_CANVAS_HEALTH_POLL_MS,
@@ -23,16 +21,18 @@ import type {
 	OwnedCanvasPaths,
 } from "./owned-canvas-ownership.ts";
 import { captureForcedCanvasCleanup } from "./owned-canvas-forced-cleanup.ts";
-import {
-	registerOwnedCanvas,
-	unregisterOwnedCanvas,
-} from "./owned-canvas-registry.ts";
+import { registerOwnedCanvas, unregisterOwnedCanvas } from "./owned-canvas-registry.ts";
 import type { OwnedCanvasRegistration } from "./owned-canvas-registry.ts";
 import { discardHeldBoards } from "./owned-canvas-recovery.ts";
+import type {
+	AttemptRecord,
+	DeathGeneration,
+	Exit,
+	Generation,
+	StoppableGeneration,
+} from "./owned-canvas-lifecycle-types.ts";
 
-interface Exit { readonly code: number | null; readonly signal: NodeJS.Signals | null; readonly expected: boolean }
 type Environment = Readonly<Record<string, string | undefined>>;
-type OwnedChild = ChildProcessByStdio<null, null, Readable>;
 interface StartOwnedCanvasOptions {
 	readonly serverPath: string;
 	readonly port?: number;
@@ -53,24 +53,6 @@ interface OwnedCanvas {
 	readonly restart: (options?: Readonly<RestartOwnedCanvasOptions>) => Promise<void>;
 	readonly dispose: () => Promise<void>;
 }
-interface Generation {
-	number: number;
-	child: Readonly<OwnedChild>;
-	pid: number;
-	port: number;
-	base: string;
-	stop: Readonly<{ expected: () => boolean; markExpected: () => void }>;
-	exit: Exit | null;
-	exitPromise: Readonly<Promise<Exit>>;
-	stderr: string;
-}
-
-interface AttemptRecord { readonly port: number; readonly pid: number; readonly exit: string; readonly foreignPid?: number; readonly stderr: string; readonly cleanup: string }
-
-interface DeathGeneration { readonly pid: number; readonly exit: Readonly<Exit> | null; readonly child: Readonly<Pick<OwnedChild, "exitCode" | "signalCode">> }
-
-interface StoppableGeneration extends DeathGeneration { readonly number: number; readonly child: Readonly<Pick<OwnedChild, "exitCode" | "kill" | "signalCode">>; readonly stop: Readonly<{ expected: () => boolean; markExpected: () => void }>; readonly exitPromise: Readonly<Promise<Exit>> }
-
 class AttemptError extends Error {
 	public readonly retryable: boolean;
 	public readonly foreignPid?: number;
@@ -84,12 +66,16 @@ class AttemptError extends Error {
 		super(message, options);
 		this.name = "AttemptError";
 		this.retryable = retryable;
-		if (foreignPid !== undefined) {this.foreignPid = foreignPid;}
+		if (foreignPid !== undefined) {
+			this.foreignPid = foreignPid;
+		}
 	}
 }
 
 const MAX_START_ATTEMPTS = 8;
-const settleOperation = async (): Promise<void> => {await Promise.resolve();};
+const settleOperation = (): void => {
+	// Intentionally swallow either outcome so later queued operations can continue.
+};
 const sleep = async (ms: number): Promise<void> => {
 	await new Promise<void>((resolve) => {
 		setTimeout(resolve, ms);
@@ -138,8 +124,7 @@ async function startOwnedCanvas({
 	const paths = createOwnedCanvasPaths();
 	const pathsDiagnostic = `\nOwned canvas paths: ${JSON.stringify(paths)}`;
 	let currentGeneration: Generation | null = null;
-	let visibleBase =
-		explicitPort === undefined ? "" : `http://127.0.0.1:${explicitPort}`;
+	let visibleBase = explicitPort === undefined ? "" : `http://127.0.0.1:${explicitPort}`;
 	let nextGeneration = 1;
 	let disposed = false;
 	let disposalPromise: Promise<void> | null = null;
@@ -157,13 +142,16 @@ async function startOwnedCanvas({
 		return result;
 	};
 	const refuseDisposed = (): void => {
-		if (disposed) {throw new Error("Cannot restart a disposed canvas process.");}
+		if (disposed) {
+			throw new Error("Cannot restart a disposed canvas process.");
+		}
 	};
 	const deathError = (
 		generation: Readonly<DeathGeneration> | null,
 		cause?: unknown,
 	): Error & { readonly code: string } => {
-		const detail = generation === null ? "has no live generation" : exitDescription(generation.exit);
+		const detail =
+			generation === null ? "has no live generation" : exitDescription(generation.exit);
 		const diagnostic = tail(stderr);
 		return Object.assign(
 			new Error(
@@ -199,9 +187,10 @@ async function startOwnedCanvas({
 		generation: Readonly<StoppableGeneration>,
 		signal: NodeJS.Signals = "SIGTERM",
 	): Promise<void> => {
-		const forcedCleanup = generation.exit !== null
-			? null
-			: captureForcedCanvasCleanup({ canvasPid: generation.pid, xdgState: paths.xdgState });
+		const forcedCleanup =
+			generation.exit !== null
+				? null
+				: captureForcedCanvasCleanup({ canvasPid: generation.pid, xdgState: paths.xdgState });
 		let forced = signal === "SIGKILL";
 		if (generation.exit === null) {
 			generation.stop.markExpected();
@@ -224,14 +213,18 @@ async function startOwnedCanvas({
 						},
 			);
 		}
-		if (currentGeneration === generation) {currentGeneration = null;}
+		if (currentGeneration === generation) {
+			currentGeneration = null;
+		}
 	};
 	const startAttempt = async (candidate: number): Promise<Generation> => {
 		const child = spawn(process.execPath, [serverPath], {
 			env: buildOwnedCanvasEnvironment({ paths, port: candidate, vault, env }),
 			stdio: ["ignore", "ignore", "pipe"],
 		});
-		if (child.pid === undefined) {throw new Error("Owned canvas has no process id.");}
+		if (child.pid === undefined) {
+			throw new Error("Owned canvas has no process id.");
+		}
 		let resolveExit!: (exit: Readonly<Exit>) => void;
 		let expectedStop = false;
 		const generation: Generation = {
@@ -276,11 +269,7 @@ async function startOwnedCanvas({
 					false,
 				);
 			}
-			if (
-				generation.exit !== null ||
-				child.exitCode !== null ||
-				child.signalCode !== null
-			) {
+			if (generation.exit !== null || child.exitCode !== null || child.signalCode !== null) {
 				if (generation.exit === null) {
 					await generation.exitPromise;
 				}
@@ -362,15 +351,13 @@ async function startOwnedCanvas({
 						stderr: tail(failed?.stderr ?? ""),
 						cleanup: cleanupResult.cleanup,
 					},
-					...("cleanupError" in cleanupResult
-						? { cleanupError: cleanupResult.cleanupError }
-						: {}),
+					...("cleanupError" in cleanupResult ? { cleanupError: cleanupResult.cleanupError } : {}),
 				};
 				attempts.push(failure.attempt);
 				if (failure.cleanupError !== undefined) {
 					throw new Error(
 						`${attemptError.message}\nFailed to reap the exact owned canvas generation; refusing to start another.\n` +
-						`Attempt: ${JSON.stringify(failure.attempt)}${pathsDiagnostic}`,
+							`Attempt: ${JSON.stringify(failure.attempt)}${pathsDiagnostic}`,
 						{ cause: error },
 					);
 				}
@@ -418,20 +405,24 @@ async function startOwnedCanvas({
 			return stderr;
 		},
 		assertRunning,
-		 async restart(options = {}) {
+		async restart(options = {}) {
 			refuseDisposed();
 			return enqueue(async () => {
 				refuseDisposed();
 				const retired = currentGeneration;
-				if (!retired) {throw deathError(null);}
+				if (!retired) {
+					throw deathError(null);
+				}
 				await stopGeneration(retired, options.signal);
 				await options.whileStopped?.();
 				refuseDisposed();
 				await startOperation(retired.port);
 			});
 		},
-		 async dispose() {
-			if (disposalPromise) {return disposalPromise;}
+		async dispose() {
+			if (disposalPromise) {
+				return disposalPromise;
+			}
 			disposed = true;
 			disposalPromise = enqueue(async () => {
 				let failure: unknown;
@@ -441,7 +432,9 @@ async function startOwnedCanvas({
 						try {
 							await discardHeldBoards(generation);
 						} catch (error) {
-							if (generation.exit === null) {failure = error;}
+							if (generation.exit === null) {
+								failure = error;
+							}
 						}
 						try {
 							await stopGeneration(generation);
