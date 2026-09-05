@@ -425,12 +425,12 @@ export function extractSceneElements(note: string): ServerElement[] {
 			: {};
 	const raw: unknown[] = Array.isArray(scene)
 		? scene
-		: Array.isArray(record.elements)
-			? record.elements
+		: Array.isArray(record["elements"])
+			? record["elements"]
 			: [];
 	return raw.filter((el) => {
 		if (!el || typeof el !== "object") return false;
-		return (el as Record<string, unknown>).isDeleted !== true;
+		return (el as Record<string, unknown>)["isDeleted"] !== true;
 	}) as ServerElement[];
 }
 

@@ -3,13 +3,13 @@ import { type ExcalidrawFile, type ServerElement } from "./types.js";
 export function usableEmbeddedFile(raw: unknown): ExcalidrawFile | null {
 	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
 	const file = raw as Record<string, unknown>;
-	if (typeof file.id !== "string" || !file.id || typeof file.dataURL !== "string" || !file.dataURL)
+	if (typeof file["id"] !== "string" || !file["id"] || typeof file["dataURL"] !== "string" || !file["dataURL"])
 		return null;
 	return {
-		id: file.id,
-		dataURL: file.dataURL,
-		mimeType: typeof file.mimeType === "string" && file.mimeType ? file.mimeType : "image/png",
-		created: typeof file.created === "number" && file.created ? file.created : Date.now(),
+		id: file["id"],
+		dataURL: file["dataURL"],
+		mimeType: typeof file["mimeType"] === "string" && file["mimeType"] ? file["mimeType"] : "image/png",
+		created: typeof file["created"] === "number" && file["created"] ? file["created"] : Date.now(),
 	};
 }
 

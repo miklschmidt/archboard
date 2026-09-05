@@ -93,15 +93,15 @@ function completeBinding(value: unknown, elbowed: boolean): Record<string, unkno
 	const record = value as Record<string, unknown>;
 	return elbowed
 		? {
-				elementId: record.elementId,
-				fixedPoint: record.fixedPoint,
-				focus: record.focus ?? 0,
-				gap: record.gap ?? BOUND_ARROW_GAP,
+				elementId: record["elementId"],
+				fixedPoint: record["fixedPoint"],
+				focus: record["focus"] ?? 0,
+				gap: record["gap"] ?? BOUND_ARROW_GAP,
 			}
 		: {
-				elementId: record.elementId,
-				focus: record.focus ?? 0,
-				gap: record.gap ?? BOUND_ARROW_GAP,
+				elementId: record["elementId"],
+				focus: record["focus"] ?? 0,
+				gap: record["gap"] ?? BOUND_ARROW_GAP,
 			};
 }
 
@@ -110,26 +110,26 @@ function completeLinearFields(
 	rest: Record<string, unknown>,
 	type: "arrow" | "line",
 ): void {
-	const elbowed = type === "arrow" && rest.elbowed === true;
-	base.points = rest.points ?? DEFAULT_LINEAR_POINTS.map((point) => point.slice());
-	const measured = measureLinear(base.points);
+	const elbowed = type === "arrow" && rest["elbowed"] === true;
+	base["points"] = rest["points"] ?? DEFAULT_LINEAR_POINTS.map((point) => point.slice());
+	const measured = measureLinear(base["points"]);
 	if (measured) {
-		base.width = measured.width;
-		base.height = measured.height;
+		base["width"] = measured.width;
+		base["height"] = measured.height;
 	}
-	base.lastCommittedPoint = null;
-	base.startBinding =
-		rest.startBinding !== undefined ? completeBinding(rest.startBinding, elbowed) : null;
-	base.endBinding =
-		rest.endBinding !== undefined ? completeBinding(rest.endBinding, elbowed) : null;
-	base.startArrowhead = rest.startArrowhead ?? null;
-	base.endArrowhead = rest.endArrowhead ?? (type === "arrow" ? "arrow" : null);
+	base["lastCommittedPoint"] = null;
+	base["startBinding"] =
+		rest["startBinding"] !== undefined ? completeBinding(rest["startBinding"], elbowed) : null;
+	base["endBinding"] =
+		rest["endBinding"] !== undefined ? completeBinding(rest["endBinding"], elbowed) : null;
+	base["startArrowhead"] = rest["startArrowhead"] ?? null;
+	base["endArrowhead"] = rest["endArrowhead"] ?? (type === "arrow" ? "arrow" : null);
 	if (type !== "arrow") return;
-	base.elbowed = elbowed;
+	base["elbowed"] = elbowed;
 	if (!elbowed) return;
-	base.fixedSegments = rest.fixedSegments ?? null;
-	base.startIsSpecial = rest.startIsSpecial ?? null;
-	base.endIsSpecial = rest.endIsSpecial ?? null;
+	base["fixedSegments"] = rest["fixedSegments"] ?? null;
+	base["startIsSpecial"] = rest["startIsSpecial"] ?? null;
+	base["endIsSpecial"] = rest["endIsSpecial"] ?? null;
 }
 
 // Excalidraw's defaults, from its own bundle rather than from anything's
@@ -266,20 +266,20 @@ export function settleDeletions(
 		const refs = Array.isArray(element.boundElements) ? element.boundElements : null;
 		const kept = refs?.filter((ref: unknown) => {
 			const record = ref && typeof ref === "object" ? (ref as Record<string, unknown>) : {};
-			return !(typeof record.id === "string" && gone.has(record.id));
+			return !(typeof record["id"] === "string" && gone.has(record["id"]));
 		});
 		const loosened = refs !== null && kept !== undefined && kept.length !== refs.length;
 		const source = element as unknown as Record<string, unknown>;
 		const starts =
-			source.startBinding && typeof source.startBinding === "object"
-				? (source.startBinding as Record<string, unknown>)
+			source["startBinding"] && typeof source["startBinding"] === "object"
+				? (source["startBinding"] as Record<string, unknown>)
 				: null;
 		const ends =
-			source.endBinding && typeof source.endBinding === "object"
-				? (source.endBinding as Record<string, unknown>)
+			source["endBinding"] && typeof source["endBinding"] === "object"
+				? (source["endBinding"] as Record<string, unknown>)
 				: null;
-		const unbindStart = typeof starts?.elementId === "string" && gone.has(starts.elementId);
-		const unbindEnd = typeof ends?.elementId === "string" && gone.has(ends.elementId);
+		const unbindStart = typeof starts?.["elementId"] === "string" && gone.has(starts["elementId"]);
+		const unbindEnd = typeof ends?.["elementId"] === "string" && gone.has(ends["elementId"]);
 		if (!loosened && !unbindStart && !unbindEnd) continue;
 		const repaired = {
 			...element,
@@ -444,8 +444,8 @@ export function expandElements(
 		if (!deterministic) return Date.now();
 		// Prefer a preserved `updated` (re-imported scene) over the server's
 		// updatedAt, so no-op import→export cycles are byte-identical.
-		if (typeof el.updated === "number") return el.updated;
-		const parsed = Date.parse(String(el.updatedAt ?? el.createdAt ?? ""));
+		if (typeof el["updated"] === "number") return el["updated"];
+		const parsed = Date.parse(String(el["updatedAt"] ?? el["createdAt"] ?? ""));
 		return Number.isNaN(parsed) ? 1 : parsed;
 	};
 
@@ -466,35 +466,35 @@ export function expandElements(
 	): Record<string, unknown> {
 		return {
 			...rest,
-			angle: rest.angle ?? 0,
-			strokeColor: rest.strokeColor ?? "#1e1e1e",
-			backgroundColor: rest.backgroundColor ?? "transparent",
-			fillStyle: rest.fillStyle ?? "solid",
-			strokeWidth: rest.strokeWidth ?? DEFAULT_STROKE_WIDTH,
-			strokeStyle: rest.strokeStyle ?? "solid",
-			roughness: rest.roughness ?? 1,
-			opacity: rest.opacity ?? 100,
-			groupIds: rest.groupIds ?? [],
-			frameId: rest.frameId ?? null,
+			angle: rest["angle"] ?? 0,
+			strokeColor: rest["strokeColor"] ?? "#1e1e1e",
+			backgroundColor: rest["backgroundColor"] ?? "transparent",
+			fillStyle: rest["fillStyle"] ?? "solid",
+			strokeWidth: rest["strokeWidth"] ?? DEFAULT_STROKE_WIDTH,
+			strokeStyle: rest["strokeStyle"] ?? "solid",
+			roughness: rest["roughness"] ?? 1,
+			opacity: rest["opacity"] ?? 100,
+			groupIds: rest["groupIds"] ?? [],
+			frameId: rest["frameId"] ?? null,
 			// Rounded, because `currentItemRoundness` is `round` and a box a human
 			// draws is rounded. `convertToExcalidrawElements` produced `null` here,
 			// which is that converter declining to choose rather than Excalidraw
 			// wanting square corners, and adopting it would have made every
 			// agent-drawn box differ from every user-drawn one.
 			roundness:
-				rest.roundness ??
-				(el.type === "rectangle" || el.type === "diamond" || el.type === "ellipse"
+				rest["roundness"] ??
+				(el["type"] === "rectangle" || el["type"] === "diamond" || el["type"] === "ellipse"
 					? { type: 3 }
 					: null),
-			seed: rest.seed ?? seedFor(`${String(el.id)}:seed`),
-			version: rest.version ?? 1,
-			versionNonce: rest.versionNonce ?? seedFor(`${String(el.id)}:nonce`),
-			index: rest.index ?? null,
-			isDeleted: rest.isDeleted ?? false,
-			boundElements: rest.boundElements ?? null,
+			seed: rest["seed"] ?? seedFor(`${String(el["id"])}:seed`),
+			version: rest["version"] ?? 1,
+			versionNonce: rest["versionNonce"] ?? seedFor(`${String(el["id"])}:nonce`),
+			index: rest["index"] ?? null,
+			isDeleted: rest["isDeleted"] ?? false,
+			boundElements: rest["boundElements"] ?? null,
 			updated: updatedFor(el),
-			link: rest.link ?? null,
-			locked: rest.locked ?? false,
+			link: rest["link"] ?? null,
+			locked: rest["locked"] ?? false,
 		};
 	}
 
@@ -505,43 +505,43 @@ export function expandElements(
 		labelText: unknown,
 	): void {
 		const hasBoundText =
-			Array.isArray(base.boundElements) &&
-			base.boundElements.some((binding: unknown) => {
+			Array.isArray(base["boundElements"]) &&
+			base["boundElements"].some((binding: unknown) => {
 				const record =
 					binding && typeof binding === "object" ? (binding as Record<string, unknown>) : {};
 				return (
-					record.type === "text" &&
-					typeof record.id === "string" &&
+					record["type"] === "text" &&
+					typeof record["id"] === "string" &&
 					(forStore ||
-						sourceElements.some((other) => other.id === record.id && other.type === "text"))
+						sourceElements.some((other) => other.id === record["id"] && other.type === "text"))
 				);
 			});
 		if (!labelText || hasBoundText) return;
 
-		const textId = labelTextIdFor(String(base.id), taken);
+		const textId = labelTextIdFor(String(base["id"]), taken);
 		named.add(textId);
-		base.boundElements = [
-			...(Array.isArray(base.boundElements) ? base.boundElements : []),
+		base["boundElements"] = [
+			...(Array.isArray(base["boundElements"]) ? base["boundElements"] : []),
 			{ type: "text", id: textId },
 		];
 		const isArrow = el.type === "arrow" || el.type === "line";
-		const fontSize = typeof rest.fontSize === "number" ? rest.fontSize : DEFAULT_FONT_SIZE;
+		const fontSize = typeof rest["fontSize"] === "number" ? rest["fontSize"] : DEFAULT_FONT_SIZE;
 		const fontFamily =
 			normalizeFontFamily(
-				typeof rest.fontFamily === "string" || typeof rest.fontFamily === "number"
-					? rest.fontFamily
+				typeof rest["fontFamily"] === "string" || typeof rest["fontFamily"] === "number"
+					? rest["fontFamily"]
 					: undefined,
 			) ?? DEFAULT_FONT_FAMILY;
 		const lineHeight = lineHeightOf(fontFamily);
 		const labelElement = {
 			id: textId,
 			type: "text",
-			x: base.x,
-			y: base.y,
+			x: base["x"],
+			y: base["y"],
 			width: 0,
 			height: 0,
 			angle: 0,
-			strokeColor: isArrow ? "#1e1e1e" : base.strokeColor,
+			strokeColor: isArrow ? "#1e1e1e" : base["strokeColor"],
 			backgroundColor: "transparent",
 			fillStyle: "solid",
 			strokeWidth: DEFAULT_STROKE_WIDTH,
@@ -568,7 +568,7 @@ export function expandElements(
 			verticalAlign: "middle",
 			autoResize: true,
 			lineHeight,
-			containerId: base.id,
+			containerId: base["id"],
 		} as Record<string, unknown>;
 		sizeText(labelElement);
 		const placement = boundTextPlacement(
@@ -576,8 +576,8 @@ export function expandElements(
 			labelElement as unknown as LabelledElement,
 		);
 		if (placement) {
-			labelElement.x = placement.x;
-			labelElement.y = placement.y;
+			labelElement["x"] = placement.x;
+			labelElement["y"] = placement.y;
 		}
 		boundTextElements.push(labelElement);
 	}
@@ -600,12 +600,12 @@ export function expandElements(
 		const base = makeBaseElement(el as unknown as Record<string, unknown>, rest);
 		const restoreServerFields = (element: Record<string, unknown>): Record<string, unknown> => {
 			if (!keepServerFields) return element;
-			if (createdAt !== undefined) element.createdAt = createdAt;
-			if (updatedAt !== undefined) element.updatedAt = updatedAt;
-			if (syncedAt !== undefined) element.syncedAt = syncedAt;
-			if (keptSource !== undefined) element.source = keptSource;
-			if (syncTimestamp !== undefined) element.syncTimestamp = syncTimestamp;
-			if (serverVersion !== undefined) element.version = serverVersion;
+			if (createdAt !== undefined) element["createdAt"] = createdAt;
+			if (updatedAt !== undefined) element["updatedAt"] = updatedAt;
+			if (syncedAt !== undefined) element["syncedAt"] = syncedAt;
+			if (keptSource !== undefined) element["source"] = keptSource;
+			if (syncTimestamp !== undefined) element["syncTimestamp"] = syncTimestamp;
+			if (serverVersion !== undefined) element["version"] = serverVersion;
 			// Nothing here restores `label`, `text` on anything that is not a text
 			// element, or an arrow's `start` and `end`. All of them are the seed, and
 			// the seed is an input format: it has been read by now, and what it said
@@ -619,25 +619,25 @@ export function expandElements(
 
 		// Standalone text elements: keep text directly
 		if (el.type === "text") {
-			base.text = rest.text ?? "";
-			base.originalText = rest.originalText ?? base.text;
-			base.fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
-			base.fontFamily =
+			base["text"] = rest["text"] ?? "";
+			base["originalText"] = rest["originalText"] ?? base["text"];
+			base["fontSize"] = rest["fontSize"] ?? DEFAULT_FONT_SIZE;
+			base["fontFamily"] =
 				normalizeFontFamily(
-					typeof rest.fontFamily === "string" || typeof rest.fontFamily === "number"
-						? rest.fontFamily
+					typeof rest["fontFamily"] === "string" || typeof rest["fontFamily"] === "number"
+						? rest["fontFamily"]
 						: undefined,
 				) ?? DEFAULT_FONT_FAMILY;
-			base.textAlign = rest.textAlign ?? DEFAULT_TEXT_ALIGN;
-			base.verticalAlign = rest.verticalAlign ?? DEFAULT_VERTICAL_ALIGN;
-			base.autoResize = rest.autoResize ?? true;
-			base.lineHeight =
-				typeof rest.lineHeight === "number"
-					? rest.lineHeight
+			base["textAlign"] = rest["textAlign"] ?? DEFAULT_TEXT_ALIGN;
+			base["verticalAlign"] = rest["verticalAlign"] ?? DEFAULT_VERTICAL_ALIGN;
+			base["autoResize"] = rest["autoResize"] ?? true;
+			base["lineHeight"] =
+				typeof rest["lineHeight"] === "number"
+					? rest["lineHeight"]
 					: lineHeightOf(
-							typeof base.fontFamily === "number" ? base.fontFamily : DEFAULT_FONT_FAMILY,
+							typeof base["fontFamily"] === "number" ? base["fontFamily"] : DEFAULT_FONT_FAMILY,
 						);
-			base.containerId = rest.containerId ?? null;
+			base["containerId"] = rest["containerId"] ?? null;
 			sizeText(base);
 			cleanedExportElements.push(restoreServerFields(base));
 			continue;
@@ -656,22 +656,22 @@ export function expandElements(
 		// one always has these; one an agent wrote had none, so the browser filled
 		// them in on a server update and the note never learned.
 		if (el.type === "freedraw") {
-			base.points = rest.points ?? [];
-			const measured = measureLinear(base.points);
+			base["points"] = rest["points"] ?? [];
+			const measured = measureLinear(base["points"]);
 			if (measured) {
-				base.width = measured.width;
-				base.height = measured.height;
+				base["width"] = measured.width;
+				base["height"] = measured.height;
 			}
-			base.pressures = rest.pressures ?? [];
-			base.simulatePressure = rest.simulatePressure ?? true;
-			base.lastCommittedPoint = rest.lastCommittedPoint ?? null;
+			base["pressures"] = rest["pressures"] ?? [];
+			base["simulatePressure"] = rest["simulatePressure"] ?? true;
+			base["lastCommittedPoint"] = rest["lastCommittedPoint"] ?? null;
 		}
 
 		if (el.type === "image") {
-			base.fileId = rest.fileId ?? null;
-			base.status = rest.status ?? "pending";
-			base.scale = rest.scale ?? [1, 1];
-			base.crop = rest.crop ?? null;
+			base["fileId"] = rest["fileId"] ?? null;
+			base["status"] = rest["status"] ?? "pending";
+			base["scale"] = rest["scale"] ?? [1, 1];
+			base["crop"] = rest["crop"] ?? null;
 		}
 
 		appendLabel(el, base, rest, labelText);
@@ -683,39 +683,39 @@ export function expandElements(
 	const shapeBoundArrows = new Map<string, { type: string; id: string }[]>();
 	for (const el of cleanedExportElements) {
 		const startBinding =
-			el.startBinding && typeof el.startBinding === "object"
-				? (el.startBinding as Record<string, unknown>)
+			el["startBinding"] && typeof el["startBinding"] === "object"
+				? (el["startBinding"] as Record<string, unknown>)
 				: null;
 		const endBinding =
-			el.endBinding && typeof el.endBinding === "object"
-				? (el.endBinding as Record<string, unknown>)
+			el["endBinding"] && typeof el["endBinding"] === "object"
+				? (el["endBinding"] as Record<string, unknown>)
 				: null;
-		if (typeof startBinding?.elementId === "string") {
-			const arr = shapeBoundArrows.get(startBinding.elementId) || [];
-			arr.push({ type: "arrow", id: String(el.id) });
-			shapeBoundArrows.set(startBinding.elementId, arr);
+		if (typeof startBinding?.["elementId"] === "string") {
+			const arr = shapeBoundArrows.get(startBinding["elementId"]) || [];
+			arr.push({ type: "arrow", id: String(el["id"]) });
+			shapeBoundArrows.set(startBinding["elementId"], arr);
 		}
-		if (typeof endBinding?.elementId === "string") {
-			const arr = shapeBoundArrows.get(endBinding.elementId) || [];
-			arr.push({ type: "arrow", id: String(el.id) });
-			shapeBoundArrows.set(endBinding.elementId, arr);
+		if (typeof endBinding?.["elementId"] === "string") {
+			const arr = shapeBoundArrows.get(endBinding["elementId"]) || [];
+			arr.push({ type: "arrow", id: String(el["id"]) });
+			shapeBoundArrows.set(endBinding["elementId"], arr);
 		}
 	}
 	for (const el of cleanedExportElements) {
-		const arrowBindings = shapeBoundArrows.get(String(el.id));
+		const arrowBindings = shapeBoundArrows.get(String(el["id"]));
 		if (arrowBindings) {
 			// Skip refs the element already carries (re-exported expanded scenes),
 			// otherwise every export cycle appends duplicate boundElements entries.
 			const existing = new Set(
-				(Array.isArray(el.boundElements) ? el.boundElements : []).map((b: unknown) => {
+				(Array.isArray(el["boundElements"]) ? el["boundElements"] : []).map((b: unknown) => {
 					const record = b && typeof b === "object" ? (b as Record<string, unknown>) : {};
-					return typeof record.id === "string" ? record.id : undefined;
+					return typeof record["id"] === "string" ? record["id"] : undefined;
 				}),
 			);
 			const additions = arrowBindings.filter((b) => !existing.has(b.id));
 			if (additions.length > 0) {
-				el.boundElements = [
-					...(Array.isArray(el.boundElements) ? el.boundElements : []),
+				el["boundElements"] = [
+					...(Array.isArray(el["boundElements"]) ? el["boundElements"] : []),
 					...additions,
 				];
 			}
@@ -745,14 +745,14 @@ export function expandElements(
 		const wanted = settledIndices(order);
 		order.forEach((element, at) => {
 			const index = wanted[at];
-			if (index !== null && index !== undefined) element.index = index;
+			if (index !== null && index !== undefined) element["index"] = index;
 		});
 		cleanedExportElements.length = 0;
 		cleanedExportElements.push(...order);
 	}
 
 	const validated = cleanedExportElements.map((element) =>
-		validatePersistedBoardElement(element, `write ingress element ${String(element.id ?? "")}`),
+		validatePersistedBoardElement(element, `write ingress element ${String(element["id"] ?? "")}`),
 	);
 	return deterministic ? (canonicalizeKeys(validated) as RuntimeBoardElement[]) : validated;
 }
@@ -886,13 +886,13 @@ export function relabelBoundTexts(
  * whatever the element carries is left alone.
  */
 function sizeText(element: Record<string, unknown>): void {
-	if (element.autoResize === false) return;
+	if (element["autoResize"] === false) return;
 	const fontFamily =
-		typeof element.fontFamily === "number" ? element.fontFamily : DEFAULT_FONT_FAMILY;
+		typeof element["fontFamily"] === "number" ? element["fontFamily"] : DEFAULT_FONT_FAMILY;
 	if (!canMeasure(fontFamily)) return;
-	const fontSize = typeof element.fontSize === "number" ? element.fontSize : DEFAULT_FONT_SIZE;
-	const lineHeight = typeof element.lineHeight === "number" ? element.lineHeight : undefined;
-	const measured = measureText(String(element.text ?? ""), fontSize, fontFamily, lineHeight);
-	element.width = measured.width;
-	element.height = measured.height;
+	const fontSize = typeof element["fontSize"] === "number" ? element["fontSize"] : DEFAULT_FONT_SIZE;
+	const lineHeight = typeof element["lineHeight"] === "number" ? element["lineHeight"] : undefined;
+	const measured = measureText(String(element["text"] ?? ""), fontSize, fontFamily, lineHeight);
+	element["width"] = measured.width;
+	element["height"] = measured.height;
 }

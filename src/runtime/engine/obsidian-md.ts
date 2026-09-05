@@ -41,11 +41,11 @@ export function renameElementId(elements: unknown[], oldId: string, newId: strin
 	for (const el of elements) {
 		if (!el || typeof el !== "object") continue;
 		const record = el as Record<string, unknown>;
-		if (record.id === oldId) record.id = newId;
-		if (Array.isArray(record.boundElements)) {
-			for (const bound of record.boundElements) {
-				if (bound && typeof bound === "object" && (bound as Record<string, unknown>).id === oldId)
-					(bound as Record<string, unknown>).id = newId;
+		if (record["id"] === oldId) record["id"] = newId;
+		if (Array.isArray(record["boundElements"])) {
+			for (const bound of record["boundElements"]) {
+				if (bound && typeof bound === "object" && (bound as Record<string, unknown>)["id"] === oldId)
+					(bound as Record<string, unknown>)["id"] = newId;
 			}
 		}
 		for (const key of ["startBinding", "endBinding"] as const) {
@@ -53,11 +53,11 @@ export function renameElementId(elements: unknown[], oldId: string, newId: strin
 			if (
 				binding &&
 				typeof binding === "object" &&
-				(binding as Record<string, unknown>).elementId === oldId
+				(binding as Record<string, unknown>)["elementId"] === oldId
 			)
-				(binding as Record<string, unknown>).elementId = newId;
+				(binding as Record<string, unknown>)["elementId"] = newId;
 		}
-		if (record.containerId === oldId) record.containerId = newId;
+		if (record["containerId"] === oldId) record["containerId"] = newId;
 	}
 }
 
@@ -606,7 +606,7 @@ export function wrapSceneAsObsidianMd(
 	existing?: string | null,
 	options: WrapOptions = {},
 ): string {
-	if (!Array.isArray(scene.elements)) {
+	if (!Array.isArray(scene["elements"])) {
 		throw new Error("Not an Excalidraw scene: missing elements array");
 	}
 	// Resolved first so an unreadable destination fails before any work.
@@ -616,22 +616,22 @@ export function wrapSceneAsObsidianMd(
 	const { body, embedded, trailing } = preservedRegions(existing);
 	const wrapped = structuredClone(scene);
 	const wrappedRecord = wrapped as Record<string, unknown>;
-	wrapped.type = "excalidraw";
-	wrapped.version = 2;
-	wrapped.files = wrapped.files ?? {};
+	wrapped["type"] = "excalidraw";
+	wrapped["version"] = 2;
+	wrapped["files"] = wrapped["files"] ?? {};
 
 	// The note says where an image is once. An id the preserved section already
 	// names has its bytes in the vault, put there by the plugin, so writing
 	// base64 for it back into the Drawing block would make two records of one
 	// picture — the second of which nothing reads and nothing keeps in step.
-	const wrappedFiles = wrappedRecord.files as Record<string, unknown>;
+	const wrappedFiles = wrappedRecord["files"] as Record<string, unknown>;
 	for (const entry of readEmbeddedFiles(embedded)) delete wrappedFiles[entry.fileId];
 
-	const wrappedElements = wrappedRecord.elements as unknown[];
+	const wrappedElements = wrappedRecord["elements"] as unknown[];
 	const used = new Set<string>(
 		wrappedElements.flatMap((el) =>
-			el && typeof el === "object" && typeof (el as Record<string, unknown>).id === "string"
-				? [(el as Record<string, unknown>).id as string]
+			el && typeof el === "object" && typeof (el as Record<string, unknown>)["id"] === "string"
+				? [(el as Record<string, unknown>)["id"] as string]
 				: [],
 		),
 	);
@@ -639,20 +639,20 @@ export function wrapSceneAsObsidianMd(
 	for (const el of wrappedElements) {
 		if (!el || typeof el !== "object") continue;
 		const record = el as Record<string, unknown>;
-		if (record.type !== "text" || record.isDeleted) continue;
+		if (record["type"] !== "text" || record["isDeleted"]) continue;
 		// Nothing archboard minted lands here. An id that does came from
 		// elsewhere and cannot be written as a block reference as it stands.
-		if (typeof record.id !== "string") continue;
-		if (!isBlockId(record.id)) {
-			const newId = derivedId(record.id, used);
+		if (typeof record["id"] !== "string") continue;
+		if (!isBlockId(record["id"])) {
+			const newId = derivedId(record["id"], used);
 			used.add(newId);
-			renameElementId(wrappedElements, record.id, newId);
+			renameElementId(wrappedElements, record["id"], newId);
 		}
-		record.rawText =
-			record.rawText && record.rawText !== ""
-				? record.rawText
-				: (record.originalText ?? record.text ?? "");
-		if (record.rawText !== "") entries.push(`${String(record.rawText)} ^${record.id}`);
+		record["rawText"] =
+			record["rawText"] && record["rawText"] !== ""
+				? record["rawText"]
+				: (record["originalText"] ?? record["text"] ?? "");
+		if (record["rawText"] !== "") entries.push(`${String(record["rawText"])} ^${record["id"]}`);
 	}
 
 	const textSection = entries.length ? entries.join("\n\n") + "\n" : "";

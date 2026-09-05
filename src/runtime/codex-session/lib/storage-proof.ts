@@ -111,7 +111,7 @@ function assertSqliteValue(value: unknown, label: string, prepared: string): voi
 }
 
 function assertOrigin(config: ConfigResponse, configPath: string): void {
-	const origin = config.origins.sqlite_home;
+	const origin = config.origins["sqlite_home"];
 	if (origin?.name.type !== "user") return fail("sqlite_home origin is not the user layer");
 	if (origin.name.file !== configPath || origin.name.profile !== null)
 		return fail("sqlite_home origin is not the prepared CODEX_HOME/config.toml");
@@ -145,7 +145,7 @@ export function proveCodexStorage(input: {
 
 	assertRootAgreement(input.initialize.codexHome, "initialize.codexHome", codexHome);
 	const configValues = input.config.config as Record<string, unknown>;
-	assertSqliteValue(configValues.sqlite_home, "config.sqlite_home", sqliteHome);
+	assertSqliteValue(configValues["sqlite_home"], "config.sqlite_home", sqliteHome);
 	assertOrigin(input.config, configPath);
 	assertRequirements(input.requirements, sqliteHome);
 }

@@ -41,7 +41,7 @@ test("trusted reads enforce the vendor arrow and binding correlation", () => {
 	).toEqual(elbow);
 	for (const end of ["startBinding", "endBinding"] as const) {
 		const binding = { ...elbow[end] } as Record<string, unknown>;
-		delete binding.fixedPoint;
+		delete binding["fixedPoint"];
 		expect(() =>
 			validatePersistedBoardElement(
 				{ ...elbow, [end]: binding },

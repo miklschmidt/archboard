@@ -78,7 +78,7 @@ function hasOutcome(
 	value: unknown,
 ): value is { readonly outcome: "not_delivered" | "outcome_unknown" } {
 	return (
-		isRecord(value) && (value.outcome === "not_delivered" || value.outcome === "outcome_unknown")
+		isRecord(value) && (value["outcome"] === "not_delivered" || value["outcome"] === "outcome_unknown")
 	);
 }
 
@@ -329,7 +329,7 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	};
 
 	const validateLogin = (value: unknown): unknown => {
-		const variant = isRecord(value) && typeof value.type === "string" ? value.type : undefined;
+		const variant = isRecord(value) && typeof value["type"] === "string" ? value["type"] : undefined;
 		const policy = LOGIN_POLICIES.find((candidate) => candidate.variant === variant);
 		if (policy?.policy === "refused")
 			throw new CodexSessionError(

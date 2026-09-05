@@ -514,8 +514,8 @@ function lifecycleError(error: unknown, message: string): CodexDynamicToolsError
 }
 
 function errorCode(error: unknown): DynamicRefusalReason | undefined {
-	if (isRecord(error) && typeof error.code === "string") {
-		const code = error.code;
+	if (isRecord(error) && typeof error["code"] === "string") {
+		const code = error["code"];
 		if (
 			code === "stale_child" ||
 			code === "prior_epoch" ||
@@ -639,6 +639,6 @@ export function isDynamicToolName(value: unknown): value is DynamicToolName {
 
 export function isDynamicServerRequest(value: unknown): value is DynamicServerRequest {
 	return (
-		isRecord(value) && value.method === "item/tool/call" && value.owner === "codex-dynamic-tools"
+		isRecord(value) && value["method"] === "item/tool/call" && value["owner"] === "codex-dynamic-tools"
 	);
 }

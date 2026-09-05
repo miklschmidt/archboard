@@ -200,8 +200,8 @@ function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCurso
 	}
 	const record = value as Record<string, unknown>;
 	exactCursorKeys(record);
-	const feedId = feedIdValue(record.feedId, "cursor.feedId");
-	const sequence = numberValue(record.sequence, "cursor.sequence");
+	const feedId = feedIdValue(record["feedId"], "cursor.feedId");
+	const sequence = numberValue(record["sequence"], "cursor.sequence");
 	if (sequence === null) fail("cursor.sequence", "must be a number");
 	const staleReason =
 		feedId === currentFeedId

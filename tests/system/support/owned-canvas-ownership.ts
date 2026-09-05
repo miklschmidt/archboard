@@ -28,7 +28,7 @@ export function buildOwnedCanvasEnvironment(options: {
 	env?: OwnedCanvasEnvironment;
 }): OwnedCanvasEnvironment {
 	const toolEnvironment: OwnedCanvasEnvironment =
-		process.env.PATH === undefined ? {} : { PATH: process.env.PATH };
+		process.env["PATH"] === undefined ? {} : { PATH: process.env["PATH"] };
 	return {
 		...toolEnvironment,
 		...options.env,

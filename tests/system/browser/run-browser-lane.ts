@@ -89,7 +89,7 @@ function ownerIsClean(state: OwnerAuditSample): boolean {
 }
 
 function preflightEnvironment(): Record<string, string> {
-	const selectedPath = process.env.PATH;
+	const selectedPath = process.env["PATH"];
 	if (!selectedPath) throw new CouldNotRunError("Browser lane has no PATH for prerequisites.");
 	return { PATH: selectedPath, LANG: "C.UTF-8", LC_ALL: "C.UTF-8", NO_COLOR: "1" };
 }
@@ -112,7 +112,7 @@ function probe(command: string, argv: readonly string[], label: string): void {
 }
 
 function configuredBrowserExecutable(): string | undefined {
-	const configured = process.env.AGENT_BROWSER_EXECUTABLE_PATH;
+	const configured = process.env["AGENT_BROWSER_EXECUTABLE_PATH"];
 	if (!configured) return undefined;
 	if (!isAbsolute(configured)) {
 		throw new CouldNotRunError(`AGENT_BROWSER_EXECUTABLE_PATH must be absolute: ${configured}`);
@@ -153,7 +153,7 @@ function ownerEnvironment(
 	ownerRoot: string,
 	browserExecutable: string | undefined,
 ): Record<string, string> {
-	const selectedPath = process.env.PATH;
+	const selectedPath = process.env["PATH"];
 	if (!selectedPath) throw new CouldNotRunError("Browser lane has no PATH for its Bun child.");
 	const identity = randomUUID().slice(0, 8);
 	const env: Record<string, string> = {
@@ -172,9 +172,9 @@ function ownerEnvironment(
 		ARCHBOARD_TEST_BROWSER_LANE_ROOT: laneRoot,
 		ARCHBOARD_TEST_BROWSER_OWNER_ROOT: ownerRoot,
 	};
-	if (browserExecutable) env.AGENT_BROWSER_EXECUTABLE_PATH = browserExecutable;
+	if (browserExecutable) env["AGENT_BROWSER_EXECUTABLE_PATH"] = browserExecutable;
 	if (file === HUMAN_PERFORMANCE_BROWSER_OWNER) {
-		env.AGENT_BROWSER_DEFAULT_TIMEOUT = String(TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS);
+		env["AGENT_BROWSER_DEFAULT_TIMEOUT"] = String(TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS);
 	}
 	return env;
 }
@@ -292,10 +292,10 @@ async function auditOwner(context: OwnerContext): Promise<void> {
 			groupAlive: processGroupExists(context.processGroup),
 			processes: markedProcesses(
 				context.root,
-				context.env.AGENT_BROWSER_NAMESPACE!,
-				context.env.AGENT_BROWSER_SESSION!,
+				context.env["AGENT_BROWSER_NAMESPACE"]!,
+				context.env["AGENT_BROWSER_SESSION"]!,
 			).filter((pid) => pid !== process.pid),
-			sockets: namespaceArtifacts(context.env.AGENT_BROWSER_SOCKET_DIR!).filter((entry) =>
+			sockets: namespaceArtifacts(context.env["AGENT_BROWSER_SOCKET_DIR"]!).filter((entry) =>
 				entry.endsWith(".sock"),
 			),
 			listeners,
@@ -304,7 +304,7 @@ async function auditOwner(context: OwnerContext): Promise<void> {
 	let state: Awaited<ReturnType<typeof sample>>;
 	try {
 		state = await pollUntil(sample, ownerIsClean, `browser owner ${context.file} cleanup`, {
-			timeoutMs: browserCleanupObservationMs(context.env.AGENT_BROWSER_IDLE_TIMEOUT_MS!),
+			timeoutMs: browserCleanupObservationMs(context.env["AGENT_BROWSER_IDLE_TIMEOUT_MS"]!),
 		});
 	} catch {
 		state = await sample();

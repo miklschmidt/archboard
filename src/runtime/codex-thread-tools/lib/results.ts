@@ -235,13 +235,13 @@ function canonicalInitialTurn(value: unknown): JsonRecord {
 function canonicalThreadValue(value: unknown): JsonRecord {
 	const record = value as JsonRecord;
 	return orderedObject(record, ["threadId", "state", "initialTurn"], {
-		initialTurn: canonicalInitialTurn(record.initialTurn),
+		initialTurn: canonicalInitialTurn(record["initialTurn"]),
 	});
 }
 
 function canonicalListValue(value: unknown): JsonRecord {
 	const record = value as JsonRecord;
-	const threads = (record.threads as readonly unknown[]).map((thread) =>
+	const threads = (record["threads"] as readonly unknown[]).map((thread) =>
 		orderedObject(thread as JsonRecord, [
 			"threadId",
 			"title",
@@ -258,7 +258,7 @@ function canonicalListValue(value: unknown): JsonRecord {
 
 function canonicalReadValue(value: unknown): JsonRecord {
 	const record = value as JsonRecord;
-	const turns = (record.turns as readonly unknown[]).map((turn) =>
+	const turns = (record["turns"] as readonly unknown[]).map((turn) =>
 		orderedObject(turn as JsonRecord, [
 			"turnId",
 			"status",
@@ -288,10 +288,10 @@ function canonicalToolValue(name: GeneralThreadToolName, value: unknown): JsonRe
 
 function canonicalEnvelope(name: GeneralThreadToolName, value: unknown): JsonRecord {
 	const record = value as JsonRecord;
-	switch (record.tag) {
+	switch (record["tag"]) {
 		case "ok":
 			return orderedObject(record, ["tag", "operationId", "value"], {
-				value: canonicalToolValue(name, record.value),
+				value: canonicalToolValue(name, record["value"]),
 			});
 		case "refused":
 			return orderedObject(record, ["tag", "reason", "message"]);

@@ -35,11 +35,11 @@ function exportFiles(files: Record<string, unknown>): BinaryFiles {
 		if (!raw || typeof raw !== "object") throw new Error(`Persisted file ${id} is invalid.`);
 		const file = raw as Record<string, unknown>;
 		if (
-			file.id !== id ||
-			file.mimeType !== "image/png" ||
-			typeof file.dataURL !== "string" ||
-			!file.dataURL.startsWith("data:image/png;base64,") ||
-			typeof file.created !== "number"
+			file["id"] !== id ||
+			file["mimeType"] !== "image/png" ||
+			typeof file["dataURL"] !== "string" ||
+			!file["dataURL"].startsWith("data:image/png;base64,") ||
+			typeof file["created"] !== "number"
 		)
 			throw new Error(`Persisted file ${id} is not a complete PNG export file.`);
 	}
@@ -127,8 +127,8 @@ function installDom(
 	window: Record<string, unknown>,
 	canvas: Record<string, unknown>,
 ): GlobalRestore {
-	if (!window.FontFace) {
-		window.FontFace = class FontFace {
+	if (!window["FontFace"]) {
+		window["FontFace"] = class FontFace {
 			readonly style: string;
 			readonly weight: string;
 			readonly stretch: string;
@@ -139,19 +139,19 @@ function installDom(
 				readonly source: string,
 				readonly descriptors: Record<string, string> = {},
 			) {
-				this.style = descriptors.style ?? "normal";
-				this.weight = descriptors.weight ?? "normal";
-				this.stretch = descriptors.stretch ?? "normal";
-				this.unicodeRange = descriptors.unicodeRange ?? "U+0-10FFFF";
+				this.style = descriptors["style"] ?? "normal";
+				this.weight = descriptors["weight"] ?? "normal";
+				this.stretch = descriptors["stretch"] ?? "normal";
+				this.unicodeRange = descriptors["unicodeRange"] ?? "U+0-10FFFF";
 			}
 			async load(): Promise<this> {
 				return this;
 			}
 		};
 	}
-	const document = window.document as Record<string, unknown>;
+	const document = window["document"] as Record<string, unknown>;
 	const faces = new Set<unknown>();
-	document.fonts = {
+	document["fonts"] = {
 		add: (face: unknown) => faces.add(face),
 		has: (face: unknown) => faces.has(face),
 		delete: (face: unknown) => faces.delete(face),
@@ -196,14 +196,14 @@ function installDom(
 		names.map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
 	);
 	const backing = new WeakMap<object, Record<string, unknown>>();
-	const createCanvas = canvas.createCanvas as (
+	const createCanvas = canvas["createCanvas"] as (
 		width: number,
 		height: number,
 	) => Record<string, unknown>;
 	const nativeFor = (element: Record<string, unknown>) => {
 		const present = backing.get(element);
 		if (present) return present;
-		const native = createCanvas(Number(element.width) || 300, Number(element.height) || 150);
+		const native = createCanvas(Number(element["width"]) || 300, Number(element["height"]) || 150);
 		Object.assign(native, {
 			setAttribute: () => undefined,
 			removeAttribute: () => undefined,
@@ -212,19 +212,19 @@ function installDom(
 		backing.set(element, native);
 		return native;
 	};
-	const htmlCanvas = window.HTMLCanvasElement as { prototype: Record<string, unknown> };
+	const htmlCanvas = window["HTMLCanvasElement"] as { prototype: Record<string, unknown> };
 	Object.assign(htmlCanvas.prototype, {
 		getContext(this: Record<string, unknown>, type: string, ...args: unknown[]) {
 			const context = (
-				nativeFor(this).getContext as (...values: unknown[]) => Record<string, unknown>
+				nativeFor(this)["getContext"] as (...values: unknown[]) => Record<string, unknown>
 			)(type, ...args);
 			return context;
 		},
 		toDataURL(this: Record<string, unknown>, type = "image/png") {
-			return (nativeFor(this).toDataURL as (mime: string) => string)(type);
+			return (nativeFor(this)["toDataURL"] as (mime: string) => string)(type);
 		},
 		toBlob(this: Record<string, unknown>, callback: (blob: Blob) => void, type = "image/png") {
-			const buffer = (nativeFor(this).toBuffer as (mime: string) => Uint8Array)(type);
+			const buffer = (nativeFor(this)["toBuffer"] as (mime: string) => Uint8Array)(type);
 			const copy = new ArrayBuffer(buffer.byteLength);
 			new Uint8Array(copy).set(buffer);
 			callback(new Blob([copy], { type }));
@@ -240,10 +240,10 @@ function installDom(
 			});
 	}
 	for (const [name, replacement] of Object.entries({
-		Image: canvas.Image,
-		Path2D: canvas.Path2D,
-		ImageData: canvas.ImageData,
-		CanvasRenderingContext2D: canvas.CanvasRenderingContext2D,
+		Image: canvas["Image"],
+		Path2D: canvas["Path2D"],
+		ImageData: canvas["ImageData"],
+		CanvasRenderingContext2D: canvas["CanvasRenderingContext2D"],
 	})) {
 		before.set(name, Object.getOwnPropertyDescriptor(globalThis, name));
 		Object.defineProperty(globalThis, name, {
@@ -292,7 +292,7 @@ try {
 	const fonts = fontFiles(
 		join(root, "node_modules/@excalidraw/excalidraw/dist/dev/fonts/Excalifont"),
 	);
-	const fontRegistry = canvas.GlobalFonts as {
+	const fontRegistry = canvas["GlobalFonts"] as {
 		registerFromPath(path: string, family: string): boolean;
 		removeAll(): void;
 	};
@@ -349,7 +349,7 @@ try {
 			throw new Error("Emulation did not render the canonical board fixture.");
 		if (valid.elements.length !== 0 || malformed === "accepted")
 			throw new Error(
-				`Emulation no longer reproduces the Mermaid gap: ${JSON.stringify(report.mermaid)}`,
+				`Emulation no longer reproduces the Mermaid gap: ${JSON.stringify(report["mermaid"])}`,
 			);
 		if (runtimeConsole.length > 0)
 			throw new Error(`Emulation emitted runtime diagnostics: ${JSON.stringify(runtimeConsole)}`);
@@ -359,10 +359,10 @@ try {
 		Object.assign(console, originalConsole);
 		fontRegistry.removeAll();
 		const restored = globals.restore();
-		(report.globals as Record<string, unknown>).restored = restored;
-		report.runtimeConsole = runtimeConsole.slice(-20);
+		(report["globals"] as Record<string, unknown>)["restored"] = restored;
+		report["runtimeConsole"] = runtimeConsole.slice(-20);
 	}
-	if (!(report.globals as Record<string, unknown>).restored)
+	if (!(report["globals"] as Record<string, unknown>)["restored"])
 		throw new Error("Emulation did not restore every installed global.");
 	if (renderFailure) throw renderFailure;
 } catch (error) {
@@ -377,7 +377,7 @@ try {
 	};
 } finally {
 	rmSync(dependencyRoot, { recursive: true, force: true });
-	report.cleanup = { dependencyRootRemoved: !existsSync(dependencyRoot) };
+	report["cleanup"] = { dependencyRootRemoved: !existsSync(dependencyRoot) };
 	await Bun.write(reportPath, JSON.stringify(report, null, 2) + "\n");
 }
 

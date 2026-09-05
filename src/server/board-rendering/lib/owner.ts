@@ -177,16 +177,16 @@ class Cdp {
 			{ expression, awaitPromise: true, returnByValue: true },
 			timeoutMs,
 		);
-		if (isJsonRecord(answer.exceptionDetails)) {
-			const details = answer.exceptionDetails;
-			const exception = isJsonRecord(details.exception) ? details.exception : undefined;
+		if (isJsonRecord(answer["exceptionDetails"])) {
+			const details = answer["exceptionDetails"];
+			const exception = isJsonRecord(details["exception"]) ? details["exception"] : undefined;
 			throw new Error(
-				typeof exception?.description === "string"
-					? exception.description
+				typeof exception?.["description"] === "string"
+					? exception["description"]
 					: `Renderer page evaluation failed: ${JSON.stringify(details)}`,
 			);
 		}
-		return isJsonRecord(answer.result) ? answer.result.value : undefined;
+		return isJsonRecord(answer["result"]) ? answer["result"]["value"] : undefined;
 	}
 
 	diagnostics(): readonly JsonRecord[] {
@@ -219,27 +219,27 @@ class Cdp {
 			return;
 		}
 		if (!isJsonRecord(message)) return;
-		const id = message.id;
+		const id = message["id"];
 		if (typeof id === "number") {
 			const pending = this.#pending.get(id);
 			if (!pending) return;
 			this.#pending.delete(id);
 			clearTimeout(pending.timeout);
-			if (isJsonRecord(message.error))
+			if (isJsonRecord(message["error"]))
 				pending.reject(
 					new Error(
-						typeof message.error.message === "string"
-							? message.error.message
+						typeof message["error"]["message"] === "string"
+							? message["error"]["message"]
 							: "DevTools command failed.",
 					),
 				);
-			else pending.resolve(isJsonRecord(message.result) ? message.result : {});
+			else pending.resolve(isJsonRecord(message["result"]) ? message["result"] : {});
 			return;
 		}
-		if (typeof message.method === "string")
+		if (typeof message["method"] === "string")
 			this.#events.push({
-				method: message.method,
-				params: isJsonRecord(message.params) ? message.params : {},
+				method: message["method"],
+				params: isJsonRecord(message["params"]) ? message["params"] : {},
 			});
 	}
 
@@ -382,7 +382,7 @@ function rawProcessGroupAbsent(groupId: number): boolean {
 		process.kill(-groupId, 0);
 		return false;
 	} catch (error) {
-		if (isJsonRecord(error) && error.code === "ESRCH") return true;
+		if (isJsonRecord(error) && error["code"] === "ESRCH") return true;
 		throw error;
 	}
 }
@@ -448,10 +448,10 @@ function isRendererJobResult(value: unknown): value is BoardRendererJobResult {
 			Object.values(files).every(
 				(file) =>
 					isJsonRecord(file) &&
-					typeof file.id === "string" &&
-					typeof file.dataURL === "string" &&
-					typeof file.mimeType === "string" &&
-					typeof file.created === "number",
+					typeof file["id"] === "string" &&
+					typeof file["dataURL"] === "string" &&
+					typeof file["mimeType"] === "string" &&
+					typeof file["created"] === "number",
 			)
 		);
 	}
@@ -475,9 +475,9 @@ function isRendererJobResult(value: unknown): value is BoardRendererJobResult {
 function isRendererPageState(value: unknown): value is RendererPageState {
 	return (
 		isJsonRecord(value) &&
-		typeof value.phase === "string" &&
-		typeof value.active === "boolean" &&
-		typeof value.jobs === "number"
+		typeof value["phase"] === "string" &&
+		typeof value["active"] === "boolean" &&
+		typeof value["jobs"] === "number"
 	);
 }
 
@@ -782,7 +782,7 @@ export function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = 
 	const resolved: ResolvedOwnerOptions = {
 		chromiumPath:
 			options.chromiumPath ??
-			process.env.ARCHBOARD_RENDERER_CHROMIUM ??
+			process.env["ARCHBOARD_RENDERER_CHROMIUM"] ??
 			Bun.which("chromium") ??
 			"",
 		setsidPath: options.setsidPath ?? Bun.which("setsid") ?? "",

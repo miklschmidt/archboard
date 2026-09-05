@@ -283,7 +283,7 @@ describe("package bridge commands", () => {
 		expect(writes, diagnostic).toHaveLength(1);
 		expect(writes[0]?.method, diagnostic).toBe("POST");
 		expect(writes[0]?.url.pathname, diagnostic).toBe("/api/bridges");
-		expect(bodyOf(writes[0]?.body).background, diagnostic).toBe("#ffffff");
+		expect(bodyOf(writes[0]?.body)["background"], diagnostic).toBe("#ffffff");
 
 		before = http.requests.length;
 		const removed = await owner.run(

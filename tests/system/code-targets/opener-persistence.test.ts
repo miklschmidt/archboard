@@ -18,7 +18,7 @@ const SYSTEM_OWNER_PATH = "tests/system/code-targets/opener-persistence.test.ts"
 function isExcludedFromHostedCi(environment: NodeJS.ProcessEnv): boolean {
 	const excludedOwner = environment[CI_EXCLUDED_SYSTEM_OWNER_ENV];
 	if (excludedOwner === undefined) return false;
-	if (environment.CI !== "true")
+	if (environment["CI"] !== "true")
 		throw new Error(`${CI_EXCLUDED_SYSTEM_OWNER_ENV} requires CI=true.`);
 	if (excludedOwner !== SYSTEM_OWNER_PATH)
 		throw new Error(
@@ -52,15 +52,15 @@ describe("machine-wide opener persistence", () => {
 	persistenceTest(
 		"applies the latest save to independent callers and survives a restarted base",
 		async () => {
-			const previousVault = process.env.ARCHBOARD_VAULT;
+			const previousVault = process.env["ARCHBOARD_VAULT"];
 			{
 				await using resources = new AsyncDisposableStack();
 				const vault = mkdtempSync(join(tmpdir(), "archboard-opener-vault-"));
 				resources.defer(() => rmSync(vault, { recursive: true }));
-				process.env.ARCHBOARD_VAULT = vault;
+				process.env["ARCHBOARD_VAULT"] = vault;
 				resources.defer(() => {
-					if (previousVault === undefined) delete process.env.ARCHBOARD_VAULT;
-					else process.env.ARCHBOARD_VAULT = previousVault;
+					if (previousVault === undefined) delete process.env["ARCHBOARD_VAULT"];
+					else process.env["ARCHBOARD_VAULT"] = previousVault;
 				});
 				const { makeIdentity, renderBoardNote } =
 					await import("../../../src/runtime/engine/board.ts");
@@ -76,7 +76,7 @@ describe("machine-wide opener persistence", () => {
 					},
 				});
 				resources.defer(() => fixture.dispose());
-				expect(process.env.ARCHBOARD_VAULT).toBe(vault);
+				expect(process.env["ARCHBOARD_VAULT"]).toBe(vault);
 				const note = join(vault, "payments.excalidraw.md");
 				const identity = makeIdentity({ board: "payments" });
 				writeFileSync(
@@ -178,8 +178,8 @@ describe("machine-wide opener persistence", () => {
 					expect(noteText).not.toContain(forbidden);
 				}
 			}
-			if (previousVault === undefined) expect(process.env.ARCHBOARD_VAULT).toBeUndefined();
-			else expect(process.env.ARCHBOARD_VAULT).toBe(previousVault);
+			if (previousVault === undefined) expect(process.env["ARCHBOARD_VAULT"]).toBeUndefined();
+			else expect(process.env["ARCHBOARD_VAULT"]).toBe(previousVault);
 		},
 		TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS,
 	);

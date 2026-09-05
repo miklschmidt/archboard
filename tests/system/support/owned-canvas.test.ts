@@ -30,17 +30,17 @@ async function probeLoopbackPort(): Promise<number> {
 	return address.port;
 }
 
-if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "collision") {
+if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "collision") {
 	// oxlint-disable-next-line no-console -- child stderr is the collision diagnostic fixture.
-	console.error(`EADDRINUSE fixture on ${process.env.PORT}`);
+	console.error(`EADDRINUSE fixture on ${process.env["PORT"]}`);
 	process.exit(98);
 }
 
-if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "namespace") {
-	const home = process.env.HOME!;
-	const xdgConfig = process.env.XDG_CONFIG_HOME!;
-	const xdgState = process.env.XDG_STATE_HOME!;
-	const temporary = process.env.TMPDIR!;
+if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "namespace") {
+	const home = process.env["HOME"]!;
+	const xdgConfig = process.env["XDG_CONFIG_HOME"]!;
+	const xdgState = process.env["XDG_STATE_HOME"]!;
+	const temporary = process.env["TMPDIR"]!;
 	const workbench = path.join(stateDir(), "codex-workbench");
 	const lock = path.join(workbench, "codex-home", ".archboard-codex-process.lock");
 	try {
@@ -57,7 +57,7 @@ if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "namespace") {
 	}
 	Bun.serve({
 		hostname: "127.0.0.1",
-		port: Number(process.env.PORT),
+		port: Number(process.env["PORT"]),
 		fetch(request) {
 			if (new URL(request.url).pathname === "/health") return Response.json({ pid: process.pid });
 			return Response.json({
@@ -67,14 +67,14 @@ if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "namespace") {
 				temporary,
 				workbench,
 				lock,
-				ambientSentinel: process.env.ARCHBOARD_TEST_AMBIENT_SENTINEL,
+				ambientSentinel: process.env["ARCHBOARD_TEST_AMBIENT_SENTINEL"],
 			});
 		},
 	});
 	await new Promise(() => undefined);
 }
 
-if (process.env.ARCHBOARD_FAILED_REAP_CHILD === "1") {
+if (process.env["ARCHBOARD_FAILED_REAP_CHILD"] === "1") {
 	let spawnCount = 0;
 	let allowFailedGenerationExit = false;
 	class FakeChild extends EventEmitter {

@@ -83,7 +83,7 @@ describe("inspection input snapshot", () => {
 			width: 1,
 			height: 1,
 		};
-		cyclic.customData = cyclic;
+		cyclic["customData"] = cyclic;
 		for (const [record, issue] of [
 			[nested, "proxy"],
 			[cyclic, "active-path-cycle"],
@@ -115,7 +115,7 @@ describe("inspection input snapshot", () => {
 			});
 			expect(record.customData).toBe(customData);
 		}
-		expect(cyclic.customData).toBe(cyclic);
+		expect(cyclic["customData"]).toBe(cyclic);
 	});
 
 	test("handles unsafe customData on otherwise valid recognized records", () => {
@@ -198,7 +198,7 @@ describe("inspection input snapshot", () => {
 
 		const firstFindingMessage = first!.findings[0]?.message;
 		const pristineDetails = structuredClone(first!.findings[0]!.details);
-		(first!.findings[0]!.details as Record<string, unknown>).testMutation = true;
+		(first!.findings[0]!.details as Record<string, unknown>)["testMutation"] = true;
 		first!.findings[0]!.message = "caller mutation";
 		const second = inspectBoard(frozenInput);
 		expect(second.findings[0]?.details).toEqual(pristineDetails);

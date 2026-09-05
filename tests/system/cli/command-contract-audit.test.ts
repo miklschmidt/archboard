@@ -61,12 +61,12 @@ const unconstrained = (schema: unknown): boolean => {
 	for (const keyword of ["anyOf", "oneOf", "allOf"])
 		if (Array.isArray(value[keyword]) && value[keyword].some(unconstrained)) return true;
 	return (
-		value.type === "object" &&
-		Object.keys((value.properties as object) ?? {}).length === 0 &&
-		Array.isArray(value.required) &&
-		value.required.length === 0 &&
-		value.propertyNames === undefined &&
-		value.additionalProperties !== false
+		value["type"] === "object" &&
+		Object.keys((value["properties"] as object) ?? {}).length === 0 &&
+		Array.isArray(value["required"]) &&
+		value["required"].length === 0 &&
+		value["propertyNames"] === undefined &&
+		value["additionalProperties"] !== false
 	);
 };
 
@@ -78,9 +78,9 @@ const meaningfulObjectBranches = (schema: unknown): boolean => {
 		const branches = value[keyword];
 		if (Array.isArray(branches)) return branches.every(meaningfulObjectBranches);
 	}
-	if (Array.isArray(value.allOf)) return value.allOf.every(meaningfulObjectBranches);
-	if (value.type !== "object") return true;
-	return ((value.required as readonly string[] | undefined) ?? []).some(
+	if (Array.isArray(value["allOf"])) return value["allOf"].every(meaningfulObjectBranches);
+	if (value["type"] !== "object") return true;
+	return ((value["required"] as readonly string[] | undefined) ?? []).some(
 		(field) => !bookkeepingFields.has(field),
 	);
 };

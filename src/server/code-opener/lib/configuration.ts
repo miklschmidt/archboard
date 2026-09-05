@@ -22,7 +22,7 @@ export type OpenerConfigurationResult = OpenerConfigurationSuccess | OpenerConfi
 const DEFAULT_SELECTION: OpenerSelection = { version: 1, kind: "platform" };
 
 export function openerConfigPath(): string {
-	return process.env.ARCHBOARD_OPENER_CONFIG || path.join(stateDir(), "opener.json");
+	return process.env["ARCHBOARD_OPENER_CONFIG"] || path.join(stateDir(), "opener.json");
 }
 
 export function readOpenerSelection(): OpenerConfigurationResult {

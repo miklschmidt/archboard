@@ -30,8 +30,8 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			writeFileSync(fixture.controlPath, JSON.stringify({ emit: "shutdown", holdClientRpc: true }));
 			await waitFor(async () => {
 				const state = snapshot(await socket.request("snapshot"));
-				return (state.approvals as unknown[]).length === 1 &&
-					(state.dynamicApprovals as unknown[]).length === 1
+				return (state["approvals"] as unknown[]).length === 1 &&
+					(state["dynamicApprovals"] as unknown[]).length === 1
 					? true
 					: undefined;
 			}, "pending normal-close batch");

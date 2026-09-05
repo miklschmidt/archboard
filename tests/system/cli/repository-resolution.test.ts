@@ -169,8 +169,8 @@ describe("repository binding resolution", () => {
 
 	test("resolves absolute, named, and ambient paths in declared order", async () => {
 		using fixture = createRepositoryFixture();
-		const previous = process.env.ARCHBOARD_REPOS;
-		process.env.ARCHBOARD_REPOS = fixture.registry;
+		const previous = process.env["ARCHBOARD_REPOS"];
+		process.env["ARCHBOARD_REPOS"] = fixture.registry;
 		try {
 			const alpha = fixture.repository("alpha", "git@github.com:acme/alpha.git");
 			const beta = fixture.repository("beta", "https://github.com/acme/beta.git");
@@ -241,15 +241,15 @@ describe("repository binding resolution", () => {
 			expect(outside.resolved).toBe(false);
 			expect(outside.note).toContain(fixture.nowhere);
 		} finally {
-			if (previous === undefined) delete process.env.ARCHBOARD_REPOS;
-			else process.env.ARCHBOARD_REPOS = previous;
+			if (previous === undefined) delete process.env["ARCHBOARD_REPOS"];
+			else process.env["ARCHBOARD_REPOS"] = previous;
 		}
 	});
 
 	test("retains portable intent when a checkout is unknown", async () => {
 		using fixture = createRepositoryFixture();
-		const previous = process.env.ARCHBOARD_REPOS;
-		process.env.ARCHBOARD_REPOS = fixture.registry;
+		const previous = process.env["ARCHBOARD_REPOS"];
+		process.env["ARCHBOARD_REPOS"] = fixture.registry;
 		try {
 			const { resolveBinding } = await import("../../../src/runtime/engine/promote.ts");
 			const unknown = await resolveBinding(
@@ -263,15 +263,15 @@ describe("repository binding resolution", () => {
 			expect(unknown).not.toHaveProperty("link");
 			expect(unknown.note).toContain("repo add");
 		} finally {
-			if (previous === undefined) delete process.env.ARCHBOARD_REPOS;
-			else process.env.ARCHBOARD_REPOS = previous;
+			if (previous === undefined) delete process.env["ARCHBOARD_REPOS"];
+			else process.env["ARCHBOARD_REPOS"] = previous;
 		}
 	});
 
 	test("refuses a stale checkout instead of falling back to the wrong repository", async () => {
 		using fixture = createRepositoryFixture();
-		const previous = process.env.ARCHBOARD_REPOS;
-		process.env.ARCHBOARD_REPOS = fixture.registry;
+		const previous = process.env["ARCHBOARD_REPOS"];
+		process.env["ARCHBOARD_REPOS"] = fixture.registry;
 		try {
 			const beta = fixture.repository("beta", "https://github.com/acme/beta.git");
 			writeFileSync(
@@ -299,8 +299,8 @@ describe("repository binding resolution", () => {
 			expect(stale.note).toContain(betaIdentity);
 			expect(stale.note).not.toContain(`file://${beta}/src/service.ts`);
 		} finally {
-			if (previous === undefined) delete process.env.ARCHBOARD_REPOS;
-			else process.env.ARCHBOARD_REPOS = previous;
+			if (previous === undefined) delete process.env["ARCHBOARD_REPOS"];
+			else process.env["ARCHBOARD_REPOS"] = previous;
 		}
 	});
 });
@@ -340,7 +340,7 @@ exit 0
 		stderr: "pipe",
 		env: {
 			...fixture.serverEnvironment,
-			PATH: `${bin}:${process.env.PATH ?? ""}`,
+			PATH: `${bin}:${process.env["PATH"] ?? ""}`,
 		},
 	});
 	const output = Promise.all([

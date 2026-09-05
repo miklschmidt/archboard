@@ -133,9 +133,9 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 			expect(`${noVault.stdout}${noVault.stderr}`).toContain(text);
 
 		const cliEnv = sanitizedEnvironment(root, vault);
-		delete cliEnv.ARCHBOARD_VAULT;
-		delete cliEnv.EXCALIDRAW_NO_AUTOSTART;
-		cliEnv.EXPRESS_SERVER_URL = `http://127.0.0.1:${await availablePort()}`;
+		delete cliEnv["ARCHBOARD_VAULT"];
+		delete cliEnv["EXCALIDRAW_NO_AUTOSTART"];
+		cliEnv["EXPRESS_SERVER_URL"] = `http://127.0.0.1:${await availablePort()}`;
 		const cli = spawnSync(process.execPath, [join(repoRoot, "src/bin.ts"), "board", "list"], {
 			cwd: repoRoot,
 			env: cliEnv,

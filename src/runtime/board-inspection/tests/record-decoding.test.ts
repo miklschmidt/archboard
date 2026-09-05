@@ -12,7 +12,7 @@ describe("inspection record decoding", () => {
 				[10, 0],
 			],
 		});
-		delete invalid.id;
+		delete invalid["id"];
 		const report = inspectBoard([
 			invalid,
 			{ id: "dup", type: "rectangle", x: 0, y: 0, width: 10, height: 10 },
@@ -30,7 +30,7 @@ describe("inspection record decoding", () => {
 		const issues = ["missing-id", "empty-string-id", "non-string-id"] as const;
 		for (const [index, rawId] of [undefined, "", 42].entries()) {
 			const record = connector({ id: rawId });
-			if (rawId === undefined) delete record.id;
+			if (rawId === undefined) delete record["id"];
 			const report = inspectBoard([record]);
 			const finding = report.findings.find((item) => item.reason === "invalid-element-identity");
 			expect(finding?.elements[0]).toEqual({ id: null, type: "arrow", sourceIndex: 0 });
@@ -64,7 +64,7 @@ describe("inspection record decoding", () => {
 
 	test("closes malformed path and binding shapes without throwing", () => {
 		const withoutPoints = connector();
-		delete withoutPoints.points;
+		delete withoutPoints["points"];
 		const pathCases = [
 			[withoutPoints, "points-missing"],
 			[{ points: null }, "points-not-array"],

@@ -3,9 +3,9 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const previousVault = process.env.ARCHBOARD_VAULT;
+const previousVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-lease-"));
-process.env.ARCHBOARD_VAULT = vault;
+process.env["ARCHBOARD_VAULT"] = vault;
 const lock = await import("../board-lock.ts");
 const logger = (await import("../logger.ts")).default;
 const timing = await import("../../../shared/timing/timing.ts");
@@ -37,8 +37,8 @@ async function cleanup(): Promise<void> {
 	lock.forgetLockAnnouncements();
 	jest.useRealTimers();
 	logger.warn = originalWarn;
-	if (previousVault === undefined) delete process.env.ARCHBOARD_VAULT;
-	else process.env.ARCHBOARD_VAULT = previousVault;
+	if (previousVault === undefined) delete process.env["ARCHBOARD_VAULT"];
+	else process.env["ARCHBOARD_VAULT"] = previousVault;
 	rmSync(vault, { recursive: true, force: true });
 }
 

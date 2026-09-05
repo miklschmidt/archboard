@@ -16,7 +16,7 @@ type Send = (
 type Emit = (this: WebSocketServer, event: string | symbol, ...args: unknown[]) => boolean;
 
 let initialSendCount = 0;
-const logPath = process.env.ARCHBOARD_TEST_INITIAL_SEND_LOG;
+const logPath = process.env["ARCHBOARD_TEST_INITIAL_SEND_LOG"];
 if (!logPath) throw new Error("ARCHBOARD_TEST_INITIAL_SEND_LOG is required.");
 
 const originalEmit = WebSocketServer.prototype.emit as Emit;

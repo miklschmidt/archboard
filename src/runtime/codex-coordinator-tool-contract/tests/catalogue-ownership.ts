@@ -124,15 +124,15 @@ export function hasJsonCatalogueDefinition(source: string): boolean {
 		if (typeof candidate !== "object" || candidate === null) return false;
 		const record = candidate as Record<string, unknown>;
 		if (
-			record.type === "namespace" &&
-			typeof record.name === "string" &&
-			NAMESPACE_NAMES.has(record.name)
+			record["type"] === "namespace" &&
+			typeof record["name"] === "string" &&
+			NAMESPACE_NAMES.has(record["name"])
 		)
 			return true;
 		if (
-			typeof record.namespace === "string" &&
-			NAMESPACE_NAMES.has(record.namespace) &&
-			Array.isArray(record.tools)
+			typeof record["namespace"] === "string" &&
+			NAMESPACE_NAMES.has(record["namespace"]) &&
+			Array.isArray(record["tools"])
 		)
 			return true;
 		return Object.values(record).some(visit);

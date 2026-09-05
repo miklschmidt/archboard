@@ -196,8 +196,8 @@ describe("coordinator canonical input fingerprint boundary", () => {
 				replayRequest(h, ownerRequest, `${fingerprintCase.name}-exact`, fingerprintCase.exact),
 			);
 			expect(exact.response).toEqual(owner.response);
-			expect(responseEnvelope(exact.response).operationId).toBe(
-				responseEnvelope(owner.response).operationId,
+			expect(responseEnvelope(exact.response)["operationId"]).toBe(
+				responseEnvelope(owner.response)["operationId"],
 			);
 			expect(effectCount(h, fingerprintCase.tool)).toBe(1);
 

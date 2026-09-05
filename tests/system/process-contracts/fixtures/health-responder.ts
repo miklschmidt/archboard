@@ -1,8 +1,8 @@
 import { createServer } from "node:http";
 
-const port = Number(process.env.PORT);
-const reportedPid = Number(process.env.REPORTED_PID ?? process.pid);
-const lateHeldBoard = process.env.ARCHBOARD_TEST_LATE_HELD_BOARD;
+const port = Number(process.env["PORT"]);
+const reportedPid = Number(process.env["REPORTED_PID"] ?? process.pid);
+const lateHeldBoard = process.env["ARCHBOARD_TEST_LATE_HELD_BOARD"];
 let stopWasRefused = false;
 const server = createServer((request, response) => {
 	if (request.url === "/health") {

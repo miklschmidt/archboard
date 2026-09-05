@@ -43,7 +43,7 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 				{ forStore: true },
 			),
 		);
-		const fresh = written.find((element) => element.type === "text" && !element.isDeleted);
+		const fresh = written.find((element) => element.type === "text" && !element["isDeleted"]);
 		assert(fresh !== undefined, "a label with no live text element was not expanded");
 		if (!fresh) throw new Error("The expanded label is missing.");
 		assert(
@@ -57,7 +57,7 @@ test("repairs absent, dangling, one-way, duplicate, and polluted label bindings"
 			`expansion produced a duplicate id: ${ids.join(", ")}`,
 		);
 		assert(
-			written.some((element) => element.isDeleted && element.id === labelTextIdFor("svc")),
+			written.some((element) => element["isDeleted"] && element.id === labelTextIdFor("svc")),
 			"the cleared label was renamed onto the new one",
 		);
 		assert(

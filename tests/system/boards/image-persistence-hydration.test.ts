@@ -147,7 +147,7 @@ describe("image persistence hydration", () => {
 		});
 		expect(opened.status).toBe(200);
 		const hydrated = await request<FilesBody>("/api/files?board=picsd");
-		expect(hydrated.body.files?.emb12345?.dataURL).toBe(`data:image/png;base64,${imageBase64}`);
+		expect(hydrated.body.files?.["emb12345"]?.dataURL).toBe(`data:image/png;base64,${imageBase64}`);
 		await request("/api/boards/save?board=picsd", { method: "POST" });
 		const resaved = fs.readFileSync(opened.body.file, "utf8");
 		expect(resaved).toContain("## Embedded Files");
@@ -159,8 +159,8 @@ describe("image persistence hydration", () => {
 			body: { board: "picsd", reload: true },
 		});
 		const afterReload = await request<FilesBody>("/api/files?board=picsd");
-		expect(afterReload.body.files?.emb12345?.dataURL).toBe(
-			beforeReload.body.files?.emb12345?.dataURL,
+		expect(afterReload.body.files?.["emb12345"]?.dataURL).toBe(
+			beforeReload.body.files?.["emb12345"]?.dataURL,
 		);
 
 		fs.writeFileSync(
@@ -173,7 +173,7 @@ describe("image persistence hydration", () => {
 		});
 		expect(escaping.status).toBe(200);
 		expect(
-			(await request<FilesBody>("/api/files?board=escape")).body.files?.emb12345,
+			(await request<FilesBody>("/api/files?board=escape")).body.files?.["emb12345"],
 		).toBeUndefined();
 
 		fs.writeFileSync(path.join(vault, "bare-logo.png"), Buffer.from(imageBase64, "base64"));
@@ -190,7 +190,7 @@ describe("image persistence hydration", () => {
 			).status,
 		).toBe(200);
 		expect(
-			(await request<FilesBody>("/api/files?board=bare-image")).body.files?.emb12345?.dataURL,
+			(await request<FilesBody>("/api/files?board=bare-image")).body.files?.["emb12345"]?.dataURL,
 		).toBe(`data:image/png;base64,${imageBase64}`);
 
 		fs.mkdirSync(path.join(vault, "duplicate-a"), { recursive: true });
@@ -210,7 +210,7 @@ describe("image persistence hydration", () => {
 			).status,
 		).toBe(200);
 		expect(
-			(await request<FilesBody>("/api/files?board=ambiguous-image")).body.files?.emb12345,
+			(await request<FilesBody>("/api/files?board=ambiguous-image")).body.files?.["emb12345"],
 		).toBeUndefined();
 
 		const callers: string[] = [];

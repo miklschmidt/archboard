@@ -39,9 +39,9 @@ describe("Codex app-server transport", () => {
 				method: "turn/steer",
 				params: { threadId: "thread-1", turnId: "turn-1", input: [] },
 			});
-			if (typeof requestFrame.id !== "string")
+			if (typeof requestFrame["id"] !== "string")
 				throw new Error("request id was not serialized as text");
-			const requestId = requestFrame.id;
+			const requestId = requestFrame["id"];
 			sendJson(child, { id: requestId, result: { turnId: "turn-1" } });
 			const delivered = await deliveredPromise;
 			expect(delivered.result).toEqual({ turnId: "turn-1" });
@@ -56,7 +56,7 @@ describe("Codex app-server transport", () => {
 
 			const errorPromise = transport.request("turn/steer", {});
 			const errorFrame = frameAt(child, 1);
-			sendJson(child, { id: errorFrame.id, error: { code: -32603, message: "fixture failure" } });
+			sendJson(child, { id: errorFrame["id"], error: { code: -32603, message: "fixture failure" } });
 			expect(await captureRejection(errorPromise)).toMatchObject({
 				name: "CodexTransportRemoteError",
 				method: "turn/steer",
@@ -93,7 +93,7 @@ describe("Codex app-server transport", () => {
 		const { child, transport, close } = createHarness();
 		try {
 			const malformedPromise = transport.request("turn/steer", {});
-			const malformedId = frameAt(child, 0).id;
+			const malformedId = frameAt(child, 0)["id"];
 			sendJson(child, {
 				id: malformedId,
 				result: { turnId: "turn-1" },
@@ -109,7 +109,7 @@ describe("Codex app-server transport", () => {
 			sendJson(child, { id: "foreign-response", result: {} });
 
 			const recoveredPromise = transport.request("turn/steer", {});
-			const recoveredId = frameAt(child, 1).id;
+			const recoveredId = frameAt(child, 1)["id"];
 			const recoveredFrame = JSON.stringify({ id: recoveredId, result: { turnId: "turn-2" } });
 			child.stdout.write(recoveredFrame.slice(0, 8));
 			await flushStreams();
@@ -326,7 +326,7 @@ describe("Codex app-server transport", () => {
 			jest.useFakeTimers();
 			fakeTimers = true;
 			const timedOut = transport.request("turn/steer", {});
-			const timedOutId = frameAt(child, 0).id;
+			const timedOutId = frameAt(child, 0)["id"];
 			jest.advanceTimersByTime(CODEX_REQUEST_SETTLEMENT_MS);
 			expect(await captureRejection(timedOut)).toMatchObject({
 				reason: "timeout",
@@ -344,14 +344,14 @@ describe("Codex app-server transport", () => {
 
 			const controller = new AbortController();
 			const cancelled = transport.request("turn/steer", {}, { signal: controller.signal });
-			const cancelledId = frameAt(child, 1).id;
+			const cancelledId = frameAt(child, 1)["id"];
 			controller.abort();
 			expect(await captureRejection(cancelled)).toMatchObject({
 				reason: "cancelled",
 				outcome: "outcome_unknown",
 				accepted: true,
 			});
-			expect(frames(child).some((frame) => frame.method === "turn/interrupt")).toBeFalse();
+			expect(frames(child).some((frame) => frame["method"] === "turn/interrupt")).toBeFalse();
 			sendJson(child, { id: cancelledId, result: { turnId: "cancelled-late" } });
 			await flushStreams();
 
@@ -412,7 +412,7 @@ describe("Codex app-server transport", () => {
 			).toMatchObject({
 				name: "CodexTransportOwnershipError",
 			});
-			expect(frames(child).filter((frame) => frame.id === "approval-once")).toHaveLength(1);
+			expect(frames(child).filter((frame) => frame["id"] === "approval-once")).toHaveLength(1);
 
 			child.stdin.blockNext = true;
 			const queued = transport.sendNotification("initialized");

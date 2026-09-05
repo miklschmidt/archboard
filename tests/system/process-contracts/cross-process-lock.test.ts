@@ -141,23 +141,23 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 				beforeRecoveredWrite,
 				(message) =>
 					message.type === "board_lock" &&
-					message.held === true &&
-					(message.holder as { kind?: string } | undefined)?.kind === "agent",
+					message["held"] === true &&
+					(message["holder"] as { kind?: string } | undefined)?.kind === "agent",
 			),
 		).toMatchObject({ held: true, holder: { kind: "agent" } });
 		const recoveredHoldIndex = pane.seen.findIndex(
 			(message, index) =>
 				index >= beforeRecoveredWrite &&
 				message.type === "board_lock" &&
-				message.held === true &&
-				(message.holder as { kind?: string } | undefined)?.kind === "agent",
+				message["held"] === true &&
+				(message["holder"] as { kind?: string } | undefined)?.kind === "agent",
 		);
 		expect(recoveredHoldIndex).toBeGreaterThanOrEqual(beforeRecoveredWrite);
 		expect(
 			await waitForPaneMessageWhere(
 				pane,
 				recoveredHoldIndex + 1,
-				(message) => message.type === "board_lock" && message.held === false,
+				(message) => message.type === "board_lock" && message["held"] === false,
 			),
 		).toMatchObject({ board: "scratch", held: false });
 
@@ -176,8 +176,8 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 			beforeClaim,
 			(message) =>
 				message.type === "board_lock" &&
-				message.held === true &&
-				(message.holder as { claimed?: boolean } | undefined)?.claimed === true,
+				message["held"] === true &&
+				(message["holder"] as { claimed?: boolean } | undefined)?.claimed === true,
 		);
 		expect(
 			await waitForPaneMessage(localPane, localBeforeClaim, "board_lock", 2_000),
@@ -205,8 +205,8 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 			localBeforeTakeover,
 			(message) =>
 				message.type === "board_lock" &&
-				message.held === true &&
-				(message.holder as { id?: string } | undefined)?.id === pane.clientId,
+				message["held"] === true &&
+				(message["holder"] as { id?: string } | undefined)?.id === pane.clientId,
 		);
 		expect(takeover).toMatchObject({
 			status: 200,
@@ -232,12 +232,12 @@ test("raw lock peer and two canvases exclude and recover through one vault", asy
 			observeCrossProcessLock(
 				localPane,
 				localBeforeRelease,
-				(message) => message.type === "board_lock" && message.held === false,
+				(message) => message.type === "board_lock" && message["held"] === false,
 			),
 			waitForPaneMessageWhere(
 				pane,
 				paneBeforeRelease,
-				(message) => message.type === "board_lock" && message.held === false,
+				(message) => message.type === "board_lock" && message["held"] === false,
 			),
 		]);
 		expect(release).toMatchObject({ status: 200, body: { released: true } });

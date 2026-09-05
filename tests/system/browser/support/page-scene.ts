@@ -43,9 +43,9 @@ export function elementFields(
 		if (!ignored.includes(key)) fields[key] = JSON.stringify(canonicalise(element[key]));
 	}
 	return {
-		id: String(element.id),
-		type: String(element.type),
-		...(typeof element.text === "string" ? { text: element.text } : {}),
+		id: String(element["id"]),
+		type: String(element["type"]),
+		...(typeof element["text"] === "string" ? { text: element["text"] } : {}),
 		fields,
 	};
 }

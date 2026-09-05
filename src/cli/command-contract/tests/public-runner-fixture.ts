@@ -35,8 +35,8 @@ const server = Bun.serve({
 });
 
 try {
-	process.env.EXPRESS_SERVER_URL = `http://127.0.0.1:${server.port}`;
-	process.env.EXCALIDRAW_NO_AUTOSTART = "1";
+	process.env["EXPRESS_SERVER_URL"] = `http://127.0.0.1:${server.port}`;
+	process.env["EXCALIDRAW_NO_AUTOSTART"] = "1";
 	const [{ getBoardInfo }, { cliContractRegistry }, { defineCommand }, { runCommand }] =
 		await Promise.all([
 			import("../../../runtime/engine/canvas-client.js"),

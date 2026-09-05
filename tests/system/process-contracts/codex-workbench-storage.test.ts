@@ -23,7 +23,7 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 	const resources = new AsyncDisposableStack();
 	try {
 		const staging = join(
-			process.env.TMPDIR ?? "/tmp",
+			process.env["TMPDIR"] ?? "/tmp",
 			`archboard-lifecycle-storage-${process.pid}-${mode}`,
 		);
 		rmSync(staging, { recursive: true, force: true });
@@ -44,12 +44,12 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 			const configRead = records(fixture.logPath).find(
 				(entry) => entry.kind === "response" && entry.method === "config/read",
 			) as FixtureRecord & { readonly result?: { readonly config?: Record<string, unknown> } };
-			const reported = configRead.result?.config?.sqlite_home;
+			const reported = configRead.result?.config?.["sqlite_home"];
 			if (mode === "env-only")
 				expect(configRead.result?.config, mode).not.toHaveProperty("sqlite_home");
 			else if (mode === "null") expect(reported, mode).toBeNull();
 			else if (mode === "redirected")
-				expect(initialization.result?.codexHome, mode).toContain("/sqlite-home");
+				expect(initialization.result?.["codexHome"], mode).toContain("/sqlite-home");
 			else if (mode === "symlink") expect(reported, mode).toContain("/sqlite-alias");
 			else if (mode === "requirements-conflict") {
 				const requirements = records(fixture.logPath).find(
@@ -89,8 +89,8 @@ async function expectStorageRefusal(mode: StorageMode): Promise<void> {
 			observed = result;
 			if (!result.ok) return result;
 			const value = snapshot(result);
-			const readiness = value.readiness as Record<string, unknown>;
-			return readiness.state === "unavailable" ? readiness : undefined;
+			const readiness = value["readiness"] as Record<string, unknown>;
+			return readiness["state"] === "unavailable" ? readiness : undefined;
 		}, `${mode} storage refusal`).catch((error: unknown) => {
 			throw new Error(
 				`${mode} did not expose its storage refusal. Last snapshot: ${JSON.stringify(observed)}\n${canvas.output()}\n${readFileSync(fixture.logPath, "utf8")}`,
@@ -122,7 +122,7 @@ describe.serial("composed Codex process lifecycle", () => {
 		let canvas: Awaited<ReturnType<typeof startCanvas>> | null = null;
 		try {
 			const staging = join(
-				process.env.TMPDIR ?? "/tmp",
+				process.env["TMPDIR"] ?? "/tmp",
 				`archboard-lifecycle-requirements-${process.pid}`,
 			);
 			rmSync(staging, { recursive: true, force: true });
@@ -153,7 +153,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				return result.ok ? result : undefined;
 			}, "managed-requirement workbench readiness");
 			const state = snapshot(await socket.request("snapshot"));
-			expect(state.readiness).toMatchObject({ state: "thread_capable" });
+			expect(state["readiness"]).toMatchObject({ state: "thread_capable" });
 			const root = join(fixture.root, "state/excalidraw-canvas/codex-workbench");
 			const codexHome = join(root, "codex-home");
 			const sqliteHome = join(root, "sqlite-home");
@@ -172,13 +172,13 @@ describe.serial("composed Codex process lifecycle", () => {
 			) as FixtureRecord & {
 				readonly result?: { readonly requirements?: Record<string, unknown> };
 			};
-			expect(initialize.result?.codexHome).toBe(codexHome);
+			expect(initialize.result?.["codexHome"]).toBe(codexHome);
 			expect(config.result).toMatchObject({
 				config: { sqlite_home: sqliteHome },
 				origins: { sqlite_home: { name: { type: "user", file: configPath, profile: null } } },
 			});
 			const managed = requirements.result?.requirements;
-			expect(managed?.sqliteHome).toBe(sqliteHome);
+			expect(managed?.["sqliteHome"]).toBe(sqliteHome);
 			expect(Object.keys(managed ?? {})).toHaveLength(30);
 			expect(
 				Object.entries(managed ?? {}).every(
@@ -204,7 +204,7 @@ describe.serial("composed Codex process lifecycle", () => {
 		const resources = new AsyncDisposableStack();
 		try {
 			const staging = join(
-				process.env.TMPDIR ?? "/tmp",
+				process.env["TMPDIR"] ?? "/tmp",
 				`archboard-lifecycle-two-home-${process.pid}`,
 			);
 			rmSync(staging, { recursive: true, force: true });
@@ -251,7 +251,7 @@ describe.serial("composed Codex process lifecycle", () => {
 				const initialized = records(fixtures[index]!.logPath).find(
 					(entry) => entry.kind === "response" && entry.method === "initialize",
 				) as FixtureRecord & { readonly result?: Record<string, unknown> };
-				expect(initialized.result?.codexHome).toBe(homes[index]);
+				expect(initialized.result?.["codexHome"]).toBe(homes[index]);
 			}
 		} finally {
 			await resources.disposeAsync();

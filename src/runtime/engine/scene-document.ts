@@ -75,12 +75,12 @@ export async function importScene(options: {
 		sceneData && typeof sceneData === "object" ? (sceneData as Record<string, unknown>) : {};
 	const elements: ServerElement[] = Array.isArray(sceneData)
 		? (sceneData as ServerElement[])
-		: Array.isArray(sceneRecord.elements)
-			? (sceneRecord.elements as ServerElement[])
+		: Array.isArray(sceneRecord["elements"])
+			? (sceneRecord["elements"] as ServerElement[])
 			: [];
 	if (elements.length === 0) throw new Error("No elements found in the import data");
 
-	const importFiles = sceneRecord.files;
+	const importFiles = sceneRecord["files"];
 	const files = importFiles && typeof importFiles === "object" ? Object.values(importFiles) : [];
 	const created =
 		options.mode === "replace"

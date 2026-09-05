@@ -271,7 +271,7 @@ describe("documented CLI workflows", () => {
 				const result = runSync(["bash", "-eu", "-o", "pipefail", "-c", match![1]!], {
 					env: {
 						...process.env,
-						PATH: `${scratch}:${process.env.PATH}`,
+						PATH: `${scratch}:${process.env["PATH"]}`,
 						board: "workflow-board",
 						FAKE_EXIT: String(exit),
 						FAKE_STDOUT: stdout,
@@ -287,7 +287,7 @@ describe("documented CLI workflows", () => {
 			const failure = runSync(["bash", "-eu", "-o", "pipefail", "-c", match![1]!], {
 				env: {
 					...process.env,
-					PATH: `${scratch}:${process.env.PATH}`,
+					PATH: `${scratch}:${process.env["PATH"]}`,
 					board: "workflow-board",
 					FAKE_EXIT: "1",
 					FAKE_STDOUT: "not published\n",

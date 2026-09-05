@@ -77,8 +77,8 @@ export interface ChangeEvent {
 // The numbers, and what they pull against, are in ./timing.ts. The overrides
 // stay here because this is a process with an environment to read; that module
 // is imported by the browser too.
-const SETTLE_MS = Number(process.env.ARCHBOARD_SETTLE_MS || DEFAULT_SETTLE_MS);
-const MAX_PENDING_MS = Number(process.env.ARCHBOARD_SETTLE_MAX_MS || DEFAULT_SETTLE_MAX_MS);
+const SETTLE_MS = Number(process.env["ARCHBOARD_SETTLE_MS"] || DEFAULT_SETTLE_MS);
+const MAX_PENDING_MS = Number(process.env["ARCHBOARD_SETTLE_MAX_MS"] || DEFAULT_SETTLE_MAX_MS);
 const MAX_EVENTS = 200;
 // Snapshots are the expensive part of the ring, so fewer are kept than events.
 // Past this depth a hook asking to coalesce is told the truth — that the

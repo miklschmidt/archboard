@@ -72,12 +72,12 @@ let reverseRequestsSent = false;
 let realtimeSessionId: string | null = null;
 
 const configResponse = () => ({
-	config: { ...configFixture, sqlite_home: process.env.CODEX_SQLITE_HOME },
+	config: { ...configFixture, sqlite_home: process.env["CODEX_SQLITE_HOME"] },
 	origins: {
 		sqlite_home: {
 			name: {
 				type: "user",
-				file: `${process.env.CODEX_HOME}/config.toml`,
+				file: `${process.env["CODEX_HOME"]}/config.toml`,
 				profile: null,
 			},
 			version: "production-fixture",
@@ -109,7 +109,7 @@ const buildThread = (
 		recencyAt: null,
 		status: { type: "idle" },
 		path: null,
-		cwd: String(params.cwd),
+		cwd: String(params["cwd"]),
 		cliVersion: "0.151.0",
 		source: "vscode",
 		canAcceptDirectInput: true,
@@ -143,36 +143,36 @@ threads.set(
 
 const threadStartResponse = (params: Record<string, unknown>, thread: FixtureThread) => ({
 	thread,
-	model: typeof params.model === "string" ? params.model : "gpt-5.6-luna",
+	model: typeof params["model"] === "string" ? params["model"] : "gpt-5.6-luna",
 	modelProvider: "openai",
-	serviceTier: params.serviceTier ?? null,
-	cwd: params.cwd,
-	runtimeWorkspaceRoots: params.runtimeWorkspaceRoots,
+	serviceTier: params["serviceTier"] ?? null,
+	cwd: params["cwd"],
+	runtimeWorkspaceRoots: params["runtimeWorkspaceRoots"],
 	instructionSources: [],
 	approvalPolicy: "never",
 	approvalsReviewer: "user",
 	sandbox: { type: "dangerFullAccess" },
 	activePermissionProfile: null,
-	reasoningEffort: params.model === "gpt-5.6-luna" ? "medium" : null,
+	reasoningEffort: params["model"] === "gpt-5.6-luna" ? "medium" : null,
 	multiAgentMode: "explicitRequestOnly",
 });
 
 const coordinatorSettings = (params: Record<string, unknown>) => ({
-	cwd: threads.get(String(params.threadId))?.cwd,
+	cwd: threads.get(String(params["threadId"]))?.["cwd"],
 	approvalPolicy: "never",
 	approvalsReviewer: "user",
 	sandboxPolicy: { type: "dangerFullAccess" },
 	activePermissionProfile: null,
-	model: params.model,
+	model: params["model"],
 	modelProvider: "openai",
-	serviceTier: params.serviceTier ?? null,
-	effort: params.effort,
+	serviceTier: params["serviceTier"] ?? null,
+	effort: params["effort"],
 	summary: "auto",
 	collaborationMode: {
 		mode: "default",
 		settings: {
-			model: params.model,
-			reasoning_effort: params.effort,
+			model: params["model"],
+			reasoning_effort: params["effort"],
 			developer_instructions: null,
 		},
 	},
@@ -241,7 +241,7 @@ const handle = (frame: WireFrame): void => {
 			}
 			respond(frame as never, {
 				userAgent: "Codex Desktop/0.151.0",
-				codexHome: process.env.CODEX_HOME,
+				codexHome: process.env["CODEX_HOME"],
 				platformFamily: "unix",
 				platformOs: "linux",
 			});
@@ -285,7 +285,7 @@ const handle = (frame: WireFrame): void => {
 			respond(frame as never, {});
 			queueMicrotask(() =>
 				notify("thread/settings/updated", {
-					threadId: params.threadId,
+					threadId: params["threadId"],
 					threadSettings: coordinatorSettings(params),
 				}),
 			);
@@ -304,11 +304,11 @@ const handle = (frame: WireFrame): void => {
 			respond(frame as never, { data: [...threads.keys()], nextCursor: null });
 			return;
 		case "thread/read":
-			if (params.includeTurns === true) {
+			if (params["includeTurns"] === true) {
 				reject(frame as never, "list_turns is not supported yet");
 				return;
 			}
-			respond(frame as never, { thread: threads.get(String(params.threadId)) });
+			respond(frame as never, { thread: threads.get(String(params["threadId"])) });
 			return;
 		case "thread/queue/list":
 			respond(frame as never, { data: [], nextCursor: null });
@@ -321,7 +321,7 @@ const handle = (frame: WireFrame): void => {
 			});
 			return;
 		case "thread/turns/list": {
-			const thread = threads.get(String(params.threadId));
+			const thread = threads.get(String(params["threadId"]));
 			respond(frame as never, {
 				data: thread?.turns ?? [],
 				nextCursor: null,
@@ -330,11 +330,11 @@ const handle = (frame: WireFrame): void => {
 			return;
 		}
 		case "thread/items/list": {
-			const thread = threads.get(String(params.threadId));
+			const thread = threads.get(String(params["threadId"]));
 			respond(frame as never, {
 				data: (thread?.turns ?? []).flatMap((turn) =>
-					((turn.items as Record<string, unknown>[] | undefined) ?? []).map((item) => ({
-						turnId: turn.id,
+					((turn["items"] as Record<string, unknown>[] | undefined) ?? []).map((item) => ({
+						turnId: turn["id"],
 						item,
 					})),
 				),
@@ -344,7 +344,7 @@ const handle = (frame: WireFrame): void => {
 			return;
 		}
 		case "turn/start": {
-			const thread = threads.get(String(params.threadId));
+			const thread = threads.get(String(params["threadId"]));
 			const isWorkhorse = thread?.id === workhorseThreadId;
 			const turn = {
 				id: `turn-${++turnSequence}`,
@@ -371,11 +371,11 @@ const handle = (frame: WireFrame): void => {
 			respond(frame as never, {});
 			return;
 		case "thread/realtime/start": {
-			if (coordinatorThreadId === null || params.threadId !== coordinatorThreadId) {
+			if (coordinatorThreadId === null || params["threadId"] !== coordinatorThreadId) {
 				reject(frame as never, "Realtime start must target the retained coordinator thread.");
 				return;
 			}
-			realtimeSessionId = String(params.realtimeSessionId);
+			realtimeSessionId = String(params["realtimeSessionId"]);
 			respond(frame as never, {});
 			setTimeout(() => {
 				const userTranscript = {
@@ -393,44 +393,44 @@ const handle = (frame: WireFrame): void => {
 					text: "The controlled voice context is visible.",
 				};
 				notify("thread/realtime/sdp", {
-					threadId: params.threadId,
+					threadId: params["threadId"],
 					sdp: "v=0\r\ns=controlled-answer-sdp\r\n",
 				});
 				notify("thread/realtime/started", {
-					threadId: params.threadId,
+					threadId: params["threadId"],
 					realtimeSessionId,
 					version: "v3",
 				});
 				notify("thread/realtime/item/started", {
-					threadId: params.threadId,
+					threadId: params["threadId"],
 					item: userTranscript,
 				});
 				notify("thread/realtime/item/completed", {
-					threadId: params.threadId,
+					threadId: params["threadId"],
 					item: userTranscript,
 				});
 				notify("thread/realtime/item/started", {
-					threadId: params.threadId,
+					threadId: params["threadId"],
 					item: assistantTranscript,
 				});
 				notify("thread/realtime/item/completed", {
-					threadId: params.threadId,
+					threadId: params["threadId"],
 					item: assistantTranscript,
 				});
 			}, 10);
 			return;
 		}
 		case "thread/realtime/stop":
-			if (coordinatorThreadId === null || params.threadId !== coordinatorThreadId) {
+			if (coordinatorThreadId === null || params["threadId"] !== coordinatorThreadId) {
 				reject(frame as never, "Realtime stop must target the retained coordinator thread.");
 				return;
 			}
-			record({ kind: "realtime_stop", realtimeSessionId, threadId: params.threadId });
+			record({ kind: "realtime_stop", realtimeSessionId, threadId: params["threadId"] });
 			respond(frame as never, {});
 			realtimeSessionId = null;
 			return;
 		case "thread/delete":
-			threads.delete(String(params.threadId));
+			threads.delete(String(params["threadId"]));
 			respond(frame as never, {});
 			return;
 		default:
@@ -467,9 +467,9 @@ const controlTimer = setInterval(() => {
 		if (control.exit === true) process.exit(17);
 		const workhorse = threads.get(workhorseThreadId ?? "");
 		const turn = workhorse?.turns[0];
-		if (control.completeWorkhorseTurn === true && workhorse && turn?.status === "inProgress") {
-			turn.status = "completed";
-			turn.completedAt = Date.now();
+		if (control.completeWorkhorseTurn === true && workhorse && turn?.["status"] === "inProgress") {
+			turn["status"] = "completed";
+			turn["completedAt"] = Date.now();
 			workhorse.status = { type: "idle" };
 			notify("turn/completed", { threadId: workhorse.id, turn });
 			notify("thread/status/changed", { threadId: workhorse.id, status: workhorse.status });

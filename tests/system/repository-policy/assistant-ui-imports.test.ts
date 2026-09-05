@@ -50,7 +50,7 @@ function run(cwd: string, command: string[]): CommandResult {
 		env: {
 			...process.env,
 			NODE_ENV: "production", // Measure Vite's production graph under Bun test.
-			PATH: `${path.join(repoRoot, "node_modules/.bin")}:${process.env.PATH ?? ""}`,
+			PATH: `${path.join(repoRoot, "node_modules/.bin")}:${process.env["PATH"] ?? ""}`,
 		},
 		stdout: "pipe",
 		stderr: "pipe",
@@ -115,10 +115,10 @@ function assistantUiDependencyGraph(): Map<string, Record<string, unknown>> {
 		const manifestPath = resolvePackageJson(name, fromDirectory);
 		if (!manifestPath) throw new Error(`missing installed assistant-ui dependency ${name}`);
 		const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as Record<string, unknown>;
-		const identity = `${String(manifest.name)}@${String(manifest.version)}`;
+		const identity = `${String(manifest["name"])}@${String(manifest["version"])}`;
 		if (packages.has(identity)) continue;
 		packages.set(identity, manifest);
-		const dependencies = manifest.dependencies;
+		const dependencies = manifest["dependencies"];
 		if (typeof dependencies !== "object" || dependencies === null) continue;
 		for (const dependency of Object.keys(dependencies))
 			pending.push([dependency, path.dirname(manifestPath)]);
@@ -165,8 +165,8 @@ describe("assistant-ui dependency and import policy", () => {
 		const graph = assistantUiDependencyGraph();
 		expect(new Set(graph.keys())).toEqual(ASSISTANT_UI_TRANSITIVE_ALLOWLIST);
 		for (const [identity, manifest] of graph) {
-			if (typeof manifest.license !== "string") throw new Error(`missing license for ${identity}`);
-			expect(["MIT", "BSD-3-Clause", "0BSD"], identity).toContain(manifest.license);
+			if (typeof manifest["license"] !== "string") throw new Error(`missing license for ${identity}`);
+			expect(["MIT", "BSD-3-Clause", "0BSD"], identity).toContain(manifest["license"]);
 		}
 	});
 	test("audits Radix declarations in every package dependency section", () => {

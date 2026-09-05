@@ -131,7 +131,7 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 
 			expect(await replacement.request("renewLease")).toMatchObject({
 				ok: true,
-				value: { commandId: replacementLease.value?.commandId },
+				value: { commandId: replacementLease.value?.["commandId"] },
 			});
 			expect((await request<{ paneCount: number }>("/api/panes")).body.paneCount).toBe(1);
 			expect(

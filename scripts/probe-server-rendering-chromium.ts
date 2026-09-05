@@ -163,7 +163,7 @@ class RendererJobError extends Error {
 		cause: unknown,
 	) {
 		super(
-			`Renderer ${job} failed in phase ${String(phase.phase ?? "unknown")}: ${(cause as Error).message}; ` +
+			`Renderer ${job} failed in phase ${String(phase["phase"] ?? "unknown")}: ${(cause as Error).message}; ` +
 				`page diagnostics=${JSON.stringify(diagnostics)}; proof=${JSON.stringify(proof)}`,
 			{ cause },
 		);
@@ -245,9 +245,9 @@ class Cdp {
 			{ expression, awaitPromise: true, returnByValue: true },
 			timeoutMs,
 		);
-		if (answer.exceptionDetails)
-			throw new Error(`Page evaluation failed: ${JSON.stringify(answer.exceptionDetails)}`);
-		return (answer.result as JsonRecord | undefined)?.value;
+		if (answer["exceptionDetails"])
+			throw new Error(`Page evaluation failed: ${JSON.stringify(answer["exceptionDetails"])}`);
+		return (answer["result"] as JsonRecord | undefined)?.["value"];
 	}
 
 	close(): void {
@@ -264,14 +264,14 @@ class Cdp {
 					return true;
 				if (event.method === "Network.loadingFailed") return true;
 				if (event.method === "Network.responseReceived") {
-					const response = event.params.response as JsonRecord | undefined;
-					return typeof response?.status === "number" && response.status >= 400;
+					const response = event.params["response"] as JsonRecord | undefined;
+					return typeof response?.["status"] === "number" && response["status"] >= 400;
 				}
 				return event.method === "Log.entryAdded";
 			})
 			.slice(-30)
 			.map((event) => {
-				const requestId = event.params.requestId;
+				const requestId = event.params["requestId"];
 				return {
 					method: event.method,
 					url: typeof requestId === "string" ? this.#requests.get(requestId) : undefined,
@@ -300,9 +300,9 @@ class Cdp {
 		if (!message.method) return;
 		const params = message.params ?? {};
 		if (message.method === "Network.requestWillBeSent") {
-			const request = params.request as JsonRecord | undefined;
-			if (typeof params.requestId === "string" && typeof request?.url === "string")
-				this.#requests.set(params.requestId, request.url);
+			const request = params["request"] as JsonRecord | undefined;
+			if (typeof params["requestId"] === "string" && typeof request?.["url"] === "string")
+				this.#requests.set(params["requestId"], request["url"]);
 		}
 		this.events.push({ method: message.method, params });
 	}
@@ -590,8 +590,8 @@ class RendererSession {
 				if (
 					!staged ||
 					typeof staged !== "object" ||
-					(staged as JsonRecord).job !== name ||
-					(staged as JsonRecord).phase !== "intentional-timeout"
+					(staged as JsonRecord)["job"] !== name ||
+					(staged as JsonRecord)["phase"] !== "intentional-timeout"
 				)
 					throw new Error(
 						`Immediate failure did not stage ${name} at intentional-timeout: ${JSON.stringify(staged)}.`,
@@ -730,12 +730,12 @@ class RendererSession {
 		let state: JsonRecord = { phase: "unavailable" };
 		while (Date.now() < deadline) {
 			state = await this.proofState();
-			if (state.phase === "ready") return;
-			if (state.status === "failed") break;
+			if (state["phase"] === "ready") return;
+			if (state["status"] === "failed") break;
 			await Bun.sleep(50);
 		}
 		throw new Error(
-			`Renderer fixture did not become ready in phase ${String(state.phase ?? "unknown")}; ` +
+			`Renderer fixture did not become ready in phase ${String(state["phase"] ?? "unknown")}; ` +
 				`page diagnostics=${JSON.stringify(this.#cdp?.diagnostics() ?? [])}; proof=${JSON.stringify(state)}`,
 		);
 	}
@@ -792,11 +792,11 @@ function exportFiles(files: Record<string, unknown>): BinaryFiles {
 		if (!raw || typeof raw !== "object") throw new Error(`Persisted file ${id} is invalid.`);
 		const file = raw as JsonRecord;
 		if (
-			file.id !== id ||
-			file.mimeType !== "image/png" ||
-			typeof file.dataURL !== "string" ||
-			!file.dataURL.startsWith("data:image/png;base64,") ||
-			typeof file.created !== "number"
+			file["id"] !== id ||
+			file["mimeType"] !== "image/png" ||
+			typeof file["dataURL"] !== "string" ||
+			!file["dataURL"].startsWith("data:image/png;base64,") ||
+			typeof file["created"] !== "number"
 		)
 			throw new Error(`Persisted file ${id} is not a complete PNG export file.`);
 	}
@@ -805,13 +805,13 @@ function exportFiles(files: Record<string, unknown>): BinaryFiles {
 
 function assertPng(result: JsonRecord): void {
 	const png = requireRecord(result, "png");
-	if (requireNumber(png.bytes, "PNG byte count is missing.") < 1)
+	if (requireNumber(png["bytes"], "PNG byte count is missing.") < 1)
 		throw new Error("PNG export is empty.");
-	requireSha256(png.hash, "PNG SHA-256 is missing.");
-	requireBoolean(png.isPng, "PNG signature is invalid.");
+	requireSha256(png["hash"], "PNG SHA-256 is missing.");
+	requireBoolean(png["isPng"], "PNG signature is invalid.");
 	const semantics = requireRecord(png, "semantics");
-	const width = requireNumber(semantics.width, "PNG width is missing.");
-	const height = requireNumber(semantics.height, "PNG height is missing.");
+	const width = requireNumber(semantics["width"], "PNG width is missing.");
+	const height = requireNumber(semantics["height"], "PNG height is missing.");
 	if (width < 500 || height < 300)
 		throw new Error(`PNG dimensions are implausible: ${width}x${height}.`);
 	const colors = requireRecord(semantics, "colors");
@@ -820,30 +820,30 @@ function assertPng(result: JsonRecord): void {
 	const store = requireRecord(colors, "store");
 	const decision = requireRecord(colors, "decision");
 	for (const [name, color] of Object.entries({ background, service, store, decision })) {
-		if (requireNumber(color.count, `PNG ${name} colour count is missing.`) < 100)
+		if (requireNumber(color["count"], `PNG ${name} colour count is missing.`) < 100)
 			throw new Error(`PNG lacks visible ${name} colour pixels.`);
 	}
 	if (
-		requireNumber(service.maxX, "PNG service bounds missing.") >=
-			requireNumber(store.minX, "PNG store bounds missing.") ||
-		requireNumber(decision.minY, "PNG decision bounds missing.") <=
-			requireNumber(service.maxY, "PNG service bounds missing.")
+		requireNumber(service["maxX"], "PNG service bounds missing.") >=
+			requireNumber(store["minX"], "PNG store bounds missing.") ||
+		requireNumber(decision["minY"], "PNG decision bounds missing.") <=
+			requireNumber(service["maxY"], "PNG service bounds missing.")
 	)
 		throw new Error("PNG fixture regions are not in the expected service, store, decision layout.");
 }
 
 function assertSvg(result: JsonRecord): void {
 	const svg = requireRecord(result, "svg");
-	if (requireNumber(svg.bytes, "SVG byte count is missing.") < 1)
+	if (requireNumber(svg["bytes"], "SVG byte count is missing.") < 1)
 		throw new Error("SVG export is empty.");
-	requireSha256(svg.hash, "SVG SHA-256 is missing.");
+	requireSha256(svg["hash"], "SVG SHA-256 is missing.");
 	const semantics = requireRecord(svg, "semantics");
-	if (semantics.root !== "svg") throw new Error("SVG root is not svg.");
-	requireBoolean(semantics.background, "SVG lacks the persisted background.");
+	if (semantics["root"] !== "svg") throw new Error("SVG root is not svg.");
+	requireBoolean(semantics["background"], "SVG lacks the persisted background.");
 	if (
-		!Array.isArray(semantics.fills) ||
-		semantics.fills.some(
-			(fill) => !fill || typeof fill !== "object" || (fill as JsonRecord).present !== true,
+		!Array.isArray(semantics["fills"]) ||
+		semantics["fills"].some(
+			(fill) => !fill || typeof fill !== "object" || (fill as JsonRecord)["present"] !== true,
 		)
 	)
 		throw new Error("SVG lacks one of the persisted fixture fills.");
@@ -855,24 +855,24 @@ function assertSvg(result: JsonRecord): void {
 		["hasArrowVisual", "SVG lacks the bound arrow visual."],
 	] as const)
 		requireBoolean(semantics[key], message);
-	if (!Array.isArray(semantics.shapes) || semantics.shapes.length < 8)
+	if (!Array.isArray(semantics["shapes"]) || semantics["shapes"].length < 8)
 		throw new Error("SVG does not contain enough native rendered shapes.");
 }
 
 function assertMermaid(result: JsonRecord): void {
 	const mermaid = requireRecord(result, "mermaid");
-	if (requireNumber(mermaid.elementCount, "Mermaid element count is missing.") < 5)
+	if (requireNumber(mermaid["elementCount"], "Mermaid element count is missing.") < 5)
 		throw new Error("Mermaid conversion returned too few elements.");
-	if (result.invalidMermaid !== "Error")
+	if (result["invalidMermaid"] !== "Error")
 		throw new Error("Malformed Mermaid did not reject with Error.");
 	const semantics = requireRecord(mermaid, "elements");
-	const nodes = semantics.nodes;
-	const edges = semantics.edges;
+	const nodes = semantics["nodes"];
+	const edges = semantics["edges"];
 	if (!Array.isArray(nodes) || !Array.isArray(edges))
 		throw new Error("Mermaid graph summary is absent.");
-	const labels = nodes.map((node) => (node as JsonRecord).label).toSorted();
+	const labels = nodes.map((node) => (node as JsonRecord)["label"]).toSorted();
 	const connections = edges
-		.map((edge) => `${String((edge as JsonRecord).from)}>${String((edge as JsonRecord).to)}`)
+		.map((edge) => `${String((edge as JsonRecord)["from"])}>${String((edge as JsonRecord)["to"])}`)
 		.toSorted();
 	if (
 		JSON.stringify(labels) !==
@@ -886,7 +886,7 @@ function assertMermaid(result: JsonRecord): void {
 }
 
 function assertSemantics(result: JsonRecord): void {
-	if ("error" in result) throw new Error(`Browser probe failed: ${JSON.stringify(result.error)}`);
+	if ("error" in result) throw new Error(`Browser probe failed: ${JSON.stringify(result["error"])}`);
 	assertPng(result);
 	assertSvg(result);
 	assertMermaid(result);
@@ -917,11 +917,11 @@ function loadPersistedRenderInput(): JsonRecord {
 		!service ||
 		!label ||
 		!arrow ||
-		!Array.isArray(service.boundElements) ||
-		!service.boundElements.some((binding) => (binding as JsonRecord).id === "label") ||
-		label.containerId !== "svc" ||
-		(arrow.startBinding as JsonRecord | undefined)?.elementId !== "svc" ||
-		(arrow.endBinding as JsonRecord | undefined)?.elementId !== "store"
+		!Array.isArray(service["boundElements"]) ||
+		!service["boundElements"].some((binding) => (binding as JsonRecord)["id"] === "label") ||
+		label["containerId"] !== "svc" ||
+		(arrow["startBinding"] as JsonRecord | undefined)?.["elementId"] !== "svc" ||
+		(arrow["endBinding"] as JsonRecord | undefined)?.["elementId"] !== "store"
 	)
 		throw new Error(
 			"Canonical persisted board fixture lost its bound label or arrow relationship.",
@@ -1083,12 +1083,12 @@ async function startFixtureServer(
 
 async function runInboundMermaid(result: JsonRecord): Promise<JsonRecord> {
 	const mermaid = requireRecord(result, "mermaid");
-	const raw = mermaid.rawElements;
+	const raw = mermaid["rawElements"];
 	if (!Array.isArray(raw)) throw new Error("Browser Mermaid result has no element array.");
 	const ids = new Map<string, string>();
 	const used = new Set<string>();
 	for (const element of raw) {
-		const source = (element as JsonRecord).id;
+		const source = (element as JsonRecord)["id"];
 		if (typeof source !== "string") throw new Error("Mermaid element has no source id.");
 		const id = derivedId(`mermaid:${source}`, used);
 		used.add(id);
@@ -1096,13 +1096,13 @@ async function runInboundMermaid(result: JsonRecord): Promise<JsonRecord> {
 	}
 	const input = raw.map((element) => {
 		const source = element as JsonRecord;
-		const start = source.start as JsonRecord | undefined;
-		const end = source.end as JsonRecord | undefined;
+		const start = source["start"] as JsonRecord | undefined;
+		const end = source["end"] as JsonRecord | undefined;
 		return {
 			...source,
-			id: ids.get(source.id as string),
-			...(start && typeof start.id === "string" ? { start: { id: ids.get(start.id) } } : {}),
-			...(end && typeof end.id === "string" ? { end: { id: ids.get(end.id) } } : {}),
+			id: ids.get(source["id"] as string),
+			...(start && typeof start["id"] === "string" ? { start: { id: ids.get(start["id"]) } } : {}),
+			...(end && typeof end["id"] === "string" ? { end: { id: ids.get(end["id"]) } } : {}),
 		};
 	});
 	const board = new Map<string, ServerElement>();
@@ -1198,7 +1198,7 @@ async function requireRuntimeEvaluateTimeout(
 		const elapsedMs = performance.now() - startedAt;
 		if (!(error instanceof RendererJobError)) throw new TimeoutOracleRejectionError("job", error);
 		if (error.job !== name) throw new TimeoutOracleRejectionError("job", error);
-		if (error.phase.phase !== "intentional-timeout")
+		if (error.phase["phase"] !== "intentional-timeout")
 			throw new TimeoutOracleRejectionError("phase", error);
 		if (!(error.cause instanceof CdpTimeoutError))
 			throw new TimeoutOracleRejectionError("cause", error);
@@ -1233,7 +1233,7 @@ async function proveImmediateFailureIsNotTimeout(session: RendererSession): Prom
 	if (
 		!(rejection.cause instanceof RendererJobError) ||
 		rejection.cause.job !== "intentional-timeout" ||
-		rejection.cause.phase.phase !== "intentional-timeout" ||
+		rejection.cause.phase["phase"] !== "intentional-timeout" ||
 		rejection.cause.cause instanceof CdpTimeoutError
 	)
 		throw new Error(
@@ -1422,7 +1422,7 @@ try {
 			throw new Error(
 				`Renderer child exit was not surfaced to the caller: ${rejection ?? "no error"}`,
 			);
-		report.childExit = { startup, exitCode: childExit.child.exitCode, rejection };
+		report["childExit"] = { startup, exitCode: childExit.child.exitCode, rejection };
 	} catch (error) {
 		childExitActionFailure = error;
 	}
@@ -1441,7 +1441,7 @@ try {
 		const startup = await replacement.start(fixture.url);
 		const job = await replacement.runJob("replacement");
 		assertSemantics(job.result);
-		report.replacement = {
+		report["replacement"] = {
 			startup,
 			job,
 			memory: replacement.memory(),
@@ -1495,7 +1495,7 @@ try {
 			};
 		}
 	}
-	report.cleanup = {
+	report["cleanup"] = {
 		temporaryOutput: {
 			directory: output,
 			exists: existsSync(output),

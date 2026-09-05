@@ -20,11 +20,11 @@ import type * as ElementSupport from "./support/elements.ts";
 import type * as OpenerSupport from "./support/opener-fixture.ts";
 import type { Invocation, OpenerFixture } from "./support/opener-fixture.ts";
 
-const callerVault = process.env.ARCHBOARD_VAULT;
+const callerVault = process.env["ARCHBOARD_VAULT"];
 const ownerVault = mkdtempSync(join(tmpdir(), "archboard-code-target-owner-"));
 // The default route dependency reads canonical board notes in this process.
 // Set its vault before importing either the route fixture or the board graph.
-process.env.ARCHBOARD_VAULT = ownerVault;
+process.env["ARCHBOARD_VAULT"] = ownerVault;
 
 let configuredVault: string | undefined;
 let makeIdentity: typeof BoardModule.makeIdentity;
@@ -46,8 +46,8 @@ afterAll(() => {
 	try {
 		rmSync(ownerVault, { recursive: true, force: true });
 	} finally {
-		if (callerVault === undefined) delete process.env.ARCHBOARD_VAULT;
-		else process.env.ARCHBOARD_VAULT = callerVault;
+		if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
+		else process.env["ARCHBOARD_VAULT"] = callerVault;
 	}
 });
 
@@ -68,7 +68,7 @@ async function activate(
 
 describe("public code-target activation contract", () => {
 	test("uses its owned vault for default route dependencies", () => {
-		expect(process.env.ARCHBOARD_VAULT).toBe(ownerVault);
+		expect(process.env["ARCHBOARD_VAULT"]).toBe(ownerVault);
 		expect(configuredVault).toBe(ownerVault);
 	});
 

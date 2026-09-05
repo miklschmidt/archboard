@@ -45,8 +45,8 @@ function isSessionQueuedSubmission(value: unknown): value is SessionQueuedSubmis
 }
 
 function responseSubmission(value: unknown): SessionQueuedSubmission | null {
-	if (!isRecord(value) || !isRecord(value.queuedSubmission)) return null;
-	const candidate = value.queuedSubmission;
+	if (!isRecord(value) || !isRecord(value["queuedSubmission"])) return null;
+	const candidate = value["queuedSubmission"];
 	return isSessionQueuedSubmission(candidate) ? candidate : null;
 }
 
@@ -120,8 +120,8 @@ export function expectedDelete(
 	response: unknown,
 	submissionId: SessionQueuedSubmission["id"],
 ): boolean {
-	if (!isRecord(response) || typeof response.deleted !== "boolean") return false;
-	return response.deleted
+	if (!isRecord(response) || typeof response["deleted"] !== "boolean") return false;
+	return response["deleted"]
 		? sameQueue(after, queueWithout(before, submissionId))
 		: sameQueue(after, before);
 }

@@ -129,7 +129,7 @@ function preflightResponse(
 			success: true,
 			...boardState,
 			source: "vault",
-			pane: record.pane ? paneRef : null,
+			pane: record["pane"] ? paneRef : null,
 		});
 	if (method === "POST" && url.pathname === "/api/panes/open")
 		return Response.json({
@@ -248,7 +248,7 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 				});
 			}
 			if (request.method === "POST" && url.pathname === "/api/render/board") {
-				const format = record.format === "svg" ? "svg" : "png";
+				const format = record["format"] === "svg" ? "svg" : "png";
 				return Response.json({
 					success: true,
 					board: "contract",
@@ -257,9 +257,9 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 					data: format === "svg" ? '<svg width="320" height="180"></svg>' : findingPng,
 					width: 320,
 					height: 180,
-					padding: record.padding ?? 16,
-					scale: record.scale ?? 1,
-					background: record.background ?? true,
+					padding: record["padding"] ?? 16,
+					scale: record["scale"] ?? 1,
+					background: record["background"] ?? true,
 					backgroundColor: "#ffffff",
 				});
 			}
@@ -304,11 +304,11 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 				const receiptFacts = {
 					...bridgeFacts,
 					overConnectorId:
-						record.over === "invalid-receipt"
+						record["over"] === "invalid-receipt"
 							? "wrong-over"
-							: record.over === "mask-source-collision"
+							: record["over"] === "mask-source-collision"
 								? bridgeFacts.bridgeId
-								: record.over === "redraw-source-collision"
+								: record["over"] === "redraw-source-collision"
 									? "Redraw01"
 									: bridgeFacts.overConnectorId,
 				};
@@ -322,7 +322,7 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 					underSegmentIndex: receiptFacts.underSegmentIndex,
 					crossing: receiptFacts.crossing,
 					elements:
-						record.over === "invalid-receipt"
+						record["over"] === "invalid-receipt"
 							? bridgePartsFor(bridgeFacts)
 							: bridgePartsFor(receiptFacts),
 					fingerprint,
@@ -339,7 +339,7 @@ export function createCliHttpDouble(observed: string[] = []): CliHttpDouble {
 					fingerprint,
 				});
 			}
-			const askedForDocument = url.searchParams.get("document") === "1" || record.document === true;
+			const askedForDocument = url.searchParams.get("document") === "1" || record["document"] === true;
 			if (url.pathname.startsWith("/api/elements"))
 				return Response.json({
 					success: true,

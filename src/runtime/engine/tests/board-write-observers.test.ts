@@ -14,7 +14,7 @@ import type { ServerElement } from "../types.js";
 import { withLockHandoffReadFault } from "./support/board-lock-test-adapter.js";
 
 const root = mkdtempSync(join(tmpdir(), "archboard-board-observers-"));
-const previousVault = process.env.ARCHBOARD_VAULT;
+const previousVault = process.env["ARCHBOARD_VAULT"];
 let boardModule: typeof BoardModule;
 let ioModule: typeof BoardIoModule;
 let storeModule: typeof BoardStoreModule;
@@ -39,7 +39,7 @@ const boxElement = (id: string) =>
 	}) as ServerElement;
 
 beforeAll(async () => {
-	process.env.ARCHBOARD_VAULT = root;
+	process.env["ARCHBOARD_VAULT"] = root;
 	const atomicModule: typeof AtomicWriteModule = await import("../atomic-write.js");
 	atomicWriteSpy = spyOn(atomicModule, "writeFileAtomic");
 	boardModule = await import("../board.js");
@@ -53,8 +53,8 @@ beforeAll(async () => {
 
 afterAll(() => {
 	for (const key of ownedKeys) storeModule?.boards.delete(key);
-	if (previousVault === undefined) delete process.env.ARCHBOARD_VAULT;
-	else process.env.ARCHBOARD_VAULT = previousVault;
+	if (previousVault === undefined) delete process.env["ARCHBOARD_VAULT"];
+	else process.env["ARCHBOARD_VAULT"] = previousVault;
 	rmSync(root, { recursive: true, force: true });
 });
 
@@ -332,7 +332,7 @@ describe.serial("post-commit pane observers", () => {
 		const second = write("second", observe as BoardWriteModule.TellPanes);
 		const third = write("third", observe as BoardWriteModule.TellPanes);
 		const fourth = write("fourth", observe as BoardWriteModule.TellPanes);
-		expect([second.version, third.version, fourth.version]).toEqual([3, 4, 5]);
+		expect([second["version"], third["version"], fourth["version"]]).toEqual([3, 4, 5]);
 		expect(scheduled).toEqual([]);
 		await flushNotifications();
 		expect(scheduled).toEqual(["second", "third", "fourth"]);

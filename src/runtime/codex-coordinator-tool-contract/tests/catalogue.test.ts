@@ -59,7 +59,7 @@ describe("coordinator namespace manifests", () => {
 			expect(namespace.type).toBe("namespace");
 			expect(namespace.tools.every((tool) => tool.type === "function")).toBe(true);
 			expect(namespace.tools.every((tool) => !tool.deferLoading)).toBe(true);
-			expect(namespace.tools.every((tool) => tool.inputSchema.additionalProperties === false)).toBe(
+			expect(namespace.tools.every((tool) => tool.inputSchema["additionalProperties"] === false)).toBe(
 				true,
 			);
 		}

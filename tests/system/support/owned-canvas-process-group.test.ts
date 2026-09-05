@@ -38,10 +38,10 @@ async function readJson(canvas: OwnedCanvas, responsePromise: Promise<Response>)
 	}
 }
 
-if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "early-death") {
+if (process.env["ARCHBOARD_LIFECYCLE_SERVER"] === "early-death") {
 	Bun.serve({
 		hostname: "127.0.0.1",
-		port: Number(process.env.PORT),
+		port: Number(process.env["PORT"]),
 		fetch(request) {
 			const pathname = new URL(request.url).pathname;
 			if (pathname === "/health") return Response.json({ pid: process.pid });
@@ -64,7 +64,7 @@ if (process.env.ARCHBOARD_LIFECYCLE_SERVER === "early-death") {
 	await new Promise(() => undefined);
 }
 
-const childMode = process.env.ARCHBOARD_LIFECYCLE_CHILD;
+const childMode = process.env["ARCHBOARD_LIFECYCLE_CHILD"];
 if (childMode) {
 	const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-lifecycle-child-"));
 	let owned: OwnedCanvas | undefined;
@@ -90,7 +90,7 @@ if (childMode) {
 		);
 		if (childMode === "interrupt") await new Promise(() => undefined);
 		if (childMode === "concurrent" || childMode === "concurrent-failure") {
-			const releaseFile = process.env.ARCHBOARD_LIFECYCLE_RELEASE_FILE;
+			const releaseFile = process.env["ARCHBOARD_LIFECYCLE_RELEASE_FILE"];
 			if (!releaseFile) throw new Error("Concurrent lifecycle child has no release file.");
 			while (!fs.existsSync(releaseFile)) await Bun.sleep(TEST_CANVAS_HEALTH_POLL_MS);
 			if (childMode === "concurrent-failure") throw new Error("intentional concurrent failure");
@@ -212,8 +212,8 @@ describe("owned canvas lifecycle", () => {
 		const releaseFile = path.join(coordinationRoot, "release");
 		const ready = new Set<string>();
 		const releaseWhenAllAreOwned = (record: Record<string, unknown>): void => {
-			if (record.marker !== "owned-canvas" || typeof record.base !== "string") return;
-			ready.add(record.base);
+			if (record["marker"] !== "owned-canvas" || typeof record["base"] !== "string") return;
+			ready.add(record["base"]);
 			if (ready.size === 4) fs.writeFileSync(releaseFile, "release\n");
 		};
 		const results = await Promise.all(
@@ -250,8 +250,8 @@ describe("owned canvas lifecycle", () => {
 				expect(fs.existsSync(owned.vault)).toBeFalse();
 				expect(fs.existsSync(owned.namespaceRoot)).toBeFalse();
 				if (mode === "early-death") {
-					const report = result.records.find((record) => record.marker === "early-death");
-					expect({ marker: report?.marker, reported: String(report?.reported) }).toEqual({
+					const report = result.records.find((record) => record["marker"] === "early-death");
+					expect({ marker: report?.["marker"], reported: String(report?.["reported"]) }).toEqual({
 						marker: "early-death",
 						reported: expect.stringMatching(
 							/(?=.*died)(?=.*intentional early canvas death after response headers)/s,
@@ -276,8 +276,8 @@ describe("owned canvas lifecycle", () => {
 			await runLifecycleChild("timeout", {
 				timeoutMs: TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 				onRecord(record) {
-					if (record.marker !== "retired-canvas") return;
-					const base = String(record.base);
+					if (record["marker"] !== "retired-canvas") return;
+					const base = String(record["base"]);
 					foreign = Bun.serve({
 						hostname: "127.0.0.1",
 						port: Number(new URL(base).port),

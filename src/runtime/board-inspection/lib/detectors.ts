@@ -488,10 +488,10 @@ type RecordMap = ReadonlyMap<string, DecodedRecord>;
 type RawRecord = Readonly<Record<string, unknown>>;
 
 const locatableOrigin = (raw: RawRecord): raw is RawRecord & { x: number; y: number } =>
-	typeof raw.x === "number" &&
-	Number.isFinite(raw.x) &&
-	typeof raw.y === "number" &&
-	Number.isFinite(raw.y);
+	typeof raw["x"] === "number" &&
+	Number.isFinite(raw["x"]) &&
+	typeof raw["y"] === "number" &&
+	Number.isFinite(raw["y"]);
 
 const storedExtent = (record: DecodedRecord, raw: RawRecord): ExactBox | null =>
 	record.evidenceBox ?? (locatableOrigin(raw) ? { x: raw.x, y: raw.y, width: 0, height: 0 } : null);
@@ -581,8 +581,8 @@ function unusablePathFinding(record: DecodedRecord, raw: RawRecord): InspectionF
 				details: {
 					connectorId: record.id,
 					sourceIndex: record.sourceIndex,
-					rawPointsKind: kindOf(raw.points),
-					rawPointsDescription: stableDescription(raw.points),
+					rawPointsKind: kindOf(raw["points"]),
+					rawPointsDescription: stableDescription(raw["points"]),
 					pointCount: null,
 					minimumRequired: 2,
 					issue: "non-array",
@@ -630,7 +630,7 @@ function connectorGeometryFindings(
 	const refs = [record.ref];
 	const decoded = decodePath(record);
 	const pathEvidence = decodedPathEvidence(record, raw, decoded.scenePoints);
-	const angle = raw.angle;
+	const angle = raw["angle"];
 	const unsupportedRotation = angle !== undefined && angle !== 0;
 	if (unsupportedRotation)
 		findings.push(
@@ -648,7 +648,7 @@ function connectorGeometryFindings(
 				...pathEvidence,
 			}),
 		);
-	const unsupportedCurve = raw.curve !== undefined || raw.curveKind !== undefined;
+	const unsupportedCurve = raw["curve"] !== undefined || raw["curveKind"] !== undefined;
 	if (unsupportedCurve)
 		findings.push(
 			make({
@@ -656,7 +656,7 @@ function connectorGeometryFindings(
 				reason: "curve",
 				severity: "warning",
 				affectsCoverage: true,
-				details: { curveKind: stableDescription(raw.curveKind ?? raw.curve) },
+				details: { curveKind: stableDescription(raw["curveKind"] ?? raw["curve"]) },
 				message: `Connector ${record.id ?? record.sourceIndex} is curved.`,
 				elements: refs,
 				...pathEvidence,
@@ -671,9 +671,9 @@ function connectorGeometryFindings(
 				severity: "warning",
 				affectsCoverage: true,
 				details: {
-					roundness: raw.roundness == null ? null : stableDescription(raw.roundness),
-					elbowed: raw.elbowed === true,
-					fixedSegments: raw.fixedSegments != null,
+					roundness: raw["roundness"] == null ? null : stableDescription(raw["roundness"]),
+					elbowed: raw["elbowed"] === true,
+					fixedSegments: raw["fixedSegments"] != null,
 				},
 				message:
 					eligibility.issue === "elbow-coordinate-limit"
@@ -714,17 +714,17 @@ function connectorGeometryFindings(
 			b: decoded.scenePoints[index + 1]!,
 		});
 	}
-	const measured = measureLinear(raw.points);
+	const measured = measureLinear(raw["points"]);
 	if (
 		!measured ||
-		typeof raw.width !== "number" ||
-		!Number.isFinite(raw.width) ||
-		typeof raw.height !== "number" ||
-		!Number.isFinite(raw.height)
+		typeof raw["width"] !== "number" ||
+		!Number.isFinite(raw["width"]) ||
+		typeof raw["height"] !== "number" ||
+		!Number.isFinite(raw["height"])
 	)
 		return findings;
-	const widthDelta = Math.abs(raw.width - measured.width),
-		heightDelta = Math.abs(raw.height - measured.height);
+	const widthDelta = Math.abs(raw["width"] - measured.width),
+		heightDelta = Math.abs(raw["height"] - measured.height);
 	const staleWidth = widthDelta >= policy.dimensionTolerance,
 		staleHeight = heightDelta >= policy.dimensionTolerance;
 	if (staleWidth || staleHeight)
@@ -735,8 +735,8 @@ function connectorGeometryFindings(
 				severity: "error",
 				affectsCoverage: false,
 				details: {
-					storedWidth: raw.width,
-					storedHeight: raw.height,
+					storedWidth: raw["width"],
+					storedHeight: raw["height"],
 					measuredWidth: measured.width,
 					measuredHeight: measured.height,
 					widthDelta,
@@ -788,16 +788,16 @@ function bindingIssue(value: unknown): BindingInspection {
 	let issue: Exclude<BindingIssue, BlockingBindingIssue> | null = null;
 	if (binding) {
 		if (!("focus" in binding)) issue = "missing-focus";
-		else if (typeof binding.focus !== "number" || !Number.isFinite(binding.focus))
+		else if (typeof binding["focus"] !== "number" || !Number.isFinite(binding["focus"]))
 			issue = "nonfinite-focus";
 		else if (!("gap" in binding)) issue = "missing-gap";
-		else if (typeof binding.gap !== "number" || !Number.isFinite(binding.gap))
+		else if (typeof binding["gap"] !== "number" || !Number.isFinite(binding["gap"]))
 			issue = "nonfinite-gap";
 		else if (
-			binding.fixedPoint != null &&
-			(!Array.isArray(binding.fixedPoint) ||
-				binding.fixedPoint.length !== 2 ||
-				binding.fixedPoint.some((n) => typeof n !== "number" || !Number.isFinite(n)))
+			binding["fixedPoint"] != null &&
+			(!Array.isArray(binding["fixedPoint"]) ||
+				binding["fixedPoint"].length !== 2 ||
+				binding["fixedPoint"].some((n) => typeof n !== "number" || !Number.isFinite(n)))
 		)
 			issue = "invalid-fixed-point";
 	}
@@ -903,8 +903,8 @@ function connectorBindingFindings(
 						entry &&
 						typeof entry === "object" &&
 						!Array.isArray(entry) &&
-						(entry as Record<string, unknown>).id === record.id &&
-						(entry as Record<string, unknown>).type === "arrow",
+						(entry as Record<string, unknown>)["id"] === record.id &&
+						(entry as Record<string, unknown>)["type"] === "arrow",
 				)
 			)
 				findings.push(
@@ -930,12 +930,12 @@ function persistedEndpointFindings(record: DecodedRecord, raw: RawRecord): Inspe
 	for (const end of ["start", "end"] as const) {
 		const input = raw[end];
 		if (!input || typeof input !== "object" || Array.isArray(input)) continue;
-		const inputId = (input as Record<string, unknown>).id;
+		const inputId = (input as Record<string, unknown>)["id"];
 		if (typeof inputId !== "string" || !inputId) continue;
 		const binding = raw[`${end}Binding`];
 		const bindingId =
 			binding && typeof binding === "object" && !Array.isArray(binding)
-				? (binding as Record<string, unknown>).elementId
+				? (binding as Record<string, unknown>)["elementId"]
 				: null;
 		if (bindingId !== inputId)
 			findings.push(
@@ -965,7 +965,7 @@ function boundElementFindings(
 	byId: RecordMap,
 	duplicateIds: ReadonlySet<string>,
 ): InspectionFinding[] {
-	const bounds = raw.boundElements;
+	const bounds = raw["boundElements"];
 	if (bounds == null) return [];
 	const findings: InspectionFinding[] = [];
 	const { readableEntries, problems } = classifyBoundElements(bounds);
@@ -1039,7 +1039,7 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 	if (
 		metadata &&
 		"node" in metadata &&
-		(typeof metadata.node !== "string" || metadata.node.length === 0) &&
+		(typeof metadata["node"] !== "string" || metadata["node"].length === 0) &&
 		record.id
 	)
 		findings.push(
@@ -1048,13 +1048,13 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 				reason: "invalid-node-metadata",
 				severity: "error",
 				affectsCoverage: true,
-				details: { elementId: record.id, valueKind: kindOf(metadata.node) },
+				details: { elementId: record.id, valueKind: kindOf(metadata["node"]) },
 				message: `Element ${record.id} has invalid node metadata.`,
 				elements: [record.ref],
 				affected: record.evidenceBox,
 			}),
 		);
-	const binding = metadata?.binding;
+	const binding = metadata?.["binding"];
 	if (binding === undefined || !record.id) return findings;
 	const object =
 		binding && typeof binding === "object" && !Array.isArray(binding)
@@ -1063,14 +1063,14 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 	const issues: string[] = [];
 	if (!object) issues.push("binding must be an object");
 	else {
-		if (typeof object.path !== "string" || !object.path)
+		if (typeof object["path"] !== "string" || !object["path"])
 			issues.push("path must be a nonempty string");
 		if (
-			typeof object.path === "string" &&
-			(object.path.startsWith("/") || object.path.split("/").includes(".."))
+			typeof object["path"] === "string" &&
+			(object["path"].startsWith("/") || object["path"].split("/").includes(".."))
 		)
 			issues.push("path must be repository-relative and usable");
-		if (object.repo !== undefined && typeof object.repo !== "string")
+		if (object["repo"] !== undefined && typeof object["repo"] !== "string")
 			issues.push("repo must be a string");
 	}
 	if (issues.length)
@@ -1086,14 +1086,14 @@ function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFind
 				affected: record.evidenceBox,
 			}),
 		);
-	if (typeof raw.link === "string" && raw.link)
+	if (typeof raw["link"] === "string" && raw["link"])
 		findings.push(
 			make({
 				code: "BROKEN_REFERENCE",
 				reason: "derived-link-persisted",
 				severity: "error",
 				affectsCoverage: false,
-				details: { elementId: record.id, link: raw.link },
+				details: { elementId: record.id, link: raw["link"] },
 				message: `Element ${record.id} persists a derived binding link.`,
 				elements: [record.ref],
 				affected: record.evidenceBox,
@@ -1117,7 +1117,7 @@ function fontFindings(
 				},
 			]
 		: [];
-	if (!("fontFamily" in raw) || raw.fontFamily === undefined)
+	if (!("fontFamily" in raw) || raw["fontFamily"] === undefined)
 		return allowed !== "any" && !allowed.includes(1)
 			? [
 					make({
@@ -1134,9 +1134,9 @@ function fontFindings(
 				]
 			: [];
 	if (
-		typeof raw.fontFamily !== "number" ||
-		!Number.isInteger(raw.fontFamily) ||
-		![1, 2, 3, 5, 6, 7, 8].includes(raw.fontFamily)
+		typeof raw["fontFamily"] !== "number" ||
+		!Number.isInteger(raw["fontFamily"]) ||
+		![1, 2, 3, 5, 6, 7, 8].includes(raw["fontFamily"])
 	)
 		return [
 			make({
@@ -1145,8 +1145,8 @@ function fontFindings(
 				severity: "warning",
 				affectsCoverage: false,
 				details: {
-					rawType: kindOf(raw.fontFamily),
-					rawDescription: stableDescription(raw.fontFamily),
+					rawType: kindOf(raw["fontFamily"]),
+					rawDescription: stableDescription(raw["fontFamily"]),
 					allowedFamilies: allowed,
 				},
 				message: `Text ${record.id ?? record.sourceIndex} has invalid persisted fontFamily.`,
@@ -1155,7 +1155,7 @@ function fontFindings(
 				affected: record.evidenceBox,
 			}),
 		];
-	return allowed !== "any" && !allowed.includes(raw.fontFamily as 1 | 2 | 3 | 5 | 6 | 7 | 8)
+	return allowed !== "any" && !allowed.includes(raw["fontFamily"] as 1 | 2 | 3 | 5 | 6 | 7 | 8)
 		? [
 				make({
 					code: "FONT_POLICY_VIOLATION",
@@ -1163,11 +1163,11 @@ function fontFindings(
 					severity: "warning",
 					affectsCoverage: false,
 					details: {
-						rawFamily: raw.fontFamily,
-						effectiveFamily: raw.fontFamily,
+						rawFamily: raw["fontFamily"],
+						effectiveFamily: raw["fontFamily"],
 						allowedFamilies: allowed,
 					},
-					message: `Text ${record.id ?? record.sourceIndex} uses disallowed font family ${raw.fontFamily}.`,
+					message: `Text ${record.id ?? record.sourceIndex} uses disallowed font family ${raw["fontFamily"]}.`,
 					elements: [record.ref],
 					points,
 					affected: record.evidenceBox,
@@ -1179,8 +1179,8 @@ function fontFindings(
 function containerFindings(record: DecodedRecord, raw: RawRecord): InspectionFinding[] {
 	if (
 		record.type !== "text" ||
-		raw.containerId == null ||
-		(typeof raw.containerId === "string" && raw.containerId.length > 0)
+		raw["containerId"] == null ||
+		(typeof raw["containerId"] === "string" && raw["containerId"].length > 0)
 	)
 		return [];
 	return [
@@ -1192,9 +1192,9 @@ function containerFindings(record: DecodedRecord, raw: RawRecord): InspectionFin
 			details: {
 				textId: record.id,
 				sourceIndex: record.sourceIndex,
-				rawKind: kindOf(raw.containerId),
-				rawDescription: stableDescription(raw.containerId),
-				issue: raw.containerId === "" ? "empty-container-id" : "non-string-container-id",
+				rawKind: kindOf(raw["containerId"]),
+				rawDescription: stableDescription(raw["containerId"]),
+				issue: raw["containerId"] === "" ? "empty-container-id" : "non-string-container-id",
 				ownerClassificationBlocked: true,
 			},
 			message: `Text ${record.id ?? record.sourceIndex} has a malformed containerId.`,
@@ -1286,8 +1286,8 @@ function unsupportedGeometryFindings(
 	if (
 		record.type !== "arrow" &&
 		record.type !== "line" &&
-		raw.angle !== undefined &&
-		raw.angle !== 0 &&
+		raw["angle"] !== undefined &&
+		raw["angle"] !== 0 &&
 		hasCoverageRoleEvidence(record, hasIncomingReference)
 	)
 		findings.push(
@@ -1298,16 +1298,16 @@ function unsupportedGeometryFindings(
 				affectsCoverage: true,
 				details: {
 					angle:
-						typeof raw.angle === "number" && Number.isFinite(raw.angle)
-							? raw.angle
-							: stableDescription(raw.angle),
+						typeof raw["angle"] === "number" && Number.isFinite(raw["angle"])
+							? raw["angle"]
+							: stableDescription(raw["angle"]),
 				},
 				message: `Element ${record.id ?? record.sourceIndex} is rotated.`,
 				elements: [record.ref],
 				affected: record.evidenceBox,
 			}),
 		);
-	const rawType = raw.type;
+	const rawType = raw["type"];
 	const canonicalType = typeof rawType === "string" && rawType.length > 0;
 	if (
 		(!canonicalType || !KNOWN_ELEMENT_TYPES.has(typeof rawType === "string" ? rawType : "")) &&
@@ -1341,11 +1341,11 @@ function incomingReferenceIds(records: readonly DecodedRecord[]): ReadonlySet<st
 		for (const end of ["start", "end"] as const) {
 			const binding = raw[`${end}Binding`];
 			if (binding && typeof binding === "object" && !Array.isArray(binding))
-				add((binding as RawRecord).elementId);
+				add((binding as RawRecord)["elementId"]);
 		}
 		if (!Array.isArray(raw.boundElements)) continue;
 		for (const entry of raw.boundElements)
-			if (entry && typeof entry === "object" && !Array.isArray(entry)) add((entry as RawRecord).id);
+			if (entry && typeof entry === "object" && !Array.isArray(entry)) add((entry as RawRecord)["id"]);
 	}
 	return ids;
 }

@@ -167,7 +167,7 @@ describe("bridge creation", () => {
 		});
 		expect(plan.inputs).toHaveLength(2);
 		for (const [index, input] of plan.inputs.entries()) {
-			const bridge = (input.customData as { archboard: { bridge: unknown } }).archboard.bridge;
+			const bridge = (input["customData"] as { archboard: { bridge: unknown } }).archboard.bridge;
 			expect(BridgeMetadataSchema.parse(bridge)).toMatchObject({
 				bridgeId: "Bridge01",
 				role: index === 0 ? "mask" : "redraw",

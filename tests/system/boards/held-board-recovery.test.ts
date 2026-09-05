@@ -338,7 +338,7 @@ describe("held board recovery", () => {
 			.find((message) => message.type === "board_released");
 		expect(replacement?.board).toBe("holdelse");
 		expect(
-			((replacement?.elements as Element[] | undefined) ?? [])
+			((replacement?.["elements"] as Element[] | undefined) ?? [])
 				.map((element) => element.id)
 				.toSorted(),
 		).toEqual(source.body.elements.map((element) => element.id).toSorted());

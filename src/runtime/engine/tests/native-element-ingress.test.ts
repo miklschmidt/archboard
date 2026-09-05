@@ -35,7 +35,7 @@ test("trusted reads reject missing native fields and invalid image values pathfu
 		{ deterministic: true, forStore: true },
 	)[0]!;
 	const missing = structuredClone(complete) as unknown as Record<string, unknown>;
-	delete missing.angle;
+	delete missing["angle"];
 	expect(() => validatePersistedBoardElement(missing, "note /vault/strict.excalidraw.md")).toThrow(
 		"note /vault/strict.excalidraw.md: invalid element image (image) at element.angle",
 	);
@@ -68,7 +68,7 @@ test("line and arrow keep distinct native contracts", () => {
 		"element.elbowed",
 	);
 	const missingElbowed = { ...arrow } as Record<string, unknown>;
-	delete missingElbowed.elbowed;
+	delete missingElbowed["elbowed"];
 	expect(() => validatePersistedBoardElement(missingElbowed, "arrow ingress")).toThrow(
 		"element.elbowed",
 	);

@@ -23,8 +23,8 @@ function expectStable(
 		note,
 	);
 	const parsed = JSON.parse(extractSceneJsonFromObsidianMd(note)) as Record<string, unknown>;
-	expect(parsed.type).toBe("excalidraw");
-	expect(parsed.elements).toHaveLength((expectedScene.elements as unknown[]).length);
+	expect(parsed["type"]).toBe("excalidraw");
+	expect(parsed["elements"]).toHaveLength((expectedScene["elements"] as unknown[]).length);
 	expect(note).toContain("\n# Excalidraw Data\n## Text Elements\n");
 	expect(note.startsWith("---\n")).toBe(true);
 	expect(note.match(/^# Excalidraw Data[ \t]*$/gm)).toHaveLength(expectedHeadingCount);

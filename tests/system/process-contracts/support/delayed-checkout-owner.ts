@@ -114,7 +114,7 @@ esac
 		pids,
 		release: () => writeFileSync(release, "release\n"),
 		releasePid: (pid: number) => writeFileSync(`${release}.${pid}`, "release\n"),
-		env: { ARCHBOARD_REPOS: registry, PATH: `${bin}:${process.env.PATH ?? ""}` },
+		env: { ARCHBOARD_REPOS: registry, PATH: `${bin}:${process.env["PATH"] ?? ""}` },
 		enable: () => writeFileSync(registry, entries),
 		dispose: () => rmSync(root, { recursive: true, force: true }),
 	};

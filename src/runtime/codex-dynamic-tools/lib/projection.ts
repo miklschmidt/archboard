@@ -82,9 +82,9 @@ function assertCursorPage(
 	readonly data: readonly unknown[];
 	readonly nextCursor: string | null;
 } {
-	if (!isRecord(value) || !Array.isArray(value.data))
+	if (!isRecord(value) || !Array.isArray(value["data"]))
 		throw projectionError(`${label} returned an invalid page.`);
-	if (value.nextCursor !== null && typeof value.nextCursor !== "string")
+	if (value["nextCursor"] !== null && typeof value["nextCursor"] !== "string")
 		throw projectionError(`${label} returned an invalid nextCursor.`);
 }
 
@@ -289,18 +289,18 @@ function textBodiesFromFunctionOutput(value: unknown): readonly string[] {
 	if (!Array.isArray(value)) return [];
 	const bodies: string[] = [];
 	for (const item of value) {
-		if (!isRecord(item) || item.type !== "input_text" || typeof item.text !== "string") continue;
-		bodies.push(item.text);
+		if (!isRecord(item) || item["type"] !== "input_text" || typeof item["text"] !== "string") continue;
+		bodies.push(item["text"]);
 	}
 	return bodies;
 }
 
 function textBodiesFromMcpResult(value: unknown): readonly string[] {
-	if (!isRecord(value) || !Array.isArray(value.content)) return [];
+	if (!isRecord(value) || !Array.isArray(value["content"])) return [];
 	const bodies: string[] = [];
-	for (const item of value.content) {
-		if (!isRecord(item) || item.type !== "text" || typeof item.text !== "string") continue;
-		bodies.push(item.text);
+	for (const item of value["content"]) {
+		if (!isRecord(item) || item["type"] !== "text" || typeof item["text"] !== "string") continue;
+		bodies.push(item["text"]);
 	}
 	return bodies;
 }
@@ -380,13 +380,13 @@ function turnSummary(
 function itemForRequestedTurn(value: unknown, requestedTurnId: string): SessionThreadItem {
 	if (
 		!isRecord(value) ||
-		typeof value.turnId !== "string" ||
-		value.turnId !== requestedTurnId ||
-		!isRecord(value.item) ||
-		typeof value.item.type !== "string"
+		typeof value["turnId"] !== "string" ||
+		value["turnId"] !== requestedTurnId ||
+		!isRecord(value["item"]) ||
+		typeof value["item"]["type"] !== "string"
 	)
 		throw projectionError("thread/items/list returned an item for a different or invalid turn.");
-	return value.item as SessionThreadItem;
+	return value["item"] as SessionThreadItem;
 }
 
 export async function projectRead(

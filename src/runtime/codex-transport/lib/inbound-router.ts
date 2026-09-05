@@ -106,7 +106,7 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 		options.enqueueProtocolError(rawId, code, message);
 	};
 	const handleResponse = (value: Record<string, unknown>): void => {
-		const rawId = value.id;
+		const rawId = value["id"];
 		if (!isWireId(rawId)) {
 			options.emitIssue({
 				kind: "malformed-frame",
@@ -230,7 +230,7 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 		throw new CodexTransportUsageError("no response owner exists for the reverse method");
 	};
 	const handleServerRequest = (value: Record<string, unknown>, frameBytes: number): void => {
-		const rawId = value.id;
+		const rawId = value["id"];
 		if (!isWireId(rawId)) {
 			issueReverse("malformed-frame", "A reverse request id is invalid");
 			return;
@@ -240,7 +240,7 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 			issueReverse("duplicate-server-request", "A reverse request id was already used", rawId);
 			return;
 		}
-		const method = value.method;
+		const method = value["method"];
 		if (typeof method !== "string") {
 			issueReverse("malformed-frame", "A reverse request method is missing or invalid", rawId);
 			protocolError(
@@ -304,7 +304,7 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 				return;
 			}
 			const schema = SERVER_REQUEST_SCHEMAS[method];
-			const parsed = schema.safeParse(value.params);
+			const parsed = schema.safeParse(value["params"]);
 			if (!parsed.success) {
 				issueReverse("malformed-frame", "The reverse request params were invalid", rawId);
 				protocolError(
@@ -450,9 +450,9 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 		const hasMethod = hasOwn(decoded, "method");
 		const hasResultOrError = hasOwn(decoded, "result") || hasOwn(decoded, "error");
 		if (state === "closing") {
-			if (hasMethod && hasId && isWireId(decoded.id))
+			if (hasMethod && hasId && isWireId(decoded["id"]))
 				protocolError(
-					decoded.id,
+					decoded["id"],
 					JSON_RPC_ERROR_CODES.internalError,
 					"Codex transport is shutting down.",
 				);
@@ -468,18 +468,18 @@ export function createInboundRouter(options: InboundRouterOptions): InboundRoute
 			if (hasId) handleServerRequest(decoded, line.byteLength);
 			else handleNotification(decoded);
 		} else if (hasId && hasResultOrError) handleResponse(decoded);
-		else if (hasId && isWireId(decoded.id)) {
-			const key = wireKey(decoded.id);
+		else if (hasId && isWireId(decoded["id"])) {
+			const key = wireKey(decoded["id"]);
 			if (options.pendingRequests.has(key)) handleResponse(decoded);
 			else if (options.reverseRequests.has(key) || options.completedReverseIds.has(key))
 				issueReverse(
 					"duplicate-server-request",
 					"A reverse request id was already used",
-					decoded.id,
+					decoded["id"],
 				);
 			else
 				protocolError(
-					decoded.id,
+					decoded["id"],
 					JSON_RPC_ERROR_CODES.invalidRequest,
 					REVERSE_ERROR_MESSAGES.invalidRequest,
 				);

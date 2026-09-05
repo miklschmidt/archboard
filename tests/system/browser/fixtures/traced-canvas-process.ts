@@ -88,7 +88,7 @@ function tracedCanvasMain(): void {
 	const environment = { ...process.env };
 	delete environment[SERVER_ENTRY_ENV];
 	delete environment[TRACE_FILE_ENV];
-	const strace = (environment.PATH ?? "")
+	const strace = (environment["PATH"] ?? "")
 		.split(":")
 		.map((directory) => `${directory}/strace`)
 		.find((candidate) => {

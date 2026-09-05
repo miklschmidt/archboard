@@ -48,10 +48,10 @@ const leaseTarget = (result: WorkbenchResult): Record<string, unknown> => {
 	if (!result.ok || result.value === undefined)
 		throw new Error(result.error ?? "The workbench lease failed.");
 	return {
-		commandId: result.value.commandId,
-		paneId: result.value.paneId,
-		childId: result.value.childId,
-		epoch: result.value.epoch,
+		commandId: result.value["commandId"],
+		paneId: result.value["paneId"],
+		childId: result.value["childId"],
+		epoch: result.value["epoch"],
 	};
 };
 
@@ -151,10 +151,10 @@ describe.serial("actual production Codex composition", () => {
 			expect(created).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 
 			const linked = snapshots(await current.request("snapshot"));
-			const threadLink = linked.threadLink as Record<string, unknown>;
+			const threadLink = linked["threadLink"] as Record<string, unknown>;
 			expect(threadLink).toMatchObject({ state: "executable" });
-			expect(typeof threadLink.threadId).toBe("string");
-			expect(linked.coordinator).toMatchObject({
+			expect(typeof threadLink["threadId"]).toBe("string");
+			expect(linked["coordinator"]).toMatchObject({
 				state: "ready",
 				configuredModel: "gpt-5.6-luna",
 				configuredEffort: "medium",
@@ -162,12 +162,12 @@ describe.serial("actual production Codex composition", () => {
 				effort: "medium",
 				serviceTier: null,
 			});
-			expect(typeof (linked.coordinator as Record<string, unknown>).threadId).toBe("string");
+			expect(typeof (linked["coordinator"] as Record<string, unknown>)["threadId"]).toBe("string");
 
 			expect(await current.request("mediaReady", { ready: true })).toMatchObject({ ok: true });
-			expect(snapshots(await current.request("snapshot")).voice).toMatchObject({ state: "ready" });
+			expect(snapshots(await current.request("snapshot"))["voice"]).toMatchObject({ state: "ready" });
 			expect(await current.request("mediaReady", { ready: false })).toMatchObject({ ok: true });
-			expect(snapshots(await current.request("snapshot")).voice).toMatchObject({
+			expect(snapshots(await current.request("snapshot"))["voice"]).toMatchObject({
 				state: "unavailable",
 				reason: "Browser audio is unavailable for this socket.",
 			});
@@ -202,7 +202,7 @@ describe.serial("actual production Codex composition", () => {
 					kind: "browser_command",
 					command: "start",
 					...leaseTarget(startLease),
-					threadId: threadLink.threadId,
+					threadId: threadLink["threadId"],
 					prompt: "Exercise both production reverse-request owners.",
 				},
 			});
@@ -211,10 +211,10 @@ describe.serial("actual production Codex composition", () => {
 				(entry) =>
 					entry.kind === "frame" &&
 					entry.method === "turn/start" &&
-					entry.params?.threadId === "thread-2",
+					entry.params?.["threadId"] === "thread-2",
 			);
 			if (semanticStart === undefined) throw new Error("The semantic turn/start was not logged.");
-			const additionalContext = semanticStart.params?.additionalContext as {
+			const additionalContext = semanticStart.params?.["additionalContext"] as {
 				readonly archboard?: { readonly value?: unknown };
 			};
 			const archboardContext = JSON.parse(String(additionalContext.archboard?.value)) as {
@@ -243,11 +243,11 @@ describe.serial("actual production Codex composition", () => {
 			await request("/api/changes?board=scratch&since=1");
 			const semanticState = await waitFor(async () => {
 				const snapshot = snapshots(await current!.request("snapshot"));
-				return snapshot.semantic as Record<string, unknown> | null;
+				return snapshot["semantic"] as Record<string, unknown> | null;
 			}, "the linked workhorse semantic outcome");
 			expect(semanticState).toMatchObject({
 				kind: "semantic_delivery",
-				threadId: threadLink.threadId,
+				threadId: threadLink["threadId"],
 				delivery: "delivered",
 				reason: null,
 			});
@@ -256,7 +256,7 @@ describe.serial("actual production Codex composition", () => {
 			);
 			if (semanticDelivery === undefined) throw new Error("The semantic delivery was not logged.");
 			expect(semanticDelivery.params).toMatchObject({
-				threadId: semanticStart.params?.threadId,
+				threadId: semanticStart.params?.["threadId"],
 				items: [
 					{
 						type: "message",
@@ -285,8 +285,8 @@ describe.serial("actual production Codex composition", () => {
 
 			const pending = await waitFor(async () => {
 				const snapshot = snapshots(await current!.request("snapshot"));
-				const approvals = snapshot.approvals as Record<string, unknown>[];
-				const dynamicApprovals = snapshot.dynamicApprovals as Record<string, unknown>[];
+				const approvals = snapshot["approvals"] as Record<string, unknown>[];
+				const dynamicApprovals = snapshot["dynamicApprovals"] as Record<string, unknown>[];
 				return approvals.length === 1 && dynamicApprovals.length === 1
 					? { approvals, dynamicApprovals }
 					: undefined;
@@ -302,8 +302,8 @@ describe.serial("actual production Codex composition", () => {
 				kind: "browser_command",
 				command: "approvalRespond",
 				...leaseTarget(ordinaryLease),
-				requestId: ordinary.requestId,
-				approvalId: ordinary.approvalId,
+				requestId: ordinary["requestId"],
+				approvalId: ordinary["approvalId"],
 				response: { approvalKind: "command_execution", decision: "accept" },
 			};
 			const ordinaryFirst = await current.request("command", { command: ordinaryCommand });
@@ -312,17 +312,17 @@ describe.serial("actual production Codex composition", () => {
 
 			const dynamicLease = await current.request("claimLease");
 			const rebound = snapshots(await current.request("snapshot"));
-			const dynamic = (rebound.dynamicApprovals as Record<string, unknown>[])[0]!;
-			const binding = dynamic.binding as Record<string, unknown>;
-			expect(binding.commandId).toBe(dynamicLease.value?.commandId);
+			const dynamic = (rebound["dynamicApprovals"] as Record<string, unknown>[])[0]!;
+			const binding = dynamic["binding"] as Record<string, unknown>;
+			expect(binding["commandId"]).toBe(dynamicLease.value?.["commandId"]);
 			const dynamicResult = await current.request("command", {
 				command: {
 					kind: "browser_command",
 					command: "dynamicApprovalRespond",
 					...leaseTarget(dynamicLease),
-					capturedLink: binding.capturedLink,
-					identity: dynamic.identity,
-					effectHash: dynamic.effectHash,
+					capturedLink: binding["capturedLink"],
+					identity: dynamic["identity"],
+					effectHash: dynamic["effectHash"],
 					decision: "approve",
 				},
 			});
@@ -352,13 +352,13 @@ describe.serial("actual production Codex composition", () => {
 			writeFileSync(controlPath, JSON.stringify({ completeWorkhorseTurn: true }));
 			await waitFor(
 				async () =>
-					(snapshots(await current.request("snapshot")).threadLink as Record<string, unknown>)
-						.status === "idle",
+					(snapshots(await current.request("snapshot"))["threadLink"] as Record<string, unknown>)
+						["status"] === "idle",
 				"the workhorse turn to finish",
 			);
 			// Nothing is discovered until the browser asks. The refresh exhausts the
 			// real persisted and loaded lists and publishes the joined inventory.
-			expect(snapshots(await current.request("snapshot")).threadCandidates).toMatchObject({
+			expect(snapshots(await current.request("snapshot"))["threadCandidates"]).toMatchObject({
 				state: "unknown",
 				records: [],
 			});
@@ -373,19 +373,19 @@ describe.serial("actual production Codex composition", () => {
 				}),
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 			const discovered = snapshots(await current.request("snapshot"));
-			const inventory = discovered.threadCandidates as Record<string, unknown>;
+			const inventory = discovered["threadCandidates"] as Record<string, unknown>;
 			expect(inventory).toMatchObject({ state: "listed", truncated: false });
-			const rows = inventory.records as readonly Record<string, unknown>[];
+			const rows = inventory["records"] as readonly Record<string, unknown>[];
 			expect(rows.length).toBeGreaterThan(0);
-			const createdRow = rows.find((row) => row.threadId === threadLink.threadId);
+			const createdRow = rows.find((row) => row["threadId"] === threadLink["threadId"]);
 			expect(createdRow).toMatchObject({
 				kind: "thread_candidate",
 				state: "executable",
 				sourcePresentation: "standard",
 				loaded: true,
 			});
-			expect(typeof createdRow?.selectionId).toBe("string");
-			expect(new Set(rows.map((row) => row.selectionId)).size).toBe(rows.length);
+			expect(typeof createdRow?.["selectionId"]).toBe("string");
+			expect(new Set(rows.map((row) => row["selectionId"])).size).toBe(rows.length);
 
 			// A persisted thread this workbench never created has no ownership
 			// record, so attaching it must record one before the link can become
@@ -393,7 +393,7 @@ describe.serial("actual production Codex composition", () => {
 			const foreignThreadId = String(
 				createIdentityAuthorities().identity.decoder.adoptThreadId(FOREIGN_FIXTURE_THREAD_ID),
 			);
-			const foreignRow = rows.find((row) => row.threadId === foreignThreadId);
+			const foreignRow = rows.find((row) => row["threadId"] === foreignThreadId);
 			if (foreignRow === undefined)
 				throw new Error("The foreign persisted thread is not in the joined list.");
 			expect(foreignRow).toMatchObject({ state: "inspect_only", reason: "unknown_provenance" });
@@ -404,13 +404,13 @@ describe.serial("actual production Codex composition", () => {
 						kind: "browser_command",
 						command: "threadLinkAttach",
 						...leaseTarget(attachLease),
-						selectionId: foreignRow.selectionId,
+						selectionId: foreignRow["selectionId"],
 						threadId: foreignThreadId,
 					},
 				}),
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 			const attached = snapshots(await current.request("snapshot"));
-			expect(attached.threadLink).toMatchObject({
+			expect(attached["threadLink"]).toMatchObject({
 				state: "executable",
 				threadId: foreignThreadId,
 				loaded: true,
@@ -428,9 +428,9 @@ describe.serial("actual production Codex composition", () => {
 				}),
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
 			const relinkRows = (
-				snapshots(await current.request("snapshot")).threadCandidates as Record<string, unknown>
-			).records as readonly Record<string, unknown>[];
-			const createdAgain = relinkRows.find((row) => row.threadId === threadLink.threadId);
+				snapshots(await current.request("snapshot"))["threadCandidates"] as Record<string, unknown>
+			)["records"] as readonly Record<string, unknown>[];
+			const createdAgain = relinkRows.find((row) => row["threadId"] === threadLink["threadId"]);
 			if (createdAgain === undefined) throw new Error("The created thread left the joined list.");
 			const relinkLease = await current.request("claimLease");
 			expect(
@@ -439,14 +439,14 @@ describe.serial("actual production Codex composition", () => {
 						kind: "browser_command",
 						command: "threadLinkRelink",
 						...leaseTarget(relinkLease),
-						selectionId: createdAgain.selectionId,
-						threadId: threadLink.threadId,
+						selectionId: createdAgain["selectionId"],
+						threadId: threadLink["threadId"],
 					},
 				}),
 			).toMatchObject({ ok: true, value: { outcome: "delivered" } });
-			expect(snapshots(await current.request("snapshot")).threadLink).toMatchObject({
+			expect(snapshots(await current.request("snapshot"))["threadLink"]).toMatchObject({
 				state: "executable",
-				threadId: threadLink.threadId,
+				threadId: threadLink["threadId"],
 			});
 
 			const childPid = records(logPath).find((entry) => entry.kind === "app_server_spawn")?.pid;

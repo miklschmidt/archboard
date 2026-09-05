@@ -156,10 +156,10 @@ function rememberVersion(data: unknown): void {
 	// board from the one the call was addressed to. So an ordinary answer's
 	// version is taken only when it names the board that was asked for.
 	const found =
-		readVersion(body.fingerprint) ??
+		readVersion(body["fingerprint"]) ??
 		(isBoardRefusal(body) ? readVersion(body) : undefined) ??
-		readVersion(body.versionConflict, "actual") ??
-		(sameBoard(body.board) ? readVersion(body) : undefined);
+		readVersion(body["versionConflict"], "actual") ??
+		(sameBoard(body["board"]) ? readVersion(body) : undefined);
 	if (found !== undefined) rememberBoardVersion(clientVersionWriter(requestedBoard), found);
 }
 
@@ -347,7 +347,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	// stopped it.
 	if (data && typeof data === "object") {
 		const body = data as Record<string, unknown>;
-		heldBoard = body.held && typeof body.held === "object" ? (body.held as HoldReport) : null;
+		heldBoard = body["held"] && typeof body["held"] === "object" ? (body["held"] as HoldReport) : null;
 	}
 	// And which version of it this process has now been told about, for the same
 	// reason: read off every answer including the refusals (TASK-091).
@@ -361,19 +361,19 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 function responseError(data: unknown, response: Response): Error {
 	const body = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
 	const error = new Error(
-		typeof body.error === "string"
-			? body.error
+		typeof body["error"] === "string"
+			? body["error"]
 			: `HTTP server error: ${response.status} ${response.statusText}`,
 	) as Error & { code?: unknown; conflict?: unknown; available?: unknown; refusal?: unknown };
 	// Refused board writes are results, not faults. Keep their structured body
 	// on the error so the CLI does not have to reconstruct what the canvas
 	// said, or read the board after the refusal.
-	if (body.conflict) {
+	if (body["conflict"]) {
 		error.code = "BOARD_CONFLICT";
-		error.conflict = body.conflict as BoardWriteConflict;
-	} else if (typeof body.code === "string") {
-		error.code = body.code;
-		if (Array.isArray(body.available)) error.available = body.available;
+		error.conflict = body["conflict"] as BoardWriteConflict;
+	} else if (typeof body["code"] === "string") {
+		error.code = body["code"];
+		if (Array.isArray(body["available"])) error.available = body["available"];
 	}
 	if (isBoardRefusal(data)) error.refusal = data;
 	return error;
@@ -383,11 +383,11 @@ function isBoardRefusal(data: unknown): data is BoardRefusal {
 	if (!data || typeof data !== "object") return false;
 	const body = data as Record<string, unknown>;
 	return (
-		body.success === false &&
-		typeof body.code === "string" &&
-		typeof body.error === "string" &&
-		Array.isArray(body.document) &&
-		(typeof body.version === "number" || body.version === null)
+		body["success"] === false &&
+		typeof body["code"] === "string" &&
+		typeof body["error"] === "string" &&
+		Array.isArray(body["document"]) &&
+		(typeof body["version"] === "number" || body["version"] === null)
 	);
 }
 

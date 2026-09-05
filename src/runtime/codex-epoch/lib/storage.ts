@@ -381,31 +381,31 @@ function readLock(
 		}
 		const record = parsed as Record<string, unknown>;
 		if (
-			!Number.isSafeInteger(record.pid) ||
-			(record.pid as number) <= 0 ||
-			typeof record.token !== "string" ||
-			!/^[-a-f0-9]{36}$/u.test(record.token) ||
-			!Number.isSafeInteger(record.acquiredAtMs) ||
-			!Number.isSafeInteger(record.untilMs) ||
-			(record.untilMs as number) < (record.acquiredAtMs as number)
+			!Number.isSafeInteger(record["pid"]) ||
+			(record["pid"] as number) <= 0 ||
+			typeof record["token"] !== "string" ||
+			!/^[-a-f0-9]{36}$/u.test(record["token"]) ||
+			!Number.isSafeInteger(record["acquiredAtMs"]) ||
+			!Number.isSafeInteger(record["untilMs"]) ||
+			(record["untilMs"] as number) < (record["acquiredAtMs"] as number)
 		) {
 			return "invalid";
 		}
 		const canonical =
 			JSON.stringify({
-				pid: record.pid,
-				token: record.token,
-				acquiredAtMs: record.acquiredAtMs,
-				untilMs: record.untilMs,
+				pid: record["pid"],
+				token: record["token"],
+				acquiredAtMs: record["acquiredAtMs"],
+				untilMs: record["untilMs"],
 			}) + "\n";
 		if (canonical !== raw) {
 			return "invalid";
 		}
 		return Object.freeze({
-			pid: record.pid as number,
-			token: record.token as string,
-			acquiredAtMs: record.acquiredAtMs as number,
-			untilMs: record.untilMs as number,
+			pid: record["pid"] as number,
+			token: record["token"] as string,
+			acquiredAtMs: record["acquiredAtMs"] as number,
+			untilMs: record["untilMs"] as number,
 		});
 	} catch (cause) {
 		return isMissing(cause) ? "missing" : "invalid";

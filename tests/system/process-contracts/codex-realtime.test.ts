@@ -39,8 +39,8 @@ function readRecords(harness: RealtimeHarness): Record<string, unknown>[] {
 
 function requestParams(harness: RealtimeHarness, method: string): Record<string, unknown>[] {
 	return readRecords(harness)
-		.filter((entry) => entry.kind === "request" && entry.method === method)
-		.map((entry) => entry.params as Record<string, unknown>);
+		.filter((entry) => entry["kind"] === "request" && entry["method"] === method)
+		.map((entry) => entry["params"] as Record<string, unknown>);
 }
 
 function expectPendingOffer(harness: RealtimeHarness, settled: boolean): void {
@@ -95,8 +95,8 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 			const answer = await generation.adapter.createOffer({ ...browser, sdp: "offer-sdp" });
 			expect(answer).toEqual({ ...browser, sdp: "answer-sdp" });
 			const records = readRecords(harness);
-			const versionProbe = records.findIndex((entry) => entry.kind === "version_probe");
-			const appServerSpawn = records.findIndex((entry) => entry.kind === "app_server_spawn");
+			const versionProbe = records.findIndex((entry) => entry["kind"] === "version_probe");
+			const appServerSpawn = records.findIndex((entry) => entry["kind"] === "app_server_spawn");
 			expect(records[versionProbe]).toMatchObject({ kind: "version_probe", args: ["--version"] });
 			expect(records[appServerSpawn]).toMatchObject({
 				kind: "app_server_spawn",
@@ -105,10 +105,10 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 			expect(versionProbe).toBeGreaterThanOrEqual(0);
 			expect(appServerSpawn).toBeGreaterThan(versionProbe);
 			const startResponses = records.filter(
-				(entry) => entry.kind === "response" && entry.method === "thread/realtime/start",
+				(entry) => entry["kind"] === "response" && entry["method"] === "thread/realtime/start",
 			);
 			expect(startResponses).toHaveLength(1);
-			expect(startResponses[0]?.result).toEqual({});
+			expect(startResponses[0]?.["result"]).toEqual({});
 			const start = requestParams(harness, "thread/realtime/start")[0];
 			expect(start).toBeDefined();
 			expect(start).toEqual({
@@ -126,12 +126,12 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 				realtimeStartInstructions: composeCoordinatorInstructions(),
 				realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
 				prompt: null,
-				realtimeSessionId: start!.realtimeSessionId,
+				realtimeSessionId: start!["realtimeSessionId"],
 				transport: { type: "webrtc", sdp: "offer-sdp" },
 				version: "v3",
 				voice: "breeze",
 			});
-			expect(start!.realtimeSessionId).toMatch(/^archboard:realtime-session:h[a-f0-9]{32}$/);
+			expect(start!["realtimeSessionId"]).toMatch(/^archboard:realtime-session:h[a-f0-9]{32}$/);
 			expect(generation.adapter.transcript()).toEqual([
 				expect.objectContaining({
 					itemId: parseRealtimeItemId(generation.identity.decoder.resolveItemId("assistant-item")),
@@ -234,12 +234,12 @@ test("real process rejects wrong child/thread/session/version, stale SDP, and fl
 			sendSdp(generation.identity, wrongThread, "wrong-thread-current-child");
 			expectPendingOffer(harness, settled);
 			const start = requestParams(harness, "thread/realtime/start")[0];
-			if (typeof start?.realtimeSessionId !== "string")
+			if (typeof start?.["realtimeSessionId"] !== "string")
 				throw new Error("Pending start identity missing.");
 			generation.adapter.onNotification(
 				makeNotification(generation.identity, "thread/realtime/started", {
 					threadId: "coordinator-thread",
-					realtimeSessionId: start.realtimeSessionId,
+					realtimeSessionId: start["realtimeSessionId"],
 					version: "v3",
 				}),
 			);
@@ -274,8 +274,8 @@ test("real process probes the pinned binary before spawn and rejects a wrong ver
 		await expect(startFailure).rejects.toMatchObject({ code: "binary_wrong_version" });
 		await waitFor(() => harness.owner.snapshot().failure?.code === "binary_wrong_version");
 		const records = readRecords(harness);
-		const versionProbe = records.findIndex((entry) => entry.kind === "version_probe");
-		const appServerSpawn = records.findIndex((entry) => entry.kind === "app_server_spawn");
+		const versionProbe = records.findIndex((entry) => entry["kind"] === "version_probe");
+		const appServerSpawn = records.findIndex((entry) => entry["kind"] === "app_server_spawn");
 		expect(records[versionProbe]).toMatchObject({
 			kind: "version_probe",
 			args: ["--version"],
@@ -383,7 +383,7 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 			});
 			expect(await generation.adapter.recover(browser)).toMatchObject({ outcome: "delivered" });
 			expect(latestState(harness)).toEqual({ phase: "idle", reason: "recovered" });
-			expect(requestParams(harness, "thread/timeline/list").map((params) => params.cursor)).toEqual(
+			expect(requestParams(harness, "thread/timeline/list").map((params) => params["cursor"])).toEqual(
 				[null, "next"],
 			);
 			expect(generation.adapter.transcript()).toHaveLength(2);
@@ -474,14 +474,14 @@ test("real process recovers pages, detects cursor loops, and classifies lost app
 			);
 			expectPendingOffer(harness, freshSettled);
 			const freshStart = requestParams(harness, "thread/realtime/start")[2];
-			if (typeof freshStart?.realtimeSessionId !== "string")
+			if (typeof freshStart?.["realtimeSessionId"] !== "string")
 				throw new Error("Fresh start identity missing.");
 			const { decoder } = second.identity;
 			const freshThread = decoder.serializeCodexIdentity(second.binding.coordinatorThreadId);
 			second.adapter.onNotification(
 				makeNotification(second.identity, "thread/realtime/started", {
 					threadId: freshThread,
-					realtimeSessionId: freshStart.realtimeSessionId,
+					realtimeSessionId: freshStart["realtimeSessionId"],
 					version: "v3",
 				}),
 			);

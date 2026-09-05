@@ -188,7 +188,7 @@ test("a held human drag gives an independent binding oracle", async () => {
 	expect(initialBrowserArrow.endBinding?.gap).toBe(15); // check-fixed-point.mjs:1371
 
 	const comparisonNode = strip(initialBrowserNode);
-	delete comparisonNode.boundElements;
+	delete comparisonNode["boundElements"];
 	const nodeSeed = await api("/api/elements/batch?board=binding-differential", {
 		method: "POST",
 		body: { elements: [comparisonNode] },

@@ -5,8 +5,8 @@ import type * as StoreModule from "../board-store.js";
 import type { ServerElement } from "../types.js";
 import { completeElement } from "./support/elements.ts";
 
-const priorSettleMs = process.env.ARCHBOARD_SETTLE_MS;
-process.env.ARCHBOARD_SETTLE_MS = "60000";
+const priorSettleMs = process.env["ARCHBOARD_SETTLE_MS"];
+process.env["ARCHBOARD_SETTLE_MS"] = "60000";
 
 let changeFeed: typeof ChangeFeedModule.changeFeed;
 let copyElements: typeof StoreModule.copyElements;
@@ -75,9 +75,9 @@ beforeAll(async () => {
 });
 
 afterAll(() => {
-	if (priorSettleMs === undefined) delete process.env.ARCHBOARD_SETTLE_MS;
-	else process.env.ARCHBOARD_SETTLE_MS = priorSettleMs;
-	expect(process.env.ARCHBOARD_SETTLE_MS).toBe(priorSettleMs);
+	if (priorSettleMs === undefined) delete process.env["ARCHBOARD_SETTLE_MS"];
+	else process.env["ARCHBOARD_SETTLE_MS"] = priorSettleMs;
+	expect(process.env["ARCHBOARD_SETTLE_MS"]).toBe(priorSettleMs);
 });
 
 describe("change feed", () => {
@@ -135,7 +135,7 @@ describe("change feed", () => {
 		const node = live.find((element) => element.id === "a");
 		expect(node).toBeDefined();
 		const archboard = (node?.customData?.archboard ?? {}) as Record<string, unknown>;
-		archboard.kind = "datastore";
+		archboard["kind"] = "datastore";
 		changeFeed.record("inplace", identity, read, "agent");
 		expect(changeFeed.settle("inplace")).not.toBeNull();
 
@@ -143,13 +143,13 @@ describe("change feed", () => {
 		original[0]!.boundElements = [{ id: "al", type: "text" }];
 		const copy = copyElements(original);
 		const originalArchboard = original[0]!.customData?.archboard as Record<string, unknown>;
-		originalArchboard.kind = "queue";
+		originalArchboard["kind"] = "queue";
 		(original[0]!.boundElements as Array<{ id: string; type: "text" }>).push({
 			id: "ghost",
 			type: "text",
 		});
 		const copiedArchboard = copy[0]?.customData?.archboard as Record<string, unknown> | undefined;
-		expect(copiedArchboard?.kind).toBe("gateway");
+		expect(copiedArchboard?.["kind"]).toBe("gateway");
 		expect(copy[0]?.boundElements).toHaveLength(1);
 	});
 

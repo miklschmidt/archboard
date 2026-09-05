@@ -66,7 +66,7 @@ function replaceGeneratedAt(
 		};
 	}
 	if (isRecord(value)) {
-		if (value.type === head)
+		if (value["type"] === head)
 			return replaceGeneratedAt(value, tail, fieldName, actualPath, containingUnionPath);
 		if (Object.hasOwn(value, head!)) {
 			const nextContainingUnionPath =
@@ -127,7 +127,7 @@ function prepareGeneratedAt(value: unknown, path: readonly string[], fieldName?:
 		);
 	}
 	if (isRecord(value)) {
-		if (value.type === head) return prepareGeneratedAt(value, tail, fieldName);
+		if (value["type"] === head) return prepareGeneratedAt(value, tail, fieldName);
 		if (Object.hasOwn(value, head!)) {
 			const current = value[head!];
 			const prepared = current === null && tail.length ? nullableMember(head!) : current;

@@ -38,14 +38,14 @@ describe("codex dynamic dispatcher", () => {
 		const response = await tools.dispatch(request);
 		const parsed = parseDynamicToolCallResponse("create_thread", response);
 		const createEnvelope = record(parsed.envelope);
-		if (createEnvelope.tag !== "ok") throw new Error("create fixture did not succeed");
-		const createValue = record(createEnvelope.value);
-		const createInitialTurn = record(createValue.initialTurn);
-		if (createInitialTurn.delivery !== "delivered")
+		if (createEnvelope["tag"] !== "ok") throw new Error("create fixture did not succeed");
+		const createValue = record(createEnvelope["value"]);
+		const createInitialTurn = record(createValue["initialTurn"]);
+		if (createInitialTurn["delivery"] !== "delivered")
 			throw new Error("create fixture did not deliver its initial turn");
 
-		expect(createValue.threadId).toBe(String(createdThread.id));
-		expect(createInitialTurn.turnId).toBe(String(createdTurn.id));
+		expect(createValue["threadId"]).toBe(String(createdThread.id));
+		expect(createInitialTurn["turnId"]).toBe(String(createdTurn.id));
 		expect(fixture.session.calls.map(({ method }) => method)).toEqual([
 			"thread/start",
 			"turn/start",
@@ -63,15 +63,15 @@ describe("codex dynamic dispatcher", () => {
 			experimentalRawEvents: false,
 		});
 		const turnParams = record(fixture.session.calls[1]?.params);
-		const additionalContext = record(turnParams.additionalContext);
-		const archboardContext = record(additionalContext.archboard);
-		if (typeof turnParams.clientUserMessageId !== "string")
+		const additionalContext = record(turnParams["additionalContext"]);
+		const archboardContext = record(additionalContext["archboard"]);
+		if (typeof turnParams["clientUserMessageId"] !== "string")
 			throw new Error("create fixture did not send an operation identity");
-		expect(turnParams.threadId).toBe(createdThread.id);
-		expect(turnParams.input).toEqual([{ type: "text", text: "create it", text_elements: [] }]);
-		expect(turnParams.turnTrigger).toBe("archboard");
-		expect(archboardContext.kind).toBe("application");
-		expect(archboardContext.value).toContain(`"id":"${turnParams.clientUserMessageId}"`);
+		expect(turnParams["threadId"]).toBe(createdThread.id);
+		expect(turnParams["input"]).toEqual([{ type: "text", text: "create it", text_elements: [] }]);
+		expect(turnParams["turnTrigger"]).toBe("archboard");
+		expect(archboardContext["kind"]).toBe("application");
+		expect(archboardContext["value"]).toContain(`"id":"${turnParams["clientUserMessageId"]}"`);
 		expect(fixture.approval.presented).toHaveLength(1);
 		expect(fixture.epoch.stages).toHaveLength(2);
 		expect(fixture.epoch.settlements.map(({ outcome }) => outcome)).toEqual([
@@ -122,10 +122,10 @@ describe("codex dynamic dispatcher", () => {
 			fixture.session.calls.find(({ method }) => method === "thread/fork")?.params,
 		);
 
-		expect(forkParams.threadId).toBe(caller.threadId);
-		expect(forkParams.beforeTurnId).toBe(caller.turnId);
-		expect(forkParams.beforeTurnId).not.toBe("caller-supplied-boundary");
-		expect(record(parsed.envelope).value).toMatchObject({ threadId: String(forkedThread.id) });
+		expect(forkParams["threadId"]).toBe(caller.threadId);
+		expect(forkParams["beforeTurnId"]).toBe(caller.turnId);
+		expect(forkParams["beforeTurnId"]).not.toBe("caller-supplied-boundary");
+		expect(record(parsed.envelope)["value"]).toMatchObject({ threadId: String(forkedThread.id) });
 	});
 
 	test("approval_required is terminal and declined approval has no effect", async () => {
@@ -186,7 +186,7 @@ describe("codex dynamic dispatcher", () => {
 		);
 		const rejectedParsed = parseDynamicToolCallResponse("create_thread", rejectedResponse);
 		if (rejectedParsed.envelope.tag !== "ok") throw new Error("rejected create was not returned");
-		expect(record(rejectedParsed.envelope).value).toMatchObject({
+		expect(record(rejectedParsed.envelope)["value"]).toMatchObject({
 			threadId: String(rejectedThread.id),
 			initialTurn: { delivery: "not_delivered" },
 		});
@@ -204,7 +204,7 @@ describe("codex dynamic dispatcher", () => {
 		);
 		const uncertainParsed = parseDynamicToolCallResponse("create_thread", uncertainResponse);
 		if (uncertainParsed.envelope.tag !== "ok") throw new Error("uncertain create was not returned");
-		expect(record(uncertainParsed.envelope).value).toMatchObject({
+		expect(record(uncertainParsed.envelope)["value"]).toMatchObject({
 			threadId: String(uncertainThread.id),
 			state: "inspect_only",
 			initialTurn: { delivery: "outcome_unknown" },
@@ -326,7 +326,7 @@ describe("codex dynamic dispatcher", () => {
 		);
 		const parsed = parseDynamicToolCallResponse("list_threads", response);
 		expect(parsed.envelope).toMatchObject({ tag: "ok" });
-		const cursor = record(record(parsed.envelope).value).nextCursor;
+		const cursor = record(record(parsed.envelope)["value"])["nextCursor"];
 		if (typeof cursor !== "string") throw new Error("list fixture did not return its next cursor");
 		const binding = decodeDynamicCursor(cursor);
 

@@ -196,10 +196,10 @@ describe("binding reference matrices", () => {
 				width: 10,
 				height: 10,
 			};
-			if (label !== "missing") target.type = rawType;
+			if (label !== "missing") target["type"] = rawType;
 			const report = inspectBoard([
 				semanticNode(`unknown-owner-${label}`, {
-					boundElements: [{ id: target.id, type: "text" }],
+					boundElements: [{ id: target["id"], type: "text" }],
 				}),
 				target,
 			]);
@@ -209,7 +209,7 @@ describe("binding reference matrices", () => {
 					(finding) =>
 						finding.code === "UNSUPPORTED_GEOMETRY" &&
 						finding.reason === "unsupported-type" &&
-						finding.elements[0]?.id === target.id,
+						finding.elements[0]?.id === target["id"],
 				),
 			).toBe(true);
 			expect(

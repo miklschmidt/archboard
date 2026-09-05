@@ -37,7 +37,7 @@ function record(value: unknown): value is Record<string, unknown> {
 }
 
 function paneEntry(value: unknown): value is { clientId: string } {
-	return record(value) && typeof value.clientId === "string";
+	return record(value) && typeof value["clientId"] === "string";
 }
 
 function timeoutError(clientId: string, observation: string, timeoutMs: number): Error {
@@ -155,8 +155,8 @@ export async function openObservedPane<Event extends ObservedPaneEvent>(options:
 		if (
 			response.status === 200 &&
 			record(response.body) &&
-			response.body.success === true &&
-			response.body.registered === true
+			response.body["success"] === true &&
+			response.body["registered"] === true
 		)
 			return;
 		throw new Error(
@@ -260,10 +260,10 @@ export async function openObservedPane<Event extends ObservedPaneEvent>(options:
 				const panes =
 					response.status === 200 &&
 					record(response.body) &&
-					response.body.success === true &&
-					Array.isArray(response.body.panes) &&
-					response.body.panes.every(paneEntry)
-						? response.body.panes
+					response.body["success"] === true &&
+					Array.isArray(response.body["panes"]) &&
+					response.body["panes"].every(paneEntry)
+						? response.body["panes"]
 						: null;
 				if (panes === null) {
 					throw new Error(

@@ -413,7 +413,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 function checkoutSnapshotFor(res: Response): CheckoutSnapshot {
-	return (res.locals.checkoutSnapshot as CheckoutSnapshot | undefined) ?? EMPTY_CHECKOUT_SNAPSHOT;
+	return (res.locals["checkoutSnapshot"] as CheckoutSnapshot | undefined) ?? EMPTY_CHECKOUT_SNAPSHOT;
 }
 
 const PROCESS_FREE_HUMAN_ROUTES = new Set([
@@ -444,12 +444,12 @@ function codeBindingsInValue(value: unknown): CodeBinding[] {
 		if (!candidate || typeof candidate !== "object" || seen.has(candidate)) continue;
 		seen.add(candidate);
 		if (!Array.isArray(candidate)) {
-			const custom = (candidate as Record<string, unknown>).customData;
+			const custom = (candidate as Record<string, unknown>)["customData"];
 			if (custom && typeof custom === "object" && !Array.isArray(custom)) {
-				const archboard = (custom as Record<string, unknown>).archboard;
+				const archboard = (custom as Record<string, unknown>)["archboard"];
 				if (archboard && typeof archboard === "object" && !Array.isArray(archboard)) {
 					const parsed = CodeBindingSchema.safeParse(
-						(archboard as Record<string, unknown>).binding,
+						(archboard as Record<string, unknown>)["binding"],
 					);
 					if (parsed.success) bindings.push(parsed.data);
 				}
@@ -478,7 +478,7 @@ function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
 		const key = boardKey(identity);
 		if (boards.has(key) && !parsed.data.reload) return [];
 		const resolution = resolveBoardNote(key, "Opening a board");
-		res.locals.preparedBoardOpen = {
+		res.locals["preparedBoardOpen"] = {
 			key,
 			resolution,
 			reload: parsed.data.reload === true,
@@ -530,7 +530,7 @@ async function prepareCheckoutSnapshot(
 		req.path === "/api/elements/changes" &&
 		(!req.body ||
 			typeof req.body !== "object" ||
-			(req.body as Record<string, unknown>).origin !== "agent")
+			(req.body as Record<string, unknown>)["origin"] !== "agent")
 	)
 		return next();
 	if (req.path.startsWith("/api/settings/opener") || req.path === "/api/code-targets/open") {
@@ -552,13 +552,13 @@ async function prepareCheckoutSnapshot(
 			),
 		);
 	};
-	res.locals.checkoutSnapshot = await capture(bindings);
-	const prepared = res.locals.preparedBoardOpen as PreparedBoardOpen | undefined;
+	res.locals["checkoutSnapshot"] = await capture(bindings);
+	const prepared = res.locals["preparedBoardOpen"] as PreparedBoardOpen | undefined;
 	const installed = prepared ? boards.get(prepared.key) : undefined;
 	if (installed !== undefined && prepared?.reload === false) {
 		let installedBindings = codeBindingsOf(readBoardContent(installed).elements.values());
 		for (;;) {
-			res.locals.checkoutSnapshot = await capture(installedBindings);
+			res.locals["checkoutSnapshot"] = await capture(installedBindings);
 			const refreshed = codeBindingsOf(readBoardContent(installed).elements.values());
 			if (JSON.stringify(refreshed) === JSON.stringify(installedBindings)) break;
 			installedBindings = refreshed;
@@ -592,8 +592,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // route cannot forget it.
 app.use((req: Request, res: Response, next: NextFunction) => {
 	const asked =
-		typeof req.query.board === "string"
-			? req.query.board
+		typeof req.query["board"] === "string"
+			? req.query["board"]
 			: req.body && typeof req.body === "object" && typeof req.body.board === "string"
 				? req.body.board
 				: "";
@@ -991,7 +991,7 @@ function boardTargetFromRequest(req: Request, what?: string): BoardWriteTarget {
 // Which board a request says it is about, before anything resolves its note.
 // The write boundary uses the resolved key to find the per-board lock.
 function boardOfRequest(req: Request): string | undefined {
-	const fromQuery = typeof req.query.board === "string" ? req.query.board : undefined;
+	const fromQuery = typeof req.query["board"] === "string" ? req.query["board"] : undefined;
 	const fromBody =
 		req.body && typeof req.body === "object" && typeof req.body.board === "string"
 			? (req.body.board as string)
@@ -1096,8 +1096,8 @@ function answerBoardError(res: Response, error: unknown, what?: string): void {
 function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void {
 	const afterPersist = request.afterPersist;
 	const sourceLockHolder =
-		res.locals.boardLockKey === request.source.key
-			? (res.locals.boardLockHolder as LockHolder | undefined)
+		res.locals["boardLockKey"] === request.source.key
+			? (res.locals["boardLockHolder"] as LockHolder | undefined)
 			: undefined;
 	res.json(
 		writeBoard(
@@ -1107,9 +1107,9 @@ function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void
 				checkoutSnapshot: checkoutSnapshotFor(res),
 				afterPersist: (context) => {
 					if (context.written) {
-						res.locals.writtenBoardVersion = context.written.version;
-						const lockKey = res.locals.boardLockKey;
-						const leaseToken = res.locals.boardLockToken;
+						res.locals["writtenBoardVersion"] = context.written.version;
+						const lockKey = res.locals["boardLockKey"];
+						const leaseToken = res.locals["boardLockToken"];
 						if (
 							typeof lockKey === "string" &&
 							typeof leaseToken === "string" &&
@@ -1419,17 +1419,17 @@ function holderFromRequest(req: Request, board: string): { id: string; kind: "hu
 	// is that person's, and a person is not made to narrate their own act
 	// (TASK-095).
 	const body =
-		typeof raw.clientId === "string" || typeof req.query.clientId !== "string"
+		typeof raw["clientId"] === "string" || typeof req.query["clientId"] !== "string"
 			? raw
-			: { ...raw, clientId: req.query.clientId };
-	const kind = body.origin === "agent" || typeof body.clientId !== "string" ? "agent" : "human";
+			: { ...raw, clientId: req.query["clientId"] };
+	const kind = body["origin"] === "agent" || typeof body["clientId"] !== "string" ? "agent" : "human";
 	if (kind === "agent") {
 		const claimed = claimWriterId(board);
 		if (claimed) return { id: claimed, kind };
 	}
 	const id =
-		typeof body.clientId === "string" && body.clientId
-			? body.clientId
+		typeof body["clientId"] === "string" && body["clientId"]
+			? body["clientId"]
 			: `agent-${Math.random().toString(36).slice(2, 10)}`;
 	return { id, kind };
 }
@@ -1605,7 +1605,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	// written, because "you no longer have this board" is the answer to the write
 	// rather than a note attached to a write that went through.
 	const writer = holderFromRequest(req, key);
-	res.locals.boardWriterKind = writer.kind;
+	res.locals["boardWriterKind"] = writer.kind;
 	if (writer.kind === "agent" && refuseRevokedClaim(res, key)) return;
 
 	// Which version this write says it is against (TASK-091). One that is not a
@@ -1613,7 +1613,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	// rather than a conflict, and nothing should wait on a lock to be told so.
 	// What the canvas remembers telling this writer is read later, under the
 	// lock, because that half can move while a write waits for the board.
-	const stated = statedVersion(req.query.expectVersion, writer.kind);
+	const stated = statedVersion(req.query["expectVersion"], writer.kind);
 	if (!stated.ok) {
 		res
 			.status(400)
@@ -1629,7 +1629,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 		if (res.statusCode >= 400) return;
 		if (writer.kind !== "agent" || claimWriterId(key) !== writer.id) return;
 		if ("writtenBoardVersion" in res.locals) {
-			rememberVersion(writer.id, res.locals.writtenBoardVersion as number | null);
+			rememberVersion(writer.id, res.locals["writtenBoardVersion"] as number | null);
 		} else {
 			rememberVersionAt(writer.id, boards.get(key)?.file);
 		}
@@ -1641,7 +1641,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	// be the one that got away with saying nothing.
 	let said: string | null = null;
 	if (writer.kind === "agent") {
-		const check = checkDoing(req.query.doing);
+		const check = checkDoing(req.query["doing"]);
 		if (!check.ok) return refuseUndescribedWrite(res, key, req.path, check.problem);
 		said = check.doing;
 	}
@@ -1664,9 +1664,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 	void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, async (signal) => {
 		const hold = await holdBoard({ board: key, holder: writer, signal });
-		res.locals.boardLockKey = key;
-		res.locals.boardLockToken = hold.leaseToken;
-		res.locals.boardLockHolder = hold.holder;
+		res.locals["boardLockKey"] = key;
+		res.locals["boardLockToken"] = hold.leaseToken;
+		res.locals["boardLockHolder"] = hold.holder;
 		try {
 			(req as Request & { resolvedBoardWrite?: ResolvedBoard }).resolvedBoardWrite =
 				resolveInstalledBoard(key, "A write", {
@@ -1977,12 +1977,12 @@ app.post("/api/bridges", (req: Request, res: Response) => {
 					plan = planBridgeCreate({
 						elements: [...content.elements.values()],
 						bridgeId: mintId(content.elements),
-						overConnectorId: String((body as Record<string, unknown>).over ?? ""),
-						underConnectorId: String((body as Record<string, unknown>).under ?? ""),
-						background: String((body as Record<string, unknown>).background ?? ""),
-						...((body as Record<string, unknown>).at &&
-						typeof (body as Record<string, unknown>).at === "object"
-							? { at: (body as Record<string, unknown>).at as { x: number; y: number } }
+						overConnectorId: String((body as Record<string, unknown>)["over"] ?? ""),
+						underConnectorId: String((body as Record<string, unknown>)["under"] ?? ""),
+						background: String((body as Record<string, unknown>)["background"] ?? ""),
+						...((body as Record<string, unknown>)["at"] &&
+						typeof (body as Record<string, unknown>)["at"] === "object"
+							? { at: (body as Record<string, unknown>)["at"] as { x: number; y: number } }
 							: {}),
 					});
 				} catch (error) {
@@ -2024,7 +2024,7 @@ app.post("/api/bridges", (req: Request, res: Response) => {
 app.delete("/api/bridges/:id", (req: Request, res: Response) => {
 	try {
 		const source = boardTargetFromRequest(req, "Removing a connector bridge");
-		const bridgeId = typeof req.params.id === "string" ? req.params.id : "";
+		const bridgeId = typeof req.params["id"] === "string" ? req.params["id"] : "";
 		answerBoardWrite(res, {
 			source,
 			origin: "agent",
@@ -2492,7 +2492,7 @@ const ElementChangesSchema = z.object({
 /** Did this caller ask for the whole board? Off unless said, on every surface. */
 function wantsDocument(req: Request): boolean {
 	const asked =
-		req.query.document ??
+		req.query["document"] ??
 		(req.body && typeof req.body === "object" ? req.body.document : undefined);
 	return asked === true || asked === "1" || asked === "true";
 }
@@ -2504,9 +2504,9 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 			ElementChangesSchema.parse(req.body ?? {});
 		const presentationLinks = new Map(
 			upserts.flatMap((upsert) => {
-				if (typeof upsert.id !== "string") return [];
+				if (typeof upsert["id"] !== "string") return [];
 				const context = presentationContextFromElement(upsert, source.key);
-				return context ? ([[upsert.id, context]] as const) : [];
+				return context ? ([[upsert["id"], context]] as const) : [];
 			}),
 		);
 		const input: ElementInputRequest =
@@ -2524,7 +2524,7 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 						presentationLinks,
 						...(timestamp === undefined ? {} : { timestamp }),
 					};
-		const writerKind = res.locals.boardWriterKind as "human" | "agent";
+		const writerKind = res.locals["boardWriterKind"] as "human" | "agent";
 		answerBoardWrite(res, {
 			source,
 			origin,
@@ -2608,18 +2608,18 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 // therefore large, and the narration in `text` is what most callers use.
 app.get("/api/changes", (req: Request, res: Response) => {
 	try {
-		const since = Number(req.query.since ?? 0);
+		const since = Number(req.query["since"] ?? 0);
 		if (!Number.isFinite(since) || since < 0) {
 			return res
 				.status(400)
 				.json({ success: false, error: "since must be a cursor from a previous response" });
 		}
 		const { key: board } = boardFromRequest(req, "changes");
-		const wantDetail = req.query.detail === "1" || req.query.detail === "true";
-		const coalesce = req.query.coalesce === "1" || req.query.coalesce === "true";
+		const wantDetail = req.query["detail"] === "1" || req.query["detail"] === "true";
+		const coalesce = req.query["coalesce"] === "1" || req.query["coalesce"] === "true";
 		// A caller reading the feed wants the board as it is, not as it was 1.2s
 		// ago, so pending settle work is completed before answering.
-		if (req.query.settle !== "0") changeFeed.settle(board);
+		if (req.query["settle"] !== "0") changeFeed.settle(board);
 
 		// A cursor ahead of the feed's own is not "nothing has happened": it came
 		// from a previous canvas process, since the board lives in memory and the
@@ -2754,7 +2754,7 @@ app.post("/api/selection", (req: Request, res: Response) => {
 
 app.get("/api/selection", (req: Request, res: Response) => {
 	try {
-		const pane = paneFromRequest(req.query.pane);
+		const pane = paneFromRequest(req.query["pane"]);
 		if (!pane) return res.status(503).json(noBrowserBody("Reading a live selection"));
 		const key = paneBoards.get(pane.clientId) ?? pane.board;
 		const board = boards.get(key);
@@ -3161,7 +3161,7 @@ app.post("/api/files", (req: Request, res: Response) => {
 app.delete("/api/files/:id", (req: Request, res: Response) => {
 	try {
 		const source = boardTargetFromRequest(req, "Deleting an image");
-		const id = req.params.id as string;
+		const id = req.params["id"] as string;
 		answerBoardWrite(res, {
 			source,
 			origin: "agent",
@@ -3956,7 +3956,7 @@ function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
 app.get("/api/boards", (req: Request, res: Response) => {
 	try {
 		const vault = requireVaultRoot();
-		const repo = typeof req.query.repo === "string" ? req.query.repo.trim() : "";
+		const repo = typeof req.query["repo"] === "string" ? req.query["repo"].trim() : "";
 		if (repo) {
 			const found = boardsForRepo(repo, [], vault);
 			return res.json({
@@ -4026,7 +4026,7 @@ app.post("/api/boards/open", (req: Request, res: Response) => {
 		}).parse(req.body ?? {});
 		const asked = identityFromParams(params);
 		const key = boardKey(asked);
-		const prepared = res.locals.preparedBoardOpen as PreparedBoardOpen | undefined;
+		const prepared = res.locals["preparedBoardOpen"] as PreparedBoardOpen | undefined;
 		const alreadyRegistered = boards.has(key) && !params.reload;
 		const installOptions = params.reload ? { ignoreHold: true } : {};
 		const { board, content } =
@@ -4247,7 +4247,7 @@ function addressesFor(boardName: string): string[] {
 
 app.get("/api/boards/compare", (req: Request, res: Response) => {
 	try {
-		const fromParam = typeof req.query.from === "string" ? req.query.from.trim() : "";
+		const fromParam = typeof req.query["from"] === "string" ? req.query["from"].trim() : "";
 		if (!fromParam) {
 			return res
 				.status(400)
@@ -4256,8 +4256,8 @@ app.get("/api/boards/compare", (req: Request, res: Response) => {
 		const fromIdentity = parseBoardKey(fromParam);
 		let fromKey = boardKey(fromIdentity);
 		let toKey =
-			typeof req.query.to === "string" && req.query.to.trim()
-				? boardKey(parseBoardKey(req.query.to.trim()))
+			typeof req.query["to"] === "string" && req.query["to"].trim()
+				? boardKey(parseBoardKey(req.query["to"].trim()))
 				: "";
 
 		// One address given: find the other side among that board's variants.
@@ -4479,8 +4479,8 @@ app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
 });
 
 // Start server
-const PORT = parseInt(process.env.PORT || "3000", 10);
-const HOST = process.env.HOST || "127.0.0.1";
+const PORT = parseInt(process.env["PORT"] || "3000", 10);
+const HOST = process.env["HOST"] || "127.0.0.1";
 const LOOPBACK_GUARD_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0", "::"]);
 const LOOPBACK_ADDRESSES = ["127.0.0.1", "::1"];
 

@@ -24,11 +24,11 @@ interface ElementsBody {
 }
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
-const callerVault = process.env.ARCHBOARD_VAULT;
+const callerVault = process.env["ARCHBOARD_VAULT"];
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-malformed-input-"));
 // The direct engine calls below share this test process. Configure their vault
 // before config.ts is first evaluated; the canvas child still receives it explicitly.
-process.env.ARCHBOARD_VAULT = vault;
+process.env["ARCHBOARD_VAULT"] = vault;
 let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
 let configuredVault: string | undefined;
@@ -58,15 +58,15 @@ afterAll(async () => {
 		try {
 			fs.rmSync(vault, { recursive: true, force: true });
 		} finally {
-			if (callerVault === undefined) delete process.env.ARCHBOARD_VAULT;
-			else process.env.ARCHBOARD_VAULT = callerVault;
+			if (callerVault === undefined) delete process.env["ARCHBOARD_VAULT"];
+			else process.env["ARCHBOARD_VAULT"] = callerVault;
 		}
 	}
 });
 
 describe("malformed input", () => {
 	test("uses its owned vault for same-process engine calls", () => {
-		expect(process.env.ARCHBOARD_VAULT).toBe(vault);
+		expect(process.env["ARCHBOARD_VAULT"]).toBe(vault);
 		expect(configuredVault).toBe(vault);
 	});
 

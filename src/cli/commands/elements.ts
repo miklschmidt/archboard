@@ -69,11 +69,11 @@ export const ApplyPayloadStageSchema = jsonText(
 	const record =
 		raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
 	const create = (
-		Array.isArray(raw) ? raw : Array.isArray(record.create) ? record.create : []
+		Array.isArray(raw) ? raw : Array.isArray(record["create"]) ? record["create"] : []
 	).filter((value): value is ElementInput => Boolean(value && typeof value === "object"));
-	const rawUpdates = Array.isArray(record.update) ? record.update : [];
-	const deletes = Array.isArray(record.delete)
-		? record.delete.filter((value): value is string => typeof value === "string")
+	const rawUpdates = Array.isArray(record["update"]) ? record["update"] : [];
+	const deletes = Array.isArray(record["delete"])
+		? record["delete"].filter((value): value is string => typeof value === "string")
 		: [];
 	if (!create.length && !rawUpdates.length && !deletes.length) {
 		context.addIssue({ code: "custom", message: "Patch has no create/update/delete operations" });
@@ -89,7 +89,7 @@ export const ApplyPayloadStageSchema = jsonText(
 			return z.NEVER;
 		}
 		const update = value as Record<string, unknown>;
-		if (typeof update.id !== "string" || !update.id) {
+		if (typeof update["id"] !== "string" || !update["id"]) {
 			context.addIssue({ code: "custom", message: 'Every update entry needs an "id"' });
 			return z.NEVER;
 		}

@@ -104,21 +104,21 @@ function captureRecord(value: unknown): OpenerCapture {
 		throw new Error("capture must be an object.");
 	}
 	const record = value as Record<string, unknown>;
-	if (!Number.isSafeInteger(record.pid) || (record.pid as number) <= 0) {
+	if (!Number.isSafeInteger(record["pid"]) || (record["pid"] as number) <= 0) {
 		throw new Error("capture.pid must be a positive safe integer.");
 	}
-	if (typeof record.target !== "string") throw new Error("capture.target must be a string.");
-	if (!Array.isArray(record.extra) || !record.extra.every((item) => typeof item === "string")) {
+	if (typeof record["target"] !== "string") throw new Error("capture.target must be a string.");
+	if (!Array.isArray(record["extra"]) || !record["extra"].every((item) => typeof item === "string")) {
 		throw new Error("capture.extra must be an array of strings.");
 	}
-	if (!Array.isArray(record.argv) || !record.argv.every((item) => typeof item === "string")) {
+	if (!Array.isArray(record["argv"]) || !record["argv"].every((item) => typeof item === "string")) {
 		throw new Error("capture.argv must be an array of strings.");
 	}
 	return {
-		pid: record.pid as number,
-		target: record.target,
-		extra: record.extra,
-		argv: record.argv,
+		pid: record["pid"] as number,
+		target: record["target"],
+		extra: record["extra"],
+		argv: record["argv"],
 	};
 }
 
@@ -312,10 +312,10 @@ export async function createOpenerFixture(
 	);
 	writeFileSync(bindingFile, JSON.stringify({ repo: repository, path: "src/index.ts" }));
 
-	const previousRepos = process.env.ARCHBOARD_REPOS;
-	const previousConfig = process.env.ARCHBOARD_OPENER_CONFIG;
-	process.env.ARCHBOARD_REPOS = registry;
-	process.env.ARCHBOARD_OPENER_CONFIG = configFile;
+	const previousRepos = process.env["ARCHBOARD_REPOS"];
+	const previousConfig = process.env["ARCHBOARD_OPENER_CONFIG"];
+	process.env["ARCHBOARD_REPOS"] = registry;
+	process.env["ARCHBOARD_OPENER_CONFIG"] = configFile;
 	let server: Server | null = null;
 	let visibleBase = "";
 	let disposed = false;
@@ -465,10 +465,10 @@ export async function createOpenerFixture(
 			if (disposed) return;
 			disposed = true;
 			await stop();
-			if (previousRepos === undefined) delete process.env.ARCHBOARD_REPOS;
-			else process.env.ARCHBOARD_REPOS = previousRepos;
-			if (previousConfig === undefined) delete process.env.ARCHBOARD_OPENER_CONFIG;
-			else process.env.ARCHBOARD_OPENER_CONFIG = previousConfig;
+			if (previousRepos === undefined) delete process.env["ARCHBOARD_REPOS"];
+			else process.env["ARCHBOARD_REPOS"] = previousRepos;
+			if (previousConfig === undefined) delete process.env["ARCHBOARD_OPENER_CONFIG"];
+			else process.env["ARCHBOARD_OPENER_CONFIG"] = previousConfig;
 			rmSync(root, { recursive: true });
 		},
 	};

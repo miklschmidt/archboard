@@ -200,7 +200,7 @@ export function applyCiBrowserOwnerExclusion(
 ): BrowserSelection {
 	const excluded = environment[CI_EXCLUDED_BROWSER_OWNERS_ENV];
 	if (excluded === undefined) return selection;
-	if (environment.CI !== "true")
+	if (environment["CI"] !== "true")
 		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} requires CI=true.`);
 	if (selection.mode !== "package") {
 		selectionError(`${CI_EXCLUDED_BROWSER_OWNERS_ENV} is valid only for the package browser lane.`);
@@ -226,8 +226,8 @@ function inside(parent: string, child: string): boolean {
 }
 
 export function browserTestRoots(): BrowserTestRoots {
-	const laneRoot = process.env.ARCHBOARD_TEST_BROWSER_LANE_ROOT;
-	const ownerRoot = process.env.ARCHBOARD_TEST_BROWSER_OWNER_ROOT;
+	const laneRoot = process.env["ARCHBOARD_TEST_BROWSER_LANE_ROOT"];
+	const ownerRoot = process.env["ARCHBOARD_TEST_BROWSER_OWNER_ROOT"];
 	if (!laneRoot || !ownerRoot)
 		throw new Error("Browser test must run through run-browser-lane.ts.");
 	if (!inside(laneRoot, ownerRoot) || laneRoot === ownerRoot) {
@@ -246,11 +246,11 @@ export function browserTestEnvironment(): Record<string, string> {
 		NO_COLOR: "1",
 	};
 	for (const name of REQUIRED_BROWSER_ENV) env[name] = requiredEnvironment(name);
-	if (process.env.AGENT_BROWSER_EXECUTABLE_PATH) {
-		env.AGENT_BROWSER_EXECUTABLE_PATH = process.env.AGENT_BROWSER_EXECUTABLE_PATH;
+	if (process.env["AGENT_BROWSER_EXECUTABLE_PATH"]) {
+		env["AGENT_BROWSER_EXECUTABLE_PATH"] = process.env["AGENT_BROWSER_EXECUTABLE_PATH"];
 	}
-	if (process.env.AGENT_BROWSER_DEFAULT_TIMEOUT) {
-		env.AGENT_BROWSER_DEFAULT_TIMEOUT = process.env.AGENT_BROWSER_DEFAULT_TIMEOUT;
+	if (process.env["AGENT_BROWSER_DEFAULT_TIMEOUT"]) {
+		env["AGENT_BROWSER_DEFAULT_TIMEOUT"] = process.env["AGENT_BROWSER_DEFAULT_TIMEOUT"];
 	}
 	return env;
 }
@@ -259,7 +259,7 @@ export function canvasTestEnvironment(
 	values: TestEnvironment = {},
 ): Record<string, string | undefined> {
 	const env: Record<string, string | undefined> = browserTestEnvironment();
-	env.LOG_FILE_PATH = join(browserTestRoots().ownerRoot, "canvas.log");
+	env["LOG_FILE_PATH"] = join(browserTestRoots().ownerRoot, "canvas.log");
 	for (const name of CLEARED_CANVAS_ENV) env[name] = undefined;
 	for (const name of Object.keys(process.env)) {
 		if (name.startsWith("ARCHBOARD_TEST_") || name.startsWith("AGENT_BROWSER_"))

@@ -9,8 +9,8 @@
 // canvas by spawning src/server.ts as a child process (see runtime/engine/spawn.ts).
 
 // Disable colors to prevent ANSI color codes from breaking JSON parsing
-process.env.NODE_DISABLE_COLORS = "1";
-process.env.NO_COLOR = "1";
+process.env["NODE_DISABLE_COLORS"] = "1";
+process.env["NO_COLOR"] = "1";
 
 const argv = process.argv.slice(2);
 // Must run before importing anything that reads runtime configuration.

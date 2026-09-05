@@ -13,13 +13,13 @@ describe("Codex app-server no-parameter requests", () => {
 				id: expect.any(String),
 				method: "configRequirements/read",
 			});
-			sendJson(child, { id: requirementsFrame.id, result: { requirements: null } });
+			sendJson(child, { id: requirementsFrame["id"], result: { requirements: null } });
 			expect((await requirementsPromise).result).toEqual({ requirements: null });
 
 			const logoutPromise = transport.request("account/logout", undefined);
 			const logoutFrame = frameAt(child, 1);
 			expect(logoutFrame).toEqual({ id: expect.any(String), method: "account/logout" });
-			sendJson(child, { id: logoutFrame.id, result: {} });
+			sendJson(child, { id: logoutFrame["id"], result: {} });
 			expect((await logoutPromise).result).toEqual({});
 
 			const requirementsError = await captureRejection(

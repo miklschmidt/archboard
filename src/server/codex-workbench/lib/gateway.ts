@@ -134,7 +134,7 @@ function actionOutcome(value: BrowserActionResult): DeliveryOutcome {
 }
 
 function errorOutcome(error: unknown): DeliveryOutcome {
-	if (isRecord(error) && isDeliveryOutcome(error.outcome)) return error.outcome;
+	if (isRecord(error) && isDeliveryOutcome(error["outcome"])) return error["outcome"];
 	return "not_delivered";
 }
 
@@ -964,7 +964,7 @@ export function createCodexWorkbenchGateway(
 		instance?: BrowserConnectionInstance,
 	): Promise<BrowserGatewayCommandResult> => {
 		const paneId =
-			paneIdOverride ?? (isRecord(value) && typeof value.paneId === "string" ? value.paneId : null);
+			paneIdOverride ?? (isRecord(value) && typeof value["paneId"] === "string" ? value["paneId"] : null);
 		if (paneId === null)
 			throw new CodexWorkbenchGatewayError(
 				"invalid_input",
@@ -973,8 +973,8 @@ export function createCodexWorkbenchGateway(
 		const state = stateFor(browserId, paneId, instance);
 		if (
 			isRecord(value) &&
-			typeof value.command === "string" &&
-			!Object.hasOwn(dispatch, value.command)
+			typeof value["command"] === "string" &&
+			!Object.hasOwn(dispatch, value["command"])
 		)
 			return refusal(state, null, "unsupported_command");
 		let parsed: OwnedBrowserCommand;

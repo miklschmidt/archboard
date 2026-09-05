@@ -22,9 +22,9 @@ const bridgeInput = (
 		if (typeof value !== "number") throw new Error(`bridge fixture has no numeric ${key}`);
 		return value;
 	};
-	if (typeof raw.id !== "string" || typeof raw.index !== "string" || !Array.isArray(raw.points))
+	if (typeof raw["id"] !== "string" || typeof raw["index"] !== "string" || !Array.isArray(raw["points"]))
 		throw new Error("bridge fixture is incomplete");
-	const points = raw.points.map((point) => {
+	const points = raw["points"].map((point) => {
 		if (
 			!Array.isArray(point) ||
 			point.length !== 2 ||
@@ -35,12 +35,12 @@ const bridgeInput = (
 		return [point[0], point[1]] as [number, number];
 	});
 	const common = {
-		id: raw.id,
+		id: raw["id"],
 		x: number("x"),
 		y: number("y"),
 		width: number("width"),
 		height: number("height"),
-		index: raw.index,
+		index: raw["index"],
 		points,
 	};
 	return type === "line" ? { ...common, type: "line" } : { ...common, type: "arrow" };

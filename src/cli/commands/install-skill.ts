@@ -113,7 +113,7 @@ export function resolveInvocation(): { command: string; onPath: boolean } {
 		[wrapper, entry].map(realpathOrNull).filter((value): value is string => value !== null),
 	);
 
-	for (const dir of (process.env.PATH ?? "").split(path.delimiter)) {
+	for (const dir of (process.env["PATH"] ?? "").split(path.delimiter)) {
 		if (!dir) continue;
 		const resolved = realpathOrNull(path.join(dir, "archboard"));
 		if (resolved && ours.has(resolved)) return { command: "archboard", onPath: true };
@@ -469,8 +469,8 @@ async function writeSetup(options: {
 
 	// A vault local to the repo is the assumed answer; an ARCHBOARD_VAULT
 	// already in the environment is somebody having answered already.
-	const suggested = process.env.ARCHBOARD_VAULT
-		? path.resolve(process.env.ARCHBOARD_VAULT)
+	const suggested = process.env["ARCHBOARD_VAULT"]
+		? path.resolve(process.env["ARCHBOARD_VAULT"])
 		: path.join(repo, LOCAL_VAULT_DIR);
 	const vault = options.vaultSpec
 		? path.resolve(expandHome(options.vaultSpec))
@@ -501,8 +501,8 @@ async function writeSetup(options: {
 	// A canvas on a non-default URL is part of the environment too, and the one
 	// thing a fresh agent has no way of guessing.
 	const canvasUrl =
-		process.env.EXPRESS_SERVER_URL && process.env.EXPRESS_SERVER_URL !== DEFAULT_CANVAS_URL
-			? process.env.EXPRESS_SERVER_URL
+		process.env["EXPRESS_SERVER_URL"] && process.env["EXPRESS_SERVER_URL"] !== DEFAULT_CANVAS_URL
+			? process.env["EXPRESS_SERVER_URL"]
 			: undefined;
 	const block = renderBlock({ vault, command, onPath, skill: options.skill, canvasUrl });
 

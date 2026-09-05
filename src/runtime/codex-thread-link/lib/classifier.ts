@@ -95,10 +95,10 @@ function invalidResult(message: string, cause?: unknown): CodexThreadLinkError {
 function isCurrentEpoch(value: unknown): value is ThreadLinkCurrentEpoch {
 	return (
 		isRecord(value) &&
-		typeof value.childId === "string" &&
-		value.childId.length > 0 &&
-		typeof value.epoch === "string" &&
-		value.epoch.length > 0
+		typeof value["childId"] === "string" &&
+		value["childId"].length > 0 &&
+		typeof value["epoch"] === "string" &&
+		value["epoch"].length > 0
 	);
 }
 
@@ -181,39 +181,39 @@ function loadedListParams(cursor: string | null) {
 }
 
 function assertThreadPage(value: unknown): asserts value is SessionThreadPageResult {
-	if (!isRecord(value) || !Array.isArray(value.data)) {
+	if (!isRecord(value) || !Array.isArray(value["data"])) {
 		throw new CodexThreadLinkError(
 			"list_exhaustion_failure",
 			"thread/list returned an invalid page before exhaustion.",
 		);
 	}
-	if (value.nextCursor !== null && typeof value.nextCursor !== "string") {
+	if (value["nextCursor"] !== null && typeof value["nextCursor"] !== "string") {
 		throw new CodexThreadLinkError(
 			"list_exhaustion_failure",
 			"thread/list returned an invalid nextCursor before exhaustion.",
 		);
 	}
-	for (const row of value.data) {
-		if (!isRecord(row) || typeof row.id !== "string" || row.id.length === 0) {
+	for (const row of value["data"]) {
+		if (!isRecord(row) || typeof row["id"] !== "string" || row["id"].length === 0) {
 			throw invalidResult("thread/list returned a row without a valid ThreadId.");
 		}
 	}
 }
 
 function assertLoadedPage(value: unknown): asserts value is SessionLoadedThreadPageResult {
-	if (!isRecord(value) || !Array.isArray(value.data)) {
+	if (!isRecord(value) || !Array.isArray(value["data"])) {
 		throw new CodexThreadLinkError(
 			"list_exhaustion_failure",
 			"thread/loaded/list returned an invalid page before exhaustion.",
 		);
 	}
-	if (value.nextCursor !== null && typeof value.nextCursor !== "string") {
+	if (value["nextCursor"] !== null && typeof value["nextCursor"] !== "string") {
 		throw new CodexThreadLinkError(
 			"list_exhaustion_failure",
 			"thread/loaded/list returned an invalid nextCursor before exhaustion.",
 		);
 	}
-	for (const id of value.data) {
+	for (const id of value["data"]) {
 		if (typeof id !== "string" || id.length === 0) {
 			throw invalidResult("thread/loaded/list returned a value that is not a ThreadId.");
 		}
@@ -313,10 +313,10 @@ export function isExecutableThreadLinkStatus(value: unknown): value is ThreadLin
 
 function statusOf(thread: SessionThread): SessionThread["status"]["type"] {
 	const status: unknown = thread.status;
-	if (!isRecord(status) || !isThreadLinkStatus(status.type)) {
+	if (!isRecord(status) || !isThreadLinkStatus(status["type"])) {
 		throw invalidResult("thread/list returned a row with an invalid thread status.");
 	}
-	return status.type;
+	return status["type"];
 }
 
 function observedDirectInput(thread: SessionThread): boolean | null {

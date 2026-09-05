@@ -15,7 +15,7 @@ describe("Codex app-server malformed routing contract", () => {
 		const { child, transport, close } = createHarness();
 		try {
 			const pending = transport.request("turn/steer", {});
-			const id = frameAt(child, 0).id;
+			const id = frameAt(child, 0)["id"];
 			const rejection = captureRejection(pending);
 			sendJson(child, { id });
 			await flushStreams();
@@ -30,12 +30,12 @@ describe("Codex app-server malformed routing contract", () => {
 			expect(
 				frames(child).some(
 					(frame) =>
-						frame.id === id && (frame.error as { code?: unknown } | undefined)?.code === -32600,
+						frame["id"] === id && (frame["error"] as { code?: unknown } | undefined)?.code === -32600,
 				),
 			).toBeFalse();
 
 			const recovered = transport.request("turn/steer", {});
-			const recoveredId = frameAt(child, 1).id;
+			const recoveredId = frameAt(child, 1)["id"];
 			sendJson(child, { id: recoveredId, result: { turnId: "recovered" } });
 			expect((await recovered).result).toEqual({ turnId: "recovered" });
 		} finally {

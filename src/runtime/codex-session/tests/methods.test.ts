@@ -276,7 +276,7 @@ describe("typed Codex session public port", () => {
 				const entry = OPERATION_CASES[name];
 				if (entry.kind === "reverse" || name === "initialize" || name === "accountLogout") continue;
 				const params = issueParams(name, entry.params, fixture);
-				if (name === "turnSteer" && params) params.expectedTurnId = expectedTurnId;
+				if (name === "turnSteer" && params) params["expectedTurnId"] = expectedTurnId;
 				fixture.transport.enqueueResponse(entry.wire, responseFor(entry.wire, fixture) as never);
 				const call = fixture.session[name] as (params?: unknown) => Promise<unknown>;
 				const result = await call(params);

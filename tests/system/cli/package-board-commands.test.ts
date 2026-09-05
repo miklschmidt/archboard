@@ -216,7 +216,7 @@ describe("package board commands", () => {
 				expect(writes[0]?.url.searchParams.get("doing"), diagnostic).toBe(doing);
 				const transportedDocument =
 					writes[0]?.url.searchParams.get("document") === "1" ||
-					bodyOf(writes[0]).document === true;
+					bodyOf(writes[0])["document"] === true;
 				expect(transportedDocument, diagnostic).toBe(document);
 				const answer =
 					write.name === "add"
@@ -324,7 +324,7 @@ describe("package board commands", () => {
 		);
 		diagnostic = packageFailure(stdin);
 		expect(stdin.status, diagnostic).toBe(0);
-		expect(bodyOf(http.writesSince(stdinBefore)[0]).x, diagnostic).toBe(44);
+		expect(bodyOf(http.writesSince(stdinBefore)[0])["x"], diagnostic).toBe(44);
 		const repeatedBefore = http.requests.length;
 		const repeatedResult = await owner.run(
 			[
@@ -345,7 +345,7 @@ describe("package board commands", () => {
 		diagnostic = packageFailure(repeatedResult);
 		expect(repeatedResult.status, diagnostic).toBe(0);
 		const repeated = http.writesSince(repeatedBefore)[0];
-		expect(bodyOf(repeated).x, diagnostic).toBe(2);
+		expect(bodyOf(repeated)["x"], diagnostic).toBe(2);
 		expect(repeated?.url.searchParams.get("document"), diagnostic).toBe("1");
 		const optionValue = await owner.run(["update", "shape1", "--set", "--document"]);
 		diagnostic = packageFailure(optionValue);
@@ -388,7 +388,7 @@ describe("package board commands", () => {
 		expect(ids.status, diagnostic).toBe(0);
 		expect(
 			bodyOf(http.requests.slice(before).find((r) => r.url.pathname === "/api/viewport"))
-				.scrollToElementIds,
+				["scrollToElementIds"],
 			diagnostic,
 		).toEqual(["shape1", "shape2"]);
 		const numericServer = await owner.run(

@@ -80,12 +80,12 @@ describe("image persistence", () => {
 			[{ id: "e1", type: "image", x: 0, y: 0, width: 10, height: 10, fileId: "img-a" }],
 			files,
 		);
-		expect(Object.keys(withImage.scene.files ?? {})).toEqual(["img-a"]);
+		expect(Object.keys(withImage.scene["files"] ?? {})).toEqual(["img-a"]);
 		const withoutImage = buildScene(
 			[{ id: "e2", type: "rectangle", x: 0, y: 0, width: 10, height: 10 }],
 			files,
 		);
-		expect(withoutImage.scene.files).toBeUndefined();
+		expect(withoutImage.scene["files"]).toBeUndefined();
 	});
 
 	test("keeps each board's images in only that board and note", async () => {

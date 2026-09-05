@@ -27,7 +27,7 @@ const PRESENTATION_MARKER_KEY = "presentationTarget";
 function markerOf(element: { customData?: unknown }): PresentationMarker | undefined {
 	const custom = element.customData;
 	if (!custom || typeof custom !== "object" || Array.isArray(custom)) return undefined;
-	const archboard = (custom as Record<string, unknown>).archboard;
+	const archboard = (custom as Record<string, unknown>)["archboard"];
 	if (!archboard || typeof archboard !== "object" || Array.isArray(archboard)) return undefined;
 	const marker = (archboard as Record<string, unknown>)[PRESENTATION_MARKER_KEY];
 	if (!marker || typeof marker !== "object" || Array.isArray(marker)) return undefined;
@@ -40,14 +40,14 @@ function markerOf(element: { customData?: unknown }): PresentationMarker | undef
 function withoutMarker<T extends object>(element: T): T {
 	const custom = (element as { customData?: unknown }).customData;
 	if (!custom || typeof custom !== "object" || Array.isArray(custom)) return element;
-	const archboard = (custom as Record<string, unknown>).archboard;
+	const archboard = (custom as Record<string, unknown>)["archboard"];
 	if (!archboard || typeof archboard !== "object" || Array.isArray(archboard)) return element;
 	if (!(PRESENTATION_MARKER_KEY in archboard)) return element;
 	const nextArchboard = { ...archboard } as Record<string, unknown>;
 	delete nextArchboard[PRESENTATION_MARKER_KEY];
 	const nextCustom = { ...custom } as Record<string, unknown>;
-	if (Object.keys(nextArchboard).length === 0) delete nextCustom.archboard;
-	else nextCustom.archboard = nextArchboard;
+	if (Object.keys(nextArchboard).length === 0) delete nextCustom["archboard"];
+	else nextCustom["archboard"] = nextArchboard;
 	const result = { ...element } as T & { customData?: Record<string, unknown> };
 	if (Object.keys(nextCustom).length === 0) delete result.customData;
 	else result.customData = nextCustom;

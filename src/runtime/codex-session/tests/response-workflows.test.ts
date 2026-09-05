@@ -36,11 +36,11 @@ async function answerPending<Method extends ResponseMethod>(
 	await fixture.settle();
 	const frames = fixture.frames();
 	const index = frames.findIndex(
-		(frame, candidate) => candidate >= from && frame.method === method && frame.id !== undefined,
+		(frame, candidate) => candidate >= from && frame["method"] === method && frame["id"] !== undefined,
 	);
 	if (index < 0) throw new Error(`transport did not write ${method}`);
 	const request = frames[index];
-	fixture.send({ id: request?.id, result });
+	fixture.send({ id: request?.["id"], result });
 	await fixture.settle();
 	return index + 1;
 }
@@ -125,8 +125,8 @@ describe("Codex session response workflows", () => {
 				() => fixture.session.accountLoginCancel({ loginId: login.loginId }),
 				{ status: "canceled" },
 			);
-			const cancel = fixture.frames().find((frame) => frame.method === "account/login/cancel");
-			expect(cancel?.params).toEqual({ loginId: "hosted-login" });
+			const cancel = fixture.frames().find((frame) => frame["method"] === "account/login/cancel");
+			expect(cancel?.["params"]).toEqual({ loginId: "hosted-login" });
 		} finally {
 			await fixture.close();
 		}
@@ -170,8 +170,8 @@ describe("Codex session response workflows", () => {
 				{ thread: { ...threadFixture, id: "listed-thread", turns: [] } },
 			);
 			expect(read.thread.id).toBe(listedThread.id);
-			const readRequest = fixture.frames().find((frame) => frame.method === "thread/read");
-			expect(readRequest?.params).toEqual({ threadId: "listed-thread" });
+			const readRequest = fixture.frames().find((frame) => frame["method"] === "thread/read");
+			expect(readRequest?.["params"]).toEqual({ threadId: "listed-thread" });
 			await expectCurrentTime(fixture, "time-listed", "listed-thread", 12);
 			expect(fixture.transport.inspectIssues()).toEqual([]);
 		} finally {

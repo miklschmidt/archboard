@@ -48,11 +48,11 @@ describe("Codex process owner", () => {
 			expect(started.state).toBe("running");
 			expect(started.ready).toBe(true);
 			expect(started.argv).toEqual([executable, ...CODEX_APP_SERVER_ARGUMENTS]);
-			expect(observed.argv).toEqual([...CODEX_APP_SERVER_ARGUMENTS]);
-			expect(observed.keys).toEqual(["HOME", "PATH", "CODEX_HOME", "CODEX_SQLITE_HOME"]);
-			expect(observed.home).toBe(path.join(root, "storage", "codex-home"));
-			expect(observed.pwd).toBeUndefined();
-			expect(observed.secret).toBeUndefined();
+			expect(observed["argv"]).toEqual([...CODEX_APP_SERVER_ARGUMENTS]);
+			expect(observed["keys"]).toEqual(["HOME", "PATH", "CODEX_HOME", "CODEX_SQLITE_HOME"]);
+			expect(observed["home"]).toBe(path.join(root, "storage", "codex-home"));
+			expect(observed["pwd"]).toBeUndefined();
+			expect(observed["secret"]).toBeUndefined();
 			expect(processOwner.snapshot().stderr.totalBytes).toBe(0);
 			expect(processOwner.snapshot().stderr.redacted).toBe(true);
 			const stopped = await processOwner.stop();
