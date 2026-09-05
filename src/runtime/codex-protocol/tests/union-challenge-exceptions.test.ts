@@ -34,6 +34,19 @@ const DIRECT_REGULAR_UNION_CHALLENGES = [
 	["turn/completed", "turn.error.codexErrorInfo.activeTurnNotSteerable.turnKind"],
 ] as const;
 
+function issuePath(issue: unknown): string[] {
+	if (typeof issue !== "object" || issue === null || !("path" in issue)) {
+		return [];
+	}
+	return Array.isArray(issue.path) ? issue.path.map(String) : [];
+}
+
+function issueCode(issue: unknown): unknown {
+	return typeof issue === "object" && issue !== null && "code" in issue
+		? issue.code
+		: undefined;
+}
+
 describe("protocol union diagnostics", () => {
 	test("contains only the 14 FunctionCallOutputBody output collapses", () => {
 		const actual = SERVER_NOTIFICATION_METHODS.flatMap((method) =>
@@ -54,7 +67,9 @@ describe("protocol union diagnostics", () => {
 			const challenge = SERVER_NOTIFICATION_UNION_CHALLENGES[method].find(
 				(candidate) => candidate.name === name,
 			);
-			if (!challenge) throw new Error(`missing challenge ${method}:${name}`);
+			if (!challenge) {
+				throw new Error(`missing challenge ${method}:${name}`);
+			}
 			const prepared = challenge.prepare(notificationFixture(method));
 			const mutation = challenge.mutate(prepared);
 			expect(mutation.allowedContainingUnionPaths).toEqual([]);
@@ -62,13 +77,12 @@ describe("protocol union diagnostics", () => {
 				decodeServerNotification({ method, params: mutation.params });
 				throw new Error(`expected ${method}:${name} to fail`);
 			} catch (error) {
-				if (!(error instanceof ProtocolDecodeError)) throw error;
+				if (!(error instanceof ProtocolDecodeError)) {
+					throw error;
+				}
 				expect(error.issues).toHaveLength(1);
-				const issue = error.issues[0];
-				const actualPath =
-					issue && typeof issue === "object" && "path" in issue && Array.isArray(issue.path)
-						? issue.path.map(String)
-						: [];
+				const [issue] = error.issues;
+				const actualPath = issuePath(issue);
 				expect(actualPath).toEqual(mutation.targetPath.map(String));
 				return `${method}:${name}`;
 			}
@@ -95,15 +109,13 @@ describe("protocol union diagnostics", () => {
 		} catch (error) {
 			thrown = error;
 		}
-		if (!(thrown instanceof ProtocolDecodeError))
+		if (!(thrown instanceof ProtocolDecodeError)) {
 			throw new Error("expected independent protocol diagnostics");
+		}
 		expect(
 			thrown.issues.map((issue) => ({
-				path:
-					issue && typeof issue === "object" && "path" in issue && Array.isArray(issue.path)
-						? issue.path.map(String)
-						: [],
-				code: issue && typeof issue === "object" && "code" in issue ? issue.code : undefined,
+				path: issuePath(issue),
+				code: issueCode(issue),
 			})),
 		).toEqual([
 			{ path: ["thread", "id"], code: "invalid_type" },
