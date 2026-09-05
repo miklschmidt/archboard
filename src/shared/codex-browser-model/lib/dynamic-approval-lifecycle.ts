@@ -178,11 +178,12 @@ export function validateDynamicApprovalState(
 		!APPROVAL_RELATIONS[approval.state].some((relation) =>
 			matchesApprovalRelation(approval, relation),
 		)
-	)
+	) {
 		refinementContext.addIssue({
 			code: "custom",
 			path: ["state"],
 			message:
 				"decision, delivery, toolResult, binding, and resumable fields are not a valid state arm",
 		});
+	}
 }

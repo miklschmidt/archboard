@@ -18,7 +18,9 @@ const commanderParser = new CommanderArgvParser();
 function selectedCase(contract: AnyCommandContract, input: unknown): OutputCase {
 	const id = contract.output.select(input as Record<string, unknown>);
 	const outputCase = contract.output.cases.find((candidate) => candidate.id === id);
-	if (!outputCase) throw new Error(`${contract.path.join(" ")}: unknown output case ${id}`);
+	if (!outputCase) {
+		throw new Error(`${contract.path.join(" ")}: unknown output case ${id}`);
+	}
 	return outputCase;
 }
 
@@ -26,15 +28,21 @@ function selectedOutcome(
 	contract: AnyCommandContract,
 	id: string | undefined,
 ): CommandOutcomeDeclaration | undefined {
-	if (id === undefined) return undefined;
+	if (id === undefined) {
+		return undefined;
+	}
 	const outcome = contract.outcomes?.find((candidate) => candidate.id === id);
-	if (!outcome) throw new Error(`${contract.path.join(" ")}: undeclared outcome ${id}`);
+	if (!outcome) {
+		throw new Error(`${contract.path.join(" ")}: undeclared outcome ${id}`);
+	}
 	return outcome;
 }
 
 function parseInput<T>(schema: z.ZodType<T>, value: unknown): T {
 	const parsed = schema.safeParse(value);
-	if (parsed.success) return parsed.data;
+	if (parsed.success) {
+		return parsed.data;
+	}
 	throw new CliUsageError(parsed.error.issues[0]?.message ?? "Invalid command input");
 }
 
@@ -50,7 +58,9 @@ export async function executeCommand(
 		signal,
 		require(prerequisite, description) {
 			const existing = prerequisiteCache.get(prerequisite);
-			if (existing) return existing;
+			if (existing) {
+				return existing;
+			}
 			const pending = requirePrerequisite(prerequisite, description);
 			prerequisiteCache.set(prerequisite, pending);
 			return pending;
@@ -85,5 +95,7 @@ export async function executeCommand(
 		diagnostics: execution.diagnostics ?? [],
 		...(outcome ? { outcome } : {}),
 	});
-	if (outcome) processCommandHost.setExitCode(outcome.exit);
+	if (outcome) {
+		processCommandHost.setExitCode(outcome.exit);
+	}
 }

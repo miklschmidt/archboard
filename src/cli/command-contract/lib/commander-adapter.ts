@@ -15,7 +15,9 @@ function commanderUsageError(error: unknown): CliUsageError {
 	const value = error as Error & { code?: string };
 	const message = value.message.replace(/^error:\s*/i, "");
 	const unknown = message.match(/^unknown option '([^']+)'/i);
-	if (unknown) return new CliUsageError(`Unknown flag ${unknown[1]?.split("=", 1)[0]}`);
+	if (unknown) {
+		return new CliUsageError(`Unknown flag ${unknown[1]?.split("=", 1)[0]}`);
+	}
 	const missing = message.match(/^option '([^']+)' argument missing/i);
 	if (missing) {
 		const spelling = missing[1]?.match(/--[a-z0-9-]+/i)?.[0] ?? missing[1];
@@ -27,8 +29,9 @@ function commanderUsageError(error: unknown): CliUsageError {
 function shieldSingleDashTokens(argv: readonly string[], declared: ReadonlySet<string>) {
 	const restored = new Map<string, string>();
 	const values = argv.map((token, index) => {
-		if (token === "-" || token.startsWith("--") || !token.startsWith("-") || declared.has(token))
+		if (token === "-" || token.startsWith("--") || !token.startsWith("-") || declared.has(token)) {
 			return token;
+		}
 		const placeholder = `archboard-single-dash-${index}`;
 		restored.set(placeholder, token);
 		return placeholder;
@@ -37,21 +40,29 @@ function shieldSingleDashTokens(argv: readonly string[], declared: ReadonlySet<s
 }
 
 function restoreToken(value: unknown, restored: ReadonlyMap<string, string>): unknown {
-	if (typeof value === "string") return restored.get(value) ?? value;
-	if (Array.isArray(value)) return value.map((item) => restoreToken(item, restored));
+	if (typeof value === "string") {
+		return restored.get(value) ?? value;
+	}
+	if (Array.isArray(value)) {
+		return value.map((item) => restoreToken(item, restored));
+	}
 	return value;
 }
 
 export class CommanderArgvParser {
 	async parse(contract: AnyCommandContract, argv: readonly string[]): Promise<TokenRecord> {
-		if (argv.includes("--")) throw new CliUsageError("Unknown flag --");
+		if (argv.includes("--")) {
+			throw new CliUsageError("Unknown flag --");
+		}
 		for (const token of argv) {
 			const spelling = contract.parameters
 				.flatMap((parameter) =>
 					parameter.kind === "option" && parameter.value === "none" ? parameter.spellings : [],
 				)
 				.find((candidate) => token.startsWith(`${candidate}=`));
-			if (spelling) throw new CliUsageError(`Flag ${spelling} does not take a value`);
+			if (spelling) {
+				throw new CliUsageError(`Flag ${spelling} does not take a value`);
+			}
 		}
 		const command = new Command();
 		command
@@ -75,7 +86,9 @@ export class CommanderArgvParser {
 				optionFlags(parameter.spellings, parameter.value),
 				parameter.description,
 			);
-			if (parameter.occurrences === "append") option.argParser(collect);
+			if (parameter.occurrences === "append") {
+				option.argParser(collect);
+			}
 			command.addOption(option);
 			options.set(parameter.key, option);
 		}
@@ -110,7 +123,9 @@ export class CommanderArgvParser {
 					continue;
 				}
 				const option = options.get(parameter.key);
-				if (!option) throw new Error(`Missing Commander option for ${parameter.key}`);
+				if (!option) {
+					throw new Error(`Missing Commander option for ${parameter.key}`);
+				}
 				const value = command.getOptionValue(option.attributeName());
 				record[parameter.key] = restoreToken(value, restored) as TokenRecord[string];
 				continue;

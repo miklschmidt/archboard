@@ -50,7 +50,9 @@ describe("opener selection", () => {
 	test.each(supportedSelections)("accepts a strict supported selection", (selection) => {
 		const parsed = OpenerSelectionSchema.safeParse(selection);
 		expect(parsed.success).toBeTrue();
-		if (parsed.success) expect(JSON.stringify(parsed.data)).toBe(JSON.stringify(selection));
+		if (parsed.success) {
+			expect(JSON.stringify(parsed.data)).toBe(JSON.stringify(selection));
+		}
 	});
 
 	test.each([

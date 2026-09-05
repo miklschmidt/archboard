@@ -192,7 +192,9 @@ function requireToken(value: unknown, domain: IdentityDomain): string {
 	if (typeof value !== "string") {
 		return fail("invalid-shape", `${domain} identity must be a string.`, domain);
 	}
-	if (value.length === 0) return fail("empty", `${domain} identity must not be empty.`, domain);
+	if (value.length === 0) {
+		return fail("empty", `${domain} identity must not be empty.`, domain);
+	}
 	if (value.trim() !== value) {
 		return fail(
 			"invalid-shape",
@@ -201,8 +203,12 @@ function requireToken(value: unknown, domain: IdentityDomain): string {
 		);
 	}
 	const match = WIRE_PATTERN.exec(value);
-	if (!match) return fail("invalid-shape", `Invalid ${domain} identity wire value.`, domain);
-	if (match[1] !== domain) return fail("wrong-domain", `Expected a ${domain} identity.`, domain);
+	if (!match) {
+		return fail("invalid-shape", `Invalid ${domain} identity wire value.`, domain);
+	}
+	if (match[1] !== domain) {
+		return fail("wrong-domain", `Expected a ${domain} identity.`, domain);
+	}
 	return match[2] as string;
 }
 
@@ -222,7 +228,9 @@ function mintToken(): string {
 
 function tokenOf(value: AnyIdentity): string {
 	const match = WIRE_PATTERN.exec(value);
-	if (!match) return fail("invalid-shape", "Identity is not a canonical wire value.");
+	if (!match) {
+		return fail("invalid-shape", "Identity is not a canonical wire value.");
+	}
 	return match[2] as string;
 }
 
@@ -306,7 +314,9 @@ function isWellFormedUnicode(value: string): boolean {
 		const codeUnit = value.charCodeAt(index);
 		if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
 			const next = value.charCodeAt(index + 1);
-			if (Number.isNaN(next) || next < 0xdc00 || next > 0xdfff) return false;
+			if (Number.isNaN(next) || next < 0xdc00 || next > 0xdfff) {
+				return false;
+			}
 			index++;
 		} else if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
 			return false;
@@ -316,7 +326,9 @@ function isWellFormedUnicode(value: string): boolean {
 }
 
 function encodeRawIdentity(raw: string, domain: IdentityDomain): string {
-	if (raw.length === 0) return fail("empty", `${domain} identity must not be empty.`, domain);
+	if (raw.length === 0) {
+		return fail("empty", `${domain} identity must not be empty.`, domain);
+	}
 	if (!isWellFormedUnicode(raw)) {
 		return fail(
 			"invalid-shape",
@@ -333,12 +345,16 @@ function encodeRawIdentity(raw: string, domain: IdentityDomain): string {
 		);
 	}
 	let encoded = "";
-	for (const byte of bytes) encoded += byte.toString(16).padStart(2, "0");
+	for (const byte of bytes) {
+		encoded += byte.toString(16).padStart(2, "0");
+	}
 	return `s${encoded}`;
 }
 
 function encodeRawJsonRpcRequestId(raw: JsonRpcRequestIdWireValue): string {
-	if (typeof raw === "string") return encodeRawIdentity(raw, "json-rpc-request");
+	if (typeof raw === "string") {
+		return encodeRawIdentity(raw, "json-rpc-request");
+	}
 	if (!Number.isSafeInteger(raw)) {
 		return fail(
 			"invalid-shape",
@@ -355,7 +371,9 @@ function encodeRawJsonRpcRequestId(raw: JsonRpcRequestIdWireValue): string {
 		);
 	}
 	let hex = "";
-	for (const byte of encoded) hex += byte.toString(16).padStart(2, "0");
+	for (const byte of encoded) {
+		hex += byte.toString(16).padStart(2, "0");
+	}
 	return `n${hex}`;
 }
 
@@ -368,7 +386,9 @@ function assertText(value: unknown, field: string): string {
 	) {
 		return fail("invalid-field", `${field} must be a non-empty bounded string.`);
 	}
-	if (value.includes("\0")) return fail("invalid-field", `${field} must not contain NUL.`);
+	if (value.includes("\0")) {
+		return fail("invalid-field", `${field} must not contain NUL.`);
+	}
 	return value;
 }
 
@@ -378,8 +398,9 @@ function assertCurrent(
 	currentChild: ChildId,
 	currentEpoch: ChildEpoch,
 ): void {
-	if (child !== currentChild)
+	if (child !== currentChild) {
 		return fail("wrong-child", "The correlation belongs to another child.");
+	}
 	if (epoch !== currentEpoch) {
 		return fail("stale-epoch", "The correlation belongs to a stale child epoch.");
 	}
@@ -400,7 +421,9 @@ function assertIssued<Domain extends IdentityDomain>(
 }
 
 function identityDomain(value: unknown): IdentityDomain {
-	if (typeof value !== "string") return fail("invalid-shape", "Identity must be a string.");
+	if (typeof value !== "string") {
+		return fail("invalid-shape", "Identity must be a string.");
+	}
 	const match = WIRE_PATTERN.exec(value);
 	if (!match || !IDENTITY_DOMAINS.has(match[1] as IdentityDomain)) {
 		return fail("invalid-shape", "Identity is not a canonical workbench identity.");
@@ -713,16 +736,21 @@ function createAuthority(ledger: IdentityLedger): IdentityAuthorities {
 		}
 		assertIssued(value, domain, issued);
 		const raw = rawByIdentity.get(value);
-		if (raw === undefined) return fail("unissued", "Identity has no trusted wire value.", domain);
+		if (raw === undefined) {
+			return fail("unissued", "Identity has no trusted wire value.", domain);
+		}
 		return String(raw);
 	};
 	const serializeJsonRpc = (value: JsonRpcRequestId): JsonRpcRequestIdWireValue => {
 		const domain = identityDomain(value);
-		if (domain !== "json-rpc-request")
+		if (domain !== "json-rpc-request") {
 			return fail("wrong-domain", "Identity is not a JSON-RPC request identity.", domain);
+		}
 		assertIssued(value, domain, issued);
 		const raw = rawByIdentity.get(value);
-		if (raw === undefined) return fail("unissued", "Identity has no trusted wire value.", domain);
+		if (raw === undefined) {
+			return fail("unissued", "Identity has no trusted wire value.", domain);
+		}
 		return raw;
 	};
 	const assertCurrentOperationId = (value: OperationId): void => {
@@ -733,7 +761,9 @@ function createAuthority(ledger: IdentityLedger): IdentityAuthorities {
 			assertCurrentOperationId(value);
 			return true;
 		} catch (error) {
-			if (error instanceof IdentityValidationError) return false;
+			if (error instanceof IdentityValidationError) {
+				return false;
+			}
 			throw error;
 		}
 	};

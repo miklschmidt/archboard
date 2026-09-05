@@ -67,33 +67,39 @@ export const FindingRenderManifestSchema = z
 		}
 		for (const [index, entry] of manifest.entries.entries()) {
 			const finding = manifest.report.findings[index];
-			if (!finding) continue;
+			if (!finding) {
+				continue;
+			}
 			const digest = findingDigest(finding);
-			if (entry.findingIndex !== index)
+			if (entry.findingIndex !== index) {
 				context.addIssue({
 					code: "custom",
 					path: ["entries", index, "findingIndex"],
 					message: "Manifest finding indexes must preserve report order.",
 				});
-			if (entry.code !== finding.code)
+			}
+			if (entry.code !== finding.code) {
 				context.addIssue({
 					code: "custom",
 					path: ["entries", index, "code"],
 					message: "Manifest entry code must match its report finding.",
 				});
-			if (entry.findingDigest !== digest)
+			}
+			if (entry.findingDigest !== digest) {
 				context.addIssue({
 					code: "custom",
 					path: ["entries", index, "findingDigest"],
 					message: "Manifest finding digest must match its report finding.",
 				});
+			}
 			if (entry.status === "rendered") {
-				if (entry.file !== findingFileName(index, finding))
+				if (entry.file !== findingFileName(index, finding)) {
 					context.addIssue({
 						code: "custom",
 						path: ["entries", index, "file"],
 						message: "Rendered file name must derive from report order, code, and digest.",
 					});
+				}
 				if (!finding.focusBBox) {
 					context.addIssue({
 						code: "custom",
@@ -102,21 +108,23 @@ export const FindingRenderManifestSchema = z
 					});
 				} else {
 					const dimensions = findingRasterDimensions(finding.focusBBox);
-					if (entry.width !== dimensions.width || entry.height !== dimensions.height)
+					if (entry.width !== dimensions.width || entry.height !== dimensions.height) {
 						context.addIssue({
 							code: "custom",
 							path: ["entries", index],
 							message: "Rendered dimensions must follow the fixed finding raster policy.",
 						});
+					}
 				}
 			}
 		}
-		if (manifest.complete !== manifest.entries.every((entry) => entry.status === "rendered"))
+		if (manifest.complete !== manifest.entries.every((entry) => entry.status === "rendered")) {
 			context.addIssue({
 				code: "custom",
 				path: ["complete"],
 				message: "Manifest complete must be true exactly when every finding rendered.",
 			});
+		}
 	});
 
 export type FindingRenderManifest = z.infer<typeof FindingRenderManifestSchema>;
@@ -151,12 +159,20 @@ export function findingFileName(index: number, finding: InspectionFinding): stri
 }
 
 export function readPngDimensions(bytes: Uint8Array): { width: number; height: number } | null {
-	if (bytes.length < 24) return null;
+	if (bytes.length < 24) {
+		return null;
+	}
 	const signature = [137, 80, 78, 71, 13, 10, 26, 10];
-	if (!signature.every((value, index) => bytes[index] === value)) return null;
+	if (!signature.every((value, index) => bytes[index] === value)) {
+		return null;
+	}
 	const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-	if (view.getUint32(8) !== 13) return null;
-	if (String.fromCharCode(...bytes.slice(12, 16)) !== "IHDR") return null;
+	if (view.getUint32(8) !== 13) {
+		return null;
+	}
+	if (String.fromCharCode(...bytes.slice(12, 16)) !== "IHDR") {
+		return null;
+	}
 	const width = view.getUint32(16);
 	const height = view.getUint32(20);
 	return width > 0 && height > 0 ? { width, height } : null;
@@ -176,24 +192,33 @@ export function assembleFindingArtifacts(
 			code: finding.code,
 			findingDigest: findingDigest(finding),
 		};
-		if (!finding.focusBBox)
+		if (!finding.focusBBox) {
 			return { ...common, status: "failed" as const, failure: "focus-unavailable" as const };
-		if (!server.sourceRenderable)
+		}
+		if (!server.sourceRenderable) {
 			return { ...common, status: "failed" as const, failure: "source-not-renderable" as const };
+		}
 		const result = byIndex.get(findingIndex);
-		if (!result || result.failure)
+		if (!result || result.failure) {
 			return {
 				...common,
 				status: "failed" as const,
 				failure: result?.failure ?? ("renderer-failed" as const),
 			};
-		if (typeof result.data !== "string")
+		}
+		if (typeof result.data !== "string") {
 			return { ...common, status: "failed" as const, failure: "renderer-failed" as const };
+		}
 		const bytes = Uint8Array.from(Buffer.from(result.data, "base64"));
 		const dimensions = readPngDimensions(bytes);
 		const expected = findingRasterDimensions(finding.focusBBox);
-		if (!dimensions || dimensions.width !== expected.width || dimensions.height !== expected.height)
+		if (
+			!dimensions ||
+			dimensions.width !== expected.width ||
+			dimensions.height !== expected.height
+		) {
 			return { ...common, status: "failed" as const, failure: "invalid-png" as const };
+		}
 		const file = findingFileName(findingIndex, finding);
 		files.push({ name: file, content: bytes });
 		return {

@@ -174,7 +174,9 @@ export function runPublicFixture(
 			});
 		}
 		child.on("close", (status) => {
-			if (descriptor !== undefined) closeSync(descriptor);
+			if (descriptor !== undefined) {
+				closeSync(descriptor);
+			}
 			resolve({
 				status,
 				stdout,

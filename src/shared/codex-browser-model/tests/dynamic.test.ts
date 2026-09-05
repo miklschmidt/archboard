@@ -41,13 +41,14 @@ describe("dynamic coordination approval browser contract", () => {
 			"contextAuthority",
 			"apiKey",
 			"secretAccessKey",
-		])
+		]) {
 			expect(
 				fixture.model.BrowserDynamicApprovalSchema.safeParse({
 					...browserApproval,
 					effect: { ...browserApproval.effect, [field]: "secret" },
 				} as unknown).success,
 			).toBeFalse();
+		}
 		expect(fixture.model.BrowserDtoSchema.safeParse(request as unknown).success).toBeFalse();
 		expect(
 			fixture.model.BrowserDynamicApprovalSchema.safeParse({
@@ -98,10 +99,11 @@ describe("dynamic coordination approval browser contract", () => {
 			"not_delivered",
 			"outcome_unknown",
 		]);
-		for (const approval of cases)
+		for (const approval of cases) {
 			expect(
 				fixture.model.BrowserDynamicApprovalSchema.parse(JSON.parse(JSON.stringify(approval))),
 			).toEqual(approval);
+		}
 	});
 
 	test("makes approval_required terminal and never resumable", () => {
@@ -120,13 +122,14 @@ describe("dynamic coordination approval browser contract", () => {
 			{ resumable: true },
 			{ resumeCommand: "resume_dynamic_call" },
 			{ binding: fixture.pending.binding },
-		])
+		]) {
 			expect(
 				fixture.model.BrowserDynamicApprovalSchema.safeParse({
 					...cancelled,
 					...mutation,
 				} as unknown).success,
 			).toBeFalse();
+		}
 	});
 
 	test("rejects hash, identity, effect, expiry, state, and seven-family lookalike drift", () => {
@@ -198,24 +201,26 @@ describe("dynamic coordination approval browser contract", () => {
 					epoch: fixture.authorities.identity.issuer.mintChildEpoch(),
 				},
 			},
-		])
+		]) {
 			expect(
 				fixture.model.BrowserDynamicApprovalResponseSchema.safeParse({
 					...response,
 					...mutation,
 				} as unknown).success,
 			).toBeFalse();
+		}
 		for (const extra of [
 			{ responses: [response] },
 			{ approvalId: fixture.authorities.identity.decoder.adoptApprovalId("ordinary-approval") },
 			{ targetThreadId: fixture.other },
-		])
+		]) {
 			expect(
 				fixture.model.BrowserDynamicApprovalResponseSchema.safeParse({
 					...response,
 					...extra,
 				} as unknown).success,
 			).toBeFalse();
+		}
 		const terminal = approvalFor(
 			fixture.requests[0]!,
 			"declined",
@@ -282,10 +287,11 @@ describe("dynamic coordination approval browser contract", () => {
 				toolResult: "approval_required",
 			},
 		];
-		for (const approval of invalid)
+		for (const approval of invalid) {
 			expect(
 				fixture.model.BrowserDynamicApprovalSchema.safeParse(approval as unknown).success,
 			).toBeFalse();
+		}
 	});
 
 	test("rejects stale epochs and fabricated operation or identity domains", () => {

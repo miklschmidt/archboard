@@ -49,7 +49,9 @@ const clock = (at: string): string => new Date(at).toLocaleTimeString();
 
 function staleSource(health: Awaited<ReturnType<typeof getHealth>>) {
 	const source = health.source;
-	if (!source?.stale || !source.newestFile || !source.newestAt) return null;
+	if (!source?.stale || !source.newestFile || !source.newestAt) {
+		return null;
+	}
 	const remedy =
 		"Restart it to pick that up: `archboard stop && archboard start`. " +
 		"Stop refuses while a board has held work that exists only in this process; resolve every reported hold first.";

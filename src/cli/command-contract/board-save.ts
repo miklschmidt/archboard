@@ -11,7 +11,9 @@ export const BoardSaveStageSchema = z.array(z.string()).transform((tokens, conte
 	const result: { as?: string; variant?: string; level?: string; force?: true } = {};
 	for (let index = 0; index < tokens.length; index += 1) {
 		const token = tokens[index]!;
-		if (!token.startsWith("--")) continue;
+		if (!token.startsWith("--")) {
+			continue;
+		}
 		let name = token.slice(2);
 		let inline: string | undefined;
 		const equals = name.indexOf("=");
@@ -36,7 +38,9 @@ export const BoardSaveStageSchema = z.array(z.string()).transform((tokens, conte
 			context.addIssue({ code: "custom", message: `Flag --${name} requires a value` });
 			return z.NEVER;
 		}
-		if (inline === undefined) index += 1;
+		if (inline === undefined) {
+			index += 1;
+		}
 		result[name] = value;
 	}
 	return result;
@@ -175,7 +179,9 @@ export const boardSaveContract = defineCommand({
 			};
 		} catch (error) {
 			const conflict = boardConflictOf(error);
-			if (!conflict) throw error;
+			if (!conflict) {
+				throw error;
+			}
 			return {
 				result: {
 					success: false as const,

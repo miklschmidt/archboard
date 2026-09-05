@@ -180,7 +180,9 @@ export const screenshotContract = defineCommand({
 		await context.require("server", "screenshot");
 		await context.require("browser", "screenshot");
 		const image = await captureBrowser(input.format, !input.noBackground, input.pane);
-		if (!input.out && input.format === "svg") return { result: image.data };
+		if (!input.out && input.format === "svg") {
+			return { result: image.data };
+		}
 		const resolved = context.resolvePath(
 			input.out ?? path.join(os.tmpdir(), `excalidraw-screenshot-${Date.now()}.png`),
 		);
@@ -298,7 +300,9 @@ export const renderContract = defineCommand({
 		},
 	],
 	async handler(input, context) {
-		if (input.tail.length > 0) throw new CliUsageError("render takes no positional arguments");
+		if (input.tail.length > 0) {
+			throw new CliUsageError("render takes no positional arguments");
+		}
 		await context.require("server", "board rendering");
 		const rendered = await renderBoard({
 			format: input.format,
