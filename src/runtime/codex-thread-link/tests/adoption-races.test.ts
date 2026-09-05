@@ -1,3 +1,4 @@
+import { unavailableThreadRead } from "./fixtures.js";
 import { describe, expect, test } from "bun:test";
 
 import { createCodexThreadLink, type ThreadLinkTarget } from "../index.ts";
@@ -22,6 +23,7 @@ function changingSession(
 	let loadedPasses = 0;
 	return {
 		session: {
+			threadRead: unavailableThreadRead,
 			threadListPage: async () => {
 				persistedPasses += 1;
 				return threadPage([thread(fixture.authority, "target", optionsForPass(persistedPasses))]);
@@ -79,6 +81,7 @@ describe("codex thread-link adoption races", () => {
 			const port = createCodexThreadLink({
 				epoch: fixture.store,
 				session: {
+					threadRead: unavailableThreadRead,
 					threadListPage: async () => {
 						persistedPasses += 1;
 						if (persistedPasses === 2) {

@@ -83,7 +83,7 @@ function startResponse(
 		path: null,
 		cwd: CHECKOUT_ROOT,
 		cliVersion: "0.151.0",
-		source: "appServer",
+		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",
 		agentNickname: null,

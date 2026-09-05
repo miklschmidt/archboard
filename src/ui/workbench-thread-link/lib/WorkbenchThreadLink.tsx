@@ -261,7 +261,13 @@ export function WorkbenchThreadLink({
 				)}
 			</header>
 			{unavailableReason === null ? null : (
-				<output className="m-0 block pb-control text-sm text-muted-foreground" id={readinessId}>
+				<output
+					className={cn(
+						"m-0 block pb-control text-sm",
+						panel.readiness.tone === "failed" ? "text-destructive" : "text-muted-foreground",
+					)}
+					id={readinessId}
+				>
 					{unavailableReason}
 				</output>
 			)}

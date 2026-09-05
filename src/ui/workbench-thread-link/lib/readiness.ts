@@ -21,8 +21,8 @@ type HostRecoveryIntent = (typeof HOST_INTENTS)[number];
 
 const RECOVERY_TEXT = {
 	refresh_snapshot: {
-		label: "Refresh connection",
-		description: "Refresh the connection, then try again.",
+		label: "Refresh status",
+		description: "Check the latest status from Codex.",
 	},
 	read_account: {
 		label: "Check sign-in",
@@ -80,6 +80,7 @@ const ARM_LABELS = {
 	signed_out: "Codex is signed out",
 	login_pending: "A Codex sign-in is in progress",
 	login_failed: "The last Codex sign-in failed",
+	coordinator_failed: "Agent setup failed",
 	account_ready: "Preparing the agent",
 	thread_capable: "Ready to connect",
 } as const satisfies Record<ThreadLinkReadinessArm, string>;
@@ -96,6 +97,7 @@ const ARM_TONES = {
 	signed_out: "blocked",
 	login_pending: "progress",
 	login_failed: "failed",
+	coordinator_failed: "failed",
 	account_ready: "progress",
 	thread_capable: "ready",
 } as const satisfies Record<ThreadLinkReadinessArm, ThreadLinkReadinessTone>;
@@ -116,6 +118,7 @@ const ARM_INTENTS = {
 	signed_out: ["retry_login"],
 	login_pending: ["cancel_login"],
 	login_failed: ["retry_login", "cancel_login"],
+	coordinator_failed: ["refresh_snapshot"],
 	account_ready: ["refresh_snapshot"],
 	thread_capable: [],
 } as const satisfies Record<ThreadLinkReadinessArm, readonly ThreadLinkRecoveryIntent[]>;
@@ -208,6 +211,12 @@ function armOf(
 		return { arm: readiness.state, detail: readiness.reason, retryAtMs: null };
 	if (snapshot?.login.state === "failed")
 		return { arm: "login_failed", detail: snapshot.login.reason, retryAtMs: null };
+	if (readiness.state === "account_ready" && snapshot?.coordinator.state === "failed")
+		return {
+			arm: "coordinator_failed",
+			detail: `Agent setup failed. ${snapshot.coordinator.reason ?? "Codex could not start the coordinator."} Restart Codex after resolving this error.`,
+			retryAtMs: null,
+		};
 	const detail = {
 		initialized: "Check sign-in before starting an agent.",
 		login_capable: "Sign in below to start an agent.",

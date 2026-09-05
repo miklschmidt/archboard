@@ -48,6 +48,20 @@ async function expectCoordinatorCode(
 }
 
 describe("coordinator lifecycle", () => {
+	test("rejects a wrong origin, model, or checkout with the mismatching field named", async () => {
+		for (const field of ["thread.source", "model", "cwd"] as const) {
+			const value = fixture();
+			if (field === "thread.source") Object.assign(value.session.started.thread, { source: "cli" });
+			if (field === "model") Object.assign(value.session.started, { model: "wrong-model" });
+			if (field === "cwd") Object.assign(value.session.started, { cwd: "/other-checkout" });
+			const result = await value.coordinator.ensure({ operationId: "mismatched-start" });
+			expect(result.state).toBe("inspect_only");
+			expect(result.reason).toContain(`authored profile: ${field}.`);
+			expect(value.session.startParams).toHaveLength(1);
+			expect(value.session.updateParams).toHaveLength(0);
+		}
+	});
+
 	test("starts the exact capable coordinator and records effective preserved settings", async () => {
 		const fixtureValue = fixture({ staleNotificationAuthority: createIdentityAuthority() });
 		const snapshot = await ready(fixtureValue);
@@ -83,6 +97,7 @@ describe("coordinator lifecycle", () => {
 		});
 		expect(fixtureValue.epoch.records).toHaveLength(1);
 		expect(fixtureValue.epoch.records[0]?.status).toBe("committed");
+		expect(fixtureValue.epoch.records[0]?.provenance.threadSource).toBe("vscode");
 	});
 
 	test("keeps configured and effective service tier absent when priority is not advertised", async () => {

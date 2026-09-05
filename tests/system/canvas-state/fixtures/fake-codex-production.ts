@@ -111,7 +111,7 @@ const buildThread = (
 		path: null,
 		cwd: String(params.cwd),
 		cliVersion: "0.151.0",
-		source: "appServer",
+		source: "vscode",
 		canAcceptDirectInput: true,
 		threadSource: "archboard",
 		agentNickname: null,
@@ -292,7 +292,10 @@ const handle = (frame: WireFrame): void => {
 			return;
 		case "thread/list":
 			respond(frame as never, {
-				data: [...threads.values()],
+				// Newly started empty threads are loaded/readable before they enter persisted history.
+				data: [...threads.values()].filter(
+					(thread) => thread.id === FOREIGN_FIXTURE_THREAD_ID || thread.turns.length > 0,
+				),
 				nextCursor: null,
 				backwardsCursor: null,
 			});
@@ -455,8 +458,18 @@ const controlTimer = setInterval(() => {
 		const control = JSON.parse(readFileSync(controlPath, "utf8")) as {
 			exit?: unknown;
 			completeLogin?: boolean;
+			completeWorkhorseTurn?: boolean;
 		};
 		if (control.exit === true) process.exit(17);
+		const workhorse = threads.get(workhorseThreadId ?? "");
+		const turn = workhorse?.turns[0];
+		if (control.completeWorkhorseTurn === true && workhorse && turn?.status === "inProgress") {
+			turn.status = "completed";
+			turn.completedAt = Date.now();
+			workhorse.status = { type: "idle" };
+			notify("turn/completed", { threadId: workhorse.id, turn });
+			notify("thread/status/changed", { threadId: workhorse.id, status: workhorse.status });
+		}
 		if (control.completeLogin === true && pendingLogin) {
 			pendingLogin = false;
 			signedIn = true;

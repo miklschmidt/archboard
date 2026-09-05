@@ -20,6 +20,13 @@ import type { SessionResponsePayloads } from "./results.js";
 
 export type { BedrockSetupParams } from "../../codex-protocol/index.js";
 
+/**
+ * Codex 0.151.0 reports this origin for our fixed app-server initialization.
+ * The child environment excludes ambient originator overrides. Ownership is
+ * still proved by the current child epoch and committed operation, not this label.
+ */
+export const CODEX_SESSION_THREAD_SOURCE = "vscode";
+
 /** The public methods of one reviewed Codex app-server session. */
 export const SESSION_METHODS = Object.freeze([
 	"initialize",

@@ -13,7 +13,7 @@ export const WORKHORSE_OPERATION_KIND = "create_thread";
 export const WORKHORSE_CLEANUP_OPERATION_KIND = "thread_delete";
 export const WORKHORSE_RPC = "thread/start";
 export const WORKHORSE_CLEANUP_RPC = "thread/delete";
-export const WORKHORSE_THREAD_SOURCE = "appServer";
+export { CODEX_SESSION_THREAD_SOURCE as WORKHORSE_THREAD_SOURCE } from "../../codex-session/index.js";
 export const WORKHORSE_THREAD_SOURCE_TAG = "archboard";
 
 export const WORKHORSE_INSTRUCTION_HASH = WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256;

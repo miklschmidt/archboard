@@ -1,4 +1,7 @@
-import { CodexSessionMutationError } from "../../codex-session/index.js";
+import {
+	CODEX_SESSION_THREAD_SOURCE,
+	CodexSessionMutationError,
+} from "../../codex-session/index.js";
 import type { SessionNotificationHandler } from "../../codex-session/index.js";
 import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
 import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
@@ -37,7 +40,7 @@ import {
 	startingSnapshot,
 } from "./state.js";
 
-const COORDINATOR_THREAD_SOURCE = "appServer" as const;
+const COORDINATOR_THREAD_SOURCE = CODEX_SESSION_THREAD_SOURCE;
 
 interface PendingSettingsNotification {
 	readonly threadId: ThreadId;
@@ -391,24 +394,28 @@ function assertStartedResponse(
 	checkoutRoot: string,
 	serviceTier: "priority" | null,
 ): void {
-	if (
-		response.thread.id.length === 0 ||
-		response.model !== COORDINATOR_MODEL ||
-		response.modelProvider.length === 0 ||
-		response.thread.modelProvider !== response.modelProvider ||
-		(serviceTier === "priority" && response.serviceTier !== "priority") ||
-		response.cwd !== checkoutRoot ||
-		response.runtimeWorkspaceRoots.length !== 1 ||
-		response.runtimeWorkspaceRoots[0] !== checkoutRoot ||
-		response.thread.cwd !== checkoutRoot ||
-		response.thread.historyMode !== "paginated" ||
-		response.thread.source !== "appServer" ||
-		response.thread.threadSource !== "archboard" ||
-		response.thread.ephemeral
-	) {
+	const mismatches = Object.entries({
+		"thread.id": response.thread.id.length === 0,
+		model: response.model !== COORDINATOR_MODEL,
+		modelProvider: response.modelProvider.length === 0,
+		"thread.modelProvider": response.thread.modelProvider !== response.modelProvider,
+		serviceTier: serviceTier === "priority" && response.serviceTier !== "priority",
+		cwd: response.cwd !== checkoutRoot,
+		runtimeWorkspaceRoots:
+			response.runtimeWorkspaceRoots.length !== 1 ||
+			response.runtimeWorkspaceRoots[0] !== checkoutRoot,
+		"thread.cwd": response.thread.cwd !== checkoutRoot,
+		"thread.historyMode": response.thread.historyMode !== "paginated",
+		"thread.source": response.thread.source !== COORDINATOR_THREAD_SOURCE,
+		"thread.threadSource": response.thread.threadSource !== "archboard",
+		"thread.ephemeral": response.thread.ephemeral,
+	})
+		.filter(([, mismatched]) => mismatched)
+		.map(([field]) => field);
+	if (mismatches.length > 0) {
 		throw new CodexCoordinatorError(
 			"invalid_start_response",
-			"The coordinator thread/start response does not match the authored profile.",
+			`The coordinator thread/start response does not match the authored profile: ${mismatches.join(", ")}.`,
 		);
 	}
 }

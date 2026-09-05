@@ -186,7 +186,7 @@ export function createThreadLinkController(
 
 	const settle = (
 		operationRevision: number,
-		next: Exclude<ThreadLinkActionSnapshot, { readonly state: "idle" | "pending" }>,
+		next: Exclude<ThreadLinkActionSnapshot, { readonly state: "pending" }>,
 	): ThreadLinkActionCompletion => {
 		// A superseded action never overwrites the action that replaced it.
 		if (operationRevision !== revision) return completion("ignored", operationRevision);
@@ -340,6 +340,8 @@ export function createThreadLinkController(
 					});
 				await authority.recover();
 			}
+			if (intent === "refresh_snapshot")
+				return settle(operationRevision, { state: "idle", revision: operationRevision });
 			return settle(operationRevision, {
 				state: "succeeded",
 				revision: operationRevision,

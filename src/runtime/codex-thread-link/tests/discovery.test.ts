@@ -1,3 +1,4 @@
+import { unavailableThreadRead } from "./fixtures.js";
 import { describe, expect, test } from "bun:test";
 
 import { CodexThreadLinkError, createCodexThreadLink } from "../index.ts";
@@ -258,6 +259,7 @@ describe("codex thread-link candidate discovery", () => {
 			const result = createCodexThreadLink({
 				epoch: fixture.store,
 				session: {
+					threadRead: unavailableThreadRead,
 					threadListPage: async () => threadPage([row]),
 					threadLoadedListPage: async () => {
 						if (!changed) {
@@ -400,6 +402,7 @@ describe("codex thread-link candidate discovery", () => {
 			const port = createCodexThreadLink({
 				epoch: fixture.store,
 				session: {
+					threadRead: unavailableThreadRead,
 					threadListPage: async () => {
 						listPass += 1;
 						return threadPage([row]);

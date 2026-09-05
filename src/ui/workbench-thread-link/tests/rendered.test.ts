@@ -34,6 +34,7 @@ const HOST_INTENTS = [
 function render(
 	overrides: {
 		readonly account?: BrowserSnapshot["account"];
+		readonly coordinator?: BrowserSnapshot["coordinator"];
 		readonly login?: BrowserSnapshot["login"];
 		readonly inventory?: ThreadLinkInventory;
 		readonly readiness?: BrowserSnapshot["readiness"];
@@ -46,6 +47,7 @@ function render(
 ): string {
 	const value = snapshot({
 		...(overrides.account === undefined ? {} : { account: overrides.account }),
+		...(overrides.coordinator === undefined ? {} : { coordinator: overrides.coordinator }),
 		...(overrides.login === undefined ? {} : { login: overrides.login }),
 		...(overrides.readiness === undefined ? {} : { readiness: overrides.readiness }),
 		...(overrides.threadLink === undefined ? {} : { threadLink: overrides.threadLink }),
@@ -144,6 +146,18 @@ describe("rendered pane thread link", () => {
 		expect(markup).toContain("Refresh the connection and try again.");
 		expect(markup).not.toContain("command lease");
 		expect(markup).toContain("disabled");
+	});
+
+	test("shows the coordinator setup error and recovery guidance instead of endless preparation", () => {
+		const markup = render({
+			readiness: { kind: "readiness", state: "account_ready" },
+			coordinator: { ...snapshot().coordinator, state: "failed", reason: "invalid_start_response" },
+			supported: [],
+		});
+		expect(markup).toContain('data-thread-link-readiness="coordinator_failed"');
+		expect(markup).toContain("invalid_start_response");
+		expect(markup).toContain("Restart Codex after resolving this error.");
+		expect(markup).not.toContain("preparing the agent");
 	});
 
 	test("renders every recovery for a failed startup arm", () => {
