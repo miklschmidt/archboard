@@ -2,22 +2,25 @@ import type { DYNAMIC_APPROVAL_STATES } from "./dynamic-approval-effects.js";
 import type { z } from "zod";
 
 type DynamicApprovalStateName = (typeof DYNAMIC_APPROVAL_STATES)[number];
-type ApprovalRelation = {
+interface ApprovalRelation {
 	readonly decision: string;
 	readonly cause: string;
 	readonly delivery: string;
 	readonly toolResult: string;
 	readonly binding: "required" | "none";
 	readonly resumable: false;
-};
-type ApprovalRelationValue = {
+}
+interface ApprovalRelationValue {
 	readonly state: DynamicApprovalStateName;
 	readonly decision: { readonly outcome: string; readonly cause: string } | null;
 	readonly delivery: string | null;
 	readonly toolResult: string | null;
 	readonly binding: object | null;
 	readonly resumable: boolean;
-};
+}
+interface ApprovalIssueContext {
+	readonly addIssue: z.RefinementCtx["addIssue"];
+}
 
 const APPROVED_STALE_FAILURES = [
 	"refused:expired",
@@ -172,7 +175,7 @@ function matchesApprovalRelation(
 
 export function validateDynamicApprovalState(
 	approval: ApprovalRelationValue,
-	refinementContext: z.RefinementCtx,
+	refinementContext: ApprovalIssueContext,
 ): void {
 	if (
 		!APPROVAL_RELATIONS[approval.state].some((relation) =>

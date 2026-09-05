@@ -1,11 +1,11 @@
 import type { DynamicApprovalCanonicalInput } from "../index.js";
 
-export type DynamicApprovalHashVector = {
+export interface DynamicApprovalHashVector {
 	readonly name: string;
 	readonly input: DynamicApprovalCanonicalInput;
 	readonly canonicalJson: string;
 	readonly expectedHash: string;
-};
+}
 
 export const DYNAMIC_APPROVAL_HASH_VECTORS: readonly DynamicApprovalHashVector[] = [
 	{

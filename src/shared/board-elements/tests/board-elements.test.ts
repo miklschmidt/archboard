@@ -76,7 +76,13 @@ const writablePoint: LineElement["points"][number] = [1, 2];
 writablePoint[0] = 3;
 writablePoint[1] = 4;
 
-function exhaustive(element: PersistedBoardElement): string {
+type ElementDiscriminator = PersistedBoardElement extends infer Element
+	? Element extends { type: infer Type extends string }
+		? { readonly type: Type }
+		: never
+	: never;
+
+function exhaustive(element: ElementDiscriminator): string {
 	switch (element.type) {
 		case "rectangle":
 		case "ellipse":
@@ -85,8 +91,9 @@ function exhaustive(element: PersistedBoardElement): string {
 		case "text":
 		case "line":
 		case "freedraw":
-		case "image":
+		case "image": {
 			return element.type;
+		}
 		default: {
 			const neverElement: never = element;
 			return neverElement;
