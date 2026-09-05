@@ -1,0 +1,193 @@
+// Approvals: one card per approval and per dynamic coordination approval,
+// with the decisions the model defines, busy state, unknown-outcome and
+// resolver-lost states shown plainly, and the spoken approval line on top.
+
+import { useCallback } from "react";
+
+import type {
+	BrowserApproval,
+	BrowserDynamicApproval,
+	BrowserSnapshot,
+} from "@/shared/codex-browser-model";
+import { Badge } from "@/ui/components/badge";
+import { Button } from "@/ui/components/button";
+import {
+	projectApproval,
+	projectDynamicApproval,
+	spokenApprovalLine,
+} from "@/ui/workbench/approval-projection";
+import type { ApprovalCard, ApprovalDecisionOption } from "@/ui/workbench/approval-projection";
+import type { ApprovalChoice, WorkbenchActions } from "@/ui/workbench/contracts";
+
+/** Inputs for the panel. */
+interface ApprovalsPanelProps {
+	snapshot: BrowserSnapshot;
+	busyApprovals: readonly string[];
+	actions: WorkbenchActions;
+}
+
+/** Inputs for one decision button. */
+interface DecisionButtonProps {
+	option: ApprovalDecisionOption;
+	onChoose: (choice: ApprovalChoice) => void;
+}
+
+/**
+ * One decision button.
+ * @param props The option and the callback.
+ * @returns The button.
+ */
+function DecisionButton(props: DecisionButtonProps): React.JSX.Element {
+	const { option, onChoose } = props;
+	const handleClick = useCallback(() => onChoose(option.choice), [onChoose, option.choice]);
+	return (
+		<Button variant={option.tone} size="xs" onClick={handleClick}>
+			{option.label}
+		</Button>
+	);
+}
+
+/** Inputs for one card. */
+interface CardProps {
+	card: ApprovalCard;
+	onChoose: (choice: ApprovalChoice) => void;
+}
+
+const PHASE_BADGE: Record<
+	ApprovalCard["phase"],
+	"default" | "secondary" | "destructive" | "outline"
+> = {
+	pending: "default",
+	busy: "secondary",
+	settled: "outline",
+	outcome_unknown: "destructive",
+	closed: "outline",
+};
+
+/**
+ * One approval card: family, details in mono, decisions, and phase.
+ * @param props The card and the decision callback.
+ * @returns An article.
+ */
+function Card(props: CardProps): React.JSX.Element {
+	const { card } = props;
+	return (
+		<article
+			aria-busy={card.phase === "busy"}
+			className="border-border flex flex-col gap-1.5 rounded-sm border p-2 text-xs"
+		>
+			<header className="flex items-center gap-2">
+				<Badge variant={PHASE_BADGE[card.phase]} className="uppercase">
+					{card.family}
+				</Badge>
+				<span className="truncate font-medium">{card.title}</span>
+				<span className="text-muted-foreground ms-auto shrink-0 font-mono text-[11px]">
+					{card.phaseText}
+				</span>
+			</header>
+			<dl className="flex flex-col gap-0.5">
+				{card.details.map((detail) => (
+					<div key={`${detail.label}:${detail.value}`} className="flex items-baseline gap-2">
+						<dt className="text-muted-foreground w-14 shrink-0">{detail.label}</dt>
+						<dd className={detail.mono ? "min-w-0 font-mono break-all" : "min-w-0 break-words"}>
+							{detail.value}
+						</dd>
+					</div>
+				))}
+			</dl>
+			{card.decisions.length === 0 ? null : (
+				<div className="flex flex-wrap items-center gap-1">
+					{card.decisions.map((option) => (
+						<DecisionButton key={option.id} option={option} onChoose={props.onChoose} />
+					))}
+				</div>
+			)}
+			<p className="text-muted-foreground">{card.spokenText}</p>
+		</article>
+	);
+}
+
+/** Inputs for one approval item. */
+interface ApprovalItemProps {
+	approval: BrowserApproval;
+	busy: boolean;
+	respond: WorkbenchActions["respondToApproval"];
+}
+
+/**
+ * One approval from the app-server session.
+ * @param props The approval, its busy state, and the callback.
+ * @returns The card.
+ */
+function ApprovalItem(props: ApprovalItemProps): React.JSX.Element {
+	const { approval, respond } = props;
+	const handleChoose = useCallback(
+		(choice: ApprovalChoice) => respond(approval, choice),
+		[approval, respond],
+	);
+	return <Card card={projectApproval(approval, props.busy)} onChoose={handleChoose} />;
+}
+
+/** Inputs for one dynamic approval item. */
+interface DynamicApprovalItemProps {
+	approval: BrowserDynamicApproval;
+	busy: boolean;
+	respond: WorkbenchActions["respondToDynamicApproval"];
+}
+
+/**
+ * One coordination approval raised through a dynamic tool.
+ * @param props The approval, its busy state, and the callback.
+ * @returns The card.
+ */
+function DynamicApprovalItem(props: DynamicApprovalItemProps): React.JSX.Element {
+	const { approval, respond } = props;
+	const handleChoose = useCallback(
+		(choice: ApprovalChoice) =>
+			respond(approval, choice.kind === "approve" ? "approve" : "decline"),
+		[approval, respond],
+	);
+	return <Card card={projectDynamicApproval(approval, props.busy)} onChoose={handleChoose} />;
+}
+
+/**
+ * The approvals panel.
+ * @param props The snapshot, the busy keys, and the actions.
+ * @returns The spoken line and the cards, or an empty state.
+ */
+function ApprovalsPanel(props: ApprovalsPanelProps): React.JSX.Element {
+	const { snapshot, actions } = props;
+	const busy = new Set(props.busyApprovals);
+	const spoken = spokenApprovalLine(snapshot.spokenApproval);
+	const empty = snapshot.approvals.length === 0 && snapshot.dynamicApprovals.length === 0;
+	return (
+		<div className="flex flex-col gap-2">
+			{spoken === null ? null : (
+				<p
+					className={spoken.warning ? "text-destructive text-xs" : "text-status-foreground text-xs"}
+				>
+					{spoken.text}
+				</p>
+			)}
+			{empty ? <p className="text-muted-foreground text-xs">Nothing awaiting approval</p> : null}
+			{snapshot.approvals.map((approval) => (
+				<ApprovalItem
+					key={approval.requestId}
+					approval={approval}
+					busy={busy.has(approval.requestId)}
+					respond={actions.respondToApproval}
+				/>
+			))}
+			{snapshot.dynamicApprovals.map((approval) => (
+				<DynamicApprovalItem
+					key={approval.identity.callId}
+					approval={approval}
+					busy={busy.has(approval.identity.callId)}
+					respond={actions.respondToDynamicApproval}
+				/>
+			))}
+		</div>
+	);
+}
+
+export { ApprovalsPanel, type ApprovalsPanelProps };

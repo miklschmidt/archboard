@@ -1,0 +1,26 @@
+diff --git a/dist/index.d.mts b/dist/index.d.mts
+index 151e643780e28dfc9f9948be46f2dc34d34f7f09..11c8abcb254f4d4cd66b79ab40e3d61e20767914 100644
+--- a/dist/index.d.mts
++++ b/dist/index.d.mts
+@@ -74,7 +74,7 @@ declare const SelectContent: React.ForwardRefExoticComponent<SelectContentProps
+ type DismissableLayerProps = React.ComponentPropsWithoutRef<typeof DismissableLayer>;
+ type FocusScopeProps = React.ComponentPropsWithoutRef<typeof FocusScope>;
+ type SelectPopperPrivateProps = {
+-    onPlaced?: PopperContentProps['onPlaced'];
++    onPlaced?: Exclude<PopperContentProps['onPlaced'], undefined>;
+ };
+ interface SelectContentImplProps extends Omit<SelectPopperPositionProps, keyof SelectPopperPrivateProps>, Omit<SelectItemAlignedPositionProps, keyof SelectPopperPrivateProps> {
+     /**
+diff --git a/dist/index.d.ts b/dist/index.d.ts
+index 151e643780e28dfc9f9948be46f2dc34d34f7f09..11c8abcb254f4d4cd66b79ab40e3d61e20767914 100644
+--- a/dist/index.d.ts
++++ b/dist/index.d.ts
+@@ -74,7 +74,7 @@ declare const SelectContent: React.ForwardRefExoticComponent<SelectContentProps
+ type DismissableLayerProps = React.ComponentPropsWithoutRef<typeof DismissableLayer>;
+ type FocusScopeProps = React.ComponentPropsWithoutRef<typeof FocusScope>;
+ type SelectPopperPrivateProps = {
+-    onPlaced?: PopperContentProps['onPlaced'];
++    onPlaced?: Exclude<PopperContentProps['onPlaced'], undefined>;
+ };
+ interface SelectContentImplProps extends Omit<SelectPopperPositionProps, keyof SelectPopperPrivateProps>, Omit<SelectItemAlignedPositionProps, keyof SelectPopperPrivateProps> {
+     /**
