@@ -358,14 +358,18 @@ describe("command contract audit", () => {
 	});
 
 	test("keeps contract implementation and private artifact policy narrow", () => {
-		expect(runCommand.length).toBe(2);
+		// contract and argv are required; the optional abort signal is the third declared parameter.
+		expect(runCommand.length).toBe(3);
 		const contractSource = readFileSync(
 			join(checkoutRoot, "src/cli/command-contract/contract.ts"),
 			"utf8",
 		);
-		expect(contractSource).toMatch(/export interface CommandOutcomeDeclaration\b/);
-		const execution =
-			contractSource.match(/export interface CommandExecution[^{]*\{([\s\S]*?)\n\}/)?.[1] ?? "";
+		expect(contractSource).toMatch(/^interface CommandOutcomeDeclaration\b/m);
+		expect(contractSource).toMatch(/^\ttype CommandOutcomeDeclaration,$/m);
+		const execution = contractSource.match(
+			/^interface CommandExecution[^{]*\{([\s\S]*?)\n\}/m,
+		)?.[1];
+		expect(execution).toBeDefined();
 		for (const forbidden of ["exit:", "stream:", "presentation:", "description:", "held:"]) {
 			expect(execution).not.toContain(forbidden);
 		}
@@ -458,13 +462,16 @@ describe("command contract audit", () => {
 			"WriteReceiptSchema",
 			"PendingArtifactSchema",
 		]) {
-			expect(sharedSchemas.includes(`export const ${schema}`), schema).toBeTrue();
+			// Declared as a module-level const and named in the grouped export list.
+			expect(new RegExp(`^const ${schema} = `, "m").test(sharedSchemas), schema).toBeTrue();
+			expect(new RegExp(`^\\t${schema},$`, "m").test(sharedSchemas), schema).toBeTrue();
 		}
 		for (const type of ["CommandContext", "CommandExecution", "PendingArtifact"]) {
 			expect(
-				new RegExp(`export (?:interface|type) ${type}\\b`).test(contractSource),
+				new RegExp(`^(?:interface|type) ${type}\\b`, "m").test(contractSource),
 				type,
 			).toBeTrue();
+			expect(new RegExp(`^\\ttype ${type},$`, "m").test(contractSource), type).toBeTrue();
 		}
 	});
 });

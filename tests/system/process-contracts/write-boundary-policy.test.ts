@@ -16,7 +16,7 @@ test("preguards opener bodies before parsing and handles activation after the wr
 	const openerMount = application.indexOf("createCodeOpenerRouter({");
 	const globalJson = application.indexOf('const globalJson = express.json({ limit: "10mb" });');
 	const bypass = application.indexOf(
-		"if (isCodeOpenerBodyRoute(req.method, req.path)) return next();",
+		"if (isCodeOpenerBodyRoute(req.method, req.path)) {\n\t\treturn next();\n\t}",
 	);
 	const boundary = application.indexOf(
 		"app.use((req: Request, res: Response, next: NextFunction) => {",
@@ -104,7 +104,9 @@ test("all note-changing routes cross the sole lock and write boundary", () => {
 	expect(middleware).toBeGreaterThan(exemptionsAt);
 	expect(middleware).toBeLessThan(firstRoute);
 	const boundary = application.slice(middleware, firstRoute);
-	expect(boundary).toContain('if (req.method === "GET" || req.method === "HEAD") return next();');
+	expect(boundary).toContain(
+		'if (req.method === "GET" || req.method === "HEAD") {\n\t\treturn next();\n\t}',
+	);
 	expect(boundary).toContain("NOT_A_BOARD_WRITE.some(([pattern]) => pattern.test(req.path))");
 	expect(boundary.match(/holdBoard\(\{ board: key, holder: writer, signal \}\)/g)).toHaveLength(1);
 	expect(boundary.indexOf("holdBoard({ board: key, holder: writer, signal })")).toBeLessThan(
@@ -149,5 +151,13 @@ test("all note-changing routes cross the sole lock and write boundary", () => {
 	expect(application).not.toContain("writeBoardContent(");
 	expect(application).not.toContain("applyElementInput(");
 	expect(boardWrite.match(/writeBoardContent\(/g)).toHaveLength(1);
-	expect(boardWrite.match(/type: "elements_changed"/g)).toHaveLength(1);
+	// The pane notification was extracted from board-write.ts into its lib; the
+	// message is still built in exactly one place on the write path.
+	const boardWriteNotifications = readFileSync(
+		join(repoRoot, "src/runtime/engine/lib/board-write-notifications.ts"),
+		"utf8",
+	);
+	expect(boardWrite).toContain('from "./lib/board-write-notifications.js"');
+	expect(boardWrite).not.toContain('type: "elements_changed"');
+	expect(boardWriteNotifications.match(/type: "elements_changed"/g)).toHaveLength(1);
 });
