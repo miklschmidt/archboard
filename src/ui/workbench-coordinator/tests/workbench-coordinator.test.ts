@@ -114,7 +114,7 @@ function textByLabel(state: BrowserWorkbenchState, label: string): string {
 	];
 	const match = fields.find((candidate) => candidate.label === label);
 	if (match === undefined) throw new Error(`Missing field ${label}`);
-	return [match.value, match.recovery].filter(Boolean).join(" ");
+	return match.value;
 }
 
 describe("workbench coordinator projection", () => {
@@ -125,7 +125,7 @@ describe("workbench coordinator projection", () => {
 		expect(projected.status).toEqual({
 			state: "confirmed",
 			label: "Coordinator confirmed",
-			detail: "The host confirmed this coordinator identity and its effective settings.",
+			detail: "Coordinator details are up to date.",
 			recovery: null,
 		});
 		expect(textByLabel(state, "Configured model")).toBe("gpt-5.6-luna");
@@ -137,10 +137,7 @@ describe("workbench coordinator projection", () => {
 		expect(textByLabel(state, "Approvals reviewer")).toBe("guardian subagent");
 		expect(textByLabel(state, "Sandbox policy")).toBe("Workspace write, network enabled");
 		expect(textByLabel(state, "Active permission profile")).toBe("archboard, extends default");
-		expect(textByLabel(state, "Coordinator identity")).toBe("coordinator-a");
-		expect(textByLabel(state, "Coordinator history")).toContain(
-			"host did not publish the read-only coordinator history",
-		);
+		expect(textByLabel(state, "Conversation")).toBe("coordinator-a");
 		expect(textByLabel(state, "Workhorse identity")).toBe("workhorse-a");
 		expect(textByLabel(state, "Workhorse history")).toBe("Current task activity for workhorse-a");
 		expect(textByLabel(state, "Workhorse settings")).toContain("gpt-daybreak-blue-latest");
@@ -165,10 +162,8 @@ describe("workbench coordinator projection", () => {
 			"gpt-5.6-luna",
 			"medium",
 		]);
-		for (const item of loading.coordinatorSettings.fields.filter(
-			(candidate) => candidate.state === "unavailable",
-		))
-			expect(item.recovery).toBe("Wait for the coordinator settings handshake to finish.");
+		expect(loading.coordinatorSettings.fields).toHaveLength(2);
+		expect(loading.status.recovery).toBe("Wait for its settings to be confirmed.");
 
 		const stale: BrowserWorkbenchState = {
 			kind: "stream",
@@ -193,11 +188,12 @@ describe("workbench coordinator projection", () => {
 			sequence: null,
 			reason: "The Codex workbench stopped.",
 		};
-		expect(projectWorkbenchCoordinator(unavailable).status.state).toBe("unavailable");
-		expect(textByLabel(unavailable, "Configured model")).toContain(
-			"host did not publish the coordinator's configured model",
-		);
-		expect(textByLabel(unavailable, "Configured model")).toContain("Reconnect");
+		const missing = projectWorkbenchCoordinator(unavailable);
+		expect(missing.status.state).toBe("unavailable");
+		expect(missing.status.recovery).toBe("Reconnect Codex to load the details.");
+		expect(missing.coordinatorIdentity.fields).toEqual([]);
+		expect(missing.coordinatorSettings.fields).toEqual([]);
+		expect(missing.workhorse.fields).toEqual([]);
 
 		const reconnecting: BrowserWorkbenchState = {
 			kind: "connection",
@@ -209,8 +205,8 @@ describe("workbench coordinator projection", () => {
 		};
 		expect(projectWorkbenchCoordinator(reconnecting).status).toMatchObject({
 			state: "unavailable",
-			detail: "The coordinator identity and settings are not available from the host.",
-			recovery: "Wait for the Codex workbench to reconnect and publish a fresh snapshot.",
+			detail: "Coordinator details are unavailable.",
+			recovery: "Wait for Codex to reconnect.",
 		});
 
 		const fallbackSettings = { ...SETTINGS, serviceTier: null } as const;
@@ -225,7 +221,7 @@ describe("workbench coordinator projection", () => {
 		);
 	});
 
-	test("names each missing host fact and gives a recovery without inventing settings", () => {
+	test("retains configured facts and one recovery when confirmed settings are missing", () => {
 		const missing = connected(snapshot({ settings: [WORKHORSE_SETTINGS] }));
 		const projected = projectWorkbenchCoordinator(missing);
 		expect(projected.status.state).toBe("unavailable");
@@ -233,29 +229,57 @@ describe("workbench coordinator projection", () => {
 			"confirmed",
 			"confirmed",
 		]);
-		for (const item of projected.coordinatorSettings.fields.slice(2)) {
-			expect(item.state).toBe("unavailable");
-			expect(item.value).toStartWith("Unavailable: the host did not publish");
-			expect(item.recovery).toContain("Reconnect the Codex workbench");
-		}
+		expect(projected.coordinatorSettings.fields).toHaveLength(2);
+		expect(projected.status.detail).toBe("Some coordinator settings are unavailable.");
+		expect(projected.status.recovery).toBe("Reconnect Codex to load the details.");
 	});
 });
 
 describe("workbench coordinator disclosure", () => {
-	test("labels coordinator and workhorse identity, history, and settings as separate regions", () => {
+	test("keeps actual coordinator and workhorse facts readable in distinct sections", () => {
 		const markup = renderToStaticMarkup(
 			createElement(WorkbenchCoordinatorDisclosure, { state: connected() }),
 		);
 		expect(markup).toContain('data-coordinator-disclosure="read-only"');
 		expect(markup).toContain('data-coordinator-state="confirmed"');
 		expect(markup).toContain("Voice coordinator");
-		expect(markup).toContain("Coordinator identity and history");
+		expect(markup).toContain("Coordinator identity");
 		expect(markup).toContain("Coordinator settings");
-		expect(markup).toContain('aria-label="Linked workhorse identity, history, and settings"');
-		expect(markup).toContain("Separate task activity and settings");
+		expect(markup).toContain("Linked conversation");
+		expect(markup).toContain("coordinator-a");
+		expect(markup).toContain("workhorse-a");
+		expect(markup).toContain("gpt-5.6-sol");
+		expect(markup).not.toContain("Unavailable:");
 		expect(markup).toContain("<output");
 		expect(markup).toContain('aria-label="Coordinator status: Coordinator confirmed"');
 		expect(markup).not.toMatch(/<form|<button|<input|<select|<textarea|<a\b/);
+	});
+
+	test("renders one explanation for an unavailable coordinator without empty field rows", () => {
+		const state = connected(
+			snapshot({
+				settings: [WORKHORSE_SETTINGS],
+				coordinator: {
+					...snapshot().coordinator,
+					state: "unbound",
+					threadId: null,
+					configuredModel: null,
+					configuredEffort: null,
+					model: null,
+					effort: null,
+					serviceTier: null,
+				},
+			}),
+		);
+		const markup = renderToStaticMarkup(createElement(WorkbenchCoordinatorDisclosure, { state }));
+		expect(markup).toContain("The voice coordinator is not connected.");
+		expect(markup.match(/Reconnect Codex/g)).toHaveLength(1);
+		expect(markup.match(/<output/g)).toHaveLength(1);
+		expect(markup).not.toContain("Configured model");
+		expect(markup).not.toContain("Coordinator history");
+		expect(markup).not.toContain("Unavailable:");
+		expect(markup).toContain("workhorse-a");
+		expect(markup).toContain("gpt-daybreak-blue-latest");
 	});
 
 	test("exports only the read-only disclosure and its projector", async () => {

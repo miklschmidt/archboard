@@ -118,12 +118,12 @@ export function WorkbenchSettingsDialog({
 	return (
 		<Dialog open={open} onOpenChange={requestOpenChange}>
 			<DialogContent
-				className="agent-settings-dialog overflow-hidden"
+				className="agent-settings-dialog max-h-[calc(100dvh-2*var(--arch-space-panel))] overflow-hidden"
 				data-workbench-settings=""
 				initialFocus={showCoordinator ? coordinatorRef : closeRef}
 				finalFocus={finalFocus}
 			>
-				<DialogHeader className="pr-touch-target">
+				<DialogHeader className="shrink-0 pr-touch-target">
 					<DialogTitle>Agent settings</DialogTitle>
 					<DialogDescription>
 						{activePane?.identity.label ?? "Choose a pane"} · Connection and account
@@ -188,10 +188,7 @@ export function WorkbenchSettingsDialog({
 									/>
 								</summary>
 								{activeState === null ? null : (
-									<WorkbenchCoordinatorDisclosure
-										className="border-0 bg-transparent px-0"
-										state={activeState}
-									/>
+									<WorkbenchCoordinatorDisclosure state={activeState} />
 								)}
 							</details>
 						</>
