@@ -99,6 +99,22 @@ function clock(iso: string): string {
 	return Number.isNaN(at.getTime()) ? iso : at.toTimeString().slice(0, 8);
 }
 
+function describeWriter(holder: Readonly<LockHolder>): string {
+	if (holder.kind === "human") {
+		return "the person at the canvas";
+	}
+	const claimed = Boolean(holder.claimed);
+	if (claimed) {
+		const hasReason = Boolean(holder.reason);
+		return `an agent that has claimed it${hasReason ? ` (${holder.reason})` : ""}`;
+	}
+	const hasReason = Boolean(holder.reason);
+	if (hasReason) {
+		return `an agent (${holder.reason})`;
+	}
+	return "an agent";
+}
+
 function describeHold(
 	board: string,
 	holder: Readonly<LockHolder> | null,
@@ -109,14 +125,7 @@ function describeHold(
 		return `Board "${board}" is being written by somebody else and did not come free. ${waited}`;
 	}
 	const held = seconds(Math.max(0, Date.now() - Date.parse(holder.since)));
-	const who =
-		holder.kind === "human"
-			? "the person at the canvas"
-			: holder.claimed
-				? `an agent that has claimed it${holder.reason ? ` (${holder.reason})` : ""}`
-				: holder.reason
-					? `an agent (${holder.reason})`
-					: "an agent";
+	const who = describeWriter(holder);
 	const where = holder.process === processName() ? "" : ` on another canvas (${holder.process})`;
 	return `Board "${board}" is held by ${who}${where}, since ${clock(holder.since)} (${held}). ${waited}`;
 }
