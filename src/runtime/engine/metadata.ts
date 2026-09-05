@@ -6,10 +6,9 @@ import type {
 	RuntimeElementTracking,
 } from "../../shared/board-elements/index.js";
 
-export type { LogicalAddress } from "../../shared/board-elements/index.js";
-export type ArchboardBlock = ArchboardElementMetadata;
+type ArchboardBlock = ArchboardElementMetadata;
 
-export interface ElementMetadata {
+interface ElementMetadata {
 	archboard?: ArchboardElementMetadata;
 	foreign: Record<string, unknown>;
 }
@@ -22,30 +21,47 @@ const TRACKING_KEYS = [
 	"syncTimestamp",
 ] as const satisfies readonly (keyof RuntimeElementTracking)[];
 
-/** Remove reserved persisted tracking claims from an untrusted customData value. */
-export function stripTrackingClaims(value: unknown): unknown {
-	if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+/**
+ * @param value untrusted custom data
+ * @returns the value without reserved persisted tracking claims
+ */
+function stripTrackingClaims(value: unknown): unknown {
+	if (!value || typeof value !== "object" || Array.isArray(value)) {
+		return value;
+	}
 	const custom = value as Record<string, unknown>;
 	const candidate = custom["archboard"];
-	if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) return { ...custom };
+	if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+		return { ...custom };
+	}
 	const semantic = Object.fromEntries(
 		Object.entries(candidate).filter(
 			([key]) => !TRACKING_KEYS.includes(key as (typeof TRACKING_KEYS)[number]),
 		),
 	);
-	const cleaned = { ...custom };
-	if (Object.keys(semantic).length > 0) cleaned["archboard"] = semantic;
-	else delete cleaned["archboard"];
+	if (Object.keys(semantic).length > 0) {
+		return { ...custom, archboard: semantic };
+	}
+	const { archboard: _archboard, ...cleaned } = custom;
 	return cleaned;
 }
 
-/** Remove both untrusted runtime-overlay and persisted-envelope tracking claims. */
-export function stripUntrustedTrackingClaims(
-	value: Record<string, unknown>,
-): Record<string, unknown> {
-	const cleaned = { ...value };
-	for (const key of TRACKING_KEYS) delete cleaned[key];
-	if ("customData" in cleaned) cleaned["customData"] = stripTrackingClaims(cleaned["customData"]);
+/**
+ * @param value untrusted element-like data
+ * @returns a copy without runtime-overlay or persisted-envelope tracking claims
+ */
+function stripUntrustedTrackingClaims(value: Record<string, unknown>): Record<string, unknown> {
+	const {
+		createdAt: _createdAt,
+		updatedAt: _updatedAt,
+		syncedAt: _syncedAt,
+		source: _source,
+		syncTimestamp: _syncTimestamp,
+		...cleaned
+	} = value;
+	if ("customData" in cleaned) {
+		cleaned["customData"] = stripTrackingClaims(cleaned["customData"]);
+	}
 	return cleaned;
 }
 
@@ -63,7 +79,7 @@ function envelopeOf(element: RuntimeBoardElement): PersistedArchboardEnvelope | 
 
 // ADR 0003 makes the namespace the boundary. Tracking is storage bookkeeping,
 // not semantic metadata, and is deliberately filtered from every caller.
-export function readElementMetadata(element: RuntimeBoardElement): ElementMetadata {
+function readElementMetadata(element: RuntimeBoardElement): ElementMetadata {
 	const values = customDataOf(element);
 	const envelope = envelopeOf(element);
 	let archboard: ArchboardElementMetadata | undefined;
@@ -73,29 +89,41 @@ export function readElementMetadata(element: RuntimeBoardElement): ElementMetada
 				([key]) => !TRACKING_KEYS.includes(key as (typeof TRACKING_KEYS)[number]),
 			),
 		);
-		if (Object.keys(semantic).length > 0) archboard = semantic;
+		if (Object.keys(semantic).length > 0) {
+			archboard = semantic;
+		}
 	}
 	const foreign = Object.fromEntries(Object.entries(values).filter(([key]) => key !== "archboard"));
 	return { ...(archboard ? { archboard } : {}), foreign };
 }
 
-/** Move persisted tracking into the runtime overlay. Nested canonical wins. */
-export function hydrateElementTracking(element: RuntimeBoardElement): RuntimeBoardElement {
+/**
+ * @param element element to hydrate
+ * @returns a copy with persisted tracking moved into the runtime overlay
+ */
+function hydrateElementTracking(element: RuntimeBoardElement): RuntimeBoardElement {
 	const envelope = envelopeOf(element);
-	if (!envelope) return { ...element };
+	if (!envelope) {
+		return { ...element };
+	}
 	const tracking = Object.fromEntries(
 		TRACKING_KEYS.flatMap((key) => (envelope[key] === undefined ? [] : [[key, envelope[key]]])),
 	) as RuntimeElementTracking;
 	const customData = stripTrackingClaims(element.customData);
 	const hydrated = { ...element, ...tracking } as RuntimeBoardElement;
-	if (customData && typeof customData === "object" && Object.keys(customData).length > 0)
-		hydrated.customData = customData as RuntimeBoardElement["customData"];
-	else delete hydrated.customData;
+	if (customData && typeof customData === "object" && Object.keys(customData).length > 0) {
+		Object.assign(hydrated, { customData });
+	} else {
+		delete hydrated.customData;
+	}
 	return hydrated;
 }
 
-/** Move runtime tracking into customData.archboard on a serialization copy. */
-export function packElementTracking(element: RuntimeBoardElement): RuntimeBoardElement {
+/**
+ * @param element element to serialize
+ * @returns a copy with runtime tracking moved into customData.archboard
+ */
+function packElementTracking(element: RuntimeBoardElement): RuntimeBoardElement {
 	const customData = customDataOf(element);
 	const current = envelopeOf(element) ?? {};
 	const tracking = Object.fromEntries(
@@ -105,46 +133,85 @@ export function packElementTracking(element: RuntimeBoardElement): RuntimeBoardE
 		}),
 	) as RuntimeElementTracking;
 	const envelope = { ...current, ...tracking };
-	const packed = { ...element } as RuntimeBoardElement;
+	const {
+		createdAt: _createdAt,
+		updatedAt: _updatedAt,
+		syncedAt: _syncedAt,
+		source: _source,
+		syncTimestamp: _syncTimestamp,
+		...untracked
+	} = element;
+	const packed = { ...untracked } as RuntimeBoardElement;
 	if (Object.keys(envelope).length > 0) {
 		packed.customData = { ...customData, archboard: envelope };
 	}
-	for (const key of TRACKING_KEYS) delete packed[key];
 	return packed;
 }
 
-/** Stable semantic view used by comparison, facts, describe, and feeds. */
-export function semanticElementProjection(element: RuntimeBoardElement): RuntimeBoardElement {
+/**
+ * @param element runtime element to project
+ * @returns a stable semantic view used by comparison, facts, describe, and feeds
+ */
+function semanticElementProjection(element: RuntimeBoardElement): RuntimeBoardElement {
 	const metadata = readElementMetadata(element).archboard;
 	const custom = customDataOf(element);
-	const projected = { ...element } as RuntimeBoardElement;
-	for (const key of TRACKING_KEYS) delete projected[key];
+	const {
+		createdAt: _createdAt,
+		updatedAt: _updatedAt,
+		syncedAt: _syncedAt,
+		source: _source,
+		syncTimestamp: _syncTimestamp,
+		...untracked
+	} = element;
+	const projected = { ...untracked } as RuntimeBoardElement;
 	const foreign = Object.fromEntries(Object.entries(custom).filter(([key]) => key !== "archboard"));
-	if (metadata) projected.customData = { ...foreign, archboard: metadata };
-	else if (Object.keys(foreign).length > 0) projected.customData = foreign;
-	else delete projected.customData;
+	if (metadata) {
+		projected.customData = { ...foreign, archboard: metadata };
+	} else if (Object.keys(foreign).length > 0) {
+		projected.customData = foreign;
+	} else {
+		delete projected.customData;
+	}
 	return projected;
 }
 
-export function archboardBlock(element: RuntimeBoardElement): ArchboardElementMetadata | undefined {
+function archboardBlock(element: RuntimeBoardElement): ArchboardElementMetadata | undefined {
 	return readElementMetadata(element).archboard;
 }
 
-export function nodeIdOf(element: RuntimeBoardElement): string | undefined {
+function nodeIdOf(element: RuntimeBoardElement): string | undefined {
 	const node = readElementMetadata(element).archboard?.node;
 	return typeof node === "string" && node ? node : undefined;
 }
 
-export function nodeIdsOnBoard(elements: RuntimeBoardElement[]): Set<string> {
+function nodeIdsOnBoard(elements: RuntimeBoardElement[]): Set<string> {
 	const ids = new Set<string>();
 	for (const element of elements) {
 		const id = nodeIdOf(element);
-		if (id) ids.add(id);
+		if (id) {
+			ids.add(id);
+		}
 	}
 	return ids;
 }
 
-export function logicalAddressOf(element: RuntimeBoardElement): LogicalAddress | undefined {
+function logicalAddressOf(element: RuntimeBoardElement): LogicalAddress | undefined {
 	const binding = readElementMetadata(element).archboard?.binding;
 	return binding && typeof binding.path === "string" ? binding : undefined;
 }
+
+export {
+	type LogicalAddress,
+	type ArchboardBlock,
+	type ElementMetadata,
+	stripTrackingClaims,
+	stripUntrustedTrackingClaims,
+	readElementMetadata,
+	hydrateElementTracking,
+	packElementTracking,
+	semanticElementProjection,
+	archboardBlock,
+	nodeIdOf,
+	nodeIdsOnBoard,
+	logicalAddressOf,
+};
