@@ -66,7 +66,7 @@ const externalImportFixture = {
 	itemTypeResults: [],
 };
 
-export const serverNotificationFixtures: Record<ServerNotificationMethod, unknown> = {
+const serverNotificationFixtures: Record<ServerNotificationMethod, unknown> = {
 	error: {
 		error: {
 			message: "fixture",
@@ -354,7 +354,13 @@ export const serverNotificationFixtures: Record<ServerNotificationMethod, unknow
 	"thread/realtime/transcript/done": { ...baseThreadNotification, role: "user", text: "raw" },
 	"thread/realtime/outputAudio/delta": {
 		...baseThreadNotification,
-		audio: { data: "AA==", sampleRate: 24000, numChannels: 1, samplesPerChannel: 1, itemId: null },
+		audio: {
+			data: "AA==",
+			sampleRate: 24_000,
+			numChannels: 1,
+			samplesPerChannel: 1,
+			itemId: null,
+		},
 	},
 	"thread/realtime/sdp": { ...baseThreadNotification, sdp: "v=0" },
 	"thread/realtime/error": { ...baseThreadNotification, message: "error" },
@@ -369,6 +375,8 @@ export const serverNotificationFixtures: Record<ServerNotificationMethod, unknow
 	},
 };
 
-export function notificationFixture(method: ServerNotificationMethod): unknown {
+function notificationFixture(method: ServerNotificationMethod): unknown {
 	return serverNotificationFixtures[method];
 }
+
+export { notificationFixture, serverNotificationFixtures };
