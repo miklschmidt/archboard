@@ -86,29 +86,34 @@
 //   · they participate as containment parents, which is how "someone drew a
 //     boundary round these three" survives.
 
-import { type ServerElement } from "./types.js";
-import { type BoardIdentity } from "./board.js";
+import { withoutValidBridgeDecorations } from "../board-inspection/bridge.js";
+import { CLUSTER_GAP, sameCentre } from "./layout.js";
+import type {
+	ChangedNode,
+	CompareResult,
+	CompareSideInput,
+	NodeFacts,
+	RelationChange,
+	SideSummary,
+	UnchangedNode,
+} from "./lib/compare-contract.js";
+import { buildBoard, hasDivergentAspect, reframeRegions } from "./lib/compare-board-model.js";
+import type { BoardModel } from "./lib/compare-board-model.js";
+import { formatBinding } from "./lib/compare-node-model.js";
+import {
+	cosmeticFields,
+	diffFields,
+	diffPartitions,
+	inferReroutes,
+	layoutFields,
+	matchEdges,
+	MAX_RELATION_PAIRS,
+	nodeFacts,
+	relationOf,
+	semanticFields,
+} from "./lib/compare-diff.js";
 
-const canonical = (v: unknown): string => {
-	if (v === null || typeof v !== "object") return JSON.stringify(v) ?? "null";
-	if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
-	const entries = Object.entries(v as Record<string, unknown>)
-		.filter(([, val]) => val !== undefined)
-		.toSorted(([x], [y]) => (x < y ? -1 : 1));
-	return `{${entries.map(([k, val]) => `${JSON.stringify(k)}:${canonical(val)}`).join(",")}}`;
-};
-const edgeFields = (e: EdgeModel): Record<string, unknown> => ({
-	label: e.label,
-	kind: e.kind,
-	connector: e.type,
-	strokeStyle: e.strokeStyle,
-	startArrowhead: e.startArrowhead,
-	endArrowhead: e.endArrowhead,
-	...(e.extra ? { extra: e.extra } : {}),
-});
 const pairKey = (x: string, y: string): string => (x < y ? `${x}\0${y}` : `${y}\0${x}`);
-const aspect = (box: BoundingBox | null): number | null =>
-	box && box.maxY - box.minY > 1 ? (box.maxX - box.minX) / (box.maxY - box.minY) : null;
 const sideSummaryOf = (input: CompareSideInput, model: BoardModel): SideSummary => ({
 	board: input.key,
 	identity: input.identity,
@@ -121,1115 +126,14 @@ const sideSummaryOf = (input: CompareSideInput, model: BoardModel): SideSummary 
 	nodeBox: model.nodeBox,
 	regionFrame: model.regionFrame,
 });
-import { readElementMetadata } from "./metadata.js";
-import type { ArchboardBlock, LogicalAddress } from "./metadata.js";
-import {
-	architectureFacts,
-	architectureLabel,
-	isArchitectureConnectorType,
-	type ArchitectureFacts,
-} from "../board-inspection/architecture.js";
-import { withoutValidBridgeDecorations } from "../board-inspection/bridge.js";
-import {
-	type Box,
-	type BoundingBox,
-	CLUSTER_GAP,
-	boundingBoxOf,
-	boxOf,
-	clusterBoxes,
-	regionName,
-	sameCentre,
-} from "./layout.js";
 
-// ---------------------------------------------------------------------------
-// Inputs and outputs
-// ---------------------------------------------------------------------------
+const bindingField = (binding: string | undefined): { binding: string } | Record<string, never> =>
+	binding === undefined ? {} : { binding };
 
-export interface CompareSideInput {
-	key: string;
-	identity: BoardIdentity;
-	elements: ServerElement[];
-	file?: string;
-	savedAt?: string;
-}
-
-export interface SideSummary {
-	board: string;
-	identity: BoardIdentity;
-	file?: string;
-	savedAt?: string;
-	elementCount: number;
-	nodeCount: number;
-	edgeCount: number;
-	plainCount: number;
-	// The box round every node on this board — a fact about the board itself.
-	nodeBox: BoundingBox | null;
-	// The box the region names on this side are thirds of. Drawn round the nodes
-	// both boards have, so that a node present on only one side cannot rename
-	// its neighbours' whereabouts; equal to `nodeBox` when the two boards share
-	// fewer than two nodes and there is nothing better to anchor to.
-	regionFrame: BoundingBox | null;
-}
-
-export interface NodeFacts {
-	node: string;
-	name: string;
-	label?: string;
-	declaredName?: string;
-	kind?: string;
-	level?: string;
-	variant?: string;
-	binding?: LogicalAddress | string;
-	bindingText?: string;
-	link?: string;
-	extra?: Record<string, unknown>;
-	elementIds: string[];
-	elementCount: number;
-	types: string[];
-	cosmetic: {
-		type: string;
-		backgroundColor?: string;
-		strokeColor?: string;
-		width: number;
-		height: number;
-	};
-	layout: NodeLayout;
-	degree: { in: number; out: number };
-	out: string[]; // node ids this one points at
-	in: string[]; // node ids pointing at it
-}
-
-export interface NodeLayout {
-	cluster: string | null;
-	clusterWith: string[];
-	clusterSize: number;
-	container: string | null;
-	group: string | null;
-	region: string;
-	prominence: "smaller" | "typical" | "larger";
-}
-
-export type FieldChange = { from: unknown; to: unknown };
-
-export interface ChangedNode {
-	node: string;
-	name: string;
-	changes: Record<string, FieldChange>;
-	cosmeticChanges?: Record<string, FieldChange>;
-	layoutChanges?: Record<string, FieldChange>;
-	from: NodeFacts;
-	to: NodeFacts;
-}
-
-export interface UnchangedNode {
-	node: string;
-	name: string;
-	kind?: string;
-	binding?: string;
-	// Same architecture, different placement: still "stable" as a node, but the
-	// human moved it and that is a statement of its own.
-	layoutChanges?: Record<string, FieldChange>;
-	cosmeticChanges?: Record<string, FieldChange>;
-	facts: NodeFacts;
-}
-
-export interface EdgeFacts {
-	from: string;
-	to: string;
-	label?: string;
-	kind?: string;
-	elementId: string;
-	type: string;
-	strokeStyle?: string;
-	startArrowhead?: string | null;
-	endArrowhead?: string | null;
-	extra?: Record<string, unknown>;
-	fromName: string;
-	toName: string;
-}
-
-export interface ChangedEdge {
-	from: string;
-	to: string;
-	changes: Record<string, FieldChange>;
-	fromFacts: EdgeFacts;
-	toFacts: EdgeFacts;
-}
-
-export interface UnresolvedConnector {
-	elementId: string;
-	type: string;
-	label?: string;
-	// What each end is attached to, said in whatever terms exist: a node id when
-	// the end landed on a node, else the label of the plain element, else null
-	// for an end bound to nothing at all.
-	fromNode?: string;
-	toNode?: string;
-	fromLabel?: string;
-	toLabel?: string;
-	reason: string;
-}
-
-export interface PlainElement {
-	id: string;
-	type: string;
-	label?: string;
-	region: string;
-	link?: string;
-	foreignCustomData?: Record<string, unknown>;
-}
-
-export interface PlainSide {
-	count: number;
-	byType: Record<string, number>;
-	labelled: PlainElement[];
-	unlabelled: Record<string, number>;
-	// Carrying archboard metadata but no node id: one promotion away from being
-	// comparable, so worth naming individually.
-	unidentified: Array<{ id: string; type: string; label?: string; archboard: ArchboardBlock }>;
-}
-
-export interface ClusterFacts {
-	id: string;
-	region: string;
-	size: number;
-	members: string[]; // node ids
-	names: string[];
-}
-
-export interface ClusterChange {
-	kind: "merged" | "split" | "formed" | "dissolved" | "stable";
-	from: string[]; // cluster ids on the `from` side
-	to: string[]; // cluster ids on the `to` side
-	sharedMembers: string[];
-	joined: string[]; // node ids in the `to` cluster(s) that were not in the `from` one(s)
-	left: string[]; // node ids in the `from` cluster(s) that are not in the `to` one(s)
-}
-
-export interface RelationChange {
-	a: string;
-	b: string;
-	from: string;
-	to: string;
-	related: "edge" | "cluster" | "edge+cluster";
-}
-
-export interface CompareResult {
-	success: true;
-	from: SideSummary;
-	to: SideSummary;
-	summary: {
-		// Did the join find anything to join on? False means the node and edge
-		// sections say nothing because nothing could be compared — never that the
-		// two boards agree.
-		comparable: boolean;
-		identical: boolean;
-		sharedNodes: number;
-		nodesAdded: number;
-		nodesRemoved: number;
-		nodesChanged: number;
-		nodesUnchanged: number;
-		nodesMovedOnly: number;
-		edgesAdded: number;
-		edgesRemoved: number;
-		edgesChanged: number;
-		edgesUnchanged: number;
-		layoutSignalsChanged: number;
-	};
-	nodes: {
-		added: NodeFacts[];
-		removed: NodeFacts[];
-		changed: ChangedNode[];
-		unchanged: UnchangedNode[];
-	};
-	edges: {
-		added: EdgeFacts[];
-		removed: EdgeFacts[];
-		changed: ChangedEdge[];
-		unchanged: EdgeFacts[];
-		// An inference layer over added/removed, not a replacement for it: a
-		// removed and an added edge sharing exactly one endpoint, one-to-one.
-		rerouted: Array<{
-			anchor: string;
-			end: "source" | "target";
-			was: string;
-			now: string;
-			anchorName: string;
-			wasName: string;
-			nowName: string;
-		}>;
-		unresolved: { from: UnresolvedConnector[]; to: UnresolvedConnector[] };
-	};
-	layout: {
-		method: Record<string, string>;
-		cannotExpress: string[];
-		clusters: { from: ClusterFacts[]; to: ClusterFacts[]; changes: ClusterChange[] };
-		groups: { from: ClusterFacts[]; to: ClusterFacts[]; changes: ClusterChange[] };
-		moved: Array<{ node: string; name: string; changes: Record<string, FieldChange> }>;
-		relations: { compared: number; changes: RelationChange[] };
-		boxAspectDiverged: boolean;
-	};
-	plain: {
-		from: PlainSide;
-		to: PlainSide;
-		// Label matching, and only label matching: a hint, never an identity claim.
-		labelOnlyOnFrom: string[];
-		labelOnlyOnTo: string[];
-		labelOnBoth: string[];
-	};
-	warnings: string[];
-}
-
-// ---------------------------------------------------------------------------
-// Reading a board into the node/edge model
-// ---------------------------------------------------------------------------
-
-const CONTAINER_TYPES = new Set(["rectangle", "ellipse", "diamond", "frame"]);
-
-// An arrow or a line is a connector until somebody promotes it. Promotion is
-// an explicit act, so what an element carries outranks what it is drawn from,
-// and only an element with no node id is read as a connector here (TASK-053).
-const isConnector = isArchitectureConnectorType;
-
-function formatBinding(binding: LogicalAddress | string | undefined): string | undefined {
-	if (binding === undefined) return undefined;
-	if (typeof binding === "string") return binding.trim() || undefined;
-	const repo = binding.repo ? `${binding.repo}:` : "";
-	const branch = binding.branch ? `@${binding.branch}` : "";
-	const commit = binding.commit ? ` (${binding.commit.slice(0, 7)})` : "";
-	return `${repo}${binding.path ?? "?"}${branch}${commit}`;
-}
-
-// What makes two bindings the same binding. Repo, path and branch: the address
-// of the code. `commit` and `confirmedAt` are when it was last *confirmed*, and
-// re-promoting an unchanged node moves both — treating that as a change would
-// fill the diff with reconfirmation noise. Both are still carried in the facts.
-function bindingIdentity(binding: LogicalAddress | string | undefined): string | undefined {
-	if (binding === undefined) return undefined;
-	if (typeof binding === "string") return binding.trim() || undefined;
-	const repo = binding.repo ? `${binding.repo}:` : "";
-	const branch = binding.branch ? `@${binding.branch}` : "";
-	return `${repo}${binding.path ?? "?"}${branch}`;
-}
-
-const ARCHBOARD_KNOWN = new Set(["node", "kind", "name", "binding", "variant", "level"]);
-
-interface NodeModel {
-	node: string;
-	elements: ServerElement[];
-	primary: ServerElement;
-	label?: string;
-	declaredName?: string;
-	name: string;
-	kind?: string;
-	level?: string;
-	variant?: string;
-	binding?: LogicalAddress | string;
-	link?: string;
-	extra: Record<string, unknown>;
-	box: Box;
-	clusterId: string | null;
-	container: string | null;
-	group: string | null;
-	region: string;
-	prominence: "smaller" | "typical" | "larger";
-	out: string[];
-	in: string[];
-}
-
-interface EdgeModel extends EdgeFacts {}
-
-interface BoardModel {
-	key: string;
-	elements: ServerElement[];
-	nodes: Map<string, NodeModel>;
-	edges: EdgeModel[];
-	unresolved: UnresolvedConnector[];
-	plain: PlainSide;
-	clusters: ClusterFacts[];
-	groups: ClusterFacts[];
-	nodeBox: BoundingBox | null;
-	// Filled in by `reframeRegions` once both sides are built and the join is
-	// known — every `region` on this model is thirds of it.
-	regionFrame: BoundingBox | null;
-	warnings: string[];
-}
-
-function labelOfAll(el: ServerElement, all: ServerElement[]): string | undefined {
-	return architectureLabel(el, all);
-}
-
-interface NodeBuildResult {
-	nodeOfElement: Map<string, string>;
-	models: NodeModel[];
-	nodes: Map<string, NodeModel>;
-}
-
-function buildNodes(facts: ArchitectureFacts): NodeBuildResult {
-	const all = facts.elements as ServerElement[];
-	const models: NodeModel[] = [];
-	for (const [id, fact] of facts.nodes) {
-		const elements = fact.elements as ServerElement[];
-		const primary = fact.primary;
-		const block = fact.metadata;
-		const extra: Record<string, unknown> = {};
-		for (const [key, value] of Object.entries(block)) {
-			if (!ARCHBOARD_KNOWN.has(key)) extra[key] = value;
-		}
-		const label =
-			labelOfAll(primary, all) ?? elements.map((el) => labelOfAll(el, all)).find(Boolean);
-		const declaredName = typeof block.name === "string" && block.name ? block.name : undefined;
-		const link = elements
-			.map((el) => el.link)
-			.find((value) => typeof value === "string" && value) as string | undefined;
-		models.push({
-			node: id,
-			elements,
-			primary,
-			...(label ? { label } : {}),
-			...(declaredName ? { declaredName } : {}),
-			name: label ?? declaredName ?? id,
-			...(typeof block.kind === "string" ? { kind: block.kind } : {}),
-			...(typeof block.level === "string" ? { level: block.level } : {}),
-			...(typeof block.variant === "string" ? { variant: block.variant } : {}),
-			...(block.binding !== undefined ? { binding: block.binding as LogicalAddress | string } : {}),
-			...(link ? { link } : {}),
-			extra,
-			box: fact.aggregateNodeFootprint,
-			clusterId: null,
-			container: null,
-			group: null,
-			region: "centre",
-			prominence: "typical",
-			out: [],
-			in: [],
-		});
-	}
-	const nodes = new Map(models.map((model) => [model.node, model]));
-	return { nodeOfElement: new Map(facts.nodeOfElement), models, nodes };
-}
-
-interface EdgeBuildResult {
-	edges: EdgeModel[];
-	unresolved: UnresolvedConnector[];
-	promotedConnectors: Array<{ node: string; from: string; to: string }>;
-}
-
-function buildEdges(
-	facts: ArchitectureFacts,
-	nodes: Map<string, NodeModel>,
-	nodeOfElement: Map<string, string>,
-): EdgeBuildResult {
-	const all = facts.elements as ServerElement[];
-	const byId = facts.byId;
-	const edges: EdgeModel[] = [];
-	const unresolved: UnresolvedConnector[] = [];
-	const promotedConnectors: Array<{ node: string; from: string; to: string }> = [];
-	for (const connector of facts.connectors) {
-		const el = connector.element;
-		const startId = connector.startTargetId;
-		const endId = connector.endTargetId;
-		const ownNode = connector.ownerNodeId;
-		if (ownNode) {
-			const from = startId ? nodeOfElement.get(startId) : undefined;
-			const to = endId ? nodeOfElement.get(endId) : undefined;
-			if (from && to && from !== to) promotedConnectors.push({ node: ownNode, from, to });
-			continue;
-		}
-		const fromNode = startId ? nodeOfElement.get(startId) : undefined;
-		const toNode = endId ? nodeOfElement.get(endId) : undefined;
-		const block = readElementMetadata(el).archboard ?? {};
-		const extra: Record<string, unknown> = {};
-		for (const [key, value] of Object.entries(block)) {
-			if (!ARCHBOARD_KNOWN.has(key)) extra[key] = value;
-		}
-		const label = labelOfAll(el, all);
-		if (fromNode && toNode) {
-			const raw = el as unknown as Record<string, unknown>;
-			edges.push({
-				from: fromNode,
-				to: toNode,
-				...(label ? { label } : {}),
-				...(typeof block.kind === "string" ? { kind: block.kind } : {}),
-				elementId: el.id,
-				type: el.type,
-				...(el.strokeStyle ? { strokeStyle: el.strokeStyle } : {}),
-				...(raw["startArrowhead"] !== undefined
-					? { startArrowhead: typeof raw["startArrowhead"] === "string" ? raw["startArrowhead"] : null }
-					: {}),
-				...(raw["endArrowhead"] !== undefined
-					? { endArrowhead: typeof raw["endArrowhead"] === "string" ? raw["endArrowhead"] : null }
-					: {}),
-				...(Object.keys(extra).length ? { extra } : {}),
-				fromName: nodes.get(fromNode)?.name ?? fromNode,
-				toName: nodes.get(toNode)?.name ?? toNode,
-			});
-			continue;
-		}
-		const endLabel = (id: string | undefined) =>
-			id && byId.get(id) ? labelOfAll(byId.get(id)!, all) : undefined;
-		const fromLabel = endLabel(startId);
-		const toLabel = endLabel(endId);
-		unresolved.push({
-			elementId: el.id,
-			type: el.type,
-			...(label ? { label } : {}),
-			...(fromNode ? { fromNode } : {}),
-			...(toNode ? { toNode } : {}),
-			...(fromLabel ? { fromLabel } : {}),
-			...(toLabel ? { toLabel } : {}),
-			reason:
-				!startId && !endId
-					? "drawn but bound to nothing at either end"
-					: !fromNode && !toNode
-						? "both ends land on elements that are not nodes"
-						: `the ${fromNode ? "target" : "source"} end lands on an element that is not a node`,
-		});
-	}
-	return { edges, unresolved, promotedConnectors };
-}
-
-function buildBoard(input: CompareSideInput): BoardModel {
-	const facts = architectureFacts(input.elements);
-	const all = [...facts.elements];
-	const warnings: string[] = [];
-	const boundLabelOf = facts.confirmedBoundLabelIds;
-
-	// --- nodes: elements grouped by node id -----------------------------------
-	//
-	// Every element carrying a node id, whatever it is drawn from. A stencil is
-	// an arbitrary set of primitives, and the shipped PostgreSQL one is seven
-	// lines, so a type test here made promoting it report success and produce a
-	// node no reader could see (TASK-053).
-	const nodeBuild = buildNodes(facts);
-	const { nodeOfElement, models, nodes } = nodeBuild;
-
-	// A node whose recorded variant is not the board's own was copied from
-	// another variant and never re-promoted. Not harmless: `variantAnomaly` is a
-	// semantic field, so every such node is reported as changed, and a board
-	// full of them buries whatever the real difference was. Branching restamps
-	// the copy (`restampVariant`, TASK-035) precisely so this stays rare enough
-	// to be worth saying out loud. When it does fire it is the trace of a copy,
-	// and the human is usually the only one who knows whether it was deliberate.
-	const stale = models.filter((m) => m.variant && m.variant !== input.identity.variant);
-	if (stale.length > 0) {
-		warnings.push(
-			`On "${input.key}" ${stale.length} node(s) record a different variant than the board itself ` +
-				`("${input.identity.variant}"): ` +
-				stale.map((m) => `${m.node} says "${m.variant}"`).join(", ") +
-				". Usually the trace of a board copied from another variant without re-promoting.",
-		);
-	}
-
-	// --- edges: connectors resolved to node ids -------------------------------
-	//
-	// A promoted connector is skipped, because it is already a node up above and
-	// the two loops have to divide the board rather than overlap it.
-	// `promotedConnectors` collects the ones that would have been edges, so the
-	// human hears what the promotion cost instead of watching a dependency
-	// disappear.
-	const edgeBuild = buildEdges(facts, nodes, nodeOfElement);
-	const { edges, unresolved, promotedConnectors } = edgeBuild;
-
-	// A connector that was promoted and also joins two other nodes is the one
-	// case where reading it as a node loses something: it used to be a
-	// dependency, and now it is part of a shape. Usually the trace of a
-	// selection that swept up an arrow it did not mean. Demote it to get the
-	// edge back.
-	const nameOfNode = (id: string) => nodes.get(id)?.name ?? id;
-	for (const { node, from, to } of promotedConnectors) {
-		warnings.push(
-			`On "${input.key}" node "${nameOfNode(node)}" includes a connector drawn from ` +
-				`"${nameOfNode(from)}" to "${nameOfNode(to)}". A promoted element is part of its node, so that ` +
-				"connection is not compared as an edge. Demote the connector if it was meant to be one.",
-		);
-	}
-
-	for (const edge of edges) {
-		nodes.get(edge.from)?.out.push(edge.to);
-		nodes.get(edge.to)?.in.push(edge.from);
-	}
-
-	// --- layout signals -------------------------------------------------------
-	const nodeBox = boundingBoxOf(models.map((m) => m.box));
-
-	// Clusters. A cluster gets a synthetic id per side; the thing that compares
-	// across sides is its *membership*, never its id.
-	const clusterOf = new Map<string, string>();
-	const clusters: ClusterFacts[] = [];
-	const clusterItems = models.map((m) => ({ ...m.box, node: m.node, name: m.name }));
-	const grouped = clusterBoxes(clusterItems, CLUSTER_GAP);
-	grouped.forEach((group, i) => {
-		const id = `c${i + 1}`;
-		const cx = group.reduce((s, g) => s + g.x + g.w / 2, 0) / group.length;
-		const cy = group.reduce((s, g) => s + g.y + g.h / 2, 0) / group.length;
-		for (const g of group) clusterOf.set(g.node, id);
-		clusters.push({
-			id,
-			region: nodeBox ? regionName(cx, cy, nodeBox) : "centre",
-			size: group.length,
-			members: group.map((g) => g.node).toSorted(),
-			names: group.map((g) => g.name),
-		});
-	});
-
-	// Explicit Excalidraw groups, as a second partition of node ids. Group ids
-	// are random per board, so again only membership compares.
-	const byGroupId = new Map<string, string[]>();
-	for (const m of models) {
-		for (const gid of m.primary.groupIds ?? []) {
-			const list = byGroupId.get(gid) ?? [];
-			if (!list.includes(m.node)) list.push(m.node);
-			byGroupId.set(gid, list);
-		}
-	}
-	const groups: ClusterFacts[] = [];
-	const groupOf = new Map<string, string>();
-	let groupIndex = 0;
-	for (const [, members] of [...byGroupId.entries()].toSorted(
-		(a, b) => b[1].length - a[1].length,
-	)) {
-		if (members.length < 2) continue; // a group of one says nothing
-		const id = `g${++groupIndex}`;
-		for (const node of members) groupOf.set(node, id);
-		groups.push({
-			id,
-			region: "n/a",
-			size: members.length,
-			members: [...members].toSorted(),
-			names: members.map((n) => nodes.get(n)?.name ?? n),
-		});
-	}
-
-	// Containment: the smallest shape that strictly contains a node, whether that
-	// shape is another node or a plain box someone drew round a subsystem.
-	const containerCandidates = all.filter(
-		(el) => CONTAINER_TYPES.has(el.type) && (el.width || 0) > 0 && (el.height || 0) > 0,
+const plainLabels = (model: BoardModel): Set<string> =>
+	new Set(
+		model.plain.labelled.map((element) => element.label).filter((label) => label !== undefined),
 	);
-	const containerKey = (el: ServerElement): string => {
-		const node = nodeOfElement.get(el.id);
-		if (node) return `node:${node}`;
-		const label = labelOfAll(el, all);
-		if (label) return `label:${label}`;
-		return `unlabelled-${el.type}`;
-	};
-	let anonymousContainer = false;
-	for (const m of models) {
-		let best: ServerElement | undefined;
-		let bestArea = Infinity;
-		const b = m.box;
-		for (const cand of containerCandidates) {
-			if (nodeOfElement.get(cand.id) === m.node) continue;
-			// Measured, like everything else, though CONTAINER_TYPES carries no path
-			// today: the rule is the same rule wherever a box is read (TASK-038).
-			const c = boxOf(cand);
-			const area = c.w * c.h;
-			const contains = c.x <= b.x && c.y <= b.y && c.x + c.w >= b.x + b.w && c.y + c.h >= b.y + b.h;
-			if (!contains || area <= b.w * b.h * 1.2) continue;
-			if (area < bestArea) {
-				best = cand;
-				bestArea = area;
-			}
-		}
-		if (best) {
-			m.container = containerKey(best);
-			if (m.container.startsWith("unlabelled-")) anonymousContainer = true;
-		}
-	}
-	if (anonymousContainer) {
-		warnings.push(
-			`On "${input.key}" at least one node sits inside an unlabelled shape. An unlabelled container has ` +
-				'no identity that survives to the other board, so it compares only as "unlabelled-<type>" — label ' +
-				"it, or promote it, to make the boundary comparable.",
-		);
-	}
-
-	// Region and prominence.
-	const areas = models
-		.map((m) => m.box.w * m.box.h)
-		.filter((a) => a > 0)
-		.toSorted((a, b) => a - b);
-	const median = areas.length ? areas[Math.floor(areas.length / 2)]! : 0;
-	for (const m of models) {
-		m.clusterId = clusterOf.get(m.node) ?? null;
-		m.group = groupOf.get(m.node) ?? null;
-		m.region = nodeBox
-			? regionName(m.box.x + m.box.w / 2, m.box.y + m.box.h / 2, nodeBox)
-			: "centre";
-		const area = m.box.w * m.box.h;
-		m.prominence =
-			median <= 0
-				? "typical"
-				: area < median * 0.6
-					? "smaller"
-					: area > median * 1.7
-						? "larger"
-						: "typical";
-		// A node whose elements are scattered is still one node — that is what the
-		// id says — but the human should hear about it, because it is usually a
-		// stray element that got promoted along with the box.
-		if (m.elements.length > 1) {
-			const spread = clusterBoxes(
-				m.elements.map((el) => boxOf(el)),
-				CLUSTER_GAP,
-			);
-			if (spread.length > 1) {
-				warnings.push(
-					`On "${input.key}" node "${m.node}" is made of ${m.elements.length} elements that sit in ` +
-						`${spread.length} separate places on the board. It compares as one node; its geometry is the ` +
-						"box round all of them, which will read as larger and vaguer than what anyone drew.",
-				);
-			}
-		}
-	}
-
-	// --- plain elements -------------------------------------------------------
-	//
-	// Whatever belongs to no node, is no connector and labels nothing. A
-	// promoted connector falls out on the first test, so the three passes still
-	// divide the board between them.
-	const plainElements = all.filter(
-		(el) => !nodeOfElement.has(el.id) && !isConnector(el.type) && !boundLabelOf.has(el.id),
-	);
-	const byType: Record<string, number> = {};
-	const unlabelled: Record<string, number> = {};
-	const labelled: PlainElement[] = [];
-	const unidentified: PlainSide["unidentified"] = [];
-	for (const el of plainElements) {
-		byType[el.type] = (byType[el.type] || 0) + 1;
-		const label = labelOfAll(el, all);
-		const metadata = readElementMetadata(el);
-		const block = metadata.archboard;
-		if (block) {
-			unidentified.push({
-				id: el.id,
-				type: el.type,
-				...(label ? { label } : {}),
-				archboard: block,
-			});
-		}
-		const foreign = metadata.foreign;
-		if (label) {
-			const b = boxOf(el);
-			labelled.push({
-				id: el.id,
-				type: el.type,
-				label,
-				region: nodeBox ? regionName(b.x + b.w / 2, b.y + b.h / 2, nodeBox) : "centre",
-				...(el.link ? { link: el.link } : {}),
-				...(Object.keys(foreign).length ? { foreignCustomData: foreign } : {}),
-			});
-		} else {
-			unlabelled[el.type] = (unlabelled[el.type] || 0) + 1;
-		}
-	}
-
-	return {
-		key: input.key,
-		elements: all,
-		nodes,
-		edges,
-		unresolved,
-		plain: { count: plainElements.length, byType, labelled, unlabelled, unidentified },
-		clusters,
-		groups,
-		nodeBox,
-		// Provisional: thirds of this board's own nodes, which is the only frame
-		// available before the other side is known. `reframeRegions` replaces it.
-		regionFrame: nodeBox,
-		warnings,
-	};
-}
-
-// Re-draw the frame the region names are thirds of, now that both sides exist.
-//
-// Region is the one layout signal whose *name* depends on something other than
-// the node it describes. The frame is the box round the nodes, so a node that
-// arrives at the edge of the board — or leaves it — stretches or shrinks the
-// frame and hands every other node a new region name. The diff then reports
-// nodes nobody touched as having moved, and the change feed states that in
-// prose: "Payment Events moved". It is noise in `compare` and a false claim
-// about a human in the feed.
-//
-// So the frame is drawn round the nodes the join actually joined, exactly as
-// the cluster signal already restricts itself to shared membership. Arriving
-// and departing nodes are still *placed* in that frame — a node added off to
-// the right is reported at the right — they just no longer redraw it.
-//
-// Below two shared nodes there is nothing to anchor to (one node's box, or
-// none, gives a frame that names everything "centre"), so the board's own node
-// box stands and the pre-existing caveat applies unchanged.
-function reframeRegions(model: BoardModel, shared: Set<string>): void {
-	const anchors = [...model.nodes.values()].filter((m) => shared.has(m.node)).map((m) => m.box);
-	const frame = anchors.length >= 2 ? boundingBoxOf(anchors) : model.nodeBox;
-	model.regionFrame = frame;
-	const at = (x: number, y: number, w: number, h: number) =>
-		frame ? regionName(x + w / 2, y + h / 2, frame) : "centre";
-
-	for (const m of model.nodes.values()) m.region = at(m.box.x, m.box.y, m.box.w, m.box.h);
-
-	for (const cluster of model.clusters) {
-		const boxes = cluster.members.map((n) => model.nodes.get(n)?.box).filter((b): b is Box => !!b);
-		if (boxes.length === 0) continue;
-		const cx = boxes.reduce((s, b) => s + b.x + b.w / 2, 0) / boxes.length;
-		const cy = boxes.reduce((s, b) => s + b.y + b.h / 2, 0) / boxes.length;
-		cluster.region = frame ? regionName(cx, cy, frame) : "centre";
-	}
-
-	const byId = new Map(model.elements.map((el) => [el.id, el]));
-	for (const plain of model.plain.labelled) {
-		const el = byId.get(plain.id);
-		if (!el) continue;
-		const b = boxOf(el);
-		plain.region = at(b.x, b.y, b.w, b.h);
-	}
-}
-
-// ---------------------------------------------------------------------------
-// Diffing
-// ---------------------------------------------------------------------------
-
-function sameJson(a: unknown, b: unknown): boolean {
-	if (a === b) return true;
-	if (a === undefined || b === undefined) return false;
-	return canonical(a) === canonical(b);
-}
-
-function nodeFacts(m: NodeModel, clusters: ClusterFacts[]): NodeFacts {
-	const cluster = clusters.find((c) => c.id === m.clusterId);
-	return {
-		node: m.node,
-		name: m.name,
-		...(m.label ? { label: m.label } : {}),
-		...(m.declaredName ? { declaredName: m.declaredName } : {}),
-		...(m.kind ? { kind: m.kind } : {}),
-		...(m.level ? { level: m.level } : {}),
-		...(m.variant ? { variant: m.variant } : {}),
-		...(m.binding !== undefined ? { binding: m.binding } : {}),
-		...(formatBinding(m.binding) ? { bindingText: formatBinding(m.binding)! } : {}),
-		...(m.link ? { link: m.link } : {}),
-		...(Object.keys(m.extra).length ? { extra: m.extra } : {}),
-		elementIds: m.elements.map((el) => el.id),
-		elementCount: m.elements.length,
-		types: [...new Set(m.elements.map((el) => el.type))],
-		cosmetic: {
-			type: m.primary.type,
-			...(m.primary.backgroundColor ? { backgroundColor: m.primary.backgroundColor } : {}),
-			...(m.primary.strokeColor ? { strokeColor: m.primary.strokeColor } : {}),
-			width: Math.round(m.box.w),
-			height: Math.round(m.box.h),
-		},
-		layout: {
-			cluster: m.clusterId,
-			// Who it sits with, not where: the set is what compares across boards.
-			clusterWith: cluster ? cluster.members.filter((n) => n !== m.node) : [],
-			clusterSize: cluster ? cluster.size : 0,
-			container: m.container,
-			group: m.group,
-			region: m.region,
-			prominence: m.prominence,
-		},
-		degree: { in: m.in.length, out: m.out.length },
-		out: [...m.out].toSorted(),
-		in: [...m.in].toSorted(),
-	};
-}
-
-function diffFields(
-	from: Record<string, unknown>,
-	to: Record<string, unknown>,
-): Record<string, FieldChange> {
-	const changes: Record<string, FieldChange> = {};
-	for (const key of new Set([...Object.keys(from), ...Object.keys(to)])) {
-		if (!sameJson(from[key], to[key])) {
-			changes[key] = { from: from[key] ?? null, to: to[key] ?? null };
-		}
-	}
-	return changes;
-}
-
-function semanticFields(m: NodeModel, boardVariant: string): Record<string, unknown> {
-	const label =
-		m.label && m.label.toLocaleLowerCase() !== m.declaredName?.toLocaleLowerCase()
-			? m.label
-			: undefined;
-	return {
-		label,
-		declaredName: m.declaredName,
-		kind: m.kind,
-		level: m.level,
-		// NOT the node's raw `variant`. Promotion stamps every node with the
-		// variant it was promoted under, so on `payments` every node says "current"
-		// and on `payments@option-a` every node says "option-a" — comparing that is
-		// comparing the two filenames, and it would report all six nodes as changed
-		// and leave nothing for "what is stable". What is worth diffing is
-		// *disagreement*: a node still claiming the variant it was copied from,
-		// which means it was never re-promoted. The raw value is in the facts on
-		// both sides either way.
-		variantAnomaly: m.variant && m.variant !== boardVariant ? m.variant : undefined,
-		binding: bindingIdentity(m.binding),
-		link: m.link,
-		elementCount: m.elements.length,
-		...(Object.keys(m.extra).length ? { extra: m.extra } : {}),
-	};
-}
-
-function cosmeticFields(m: NodeModel): Record<string, unknown> {
-	return {
-		shape: m.primary.type,
-		backgroundColor: m.primary.backgroundColor,
-		strokeColor: m.primary.strokeColor,
-		width: Math.round(m.box.w),
-		height: Math.round(m.box.h),
-	};
-}
-
-function layoutFields(
-	m: NodeModel,
-	clusters: ClusterFacts[],
-	groups: ClusterFacts[],
-	shared: Set<string>,
-): Record<string, unknown> {
-	// A cluster is named by its membership, never by its synthetic id — the ids
-	// are per-side and comparing them would report a change every time a cluster
-	// changed rank. What is compared is the set of *other nodes* it sits with,
-	// which is what "together" actually means.
-	//
-	// Restricted to nodes that exist on both boards: a node that only ever
-	// existed on one side joining this cluster is a fact about that node, and it
-	// is reported in that node's own facts. Counting it here as well would make
-	// every neighbour of an added node look like it had been moved.
-	const companions = (list: ClusterFacts[], id: string | null, onlyShared: boolean) => {
-		const found = list.find((c) => c.id === id);
-		if (!found) return [];
-		return found.members.filter((n) => n !== m.node && (!onlyShared || shared.has(n)));
-	};
-	return {
-		cluster: companions(clusters, m.clusterId, true),
-		// A group compares the same way — by who is in it — but unrestricted.
-		// Proximity is incidental, so a new neighbour must not read as movement;
-		// grouping is an explicit act *about* the nodes named in it, so being
-		// grouped with a node that is new is exactly the statement being made.
-		group: m.group ? companions(groups, m.group, false) : null,
-		container: m.container,
-		region: m.region,
-		prominence: m.prominence,
-	};
-}
-
-// Partition diff, used for both proximity clusters and explicit groups. The
-// correspondence is by shared membership: a `to` cluster fed by two `from`
-// clusters is a merge, a `from` cluster whose members land in two `to` clusters
-// is a split, and a cluster made only of new nodes was formed.
-function diffPartitions(from: ClusterFacts[], to: ClusterFacts[]): ClusterChange[] {
-	const fromOf = new Map<string, string>();
-	for (const c of from) for (const n of c.members) fromOf.set(n, c.id);
-	const toOf = new Map<string, string>();
-	for (const c of to) for (const n of c.members) toOf.set(n, c.id);
-
-	const changes: ClusterChange[] = [];
-	const seenFrom = new Set<string>();
-
-	for (const t of to) {
-		const sources = new Set(t.members.map((n) => fromOf.get(n)).filter(Boolean) as string[]);
-		const shared = t.members.filter((n) => fromOf.has(n));
-		for (const s of sources) seenFrom.add(s);
-
-		if (sources.size === 0) {
-			changes.push({
-				kind: "formed",
-				from: [],
-				to: [t.id],
-				sharedMembers: [],
-				joined: t.members,
-				left: [],
-			});
-			continue;
-		}
-		const sourceMembers = new Set<string>();
-		for (const s of sources) {
-			const c = from.find((x) => x.id === s)!;
-			for (const n of c.members) sourceMembers.add(n);
-		}
-		const joined = t.members.filter((n) => !sourceMembers.has(n));
-		const left = [...sourceMembers].filter((n) => toOf.get(n) !== t.id);
-		// Did any source cluster lose members to a different `to` cluster?
-		const splitSources = [...sources].filter((s) => {
-			const c = from.find((x) => x.id === s)!;
-			return new Set(c.members.map((n) => toOf.get(n) ?? "·gone")).size > 1;
-		});
-		const kind: ClusterChange["kind"] =
-			sources.size > 1
-				? "merged"
-				: splitSources.length > 0
-					? "split"
-					: joined.length === 0 && left.length === 0
-						? "stable"
-						: "split";
-		changes.push({
-			kind,
-			from: [...sources].toSorted(),
-			to: [t.id],
-			sharedMembers: shared.toSorted(),
-			joined: joined.toSorted(),
-			left: left.toSorted(),
-		});
-	}
-
-	for (const f of from) {
-		if (seenFrom.has(f.id)) continue;
-		changes.push({
-			kind: "dissolved",
-			from: [f.id],
-			to: [],
-			sharedMembers: [],
-			joined: [],
-			left: f.members,
-		});
-	}
-
-	return changes;
-}
-
-// Coarse direction from a to b: which way a human would point. The dominant
-// axis names the relation and the other axis qualifies it when it is at least
-// half as large, so a box diagonally up-left reads as "above-left" and not as
-// an arbitrary pick between the two.
-function relationOf(a: Box, b: Box): string {
-	const ax = a.x + a.w / 2,
-		ay = a.y + a.h / 2;
-	const bx = b.x + b.w / 2,
-		by = b.y + b.h / 2;
-	const dx = bx - ax,
-		dy = by - ay;
-	const adx = Math.abs(dx),
-		ady = Math.abs(dy);
-	if (adx < 1 && ady < 1) return "on-top-of";
-	const horizontal = dx > 0 ? "left-of" : "right-of"; // a is left-of b when b is further right
-	const vertical = dy > 0 ? "above" : "below";
-	if (adx >= ady)
-		return ady >= adx * 0.5
-			? `${vertical}-${horizontal === "left-of" ? "left" : "right"}`
-			: horizontal;
-	return adx >= ady * 0.5 ? `${vertical}-${horizontal === "left-of" ? "left" : "right"}` : vertical;
-}
-
-// The pairwise pass is the only place with a budget, and it is declared rather
-// than applied silently. Users create boards interactively, so this is
-// generous by two orders of magnitude for anything real.
-const MAX_RELATION_PAIRS = 20000;
-
-// ---------------------------------------------------------------------------
-// Edge matching
-// ---------------------------------------------------------------------------
-
-const edgeKey = (e: EdgeFacts) => `${e.from}\0${e.to}`;
-
-function matchEdges(
-	from: EdgeModel[],
-	to: EdgeModel[],
-): {
-	added: EdgeFacts[];
-	removed: EdgeFacts[];
-	changed: ChangedEdge[];
-	unchanged: EdgeFacts[];
-} {
-	const bucket = (list: EdgeModel[]) => {
-		const map = new Map<string, EdgeModel[]>();
-		for (const e of list) {
-			const key = edgeKey(e);
-			const arr = map.get(key) ?? [];
-			arr.push(e);
-			map.set(key, arr);
-		}
-		return map;
-	};
-	const fromMap = bucket(from);
-	const toMap = bucket(to);
-
-	const added: EdgeFacts[] = [];
-	const removed: EdgeFacts[] = [];
-	const changed: ChangedEdge[] = [];
-	const unchanged: EdgeFacts[] = [];
-
-	for (const key of new Set([...fromMap.keys(), ...toMap.keys()])) {
-		const lefts = [...(fromMap.get(key) ?? [])];
-		const rights = [...(toMap.get(key) ?? [])];
-
-		// Parallel edges between the same pair: match by label first, so renaming
-		// one of two arrows does not read as one removed and one added.
-		for (let i = lefts.length - 1; i >= 0; i--) {
-			const j = rights.findIndex((r) => (r.label ?? "") === (lefts[i]!.label ?? ""));
-			if (j === -1) continue;
-			const l = lefts.splice(i, 1)[0]!;
-			const r = rights.splice(j, 1)[0]!;
-			const changes = diffFields(edgeFields(l), edgeFields(r));
-			if (Object.keys(changes).length === 0) unchanged.push(r);
-			else changed.push({ from: r.from, to: r.to, changes, fromFacts: l, toFacts: r });
-		}
-		// Whatever is left pairs up positionally: same endpoints, different label.
-		while (lefts.length && rights.length) {
-			const l = lefts.shift()!;
-			const r = rights.shift()!;
-			const changes = diffFields(edgeFields(l), edgeFields(r));
-			if (Object.keys(changes).length === 0) unchanged.push(r);
-			else changed.push({ from: r.from, to: r.to, changes, fromFacts: l, toFacts: r });
-		}
-		removed.push(...lefts);
-		added.push(...rights);
-	}
-
-	return { added, removed, changed, unchanged };
-}
-
-// Reroutes: a removed edge and an added edge that share exactly one endpoint,
-// one-to-one on that endpoint. An inference, offered alongside added/removed
-// rather than instead of it, because "A now points at C instead of B" is the
-// sentence a human would say and reconstructing it from two lists is work the
-// consumer should not have to redo.
-function inferReroutes(
-	removed: EdgeFacts[],
-	added: EdgeFacts[],
-): CompareResult["edges"]["rerouted"] {
-	const out: CompareResult["edges"]["rerouted"] = [];
-	const byAnchor = (list: EdgeFacts[], end: "source" | "target") => {
-		const map = new Map<string, EdgeFacts[]>();
-		for (const e of list) {
-			const anchor = end === "source" ? e.from : e.to;
-			const arr = map.get(anchor) ?? [];
-			arr.push(e);
-			map.set(anchor, arr);
-		}
-		return map;
-	};
-	for (const end of ["source", "target"] as const) {
-		const rem = byAnchor(removed, end);
-		const add = byAnchor(added, end);
-		for (const [anchor, rs] of rem) {
-			const as = add.get(anchor);
-			if (!as || rs.length !== 1 || as.length !== 1) continue;
-			const r = rs[0]!,
-				a = as[0]!;
-			const was = end === "source" ? r.to : r.from;
-			const now = end === "source" ? a.to : a.from;
-			if (was === now) continue;
-			out.push({
-				anchor,
-				end,
-				was,
-				now,
-				anchorName: end === "source" ? a.fromName : a.toName,
-				wasName: end === "source" ? r.toName : r.fromName,
-				nowName: end === "source" ? a.toName : a.fromName,
-			});
-		}
-	}
-	return out;
-}
-
-// ---------------------------------------------------------------------------
-// The comparison
-// ---------------------------------------------------------------------------
 
 const LAYOUT_METHOD: Record<string, string> = {
 	cluster:
@@ -1269,14 +173,11 @@ const LAYOUT_CANNOT_EXPRESS = [
 	"Size, colour and stroke are reported per node as `cosmetic` and never counted as a change to the architecture.",
 ];
 
-export function compareBoards(
-	fromInput: CompareSideInput,
-	toInput: CompareSideInput,
-): CompareResult {
-	fromInput = { ...fromInput, elements: withoutValidBridgeDecorations(fromInput.elements) };
-	toInput = { ...toInput, elements: withoutValidBridgeDecorations(toInput.elements) };
-	const A = buildBoard(fromInput);
-	const B = buildBoard(toInput);
+function compareBoards(fromInput: CompareSideInput, toInput: CompareSideInput): CompareResult {
+	const from = { ...fromInput, elements: withoutValidBridgeDecorations(fromInput.elements) };
+	const to = { ...toInput, elements: withoutValidBridgeDecorations(toInput.elements) };
+	const A = buildBoard(from);
+	const B = buildBoard(to);
 	const warnings = [...A.warnings, ...B.warnings];
 
 	// The nodes the join actually joined. Layout is only compared in terms of
@@ -1308,12 +209,14 @@ export function compareBoards(
 			added.push(nodeFacts(b, B.clusters));
 			continue;
 		}
-		if (!a || !b) continue;
+		if (!a || !b) {
+			continue;
+		}
 		shared++;
 
 		const semantic = diffFields(
-			semanticFields(a, fromInput.identity.variant),
-			semanticFields(b, toInput.identity.variant),
+			semanticFields(a, from.identity.variant),
+			semanticFields(b, to.identity.variant),
 		);
 		const cosmetic = diffFields(cosmeticFields(a), cosmeticFields(b));
 		const layout = diffFields(
@@ -1335,7 +238,9 @@ export function compareBoards(
 		//
 		// A board rearranged wholesale is untouched by this: every centre moved,
 		// so nothing is suppressed and every move is still reported.
-		if (layout["region"] && sameCentre(a.box, b.box)) delete layout["region"];
+		if (layout["region"] && sameCentre(a.box, b.box)) {
+			delete layout["region"];
+		}
 		layoutSignalsChanged += Object.keys(layout).length;
 		if (Object.keys(layout).length > 0) {
 			moved.push({ node: id, name: b.name, changes: layout });
@@ -1346,19 +251,20 @@ export function compareBoards(
 				node: id,
 				name: b.name,
 				changes: semantic,
-				...(Object.keys(cosmetic).length ? { cosmeticChanges: cosmetic } : {}),
-				...(Object.keys(layout).length ? { layoutChanges: layout } : {}),
+				...(Object.keys(cosmetic).length > 0 ? { cosmeticChanges: cosmetic } : {}),
+				...(Object.keys(layout).length > 0 ? { layoutChanges: layout } : {}),
 				from: nodeFacts(a, A.clusters),
 				to: nodeFacts(b, B.clusters),
 			});
 		} else {
+			const binding = formatBinding(b.binding);
 			unchanged.push({
 				node: id,
 				name: b.name,
 				...(b.kind ? { kind: b.kind } : {}),
-				...(formatBinding(b.binding) ? { binding: formatBinding(b.binding)! } : {}),
-				...(Object.keys(layout).length ? { layoutChanges: layout } : {}),
-				...(Object.keys(cosmetic).length ? { cosmeticChanges: cosmetic } : {}),
+				...bindingField(binding),
+				...(Object.keys(layout).length > 0 ? { layoutChanges: layout } : {}),
+				...(Object.keys(cosmetic).length > 0 ? { cosmeticChanges: cosmetic } : {}),
 				facts: nodeFacts(b, B.clusters),
 			});
 		}
@@ -1375,20 +281,35 @@ export function compareBoards(
 	// Relations, over the pairs that are actually related on either side.
 	const relatedPairs = new Set<string>();
 	const reason = new Map<string, Set<"edge" | "cluster">>();
-	const mark = (x: string, y: string, why: "edge" | "cluster") => {
-		if (x === y) return;
-		if (!A.nodes.has(x) || !B.nodes.has(x) || !A.nodes.has(y) || !B.nodes.has(y)) return;
+	const mark = (x: string, y: string, why: "edge" | "cluster"): void => {
+		if (x === y) {
+			return;
+		}
+		if (!A.nodes.has(x) || !B.nodes.has(x) || !A.nodes.has(y) || !B.nodes.has(y)) {
+			return;
+		}
 		const key = pairKey(x, y);
 		relatedPairs.add(key);
 		const set = reason.get(key) ?? new Set();
 		set.add(why);
 		reason.set(key, set);
 	};
-	for (const e of [...A.edges, ...B.edges]) mark(e.from, e.to, "edge");
+	for (const e of [...A.edges, ...B.edges]) {
+		mark(e.from, e.to, "edge");
+	}
 	for (const c of [...A.clusters, ...B.clusters]) {
-		if (c.members.length > 40) continue; // a 40-member blob is not a statement about any pair
+		if (c.members.length > 40) {
+			// A 40-member blob is not a statement about any pair.
+			continue;
+		}
 		for (let i = 0; i < c.members.length; i++) {
-			for (let j = i + 1; j < c.members.length; j++) mark(c.members[i]!, c.members[j]!, "cluster");
+			for (let j = i + 1; j < c.members.length; j++) {
+				const x = c.members.at(i);
+				const y = c.members.at(j);
+				if (x !== undefined && y !== undefined) {
+					mark(x, y, "cluster");
+				}
+			}
 		}
 	}
 
@@ -1402,23 +323,31 @@ export function compareBoards(
 		);
 	} else {
 		for (const key of relatedPairs) {
-			const [x, y] = key.split("\0") as [string, string];
-			const before = relationOf(A.nodes.get(x)!.box, A.nodes.get(y)!.box);
-			const after = relationOf(B.nodes.get(x)!.box, B.nodes.get(y)!.box);
+			const [x, y] = key.split("\0");
+			const fromX = x === undefined ? undefined : A.nodes.get(x);
+			const fromY = y === undefined ? undefined : A.nodes.get(y);
+			const toX = x === undefined ? undefined : B.nodes.get(x);
+			const toY = y === undefined ? undefined : B.nodes.get(y);
+			const why = reason.get(key);
+			if (x === undefined || y === undefined || !fromX || !fromY || !toX || !toY || !why) {
+				continue;
+			}
+			const before = relationOf(fromX.box, fromY.box);
+			const after = relationOf(toX.box, toY.box);
 			relationsCompared++;
-			if (before === after) continue;
-			const why = reason.get(key)!;
+			if (before === after) {
+				continue;
+			}
+			let related: "edge" | "cluster" | "edge+cluster" = "cluster";
+			if (why.has("edge")) {
+				related = why.has("cluster") ? "edge+cluster" : "edge";
+			}
 			relationChanges.push({
 				a: x,
 				b: y,
 				from: before,
 				to: after,
-				related:
-					why.has("edge") && why.has("cluster")
-						? "edge+cluster"
-						: why.has("edge")
-							? "edge"
-							: "cluster",
+				related,
 			});
 		}
 		layoutSignalsChanged += relationChanges.length;
@@ -1427,10 +356,7 @@ export function compareBoards(
 	// Measured on the region frames, since those are what the region names are
 	// thirds of. Both are drawn round the same set of nodes, so a divergence
 	// here is a real difference in how the two boards lay those nodes out.
-	const aspectA = aspect(A.regionFrame),
-		aspectB = aspect(B.regionFrame);
-	const boxAspectDiverged =
-		aspectA !== null && aspectB !== null && (aspectA / aspectB > 1.5 || aspectB / aspectA > 1.5);
+	const boxAspectDiverged = hasDivergentAspect(A.regionFrame, B.regionFrame);
 	if (boxAspectDiverged) {
 		warnings.push(
 			"The two boards frame the nodes they share differently enough (aspect ratio differs by more than half " +
@@ -1441,8 +367,8 @@ export function compareBoards(
 	}
 
 	// --- plain elements -------------------------------------------------------
-	const labelsA = new Set(A.plain.labelled.map((p) => p.label!));
-	const labelsB = new Set(B.plain.labelled.map((p) => p.label!));
+	const labelsA = plainLabels(A);
+	const labelsB = plainLabels(B);
 
 	// --- warnings that are about the comparison itself ------------------------
 	//
@@ -1459,7 +385,7 @@ export function compareBoards(
 				"(`promote --kind ...`) to give them the node ids this diff joins on.",
 		);
 	} else if (A.nodes.size === 0 || B.nodes.size === 0) {
-		const empty = A.nodes.size === 0 ? fromInput.key : toInput.key;
+		const empty = A.nodes.size === 0 ? from.key : to.key;
 		warnings.push(
 			`"${empty}" has no promoted nodes at all, so every node on the other board reads as added or removed. ` +
 				"That is an artefact of nothing having been promoted, not a statement about the architecture.",
@@ -1498,8 +424,8 @@ export function compareBoards(
 
 	return {
 		success: true,
-		from: sideSummaryOf(fromInput, A),
-		to: sideSummaryOf(toInput, B),
+		from: sideSummaryOf(from, A),
+		to: sideSummaryOf(to, B),
 		summary: {
 			comparable,
 			identical,
@@ -1543,3 +469,23 @@ export function compareBoards(
 		warnings,
 	};
 }
+
+export type {
+	CompareSideInput,
+	SideSummary,
+	NodeFacts,
+	NodeLayout,
+	FieldChange,
+	ChangedNode,
+	UnchangedNode,
+	EdgeFacts,
+	ChangedEdge,
+	UnresolvedConnector,
+	PlainElement,
+	PlainSide,
+	ClusterFacts,
+	ClusterChange,
+	RelationChange,
+	CompareResult,
+} from "./lib/compare-contract.js";
+export { compareBoards };
