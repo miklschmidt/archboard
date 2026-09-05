@@ -23,7 +23,9 @@ function sourceFiles(root: string): string[] {
 const IDENTITY_TYPES = ["RealtimeSessionId", "RealtimeCorrelationId", "RealtimeItemId"] as const;
 function exportedIdentityTypes(source: string): readonly string[] {
 	return IDENTITY_TYPES.filter((name) =>
-		new RegExp(`export\\s+type\\s+${name}\\s*=`, "u").test(source),
+		// Either spelling declares the brand once: an inline `export type` or a
+		// `type` declaration re-exported through the module's grouped export list.
+		new RegExp(`(?:^|\\n)(?:export\\s+)?type\\s+${name}\\s*=`, "u").test(source),
 	);
 }
 
