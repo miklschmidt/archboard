@@ -15,5 +15,5 @@
 		"src/ui/**/*.mts",
 		"src/ui/**/*.cts"
 	],
-	"exclude": ["node_modules", "dist", "legacy", "src/ui/**/tests/**", "src/ui/**/*.test.ts"]
+	"exclude": ["node_modules", "dist", "src/ui/**/tests/**", "src/ui/**/*.test.ts"]
 }

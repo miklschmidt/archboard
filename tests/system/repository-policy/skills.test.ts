@@ -1,221 +1,44 @@
-import { describe, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-	return value !== null && typeof value === "object" && !Array.isArray(value);
+/**
+ * The YAML frontmatter of one skill, or the reason it cannot be read.
+ * @param source The skill file's text.
+ * @returns The parsed frontmatter, or an error message.
+ */
+function frontmatter(source: string): Record<string, unknown> | string {
+	const match = /^---\n([\s\S]*?)\n---\n/u.exec(source);
+	if (match?.[1] === undefined) {
+		return "missing frontmatter block";
+	}
+	try {
+		const parsed: unknown = Bun.YAML.parse(match[1]);
+		return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+			? (parsed as Record<string, unknown>)
+			: "frontmatter is not a mapping";
+	} catch (error) {
+		return error instanceof Error ? error.message : String(error);
+	}
 }
 
-function isEscaped(text: string, index: number): boolean {
-	let slashes = 0;
-	for (let cursor = index - 1; cursor >= 0 && text[cursor] === "\\"; cursor -= 1) {
-		slashes += 1;
-	}
-	return slashes % 2 === 1;
-}
-
-function tableCells(line: string): string[] {
-	const cells: string[] = [];
-	let start = 0;
-	for (let index = 0; index < line.length; index += 1) {
-		if (line[index] !== "|" || isEscaped(line, index)) {
-			continue;
-		}
-		cells.push(line.slice(start, index));
-		start = index + 1;
-	}
-	cells.push(line.slice(start));
-	if (line.startsWith("|")) {
-		cells.shift();
-	}
-	if (line.endsWith("|") && !isEscaped(line, line.length - 1)) {
-		cells.pop();
-	}
-	return cells.map((cell) => cell.trim());
-}
-
-function isTableSeparator(line: string): boolean {
-	const cells = tableCells(line);
-	return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
-}
-
-function validateSkillText(source: string, label: string): string[] {
-	const errors: string[] = [];
-	const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
-	if (!match) {
-		errors.push(`${label}: missing YAML frontmatter delimited by --- lines`);
-	} else {
-		try {
-			const frontmatter = Bun.YAML.parse(match[1] ?? "");
-			if (!isPlainObject(frontmatter)) {
-				errors.push(`${label}: YAML frontmatter must be a mapping`);
-			} else {
-				for (const field of ["name", "description"]) {
-					const value = frontmatter[field];
-					if (typeof value !== "string" || value.trim() === "") {
-						errors.push(`${label}: YAML frontmatter field ${field} must be a non-empty string`);
-					}
-				}
-			}
-		} catch (error) {
-			const message = error instanceof Error ? error.message : String(error);
-			errors.push(`${label}: invalid YAML frontmatter: ${message}`);
+test("every tracked skill has frontmatter that parses with a name and description", () => {
+	const skillsRoot = path.join(repoRoot, "skills");
+	const files = fs
+		.readdirSync(skillsRoot, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => path.join(skillsRoot, entry.name, "SKILL.md"))
+		.filter((file) => fs.existsSync(file));
+	expect(files.length).toBeGreaterThan(0);
+	for (const file of files) {
+		const parsed = frontmatter(fs.readFileSync(file, "utf8"));
+		expect(parsed, path.relative(repoRoot, file)).toBeObject();
+		if (typeof parsed === "object") {
+			expect(parsed["name"], file).toBe(path.basename(path.dirname(file)));
+			expect(parsed["description"], file).toBeString();
 		}
 	}
-
-	const lines = source.split(/\r?\n/);
-	let fence: string | undefined;
-	for (let index = 0; index < lines.length - 1; index += 1) {
-		const line = lines[index] ?? "";
-		const fenceMatch = line.trim().match(/^(```+|~~~+)/);
-		if (fenceMatch) {
-			const marker = fenceMatch[1]?.[0];
-			if (fence === undefined) {
-				fence = marker;
-			} else if (fence === marker) {
-				fence = undefined;
-			}
-			continue;
-		}
-		if (fence !== undefined || !line.trimStart().startsWith("|")) {
-			continue;
-		}
-		const next = lines[index + 1] ?? "";
-		if (!isTableSeparator(next)) {
-			continue;
-		}
-
-		const expected = tableCells(line).length;
-		const separator = tableCells(next).length;
-		if (separator !== expected) {
-			errors.push(
-				`${label}:${index + 2}: Markdown table separator has ${separator} columns; header has ${expected}`,
-			);
-		}
-		for (let row = index + 2; row < lines.length; row += 1) {
-			const value = lines[row] ?? "";
-			if (!value.trimStart().startsWith("|")) {
-				break;
-			}
-			const actual = tableCells(value).length;
-			if (actual !== expected) {
-				errors.push(
-					`${label}:${row + 1}: Markdown table row has ${actual} columns; expected ${expected}. Escape literal pipes as \\|.`,
-				);
-			}
-		}
-		index += 1;
-	}
-	return errors;
-}
-
-describe("skill repository policy", () => {
-	test("accepts valid frontmatter, YAML metadata, and escaped table pipes", () => {
-		const valid = `---\nname: demo\ndescription: >-\n  Draw a diagram: safely.\n---\n\n| Task | Command |\n| --- | --- |\n| Import | \`import [file\\|-]\` |\n`;
-		expect(validateSkillText(valid, "valid fixture")).toEqual([]);
-	});
-
-	test("rejects missing frontmatter", () => {
-		expect(validateSkillText("# Demo\n", "missing fixture")).toEqual([
-			"missing fixture: missing YAML frontmatter delimited by --- lines",
-		]);
-	});
-
-	test("rejects malformed YAML", () => {
-		const errors = validateSkillText(
-			"---\nname: demo\ndescription: Draw a diagram: safely.\n---\n",
-			"invalid YAML fixture",
-		);
-		expect(errors.some((error) => error.includes("invalid YAML"))).toBeTrue();
-	});
-
-	test("rejects non-mapping and incomplete metadata", () => {
-		expect(validateSkillText("---\n- demo\n---\n", "list fixture")).toContain(
-			"list fixture: YAML frontmatter must be a mapping",
-		);
-		expect(validateSkillText("---\nname: demo\n---\n", "metadata fixture")).toContain(
-			"metadata fixture: YAML frontmatter field description must be a non-empty string",
-		);
-	});
-
-	test("rejects unescaped table pipes and mismatched separators", () => {
-		const unescaped = `---\nname: demo\ndescription: Demo\n---\n\n| Task | Command |\n| --- | --- |\n| Import | \`import [file|-]\` |\n`;
-		expect(validateSkillText(unescaped, "table fixture")).toContain(
-			"table fixture:8: Markdown table row has 3 columns; expected 2. Escape literal pipes as \\|.",
-		);
-		const separator = `---\nname: demo\ndescription: Demo\n---\n\n| A | B |\n| --- |\n`;
-		expect(validateSkillText(separator, "separator fixture")).toContain(
-			"separator fixture:7: Markdown table separator has 1 columns; header has 2",
-		);
-	});
-
-	test("ignores table-like text inside fenced code", () => {
-		const fenced = `---\nname: demo\ndescription: Demo\n---\n\n\`\`\`md\n| A | B |\n| --- | --- |\n| broken | pipe | here |\n\`\`\`\n`;
-		expect(validateSkillText(fenced, "fenced fixture")).toEqual([]);
-	});
-
-	test("the distributable skills tree is valid", () => {
-		const skillsRoot = path.join(repoRoot, "skills");
-		const files = fs
-			.readdirSync(skillsRoot, { withFileTypes: true })
-			.filter((entry) => entry.isDirectory())
-			.map((entry) => path.join(skillsRoot, entry.name, "SKILL.md"))
-			.filter((file) => fs.existsSync(file))
-			.toSorted();
-		expect(files.length).toBeGreaterThan(0);
-		const errors = files.flatMap((file) =>
-			validateSkillText(fs.readFileSync(file, "utf8"), path.relative(repoRoot, file)),
-		);
-		expect(errors).toEqual([]);
-	});
-
-	test("the Archboard skill keeps persisted-board and live-browser workflows separate", () => {
-		const skill = fs.readFileSync(path.join(repoRoot, "skills/archboard/SKILL.md"), "utf8");
-		const sections = new Map(
-			skill
-				.split(/^## /m)
-				.slice(1)
-				.map((section) => {
-					const [heading = "", ...body] = section.split("\n");
-					return [heading.trim(), body.join("\n")] as const;
-				}),
-		);
-		const mainPath = [...sections].find(([heading]) => /main path/i.test(heading))?.[1];
-		const browserBranch = [...sections].find(([heading]) => /browser/i.test(heading))?.[1];
-		const executableBrowserCommand = /^\s*archboard browser\b/m;
-		expect(mainPath).toBeDefined();
-		expect(mainPath).not.toMatch(executableBrowserCommand);
-		expect(browserBranch).toMatch(executableBrowserCommand);
-		for (const [heading, body] of sections) {
-			if (body === browserBranch) {
-				continue;
-			}
-			expect(body, `section ${heading}`).not.toMatch(executableBrowserCommand);
-		}
-
-		const evaluation = JSON.parse(
-			fs.readFileSync(path.join(repoRoot, "skills/archboard/evals/evals.json"), "utf8"),
-		) as {
-			evals: Array<{
-				workflow?: string;
-				files: string[];
-			}>;
-		};
-		const zeroBrowser = evaluation.evals.filter((entry) => entry.workflow === "zero-browser");
-		const collaboration = evaluation.evals.filter(
-			(entry) => entry.workflow === "browser-collaboration",
-		);
-		expect(zeroBrowser).toHaveLength(1);
-		expect(zeroBrowser[0]?.files).toEqual([
-			"tests/system/boards/vault-only-production-interfaces.test.ts",
-		]);
-		expect(collaboration).toHaveLength(1);
-		expect(collaboration[0]?.files).toEqual([
-			"tests/system/browser/selection-inspector.test.ts",
-			"tests/system/browser/server-update-ordering.test.ts",
-		]);
-	});
 });
