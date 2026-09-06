@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-06 12:59'
-updated_date: '2026-09-06 13:43'
+updated_date: '2026-09-06 13:49'
 labels: []
 dependencies: []
 priority: high
@@ -23,13 +23,13 @@ AGENTS.md carried the rule 'a person is never refused: never version-refused, an
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A human element write carries the version the pane last saw and is refused with the same version conflict an agent gets when the note has moved
-- [ ] #2 After a refused human write the pane reconciles to the note on disk and shows no local state the note does not hold
-- [ ] #3 While an agent claims a board, a pane showing it accepts pan and zoom and rejects content edits, and a content gesture no longer revokes the claim
-- [ ] #4 A person can still release an agent's claim through one explicit control, and the agent is told it lost the board
-- [ ] #5 Every pane shows in real time which board an agent is editing, including boards no pane has open
-- [ ] #6 The rewritten AGENTS.md invariant matches the behaviour
-- [ ] #7 ADR 0022 records the superseding decision; ADR 0006 and ADR 0016 point to it
+- [x] #1 A human element write carries the version the pane last saw and is refused with the same version conflict an agent gets when the note has moved
+- [x] #2 After a refused human write the pane reconciles to the note on disk and shows no local state the note does not hold
+- [x] #3 While an agent claims a board, a pane showing it accepts pan and zoom and rejects content edits, and a content gesture no longer revokes the claim
+- [x] #4 A person can still release an agent's claim through one explicit control, and the agent is told it lost the board
+- [x] #5 Every pane shows in real time which board an agent is editing, including boards no pane has open
+- [x] #6 The rewritten AGENTS.md invariant matches the behaviour
+- [x] #7 ADR 0022 records the superseding decision; ADR 0006 and ADR 0016 point to it
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -46,4 +46,22 @@ AGENTS.md carried the rule 'a person is never refused: never version-refused, an
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented in 5e3a5daa on codex/task-150-ui-rebuild. Server: statedVersion parses the same for both writers and requires expectVersion on a pane's write (0 before any note); version carried on initial_elements, board_switched, elements_changed and board_released(elsewhere); /api/boards/hold no longer revokes and the lock refuses a human hold against somebody else's claim immediately instead of at the 400 ms deadline; new /api/boards/take-back; boardless agent_activity snapshot from src/server/canvas/lib/agent-activity.ts with ACTIVITY_LINGER_MS. UI: noteVersion in the reporting state, expectVersion on every human write and beacon, version-conflict reconcile to the refusal document with one notice, readOnly under an agent claim, take-back via the route, navigator agent-activity marker and doing line including unlisted boards. Docs: skill and reference wording, ADR 0022 selection sentence. Owners: board-version-client, board-lock-api, doing-activity, write-boundary-policy, note-version and agent-activity unit tests, claim-interaction rewritten, new human-version-refusal browser owner. Verification: fmt, lint, type-check, engine tests, test:modules, test:system, focused browser lane green; complete bun run check running in an isolated worktree.
+
+Complete bun run check green on 5e3a5daa in an isolated worktree (2660 module, 322 system, 9 repository, 19 browser owners). e4caa45b adds the ensure:codex-contract step so a fresh checkout's lint no longer runs before the contract exists. Hold under a claim refuses immediately (lock wait loop breaks on somebody else's claim when not revoking).
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-09-06 13:49
+---
+Ready for the maintainer's independent review; left In Progress on purpose.
+---
+<!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A person's write is version-checked like an agent's and refused when stale; the pane withdraws the optimistic change to the refusal's document and shows one notice (board-version-client system owner, human-version-refusal browser owner). A hold never revokes a claim: a claimed board is view mode for people, pan and zoom still report, a drag takes no hold, and the lock refuses a person's hold immediately (claim-interaction browser owner, board-lock-api process owner). Take-back is the explicit /api/boards/take-back route and the agent is told once. A boardless agent_activity snapshot marks claimed and recently written boards in the navigator whether or not a pane has them open (doing-activity process owner, agent-activity unit owner, claim-interaction). ADR 0022 written, ADR 0006 and 0016 point to it, AGENTS.md and the archboard skill updated. Verified with the complete bun run check on 5e3a5daa.
+<!-- SECTION:FINAL_SUMMARY:END -->
