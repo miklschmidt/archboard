@@ -13,11 +13,11 @@
 // Human holds are not activity: a person's own hold is what their pane is
 // doing, and it is nobody else's business.
 
-import type { DoingEntry } from "../../../runtime/engine/board-doing.js";
-import type { LockHolder } from "../../../runtime/engine/board-lock.js";
-import { normalizeBoardKey } from "../../../runtime/engine/board.js";
-import type { AgentActivity, AgentActivityMessage } from "../../../runtime/engine/types.js";
-import { ACTIVITY_LINGER_MS } from "../../../shared/timing/timing.js";
+import type { DoingEntry } from "@/runtime/engine/board-doing";
+import type { LockHolder } from "@/runtime/engine/board-lock";
+import { normalizeBoardKey } from "@/runtime/engine/board";
+import type { AgentActivity, AgentActivityMessage } from "@/runtime/engine/types";
+import { ACTIVITY_LINGER_MS } from "@/shared/timing/timing";
 
 interface Entry {
 	board: string;
@@ -35,6 +35,9 @@ interface AgentActivityTracker {
 	snapshot(): AgentActivityMessage;
 }
 
+/**
+ *
+ */
 function clearLinger(entry: Entry): void {
 	if (entry.linger) {
 		clearTimeout(entry.linger);
@@ -42,6 +45,9 @@ function clearLinger(entry: Entry): void {
 	}
 }
 
+/**
+ *
+ */
 function createAgentActivity(options: {
 	/** Sends the snapshot to every connected client. */
 	send: (message: AgentActivityMessage) => void;
@@ -51,6 +57,9 @@ function createAgentActivity(options: {
 	const entries = new Map<string, Entry>();
 	let current: AgentActivityMessage = { type: "agent_activity", activity: [] };
 
+	/**
+	 *
+	 */
 	const publish = (): void => {
 		const activity: AgentActivity[] = [...entries.values()].map(({ board, claim, doing }) => ({
 			board,
@@ -64,6 +73,9 @@ function createAgentActivity(options: {
 	// Each write restarts the linger, so continuous unclaimed work is one
 	// visit. When it fires under a claim taken meanwhile, the claim keeps the
 	// entry and the timer simply ends.
+	/**
+	 *
+	 */
 	const lingerThenDrop = (key: string, entry: Entry): void => {
 		clearLinger(entry);
 		const timer = setTimeout(() => {
@@ -79,9 +91,12 @@ function createAgentActivity(options: {
 	};
 
 	return {
+		/**
+		 *
+		 */
 		lockChanged(board, holder) {
 			const key = normalizeBoardKey(board);
-			const claim = holder && holder.kind === "agent" && holder.claimed ? holder : null;
+			const claim = holder?.kind === "agent" && holder.claimed ? holder : null;
 			const entry = entries.get(key);
 			if (claim) {
 				if (entry) {
@@ -100,7 +115,7 @@ function createAgentActivity(options: {
 			}
 			// A human hold, a per-write agent hold or a free board: only news when
 			// it ends a claim this list was showing.
-			if (!entry || !entry.claim) {
+			if (!entry?.claim) {
 				return;
 			}
 			entry.claim = null;
@@ -111,6 +126,9 @@ function createAgentActivity(options: {
 			}
 			publish();
 		},
+		/**
+		 *
+		 */
 		doingLanded(board, doing) {
 			if (doing.kind !== "agent") {
 				return;
@@ -129,6 +147,9 @@ function createAgentActivity(options: {
 			}
 			publish();
 		},
+		/**
+		 *
+		 */
 		snapshot() {
 			return current;
 		},

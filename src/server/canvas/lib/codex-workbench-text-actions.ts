@@ -2,15 +2,18 @@ import {
 	CodexWorkbenchGatewayError,
 	type BrowserActionContext,
 	type BrowserTextActions,
-} from "../../codex-workbench/index.js";
-import type { OperationId, ThreadId } from "../../../shared/codex-workbench-identity/index.js";
+} from "@/server/codex-workbench";
+import type { OperationId, ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	createTurnStartParams,
 	createTurnSteerParams,
 	type ArchboardContext,
-} from "../../../runtime/codex-instructions/index.js";
-import type { CodexWorkbenchComponents } from "./codex-workbench.js";
+} from "@/runtime/codex-instructions";
+import type { CodexWorkbenchComponents } from "@/server/canvas/lib/codex-workbench";
 
+/**
+ *
+ */
 function browserLeaseThreadId(context: BrowserActionContext): ThreadId {
 	if (context.link.threadId === null) {
 		throw new Error("A text command requires the exact executable lease thread.");
@@ -18,6 +21,9 @@ function browserLeaseThreadId(context: BrowserActionContext): ThreadId {
 	return context.link.threadId;
 }
 
+/**
+ *
+ */
 export function createCanvasCanonicalTextActions(options: {
 	readonly identity: CodexWorkbenchComponents["identity"];
 	readonly session: Pick<
@@ -33,6 +39,9 @@ export function createCanvasCanonicalTextActions(options: {
 		},
 	) => ArchboardContext;
 }): BrowserTextActions {
+	/**
+	 *
+	 */
 	const issue = (): { readonly operationId: OperationId; readonly wire: string } => {
 		const operationId = options.identity.operation.issuer.mintOperationId();
 		return {
@@ -41,6 +50,9 @@ export function createCanvasCanonicalTextActions(options: {
 		};
 	};
 	return Object.freeze({
+		/**
+		 *
+		 */
 		start: async (command, context) => {
 			const threadId = browserLeaseThreadId(context);
 			// Starting requires authoritative idle metadata, not hydrated history:
@@ -67,6 +79,9 @@ export function createCanvasCanonicalTextActions(options: {
 			const response = await options.session.turnStart({ ...canonical, threadId });
 			return { outcome: "delivered", turnId: response.turn.id };
 		},
+		/**
+		 *
+		 */
 		steer: async (command, context) => {
 			const threadId = browserLeaseThreadId(context);
 			const { thread } = await options.session.threadRead({ threadId, includeTurns: false });
@@ -98,6 +113,9 @@ export function createCanvasCanonicalTextActions(options: {
 			});
 			return { outcome: "delivered" };
 		},
+		/**
+		 *
+		 */
 		interrupt: async (command) => {
 			await options.session.turnInterrupt({
 				threadId: command.threadId,

@@ -7,18 +7,18 @@ import type {
 	DynamicApprovalOwnerBinding,
 	DynamicApprovalOwnerRequest,
 	DynamicApprovalOwnerView,
-} from "../../codex-workbench/index.js";
+} from "@/server/codex-workbench";
 import type {
 	BrowserCommandId,
 	IdentityAuthorities,
 	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	DynamicToolApprovalDecision,
 	DynamicToolApprovalPort,
 	DynamicToolApprovalRequest,
-} from "../../../runtime/codex-dynamic-tools/index.js";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
+} from "@/runtime/codex-dynamic-tools";
+import type { TransportServerNotification } from "@/runtime/codex-transport";
 
 interface PendingDynamicApproval {
 	readonly request: DynamicApprovalOwnerRequest;
@@ -52,6 +52,9 @@ interface CanvasDynamicApprovalOwnerOptions {
 	readonly bindingForCaller: (threadId: ThreadId) => DynamicApprovalOwnerBinding;
 }
 
+/**
+ *
+ */
 function keyFor(request: Pick<DynamicToolApprovalRequest, "identity" | "effectHash">): string {
 	const { identity, effectHash } = request;
 	return JSON.stringify([
@@ -68,6 +71,9 @@ function keyFor(request: Pick<DynamicToolApprovalRequest, "identity" | "effectHa
 	]);
 }
 
+/**
+ *
+ */
 function immutableBinding(binding: DynamicApprovalOwnerBinding): DynamicApprovalOwnerBinding {
 	return Object.freeze({
 		commandId: binding.commandId,
@@ -80,6 +86,9 @@ function immutableBinding(binding: DynamicApprovalOwnerBinding): DynamicApproval
 	});
 }
 
+/**
+ *
+ */
 function freezeGraph(value: unknown, seen = new WeakSet<object>()): void {
 	if (value === null || typeof value !== "object" || seen.has(value)) {
 		return;
@@ -91,10 +100,13 @@ function freezeGraph(value: unknown, seen = new WeakSet<object>()): void {
 	Object.freeze(value);
 }
 
+/**
+ *
+ */
 function ownImmutableRequest(request: DynamicToolApprovalRequest): DynamicApprovalOwnerRequest {
 	const owned = structuredClone(request);
 	freezeGraph(owned);
-	return owned as DynamicApprovalOwnerRequest;
+	return owned;
 }
 
 /** One real visual-approval owner shared by the dispatcher and browser gateway. */
@@ -104,11 +116,17 @@ function createCanvasDynamicApprovalOwner(
 	const pending = new Map<string, PendingDynamicApproval>();
 	const decisions = new Map<string, DynamicToolApprovalDecision>();
 	const listeners = new Set<() => void>();
+	/**
+	 *
+	 */
 	const notify = (): void => {
 		for (const listener of listeners) {
 			listener();
 		}
 	};
+	/**
+	 *
+	 */
 	const terminal = (
 		entry: PendingDynamicApproval,
 		outcome: DynamicToolApprovalDecision["outcome"],
@@ -131,6 +149,9 @@ function createCanvasDynamicApprovalOwner(
 		entry.resolve(decision);
 		notify();
 	};
+	/**
+	 *
+	 */
 	const present = (request: DynamicToolApprovalRequest): void => {
 		const ownedRequest = ownImmutableRequest(request);
 		const key = keyFor(ownedRequest);
@@ -158,6 +179,9 @@ function createCanvasDynamicApprovalOwner(
 	};
 	const port: DynamicToolApprovalPort = Object.freeze({
 		presentImmutableRequest: present,
+		/**
+		 *
+		 */
 		awaitOneExactVisualDecision: (request: DynamicToolApprovalRequest) => {
 			const entry = pending.get(keyFor(request));
 			if (entry === undefined) {
@@ -165,6 +189,9 @@ function createCanvasDynamicApprovalOwner(
 			}
 			return entry.decision;
 		},
+		/**
+		 *
+		 */
 		settleIdentityAndEffectHashOnce: (input: {
 			readonly request: DynamicToolApprovalRequest;
 			readonly decision: DynamicToolApprovalDecision;
@@ -186,6 +213,9 @@ function createCanvasDynamicApprovalOwner(
 		},
 	});
 	const browser: BrowserDynamicApprovalActions = Object.freeze({
+		/**
+		 *
+		 */
 		resolve: async (
 			command: BrowserDynamicApprovalResponse,
 			_context: BrowserActionContext,
@@ -210,6 +240,9 @@ function createCanvasDynamicApprovalOwner(
 			);
 			return { outcome: "delivered" };
 		},
+		/**
+		 *
+		 */
 		onBrowserDisconnect: (context: BrowserActionContext, _reason: BrowserDisconnectReason) => {
 			for (const entry of pending.values()) {
 				if (entry.binding.paneId === context.paneId) {
@@ -217,6 +250,9 @@ function createCanvasDynamicApprovalOwner(
 				}
 			}
 		},
+		/**
+		 *
+		 */
 		onChange: (listener: () => void) => {
 			listeners.add(listener);
 			return () => listeners.delete(listener);
@@ -225,12 +261,18 @@ function createCanvasDynamicApprovalOwner(
 	return Object.freeze({
 		port,
 		browser,
+		/**
+		 *
+		 */
 		pending: () =>
 			Object.freeze(
 				[...pending.values()].map((entry) =>
 					Object.freeze({ request: entry.request, binding: entry.binding }),
 				),
 			),
+		/**
+		 *
+		 */
 		bindLease: (paneId: string, commandId: BrowserCommandId) => {
 			for (const entry of pending.values()) {
 				if (entry.binding.paneId !== paneId || entry.binding.commandId === commandId) {
@@ -240,6 +282,9 @@ function createCanvasDynamicApprovalOwner(
 			}
 		},
 		subscribe: browser.onChange!,
+		/**
+		 *
+		 */
 		onNotification: (event: TransportServerNotification) => {
 			if (
 				event.correlation.child !== options.identity.identity.validator.childId ||
@@ -274,11 +319,17 @@ function createCanvasDynamicApprovalOwner(
 				}
 			}
 		},
+		/**
+		 *
+		 */
 		settleAll: (cause: "host_shutdown" | "child_disconnected") => {
 			for (const entry of pending.values()) {
 				terminal(entry, cause === "host_shutdown" ? "cancelled" : "disconnected", cause);
 			}
 		},
+		/**
+		 *
+		 */
 		dispose: () => {
 			for (const entry of pending.values()) {
 				clearTimeout(entry.timer);

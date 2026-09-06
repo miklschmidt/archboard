@@ -2,25 +2,28 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:f
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { processIdentity, type ProcessIdentity } from "../../../runtime/engine/process-group.js";
+import { processIdentity, type ProcessIdentity } from "@/runtime/engine/process-group";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
-} from "../../../runtime/codex-process/process-group.js";
+} from "@/runtime/codex-process/process-group";
 import {
 	BOARD_RENDER_CLEANUP_MS,
 	BOARD_RENDER_JOB_TIMEOUT_MS,
 	BOARD_RENDER_STARTUP_TIMEOUT_MS,
-} from "../../../shared/timing/timing.js";
-import type { BoardRendererJob, BoardRendererJobResult, RendererPageState } from "./contract.js";
+} from "@/shared/timing/timing";
+import type { BoardRendererJob, BoardRendererJobResult, RendererPageState } from "@/server/board-rendering/lib/contract";
 import {
 	createRendererFixture,
 	type RendererFixture,
 	type RendererFixtureTestHooks,
-} from "./fixture.js";
+} from "@/server/board-rendering/lib/fixture";
 
 type JsonRecord = Record<string, unknown>;
 
+/**
+ *
+ */
 function isJsonRecord(value: unknown): value is JsonRecord {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -89,6 +92,9 @@ interface BoardRendererCleanup extends RendererSessionCleanup {
 class BoardRendererError extends Error {
 	readonly code = "BOARD_RENDERER_FAILED";
 
+	/**
+	 *
+	 */
 	constructor(
 		message: string,
 		readonly phase: string,
@@ -125,12 +131,18 @@ class Cdp {
 	#nextId = 1;
 	#closed = false;
 
+	/**
+	 *
+	 */
 	private constructor(readonly socket: WebSocket) {
 		socket.addEventListener("message", (event) => this.onMessage(String(event.data)));
 		socket.addEventListener("error", () => this.rejectPending("Renderer DevTools socket failed."));
 		socket.addEventListener("close", () => this.rejectPending("Renderer DevTools socket closed."));
 	}
 
+	/**
+	 *
+	 */
 	static async connect(url: string, timeoutMs: number): Promise<Cdp> {
 		const socket = new WebSocket(url);
 		await new Promise<void>((resolveConnection, rejectConnection) => {
@@ -158,6 +170,9 @@ class Cdp {
 		return new Cdp(socket);
 	}
 
+	/**
+	 *
+	 */
 	async call(method: string, params: JsonRecord = {}, timeoutMs: number): Promise<JsonRecord> {
 		if (this.#closed) {
 			throw new Error("Renderer DevTools connection is closed.");
@@ -173,6 +188,9 @@ class Cdp {
 		});
 	}
 
+	/**
+	 *
+	 */
 	async evaluate(expression: string, timeoutMs: number): Promise<unknown> {
 		const answer = await this.call(
 			"Runtime.evaluate",
@@ -191,6 +209,9 @@ class Cdp {
 		return isJsonRecord(answer["result"]) ? answer["result"]["value"] : undefined;
 	}
 
+	/**
+	 *
+	 */
 	diagnostics(): readonly JsonRecord[] {
 		return this.#events
 			.filter((event) =>
@@ -205,6 +226,9 @@ class Cdp {
 			.map((event) => ({ method: event.method, params: event.params }));
 	}
 
+	/**
+	 *
+	 */
 	close(): void {
 		if (this.#closed) {
 			return;
@@ -214,6 +238,9 @@ class Cdp {
 		this.socket.close();
 	}
 
+	/**
+	 *
+	 */
 	private onMessage(raw: string): void {
 		let message: unknown;
 		try {
@@ -254,6 +281,9 @@ class Cdp {
 		}
 	}
 
+	/**
+	 *
+	 */
 	private rejectPending(message: string): void {
 		for (const pending of this.#pending.values()) {
 			clearTimeout(pending.timeout);
@@ -263,6 +293,9 @@ class Cdp {
 	}
 }
 
+/**
+ *
+ */
 function requiredExecutable(name: string, explicit?: string): string {
 	const candidate = explicit ?? Bun.which(name);
 	if (!candidate || !existsSync(candidate)) {
@@ -274,10 +307,16 @@ function requiredExecutable(name: string, explicit?: string): string {
 	return candidate;
 }
 
+/**
+ *
+ */
 async function reserveLoopbackPort(): Promise<number> {
 	const server = Bun.serve({
 		hostname: "127.0.0.1",
 		port: 0,
+		/**
+		 *
+		 */
 		fetch: () => new Response("reserved"),
 	});
 	const port = server.port;
@@ -288,13 +327,19 @@ async function reserveLoopbackPort(): Promise<number> {
 	return port;
 }
 
+/**
+ *
+ */
 async function loopbackPortIsAvailable(port: number | null): Promise<boolean> {
 	if (port === null) {
 		return true;
 	}
 	let server: ReturnType<typeof Bun.serve> | null = null;
 	try {
-		server = Bun.serve({ hostname: "127.0.0.1", port, fetch: () => new Response("audit") });
+		server = Bun.serve({ hostname: "127.0.0.1", port, /**
+		 *
+		 */
+		fetch: () => new Response("audit") });
 		return true;
 	} catch {
 		return false;
@@ -305,6 +350,9 @@ async function loopbackPortIsAvailable(port: number | null): Promise<boolean> {
 	}
 }
 
+/**
+ *
+ */
 function readablePipe(
 	stream: ReadableStream<Uint8Array> | number | undefined,
 ): ReadableStream<Uint8Array> {
@@ -322,11 +370,17 @@ interface CapturedPipe {
 
 const OUTPUT_TAIL_CHARACTERS = 8_192;
 
+/**
+ *
+ */
 function capturePipe(stream: ReadableStream<Uint8Array>): CapturedPipe {
 	const reader = stream.getReader();
 	const decoder = new TextDecoder();
 	let output = "";
 	let failure: string | null = null;
+	/**
+	 *
+	 */
 	const append = (chunk: string): void => {
 		output = (output + chunk).slice(-OUTPUT_TAIL_CHARACTERS);
 	};
@@ -346,11 +400,20 @@ function capturePipe(stream: ReadableStream<Uint8Array>): CapturedPipe {
 	})();
 	return Object.freeze({
 		settled,
+		/**
+		 *
+		 */
 		tail: () => output,
+		/**
+		 *
+		 */
 		error: () => failure,
 	});
 }
 
+/**
+ *
+ */
 function abortReason(signal: AbortSignal): Error {
 	return signal.reason instanceof Error
 		? signal.reason
@@ -359,6 +422,9 @@ function abortReason(signal: AbortSignal): Error {
 			);
 }
 
+/**
+ *
+ */
 async function abortable<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> {
 	if (!signal) {
 		return await work;
@@ -368,6 +434,9 @@ async function abortable<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> 
 	const canceled = new Promise<never>((_resolve, reject) => {
 		cancel = reject;
 	});
+	/**
+	 *
+	 */
 	const onAbort = (): void => cancel(abortReason(signal));
 	signal.addEventListener("abort", onAbort, { once: true });
 	try {
@@ -377,6 +446,9 @@ async function abortable<T>(work: Promise<T>, signal?: AbortSignal): Promise<T> 
 	}
 }
 
+/**
+ *
+ */
 async function settlesBefore(promise: Promise<unknown>, deadline: number): Promise<boolean> {
 	return await Promise.race([
 		promise.then(
@@ -387,6 +459,9 @@ async function settlesBefore(promise: Promise<unknown>, deadline: number): Promi
 	]);
 }
 
+/**
+ *
+ */
 async function waitForGroupAbsence(
 	identity: CodexProcessGroupIdentity,
 	deadline: number,
@@ -404,6 +479,9 @@ async function waitForGroupAbsence(
 	return processGroups.inspect(identity) === "quiescent";
 }
 
+/**
+ *
+ */
 function rawProcessGroupAbsent(groupId: number): boolean {
 	try {
 		process.kill(-groupId, 0);
@@ -416,6 +494,9 @@ function rawProcessGroupAbsent(groupId: number): boolean {
 	}
 }
 
+/**
+ *
+ */
 async function captureGroup(
 	candidate: ProcessIdentity,
 	deadline: number,
@@ -441,8 +522,14 @@ async function captureGroup(
 	);
 }
 
+/**
+ *
+ */
 function ownedProcessIds(pid: number): number[] {
 	const seen = new Set<number>();
+	/**
+	 *
+	 */
 	const visit = (candidate: number): void => {
 		if (seen.has(candidate) || !existsSync(`/proc/${candidate}`)) {
 			return;
@@ -465,6 +552,9 @@ function ownedProcessIds(pid: number): number[] {
 	return [...seen].toSorted((left, right) => left - right);
 }
 
+/**
+ *
+ */
 function isRendererJobResult(value: unknown): value is BoardRendererJobResult {
 	if (!isJsonRecord(value)) {
 		return false;
@@ -512,6 +602,9 @@ function isRendererJobResult(value: unknown): value is BoardRendererJobResult {
 	);
 }
 
+/**
+ *
+ */
 function isRendererPageState(value: unknown): value is RendererPageState {
 	return (
 		isJsonRecord(value) &&
@@ -534,24 +627,42 @@ class RendererSession {
 	#closePromise: Promise<RendererSessionCleanup> | null = null;
 	readonly #observed = new Set<number>();
 
+	/**
+	 *
+	 */
 	private constructor(readonly options: ResolvedOwnerOptions) {}
 
+	/**
+	 *
+	 */
 	get pid(): number | null {
 		return this.#child?.pid ?? null;
 	}
 
+	/**
+	 *
+	 */
 	get profile(): string | null {
 		return this.#profile;
 	}
 
+	/**
+	 *
+	 */
 	get tempRoot(): string | null {
 		return this.#tempRoot;
 	}
 
+	/**
+	 *
+	 */
 	get port(): number | null {
 		return this.#port;
 	}
 
+	/**
+	 *
+	 */
 	static async acquire(url: string, options: ResolvedOwnerOptions): Promise<RendererSession> {
 		const session = new RendererSession(options);
 		try {
@@ -613,6 +724,9 @@ class RendererSession {
 		}
 	}
 
+	/**
+	 *
+	 */
 	async run(job: BoardRendererJob, signal?: AbortSignal): Promise<BoardRendererJobResult> {
 		const cdp = this.#cdp;
 		if (!cdp || !this.#child) {
@@ -651,6 +765,9 @@ class RendererSession {
 		}
 	}
 
+	/**
+	 *
+	 */
 	close(): Promise<RendererSessionCleanup> {
 		if (this.#closePromise) {
 			return this.#closePromise;
@@ -659,6 +776,9 @@ class RendererSession {
 		return this.#closePromise;
 	}
 
+	/**
+	 *
+	 */
 	private async connect(url: string): Promise<void> {
 		if (!this.#child || this.#port === null) {
 			throw new Error("Renderer process is incomplete.");
@@ -708,6 +828,9 @@ class RendererSession {
 		throw new Error("Renderer page did not become ready before its startup deadline.");
 	}
 
+	/**
+	 *
+	 */
 	private async pageState(): Promise<RendererPageState | null> {
 		if (!this.#cdp) {
 			return null;
@@ -719,6 +842,9 @@ class RendererSession {
 		return isRendererPageState(value) ? value : null;
 	}
 
+	/**
+	 *
+	 */
 	private async closeOnce(): Promise<RendererSessionCleanup> {
 		const errors: string[] = [];
 		this.#cdp?.close();
@@ -750,7 +876,7 @@ class RendererSession {
 			} catch (error) {
 				errors.push(error instanceof Error ? error.message : String(error));
 			}
-		} else if (this.#child && this.#child.exitCode === null) {
+		} else if (this.#child?.exitCode === null) {
 			errors.push("Renderer process group could not be proved during cleanup.");
 			this.#child.kill("SIGKILL");
 		} else if (this.#child) {
@@ -829,6 +955,9 @@ class RendererSession {
 		return this.options.testHooks.adjustSessionCleanup?.(cleanup) ?? cleanup;
 	}
 
+	/**
+	 *
+	 */
 	private processDiagnostics(): JsonRecord[] {
 		return [
 			...(this.#stdout?.tail() ? [{ stream: "stdout", tail: this.#stdout.tail() }] : []),
@@ -836,6 +965,9 @@ class RendererSession {
 		];
 	}
 
+	/**
+	 *
+	 */
 	private observe(): void {
 		if (!this.#child) {
 			return;
@@ -846,6 +978,9 @@ class RendererSession {
 	}
 }
 
+/**
+ *
+ */
 function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 	let chromiumStarts = 0;
 	const configuredHooks = options.testHooks ?? {};
@@ -861,6 +996,9 @@ function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 		cleanupTimeoutMs: options.cleanupTimeoutMs ?? BOARD_RENDER_CLEANUP_MS,
 		testHooks: {
 			...configuredHooks,
+			/**
+			 *
+			 */
 			onChromiumStart(pid) {
 				chromiumStarts += 1;
 				configuredHooks.onChromiumStart?.(pid);
@@ -879,6 +1017,9 @@ function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 	let stopPromise: Promise<BoardRendererCleanup> | null = null;
 	let lastCleanup: BoardRendererCleanup | null = null;
 
+	/**
+	 *
+	 */
 	const start = (): void => {
 		if (started) {
 			return;
@@ -887,6 +1028,9 @@ function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 		accepting = true;
 	};
 
+	/**
+	 *
+	 */
 	const acquire = async (): Promise<RendererSession> => {
 		if (session) {
 			return session;
@@ -923,6 +1067,9 @@ function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 		return acquisition;
 	};
 
+	/**
+	 *
+	 */
 	const execute = async (
 		job: BoardRendererJob,
 		signal?: AbortSignal,
@@ -939,6 +1086,9 @@ function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 			resolveResult = resolveJob;
 			rejectResult = rejectJob;
 		});
+		/**
+		 *
+		 */
 		const onAbort = (): void => {
 			if (state.value !== "queued" || !signal) {
 				return;
@@ -1000,6 +1150,9 @@ function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 		return result;
 	};
 
+	/**
+	 *
+	 */
 	const stop = (): Promise<BoardRendererCleanup> => {
 		if (stopPromise) {
 			return stopPromise;
@@ -1063,6 +1216,9 @@ function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 		execute,
 		stop,
 		forceStop: stop,
+		/**
+		 *
+		 */
 		status: (): BoardRenderingOwnerStatus => ({
 			started,
 			accepting,
@@ -1075,6 +1231,9 @@ function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 			controlPort: session?.port ?? null,
 			fixturePort: fixture?.port ?? null,
 		}),
+		/**
+		 *
+		 */
 		lastCleanup: (): BoardRendererCleanup | null => lastCleanup,
 	});
 }

@@ -4,52 +4,52 @@ import { mkdirSync } from "node:fs";
 import {
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
-} from "../../../runtime/codex-process/executable.js";
-import { createCodexWaitGraph } from "../../../runtime/codex-wait-graph/index.js";
-import { createCoordinatorCallbackRealtimePort } from "../../../runtime/codex-coordinator-callbacks/index.js";
+} from "@/runtime/codex-process/executable";
+import { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
+import { createCoordinatorCallbackRealtimePort } from "@/runtime/codex-coordinator-callbacks";
 import {
 	ArchboardContextSchema,
 	type ArchboardContext,
-} from "../../../runtime/codex-instructions/index.js";
-import type { CodexProcessGroupIdentity } from "../../../runtime/codex-process/process-group.js";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
+} from "@/runtime/codex-instructions";
+import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/process-group";
+import type { TransportServerNotification } from "@/runtime/codex-transport";
 import type {
 	SemanticContextPublisherOptions,
 	SettledSemanticChangeEvent,
-} from "../../../runtime/codex-semantic-context/index.js";
-import type { LogicalToolCallCorrelation } from "../../../shared/codex-workbench-identity/index.js";
-import type { WorkhorseOperationBinding } from "../../../runtime/codex-workhorse-operations/index.js";
-import type { BrowserLeaseLedger } from "../../codex-workbench/index.js";
-import { stateDir } from "../../../runtime/engine/state-dir.js";
+} from "@/runtime/codex-semantic-context";
+import type { LogicalToolCallCorrelation } from "@/shared/codex-workbench-identity";
+import type { WorkhorseOperationBinding } from "@/runtime/codex-workhorse-operations";
+import type { BrowserLeaseLedger } from "@/server/codex-workbench";
+import { stateDir } from "@/runtime/engine/state-dir";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,
 	CodexWorkbenchGenerationInput,
 	InstallProductionCodexWorkbenchOptions,
 	ProductionCodexWorkbenchBindings,
-} from "./codex-workbench.js";
+} from "@/server/canvas/lib/codex-workbench";
 import {
 	createCanvasBrowserGatewayOptions,
 	type CanvasBrowserBindingState,
-} from "./codex-workbench-browser-gateway.js";
+} from "@/server/canvas/lib/codex-workbench-browser-gateway";
 import {
 	createCanvasDynamicApprovalOwner,
 	type CanvasDynamicApprovalOwner,
-} from "./codex-workbench-approvals.js";
+} from "@/server/canvas/lib/codex-workbench-approvals";
 import {
 	createCanvasDynamicAuthorityAdapters,
 	type CanvasDynamicAuthorityAdapters,
-} from "./codex-workbench-authority.js";
+} from "@/server/canvas/lib/codex-workbench-authority";
 import {
 	createCanvasDynamicLifecycleOwner,
 	createCanvasDynamicOperationIdAdapter,
 	type CanvasDynamicLifecycleOwner,
-} from "./codex-workbench-operation-lifecycle.js";
+} from "@/server/canvas/lib/codex-workbench-operation-lifecycle";
 import {
 	createCanvasBrowserProjectionBudget,
 	createCanvasTimelineOwner,
 	type CanvasTimelineOwner,
-} from "./codex-workbench-timeline.js";
+} from "@/server/canvas/lib/codex-workbench-timeline";
 
 export interface CanvasCodexWorkbenchHost {
 	readonly checkoutRoot: string;
@@ -104,6 +104,9 @@ interface GenerationOwners {
 	retired: boolean;
 }
 
+/**
+ *
+ */
 function requireCreated<Name extends keyof CodexWorkbenchComponents>(
 	created: Readonly<Partial<CodexWorkbenchComponents>>,
 	name: Name,
@@ -114,6 +117,9 @@ function requireCreated<Name extends keyof CodexWorkbenchComponents>(
 	return component;
 }
 
+/**
+ *
+ */
 function currentOperationBinding(
 	created: Readonly<Partial<CodexWorkbenchComponents>>,
 ): WorkhorseOperationBinding | null {
@@ -161,6 +167,9 @@ function closedTransport(transport: CodexWorkbenchComponents["transport"]): bool
 	}
 }
 
+/**
+ *
+ */
 function currentRealtimeGeneration(created: Readonly<Partial<CodexWorkbenchComponents>>) {
 	const generation = created.realtime?.generation();
 	return generation === null || generation === undefined
@@ -214,6 +223,9 @@ export function createCanvasCodexWorkbenchInstallation(
 	// for. Nothing below it can be current, so a request for one is a caller
 	// mistake rather than a reason to build owners nobody will dispose.
 	let highestGeneration = 0;
+	/**
+	 *
+	 */
 	const ownersFor = (input: CodexWorkbenchGenerationInput): GenerationOwners => {
 		const owners = byGeneration.get(input.generation);
 		if (owners !== undefined) {
@@ -265,8 +277,14 @@ export function createCanvasCodexWorkbenchInstallation(
 		return created;
 	};
 
+	/**
+	 *
+	 */
 	const bindings = (input: CodexWorkbenchGenerationInput): ProductionCodexWorkbenchBindings => {
 		const owners = ownersFor(input);
+		/**
+		 *
+		 */
 		const requireOwners = (created: Readonly<Partial<CodexWorkbenchComponents>>) => {
 			if (owners.authority === null) {
 				if (
@@ -280,6 +298,9 @@ export function createCanvasCodexWorkbenchInstallation(
 					epoch: created.epoch,
 					threadLink: created.threadLink,
 					paneIds: host.paneIds,
+					/**
+					 *
+					 */
 					contextFor: (context) => {
 						const captured = host.contextForOperation(
 							{
@@ -308,7 +329,13 @@ export function createCanvasCodexWorkbenchInstallation(
 				const identity = requireCreated(created, "identity");
 				owners.approval = createCanvasDynamicApprovalOwner({
 					identity,
+					/**
+					 *
+					 */
 					now: () => Date.now(),
+					/**
+					 *
+					 */
 					bindingForCaller: (threadId) => {
 						const paneId = owners.authority!.paneForThread(threadId);
 						if (paneId === null) throw new Error("The dynamic caller has no live pane binding.");
@@ -334,6 +361,9 @@ export function createCanvasCodexWorkbenchInstallation(
 					identity: requireCreated(created, "identity"),
 					waitGraph,
 					waitForTargets: host.waitForTargets,
+					/**
+					 *
+					 */
 					shutdownEpoch: async (child, epoch) => {
 						// Fail-closed epoch teardown is the owner's terminal path, not a
 						// bare process stop: it revokes public dispatch and the browser
@@ -360,19 +390,46 @@ export function createCanvasCodexWorkbenchInstallation(
 			};
 		};
 		return {
+			/**
+			 *
+			 */
 			epoch: () => ({ rootDirectory: epochRoot, codexHome, sqliteHome }),
+			/**
+			 *
+			 */
 			transport: () => ({ child: input.child }),
+			/**
+			 *
+			 */
 			session: () => ({
 				storage: { codexHome, sqliteHome, configPath: path.join(codexHome, "config.toml") },
 				checkoutRoot: host.checkoutRoot,
 				lifecycle: input.child.lifecycle,
 			}),
+			/**
+			 *
+			 */
 			threadLink: (created) => ({
+				/**
+				 *
+				 */
 				currentEpoch: () => created.epoch?.snapshot().manifest.activeEpoch ?? null,
 			}),
+			/**
+			 *
+			 */
 			workhorse: () => ({ checkoutRoot: host.checkoutRoot }),
+			/**
+			 *
+			 */
 			semanticPublisher: () => host.semanticPublisher,
+			/**
+			 *
+			 */
 			realtime: (created) => ({
+				/**
+				 *
+				 */
 				freshSemanticBrief: (wireSessionId) => {
 					const freshInput = host.semanticPublisher.fresh.read();
 					return requireCreated(created, "semanticPublisher").freshBriefFor({
@@ -383,6 +440,9 @@ export function createCanvasCodexWorkbenchInstallation(
 						},
 					}).brief;
 				},
+				/**
+				 *
+				 */
 				currentBinding: () => {
 					const workhorse = created.workhorse?.snapshot();
 					const coordinator = created.coordinator?.snapshot();
@@ -403,48 +463,99 @@ export function createCanvasCodexWorkbenchInstallation(
 					};
 				},
 			}),
+			/**
+			 *
+			 */
 			approvals: (created) => ({
 				onError: host.onFatal,
+				/**
+				 *
+				 */
 				getCurrentBinding: (request) => {
 					const binding = created.semanticDelivery?.snapshot().binding ?? null;
 					return binding?.target.threadId === request.threadId
 						? { link: `pane:${binding.paneId}` }
 						: { link: null };
 				},
+				/**
+				 *
+				 */
 				onChange: () => {
 					if (!owners.approvalProjectionInstalled) return;
 					for (const listener of owners.projectionListeners) listener();
 				},
 			}),
 			dynamicAdapters: {
+				/**
+				 *
+				 */
 				approval: (created) => requireOwners(created).approval.port,
+				/**
+				 *
+				 */
 				threadAuthority: (created) => requireOwners(created).authority.thread,
+				/**
+				 *
+				 */
 				context: (created) => requireOwners(created).authority.context,
+				/**
+				 *
+				 */
 				operationId: (created) => {
 					if (created.identity === undefined) throw new Error("Operation authority is not ready.");
 					return createCanvasDynamicOperationIdAdapter(created.identity.operation);
 				},
+				/**
+				 *
+				 */
 				lifecycle: (created) => requireOwners(created).lifecycle.port,
 			},
+			/**
+			 *
+			 */
 			dynamicTools: () => ({ waitGraph, checkoutRoot: host.checkoutRoot }),
+			/**
+			 *
+			 */
 			semanticDelivery: (created) => ({
 				feedId: host.semanticPublisher.feedId,
+				/**
+				 *
+				 */
 				now: () => Date.now(),
 				publisher: requireCreated(created, "semanticPublisher"),
+				/**
+				 *
+				 */
 				currentExecution: () => ({
 					childId: requireCreated(created, "identity").identity.validator.childId,
 					epoch: requireCreated(created, "identity").identity.validator.epoch,
 				}),
 				hooks: {
+					/**
+					 *
+					 */
 					contextForEvent: (event, binding) => host.contextForEvent(event, binding.paneId),
 				},
+				/**
+				 *
+				 */
 				retireEpoch: () => requireCreated(created, "epoch").close(),
 			}),
+			/**
+			 *
+			 */
 			coordinator: () => ({
 				checkoutRoot: host.checkoutRoot,
 				persisted: input.adoptedCoordinator,
 			}),
+			/**
+			 *
+			 */
 			queue: (created) => ({
+				/**
+				 *
+				 */
 				currentBinding: () => {
 					const workhorse = created.workhorse?.snapshot();
 					const coordinator = created.coordinator?.snapshot();
@@ -465,9 +576,21 @@ export function createCanvasCodexWorkbenchInstallation(
 					};
 				},
 			}),
+			/**
+			 *
+			 */
 			operations: (created) => ({
+				/**
+				 *
+				 */
 				currentBinding: () => currentOperationBinding(created),
+				/**
+				 *
+				 */
 				currentCoordinatorCall: () => owners.currentCoordinatorCall,
+				/**
+				 *
+				 */
 				contextFor: (operation) => {
 					const workhorse = requireCreated(created, "workhorse").snapshot();
 					if (
@@ -494,7 +617,13 @@ export function createCanvasCodexWorkbenchInstallation(
 					);
 				},
 			}),
+			/**
+			 *
+			 */
 			spokenApproval: (created) => ({
+				/**
+				 *
+				 */
 				currentRealtime: () => {
 					const generation = created.realtime?.generation();
 					return generation === null || generation === undefined
@@ -504,20 +633,41 @@ export function createCanvasCodexWorkbenchInstallation(
 								correlationId: generation.browserCorrelationId,
 							};
 				},
+				/**
+				 *
+				 */
 				onChange: () => {
 					if (!owners.approvalProjectionInstalled) return;
 					for (const listener of owners.projectionListeners) listener();
 				},
 			}),
+			/**
+			 *
+			 */
 			coordinatorTools: (created) => ({
 				authority: {
+					/**
+					 *
+					 */
 					currentCoordinator: () => created.coordinator?.snapshot() ?? null,
+					/**
+					 *
+					 */
 					currentWorkhorseBinding: () => currentOperationBinding(created),
+					/**
+					 *
+					 */
 					currentCall: () => owners.currentCoordinatorCall,
+					/**
+					 *
+					 */
 					expectedTurnId: () => owners.currentCoordinatorCall?.turnId ?? null,
 				},
 			}),
 			coordinatorCall: {
+				/**
+				 *
+				 */
 				run: async (request, operation) => {
 					owners.currentCoordinatorCall = request.logicalCall;
 					try {
@@ -528,16 +678,28 @@ export function createCanvasCodexWorkbenchInstallation(
 					}
 				},
 			},
+			/**
+			 *
+			 */
 			callbacks: (created) => ({
 				semantic: requireCreated(created, "semanticPublisher"),
 				realtime: createCoordinatorCallbackRealtimePort({
 					session: requireCreated(created, "session"),
+					/**
+					 *
+					 */
 					currentGeneration: () => currentRealtimeGeneration(created),
 				}),
+				/**
+				 *
+				 */
 				currentChild: () => ({
 					childId: requireCreated(created, "identity").identity.validator.childId,
 					epoch: requireCreated(created, "identity").identity.validator.epoch,
 				}),
+				/**
+				 *
+				 */
 				currentCoordinator: () => {
 					const snapshot = created.coordinator?.snapshot();
 					if (
@@ -555,6 +717,9 @@ export function createCanvasCodexWorkbenchInstallation(
 						epoch: snapshot.epoch,
 					};
 				},
+				/**
+				 *
+				 */
 				currentWorkhorseLink: () => {
 					const workhorse = created.workhorse?.snapshot();
 					if (
@@ -576,12 +741,21 @@ export function createCanvasCodexWorkbenchInstallation(
 						},
 					};
 				},
+				/**
+				 *
+				 */
 				currentRealtimeGeneration: () => currentRealtimeGeneration(created),
+				/**
+				 *
+				 */
 				onSettled: () => {
 					if (!owners.approvalProjectionInstalled) return;
 					for (const listener of owners.projectionListeners) listener();
 				},
 			}),
+			/**
+			 *
+			 */
 			gateway: (created) => {
 				const dynamic = requireOwners(created).approval;
 				const budget = createCanvasBrowserProjectionBudget();
@@ -590,6 +764,9 @@ export function createCanvasCodexWorkbenchInstallation(
 						session: requireCreated(created, "session"),
 						identity: requireCreated(created, "identity").identity.decoder,
 						approvals: requireCreated(created, "approvals"),
+						/**
+						 *
+						 */
 						onChange: () => {
 							if (!owners.approvalProjectionInstalled) return;
 							for (const listener of owners.projectionListeners) listener();
@@ -605,7 +782,13 @@ export function createCanvasCodexWorkbenchInstallation(
 					state: owners.browserState,
 					leaseLedger: host.browserLeaseLedger,
 					checkoutRoot: host.checkoutRoot,
+					/**
+					 *
+					 */
 					process: () => input.process.snapshot(),
+					/**
+					 *
+					 */
 					contextForOperation: (context, operation) =>
 						host.contextForOperation(
 							{
@@ -617,10 +800,16 @@ export function createCanvasCodexWorkbenchInstallation(
 							},
 							operation,
 						),
+					/**
+					 *
+					 */
 					onChange: (listener) => {
 						owners.projectionListeners.add(listener);
 						return () => void owners.projectionListeners.delete(listener);
 					},
+					/**
+					 *
+					 */
 					onAccountNotification: (listener) => {
 						owners.accountListeners.add(listener);
 						return () => void owners.accountListeners.delete(listener);
@@ -630,18 +819,30 @@ export function createCanvasCodexWorkbenchInstallation(
 					...options,
 					// Child lifecycle transitions change readiness without any browser
 					// command, so the owned process is the gateway's change source.
-					lifecycle: { onChange: (listener) => input.process.subscribe(() => listener()) },
+					lifecycle: { /**
+					 *
+					 */
+					onChange: (listener) => input.process.subscribe(() => listener()) },
 				};
 			},
 		};
 	};
 
+	/**
+	 *
+	 */
 	const hooks = (input: CodexWorkbenchGenerationInput): CodexWorkbenchGenerationHooks => {
 		const owners = ownersFor(input);
 		return {
 			threadContext: {
+				/**
+				 *
+				 */
 				contextForEvent: (event, binding) => host.contextForEvent(event, binding.paneId),
 			},
+			/**
+			 *
+			 */
 			onNotification: (event) => {
 				for (const listener of owners.accountListeners) listener(event);
 				owners.timeline?.onNotification(event);
@@ -650,6 +851,9 @@ export function createCanvasCodexWorkbenchInstallation(
 			},
 			installIdentityDecoders: host.installIdentityDecoders,
 			installLifecycleSignals: host.installLifecycleSignals,
+			/**
+			 *
+			 */
 			installApprovalProjection: () => {
 				if (owners.approvalProjectionInstalled)
 					throw new Error("The Codex approval projection is already installed.");
@@ -659,6 +863,9 @@ export function createCanvasCodexWorkbenchInstallation(
 				};
 			},
 			installBrowserGateway: host.installBrowserGateway,
+			/**
+			 *
+			 */
 			initializeSession: async (session, components) => {
 				input.assertActivationCurrent();
 				if (input.adoptedSession === null) {
@@ -711,9 +918,15 @@ export function createCanvasCodexWorkbenchInstallation(
 			stopBrowser: host.stopBrowser,
 			stopRealtime: host.stopRealtime,
 			stopQueue: host.stopQueue,
+			/**
+			 *
+			 */
 			retireDynamicLifecycle: async (child, epoch) => {
 				await owners.lifecycle?.childExit(child, epoch);
 			},
+			/**
+			 *
+			 */
 			cancelDynamicApprovalsAndWaits: async (_components, cause) => {
 				owners.timeline?.dispose();
 				owners.approval?.settleAll(cause);
@@ -726,6 +939,9 @@ export function createCanvasCodexWorkbenchInstallation(
 				// listeners all leave with the record itself.
 				retire(owners);
 			},
+			/**
+			 *
+			 */
 			settleOrdinaryRequests: async (approvals, cause) => {
 				for (const snapshot of approvals.inspect()) {
 					if (snapshot.state === "pending")

@@ -1,16 +1,13 @@
-import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
-import type { CoordinatorToolDispatcher } from "../../../runtime/codex-coordinator-tools/index.js";
-import type { CodexDynamicTools } from "../../../runtime/codex-dynamic-tools/index.js";
+import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
+import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
+import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
 import type {
 	CodexSession,
-	SessionAttestationRequest,
-	SessionCurrentTimeRequest,
-	SessionTokenRefreshRequest,
-} from "../../../runtime/codex-session/index.js";
+} from "@/runtime/codex-session";
 import type {
 	DynamicServerRequest,
 	TransportServerRequest,
-} from "../../../runtime/codex-transport/server-requests.js";
+} from "@/runtime/codex-transport/server-requests";
 
 interface CodexWorkbenchRequestOwners {
 	readonly approvals: Pick<CodexApprovalBroker, "receive">;
@@ -26,10 +23,16 @@ interface CodexWorkbenchRequestRouter {
 	readonly route: (request: TransportServerRequest) => void;
 }
 
+/**
+ *
+ */
 function assertUnreachable(value: never): never {
 	throw new TypeError(`Unreachable Codex server request: ${String(value)}`);
 }
 
+/**
+ *
+ */
 function routeDynamicRequest(
 	request: DynamicServerRequest,
 	owners: CodexWorkbenchRequestOwners,
@@ -51,6 +54,9 @@ function createCodexWorkbenchRequestRouter(
 	owners: CodexWorkbenchRequestOwners,
 ): CodexWorkbenchRequestRouter {
 	return Object.freeze({
+		/**
+		 *
+		 */
 		route: (request: TransportServerRequest): void => {
 			switch (request.method) {
 				case "item/commandExecution/requestApproval":
@@ -66,13 +72,13 @@ function createCodexWorkbenchRequestRouter(
 					routeDynamicRequest(request, owners);
 					return;
 				case "currentTime/read":
-					void owners.session.respondCurrentTime(request as SessionCurrentTimeRequest);
+					void owners.session.respondCurrentTime(request);
 					return;
 				case "account/chatgptAuthTokens/refresh":
-					void owners.session.respondUnsupportedTokenRefresh(request as SessionTokenRefreshRequest);
+					void owners.session.respondUnsupportedTokenRefresh(request);
 					return;
 				case "attestation/generate":
-					void owners.session.respondUnsupportedAttestation(request as SessionAttestationRequest);
+					void owners.session.respondUnsupportedAttestation(request);
 					return;
 				default:
 					return assertUnreachable(request);

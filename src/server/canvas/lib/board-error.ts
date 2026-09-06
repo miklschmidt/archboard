@@ -1,12 +1,15 @@
 import { z } from "zod";
-import { BoardRequiredError, BoardResolutionError } from "../../../runtime/engine/board-target.js";
-import { BoardMutationError } from "../../../runtime/engine/board-write.js";
-import { BoardHeldError } from "../../../runtime/engine/board-lock.js";
-import { BoardWriteConflictError } from "../../../runtime/engine/board-io.js";
-import { RenderGeometryError } from "../../../runtime/engine/geometry.js";
-import { NativeElementValidationError } from "../../../runtime/engine/native-element.js";
-import { BoardRendererError } from "../../board-rendering/index.js";
+import { BoardRequiredError, BoardResolutionError } from "@/runtime/engine/board-target";
+import { BoardMutationError } from "@/runtime/engine/board-write";
+import { BoardHeldError } from "@/runtime/engine/board-lock";
+import { BoardWriteConflictError } from "@/runtime/engine/board-io";
+import { RenderGeometryError } from "@/runtime/engine/geometry";
+import { NativeElementValidationError } from "@/runtime/engine/native-element";
+import { BoardRendererError } from "@/server/board-rendering";
 
+/**
+ *
+ */
 function errorMessage(error: unknown): unknown {
 	if (error === null || error === undefined) {
 		throw new TypeError("A board error must be a non-nullish value");
@@ -14,6 +17,9 @@ function errorMessage(error: unknown): unknown {
 	return Reflect.get(new Object(error), "message");
 }
 
+/**
+ *
+ */
 function boardErrorStatus(error: unknown): number {
 	if (error instanceof z.ZodError) {
 		return 400;
@@ -46,6 +52,9 @@ function boardErrorStatus(error: unknown): number {
 		: 500;
 }
 
+/**
+ *
+ */
 function boardErrorBody(error: unknown): Record<string, unknown> {
 	let message: unknown;
 	if (error instanceof z.ZodError) {

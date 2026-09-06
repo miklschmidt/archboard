@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-import type { OpenerCommand } from "../../../shared/code-target/index.js";
+import type { OpenerCommand } from "@/shared/code-target";
 
 type LaunchResult =
 	| { ok: true }
@@ -11,6 +11,9 @@ type ResolvedOpenerCommand =
 	| { ok: true; command: OpenerCommand }
 	| { ok: false; code: "OPENER_UNAVAILABLE"; error: string };
 
+/**
+ *
+ */
 function executableFile(candidate: string): boolean {
 	try {
 		if (!fs.statSync(candidate).isFile()) {
@@ -23,6 +26,9 @@ function executableFile(candidate: string): boolean {
 	}
 }
 
+/**
+ *
+ */
 function resolveExecutable(executable: string): string | null {
 	if (path.posix.isAbsolute(executable) || path.win32.isAbsolute(executable)) {
 		return executableFile(executable) ? executable : null;
@@ -30,6 +36,9 @@ function resolveExecutable(executable: string): string | null {
 	return Bun.which(executable) ?? null;
 }
 
+/**
+ *
+ */
 function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerCommand {
 	const executable = resolveExecutable(command.executable);
 	return executable
@@ -41,6 +50,9 @@ function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerCommand {
 			};
 }
 
+/**
+ *
+ */
 async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 	const resolved = resolveOpenerCommand(command);
 	if (!resolved.ok) {
@@ -49,6 +61,9 @@ async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 	return new Promise((resolve) => {
 		let settled = false;
 		let child: ReturnType<typeof spawn>;
+		/**
+		 *
+		 */
 		const finish = (result: LaunchResult): void => {
 			if (settled) {
 				return;
@@ -58,10 +73,16 @@ async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 			child.removeListener("error", onError);
 			resolve(result);
 		};
+		/**
+		 *
+		 */
 		const onSpawn = (): void => {
 			child.unref();
 			finish({ ok: true });
 		};
+		/**
+		 *
+		 */
 		const onError = (error: Error): void => {
 			finish({
 				ok: false,

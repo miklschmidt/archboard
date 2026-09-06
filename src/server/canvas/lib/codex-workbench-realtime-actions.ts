@@ -1,14 +1,14 @@
-import type { BrowserActionContext, BrowserRealtimeActions } from "../../codex-workbench/index.js";
+import type { BrowserActionContext, BrowserRealtimeActions } from "@/server/codex-workbench";
 import type {
 	ChildEpoch,
 	ChildId,
 	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import {
 	parseRealtimeCorrelationId,
 	parseRealtimeSessionId,
-} from "../../../shared/codex-realtime-host/index.js";
-import type { CodexWorkbenchComponents } from "./codex-workbench.js";
+} from "@/shared/codex-realtime-host";
+import type { CodexWorkbenchComponents } from "@/server/canvas/lib/codex-workbench";
 
 type RealtimeComponents = Pick<CodexWorkbenchComponents, "coordinator" | "realtime" | "workhorse">;
 
@@ -31,6 +31,9 @@ export function createCanvasRealtimeActions(
 ): BrowserRealtimeActions {
 	let activeRealtime: ActiveRealtime | null = null;
 	let realtimeQueue = Promise.resolve();
+	/**
+	 *
+	 */
 	const serialize = <Value>(operation: () => Promise<Value>): Promise<Value> => {
 		const pending = realtimeQueue.then(operation);
 		realtimeQueue = pending.then(
@@ -39,6 +42,9 @@ export function createCanvasRealtimeActions(
 		);
 		return pending;
 	};
+	/**
+	 *
+	 */
 	const stopActive = async (expected?: ActiveRealtime): Promise<void> => {
 		const active = activeRealtime;
 		if (active === null || (expected !== undefined && active !== expected)) {
@@ -55,6 +61,9 @@ export function createCanvasRealtimeActions(
 			}
 		}
 	};
+	/**
+	 *
+	 */
 	const requireActive = (handle: string, context: BrowserActionContext): ActiveRealtime => {
 		const active = activeRealtime;
 		const coordinator = components.coordinator.snapshot();
@@ -78,6 +87,9 @@ export function createCanvasRealtimeActions(
 	};
 
 	const actions: BrowserRealtimeActions = {
+		/**
+		 *
+		 */
 		start: (command, context) =>
 			serialize(async () => {
 				if (activeRealtime !== null) {
@@ -129,6 +141,9 @@ export function createCanvasRealtimeActions(
 					throw error;
 				}
 			}),
+		/**
+		 *
+		 */
 		appendText: (command, context) =>
 			serialize(async () => {
 				const active = requireActive(command.realtimeSessionHandle, context);
@@ -139,12 +154,18 @@ export function createCanvasRealtimeActions(
 				});
 				return { outcome: "delivered" as const };
 			}),
+		/**
+		 *
+		 */
 		stop: (command, context) =>
 			serialize(async () => {
 				const active = requireActive(command.realtimeSessionHandle, context);
 				await stopActive(active);
 				return { outcome: "delivered" as const };
 			}),
+		/**
+		 *
+		 */
 		onBrowserDisconnect: (context, reason) => {
 			if (
 				reason !== "browser_disconnected" &&

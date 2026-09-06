@@ -4,12 +4,12 @@ export {
 	type BoardRendererCleanup,
 	type BoardRenderingOwnerOptions,
 	type BoardRenderingOwnerStatus,
-} from "./lib/owner.js";
+} from "@/server/board-rendering/lib/owner";
 export {
 	createRendererFixture,
 	RendererFixtureError,
 	type RendererFixture,
-} from "./lib/fixture.js";
+} from "@/server/board-rendering/lib/fixture";
 export {
 	DEFAULT_MERMAID_CONFIG,
 	type BoardRenderJob,
@@ -22,4 +22,4 @@ export {
 	type MermaidRenderJob,
 	type MermaidRenderJobResult,
 	type MermaidSkeleton,
-} from "./lib/contract.js";
+} from "@/server/board-rendering/lib/contract";

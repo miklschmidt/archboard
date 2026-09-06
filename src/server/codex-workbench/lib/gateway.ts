@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
+import { createCodexBrowserModel } from "@/shared/codex-browser-model";
 import type {
 	BrowserCommand,
 	BrowserCommandLease,
@@ -8,17 +8,17 @@ import type {
 	BrowserOperationOutcome,
 	BrowserSnapshot,
 	DeliveryOutcome,
-} from "../../../shared/codex-browser-model/index.js";
+} from "@/shared/codex-browser-model";
 import type {
 	BrowserCommandId,
 	ChildEpoch,
 	ChildId,
 	IdentityAuthorities,
 	JsonRpcRequestId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import { parseApprovalResponse } from "../../../runtime/codex-approvals/index.js";
-import { SupportedLoginAccountParamsSchema } from "../../../runtime/codex-protocol/index.js";
-import { createBrowserLeaseManager, type BrowserLeaseManager } from "./lease.js";
+} from "@/shared/codex-workbench-identity";
+import { parseApprovalResponse } from "@/runtime/codex-approvals";
+import { SupportedLoginAccountParamsSchema } from "@/runtime/codex-protocol";
+import { createBrowserLeaseManager, type BrowserLeaseManager } from "@/server/codex-workbench/lib/lease";
 import {
 	CodexWorkbenchGatewayError,
 	type BrowserActionContext,
@@ -40,8 +40,8 @@ import {
 	type BrowserPublishedPayload,
 	type BrowserUnsubscribe,
 	type CodexWorkbenchGatewayOptions,
-} from "./contract.js";
-import type { BrowserOwnerProjection } from "./projection-contract.js";
+} from "@/server/codex-workbench/lib/contract";
+import type { BrowserOwnerProjection } from "@/server/codex-workbench/lib/projection-contract";
 import {
 	BROWSER_SNAPSHOT_MAX_BYTES,
 	assertBrowserSnapshotBudget,
@@ -49,7 +49,7 @@ import {
 	diffBrowserSnapshots,
 	fitBrowserSnapshotBounded,
 	projectCodexBrowserState,
-} from "./projection.js";
+} from "@/server/codex-workbench/lib/projection";
 
 const ACCOUNT_READINESS = new Set([
 	"login_capable",
@@ -98,18 +98,30 @@ type BrowserActionDispatch = {
 	) => Promise<BrowserActionResult>;
 };
 
+/**
+ *
+ */
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ *
+ */
 function sameWireValue(left: unknown, right: unknown): boolean {
 	return JSON.stringify(left) === JSON.stringify(right);
 }
 
+/**
+ *
+ */
 function fingerprintCommand(command: OwnedBrowserCommand): string {
 	return createHash("sha256").update(JSON.stringify(command)).digest("hex");
 }
 
+/**
+ *
+ */
 function normalizeBrowserCommand(command: BrowserCommand): OwnedBrowserCommand {
 	if (command.command === "accountLogin")
 		return {
@@ -124,25 +136,40 @@ function normalizeBrowserCommand(command: BrowserCommand): OwnedBrowserCommand {
 	return command;
 }
 
+/**
+ *
+ */
 function isDeliveryOutcome(value: unknown): value is DeliveryOutcome {
 	return value === "delivered" || value === "not_delivered" || value === "outcome_unknown";
 }
 
+/**
+ *
+ */
 function actionOutcome(value: BrowserActionResult): DeliveryOutcome {
 	if (value === undefined) return "delivered";
 	return value.outcome;
 }
 
+/**
+ *
+ */
 function errorOutcome(error: unknown): DeliveryOutcome {
 	if (isRecord(error) && isDeliveryOutcome(error["outcome"])) return error["outcome"];
 	return "not_delivered";
 }
 
+/**
+ *
+ */
 function errorCode(error: unknown): CodexWorkbenchGatewayError["code"] {
 	if (error instanceof CodexWorkbenchGatewayError) return error.code;
 	return errorOutcome(error) === "outcome_unknown" ? "outcome_unknown" : "command_failed";
 }
 
+/**
+ *
+ */
 function staticMessage(
 	outcome: DeliveryOutcome,
 	code: CodexWorkbenchGatewayError["code"] | null,
@@ -172,26 +199,41 @@ function staticMessage(
 	return messages[code] ?? "The browser command was refused.";
 }
 
+/**
+ *
+ */
 function isOversizedDelta(error: unknown): boolean {
 	return (
 		error instanceof Error && error.message === "the browser delta exceeds its wire-size bound"
 	);
 }
 
+/**
+ *
+ */
 function connectionKey(browserId: string, paneId: string): string {
 	return `${browserId}\u0000${paneId}`;
 }
 
+/**
+ *
+ */
 function assertOpaqueName(value: string, field: string): void {
 	if (typeof value !== "string" || value.length === 0 || value.length > 128)
 		throw new CodexWorkbenchGatewayError("invalid_input", `${field} is invalid.`);
 }
 
+/**
+ *
+ */
 function commandThreadId(command: OwnedBrowserCommand): string | null {
 	if ("threadId" in command && typeof command.threadId === "string") return command.threadId;
 	return null;
 }
 
+/**
+ *
+ */
 function isAccountCommand(command: OwnedBrowserCommand): boolean {
 	return (
 		command.command === "accountLogin" ||
@@ -200,6 +242,9 @@ function isAccountCommand(command: OwnedBrowserCommand): boolean {
 	);
 }
 
+/**
+ *
+ */
 function isThreadLinkCommand(command: OwnedBrowserCommand): boolean {
 	return (
 		command.command === "threadLinkCreate" ||
@@ -209,22 +254,34 @@ function isThreadLinkCommand(command: OwnedBrowserCommand): boolean {
 	);
 }
 
+/**
+ *
+ */
 function isOrdinaryApprovalCommand(
 	command: OwnedBrowserCommand,
 ): command is BrowserApprovalCommand {
 	return command.command === "approvalRespond";
 }
 
+/**
+ *
+ */
 function isDynamicApprovalCommand(
 	command: OwnedBrowserCommand,
 ): command is BrowserDynamicApprovalResponse {
 	return command.command === "dynamicApprovalRespond";
 }
 
+/**
+ *
+ */
 function actionContext(record: BrowserLeaseRecord): BrowserActionContext {
 	return record.binding;
 }
 
+/**
+ *
+ */
 function executableLink(snapshot: BrowserSnapshot): BrowserSnapshot["threadLink"] {
 	if (snapshot.threadLink.state !== "executable")
 		throw new CodexWorkbenchGatewayError(
@@ -234,6 +291,9 @@ function executableLink(snapshot: BrowserSnapshot): BrowserSnapshot["threadLink"
 	return snapshot.threadLink;
 }
 
+/**
+ *
+ */
 function currentLeaseOrThrow(
 	manager: BrowserLeaseManager,
 	commandId: BrowserCommandId,
@@ -277,6 +337,9 @@ function currentLeaseOrThrow(
 	return current;
 }
 
+/**
+ *
+ */
 function emit(
 	listeners: Set<(message: BrowserGatewayMessage) => void>,
 	message: BrowserGatewayMessage,
@@ -291,6 +354,9 @@ function emit(
 	}
 }
 
+/**
+ *
+ */
 function publishedTerminalIds(payload: BrowserPublishedPayload): readonly JsonRpcRequestId[] {
 	const approvals =
 		"delta" in payload
@@ -305,6 +371,9 @@ function publishedTerminalIds(payload: BrowserPublishedPayload): readonly JsonRp
 	);
 }
 
+/**
+ *
+ */
 export function createCodexWorkbenchGateway(
 	options: CodexWorkbenchGatewayOptions,
 ): CodexWorkbenchGateway {
@@ -324,6 +393,9 @@ export function createCodexWorkbenchGateway(
 	let leaseManager: BrowserLeaseManager;
 	const sourceUnsubscribers: BrowserUnsubscribe[] = [];
 
+	/**
+	 *
+	 */
 	const trackSettlement = (settlement: Promise<void>): void => {
 		pendingSettlements.add(settlement);
 		void settlement.then(
@@ -338,10 +410,16 @@ export function createCodexWorkbenchGateway(
 		);
 	};
 
+	/**
+	 *
+	 */
 	const drainSettlements = async (): Promise<void> => {
 		while (pendingSettlements.size > 0) await Promise.allSettled(Array.from(pendingSettlements));
 	};
 
+	/**
+	 *
+	 */
 	const rememberLeaseReason = (
 		record: BrowserLeaseRecord,
 		reason: CodexWorkbenchGatewayError["code"],
@@ -359,6 +437,9 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const notifyDisconnect = (
 		state: ConnectionState,
 		reason: BrowserDisconnectReason,
@@ -414,6 +495,9 @@ export function createCodexWorkbenchGateway(
 		});
 		// Approval teardown is best effort. Both owners get a chance to settle,
 		// and lifecycle methods resolve after all settlement promises finish.
+		/**
+		 *
+		 */
 		const invoke = <Context extends BrowserPresenterContext>(
 			callback:
 				| ((context: Context, reason: BrowserDisconnectReason) => Promise<void> | void)
@@ -447,6 +531,9 @@ export function createCodexWorkbenchGateway(
 	// A lease is app-global, so retiring its owner removes its only possible
 	// in-flight entry. Settled entries remain replayable until bounded eviction;
 	// an evicted id is necessarily non-current and must pass lease authority.
+	/**
+	 *
+	 */
 	const rememberSettled = (commandId: BrowserCommandId, entry: CachedCommand): void => {
 		if (disposed) return;
 		settledCommands.delete(commandId);
@@ -465,6 +552,9 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const finishLease = (
 		record: BrowserLeaseRecord,
 		state: "expired" | "released",
@@ -476,6 +566,9 @@ export function createCodexWorkbenchGateway(
 		return result;
 	};
 
+	/**
+	 *
+	 */
 	const readBinding = (paneId: string) => {
 		try {
 			const binding = options.threadLink.read(paneId);
@@ -496,6 +589,9 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const stateFor = (
 		browserId: string,
 		paneId: string,
@@ -514,6 +610,9 @@ export function createCodexWorkbenchGateway(
 		return state;
 	};
 
+	/**
+	 *
+	 */
 	const expireLeaseIfDue = (): void => {
 		const current = leaseManager.current();
 		if (current === null || now() < current.lease.expiresAtMs) return;
@@ -521,6 +620,9 @@ export function createCodexWorkbenchGateway(
 		if (expired !== null) rememberLeaseReason(expired, "lease_expired");
 	};
 
+	/**
+	 *
+	 */
 	const leaseForSnapshot = (state: ConnectionState): BrowserCommandLease | null => {
 		expireLeaseIfDue();
 		const current = leaseManager.current();
@@ -533,6 +635,9 @@ export function createCodexWorkbenchGateway(
 		return state.lease;
 	};
 
+	/**
+	 *
+	 */
 	const projectionContext = (
 		state: ConnectionState,
 	): Parameters<BrowserProjectionPort["read"]>[0] => ({
@@ -554,6 +659,9 @@ export function createCodexWorkbenchGateway(
 		await options.projection.refresh(projectionContext(state));
 	};
 
+	/**
+	 *
+	 */
 	const snapshotFor = (state: ConnectionState): BrowserSnapshot => {
 		const binding = readBinding(state.paneId);
 		const lease = leaseForSnapshot(state);
@@ -594,6 +702,9 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const updateSnapshot = (state: ConnectionState): BrowserGatewaySnapshotMessage => {
 		const snapshot = snapshotFor(state);
 		if (state.lastSnapshot === null) state.sequence = 0;
@@ -614,10 +725,16 @@ export function createCodexWorkbenchGateway(
 		return message;
 	};
 
+	/**
+	 *
+	 */
 	const acknowledgeRequestIds = (requestIds: readonly JsonRpcRequestId[]): void => {
 		if (requestIds.length > 0) options.actions.ordinaryApprovals.acknowledgePublished(requestIds);
 	};
 
+	/**
+	 *
+	 */
 	const acknowledgeReadyTerminals = (): void => {
 		const candidates = options.actions.ordinaryApprovals.unpresentedTerminals();
 		const candidateSet = new Set(candidates);
@@ -638,6 +755,9 @@ export function createCodexWorkbenchGateway(
 			for (const requestId of requestIds) state.publishedTerminals.delete(requestId);
 	};
 
+	/**
+	 *
+	 */
 	const confirmPublished = (state: ConnectionState, payload: BrowserPublishedPayload): void => {
 		if (state.closed || connections.get(connectionKey(state.browserId, state.paneId)) !== state)
 			return;
@@ -645,6 +765,9 @@ export function createCodexWorkbenchGateway(
 		acknowledgeReadyTerminals();
 	};
 
+	/**
+	 *
+	 */
 	const publishConnection = (state: ConnectionState): void => {
 		if (state.closed || state.lastSnapshot === null) return;
 		const snapshot = snapshotFor(state);
@@ -672,6 +795,9 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const publishAll = (): void => {
 		if (disposed) return;
 		if (publishing) {
@@ -698,15 +824,24 @@ export function createCodexWorkbenchGateway(
 		identity,
 		now,
 		...(options.leaseLedger === undefined ? {} : { ledger: options.leaseLedger }),
+		/**
+		 *
+		 */
 		onFinish: (record) => rememberLeaseReason(record, "lease_expired"),
 		onChange: publishAll,
 	});
 
+	/**
+	 *
+	 */
 	const ensureAccountReadiness = (snapshot: BrowserSnapshot): void => {
 		if (!ACCOUNT_READINESS.has(snapshot.readiness.state))
 			throw new CodexWorkbenchGatewayError("not_ready", "The workbench is not login-capable.");
 	};
 
+	/**
+	 *
+	 */
 	const ensureThreadReadiness = (snapshot: BrowserSnapshot): void => {
 		if (!THREAD_READINESS.has(snapshot.readiness.state))
 			throw new CodexWorkbenchGatewayError(
@@ -715,6 +850,9 @@ export function createCodexWorkbenchGateway(
 			);
 	};
 
+	/**
+	 *
+	 */
 	const ensureLeaseBinding = (state: ConnectionState, record: BrowserLeaseRecord): void => {
 		const binding = readBinding(state.paneId);
 		if (
@@ -732,6 +870,9 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const validateThreadTarget = (command: OwnedBrowserCommand, snapshot: BrowserSnapshot): void => {
 		const link = executableLink(snapshot);
 		const target = commandThreadId(command);
@@ -746,30 +887,93 @@ export function createCodexWorkbenchGateway(
 	};
 
 	const dispatch = {
+		/**
+		 *
+		 */
 		accountLogin: (command, context) => options.actions.account.login(command, context),
+		/**
+		 *
+		 */
 		accountLoginCancel: (command, context) => options.actions.account.loginCancel(command, context),
+		/**
+		 *
+		 */
 		accountLogout: (command, context) => options.actions.account.logout(command, context),
+		/**
+		 *
+		 */
 		threadLinkCreate: (command, context) => options.actions.threadLinks.create(command, context),
+		/**
+		 *
+		 */
 		threadLinkRefresh: (command, context) => options.actions.threadLinks.refresh(command, context),
+		/**
+		 *
+		 */
 		threadLinkAttach: (command, context) => options.actions.threadLinks.attach(command, context),
+		/**
+		 *
+		 */
 		threadLinkRelink: (command, context) => options.actions.threadLinks.relink(command, context),
+		/**
+		 *
+		 */
 		start: (command, context) => options.actions.text.start(command, context),
+		/**
+		 *
+		 */
 		steer: (command, context) => options.actions.text.steer(command, context),
+		/**
+		 *
+		 */
 		interrupt: (command, context) => options.actions.text.interrupt(command, context),
+		/**
+		 *
+		 */
 		queueAdd: (command, context) => options.actions.queue.add(command, context),
+		/**
+		 *
+		 */
 		queueUpdate: (command, context) => options.actions.queue.update(command, context),
+		/**
+		 *
+		 */
 		queueDelete: (command, context) => options.actions.queue.delete(command, context),
+		/**
+		 *
+		 */
 		queueReorder: (command, context) => options.actions.queue.reorder(command, context),
+		/**
+		 *
+		 */
 		queueStart: (command, context) => options.actions.queue.start(command, context),
+		/**
+		 *
+		 */
 		approvalRespond: (command, context) =>
 			options.actions.ordinaryApprovals.resolve(command, context),
+		/**
+		 *
+		 */
 		dynamicApprovalRespond: (command, context) =>
 			options.actions.dynamicApprovals.resolve(command, context),
+		/**
+		 *
+		 */
 		realtimeStart: (command, context) => options.actions.realtime.start(command, context),
+		/**
+		 *
+		 */
 		realtimeAppendText: (command, context) => options.actions.realtime.appendText(command, context),
+		/**
+		 *
+		 */
 		realtimeStop: (command, context) => options.actions.realtime.stop(command, context),
 	} satisfies BrowserActionDispatch;
 
+	/**
+	 *
+	 */
 	const invoke = <Command extends OwnedBrowserCommand>(
 		command: Command,
 		context: BrowserActionContext,
@@ -781,6 +985,9 @@ export function createCodexWorkbenchGateway(
 			) => Promise<BrowserActionResult>
 		)(command, context);
 
+	/**
+	 *
+	 */
 	const refusal = async (
 		state: ConnectionState,
 		commandId: BrowserCommandId | null,
@@ -806,6 +1013,9 @@ export function createCodexWorkbenchGateway(
 		});
 	};
 
+	/**
+	 *
+	 */
 	const execute = async (
 		state: ConnectionState,
 		command: OwnedBrowserCommand,
@@ -959,6 +1169,9 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const command = async (
 		browserId: BrowserConnectionId,
 		value: unknown,
@@ -1029,6 +1242,9 @@ export function createCodexWorkbenchGateway(
 		return result;
 	};
 
+	/**
+	 *
+	 */
 	const accountRead = async (
 		browserId: BrowserConnectionId,
 		paneId: string,
@@ -1061,6 +1277,9 @@ export function createCodexWorkbenchGateway(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const claimLease = (
 		browserId: string,
 		paneId: string,
@@ -1085,6 +1304,9 @@ export function createCodexWorkbenchGateway(
 		return record.lease;
 	};
 
+	/**
+	 *
+	 */
 	const renewLease = (
 		browserId: string,
 		lease: Pick<BrowserCommandLease, "commandId" | "paneId" | "childId" | "epoch">,
@@ -1125,6 +1347,9 @@ export function createCodexWorkbenchGateway(
 		return renewed.lease;
 	};
 
+	/**
+	 *
+	 */
 	const releaseLease = (
 		browserId: string,
 		paneId: string,
@@ -1142,6 +1367,9 @@ export function createCodexWorkbenchGateway(
 		return record?.lease ?? null;
 	};
 
+	/**
+	 *
+	 */
 	const setMediaReady = (state: ConnectionState, ready: boolean): BrowserGatewaySnapshotMessage => {
 		stateFor(state.browserId, state.paneId, state.instance);
 		if (state.mediaReady !== ready) {
@@ -1151,6 +1379,9 @@ export function createCodexWorkbenchGateway(
 		return updateSnapshot(state);
 	};
 
+	/**
+	 *
+	 */
 	const connect = (
 		browserId: string,
 		paneId: string,
@@ -1210,6 +1441,9 @@ export function createCodexWorkbenchGateway(
 		return connectionFor(state);
 	};
 
+	/**
+	 *
+	 */
 	const terminate = (reason: BrowserDisconnectReason): void => {
 		if (disposed) return;
 		for (const state of connections.values()) {
@@ -1254,6 +1488,9 @@ export function createCodexWorkbenchGateway(
 		settledCommands.clear();
 	};
 
+	/**
+	 *
+	 */
 	const closeConnection = async (state: ConnectionState): Promise<void> => {
 		if (disposed || state.closed) {
 			await drainSettlements();
@@ -1278,6 +1515,9 @@ export function createCodexWorkbenchGateway(
 		await drainSettlements();
 	};
 
+	/**
+	 *
+	 */
 	const closeConnectionInstance = async (
 		browserId: string,
 		paneId: string,
@@ -1295,6 +1535,9 @@ export function createCodexWorkbenchGateway(
 		await closeConnection(state);
 	};
 
+	/**
+	 *
+	 */
 	const childExit = async (childId: ChildId, epoch: ChildEpoch): Promise<void> => {
 		if (disposed) {
 			await drainSettlements();
@@ -1309,11 +1552,17 @@ export function createCodexWorkbenchGateway(
 		await drainSettlements();
 	};
 
+	/**
+	 *
+	 */
 	const dispose = async (): Promise<void> => {
 		terminate("gateway_shutdown");
 		await drainSettlements();
 	};
 
+	/**
+	 *
+	 */
 	const subscribe = (
 		browserId: string,
 		paneId: string,
@@ -1325,19 +1574,37 @@ export function createCodexWorkbenchGateway(
 		return () => state.listeners.delete(listener);
 	};
 
+	/**
+	 *
+	 */
 	const connectionFor = (state: ConnectionState): BrowserWorkbenchConnection =>
 		Object.freeze({
 			browserId: state.browserId,
 			paneId: state.paneId,
 			instance: state.instance,
+			/**
+			 *
+			 */
 			snapshot: () => {
 				const current = stateFor(state.browserId, state.paneId, state.instance);
 				return updateSnapshot(current);
 			},
+			/**
+			 *
+			 */
 			refreshProjection: () =>
 				refreshProjection(stateFor(state.browserId, state.paneId, state.instance)),
+			/**
+			 *
+			 */
 			confirmPublished: (payload: BrowserPublishedPayload) => confirmPublished(state, payload),
+			/**
+			 *
+			 */
 			claimLease: () => claimLease(state.browserId, state.paneId, state.instance),
+			/**
+			 *
+			 */
 			renewLease: () => {
 				stateFor(state.browserId, state.paneId, state.instance);
 				expireLeaseIfDue();
@@ -1345,12 +1612,30 @@ export function createCodexWorkbenchGateway(
 					throw new CodexWorkbenchGatewayError("lease_required", "No command lease is active.");
 				return renewLease(state.browserId, state.lease, state.instance);
 			},
+			/**
+			 *
+			 */
 			releaseLease: () => releaseLease(state.browserId, state.paneId, undefined, state.instance),
+			/**
+			 *
+			 */
 			setMediaReady: (ready: boolean) => setMediaReady(state, ready),
+			/**
+			 *
+			 */
 			accountRead: () => accountRead(state.browserId, state.paneId, state.instance),
+			/**
+			 *
+			 */
 			command: (value: unknown) => command(state.browserId, value, state.paneId, state.instance),
+			/**
+			 *
+			 */
 			subscribe: (listener: (message: BrowserGatewayMessage) => void) =>
 				subscribe(state.browserId, state.paneId, listener, state.instance),
+			/**
+			 *
+			 */
 			close: () => closeConnection(state),
 		});
 
@@ -1370,6 +1655,9 @@ export function createCodexWorkbenchGateway(
 
 	return Object.freeze({
 		connect,
+		/**
+		 *
+		 */
 		snapshot: (browserId: string, paneId: string) => updateSnapshot(stateFor(browserId, paneId)),
 		claimLease,
 		renewLease,

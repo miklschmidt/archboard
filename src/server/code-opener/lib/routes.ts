@@ -16,20 +16,20 @@ import {
 	type CodeBinding,
 	type CodeTargetFailureCode,
 	type OpenerSelection,
-} from "../../../shared/code-target/index.js";
+} from "@/shared/code-target";
 import {
 	resolveLocalCodeTarget,
 	resolveRegisteredCheckout,
 	snapshotCheckoutAccess,
 	type LocalCodeTargetResult,
-} from "../../../runtime/code-target/index.js";
-import { githubUrlForBinding } from "../../../runtime/code-target/presentation.js";
-import { resolveBoard } from "../../../runtime/engine/board-io.js";
-import { readElementMetadata } from "../../../runtime/engine/metadata.js";
-import { checkBrowserCsrf, type BrowserCsrfKind } from "./browser-csrf.js";
-import { readOpenerSelection, resetOpenerSelection, saveOpenerSelection } from "./configuration.js";
-import { launchOpener, resolveOpenerCommand, type LaunchResult } from "./launch.js";
-import { planOpenerCommand, validateOpenerSelection, type OpenerPlan } from "./planning.js";
+} from "@/runtime/code-target";
+import { githubUrlForBinding } from "@/runtime/code-target/presentation";
+import { resolveBoard } from "@/runtime/engine/board-io";
+import { readElementMetadata } from "@/runtime/engine/metadata";
+import { checkBrowserCsrf, type BrowserCsrfKind } from "@/server/code-opener/lib/browser-csrf";
+import { readOpenerSelection, resetOpenerSelection, saveOpenerSelection } from "@/server/code-opener/lib/configuration";
+import { launchOpener, resolveOpenerCommand, type LaunchResult } from "@/server/code-opener/lib/launch";
+import { planOpenerCommand, validateOpenerSelection, type OpenerPlan } from "@/server/code-opener/lib/planning";
 
 type BindingLookup =
 	| { ok: true; binding: CodeBinding }
@@ -50,6 +50,9 @@ const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
 	"stream.encoding.set",
 	"stream.not.readable",
 ]);
+/**
+ *
+ */
 const pass: RequestHandler = (_request, _response, next) => next();
 
 export interface CodeOpenerRouteDependencies {
@@ -72,6 +75,9 @@ export interface CodeOpenerRouteDependencies {
 	): Promise<T>;
 }
 
+/**
+ *
+ */
 function canonicalBinding(boardKey: string, elementId: string): BindingLookup {
 	let content;
 	try {
@@ -95,16 +101,28 @@ function canonicalBinding(boardKey: string, elementId: string): BindingLookup {
 
 const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 	bindingForElement: canonicalBinding,
+	/**
+	 *
+	 */
 	resolveTarget: async (binding, signal) =>
 		resolveLocalCodeTarget(
 			binding,
 			await snapshotCheckoutAccess({ ...(signal ? { signal } : {}), bindings: [binding] }),
 		),
 	launch: launchOpener,
+	/**
+	 *
+	 */
 	runCheckout: async (_request, _response, _name, work) => work(new AbortController().signal),
+	/**
+	 *
+	 */
 	runMutation: async (_request, _name, work) => work(new AbortController().signal),
 };
 
+/**
+ *
+ */
 function guard(kind: BrowserCsrfKind) {
 	return (request: Request, response: Response, next: NextFunction): void => {
 		response.removeHeader("Access-Control-Allow-Origin");
@@ -126,6 +144,9 @@ function guard(kind: BrowserCsrfKind) {
 	};
 }
 
+/**
+ *
+ */
 function asyncEndpoint(
 	handler: (request: Request, response: Response) => Promise<void>,
 ): RequestHandler {
@@ -134,6 +155,9 @@ function asyncEndpoint(
 	};
 }
 
+/**
+ *
+ */
 function statusFor(code: CodeTargetFailureCode): number {
 	if (code === "CROSS_ORIGIN_REFUSED") return 403;
 	if (code === "BOARD_NOT_FOUND" || code === "ELEMENT_NOT_FOUND") return 404;
@@ -142,6 +166,9 @@ function statusFor(code: CodeTargetFailureCode): number {
 	return 422;
 }
 
+/**
+ *
+ */
 function sendFailure(
 	response: Response,
 	failure: { code: CodeTargetFailureCode; error: string },
@@ -163,6 +190,9 @@ function sendFailure(
 	});
 }
 
+/**
+ *
+ */
 function bodyFailure(): ErrorRequestHandler {
 	return (error, _request, response, next) => {
 		const kind =
@@ -174,6 +204,9 @@ function bodyFailure(): ErrorRequestHandler {
 	};
 }
 
+/**
+ *
+ */
 export function isCodeOpenerBodyRoute(method: string, pathname: string): boolean {
 	return (
 		(method === "PUT" && pathname === "/api/settings/opener") ||
@@ -182,6 +215,9 @@ export function isCodeOpenerBodyRoute(method: string, pathname: string): boolean
 	);
 }
 
+/**
+ *
+ */
 export function createCodeOpenerPreguard(): Router {
 	const router = Router();
 	const body = json({ limit: "32kb" });
@@ -194,6 +230,9 @@ export function createCodeOpenerPreguard(): Router {
 	return router;
 }
 
+/**
+ *
+ */
 async function planAndLaunch(
 	selection: OpenerSelection,
 	target: string,
@@ -203,6 +242,9 @@ async function planAndLaunch(
 	return plan.ok ? launch(plan.command) : plan;
 }
 
+/**
+ *
+ */
 export function createCodeOpenerRouter(
 	overrides: Partial<CodeOpenerRouteDependencies> = {},
 ): Router {

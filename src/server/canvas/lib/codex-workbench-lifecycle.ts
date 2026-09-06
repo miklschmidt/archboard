@@ -1,47 +1,47 @@
-import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
-import type { CoordinatorCallbacks } from "../../../runtime/codex-coordinator-callbacks/index.js";
-import type { CoordinatorToolDispatcher } from "../../../runtime/codex-coordinator-tools/index.js";
+import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
+import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
+import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
 import type {
 	CodexCoordinator,
 	CoordinatorPersistedState,
-} from "../../../runtime/codex-coordinator/index.js";
-import type { CodexDynamicTools } from "../../../runtime/codex-dynamic-tools/index.js";
-import type { CodexEpochStore } from "../../../runtime/codex-epoch/index.js";
+} from "@/runtime/codex-coordinator";
+import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
+import type { CodexEpochStore } from "@/runtime/codex-epoch";
 import {
 	CodexProcessError,
 	type CodexProcess,
 	type CodexProcessChild,
 	type CodexProcessSnapshot,
-} from "../../../runtime/codex-process/index.js";
-import type { CodexRealtimeAdapter } from "../../../runtime/codex-realtime/index.js";
-import type { SemanticContextPublisher } from "../../../runtime/codex-semantic-context/index.js";
+} from "@/runtime/codex-process";
+import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
+import type { SemanticContextPublisher } from "@/runtime/codex-semantic-context";
 import {
 	CODEX_SESSION_CONTROL,
 	type CodexSession,
 	type ControlledCodexSession,
-} from "../../../runtime/codex-session/index.js";
-import type { CodexSpokenApprovalGate } from "../../../runtime/codex-spoken-approval/index.js";
-import type { CodexThreadContextController } from "../../../runtime/codex-thread-context/index.js";
-import type { CodexThreadLinkPort } from "../../../runtime/codex-thread-link/index.js";
-import type { CodexTransport } from "../../../runtime/codex-transport/index.js";
-import type { CodexWorkhorseOperations } from "../../../runtime/codex-workhorse-operations/index.js";
-import type { CodexWorkhorseQueue } from "../../../runtime/codex-workhorse-queue/index.js";
-import type { CodexWorkhorseStart } from "../../../runtime/codex-workhorse-start/index.js";
+} from "@/runtime/codex-session";
+import type { CodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
+import type { CodexThreadContextController } from "@/runtime/codex-thread-context";
+import type { CodexThreadLinkPort } from "@/runtime/codex-thread-link";
+import type { CodexTransport } from "@/runtime/codex-transport";
+import type { CodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
+import type { CodexWorkhorseQueue } from "@/runtime/codex-workhorse-queue";
+import type { CodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
 import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthorities,
 	IdentityLedger,
 	OperationId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { CodexWorkbenchGateway } from "../../codex-workbench/index.js";
-import { CodexWorkbenchCompositionError } from "./codex-workbench-error.js";
-import { CODEX_GENERATION_REGISTRATION_KEYS } from "./codex-workbench-generation-contract.js";
+} from "@/shared/codex-workbench-identity";
+import type { CodexWorkbenchGateway } from "@/server/codex-workbench";
+import { CodexWorkbenchCompositionError } from "@/server/canvas/lib/codex-workbench-error";
+import { CODEX_GENERATION_REGISTRATION_KEYS } from "@/server/canvas/lib/codex-workbench-generation-contract";
 import {
 	createCodexWorkbenchRequestRouter,
 	type CodexWorkbenchRequestOwners,
 	type CodexWorkbenchRequestRouter,
-} from "./codex-workbench-routing.js";
+} from "@/server/canvas/lib/codex-workbench-routing";
 
 const CODEX_WORKBENCH_OWNER = "archboard-canvas-codex-workbench" as const;
 
@@ -158,6 +158,9 @@ class GenerationInstallError extends Error {
 	override readonly name = "CodexWorkbenchGenerationInstallError";
 	override readonly cause: unknown;
 
+	/**
+	 *
+	 */
 	constructor(
 		readonly stage: string,
 		readonly cleanupFailure: Error | null,
@@ -175,15 +178,24 @@ class GenerationInstallError extends Error {
 	}
 }
 
+/**
+ *
+ */
 function failureMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ *
+ */
 function appendFailure(current: Error | null, next: unknown, message: string): Error {
 	const nextError = next instanceof Error ? next : new Error(String(next));
 	return current === null ? nextError : new AggregateError([current, nextError], message);
 }
 
+/**
+ *
+ */
 function emptyRegistrations(): GenerationRegistrations {
 	return {
 		transportRequest: null,
@@ -212,6 +224,9 @@ function releaseRegistrations(registrations: GenerationRegistrations, label: str
 	return failure;
 }
 
+/**
+ *
+ */
 async function settleChildExit(
 	state: GenerationState,
 	child: Parameters<CodexWorkbenchGateway["childExit"]>[0],
@@ -239,6 +254,9 @@ async function settleChildExit(
 	}
 }
 
+/**
+ *
+ */
 function installRegistrations(
 	state: GenerationState,
 	router: CodexWorkbenchRequestRouter,
@@ -298,6 +316,9 @@ function createCodexWorkbenchGenerationLifecycle(
 		childSettlement: null,
 	};
 
+	/**
+	 *
+	 */
 	const onNotification: Parameters<CodexTransport["onServerNotification"]>[0] = (event) => {
 		if (!state.active || state.stopped) {
 			return;
@@ -310,6 +331,9 @@ function createCodexWorkbenchGenerationLifecycle(
 		components.spokenApproval.onNotification(event);
 	};
 	const activeRouter: CodexWorkbenchRequestRouter = {
+		/**
+		 *
+		 */
 		route: (request) => {
 			if (!state.active || state.stopped) {
 				return;
@@ -317,6 +341,9 @@ function createCodexWorkbenchGenerationLifecycle(
 			router.route(request);
 		},
 	};
+	/**
+	 *
+	 */
 	const deactivate = (): void => {
 		state.active = false;
 		const registrations = state.registrations;
@@ -326,6 +353,9 @@ function createCodexWorkbenchGenerationLifecycle(
 			throw failure;
 		}
 	};
+	/**
+	 *
+	 */
 	const activate = async (): Promise<void> => {
 		state.assertActivationCurrent();
 		if (state.stopped) {
@@ -362,6 +392,9 @@ function createCodexWorkbenchGenerationLifecycle(
 			throw failure;
 		}
 	};
+	/**
+	 *
+	 */
 	const retireChild = (exit: CodexTransportExit): Promise<void> => {
 		if (state.childSettlement !== null) {
 			return state.childSettlement;
@@ -371,6 +404,9 @@ function createCodexWorkbenchGenerationLifecycle(
 		return settlement;
 	};
 
+	/**
+	 *
+	 */
 	const stop = (reason: CodexWorkbenchStopReason): Promise<void> => {
 		if (state.stopComplete) {
 			return Promise.resolve();
@@ -387,6 +423,9 @@ function createCodexWorkbenchGenerationLifecycle(
 		}
 		const cause = reason === "shutdown" ? "host_shutdown" : "child_disconnected";
 		const operation = (async (): Promise<void> => {
+			/**
+			 *
+			 */
 			const attempt = async (cleanup: () => Promise<unknown> | void): Promise<void> => {
 				try {
 					await cleanup();
@@ -428,6 +467,9 @@ function createCodexWorkbenchGenerationLifecycle(
 		return operation;
 	};
 
+	/**
+	 *
+	 */
 	const finishStop = (): void => {
 		if (state.finishComplete) {
 			return;
@@ -542,10 +584,16 @@ interface CodexWorkbenchOwnerPublication {
 
 const releasedSnapshots = new WeakMap<CodexWorkbenchOwnerRuntime, CodexWorkbenchSnapshot>();
 
+/**
+ *
+ */
 function emptyPublication(): CodexWorkbenchOwnerPublication {
 	return { generation: 0, state: "idle", failure: null, current: null, runtime: null };
 }
 
+/**
+ *
+ */
 function isCurrentRuntime(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -553,6 +601,9 @@ function isCurrentRuntime(
 	return published.runtime === runtime && !runtime.released;
 }
 
+/**
+ *
+ */
 function ownsTicket(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -561,11 +612,17 @@ function ownsTicket(
 	return isCurrentRuntime(published, runtime) && runtime.operation === ticket;
 }
 
+/**
+ *
+ */
 function reserveTicket(runtime: CodexWorkbenchOwnerRuntime): number {
 	runtime.operation += 1;
 	return runtime.operation;
 }
 
+/**
+ *
+ */
 function snapshot(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -594,6 +651,9 @@ function snapshot(
 	});
 }
 
+/**
+ *
+ */
 function terminalProcessAcquisitionFailure(current: CodexProcessSnapshot): Error | null {
 	if (current.state !== "terminal_failure") {
 		return null;
@@ -607,6 +667,9 @@ function terminalProcessAcquisitionFailure(current: CodexProcessSnapshot): Error
 	});
 }
 
+/**
+ *
+ */
 function revokePublicDispatch(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -616,6 +679,9 @@ function revokePublicDispatch(
 	}
 }
 
+/**
+ *
+ */
 function releaseRegistration(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -649,6 +715,9 @@ function releaseRegistration(
 	published.runtime = null;
 }
 
+/**
+ *
+ */
 function stopProcess(
 	local: OwnerLocalState,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -710,6 +779,9 @@ interface OwnerLocalState {
 	restart: (() => void) | null;
 }
 
+/**
+ *
+ */
 function ownsProcessChild(process: CodexProcess, child: CodexProcessChild): boolean {
 	const current = process.currentChild();
 	return (
@@ -721,6 +793,9 @@ function ownsProcessChild(process: CodexProcess, child: CodexProcessChild): bool
 	);
 }
 
+/**
+ *
+ */
 function ownsTransaction(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -749,6 +824,9 @@ function ownsTransaction(
 	}
 }
 
+/**
+ *
+ */
 function assertTransaction(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -761,6 +839,9 @@ function assertTransaction(
 	}
 }
 
+/**
+ *
+ */
 function invalidateTransaction(local: OwnerLocalState): void {
 	if (local.transaction !== null) {
 		local.transaction.phase = "invalidated";
@@ -768,6 +849,9 @@ function invalidateTransaction(local: OwnerLocalState): void {
 	local.transaction = null;
 }
 
+/**
+ *
+ */
 function ownGeneration(
 	local: OwnerLocalState,
 	generation: CodexWorkbenchGeneration,
@@ -781,6 +865,9 @@ function ownGeneration(
 	return resource;
 }
 
+/**
+ *
+ */
 function beginGenerationCleanup(
 	local: OwnerLocalState,
 	generation: CodexWorkbenchGeneration,
@@ -820,6 +907,9 @@ function beginGenerationCleanup(
 	return cleanup;
 }
 
+/**
+ *
+ */
 function attachExitBridge(runtime: CodexWorkbenchOwnerRuntime, transport: CodexTransport): void {
 	if (runtime.transport !== transport) {
 		throw new CodexWorkbenchCompositionError(
@@ -839,6 +929,9 @@ function attachExitBridge(runtime: CodexWorkbenchOwnerRuntime, transport: CodexT
 	});
 }
 
+/**
+ *
+ */
 function generationInput(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -866,6 +959,9 @@ function generationInput(
 				: "login-capable"
 			: null,
 		adoptedCoordinator,
+		/**
+		 *
+		 */
 		assertActivationCurrent: () =>
 			assertTransaction(
 				published,
@@ -874,6 +970,9 @@ function generationInput(
 				transaction,
 				"A retired Codex activation cannot mutate production readiness.",
 			),
+		/**
+		 *
+		 */
 		markSessionReady: (accountReady: boolean) => {
 			assertTransaction(
 				published,
@@ -885,10 +984,16 @@ function generationInput(
 			readiness.initialized = true;
 			readiness.accountReady = accountReady;
 		},
+		/**
+		 *
+		 */
 		shutdownOwner: () => terminalShutdown(published, runtime, local),
 	});
 }
 
+/**
+ *
+ */
 function terminalShutdown(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -949,6 +1054,9 @@ function terminalShutdown(
 	return operation;
 }
 
+/**
+ *
+ */
 function observeChildExit(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -1004,18 +1112,27 @@ function observeChildExit(
 	local.restart?.();
 }
 
+/**
+ *
+ */
 function replaceExitHandler(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
 	local: OwnerLocalState,
 ): CodexWorkbenchExitHandler {
 	const handler: CodexWorkbenchExitHandler = {
+		/**
+		 *
+		 */
 		handle: (event) => observeChildExit(published, runtime, local, event),
 	};
 	runtime.exitBridge.handler = handler;
 	return handler;
 }
 
+/**
+ *
+ */
 function publishReadySlots(
 	published: CodexWorkbenchOwnerPublication,
 	runtime: CodexWorkbenchOwnerRuntime,
@@ -1023,9 +1140,21 @@ function publishReadySlots(
 	generation: CodexWorkbenchGeneration,
 ): CodexWorkbenchOwnerSlots {
 	const slots: CodexWorkbenchOwnerSlots = {
+		/**
+		 *
+		 */
 		start: () => Promise.resolve(snapshot(published, runtime)),
+		/**
+		 *
+		 */
 		shutdown: () => terminalShutdown(published, runtime, local),
+		/**
+		 *
+		 */
 		snapshot: () => snapshot(published, runtime),
+		/**
+		 *
+		 */
 		gateway: () => {
 			if (!isCurrentRuntime(published, runtime) || published.state !== "ready") {
 				throw new CodexWorkbenchCompositionError(
@@ -1093,6 +1222,9 @@ function installCodexWorkbenchOwnerLifecycle(
 	published.runtime = runtime;
 	replaceExitHandler(published, runtime, local);
 	local.processChildUnsubscribe = runtime.process.onChild((child) => local.nextChild?.(child));
+	/**
+	 *
+	 */
 	const dispatchSlots = (): CodexWorkbenchOwnerSlots => {
 		if (published.current === null) {
 			throw new CodexWorkbenchCompositionError(
@@ -1104,6 +1236,9 @@ function installCodexWorkbenchOwnerLifecycle(
 	};
 
 	const initialSlots: CodexWorkbenchOwnerSlots = {
+		/**
+		 *
+		 */
 		start: () => {
 			if (local.startPromise !== null) {
 				return local.startPromise;
@@ -1138,6 +1273,9 @@ function installCodexWorkbenchOwnerLifecycle(
 					rejectChild = reject;
 				});
 				let acceptedChild = false;
+				/**
+				 *
+				 */
 				const receiveChild = (child: CodexProcessChild) => {
 					if (acceptedChild) {
 						return;
@@ -1181,6 +1319,9 @@ function installCodexWorkbenchOwnerLifecycle(
 					}
 				};
 				local.nextChild = receiveChild;
+				/**
+				 *
+				 */
 				const observeProcess = (current: CodexProcessSnapshot): void => {
 					if (!ownsTicket(published, runtime, ticket) || local.nextChild !== receiveChild) {
 						return;
@@ -1320,8 +1461,17 @@ function installCodexWorkbenchOwnerLifecycle(
 			local.startPromise = operation;
 			return operation;
 		},
+		/**
+		 *
+		 */
 		shutdown: () => terminalShutdown(published, runtime, local),
+		/**
+		 *
+		 */
 		snapshot: () => snapshot(published, runtime),
+		/**
+		 *
+		 */
 		gateway: () => {
 			throw new CodexWorkbenchCompositionError(
 				"not_started",
@@ -1330,6 +1480,9 @@ function installCodexWorkbenchOwnerLifecycle(
 		},
 	};
 	published.current = initialSlots;
+	/**
+	 *
+	 */
 	local.restart = () => {
 		if (!isCurrentRuntime(published, runtime) || runtime.released) {
 			return;
@@ -1338,12 +1491,24 @@ function installCodexWorkbenchOwnerLifecycle(
 		void initialSlots.start().catch(() => undefined);
 	};
 	return Object.freeze({
+		/**
+		 *
+		 */
 		start: () => dispatchSlots().start(),
 		// Keep terminal ownership in this returned handle after public dispatch
 		// is revoked. The Canvas lifetime may need one force retry to prove the
 		// detached process group is gone.
+		/**
+		 *
+		 */
 		shutdown: () => terminalShutdown(published, runtime, local),
+		/**
+		 *
+		 */
 		snapshot: () => snapshot(published, runtime),
+		/**
+		 *
+		 */
 		gateway: () => dispatchSlots().gateway(),
 	});
 }

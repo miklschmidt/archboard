@@ -28,12 +28,18 @@ interface RendererFixtureTestHooks {
 class RendererFixtureError extends Error {
 	readonly code = "RENDERER_FIXTURE_INVALID_BUILD" as const;
 
+	/**
+	 *
+	 */
 	constructor(message: string, options?: ErrorOptions) {
 		super(message, options);
 		this.name = "RendererFixtureError";
 	}
 }
 
+/**
+ *
+ */
 function canonicalTarget(target: string, description: string, kind: "file" | "directory"): string {
 	let canonical: string;
 	try {
@@ -53,10 +59,16 @@ function canonicalTarget(target: string, description: string, kind: "file" | "di
 	return canonical;
 }
 
+/**
+ *
+ */
 function isBelow(root: string, target: string): boolean {
 	return target.startsWith(`${root}${sep}`);
 }
 
+/**
+ *
+ */
 function rendererFile(
 	pathname: string,
 	canonicalRendererEntry: string,
@@ -115,6 +127,9 @@ async function createRendererFixture(
 			hostname: "127.0.0.1",
 			port: 0,
 			development: false,
+			/**
+			 *
+			 */
 			fetch(request) {
 				const file = rendererFile(
 					new URL(request.url).pathname,
@@ -140,7 +155,13 @@ async function createRendererFixture(
 		const createdFixture: RendererFixture = Object.freeze({
 			port,
 			url: `http://127.0.0.1:${port}/renderer.html`,
+			/**
+			 *
+			 */
 			listening: () => !closed,
+			/**
+			 *
+			 */
 			close: async () => {
 				if (closed) {
 					return;

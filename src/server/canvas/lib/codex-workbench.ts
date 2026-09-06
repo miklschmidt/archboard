@@ -2,23 +2,23 @@ import {
 	createCodexApprovalBroker,
 	type CodexApprovalBroker,
 	type CodexApprovalBrokerOptions,
-} from "../../../runtime/codex-approvals/index.js";
+} from "@/runtime/codex-approvals";
 import {
 	createCodexCoordinatorCallbacks,
 	type CoordinatorCallbackOptions,
 	type CoordinatorCallbacks,
-} from "../../../runtime/codex-coordinator-callbacks/index.js";
+} from "@/runtime/codex-coordinator-callbacks";
 import {
 	COORDINATOR_DYNAMIC_DISPATCHERS,
 	createCodexCoordinatorTools,
 	type CodexCoordinatorToolsOptions,
 	type CoordinatorToolDispatcher,
-} from "../../../runtime/codex-coordinator-tools/index.js";
+} from "@/runtime/codex-coordinator-tools";
 import {
 	createCodexCoordinator,
 	type CodexCoordinator,
 	type CodexCoordinatorOptions,
-} from "../../../runtime/codex-coordinator/index.js";
+} from "@/runtime/codex-coordinator";
 import {
 	createCodexDynamicTools,
 	type CodexDynamicTools,
@@ -28,88 +28,88 @@ import {
 	type DynamicThreadAuthorityPort,
 	type DynamicToolApprovalPort,
 	type DynamicToolLifecyclePort,
-} from "../../../runtime/codex-dynamic-tools/index.js";
+} from "@/runtime/codex-dynamic-tools";
 import {
 	createCodexEpochStore,
 	type CodexEpochStore,
 	type CodexEpochStoreOptions,
-} from "../../../runtime/codex-epoch/index.js";
+} from "@/runtime/codex-epoch";
 import {
 	createCodexProcess,
 	type CodexProcessOptions,
-} from "../../../runtime/codex-process/index.js";
+} from "@/runtime/codex-process";
 import {
 	CODEX_SESSION_CONTROL,
 	createCodexSession,
 	type CodexSessionOptions,
 	type ControlledCodexSession,
-} from "../../../runtime/codex-session/index.js";
+} from "@/runtime/codex-session";
 import {
 	createCodexRealtimeAdapter,
 	type CodexRealtimeAdapter,
 	type CodexRealtimeAdapterOptions,
-} from "../../../runtime/codex-realtime/index.js";
+} from "@/runtime/codex-realtime";
 import {
 	createSemanticContextPublisher,
 	type SemanticContextPublisher,
 	type SemanticContextPublisherOptions,
-} from "../../../runtime/codex-semantic-context/index.js";
+} from "@/runtime/codex-semantic-context";
 import {
 	createCodexSpokenApprovalGate,
 	type CodexSpokenApprovalGate,
 	type CodexSpokenApprovalGateOptions,
-} from "../../../runtime/codex-spoken-approval/index.js";
+} from "@/runtime/codex-spoken-approval";
 import {
 	createCodexThreadContextController,
 	type CodexThreadContextController,
 	type CodexThreadContextControllerOptions,
-} from "../../../runtime/codex-thread-context/index.js";
+} from "@/runtime/codex-thread-context";
 import {
 	createCodexThreadLink,
 	type CodexThreadLinkOptions,
 	type CodexThreadLinkPort,
-} from "../../../runtime/codex-thread-link/index.js";
+} from "@/runtime/codex-thread-link";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
-} from "../../../runtime/codex-thread-tools/index.js";
+} from "@/runtime/codex-thread-tools";
 import {
 	createCodexTransport,
 	type CodexTransport,
 	type CodexTransportOptions,
-} from "../../../runtime/codex-transport/index.js";
+} from "@/runtime/codex-transport";
 import type {
 	DynamicServerRequest,
 	TransportServerRequest,
-} from "../../../runtime/codex-transport/server-requests.js";
+} from "@/runtime/codex-transport/server-requests";
 import {
 	createCodexWorkhorseOperations,
 	type CodexWorkhorseOperations,
 	type WorkhorseOperationOptions,
-} from "../../../runtime/codex-workhorse-operations/index.js";
+} from "@/runtime/codex-workhorse-operations";
 import {
 	createCodexWorkhorseQueue,
 	type CodexWorkhorseQueue,
 	type WorkhorseQueueOptions,
-} from "../../../runtime/codex-workhorse-queue/index.js";
+} from "@/runtime/codex-workhorse-queue";
 import {
 	createCodexWorkhorseStart,
 	type CodexWorkhorseStart,
 	type CodexWorkhorseStartOptions,
-} from "../../../runtime/codex-workhorse-start/index.js";
+} from "@/runtime/codex-workhorse-start";
 import {
 	createIdentityAuthorities,
 	createIdentityLedger,
 	type IdentityAuthorities,
 	type IdentityLedger,
 	type OperationId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import {
 	createCodexWorkbenchGateway,
 	type CodexWorkbenchGateway,
 	type CodexWorkbenchGatewayOptions,
-} from "../../codex-workbench/index.js";
-import { CodexWorkbenchCompositionError } from "./codex-workbench-error.js";
+} from "@/server/codex-workbench";
+import { CodexWorkbenchCompositionError } from "@/server/canvas/lib/codex-workbench-error";
 import {
 	CODEX_WORKBENCH_OWNER,
 	createCodexWorkbenchGenerationLifecycle,
@@ -126,10 +126,13 @@ import {
 	type CodexWorkbenchStableKernel,
 	type CodexWorkbenchState,
 	type CodexWorkbenchStopReason,
-} from "./codex-workbench-lifecycle.js";
+} from "@/server/canvas/lib/codex-workbench-lifecycle";
 
 type ComponentName = keyof CodexWorkbenchComponents;
 
+/**
+ *
+ */
 function isCoordinatorToolRequest(
 	request: TransportServerRequest,
 ): request is Parameters<CoordinatorToolDispatcher["dispatch"]>[0] {
@@ -142,6 +145,9 @@ type CodexWorkbenchComponentFactories = {
 	) => CodexWorkbenchComponents[Name];
 };
 
+/**
+ *
+ */
 function installDynamicRegistrations(transport: CodexTransport): void {
 	transport.registerDynamicDispatcher({
 		owner: "codex-dynamic-tools",
@@ -245,6 +251,9 @@ interface ProductionCodexWorkbenchBindings {
 	) => Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink">;
 }
 
+/**
+ *
+ */
 function requireComponent<Name extends ComponentName>(
 	created: Readonly<Partial<CodexWorkbenchComponents>>,
 	name: Name,
@@ -268,8 +277,17 @@ function createProductionCodexWorkbenchFactories(
 	initialIdentity: IdentityAuthorities | null = null,
 ): CodexWorkbenchComponentFactories {
 	return Object.freeze({
+		/**
+		 *
+		 */
 		identity: () => initialIdentity ?? createIdentityAuthorities(identityLedger),
+		/**
+		 *
+		 */
 		epoch: (created) => createCodexEpochStore(bindings.epoch(created)),
+		/**
+		 *
+		 */
 		transport: (created) => {
 			const identity = requireComponent(created, "identity").identity;
 			if (kernel !== null) {
@@ -283,6 +301,9 @@ function createProductionCodexWorkbenchFactories(
 			installDynamicRegistrations(transport);
 			return transport;
 		},
+		/**
+		 *
+		 */
 		session: (created) =>
 			createCodexSession({
 				...bindings.session(created),
@@ -291,12 +312,18 @@ function createProductionCodexWorkbenchFactories(
 				listenerOwnership: "composition",
 				...(adoptedSession === null ? {} : { adoptedReadiness: adoptedSession }),
 			}),
+		/**
+		 *
+		 */
 		threadLink: (created) =>
 			createCodexThreadLink({
 				...bindings.threadLink(created),
 				session: requireComponent(created, "session"),
 				epoch: requireComponent(created, "epoch"),
 			}),
+		/**
+		 *
+		 */
 		workhorse: (created) =>
 			createCodexWorkhorseStart({
 				...bindings.workhorse(created),
@@ -306,14 +333,23 @@ function createProductionCodexWorkbenchFactories(
 				identity: requireComponent(created, "identity").identity,
 				operation: requireComponent(created, "identity").operation,
 			}),
+		/**
+		 *
+		 */
 		semanticPublisher: (created) =>
 			createSemanticContextPublisher(bindings.semanticPublisher(created)),
+		/**
+		 *
+		 */
 		realtime: (created) =>
 			createCodexRealtimeAdapter({
 				...bindings.realtime(created),
 				session: requireComponent(created, "session"),
 				identity: requireComponent(created, "identity").identity,
 			}),
+		/**
+		 *
+		 */
 		approvals: (created) =>
 			createCodexApprovalBroker({
 				...bindings.approvals(created),
@@ -321,6 +357,9 @@ function createProductionCodexWorkbenchFactories(
 				identity: requireComponent(created, "identity").identity,
 				listenerOwnership: "composition",
 			}),
+		/**
+		 *
+		 */
 		dynamicTools: (created) =>
 			createCodexDynamicTools({
 				...bindings.dynamicTools(created),
@@ -334,6 +373,9 @@ function createProductionCodexWorkbenchFactories(
 				operationId: bindings.dynamicAdapters.operationId(created),
 				lifecycle: bindings.dynamicAdapters.lifecycle(created),
 			}),
+		/**
+		 *
+		 */
 		semanticDelivery: (created) =>
 			createCodexThreadContextController({
 				...bindings.semanticDelivery(created),
@@ -342,6 +384,9 @@ function createProductionCodexWorkbenchFactories(
 				identity: requireComponent(created, "identity").identity,
 				epoch: requireComponent(created, "epoch"),
 			}),
+		/**
+		 *
+		 */
 		coordinator: (created) =>
 			createCodexCoordinator({
 				...bindings.coordinator(created),
@@ -350,6 +395,9 @@ function createProductionCodexWorkbenchFactories(
 				epoch: requireComponent(created, "epoch"),
 				identity: requireComponent(created, "identity").identity,
 			}),
+		/**
+		 *
+		 */
 		queue: (created) => {
 			const operation = requireComponent(created, "identity").operation;
 			return createCodexWorkhorseQueue({
@@ -362,6 +410,9 @@ function createProductionCodexWorkbenchFactories(
 				},
 			});
 		},
+		/**
+		 *
+		 */
 		operations: (created) =>
 			createCodexWorkhorseOperations({
 				...bindings.operations(created),
@@ -372,6 +423,9 @@ function createProductionCodexWorkbenchFactories(
 				identity: requireComponent(created, "identity").identity,
 				operation: requireComponent(created, "identity").operation,
 			}),
+		/**
+		 *
+		 */
 		spokenApproval: (created) =>
 			createCodexSpokenApprovalGate({
 				...bindings.spokenApproval(created),
@@ -381,6 +435,9 @@ function createProductionCodexWorkbenchFactories(
 				session: requireComponent(created, "session"),
 				identity: requireComponent(created, "identity").identity,
 			}),
+		/**
+		 *
+		 */
 		coordinatorTools: (created) => {
 			const dispatcher = createCodexCoordinatorTools({
 				...bindings.coordinatorTools(created),
@@ -390,11 +447,17 @@ function createProductionCodexWorkbenchFactories(
 				spokenApproval: requireComponent(created, "spokenApproval"),
 				transport: requireComponent(created, "transport"),
 			});
+			/**
+			 *
+			 */
 			const dispatch: CoordinatorToolDispatcher["dispatch"] = (request) =>
 				bindings.coordinatorCall.run(request, () => dispatcher.dispatch(request));
 			return Object.freeze({
 				...dispatcher,
 				dispatch,
+				/**
+				 *
+				 */
 				onServerRequest: (request: TransportServerRequest) => {
 					if (!isCoordinatorToolRequest(request)) {
 						return;
@@ -403,6 +466,9 @@ function createProductionCodexWorkbenchFactories(
 				},
 			});
 		},
+		/**
+		 *
+		 */
 		callbacks: (created) =>
 			createCodexCoordinatorCallbacks({
 				...bindings.callbacks(created),
@@ -410,6 +476,9 @@ function createProductionCodexWorkbenchFactories(
 				session: requireComponent(created, "session"),
 				threadLink: requireComponent(created, "threadLink"),
 			}),
+		/**
+		 *
+		 */
 		gateway: (created) => {
 			const dependencies = {
 				identity: requireComponent(created, "identity"),
@@ -567,6 +636,9 @@ interface InstallProductionCodexWorkbenchOptions {
 	readonly hooks: (input: CodexWorkbenchGenerationInput) => CodexWorkbenchGenerationHooks;
 }
 
+/**
+ *
+ */
 function productionGenerationFactory(
 	options: InstallProductionCodexWorkbenchOptions,
 ): CodexWorkbenchGenerationFactory {
@@ -589,6 +661,9 @@ function productionGenerationFactory(
 	};
 }
 
+/**
+ *
+ */
 function productionKernelFactory(
 	options: InstallProductionCodexWorkbenchOptions,
 ): NonNullable<CodexWorkbenchOwnerOptions["createKernel"]> {
@@ -615,12 +690,18 @@ function installProductionCodexWorkbench(
 	options: InstallProductionCodexWorkbenchOptions,
 ): CodexWorkbenchOwner {
 	return installCodexWorkbenchOwner({
+		/**
+		 *
+		 */
 		createProcess: () => createCodexProcess(options.process),
 		createKernel: productionKernelFactory(options),
 		createGeneration: productionGenerationFactory(options),
 	});
 }
 
+/**
+ *
+ */
 function installCodexWorkbenchOwner(options: CodexWorkbenchOwnerOptions): CodexWorkbenchOwner {
 	return installCodexWorkbenchOwnerLifecycle(options);
 }

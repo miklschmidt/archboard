@@ -3,7 +3,7 @@ import type { BinaryFiles } from "@excalidraw/excalidraw/types";
 import type { MermaidConfig } from "@excalidraw/mermaid-to-excalidraw";
 import type { parseMermaidToExcalidraw } from "@excalidraw/mermaid-to-excalidraw";
 
-import type { BoardRenderSnapshot } from "../../../shared/board-rendering/index.js";
+import type { BoardRenderSnapshot } from "@/shared/board-rendering";
 
 export const DEFAULT_MERMAID_CONFIG: MermaidConfig = {
 	startOnLoad: false,
@@ -13,7 +13,7 @@ export const DEFAULT_MERMAID_CONFIG: MermaidConfig = {
 	maxTextSize: 50_000,
 };
 
-export type { BoardRenderSnapshot } from "../../../shared/board-rendering/index.js";
+export type { BoardRenderSnapshot } from "@/shared/board-rendering";
 
 export type MermaidParserResult = Awaited<ReturnType<typeof parseMermaidToExcalidraw>>;
 export type MermaidSkeleton = ExcalidrawElementSkeleton;

@@ -1,6 +1,9 @@
-import { CodexExecutableError } from "../../../runtime/codex-process/executable.js";
-import { CodexProcessError } from "../../../runtime/codex-process/index.js";
+import { CodexExecutableError } from "@/runtime/codex-process/executable";
+import { CodexProcessError } from "@/runtime/codex-process";
 
+/**
+ *
+ */
 function failures(error: unknown): readonly Error[] {
 	if (!(error instanceof Error)) {
 		return [];
@@ -12,6 +15,9 @@ function failures(error: unknown): readonly Error[] {
 	];
 }
 
+/**
+ *
+ */
 function codexFailure(error: unknown): CodexExecutableError | CodexProcessError | null {
 	return (
 		failures(error).find(

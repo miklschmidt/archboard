@@ -1,14 +1,17 @@
 import type { Response } from "express";
-import { BoardHeldError } from "../../../runtime/engine/board-lock.js";
-import { readBoardContent } from "../../../runtime/engine/board-io.js";
-import { boards } from "../../../runtime/engine/board-store.js";
-import logger from "../../../runtime/engine/logger.js";
-import { presentElements } from "../../../runtime/engine/presentation.js";
-import type { ServerElement } from "../../../runtime/engine/types.js";
-import { EMPTY_CHECKOUT_SNAPSHOT } from "../../../runtime/code-target/index.js";
-import type { CheckoutSnapshot } from "../../../runtime/code-target/index.js";
-import { boardErrorBody, boardErrorStatus } from "./board-error.js";
+import { BoardHeldError } from "@/runtime/engine/board-lock";
+import { readBoardContent } from "@/runtime/engine/board-io";
+import { boards } from "@/runtime/engine/board-store";
+import logger from "@/runtime/engine/logger";
+import { presentElements } from "@/runtime/engine/presentation";
+import type { ServerElement } from "@/runtime/engine/types";
+import { EMPTY_CHECKOUT_SNAPSHOT } from "@/runtime/code-target";
+import type { CheckoutSnapshot } from "@/runtime/code-target";
+import { boardErrorBody, boardErrorStatus } from "@/server/canvas/lib/board-error";
 
+/**
+ *
+ */
 function checkoutSnapshotFor(
 	response: Readonly<
 		Pick<
@@ -22,7 +25,6 @@ function checkoutSnapshotFor(
 
 /**
  * Read the note state included with a write-boundary refusal.
- *
  * @param board Canonical board key.
  * @param checkoutSnapshot Checkout overlay already captured for the request.
  * @returns Presented document and its persisted version.
@@ -42,6 +44,9 @@ function refusalDocument(
 	};
 }
 
+/**
+ *
+ */
 function contextualBoardErrorBody(
 	error: unknown,
 	checkoutSnapshot: Readonly<CheckoutSnapshot>,
@@ -55,7 +60,6 @@ function contextualBoardErrorBody(
 
 /**
  * Send the canonical board failure response.
- *
  * @param response Express response carrying any captured checkout overlay.
  * @param error Failure being mapped.
  * @param what Optional operation context logged with the failure.

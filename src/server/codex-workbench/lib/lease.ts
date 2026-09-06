@@ -1,21 +1,24 @@
-import { CODEX_BROWSER_COMMAND_LEASE_MS } from "../../../shared/timing/timing.js";
+import { CODEX_BROWSER_COMMAND_LEASE_MS } from "@/shared/timing/timing";
 import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthorities,
 	BrowserCommandId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { BrowserCommandLease } from "../../../shared/codex-browser-model/index.js";
-import type { ThreadLinkBindingSnapshot } from "../../../runtime/codex-thread-link/index.js";
+} from "@/shared/codex-workbench-identity";
+import type { BrowserCommandLease } from "@/shared/codex-browser-model";
+import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
 import type {
 	BrowserConnectionId,
 	BrowserConnectionInstance,
 	BrowserLeaseLedger,
 	BrowserLeaseRecord,
-} from "./contract.js";
+} from "@/server/codex-workbench/lib/contract";
 
 const RETIRED_LEASE_LIMIT = 64;
 
+/**
+ *
+ */
 function deepFreeze<T>(value: T): T {
 	if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
 		Object.freeze(value);
@@ -56,10 +59,16 @@ interface BrowserLeaseManager {
 	readonly detach: () => void;
 }
 
+/**
+ *
+ */
 function createBrowserLeaseLedger(): BrowserLeaseLedger {
 	return { active: null, retired: new Map() };
 }
 
+/**
+ *
+ */
 function freezeRecord(record: BrowserLeaseRecord): BrowserLeaseRecord {
 	const capturedLink = deepFreeze(structuredClone(record.capturedLink));
 	return Object.freeze({
@@ -69,6 +78,9 @@ function freezeRecord(record: BrowserLeaseRecord): BrowserLeaseRecord {
 	});
 }
 
+/**
+ *
+ */
 function sameLeaseTarget(left: BrowserCommandLease, right: BrowserCommandLease): boolean {
 	return (
 		left.commandId === right.commandId &&
@@ -78,6 +90,9 @@ function sameLeaseTarget(left: BrowserCommandLease, right: BrowserCommandLease):
 	);
 }
 
+/**
+ *
+ */
 function assertTime(value: number): number {
 	if (!Number.isSafeInteger(value) || value < 0) {
 		throw new Error("the gateway clock returned invalid time");
@@ -85,6 +100,9 @@ function assertTime(value: number): number {
 	return value;
 }
 
+/**
+ *
+ */
 function createBrowserLeaseManager(options: {
 	readonly identity: IdentityAuthorities;
 	readonly now: () => number;
@@ -97,15 +115,24 @@ function createBrowserLeaseManager(options: {
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let disposed = false;
 	const retired = ledger.retired;
+	/**
+	 *
+	 */
 	const setActive = (record: BrowserLeaseRecord | null): void => {
 		active = record;
 		ledger.active = record;
 	};
 
+	/**
+	 *
+	 */
 	const notify = (): void => {
 		options.onChange?.();
 	};
 
+	/**
+	 *
+	 */
 	const remember = (record: BrowserLeaseRecord): void => {
 		retired.delete(record.lease.commandId);
 		retired.set(record.lease.commandId, record);
@@ -118,6 +145,9 @@ function createBrowserLeaseManager(options: {
 		}
 	};
 
+	/**
+	 *
+	 */
 	const clearTimer = (): void => {
 		if (timer !== undefined) {
 			clearTimeout(timer);
@@ -125,6 +155,9 @@ function createBrowserLeaseManager(options: {
 		timer = undefined;
 	};
 
+	/**
+	 *
+	 */
 	const finish = (
 		record: BrowserLeaseRecord,
 		state: "expired" | "released",
@@ -145,6 +178,9 @@ function createBrowserLeaseManager(options: {
 		return terminal;
 	};
 
+	/**
+	 *
+	 */
 	const expireWhenDue = (commandId: BrowserCommandId): void => {
 		if (disposed || active?.lease.commandId !== commandId) {
 			return;
@@ -156,6 +192,9 @@ function createBrowserLeaseManager(options: {
 		finish(active, "expired");
 	};
 
+	/**
+	 *
+	 */
 	const schedule = (record: BrowserLeaseRecord): void => {
 		clearTimer();
 		const delay = Math.max(0, record.lease.expiresAtMs - assertTime(options.now()));
@@ -163,6 +202,9 @@ function createBrowserLeaseManager(options: {
 		timer.unref?.();
 	};
 
+	/**
+	 *
+	 */
 	const requireActive = (commandId: BrowserCommandId): BrowserLeaseRecord => {
 		if (active?.lease.commandId === commandId) {
 			if (assertTime(options.now()) >= active.lease.expiresAtMs) {
@@ -177,6 +219,9 @@ function createBrowserLeaseManager(options: {
 		throw new Error("the browser command lease is unknown");
 	};
 
+	/**
+	 *
+	 */
 	const claim = (
 		browserId: BrowserConnectionId,
 		paneId: string,
@@ -225,6 +270,9 @@ function createBrowserLeaseManager(options: {
 		return record;
 	};
 
+	/**
+	 *
+	 */
 	const renew = (
 		browserId: BrowserConnectionId,
 		connection: BrowserConnectionInstance,
@@ -252,6 +300,9 @@ function createBrowserLeaseManager(options: {
 		return renewed;
 	};
 
+	/**
+	 *
+	 */
 	const release = (
 		browserId: BrowserConnectionId,
 		paneId: string,
@@ -277,6 +328,9 @@ function createBrowserLeaseManager(options: {
 		return finish(active, "released");
 	};
 
+	/**
+	 *
+	 */
 	const invalidate = (
 		childId: ChildId,
 		epoch: ChildEpoch,
@@ -288,6 +342,9 @@ function createBrowserLeaseManager(options: {
 		return finish(active, state);
 	};
 
+	/**
+	 *
+	 */
 	const dispose = (): void => {
 		if (disposed) {
 			return;
@@ -299,6 +356,9 @@ function createBrowserLeaseManager(options: {
 		}
 		retired.clear();
 	};
+	/**
+	 *
+	 */
 	const detach = (): void => {
 		if (disposed) {
 			return;
@@ -311,7 +371,13 @@ function createBrowserLeaseManager(options: {
 	}
 
 	return Object.freeze({
+		/**
+		 *
+		 */
 		current: () => active,
+		/**
+		 *
+		 */
 		find: (commandId: BrowserCommandId) =>
 			active?.lease.commandId === commandId ? active : (retired.get(commandId) ?? null),
 		claim,

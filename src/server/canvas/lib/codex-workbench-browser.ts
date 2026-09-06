@@ -7,8 +7,8 @@ import type {
 	BrowserSnapshot,
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
-} from "../../codex-workbench/index.js";
-import type { BrowserGatewayAction } from "../../../shared/codex-browser-gateway/index.js";
+} from "@/server/codex-workbench";
+import type { BrowserGatewayAction } from "@/shared/codex-browser-gateway";
 
 const RequestIdSchema = z.string().min(1).max(128);
 const RequestBase = { type: z.literal("codex_workbench_request"), requestId: RequestIdSchema };
@@ -59,6 +59,9 @@ function createCanvasCodexBrowserSocketSend(
 	socket: CanvasCodexBrowserWebSocket,
 ): CanvasCodexBrowserSocketSend {
 	return Object.freeze({
+		/**
+		 *
+		 */
 		send: async (message: unknown): Promise<void> => {
 			if (socket.readyState !== WebSocket.OPEN) {
 				throw new Error("The Codex browser WebSocket is not open.");
@@ -101,10 +104,16 @@ interface CanvasCodexBrowserSocketOwner {
 	readonly dispose: () => void;
 }
 
+/**
+ *
+ */
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ *
+ */
 async function sendResult(
 	transport: CanvasCodexBrowserSocketSend,
 	request: BrowserRequest,
@@ -119,6 +128,9 @@ async function sendResult(
 	});
 }
 
+/**
+ *
+ */
 async function sendPublishedResult(
 	transport: CanvasCodexBrowserSocketSend,
 	request: BrowserRequest,
@@ -144,6 +156,9 @@ function createCanvasCodexBrowserSocketOwner(
 	let publicationFailure: Error | null = null;
 	let disposed = false;
 
+	/**
+	 *
+	 */
 	const connectionFor = (
 		instance: BrowserConnectionInstance,
 		browserId: string,
@@ -166,6 +181,9 @@ function createCanvasCodexBrowserSocketOwner(
 		return connection;
 	};
 
+	/**
+	 *
+	 */
 	const accept = (instance: BrowserConnectionInstance, browserId: string): void => {
 		if (disposed) {
 			throw new Error("The Codex browser socket owner is stopped.");
@@ -176,6 +194,9 @@ function createCanvasCodexBrowserSocketOwner(
 		connectionFor(instance, browserId);
 	};
 
+	/**
+	 *
+	 */
 	const trackPublication = (
 		publication: Promise<void>,
 		connection: BrowserWorkbenchConnection,
@@ -194,6 +215,9 @@ function createCanvasCodexBrowserSocketOwner(
 		);
 	};
 
+	/**
+	 *
+	 */
 	const failure = async (
 		transport: CanvasCodexBrowserSocketSend,
 		requestId: string | null,
@@ -208,6 +232,9 @@ function createCanvasCodexBrowserSocketOwner(
 			error: errorMessage(error),
 		});
 
+	/**
+	 *
+	 */
 	const handle = async (
 		instance: BrowserConnectionInstance,
 		browserId: string,
@@ -284,6 +311,9 @@ function createCanvasCodexBrowserSocketOwner(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const close = (instance: BrowserConnectionInstance, browserId: string): Promise<void> => {
 		const existing = closePromises.get(instance);
 		if (existing !== undefined) {
@@ -315,6 +345,9 @@ function createCanvasCodexBrowserSocketOwner(
 		return owned;
 	};
 
+	/**
+	 *
+	 */
 	const drain = async (): Promise<void> => {
 		while (activeCloses.size > 0 || activePublications.size > 0) {
 			await Promise.allSettled([...activeCloses, ...activePublications]);
@@ -333,6 +366,9 @@ function createCanvasCodexBrowserSocketOwner(
 		);
 	};
 
+	/**
+	 *
+	 */
 	const dispose = (): void => {
 		if (disposed) {
 			return;
