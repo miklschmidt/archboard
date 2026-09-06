@@ -7,6 +7,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/arrow-binding-differential.test.ts",
 	"tests/system/browser/shell-layout.test.ts",
 	"tests/system/browser/board-navigator.test.ts",
+	"tests/system/browser/board-drill-down.test.ts",
 	"tests/system/browser/fullscreen-presentation.test.ts",
 	"tests/system/browser/typed-text.test.ts",
 	"tests/system/browser/server-update-ordering.test.ts",

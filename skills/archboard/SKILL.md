@@ -149,6 +149,13 @@ for the full human read-back loop.
 
 ## Architecture identity and stencils
 
+Choose a board's abstraction level from `system`, `service`, or `module`.
+A node inherits its board's level unless promotion records an explicit override.
+Level is metadata: it creates neither a board nor a navigation link. For choosing
+levels and creating, attaching, inspecting, and following a drill-down to a
+node's internals, read
+[`references/architecture-workflow.md`](references/architecture-workflow.md#levels-and-drill-down).
+
 Promotion turns one or several selected elements into one architecture node.
 The shared node identity survives moves, browser round trips, and branching;
 the optional code binding remains portable repository metadata. A multipart
