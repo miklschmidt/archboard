@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-06 14:09'
-updated_date: '2026-09-06 16:24'
+updated_date: '2026-09-06 18:04'
 labels: []
 dependencies: []
 priority: high
@@ -45,6 +45,8 @@ The audit after ADR 0022 found behaviour that exists to satisfy a stated rule ra
 
 <!-- SECTION:NOTES:BEGIN -->
 Implemented in 8ba1aeae. Complete bun run check green in an isolated worktree (2657 module, 309 system, 9 repository, 19 browser owners). Root cause of the crash-replacement flake: the fake Codex reissued thread-1 from a replacement child and the epoch provenance check refused it; the old store's slow writes hid this. The fixture now continues its sequence across children. Kept promotion-delete-bridge-one-write as the one-write owner: composed multi-element operations are the only shape a single-body route cannot regress.
+
+Review correction (be04bb5b): the hold's recovery commands single-quote a board name the shell would split or pair up (space, apostrophe); a plain word stays bare. Owner: board-version-conflict unit test with the board "owner's board"; held-board-recovery system owner still runs the printed commands.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -60,6 +62,12 @@ author: @codex
 created: 2026-09-06 16:24
 ---
 Final independent review of 0d1706d06b21df1c72910a640dadad35cd37234a..28e148acd599f702fe895ed1519a6510322714da: [P2] src/runtime/engine/board-version.ts:159-162 interpolates legal board names without shell quoting into reload, overwrite and save-as recovery commands. Public validation accepts my board and owner's board. Bash splitting plus the public browser-show schema confirms the first reload command can target my instead of my board; the apostrophe case fails with an unmatched quote. AC5 is therefore incomplete. Quote the source, target and suggested save-as name consistently. Read-only reproduction needed no server. Task remains In Progress for correction. Verification at pinned TARGET in /tmp/archboard-final-review-28e148ac, confined state and memory-limited scope: lint, formatting, both TypeScript projects, frontend build and 2657 module tests passed. The complete check command stopped after 308 system passes and one public-start cleanup failure caused by inherited LOG_FILE_PATH; TASK-150.06 documents that this owner requires the variable unset. All 8 cases in that owner passed with LOG_FILE_PATH unset and confined XDG state. The 9 repository tests and full 19-owner serial browser lane then passed. No implementation files changed; this is a review, not a fix or acceptance. No live server or user vault used.
+---
+
+author: @claude
+created: 2026-09-06 18:04
+---
+Codex finding on board-version.ts:159-162 validated and fixed in be04bb5b: source, target and the suggested save-as name are shell-quoted when needed (single quotes, the POSIX-literal form); "my board" and "owner's board" now print as one word each. Unit owner added; the recovery system owner still types the printed overwrite back.
 ---
 <!-- COMMENTS:END -->
 

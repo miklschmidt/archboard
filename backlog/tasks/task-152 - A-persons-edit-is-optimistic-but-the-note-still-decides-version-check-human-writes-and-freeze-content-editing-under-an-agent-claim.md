@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-06 12:59'
-updated_date: '2026-09-06 16:24'
+updated_date: '2026-09-06 18:14'
 labels: []
 dependencies: []
 priority: high
@@ -48,6 +48,10 @@ AGENTS.md carried the rule 'a person is never refused: never version-refused, an
 Implemented in 5e3a5daa on codex/task-150-ui-rebuild. Server: statedVersion parses the same for both writers and requires expectVersion on a pane's write (0 before any note); version carried on initial_elements, board_switched, elements_changed and board_released(elsewhere); /api/boards/hold no longer revokes and the lock refuses a human hold against somebody else's claim immediately instead of at the 400 ms deadline; new /api/boards/take-back; boardless agent_activity snapshot from src/server/canvas/lib/agent-activity.ts with ACTIVITY_LINGER_MS. UI: noteVersion in the reporting state, expectVersion on every human write and beacon, version-conflict reconcile to the refusal document with one notice, readOnly under an agent claim, take-back via the route, navigator agent-activity marker and doing line including unlisted boards. Docs: skill and reference wording, ADR 0022 selection sentence. Owners: board-version-client, board-lock-api, doing-activity, write-boundary-policy, note-version and agent-activity unit tests, claim-interaction rewritten, new human-version-refusal browser owner. Verification: fmt, lint, type-check, engine tests, test:modules, test:system, focused browser lane green; complete bun run check running in an isolated worktree.
 
 Complete bun run check green on 5e3a5daa in an isolated worktree (2660 module, 322 system, 9 repository, 19 browser owners). e4caa45b adds the ensure:codex-contract step so a fresh checkout's lint no longer runs before the contract exists. Hold under a claim refuses immediately (lock wait loop breaks on somebody else's claim when not revoking).
+
+Review correction (ee9a24c4): a version refusal no longer carries the element under an open text editor over. The pane shows exactly the refusal's document, closes Excalidraw's editor (blur after the note is on screen; Excalidraw's submit is a no-op for an element the scene no longer holds) and keeps nothing the note lacks. The same applies to withdrawal for a claim. Owners: note-version unit test flipped, human-version-refusal browser owner gained the open-editor scenario (typed text never reaches the note, next write lands against the new version).
+
+Complete bun run check green on the review-correction tree (source identical to 3d0405aa) in an isolated worktree with a confined root outside the checkout; 5 system owners that read git ambience fail when the confined tmp root sits inside the checked-out worktree, which is a runner-setup mistake, not a product one.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -63,6 +67,12 @@ author: @codex
 created: 2026-09-06 16:24
 ---
 Final independent review of 0d1706d06b21df1c72910a640dadad35cd37234a..28e148acd599f702fe895ed1519a6510322714da: [P2] src/ui/canvas/lib/reporting.ts:246 passes currentWithheldIds() during a version refusal, preserving local text absent from the refusal document. Closing the editor can subsequently report it against the new version and resurrect text removed by the winning writer. This violates AC2 and ADR 0022: the refused optimistic edit must be withdrawn and the pane must show the note. note-version.test.ts currently explicitly expects text survival. Reconcile the entire refused scene and active editor rather than using ordinary incoming-snapshot preservation. Task remains In Progress for correction. Verification at pinned TARGET in /tmp/archboard-final-review-28e148ac, confined state and memory-limited scope: lint, formatting, both TypeScript projects, frontend build and 2657 module tests passed. The complete check command stopped after 308 system passes and one public-start cleanup failure caused by inherited LOG_FILE_PATH; TASK-150.06 documents that this owner requires the variable unset. All 8 cases in that owner passed with LOG_FILE_PATH unset and confined XDG state. The 9 repository tests and full 19-owner serial browser lane then passed. No implementation files changed; this is a review, not a fix or acceptance. No live server or user vault used.
+---
+
+author: @claude
+created: 2026-09-06 18:04
+---
+Codex finding on reporting.ts:246 validated and fixed in ee9a24c4. Empirically Excalidraw keeps the editor textarea open after the scene replacement and would write the text back on submit if the element were still present, so the pane removes the element outright and blurs the editor; the browser owner proves the typed text is gone from the pane and never reaches the note.
 ---
 <!-- COMMENTS:END -->
 
