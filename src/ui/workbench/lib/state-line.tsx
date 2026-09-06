@@ -1,46 +1,52 @@
-// One state line: a dot, the words, and the recovery words when there are any.
+// One session item of the definition list: a tone dot beside the state words
+// as the term, the recovery words as the detail, and the actions that change
+// this state as a second detail.
 
 import { cn } from "cn";
 
 import type { StateLine } from "@/ui/workbench/session-projection";
 
-/** Inputs for one state line. */
-interface StateLineRowProps {
+/** Inputs for one session item. */
+interface SessionItemProps {
 	line: StateLine;
 	/** Rendered after the words: the actions that change this state. */
 	children?: React.ReactNode;
 }
 
+/**
+ * The dot per tone. A warning is a real failure with recovery words beside
+ * it; the dot carries the tone so the words stay in the foreground colour.
+ */
 const DOT_CLASS: Record<StateLine["tone"], string> = {
 	live: "bg-status",
-	idle: "bg-muted-foreground/40",
+	idle: "bg-muted-foreground/60",
 	warning: "bg-destructive",
 };
 
 /**
- * A state line with its tone dot and optional actions.
+ * A session item with its tone dot, recovery words and optional actions.
  * @param props The line and its actions.
- * @returns One dense row.
+ * @returns A term and its details.
  */
-function StateLineRow(props: StateLineRowProps): React.JSX.Element {
+function SessionItem(props: SessionItemProps): React.JSX.Element {
 	const { line } = props;
 	return (
-		<div className="flex min-w-0 items-center gap-2 text-xs">
-			<span
-				aria-hidden="true"
-				className={cn("inline-block size-1.5 shrink-0 rounded-full", DOT_CLASS[line.tone])}
-			/>
-			<span className={cn("truncate", line.tone === "warning" && "text-destructive")}>
-				{line.text}
-			</span>
+		<div className="flex flex-col gap-1">
+			<dt className="text-body flex min-w-0 items-start gap-2 font-medium">
+				<span
+					aria-hidden="true"
+					className={cn("mt-[5px] size-1.5 shrink-0 rounded-full", DOT_CLASS[line.tone])}
+				/>
+				<span className="line-clamp-2 break-words">{line.text}</span>
+			</dt>
 			{line.recovery === null ? null : (
-				<span className="text-muted-foreground truncate">{line.recovery}</span>
+				<dd className="text-body text-muted-foreground ps-3.5">{line.recovery}</dd>
 			)}
 			{props.children === undefined ? null : (
-				<span className="ms-auto flex shrink-0 items-center gap-1">{props.children}</span>
+				<dd className="flex flex-wrap items-center gap-1 ps-3.5 pt-0.5">{props.children}</dd>
 			)}
 		</div>
 	);
 }
 
-export { StateLineRow, type StateLineRowProps };
+export { SessionItem, type SessionItemProps };

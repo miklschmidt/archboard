@@ -13,6 +13,7 @@ import { useCallback } from "react";
 import type { BrowserQueue } from "@/shared/codex-browser-model";
 import { Button } from "@/ui/components/button";
 import type { WorkbenchQueueActions, WorkbenchQueueCommandView } from "@/ui/workbench/contracts";
+import { PanelLine } from "@/ui/workbench/lib/panel-line";
 import {
 	queueEntryActions,
 	queueEntryStatusText,
@@ -40,6 +41,35 @@ interface QueueRowProps {
 	actions: WorkbenchQueueActions;
 }
 
+/** Inputs for one row action. */
+interface RowActionProps {
+	label: string;
+	enabled: boolean;
+	onClick: () => void;
+	children: React.ReactNode;
+}
+
+/**
+ * A 24px icon action whose hit area reaches 32px (the documented desktop
+ * exception to the 44px target), so dense rows stay dense and still tappable.
+ * @param props The label, availability, callback and icon.
+ * @returns The button.
+ */
+function RowAction(props: RowActionProps): React.JSX.Element {
+	return (
+		<Button
+			variant="ghost"
+			size="icon-xs"
+			aria-label={props.label}
+			disabled={!props.enabled}
+			onClick={props.onClick}
+			className="relative rounded-sm after:absolute after:-inset-1"
+		>
+			{props.children}
+		</Button>
+	);
+}
+
 /**
  * One queued submission with its actions.
  * @param props The entry, its position, its ownership, what it may do, and the callbacks.
@@ -53,53 +83,31 @@ function QueueRow(props: QueueRowProps): React.JSX.Element {
 	const remove = useCallback(() => actions.remove(id), [actions, id]);
 	const sendNow = useCallback(() => actions.sendNow(id), [actions, id]);
 	return (
-		<li className="flex items-start gap-2 py-1.5 text-xs">
-			<span className="text-muted-foreground w-4 shrink-0 font-mono">{props.position}</span>
+		<li className="flex items-start gap-2 py-2">
+			<span className="text-technical text-muted-foreground w-4 shrink-0 pt-px text-right font-mono">
+				{props.position}
+			</span>
 			<span className="flex min-w-0 flex-1 flex-col gap-0.5">
-				<span className="line-clamp-2 break-words">{entry.prompt}</span>
-				<span className="text-muted-foreground font-mono text-[11px]">
+				<span className="text-body line-clamp-2 break-words">{entry.prompt}</span>
+				<span className="text-technical text-muted-foreground truncate font-mono">
 					{queueEntryStatusText(entry.status)}
 					{entry.operationId === null ? "" : ` · ${entry.operationId}`}
 					{props.ownership === null ? "" : ` · ${props.ownership}`}
 				</span>
 			</span>
-			<span className="flex shrink-0 items-center">
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					aria-label="Move up"
-					disabled={!available.moveUp}
-					onClick={moveUp}
-				>
+			<span className="-my-0.5 flex shrink-0 items-center">
+				<RowAction label="Move up" enabled={available.moveUp} onClick={moveUp}>
 					<RiArrowUpSLine />
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					aria-label="Move down"
-					disabled={!available.moveDown}
-					onClick={moveDown}
-				>
+				</RowAction>
+				<RowAction label="Move down" enabled={available.moveDown} onClick={moveDown}>
 					<RiArrowDownSLine />
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					aria-label="Send now"
-					disabled={!available.sendNow}
-					onClick={sendNow}
-				>
+				</RowAction>
+				<RowAction label="Send now" enabled={available.sendNow} onClick={sendNow}>
 					<RiSendPlaneLine />
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					aria-label="Remove"
-					disabled={!available.remove}
-					onClick={remove}
-				>
+				</RowAction>
+				<RowAction label="Remove" enabled={available.remove} onClick={remove}>
 					<RiDeleteBinLine />
-				</Button>
+				</RowAction>
 			</span>
 		</li>
 	);
@@ -111,7 +119,8 @@ interface CommandLineProps {
 }
 
 /**
- * What the controller has on the wire, or how the last command settled.
+ * What the controller has on the wire, or how the last command settled. A
+ * refusal is a real failure; an unknown outcome is not yet one.
  * @param props The command state.
  * @returns The line, or nothing while idle with no settlement.
  */
@@ -119,25 +128,18 @@ function CommandLine(props: CommandLineProps): React.JSX.Element | null {
 	const { pending, settlement } = props.command;
 	if (pending !== null) {
 		return (
-			<p aria-live="polite" className="text-muted-foreground text-xs">
+			<PanelLine tone="live" live>
 				{pending}
-			</p>
+			</PanelLine>
 		);
 	}
 	if (settlement === null) {
 		return null;
 	}
 	return (
-		<p
-			aria-live="polite"
-			className={
-				settlement.tone === "reconciled"
-					? "text-muted-foreground text-xs"
-					: "text-destructive text-xs"
-			}
-		>
+		<PanelLine tone={settlement.tone === "refused" ? "failure" : "muted"} live>
 			{settlement.message}
-		</p>
+		</PanelLine>
 	);
 }
 
@@ -151,15 +153,13 @@ function QueuePanel(props: QueuePanelProps): React.JSX.Element {
 	const state = queueStateText(queue);
 	return (
 		<div className="flex flex-col gap-1">
-			<p
-				className={state.recovering ? "text-destructive text-xs" : "text-muted-foreground text-xs"}
-			>
+			<PanelLine tone="muted">
 				{state.text}
 				{state.recovering ? " — actions resume when the host recovers" : ""}
-			</p>
+			</PanelLine>
 			<CommandLine command={command} />
 			{queue.entries.length === 0 ? null : (
-				<ol aria-label="Queued submissions" className="divide-border divide-y">
+				<ol aria-label="Queued submissions" className="divide-border mt-1 divide-y">
 					{queue.entries.map((entry, index) => (
 						<QueueRow
 							key={entry.submissionId}

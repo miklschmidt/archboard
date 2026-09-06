@@ -1,10 +1,12 @@
-// The Archboard-owned intent controls beside the official composer: how the
-// next message is delivered (send, or steer the running turn), whether it is
-// queued instead, and a Stop for the active turn. The official Send button
-// submits through the assistant-ui runtime, which reads this intent.
+// The Archboard-owned intent controls inside the official composer's action
+// row: how the next message is delivered (send, or steer the running turn),
+// whether it is queued instead, a Stop for the active turn, and the turn
+// state. The official Send button submits through the assistant-ui runtime,
+// which reads this intent. The workbench hands the values down through a
+// context so the official thread file only renders a slot.
 
 import { RiStopLine } from "@remixicon/react";
-import { useCallback, useMemo } from "react";
+import { createContext, useCallback, useContext, useMemo } from "react";
 
 import { Button } from "@/ui/components/button";
 import { Checkbox } from "@/ui/components/checkbox";
@@ -16,7 +18,7 @@ import type {
 	WorkbenchComposerView,
 } from "@/ui/workbench/contracts";
 
-/** Inputs for the intent bar. */
+/** Inputs for the intent row. */
 interface ComposerIntentBarProps {
 	composer: WorkbenchComposerView;
 	/** The running turn's id, or null when the workhorse is idle. */
@@ -28,6 +30,11 @@ interface ComposerIntentBarProps {
 
 const QUEUE_CHECKBOX_ID = "workbench-queue-instead";
 
+/** A 24px toggle: control text in a flat chip. */
+const INTENT_ITEM = "h-6 min-w-0 px-2 text-control";
+
+const ComposerIntentContext = createContext<ComposerIntentBarProps | null>(null);
+
 /**
  * Whether a toggle value is one of the intents.
  * @param value The toggle group's value.
@@ -38,9 +45,9 @@ function intentFrom(value: unknown): ComposerIntent | null {
 }
 
 /**
- * The intent bar.
+ * The intent row.
  * @param props The composer view, the active turn, and the actions.
- * @returns The bar.
+ * @returns The row.
  */
 function ComposerIntentBar(props: ComposerIntentBarProps): React.JSX.Element {
 	const { composer, actions } = props;
@@ -63,7 +70,7 @@ function ComposerIntentBar(props: ComposerIntentBarProps): React.JSX.Element {
 		[actions],
 	);
 	return (
-		<div className="border-border flex items-center gap-3 border-t px-3 py-1.5 text-xs">
+		<div className="flex min-w-0 flex-1 items-center gap-3">
 			<ToggleGroup
 				value={groupValue}
 				onValueChange={handleIntent}
@@ -72,9 +79,16 @@ function ComposerIntentBar(props: ComposerIntentBarProps): React.JSX.Element {
 				spacing={0}
 				aria-label="Delivery"
 				disabled={!props.canCompose}
+				className="rounded-sm"
 			>
-				<ToggleGroupItem value="send">Send</ToggleGroupItem>
-				<ToggleGroupItem value="steer" disabled={!running}>
+				<ToggleGroupItem value="send" className={`${INTENT_ITEM} first:rounded-l-sm!`}>
+					Send
+				</ToggleGroupItem>
+				<ToggleGroupItem
+					value="steer"
+					disabled={!running}
+					className={`${INTENT_ITEM} last:rounded-r-sm!`}
+				>
 					Steer
 				</ToggleGroupItem>
 			</ToggleGroup>
@@ -85,21 +99,36 @@ function ComposerIntentBar(props: ComposerIntentBarProps): React.JSX.Element {
 					onCheckedChange={handleQueue}
 					disabled={!props.canCompose}
 				/>
-				<Label htmlFor={QUEUE_CHECKBOX_ID} className="text-xs font-normal">
+				<Label htmlFor={QUEUE_CHECKBOX_ID} className="text-body font-normal">
 					Queue instead
 				</Label>
 			</span>
-			<span className="text-muted-foreground truncate">
-				{running ? "A turn is running" : "Workhorse idle"}
-			</span>
 			{running ? (
-				<Button variant="destructive" size="xs" className="ms-auto" onClick={actions.stopTurn}>
+				<Button variant="outline" size="xs" onClick={actions.stopTurn}>
 					<RiStopLine />
 					Stop
 				</Button>
 			) : null}
+			<span className="text-body text-muted-foreground ms-auto truncate">
+				{running ? "Turn running" : "Workhorse idle"}
+			</span>
 		</div>
 	);
 }
 
-export { ComposerIntentBar, type ComposerIntentBarProps };
+/**
+ * The intent row as the official composer's footer slot, fed by the context
+ * the workbench provides.
+ * @returns The row, or nothing outside the workbench.
+ */
+function ComposerIntentFooter(): React.JSX.Element | null {
+	const value = useContext(ComposerIntentContext);
+	return value === null ? null : <ComposerIntentBar {...value} />;
+}
+
+export {
+	ComposerIntentBar,
+	ComposerIntentContext,
+	ComposerIntentFooter,
+	type ComposerIntentBarProps,
+};

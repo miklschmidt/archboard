@@ -2,6 +2,7 @@
 // with the decisions the model defines, busy state, unknown-outcome and
 // resolver-lost states shown plainly, and the spoken approval line on top.
 
+import { cn } from "cn";
 import { useCallback } from "react";
 
 import type {
@@ -9,7 +10,6 @@ import type {
 	BrowserDynamicApproval,
 	BrowserSnapshot,
 } from "@/shared/codex-browser-model";
-import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
 import {
 	projectApproval,
@@ -18,6 +18,7 @@ import {
 } from "@/ui/workbench/approval-projection";
 import type { ApprovalCard, ApprovalDecisionOption } from "@/ui/workbench/approval-projection";
 import type { ApprovalChoice, WorkbenchActions } from "@/ui/workbench/contracts";
+import { PanelLine } from "@/ui/workbench/lib/panel-line";
 
 /** Inputs for the panel. */
 interface ApprovalsPanelProps {
@@ -35,7 +36,7 @@ interface DecisionButtonProps {
 }
 
 /**
- * One decision button.
+ * One decision button, 28px.
  * @param props The option and the callback.
  * @returns The button.
  */
@@ -43,7 +44,7 @@ function DecisionButton(props: DecisionButtonProps): React.JSX.Element {
 	const { option, onChoose } = props;
 	const handleClick = useCallback(() => onChoose(option.choice), [onChoose, option.choice]);
 	return (
-		<Button variant={option.tone} size="xs" onClick={handleClick}>
+		<Button variant={option.tone} size="sm" className="rounded-sm" onClick={handleClick}>
 			{option.label}
 		</Button>
 	);
@@ -57,15 +58,16 @@ interface CardProps {
 	onChoose: (choice: ApprovalChoice) => void;
 }
 
-const PHASE_BADGE: Record<
-	ApprovalCard["phase"],
-	"default" | "secondary" | "destructive" | "outline"
-> = {
-	pending: "default",
-	busy: "secondary",
-	settled: "outline",
-	outcome_unknown: "destructive",
-	closed: "outline",
+/**
+ * The dot per phase: lime while a decision is wanted or on the wire, grey once
+ * the card is history, destructive when the outcome is unknown.
+ */
+const PHASE_DOT: Record<ApprovalCard["phase"], string> = {
+	pending: "before:bg-status",
+	busy: "before:bg-status motion-safe:before:animate-pulse",
+	settled: "before:bg-muted-foreground/60",
+	outcome_unknown: "before:bg-destructive",
+	closed: "before:bg-muted-foreground/60",
 };
 
 /**
@@ -75,43 +77,58 @@ const PHASE_BADGE: Record<
  */
 function Card(props: CardProps): React.JSX.Element {
 	const { card } = props;
+	const open = card.phase === "pending" || card.phase === "busy";
 	return (
 		<article
 			aria-busy={card.phase === "busy"}
-			className="border-border flex flex-col gap-1.5 rounded-sm border p-2 text-xs"
+			className={cn(
+				"border-border bg-background flex flex-col gap-1.5 rounded-sm border p-2",
+				!open && "text-muted-foreground",
+			)}
 		>
-			<header className="flex items-center gap-2">
-				<Badge variant={PHASE_BADGE[card.phase]} className="uppercase">
+			<header className="flex min-w-0 items-center gap-2">
+				{/* The phase dot is a pseudo-element so the family stays the header's first span. */}
+				<span
+					className={`text-kicker text-muted-foreground flex shrink-0 items-center gap-1.5 uppercase before:size-1.5 before:shrink-0 before:rounded-full ${PHASE_DOT[card.phase]}`}
+				>
 					{card.family}
-				</Badge>
-				<span className="truncate font-medium">{card.title}</span>
-				<span className="text-muted-foreground ms-auto shrink-0 font-mono text-[11px]">
+				</span>
+				<span className={`text-control truncate ${open ? "text-foreground" : ""}`}>
+					{card.title}
+				</span>
+				<span className="text-technical text-muted-foreground ms-auto shrink-0 truncate font-mono">
 					{card.phaseText}
 				</span>
 			</header>
 			<dl className="flex flex-col gap-0.5">
 				{card.details.map((detail) => (
 					<div key={`${detail.label}:${detail.value}`} className="flex items-baseline gap-2">
-						<dt className="text-muted-foreground w-14 shrink-0">{detail.label}</dt>
-						<dd className={detail.mono ? "min-w-0 font-mono break-all" : "min-w-0 break-words"}>
+						<dt className="text-body text-muted-foreground w-16 shrink-0">{detail.label}</dt>
+						<dd
+							className={
+								detail.mono
+									? "text-technical min-w-0 font-mono break-all"
+									: "text-body min-w-0 break-words"
+							}
+						>
 							{detail.value}
 						</dd>
 					</div>
 				))}
 			</dl>
 			{card.decisions.length === 0 ? null : (
-				<div className="flex flex-wrap items-center gap-1">
+				<div className="flex flex-wrap items-center gap-1 pt-0.5">
 					{card.decisions.map((option) => (
 						<DecisionButton key={option.id} option={option} onChoose={props.onChoose} />
 					))}
 				</div>
 			)}
 			{props.error === null ? null : (
-				<p role="alert" className="text-destructive">
+				<p role="alert" className="text-body text-destructive">
 					{props.error}
 				</p>
 			)}
-			<p className="text-muted-foreground">{card.spokenText}</p>
+			<p className="text-body text-muted-foreground">{card.spokenText}</p>
 		</article>
 	);
 }
@@ -186,13 +203,9 @@ function ApprovalsPanel(props: ApprovalsPanelProps): React.JSX.Element {
 	return (
 		<div className="flex flex-col gap-2">
 			{spoken === null ? null : (
-				<p
-					className={spoken.warning ? "text-destructive text-xs" : "text-status-foreground text-xs"}
-				>
-					{spoken.text}
-				</p>
+				<PanelLine tone={spoken.warning ? "failure" : "live"}>{spoken.text}</PanelLine>
 			)}
-			{empty ? <p className="text-muted-foreground text-xs">Nothing awaiting approval</p> : null}
+			{empty ? <PanelLine tone="muted">Nothing awaiting approval</PanelLine> : null}
 			{snapshot.approvals.map((approval) => (
 				<ApprovalItem
 					key={approval.requestId}
