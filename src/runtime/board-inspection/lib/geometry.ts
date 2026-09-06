@@ -1,4 +1,4 @@
-import type { SceneBBox, ScenePoint } from "../schemas.js";
+import type { SceneBBox, ScenePoint } from "@/runtime/board-inspection/schemas";
 
 interface ExactPoint {
 	x: number;

@@ -1,5 +1,5 @@
-import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
-import { CodexDynamicToolsError } from "./contract.js";
+import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import { CodexDynamicToolsError } from "@/runtime/codex-dynamic-tools/lib/contract";
 import type {
 	CodexDynamicToolsOptions,
 	DynamicCallerAuthority,
@@ -7,9 +7,9 @@ import type {
 	DynamicObservedTarget,
 	DynamicRefusalReason,
 	DynamicTargetAuthority,
-} from "./contract.js";
-import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
-import { isAllowedSource } from "./classification.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
+import type { ThreadLinkClassification } from "@/runtime/codex-thread-link";
+import { isAllowedSource } from "@/runtime/codex-dynamic-tools/lib/classification";
 
 type AuthorityFacts = Readonly<
 	Omit<DynamicTargetAuthority, "authority" | "role" | "linkClassification" | "threadLinkTarget">

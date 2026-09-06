@@ -2,8 +2,8 @@ import {
 	parseToolResultEnvelope,
 	type DynamicToolCallResponse,
 	type GeneralThreadToolName,
-} from "../../codex-thread-tools/index.js";
-import type { DynamicRefusalReason } from "./contract.js";
+} from "@/runtime/codex-thread-tools";
+import type { DynamicRefusalReason } from "@/runtime/codex-dynamic-tools/lib/contract";
 
 const OUTCOME_UNKNOWN_MESSAGE =
 	"The request may have taken effect. Inspect authoritative state before another mutation." as const;

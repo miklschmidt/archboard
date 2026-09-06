@@ -4,24 +4,24 @@ import {
 	resolveThreadOwnershipProvenance,
 	type EpochExecutionProof,
 	type EpochOperationRecord,
-} from "../../codex-epoch/index.js";
-import { ADDITIONAL_CONTEXT_POLICY } from "../../codex-instructions/index.js";
+} from "@/runtime/codex-epoch";
+import { ADDITIONAL_CONTEXT_POLICY } from "@/runtime/codex-instructions";
 import type {
 	CodexSession,
 	SessionLoadedThreadPageResult,
 	SessionThread,
 	SessionThreadPageResult,
-} from "../../codex-session/index.js";
-import { CODEX_SESSION_THREAD_SOURCE } from "../../codex-session/index.js";
-import { CODEX_THREAD_STATUS_TYPES } from "../../../shared/codex-app-server-contract/index.js";
-import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-session";
+import { CODEX_SESSION_THREAD_SOURCE } from "@/runtime/codex-session";
+import { CODEX_THREAD_STATUS_TYPES } from "@/shared/codex-app-server-contract";
+import type { ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	cloneAndFreeze,
 	deepEqual,
 	isEpochExecutionProof,
 	isEpochOperationRecord,
 	proofMatchesManifest,
-} from "./provenance.js";
+} from "@/runtime/codex-thread-link/lib/provenance";
 import {
 	CodexThreadLinkError,
 	type CodexThreadLinkClassifier,
@@ -41,7 +41,7 @@ import {
 	type ThreadLinkStatus,
 	type ThreadLink,
 	type ThreadLinkTarget,
-} from "./contract.js";
+} from "@/runtime/codex-thread-link/lib/contract";
 
 const PAGE_LIMIT = 100;
 const ALLOWED_SOURCES = Object.freeze([

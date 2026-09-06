@@ -1,19 +1,26 @@
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
-import type { IdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
-import { CODEX_COMPOSED_SHUTDOWN_MS } from "../../../shared/timing/timing.js";
+import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
+import { CODEX_COMPOSED_SHUTDOWN_MS } from "@/shared/timing/timing";
 import {
 	CodexTransportClosedError,
 	CodexTransportRemoteError,
 	CodexTransportRequestError,
 	type CodexRequestFailureReason,
-} from "./errors.js";
-import { createFrameWriter, type FrameWriter, type FrameWriterJob } from "./frame-writer.js";
-import { createTransportEvents } from "./events.js";
-import { createInboundRouter } from "./inbound-router.js";
-import { createLateResponseStore } from "./late-responses.js";
-import { createOutboundOperations } from "./request-operations.js";
-import { attachCodexStreamReader, type StreamReaderAttachment } from "./stream-reader.js";
-import { createTransportWriterCallbacks } from "./writer-callbacks.js";
+} from "@/runtime/codex-transport/lib/errors";
+import {
+	createFrameWriter,
+	type FrameWriter,
+	type FrameWriterJob,
+} from "@/runtime/codex-transport/lib/frame-writer";
+import { createTransportEvents } from "@/runtime/codex-transport/lib/events";
+import { createInboundRouter } from "@/runtime/codex-transport/lib/inbound-router";
+import { createLateResponseStore } from "@/runtime/codex-transport/lib/late-responses";
+import { createOutboundOperations } from "@/runtime/codex-transport/lib/request-operations";
+import {
+	attachCodexStreamReader,
+	type StreamReaderAttachment,
+} from "@/runtime/codex-transport/lib/stream-reader";
+import { createTransportWriterCallbacks } from "@/runtime/codex-transport/lib/writer-callbacks";
 import type {
 	CodexTransport,
 	CodexTransportChild,
@@ -21,10 +28,15 @@ import type {
 	DynamicDispatcherRegistration,
 	TransportServerRequest,
 	TransportSnapshot,
-} from "./types.js";
-import type { PendingRequest, RequestTombstone, ReverseRecord, WriteJob } from "./internals.js";
-import { cloneAndFreeze } from "./public-values.js";
-import { jsonLine, wireKey, type WireId } from "./wire.js";
+} from "@/runtime/codex-transport/lib/types";
+import type {
+	PendingRequest,
+	RequestTombstone,
+	ReverseRecord,
+	WriteJob,
+} from "@/runtime/codex-transport/lib/internals";
+import { cloneAndFreeze } from "@/runtime/codex-transport/lib/public-values";
+import { jsonLine, wireKey, type WireId } from "@/runtime/codex-transport/lib/wire";
 
 const PROTOCOL_ERROR_MESSAGE = "Codex transport is shutting down.";
 const ignoreTerminalStreamError = (_error: Error): void => {};

@@ -4,7 +4,7 @@ import type {
 	EpochExecutionProof,
 	EpochManifest,
 	EpochOperationRecord,
-} from "../../codex-epoch/index.js";
+} from "@/runtime/codex-epoch";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);

@@ -1,18 +1,24 @@
-import { createCodexThreadLinkBindingController } from "./lib/binding.js";
+import { createCodexThreadLinkBindingController } from "@/runtime/codex-thread-link/lib/binding";
 import {
 	createCodexThreadLinkClassifier,
 	discoverCodexThreadLinkCandidates,
-} from "./lib/classifier.js";
-import { CodexThreadLinkConflictError } from "./lib/contract.js";
+} from "@/runtime/codex-thread-link/lib/classifier";
+import { CodexThreadLinkConflictError } from "@/runtime/codex-thread-link/lib/contract";
 import type {
 	CodexThreadLinkClassifierOptions,
 	CodexThreadLinkPort,
 	ThreadLinkEpochAuthority,
-} from "./lib/contract.js";
+} from "@/runtime/codex-thread-link/lib/contract";
 
-export { createCodexThreadLinkBinding } from "./lib/binding.js";
-export { classifyCodexThreadLink, createCodexThreadLinkClassifier } from "./lib/classifier.js";
-export { CodexThreadLinkConflictError, CodexThreadLinkError } from "./lib/contract.js";
+export { createCodexThreadLinkBinding } from "@/runtime/codex-thread-link/lib/binding";
+export {
+	classifyCodexThreadLink,
+	createCodexThreadLinkClassifier,
+} from "@/runtime/codex-thread-link/lib/classifier";
+export {
+	CodexThreadLinkConflictError,
+	CodexThreadLinkError,
+} from "@/runtime/codex-thread-link/lib/contract";
 export type {
 	CodexThreadLinkClassifier,
 	CodexThreadLinkClassifierOptions,
@@ -52,7 +58,7 @@ export type {
 	ThreadLinkStatus,
 	ThreadLinkTarget,
 	UnboundThreadLink,
-} from "./lib/contract.js";
+} from "@/runtime/codex-thread-link/lib/contract";
 
 export interface CodexThreadLinkOptions extends Omit<CodexThreadLinkClassifierOptions, "epoch"> {
 	readonly epoch: ThreadLinkEpochAuthority;

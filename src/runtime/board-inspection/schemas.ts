@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { compareIdentity, obstacleIdentity } from "./lib/ordering.js";
+import { compareIdentity, obstacleIdentity } from "@/runtime/board-inspection/lib/ordering";
 
 const BridgeIncompleteIssueSchema = z.enum([
 	"malformed-metadata",

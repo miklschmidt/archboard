@@ -13,31 +13,34 @@ import {
 	CODEX_PROCESS_RESTART_BASE_MS,
 	CODEX_PROCESS_RESTART_MAX_MS,
 	CODEX_REQUEST_SETTLEMENT_MS,
-} from "../../../shared/timing/timing.js";
+} from "@/shared/timing/timing";
 import {
 	buildCodexChildEnvironment,
 	type CodexAmbientEnvironment,
 	type CodexChildEnvironment,
-} from "./environment.js";
+} from "@/runtime/codex-process/lib/environment";
 import {
 	CodexExecutableError,
 	verifyCodexExecutable,
 	type VerifiedCodexExecutable,
-} from "./executable.js";
-import { createCodexDiagnosticsBuffer, type BoundedCodexDiagnostics } from "./diagnostics.js";
+} from "@/runtime/codex-process/lib/executable";
+import {
+	createCodexDiagnosticsBuffer,
+	type BoundedCodexDiagnostics,
+} from "@/runtime/codex-process/lib/diagnostics";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
 	type CodexProcessGroupOperations,
-} from "./process-group.js";
-import { createProcessGroupCleanup } from "./process-group-cleanup.js";
+} from "@/runtime/codex-process/lib/process-group";
+import { createProcessGroupCleanup } from "@/runtime/codex-process/lib/process-group-cleanup";
 import {
 	CodexStorageError,
 	prepareCodexStorage,
 	type CodexStorageFileSystem,
 	type CodexStorageInput,
 	type PreparedCodexStorage,
-} from "./storage.js";
+} from "@/runtime/codex-process/lib/storage";
 
 export const CODEX_APP_SERVER_ARGUMENTS = Object.freeze([
 	"app-server",
@@ -363,7 +366,7 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 	}
 
 	function snapshot(): CodexProcessSnapshot {
-		const unprovenChild = unprovenChildren.values().next().value as UnprovenChild | undefined;
+		const unprovenChild = unprovenChildren.values().next().value;
 		return Object.freeze({
 			state,
 			pid: current?.child.pid ?? unprovenChild?.child.pid ?? null,

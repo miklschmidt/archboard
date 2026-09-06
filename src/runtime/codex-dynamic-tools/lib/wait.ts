@@ -1,12 +1,8 @@
-import type {
-	ChildId,
-	DynamicToolCallId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import type { ChildId, DynamicToolCallId, ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
-} from "../../codex-thread-tools/index.js";
+} from "@/runtime/codex-thread-tools";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,
@@ -14,9 +10,12 @@ import {
 	type DynamicTargetAuthority,
 	type DynamicWaitEvent,
 	type DynamicWaitOwner,
-} from "./contract.js";
-import { encodeDynamicCursor, unwrapDynamicCursor } from "./cursors.js";
-import { assertWaitTargetAllowed } from "./classification.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
+import {
+	encodeDynamicCursor,
+	unwrapDynamicCursor,
+} from "@/runtime/codex-dynamic-tools/lib/cursors";
+import { assertWaitTargetAllowed } from "@/runtime/codex-dynamic-tools/lib/classification";
 
 interface WaitProjection {
 	readonly event: DynamicWaitEvent["event"];

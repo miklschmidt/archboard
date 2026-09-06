@@ -5,24 +5,20 @@ import type {
 	EpochOperationRecord,
 	EpochOperationStatus,
 	EpochOperationOutcome,
-} from "../../codex-epoch/index.js";
+} from "@/runtime/codex-epoch";
 import type {
 	CodexSession,
 	SessionLoadedThreadPageResult,
 	SessionThread,
 	SessionThreadPageResult,
 	SessionThreadSource,
-} from "../../codex-session/index.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-session";
+import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
 import type {
 	ThreadLinkReason as AuthoredThreadLinkReason,
 	ThreadLinkState as AuthoredThreadLinkState,
-} from "../../codex-instructions/index.js";
-import type { AdditionalContextPolicy } from "../../codex-instructions/index.js";
+} from "@/runtime/codex-instructions";
+import type { AdditionalContextPolicy } from "@/runtime/codex-instructions";
 
 type ThreadLinkReason = AuthoredThreadLinkReason;
 type ThreadLinkReasonCode = ThreadLinkReason;

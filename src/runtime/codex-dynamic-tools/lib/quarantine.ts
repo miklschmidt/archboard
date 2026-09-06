@@ -1,5 +1,5 @@
-import type { DynamicToolCallResponse } from "../../codex-thread-tools/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
+import type { DynamicToolCallResponse } from "@/runtime/codex-thread-tools";
+import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 import {
 	CodexDynamicEpochQuarantinedError,
 	CodexDynamicOperationTerminalizationError,
@@ -8,7 +8,7 @@ import {
 	type DynamicMutationQuarantineIdentity,
 	type DynamicMutationQuarantineInspection,
 	type DynamicMutationTerminalProof,
-} from "./contract.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
 import {
 	blockedDynamicResponse,
 	createOrdinaryWireOwners,
@@ -25,7 +25,7 @@ import {
 	requestWireKey,
 	type QuarantineLogicalOwner,
 	type QuarantineWireOwner,
-} from "./quarantine-support.js";
+} from "@/runtime/codex-dynamic-tools/lib/quarantine-support";
 
 interface DynamicQuarantineDispatcher {
 	readonly dispatch: (

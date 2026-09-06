@@ -5,10 +5,13 @@ export type {
 	CodexTransportRequestOptions,
 	CodexTransportResponse,
 	TransportRequestFailure,
-} from "./client.js";
+} from "@/runtime/codex-transport/client";
 
-export { createCodexTransport } from "./client.js";
+export { createCodexTransport } from "@/runtime/codex-transport/client";
 
-export { CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP } from "./lib/capacity.js";
+export { CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP } from "@/runtime/codex-transport/lib/capacity";
 
-export type { DynamicServerRequest, TransportServerNotification } from "./server-requests.js";
+export type {
+	DynamicServerRequest,
+	TransportServerNotification,
+} from "@/runtime/codex-transport/server-requests";

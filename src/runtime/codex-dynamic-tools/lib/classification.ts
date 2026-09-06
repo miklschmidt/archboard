@@ -1,7 +1,7 @@
-import { GeneralThreadToolNameSchema } from "../../codex-thread-tools/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
-import { isCodexThreadStatusType } from "../../../shared/codex-app-server-contract/index.js";
-import { CodexDynamicToolsError } from "./contract.js";
+import { GeneralThreadToolNameSchema } from "@/runtime/codex-thread-tools";
+import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import { isCodexThreadStatusType } from "@/shared/codex-app-server-contract";
+import { CodexDynamicToolsError } from "@/runtime/codex-dynamic-tools/lib/contract";
 import type {
 	DynamicCallerAuthority,
 	DynamicEpochState,
@@ -11,7 +11,7 @@ import type {
 	DynamicStatus,
 	DynamicTargetAuthority,
 	DynamicToolName,
-} from "./contract.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
 
 type PolicyAuthorityView<Authority extends DynamicCallerAuthority | DynamicTargetAuthority> =
 	Readonly<Omit<Authority, "linkClassification" | "threadLinkTarget">> & {

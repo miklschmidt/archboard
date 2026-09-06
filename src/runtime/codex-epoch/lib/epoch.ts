@@ -7,16 +7,16 @@ import {
 	emptyManifest,
 	encodeManifest,
 	manifestBytesHash,
-} from "./manifest.js";
+} from "@/runtime/codex-epoch/lib/manifest";
 import {
 	defaultCodexEpochFileSystem,
 	ensureEpochDirectory,
 	readManifestText,
 	writeFileAtomic,
-} from "./storage.js";
-import { CodexEpochError } from "./contract.js";
-import { assertSafeStorageRoots } from "./path-safety.js";
-import type { EpochManifest, EpochOperationRecord } from "./manifest.js";
+} from "@/runtime/codex-epoch/lib/storage";
+import { CodexEpochError } from "@/runtime/codex-epoch/lib/contract";
+import { assertSafeStorageRoots } from "@/runtime/codex-epoch/lib/path-safety";
+import type { EpochManifest, EpochOperationRecord } from "@/runtime/codex-epoch/lib/manifest";
 import type {
 	CodexEpochStore,
 	CodexEpochStoreOptions,
@@ -29,7 +29,7 @@ import type {
 	EpochStageInput,
 	EpochTransaction,
 	Mutation,
-} from "./contract.js";
+} from "@/runtime/codex-epoch/lib/contract";
 import {
 	EPOCH_START_KIND,
 	assertCurrentGeneration,
@@ -55,7 +55,7 @@ import {
 	sameRecordInput,
 	timestamp,
 	uncertainProvenance,
-} from "./validation.js";
+} from "@/runtime/codex-epoch/lib/validation";
 export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpochStore {
 	const fileSystem = options.fileSystem ?? defaultCodexEpochFileSystem;
 	const rootDirectory = normalizeRoot(options.rootDirectory);

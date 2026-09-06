@@ -1,10 +1,10 @@
-import { CODEX_TERM_GRACE_MS } from "../../../shared/timing/timing.js";
-import type { CodexProcessError } from "./process.js";
+import { CODEX_TERM_GRACE_MS } from "@/shared/timing/timing";
+import type { CodexProcessError } from "@/runtime/codex-process/lib/process";
 import type {
 	CodexProcessGroupIdentity,
 	CodexProcessGroupInspection,
 	CodexProcessGroupOperations,
-} from "./process-group.js";
+} from "@/runtime/codex-process/lib/process-group";
 
 type Timer = ReturnType<typeof setTimeout>;
 

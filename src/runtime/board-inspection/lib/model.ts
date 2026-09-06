@@ -1,8 +1,8 @@
-import type { NodeRef, ObstacleRef } from "../schemas.js";
-import type { DecodedRecord } from "./decode.js";
-import { aggregateBoxes, contains, type ExactBox } from "./geometry.js";
-import { sweepIntervalPairs, type SweepWork } from "./interval-sweep.js";
-import { compareIdentity, obstacleIdentity } from "./ordering.js";
+import type { NodeRef, ObstacleRef } from "@/runtime/board-inspection/schemas";
+import type { DecodedRecord } from "@/runtime/board-inspection/lib/decode";
+import { aggregateBoxes, contains, type ExactBox } from "@/runtime/board-inspection/lib/geometry";
+import { sweepIntervalPairs, type SweepWork } from "@/runtime/board-inspection/lib/interval-sweep";
+import { compareIdentity, obstacleIdentity } from "@/runtime/board-inspection/lib/ordering";
 
 interface InspectionNode {
 	id: string;

@@ -3,7 +3,7 @@ export {
 	CODEX_PROCESS_STDERR_MAX_BYTES,
 	CodexProcessError,
 	createCodexProcess,
-} from "./process.js";
+} from "@/runtime/codex-process/process";
 export type {
 	CodexProcess,
 	CodexProcessChild,
@@ -15,4 +15,4 @@ export type {
 	CodexProcessStorageInput,
 	CodexProcessSnapshot,
 	CodexProcessState,
-} from "./process.js";
+} from "@/runtime/codex-process/process";

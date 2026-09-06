@@ -1,24 +1,35 @@
 import { z } from "zod";
 
-import type { AgentElementInput } from "../engine/apply-element-input.js";
-import type { ServerElement } from "../engine/types.js";
-import { readElementMetadata } from "../engine/metadata.js";
+import type { AgentElementInput } from "@/runtime/engine/apply-element-input";
+import type { ServerElement } from "@/runtime/engine/types";
+import { readElementMetadata } from "@/runtime/engine/metadata";
 import {
 	decodePath,
 	decodeRecords,
 	persistedConnectorPointChainEligibility,
 	type DecodedRecord,
-} from "./lib/decode.js";
-import { intersectSegments, point, type ExactPoint, type Segment } from "./lib/geometry.js";
+} from "@/runtime/board-inspection/lib/decode";
+import {
+	intersectSegments,
+	point,
+	type ExactPoint,
+	type Segment,
+} from "@/runtime/board-inspection/lib/geometry";
 import {
 	INSPECTION_FIELDS,
 	type SnapshotField,
 	type SnapshotRecord,
-} from "./lib/input-snapshot.js";
-import { compareIdentity } from "./lib/ordering.js";
-import { type BridgeIncompleteIssue, type BridgeStaleIssue } from "./schemas.js";
+} from "@/runtime/board-inspection/lib/input-snapshot";
+import { compareIdentity } from "@/runtime/board-inspection/lib/ordering";
+import {
+	type BridgeIncompleteIssue,
+	type BridgeStaleIssue,
+} from "@/runtime/board-inspection/schemas";
 
-export { BridgeIncompleteIssueSchema, BridgeStaleIssueSchema } from "./schemas.js";
+export {
+	BridgeIncompleteIssueSchema,
+	BridgeStaleIssueSchema,
+} from "@/runtime/board-inspection/schemas";
 
 const finite = z.number().finite();
 const hexColour = z

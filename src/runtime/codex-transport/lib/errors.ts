@@ -1,5 +1,5 @@
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
-import type { WireRequestCorrelation } from "../../../shared/codex-workbench-identity/index.js";
+import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import type { WireRequestCorrelation } from "@/shared/codex-workbench-identity";
 
 type CodexRequestFailureReason =
 	| "cancelled"

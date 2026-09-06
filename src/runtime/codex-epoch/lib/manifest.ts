@@ -1,13 +1,8 @@
 import { createHash } from "node:crypto";
 import { isAbsolute, resolve } from "node:path";
 
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import { assertNoDuplicateKeys } from "./manifest-json.js";
+import type { ChildEpoch, ChildId, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
+import { assertNoDuplicateKeys } from "@/runtime/codex-epoch/lib/manifest-json";
 
 const CODEX_EPOCH_MANIFEST_SCHEMA = 1 as const;
 const THREAD_PROVENANCE_KINDS = new Set([

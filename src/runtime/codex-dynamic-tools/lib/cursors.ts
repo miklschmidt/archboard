@@ -1,5 +1,5 @@
-import type { ChildEpoch, ChildId } from "../../../shared/codex-workbench-identity/index.js";
-import { CodexDynamicToolsError } from "./contract.js";
+import type { ChildEpoch, ChildId } from "@/shared/codex-workbench-identity";
+import { CodexDynamicToolsError } from "@/runtime/codex-dynamic-tools/lib/contract";
 
 type DynamicCursorDirection = "asc" | "desc" | "event";
 

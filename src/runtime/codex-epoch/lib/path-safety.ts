@@ -1,7 +1,7 @@
 import { isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 
-import { CodexEpochError } from "./contract.js";
-import type { CodexEpochFileSystem } from "./storage.js";
+import { CodexEpochError } from "@/runtime/codex-epoch/lib/contract";
+import type { CodexEpochFileSystem } from "@/runtime/codex-epoch/lib/storage";
 
 function assertSafeStorageRoots(
 	fileSystem: CodexEpochFileSystem,

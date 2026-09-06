@@ -1,13 +1,13 @@
-import type { ServerElement } from "../engine/types.js";
-import { boundingBoxOf, boxOf, type Box } from "../engine/layout.js";
-import { labelOf } from "../engine/promote.js";
+import type { ServerElement } from "@/runtime/engine/types";
+import { boundingBoxOf, boxOf, type Box } from "@/runtime/engine/layout";
+import { labelOf } from "@/runtime/engine/promote";
 import {
 	type ArchboardBlock,
 	nodeIdOf,
 	readElementMetadata,
 	semanticElementProjection,
-} from "../engine/metadata.js";
-import { withoutValidBridgeDecorations } from "./bridge.js";
+} from "@/runtime/engine/metadata";
+import { withoutValidBridgeDecorations } from "@/runtime/board-inspection/bridge";
 
 interface ArchitectureNode {
 	readonly node: string;

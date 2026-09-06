@@ -1,6 +1,9 @@
-import { ProtocolDecodeError } from "../../codex-protocol/index.js";
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
-import { CodexTransportUsageError, CodexTransportWriteError } from "./errors.js";
+import { ProtocolDecodeError } from "@/runtime/codex-protocol";
+import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import {
+	CodexTransportUsageError,
+	CodexTransportWriteError,
+} from "@/runtime/codex-transport/lib/errors";
 
 export type WireId = string | number;
 

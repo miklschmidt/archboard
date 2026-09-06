@@ -1,4 +1,4 @@
-import type { CheckResult, InspectionFinding } from "../schemas.js";
+import type { CheckResult, InspectionFinding } from "@/runtime/board-inspection/schemas";
 
 const assertNever = (value: never): never => {
 	throw new Error(`Unhandled inspection finding: ${JSON.stringify(value)}`);

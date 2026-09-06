@@ -1,6 +1,6 @@
 import type { Readable } from "node:stream";
 
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
+import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
 
 interface StreamReaderHandlers {
 	readonly onLine: (line: Buffer) => void;
