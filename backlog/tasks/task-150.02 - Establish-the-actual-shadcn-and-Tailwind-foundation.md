@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-05 14:48'
+updated_date: '2026-09-06 17:42'
 labels: []
 dependencies:
   - TASK-150.01
@@ -57,7 +57,7 @@ Takeover plan 2026-09-05 (Claude orchestrating):
 1. Component owner: src/ui/components is the shared module. components.json aliases ui/components/lib/hooks -> @/ui/components, css -> src/ui/theme/app.css, style base-nova, iconLibrary remixicon. The registry's class merger is the pinned npm package 'cn' (0.2.5), so no local utils file exists (the CLI's generated utils.ts was removed).
 2. Preset b3QvqlIdU applied with the pinned CLI (shadcn 4.21.0 after the CLI's own bump; recorded). Reference adaptations in app.css: cobalt #155eef primary/ring/sidebar-primary, lime status tokens (--status, --status-foreground, --status-subtle exposed as color-status*), chalk/pale-stone light surfaces, charcoal/black dark surfaces, radius 0.45rem, bundled Onest/DM Mono @font-face (Manrope removed), font-synthesis none, data-theme dark custom variant, color-scheme, reduced-motion rule, Excalidraw vendor CSS imported unlayered.
 3. Pull only needed base-nova items with 'shadcn add': button, badge, separator, tooltip, dialog, alert-dialog, alert, input, textarea, field, label, select, combobox, input-group, checkbox, radio-group, collapsible, tabs, toggle-group, dropdown-menu, sidebar (+sheet, skeleton, use-mobile). Convert their lucide imports to @remixicon/react equivalents; keep markup/focus/keyboard/state mechanics.
-4. UI lint: add an override in src/ui/.oxlintrc.jsonc listing the exact generated files, turning off only authored-style/layout/length rules (jsdoc*, jsdoc-extra/*, complexity, max-lines, archboard/no-anonymous-jsx-handlers, archboard/absolute-imports where the CLI writes package-relative forms) while keeping correctness/suspicious/perf, typescript type-aware, react, jsx-a11y and import rules. Classify every remaining diagnostic individually; statement-level suppressions only with a reason.
+4. UI lint: add an override in src/ui/.oxlintrc.jsonc listing the exact generated files, turning off only authored-style/layout/length rules (jsdoc*, jsdoc-extra/*, complexity, max-lines, archboard/no-anonymous-jsx-handlers, archboard/absolute-imports where the CLI writes package-relative forms) while keeping correctness/suspicious/perf, typescript type-aware, react, jsx-a11y and import rules. Classify every remaining diagnostic individually; statement-level suppressions only with a reason. User clarification (2026-09-06): the documented jsx-a11y/prefer-tag-over-role override in src/ui/.oxlintrc.jsonc is approved as written for its exact vendor-file list. Its valid-ARIA and upstream-markup/styling rationale justifies this specific exception to statement-level-only suppressions and retained accessibility checks; no narrowing or configuration change is required.
 5. Fresh entry: frontend/index.html + frontend/main.tsx mount src/ui/application (Application) with StrictMode; window.name stays 'archboard' (library site return contract). src/ui/shell composes header (wordmark mask, board identity, connection/claim state, theme toggle), Sidebar navigator, canvas stage with vendor Excalidraw mount (src/ui/canvas/CanvasStage), optional inspector, collapsible workbench dock. Typed view inputs and callbacks only; example data lives in one clearly named presentation-example module and no fake backend.
 6. Gates: bun run lint (both stages), bun run type-check, bun run build. No browser tests.
 <!-- SECTION:PLAN:END -->

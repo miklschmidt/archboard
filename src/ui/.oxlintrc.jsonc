@@ -207,6 +207,9 @@
 				"react-perf/jsx-no-new-array-as-prop": "off",
 				// role="group" on a div is valid ARIA; swapping the official element for
 				// fieldset would change upstream markup and default styling.
+				// User clarification (2026-09-06, TASK-150): this justified override is
+				// approved for the exact files above, as an exception to the task's
+				// statement-level-only wording and retained accessibility checks.
 				"jsx-a11y/prefer-tag-over-role": "off",
 				"jsdoc/check-access": "off",
 				"jsdoc/check-property-names": "off",
