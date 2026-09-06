@@ -135,11 +135,18 @@ function presentationNotice(error: string): ShellNotice {
  * @param notice The notice to add.
  * @returns The notices, with the notice last when it is new.
  */
-function withNotice(notices: readonly ShellNotice[], notice: ShellNotice): ShellNotice[] {
-	if (notices.some((candidate) => candidate.id === notice.id)) {
-		return notices.map((candidate) => (candidate.id === notice.id ? notice : candidate));
+function withNotice(notices: readonly ShellNotice[], notice: ShellNotice): readonly ShellNotice[] {
+	const existing = notices.find((candidate) => candidate.id === notice.id);
+	if (existing === undefined) {
+		return [...notices, notice];
 	}
-	return [...notices, notice];
+	// Notices are plain data; a re-raise of the same words is not a change.
+	// Returning the same array keeps React state stable, so an effect that
+	// keeps a notice current cannot re-render the application forever.
+	if (JSON.stringify(existing) === JSON.stringify(notice)) {
+		return notices;
+	}
+	return notices.map((candidate) => (candidate.id === notice.id ? notice : candidate));
 }
 
 /**
@@ -148,8 +155,11 @@ function withNotice(notices: readonly ShellNotice[], notice: ShellNotice): Shell
  * @param id The id to drop.
  * @returns The notices without it.
  */
-function withoutNotice(notices: readonly ShellNotice[], id: string): ShellNotice[] {
-	return notices.filter((candidate) => candidate.id !== id);
+function withoutNotice(notices: readonly ShellNotice[], id: string): readonly ShellNotice[] {
+	// Same reference when there was nothing to drop, for the reason above.
+	return notices.some((candidate) => candidate.id === id)
+		? notices.filter((candidate) => candidate.id !== id)
+		: notices;
 }
 
 export {
