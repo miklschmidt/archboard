@@ -105,6 +105,25 @@ describe.serial("board version conflict diagnosis", () => {
 		expect(versionModule.versionMove(2, null)).toBe("unknown");
 	});
 
+	test("recovery commands quote a board name the shell would split or pair up", () => {
+		const identity = boardModule.makeIdentity({ board: "owner's board" });
+		const { board } = ownBoard(identity, "owner's board.excalidraw.md");
+		ioModule.writeBoardContent(board, contentOf(box("aaa", 10)));
+		writeFileSync(board.file, `${readFileSync(board.file, "utf-8")}\n<!-- edited by hand -->\n`);
+		let outcomes: { reload: string; overwrite: string; saveAs: string } | undefined;
+		try {
+			ioModule.writeBoardContent(board, contentOf(box("aaa", 20)));
+		} catch (error) {
+			outcomes = (error as { conflict?: { outcomes?: typeof outcomes } }).conflict?.outcomes;
+		}
+		const quoted = "'owner'\\''s board'";
+		expect(outcomes).toEqual({
+			reload: `browser show ${quoted} --pane <spec> --reload`,
+			overwrite: `board save --board ${quoted} --force --doing "keeping the canvas"`,
+			saveAs: `board save --board ${quoted} --as 'owner'\\''s board@from-canvas' --doing "keeping both"`,
+		});
+	});
+
 	test("note-watch marks reuse the same ahead and foreign diagnoses", () => {
 		const identity = boardModule.makeIdentity({ board: "watched-version" });
 		const { key, board } = ownBoard(identity, "watched-version.excalidraw.md");
