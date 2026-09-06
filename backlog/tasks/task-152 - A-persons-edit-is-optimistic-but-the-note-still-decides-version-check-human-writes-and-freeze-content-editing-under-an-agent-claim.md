@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-06 12:59'
-updated_date: '2026-09-06 18:14'
+updated_date: '2026-09-06 18:20'
 labels: []
 dependencies: []
 priority: high
@@ -73,6 +73,12 @@ author: @claude
 created: 2026-09-06 18:04
 ---
 Codex finding on reporting.ts:246 validated and fixed in ee9a24c4. Empirically Excalidraw keeps the editor textarea open after the scene replacement and would write the text back on submit if the element were still present, so the pane removes the element outright and blurs the editor; the browser owner proves the typed text is gone from the pane and never reaches the note.
+---
+
+author: @codex
+created: 2026-09-06 18:20
+---
+Re-review of ea89db1c..a970611dddd3407412b6da21d9f67dd1cd7cc250: the original P2 is partially resolved by 0651d41a; a new text draft absent from the note is discarded, but editing existing text still fails AC2. Remaining [P2] src/ui/canvas/lib/reporting.ts:403-408: applyNoteScene installs the note and then closes the old editor by blur. Excalidraw submits that textarea value into any matching text ID still in the scene, overwriting the just-restored authoritative text. Reproduced through the serial browser adapter by varying the new browser case to select seeded text id note, open it with Enter, select all and type draft, then trigger the same stale drag refusal. After refusal the editor was closed but the pane texts contained draft while the server note retained drawn by the agent. The assertion that draft is absent failed. Log: /tmp/archboard-rereview-existing-text.log. Ensure discarding the editor cannot submit its stale contents into the restored scene; cover an existing text element retained by the note as well as a new draft. No fixes made; finding remains open. Verification in a disposable checkout at TARGET with confined HOME/XDG/vault/Codex state and memory-limited sequential processes: lint, fmt:check, both TypeScript projects and frontend build passed; 11 focused module tests (board-version-conflict, note-version, composer-controls), 8 held-board recovery system tests, and the human-version-refusal (2 cases), claim-interaction and codex-text-workbench browser owners passed. A separate existing-text variation of the refusal browser owner failed as described on TASK-152. The probe changed only its disposable test setup, restored it afterwards, and never modified product source. This was focused re-verification, not a new complete bun run check.
 ---
 <!-- COMMENTS:END -->
 
