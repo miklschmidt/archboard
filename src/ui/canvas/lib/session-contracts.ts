@@ -103,6 +103,8 @@ interface CanvasSessionOptions<Transport extends WorkbenchTransportPort> {
 	onPaneStateAccepted?: () => void;
 	/** A board note could not be rendered and none of it entered Excalidraw. */
 	onBoardError?: (error: string) => void;
+	/** An element's board link could not be followed. */
+	onBoardLinkError?: (error: string) => void;
 	/**
 	 * This tab runs a bundle the canvas no longer serves (TASK-056). Said once
 	 * per build, at the pane's own pulse, rather than discovered by a command
@@ -188,7 +190,7 @@ interface CanvasSession<Transport extends WorkbenchTransportPort> {
 	clearSelection: () => void;
 	/** Open the selected element's code target. */
 	openCode: (elementId: string) => void;
-	/** Excalidraw's onLinkOpen, for code links drawn on the board. */
+	/** Excalidraw's onLinkOpen, for board and code links. */
 	handleLinkOpen: NonNullable<ExcalidrawProps["onLinkOpen"]>;
 	previewController: MountedBoardPreviewController;
 	/** The transport retained by the current canvas socket generation. */

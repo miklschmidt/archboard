@@ -42,6 +42,7 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 /** What other owners hear from the panes; bound live each render. */
 interface PaneEvents {
 	readonly onBoardError: (paneId: string, error: string) => void;
+	readonly onBoardLinkError: (error: string) => void;
 	/** Which boards an agent is working on, across the server (ADR 0022). */
 	readonly onAgentActivity: (activity: readonly AgentActivityEntry[]) => void;
 	/** A pane withdrew the person's unwritten edit and shows the note's state (ADR 0022). */
@@ -83,6 +84,7 @@ type PaneHost = Required<
 		| "onPathFocus"
 		| "onPathFocusOverlay"
 		| "onCodeTargetNotice"
+		| "onBoardLinkError"
 		| "onAgentActivity"
 		| "onEditsWithdrawn"
 	>
@@ -230,6 +232,13 @@ function createPaneHost(setters: HostSetters): PaneHost {
 		 */
 		onBoardError: (paneId: string, error: string): void => {
 			events.read().onBoardError(paneId, error);
+		},
+		/**
+		 * A board link could not be followed.
+		 * @param error The refusal.
+		 */
+		onBoardLinkError: (error: string): void => {
+			events.read().onBoardLinkError(error);
 		},
 		/**
 		 * This tab runs a bundle the canvas no longer serves.

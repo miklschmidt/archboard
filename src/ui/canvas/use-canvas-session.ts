@@ -8,6 +8,7 @@ import type { AppState, ExcalidrawImperativeAPI, LibraryItems } from "@excalidra
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
+import { createCanvasLinkHandler } from "@/ui/canvas/lib/link-handler";
 import { createPaneCore, type PaneCore, type PaneCoreHost } from "@/ui/canvas/lib/pane-core";
 import { usePaneContact, type PaneContact } from "@/ui/canvas/pane-contact";
 import { SessionBox } from "@/ui/canvas/lib/session-box";
@@ -21,7 +22,7 @@ import {
 	type TakeBackResult,
 } from "@/ui/canvas/lib/session-contracts";
 import type { WorkbenchTransportPort } from "@/ui/canvas/workbench-port";
-import { activateCodeTarget, createCodeTargetLinkHandler } from "@/ui/code-target";
+import { activateCodeTarget } from "@/ui/code-target";
 import { agentClaim, type BoardIdentity, type DoingEntry, type LockHolder } from "@/ui/types";
 
 /**
@@ -191,8 +192,21 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 		[onFailure, state.boardKey],
 	);
 	const handleLinkOpen = useMemo(
-		() => createCodeTargetLinkHandler({ boardKey: state.boardKey, onSuccess: noop, onFailure }),
-		[onFailure, state.boardKey],
+		() =>
+			createCanvasLinkHandler({
+				boardKey: state.boardKey,
+				clientId,
+				onSuccess: noop,
+				onFailure,
+				/**
+				 * Send a board-link failure to the current shell.
+				 * @param error The failure and recovery guidance.
+				 */
+				onBoardLinkError: (error: string): void => {
+					box.options.onBoardLinkError?.(error);
+				},
+			}),
+		[box, clientId, onFailure, state.boardKey],
 	);
 
 	return {
