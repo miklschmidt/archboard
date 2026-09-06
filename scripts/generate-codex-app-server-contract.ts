@@ -370,7 +370,19 @@ async function generateContract(codexEntry: string): Promise<void> {
 	}
 }
 
+/**
+ * `--ensure`: generate only when the published pointer is not already the
+ * expected version. Lint and type-check run this first so a fresh checkout
+ * never lints against a missing contract, and a warm one pays one readlink.
+ */
+function contractIsCurrent(): boolean {
+	return currentVersionName() === versionName && existsSync(join(currentRoot, "index.ts"));
+}
+
 async function main(): Promise<void> {
+	if (process.argv.includes("--ensure") && contractIsCurrent()) {
+		return;
+	}
 	const codexEntry = resolveLocalCodexEntry();
 	requireOwnedDirectory(contractRoot, join("generated", "versions"));
 	await generateContract(codexEntry);

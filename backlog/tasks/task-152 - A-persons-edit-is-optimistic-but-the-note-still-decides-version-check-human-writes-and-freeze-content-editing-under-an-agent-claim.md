@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-06 12:59'
-updated_date: '2026-09-06 13:10'
+updated_date: '2026-09-06 13:43'
 labels: []
 dependencies: []
 priority: high
@@ -41,3 +41,9 @@ AGENTS.md carried the rule 'a person is never refused: never version-refused, an
 4. Docs: skill text in skills/archboard (take-back is explicit, no steering toward the watched board), ADR 0022 wording on selection under view mode; TESTING/DESIGN untouched unless wrong.
 5. Verify: focused owners per package, then the complete bun run check in an isolated worktree; browser lane focus on claim-interaction, human-hold-persistence, live-session-convergence, hold-generation.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented in 5e3a5daa on codex/task-150-ui-rebuild. Server: statedVersion parses the same for both writers and requires expectVersion on a pane's write (0 before any note); version carried on initial_elements, board_switched, elements_changed and board_released(elsewhere); /api/boards/hold no longer revokes and the lock refuses a human hold against somebody else's claim immediately instead of at the 400 ms deadline; new /api/boards/take-back; boardless agent_activity snapshot from src/server/canvas/lib/agent-activity.ts with ACTIVITY_LINGER_MS. UI: noteVersion in the reporting state, expectVersion on every human write and beacon, version-conflict reconcile to the refusal document with one notice, readOnly under an agent claim, take-back via the route, navigator agent-activity marker and doing line including unlisted boards. Docs: skill and reference wording, ADR 0022 selection sentence. Owners: board-version-client, board-lock-api, doing-activity, write-boundary-policy, note-version and agent-activity unit tests, claim-interaction rewritten, new human-version-refusal browser owner. Verification: fmt, lint, type-check, engine tests, test:modules, test:system, focused browser lane green; complete bun run check running in an isolated worktree.
+<!-- SECTION:NOTES:END -->
