@@ -1,11 +1,11 @@
-import { deliverOne, makeDelivery } from "./deliver.js";
-import type { CallbackDeliveryEvidence } from "./deliver.js";
-import { CODEX_SEMANTIC_FRESHNESS_MS } from "../../../shared/timing/timing.js";
+import { deliverOne, makeDelivery } from "@/runtime/codex-coordinator-callbacks/lib/deliver";
+import type { CallbackDeliveryEvidence } from "@/runtime/codex-coordinator-callbacks/lib/deliver";
+import { CODEX_SEMANTIC_FRESHNESS_MS } from "@/shared/timing/timing";
 import {
 	coordinatorCallbackCoalescingKey,
 	coordinatorCallbackKey,
 	normalizeCoordinatorCallback,
-} from "./normalize.js";
+} from "@/runtime/codex-coordinator-callbacks/lib/normalize";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackDelivery,
@@ -15,10 +15,13 @@ import type {
 	CoordinatorCallbacks,
 	CoordinatorCallbacksRetainedState,
 	CoordinatorCallbackSource,
-} from "./contract.js";
+} from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
 export const CALLBACK_BUFFER_LIMIT = 64;
 
+/**
+ *
+ */
 function realtimeGenerationKey(
 	generation: NonNullable<CoordinatorCallback["correlation"]["realtimeGeneration"]>,
 ): string {
@@ -42,10 +45,16 @@ interface PendingCallback {
 	settled: boolean;
 }
 
+/**
+ *
+ */
 function freeze<T>(value: T): T {
 	return Object.freeze(value);
 }
 
+/**
+ *
+ */
 function invalidDelivery(evidence: CallbackDeliveryEvidence): CoordinatorCallbackDelivery {
 	return makeDelivery(null, evidence, {
 		attemptedAtMs: null,
@@ -55,6 +64,9 @@ function invalidDelivery(evidence: CallbackDeliveryEvidence): CoordinatorCallbac
 	});
 }
 
+/**
+ *
+ */
 export function createCodexCoordinatorCallbacks(
 	options: CoordinatorCallbackOptions,
 ): CoordinatorCallbacks {
@@ -76,6 +88,9 @@ export function createCodexCoordinatorCallbacks(
 			"The coordinator callback settled ledger limit must be a positive integer.",
 		);
 	}
+	/**
+	 *
+	 */
 	const captureEvidence = (callback: CoordinatorCallback | null): CallbackDeliveryEvidence => {
 		const capturedAtMs = callback?.kind === "semantic" ? callback.semantic.capturedAtMs : now();
 		return Object.freeze({
@@ -87,6 +102,9 @@ export function createCodexCoordinatorCallbacks(
 					: capturedAtMs + CODEX_SEMANTIC_FRESHNESS_MS,
 		});
 	};
+	/**
+	 *
+	 */
 	const incrementOmittedPrefix = (
 		generation: NonNullable<CoordinatorCallback["correlation"]["realtimeGeneration"]>,
 	): void => {
@@ -103,6 +121,9 @@ export function createCodexCoordinatorCallbacks(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const settle = (entry: PendingCallback, delivery: CoordinatorCallbackDelivery): void => {
 		if (entry.settled) {
 			return;
@@ -127,6 +148,9 @@ export function createCodexCoordinatorCallbacks(
 		entry.resolve(delivery);
 	};
 
+	/**
+	 *
+	 */
 	const settleWithoutAttempt = (
 		entry: PendingCallback,
 		outcome: CoordinatorCallbackDeliveryOutcome,
@@ -143,6 +167,9 @@ export function createCodexCoordinatorCallbacks(
 		);
 	};
 
+	/**
+	 *
+	 */
 	const drain = async (): Promise<void> => {
 		if (draining) {
 			return;
@@ -175,6 +202,9 @@ export function createCodexCoordinatorCallbacks(
 		}
 	};
 
+	/**
+	 *
+	 */
 	function schedule(): void {
 		if (draining || drainScheduled || disposed) {
 			return;
@@ -186,6 +216,9 @@ export function createCodexCoordinatorCallbacks(
 		});
 	}
 
+	/**
+	 *
+	 */
 	const enqueue = (event: CoordinatorCallbackSource): Promise<CoordinatorCallbackDelivery> => {
 		let callback: CoordinatorCallback;
 		try {
@@ -274,7 +307,13 @@ export function createCodexCoordinatorCallbacks(
 
 	return freeze({
 		enqueue,
+		/**
+		 *
+		 */
 		flush: () => drainTail,
+		/**
+		 *
+		 */
 		inspect: () =>
 			freeze(
 				settledOrder.flatMap((key) => {
@@ -282,6 +321,9 @@ export function createCodexCoordinatorCallbacks(
 					return delivery === undefined ? [] : [delivery];
 				}),
 			),
+		/**
+		 *
+		 */
 		inspectHistory: (generation) => {
 			const generationKey = realtimeGenerationKey(generation);
 			return freeze({
@@ -302,6 +344,9 @@ export function createCodexCoordinatorCallbacks(
 				omittedPrefixCount: omittedPrefixes.get(generationKey) ?? 0,
 			});
 		},
+		/**
+		 *
+		 */
 		get: (event: CoordinatorCallbackSource) => {
 			try {
 				const link = options.currentWorkhorseLink();
@@ -317,7 +362,13 @@ export function createCodexCoordinatorCallbacks(
 				return undefined;
 			}
 		},
+		/**
+		 *
+		 */
 		pendingCount: () => pending.length,
+		/**
+		 *
+		 */
 		dispose: () => {
 			if (disposed) {
 				return;
@@ -337,6 +388,9 @@ export function createCodexCoordinatorCallbacks(
 	});
 }
 
+/**
+ *
+ */
 export function installCodexCoordinatorCallbacks(
 	retained: CoordinatorCallbacksRetainedState,
 	options: CoordinatorCallbackOptions,
@@ -349,4 +403,7 @@ export function installCodexCoordinatorCallbacks(
 	return callbacks;
 }
 
-export { coordinatorCallbackKey, normalizeCoordinatorCallback } from "./normalize.js";
+export {
+	coordinatorCallbackKey,
+	normalizeCoordinatorCallback,
+} from "@/runtime/codex-coordinator-callbacks/lib/normalize";

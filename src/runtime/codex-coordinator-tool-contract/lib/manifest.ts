@@ -73,10 +73,16 @@ const CanonicalNamespaceSchema = z
 	})
 	.strict();
 
+/**
+ *
+ */
 function sha256(bytes: Uint8Array): string {
 	return createHash("sha256").update(bytes).digest("hex");
 }
 
+/**
+ *
+ */
 function decodeCanonicalBytes(bytes: Buffer, label: string): string {
 	if (bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
 		throw new TypeError(`${label} must be UTF-8 without a BOM.`);
@@ -100,6 +106,9 @@ function decodeCanonicalBytes(bytes: Buffer, label: string): string {
 	return text;
 }
 
+/**
+ *
+ */
 function parseManifestText(text: string, label: string): CanonicalNamespace {
 	let value: unknown;
 	try {
@@ -107,9 +116,12 @@ function parseManifestText(text: string, label: string): CanonicalNamespace {
 	} catch (error) {
 		throw new TypeError(`${label} is not valid JSON.`, { cause: error });
 	}
-	return CanonicalNamespaceSchema.parse(value) as CanonicalNamespace;
+	return CanonicalNamespaceSchema.parse(value);
 }
 
+/**
+ *
+ */
 function deepFreeze<T>(value: T): T {
 	if (typeof value !== "object" || value === null || Object.isFrozen(value)) {
 		return value;
@@ -121,10 +133,16 @@ function deepFreeze<T>(value: T): T {
 	return value;
 }
 
+/**
+ *
+ */
 function expectedToolNames(namespace: NamespaceName): readonly string[] {
 	return EXPECTED_TOOL_NAMES[namespace];
 }
 
+/**
+ *
+ */
 function assertManifestShape(manifest: CanonicalNamespace, expectedName: NamespaceName): void {
 	if (manifest.type !== "namespace") {
 		throw new TypeError(`${expectedName} must be a namespace.`);
@@ -160,6 +178,9 @@ interface LoadedManifest {
 	readonly sha256: string;
 }
 
+/**
+ *
+ */
 function loadManifest(namespace: NamespaceName): LoadedManifest {
 	const label = `${namespace} manifest`;
 	const bytes = readFileSync(new URL(`../${MANIFEST_FILES[namespace]}`, import.meta.url));
@@ -194,16 +215,25 @@ interface CoordinatorManifestIntegrity {
 	readonly voiceSha256: string;
 }
 
+/**
+ *
+ */
 function manifestFor(namespace: NamespaceName): CanonicalNamespace {
 	return namespace === "archboard_workhorse"
 		? ARCHBOARD_WORKHORSE_NAMESPACE
 		: ARCHBOARD_VOICE_NAMESPACE;
 }
 
+/**
+ *
+ */
 function expectedDigest(namespace: NamespaceName): string {
 	return MANIFEST_DIGESTS[namespace];
 }
 
+/**
+ *
+ */
 function parseCandidate(
 	namespace: NamespaceName,
 	candidate: string | Uint8Array,
@@ -242,6 +272,9 @@ function verifyCoordinatorManifestIntegrity(): CoordinatorManifestIntegrity {
 	return Object.freeze({ workhorseSha256: workhorse.sha256, voiceSha256: voice.sha256 });
 }
 
+/**
+ *
+ */
 function canonicalTool(namespace: NamespaceName, toolName: CoordinatorToolName): CanonicalTool {
 	const tool = manifestFor(namespace).tools.find((candidate) => candidate.name === toolName);
 	if (!tool) {

@@ -3,12 +3,15 @@ import { createHash } from "node:crypto";
 import {
 	COORDINATOR_TOOL_MANIFEST_DIGESTS,
 	verifyCoordinatorManifestIntegrity,
-} from "../../codex-coordinator-tool-contract/index.js";
+} from "@/runtime/codex-coordinator-tool-contract";
 import {
 	COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256,
 	verifyAuthoredInstructionIntegrity,
-} from "../../codex-instructions/index.js";
-import type { CoordinatorReviewHashes, CoordinatorSettings } from "./contract.js";
+} from "@/runtime/codex-instructions";
+import type {
+	CoordinatorReviewHashes,
+	CoordinatorSettings,
+} from "@/runtime/codex-coordinator/lib/contract";
 
 const CATALOGUE_HASH_INPUT = JSON.stringify({
 	workhorse: COORDINATOR_TOOL_MANIFEST_DIGESTS.workhorse,
@@ -19,10 +22,16 @@ const COORDINATOR_CATALOGUE_HASH = createHash("sha256")
 	.update(CATALOGUE_HASH_INPUT, "utf8")
 	.digest("hex");
 
+/**
+ *
+ */
 function hashCoordinatorSettings(settings: CoordinatorSettings): string {
 	return createHash("sha256").update(canonicalJson(settings), "utf8").digest("hex");
 }
 
+/**
+ *
+ */
 function reviewedCoordinatorHashes(settingsHash: string): CoordinatorReviewHashes {
 	const instruction = verifyAuthoredInstructionIntegrity();
 	const manifests = verifyCoordinatorManifestIntegrity();
@@ -42,6 +51,9 @@ function reviewedCoordinatorHashes(settingsHash: string): CoordinatorReviewHashe
 	});
 }
 
+/**
+ *
+ */
 function canonicalJson(value: unknown): string {
 	if (value === null) {
 		return "null";
@@ -67,6 +79,9 @@ function canonicalJson(value: unknown): string {
 	throw new TypeError("coordinator settings contain a non-JSON value");
 }
 
+/**
+ *
+ */
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }

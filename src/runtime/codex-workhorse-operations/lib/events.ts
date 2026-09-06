@@ -1,10 +1,10 @@
-import type { EpochTransaction } from "../../codex-epoch/index.js";
-import type { QueuedSubmissionId, TurnId } from "../../../shared/codex-workbench-identity/index.js";
+import type { EpochTransaction } from "@/runtime/codex-epoch";
+import type { QueuedSubmissionId, TurnId } from "@/shared/codex-workbench-identity";
 import {
 	type WorkhorseOperationEvent,
 	type WorkhorseOperationEventListener,
 	type WorkhorseOperationOptions,
-} from "./contract.js";
+} from "@/runtime/codex-workhorse-operations/lib/contract";
 import {
 	boundedDetail,
 	freeze,
@@ -17,8 +17,11 @@ import {
 	type StageInput,
 	type WorkhorseEvents,
 	snapshotCall,
-} from "./internal.js";
+} from "@/runtime/codex-workhorse-operations/lib/internal";
 
+/**
+ *
+ */
 function correlationForState(state: OperationState) {
 	return freeze({
 		operationId: state.operationId,
@@ -34,6 +37,9 @@ function correlationForState(state: OperationState) {
 	});
 }
 
+/**
+ *
+ */
 export function createWorkhorseEvents(options: WorkhorseOperationOptions): WorkhorseEvents {
 	const listeners = new Set<WorkhorseOperationEventListener>();
 	const operations = new Map<string, OperationState>();
@@ -47,6 +53,9 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 
 	const correlation = correlationForState;
 
+	/**
+	 *
+	 */
 	const emit = (
 		state: OperationState,
 		type: WorkhorseOperationEvent["type"],
@@ -111,6 +120,9 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		}
 	};
 
+	/**
+	 *
+	 */
 	const stage = (input: StageInput): OperationState => {
 		if (input.workhorse.proof === null) {
 			throw operationError("unknown_provenance", "Workhorse proof is missing.");
@@ -194,6 +206,9 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		return state;
 	};
 
+	/**
+	 *
+	 */
 	const settleDurable = (
 		state: OperationState,
 		requested: Exclude<OperationState["outcome"], "pending">,
@@ -254,6 +269,9 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		return outcome;
 	};
 
+	/**
+	 *
+	 */
 	const terminal = (
 		state: OperationState,
 		type: "completed" | "failed",
@@ -270,6 +288,9 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		emit(state, type, state.outcome, queue, detail);
 	};
 
+	/**
+	 *
+	 */
 	const clear = (state: OperationState): void => {
 		if (state.terminalEmitted) {
 			return;
@@ -281,6 +302,9 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		}
 	};
 
+	/**
+	 *
+	 */
 	const correlateTurn = (
 		state: OperationState,
 		turnId: TurnId,
@@ -318,6 +342,9 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		}
 	};
 
+	/**
+	 *
+	 */
 	const reconcileUnknownQueue = (
 		queue: readonly { readonly id: QueuedSubmissionId; readonly clientUserMessageId: string }[],
 	): void => {
@@ -356,6 +383,9 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		}
 	};
 
+	/**
+	 *
+	 */
 	const scheduleQueueReconciliation = (): void => {
 		queueReconcileTail = queueReconcileTail.then(
 			async () => {
@@ -371,6 +401,9 @@ export function createWorkhorseEvents(options: WorkhorseOperationOptions): Workh
 		);
 	};
 
+	/**
+	 *
+	 */
 	const subscribe = (listener: WorkhorseOperationEventListener): (() => void) => {
 		listeners.add(listener);
 		return () => listeners.delete(listener);

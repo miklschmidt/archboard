@@ -1,26 +1,19 @@
-import { CodexEpochError, type EpochExecutionRequest } from "../../codex-epoch/index.js";
-import { CodexSessionMutationError, type SessionParams } from "../../codex-session/index.js";
+import { CodexEpochError, type EpochExecutionRequest } from "@/runtime/codex-epoch";
+import { CodexSessionMutationError, type SessionParams } from "@/runtime/codex-session";
 import {
 	createThreadInjectItemsParams,
 	type ArchboardContext,
 	type ThreadInjectItemsParams,
-} from "../../codex-instructions/index.js";
-import type {
-	SemanticCursor,
-	SettledSemanticChangeEvent,
-} from "../../codex-semantic-context/index.js";
+} from "@/runtime/codex-instructions";
+import type { SemanticCursor, SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
 import type {
 	ThreadLink,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkClassification,
 	ThreadLinkSnapshot,
-} from "../../codex-thread-link/index.js";
-import { CodexThreadLinkError, type ThreadLinkReasonCode } from "../../codex-thread-link/index.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-thread-link";
+import { CodexThreadLinkError, type ThreadLinkReasonCode } from "@/runtime/codex-thread-link";
+import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
 import type {
 	CodexThreadContextDelivery,
 	CodexThreadContextDeliveryOptions,
@@ -29,7 +22,7 @@ import type {
 	CodexThreadContextDeliveryState,
 	CodexThreadContextEventId,
 	CodexThreadContextExecution,
-} from "./contract.js";
+} from "@/runtime/codex-thread-context/lib/contract";
 
 interface DeliveryTarget {
 	readonly threadId: ThreadId;
@@ -50,13 +43,22 @@ function canonicalSemanticCursorToken(cursor: SemanticCursor): string {
 	return `${cursor.feedId}:${cursor.sequence}`;
 }
 
+/**
+ *
+ */
 const keyFor = (event: CodexThreadContextEventId): string =>
 	JSON.stringify([event.feedId, event.sequence]);
 
+/**
+ *
+ */
 function eventId(event: SettledSemanticChangeEvent): CodexThreadContextEventId {
 	return Object.freeze({ feedId: event.feedId, sequence: event.cursor?.sequence ?? -1 });
 }
 
+/**
+ *
+ */
 function generationReason(
 	childId: ChildId,
 	epoch: ChildEpoch,
@@ -71,6 +73,9 @@ function generationReason(
 	return null;
 }
 
+/**
+ *
+ */
 function epochErrorReason(error: unknown): CodexThreadContextDeliveryReason {
 	if (error instanceof CodexEpochError) {
 		if (error.code === "stale_child") {
@@ -86,10 +91,16 @@ function epochErrorReason(error: unknown): CodexThreadContextDeliveryReason {
 	return "thread_revalidation_failed";
 }
 
+/**
+ *
+ */
 function linkReason(link: ThreadLinkSnapshot): CodexThreadContextDeliveryReason {
 	return link.state === "unbound" ? "unbound" : (link.reason ?? "unknown_provenance");
 }
 
+/**
+ *
+ */
 function sameSource(left: ThreadLink["source"], right: ThreadLink["source"]): boolean {
 	if (typeof left === "string" || typeof right === "string") {
 		return left === right;
@@ -97,6 +108,9 @@ function sameSource(left: ThreadLink["source"], right: ThreadLink["source"]): bo
 	return JSON.stringify(left) === JSON.stringify(right);
 }
 
+/**
+ *
+ */
 function sameLink(left: ThreadLinkSnapshot, right: ThreadLinkSnapshot): boolean {
 	if (left.state !== right.state) {
 		return false;
@@ -128,6 +142,9 @@ function sameLink(left: ThreadLinkSnapshot, right: ThreadLinkSnapshot): boolean 
 	return false;
 }
 
+/**
+ *
+ */
 function sameBinding(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSnapshot): boolean {
 	return (
 		left.paneId === right.paneId &&
@@ -136,10 +153,16 @@ function sameBinding(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSn
 	);
 }
 
+/**
+ *
+ */
 function sameStringValues(left: readonly string[], right: readonly string[]): boolean {
 	return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
+/**
+ *
+ */
 function readExecution(
 	options: CodexThreadContextDeliveryOptions,
 ): CodexThreadContextExecution | null {
@@ -150,6 +173,9 @@ function readExecution(
 	}
 }
 
+/**
+ *
+ */
 function executionReason(
 	execution: CodexThreadContextExecution | null,
 	identity: CodexThreadContextDeliveryOptions["identity"],
@@ -175,6 +201,9 @@ function executionReason(
 	return null;
 }
 
+/**
+ *
+ */
 function targetLinkReason(
 	link: ThreadLinkSnapshot,
 	target: DeliveryTarget,
@@ -194,6 +223,9 @@ function targetLinkReason(
 	return null;
 }
 
+/**
+ *
+ */
 function eventLinkReason(
 	event: SettledSemanticChangeEvent,
 ): CodexThreadContextDeliveryReason | null {
@@ -208,6 +240,9 @@ function eventLinkReason(
 		: "unknown_provenance";
 }
 
+/**
+ *
+ */
 function isThreadLinkReasonCode(value: string | null): value is ThreadLinkReasonCode {
 	switch (value) {
 		case "stale_child":
@@ -231,6 +266,9 @@ function isThreadLinkReasonCode(value: string | null): value is ThreadLinkReason
 	}
 }
 
+/**
+ *
+ */
 function eventReason(
 	event: SettledSemanticChangeEvent,
 	options: CodexThreadContextDeliveryOptions,
@@ -298,6 +336,9 @@ function eventReason(
 	return null;
 }
 
+/**
+ *
+ */
 function eventIdentityReason(
 	event: SettledSemanticChangeEvent,
 	expected: CodexThreadContextEventId,
@@ -308,6 +349,9 @@ function eventIdentityReason(
 		: "stale_cursor";
 }
 
+/**
+ *
+ */
 function contextMatchesEvent(
 	event: SettledSemanticChangeEvent,
 	context: ArchboardContext,
@@ -350,6 +394,9 @@ function contextMatchesEvent(
 	);
 }
 
+/**
+ *
+ */
 function requestFor(target: DeliveryTarget): EpochExecutionRequest {
 	return {
 		childId: target.childId,
@@ -359,6 +406,9 @@ function requestFor(target: DeliveryTarget): EpochExecutionRequest {
 	};
 }
 
+/**
+ *
+ */
 function finalReason(
 	state: DeliveryState,
 	options: CodexThreadContextDeliveryOptions,
@@ -412,6 +462,9 @@ function finalReason(
 	return null;
 }
 
+/**
+ *
+ */
 function afterAttemptReason(
 	state: DeliveryState,
 	options: CodexThreadContextDeliveryOptions,
@@ -449,6 +502,9 @@ function afterAttemptReason(
 	return null;
 }
 
+/**
+ *
+ */
 function outcome(
 	event: SettledSemanticChangeEvent,
 	options: CodexThreadContextDeliveryOptions,
@@ -472,14 +528,23 @@ function outcome(
 	});
 }
 
+/**
+ *
+ */
 function isKnownNotDelivered(error: unknown): boolean {
 	return error instanceof CodexSessionMutationError && error.outcome === "not_delivered";
 }
 
+/**
+ *
+ */
 function isKnownUnknown(error: unknown): boolean {
 	return error instanceof CodexSessionMutationError && error.outcome === "outcome_unknown";
 }
 
+/**
+ *
+ */
 async function deliverOne(
 	event: SettledSemanticChangeEvent,
 	options: CodexThreadContextDeliveryOptions,
@@ -621,6 +686,9 @@ async function deliverOne(
 	return outcome(event, options, "delivered", null, true, payload);
 }
 
+/**
+ *
+ */
 function createDelivery(
 	options: CodexThreadContextDeliveryOptions,
 	subscribe: boolean,
@@ -631,6 +699,9 @@ function createDelivery(
 	let highestReservedSequence = -1;
 	let disposed = false;
 
+	/**
+	 *
+	 */
 	const deliver = (
 		event: SettledSemanticChangeEvent,
 	): Promise<CodexThreadContextDeliveryOutcome> => {
@@ -677,6 +748,9 @@ function createDelivery(
 
 	return Object.freeze({
 		deliver,
+		/**
+		 *
+		 */
 		inspect: () =>
 			Object.freeze(
 				firstSeenKeys.flatMap((key) => {
@@ -684,7 +758,13 @@ function createDelivery(
 					return result === undefined ? [] : [result];
 				}),
 			),
+		/**
+		 *
+		 */
 		get: (event: CodexThreadContextEventId) => settled.get(keyFor(event)),
+		/**
+		 *
+		 */
 		dispose: () => {
 			if (disposed) {
 				return;
@@ -695,6 +775,9 @@ function createDelivery(
 	});
 }
 
+/**
+ *
+ */
 function createCodexThreadContextDelivery(
 	options: CodexThreadContextDeliveryOptions,
 ): CodexThreadContextDelivery {

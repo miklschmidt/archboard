@@ -1,17 +1,17 @@
-import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
+import type { ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
-} from "../../codex-coordinator-tool-contract/index.js";
-import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "../../codex-instructions/index.js";
-import type { CanonicalNamespace } from "../../codex-coordinator-tool-contract/index.js";
-import type { CodexSession, SessionParams } from "../../codex-session/index.js";
+} from "@/runtime/codex-coordinator-tool-contract";
+import { COORDINATOR_DEVELOPER_INSTRUCTIONS } from "@/runtime/codex-instructions";
+import type { CanonicalNamespace } from "@/runtime/codex-coordinator-tool-contract";
+import type { CodexSession, SessionParams } from "@/runtime/codex-session";
 import {
 	CodexCoordinatorError,
 	type CoordinatorModel,
 	type CoordinatorSettingsUpdateParams,
 	type CoordinatorThreadStartParams,
-} from "./contract.js";
+} from "@/runtime/codex-coordinator/lib/contract";
 
 const COORDINATOR_MODEL = "gpt-5.6-luna" as const;
 const COORDINATOR_EFFORT = "medium" as const;
@@ -67,6 +67,9 @@ async function listCoordinatorModels(
 	}
 }
 
+/**
+ *
+ */
 function selectCoordinatorModel(models: readonly CoordinatorModel[]): CoordinatorModelSelection {
 	const matches = models.filter((model) => model.model === COORDINATOR_MODEL);
 	if (matches.length === 0) {
@@ -134,6 +137,9 @@ function namespaceForThreadStart(namespace: CanonicalNamespace): ThreadStartName
 	};
 }
 
+/**
+ *
+ */
 function coordinatorJsonValue(value: unknown): CoordinatorJsonValue {
 	if (value === null) {
 		return null;
@@ -160,6 +166,9 @@ function coordinatorJsonValue(value: unknown): CoordinatorJsonValue {
 	throw new TypeError("Coordinator tool schemas must contain JSON values.");
 }
 
+/**
+ *
+ */
 function coordinatorDynamicTools(): NonNullable<CoordinatorThreadStartParams["dynamicTools"]> {
 	return [
 		namespaceForThreadStart(ARCHBOARD_WORKHORSE_NAMESPACE),
@@ -167,6 +176,9 @@ function coordinatorDynamicTools(): NonNullable<CoordinatorThreadStartParams["dy
 	];
 }
 
+/**
+ *
+ */
 function createCoordinatorThreadStartParams(
 	checkoutRoot: string,
 	serviceTier: "priority" | null,
@@ -206,6 +218,9 @@ function createCoordinatorThreadStartParams(
 	} satisfies SessionParams<"thread/start">;
 }
 
+/**
+ *
+ */
 function createCoordinatorSettingsUpdateParams(
 	threadId: ThreadId,
 	serviceTier: "priority" | null,

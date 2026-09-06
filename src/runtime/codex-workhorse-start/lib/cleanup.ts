@@ -1,36 +1,39 @@
-import type {
-	ChildEpoch,
-	ChildId,
-	OperationId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import type { ChildEpoch, ChildId, OperationId, ThreadId } from "@/shared/codex-workbench-identity";
 import type {
 	EpochConfirmation,
 	EpochOperationRecord,
 	EpochTransaction,
-} from "../../codex-epoch/index.js";
-import type { ThreadLinkBindingSnapshot } from "../../codex-thread-link/index.js";
+} from "@/runtime/codex-epoch";
+import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
 	WORKHORSE_CLEANUP_RPC,
 	WORKHORSE_INSTRUCTION_HASH,
 	WORKHORSE_MANIFEST_HASH,
 	WORKHORSE_THREAD_SOURCE,
-} from "./model.js";
+} from "@/runtime/codex-workhorse-start/lib/model";
 import type {
 	CodexWorkhorseStartOptions,
 	WorkhorseCleanupFacts,
 	WorkhorseSnapshot,
 	WorkhorseStartInput,
 	WorkhorseStartTransaction,
-} from "./contract.js";
-import { cleanupFacts, errorMessage, inspectSnapshot, mutationOutcome } from "./state.js";
+} from "@/runtime/codex-workhorse-start/lib/contract";
+import {
+	cleanupFacts,
+	errorMessage,
+	inspectSnapshot,
+	mutationOutcome,
+} from "@/runtime/codex-workhorse-start/lib/state";
 import {
 	isCommittedCleanupRecord,
 	isExactIdleWorkhorseRoot,
 	type ValidatedWorkhorseStart,
-} from "./validation.js";
+} from "@/runtime/codex-workhorse-start/lib/validation";
 
+/**
+ *
+ */
 async function compensateAfterBindFailure(
 	options: CodexWorkhorseStartOptions,
 	input: WorkhorseStartInput,
@@ -276,6 +279,9 @@ async function compensateAfterBindFailure(
 	);
 }
 
+/**
+ *
+ */
 function inspectAfterBindFailure(
 	input: WorkhorseStartInput,
 	childId: ChildId,
@@ -300,6 +306,9 @@ function inspectAfterBindFailure(
 	});
 }
 
+/**
+ *
+ */
 function assertTransaction(
 	transaction: EpochTransaction,
 	childId: ChildId,
@@ -323,6 +332,9 @@ function assertTransaction(
 	}
 }
 
+/**
+ *
+ */
 function rollback(
 	options: CodexWorkhorseStartOptions,
 	transaction: WorkhorseStartTransaction,
@@ -336,6 +348,9 @@ function rollback(
 	}
 }
 
+/**
+ *
+ */
 function markUnknown(
 	options: CodexWorkhorseStartOptions,
 	transaction: WorkhorseStartTransaction,

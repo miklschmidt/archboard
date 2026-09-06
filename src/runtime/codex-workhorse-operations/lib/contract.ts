@@ -1,21 +1,17 @@
-import type {
-	CodexEpochStore,
-	EpochExecutionProof,
-	EpochTransaction,
-} from "../../codex-epoch/index.js";
-import type { ArchboardContext } from "../../codex-instructions/index.js";
-import type { CodexSession, SessionParams, SessionTurn } from "../../codex-session/index.js";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
+import type { CodexEpochStore, EpochExecutionProof, EpochTransaction } from "@/runtime/codex-epoch";
+import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { CodexSession, SessionParams, SessionTurn } from "@/runtime/codex-session";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
 	ThreadLinkTarget,
-} from "../../codex-thread-link/index.js";
+} from "@/runtime/codex-thread-link";
 import type {
 	CodexWorkhorseQueue,
 	WorkhorseQueueOperation as QueueOperation,
 	WorkhorseQueueMutation,
-} from "../../codex-workhorse-queue/index.js";
+} from "@/runtime/codex-workhorse-queue";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -26,8 +22,8 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { CodexThreadStatusType } from "../../../shared/codex-app-server-contract/index.js";
+} from "@/shared/codex-workbench-identity";
+import type { CodexThreadStatusType } from "@/shared/codex-app-server-contract";
 
 /** The only four operations the coordinator may dispatch to its workhorse. */
 const WORKHORSE_OPERATION_NAMES = Object.freeze([
@@ -237,6 +233,9 @@ class CodexWorkhorseOperationsError extends Error {
 	readonly operationId: OperationId | null;
 	override readonly cause: unknown;
 
+	/**
+	 *
+	 */
 	constructor(
 		code: WorkhorseOperationErrorCode,
 		message: string,

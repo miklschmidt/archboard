@@ -1,8 +1,8 @@
-import {
-	canTransitionRealtimeState,
-	type RealtimeState,
-} from "../../../shared/codex-realtime-host/index.js";
+import { canTransitionRealtimeState, type RealtimeState } from "@/shared/codex-realtime-host";
 
+/**
+ *
+ */
 function inputStates(current: RealtimeState): readonly RealtimeState[] {
 	if (current.phase === "speaking") {
 		return [{ phase: "processing", reason: "user_interrupted" }];
@@ -13,6 +13,9 @@ function inputStates(current: RealtimeState): readonly RealtimeState[] {
 	return [];
 }
 
+/**
+ *
+ */
 function assistantStates(
 	current: RealtimeState,
 	status: "provisional" | "final",
@@ -38,6 +41,9 @@ function assistantStates(
 	return [];
 }
 
+/**
+ *
+ */
 function closingStates(current: RealtimeState): readonly RealtimeState[] {
 	if (current.phase === "closed") {
 		return [];
@@ -53,6 +59,9 @@ function closingStates(current: RealtimeState): readonly RealtimeState[] {
 	];
 }
 
+/**
+ *
+ */
 function realtimeFailureState(current: RealtimeState, message: string): RealtimeState | null {
 	const failure: RealtimeState = {
 		phase: "recoverable_error",
@@ -62,6 +71,9 @@ function realtimeFailureState(current: RealtimeState, message: string): Realtime
 	return canTransitionRealtimeState(current, failure) ? failure : null;
 }
 
+/**
+ *
+ */
 function appServerFailureState(current: RealtimeState, message: string): RealtimeState | null {
 	const failure: RealtimeState = {
 		phase: "recoverable_error",
@@ -71,6 +83,9 @@ function appServerFailureState(current: RealtimeState, message: string): Realtim
 	return canTransitionRealtimeState(current, failure) ? failure : null;
 }
 
+/**
+ *
+ */
 function stopState(current: RealtimeState): RealtimeState | null {
 	const stopping: RealtimeState = { phase: "stopping", reason: "stop_requested" };
 	return canTransitionRealtimeState(current, stopping) ? stopping : null;

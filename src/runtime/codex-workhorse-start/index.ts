@@ -1,4 +1,4 @@
-export { createCodexWorkhorseStart } from "./lib/start.js";
+export { createCodexWorkhorseStart } from "@/runtime/codex-workhorse-start/lib/start";
 export {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
 	WORKHORSE_CLEANUP_RPC,
@@ -9,7 +9,7 @@ export {
 	WORKHORSE_THREAD_SOURCE,
 	WORKHORSE_THREAD_SOURCE_TAG,
 	createWorkhorseThreadStartParams,
-} from "./lib/model.js";
+} from "@/runtime/codex-workhorse-start/lib/model";
 export type {
 	CodexWorkhorseStart,
 	CodexWorkhorseStartOptions,
@@ -38,4 +38,4 @@ export type {
 	WorkhorseThreadReadResponse,
 	WorkhorseThreadStartParams,
 	WorkhorseThreadDeleteResponse,
-} from "./lib/contract.js";
+} from "@/runtime/codex-workhorse-start/lib/contract";

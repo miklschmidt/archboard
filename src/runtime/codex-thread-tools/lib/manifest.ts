@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 
-import { parseStrictJson } from "./json.js";
+import { parseStrictJson } from "@/runtime/codex-thread-tools/lib/json";
 
 export const ARCHBOARD_APP_MANIFEST_SHA256 =
 	"df0fc2b1b33d985a7b84e54431162d6c00a3da0f8cecd98a18730e55bc7b272e" as const;
@@ -37,6 +37,9 @@ const ArchboardAppManifestSchema = z.strictObject({
 export type ArchboardAppNamespaceSpec = z.infer<typeof ArchboardAppManifestSchema>;
 export type ArchboardAppToolSpec = ArchboardAppNamespaceSpec["tools"][number];
 
+/**
+ *
+ */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) {
 		return value;
@@ -47,6 +50,9 @@ function freezeDeep<T>(value: T): T {
 	return Object.freeze(value);
 }
 
+/**
+ *
+ */
 function decodeManifestBytes(bytes: Uint8Array): string {
 	const buffer = Buffer.from(bytes);
 	if (buffer.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
@@ -70,10 +76,16 @@ function decodeManifestBytes(bytes: Uint8Array): string {
 	return text;
 }
 
+/**
+ *
+ */
 function digest(bytes: Uint8Array): string {
 	return createHash("sha256").update(bytes).digest("hex");
 }
 
+/**
+ *
+ */
 function parseManifestBytes(bytes: Uint8Array): {
 	readonly text: string;
 	readonly manifest: ArchboardAppNamespaceSpec;

@@ -3,21 +3,21 @@ import type {
 	EpochOperationRecord,
 	EpochSnapshot,
 	EpochTransaction,
-} from "../../codex-epoch/index.js";
-import type { CodexSession, SessionParams, SessionResponse } from "../../codex-session/index.js";
+} from "@/runtime/codex-epoch";
+import type { CodexSession, SessionParams, SessionResponse } from "@/runtime/codex-session";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
 	ThreadLinkTarget,
-} from "../../codex-thread-link/index.js";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
+} from "@/runtime/codex-thread-link";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import type {
 	ChildEpoch,
 	ChildId,
 	IdentityValidator,
 	ThreadId,
 	TrustedIdentityDecoder,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 
 type CoordinatorModel = SessionResponse<"model/list">["data"][number];
 type CoordinatorStartResponse = SessionResponse<"thread/start">;
@@ -179,6 +179,9 @@ class CodexCoordinatorError extends Error {
 	readonly code: CoordinatorErrorCode;
 	override readonly cause: unknown;
 
+	/**
+	 *
+	 */
 	constructor(code: CoordinatorErrorCode, message: string, cause?: unknown) {
 		super(message);
 		this.code = code;

@@ -25,7 +25,7 @@ import type {
 	TurnSchema,
 	TurnStartSchema,
 	TurnSteerResponseSchema,
-} from "../../codex-protocol/index.js";
+} from "@/runtime/codex-protocol";
 import type {
 	AnyIdentity,
 	ItemId,
@@ -33,7 +33,7 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 
 type ProtocolObjectFields<
 	Schema extends z.ZodObject,
@@ -365,6 +365,9 @@ type ExactSessionProtocolMethodTable<Table extends SessionProtocolMethodTable> =
 };
 type NoExtraSessionProtocolMethods<Table> =
 	Exclude<keyof Table, ResponseMethod> extends never ? unknown : never;
+/**
+ *
+ */
 function defineSessionProtocolMethods<const Table extends SessionProtocolMethodTable>(
 	table: Readonly<
 		Table & ExactSessionProtocolMethodTable<Table> & NoExtraSessionProtocolMethods<Table>

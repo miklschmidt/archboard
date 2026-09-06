@@ -2,11 +2,11 @@ import type {
 	CodexClientNotificationByMethod,
 	CodexResponseByMethod,
 	CodexServerNotificationParamsByMethod,
-} from "../../../shared/codex-app-server-contract/index.js";
+} from "@/shared/codex-app-server-contract";
 import {
 	CODEX_CLIENT_REQUEST_METHODS,
 	CODEX_SERVER_REQUEST_METHODS,
-} from "../../../shared/codex-app-server-contract/index.js";
+} from "@/shared/codex-app-server-contract";
 
 /** Supported client-to-server requests from the generated Codex 0.151.0 union. */
 const CLIENT_REQUEST_METHODS = CODEX_CLIENT_REQUEST_METHODS;
@@ -123,6 +123,9 @@ type ClientNotificationMethod = (typeof CLIENT_NOTIFICATION_METHODS)[number];
 type ServerRequestMethod = (typeof SERVER_REQUEST_METHODS)[number];
 type ServerNotificationMethod = (typeof SERVER_NOTIFICATION_METHODS)[number];
 
+/**
+ *
+ */
 function isClientRequestMethodWithoutParams(
 	method: string,
 ): method is ClientRequestMethodWithoutParams {

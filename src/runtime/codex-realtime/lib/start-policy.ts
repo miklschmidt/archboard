@@ -1,13 +1,16 @@
 import type {
 	RealtimeSessionId as WireRealtimeSessionId,
 	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import { composeCoordinatorInstructions } from "../../codex-instructions/index.js";
-import type { SessionParams } from "../../codex-session/index.js";
+} from "@/shared/codex-workbench-identity";
+import { composeCoordinatorInstructions } from "@/runtime/codex-instructions";
+import type { SessionParams } from "@/runtime/codex-session";
 
 const REALTIME_END_INSTRUCTIONS =
 	"Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.";
 
+/**
+ *
+ */
 export function createRealtimeStartParams(input: {
 	readonly threadId: ThreadId;
 	readonly realtimeSessionId: WireRealtimeSessionId;

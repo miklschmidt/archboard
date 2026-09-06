@@ -4,13 +4,13 @@ import {
 	assertCanonicalInstructionBytes,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-} from "../../codex-instructions/index.js";
+} from "@/runtime/codex-instructions";
 import {
 	ARCHBOARD_APP_DYNAMIC_TOOLS,
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 	type ArchboardAppNamespaceSpec,
-} from "./manifest.js";
+} from "@/runtime/codex-thread-tools/lib/manifest";
 
 assertCanonicalInstructionBytes("workhorse", WORKHORSE_DEVELOPER_INSTRUCTIONS);
 
@@ -32,6 +32,9 @@ type ToolInstallationRequest = z.infer<typeof ToolInstallationRequestSchema>;
 
 const EMPTY_DYNAMIC_TOOLS: readonly ArchboardAppNamespaceSpec[] = Object.freeze([]);
 
+/**
+ *
+ */
 function parseInstallationRequest(value: unknown): ToolInstallationRequest {
 	const parsed = ToolInstallationRequestSchema.safeParse(value);
 	if (!parsed.success) {

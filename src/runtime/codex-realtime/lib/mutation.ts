@@ -2,15 +2,18 @@ import type {
 	AppendOutcome,
 	RealtimeCorrelationId,
 	RealtimeSessionId,
-} from "../../../shared/codex-realtime-host/index.js";
-import { CodexSessionMutationError } from "../../codex-session/index.js";
-import { realtimeErrorMessage } from "./binding.js";
+} from "@/shared/codex-realtime-host";
+import { CodexSessionMutationError } from "@/runtime/codex-session";
+import { realtimeErrorMessage } from "@/runtime/codex-realtime/lib/binding";
 
 interface MutationRequest {
 	readonly sessionId: RealtimeSessionId;
 	readonly correlationId: RealtimeCorrelationId;
 }
 
+/**
+ *
+ */
 async function runRealtimeMutation(
 	request: Readonly<MutationRequest>,
 	invoke: () => Promise<unknown>,

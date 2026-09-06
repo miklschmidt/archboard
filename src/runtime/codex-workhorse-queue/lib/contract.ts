@@ -1,4 +1,4 @@
-import type { CodexSession, SessionQueuedSubmission } from "../../codex-session/index.js";
+import type { CodexSession, SessionQueuedSubmission } from "@/runtime/codex-session";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -6,7 +6,7 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 
 /** The only queue operations exposed to Archboard callers. */
 const WORKHORSE_QUEUE_OPERATIONS = Object.freeze([
@@ -164,6 +164,9 @@ class CodexWorkhorseQueueError extends Error {
 	readonly queue: QueueSnapshot | null;
 	override readonly cause: unknown;
 
+	/**
+	 *
+	 */
 	constructor(
 		code: WorkhorseQueueErrorCode,
 		message: string,

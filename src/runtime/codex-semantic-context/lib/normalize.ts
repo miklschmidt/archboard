@@ -1,4 +1,7 @@
-import { SEMANTIC_CONTEXT_ELLIPSIS, SEMANTIC_CONTEXT_LIMITS } from "./limits.js";
+import {
+	SEMANTIC_CONTEXT_ELLIPSIS,
+	SEMANTIC_CONTEXT_LIMITS,
+} from "@/runtime/codex-semantic-context/lib/limits";
 import type {
 	SemanticContextInput,
 	SemanticClaimHolder,
@@ -11,7 +14,7 @@ import type {
 	SemanticPane,
 	SemanticThreadLink,
 	SemanticWorkhorse,
-} from "./types.js";
+} from "@/runtime/codex-semantic-context/lib/types";
 
 interface BoundedValue<Value> {
 	readonly value: Value;
@@ -39,6 +42,9 @@ interface NormalizedContext {
 class SemanticContextInputError extends Error {
 	readonly field: string;
 
+	/**
+	 *
+	 */
 	constructor(field: string, message: string) {
 		super(`${field}: ${message}`);
 		this.name = "SemanticContextInputError";
@@ -46,14 +52,23 @@ class SemanticContextInputError extends Error {
 	}
 }
 
+/**
+ *
+ */
 function fail(field: string, message: string): never {
 	throw new SemanticContextInputError(field, message);
 }
 
+/**
+ *
+ */
 function byteLength(value: string): number {
 	return new TextEncoder().encode(value).byteLength;
 }
 
+/**
+ *
+ */
 function jsonStringPayloadBytes(character: string): number {
 	const codeUnit = character.charCodeAt(0);
 	if (character === '"' || character === "\\") {
@@ -115,6 +130,9 @@ function clipJsonUtf8(value: string, maximum: number): BoundedValue<string> {
 	return { value: `${kept.join("")}${suffix}`, truncated: true };
 }
 
+/**
+ *
+ */
 function feedIdValue(value: unknown, field: string): string {
 	const result = textValue(value, field, SEMANTIC_CONTEXT_LIMITS.cursorBytes);
 	if (result.truncated) {
@@ -129,6 +147,9 @@ function feedIdValue(value: unknown, field: string): string {
 	return result.value;
 }
 
+/**
+ *
+ */
 function clipUtf8(value: string, maximum: number): BoundedValue<string> {
 	if (byteLength(value) <= maximum) {
 		return { value, truncated: false };
@@ -150,6 +171,9 @@ function clipUtf8(value: string, maximum: number): BoundedValue<string> {
 	};
 }
 
+/**
+ *
+ */
 function textValue(
 	value: unknown,
 	field: string,
@@ -168,6 +192,9 @@ function textValue(
 	return clipUtf8(value, maximum);
 }
 
+/**
+ *
+ */
 function nullableTextValue(
 	value: unknown,
 	field: string,
@@ -180,6 +207,9 @@ function nullableTextValue(
 	return { value: result.value, truncated: result.truncated };
 }
 
+/**
+ *
+ */
 function identityValue<Identity extends string>(
 	value: Identity | null | undefined,
 	field: string,
@@ -199,6 +229,9 @@ function identityValue<Identity extends string>(
 	return value;
 }
 
+/**
+ *
+ */
 function numberValue(value: unknown, field: string): number | null {
 	if (value === null) {
 		return null;
@@ -214,6 +247,9 @@ interface NormalizedCursor {
 	readonly staleReason: string | null;
 }
 
+/**
+ *
+ */
 function exactCursorKeys(value: Record<string, unknown>): void {
 	const keys = Reflect.ownKeys(value);
 	if (
@@ -225,6 +261,9 @@ function exactCursorKeys(value: Record<string, unknown>): void {
 	}
 }
 
+/**
+ *
+ */
 function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCursor {
 	if (value === null) {
 		return { value: null, staleReason: null };
@@ -249,10 +288,16 @@ function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCurso
 	};
 }
 
+/**
+ *
+ */
 function uniqueSorted(values: readonly string[]): string[] {
 	return [...new Set(values)].toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0));
 }
 
+/**
+ *
+ */
 function deepFreeze<Value>(value: Value): Value {
 	if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
 		return value;
@@ -264,6 +309,9 @@ function deepFreeze<Value>(value: Value): Value {
 	return value;
 }
 
+/**
+ *
+ */
 function claimHolder(value: unknown): SemanticClaimHolder {
 	if (value === "human" || value === "agent" || value === "none") {
 		return value;
@@ -271,6 +319,9 @@ function claimHolder(value: unknown): SemanticClaimHolder {
 	fail("claim.holder", "must be human, agent, or none");
 }
 
+/**
+ *
+ */
 function threadLinkState(value: unknown): "executable" | "inspect_only" | "unbound" {
 	if (value === "executable" || value === "inspect_only" || value === "unbound") {
 		return value;
@@ -278,6 +329,9 @@ function threadLinkState(value: unknown): "executable" | "inspect_only" | "unbou
 	fail("threadLink.state", "must be executable, inspect_only, or unbound");
 }
 
+/**
+ *
+ */
 function booleanValue(value: unknown, field: string): boolean {
 	if (typeof value !== "boolean") {
 		fail(field, "must be a boolean");
@@ -285,6 +339,9 @@ function booleanValue(value: unknown, field: string): boolean {
 	return value;
 }
 
+/**
+ *
+ */
 function boundedReasons(values: readonly unknown[], field: string): BoundedValue<string[]> {
 	const entries = values.map((value, index) =>
 		textValue(value, `${field}[${index}]`, SEMANTIC_CONTEXT_LIMITS.ambiguityBytes),
@@ -298,6 +355,9 @@ function boundedReasons(values: readonly unknown[], field: string): BoundedValue
 	};
 }
 
+/**
+ *
+ */
 function normalizeContext(
 	input: SemanticContextInput,
 	currentFeedId: string,

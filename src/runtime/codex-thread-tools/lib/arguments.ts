@@ -1,7 +1,14 @@
 import { z } from "zod";
 
-import { GeneralThreadToolNameSchema, type GeneralThreadToolName } from "./manifest.js";
-import { WAIT_THREADS_TIMEOUT_MAX_MS, JsonValueSchema, boundedText } from "./limits.js";
+import {
+	GeneralThreadToolNameSchema,
+	type GeneralThreadToolName,
+} from "@/runtime/codex-thread-tools/lib/manifest";
+import {
+	WAIT_THREADS_TIMEOUT_MAX_MS,
+	JsonValueSchema,
+	boundedText,
+} from "@/runtime/codex-thread-tools/lib/limits";
 
 const ThreadIdSchema = boundedText(128);
 const CursorSchema = boundedText(1024);
@@ -65,6 +72,9 @@ export type ToolArguments = {
 
 export type ToolArgument<Name extends GeneralThreadToolName> = ToolArguments[Name];
 
+/**
+ *
+ */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) {
 		return value;
@@ -75,6 +85,9 @@ function freezeDeep<T>(value: T): T {
 	return Object.freeze(value);
 }
 
+/**
+ *
+ */
 function invalid(label: string, issues: readonly { readonly message: string }[]): never {
 	throw new TypeError(`Invalid ${label}: ${issues.map((issue) => issue.message).join("; ")}`);
 }
@@ -87,6 +100,9 @@ export function parseToolArguments(
 	name: unknown,
 	value: unknown,
 ): ToolArguments[GeneralThreadToolName];
+/**
+ *
+ */
 export function parseToolArguments(
 	name: unknown,
 	value: unknown,
@@ -103,5 +119,5 @@ export function parseToolArguments(
 	if (!parsed.success) {
 		invalid(`${parsedName.data} arguments`, parsed.error.issues);
 	}
-	return freezeDeep(parsed.data) as ToolArguments[GeneralThreadToolName];
+	return freezeDeep(parsed.data);
 }

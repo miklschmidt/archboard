@@ -1,16 +1,28 @@
 class CanonicalJsonError extends TypeError {
+	/**
+	 *
+	 */
 	constructor(message: string) {
 		super(message);
 		this.name = "CanonicalJsonError";
 	}
 }
 
+/**
+ *
+ */
 function parseJsonStructure(source: string): void {
 	let cursor = 0;
 
+	/**
+	 *
+	 */
 	const fail = (message: string): never => {
 		throw new CanonicalJsonError(`${message} at byte ${cursor}.`);
 	};
+	/**
+	 *
+	 */
 	const skipWhitespace = (): void => {
 		while (
 			source[cursor] === " " ||
@@ -21,6 +33,9 @@ function parseJsonStructure(source: string): void {
 			cursor++;
 		}
 	};
+	/**
+	 *
+	 */
 	const parseString = (): string => {
 		if (source[cursor] !== '"') {
 			return fail("Expected a JSON string");
@@ -47,6 +62,9 @@ function parseJsonStructure(source: string): void {
 		}
 		return fail("Unterminated JSON string");
 	};
+	/**
+	 *
+	 */
 	const parseValue = (): void => {
 		skipWhitespace();
 		const character = source[cursor];
@@ -125,6 +143,9 @@ function parseJsonStructure(source: string): void {
 	}
 }
 
+/**
+ *
+ */
 function parseStrictJson(source: string, label: string): unknown {
 	try {
 		parseJsonStructure(source);

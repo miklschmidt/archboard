@@ -5,8 +5,8 @@ import {
 	CodeBindingSchema,
 	type CodeBinding,
 	type CodeTargetFailureCode,
-} from "../../../shared/code-target/index.js";
-import type { RegisteredRepo } from "../../engine/repo-registry.js";
+} from "@/shared/code-target";
+import type { RegisteredRepo } from "@/runtime/engine/repo-registry";
 
 type ResolutionFailureCode = Extract<
 	CodeTargetFailureCode,
@@ -42,6 +42,9 @@ interface ResolverDependencies {
 }
 type PathContainment = Pick<typeof path, "relative" | "isAbsolute" | "sep">;
 
+/**
+ *
+ */
 function isPathWithin(root: string, candidate: string, paths: PathContainment = path): boolean {
 	const relative = paths.relative(root, candidate);
 	return (
@@ -49,9 +52,15 @@ function isPathWithin(root: string, candidate: string, paths: PathContainment = 
 		(relative === "" || (!relative.startsWith(`..${paths.sep}`) && relative !== ".."))
 	);
 }
+/**
+ *
+ */
 function failure(code: ResolutionFailureCode, error: string): ResolutionFailure {
 	return { ok: false, code, error };
 }
+/**
+ *
+ */
 function resolveCheckout(
 	repository: string,
 	entries: readonly RegisteredRepo[],
@@ -100,9 +109,15 @@ function resolveCheckout(
 	}
 	return { ok: true, repository, root };
 }
+/**
+ *
+ */
 function isAbsoluteOnAnyPlatform(value: string): boolean {
 	return path.posix.isAbsolute(value) || path.win32.isAbsolute(value);
 }
+/**
+ *
+ */
 function resolveTarget(
 	binding: CodeBinding,
 	checkout: RegisteredCheckoutResult,
@@ -137,12 +152,18 @@ function resolveTarget(
 	}
 	return { ...checkout, target, path: binding.path, kind: stats.isFile() ? "file" : "directory" };
 }
+/**
+ *
+ */
 function resolveRegisteredCheckoutWith(
 	repository: string,
 	dependencies: ResolverDependencies,
 ): RegisteredCheckoutResult {
 	return resolveCheckout(repository, dependencies.readRegistry(), dependencies);
 }
+/**
+ *
+ */
 function resolveLocalCodeTargetsWith(
 	bindings: readonly CodeBinding[],
 	dependencies: ResolverDependencies,

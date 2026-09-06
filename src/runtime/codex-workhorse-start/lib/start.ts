@@ -1,16 +1,11 @@
-import type {
-	ChildEpoch,
-	ChildId,
-	OperationId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import type { ChildEpoch, ChildId, OperationId, ThreadId } from "@/shared/codex-workbench-identity";
 import type {
 	EpochExecutionProof,
 	EpochOperationRecord,
 	EpochTransaction,
-} from "../../codex-epoch/index.js";
-import type { ThreadLinkBindingSnapshot, ThreadLinkTarget } from "../../codex-thread-link/index.js";
-import { compensateAfterBindFailure } from "./cleanup.js";
+} from "@/runtime/codex-epoch";
+import type { ThreadLinkBindingSnapshot, ThreadLinkTarget } from "@/runtime/codex-thread-link";
+import { compensateAfterBindFailure } from "@/runtime/codex-workhorse-start/lib/cleanup";
 import {
 	WORKHORSE_INSTRUCTION_HASH,
 	WORKHORSE_MANIFEST_HASH,
@@ -18,7 +13,7 @@ import {
 	WORKHORSE_RPC,
 	WORKHORSE_THREAD_SOURCE,
 	createWorkhorseThreadStartParams,
-} from "./model.js";
+} from "@/runtime/codex-workhorse-start/lib/model";
 import type {
 	CodexWorkhorseStart,
 	CodexWorkhorseStartOptions,
@@ -26,7 +21,7 @@ import type {
 	WorkhorseStartInput,
 	WorkhorseStartResponse,
 	WorkhorseStartTransaction,
-} from "./contract.js";
+} from "@/runtime/codex-workhorse-start/lib/contract";
 import {
 	emptySnapshot,
 	errorMessage,
@@ -35,21 +30,30 @@ import {
 	mutationOutcome,
 	readySnapshot,
 	startingSnapshot,
-} from "./state.js";
+} from "@/runtime/codex-workhorse-start/lib/state";
 import {
 	isCommittedStartRecord,
 	isCurrentStartProof,
 	isExecutableWorkhorseBinding,
 	validateWorkhorseStartResponse,
 	type ValidatedWorkhorseStart,
-} from "./validation.js";
-import { cloneAndFreeze } from "./immutability.js";
+} from "@/runtime/codex-workhorse-start/lib/validation";
+import { cloneAndFreeze } from "@/runtime/codex-workhorse-start/lib/immutability";
 
+/**
+ *
+ */
 function createCodexWorkhorseStart(options: CodexWorkhorseStartOptions): CodexWorkhorseStart {
 	let latest = emptySnapshot();
 	let tail: Promise<void> = Promise.resolve();
 
+	/**
+	 *
+	 */
 	const snapshot = (): WorkhorseSnapshot => latest;
+	/**
+	 *
+	 */
 	const start = (input: WorkhorseStartInput): Promise<WorkhorseSnapshot> => {
 		const run = tail.then(() => execute(input));
 		tail = run.then(
@@ -59,6 +63,9 @@ function createCodexWorkhorseStart(options: CodexWorkhorseStartOptions): CodexWo
 		return run;
 	};
 
+	/**
+	 *
+	 */
 	async function execute(input: WorkhorseStartInput): Promise<WorkhorseSnapshot> {
 		const childId = options.identity.validator.childId;
 		const epoch = options.identity.validator.epoch;
@@ -300,6 +307,9 @@ function createCodexWorkhorseStart(options: CodexWorkhorseStartOptions): CodexWo
 		return latest;
 	}
 
+	/**
+	 *
+	 */
 	async function settleStartFailure(
 		input: WorkhorseStartInput,
 		childId: ChildId,
@@ -357,6 +367,9 @@ function createCodexWorkhorseStart(options: CodexWorkhorseStartOptions): CodexWo
 	return Object.freeze({ start, snapshot });
 }
 
+/**
+ *
+ */
 function assertTransaction(
 	transaction: EpochTransaction,
 	childId: ChildId,
@@ -380,6 +393,9 @@ function assertTransaction(
 	}
 }
 
+/**
+ *
+ */
 function rollback(
 	options: CodexWorkhorseStartOptions,
 	transaction: WorkhorseStartTransaction,
@@ -393,6 +409,9 @@ function rollback(
 	}
 }
 
+/**
+ *
+ */
 function markUnknown(
 	options: CodexWorkhorseStartOptions,
 	transaction: WorkhorseStartTransaction,
