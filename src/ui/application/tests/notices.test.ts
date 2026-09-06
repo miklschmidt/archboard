@@ -4,10 +4,18 @@ import {
 	NOTICE_ACTIONS,
 	codeTargetShellNotice,
 	holdNotice,
+	noteNotices,
 	staleFrontendNotice,
 	withNotice,
 	withoutNotice,
 } from "@/ui/application/notices";
+import { addPane, initialPaneList } from "@/ui/application/pane-list";
+import {
+	emptyPaneStatus,
+	initialPaneRecord,
+	type PaneRecords,
+} from "@/ui/application/pane-records";
+import type { BoardHold } from "@/ui/types";
 
 test("a notice with the same id replaces its predecessor in place", () => {
 	const first = holdNotice("A", "Checkout", 1);
@@ -37,4 +45,47 @@ test("code target notices carry the typed actions through and stale builds offer
 	expect(staleFrontendNotice("old").actions).toEqual([
 		{ kind: "select", id: NOTICE_ACTIONS.reloadFrontend, label: "Reload" },
 	]);
+});
+
+test("note notices are derived from the records, in pane order, and absent otherwise", () => {
+	const list = addPane(initialPaneList());
+	expect(noteNotices(list, {})).toEqual([]);
+	const hold: BoardHold = {
+		board: "Checkout",
+		since: "2026-09-06T10:00:00.000Z",
+		writes: 3,
+		fromScreen: false,
+		conflict: {
+			board: "Checkout",
+			file: "Checkout.md",
+			reason: "changed",
+			outcomes: { reload: "", overwrite: "", saveAs: "" },
+			message: "",
+		},
+		message: "",
+	};
+	const records: PaneRecords = {
+		B: { ...initialPaneRecord("B"), status: { ...emptyPaneStatus("B"), hold } },
+		A: {
+			...initialPaneRecord("A"),
+			status: {
+				...emptyPaneStatus("A"),
+				boardKey: "Billing",
+				writtenElsewhere: {
+					board: "Billing",
+					file: "Billing.md",
+					reason: "changed",
+					writtenAt: "2026-09-06T10:01:00.000Z",
+					versionMove: "unchanged",
+					version: null,
+					ourVersion: null,
+					message: "",
+				},
+			},
+		},
+	};
+	const notices = noteNotices(list, records);
+	expect(notices.map((notice) => notice.id)).toEqual(["elsewhere:A", "hold:B"]);
+	expect(notices[0]?.title).toBe("Billing was written elsewhere");
+	expect(notices[1]?.description).toContain("3 change(s)");
 });

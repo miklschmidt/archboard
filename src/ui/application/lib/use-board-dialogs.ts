@@ -59,6 +59,8 @@ interface BoardDialogEvents {
 	readonly onDone: (message: string | null) => void;
 	/** The person confirmed closing a pane that held work. */
 	readonly onClosePane: (paneId: string) => void;
+	/** No dialog is open any more, whatever closed it. */
+	readonly onClosed: () => void;
 }
 
 /** The dialogs' state and the moves. */
@@ -122,7 +124,11 @@ function useBoardDialogs(
 		openedFrom.current = active instanceof HTMLElement ? active : null;
 		setState({ open, busy: false, busyOutcome: null, error: null });
 	}, []);
-	const close = useCallback((): void => setState(CLOSED), []);
+	// Every way out of a dialog ends here, so what waits for one to close hears it.
+	const close = useCallback((): void => {
+		setState(CLOSED);
+		events.onClosed();
+	}, [events]);
 
 	/**
 	 * Apply a command's outcome: close on success, keep the error, or move to
@@ -134,6 +140,7 @@ function useBoardDialogs(
 				case "done":
 					setState(CLOSED);
 					events.onDone(outcome.message);
+					events.onClosed();
 					return;
 				case "conflict":
 					show({ kind: "conflict", conflict: outcome.conflict, hold: outcome.hold, context });
@@ -169,6 +176,7 @@ function useBoardDialogs(
 		if (open.kind === "confirm-close") {
 			setState(CLOSED);
 			events.onClosePane(open.paneId);
+			events.onClosed();
 			return;
 		}
 		if (open.kind !== "confirm-clear" || state.busy) {
@@ -203,7 +211,7 @@ function useBoardDialogs(
 				return;
 			}
 			if (outcome === "keep") {
-				setState(CLOSED);
+				close();
 				return;
 			}
 			if (outcome === "elsewhere") {
@@ -215,7 +223,7 @@ function useBoardDialogs(
 				settle(result, open.context),
 			);
 		},
-		[api, settle, show, state],
+		[api, close, settle, show, state],
 	);
 
 	const openBoardDialog = useCallback(

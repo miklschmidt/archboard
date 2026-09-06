@@ -3,22 +3,22 @@
 // the transport, the runtime and the controllers are the state; this file
 // only connects them.
 
-import type { LibraryItems } from "@excalidraw/excalidraw/types";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
+import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { AgentSettingsHost } from "@/ui/application/lib/agent-settings-host";
 import { ApplicationPane } from "@/ui/application/lib/application-pane";
 import { BoardDialogsHost } from "@/ui/application/lib/dialogs";
 import {
-	boardErrorNotice,
 	codeTargetShellNotice,
 	failureNotice,
 	infoNotice,
+	noteNotices,
 	presentationNotice,
-	staleFrontendNotice,
 } from "@/ui/application/notices";
 import { OpenerSettingsHost } from "@/ui/application/lib/opener-settings-host";
+import { openPendingRecovery, paneEvents } from "@/ui/application/lib/pane-events";
 import { heldBoardKeys, recordFor } from "@/ui/application/pane-records";
 import { createShellActions } from "@/ui/application/lib/shell-actions";
 import { assembleShellView } from "@/ui/application/shell-view";
@@ -31,10 +31,8 @@ import {
 	useFullscreen,
 	type Fullscreen,
 } from "@/ui/application/lib/use-fullscreen";
-import { useNoteRecovery } from "@/ui/application/lib/use-note-recovery";
 import { useNotices, type NoticeStack } from "@/ui/application/lib/use-notices";
-import type { PaneSession } from "@/ui/application/lib/pane-handles";
-import { usePanes, type PaneEvents, type Panes } from "@/ui/application/lib/use-panes";
+import { usePanes, type Panes } from "@/ui/application/lib/use-panes";
 import { useReducedMotion } from "@/ui/application/lib/use-reduced-motion";
 import { useStageEvents, type EscapeOrigin } from "@/ui/application/lib/use-stage-events";
 import { useWorkbench } from "@/ui/application/lib/use-workbench";
@@ -124,35 +122,6 @@ function useLibrarySync(panes: Panes, library: LibraryController): void {
 			session.applyLibrary(items);
 		}
 	}, [handles, items]);
-}
-
-/**
- * The notices raised by the presentation and the library.
- * @param fullscreen The presentation.
- * @param library The library.
- * @param notices The notice stack.
- */
-function useSideNotices(
-	fullscreen: Fullscreen,
-	library: LibraryController,
-	notices: NoticeStack,
-): void {
-	const { error, paneId } = fullscreen.snapshot;
-	const { clearError } = fullscreen;
-	const { raise } = notices;
-	// A refused exit stays with the presentation, where the person is; a
-	// refused entry becomes a notice in the workspace they are still in.
-	useEffect(() => {
-		if (error !== null && paneId === null) {
-			raise(presentationNotice(error));
-			clearError();
-		}
-	}, [error, paneId, clearError, raise]);
-	useEffect(() => {
-		if (library.error !== null) {
-			raise(failureNotice("library", "Library", library.error));
-		}
-	}, [library.error, raise]);
 }
 
 /**
@@ -255,6 +224,11 @@ interface ShellViewSources {
 function useShellView(sources: ShellViewSources): ShellView {
 	const { theme, panes, boards, fullscreen, notices } = sources;
 	const canvases = useCanvases(panes, theme);
+	// The note states are read off the records; only event notices are state.
+	const allNotices = useMemo(
+		() => [...noteNotices(panes.list, panes.records), ...notices.notices],
+		[panes.list, panes.records, notices.notices],
+	);
 	const presentedPaneId = fullscreen.snapshot.paneId;
 	const presentedConnected =
 		presentedPaneId !== null && recordFor(panes.records, presentedPaneId).status.connected;
@@ -269,9 +243,9 @@ function useShellView(sources: ShellViewSources): ShellView {
 				boardsError: boards.error,
 				previews: boards.previews,
 				presentation: shellPresentationOf(fullscreen.snapshot, presentedConnected),
-				notices: notices.notices,
+				notices: allNotices,
 			}),
-		[theme, panes, canvases, boards, fullscreen.snapshot, presentedConnected, notices.notices],
+		[theme, panes, canvases, boards, fullscreen.snapshot, presentedConnected, allNotices],
 	);
 }
 
@@ -316,103 +290,6 @@ function SettingsHosts(props: SettingsHostsProps): React.JSX.Element | null {
 	return null;
 }
 
-/** The owners the pane events reach. */
-interface PaneEventOwners {
-	readonly notices: NoticeStack;
-	readonly library: LibraryController;
-	readonly boards: Boards;
-	readonly workbench: ReturnType<typeof useWorkbench>;
-	readonly setTheme: (theme: ThemeChoice) => void;
-}
-
-/**
- * The pane events over their owners.
- * @param owners The owners.
- * @returns The events.
- */
-function paneEvents(owners: PaneEventOwners): PaneEvents {
-	const { notices, library, boards, workbench } = owners;
-	/**
-	 * A pane published its status: its transport and its scene may have changed.
-	 * @param paneId The pane.
-	 */
-	function onStatusPublished(paneId: string): void {
-		workbench.paneReported(paneId);
-		boards.previewMounted(paneId);
-	}
-	/**
-	 * A pane reported its session, or went.
-	 * @param paneId The pane.
-	 * @param session The session, or null.
-	 */
-	function onSession(paneId: string, session: PaneSession | null): void {
-		if (session === null) {
-			workbench.paneGone(paneId);
-			return;
-		}
-		workbench.paneReported(paneId);
-		session.applyLibrary(library.items);
-	}
-	/**
-	 * A board note could not be rendered.
-	 * @param paneId The pane.
-	 * @param error The refusal.
-	 */
-	function onBoardError(paneId: string, error: string): void {
-		notices.raise(boardErrorNotice(paneId, error));
-	}
-	/**
-	 * This tab runs a bundle the canvas no longer serves.
-	 * @param message What the server said.
-	 */
-	function onStaleFrontend(message: string): void {
-		notices.raise(staleFrontendNotice(message));
-	}
-	/**
-	 * A code target could not be opened.
-	 * @param notice The failure.
-	 */
-	function onCodeTargetNotice(notice: CodeTargetNotice): void {
-		notices.raise(codeTargetShellNotice(notice));
-	}
-	/**
-	 * Excalidraw's own menu changed the theme.
-	 * @param theme The theme.
-	 */
-	function onThemeChange(theme: ThemeChoice): void {
-		owners.setTheme(theme);
-	}
-	/**
-	 * Another tab changed the palette.
-	 * @param items The palette.
-	 */
-	function onLibraryChanged(items: LibraryItems): void {
-		library.applyFromServer(items);
-	}
-	/**
-	 * A pane's Excalidraw changed the palette.
-	 * @param items The palette.
-	 */
-	function onLibraryChange(items: LibraryItems): void {
-		library.reportFromPane(items);
-	}
-	/** The server accepted a changed pane report: the listing may have moved. */
-	function onPaneStateAccepted(): void {
-		boards.refresh();
-	}
-	return {
-		onBoardError,
-		onStaleFrontend,
-		onCodeTargetNotice,
-		onThemeChange,
-		onLibraryChanged,
-		onLibraryChange,
-		onPaneStateAccepted,
-		onStatusPublished,
-		onSession,
-	};
-}
-
 /**
  * The root component.
  * @returns The shell inside its providers, with the dialogs and the workbench.
@@ -421,7 +298,12 @@ function Application(): React.JSX.Element {
 	const [theme, setTheme] = useTheme();
 	const reducedMotion = useReducedMotion();
 	const notices = useNotices();
-	const library = useLibrary();
+	const { raise } = notices;
+	const onLibraryError = useCallback(
+		(message: string): void => raise(failureNotice("library", "Library", message)),
+		[raise],
+	);
+	const library = useLibrary({ onError: onLibraryError });
 	const [settings, setSettings] = useState<SettingsSurface | null>(null);
 	const closeSettings = useCallback((): void => setSettings(null), []);
 	const openAgentSettings = useCallback((): void => setSettings("agent"), []);
@@ -437,7 +319,19 @@ function Application(): React.JSX.Element {
 	);
 	const boards = useBoards(panes.handles, heldKeys);
 	const workbench = useWorkbench(panes.handles, panes.list.activePaneId, openAgentSettings);
-	const fullscreen = useFullscreen();
+	// A refused exit stays with the presentation, where the person is; a
+	// refused entry becomes a notice in the workspace they are still in.
+	const onRefused = useCallback(
+		(error: string, paneId: string | null): void => {
+			if (paneId === null) {
+				raise(presentationNotice(error));
+			}
+		},
+		[raise],
+	);
+	const fullscreen = useFullscreen({ onRefused });
+	// What a closing dialog wakes exists only once the dialogs do; bound below.
+	const [afterDialogClose] = useState(() => new LiveBinding<() => void>());
 	const dialogEvents = useMemo(
 		() => ({
 			/**
@@ -446,23 +340,26 @@ function Application(): React.JSX.Element {
 			 */
 			onDone: (message: string | null): void => {
 				if (message !== null) {
-					notices.raise(infoNotice("board-command", "Board", message));
+					raise(infoNotice("board-command", "Board", message));
 				}
 				boards.refresh();
 			},
 			onClosePane: panes.close,
+			/** A dialog closed; a note state that waited for it gets its dialog now. */
+			onClosed: (): void => {
+				afterDialogClose.read()();
+			},
 		}),
-		[notices, boards, panes.close],
+		[raise, boards, panes.close, afterDialogClose],
 	);
 	const dialogs = useBoardDialogs(dialogEvents);
-	useNoteRecovery(panes, notices, dialogs);
 	usePresentationTransfer(panes, fullscreen);
 	usePresentationFocusReturn(fullscreen.snapshot.paneId);
 	useBoardPlaceholders(panes);
 	useLibrarySync(panes, library);
-	useSideNotices(fullscreen, library, notices);
 	// Bound each render, after the owners the events reach exist.
-	panes.bindEvents(paneEvents({ notices, library, boards, workbench, setTheme }));
+	panes.bindEvents(paneEvents({ notices, library, boards, workbench, setTheme, panes, dialogs }));
+	afterDialogClose.bind(() => openPendingRecovery({ panes, dialogs }));
 
 	const openSettings = useCallback(
 		(surface: SettingsSurface): void => {
