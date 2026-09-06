@@ -68,7 +68,7 @@ describe("the note version a pane states on its writes (ADR 0022)", () => {
 		expect(harness.settledReleaseChecks).toBeGreaterThan(0);
 	});
 
-	test("a version refusal carries the element under an open editor over", () => {
+	test("a version refusal withdraws the element under an open editor with the rest", () => {
 		const harness = new ReportingHarness();
 		harness.withheldIds = ["t"];
 		harness.scene = [...harness.scene, { id: "t", type: "text", text: "typing", x: 0, y: 0 }];
@@ -80,10 +80,12 @@ describe("the note version a pane states on its writes (ADR 0022)", () => {
 		});
 		harness.refuseVersion([{ ...find(harness.server.document, "a"), x: 5 }, box("b", 200)], 9);
 		expect(find(harness.scene, "a").x).toBe(5);
-		expect(find(harness.scene, "t").text).toBe("typing");
-		// The withheld element stays out of the baseline, so it is reported once the editor closes.
+		// The note decides: the text under the editor is not in the note, so it is gone,
+		// not carried over to be reported once the editor closes.
+		expect(harness.scene.some((element) => element.id === "t")).toBe(false);
 		expect(harness.state.baseline.has("t")).toBe(false);
 		expect(harness.state.noteVersion).toBe(9);
+		expect(harness.pendingIsReachable()).toBe(true);
 	});
 
 	test("withdrawing for a claim settles everything scheduled and ignores a stale answer", () => {

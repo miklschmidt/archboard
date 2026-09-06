@@ -3,7 +3,6 @@
 // exercised without a browser.
 
 import {
-	carryWithheld,
 	hasPendingEdits,
 	initialState,
 	mergeIncoming,
@@ -429,12 +428,15 @@ class ReportingHarness {
 	refuseVersion(document: readonly SceneElement[], version: number | null): void {
 		const request = this.server.refuse();
 		this.dispatch({ type: "report_version_refused", generation: request.generation, version });
-		const answered = new Set(document.map((element) => element.id));
-		const kept = carryWithheld(this.scene, answered, this.withheldIds);
+		// The note decides: the runtime shows the document as is, an open editor closed.
 		this.dispatch({
 			type: "server_update_requested",
-			update: { elements: copy([...document, ...kept]), captureUpdate: "never" },
-			baselineUpdate: { type: "replace", withheldIds: this.withheldIds },
+			update: {
+				elements: copy([...document]),
+				appState: { editingTextElement: null },
+				captureUpdate: "never",
+			},
+			baselineUpdate: { type: "replace", withheldIds: [] },
 		});
 		this.clock.advance(0);
 	}
