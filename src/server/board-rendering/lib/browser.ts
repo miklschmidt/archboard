@@ -10,19 +10,25 @@ import type {
 	BoardRendererJobResult,
 	BrowserRendererEntry,
 	MermaidParserResult,
-} from "./contract";
+} from "@/server/board-rendering/lib/contract";
 
 const state = { phase: "ready", active: false, jobs: 0 };
 
 type RendererElements = Parameters<typeof exportToBlob>[0]["elements"];
 type RendererFiles = Parameters<typeof exportToBlob>[0]["files"];
 
+/**
+ *
+ */
 function rendererElements(elements: BoardRenderJob["snapshot"]["elements"]): RendererElements {
 	// Excalidraw's nominal Radians/point brands have no runtime representation. Board I/O has
 	// already validated every persisted field before this renderer-only type restoration.
 	return elements as unknown as RendererElements;
 }
 
+/**
+ *
+ */
 function rendererFiles(files: BoardRenderJob["snapshot"]["files"]): RendererFiles {
 	// File ids and MIME values are validated at board I/O; Excalidraw's nominal brands disappear
 	// from the persisted JSON representation and are restored only at this renderer boundary.
@@ -43,6 +49,9 @@ const fontNames = new Map<number, string>([
 
 class RenderInputError extends Error {}
 
+/**
+ *
+ */
 async function requireFonts(job: BoardRenderJob): Promise<void> {
 	const wanted = new Map<number, number>();
 	for (const element of job.snapshot.elements) {
@@ -72,6 +81,9 @@ async function requireFonts(job: BoardRenderJob): Promise<void> {
 	}
 }
 
+/**
+ *
+ */
 function requireEmbeddedFiles(job: BoardRenderJob): void {
 	for (const element of job.snapshot.elements) {
 		if (element.type !== "image" || element.isDeleted) {
@@ -84,6 +96,9 @@ function requireEmbeddedFiles(job: BoardRenderJob): void {
 	}
 }
 
+/**
+ *
+ */
 function findingFrame(
 	spec: Extract<BoardRenderSpec, { kind: "focus" }>,
 ): ExcalidrawFrameLikeElement {
@@ -118,6 +133,9 @@ function findingFrame(
 	};
 }
 
+/**
+ *
+ */
 async function pngBase64(blob: Blob): Promise<{ data: string; width: number; height: number }> {
 	const bytes = new Uint8Array(await blob.arrayBuffer());
 	let binary = "";
@@ -132,6 +150,9 @@ async function pngBase64(blob: Blob): Promise<{ data: string; width: number; hei
 	}
 }
 
+/**
+ *
+ */
 function svgSize(svg: SVGSVGElement): { width: number; height: number } {
 	const width = Number.parseFloat(svg.getAttribute("width") ?? "");
 	const height = Number.parseFloat(svg.getAttribute("height") ?? "");
@@ -141,6 +162,9 @@ function svgSize(svg: SVGSVGElement): { width: number; height: number } {
 	return { width, height };
 }
 
+/**
+ *
+ */
 async function renderOutput(
 	job: BoardRenderJob,
 	spec: BoardRenderSpec,
@@ -163,6 +187,9 @@ async function renderOutput(
 							...options,
 							exportPadding: 0,
 							exportingFrame: findingFrame(spec),
+							/**
+							 *
+							 */
 							getDimensions: () => ({
 								width: spec.width,
 								height: spec.height,
@@ -184,6 +211,9 @@ async function renderOutput(
 	};
 }
 
+/**
+ *
+ */
 async function run(job: BoardRendererJob): Promise<BoardRendererJobResult> {
 	if (state.active) {
 		throw new Error("Board renderer received concurrent page work.");

@@ -29,6 +29,9 @@ interface CanvasActiveMutation {
 class CanvasApplicationBusyError extends Error {
 	readonly code = "CANVAS_BUSY";
 
+	/**
+	 *
+	 */
 	constructor(
 		readonly timeoutMs: number,
 		readonly active: readonly CanvasActiveMutation[],
@@ -61,6 +64,9 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 	let nextId = 0;
 	const active = new Map<number, CanvasActiveMutation>();
 	const drained = new Set<() => void>();
+	/**
+	 *
+	 */
 	const settle = (): void => {
 		if (active.size !== 0) {
 			return;
@@ -70,6 +76,9 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 		}
 		drained.clear();
 	};
+	/**
+	 *
+	 */
 	const enter = (entry: CanvasActiveMutation): (() => void) => {
 		const id = nextId++;
 		active.set(id, entry);
@@ -85,6 +94,9 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 	};
 
 	return Object.freeze({
+		/**
+		 *
+		 */
 		admit: (name: string): CanvasMutationLease | null => {
 			if (!accepting) {
 				return null;
@@ -93,6 +105,9 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 			const finishRequest = enter({ name, kind: "request", startedAt: Date.now() });
 			return Object.freeze({
 				signal: controller.signal,
+				/**
+				 *
+				 */
 				abort: (reason?: unknown): void => {
 					if (!controller.signal.aborted) {
 						controller.abort(reason ?? new Error(`${name} disconnected.`));
@@ -100,6 +115,9 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 					finishRequest();
 				},
 				finish: finishRequest,
+				/**
+				 *
+				 */
 				track: async <T>(
 					workName: string,
 					work: (signal: AbortSignal) => Promise<T> | T,
@@ -114,6 +132,9 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 				},
 			});
 		},
+		/**
+		 *
+		 */
 		quiesce: async (): Promise<void> => {
 			accepting = false;
 			if (active.size === 0) {
@@ -124,6 +145,9 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 			let onDrain!: () => void;
 			const settled = await Promise.race([
 				new Promise<true>((resolve) => {
+					/**
+					 *
+					 */
 					onDrain = () => resolve(true);
 					drained.add(onDrain);
 				}),
@@ -147,11 +171,23 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 				),
 			);
 		},
+		/**
+		 *
+		 */
 		resume: (): void => {
 			accepting = true;
 		},
+		/**
+		 *
+		 */
 		accepting: (): boolean => accepting,
+		/**
+		 *
+		 */
 		active: (): number => active.size,
+		/**
+		 *
+		 */
 		activeMutations: (): readonly CanvasActiveMutation[] => [...active.values()],
 	});
 }
@@ -195,6 +231,9 @@ interface CanvasApplicationLifetimeOptions {
 class CanvasApplicationHeldError extends Error {
 	readonly code = "CANVAS_HELD";
 
+	/**
+	 *
+	 */
 	constructor(readonly boards: readonly string[]) {
 		super(
 			[
@@ -207,12 +246,18 @@ class CanvasApplicationHeldError extends Error {
 }
 
 class CanvasApplicationStartupCancelledError extends Error {
+	/**
+	 *
+	 */
 	constructor(readonly reason: CanvasApplicationStopReason) {
 		super(`Canvas application startup was canceled by ${reason}.`);
 		this.name = "CanvasApplicationStartupCancelledError";
 	}
 }
 
+/**
+ *
+ */
 const failure = (error: unknown): Error =>
 	error instanceof Error ? error : new Error(String(error));
 
@@ -245,14 +290,26 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 	let cleanupProven = false;
 	const startup = new AbortController();
 	const entered: CanvasApplicationResource[] = [];
+	/**
+	 *
+	 */
 	const emit = (action: CanvasApplicationEvent["action"], resource: string | null = null): void =>
 		options.observe?.({ phase, action, resource });
+	/**
+	 *
+	 */
 	const setPhase = (next: CanvasApplicationPhase): void => {
 		phase = next;
 		emit("phase");
 	};
+	/**
+	 *
+	 */
 	const holds = (): string[] => [...(options.heldBoards?.() ?? [])].toSorted();
 
+	/**
+	 *
+	 */
 	const stopResource = async (
 		resource: CanvasApplicationResource,
 		reason: CanvasApplicationStopReason,
@@ -312,6 +369,9 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 		}
 	};
 
+	/**
+	 *
+	 */
 	const unwind = (reason: CanvasApplicationStopReason): Promise<void> => {
 		if (unwindPromise !== null) {
 			return unwindPromise;
@@ -340,6 +400,9 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 		return unwindPromise;
 	};
 
+	/**
+	 *
+	 */
 	const stopStarting = (reason: CanvasApplicationStopReason): Promise<void> => {
 		startup.abort(reason);
 		setPhase("stopping");
@@ -354,8 +417,17 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 	};
 
 	return Object.freeze({
+		/**
+		 *
+		 */
 		phase: (): CanvasApplicationPhase => phase,
+		/**
+		 *
+		 */
 		cleanupProven: (): boolean => cleanupProven,
+		/**
+		 *
+		 */
 		start: (): Promise<void> => {
 			if (startPromise !== null) {
 				return startPromise;
@@ -403,6 +475,9 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 			})();
 			return startPromise;
 		},
+		/**
+		 *
+		 */
 		stop: (reason: CanvasApplicationStopReason): Promise<void> => {
 			if (stopPromise !== null) {
 				return stopPromise;

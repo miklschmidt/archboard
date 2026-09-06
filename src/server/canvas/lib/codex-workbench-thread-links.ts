@@ -4,29 +4,32 @@ import type {
 	BrowserThreadLinkActions,
 	BrowserThreadLinkTargetCommand,
 	CodexThreadCandidatesProjectionInput,
-} from "../../codex-workbench/index.js";
-import { boundedBrowserReason } from "./codex-workbench-readiness.js";
+} from "@/server/codex-workbench";
+import { boundedBrowserReason } from "@/server/canvas/lib/codex-workbench-readiness";
 import type {
 	ChildEpoch,
 	ChildId,
 	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import {
 	EPOCH_THREAD_ATTACH_OPERATION,
 	type EpochOperationRecord,
-} from "../../../runtime/codex-epoch/index.js";
+} from "@/runtime/codex-epoch";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkCandidateDiscovery,
-} from "../../../runtime/codex-thread-link/index.js";
-import type { CodexWorkhorseStart } from "../../../runtime/codex-workhorse-start/index.js";
+} from "@/runtime/codex-thread-link";
+import type { CodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
 import type {
 	CodexThreadContextBindingToken,
 	CodexThreadContextController,
-} from "../../../runtime/codex-thread-context/index.js";
-import type { CodexWorkbenchComponents } from "./codex-workbench.js";
+} from "@/runtime/codex-thread-context";
+import type { CodexWorkbenchComponents } from "@/server/canvas/lib/codex-workbench";
 
+/**
+ *
+ */
 function bindThreadContextToReadyWorkhorse(
 	workhorse: Pick<CodexWorkhorseStart, "snapshot">,
 	controller: Pick<CodexThreadContextController, "snapshot" | "compareAndSwap">,
@@ -58,6 +61,9 @@ function bindThreadContextToReadyWorkhorse(
 	});
 }
 
+/**
+ *
+ */
 function replaceThreadContextBinding(
 	controller: Pick<CodexThreadContextController, "snapshot" | "compareAndSwap">,
 	target: {
@@ -86,6 +92,9 @@ function replaceThreadContextBinding(
 	}).token;
 }
 
+/**
+ *
+ */
 function clearCanvasThreadContextForLease(
 	controller: Pick<CodexThreadContextController, "snapshot" | "compareAndSwap">,
 	expected: CodexThreadContextBindingToken,
@@ -97,6 +106,9 @@ function clearCanvasThreadContextForLease(
 	controller.compareAndSwap({ expected: current.token, next: null });
 }
 
+/**
+ *
+ */
 function expectedBrowserLink(context: BrowserActionContext) {
 	return {
 		revision: context.linkRevision,
@@ -133,11 +145,17 @@ interface CanvasThreadCandidateInventory {
 
 type EpochGenerationSource = Pick<CodexWorkbenchComponents["epoch"], "snapshot">;
 
+/**
+ *
+ */
 function epochGeneration(epoch: EpochGenerationSource): string {
 	const cas = epoch.snapshot().cas;
 	return `${cas.revision}:${cas.bytesHash ?? "none"}`;
 }
 
+/**
+ *
+ */
 function createCanvasThreadCandidateInventory(
 	threadLink: Pick<CodexThreadLinkPort, "discoverCandidates">,
 	epoch: EpochGenerationSource,
@@ -148,15 +166,27 @@ function createCanvasThreadCandidateInventory(
 	};
 	let selections = new Map<string, ThreadId>();
 	let generation: string | null = null;
+	/**
+	 *
+	 */
 	const retire = (reason: string): void => {
 		published = { kind: "codex_thread_candidates", state: "unavailable", reason };
 		selections = new Map();
 		generation = null;
 	};
 	return Object.freeze({
+		/**
+		 *
+		 */
 		read: () => published,
+		/**
+		 *
+		 */
 		generation: () => generation,
 		invalidate: retire,
+		/**
+		 *
+		 */
 		refresh: async () => {
 			try {
 				const discovery = await threadLink.discoverCandidates();
@@ -180,10 +210,16 @@ function createCanvasThreadCandidateInventory(
 				throw error;
 			}
 		},
+		/**
+		 *
+		 */
 		threadIdFor: (selectionId: string) => selections.get(selectionId) ?? null,
 	});
 }
 
+/**
+ *
+ */
 function createCanvasThreadLinkActions(options: {
 	readonly workhorse: CodexWorkbenchComponents["workhorse"];
 	readonly threadLink: CodexWorkbenchComponents["threadLink"];
@@ -198,6 +234,9 @@ function createCanvasThreadLinkActions(options: {
 		CodexThreadContextBindingToken
 	>();
 	const emptyAuthoredHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+	/**
+	 *
+	 */
 	const recordFor = (threadId: ThreadId): EpochOperationRecord | null => {
 		const active = options.epoch.snapshot().manifest.activeEpoch;
 		if (active === null) {
@@ -215,6 +254,9 @@ function createCanvasThreadLinkActions(options: {
 				) ?? null
 		);
 	};
+	/**
+	 *
+	 */
 	const attachRecord = async (
 		threadId: ThreadId,
 		context: BrowserActionContext,
@@ -335,6 +377,9 @@ function createCanvasThreadLinkActions(options: {
 		return { outcome: "delivered" };
 	};
 	return Object.freeze({
+		/**
+		 *
+		 */
 		create: async (_command, context) => {
 			const started = await options.workhorse.start({
 				paneId: context.paneId,
@@ -364,12 +409,24 @@ function createCanvasThreadLinkActions(options: {
 			controllerTokens.set(context.connection, token);
 			return { outcome: "delivered" };
 		},
+		/**
+		 *
+		 */
 		refresh: async () => {
 			await options.candidates.refresh();
 			return { outcome: "delivered" };
 		},
+		/**
+		 *
+		 */
 		attach: (command, context) => adoptCandidate(command, context),
+		/**
+		 *
+		 */
 		relink: (command, context) => adoptCandidate(command, context),
+		/**
+		 *
+		 */
 		onBrowserDisconnect: (context, reason) => {
 			if (
 				reason !== "browser_disconnected" &&

@@ -1,10 +1,13 @@
 import type {
 	CoordinatorCallbackDelivery,
 	CoordinatorCallbacks,
-} from "../../../runtime/codex-coordinator-callbacks/index.js";
-import type { CodexRealtimeGeneration } from "../../../runtime/codex-realtime/index.js";
-import type { BrowserVoiceContext } from "../../../shared/codex-browser-model/index.js";
+} from "@/runtime/codex-coordinator-callbacks";
+import type { CodexRealtimeGeneration } from "@/runtime/codex-realtime";
+import type { BrowserVoiceContext } from "@/shared/codex-browser-model";
 
+/**
+ *
+ */
 function sameGeneration(
 	delivery: CoordinatorCallbackDelivery,
 	generation: CodexRealtimeGeneration,
@@ -22,6 +25,9 @@ function sameGeneration(
 	);
 }
 
+/**
+ *
+ */
 function entryKind(
 	delivery: CoordinatorCallbackDelivery,
 ): BrowserVoiceContext["entries"][number]["kind"] {
@@ -35,6 +41,9 @@ function entryKind(
 	return callback.type;
 }
 
+/**
+ *
+ */
 function browserEntry(
 	delivery: CoordinatorCallbackDelivery,
 ): BrowserVoiceContext["entries"][number] {

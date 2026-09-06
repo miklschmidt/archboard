@@ -3,7 +3,7 @@ import type {
 	ChildId,
 	IdentityAuthorities,
 	OperationId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	DynamicCallerAuthority,
 	DynamicEpochTeardownProof,
@@ -17,10 +17,10 @@ import type {
 	DynamicToolLifecyclePort,
 	DynamicWaitEvent,
 	DynamicWaitOwner,
-} from "../../../runtime/codex-dynamic-tools/index.js";
-import type { CodexWaitGraph, WaitOwner } from "../../../runtime/codex-wait-graph/index.js";
-import type { DynamicServerRequest } from "../../../runtime/codex-transport/server-requests.js";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
+} from "@/runtime/codex-dynamic-tools";
+import type { CodexWaitGraph, WaitOwner } from "@/runtime/codex-wait-graph";
+import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { TransportServerNotification } from "@/runtime/codex-transport";
 
 /** The shared OperationId authority plus exact once-only terminal disposition. */
 function createCanvasDynamicOperationIdAdapter(
@@ -28,15 +28,27 @@ function createCanvasDynamicOperationIdAdapter(
 ): DynamicOperationIdPort {
 	const terminal = new Map<OperationId, DynamicOperationTerminalResult>();
 	return Object.freeze({
+		/**
+		 *
+		 */
 		issueCanonicalOperationId: () => authority.issuer.mintOperationId(),
+		/**
+		 *
+		 */
 		validateCurrentUnconsumedOperationId: (operationId: OperationId) => {
 			authority.validator.assertCurrentOperationId(operationId);
 			if (terminal.has(operationId)) {
 				throw new Error("The OperationId is already terminal.");
 			}
 		},
+		/**
+		 *
+		 */
 		serializeForOwnedWireFields: (operationId: OperationId) =>
 			authority.decoder.serializeOperationId(operationId),
+		/**
+		 *
+		 */
 		terminalizeCanonicalOperationId: (input: {
 			readonly operationId: OperationId;
 			readonly disposition: DynamicOperationTerminalDisposition;
@@ -57,6 +69,9 @@ function createCanvasDynamicOperationIdAdapter(
 			terminal.set(input.operationId, result);
 			return result;
 		},
+		/**
+		 *
+		 */
 		readCanonicalOperationTerminalResult: (operationId: OperationId) => {
 			authority.validator.assertCurrentOperationId(operationId);
 			return terminal.get(operationId) ?? null;
@@ -64,6 +79,9 @@ function createCanvasDynamicOperationIdAdapter(
 	});
 }
 
+/**
+ *
+ */
 function waitOwner(owner: DynamicWaitOwner): WaitOwner {
 	return {
 		child: owner.child,
@@ -73,10 +91,16 @@ function waitOwner(owner: DynamicWaitOwner): WaitOwner {
 	};
 }
 
+/**
+ *
+ */
 function quarantineKey(identity: DynamicMutationQuarantineIdentity): string {
 	return JSON.stringify([identity.child, identity.epoch, identity.callId]);
 }
 
+/**
+ *
+ */
 function waitKey(owner: DynamicWaitOwner): string {
 	return JSON.stringify([owner.child, owner.epoch, owner.caller, owner.turn, owner.call]);
 }
@@ -125,6 +149,9 @@ function createCanvasDynamicLifecycleOwner(
 	>();
 	let stopped = false;
 	const port: DynamicToolLifecyclePort = Object.freeze({
+		/**
+		 *
+		 */
 		assertCallExecuting: (input: {
 			readonly request: DynamicServerRequest;
 			readonly caller: DynamicCallerAuthority;
@@ -133,6 +160,9 @@ function createCanvasDynamicLifecycleOwner(
 				throw new Error("The logical dynamic call is no longer executing.");
 			}
 		},
+		/**
+		 *
+		 */
 		registerWaitOwner: ({ owner }: { readonly owner: DynamicWaitOwner }) => {
 			const result = options.waitGraph.addEdgeSet({
 				owner: waitOwner(owner),
@@ -142,17 +172,26 @@ function createCanvasDynamicLifecycleOwner(
 				throw new Error(`The wait owner would create a cycle: ${result.cycle.join(" -> ")}`);
 			}
 		},
+		/**
+		 *
+		 */
 		releaseWaitOwner: ({
 			owner,
 			cause,
 		}: Parameters<DynamicToolLifecyclePort["releaseWaitOwner"]>[0]) => {
 			options.waitGraph.release({ owner: waitOwner(owner), cause });
 		},
+		/**
+		 *
+		 */
 		releaseWaitOwnersForChild: ({
 			child,
 		}: Parameters<DynamicToolLifecyclePort["releaseWaitOwnersForChild"]>[0]) => {
 			options.waitGraph.release({ cause: "child-exit", child });
 		},
+		/**
+		 *
+		 */
 		poisonEpochAndOwnMutationQuarantine: ({
 			identity,
 			retryTerminalization,
@@ -168,6 +207,9 @@ function createCanvasDynamicLifecycleOwner(
 				readonly epoch: ChildEpoch;
 				readonly exited: true;
 			}>((resolve) => {
+				/**
+				 *
+				 */
 				resolveExit = () => resolve({ child: identity.child, epoch: identity.epoch, exited: true });
 			});
 			const owner = Object.freeze({
@@ -184,6 +226,9 @@ function createCanvasDynamicLifecycleOwner(
 			});
 			return owner;
 		},
+		/**
+		 *
+		 */
 		failClosedShutdownEpoch: ({
 			child,
 			epoch,
@@ -196,6 +241,9 @@ function createCanvasDynamicLifecycleOwner(
 			teardown: options.shutdownEpoch(child, epoch),
 		}),
 		reportFatalLifecycleFault: options.onFatal,
+		/**
+		 *
+		 */
 		waitForTargets: (input: Parameters<DynamicToolLifecyclePort["waitForTargets"]>[0]) => {
 			const key = waitKey(input.owner);
 			if (activeWaits.has(key)) {
@@ -213,6 +261,9 @@ function createCanvasDynamicLifecycleOwner(
 			]).finally(() => activeWaits.delete(key));
 		},
 	});
+	/**
+	 *
+	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		if (
 			event.correlation.child !== options.identity.identity.validator.childId ||
@@ -252,6 +303,9 @@ function createCanvasDynamicLifecycleOwner(
 			active.reject(error);
 		}
 	};
+	/**
+	 *
+	 */
 	const childExit = async (child: ChildId, epoch: ChildEpoch): Promise<void> => {
 		for (const active of activeWaits.values()) {
 			if (active.owner.child !== child || active.owner.epoch !== epoch) {
@@ -287,6 +341,9 @@ function createCanvasDynamicLifecycleOwner(
 		// host shutdown is the end of the process, so the surviving edges cost
 		// nothing. Releasing them here would only add a second teardown order to
 		// keep in step with the one child exit already owns.
+		/**
+		 *
+		 */
 		shutdown: async () => {
 			if (stopped) {
 				return;

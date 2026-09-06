@@ -1,6 +1,6 @@
-import type { CodexProcessSnapshot } from "../../../runtime/codex-process/index.js";
-import type { BrowserLogin, BrowserReadiness } from "../../../shared/codex-browser-model/index.js";
-import type { BrowserAccountProjectionInput } from "../../codex-workbench/index.js";
+import type { CodexProcessSnapshot } from "@/runtime/codex-process";
+import type { BrowserLogin, BrowserReadiness } from "@/shared/codex-browser-model";
+import type { BrowserAccountProjectionInput } from "@/server/codex-workbench";
 
 const READINESS_REASON_MAX_BYTES = 512;
 const textEncoder = new TextEncoder();
@@ -48,6 +48,9 @@ export function boundedBrowserReason(value: string | null | undefined, fallback:
 	return truncated.trim().length === 0 ? fallback : truncated;
 }
 
+/**
+ *
+ */
 function accountReadiness(input: CanvasReadinessInput): BrowserReadiness {
 	if (input.login.state === "pending")
 		return { kind: "readiness", state: "login_pending", loginId: input.login.loginId };

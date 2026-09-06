@@ -2,8 +2,8 @@ import {
 	BROWSER_PERMISSION_FILE_ACCESS,
 	type BrowserApproval,
 	JsonValueSchema,
-} from "../../../shared/codex-browser-model/index.js";
-import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+} from "@/shared/codex-browser-model";
+import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
 
 type OwnerApprovalRequest = ApprovalOwnerView["request"];
 type OwnerCommandRequest = Extract<OwnerApprovalRequest, { readonly family: "command_execution" }>;
@@ -22,10 +22,16 @@ const BROWSER_FILE_ACCESS_BY_CODEX_ACCESS = BROWSER_PERMISSION_FILE_ACCESS satis
 	string
 >;
 
+/**
+ *
+ */
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ *
+ */
 function fieldType(value: unknown): "string" | "number" | "integer" | "boolean" | "enum" | null {
 	if (!isRecord(value)) {
 		return null;
@@ -63,14 +69,23 @@ function fieldType(value: unknown): "string" | "number" | "integer" | "boolean" 
 		: null;
 }
 
+/**
+ *
+ */
 function stringValue(value: unknown): string | null {
 	return typeof value === "string" ? value : null;
 }
 
+/**
+ *
+ */
 function numberValue(value: unknown): number | null {
 	return typeof value === "number" ? value : null;
 }
 
+/**
+ *
+ */
 function enumOptions(definition: Record<string, unknown>): readonly string[] | null {
 	if (
 		Array.isArray(definition["enum"]) &&
@@ -99,6 +114,9 @@ function enumOptions(definition: Record<string, unknown>): readonly string[] | n
 	return null;
 }
 
+/**
+ *
+ */
 function formFields(schema: unknown): BrowserElicitationField[] | null {
 	if (!isRecord(schema) || !isRecord(schema["properties"])) {
 		return null;
@@ -148,6 +166,9 @@ function formFields(schema: unknown): BrowserElicitationField[] | null {
 	return fields;
 }
 
+/**
+ *
+ */
 function safeUrl(value: string): string {
 	const parsed = new URL(value);
 	if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
@@ -159,10 +180,16 @@ function safeUrl(value: string): string {
 type CommandDecision = NonNullable<OwnerCommandRequest["params"]["availableDecisions"]>[number];
 const DEFAULT_COMMAND_DECISIONS: readonly CommandDecision[] = ["accept", "decline", "cancel"];
 
+/**
+ *
+ */
 function effectiveCommandDecisions(request: OwnerCommandRequest): readonly CommandDecision[] {
 	return request.params.availableDecisions ?? DEFAULT_COMMAND_DECISIONS;
 }
 
+/**
+ *
+ */
 function projectCommandDecision(decision: CommandDecision): BrowserCommandDecision {
 	if (typeof decision === "string") {
 		return decision;
@@ -184,6 +211,9 @@ function projectCommandDecision(decision: CommandDecision): BrowserCommandDecisi
 	};
 }
 
+/**
+ *
+ */
 function fileSystemAccesses(value: PermissionFileSystem): readonly CodexFileAccess[] {
 	if (value === null) {
 		return [];
@@ -203,6 +233,9 @@ function fileSystemAccesses(value: PermissionFileSystem): readonly CodexFileAcce
 	);
 }
 
+/**
+ *
+ */
 function projectLifecycle(view: ApprovalOwnerView): BrowserApproval["lifecycle"] {
 	const { state, decision, outcome, reason } = view.snapshot;
 	if (state === "staged" || state === "pending") {
@@ -232,6 +265,9 @@ function projectLifecycle(view: ApprovalOwnerView): BrowserApproval["lifecycle"]
 	};
 }
 
+/**
+ *
+ */
 export function projectApproval(view: ApprovalOwnerView): BrowserApproval {
 	const request = view.request;
 	const envelope = {

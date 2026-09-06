@@ -5,7 +5,7 @@ import {
 	type CodeTargetFailureCode,
 	type OpenerCommand,
 	type OpenerSelection,
-} from "../../../shared/code-target/index.js";
+} from "@/shared/code-target";
 
 interface OpenerPlanSuccess {
 	ok: true;
@@ -28,10 +28,16 @@ const PLATFORM_EXECUTABLES: Readonly<Record<string, string | undefined>> = {
 	win32: "explorer.exe",
 };
 
+/**
+ *
+ */
 function invalid(error: string): OpenerSelectionInvalid {
 	return { ok: false, code: "OPENER_CONFIG_INVALID", error };
 }
 
+/**
+ *
+ */
 function validateOpenerSelection(selection: unknown): OpenerSelection | OpenerSelectionInvalid {
 	const parsed = OpenerSelectionSchema.safeParse(selection);
 	if (!parsed.success) {
@@ -43,6 +49,9 @@ function validateOpenerSelection(selection: unknown): OpenerSelection | OpenerSe
 	return parsed.data;
 }
 
+/**
+ *
+ */
 function planOpenerCommand(
 	selection: OpenerSelection,
 	target: string,

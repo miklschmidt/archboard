@@ -11,11 +11,17 @@ type BrowserCsrfResult = { ok: true } | { ok: false; code: "CROSS_ORIGIN_REFUSED
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
+/**
+ *
+ */
 function normalizeHostname(hostname: string): string {
 	const lowered = hostname.toLowerCase();
 	return lowered.startsWith("[") && lowered.endsWith("]") ? lowered.slice(1, -1) : lowered;
 }
 
+/**
+ *
+ */
 function authorityHostname(value: string | undefined): string | null {
 	if (!value) {
 		return null;
@@ -31,6 +37,9 @@ function authorityHostname(value: string | undefined): string | null {
 	}
 }
 
+/**
+ *
+ */
 function urlHostname(value: string | undefined, allowLocation: boolean): string | null {
 	if (!value || value === "null") {
 		return null;
@@ -52,10 +61,16 @@ function urlHostname(value: string | undefined, allowLocation: boolean): string 
 	}
 }
 
+/**
+ *
+ */
 function refused(error: string): BrowserCsrfResult {
 	return { ok: false, code: "CROSS_ORIGIN_REFUSED", error };
 }
 
+/**
+ *
+ */
 function checkBrowserCsrf(kind: BrowserCsrfKind, headers: BrowserCsrfHeaders): BrowserCsrfResult {
 	// This protects browsers against CSRF. It does not authenticate a local process
 	// that can forge the accepted loopback headers.

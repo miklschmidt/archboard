@@ -9,35 +9,35 @@ import type {
 	BrowserLeaseLedger,
 	CodexQueueProjectionInput,
 	CodexWorkbenchGatewayOptions,
-} from "../../codex-workbench/index.js";
-import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
-import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
+} from "@/server/codex-workbench";
+import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
+import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type { SessionQueuedSubmission } from "@/runtime/codex-session";
 import type {
 	OperationAuthority,
 	OperationId,
 	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import { CODEX_QUEUE_REREAD_FLOOR_MS } from "../../../shared/timing/timing.js";
-import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
-import type { CodexWorkbenchComponents } from "./codex-workbench.js";
-import type { CanvasDynamicApprovalOwner } from "./codex-workbench-approvals.js";
+} from "@/shared/codex-workbench-identity";
+import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@/shared/timing/timing";
+import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { CodexWorkbenchComponents } from "@/server/canvas/lib/codex-workbench";
+import type { CanvasDynamicApprovalOwner } from "@/server/canvas/lib/codex-workbench-approvals";
 import type {
 	CanvasBrowserProjectionBudget,
 	CanvasTimelineOwner,
-} from "./codex-workbench-timeline.js";
+} from "@/server/canvas/lib/codex-workbench-timeline";
 import {
 	createCanvasThreadCandidateInventory,
 	createCanvasThreadLinkActions,
-} from "./codex-workbench-thread-links.js";
-import { createCanvasCanonicalTextActions } from "./codex-workbench-text-actions.js";
-import { createCanvasBrowserAccountOwner } from "./codex-workbench-account.js";
-import { createCanvasRealtimeActions } from "./codex-workbench-realtime-actions.js";
-import { projectCanvasVoiceContext } from "./codex-workbench-voice-context.js";
+} from "@/server/canvas/lib/codex-workbench-thread-links";
+import { createCanvasCanonicalTextActions } from "@/server/canvas/lib/codex-workbench-text-actions";
+import { createCanvasBrowserAccountOwner } from "@/server/canvas/lib/codex-workbench-account";
+import { createCanvasRealtimeActions } from "@/server/canvas/lib/codex-workbench-realtime-actions";
+import { projectCanvasVoiceContext } from "@/server/canvas/lib/codex-workbench-voice-context";
 import {
 	projectCanvasBrowserReadiness,
 	type CanvasReadinessProcessFacts,
-} from "./codex-workbench-readiness.js";
+} from "@/server/canvas/lib/codex-workbench-readiness";
 
 /**
  * The account, login, and queue facts this adapter learns from its own command
@@ -75,6 +75,9 @@ function archboardOperation(
 	}
 }
 
+/**
+ *
+ */
 function queueOwnerView(
 	queue: readonly SessionQueuedSubmission[],
 	operations: OperationAuthority,
@@ -89,6 +92,9 @@ function queueOwnerView(
 	};
 }
 
+/**
+ *
+ */
 function visibleApprovalViews(approvals: CodexApprovalBroker) {
 	return approvals
 		.inspectViews()
@@ -105,6 +111,9 @@ function createCanvasOrdinaryApprovalActions(
 	approvals: CodexApprovalBroker,
 ): BrowserOrdinaryApprovalActions {
 	const actions: BrowserOrdinaryApprovalActions = {
+		/**
+		 *
+		 */
 		pending: (requestId) => {
 			try {
 				if (approvals.get(requestId)?.state !== "pending") {
@@ -115,6 +124,9 @@ function createCanvasOrdinaryApprovalActions(
 				return null;
 			}
 		},
+		/**
+		 *
+		 */
 		resolve: async (command) => {
 			const settlement = await approvals.resolve({
 				requestId: command.requestId,
@@ -123,12 +135,21 @@ function createCanvasOrdinaryApprovalActions(
 			});
 			return { outcome: settlement.outcome };
 		},
+		/**
+		 *
+		 */
 		acknowledge: (requestId) => approvals.acknowledge(requestId),
+		/**
+		 *
+		 */
 		unpresentedTerminals: () =>
 			approvals
 				.inspectViews()
 				.filter((view) => view.terminalDelivery === "after_publish")
 				.map((view) => view.request.requestId),
+		/**
+		 *
+		 */
 		acknowledgePublished: (requestIds) => {
 			for (const requestId of new Set(requestIds)) {
 				try {
@@ -141,6 +162,9 @@ function createCanvasOrdinaryApprovalActions(
 				}
 			}
 		},
+		/**
+		 *
+		 */
 		onBrowserDisconnect: async (context, reason) => {
 			if (context.link.state !== "executable") {
 				return;
@@ -202,6 +226,9 @@ function createCanvasBrowserGatewayOptions(input: {
 	) => ArchboardContext;
 }): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink"> {
 	const { components, dynamicApprovals, state } = input;
+	/**
+	 *
+	 */
 	const updateQueue = <Result extends { readonly queue: readonly SessionQueuedSubmission[] }>(
 		result: Result,
 	): Result => {
@@ -209,19 +236,31 @@ function createCanvasBrowserGatewayOptions(input: {
 		state.queueThreadId = components.workhorse.snapshot().threadId;
 		return result;
 	};
+	/**
+	 *
+	 */
 	const clearQueue = (): void => {
 		state.queue = UNAVAILABLE_QUEUE;
 		state.queueThreadId = null;
 	};
+	/**
+	 *
+	 */
 	const issueOperation = (): OperationId => components.identity.operation.issuer.mintOperationId();
 	// Kept beside the action table so every mutation returns the same browser outcome shape.
 	// eslint-disable-next-line unicorn/consistent-function-scoping
+	/**
+	 *
+	 */
 	const run = async (operation: () => Promise<unknown>): Promise<BrowserActionResult> => {
 		await operation();
 		return { outcome: "delivered" };
 	};
 	// A thread link change re-targets every queue: the cached submissions belong
 	// to the previous thread and must not be presented for the new one.
+	/**
+	 *
+	 */
 	const refreshLinkedQueue = async (): Promise<void> => {
 		clearQueue();
 		if (components.workhorse.snapshot().state !== "ready") {
@@ -269,13 +308,15 @@ function createCanvasBrowserGatewayOptions(input: {
 	const now = input.now ?? Date.now;
 	let inFlightReread: { readonly threadId: ThreadId; readonly read: Promise<void> } | null = null;
 	let lastRereadAtMs: { readonly threadId: ThreadId; readonly atMs: number } | null = null;
+	/**
+	 *
+	 */
 	const coalescedReread = (threadId: ThreadId): Promise<void> => {
-		if (inFlightReread !== null && inFlightReread.threadId === threadId) {
+		if (inFlightReread?.threadId === threadId) {
 			return inFlightReread.read;
 		}
 		if (
-			lastRereadAtMs !== null &&
-			lastRereadAtMs.threadId === threadId &&
+			lastRereadAtMs?.threadId === threadId &&
 			now() - lastRereadAtMs.atMs < CODEX_QUEUE_REREAD_FLOOR_MS
 		) {
 			return Promise.resolve();
@@ -308,6 +349,9 @@ function createCanvasBrowserGatewayOptions(input: {
 	const actions: BrowserWorkbenchActions = {
 		account: {
 			...account.actions,
+			/**
+			 *
+			 */
 			read: async (context) => {
 				const result = await account.actions.read(context);
 				if (components.workhorse.snapshot().state === "ready") {
@@ -317,17 +361,29 @@ function createCanvasBrowserGatewayOptions(input: {
 			},
 		},
 		threadLinks: {
+			/**
+			 *
+			 */
 			refresh: (command, context) => threadLinks.refresh(command, context),
+			/**
+			 *
+			 */
 			create: async (command, context) => {
 				const result = await threadLinks.create(command, context);
 				await refreshLinkedQueue();
 				return result;
 			},
+			/**
+			 *
+			 */
 			attach: async (command, context) => {
 				const result = await threadLinks.attach(command, context);
 				await refreshLinkedQueue();
 				return result;
 			},
+			/**
+			 *
+			 */
 			relink: async (command, context) => {
 				const result = await threadLinks.relink(command, context);
 				await refreshLinkedQueue();
@@ -343,6 +399,9 @@ function createCanvasBrowserGatewayOptions(input: {
 			contextForOperation: input.contextForOperation,
 		}),
 		queue: {
+			/**
+			 *
+			 */
 			add: (command) =>
 				run(
 					async () =>
@@ -350,6 +409,9 @@ function createCanvasBrowserGatewayOptions(input: {
 							await components.queue.add({ operationId: issueOperation(), prompt: command.prompt }),
 						),
 				),
+			/**
+			 *
+			 */
 			update: (command) =>
 				run(
 					async () =>
@@ -361,6 +423,9 @@ function createCanvasBrowserGatewayOptions(input: {
 							}),
 						),
 				),
+			/**
+			 *
+			 */
 			delete: (command) =>
 				run(
 					async () =>
@@ -371,6 +436,9 @@ function createCanvasBrowserGatewayOptions(input: {
 							}),
 						),
 				),
+			/**
+			 *
+			 */
 			reorder: (command) =>
 				run(
 					async () =>
@@ -381,6 +449,9 @@ function createCanvasBrowserGatewayOptions(input: {
 							}),
 						),
 				),
+			/**
+			 *
+			 */
 			start: (command) =>
 				run(
 					async () =>
@@ -397,6 +468,9 @@ function createCanvasBrowserGatewayOptions(input: {
 		dynamicApprovals: dynamicApprovals.browser,
 	};
 	const projection: BrowserProjectionPort = {
+		/**
+		 *
+		 */
 		refresh: async (context): Promise<void> => {
 			const link = context.binding.link;
 			if (link.state !== "executable" || link.threadId === null) {
@@ -404,6 +478,9 @@ function createCanvasBrowserGatewayOptions(input: {
 			}
 			await coalescedReread(link.threadId);
 		},
+		/**
+		 *
+		 */
 		read: (
 			context: Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0],
 		): BrowserOwnerProjection => {
@@ -530,6 +607,9 @@ function createCanvasBrowserGatewayOptions(input: {
 				voiceContext,
 			};
 		},
+		/**
+		 *
+		 */
 		onChange: (listener) => {
 			const unsubscribe = input.onChange(listener);
 			const unsubscribeAccount = account.subscribe(listener);
@@ -538,6 +618,9 @@ function createCanvasBrowserGatewayOptions(input: {
 				unsubscribe();
 			};
 		},
+		/**
+		 *
+		 */
 		onBrowserDisconnect: ({ paneId, connection }) => input.timeline.retire(paneId, connection),
 	};
 	return {

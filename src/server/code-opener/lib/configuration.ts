@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { OpenerSelection } from "../../../shared/code-target/index.js";
-import { writeFileAtomic } from "../../../runtime/engine/atomic-write.js";
-import { stateDir } from "../../../runtime/engine/state-dir.js";
-import { validateOpenerSelection } from "./planning.js";
+import type { OpenerSelection } from "@/shared/code-target";
+import { writeFileAtomic } from "@/runtime/engine/atomic-write";
+import { stateDir } from "@/runtime/engine/state-dir";
+import { validateOpenerSelection } from "@/server/code-opener/lib/planning";
 
 interface OpenerConfigurationSuccess {
 	ok: true;
@@ -21,10 +21,16 @@ type OpenerConfigurationResult = OpenerConfigurationSuccess | OpenerConfiguratio
 
 const DEFAULT_SELECTION: OpenerSelection = { version: 1, kind: "platform" };
 
+/**
+ *
+ */
 function openerConfigPath(): string {
 	return process.env["ARCHBOARD_OPENER_CONFIG"] || path.join(stateDir(), "opener.json");
 }
 
+/**
+ *
+ */
 function readOpenerSelection(): OpenerConfigurationResult {
 	const file = openerConfigPath();
 	let raw: string;
@@ -48,6 +54,9 @@ function readOpenerSelection(): OpenerConfigurationResult {
 	}
 }
 
+/**
+ *
+ */
 function writeSelection(selection: unknown): OpenerConfigurationResult {
 	const validated = validateOpenerSelection(selection);
 	if ("ok" in validated) {
@@ -63,6 +72,9 @@ function writeSelection(selection: unknown): OpenerConfigurationResult {
 	}
 }
 
+/**
+ *
+ */
 function saveOpenerSelection(selection: unknown): OpenerConfigurationResult {
 	const current = readOpenerSelection();
 	if (!current.ok) {
@@ -71,6 +83,9 @@ function saveOpenerSelection(selection: unknown): OpenerConfigurationResult {
 	return writeSelection(selection);
 }
 
+/**
+ *
+ */
 function resetOpenerSelection(): OpenerConfigurationResult {
 	return writeSelection(DEFAULT_SELECTION);
 }

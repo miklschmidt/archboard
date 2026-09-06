@@ -2,7 +2,7 @@ export {
 	CODEX_WORKBENCH_OWNER,
 	CodexWorkbenchCompositionError,
 	installCodexWorkbenchOwner,
-} from "./lib/codex-workbench.js";
+} from "@/server/canvas/lib/codex-workbench";
 export type {
 	CodexWorkbenchGenerationInput,
 	CodexWorkbenchKernelAcquisition,
@@ -13,4 +13,4 @@ export type {
 	CodexWorkbenchSnapshot,
 	CodexWorkbenchState,
 	CodexWorkbenchStopReason,
-} from "./lib/codex-workbench.js";
+} from "@/server/canvas/lib/codex-workbench";
