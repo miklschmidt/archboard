@@ -1,13 +1,13 @@
 import { z } from "zod";
 
-import type { CodexResponseByMethod } from "../../../shared/codex-app-server-contract/index.js";
+import type { CodexResponseByMethod } from "@/shared/codex-app-server-contract";
 import {
 	ConfigLayerMetadataSchema,
 	ConfigLayerSchema,
 	ConfigRequirementsSchema,
 	ConfigSchema,
 	ModelSchema,
-} from "./config-schemas.js";
+} from "@/runtime/codex-protocol/lib/config-schemas";
 import {
 	AccountSchema,
 	ActivePermissionProfileSchema,
@@ -16,7 +16,7 @@ import {
 	MultiAgentModeSchema,
 	ReasoningEffortSchema,
 	SandboxPolicySchema,
-} from "./core-schemas.js";
+} from "@/runtime/codex-protocol/lib/core-schemas";
 import {
 	LoadedThreadPageSchema,
 	QueueStartSchema,
@@ -27,11 +27,11 @@ import {
 	ThreadTurnPageSchema,
 	ThreadSchema,
 	TurnStartSchema,
-} from "./thread-schemas.js";
-import { QueuedSubmissionSchema } from "./item-schemas.js";
-import type { ResponseMethod } from "./methods.js";
-import { FiniteNumberSchema, looseObject } from "./scalars.js";
-import { codexIngressSchemas } from "./vendor-schema.js";
+} from "@/runtime/codex-protocol/lib/thread-schemas";
+import { QueuedSubmissionSchema } from "@/runtime/codex-protocol/lib/item-schemas";
+import type { ResponseMethod } from "@/runtime/codex-protocol/lib/methods";
+import { FiniteNumberSchema, looseObject } from "@/runtime/codex-protocol/lib/scalars";
+import { codexIngressSchemas } from "@/runtime/codex-protocol/lib/vendor-schema";
 
 const InitializeResponseSchema = looseObject({
 	userAgent: z.string(),

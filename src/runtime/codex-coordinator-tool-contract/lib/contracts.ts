@@ -14,11 +14,11 @@ import {
 	type ThreadQueueReorderParams,
 	type ThreadQueueStartParams,
 	type ThreadQueueUpdateParams,
-} from "../../codex-protocol/index.js";
+} from "@/runtime/codex-protocol";
 import {
 	CODEX_THREAD_STATUS_TYPES,
 	CodexThreadStatusTypeSchema,
-} from "../../../shared/codex-app-server-contract/index.js";
+} from "@/shared/codex-app-server-contract";
 import type {
 	JsonSchema,
 	NamespaceName,
@@ -26,14 +26,14 @@ import type {
 	CoordinatorToolName,
 	WorkhorseToolName,
 	VoiceToolName,
-} from "./manifest.js";
+} from "@/runtime/codex-coordinator-tool-contract/lib/manifest";
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
 	ARCHBOARD_VOICE_TOOL_NAMES,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
 	ARCHBOARD_WORKHORSE_TOOL_NAMES,
 	canonicalTool,
-} from "./manifest.js";
+} from "@/runtime/codex-coordinator-tool-contract/lib/manifest";
 
 const COORDINATOR_ROLE = "coordinator" as const;
 type CoordinatorRole = typeof COORDINATOR_ROLE;
@@ -43,6 +43,9 @@ const COORDINATOR_NAMESPACE_NAMES = Object.freeze([
 	"archboard_voice",
 ] as const);
 
+/**
+ *
+ */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null || Object.isFrozen(value)) {
 		return value;
@@ -271,14 +274,23 @@ const VOICE_TOOL_INPUT_SCHEMAS = Object.freeze({
 	resolve_spoken_approval: ResolveSpokenApprovalInputSchema,
 } satisfies Record<VoiceToolName, z.ZodTypeAny>);
 
+/**
+ *
+ */
 function parseWorkhorseToolInput(toolName: WorkhorseToolName, input: unknown): unknown {
 	return WORKHORSE_TOOL_INPUT_SCHEMAS[toolName].parse(input);
 }
 
+/**
+ *
+ */
 function parseVoiceToolInput(toolName: VoiceToolName, input: unknown): unknown {
 	return VOICE_TOOL_INPUT_SCHEMAS[toolName].parse(input);
 }
 
+/**
+ *
+ */
 function parseCoordinatorToolInput(
 	namespace: NamespaceName,
 	toolName: CoordinatorToolName,
@@ -442,6 +454,9 @@ const COORDINATOR_TOOL_RESULT_SCHEMAS = Object.freeze({
 	resolve_spoken_approval: ResolveSpokenApprovalResultSchema,
 } satisfies Record<CoordinatorToolName, z.ZodTypeAny>);
 
+/**
+ *
+ */
 function parseCoordinatorToolResult(toolName: CoordinatorToolName, value: unknown): unknown {
 	return COORDINATOR_TOOL_RESULT_SCHEMAS[toolName].parse(value);
 }
@@ -451,6 +466,9 @@ const JsonNullableStringSchema: JsonSchema = freezeDeep({
 	anyOf: [JsonStringSchema, Object.freeze({ type: "null" })],
 });
 
+/**
+ *
+ */
 function strictResultObject(
 	properties: Readonly<Record<string, JsonSchema>>,
 	required: readonly string[],
@@ -660,6 +678,9 @@ const VOICE_REFUSALS = [
 	"unsupported",
 ] as const satisfies readonly DynamicToolRefusalReason[];
 
+/**
+ *
+ */
 function contract(
 	namespace: NamespaceName,
 	toolName: CoordinatorToolName,

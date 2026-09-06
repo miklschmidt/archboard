@@ -1,11 +1,11 @@
-import {
-	parseRealtimeItemId,
-	type RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
-import type { TrustedIdentityDecoder } from "../../../shared/codex-workbench-identity/index.js";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
-import type { ActiveRealtimeSession } from "./state.js";
+import { parseRealtimeItemId, type RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type { TrustedIdentityDecoder } from "@/shared/codex-workbench-identity";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type { ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
 
+/**
+ *
+ */
 function orderedRecords(session: ActiveRealtimeSession): readonly RealtimeTranscriptRecord[] {
 	return [...session.entries.values()]
 		.toSorted((left, right) => left.order - right.order || left.itemId.localeCompare(right.itemId))
@@ -20,6 +20,9 @@ function orderedRecords(session: ActiveRealtimeSession): readonly RealtimeTransc
 		}));
 }
 
+/**
+ *
+ */
 function exactNotification(
 	session: ActiveRealtimeSession,
 	event: TransportServerNotification,

@@ -2,15 +2,9 @@ import type {
 	RealtimeCorrelation,
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
-import {
-	IdentityValidationError,
-	type TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type {
-	DynamicServerRequest,
-	TransportServerNotification,
-} from "../../codex-transport/index.js";
+} from "@/shared/codex-realtime-host";
+import { IdentityValidationError, type TurnId } from "@/shared/codex-workbench-identity";
+import type { DynamicServerRequest, TransportServerNotification } from "@/runtime/codex-transport";
 import type {
 	CodexSpokenApprovalGate,
 	CodexSpokenApprovalGateOptions,
@@ -18,22 +12,28 @@ import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,
 	SpokenApprovalToolResult,
-} from "./contract.js";
-import { CodexSpokenApprovalError } from "./contract.js";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT, type ActiveSlot } from "./state.js";
+} from "@/runtime/codex-spoken-approval/lib/contract";
+import { CodexSpokenApprovalError } from "@/runtime/codex-spoken-approval/lib/contract";
+import {
+	EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
+	type ActiveSlot,
+} from "@/runtime/codex-spoken-approval/lib/state";
 import {
 	recordKey,
 	sameRealtime,
 	validateArm,
 	validSequence,
 	type CoordinatorIdentity,
-} from "./validation.js";
+} from "@/runtime/codex-spoken-approval/lib/validation";
 import {
 	resolveSpokenApproval,
 	startClassifier,
 	type ClassifierTurnHost,
-} from "./classifier-turn.js";
+} from "@/runtime/codex-spoken-approval/lib/classifier-turn";
 
+/**
+ *
+ */
 function clearTimer(slot: ActiveSlot): void {
 	if (slot.timer === null) {
 		return;
@@ -42,6 +42,9 @@ function clearTimer(slot: ActiveSlot): void {
 	slot.timer = null;
 }
 
+/**
+ *
+ */
 function rejectTurnReady(slot: ActiveSlot, error: unknown): void {
 	const ready = slot.turnReady;
 	if (ready === null || ready.settled) {
@@ -51,10 +54,16 @@ function rejectTurnReady(slot: ActiveSlot, error: unknown): void {
 	ready.reject(error);
 }
 
+/**
+ *
+ */
 function refusal(reason: "not_ready", message: string): SpokenApprovalToolResult {
 	return Object.freeze({ tag: "refused", reason, message });
 }
 
+/**
+ *
+ */
 export function createCodexSpokenApprovalGate(
 	options: CodexSpokenApprovalGateOptions,
 ): CodexSpokenApprovalGate {
@@ -63,6 +72,9 @@ export function createCodexSpokenApprovalGate(
 	let active: ActiveSlot | null = null;
 	let disposed = false;
 
+	/**
+	 *
+	 */
 	const notify = (snapshot: SpokenApprovalSnapshot): void => {
 		try {
 			options.onChange?.(snapshot);
@@ -71,6 +83,9 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const notifyFallback = (
 		reason: SpokenApprovalFallbackReason,
 		snapshot: SpokenApprovalSnapshot,
@@ -82,6 +97,9 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const publish = (slot: ActiveSlot): SpokenApprovalSnapshot => {
 		currentSnapshot = Object.freeze({
 			state: slot.phase,
@@ -110,6 +128,9 @@ export function createCodexSpokenApprovalGate(
 		return currentSnapshot;
 	};
 
+	/**
+	 *
+	 */
 	const fallbackWithoutSlot = (
 		reason: SpokenApprovalFallbackReason,
 		requestId: SpokenApprovalSnapshot["requestId"] = null,
@@ -125,6 +146,9 @@ export function createCodexSpokenApprovalGate(
 		return currentSnapshot;
 	};
 
+	/**
+	 *
+	 */
 	const enterFallback = (slot: ActiveSlot, reason: SpokenApprovalFallbackReason): void => {
 		if (slot.phase === "settled" || slot.phase === "visual_fallback") {
 			return;
@@ -137,6 +161,9 @@ export function createCodexSpokenApprovalGate(
 		notifyFallback(reason, snapshot);
 	};
 
+	/**
+	 *
+	 */
 	const currentTime = (): number | null => {
 		try {
 			const value = now();
@@ -146,6 +173,9 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const currentRealtime = (): RealtimeCorrelation | null => {
 		try {
 			return options.currentRealtime();
@@ -154,6 +184,9 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const currentCoordinator = (): CoordinatorIdentity | null => {
 		try {
 			const snapshot = options.coordinator.snapshot();
@@ -175,6 +208,9 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const isLive = (slot: ActiveSlot | null): slot is ActiveSlot =>
 		slot !== null &&
 		active === slot &&
@@ -188,6 +224,9 @@ export function createCodexSpokenApprovalGate(
 		currentCoordinator,
 		currentRealtime,
 		currentTime,
+		/**
+		 *
+		 */
 		transcript: () => options.realtime.transcript(),
 	};
 
@@ -203,6 +242,9 @@ export function createCodexSpokenApprovalGate(
 		enterFallback,
 	};
 
+	/**
+	 *
+	 */
 	const arm = (input: SpokenApprovalArmInput): SpokenApprovalSnapshot => {
 		if (disposed) {
 			throw new CodexSpokenApprovalError(
@@ -270,6 +312,9 @@ export function createCodexSpokenApprovalGate(
 		return snapshot;
 	};
 
+	/**
+	 *
+	 */
 	const onSemanticEvent = (event: RealtimeSemanticEvent): void => {
 		const slot = active;
 		if (!isLive(slot)) {
@@ -329,6 +374,9 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		const slot = active;
 		if (!isLive(slot)) {
@@ -402,6 +450,9 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const resolve = (request: DynamicServerRequest): Promise<SpokenApprovalToolResult> => {
 		const slot = active;
 		if (!isLive(slot)) {
@@ -412,6 +463,9 @@ export function createCodexSpokenApprovalGate(
 		return resolveSpokenApproval(classifierHost, slot, request);
 	};
 
+	/**
+	 *
+	 */
 	const onChildExit = (exit: {
 		readonly child: ActiveSlot["child"];
 		readonly epoch: ActiveSlot["epoch"];
@@ -428,11 +482,17 @@ export function createCodexSpokenApprovalGate(
 	const unsubscribe = options.realtime.onSemanticEvent(onSemanticEvent);
 	return Object.freeze({
 		arm,
+		/**
+		 *
+		 */
 		snapshot: () => currentSnapshot,
 		onSemanticEvent,
 		onNotification,
 		resolve,
 		onChildExit,
+		/**
+		 *
+		 */
 		dispose: () => {
 			if (disposed) {
 				return;
@@ -446,4 +506,4 @@ export function createCodexSpokenApprovalGate(
 	});
 }
 
-export { CodexSpokenApprovalError } from "./contract.js";
+export { CodexSpokenApprovalError } from "@/runtime/codex-spoken-approval/lib/contract";

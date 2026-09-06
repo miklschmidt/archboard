@@ -6,8 +6,11 @@ import {
 	type CoordinatorReviewHashes,
 	type CoordinatorSettings,
 	type CoordinatorSnapshot,
-} from "./contract.js";
+} from "@/runtime/codex-coordinator/lib/contract";
 
+/**
+ *
+ */
 function emptySnapshot(state: "unbound" | "failed", reason: string | null): CoordinatorSnapshot {
 	return Object.freeze({
 		state,
@@ -28,6 +31,9 @@ function emptySnapshot(state: "unbound" | "failed", reason: string | null): Coor
 	});
 }
 
+/**
+ *
+ */
 function startingSnapshot(
 	threadId: CoordinatorSnapshot["threadId"],
 	childId: CoordinatorSnapshot["childId"],
@@ -46,6 +52,9 @@ function startingSnapshot(
 	});
 }
 
+/**
+ *
+ */
 function failedSnapshot(
 	reason: string,
 	configured: CoordinatorConfiguredSettings | null,
@@ -53,6 +62,9 @@ function failedSnapshot(
 	return Object.freeze({ ...emptySnapshot("failed", reason), configured });
 }
 
+/**
+ *
+ */
 function inspectSnapshot(
 	threadId: CoordinatorSnapshot["threadId"],
 	operationId: string | null,
@@ -80,6 +92,9 @@ function inspectSnapshot(
 	});
 }
 
+/**
+ *
+ */
 function readySnapshot(persistence: CoordinatorPersistedState): CoordinatorSnapshot {
 	return Object.freeze({
 		state: "ready" as const,
@@ -100,10 +115,16 @@ function readySnapshot(persistence: CoordinatorPersistedState): CoordinatorSnaps
 	});
 }
 
+/**
+ *
+ */
 function freezePersistence(value: CoordinatorPersistedState): CoordinatorPersistedState {
 	return deepFreeze(structuredClone(value));
 }
 
+/**
+ *
+ */
 function sameValue(left: unknown, right: unknown): boolean {
 	if (Object.is(left, right)) {
 		return true;
@@ -127,10 +148,16 @@ function sameValue(left: unknown, right: unknown): boolean {
 	return false;
 }
 
+/**
+ *
+ */
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : "unknown error";
 }
 
+/**
+ *
+ */
 function coordinatorError(
 	error: unknown,
 	code: ConstructorParameters<typeof CodexCoordinatorError>[0],
@@ -142,10 +169,16 @@ function coordinatorError(
 	return new CodexCoordinatorError(code, `${prefix} ${errorMessage(error)}`, error);
 }
 
+/**
+ *
+ */
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ *
+ */
 function deepFreeze<Value>(value: Value): Value {
 	if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
 		return value;

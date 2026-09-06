@@ -1,8 +1,8 @@
-import { CodexSessionMutationError, type SessionParams } from "../../codex-session/index.js";
-import type { ThreadLinkEpochProof } from "../../codex-thread-link/index.js";
+import { CodexSessionMutationError, type SessionParams } from "@/runtime/codex-session";
+import type { ThreadLinkEpochProof } from "@/runtime/codex-thread-link";
 import { isDeepStrictEqual } from "node:util";
-import { encodeCoordinatorCallback } from "./encoding.js";
-import { sameRealtimeGeneration } from "./realtime.js";
+import { encodeCoordinatorCallback } from "@/runtime/codex-coordinator-callbacks/lib/encoding";
+import { sameRealtimeGeneration } from "@/runtime/codex-coordinator-callbacks/lib/realtime";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackDelivery,
@@ -12,7 +12,7 @@ import type {
 	CoordinatorCallbackLinkCorrelation,
 	CoordinatorCallbackOptions,
 	CoordinatorCallbackRealtimeRequest,
-} from "./contract.js";
+} from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
 interface CallbackDeliveryEvidence {
 	readonly sourceOrder: number;
@@ -20,14 +20,23 @@ interface CallbackDeliveryEvidence {
 	readonly freshUntilMs: number;
 }
 
+/**
+ *
+ */
 function freeze<T>(value: T): T {
 	return Object.freeze(value);
 }
 
+/**
+ *
+ */
 function deliveryKind(): "coordinator_callback_delivery" {
 	return "coordinator_callback_delivery";
 }
 
+/**
+ *
+ */
 function makeDelivery(
 	callback: CoordinatorCallback | null,
 	evidence: CallbackDeliveryEvidence,
@@ -65,10 +74,16 @@ function makeDelivery(
 			});
 }
 
+/**
+ *
+ */
 function sameJson(left: unknown, right: unknown): boolean {
 	return isDeepStrictEqual(left, right);
 }
 
+/**
+ *
+ */
 function sameLink(
 	left: CoordinatorCallbackLinkCorrelation | null,
 	right: CoordinatorCallbackLinkCorrelation,
@@ -82,6 +97,9 @@ function sameLink(
 	);
 }
 
+/**
+ *
+ */
 function proofRecord(value: ThreadLinkEpochProof | null | undefined): unknown {
 	if (value === null || value === undefined) {
 		return null;
@@ -89,6 +107,9 @@ function proofRecord(value: ThreadLinkEpochProof | null | undefined): unknown {
 	return "record" in value ? value.record : value;
 }
 
+/**
+ *
+ */
 function classificationAccepted(
 	callback: CoordinatorCallback,
 	live: Awaited<ReturnType<CoordinatorCallbackOptions["threadLink"]["classify"]>>,
@@ -114,6 +135,9 @@ function classificationAccepted(
 	);
 }
 
+/**
+ *
+ */
 function finalAuthorityReason(
 	callback: CoordinatorCallback,
 	options: CoordinatorCallbackOptions,
@@ -162,6 +186,9 @@ function finalAuthorityReason(
 	return null;
 }
 
+/**
+ *
+ */
 function afterAttemptReason(
 	callback: CoordinatorCallback,
 	options: CoordinatorCallbackOptions,
@@ -173,6 +200,9 @@ function afterAttemptReason(
 	return finalAuthorityReason(callback, options);
 }
 
+/**
+ *
+ */
 function developerPayload(
 	callback: CoordinatorCallback,
 	text: string,
@@ -193,6 +223,9 @@ function developerPayload(
 	};
 }
 
+/**
+ *
+ */
 function sessionFailure(error: unknown): {
 	readonly outcome: CoordinatorCallbackDeliveryOutcome;
 	readonly reason: CoordinatorCallbackDeliveryReason;
@@ -203,6 +236,9 @@ function sessionFailure(error: unknown): {
 	return { outcome: "outcome_unknown", reason: "response_lost" };
 }
 
+/**
+ *
+ */
 async function deliverOne(
 	callback: CoordinatorCallback,
 	options: CoordinatorCallbackOptions,

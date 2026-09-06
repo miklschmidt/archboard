@@ -7,16 +7,25 @@ import {
 	type OperationRpc,
 	type ThreadLinkReason,
 	type ThreadLinkState,
-} from "./context-policy.js";
+} from "@/runtime/codex-instructions/lib/context-policy";
 
+/**
+ *
+ */
 const utf8Bytes = (value: string): number => Buffer.byteLength(value, "utf8");
 
+/**
+ *
+ */
 function boundedUtf8Text(maxBytes: number, label: string) {
 	return z.string().refine((value) => utf8Bytes(value) <= maxBytes, {
 		message: `${label} must be at most ${maxBytes} UTF-8 bytes`,
 	});
 }
 
+/**
+ *
+ */
 function nonEmptyBoundedUtf8Text(maxBytes: number, label: string) {
 	return z
 		.string()
@@ -52,6 +61,9 @@ const deliveredOutcomeSchema = z.literal(operationOutcomeValues[0]);
 const notDeliveredOutcomeSchema = z.literal(operationOutcomeValues[1]);
 const outcomeUnknownSchema = z.literal(operationOutcomeValues[2]);
 
+/**
+ *
+ */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) {
 		return value;
@@ -183,6 +195,9 @@ const ArchboardContextSchema = ArchboardContextRawSchema.transform((value) => fr
 
 type ArchboardContext = z.infer<typeof ArchboardContextSchema>;
 
+/**
+ *
+ */
 function orderedOperation(value: ArchboardContext["operation"]): ArchboardContext["operation"] {
 	if (value.id === null) {
 		return { id: null, kind: null, rpc: null, outcome: null };
@@ -199,6 +214,9 @@ function orderedOperation(value: ArchboardContext["operation"]): ArchboardContex
 	return { id: value.id, kind: value.kind, rpc: value.rpc, outcome: "outcome_unknown" };
 }
 
+/**
+ *
+ */
 function orderedContext(value: ArchboardContext): ArchboardContext {
 	return {
 		schema: value.schema,
@@ -247,6 +265,9 @@ function orderedContext(value: ArchboardContext): ArchboardContext {
 	};
 }
 
+/**
+ *
+ */
 function validateContext(input: unknown): ArchboardContext {
 	const parsed = ArchboardContextSchema.safeParse(input);
 	if (!parsed.success) {
@@ -255,10 +276,16 @@ function validateContext(input: unknown): ArchboardContext {
 	return freezeDeep(orderedContext(parsed.data));
 }
 
+/**
+ *
+ */
 function canonicalContext(input: ArchboardContext): ArchboardContext {
 	return validateContext(input);
 }
 
+/**
+ *
+ */
 function encodeCanonicalContext(input: ArchboardContext): string {
 	const encoded = JSON.stringify(canonicalContext(input));
 	if (encoded === undefined) {

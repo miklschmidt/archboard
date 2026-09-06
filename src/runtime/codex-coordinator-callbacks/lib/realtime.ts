@@ -1,16 +1,19 @@
-import { CodexSessionMutationError, type CodexSession } from "../../codex-session/index.js";
+import { CodexSessionMutationError, type CodexSession } from "@/runtime/codex-session";
 import type {
 	CoordinatorCallbackMutationResult,
 	CoordinatorCallbackRealtimeGeneration,
 	CoordinatorCallbackRealtimePort,
 	CoordinatorCallbackRealtimeRequest,
-} from "./contract.js";
+} from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
 interface CoordinatorCallbackRealtimePortOptions {
 	readonly session: Pick<CodexSession, "realtimeAppendText">;
 	readonly currentGeneration: () => CoordinatorCallbackRealtimeGeneration | null;
 }
 
+/**
+ *
+ */
 function sameRealtimeGeneration(
 	left: CoordinatorCallbackRealtimeGeneration | null,
 	right: CoordinatorCallbackRealtimeGeneration | null,
@@ -28,10 +31,16 @@ function sameRealtimeGeneration(
 	);
 }
 
+/**
+ *
+ */
 function stale(): CoordinatorCallbackMutationResult {
 	return { attempted: false, outcome: "not_delivered", reason: "stale_session" };
 }
 
+/**
+ *
+ */
 function failed(error: unknown): CoordinatorCallbackMutationResult {
 	if (error instanceof CodexSessionMutationError && error.outcome === "not_delivered") {
 		return { attempted: true, outcome: "not_delivered", reason: "session_rejected" };
@@ -39,10 +48,16 @@ function failed(error: unknown): CoordinatorCallbackMutationResult {
 	return { attempted: true, outcome: "outcome_unknown", reason: "response_lost" };
 }
 
+/**
+ *
+ */
 function createCoordinatorCallbackRealtimePort(
 	options: CoordinatorCallbackRealtimePortOptions,
 ): CoordinatorCallbackRealtimePort {
 	return Object.freeze({
+		/**
+		 *
+		 */
 		appendDeveloper: async (
 			request: CoordinatorCallbackRealtimeRequest,
 		): Promise<CoordinatorCallbackMutationResult> => {

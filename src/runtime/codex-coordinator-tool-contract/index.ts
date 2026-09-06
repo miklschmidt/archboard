@@ -11,7 +11,7 @@ export {
 	canonicalTool,
 	COORDINATOR_TOOL_MANIFEST_DIGESTS,
 	verifyCoordinatorManifestIntegrity,
-} from "./lib/manifest.js";
+} from "@/runtime/codex-coordinator-tool-contract/lib/manifest";
 export type {
 	CanonicalNamespace,
 	CanonicalTool,
@@ -21,7 +21,7 @@ export type {
 	NamespaceName,
 	VoiceToolName,
 	WorkhorseToolName,
-} from "./lib/manifest.js";
+} from "@/runtime/codex-coordinator-tool-contract/lib/manifest";
 
 export {
 	ARCHBOARD_VOICE_CATALOGUE,
@@ -83,7 +83,7 @@ export {
 	parseWorkhorseToolInput,
 	VOICE_TOOL_INPUT_SCHEMAS,
 	WORKHORSE_TOOL_INPUT_SCHEMAS,
-} from "./lib/contracts.js";
+} from "@/runtime/codex-coordinator-tool-contract/lib/contracts";
 export type {
 	AuthorityTarget,
 	CoordinatorRole,
@@ -109,4 +109,4 @@ export type {
 	ThreadQueueReorderParams,
 	ThreadQueueStartParams,
 	ThreadQueueUpdateParams,
-} from "./lib/contracts.js";
+} from "@/runtime/codex-coordinator-tool-contract/lib/contracts";

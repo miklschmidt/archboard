@@ -1,5 +1,8 @@
-import { CODEX_SEMANTIC_FRESHNESS_MS } from "../../../shared/timing/timing.js";
-import { SEMANTIC_CONTEXT_ELLIPSIS, SEMANTIC_CONTEXT_LIMITS } from "./limits.js";
+import { CODEX_SEMANTIC_FRESHNESS_MS } from "@/shared/timing/timing";
+import {
+	SEMANTIC_CONTEXT_ELLIPSIS,
+	SEMANTIC_CONTEXT_LIMITS,
+} from "@/runtime/codex-semantic-context/lib/limits";
 import {
 	boundedReasons,
 	byteLength,
@@ -10,7 +13,7 @@ import {
 	normalizeContext,
 	type NormalizedContext,
 	uniqueSorted,
-} from "./normalize.js";
+} from "@/runtime/codex-semantic-context/lib/normalize";
 import type {
 	SemanticBriefFields,
 	SemanticBriefSource,
@@ -19,7 +22,7 @@ import type {
 	SemanticCursorInput,
 	SemanticFreshness,
 	SemanticStaleness,
-} from "./types.js";
+} from "@/runtime/codex-semantic-context/lib/types";
 
 interface BriefMetadata {
 	readonly source: SemanticBriefSource;
@@ -49,6 +52,9 @@ interface FitParts {
 	truncated: boolean;
 }
 
+/**
+ *
+ */
 function copyContext(context: NormalizedContext): BriefContext {
 	return {
 		...context,
@@ -66,6 +72,9 @@ function copyContext(context: NormalizedContext): BriefContext {
 	};
 }
 
+/**
+ *
+ */
 function serializableBrief(
 	context: BriefContext,
 	parts: Pick<
@@ -96,10 +105,16 @@ function serializableBrief(
 	};
 }
 
+/**
+ *
+ */
 function render(context: BriefContext, parts: FitParts): string {
 	return JSON.stringify(serializableBrief(context, parts));
 }
 
+/**
+ *
+ */
 function timestamp(value: number, field: string): number {
 	if (!Number.isFinite(value)) {
 		fail(field, "must be finite");
@@ -114,6 +129,9 @@ interface TextSlot {
 	readonly set: (value: string | null) => void;
 }
 
+/**
+ *
+ */
 function fitTextSlot(parts: FitParts, context: BriefContext, slot: TextSlot): void {
 	if (slot.original === null) {
 		slot.set(null);
@@ -126,6 +144,9 @@ function fitTextSlot(parts: FitParts, context: BriefContext, slot: TextSlot): vo
 	slot.set(fitted || slot.minimum);
 }
 
+/**
+ *
+ */
 function fitArray(
 	parts: FitParts,
 	context: BriefContext,
@@ -144,6 +165,9 @@ function fitArray(
 	}
 }
 
+/**
+ *
+ */
 function fitAggregate(
 	context: BriefContext,
 	feedId: string,
@@ -182,6 +206,9 @@ function fitAggregate(
 			original: context.repository,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.repository = value ?? SEMANTIC_CONTEXT_ELLIPSIS;
 			},
@@ -190,6 +217,9 @@ function fitAggregate(
 			original: context.board.key,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.board = { ...context.board, key: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
@@ -198,6 +228,9 @@ function fitAggregate(
 			original: context.child.id,
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.child = { ...context.child, id: value as typeof context.child.id };
 			},
@@ -206,6 +239,9 @@ function fitAggregate(
 			original: context.child.epoch,
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.child = { ...context.child, epoch: value as typeof context.child.epoch };
 			},
@@ -214,6 +250,9 @@ function fitAggregate(
 			original: context.workhorse.threadId,
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.workhorse = {
 					...context.workhorse,
@@ -225,6 +264,9 @@ function fitAggregate(
 			original: context.workhorse.turnId,
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.workhorse = {
 					...context.workhorse,
@@ -236,6 +278,9 @@ function fitAggregate(
 			original: context.coordinator.threadId,
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.coordinator = {
 					...context.coordinator,
@@ -247,6 +292,9 @@ function fitAggregate(
 			original: context.coordinator.realtimeSessionId,
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.coordinator = {
 					...context.coordinator,
@@ -258,6 +306,9 @@ function fitAggregate(
 			original: context.board.note,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.board = { ...context.board, note: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
@@ -266,6 +317,9 @@ function fitAggregate(
 			original: context.pane.paneId,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.pane = { ...context.pane, paneId: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
@@ -274,6 +328,9 @@ function fitAggregate(
 			original: parts.description,
 			empty: "",
 			minimum: "",
+			/**
+			 *
+			 */
 			set: (value) => {
 				parts.description = value ?? "";
 			},
@@ -282,6 +339,9 @@ function fitAggregate(
 			original: context.doing,
 			empty: null,
 			minimum: null,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.doing = value;
 			},
@@ -290,6 +350,9 @@ function fitAggregate(
 			original: context.claim.doing,
 			empty: null,
 			minimum: null,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.claim = { ...context.claim, doing: value };
 			},
@@ -298,6 +361,9 @@ function fitAggregate(
 			original: context.threadLink.reason,
 			empty: null,
 			minimum: null,
+			/**
+			 *
+			 */
 			set: (value) => {
 				context.threadLink = { ...context.threadLink, reason: value };
 			},
@@ -334,6 +400,9 @@ function fitAggregate(
 	return { ...parts, brief };
 }
 
+/**
+ *
+ */
 function buildSemanticBrief(
 	input: SemanticContextInput,
 	feedId: string,

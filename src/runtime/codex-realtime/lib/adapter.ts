@@ -13,17 +13,23 @@ import {
 	type RealtimeSemanticEventListener,
 	type RealtimeSessionId as BrowserRealtimeSessionId,
 	type RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
-import type { CodexRealtimeAdapter, CodexRealtimeAdapterOptions } from "./contract.js";
-import { realtimeErrorMessage, sameRealtimeBinding } from "./binding.js";
-import * as phase from "./phase.js";
-import { exactNotification, orderedRecords } from "./records.js";
-import { runRealtimeMutation } from "./mutation.js";
-import { createRealtimeStartParams } from "./start-policy.js";
-import { realtimeGeneration, type ActiveRealtimeSession } from "./state.js";
+} from "@/shared/codex-realtime-host";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type {
+	CodexRealtimeAdapter,
+	CodexRealtimeAdapterOptions,
+} from "@/runtime/codex-realtime/lib/contract";
+import { realtimeErrorMessage, sameRealtimeBinding } from "@/runtime/codex-realtime/lib/binding";
+import * as phase from "@/runtime/codex-realtime/lib/phase";
+import { exactNotification, orderedRecords } from "@/runtime/codex-realtime/lib/records";
+import { runRealtimeMutation } from "@/runtime/codex-realtime/lib/mutation";
+import { createRealtimeStartParams } from "@/runtime/codex-realtime/lib/start-policy";
+import { realtimeGeneration, type ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
 const TIMELINE_PAGE_LIMIT = 100;
 
+/**
+ *
+ */
 export function createCodexRealtimeAdapter(
 	options: CodexRealtimeAdapterOptions,
 ): CodexRealtimeAdapter {
@@ -31,6 +37,9 @@ export function createCodexRealtimeAdapter(
 	let active: ActiveRealtimeSession | null = null;
 	let retainedTranscript: readonly RealtimeTranscriptRecord[] = [];
 	let disposed = false;
+	/**
+	 *
+	 */
 	const emit = (event: RealtimeSemanticEvent): void => {
 		for (const listener of Array.from(listeners)) {
 			try {
@@ -40,6 +49,9 @@ export function createCodexRealtimeAdapter(
 			}
 		}
 	};
+	/**
+	 *
+	 */
 	const emitDiagnostic = (
 		session: ActiveRealtimeSession,
 		code: "realtime" | "app_server" | "coordinator" | "protocol",
@@ -52,6 +64,9 @@ export function createCodexRealtimeAdapter(
 			code,
 			message,
 		});
+	/**
+	 *
+	 */
 	const state = (
 		session: ActiveRealtimeSession,
 		value: Extract<RealtimeSemanticEvent, { kind: "state" }>["state"],
@@ -64,6 +79,9 @@ export function createCodexRealtimeAdapter(
 			state: session.state,
 		});
 	};
+	/**
+	 *
+	 */
 	const states = (
 		session: ActiveRealtimeSession,
 		values: readonly Parameters<typeof state>[1][],
@@ -72,6 +90,9 @@ export function createCodexRealtimeAdapter(
 			state(session, value);
 		}
 	};
+	/**
+	 *
+	 */
 	const finalize = (session: ActiveRealtimeSession): void => {
 		states(session, phase.closingStates(session.state));
 		retainedTranscript = orderedRecords(session);
@@ -85,6 +106,9 @@ export function createCodexRealtimeAdapter(
 			active = null;
 		}
 	};
+	/**
+	 *
+	 */
 	const bindingIsCurrent = (session: ActiveRealtimeSession): boolean => {
 		const current = options.currentBinding();
 		return (
@@ -96,6 +120,9 @@ export function createCodexRealtimeAdapter(
 		);
 	};
 
+	/**
+	 *
+	 */
 	const requestIsCurrent = (
 		session: ActiveRealtimeSession,
 		request: {
@@ -107,12 +134,18 @@ export function createCodexRealtimeAdapter(
 		request.sessionId === session.browserSessionId &&
 		request.correlationId === session.correlationId;
 
+	/**
+	 *
+	 */
 	const publishTranscript = (session: ActiveRealtimeSession): void => {
 		for (const record of orderedRecords(session)) {
 			emit({ kind: "transcript", record });
 		}
 	};
 
+	/**
+	 *
+	 */
 	const settleAnswer = (session: ActiveRealtimeSession): void => {
 		if (
 			session.answerSettled ||
@@ -138,6 +171,9 @@ export function createCodexRealtimeAdapter(
 		});
 	};
 
+	/**
+	 *
+	 */
 	const failStart = (session: ActiveRealtimeSession, error: unknown): void => {
 		if (session.answerSettled) {
 			return;
@@ -151,6 +187,9 @@ export function createCodexRealtimeAdapter(
 		session.rejectAnswer(error instanceof Error ? error : new Error(realtimeErrorMessage(error)));
 	};
 
+	/**
+	 *
+	 */
 	const createOffer = (offer: CreateOfferSdp): Promise<AnswerSdp> => {
 		if (disposed) {
 			return Promise.reject(new Error("The Codex realtime adapter is disposed."));
@@ -226,6 +265,9 @@ export function createCodexRealtimeAdapter(
 		return answer;
 	};
 
+	/**
+	 *
+	 */
 	const upsertLiveItem = (
 		session: ActiveRealtimeSession,
 		item: {
@@ -273,6 +315,9 @@ export function createCodexRealtimeAdapter(
 		publishTranscript(session);
 	};
 
+	/**
+	 *
+	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		const session = active;
 		if (
@@ -377,6 +422,9 @@ export function createCodexRealtimeAdapter(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const mutationOutcome = async (
 		session: ActiveRealtimeSession,
 		request: {
@@ -393,6 +441,9 @@ export function createCodexRealtimeAdapter(
 			(message) => emitDiagnostic(session, kind === "append" ? "realtime" : "app_server", message),
 		);
 
+	/**
+	 *
+	 */
 	const currentFor = (request: {
 		readonly sessionId: BrowserRealtimeSessionId;
 		readonly correlationId: RealtimeCorrelationId;
@@ -405,6 +456,9 @@ export function createCodexRealtimeAdapter(
 			: null;
 	};
 
+	/**
+	 *
+	 */
 	const appendText = (request: AppendTextRequest): Promise<AppendOutcome> => {
 		const session = currentFor(request);
 		if (!session) {
@@ -428,6 +482,9 @@ export function createCodexRealtimeAdapter(
 		});
 	};
 
+	/**
+	 *
+	 */
 	const appendSpeech = (request: AppendSpeechRequest): Promise<AppendOutcome> => {
 		const session = currentFor(request);
 		if (!session) {
@@ -450,6 +507,9 @@ export function createCodexRealtimeAdapter(
 		});
 	};
 
+	/**
+	 *
+	 */
 	const stop: CodexRealtimeAdapter["stop"] = async (request) => {
 		const session = currentFor(request);
 		if (!session) {
@@ -481,6 +541,9 @@ export function createCodexRealtimeAdapter(
 		return outcome;
 	};
 
+	/**
+	 *
+	 */
 	const recover: CodexRealtimeAdapter["recover"] = async (request) => {
 		const session = currentFor(request);
 		if (!session) {
@@ -580,6 +643,9 @@ export function createCodexRealtimeAdapter(
 
 	return Object.freeze({
 		createOffer,
+		/**
+		 *
+		 */
 		onSemanticEvent: (listener: RealtimeSemanticEventListener) => {
 			listeners.add(listener);
 			return () => listeners.delete(listener);
@@ -589,8 +655,17 @@ export function createCodexRealtimeAdapter(
 		stop,
 		recover,
 		onNotification,
+		/**
+		 *
+		 */
 		transcript: () => (active ? orderedRecords(active) : retainedTranscript),
+		/**
+		 *
+		 */
 		generation: () => (active === null ? null : realtimeGeneration(active)),
+		/**
+		 *
+		 */
 		dispose: () => {
 			disposed = true;
 			listeners.clear();

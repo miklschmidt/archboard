@@ -1,15 +1,15 @@
-import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
+import type { ThreadLinkClassification } from "@/runtime/codex-thread-link";
 import {
 	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
 	ARCHBOARD_WORKHORSE_NAMESPACE,
-} from "../../codex-coordinator-tool-contract/index.js";
+} from "@/runtime/codex-coordinator-tool-contract";
 import {
 	CodexWorkhorseOperationsError,
 	type WorkhorseCoordinatorCall,
 	type WorkhorseOperationBinding,
 	type WorkhorseOperationName,
 	type WorkhorseOperationOptions,
-} from "./contract.js";
+} from "@/runtime/codex-workhorse-operations/lib/contract";
 import {
 	assertExecutableClassification,
 	operationError,
@@ -17,9 +17,15 @@ import {
 	sameCall,
 	snapshotBinding,
 	type WorkhorseValidation,
-} from "./internal.js";
+} from "@/runtime/codex-workhorse-operations/lib/internal";
 
+/**
+ *
+ */
 export function createWorkhorseValidation(options: WorkhorseOperationOptions): WorkhorseValidation {
+	/**
+	 *
+	 */
 	const currentBinding = (): WorkhorseOperationBinding => {
 		const binding = options.currentBinding();
 		if (binding === null) {
@@ -42,6 +48,9 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 		return snapshotBinding(binding);
 	};
 
+	/**
+	 *
+	 */
 	const assertCurrentBinding = (binding: WorkhorseOperationBinding): void => {
 		const current = options.currentBinding();
 		if (current === null) {
@@ -61,6 +70,9 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 		}
 	};
 
+	/**
+	 *
+	 */
 	const assertCall = (
 		call: WorkhorseCoordinatorCall,
 		tool: WorkhorseOperationName,
@@ -108,6 +120,9 @@ export function createWorkhorseValidation(options: WorkhorseOperationOptions): W
 		}
 	};
 
+	/**
+	 *
+	 */
 	const classify = async (
 		binding: WorkhorseOperationBinding,
 		call: WorkhorseCoordinatorCall,

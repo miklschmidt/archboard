@@ -1,18 +1,18 @@
-import type { CoordinatorSnapshot } from "../../codex-coordinator/index.js";
+import type { CoordinatorSnapshot } from "@/runtime/codex-coordinator";
 import type {
 	CodexSpokenApprovalGate,
 	SpokenApprovalToolResult,
-} from "../../codex-spoken-approval/index.js";
+} from "@/runtime/codex-spoken-approval";
 import type {
 	CodexWorkhorseOperations,
 	WorkhorseCoordinatorCall,
 	WorkhorseOperationBinding,
-} from "../../codex-workhorse-operations/index.js";
+} from "@/runtime/codex-workhorse-operations";
 import type {
 	DynamicServerRequest,
 	ReverseResponse,
 	TransportServerRequest,
-} from "../../codex-transport/server-requests.js";
+} from "@/runtime/codex-transport/server-requests";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -23,7 +23,7 @@ import type {
 	OperationAuthority,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	CoordinatorToolName,
 	DynamicToolRefusalReason,
@@ -35,15 +35,15 @@ import type {
 	ResolveSpokenApprovalResult,
 	SteerWorkhorseInput,
 	SteerWorkhorseResult,
-} from "../../codex-coordinator-tool-contract/index.js";
+} from "@/runtime/codex-coordinator-tool-contract";
 import {
 	ARCHBOARD_VOICE_MANIFEST_SHA256,
 	ARCHBOARD_WORKHORSE_MANIFEST_SHA256,
-} from "../../codex-coordinator-tool-contract/index.js";
+} from "@/runtime/codex-coordinator-tool-contract";
 import type {
 	UnknownDynamicToolResponseSchema,
 	ValidDynamicToolResponseSchema,
-} from "../../codex-coordinator-tool-contract/index.js";
+} from "@/runtime/codex-coordinator-tool-contract";
 import type { z } from "zod";
 
 const COORDINATOR_TOOLS_OWNER = "codex-coordinator-tools" as const;
@@ -193,6 +193,9 @@ class CodexCoordinatorToolsError extends Error {
 	override readonly name = "CodexCoordinatorToolsError";
 	readonly code: "disposed" | "duplicate";
 
+	/**
+	 *
+	 */
 	constructor(code: "disposed" | "duplicate", message: string) {
 		super(message);
 		this.code = code;

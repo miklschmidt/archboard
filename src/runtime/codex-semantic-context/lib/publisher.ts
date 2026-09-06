@@ -1,6 +1,13 @@
-import { buildSemanticBrief } from "./brief.js";
-import { SEMANTIC_CONTEXT_LIMITS } from "./limits.js";
-import { byteLength, clipJsonUtf8, deepFreeze, feedIdValue, fail, textValue } from "./normalize.js";
+import { buildSemanticBrief } from "@/runtime/codex-semantic-context/lib/brief";
+import { SEMANTIC_CONTEXT_LIMITS } from "@/runtime/codex-semantic-context/lib/limits";
+import {
+	byteLength,
+	clipJsonUtf8,
+	deepFreeze,
+	feedIdValue,
+	fail,
+	textValue,
+} from "@/runtime/codex-semantic-context/lib/normalize";
 import type {
 	FreshSemanticBrief,
 	PaneFocusEvent,
@@ -17,9 +24,9 @@ import type {
 	SemanticUnsubscribe,
 	SettledChangeSourceEvent,
 	SettledSemanticChangeEvent,
-} from "./types.js";
+} from "@/runtime/codex-semantic-context/lib/types";
 
-export { SemanticContextInputError } from "./normalize.js";
+export { SemanticContextInputError } from "@/runtime/codex-semantic-context/lib/normalize";
 
 const LISTENER_DIAGNOSTIC_MAX_DROPPED_COUNT = Number.MAX_SAFE_INTEGER;
 const LISTENER_DIAGNOSTIC_MAX_ENTRIES = 64;
@@ -67,6 +74,9 @@ export class SemanticContextLifecycleError extends Error {
 	readonly phase: "registration" | "dispose";
 	readonly causes: readonly unknown[];
 
+	/**
+	 *
+	 */
 	constructor(phase: "registration" | "dispose", causes: readonly unknown[]) {
 		super(
 			`Semantic context ${phase} failed with ${causes.length} error${causes.length === 1 ? "" : "s"}.`,
@@ -77,6 +87,9 @@ export class SemanticContextLifecycleError extends Error {
 	}
 }
 
+/**
+ *
+ */
 function withKind(
 	fields: ReturnType<typeof buildSemanticBrief>,
 	kind: SemanticBrief["kind"],
@@ -85,18 +98,30 @@ function withKind(
 	return deepFreeze({ kind, ...fields, ...extra }) as SemanticBrief;
 }
 
+/**
+ *
+ */
 function validateFeedId(feedId: string): string {
 	return feedIdValue(feedId, "feedId");
 }
 
+/**
+ *
+ */
 function validOrigin(value: unknown): value is SemanticChangeOrigin {
 	return value === "human" || value === "agent" || value === "mixed";
 }
 
+/**
+ *
+ */
 function validSignificance(value: unknown): value is "layout" | "structural" | "cosmetic" {
 	return value === "layout" || value === "structural" || value === "cosmetic";
 }
 
+/**
+ *
+ */
 function sourceCursor(value: unknown): number {
 	if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
 		fail("change.cursor", "must be a non-negative safe integer");
@@ -104,6 +129,9 @@ function sourceCursor(value: unknown): number {
 	return value;
 }
 
+/**
+ *
+ */
 function dateCapture(
 	at: string,
 	clock: () => number,
@@ -114,6 +142,9 @@ function dateCapture(
 		: { capturedAtMs: clock(), ambiguous: true };
 }
 
+/**
+ *
+ */
 function cleanupAll(cleanups: readonly SemanticUnsubscribe[]): unknown[] {
 	const errors: unknown[] = [];
 	for (let index = cleanups.length - 1; index >= 0; index--) {
@@ -126,6 +157,9 @@ function cleanupAll(cleanups: readonly SemanticUnsubscribe[]): unknown[] {
 	return errors;
 }
 
+/**
+ *
+ */
 function errorDetails(error: unknown): { errorName: string; message: string } {
 	let isError: boolean;
 	try {
@@ -170,6 +204,9 @@ function errorDetails(error: unknown): { errorName: string; message: string } {
 	}
 }
 
+/**
+ *
+ */
 export function createSemanticContextPublisher(
 	options: SemanticContextPublisherOptions,
 ): SemanticContextPublisher {
@@ -182,6 +219,9 @@ export function createSemanticContextPublisher(
 	let droppedListenerFailures = 0;
 	let disposed = false;
 
+	/**
+	 *
+	 */
 	const recordListenerFailure = (
 		port: SemanticPublisherPort,
 		eventKind: SemanticBrief["kind"],
@@ -212,6 +252,9 @@ export function createSemanticContextPublisher(
 		);
 	};
 
+	/**
+	 *
+	 */
 	const emit = <Event>(
 		listeners: Iterable<(event: Event) => void>,
 		event: Event,
@@ -227,12 +270,18 @@ export function createSemanticContextPublisher(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const ensureLive = (): void => {
 		if (disposed) {
 			throw new Error("The semantic context publisher has been disposed.");
 		}
 	};
 
+	/**
+	 *
+	 */
 	const subscribe = <Event>(
 		listeners: Set<(event: Event) => void>,
 		listener: (event: Event) => void,
@@ -249,6 +298,9 @@ export function createSemanticContextPublisher(
 		};
 	};
 
+	/**
+	 *
+	 */
 	function publishPaneFocus(input: SemanticContextInput): PaneFocusEvent {
 		ensureLive();
 		const capturedAtMs = clock();
@@ -268,6 +320,9 @@ export function createSemanticContextPublisher(
 		return event;
 	}
 
+	/**
+	 *
+	 */
 	function publishPaneSelection(input: SemanticContextInput): PaneSelectionEvent {
 		ensureLive();
 		const capturedAtMs = clock();
@@ -283,6 +338,9 @@ export function createSemanticContextPublisher(
 		return event;
 	}
 
+	/**
+	 *
+	 */
 	function freshBriefFor(input: SemanticContextInput): FreshSemanticBrief {
 		ensureLive();
 		const capturedAtMs = clock();
@@ -294,10 +352,16 @@ export function createSemanticContextPublisher(
 		return withKind(fields, "fresh_brief") as FreshSemanticBrief;
 	}
 
+	/**
+	 *
+	 */
 	function freshBrief(): FreshSemanticBrief {
 		return freshBriefFor(options.fresh.read());
 	}
 
+	/**
+	 *
+	 */
 	const onSettledChange = (event: SettledChangeSourceEvent): void => {
 		if (disposed) {
 			return;
@@ -385,6 +449,9 @@ export function createSemanticContextPublisher(
 		throw error;
 	}
 
+	/**
+	 *
+	 */
 	function drainListenerFailures(): SemanticListenerFailureBatch {
 		const drained = {
 			entries: listenerFailures.splice(0),
@@ -394,6 +461,9 @@ export function createSemanticContextPublisher(
 		return deepFreeze(drained);
 	}
 
+	/**
+	 *
+	 */
 	function dispose(): void {
 		if (disposed) {
 			return;
@@ -409,10 +479,19 @@ export function createSemanticContextPublisher(
 	}
 
 	return Object.freeze({
+		/**
+		 *
+		 */
 		subscribeSettledChange: (listener: (event: SettledSemanticChangeEvent) => void) =>
 			subscribe(settledListeners, listener),
+		/**
+		 *
+		 */
 		subscribePaneFocus: (listener: (event: PaneFocusEvent) => void) =>
 			subscribe(focusListeners, listener),
+		/**
+		 *
+		 */
 		subscribePaneSelection: (listener: (event: PaneSelectionEvent) => void) =>
 			subscribe(selectionListeners, listener),
 		publishPaneFocus,

@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { CodeBinding } from "../../shared/code-target/index.js";
-import { repoIdentityAt, repoRootOf } from "../engine/git.js";
-import { listRepos, type RegisteredRepoStatus } from "../engine/repo-registry.js";
+import type { CodeBinding } from "@/shared/code-target";
+import { repoIdentityAt, repoRootOf } from "@/runtime/engine/git";
+import { listRepos, type RegisteredRepoStatus } from "@/runtime/engine/repo-registry";
 import {
 	isPathWithin,
 	resolveLocalCodeTargetsWith,
@@ -11,14 +11,14 @@ import {
 	type LocalCodeTargetResult,
 	type RegisteredCheckoutResult,
 	type ResolverDependencies,
-} from "./lib/resolver-core.js";
+} from "@/runtime/code-target/lib/resolver-core";
 export type {
 	LocalCodeTarget,
 	LocalCodeTargetResult,
 	RegisteredCheckout,
 	RegisteredCheckoutResult,
 	ResolutionFailure,
-} from "./lib/resolver-core.js";
+} from "@/runtime/code-target/lib/resolver-core";
 export { isPathWithin };
 
 interface CheckoutInspection {
@@ -41,10 +41,19 @@ export interface CheckoutSnapshot {
 
 export const EMPTY_CHECKOUT_SNAPSHOT: CheckoutSnapshot = Object.freeze({
 	entries: Object.freeze([]),
+	/**
+	 *
+	 */
 	inspection: () => undefined,
+	/**
+	 *
+	 */
 	path: () => undefined,
 });
 
+/**
+ *
+ */
 export async function snapshotCheckoutAccess(
 	options: { signal?: AbortSignal; bindings?: readonly CodeBinding[] } = {},
 ): Promise<CheckoutSnapshot> {
@@ -88,6 +97,9 @@ export async function snapshotCheckoutAccess(
 	);
 	const inspections = new Map(inspected);
 	const paths = new Map<string, PathInspection>();
+	/**
+	 *
+	 */
 	const remember = (candidate: string, realpath: string, kind: PathInspection["kind"]): void => {
 		paths.set(candidate, Object.freeze({ realpath, kind }));
 	};
@@ -122,14 +134,29 @@ export async function snapshotCheckoutAccess(
 	}
 	return Object.freeze({
 		entries: Object.freeze(entries),
+		/**
+		 *
+		 */
 		inspection: (repository: string) => inspections.get(repository),
+		/**
+		 *
+		 */
 		path: (candidate: string) => paths.get(candidate),
 	});
 }
 
+/**
+ *
+ */
 function dependenciesFor(snapshot: CheckoutSnapshot): ResolverDependencies {
 	return {
+		/**
+		 *
+		 */
 		readRegistry: () => [...snapshot.entries],
+		/**
+		 *
+		 */
 		realpath: (candidate) => {
 			const inspected = snapshot.path(candidate);
 			if (!inspected) {
@@ -137,22 +164,37 @@ function dependenciesFor(snapshot: CheckoutSnapshot): ResolverDependencies {
 			}
 			return inspected.realpath;
 		},
+		/**
+		 *
+		 */
 		stat: (candidate) => {
 			const inspected = snapshot.path(candidate);
 			if (!inspected) {
 				throw new Error("Path was not captured by this checkout snapshot.");
 			}
 			return {
+				/**
+				 *
+				 */
 				isDirectory: () => inspected.kind === "directory",
+				/**
+				 *
+				 */
 				isFile: () => inspected.kind === "file",
 			};
 		},
+		/**
+		 *
+		 */
 		repoRoot: (candidate) => {
 			const entry = snapshot.entries.find(
 				(item) => snapshot.inspection(item.repo)?.root === candidate,
 			);
 			return entry ? snapshot.inspection(entry.repo)?.root : undefined;
 		},
+		/**
+		 *
+		 */
 		repoIdentity: (candidate) => {
 			const entry = snapshot.entries.find(
 				(item) => snapshot.inspection(item.repo)?.root === candidate,
@@ -162,6 +204,9 @@ function dependenciesFor(snapshot: CheckoutSnapshot): ResolverDependencies {
 	};
 }
 
+/**
+ *
+ */
 export function resolveRegisteredCheckout(
 	repository: string,
 	snapshot: CheckoutSnapshot,
@@ -169,6 +214,9 @@ export function resolveRegisteredCheckout(
 	return resolveRegisteredCheckoutWith(repository, dependenciesFor(snapshot));
 }
 
+/**
+ *
+ */
 export function resolveLocalCodeTargets(
 	bindings: readonly CodeBinding[],
 	snapshot: CheckoutSnapshot,
@@ -176,6 +224,9 @@ export function resolveLocalCodeTargets(
 	return resolveLocalCodeTargetsWith(bindings, dependenciesFor(snapshot));
 }
 
+/**
+ *
+ */
 export function resolveLocalCodeTarget(
 	binding: CodeBinding,
 	snapshot: CheckoutSnapshot,

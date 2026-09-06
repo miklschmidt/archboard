@@ -1,17 +1,20 @@
 import { z } from "zod";
 
-import { normalizeCodexJsonWire } from "../../../shared/codex-app-server-contract/index.js";
-import { CODEX_PROTOCOL_VERSION, isSupportedCodexUserAgent } from "./version.js";
+import { normalizeCodexJsonWire } from "@/shared/codex-app-server-contract";
+import {
+	CODEX_PROTOCOL_VERSION,
+	isSupportedCodexUserAgent,
+} from "@/runtime/codex-protocol/lib/version";
 import {
 	CLIENT_REQUEST_PARAM_SCHEMAS,
 	type ClientRequestParams,
-} from "./client-request-schemas.js";
+} from "@/runtime/codex-protocol/lib/client-request-schemas";
 import {
 	CLIENT_NOTIFICATION_SCHEMAS,
 	JsonRpcErrorSchema,
 	LoginAccountParamsSchema,
 	SERVER_REQUEST_SCHEMAS,
-} from "./request-schemas.js";
+} from "@/runtime/codex-protocol/lib/request-schemas";
 import {
 	CLIENT_NOTIFICATION_METHODS,
 	CLIENT_REQUEST_METHODS,
@@ -19,13 +22,13 @@ import {
 	type ResponseMethod,
 	RESPONSE_METHODS,
 	type ServerRequestMethod,
-} from "./methods.js";
-import { RESPONSE_SCHEMAS } from "./response-schemas.js";
+} from "@/runtime/codex-protocol/lib/methods";
+import { RESPONSE_SCHEMAS } from "@/runtime/codex-protocol/lib/response-schemas";
 import {
 	ServerNotificationEnvelopeSchema,
 	SERVER_NOTIFICATION_SCHEMAS,
-} from "./notification-schemas.js";
-import { JsonValueSchema, RequestIdSchema } from "./scalars.js";
+} from "@/runtime/codex-protocol/lib/notification-schemas";
+import { JsonValueSchema, RequestIdSchema } from "@/runtime/codex-protocol/lib/scalars";
 
 export type ProtocolDirection =
 	| "response"
@@ -48,10 +51,16 @@ export interface ProtocolDecodeErrorInit {
 type IssuePath = readonly (string | number)[];
 type IssueRecord = Record<string, unknown>;
 
+/**
+ *
+ */
 function isIssueRecord(value: unknown): value is IssueRecord {
 	return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ *
+ */
 function issuePath(issue: unknown): IssuePath {
 	if (!isIssueRecord(issue) || !Array.isArray(issue["path"])) {
 		return [];
@@ -61,6 +70,9 @@ function issuePath(issue: unknown): IssuePath {
 	);
 }
 
+/**
+ *
+ */
 function unionBranches(issue: IssueRecord): unknown[][] | undefined {
 	if (issue["code"] !== "invalid_union" || !Array.isArray(issue["errors"])) {
 		return undefined;
@@ -75,6 +87,9 @@ function unionBranches(issue: IssueRecord): unknown[][] | undefined {
 	return branches;
 }
 
+/**
+ *
+ */
 function valueAtPath(value: unknown, path: IssuePath): unknown {
 	let current = value;
 	for (const segment of path) {
@@ -93,6 +108,9 @@ function valueAtPath(value: unknown, path: IssuePath): unknown {
 	return current;
 }
 
+/**
+ *
+ */
 function issuePaths(issue: unknown, prefix: IssuePath = []): IssuePath[] {
 	if (!isIssueRecord(issue)) {
 		return [prefix];
@@ -113,6 +131,9 @@ interface UnionBranchScore {
 	readonly index: number;
 }
 
+/**
+ *
+ */
 function branchScore(
 	branch: readonly unknown[],
 	unionValue: unknown,
@@ -131,6 +152,9 @@ function branchScore(
 	return { depth, inputKeyMatches, index };
 }
 
+/**
+ *
+ */
 function isBetterBranch(candidate: UnionBranchScore, current: UnionBranchScore): boolean {
 	if (candidate.depth !== current.depth) {
 		return candidate.depth > current.depth;
@@ -141,6 +165,9 @@ function isBetterBranch(candidate: UnionBranchScore, current: UnionBranchScore):
 	return candidate.index > current.index;
 }
 
+/**
+ *
+ */
 function deepestBranch(
 	branches: readonly (readonly unknown[])[],
 	unionValue: unknown,
@@ -157,10 +184,16 @@ function deepestBranch(
 	return selected;
 }
 
+/**
+ *
+ */
 function withIssuePath(issue: IssueRecord, path: IssuePath): IssueRecord {
 	return { ...issue, path };
 }
 
+/**
+ *
+ */
 function isFunctionCallOutputBodyUnion(issue: IssueRecord): boolean {
 	// FunctionCallOutputBodySchema is the one intentional regular union at an
 	// output field; retain its containing issue for the documented exception.
@@ -168,6 +201,9 @@ function isFunctionCallOutputBodyUnion(issue: IssueRecord): boolean {
 	return path[path.length - 1] === "output";
 }
 
+/**
+ *
+ */
 function normalizeIssue(issue: unknown, prefix: IssuePath, rootValue: unknown): unknown[] {
 	if (!isIssueRecord(issue)) {
 		return [issue];
@@ -184,6 +220,9 @@ function normalizeIssue(issue: unknown, prefix: IssuePath, rootValue: unknown): 
 	return selected.flatMap((child) => normalizeIssue(child, path, rootValue));
 }
 
+/**
+ *
+ */
 function normalizeIssues(issues: readonly unknown[], value: unknown): readonly unknown[] {
 	return issues.flatMap((issue) => normalizeIssue(issue, [], value));
 }
@@ -196,6 +235,9 @@ export class ProtocolDecodeError extends Error {
 	readonly recoveryAction: string;
 	readonly issues: readonly unknown[];
 
+	/**
+	 *
+	 */
 	constructor(init: ProtocolDecodeErrorInit) {
 		const recoveryAction = init.recoveryAction ?? PROTOCOL_RECOVERY_ACTION;
 		const issues = init.issues ?? [];
@@ -213,6 +255,9 @@ export class ProtocolDecodeError extends Error {
 	}
 }
 
+/**
+ *
+ */
 function formatIssues(issues: readonly unknown[]): string {
 	return issues
 		.map((issue) => {
@@ -226,6 +271,9 @@ function formatIssues(issues: readonly unknown[]): string {
 		.join("; ");
 }
 
+/**
+ *
+ */
 function decodeSchema<T extends z.ZodTypeAny>(
 	method: string,
 	direction: ProtocolDirection,
@@ -253,6 +301,9 @@ function decodeSchema<T extends z.ZodTypeAny>(
 	return result.data;
 }
 
+/**
+ *
+ */
 function methodSchema<T extends Record<string, z.ZodTypeAny>>(
 	schemas: T,
 	method: string,
@@ -269,6 +320,9 @@ function methodSchema<T extends Record<string, z.ZodTypeAny>>(
 	return schema;
 }
 
+/**
+ *
+ */
 function methodHint(value: unknown): string {
 	if (!value || typeof value !== "object" || Array.isArray(value)) {
 		return "<unknown>";
@@ -281,6 +335,9 @@ export type ResponsePayloads = {
 	[M in ResponseMethod]: z.infer<(typeof RESPONSE_SCHEMAS)[M]>;
 };
 
+/**
+ *
+ */
 export function decodeClientRequestParams<Method extends ClientRequestMethod>(
 	method: Method,
 	params: unknown,
@@ -294,6 +351,9 @@ export function decodeResponse<M extends ResponseMethod>(
 	payload: unknown,
 ): ResponsePayloads[M];
 export function decodeResponse(method: string, payload: unknown): unknown;
+/**
+ *
+ */
 export function decodeResponse(method: string, payload: unknown): unknown {
 	const schema = methodSchema(RESPONSE_SCHEMAS, method, "response");
 	const decoded = decodeSchema(method, "response", schema, payload);
@@ -312,6 +372,9 @@ export function decodeResponse(method: string, payload: unknown): unknown {
 	return decoded;
 }
 
+/**
+ *
+ */
 export function decodeLoginAccountParams(value: unknown) {
 	const decoded = decodeSchema(
 		"account/login/start",
@@ -343,6 +406,9 @@ export type DecodedClientNotification = z.infer<
 	(typeof CLIENT_NOTIFICATION_SCHEMAS)["initialized"]
 >;
 
+/**
+ *
+ */
 export function decodeClientNotification(value: unknown): DecodedClientNotification {
 	const envelope = decodeSchema(
 		methodHint(value),
@@ -352,7 +418,7 @@ export function decodeClientNotification(value: unknown): DecodedClientNotificat
 	);
 	const method = envelope.method;
 	const schema = methodSchema(CLIENT_NOTIFICATION_SCHEMAS, method, "client-notification");
-	return decodeSchema(method, "client-notification", schema, value) as DecodedClientNotification;
+	return decodeSchema(method, "client-notification", schema, value);
 }
 
 export type ServerNotificationPayloads = {
@@ -366,6 +432,9 @@ export type DecodedServerNotification = {
 	};
 }[keyof ServerNotificationPayloads];
 
+/**
+ *
+ */
 export function decodeServerNotification(value: unknown): DecodedServerNotification {
 	const envelope = decodeSchema(
 		methodHint(value),
@@ -390,6 +459,9 @@ export type DecodedServerRequest = {
 }[ServerRequestMethod];
 
 export function decodeServerRequest(value: unknown): DecodedServerRequest;
+/**
+ *
+ */
 export function decodeServerRequest(value: unknown): DecodedServerRequest {
 	const envelope = decodeSchema(
 		methodHint(value),
@@ -422,6 +494,9 @@ export function decodeServerRequest(value: unknown): DecodedServerRequest {
 
 export type DecodedJsonRpcError = z.infer<typeof JsonRpcErrorSchema>;
 
+/**
+ *
+ */
 export function decodeJsonRpcError(value: unknown, method = "<unknown>"): DecodedJsonRpcError {
 	return decodeSchema(method, "json-rpc-error", JsonRpcErrorSchema, value);
 }
@@ -433,6 +508,9 @@ const JsonRpcResultEnvelopeSchema = z.strictObject({
 	result: JsonValueSchema,
 });
 
+/**
+ *
+ */
 export function decodeResponseEnvelope<M extends ResponseMethod>(
 	method: M,
 	value: unknown,
@@ -443,22 +521,34 @@ export function decodeResponseEnvelope<M extends ResponseMethod>(
 	const envelope = decodeSchema(method, "response", JsonRpcResultEnvelopeSchema, value);
 	return {
 		id: envelope.id,
-		result: decodeResponse(method, envelope.result) as ResponsePayloads[M],
+		result: decodeResponse(method, envelope.result),
 	};
 }
 
+/**
+ *
+ */
 export function isSupportedResponseMethod(method: string): method is ResponseMethod {
 	return (RESPONSE_METHODS as readonly string[]).includes(method);
 }
 
+/**
+ *
+ */
 export function isSupportedClientRequestMethod(method: string): method is ClientRequestMethod {
 	return (CLIENT_REQUEST_METHODS as readonly string[]).includes(method);
 }
 
+/**
+ *
+ */
 export function isSupportedServerRequestMethod(method: string): method is ServerRequestMethod {
 	return (Object.keys(SERVER_REQUEST_SCHEMAS) as readonly string[]).includes(method);
 }
 
+/**
+ *
+ */
 export function isSupportedClientNotificationMethod(
 	method: string,
 ): method is (typeof CLIENT_NOTIFICATION_METHODS)[number] {

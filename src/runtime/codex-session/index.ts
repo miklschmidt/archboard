@@ -1,4 +1,4 @@
-export { createCodexSession } from "./lib/session.js";
+export { createCodexSession } from "@/runtime/codex-session/lib/session";
 export {
 	CODEX_SESSION_CONTROL,
 	CODEX_SESSION_THREAD_SOURCE,
@@ -6,7 +6,7 @@ export {
 	CodexSessionError,
 	CodexSessionMutationError,
 	CodexSessionStorageError,
-} from "./lib/contract.js";
+} from "@/runtime/codex-session/lib/contract";
 export type {
 	BedrockSetupParams,
 	CodexSession,
@@ -24,7 +24,7 @@ export type {
 	SessionParams,
 	SessionServerRequest,
 	SessionTokenRefreshRequest,
-} from "./lib/contract.js";
+} from "@/runtime/codex-session/lib/contract";
 export type {
 	ExactSessionRequestIdentityTuple,
 	SessionAccountLoginResult,
@@ -53,4 +53,4 @@ export type {
 	SessionTurn,
 	SessionTurnResult,
 	SessionTurnSteerResult,
-} from "./lib/results.js";
+} from "@/runtime/codex-session/lib/results";

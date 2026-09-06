@@ -4,8 +4,12 @@ import {
 	FunctionCallOutputBodySchema,
 	ImageDetailSchema,
 	MessagePhaseSchema,
-} from "./core-schemas.js";
-import { CodexSafeI64Schema, JsonValueSchema, looseObject } from "./scalars.js";
+} from "@/runtime/codex-protocol/lib/core-schemas";
+import {
+	CodexSafeI64Schema,
+	JsonValueSchema,
+	looseObject,
+} from "@/runtime/codex-protocol/lib/scalars";
 
 const InternalChatMessageMetadataPassthroughSchema = looseObject({
 	turn_id: z.string().optional(),

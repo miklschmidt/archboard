@@ -8,21 +8,27 @@ import type {
 	SpokenEligibility,
 	SpokenEligibilityFacts,
 	TerminalApprovalState,
-} from "./contract.js";
-import { CodexApprovalError } from "./contract.js";
-import type { ReverseResponse } from "../../codex-transport/server-requests.js";
-import { CodexServerResponseSchema } from "../../codex-protocol/index.js";
+} from "@/runtime/codex-approvals/lib/contract";
+import { CodexApprovalError } from "@/runtime/codex-approvals/lib/contract";
+import type { ReverseResponse } from "@/runtime/codex-transport/server-requests";
+import { CodexServerResponseSchema } from "@/runtime/codex-protocol";
 import {
 	CodexTransportOwnershipError,
 	CodexTransportUsageError,
-} from "../../codex-transport/errors.js";
+} from "@/runtime/codex-transport/errors";
 
 type RecordValue = Record<string, unknown>;
 
+/**
+ *
+ */
 function isRecord(value: unknown): value is RecordValue {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ *
+ */
 function parseApprovalResponse(value: unknown): ApprovalResponse {
 	if (!isRecord(value) || typeof value["approvalKind"] !== "string") {
 		throw new CodexApprovalError("invalid_response", "The approval response is malformed.");
@@ -59,6 +65,9 @@ function parseApprovalResponse(value: unknown): ApprovalResponse {
 	return { approvalKind, ...parsed.data.result } as ApprovalResponse;
 }
 
+/**
+ *
+ */
 function responseFamilyMatches(family: ApprovalFamily, response: ApprovalResponse): boolean {
 	return (
 		(family === "command_execution" && response.approvalKind === "command_execution") ||
@@ -71,6 +80,9 @@ function responseFamilyMatches(family: ApprovalFamily, response: ApprovalRespons
 	);
 }
 
+/**
+ *
+ */
 function decisionEqual(left: unknown, right: unknown): boolean {
 	return JSON.stringify(left) === JSON.stringify(right);
 }
@@ -79,11 +91,17 @@ type CommandDecision = NonNullable<CommandApprovalRequest["params"]["availableDe
 
 const DEFAULT_COMMAND_DECISIONS: readonly CommandDecision[] = ["accept", "decline", "cancel"];
 
+/**
+ *
+ */
 function effectiveCommandDecisions(request: CommandApprovalRequest): readonly CommandDecision[] {
 	const available = request.params.availableDecisions;
 	return available === undefined || available === null ? DEFAULT_COMMAND_DECISIONS : available;
 }
 
+/**
+ *
+ */
 function decisionAllowed(
 	request: ApprovalRequest,
 	response: ApprovalResponse,
@@ -101,6 +119,9 @@ function decisionAllowed(
 	return true;
 }
 
+/**
+ *
+ */
 function validateApprovalResponse(
 	request: ApprovalRequest,
 	response: ApprovalResponse,
@@ -123,6 +144,9 @@ function validateApprovalResponse(
 	return response;
 }
 
+/**
+ *
+ */
 function toServerResponse(request: ApprovalRequest, response: ApprovalResponse): ReverseResponse {
 	switch (request.method) {
 		case "item/commandExecution/requestApproval":
@@ -177,6 +201,9 @@ function toServerResponse(request: ApprovalRequest, response: ApprovalResponse):
 	}
 }
 
+/**
+ *
+ */
 function familyError(request: ApprovalRequest): CodexApprovalError {
 	return new CodexApprovalError(
 		"invalid_response",
@@ -185,6 +212,9 @@ function familyError(request: ApprovalRequest): CodexApprovalError {
 	);
 }
 
+/**
+ *
+ */
 function fallbackResponse(
 	request: ApprovalRequest,
 	state: TerminalApprovalState,
@@ -213,6 +243,9 @@ function fallbackResponse(
 	}
 }
 
+/**
+ *
+ */
 function supportsSpokenFormSchema(schema: unknown): boolean {
 	if (!isRecord(schema) || !isRecord(schema["properties"])) {
 		return false;
@@ -247,6 +280,9 @@ function supportsSpokenFormSchema(schema: unknown): boolean {
 	});
 }
 
+/**
+ *
+ */
 function spokenText(value: unknown): string | null {
 	if (typeof value !== "string") {
 		return null;
@@ -260,6 +296,9 @@ function spokenText(value: unknown): string | null {
 	return value;
 }
 
+/**
+ *
+ */
 function spokenCommandEffectSummary(request: CommandApprovalRequest): string {
 	if (request.params.command === undefined || request.params.command === null) {
 		throw new CodexApprovalError(
@@ -306,6 +345,9 @@ function spokenCommandEffectSummary(request: CommandApprovalRequest): string {
 	return bounded;
 }
 
+/**
+ *
+ */
 function toSpokenEffectPresentation(request: ApprovalRequest): SpokenApprovalEffectPresentation {
 	if (request.family !== "command_execution") {
 		throw new CodexApprovalError(
@@ -328,6 +370,9 @@ function toSpokenEffectPresentation(request: ApprovalRequest): SpokenApprovalEff
 	});
 }
 
+/**
+ *
+ */
 function spokenEligibility(
 	request: ApprovalRequest,
 	currentBinding: boolean,
@@ -411,6 +456,9 @@ function spokenEligibility(
 	}
 }
 
+/**
+ *
+ */
 function failedSettlement(
 	request: ApprovalRequest,
 	state: TerminalApprovalState,
@@ -426,6 +474,9 @@ function failedSettlement(
 	});
 }
 
+/**
+ *
+ */
 function classifyResponseFailure(
 	error: unknown,
 	writeAttempted = true,

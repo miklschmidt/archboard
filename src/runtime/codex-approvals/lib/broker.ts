@@ -15,9 +15,13 @@ import type {
 	SpokenApprovalEffectPresentation,
 	SpokenEligibility,
 	TerminalApprovalState,
-} from "./contract.js";
-import { CodexApprovalError as ApprovalError } from "./contract.js";
-import { completeBinding, normalizeApprovalRequest, rebindApprovalRequest } from "./request.js";
+} from "@/runtime/codex-approvals/lib/contract";
+import { CodexApprovalError as ApprovalError } from "@/runtime/codex-approvals/lib/contract";
+import {
+	completeBinding,
+	normalizeApprovalRequest,
+	rebindApprovalRequest,
+} from "@/runtime/codex-approvals/lib/request";
 import {
 	classifyResponseFailure,
 	fallbackResponse,
@@ -26,14 +30,10 @@ import {
 	toSpokenEffectPresentation,
 	toServerResponse,
 	validateApprovalResponse,
-} from "./response.js";
-import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	JsonRpcRequestId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { TransportServerRequest } from "../../codex-transport/server-requests.js";
+} from "@/runtime/codex-approvals/lib/response";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@/shared/timing/timing";
+import type { ChildEpoch, ChildId, JsonRpcRequestId } from "@/shared/codex-workbench-identity";
+import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
 
 interface ApprovalRecord {
 	readonly request: ApprovalRequest;
@@ -50,10 +50,16 @@ interface ApprovalRecord {
 	terminalDelivery: ApprovalTerminalDelivery;
 }
 
+/**
+ *
+ */
 function isTerminal(state: ApprovalState): state is TerminalApprovalState {
 	return state !== "staged" && state !== "pending";
 }
 
+/**
+ *
+ */
 function sameBinding(left: ApprovalBinding, right: ApprovalBinding): boolean {
 	return (
 		left.child === right.child &&
@@ -64,10 +70,16 @@ function sameBinding(left: ApprovalBinding, right: ApprovalBinding): boolean {
 	);
 }
 
+/**
+ *
+ */
 function toError(error: unknown): Error {
 	return error instanceof Error ? error : new Error(String(error));
 }
 
+/**
+ *
+ */
 function approvalDecision(response: ApprovalResponse): ApprovalDecision {
 	switch (response.approvalKind) {
 		case "command_execution":
@@ -92,6 +104,9 @@ function approvalDecision(response: ApprovalResponse): ApprovalDecision {
 	}
 }
 
+/**
+ *
+ */
 function snapshotOf(record: ApprovalRecord): ApprovalSnapshot {
 	return Object.freeze({
 		kind: "approval" as const,
@@ -114,6 +129,9 @@ function snapshotOf(record: ApprovalRecord): ApprovalSnapshot {
 	});
 }
 
+/**
+ *
+ */
 export function createCodexApprovalBroker(
 	options: CodexApprovalBrokerOptions,
 ): CodexApprovalBroker {
@@ -123,6 +141,9 @@ export function createCodexApprovalBroker(
 	const unsubscribers: Array<() => void> = [];
 	let disposed = false;
 
+	/**
+	 *
+	 */
 	const reportError = (error: unknown, request?: TransportServerRequest): void => {
 		try {
 			options.onError?.(toError(error), request);
@@ -131,6 +152,9 @@ export function createCodexApprovalBroker(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const requireRequestId = (value: JsonRpcRequestId): JsonRpcRequestId => {
 		try {
 			return identity.decoder.parseJsonRpcRequestId(value);
@@ -142,6 +166,9 @@ export function createCodexApprovalBroker(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const requireRecord = (value: JsonRpcRequestId): ApprovalRecord => {
 		const requestId = requireRequestId(value);
 		const record = records.get(requestId);
@@ -154,6 +181,9 @@ export function createCodexApprovalBroker(
 		return record;
 	};
 
+	/**
+	 *
+	 */
 	const notify = (record: ApprovalRecord): void => {
 		try {
 			options.onChange?.(snapshotOf(record));
@@ -162,6 +192,9 @@ export function createCodexApprovalBroker(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const currentBinding = (record: ApprovalRecord): ApprovalBinding | null => {
 		try {
 			const input = options.getCurrentBinding?.(record.request) ?? record.request.binding;
@@ -173,6 +206,9 @@ export function createCodexApprovalBroker(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const bindingEvidenceMatches = (record: ApprovalRecord, input: ApprovalResolveInput): boolean => {
 		if (input.binding === undefined) return true;
 		try {
@@ -182,6 +218,9 @@ export function createCodexApprovalBroker(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const settleTransport = (
 		record: ApprovalRecord,
 		requestedState: TerminalApprovalState,
@@ -249,6 +288,9 @@ export function createCodexApprovalBroker(
 		);
 		return settlementPromise;
 
+		/**
+		 *
+		 */
 		function finish(outcome: ApprovalOutcome, error?: unknown): void {
 			if (record.outcome !== null) return;
 			record.outcome = outcome;
@@ -280,6 +322,9 @@ export function createCodexApprovalBroker(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const terminal = (
 		requestId: JsonRpcRequestId,
 		state: TerminalApprovalState,
@@ -302,6 +347,9 @@ export function createCodexApprovalBroker(
 		);
 	};
 
+	/**
+	 *
+	 */
 	const stage = (request: TransportServerRequest): ApprovalSnapshot => {
 		if (disposed) throw new ApprovalError("disposed", "The approval broker has been disposed.");
 		if (request.owner !== "codex-approvals")
@@ -358,11 +406,17 @@ export function createCodexApprovalBroker(
 		return snapshotOf(record);
 	};
 
+	/**
+	 *
+	 */
 	const receive = (request: TransportServerRequest): ApprovalSnapshot => {
 		const staged = stage(request);
 		return pending(staged.requestId);
 	};
 
+	/**
+	 *
+	 */
 	const pending = (requestId: JsonRpcRequestId): ApprovalSnapshot => {
 		if (disposed) throw new ApprovalError("disposed", "The approval broker has been disposed.");
 		const record = requireRecord(requestId);
@@ -375,6 +429,9 @@ export function createCodexApprovalBroker(
 		return snapshotOf(record);
 	};
 
+	/**
+	 *
+	 */
 	const resolve = (input: ApprovalResolveInput): Promise<ApprovalSettlement> => {
 		try {
 			if (disposed) throw new ApprovalError("disposed", "The approval broker has been disposed.");
@@ -427,6 +484,9 @@ export function createCodexApprovalBroker(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const get = (requestId: JsonRpcRequestId): ApprovalSnapshot | undefined => {
 		try {
 			const record = records.get(requireRequestId(requestId));
@@ -436,9 +496,15 @@ export function createCodexApprovalBroker(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const inspect = (): readonly ApprovalSnapshot[] =>
 		Object.freeze(Array.from(records.values(), snapshotOf));
 
+	/**
+	 *
+	 */
 	const acknowledge = (requestId: JsonRpcRequestId): void => {
 		const record = requireRecord(requestId);
 		if (!isTerminal(record.state))
@@ -451,6 +517,9 @@ export function createCodexApprovalBroker(
 		records.delete(requestId);
 	};
 
+	/**
+	 *
+	 */
 	const spokenForRecord = (record: ApprovalRecord): SpokenEligibility => {
 		if (record.state !== "pending") return { eligible: false, reason: "not_pending" };
 		const live = currentBinding(record);
@@ -468,6 +537,9 @@ export function createCodexApprovalBroker(
 		);
 	};
 
+	/**
+	 *
+	 */
 	const view = (requestId: JsonRpcRequestId): ApprovalOwnerView => {
 		const record = requireRecord(requestId);
 		return Object.freeze({
@@ -479,9 +551,15 @@ export function createCodexApprovalBroker(
 		});
 	};
 
+	/**
+	 *
+	 */
 	const inspectViews = (): readonly ApprovalOwnerView[] =>
 		Object.freeze(Array.from(records.values(), (record) => view(record.request.requestId)));
 
+	/**
+	 *
+	 */
 	const spokenPresentation = (requestId: JsonRpcRequestId) => {
 		const record = requireRecord(requestId);
 		if (record.spokenEffectPresentation === null)
@@ -493,11 +571,17 @@ export function createCodexApprovalBroker(
 		return record.spokenEffectPresentation;
 	};
 
+	/**
+	 *
+	 */
 	const spoken = (requestId: JsonRpcRequestId): SpokenEligibility => {
 		const record = requireRecord(requestId);
 		return spokenForRecord(record);
 	};
 
+	/**
+	 *
+	 */
 	const childExit = async (exit: {
 		readonly child: ChildId;
 		readonly epoch: ChildEpoch;
@@ -522,6 +606,9 @@ export function createCodexApprovalBroker(
 		return Promise.all(settlements);
 	};
 
+	/**
+	 *
+	 */
 	const dispose = (): void => {
 		if (disposed) return;
 		disposed = true;
@@ -573,10 +660,19 @@ export function createCodexApprovalBroker(
 		spokenEffectPresentation: spokenPresentation,
 		spokenEligibility: spoken,
 		resolve,
+		/**
+		 *
+		 */
 		cancel: (requestId: JsonRpcRequestId, reason = "The approval was cancelled.") =>
 			terminal(requestId, "cancelled", reason),
+		/**
+		 *
+		 */
 		expire: (requestId: JsonRpcRequestId) =>
 			terminal(requestId, "expired", "The approval expired before it was resolved."),
+		/**
+		 *
+		 */
 		markStale: (requestId: JsonRpcRequestId, reason = "The approval ownership is stale.") =>
 			terminal(requestId, "stale", reason),
 		childExit,

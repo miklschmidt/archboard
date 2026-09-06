@@ -1,8 +1,14 @@
-import type { SessionQueuedSubmission } from "../../codex-session/index.js";
-import type { QueuedSubmissionId } from "../../../shared/codex-workbench-identity/index.js";
-import { CodexWorkhorseQueueError, type QueueSnapshot } from "./contract.js";
-import { queueMutationTarget } from "./input-validation.js";
+import type { SessionQueuedSubmission } from "@/runtime/codex-session";
+import type { QueuedSubmissionId } from "@/shared/codex-workbench-identity";
+import {
+	CodexWorkhorseQueueError,
+	type QueueSnapshot,
+} from "@/runtime/codex-workhorse-queue/lib/contract";
+import { queueMutationTarget } from "@/runtime/codex-workhorse-queue/lib/input-validation";
 
+/**
+ *
+ */
 function queueStartTarget(
 	queue: QueueSnapshot,
 	submissionId: QueuedSubmissionId,
@@ -18,6 +24,9 @@ function queueStartTarget(
 	return target;
 }
 
+/**
+ *
+ */
 function queueStartClientUserMessageId(value: string | null): string {
 	if (value !== null) {
 		return value;

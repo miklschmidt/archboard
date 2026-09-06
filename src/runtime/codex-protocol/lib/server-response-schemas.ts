@@ -3,14 +3,24 @@ import { z } from "zod";
 import type {
 	CodexOutputConformance,
 	CodexServerResponseByMethod,
-} from "../../../shared/codex-app-server-contract/index.js";
+} from "@/shared/codex-app-server-contract";
 import {
 	CodexCommandExecutionApprovalDecisionSchema,
 	CodexFileChangeApprovalDecisionSchema,
-} from "../../../shared/codex-app-server-contract/index.js";
-import { UNSUPPORTED_ATTESTATION_ERROR, UNSUPPORTED_TOKEN_REFRESH_ERROR } from "./authored.js";
-import { JsonValueSchema, NonNegativeIntegerSchema, boundedText } from "./scalars.js";
+} from "@/shared/codex-app-server-contract";
+import {
+	UNSUPPORTED_ATTESTATION_ERROR,
+	UNSUPPORTED_TOKEN_REFRESH_ERROR,
+} from "@/runtime/codex-protocol/lib/authored";
+import {
+	JsonValueSchema,
+	NonNegativeIntegerSchema,
+	boundedText,
+} from "@/runtime/codex-protocol/lib/scalars";
 
+/**
+ *
+ */
 function codexOutputSchema<Wire>() {
 	return <Schema extends z.ZodType>(
 		schema: Schema & CodexOutputConformance<Wire, z.output<Schema>>,

@@ -1,10 +1,13 @@
-import type { SessionQueuedSubmission } from "../../codex-session/index.js";
+import type { SessionQueuedSubmission } from "@/runtime/codex-session";
 import {
 	CodexWorkhorseQueueError,
 	type QueueSnapshot,
 	type WorkhorseQueueMutation,
-} from "./contract.js";
+} from "@/runtime/codex-workhorse-queue/lib/contract";
 
+/**
+ *
+ */
 function queueMutationTarget(
 	queue: QueueSnapshot,
 	submissionId: SessionQueuedSubmission["id"],
@@ -21,6 +24,9 @@ function queueMutationTarget(
 	);
 }
 
+/**
+ *
+ */
 function assertCompleteOrder(
 	queue: QueueSnapshot,
 	orderedSubmissionIds: readonly SessionQueuedSubmission["id"][],

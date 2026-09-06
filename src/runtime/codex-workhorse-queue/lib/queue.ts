@@ -1,6 +1,6 @@
-import { createTextUserInput, type TextUserInput } from "../../codex-instructions/index.js";
-import { CodexSessionMutationError } from "../../codex-session/index.js";
-import type { SessionQueuedSubmission } from "../../codex-session/index.js";
+import { createTextUserInput, type TextUserInput } from "@/runtime/codex-instructions";
+import { CodexSessionMutationError } from "@/runtime/codex-session";
+import type { SessionQueuedSubmission } from "@/runtime/codex-session";
 import {
 	CodexWorkhorseQueueError,
 	type CodexWorkhorseQueue,
@@ -22,7 +22,7 @@ import {
 	type WorkhorseQueueOperationIdPort,
 	type WorkhorseQueueOptions,
 	type WorkhorseQueueOperation,
-} from "./contract.js";
+} from "@/runtime/codex-workhorse-queue/lib/contract";
 import {
 	expectedAdd,
 	expectedDelete,
@@ -31,9 +31,15 @@ import {
 	expectedUpdate,
 	sameBinding,
 	snapshot,
-} from "./reconcile.js";
-import { assertCompleteOrder, queueMutationTarget } from "./input-validation.js";
-import { queueStartClientUserMessageId, queueStartTarget } from "./start-correlation.js";
+} from "@/runtime/codex-workhorse-queue/lib/reconcile";
+import {
+	assertCompleteOrder,
+	queueMutationTarget,
+} from "@/runtime/codex-workhorse-queue/lib/input-validation";
+import {
+	queueStartClientUserMessageId,
+	queueStartTarget,
+} from "@/runtime/codex-workhorse-queue/lib/start-correlation";
 
 const QUEUE_PAGE_LIMIT = 100;
 
@@ -45,6 +51,9 @@ type MutationRequest<OperationIdValue extends string> =
 	| QueueReorderRequest<OperationIdValue>
 	| QueueStartRequest<OperationIdValue>;
 
+/**
+ *
+ */
 function queueError(
 	code: ConstructorParameters<typeof CodexWorkhorseQueueError>[0],
 	message: string,
@@ -53,6 +62,9 @@ function queueError(
 	return new CodexWorkhorseQueueError(code, message, options);
 }
 
+/**
+ *
+ */
 function inputForPrompt(prompt: string): TextUserInput {
 	try {
 		return createTextUserInput(prompt);
@@ -67,10 +79,16 @@ function inputForPrompt(prompt: string): TextUserInput {
 	}
 }
 
+/**
+ *
+ */
 function mutationOutcome(error: unknown): QueueMutationOutcome {
 	return error instanceof CodexSessionMutationError ? error.outcome : "outcome_unknown";
 }
 
+/**
+ *
+ */
 function operationIdPort<OperationIdValue extends string>(
 	port: WorkhorseQueueOperationIdPort<OperationIdValue>,
 	operation: WorkhorseQueueMutation,
@@ -93,12 +111,18 @@ function operationIdPort<OperationIdValue extends string>(
 	}
 }
 
+/**
+ *
+ */
 export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	options: WorkhorseQueueOptions<OperationIdValue>,
 ): CodexWorkhorseQueue<OperationIdValue> {
 	let commandTail: Promise<void> = Promise.resolve();
 	let closed = false;
 
+	/**
+	 *
+	 */
 	const enqueue = <Value>(work: () => Promise<Value>): Promise<Value> => {
 		if (closed)
 			return Promise.reject(
@@ -112,6 +136,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		return result;
 	};
 
+	/**
+	 *
+	 */
 	const currentBinding = (): WorkhorseQueueBinding => {
 		const binding = options.currentBinding();
 		if (binding === null)
@@ -122,6 +149,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		return Object.freeze({ ...binding });
 	};
 
+	/**
+	 *
+	 */
 	const isCurrentBinding = (binding: WorkhorseQueueBinding): boolean => {
 		const current = options.currentBinding();
 		return (
@@ -131,6 +161,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		);
 	};
 
+	/**
+	 *
+	 */
 	const assertCurrentBinding = (
 		binding: WorkhorseQueueBinding,
 		operation?: WorkhorseQueueOperation,
@@ -151,6 +184,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		| { readonly binding: WorkhorseQueueBinding; readonly error?: never }
 		| { readonly binding?: never; readonly error: unknown };
 
+	/**
+	 *
+	 */
 	const captureBinding = (): AcceptedBinding => {
 		try {
 			return { binding: currentBinding() };
@@ -159,6 +195,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const enqueueForBinding = <Value>(
 		operation: WorkhorseQueueOperation,
 		work: (binding: WorkhorseQueueBinding) => Promise<Value>,
@@ -171,6 +210,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		});
 	};
 
+	/**
+	 *
+	 */
 	const readAuthoritative = async (binding: WorkhorseQueueBinding): Promise<QueueSnapshot> => {
 		const seenCursors = new Set<string>();
 		const seenSubmissionIds = new Set<string>();
@@ -226,6 +268,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const freshAfterMutation = async (
 		binding: WorkhorseQueueBinding,
 		operation: WorkhorseQueueMutation,
@@ -248,6 +293,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const runMutation = async <
 		Operation extends WorkhorseQueueMutation,
 		Response extends MutationResponse,
@@ -320,6 +368,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		return Object.freeze({ operation, operationId: request.operationId, outcome, queue: after });
 	};
 
+	/**
+	 *
+	 */
 	const list = (): Promise<QueueListResult> =>
 		enqueueForBinding("list", async (binding) => {
 			const queue = await readAuthoritative(binding);
@@ -327,6 +378,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 			return Object.freeze(result);
 		});
 
+	/**
+	 *
+	 */
 	const add = (
 		request: QueueAddRequest<OperationIdValue>,
 	): Promise<QueueAddResult<OperationIdValue>> =>
@@ -358,6 +412,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 			return result;
 		});
 
+	/**
+	 *
+	 */
 	const update = (
 		request: QueueUpdateRequest<OperationIdValue>,
 	): Promise<QueueUpdateResult<OperationIdValue>> =>
@@ -385,6 +442,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 			);
 		});
 
+	/**
+	 *
+	 */
 	const remove = (
 		request: QueueDeleteRequest<OperationIdValue>,
 	): Promise<QueueDeleteResult<OperationIdValue>> =>
@@ -408,6 +468,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 			),
 		);
 
+	/**
+	 *
+	 */
 	const reorder = (
 		request: QueueReorderRequest<OperationIdValue>,
 	): Promise<QueueReorderResult<OperationIdValue>> =>
@@ -434,6 +497,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 			),
 		);
 
+	/**
+	 *
+	 */
 	const start = (
 		request: QueueStartRequest<OperationIdValue>,
 	): Promise<QueueStartResult<OperationIdValue>> =>
@@ -471,6 +537,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 			});
 		});
 
+	/**
+	 *
+	 */
 	const shutdown = async (): Promise<void> => {
 		closed = true;
 		await commandTail;

@@ -1,13 +1,13 @@
 import { z } from "zod";
 
-import type { CodexClientRequestParamsByMethod } from "../../../shared/codex-app-server-contract/index.js";
+import type { CodexClientRequestParamsByMethod } from "@/shared/codex-app-server-contract";
 import type {
 	LoginId,
 	QueuedSubmissionId,
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import {
 	ApprovalsReviewerSchema,
 	ConversationTextRoleSchema,
@@ -20,22 +20,25 @@ import {
 	RealtimeVoiceSchema,
 	SandboxModeSchema,
 	ThreadHistoryModeSchema,
-} from "./core-schemas.js";
-import type { ClientRequestMethod, ClientRequestMethodWithoutParams } from "./methods.js";
+} from "@/runtime/codex-protocol/lib/core-schemas";
+import type {
+	ClientRequestMethod,
+	ClientRequestMethodWithoutParams,
+} from "@/runtime/codex-protocol/lib/methods";
 import {
 	AccountReadParamsSchema,
 	CancelLoginAccountParamsSchema,
 	ClientInfoSchema,
 	LoginAccountParamsSchema,
-} from "./request-schemas.js";
+} from "@/runtime/codex-protocol/lib/request-schemas";
 import {
 	FiniteNumberSchema,
 	JsonRecordSchema,
 	JsonValueSchema,
 	NonNegativeIntegerSchema,
-} from "./scalars.js";
-import { TurnItemsViewSchema } from "./thread-schemas.js";
-import { codexIngressSchemas } from "./vendor-schema.js";
+} from "@/runtime/codex-protocol/lib/scalars";
+import { TurnItemsViewSchema } from "@/runtime/codex-protocol/lib/thread-schemas";
+import { codexIngressSchemas } from "@/runtime/codex-protocol/lib/vendor-schema";
 
 const NullablePageSchema = {
 	cursor: z.string().nullable().optional(),

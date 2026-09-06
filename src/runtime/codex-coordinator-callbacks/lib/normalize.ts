@@ -1,10 +1,10 @@
-import type { LogicalToolCallCorrelation } from "../../../shared/codex-workbench-identity/index.js";
+import type { LogicalToolCallCorrelation } from "@/shared/codex-workbench-identity";
 import type {
 	PaneFocusEvent,
 	PaneSelectionEvent,
 	SettledSemanticChangeEvent,
-} from "../../codex-semantic-context/index.js";
-import type { WorkhorseOperationEvent } from "../../codex-workhorse-operations/index.js";
+} from "@/runtime/codex-semantic-context";
+import type { WorkhorseOperationEvent } from "@/runtime/codex-workhorse-operations";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCorrelation,
@@ -13,16 +13,25 @@ import type {
 	CoordinatorCallbackSource,
 	CoordinatorOperationCallback,
 	CoordinatorSemanticCallback,
-} from "./contract.js";
+} from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
+/**
+ *
+ */
 function freeze<T>(value: T): T {
 	return Object.freeze(value);
 }
 
+/**
+ *
+ */
 function freezeArray<T>(values: readonly T[]): readonly T[] {
 	return freeze([...values]);
 }
 
+/**
+ *
+ */
 function freezeTree(value: object): void {
 	for (const child of Object.values(value)) {
 		if (child !== null && typeof child === "object") {
@@ -32,30 +41,48 @@ function freezeTree(value: object): void {
 	Object.freeze(value);
 }
 
+/**
+ *
+ */
 function copyLink(value: CoordinatorCallbackLinkCorrelation): CoordinatorCallbackLinkCorrelation {
 	const copy = structuredClone(value);
 	freezeTree(copy);
 	return copy;
 }
 
+/**
+ *
+ */
 function copyCall(value: LogicalToolCallCorrelation): LogicalToolCallCorrelation {
 	return freeze({ ...value });
 }
 
+/**
+ *
+ */
 function copyQueueOperation(
 	value: WorkhorseOperationEvent["queueOperation"],
 ): WorkhorseOperationEvent["queueOperation"] {
 	return value === null ? null : value;
 }
 
+/**
+ *
+ */
 function operationKind(): "operation" {
 	return "operation";
 }
 
+/**
+ *
+ */
 function semanticKind(): "semantic" {
 	return "semantic";
 }
 
+/**
+ *
+ */
 function operationCorrelation(
 	event: WorkhorseOperationEvent,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
@@ -79,6 +106,9 @@ function operationCorrelation(
 	});
 }
 
+/**
+ *
+ */
 function operationBase(
 	event: WorkhorseOperationEvent,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
@@ -95,6 +125,9 @@ function operationBase(
 	};
 }
 
+/**
+ *
+ */
 function normalizeOperationCallback(
 	event: WorkhorseOperationEvent,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
@@ -125,6 +158,9 @@ function normalizeOperationCallback(
 
 type SemanticSource = SettledSemanticChangeEvent | PaneFocusEvent | PaneSelectionEvent;
 
+/**
+ *
+ */
 function semanticCorrelation(
 	event: SemanticSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
@@ -147,6 +183,9 @@ function semanticCorrelation(
 	});
 }
 
+/**
+ *
+ */
 function semanticCapturedAt(event: SemanticSource): number {
 	if (event.kind === "pane_focus") {
 		return event.focus.capturedAtMs;
@@ -157,6 +196,9 @@ function semanticCapturedAt(event: SemanticSource): number {
 	return event.freshness.capturedAtMs;
 }
 
+/**
+ *
+ */
 function semanticBase(
 	event: SemanticSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
@@ -183,6 +225,9 @@ function semanticBase(
 	};
 }
 
+/**
+ *
+ */
 function normalizeSemanticCallback(
 	event: SemanticSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
@@ -201,6 +246,9 @@ function normalizeSemanticCallback(
 	throw new TypeError("Unsupported semantic callback source.");
 }
 
+/**
+ *
+ */
 function normalizeCoordinatorCallback(
 	event: CoordinatorCallbackSource,
 	workhorseLink: CoordinatorCallbackLinkCorrelation,
@@ -219,10 +267,16 @@ function normalizeCoordinatorCallback(
 	return normalizeOperationCallback(event, workhorseLink, realtimeGeneration);
 }
 
+/**
+ *
+ */
 function valueOrNull(value: string | null): string {
 	return value ?? "";
 }
 
+/**
+ *
+ */
 function semanticScope(callback: CoordinatorSemanticCallback): string {
 	const correlation = callback.correlation;
 	return JSON.stringify([
@@ -236,6 +290,9 @@ function semanticScope(callback: CoordinatorSemanticCallback): string {
 	]);
 }
 
+/**
+ *
+ */
 function coordinatorCallbackKey(callback: CoordinatorCallback): string {
 	if (callback.kind === "operation") {
 		return `operation:${valueOrNull(callback.correlation.operationId)}:${callback.type}`;

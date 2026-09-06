@@ -18,29 +18,23 @@ import {
 	type NamespaceName,
 	type ResolveSpokenApprovalInput,
 	type SteerWorkhorseInput,
-} from "../../codex-coordinator-tool-contract/index.js";
-import type { CodexCoordinatorToolsOptions } from "./contract.js";
+} from "@/runtime/codex-coordinator-tool-contract";
+import type { CodexCoordinatorToolsOptions } from "@/runtime/codex-coordinator-tools/lib/contract";
 import {
 	COORDINATOR_TOOLS_OWNER,
 	type CoordinatorToolCoordinatorAuthority,
 	type CoordinatorToolsServerRequest,
-} from "./contract.js";
+} from "@/runtime/codex-coordinator-tools/lib/contract";
 import type {
 	DynamicServerRequest,
 	TransportServerRequest,
-} from "../../codex-transport/server-requests.js";
-import type {
-	LogicalToolCallCorrelation,
-	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import {
-	IdentityValidationError,
-	logicalToolCallKey,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-transport/server-requests";
+import type { LogicalToolCallCorrelation, TurnId } from "@/shared/codex-workbench-identity";
+import { IdentityValidationError, logicalToolCallKey } from "@/shared/codex-workbench-identity";
 import {
 	type WorkhorseCoordinatorCall,
 	type WorkhorseOperationBinding,
-} from "../../codex-workhorse-operations/index.js";
+} from "@/runtime/codex-workhorse-operations";
 
 type CoordinatorToolInput =
 	| InspectWorkhorseInput
@@ -60,6 +54,9 @@ interface ValidatedCoordinatorToolCall {
 	readonly expectedTurnId: TurnId | null;
 }
 
+/**
+ *
+ */
 function canonicalInput(tool: CoordinatorToolName, input: CoordinatorToolInput): string {
 	switch (tool) {
 		case "inspect_workhorse":
@@ -101,6 +98,9 @@ function canonicalInput(tool: CoordinatorToolName, input: CoordinatorToolInput):
 	}
 }
 
+/**
+ *
+ */
 function inputFingerprint(
 	namespace: NamespaceName,
 	tool: CoordinatorToolName,
@@ -128,12 +128,18 @@ class CoordinatorToolValidationError extends Error {
 		| "system_error"
 		| "busy";
 
+	/**
+	 *
+	 */
 	constructor(reason: CoordinatorToolValidationError["reason"], message: string, cause?: unknown) {
 		super(message, { cause });
 		this.reason = reason;
 	}
 }
 
+/**
+ *
+ */
 function fail(
 	reason: CoordinatorToolValidationError["reason"],
 	message: string,
@@ -142,6 +148,9 @@ function fail(
 	throw new CoordinatorToolValidationError(reason, message, cause);
 }
 
+/**
+ *
+ */
 function sameCall(left: LogicalToolCallCorrelation, right: LogicalToolCallCorrelation): boolean {
 	return (
 		left.child === right.child &&
@@ -155,6 +164,9 @@ function sameCall(left: LogicalToolCallCorrelation, right: LogicalToolCallCorrel
 	);
 }
 
+/**
+ *
+ */
 function mapIdentityFailure(error: unknown): CoordinatorToolValidationError {
 	if (error instanceof IdentityValidationError) {
 		if (error.code === "wrong-child") {
@@ -186,6 +198,9 @@ function mapIdentityFailure(error: unknown): CoordinatorToolValidationError {
 	);
 }
 
+/**
+ *
+ */
 function assertRequestEnvelope(
 	options: CodexCoordinatorToolsOptions,
 	request: DynamicServerRequest,
@@ -224,6 +239,9 @@ function assertRequestEnvelope(
 	}
 }
 
+/**
+ *
+ */
 function assertLogicalCall(
 	options: CodexCoordinatorToolsOptions,
 	request: DynamicServerRequest,
@@ -286,6 +304,9 @@ function assertLogicalCall(
 	return call;
 }
 
+/**
+ *
+ */
 function currentCoordinator(
 	options: CodexCoordinatorToolsOptions,
 	call: LogicalToolCallCorrelation,
@@ -306,6 +327,9 @@ function currentCoordinator(
 	return current;
 }
 
+/**
+ *
+ */
 function workhorseBinding(
 	options: CodexCoordinatorToolsOptions,
 	call: LogicalToolCallCorrelation,
@@ -344,6 +368,9 @@ function workhorseBinding(
 	return binding;
 }
 
+/**
+ *
+ */
 function parseInput(
 	namespace: NamespaceName,
 	tool: CoordinatorToolName,
@@ -372,6 +399,9 @@ function parseInput(
 	}
 }
 
+/**
+ *
+ */
 function validateCoordinatorToolRequest(
 	options: CodexCoordinatorToolsOptions,
 	request: DynamicServerRequest,
@@ -430,16 +460,25 @@ function validateCoordinatorToolRequest(
 	});
 }
 
+/**
+ *
+ */
 function isCoordinatorToolRequest(
 	request: TransportServerRequest,
 ): request is CoordinatorToolsServerRequest {
 	return request.owner === COORDINATOR_TOOLS_OWNER && request.method === "item/tool/call";
 }
 
+/**
+ *
+ */
 function callKey(request: DynamicServerRequest): string {
 	return `${request.child}\u0000${request.epoch}\u0000${String(request.requestId)}`;
 }
 
+/**
+ *
+ */
 function logicalCallKey(call: LogicalToolCallCorrelation): string {
 	return logicalToolCallKey(call);
 }

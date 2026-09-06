@@ -7,13 +7,19 @@ import {
 	type CodeBinding,
 	type CodeTargetOpenRequest,
 	type GitHubHttpsUrl,
-} from "../../shared/code-target/index.js";
-import type { LocalCodeTargetResult } from "./index.js";
+} from "@/shared/code-target";
+import type { LocalCodeTargetResult } from "@/runtime/code-target";
 
+/**
+ *
+ */
 function encodeField(value: string): string {
 	return encodeURIComponent(value);
 }
 
+/**
+ *
+ */
 function githubUrlForBinding(binding: CodeBinding): GitHubHttpsUrl | undefined {
 	const parsed = CodeBindingSchema.safeParse(binding);
 	if (!parsed.success) {
@@ -45,6 +51,9 @@ function githubUrlForBinding(binding: CodeBinding): GitHubHttpsUrl | undefined {
 	return validated.success ? validated.data : undefined;
 }
 
+/**
+ *
+ */
 function presentationTargetForBinding(
 	binding: CodeBinding,
 	identity: CodeTargetOpenRequest,

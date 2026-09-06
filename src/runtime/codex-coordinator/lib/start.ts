@@ -1,11 +1,8 @@
-import {
-	CODEX_SESSION_THREAD_SOURCE,
-	CodexSessionMutationError,
-} from "../../codex-session/index.js";
-import type { SessionNotificationHandler } from "../../codex-session/index.js";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
-import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
+import { CODEX_SESSION_THREAD_SOURCE, CodexSessionMutationError } from "@/runtime/codex-session";
+import type { SessionNotificationHandler } from "@/runtime/codex-session";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type { ThreadId } from "@/shared/codex-workbench-identity";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "@/shared/timing/timing";
 import {
 	CodexCoordinatorError,
 	type CodexCoordinatorOptions,
@@ -19,16 +16,19 @@ import {
 	type CoordinatorSnapshot,
 	type CoordinatorStartResponse,
 	type CoordinatorThreadSettings,
-} from "./contract.js";
+} from "@/runtime/codex-coordinator/lib/contract";
 import {
 	COORDINATOR_EFFORT,
 	COORDINATOR_MODEL,
 	createCoordinatorSettingsUpdateParams,
 	createCoordinatorThreadStartParams,
 	type CoordinatorModelSelection,
-} from "./model.js";
-import { hashCoordinatorSettings, reviewedCoordinatorHashes } from "./review.js";
-import { COORDINATOR_OPERATION_KIND, COORDINATOR_RPC } from "./reuse.js";
+} from "@/runtime/codex-coordinator/lib/model";
+import {
+	hashCoordinatorSettings,
+	reviewedCoordinatorHashes,
+} from "@/runtime/codex-coordinator/lib/review";
+import { COORDINATOR_OPERATION_KIND, COORDINATOR_RPC } from "@/runtime/codex-coordinator/lib/reuse";
 import {
 	coordinatorError,
 	errorMessage,
@@ -38,7 +38,7 @@ import {
 	readySnapshot,
 	sameValue,
 	startingSnapshot,
-} from "./state.js";
+} from "@/runtime/codex-coordinator/lib/state";
 
 const COORDINATOR_THREAD_SOURCE = CODEX_SESSION_THREAD_SOURCE;
 
@@ -60,6 +60,9 @@ interface CoordinatorStartHooks {
 	readonly setPersistence: (persistence: CoordinatorPersistedState | null) => void;
 }
 
+/**
+ *
+ */
 function createCoordinatorStarter(
 	options: CodexCoordinatorOptions,
 	hooks: CoordinatorStartHooks,
@@ -75,6 +78,9 @@ function createCoordinatorStarter(
 } {
 	let pendingSettings: PendingSettingsNotification | null = null;
 
+	/**
+	 *
+	 */
 	const onNotification: SessionNotificationHandler = (event) => {
 		const pending = pendingSettings;
 		if (pending === null || !isCurrentNotification(event, options)) {
@@ -105,6 +111,9 @@ function createCoordinatorStarter(
 		pending.resolve({ kind: "matched", settings: notification.params.threadSettings });
 	};
 
+	/**
+	 *
+	 */
 	const start = async (
 		operationId: string,
 		selection: CoordinatorModelSelection,
@@ -299,6 +308,9 @@ function createCoordinatorStarter(
 		return hooks.snapshot();
 	};
 
+	/**
+	 *
+	 */
 	function waitForSettings(
 		threadId: ThreadId,
 		started: CoordinatorStartResponse,
@@ -320,6 +332,9 @@ function createCoordinatorStarter(
 			started,
 			configured,
 			resolve,
+			/**
+			 *
+			 */
 			cancel: () => {
 				if (pendingSettings !== pending) {
 					return;
@@ -350,6 +365,9 @@ function createCoordinatorStarter(
 		};
 	}
 
+	/**
+	 *
+	 */
 	const rollback = (transaction: CoordinatorEpochTransaction, reason: string): void => {
 		try {
 			options.epoch.rollbackOperation(transaction, reason);
@@ -357,6 +375,9 @@ function createCoordinatorStarter(
 			// The failed state remains terminal; rollback is never retried.
 		}
 	};
+	/**
+	 *
+	 */
 	const markUnknown = (
 		transaction: CoordinatorEpochTransaction,
 		reason: string,
@@ -376,6 +397,9 @@ function createCoordinatorStarter(
 	return Object.freeze({ start, onNotification });
 }
 
+/**
+ *
+ */
 function settingsMismatch(
 	started: CoordinatorStartResponse,
 	configured: CoordinatorConfiguredSettings,
@@ -414,6 +438,9 @@ function settingsMismatch(
 	return null;
 }
 
+/**
+ *
+ */
 function assertStartedResponse(
 	response: CoordinatorStartResponse,
 	checkoutRoot: string,
@@ -445,6 +472,9 @@ function assertStartedResponse(
 	}
 }
 
+/**
+ *
+ */
 function coordinatorSettings(
 	configured: CoordinatorConfiguredSettings,
 	settings: CoordinatorThreadSettings,
@@ -464,12 +494,18 @@ function coordinatorSettings(
 	});
 }
 
+/**
+ *
+ */
 function mutationOutcome(error: unknown): "not_delivered" | "outcome_unknown" {
 	return error instanceof CodexSessionMutationError && error.outcome === "not_delivered"
 		? "not_delivered"
 		: "outcome_unknown";
 }
 
+/**
+ *
+ */
 function isCurrentNotification(
 	event: TransportServerNotification,
 	options: CodexCoordinatorOptions,

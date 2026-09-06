@@ -10,29 +10,31 @@ import {
 	selectOperationIdentity,
 	threadIdWire,
 	type WorkhorseRuntime,
-} from "./internal.js";
+} from "@/runtime/codex-workhorse-operations/lib/internal";
 import type {
 	InspectWorkhorseRequest,
 	InspectWorkhorseResult,
 	ManageWorkhorseQueueRequest,
 	ManageWorkhorseQueueResult,
 	WorkhorseOperationBinding,
-} from "./contract.js";
-import type {
-	OperationId,
-	ThreadId,
-	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { WorkhorseOperationClassification } from "./contract.js";
+} from "@/runtime/codex-workhorse-operations/lib/contract";
+import type { OperationId, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
+import type { WorkhorseOperationClassification } from "@/runtime/codex-workhorse-operations/lib/contract";
 
 type MutableQueueRequest = Exclude<ManageWorkhorseQueueRequest, { readonly operation: "list" }>;
 
+/**
+ *
+ */
 function mutationErrorCode(
 	outcome: Exclude<ReturnType<WorkhorseRuntime["settleDurable"]>, "pending">,
 ): "transport_failure" | "outcome_unknown" {
 	return outcome === "outcome_unknown" ? "outcome_unknown" : "transport_failure";
 }
 
+/**
+ *
+ */
 function activeTurnId(
 	runtime: WorkhorseRuntime,
 	threadId: ThreadId,
@@ -48,6 +50,9 @@ function activeTurnId(
 	return current;
 }
 
+/**
+ *
+ */
 function createInspect(
 	runtime: WorkhorseRuntime,
 ): (request: InspectWorkhorseRequest) => Promise<InspectWorkhorseResult> {
@@ -69,6 +74,9 @@ function createInspect(
 		});
 }
 
+/**
+ *
+ */
 async function mutateQueue(
 	runtime: WorkhorseRuntime,
 	request: MutableQueueRequest,
@@ -99,6 +107,9 @@ async function mutateQueue(
 	try {
 		const staged = await runtime.classify(binding, request.call, "manage_workhorse_queue");
 		assertCreatedWorkhorse(staged.workhorse);
+		/**
+		 *
+		 */
 		const beforeEffect: NonNullable<
 			Parameters<WorkhorseRuntime["options"]["queue"]["start"]>[0]["beforeEffect"]
 		> = async (context): Promise<void> => {
@@ -252,6 +263,9 @@ async function mutateQueue(
 	return freeze({ operation: request.operation, queuedSubmissionIds: ids });
 }
 
+/**
+ *
+ */
 function createManageQueue(
 	runtime: WorkhorseRuntime,
 ): (request: ManageWorkhorseQueueRequest) => Promise<ManageWorkhorseQueueResult> {

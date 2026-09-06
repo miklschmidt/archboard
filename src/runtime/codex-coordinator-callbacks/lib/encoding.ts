@@ -1,6 +1,9 @@
-import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoch/index.js";
-import type { ThreadLinkEpochProof } from "../../codex-thread-link/index.js";
-import type { CoordinatorCallback, CoordinatorCallbackCorrelation } from "./contract.js";
+import type { EpochExecutionProof, EpochOperationRecord } from "@/runtime/codex-epoch";
+import type { ThreadLinkEpochProof } from "@/runtime/codex-thread-link";
+import type {
+	CoordinatorCallback,
+	CoordinatorCallbackCorrelation,
+} from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
 const CALLBACK_MAX_UTF8_BYTES = 32_768;
 const CALLBACK_MAX_STRING_UTF8_BYTES = 8_192;
@@ -10,6 +13,9 @@ const CALLBACK_MAX_SELECTION_ID_UTF8_BYTES = 64;
 const CALLBACK_SCHEMA = 1;
 const encoder = new TextEncoder();
 
+/**
+ *
+ */
 function requireExactKeys(value: object, expected: readonly string[]): void {
 	const actual = Object.keys(value).toSorted();
 	const keys = [...expected].toSorted();
@@ -18,16 +24,25 @@ function requireExactKeys(value: object, expected: readonly string[]): void {
 	}
 }
 
+/**
+ *
+ */
 function requireAllowedKeys(value: object, allowed: readonly string[]): void {
 	if (Object.keys(value).some((key) => !allowed.includes(key))) {
 		throw new TypeError("Callback object contains an unknown key.");
 	}
 }
 
+/**
+ *
+ */
 function utf8(value: string): number {
 	return encoder.encode(value).byteLength;
 }
 
+/**
+ *
+ */
 function requireString(value: string | null): string | null {
 	if (value !== null && (value.length === 0 || utf8(value) > CALLBACK_MAX_STRING_UTF8_BYTES)) {
 		throw new TypeError("Callback string exceeds its UTF-8 limit.");
@@ -35,6 +50,9 @@ function requireString(value: string | null): string | null {
 	return value;
 }
 
+/**
+ *
+ */
 function requireId(value: string | null): string | null {
 	const checked = requireString(value);
 	if (checked !== null && utf8(checked) > CALLBACK_MAX_ID_UTF8_BYTES) {
@@ -43,6 +61,9 @@ function requireId(value: string | null): string | null {
 	return checked;
 }
 
+/**
+ *
+ */
 function requireArray(values: readonly string[], entryBytes: number): readonly string[] {
 	if (values.length > CALLBACK_MAX_ARRAY_ENTRIES) {
 		throw new TypeError("Callback array exceeds its entry limit.");
@@ -59,6 +80,9 @@ function requireArray(values: readonly string[], entryBytes: number): readonly s
 	});
 }
 
+/**
+ *
+ */
 function queueRpc(operation: unknown): string | null {
 	switch (operation) {
 		case "add":
@@ -76,6 +100,9 @@ function queueRpc(operation: unknown): string | null {
 	}
 }
 
+/**
+ *
+ */
 function operationRecord(record: EpochOperationRecord) {
 	return {
 		correlation: {
@@ -107,6 +134,9 @@ function operationRecord(record: EpochOperationRecord) {
 	};
 }
 
+/**
+ *
+ */
 function proof(value: ThreadLinkEpochProof | null | undefined) {
 	if (value === null || value === undefined) {
 		return null;
@@ -121,6 +151,9 @@ function proof(value: ThreadLinkEpochProof | null | undefined) {
 	return { manifestRevision: null, record: operationRecord(value) };
 }
 
+/**
+ *
+ */
 function correlation(value: CoordinatorCallbackCorrelation) {
 	requireExactKeys(value, [
 		"operationId",
@@ -229,6 +262,9 @@ function correlation(value: CoordinatorCallbackCorrelation) {
 	};
 }
 
+/**
+ *
+ */
 function callbackDocument(callback: CoordinatorCallback) {
 	if (callback.kind === "operation") {
 		requireExactKeys(callback, [
@@ -347,6 +383,9 @@ function callbackDocument(callback: CoordinatorCallback) {
 	};
 }
 
+/**
+ *
+ */
 function canonicalJson(value: unknown): string {
 	if (value === null || typeof value !== "object") {
 		return JSON.stringify(value);
@@ -360,6 +399,9 @@ function canonicalJson(value: unknown): string {
 		.join(",")}}`;
 }
 
+/**
+ *
+ */
 function encodeCoordinatorCallback(callback: CoordinatorCallback): string {
 	const text = canonicalJson(callbackDocument(callback));
 	if (utf8(text) > CALLBACK_MAX_UTF8_BYTES) {

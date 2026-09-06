@@ -1,25 +1,26 @@
-import { CodexApprovalError, type ApprovalSettlement } from "../../codex-approvals/index.js";
+import { CodexApprovalError, type ApprovalSettlement } from "@/runtime/codex-approvals";
 import {
 	ResolveSpokenApprovalInputSchema,
 	type DynamicToolRefusalReason,
-} from "../../codex-coordinator-tool-contract/index.js";
-import { createTurnStartParams, type TurnStartParams } from "../../codex-instructions/index.js";
-import type { SessionParams, SessionResponse } from "../../codex-session/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/index.js";
-import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
-import {
-	type IdentityAuthority,
-	type TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-coordinator-tool-contract";
+import { createTurnStartParams, type TurnStartParams } from "@/runtime/codex-instructions";
+import type { SessionParams, SessionResponse } from "@/runtime/codex-session";
+import type { DynamicServerRequest } from "@/runtime/codex-transport";
+import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import { type IdentityAuthority, type TurnId } from "@/shared/codex-workbench-identity";
 import type {
 	CodexSpokenApprovalGateOptions,
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,
 	SpokenApprovalToolResult,
-} from "./contract.js";
-import type { ActiveSlot, TurnReadyControls } from "./state.js";
-import { sameBinding, validateResolverCall, type CallValidationFailure } from "./validation.js";
-import { createSpokenApprovalClassifierPrompt } from "./classifier.js";
+} from "@/runtime/codex-spoken-approval/lib/contract";
+import type { ActiveSlot, TurnReadyControls } from "@/runtime/codex-spoken-approval/lib/state";
+import {
+	sameBinding,
+	validateResolverCall,
+	type CallValidationFailure,
+} from "@/runtime/codex-spoken-approval/lib/validation";
+import { createSpokenApprovalClassifierPrompt } from "@/runtime/codex-spoken-approval/lib/classifier";
 
 interface ClassifierTurnHost {
 	readonly approvalBroker: CodexSpokenApprovalGateOptions["approvalBroker"];
@@ -37,6 +38,9 @@ interface ClassifierTurnHost {
 	readonly enterFallback: (slot: ActiveSlot, reason: SpokenApprovalFallbackReason) => void;
 }
 
+/**
+ *
+ */
 function createTurnReady(): TurnReadyControls {
 	let resolveTurn: ((turnId: TurnId) => void) | undefined;
 	let rejectTurn: ((reason: unknown) => void) | undefined;
@@ -50,10 +54,16 @@ function createTurnReady(): TurnReadyControls {
 	return { promise, resolve: resolveTurn, reject: rejectTurn, settled: false };
 }
 
+/**
+ *
+ */
 function refusal(reason: DynamicToolRefusalReason, message: string): SpokenApprovalToolResult {
 	return Object.freeze({ tag: "refused", reason, message });
 }
 
+/**
+ *
+ */
 function success(
 	verdict: "accept" | "decline",
 	settlement: ApprovalSettlement,
@@ -64,10 +74,16 @@ function success(
 	});
 }
 
+/**
+ *
+ */
 function safeMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ *
+ */
 function failReady(
 	host: ClassifierTurnHost,
 	slot: ActiveSlot,
@@ -83,6 +99,9 @@ function failReady(
 	}
 }
 
+/**
+ *
+ */
 function finishTurn(
 	host: ClassifierTurnHost,
 	slot: ActiveSlot,
@@ -119,6 +138,9 @@ function finishTurn(
 	}
 }
 
+/**
+ *
+ */
 function startClassifier(
 	host: ClassifierTurnHost,
 	slot: ActiveSlot,
@@ -217,10 +239,16 @@ function startClassifier(
 	);
 }
 
+/**
+ *
+ */
 function validationRefusal(failure: CallValidationFailure): SpokenApprovalToolResult {
 	return refusal(failure.refusal, failure.message);
 }
 
+/**
+ *
+ */
 async function handleResolver(
 	host: ClassifierTurnHost,
 	slot: ActiveSlot,
@@ -292,6 +320,9 @@ async function handleResolver(
 	return success(verdict, settlement);
 }
 
+/**
+ *
+ */
 async function resolveSpokenApproval(
 	host: ClassifierTurnHost,
 	slot: ActiveSlot,

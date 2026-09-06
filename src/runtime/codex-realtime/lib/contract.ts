@@ -3,16 +3,16 @@ import type {
 	RealtimeCorrelationId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
 	RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "@/shared/codex-realtime-host";
 import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthority,
 	RealtimeSessionId,
 	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { CodexSession, SessionNotificationHandler } from "../../codex-session/index.js";
-import type { FreshSemanticBrief } from "../../codex-semantic-context/index.js";
+} from "@/shared/codex-workbench-identity";
+import type { CodexSession, SessionNotificationHandler } from "@/runtime/codex-session";
+import type { FreshSemanticBrief } from "@/runtime/codex-semantic-context";
 
 interface CodexRealtimeBinding {
 	readonly child: ChildId;

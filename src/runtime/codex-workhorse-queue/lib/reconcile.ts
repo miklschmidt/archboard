@@ -1,7 +1,13 @@
-import { QueuedSubmissionSchema } from "../../codex-protocol/index.js";
-import type { SessionQueuedSubmission } from "../../codex-session/index.js";
-import type { QueueSnapshot, WorkhorseQueueBinding } from "./contract.js";
+import { QueuedSubmissionSchema } from "@/runtime/codex-protocol";
+import type { SessionQueuedSubmission } from "@/runtime/codex-session";
+import type {
+	QueueSnapshot,
+	WorkhorseQueueBinding,
+} from "@/runtime/codex-workhorse-queue/lib/contract";
 
+/**
+ *
+ */
 function sameBinding(left: WorkhorseQueueBinding, right: WorkhorseQueueBinding): boolean {
 	return (
 		left.childId === right.childId &&
@@ -11,6 +17,9 @@ function sameBinding(left: WorkhorseQueueBinding, right: WorkhorseQueueBinding):
 	);
 }
 
+/**
+ *
+ */
 function sameSubmission(left: SessionQueuedSubmission, right: SessionQueuedSubmission): boolean {
 	return (
 		left.id === right.id &&
@@ -19,6 +28,9 @@ function sameSubmission(left: SessionQueuedSubmission, right: SessionQueuedSubmi
 	);
 }
 
+/**
+ *
+ */
 function sameQueue(left: QueueSnapshot, right: QueueSnapshot): boolean {
 	return (
 		left.length === right.length &&
@@ -29,6 +41,9 @@ function sameQueue(left: QueueSnapshot, right: QueueSnapshot): boolean {
 	);
 }
 
+/**
+ *
+ */
 function queueWithout(
 	queue: QueueSnapshot,
 	submissionId: SessionQueuedSubmission["id"],
@@ -36,14 +51,23 @@ function queueWithout(
 	return queue.filter((submission) => submission.id !== submissionId);
 }
 
+/**
+ *
+ */
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ *
+ */
 function isSessionQueuedSubmission(value: unknown): value is SessionQueuedSubmission {
 	return QueuedSubmissionSchema.safeParse(value).success;
 }
 
+/**
+ *
+ */
 function responseSubmission(value: unknown): SessionQueuedSubmission | null {
 	if (!isRecord(value) || !isRecord(value["queuedSubmission"])) {
 		return null;
@@ -52,10 +76,16 @@ function responseSubmission(value: unknown): SessionQueuedSubmission | null {
 	return isSessionQueuedSubmission(candidate) ? candidate : null;
 }
 
+/**
+ *
+ */
 function snapshot(data: readonly SessionQueuedSubmission[]): QueueSnapshot {
 	return Object.freeze(data.slice());
 }
 
+/**
+ *
+ */
 function expectedAdd(
 	before: QueueSnapshot,
 	after: QueueSnapshot,
@@ -94,6 +124,9 @@ function expectedAdd(
 	return addedCount === 1 && beforeIndex === before.length;
 }
 
+/**
+ *
+ */
 function expectedUpdate(
 	before: QueueSnapshot,
 	after: QueueSnapshot,
@@ -125,6 +158,9 @@ function expectedUpdate(
 	});
 }
 
+/**
+ *
+ */
 function expectedDelete(
 	before: QueueSnapshot,
 	after: QueueSnapshot,
@@ -139,6 +175,9 @@ function expectedDelete(
 		: sameQueue(after, before);
 }
 
+/**
+ *
+ */
 function expectedReorder(
 	before: QueueSnapshot,
 	after: QueueSnapshot,
@@ -155,6 +194,9 @@ function expectedReorder(
 	});
 }
 
+/**
+ *
+ */
 function expectedStart(
 	before: QueueSnapshot,
 	after: QueueSnapshot,

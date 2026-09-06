@@ -5,12 +5,15 @@ import type {
 	RealtimeState,
 	RealtimeTranscriptRecord,
 	RealtimeTranscriptRole,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "@/shared/codex-realtime-host";
 import type {
 	ItemId,
 	RealtimeSessionId as WireRealtimeSessionId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { CodexRealtimeBinding, CodexRealtimeGeneration } from "./contract.js";
+} from "@/shared/codex-workbench-identity";
+import type {
+	CodexRealtimeBinding,
+	CodexRealtimeGeneration,
+} from "@/runtime/codex-realtime/lib/contract";
 
 interface RealtimeTranscriptEntry {
 	readonly itemId: ItemId;
@@ -38,6 +41,9 @@ interface ActiveRealtimeSession {
 	nextLiveOrder: number;
 }
 
+/**
+ *
+ */
 function realtimeGeneration(session: ActiveRealtimeSession): CodexRealtimeGeneration {
 	return Object.freeze({
 		...session.binding,

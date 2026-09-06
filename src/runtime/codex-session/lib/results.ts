@@ -1,4 +1,4 @@
-import type { ResponseMethod, ResponsePayloads } from "../../codex-protocol/index.js";
+import type { ResponseMethod, ResponsePayloads } from "@/runtime/codex-protocol";
 import type {
 	ItemId,
 	LoginId,
@@ -6,8 +6,8 @@ import type {
 	ThreadId,
 	TrustedIdentityDecoder,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import { SESSION_PROTOCOL_METHODS } from "./response-contract.js";
+} from "@/shared/codex-workbench-identity";
+import { SESSION_PROTOCOL_METHODS } from "@/runtime/codex-session/lib/response-contract";
 import type {
 	ExactSessionRequestIdentityTuple,
 	SessionAccountLoginResult,
@@ -36,7 +36,7 @@ import type {
 	SessionTurn,
 	SessionTurnResult,
 	SessionTurnSteerResult,
-} from "./response-contract.js";
+} from "@/runtime/codex-session/lib/response-contract";
 
 type ResponseIdentityKind = (typeof SESSION_PROTOCOL_METHODS)[ResponseMethod]["responseIdentities"];
 type DecodedResponse = {
@@ -53,18 +53,30 @@ interface ResponseIdentityCollection {
 	readonly loginIds: unknown[];
 }
 
+/**
+ *
+ */
 function isUnknownArray(value: unknown): value is readonly unknown[] {
 	return Array.isArray(value);
 }
 
+/**
+ *
+ */
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !isUnknownArray(value);
 }
 
+/**
+ *
+ */
 function collection(): ResponseIdentityCollection {
 	return { threadIds: [], turnIds: [], itemIds: [], queuedSubmissionIds: [], loginIds: [] };
 }
 
+/**
+ *
+ */
 function collectThreadItem(value: unknown, identities: ResponseIdentityCollection): void {
 	if (!isRecord(value)) {
 		return;
@@ -90,6 +102,9 @@ function collectThreadItem(value: unknown, identities: ResponseIdentityCollectio
 	}
 }
 
+/**
+ *
+ */
 function collectTurn(value: unknown, identities: ResponseIdentityCollection): void {
 	if (!isRecord(value)) {
 		return;
@@ -102,6 +117,9 @@ function collectTurn(value: unknown, identities: ResponseIdentityCollection): vo
 	}
 }
 
+/**
+ *
+ */
 function collectThreadSource(value: unknown, identities: ResponseIdentityCollection): void {
 	if (
 		!isRecord(value) ||
@@ -113,6 +131,9 @@ function collectThreadSource(value: unknown, identities: ResponseIdentityCollect
 	identities.threadIds.push(value["subAgent"]["thread_spawn"]["parent_thread_id"]);
 }
 
+/**
+ *
+ */
 function collectThread(value: unknown, identities: ResponseIdentityCollection): void {
 	if (!isRecord(value)) {
 		return;
@@ -132,12 +153,18 @@ function collectThread(value: unknown, identities: ResponseIdentityCollection): 
 	}
 }
 
+/**
+ *
+ */
 function collectQueue(value: unknown, identities: ResponseIdentityCollection): void {
 	if (isRecord(value)) {
 		identities.queuedSubmissionIds.push(value["id"]);
 	}
 }
 
+/**
+ *
+ */
 function collectResponseIdentities(
 	kind: ResponseIdentityKind,
 	payload: unknown,
@@ -232,6 +259,9 @@ interface ResponseIdentityMaps {
 	readonly loginIds: Readonly<ReadonlyMap<unknown, LoginId>>;
 }
 
+/**
+ *
+ */
 function adoptedMap<Identity extends string>(
 	raw: readonly unknown[],
 	adopted: readonly Identity[],
@@ -239,6 +269,9 @@ function adoptedMap<Identity extends string>(
 	return new Map(adopted.map((identity, index) => [raw[index], identity]));
 }
 
+/**
+ *
+ */
 function brandThreadItem(
 	value: Readonly<Record<string, unknown>>,
 	maps: ResponseIdentityMaps,
@@ -272,6 +305,9 @@ function brandThreadItem(
 	return branded;
 }
 
+/**
+ *
+ */
 function brandTurn(
 	value: Readonly<Record<string, unknown>>,
 	maps: ResponseIdentityMaps,
@@ -287,6 +323,9 @@ function brandTurn(
 	} as SessionTurn;
 }
 
+/**
+ *
+ */
 function brandThreadSource(value: unknown, maps: ResponseIdentityMaps): unknown {
 	if (
 		!isRecord(value) ||
@@ -307,6 +346,9 @@ function brandThreadSource(value: unknown, maps: ResponseIdentityMaps): unknown 
 	};
 }
 
+/**
+ *
+ */
 function brandThread(
 	value: Readonly<Record<string, unknown>>,
 	maps: ResponseIdentityMaps,
@@ -324,10 +366,16 @@ function brandThread(
 	} as SessionThread;
 }
 
+/**
+ *
+ */
 function brandQueue(value: Readonly<Record<string, unknown>>, maps: ResponseIdentityMaps): unknown {
 	return { ...value, id: maps.queuedSubmissionIds.get(value["id"]) };
 }
 
+/**
+ *
+ */
 function brandItemEntry(
 	entry: Readonly<Record<string, unknown>>,
 	maps: ResponseIdentityMaps,
@@ -339,6 +387,9 @@ function brandItemEntry(
 	};
 }
 
+/**
+ *
+ */
 function brandResponse(
 	kind: ResponseIdentityKind,
 	payload: unknown,

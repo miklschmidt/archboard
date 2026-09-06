@@ -3,6 +3,9 @@ function cloneAndFreeze<T>(value: T): T {
 	return deepFreeze(structuredClone(value), new WeakSet<object>());
 }
 
+/**
+ *
+ */
 function deepFreeze<T>(value: T, seen: WeakSet<object>): T {
 	if (value === null || typeof value !== "object") {
 		return value;

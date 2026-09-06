@@ -1,17 +1,17 @@
-import type { EpochOperationRecord, EpochTransaction } from "../../codex-epoch/index.js";
-import { CodexSessionMutationError } from "../../codex-session/index.js";
-import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
+import type { EpochOperationRecord, EpochTransaction } from "@/runtime/codex-epoch";
+import { CodexSessionMutationError } from "@/runtime/codex-session";
+import type { ThreadLinkClassification } from "@/runtime/codex-thread-link";
 import {
 	CodexWorkhorseQueueError,
 	type WorkhorseQueueMutation,
-} from "../../codex-workhorse-queue/index.js";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
+} from "@/runtime/codex-workhorse-queue";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import type {
 	OperationId,
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import {
 	CodexWorkhorseOperationsError,
 	type WorkhorseCoordinatorCall,
@@ -25,7 +25,7 @@ import {
 	type WorkhorseOperationOptions,
 	type WorkhorseOperationRpc,
 	type WorkhorseOperationTarget,
-} from "./contract.js";
+} from "@/runtime/codex-workhorse-operations/lib/contract";
 
 const INPUT_LIMIT_BYTES = 4_096;
 const WORKHORSE_CREATION_KIND = "create_thread";
@@ -136,14 +136,23 @@ interface WorkhorseRuntime extends WorkhorseValidation, WorkhorseEvents {
 	readonly enqueue: <Value>(work: () => Promise<Value>) => Promise<Value>;
 }
 
+/**
+ *
+ */
 function freeze<T>(value: T): T {
 	return Object.freeze(value);
 }
 
+/**
+ *
+ */
 function messageOf(error: unknown): string {
 	return error instanceof Error ? error.message : "unknown error";
 }
 
+/**
+ *
+ */
 function boundedDetail(value: string): string {
 	if (Buffer.byteLength(value, "utf8") <= INPUT_LIMIT_BYTES) {
 		return value;
@@ -163,6 +172,9 @@ function boundedDetail(value: string): string {
 	return `${prefix}${suffix}`;
 }
 
+/**
+ *
+ */
 function sameCall(left: WorkhorseCoordinatorCall, right: WorkhorseCoordinatorCall): boolean {
 	return (
 		left.child === right.child &&
@@ -176,6 +188,9 @@ function sameCall(left: WorkhorseCoordinatorCall, right: WorkhorseCoordinatorCal
 	);
 }
 
+/**
+ *
+ */
 function sameTarget(left: WorkhorseOperationTarget, right: WorkhorseOperationTarget): boolean {
 	return (
 		left.childId === right.childId &&
@@ -185,6 +200,9 @@ function sameTarget(left: WorkhorseOperationTarget, right: WorkhorseOperationTar
 	);
 }
 
+/**
+ *
+ */
 function sameBinding(left: WorkhorseOperationBinding, right: WorkhorseOperationBinding): boolean {
 	return (
 		left.childId === right.childId &&
@@ -194,10 +212,16 @@ function sameBinding(left: WorkhorseOperationBinding, right: WorkhorseOperationB
 	);
 }
 
+/**
+ *
+ */
 function snapshotTarget(target: WorkhorseOperationTarget): WorkhorseOperationTarget {
 	return freeze({ ...target });
 }
 
+/**
+ *
+ */
 function snapshotBinding(binding: WorkhorseOperationBinding): WorkhorseOperationBinding {
 	return freeze({
 		childId: binding.childId,
@@ -207,10 +231,16 @@ function snapshotBinding(binding: WorkhorseOperationBinding): WorkhorseOperation
 	});
 }
 
+/**
+ *
+ */
 function snapshotCall(call: WorkhorseCoordinatorCall): WorkhorseCoordinatorCall {
 	return freeze({ ...call });
 }
 
+/**
+ *
+ */
 function operationRpc(
 	operation: MutationOperation,
 	queueOperation?: QueueMutation,
@@ -231,6 +261,9 @@ function operationRpc(
 	return `thread/queue/${queueOperation}`;
 }
 
+/**
+ *
+ */
 function operationError(
 	code: ConstructorParameters<typeof CodexWorkhorseOperationsError>[0],
 	message: string,
@@ -239,6 +272,9 @@ function operationError(
 	return new CodexWorkhorseOperationsError(code, message, options);
 }
 
+/**
+ *
+ */
 function mapLinkReason(
 	reason: string,
 ): ConstructorParameters<typeof CodexWorkhorseOperationsError>[0] {
@@ -269,10 +305,16 @@ function mapLinkReason(
 	}
 }
 
+/**
+ *
+ */
 function sessionMutationOutcome(error: unknown): Exclude<WorkhorseOperationDelivery, "pending"> {
 	return error instanceof CodexSessionMutationError ? error.outcome : "outcome_unknown";
 }
 
+/**
+ *
+ */
 function queueMutationOutcome(
 	error: unknown,
 	effectStarted = true,
@@ -292,6 +334,9 @@ function queueMutationOutcome(
 	return "not_delivered";
 }
 
+/**
+ *
+ */
 function validateBoundedInput(value: string, label: string, allowEmpty = false): void {
 	if (typeof value !== "string" || (!allowEmpty && value.length === 0)) {
 		throw operationError("invalid_input", `${label} must be nonempty text.`);
@@ -304,6 +349,9 @@ function validateBoundedInput(value: string, label: string, allowEmpty = false):
 	}
 }
 
+/**
+ *
+ */
 function selectOperationIdentity(
 	runtime: WorkhorseRuntime,
 	operation: MutationOperation,
@@ -324,6 +372,9 @@ function selectOperationIdentity(
 	}
 }
 
+/**
+ *
+ */
 function activeTurnFromClassification(
 	classification: WorkhorseOperationClassification,
 ): TurnId | null {
@@ -334,14 +385,23 @@ function activeTurnFromClassification(
 	return active.length === 1 ? active[0]!.id : null;
 }
 
+/**
+ *
+ */
 function threadIdWire(options: WorkhorseOperationOptions, threadId: ThreadId): string {
 	return options.identity.decoder.serializeCodexIdentity(threadId);
 }
 
+/**
+ *
+ */
 function turnIdWire(options: WorkhorseOperationOptions, turnId: TurnId): string {
 	return options.identity.decoder.serializeCodexIdentity(turnId);
 }
 
+/**
+ *
+ */
 function turnIdFromRaw(options: WorkhorseOperationOptions, value: string): TurnId {
 	const adopted = options.identity.decoder.adoptCodexResponseIdentities({ turnIds: [value] });
 	const turnId = adopted.turnIds[0];
@@ -351,18 +411,27 @@ function turnIdFromRaw(options: WorkhorseOperationOptions, value: string): TurnI
 	return turnId;
 }
 
+/**
+ *
+ */
 function userMessageClientIds(turn: TurnNotification["params"]["turn"]): readonly string[] {
 	return turn.items.flatMap((item) =>
 		item.type === "userMessage" && item.clientId !== null ? [item.clientId] : [],
 	);
 }
 
+/**
+ *
+ */
 function queueIds(
 	queue: readonly { readonly id: QueuedSubmissionId }[],
 ): readonly QueuedSubmissionId[] {
 	return freeze(queue.map(({ id }) => id));
 }
 
+/**
+ *
+ */
 function recordMatchesTarget(
 	record: EpochOperationRecord,
 	target: WorkhorseOperationTarget,
@@ -378,6 +447,9 @@ function recordMatchesTarget(
 	);
 }
 
+/**
+ *
+ */
 function assertExecutableClassification(
 	classification: ThreadLinkClassification,
 	target: WorkhorseOperationTarget,
@@ -408,6 +480,9 @@ function assertExecutableClassification(
 	}
 }
 
+/**
+ *
+ */
 function assertCreatedWorkhorse(classification: ThreadLinkClassification): void {
 	if (!isCreatedWorkhorse(classification)) {
 		throw operationError(
@@ -417,6 +492,9 @@ function assertCreatedWorkhorse(classification: ThreadLinkClassification): void 
 	}
 }
 
+/**
+ *
+ */
 function isCreatedWorkhorse(classification: ThreadLinkClassification): boolean {
 	return (
 		classification.link.state === "executable" &&

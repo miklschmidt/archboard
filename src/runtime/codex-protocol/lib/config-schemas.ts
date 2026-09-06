@@ -11,14 +11,14 @@ import {
 	ReasoningSummarySchema,
 	SandboxModeSchema,
 	SandboxPolicySchema,
-} from "./core-schemas.js";
+} from "@/runtime/codex-protocol/lib/core-schemas";
 import {
 	CodexSafeI64Schema,
 	FiniteNumberSchema,
 	JsonRecordSchema,
 	JsonValueSchema,
 	looseObject,
-} from "./scalars.js";
+} from "@/runtime/codex-protocol/lib/scalars";
 
 const AutoCompactTokenLimitScopeSchema = z.enum(["total", "body_after_prefix"]);
 const ForcedLoginMethodSchema = z.enum(["chatgpt", "api"]);

@@ -7,4 +7,4 @@ export {
 	type WaitEdgeSetInput,
 	type WaitEdgeSetResult,
 	type WaitOwner,
-} from "./lib/wait-graph.js";
+} from "@/runtime/codex-wait-graph/lib/wait-graph";

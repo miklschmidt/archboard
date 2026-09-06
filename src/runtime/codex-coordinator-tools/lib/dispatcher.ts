@@ -1,12 +1,8 @@
 import type {
 	DynamicServerRequest,
 	TransportServerRequest,
-} from "../../codex-transport/server-requests.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	JsonRpcRequestId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-transport/server-requests";
+import type { ChildEpoch, ChildId, JsonRpcRequestId } from "@/shared/codex-workbench-identity";
 import {
 	COORDINATOR_TOOLS_OWNER,
 	COORDINATOR_REPLAY_LIMITS,
@@ -18,8 +14,11 @@ import {
 	type CoordinatorReplayStateSnapshot,
 	type CoordinatorToolsServerRequest,
 	type DynamicToolResponse,
-} from "./contract.js";
-import { outcomeUnknownResponse, refusedResponse } from "./response.js";
+} from "@/runtime/codex-coordinator-tools/lib/contract";
+import {
+	outcomeUnknownResponse,
+	refusedResponse,
+} from "@/runtime/codex-coordinator-tools/lib/response";
 import {
 	captureSpokenOperationIdentity,
 	invokeWorkhorse,
@@ -30,7 +29,7 @@ import {
 	spokenResponse,
 	workhorseResponse,
 	type IssuedOperationIdentity,
-} from "./tool-execution.js";
+} from "@/runtime/codex-coordinator-tools/lib/tool-execution";
 import {
 	CoordinatorToolValidationError,
 	callKey,
@@ -38,7 +37,7 @@ import {
 	logicalCallKey,
 	validateCoordinatorToolRequest,
 	type ValidatedCoordinatorToolCall,
-} from "./validation.js";
+} from "@/runtime/codex-coordinator-tools/lib/validation";
 
 interface CallState {
 	readonly wireKey: string;
@@ -72,10 +71,16 @@ interface TerminalWireCallState {
 	readonly terminal: CoordinatorToolDispatchResult;
 }
 
+/**
+ *
+ */
 function errorMessage(error: unknown): string {
 	return error instanceof Error && error.message.length > 0 ? error.message : "unknown error";
 }
 
+/**
+ *
+ */
 function complete(
 	response: DynamicToolResponse,
 	attempted: boolean,
@@ -83,8 +88,14 @@ function complete(
 	return Object.freeze({ response, attempted });
 }
 
+/**
+ *
+ */
 function ignoreCancellation(): void {}
 
+/**
+ *
+ */
 function mismatchResponse(): DynamicToolResponse {
 	return refusedResponse(
 		"invalid_call",
@@ -93,6 +104,9 @@ function mismatchResponse(): DynamicToolResponse {
 	);
 }
 
+/**
+ *
+ */
 function isBoundaryRefusal(reason: CoordinatorToolValidationError["reason"]): boolean {
 	return (
 		reason === "invalid_call" ||
@@ -102,6 +116,9 @@ function isBoundaryRefusal(reason: CoordinatorToolValidationError["reason"]): bo
 	);
 }
 
+/**
+ *
+ */
 export function createCodexCoordinatorTools(
 	options: CodexCoordinatorToolsOptions,
 ): CoordinatorToolDispatcher {
@@ -112,6 +129,9 @@ export function createCodexCoordinatorTools(
 	const liveLogicalCalls = new Map<string, LogicalCallState>();
 	const retainedLogicalCalls = new Map<string, TerminalLogicalCallState>();
 
+	/**
+	 *
+	 */
 	const removeRetainedLogical = (key: string): void => {
 		retainedLogicalCalls.delete(key);
 		for (const [wireKey, wire] of retainedWireCalls) {
@@ -121,11 +141,14 @@ export function createCodexCoordinatorTools(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const retainWire = (key: string, value: TerminalWireCallState): void => {
 		retainedWireCalls.delete(key);
 		retainedWireCalls.set(key, value);
 		while (retainedWireCalls.size > COORDINATOR_REPLAY_LIMITS.retainedWireCalls) {
-			const oldest = retainedWireCalls.keys().next().value as string | undefined;
+			const oldest = retainedWireCalls.keys().next().value;
 			if (oldest === undefined) {
 				break;
 			}
@@ -133,11 +156,14 @@ export function createCodexCoordinatorTools(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const retainLogical = (value: TerminalLogicalCallState): void => {
 		retainedLogicalCalls.delete(value.key);
 		retainedLogicalCalls.set(value.key, value);
 		while (retainedLogicalCalls.size > COORDINATOR_REPLAY_LIMITS.retainedLogicalCalls) {
-			const oldest = retainedLogicalCalls.keys().next().value as string | undefined;
+			const oldest = retainedLogicalCalls.keys().next().value;
 			if (oldest === undefined) {
 				break;
 			}
@@ -145,11 +171,17 @@ export function createCodexCoordinatorTools(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const currentLogicalKey = (): string | null => {
 		const current = options.authority.currentCall();
 		return current === null ? null : logicalCallKey(current);
 	};
 
+	/**
+	 *
+	 */
 	const pruneStaleTerminals = (): void => {
 		const current = currentLogicalKey();
 		for (const key of retainedLogicalCalls.keys()) {
@@ -164,6 +196,9 @@ export function createCodexCoordinatorTools(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const retireWire = (
 		state: CallState,
 		terminal: CoordinatorToolDispatchResult,
@@ -177,6 +212,9 @@ export function createCodexCoordinatorTools(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const respondOnce = async (state: CallState, response: DynamicToolResponse): Promise<void> => {
 		if (state.responseAttempted || state.childDisconnected) {
 			return;
@@ -189,6 +227,9 @@ export function createCodexCoordinatorTools(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const finish = async (
 		state: CallState,
 		response: DynamicToolResponse,
@@ -200,6 +241,9 @@ export function createCodexCoordinatorTools(
 		return terminal;
 	};
 
+	/**
+	 *
+	 */
 	const unavailable = (attempted: boolean): CoordinatorToolDispatchResult =>
 		complete(
 			refusedResponse(
@@ -210,6 +254,9 @@ export function createCodexCoordinatorTools(
 			attempted,
 		);
 
+	/**
+	 *
+	 */
 	const execute = async (
 		state: CallState,
 		validated: ValidatedCoordinatorToolCall,
@@ -309,10 +356,16 @@ export function createCodexCoordinatorTools(
 		}
 	};
 
+	/**
+	 *
+	 */
 	const settleWire = async (
 		state: CallState,
 		logical: LogicalCallState,
 	): Promise<CoordinatorToolDispatchResult> => {
+		/**
+		 *
+		 */
 		const cancelled = (): CoordinatorToolDispatchResult => unavailable(false);
 		let terminal: CoordinatorToolDispatchResult;
 		if (state === logical.owner) {
@@ -336,6 +389,9 @@ export function createCodexCoordinatorTools(
 		return finish(state, terminal.response);
 	};
 
+	/**
+	 *
+	 */
 	const runWire = async (state: CallState): Promise<CoordinatorToolDispatchResult> => {
 		let validated: ValidatedCoordinatorToolCall;
 		try {
@@ -412,6 +468,9 @@ export function createCodexCoordinatorTools(
 		return settleWire(state, logical);
 	};
 
+	/**
+	 *
+	 */
 	const dispatch = (
 		request: CoordinatorToolsServerRequest,
 	): Promise<CoordinatorToolDispatchResult> => {
@@ -463,6 +522,9 @@ export function createCodexCoordinatorTools(
 		return promise;
 	};
 
+	/**
+	 *
+	 */
 	const onServerRequest = (request: TransportServerRequest): void => {
 		if (!isCoordinatorToolRequest(request)) {
 			return;
@@ -470,6 +532,9 @@ export function createCodexCoordinatorTools(
 		void dispatch(request).catch(() => undefined);
 	};
 
+	/**
+	 *
+	 */
 	const cancel = (
 		requestId: JsonRpcRequestId,
 		cause: CoordinatorToolCancellation["cause"],
@@ -487,6 +552,9 @@ export function createCodexCoordinatorTools(
 		state.wakeCancellation();
 	};
 
+	/**
+	 *
+	 */
 	const onChildExit = (exit: { readonly child: ChildId; readonly epoch: ChildEpoch }): void => {
 		if (
 			exit.child !== options.identity.validator.childId ||
@@ -511,6 +579,9 @@ export function createCodexCoordinatorTools(
 		retainedLogicalCalls.clear();
 	};
 
+	/**
+	 *
+	 */
 	const dispose = (): void => {
 		if (disposed) {
 			return;
@@ -530,6 +601,9 @@ export function createCodexCoordinatorTools(
 		retainedLogicalCalls.clear();
 	};
 
+	/**
+	 *
+	 */
 	const replayState = (): CoordinatorReplayStateSnapshot =>
 		Object.freeze({
 			liveWireCount: liveWireCalls.size,

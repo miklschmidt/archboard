@@ -3,7 +3,7 @@ import type {
 	DynamicToolCallId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 
 interface WaitOwner {
 	readonly child: ChildId;
@@ -69,18 +69,30 @@ interface GraphNode {
 
 type VisitState = "visiting" | "visited";
 
+/**
+ *
+ */
 function compareText(left: string, right: string): number {
 	return left < right ? -1 : left > right ? 1 : 0;
 }
 
+/**
+ *
+ */
 function ownerKey(owner: WaitOwner): string {
 	return JSON.stringify([owner.child, owner.caller, owner.turn, owner.call]);
 }
 
+/**
+ *
+ */
 function vertexKey(child: ChildId, thread: ThreadId): string {
 	return JSON.stringify([child, thread]);
 }
 
+/**
+ *
+ */
 function copyOwner(owner: WaitOwner): WaitOwner {
 	return Object.freeze({
 		child: owner.child,
@@ -90,10 +102,16 @@ function copyOwner(owner: WaitOwner): WaitOwner {
 	});
 }
 
+/**
+ *
+ */
 function canonicalTargets(targets: readonly ThreadId[]): readonly ThreadId[] {
 	return Object.freeze([...new Set(targets)].toSorted(compareText));
 }
 
+/**
+ *
+ */
 function registrationFor(input: WaitEdgeSetInput): Registration {
 	const owner = copyOwner(input.owner);
 	return Object.freeze({
@@ -103,25 +121,40 @@ function registrationFor(input: WaitEdgeSetInput): Registration {
 	});
 }
 
+/**
+ *
+ */
 function edgeFor(registration: Registration, target: ThreadId): WaitEdge {
 	return Object.freeze({ owner: registration.owner, target });
 }
 
+/**
+ *
+ */
 function edgesFor(registration: Registration): readonly WaitEdge[] {
 	return Object.freeze(registration.targets.map((target) => edgeFor(registration, target)));
 }
 
+/**
+ *
+ */
 function compareEdges(left: WaitEdge, right: WaitEdge): number {
 	const ownerComparison = compareText(ownerKey(left.owner), ownerKey(right.owner));
 	return ownerComparison !== 0 ? ownerComparison : compareText(left.target, right.target);
 }
 
+/**
+ *
+ */
 function sortedEdges(registrations: Iterable<Registration>): readonly WaitEdge[] {
 	return Object.freeze(
 		[...registrations].flatMap((registration) => edgesFor(registration)).toSorted(compareEdges),
 	);
 }
 
+/**
+ *
+ */
 function addNode(
 	child: ChildId,
 	thread: ThreadId,
@@ -136,6 +169,9 @@ function addNode(
 	return key;
 }
 
+/**
+ *
+ */
 function graphOf(registrations: Iterable<Registration>): {
 	readonly nodes: Map<string, GraphNode>;
 	readonly adjacency: Map<string, Set<string>>;
@@ -152,12 +188,18 @@ function graphOf(registrations: Iterable<Registration>): {
 	return { nodes, adjacency };
 }
 
+/**
+ *
+ */
 function findCycle(registrations: Iterable<Registration>): readonly GraphNode[] | null {
 	const { nodes, adjacency } = graphOf(registrations);
 	const state = new Map<string, VisitState>();
 	const stack: string[] = [];
 	const stackIndex = new Map<string, number>();
 
+	/**
+	 *
+	 */
 	const visit = (key: string): readonly GraphNode[] | null => {
 		state.set(key, "visiting");
 		stackIndex.set(key, stack.length);
@@ -197,10 +239,16 @@ function findCycle(registrations: Iterable<Registration>): readonly GraphNode[] 
 	return null;
 }
 
+/**
+ *
+ */
 function freezeEdges(edges: readonly WaitEdge[]): readonly WaitEdge[] {
 	return Object.freeze([...edges].toSorted(compareEdges));
 }
 
+/**
+ *
+ */
 function freezeCycle(nodes: readonly GraphNode[]): {
 	readonly child: ChildId;
 	readonly cycle: readonly ThreadId[];
@@ -215,9 +263,15 @@ function freezeCycle(nodes: readonly GraphNode[]): {
 	};
 }
 
+/**
+ *
+ */
 function createCodexWaitGraph(): CodexWaitGraph {
 	const registrations = new Map<string, Registration>();
 
+	/**
+	 *
+	 */
 	const addEdgeSet = (input: WaitEdgeSetInput): WaitEdgeSetResult => {
 		const registration = registrationFor(input);
 		const proposed = new Map(registrations);
@@ -231,6 +285,9 @@ function createCodexWaitGraph(): CodexWaitGraph {
 		return Object.freeze({ ok: true, edges: edgesFor(registration) });
 	};
 
+	/**
+	 *
+	 */
 	const release = (cleanup: WaitCleanup): readonly WaitEdge[] => {
 		const keys = new Set<string>();
 		if (cleanup.cause === "child-exit") {
@@ -257,6 +314,9 @@ function createCodexWaitGraph(): CodexWaitGraph {
 		return freezeEdges(removed);
 	};
 
+	/**
+	 *
+	 */
 	const inspect = (): readonly WaitEdge[] => sortedEdges(registrations.values());
 
 	return Object.freeze({ addEdgeSet, release, inspect });

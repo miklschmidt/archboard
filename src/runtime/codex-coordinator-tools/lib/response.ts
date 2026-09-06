@@ -7,15 +7,21 @@ import {
 	parseCoordinatorToolResult,
 	type CoordinatorToolName,
 	type DynamicToolRefusalReason,
-} from "../../codex-coordinator-tool-contract/index.js";
-import type { DynamicToolOkEnvelopeSchema } from "../../codex-coordinator-tool-contract/index.js";
-import type { CoordinatorToolValueFor, DynamicToolResponse } from "./contract.js";
-import { DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE } from "../../codex-coordinator-tool-contract/index.js";
+} from "@/runtime/codex-coordinator-tool-contract";
+import type { DynamicToolOkEnvelopeSchema } from "@/runtime/codex-coordinator-tool-contract";
+import type {
+	CoordinatorToolValueFor,
+	DynamicToolResponse,
+} from "@/runtime/codex-coordinator-tools/lib/contract";
+import { DYNAMIC_TOOL_OUTCOME_UNKNOWN_MESSAGE } from "@/runtime/codex-coordinator-tool-contract";
 import type { z } from "zod";
 
 type DynamicToolEnvelope = z.infer<typeof DynamicToolEnvelopeSchema>;
 type DynamicToolValue = z.infer<typeof DynamicToolOkEnvelopeSchema>["value"];
 
+/**
+ *
+ */
 function freezeDeep<T>(value: T): T {
 	if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
 		return value;
@@ -26,11 +32,17 @@ function freezeDeep<T>(value: T): T {
 	return Object.freeze(value);
 }
 
+/**
+ *
+ */
 function boundedMessage(message: string): string {
 	const value = message.length === 0 ? "The coordinator tool call was refused." : message;
 	return value.length <= 4_096 ? value : `${value.slice(0, 4_093)}...`;
 }
 
+/**
+ *
+ */
 function requireOperationId(operationId: string | null | undefined): string {
 	if (typeof operationId !== "string" || operationId.length === 0 || operationId.length > 128) {
 		throw new TypeError(
@@ -40,6 +52,9 @@ function requireOperationId(operationId: string | null | undefined): string {
 	return operationId;
 }
 
+/**
+ *
+ */
 function canonicalValue<Name extends CoordinatorToolName>(
 	name: Name,
 	value: CoordinatorToolValueFor<Name>,
@@ -72,6 +87,9 @@ function canonicalValue<Name extends CoordinatorToolName>(
 	}
 }
 
+/**
+ *
+ */
 function responseForEnvelope(envelope: DynamicToolEnvelope, success: boolean): DynamicToolResponse {
 	const text = JSON.stringify(DynamicToolEnvelopeSchema.parse(envelope));
 	const candidate = {
@@ -81,9 +99,12 @@ function responseForEnvelope(envelope: DynamicToolEnvelope, success: boolean): D
 	const parsed = success
 		? ValidDynamicToolResponseSchema.parse(candidate)
 		: UnknownDynamicToolResponseSchema.parse(candidate);
-	return freezeDeep(parsed as DynamicToolResponse);
+	return freezeDeep(parsed);
 }
 
+/**
+ *
+ */
 function okResponse<Name extends CoordinatorToolName>(
 	name: Name,
 	operationId: string,
@@ -101,6 +122,9 @@ function okResponse<Name extends CoordinatorToolName>(
 	);
 }
 
+/**
+ *
+ */
 function refusedResponse(
 	reason: DynamicToolRefusalReason,
 	message: string,
@@ -112,6 +136,9 @@ function refusedResponse(
 	);
 }
 
+/**
+ *
+ */
 function approvalRequiredResponse(operationId: string, summary: string): DynamicToolResponse {
 	return responseForEnvelope(
 		{
@@ -123,6 +150,9 @@ function approvalRequiredResponse(operationId: string, summary: string): Dynamic
 	);
 }
 
+/**
+ *
+ */
 function outcomeUnknownResponse(operationId: string): DynamicToolResponse {
 	const envelope = DynamicToolOutcomeUnknownEnvelopeSchema.parse({
 		tag: "outcome_unknown",
@@ -132,11 +162,14 @@ function outcomeUnknownResponse(operationId: string): DynamicToolResponse {
 	return responseForEnvelope(envelope, true);
 }
 
+/**
+ *
+ */
 function parseResponseText(response: DynamicToolResponse): DynamicToolResponse {
 	const parsed = response.success
 		? DynamicToolResponseSchema.parse(response)
 		: UnknownDynamicToolResponseSchema.parse(response);
-	return freezeDeep(parsed as DynamicToolResponse);
+	return freezeDeep(parsed);
 }
 
 export {

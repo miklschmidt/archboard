@@ -5,15 +5,25 @@ import type {
 	CodexInitializeCapabilities,
 	CodexLoginAccountParams,
 	CodexOutputConformance,
-} from "../../../shared/codex-app-server-contract/index.js";
-import { boundedText, JsonValueSchema, optionalNullableText } from "./scalars.js";
+} from "@/shared/codex-app-server-contract";
+import {
+	boundedText,
+	JsonValueSchema,
+	optionalNullableText,
+} from "@/runtime/codex-protocol/lib/scalars";
 
+/**
+ *
+ */
 function codexOutputSchema<Wire>() {
 	return <Schema extends z.ZodType>(
 		schema: Schema & CodexOutputConformance<Wire, z.output<Schema>>,
 	): Schema => schema;
 }
 
+/**
+ *
+ */
 function codexIngressSchema<Wire>() {
 	return <Schema extends z.ZodType>(
 		schema: Schema & CodexIngressConformance<Wire, z.input<Schema>, z.output<Schema>>,
@@ -64,6 +74,9 @@ const LoginPolicySchema = z
 	.object({ variant: LoginVariantSchema, policy: z.enum(["supported", "refused"]) })
 	.strict();
 
+/**
+ *
+ */
 const ExactLoginPolicySchema = <
 	Variant extends (typeof LOGIN_VARIANTS)[number],
 	Policy extends "supported" | "refused",

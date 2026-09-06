@@ -7,17 +7,17 @@ import {
 	type CoordinatorEnsureInput,
 	type CoordinatorReviewHashes,
 	type CoordinatorSnapshot,
-} from "./contract.js";
+} from "@/runtime/codex-coordinator/lib/contract";
 import {
 	COORDINATOR_EFFORT,
 	COORDINATOR_MODEL,
 	listCoordinatorModels,
 	selectCoordinatorModel,
 	type CoordinatorModelSelection,
-} from "./model.js";
-import { reviewedCoordinatorHashes } from "./review.js";
-import { assertCurrentEpoch, decideCandidate } from "./reuse.js";
-import { createCoordinatorStarter } from "./start.js";
+} from "@/runtime/codex-coordinator/lib/model";
+import { reviewedCoordinatorHashes } from "@/runtime/codex-coordinator/lib/review";
+import { assertCurrentEpoch, decideCandidate } from "@/runtime/codex-coordinator/lib/reuse";
+import { createCoordinatorStarter } from "@/runtime/codex-coordinator/lib/start";
 import {
 	coordinatorError,
 	emptySnapshot,
@@ -25,8 +25,11 @@ import {
 	freezePersistence,
 	inspectSnapshot,
 	readySnapshot,
-} from "./state.js";
+} from "@/runtime/codex-coordinator/lib/state";
 
+/**
+ *
+ */
 export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexCoordinator {
 	if (options.checkoutRoot.length === 0) {
 		throw new CodexCoordinatorError("invalid_input", "The coordinator requires a checkout root.");
@@ -35,15 +38,27 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 	let current: CoordinatorSnapshot = emptySnapshot("unbound", null);
 	let ensureTail: Promise<void> = Promise.resolve();
 	const starter = createCoordinatorStarter(options, {
+		/**
+		 *
+		 */
 		setSnapshot: (snapshot) => {
 			current = snapshot;
 		},
+		/**
+		 *
+		 */
 		snapshot: () => current,
+		/**
+		 *
+		 */
 		setPersistence: (persistence) => {
 			retainedPersistence = persistence;
 		},
 	});
 
+	/**
+	 *
+	 */
 	const ensure = (input: CoordinatorEnsureInput = {}): Promise<CoordinatorSnapshot> => {
 		const run = ensureTail.then(() => ensureOne(input));
 		ensureTail = run.then(
@@ -53,6 +68,9 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 		return run;
 	};
 
+	/**
+	 *
+	 */
 	async function ensureOne(input: CoordinatorEnsureInput): Promise<CoordinatorSnapshot> {
 		current = emptySnapshot("unbound", null);
 		let selection: CoordinatorModelSelection;
@@ -138,7 +156,13 @@ export function createCodexCoordinator(options: CodexCoordinatorOptions): CodexC
 
 	return Object.freeze({
 		ensure,
+		/**
+		 *
+		 */
 		snapshot: () => current,
+		/**
+		 *
+		 */
 		persisted: () => retainedPersistence,
 		onNotification: starter.onNotification,
 	});

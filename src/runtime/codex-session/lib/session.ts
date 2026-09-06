@@ -13,12 +13,12 @@ import {
 	type ClientRequestParams,
 	type ResponseMethod,
 	type ResponsePayloads,
-} from "../../codex-protocol/index.js";
-import type { CodexTransport, CodexTransportResponse } from "../../codex-transport/index.js";
+} from "@/runtime/codex-protocol";
+import type { CodexTransport, CodexTransportResponse } from "@/runtime/codex-transport";
 import type {
 	TransportServerRequest,
 	TransportServerNotification,
-} from "../../codex-transport/server-requests.js";
+} from "@/runtime/codex-transport/server-requests";
 import {
 	CodexSessionError,
 	CodexSessionMutationError,
@@ -29,14 +29,14 @@ import {
 	type SessionParams,
 	type SessionServerRequest,
 	type SessionMutationOutcome,
-} from "./contract.js";
+} from "@/runtime/codex-session/lib/contract";
 import {
 	adoptSessionResponse,
 	SESSION_PROTOCOL_METHODS,
 	type SessionRequestIdentityField,
 	type SessionResponsePayloads,
-} from "./results.js";
-import { proveCodexStorage } from "./storage-proof.js";
+} from "@/runtime/codex-session/lib/results";
+import { proveCodexStorage } from "@/runtime/codex-session/lib/storage-proof";
 
 const CLIENT_INFO = Object.freeze({
 	name: "archboard",
@@ -60,10 +60,16 @@ type SessionPhase =
 	| "failed";
 type SessionGate = "login-capable" | "thread-capable";
 
+/**
+ *
+ */
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ *
+ */
 function requestParams(value: unknown): Readonly<Record<string, unknown>> {
 	if (value === undefined) {
 		return {};
@@ -77,6 +83,9 @@ function requestParams(value: unknown): Readonly<Record<string, unknown>> {
 	return value;
 }
 
+/**
+ *
+ */
 function hasOutcome(
 	value: unknown,
 ): value is { readonly outcome: "not_delivered" | "outcome_unknown" } {
@@ -86,6 +95,9 @@ function hasOutcome(
 	);
 }
 
+/**
+ *
+ */
 function mutationFailure(method: string, error: unknown): CodexSessionMutationError {
 	if (error instanceof CodexSessionMutationError) {
 		return error;
@@ -102,6 +114,9 @@ function mutationFailure(method: string, error: unknown): CodexSessionMutationEr
 	return new CodexSessionMutationError(method, outcome, message, error);
 }
 
+/**
+ *
+ */
 function mutationOutcome(error: unknown): SessionMutationOutcome | undefined {
 	if (error instanceof CodexSessionMutationError) {
 		return error.outcome;
@@ -117,6 +132,9 @@ function authoredSessionInitializeParams(): ClientRequestParams<"initialize"> {
 	};
 }
 
+/**
+ *
+ */
 export function createCodexSession(options: CodexSessionOptions): ControlledCodexSession {
 	const transport: CodexTransport = options.transport;
 	const identity = options.identity;
@@ -132,22 +150,49 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	const unsubscribers: Array<() => void> = [];
 	let disposed = false;
 	const requestIdentitySerializers = {
+		/**
+		 *
+		 */
 		threadId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value)),
+		/**
+		 *
+		 */
 		parentThreadId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value)),
+		/**
+		 *
+		 */
 		ancestorThreadId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value)),
+		/**
+		 *
+		 */
 		turnId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
+		/**
+		 *
+		 */
 		lastTurnId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
+		/**
+		 *
+		 */
 		beforeTurnId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
+		/**
+		 *
+		 */
 		expectedTurnId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
+		/**
+		 *
+		 */
 		queuedSubmissionId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseQueuedSubmissionId(value)),
+		/**
+		 *
+		 */
 		queuedSubmissionIds: (value: unknown) => {
 			if (!Array.isArray(value)) {
 				throw new TypeError("queuedSubmissionIds must be an array of issued identities.");
@@ -158,10 +203,19 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 				),
 			);
 		},
+		/**
+		 *
+		 */
 		loginId: (value: unknown) =>
 			identity.decoder.serializeCodexIdentity(identity.decoder.parseLoginId(value)),
+		/**
+		 *
+		 */
 		realtimeSessionId: (value: unknown) => identity.decoder.parseRealtimeSessionId(value),
 	} satisfies Record<SessionRequestIdentityField, (value: unknown) => unknown>;
+	/**
+	 *
+	 */
 	const serializeIdentityField = (field: SessionRequestIdentityField, value: unknown): unknown => {
 		if (value === undefined || value === null) {
 			return value;
@@ -177,6 +231,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
+	/**
+	 *
+	 */
 	const serializeRequestParams = <Method extends OutboundMethod>(
 		method: Method,
 		value: unknown,
@@ -197,6 +254,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		return serialized as ClientRequestParams<Method>;
 	};
 
+	/**
+	 *
+	 */
 	const setAccountReadiness = (ready: boolean): void => {
 		accountReady = ready;
 		if (phase !== "failed") {
@@ -204,6 +264,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
+	/**
+	 *
+	 */
 	const deliverNotification = (event: TransportServerNotification): void => {
 		if (!notificationSink) {
 			return;
@@ -215,6 +278,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
+	/**
+	 *
+	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		if (disposed || notificationsStopped) {
 			return;
@@ -226,6 +292,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		deliverNotification(event);
 	};
 
+	/**
+	 *
+	 */
 	const publishNotifications = (): void => {
 		notificationsPublished = true;
 		publishingNotifications = true;
@@ -238,6 +307,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		publishingNotifications = false;
 	};
 
+	/**
+	 *
+	 */
 	const requireGate = (gate: SessionGate): void => {
 		if (phase === "failed") {
 			throw new CodexSessionError(
@@ -259,6 +331,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
+	/**
+	 *
+	 */
 	const requestDecoded = async <Method extends OutboundMethod>(
 		method: Method,
 		params: unknown,
@@ -308,7 +383,7 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 		let decoded: ResponsePayloads[Method];
 		try {
-			decoded = decodeResponse(method, response.result) as ResponsePayloads[Method];
+			decoded = decodeResponse(method, response.result);
 		} catch (error) {
 			if (mutation) {
 				throw mutationFailure(method, error);
@@ -335,6 +410,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
+	/**
+	 *
+	 */
 	const read = async <Method extends OutboundMethod>(
 		method: Method,
 		params: unknown,
@@ -344,6 +422,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		return requestDecoded(method, params, READ_OPTIONS, false);
 	};
 
+	/**
+	 *
+	 */
 	const mutate = async <Method extends OutboundMethod>(
 		method: Method,
 		params: unknown,
@@ -363,6 +444,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
+	/**
+	 *
+	 */
 	const validateLogin = (value: unknown): unknown => {
 		const variant =
 			isRecord(value) && typeof value["type"] === "string" ? value["type"] : undefined;
@@ -389,6 +473,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		return supported.data;
 	};
 
+	/**
+	 *
+	 */
 	const validateReverseRequest = (
 		request: SessionServerRequest,
 		method: SessionServerRequest["method"],
@@ -411,6 +498,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
+	/**
+	 *
+	 */
 	const validateCurrentThread = (
 		request: Extract<SessionServerRequest, { method: "currentTime/read" }>,
 	): void => {
@@ -432,6 +522,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
+	/**
+	 *
+	 */
 	const respondCurrentTime = async (
 		request: Extract<SessionServerRequest, { method: "currentTime/read" }>,
 	): Promise<void> => {
@@ -445,6 +538,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		});
 	};
 
+	/**
+	 *
+	 */
 	const respondUnsupportedTokenRefresh = async (
 		request: Extract<SessionServerRequest, { method: "account/chatgptAuthTokens/refresh" }>,
 	): Promise<void> => {
@@ -452,6 +548,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		await transport.respond(request, "codex-session", { error: UNSUPPORTED_TOKEN_REFRESH_ERROR });
 	};
 
+	/**
+	 *
+	 */
 	const respondUnsupportedAttestation = async (
 		request: Extract<SessionServerRequest, { method: "attestation/generate" }>,
 	): Promise<void> => {
@@ -459,6 +558,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		await transport.respond(request, "codex-session", { error: UNSUPPORTED_ATTESTATION_ERROR });
 	};
 
+	/**
+	 *
+	 */
 	const respondInvalidReverseRequest = (request: SessionServerRequest): void => {
 		void transport
 			.respond(request, "codex-session", {
@@ -470,6 +572,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 			.catch(() => undefined);
 	};
 
+	/**
+	 *
+	 */
 	const onServerRequest = (request: TransportServerRequest): void => {
 		if (disposed) {
 			return;
@@ -490,6 +595,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		});
 	};
 
+	/**
+	 *
+	 */
 	const dispose = (): void => {
 		if (disposed) {
 			return;
@@ -507,6 +615,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		unsubscribers.push(transport.onServerRequest(onServerRequest));
 	}
 
+	/**
+	 *
+	 */
 	const initialize = async (): Promise<SessionResponsePayloads["initialize"]> => {
 		if (phase !== "transport-connected") {
 			throw new CodexSessionError(
@@ -560,8 +671,14 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
+	/**
+	 *
+	 */
 	const configRead = (params?: SessionParams<"config/read">) =>
 		read("config/read", params, "login-capable");
+	/**
+	 *
+	 */
 	const accountRead = async (params?: SessionParams<"account/read">) => {
 		const result = await read("account/read", params, "login-capable");
 		if (result.account === null) {
@@ -572,10 +689,19 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 		return result;
 	};
+	/**
+	 *
+	 */
 	const accountLogin = (params: Parameters<CodexSession["accountLogin"]>[0]) =>
 		mutate("account/login/start", params, "login-capable", validateLogin);
+	/**
+	 *
+	 */
 	const accountLoginCancel = (params: SessionParams<"account/login/cancel">) =>
 		mutate("account/login/cancel", params, "login-capable");
+	/**
+	 *
+	 */
 	const accountLogout = async () => {
 		const restoreReady = accountReady && phase === "thread-capable";
 		if (restoreReady) {
@@ -594,54 +720,129 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 			throw error;
 		}
 	};
+	/**
+	 *
+	 */
 	const modelList = (params?: SessionParams<"model/list">) =>
 		read("model/list", params, "login-capable");
+	/**
+	 *
+	 */
 	const threadStart = (params: SessionParams<"thread/start">) =>
 		mutate("thread/start", params, "thread-capable");
+	/**
+	 *
+	 */
 	const threadFork = (params: SessionParams<"thread/fork">) =>
 		mutate("thread/fork", params, "thread-capable");
+	/**
+	 *
+	 */
 	const threadListPage = (params?: SessionParams<"thread/list">) =>
 		read("thread/list", params, "thread-capable");
+	/**
+	 *
+	 */
 	const threadLoadedListPage = (params?: SessionParams<"thread/loaded/list">) =>
 		read("thread/loaded/list", params, "thread-capable");
+	/**
+	 *
+	 */
 	const threadRead = (params: SessionParams<"thread/read">) =>
 		read("thread/read", params, "thread-capable");
+	/**
+	 *
+	 */
 	const threadTurnsListPage = (params: SessionParams<"thread/turns/list">) =>
 		read("thread/turns/list", params, "thread-capable");
+	/**
+	 *
+	 */
 	const threadItemsListPage = (params: SessionParams<"thread/items/list">) =>
 		read("thread/items/list", params, "thread-capable");
+	/**
+	 *
+	 */
 	const threadDelete = (params: SessionParams<"thread/delete">) =>
 		mutate("thread/delete", params, "thread-capable");
+	/**
+	 *
+	 */
 	const threadSettingsUpdate = (params: SessionParams<"thread/settings/update">) =>
 		mutate("thread/settings/update", params, "thread-capable");
+	/**
+	 *
+	 */
 	const turnStart = (params: SessionParams<"turn/start">) =>
 		mutate("turn/start", params, "thread-capable");
+	/**
+	 *
+	 */
 	const turnSteer = (params: SessionParams<"turn/steer">) =>
 		mutate("turn/steer", params, "thread-capable");
+	/**
+	 *
+	 */
 	const turnInterrupt = (params: SessionParams<"turn/interrupt">) =>
 		mutate("turn/interrupt", params, "thread-capable");
+	/**
+	 *
+	 */
 	const queueAdd = (params: SessionParams<"thread/queue/add">) =>
 		mutate("thread/queue/add", params, "thread-capable");
+	/**
+	 *
+	 */
 	const queueListPage = (params: SessionParams<"thread/queue/list">) =>
 		read("thread/queue/list", params, "thread-capable");
+	/**
+	 *
+	 */
 	const queueUpdate = (params: SessionParams<"thread/queue/update">) =>
 		mutate("thread/queue/update", params, "thread-capable");
+	/**
+	 *
+	 */
 	const queueDelete = (params: SessionParams<"thread/queue/delete">) =>
 		mutate("thread/queue/delete", params, "thread-capable");
+	/**
+	 *
+	 */
 	const queueReorder = (params: SessionParams<"thread/queue/reorder">) =>
 		mutate("thread/queue/reorder", params, "thread-capable");
+	/**
+	 *
+	 */
 	const queueStart = (params: SessionParams<"thread/queue/start">) =>
 		mutate("thread/queue/start", params, "thread-capable");
+	/**
+	 *
+	 */
 	const threadInjectItems = (params: SessionParams<"thread/inject_items">) =>
 		mutate("thread/inject_items", params, "thread-capable");
+	/**
+	 *
+	 */
 	const realtimeStart = (params: SessionParams<"thread/realtime/start">) =>
 		mutate("thread/realtime/start", params, "thread-capable");
+	/**
+	 *
+	 */
 	const realtimeAppendText = (params: SessionParams<"thread/realtime/appendText">) =>
 		mutate("thread/realtime/appendText", params, "thread-capable");
+	/**
+	 *
+	 */
 	const realtimeAppendSpeech = (params: SessionParams<"thread/realtime/appendSpeech">) =>
 		mutate("thread/realtime/appendSpeech", params, "thread-capable");
+	/**
+	 *
+	 */
 	const realtimeStop = (params: SessionParams<"thread/realtime/stop">) =>
 		mutate("thread/realtime/stop", params, "thread-capable");
+	/**
+	 *
+	 */
 	const timelineListPage = (params: SessionParams<"thread/timeline/list">) =>
 		read("thread/timeline/list", params, "thread-capable");
 

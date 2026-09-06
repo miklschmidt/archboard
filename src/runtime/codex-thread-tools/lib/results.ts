@@ -3,11 +3,18 @@ import { z } from "zod";
 import {
 	CodexThreadStatusTypeSchema,
 	CodexTurnStatusSchema,
-} from "../../../shared/codex-app-server-contract/index.js";
+} from "@/shared/codex-app-server-contract";
 
-import { GeneralThreadToolNameSchema, type GeneralThreadToolName } from "./manifest.js";
-import { parseStrictJson } from "./json.js";
-import { boundedText, boundedUtf8Text, nullableUtf8Text } from "./limits.js";
+import {
+	GeneralThreadToolNameSchema,
+	type GeneralThreadToolName,
+} from "@/runtime/codex-thread-tools/lib/manifest";
+import { parseStrictJson } from "@/runtime/codex-thread-tools/lib/json";
+import {
+	boundedText,
+	boundedUtf8Text,
+	nullableUtf8Text,
+} from "@/runtime/codex-thread-tools/lib/limits";
 
 const IdentitySchema = boundedText(128);
 const CursorSchema = boundedUtf8Text(1024);
@@ -153,6 +160,9 @@ const OutcomeUnknownEnvelopeSchema = z.strictObject({
 	),
 });
 
+/**
+ *
+ */
 function okEnvelope(value: z.ZodTypeAny) {
 	return z.strictObject({
 		tag: z.literal("ok"),
@@ -197,6 +207,9 @@ export interface ParsedDynamicToolCallResponse<Name extends GeneralThreadToolNam
 	readonly envelope: ToolResultEnvelope<Name>;
 }
 
+/**
+ *
+ */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) {
 		return value;
@@ -207,6 +220,9 @@ function freezeDeep<T>(value: T): T {
 	return Object.freeze(value);
 }
 
+/**
+ *
+ */
 function schemaFor(name: unknown): z.ZodTypeAny {
 	const parsedName = GeneralThreadToolNameSchema.safeParse(name);
 	if (!parsedName.success) {
@@ -215,12 +231,18 @@ function schemaFor(name: unknown): z.ZodTypeAny {
 	return TOOL_RESULT_ENVELOPE_SCHEMAS[parsedName.data];
 }
 
+/**
+ *
+ */
 function invalidResult(label: string, issues: readonly { readonly message: string }[]): never {
 	throw new TypeError(`Invalid ${label}: ${issues.map((issue) => issue.message).join("; ")}`);
 }
 
 type JsonRecord = Record<string, unknown>;
 
+/**
+ *
+ */
 function orderedObject(
 	value: JsonRecord,
 	keys: readonly string[],
@@ -235,10 +257,16 @@ function orderedObject(
 	return result;
 }
 
+/**
+ *
+ */
 function canonicalInitialTurn(value: unknown): JsonRecord {
 	return orderedObject(value as JsonRecord, ["delivery", "turnId", "operationId", "reason"]);
 }
 
+/**
+ *
+ */
 function canonicalThreadValue(value: unknown): JsonRecord {
 	const record = value as JsonRecord;
 	return orderedObject(record, ["threadId", "state", "initialTurn"], {
@@ -246,6 +274,9 @@ function canonicalThreadValue(value: unknown): JsonRecord {
 	});
 }
 
+/**
+ *
+ */
 function canonicalListValue(value: unknown): JsonRecord {
 	const record = value as JsonRecord;
 	const threads = (record["threads"] as readonly unknown[]).map((thread) =>
@@ -263,6 +294,9 @@ function canonicalListValue(value: unknown): JsonRecord {
 	return orderedObject(record, ["threads", "nextCursor"], { threads });
 }
 
+/**
+ *
+ */
 function canonicalReadValue(value: unknown): JsonRecord {
 	const record = value as JsonRecord;
 	const turns = (record["turns"] as readonly unknown[]).map((turn) =>
@@ -277,6 +311,9 @@ function canonicalReadValue(value: unknown): JsonRecord {
 	return orderedObject(record, ["threadId", "turns", "nextCursor"], { turns });
 }
 
+/**
+ *
+ */
 function canonicalToolValue(name: GeneralThreadToolName, value: unknown): JsonRecord {
 	switch (name) {
 		case "create_thread":
@@ -293,6 +330,9 @@ function canonicalToolValue(name: GeneralThreadToolName, value: unknown): JsonRe
 	}
 }
 
+/**
+ *
+ */
 function canonicalEnvelope(name: GeneralThreadToolName, value: unknown): JsonRecord {
 	const record = value as JsonRecord;
 	switch (record["tag"]) {
@@ -319,6 +359,9 @@ export function parseToolResultEnvelope(
 	name: unknown,
 	text: string,
 ): ToolResultEnvelope<GeneralThreadToolName>;
+/**
+ *
+ */
 export function parseToolResultEnvelope(
 	name: unknown,
 	text: string,
@@ -346,6 +389,9 @@ export function parseDynamicToolCallResponse(
 	name: unknown,
 	response: unknown,
 ): ParsedDynamicToolCallResponse<GeneralThreadToolName>;
+/**
+ *
+ */
 export function parseDynamicToolCallResponse(
 	name: unknown,
 	response: unknown,
@@ -366,5 +412,5 @@ export function parseDynamicToolCallResponse(
 		contentItems: parsed.data.contentItems,
 		success: parsed.data.success,
 		envelope,
-	}) as ParsedDynamicToolCallResponse<GeneralThreadToolName>;
+	});
 }

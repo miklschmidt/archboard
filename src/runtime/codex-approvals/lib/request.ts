@@ -12,8 +12,8 @@ import type {
 	FileApprovalRequest,
 	PermissionsApprovalRequest,
 	UserInputApprovalRequest,
-} from "./contract.js";
-import { CodexApprovalError } from "./contract.js";
+} from "@/runtime/codex-approvals/lib/contract";
+import { CodexApprovalError } from "@/runtime/codex-approvals/lib/contract";
 import type {
 	ApprovalId,
 	ChildEpoch,
@@ -23,11 +23,14 @@ import type {
 	JsonRpcRequestId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { TransportServerRequest } from "../../codex-transport/server-requests.js";
+} from "@/shared/codex-workbench-identity";
+import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
 
 type HumanRequest = Extract<TransportServerRequest, { readonly owner: "codex-approvals" }>;
 
+/**
+ *
+ */
 function deepFreeze<T>(value: T, seen = new WeakSet<object>()): T {
 	if (value === null || typeof value !== "object" || seen.has(value)) return value;
 	seen.add(value);
@@ -35,10 +38,16 @@ function deepFreeze<T>(value: T, seen = new WeakSet<object>()): T {
 	return Object.freeze(value);
 }
 
+/**
+ *
+ */
 function cloneAndFreeze<T>(value: T): T {
 	return deepFreeze(structuredClone(value));
 }
 
+/**
+ *
+ */
 function stableJson(value: unknown): string {
 	if (value === null || typeof value !== "object") {
 		const primitive = JSON.stringify(value);
@@ -52,10 +61,16 @@ function stableJson(value: unknown): string {
 		.join(",")}}`;
 }
 
+/**
+ *
+ */
 function effectFingerprint(params: unknown): string {
 	return createHash("sha256").update(stableJson(params), "utf8").digest("hex");
 }
 
+/**
+ *
+ */
 function adopt<T>(raw: unknown, parse: (value: unknown) => T, adoptRaw: (value: unknown) => T): T {
 	try {
 		return parse(raw);
@@ -64,11 +79,17 @@ function adopt<T>(raw: unknown, parse: (value: unknown) => T, adoptRaw: (value: 
 	}
 }
 
+/**
+ *
+ */
 function optionalApprovalId(authority: IdentityAuthority, raw: unknown): ApprovalId | null {
 	if (raw === null || raw === undefined) return null;
 	return adopt(raw, authority.decoder.parseApprovalId, authority.decoder.adoptApprovalId);
 }
 
+/**
+ *
+ */
 function itemIdentity(
 	authority: IdentityAuthority,
 	params: { readonly threadId: unknown; readonly turnId: unknown; readonly itemId: unknown },
@@ -103,6 +124,9 @@ function itemIdentity(
 	};
 }
 
+/**
+ *
+ */
 function envelope(
 	authority: IdentityAuthority,
 	request: HumanRequest,
@@ -137,6 +161,9 @@ function envelope(
 	});
 }
 
+/**
+ *
+ */
 function bindingText(value: unknown, field: string): string {
 	if (typeof value !== "string" || value.length === 0 || value.includes("\0")) {
 		throw new CodexApprovalError(
@@ -147,6 +174,9 @@ function bindingText(value: unknown, field: string): string {
 	return value;
 }
 
+/**
+ *
+ */
 export function completeBinding(
 	request: ApprovalRequest,
 	input: ApprovalBindingInput | undefined,
@@ -172,6 +202,9 @@ export function completeBinding(
 	return Object.freeze(candidate);
 }
 
+/**
+ *
+ */
 function identityFor(authority: IdentityAuthority, request: HumanRequest): ApprovalRequestIdentity {
 	switch (request.method) {
 		case "item/commandExecution/requestApproval": {
@@ -227,6 +260,9 @@ function identityFor(authority: IdentityAuthority, request: HumanRequest): Appro
 	}
 }
 
+/**
+ *
+ */
 function targetFor(identity: ApprovalRequestIdentity): string {
 	switch (identity.kind) {
 		case "item":
@@ -238,6 +274,9 @@ function targetFor(identity: ApprovalRequestIdentity): string {
 	}
 }
 
+/**
+ *
+ */
 function base(
 	authority: IdentityAuthority,
 	request: HumanRequest,
@@ -277,6 +316,9 @@ function base(
 	};
 }
 
+/**
+ *
+ */
 export function normalizeApprovalRequest(
 	authority: IdentityAuthority,
 	request: TransportServerRequest,
@@ -448,6 +490,9 @@ export function normalizeApprovalRequest(
 	}
 }
 
+/**
+ *
+ */
 export function rebindApprovalRequest(
 	request: ApprovalRequest,
 	input: ApprovalBindingInput,

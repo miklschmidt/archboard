@@ -1,18 +1,16 @@
-import type {
-	ChildEpoch,
-	ChildId,
-	OperationId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { ThreadLinkBindingSnapshot } from "../../codex-thread-link/index.js";
-import { cloneAndFreeze } from "./immutability.js";
+import type { ChildEpoch, ChildId, OperationId, ThreadId } from "@/shared/codex-workbench-identity";
+import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
+import { cloneAndFreeze } from "@/runtime/codex-workhorse-start/lib/immutability";
 import type {
 	WorkhorseCleanupFacts,
 	WorkhorseSettlementOutcome,
 	WorkhorseSnapshot,
 	WorkhorseStartFacts,
-} from "./contract.js";
+} from "@/runtime/codex-workhorse-start/lib/contract";
 
+/**
+ *
+ */
 function emptySnapshot(): WorkhorseSnapshot {
 	return cloneAndFreeze({
 		kind: "codex_workhorse" as const,
@@ -30,6 +28,9 @@ function emptySnapshot(): WorkhorseSnapshot {
 	});
 }
 
+/**
+ *
+ */
 function startingSnapshot(
 	paneId: string,
 	childId: ChildId,
@@ -47,6 +48,9 @@ function startingSnapshot(
 	});
 }
 
+/**
+ *
+ */
 function failedSnapshot(
 	paneId: string,
 	operationId: OperationId,
@@ -75,6 +79,9 @@ interface InspectSnapshotInput {
 	readonly reason: string;
 }
 
+/**
+ *
+ */
 function inspectSnapshot(input: InspectSnapshotInput): WorkhorseSnapshot {
 	return cloneAndFreeze({
 		kind: "codex_workhorse" as const,
@@ -92,6 +99,9 @@ function inspectSnapshot(input: InspectSnapshotInput): WorkhorseSnapshot {
 	});
 }
 
+/**
+ *
+ */
 function readySnapshot(
 	paneId: string,
 	childId: ChildId,
@@ -116,6 +126,9 @@ function readySnapshot(
 	});
 }
 
+/**
+ *
+ */
 function cleanupFacts(
 	operationId: OperationId,
 	threadId: ThreadId,
@@ -125,10 +138,16 @@ function cleanupFacts(
 	return cloneAndFreeze({ operationId, threadId, outcome, reason });
 }
 
+/**
+ *
+ */
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : "unknown error";
 }
 
+/**
+ *
+ */
 function mutationOutcome(error: unknown): "not_delivered" | "outcome_unknown" {
 	if (
 		error !== null &&
