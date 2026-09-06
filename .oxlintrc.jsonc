@@ -16,7 +16,7 @@
 		"promise",
 	],
 	"jsPlugins": [
-		"./tools/oxlint-plugin-archboard.js",
+		"./tools/oxlint-plugin-archboard.ts",
 		{
 			"name": "jsdoc-extra",
 			"specifier": "eslint-plugin-jsdoc",
