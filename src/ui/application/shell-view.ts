@@ -13,7 +13,7 @@ import type {
 	ShellView,
 	ThemeChoice,
 } from "@/ui/shell";
-import type { BoardIdentity, BoardListing } from "@/ui/types";
+import type { AgentActivityEntry, BoardIdentity, BoardListing } from "@/ui/types";
 
 /** The listing before the server has answered. */
 const EMPTY_LISTING: BoardListing = Object.freeze({
@@ -38,6 +38,8 @@ interface ShellViewInputs {
 	readonly previews: Readonly<Record<string, PreviewSource | null>>;
 	readonly presentation: ShellPresentation | null;
 	readonly notices: readonly ShellNotice[];
+	/** Which boards an agent is working on, by board key (ADR 0022). */
+	readonly agentActivity: Readonly<Record<string, AgentActivityEntry>>;
 }
 
 /**
@@ -99,6 +101,7 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 		pathFocus: active.pathFocus,
 		pathFocusOverlay: active.overlay,
 		notices: inputs.notices,
+		agentActivity: inputs.agentActivity,
 	};
 }
 

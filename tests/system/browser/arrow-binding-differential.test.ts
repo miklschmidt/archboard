@@ -20,6 +20,7 @@ import {
 	registerCanvasBase,
 } from "./support/agent-browser.ts";
 import { inExcalidrawApp, READ_PAGE_SCENE_EXPRESSION } from "./support/page-scene.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 
 type SceneElement = ExcalidrawElement;
 type ElementsBody = { elements?: SceneElement[] };
@@ -139,10 +140,13 @@ test("a held human drag gives an independent binding oracle", async () => {
 		method: "POST",
 		body: { elements: fixedPointElements },
 	});
-	const humanReported = await api("/api/elements/changes?board=fixedpoint", {
-		method: "POST",
-		body: { upserts: [humanArrowInput], deletes: [], clientId: "fixed-point-person" },
-	});
+	const humanReported = await api(
+		`/api/elements/changes${await humanWriteQuery(api, "fixedpoint")}`,
+		{
+			method: "POST",
+			body: { upserts: [humanArrowInput], deletes: [], clientId: "fixed-point-person" },
+		},
+	);
 	const humanSettled = await api("/api/elements/human-node?board=fixedpoint", {
 		method: "PUT",
 		body: { x: 1000, y: 1000 },
@@ -197,14 +201,17 @@ test("a held human drag gives an independent binding oracle", async () => {
 		method: "POST",
 		body: { elements: [comparisonNode] },
 	});
-	const arrowSeed = await api("/api/elements/changes?board=binding-differential", {
-		method: "POST",
-		body: {
-			upserts: [strip(initialBrowserArrow)],
-			deletes: [],
-			clientId: "fixed-point-person",
+	const arrowSeed = await api(
+		`/api/elements/changes${await humanWriteQuery(api, "binding-differential")}`,
+		{
+			method: "POST",
+			body: {
+				upserts: [strip(initialBrowserArrow)],
+				deletes: [],
+				clientId: "fixed-point-person",
+			},
 		},
-	});
+	);
 	const comparisonBefore =
 		(await api<ElementsBody>("/api/elements?board=binding-differential")).body.elements ?? [];
 	const initialServerNode = requiredElement(comparisonBefore, "human-node");

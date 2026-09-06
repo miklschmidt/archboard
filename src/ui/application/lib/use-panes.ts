@@ -36,12 +36,20 @@ import type {
 } from "@/ui/canvas/use-canvas-session";
 import type { PathFocusOverlay } from "@/ui/path-focus";
 import type { RecoveryKind } from "@/ui/shell";
-import type { LockHolder, PaneStatus } from "@/ui/types";
+import type { AgentActivityEntry, EditWithdrawalReason, LockHolder, PaneStatus } from "@/ui/types";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 /** What other owners hear from the panes; bound live each render. */
 interface PaneEvents {
 	readonly onBoardError: (paneId: string, error: string) => void;
+	/** Which boards an agent is working on, across the server (ADR 0022). */
+	readonly onAgentActivity: (activity: readonly AgentActivityEntry[]) => void;
+	/** A pane withdrew the person's unwritten edit and shows the note's state (ADR 0022). */
+	readonly onEditsWithdrawn: (
+		paneId: string,
+		boardKey: string | null,
+		reason: EditWithdrawalReason,
+	) => void;
 	readonly onStaleFrontend: (message: string) => void;
 	readonly onCodeTargetNotice: (notice: CodeTargetNotice) => void;
 	readonly onThemeChange: (theme: CanvasTheme) => void;
@@ -75,6 +83,8 @@ type PaneHost = Required<
 		| "onPathFocus"
 		| "onPathFocusOverlay"
 		| "onCodeTargetNotice"
+		| "onAgentActivity"
+		| "onEditsWithdrawn"
 	>
 > & {
 	/** A board note could not be rendered in one pane. */
@@ -244,6 +254,26 @@ function createPaneHost(setters: HostSetters): PaneHost {
 		 */
 		onCodeTargetNotice: (notice: CodeTargetNotice): void => {
 			events.read().onCodeTargetNotice(notice);
+		},
+		/**
+		 * Which boards an agent is working on.
+		 * @param activity The whole snapshot.
+		 */
+		onAgentActivity: (activity: readonly AgentActivityEntry[]): void => {
+			events.read().onAgentActivity(activity);
+		},
+		/**
+		 * A pane withdrew the person's unwritten edit.
+		 * @param paneId The pane.
+		 * @param boardKey Its board.
+		 * @param reason Why.
+		 */
+		onEditsWithdrawn: (
+			paneId: string,
+			boardKey: string | null,
+			reason: EditWithdrawalReason,
+		): void => {
+			events.read().onEditsWithdrawn(paneId, boardKey, reason);
 		},
 		onSession,
 		/**

@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester } from "./support/http.ts";
 import { openPaneSession, type PaneEvent } from "./support/pane-session.ts";
@@ -28,6 +29,11 @@ interface DoingEvent extends PaneEvent {
 	board: string;
 	doing?: DoingEntry;
 	recent?: DoingEntry[];
+}
+
+interface ActivityEvent extends PaneEvent {
+	type: "agent_activity";
+	activity: Array<{ board: string; claim: unknown; doing: DoingEntry | null }>;
 }
 
 const doingEvents = (events: PaneEvent[], start = 0): DoingEvent[] =>
@@ -87,6 +93,21 @@ describe.serial("doing activity", () => {
 			| DoingEvent
 			| undefined;
 		expect(otherBoardNews?.board).toBe("payments");
+		// Every pane hears which board an agent is on, whatever it is showing (ADR
+		// 0022): a snapshot on connect, and again as the unclaimed write lands.
+		expect(right.events.find((event) => event.type === "agent_activity")).toMatchObject({
+			activity: [],
+		});
+		const activity = (await right.waitFor("agent_activity", rightStart)) as
+			| ActivityEvent
+			| undefined;
+		expect(activity?.activity).toEqual([
+			expect.objectContaining({
+				board: "payments",
+				claim: null,
+				doing: expect.objectContaining({ doing: "rerouting orders through it", kind: "agent" }),
+			}),
+		]);
 
 		const afterSuccess = left.mark();
 		const refusedLine = "updating a box that is gone";
@@ -102,18 +123,44 @@ describe.serial("doing activity", () => {
 		).toBeFalse();
 
 		const humanStart = left.mark();
-		const human = await request("/api/elements/changes?board=payments", {
-			method: "POST",
-			doing: false,
-			body: {
-				clientId: left.clientId,
-				upserts: [{ ...box("human", 300), type: "ellipse" }],
-				deletes: [],
+		const human = await request(
+			`/api/elements/changes${await humanWriteQuery(request, "payments")}`,
+			{
+				method: "POST",
+				doing: false,
+				body: {
+					clientId: left.clientId,
+					upserts: [{ ...box("human", 300), type: "ellipse" }],
+					deletes: [],
+				},
 			},
-		});
+		);
 		expect(human.status).toBe(200);
 		await left.sync();
 		expect(doingEvents(left.events, humanStart)).toHaveLength(0);
+
+		// A claim is activity for as long as it stands, and its end is news too.
+		const claimStart = right.mark();
+		await request("/api/boards/claim?board=payments", {
+			method: "POST",
+			doing: false,
+			body: { reason: "redrawing the payment path" },
+		});
+		const claimed = (await right.waitFor("agent_activity", claimStart)) as
+			| ActivityEvent
+			| undefined;
+		expect(claimed?.activity).toEqual([
+			expect.objectContaining({
+				board: "payments",
+				claim: expect.objectContaining({ claimed: true, reason: "redrawing the payment path" }),
+			}),
+		]);
+		const releaseStart = right.mark();
+		await request("/api/boards/claim/release?board=payments", { method: "POST", doing: false });
+		const released = (await right.waitFor("agent_activity", releaseStart)) as
+			| ActivityEvent
+			| undefined;
+		expect(released?.activity.every((entry) => entry.claim === null)).toBeTrue();
 
 		for (let index = 0; index < 7; index += 1) {
 			const start = left.mark();

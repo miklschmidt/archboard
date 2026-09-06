@@ -44,6 +44,7 @@ test("the shell view names the active pane's board and carries its projections",
 		previews: {},
 		presentation: null,
 		notices: [],
+		agentActivity: {},
 	});
 	// Pane B is focused after being added; it holds no board.
 	expect(view.activePaneId).toBe("B");
@@ -69,6 +70,7 @@ test("the focused pane's board key is the selected navigator entry and held keys
 		previews: {},
 		presentation: { kind: "live", paneId: "A" },
 		notices: [],
+		agentActivity: {},
 	});
 	expect(view.current).toEqual(CHECKOUT);
 	expect(view.selectedBoardKey).toBe("Checkout");
@@ -100,6 +102,7 @@ test("scratch boards are the placeholder boards the panes hold, once each", () =
 		previews: {},
 		presentation: null,
 		notices: [],
+		agentActivity: {},
 	});
 	expect(view.scratch).toEqual([
 		{

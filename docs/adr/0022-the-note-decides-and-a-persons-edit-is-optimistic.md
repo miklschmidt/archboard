@@ -31,7 +31,8 @@ experience being honest, and the version check runs for everyone.
 
 **A claimed board is read-only to people while the claim stands.** When an
 agent claims a board, every pane showing it stops accepting content edits.
-Panning, zooming and selecting keep working, so a person can watch and read.
+Panning and zooming keep working, so a person can watch and read; the pane is
+in Excalidraw's view mode, which takes selection with it.
 A content gesture no longer revokes the claim. A person who wants the board
 back uses one explicit control that releases the claim, and the agent is told
 it lost the board, as ADR 0016 already says.

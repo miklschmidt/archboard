@@ -93,8 +93,9 @@ async function attempt(
 	revoke: boolean,
 ): Promise<Attempt> {
 	// Three ordinary states: same holder renews; a live rival refuses; absent or
-	// lapsed state is acquired. Human takeover of a claim follows the contested
-	// lapsed path, while a short write is never revoked.
+	// lapsed state is acquired. A person's explicit take-back of a claim (ADR
+	// 0022) follows the contested lapsed path; a short write is never revoked,
+	// and an ordinary human hold is refused by a claim like any other rival.
 	const file = lockPathFor(board);
 	const current = readRecord(file);
 	const live = liveRecord(current);
@@ -232,6 +233,12 @@ async function holdBoard(request: LockRequest): Promise<LockHold> {
 			// Null means movement/race, not a known holder. Preserve the last concrete
 			// blocker for refusal text and predecessor proof.
 			blocker = result.record;
+			// Waiting is for a write that is about to finish. A claim is not: it
+			// stands until its holder releases it or a take-back revokes it, so a
+			// request that will not revoke learns that now instead of at the deadline.
+			if (blocker.claimed && blocker.id !== request.holder.id && request.revokeClaim !== true) {
+				break;
+			}
 		}
 		if (Date.now() >= deadline) {
 			// Bound file churn: allow two post-deadline attempts when no concrete

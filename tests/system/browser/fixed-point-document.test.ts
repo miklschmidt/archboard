@@ -20,6 +20,7 @@ import {
 } from "./support/agent-browser.ts";
 import { READ_PAGE_SCENE_EXPRESSION } from "./support/page-scene.ts";
 import { fixedPointElements, humanArrowInput } from "./fixtures/fixed-point-scene.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 
 type ServerFields = {
 	createdAt?: string;
@@ -203,7 +204,7 @@ test(
 		expect(made.body.elements).toHaveLength(15); // check-fixed-point.mjs:777
 		const rectangleLabel = await alignRectangleLabel(api, made.body.elements);
 
-		await api("/api/elements/changes?board=fixedpoint", {
+		await api(`/api/elements/changes${await humanWriteQuery(api, "fixedpoint")}`, {
 			method: "POST",
 			body: {
 				upserts: [humanArrowInput],
@@ -351,7 +352,7 @@ test(
 		expect(boundArrow.endBinding?.elementId).toBe("ell1");
 
 		const text = held.find((element) => element.id === "text1")!;
-		await api("/api/elements/changes?board=fixedpoint", {
+		await api(`/api/elements/changes${await humanWriteQuery(api, "fixedpoint")}`, {
 			method: "POST",
 			body: {
 				upserts: [{ ...text, index: rect.index }],

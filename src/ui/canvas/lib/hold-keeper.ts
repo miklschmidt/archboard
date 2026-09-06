@@ -1,11 +1,14 @@
-// The board's mutex, from the pane's side (ADR 0016).
+// The board's mutex, from the pane's side (ADR 0016, ADR 0022).
 //
 // Taking it is the pane's job, on the leading edge of a content edit: the
 // change is already local, and the report follows. Renewal is the same call,
 // rate-limited to `LOCK_RENEW_MS` so a drag costs one request per second and
 // a long gesture's lease stays alive. Releasing happens once the gesture is
-// over and its write has landed. A refusal or failure never refuses the person:
-// the edit stays visible and the hold is retried while content is pending.
+// over and its write has landed. The person's edit is optimistic and the note
+// decides: a hold refused because an agent's claim stands withdraws the edit,
+// and the pane shows the board as the note holds it. A hold refused by a
+// passing write, or one that failed on the wire, is retried while content is
+// pending, and the edit stays visible meanwhile.
 
 import { LOCK_RENEW_MS } from "@/shared/timing/timing";
 import type { HoldReply } from "@/ui/canvas/api";
@@ -15,7 +18,7 @@ import {
 	scheduleRenewalForOwnedHoldAttempt,
 	type HoldAttempt,
 } from "@/ui/canvas/hold-attempt";
-import type { LockHolder } from "@/ui/types";
+import { agentClaim, type LockHolder } from "@/ui/types";
 
 /** What the keeper needs from its pane. */
 interface HoldKeeperOptions {
@@ -29,6 +32,8 @@ interface HoldKeeperOptions {
 	releaseBoard: (board: string | null, clientId: string) => void;
 	/** Who holds the board when it is not this pane, or null when it is free or ours. */
 	onHolder: (holder: LockHolder | null) => void;
+	/** An agent's claim stands where the person just edited: withdraw the edit (ADR 0022). */
+	onClaimRefused: (reply: HoldReply) => void;
 	/** The holder assumed until the server says otherwise. */
 	unknownHolder: LockHolder;
 	now?: () => number;
@@ -121,13 +126,17 @@ function createHoldKeeper(options: HoldKeeperOptions): HoldKeeper {
 				if (stillOwned(owned, promise, target)) {
 					holding = reply.held;
 					options.onHolder(reply.held ? null : (reply.holder ?? options.unknownHolder));
+					// A claim is not waited out: the board is read-only to people while
+					// it stands, and what was drawn before the pane knew is withdrawn.
+					if (!reply.held && agentClaim(reply.holder) !== null) {
+						options.onClaimRefused(reply);
+					}
 				}
 				return reply;
 			})
 			.catch(() => {
-				// Persistence has not succeeded, and the local edit remains pending.
-				// Retry while there is content to save; never reload the board and
-				// erase the only visible copy of the person's work.
+				// The wire failed, not the note: the local edit remains pending and
+				// the hold is retried while there is content to save.
 				if (stillOwned(owned, promise, target)) {
 					holding = false;
 				}

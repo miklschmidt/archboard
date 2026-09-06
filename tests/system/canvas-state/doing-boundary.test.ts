@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester } from "./support/http.ts";
 
@@ -159,25 +160,27 @@ describe.serial("doing write boundary", () => {
 		expect(said.status).toBe(0);
 		expect(cli(["help"]).stdout).toContain("--doing");
 
-		const human = await request<Refusal>("/api/elements/changes?board=payments", {
-			method: "POST",
-			doing: false,
-			body: {
-				clientId: "pane-human",
-				upserts: [{ ...box("human"), type: "ellipse" }],
-				deletes: [],
+		const human = await request<Refusal>(
+			`/api/elements/changes${await humanWriteQuery(request, "payments")}`,
+			{
+				method: "POST",
+				doing: false,
+				body: {
+					clientId: "pane-human",
+					upserts: [{ ...box("human"), type: "ellipse" }],
+					deletes: [],
+				},
 			},
-		});
+		);
 		expect(human.status).toBe(200);
-		const save = await request<Refusal>("/api/boards/save?board=payments&clientId=pane-human", {
-			method: "POST",
-			doing: false,
-			body: {},
-		});
-		const clear = await request<Refusal>("/api/elements/clear?board=payments&clientId=pane-human", {
-			method: "DELETE",
-			doing: false,
-		});
+		const save = await request<Refusal>(
+			`/api/boards/save${await humanWriteQuery(request, "payments")}&clientId=pane-human`,
+			{ method: "POST", doing: false, body: {} },
+		);
+		const clear = await request<Refusal>(
+			`/api/elements/clear${await humanWriteQuery(request, "payments")}&clientId=pane-human`,
+			{ method: "DELETE", doing: false },
+		);
 		expect([save.status, clear.status]).toEqual([200, 200]);
 	}, 20_000);
 });

@@ -3,6 +3,7 @@
 // exercised without a browser.
 
 import {
+	carryWithheld,
 	hasPendingEdits,
 	initialState,
 	mergeIncoming,
@@ -402,14 +403,38 @@ class ReportingHarness {
 	/**
 	 * The server accepted the oldest waiting report.
 	 * @param corrections What the server changed.
+	 * @param version The note version the write left the board at.
 	 */
-	accept(corrections: Corrections = { upserts: [], deletes: [] }): void {
+	accept(
+		corrections: Corrections = { upserts: [], deletes: [] },
+		version: number | null = null,
+	): void {
 		const request = this.server.accept(corrections);
 		this.dispatch({
 			type: "report_succeeded",
 			generation: request.generation,
 			corrections,
 			currentScene: copy(this.scene),
+			version,
+		});
+		this.clock.advance(0);
+	}
+
+	/**
+	 * The server refused the oldest waiting report because the note moved
+	 * (ADR 0022): the refusal's document replaces the scene, as the runtime does.
+	 * @param document The board as the note holds it.
+	 * @param version The note version the document is at.
+	 */
+	refuseVersion(document: readonly SceneElement[], version: number | null): void {
+		const request = this.server.refuse();
+		this.dispatch({ type: "report_version_refused", generation: request.generation, version });
+		const answered = new Set(document.map((element) => element.id));
+		const kept = carryWithheld(this.scene, answered, this.withheldIds);
+		this.dispatch({
+			type: "server_update_requested",
+			update: { elements: copy([...document, ...kept]), captureUpdate: "never" },
+			baselineUpdate: { type: "replace", withheldIds: this.withheldIds },
 		});
 		this.clock.advance(0);
 	}

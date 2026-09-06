@@ -21,7 +21,7 @@ import {
 } from "@/ui/canvas/lib/session-contracts";
 import type { WorkbenchTransportPort } from "@/ui/canvas/workbench-port";
 import { activateCodeTarget, createCodeTargetLinkHandler } from "@/ui/code-target";
-import type { BoardIdentity, DoingEntry, LockHolder } from "@/ui/types";
+import { agentClaim, type BoardIdentity, type DoingEntry, type LockHolder } from "@/ui/types";
 
 /**
  * A client id for one pane: the pane, plus enough randomness that two tabs
@@ -55,8 +55,8 @@ function useSessionState(): SessionState {
 	const [connected, setConnected] = useState(false);
 	const [board, setBoard] = useState<BoardIdentity | null>(null);
 	const [boardKey, setBoardKey] = useState<string | null>(null);
-	// It starts held and stays held until the server says otherwise: a pane
-	// that cannot be told assumes the board is held rather than free (ADR 0016).
+	// It starts as somebody else's until the server says otherwise: a pane that
+	// has not been told does not read the board as free (ADR 0016).
 	const [heldBy, setHeldBy] = useState<LockHolder | null>(UNKNOWN_HOLDER);
 	const [doing, setDoing] = useState<DoingEntry[]>([]);
 	return {
@@ -202,9 +202,9 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 		board: state.board,
 		connected: state.connected,
 		// Disconnected stays fail-closed because lock and board news cannot reach
-		// the pane. A connected pane remains locally editable while persistence
-		// waits for the authoritative mutex, even when an agent holds it.
-		readOnly: !state.connected,
+		// the pane. An agent's claim makes the board read-only to people while
+		// it stands (ADR 0022); a passing write does not.
+		readOnly: !state.connected || agentClaim(state.heldBy) !== null,
 		heldBy: state.heldBy,
 		doing: state.doing,
 		handleChange,

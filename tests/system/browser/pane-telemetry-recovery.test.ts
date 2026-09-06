@@ -19,6 +19,7 @@ import {
 	registerCanvasBase,
 } from "./support/agent-browser.ts";
 import { inExcalidrawApp } from "./support/page-scene.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 
 type Rect = { x: number; y: number; width: number; height: number };
 type Viewport = Rect & { zoom: number };
@@ -74,7 +75,7 @@ test(
 			method: "POST",
 			body: { elements: fixedPointElements },
 		});
-		await api("/api/elements/changes?board=fixedpoint", {
+		await api(`/api/elements/changes${await humanWriteQuery(api, "fixedpoint")}`, {
 			method: "POST",
 			body: {
 				upserts: [humanArrowInput],

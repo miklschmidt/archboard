@@ -33,6 +33,7 @@ import {
 	pageElements,
 	pageFileIds,
 } from "./support/hold-page-scene.ts";
+import { humanWriteQuery, noteVersionOf } from "../support/note-version.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = LIVE_SESSION_BOARD;
@@ -284,10 +285,13 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 			`${JSON.stringify(foreign).slice(1, -1)}}, {"id": "${RECOVERY_SENTINEL_ID}"`,
 		),
 	);
-	const conflict = await request(`/api/elements/changes?board=${RECOVERY_BOARD}`, {
-		method: "POST",
-		body: { clientId: paneClient, upserts: [authBefore] },
-	});
+	const conflict = await request(
+		`/api/elements/changes${await humanWriteQuery(request, RECOVERY_BOARD)}`,
+		{
+			method: "POST",
+			body: { clientId: paneClient, upserts: [authBefore] },
+		},
+	);
 	expect(conflict.status).toBe(409);
 	// The hold raises its recovery dialog once; the person may decide later.
 	await pollUntil(
@@ -305,8 +309,10 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 	);
 	expect(stopped.held?.board).toBe(RECOVERY_BOARD);
 
+	// A person's write states the note version even on a held board (ADR 0022).
+	const heldVersion = await noteVersionOf(request, RECOVERY_BOARD);
 	const heldElementWrite = await request(
-		`/api/elements/batch?board=${RECOVERY_BOARD}&clientId=${encodeURIComponent(paneClient)}`,
+		`/api/elements/batch?board=${RECOVERY_BOARD}&clientId=${encodeURIComponent(paneClient)}&expectVersion=${heldVersion}`,
 		{
 			method: "POST",
 			body: {
@@ -326,7 +332,7 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 	);
 	expect(heldElementWrite.status).toBe(200);
 	const heldFileWrite = await request(
-		`/api/files?board=${RECOVERY_BOARD}&clientId=${encodeURIComponent(paneClient)}`,
+		`/api/files?board=${RECOVERY_BOARD}&clientId=${encodeURIComponent(paneClient)}&expectVersion=${heldVersion}`,
 		{
 			method: "POST",
 			body: [
@@ -354,10 +360,14 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 		body: { clientId: "another-writer" },
 	});
 	expect(blockedBeforeSave.status).toBe(409);
-	const saved = await request<{ resolvedHold?: { outcome?: string } }>("/api/boards/save", {
-		method: "POST",
-		body: { board: RECOVERY_BOARD, name: "held-recovery-copy", clientId: paneClient },
-	});
+	// A person's save states the note version too (ADR 0022); the shell's Save does the same.
+	const saved = await request<{ resolvedHold?: { outcome?: string } }>(
+		`/api/boards/save?expectVersion=${heldVersion}`,
+		{
+			method: "POST",
+			body: { board: RECOVERY_BOARD, name: "held-recovery-copy", clientId: paneClient },
+		},
+	);
 	expect(saved.status).toBe(200);
 	expect(saved.body.resolvedHold?.outcome).toBe("elsewhere");
 	expect(saved.body).not.toHaveProperty("panes");

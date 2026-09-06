@@ -40,6 +40,7 @@ import {
 	type RovingItemProps,
 	type RovingList,
 } from "@/ui/shell/lib/roving-list";
+import type { AgentActivityEntry } from "@/ui/types";
 
 /** One cache for every preview the navigator shows; it revokes what it drops. */
 const PREVIEW_CACHE = new BoardPreviewCache(16);
@@ -64,17 +65,76 @@ interface EntryMarkersProps {
 }
 
 /**
+ * What the live marker says of an agent's work on a board (ADR 0022).
+ * @param activity The agent's activity on the board.
+ * @returns The accessible name: the claim and its reason, or a passing write.
+ */
+function activityLabel(activity: AgentActivityEntry): string {
+	if (activity.claim === null) {
+		return "Agent writing this board";
+	}
+	const reason = activity.claim.reason;
+	return reason === undefined ? "Agent claimed this board" : `Agent claimed this board: ${reason}`;
+}
+
+/**
+ * The live marker beside a board an agent is working on: the lime dot the
+ * header and dock use, pulsing, named for assistive technology and the pointer.
+ * @param props The entry.
+ * @returns The marker, or nothing while no agent is on the board.
+ */
+function ActivityMarker(props: EntryMarkersProps): React.JSX.Element | null {
+	const { activity } = props.entry;
+	if (activity === null) {
+		return null;
+	}
+	const label = activityLabel(activity);
+	return (
+		<span
+			title={label}
+			data-slot="agent-activity"
+			className="inline-flex h-4 shrink-0 items-center px-0.5"
+		>
+			<StatusDot tone="live" className="motion-safe:animate-pulse" />
+			<span className="sr-only">{label}</span>
+		</span>
+	);
+}
+
+/**
+ * The latest thing an agent said it was doing to a board, as a second line
+ * under the name while the activity lingers (ADR 0022).
+ * @param props The entry.
+ * @returns The line, or nothing while nothing was said.
+ */
+function DoingLine(props: EntryMarkersProps): React.JSX.Element | null {
+	const doing = props.entry.activity?.doing ?? null;
+	if (doing === null) {
+		return null;
+	}
+	return (
+		<span
+			data-slot="agent-doing"
+			className="text-muted-foreground text-technical line-clamp-1 min-w-0 whitespace-normal!"
+		>
+			{doing.doing}
+		</span>
+	);
+}
+
+/**
  * Draft and on-screen markers, right-aligned on the name line.
  * @param props The entry.
  * @returns The markers, or nothing when the entry is plain.
  */
 function EntryMarkers(props: EntryMarkersProps): React.JSX.Element | null {
-	const { draft, onScreen } = props.entry;
-	if (!draft && onScreen === null) {
+	const { draft, onScreen, activity } = props.entry;
+	if (!draft && onScreen === null && activity === null) {
 		return null;
 	}
 	return (
 		<span className="flex shrink-0 gap-1">
+			<ActivityMarker entry={props.entry} />
 			{draft && <span className={`${MARK_CLASS} text-muted-foreground`}>Draft</span>}
 			{onScreen !== null && (
 				<span
@@ -163,6 +223,7 @@ function VariantRow(props: VariantRowProps): React.JSX.Element {
 					<span className="line-clamp-2 min-w-0 whitespace-normal!">{props.label}</span>
 					<EntryMarkers entry={entry} />
 				</span>
+				<DoingLine entry={entry} />
 				<PreviewCard
 					board={entry.identity.board}
 					snapshot={entry.preview}

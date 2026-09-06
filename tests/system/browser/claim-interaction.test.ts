@@ -4,6 +4,7 @@ import { join, resolve } from "node:path";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
+import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { LIVE_SESSION_BOARD, LIVE_SESSION_SEED } from "./fixtures/live-session-scene.ts";
 import {
@@ -16,8 +17,10 @@ import {
 } from "./support/agent-browser.ts";
 import {
 	claimCounts,
+	dragOn,
 	expectNoteUnchanged,
 	installClaimRecorder,
+	navigatorActivity,
 	verifyBoardStatusPresentation,
 	verifyPaneScopedTakeBack,
 } from "./support/claim-interaction.ts";
@@ -29,6 +32,8 @@ import {
 } from "./support/workbench-metrics.ts";
 const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = LIVE_SESSION_BOARD;
+/** A board an agent creates and claims that no pane ever opens. */
+const UNOPENED_BOARD = "agent-made-board";
 /** WCAG 2.5.8 target size floor. */
 const MIN_TARGET = 24;
 interface ElementsBody {
@@ -138,8 +143,17 @@ const pageElement = (browser: AgentBrowserSession, id: string): Promise<Excalidr
 			return element ? { ...element } : null;
 		})()`);
 test(
-	"claims remain readable and camera-safe while content and take-back revoke them",
+	"a claimed board is read-only to people until the one take-back control releases it",
 	async () => {
+		declareTestWallClockBudget({
+			test: "a claimed board is read-only to people until the one take-back control releases it",
+			reason:
+				"One real browser walks the whole claim life: read-only under the claim, the navigator marking two boards, a pane split, the take-back control in three states, and a canvas restart.",
+			outerBoundMs: TEST_BROWSER_COMMAND_TIMEOUT_MS * 6,
+			task: "TASK-152",
+			evidence:
+				"The owner takes about 11 seconds on the measured local runner; the bound leaves room for a slower one.",
+		});
 		await using resources = new AsyncDisposableStack();
 		const { browser, canvas, clientId, noteFile, request } = await openSeededBoard(resources);
 		await installClaimRecorder(browser);
@@ -150,6 +164,7 @@ test(
 			headerClaim: null,
 			banner: null,
 			takeBackState: null,
+			view: false,
 		});
 		const claimWhy = "redrawing the payment path";
 		const claim = await request<ClaimBody>(`/api/boards/claim?board=${BOARD}`, {
@@ -162,17 +177,24 @@ test(
 		expect(claim.body.claim.holder.claimed).toBe(true);
 		const claimed = await pollUntil(
 			() => readBanner(browser),
-			(value) => value.reason === claimWhy && value.banner !== null,
-			"the claimed-board explanation to become readable",
+			(value) => value.reason === claimWhy && value.banner !== null && value.view === true,
+			"the claimed board to become read-only with its explanation readable",
 		);
 		expect(claimed.headerClaim).toBe("Board claimed");
 		expect(claimed.banner?.text).toContain("Agent claimed this board");
 		expect(claimed.banner?.reason).toBe(claimWhy);
-		expect(claimed.view).toBe(false);
 		expect(claimed.take).toBe("Take back control");
 		expect(claimed.takeBackState).toBe("idle");
 		expect(claimed.takeBackHeight).toBeGreaterThanOrEqual(MIN_TARGET);
 		expect(claimed.banner?.height).toBeLessThan(90);
+		// Every pane sees which board an agent holds, from the boardless snapshot.
+		const marked = await pollUntil(
+			() => navigatorActivity(browser, BOARD),
+			(value) => value.marker !== null,
+			"the navigator to mark the claimed board",
+		);
+		expect(marked.marker).toContain(claimWhy);
+
 		const beforeCamera = await claimCounts(browser);
 		const cameraBefore = paneViewport((await request<PaneList>("/api/panes")).body, clientId);
 		expect(cameraBefore).toBeDefined();
@@ -194,12 +216,13 @@ test(
 		const cameraAfter = await pollUntil(
 			async () => paneViewport((await request<PaneList>("/api/panes")).body, clientId),
 			(viewport) => viewport !== undefined && viewport.zoom !== cameraBefore?.zoom,
-			"the camera-only change to reach the pane registry",
+			"the camera-only change to reach the pane registry under the claim",
 		);
 		expect(cameraAfter?.zoom).toBeGreaterThan(cameraBefore?.zoom ?? 0);
 		const afterCamera = await claimCounts(browser);
 		expect(afterCamera.holds - beforeCamera.holds).toBe(0);
 		expect(afterCamera.sent - beforeCamera.sent).toBe(0);
+
 		const step = "moving the queue out of the payment path";
 		const claimedWrite = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
 			method: "POST",
@@ -226,7 +249,80 @@ test(
 		);
 		expect(narrated.history.at(-1)).toContain(step);
 		expect(narrated.reason).toBe(claimWhy);
-		expect(narrated.headerClaim).toBe("Board claimed");
+		const narratedRow = await pollUntil(
+			() => navigatorActivity(browser, BOARD),
+			(value) => value.doing === step,
+			"the navigator to carry the latest doing line under the claimed board",
+		);
+		expect(narratedRow.marker).toContain(claimWhy);
+
+		// A board an agent creates and claims is shown to every pane, though no pane opened it.
+		expect(
+			(
+				await request("/api/boards/new", {
+					method: "POST",
+					body: { board: UNOPENED_BOARD, level: "service" },
+				})
+			).status,
+		).toBe(200);
+		const unopenedWhy = "drafting a board nobody is looking at";
+		expect(
+			(
+				await request(`/api/boards/claim?board=${UNOPENED_BOARD}`, {
+					method: "POST",
+					body: { reason: unopenedWhy },
+				})
+			).status,
+		).toBe(200);
+		const unopened = await pollUntil(
+			() => navigatorActivity(browser, UNOPENED_BOARD),
+			(value) => value.row && value.marker !== null,
+			"the navigator to list and mark the board no pane has open",
+		);
+		expect(unopened.marker).toContain(unopenedWhy);
+		expect((await readBanner(browser)).pane).toBe("Pane A");
+		expect(
+			(
+				await request(`/api/boards/claim/release?board=${UNOPENED_BOARD}`, {
+					method: "POST",
+					body: {},
+				})
+			).status,
+		).toBe(200);
+		await pollUntil(
+			() => navigatorActivity(browser, UNOPENED_BOARD),
+			(value) => value.marker === null,
+			"the released board to lose its marker",
+		);
+
+		// A pointer drag on the claimed board takes no hold and revokes nothing.
+		expect(
+			(await request("/api/viewport", { method: "POST", body: { scrollToElementId: streamedId } }))
+				.status,
+		).toBe(200);
+		const serverBefore = (
+			await request<ElementsBody>(`/api/elements?board=${BOARD}`)
+		).body.elements.find((element) => element.id === streamedId)!;
+		const countsBeforeDrag = await claimCounts(browser);
+		await dragOn(browser, streamedId);
+		await pollUntil(
+			async () => paneViewport((await request<PaneList>("/api/panes")).body, clientId),
+			(viewport) => viewport !== undefined,
+			"the pane to keep reporting after the drag",
+		);
+		const local = await pageElement(browser, streamedId);
+		expect(local!.x).toBeCloseTo(serverBefore.x, 3);
+		const countsAfterDrag = await claimCounts(browser);
+		expect(countsAfterDrag.holds - countsBeforeDrag.holds).toBe(0);
+		expect(countsAfterDrag.sent - countsBeforeDrag.sent).toBe(0);
+		expect((await readBanner(browser)).view).toBe(true);
+		const stillClaimed = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
+			method: "POST",
+			body: { type: "rectangle", x: 880, y: 880, width: 20, height: 20 },
+		});
+		expect(stillClaimed.status).toBe(200);
+
+		// The banner is pane-scoped: a second pane on another board shows none of it.
 		expect((await request("/api/panes/open", { method: "POST", body: {} })).status).toBe(200);
 		const split = await pollUntil(
 			async () => (await request<PaneList>("/api/panes")).body,
@@ -260,12 +356,11 @@ test(
 		expect(paneB).toMatchObject({ headerClaim: null, banner: null, takeBackState: null });
 		expect(paneB.otherBanners).toEqual(["Pane A"]);
 		await browser.run(["click", `${paneSection("Pane A")} .excalidraw`]);
-		const paneA = await pollUntil(
+		await pollUntil(
 			() => readBanner(browser),
-			(value) => value.pane === "Pane A" && value.doing === step,
+			(value) => value.pane === "Pane A" && value.reason === claimWhy,
 			"the header and dock to restore Pane A claim and progress",
 		);
-		expect(paneA).toMatchObject({ headerClaim: "Board claimed", reason: claimWhy });
 		await browser.run(["click", `${paneSection("Pane B")} .excalidraw`]);
 		expect(
 			(await request("/api/panes/close", { method: "POST", body: { pane: secondClientId } }))
@@ -276,88 +371,34 @@ test(
 			(value) => value.pane === "Pane A" && value.reason === claimWhy,
 			"the surviving pane to regain the header and dock",
 		);
-		const takeoverId = claimedWrite.body.elements?.[0]?.id ?? claimedWrite.body.element?.id;
-		expect(typeof takeoverId).toBe("string");
-		const framed = await request("/api/viewport", {
+
+		// The one explicit control releases the claim through its own route.
+		const takeBacksBefore = (await claimCounts(browser)).takeBacks;
+		await browser.run([
+			"click",
+			`${paneSection("Pane A")}[aria-current="true"] [data-slot="claim-banner"] button`,
+		]);
+		const released = await pollUntil(
+			() => readBanner(browser),
+			(value) => value.banner === null && value.headerClaim === null && value.view === false,
+			"the take-back to release the claim and reopen the board to the person",
+		);
+		expect(released.takeBackState).toBeNull();
+		expect((await claimCounts(browser)).takeBacks - takeBacksBefore).toBe(1);
+		const lost = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
 			method: "POST",
-			body: { scrollToElementId: takeoverId },
+			body: { type: "rectangle", x: 900, y: 900, width: 20, height: 20 },
 		});
-		expect(framed.status).toBe(200);
-		let priorDragPoint = "";
-		let stableDragPoints = 0;
-		const dragPoint = await pollUntil(
-			() =>
-				browser.eval<{ error?: string; inside?: boolean; x?: number; y?: number }>(`(() => {
-					const app = ${EXCALIDRAW_APP_EXPRESSION};
-					const element = app?.scene.getElementsIncludingDeleted()
-						.find(candidate => candidate.id === ${JSON.stringify(takeoverId)});
-					const canvas = document.querySelector(".excalidraw")?.getBoundingClientRect();
-					if (!app || !element || !canvas) return { error: "takeover target is missing" };
-					const zoom = app.state.zoom?.value ?? 1;
-					const x = Math.round((element.x + 24 + app.state.scrollX) * zoom + app.state.offsetLeft);
-					const y = Math.round((element.y + 24 + app.state.scrollY) * zoom + app.state.offsetTop);
-					return { x, y, inside: x >= canvas.left && x <= canvas.right && y >= canvas.top && y <= canvas.bottom };
-				})()`),
-			(value) => {
-				const sample = `${value.x}:${value.y}`;
-				stableDragPoints = sample === priorDragPoint ? stableDragPoints + 1 : 0;
-				priorDragPoint = sample;
-				return value.inside === true && stableDragPoints >= 3;
-			},
-			"the claimed element to be framed inside the canvas",
-		);
-		expect(dragPoint.inside).toBe(true);
-		const serverBefore = (
-			await request<ElementsBody>(`/api/elements?board=${BOARD}`)
-		).body.elements.find((element) => element.id === takeoverId)!;
-		const countsBeforeTakeover = await claimCounts(browser);
-		await browser.eval("window.__delayNextClaimReport()");
-		await browser.run(["mouse", "move", String(dragPoint.x), String(dragPoint.y)]);
-		await browser.run(["mouse", "down"]);
-		for (let segment = 1; segment <= 4; segment += 1) {
-			await browser.run(["mouse", "move", String(dragPoint.x! + segment * 9), String(dragPoint.y)]);
-		}
-		await browser.run(["mouse", "up"]);
-		const pendingTakeover = await pollUntil(
-			() => claimCounts(browser),
-			(value) => value.pending === 1,
-			"the content takeover report to remain pending before persistence",
-		);
-		const localTakeover = await pageElement(browser, takeoverId!);
-		const serverBeforeReport = (
-			await request<ElementsBody>(`/api/elements?board=${BOARD}`)
-		).body.elements.find((element) => element.id === takeoverId)!;
-		expect(localTakeover!.x).toBeGreaterThan(serverBefore.x + 20);
-		expect(serverBeforeReport.x).toBeCloseTo(serverBefore.x, 3);
-		expect(pendingTakeover.holds - countsBeforeTakeover.holds).toBe(1);
+		expect(lost.status).toBe(409);
+		expect(lost.body.code).toBe("CLAIM_REVOKED");
 		expect(
-			(await browser.eval<{ released: boolean }>("window.__releaseClaimReport()")).released,
-		).toBe(true);
-		const converged = await pollUntil(
-			async () => ({
-				local: await pageElement(browser, takeoverId!),
-				server: (await request<ElementsBody>(`/api/elements?board=${BOARD}`)).body.elements.find(
-					(element) => element.id === takeoverId,
-				),
-			}),
-			(value) =>
-				value.local !== null &&
-				value.server !== undefined &&
-				Math.abs(value.local.x - value.server.x) < 0.001,
-			"the local pointer edit to converge with persistence",
-		);
-		expect(converged.server!.x).toBeCloseTo(converged.local!.x, 3);
-		const contentRevoked = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
-			method: "POST",
-			body: { type: "rectangle", x: 880, y: 880, width: 20, height: 20 },
-		});
-		expect(contentRevoked.status).toBe(409);
-		expect(contentRevoked.body.code).toBe("CLAIM_REVOKED");
-		const contentToldOnce = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
-			method: "POST",
-			body: { type: "rectangle", x: 880, y: 900, width: 20, height: 20 },
-		});
-		expect(contentToldOnce.status).toBe(200);
+			(
+				await request<WriteBody>(`/api/elements?board=${BOARD}`, {
+					method: "POST",
+					body: { type: "rectangle", x: 920, y: 920, width: 20, height: 20 },
+				})
+			).status,
+		).toBe(200);
 		const noteBeforePresentation = await verifyBoardStatusPresentation({
 			board: BOARD,
 			browser,
@@ -380,7 +421,6 @@ test(
 			(value) => value.reason === explicitWhy && value.banner !== null,
 			"the second claim's exact control to appear",
 		);
-		expect(explicitClaim.reason).toBe(explicitWhy);
 		expect(explicitClaim.take).toBe("Take back control");
 		await verifyPaneScopedTakeBack({
 			board: BOARD,
@@ -391,21 +431,6 @@ test(
 			request,
 		});
 		expectNoteUnchanged(noteFile, noteBeforePresentation);
-
-		const lost = await request<WriteBody>(`/api/elements?board=${BOARD}`, {
-			method: "POST",
-			body: { type: "rectangle", x: 900, y: 900, width: 20, height: 20 },
-		});
-		expect(lost.status).toBe(409);
-		expect(lost.body.code).toBe("CLAIM_REVOKED");
-		expect(
-			(
-				await request<WriteBody>(`/api/elements?board=${BOARD}`, {
-					method: "POST",
-					body: { type: "rectangle", x: 920, y: 920, width: 20, height: 20 },
-				})
-			).status,
-		).toBe(200);
 
 		await canvas.restart({
 			whileStopped: async () => {

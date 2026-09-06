@@ -1,7 +1,12 @@
 // The browser's one way of speaking JSON to the canvas server. Every endpoint
 // in `api.ts` goes through here, so a refusal is read the same way everywhere.
 
-import type { BoardHold, BoardWriteConflict } from "@/ui/types";
+import type {
+	BoardHold,
+	BoardVersionConflict,
+	BoardWriteConflict,
+	ServerElement,
+} from "@/ui/types";
 
 /**
  * A refused board write. Distinct from a plain Error because the shell has to
@@ -23,6 +28,37 @@ class BoardConflictError extends Error {
 		this.name = "BoardConflictError";
 		this.conflict = conflict;
 		this.held = held;
+	}
+}
+
+/**
+ * A write refused because the note moved past the version the pane stated
+ * (ADR 0022). Not a fault and not a choice: the refusal carries the board as
+ * the note holds it, and the pane reconciles to that.
+ */
+class BoardVersionConflictError extends Error {
+	readonly conflict: BoardVersionConflict;
+	/** The board as the note holds it now. */
+	readonly document: readonly ServerElement[];
+	/** The note version the document is at, or null when the note carries none. */
+	readonly version: number | null;
+
+	/**
+	 * Wrap the server's version-conflict answer.
+	 * @param conflict The conflict as the server described it.
+	 * @param document The board as the note holds it.
+	 * @param version The note version the document is at.
+	 */
+	constructor(
+		conflict: BoardVersionConflict,
+		document: readonly ServerElement[],
+		version: number | null,
+	) {
+		super(conflict.message);
+		this.name = "BoardVersionConflictError";
+		this.conflict = conflict;
+		this.document = document;
+		this.version = version;
 	}
 }
 
@@ -86,6 +122,24 @@ function conflictFrom(record: JsonRecord | null): BoardConflictError | null {
 }
 
 /**
+ * The version conflict a refusal carries, when the note moved under the write.
+ * @param record The decoded body.
+ * @returns The error, or null when the body names no version conflict.
+ */
+function versionConflictFrom(record: JsonRecord | null): BoardVersionConflictError | null {
+	if (record === null || !isRecord(record["versionConflict"])) {
+		return null;
+	}
+	const document = record["document"];
+	const version = record["version"];
+	return new BoardVersionConflictError(
+		trustReply<BoardVersionConflict>(record["versionConflict"]),
+		Array.isArray(document) ? trustReply<ServerElement[]>(document) : [],
+		typeof version === "number" ? version : null,
+	);
+}
+
+/**
  * The message a failed reply carries, or a fallback naming the request.
  * @param record The decoded body.
  * @param method The request method.
@@ -121,12 +175,22 @@ function replyFailure(
 	if (response.ok && record?.["success"] !== false) {
 		return null;
 	}
-	return conflictFrom(record) ?? plainFailure(record, method, url, response.status);
+	return refusalFrom(record) ?? plainFailure(record, method, url, response.status);
 }
 
 /**
- * Fetch a JSON reply, throwing a `BoardConflictError` for a refused write and
- * a plain Error for any other failure.
+ * The typed refusal a failed body carries, if it is one of the two.
+ * @param record The decoded body.
+ * @returns The version conflict, the hash conflict, or null.
+ */
+function refusalFrom(record: JsonRecord | null): Error | null {
+	return versionConflictFrom(record) ?? conflictFrom(record);
+}
+
+/**
+ * Fetch a JSON reply, throwing a `BoardVersionConflictError` when the note
+ * moved under a write, a `BoardConflictError` for a refused write and a plain
+ * Error for any other failure.
  * @param url The endpoint.
  * @param init Request options; GET when absent.
  * @returns The decoded reply, trusted to be the endpoint's contract.
@@ -208,6 +272,7 @@ function boardQuery(board: string | null): string {
 
 export {
 	BoardConflictError,
+	BoardVersionConflictError,
 	boardQuery,
 	isRecord,
 	json,

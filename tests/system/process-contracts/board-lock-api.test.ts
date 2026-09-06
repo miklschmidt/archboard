@@ -4,9 +4,14 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
-import { openTestPane, waitForPaneMessage } from "../boards/support/pane-websocket.ts";
+import {
+	openTestPane,
+	waitForPaneMessage,
+	waitForPaneMessageWhere,
+} from "../boards/support/pane-websocket.ts";
 import { sanitizedEnvironment } from "./support/process-http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
@@ -43,10 +48,13 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 			held: true,
 			holder: { id: pane.clientId },
 		});
-		const joined = await request("/api/elements/changes?board=scratch", {
-			method: "POST",
-			body: { clientId: pane.clientId, upserts: [box("held")], deletes: [] },
-		});
+		const joined = await request(
+			`/api/elements/changes${await humanWriteQuery(request, "scratch")}`,
+			{
+				method: "POST",
+				body: { clientId: pane.clientId, upserts: [box("held")], deletes: [] },
+			},
+		);
 		expect(joined.status).toBe(200);
 		const renewed = await request<{ created: boolean }>("/api/boards/hold?board=scratch", {
 			method: "POST",
@@ -95,18 +103,39 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 				).status,
 			).toBe(200);
 		}
+		// A content gesture no longer takes a claimed board (ADR 0022): the hold is
+		// refused with the claim as holder, and the claim keeps writing.
+		const gestureUnderClaim = await request<{ code: string; holder: { claimed?: boolean } }>(
+			"/api/boards/hold?board=scratch",
+			{ method: "POST", body: { clientId: pane.clientId } },
+		);
+		expect(gestureUnderClaim.status).toBe(409);
+		expect(gestureUnderClaim.body.code).toBe("BOARD_HELD");
+		expect(gestureUnderClaim.body.holder).toMatchObject({ kind: "agent", claimed: true, reason });
 		expect(
 			(
-				await request("/api/boards/hold?board=scratch", {
+				await request("/api/elements?board=scratch", {
 					method: "POST",
-					body: { clientId: pane.clientId },
+					body: box("still-claimed"),
 				})
 			).status,
 		).toBe(200);
-		await request("/api/boards/hold/release?board=scratch", {
-			method: "POST",
-			body: { clientId: pane.clientId },
-		});
+		// The one explicit control ends the claim and leaves the board to nobody.
+		const takeBackStart = pane.since();
+		const takenBack = await request<{ released: boolean; claim?: { reason?: string } }>(
+			"/api/boards/take-back?board=scratch",
+			{ method: "POST", body: { clientId: pane.clientId } },
+		);
+		expect(takenBack.status).toBe(200);
+		expect(takenBack.body).toMatchObject({ released: true, claim: { claimed: true, reason } });
+		expect(
+			await waitForPaneMessageWhere(
+				pane,
+				takeBackStart,
+				(message) => message.type === "board_lock" && message["held"] === false,
+				2_000,
+			),
+		).toBeDefined();
 		const revoked = await request<{
 			code: string;
 			error: string;
@@ -142,10 +171,20 @@ test("public lock API preserves holds, claims, refusals, and told-once recovery"
 			).body.released,
 		).toBeFalse();
 
+		expect(
+			(
+				await request<{ released: boolean }>("/api/boards/take-back?board=scratch", {
+					method: "POST",
+					body: { clientId: pane.clientId },
+				})
+			).body,
+		).toMatchObject({ success: true, released: false });
+
 		for (const [path, body] of [
 			["/api/boards/claim", { reason: "anything" }],
 			["/api/boards/claim?board=scratch", {}],
 			["/api/boards/hold?board=scratch", {}],
+			["/api/boards/take-back?board=scratch", {}],
 		] as const) {
 			expect((await request(path, { method: "POST", body })).status).toBe(400);
 		}

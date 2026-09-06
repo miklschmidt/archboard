@@ -94,16 +94,18 @@ class FakeApi implements BoardCommandApi {
 	 * Record a clear.
 	 * @param board The board.
 	 * @param clientId The pane.
+	 * @param expectVersion The note version the pane last saw.
 	 * @returns Four removed elements.
 	 */
-	clear(board: string, clientId: string): Promise<{ count: number }> {
-		this.calls.push(["clear", board, clientId]);
+	clear(board: string, clientId: string, expectVersion: number | null): Promise<{ count: number }> {
+		this.calls.push(["clear", board, clientId, expectVersion]);
 		return Promise.resolve({ count: 4 });
 	}
 }
 
 const TWO_PANES: BoardCommandContext = {
 	clientId: "A-1",
+	expectVersion: 3,
 	boardKey: "Checkout",
 	board: { board: "Checkout", variant: "current" },
 	pane: "A-1",
@@ -150,7 +152,16 @@ test("save-as writes the pane's board under the new name with the person's clien
 	);
 	expect(outcome).toEqual({ kind: "done", message: "Saved as Checkout." });
 	expect(api.calls).toEqual([
-		["save", { board: "Checkout", clientId: "A-1", name: "Checkout", variant: "async-payments" }],
+		[
+			"save",
+			{
+				board: "Checkout",
+				clientId: "A-1",
+				expectVersion: 3,
+				name: "Checkout",
+				variant: "async-payments",
+			},
+		],
 	]);
 	const noBoard = await runBoardDialogRequest(
 		api,
@@ -171,14 +182,16 @@ test("a refused save is a conflict outcome, and the two wire outcomes are one ca
 	]);
 	const saving = new FakeApi();
 	await runConflictOutcome(saving, "overwrite", ONE_PANE);
-	expect(saving.calls).toEqual([["save", { board: "Checkout", clientId: "A-1", force: true }]]);
+	expect(saving.calls).toEqual([
+		["save", { board: "Checkout", clientId: "A-1", expectVersion: 3, force: true }],
+	]);
 });
 
 test("clear is one call that carries the pane's client id and reports the count", async () => {
 	const api = new FakeApi();
 	const outcome = await runClear(api, ONE_PANE);
 	expect(outcome).toEqual({ kind: "done", message: "Removed 4 element(s)." });
-	expect(api.calls).toEqual([["clear", "Checkout", "A-1"]]);
+	expect(api.calls).toEqual([["clear", "Checkout", "A-1", 3]]);
 	const failed = await runClear(api, { ...ONE_PANE, boardKey: null });
 	expect(failed.kind).toBe("failed");
 });

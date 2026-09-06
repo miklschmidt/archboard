@@ -19,14 +19,20 @@ import {
 } from "@/shared/code-target";
 import type { ChangeReport } from "@/ui/canvas/changes";
 import {
+	holdBoard,
+	releaseBoard,
+	takeBoardBack,
+	type HoldReply,
+	type TakeBackReply,
+} from "@/ui/canvas/lib/board-hold-api";
+import {
 	BoardConflictError,
+	BoardVersionConflictError,
 	boardQuery,
-	isRecord,
 	json,
 	mutation,
 	post,
 	strictReply,
-	trustReply,
 	type ReplySchema,
 } from "@/ui/canvas/lib/http";
 import type {
@@ -37,7 +43,6 @@ import type {
 	BoardPreviewSnapshot,
 	BoardSaveResult,
 	BrowserPaneListing,
-	LockHolder,
 	PersistedBoardListing,
 	ServerElement,
 } from "@/ui/types";
@@ -204,6 +209,18 @@ function changeReportPayload(
 }
 
 /**
+ * The change-report endpoint, stating the note version the pane last saw
+ * (ADR 0022): 0 for none, and a note that moved since refuses the write.
+ * @param board The board the delta is against.
+ * @param expectVersion The note version the pane last saw, or null for none.
+ * @returns The URL.
+ */
+function changesUrl(board: string | null, expectVersion: number | null): string {
+	const base = boardQuery(board);
+	return `/api/elements/changes${base}${base === "" ? "?" : "&"}expectVersion=${expectVersion ?? 0}`;
+}
+
+/**
  * Tell the server what changed, and get a compact canonical acknowledgement.
  *
  * The board rides in the query string so that a switch landing mid-flight
@@ -213,6 +230,7 @@ function changeReportPayload(
  * @param board The board the delta is against.
  * @param report The computed delta.
  * @param clientId The reporting pane.
+ * @param expectVersion The note version the pane last saw, or null for none.
  * @param fullReport Whether this is a held-board full report.
  * @returns The server's acknowledgement.
  */
@@ -220,12 +238,10 @@ function reportChanges(
 	board: string | null,
 	report: ChangeReport,
 	clientId: string,
+	expectVersion: number | null,
 	fullReport = false,
 ): Promise<ChangeReportReply> {
-	return post(
-		`/api/elements/changes${boardQuery(board)}`,
-		changeReportPayload(report, clientId, fullReport),
-	);
+	return post(changesUrl(board, expectVersion), changeReportPayload(report, clientId, fullReport));
 }
 
 /**
@@ -233,16 +249,22 @@ function reportChanges(
  * @param board The board the delta is against.
  * @param report The computed delta.
  * @param clientId The reporting pane.
+ * @param expectVersion The note version the pane last saw, or null for none.
  * @returns Whether the browser accepted the beacon.
  */
-function beaconChanges(board: string | null, report: ChangeReport, clientId: string): boolean {
+function beaconChanges(
+	board: string | null,
+	report: ChangeReport,
+	clientId: string,
+	expectVersion: number | null,
+): boolean {
 	if (typeof navigator.sendBeacon !== "function") {
 		return false;
 	}
 	const body = new Blob([JSON.stringify(changeReportPayload(report, clientId, false))], {
 		type: "application/json",
 	});
-	return navigator.sendBeacon(`/api/elements/changes${boardQuery(board)}`, body);
+	return navigator.sendBeacon(changesUrl(board, expectVersion), body);
 }
 
 /** What one pane tells the server it has in front of the human. */
@@ -333,87 +355,25 @@ function postViewportResult(
 	return post("/api/viewport/result", { requestId, ...payload });
 }
 
-/** The answer to a hold: who has the board now. */
-interface HoldReply {
-	held: boolean;
-	/** Who has it: this pane on success, somebody else on a refusal. */
-	holder: LockHolder | null;
-}
-
-/**
- * Read a hold reply body without trusting more of it than it must carry.
- * @param body The decoded body.
- * @returns The success flag and holder, when present.
- */
-function holdReplyBody(body: unknown): { success: boolean; holder: LockHolder | null } {
-	if (!isRecord(body)) {
-		return { success: false, holder: null };
-	}
-	const holder = body["holder"];
-	return {
-		success: body["success"] === true,
-		holder: isRecord(holder) ? trustReply<LockHolder>(holder) : null,
-	};
-}
-
-/**
- * Take the board's mutex, or say again that this pane still has it (ADR 0016).
- * Deliberately not `json()`: a refusal here is an answer, not a failure.
- * @param board The board.
- * @param clientId This pane.
- * @returns Whether the board is held by this pane, and who has it otherwise.
- */
-async function holdBoard(board: string | null, clientId: string): Promise<HoldReply> {
-	const response = await fetch(
-		`/api/boards/hold${boardQuery(board)}`,
-		mutation("POST", { clientId }),
-	);
-	const body = holdReplyBody(await response.json().catch(() => ({})));
-	if (response.ok && body.success) {
-		return { held: true, holder: body.holder };
-	}
-	return { held: false, holder: body.holder };
-}
-
-/**
- * Give the board back. Best effort on purpose: the hold is a lease, so a
- * release that never arrives costs `LOCK_LEASE_MS` and not the board.
- * @param board The board.
- * @param clientId This pane.
- */
-function releaseBoard(board: string | null, clientId: string): void {
-	void fetch(`/api/boards/hold/release${boardQuery(board)}`, mutation("POST", { clientId })).catch(
-		() => undefined,
-	);
-}
-
-/**
- * Take a claimed board back from the agent that has it, and give it straight
- * back: the board goes to nobody, and the next gesture holds it as any gesture
- * does. Nothing already written is undone (ADR 0016).
- * @param board The board.
- * @param clientId This pane.
- * @returns Whether the board was taken.
- */
-async function takeBoardBack(board: string | null, clientId: string): Promise<HoldReply> {
-	const taken = await holdBoard(board, clientId);
-	if (taken.held) {
-		releaseBoard(board, clientId);
-	}
-	return taken;
-}
-
 /**
  * The one call that empties a board. Confirmed in the shell, never here.
- * `clientId` is what says this write is a person's (TASK-095).
+ * `clientId` is what says this write is a person's (TASK-095), and a person's
+ * write states the note version the pane last saw (ADR 0022).
  * @param board The board.
  * @param clientId The pane the person is working in.
+ * @param expectVersion The note version the pane last saw, or null for none.
  * @returns How many elements were removed.
  */
-function clearBoard(board: string | null, clientId: string): Promise<{ count: number }> {
+function clearBoard(
+	board: string | null,
+	clientId: string,
+	expectVersion: number | null,
+): Promise<{ count: number }> {
 	const base = boardQuery(board);
 	const query = `${base}${base === "" ? "?" : "&"}clientId=${encodeURIComponent(clientId)}`;
-	return json(`/api/elements/clear${query}`, { method: "DELETE" });
+	return json(`/api/elements/clear${query}&expectVersion=${expectVersion ?? 0}`, {
+		method: "DELETE",
+	});
 }
 
 /** The stencil palette as the server holds it. */
@@ -520,6 +480,8 @@ interface SaveRequest {
 	board: string;
 	/** The pane the person pressed Save in: what makes this a person's write (TASK-095). */
 	clientId?: string;
+	/** The note version that pane last saw, which a person's write states (ADR 0022). */
+	expectVersion?: number | null;
 	name?: string;
 	variant?: string;
 	level?: string;
@@ -534,11 +496,14 @@ interface SaveRequest {
  * @returns What the save did (ADR 0012).
  */
 function saveBoard(as: SaveRequest): Promise<BoardSaveResult> {
-	return post("/api/boards/save", as);
+	const { expectVersion, ...body } = as;
+	const query = as.clientId === undefined ? "" : `?expectVersion=${expectVersion ?? 0}`;
+	return post(`/api/boards/save${query}`, body);
 }
 
 export {
 	BoardConflictError,
+	BoardVersionConflictError,
 	type ChangeReportReply,
 	type HoldReply,
 	type LibraryReply,
@@ -546,6 +511,7 @@ export {
 	type PaneReply,
 	type PaneReport,
 	type SaveRequest,
+	type TakeBackReply,
 	beaconChanges,
 	clearBoard,
 	fetchBoardInfo,

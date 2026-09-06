@@ -58,6 +58,8 @@ function optionsFor(
 		onPathFocus: host.onPathFocus,
 		onPathFocusOverlay: host.onPathFocusOverlay,
 		onCodeTargetNotice: host.onCodeTargetNotice,
+		onAgentActivity: host.onAgentActivity,
+		onEditsWithdrawn: host.onEditsWithdrawn,
 		createWorkbenchSockets,
 	};
 }

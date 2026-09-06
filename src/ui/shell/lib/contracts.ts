@@ -6,7 +6,13 @@ import type { CodeTargetNoticeAction } from "@/shared/code-target";
 import type { PreviewSource } from "@/ui/board-preview";
 import type { PathFocusOverlay, PathFocusSnapshot } from "@/ui/path-focus";
 import type { SelectionProjection } from "@/ui/selection-inspector";
-import type { BoardIdentity, BoardListing, LockHolder, PaneStatus } from "@/ui/types";
+import type {
+	AgentActivityEntry,
+	BoardIdentity,
+	BoardListing,
+	LockHolder,
+	PaneStatus,
+} from "@/ui/types";
 
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
@@ -109,6 +115,11 @@ interface ShellView {
 	/** Where the focused elements are on their stage, or null while focus is off. */
 	pathFocusOverlay: PathFocusOverlay | null;
 	notices: readonly ShellNotice[];
+	/**
+	 * Which boards an agent is working on right now, by board key, including
+	 * boards no pane has open (ADR 0022). The navigator marks each one.
+	 */
+	agentActivity: Readonly<Record<string, AgentActivityEntry>>;
 }
 
 /** Everything a person can do from the shell. */

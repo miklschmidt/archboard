@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { listBoards, parseBoardKey, renderBoardNote } from "../../../src/runtime/engine/board.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 
@@ -405,7 +406,7 @@ describe.serial("vault-only production interfaces", () => {
 		}
 		expect(admitted).toBeTrue();
 		const holderWrite = await request<{ fingerprint: { version: number } }>(
-			"/api/elements?board=waited-write",
+			`/api/elements${await humanWriteQuery(request, "waited-write")}`,
 			{
 				method: "POST",
 				body: {

@@ -90,6 +90,10 @@ test("exempts activation from the board-write lock for its approved reason", () 
 	expect(tuple).toContain(
 		'"reads canonical board state and launches a process but writes no note"',
 	);
+	// The person's take-back is the lock given back, never a note write (ADR 0022).
+	const takeBack = exemptions.indexOf("/^\\/api\\/boards\\/take-back$/");
+	expect(takeBack).toBeGreaterThanOrEqual(0);
+	expect(exemptions.indexOf('"is the lock, given back"', takeBack)).toBeGreaterThan(takeBack);
 });
 
 test("all note-changing routes cross the sole lock and write boundary", () => {

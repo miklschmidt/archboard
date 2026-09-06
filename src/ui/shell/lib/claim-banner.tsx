@@ -1,6 +1,7 @@
-// The per-pane claim banner: while an agent holds a pane's board, a 32px
+// The per-pane claim banner: while an agent claims a pane's board, a 32px
 // strip across the stage says who, why and since when, and offers the one
-// tap that takes it back.
+// control that releases the claim (ADR 0022). The canvas beneath is read-only
+// meanwhile; the words say so.
 
 import { useCallback } from "react";
 
@@ -8,21 +9,12 @@ import { Button } from "@/ui/components/button";
 import type { ShellActions, ShellPane, TakeBackState } from "@/ui/shell/lib/contracts";
 import { StatusDot } from "@/ui/shell/lib/status-dot";
 import { clockTime } from "@/ui/shell/lib/time";
-import type { LockHolder } from "@/ui/types";
+import { agentClaim } from "@/ui/types";
 
 /** Inputs for the banner. */
 interface ClaimBannerProps {
 	pane: ShellPane;
 	actions: ShellActions;
-}
-
-/**
- * Whether a holder is an agent's claim rather than one passing write.
- * @param holder The lock holder, or null while the board is free.
- * @returns The claim, or null when there is nothing to announce.
- */
-function agentClaim(holder: LockHolder | null): LockHolder | null {
-	return holder?.kind === "agent" && holder.claimed === true ? holder : null;
 }
 
 /** Inputs for the take-back control. */
@@ -79,6 +71,7 @@ function ClaimBanner(props: ClaimBannerProps): React.JSX.Element | null {
 			<StatusDot tone="live" />
 			<span className="shrink-0 font-medium">Agent claimed this board</span>
 			{claim.reason !== undefined && <span className="truncate">{claim.reason}</span>}
+			<span className="text-technical shrink-0 opacity-80">read-only</span>
 			<span className="text-technical shrink-0 opacity-80">
 				since{" "}
 				<time dateTime={claim.since} className="font-mono">

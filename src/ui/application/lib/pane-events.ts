@@ -10,6 +10,7 @@ import {
 	boardErrorNotice,
 	codeTargetShellNotice,
 	staleFrontendNotice,
+	withdrawnNotice,
 } from "@/ui/application/notices";
 import {
 	recoveryMarker,
@@ -19,6 +20,7 @@ import {
 import { recordFor } from "@/ui/application/pane-records";
 import { contextFor } from "@/ui/application/lib/shell-actions";
 import type { PaneSession } from "@/ui/application/lib/pane-handles";
+import type { AgentActivity } from "@/ui/application/lib/use-agent-activity";
 import type { BoardDialogs } from "@/ui/application/lib/use-board-dialogs";
 import type { Boards } from "@/ui/application/lib/use-boards";
 import type { NoticeStack } from "@/ui/application/lib/use-notices";
@@ -26,7 +28,7 @@ import type { PaneEvents, Panes } from "@/ui/application/lib/use-panes";
 import type { useWorkbench } from "@/ui/application/lib/use-workbench";
 import type { LibraryController } from "@/ui/board-library";
 import type { RecoveryKind, ThemeChoice } from "@/ui/shell";
-import type { PaneStatus } from "@/ui/types";
+import type { AgentActivityEntry, EditWithdrawalReason, PaneStatus } from "@/ui/types";
 
 /** The owners the recovery dialogs reach. */
 interface RecoveryOwners {
@@ -40,6 +42,7 @@ interface PaneEventOwners extends RecoveryOwners {
 	readonly library: LibraryController;
 	readonly boards: Boards;
 	readonly workbench: ReturnType<typeof useWorkbench>;
+	readonly activity: AgentActivity;
 	readonly setTheme: (theme: ThemeChoice) => void;
 }
 
@@ -206,8 +209,30 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 	function onPaneStateAccepted(): void {
 		boards.refresh();
 	}
+	/**
+	 * Which boards an agent is working on.
+	 * @param snapshot The whole snapshot.
+	 */
+	function onAgentActivity(snapshot: readonly AgentActivityEntry[]): void {
+		owners.activity.replace(snapshot);
+	}
+	/**
+	 * A pane withdrew the person's unwritten edit (ADR 0022).
+	 * @param paneId The pane.
+	 * @param boardKey Its board.
+	 * @param reason Why.
+	 */
+	function onEditsWithdrawn(
+		paneId: string,
+		boardKey: string | null,
+		reason: EditWithdrawalReason,
+	): void {
+		notices.raise(withdrawnNotice(paneId, boardKey, reason));
+	}
 	return {
 		onBoardError,
+		onAgentActivity,
+		onEditsWithdrawn,
 		onStaleFrontend,
 		onCodeTargetNotice,
 		onThemeChange,

@@ -26,13 +26,19 @@ interface BoardCommandApi {
 	readonly open: (request: OpenBoardRequest) => Promise<BoardInfo>;
 	readonly create: (address: Partial<BoardIdentity> & { board: string }) => Promise<BoardInfo>;
 	readonly save: (request: SaveRequest) => Promise<BoardSaveResult>;
-	readonly clear: (board: string, clientId: string) => Promise<{ count: number }>;
+	readonly clear: (
+		board: string,
+		clientId: string,
+		expectVersion: number | null,
+	) => Promise<{ count: number }>;
 }
 
 /** The pane a command acts for. */
 interface BoardCommandContext {
 	/** The pane's identity to the server: what makes the write a person's (TASK-095). */
 	readonly clientId: string;
+	/** The note version the pane last saw, which a person's write states (ADR 0022). */
+	readonly expectVersion: number | null;
 	/** The board the pane holds, or null before it has one. */
 	readonly boardKey: string | null;
 	/** The board's identity, for a reload. */
@@ -160,7 +166,12 @@ function saveAs(
 		return Promise.resolve(failed("Save as", new Error("This pane holds no board to save.")));
 	}
 	return attempt("Save as", async () => {
-		const save: SaveRequest = { board: boardKey, clientId: context.clientId, name: request.board };
+		const save: SaveRequest = {
+			board: boardKey,
+			clientId: context.clientId,
+			expectVersion: context.expectVersion,
+			name: request.board,
+		};
 		if (request.variant !== undefined) {
 			save.variant = request.variant;
 		}
@@ -236,7 +247,11 @@ function runSave(
 		return Promise.resolve(failed("Save", new Error("This pane holds no board to save.")));
 	}
 	return attempt("Save", async () => {
-		const save: SaveRequest = { board: boardKey, clientId: context.clientId };
+		const save: SaveRequest = {
+			board: boardKey,
+			clientId: context.clientId,
+			expectVersion: context.expectVersion,
+		};
 		if (force) {
 			save.force = true;
 		}
@@ -279,7 +294,7 @@ function runClear(
 		return Promise.resolve(failed("Clear", new Error("This pane holds no board to clear.")));
 	}
 	return attempt("Clear board", async () => {
-		const { count } = await api.clear(boardKey, context.clientId);
+		const { count } = await api.clear(boardKey, context.clientId, context.expectVersion);
 		return `Removed ${count} element(s).`;
 	});
 }

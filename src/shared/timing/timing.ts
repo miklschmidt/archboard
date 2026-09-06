@@ -545,6 +545,23 @@ const CLAIM_LEASE_MS = LOCK_LEASE_MS;
  */
 const LOCK_WATCH_MS = LOCK_RENEW_MS;
 
+/**
+ * How long an agent's unclaimed write stays on every pane's activity list.
+ *
+ * A claim is activity for as long as it stands. A lone write is over in the
+ * time it takes to land, and an entry that vanished with the lease would be
+ * gone before the eye reached the navigator, so the entry outlives the write
+ * by this much (ADR 0022: every pane shows in real time which board an agent
+ * is editing, watched or not).
+ *
+ * Pulls against staleness: the list says "an agent is here" about a board
+ * nobody is touching any more. Eight seconds is long enough to read a `doing`
+ * line and glance at the board it names, and short enough that a burst of
+ * unclaimed writes reads as one visit rather than a board that never comes
+ * free. Each write restarts it, so continuous work never flickers.
+ */
+const ACTIVITY_LINGER_MS = 8000;
+
 /** Actual elapsed ceiling for a test with no reviewed source-local real-time declaration. */
 const TEST_WALL_CLOCK_BUDGET_MS = 20_000;
 /** One controlled Bun child runs three millisecond fixtures and must settle well below the repository budget. */
@@ -747,6 +764,7 @@ export {
 	CLAIM_MAX_MS,
 	CLAIM_LEASE_MS,
 	LOCK_WATCH_MS,
+	ACTIVITY_LINGER_MS,
 	TEST_WALL_CLOCK_BUDGET_MS,
 	TEST_WALL_CLOCK_PRELOAD_LIFECYCLE_TIMEOUT_MS,
 	TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS,

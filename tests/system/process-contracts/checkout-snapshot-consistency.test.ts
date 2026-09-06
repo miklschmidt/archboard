@@ -8,6 +8,7 @@ import { makeIdentity, renderBoardNote, vaultPathFor } from "../../../src/runtim
 import { createJsonRequester } from "../boards/support/http.ts";
 import { openTestPane, waitForPaneMessage } from "../boards/support/pane-websocket.ts";
 import { completeElement } from "../code-targets/support/elements.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
 	createDelayedCheckoutOwner,
@@ -366,7 +367,7 @@ test("a provisional duplicate socket cannot retire the live pane authority", asy
 				viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
 			},
 		});
-		await request("/api/elements/changes?board=scratch", {
+		await request(`/api/elements/changes${await humanWriteQuery(request, "scratch")}`, {
 			method: "POST",
 			body: {
 				origin: "human",
@@ -431,7 +432,7 @@ test("canvas stop terminates a noncooperative provisional WebSocket", async () =
 			env: owner.env,
 		});
 		const request = createJsonRequester(canvas);
-		await request("/api/elements/changes?board=scratch", {
+		await request(`/api/elements/changes${await humanWriteQuery(request, "scratch")}`, {
 			method: "POST",
 			body: {
 				origin: "human",

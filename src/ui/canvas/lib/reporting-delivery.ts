@@ -217,7 +217,13 @@ function sendReport(
 	fullReport: boolean,
 	effects: Effects,
 ): ChangeReportingState {
-	effects.push({ type: "send_report", report, fullReport, generation: state.generation });
+	effects.push({
+		type: "send_report",
+		report,
+		fullReport,
+		generation: state.generation,
+		expectVersion: state.noteVersion,
+	});
 	return {
 		...state,
 		retryTimerScheduled: false,

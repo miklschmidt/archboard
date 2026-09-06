@@ -12,6 +12,8 @@ import type {
 	RuntimeBoardElement,
 	TextElement,
 } from "../../shared/board-elements/index.js";
+import type { DoingEntry } from "./board-doing.js";
+import type { LockHolder } from "./lib/board-lock-contracts.js";
 
 type ExcalidrawElement = PersistedBoardElement;
 type ExcalidrawTextElement = TextElement;
@@ -121,12 +123,41 @@ type WebSocketMessageType =
 	// library is: a pane appearing or going away says nothing about any board,
 	// and the pane that receives one keeps whatever it was holding.
 	| "pane_open"
-	| "pane_close";
+	| "pane_close"
+	// Which boards an agent is editing right now, across every board this
+	// canvas serves (ADR 0022). Boardless on purpose: it is one list for the
+	// navigator, and it names boards no pane has open. Always the whole
+	// snapshot, so a client replaces rather than merges.
+	| "agent_activity";
+
+/**
+ * The note's version after the write or as loaded, on every message that
+ * carries a board's elements (ADR 0022). A pane states this on its next write,
+ * and is refused when the note has moved since. Null when the note carries no
+ * version archboard can read, or there is no note.
+ */
+type CarriedVersion = number | null;
 
 interface InitialElementsMessage extends WebSocketMessage {
 	type: "initial_elements";
 	elements: ServerElement[];
 	board: string;
+	version: CarriedVersion;
+}
+
+/** One board an agent has, or has just written (ADR 0022). */
+interface AgentActivity {
+	/** The board key as panes know it. */
+	board: string;
+	/** The standing claim, or null after an unclaimed write while its entry lingers. */
+	claim: LockHolder | null;
+	/** The last thing the agent said it was doing here, or null under a claim that has not written yet. */
+	doing: DoingEntry | null;
+}
+
+interface AgentActivityMessage extends WebSocketMessage {
+	type: "agent_activity";
+	activity: AgentActivity[];
 }
 
 // The canvas is now showing a different board. Carries the whole scene rather
@@ -137,6 +168,7 @@ interface BoardSwitchedMessage extends WebSocketMessage {
 	board: string;
 	identity: { board: string; variant: string; level?: string };
 	elements: ServerElement[];
+	version: CarriedVersion;
 	timestamp: string;
 }
 
@@ -172,6 +204,8 @@ interface ElementsChangedMessage extends WebSocketMessage {
 	updated: ServerElement[];
 	deleted: string[];
 	origin: string | null;
+	/** The note after this write, or its version as loaded while the board is held. */
+	version: CarriedVersion;
 	timestamp: string;
 }
 
@@ -362,6 +396,9 @@ export {
 	type WebSocketMessage,
 	type WebSocketMessageType,
 	type InitialElementsMessage,
+	type CarriedVersion,
+	type AgentActivity,
+	type AgentActivityMessage,
 	type BoardSwitchedMessage,
 	type ElementCreatedMessage,
 	type ElementUpdatedMessage,

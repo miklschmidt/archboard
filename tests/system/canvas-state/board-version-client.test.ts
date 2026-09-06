@@ -39,6 +39,7 @@ interface VersionAnswer {
 	fingerprint?: { version?: number };
 	versionConflict?: { expected?: number; actual?: number };
 	conflict?: { reason?: string; versionMove?: string; message?: string };
+	document?: Array<{ id?: string }>;
 	success?: boolean;
 }
 
@@ -168,7 +169,46 @@ describe.serial("board version client state", () => {
 			client.setRequestedBoard(null);
 			client.setWriteDoing(null);
 
-			const human = await request<VersionAnswer>(
+			// A pane's write is version-checked like an agent's (ADR 0022): it states
+			// the version it last saw, is refused with the note when that has moved,
+			// and is not accepted at all when it says nothing.
+			const paneBoard = await request<VersionAnswer>("/api/boards/new", {
+				method: "POST",
+				body: { board: "pane" },
+			});
+			const seen = paneBoard.body.version!;
+			const paneWrite = (
+				expectVersion: string | null,
+				id: string,
+			): Promise<{ status: number; body: VersionAnswer }> =>
+				request<VersionAnswer>(
+					`/api/elements/changes?board=pane${expectVersion === null ? "" : `&expectVersion=${expectVersion}`}`,
+					{
+						method: "POST",
+						doing: false,
+						body: { upserts: [box(id, 700)], deletes: [], clientId: "pane-1-somebody" },
+					},
+				);
+			const stated = await paneWrite(String(seen), "theirs");
+			expect(stated.status).toBe(200);
+			expect(stated.body.fingerprint?.version).toBe(seen + 1);
+			const staleHuman = await paneWrite(String(seen), "late");
+			expect(staleHuman.status).toBe(409);
+			expect(staleHuman.body.code).toBe("BOARD_VERSION_CONFLICT");
+			expect(staleHuman.body.versionConflict).toMatchObject({
+				expected: seen,
+				actual: seen + 1,
+			});
+			expect(staleHuman.body.version).toBe(seen + 1);
+			expect(staleHuman.body.document).toContainEqual(expect.objectContaining({ id: "theirs" }));
+			expect(staleHuman.body.document).not.toContainEqual(expect.objectContaining({ id: "late" }));
+			const silentHuman = await paneWrite(null, "silent");
+			expect(silentHuman.status).toBe(400);
+			expect(silentHuman.body.code).toBe("BAD_EXPECTED_VERSION");
+			expect(silentHuman.body.error).toMatch(/expectVersion.*required/);
+			// While a board is held, nothing writes the note and nothing is checked;
+			// the pane's stated version is not consulted, as for an agent.
+			const heldHuman = await request<VersionAnswer>(
 				"/api/elements/changes?board=claimed&expectVersion=1",
 				{
 					method: "POST",
@@ -176,8 +216,8 @@ describe.serial("board version client state", () => {
 					body: { upserts: [box("theirs", 700)], deletes: [], clientId: "pane-1-somebody" },
 				},
 			);
-			expect(human.status).toBe(200);
-			expect(human.body.success).toBeTrue();
+			expect(heldHuman.status).toBe(200);
+			expect(heldHuman.body.success).toBeTrue();
 
 			await request("/api/boards/new", { method: "POST", body: { board: "shared" } });
 			await request("/api/elements?board=shared", { method: "POST", body: box("eight", 10) });

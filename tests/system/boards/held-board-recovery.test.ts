@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 import { createJsonRequester } from "./support/http.ts";
@@ -210,18 +211,21 @@ describe("held board recovery", () => {
 			savedAt,
 		);
 
-		const fullReport = await request<WriteBody>("/api/elements/changes?board=holdover", {
-			method: "POST",
-			body: {
-				upserts: [
-					{ id: "ours1", type: "rectangle", x: 10, y: 10, width: 50, height: 50 },
-					{ id: "held1", type: "rectangle", x: 100, y: 100, width: 30, height: 30 },
-				],
-				deletes: [],
-				fullReport: true,
-				clientId: "a-pane",
+		const fullReport = await request<WriteBody>(
+			`/api/elements/changes${await humanWriteQuery(request, "holdover")}`,
+			{
+				method: "POST",
+				body: {
+					upserts: [
+						{ id: "ours1", type: "rectangle", x: 10, y: 10, width: 50, height: 50 },
+						{ id: "held1", type: "rectangle", x: 100, y: 100, width: 30, height: 30 },
+					],
+					deletes: [],
+					fullReport: true,
+					clientId: "a-pane",
+				},
 			},
-		});
+		);
 		expect(fullReport.status).toBe(200);
 		const after = await request<ElementsBody>("/api/elements?board=holdover");
 		expect(after.body.elements.map((element) => element.id).toSorted()).toEqual(["held1", "ours1"]);
@@ -234,7 +238,7 @@ describe("held board recovery", () => {
 			method: "POST",
 			body: { id: "held-force", type: "rectangle", x: 100, y: 100, width: 30, height: 30 },
 		});
-		await request("/api/elements/changes?board=holdforce", {
+		await request(`/api/elements/changes${await humanWriteQuery(request, "holdforce")}`, {
 			method: "POST",
 			body: {
 				upserts: [
@@ -266,15 +270,18 @@ describe("held board recovery", () => {
 		});
 		expect(fs.readFileSync(file, "utf8")).toContain("after1");
 		expect(afterForce.status).toBe(200);
-		const refused = await request<WriteBody>("/api/elements/changes?board=holdforce", {
-			method: "POST",
-			body: {
-				upserts: [{ id: "ours1", type: "rectangle", x: 1, y: 1, width: 5, height: 5 }],
-				deletes: [],
-				fullReport: true,
-				clientId: "a-pane",
+		const refused = await request<WriteBody>(
+			`/api/elements/changes${await humanWriteQuery(request, "holdforce")}`,
+			{
+				method: "POST",
+				body: {
+					upserts: [{ id: "ours1", type: "rectangle", x: 1, y: 1, width: 5, height: 5 }],
+					deletes: [],
+					fullReport: true,
+					clientId: "a-pane",
+				},
 			},
-		});
+		);
 		expect(refused.status).toBe(400);
 		expect(refused.body.error).toContain("full report");
 	});
@@ -344,17 +351,20 @@ describe("held board recovery", () => {
 				.map((element) => element.id)
 				.toSorted(),
 		).toEqual(source.body.elements.map((element) => element.id).toSorted());
-		const resumed = await request<ElementsBody>("/api/elements?board=holdelse&clientId=held-pane", {
-			method: "POST",
-			body: {
-				id: "after-elsewhere",
-				type: "rectangle",
-				x: 20,
-				y: 20,
-				width: 20,
-				height: 20,
+		const resumed = await request<ElementsBody>(
+			`/api/elements${await humanWriteQuery(request, "holdelse")}&clientId=held-pane`,
+			{
+				method: "POST",
+				body: {
+					id: "after-elsewhere",
+					type: "rectangle",
+					x: 20,
+					y: 20,
+					width: 20,
+					height: 20,
+				},
 			},
-		});
+		);
 		expect(resumed.status).toBe(200);
 		expect(resumed.body.held).toBeUndefined();
 		expect(fs.readFileSync(stopped.file, "utf8")).toContain("after-elsewhere");
@@ -384,22 +394,31 @@ describe("held board recovery", () => {
 		expect(heldByA.status).toBe(200);
 		const file = (await request<BoardInfo>(`/api/boards/info?board=${board}`)).body.file;
 		writeForeignElement(file, "theirs-release-order");
-		const conflict = await request<WriteBody>(`/api/elements?board=${board}&clientId=${humanA}`, {
-			method: "POST",
-			body: { id: "conflicted", type: "ellipse", x: 5, y: 5, width: 20, height: 20 },
-		});
+		const conflict = await request<WriteBody>(
+			`/api/elements${await humanWriteQuery(request, board)}&clientId=${humanA}`,
+			{
+				method: "POST",
+				body: { id: "conflicted", type: "ellipse", x: 5, y: 5, width: 20, height: 20 },
+			},
+		);
 		expect(conflict.status).toBe(409);
 		expect(conflict.body.held?.board).toBe(board);
-		const heldWrite = await request(`/api/elements?board=${board}&clientId=${humanA}`, {
-			method: "POST",
-			body: { id: "held", type: "rectangle", x: 80, y: 80, width: 30, height: 30 },
-		});
+		const heldWrite = await request(
+			`/api/elements${await humanWriteQuery(request, board)}&clientId=${humanA}`,
+			{
+				method: "POST",
+				body: { id: "held", type: "rectangle", x: 80, y: 80, width: 30, height: 30 },
+			},
+		);
 		expect(heldWrite.status).toBe(200);
 
-		const saved = await request<WriteBody>("/api/boards/save", {
-			method: "POST",
-			body: { board, name: "hold-release-copy", clientId: humanA },
-		});
+		const saved = await request<WriteBody>(
+			`/api/boards/save${await humanWriteQuery(request, board)}`,
+			{
+				method: "POST",
+				body: { board, name: "hold-release-copy", clientId: humanA },
+			},
+		);
 		expect(saved.status).toBe(200);
 		expect(saved.body.resolvedHold).toMatchObject({ outcome: "elsewhere" });
 		const acquiredByB = await request(`/api/boards/hold?board=${board}`, {

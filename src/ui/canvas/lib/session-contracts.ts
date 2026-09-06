@@ -15,15 +15,23 @@ import type { WorkbenchTransportPort } from "@/ui/canvas/workbench-port";
 import type { MountedBoardPreviewController } from "@/ui/board-preview";
 import type { PathFocusOverlay, PathFocusSnapshot } from "@/ui/path-focus";
 import type { SelectionProjection } from "@/ui/selection-inspector";
-import type { BoardIdentity, DoingEntry, LockHolder, PaneStatus } from "@/ui/types";
+import type {
+	AgentActivityEntry,
+	BoardIdentity,
+	DoingEntry,
+	EditWithdrawalReason,
+	LockHolder,
+	PaneStatus,
+} from "@/ui/types";
 
 /**
  * The holder a pane assumes before it has been told who has the board.
  *
  * Not a real holder and never printed as one: it is how "I do not know" is
- * spelled in the one field that decides whether a pane accepts a touch, and
- * ADR 0016 says not knowing means held. It is replaced by the truth one message
- * later, or by nothing if the board is free.
+ * spelled in the field that says who has the board, so nothing reads the
+ * board as free before the server has said so. It is not a claim, so it does
+ * not make the pane read-only; it is replaced by the truth one message later,
+ * or by nothing if the board is free.
  */
 const UNKNOWN_HOLDER: LockHolder = Object.freeze({
 	id: "",
@@ -112,6 +120,21 @@ interface CanvasSessionOptions<Transport extends WorkbenchTransportPort> {
 	/** A code target could not be opened. */
 	onCodeTargetNotice?: (notice: CodeTargetNotice) => void;
 	/**
+	 * Which boards an agent is working on, across this whole server (ADR 0022).
+	 * A whole snapshot each time; every pane's socket hears it, and the shell
+	 * replaces its map, so hearing it twice changes nothing.
+	 */
+	onAgentActivity?: (activity: readonly AgentActivityEntry[]) => void;
+	/**
+	 * The person's unwritten edit on this pane was withdrawn and the board now
+	 * shows the note's state (ADR 0022).
+	 */
+	onEditsWithdrawn?: (
+		paneId: string,
+		boardKey: string | null,
+		reason: EditWithdrawalReason,
+	) => void;
+	/**
 	 * How the workbench rides this pane's socket. Called once; the session
 	 * attaches the owner after pane registration and disposes it on unmount.
 	 * Absent, the pane carries no workbench.
@@ -134,9 +157,13 @@ interface CanvasSession<Transport extends WorkbenchTransportPort> {
 	board: BoardIdentity | null;
 	connected: boolean;
 	/**
-	 * A disconnected pane fails closed because it cannot learn claim or lock
-	 * state. A connected pane stays locally editable while persistence waits
-	 * for the mutex.
+	 * Whether the canvas takes content edits (ADR 0022). A disconnected pane
+	 * fails closed because it cannot learn claim or lock state. A pane whose
+	 * board an agent claims is read-only while the claim stands: pan, zoom and
+	 * selection keep working, and a content gesture does not revoke the claim;
+	 * `takeBack` is the one control that releases it. Otherwise the canvas is
+	 * editable, and every edit is optimistic: written with the note version the
+	 * pane last saw, and withdrawn when the note has moved since.
 	 */
 	readOnly: boolean;
 	/** Who holds the board when it is not this pane, or null. */
@@ -150,7 +177,7 @@ interface CanvasSession<Transport extends WorkbenchTransportPort> {
 	/** Push the shell's palette into this pane's Excalidraw, once per content hash. */
 	applyLibrary: (items: LibraryItems) => void;
 	markInteracted: () => void;
-	/** Take a claimed board back; nothing is undone (ADR 0016). */
+	/** Release an agent's claim on this pane's board; nothing is undone (ADR 0016, ADR 0022). */
 	takeBack: () => Promise<TakeBackResult>;
 	/** Dim everything not connected to the selected element. */
 	focusPath: () => void;

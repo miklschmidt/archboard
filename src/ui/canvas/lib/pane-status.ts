@@ -20,6 +20,7 @@ interface LivePaneStatus {
 	hold: BoardHold | null;
 	writtenElsewhere: NoteWrittenElsewhere | null;
 	doing: DoingEntry[];
+	noteVersion: number | null;
 }
 
 /** What the status needs to publish itself. */
@@ -51,6 +52,7 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 		hold: null,
 		writtenElsewhere: null,
 		doing: [],
+		noteVersion: null,
 	};
 
 	/** Tell the shell what this pane is, now. */
@@ -66,6 +68,7 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 			hold: live.hold,
 			writtenElsewhere: live.writtenElsewhere,
 			doing: live.doing,
+			noteVersion: live.noteVersion,
 		});
 	}
 

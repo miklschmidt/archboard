@@ -248,13 +248,28 @@ function stampBoardVersion(
 	return { note, bytes: Buffer.from(note, "utf-8"), version: next };
 }
 
-/** Parse the request source. A person's change is never version-checked. */
+/**
+ * Parse what a write says it was editing.
+ *
+ * One parser for both writers (ADR 0022): a person's pane states the version
+ * it last saw on every write, exactly as an agent does, and is refused the
+ * same way when the note has moved. The difference is only in what silence
+ * means. An agent may stay silent, because under a claim the canvas remembers
+ * what it last told that writer; a pane has no remembered path and must
+ * always state, `0` when it has seen no note yet.
+ */
 function statedVersion(raw: unknown, writer: "human" | "agent"): StatedVersionResult {
-	if (writer !== "agent") {
-		return { ok: true };
-	}
 	if (raw === undefined || raw === "") {
-		return { ok: true };
+		if (writer === "agent") {
+			return { ok: true };
+		}
+		return {
+			ok: false,
+			problem:
+				"`expectVersion` is required on a pane's write: the version the pane last saw, as " +
+				"`initial_elements`, `board_switched`, `elements_changed` or the last write's fingerprint " +
+				"reported it, or 0 when it has seen no note yet. Got nothing.",
+		};
 	}
 	if (typeof raw !== "string" || !/^\d+$/.test(raw.trim())) {
 		return {

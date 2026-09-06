@@ -9,6 +9,7 @@ import {
 	type WorkbenchResult,
 } from "./support/codex-production.ts";
 import { createIdentityAuthorities } from "../../../src/shared/codex-workbench-identity/index.js";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 
 /**
@@ -190,7 +191,9 @@ describe.serial("actual production Codex composition", () => {
 				},
 			);
 			expect(seeded.status).toBe(200);
-			const changed = await request("/api/elements/changes?board=scratch", {
+			const paneChanges = async () =>
+				`/api/elements/changes${await humanWriteQuery(request, "scratch")}`;
+			const changed = await request(await paneChanges(), {
 				method: "POST",
 				doing: false,
 				body: {
@@ -240,7 +243,7 @@ describe.serial("actual production Codex composition", () => {
 			expect(archboardContext.focus.paneId).toBeNull();
 			expect(semanticBrief.pane).toEqual({ paneId: "bound-pane", focused: false });
 
-			const followup = await request("/api/elements/changes?board=scratch", {
+			const followup = await request(await paneChanges(), {
 				method: "POST",
 				doing: false,
 				body: {
