@@ -4,7 +4,10 @@ import { cn } from "cn";
 
 /** Inputs for one state dot. */
 interface StatusDotProps {
-	/** `live` is the acid-lime accent; `idle` is a muted neutral. */
+	/**
+	 * `live` is the acid-lime accent; `idle` is a muted neutral; `warning` is
+	 * the amber of a board that needs a decision, never the destructive red.
+	 */
 	tone: "live" | "idle" | "warning";
 	className?: string | undefined;
 }
@@ -12,7 +15,7 @@ interface StatusDotProps {
 const TONE_CLASS: Record<StatusDotProps["tone"], string> = {
 	live: "bg-status",
 	idle: "bg-muted-foreground/40",
-	warning: "bg-destructive",
+	warning: "bg-warning",
 };
 
 /**

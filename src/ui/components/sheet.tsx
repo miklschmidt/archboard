@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
-import { cn } from "cn";
+import { cn } from "@/ui/components/class-names";
 
 import { Button } from "@/ui/components/button";
 import { RiCloseLine } from "@remixicon/react";

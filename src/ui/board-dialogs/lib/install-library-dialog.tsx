@@ -12,7 +12,7 @@ import {
 	BusyText,
 	DialogErrorAlert,
 	Facts,
-	OUTLINE_BUTTON_CLASS,
+	CANCEL_BUTTON_CLASS,
 	type FactRow,
 } from "@/ui/board-dialogs/lib/dialog-parts";
 import { checkLibrarySource } from "@/ui/board-dialogs/lib/library-source";
@@ -95,10 +95,10 @@ function InstallLibraryDialog(props: InstallLibraryDialogProps): React.JSX.Eleme
 				<DialogErrorAlert error={props.error} />
 				<BusyText busy={props.busy} text="Installing the library…" />
 				<DialogFooter>
-					<DialogClose className={OUTLINE_BUTTON_CLASS} disabled={props.busy}>
+					<DialogClose className={CANCEL_BUTTON_CLASS} disabled={props.busy}>
 						Cancel
 					</DialogClose>
-					<Button disabled={!canInstall} onClick={handleInstall}>
+					<Button size="sm" disabled={!canInstall} onClick={handleInstall}>
 						Install
 					</Button>
 				</DialogFooter>

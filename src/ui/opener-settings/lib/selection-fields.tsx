@@ -43,7 +43,8 @@ interface AvailabilityBadgeProps {
 }
 
 /**
- * Whether the saved opener can run, as the server last checked.
+ * Whether the saved opener can run, as the server last checked. An opener
+ * that cannot run is a warning with a choice beside it, not a failure.
  * @param props The availability.
  * @returns A badge.
  */
@@ -53,7 +54,7 @@ function AvailabilityBadge(props: AvailabilityBadgeProps): React.JSX.Element {
 		return <Badge variant="outline">Available</Badge>;
 	}
 	return (
-		<Badge variant="destructive" className="font-mono font-medium">
+		<Badge variant="outline" size="technical" className="border-warning/60 text-warning-foreground">
 			{availability.code}
 		</Badge>
 	);

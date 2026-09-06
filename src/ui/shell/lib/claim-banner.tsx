@@ -1,5 +1,6 @@
-// The per-pane claim banner: while an agent holds a pane's board, the stage
-// says who, why and since when, and offers the one tap that takes it back.
+// The per-pane claim banner: while an agent holds a pane's board, a 32px
+// strip across the stage says who, why and since when, and offers the one
+// tap that takes it back.
 
 import { useCallback } from "react";
 
@@ -41,11 +42,14 @@ function TakeBackControl(props: TakeBackControlProps): React.JSX.Element {
 	const handleClick = useCallback(() => actions.takeBackControl(paneId), [actions, paneId]);
 	const pending = state.kind === "pending";
 	return (
-		<span className="flex items-center gap-2">
-			{state.kind === "failed" && <span className="text-destructive text-xs">{state.message}</span>}
+		<span className="flex items-center gap-3">
+			{state.kind === "failed" && (
+				<span className="text-destructive text-body truncate">{state.message}</span>
+			)}
 			<Button
 				variant="outline"
-				size="sm"
+				size="xs"
+				className="border-status-foreground/40 bg-background/60 hover:bg-background text-status-foreground hover:text-status-foreground shrink-0 rounded-[2px] font-medium"
 				onClick={handleClick}
 				disabled={pending}
 				aria-busy={pending}
@@ -70,12 +74,12 @@ function ClaimBanner(props: ClaimBannerProps): React.JSX.Element | null {
 	return (
 		<div
 			data-slot="claim-banner"
-			className="border-border bg-status-subtle text-foreground flex h-9 shrink-0 items-center gap-3 border-b px-3 text-sm"
+			className="border-border bg-status-subtle text-status-foreground text-body flex h-8 shrink-0 items-center gap-3 border-b px-3"
 		>
 			<StatusDot tone="live" />
-			<span className="font-medium">Agent claimed this board</span>
+			<span className="shrink-0 font-medium">Agent claimed this board</span>
 			{claim.reason !== undefined && <span className="truncate">{claim.reason}</span>}
-			<span className="text-muted-foreground shrink-0 text-xs">
+			<span className="text-technical shrink-0 opacity-80">
 				since{" "}
 				<time dateTime={claim.since} className="font-mono">
 					{clockTime(claim.since)}

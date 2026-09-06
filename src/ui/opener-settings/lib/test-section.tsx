@@ -25,7 +25,7 @@ interface RepositoryItemProps {
 }
 
 /**
- * One checkout, with a badge when it cannot be opened as registered.
+ * One checkout, with a warning badge when it cannot be opened as registered.
  * @param props The checkout.
  * @returns A select item.
  */
@@ -34,9 +34,15 @@ function RepositoryItem(props: RepositoryItemProps): React.JSX.Element {
 	return (
 		<SelectItem value={checkout.repository}>
 			<span className="font-mono">{checkout.repository}</span>
-			{!checkout.exists && <Badge variant="destructive">missing</Badge>}
+			{!checkout.exists && (
+				<Badge variant="outline" className="border-warning/60 text-warning-foreground">
+					missing
+				</Badge>
+			)}
 			{checkout.exists && !checkout.identityMatches && (
-				<Badge variant="secondary">identity changed</Badge>
+				<Badge variant="outline" className="border-warning/60 text-warning-foreground">
+					identity changed
+				</Badge>
 			)}
 		</SelectItem>
 	);

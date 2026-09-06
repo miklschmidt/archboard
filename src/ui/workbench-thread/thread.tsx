@@ -15,7 +15,7 @@ import {
 import { TooltipIconButton } from "@/ui/workbench-thread/tooltip-icon-button";
 import { Button } from "@/ui/components/button";
 import { Skeleton } from "@/ui/components/skeleton";
-import { cn } from "cn";
+import { cn } from "@/ui/components/class-names";
 import {
 	ActionBarMorePrimitive,
 	ActionBarPrimitive,

@@ -46,6 +46,29 @@
 	--font-mono: "Archboard DM Mono", ui-monospace, monospace;
 	--font-heading: var(--font-sans);
 	--tracking-wordmark: -0.02027027027em;
+	/* Type roles (TASK-150.08). Chrome uses only these six sizes; Excalidraw
+	   keeps its own. kicker: section labels. technical: identifiers, paths,
+	   versions, counts and times, always in the mono face. body: prose and row
+	   labels. control: buttons, tabs, fields. title: region and dialog titles.
+	   board: the board name in the header (named so it cannot collide with
+	   the text-primary colour utility). */
+	--text-kicker: 10px;
+	--text-kicker--line-height: 12px;
+	--text-kicker--letter-spacing: 0.08em;
+	--text-kicker--font-weight: 600;
+	--text-technical: 11px;
+	--text-technical--line-height: 14px;
+	--text-body: 12px;
+	--text-body--line-height: 16px;
+	--text-control: 13px;
+	--text-control--line-height: 18px;
+	--text-control--font-weight: 500;
+	--text-title: 14px;
+	--text-title--line-height: 20px;
+	--text-title--font-weight: 600;
+	--text-board: 16px;
+	--text-board--line-height: 22px;
+	--text-board--font-weight: 600;
 	--color-sidebar-ring: var(--sidebar-ring);
 	--color-sidebar-border: var(--sidebar-border);
 	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -81,6 +104,13 @@
 	--color-status: var(--status);
 	--color-status-foreground: var(--status-foreground);
 	--color-status-subtle: var(--status-subtle);
+	/* Warning: a board that has stopped saving or was written elsewhere. It is
+	   not a refusal and never reads as one; destructive is for failures. */
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
+	--color-warning-subtle: var(--warning-subtle);
+	/* Controls move in 120ms; the reference chrome is flat and quick. */
+	--default-transition-duration: 120ms;
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
 	--radius-lg: var(--radius);
@@ -99,6 +129,28 @@
 	background-color: currentColor;
 	-webkit-mask: url("../shell/assets/archboard-wordmark.svg") center / contain no-repeat;
 	mask: url("../shell/assets/archboard-wordmark.svg") center / contain no-repeat;
+}
+
+/* Desktop icon buttons are 28px visual inside a 32px hit area: the
+   documented exception to a 44px target. */
+@utility hit-area {
+	position: relative;
+	&::after {
+		content: "";
+		position: absolute;
+		inset: -2px;
+	}
+}
+
+/* The faint 8px dot grid an empty preview shows instead of a sentence. */
+@utility dot-grid {
+	background-image: radial-gradient(
+		circle,
+		color-mix(in oklch, var(--foreground) 12%, transparent) 0.6px,
+		transparent 0.6px
+	);
+	background-size: 8px 8px;
+	background-position: 4px 4px;
 }
 
 /* Light: chalk white, pale stone panels, near-black text, cobalt selection. */
@@ -131,7 +183,11 @@
 	--status: #a3e635;
 	--status-foreground: #315314;
 	--status-subtle: #e7f9b7;
-	--radius: 0.45rem;
+	--warning: #d29a1e;
+	--warning-foreground: #6e4a00;
+	--warning-subtle: #fbf1d7;
+	/* Small corners: controls about 3px, dialogs about 4px. */
+	--radius: 0.3rem;
 	--sidebar: oklch(0.975 0.003 95);
 	--sidebar-foreground: oklch(0.145 0 0);
 	--sidebar-primary: #155eef;
@@ -170,6 +226,9 @@
 	--status: #a3e635;
 	--status-foreground: #d9ff84;
 	--status-subtle: #273716;
+	--warning: #d29a1e;
+	--warning-foreground: #f2c96b;
+	--warning-subtle: #3a2d10;
 	--sidebar: oklch(0.165 0.004 264);
 	--sidebar-foreground: oklch(0.965 0.004 95);
 	--sidebar-primary: #155eef;
@@ -210,6 +269,15 @@
 	.excalidraw
 	:is(.layer-ui__wrapper, .App-menu, .App-toolbar-container) {
 	display: none;
+}
+
+/* A theme switch is one frame: the shell sets this attribute while it swaps
+   `data-theme`, forces a style flush, and removes it next frame, so no
+   control cross-fades between the palettes. */
+html[data-theme-switching] *,
+html[data-theme-switching] *::before,
+html[data-theme-switching] *::after {
+	transition: none !important;
 }
 
 /* Forced colours drop box-shadow, which is how the focus ring is drawn, so

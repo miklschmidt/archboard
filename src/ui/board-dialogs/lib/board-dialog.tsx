@@ -20,7 +20,8 @@ import {
 	BusyText,
 	DialogErrorAlert,
 	FieldIssues,
-	OUTLINE_BUTTON_CLASS,
+	CANCEL_BUTTON_CLASS,
+	PathValue,
 } from "@/ui/board-dialogs/lib/dialog-parts";
 import { Button } from "@/ui/components/button";
 import {
@@ -49,6 +50,51 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/ui/components/select";
+import type { BoardIdentity } from "@/ui/types";
+
+/**
+ * The technical suffixes an open-list item shows after the board name.
+ * @param identity The board's identity.
+ * @returns The variant when it is not the current one, then the level.
+ */
+function boardSuffixes(identity: BoardIdentity): string[] {
+	const suffixes: string[] = [];
+	if (identity.variant !== "current") {
+		suffixes.push(`@${identity.variant}`);
+	}
+	if (identity.level !== undefined) {
+		suffixes.push(identity.level);
+	}
+	return suffixes;
+}
+
+/** Inputs for one board in the open list. */
+interface BoardItemProps {
+	entryKey: string;
+	/** The entry's identity, or null when the key is not in the listing. */
+	identity: BoardIdentity | null;
+}
+
+/**
+ * One board in the open list: the name, then the variant and level as
+ * technical suffixes when the board has them.
+ * @param props The key and its identity.
+ * @returns The item's content.
+ */
+function BoardItem(props: BoardItemProps): React.JSX.Element {
+	const { entryKey, identity } = props;
+	const suffixes = identity ? boardSuffixes(identity) : [];
+	return (
+		<>
+			<span className="truncate">{identity?.board ?? entryKey}</span>
+			{suffixes.length > 0 && (
+				<span className="text-muted-foreground text-technical shrink-0 font-mono">
+					{suffixes.join(" · ")}
+				</span>
+			)}
+		</>
+	);
+}
 
 /** Inputs shared by both forms: the dialog's props, passed through whole. */
 interface FormProps {
@@ -78,10 +124,10 @@ function FormFooter(props: FormFooterProps): React.JSX.Element {
 			<DialogErrorAlert error={props.error} />
 			<BusyText busy={props.busy} text={props.busyText} />
 			<DialogFooter>
-				<DialogClose className={OUTLINE_BUTTON_CLASS} disabled={props.busy}>
+				<DialogClose className={CANCEL_BUTTON_CLASS} disabled={props.busy}>
 					Cancel
 				</DialogClose>
-				<Button type="submit" disabled={!props.canSubmit}>
+				<Button type="submit" size="sm" disabled={!props.canSubmit}>
 					{props.submitLabel}
 				</Button>
 			</DialogFooter>
@@ -104,6 +150,10 @@ function OpenBoardForm(props: FormProps): React.JSX.Element {
 		() => dialog.boards?.boards.map((entry) => entry.key) ?? [],
 		[dialog.boards],
 	);
+	const entries = useMemo(
+		() => new Map(dialog.boards?.boards.map((entry) => [entry.key, entry.identity]) ?? []),
+		[dialog.boards],
+	);
 	const request = buildOpenRequest(dialog.boards, selectedKey);
 	const handleSelect = useCallback((value: string | null) => setSelectedKey(value), []);
 	const handleSubmit = useCallback(
@@ -118,10 +168,10 @@ function OpenBoardForm(props: FormProps): React.JSX.Element {
 	const renderItem = useCallback(
 		(key: string) => (
 			<ComboboxItem key={key} value={key}>
-				{key}
+				<BoardItem entryKey={key} identity={entries.get(key) ?? null} />
 			</ComboboxItem>
 		),
-		[],
+		[entries],
 	);
 	const boardIssues = issuesFor(dialog.issues, "board");
 	return (
@@ -135,10 +185,17 @@ function OpenBoardForm(props: FormProps): React.JSX.Element {
 						<ComboboxList>{renderItem}</ComboboxList>
 					</ComboboxContent>
 				</Combobox>
-				<FieldDescription>
-					{dialog.boards
-						? `${dialog.boards.boards.length} boards in ${dialog.boards.vault}`
-						: "Listing the vault…"}
+				<FieldDescription className="flex flex-col gap-0.5">
+					{dialog.boards ? (
+						<>
+							<span>
+								<span className="font-mono">{dialog.boards.boards.length}</span> boards in the vault
+							</span>
+							<PathValue path={dialog.boards.vault} />
+						</>
+					) : (
+						"Listing the vault…"
+					)}
 				</FieldDescription>
 				<FieldIssues messages={boardIssues} />
 			</Field>

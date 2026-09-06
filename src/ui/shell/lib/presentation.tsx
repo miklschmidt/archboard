@@ -60,7 +60,7 @@ function VoiceSlot(props: VoiceSlotProps): React.JSX.Element {
 	return (
 		<fieldset aria-label="Voice controls" className="m-0 flex items-center gap-1 border-0 p-0">
 			{props.children ?? (
-				<span className="text-muted-foreground text-xs">No voice workbench on this pane.</span>
+				<span className="text-muted-foreground text-body">No voice workbench on this pane.</span>
 			)}
 		</fieldset>
 	);
@@ -82,8 +82,8 @@ function RecoveryMessage(props: RecoveryMessageProps): React.JSX.Element {
 			aria-label="Presentation recovery"
 			className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-8 text-center"
 		>
-			<p className="text-base font-medium">The presented pane is disconnected</p>
-			<p className="text-muted-foreground max-w-prose text-sm">{props.message}</p>
+			<p className="text-title">The presented pane is disconnected</p>
+			<p className="text-muted-foreground text-body max-w-prose">{props.message}</p>
 		</section>
 	);
 }
@@ -100,15 +100,15 @@ function PresentationBar(props: PresentationBarProps): React.JSX.Element {
 		<div
 			data-slot="presentation-bar"
 			data-presentation={paneId}
-			className="border-border flex h-9 shrink-0 items-center gap-2 border-b px-2"
+			className="border-border bg-background flex h-9 shrink-0 items-center gap-3 border-b px-2"
 		>
 			<ExitControl actions={actions} />
-			<span className="text-muted-foreground text-xs">
+			<span className="text-muted-foreground text-body">
 				Pane <span className="font-mono">{paneId}</span>
 				{pane.status.board && ` · ${pane.status.board.board}`}
 			</span>
 			{props.error !== null && (
-				<span role="alert" className="text-destructive min-w-0 truncate text-xs">
+				<span role="alert" className="text-destructive text-body min-w-0 truncate">
 					{props.error}
 				</span>
 			)}

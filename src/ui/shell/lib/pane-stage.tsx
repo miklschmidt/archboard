@@ -118,6 +118,7 @@ function CanvasStages(props: CanvasStagesProps): React.JSX.Element {
 						key={pane.status.paneId}
 						pane={pane}
 						active={pane.status.paneId === activePaneId}
+						framed={panes.length > 1 && presented === null}
 						first={index === 0 || presented !== null}
 						hidden={hiddenBy(presentation, pane.status.paneId)}
 						overlay={overlayFor(overlay, pane.status.paneId)}
@@ -129,10 +130,24 @@ function CanvasStages(props: CanvasStagesProps): React.JSX.Element {
 	);
 }
 
+/**
+ * The stage's classes: the inset cobalt ring is drawn only while two panes
+ * share the centre.
+ * @param framed Whether the active stage should carry the ring.
+ * @returns The class list.
+ */
+function stageClass(framed: boolean): string {
+	return framed
+		? "data-active:ring-primary flex min-h-0 min-w-0 flex-1 flex-col data-active:ring-1 data-active:ring-inset"
+		: "flex min-h-0 min-w-0 flex-1 flex-col";
+}
+
 /** Inputs for one pane's stage. */
 interface PaneStageProps {
 	pane: ShellPane;
 	active: boolean;
+	/** Draw the focus ring on the active stage: only while two panes share the centre. */
+	framed: boolean;
 	first: boolean;
 	hidden: boolean;
 	overlay: PathFocusOverlay | null;
@@ -141,8 +156,10 @@ interface PaneStageProps {
 
 /**
  * One pane's canvas under its claim banner, with the separator that divides
- * it from the pane before. The canvas itself is the application's.
- * @param props The pane, whether it is first, hidden, its overlay and the actions.
+ * it from the pane before. The canvas itself is the application's. With two
+ * panes, the active one carries a one-pixel inset cobalt ring; alone, the
+ * pane bar's underline already says which pane is focused.
+ * @param props The pane, whether it is first, framed, hidden, its overlay and the actions.
  * @returns The mounted canvas.
  */
 function PaneStage(props: PaneStageProps): React.JSX.Element {
@@ -156,7 +173,7 @@ function PaneStage(props: PaneStageProps): React.JSX.Element {
 				aria-current={props.active ? "true" : undefined}
 				data-active={props.active ? "" : undefined}
 				hidden={props.hidden}
-				className="data-active:ring-primary/60 flex min-h-0 min-w-0 flex-1 flex-col data-active:ring-1 data-active:ring-inset"
+				className={stageClass(props.framed)}
 			>
 				<ClaimBanner pane={pane} actions={actions} />
 				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">

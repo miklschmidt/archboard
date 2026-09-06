@@ -29,6 +29,9 @@ interface PreviewCardProps {
 /** The padding Excalidraw leaves around an exported scene, in scene pixels. */
 const EXPORT_PADDING = 8;
 
+/** The 16:9 card every state shares: one-pixel border, two-pixel corners. */
+const CARD_CLASS = "border-border bg-card relative block aspect-video w-full rounded-[2px] border";
+
 /**
  * Export the scene as an SVG Blob URL.
  * @param snapshot The scene to depict.
@@ -50,18 +53,25 @@ async function renderPreviewUrl(snapshot: PreviewSource, theme: PreviewTheme): P
 
 /** What the card shows while it has no image. */
 interface EmptyBoxProps {
+	/** The words, kept short: they sit as a technical label in the corner. */
 	text: string;
+	/** Whether the board itself is empty, which paints the faint dot grid. */
+	empty: boolean;
 }
 
 /**
- * The bordered 16:9 box shown before a preview exists or when the board is empty.
- * @param props The text to show in the box.
- * @returns The box.
+ * The 16:9 card shown before a preview exists or when the board is empty:
+ * a faint dot grid with a small technical label in the corner, not a
+ * sentence in the middle.
+ * @param props The label and whether the board is empty.
+ * @returns The card.
  */
 function EmptyBox(props: EmptyBoxProps): React.JSX.Element {
 	return (
-		<span className="border-border bg-background text-muted-foreground flex aspect-video w-full items-center justify-center rounded-sm border px-1 text-center text-[10px] leading-tight">
-			{props.text}
+		<span className={`${CARD_CLASS} ${props.empty ? "dot-grid" : ""}`}>
+			<span className="text-technical text-muted-foreground bg-card absolute bottom-1 left-1 rounded-[2px] px-0.5 font-mono">
+				{props.text}
+			</span>
 		</span>
 	);
 }
@@ -153,21 +163,17 @@ function PreviewCard(props: PreviewCardProps): React.JSX.Element {
 		return observeAndExport(hostRef.current, request);
 	}, [snapshot, theme, cache, gate, adopt]);
 	if (snapshot === null) {
-		return <EmptyBox text={`No preview yet for ${board}`} />;
+		return <EmptyBox text="No preview yet" empty={false} />;
 	}
 	if (!previewSourceHasContent(snapshot)) {
-		return <EmptyBox text="Empty board" />;
+		return <EmptyBox text="Empty board" empty />;
 	}
 	return (
 		<span ref={hostRef} className="block w-full">
 			{url === null ? (
-				<EmptyBox text="Rendering preview" />
+				<EmptyBox text="Rendering" empty={false} />
 			) : (
-				<img
-					src={url}
-					alt={`Preview of ${board}`}
-					className="border-border bg-background aspect-video w-full rounded-sm border object-contain"
-				/>
+				<img src={url} alt={`Preview of ${board}`} className={`${CARD_CLASS} object-contain p-1`} />
 			)}
 		</span>
 	);

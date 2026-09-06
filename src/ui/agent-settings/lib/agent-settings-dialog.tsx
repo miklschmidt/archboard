@@ -5,7 +5,7 @@ import { AccountSection } from "@/ui/agent-settings/lib/account-section";
 import type { AgentSettingsDialogProps } from "@/ui/agent-settings/lib/contracts";
 import { CoordinatorSection, SessionSettings } from "@/ui/agent-settings/lib/coordinator-section";
 import { ThreadLinkSection } from "@/ui/agent-settings/lib/thread-link-section";
-import { OUTLINE_BUTTON_CLASS } from "@/ui/board-dialogs";
+import { CANCEL_BUTTON_CLASS } from "@/ui/board-dialogs";
 import {
 	Dialog,
 	DialogClose,
@@ -58,7 +58,7 @@ function AgentSettingsDialog(props: AgentSettingsDialogProps): React.JSX.Element
 				<Separator />
 				<SessionSettings settings={props.settings} />
 				<DialogFooter>
-					<DialogClose className={OUTLINE_BUTTON_CLASS}>Close</DialogClose>
+					<DialogClose className={CANCEL_BUTTON_CLASS}>Close</DialogClose>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

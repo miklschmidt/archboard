@@ -7,7 +7,6 @@ import { useCallback } from "react";
 import type { CodeBinding } from "@/shared/code-target";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
-import { Separator } from "@/ui/components/separator";
 import { describePathFocusReason, type PathFocusSnapshot } from "@/ui/path-focus";
 import {
 	SELECTION_METADATA_KEYS,
@@ -31,16 +30,12 @@ interface SectionLabelProps {
 }
 
 /**
- * A small uppercase section heading.
+ * A section heading in the kicker role: small, uppercase, muted.
  * @param props The heading text.
  * @returns The heading.
  */
 function SectionLabel(props: SectionLabelProps): React.JSX.Element {
-	return (
-		<h3 className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-			{props.children}
-		</h3>
-	);
+	return <h3 className="text-kicker text-muted-foreground uppercase">{props.children}</h3>;
 }
 
 /** Inputs for one definition row. */
@@ -52,16 +47,27 @@ interface RowProps {
 }
 
 /**
- * One row: a label and a value, mono when the value is technical.
+ * One row of the definition grid: a muted label, then the value, mono when
+ * it is technical. The value carries the full text as a title so a
+ * truncated path is still readable.
  * @param props The row.
  * @returns A definition pair.
  */
 function Row(props: RowProps): React.JSX.Element {
 	return (
-		<div className="flex items-baseline justify-between gap-3 text-sm">
-			<dt className="text-muted-foreground shrink-0">{props.label}</dt>
-			<dd className={props.technical ? "truncate font-mono text-xs" : "truncate"}>{props.value}</dd>
-		</div>
+		<>
+			<dt className="text-muted-foreground text-body truncate">{props.label}</dt>
+			<dd
+				title={props.value}
+				className={
+					props.technical
+						? "text-technical truncate text-right font-mono"
+						: "text-body truncate text-right"
+				}
+			>
+				{props.value}
+			</dd>
+		</>
 	);
 }
 
@@ -78,7 +84,7 @@ interface ElementRowsProps {
 function ElementRows(props: ElementRowsProps): React.JSX.Element {
 	const { element } = props;
 	return (
-		<dl className="flex flex-col gap-1.5">
+		<dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2">
 			<Row label="Element" value={element.id} technical />
 			{SELECTION_METADATA_KEYS.map((key) => {
 				const value = element.metadata[key];
@@ -97,14 +103,14 @@ interface BindingRowsProps {
 
 /**
  * The persisted code binding: repository, path and, when known, branch,
- * commit and confirmation time, all in the mono face.
+ * commit and confirmation time, all in the mono face on 24px rows.
  * @param props The binding.
  * @returns The bound repository rows.
  */
 function BindingRows(props: BindingRowsProps): React.JSX.Element {
 	const { binding } = props;
 	return (
-		<dl className="flex flex-col gap-1">
+		<dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2.5">
 			<Row label="repo" value={binding.repo} technical />
 			<Row label="path" value={binding.path} technical />
 			{binding.branch !== undefined && <Row label="branch" value={binding.branch} technical />}
@@ -132,19 +138,24 @@ function BindingSection(props: BindingSectionProps): React.JSX.Element {
 	const elementId = selection.element.id;
 	const handleOpen = useCallback(() => actions.openCode(elementId), [actions, elementId]);
 	return (
-		<section className="flex flex-col gap-2">
+		<section className="flex flex-col gap-3">
 			<SectionLabel>Bound repository</SectionLabel>
 			{selection.kind === "bound" && <BindingRows binding={selection.binding} />}
 			{selection.kind === "unbound" && (
-				<p className="text-muted-foreground text-sm">Not bound to code.</p>
+				<p className="text-muted-foreground text-body">Not bound to code.</p>
 			)}
 			{selection.kind === "malformed" && (
-				<p className="text-destructive text-sm">
+				<p className="text-destructive text-body">
 					The binding cannot be read. {selection.explanation}
 				</p>
 			)}
 			{selection.kind === "bound" && (
-				<Button variant="outline" size="sm" className="self-start" onClick={handleOpen}>
+				<Button
+					variant="outline"
+					size="sm"
+					className="border-primary text-primary hover:bg-primary/10 hover:text-primary self-start"
+					onClick={handleOpen}
+				>
 					<RiExternalLinkLine data-icon="inline-start" />
 					Open code
 				</Button>
@@ -171,13 +182,15 @@ function PathFocusSection(props: PathFocusSectionProps): React.JSX.Element {
 	const handleFocus = useCallback(() => actions.focusPath(elementId), [actions, elementId]);
 	const handleExit = useCallback(() => actions.exitPathFocus(), [actions]);
 	return (
-		<section className="flex flex-col gap-2">
+		<section className="flex flex-col gap-3">
 			<SectionLabel>Path focus</SectionLabel>
 			{pathFocus.kind === "no-path" && (
-				<p className="text-muted-foreground text-sm">{describePathFocusReason(pathFocus.reason)}</p>
+				<p className="text-muted-foreground text-body">
+					{describePathFocusReason(pathFocus.reason)}
+				</p>
 			)}
 			{pathFocus.kind === "connected" && (
-				<p className="text-sm">
+				<p className="text-body">
 					<span className="font-mono">{pathFocus.elementIds.length}</span> connected elements
 				</p>
 			)}
@@ -187,7 +200,7 @@ function PathFocusSection(props: PathFocusSectionProps): React.JSX.Element {
 					Exit focus
 				</Button>
 			) : (
-				<Button variant="outline" size="sm" className="self-start" onClick={handleFocus}>
+				<Button variant="ghost" size="sm" className="-ml-2 self-start" onClick={handleFocus}>
 					<RiFocus3Line data-icon="inline-start" />
 					Focus path
 				</Button>
@@ -214,7 +227,7 @@ interface LineProps {
  * @returns The line.
  */
 function Line(props: LineProps): React.JSX.Element {
-	return <p className="text-muted-foreground text-sm">{props.text}</p>;
+	return <p className="text-muted-foreground text-body">{props.text}</p>;
 }
 
 /** Inputs for the element body. */
@@ -225,7 +238,8 @@ interface ElementInspectorProps {
 }
 
 /**
- * The inspector body for one element.
+ * The inspector body for one element: the title row, the metadata grid,
+ * then the binding and focus sections under one-pixel rules.
  * @param props The element selection, the focus state and the actions.
  * @returns Title, rows, binding and focus sections.
  */
@@ -233,23 +247,25 @@ function ElementInspector(props: ElementInspectorProps): React.JSX.Element {
 	const { selection } = props;
 	return (
 		<>
-			<div className="flex items-start justify-between gap-2">
-				<h2 className="text-base leading-tight font-semibold">
-					{selectedElementTitle(selection.element)}
-				</h2>
-				<Badge variant="outline" className="shrink-0 uppercase">
-					{selection.element.type}
-				</Badge>
+			<div className="flex flex-col gap-3 px-4 py-4">
+				<div className="flex items-center justify-between gap-2">
+					<h2 className="text-title truncate">{selectedElementTitle(selection.element)}</h2>
+					<Badge variant="outline" size="technical" className="shrink-0 uppercase">
+						{selection.element.type}
+					</Badge>
+				</div>
+				<ElementRows element={selection.element} />
 			</div>
-			<ElementRows element={selection.element} />
-			<Separator />
-			<BindingSection selection={selection} actions={props.actions} />
-			<Separator />
-			<PathFocusSection
-				elementId={selection.element.id}
-				pathFocus={props.pathFocus}
-				actions={props.actions}
-			/>
+			<div className="border-border border-t px-4 py-4">
+				<BindingSection selection={selection} actions={props.actions} />
+			</div>
+			<div className="border-border border-t px-4 py-4">
+				<PathFocusSection
+					elementId={selection.element.id}
+					pathFocus={props.pathFocus}
+					actions={props.actions}
+				/>
+			</div>
 		</>
 	);
 }
@@ -267,11 +283,15 @@ function InspectorBody(props: InspectorProps): React.JSX.Element | null {
 		);
 	}
 	if (selection.kind === "multiple") {
-		return <Line text={`${selection.count} elements selected.`} />;
+		return (
+			<div className="px-4 py-4">
+				<Line text={`${selection.count} elements selected.`} />
+			</div>
+		);
 	}
 	if (selection.kind === "missing") {
 		return (
-			<p className="text-muted-foreground text-sm">
+			<p className="text-muted-foreground text-body px-4 py-4">
 				Element <span className="font-mono">{selection.id}</span> is no longer on the board.
 			</p>
 		);
@@ -291,9 +311,11 @@ function Inspector(props: InspectorProps): React.JSX.Element | null {
 	return (
 		<aside
 			aria-label="Inspector"
-			className="border-border bg-sidebar flex w-[280px] shrink-0 flex-col gap-4 overflow-y-auto border-l p-4"
+			className="border-border bg-card flex w-[280px] shrink-0 flex-col overflow-y-auto border-l"
 		>
-			<SectionLabel>Inspect</SectionLabel>
+			<div className="border-border flex h-10 shrink-0 items-center border-b px-4">
+				<SectionLabel>Inspect</SectionLabel>
+			</div>
 			<InspectorBody {...props} />
 		</aside>
 	);

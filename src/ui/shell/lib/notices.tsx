@@ -1,7 +1,14 @@
 // Persistent notices above the canvas. A message that carries a recovery
 // action is never a toast: it stays up until the person chooses or dismisses.
+// They stack flat above the pane bar, one-pixel rules between them, never
+// floating over the canvas.
 
-import { RiCloseLine, RiExternalLinkLine } from "@remixicon/react";
+import {
+	RiCloseLine,
+	RiErrorWarningLine,
+	RiExternalLinkLine,
+	RiInformationLine,
+} from "@remixicon/react";
 import { useCallback } from "react";
 
 import { GitHubHttpsUrlSchema, type CodeTargetNoticeAction } from "@/shared/code-target";
@@ -9,7 +16,14 @@ import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/ui/component
 import { Button, buttonVariants } from "@/ui/components/button";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "@/ui/shell/lib/contracts";
 
-const LINK_BUTTON_CLASS = buttonVariants({ variant: "outline", size: "xs" });
+/** A 24px outline action with two-pixel corners. */
+const ACTION_CLASS = "rounded-[2px] font-medium";
+
+const LINK_BUTTON_CLASS = buttonVariants({
+	variant: "outline",
+	size: "xs",
+	className: ACTION_CLASS,
+});
 
 /** The id a `settings` code target action is reported with. */
 const SETTINGS_ACTION_ID = "settings";
@@ -34,7 +48,7 @@ function ReportedAction(props: ReportedActionProps): React.JSX.Element {
 		[actions, noticeId, actionId],
 	);
 	return (
-		<Button variant="outline" size="xs" onClick={handleClick}>
+		<Button variant="outline" size="xs" className={ACTION_CLASS} onClick={handleClick}>
 			{props.label}
 		</Button>
 	);
@@ -106,7 +120,9 @@ interface NoticeProps {
 }
 
 /**
- * One persistent notice with its actions and a dismiss control.
+ * One persistent notice with its actions and a dismiss control. The icon
+ * names the tone: an information mark for a message, a warning mark for a
+ * failure with its recovery.
  * @param props The notice and the shell actions.
  * @returns The alert.
  */
@@ -114,10 +130,16 @@ function Notice(props: NoticeProps): React.JSX.Element {
 	const { notice, actions } = props;
 	const handleDismiss = useCallback(() => actions.dismissNotice(notice.id), [actions, notice.id]);
 	return (
-		<Alert variant={notice.tone} className="rounded-none border-x-0 border-t-0 pr-2">
-			<AlertTitle>{notice.title}</AlertTitle>
-			<AlertDescription>{notice.description}</AlertDescription>
-			<AlertAction className="flex items-center gap-1.5">
+		<Alert
+			variant={notice.tone}
+			className="bg-background flex min-h-10 flex-row items-center gap-x-3 rounded-none border-0 px-4 py-1.5 has-data-[slot=alert-action]:pr-3 *:[svg]:translate-y-0"
+		>
+			{notice.tone === "destructive" ? <RiErrorWarningLine /> : <RiInformationLine />}
+			<AlertTitle className="shrink-0">{notice.title}</AlertTitle>
+			<AlertDescription className="min-w-0 flex-1 truncate" title={notice.description}>
+				{notice.description}
+			</AlertDescription>
+			<AlertAction className="static ml-auto flex shrink-0 items-center gap-2">
 				{notice.actions.map((action) => (
 					<NoticeAction
 						key={actionKey(action)}
@@ -128,7 +150,8 @@ function Notice(props: NoticeProps): React.JSX.Element {
 				))}
 				<Button
 					variant="ghost"
-					size="icon-xs"
+					size="icon-sm"
+					className="hit-area text-muted-foreground"
 					aria-label={`Dismiss notice: ${notice.title}`}
 					onClick={handleDismiss}
 				>
@@ -146,7 +169,8 @@ interface NoticesProps {
 }
 
 /**
- * Every persistent notice, stacked above the canvas.
+ * Every persistent notice, stacked above the canvas with a one-pixel rule
+ * between each and under the last.
  * @param props The notices and the shell actions.
  * @returns The stack, or nothing when there is no notice.
  */
@@ -155,7 +179,7 @@ function Notices(props: NoticesProps): React.JSX.Element | null {
 		return null;
 	}
 	return (
-		<div className="shrink-0">
+		<div className="bg-border flex shrink-0 flex-col gap-px border-b">
 			{props.notices.map((notice) => (
 				<Notice key={notice.id} notice={notice} actions={props.actions} />
 			))}

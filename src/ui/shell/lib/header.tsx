@@ -1,8 +1,9 @@
-// The 56px header: wordmark, board breadcrumb, then the live state and the
-// controls that act on the board. Pane controls live in the pane bar. The
-// text pieces shrink and truncate so a narrower window never clips the row.
+// The 56px header: four sections under one-pixel rules. The wordmark, the
+// board breadcrumb, the live state chips, and the actions on the board. Pane
+// controls live in the pane bar. The text pieces shrink and truncate so a
+// narrower window never clips the row.
 
-import { RiMoonLine, RiSettings3Line, RiSunLine } from "@remixicon/react";
+import { RiLockLine, RiMoonLine, RiSettings3Line, RiSunLine } from "@remixicon/react";
 import { useCallback } from "react";
 
 import { Badge } from "@/ui/components/badge";
@@ -23,7 +24,12 @@ import type {
 import { StatusDot } from "@/ui/shell/lib/status-dot";
 import type { BoardHold, BoardIdentity, LockHolder, NoteWrittenElsewhere } from "@/ui/types";
 
-const ICON_BUTTON_CLASS = buttonVariants({ variant: "ghost", size: "icon-sm" });
+/** A 28px icon button inside a 32px hit area. */
+const ICON_BUTTON_CLASS = buttonVariants({
+	variant: "ghost",
+	size: "icon-sm",
+	className: "hit-area",
+});
 
 /** The settings menu trigger's id: the dialogs it opens return focus to it. */
 const SETTINGS_TRIGGER_ID = "shell-settings";
@@ -97,24 +103,27 @@ interface BreadcrumbProps {
 }
 
 /**
- * The board's address as a breadcrumb: name, variant when it is not the
- * current one, and level as a small technical badge.
+ * The board's address as a breadcrumb: the name in the header's one large
+ * size, the variant after a thin slash when it is not the current one, and
+ * the level as a small technical badge.
  * @param props The identity to spell out.
  * @returns The breadcrumb.
  */
 function Breadcrumb(props: BreadcrumbProps): React.JSX.Element {
 	const { identity } = props;
 	return (
-		<nav aria-label="Current board" className="flex min-w-0 flex-1 items-center gap-2 text-sm">
-			<span className="truncate font-medium">{identity.board}</span>
+		<nav aria-label="Current board" className="flex min-w-0 flex-1 items-center gap-2">
+			<span className="text-board truncate">{identity.board}</span>
 			{identity.variant !== "current" && (
 				<>
-					<span className="text-muted-foreground">/</span>
-					<span className="truncate">{identity.variant}</span>
+					<span aria-hidden="true" className="text-border text-board font-normal">
+						/
+					</span>
+					<span className="text-muted-foreground text-body truncate">{identity.variant}</span>
 				</>
 			)}
 			{identity.level !== undefined && (
-				<Badge variant="outline" className="font-mono font-medium">
+				<Badge variant="outline" size="technical" className="text-muted-foreground">
 					{identity.level}
 				</Badge>
 			)}
@@ -135,7 +144,7 @@ interface SummaryProps {
 function ConnectionState(props: SummaryProps): React.JSX.Element {
 	const { connected } = props.summary;
 	return (
-		<span className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs">
+		<span className="text-muted-foreground text-body flex shrink-0 items-center gap-1.5">
 			<StatusDot tone={connected ? "live" : "idle"} />
 			{connected ? "Connected" : "Disconnected"}
 		</span>
@@ -145,7 +154,7 @@ function ConnectionState(props: SummaryProps): React.JSX.Element {
 /**
  * Who holds the board. The take-back control sits in the pane's claim banner.
  * @param props The flattened pane.
- * @returns The claim badge, or nothing while the board is free.
+ * @returns The claim chip, or nothing while the board is free.
  */
 function ClaimState(props: SummaryProps): React.JSX.Element | null {
 	const claim = describeClaim(props.summary.holder);
@@ -153,26 +162,32 @@ function ClaimState(props: SummaryProps): React.JSX.Element | null {
 		return null;
 	}
 	return (
-		<Badge variant="outline" className="max-w-72 min-w-0 gap-1.5">
-			<StatusDot tone="live" />
-			<span className="shrink-0">{claim.label}</span>
+		<Badge variant="outline" size="chip" className="max-w-80 min-w-0">
+			<RiLockLine className="text-muted-foreground" />
+			<span className="shrink-0 font-medium">{claim.label}</span>
 			{claim.reason !== null && (
-				<span className="text-muted-foreground truncate font-normal">· {claim.reason}</span>
+				<span className="text-muted-foreground truncate">· {claim.reason}</span>
 			)}
+			<StatusDot tone="live" className="ml-0.5" />
 		</Badge>
 	);
 }
 
 /**
- * A board that has stopped saving, or whose note was written elsewhere.
+ * A board that has stopped saving, or whose note was written elsewhere. A
+ * warning, not a refusal: the person decides what happens next.
  * @param props The flattened pane.
- * @returns The indicator, or nothing when the board is saving normally.
+ * @returns The chip, or nothing when the board is saving normally.
  */
 function NoteState(props: SummaryProps): React.JSX.Element | null {
 	const { hold, elsewhere } = props.summary;
 	if (hold) {
 		return (
-			<Badge variant="destructive" className="shrink-0 gap-1.5">
+			<Badge
+				variant="outline"
+				size="chip"
+				className="border-warning/60 bg-warning-subtle text-warning-foreground shrink-0"
+			>
 				<StatusDot tone="warning" />
 				Not saving · <span className="font-mono">{hold.writes}</span> held
 			</Badge>
@@ -180,7 +195,11 @@ function NoteState(props: SummaryProps): React.JSX.Element | null {
 	}
 	if (elsewhere) {
 		return (
-			<Badge variant="secondary" className="shrink-0 gap-1.5">
+			<Badge
+				variant="outline"
+				size="chip"
+				className="border-warning/60 bg-warning-subtle text-warning-foreground shrink-0"
+			>
 				<StatusDot tone="warning" />
 				Note written elsewhere
 			</Badge>
@@ -243,7 +262,11 @@ interface SettingsItemProps extends ActionsProps {
 function SettingsItem(props: SettingsItemProps): React.JSX.Element {
 	const { surface, actions } = props;
 	const handleClick = useCallback(() => actions.openSettings(surface), [actions, surface]);
-	return <DropdownMenuItem onClick={handleClick}>{props.label}</DropdownMenuItem>;
+	return (
+		<DropdownMenuItem className="h-7" onClick={handleClick}>
+			{props.label}
+		</DropdownMenuItem>
+	);
 }
 
 /**
@@ -261,7 +284,11 @@ function SettingsMenu(props: ActionsProps): React.JSX.Element {
 			>
 				<RiSettings3Line />
 			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="w-44">
+			<DropdownMenuContent
+				align="end"
+				sideOffset={8}
+				className="border-border w-44 rounded-md border shadow-none"
+			>
 				{SETTINGS_ITEMS.map((item) => (
 					<SettingsItem
 						key={item.surface}
@@ -293,6 +320,7 @@ function ThemeToggle(props: ThemeToggleProps): React.JSX.Element {
 		<Button
 			variant="ghost"
 			size="icon-sm"
+			className="hit-area"
 			aria-label={`Switch to ${next} theme`}
 			onClick={handleClick}
 		>
@@ -310,21 +338,29 @@ function Header(props: HeaderProps): React.JSX.Element {
 	const { actions } = props;
 	const summary = summarisePane(props.pane);
 	return (
-		<header className="border-border bg-background flex h-14 min-w-0 shrink-0 items-center gap-3 overflow-hidden border-b px-4">
-			<h1 className="wordmark shrink-0">
-				<span className="sr-only">archboard</span>
-			</h1>
-			<Separator orientation="vertical" className="h-6" />
-			<Breadcrumb identity={props.current} />
-			<span className="flex min-w-0 shrink items-center gap-3">
+		<header className="border-border bg-background flex h-14 min-w-0 shrink-0 items-stretch overflow-hidden border-b">
+			<div className="flex w-[136px] shrink-0 items-center justify-center">
+				<h1 className="wordmark">
+					<span className="sr-only">archboard</span>
+				</h1>
+			</div>
+			<Separator orientation="vertical" />
+			<div className="flex min-w-0 flex-1 items-center px-4">
+				<Breadcrumb identity={props.current} />
+			</div>
+			<Separator orientation="vertical" />
+			<div className="flex min-w-0 shrink items-center gap-3 px-4">
 				<ConnectionState summary={summary} />
 				<ClaimState summary={summary} />
 				<NoteState summary={summary} />
-			</span>
-			<Separator orientation="vertical" className="h-6" />
-			<BoardActions actions={actions} />
-			<SettingsMenu actions={actions} />
-			<ThemeToggle theme={props.theme} actions={actions} />
+			</div>
+			<Separator orientation="vertical" />
+			<div className="flex shrink-0 items-center gap-1 px-4">
+				<BoardActions actions={actions} />
+				<Separator orientation="vertical" className="mx-1 h-4 self-center" />
+				<SettingsMenu actions={actions} />
+				<ThemeToggle theme={props.theme} actions={actions} />
+			</div>
 		</header>
 	);
 }

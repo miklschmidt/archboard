@@ -77,7 +77,7 @@ function SignInForm(props: SignInFormProps): React.JSX.Element {
 					</SelectContent>
 				</Select>
 			</Field>
-			<Button disabled={props.busy} onClick={handleSignIn}>
+			<Button size="sm" disabled={props.busy} onClick={handleSignIn}>
 				Sign in
 			</Button>
 		</div>
@@ -103,7 +103,7 @@ function PendingLoginView(props: PendingLoginProps): React.JSX.Element {
 		[onCancelLogin, login.loginId],
 	);
 	return (
-		<div className="grid gap-2 text-sm">
+		<div className="text-body grid gap-2">
 			<p>
 				Signing in with {loginVariantLabel(login.variant)} · <Technical>{login.loginId}</Technical>
 			</p>
@@ -179,7 +179,7 @@ function AccountSection(props: AccountSectionProps): React.JSX.Element {
 			<SectionHeading title="Account">
 				<StateBadge summary={summary} />
 			</SectionHeading>
-			{outcome !== null && <p className="text-muted-foreground text-sm">{outcome}</p>}
+			{outcome !== null && <p className="text-muted-foreground text-body">{outcome}</p>}
 			<AccountAction
 				account={props.account}
 				pending={pendingLogin(props.login)}
