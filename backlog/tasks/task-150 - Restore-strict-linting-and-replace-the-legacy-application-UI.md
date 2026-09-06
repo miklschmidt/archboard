@@ -4,7 +4,7 @@ title: Restore strict linting and replace the legacy application UI
 status: In Progress
 assignee: []
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-06 17:42'
+updated_date: '2026-09-06 18:04'
 labels: []
 dependencies: []
 references:
@@ -210,6 +210,8 @@ Effects audit (3b4f316f): useNoteRecovery and useSideNotices (state-to-state der
 Complete bun run check passed on 3b4f316f in an isolated worktree with a confined environment (every lane including the full serial browser lane). This is the commit the final independent review should compare against BASE 0d1706d0.
 
 Acceptance 2026-09-06: AC 1–5 and 7 checked from the children's verified summaries and the complete bun run check on 3b4f316f (lint baseline TASK-150.01; foundation and component policy TASK-150.02; fresh presentation, ported logic and zero archive bytes TASK-150.03/.04/.05/.07; rendered workflows, accessibility and the serial browser lane TASK-150.06; model-output-only wave with the voice-output-level contract TASK-150.07/.06). AC 6 stays open until the user's final independent review of 0d1706d0..3b4f316f; the task stays In Progress for that reason.
+
+Review correction (e80e0ff9): the composer's Send stands beside Stop while a turn runs, and both the button and Enter submit through the runtime's own handler (steer, send or queue by intent). assistant-ui's official Send and Enter refuse a running turn without a queue adapter, and that adapter would route the message around the handler, so the thread submits through the runtime's composer directly. Owner: composer-controls rendered test in workbench-runtime (button click and Enter keydown while running produce a steer; Shift+Enter does not submit).
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -225,5 +227,11 @@ author: @codex
 created: 2026-09-06 17:38
 ---
 Review correction: withdraw the Standards P2 finding on src/ui/.oxlintrc.jsonc:210. The preceding comment validly justifies preserving upstream div role="group" markup and styling, and the user confirms this exception is allowed as written. I treated the historical statement-level wording as categorical rather than applying the justified-exception policy to this vendor override. No configuration change is required. Corrected review: zero Standards findings and three Spec findings (running-turn submission, withheld text after version refusal, and recovery-command quoting). This supersedes the Standards finding and four-finding count in the previous review comment; validation evidence and the three behavioral findings are unchanged.
+---
+
+author: @claude
+created: 2026-09-06 18:04
+---
+Codex P1 on thread.tsx:240 validated and fixed in e80e0ff9: pointer and keyboard submission work during a running turn through the authoritative intent handler, Stop stays. The rendered test drives the real controls rather than composer.send(). The Standards finding was withdrawn by the reviewer; no configuration change.
 ---
 <!-- COMMENTS:END -->
