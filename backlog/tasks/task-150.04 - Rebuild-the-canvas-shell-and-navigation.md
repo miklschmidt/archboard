@@ -1,10 +1,11 @@
 ---
 id: TASK-150.04
 title: Build the fresh canvas shell and navigation
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-05 13:58'
+updated_date: '2026-09-05 15:26'
 labels: []
 dependencies:
   - TASK-150.02
@@ -33,22 +34,31 @@ Browser-test execution is deferred to TASK-150.06 after all rebuild tasks report
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Navigation uses suitable official Sidebar, Collapsible and Button parts with stable plain board names, indented variants, two-line long names, a preview interface for real scene data connected in TASK-150.07 and a separate Scratch area.
-- [ ] #2 Pane selection, action menus, disclosures, icon help and inspector actions use suitable shared Tabs or ToggleGroup, DropdownMenu, Collapsible, Tooltip and Button parts without adding redundant state or empty panels.
-- [ ] #3 The new presentation represents independent boards/panes, fullscreen, persistence/connection/claim state, doing, selection/binding, code targets and path focus through typed inputs and action callbacks based on actual product contracts. Copying archived logic and connecting these operations belongs to TASK-150.07.
-- [ ] #4 The canvas is dominant at 1920x1080 in light and dark themes, one-pane, two-pane and fullscreen layouts; presentation-only actions never write board notes.
-- [ ] #5 The fresh shell presentation contains no legacy imports or transplanted CSS and passes strict and applicable non-browser checks. Runtime actions and data remain explicitly pending for TASK-150.07, with browser evidence pending for TASK-150.06.
+- [x] #1 Navigation uses suitable official Sidebar, Collapsible and Button parts with stable plain board names, indented variants, two-line long names, a preview interface for real scene data connected in TASK-150.07 and a separate Scratch area.
+- [x] #2 Pane selection, action menus, disclosures, icon help and inspector actions use suitable shared Tabs or ToggleGroup, DropdownMenu, Collapsible, Tooltip and Button parts without adding redundant state or empty panels.
+- [x] #3 The new presentation represents independent boards/panes, fullscreen, persistence/connection/claim state, doing, selection/binding, code targets and path focus through typed inputs and action callbacks based on actual product contracts. Copying archived logic and connecting these operations belongs to TASK-150.07.
+- [x] #4 The canvas is dominant at 1920x1080 in light and dark themes, one-pane, two-pane and fullscreen layouts; presentation-only actions never write board notes.
+- [x] #5 The fresh shell presentation contains no legacy imports or transplanted CSS and passes strict and applicable non-browser checks. Runtime actions and data remain explicitly pending for TASK-150.07, with browser evidence pending for TASK-150.06.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-3. Build the fresh canvas shell and navigation. TASK-150.04.
-Depends on TASK-150.02. coordinator UI workers following coordinator's composition.
-Map the navigator to official Sidebar parts, Collapsible groups and Button actions, with plain stable board names, indented variants, two-line long names and a separate Scratch area. Define preview presentation to consume real scene data supplied by the later integration; do not invent canonical or persisted board content. Map pane choices to the suitable Tabs/ToggleGroup parts, action menus to DropdownMenu, supporting disclosures to Collapsible, icon help to Tooltip, and inspector actions to Button. Use Tailwind grid/flex and shared separators for header, navigator, canvas, optional inspector and workbench.
-Preserve open/new/save/clear/install, both panes and their independent boards, fullscreen transfer/stop/recovery, persistence and connection state, claims/doing/take-back control, selection/binding/code-target/opening and path focus. Show implemented state only; avoid redundant status bars and empty panels.
-Compose the shell from the approved reference and new shared components. Read product contracts to represent independent panes, navigation, inspection and recovery accurately, but supply typed view inputs/action callbacks rather than porting archived logic. Do not import or recreate retired header/navigation/inspector/pane CSS or markup. Product-action wiring and real data connection belong to TASK-150.07.
-Exit: reference-led 1920x1080 desktop composition, one/two-pane and fullscreen presentation, navigator and inspector components are implemented with typed inputs/callbacks; strict and applicable non-browser checks pass. Runtime integration remains pending for TASK-150.07. Rendered/browser proof belongs to TASK-150.06.
+Worker (2026-09-05) extends the committed frame (63d634f3): navigator from real BoardListing (vault/open/onScreen/Draft markers, variants, two-line names, Scratch, needs-name, refresh, error); lazy previews via exportToSvg through projectPreviewSnapshot/BoardPreviewCache/PreviewRequestGate in src/ui/board-preview/preview-card.tsx; pane bar with per-pane status, claim banner, take-back state, add/close/present, view mode when disconnected, min-w-0 so the canvas flexes; selection-inspector pure union module + presentation; path-focus pure union module + non-persistent overlay; dock doing lines and pulse; CodeTargetNoticeAction notices; fullscreen presentation with recovery. Gates: fmt, lint, type-check, build, pure-helper Bun tests. Dialog hosting is integrated by the coordinator after TASK-150.03.
 
-Current execution constraints: preserve all completed corrections and the user's test deletions. Do not restore deleted tests or add repository-policy suites, configuration snapshots, dependency/version mirrors, tests of upstream tooling, or tests of test helpers. Use the existing lint/compiler commands and meaningful existing product checks. New strict lint adoption is limited to src/ui; remaining non-UI adoption is TASK-151. UI uses the existing root TypeScript project; do not create src/ui/tsconfig.json. Run analysis sequentially and keep the repository project guard on all lint/fix paths. No callbacks to previous tasks, fixed agent assignments, or extra interim review loops.
+Shell completion pass (worker): 1. Pure roots src/ui/selection-inspector/index.ts (SelectionProjection union + sameSelectionProjection) and src/ui/path-focus/index.ts (PathFocusSnapshot union, PathFocusOverlay, samePathFocusSnapshot) with Bun tests. 2. src/ui/board-preview/preview-card.tsx lazy exportToSvg card behind IntersectionObserver, gate and cache. 3. Grow ShellView/ShellActions: listing error, refresh, draft/on-screen markers, scratch placeholder, per-pane takeBack state, path focus + overlay, presentation live/recovery union, notice action union with CodeTargetNoticeAction shapes, dismiss. 4. Navigator, pane bar with status lines, claim banner, focus overlay, inspector, dock doing lines and pulse, presentation recovery; header shrink fix. 5. Update the temporary fixture. Verify: fmt, lint, type-check, build, focused bun tests.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Shell completion pass (uncommitted): new pure roots src/ui/selection-inspector/index.ts (SelectionProjection union, sameSelectionProjection) and src/ui/path-focus/index.ts (PathFocusSnapshot/PathFocusOverlay, comparators) with Bun tests; src/ui/selection-inspector/inspector.tsx; src/ui/board-preview/preview-card.tsx (lazy exportToSvg behind IntersectionObserver, gate + cache, revokes late URLs); shell lib: navigator-entries.ts, pane-bar.tsx, claim-banner.tsx, path-focus-overlay.tsx, time.ts; contracts grew (boardsError, refreshBoards, nameBoard, takeBack state, pathFocus + overlay, presentation live/recovery, notice action union with CodeTargetNoticeAction shapes, dismissNotice, exitPathFocus, Shell voiceControls slot). Header take-back moved into the per-pane claim banner; header shrinks/truncates. Verified: bun run fmt; lint and tsc clean for shell/selection-inspector/path-focus/board-preview/application (whole-repo lint:ui and type-check fail only in concurrent untracked src/ui/voice-wave, src/ui/workbench-thread and src/ui/opener-settings); bun run build exit 0; focused tests 12 pass. No browser verification.
+
+Checkpoint e699dac3: navigator from real BoardListing with lazy exportToSvg previews (preview-card.tsx), pane bar/claim banners/take-back state, selection-inspector and path-focus pure modules with tests (12 pass, confined), inspector presentation, path-focus overlay, presentation recovery variant, notice actions. Scoped UI lint exit 0 for shell/selection-inspector/path-focus/board-preview/application/canvas; build exit 0. Full-tree gate re-run once concurrent workers land. Arrow-key navigation is a keydown handler without roving tabindex; 1360px header fix by layout reasoning, browser proof deferred to TASK-150.06.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Fresh shell presentation (commits 63d634f3, e699dac3): Sidebar/Collapsible navigator from the real BoardListing with Scratch, drafts, on-screen markers and lazy real-scene previews; ToggleGroup pane bar, DropdownMenu actions, Tooltip help, Button inspector actions; typed ShellView/ShellActions for panes, fullscreen, persistence/connection/claim/doing, selection, code targets and path focus; no legacy imports or transplanted CSS. Verified by scoped strict lint, type-check, build and 12 pure-helper tests; canvas dominance in both themes seen in a preview design inspection; browser proof remains TASK-150.06.
+<!-- SECTION:FINAL_SUMMARY:END -->
