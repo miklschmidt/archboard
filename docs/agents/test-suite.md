@@ -10,7 +10,7 @@ native lanes in this order:
 - `test:system`: system product owners under the seven explicit non-browser
   directories, with `--max-concurrency=1` because they own real processes and
   shared local ports;
-- `test:repository`: isolated repository-policy tests, including inventory and no-MJS policy;
+- `test:repository`: the source-boundary lint fixtures and the skill frontmatter check;
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter.
 
@@ -20,9 +20,7 @@ same command with two exact hosted-only exceptions after clean-runner stalls:
 `tests/system/code-targets/opener-persistence.test.ts` and the complete serial
 browser lane. All normal owners remain mandatory locally; TASK-141 and TASK-142
 own restoring the system owner and the normal browser inventory to hosted
-coverage. Repository policy pins both exceptions and rejects a native test with
-no declared lane, normal/opt-in overlap, an opt-in path reachable from `check`, a
-browser owner outside its typed serial inventory, or an undeclared `test:*` key.
+coverage.
 
 The supported normal topology is one Archboard server, one package-local bound
 Codex app-server, and one human editor. Short races inside that topology stay in
@@ -36,10 +34,8 @@ their cheapest product owner. These commands contain everything outside it:
 | `bun run test:opt-in:browser-performance`                                | The 10,000-element human-edit measurement and 42-cycle convergence soak through the serial real-browser adapter.                               |
 | `bun run opt-in:renderer-chromium` / `bun run opt-in:renderer-emulation` | Manual renderer and upstream-emulation probes. They are never package test owners.                                                             |
 
-The normal/opt-in inventory is static and fail-closed. Every `.test.ts`,
-`.spec.ts`, `.test.tsx`, and `.spec.tsx` owner is selected exactly once. Every
-opt-in package command is unreachable from `check`, including through a helper
-script, and hosted CI may invoke only `bun run check`.
+Every test owner belongs to exactly one lane; opt-in package commands are never
+reached from `check`, and hosted CI invokes only `bun run check`.
 
 The whole chain's duration is machine-dependent. Browser owners run one at a
 time. Re-measure before making a timing claim.
@@ -62,8 +58,6 @@ finishes inside the wall-clock budget.
 Keep a real-time exception inside its exact test callback. Its first statement calls
 `declareTestWallClockBudget` with the exact test name, a concrete reason, a `TEST_*`
 outer bound, the task that owns the choice, and recorded duration evidence.
-Repository policy checks that AST shape and the parsed preload entry. There is no
-separate filename list to update.
 
 The opt-in renderer-tooling owners load `dist/frontend/renderer.html`. Run
 `bun run build:frontend` first in a clean checkout. The normal package test
@@ -362,9 +356,6 @@ failure matrices.
   entrypoint rule, co-located test files are rejected, and test/spec files under
   a module's `tests/` directory are accepted. Each assertion removes its
   temporary project even when the assertion fails.
-- `bun test tests/system/repository-policy/tsconfig-gate-scope.test.ts` reads the two canonical TypeScript configs without
-  invoking the compiler. It pins `noEmit` and the exact root and frontend source sets because TypeScript exits cleanly
-  when a source tree containing errors disappears from `include`.
 
 ## Board inspection check
 
