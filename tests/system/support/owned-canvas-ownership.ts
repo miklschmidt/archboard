@@ -2,10 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import {
-	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
-	TEST_CANVAS_HEALTH_POLL_MS,
-} from "../../../src/shared/timing/timing.ts";
+import { TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS, TEST_CANVAS_HEALTH_POLL_MS } from "./timing.ts";
 
 interface OwnedCanvasPaths {
 	readonly root: string;

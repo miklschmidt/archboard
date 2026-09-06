@@ -10,7 +10,7 @@ import {
 	TEST_CANVAS_EARLY_DEATH_DELAY_MS,
 	TEST_CANVAS_HEALTH_POLL_MS,
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+} from "./timing.ts";
 import { processExists, startOwnedCanvas, type OwnedCanvas } from "./owned-canvas.ts";
 import {
 	createLifecycleChildRunner,

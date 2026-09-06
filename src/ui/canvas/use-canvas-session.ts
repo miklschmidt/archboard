@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { createPaneCore, type PaneCore, type PaneCoreHost } from "@/ui/canvas/lib/pane-core";
+import { usePaneContact, type PaneContact } from "@/ui/canvas/pane-contact";
 import { SessionBox } from "@/ui/canvas/lib/session-box";
 import {
 	UNKNOWN_HOLDER,
@@ -35,7 +36,7 @@ function mintClientId(paneId: string): string {
 
 /** The React state a session renders from. */
 interface SessionState {
-	connected: boolean;
+	contact: PaneContact;
 	setConnected: (connected: boolean) => void;
 	board: BoardIdentity | null;
 	setBoard: (board: BoardIdentity | null) => void;
@@ -52,7 +53,7 @@ interface SessionState {
  * @returns The state cells and their setters.
  */
 function useSessionState(): SessionState {
-	const [connected, setConnected] = useState(false);
+	const { contact, setConnected } = usePaneContact();
 	const [board, setBoard] = useState<BoardIdentity | null>(null);
 	const [boardKey, setBoardKey] = useState<string | null>(null);
 	// It starts as somebody else's until the server says otherwise: a pane that
@@ -60,7 +61,7 @@ function useSessionState(): SessionState {
 	const [heldBy, setHeldBy] = useState<LockHolder | null>(UNKNOWN_HOLDER);
 	const [doing, setDoing] = useState<DoingEntry[]>([]);
 	return {
-		connected,
+		contact,
 		setConnected,
 		board,
 		setBoard,
@@ -200,11 +201,13 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 		attachPaneElement,
 		boardKey: state.boardKey,
 		board: state.board,
-		connected: state.connected,
-		// Disconnected stays fail-closed because lock and board news cannot reach
-		// the pane. An agent's claim makes the board read-only to people while
-		// it stands (ADR 0022); a passing write does not.
-		readOnly: !state.connected || agentClaim(state.heldBy) !== null,
+		connected: state.contact.connected,
+		// An agent's claim makes the board read-only to people while it stands
+		// (ADR 0022); a passing write does not, and neither does a socket blip:
+		// an edit made out of contact is refused and reconciled like any other,
+		// so only contact lost for longer than one reconnect takes the canvas
+		// away. UNKNOWN_HOLDER is not a claim, so a fresh pane is editable.
+		readOnly: agentClaim(state.heldBy) !== null || state.contact.lost,
 		heldBy: state.heldBy,
 		doing: state.doing,
 		handleChange,

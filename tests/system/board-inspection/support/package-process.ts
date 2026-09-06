@@ -1,7 +1,7 @@
 import {
 	TEST_BOARD_INSPECTION_PACKAGE_COMMAND_TIMEOUT_MS,
 	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS,
-} from "../../../../src/shared/timing/timing.js";
+} from "../../support/timing.ts";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,

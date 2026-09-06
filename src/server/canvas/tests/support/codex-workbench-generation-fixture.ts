@@ -52,8 +52,6 @@ export function createCodexWorkbenchGenerationFixture(
 	const epoch = {
 		rootDirectory: "/fixture/epoch",
 		manifestPath: "/fixture/epoch/manifest.json",
-		recordsPath: "/fixture/epoch/records.jsonl",
-		lockPath: "/fixture/epoch/lock",
 		snapshot: () => unavailable("epoch.snapshot"),
 		stageEpoch: () => unavailable("epoch.stageEpoch"),
 		startEpoch: () => unavailable("epoch.startEpoch"),

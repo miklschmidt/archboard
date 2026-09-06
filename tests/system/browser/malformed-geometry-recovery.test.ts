@@ -3,11 +3,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	PANE_LAYOUT_TIMEOUT_MS,
-	PANE_SETTLE_CAP_MS,
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+import { PANE_LAYOUT_TIMEOUT_MS, PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
 import { renderBoardNote } from "../../../src/runtime/engine/board.ts";
 import { expandElements } from "../../../src/runtime/engine/expand-elements.ts";
 import { createJsonRequester } from "../boards/support/http.ts";

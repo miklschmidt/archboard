@@ -13,11 +13,15 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+	GIT_COMMAND_TIMEOUT_MS,
 	GIT_PROCESS_GROUP_CLEANUP_MS,
-	TEST_GIT_FIXTURE_START_MS,
-	TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS,
 } from "../../../shared/timing/timing.ts";
 import { git } from "../git.js";
+
+/** Bound for the fake Git child to publish its startup marker. */
+const TEST_GIT_FIXTURE_START_MS = GIT_COMMAND_TIMEOUT_MS;
+/** Bun case bound for the composed lifecycle owner: one command deadline for readiness, one for the cases. */
+const TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS = 2 * GIT_COMMAND_TIMEOUT_MS;
 
 const GIT_PROCESS_OWNER = fileURLToPath(new URL("../git-process-owner.ts", import.meta.url));
 

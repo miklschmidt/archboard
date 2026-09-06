@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { createCanvasApplicationLifetime } from "../../../src/server/canvas/index.ts";
-import { TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS } from "../support/timing.ts";
 import { processExists, waitForProcessExit } from "../support/owned-canvas.ts";
 
 test("application timeout force-reaps a real process group before stop resolves", async () => {

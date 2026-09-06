@@ -1,5 +1,5 @@
 import { createPackageInspectionOwner } from "../support/package-inspection.js";
-import { TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS } from "../../../../src/shared/timing/timing.js";
+import { TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS } from "../../support/timing.ts";
 
 const owner = createPackageInspectionOwner();
 const vault = owner.startVault();

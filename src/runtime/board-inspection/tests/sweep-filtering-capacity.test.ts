@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS } from "../../../shared/timing/timing.js";
+/** Bun lifecycle failure threshold for the sweep owner, not a hang ceiling. */
+const TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS = 15_000;
 import { inspectBoardDiagnostics } from "../diagnostics.js";
 import { connector, semanticNode } from "./fixtures/elements.js";
 

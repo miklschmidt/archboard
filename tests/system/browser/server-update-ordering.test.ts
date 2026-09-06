@@ -3,10 +3,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
-import {
-	REPORT_PROGRESS_MS,
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+import { REPORT_PROGRESS_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { LIVE_SESSION_BOARD, LIVE_SESSION_SEED } from "./fixtures/live-session-scene.js";

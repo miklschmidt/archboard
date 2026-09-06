@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 
 import { measureLineWidth } from "../../../src/runtime/engine/measure-text.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
-import { TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS } from "../support/timing.ts";
 import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";

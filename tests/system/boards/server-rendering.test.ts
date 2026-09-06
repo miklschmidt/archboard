@@ -6,11 +6,11 @@ import { join, resolve } from "node:path";
 import { readPngDimensions } from "../../../src/cli/finding-rendering/index.ts";
 import { findingRasterDimensions } from "../../../src/shared/finding-raster/index.ts";
 import { isBlockId } from "../../../src/shared/ids/ids.ts";
+import { LOCK_LEASE_MS } from "../../../src/shared/timing/timing.ts";
 import {
-	LOCK_LEASE_MS,
 	TEST_SERVER_RENDERING_CASE_TIMEOUT_MS,
 	TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+} from "../support/timing.ts";
 import { findingElements, findingFile } from "../browser/fixtures/fixed-point-scene.ts";
 import { processExists, startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { humanWriteQuery } from "../support/note-version.ts";

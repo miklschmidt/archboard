@@ -80,7 +80,6 @@ function createFixtureGroup(): FixtureGroup {
 				mkdirSync(directory, { recursive: true, mode: 0o700 });
 			}
 			copyFileSync(preparedSnapshot.manifestPath, join(epochRoot, "epoch-manifest.json"));
-			copyFileSync(preparedSnapshot.recordsPath, join(epochRoot, "epoch-records.json"));
 			const caseAuthorities = restoreIdentityAuthorities({
 				childId: identity.validator.childId,
 				epoch: identity.validator.epoch,

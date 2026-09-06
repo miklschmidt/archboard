@@ -3,7 +3,7 @@ import { copyFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS } from "../support/timing.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import type { OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";

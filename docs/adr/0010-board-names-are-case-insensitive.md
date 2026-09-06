@@ -35,10 +35,16 @@ creates a second note beside it. That is exactly how APFS and NTFS behave, and
 it means a vault looks on Linux the way its author left it on a Mac.
 
 The cost is a readdir per path segment when a board's file is resolved, because
-a case-sensitive filesystem will not do the matching for us. There is
-deliberately no fast path for a name that already matches byte for byte: it
-would make the answer depend on how the caller spelled the address, which is the
-one thing this must not do.
+a case-sensitive filesystem will not do the matching for us. This decision
+originally refused a fast path for a name that already matches byte for byte,
+so that the answer could never depend on how the caller spelled the address.
+
+_Superseded in part by TASK-153._ A note that exists at the byte-equal path is
+now returned without the readdir; the walk runs only when nothing is there. The
+only vault where the two answers differ is one already holding two
+case-variants of one name, which the section below calls broken and which
+`board list` already reports as a collision, so the fast path costs nothing
+that was not already lost.
 
 ## Why not case-sensitive everywhere
 

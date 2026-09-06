@@ -20,7 +20,7 @@ import {
 	vaultPathFor,
 } from "../../../src/runtime/engine/board.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
-import { TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS } from "../support/timing.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { humanWriteQuery } from "../support/note-version.ts";

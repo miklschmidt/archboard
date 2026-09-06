@@ -6,7 +6,7 @@ import os from "node:os";
 import path from "node:path";
 import { PassThrough } from "node:stream";
 
-import { TEST_CANVAS_HEALTH_POLL_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_CANVAS_HEALTH_POLL_MS } from "./timing.ts";
 import { stateDir } from "../../../src/runtime/engine/state-dir.ts";
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");

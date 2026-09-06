@@ -168,7 +168,7 @@ describe("malformed input", () => {
 			width: 100,
 			height: 50,
 		} as ServerElement);
-		writeBoardContent(board, valid, { saveCommand: "board save" });
+		writeBoardContent(board, valid);
 		const before = fs.readFileSync(file);
 		const foreignId = "foreign-text-id-needing-settlement";
 		const malformed = readBoardContent(board);
@@ -183,7 +183,7 @@ describe("malformed input", () => {
 		} as ServerElement);
 		let error: Error | undefined;
 		try {
-			writeBoardContent(board, malformed, { saveCommand: "board save" });
+			writeBoardContent(board, malformed);
 		} catch (cause) {
 			error = cause as Error;
 		}

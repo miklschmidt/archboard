@@ -193,9 +193,11 @@ async function attempt(
 }
 
 async function holdBoard(request: LockRequest): Promise<LockHold> {
-	// The expected blocker is one human edit, so agents wait rather than fail
-	// immediately. The cap outlasts a crashed holder's lease. A human gesture may
-	// choose a shorter cap, and zero asks exactly once.
+	// Waiting is for agents. The expected blocker is a person's short gesture
+	// hold or another agent's per-write hold, both about to clear, so an agent
+	// waits them out rather than failing at once; the cap outlasts a crashed
+	// holder's lease. A person never waits: their gesture is refused on the
+	// spot when anybody else holds the board (TASK-153). Zero asks exactly once.
 	const board = normalizeBoardKey(request.board);
 	const leaseMs = request.leaseMs ?? LOCK_LEASE_MS;
 	const waitMs = request.waitMs ?? LOCK_WAIT_CAP_MS;
@@ -233,11 +235,21 @@ async function holdBoard(request: LockRequest): Promise<LockHold> {
 			// Null means movement/race, not a known holder. Preserve the last concrete
 			// blocker for refusal text and predecessor proof.
 			blocker = result.record;
-			// Waiting is for a write that is about to finish. A claim is not: it
-			// stands until its holder releases it or a take-back revokes it, so a
-			// request that will not revoke learns that now instead of at the deadline.
-			if (blocker.claimed && blocker.id !== request.holder.id && request.revokeClaim !== true) {
-				break;
+			if (blocker.id !== request.holder.id) {
+				// A person is refused now, whoever the blocker is: the wait was only
+				// ever for an agent behind a person's gesture hold or another agent's
+				// per-write hold, and it was never meant to make a person wait to
+				// learn that their edit was not accepted.
+				if (request.holder.kind === "human") {
+					break;
+				}
+				// An agent waits for a write that is about to finish. A claim is not:
+				// it stands until its holder releases it or a take-back revokes it, so
+				// a request that will not revoke learns that now instead of at the
+				// deadline.
+				if (blocker.claimed && request.revokeClaim !== true) {
+					break;
+				}
 			}
 		}
 		if (Date.now() >= deadline) {

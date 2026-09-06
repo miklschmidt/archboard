@@ -10,6 +10,7 @@ import {
 	soloPane,
 	type PaneRegistration,
 } from "../../../src/runtime/engine/panes.ts";
+import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 import { openTestPane, type PaneMessage, type TestPane } from "./support/pane-websocket.ts";
@@ -260,16 +261,23 @@ describe("pane addressing", () => {
 		expect(onePane.body.text).toContain("archboard browser open");
 		const leftStart = left.since();
 		let shellPane: TestPane | undefined;
+		// The shell answers a split by mounting the new pane and re-reporting the
+		// one it squeezed; the answer arrives once both have reported, not at the
+		// settle cap (TASK-153).
 		left.socket.on("message", (data) => {
 			const message = JSON.parse(data.toString()) as PaneMessage;
 			if (message.type === "pane_open") {
-				void createPane("p-shell", 640).then((opened) => {
-					shellPane = opened;
-					return undefined;
-				});
+				void createPane("p-shell", 640)
+					.then((opened) => {
+						shellPane = opened;
+						return left.adopt("payments");
+					})
+					.then(() => undefined);
 			}
 		});
+		const splitAskedAt = Date.now();
 		const split = await request<PaneAction>("/api/panes/open", { method: "POST" });
+		expect(Date.now() - splitAskedAt).toBeLessThan(PANE_SETTLE_CAP_MS);
 		expect(split.status).toBe(200);
 		expect(split.body).toMatchObject({ paneCount: 2, pane: { place: "right" } });
 		expect(shellPane?.board()).toBe("payments");
@@ -288,13 +296,18 @@ describe("pane addressing", () => {
 		shellPane!.socket.on("message", (data) => {
 			const message = JSON.parse(data.toString()) as PaneMessage;
 			if (message.type === "pane_close") {
-				void shellPane!.close();
+				void shellPane!
+					.close()
+					.then(() => left.adopt("payments"))
+					.then(() => undefined);
 			}
 		});
+		const closeAskedAt = Date.now();
 		const closed = await request<PaneAction>("/api/panes/close", {
 			method: "POST",
 			body: { pane: "right" },
 		});
+		expect(Date.now() - closeAskedAt).toBeLessThan(PANE_SETTLE_CAP_MS);
 		expect(closed.status).toBe(200);
 		expect(closed.body).toMatchObject({ paneCount: 1, closed: { place: "right" } });
 		const survivor = (await request<PaneReport>("/api/panes")).body.panes[0];

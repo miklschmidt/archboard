@@ -111,6 +111,16 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		await lock.withBoardLock({ board, holder: human("user") }, () => ++writes);
 		expect(writes).toBe(2);
 		expect(lock.boardLockState(board)?.id).toBe("user");
+		// A person behind another person's hold is refused at once, without the
+		// agent's wait (TASK-153): no timer is advanced and no time is waited.
+		const otherPerson = await lock
+			.holdBoard({ board, holder: human("other-pane") })
+			.catch((error: unknown) => error);
+		if (!(otherPerson instanceof lock.BoardHeldError)) {
+			throw new Error("Expected the other person's hold to be refused.");
+		}
+		expect(otherPerson.holder).toMatchObject({ id: "user" });
+		expect(otherPerson.waitedMs).toBe(0);
 		expect(lock.releaseHold(board, "later")).toBeFalse();
 		expect(lock.releaseHold(board, "user")).toBeTrue();
 

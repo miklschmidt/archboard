@@ -85,16 +85,29 @@ const SELECTION_DEBOUNCE_MS = 150;
 /**
  * How long a pane waits before dialling the socket again after it drops.
  *
- * Gathered here rather than left inline because ADR 0016 gives it a second
- * job it does not have yet. Lock state is broadcast over this socket, and a
- * pane that cannot hear the broadcast has to assume the board is held rather
- * than that it is free. So this is also the longest a pane can refuse a user's
- * edit after a brief disconnect. It is deliberately unrelated to
- * REPORT_PROGRESS_MS: change
- * reports go by HTTP and are not gated on the socket, so a dropped socket must
- * not also stop a user's edits reaching the server.
+ * It is also the grace before a pane reads a dropped socket as anything at
+ * all. A pane stays editable through a socket blip (ADR 0022, TASK-153): lock
+ * state is broadcast over this socket, but a pane that cannot hear it for a
+ * moment does not assume the board is held, because a person refused their
+ * own edit for a network hiccup is the wall stopping for no reason they can
+ * see. Only CONTACT_LOST_MS below puts the pane in view mode. It is
+ * deliberately unrelated to REPORT_PROGRESS_MS: change reports go by HTTP and
+ * are not gated on the socket, so a dropped socket must not also stop a
+ * user's edits reaching the server.
  */
 const SOCKET_RECONNECT_MS = 3000;
+
+/**
+ * How long a pane goes without the server before it treats contact as lost
+ * and shows the board in view mode.
+ *
+ * Two redial intervals, so one failed redial is a blip and a second is loss.
+ * A redial that succeeds inside the first interval never shows view mode for
+ * a frame, and a pane that cannot hear lock broadcasts for longer than that
+ * stops accepting content edits, since it can no longer say whether an agent
+ * has claimed the board (ADR 0022). Pan and zoom keep working throughout.
+ */
+const CONTACT_LOST_MS = 2 * SOCKET_RECONNECT_MS;
 
 // ── What a pane looks like from outside ───────────────────────────────────
 
@@ -112,8 +125,9 @@ const PANE_DEBOUNCE_MS = 300;
  * How long the server waits for the panes to say where they ended up, after
  * asking the browser to split or close one.
  *
- * This is a cap, not a delay. The wait ends as soon as every pane has
- * re-reported. It exists because a pane that has just been mounted, or just
+ * This is a cap, not a delay. The wait ends as soon as the panes the layout
+ * change moved have re-reported; a pane it did not touch is not waited on
+ * (TASK-153). It exists because a pane that has just been mounted, or just
  * been squeezed into half the width, reports its new rectangle a beat later,
  * and answering before that arrives means answering out of stale geometry.
  * That is how a plain left/right split once came back described as "row 2,
@@ -251,27 +265,6 @@ const GIT_PROCESS_GROUP_CLEANUP_MS = CANVAS_MUTATION_DRAIN_TIMEOUT_MS;
 const GIT_PROCESS_GROUP_POLL_MS = 10;
 
 /**
- * Bound for a fake Git child to publish its startup marker in the module owner.
- * The owner also runs inside the serialized system watchdog, so observing the
- * fixture must allow the real command its complete deadline.
- */
-const TEST_GIT_FIXTURE_START_MS = GIT_COMMAND_TIMEOUT_MS;
-
-/**
- * Bun case bound for the composed Git module lifecycle owner. It leaves one
- * command deadline for fixture readiness and one for its remaining lifecycle
- * cases while the outer process-contract watchdog remains the final bound.
- */
-const TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS = 2 * GIT_COMMAND_TIMEOUT_MS;
-
-/**
- * Poll cadence for the delayed-checkout fixture's explicit release files.
- * The files, not elapsed time, gate each Git probe; a short cadence keeps the
- * four-stage concurrency owner well inside Bun's ordinary case bound.
- */
-const TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS = 25;
-
-/**
  * Outer grace before an interrupted CLI restores the signal's default action.
  * Git may spend one cleanup grace terminating and cancelling its leader and
  * pipes, then another proving the detached group is absent. A third grace is
@@ -279,20 +272,6 @@ const TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS = 25;
  * re-signals itself; the outer owner must never pre-empt either inner proof.
  */
 const CLI_INTERRUPT_CLEANUP_MS = 3 * GIT_PROCESS_GROUP_CLEANUP_MS;
-
-/**
- * External bound for the exact Git lifecycle plus opener regression sequence.
- * It is four ordinary Git command bounds: enough for the serial owners while
- * still diagnosing a retained child or pipe well inside the repository lane.
- */
-const TEST_GIT_OPENER_WATCHDOG_MS = 4 * GIT_COMMAND_TIMEOUT_MS;
-
-/**
- * Bun's case deadline includes the watchdog plus two cleanup grace windows:
- * one to kill and drain the child group, and one for the owner to report it.
- */
-const TEST_GIT_OPENER_CASE_TIMEOUT_MS =
-	TEST_GIT_OPENER_WATCHDOG_MS + 2 * GIT_PROCESS_GROUP_CLEANUP_MS;
 
 // ── Codex workbench policy (ADR 0019) ─────────────────────────────────────
 //
@@ -371,10 +350,10 @@ const CODEX_QUEUE_REREAD_FLOOR_MS = 1000;
 // ── One writer at a time (ADR 0016) ───────────────────────────────────────
 //
 // `src/runtime/engine/board-lock.ts` is the only thing that reads these. It was built
-// against them rather than around them, and the three it added since — the
-// poll, the steal guard and the free linger — are here for the reason the
-// first three were: a number that governs the lock and lives next to the lock
-// is a number the next person tunes without seeing what it pulls against.
+// against them rather than around them, and the two it added since — the
+// poll and the steal guard — are here for the reason the first three were: a
+// number that governs the lock and lives next to the lock is a number the next
+// person tunes without seeing what it pulls against.
 
 /**
  * How long a lock is held without renewal before it lapses.
@@ -454,28 +433,6 @@ const LOCK_POLL_MS = 50;
  * holder died. Nothing on the ordinary path waits it out.
  */
 const LOCK_STEAL_GUARD_MS = 25;
-
-/**
- * How long the panes are left believing a board is still held after it was
- * released.
- *
- * The lock itself is released immediately — this delays only the news, and
- * only the half of the news that opens a board back up. A release that is
- * followed by another hold inside this window is never broadcast at all.
- *
- * It exists because an agent's write is still a fan-out in places (TASK-083:
- * promote, demote and a multi-id delete are one write per element), so a
- * single agent action can take and release the lock a dozen times in as many
- * milliseconds. Broadcast raw, that is a dozen round trips of every pane
- * flicking in and out of read-only while the user edits.
- *
- * A linger errs toward saying a free board is held, which is the direction
- * this whole mechanism errs in (ADR 0016: a pane that cannot be told must
- * assume the board is held). One renewal interval is long enough to swallow a
- * fan-out and short enough that a user never notices a board they can already
- * write to.
- */
-const LOCK_FREE_LINGER_MS = LOCK_RENEW_MS;
 
 // ── A claim: one writer for longer than one write (ADR 0016, TASK-080) ────
 
@@ -562,153 +519,7 @@ const LOCK_WATCH_MS = LOCK_RENEW_MS;
  */
 const ACTIVITY_LINGER_MS = 8000;
 
-/** Actual elapsed ceiling for a test with no reviewed source-local real-time declaration. */
-const TEST_WALL_CLOCK_BUDGET_MS = 20_000;
-/** One controlled Bun child runs three millisecond fixtures and must settle well below the repository budget. */
-const TEST_WALL_CLOCK_PRELOAD_LIFECYCLE_TIMEOUT_MS = 5000;
-/** Bun lifecycle failure thresholds, not hang ceilings or SLAs, clear hosted sweep 5.274s and totality 5,003.69ms at roughly 3x. */
-const TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS = 15_000;
-const TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS = 15_000;
-/** One packaged inspection stays below the required 20-second per-child diagnostic ceiling. */
-const TEST_BOARD_INSPECTION_PACKAGE_COMMAND_TIMEOUT_MS = 18_000;
-/** TERM, KILL, and leader/pipe settlement phases together stay below the 5-second cleanup cap. */
-const TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS = 1000;
-/** Observation cadence while proving a packaged inspection's detached group is absent. */
-const TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS = 10;
-/** The local HTTP sentinel must publish its ephemeral port before a package inspection starts. */
-const TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS = 5000;
-/** Lets the process-group fixture publish descendant readiness before its forced failure. */
-const TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS = 1000;
-/** Bounds both retained parent-SIGTERM owners while they join cleanup before replaying the signal. */
-const TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS = 15_000;
 // ── Canvas subprocesses owned by checks (TASK-086) ───────────────────────
-
-/** Canvas identity startup stays below TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS with bounded shutdown room. */
-const TEST_CANVAS_STARTUP_TIMEOUT_MS = 15_000;
-
-/**
- * How long one health request may wait inside the startup cap.
- *
- * It is ten TEST_CANVAS_HEALTH_POLL_MS intervals. A dead listener therefore
- * costs at most half a second per attempt, while a connection refusal returns
- * immediately and follows the shorter poll cadence.
- */
-const TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS = 500;
-
-/**
- * How long startup waits between refused health connections.
- *
- * This pulls against the server's ordinary sub-second startup. Shorter would
- * spin on a closed port; longer would make identity verification noticeably
- * lag behind a child that is already listening.
- */
-const TEST_CANVAS_HEALTH_POLL_MS = 50;
-
-/**
- * How long graceful shutdown gets before the owner escalates its exact child
- * to SIGKILL, and how long that forced exit gets to be observed.
- *
- * Two of these intervals plus TEST_CANVAS_STARTUP_TIMEOUT_MS must fit inside
- * TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS so the parent proof outlives the complete
- * child-owned cleanup path.
- */
-const TEST_CANVAS_SHUTDOWN_TIMEOUT_MS = 1000;
-
-/**
- * Outer threshold for one lifecycle proof subprocess, from spawn through cleanup.
- *
- * It clears startup, owner shutdown, and post-`canvas stop` PID observation
- * beyond the server's 2,000 ms forced-exit fallback. A stuck proof therefore
- * fails with its PID and mode instead of hanging the whole board suite.
- */
-const TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS = 20_000;
-
-/**
- * Two shutdown intervals beyond TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS let the Bun
- * case receive rejection, assert it, and dispose a retained generation.
- */
-const TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS = 2 * TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
-
-/**
- * Cap for the post-cleanup health probe.
- *
- * Five health-poll intervals are enough to distinguish a listener that still
- * answers from a refused connection without making four cleanup cases cost a
- * second each when a platform delays refusal.
- */
-const TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS = 250;
-
-/**
- * Delay between the early-death fixture sending response headers and exiting.
- *
- * Half one health-poll interval lets `fetch` expose the response before the
- * body is cut off, while the public liveness check still observes the exit
- * inside the same TEST_CANVAS_HEALTH_POLL_MS window.
- */
-const TEST_CANVAS_EARLY_DEATH_DELAY_MS = 25;
-
-/**
- * How often synthetic pane mechanics inspect their captured socket frames.
- *
- * The interval stays short enough to observe an already-delivered loopback
- * frame or registry update without turning the wait into a busy spin.
- */
-const TEST_PANE_MESSAGE_POLL_MS = 20;
-
-/**
- * Outer cap for a synthetic pane waiting on one named socket frame.
- *
- * This is longer than PANE_SETTLE_CAP_MS, so a server waiting for pane
- * geometry gets its full cap before the test declares the expected frame
- * missing. It remains far below BROWSER_EXPORT_TIMEOUT_MS because these
- * panes acknowledge callbacks directly and never render.
- */
-const TEST_PANE_MESSAGE_TIMEOUT_MS = 2000;
-/**
- * TASK-148.04 measures each real cross-process lock-watch delivery from the
- * completed ownership change to its matching board_lock frame. One sweep
- * should deliver it; three sweeps are the outer bound for timer phase,
- * loopback delivery, and a stressed system-test host.
- */
-const TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS = 3 * LOCK_WATCH_MS;
-/** Four LOCK_WATCH_MS sweeps cover a timestamp boundary and board_note delivery. */
-const TEST_NOTE_WATCH_MESSAGE_TIMEOUT_MS = 4 * LOCK_WATCH_MS;
-/**
- * LOCK_POLL_MS observes a delivered note-watch frame without polling faster
- * than the lock-file machinery that carries the notification.
- */
-const TEST_NOTE_WATCH_MESSAGE_POLL_MS = LOCK_POLL_MS;
-/** One LOCK_WATCH_MS bounds the board_note clearing frame after reload. */
-const TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS = LOCK_WATCH_MS;
-/** Ordinary browser commands stay at 30s; the 10k-element initial render gets three windows, finite and not an SLA. */
-const TEST_BROWSER_COMMAND_TIMEOUT_MS = BROWSER_EXPORT_TIMEOUT_MS;
-const TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS = 3 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
-/** The 10,000-element real-browser performance owner measured 55.9-76.84s; eight command windows preserve its existing finite case bound. */
-const TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS = 8 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
-/** Forty-two real interleaved browser/server cycles were measured at about 40s; four command windows retain the existing finite Bun case bound. */
-const TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS = 4 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
-/** Matches the existing loopback and lock polling cadence without busy-waiting. */
-const TEST_BROWSER_POLL_MS = LOCK_POLL_MS;
-/** Extends the negative pane window past one debounce without reaching its settle cap. */
-const TEST_PANE_DEBOUNCE_MARGIN_MS = 2 * TEST_BROWSER_POLL_MS;
-/** Polls fake-opener lifecycle evidence within its 2s operation bound. */
-const TEST_OPENER_LIFECYCLE = { pollMs: 20, timeoutMs: 2000 } as const;
-/** Aggregate Bun case, not an operation cap/SLA: 20s avoids the hosted 5s cancellation path while keeping a finite bound. */
-const TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS = 20_000;
-/** Aggregate Bun case, not an operation cap/SLA: 20s clears hosted 5,034ms and stressed 14,815.78ms. */
-const TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS = 20_000;
-/** Two real renderer acquisitions plus cleanup measured below 7s; 9.5s retains a narrow stressed-host margin. */
-const TEST_BOARD_RENDERER_OWNER_TIMEOUT_MS = 9500;
-/** The injected startup exit settles in under 300ms; 3s leaves room for process and pipe cleanup. */
-const TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS = 3000;
-/** The static fixture performs six loopback reads and starts no Chromium process. */
-const TEST_BOARD_RENDERER_FIXTURE_TIMEOUT_MS = 1000;
-/** Lazy Chromium startup plus concurrent PNG/SVG measured below 2s; no routine case gets a product-timeout sum. */
-const TEST_SERVER_RENDERING_CASE_TIMEOUT_MS = 5000;
-/** A healthy pre-render human hold is immediate; 400ms fails the focused owner before a product lease can expire. */
-const TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS = 400;
-/** Missing Chromium is a preflight refusal and should never approach the 5s product startup bound. */
-const TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS = 2000;
 
 export {
 	REPORT_PROGRESS_MS,
@@ -716,6 +527,7 @@ export {
 	REPORT_RETRY_MS,
 	SELECTION_DEBOUNCE_MS,
 	SOCKET_RECONNECT_MS,
+	CONTACT_LOST_MS,
 	PANE_DEBOUNCE_MS,
 	PANE_SETTLE_CAP_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
@@ -733,12 +545,7 @@ export {
 	GIT_COMMAND_TIMEOUT_MS,
 	GIT_PROCESS_GROUP_CLEANUP_MS,
 	GIT_PROCESS_GROUP_POLL_MS,
-	TEST_GIT_FIXTURE_START_MS,
-	TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS,
-	TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS,
 	CLI_INTERRUPT_CLEANUP_MS,
-	TEST_GIT_OPENER_WATCHDOG_MS,
-	TEST_GIT_OPENER_CASE_TIMEOUT_MS,
 	CODEX_PROCESS_RESTART_BASE_MS,
 	CODEX_PROCESS_RESTART_MAX_MS,
 	CODEX_REQUEST_SETTLEMENT_MS,
@@ -759,49 +566,9 @@ export {
 	LOCK_WAIT_CAP_MS,
 	LOCK_POLL_MS,
 	LOCK_STEAL_GUARD_MS,
-	LOCK_FREE_LINGER_MS,
 	CLAIM_DEFAULT_MS,
 	CLAIM_MAX_MS,
 	CLAIM_LEASE_MS,
 	LOCK_WATCH_MS,
 	ACTIVITY_LINGER_MS,
-	TEST_WALL_CLOCK_BUDGET_MS,
-	TEST_WALL_CLOCK_PRELOAD_LIFECYCLE_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_SWEEP_CASE_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_COMMAND_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS,
-	TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_FAILURE_TIMEOUT_MS,
-	TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS,
-	TEST_CANVAS_STARTUP_TIMEOUT_MS,
-	TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS,
-	TEST_CANVAS_HEALTH_POLL_MS,
-	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
-	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
-	TEST_CANVAS_CASE_TIMEOUT_MARGIN_MS,
-	TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS,
-	TEST_CANVAS_EARLY_DEATH_DELAY_MS,
-	TEST_PANE_MESSAGE_POLL_MS,
-	TEST_PANE_MESSAGE_TIMEOUT_MS,
-	TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS,
-	TEST_NOTE_WATCH_MESSAGE_TIMEOUT_MS,
-	TEST_NOTE_WATCH_MESSAGE_POLL_MS,
-	TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS,
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-	TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS,
-	TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS,
-	TEST_LIVE_SESSION_CONVERGENCE_CASE_TIMEOUT_MS,
-	TEST_BROWSER_POLL_MS,
-	TEST_PANE_DEBOUNCE_MARGIN_MS,
-	TEST_OPENER_LIFECYCLE,
-	TEST_OPENER_PERSISTENCE_CASE_TIMEOUT_MS,
-	TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS,
-	TEST_BOARD_RENDERER_OWNER_TIMEOUT_MS,
-	TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS,
-	TEST_BOARD_RENDERER_FIXTURE_TIMEOUT_MS,
-	TEST_SERVER_RENDERING_CASE_TIMEOUT_MS,
-	TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS,
-	TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS,
 };

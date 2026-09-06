@@ -232,11 +232,14 @@ function createDynamicApprovalSchemas(identity: IdentitySchemas, context: Identi
 		.strict()
 		.superRefine((request, refinementContext) => {
 			validateIdentityAndEffect(request.identity, request.effect, refinementContext);
-			if (request.expiresAtMs - request.createdAtMs !== CODEX_APPROVAL_EXPIRY_MS) {
+			// A bounded window, not an exact constant: the request is valid while it
+			// expires after it was created and no later than the configured bound.
+			const window = request.expiresAtMs - request.createdAtMs;
+			if (window <= 0 || window > CODEX_APPROVAL_EXPIRY_MS) {
 				refinementContext.addIssue({
 					code: "custom",
 					path: ["expiresAtMs"],
-					message: `expiry must be exactly ${CODEX_APPROVAL_EXPIRY_MS}ms after creation`,
+					message: `expiry must be after creation and at most ${CODEX_APPROVAL_EXPIRY_MS}ms after it`,
 				});
 			}
 			if (
