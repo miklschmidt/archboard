@@ -125,6 +125,15 @@ function describeVersionMove(
 	}
 }
 
+// A board name may hold a space, an apostrophe or anything else the shell
+// splits on or pairs up (only "@" and path-hostile characters are refused),
+// and the recovery commands are typed back into a shell as printed. A word
+// the shell would leave alone is printed bare; anything else is single-quoted,
+// the one quoting every POSIX shell reads literally (TASK-153).
+const PLAIN_WORD_RE = /^[A-Za-z0-9@%+=:,./_-]+$/;
+const shellWord = (word: string): string =>
+	PLAIN_WORD_RE.test(word) ? word : `'${word.replaceAll("'", "'\\''")}'`;
+
 const clock = (iso: string | undefined): string =>
 	iso ? new Date(iso).toISOString().replace("T", " ").slice(0, 19) + " UTC" : "unknown";
 
@@ -154,12 +163,13 @@ function describeWriteConflict(input: {
 	// cannot tell a person at a terminal from an agent and refuses an unstated
 	// write (TASK-095); a fixed line per outcome is honest, since the outcome is
 	// the intent (TASK-153). Reload is not a write and needs neither.
-	const from = input.savedFrom ?? key;
-	const as = from === key ? "" : ` --as ${key}`;
+	const savedFrom = input.savedFrom ?? key;
+	const from = shellWord(savedFrom);
+	const as = savedFrom === key ? "" : ` --as ${shellWord(key)}`;
 	const outcomes = {
-		reload: `browser show ${key} --pane <spec> --reload`,
+		reload: `browser show ${shellWord(key)} --pane <spec> --reload`,
 		overwrite: `board save --board ${from}${as} --force --doing "keeping the canvas"`,
-		saveAs: `board save --board ${from} --as ${suggestSaveAsName(input.target)} --doing "keeping both"`,
+		saveAs: `board save --board ${from} --as ${shellWord(suggestSaveAsName(input.target))} --doing "keeping both"`,
 	};
 	const lead =
 		input.reason === "changed"
