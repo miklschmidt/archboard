@@ -1,23 +1,23 @@
-import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
 import type {
 	CodexSession,
 	SessionThreadItem,
 	SessionThreadTurnPageResult,
 	SessionTurn,
-} from "../../../runtime/codex-session/index.js";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/server-requests.js";
-import type { ThreadLinkSnapshot } from "../../../runtime/codex-thread-link/index.js";
+} from "@/runtime/codex-session";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
 import type {
 	ThreadId,
 	TrustedIdentityDecoder,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	BrowserConnectionInstance,
 	CodexTimelineItemProjectionInput,
 	CodexTimelineProjectionInput,
 	CodexTimelineTurnProjectionInput,
-} from "../../codex-workbench/index.js";
-import { assertBrowserSnapshotBudget } from "../../codex-workbench/index.js";
+} from "@/server/codex-workbench";
+import { assertBrowserSnapshotBudget } from "@/server/codex-workbench";
 
 const TIMELINE_PAGE_LIMIT = 100;
 const TIMELINE_PAGE_LIMIT_MAX = 8;
@@ -105,10 +105,16 @@ interface CanvasTimelineOwnerOptions {
 	readonly budget?: CanvasBrowserProjectionBudget;
 }
 
+/**
+ *
+ */
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ *
+ */
 function boundedText(
 	value: string,
 	maximum: number,
@@ -151,14 +157,23 @@ function boundedText(
 	};
 }
 
+/**
+ *
+ */
 function normalizedText(value: string): string {
 	return value.replace(/\s+/gu, " ").trim();
 }
 
+/**
+ *
+ */
 function boundedNormalizedText(value: string, maximum: number): string {
 	return normalizedText(boundedText(value, maximum, "").value);
 }
 
+/**
+ *
+ */
 function userText(item: SessionThreadItem): {
 	readonly value: string | null;
 	readonly truncated: boolean;
@@ -191,6 +206,9 @@ function userText(item: SessionThreadItem): {
 	};
 }
 
+/**
+ *
+ */
 function assistantText(item: SessionThreadItem): string | null {
 	if (item.type !== "agentMessage") {
 		return null;
@@ -199,6 +217,9 @@ function assistantText(item: SessionThreadItem): string | null {
 	return text.length === 0 ? null : text;
 }
 
+/**
+ *
+ */
 function reasoningText(item: Extract<SessionThreadItem, { readonly type: "reasoning" }>): {
 	readonly value: string;
 	readonly truncated: boolean;
@@ -225,6 +246,9 @@ type ProjectedItem = {
 	readonly truncated: boolean;
 };
 
+/**
+ *
+ */
 function projectItem(item: SessionThreadItem): ProjectedItem {
 	switch (item.type) {
 		case "agentMessage": {
@@ -288,6 +312,9 @@ type TimelineApprovalState = Extract<
 	{ readonly kind: "approval_request" }
 >["state"];
 
+/**
+ *
+ */
 function approvalState(view: TimelineApprovalView): TimelineApprovalState | null {
 	switch (view.snapshot.state) {
 		case "staged":
@@ -301,6 +328,9 @@ function approvalState(view: TimelineApprovalView): TimelineApprovalState | null
 	}
 }
 
+/**
+ *
+ */
 function approvalFor(
 	view: TimelineApprovalView,
 	threadId: ThreadId,
@@ -325,6 +355,9 @@ function approvalFor(
 	};
 }
 
+/**
+ *
+ */
 function projectTurnData(turn: SessionTurn, maxItems: number): TimelineTurnData {
 	const items: TimelineItemData[] = [];
 	let user: string | null = null;
@@ -367,6 +400,9 @@ function projectTurnData(turn: SessionTurn, maxItems: number): TimelineTurnData 
 	};
 }
 
+/**
+ *
+ */
 function projectTurn(
 	threadId: ThreadId,
 	turn: TimelineTurnData,
@@ -376,6 +412,9 @@ function projectTurn(
 	const items: CodexTimelineItemProjectionInput[] = [];
 	const matchedApprovals = new Set<number>();
 	let truncated = turn.presentation.outputs.truncated;
+	/**
+	 *
+	 */
 	const append = (item: CodexTimelineItemProjectionInput): void => {
 		if (items.length >= maxItems) {
 			truncated = true;
@@ -420,6 +459,9 @@ function projectTurn(
 	};
 }
 
+/**
+ *
+ */
 function timelineBytes(
 	threadId: ThreadId,
 	turns: readonly CodexTimelineTurnProjectionInput[],
@@ -429,6 +471,9 @@ function timelineBytes(
 		.byteLength;
 }
 
+/**
+ *
+ */
 function markTruncated(turn: CodexTimelineTurnProjectionInput): CodexTimelineTurnProjectionInput {
 	if (turn.presentation.outputs.truncated) {
 		return turn;
@@ -442,6 +487,9 @@ function markTruncated(turn: CodexTimelineTurnProjectionInput): CodexTimelineTur
 	};
 }
 
+/**
+ *
+ */
 function fitTurn(
 	threadId: ThreadId,
 	turns: readonly CodexTimelineTurnProjectionInput[],
@@ -505,20 +553,23 @@ function projectData(
 	if (truncated && turns.length > 0) {
 		turns[0] = markTruncated(turns[0]!);
 		while (turns.length > 0 && timelineBytes(data.threadId, turns, data.cursor) > budget.maxBytes) {
-			const oldest: CodexTimelineTurnProjectionInput = turns[0]!;
+			const oldest: CodexTimelineTurnProjectionInput = turns[0];
 			if (oldest.items.length > 0) {
 				turns[0] = { ...markTruncated(oldest), items: oldest.items.slice(0, -1) };
 				continue;
 			}
 			turns.shift();
 			if (turns.length > 0) {
-				turns[0] = markTruncated(turns[0]!);
+				turns[0] = markTruncated(turns[0]);
 			}
 		}
 	}
 	return { kind: "codex_timeline", threadId: data.threadId, turns, cursor: data.cursor };
 }
 
+/**
+ *
+ */
 function bindingKey(
 	paneId: string,
 	revision: number,
@@ -539,6 +590,9 @@ function bindingKey(
 	]);
 }
 
+/**
+ *
+ */
 function eventThreadId(event: TransportServerNotification): string | null {
 	const params = event.notification.params;
 	if (isRecord(params) && typeof params.threadId === "string") {
@@ -555,6 +609,9 @@ function eventThreadId(event: TransportServerNotification): string | null {
 	return null;
 }
 
+/**
+ *
+ */
 function eventMatchesThread(
 	eventId: string | null,
 	threadId: ThreadId,
@@ -566,6 +623,9 @@ function eventMatchesThread(
 	);
 }
 
+/**
+ *
+ */
 function isTimelineNotification(method: string): boolean {
 	return (
 		(method.startsWith("thread/") && !method.startsWith("thread/realtime/")) ||
@@ -592,6 +652,9 @@ async function readTurnPages(
 	const seenCursors = new Set<string>();
 	let retainedBytes = timelineBytes(threadId, [], "x".repeat(TIMELINE_CURSOR_LIMIT));
 	let cursor: string | null = null;
+	/**
+	 *
+	 */
 	const settled = (
 		truncated: boolean,
 	): { readonly turns: readonly TimelineTurnData[]; readonly truncated: boolean } => ({
@@ -636,6 +699,9 @@ async function readTurnPages(
 	return settled(true);
 }
 
+/**
+ *
+ */
 function boundedCursor(cursor: string | null): string | null {
 	if (cursor === null) {
 		return null;
@@ -646,12 +712,18 @@ function boundedCursor(cursor: string | null): string | null {
 	return cursor;
 }
 
+/**
+ *
+ */
 function boundedBudgetValue(value: number | undefined, fallback: number, maximum: number): number {
 	return typeof value === "number" && Number.isSafeInteger(value) && value > 0
 		? Math.min(value, maximum)
 		: fallback;
 }
 
+/**
+ *
+ */
 function createCanvasBrowserProjectionBudget(
 	input: Partial<CanvasBrowserProjectionBudget> = {},
 ): CanvasBrowserProjectionBudget {
@@ -673,13 +745,22 @@ function createCanvasBrowserProjectionBudget(
 	return budget;
 }
 
+/**
+ *
+ */
 function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasTimelineOwner {
 	const states = new Map<string, Map<BrowserConnectionInstance, TimelinePaneState>>();
 	const budget = createCanvasBrowserProjectionBudget(options.budget);
 	let disposed = false;
+	/**
+	 *
+	 */
 	const isCurrent = (state: TimelinePaneState): boolean =>
 		states.get(state.paneId)?.get(state.connection) === state;
 
+	/**
+	 *
+	 */
 	const refresh = (state: TimelinePaneState): void => {
 		if (disposed || !state.ready || state.link.threadId === null || state.refresh !== null) {
 			return;
@@ -727,6 +808,9 @@ function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasT
 		);
 	};
 
+	/**
+	 *
+	 */
 	const read: CanvasTimelineOwner["read"] = (
 		paneId,
 		revision,
@@ -765,6 +849,9 @@ function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasT
 			: projectData(state.data, options.approvals.inspectViews(), budget);
 	};
 
+	/**
+	 *
+	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		if (disposed || !isTimelineNotification(event.notification.method)) {
 			return;
@@ -788,6 +875,9 @@ function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasT
 		}
 	};
 
+	/**
+	 *
+	 */
 	const retire = (paneId: string, connection: BrowserConnectionInstance): void => {
 		const paneStates = states.get(paneId);
 		const state = paneStates?.get(connection);
@@ -804,6 +894,9 @@ function createCanvasTimelineOwner(options: CanvasTimelineOwnerOptions): CanvasT
 		}
 	};
 
+	/**
+	 *
+	 */
 	const dispose = (): void => {
 		if (disposed) {
 			return;

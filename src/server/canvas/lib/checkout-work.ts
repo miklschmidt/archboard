@@ -32,10 +32,16 @@ interface CheckoutWorkOwner {
 	readonly stop: () => Promise<void>;
 }
 
+/**
+ *
+ */
 function createCheckoutWorkOwner(): CheckoutWorkOwner {
 	let accepting = true;
 	const active = new Set<ActiveCheckoutWork>();
 
+	/**
+	 *
+	 */
 	function track<T>(
 		name: string,
 		externalSignal: CheckoutSignal | undefined,
@@ -47,6 +53,9 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 			);
 		}
 		const controller = new AbortController();
+		/**
+		 *
+		 */
 		const cancel = (): void => {
 			controller.abort(externalSignal?.reason ?? new Error(`${name} canceled.`));
 		};
@@ -69,6 +78,9 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 		return promise;
 	}
 
+	/**
+	 *
+	 */
 	async function trackRequest<T>(
 		request: CheckoutRequest,
 		response: CheckoutResponse,
@@ -76,6 +88,9 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 		work: CheckoutTask<T>,
 	): Promise<T> {
 		const requestController = new AbortController();
+		/**
+		 *
+		 */
 		const cancel = (): void => {
 			requestController.abort(new Error(`${request.method} ${request.path} disconnected.`));
 		};
@@ -89,6 +104,9 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 		}
 	}
 
+	/**
+	 *
+	 */
 	function quiesce(): void {
 		accepting = false;
 		for (const owner of active) {
@@ -96,6 +114,9 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 		}
 	}
 
+	/**
+	 *
+	 */
 	async function stop(): Promise<void> {
 		quiesce();
 		const admitted = [...active];
@@ -112,6 +133,9 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 		track,
 		trackRequest,
 		quiesce,
+		/**
+		 *
+		 */
 		resume() {
 			accepting = true;
 		},

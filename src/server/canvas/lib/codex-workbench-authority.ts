@@ -2,7 +2,7 @@ import type {
 	IdentityAuthorities,
 	OperationId,
 	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import {
 	createDynamicAuthorityTokenIssuer,
 	type DynamicCallerAuthority,
@@ -10,14 +10,14 @@ import {
 	type DynamicContextPort,
 	type DynamicTargetAuthority,
 	type DynamicThreadAuthorityPort,
-} from "../../../runtime/codex-dynamic-tools/index.js";
-import type { CodexEpochStore, EpochOperationRecord } from "../../../runtime/codex-epoch/index.js";
+} from "@/runtime/codex-dynamic-tools";
+import type { CodexEpochStore, EpochOperationRecord } from "@/runtime/codex-epoch";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
-} from "../../../runtime/codex-thread-link/index.js";
-import type { DynamicServerRequest } from "../../../runtime/codex-transport/server-requests.js";
-import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
+} from "@/runtime/codex-thread-link";
+import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { ArchboardContext } from "@/runtime/codex-instructions";
 
 export interface CanvasDynamicAuthorityOptions {
 	readonly identity: IdentityAuthorities;
@@ -43,6 +43,9 @@ export interface CanvasDynamicAuthorityAdapters {
 	readonly dispose: () => void;
 }
 
+/**
+ *
+ */
 function latestThreadRecord(
 	epoch: Pick<CodexEpochStore, "snapshot">,
 	threadId: ThreadId,
@@ -66,6 +69,9 @@ export function createCanvasDynamicAuthorityAdapters(
 		ReturnType<typeof issuer.issue>,
 		DynamicServerRequest["logicalCall"]
 	>();
+	/**
+	 *
+	 */
 	const tokenFor = (key: string): ReturnType<typeof issuer.issue> => {
 		const prior = tokens.get(key);
 		if (prior !== undefined && issuer.owns(prior)) return prior;
@@ -73,6 +79,9 @@ export function createCanvasDynamicAuthorityAdapters(
 		tokens.set(key, issued);
 		return issued;
 	};
+	/**
+	 *
+	 */
 	const paneForThread = (threadId: ThreadId): string | null => {
 		for (const paneId of options.paneIds()) {
 			const binding = options.threadLink.read(paneId);
@@ -80,6 +89,9 @@ export function createCanvasDynamicAuthorityAdapters(
 		}
 		return null;
 	};
+	/**
+	 *
+	 */
 	const targetFacts = async (
 		threadId: ThreadId,
 	): Promise<{
@@ -127,6 +139,9 @@ export function createCanvasDynamicAuthorityAdapters(
 			},
 		};
 	};
+	/**
+	 *
+	 */
 	const isLogicalCallItem = (
 		item: NonNullable<ThreadLinkClassification["thread"]>["turns"][number]["items"][number],
 		callId: DynamicServerRequest["logicalCall"]["callId"],
@@ -134,6 +149,9 @@ export function createCanvasDynamicAuthorityAdapters(
 		item.type === "dynamicToolCall" &&
 		options.identity.identity.decoder.serializeCodexIdentity(item.id) ===
 			options.identity.identity.decoder.serializeCodexIdentity(callId);
+	/**
+	 *
+	 */
 	const resolveCaller = async (request: DynamicServerRequest): Promise<DynamicCallerAuthority> => {
 		options.identity.identity.validator.assertCurrentEpoch(request.child, request.epoch);
 		const facts = await targetFacts(request.logicalCall.threadId);
@@ -172,6 +190,9 @@ export function createCanvasDynamicAuthorityAdapters(
 			executing: true,
 		});
 	};
+	/**
+	 *
+	 */
 	const classifyTarget = async (
 		caller: DynamicCallerAuthority,
 		value: unknown,
@@ -191,12 +212,21 @@ export function createCanvasDynamicAuthorityAdapters(
 		});
 	};
 	const thread: DynamicThreadAuthorityPort = Object.freeze({
+		/**
+		 *
+		 */
 		resolveExactLogicalCaller: (
 			input: Parameters<DynamicThreadAuthorityPort["resolveExactLogicalCaller"]>[0],
 		) => resolveCaller(input.request),
+		/**
+		 *
+		 */
 		classifyExactTarget: (
 			input: Parameters<DynamicThreadAuthorityPort["classifyExactTarget"]>[0],
 		) => classifyTarget(input.caller, input.threadId),
+		/**
+		 *
+		 */
 		resolveExactTurnBoundary: async (
 			input: Parameters<DynamicThreadAuthorityPort["resolveExactTurnBoundary"]>[0],
 		) => {
@@ -211,6 +241,9 @@ export function createCanvasDynamicAuthorityAdapters(
 				throw new Error("The requested fork boundary is not in the target thread.");
 			return found.id;
 		},
+		/**
+		 *
+		 */
 		revalidateCaller: async (caller: DynamicCallerAuthority) => {
 			if (!issuer.owns(caller.authority)) throw new Error("The caller authority was retired.");
 			const logicalCall = callerCalls.get(caller.authority);
@@ -243,6 +276,9 @@ export function createCanvasDynamicAuthorityAdapters(
 				linkClassification: facts.classification,
 			});
 		},
+		/**
+		 *
+		 */
 		revalidateTarget: async (target: DynamicTargetAuthority) => {
 			if (!issuer.owns(target.authority)) throw new Error("The target authority was retired.");
 			const facts = await targetFacts(target.threadId);
@@ -250,6 +286,9 @@ export function createCanvasDynamicAuthorityAdapters(
 		},
 	});
 	const context: DynamicContextPort = Object.freeze({
+		/**
+		 *
+		 */
 		issueAndRevalidatePaneLinkAuthority: (
 			input: Parameters<DynamicContextPort["issueAndRevalidatePaneLinkAuthority"]>[0],
 		) => {
@@ -270,6 +309,9 @@ export function createCanvasDynamicAuthorityAdapters(
 				turnId: caller.turnId,
 			});
 		},
+		/**
+		 *
+		 */
 		readOneFreshArchboardContext: async (
 			input: Parameters<DynamicContextPort["readOneFreshArchboardContext"]>[0],
 		) => {
@@ -284,6 +326,9 @@ export function createCanvasDynamicAuthorityAdapters(
 		thread,
 		context,
 		paneForThread,
+		/**
+		 *
+		 */
 		dispose: () => {
 			issuer.retireAll();
 			tokens.clear();

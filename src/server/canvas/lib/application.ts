@@ -7,54 +7,54 @@ import net from "net";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import logger, { closeLogger, forceCloseLogger } from "../../../runtime/engine/logger.js";
-import { snapshots, selectionState } from "../../../runtime/engine/types.js";
+import logger, { closeLogger, forceCloseLogger } from "@/runtime/engine/logger";
+import { snapshots, selectionState } from "@/runtime/engine/types";
 import type {
 	ServerElement,
 	ExcalidrawFile,
 	WebSocketMessage,
 	InitialElementsMessage,
 	Snapshot,
-} from "../../../runtime/engine/types.js";
-import { derivedId, mintId } from "../../../shared/ids/ids.js";
-import { CodeBindingSchema, type CodeBinding } from "../../../shared/code-target/index.js";
-import { buildSelectionReport } from "../../../runtime/engine/describe.js";
-import { describeScene } from "../../../runtime/engine/describe.js";
+} from "@/runtime/engine/types";
+import { derivedId, mintId } from "@/shared/ids/ids";
+import { CodeBindingSchema, type CodeBinding } from "@/shared/code-target";
+import { buildSelectionReport } from "@/runtime/engine/describe";
+import { describeScene } from "@/runtime/engine/describe";
 import {
 	ArchboardContextSchema,
 	type ArchboardContext,
-} from "../../../runtime/codex-instructions/index.js";
+} from "@/runtime/codex-instructions";
 import type {
 	SemanticContextInput,
 	SettledChangeSourceEvent,
 	SettledSemanticChangeEvent,
-} from "../../../runtime/codex-semantic-context/index.js";
-import { canonicalSemanticCursorToken } from "../../../runtime/codex-thread-context/index.js";
-import type { DynamicWaitEvent } from "../../../runtime/codex-dynamic-tools/index.js";
-import type { CodexWorkbenchComponents } from "../codex-workbench-generation.js";
+} from "@/runtime/codex-semantic-context";
+import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
+import type { DynamicWaitEvent } from "@/runtime/codex-dynamic-tools";
+import type { CodexWorkbenchComponents } from "@/server/canvas/codex-workbench-generation";
 import {
 	createCanvasCodexBrowserSocketOwner,
 	createCanvasCodexBrowserSocketSend,
 	type BrowserConnectionInstance,
-} from "../codex-workbench-browser.js";
-import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "../../codex-workbench/index.js";
-import { requireExactSemanticPane } from "./codex-workbench-semantic-pane.js";
-import type { CanvasCodexWorkbenchHost } from "./codex-workbench-production.js";
-import type { createCanvasCodexWorkbenchApplication } from "./codex-workbench-application.js";
+} from "@/server/canvas/codex-workbench-browser";
+import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "@/server/codex-workbench";
+import { requireExactSemanticPane } from "@/server/canvas/lib/codex-workbench-semantic-pane";
+import type { CanvasCodexWorkbenchHost } from "@/server/canvas/lib/codex-workbench-production";
+import type { createCanvasCodexWorkbenchApplication } from "@/server/canvas/lib/codex-workbench-application";
 import {
 	buildPanesReport,
 	MAX_PANES,
 	panesInOrder,
 	resolvePaneSpec,
 	soloPane,
-} from "../../../runtime/engine/panes.js";
-import type { PaneRegistration } from "../../../runtime/engine/panes.js";
-import { BoardRequiredError, BoardResolutionError } from "../../../runtime/engine/board-target.js";
-import { RenderGeometryError } from "../../../runtime/engine/geometry.js";
-import { NativeElementValidationError } from "../../../runtime/engine/native-element.js";
+} from "@/runtime/engine/panes";
+import type { PaneRegistration } from "@/runtime/engine/panes";
+import { BoardRequiredError, BoardResolutionError } from "@/runtime/engine/board-target";
+import { RenderGeometryError } from "@/runtime/engine/geometry";
+import { NativeElementValidationError } from "@/runtime/engine/native-element";
 import { z } from "zod";
 import { WebSocket } from "ws";
-import { writePidFile, removePidFile } from "../../../runtime/engine/pidfile.js";
+import { writePidFile, removePidFile } from "@/runtime/engine/pidfile";
 import {
 	boardSummaries,
 	boards,
@@ -62,8 +62,8 @@ import {
 	getOrCreateBoard,
 	recordBaseline,
 	SCRATCH_KEY,
-} from "../../../runtime/engine/board-store.js";
-import type { BoardState } from "../../../runtime/engine/board-store.js";
+} from "@/runtime/engine/board-store";
+import type { BoardState } from "@/runtime/engine/board-store";
 import {
 	holdOn,
 	isHeld,
@@ -74,8 +74,8 @@ import {
 	reportHold,
 	writesBoardNote,
 	heldBoardKeys,
-} from "../../../runtime/engine/board-hold.js";
-import type { HoldReport } from "../../../runtime/engine/board-hold.js";
+} from "@/runtime/engine/board-hold";
+import type { HoldReport } from "@/runtime/engine/board-hold";
 import {
 	boardFilesMessage,
 	createBoard,
@@ -88,13 +88,13 @@ import {
 	resolveBoard,
 	resolveInstalledBoard,
 	resolveBoardNote,
-} from "../../../runtime/engine/board-io.js";
+} from "@/runtime/engine/board-io";
 import type {
 	BoardContent,
 	LoadedBoard,
 	ResolvedBoard,
 	ResolvedBoardNote,
-} from "../../../runtime/engine/board-io.js";
+} from "@/runtime/engine/board-io";
 import {
 	BoardLockCancelledError,
 	boardLockState,
@@ -111,16 +111,16 @@ import {
 	takeClaimRevocation,
 	withBoardLock,
 	watchBoardLocks,
-} from "../../../runtime/engine/board-lock.js";
-import type { LockHolder } from "../../../runtime/engine/board-lock.js";
+} from "@/runtime/engine/board-lock";
+import type { LockHolder } from "@/runtime/engine/board-lock";
 import {
 	checkDoing,
 	forgetDoing,
 	recentDoing,
 	recordDoing,
-} from "../../../runtime/engine/board-doing.js";
-import type { DoingEntry } from "../../../runtime/engine/board-doing.js";
-import { createAgentActivity } from "./agent-activity.js";
+} from "@/runtime/engine/board-doing";
+import type { DoingEntry } from "@/runtime/engine/board-doing";
+import { createAgentActivity } from "@/server/canvas/lib/agent-activity";
 import {
 	CURRENT_VARIANT,
 	boardKey,
@@ -135,8 +135,8 @@ import {
 	validateLevel,
 	validateVariant,
 	vaultPathFor,
-} from "../../../runtime/engine/board.js";
-import type { BoardIdentity } from "../../../runtime/engine/board.js";
+} from "@/runtime/engine/board";
+import type { BoardIdentity } from "@/runtime/engine/board";
 import {
 	checkBoardVersion,
 	forgetRememberedVersions,
@@ -144,43 +144,43 @@ import {
 	rememberVersionAt,
 	statedVersion,
 	versionOfNoteAt,
-} from "../../../runtime/engine/board-version.js";
+} from "@/runtime/engine/board-version";
 import {
 	noteWrittenElsewhere,
 	onNoteWrittenElsewhere,
 	refreshNoteWatch,
 	forgetNoteWatch,
-} from "../../../runtime/engine/note-watch.js";
-import type { NoteWrittenElsewhere } from "../../../runtime/engine/note-watch.js";
-import { ARCHBOARD_VAULT, noVaultMessage } from "../../../runtime/engine/config.js";
-import { restampVariant } from "../../../runtime/engine/promote.js";
-import { boardsForRepo } from "../../../runtime/engine/repo-boards.js";
-import { compareBoards } from "../../../runtime/engine/compare.js";
-import type { CompareSideInput } from "../../../runtime/engine/compare.js";
-import { changeFeed } from "../../../runtime/engine/change-feed.js";
-import type { ChangeEvent } from "../../../runtime/engine/change-feed.js";
+} from "@/runtime/engine/note-watch";
+import type { NoteWrittenElsewhere } from "@/runtime/engine/note-watch";
+import { ARCHBOARD_VAULT, noVaultMessage } from "@/runtime/engine/config";
+import { restampVariant } from "@/runtime/engine/promote";
+import { boardsForRepo } from "@/runtime/engine/repo-boards";
+import { compareBoards } from "@/runtime/engine/compare";
+import type { CompareSideInput } from "@/runtime/engine/compare";
+import { changeFeed } from "@/runtime/engine/change-feed";
+import type { ChangeEvent } from "@/runtime/engine/change-feed";
 import {
 	CANVAS_HTTP_STOP_GRACE_MS,
 	CANVAS_MUTATION_DRAIN_TIMEOUT_MS,
 	CODEX_WAIT_TARGET_POLL_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
 	PANE_SETTLE_CAP_MS,
-} from "../../../shared/timing/timing.js";
+} from "@/shared/timing/timing";
 import {
 	CanvasApplicationBusyError,
 	CanvasApplicationHeldError,
 	createCanvasApplicationLifetime,
 	createCanvasMutationAdmission,
 	type CanvasMutationLease,
-} from "./application-lifetime.js";
-import { narrateChange } from "../../../runtime/engine/changes.js";
-import { createLibraryRouter } from "./library-routes.js";
-import { overlapsRegion } from "../../../runtime/engine/geometry.js";
+} from "@/server/canvas/lib/application-lifetime";
+import { narrateChange } from "@/runtime/engine/changes";
+import { createLibraryRouter } from "@/server/canvas/lib/library-routes";
+import { overlapsRegion } from "@/runtime/engine/geometry";
 import {
 	AgentElementInputSchema,
 	HumanElementChangeSchema,
 	type ElementInputRequest,
-} from "../../../runtime/engine/apply-element-input.js";
+} from "@/runtime/engine/apply-element-input";
 import {
 	agentWriteAnswer,
 	humanWriteAnswer,
@@ -188,32 +188,32 @@ import {
 	elementMutation,
 	SCENE_REPLACEMENT_MARKER,
 	writeBoard,
-} from "../../../runtime/engine/board-write.js";
-import { drawnFileIds, usableEmbeddedFile } from "../../../runtime/engine/embedded-files.js";
-import type { BoardWriteRequest, BoardWriteTarget } from "../../../runtime/engine/board-write.js";
+} from "@/runtime/engine/board-write";
+import { drawnFileIds, usableEmbeddedFile } from "@/runtime/engine/embedded-files";
+import type { BoardWriteRequest, BoardWriteTarget } from "@/runtime/engine/board-write";
 import {
 	codeBindingsOf,
 	presentElement,
 	presentElements,
 	presentationContextFromElement,
 	stripBindingPresentationLinks,
-} from "../../../runtime/engine/presentation.js";
+} from "@/runtime/engine/presentation";
 import {
 	EMPTY_CHECKOUT_SNAPSHOT,
 	snapshotCheckoutAccess,
 	type CheckoutSnapshot,
-} from "../../../runtime/code-target/index.js";
-import { frontendState, sourceState } from "../../../runtime/engine/staleness.js";
+} from "@/runtime/code-target";
+import { frontendState, sourceState } from "@/runtime/engine/staleness";
 import {
 	BridgeRefusal,
 	planBridgeCreate,
 	planBridgeRemoval,
-} from "../../../runtime/board-inspection/bridge.js";
+} from "@/runtime/board-inspection/bridge";
 import {
 	InspectionPolicyInputSchema,
 	inspectBoard,
-} from "../../../runtime/board-inspection/index.js";
-import { findingRasterDimensions } from "../../../shared/finding-raster/index.js";
+} from "@/runtime/board-inspection";
+import { findingRasterDimensions } from "@/shared/finding-raster";
 import {
 	BoardRendererError,
 	createBoardRenderingOwner,
@@ -221,27 +221,27 @@ import {
 	type BoardRenderSnapshot,
 	type MermaidRenderJobResult,
 	type MermaidSkeleton,
-} from "../../board-rendering/index.js";
+} from "@/server/board-rendering";
 import {
 	createCodeOpenerPreguard,
 	createCodeOpenerRouter,
 	isCodeOpenerBodyRoute,
-} from "../../code-opener/index.js";
-import { createCanvasHttpServer } from "./http-server.js";
+} from "@/server/code-opener";
+import { createCanvasHttpServer } from "@/server/canvas/lib/http-server";
 import {
 	canvasStartupOwnershipRecord,
 	canvasStartupTerminalRecord,
 	writeCanvasStartupProtocolRecord,
-} from "../../../shared/canvas-startup-terminal/index.js";
-import { canvasStartupFailureMessage } from "./startup-error.js";
-import { createCheckoutWorkOwner } from "./checkout-work.js";
-import { createBrowserPresentationOwner } from "../../browser-presentation/index.js";
+} from "@/shared/canvas-startup-terminal";
+import { canvasStartupFailureMessage } from "@/server/canvas/lib/startup-error";
+import { createCheckoutWorkOwner } from "@/server/canvas/lib/checkout-work";
+import { createBrowserPresentationOwner } from "@/server/browser-presentation";
 import {
 	answerBoardError,
 	boardErrorStatus,
 	checkoutSnapshotFor,
 	refusalDocument,
-} from "./board-response.js";
+} from "@/server/canvas/lib/board-response";
 
 // Load environment variables
 dotenv.config({ quiet: true });
@@ -261,6 +261,9 @@ const admittedMutations = new WeakMap<Request, CanvasMutationLease>();
 
 const checkoutWork = createCheckoutWorkOwner();
 
+/**
+ *
+ */
 function trackMutationWork<T>(
 	req: Request,
 	name: string,
@@ -280,6 +283,9 @@ type AsyncEndpoint = (
 	signal: AbortSignal,
 ) => Promise<unknown>;
 
+/**
+ *
+ */
 function asyncEndpoint(
 	handler: AsyncEndpoint,
 ): (req: Request, res: Response, next: NextFunction) => void {
@@ -369,6 +375,9 @@ const PROCESS_FREE_HUMAN_ROUTES = new Set([
 	"/api/selection",
 ]);
 
+/**
+ *
+ */
 function openBoardBindings(): ReturnType<typeof codeBindingsOf> {
 	const bindings: ReturnType<typeof codeBindingsOf> = [];
 	for (const board of boards.values()) {
@@ -381,6 +390,9 @@ function openBoardBindings(): ReturnType<typeof codeBindingsOf> {
 	return bindings;
 }
 
+/**
+ *
+ */
 function codeBindingsInValue(value: unknown): CodeBinding[] {
 	const bindings: CodeBinding[] = [];
 	const pending: unknown[] = [value];
@@ -416,6 +428,9 @@ interface PreparedBoardOpen {
 	readonly reload: boolean;
 }
 
+/**
+ *
+ */
 function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
 	if (req.method !== "POST" || req.path !== "/api/boards/open") {
 		return [];
@@ -450,6 +465,9 @@ function unopenedBoardBindings(req: Request, res: Response): CodeBinding[] {
 	}
 }
 
+/**
+ *
+ */
 function requestCheckoutBindings(req: Request, res: Response): CodeBinding[] {
 	const named =
 		req.method === "POST" && req.path === "/api/boards/open" ? undefined : boardOfRequest(req);
@@ -472,6 +490,9 @@ function requestCheckoutBindings(req: Request, res: Response): CodeBinding[] {
 // Resolve machine-local checkout authority before any board lock is taken.
 // Code-opener routes make their own snapshot at activation time, so settings
 // and activation can never share authority accidentally.
+/**
+ *
+ */
 async function prepareCheckoutSnapshot(
 	req: Request,
 	res: Response,
@@ -503,6 +524,9 @@ async function prepareCheckoutSnapshot(
 		return next();
 	}
 	const bindings = requestCheckoutBindings(req, res);
+	/**
+	 *
+	 */
 	const capture = (captureBindings: readonly CodeBinding[]): Promise<CheckoutSnapshot> => {
 		if (req.method === "GET" || req.method === "HEAD") {
 			return checkoutWork.trackRequest(
@@ -572,6 +596,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	}
 	const key = normalizeBoardKey(asked);
 	const send = res.json.bind(res);
+	/**
+	 *
+	 */
 	res.json = (body: unknown) => {
 		const hold = holdOn(key);
 		return send(
@@ -693,6 +720,9 @@ function socketsFor(clientId: string): WebSocket[] {
 // drop a message about board B rather than merge it into what it is rendering.
 // With two panes on two boards that filter stops being a formality — it is the
 // only thing keeping an edit on one board out of the other one's scene.
+/**
+ *
+ */
 function broadcast(message: WebSocketMessage, board: string): void {
 	const data = JSON.stringify({ ...message, board });
 	clients.forEach((client) => {
@@ -712,6 +742,9 @@ function broadcast(message: WebSocketMessage, board: string): void {
 // A board switch is the message this exists for: it replaces the receiving
 // pane's whole scene, so sending it to every socket is how one pane's `board
 // open` used to drag the other pane along with it.
+/**
+ *
+ */
 function sendToPane(clientId: string, message: WebSocketMessage, board: string): boolean {
 	return deliverToPane(clientId, JSON.stringify({ ...message, board }));
 }
@@ -721,10 +754,16 @@ function sendToPane(clientId: string, message: WebSocketMessage, board: string):
 // receiving pane keeps whatever board it is holding — so stamping a board key
 // on it would be inventing one. Kept separate from sendToPane so that omitting
 // the board stays a deliberate act rather than a missing argument.
+/**
+ *
+ */
 function sendLayoutToPane(clientId: string, message: WebSocketMessage): boolean {
 	return deliverToPane(clientId, JSON.stringify(message));
 }
 
+/**
+ *
+ */
 function deliverToPane(clientId: string, data: string): boolean {
 	let delivered = false;
 	for (const socket of socketsFor(clientId)) {
@@ -762,7 +801,13 @@ function lockMessage(board: string, holder: LockHolder | null): WebSocketMessage
  * can never say something different from what the pane on that board hears.
  */
 const agentActivity = createAgentActivity({
+	/**
+	 *
+	 */
 	send: (message) => broadcastBoardless(message),
+	/**
+	 *
+	 */
 	displayKey: (board) =>
 		[...boards.keys()].find((known) => normalizeBoardKey(known) === board) ?? board,
 });
@@ -786,7 +831,7 @@ onBoardLockChanged((board, holder) => {
  */
 function announceDoing(board: string, entry: DoingEntry): void {
 	const recent = recordDoing(board, entry);
-	broadcast({ type: "board_doing", doing: entry, recent } as WebSocketMessage, board);
+	broadcast({ type: "board_doing", doing: entry, recent }, board);
 	agentActivity.doingLanded(board, entry);
 }
 
@@ -884,7 +929,7 @@ function tellPaneAboutLock(clientId: string, board: string): void {
 	// what has happened so far.
 	const said = recentDoing(board);
 	if (said.length > 0) {
-		sendToPane(clientId, { type: "board_doing", recent: said } as WebSocketMessage, board);
+		sendToPane(clientId, { type: "board_doing", recent: said }, board);
 	}
 }
 
@@ -894,6 +939,9 @@ function tellPaneAboutLock(clientId: string, board: string): void {
 // client applies it without asking which board the message came from. Kept
 // separate from broadcast() so that omitting the board key stays a deliberate
 // act rather than a missing argument.
+/**
+ *
+ */
 function broadcastBoardless(message: WebSocketMessage): void {
 	const data = JSON.stringify(message);
 	clients.forEach((client) => {
@@ -953,7 +1001,7 @@ function releaseBoardHold(
 	}
 	const report = reportHold(key, hold);
 	logger.info(`Board "${key}" is saving again (${outcome}), after ${hold.writes} held change(s).`);
-	broadcast({ type: "board_released", hold: report, outcome } as WebSocketMessage, key);
+	broadcast({ type: "board_released", hold: report, outcome }, key);
 	return report;
 }
 
@@ -965,6 +1013,9 @@ function releaseBoardHold(
 // The note is read here, once, and the request works against what it read. That
 // read is what makes the vault the truth (ADR 0015): there is no map to consult
 // instead, so the answer cannot be a copy that stopped agreeing with the note.
+/**
+ *
+ */
 function boardFromRequest(
 	req: Request,
 	what?: string,
@@ -977,7 +1028,7 @@ function boardTargetFromRequest(req: Request, what?: string): BoardWriteTarget {
 	const prepared = (req as Request & { resolvedBoardWrite?: ResolvedBoard }).resolvedBoardWrite;
 	const asked = boardOfRequest(req);
 	const key = asked ? boardKey(parseBoardKey(asked)) : "";
-	if (prepared && prepared.key === key) {
+	if (prepared?.key === key) {
 		return { key: prepared.key, board: prepared.board };
 	}
 	const { key: resolvedKey, board } = resolveInstalledBoard(asked, what, { write: true });
@@ -986,6 +1037,9 @@ function boardTargetFromRequest(req: Request, what?: string): BoardWriteTarget {
 
 // Which board a request says it is about, before anything resolves its note.
 // The write boundary uses the resolved key to find the per-board lock.
+/**
+ *
+ */
 function boardOfRequest(req: Request): string | undefined {
 	const fromQuery = typeof req.query["board"] === "string" ? req.query["board"] : undefined;
 	const fromBody =
@@ -1008,6 +1062,9 @@ function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void
 				...request,
 				...(sourceLockHolder === undefined ? {} : { sourceLockHolder }),
 				checkoutSnapshot: checkoutSnapshotFor(res),
+				/**
+				 *
+				 */
 				afterPersist: (context) => {
 					if (context.written) {
 						res.locals["writtenBoardVersion"] = context.written.version;
@@ -1051,6 +1108,9 @@ function boardForNewPane(clientId: string): string {
 
 // WebSocket connection handling. The lifecycle creates and closes the server;
 // this function owns one accepted socket only.
+/**
+ *
+ */
 async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): Promise<void> {
 	const codexSocketInstance = Object.freeze({});
 	codexSocketInstances.set(ws, codexSocketInstance);
@@ -1254,6 +1314,9 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 			"requestId" in message && typeof message.requestId === "string" ? message.requestId : null;
 		const action =
 			"action" in message && typeof message.action === "string" ? message.action : null;
+		/**
+		 *
+		 */
 		const send = (response: unknown): void => {
 			void codexTransport
 				.send(response)
@@ -1335,7 +1398,7 @@ const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
  * and releases the board around that one write — which is the per-write mutex.
  *
  * Unless this canvas holds a claim on the board, in which case an agent's write
- * *is* the claim's, and that is the whole of how a claim survives across
+ * is* the claim's, and that is the whole of how a claim survives across
  * requests (ADR 0016, TASK-080). Nothing is threaded through the caller: a CLI
  * agent is a fresh process every command and has nowhere to keep an id, so the
  * canvas keeps it, against the board every call already names. The write joins
@@ -1413,6 +1476,9 @@ interface PreparedMermaidConversion {
 
 const PREPARED_MERMAID = Symbol("prepared-mermaid");
 
+/**
+ *
+ */
 function freezeObjectGraph(value: unknown, seen = new Set<object>()): void {
 	if (!value || typeof value !== "object" || seen.has(value)) {
 		return;
@@ -1424,6 +1490,9 @@ function freezeObjectGraph(value: unknown, seen = new Set<object>()): void {
 	Object.freeze(value);
 }
 
+/**
+ *
+ */
 function canonicalMermaidResult(rendered: MermaidRenderJobResult): PreparedMermaidConversion {
 	if (rendered.error) {
 		throw new BoardMutationError(
@@ -1461,6 +1530,9 @@ function canonicalMermaidResult(rendered: MermaidRenderJobResult): PreparedMerma
 	return prepared;
 }
 
+/**
+ *
+ */
 function isPreparedMermaid(value: unknown): value is PreparedMermaidConversion {
 	return (
 		value !== null &&
@@ -1472,6 +1544,9 @@ function isPreparedMermaid(value: unknown): value is PreparedMermaidConversion {
 	);
 }
 
+/**
+ *
+ */
 function preparedMermaidOf(req: Request): PreparedMermaidConversion {
 	const prepared: unknown = Reflect.get(req, PREPARED_MERMAID);
 	if (!isPreparedMermaid(prepared)) {
@@ -1683,6 +1758,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 		}
 		if (hold.created) {
 			let given = false;
+			/**
+			 *
+			 */
 			const give = (): void => {
 				if (given) {
 					return;
@@ -1707,9 +1785,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use(
 	createCodeOpenerRouter({
+		/**
+		 *
+		 */
 		runCheckout: (req, res, name, work) => {
 			return checkoutWork.trackRequest(req, res, name, work);
 		},
+		/**
+		 *
+		 */
 		runMutation: (req, name, work) => trackMutationWork(req, name, work),
 	}),
 );
@@ -1967,11 +2051,20 @@ app.post("/api/elements", (req: Request, res: Response) => {
 			origin: "agent",
 			mutation: elementMutation<{ stored: ServerElement }>(() => ({
 				input: { upserts: [req.body], origin: "agent" },
+				/**
+				 *
+				 */
 				value: (applied) => ({ stored: applied.named[0] as ServerElement }),
 			})),
+			/**
+			 *
+			 */
 			afterPersist: ({ value }) => {
 				logger.info("Creating element via API", { type: value.stored.type, board: source.key });
 			},
+			/**
+			 *
+			 */
 			answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
@@ -2027,9 +2120,15 @@ app.post("/api/bridges", (req: Request, res: Response) => {
 				}
 				return {
 					input: { upserts: [...plan.inputs], origin: "agent" },
+					/**
+					 *
+					 */
 					value: (applied) => ({ plan, generated: applied.named }),
 				};
 			}),
+			/**
+			 *
+			 */
 			answer: ({ content, value, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
@@ -2075,9 +2174,15 @@ app.delete("/api/bridges/:id", (req: Request, res: Response) => {
 				}
 				return {
 					input: { deletes: [...deleted], origin: "agent" },
+					/**
+					 *
+					 */
 					value: () => ({ deleted }),
 				};
 			}),
+			/**
+			 *
+			 */
 			answer: ({ content, value, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
@@ -2122,6 +2227,9 @@ app.put("/api/elements/:id", (req: Request, res: Response) => {
 				}
 				return {
 					input: { upserts: [{ ...body, id }], origin: "agent" },
+					/**
+					 *
+					 */
 					value: (applied) => {
 						const touched = new Map(
 							[...applied.created, ...applied.updated].map((element) => [element.id, element]),
@@ -2131,6 +2239,9 @@ app.put("/api/elements/:id", (req: Request, res: Response) => {
 					},
 				};
 			}),
+			/**
+			 *
+			 */
 			answer: ({ content, value, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
@@ -2156,6 +2267,9 @@ app.put("/api/elements/:id", (req: Request, res: Response) => {
 	return undefined;
 });
 
+/**
+ *
+ */
 function clearSelectionForBoard(boardKeyToClear: string): void {
 	for (const [clientId] of selectionState.byClient) {
 		if (paneBoards.get(clientId) === boardKeyToClear) {
@@ -2176,6 +2290,9 @@ app.delete("/api/elements/clear", (req: Request, res: Response) => {
 		answerBoardWrite(res, {
 			source,
 			origin: "agent",
+			/**
+			 *
+			 */
 			mutation: (content) => {
 				const deleted = Array.from(content.elements.keys());
 				content.elements.clear();
@@ -2184,12 +2301,18 @@ app.delete("/api/elements/clear", (req: Request, res: Response) => {
 					delta: { deleted },
 				};
 			},
+			/**
+			 *
+			 */
 			afterPersist: ({ value }) => {
 				// Nothing is on this board, so nothing on it can be selected in any
 				// pane showing it. A pane on another board keeps its pick.
 				clearSelectionForBoard(source.key);
 				logger.info(`Canvas cleared: ${value.count} elements removed from board "${source.key}"`);
 			},
+			/**
+			 *
+			 */
 			answer: ({ value }) => ({
 				success: true,
 				board: source.key,
@@ -2224,9 +2347,15 @@ app.delete("/api/elements/:id", (req: Request, res: Response) => {
 				}
 				return {
 					input: { deletes: [id], origin: "agent" },
+					/**
+					 *
+					 */
 					value: (applied) => ({ deleted: applied.deleted }),
 				};
 			}),
+			/**
+			 *
+			 */
 			answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
@@ -2361,9 +2490,18 @@ app.post("/api/elements/batch", (req: Request, res: Response) => {
 			mutation: elementMutation<{ count: number }>(() => ({
 				input: { upserts: elementsToCreate, origin: "agent" },
 				...(replacesScene ? { replaceScene: { files: replacementFileList } } : {}),
+				/**
+				 *
+				 */
 				value: (applied) => ({ count: applied.created.length }),
 			})),
-			...(replacesScene ? { afterPersist: () => clearSelectionForBoard(source.key) } : {}),
+			...(replacesScene ? { /**
+			 *
+			 */
+			afterPersist: () => clearSelectionForBoard(source.key) } : {}),
+			/**
+			 *
+			 */
 			answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
 				success: true,
 				board: source.key,
@@ -2388,6 +2526,9 @@ app.post("/api/elements/batch", (req: Request, res: Response) => {
 	return undefined;
 });
 
+/**
+ *
+ */
 function mermaidElementInput(
 	elements: readonly MermaidSkeleton[],
 	existingIds: Iterable<string>,
@@ -2402,6 +2543,9 @@ function mermaidElementInput(
 		used.add(id);
 		ids.set(element.id, id);
 	}
+	/**
+	 *
+	 */
 	const endpoint = (value: unknown): { id: string } | undefined => {
 		if (!value || typeof value !== "object" || typeof Reflect.get(value, "id") !== "string") {
 			return undefined;
@@ -2458,11 +2602,17 @@ app.post(
 						upserts: mermaidElementInput(converted.elements, content.elements.keys()),
 					},
 					addFiles: Object.values(converted.files),
+					/**
+					 *
+					 */
 					value: (applied) => {
 						const elements = [...applied.created, ...applied.updated];
 						return { count: elements.length, ids: elements.map((element) => element.id) };
 					},
 				})),
+				/**
+				 *
+				 */
 				answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
 					success: true,
 					board: source.key,
@@ -2603,9 +2753,15 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 				return {
 					input,
 					wholeScene: fullReport,
+					/**
+					 *
+					 */
 					value: () => null,
 				};
 			}),
+			/**
+			 *
+			 */
 			afterPersist: ({ content, delta }) => {
 				logger.info(
 					`Change report from ${clientId ?? (writerKind === "agent" ? "an agent" : "an unidentified client")} ` +
@@ -2614,6 +2770,9 @@ app.post("/api/elements/changes", (req: Request, res: Response) => {
 						`(${content.elements.size} on the board)`,
 				);
 			},
+			/**
+			 *
+			 */
 			answer: (context) => {
 				const { content, delta, written, appliedAt } = context;
 				return {
@@ -2697,6 +2856,9 @@ app.get("/api/changes", (req: Request, res: Response) => {
 			});
 		}
 
+		/**
+		 *
+		 */
 		const strip = (event: ChangeEvent) =>
 			wantDetail ? event : { ...event, change: { ...event.change, detail: undefined } };
 
@@ -2772,6 +2934,9 @@ const SelectionSchema = z.object({
 // this decides what to do with it by whose it is, not by which board it is on.
 // Tagging it with a board would only give panes on other boards a reason to
 // drop a message that was never about their board in the first place.
+/**
+ *
+ */
 function broadcastSelection(): void {
 	const current = selectionState.current;
 	broadcastBoardless({
@@ -2923,7 +3088,13 @@ app.post("/api/panes", (req: Request, res: Response) => {
 
 app.get("/api/panes", (_req: Request, res: Response) => {
 	const report = buildPanesReport(Array.from(panes.values()), {
+		/**
+		 *
+		 */
 		identity: (key) => boards.get(key)?.identity ?? null,
+		/**
+		 *
+		 */
 		elements: (key) => {
 			const board = boards.get(key);
 			return board
@@ -2933,6 +3104,9 @@ app.get("/api/panes", (_req: Request, res: Response) => {
 					})
 				: [];
 		},
+		/**
+		 *
+		 */
 		selection: (clientId) => selectionState.byClient.get(clientId) ?? null,
 		canvasUrl: `http://${formatHostForUrl(HOST)}:${PORT}`,
 	});
@@ -2974,6 +3148,9 @@ interface PendingPaneClose {
 }
 const pendingPaneCloses = new Set<PendingPaneClose>();
 
+/**
+ *
+ */
 function notePaneOpened(registration: PaneRegistration): void {
 	for (const pending of pendingPaneOpens) {
 		if (pending.known.has(registration.clientId)) {
@@ -2985,6 +3162,9 @@ function notePaneOpened(registration: PaneRegistration): void {
 	}
 }
 
+/**
+ *
+ */
 function notePaneClosed(clientId: string): void {
 	for (const pending of pendingPaneCloses) {
 		if (pending.clientId !== clientId) {
@@ -3234,6 +3414,9 @@ app.post("/api/files", (req: Request, res: Response) => {
 		answerBoardWrite(res, {
 			source,
 			origin: "agent",
+			/**
+			 *
+			 */
 			mutation: (content) => {
 				const accepted = fileList
 					.map((file) => usableEmbeddedFile(file))
@@ -3249,6 +3432,9 @@ app.post("/api/files", (req: Request, res: Response) => {
 					delta: { filesAdded: accepted },
 				};
 			},
+			/**
+			 *
+			 */
 			answer: ({ value }) => ({
 				success: true,
 				board: source.key,
@@ -3277,6 +3463,9 @@ app.delete("/api/files/:id", (req: Request, res: Response) => {
 		answerBoardWrite(res, {
 			source,
 			origin: "agent",
+			/**
+			 *
+			 */
 			mutation: (content) => {
 				if (!content.files.delete(id)) {
 					throw new BoardMutationError(404, `No image "${id}" on board "${source.key}".`);
@@ -3286,6 +3475,9 @@ app.delete("/api/files/:id", (req: Request, res: Response) => {
 					delta: { filesDeleted: [id] },
 				};
 			},
+			/**
+			 *
+			 */
 			answer: () => ({ success: true, board: source.key }),
 		});
 	} catch (error) {
@@ -3300,6 +3492,9 @@ const boardRenderRequestSchema = z.object({
 	scale: z.number().min(0.25).max(4).default(1),
 });
 
+/**
+ *
+ */
 function copiedRenderSnapshot(
 	scene: NonNullable<ReturnType<typeof readBoardInspectionSnapshot>["renderScene"]>,
 ): BoardRenderSnapshot {
@@ -3446,8 +3641,17 @@ app.post(
 );
 
 const browserPresentation = createBrowserPresentationOwner({
+	/**
+	 *
+	 */
 	panes: () => [...panes.values()],
+	/**
+	 *
+	 */
 	browserCount: () => clients.size,
+	/**
+	 *
+	 */
 	boardForPane: (pane) => paneBoards.get(pane.clientId) ?? pane.board,
 	sendToPane,
 	checkoutSnapshotFor,
@@ -3585,6 +3789,9 @@ const BoardAddressSchema = z.object({
 // A board address as callers write it: "payments", "payments@proposed", or a
 // name plus an explicit variant. The key form is what a human says and what
 // `board list` prints, so it is accepted everywhere a board is named.
+/**
+ *
+ */
 function identityFromParams(params: {
 	board: string;
 	variant?: string;
@@ -3599,6 +3806,9 @@ function identityFromParams(params: {
 // `content` is passed by callers that have already read the note, which is
 // every route that answers about a board it just touched; the default is for
 // the ones that have not.
+/**
+ *
+ */
 function identityResponse(key: string, board: BoardState, content?: BoardContent) {
 	const read = content ?? readBoardContent(board);
 	return {
@@ -3979,6 +4189,9 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 			// Save is the explicit resolution for a held board. It writes the note
 			// chosen by the person instead of adding another change to the held copy.
 			save: { target, force },
+			/**
+			 *
+			 */
 			mutation: (content, destinationBefore) => {
 				const saved = branched
 					? restampVariant(Array.from(content.elements.values()), targetIdentity.variant)
@@ -4000,12 +4213,18 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 							}),
 				};
 			},
+			/**
+			 *
+			 */
 			afterPersist: ({ content, written }) => {
 				logger.info(
 					`Board saved: "${targetKey}" (${written?.elementCount ?? content.elements.size} elements) -> ${file}` +
 						(kind === "same-board" ? "" : ` [${kind}]`),
 				);
 			},
+			/**
+			 *
+			 */
 			answer: ({ content, written }) => {
 				if (!written) {
 					throw new Error(`Saving "${targetKey}" did not write its note.`);
@@ -4046,6 +4265,9 @@ app.post("/api/boards/save", (req: Request, res: Response) => {
 // Both sides are read from their notes, because that is where a board is (ADR
 // 0015, ADR 0020).
 
+/**
+ *
+ */
 function loadSideForCompare(key: string): CompareSideInput {
 	const resolved = resolveBoard(key, "Comparing boards");
 	return {
@@ -4060,6 +4282,9 @@ function loadSideForCompare(key: string): CompareSideInput {
 
 // Every persisted address for a board name, so a one-sided `compare payments`
 // can find the other side without consulting transient session state.
+/**
+ *
+ */
 function addressesFor(boardName: string): string[] {
 	return listBoards()
 		.filter((found) => found.identity.board === boardName)
@@ -4165,6 +4390,9 @@ app.get("/api/boards/compare", (req: Request, res: Response) => {
 // rather than by a client id, so there is no echo to suppress here.
 app.use(
 	createLibraryRouter({
+		/**
+		 *
+		 */
 		notifyLibraryChanged(notification) {
 			broadcastBoardless({
 				...notification,
@@ -4259,15 +4487,24 @@ const HOST = process.env["HOST"] || "127.0.0.1";
 const LOOPBACK_GUARD_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "0.0.0.0", "::"]);
 const LOOPBACK_ADDRESSES = ["127.0.0.1", "::1"];
 
+/**
+ *
+ */
 function formatHostForUrl(host: string): string {
 	return host.includes(":") ? `[${host}]` : host;
 }
 
+/**
+ *
+ */
 function canConnect(host: string, port: number): Promise<boolean> {
 	return new Promise((resolve) => {
 		let settled = false;
 		const socket = net.createConnection({ host, port });
 
+		/**
+		 *
+		 */
 		const finish = (isOpen: boolean): void => {
 			if (settled) {
 				return;
@@ -4284,6 +4521,9 @@ function canConnect(host: string, port: number): Promise<boolean> {
 	});
 }
 
+/**
+ *
+ */
 async function findExistingLoopbackListener(port: number): Promise<string | null> {
 	for (const host of LOOPBACK_ADDRESSES) {
 		if (await canConnect(host, port)) {
@@ -4293,6 +4533,9 @@ async function findExistingLoopbackListener(port: number): Promise<string | null
 	return null;
 }
 
+/**
+ *
+ */
 function logHttpServerError(error: NodeJS.ErrnoException): void {
 	if (error.code === "EADDRINUSE") {
 		const address = (error as NodeJS.ErrnoException & { address?: string }).address || HOST;
@@ -4304,10 +4547,16 @@ function logHttpServerError(error: NodeJS.ErrnoException): void {
 	}
 }
 
+/**
+ *
+ */
 function isRecoverableCanvasStopError(error: unknown): boolean {
 	return error instanceof CanvasApplicationHeldError || error instanceof CanvasApplicationBusyError;
 }
 
+/**
+ *
+ */
 function reportCanvasStopError(error: unknown): void {
 	const message = `Canvas shutdown refused or failed: ${(error as Error).message}`;
 	if (isRecoverableCanvasStopError(error)) {
@@ -4388,10 +4637,16 @@ function adoptScratchBoard(): void {
 	}
 }
 
+/**
+ *
+ */
 function sleepFor(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ *
+ */
 function canonicalContextFromBrief(
 	brief:
 		| SettledSemanticChangeEvent
@@ -4431,10 +4686,16 @@ function canonicalContextFromBrief(
 	});
 }
 
+/**
+ *
+ */
 function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 	let active: CodexWorkbenchComponents | null = null;
 	let installedIdentity: CodexWorkbenchComponents["identity"] | null = null;
 
+	/**
+	 *
+	 */
 	const semanticInput = (
 		contextBoard: string,
 		cursor: SemanticContextInput["cursor"],
@@ -4523,16 +4784,25 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 		};
 	};
 
+	/**
+	 *
+	 */
 	const currentSemanticPane = (contextBoard?: string): PaneRegistration => {
 		const binding = active?.semanticDelivery.snapshot().binding ?? null;
 		return requireExactSemanticPane({
 			bindingPaneId: binding?.paneId ?? null,
 			...(contextBoard === undefined ? {} : { contextBoard }),
 			panes: panes.values(),
+			/**
+			 *
+			 */
 			boardForPane: (pane) => paneBoards.get(pane.clientId) ?? pane.board,
 		});
 	};
 
+	/**
+	 *
+	 */
 	const waitForTargets: CanvasCodexWorkbenchHost["waitForTargets"] = async (input) => {
 		const workbench = active;
 		if (workbench === null) {
@@ -4596,6 +4866,9 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 	const checkoutRoot = path.resolve(moduleDir, "..");
 	return {
 		checkoutRoot,
+		/**
+		 *
+		 */
 		onCodexProcessGroupOwned: (codexGroup) => {
 			writeCanvasStartupProtocolRecord(
 				canvasStartupOwnershipRecord({ canvasPid: process.pid, codexGroup }),
@@ -4605,12 +4878,18 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			feed: changeFeed,
 			feedId: changeFeed.status().feedId,
 			fresh: {
+				/**
+				 *
+				 */
 				read: () => {
 					const pane = currentSemanticPane();
 					const key = paneBoards.get(pane.clientId) ?? pane.board;
 					return semanticInput(key, null, pane.paneId);
 				},
 			},
+			/**
+			 *
+			 */
 			contextForChange: (event: SettledChangeSourceEvent) => {
 				const pane = currentSemanticPane(event.board);
 				return semanticInput(
@@ -4620,7 +4899,13 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				);
 			},
 		},
+		/**
+		 *
+		 */
 		paneIds: () => panesInOrder(Array.from(panes.values())).map(({ pane }) => pane.paneId),
+		/**
+		 *
+		 */
 		contextForEvent: (event, paneId, operation) =>
 			canonicalContextFromBrief(
 				event,
@@ -4629,6 +4914,9 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 					? { id: null, kind: null, rpc: null, outcome: null }
 					: { ...operation, outcome: null },
 			),
+		/**
+		 *
+		 */
 		contextForOperation: (authority, operation) => {
 			if (active === null) {
 				throw new Error("The Codex workbench context is not ready.");
@@ -4662,9 +4950,15 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 		},
 		waitForTargets,
 		browserLeaseLedger,
+		/**
+		 *
+		 */
 		installIdentityDecoders: (identity) => {
 			installedIdentity = identity;
 		},
+		/**
+		 *
+		 */
 		installLifecycleSignals: (components) => {
 			if (installedIdentity !== components.identity) {
 				throw new Error("The installed identity decoders do not match the active graph.");
@@ -4676,11 +4970,20 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				}
 			};
 		},
+		/**
+		 *
+		 */
 		installBrowserGateway: (gateway) => {
 			const socketOwner = createCanvasCodexBrowserSocketOwner({
 				gateway,
+				/**
+				 *
+				 */
 				paneForBrowser: (browserId) => panes.get(browserId)?.paneId ?? null,
 			});
+			/**
+			 *
+			 */
 			const remove = (): void => {
 				socketOwner.dispose();
 				wiring.codex.handleBrowserMessage = null;
@@ -4688,6 +4991,9 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				wiring.codex.closeBrowser = null;
 				wiring.codex.drainBrowsers = null;
 			};
+			/**
+			 *
+			 */
 			wiring.codex.handleBrowserMessage = (instance, browserId, input, send) =>
 				socketOwner.handle(instance, browserId, input, { send });
 			wiring.codex.acceptBrowser = socketOwner.accept;
@@ -4706,7 +5012,13 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			}
 			return remove;
 		},
+		/**
+		 *
+		 */
 		stopBrowser: (gateway) => gateway.dispose(),
+		/**
+		 *
+		 */
 		stopRealtime: async (realtime) => {
 			const generation = realtime.generation();
 			if (generation === null) {
@@ -4717,15 +5029,24 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				correlationId: generation.browserCorrelationId,
 			});
 		},
+		/**
+		 *
+		 */
 		stopQueue: async (queue) => {
 			await queue.shutdown();
 		},
+		/**
+		 *
+		 */
 		onFatal: (error) => logger.error("Fatal Codex workbench fault:", error),
 	};
 }
 
 let codexApplication: ReturnType<typeof createCanvasCodexWorkbenchApplication> | null = null;
 
+/**
+ *
+ */
 function resetCodexWorkbenchWiring(): void {
 	wiring.codex.acceptBrowser = null;
 	wiring.codex.closeBrowser = null;
@@ -4733,6 +5054,9 @@ function resetCodexWorkbenchWiring(): void {
 	wiring.codex.handleBrowserMessage = null;
 }
 
+/**
+ *
+ */
 async function stopCodexWorkbench(): Promise<void> {
 	const application = codexApplication;
 	if (application === null) {
@@ -4746,20 +5070,29 @@ async function stopCodexWorkbench(): Promise<void> {
 	resetCodexWorkbenchWiring();
 }
 
+/**
+ *
+ */
 async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 	const [applicationModule, productionModule] = await Promise.all([
-		import("../codex-workbench-application.js"),
-		import("../codex-workbench-production.js"),
+		import("@/server/canvas/codex-workbench-application"),
+		import("@/server/canvas/codex-workbench-production"),
 	]);
 	if (signal.aborted) {
 		throw new Error("Codex startup was canceled before installation.");
 	}
 	const application = applicationModule.createCanvasCodexWorkbenchApplication({
 		module: productionModule,
+		/**
+		 *
+		 */
 		installation: () =>
 			productionModule.createCanvasCodexWorkbenchInstallation(createCodexWorkbenchHost()),
 	});
 	codexApplication = application;
+	/**
+	 *
+	 */
 	const cancel = (): void => {
 		void application.shutdown().catch(() => undefined);
 	};
@@ -4776,6 +5109,9 @@ async function prepareCodexWorkbench(signal: AbortSignal): Promise<void> {
 }
 
 let httpClosePromise: Promise<void> | null = null;
+/**
+ *
+ */
 function closeHttpServer(): Promise<void> {
 	if (httpClosePromise !== null) {
 		return httpClosePromise;
@@ -4789,11 +5125,17 @@ function closeHttpServer(): Promise<void> {
 	return httpClosePromise;
 }
 
+/**
+ *
+ */
 async function forceCloseHttpServer(): Promise<void> {
 	server.closeAllConnections();
 	await closeHttpServer();
 }
 
+/**
+ *
+ */
 function startWebSocketServer(): void {
 	if (wss !== null) {
 		throw new Error("The WebSocket server is already installed.");
@@ -4810,6 +5152,9 @@ function startWebSocketServer(): void {
 	wss = owner;
 }
 
+/**
+ *
+ */
 function closeWebSocketServer(): Promise<void> {
 	const owner = wss;
 	if (owner === null) {
@@ -4830,9 +5175,15 @@ function closeWebSocketServer(): Promise<void> {
 	});
 }
 
+/**
+ *
+ */
 async function closeBrowserOwners(): Promise<void> {
 	const cleanupFailures: unknown[] = [];
 	const retainedFailures = new Set<unknown>();
+	/**
+	 *
+	 */
 	const retainFailure = (error: unknown): void => {
 		if (error instanceof AggregateError) {
 			for (const nested of error.errors) {
@@ -4899,11 +5250,20 @@ async function closeBrowserOwners(): Promise<void> {
 	}
 }
 
+/**
+ *
+ */
 const cleanupProvenBeforeResourceAcquisition = (): boolean => true;
 
+/**
+ *
+ */
 async function startServer(): Promise<void> {
 	let cleanupProven = cleanupProvenBeforeResourceAcquisition;
 	let terminalReported = false;
+	/**
+	 *
+	 */
 	const reportStartupTerminal = (message: string | null = null): void => {
 		if (terminalReported) {
 			return;
@@ -4954,6 +5314,9 @@ async function startServer(): Promise<void> {
 	let httpPhase: "idle" | "starting" | "running" | "failed" | "stopping" = "idle";
 	let httpStartPromise: Promise<void> | null = null;
 	let runtimeServerStop: Promise<void> | null = null;
+	/**
+	 *
+	 */
 	const stopCanvasAfterHttpError = async (): Promise<void> => {
 		try {
 			await lifetime.stop("server-error");
@@ -4966,6 +5329,9 @@ async function startServer(): Promise<void> {
 			}
 		}
 	};
+	/**
+	 *
+	 */
 	const stopAfterServerError = (error: NodeJS.ErrnoException): void => {
 		logHttpServerError(error);
 		if (runtimeServerStop !== null) {
@@ -4973,6 +5339,9 @@ async function startServer(): Promise<void> {
 		}
 		runtimeServerStop = stopCanvasAfterHttpError();
 	};
+	/**
+	 *
+	 */
 	const stopCanvasAfterSignal = async (signal: NodeJS.Signals): Promise<void> => {
 		try {
 			await lifetime.stop(signal);
@@ -4985,12 +5354,24 @@ async function startServer(): Promise<void> {
 			reportStartupTerminal();
 		}
 	};
+	/**
+	 *
+	 */
 	const shutdown = (signal: NodeJS.Signals): void => {
 		logger.info(`Received ${signal}, shutting down canvas server`);
 		void stopCanvasAfterSignal(signal);
 	};
+	/**
+	 *
+	 */
 	const onTerm = (): void => shutdown("SIGTERM");
+	/**
+	 *
+	 */
 	const onInterrupt = (): void => shutdown("SIGINT");
+	/**
+	 *
+	 */
 	const onExit = (): void => {
 		if (ownsPidFile) {
 			removePidFile(PORT);
@@ -4998,14 +5379,23 @@ async function startServer(): Promise<void> {
 	};
 	lifetime = createCanvasApplicationLifetime({
 		heldBoards: heldBoardKeys,
+		/**
+		 *
+		 */
 		quiesce: async () => {
 			checkoutWork.quiesce();
 			await mutationAdmission.quiesce();
 		},
+		/**
+		 *
+		 */
 		resume: () => {
 			checkoutWork.resume();
 			mutationAdmission.resume();
 		},
+		/**
+		 *
+		 */
 		observe: ({ action, resource }) => {
 			// The logger cannot report its own terminal transition after its
 			// writable stream has ended.
@@ -5021,16 +5411,28 @@ async function startServer(): Promise<void> {
 		resources: [
 			{
 				name: "logger-transports",
+				/**
+				 *
+				 */
 				stop: () => closeLogger(),
+				/**
+				 *
+				 */
 				forceStop: () => forceCloseLogger(),
 			},
 			{
 				name: "process-signals",
+				/**
+				 *
+				 */
 				start: () => {
 					process.on("SIGTERM", onTerm);
 					process.on("SIGINT", onInterrupt);
 					process.on("exit", onExit);
 				},
+				/**
+				 *
+				 */
 				stop: () => {
 					process.off("SIGTERM", onTerm);
 					process.off("SIGINT", onInterrupt);
@@ -5039,7 +5441,13 @@ async function startServer(): Promise<void> {
 			},
 			{
 				name: "engine-state",
+				/**
+				 *
+				 */
 				start: () => adoptScratchBoard(),
+				/**
+				 *
+				 */
 				stop: () => {
 					watchBoardLocks(null);
 					onBoardLockChanged(null);
@@ -5064,23 +5472,41 @@ async function startServer(): Promise<void> {
 			},
 			{
 				name: "board-renderer",
+				/**
+				 *
+				 */
 				start: () => boardRenderer.start(),
+				/**
+				 *
+				 */
 				stop: async () => {
 					await boardRenderer.stop();
 				},
+				/**
+				 *
+				 */
 				forceStop: async () => {
 					await boardRenderer.forceStop();
 				},
 			},
 			{
 				name: "http-server",
+				/**
+				 *
+				 */
 				start: (signal) => {
 					const cancellation = new Error("Canvas HTTP startup was canceled.");
 					const listenController = new AbortController();
 					httpStartPromise = new Promise<void>((resolve, reject) => {
 						httpPhase = "starting";
 						let settled = false;
+						/**
+						 *
+						 */
 						const cancelListen = (): void => listenController.abort(signal.reason);
+						/**
+						 *
+						 */
 						const onClose = (): void => {
 							settleStart(
 								signal.aborted
@@ -5088,6 +5514,9 @@ async function startServer(): Promise<void> {
 									: new Error("Canvas HTTP server closed before startup completed."),
 							);
 						};
+						/**
+						 *
+						 */
 						const settleStart = (error?: Error): void => {
 							if (settled) {
 								return;
@@ -5102,6 +5531,9 @@ async function startServer(): Promise<void> {
 								resolve();
 							}
 						};
+						/**
+						 *
+						 */
 						httpErrorListener = (error) => {
 							if (httpPhase === "starting") {
 								logHttpServerError(error);
@@ -5136,6 +5568,9 @@ async function startServer(): Promise<void> {
 					});
 					return httpStartPromise;
 				},
+				/**
+				 *
+				 */
 				stop: async () => {
 					if (httpPhase === "running") {
 						httpPhase = "stopping";
@@ -5160,6 +5595,9 @@ async function startServer(): Promise<void> {
 			},
 			{
 				name: "websocket-server",
+				/**
+				 *
+				 */
 				start: () => {
 					startWebSocketServer();
 					logger.info(`WebSocket server running on ws://${formatHostForUrl(HOST)}:${PORT}`);
@@ -5169,6 +5607,9 @@ async function startServer(): Promise<void> {
 			{ name: "browser-and-pending-operations", stop: closeBrowserOwners },
 			{
 				name: "checkout-snapshot-work",
+				/**
+				 *
+				 */
 				start: () => {
 					checkoutWork.resume();
 				},

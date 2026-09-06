@@ -5,7 +5,7 @@ import type {
 	BrowserSnapshot,
 	BrowserThreadLink,
 	DeliveryOutcome,
-} from "../../../shared/codex-browser-model/index.js";
+} from "@/shared/codex-browser-model";
 import type {
 	BrowserCommandId,
 	ChildEpoch,
@@ -13,18 +13,18 @@ import type {
 	IdentityAuthorities,
 	JsonRpcRequestId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkSnapshot,
-} from "../../../runtime/codex-thread-link/index.js";
-import type { AnswerSdp } from "../../../shared/codex-realtime-host/index.js";
+} from "@/runtime/codex-thread-link";
+import type { AnswerSdp } from "@/shared/codex-realtime-host";
 import type {
 	ApprovalOwnerView,
 	ApprovalResponse,
-} from "../../../runtime/codex-approvals/index.js";
-import type { SupportedLoginAccountParams } from "../../../runtime/codex-protocol/index.js";
+} from "@/runtime/codex-approvals";
+import type { SupportedLoginAccountParams } from "@/runtime/codex-protocol";
 import type {
 	BrowserGatewayAccountReadResult,
 	BrowserGatewayCommandResult,
@@ -33,8 +33,8 @@ import type {
 	BrowserGatewayMessage,
 	BrowserGatewaySnapshotMessage,
 	BrowserSnapshotDelta,
-} from "../../../shared/codex-browser-gateway/index.js";
-import type { BrowserOwnerProjection } from "./projection-contract.js";
+} from "@/shared/codex-browser-gateway";
+import type { BrowserOwnerProjection } from "@/server/codex-workbench/lib/projection-contract";
 
 export type BrowserConnectionId = string;
 /** Exact process-local WebSocket ownership. Reusable browser ids never substitute for it. */
@@ -359,6 +359,9 @@ export class CodexWorkbenchGatewayError extends Error {
 	readonly commandId: BrowserCommandId | null;
 	override readonly cause: unknown;
 
+	/**
+	 *
+	 */
 	constructor(
 		code: BrowserGatewayErrorCode,
 		message: string,

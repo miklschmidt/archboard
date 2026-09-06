@@ -12,19 +12,19 @@ import type {
 	BrowserThreadLink,
 	BrowserThreadLinkSourcePresentation,
 	BrowserTimeline,
-} from "../../../shared/codex-browser-model/index.js";
-import { BROWSER_THREAD_CANDIDATE_LIMIT } from "../../../shared/codex-browser-model/index.js";
+} from "@/shared/codex-browser-model";
+import { BROWSER_THREAD_CANDIDATE_LIMIT } from "@/shared/codex-browser-model";
 import {
 	IdentityValidationError,
 	type TrustedIdentityDecoder,
 	type TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { ApprovalOwnerView } from "../../../runtime/codex-approvals/index.js";
+} from "@/shared/codex-workbench-identity";
+import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
 import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,
-} from "../../../runtime/codex-spoken-approval/index.js";
-import type { BrowserSnapshotDelta } from "./contract.js";
+} from "@/runtime/codex-spoken-approval";
+import type { BrowserSnapshotDelta } from "@/server/codex-workbench/lib/contract";
 import type {
 	BrowserProjectionInput,
 	BrowserProjectionResult,
@@ -36,8 +36,8 @@ import type {
 	CodexTimelineItemProjectionInput,
 	CodexVoiceProjectionInput,
 	DynamicApprovalOwnerView,
-} from "./projection-contract.js";
-import { projectApproval } from "./approval-projection.js";
+} from "@/server/codex-workbench/lib/projection-contract";
+import { projectApproval } from "@/server/codex-workbench/lib/approval-projection";
 
 type CodexAccountType = NonNullable<
 	Extract<
@@ -61,6 +61,9 @@ const SECRET_KEYS = new Set([
 	"refreshToken",
 ]);
 
+/**
+ *
+ */
 function containsSecretKey(value: unknown, seen = new Set<object>()): boolean {
 	if (value === null || typeof value !== "object") return false;
 	if (seen.has(value)) return false;
@@ -72,6 +75,9 @@ function containsSecretKey(value: unknown, seen = new Set<object>()): boolean {
 	return false;
 }
 
+/**
+ *
+ */
 function projectAccount(input: BrowserProjectionInput["account"]): BrowserAccount {
 	if (input.kind !== "codex_account_response") return input;
 	const account = input.response.account;
@@ -83,6 +89,9 @@ function projectAccount(input: BrowserProjectionInput["account"]): BrowserAccoun
 	};
 }
 
+/**
+ *
+ */
 function projectSettings(input: CodexSettingsProjectionInput): BrowserSettings {
 	const settings = input.settings;
 	return {
@@ -104,6 +113,9 @@ function projectSettings(input: CodexSettingsProjectionInput): BrowserSettings {
 	};
 }
 
+/**
+ *
+ */
 function projectApprovalPolicy(
 	policy: CodexSettingsProjectionInput["settings"]["approvalPolicy"],
 ): BrowserSettings["approvalPolicy"] {
@@ -119,6 +131,9 @@ function projectApprovalPolicy(
 	};
 }
 
+/**
+ *
+ */
 function projectSandbox(
 	policy: CodexSettingsProjectionInput["settings"]["sandboxPolicy"],
 ): BrowserSettings["sandbox"] {
@@ -173,6 +188,9 @@ function projectQueueStatus(
 	return blocked ? "approval_blocked" : "running";
 }
 
+/**
+ *
+ */
 function projectQueue(
 	input: CodexQueueProjectionInput,
 	link: BrowserProjectionInput["threadLink"],
@@ -207,6 +225,9 @@ type BrowserTimelineApprovalStatus = Extract<
 	{ readonly media: "approval" }
 >["status"];
 
+/**
+ *
+ */
 function projectTimelineApprovalStatus(
 	state: Extract<CodexTimelineItemProjectionInput, { readonly kind: "approval_request" }>["state"],
 ): BrowserTimelineApprovalStatus {
@@ -220,6 +241,9 @@ function projectTimelineApprovalStatus(
 	}
 }
 
+/**
+ *
+ */
 function projectTimelineItem(item: CodexTimelineItemProjectionInput): BrowserTimelineItem {
 	switch (item.kind) {
 		case "agent_message":
@@ -254,6 +278,9 @@ function projectTimelineItem(item: CodexTimelineItemProjectionInput): BrowserTim
 	}
 }
 
+/**
+ *
+ */
 function projectTimeline(input: BrowserProjectionInput["timeline"]): BrowserTimeline | null {
 	if (input === null) return null;
 	return {
@@ -350,6 +377,9 @@ function projectThreadCandidates(
 	};
 }
 
+/**
+ *
+ */
 function projectThreadLink(input: BrowserProjectionInput["threadLink"]): BrowserThreadLink {
 	switch (input.state) {
 		case "unbound":
@@ -394,6 +424,9 @@ function projectThreadLink(input: BrowserProjectionInput["threadLink"]): Browser
 	}
 }
 
+/**
+ *
+ */
 function projectSemantic(input: CodexSemanticProjectionInput): BrowserSemanticDelivery | null {
 	if (input.outcome === null || input.outcome.targetThreadId === null || input.freshness === null)
 		return null;
@@ -407,6 +440,9 @@ function projectSemantic(input: CodexSemanticProjectionInput): BrowserSemanticDe
 	};
 }
 
+/**
+ *
+ */
 function projectCoordinator(input: CodexCoordinatorProjectionInput): BrowserCoordinator {
 	return {
 		kind: "coordinator",
@@ -422,6 +458,9 @@ function projectCoordinator(input: CodexCoordinatorProjectionInput): BrowserCoor
 	};
 }
 
+/**
+ *
+ */
 function projectVoice(input: CodexVoiceProjectionInput) {
 	return {
 		kind: "voice",
@@ -445,6 +484,9 @@ function projectVoice(input: CodexVoiceProjectionInput) {
 	};
 }
 
+/**
+ *
+ */
 function joinedSpokenApproval(
 	snapshot: SpokenApprovalSnapshot,
 	approvals: readonly ApprovalOwnerView[],
@@ -475,6 +517,9 @@ function joinedSpokenApproval(
 	};
 }
 
+/**
+ *
+ */
 function spokenGate(snapshot: SpokenApprovalSnapshot): BrowserSpokenApproval["gate"] {
 	if (
 		snapshot.coordinatorThreadId === null ||
@@ -505,6 +550,9 @@ function spokenGate(snapshot: SpokenApprovalSnapshot): BrowserSpokenApproval["ga
 	};
 }
 
+/**
+ *
+ */
 function capturedSpokenUserFinal(
 	snapshot: SpokenApprovalSnapshot,
 ): BrowserSpokenApproval["capturedUserFinal"] {
@@ -524,6 +572,9 @@ function capturedSpokenUserFinal(
 	};
 }
 
+/**
+ *
+ */
 function spokenSettlement(snapshot: SpokenApprovalSnapshot): BrowserSpokenApproval["settlement"] {
 	if (snapshot.settlement === null) return null;
 	if (
@@ -538,6 +589,9 @@ function spokenSettlement(snapshot: SpokenApprovalSnapshot): BrowserSpokenApprov
 	};
 }
 
+/**
+ *
+ */
 function browserFallbackState(
 	reason: SpokenApprovalFallbackReason,
 	settlement: BrowserSpokenApproval["settlement"],
@@ -573,6 +627,9 @@ function browserFallbackState(
 	}
 }
 
+/**
+ *
+ */
 function projectSpokenApproval(
 	model: Pick<BrowserSchemas, "BrowserSpokenApprovalSchema">,
 	snapshot: SpokenApprovalSnapshot,
@@ -591,6 +648,9 @@ function projectSpokenApproval(
 		exactSettlement &&
 		coordinator.threadId === gate.coordinatorThreadId &&
 		voice.generation?.browserSessionId === gate.realtimeSessionId;
+	/**
+	 *
+	 */
 	const stale = (): BrowserSpokenApproval =>
 		model.BrowserSpokenApprovalSchema.parse({
 			kind: "spoken_approval",
@@ -601,6 +661,9 @@ function projectSpokenApproval(
 			settlement,
 			reason: "stale_state",
 		});
+	/**
+	 *
+	 */
 	const missingUserFinal = (): BrowserSpokenApproval =>
 		model.BrowserSpokenApprovalSchema.parse({
 			kind: "spoken_approval",
@@ -611,6 +674,9 @@ function projectSpokenApproval(
 			settlement,
 			reason: "missing_user_final",
 		});
+	/**
+	 *
+	 */
 	const parse = (
 		state: BrowserSpokenApproval["state"],
 		reason: SpokenApprovalFallbackReason | null,
@@ -690,6 +756,9 @@ function adoptBoundaryTurnId(identity: DynamicProjectionIdentity, value: string)
 	}
 }
 
+/**
+ *
+ */
 function projectDynamicApprovalEffect(
 	model: DynamicProjectionModel,
 	identity: DynamicProjectionIdentity,
@@ -746,6 +815,9 @@ function projectDynamicApprovalEffect(
 	});
 }
 
+/**
+ *
+ */
 function projectDynamicApproval(
 	model: DynamicProjectionModel,
 	identity: DynamicProjectionIdentity,
@@ -786,6 +858,9 @@ function projectDynamicApproval(
 	});
 }
 
+/**
+ *
+ */
 export function projectCodexBrowserState(
 	model: DynamicProjectionModel,
 	identity: DynamicProjectionIdentity,
@@ -864,6 +939,9 @@ const SNAPSHOT_KEYS: readonly BrowserSnapshotKey[] = [
 	"operation",
 ];
 
+/**
+ *
+ */
 function deepFreeze<T>(value: T): T {
 	if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
 		Object.freeze(value);
@@ -872,16 +950,25 @@ function deepFreeze<T>(value: T): T {
 	return value;
 }
 
+/**
+ *
+ */
 function wireBytes(value: unknown): number {
 	const encoded = JSON.stringify(value);
 	if (encoded === undefined) throw new Error("browser gateway produced a non-JSON value");
 	return new TextEncoder().encode(encoded).byteLength;
 }
 
+/**
+ *
+ */
 function assertBounded(value: unknown, limit: number, kind: string): void {
 	if (wireBytes(value) > limit) throw new Error(`the browser ${kind} exceeds its wire-size bound`);
 }
 
+/**
+ *
+ */
 export function assertBrowserSnapshotBudget(limit: number): void {
 	if (
 		!Number.isSafeInteger(limit) ||
@@ -893,6 +980,9 @@ export function assertBrowserSnapshotBudget(limit: number): void {
 		);
 }
 
+/**
+ *
+ */
 function truncateTimelineTurn(
 	turn: BrowserTimeline["turns"][number],
 	items: BrowserTimeline["turns"][number]["items"],
@@ -909,6 +999,9 @@ export function fitBrowserSnapshotBounded(
 	if (wireBytes(snapshot) <= limit) return snapshot;
 	let turns = snapshot.timeline?.turns.slice() ?? [];
 	let voiceContext = snapshot.voiceContext ?? null;
+	/**
+	 *
+	 */
 	const candidate = (): BrowserSnapshot => ({
 		...snapshot,
 		timeline: snapshot.timeline === null ? null : { ...snapshot.timeline, turns },
@@ -946,10 +1039,16 @@ export function fitBrowserSnapshotBounded(
 	return deepFreeze(fitted);
 }
 
+/**
+ *
+ */
 function sameWireValue(left: unknown, right: unknown): boolean {
 	return JSON.stringify(left) === JSON.stringify(right);
 }
 
+/**
+ *
+ */
 export function diffBrowserSnapshots(
 	previous: BrowserSnapshot,
 	next: BrowserSnapshot,
@@ -960,9 +1059,12 @@ export function diffBrowserSnapshots(
 	}
 	if (Object.keys(delta).length === 0) return null;
 	assertBounded(delta, BROWSER_DELTA_MAX_BYTES, "delta");
-	return deepFreeze(delta) as BrowserSnapshotDelta;
+	return deepFreeze(delta);
 }
 
+/**
+ *
+ */
 export function assertBrowserSnapshotBounded(
 	snapshot: BrowserSnapshot,
 	limit = BROWSER_SNAPSHOT_MAX_BYTES,
@@ -971,6 +1073,9 @@ export function assertBrowserSnapshotBounded(
 	assertBounded(snapshot, limit, "snapshot");
 }
 
+/**
+ *
+ */
 export function assertBrowserDeltaBounded(delta: BrowserSnapshotDelta): void {
 	assertBounded(delta, BROWSER_DELTA_MAX_BYTES, "delta");
 }

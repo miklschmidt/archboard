@@ -2,7 +2,7 @@ import type {
 	CodexWorkbenchOwner,
 	CodexWorkbenchSnapshot,
 	InstallProductionCodexWorkbenchOptions,
-} from "./codex-workbench.js";
+} from "@/server/canvas/lib/codex-workbench";
 
 interface CanvasCodexWorkbenchModule {
 	readonly installProductionCodexWorkbench: (
@@ -33,6 +33,9 @@ function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchAppl
 	let shutdownPromise: Promise<void> | null = null;
 	let shutdownRequested = false;
 
+	/**
+	 *
+	 */
 	const shutdown = (): Promise<void> => {
 		shutdownRequested = true;
 		if (shutdownPromise !== null) {
@@ -68,6 +71,9 @@ function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchAppl
 		return shutdownPromise;
 	};
 
+	/**
+	 *
+	 */
 	const prepare = (): Promise<CodexWorkbenchSnapshot> => {
 		if (preparePromise !== null) {
 			return preparePromise;

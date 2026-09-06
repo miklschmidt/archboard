@@ -1,20 +1,20 @@
 import express from "express";
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { boardFilesMessage, readBoardContent } from "../../../runtime/engine/board-io.js";
-import logger from "../../../runtime/engine/logger.js";
-import { resolvePaneSpec } from "../../../runtime/engine/panes.js";
-import type { PaneRegistration } from "../../../runtime/engine/panes.js";
-import { presentElements } from "../../../runtime/engine/presentation.js";
-import { boards } from "../../../runtime/engine/board-store.js";
-import type { WebSocketMessage } from "../../../runtime/engine/types.js";
-import { mintId } from "../../../shared/ids/ids.js";
+import { boardFilesMessage, readBoardContent } from "@/runtime/engine/board-io";
+import logger from "@/runtime/engine/logger";
+import { resolvePaneSpec } from "@/runtime/engine/panes";
+import type { PaneRegistration } from "@/runtime/engine/panes";
+import { presentElements } from "@/runtime/engine/presentation";
+import { boards } from "@/runtime/engine/board-store";
+import type { WebSocketMessage } from "@/runtime/engine/types";
+import { mintId } from "@/shared/ids/ids";
 import {
 	BROWSER_CAPTURE_COLLECTION_MS,
 	BROWSER_CAPTURE_DISPATCH_MS,
 	BROWSER_EXPORT_TIMEOUT_MS,
 	BROWSER_VIEWPORT_SETTLEMENT_MS,
-} from "../../../shared/timing/timing.js";
+} from "@/shared/timing/timing";
 
 type BrowserPane = Readonly<
 	Omit<PaneRegistration, "rect" | "viewport"> & {
@@ -136,6 +136,9 @@ const viewportResultSchema = z.object({
 
 type BrowserRequest = Readonly<Pick<Request<Record<string, string>, unknown, unknown>, "body">>;
 
+/**
+ *
+ */
 function errorMessage(error: unknown): string {
 	if (error instanceof Error) {
 		return error.message;
@@ -143,12 +146,18 @@ function errorMessage(error: unknown): string {
 	return typeof error === "string" ? error : "Unknown browser presentation error";
 }
 
+/**
+ *
+ */
 function validationMessages(
 	issues: readonly Readonly<Pick<z.ZodError["issues"][number], "message">>[],
 ): string {
 	return issues.map((issue) => issue.message).join("; ");
 }
 
+/**
+ *
+ */
 function viewportFailureMessage(error: unknown, message: unknown): string {
 	if (typeof error === "string" && error.length > 0) {
 		return error;
@@ -156,6 +165,9 @@ function viewportFailureMessage(error: unknown, message: unknown): string {
 	return typeof message === "string" && message.length > 0 ? message : "Viewport update failed";
 }
 
+/**
+ *
+ */
 function createBrowserPresentationOwner(dependencies: BrowserPresentationDependencies): {
 	readonly router: express.Router;
 	readonly stop: () => void;
@@ -165,10 +177,16 @@ function createBrowserPresentationOwner(dependencies: BrowserPresentationDepende
 	const pendingCaptures = new Map<string, PendingBrowserCapture>();
 	const pendingViewports = new Map<string, PendingViewport>();
 
+	/**
+	 *
+	 */
 	const primaryPane = (): BrowserPane | null => {
 		const panes = dependencies.panes();
 		return panes.find((pane) => pane.primary) ?? panes[0] ?? null;
 	};
+	/**
+	 *
+	 */
 	const capturePane = (spec: unknown): BrowserPane | null => {
 		const panes = dependencies.panes();
 		return typeof spec === "string" && spec.trim()
@@ -412,6 +430,9 @@ function createBrowserPresentationOwner(dependencies: BrowserPresentationDepende
 		},
 	);
 
+	/**
+	 *
+	 */
 	const stop = (): void => {
 		const captures = [...pendingCaptures.values()];
 		const viewports = [...pendingViewports.values()];

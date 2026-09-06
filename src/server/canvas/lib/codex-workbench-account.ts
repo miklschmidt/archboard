@@ -1,10 +1,13 @@
-import type { BrowserWorkbenchActions } from "../../codex-workbench/index.js";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
-import type { SessionLoginParams } from "../../../runtime/codex-session/index.js";
-import { createCodexBrowserModel } from "../../../shared/codex-browser-model/index.js";
-import type { CanvasBrowserBindingState } from "./codex-workbench-browser-gateway.js";
-import type { CodexWorkbenchComponents } from "./codex-workbench.js";
+import type { BrowserWorkbenchActions } from "@/server/codex-workbench";
+import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type { SessionLoginParams } from "@/runtime/codex-session";
+import { createCodexBrowserModel } from "@/shared/codex-browser-model";
+import type { CanvasBrowserBindingState } from "@/server/canvas/lib/codex-workbench-browser-gateway";
+import type { CodexWorkbenchComponents } from "@/server/canvas/lib/codex-workbench";
 
+/**
+ *
+ */
 function sessionLoginParams(
 	login: Parameters<BrowserWorkbenchActions["account"]["login"]>[0]["login"],
 ): SessionLoginParams {
@@ -49,6 +52,9 @@ export function createCanvasBrowserAccountOwner(input: {
 	let readRevision = 0;
 	let disposed = false;
 	let listener: (() => void) | null = null;
+	/**
+	 *
+	 */
 	const publish = () => listener?.();
 	let starting = false;
 	let cancelling = false;
@@ -59,9 +65,15 @@ export function createCanvasBrowserAccountOwner(input: {
 	// generic failure, so the original error is what a reader throws.
 	let readFailure: unknown = null;
 
+	/**
+	 *
+	 */
 	const refresh = async (expectedRevision: number): Promise<void> => {
 		const request = ++readRevision;
 		const pending = state.login;
+		/**
+		 *
+		 */
 		const current = () => !disposed && revision === expectedRevision && request === readRevision;
 		try {
 			const response = await components.session.accountRead();
@@ -94,6 +106,9 @@ export function createCanvasBrowserAccountOwner(input: {
 		}
 	};
 
+	/**
+	 *
+	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		if (
 			disposed ||
@@ -138,6 +153,9 @@ export function createCanvasBrowserAccountOwner(input: {
 	};
 
 	const actions: BrowserWorkbenchActions["account"] = {
+		/**
+		 *
+		 */
 		read: async () => {
 			await refresh(revision);
 			if (state.account.kind === "account" && state.account.state === "failed") {
@@ -145,6 +163,9 @@ export function createCanvasBrowserAccountOwner(input: {
 			}
 			return { outcome: "delivered" };
 		},
+		/**
+		 *
+		 */
 		login: async (command) => {
 			const attempt = ++revision;
 			starting = true;
@@ -193,6 +214,9 @@ export function createCanvasBrowserAccountOwner(input: {
 				}
 			}
 		},
+		/**
+		 *
+		 */
 		loginCancel: async (command) => {
 			if (state.login.state !== "pending" || state.login.loginId !== command.loginId)
 				throw new Error(
@@ -225,6 +249,9 @@ export function createCanvasBrowserAccountOwner(input: {
 			}
 			return { outcome: "delivered" };
 		},
+		/**
+		 *
+		 */
 		logout: async () => {
 			const attempt = ++revision;
 			loggingOut = true;
@@ -243,6 +270,9 @@ export function createCanvasBrowserAccountOwner(input: {
 	};
 	return {
 		actions,
+		/**
+		 *
+		 */
 		subscribe: (onChange: () => void) => {
 			listener = onChange;
 			const unsubscribe = input.onNotification(onNotification);

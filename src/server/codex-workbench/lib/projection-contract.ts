@@ -9,37 +9,37 @@ import type {
 	BrowserSettings,
 	BrowserSnapshot,
 	BrowserVoiceContext,
-} from "../../../shared/codex-browser-model/index.js";
+} from "@/shared/codex-browser-model";
 import type {
 	BrowserCommandId,
 	ChildEpoch,
 	ChildId,
 	OperationId,
 	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	CodexResponseByMethod,
 	CodexServerNotificationParamsByMethod,
-} from "../../../shared/codex-app-server-contract/index.js";
+} from "@/shared/codex-app-server-contract";
 import type {
 	ApprovalOwnerView,
 	ApprovalState,
 	DeepReadonly,
 	ItemApprovalIdentity,
-} from "../../../runtime/codex-approvals/index.js";
-import type { DynamicToolApprovalRequest } from "../../../runtime/codex-dynamic-tools/index.js";
+} from "@/runtime/codex-approvals";
+import type { DynamicToolApprovalRequest } from "@/runtime/codex-dynamic-tools";
 import type {
 	SessionQueuedSubmission,
 	SessionResponsePayloads,
 	SessionThreadItem,
 	SessionTurn,
-} from "../../../runtime/codex-session/index.js";
+} from "@/runtime/codex-session";
 import type {
 	ThreadLinkCandidate,
 	ThreadLinkSnapshot,
-} from "../../../runtime/codex-thread-link/index.js";
-import type { RealtimeTranscriptRecord } from "../../../shared/codex-realtime-host/index.js";
-import type { SpokenApprovalSnapshot } from "../../../runtime/codex-spoken-approval/index.js";
+} from "@/runtime/codex-thread-link";
+import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type { SpokenApprovalSnapshot } from "@/runtime/codex-spoken-approval";
 
 interface CodexAccountProjectionInput {
 	readonly kind: "codex_account_response";

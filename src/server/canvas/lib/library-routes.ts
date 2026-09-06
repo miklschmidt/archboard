@@ -1,9 +1,9 @@
 import { Router as createRouter } from "express";
 import type { RequestHandler, Router as ExpressRouter } from "express";
 import { z } from "zod";
-import { readLibrary, writeLibrary } from "../../../runtime/engine/library.js";
-import type { LibraryItem } from "../../../runtime/engine/library.js";
-import logger from "../../../runtime/engine/logger.js";
+import { readLibrary, writeLibrary } from "@/runtime/engine/library";
+import type { LibraryItem } from "@/runtime/engine/library";
+import logger from "@/runtime/engine/logger";
 
 const LibraryStatusSchema = z.enum(["published", "unpublished"]);
 const OptionalLibraryStatusSchema = LibraryStatusSchema.optional();
@@ -40,10 +40,16 @@ interface LibraryRouteDependencies {
 	notifyLibraryChanged: (notification: LibraryChangedNotification) => void;
 }
 
+/**
+ *
+ */
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ *
+ */
 const readLibraryRoute: RequestHandler = (_request, response): void => {
 	try {
 		const state = readLibrary();
@@ -61,6 +67,9 @@ const readLibraryRoute: RequestHandler = (_request, response): void => {
 	}
 };
 
+/**
+ *
+ */
 function libraryItemFromRequest(item: LibraryWriteInput): LibraryItem {
 	return {
 		id: item.id,
@@ -73,13 +82,15 @@ function libraryItemFromRequest(item: LibraryWriteInput): LibraryItem {
 
 /**
  * Create the complete server-side stencil-library HTTP boundary.
- *
  * @param dependencies Narrow notification boundary for successful writes.
  * @returns Router that owns both library endpoints.
  */
 function createLibraryRouter(dependencies: Readonly<LibraryRouteDependencies>): ExpressRouter {
 	const router = createRouter();
 	router.get("/api/library", readLibraryRoute);
+	/**
+	 *
+	 */
 	const writeLibraryRoute: RequestHandler = (request, response): void => {
 		try {
 			const body = LibraryWriteSchema.parse(request.body ?? {});
