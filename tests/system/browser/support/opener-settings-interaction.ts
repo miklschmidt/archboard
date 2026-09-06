@@ -2,6 +2,7 @@ import { expect } from "bun:test";
 
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 import { dialogSnapshot } from "./opener-settings.ts";
+import { openSettingsItem, switchTheme } from "./shell-dom.ts";
 
 type ShellTheme = "light" | "dark";
 
@@ -11,30 +12,60 @@ function roleAction(
 	name: string,
 	action: "click" | "text" = "click",
 ): Promise<string> {
-	return browser.run(["find", "role", role, action, "--name", name, "--exact"]);
+	return browser.run(["find", "role", role, action, "--name", name, "--exact"], {
+		timeoutMs: 10_000,
+	});
 }
 
-function fillLabel(browser: AgentBrowserSession, label: string, value: string): Promise<string> {
-	return browser.run(["find", "label", label, "fill", value, "--exact"]);
+/**
+ * Replace a labelled field's value from the keyboard: select all, delete, type.
+ * @param browser The page.
+ * @param label The field's label.
+ * @param value The new value.
+ */
+async function fillLabel(
+	browser: AgentBrowserSession,
+	label: string,
+	value: string,
+): Promise<void> {
+	await browser.run(["find", "label", label, "click", "--exact"]);
+	await browser.run(["press", "Control+a"]);
+	await browser.run(["press", "Backspace"]);
+	await browser.run(["keyboard", "type", value]);
 }
 
-async function setTheme(browser: AgentBrowserSession, theme: ShellTheme): Promise<void> {
-	const current = await browser.eval<string | null>(
-		"document.querySelector('.shell')?.getAttribute('data-theme') ?? null",
-	);
-	if (current !== theme) {
-		await roleAction(browser, "button", `Use ${theme} theme`);
-	}
+/**
+ * Open the opener settings dialog the way a person does: the header settings
+ * menu, then its item.
+ * @param browser The page.
+ */
+async function openOpenerSettings(browser: AgentBrowserSession): Promise<void> {
+	await openSettingsItem(browser, "Opener settings");
+	// Clicks land only once the dialog has finished animating into place.
 	await pollUntil(
 		() =>
-			browser.eval<string | null>(
-				"document.querySelector('.shell')?.getAttribute('data-theme') ?? null",
+			browser.eval<string[]>(
+				`(() => { const dialog = document.querySelector('[role="dialog"]'); return dialog ? dialog.getAnimations().map(animation => animation.playState) : ['missing']; })()`,
 			),
-		(value) => value === theme,
-		`the ${theme} theme`,
+		(states) => states.every((state) => state === "finished"),
+		"the opener settings dialog to settle in place",
+		{ timeoutMs: 5_000 },
 	);
 }
 
+/**
+ * Switch the shell theme through the header toggle.
+ * @param browser The page.
+ * @param theme The theme wanted.
+ */
+async function setTheme(browser: AgentBrowserSession, theme: ShellTheme): Promise<void> {
+	await switchTheme(browser, theme);
+}
+
+/**
+ * The dialog is gone and focus is back on the settings trigger it came from.
+ * @param browser The page.
+ */
 async function assertDialogClosedAndFocusReturned(browser: AgentBrowserSession): Promise<void> {
 	await pollUntil(
 		() => dialogSnapshot(browser),
@@ -42,10 +73,33 @@ async function assertDialogClosedAndFocusReturned(browser: AgentBrowserSession):
 		"the opener settings dialog to close",
 	);
 	expect(
-		await browser.eval<boolean>(
-			"document.activeElement === window.__openerTrigger && document.querySelectorAll('[role=dialog]').length === 0",
+		await browser.eval<string>(
+			"(document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.tagName ?? 'none') + ' · dialogs ' + document.querySelectorAll('[role=dialog]').length",
 		),
-	).toBe(true);
+	).toBe("Settings · dialogs 0");
 }
 
-export { roleAction, fillLabel, setTheme, assertDialogClosedAndFocusReturned };
+export { roleAction, fillLabel, openOpenerSettings, setTheme, assertDialogClosedAndFocusReturned };
+
+/**
+ * Type the Arguments textarea the way a person does: one argument per line,
+ * Enter between them. `fill` would flatten the newlines.
+ * @param browser The page.
+ * @param lines The arguments, one per line.
+ */
+async function fillArguments(
+	browser: AgentBrowserSession,
+	lines: readonly string[],
+): Promise<void> {
+	await browser.run(["find", "label", "Arguments", "click", "--exact"]);
+	await browser.run(["press", "Control+a"]);
+	await browser.run(["press", "Backspace"]);
+	for (const [index, line] of lines.entries()) {
+		if (index > 0) {
+			await browser.run(["press", "Enter"]);
+		}
+		await browser.run(["keyboard", "type", line]);
+	}
+}
+
+export { fillArguments };

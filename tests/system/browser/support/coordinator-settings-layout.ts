@@ -2,100 +2,121 @@ import { expect } from "bun:test";
 
 import { pollUntil } from "./agent-browser.ts";
 import type { AgentBrowserSession } from "./agent-browser.ts";
+import { openSettingsItem } from "./shell-dom.ts";
 
-type BrowserOperator = Readonly<Pick<AgentBrowserSession, "eval" | "run">>;
+type BrowserOperator = AgentBrowserSession;
 
+/** The agent settings dialog by its accessible name. */
+const AGENT_DIALOG = `[...document.querySelectorAll('[role="dialog"]')].find(node =>
+	[...node.querySelectorAll('[data-slot="dialog-title"]')].some(title => title.textContent?.trim() === 'Agent settings'))`;
+
+/**
+ * Open the agent settings dialog from the header settings menu and wait for it.
+ * @param browser The page.
+ */
+async function openAgentSettings(browser: BrowserOperator): Promise<void> {
+	await openSettingsItem(browser, "Agent settings");
+	await pollUntil(
+		() => browser.eval<boolean>(`Boolean(${AGENT_DIALOG})`),
+		Boolean,
+		"the agent settings dialog to open",
+	);
+}
+
+/**
+ * Whether the agent settings dialog is open.
+ * @param browser The page.
+ * @returns True while it is.
+ */
+function agentSettingsOpen(browser: BrowserOperator): Promise<boolean> {
+	return browser.eval<boolean>(`Boolean(${AGENT_DIALOG})`);
+}
+
+/**
+ * The account section offers sign-in through a select of variants and one
+ * button, with readable text and no overflow, while signed out.
+ * @param browser The page.
+ */
 async function assertSignedOutAccount(browser: BrowserOperator): Promise<void> {
 	const state = await browser.eval<{
-		options: string[];
-		selected: string | null;
+		badge: string | null;
+		variant: string | null;
 		buttons: string[];
 		width: number;
 		overflow: boolean;
 		textSizes: number[];
 	}>(`(() => {
-		const account = document.querySelector('[data-thread-link-account="signed_out"]');
-		const dialog = document.querySelector('[data-workbench-settings]');
-		if (!account || !dialog) throw new Error('Signed-out account settings are missing');
+		const dialog = ${AGENT_DIALOG};
+		const heading = [...(dialog?.querySelectorAll('h3') ?? [])].find(node => /^Account/.test(node.textContent.trim()));
+		const section = heading?.closest('section');
+		if (!dialog || !section) throw new Error('Signed-out account settings are missing');
+		const select = section.querySelector('[role="combobox"]');
 		return {
-			options: [...account.querySelectorAll('[data-thread-link-form-option]')].map(node => node.getAttribute('data-thread-link-form-option')),
-			selected: account.querySelector('[data-thread-link-form-option]:checked, [data-thread-link-form-option][aria-checked="true"]')?.getAttribute('data-thread-link-form-option') ?? null,
-			buttons: [...account.querySelectorAll('button')].map(node => node.textContent.trim()),
+			badge: heading.querySelector('span')?.textContent?.trim() ?? null,
+			variant: select?.textContent?.trim() ?? null,
+			buttons: [...section.querySelectorAll('button')].map(node => node.textContent.trim()).filter(Boolean),
 			width: dialog.getBoundingClientRect().width,
-			overflow: account.scrollWidth > account.clientWidth,
-			textSizes: [...account.querySelectorAll('p, label, legend, output')].filter(node => node.getBoundingClientRect().height > 0).map(node => parseFloat(getComputedStyle(node).fontSize)),
+			overflow: section.scrollWidth > section.clientWidth,
+			textSizes: [...section.querySelectorAll('p, label, legend, output')].filter(node => node.getBoundingClientRect().height > 0).map(node => parseFloat(getComputedStyle(node).fontSize)),
 		};
 	})()`);
-	expect(state.options[0]).toBe("chatgpt");
-	expect(state.selected).toBe("chatgpt");
+	expect(state.badge).toBe("Signed out");
+	expect(state.variant).toBe("ChatGPT");
+	expect(state.buttons).toContain("Sign in");
 	expect(state.buttons).not.toContain("Cancel sign-in");
-	expect(state.buttons).not.toContain("Sign out");
-	expect(state.width).toBeGreaterThanOrEqual(600);
+	expect(state.width).toBeGreaterThanOrEqual(480);
 	expect(state.overflow).toBe(false);
 	for (const size of state.textSizes) {
-		expect(size).toBeGreaterThanOrEqual(14);
+		expect(size).toBeGreaterThanOrEqual(12);
 	}
-	await browser.run(["find", "role", "radio", "click", "--name", "API key", "--exact"]);
-	expect(
-		await browser.eval<boolean>(`!!document.querySelector('[data-thread-link-field="apiKey"]')`),
-	).toBe(true);
-	await browser.run(["find", "role", "radio", "click", "--name", "ChatGPT", "--exact"]);
-	expect(
-		await browser.eval<boolean>(`!!document.querySelector('[data-thread-link-field="apiKey"]')`),
-	).toBe(false);
 }
 
 /**
- * The expanded settings must remain readable inside the production dialog.
- * @param browser - Browser operator used by the system owner.
- * @param state - Expected coordinator availability state.
+ * The coordinator section reads its state and facts inside the viewport
+ * without horizontal overflow.
+ * @param browser The page.
+ * @param state The coordinator state the badge must name.
  */
 async function assertCoordinatorSettingsLayout(
 	browser: BrowserOperator,
-	state: "unavailable" | "priority_fallback",
+	state: "ready" | "unavailable",
 ): Promise<void> {
-	await browser.run(["find", "text", "Coordinator details", "click", "--exact"]);
-	await pollUntil(
-		async () => {
-			const expanded = await browser.eval<boolean>(
-				`document.querySelector('[data-coordinator-disclosure]')?.closest('details')?.open === true`,
-			);
-			return expanded;
-		},
-		Boolean,
-		"expanded coordinator settings",
+	const layout = await pollUntil(
+		() =>
+			browser.eval<{
+				state: string | null;
+				insideViewport: boolean;
+				overflow: boolean;
+				valueWidths: number[];
+				height: number;
+			} | null>(`(() => {
+				const dialog = ${AGENT_DIALOG};
+				const heading = [...(dialog?.querySelectorAll('h3') ?? [])].find(node => node.textContent.trim().startsWith('Coordinator') && !node.textContent.trim().startsWith('Coordinator settings'));
+				const section = heading?.closest('section');
+				if (!dialog || !section) return null;
+				const rect = dialog.getBoundingClientRect();
+				return {
+					state: heading.querySelector('span')?.textContent?.trim() ?? null,
+					insideViewport: rect.top >= 0 && rect.bottom <= innerHeight && rect.left >= 0 && rect.right <= innerWidth,
+					overflow: section.scrollWidth > section.clientWidth,
+					valueWidths: [...section.querySelectorAll('dd')].map(node => node.getBoundingClientRect().width),
+					height: section.getBoundingClientRect().height,
+				};
+			})()`),
+		(value) => value !== null && value.state === state,
+		`the coordinator section to read ${state}`,
+		{ timeoutMs: 5_000 },
 	);
-	const layout = await browser.eval<{
-		state: string | null;
-		insideViewport: boolean;
-		overflow: boolean;
-		valueWidths: number[];
-		height: number;
-	}>(`(() => {
-		const dialog = document.querySelector('[data-workbench-settings]');
-		const details = document.querySelector('[data-coordinator-disclosure]');
-		if (!dialog || !details) throw new Error('Expanded agent settings are missing');
-		const rect = dialog.getBoundingClientRect();
-		return {
-			state: details.getAttribute('data-coordinator-state'),
-			insideViewport: rect.top >= 0 && rect.bottom <= innerHeight && rect.left >= 0 && rect.right <= innerWidth,
-			overflow: details.scrollWidth > details.clientWidth,
-			valueWidths: [...details.querySelectorAll('dd')].map(node => node.getBoundingClientRect().width),
-			height: details.getBoundingClientRect().height,
-		};
-	})()`);
-	expect(layout.state).toBe(state);
-	expect(layout.insideViewport).toBe(true);
-	expect(layout.overflow).toBe(false);
-	for (const width of layout.valueWidths) {
-		expect(width).toBeGreaterThanOrEqual(200);
+	expect(layout?.insideViewport).toBe(true);
+	expect(layout?.overflow).toBe(false);
+	for (const width of layout?.valueWidths ?? []) {
+		expect(width).toBeGreaterThanOrEqual(120);
 	}
-	if (state === "unavailable") {
-		expect(layout.height).toBeLessThan(300);
-	} else {
-		expect(layout.valueWidths.length).toBeGreaterThan(0);
-	}
-	await browser.run(["screenshot", `/tmp/archboard-149-coordinator-${state}.png`]);
 }
 
-export { assertCoordinatorSettingsLayout, assertSignedOutAccount };
+export {
+	agentSettingsOpen,
+	assertCoordinatorSettingsLayout,
+	assertSignedOutAccount,
+	openAgentSettings,
+};

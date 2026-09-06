@@ -21,6 +21,12 @@ import {
 	registerCanvasBase,
 } from "./support/agent-browser.ts";
 import { inExcalidrawApp } from "./support/page-scene.ts";
+import {
+	BOARD_NAME_EXPRESSION,
+	clickNavigatorRow,
+	dismissFirstNotice,
+	navigatorRow,
+} from "./support/shell-dom.ts";
 
 type Pane = {
 	board?: string;
@@ -146,27 +152,19 @@ test(
 			body: { board: "scratch", reload: true, pane: panes.panes?.[0]?.clientId },
 		});
 		expect(recoveredScratch.status).toBe(200); // check-fixed-point.mjs:1053
-		await browser.eval(`(() => {
-      document.querySelector('.notice-dismiss')?.click();
-      return true;
-    })()`);
+		expect(await dismissFirstNotice(browser)).toBe(true);
 
 		const legacyRowReady = await pollUntil(
 			() =>
 				browser.eval<boolean>(
-					`Boolean(document.querySelector('.board-group[aria-label="legacy-geometry"] .board-nav-row'))`,
+					`Boolean(document.querySelector(${JSON.stringify(navigatorRow("legacy-geometry"))}))`,
 				),
 			Boolean,
 			"the legacy board row to appear",
 			{ timeoutMs: PANE_LAYOUT_TIMEOUT_MS },
 		);
 		expect(legacyRowReady).toBe(true); // check-fixed-point.mjs:1101
-		const legacyOpenStarted = await browser.eval<boolean>(`(() => {
-      const row = document.querySelector('.board-group[aria-label="legacy-geometry"] .board-nav-row');
-      if (!row) return false;
-      row.click();
-      return true;
-    })()`);
+		const legacyOpenStarted = await clickNavigatorRow(browser, "legacy-geometry");
 		expect(legacyOpenStarted).toBe(true); // check-fixed-point.mjs:1101
 		const legacyFailure = await pollUntil(
 			() =>
@@ -190,18 +188,13 @@ test(
 		expect(fs.readFileSync(legacyFile, "utf8")).toBe(legacy.malformed); // check-fixed-point.mjs:1113
 
 		fs.writeFileSync(legacyFile, legacy.valid);
-		const correctedOpenStarted = await browser.eval<boolean>(`(() => {
-      const row = document.querySelector('.board-group[aria-label="legacy-geometry"] .board-nav-row');
-      if (!row) return false;
-      row.click();
-      return true;
-    })()`);
+		const correctedOpenStarted = await clickNavigatorRow(browser, "legacy-geometry");
 		expect(correctedOpenStarted).toBe(true); // check-fixed-point.mjs:1157
 		const corrected = await pollUntil(
 			() =>
 				browser.eval<CorrectedState>(
 					inExcalidrawApp(`
-            const board = document.querySelector('.board-name')?.textContent.trim();
+            const board = ${BOARD_NAME_EXPRESSION};
             return {
               board,
               rendered: app.scene.getElementsIncludingDeleted()

@@ -2,6 +2,7 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import type { AgentBrowserSession } from "./agent-browser.ts";
 import { EXCALIDRAW_APP_EXPRESSION } from "./page-scene.ts";
+import { PANE_TABS } from "./shell-dom.ts";
 
 const move = (
 	browser: AgentBrowserSession,
@@ -29,7 +30,7 @@ const pageElement = (browser: AgentBrowserSession, id: string): Promise<Excalidr
 	})()`);
 
 const focusedBoardTitle = (browser: AgentBrowserSession): Promise<string | null> =>
-	browser.eval('document.querySelector(".pane-tab.focused")?.textContent ?? null');
+	browser.eval(`document.querySelector('${PANE_TABS}[aria-pressed="true"]')?.textContent ?? null`);
 
 const pageElements = (browser: AgentBrowserSession): Promise<ExcalidrawElement[]> =>
 	browser.eval(`(() => {

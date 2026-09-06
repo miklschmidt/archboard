@@ -83,11 +83,13 @@ function toEntry(
 }
 
 /**
- * Persisted boards first, then open boards the vault does not hold yet.
+ * Persisted boards first, then open boards the vault does not hold yet. A
+ * scratch board is open too, but it belongs to the scratch group, not here.
  * @param listing The listing.
+ * @param scratchKeys The keys the scratch group already lists.
  * @returns Sources in listing order, drafts last.
  */
-function boardSources(listing: BoardListing): EntrySource[] {
+function boardSources(listing: BoardListing, scratchKeys: ReadonlySet<string>): EntrySource[] {
 	const persisted = listing.boards.map((board) => ({
 		key: board.key,
 		identity: board.identity,
@@ -96,7 +98,7 @@ function boardSources(listing: BoardListing): EntrySource[] {
 	}));
 	const persistedKeys = new Set(persisted.map((source) => source.key));
 	const drafts = listing.open
-		.filter((board) => !persistedKeys.has(board.key))
+		.filter((board) => !persistedKeys.has(board.key) && !scratchKeys.has(board.key))
 		.map((board) => ({
 			key: board.key,
 			identity: board.identity,
@@ -107,14 +109,17 @@ function boardSources(listing: BoardListing): EntrySource[] {
 }
 
 /**
- * Group the listing by board name, drafts included.
+ * Group the listing by board name, drafts included. The vault lists boards in
+ * directory order, which changes between restarts; a person finds a board by
+ * name, so groups and their variants are sorted by name.
  * @param view The shell view holding the listing and the previews.
- * @returns Groups in first-seen order.
+ * @returns Groups by board name, variants by key.
  */
 function groupBoards(view: ShellView): NavigatorGroup[] {
 	const letters = onScreenLetters(view.boards);
 	const groups = new Map<string, NavigatorGroup>();
-	for (const source of boardSources(view.boards)) {
+	const scratchKeys = new Set(view.scratch.map((entry) => entry.key));
+	for (const source of boardSources(view.boards, scratchKeys)) {
 		const group = groups.get(source.identity.board) ?? {
 			board: source.identity.board,
 			variants: [],
@@ -122,7 +127,12 @@ function groupBoards(view: ShellView): NavigatorGroup[] {
 		group.variants.push(toEntry(source, view, letters));
 		groups.set(source.identity.board, group);
 	}
-	return [...groups.values()];
+	return [...groups.values()]
+		.map((group) => ({
+			...group,
+			variants: group.variants.toSorted((a, b) => a.key.localeCompare(b.key, "en")),
+		}))
+		.toSorted((a, b) => a.board.localeCompare(b.board, "en"));
 }
 
 /**

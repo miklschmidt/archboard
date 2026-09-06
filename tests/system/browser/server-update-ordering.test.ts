@@ -143,6 +143,8 @@ test("server updates cannot absorb ordered user edits or queued reports", async 
 
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", canvas.base]);
+	// The supported desktop viewport; the canvas keeps its size for pointer targets.
+	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		async () => (await request<{ paneCount: number }>("/api/panes")).body.paneCount,
 		(count) => count === 1,

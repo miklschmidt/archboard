@@ -19,7 +19,7 @@ import type {
 	TakeBackState,
 	ThemeChoice,
 } from "@/ui/shell/lib/contracts";
-import { Header } from "@/ui/shell/lib/header";
+import { Header, SETTINGS_TRIGGER_ID } from "@/ui/shell/lib/header";
 import { Navigator } from "@/ui/shell/lib/navigator";
 import { Notices } from "@/ui/shell/lib/notices";
 import { PaneBar } from "@/ui/shell/lib/pane-bar";
@@ -92,6 +92,7 @@ function Shell(props: ShellProps): React.JSX.Element {
 }
 
 export {
+	SETTINGS_TRIGGER_ID,
 	Shell,
 	type ShellProps,
 	type ShellView,

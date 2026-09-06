@@ -12,6 +12,22 @@ import {
 	type OpenerSettingsFlowState,
 } from "@/ui/opener-settings-flow/lib/flow";
 
+/** Hears nothing: the listener a host leaves behind when it unmounts. */
+const SILENT_LISTENER: OpenerSettingsFlowListener = Object.freeze({
+	/** An outcome for a host that has unmounted: dropped. */
+	onSuccess: (): void => {
+		// Unmounted.
+	},
+	/** A failure for a host that has unmounted: dropped. */
+	onFailure: (): void => {
+		// Unmounted.
+	},
+	/** A save for a host that has unmounted: dropped. */
+	onSaved: (): void => {
+		// Unmounted.
+	},
+});
+
 /** The flow and what it renders, for a mounted dialog host. */
 interface MountedOpenerSettingsFlow {
 	readonly flow: OpenerSettingsFlow;
@@ -72,6 +88,14 @@ function useOpenerSettingsFlow(listener: OpenerSettingsFlowListener): MountedOpe
 	useEffect(() => {
 		live.replace(listener);
 	}, [live, listener]);
+	// A dialog the person closed hears nothing more: an outcome that lands after
+	// the host unmounts belongs to a read or a test they no longer asked for.
+	useEffect(
+		() => () => {
+			live.replace(SILENT_LISTENER);
+		},
+		[live],
+	);
 	useEffect(() => {
 		void flow.load();
 	}, [flow]);

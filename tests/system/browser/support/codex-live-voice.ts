@@ -22,22 +22,26 @@ const CONTROLLED_MEDIA_SOURCE = String.raw`
 		peers: [],
 		contexts: [],
 		playCount: 0,
+		outputSilent: false,
+	};
+	// Native prototypes expose these as getters, so the doubles own plain fields.
+	const own = (target, fields) => {
+		for (const [key, value] of Object.entries(fields)) {
+			Object.defineProperty(target, key, { configurable: true, writable: true, value });
+		}
 	};
 	class ControlledTrack extends EventTarget {
 		constructor(kind) {
 			super();
-			this.kind = kind;
-			this.enabled = true;
-			this.readyState = 'live';
-			this.stopCount = 0;
+			own(this, { kind, enabled: true, readyState: 'live', stopCount: 0 });
 		}
 		stop() {
 			this.stopCount += 1;
 			this.readyState = 'ended';
 		}
 	}
-	class ControlledStream {
-		constructor(tracks = []) { this.tracks = tracks; }
+	class ControlledStream extends EventTarget {
+		constructor(tracks = []) { super(); own(this, { tracks }); }
 		getTracks() { return this.tracks; }
 		getAudioTracks() { return this.tracks.filter(track => track.kind === 'audio'); }
 	}
@@ -49,7 +53,7 @@ const CONTROLLED_MEDIA_SOURCE = String.raw`
 		close() { this.readyState = 'closed'; }
 	}
 	class ControlledSender {
-		constructor(track) { this.track = track; }
+		constructor(track) { own(this, { track }); }
 		replaceTrack(track) {
 			this.track = track;
 			return Promise.resolve();
@@ -96,7 +100,9 @@ const CONTROLLED_MEDIA_SOURCE = String.raw`
 			super();
 			this.fftSize = 4;
 		}
-		getByteTimeDomainData(samples) { samples.set([128, 144, 128, 112]); }
+		// Model output: a steady tone unless the test silences the output while the
+		// microphone stays live, which is how microphone-only input is told apart.
+		getByteTimeDomainData(samples) { samples.set(audit.outputSilent ? [128, 128, 128, 128] : [128, 144, 128, 112]); }
 	}
 	class ControlledAudioContext {
 		constructor() {
@@ -116,7 +122,13 @@ const CONTROLLED_MEDIA_SOURCE = String.raw`
 			return Promise.resolve();
 		}
 	}
+	// The product narrows every DOM object with instanceof at one seam; the
+	// doubles sit on the native prototypes so that seam stays the real one.
+	Object.setPrototypeOf(ControlledTrack.prototype, MediaStreamTrack.prototype);
+	Object.setPrototypeOf(ControlledStream.prototype, MediaStream.prototype);
+	Object.setPrototypeOf(ControlledSender.prototype, RTCRtpSender.prototype);
 	const mediaDevices = new EventTarget();
+	Object.setPrototypeOf(mediaDevices, MediaDevices.prototype);
 	mediaDevices.getUserMedia = () => {
 		const track = new ControlledTrack('audio');
 		audit.localTracks.push(track);
@@ -192,3 +204,17 @@ export {
 	readControlledVoiceMediaAudit,
 	type ControlledVoiceMediaAudit,
 };
+
+/**
+ * Silence or restore the controlled model output while the microphone track
+ * stays live: the wave must follow the model, never the microphone.
+ * @param browser The page.
+ * @param silent True to make the model output silent.
+ */
+async function setControlledOutputSilent(browser: BrowserOperator, silent: boolean): Promise<void> {
+	await browser.eval<boolean>(
+		`(globalThis.__archboardControlledVoiceMedia.outputSilent = ${JSON.stringify(silent)}, true)`,
+	);
+}
+
+export { setControlledOutputSilent };

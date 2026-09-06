@@ -29,6 +29,11 @@ import {
 	SelectValue,
 } from "@/ui/components/select";
 
+/** The sign-in variants with the words the select shows for each. */
+const LOGIN_ITEMS: ReadonlyArray<{ value: LoginVariant; label: string }> = LOGIN_VARIANTS.map(
+	(variant) => ({ value: variant, label: loginVariantLabel(variant) }),
+);
+
 /** Inputs for the sign-in form. */
 interface SignInFormProps {
 	busy: boolean;
@@ -54,7 +59,12 @@ function SignInForm(props: SignInFormProps): React.JSX.Element {
 		<div className="flex items-end gap-2">
 			<Field className="flex-1">
 				<FieldLabel htmlFor={id}>Sign in with</FieldLabel>
-				<Select value={variant} onValueChange={handleVariant} disabled={props.busy}>
+				<Select
+					items={LOGIN_ITEMS}
+					value={variant}
+					onValueChange={handleVariant}
+					disabled={props.busy}
+				>
 					<SelectTrigger id={id} className="w-full">
 						<SelectValue />
 					</SelectTrigger>

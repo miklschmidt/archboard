@@ -47,12 +47,22 @@ import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import { useLibrary, type LibraryController } from "@/ui/board-library";
 import { TooltipProvider } from "@/ui/components/tooltip";
 import {
+	SETTINGS_TRIGGER_ID,
 	Shell,
 	type SettingsSurface,
 	type ShellActions,
 	type ShellView,
 	type ThemeChoice,
 } from "@/ui/shell";
+
+/**
+ * The settings menu trigger: where a settings dialog returns focus, since the
+ * menu item that opened it is gone by the time the dialog closes.
+ * @returns The trigger, or null before the header mounts.
+ */
+function settingsTrigger(): HTMLElement | null {
+	return document.getElementById(SETTINGS_TRIGGER_ID);
+}
 
 /** The one notice the library menu item raises when nothing is offered. */
 const LIBRARY_HINT =
@@ -124,20 +134,40 @@ function useSideNotices(
 	library: LibraryController,
 	notices: NoticeStack,
 ): void {
-	const { error } = fullscreen.snapshot;
+	const { error, paneId } = fullscreen.snapshot;
 	const { clearError } = fullscreen;
 	const { raise } = notices;
+	// A refused exit stays with the presentation, where the person is; a
+	// refused entry becomes a notice in the workspace they are still in.
 	useEffect(() => {
-		if (error !== null) {
+		if (error !== null && paneId === null) {
 			raise(presentationNotice(error));
 			clearError();
 		}
-	}, [error, clearError, raise]);
+	}, [error, paneId, clearError, raise]);
 	useEffect(() => {
 		if (library.error !== null) {
 			raise(failureNotice("library", "Library", library.error));
 		}
 	}, [library.error, raise]);
+}
+
+/**
+ * Keep the presentation on a pane that exists: when the presented or wanted
+ * pane closes, the survivor takes over or the presentation ends.
+ * @param panes The panes.
+ * @param fullscreen The presentation.
+ */
+function usePresentationTransfer(panes: Panes, fullscreen: Fullscreen): void {
+	const { list } = panes;
+	const { target, paneRemoved } = fullscreen;
+	useEffect(() => {
+		const wanted = target();
+		if (wanted === null || list.panes.some((pane) => pane.paneId === wanted)) {
+			return;
+		}
+		paneRemoved(wanted, list.panes[0]?.paneId ?? null);
+	}, [list, target, paneRemoved]);
 }
 
 /**
@@ -225,10 +255,17 @@ function SettingsHosts(props: SettingsHostsProps): React.JSX.Element | null {
 		[notices],
 	);
 	if (surface === "opener") {
-		return <OpenerSettingsHost onSuccess={onSuccess} onFailure={onFailure} onClose={onClose} />;
+		return (
+			<OpenerSettingsHost
+				onSuccess={onSuccess}
+				onFailure={onFailure}
+				onClose={onClose}
+				finalFocus={settingsTrigger}
+			/>
+		);
 	}
 	if (surface === "agent" && owners !== null) {
-		return <AgentSettingsHost owners={owners} onClose={onClose} />;
+		return <AgentSettingsHost owners={owners} onClose={onClose} finalFocus={settingsTrigger} />;
 	}
 	return null;
 }
@@ -373,6 +410,7 @@ function Application(): React.JSX.Element {
 	);
 	const dialogs = useBoardDialogs(dialogEvents);
 	useNoteRecovery(panes, notices, dialogs);
+	usePresentationTransfer(panes, fullscreen);
 	useBoardPlaceholders(panes);
 	useLibrarySync(panes, library);
 	useSideNotices(fullscreen, library, notices);

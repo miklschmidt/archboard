@@ -4,7 +4,7 @@
 // offers the exit.
 
 import { RiFullscreenExitLine } from "@remixicon/react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import { Button } from "@/ui/components/button";
 import type { ShellActions, ShellPane } from "@/ui/shell/lib/contracts";
@@ -12,6 +12,8 @@ import type { ShellActions, ShellPane } from "@/ui/shell/lib/contracts";
 /** Inputs for the presentation bar. */
 interface PresentationBarProps {
 	pane: ShellPane;
+	/** A refused exit, shown in the bar so it is seen from inside the presentation. */
+	error: string | null;
 	/** Live voice controls, when the voice workbench supplies them. */
 	voiceControls: React.ReactNode;
 	actions: ShellActions;
@@ -23,15 +25,21 @@ interface ExitControlProps {
 }
 
 /**
- * Leave the presentation.
+ * Leave the presentation. The control takes focus when the bar mounts: the
+ * control that started the presentation sits outside the presented stage,
+ * so keyboard focus would otherwise be stranded on something unseen.
  * @param props The actions.
  * @returns The exit button.
  */
 function ExitControl(props: ExitControlProps): React.JSX.Element {
 	const { actions } = props;
+	const exit = useRef<HTMLButtonElement | null>(null);
 	const handleExit = useCallback(() => actions.present(null), [actions]);
+	useEffect(() => {
+		exit.current?.focus();
+	}, []);
 	return (
-		<Button variant="ghost" size="sm" onClick={handleExit}>
+		<Button ref={exit} variant="ghost" size="sm" onClick={handleExit}>
 			<RiFullscreenExitLine data-icon="inline-start" />
 			Exit presentation
 		</Button>
@@ -91,6 +99,7 @@ function PresentationBar(props: PresentationBarProps): React.JSX.Element {
 	return (
 		<div
 			data-slot="presentation-bar"
+			data-presentation={paneId}
 			className="border-border flex h-9 shrink-0 items-center gap-2 border-b px-2"
 		>
 			<ExitControl actions={actions} />
@@ -98,6 +107,11 @@ function PresentationBar(props: PresentationBarProps): React.JSX.Element {
 				Pane <span className="font-mono">{paneId}</span>
 				{pane.status.board && ` · ${pane.status.board.board}`}
 			</span>
+			{props.error !== null && (
+				<span role="alert" className="text-destructive min-w-0 truncate text-xs">
+					{props.error}
+				</span>
+			)}
 			<span className="flex-1" />
 			<VoiceSlot>{props.voiceControls}</VoiceSlot>
 		</div>

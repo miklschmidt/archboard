@@ -25,6 +25,7 @@ import {
 	resetHoldRecorder,
 } from "./support/human-hold-recorder.ts";
 import { dragPageElement, EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
+import { PANE_TABS } from "./support/shell-dom.ts";
 import {
 	focusedBoardTitle,
 	move,
@@ -37,6 +38,10 @@ const repoRoot = resolve(import.meta.dir, "../../..");
 const BOARD = LIVE_SESSION_BOARD;
 const RECOVERY_BOARD = "held-recovery-source";
 const RECOVERY_SENTINEL_ID = "recovery-auth";
+/** The header and pane-tab words that mark a board not saving or written elsewhere. */
+const NOTE_MARKS = `[...document.querySelectorAll('header span, ${PANE_TABS} span')]
+	.map(node => node.textContent.trim())
+	.filter(text => /^(Not saving|Note written elsewhere|· not saving|· written elsewhere)/.test(text))`;
 const RECOVERY_SEED = [
 	{ id: RECOVERY_SENTINEL_ID, type: "rectangle", x: 100, y: 100, width: 220, height: 90 },
 ] as const;
@@ -92,6 +97,8 @@ beforeAll(async () => {
 	const request = createJsonRequester(canvas);
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", canvas.base]);
+	// The supported desktop viewport; the canvas keeps its size for pointer targets.
+	await browser.run(["set", "viewport", "1920", "1080"]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/Headless/i);
 	const panes = await pollUntil(
 		async () => (await request<PaneList>("/api/panes")).body,
@@ -246,16 +253,9 @@ test(
 		expect(afterBoth.find((element) => element.id === "auth")!.x).toBeCloseTo(authBefore.x + 40, 3);
 		expect(afterBoth.find((element) => element.id === "queue")!.backgroundColor).toBe("#ff8787");
 
-		const saving = await browser.eval<{
-			elsewhere: string | null;
-			metas: Array<string | null>;
-		}>(`(() => ({
-			metas: [...document.querySelectorAll('[aria-label="Board status"] .meta')].map(node => node.textContent),
-			elsewhere: document.querySelector(".chip-elsewhere")?.textContent ?? null,
-		}))()`);
-		expect(saving.elsewhere).toBeNull();
-		expect(saving.metas).toContain("In the vault");
-		expect(saving.metas.some((text) => /unsaved/.test(text ?? ""))).toBe(false);
+		// A board saving normally carries no note warning in the header or its pane tab.
+		const saving = await browser.eval<string[]>(NOTE_MARKS);
+		expect(saving).toEqual([]);
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS * 4,
 );
@@ -291,14 +291,19 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 		body: { clientId: paneClient, upserts: [authBefore] },
 	});
 	expect(conflict.status).toBe(409);
+	// The hold raises its recovery dialog once; the person may decide later.
+	await pollUntil(
+		() => browser.eval<boolean>("document.querySelector('[role=\"alertdialog\"]') !== null"),
+		Boolean,
+		"the board-stopped-saving dialog to open",
+		{ timeoutMs: 3_000 },
+	);
 	const stopped = await pollUntil(
 		async () => ({
 			held: (await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)).body.held,
-			mark: await browser.eval<string | null>(
-				'document.querySelector(".chip-held")?.textContent ?? null',
-			),
+			mark: (await browser.eval<string[]>(NOTE_MARKS)).join(" "),
 		}),
-		(value) => value.held?.board === RECOVERY_BOARD && /not saving/.test(value.mark ?? ""),
+		(value) => value.held?.board === RECOVERY_BOARD && /[Nn]ot saving/.test(value.mark),
 		"the note hold and its rendered status",
 		{ timeoutMs: 3_000 },
 	);
@@ -361,6 +366,13 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 	expect(saved.status).toBe(200);
 	expect(saved.body.resolvedHold?.outcome).toBe("elsewhere");
 	expect(saved.body).not.toHaveProperty("panes");
+	// The save-elsewhere resolved the hold, so the dialog raised for it closes on its own.
+	await pollUntil(
+		() => browser.eval<boolean>("document.querySelector('[role=\"alertdialog\"]') === null"),
+		Boolean,
+		"the resolved hold to close its recovery dialog",
+		{ timeoutMs: 3_000 },
+	);
 	const claimedAfterRecovery = await request(`/api/boards/hold?board=${RECOVERY_BOARD}`, {
 		method: "POST",
 		body: { clientId: "another-writer" },
@@ -402,9 +414,7 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 		panes.body.panes.some((pane) => pane.clientId === paneClient && pane.board === RECOVERY_BOARD),
 	).toBe(true);
 	expect(await focusedBoardTitle(browser)).toContain(RECOVERY_BOARD);
-	expect(
-		await browser.eval<string | null>('document.querySelector(".chip-held")?.textContent ?? null'),
-	).toBeNull();
+	expect(await browser.eval<string[]>(NOTE_MARKS)).toEqual([]);
 	expect((await readHoldCounters(browser)).pending).toBe(0);
 
 	const countsBefore = await readHoldCounters(browser);
@@ -457,9 +467,7 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 	]);
 	expect(finished.pending).toBe(0);
 	expect(finished.reports).toBeGreaterThan(countsBefore.reports);
-	expect(
-		await browser.eval<string | null>('document.querySelector(".chip-held")?.textContent ?? null'),
-	).toBeNull();
+	expect(await browser.eval<string[]>(NOTE_MARKS)).toEqual([]);
 	expect(
 		finalPanes.body.panes.some(
 			(pane) => pane.clientId === paneClient && pane.board === RECOVERY_BOARD,

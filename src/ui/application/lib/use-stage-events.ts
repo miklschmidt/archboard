@@ -1,4 +1,4 @@
-// What the stage element hears for the whole application: Escape leaves path
+// What the application hears around the stage: Escape (on the document) leaves path
 // focus, and a pointer on a pane focuses that pane. Both are captured before
 // Excalidraw so they work whatever tool is active.
 
@@ -56,10 +56,13 @@ function useStageEvents(stage: HTMLDivElement | null, events: StageEvents): void
 			}
 		}
 		const options: AddEventListenerOptions = { capture: true, passive: true };
-		stage.addEventListener("keydown", onKeyDown, options);
+		// Escape is heard on the document: after a presentation ends, focus may rest
+		// on the body, and the mode must still leave on the key that leaves modes.
+		const owner = stage.ownerDocument;
+		owner.addEventListener("keydown", onKeyDown, options);
 		stage.addEventListener("pointerdown", onPointerDown, options);
 		return () => {
-			stage.removeEventListener("keydown", onKeyDown, options);
+			owner.removeEventListener("keydown", onKeyDown, options);
 			stage.removeEventListener("pointerdown", onPointerDown, options);
 		};
 	}, [stage, events]);

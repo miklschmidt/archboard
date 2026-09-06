@@ -54,6 +54,8 @@ interface OpenerSettingsDialogProps {
 	/** Restore the platform default; the host persists it. */
 	onReset: () => void;
 	onOpenChange: (open: boolean) => void;
+	/** Where focus returns when the dialog closes: the control that opened it. */
+	finalFocus?: () => HTMLElement | null;
 }
 
 export type {

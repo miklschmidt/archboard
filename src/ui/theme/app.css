@@ -114,7 +114,9 @@
 	--secondary: oklch(0.967 0.001 286.375);
 	--secondary-foreground: oklch(0.21 0.006 285.885);
 	--muted: oklch(0.97 0 0);
-	--muted-foreground: oklch(0.556 0 0);
+	/* Darker than the preset's 0.556: secondary text must clear 4.5:1 on the
+	   pale stone sidebar and inspector, not only on chalk white. */
+	--muted-foreground: oklch(0.5 0 0);
 	--accent: oklch(0.97 0 0);
 	--accent-foreground: oklch(0.205 0 0);
 	--destructive: oklch(0.577 0.245 27.325);
@@ -198,6 +200,25 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+	}
+}
+
+/* The one vendor-selector adapter: a presented pane shows its canvas alone.
+   Excalidraw's own chrome (toolbar, menu, footer) stays mounted and returns
+   with the workspace; only the presentation hides it. */
+[data-slot="canvas-stages"][data-presenting]
+	.excalidraw
+	:is(.layer-ui__wrapper, .App-menu, .App-toolbar-container) {
+	display: none;
+}
+
+/* Forced colours drop box-shadow, which is how the focus ring is drawn, so
+   keyboard focus would vanish. Unlayered on purpose: it must win over the
+   utilities' `outline-none`. */
+@media (forced-colors: active) {
+	:focus-visible {
+		outline: 2px solid CanvasText;
+		outline-offset: 1px;
 	}
 }
 

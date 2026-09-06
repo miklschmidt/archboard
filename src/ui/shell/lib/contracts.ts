@@ -66,6 +66,8 @@ interface ShellNotice {
 interface LivePresentation {
 	kind: "live";
 	paneId: string;
+	/** A refused exit, in plain words, shown where the person is: in the presentation. */
+	error?: string | null;
 }
 
 /** The presented pane has lost its connection; the person is told and can leave. */

@@ -25,7 +25,10 @@ import { Separator } from "@/ui/components/separator";
 function AgentSettingsDialog(props: AgentSettingsDialogProps): React.JSX.Element {
 	return (
 		<Dialog open={props.open} onOpenChange={props.onOpenChange}>
-			<DialogContent className="max-h-[calc(100vh-4rem)] overflow-y-auto sm:max-w-lg">
+			<DialogContent
+				className="max-h-[calc(100vh-4rem)] overflow-y-auto sm:max-w-lg"
+				finalFocus={props.finalFocus}
+			>
 				<DialogHeader>
 					<DialogTitle>Agent settings</DialogTitle>
 					<DialogDescription>

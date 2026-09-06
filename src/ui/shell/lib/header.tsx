@@ -25,6 +25,9 @@ import type { BoardHold, BoardIdentity, LockHolder, NoteWrittenElsewhere } from 
 
 const ICON_BUTTON_CLASS = buttonVariants({ variant: "ghost", size: "icon-sm" });
 
+/** The settings menu trigger's id: the dialogs it opens return focus to it. */
+const SETTINGS_TRIGGER_ID = "shell-settings";
+
 /** Inputs for the header. */
 interface HeaderProps {
 	current: BoardIdentity;
@@ -251,7 +254,11 @@ function SettingsItem(props: SettingsItemProps): React.JSX.Element {
 function SettingsMenu(props: ActionsProps): React.JSX.Element {
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger className={ICON_BUTTON_CLASS} aria-label="Settings">
+			<DropdownMenuTrigger
+				id={SETTINGS_TRIGGER_ID}
+				className={ICON_BUTTON_CLASS}
+				aria-label="Settings"
+			>
 				<RiSettings3Line />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="end" className="w-44">
@@ -322,4 +329,4 @@ function Header(props: HeaderProps): React.JSX.Element {
 	);
 }
 
-export { Header, type HeaderProps };
+export { Header, SETTINGS_TRIGGER_ID, type HeaderProps };
