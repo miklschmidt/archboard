@@ -129,7 +129,7 @@ const claimContract = defineCommand({
 			result.created
 				? `"${result.board}" is yours until ${until}, or until you release it.`
 				: `Your claim on "${result.board}" now runs to ${until}.`
-		} Every write you make to it goes under the claim, and nobody else writes to it meanwhile. The person at the canvas can take it back at any moment — you will be told, and what you have already written stays. Leave the board sensible after each write, or work on a variant and swap. Release it with \`archboard release --board ${result.board}\`.`;
+		} Every write you make to it goes under the claim, and nobody else writes to it meanwhile. Panes showing it are read-only to people until you release it; a person can release your claim with one explicit control, you will be told, and what you have already written stays. Leave the board sensible after each write. Release it with \`archboard release --board ${result.board}\`.`;
 		return { result: ClaimResultSchema.parse(result), diagnostics: [diagnostic] };
 	},
 });
