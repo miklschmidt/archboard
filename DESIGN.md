@@ -1,296 +1,127 @@
 # Design and Codex integration
 
-What archboard is building on top of its Excalidraw base, and how it plugs into
-Codex + GPT-Live voice.
-
-The approved visual direction for the application chrome is the
-[operator canvas shell reference](docs/design/operator-canvas-shell.md). It
-separates the composition and visual language to adopt from the mockup details
-that do not represent real product state.
-
-Archboard’s shell is desktop-only. Do not plan, implement, or gate phone/narrow
-responsive layouts unless the user explicitly reverses this decision.
-
-Everything below marked "verified" was established by reading the Codex source
-at commit `f5a3dc5540` or by testing this build. Nothing here is inferred from
-documentation.
-
-## What the base gives us, and what it doesn't
-
-Archboard starts from [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw)
-v2.0.0 because the expensive part — the Excalidraw element schema, bindings,
-rendering, mermaid conversion, and a command surface — was already solved
-there. Archboard retained the CLI and later deleted the duplicated MCP
-transport (ADR 0008). What the base does not give us:
-
-| Gap                                    | Why it blocks us                                                                                                                     |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `describe` ignores `customData`/`link` | The agent's primary read path is blind to the semantic model                                                                         |
-| No persistence                         | In-memory; "current vs proposed" work cannot survive a restart                                                                       |
-| No multi-document                      | One global canvas; no variants, no per-project boards                                                                                |
-| No change-event feed                   | Nothing to react to when the human draws. The current feed can deliver a settled semantic change to one explicitly linked workhorse. |
-
-**We are not staying mergeable.** Archboard diverges for our use case without
-regard for whether upstream would accept the change. Restructure freely: rename
-things, delete what we don't use, break their conventions where ours are better.
-The `upstream` remote is kept for reference and occasional cherry-picking, not
-as a merge target.
-
-Note this was not the original plan — the early docs and commits optimised for
-upstreamability. If something looks conservative for no reason, that is why, and
-it can go.
+What archboard builds on its Excalidraw base and how it plugs into Codex and
+GPT-Live voice. Everything marked verified was established by reading the Codex
+source at commit `f5a3dc5540` or by testing this build. The visual direction
+for the chrome is the [operator canvas shell reference](docs/design/operator-canvas-shell.md).
 
 ## The constraint that drives the design
 
-**The GPT-Live voice model never sees tool calls or tool results.**
-
-Verified at `codex-rs/core/src/session/turn.rs:1732` (`realtime_text_for_event`).
-Tool-call events, exec events, web search, and patch application all return
-`None`. Only two things reach the voice layer:
-
-- `AgentMessage` prose
-- approval/elicitation prompts
-
-Backend text is prefixed `[BACKEND] ` and truncated to a **1,000-token budget**
-(`realtime_conversation.rs:91`).
+**The GPT-Live voice model never sees tool calls or tool results** (verified:
+`codex-rs/core/src/session/turn.rs`, `realtime_text_for_event`). Only agent
+prose and approval prompts reach it, prefixed `[BACKEND] ` under a 1,000-token
+budget. The realtime session is one long-lived thread on the Codex `Session`,
+feature-gated off by default, and delegation crosses as one opaque text
+envelope capped at 4 KiB; a second delegation mid-turn steers the running turn.
 
 So no amount of `describe` quality reaches the voice model directly. The Codex
-thread reads the canvas and **re-narrates it in prose**. Our output target is
-therefore not "complete scene dump" but "something an agent can compress into a
-spoken sentence":
-
-> not: 47 elements, ids, coordinates
-> but: "Postgres is talking to three services directly, two of which also go
-> through the queue"
-
-This single fact should shape every read-path decision in the fork.
-
-## How the voice channel actually works (verified)
-
-- It is **in this repo**, not the closed desktop app:
-  `codex-rs/core/src/realtime_conversation.rs` (2,478 lines). Model
-  `gpt-live-1-boulder-alpha`.
-- Feature-gated **off by default**: `Feature::RealtimeConversation`,
-  `Stage::UnderDevelopment`, `default_enabled: false`
-  (`codex-rs/features/src/lib.rs:1457`).
-- **One long-lived thread**, not one per interaction. The realtime session is a
-  field on the Codex `Session` (`core/src/session/session.rs:60`) and starting
-  it requires an existing thread id.
-- Delegation crosses as a **single opaque text string** wrapped in an envelope:
-
-```xml
-<realtime_delegation>
-  <input>run ls</input>
-  <transcript_delta>user: Hi how are you
-assistant: Doing well, what can I help you with?
-user: run ls</transcript_delta>
-</realtime_delegation>
-```
-
-Both fields capped at 4 KiB. A second delegation mid-turn **steers** the running
-turn rather than starting a new one.
+thread reads the canvas and re-narrates it in prose. Every read path therefore
+targets what an agent can compress into a spoken sentence, not a complete scene
+dump: "Postgres is talking to three services directly, two of which also go
+through the queue", never 47 elements with ids and coordinates.
 
 ## Three channels, three jobs
 
 ### 1. Turn-start baseline — owned thread context
 
-The configured app-server child is already the turn boundary, so Archboard
-supplies context there instead of installing a hook into the user's global
-Codex configuration. New workhorses receive the exact tracked shared developer
-instructions at `thread/start`. A turn that Archboard starts on an attached
-workhorse carries those instructions once as `additionalContext.archboard` with
-kind `application`; merely linking, rejoining, or reconnecting changes no thread
-configuration.
-
-A voice coordinator receives the shared instructions plus its exact tracked
-role extension when Archboard starts the coordinator thread. Each realtime V3
-start includes Codex startup context, the same coordinator role instructions,
-and a compact role-bearing semantic brief. The brief fits the generated
-128-item and 8,192-estimated-token limits and names the repository, workhorse,
-coordinator, board, pane, version, selection, claim, doing state, change cursor,
-and compact board description.
-
-There is no `canvas-hook` process, hook trust grant, global `hooks.json` edit, or
-second context diff. The semantic change feed owns compact deltas; the thread
-start and realtime adapters only choose when and where to deliver them.
+The configured app-server child is the turn boundary, so Archboard supplies
+context there rather than through the user's global Codex configuration. New
+workhorses receive the tracked shared developer instructions at `thread/start`;
+a turn Archboard starts carries them once as `additionalContext.archboard`.
+Linking, rejoining or reconnecting changes no thread configuration. A voice
+coordinator receives the same instructions plus its role extension, and each
+realtime start carries a compact role-bearing semantic brief (repository,
+workhorse, coordinator, board, pane, version, selection, claim, doing state,
+change cursor, board description) within the generated item and token limits.
+There is no hook process, hook trust grant or second context diff.
 
 ### 2. Mid-conversation context — the bound app-server session
 
 The workbench owns one private stdio app-server child and one explicit thread
-link from a pane to its workhorse. That link is the only automatic target for
-semantic board updates. Archboard does not inspect recent activity, count loaded
-threads, read an environment-selected thread id, or connect a second client.
-The former control-socket path is retired and unavailable.
+link from a pane to its workhorse; that link is the only automatic target for
+semantic board updates. Archboard never inspects recent activity, reads an
+environment-selected thread, or connects a second client. The child runs in an
+Archboard-only `CODEX_HOME` and `CODEX_SQLITE_HOME` with its own sign-in, and
+an epoch manifest outside Codex storage makes every prior-child thread
+inspect-only: an operational boundary against cold resume of persisted dynamic
+tools, not protection against a process pointed at those paths on purpose.
 
-The child runs in an Archboard-only `CODEX_HOME` and `CODEX_SQLITE_HOME` with a
-separate supported sign-in. An epoch manifest outside Codex storage makes every
-prior-child thread inspect-only. This avoids accidental cold resume of persisted
-dynamic tools and queued work; it is an operational boundary, not protection
-against a same-user process intentionally pointed at those private paths.
-
-The existing change feed settles a person's gesture, discards visual noise, and
-renders a compact semantic delta. Immediately before delivery, Archboard
-revalidates the child, epoch, pane link, loaded membership, controllability,
-thread status, semantic cursor, and origin. A human or mixed-origin layout or
-structural update gets one `thread/inject_items` attempt on the same owned
-connection. The payload is one developer message with one `input_text` part, so
-it enters model-visible history without starting a turn. Agent-only and cosmetic
-updates are discarded. Each event settles once as `delivered`, `not_delivered`
-with a reason, or `outcome_unknown` after a lost response. Archboard never
-retries an unknown mutation, falls back to turn or steer, or selects another
-thread.
+The change feed settles a person's gesture, discards visual noise and renders
+a compact semantic delta. Immediately before delivery Archboard revalidates the
+child, epoch, pane link, loaded membership, controllability, thread status,
+semantic cursor and origin. A human or mixed-origin layout or structural update
+gets one `thread/inject_items` attempt on the same owned connection: one
+developer message with one `input_text` part, entering model-visible history
+without starting a turn. Agent-only and cosmetic updates are discarded. Each
+event settles once as `delivered`, `not_delivered` with a reason, or
+`outcome_unknown` after a lost response; Archboard never retries an unknown
+mutation, falls back to turn or steer, or selects another thread.
 
 Realtime voice attaches to a persistent fast coordinator thread linked to the
-pane's workhorse, not to the workhorse itself. This keeps low-latency questions,
-web and repository lookups, and immediate board interaction responsive while a
-heavier turn continues. The coordinator has normal Codex capabilities and may
-perform one explicit unambiguous board operation directly; sustained code or
-repository work defaults to delegation. Busy unrelated work uses the app-server
-thread queue only for an Archboard-created workhorse with proven persistent
-instructions; an attached busy workhorse can be steered with exact context or is
-refused until idle. App-server lifecycle events notify the coordinator without a
-blocking wait.
+pane's workhorse, not to the workhorse itself, so quick questions, lookups and
+immediate board interaction stay responsive while a heavier turn continues. The
+coordinator may perform one explicit unambiguous board operation directly;
+sustained work defaults to delegation. Busy unrelated work uses the app-server
+thread queue only for an Archboard-created workhorse; an attached busy
+workhorse can be steered with exact context or is refused until idle.
 
-Spoken approval is state-gated. Realtime V3 cannot emit a typed tool verdict, so
-a later ordinary coordinator turn classifies one host-bound final user reply and
-calls a dedicated typed resolver. After the effect prompt, only the next
-matching final user item from the same realtime session may arm the immutable
-request. Its item id and monotonic sequence are part of the authority.
-Assistant output, provisional user deltas, pre-prompt items, duplicates, and
-stale sessions cannot arm it. A request blocking that coordinator remains
-visual-only. Target, effect, child epoch, realtime session, and expiry are
-compare-and-swapped before one-time execution.
+Spoken approval is state-gated. Realtime cannot emit a typed tool verdict, so a
+later ordinary coordinator turn classifies one host-bound final user reply and
+calls a dedicated typed resolver. Only the next matching final user item from
+the same realtime session may arm the immutable request; its item id and
+sequence are part of the authority. Assistant output, provisional user deltas,
+pre-prompt items, duplicates, and stale sessions cannot arm it. Target, effect,
+child epoch, realtime session and expiry are compare-and-swapped before
+one-time execution. A request that
+blocks the coordinator stays visual-only.
 
-Codex 0.151.0's experimental V3 contract provides startup context, role-bearing
-initial items, session instructions, realtime text append, and transcript-tail
-flush. Each start supplies a fresh semantic brief; while active, the coordinator
-receives the same human board deltas plus live pane and selection context. Its
-timeline remains distinct from the workhorse timeline and the UI cross-links
-delegations, queue changes, callbacks, approvals, and results. There is no
-second board snapshot or implicit thread selector.
-
-ADR 0019 supersedes ADR 0005's legacy control-socket route, opt-in environment
-switch, explicit thread environment variable, and loud-injection experiment.
+ADR 0019 supersedes ADR 0005.
 
 ### 3. On-demand query — CLI
 
-The agent pulls persisted board state with `archboard describe`, `query`,
-`changes`, and `compare`. Mermaid conversion, board rendering, inspection,
-snapshots, branches, and exports also need no browser. Only explicit
-`archboard browser` commands inspect or control live panes, selections, cameras,
-or pixels. The CLI auto-starts the canvas server when a command needs it.
+The agent pulls persisted board state with `describe`, `query`, `changes` and
+`compare`; conversion, rendering, inspection, snapshots, branches and exports
+need no browser, and only `browser` commands touch live panes. The CLI
+auto-starts the canvas server. The former MCP catalogue was retired (ADR 0008);
+the loopback REST interface remains the seam behind the CLI and browser.
 
-Archboard once maintained an MCP tool catalogue and dispatcher beside the CLI.
-Nothing in current use required a shell-less transport, and the duplicate
-interface added schemas, dispatch arms, docs, dependencies, and parity tests to
-every capability. ADR 0008 records why it was retired. The loopback REST
-interface remains the application seam behind the CLI and browser.
+## Security
 
-## Security — read before wiring the workbench
+A workbench that can answer approvals, send turns and expose coordination
+tools carries real authority, so the canvas server stays loopback-only while
+the workbench is enabled: loopback peer, loopback Host, same-origin HTTP and
+WebSocket. A browser lease owns interactive reverse requests and is explicitly
+transferred; a child exit invalidates every thread-ownership proof.
+Dynamic-tool mutations bind approval to child epoch, requesting thread and
+turn, target state and a canonical effect fingerprint, revalidated before
+dispatch; general waits join a session-owned wait-for graph that rejects
+cycles. Remote access must tunnel over SSH or run without the workbench.
 
-The shared control-socket route is retired. The private child does not remove
-the authority of a workbench that can answer approvals, send turns, and expose
-coordination tools.
-The canvas server therefore remains loopback-only while the workbench is
-enabled. Its browser bridge requires an actual loopback peer, loopback Host, and
-same-origin HTTP and WebSocket requests. A browser lease owns interactive
-reverse requests and is explicitly transferred; a child exit invalidates every
-thread-ownership proof.
+## What we are not doing
 
-Dynamic-tool mutations also bind approval to child epoch, requesting thread and
-turn, target state, and a canonical effect fingerprint. The target and effect are
-revalidated immediately before dispatch. General waits add edges to a
-session-owned wait-for graph and reject direct or transitive cycles before any
-operation begins.
-
-Remote desktop access must use an SSH tunnel that preserves the loopback
-boundary, or run without the workbench. A LAN-bound unauthenticated listener
-never receives a path to the app-server child.
-
-## What we're NOT doing
-
-**Patching Codex.** `codex-rs/core/src/context/world_state/` is a diff-only
-external-state engine — `snapshot()` + `render_diff()` per turn, full context on
-turn 1 and deltas thereafter. It is exactly the right abstraction for a canvas,
-and strictly better than a hook: in-process, structured, no re-sending unchanged
-text.
-
-But every `WorldStateSection` implementation is in-tree core Rust, assembled at
-startup. There is **no config or plugin surface** to register one. Using it means
-forking and maintaining Codex itself.
-
-Not worth it. The owned app-server session now supplies baseline instructions,
-turn context, quiet history injection, and realtime developer context without a
-Codex fork or a global `UserPromptSubmit` hook. Revisit the in-process extension
-only if Codex exposes a supported registration surface that materially simplifies
-that owned-session design.
+Patching Codex. Its in-tree `world_state` engine is the right abstraction for
+a canvas, but every section is core Rust with no plugin surface; using it means
+maintaining a fork. The owned app-server session supplies baseline
+instructions, turn context, quiet history injection and realtime context
+without that. Revisit only if Codex exposes a supported registration surface.
 
 ## Roadmap
 
-Ordered by dependency, not ambition. Backlog.md is authoritative —
-`backlog task list --plain`; this is the narrative version.
-
-**Done**
-
-- **`describe` surfaces the semantic model** (TASK-001). Nodes separated from
-  plain elements, grouped by kind, portable bindings described, bound labels
-  folded back into their containers, and a speakable summary line leading. It
-  degrades to a per-kind rollup on large scenes rather than dumping, which
-  absorbed most of what was originally a separate "compressed description mode"
-  item.
-- **Obsidian export preserves custom frontmatter** (TASK-002), so board
-  identity can live there. Prerequisite for everything multi-board.
-- **Selection published to the server** (TASK-004), so the agent can act on
-  what the human has picked rather than on ids nobody said out loud.
-- **Promotion** (TASK-005) — declare selected elements a node and bind it in
-  one gesture. The most touchscreen-native interaction in the product, and
-  where the node ids `compare` joins on come from.
-- **Multi-document** (TASK-003) — boards as individual vault files with
-  identity in frontmatter, reaching the element store and the WebSocket
-  protocol, not just the file layer. Includes the two-writer behaviour against
-  Obsidian (ADR 0006).
-- **`compare`** (TASK-007) — structured semantic diff between two variants,
-  joined on node identity. Structured output only; prose is the agent's job.
-  Written for **sufficiency, not narratability**: the consumer is a full agent
-  thread that narrates the result itself and can ask a follow-up question, so
-  nothing is summarised and nothing is truncated. Layout is carried as relative
-  structure — cluster membership, containment, grouping, region, coarse
-  direction, relative size — because a rearrangement is a statement about the
-  design but a coordinate delta is noise; the result names what that model
-  cannot express so the narrator does not overclaim.
-- **`panes`** (TASK-006) — what the human is currently looking at: per pane,
-  where it sits on the glass, which board and variant it holds, how much of that
-  board is in view, and what is picked in it. **View state only**, and that line
-  is load-bearing: it exists to resolve spatial deixis for a voice model that
-  cannot see the screen, which means it has to be affordable on every turn, which
-  it stops being the moment somebody inlines the elements to save a round trip.
-  `describe` and `compare` are where contents live.
-- **A board per pane** (TASK-021) — current beside proposed, which is the whole
-  reason panes exist. Opening a board addresses one pane: `board_switched`
-  reaches that pane's socket alone, only that pane's selection is retired, and
-  each board is saved against its own baseline. `panes` needed no new shape —
-  it already reported the board each pane adopted rather than a server-wide
-  one — only the loss of the line explaining why the two were always the same.
-  The hard half was authority, not display: with two boards on screen, "the
-  board" has no referent, so **every content call names one persisted board and
-  a missing name is refused with persisted choices** (ADR 0020). The active
-  pointer is deleted rather than defaulted, because a default is the same
-  ambient resolution in a costume. Panes keep one default, on the display axis
-  only: `board open` with a single pane on screen goes into it, with two it needs
-  `--pane`, and the answer always says where the board landed.
+Backlog.md is authoritative (`backlog task list --plain`); completed work is
+in its closed tasks and `docs/adr/`.
 
 **Later**
 
-- **Architecture node kinds** as a controlled vocabulary — service, queue,
-  datastore, gateway, external. Boxes-and-arrows with infra-flavoured types; no
+- **Architecture node kinds** as a controlled vocabulary: service, queue,
+  datastore, gateway, external. Boxes and arrows with infra-flavoured types, no
   resource graph underneath.
 
 ## Verified element metadata
 
-`customData` and human-authored `link` values survive the full round-trip in v2,
-including the frontend sync after a human drags an element. Archboard's semantic
+`customData` and human-authored `link` values survive the full round-trip,
+including the frontend sync after a human drags an element. Archboard's
 channel is `customData.archboard`; code bindings live there as portable
-metadata, not as stored local links.
+metadata, never as stored local links:
 
 ```json
 {
@@ -313,18 +144,10 @@ metadata, not as stored local links.
 }
 ```
 
-When an element is presented to a browser or API caller, archboard resolves the
-binding through this machine's checkout registry. A valid local file or
-directory gets an internal target addressed by board and element. If no local
-target exists, an exact `github.com/owner/repository` identity gets a validated
-GitHub HTTPS target at the recorded commit, branch, or `HEAD`. Other hosts get
-no invented target. The overlay exists only on an outbound copy and is stripped
-before the note is written.
-
-New presentations never emit `file://`. One upgrade edge remains deliberate: a
-pane may echo an old `file://` overlay after its checkout disappears. Without
-retaining presentation history, archboard cannot distinguish that value from a
-human-authored file link, so it preserves the value. While the canonical local
-target still resolves, the exact old overlay is recognized and removed.
-Elements synced from the browser are tagged `"source": "frontend_sync"`,
-distinguishing human edits from agent-authored elements.
+On the way out, archboard resolves the binding through this machine's checkout
+registry: a local target when the file or directory exists, otherwise a
+validated GitHub HTTPS target for an exact `github.com/owner/repository`
+identity, and no invented target for other hosts. The overlay exists only on
+an outbound copy and is stripped before the note is written; new presentations
+never emit `file://`. Elements synced from the browser are tagged
+`"source": "frontend_sync"`.
