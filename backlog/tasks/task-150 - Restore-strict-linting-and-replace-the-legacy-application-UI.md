@@ -1,10 +1,10 @@
 ---
 id: TASK-150
 title: Restore strict linting and replace the legacy application UI
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-06 18:20'
+updated_date: '2026-09-06 18:46'
 labels: []
 dependencies: []
 references:
@@ -35,7 +35,7 @@ Replace the retired application UI with the approved official shadcn Base UI, Ta
 - [x] #3 The application uses official pinned shadcn Base UI source in a shared component module, Tailwind for application layout and styling, and verified Remix Icon generation while product behavior remains in named modules. Shared official shadcn component source retains compiler, type-aware safety, React correctness and accessibility checks and is exempt only from authored-code style, module-layout and file-length rules. The workbench uses fresh official assistant-ui components compatible with the shadcn Base UI foundation and the existing Codex-owned product runtime.
 - [x] #4 The replacement presentation is built fresh from the approved shadcn preset and operator reference. Product logic copied from legacy/ is repaired in src/ui under full applicable checks. No legacy archive content enters any commit or active import/build graph, and no old application CSS, JSX controls, compatibility wrappers or parallel styling system remains.
 - [x] #5 Rendered desktop workflows preserve all canvas, navigation, persistence, recovery, text, voice, fullscreen, selection, binding and accessibility behavior in light and dark themes, with complete normal gates and honest manual evidence passing. Browser tests execute only in complete workflow verification after the rebuild is reported ready; all proposed browser-test replacements or behavioral rewrites require prior case-by-case approval by the orchestrating agent, with required behavior and accessibility coverage preserved.
-- [ ] #6 Keep non-UI repair deferred to TASK-151 and preserve completed corrections and user test deletions. After all in-scope implementation and complete workflow verification, perform the single final independent review of the fixed BASE..TARGET range; no interim review loops.
+- [x] #6 Keep non-UI repair deferred to TASK-151 and preserve completed corrections and user test deletions. After all in-scope implementation and complete workflow verification, perform the single final independent review of the fixed BASE..TARGET range; no interim review loops.
 - [x] #7 The official LiveKit wave visualizes model audio output only, integrated with the existing voice playback through an explicitly named output-level contract. Microphone input cannot drive it. No second voice backend or legacy meter remains; strict checks, accessible static/status presentation and final rendered verification cover the adaptation.
 <!-- AC:END -->
 
@@ -240,4 +240,16 @@ created: 2026-09-06 18:20
 ---
 Re-review of ea89db1c..a970611dddd3407412b6da21d9f67dd1cd7cc250: the running-turn submission P1 is resolved by 59549a59. Send remains available beside Stop; click and Enter reach the authoritative runtime handler. The rendered control tests pass. Standards: no findings; the vendor lint exception remains explicitly approved. TASK-153 quoting is also resolved. TASK-152 has one remaining P2 for existing text, recorded there; its new-draft case passes. Verification in a disposable checkout at TARGET with confined HOME/XDG/vault/Codex state and memory-limited sequential processes: lint, fmt:check, both TypeScript projects and frontend build passed; 11 focused module tests (board-version-conflict, note-version, composer-controls), 8 held-board recovery system tests, and the human-version-refusal (2 cases), claim-interaction and codex-text-workbench browser owners passed. A separate existing-text variation of the refusal browser owner failed as described on TASK-152. The probe changed only its disposable test setup, restored it afterwards, and never modified product source. This was focused re-verification, not a new complete bun run check.
 ---
+
+author: @codex
+created: 2026-09-06 18:46
+---
+Rebuilt the UI with the approved shadcn/Base UI, Tailwind, assistant-ui and model-output wave foundation while preserving product workflows. Strict UI policy remains active and non-UI adoption stays deferred to TASK-151. The running composer submission fix is accepted. Final independent acceptance at 044d2a8d: zero Standards findings and zero Spec findings. Direct comparison with the prior reviewed tree 348d4738 confirms only the remaining canvas correction and its browser coverage changed in product/test source; previously accepted composer and quoting fixes are preserved after squashing. Reviewer reran lint, fmt:check, both TypeScript projects, frontend build, 6 note-version module tests, all 3 human-version-refusal browser scenarios and the claim-interaction browser owner in a disposable checkout with confined external state. All passed. Initial browser setup failed because the reviewer temporary path exceeded the agent-browser Unix socket path limit; shortening the confined root resolved setup, with no product changes. Logs: /tmp/archboard-review-044d2a8d.log and /tmp/archboard-review-044d2a8d-browser.log. Claude/user reports complete bun run check passed at 52bdf08a; git comparison confirms 044d2a8d differs only in TASK-152 metadata. The reviewer reran focused gates, not the complete check. All three behavioral review findings are now resolved; the approved lint exception remains withdrawn. This acceptance supersedes earlier open/revision-required review comments.
+---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Rebuilt the UI with the approved shadcn/Base UI, Tailwind, assistant-ui and model-output wave foundation while preserving product workflows. Strict UI policy remains active and non-UI adoption stays deferred to TASK-151. The running composer submission fix is accepted. Final review accepted at 044d2a8d; reviewer focused lint/type/build/module/browser verification passed, with complete-check evidence from Claude at source-identical 52bdf08a.
+<!-- SECTION:FINAL_SUMMARY:END -->
