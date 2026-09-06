@@ -14,5 +14,6 @@ export {
 export {
 	useLibrary,
 	type LibraryController,
+	type LibraryOptions,
 	type PendingInstall,
 } from "@/ui/board-library/lib/use-library";

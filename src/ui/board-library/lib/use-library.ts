@@ -88,16 +88,34 @@ function failureMessage(failure: unknown): string {
 	return failure instanceof Error ? failure.message : String(failure);
 }
 
+/** Who hears a library failure the moment it happens, besides the dialog. */
+interface LibraryOptions {
+	/**
+	 * A read, a fetch or a save failed; the same words the dialog shows. Keep
+	 * the listener stable: the first read runs again when it changes.
+	 */
+	readonly onError?: (message: string) => void;
+}
+
 /**
  * The library, read from and written to the server.
+ * @param options Who hears a failure.
  * @returns The controller.
  */
-function useLibrary(): LibraryController {
+function useLibrary(options: LibraryOptions = {}): LibraryController {
 	const [items, setItems] = useState<LibraryItems>([]);
 	const [pending, setPending] = useState<PendingInstall | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [server] = useState(() => new ServerLibraryRecord());
+	const { onError } = options;
+	const fail = useCallback(
+		(message: string): void => {
+			setError(message);
+			onError?.(message);
+		},
+		[onError],
+	);
 
 	const persist = useCallback(
 		async (next: LibraryItems): Promise<void> => {
@@ -108,10 +126,10 @@ function useLibrary(): LibraryController {
 			try {
 				await putLibrary(next);
 			} catch (failure) {
-				setError(`The library could not be saved: ${failureMessage(failure)}`);
+				fail(`The library could not be saved: ${failureMessage(failure)}`);
 			}
 		},
-		[server],
+		[fail, server],
 	);
 
 	useEffect(() => {
@@ -126,35 +144,38 @@ function useLibrary(): LibraryController {
 			})
 			.catch((failure: unknown) => {
 				if (!cancelled) {
-					setError(`The library could not be read: ${failureMessage(failure)}`);
+					fail(`The library could not be read: ${failureMessage(failure)}`);
 				}
 			});
 		return () => {
 			cancelled = true;
 		};
-	}, [server]);
+	}, [fail, server]);
 
 	// Both entry points matter. A cold load carries the hash when the library
 	// site opened a new tab; a hashchange is the same trip landing back in the
 	// tab that started it. The hash is cleared before anything is fetched.
-	const offer = useCallback(async (candidate: string): Promise<void> => {
-		clearLibraryHash();
-		setError(null);
-		setBusy(true);
-		try {
-			const fetched = await fetchLibraryFrom(candidate);
-			setPending({
-				source: fetched.url.href,
-				host: fetched.url.hostname,
-				name: libraryName(fetched.url),
-				items: fetched.items,
-			});
-		} catch (failure) {
-			setError(failureMessage(failure));
-		} finally {
-			setBusy(false);
-		}
-	}, []);
+	const offer = useCallback(
+		async (candidate: string): Promise<void> => {
+			clearLibraryHash();
+			setError(null);
+			setBusy(true);
+			try {
+				const fetched = await fetchLibraryFrom(candidate);
+				setPending({
+					source: fetched.url.href,
+					host: fetched.url.hostname,
+					name: libraryName(fetched.url),
+					items: fetched.items,
+				});
+			} catch (failure) {
+				fail(failureMessage(failure));
+			} finally {
+				setBusy(false);
+			}
+		},
+		[fail],
+	);
 
 	useEffect(() => {
 		const requested = pendingLibraryUrl();
@@ -226,4 +247,4 @@ function useLibrary(): LibraryController {
 	};
 }
 
-export { useLibrary, type LibraryController, type PendingInstall };
+export { useLibrary, type LibraryController, type LibraryOptions, type PendingInstall };

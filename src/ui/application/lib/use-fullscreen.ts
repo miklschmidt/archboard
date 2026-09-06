@@ -2,7 +2,7 @@
 // shell's presentation derived from it: live while the presented pane is
 // connected, recovery once it is not.
 
-import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import {
 	createFullscreenPresentation,
@@ -12,6 +12,16 @@ import {
 import type { ShellPresentation } from "@/ui/shell";
 
 const IDLE: FullscreenPresentationSnapshot = Object.freeze({ paneId: null, error: null });
+
+/** Who hears the browser refuse, the moment it does. */
+interface FullscreenOptions {
+	/**
+	 * A refused entry names no pane and is cleared from the presentation once
+	 * heard: it belongs to the workspace the person is still in. A refused
+	 * exit names the presented pane and stays with the presentation.
+	 */
+	readonly onRefused?: (error: string, paneId: string | null) => void;
+}
 
 /** The presentation and the ref that gives it its root. */
 interface Fullscreen {
@@ -49,17 +59,40 @@ function idleSnapshot(): FullscreenPresentationSnapshot {
 
 /**
  * The fullscreen presentation.
+ * @param options Who hears a refusal.
  * @returns The presentation's ref, snapshot and moves.
  */
-function useFullscreen(): Fullscreen {
+function useFullscreen(options: FullscreenOptions = {}): Fullscreen {
 	const [presentation, setPresentation] = useState<FullscreenPresentation | null>(null);
 	const [stage, setStage] = useState<HTMLDivElement | null>(null);
 	const owned = useRef<FullscreenPresentation | null>(null);
+	// The presentation is created once per stage element and outlives any one
+	// render's listener; it reads the latest through this ref.
+	const refused = useRef(options.onRefused);
+	useEffect(() => {
+		refused.current = options.onRefused;
+	}, [options.onRefused]);
 
 	const attachStage = useCallback((element: HTMLDivElement | null): void => {
 		owned.current?.rootRemoved();
 		owned.current?.dispose();
-		owned.current = element === null ? null : createFullscreenPresentation(element);
+		owned.current =
+			element === null
+				? null
+				: createFullscreenPresentation(element, {
+						/**
+						 * The browser refused; a refused entry is the workspace's notice, not
+						 * the presentation's error.
+						 * @param error The refusal's words.
+						 * @param paneId The presented pane, or null after a refused entry.
+						 */
+						onRefused: (error: string, paneId: string | null): void => {
+							refused.current?.(error, paneId);
+							if (paneId === null) {
+								owned.current?.clearError();
+							}
+						},
+					});
 		setPresentation(owned.current);
 		setStage(element);
 	}, []);
@@ -115,4 +148,4 @@ function shellPresentationOf(
 	};
 }
 
-export { shellPresentationOf, useFullscreen, type Fullscreen };
+export { shellPresentationOf, useFullscreen, type Fullscreen, type FullscreenOptions };
