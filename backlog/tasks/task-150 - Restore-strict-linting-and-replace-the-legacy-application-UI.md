@@ -4,7 +4,7 @@ title: Restore strict linting and replace the legacy application UI
 status: In Progress
 assignee: []
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-06 12:18'
+updated_date: '2026-09-06 16:24'
 labels: []
 dependencies: []
 references:
@@ -211,3 +211,13 @@ Complete bun run check passed on 3b4f316f in an isolated worktree with a confine
 
 Acceptance 2026-09-06: AC 1–5 and 7 checked from the children's verified summaries and the complete bun run check on 3b4f316f (lint baseline TASK-150.01; foundation and component policy TASK-150.02; fresh presentation, ported logic and zero archive bytes TASK-150.03/.04/.05/.07; rendered workflows, accessibility and the serial browser lane TASK-150.06; model-output-only wave with the voice-output-level contract TASK-150.07/.06). AC 6 stays open until the user's final independent review of 0d1706d0..3b4f316f; the task stays In Progress for that reason.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @codex
+created: 2026-09-06 16:24
+---
+Final independent review of 0d1706d06b21df1c72910a640dadad35cd37234a..28e148acd599f702fe895ed1519a6510322714da: changes require revision. Standards: [P2] src/ui/.oxlintrc.jsonc:210 disables correctness-category jsx-a11y/prefer-tag-over-role across all listed vendor files. The specific upstream div role=group rationale warrants statement-level exceptions, not a broad accessibility override; parent and TASK-150.02 retain accessibility checks and require statement-level additional suppressions. Spec: [P1] src/ui/workbench-thread/thread.tsx:240 hides Send while isRunning; assistant-ui ComposerInput also blocks Enter while running without a queue capability, which runtime.tsx does not configure. Steer and Queue instead therefore cannot submit through the actual controls during a running turn. Preserve pointer and keyboard submission through the authoritative intent handler alongside Stop; mounted-runtime tests currently bypass controls through composer.send(). TASK-152 and TASK-153 each have a separate confirmed spec finding recorded on their task. Verification at pinned TARGET in /tmp/archboard-final-review-28e148ac, confined state and memory-limited scope: lint, formatting, both TypeScript projects, frontend build and 2657 module tests passed. The complete check command stopped after 308 system passes and one public-start cleanup failure caused by inherited LOG_FILE_PATH; TASK-150.06 documents that this owner requires the variable unset. All 8 cases in that owner passed with LOG_FILE_PATH unset and confined XDG state. The 9 repository tests and full 19-owner serial browser lane then passed. No implementation files changed; this is a review, not a fix or acceptance. No live server or user vault used. Final independent review has been performed; TASK-150 remains In Progress because acceptance is blocked by these findings.
+---
+<!-- COMMENTS:END -->
