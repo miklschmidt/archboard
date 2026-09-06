@@ -1,231 +1,52 @@
 ---
 name: archboard-dev
-description: Procedures for working on archboard itself — rebuilding with bun, syncing skills, cherry-picking from upstream mcp_excalidraw rather than merging it, and verifying the canvas round-trip end to end with a browser attached. Use when changing this repo's own source, taking a fix from upstream, or checking that a canvas change actually works.
+description: Working on archboard's own source — restart semantics, taking a fix from upstream without merging, syncing the tracked skills, and the handful of facts that are not derivable from the code and will otherwise cost an afternoon. Use when changing this repo, cherry-picking from upstream, or verifying a canvas change.
 ---
 
 # Working on archboard
 
-Always-on context lives in `AGENTS.md`; fork rationale and roadmap in
-`DESIGN.md`. This skill is the procedural half: how to actually do the recurring
-jobs.
-
-## After changing source
-
-There is no build step for the server or the CLI. bun runs the TypeScript, so
-`./bin/canvas` picks up a source change on the next command (ADR 0014). Two
-things still do not:
-
-```bash
-bunx vite build     # src/ui/ changed -> dist/frontend/
-./bin/canvas stop && ./bin/canvas start   # src/ that the SERVER executes changed
-```
-
-A running process read its source at start, so a server route keeps its old
-behaviour until it is restarted while the CLI already has the new one. That
-split is what made TASK-056 confusing.
-
-**A restart costs the process and nothing on a saving board** — every write
-already went to its note (ADR 0015). The one exception is a _held_ board
-(TASK-079), one whose write was refused because the note changed underneath:
-its changes since live in the canvas process and in no note, and `board list`
-shows a `held` block for it. Check for one before restarting. What a restart
-does drop is the tabs' sockets, the panes and the change feed's cursor, so
-when you are working on the server itself, use the guarded restart:
-
-```bash
-./bin/canvas stop
-./bin/canvas start
-```
-
-**Saving a backend file does not reload anything.** The server never runs with
-`--hot`, `--watch`, or restart-on-save. The Canvas application lifetime owns
-construction and reverse-order teardown of process resources. Stop refuses if
-a held board contains work that exists only in memory and names all three
-recovery choices. `bun run dev` adds an independent Vite process; only the
-frontend bundle uses browser HMR.
-
-This box has node + bun but **no npm/npx**. The `package.json` scripts shell out
-to bun, so use `bun run <script>` — never `npm run`. `bun install` intermittently
-fails extracting a tarball — run it again.
-
-## Verify the boundary that changed
-
-Named-board work is browser-free. Use a disposable vault and one explicitly
-named disposable board. Confirm zero WebSocket clients before exercising reads,
-writes, Mermaid conversion, PNG/SVG rendering, finding close-ups, inspection,
-snapshots, branches, and exports. Do not open a pane as setup for those checks.
-
-```bash
-export ARCHBOARD_VAULT=/path/to/disposable-vault
-./bin/canvas start
-./bin/canvas status # browserClients must be 0
-probe_board=archboard-dev-probe
-./bin/canvas board new "$probe_board" --level module
-cat <<'EOF' | ./bin/canvas add --board "$probe_board" --doing "drawing a probe box"
-[{"type":"rectangle","x":100,"y":100,"width":300,"height":120,
-  "backgroundColor":"#e3f2fd",
-  "label":{"text":"Probe"},
-  "customData":{"archboard":{"node":"probe","kind":"service"}}}]
-EOF
-./bin/canvas describe --board "$probe_board"                # reads as 1 node, not 1 rectangle
-./bin/canvas query --board "$probe_board" --type rectangle  # metadata remains visible
-```
-
-Every command that touches a board names it, and one that does not is refused
-(ADR 0020). Every command that _changes_ a board also says what it is doing and
-is refused without it (TASK-095). The browser-client count remains zero through
-this probe.
-
-Metadata goes under `customData.archboard` (ADR 0003) — namespaced, never flat,
-because the Obsidian plugin writes its own top-level keys. The explicit
-`backgroundColor` above is only there to show one being honoured — since
-TASK-009 a shape gets a fill on its own (`src/shared/appearance/appearance.ts`), which is
-what makes its interior tappable.
-
-Open <http://127.0.0.1:3000> only when the change concerns a live browser
-workflow or Excalidraw round-trip fidelity. Once the browser connects, inspect
-the existing pane and point it at the disposable board:
-
-```bash
-./bin/canvas browser panes --text
-./bin/canvas browser show "$probe_board" --pane primary
-```
-
-Only after that display step, drag the box and re-run `query`. The position,
-`customData`, and any human-authored link must survive.
-A bound code link is different: `query` may present one derived from the
-portable binding and this machine's checkout registry, but the note must never
-store it. That frontend round-trip is where metadata gets silently dropped or
-presentation data leaks into persistence; the retained real-browser checks own
-it.
-
-Elements that came back through the browser are tagged
-`"source": "frontend_sync"`.
-
-To exercise explicit live interaction, click the box in the browser after the
-display step. Read the structured selection, extract its `elementIds` with the
-existing Bun runtime, and pass those ids to the board write:
-
-```bash
-selection_json="$(./bin/canvas browser selection --pane primary)"
-ids="$(bun -e 'process.stdout.write(JSON.parse(await Bun.stdin.text()).elementIds.join(","))' \
-  <<<"$selection_json")"
-./bin/canvas promote --board "$probe_board" --ids "$ids" --kind service --name "Probe" \
-  --path src/runtime/engine/promote.ts --doing "calling the probe box a service"
-```
+Always-on rules are in `AGENTS.md`; procedures for running and verifying the
+canvas are in `TESTING.md`. This skill holds only what neither the code nor
+those documents will tell you.
 
 ## Taking something from upstream
 
-Archboard is **not** kept mergeable with `yctimlin/mcp_excalidraw`. Do not run
-`git merge upstream/main` — it will drag in conventions we have deliberately
-replaced. Restructure freely; upstream's opinion is not a constraint.
-
-The remote is kept for reference and for cherry-picking a specific fix:
+Archboard is not kept mergeable with `yctimlin/mcp_excalidraw`. Never
+`git merge upstream/main`; it drags back conventions this repo replaced. The
+remote exists for reference and for taking one specific fix:
 
 ```bash
 git fetch upstream
-git log --oneline HEAD..upstream/main            # what changed there
-git log -p upstream/main -- path/to/file.ts      # read before taking
-git cherry-pick <sha>                            # only when it clearly applies
-bun run type-check && bun run test               # always check after
+git log -p upstream/main -- path/to/file.ts   # read before taking
+git cherry-pick <sha>                          # only when it clearly applies
+bun run check
 ```
 
-Prefer reading their fix and reimplementing it our way over importing their
-structure wholesale.
+Prefer reimplementing their fix our way over importing their structure. The npm
+package `mcp-excalidraw-server` is releases behind the git tag; never install it.
 
 ## Syncing skills
 
-```bash
-bun scripts/sync-skills.ts       # skills/ -> .agents/skills/ -> .claude/skills/
-skills experimental_install       # third-party, from skills-lock.json
-```
+`skills/` is the single tracked source; `bun scripts/sync-skills.ts` replaces
+`.agents/skills/` and `.claude/skills/` from it, leaving third-party skills
+(`skills experimental_install`, pinned in `skills-lock.json`) alone.
+`~/.agents/skills/archboard` symlinks into the synced copy so other repos use
+the same canvas skill. Keep the `archboard` skill free of machine-specific
+paths; it runs outside this repo.
 
-`skills/` is the single tracked source: every subdirectory with a `SKILL.md` is
-synced, so adding a skill is just adding a directory. The sync replaces rather
-than overlays, so deleted files don't linger, and it leaves the third-party
-skills in `.agents/skills/` alone.
+## Facts that will mislead you
 
-`archboard` is used outside this repo too, so keep it portable — **no
-machine-specific paths**. It names both `archboard` (the package's single bin,
-for use outside the repo) and `./bin/canvas` (inside it), so it works in both
-places without local patching.
-Maintainer-facing skills like this one may reference repo paths freely.
-
-`~/.agents/skills/archboard` is a symlink to this repo's synced copy, so
-the canvas skill is available in other repos and cannot drift. Re-running the
-sync updates it automatically.
-
-## Things that will mislead you
-
-- **npm `latest` is 1.1.0**, two releases behind. Upstream tags v2.0.0 in git but
-  never published it. Never `bun add mcp-excalidraw-server`; build from source.
-- **A shape with `backgroundColor: transparent` is only hit-testable on its
-  stroke** — with one exception that will waste an afternoon if you don't know
-  it. Excalidraw's rule is `!isTransparent(backgroundColor) ||
-hasBoundTextElement(el) || ...`, so a _labelled_ transparent shape does hit-test
-  inside and an unlabelled one does not. A test built on a labelled probe
-  therefore passes whether or not fills work. Since TASK-009 shapes are filled
-  by default (`src/shared/appearance/appearance.ts`), so this only bites on shapes made
-  before that or explicitly opted out with `"backgroundColor": "transparent"`.
-- **`describe` degrades above 120 nodes** to a per-kind rollup rather than
-  dumping every node. That is deliberate (narratability); use `query` when you
-  need the exhaustive set.
-- **The note is the board, and the canvas holds no copy of one** (ADR 0015).
-  Every write — an agent's `add`, a human's drag — goes to the note, so there
-  is nothing unsaved and a restart loses nothing on a saving board. `scratch`
-  included: its note is `<vault>/.archboard/scratch.excalidraw.md` and the
-  canvas picks it up at start. The exception is a held board (TASK-079), whose
-  changes since the refusal live only in the canvas process.
-- **Everything needs `ARCHBOARD_VAULT`**, and there is no default. Without it
-  the canvas refuses to start, so a shell missing it fails before whatever you
-  were testing runs. Set it before `./bin/canvas start` — the canvas server
-  does the vault I/O, so exporting it after the server is up changes nothing.
-- **Any write can be refused, and that is the design** (ADR 0006). archboard
-  verifies the sha-256 of the bytes it last wrote at the note's path before
-  writing again; a note that changed underneath is reported, never overwritten.
-  Every gesture is a write, so the check runs on every one, and a refusal stops
-  the board saving — it is _held_ (TASK-079) — rather than opening a dialog.
-  Do not "fix" this by reloading or merging — both were considered and
-  rejected, because an Excalidraw scene has no merge and reloading just swaps
-  which side loses silently. `--force` exists for the human, not for you.
-- **`export --out` does not `mkdir -p`** — create the directory first.
-- **The library is server state, not browser state** (ADR 0007). It is in
-  `<vault>/.archboard/library.excalidrawlib`, seeded from `libraries/` on first
-  read, and pushed to every pane over the socket — so `library list` answers
-  with no browser open, and clearing a browser profile costs nothing. Two
-  consequences when testing: the seed only happens once per vault (delete that
-  file to re-run it), and a stencil dragged onto a canvas is plain elements from
-  that moment on, so `describe` will never mention the library.
-- **Opening the library sidebar with 111 stencils takes several seconds** —
-  Excalidraw renders a preview per item. That is its cost, not ours; do not read
-  it as the sync path hanging.
-- **The browser never sends a scene.** It reports a delta to
-  `POST /api/elements/changes` against a baseline of what that tab has actually
-  received, and the server merges it. There is no endpoint that replaces a
-  board wholesale from a client, and adding one back would reopen the
-  stale-tab-truncates-the-board hole (TASK-016). Deletions only ever name ids
-  the reporting tab already held.
-- **A second pane starts on what the first is showing, and is then pointed
-  somewhere else** — `browser open`, then `browser show <name> --pane right`.
-  The switch reaches that
-  pane's socket alone (`sendToPane`, not `broadcast`), only that pane's
-  selection is retired, and the change feed is reset only when the board was
-  not already on screen in another pane. A regression here looks like the other
-  pane's scene being replaced, so test with two boards, never two panes on one.
-- **There is no active or default board to fall back to** (ADR 0020).
-  `activeBoardKey()` and friends are deleted. `resolveBoard()` requires a
-  persisted named-board key, and every board-blind caller funnels through it.
-  That is why the refusal only had to be written once. If you add a route that
-  reads or writes elements, call `boardFromRequest(req, 'What it is doing')` and
-  the refusal comes with it. Do not add a default "for convenience": that is
-  the whole bug.
-- **A pane exists only while its socket is open.** `browser panes` is fed by pushes from
-  the browser keyed by client id, and the close handler retires the pane and its
-  selection together. So a closed tab or an unsplit disappears from the report
-  with nothing to clean up, and no browser at all reports as no panes — which is
-  a normal state, not an error.
-
-## Tracker
-
-Backlog.md, via the CLI only — never hand-edit files under `backlog/`.
-See `docs/agents/issue-tracker.md`.
+- A shape with `backgroundColor: transparent` is hit-testable only on its
+  stroke, except a labelled one, which hit-tests inside. A test built on a
+  labelled probe therefore passes whether or not fills work. Shapes are filled
+  by default since TASK-009 (`src/shared/appearance/appearance.ts`).
+- `describe` degrades above 120 nodes to a per-kind rollup on purpose; use
+  `query` for the exhaustive set.
+- A refused write is the design (ADR 0006): a note that changed underneath is
+  reported and the board is held, never overwritten, reloaded or merged. Do not
+  "fix" a refusal; `--force` exists for the person, not for you.
+- Opening the library sidebar with a hundred stencils takes seconds because
+  Excalidraw renders a preview per item; it is not the sync path hanging.
+- Test with two boards when checking pane switching, never two panes on one
+  board: a switch reaches one pane's socket, and a regression looks like the
+  other pane being replaced.
