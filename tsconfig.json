@@ -54,5 +54,5 @@
 		"allowUnusedLabels": false
 	},
 	"include": ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts"],
-	"exclude": ["node_modules", "dist", "legacy", "frontend", "src/server/board-rendering/browser.ts"]
+	"exclude": ["node_modules", "dist", "frontend", "src/server/board-rendering/browser.ts"]
 }
