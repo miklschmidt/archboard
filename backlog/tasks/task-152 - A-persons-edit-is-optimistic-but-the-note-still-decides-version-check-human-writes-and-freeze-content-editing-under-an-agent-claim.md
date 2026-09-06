@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-06 12:59'
-updated_date: '2026-09-06 13:49'
+updated_date: '2026-09-06 16:24'
 labels: []
 dependencies: []
 priority: high
@@ -57,6 +57,12 @@ author: @claude
 created: 2026-09-06 13:49
 ---
 Ready for the maintainer's independent review; left In Progress on purpose.
+---
+
+author: @codex
+created: 2026-09-06 16:24
+---
+Final independent review of 0d1706d06b21df1c72910a640dadad35cd37234a..28e148acd599f702fe895ed1519a6510322714da: [P2] src/ui/canvas/lib/reporting.ts:246 passes currentWithheldIds() during a version refusal, preserving local text absent from the refusal document. Closing the editor can subsequently report it against the new version and resurrect text removed by the winning writer. This violates AC2 and ADR 0022: the refused optimistic edit must be withdrawn and the pane must show the note. note-version.test.ts currently explicitly expects text survival. Reconcile the entire refused scene and active editor rather than using ordinary incoming-snapshot preservation. Task remains In Progress for correction. Verification at pinned TARGET in /tmp/archboard-final-review-28e148ac, confined state and memory-limited scope: lint, formatting, both TypeScript projects, frontend build and 2657 module tests passed. The complete check command stopped after 308 system passes and one public-start cleanup failure caused by inherited LOG_FILE_PATH; TASK-150.06 documents that this owner requires the variable unset. All 8 cases in that owner passed with LOG_FILE_PATH unset and confined XDG state. The 9 repository tests and full 19-owner serial browser lane then passed. No implementation files changed; this is a review, not a fix or acceptance. No live server or user vault used.
 ---
 <!-- COMMENTS:END -->
 
