@@ -1,10 +1,7 @@
 import fs from "node:fs";
 import { join } from "node:path";
 
-import {
-	TEST_CANVAS_HEALTH_POLL_MS,
-	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+import { TEST_CANVAS_HEALTH_POLL_MS, TEST_CANVAS_SHUTDOWN_TIMEOUT_MS } from "./timing.ts";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,

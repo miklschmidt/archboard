@@ -165,7 +165,6 @@ import {
 	CODEX_WAIT_TARGET_POLL_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
 	PANE_SETTLE_CAP_MS,
-	REPORT_PROGRESS_MS,
 } from "../../../shared/timing/timing.js";
 import {
 	CanvasApplicationBusyError,
@@ -1723,15 +1722,11 @@ app.use(
  * gesture, and renewal every LOCK_RENEW_MS keeps the lease alive while content
  * remains pending.
  *
- * It waits, but only for as long as the pane was going to sit on the change
- * anyway. An agent's per-write hold is about twenty milliseconds, and a user
- * edit that starts during one is not somebody who has lost the board, so the
- * wait is the progress deadline: a person is going to be 400 ms from having their
- * change written whatever this answers, and anything still holding the board at
- * the end of that is a real holder rather than a write in flight.
- *
- * Not the agent's five seconds, for the other half of the same reason. A person
- * cannot be made to wait that long to find out whether their edit was accepted.
+ * It does not wait. A person is refused on the spot when anybody else holds
+ * the board (TASK-153): the lock's bounded wait exists for an agent behind a
+ * person's gesture, and a person cannot be made to wait to find out whether
+ * their edit was accepted. The refusal names the holder, and the pane
+ * withdraws the optimistic edit and reconciles to the note (ADR 0022).
  *
  * It never takes a claimed board back (ADR 0022). Under a claim the answer is
  * the refusal, naming the agent that has it, and the pane withdraws the
@@ -1755,7 +1750,7 @@ app.post("/api/boards/hold", (req: Request, res: Response) => {
 			...(typeof body.reason === "string" && body.reason ? { reason: body.reason } : {}),
 		};
 		void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>
-			holdBoard({ board: key, holder, waitMs: REPORT_PROGRESS_MS, signal }),
+			holdBoard({ board: key, holder, signal }),
 		)
 			.then((hold) =>
 				res.json({ success: true, board: key, holder: hold.holder, created: hold.created }),
@@ -1811,8 +1806,9 @@ app.post("/api/boards/hold/release", (req: Request, res: Response) => {
  * any gesture does. Nothing already written is undone; the agent hears once,
  * on its next write or re-claim, that it lost the board (ADR 0016).
  *
- * The wait is the hold's: a per-write agent hold is waited out, and only a
- * holder still there at the end is refused.
+ * Like the hold, it does not wait: a claim is revoked at once, and an
+ * unclaimed writer holding the board at that instant is refused by name so
+ * the person can ask again (TASK-153).
  */
 app.post("/api/boards/take-back", (req: Request, res: Response) => {
 	try {
@@ -1828,7 +1824,7 @@ app.post("/api/boards/take-back", (req: Request, res: Response) => {
 		const standing = boardLockState(key);
 		const claim = standing?.kind === "agent" && standing.claimed ? standing : null;
 		void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>
-			holdBoard({ board: key, holder, waitMs: REPORT_PROGRESS_MS, revokeClaim: true, signal }),
+			holdBoard({ board: key, holder, revokeClaim: true, signal }),
 		)
 			.then((hold) => {
 				if (hold.created) {
@@ -3012,17 +3008,30 @@ function noBrowserBody(what: string): Record<string, unknown> {
 }
 
 /**
- * Wait until every pane has reported itself since the layout was asked for.
+ * Wait until the panes the layout change moved have reported themselves since
+ * it was asked for.
  *
  * The answer to a layout change names where a pane ended up, and "left" and
  * "right" are read off the rectangles the panes report. So the report has to
  * be the one taken after the shell re-laid them out, not the one from before.
+ *
+ * Only the panes named are waited on: the ones the shell was asked to open
+ * or close and the ones sharing the screen whose rectangle changes with them.
+ * A pane that registers meanwhile, or one that has gone since, is not asked
+ * and not waited for, and the wait ends the moment the last named pane has
+ * re-reported (TASK-153). PANE_SETTLE_CAP_MS is the bound, never the delay.
  */
-async function settleAfterLayout(askedAt: string): Promise<void> {
+async function settleAfterLayout(askedAt: string, moved: Iterable<string>): Promise<void> {
+	const waitedOn = new Set(moved);
 	const deadline = Date.now() + PANE_SETTLE_CAP_MS;
 	while (Date.now() < deadline) {
-		const all = Array.from(panes.values());
-		if (all.length > 0 && all.every((pane) => pane.at > askedAt)) {
+		for (const clientId of waitedOn) {
+			const pane = panes.get(clientId);
+			if (!pane || pane.at > askedAt) {
+				waitedOn.delete(clientId);
+			}
+		}
+		if (waitedOn.size === 0) {
 			return;
 		}
 		await sleep(50);
@@ -3085,7 +3094,9 @@ app.post(
 
 		try {
 			const pane = await opened;
-			await settleAfterLayout(askedAt);
+			// The new pane and every pane already on screen when the split was
+			// asked for: the shell re-lays all of them side by side.
+			await settleAfterLayout(askedAt, [...pending.known, pane.clientId]);
 			logger.info(`Pane opened on request: ${pane.paneId} (${panes.size} on screen)`);
 			res.json({
 				success: true,
@@ -3174,7 +3185,13 @@ app.post(
 
 		try {
 			await closed;
-			await settleAfterLayout(askedAt);
+			// The panes that stay: closing one widens the rest.
+			await settleAfterLayout(
+				askedAt,
+				registrations
+					.map((entry) => entry.clientId)
+					.filter((clientId) => clientId !== target.clientId),
+			);
 			logger.info(`Pane closed on request: ${target.paneId} (${panes.size} left on screen)`);
 			res.json({
 				success: true,

@@ -137,12 +137,26 @@ describe("dynamic coordination approval browser contract", () => {
 		const request = fixture.requests[0]!;
 		const wrongHash = { ...request, effectHash: `sha256:${"f".repeat(64)}` };
 		expect(fixture.model.DynamicApprovalRequestSchema.safeParse(wrongHash).success).toBeFalse();
+		// Expiry is a bounded window after creation, not the constant exactly
+		// (TASK-153): inside it parses, at or before creation and past it do not.
 		expect(
 			fixture.model.DynamicApprovalRequestSchema.safeParse({
 				...request,
 				expiresAtMs: request.expiresAtMs + 1,
 			}).success,
 		).toBeFalse();
+		expect(
+			fixture.model.DynamicApprovalRequestSchema.safeParse({
+				...request,
+				expiresAtMs: request.createdAtMs,
+			}).success,
+		).toBeFalse();
+		expect(
+			fixture.model.DynamicApprovalRequestSchema.safeParse({
+				...request,
+				expiresAtMs: request.expiresAtMs - 1,
+			}).success,
+		).toBeTrue();
 		expect(
 			fixture.model.DynamicApprovalRequestSchema.safeParse({
 				...request,

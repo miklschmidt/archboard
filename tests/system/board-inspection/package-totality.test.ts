@@ -10,7 +10,7 @@ import type {
 	LegacyElementIngress,
 	RuntimeBoardElement,
 } from "../../../src/shared/board-elements/index.js";
-import { TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_BOARD_INSPECTION_TOTALITY_CASE_TIMEOUT_MS } from "../support/timing.ts";
 import { connector, type PackageElement } from "./fixtures/package-cases.js";
 import { createPackageInspectionOwner } from "./support/package-inspection.js";
 

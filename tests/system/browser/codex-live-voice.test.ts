@@ -5,7 +5,7 @@ import { join } from "node:path";
 import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+} from "../support/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { prepareProductionFixture } from "../canvas-state/support/codex-production.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";

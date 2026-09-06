@@ -1,7 +1,7 @@
 import { closeSync, existsSync, openSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import { TEST_OPENER_LIFECYCLE } from "../../../../src/shared/timing/timing.ts";
+import { TEST_OPENER_LIFECYCLE } from "../../support/timing.ts";
 
 const [mode, captureDirectory, releaseFile, exitDirectory, target, ...extra] =
 	process.argv.slice(2);

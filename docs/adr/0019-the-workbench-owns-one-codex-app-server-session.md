@@ -32,6 +32,15 @@ Archboard does not resume them or deliver input, tools, queued work, or board
 context to them. Dedicated state prevents accidental discovery; it is not a
 security boundary against a malicious process running as the same user.
 
+The epoch manifest that records which child owns which thread exists to work
+around a Codex behaviour: resuming an older thread loses the dynamic tools it
+was started with, so Archboard must know which threads belong to a previous
+child and refuse to resume them. The maintainer expects this to be fixed
+upstream, and the epoch mechanism should be removed when it is. Until then the
+ledger is one file replaced atomically by a rename, with no lock file, second
+copy, or other durability machinery; a manifest that cannot be read is treated
+as "no prior epochs", which leaves every earlier thread inspect-only.
+
 Archboard-created workhorses receive a small typed coordination catalogue on
 the owned connection. Attached threads remain usable without pretending that
 they have tools they were not started with. Mutating coordination is bound to

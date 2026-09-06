@@ -4,7 +4,7 @@ import { join } from "node:path";
 import {
 	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS,
 	TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS,
-} from "../../../../src/shared/timing/timing.js";
+} from "../../support/timing.ts";
 import { processIdentity, processIdentityExists, type ProcessIdentity } from "./package-process.js";
 
 type OwnedOutcome<T> = { status: "fulfilled"; value: T } | { status: "rejected"; error: Error };

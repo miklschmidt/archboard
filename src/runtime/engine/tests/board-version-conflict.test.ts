@@ -57,10 +57,8 @@ describe.serial("board version conflict diagnosis", () => {
 	test("foreign, reverted, ahead, and unknown versions are distinct", () => {
 		const identity = boardModule.makeIdentity({ board: "ledger-conflict" });
 		const { board } = ownBoard(identity, "ledger-conflict.excalidraw.md");
-		ioModule.writeBoardContent(board, contentOf(box("aaa", 10)), { saveCommand: "board save" });
-		ioModule.writeBoardContent(board, contentOf(box("aaa", 10), box("bbb", 200)), {
-			saveCommand: "board save",
-		});
+		ioModule.writeBoardContent(board, contentOf(box("aaa", 10)));
+		ioModule.writeBoardContent(board, contentOf(box("aaa", 10), box("bbb", 200)), {});
 		const clean = readFileSync(board.file, "utf-8");
 
 		writeFileSync(board.file, `${clean}\n<!-- somebody else was here -->\n`);
@@ -74,7 +72,7 @@ describe.serial("board version conflict diagnosis", () => {
 		let refusal: ReturnType<typeof ioModule.foreignWriteTo> = null;
 		let refusalMessage = "";
 		try {
-			ioModule.writeBoardContent(board, contentOf(box("aaa", 10)), { saveCommand: "board save" });
+			ioModule.writeBoardContent(board, contentOf(box("aaa", 10)));
 		} catch (error) {
 			refusal =
 				(error as { conflict?: ReturnType<typeof ioModule.foreignWriteTo> }).conflict ?? null;
@@ -110,10 +108,8 @@ describe.serial("board version conflict diagnosis", () => {
 	test("note-watch marks reuse the same ahead and foreign diagnoses", () => {
 		const identity = boardModule.makeIdentity({ board: "watched-version" });
 		const { key, board } = ownBoard(identity, "watched-version.excalidraw.md");
-		ioModule.writeBoardContent(board, contentOf(box("aaa", 10)), { saveCommand: "board save" });
-		ioModule.writeBoardContent(board, contentOf(box("aaa", 10), box("bbb", 200)), {
-			saveCommand: "board save",
-		});
+		ioModule.writeBoardContent(board, contentOf(box("aaa", 10)));
+		ioModule.writeBoardContent(board, contentOf(box("aaa", 10), box("bbb", 200)), {});
 		const clean = readFileSync(board.file, "utf-8");
 
 		writeFileSync(

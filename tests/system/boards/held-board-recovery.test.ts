@@ -45,11 +45,18 @@ let canvas: OwnedCanvas;
 let request: ReturnType<typeof createJsonRequester>;
 const panes: TestPane[] = [];
 
-async function runCli(args: string[]): Promise<{ code: number | null; stderr: string }> {
+async function runCli(
+	args: string[],
+	options: { asPrinted?: boolean } = {},
+): Promise<{ code: number | null; stderr: string }> {
 	return new Promise((resolve) => {
 		const child = spawn(
 			process.execPath,
-			[path.join(repoRoot, "src/bin.ts"), ...args, "--doing", "checking held recovery"],
+			[
+				path.join(repoRoot, "src/bin.ts"),
+				...args,
+				...(options.asPrinted ? [] : ["--doing", "checking held recovery"]),
+			],
 			{
 				env: {
 					...process.env,
@@ -465,5 +472,29 @@ describe("held board recovery", () => {
 		const accepted = await add(2);
 		expect(accepted.code).toBe(0);
 		expect(accepted.stderr).toMatch(/stopped saving/);
+
+		// The printed remedies are runnable as printed: they name the board and
+		// say what they are doing, so the write boundary accepts them from a
+		// terminal (TASK-153). The overwrite line is typed back exactly as shown.
+		const printed = (outcome: string): string[] => {
+			const line = accepted.stderr.split("\n").find((l) => l.trimStart().startsWith(outcome));
+			expect(line, `${outcome} line in:\n${accepted.stderr}`).toBeDefined();
+			const command = line!.slice(line!.indexOf("->") + 2).trim();
+			return Array.from(command.matchAll(/"([^"]*)"|(\S+)/g), (m) => m[1] ?? m[2]!);
+		};
+		expect(printed("elsewhere").join(" ")).toBe(
+			"board save --board cliheld --as cliheld@from-canvas --doing keeping both",
+		);
+		const overwrite = printed("overwrite");
+		expect(overwrite.join(" ")).toBe(
+			"board save --board cliheld --force --doing keeping the canvas",
+		);
+		const overwritten = await runCli(overwrite, { asPrinted: true });
+		expect(overwritten.code, overwritten.stderr).toBe(0);
+		expect(overwritten.stderr).toMatch(/saving again/);
+		const after = await request<{ elements: Array<{ type: string }> }>(
+			"/api/elements?board=cliheld",
+		);
+		expect(after.body.elements.filter((element) => element.type === "ellipse")).toHaveLength(1);
 	});
 });

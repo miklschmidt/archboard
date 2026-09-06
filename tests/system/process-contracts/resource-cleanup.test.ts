@@ -187,31 +187,6 @@ test("sanitized child environments retain only approved state", () => {
 	expect(env["UNAPPROVED_INHERITED_KEY"]).toBeUndefined();
 });
 
-test("every dynamic owner establishes lexical disposal before its first acquisition", () => {
-	for (const name of [
-		"local-bind",
-		"board-lock-api",
-		"cross-process-lock",
-		"element-ops-one-write",
-		"apply-one-write",
-		"promotion-delete-bridge-one-write",
-		"import-replace-one-write",
-		"import-merge-held-one-write",
-		"snapshot-one-write",
-	]) {
-		const source = readFileSync(join(import.meta.dir, `${name}.test.ts`), "utf8");
-		for (const match of source.matchAll(/mkdtempSync\(/g)) {
-			const root = match.index;
-			const owner = source.lastIndexOf("test(", root);
-			const disposal = source.indexOf("await using resources = new AsyncDisposableStack()", owner);
-			expect(disposal, `${name} has no lexical disposal before root at ${root}`).toBeGreaterThan(
-				owner,
-			);
-			expect(disposal, `${name} starts disposal after root at ${root}`).toBeLessThan(root);
-		}
-	}
-});
-
 test("static probes roll back earlier exclusive creates after a later collision", () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-static-probe-failure-"));
 	try {

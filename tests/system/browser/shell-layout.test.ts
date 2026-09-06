@@ -3,10 +3,8 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	PANE_SETTLE_CAP_MS,
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { activityLines, fixedPointElements } from "./fixtures/fixed-point-scene.ts";

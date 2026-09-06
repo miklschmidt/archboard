@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { TEST_OPENER_LIFECYCLE } from "../../../../src/shared/timing/timing.ts";
+import { TEST_OPENER_LIFECYCLE } from "../../support/timing.ts";
 
 function assertBefore(deadline: number, description: string): void {
 	if (Date.now() >= deadline) {

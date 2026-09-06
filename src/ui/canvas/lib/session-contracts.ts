@@ -157,13 +157,15 @@ interface CanvasSession<Transport extends WorkbenchTransportPort> {
 	board: BoardIdentity | null;
 	connected: boolean;
 	/**
-	 * Whether the canvas takes content edits (ADR 0022). A disconnected pane
-	 * fails closed because it cannot learn claim or lock state. A pane whose
-	 * board an agent claims is read-only while the claim stands: pan, zoom and
-	 * selection keep working, and a content gesture does not revoke the claim;
-	 * `takeBack` is the one control that releases it. Otherwise the canvas is
-	 * editable, and every edit is optimistic: written with the note version the
-	 * pane last saw, and withdrawn when the note has moved since.
+	 * Whether the canvas takes content edits (ADR 0022). A pane whose board an
+	 * agent claims is read-only while the claim stands: pan, zoom and selection
+	 * keep working, and a content gesture does not revoke the claim; `takeBack`
+	 * is the one control that releases it. A pane out of contact with the
+	 * server for longer than one reconnect attempt is read-only too, since
+	 * nothing it shows can be settled. Otherwise the canvas is editable, on
+	 * mount and through a socket blip alike, and every edit is optimistic:
+	 * written with the note version the pane last saw, refused and withdrawn
+	 * when the note has moved since or the server could not be reached.
 	 */
 	readOnly: boolean;
 	/** Who holds the board when it is not this pane, or null. */

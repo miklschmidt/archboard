@@ -15,11 +15,9 @@ import { describe, expect, test } from "bun:test";
 import { createIdentityAuthority } from "../../../shared/codex-workbench-identity/index.js";
 import {
 	createCodexEpochStore,
-	defaultCodexEpochFileSystem,
 	type CodexEpochFileSystem,
 	type CodexEpochStore,
 	type EpochStageInput,
-	type EpochTransaction,
 } from "../index.js";
 
 const INSTRUCTION_HASH = "1".repeat(64);
@@ -86,68 +84,6 @@ describe("codex epoch review remediations", () => {
 				status: "staged",
 				outcome: "pending",
 			});
-		});
-	});
-
-	test("serializes two stale-lock reapers without deleting the winner lock", () => {
-		withState((state) => {
-			const first = createIdentityAuthority();
-			const second = createIdentityAuthority();
-			let lockPath = "";
-			let secondStore: CodexEpochStore;
-			let secondResult: EpochTransaction | undefined;
-			let secondFailure: unknown;
-			let interleaved = false;
-			let insideSecond = false;
-			let stateWrites = 0;
-			const fileSystem: CodexEpochFileSystem = {
-				...defaultCodexEpochFileSystem,
-				unlinkSync: (path) => {
-					if (path === lockPath && !interleaved && !insideSecond) {
-						interleaved = true;
-						insideSecond = true;
-						try {
-							secondResult = secondStore.stageEpoch(input(second, "epoch-b", "epoch_start"));
-						} catch (error) {
-							secondFailure = error;
-						} finally {
-							insideSecond = false;
-						}
-					}
-					defaultCodexEpochFileSystem.unlinkSync(path);
-				},
-				renameSync: (oldPath, newPath) => {
-					if (newPath.endsWith("/epoch-records.json")) stateWrites++;
-					defaultCodexEpochFileSystem.renameSync(oldPath, newPath);
-				},
-			};
-			const firstStore = makeStore(state, fileSystem);
-			lockPath = firstStore.lockPath;
-			secondStore = makeStore(state, fileSystem);
-			writeFileSync(
-				lockPath,
-				`${JSON.stringify({
-					pid: 2_147_483_647,
-					token: "00000000-0000-4000-8000-000000000000",
-					acquiredAtMs: 0,
-					untilMs: 1,
-				})}\n`,
-				{ mode: 0o600 },
-			);
-			let firstResult: EpochTransaction | undefined;
-			let firstFailure: unknown;
-			try {
-				firstResult = firstStore.stageEpoch(input(first, "epoch-a", "epoch_start"));
-			} catch (error) {
-				firstFailure = error;
-			}
-
-			expect(firstFailure).toBeUndefined();
-			expect(firstResult?.record.status).toBe("staged");
-			expect(secondResult).toBeUndefined();
-			expect(secondFailure).toMatchObject({ code: "locked" });
-			expect(stateWrites).toBe(1);
-			expect(firstStore.snapshot().manifest.records).toHaveLength(1);
 		});
 	});
 });

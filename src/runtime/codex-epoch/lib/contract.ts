@@ -11,10 +11,7 @@ type CodexEpochErrorCode =
 	| "invalid_input"
 	| "outside_codex_storage"
 	| "closed"
-	| "locked"
-	| "corrupt_manifest"
 	| "storage_failure"
-	| "durability_failed"
 	| "conflict"
 	| "not_initialized"
 	| "stale_child"
@@ -45,7 +42,6 @@ interface EpochSnapshot {
 	readonly manifest: EpochManifest;
 	readonly cas: EpochCasToken;
 	readonly manifestPath: string;
-	readonly recordsPath: string;
 }
 
 interface EpochStageInput {
@@ -95,8 +91,6 @@ interface CodexEpochStoreOptions {
 interface CodexEpochStore {
 	readonly rootDirectory: string;
 	readonly manifestPath: string;
-	readonly recordsPath: string;
-	readonly lockPath: string;
 	readonly snapshot: () => EpochSnapshot;
 	readonly stageEpoch: (input: EpochStageInput) => EpochTransaction;
 	readonly startEpoch: (input: EpochStageInput) => EpochOperationRecord;
@@ -133,7 +127,6 @@ interface DiskState {
 }
 
 interface Mutation<T> {
-	readonly writeOrder: "manifest-first" | "records-first";
 	readonly payload: {
 		readonly activeEpoch: ActiveEpoch | null;
 		readonly records: readonly EpochOperationRecord[];

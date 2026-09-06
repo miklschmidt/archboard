@@ -1,4 +1,5 @@
 import {
+	lstatSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
@@ -16,6 +17,7 @@ import { createIdentityAuthority } from "../../../shared/codex-workbench-identit
 import {
 	createCodexEpochStore,
 	defaultCodexEpochFileSystem,
+	emptyManifest,
 	type CodexEpochFileSystem,
 	type CodexEpochStore,
 	type EpochCasToken,
@@ -35,9 +37,7 @@ describe("codex epoch ownership", () => {
 			const staged = store.stageEpoch(input);
 			expect(staged.record.status).toBe("staged");
 			expect(store.snapshot().manifest.activeEpoch).toBeNull();
-			expect(readFileSync(store.manifestPath, "utf8")).toBe(
-				readFileSync(store.recordsPath, "utf8"),
-			);
+			expect(readdirSync(state.root)).toEqual(["epoch-manifest.json"]);
 
 			const committed = store.commitEpoch(staged);
 			expect(committed.status).toBe("committed");
@@ -208,81 +208,84 @@ describe("codex epoch ownership", () => {
 		});
 	});
 
-	test("fails closed for corrupt, truncated, non-UTF-8, duplicate, and mismatched state", () => {
+	test("a garbage manifest reads as no prior epochs and the next write replaces it", () => {
 		withState((state) => {
 			const authority = createIdentityAuthority();
 			const store = makeStore(state);
 			store.startEpoch(epochInput(authority, "epoch-start", "epoch_start"));
-			const originalManifest = readFileSync(store.manifestPath);
-			const originalRecords = readFileSync(store.recordsPath);
+			const original = readFileSync(store.manifestPath);
+			const request = {
+				childId: authority.validator.childId,
+				epoch: authority.validator.epoch,
+				operationId: "epoch-start",
+			};
+			expect(store.canExecute(request)).toBe(true);
 
-			writeFileSync(store.manifestPath, Buffer.concat([originalManifest.subarray(0, 20)]));
-			expect(() => store.snapshot()).toThrowError(
-				expect.objectContaining({ code: "corrupt_manifest" }),
-			);
-			writeFileSync(store.manifestPath, Buffer.from([0xff, 0xfe, 0xfd]));
-			expect(() => store.snapshot()).toThrowError(
-				expect.objectContaining({ code: "corrupt_manifest" }),
-			);
-			writeFileSync(store.manifestPath, originalManifest);
-			writeFileSync(
-				store.recordsPath,
-				Buffer.from(originalRecords.toString().replace('"schema":1', '"schema":1,"schema":1')),
-			);
-			expect(() => store.snapshot()).toThrowError(
-				expect.objectContaining({ code: "corrupt_manifest" }),
-			);
-			writeFileSync(store.recordsPath, originalRecords);
-			writeFileSync(
-				store.recordsPath,
-				Buffer.from(originalRecords.toString().replace(/"revision":\d+/u, '"revision":999')),
-			);
-			expect(() => store.snapshot()).toThrowError(
-				expect.objectContaining({ code: "corrupt_manifest" }),
-			);
-
-			writeFileSync(store.recordsPath, originalRecords);
+			const garbage: readonly Buffer[] = [
+				original.subarray(0, 20),
+				Buffer.from([0xff, 0xfe, 0xfd]),
+				Buffer.from(original.toString().replace('"schema":1', '"schema":1,"schema":1')),
+				Buffer.from(original.toString().replace(/"revision":\d+/u, '"revision":999')),
+				Buffer.from("broken\n"),
+			];
+			for (const bytes of garbage) {
+				writeFileSync(store.manifestPath, bytes);
+				expect(store.snapshot().manifest).toEqual(emptyManifest());
+				expect(store.snapshot().cas).toEqual({ revision: 0, bytesHash: null });
+				expect(store.canExecute(request)).toBe(false);
+			}
 			rmSync(store.manifestPath);
-			symlinkSync(store.recordsPath, store.manifestPath);
-			expect(() => store.snapshot()).toThrowError(
-				expect.objectContaining({ code: "corrupt_manifest" }),
-			);
+			expect(store.snapshot().manifest).toEqual(emptyManifest());
+			symlinkSync(join(state.codexHome, "sentinel.db"), store.manifestPath);
+			expect(store.snapshot().manifest).toEqual(emptyManifest());
+
+			const replacement = createIdentityAuthority();
+			store.startEpoch(epochInput(replacement, "epoch-start-b", "epoch_start"));
+			expect(lstatSync(store.manifestPath).isSymbolicLink()).toBe(false);
+			expect(store.snapshot().manifest.revision).toBe(2);
+			expect(store.snapshot().manifest.records).toHaveLength(1);
+			expect(readFileSync(join(state.codexHome, "sentinel.db"), "utf8")).toBe("codex-state");
 		});
 	});
 
-	test("publishes records before the active manifest and preserves fsync failures", () => {
+	test("writes the manifest with one temp write and one rename", () => {
 		withState((state) => {
 			const calls: string[] = [];
-			const fileSystem = recordingFileSystem(calls, state.root);
 			const authority = createIdentityAuthority();
-			const store = makeStore(state, fileSystem);
-			store.startEpoch(epochInput(authority, "epoch-start", "epoch_start"));
-			const recordsPublish = calls.findIndex((call) => call === "rename:epoch-records.json");
-			const manifestPublish = calls.findIndex((call) => call === "rename:epoch-manifest.json");
-			expect(recordsPublish).toBeGreaterThanOrEqual(0);
-			expect(manifestPublish).toBeGreaterThan(recordsPublish);
-			const recordsDirectoryFsync = calls.findIndex(
-				(call, index) => call === "fsync-dir:root" && index > recordsPublish,
-			);
-			const manifestDirectoryFsync = calls.findIndex(
-				(call, index) => call === "fsync-dir:root" && index > manifestPublish,
-			);
-			expect(recordsDirectoryFsync).toBeGreaterThan(recordsPublish);
-			expect(manifestDirectoryFsync).toBeGreaterThan(manifestPublish);
+			const store = makeStore(state, recordingFileSystem(calls, state.root));
+			store.stageEpoch(epochInput(authority, "epoch-start", "epoch_start"));
+			expect(calls.filter((call) => call.startsWith("rename:"))).toEqual([
+				"rename:epoch-manifest.json",
+			]);
+			expect(calls.filter((call) => call.startsWith("open:"))).toHaveLength(1);
+			expect(calls.some((call) => call === "fsync-dir:root")).toBe(false);
+			expect(readdirSync(state.root)).toEqual(["epoch-manifest.json"]);
+		});
+	});
 
-			const failureCalls: string[] = [];
-			const failingFs = recordingFileSystem(failureCalls, state.root, {
-				failTempFsyncFor: ".epoch-records.",
-			});
-			const failingStore = makeStore(state, failingFs);
-			const nextAuthority = createIdentityAuthority();
-			expect(() =>
-				failingStore.stageEpoch(
-					epochInput(nextAuthority, "crash-start", "epoch_start", failingStore.snapshot().cas),
-				),
-			).toThrowError(expect.objectContaining({ code: "durability_failed" }));
-			expect(failureCalls.some((call) => call.includes("fsync-temp:.epoch-records."))).toBe(true);
-			expect(() => failingStore.snapshot()).not.toThrow();
+	test("a crash before the rename leaves the old manifest and the store usable", () => {
+		withState((state) => {
+			const authority = createIdentityAuthority();
+			const store = makeStore(state);
+			store.startEpoch(epochInput(authority, "epoch-start", "epoch_start"));
+			const before = readFileSync(store.manifestPath, "utf8");
+			for (const failAt of ["write", "fsync", "rename"] as const) {
+				const calls: string[] = [];
+				const crashing = makeStore(state, recordingFileSystem(calls, state.root, { failAt }));
+				const staged = () =>
+					crashing.stageOperation(
+						effectInput(authority, `link-${failAt}`, "link", crashing.snapshot().cas),
+					);
+				expect(staged).toThrowError(expect.objectContaining({ code: "storage_failure" }));
+				expect(readFileSync(store.manifestPath, "utf8")).toBe(before);
+				expect(readdirSync(state.root)).toEqual(["epoch-manifest.json"]);
+				expect(crashing.snapshot().manifest.revision).toBe(2);
+			}
+			const link = store.stageOperation(
+				effectInput(authority, "link-after", "link", store.snapshot().cas),
+			);
+			expect(link.record.status).toBe("staged");
+			expect(store.snapshot().manifest.revision).toBe(3);
 		});
 	});
 
@@ -307,9 +310,7 @@ describe("codex epoch ownership", () => {
 				}),
 			).toThrow();
 			writeFileSync(store.manifestPath, "broken\n");
-			expect(() => store.snapshot()).toThrowError(
-				expect.objectContaining({ code: "corrupt_manifest" }),
-			);
+			expect(store.snapshot().manifest).toEqual(emptyManifest());
 			expect(sentinel(state.codexHome)).toEqual(beforeCodex);
 			expect(sentinel(state.sqliteHome)).toEqual(beforeSqlite);
 		});
@@ -324,25 +325,6 @@ describe("codex epoch ownership", () => {
 					sqliteHome: state.sqliteHome,
 				}),
 			).toThrowError(expect.objectContaining({ code: "outside_codex_storage" }));
-		});
-	});
-
-	test("refuses a live competing process through the durable lease", () => {
-		withState((state) => {
-			const authority = createIdentityAuthority();
-			const store = makeStore(state);
-			writeFileSync(
-				store.lockPath,
-				JSON.stringify({
-					pid: process.pid,
-					token: "00000000-0000-4000-8000-000000000000",
-					acquiredAtMs: Date.now(),
-					untilMs: Date.now() + 30_000,
-				}),
-			);
-			expect(() => store.stageEpoch(epochInput(authority, "blocked", "epoch_start"))).toThrowError(
-				expect.objectContaining({ code: "locked" }),
-			);
 		});
 	});
 });
@@ -413,15 +395,11 @@ function effectInput(
 	};
 }
 
-interface FsyncFailure {
-	readonly failTempFsyncFor?: string;
+interface Crash {
+	readonly failAt: "write" | "fsync" | "rename";
 }
 
-function recordingFileSystem(
-	calls: string[],
-	root: string,
-	failure?: FsyncFailure,
-): CodexEpochFileSystem {
+function recordingFileSystem(calls: string[], root: string, crash?: Crash): CodexEpochFileSystem {
 	const descriptors = new Map<number, string>();
 	return {
 		...defaultCodexEpochFileSystem,
@@ -434,6 +412,9 @@ function recordingFileSystem(
 		writeSync: (descriptor, data, offset, length) => {
 			const path = descriptors.get(descriptor) ?? "unknown";
 			calls.push(`write:${path.split("/").pop()}`);
+			if (crash?.failAt === "write") {
+				throw new Error("injected write failure");
+			}
 			return defaultCodexEpochFileSystem.writeSync(descriptor, data, offset, length);
 		},
 		fsyncSync: (descriptor) => {
@@ -446,8 +427,8 @@ function recordingFileSystem(
 			} else {
 				calls.push(`fsync:${name}`);
 			}
-			if (failure?.failTempFsyncFor !== undefined && name.includes(failure.failTempFsyncFor)) {
-				throw new Error("injected temp fsync failure");
+			if (crash?.failAt === "fsync") {
+				throw new Error("injected fsync failure");
 			}
 			defaultCodexEpochFileSystem.fsyncSync(descriptor);
 		},
@@ -459,6 +440,9 @@ function recordingFileSystem(
 		},
 		renameSync: (oldPath, newPath) => {
 			calls.push(`rename:${newPath.split("/").pop()}`);
+			if (crash?.failAt === "rename") {
+				throw new Error("injected rename failure");
+			}
 			defaultCodexEpochFileSystem.renameSync(oldPath, newPath);
 		},
 	};

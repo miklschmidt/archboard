@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { planOpenerCommand } from "../../../src/server/code-opener/index.ts";
-import { TEST_OPENER_LIFECYCLE } from "../../../src/shared/timing/timing.ts";
+import { TEST_OPENER_LIFECYCLE } from "../support/timing.ts";
 import {
 	createOpenerFixture,
 	jsonBody,

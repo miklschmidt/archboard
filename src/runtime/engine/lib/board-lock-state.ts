@@ -1,13 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { LOCK_FREE_LINGER_MS, LOCK_WATCH_MS } from "../../../shared/timing/timing.js";
+import { LOCK_WATCH_MS } from "../../../shared/timing/timing.js";
 import { VAULT_STATE_DIR, normalizeBoardKey, requireVaultRoot } from "../board.js";
 import logger from "../logger.js";
 import type { LockHandoff, LockHolder, LockRecord, LockSink } from "./board-lock-contracts.js";
 
 const processAnnounced = new Map<string, string>();
-const processLingers = new Map<string, ReturnType<typeof setTimeout>>();
 const processSink = { notify: null as LockSink | null };
 const processSweep = { also: null as ((board: string) => void) | null };
 const processWatcher: {
@@ -168,14 +167,6 @@ function boardLockState(board: string): LockHolder | null {
 	return live ? holderOf(live) : null;
 }
 
-function clearLinger(board: string): void {
-	const timer = processLingers.get(board);
-	if (timer) {
-		clearTimeout(timer);
-		processLingers.delete(board);
-	}
-}
-
 function announce(board: string, holder: LockHolder | null): void {
 	// Renewal changes `until` but not whether a pane may draw, so expiry is absent
 	// from this fingerprint. Holder/start/reason/claim changes remain real news.
@@ -190,22 +181,15 @@ function announce(board: string, holder: LockHolder | null): void {
 }
 
 function announceHeld(board: string, holder: LockHolder): void {
-	clearLinger(board);
 	announce(board, holder);
 }
 
-function announceFreeSoon(board: string): void {
-	// The lease is already free. Only the news lingers, coalescing rapid
-	// acquire/release fan-out so panes do not flicker in and out of read-only.
-	// Re-read when the timer fires: a newly held board must be announced held,
+function announceFree(board: string): void {
+	// Release news goes out at once (TASK-153): a pane left believing a free
+	// board is held is a pane refusing edits for no reason. Re-read rather than
+	// assume, so a board another process has taken meanwhile is announced held,
 	// never falsely free from stale release state.
-	clearLinger(board);
-	const timer = setTimeout(() => {
-		processLingers.delete(board);
-		announce(board, boardLockState(board));
-	}, LOCK_FREE_LINGER_MS);
-	timer.unref?.();
-	processLingers.set(board, timer);
+	announce(board, boardLockState(board));
 }
 
 function recordLockCommit(board: string, leaseToken: string, hash: string): boolean {
@@ -230,7 +214,7 @@ function recordLockCommit(board: string, leaseToken: string, hash: string): bool
 function releaseHold(board: string, holderId: string): boolean {
 	// Release only if it is still ours. A lapsed lease may already belong to a
 	// successor, and unlinking that record would admit a third writer.
-	// Ordering is deliberate: optional handoff, immediate unlink, delayed news.
+	// Ordering is deliberate: optional handoff, immediate unlink, then the news.
 	const key = normalizeBoardKey(board);
 	const file = lockPathFor(key);
 	const current = readRecord(file);
@@ -249,7 +233,7 @@ function releaseHold(board: string, holderId: string): boolean {
 	} catch {
 		/* already gone: released is released */
 	}
-	announceFreeSoon(key);
+	announceFree(key);
 	return true;
 }
 
@@ -278,11 +262,6 @@ function sweepBoardLocks(): void {
 			logger.warn(`Board lock sweep passenger failed for "${board}"; lock watch continues.`, {
 				error,
 			});
-		}
-		if (processLingers.has(board)) {
-			// Local release news is intentionally coalescing; a sweep must not undo
-			// that decision by announcing free early.
-			continue;
 		}
 		announce(board, boardLockState(board));
 	}
@@ -318,12 +297,8 @@ function onBoardLockChanged(sink: LockSink | null): void {
 }
 
 function forgetLockState(): void {
-	// Drop only this process's remembered announcements and pending free news.
-	// Vault records remain authoritative and untouched.
-	for (const timer of processLingers.values()) {
-		clearTimeout(timer);
-	}
-	processLingers.clear();
+	// Drop only this process's remembered announcements. Vault records remain
+	// authoritative and untouched.
 	processAnnounced.clear();
 }
 

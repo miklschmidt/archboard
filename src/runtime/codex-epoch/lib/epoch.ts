@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 
 import {
@@ -8,15 +9,12 @@ import {
 	manifestBytesHash,
 } from "./manifest.js";
 import {
-	acquireDurableLock,
 	defaultCodexEpochFileSystem,
-	DurableStorageError,
 	ensureEpochDirectory,
-	readUtf8File,
-	writeEpochStateDurable,
+	readManifestText,
+	writeFileAtomic,
 } from "./storage.js";
 import { CodexEpochError } from "./contract.js";
-import { mapLockError, mapStorageError } from "./errors.js";
 import { assertSafeStorageRoots } from "./path-safety.js";
 import type { EpochManifest, EpochOperationRecord } from "./manifest.js";
 import type {
@@ -65,15 +63,12 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 	try {
 		ensureEpochDirectory(fileSystem, rootDirectory);
 	} catch (error) {
-		throw mapStorageError(error, "unable to establish the Archboard-owned epoch root");
+		throw storageError("unable to establish the Archboard-owned epoch root", error);
 	}
 	const manifestPath = join(rootDirectory, "epoch-manifest.json");
-	const recordsPath = join(rootDirectory, "epoch-records.json");
-	const lockPath = join(rootDirectory, ".epoch-manifest.lock");
 	const now = options.now ?? Date.now;
 	let nextTemporaryId = 0;
 	let closed = false;
-	let poisoned: string | null = null;
 
 	const snapshot = (): EpochSnapshot => {
 		assertOpen();
@@ -82,7 +77,6 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 			manifest: state.manifest,
 			cas: { revision: state.manifest.revision, bytesHash: state.bytesHash },
 			manifestPath,
-			recordsPath,
 		};
 	};
 
@@ -137,7 +131,6 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 				updatedAtMs: createdAtMs,
 			});
 			return {
-				writeOrder: "records-first",
 				payload: {
 					activeEpoch: current.manifest.activeEpoch,
 					records: [...current.manifest.records, record],
@@ -186,7 +179,6 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 						}
 					: current.manifest.activeEpoch;
 			return {
-				writeOrder: "manifest-first",
 				payload: {
 					activeEpoch,
 					records: replaceRecord(current.manifest.records, committed),
@@ -224,7 +216,6 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 				updatedAtMs: timestamp(now(), "updatedAtMs", record.createdAtMs),
 			});
 			return {
-				writeOrder: "manifest-first",
 				payload: {
 					activeEpoch: current.manifest.activeEpoch,
 					records: replaceRecord(current.manifest.records, rolledBack),
@@ -251,7 +242,6 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 				updatedAtMs: timestamp(now(), "updatedAtMs", record.createdAtMs),
 			});
 			return {
-				writeOrder: "manifest-first",
 				payload: {
 					activeEpoch: current.manifest.activeEpoch,
 					records: replaceRecord(current.manifest.records, unknown),
@@ -302,7 +292,6 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 						}
 					: current.manifest.activeEpoch;
 			return {
-				writeOrder: "manifest-first",
 				payload: {
 					activeEpoch,
 					records: replaceRecord(current.manifest.records, confirmed),
@@ -369,123 +358,67 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 		}
 	}
 
+	/**
+	 * A missing, unreadable, malformed, non-canonical or internally inconsistent
+	 * manifest reads as "no prior epochs". Every thread from before is then
+	 * inspect-only and the next write replaces the file, which is the safe
+	 * direction for a ledger whose only job is to refuse resuming older threads.
+	 */
 	function readDisk(): DiskState {
-		let manifestRaw: string | null;
-		let recordsRaw: string | null;
-		try {
-			manifestRaw = readUtf8File(fileSystem, manifestPath);
-			recordsRaw = readUtf8File(fileSystem, recordsPath);
-		} catch (error) {
-			throw epochError("corrupt_manifest", "epoch state cannot be read", error);
-		}
-		if (manifestRaw === null && recordsRaw === null) {
+		const raw = readManifestText(fileSystem, manifestPath);
+		if (raw === null) {
 			return { manifest: emptyManifest(), bytesHash: null };
 		}
-		if (manifestRaw === null || recordsRaw === null) {
-			throw epochError(
-				"corrupt_manifest",
-				"epoch manifest and record journal must be published together",
-			);
-		}
 		try {
-			const manifest = decodeManifest(manifestRaw);
-			const records = decodeManifest(recordsRaw);
-			if (encodeManifest(manifest) !== encodeManifest(records)) {
-				throw new Error("manifest and record journal disagree");
-			}
+			const manifest = decodeManifest(raw);
 			assertManifestRelations(manifest);
-			return { manifest, bytesHash: manifestBytesHash(manifestRaw) };
-		} catch (error) {
-			if (error instanceof CodexEpochError) {
-				throw error;
-			}
-			throw epochError("corrupt_manifest", "epoch manifest is corrupt or inconsistent", error);
+			return { manifest, bytesHash: manifestBytesHash(raw) };
+		} catch {
+			return { manifest: emptyManifest(), bytesHash: null };
 		}
 	}
 
+	// Every operation is synchronous and the server is one process, so writes
+	// are serialised by the call stack; there is no lock and nothing to wait on.
 	function mutate<T>(
 		expected: EpochCasToken | undefined,
 		action: (current: DiskState) => Mutation<T>,
 	): T {
 		assertOpen();
-		if (poisoned !== null) {
-			throw epochError("durability_failed", `epoch store is quarantined: ${poisoned}`);
-		}
-		let lock: ReturnType<typeof acquireDurableLock> | null = null;
-		let value: T | undefined;
-		let failure: unknown;
-		try {
-			try {
-				lock = acquireDurableLock(fileSystem, lockPath, rootDirectory);
-			} catch (error) {
-				const mapped = mapLockError(error);
-				if (mapped.code === "durability_failed") {
-					poisoned = "lock acquisition failed";
-				}
-				throw mapped;
-			}
-			const current = readDisk();
-			if (expected !== undefined && !sameCas(expected, casForState(current))) {
-				throw epochError(
-					"conflict",
-					`epoch CAS conflict: expected revision ${expected.revision}, found ${current.manifest.revision}`,
-				);
-			}
-			const mutation = action(current);
-			const next = buildManifest({
-				schema: 1,
-				revision: current.manifest.revision + 1,
-				activeEpoch: mutation.payload.activeEpoch,
-				records: mutation.payload.records,
-			});
-			assertManifestRelations(next);
-			writeState(next, mutation.writeOrder);
-			value = mutation.result(next);
-		} catch (error) {
-			failure = error;
-		} finally {
-			if (lock !== null) {
-				try {
-					lock.release();
-				} catch (error) {
-					poisoned = "lock cleanup durability is unknown";
-					if (failure === undefined) {
-						failure = mapStorageError(error, "epoch lock cleanup failed");
-					}
-				}
-			}
-		}
-		if (failure !== undefined) {
-			throw failure;
-		}
-		return value as T;
-	}
-	function writeState(manifest: EpochManifest, order: Mutation<unknown>["writeOrder"]): void {
-		const encoded = encodeManifest(manifest);
-		try {
-			nextTemporaryId = writeEpochStateDurable(
-				fileSystem,
-				rootDirectory,
-				manifestPath,
-				recordsPath,
-				encoded,
-				order,
-				nextTemporaryId,
+		const current = readDisk();
+		if (expected !== undefined && !sameCas(expected, casForState(current))) {
+			throw epochError(
+				"conflict",
+				`epoch CAS conflict: expected revision ${expected.revision}, found ${current.manifest.revision}`,
 			);
+		}
+		const mutation = action(current);
+		const next = buildManifest({
+			schema: 1,
+			revision: current.manifest.revision + 1,
+			activeEpoch: mutation.payload.activeEpoch,
+			records: mutation.payload.records,
+		});
+		assertManifestRelations(next);
+		writeState(next);
+		return mutation.result(next);
+	}
+
+	function writeState(manifest: EpochManifest): void {
+		const temporaryPath = join(
+			rootDirectory,
+			`.epoch-manifest.${process.pid}.${nextTemporaryId++}.${randomUUID()}.tmp`,
+		);
+		try {
+			writeFileAtomic(fileSystem, manifestPath, temporaryPath, encodeManifest(manifest));
 		} catch (error) {
-			if (error instanceof DurableStorageError) {
-				poisoned = `durability failed during ${error.phase}`;
-				throw epochError("durability_failed", poisoned, error);
-			}
-			throw mapStorageError(error, "epoch state write failed");
+			throw storageError("epoch manifest write failed", error);
 		}
 	}
 
 	return {
 		rootDirectory,
 		manifestPath,
-		recordsPath,
-		lockPath,
 		snapshot,
 		stageEpoch,
 		startEpoch,
@@ -499,4 +432,8 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 		canExecute,
 		close,
 	};
+}
+
+function storageError(message: string, cause: unknown): CodexEpochError {
+	return cause instanceof CodexEpochError ? cause : epochError("storage_failure", message, cause);
 }

@@ -61,7 +61,7 @@ type FixtureThread = Record<string, unknown> & {
 };
 
 const threads = new Map<string, FixtureThread>();
-let threadSequence = 0;
+let threadSequence = readFileSync(logPath, "utf8").split('"thread/start","result"').length - 1;
 let turnSequence = 0;
 let coordinatorThreadId: string | null = null;
 let workhorseThreadId: string | null = null;
@@ -494,7 +494,7 @@ const controlTimer = setInterval(() => {
 			notify("account/updated", { authMode: "chatgpt", planType: "pro" });
 		}
 	} catch {
-		// The controller updates atomically enough for this bounded test-only poll.
+		// Bounded test-only poll; the controller updates atomically enough.
 	}
 }, 20);
 controlTimer.unref();

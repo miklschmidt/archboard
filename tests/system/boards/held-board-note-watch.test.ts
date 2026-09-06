@@ -21,7 +21,7 @@ import {
 	TEST_NOTE_WATCH_MESSAGE_POLL_MS,
 	TEST_NOTE_WATCH_MESSAGE_TIMEOUT_MS,
 	TEST_PANE_MESSAGE_POLL_MS,
-} from "../../../src/shared/timing/timing.ts";
+} from "../support/timing.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 import { openTestPane, type PaneMessage, type TestPane } from "./support/pane-websocket.ts";
@@ -65,7 +65,7 @@ describe("held board note watch", () => {
 		forgetNoteWatch();
 		try {
 			expect(noteWrittenElsewhere(key)).toBeNull();
-			writeBoardContent(board, emptyContent(), { saveCommand: "board save" });
+			writeBoardContent(board, emptyContent());
 			expect(noteWrittenElsewhere(key)).toBeNull();
 
 			const pinned = new Date(Math.floor(Date.now() / 1_000) * 1_000);
@@ -106,7 +106,7 @@ describe("held board note watch", () => {
 
 			let conflict: BoardWriteConflict | undefined;
 			try {
-				writeBoardContent(board, emptyContent(), { saveCommand: "board save" });
+				writeBoardContent(board, emptyContent());
 			} catch (error) {
 				conflict = (error as { conflict?: BoardWriteConflict }).conflict;
 			}
@@ -193,7 +193,7 @@ describe("held board note watch", () => {
 		const locks = pane.seen
 			.slice(start)
 			.filter((message) => message.type === "board_lock" && message.board === "watched");
-		expect(locks.at(-1)?.["held"]).toBeFalse();
+		expect(locks.some((message) => message["held"] === true)).toBeFalse();
 
 		await request("/api/boards/open", {
 			method: "POST",

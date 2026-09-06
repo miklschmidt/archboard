@@ -39,18 +39,20 @@ interface BrowserSelection {
 	testName?: string;
 }
 
-const ALL_BROWSER_TEST_PATHS = [...BROWSER_TEST_PATHS, ...OPT_IN_BROWSER_TEST_PATHS] as const;
-const PATH_INDEX = new Map<string, number>(
-	ALL_BROWSER_TEST_PATHS.map((file, index) => [file, index]),
-);
-
 function selectionError(message: string): never {
 	throw new Error(
 		`${message}\nUse the complete package command or ` +
-			`bun ${BROWSER_ADAPTER_PATH} [--opt-in] --focus <canonical test path> [--test-name <exact test name>].`,
+			`bun ${BROWSER_ADAPTER_PATH} [--opt-in] --focus <test path>... [--test-name <exact test name>].`,
 	);
 }
 
+/**
+ * What the lane runs. The package command runs the whole inventory; `--focus`
+ * runs any subset of it, in the order given, deduplicated. Only what protects
+ * against a typo silently running the whole lane is refused: a path that is
+ * not an owner, a flag the runner does not know, or `--test-name` without
+ * exactly one owner to apply it to (TASK-153).
+ */
 function validateBrowserSelection(argv: readonly string[]): BrowserSelection {
 	if (argv[0] !== "bun" || argv[1] !== BROWSER_ADAPTER_PATH) {
 		selectionError(`Browser lane must start with \`bun ${BROWSER_ADAPTER_PATH}\`.`);
@@ -79,46 +81,28 @@ function validateBrowserSelection(argv: readonly string[]): BrowserSelection {
 			selectionError("--test-name requires a non-empty exact test name.");
 		}
 		selected = focusArguments.slice(0, testNameIndex);
-		if (selected.length !== 1) {
-			selectionError("--test-name requires exactly one focused browser owner.");
-		}
 	}
-	if (focused && selected.length === 0) {
+	const unknownFlag = selected.find((token) => token.startsWith("-"));
+	if (unknownFlag) {
+		selectionError(`Browser lane does not know \`${unknownFlag}\`.`);
+	}
+	const inventory: readonly string[] = optIn ? OPT_IN_BROWSER_TEST_PATHS : BROWSER_TEST_PATHS;
+	const unknown = selected.find((file) => !inventory.includes(file));
+	if (unknown) {
+		selectionError(
+			`\`${unknown}\` is not ${optIn ? "an opt-in" : "a normal"} browser owner. The ${
+				optIn ? "opt-in" : "normal"
+			} inventory is:\n${inventory.join("\n")}`,
+		);
+	}
+	const files = focused ? Array.from(new Set(selected)) : [...inventory];
+	if (focused && files.length === 0) {
 		selectionError("Focused browser lane is empty.");
 	}
-	if (selected.some((token) => token.startsWith("-"))) {
-		selectionError("Browser lane accepts no extra flags.");
+	if (testName && files.length !== 1) {
+		selectionError("--test-name requires exactly one focused browser owner.");
 	}
-	const indices = selected.map((file) => PATH_INDEX.get(file));
-	const unknown = selected.find((_, index) => indices[index] === undefined);
-	if (unknown) {
-		selectionError(`Browser lane names unknown path \`${unknown}\`.`);
-	}
-	const duplicate = selected.find((file, index) => selected.indexOf(file) !== index);
-	if (duplicate) {
-		selectionError(`Browser lane repeats \`${duplicate}\`.`);
-	}
-	const inventory = optIn ? OPT_IN_BROWSER_TEST_PATHS : BROWSER_TEST_PATHS;
-	if (selected.some((file) => !inventory.includes(file as never))) {
-		selectionError(
-			`${optIn ? "Opt-in" : "Normal"} browser lane names a path from the other inventory.`,
-		);
-	}
-	for (let index = 1; index < indices.length; index += 1) {
-		if ((indices[index - 1] ?? -1) >= (indices[index] ?? -1)) {
-			selectionError("Focused browser paths are not in canonical relative order.");
-		}
-	}
-	if (
-		!focused &&
-		(selected.length !== inventory.length ||
-			selected.some((file, index) => file !== inventory[index]))
-	) {
-		selectionError(
-			`${optIn ? "Opt-in" : "Package"} browser lane must name all ${inventory.length} canonical paths in order.`,
-		);
-	}
-	return { mode, files: selected as BrowserTestPath[], ...(testName ? { testName } : {}) };
+	return { mode, files: files as BrowserTestPath[], ...(testName ? { testName } : {}) };
 }
 
 function browserOwnerCommandArguments(file: BrowserTestPath, testName?: string): string[] {

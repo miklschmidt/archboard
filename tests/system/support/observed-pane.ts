@@ -1,9 +1,6 @@
 import { WebSocket, type RawData } from "ws";
 
-import {
-	TEST_PANE_MESSAGE_POLL_MS,
-	TEST_PANE_MESSAGE_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+import { TEST_PANE_MESSAGE_POLL_MS, TEST_PANE_MESSAGE_TIMEOUT_MS } from "./timing.ts";
 
 interface ObservedPaneEvent {
 	type: string;

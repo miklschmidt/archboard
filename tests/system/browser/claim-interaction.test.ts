@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -434,13 +434,20 @@ test(
 
 		await canvas.restart({
 			whileStopped: async () => {
-				const disconnected = await pollUntil(
+				// A dropped socket is a blip first: the pane stays editable through
+				// one reconnect window, and only then reads contact as lost.
+				const blip = await pollUntil(
+					() => readBanner(browser),
+					(value) => value.connection === "Disconnected",
+					"the pane to notice the dropped socket",
+				);
+				expect(blip).toMatchObject({ connection: "Disconnected", view: false });
+				const contactLost = await pollUntil(
 					() => readBanner(browser),
 					(value) => value.view === true && value.connection === "Disconnected",
-					"the disconnected pane to fail closed as held",
+					"the pane to lose contact after one reconnect window",
 				);
-				expect(disconnected).toMatchObject({ connection: "Disconnected", view: true });
-				expect(disconnected.banner).toBeNull();
+				expect(contactLost.banner).toBeNull();
 			},
 		});
 		const reconnected = await pollUntil(
@@ -454,7 +461,7 @@ test(
 		await pollUntil(
 			() => readBanner(browser),
 			(value) => value.view === true && value.connection === "Disconnected",
-			"the stopped canvas to remain fail closed",
+			"the stopped canvas to lose contact",
 		);
 	},
 	TEST_BROWSER_COMMAND_TIMEOUT_MS * 6,

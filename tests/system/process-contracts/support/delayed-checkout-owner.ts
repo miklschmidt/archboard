@@ -3,7 +3,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS } from "../../../../src/shared/timing/timing.ts";
+import { TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS } from "../../support/timing.ts";
 
 async function waitForRecordedPid(file: string): Promise<number> {
 	const [pid] = await waitForRecordedPids(file, 1);

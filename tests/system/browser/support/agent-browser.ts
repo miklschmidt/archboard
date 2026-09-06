@@ -2,10 +2,7 @@ import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSyn
 import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { isAbsolute, join, relative, resolve } from "node:path";
 
-import {
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-	TEST_BROWSER_POLL_MS,
-} from "../../../../src/shared/timing/timing.ts";
+import { TEST_BROWSER_COMMAND_TIMEOUT_MS, TEST_BROWSER_POLL_MS } from "../../support/timing.ts";
 
 interface BrowserTestRoots {
 	laneRoot: string;

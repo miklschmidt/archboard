@@ -7,7 +7,7 @@ import {
 	TEST_BOARD_INSPECTION_PACKAGE_LIFECYCLE_CASE_TIMEOUT_MS,
 	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS,
 	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS,
-} from "../../../src/shared/timing/timing.js";
+} from "../support/timing.ts";
 import {
 	createPackageInspectionOwner,
 	processIdentityExists,

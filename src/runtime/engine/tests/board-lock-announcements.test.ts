@@ -8,10 +8,10 @@ const vault = mkdtempSync(join(tmpdir(), "archboard-lock-news-"));
 process.env["ARCHBOARD_VAULT"] = vault;
 const lock = await import("../board-lock.ts");
 const logger = (await import("../logger.ts")).default;
-const { LOCK_FREE_LINGER_MS, LOCK_WATCH_MS } = await import("../../../shared/timing/timing.ts");
+const { LOCK_WATCH_MS } = await import("../../../shared/timing/timing.ts");
 const originalWarn = logger.warn;
 
-test("announcements isolate passenger failure and coalesce free news", async () => {
+test("announcements isolate passenger failure and report release at once", async () => {
 	jest.useFakeTimers();
 	try {
 		const warnings: unknown[][] = [];
@@ -47,10 +47,9 @@ test("announcements isolate passenger failure and coalesce free news", async () 
 			waitMs: 0,
 		});
 		expect(news.length).toBe(beforeRenew);
+		// Release news goes out with the release, not after a linger (TASK-153).
 		lock.releaseHold("broadcast", "pane");
-		expect(news.at(-1)?.held).toBeTrue();
-		jest.advanceTimersByTime(LOCK_FREE_LINGER_MS);
-		expect(news.at(-1)?.held).toBeFalse();
+		expect(news.at(-1)).toEqual({ board: "broadcast", id: null, held: false });
 
 		const start = news.length;
 		for (let index = 0; index < 8; index += 1) {
@@ -59,13 +58,10 @@ test("announcements isolate passenger failure and coalesce free news", async () 
 				() => undefined,
 			);
 		}
-		jest.advanceTimersByTime(LOCK_FREE_LINGER_MS);
 		const sequence = news.slice(start);
-		const flips = sequence.filter(
-			(item, index) => index > 0 && item.held !== sequence[index - 1]?.held,
-		).length;
-		expect(flips).toBe(1);
-		expect(sequence.at(-1)?.held).toBeFalse();
+		expect(sequence.map((item) => item.held)).toEqual(
+			Array.from({ length: 16 }, (_, index) => index % 2 === 0),
+		);
 	} finally {
 		lock.watchBoardLocks(null);
 		lock.onBoardSweep(null);

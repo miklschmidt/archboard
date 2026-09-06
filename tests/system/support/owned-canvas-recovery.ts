@@ -1,4 +1,4 @@
-import { TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS } from "./timing.ts";
 
 async function discardHeldBoards(
 	generation: Readonly<{ base: string; pid: number; exit: object | null }>,

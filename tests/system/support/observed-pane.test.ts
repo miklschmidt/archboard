@@ -2,7 +2,7 @@ import { expect, jest, test } from "bun:test";
 import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 
-import { TEST_PANE_MESSAGE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_PANE_MESSAGE_TIMEOUT_MS } from "./timing.ts";
 import { openObservedPane } from "./observed-pane.ts";
 
 interface Event {

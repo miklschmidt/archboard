@@ -10,7 +10,7 @@ import {
 	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS,
 	TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_POLL_MS,
 	TEST_BOARD_INSPECTION_SENTINEL_STARTUP_TIMEOUT_MS,
-} from "../../../../src/shared/timing/timing.js";
+} from "../../support/timing.ts";
 
 interface PackageProcessGroupIdentity {
 	group: number;

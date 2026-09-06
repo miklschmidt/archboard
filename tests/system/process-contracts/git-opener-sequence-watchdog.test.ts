@@ -6,9 +6,8 @@ import { join, resolve } from "node:path";
 import {
 	GIT_PROCESS_GROUP_CLEANUP_MS,
 	GIT_PROCESS_GROUP_POLL_MS,
-	TEST_GIT_OPENER_CASE_TIMEOUT_MS,
-	TEST_GIT_OPENER_WATCHDOG_MS,
 } from "../../../src/shared/timing/timing.js";
+import { TEST_GIT_OPENER_CASE_TIMEOUT_MS, TEST_GIT_OPENER_WATCHDOG_MS } from "../support/timing.ts";
 
 const ROOT = resolve(import.meta.dir, "../../..");
 const OWNERS = [

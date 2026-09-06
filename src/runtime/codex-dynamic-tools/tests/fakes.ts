@@ -74,7 +74,6 @@ export class FakeEpoch {
 			},
 			cas: { revision: this.revision, bytesHash: null },
 			manifestPath: "/tmp/fake-epoch-manifest.json",
-			recordsPath: "/tmp/fake-epoch-records.json",
 		};
 	}
 

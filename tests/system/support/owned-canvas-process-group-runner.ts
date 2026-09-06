@@ -8,7 +8,7 @@ import {
 	TEST_CANVAS_HEALTH_POLL_MS,
 	TEST_CANVAS_LISTENER_PROBE_TIMEOUT_MS,
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+} from "./timing.ts";
 import { isOwnedCanvasNamespaceRoot, processExists } from "./owned-canvas.ts";
 
 type JsonRecord = Readonly<Record<string, unknown>>;

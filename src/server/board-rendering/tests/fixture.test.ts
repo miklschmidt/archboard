@@ -3,8 +3,10 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { TEST_BOARD_RENDERER_FIXTURE_TIMEOUT_MS } from "../../../shared/timing/timing.ts";
 import { createRendererFixture, RendererFixtureError } from "../index.ts";
+
+/** Bound for the renderer fixture to answer. */
+const TEST_BOARD_RENDERER_FIXTURE_TIMEOUT_MS = 1000;
 
 const rendererEntry = resolve(import.meta.dir, "../../../../dist/frontend/renderer.html");
 

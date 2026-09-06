@@ -6,15 +6,16 @@ import { join, resolve } from "node:path";
 import { projectBoardRenderSnapshot } from "../../../runtime/engine/board-io.ts";
 import { extractSceneJsonFromObsidianMd } from "../../../runtime/engine/obsidian-md.ts";
 import {
-	TEST_BOARD_RENDERER_OWNER_TIMEOUT_MS,
-	TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS,
-} from "../../../shared/timing/timing.ts";
-import {
 	BoardRendererError,
 	createBoardRenderingOwner,
 	DEFAULT_MERMAID_CONFIG,
 	type BoardRenderSnapshot,
 } from "../index.ts";
+
+/** Bun case bound for the renderer owner. */
+const TEST_BOARD_RENDERER_OWNER_TIMEOUT_MS = 9500;
+/** Bound for a renderer that fails to start to say so. */
+const TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS = 3000;
 
 const repositoryRoot = resolve(import.meta.dir, "../../../..");
 

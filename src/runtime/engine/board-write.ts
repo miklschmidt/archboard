@@ -254,8 +254,7 @@ function persist<T>(
 	try {
 		written = writeBoardContent(target.board, content, {
 			...(request.save?.force === undefined ? {} : { force: request.save.force }),
-			saveCommand:
-				target.key === request.source.key ? "board save" : `board save --as ${target.key}`,
+			savedFrom: request.source.key,
 		});
 	} catch (error) {
 		if (error instanceof BoardWriteConflictError && !isHeld(target.key) && !request.save) {

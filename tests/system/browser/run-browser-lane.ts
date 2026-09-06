@@ -20,7 +20,7 @@ import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_BROWSER_POLL_MS,
 	TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+} from "../support/timing.ts";
 import {
 	BROWSER_ADAPTER_PATH,
 	CI_EXCLUDED_BROWSER_OWNERS_ENV,

@@ -146,13 +146,20 @@ function describeWriteConflict(input: {
 	fileModifiedAt?: string;
 	expectedVersion?: number | null;
 	actualVersion?: number | null;
-	saveCommand: string;
+	savedFrom?: string;
 }): BoardWriteConflict {
 	const key = boardKey(input.target);
+	// Every outcome is typed as printed. The two that write name the board the
+	// save is issued for and say what they are doing, because the write boundary
+	// cannot tell a person at a terminal from an agent and refuses an unstated
+	// write (TASK-095); a fixed line per outcome is honest, since the outcome is
+	// the intent (TASK-153). Reload is not a write and needs neither.
+	const from = input.savedFrom ?? key;
+	const as = from === key ? "" : ` --as ${key}`;
 	const outcomes = {
 		reload: `browser show ${key} --pane <spec> --reload`,
-		overwrite: `${input.saveCommand} --force`,
-		saveAs: `board save --as ${suggestSaveAsName(input.target)}`,
+		overwrite: `board save --board ${from}${as} --force --doing "keeping the canvas"`,
+		saveAs: `board save --board ${from} --as ${suggestSaveAsName(input.target)} --doing "keeping both"`,
 	};
 	const lead =
 		input.reason === "changed"

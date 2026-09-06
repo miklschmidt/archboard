@@ -160,7 +160,6 @@ class FakeEpoch implements CoordinatorEpochPort {
 			manifest: { ...emptyManifest(), activeEpoch: this.activeEpoch, records: this.records },
 			cas: { revision: this.revision, bytesHash: null },
 			manifestPath: "/tmp/fake-epoch-manifest.json",
-			recordsPath: "/tmp/fake-epoch-records.json",
 		};
 	}
 
