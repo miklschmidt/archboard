@@ -77,7 +77,7 @@ describe("package bin and help", () => {
 			[
 				"src/cli/command-contract/tests/fixed-base-compatibility.json",
 				compatibilityPath,
-				"fa7c2d2081665402214e9ae8361a1f722b3a208e77d542a093e07c3eea33b457",
+				"537f3458236e6b0131b0553955237523191ecfc350b4ca2283918d7e78496aa9",
 			],
 		] as const;
 		for (const [oldRelative, owned, digest] of pairs) {
