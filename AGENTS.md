@@ -1,239 +1,79 @@
 # archboard — agent-driven architecture canvas
 
-An internal tool: a live Excalidraw canvas for building, exploring, and
-refactoring **code and infrastructure architecture** by voice with an agent.
-Private, never published — to npm or anywhere else.
+A private internal tool, never published: a live Excalidraw canvas for building
+and refactoring code and infrastructure architecture with an agent. `main`
+forked from `yctimlin/mcp_excalidraw` v2.0.0 and is deliberately not kept
+mergeable with it.
 
 Where things are written down:
 
-- Design and roadmap: `DESIGN.md`
-- Running it end to end with Codex: `TESTING.md`
-- Installing it for use in other repos: `INSTALL.md`
-- Domain language: `CONTEXT.md`
-- Deep-module directory and import rules: `docs/agents/boundaries.md`
+- Design, roadmap, the bound Codex app-server contract: `DESIGN.md`
+- Running and verifying it end to end: `TESTING.md`; installing it elsewhere: `INSTALL.md`
+- Domain language: `CONTEXT.md`; module layout and import rules: `docs/agents/boundaries.md`
 - Decisions: `docs/adr/` — read the ADR before touching what it decides
-- Measured investigations (write costs, text metrics,
-  statelessness): `docs/design/`
-- Using the canvas: the `archboard` skill. Working on this repo's own
-  source: the `archboard-dev` skill — procedures, and a list of things that
-  will mislead you
-- Work, open and closed: Backlog.md via the `backlog` CLI; never hand-edit
-  files under `backlog/`
+- Measured investigations: `docs/design/`; the UI's visual authority is
+  `docs/design/operator-canvas-shell.md` with its reference image
+- Changing tests or CI: `docs/agents/test-suite.md`
+- Working on this repo: the `archboard-dev` skill; using the canvas: the `archboard` skill
+- Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
 
-## Shell platform contract
+## Environment facts you cannot derive
 
-Archboard’s shell is desktop-only. Do not plan, implement, or gate phone/narrow
-responsive layouts unless the user explicitly reverses this decision.
+- This box has node and bun but no npm or npx: `bun run <script>`, never
+  `npm run`. `bun install` intermittently fails extracting a tarball; run it again.
+- A running server read its source at start. Editing source changes the next
+  CLI command, not the running server: `./bin/canvas stop && ./bin/canvas start`.
+  Stop refuses while a held board has work that exists only in memory.
+- `bun run check` is the complete gate. `skills/` is the tracked source of the
+  skills; `.agents/skills/` and `.claude/skills/` are derived and untracked
+  (`bun scripts/sync-skills.ts`, `skills experimental_install`).
 
-## UI visual authority
+## Invariants nothing refuses
 
-Every UI-design or UI-implementation worker must read
-`docs/design/operator-canvas-shell.md` and inspect
-`docs/design/assets/operator-canvas-shell.png` before changing rendered Archboard
-UI. These references are the visual authority. Keep UI code boundaries and
-verification requirements in their existing documents.
+The loud rules teach themselves (a call naming no board, an agent write without
+`--doing`, a stale version, a note changed under another editor are all refused
+with the reason). These are the rules that will not stop you:
 
-## Upstream
-
-`main` is based on [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw)
-`v2.0.0` (`6ddbe98`, 2026-08-09) with full upstream history retained.
-**Archboard is diverging deliberately and is not kept mergeable.** Restructure
-freely; the `upstream` remote exists for reference and cherry-picking (see the
-archboard-dev skill), not as a merge target. Always build from source; never
-`bun add mcp-excalidraw-server` — the npm package is releases behind.
-
-## Run it (there is no build step)
-
-bun runs the TypeScript: the server and the CLI start from `src/`, and only
-the frontend is built, by vite (ADR 0014). This box has node + bun but **no
-npm/npx** — run scripts with `bun run`, never `npm run`. `bun install`
-intermittently fails extracting a tarball; just run it again.
-
-```bash
-bun install
-bun run build       # frontend only -> dist/frontend/
-bun run test        # type-check first, then the whole normal suite
-./bin/canvas start  # canvas server on 127.0.0.1:3000
-./bin/canvas status # names stale source in a running server, and the remedy
-./bin/canvas stop
-```
-
-`bin/canvas` runs `src/bin.ts` with bun and resolves from any cwd; use it,
-never `npx`. **A canvas with no vault refuses to start** (ADR 0015) — set
-`ARCHBOARD_VAULT` (or put it in `.env`) before the server starts.
-
-**Editing source changes behaviour on the next CLI command, but not in a
-server that is already running** — restart it through the guarded lifecycle:
-
-```bash
-./bin/canvas stop
-./bin/canvas start
-```
-
-Saving a backend file reloads nothing. Stop refuses while any held board has
-work that exists only in process memory and names each board's reload,
-overwrite, and save-elsewhere recovery choices. `bun run dev` starts the same
-backend plus an independent Vite frontend with browser HMR.
-
-**Running the complete normal local suite needs `agent-browser` on PATH**: one
-typed serial browser lane drives every path in the normal executable
-`BROWSER_TEST_PATHS` inventory and exits 2 when prerequisites are absent. The
-separate opt-in browser-performance inventory also needs `strace`. Both stay
-headless and run one owner at a time. The lane reports its selected owner count
-at execution, so do not copy that count into documentation. `bun run check` is
-the complete normal gate. GitHub Actions invokes that command with two
-fail-closed hosted exceptions:
-`tests/system/code-targets/opener-persistence.test.ts` and the complete serial
-browser lane. TASK-141 and TASK-142 own restoring the system owner and the
-normal browser inventory; opt-in owners never enter hosted CI through that
-restoration. The controlled text-workbench owner runs the production browser
-composition against the exact Codex 0.151.0 protocol fake; it never resolves a
-Codex executable through `PATH`. `bun run test:repository` includes the
-inventory that rejects missing, duplicate, overlapping, or normal-gate-reachable
-opt-in tests. Changing tests or CI, or a browser owner failing →
-`docs/agents/test-suite.md`.
-
-The server is enough for board work. Named-board reads, writes, Mermaid
-conversion, PNG/SVG rendering, finding close-ups, inspection, snapshots,
-branches, and exports work with zero browser clients. Open
-<http://127.0.0.1:3000> only for a live human session. Commands under
-`browser` inspect or control that session; real-browser checks verify browser
-fidelity rather than a board-work prerequisite.
-
-## Skills (after a fresh clone)
-
-`.agents/skills/` and `.claude/skills/` are **derived and untracked**, so a
-clone has no skills until you restore them:
-
-```bash
-skills experimental_install     # third-party, pinned in skills-lock.json
-bun scripts/sync-skills.ts      # ours, from skills/ (creates the symlinks)
-```
-
-`skills/` is our single tracked source, deliberately absent from
-`skills-lock.json` so the skills tool cannot clobber it. Everything else under
-`.claude/` — `settings.json`, `commands/`, `agents/` — is authored
-configuration and **is** tracked.
-
-## The loop
-
-```
-agent reads code  ->  draws the architecture  ->  you rearrange it on the canvas
-      ^                                                      |
-      +------------  agent reads the new layout  <-----------+
-```
-
-The read-back is the point. Moving a box is a statement about the design.
-
-**Creators need an immediate connection to what they are creating** (Bret
-Victor, _Inventing on Principle_). On this canvas the creator is both of you,
-so every change either of you makes is visible as it is made. Keeping somebody
-from _editing_ while another writer holds the board is fine — that is what the
-lock is for (ADR 0016). Keeping them from _seeing_ is not. An agent never
-works out of sight and reveals the result: it claims the board, says what it
-is doing, and restructures in the open.
-
-## Invariants
-
-The loud rules teach themselves — a call that names no board is refused and
-lists the persisted boards in the configured vault (ADR 0020), an agent write without `--doing` is refused
-(TASK-095), a stale write is refused once with the board's real version
-(`BOARD_VERSION_CONFLICT`: re-read the board, never retry blind), and a note
-that changed on disk under another editor is refused, never overwritten
-(ADR 0006). These are the rules nothing refuses:
-
-- **The note is the board, and the canvas holds no copy of one** (ADR 0015).
-  `src/runtime/engine/board-io.ts` is the one place a note is read or written, and it is
-  synchronous on purpose — an `await` between the read and the write would let
-  two writes to one board interleave. Every note write goes through
-  `src/runtime/engine/atomic-write.ts`; the fsync is over half the cost of a write and
-  was accepted with ADR 0015 — do not optimise it away without reopening it.
-- **One writer at a time, per board** (ADR 0016). The lock is a lease file in
-  the vault, taken by one write-boundary middleware, deny by default: a
-  non-GET naming a board is a write unless the exemption table says why not.
-  The same middleware requires `doing`. Claim before substantial work
-  (`claim` / `release`) — nothing refuses you for skipping it; you just leave
-  a gap for another writer between every pair of writes.
-- **A person is never refused** — their local edit is visible before either
-  `REPORT_PROGRESS_MS` or `REPORT_IDLE_SETTLE_MS`, never version-refused, and
-  never asked to narrate. An agent must not make
-  the canvas stop responding to the person standing at it.
-- **There is one converter, it runs on the way in, and nothing converts on the
-  way out** (ADR 0015). `label: {text}` and arrow `start`/`end` are input
-  spellings, spent at the write boundary; the board holds the result — a
-  labelled box is two elements from the moment it is written — and Excalidraw
-  does not change it (`test:serial-browser` asserts a zero diff). A second converter,
-  or a conversion on the read path, is how one board becomes two documents.
-  The exception-looking thing is not an exception: binding-derived code links
-  are a noncanonical presentation overlay, added to copies returned to a
-  browser or caller and stripped at the write boundary. They are never a second
-  board document and never persist in the note.
-- **One thing somebody asked for is one write** (TASK-068). Align, patch,
-  promote, import: each reaches the note as one read-modify-write under one
-  lock acquisition, and the `test:system` process-contract owners count writes on the wire.
-- **Renaming an element id is the most dangerous thing in the system.** Every
-  id archboard mints comes from `src/shared/ids/ids.ts`: one to eight characters of
-  Obsidian's block-id alphabet, so the note writer has nothing to rename. No
-  second minting site, no longer shape. Why, and what a rename costs:
-  `docs/design/server-is-the-truth.md` §4.
-- **A text element's width is measured, not estimated**
-  (`src/runtime/engine/measure-text.ts`, within 0.0012 px of Chrome):
-  `docs/design/measuring-text-outside-a-browser.md`.
+- **The note is the board; the canvas holds no copy** (ADR 0015).
+  `src/runtime/engine/board-io.ts` is the one place a note is read or written,
+  synchronously on purpose, and every write goes through `atomic-write.ts`
+  including its fsync.
+- **One writer at a time per board** (ADR 0016), a lease file taken by one
+  write-boundary middleware, deny by default. Claim before substantial work.
+- **A person is never refused**: their local edit is visible immediately, never
+  version-refused, never asked to narrate. An agent never makes the canvas stop
+  responding to the person at it, and never works out of sight: claim, say
+  what you are doing, restructure in the open.
+- **One converter, on the way in, nothing on the way out** (ADR 0015).
+  `label: {text}` and arrow `start`/`end` are input spellings spent at the write
+  boundary; the board holds the result. Binding-derived code links are a
+  presentation overlay on copies, stripped at the write boundary, never persisted.
+- **One thing somebody asked for is one write** (TASK-068).
+- **Never rename an element id.** Every id comes from `src/shared/ids/ids.ts`
+  (Obsidian block-id alphabet, one to eight characters); no second minting
+  site. Why: `docs/design/server-is-the-truth.md` §4.
+- **Text width is measured, not estimated** (`src/runtime/engine/measure-text.ts`).
 - **Every write path replaces an element; nothing edits one in place.**
-  Branches and snapshots are deep copies, and checks mutate copies to prove
-  it (TASK-042, TASK-048).
-- **Every duration is in `src/shared/timing/timing.ts`** with what it pulls against
-  written beside it. Read the file before tuning one (TASK-066).
-- **`customData.archboard` is archboard's metadata channel** (ADR 0003) and
-  survives the human round-trip; archboard's own keys sit under
-  `customData.archboard`, never flat. A code-bound element persists
-  `customData.archboard.binding` only: repository, repo-relative path, and
-  branch/commit/confirmed-at details when available. `link` is still valid for
-  human-authored board and web links, but a code binding's tappable local target
-  is derived on outbound presentation from the binding plus the machine-local
-  checkout registry, and is stripped before any note write. Elements that came
-  back through the browser are tagged `"source": "frontend_sync"`.
-- **Keep a board open in one editor at a time.** The conflict check reads the
-  file, not another app's memory, so two editors can still cross-write.
-- **Codex communication uses one private package-local app-server session over
-  stdio.** Archboard owns its dedicated `CODEX_HOME`, `CODEX_SQLITE_HOME`, strict
-  config, epoch state, and sign-in. A pane's explicit thread link names one
-  workhorse, while voice belongs to its separate coordinator. The retired ambient
-  daemon, control client, and environment-selected target are unavailable. The
+- **Every duration lives in `src/shared/timing/timing.ts`** with what it pulls
+  against written beside it.
+- **`customData.archboard` is archboard's metadata channel** (ADR 0003), never
+  flat keys. A code binding persists only under `customData.archboard.binding`.
+- **Codex runs as one private package-local app-server session over stdio**
+  with its own `CODEX_HOME`; a pane's thread link names one workhorse and
+  voice belongs to its separate coordinator. The
   [bound app-server design](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session)
-  is the semantic delivery and outcome contract.
-
-## Names on the wire
-
-`archboard` is the name everywhere a user reads: CLI help and errors, and the
-`source` in exported scenes. Two internal identity
-strings deliberately keep the old spelling — `mcp-excalidraw-canvas` in
-`/health` (how a client proves it is not talking to a foreign service on the
-port) and the `excalidraw-canvas` state directory (renaming it would orphan a
-running server's pidfile). Neither is printed by any command.
-
-## Agent docs
-
-- Issue tracker: Backlog.md, CLI only — `docs/agents/issue-tracker.md`
-- Triage labels, the five canonical role strings — `docs/agents/triage-labels.md`
-- Domain docs, `CONTEXT.md` and `docs/adr/`, created lazily — `docs/agents/domain.md`
+  is the delivery and outcome contract.
+- The shell is desktop-only at 1920×1080; do not add phone or narrow layouts.
 
 ## Test policy
 
-Give each non-obvious regression one cheapest credible owner. Before adding or
-keeping a test, name the regression and the cheapest stable interface that
-catches it. Use types, lint, or static checks for structural rules; focused unit
-or integration owners for hidden behaviour; rendered or browser owners for
-visible workflows; and process or system owners only when the bug needs that
-boundary.
-
-A cheap test can still be worthless. Remove or merge an owner when normal use
-makes its failure obvious, another owner catches the same regression, or it
-mostly simulates upstream tools rather than Archboard. Count runtime,
-subprocesses, fixtures, cleanup states, false failures, maintenance, and slower
-agent iteration as costs. Prove narrow facts narrowly: inspect the real
-user-facing interface when it makes the result obvious instead of launching a
-broad toolchain or constructing a larger simulation.
+Give each non-obvious regression one cheapest credible owner: types and lint
+for structural rules, focused unit or integration owners for hidden behaviour,
+rendered or browser owners for visible workflows, process or system owners only
+when the bug needs that boundary. Remove an owner when normal use makes its
+failure obvious, another owner catches it, or it mostly simulates upstream
+tools. Never add repository-policy tests, configuration snapshots, or tests of
+lint rules, tooling or test helpers; the maintainer deletes them on sight.
 
 <!-- BACKLOG.MD GUIDELINES START -->
 <!-- backlog.md-instructions-version: 1.50.1 -->
