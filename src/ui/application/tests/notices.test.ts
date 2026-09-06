@@ -19,6 +19,13 @@ test("a notice with the same id replaces its predecessor in place", () => {
 	expect(withoutNotice(stack, "hold:A").map((notice) => notice.id)).toEqual(["stale-frontend"]);
 });
 
+test("raising the same words or dismissing an absent id keeps the stack's identity", () => {
+	const stack = withNotice([], holdNotice("A", "Checkout", 1));
+	expect(withNotice(stack, holdNotice("A", "Checkout", 1))).toBe(stack);
+	expect(withoutNotice(stack, "elsewhere:A")).toBe(stack);
+	expect(withNotice(stack, holdNotice("A", "Checkout", 2))).not.toBe(stack);
+});
+
 test("code target notices carry the typed actions through and stale builds offer a reload", () => {
 	const notice = codeTargetShellNotice({
 		kind: "error",
