@@ -3,11 +3,11 @@ id: TASK-152
 title: >-
   A person's edit is optimistic, but the note still decides: version-check human
   writes and freeze content editing under an agent claim
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-06 12:59'
-updated_date: '2026-09-06 18:39'
+updated_date: '2026-09-06 18:46'
 labels: []
 dependencies: []
 priority: high
@@ -90,10 +90,18 @@ created: 2026-09-06 18:34
 ---
 Remaining P2 (reporting.ts:403-408, existing text) validated and fixed in 207ca123: the editor is closed while its element is absent from the scene, then the note is shown whole. The browser owner now covers both the new-draft and the existing-text case (three scenarios green); complete bun run check running on the squashed head in an isolated, correctly confined worktree.
 ---
+
+author: @codex
+created: 2026-09-06 18:46
+---
+The existing-text P2 is resolved: showNoteScene temporarily omits the edited element, closes the editor while it cannot submit into that ID, then restores the complete authoritative note. Stale-drag, new-draft and existing-text scenarios all pass, including the subsequent write. Final independent acceptance at 044d2a8d: zero Standards findings and zero Spec findings. Direct comparison with the prior reviewed tree 348d4738 confirms only the remaining canvas correction and its browser coverage changed in product/test source; previously accepted composer and quoting fixes are preserved after squashing. Reviewer reran lint, fmt:check, both TypeScript projects, frontend build, 6 note-version module tests, all 3 human-version-refusal browser scenarios and the claim-interaction browser owner in a disposable checkout with confined external state. All passed. Initial browser setup failed because the reviewer temporary path exceeded the agent-browser Unix socket path limit; shortening the confined root resolved setup, with no product changes. Logs: /tmp/archboard-review-044d2a8d.log and /tmp/archboard-review-044d2a8d-browser.log. Claude/user reports complete bun run check passed at 52bdf08a; git comparison confirms 044d2a8d differs only in TASK-152 metadata. The reviewer reran focused gates, not the complete check. All three behavioral review findings are now resolved; the approved lint exception remains withdrawn. This acceptance supersedes earlier open/revision-required review comments.
+---
 <!-- COMMENTS:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
 A person's write is version-checked like an agent's and refused when stale; the pane withdraws the optimistic change to the refusal's document and shows one notice (board-version-client system owner, human-version-refusal browser owner). A hold never revokes a claim: a claimed board is view mode for people, pan and zoom still report, a drag takes no hold, and the lock refuses a person's hold immediately (claim-interaction browser owner, board-lock-api process owner). Take-back is the explicit /api/boards/take-back route and the agent is told once. A boardless agent_activity snapshot marks claimed and recently written boards in the navigator whether or not a pane has them open (doing-activity process owner, agent-activity unit owner, claim-interaction). ADR 0022 written, ADR 0006 and 0016 point to it, AGENTS.md and the archboard skill updated. Verified with the complete bun run check on 5e3a5daa.
+
+The existing-text P2 is resolved: showNoteScene temporarily omits the edited element, closes the editor while it cannot submit into that ID, then restores the complete authoritative note. Stale-drag, new-draft and existing-text scenarios all pass, including the subsequent write. Final review accepted at 044d2a8d; reviewer focused lint/type/build/module/browser verification passed, with complete-check evidence from Claude at source-identical 52bdf08a.
 <!-- SECTION:FINAL_SUMMARY:END -->
