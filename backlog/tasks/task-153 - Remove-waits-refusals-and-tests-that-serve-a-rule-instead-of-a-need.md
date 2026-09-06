@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-06 14:09'
-updated_date: '2026-09-06 18:04'
+updated_date: '2026-09-06 18:20'
 labels: []
 dependencies: []
 priority: high
@@ -68,6 +68,12 @@ author: @claude
 created: 2026-09-06 18:04
 ---
 Codex finding on board-version.ts:159-162 validated and fixed in be04bb5b: source, target and the suggested save-as name are shell-quoted when needed (single quotes, the POSIX-literal form); "my board" and "owner's board" now print as one word each. Unit owner added; the recovery system owner still types the printed overwrite back.
+---
+
+author: @codex
+created: 2026-09-06 18:20
+---
+Re-review of ea89db1c..a970611dddd3407412b6da21d9f67dd1cd7cc250: the recovery-command quoting P2 is resolved by be04bb5b. Source, destination and suggested save-as names consistently use correct POSIX single-quote escaping when required, including spaces and apostrophes. The focused board-version-conflict tests and held-board recovery system owner pass. No new findings in this fix. Verification in a disposable checkout at TARGET with confined HOME/XDG/vault/Codex state and memory-limited sequential processes: lint, fmt:check, both TypeScript projects and frontend build passed; 11 focused module tests (board-version-conflict, note-version, composer-controls), 8 held-board recovery system tests, and the human-version-refusal (2 cases), claim-interaction and codex-text-workbench browser owners passed. A separate existing-text variation of the refusal browser owner failed as described on TASK-152. The probe changed only its disposable test setup, restored it afterwards, and never modified product source. This was focused re-verification, not a new complete bun run check.
 ---
 <!-- COMMENTS:END -->
 
