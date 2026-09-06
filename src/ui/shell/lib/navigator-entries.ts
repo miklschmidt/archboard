@@ -1,10 +1,11 @@
 // What the navigator lists, derived from the real listing: persisted boards
-// grouped by name, open boards that are not in the vault yet, which pane is
-// showing what, and the scratch boards. Pure: no React.
+// grouped by name, open boards that are not in the vault yet, boards an agent
+// is working on that nothing else lists, which pane is showing what, what an
+// agent is doing where, and the scratch boards. Pure: no React.
 
 import type { ScratchBoardEntry, ShellView } from "@/ui/shell/lib/contracts";
 import type { PreviewSource } from "@/ui/board-preview";
-import type { BoardIdentity, BoardListing } from "@/ui/types";
+import type { AgentActivityEntry, BoardIdentity, BoardListing } from "@/ui/types";
 
 /** Pane letters in reading order; a third pane would be a number. */
 const PANE_LETTERS = ["A", "B"] as const;
@@ -29,6 +30,22 @@ interface NavigatorEntry {
 	onScreen: string | null;
 	/** A scratch board with a note but no chosen name. */
 	placeholder: boolean;
+	/** What an agent is doing to this board right now, or null (ADR 0022). */
+	activity: AgentActivityEntry | null;
+}
+
+/**
+ * The identity a board key spells: a bare name is the current variant, and
+ * `name@variant` names another. Mirrors `parseBoardKey` in the engine, which
+ * the browser cannot import.
+ * @param key The board key.
+ * @returns Its identity.
+ */
+function identityOfKey(key: string): BoardIdentity {
+	const at = key.lastIndexOf("@");
+	return at === -1
+		? { board: key, variant: "current" }
+		: { board: key.slice(0, at), variant: key.slice(at + 1) };
 }
 
 /** A named board and its variants, in listing order. */
@@ -79,33 +96,43 @@ function toEntry(
 		draft: source.draft,
 		onScreen: letters.get(source.key) ?? null,
 		placeholder: source.placeholder,
+		activity: view.agentActivity[source.key] ?? null,
 	};
 }
 
 /**
- * Persisted boards first, then open boards the vault does not hold yet. A
- * scratch board is open too, but it belongs to the scratch group, not here.
- * @param listing The listing.
+ * Persisted boards first, then open boards the vault does not hold yet, then
+ * boards an agent is working on that neither lists: a board an agent has just
+ * created shows the moment it is written to (ADR 0022). A scratch board is
+ * open too, but it belongs to the scratch group, not here.
+ * @param view The shell view holding the listing and the agent activity.
  * @param scratchKeys The keys the scratch group already lists.
  * @returns Sources in listing order, drafts last.
  */
-function boardSources(listing: BoardListing, scratchKeys: ReadonlySet<string>): EntrySource[] {
+function boardSources(view: ShellView, scratchKeys: ReadonlySet<string>): EntrySource[] {
+	const listing = view.boards;
 	const persisted = listing.boards.map((board) => ({
 		key: board.key,
 		identity: board.identity,
 		draft: false,
 		placeholder: false,
 	}));
-	const persistedKeys = new Set(persisted.map((source) => source.key));
+	const listed = new Set(persisted.map((source) => source.key));
 	const drafts = listing.open
-		.filter((board) => !persistedKeys.has(board.key) && !scratchKeys.has(board.key))
+		.filter((board) => !listed.has(board.key) && !scratchKeys.has(board.key))
 		.map((board) => ({
 			key: board.key,
 			identity: board.identity,
 			draft: true,
 			placeholder: false,
 		}));
-	return [...persisted, ...drafts];
+	for (const draft of drafts) {
+		listed.add(draft.key);
+	}
+	const working = Object.keys(view.agentActivity)
+		.filter((key) => !listed.has(key) && !scratchKeys.has(key))
+		.map((key) => ({ key, identity: identityOfKey(key), draft: true, placeholder: false }));
+	return [...persisted, ...drafts, ...working];
 }
 
 /**
@@ -119,7 +146,7 @@ function groupBoards(view: ShellView): NavigatorGroup[] {
 	const letters = onScreenLetters(view.boards);
 	const groups = new Map<string, NavigatorGroup>();
 	const scratchKeys = new Set(view.scratch.map((entry) => entry.key));
-	for (const source of boardSources(view.boards, scratchKeys)) {
+	for (const source of boardSources(view, scratchKeys)) {
 		const group = groups.get(source.identity.board) ?? {
 			board: source.identity.board,
 			variants: [],
@@ -151,4 +178,11 @@ function scratchEntries(view: ShellView): NavigatorEntry[] {
 	);
 }
 
-export { paneLetter, groupBoards, scratchEntries, type NavigatorEntry, type NavigatorGroup };
+export {
+	identityOfKey,
+	paneLetter,
+	groupBoards,
+	scratchEntries,
+	type NavigatorEntry,
+	type NavigatorGroup,
+};

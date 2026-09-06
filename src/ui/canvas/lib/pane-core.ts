@@ -7,7 +7,13 @@
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { AppState, ExcalidrawImperativeAPI, LibraryItems } from "@excalidraw/excalidraw/types";
 
-import { holdBoard, publishSelection, releaseBoard, takeBoardBack } from "@/ui/canvas/api";
+import {
+	holdBoard,
+	publishSelection,
+	releaseBoard,
+	takeBoardBack,
+	type HoldReply,
+} from "@/ui/canvas/api";
 import { createHoldRenewalDeadline, createPaneReportDeadline } from "@/ui/canvas/canvas-deadlines";
 import { createHoldKeeper } from "@/ui/canvas/lib/hold-keeper";
 import { createPaneLibrarySync } from "@/ui/canvas/lib/pane-library";
@@ -15,6 +21,7 @@ import { createMessageContext } from "@/ui/canvas/lib/pane-message-context";
 import { createPaneReportSender } from "@/ui/canvas/lib/pane-report-sender";
 import { createPaneStatus } from "@/ui/canvas/lib/pane-status";
 import { createPaneSocketConnector, type PaneSocketGeneration } from "@/ui/canvas/lib/pane-socket";
+import { attachWorkbenchOwner } from "@/ui/canvas/lib/pane-workbench-attach";
 import { createReporting } from "@/ui/canvas/lib/reporting";
 import { sceneFromExcalidraw } from "@/ui/canvas/lib/scene-boundary";
 import {
@@ -33,15 +40,13 @@ import {
 } from "@/ui/canvas/lib/session-contracts";
 import { handleSocketMessage } from "@/ui/canvas/lib/socket-messages";
 import type { WorkbenchTransportPort } from "@/ui/canvas/workbench-port";
-import {
-	attachCanvasWorkbenchAfterRegistration,
-	type CanvasWorkbenchSocketOwner,
-} from "@/ui/canvas/workbench-socket";
+import type { CanvasWorkbenchSocketOwner } from "@/ui/canvas/workbench-socket";
 import type { PathFocusOverlay } from "@/ui/path-focus";
 import type {
 	BoardHold,
 	BoardIdentity,
 	DoingEntry,
+	EditWithdrawalReason,
 	LockHolder,
 	NoteWrittenElsewhere,
 	PaneStatus,
@@ -91,6 +96,11 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 ): PaneCore<Transport> {
 	const { paneId, clientId } = host;
 	let disposed = false;
+	/**
+	 * Whether this pane is still mounted.
+	 * @returns True until disposed.
+	 */
+	const live = (): boolean => !disposed;
 	const paneReportDeadline = createPaneReportDeadline();
 	const librarySync = createPaneLibrarySync();
 
@@ -144,6 +154,14 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		return reporting.hasPendingChanges() || !reporting.settled();
 	}
 
+	/**
+	 * An agent's claim stands where the person just edited: the note decides (ADR 0022).
+	 * @param reply The refusal, with the note's document when it carried one.
+	 */
+	function onClaimRefused(reply: HoldReply): void {
+		reporting.withdrawForClaim(reply);
+	}
+
 	const holdKeeper = createHoldKeeper({
 		clientId,
 		boardKey,
@@ -152,6 +170,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		holdBoard,
 		releaseBoard,
 		onHolder: setHolder,
+		onClaimRefused,
 		unknownHolder: UNKNOWN_HOLDER,
 	});
 
@@ -163,6 +182,23 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		status.hold = hold;
 	}
 
+	/**
+	 * The person's unwritten edit was withdrawn and the note's state shown.
+	 * @param reason Why: the note moved, or a claim stands.
+	 */
+	function editsWithdrawn(reason: EditWithdrawalReason): void {
+		host.options().onEditsWithdrawn?.(paneId, status.boardKey, reason);
+	}
+
+	/**
+	 * The note version the pane states on its writes changed; the shell's own
+	 * writes for this pane state it too.
+	 * @param version The version, or null.
+	 */
+	function noteVersionChanged(version: number | null): void {
+		status.noteVersion = version;
+	}
+
 	const reporting = createReporting({
 		clientId,
 		api: host.api,
@@ -172,6 +208,8 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		noteChange,
 		publishStatus: publishAll,
 		setHold,
+		editsWithdrawn,
+		noteVersionChanged,
 	});
 
 	/**
@@ -347,51 +385,10 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @param generation The socket generation that opened.
 	 */
 	function attachWorkbench(generation: PaneSocketGeneration): void {
-		if (host.workbenchSockets !== null) {
-			attachOwner(host.workbenchSockets, generation);
+		const sockets = host.workbenchSockets;
+		if (sockets !== null) {
+			attachWorkbenchOwner({ sockets, generation, connector, live, publishStatus });
 		}
-	}
-
-	/**
-	 * Attach a workbench owner once the server has registered the socket's pane.
-	 * @param sockets The owner.
-	 * @param generation The socket generation that opened.
-	 */
-	function attachOwner(
-		sockets: CanvasWorkbenchSocketOwner<Transport>,
-		generation: PaneSocketGeneration,
-	): void {
-		/**
-		 * Whether this generation is still the pane's socket.
-		 * @returns True while nothing has replaced it.
-		 */
-		function isCurrent(): boolean {
-			return (
-				!disposed &&
-				connector.isCurrent(generation) &&
-				connector.registration() === generation.registration
-			);
-		}
-		/** Say what the pane is once the workbench is attached, or failed to. */
-		function settled(): void {
-			if (isCurrent()) {
-				publishStatus();
-			}
-		}
-		/**
-		 * Attach the owner to this generation's socket.
-		 * @returns The transport state once attached.
-		 */
-		function attach(): ReturnType<typeof sockets.attach> {
-			return sockets.attach(generation.socket);
-		}
-		attachCanvasWorkbenchAfterRegistration({
-			registration: generation.registration,
-			isCurrent,
-			attach,
-		})
-			.then(settled, settled)
-			.catch(() => undefined);
 	}
 
 	/**
@@ -485,18 +482,20 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	});
 
 	/**
-	 * The person takes their board back from an agent that claimed it. Nothing
-	 * is undone; the board goes to nobody, and the next gesture takes it.
-	 * @returns Whether the board was taken.
+	 * The person releases an agent's claim on their board: the one explicit
+	 * control over a claimed board (ADR 0022). Nothing is undone; the board goes
+	 * to nobody, and the agent is told once that it lost the board.
+	 * @returns Whether the claim was released.
 	 */
 	async function takeBack(): Promise<TakeBackResult> {
 		const target = status.boardKey;
 		try {
-			const reply = await takeBoardBack(target, clientId);
-			if (status.boardKey !== target || !reply.held) {
+			await takeBoardBack(target, clientId);
+			if (status.boardKey !== target) {
 				return { outcome: "failure" };
 			}
-			// Believed only on success; the broadcast says so anyway.
+			// Released, or nobody claimed it any more: the board is free either
+			// way, and the broadcast says so too.
 			setHolder(null);
 			return { outcome: "success" };
 		} catch {

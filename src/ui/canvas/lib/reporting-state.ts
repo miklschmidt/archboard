@@ -68,6 +68,12 @@ interface ChangeReportingState {
 	fullReportNeeded: boolean;
 	generation: number;
 	inFlightReport: ReportContext | null;
+	/**
+	 * The note version this pane last saw, stated on every write (ADR 0022).
+	 * Null both before the pane has been told and when the note carries none:
+	 * either way the pane states 0, and a note that has moved refuses it.
+	 */
+	noteVersion: number | null;
 }
 
 /** A timer firing, with the scene as it stands at that moment. */
@@ -105,9 +111,20 @@ type ChangeReportingEvent =
 			generation: number;
 			corrections: ReportCorrections;
 			currentScene: readonly SceneElement[];
+			/** The note version the write left the board at. */
+			version: number | null;
 	  }
 	| { type: "report_refused"; generation: number }
+	/** The note moved past the version the report stated (ADR 0022). */
+	| { type: "report_version_refused"; generation: number; version: number | null }
 	| { type: "report_failed"; generation: number }
+	/** The server said which note version the board on screen came from. */
+	| { type: "note_version_learned"; version: number | null }
+	/**
+	 * The person's unwritten edits are withdrawn: the note decides, and the
+	 * scene is about to be replaced with what it holds (ADR 0022).
+	 */
+	| { type: "edits_withdrawn" }
 	| { type: "board_adopted" }
 	| { type: "reports_cancelled" }
 	| { type: "full_report_cleared" }
@@ -130,8 +147,15 @@ type ChangeReportingEffect =
 			reportAfterUpdate?: ReportAfterServerUpdate;
 	  }
 	| { type: "finish_server_update"; generation: number }
-	| { type: "send_report"; report: ChangeReport; fullReport: boolean; generation: number }
-	| { type: "send_beacon"; report: ChangeReport }
+	| {
+			type: "send_report";
+			report: ChangeReport;
+			fullReport: boolean;
+			generation: number;
+			/** The note version the report states it was made against. */
+			expectVersion: number | null;
+	  }
+	| { type: "send_beacon"; report: ChangeReport; expectVersion: number | null }
 	| { type: "take_hold" }
 	| { type: "note_change" }
 	| { type: "release_if_idle" }
@@ -167,6 +191,7 @@ function initialState(): ChangeReportingState {
 		fullReportNeeded: false,
 		generation: 0,
 		inFlightReport: null,
+		noteVersion: null,
 	};
 }
 

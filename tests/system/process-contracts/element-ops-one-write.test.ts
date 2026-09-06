@@ -8,6 +8,7 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import { boundTextPlacement } from "../../../src/runtime/engine/labels.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { nonReadRecords, startCountingProxy } from "./support/counting-proxy.ts";
 import {
@@ -241,7 +242,7 @@ test("arrange intents each cross the real proxy once and preserve related elemen
 		expect(elements.find((element) => element.id === "box-0")?.groupIds).toContain("existing");
 
 		const beforeHuman = await request<ChangeFeed>("/api/changes?board=scratch&since=0");
-		await request("/api/elements/changes?board=scratch", {
+		await request(`/api/elements/changes${await humanWriteQuery(request, "scratch")}`, {
 			method: "POST",
 			body: {
 				clientId: "pane",

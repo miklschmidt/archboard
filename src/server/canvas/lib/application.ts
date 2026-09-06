@@ -120,6 +120,7 @@ import {
 	recordDoing,
 } from "../../../runtime/engine/board-doing.js";
 import type { DoingEntry } from "../../../runtime/engine/board-doing.js";
+import { createAgentActivity } from "./agent-activity.js";
 import {
 	CURRENT_VARIANT,
 	boardKey,
@@ -742,10 +743,11 @@ function deliverToPane(clientId: string, data: string): boolean {
 /**
  * A board's writer changed, so every pane holding it is told (ADR 0016).
  *
- * The lock is a broadcast and not only a guard. `holder` lets panes explain a
- * claim and decide whether a content edit is takeover. A connected pane keeps
- * local content responsive; the authoritative vault-backed mutex still orders
- * when that content may persist.
+ * The lock is a broadcast and not only a guard. `holder` lets a pane explain a
+ * claim and go read-only under it (ADR 0022): while an agent has claimed the
+ * board, the pane takes pan and zoom and no content edit, until the person
+ * explicitly takes the board back. The authoritative vault-backed mutex still
+ * orders when anything may persist.
  *
  * The board key is stamped on by `broadcast`, so a pane showing the other board
  * drops it the same way it drops any other board's news.
@@ -754,8 +756,21 @@ function lockMessage(board: string, holder: LockHolder | null): WebSocketMessage
 	return { type: "board_lock", board, held: holder !== null, holder };
 }
 
+/**
+ * The boardless account of agent work, for the navigator (ADR 0022).
+ *
+ * Fed by the same two announcements the board-scoped messages ride on, so it
+ * can never say something different from what the pane on that board hears.
+ */
+const agentActivity = createAgentActivity({
+	send: (message) => broadcastBoardless(message),
+	displayKey: (board) =>
+		[...boards.keys()].find((known) => normalizeBoardKey(known) === board) ?? board,
+});
+
 onBoardLockChanged((board, holder) => {
 	broadcast(lockMessage(board, holder), board);
+	agentActivity.lockChanged(board, holder);
 });
 
 /**
@@ -773,6 +788,7 @@ onBoardLockChanged((board, holder) => {
 function announceDoing(board: string, entry: DoingEntry): void {
 	const recent = recordDoing(board, entry);
 	broadcast({ type: "board_doing", doing: entry, recent } as WebSocketMessage, board);
+	agentActivity.doingLanded(board, entry);
 }
 
 /**
@@ -1157,6 +1173,8 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 			boardKey: startingKey,
 			checkoutSnapshot,
 		}),
+		// The version the pane states on its first write (ADR 0022).
+		version: content.version ?? null,
 		...boardFilesMessage(content),
 	};
 	await new Promise<void>((resolve, reject) => {
@@ -1213,6 +1231,9 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 	if (clientId) {
 		tellPaneAboutLock(clientId, startingKey);
 	}
+	// And which boards an agent has right now, across the whole vault (ADR
+	// 0022): the same reasoning, for the navigator rather than the pane.
+	ws.send(JSON.stringify(agentActivity.snapshot()));
 
 	const codexTransport = createCanvasCodexBrowserSocketSend(ws);
 	ws.on("message", (raw) => {
@@ -1285,6 +1306,7 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 // now the mutex does, which is the same guarantee extended to a second process.
 const NOT_A_BOARD_WRITE: Array<[RegExp, string]> = [
 	[/^\/api\/boards\/hold/, "is the lock"],
+	[/^\/api\/boards\/take-back$/, "is the lock, given back"],
 	[/^\/api\/boards\/claim/, "is the lock, held for longer"],
 	[/^\/api\/panes/, "layout, not board content, and open/close wait on the browser"],
 	[/^\/api\/viewport/, "a camera move, and it waits on the browser"],
@@ -1703,15 +1725,18 @@ app.use(
  *
  * It waits, but only for as long as the pane was going to sit on the change
  * anyway. An agent's per-write hold is about twenty milliseconds, and a user
- * edit that starts during one is not somebody who has lost the board — telling
- * them so and discarding their edit would make the pane reject a user edit,
- * which is the thing ADR 0016 forbids in as many words. So the
+ * edit that starts during one is not somebody who has lost the board, so the
  * wait is the progress deadline: a person is going to be 400 ms from having their
  * change written whatever this answers, and anything still holding the board at
  * the end of that is a real holder rather than a write in flight.
  *
  * Not the agent's five seconds, for the other half of the same reason. A person
  * cannot be made to wait that long to find out whether their edit was accepted.
+ *
+ * It never takes a claimed board back (ADR 0022). Under a claim the answer is
+ * the refusal, naming the agent that has it, and the pane withdraws the
+ * optimistic edit and stays read-only until the claim ends or the person asks
+ * for the board through `/api/boards/take-back`.
  */
 app.post("/api/boards/hold", (req: Request, res: Response) => {
 	try {
@@ -1729,19 +1754,8 @@ app.post("/api/boards/hold", (req: Request, res: Response) => {
 			kind: "human" as const,
 			...(typeof body.reason === "string" && body.reason ? { reason: body.reason } : {}),
 		};
-		// And it takes a claimed board back. The lock excludes writers from each
-		// other; it does not lock somebody out of their own board, and an agent
-		// that has claimed a board for ten minutes must not be able to make the
-		// pane reject that user's edits (ADR 0016). Only a
-		// claim: an unclaimed agent hold is one write and is waited out above.
 		void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>
-			holdBoard({
-				board: key,
-				holder,
-				waitMs: REPORT_PROGRESS_MS,
-				revokeClaim: true,
-				signal,
-			}),
+			holdBoard({ board: key, holder, waitMs: REPORT_PROGRESS_MS, signal }),
 		)
 			.then((hold) =>
 				res.json({ success: true, board: key, holder: hold.holder, created: hold.created }),
@@ -1780,6 +1794,59 @@ app.post("/api/boards/hold/release", (req: Request, res: Response) => {
 				.json({ success: false, error: "A release needs the clientId that took the hold." });
 		}
 		res.json({ success: true, board: key, released: releaseHold(key, body.clientId) });
+	} catch (error) {
+		answerBoardError(res, error);
+	}
+
+	return undefined;
+});
+
+/**
+ * The person wants a claimed board back (ADR 0022).
+ *
+ * The one control that ends an agent's claim. A content gesture never does:
+ * a claimed board is read-only to people, and taking it back is something
+ * they ask for by name. The lease is taken with the claim revoked and given
+ * straight back, so the board goes to nobody and the next gesture holds it as
+ * any gesture does. Nothing already written is undone; the agent hears once,
+ * on its next write or re-claim, that it lost the board (ADR 0016).
+ *
+ * The wait is the hold's: a per-write agent hold is waited out, and only a
+ * holder still there at the end is refused.
+ */
+app.post("/api/boards/take-back", (req: Request, res: Response) => {
+	try {
+		const { key } = resolveBoard(boardOfRequest(req), "Taking a board back");
+		const body = (req.body ?? {}) as { clientId?: unknown };
+		if (typeof body.clientId !== "string" || !body.clientId) {
+			return res.status(400).json({
+				success: false,
+				error: "Taking a board back needs the clientId of the pane asking for it.",
+			});
+		}
+		const holder = { id: body.clientId, kind: "human" as const };
+		const standing = boardLockState(key);
+		const claim = standing?.kind === "agent" && standing.claimed ? standing : null;
+		void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>
+			holdBoard({ board: key, holder, waitMs: REPORT_PROGRESS_MS, revokeClaim: true, signal }),
+		)
+			.then((hold) => {
+				if (hold.created) {
+					releaseHold(key, hold.holder.id);
+				}
+				return res.json({
+					success: true,
+					board: key,
+					released: claim !== null,
+					...(claim ? { claim } : {}),
+				});
+			})
+			.catch((error) => {
+				if (error instanceof BoardLockCancelledError && (req.aborted || res.destroyed)) {
+					return;
+				}
+				answerBoardError(res, error);
+			});
 	} catch (error) {
 		answerBoardError(res, error);
 	}
@@ -3596,6 +3663,7 @@ function switchPaneTo(
 				boardKey: key,
 				checkoutSnapshot,
 			}),
+			version: content.version ?? null,
 			...boardFilesMessage(content),
 			timestamp: new Date().toISOString(),
 		},

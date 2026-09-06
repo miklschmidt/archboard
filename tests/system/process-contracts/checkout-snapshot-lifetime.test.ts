@@ -3,8 +3,10 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { WebSocket } from "ws";
 
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { completeElement } from "../code-targets/support/elements.ts";
+
 import {
 	createDelayedCheckoutOwner as fixture,
 	expectPidAbsent,
@@ -14,6 +16,13 @@ import {
 } from "./support/delayed-checkout-owner.ts";
 
 const SERVER_PATH = fileURLToPath(new URL("../../../src/server.ts", import.meta.url));
+
+/** A pane's write of scratch states the note's version (ADR 0022); raw fetch has no requester. */
+const scratchWriteQuery = (base: string): Promise<string> =>
+	humanWriteQuery(
+		async (path) => ({ body: await (await fetch(`${base}${path}`)).json() }),
+		"scratch",
+	);
 
 async function waitForMessage(
 	messages: Array<Record<string, unknown>>,
@@ -127,6 +136,7 @@ test("a delayed WebSocket receives a fresh initial scene before any concurrent d
 			vault: owner.vault,
 			env: owner.env,
 		});
+		const changesQuery = await scratchWriteQuery(canvas.base);
 		owner.enable();
 		const messages: Array<Record<string, unknown>> = [];
 		socket = new WebSocket(`${canvas.base.replace(/^http/u, "ws")}?clientId=delayed-pane`);
@@ -151,7 +161,7 @@ test("a delayed WebSocket receives a fresh initial scene before any concurrent d
 				},
 			},
 		});
-		const changed = await fetch(`${canvas.base}/api/elements/changes?board=scratch`, {
+		const changed = await fetch(`${canvas.base}/api/elements/changes${changesQuery}`, {
 			method: "POST",
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify({
@@ -189,6 +199,7 @@ test("human reports spawn no Git work while agent reports capture fresh authorit
 			vault: owner.vault,
 			env: owner.env,
 		});
+		const changesQuery = await scratchWriteQuery(canvas.base);
 		owner.enable();
 		const element = completeElement({
 			id: "bound",
@@ -201,7 +212,7 @@ test("human reports spawn no Git work while agent reports capture fresh authorit
 				archboard: { binding: { repo: "github.com/acme/delayed", path: "src/index.ts" } },
 			},
 		});
-		const human = await fetch(`${canvas.base}/api/elements/changes?board=scratch`, {
+		const human = await fetch(`${canvas.base}/api/elements/changes${changesQuery}`, {
 			method: "POST",
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify({

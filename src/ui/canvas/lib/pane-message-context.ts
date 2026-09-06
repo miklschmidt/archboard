@@ -158,6 +158,14 @@ function createMessageContext<Transport extends WorkbenchTransportPort>(
 	}
 
 	/**
+	 * The shell's agent activity listener, if any.
+	 * @returns The listener.
+	 */
+	function onAgentActivity(): CanvasSessionOptions<Transport>["onAgentActivity"] {
+		return parts.options().onAgentActivity;
+	}
+
+	/**
 	 * Excalidraw's files, or nothing before the canvas mounts.
 	 * @returns The file owner.
 	 */
@@ -184,6 +192,7 @@ function createMessageContext<Transport extends WorkbenchTransportPort>(
 		applyServerScene: reporting.applyServerScene,
 		applyServerElements: reporting.applyServerElements,
 		removeElements: reporting.removeElements,
+		learnNoteVersion: reporting.learnNoteVersion,
 		adoptBoard: parts.adoptBoard,
 		dispatchReporting: reporting.dispatch,
 		noteChange: parts.noteChange,
@@ -215,6 +224,13 @@ function createMessageContext<Transport extends WorkbenchTransportPort>(
 		 */
 		get onBoardError() {
 			return onBoardError();
+		},
+		/**
+		 * The shell's agent activity listener, if any.
+		 * @returns The listener.
+		 */
+		get onAgentActivity() {
+			return onAgentActivity();
 		},
 	};
 }

@@ -8,6 +8,7 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
 import { createJsonRequester } from "../boards/support/http.ts";
 import { waitFor } from "../canvas-state/support/http.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { nonReadRecords, startCountingProxy } from "./support/counting-proxy.ts";
 import {
@@ -202,21 +203,24 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 			expect((await request("/api/elements?board=scratch")).body).toEqual(prior.body);
 		}
 
-		const human = await request<Record<string, unknown>>("/api/elements/changes?board=scratch", {
-			method: "POST",
-			body: {
-				clientId: "pane",
-				upserts: [{ id: "human", type: "rectangle", x: 0, y: 100, width: 20, height: 20 }],
-				deletes: [],
+		const human = await request<Record<string, unknown>>(
+			`/api/elements/changes${await humanWriteQuery(request, "scratch")}`,
+			{
+				method: "POST",
+				body: {
+					clientId: "pane",
+					upserts: [{ id: "human", type: "rectangle", x: 0, y: 100, width: 20, height: 20 }],
+					deletes: [],
+				},
 			},
-		});
+		);
 		expect(human.body["document"]).toBeUndefined();
 		expect(human.body["corrections"]).toBeDefined();
 		const compact = await request<{
 			document?: unknown;
 			corrections: { upserts: ElementIdView[]; deletes: string[] };
 			fingerprint: { note: string; version: number };
-		}>("/api/elements/changes?board=scratch", {
+		}>(`/api/elements/changes${await humanWriteQuery(request, "scratch")}`, {
 			method: "POST",
 			body: { clientId: "pane", upserts: [{ id: "human", x: 1 }], deletes: [] },
 		});
@@ -229,7 +233,7 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 		const canonical = await request<{
 			document?: unknown;
 			corrections: { upserts: ApplyElementView[]; deletes: string[] };
-		}>("/api/elements/changes?board=scratch", {
+		}>(`/api/elements/changes${await humanWriteQuery(request, "scratch")}`, {
 			method: "POST",
 			body: {
 				clientId: "pane",
@@ -294,7 +298,7 @@ test("apply is atomic, compact by default, and one real proxy write", async () =
 		});
 		const outside = await request<{
 			corrections: { upserts: ApplyElementView[] };
-		}>("/api/elements/changes?board=ack-corrections", {
+		}>(`/api/elements/changes${await humanWriteQuery(request, "ack-corrections")}`, {
 			method: "POST",
 			body: {
 				clientId: "pane",

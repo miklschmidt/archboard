@@ -201,7 +201,10 @@ Do not claim for one box, one label, one promotion, or a read. Ask questions
 before claiming, and release as soon as writes end.
 
 The claim reason names the campaign. Each `--doing` line names the current
-step. The person can take a claimed board back. If that happens, stop and say
+step. While you hold a claim, panes showing the board are read-only to people;
+every pane shows which board you hold and your latest step, so work on any
+board that needs it, whether or not somebody is looking at it. A person can
+release your claim with one explicit control. If that happens, stop and say
 what is complete and what partial state remains.
 
 A version refusal means another Archboard writer changed the board first. Use
