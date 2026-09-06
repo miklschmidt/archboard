@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-06 14:09'
-updated_date: '2026-09-06 14:20'
+updated_date: '2026-09-06 14:56'
 labels: []
 dependencies: []
 priority: high
@@ -21,16 +21,16 @@ The audit after ADR 0022 found behaviour that exists to satisfy a stated rule ra
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A pane is editable as soon as it is connected and stays editable through a socket blip; only an agent claim or a genuine loss of contact longer than one reconnect puts it in view mode
-- [ ] #2 A person's write behind another person's gesture hold is refused with BOARD_HELD without waiting the lock cap; an agent still waits out a person's hold
-- [ ] #3 Lock release news is broadcast without the free-linger delay and panes do not flicker
-- [ ] #4 Pane layout settlement waits only on the panes it asked to move and returns as soon as they re-report
-- [ ] #5 The hold's printed and API recovery commands are runnable as printed (they name the board and satisfy --doing or are exempt from it)
-- [ ] #6 An approval is valid when its expiry is after its creation and within the configured bound, not only when it equals the constant
-- [ ] #7 A board name that matches a note byte for byte resolves without a readdir; a case-insensitive match still resolves and a collision is still reported
-- [ ] #8 lock-source-policy.test.ts, the source-string-ordering half of write-boundary-policy.test.ts, five of the six one-write counting-proxy owners and the browser runner's argument-order and duplicate refusals are gone; the one-write invariant keeps one owner
-- [ ] #9 The epoch manifest is one file written by one atomic rename with no lock file or second copy; an unreadable or inconsistent manifest is treated as no prior epochs, not as a poisoned store
-- [ ] #10 Test budgets (the TEST_ constants) live in a test support module, not in src/shared/timing/timing.ts, and the reconnect constant's rationale matches ADR 0022
+- [x] #1 A pane is editable as soon as it is connected and stays editable through a socket blip; only an agent claim or a genuine loss of contact longer than one reconnect puts it in view mode
+- [x] #2 A person's write behind another person's gesture hold is refused with BOARD_HELD without waiting the lock cap; an agent still waits out a person's hold
+- [x] #3 Lock release news is broadcast without the free-linger delay and panes do not flicker
+- [x] #4 Pane layout settlement waits only on the panes it asked to move and returns as soon as they re-report
+- [x] #5 The hold's printed and API recovery commands are runnable as printed (they name the board and satisfy --doing or are exempt from it)
+- [x] #6 An approval is valid when its expiry is after its creation and within the configured bound, not only when it equals the constant
+- [x] #7 A board name that matches a note byte for byte resolves without a readdir; a case-insensitive match still resolves and a collision is still reported
+- [x] #8 lock-source-policy.test.ts, the source-string-ordering half of write-boundary-policy.test.ts, five of the six one-write counting-proxy owners and the browser runner's argument-order and duplicate refusals are gone; the one-write invariant keeps one owner
+- [x] #9 The epoch manifest is one file written by one atomic rename with no lock file or second copy; an unreadable or inconsistent manifest is treated as no prior epochs, not as a poisoned store
+- [x] #10 Test budgets (the TEST_ constants) live in a test support module, not in src/shared/timing/timing.ts, and the reconnect constant's rationale matches ADR 0022
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -40,3 +40,25 @@ The audit after ADR 0022 found behaviour that exists to satisfy a stated rule ra
 
 5. Epoch storage: one file, temp-write and rename, no lock, unreadable means no prior epochs; ADR 0019 notes the epoch mechanism is a workaround for a Codex thread-resume bug expected to be fixed upstream. 6. Move the 44 TEST_ constants to tests/system/support/timing.ts unchanged.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented in 8ba1aeae. Complete bun run check green in an isolated worktree (2657 module, 309 system, 9 repository, 19 browser owners). Root cause of the crash-replacement flake: the fake Codex reissued thread-1 from a replacement child and the epoch provenance check refused it; the old store's slow writes hid this. The fixture now continues its sequence across children. Kept promotion-delete-bridge-one-write as the one-write owner: composed multi-element operations are the only shape a single-body route cannot regress.
+<!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+author: @claude
+created: 2026-09-06 14:56
+---
+Ready for the maintainer's review; left In Progress on purpose.
+---
+<!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+A person's hold behind any holder refuses at once; a pane stays editable through a blip (contact lost after CONTACT_LOST_MS); lock release news is immediate; layout settlement waits only on moved panes; recovery commands run as printed; approvals are valid inside their window; byte-equal board names skip the readdir; the epoch manifest is one atomically renamed file with unreadable meaning no prior epochs; test budgets moved to tests/system/support/timing.ts; the grep and ordering policy tests, five one-write owners and the browser runner's order refusals are gone. Verified with the complete bun run check on 8ba1aeae.
+<!-- SECTION:FINAL_SUMMARY:END -->
