@@ -37,7 +37,11 @@ import {
 	timerOfEffect,
 	type ReportingRuntime,
 } from "@/ui/canvas/lib/reporting-runtime";
-import { idUnderEditor, sceneUpdateData } from "@/ui/canvas/lib/reporting-scene-update";
+import {
+	idUnderEditor,
+	sceneUpdateData,
+	showNoteScene,
+} from "@/ui/canvas/lib/reporting-scene-update";
 import { sceneFromExcalidraw, sceneFromServer } from "@/ui/canvas/lib/scene-boundary";
 import type { BoardHold, EditWithdrawalReason, ServerElement } from "@/ui/types";
 
@@ -55,6 +59,8 @@ interface ReportingHost {
 	readonly editsWithdrawn: (reason: EditWithdrawalReason) => void;
 	/** The note version the pane states on its writes changed (ADR 0022). */
 	readonly noteVersionChanged: (version: number | null) => void;
+	/** The pane's element, where Excalidraw's text editor lives. */
+	readonly stage: () => HTMLElement | null;
 }
 
 /** What the refusal said the note holds, when it said. */
@@ -231,9 +237,9 @@ function createReporting(host: ReportingHost): Reporting {
 
 	/**
 	 * A report did not land. A version conflict is the note deciding (ADR 0022):
-	 * the refusal's document replaces the scene, an open editor's element
-	 * carried over as any wholesale replacement carries it. A hash conflict is
-	 * the held-board recovery (ADR 0006); anything else is retried.
+	 * the refusal's document replaces the scene, an open editor included. A
+	 * hash conflict is the held-board recovery (ADR 0006); anything else is
+	 * retried.
 	 * @param error What the request threw.
 	 * @param generation The generation the report was sent in.
 	 */
@@ -243,7 +249,7 @@ function createReporting(host: ReportingHost): Reporting {
 				return;
 			}
 			dispatch({ type: "report_version_refused", generation, version: error.version });
-			applyServerScene(sceneFromServer([...error.document]), currentWithheldIds());
+			showNoteScene(host.api(), host.stage(), sceneFromServer([...error.document]), dispatch);
 			host.editsWithdrawn("moved");
 			return;
 		}
@@ -483,7 +489,7 @@ function createReporting(host: ReportingHost): Reporting {
 			return;
 		}
 		learnNoteVersion(note.version);
-		applyServerScene(sceneFromServer([...note.document]), currentWithheldIds());
+		showNoteScene(host.api(), host.stage(), sceneFromServer([...note.document]), dispatch);
 	}
 
 	/** Report now, and wait for the answer. */
