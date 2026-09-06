@@ -1,10 +1,21 @@
-import { CodexServerResponseSchema } from "../../codex-protocol/index.js";
-import { CodexTransportOwnershipError, CodexTransportUsageError } from "./errors.js";
-import type { ReverseRecord, ReverseResponseJob, WriteJob } from "./internals.js";
-import type { ResponseOwner, ReverseResponse, TransportServerRequest } from "./types.js";
-import { hasOwn, isRecord, jsonLine } from "./wire.js";
-import { cloneAndFreeze } from "./public-values.js";
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
+import { CodexServerResponseSchema } from "@/runtime/codex-protocol";
+import {
+	CodexTransportOwnershipError,
+	CodexTransportUsageError,
+} from "@/runtime/codex-transport/lib/errors";
+import type {
+	ReverseRecord,
+	ReverseResponseJob,
+	WriteJob,
+} from "@/runtime/codex-transport/lib/internals";
+import type {
+	ResponseOwner,
+	ReverseResponse,
+	TransportServerRequest,
+} from "@/runtime/codex-transport/lib/types";
+import { hasOwn, isRecord, jsonLine } from "@/runtime/codex-transport/lib/wire";
+import { cloneAndFreeze } from "@/runtime/codex-transport/lib/public-values";
+import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
 
 interface ReverseResponderOptions {
 	readonly reverseRequests: Map<string, ReverseRecord>;
@@ -75,7 +86,7 @@ function createReverseResponder(options: ReverseResponderOptions): ReverseRespon
 					),
 				);
 			}
-			canonical = cloneAndFreeze(parsed.data) as Record<string, unknown>;
+			canonical = cloneAndFreeze(parsed.data);
 		} catch {
 			return Promise.reject(new CodexTransportUsageError("reverse response is not JSON-shaped"));
 		}

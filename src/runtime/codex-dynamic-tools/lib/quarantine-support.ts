@@ -1,16 +1,13 @@
-import {
-	logicalToolCallKey,
-	type JsonRpcRequestId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import { logicalToolCallKey, type JsonRpcRequestId } from "@/shared/codex-workbench-identity";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 	type DynamicToolCallResponse,
-} from "../../codex-thread-tools/index.js";
+} from "@/runtime/codex-thread-tools";
 import {
 	CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP,
 	type DynamicServerRequest,
-} from "../../codex-transport/index.js";
+} from "@/runtime/codex-transport";
 import {
 	type CodexDynamicToolsOptions,
 	type DynamicEpochTeardownProof,
@@ -19,10 +16,10 @@ import {
 	type DynamicMutationQuarantineOwner,
 	type DynamicMutationQuarantineState,
 	type DynamicMutationToolName,
-} from "./contract.js";
-import type { DynamicOperationSettlement } from "./effects.js";
-import { validateDynamicCall } from "./request-validation.js";
-import { invalidDynamicResponse } from "./response.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
+import type { DynamicOperationSettlement } from "@/runtime/codex-dynamic-tools/lib/effects";
+import { validateDynamicCall } from "@/runtime/codex-dynamic-tools/lib/request-validation";
+import { invalidDynamicResponse } from "@/runtime/codex-dynamic-tools/lib/response";
 
 const DYNAMIC_QUARANTINE_WIRE_CAP = CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP;
 

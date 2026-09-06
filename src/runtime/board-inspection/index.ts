@@ -8,19 +8,25 @@ import {
 	type InspectionPolicyInput,
 	type InspectionFinding,
 	type InspectionReport,
-} from "./schemas.js";
-import { decodeRecords } from "./lib/decode.js";
-import { BROAD_PHASE_COMPARISON_LIMIT, detectBoard } from "./lib/detectors.js";
-import { box, finite, focusBox, point } from "./lib/geometry.js";
+} from "@/runtime/board-inspection/schemas";
+import { decodeRecords } from "@/runtime/board-inspection/lib/decode";
+import {
+	BROAD_PHASE_COMPARISON_LIMIT,
+	detectBoard,
+} from "@/runtime/board-inspection/lib/detectors";
+import { box, finite, focusBox, point } from "@/runtime/board-inspection/lib/geometry";
 import {
 	INSPECTION_INPUT_COMPLEXITY_LIMIT,
 	snapshotInspectionInput,
 	type SnapshotIssue,
 	type SnapshotRecord,
-} from "./lib/input-snapshot.js";
-import { compareIdentity } from "./lib/ordering.js";
-import { validateBridgeDecorations, type InvalidBridgeDecoration } from "./bridge.js";
-import type { ServerElement } from "../engine/types.js";
+} from "@/runtime/board-inspection/lib/input-snapshot";
+import { compareIdentity } from "@/runtime/board-inspection/lib/ordering";
+import {
+	validateBridgeDecorations,
+	type InvalidBridgeDecoration,
+} from "@/runtime/board-inspection/bridge";
+import type { ServerElement } from "@/runtime/engine/types";
 
 export {
 	CheckResultSchema,
@@ -37,7 +43,7 @@ export {
 	ObstacleRefSchema,
 	SceneBBoxSchema,
 	ScenePointSchema,
-} from "./schemas.js";
+} from "@/runtime/board-inspection/schemas";
 export type {
 	CheckResult,
 	ElementRef,
@@ -49,10 +55,10 @@ export type {
 	ObstacleRef,
 	SceneBBox,
 	ScenePoint,
-} from "./schemas.js";
-export { formatInspectionText } from "./lib/format-text.js";
-export { BROAD_PHASE_COMPARISON_LIMIT } from "./lib/detectors.js";
-export { INSPECTION_INPUT_COMPLEXITY_LIMIT } from "./lib/input-snapshot.js";
+} from "@/runtime/board-inspection/schemas";
+export { formatInspectionText } from "@/runtime/board-inspection/lib/format-text";
+export { BROAD_PHASE_COMPARISON_LIMIT } from "@/runtime/board-inspection/lib/detectors";
+export { INSPECTION_INPUT_COMPLEXITY_LIMIT } from "@/runtime/board-inspection/lib/input-snapshot";
 export {
 	BridgeIncompleteIssueSchema,
 	BridgeMetadataSchema,
@@ -61,7 +67,7 @@ export {
 	planBridgeCreate,
 	planBridgeRemoval,
 	validateBridgeDecorations,
-} from "./bridge.js";
+} from "@/runtime/board-inspection/bridge";
 
 export const DEFAULT_INSPECTION_POLICY: InspectionPolicy = Object.freeze({
 	allowedFontFamilies: Object.freeze([5]) as unknown as [5],

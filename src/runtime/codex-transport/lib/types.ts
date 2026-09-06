@@ -8,7 +8,7 @@ import type {
 	ResponsePayloads,
 	ServerRequestMethod,
 	ServerRequestPayloads,
-} from "../../codex-protocol/index.js";
+} from "@/runtime/codex-protocol";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -17,7 +17,7 @@ import type {
 	LogicalToolCallCorrelation,
 	ThreadId,
 	WireRequestCorrelation,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	CodexRemoteError,
 	CodexRequestFailureReason,
@@ -26,7 +26,7 @@ import type {
 	TransportRemoteErrorSummary,
 	CodexTransportRemoteError,
 	CodexTransportWriteError,
-} from "./errors.js";
+} from "@/runtime/codex-transport/lib/errors";
 
 /** The subset of the Node child-process contract that the transport needs. */
 type CodexTransportChild = Pick<

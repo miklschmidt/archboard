@@ -2,10 +2,10 @@ import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 	type GeneralThreadToolName,
-} from "../../codex-thread-tools/index.js";
-import type { DynamicToolCallResponse } from "../../codex-thread-tools/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
-import type { OperationId, TurnId } from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-thread-tools";
+import type { DynamicToolCallResponse } from "@/runtime/codex-thread-tools";
+import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { OperationId, TurnId } from "@/shared/codex-workbench-identity";
 import {
 	CodexDynamicOperationTerminalizationError,
 	CodexDynamicToolsError,
@@ -21,15 +21,18 @@ import {
 	type DynamicTargetAuthority,
 	type DynamicToolApprovalDecision,
 	type DynamicToolApprovalRequest,
-} from "./contract.js";
-import { assertMutationTargetAllowed, dynamicErrorForResponse } from "./classification.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
+import {
+	assertMutationTargetAllowed,
+	dynamicErrorForResponse,
+} from "@/runtime/codex-dynamic-tools/lib/classification";
 import {
 	resolveCaller,
 	resolveTarget,
 	revalidateCaller,
 	revalidateTarget,
-} from "./authority-classification.js";
-import { validateDynamicCall } from "./request-validation.js";
+} from "@/runtime/codex-dynamic-tools/lib/authority-classification";
+import { validateDynamicCall } from "@/runtime/codex-dynamic-tools/lib/request-validation";
 import {
 	approvalExpiry,
 	createDynamicOperationRecoverySettlement,
@@ -40,20 +43,31 @@ import {
 	operationWireForIssuedResult,
 	prepareMutation,
 	validateDecisionShape,
-} from "./effects.js";
-import { executeCreate, executeFork, executeSend, type MutationExecution } from "./mutations.js";
-import type { DynamicOperationSettlement, PreparedDynamicMutation } from "./effects.js";
-import { projectList, projectRead } from "./projection.js";
+} from "@/runtime/codex-dynamic-tools/lib/effects";
+import {
+	executeCreate,
+	executeFork,
+	executeSend,
+	type MutationExecution,
+} from "@/runtime/codex-dynamic-tools/lib/mutations";
+import type {
+	DynamicOperationSettlement,
+	PreparedDynamicMutation,
+} from "@/runtime/codex-dynamic-tools/lib/effects";
+import { projectList, projectRead } from "@/runtime/codex-dynamic-tools/lib/projection";
 import {
 	approvalRequiredDynamicResponse,
 	dynamicResponse,
 	invalidDynamicResponse,
 	outcomeUnknownDynamicResponse,
 	refusedDynamicResponse,
-} from "./response.js";
-import { waitForDynamicThreads } from "./wait.js";
-import { encodeDynamicCursor, unwrapDynamicCursor } from "./cursors.js";
-import { createDynamicQuarantineDispatcher } from "./quarantine.js";
+} from "@/runtime/codex-dynamic-tools/lib/response";
+import { waitForDynamicThreads } from "@/runtime/codex-dynamic-tools/lib/wait";
+import {
+	encodeDynamicCursor,
+	unwrapDynamicCursor,
+} from "@/runtime/codex-dynamic-tools/lib/cursors";
+import { createDynamicQuarantineDispatcher } from "@/runtime/codex-dynamic-tools/lib/quarantine";
 
 function isMutationToolName(value: GeneralThreadToolName): value is DynamicMutationToolName {
 	return value === "create_thread" || value === "fork_thread" || value === "send_message_to_thread";

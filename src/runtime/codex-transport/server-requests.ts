@@ -1,4 +1,7 @@
-export { HUMAN_APPROVAL_METHODS, SESSION_SERVER_REQUEST_METHODS } from "./lib/types.js";
+export {
+	HUMAN_APPROVAL_METHODS,
+	SESSION_SERVER_REQUEST_METHODS,
+} from "@/runtime/codex-transport/lib/types";
 
 export type {
 	DynamicDispatcherOwner,
@@ -12,4 +15,4 @@ export type {
 	TransportServerNotificationListener,
 	TransportServerRequest,
 	TransportServerRequestListener,
-} from "./lib/types.js";
+} from "@/runtime/codex-transport/lib/types";

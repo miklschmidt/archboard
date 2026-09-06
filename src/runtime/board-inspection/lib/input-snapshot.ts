@@ -275,12 +275,12 @@ function snapshotInspectionInput(input: readonly unknown[]): InspectionInputSnap
 				}
 				if (scalarType === "function" || scalarType === "symbol" || scalarType === "bigint") {
 					blocked = true;
-					recordIssues.push({ sourceIndex, path, issue: scalarType as NonDataInputIssue });
+					recordIssues.push({ sourceIndex, path, issue: scalarType });
 					task.assign(undefined);
 					continue;
 				}
 
-				const objectValue = value as object;
+				const objectValue = value;
 				if (nodeTypes.isProxy(objectValue)) {
 					blocked = true;
 					recordIssues.push({ sourceIndex, path, issue: "proxy" });

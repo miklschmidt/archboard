@@ -1,11 +1,6 @@
 import { isAbsolute, resolve } from "node:path";
 
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import type { ChildEpoch, ChildId, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
 import {
 	CodexEpochError,
 	type CodexEpochErrorCode,
@@ -15,14 +10,14 @@ import {
 	type EpochExecutionRequest,
 	type EpochStageInput,
 	type EpochTransaction,
-} from "./contract.js";
+} from "@/runtime/codex-epoch/lib/contract";
 import type {
 	EpochManifest,
 	EpochOperationCorrelation,
 	EpochOperationRecord,
 	EpochProvenance,
-} from "./manifest.js";
-import { operationRequiresThreadProvenance } from "./manifest.js";
+} from "@/runtime/codex-epoch/lib/manifest";
+import { operationRequiresThreadProvenance } from "@/runtime/codex-epoch/lib/manifest";
 
 const CHILD_PATTERN = /^archboard:child:([A-Za-z0-9][A-Za-z0-9._~-]{0,8192})$/u;
 const EPOCH_PATTERN =

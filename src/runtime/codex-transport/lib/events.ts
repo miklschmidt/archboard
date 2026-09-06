@@ -1,5 +1,5 @@
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
-import { CodexTransportUsageError } from "./errors.js";
+import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import { CodexTransportUsageError } from "@/runtime/codex-transport/lib/errors";
 import type {
 	TransportExit,
 	TransportIssue,
@@ -8,7 +8,7 @@ import type {
 	TransportStderrChunk,
 	TransportStderrSnapshot,
 	Unsubscribe,
-} from "./types.js";
+} from "@/runtime/codex-transport/lib/types";
 
 type Listener<T> = (value: T) => void;
 

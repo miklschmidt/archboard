@@ -8,15 +8,18 @@ import {
 	SERVER_REQUEST_SCHEMAS,
 	type DecodedServerRequest,
 	type ServerRequestPayloads,
-} from "../../codex-protocol/index.js";
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
+} from "@/runtime/codex-protocol";
+import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
 import type {
 	IdentityAuthority,
 	LogicalToolCallCorrelation,
 	WireRequestCorrelation,
-} from "../../../shared/codex-workbench-identity/index.js";
-import { CodexTransportUsageError, type CodexRequestFailureReason } from "./errors.js";
-import { createReverseResponder } from "./reverse-responder.js";
+} from "@/shared/codex-workbench-identity";
+import {
+	CodexTransportUsageError,
+	type CodexRequestFailureReason,
+} from "@/runtime/codex-transport/lib/errors";
+import { createReverseResponder } from "@/runtime/codex-transport/lib/reverse-responder";
 import type {
 	DynamicDispatcherRegistration,
 	ResponseOwner,
@@ -24,8 +27,13 @@ import type {
 	TransportIssue,
 	TransportServerNotification,
 	TransportServerRequest,
-} from "./types.js";
-import type { PendingRequest, RequestTombstone, ReverseRecord, WriteJob } from "./internals.js";
+} from "@/runtime/codex-transport/lib/types";
+import type {
+	PendingRequest,
+	RequestTombstone,
+	ReverseRecord,
+	WriteJob,
+} from "@/runtime/codex-transport/lib/internals";
 import {
 	JsonFrameDecodeError,
 	boundedText,
@@ -38,9 +46,12 @@ import {
 	responseKind,
 	wireKey,
 	type WireId,
-} from "./wire.js";
-import { HUMAN_APPROVAL_METHODS, SESSION_SERVER_REQUEST_METHODS } from "./types.js";
-import { cloneAndFreeze } from "./public-values.js";
+} from "@/runtime/codex-transport/lib/wire";
+import {
+	HUMAN_APPROVAL_METHODS,
+	SESSION_SERVER_REQUEST_METHODS,
+} from "@/runtime/codex-transport/lib/types";
+import { cloneAndFreeze } from "@/runtime/codex-transport/lib/public-values";
 
 const REVERSE_ERROR_MESSAGES = Object.freeze({
 	invalidRequest: "Invalid reverse request.",
@@ -181,7 +192,7 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 			} as TransportServerRequest;
 		}
 		if (decoded.method === "item/tool/call") {
-			const params = decoded.params as ServerRequestPayloads["item/tool/call"];
+			const params = decoded.params;
 			if (params.namespace === null) {
 				throw new CodexTransportUsageError("dynamic tool namespace is null");
 			}
@@ -207,10 +218,10 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 				params,
 				owner: registration.owner,
 				logicalCall,
-			} as TransportServerRequest;
+			};
 		}
 		if (decoded.method === "currentTime/read") {
-			const params = decoded.params as ServerRequestPayloads["currentTime/read"];
+			const params = decoded.params;
 			return {
 				child: correlation.child,
 				epoch: correlation.epoch,
@@ -222,7 +233,7 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 					threadId: identity.decoder.resolveThreadId(params.threadId),
 				},
 				owner: "codex-session",
-			} as TransportServerRequest;
+			};
 		}
 		if (isInList(SESSION_SERVER_REQUEST_METHODS, decoded.method)) {
 			return {

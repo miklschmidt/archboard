@@ -1,14 +1,18 @@
-import { inspectBoard } from "./index.js";
-import type { InspectionFinding, InspectionPolicyInput, InspectionReport } from "./schemas.js";
-import { decodeRecords } from "./lib/decode.js";
-import { detectBoard } from "./lib/detectors.js";
-import { snapshotInspectionInput } from "./lib/input-snapshot.js";
+import { inspectBoard } from "@/runtime/board-inspection";
+import type {
+	InspectionFinding,
+	InspectionPolicyInput,
+	InspectionReport,
+} from "@/runtime/board-inspection/schemas";
+import { decodeRecords } from "@/runtime/board-inspection/lib/decode";
+import { detectBoard } from "@/runtime/board-inspection/lib/detectors";
+import { snapshotInspectionInput } from "@/runtime/board-inspection/lib/input-snapshot";
 import {
 	buildSweepHierarchy,
 	emptySweepWork,
 	sweepIntervalPairs,
 	type SweepWork,
-} from "./lib/interval-sweep.js";
+} from "@/runtime/board-inspection/lib/interval-sweep";
 
 interface InspectionWorkDiagnostics {
 	inputUnits: number;

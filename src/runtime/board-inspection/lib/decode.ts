@@ -1,7 +1,7 @@
-import type { ElementRef } from "../schemas.js";
-import { collectInvalidRenderGeometry } from "../../engine/geometry.js";
-import { finite, type ExactBox, type ExactPoint } from "./geometry.js";
-import type { SnapshotRecord } from "./input-snapshot.js";
+import type { ElementRef } from "@/runtime/board-inspection/schemas";
+import { collectInvalidRenderGeometry } from "@/runtime/engine/geometry";
+import { finite, type ExactBox, type ExactPoint } from "@/runtime/board-inspection/lib/geometry";
+import type { SnapshotRecord } from "@/runtime/board-inspection/lib/input-snapshot";
 
 const MAX_ANALYZABLE_SEGMENT_COMPONENT = Math.sqrt(Number.MAX_VALUE) / 2;
 const ELBOW_POINT_COMPONENT_LIMIT = 1_000_000 as const;
@@ -42,7 +42,7 @@ const kindOf = (value: unknown): ValueKind => {
 	if (Array.isArray(value)) {
 		return "array";
 	}
-	return typeof value as ValueKind;
+	return typeof value;
 };
 
 function stableDescription(value: unknown): string {

@@ -8,14 +8,14 @@ import type {
 	SessionLoadedThreadPageResult,
 	SessionTurn,
 	CodexSession,
-} from "../../codex-session/index.js";
-import type { ThreadId } from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-session";
+import type { ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	CodexDynamicToolsError,
 	type DynamicCallerAuthority,
 	type DynamicObservedTarget,
 	type DynamicTargetAuthority,
-} from "./contract.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
 
 const THREAD_SOURCE_KINDS = Object.freeze(["cli", "vscode", "exec", "appServer"] as const);
 const AUTHORITY_PAGE_LIMIT = 100 as const;
@@ -124,7 +124,7 @@ async function exhaustThreadList(
 			if (!isRecord(row) || typeof row.id !== "string" || row.id.length === 0) {
 				throw projectionError("thread/list returned a row without a ThreadId.");
 			}
-			rows.push(row as SessionThread);
+			rows.push(row);
 		}
 		if (page.nextCursor === null) {
 			return rows;
@@ -155,7 +155,7 @@ async function exhaustLoadedList(
 			if (typeof id !== "string" || id.length === 0) {
 				throw projectionError("thread/loaded/list returned an invalid ThreadId.");
 			}
-			ids.push(id as ThreadId);
+			ids.push(id);
 		}
 		if (page.nextCursor === null) {
 			return ids;
