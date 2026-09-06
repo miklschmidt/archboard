@@ -28,6 +28,7 @@ import {
 	MessagePrimitive,
 	ThreadPrimitive,
 	type ToolCallMessagePartComponent,
+	useAui,
 	useAuiState,
 } from "@assistant-ui/react";
 import {
@@ -48,6 +49,7 @@ import {
 	useContext,
 	type ComponentType,
 	type FC,
+	type KeyboardEvent,
 	type PropsWithChildren,
 } from "react";
 
@@ -211,7 +213,43 @@ const ThreadWelcome: FC = () => {
 	);
 };
 
+/**
+ * Submission through the runtime's own handler, which decides steer, send or
+ * queue for a message (`src/ui/workbench-runtime`). The official Send and the
+ * input's Enter refuse while a turn runs unless the runtime declares a queue
+ * adapter, and that adapter would route a running-turn message around the
+ * handler; Archboard submits through the handler in both states and shows
+ * Stop beside Send while a turn runs.
+ * @returns Whether a message can be sent, the send, and the Enter handler
+ *   that submits while a turn runs (the official input handles Enter otherwise).
+ */
+function useSubmitThroughRuntime(): {
+	canSend: boolean;
+	send: () => void;
+	onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
+} {
+	const aui = useAui();
+	const canSend = useAuiState((s) => s.composer.canSend);
+	const send = (): void => {
+		aui.composer.send();
+	};
+	const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
+		if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) {
+			return;
+		}
+		if (!aui.thread.getState().isRunning) {
+			return;
+		}
+		event.preventDefault();
+		if (aui.composer.getState().canSend) {
+			send();
+		}
+	};
+	return { canSend, send, onKeyDown };
+}
+
 const Composer: FC = () => {
+	const { onKeyDown } = useSubmitThroughRuntime();
 	return (
 		<ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
 			<div
@@ -224,10 +262,30 @@ const Composer: FC = () => {
 					rows={1}
 					enterKeyHint="send"
 					aria-label="Message input"
+					onKeyDown={onKeyDown}
 				/>
 				<ComposerAction />
 			</div>
 		</ComposerPrimitive.Root>
+	);
+};
+
+const ComposerSend: FC = () => {
+	const { canSend, send } = useSubmitThroughRuntime();
+	return (
+		<TooltipIconButton
+			tooltip="Send message"
+			side="bottom"
+			type="button"
+			variant="default"
+			size="icon"
+			className="aui-composer-send size-7 rounded-sm"
+			aria-label="Send message"
+			disabled={!canSend}
+			onClick={send}
+		>
+			<RiArrowUpLine className="aui-composer-send-icon size-4" />
+		</TooltipIconButton>
 	);
 };
 
@@ -237,21 +295,7 @@ const ComposerAction: FC = () => {
 		<div className="aui-composer-action-wrapper border-border relative flex items-center justify-between gap-3 border-t px-2 py-1.5">
 			{ComposerFooter ? <ComposerFooter /> : null}
 			<div className="ms-auto flex items-center gap-1.5">
-				<AuiIf condition={(s) => !s.thread.isRunning}>
-					<ComposerPrimitive.Send asChild>
-						<TooltipIconButton
-							tooltip="Send message"
-							side="bottom"
-							type="button"
-							variant="default"
-							size="icon"
-							className="aui-composer-send size-7 rounded-sm"
-							aria-label="Send message"
-						>
-							<RiArrowUpLine className="aui-composer-send-icon size-4" />
-						</TooltipIconButton>
-					</ComposerPrimitive.Send>
-				</AuiIf>
+				<ComposerSend />
 				<AuiIf condition={(s) => s.thread.isRunning}>
 					<ComposerPrimitive.Cancel asChild>
 						<Button
