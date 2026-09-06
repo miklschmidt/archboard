@@ -80,6 +80,9 @@ interface RecoveryPresentation {
 /** A fullscreen presentation of one pane. */
 type ShellPresentation = LivePresentation | RecoveryPresentation;
 
+/** The two note states a person resolves through a dialog (ADR 0006, TASK-062). */
+type RecoveryKind = "hold" | "elsewhere";
+
 /** The settings surfaces the header's menu reaches. */
 type SettingsSurface = "opener" | "agent" | "library";
 
@@ -131,6 +134,10 @@ interface ShellActions {
 	openCode(elementId: string): void;
 	focusPath(elementId: string): void;
 	exitPathFocus(): void;
+	/** Close the inspector by clearing the active pane's selection; presentation only. */
+	dismissSelection(): void;
+	/** Reopen the recovery dialog for a board that stopped saving or was written elsewhere. */
+	openRecovery(kind: RecoveryKind): void;
 }
 
 export type {
@@ -145,6 +152,7 @@ export type {
 	RecoveryPresentation,
 	ShellPresentation,
 	SettingsSurface,
+	RecoveryKind,
 	ShellView,
 	ShellActions,
 };

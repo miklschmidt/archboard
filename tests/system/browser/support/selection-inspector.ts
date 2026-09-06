@@ -74,7 +74,8 @@ function readInspectorContract(browser: AgentBrowserSession): Promise<InspectorC
 		const label = inspector.querySelector('dl dt');
 		const human = [...inspector.querySelectorAll('dl dd')].find(node => !node.classList.contains('font-mono'));
 		const technical = inspector.querySelector('dl dd.font-mono');
-		const copy = [...inspector.querySelectorAll('p')].at(-1) ?? human ?? label;
+		// Human copy: the last prose line; the element id under a promoted name is technical.
+		const copy = [...inspector.querySelectorAll('p')].filter(node => !node.classList.contains('font-mono')).at(-1) ?? human ?? label;
 		const named = name => [...inspector.querySelectorAll('button')].find(node => node.textContent.trim() === name);
 		const control = named('Focus path') ?? named('Exit focus');
 		const open = named('Open code');

@@ -1,4 +1,4 @@
-// The 56px header: four sections under one-pixel rules. The wordmark, the
+// The 56px header: five sections under full-height one-pixel rules. The wordmark, the
 // board breadcrumb, the live state chips, and the actions on the board. Pane
 // controls live in the pane bar. The text pieces shrink and truncate so a
 // narrower window never clips the row.
@@ -7,7 +7,7 @@ import { RiLockLine, RiMoonLine, RiSettings3Line, RiSunLine } from "@remixicon/r
 import { useCallback } from "react";
 
 import { Badge } from "@/ui/components/badge";
-import { Button, buttonVariants } from "@/ui/components/button";
+import { Button } from "@/ui/components/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -15,24 +15,24 @@ import {
 	DropdownMenuTrigger,
 } from "@/ui/components/dropdown-menu";
 import { Separator } from "@/ui/components/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
 import type {
+	RecoveryKind,
 	SettingsSurface,
 	ShellActions,
 	ShellPane,
 	ThemeChoice,
 } from "@/ui/shell/lib/contracts";
+import { ICON_BUTTON_CLASS, IconButton } from "@/ui/shell/lib/icon-button";
 import { StatusDot } from "@/ui/shell/lib/status-dot";
 import type { BoardHold, BoardIdentity, LockHolder, NoteWrittenElsewhere } from "@/ui/types";
 
-/** A 28px icon button inside a 32px hit area. */
-const ICON_BUTTON_CLASS = buttonVariants({
-	variant: "ghost",
-	size: "icon-sm",
-	className: "hit-area",
-});
-
 /** The settings menu trigger's id: the dialogs it opens return focus to it. */
 const SETTINGS_TRIGGER_ID = "shell-settings";
+
+/** A warning chip that is also the way into its recovery dialog. */
+const WARNING_CHIP_CLASS =
+	"border-warning/60 bg-warning-subtle text-warning-foreground hover:bg-warning-subtle hover:text-warning-foreground text-body h-6 shrink-0 gap-1.5 rounded-[2px] px-2 font-normal";
 
 /** Inputs for the header. */
 interface HeaderProps {
@@ -173,36 +173,73 @@ function ClaimState(props: SummaryProps): React.JSX.Element | null {
 	);
 }
 
+/** Inputs for one warning chip. */
+interface WarningChipProps {
+	kind: RecoveryKind;
+	/** What the chip says, its first words the state's name. */
+	children: React.ReactNode;
+	/** The accessible name: the state and the choice the chip opens. */
+	label: string;
+	actions: ShellActions;
+}
+
 /**
- * A board that has stopped saving, or whose note was written elsewhere. A
- * warning, not a refusal: the person decides what happens next.
- * @param props The flattened pane.
+ * The warning chip as the tooltip's element: a 24px outline button.
+ * @param props The merged props Base UI hands to the rendered element.
+ * @returns The chip button.
+ */
+function renderWarningChip(props: React.ComponentPropsWithRef<"button">): React.JSX.Element {
+	return <Button variant="outline" size="xs" {...props} className={WARNING_CHIP_CLASS} />;
+}
+
+/**
+ * A warning chip that opens the recovery dialog when chosen. A warning, not
+ * a refusal: the person decides what happens next.
+ * @param props The recovery kind, the words and the actions.
+ * @returns A chip-sized button with a tooltip naming what it opens.
+ */
+function WarningChip(props: WarningChipProps): React.JSX.Element {
+	const { kind, actions } = props;
+	const handleClick = useCallback(() => actions.openRecovery(kind), [actions, kind]);
+	return (
+		<Tooltip>
+			<TooltipTrigger render={renderWarningChip} aria-label={props.label} onClick={handleClick}>
+				<StatusDot tone="warning" />
+				<span>{props.children}</span>
+			</TooltipTrigger>
+			<TooltipContent>Choose what happens to the note</TooltipContent>
+		</Tooltip>
+	);
+}
+
+/**
+ * A board that has stopped saving, or whose note was written elsewhere. The
+ * chip is the way back into the choice the notice offered.
+ * @param props The flattened pane and the actions.
  * @returns The chip, or nothing when the board is saving normally.
  */
-function NoteState(props: SummaryProps): React.JSX.Element | null {
+function NoteState(props: SummaryProps & ActionsProps): React.JSX.Element | null {
 	const { hold, elsewhere } = props.summary;
 	if (hold) {
 		return (
-			<Badge
-				variant="outline"
-				size="chip"
-				className="border-warning/60 bg-warning-subtle text-warning-foreground shrink-0"
+			<WarningChip
+				kind="hold"
+				label={`Not saving, ${hold.writes} changes held: choose what happens to the note`}
+				actions={props.actions}
 			>
-				<StatusDot tone="warning" />
 				Not saving · <span className="font-mono">{hold.writes}</span> held
-			</Badge>
+			</WarningChip>
 		);
 	}
 	if (elsewhere) {
 		return (
-			<Badge
-				variant="outline"
-				size="chip"
-				className="border-warning/60 bg-warning-subtle text-warning-foreground shrink-0"
+			<WarningChip
+				kind="elsewhere"
+				label="Note written elsewhere: choose what happens to the note"
+				actions={props.actions}
 			>
-				<StatusDot tone="warning" />
 				Note written elsewhere
-			</Badge>
+			</WarningChip>
 		);
 	}
 	return null;
@@ -270,6 +307,15 @@ function SettingsItem(props: SettingsItemProps): React.JSX.Element {
 }
 
 /**
+ * The menu trigger as the tooltip's element, so one button is both.
+ * @param props The merged props Base UI hands to the rendered element.
+ * @returns The dropdown trigger.
+ */
+function renderMenuTrigger(props: React.ComponentPropsWithRef<"button">): React.JSX.Element {
+	return <DropdownMenuTrigger {...props} />;
+}
+
+/**
  * The settings menu.
  * @param props The action that opens a settings surface.
  * @returns A dropdown behind a gear icon.
@@ -277,13 +323,17 @@ function SettingsItem(props: SettingsItemProps): React.JSX.Element {
 function SettingsMenu(props: ActionsProps): React.JSX.Element {
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger
-				id={SETTINGS_TRIGGER_ID}
-				className={ICON_BUTTON_CLASS}
-				aria-label="Settings"
-			>
-				<RiSettings3Line />
-			</DropdownMenuTrigger>
+			<Tooltip>
+				<TooltipTrigger
+					render={renderMenuTrigger}
+					id={SETTINGS_TRIGGER_ID}
+					className={ICON_BUTTON_CLASS}
+					aria-label="Settings"
+				>
+					<RiSettings3Line />
+				</TooltipTrigger>
+				<TooltipContent>Settings</TooltipContent>
+			</Tooltip>
 			<DropdownMenuContent
 				align="end"
 				sideOffset={8}
@@ -308,7 +358,8 @@ interface ThemeToggleProps extends ActionsProps {
 }
 
 /**
- * Switch between the light and dark themes.
+ * Switch between the light and dark themes. The theme in force is announced
+ * beside the control, so a switch is heard as well as seen.
  * @param props The current theme and the action that changes it.
  * @returns A sun or moon button named for the theme it switches to.
  */
@@ -317,15 +368,14 @@ function ThemeToggle(props: ThemeToggleProps): React.JSX.Element {
 	const next: ThemeChoice = theme === "dark" ? "light" : "dark";
 	const handleClick = useCallback(() => actions.setTheme(next), [actions, next]);
 	return (
-		<Button
-			variant="ghost"
-			size="icon-sm"
-			className="hit-area"
-			aria-label={`Switch to ${next} theme`}
-			onClick={handleClick}
-		>
-			{theme === "dark" ? <RiSunLine /> : <RiMoonLine />}
-		</Button>
+		<>
+			<IconButton label={`Switch to ${next} theme`} onClick={handleClick}>
+				{theme === "dark" ? <RiSunLine /> : <RiMoonLine />}
+			</IconButton>
+			<output aria-live="polite" className="sr-only">
+				{theme === "dark" ? "Dark theme" : "Light theme"}
+			</output>
+		</>
 	);
 }
 
@@ -339,12 +389,13 @@ function Header(props: HeaderProps): React.JSX.Element {
 	const summary = summarisePane(props.pane);
 	return (
 		<header className="border-border bg-background flex h-14 min-w-0 shrink-0 items-stretch overflow-hidden border-b">
-			<div className="flex w-[136px] shrink-0 items-center justify-center">
+			{/* The rule is this section's own right border, exactly as the navigator
+			    draws its rule, so the two lines meet on the same pixel. */}
+			<div className="border-border flex w-(--shell-navigator-width) shrink-0 items-center justify-center border-r">
 				<h1 className="wordmark">
 					<span className="sr-only">archboard</span>
 				</h1>
 			</div>
-			<Separator orientation="vertical" />
 			<div className="flex min-w-0 flex-1 items-center px-4">
 				<Breadcrumb identity={props.current} />
 			</div>
@@ -352,12 +403,14 @@ function Header(props: HeaderProps): React.JSX.Element {
 			<div className="flex min-w-0 shrink items-center gap-3 px-4">
 				<ConnectionState summary={summary} />
 				<ClaimState summary={summary} />
-				<NoteState summary={summary} />
+				<NoteState summary={summary} actions={actions} />
 			</div>
 			<Separator orientation="vertical" />
 			<div className="flex shrink-0 items-center gap-1 px-4">
 				<BoardActions actions={actions} />
-				<Separator orientation="vertical" className="mx-1 h-4 self-center" />
+			</div>
+			<Separator orientation="vertical" />
+			<div className="flex shrink-0 items-center gap-1 px-3">
 				<SettingsMenu actions={actions} />
 				<ThemeToggle theme={props.theme} actions={actions} />
 			</div>

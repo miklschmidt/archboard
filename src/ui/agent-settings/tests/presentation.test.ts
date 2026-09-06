@@ -59,10 +59,10 @@ describe("agent settings presentation", () => {
 			detail: "no thread is linked",
 			tone: "outline",
 		});
-		expect(threadLinkFacts(UNBOUND).map((row) => row.label)).toEqual([
-			"Status",
-			"Loaded",
-			"Direct input",
+		expect(threadLinkFacts(UNBOUND).map((row) => [row.label, row.value])).toEqual([
+			["Status", "Not loaded"],
+			["Inventory", "Thread inventory not loaded yet"],
+			["Direct input", "Direct input is not accepted"],
 		]);
 	});
 
@@ -80,7 +80,7 @@ describe("agent settings presentation", () => {
 			reason: null,
 		};
 		expect(describeCoordinator(coordinator)).toEqual({
-			label: "ready",
+			label: "Ready",
 			detail: null,
 			tone: "default",
 		});

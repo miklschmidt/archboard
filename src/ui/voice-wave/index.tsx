@@ -42,7 +42,7 @@ interface StaticWaveProps {
 }
 
 /**
- * The dock wave is a 120×24 strip, not the renderer's square; larger presets
+ * The dock wave is a 120 by 24 strip, not the renderer's square; larger presets
  * keep the official square geometry.
  */
 const WAVE_CLASS: Record<VoiceOutputWaveSize, string> = {
@@ -59,13 +59,24 @@ const RULE_CLASS: Record<VoiceOutputWaveSize, string> = {
 };
 
 /**
- * The static presentation: one status-coloured rule and the state text,
- * for reduced motion and for browsers without WebGL.
+ * Whether the session carries audio, which is when the wave is lime and moving.
+ * @param state The voice output state.
+ * @param active Whether the session is live.
+ * @returns True while there is audio to follow.
+ */
+function isLive(state: VoiceWaveState, active: boolean): boolean {
+	return active && state !== "inactive";
+}
+
+/**
+ * The static presentation: one rule in the muted neutral, lime only while
+ * live, and the state text. Shown before and after a session, under reduced
+ * motion, and in browsers without WebGL.
  * @param props The state and whether the session is live.
  * @returns A rule and the state text.
  */
 function StaticWave(props: StaticWaveProps): React.JSX.Element {
-	const live = props.active && props.state !== "inactive";
+	const live = isLive(props.state, props.active);
 	return (
 		<div
 			data-voice-wave="static"
@@ -91,7 +102,25 @@ function StaticWave(props: StaticWaveProps): React.JSX.Element {
 }
 
 /**
- * The voice output wave with its accessible state text.
+ * Whether the wave must be the static rule: reduced motion, no WebGL, or no
+ * audio to follow.
+ * @param props The wave inputs.
+ * @param reducedMotion Whether motion is reduced by preference or prop.
+ * @param webGl Whether a WebGL context is available.
+ * @returns True when the static presentation is shown.
+ */
+function usesStaticWave(
+	props: VoiceOutputWaveProps,
+	reducedMotion: boolean,
+	webGl: boolean,
+): boolean {
+	return reducedMotion || !webGl || !isLive(props.state, props.active);
+}
+
+/**
+ * The voice output wave with its accessible state text. The lime shader
+ * runs only while the session carries audio; before and after, and under
+ * reduced motion or without WebGL, the wave is the muted static rule.
  * @param props The typed voice output state.
  * @returns The animated wave, or a static fallback.
  */
@@ -102,7 +131,7 @@ function VoiceOutputWave(props: VoiceOutputWaveProps): React.JSX.Element {
 	const reducedMotion = props.reducedMotion === true || prefersReducedMotion;
 	const size = props.size ?? "sm";
 	const showText = props.showText === true;
-	if (reducedMotion || !webGl) {
+	if (usesStaticWave(props, reducedMotion, webGl)) {
 		return (
 			<StaticWave
 				state={props.state}

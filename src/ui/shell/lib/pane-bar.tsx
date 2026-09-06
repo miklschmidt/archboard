@@ -5,20 +5,13 @@
 import { RiAddLine, RiCloseLine, RiFullscreenLine } from "@remixicon/react";
 import { useCallback, useMemo } from "react";
 
-import { buttonVariants } from "@/ui/components/button";
 import { ToggleGroup, ToggleGroupItem } from "@/ui/components/toggle-group";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
 import type { ShellActions, ShellPane } from "@/ui/shell/lib/contracts";
+import { IconButton } from "@/ui/shell/lib/icon-button";
 import { paneLetter } from "@/ui/shell/lib/navigator-entries";
+import { presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 import { StatusDot } from "@/ui/shell/lib/status-dot";
 import { clockTime } from "@/ui/shell/lib/time";
-
-/** A 28px icon button inside a 32px hit area. */
-const ICON_BUTTON_CLASS = buttonVariants({
-	variant: "ghost",
-	size: "icon-sm",
-	className: "hit-area",
-});
 
 /**
  * "Pane A · board": the pane's place in reading order and what it holds.
@@ -66,35 +59,6 @@ function PaneStatusLine(props: PaneStatusLineProps): React.JSX.Element {
 	);
 }
 
-/** Inputs for an icon control. */
-interface IconControlProps {
-	label: string;
-	onClick: () => void;
-	disabled: boolean;
-	children: React.ReactNode;
-}
-
-/**
- * An icon control with a tooltip that doubles as its accessible name.
- * @param props The label, icon and click handler.
- * @returns The tooltip-wrapped button.
- */
-function IconControl(props: IconControlProps): React.JSX.Element {
-	return (
-		<Tooltip>
-			<TooltipTrigger
-				className={ICON_BUTTON_CLASS}
-				aria-label={props.label}
-				onClick={props.onClick}
-				disabled={props.disabled}
-			>
-				{props.children}
-			</TooltipTrigger>
-			<TooltipContent>{props.label}</TooltipContent>
-		</Tooltip>
-	);
-}
-
 /** Inputs for the pane controls. */
 interface PaneControlsProps {
 	activePaneId: string;
@@ -117,23 +81,24 @@ function PaneControls(props: PaneControlsProps): React.JSX.Element {
 	);
 	return (
 		<span className="flex shrink-0 items-center gap-1 px-2">
-			<IconControl label="Add pane" onClick={handleAdd} disabled={paneCount >= 2}>
+			<IconButton label="Add pane" onClick={handleAdd} disabled={paneCount >= 2}>
 				<RiAddLine />
-			</IconControl>
-			<IconControl
+			</IconButton>
+			<IconButton
 				label={`Close pane ${activePaneId}`}
 				onClick={handleClose}
 				disabled={paneCount <= 1}
 			>
 				<RiCloseLine />
-			</IconControl>
-			<IconControl
+			</IconButton>
+			<IconButton
 				label={`Present pane ${activePaneId} fullscreen`}
+				shortcut={presentShortcutLabel()}
 				onClick={handlePresent}
 				disabled={activePaneId === ""}
 			>
 				<RiFullscreenLine />
-			</IconControl>
+			</IconButton>
 		</span>
 	);
 }
@@ -177,7 +142,7 @@ function PaneBar(props: PaneBarProps): React.JSX.Element {
 						key={pane.status.paneId}
 						value={pane.status.paneId}
 						aria-current={pane.status.paneId === activePaneId ? "true" : undefined}
-						className="border-border hover:bg-sidebar-accent aria-pressed:border-b-primary aria-pressed:text-foreground text-muted-foreground h-auto min-w-0 gap-3 rounded-none border-r border-b-2 border-b-transparent px-4 aria-pressed:bg-transparent"
+						className="border-border hover:bg-sidebar-accent aria-pressed:border-b-primary aria-pressed:text-foreground text-muted-foreground h-auto min-w-0 gap-3 rounded-none border-r border-b-2 border-b-transparent px-4 focus-visible:ring-inset aria-pressed:bg-transparent"
 					>
 						<span className="truncate">{paneLabel(pane, index)}</span>
 						<PaneStatusLine pane={pane} />

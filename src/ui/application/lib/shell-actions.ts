@@ -17,7 +17,13 @@ import { EMPTY_DRAFT, type BoardDialogs } from "@/ui/application/lib/use-board-d
 import type { Fullscreen } from "@/ui/application/lib/use-fullscreen";
 import type { NoticeStack } from "@/ui/application/lib/use-notices";
 import type { Panes } from "@/ui/application/lib/use-panes";
-import type { SettingsSurface, ShellActions, ShellPresentation, ThemeChoice } from "@/ui/shell";
+import type {
+	RecoveryKind,
+	SettingsSurface,
+	ShellActions,
+	ShellPresentation,
+	ThemeChoice,
+} from "@/ui/shell";
 import type { BoardIdentity, BoardListing } from "@/ui/types";
 
 /** What the actions act on. */
@@ -308,6 +314,8 @@ type InspectorActions = Pick<
 	| "openCode"
 	| "focusPath"
 	| "exitPathFocus"
+	| "dismissSelection"
+	| "openRecovery"
 >;
 
 /**
@@ -361,7 +369,37 @@ function inspectorActions(deps: ShellActionDeps): InspectorActions {
 	function exitPathFocus(): void {
 		activeSession()?.exitPathFocus();
 	}
-	return { openSettings, selectNoticeAction, dismissNotice, openCode, focusPath, exitPathFocus };
+	/**
+	 * Close the inspector by clearing the active pane's selection, then put
+	 * keyboard focus on that pane so it is not stranded on a control that has
+	 * gone. Presentation only: the note is never written.
+	 */
+	function dismissSelection(): void {
+		activeSession()?.clearSelection();
+		deps.fullscreen.stage
+			?.querySelector<HTMLElement>('section[aria-label^="Pane "][aria-current="true"]')
+			?.focus();
+	}
+	/**
+	 * Reopen the recovery dialog behind a header chip.
+	 * @param kind Which note state the chip names.
+	 */
+	function openRecovery(kind: RecoveryKind): void {
+		answerNotice(
+			deps,
+			kind === "hold" ? NOTICE_ACTIONS.resolveHold : NOTICE_ACTIONS.resolveElsewhere,
+		);
+	}
+	return {
+		openSettings,
+		selectNoticeAction,
+		dismissNotice,
+		openCode,
+		focusPath,
+		exitPathFocus,
+		dismissSelection,
+		openRecovery,
+	};
 }
 
 /**

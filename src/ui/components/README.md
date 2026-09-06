@@ -73,6 +73,8 @@ correctness check rather than a style rule.
   association rule, which cannot see the spread `htmlFor`.
 - Every file: `cn` comes from `@/ui/components/class-names` (see above) instead of the
   bare `cn` package. Same engine, same semantics, plus the six type roles.
+- `tooltip.tsx`: the positioner is `pointer-events-none`, so a tooltip that is
+  closing or open on focus never swallows a click meant for a neighbour.
 - `badge.tsx`: a `size` axis (`default`, `technical`, `chip`) beside the
   official variants; every official variant is untouched.
 - `sidebar.tsx`, `toggle-group.tsx`: CSS custom properties in `style` are

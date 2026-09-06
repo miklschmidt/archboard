@@ -1,13 +1,14 @@
 // The session column on the left of the dock body: the one private session's
 // readiness, the explicit thread link with its actions, and the separate
-// coordinator as a definition list, then the lease, operation and
-// board-context delivery tokens in mono.
+// coordinator as a definition list, the lease, operation and board-context
+// delivery tokens in mono, then the recent activity the shell hands in.
 
 import { RiLinkM, RiLinkUnlinkM, RiRefreshLine, RiSettings3Line } from "@remixicon/react";
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 import { Button } from "@/ui/components/button";
 import type { WorkbenchActions } from "@/ui/workbench/contracts";
+import { IconAction } from "@/ui/workbench/lib/icon-action";
 import { SessionItem } from "@/ui/workbench/lib/state-line";
 import {
 	coordinatorLine,
@@ -21,6 +22,8 @@ import {
 /** Inputs for the column. */
 interface SessionColumnProps {
 	snapshot: BrowserSnapshot;
+	/** The recent `doing` lines, rendered by the shell, or null. */
+	activity: React.ReactNode;
 	actions: WorkbenchActions;
 }
 
@@ -31,7 +34,8 @@ interface ThreadLinkButtonsProps {
 }
 
 /**
- * Link, choose, refresh and unlink for the workhorse.
+ * Link, choose, refresh and unlink for the workhorse, on one row: the
+ * refresh is an icon so the three fit the column's width.
  * @param props Whether a thread is linked, and the callbacks.
  * @returns The buttons.
  */
@@ -40,24 +44,28 @@ function ThreadLinkButtons(props: ThreadLinkButtonsProps): React.JSX.Element {
 		<>
 			{props.linked ? (
 				<>
-					<Button variant="ghost" size="xs" onClick={props.actions.refresh}>
-						<RiRefreshLine />
-						Refresh
-					</Button>
 					<Button variant="ghost" size="xs" onClick={props.actions.unlink}>
 						<RiLinkUnlinkM />
 						Unlink
 					</Button>
+					<Button variant="ghost" size="xs" onClick={props.actions.choose}>
+						Choose
+					</Button>
+					<IconAction label="Refresh thread" onClick={props.actions.refresh}>
+						<RiRefreshLine />
+					</IconAction>
 				</>
 			) : (
-				<Button variant="outline" size="xs" onClick={props.actions.link}>
-					<RiLinkM />
-					Link new thread
-				</Button>
+				<>
+					<Button variant="outline" size="xs" onClick={props.actions.link}>
+						<RiLinkM />
+						Link new thread
+					</Button>
+					<Button variant="ghost" size="xs" onClick={props.actions.choose}>
+						Choose
+					</Button>
+				</>
 			)}
-			<Button variant="ghost" size="xs" onClick={props.actions.choose}>
-				Choose
-			</Button>
 		</>
 	);
 }
@@ -92,10 +100,32 @@ function Tokens(props: TokensProps): React.JSX.Element | null {
 	);
 }
 
+/** Inputs for the activity section. */
+interface ActivitySectionProps {
+	activity: React.ReactNode;
+}
+
+/**
+ * The recent activity under its own kicker, when there is any.
+ * @param props The rendered activity, or null.
+ * @returns The section, or nothing.
+ */
+function ActivitySection(props: ActivitySectionProps): React.JSX.Element | null {
+	if (props.activity === null) {
+		return null;
+	}
+	return (
+		<div className="border-border flex flex-col gap-2 border-t pt-2">
+			<h3 className="text-kicker text-muted-foreground uppercase">Activity</h3>
+			{props.activity}
+		</div>
+	);
+}
+
 /**
  * The session column.
- * @param props The snapshot and the actions.
- * @returns The kicker, the definition list and the tokens.
+ * @param props The snapshot, the activity and the actions.
+ * @returns The kicker, the definition list, the tokens and the activity.
  */
 function SessionColumn(props: SessionColumnProps): React.JSX.Element {
 	const { snapshot, actions } = props;
@@ -106,15 +136,9 @@ function SessionColumn(props: SessionColumnProps): React.JSX.Element {
 		>
 			<div className="-me-1 flex h-8 shrink-0 items-center">
 				<h2 className="text-kicker text-muted-foreground flex-1 uppercase">Session</h2>
-				<Button
-					variant="ghost"
-					size="icon-xs"
-					aria-label="Agent settings"
-					className="relative rounded-sm after:absolute after:-inset-1"
-					onClick={actions.openAgentSettings}
-				>
+				<IconAction label="Agent settings" onClick={actions.openAgentSettings}>
 					<RiSettings3Line />
-				</Button>
+				</IconAction>
 			</div>
 			<dl className="flex flex-col gap-3">
 				<SessionItem line={readinessLine(snapshot.readiness)} />
@@ -127,6 +151,7 @@ function SessionColumn(props: SessionColumnProps): React.JSX.Element {
 				<SessionItem line={coordinatorLine(snapshot.coordinator)} />
 			</dl>
 			<Tokens snapshot={snapshot} />
+			<ActivitySection activity={props.activity} />
 		</section>
 	);
 }

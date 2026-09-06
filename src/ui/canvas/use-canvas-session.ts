@@ -177,6 +177,7 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 	const takeBack = useCallback((): Promise<TakeBackResult> => core.takeBack(), [core]);
 	const focusPath = useCallback((): void => core.projection.focusPath(), [core]);
 	const exitPathFocus = useCallback((): void => core.projection.exitPathFocus(), [core]);
+	const clearSelection = useCallback((): void => core.projection.clearSelection(), [core]);
 	const workbenchTransport = useCallback((): Transport | null => core.workbenchTransport(), [core]);
 	const onFailure = useCallback(
 		(notice: CodeTargetNotice): void => box.options.onCodeTargetNotice?.(notice),
@@ -213,6 +214,7 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 		takeBack,
 		focusPath,
 		exitPathFocus,
+		clearSelection,
 		openCode,
 		handleLinkOpen,
 		previewController: core.projection.previewController,

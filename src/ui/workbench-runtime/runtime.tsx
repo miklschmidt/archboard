@@ -346,6 +346,8 @@ function useWorkbenchRuntime(
 			voice,
 			nowMs: now(),
 			reducedMotion,
+			// The host composes the pane's recent activity in.
+			activity: null,
 		}),
 		[state, local, voice, now, reducedMotion],
 	);

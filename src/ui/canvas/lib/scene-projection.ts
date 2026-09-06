@@ -42,6 +42,8 @@ interface SceneProjection {
 	readonly changed: (appState: AppState) => void;
 	readonly focusPath: () => void;
 	readonly exitPathFocus: () => void;
+	/** Clear the selection in Excalidraw's app state; presentation only. */
+	readonly clearSelection: () => void;
 	/** The pane is on another board now: focus ends, selection is re-published. */
 	readonly boardChanged: () => void;
 	/** The stage moved or resized; the overlay follows. */
@@ -142,6 +144,15 @@ function createSceneProjection(host: SceneProjectionHost): SceneProjection {
 	}
 
 	/**
+	 * Clear Excalidraw's selection: app state only, so the scene and the note
+	 * are untouched. Excalidraw reports the change, which empties the
+	 * inspector and ends path focus through the ordinary path.
+	 */
+	function clearSelection(): void {
+		host.api()?.updateScene({ appState: { selectedElementIds: {} } });
+	}
+
+	/**
 	 * Follow the selection while focus is on: it moves with it, and ends with it.
 	 * @param ids The selected ids now.
 	 */
@@ -194,6 +205,7 @@ function createSceneProjection(host: SceneProjectionHost): SceneProjection {
 		changed,
 		focusPath,
 		exitPathFocus,
+		clearSelection,
 		boardChanged,
 		refreshOverlay,
 		previewController: { read },

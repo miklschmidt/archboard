@@ -155,6 +155,10 @@
 
 /* Light: chalk white, pale stone panels, near-black text, cobalt selection. */
 :root {
+	/* One width for the navigator and the header section above it, so their
+	   right-hand rules align. Narrow like the reference strip, wide enough for
+	   two-line board names. */
+	--shell-navigator-width: 200px;
 	--background: oklch(0.99 0.002 95);
 	--foreground: oklch(0.145 0 0);
 	--card: oklch(1 0 0);
@@ -260,6 +264,49 @@
 	body {
 		@apply bg-background text-foreground;
 	}
+}
+
+/* Excalidraw's islands (toolbar, zoom, menu, library) take the shell's flat
+   look through Excalidraw's own public custom properties, set on its root
+   and re-set for its dark theme: the panel surface and rule, the cobalt
+   selection, the small radius, no island shadow, and the neutral hover.
+   The tints mix in oklab: a hue-based space would swing a mix with a
+   neutral towards the neutral's literal hue.
+   The dark selector is the root class Excalidraw sets from its `theme`
+   prop; the doubled root class outranks the vendor sheet, which the
+   bundle injects after this one. Nothing here reaches a vendor class
+   below the root. */
+.excalidraw.excalidraw,
+.excalidraw.excalidraw.theme--dark {
+	--island-bg-color: var(--card);
+	--popup-bg-color: var(--popover);
+	--sidebar-bg-color: var(--card);
+	--sidebar-border-color: var(--border);
+	--dialog-border-color: var(--border);
+	--shadow-island: 0 0 0 1px var(--border);
+	--border-radius-md: 3px;
+	--border-radius-lg: 4px;
+	--color-primary: var(--primary);
+	--color-primary-darker: color-mix(in oklab, var(--primary) 88%, black);
+	--color-primary-darkest: color-mix(in oklab, var(--primary) 76%, black);
+	--color-primary-light: color-mix(in oklab, var(--primary) 14%, var(--card));
+	--color-primary-hover: color-mix(in oklab, var(--primary) 92%, black);
+	--color-brand-hover: color-mix(in oklab, var(--primary) 92%, black);
+	--color-brand-active: color-mix(in oklab, var(--primary) 80%, black);
+	--color-surface-primary-container: color-mix(in oklab, var(--primary) 14%, var(--card));
+	--color-on-primary-container: var(--foreground);
+	--color-surface-lowest: var(--card);
+	--color-surface-low: var(--muted);
+	--color-surface-mid: var(--muted);
+	--color-surface-high: var(--accent);
+	--color-on-surface: var(--foreground);
+	--color-border-outline: var(--muted-foreground);
+	--color-border-outline-variant: var(--border);
+	--focus-highlight-color: var(--ring);
+	--select-highlight-color: var(--ring);
+	--button-hover-bg: var(--muted);
+	--button-active-bg: color-mix(in oklab, var(--primary) 14%, var(--card));
+	--button-active-border: var(--primary);
 }
 
 /* The one vendor-selector adapter: a presented pane shows its canvas alone.

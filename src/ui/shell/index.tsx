@@ -4,8 +4,10 @@
 
 import { SidebarProvider } from "@/ui/components/sidebar";
 import { Inspector } from "@/ui/selection-inspector/inspector";
+import { ActivityList, recentDoing } from "@/ui/shell/lib/activity-list";
 import type {
 	LivePresentation,
+	RecoveryKind,
 	RecoveryPresentation,
 	ScratchBoardEntry,
 	SelectableNoticeAction,
@@ -24,10 +26,11 @@ import { Navigator } from "@/ui/shell/lib/navigator";
 import { Notices } from "@/ui/shell/lib/notices";
 import { PaneBar } from "@/ui/shell/lib/pane-bar";
 import { CanvasStages } from "@/ui/shell/lib/pane-stage";
+import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 import { WorkbenchDock } from "@/ui/shell/lib/workbench-dock";
 
-/** The navigator's width, 200px: narrow like the reference strip, wide enough for two-line names. */
-const SIDEBAR_STYLE: React.CSSProperties = { "--sidebar-width": "200px" };
+/** The navigator shares --shell-navigator-width with the header wordmark section, so the rule between them runs straight. */
+const SIDEBAR_STYLE: React.CSSProperties = { "--sidebar-width": "var(--shell-navigator-width)" };
 
 /** Inputs for the shell. */
 interface ShellProps {
@@ -39,6 +42,8 @@ interface ShellProps {
 	dockHeader?: React.ReactNode;
 	/** The workbench itself, for the dock body. */
 	dockBody?: React.ReactNode;
+	/** The recent activity, shown in the dock while no workbench rides the pane. */
+	dockActivity?: React.ReactNode;
 	/** The fullscreen root: the centre stage element. */
 	attachStage?: (element: HTMLDivElement | null) => void;
 }
@@ -83,6 +88,7 @@ function Shell(props: ShellProps): React.JSX.Element {
 						paneCount={view.panes.length}
 						headerControls={props.dockHeader ?? null}
 						body={props.dockBody ?? null}
+						activity={props.dockActivity ?? null}
 					/>
 				</div>
 				<Inspector selection={view.selection} pathFocus={view.pathFocus} actions={actions} />
@@ -92,8 +98,12 @@ function Shell(props: ShellProps): React.JSX.Element {
 }
 
 export {
+	ActivityList,
 	SETTINGS_TRIGGER_ID,
 	Shell,
+	isPresentShortcut,
+	presentShortcutLabel,
+	recentDoing,
 	type ShellProps,
 	type ShellView,
 	type ShellActions,
@@ -104,6 +114,7 @@ export {
 	type SelectableNoticeAction,
 	type ShellPresentation,
 	type LivePresentation,
+	type RecoveryKind,
 	type RecoveryPresentation,
 	type ScratchBoardEntry,
 	type SettingsSurface,

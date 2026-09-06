@@ -15,6 +15,7 @@ import { GitHubHttpsUrlSchema, type CodeTargetNoticeAction } from "@/shared/code
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/ui/components/alert";
 import { Button, buttonVariants } from "@/ui/components/button";
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "@/ui/shell/lib/contracts";
+import { IconButton } from "@/ui/shell/lib/icon-button";
 
 /** A 24px outline action with two-pixel corners. */
 const ACTION_CLASS = "rounded-[2px] font-medium";
@@ -148,15 +149,13 @@ function Notice(props: NoticeProps): React.JSX.Element {
 						actions={actions}
 					/>
 				))}
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					className="hit-area text-muted-foreground"
-					aria-label={`Dismiss notice: ${notice.title}`}
+				<IconButton
+					label={`Dismiss notice: ${notice.title}`}
+					className="text-muted-foreground"
 					onClick={handleDismiss}
 				>
 					<RiCloseLine />
-				</Button>
+				</IconButton>
 			</AlertAction>
 		</Alert>
 	);

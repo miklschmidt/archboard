@@ -238,7 +238,10 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 		};
 		const flat = [shell, header, nav, stages, dock, newBoard, pane];
-		const humanLabels = [groupLabel, board];
+		// Human labels: the board group's name and the header's board name. The
+		// section label beside them is a kicker, checked on its own terms.
+		const groupName = nav.querySelector('[data-sidebar="menu-item"] > button > span:last-child') ?? groupLabel;
+		const humanLabels = [groupName, board];
 		open.focus();
 		const focusStyle = getComputedStyle(open);
 		const focusRect = open.getBoundingClientRect();
@@ -309,6 +312,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name)),
 				humanLabels: humanLabels.map(node => { const value = getComputedStyle(node); return {
 					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
+				sectionKicker: { ...metrics(groupLabel), transform: getComputedStyle(groupLabel).textTransform },
 				titleType: metrics(board), bodyType: metrics(connection), kickerType: metrics(level), controlType: metrics(open), paneType: metrics(pane),
 				actionTargets: actionTargets.map(({ width, height }) => ({ width, height })),
 				paneTarget: (() => { const value = rect(pane); return { width: value.width, height: value.height }; })(),

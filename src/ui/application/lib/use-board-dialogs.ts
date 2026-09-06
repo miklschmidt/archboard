@@ -3,7 +3,7 @@
 // command; the outcome closes the dialog, keeps it open with the error, or
 // hands over to the conflict dialogs (ADR 0006).
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import {
 	SERVER_API,
@@ -82,6 +82,8 @@ interface BoardDialogs {
 	readonly confirm: () => void;
 	readonly chooseConflictOutcome: (outcome: ConflictOutcome) => void;
 	readonly chooseElsewhereOutcome: (outcome: ElsewhereOutcome) => void;
+	/** The control that had focus when the open dialog was opened, while it is still in the page. */
+	readonly opener: () => HTMLElement | null;
 }
 
 const NONE: OpenDialog = Object.freeze({ kind: "none" });
@@ -106,8 +108,18 @@ function useBoardDialogs(
 	api: BoardCommandApi = SERVER_API,
 ): BoardDialogs {
 	const [state, setState] = useState<BoardDialogState>(CLOSED);
+	// Captured when a dialog opens, so closing returns focus to what opened it:
+	// a header button, a navigator chip, a notice action or a header chip.
+	const openedFrom = useRef<HTMLElement | null>(null);
+	const opener = useCallback(
+		(): HTMLElement | null =>
+			openedFrom.current?.isConnected === true ? openedFrom.current : null,
+		[],
+	);
 
 	const show = useCallback((open: OpenDialog): void => {
+		const active = document.activeElement;
+		openedFrom.current = active instanceof HTMLElement ? active : null;
 		setState({ open, busy: false, busyOutcome: null, error: null });
 	}, []);
 	const close = useCallback((): void => setState(CLOSED), []);
@@ -242,8 +254,10 @@ function useBoardDialogs(
 			confirm,
 			chooseConflictOutcome,
 			chooseElsewhereOutcome,
+			opener,
 		}),
 		[
+			opener,
 			state,
 			openBoardDialog,
 			openConfirmClear,

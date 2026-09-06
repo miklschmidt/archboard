@@ -1,20 +1,19 @@
-// The bottom workbench dock: a 40px header with connection, claim and
-// `doing` data and a disclosure, and a 320px body reserved for the workbench
-// (TASK-150.05).
+// The bottom workbench dock: a 40px header with connection, claim and the
+// current `doing` line and a disclosure, and a 320px body for the workbench
+// (TASK-150.05). The recent activity lives in the workbench's session column;
+// when no workbench rides the pane, the dock body shows it beside a line
+// saying so, so a person never loses the agent's narration.
 
-import { RiArrowDownSLine, RiArrowUpSLine, RiCheckLine } from "@remixicon/react";
+import { RiArrowDownSLine, RiArrowUpSLine } from "@remixicon/react";
 import { useCallback, useState } from "react";
 
-import { Button } from "@/ui/components/button";
 import { Collapsible, CollapsibleContent } from "@/ui/components/collapsible";
 import { agentClaim } from "@/ui/shell/lib/claim-banner";
 import type { ShellPane, TakeBackState } from "@/ui/shell/lib/contracts";
+import { IconButton } from "@/ui/shell/lib/icon-button";
 import { StatusDot } from "@/ui/shell/lib/status-dot";
 import { clockTime } from "@/ui/shell/lib/time";
 import type { DoingEntry } from "@/ui/types";
-
-/** How many `doing` lines the disclosure shows. */
-const DOING_LINES = 6;
 
 /** Inputs for the dock. */
 interface WorkbenchDockProps {
@@ -25,15 +24,8 @@ interface WorkbenchDockProps {
 	headerControls: React.ReactNode;
 	/** The workbench itself, or null while no workbench rides this pane. */
 	body: React.ReactNode;
-}
-
-/**
- * The last few `doing` lines, oldest first.
- * @param pane The pane, or null when none is open.
- * @returns At most `DOING_LINES` entries.
- */
-function recentDoing(pane: ShellPane | null): DoingEntry[] {
-	return (pane?.status.doing ?? []).slice(-DOING_LINES);
+	/** The recent activity, shown here only while no workbench rides the pane. */
+	activity: React.ReactNode;
 }
 
 /** Inputs for the current activity line. */
@@ -63,57 +55,14 @@ function DoingLine(props: DoingLineProps): React.JSX.Element {
 	);
 }
 
-/** Inputs for the `doing` history. */
-interface DoingHistoryProps {
-	entries: readonly DoingEntry[];
-}
-
-/**
- * The last few `doing` lines, oldest first: a check for what is done, a
- * dot for the latest, the time in the mono face, and who said it.
- * @param props The entries.
- * @returns A list, or nothing when nobody has said anything.
- */
-function DoingHistory(props: DoingHistoryProps): React.JSX.Element | null {
-	if (props.entries.length === 0) {
-		return null;
-	}
-	const last = props.entries.length - 1;
-	return (
-		<ol
-			aria-label="Recent activity"
-			className="text-body border-border bg-sidebar flex flex-col gap-1 border-t px-4 py-2"
-		>
-			{props.entries.map((entry, index) => (
-				<li key={`${entry.by}:${entry.at}`} className="flex items-center gap-2">
-					{index === last ? (
-						<StatusDot tone="live" className="mx-[3px]" />
-					) : (
-						<RiCheckLine aria-hidden="true" className="text-muted-foreground size-3 shrink-0" />
-					)}
-					<time
-						dateTime={entry.at}
-						className="text-muted-foreground text-technical shrink-0 font-mono"
-					>
-						{clockTime(entry.at)}
-					</time>
-					<span className="text-muted-foreground text-technical shrink-0">
-						{entry.kind === "agent" ? "agent" : "human"}
-					</span>
-					<span className="truncate">{entry.doing}</span>
-				</li>
-			))}
-		</ol>
-	);
-}
-
 /** Inputs for the take-back state line. */
 interface TakeBackLineProps {
 	state: TakeBackState;
 }
 
 /**
- * Where the take-back operation stands, when it is not idle.
+ * Where the take-back operation stands, when it is not idle: a live line so
+ * the words are heard as well as seen.
  * @param props The state.
  * @returns A short line, or nothing while idle.
  */
@@ -122,15 +71,14 @@ function TakeBackLine(props: TakeBackLineProps): React.JSX.Element | null {
 	if (state.kind === "idle") {
 		return null;
 	}
+	const failed = state.kind === "failed";
 	return (
 		<span
-			className={
-				state.kind === "failed"
-					? "text-destructive text-body truncate"
-					: "text-muted-foreground text-body truncate"
-			}
+			aria-live="polite"
+			className={`text-body flex min-w-0 items-center gap-1.5 ${failed ? "text-foreground" : "text-muted-foreground"}`}
 		>
-			{state.kind === "failed" ? state.message : "Taking back control"}
+			<StatusDot tone={failed ? "warning" : "live"} />
+			<span className="truncate">{failed ? state.message : "Taking back control…"}</span>
 		</span>
 	);
 }
@@ -174,7 +122,7 @@ function DockActivity(props: DockStateProps): React.JSX.Element {
 		<>
 			<ActivityDot connected={pane?.status.connected === true} active={claim !== null} />
 			<span className="text-kicker shrink-0 uppercase">Agent workbench</span>
-			<DoingLine entry={recentDoing(pane).at(-1) ?? null} />
+			<DoingLine entry={pane?.status.doing.at(-1) ?? null} />
 		</>
 	);
 }
@@ -196,16 +144,47 @@ function DockCounts(props: DockStateProps): React.JSX.Element {
 	);
 }
 
+/** Inputs for the body shown while no workbench rides the pane. */
+interface DetachedBodyProps {
+	activity: React.ReactNode;
+}
+
+/**
+ * The dock body without a workbench: the recent activity in the session
+ * column's place, and one line saying why the rest is empty.
+ * @param props The recent activity.
+ * @returns The two-column fallback.
+ */
+function DetachedBody(props: DetachedBodyProps): React.JSX.Element {
+	return (
+		<div className="flex h-full min-h-0">
+			<section
+				aria-label="Activity"
+				className="border-border flex w-[260px] shrink-0 flex-col gap-2 overflow-y-auto border-r px-3 pb-3"
+			>
+				<div className="flex h-8 shrink-0 items-center">
+					<h2 className="text-kicker text-muted-foreground uppercase">Activity</h2>
+				</div>
+				{props.activity ?? (
+					<p className="text-muted-foreground text-body">Nothing said about this board yet.</p>
+				)}
+			</section>
+			<p className="text-muted-foreground text-body flex min-w-0 flex-1 items-center justify-center px-6 text-center">
+				No agent workbench is attached to this pane. Agent activity on the board still shows here.
+			</p>
+		</div>
+	);
+}
+
 /**
  * The workbench dock.
- * @param props The pane the dock describes and the pane count.
+ * @param props The pane the dock describes, the pane count and the slots.
  * @returns The collapsible dock.
  */
 function WorkbenchDock(props: WorkbenchDockProps): React.JSX.Element {
 	const { pane, paneCount } = props;
 	const [open, setOpen] = useState(true);
 	const handleToggle = useCallback(() => setOpen((value) => !value), []);
-	const entries = recentDoing(pane);
 	return (
 		<Collapsible
 			open={open}
@@ -217,25 +196,18 @@ function WorkbenchDock(props: WorkbenchDockProps): React.JSX.Element {
 				<span className="flex-1" />
 				<DockCounts pane={pane} paneCount={paneCount} />
 				{props.headerControls}
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					className="hit-area text-muted-foreground"
-					aria-label={open ? "Collapse workbench" : "Expand workbench"}
-					aria-expanded={open}
+				<IconButton
+					label={open ? "Collapse workbench" : "Expand workbench"}
+					expanded={open}
+					className="text-muted-foreground"
 					onClick={handleToggle}
 				>
 					{open ? <RiArrowDownSLine /> : <RiArrowUpSLine />}
-				</Button>
+				</IconButton>
 			</div>
 			<CollapsibleContent>
-				<DoingHistory entries={entries} />
 				<div className="border-border h-80 min-h-0 border-t">
-					{props.body ?? (
-						<p className="text-muted-foreground text-body flex h-full items-center justify-center">
-							No agent workbench is attached to this pane.
-						</p>
-					)}
+					{props.body ?? <DetachedBody activity={props.activity} />}
 				</div>
 			</CollapsibleContent>
 		</Collapsible>

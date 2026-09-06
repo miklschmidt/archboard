@@ -4,7 +4,7 @@
 // only connects them.
 
 import type { LibraryItems } from "@excalidraw/excalidraw/types";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { AgentSettingsHost } from "@/ui/application/lib/agent-settings-host";
@@ -36,7 +36,7 @@ import { useNotices, type NoticeStack } from "@/ui/application/lib/use-notices";
 import type { PaneSession } from "@/ui/application/lib/pane-handles";
 import { usePanes, type PaneEvents, type Panes } from "@/ui/application/lib/use-panes";
 import { useReducedMotion } from "@/ui/application/lib/use-reduced-motion";
-import { useStageEvents } from "@/ui/application/lib/use-stage-events";
+import { useStageEvents, type EscapeOrigin } from "@/ui/application/lib/use-stage-events";
 import { useWorkbench } from "@/ui/application/lib/use-workbench";
 import {
 	PresentationVoiceControls,
@@ -44,11 +44,14 @@ import {
 	WorkbenchDockHeader,
 } from "@/ui/application/lib/workbench-frame";
 import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
+import type { DoingEntry } from "@/ui/types";
 import { useLibrary, type LibraryController } from "@/ui/board-library";
 import { TooltipProvider } from "@/ui/components/tooltip";
 import {
+	ActivityList,
 	SETTINGS_TRIGGER_ID,
 	Shell,
+	recentDoing,
 	type SettingsSurface,
 	type ShellActions,
 	type ShellView,
@@ -171,25 +174,68 @@ function usePresentationTransfer(panes: Panes, fullscreen: Fullscreen): void {
 }
 
 /**
- * The workbench's three slots in the shell over the focused pane's owners.
+ * Return keyboard focus to the pane that was presented when a presentation
+ * ends, however it ended: the exit control, the shortcut, or the browser's
+ * own Escape. The exit control goes with the presentation, so without this
+ * the keyboard would be stranded on the body. The pane, not the present
+ * control, takes it: the person was looking at that canvas, and a control
+ * focused by script would pop its tooltip over its neighbours.
+ * @param presentedPaneId The presented pane, or null in the workspace.
+ */
+function usePresentationFocusReturn(presentedPaneId: string | null): void {
+	const previous = useRef<string | null>(null);
+	useEffect(() => {
+		const ended = previous.current;
+		if (ended !== null && presentedPaneId === null) {
+			document.querySelector<HTMLElement>(`section[aria-label="Pane ${ended}"]`)?.focus();
+		}
+		previous.current = presentedPaneId;
+	}, [presentedPaneId]);
+}
+
+/** The workbench's places in the shell. */
+interface WorkbenchSlots {
+	header: React.ReactNode;
+	body: React.ReactNode;
+	voice: React.ReactNode;
+	/** The active pane's recent `doing` lines, or null when nobody said anything. */
+	activity: React.ReactNode;
+}
+
+/**
+ * The active pane's recent activity, rendered once for the workbench's
+ * session column or, without a workbench, the dock's own column.
+ * @param doing Every `doing` line the active pane holds.
+ * @returns The list, or null when there is nothing to show.
+ */
+function useActivity(doing: readonly DoingEntry[]): React.ReactNode {
+	const recent = useMemo(() => recentDoing(doing), [doing]);
+	return useMemo(() => (recent.length === 0 ? null : <ActivityList entries={recent} />), [recent]);
+}
+
+/**
+ * The workbench's slots in the shell over the focused pane's owners.
  * @param owners The owners, or null while the focused pane has no transport.
  * @param reducedMotion The motion preference.
- * @returns The dock header, the dock body and the presentation voice controls.
+ * @param activity The active pane's rendered recent activity, or null.
+ * @returns The dock header, the dock body, the presentation voice controls and the activity.
  */
 function useWorkbenchSlots(
 	owners: WorkbenchOwners | null,
 	reducedMotion: boolean,
-): { header: React.ReactNode; body: React.ReactNode; voice: React.ReactNode } {
+	activity: React.ReactNode,
+): WorkbenchSlots {
 	return useMemo(() => {
 		if (owners === null) {
-			return { header: null, body: null, voice: null };
+			return { header: null, body: null, voice: null, activity };
 		}
 		return {
 			header: <WorkbenchDockHeader owners={owners} reducedMotion={reducedMotion} />,
-			body: <WorkbenchDockBody owners={owners} reducedMotion={reducedMotion} />,
+			body: <WorkbenchDockBody owners={owners} reducedMotion={reducedMotion} activity={activity} />,
 			voice: <PresentationVoiceControls owners={owners} />,
+			activity,
 		};
-	}, [owners, reducedMotion]);
+	}, [owners, reducedMotion, activity]);
 }
 
 /** What the shell view is assembled from, beyond the panes. */
@@ -411,6 +457,7 @@ function Application(): React.JSX.Element {
 	const dialogs = useBoardDialogs(dialogEvents);
 	useNoteRecovery(panes, notices, dialogs);
 	usePresentationTransfer(panes, fullscreen);
+	usePresentationFocusReturn(fullscreen.snapshot.paneId);
 	useBoardPlaceholders(panes);
 	useLibrarySync(panes, library);
 	useSideNotices(fullscreen, library, notices);
@@ -442,11 +489,29 @@ function Application(): React.JSX.Element {
 			createShellActions({ setTheme, panes, boards, dialogs, notices, fullscreen, openSettings }),
 		[setTheme, panes, boards, dialogs, notices, fullscreen, openSettings],
 	);
+	const view = useShellView({ theme, panes, boards, fullscreen, notices });
+	const pathFocused = view.pathFocus.kind === "connected";
 	const stageEvents = useMemo(
 		() => ({
-			/** Escape leaves path focus. */
-			onEscape: (): void => {
-				actions.exitPathFocus();
+			/**
+			 * Escape leaves path focus; inside the inspector, with no focus to
+			 * leave, it clears the selection and so closes the inspector.
+			 * @param origin Where the key was pressed.
+			 */
+			onEscape: (origin: EscapeOrigin): void => {
+				if (pathFocused) {
+					actions.exitPathFocus();
+				} else if (origin === "inspector") {
+					actions.dismissSelection();
+				}
+			},
+			/** The present shortcut toggles the presentation of the active pane. */
+			onPresentShortcut: (): void => {
+				if (fullscreen.snapshot.paneId === null) {
+					actions.present({ kind: "live", paneId: panes.list.activePaneId });
+				} else {
+					actions.present(null);
+				}
 			},
 			/**
 			 * A pointer on a pane focuses it.
@@ -456,12 +521,11 @@ function Application(): React.JSX.Element {
 				panes.select(paneId);
 			},
 		}),
-		[actions, panes],
+		[actions, panes, fullscreen.snapshot.paneId, pathFocused],
 	);
 	useStageEvents(fullscreen.stage, stageEvents);
-
-	const view = useShellView({ theme, panes, boards, fullscreen, notices });
-	const slots = useWorkbenchSlots(workbench.owners, reducedMotion);
+	const activity = useActivity(panes.active.status.doing);
+	const slots = useWorkbenchSlots(workbench.owners, reducedMotion, activity);
 	const levels = useMemo(
 		() =>
 			[...new Set(boards.listing.boards.flatMap((board) => board.identity.level ?? []))].toSorted(),
@@ -475,6 +539,7 @@ function Application(): React.JSX.Element {
 				voiceControls={slots.voice}
 				dockHeader={slots.header}
 				dockBody={slots.body}
+				dockActivity={slots.activity}
 				attachStage={fullscreen.attachStage}
 			/>
 			<BoardDialogsHost

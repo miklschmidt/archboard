@@ -99,6 +99,11 @@ interface WorkbenchView {
 	/** The clock the freshness and expiry text is judged against. */
 	nowMs: number;
 	reducedMotion: boolean;
+	/**
+	 * The recent `doing` lines of the pane this workbench rides, rendered by
+	 * the shell and placed in the session column; null when nobody said anything.
+	 */
+	activity: React.ReactNode;
 }
 
 /**

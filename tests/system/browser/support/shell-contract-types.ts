@@ -43,6 +43,8 @@ type ThemeSnapshot = {
 	fontChecks: boolean[];
 	fontResources: string[];
 	humanLabels: Array<{ family: string; transform: string; weight: number }>;
+	/** The navigator's section label: the kicker role, uppercase and tracked. */
+	sectionKicker: { family: string; transform: string; weight: number; size: number };
 	titleType: ShellMetrics;
 	bodyType: ShellMetrics;
 	kickerType: ShellMetrics;
