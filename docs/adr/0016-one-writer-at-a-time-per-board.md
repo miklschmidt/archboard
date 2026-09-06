@@ -1,5 +1,10 @@
 # One writer at a time, per board
 
+Superseded in part by [ADR 0022](0022-the-note-decides-and-a-persons-edit-is-optimistic.md):
+a content gesture no longer revokes a claim, a claimed board is read-only to
+people until an explicit release, and an agent is not asked to restructure in
+view of the person. The lock, the lease and the broadcast stand.
+
 A board is a note, and two writers to one note lose each other's work. An agent
 drawing while a person rearranges is not rare on a wall display: it is the
 normal way this tool is used.

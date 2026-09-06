@@ -1,5 +1,9 @@
 # Detect board write conflicts rather than prevent them
 
+Superseded in part by [ADR 0022](0022-the-note-decides-and-a-persons-edit-is-optimistic.md):
+the version precondition now applies to a person's write as well. The hash
+check, the held-board outcomes and the ordering role of the version stand.
+
 Archboard records a board file's hash when it loads it, verifies that hash
 before every write, and **refuses the write and reports the conflict** if the
 file changed underneath. It does not lock, and it does not reload.

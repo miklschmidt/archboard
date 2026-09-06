@@ -40,14 +40,13 @@ with the reason). These are the rules that will not stop you:
   including its fsync.
 - **One writer at a time per board** (ADR 0016), a lease file taken by one
   write-boundary middleware, deny by default. Claim before substantial work.
-- **A person's edit is optimistic, and the note still decides.** The canvas
-  shows a person's edit immediately, but a pane never drifts from the note on
-  disk: its write is version-checked like any other, refused when stale, and
-  the pane then reconciles to the note. A person is never asked to narrate.
-  While an agent claims a board, panes showing it take no content edits (pan
-  and zoom still work), and every pane shows in real time which board an
-  agent is editing. An agent may edit any board whether or not somebody is
-  looking at it.
+- **A person's edit is optimistic, and the note still decides** (ADR 0022).
+  The canvas shows a person's edit immediately, but a pane never drifts from
+  the note on disk: its write is version-checked like any other, refused when
+  stale, and the pane then reconciles to the note. While an agent claims a
+  board, panes showing it take no content edits (pan and zoom still work),
+  and every pane shows in real time which board an agent is editing. An agent
+  may edit any board whether or not somebody is looking at it.
 - **One converter, on the way in, nothing on the way out** (ADR 0015).
   `label: {text}` and arrow `start`/`end` are input spellings spent at the write
   boundary; the board holds the result. Binding-derived code links are a
