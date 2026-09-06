@@ -1,4 +1,4 @@
-import type { ElementBinding, NativeBoardElement } from "./lib/vendor-types.js";
+import type { ElementBinding, NativeBoardElement } from "@/shared/board-elements/lib/vendor-types";
 
 const BOARD_ELEMENT_TYPES = [
 	"rectangle",
@@ -139,4 +139,4 @@ export type {
 	RectangleElement,
 	TextElement,
 	WritableVendorElement,
-} from "./lib/vendor-types.js";
+} from "@/shared/board-elements/lib/vendor-types";

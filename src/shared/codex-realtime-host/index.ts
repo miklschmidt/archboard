@@ -32,13 +32,13 @@ export type {
 	RecoveryRequest,
 	RemoteMediaAttachment,
 	StopRequest,
-} from "./lib/contract.js";
+} from "@/shared/codex-realtime-host/lib/contract";
 
 export {
 	parseRealtimeCorrelationId,
 	parseRealtimeItemId,
 	parseRealtimeSessionId,
-} from "./lib/contract.js";
+} from "@/shared/codex-realtime-host/lib/contract";
 
 export {
 	assertRealtimeTransition,
@@ -47,4 +47,4 @@ export {
 	REALTIME_PHASES,
 	REALTIME_TRANSITIONS,
 	transitionRealtimeState,
-} from "./lib/state.js";
+} from "@/shared/codex-realtime-host/lib/state";

@@ -5,8 +5,8 @@ import {
 	listRepos,
 	registryPath,
 	RepoRegistryError,
-} from "../../runtime/engine/repo-registry.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
+} from "@/runtime/engine/repo-registry";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 
 const usage = "Usage: repo list [--text] | repo add [dir] | repo forget <identity>";
 const tail = z.array(z.string()).default([]);

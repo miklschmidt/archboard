@@ -1,9 +1,13 @@
 import { z } from "zod";
-import { updateElementStrict } from "../../runtime/engine/canvas-client.js";
-import { defineCommand } from "./contract.js";
-import type { CommandContext } from "./contract.js";
-import { BoardFingerprintSchema, HoldReportSchema, ServerElementSchema } from "./schemas.js";
-import { commonRefusals, tail, WRITE_ANSWER } from "./lib/common.js";
+import { updateElementStrict } from "@/runtime/engine/canvas-client";
+import { defineCommand } from "@/cli/command-contract/contract";
+import type { CommandContext } from "@/cli/command-contract/contract";
+import {
+	BoardFingerprintSchema,
+	HoldReportSchema,
+	ServerElementSchema,
+} from "@/cli/command-contract/schemas";
+import { commonRefusals, tail, WRITE_ANSWER } from "@/cli/command-contract/lib/common";
 
 const UpdateInputSchema = z.object({
 	id: z.preprocess(
@@ -205,4 +209,4 @@ export {
 	type UpdateResult,
 	updateContract,
 };
-export { WRITE_ANSWER } from "./lib/common.js";
+export { WRITE_ANSWER } from "@/cli/command-contract/lib/common";

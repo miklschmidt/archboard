@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { setViewport } from "../../runtime/engine/canvas-client.js";
-import { defineCommand } from "./contract.js";
-import { HoldReportSchema } from "./schemas.js";
-import { serverRefusal, tail } from "./lib/common.js";
+import { setViewport } from "@/runtime/engine/canvas-client";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { HoldReportSchema } from "@/cli/command-contract/schemas";
+import { serverRefusal, tail } from "@/cli/command-contract/lib/common";
 
 const ViewportInputSchema = z
 	.object({

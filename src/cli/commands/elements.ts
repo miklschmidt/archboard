@@ -4,17 +4,17 @@ import {
 	batchCreateElementsStrict,
 	getElementStrict,
 	getElements,
-} from "../../runtime/engine/canvas-client.js";
-import type { ElementInput } from "../../runtime/engine/canvas-client.js";
-import type { ServerElement } from "../../runtime/engine/types.js";
-import { defineCommand } from "../command-contract/contract.js";
-import type { CommandContext } from "../command-contract/contract.js";
+} from "@/runtime/engine/canvas-client";
+import type { ElementInput } from "@/runtime/engine/canvas-client";
+import type { ServerElement } from "@/runtime/engine/types";
+import { defineCommand } from "@/cli/command-contract/contract";
+import type { CommandContext } from "@/cli/command-contract/contract";
 import {
 	BoardFingerprintSchema,
 	HoldReportSchema,
 	ServerElementSchema,
-} from "../command-contract/schemas.js";
-import { boardWriteRefusals, commonRefusals } from "../command-contract/common.js";
+} from "@/cli/command-contract/schemas";
+import { boardWriteRefusals, commonRefusals } from "@/cli/command-contract/common";
 
 const tail = z.array(z.string()).default([]);
 const documentOption = {

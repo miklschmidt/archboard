@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { compareBoardsOnCanvas } from "../../runtime/engine/canvas-client.js";
-import { defineCommand } from "../command-contract/contract.js";
-import { BoardAddressSchema, HoldReportSchema } from "../command-contract/schemas.js";
+import { compareBoardsOnCanvas } from "@/runtime/engine/canvas-client";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { BoardAddressSchema, HoldReportSchema } from "@/cli/command-contract/schemas";
 
 const CompareInputSchema = z.object({
 	fromOption: z.string().optional(),
