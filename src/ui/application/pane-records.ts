@@ -19,6 +19,17 @@ interface PaneRecord {
 	readonly placeholder: boolean;
 }
 
+/** Every field a patch may carry; `patchRecord` compares them one by one. */
+const RECORD_FIELDS = [
+	"status",
+	"holder",
+	"takeBack",
+	"selection",
+	"pathFocus",
+	"overlay",
+	"placeholder",
+] as const satisfies readonly (keyof PaneRecord)[];
+
 /** The records by pane id. */
 type PaneRecords = Readonly<Record<string, PaneRecord>>;
 
@@ -85,7 +96,16 @@ function patchRecord(
 	paneId: string,
 	patch: Partial<PaneRecord>,
 ): PaneRecords {
-	return { ...records, [paneId]: Object.freeze({ ...recordFor(records, paneId), ...patch }) };
+	const current = recordFor(records, paneId);
+	// A patch that changes no field keeps the records' identity, so a pane
+	// re-reporting the same status cannot re-render the application forever.
+	const unchanged = RECORD_FIELDS.every(
+		(field) => !(field in patch) || Object.is(current[field], patch[field]),
+	);
+	if (paneId in records && unchanged) {
+		return records;
+	}
+	return { ...records, [paneId]: Object.freeze({ ...current, ...patch }) };
 }
 
 /**
