@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-09-06 12:59'
+updated_date: '2026-09-06 13:02'
 labels: []
 dependencies: []
 priority: high
@@ -26,6 +27,6 @@ AGENTS.md carried the rule 'a person is never refused: never version-refused, an
 - [ ] #3 While an agent claims a board, a pane showing it accepts pan and zoom and rejects content edits, and a content gesture no longer revokes the claim
 - [ ] #4 A person can still release an agent's claim through one explicit control, and the agent is told it lost the board
 - [ ] #5 Every pane shows in real time which board an agent is editing, including boards no pane has open
-- [ ] #6 ADR 0006 and ADR 0016 record the superseding decision and the archboard skill no longer tells agents to keep restructures in view of the person
-- [ ] #7 The rewritten AGENTS.md invariant matches the behaviour
+- [ ] #6 The rewritten AGENTS.md invariant matches the behaviour
+- [ ] #7 ADR 0022 records the superseding decision; ADR 0006 and ADR 0016 point to it
 <!-- AC:END -->
