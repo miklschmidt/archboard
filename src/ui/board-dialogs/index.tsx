@@ -46,7 +46,8 @@ export {
 	DialogErrorAlert,
 	Facts,
 	FieldIssues,
-	OUTLINE_BUTTON_CLASS,
+	CANCEL_BUTTON_CLASS,
+	PathValue,
 	Technical,
 	type FactRow,
 } from "@/ui/board-dialogs/lib/dialog-parts";

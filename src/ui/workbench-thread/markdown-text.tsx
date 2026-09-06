@@ -11,7 +11,7 @@ import { RiCheckLine, RiFileCopyLine } from "@remixicon/react";
 
 import { TooltipIconButton } from "@/ui/workbench-thread/tooltip-icon-button";
 import { useCopyToClipboard } from "@/ui/workbench-thread/use-copy-to-clipboard";
-import { cn } from "cn";
+import { cn } from "@/ui/components/class-names";
 
 type MarkdownTextProps = Partial<TextMessagePartProps> & {
 	components?: Parameters<typeof memoizeMarkdownComponents>[0];

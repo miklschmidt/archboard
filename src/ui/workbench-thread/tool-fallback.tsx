@@ -16,7 +16,7 @@ import {
 	type ToolCallMessagePartComponent,
 } from "@assistant-ui/react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/components/collapsible";
-import { cn } from "cn";
+import { cn } from "@/ui/components/class-names";
 import { Button } from "@/ui/components/button";
 
 const ANIMATION_DURATION = 200;

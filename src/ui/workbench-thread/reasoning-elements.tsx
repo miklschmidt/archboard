@@ -10,7 +10,7 @@ import {
 import { cva, type VariantProps } from "class-variance-authority";
 import { RiBrainLine, RiArrowDownSLine } from "@remixicon/react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/components/collapsible";
-import { cn } from "cn";
+import { cn } from "@/ui/components/class-names";
 
 export const ANIMATION_DURATION = 200;
 
