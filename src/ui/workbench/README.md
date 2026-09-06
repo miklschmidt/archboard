@@ -1,9 +1,22 @@
 # Agent workbench
 
-The product composition of the dock: the official assistant-ui thread as the
-primary area, a lifecycle strip above it, Archboard's intent controls beneath
-it, and a dense side panel with voice, queue, approvals, captured context and
-transcript. Every value shown comes in through `WorkbenchView`, grounded in
+The product composition of the dock body, three columns under the shell's dock
+header (TASK-150.08): a 260px session column on the left (readiness, thread
+link and coordinator as a definition list with the link actions, then the
+lease, operation and board-context tokens in mono), the official assistant-ui
+thread in the centre with Archboard's intent controls rendered inside the
+composer's action row through the thread's `ComposerFooter` slot, and a 320px
+right column with the voice row (output wave, state words, icon controls) over
+flat underlined tabs for queue, approvals, captured context and transcript.
+Side panels present ordinary unavailability and empty states with
+`lib/panel-line.tsx`: muted words and a grey dot; only a real failure gets the
+destructive dot, and its words stay in the foreground colour.
+
+Type roles come from the theme's `text-kicker`, `text-technical`, `text-body`,
+`text-control` and `text-title` utilities. The registry's `cn` treats an
+unknown `text-*` utility as a colour, so a role and a text colour must never
+share one `cn` call or one `className` handed to a shared component: put both
+on a plain `className` string, or the role on an inner element. Every value shown comes in through `WorkbenchView`, grounded in
 `src/shared/codex-browser-model`; every gesture goes out through
 `WorkbenchActions`. The module keeps no session state, opens no socket and
 runs no timer: the runtime adapter (`src/ui/workbench-runtime`, TASK-150.07)

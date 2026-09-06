@@ -1,9 +1,8 @@
 // The live voice transcript as an accessible live list, with empty, partial
 // and terminal states.
 
-import { cn } from "cn";
-
 import type { BrowserVoice } from "@/shared/codex-browser-model";
+import { PanelLine } from "@/ui/workbench/lib/panel-line";
 
 type TranscriptRecord = BrowserVoice["transcript"][number];
 
@@ -44,11 +43,13 @@ interface RecordRowProps {
 function RecordRow(props: RecordRowProps): React.JSX.Element {
 	const { record } = props;
 	return (
-		<li aria-busy={!record.final} className="flex gap-2 py-1 text-xs">
-			<span className="text-muted-foreground w-12 shrink-0 font-mono text-[11px]">
+		<li aria-busy={!record.final} className="flex gap-2 py-1.5">
+			<span className="text-kicker text-muted-foreground w-12 shrink-0 pt-0.5 uppercase">
 				{record.speaker === "user" ? "you" : "agent"}
 			</span>
-			<span className={cn("min-w-0 break-words", !record.final && "text-muted-foreground italic")}>
+			<span
+				className={`text-body min-w-0 break-words ${record.final ? "" : "text-muted-foreground"}`}
+			>
 				{record.text}
 				{record.final ? "" : "…"}
 			</span>
@@ -67,7 +68,7 @@ function TranscriptPanel(props: TranscriptPanelProps): React.JSX.Element {
 	return (
 		<div className="flex flex-col gap-1">
 			{voice.transcript.length === 0 ? (
-				<p className="text-muted-foreground text-xs">Nothing said yet</p>
+				<PanelLine tone="muted">Nothing said yet</PanelLine>
 			) : (
 				<ol aria-live="polite" aria-label="Voice transcript" className="divide-border divide-y">
 					{voice.transcript.map((record) => (
@@ -75,9 +76,11 @@ function TranscriptPanel(props: TranscriptPanelProps): React.JSX.Element {
 					))}
 				</ol>
 			)}
-			{terminal === null ? null : <p className="text-destructive text-xs">{terminal}</p>}
+			{terminal === null ? null : (
+				<PanelLine tone={voice.state === "failed" ? "failure" : "muted"}>{terminal}</PanelLine>
+			)}
 			{voice.delivery === null ? null : (
-				<p className="text-muted-foreground font-mono text-[11px]">
+				<p className="text-technical text-muted-foreground font-mono">
 					delivery {voice.delivery.replaceAll("_", " ")}
 				</p>
 			)}

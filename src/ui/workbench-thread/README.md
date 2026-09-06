@@ -80,6 +80,19 @@ against the pinned 0.15.17 package. One was missing:
 
 `thread.tsx`
 
+- TASK-150.08 visual pass (classes, copy and one slot; primitives, data
+  attributes, keyboard and scroll mechanics unchanged): the thread fills its
+  column (`--thread-max-width: none`), turns are separated by one 1px rule,
+  the user turn is a flat `bg-muted` `rounded-sm` block and the assistant turn
+  is plain body text; the welcome reads "No turns yet" with an operator line
+  instead of the consumer greeting; the composer is a 1px `border-border`
+  `rounded-sm` `bg-card` block of at least 72px with control-size text, the
+  placeholder "Ask the workhorse or add context…", a 28px `rounded-sm` Send or
+  Stop button, and a `ComposerFooter` component slot in `ThreadComponents`
+  rendered at the start of the action row (Archboard's intent controls); the
+  edit composer, scroll-to-bottom, action-bar menu, error box and history
+  skeleton use `rounded-sm`/`rounded-md` and the type roles; the working
+  indicator is status-coloured.
 - Attachment affordances removed: the `ComposerAttachmentDropzone`,
   `ComposerAttachments`, `ComposerAddAttachment` and `UserMessageAttachments`
   imports and elements, the `File`/`Image` part renderers and the `file` and

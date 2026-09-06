@@ -1,12 +1,14 @@
 // Start, mute, unmute, stop and restart for the live voice session, from
-// shadcn Buttons and Tooltips. The expanded variant sits in the workbench
-// beside the output wave; the compact variant fits a collapsed dock header
-// and the fullscreen slot. Neither reads audio: there is no input meter.
+// shadcn Buttons and Tooltips. The expanded variant sits in the workbench's
+// voice row beside the output wave and shows the state words; the compact
+// variant fits the dock header and the fullscreen slot. Both are 24px icon
+// controls whose visible label is the tooltip and whose text is read by
+// assistive technology. Neither reads audio: there is no input meter.
 
 import { RiMicLine, RiMicOffLine, RiPlayLine, RiRestartLine, RiStopLine } from "@remixicon/react";
 import { cn } from "cn";
 
-import { Button, buttonVariants } from "@/ui/components/button";
+import { buttonVariants } from "@/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
 import { voiceControlsAvailability } from "@/ui/voice-controls/availability";
 import type { ControlAvailability } from "@/ui/voice-controls/availability";
@@ -23,13 +25,15 @@ interface VoiceControlsProps {
 interface ControlSpec {
 	label: string;
 	icon: React.JSX.Element;
-	variant: "default" | "outline" | "ghost" | "destructive";
+	variant: "default" | "outline" | "ghost";
 	availability: ControlAvailability;
 	onClick: () => void;
 }
 
 /**
  * The five controls in display order, with the availability the view allows.
+ * Start and unmute are the primary affordance; the rest are ordinary outline
+ * controls, stopping included.
  * @param view The controls' inputs.
  * @param actions The callbacks.
  * @returns The control specs, hidden ones included.
@@ -61,7 +65,7 @@ function controlSpecs(view: VoiceControlsView, actions: VoiceControlsActions): C
 		{
 			label: "Stop voice",
 			icon: <RiStopLine />,
-			variant: "destructive",
+			variant: "outline",
 			availability: availability.stop,
 			onClick: actions.stop,
 		},
@@ -75,13 +79,14 @@ function controlSpecs(view: VoiceControlsView, actions: VoiceControlsActions): C
 	];
 }
 
-/** Inputs for one compact icon control. */
+/** Inputs for one icon control. */
 interface IconControlProps {
 	spec: ControlSpec;
 }
 
 /**
- * One icon-only control with its tooltip.
+ * One 24px icon control with its tooltip and its label for assistive
+ * technology; the hit area reaches 32px (the documented desktop exception).
  * @param props The control spec.
  * @returns The button, or nothing when the control is hidden.
  */
@@ -93,49 +98,83 @@ function IconControl(props: IconControlProps): React.JSX.Element | null {
 	return (
 		<Tooltip>
 			<TooltipTrigger
-				className={buttonVariants({ variant: spec.variant, size: "icon-xs" })}
+				className={cn(
+					buttonVariants({ variant: spec.variant, size: "icon-xs" }),
+					"relative rounded-sm after:absolute after:-inset-1",
+				)}
 				aria-label={spec.label}
 				disabled={!spec.availability.enabled}
 				onClick={spec.onClick}
 			>
 				{spec.icon}
+				<span className="sr-only">{spec.label}</span>
 			</TooltipTrigger>
 			<TooltipContent side="top">{spec.label}</TooltipContent>
 		</Tooltip>
 	);
 }
 
-/** Inputs for one labelled control. */
-interface LabelledControlProps {
-	spec: ControlSpec;
+/** Inputs for the state words. */
+interface StateTextProps {
+	view: VoiceControlsView;
 }
 
 /**
- * One control with its icon and visible label.
- * @param props The control spec.
- * @returns The button, or nothing when the control is hidden.
+ * The colour of the state words: lime while live, foreground after a failure,
+ * muted otherwise.
+ * @param live Whether the session carries audio.
+ * @param failed Whether the last command failed.
+ * @returns The text colour class.
  */
-function LabelledControl(props: LabelledControlProps): React.JSX.Element | null {
-	const { spec } = props;
-	if (!spec.availability.shown) {
-		return null;
+function stateTone(live: boolean, failed: boolean): string {
+	if (failed) {
+		return "text-foreground";
 	}
+	return live ? "text-status-foreground" : "text-muted-foreground";
+}
+
+/**
+ * The dot beside the state words.
+ * @param live Whether the session carries audio.
+ * @param failed Whether the last command failed.
+ * @returns The dot colour class.
+ */
+function dotTone(live: boolean, failed: boolean): string {
+	if (failed) {
+		return "bg-destructive";
+	}
+	return live ? "bg-status" : "bg-muted-foreground/60";
+}
+
+/**
+ * The state words with a tone dot: lime while live, grey while ordinary
+ * unavailability, destructive only after a failure.
+ * @param props The view.
+ * @returns The dot and the live-announced words.
+ */
+function StateText(props: StateTextProps): React.JSX.Element {
+	const { stateText, live } = voiceControlsAvailability(props.view);
+	const failed = props.view.failure !== null;
 	return (
-		<Button
-			variant={spec.variant}
-			size="xs"
-			disabled={!spec.availability.enabled}
-			onClick={spec.onClick}
-		>
-			{spec.icon}
-			{spec.label}
-		</Button>
+		<span className="flex min-w-0 flex-1 items-center gap-2">
+			<span
+				aria-hidden="true"
+				className={`size-1.5 shrink-0 rounded-full ${dotTone(live, failed)}`}
+			/>
+			<output
+				aria-live="polite"
+				title={stateText}
+				className={`text-body truncate ${stateTone(live, failed)}`}
+			>
+				{stateText}
+			</output>
+		</span>
 	);
 }
 
 /**
  * The compact variant: icon buttons with tooltips and the state text for
- * assistive technology, for the collapsed dock header and the fullscreen slot.
+ * assistive technology, for the dock header and the fullscreen slot.
  * @param props The view, the callbacks and an optional class.
  * @returns A toolbar of icon controls.
  */
@@ -155,32 +194,22 @@ function VoiceControlsCompact(props: VoiceControlsProps): React.JSX.Element {
 }
 
 /**
- * The expanded variant: labelled buttons and the visible state text, for the
- * open workbench beside the output wave.
+ * The expanded variant: the visible state words and the icon controls, for
+ * the workbench's voice row beside the output wave.
  * @param props The view, the callbacks and an optional class.
- * @returns A toolbar of labelled controls and the state line.
+ * @returns The state line and a toolbar of controls.
  */
 function VoiceControls(props: VoiceControlsProps): React.JSX.Element {
 	const specs = controlSpecs(props.view, props.actions);
-	const { stateText, live } = voiceControlsAvailability(props.view);
 	return (
 		<div
 			data-voice-controls="expanded"
 			className={cn("flex min-w-0 items-center gap-2", props.className)}
 		>
-			<output
-				aria-live="polite"
-				className={cn(
-					"truncate text-xs",
-					live ? "text-status-foreground" : "text-muted-foreground",
-					props.view.failure === null ? undefined : "text-destructive",
-				)}
-			>
-				{stateText}
-			</output>
-			<span className="flex items-center gap-1">
+			<StateText view={props.view} />
+			<span className="flex shrink-0 items-center gap-1">
 				{specs.map((spec) => (
-					<LabelledControl key={spec.label} spec={spec} />
+					<IconControl key={spec.label} spec={spec} />
 				))}
 			</span>
 		</div>
