@@ -155,6 +155,8 @@ interface CanvasSession<Transport extends WorkbenchTransportPort> {
 	/** Dim everything not connected to the selected element. */
 	focusPath: () => void;
 	exitPathFocus: () => void;
+	/** Clear the selection, which closes the inspector; presentation only. */
+	clearSelection: () => void;
 	/** Open the selected element's code target. */
 	openCode: (elementId: string) => void;
 	/** Excalidraw's onLinkOpen, for code links drawn on the board. */

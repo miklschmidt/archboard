@@ -144,7 +144,7 @@ function ConflictDialog(props: ConflictDialogProps): React.JSX.Element {
 	const choices = useMemo(() => describeConflictOutcomes(conflict), [conflict]);
 	return (
 		<AlertDialog open={props.open} onOpenChange={props.onOpenChange}>
-			<AlertDialogContent className="data-[size=default]:sm:max-w-lg">
+			<AlertDialogContent className="data-[size=default]:sm:max-w-lg" finalFocus={props.finalFocus}>
 				<AlertDialogHeader>
 					<AlertDialogTitle>Board stopped saving</AlertDialogTitle>
 					<AlertDialogDescription>

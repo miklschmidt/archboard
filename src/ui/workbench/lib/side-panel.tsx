@@ -28,6 +28,9 @@ interface TabLabelProps {
 /** The scrolling panel body under the tabs. */
 const PANEL_CLASS = "min-h-0 overflow-y-auto px-3 py-2";
 
+/** The queue panel manages its own scrolling so its settlement line can stay fixed. */
+const QUEUE_PANEL_CLASS = "flex min-h-0 flex-col";
+
 /**
  * How many approvals still wait for a decision.
  * @param snapshot The published snapshot.
@@ -103,8 +106,13 @@ function SidePanel(props: SidePanelProps): React.JSX.Element {
 						<TabLabel label="Transcript" count={snapshot.voice.transcript.length} />
 					</TabsTrigger>
 				</TabsList>
-				<TabsContent value="queue" className={PANEL_CLASS}>
-					<QueuePanel queue={snapshot.queue} command={view.queueCommand} actions={actions.queue} />
+				<TabsContent value="queue" className={QUEUE_PANEL_CLASS}>
+					<QueuePanel
+						queue={snapshot.queue}
+						linked={snapshot.threadLink.state !== "unbound"}
+						command={view.queueCommand}
+						actions={actions.queue}
+					/>
 				</TabsContent>
 				<TabsContent value="approvals" className={PANEL_CLASS}>
 					<ApprovalsPanel

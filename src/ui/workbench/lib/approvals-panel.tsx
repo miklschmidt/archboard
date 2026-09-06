@@ -86,17 +86,22 @@ function Card(props: CardProps): React.JSX.Element {
 				!open && "text-muted-foreground",
 			)}
 		>
-			<header className="flex min-w-0 items-center gap-2">
+			<header className="flex min-w-0 items-start gap-2">
 				{/* The phase dot is a pseudo-element so the family stays the header's first span. */}
 				<span
-					className={`text-kicker text-muted-foreground flex shrink-0 items-center gap-1.5 uppercase before:size-1.5 before:shrink-0 before:rounded-full ${PHASE_DOT[card.phase]}`}
+					className={`text-kicker text-muted-foreground flex h-[18px] shrink-0 items-center gap-1.5 uppercase before:size-1.5 before:shrink-0 before:rounded-full ${PHASE_DOT[card.phase]}`}
 				>
 					{card.family}
 				</span>
-				<span className={`text-control truncate ${open ? "text-foreground" : ""}`}>
+				<span
+					className={`text-control line-clamp-2 min-w-0 flex-1 break-words ${open ? "text-foreground" : ""}`}
+				>
 					{card.title}
 				</span>
-				<span className="text-technical text-muted-foreground ms-auto shrink-0 truncate font-mono">
+				<span
+					className="text-technical text-muted-foreground max-w-[45%] shrink-0 pt-0.5 text-right font-mono break-words"
+					title={card.phaseText}
+				>
 					{card.phaseText}
 				</span>
 			</header>

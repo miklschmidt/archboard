@@ -138,8 +138,8 @@ function CanvasStages(props: CanvasStagesProps): React.JSX.Element {
  */
 function stageClass(framed: boolean): string {
 	return framed
-		? "data-active:ring-primary flex min-h-0 min-w-0 flex-1 flex-col data-active:ring-1 data-active:ring-inset"
-		: "flex min-h-0 min-w-0 flex-1 flex-col";
+		? "data-active:ring-primary flex min-h-0 min-w-0 flex-1 flex-col outline-none data-active:ring-1 data-active:ring-inset"
+		: "flex min-h-0 min-w-0 flex-1 flex-col outline-none";
 }
 
 /** Inputs for one pane's stage. */
@@ -173,6 +173,8 @@ function PaneStage(props: PaneStageProps): React.JSX.Element {
 				aria-current={props.active ? "true" : undefined}
 				data-active={props.active ? "" : undefined}
 				hidden={props.hidden}
+				// Focus lands here when the inspector closes: programmatic only, no tab stop.
+				tabIndex={-1}
 				className={stageClass(props.framed)}
 			>
 				<ClaimBanner pane={pane} actions={actions} />

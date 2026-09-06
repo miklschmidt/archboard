@@ -6,7 +6,10 @@
 import { useSyncExternalStore } from "react";
 
 import { useVoiceView } from "@/ui/application/lib/use-voice-view";
-import { WorkbenchOwnersContext } from "@/ui/application/lib/workbench-context";
+import {
+	WorkbenchActivityContext,
+	WorkbenchOwnersContext,
+} from "@/ui/application/lib/workbench-context";
 import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import { WorkbenchRenderer } from "@/ui/application/lib/workbench-renderer";
 import { VoiceControlsCompact } from "@/ui/voice-controls";
@@ -19,23 +22,31 @@ interface WorkbenchFrameProps {
 	reducedMotion: boolean;
 }
 
+/** Inputs for the dock body, which also carries the pane's recent activity. */
+interface WorkbenchDockBodyProps extends WorkbenchFrameProps {
+	/** The recent `doing` lines, rendered by the shell, or null. */
+	activity: React.ReactNode;
+}
+
 /**
  * The dock body: the one runtime over the transport, rendering the workbench.
- * @param props The owners and the motion preference.
+ * @param props The owners, the motion preference and the activity.
  * @returns The provider around the renderer.
  */
-function WorkbenchDockBody(props: WorkbenchFrameProps): React.JSX.Element {
+function WorkbenchDockBody(props: WorkbenchDockBodyProps): React.JSX.Element {
 	const { owners } = props;
 	const voice = useVoiceView(owners);
 	return (
 		<WorkbenchOwnersContext.Provider value={owners}>
-			<WorkbenchRuntimeProvider
-				transport={owners.transport}
-				host={owners.host}
-				voice={voice}
-				reducedMotion={props.reducedMotion}
-				render={WorkbenchRenderer}
-			/>
+			<WorkbenchActivityContext.Provider value={props.activity}>
+				<WorkbenchRuntimeProvider
+					transport={owners.transport}
+					host={owners.host}
+					voice={voice}
+					reducedMotion={props.reducedMotion}
+					render={WorkbenchRenderer}
+				/>
+			</WorkbenchActivityContext.Provider>
 		</WorkbenchOwnersContext.Provider>
 	);
 }
@@ -75,5 +86,6 @@ export {
 	PresentationVoiceControls,
 	WorkbenchDockBody,
 	WorkbenchDockHeader,
+	type WorkbenchDockBodyProps,
 	type WorkbenchFrameProps,
 };

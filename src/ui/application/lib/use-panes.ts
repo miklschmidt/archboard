@@ -148,7 +148,9 @@ function createPaneHost(setters: HostSetters): PaneHost {
 	 * @param holder The holder, or null.
 	 */
 	function onHolder(paneId: string, _boardKey: string | null, holder: LockHolder | null): void {
-		patch(paneId, { holder });
+		// A claim that ends takes its take-back outcome with it: the failure line
+		// belongs to the claim it was about, not to the next one.
+		patch(paneId, holder === null ? { holder, takeBack: { kind: "idle" } } : { holder });
 	}
 	/**
 	 * The server asks for another pane, or for this one to go.

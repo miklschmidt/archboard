@@ -32,7 +32,9 @@ function TooltipContent({
 				alignOffset={alignOffset}
 				side={side}
 				sideOffset={sideOffset}
-				className="isolate z-50"
+				// Archboard: a tooltip never intercepts the pointer, so one that is still
+				// closing, or open on focus, cannot swallow a click meant for a neighbour.
+				className="pointer-events-none isolate z-50"
 			>
 				<TooltipPrimitive.Popup
 					data-slot="tooltip-content"

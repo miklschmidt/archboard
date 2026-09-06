@@ -160,7 +160,15 @@ test(
 						[500, 600].includes(weight),
 				),
 			).toBe(true);
-			expect(snapshot.titleType).toMatchObject({ weight: 500 });
+			// The six type roles (TASK-150.08): board name 600, body 400, the level
+			// badge and controls 500, and the section kicker uppercase 600 at 10px.
+			expect(snapshot.titleType).toMatchObject({ weight: 600 });
+			expect(snapshot.sectionKicker).toMatchObject({
+				weight: 600,
+				transform: "uppercase",
+				size: 10,
+			});
+			expect(snapshot.sectionKicker.family).toContain("archboard onest");
 			expect(snapshot.bodyType).toMatchObject({ weight: 400 });
 			expect(snapshot.kickerType).toMatchObject({ weight: 500 });
 			expect(snapshot.controlType).toMatchObject({ weight: 500 });

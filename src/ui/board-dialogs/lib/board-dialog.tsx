@@ -368,7 +368,7 @@ function BoardDialog(props: BoardDialogProps): React.JSX.Element {
 	const copy = boardDialogCopy(props.mode);
 	return (
 		<Dialog open={props.open} onOpenChange={props.onOpenChange}>
-			<DialogContent>
+			<DialogContent finalFocus={props.finalFocus}>
 				<DialogHeader>
 					<DialogTitle>{copy.title}</DialogTitle>
 					<DialogDescription>{copy.description}</DialogDescription>

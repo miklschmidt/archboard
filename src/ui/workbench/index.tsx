@@ -51,13 +51,13 @@ function Workbench(props: WorkbenchProps): React.JSX.Element {
 	if (session.kind !== "ready") {
 		return (
 			<section aria-label="Agent workbench" className="flex h-full min-h-0 flex-col">
-				<SessionState session={session} actions={actions} />
+				<SessionState session={session} actions={actions} activity={view.activity} />
 			</section>
 		);
 	}
 	return (
 		<section aria-label="Agent workbench" className="bg-background flex h-full min-h-0">
-			<SessionColumn snapshot={session.snapshot} actions={actions} />
+			<SessionColumn snapshot={session.snapshot} activity={view.activity} actions={actions} />
 			<div className="flex min-w-0 flex-1 flex-col">
 				<ComposerIntentContext.Provider value={intent}>
 					<Thread components={THREAD_COMPONENTS} />
