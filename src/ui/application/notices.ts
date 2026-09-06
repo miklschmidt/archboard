@@ -2,6 +2,8 @@
 // repeat replaces its predecessor rather than stacking. Pure.
 
 import type { CodeTargetNotice } from "@/shared/code-target";
+import type { PaneList } from "@/ui/application/pane-list";
+import { recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import type { ShellNotice } from "@/ui/shell";
 
 /** The ids of the notices that carry a shell action, reported back by id. */
@@ -115,6 +117,28 @@ function elsewhereNotice(paneId: string, board: string): ShellNotice {
 }
 
 /**
+ * The note notices every pane's state asks for right now: a hold and a write
+ * elsewhere each stay visible while they last (ADR 0006, TASK-062). Derived
+ * from the records on every render rather than kept as state of their own.
+ * @param list The panes, in order.
+ * @param records What each pane reported.
+ * @returns The notices in pane order, a pane's hold before its write elsewhere.
+ */
+function noteNotices(list: PaneList, records: PaneRecords): readonly ShellNotice[] {
+	return list.panes.flatMap((entry) => {
+		const { hold, writtenElsewhere, boardKey } = recordFor(records, entry.paneId).status;
+		const notices: ShellNotice[] = [];
+		if (hold !== null) {
+			notices.push(holdNotice(entry.paneId, boardKey ?? hold.board, hold.writes));
+		}
+		if (writtenElsewhere !== null) {
+			notices.push(elsewhereNotice(entry.paneId, boardKey ?? writtenElsewhere.board));
+		}
+		return notices;
+	});
+}
+
+/**
  * The browser refused or lost a fullscreen presentation.
  * @param error The presentation's plain words.
  * @returns The notice.
@@ -170,6 +194,7 @@ export {
 	failureNotice,
 	holdNotice,
 	infoNotice,
+	noteNotices,
 	presentationNotice,
 	staleFrontendNotice,
 	withNotice,

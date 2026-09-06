@@ -7,6 +7,12 @@ import type { LibraryItems } from "@excalidraw/excalidraw/types";
 import { useCallback, useMemo, useState } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
+import { LiveBinding } from "@/ui/application/lib/live-binding";
+import {
+	NoteRecoveryMemory,
+	type NoteStateChange,
+	type PendingRecovery,
+} from "@/ui/application/note-recovery";
 import {
 	addPane,
 	closePane,
@@ -29,6 +35,7 @@ import type {
 	PaneSelectionSnapshot,
 } from "@/ui/canvas/use-canvas-session";
 import type { PathFocusOverlay } from "@/ui/path-focus";
+import type { RecoveryKind } from "@/ui/shell";
 import type { LockHolder, PaneStatus } from "@/ui/types";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
@@ -43,6 +50,11 @@ interface PaneEvents {
 	readonly onPaneStateAccepted: () => void;
 	/** A pane's status was published; the workbench re-reads its transport. */
 	readonly onStatusPublished: (paneId: string) => void;
+	/**
+	 * A pane's note state began or ended (ADR 0006, TASK-062), after the
+	 * status was patched in and before that patch has rendered.
+	 */
+	readonly onNoteState: (paneId: string, status: PaneStatus, change: NoteStateChange) => void;
 	/** A pane reported its session, or went. */
 	readonly onSession: (paneId: string, session: PaneSession | null) => void;
 }
@@ -68,6 +80,10 @@ type PaneHost = Required<
 	/** A board note could not be rendered in one pane. */
 	readonly onBoardError: (paneId: string, error: string) => void;
 	readonly onSession: (paneId: string, session: PaneSession | null) => void;
+	/** The first note state whose dialog has not been shown, from the statuses heard. */
+	readonly pendingRecovery: () => PendingRecovery | null;
+	/** A note state's dialog was shown; `marker` is the hold's `since` or the write's `writtenAt`. */
+	readonly recoveryShown: (paneId: string, kind: RecoveryKind, marker: string) => void;
 };
 
 /** The panes, their records, the handles and the moves. */
@@ -89,39 +105,12 @@ interface Panes {
 	readonly bindEvents: (events: PaneEvents) => void;
 }
 
-/**
- * The events the host forwards to, replaced each render. A method rather
- * than a ref because the host reads it from callbacks, never from render.
- */
-class LiveEvents {
-	#current: PaneEvents | null = null;
-
-	/**
-	 * Bind the current events.
-	 * @param events The events.
-	 */
-	bind(events: PaneEvents): void {
-		this.#current = events;
-	}
-
-	/**
-	 * The current events.
-	 * @returns The events.
-	 * @throws {Error} When nothing was bound; sessions only call after the first render.
-	 */
-	read(): PaneEvents {
-		if (this.#current === null) {
-			throw new Error("The pane events are bound after the first render.");
-		}
-		return this.#current;
-	}
-}
-
 /** The setters the host writes through. */
 interface HostSetters {
 	readonly patch: (paneId: string, patch: Partial<PaneRecord>) => void;
-	readonly events: LiveEvents;
+	readonly events: LiveBinding<PaneEvents>;
 	readonly handles: PaneHandles;
+	readonly recovery: NoteRecoveryMemory;
 	readonly add: () => void;
 	readonly close: (paneId: string) => void;
 }
@@ -132,14 +121,19 @@ interface HostSetters {
  * @returns The host.
  */
 function createPaneHost(setters: HostSetters): PaneHost {
-	const { patch, events, handles } = setters;
+	const { patch, events, handles, recovery } = setters;
 	/**
-	 * A pane said what it is.
+	 * A pane said what it is. The note state transitions are reported after
+	 * the patch, so a handler that opens a dialog sees the status it is for.
 	 * @param status The status.
 	 */
 	function onStatus(status: PaneStatus): void {
 		patch(status.paneId, { status });
-		events.read().onStatusPublished(status.paneId);
+		const current = events.read();
+		current.onStatusPublished(status.paneId);
+		for (const change of recovery.observe(status)) {
+			current.onNoteState(status.paneId, status, change);
+		}
 	}
 	/**
 	 * Who holds a pane's board changed.
@@ -252,6 +246,20 @@ function createPaneHost(setters: HostSetters): PaneHost {
 			events.read().onCodeTargetNotice(notice);
 		},
 		onSession,
+		/**
+		 * The first note state whose dialog has not been shown.
+		 * @returns The pending recovery, or null.
+		 */
+		pendingRecovery: (): PendingRecovery | null => recovery.pending(),
+		/**
+		 * A note state's dialog was shown.
+		 * @param paneId The pane.
+		 * @param kind Which state.
+		 * @param marker The state's marker.
+		 */
+		recoveryShown: (paneId: string, kind: RecoveryKind, marker: string): void => {
+			recovery.shown(paneId, kind, marker);
+		},
 	};
 }
 
@@ -263,16 +271,21 @@ function usePanes(): Panes {
 	const [list, setList] = useState<PaneList>(initialPaneList);
 	const [records, setRecords] = useState<PaneRecords>({});
 	const [handles] = useState(() => new PaneHandles());
-	const [events] = useState(() => new LiveEvents());
+	const [events] = useState(() => new LiveBinding<PaneEvents>());
+	const [recovery] = useState(() => new NoteRecoveryMemory());
 
 	const patch = useCallback((paneId: string, next: Partial<PaneRecord>): void => {
 		setRecords((current) => patchRecord(current, paneId, next));
 	}, []);
 	const add = useCallback((): void => setList(addPane), []);
-	const close = useCallback((paneId: string): void => {
-		setList((current) => closePane(current, paneId));
-		setRecords((current) => dropRecord(current, paneId));
-	}, []);
+	const close = useCallback(
+		(paneId: string): void => {
+			setList((current) => closePane(current, paneId));
+			setRecords((current) => dropRecord(current, paneId));
+			recovery.forget(paneId);
+		},
+		[recovery],
+	);
 	const select = useCallback(
 		(paneId: string): void => {
 			setList((current) => selectPane(current, paneId));
@@ -280,7 +293,7 @@ function usePanes(): Panes {
 		},
 		[handles],
 	);
-	const [host] = useState(() => createPaneHost({ patch, events, handles, add, close }));
+	const [host] = useState(() => createPaneHost({ patch, events, handles, recovery, add, close }));
 	const bindEvents = useCallback((next: PaneEvents): void => events.bind(next), [events]);
 	const active = recordFor(records, list.activePaneId);
 	return useMemo(

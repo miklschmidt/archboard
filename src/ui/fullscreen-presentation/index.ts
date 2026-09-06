@@ -28,6 +28,16 @@ interface FullscreenPresentation {
 	readonly dispose: () => void;
 }
 
+/** Who hears a refusal the moment it is recorded, besides the snapshot. */
+interface FullscreenPresentationListeners {
+	/**
+	 * The browser refused an entry or an exit. A refused entry names no pane:
+	 * the person is still in the workspace. A refused exit names the pane
+	 * still presented.
+	 */
+	readonly onRefused?: (error: string, paneId: string | null) => void;
+}
+
 const IDLE: FullscreenPresentationSnapshot = Object.freeze({ paneId: null, error: null });
 
 /**
@@ -62,9 +72,13 @@ function attempt(request: () => Promise<void>, settle: (error?: unknown) => void
 /**
  * Create the presentation for one root.
  * @param root The element presented fullscreen.
+ * @param hearing Who hears a refusal as it is recorded.
  * @returns The presentation.
  */
-function createFullscreenPresentation(root: HTMLElement): FullscreenPresentation {
+function createFullscreenPresentation(
+	root: HTMLElement,
+	hearing: FullscreenPresentationListeners = {},
+): FullscreenPresentation {
 	const ownerDocument = root.ownerDocument;
 	const listeners = new Set<() => void>();
 	let snapshot = IDLE;
@@ -163,7 +177,19 @@ function createFullscreenPresentation(root: HTMLElement): FullscreenPresentation
 			return;
 		}
 		wantedPaneId = null;
-		publish(null, entryFailure(error));
+		refuse(null, entryFailure(error));
+	}
+
+	/**
+	 * Record a refusal: publish it, and tell the listener when there is one.
+	 * @param paneId The pane still presented, or null when nothing is.
+	 * @param error The refusal's words, or null when nothing was refused.
+	 */
+	function refuse(paneId: string | null, error: string | null): void {
+		publish(paneId, error);
+		if (error !== null) {
+			hearing.onRefused?.(error, paneId);
+		}
 	}
 
 	/**
@@ -195,7 +221,7 @@ function createFullscreenPresentation(root: HTMLElement): FullscreenPresentation
 			exitOwnedRoot();
 			return;
 		}
-		publish(wantedPaneId, exitFailure(token, error));
+		refuse(wantedPaneId, exitFailure(token, error));
 	}
 
 	/**
@@ -352,5 +378,6 @@ function createFullscreenPresentation(root: HTMLElement): FullscreenPresentation
 export {
 	createFullscreenPresentation,
 	type FullscreenPresentation,
+	type FullscreenPresentationListeners,
 	type FullscreenPresentationSnapshot,
 };
