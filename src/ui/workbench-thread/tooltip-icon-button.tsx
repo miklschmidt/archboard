@@ -2,7 +2,7 @@ import { type ComponentPropsWithRef, forwardRef } from "react";
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/ui/components/tooltip";
 import { Button } from "@/ui/components/button";
-import { cn } from "cn";
+import { cn } from "@/ui/components/class-names";
 
 export type TooltipIconButtonProps = ComponentPropsWithRef<typeof Button> & {
 	tooltip: string;

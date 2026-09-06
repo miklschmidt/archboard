@@ -4,7 +4,7 @@
 import { useCallback, useState } from "react";
 
 import type { OpenerSettingsReply } from "@/shared/code-target";
-import { BusyText, DialogErrorAlert, OUTLINE_BUTTON_CLASS, Technical } from "@/ui/board-dialogs";
+import { BusyText, DialogErrorAlert, CANCEL_BUTTON_CLASS, Technical } from "@/ui/board-dialogs";
 import { Button } from "@/ui/components/button";
 import {
 	Dialog,
@@ -47,7 +47,7 @@ interface EffectiveOpenerProps {
 function EffectiveOpener(props: EffectiveOpenerProps): React.JSX.Element {
 	const { effectiveCommand } = props.settings;
 	return (
-		<p className="text-muted-foreground text-xs">
+		<p className="text-muted-foreground text-body">
 			Saved opener:{" "}
 			{effectiveCommand ? <Technical>{formatCommand(effectiveCommand)}</Technical> : "none"}
 		</p>
@@ -130,16 +130,21 @@ function OpenerSettingsForm(props: OpenerSettingsFormProps): React.JSX.Element {
 			<BusyText busy={busy.save} text="Saving the opener…" />
 			<BusyText busy={busy.reset} text="Restoring the platform default…" />
 			<DialogFooter>
-				<Button variant="ghost" disabled={anyBusy} onClick={dialog.onReset}>
+				<Button variant="ghost" size="sm" disabled={anyBusy} onClick={dialog.onReset}>
 					Reset
 				</Button>
-				<Button variant="outline" disabled={anyBusy || repository === null} onClick={handleTest}>
+				<Button
+					variant="outline"
+					size="sm"
+					disabled={anyBusy || repository === null}
+					onClick={handleTest}
+				>
 					Test
 				</Button>
-				<DialogClose className={OUTLINE_BUTTON_CLASS} disabled={anyBusy}>
+				<DialogClose className={CANCEL_BUTTON_CLASS} disabled={anyBusy}>
 					Close
 				</DialogClose>
-				<Button disabled={anyBusy} onClick={handleSave}>
+				<Button size="sm" disabled={anyBusy} onClick={handleSave}>
 					Save
 				</Button>
 			</DialogFooter>
@@ -172,7 +177,7 @@ function OpenerSettingsDialog(props: OpenerSettingsDialogProps): React.JSX.Eleme
 						dialog={props}
 					/>
 				) : (
-					<p aria-live="polite" className="text-muted-foreground text-sm">
+					<p aria-live="polite" className="text-muted-foreground text-body">
 						Reading opener settings…
 					</p>
 				)}

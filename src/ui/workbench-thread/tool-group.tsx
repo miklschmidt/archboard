@@ -3,7 +3,7 @@ import { RiArrowDownSLine, RiLoader4Line } from "@remixicon/react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { useScrollLock } from "@assistant-ui/react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/components/collapsible";
-import { cn } from "cn";
+import { cn } from "@/ui/components/class-names";
 
 const ANIMATION_DURATION = 200;
 

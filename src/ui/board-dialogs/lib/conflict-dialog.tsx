@@ -64,7 +64,7 @@ function OutcomeItem<Outcome extends string>(props: OutcomeItemProps<Outcome>): 
 			>
 				{choice.label}
 			</Button>
-			<div className="min-w-0 text-sm">
+			<div className="text-body min-w-0">
 				<p>{choice.consequence}</p>
 				{choice.command !== undefined && <Technical>{choice.command}</Technical>}
 			</div>

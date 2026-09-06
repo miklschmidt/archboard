@@ -36,7 +36,14 @@ function initialTheme(): ThemeChoice {
  * @param theme The chosen theme.
  */
 function applyTheme(theme: ThemeChoice): void {
-	document.documentElement.dataset["theme"] = theme;
+	const root = document.documentElement;
+	// One frame without transitions: the palette swaps whole, never cross-fades.
+	root.dataset["themeSwitching"] = "";
+	root.dataset["theme"] = theme;
+	void root.offsetWidth;
+	window.requestAnimationFrame(() => {
+		delete root.dataset["themeSwitching"];
+	});
 	try {
 		window.localStorage.setItem(THEME_STORAGE_KEY, theme);
 	} catch {

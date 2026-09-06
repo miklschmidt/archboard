@@ -9,7 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/ui/components/alert";
 import { buttonVariants } from "@/ui/components/button";
 import { FieldError } from "@/ui/components/field";
 
-const OUTLINE_BUTTON_CLASS = buttonVariants({ variant: "outline" });
+/** The dismissing action of a dialog footer: a 28px ghost button. */
+const CANCEL_BUTTON_CLASS = buttonVariants({ variant: "ghost", size: "sm" });
 
 /** Inputs for the error alert. */
 interface DialogErrorAlertProps {
@@ -27,7 +28,7 @@ function DialogErrorAlert(props: DialogErrorAlertProps): React.JSX.Element | nul
 		return null;
 	}
 	return (
-		<Alert variant="destructive">
+		<Alert variant="destructive" className="rounded-sm">
 			<RiErrorWarningLine />
 			<AlertTitle>{error.title}</AlertTitle>
 			<AlertDescription>{error.message}</AlertDescription>
@@ -51,7 +52,7 @@ function BusyText(props: BusyTextProps): React.JSX.Element | null {
 		return null;
 	}
 	return (
-		<p aria-live="polite" className="text-muted-foreground text-xs">
+		<p aria-live="polite" className="text-muted-foreground text-body">
 			{props.text}
 		</p>
 	);
@@ -63,12 +64,52 @@ interface TechnicalProps {
 }
 
 /**
- * An identifier, path, version or time in the mono face.
+ * An identifier, path, version or time in the mono face. A long value wraps
+ * over three lines at most and carries its full text as a title.
  * @param props The value.
  * @returns The value as code.
  */
 function Technical(props: TechnicalProps): React.JSX.Element {
-	return <code className="font-mono text-xs break-all">{props.children}</code>;
+	const { children } = props;
+	return (
+		<code
+			title={typeof children === "string" ? children : undefined}
+			className="text-technical line-clamp-3 font-mono break-all"
+		>
+			{children}
+		</code>
+	);
+}
+
+/**
+ * The last segment of a path: the folder or file a person knows it by.
+ * @param path An absolute path, with either separator.
+ * @returns The final non-empty segment, or the path itself.
+ */
+function pathName(path: string): string {
+	const segments = path.split(/[\\/]/u).filter((segment) => segment !== "");
+	return segments.at(-1) ?? path;
+}
+
+/** Inputs for a path value. */
+interface PathValueProps {
+	path: string;
+}
+
+/**
+ * A long path: its folder or file name first, then the whole path in the
+ * mono face, clamped to three lines with the full text as a title.
+ * @param props The path.
+ * @returns The named path.
+ */
+function PathValue(props: PathValueProps): React.JSX.Element {
+	const { path } = props;
+	return (
+		<span title={path} className="text-technical inline-flex min-w-0 flex-col font-mono">
+			<span className="text-foreground font-medium">{pathName(path)}</span>
+			<span className="text-muted-foreground line-clamp-3 break-all">{path}</span>
+		</span>
+	);
 }
 
 /** One row of a facts table. */
@@ -111,7 +152,7 @@ interface FactsProps {
  */
 function Facts(props: FactsProps): React.JSX.Element {
 	return (
-		<dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
+		<dl className="text-body grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1.5">
 			{props.rows.map((row) => (
 				<Fact key={row.label} row={row} />
 			))}
@@ -137,11 +178,13 @@ function FieldIssues(props: FieldIssuesProps): React.JSX.Element {
 
 export {
 	BusyText,
+	CANCEL_BUTTON_CLASS,
 	DialogErrorAlert,
 	Fact,
 	Facts,
 	FieldIssues,
-	OUTLINE_BUTTON_CLASS,
+	PathValue,
 	Technical,
+	pathName,
 	type FactRow,
 };

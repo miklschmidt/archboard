@@ -17,7 +17,7 @@ interface SectionHeadingProps {
  */
 function SectionHeading(props: SectionHeadingProps): React.JSX.Element {
 	return (
-		<h3 className="flex items-center gap-2 text-sm font-semibold">
+		<h3 className="text-control flex items-center gap-2 font-semibold">
 			{props.title}
 			{props.children}
 		</h3>
@@ -40,7 +40,9 @@ function StateBadge(props: StateBadgeProps): React.JSX.Element {
 		<>
 			<Badge variant={summary.tone}>{summary.label}</Badge>
 			{summary.detail !== null && (
-				<span className="text-muted-foreground truncate text-xs font-normal">{summary.detail}</span>
+				<span className="text-muted-foreground text-body truncate font-normal">
+					{summary.detail}
+				</span>
 			)}
 		</>
 	);

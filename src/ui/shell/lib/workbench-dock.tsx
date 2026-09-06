@@ -1,7 +1,8 @@
-// The bottom workbench dock: connection, claim and `doing` data in a header
-// row with a disclosure, and a body reserved for the thread (TASK-150.05).
+// The bottom workbench dock: a 40px header with connection, claim and
+// `doing` data and a disclosure, and a 320px body reserved for the workbench
+// (TASK-150.05).
 
-import { RiArrowDownSLine, RiArrowUpSLine } from "@remixicon/react";
+import { RiArrowDownSLine, RiArrowUpSLine, RiCheckLine } from "@remixicon/react";
 import { useCallback, useState } from "react";
 
 import { Button } from "@/ui/components/button";
@@ -13,7 +14,7 @@ import { clockTime } from "@/ui/shell/lib/time";
 import type { DoingEntry } from "@/ui/types";
 
 /** How many `doing` lines the disclosure shows. */
-const DOING_LINES = 4;
+const DOING_LINES = 6;
 
 /** Inputs for the dock. */
 interface WorkbenchDockProps {
@@ -48,12 +49,14 @@ interface DoingLineProps {
 function DoingLine(props: DoingLineProps): React.JSX.Element {
 	const { entry } = props;
 	if (!entry) {
-		return <span className="text-muted-foreground text-sm">Nothing in progress</span>;
+		return (
+			<span className="text-muted-foreground text-control font-normal">Nothing in progress</span>
+		);
 	}
 	return (
-		<span className="flex min-w-0 items-baseline gap-2 text-sm">
+		<span className="text-control flex min-w-0 items-baseline gap-2">
 			<span className="truncate">{entry.doing}</span>
-			<time dateTime={entry.at} className="text-muted-foreground shrink-0 font-mono text-xs">
+			<time dateTime={entry.at} className="text-muted-foreground text-technical shrink-0 font-mono">
 				{clockTime(entry.at)}
 			</time>
 		</span>
@@ -66,7 +69,8 @@ interface DoingHistoryProps {
 }
 
 /**
- * The last few `doing` lines, oldest first, each naming who said it.
+ * The last few `doing` lines, oldest first: a check for what is done, a
+ * dot for the latest, the time in the mono face, and who said it.
  * @param props The entries.
  * @returns A list, or nothing when nobody has said anything.
  */
@@ -74,14 +78,26 @@ function DoingHistory(props: DoingHistoryProps): React.JSX.Element | null {
 	if (props.entries.length === 0) {
 		return null;
 	}
+	const last = props.entries.length - 1;
 	return (
-		<ol aria-label="Recent activity" className="flex flex-col gap-1 px-3 py-2 text-sm">
-			{props.entries.map((entry) => (
-				<li key={`${entry.by}:${entry.at}`} className="flex items-baseline gap-2">
-					<time dateTime={entry.at} className="text-muted-foreground shrink-0 font-mono text-xs">
+		<ol
+			aria-label="Recent activity"
+			className="text-body border-border bg-sidebar flex flex-col gap-1 border-t px-4 py-2"
+		>
+			{props.entries.map((entry, index) => (
+				<li key={`${entry.by}:${entry.at}`} className="flex items-center gap-2">
+					{index === last ? (
+						<StatusDot tone="live" className="mx-[3px]" />
+					) : (
+						<RiCheckLine aria-hidden="true" className="text-muted-foreground size-3 shrink-0" />
+					)}
+					<time
+						dateTime={entry.at}
+						className="text-muted-foreground text-technical shrink-0 font-mono"
+					>
 						{clockTime(entry.at)}
 					</time>
-					<span className="text-muted-foreground shrink-0 text-xs">
+					<span className="text-muted-foreground text-technical shrink-0">
 						{entry.kind === "agent" ? "agent" : "human"}
 					</span>
 					<span className="truncate">{entry.doing}</span>
@@ -109,7 +125,9 @@ function TakeBackLine(props: TakeBackLineProps): React.JSX.Element | null {
 	return (
 		<span
 			className={
-				state.kind === "failed" ? "text-destructive text-xs" : "text-muted-foreground text-xs"
+				state.kind === "failed"
+					? "text-destructive text-body truncate"
+					: "text-muted-foreground text-body truncate"
 			}
 		>
 			{state.kind === "failed" ? state.message : "Taking back control"}
@@ -125,7 +143,7 @@ interface ActivityDotProps {
 }
 
 /**
- * The dock's state dot: lime while connected, pulsing while an agent works.
+ * The dock's state dot: lime while connected, pulsing only while an agent works.
  * @param props Connection and activity.
  * @returns The dot.
  */
@@ -138,11 +156,6 @@ function ActivityDot(props: ActivityDotProps): React.JSX.Element {
 	);
 }
 
-/**
- * The workbench dock.
- * @param props The pane the dock describes and the pane count.
- * @returns The collapsible dock.
- */
 /** Inputs for the dock's state cluster. */
 interface DockStateProps {
 	pane: ShellPane | null;
@@ -160,9 +173,7 @@ function DockActivity(props: DockStateProps): React.JSX.Element {
 	return (
 		<>
 			<ActivityDot connected={pane?.status.connected === true} active={claim !== null} />
-			<span className="shrink-0 text-[11px] font-medium tracking-wide uppercase">
-				Agent workbench
-			</span>
+			<span className="text-kicker shrink-0 uppercase">Agent workbench</span>
 			<DoingLine entry={recentDoing(pane).at(-1) ?? null} />
 		</>
 	);
@@ -178,7 +189,7 @@ function DockCounts(props: DockStateProps): React.JSX.Element {
 	return (
 		<>
 			{pane && <TakeBackLine state={pane.takeBack} />}
-			<span className="text-muted-foreground shrink-0 text-xs">
+			<span className="text-muted-foreground text-technical shrink-0">
 				<span className="font-mono">{paneCount}</span> {paneCount === 1 ? "pane" : "panes"}
 			</span>
 		</>
@@ -201,14 +212,15 @@ function WorkbenchDock(props: WorkbenchDockProps): React.JSX.Element {
 			onOpenChange={setOpen}
 			className="border-border bg-background shrink-0 border-t"
 		>
-			<div className="flex h-10 items-center gap-3 px-3">
+			<div className="bg-sidebar flex h-10 items-center gap-3 pr-2 pl-4">
 				<DockActivity pane={pane} paneCount={paneCount} />
 				<span className="flex-1" />
 				<DockCounts pane={pane} paneCount={paneCount} />
 				{props.headerControls}
 				<Button
 					variant="ghost"
-					size="icon-xs"
+					size="icon-sm"
+					className="hit-area text-muted-foreground"
 					aria-label={open ? "Collapse workbench" : "Expand workbench"}
 					aria-expanded={open}
 					onClick={handleToggle}
@@ -217,12 +229,10 @@ function WorkbenchDock(props: WorkbenchDockProps): React.JSX.Element {
 				</Button>
 			</div>
 			<CollapsibleContent>
-				<div className="border-border border-t">
-					<DoingHistory entries={entries} />
-				</div>
+				<DoingHistory entries={entries} />
 				<div className="border-border h-80 min-h-0 border-t">
 					{props.body ?? (
-						<p className="text-muted-foreground flex h-full items-center justify-center text-sm">
+						<p className="text-muted-foreground text-body flex h-full items-center justify-center">
 							No agent workbench is attached to this pane.
 						</p>
 					)}

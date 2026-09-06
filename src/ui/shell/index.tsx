@@ -26,8 +26,8 @@ import { PaneBar } from "@/ui/shell/lib/pane-bar";
 import { CanvasStages } from "@/ui/shell/lib/pane-stage";
 import { WorkbenchDock } from "@/ui/shell/lib/workbench-dock";
 
-/** The navigator's width; the sidebar reads it from this custom property. */
-const SIDEBAR_STYLE: React.CSSProperties = { "--sidebar-width": "15rem" };
+/** The navigator's width, 200px: narrow like the reference strip, wide enough for two-line names. */
+const SIDEBAR_STYLE: React.CSSProperties = { "--sidebar-width": "200px" };
 
 /** Inputs for the shell. */
 interface ShellProps {

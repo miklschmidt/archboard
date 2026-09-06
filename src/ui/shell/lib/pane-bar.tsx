@@ -1,5 +1,6 @@
-// The pane bar: one tab per pane, each with a status line beneath its name,
-// and the controls that add, close and present panes.
+// The pane bar: one flat tab per pane, its status inline after its name, and
+// the controls that add, close and present panes. The focused tab carries a
+// two-pixel cobalt rule along its bottom edge; nothing else is drawn.
 
 import { RiAddLine, RiCloseLine, RiFullscreenLine } from "@remixicon/react";
 import { useCallback, useMemo } from "react";
@@ -12,7 +13,12 @@ import { paneLetter } from "@/ui/shell/lib/navigator-entries";
 import { StatusDot } from "@/ui/shell/lib/status-dot";
 import { clockTime } from "@/ui/shell/lib/time";
 
-const ICON_BUTTON_CLASS = buttonVariants({ variant: "ghost", size: "icon-sm" });
+/** A 28px icon button inside a 32px hit area. */
+const ICON_BUTTON_CLASS = buttonVariants({
+	variant: "ghost",
+	size: "icon-sm",
+	className: "hit-area",
+});
 
 /**
  * "Pane A · board": the pane's place in reading order and what it holds.
@@ -39,7 +45,7 @@ interface PaneStatusLineProps {
 function PaneStatusLine(props: PaneStatusLineProps): React.JSX.Element {
 	const { status } = props.pane;
 	return (
-		<span className="text-muted-foreground flex items-center gap-1.5 text-[11px] font-normal">
+		<span className="text-technical text-muted-foreground flex items-center gap-1.5 font-normal">
 			<StatusDot tone={status.connected ? "live" : "idle"} />
 			{status.connected ? "Connected" : "Offline"}
 			<span aria-hidden="true">·</span>
@@ -52,8 +58,10 @@ function PaneStatusLine(props: PaneStatusLineProps): React.JSX.Element {
 					</time>
 				</>
 			)}
-			{status.hold && <span className="text-destructive">· not saving</span>}
-			{status.writtenElsewhere && <span className="text-destructive">· written elsewhere</span>}
+			{status.hold && <span className="text-warning-foreground">· not saving</span>}
+			{status.writtenElsewhere && (
+				<span className="text-warning-foreground">· written elsewhere</span>
+			)}
 		</span>
 	);
 }
@@ -108,7 +116,7 @@ function PaneControls(props: PaneControlsProps): React.JSX.Element {
 		[actions, activePaneId],
 	);
 	return (
-		<span className="flex shrink-0 items-center gap-0.5">
+		<span className="flex shrink-0 items-center gap-1 px-2">
 			<IconControl label="Add pane" onClick={handleAdd} disabled={paneCount >= 2}>
 				<RiAddLine />
 			</IconControl>
@@ -139,9 +147,9 @@ interface PaneBarProps {
 
 /**
  * The pane chooser: a single-choice toggle group naming each pane, with the
- * focused pane marked and each pane's status beneath its name.
+ * focused pane underlined and each pane's status inline after its name.
  * @param props The panes, the active pane and the actions.
- * @returns The pane bar.
+ * @returns The 36px pane bar with its one-pixel bottom rule.
  */
 function PaneBar(props: PaneBarProps): React.JSX.Element {
 	const { actions, activePaneId, panes } = props;
@@ -156,24 +164,22 @@ function PaneBar(props: PaneBarProps): React.JSX.Element {
 		[actions],
 	);
 	return (
-		<div className="border-border bg-background flex h-12 shrink-0 items-center gap-2 border-b px-2">
+		<div className="border-border bg-background flex h-9 shrink-0 items-stretch border-b">
 			<ToggleGroup
 				value={value}
 				onValueChange={handleChange}
-				variant="outline"
-				size="sm"
 				spacing={0}
 				aria-label="Pane"
-				className="min-w-0"
+				className="min-w-0 items-stretch rounded-none"
 			>
 				{panes.map((pane, index) => (
 					<ToggleGroupItem
 						key={pane.status.paneId}
 						value={pane.status.paneId}
 						aria-current={pane.status.paneId === activePaneId ? "true" : undefined}
-						className="aria-pressed:ring-primary h-auto flex-col items-start gap-0 px-3 py-1 aria-pressed:ring-1 aria-pressed:ring-inset"
+						className="border-border hover:bg-sidebar-accent aria-pressed:border-b-primary aria-pressed:text-foreground text-muted-foreground h-auto min-w-0 gap-3 rounded-none border-r border-b-2 border-b-transparent px-4 aria-pressed:bg-transparent"
 					>
-						<span className="font-medium">{paneLabel(pane, index)}</span>
+						<span className="truncate">{paneLabel(pane, index)}</span>
 						<PaneStatusLine pane={pane} />
 					</ToggleGroupItem>
 				))}
