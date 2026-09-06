@@ -1,14 +1,6 @@
-import type { EpochExecutionProof, EpochOperationRecord } from "../../codex-epoch/index.js";
-import type {
-	ThreadLinkBindingSnapshot,
-	ThreadLinkSnapshot,
-} from "../../codex-thread-link/index.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	OperationId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import type { EpochExecutionProof, EpochOperationRecord } from "@/runtime/codex-epoch";
+import type { ThreadLinkBindingSnapshot, ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
+import type { ChildEpoch, ChildId, OperationId, ThreadId } from "@/shared/codex-workbench-identity";
 import {
 	WORKHORSE_CLEANUP_OPERATION_KIND,
 	WORKHORSE_CLEANUP_RPC,
@@ -18,14 +10,14 @@ import {
 	WORKHORSE_RPC,
 	WORKHORSE_THREAD_SOURCE,
 	WORKHORSE_THREAD_SOURCE_TAG,
-} from "./model.js";
+} from "@/runtime/codex-workhorse-start/lib/model";
 import type {
 	CodexWorkhorseStartOptions,
 	WorkhorseStartFacts,
 	WorkhorseStartResponse,
 	WorkhorseThread,
-} from "./contract.js";
-import { cloneAndFreeze } from "./immutability.js";
+} from "@/runtime/codex-workhorse-start/lib/contract";
+import { cloneAndFreeze } from "@/runtime/codex-workhorse-start/lib/immutability";
 
 interface ValidatedWorkhorseStart {
 	readonly thread: WorkhorseThread;
@@ -33,6 +25,9 @@ interface ValidatedWorkhorseStart {
 	readonly facts: WorkhorseStartFacts;
 }
 
+/**
+ *
+ */
 function validateWorkhorseStartResponse(
 	response: WorkhorseStartResponse,
 	options: CodexWorkhorseStartOptions,
@@ -87,6 +82,9 @@ function validateWorkhorseStartResponse(
 	return Object.freeze({ thread: cloneAndFreeze(response.thread), threadId, facts });
 }
 
+/**
+ *
+ */
 function isCommittedStartRecord(
 	record: EpochOperationRecord,
 	childId: ChildId,
@@ -115,6 +113,9 @@ function isCommittedStartRecord(
 	);
 }
 
+/**
+ *
+ */
 function isCurrentStartProof(
 	proof: EpochExecutionProof,
 	childId: ChildId,
@@ -126,6 +127,9 @@ function isCurrentStartProof(
 	return isCommittedStartRecord(proof.record, childId, epoch, operationId, threadId, checkoutRoot);
 }
 
+/**
+ *
+ */
 function isCommittedCleanupRecord(
 	record: EpochOperationRecord,
 	childId: ChildId,
@@ -174,6 +178,9 @@ function isExactIdleWorkhorseRoot(
 	);
 }
 
+/**
+ *
+ */
 function isExecutableWorkhorseBinding(
 	binding: ThreadLinkBindingSnapshot,
 	paneId: string,

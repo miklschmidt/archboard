@@ -1,17 +1,26 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import type { ResponsePayloads } from "../../codex-protocol/index.js";
-import { CodexSessionStorageError, type CodexSessionStorage } from "./contract.js";
+import type { ResponsePayloads } from "@/runtime/codex-protocol";
+import {
+	CodexSessionStorageError,
+	type CodexSessionStorage,
+} from "@/runtime/codex-session/lib/contract";
 
 type InitializeResponse = ResponsePayloads["initialize"];
 type ConfigResponse = ResponsePayloads["config/read"];
 type RequirementsResponse = ResponsePayloads["configRequirements/read"];
 
+/**
+ *
+ */
 function fail(detail: string): never {
 	throw new CodexSessionStorageError(`Codex storage proof refused: ${detail}`);
 }
 
+/**
+ *
+ */
 function isWithin(parent: string, child: string): boolean {
 	const relative = path.relative(parent, child);
 	return (
@@ -22,6 +31,9 @@ function isWithin(parent: string, child: string): boolean {
 	);
 }
 
+/**
+ *
+ */
 function requireAbsolutePath(value: unknown, label: string): string {
 	if (typeof value !== "string" || value.length === 0 || value.includes("\0")) {
 		return fail(`${label} must be a nonempty absolute path`);
@@ -32,6 +44,9 @@ function requireAbsolutePath(value: unknown, label: string): string {
 	return value;
 }
 
+/**
+ *
+ */
 function assertNoSymlinkComponents(candidate: string, label: string): void {
 	const parsed = path.parse(candidate);
 	let current = parsed.root;
@@ -49,6 +64,9 @@ function assertNoSymlinkComponents(candidate: string, label: string): void {
 	}
 }
 
+/**
+ *
+ */
 function canonicalPath(value: unknown, label: string): string {
 	const candidate = requireAbsolutePath(value, label);
 	assertNoSymlinkComponents(candidate, label);
@@ -64,6 +82,9 @@ function canonicalPath(value: unknown, label: string): string {
 	return canonical;
 }
 
+/**
+ *
+ */
 function currentUserId(): number | undefined {
 	if (process.platform === "win32") {
 		return undefined;
@@ -71,6 +92,9 @@ function currentUserId(): number | undefined {
 	return process.getuid?.();
 }
 
+/**
+ *
+ */
 function assertOwnerAndMode(stats: fs.Stats, label: string, mode: number): void {
 	const owner = currentUserId();
 	if (process.platform !== "win32" && owner === undefined) {
@@ -84,6 +108,9 @@ function assertOwnerAndMode(stats: fs.Stats, label: string, mode: number): void 
 	}
 }
 
+/**
+ *
+ */
 function assertDirectory(value: unknown, label: string): string {
 	const canonical = canonicalPath(value, label);
 	let stats: fs.Stats;
@@ -99,6 +126,9 @@ function assertDirectory(value: unknown, label: string): string {
 	return canonical;
 }
 
+/**
+ *
+ */
 function assertConfigFile(value: unknown, label: string): string {
 	const canonical = canonicalPath(value, label);
 	let stats: fs.Stats;
@@ -114,12 +144,18 @@ function assertConfigFile(value: unknown, label: string): string {
 	return canonical;
 }
 
+/**
+ *
+ */
 function assertRootAgreement(value: unknown, label: string, prepared: string): void {
 	if (canonicalPath(value, label) !== prepared) {
 		return fail(`${label} does not match the prepared storage root`);
 	}
 }
 
+/**
+ *
+ */
 function assertSqliteValue(value: unknown, label: string, prepared: string): void {
 	if (typeof value !== "string") {
 		return fail(`${label} is missing or null`);
@@ -127,6 +163,9 @@ function assertSqliteValue(value: unknown, label: string, prepared: string): voi
 	assertRootAgreement(value, label, prepared);
 }
 
+/**
+ *
+ */
 function assertOrigin(config: ConfigResponse, configPath: string): void {
 	const origin = config.origins["sqlite_home"];
 	if (origin?.name.type !== "user") {
@@ -137,6 +176,9 @@ function assertOrigin(config: ConfigResponse, configPath: string): void {
 	}
 }
 
+/**
+ *
+ */
 function assertRequirements(requirements: RequirementsResponse, sqliteHome: string): void {
 	const managed = requirements.requirements;
 	if (managed === null) {

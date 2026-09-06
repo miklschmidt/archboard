@@ -1,7 +1,7 @@
 import {
 	CodexWorkhorseOperationsError,
 	type CodexWorkhorseOperations,
-} from "../../codex-workhorse-operations/index.js";
+} from "@/runtime/codex-workhorse-operations";
 import type {
 	DelegateToWorkhorseInput,
 	DelegateToWorkhorseResult,
@@ -13,17 +13,27 @@ import type {
 	ResolveSpokenApprovalInput,
 	SteerWorkhorseInput,
 	SteerWorkhorseResult,
-} from "../../codex-coordinator-tool-contract/index.js";
-import type { OperationId } from "../../../shared/codex-workbench-identity/index.js";
-import type { CodexCoordinatorToolsOptions, DynamicToolResponse } from "./contract.js";
-import type { ValidatedCoordinatorToolCall } from "./validation.js";
-import { okResponse, outcomeUnknownResponse, refusedResponse } from "./response.js";
+} from "@/runtime/codex-coordinator-tool-contract";
+import type { OperationId } from "@/shared/codex-workbench-identity";
+import type {
+	CodexCoordinatorToolsOptions,
+	DynamicToolResponse,
+} from "@/runtime/codex-coordinator-tools/lib/contract";
+import type { ValidatedCoordinatorToolCall } from "@/runtime/codex-coordinator-tools/lib/validation";
+import {
+	okResponse,
+	outcomeUnknownResponse,
+	refusedResponse,
+} from "@/runtime/codex-coordinator-tools/lib/response";
 
 interface IssuedOperationIdentity {
 	readonly id: OperationId;
 	readonly wire: string;
 }
 
+/**
+ *
+ */
 function operationIdentity(
 	options: CodexCoordinatorToolsOptions,
 	value: unknown,
@@ -33,10 +43,16 @@ function operationIdentity(
 	return Object.freeze({ id, wire: options.operation.decoder.serializeOperationId(id) });
 }
 
+/**
+ *
+ */
 function issueOperationIdentity(options: CodexCoordinatorToolsOptions): IssuedOperationIdentity {
 	return operationIdentity(options, options.operation.issuer.mintOperationId());
 }
 
+/**
+ *
+ */
 function captureSpokenOperationIdentity(
 	options: CodexCoordinatorToolsOptions,
 ): IssuedOperationIdentity | null {
@@ -48,19 +64,31 @@ function captureSpokenOperationIdentity(
 	}
 }
 
+/**
+ *
+ */
 function errorMessage(error: unknown): string {
 	return error instanceof Error && error.message.length > 0 ? error.message : "unknown error";
 }
 
+/**
+ *
+ */
 function errorField(error: unknown, field: string): unknown {
 	return error !== null && typeof error === "object" ? Reflect.get(error, field) : undefined;
 }
 
+/**
+ *
+ */
 function outcomeFromError(error: unknown): "not_delivered" | "outcome_unknown" | null {
 	const outcome = errorField(error, "outcome");
 	return outcome === "not_delivered" || outcome === "outcome_unknown" ? outcome : null;
 }
 
+/**
+ *
+ */
 function refusalFromError(error: unknown): DynamicToolRefusalReason | null {
 	const code = errorField(error, "code");
 	if (
@@ -83,6 +111,9 @@ function refusalFromError(error: unknown): DynamicToolRefusalReason | null {
 	return null;
 }
 
+/**
+ *
+ */
 function isMutation(call: ValidatedCoordinatorToolCall): boolean {
 	return (
 		call.tool === "delegate_to_workhorse" ||
@@ -92,6 +123,9 @@ function isMutation(call: ValidatedCoordinatorToolCall): boolean {
 	);
 }
 
+/**
+ *
+ */
 function invokeWorkhorse(
 	operations: CodexCoordinatorToolsOptions["operations"],
 	validated: ValidatedCoordinatorToolCall,
@@ -132,6 +166,9 @@ function invokeWorkhorse(
 	}
 }
 
+/**
+ *
+ */
 function workhorseResponse(
 	options: CodexCoordinatorToolsOptions,
 	validated: ValidatedCoordinatorToolCall,
@@ -156,6 +193,9 @@ function workhorseResponse(
 	}
 }
 
+/**
+ *
+ */
 function errorUsesOperation(
 	options: CodexCoordinatorToolsOptions,
 	error: unknown,
@@ -172,6 +212,9 @@ function errorUsesOperation(
 	}
 }
 
+/**
+ *
+ */
 function responseForWorkhorseError(
 	options: CodexCoordinatorToolsOptions,
 	validated: ValidatedCoordinatorToolCall,
@@ -210,6 +253,9 @@ function responseForWorkhorseError(
 	return refusedResponse("system_error", `The workhorse tool failed: ${errorMessage(error)}`);
 }
 
+/**
+ *
+ */
 function spokenResponse(
 	result: Awaited<ReturnType<CodexCoordinatorToolsOptions["spokenApproval"]["resolve"]>>,
 	operation: IssuedOperationIdentity | null,
@@ -229,6 +275,9 @@ function spokenResponse(
 	});
 }
 
+/**
+ *
+ */
 function spokenInput(call: ValidatedCoordinatorToolCall): ResolveSpokenApprovalInput {
 	return call.input as ResolveSpokenApprovalInput;
 }

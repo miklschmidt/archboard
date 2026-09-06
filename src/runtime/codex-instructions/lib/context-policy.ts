@@ -4,6 +4,9 @@ type DeepReadonly<Value> = Value extends readonly unknown[]
 		? { readonly [Key in keyof Value]: DeepReadonly<Value[Key]> }
 		: Value;
 
+/**
+ *
+ */
 function deepFreeze<Value>(value: Value): DeepReadonly<Value> {
 	if (typeof value !== "object" || value === null) {
 		return value as DeepReadonly<Value>;

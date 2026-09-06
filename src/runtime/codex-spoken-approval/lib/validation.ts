@@ -2,29 +2,22 @@ import type {
 	ApprovalSnapshot,
 	CodexApprovalBroker,
 	SpokenApprovalEffectPresentation,
-} from "../../codex-approvals/index.js";
+} from "@/runtime/codex-approvals";
 import {
 	ARCHBOARD_VOICE_MANIFEST_SHA256,
 	type DynamicToolRefusalReason,
-} from "../../codex-coordinator-tool-contract/index.js";
-import { ArchboardContextSchema, type ArchboardContext } from "../../codex-instructions/index.js";
-import type { SpokenApprovalArmInput, SpokenApprovalFallbackReason } from "./contract.js";
-import type { ActiveSlot } from "./state.js";
-import {
-	IdentityValidationError,
-	type IdentityAuthority,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-coordinator-tool-contract";
+import { ArchboardContextSchema, type ArchboardContext } from "@/runtime/codex-instructions";
 import type {
-	RealtimeCorrelation,
-	RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/index.js";
-import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "../../../shared/timing/timing.js";
+	SpokenApprovalArmInput,
+	SpokenApprovalFallbackReason,
+} from "@/runtime/codex-spoken-approval/lib/contract";
+import type { ActiveSlot } from "@/runtime/codex-spoken-approval/lib/state";
+import { IdentityValidationError, type IdentityAuthority } from "@/shared/codex-workbench-identity";
+import type { RealtimeCorrelation, RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
+import type { DynamicServerRequest } from "@/runtime/codex-transport";
+import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "@/shared/timing/timing";
 
 interface CoordinatorIdentity {
 	readonly child: ChildId;
@@ -59,18 +52,30 @@ type ArmValidationResult =
 			readonly expiresAtMs: number;
 	  };
 
+/**
+ *
+ */
 function invalid(reason: SpokenApprovalFallbackReason): ArmValidationResult {
 	return { ok: false, reason };
 }
 
+/**
+ *
+ */
 function sameRealtime(left: RealtimeCorrelation, right: RealtimeCorrelation): boolean {
 	return left.sessionId === right.sessionId && left.correlationId === right.correlationId;
 }
 
+/**
+ *
+ */
 function recordKey(record: RealtimeTranscriptRecord): string {
 	return `${record.sessionId}\u0000${record.correlationId}\u0000${record.itemId}`;
 }
 
+/**
+ *
+ */
 function sameBinding(
 	left: ApprovalSnapshot["binding"],
 	right: ApprovalSnapshot["binding"],
@@ -84,6 +89,9 @@ function sameBinding(
 	);
 }
 
+/**
+ *
+ */
 function sameSpokenEffectPresentation(
 	presentation: SpokenApprovalEffectPresentation,
 	approval: ApprovalSnapshot,
@@ -101,10 +109,16 @@ function sameSpokenEffectPresentation(
 	);
 }
 
+/**
+ *
+ */
 function safeErrorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ *
+ */
 function oneLine(value: unknown, label: string): string {
 	if (
 		typeof value !== "string" ||
@@ -120,6 +134,9 @@ function oneLine(value: unknown, label: string): string {
 	return value;
 }
 
+/**
+ *
+ */
 function validSequence(value: unknown): value is number {
 	return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
@@ -130,6 +147,9 @@ interface CallValidationFailure {
 	readonly message: string;
 }
 
+/**
+ *
+ */
 function failure(
 	fallback: SpokenApprovalFallbackReason,
 	refusal: DynamicToolRefusalReason,
@@ -138,6 +158,9 @@ function failure(
 	return { fallback, refusal, message };
 }
 
+/**
+ *
+ */
 function failureForIdentity(error: unknown): CallValidationFailure {
 	if (error instanceof IdentityValidationError) {
 		if (error.code === "wrong-child") {
@@ -162,6 +185,9 @@ function failureForIdentity(error: unknown): CallValidationFailure {
 	);
 }
 
+/**
+ *
+ */
 function validateArm(host: ValidationHost, input: SpokenApprovalArmInput): ArmValidationResult {
 	let effectSummary: string;
 	let operationId: string;
@@ -234,6 +260,9 @@ function validateArm(host: ValidationHost, input: SpokenApprovalArmInput): ArmVa
 	});
 }
 
+/**
+ *
+ */
 function validateArmContext(
 	host: ValidationHost,
 	input: SpokenApprovalArmInput,
@@ -326,6 +355,9 @@ function validateArmContext(
 	};
 }
 
+/**
+ *
+ */
 function validateResolverCall(
 	host: Omit<ValidationHost, "transcript">,
 	slot: ActiveSlot,

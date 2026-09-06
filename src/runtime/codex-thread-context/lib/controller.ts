@@ -1,6 +1,6 @@
-import type { SettledSemanticChangeEvent } from "../../codex-semantic-context/index.js";
-import type { ThreadLinkBindingSnapshot } from "../../codex-thread-link/index.js";
-import type { ChildEpoch, ChildId } from "../../../shared/codex-workbench-identity/index.js";
+import type { SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
+import type { ThreadLinkBindingSnapshot } from "@/runtime/codex-thread-link";
+import type { ChildEpoch, ChildId } from "@/shared/codex-workbench-identity";
 import {
 	CodexThreadContextControllerError,
 	type CodexThreadContextBinding,
@@ -12,8 +12,8 @@ import {
 	type CodexThreadContextDelivery,
 	type CodexThreadContextDeliveryOutcome,
 	type CodexThreadContextEventId,
-} from "./contract.js";
-import { createUnsubscribedCodexThreadContextDelivery } from "./delivery.js";
+} from "@/runtime/codex-thread-context/lib/contract";
+import { createUnsubscribedCodexThreadContextDelivery } from "@/runtime/codex-thread-context/lib/delivery";
 
 interface ActiveBinding {
 	readonly revision: number;
@@ -21,14 +21,23 @@ interface ActiveBinding {
 	readonly delivery: CodexThreadContextDelivery;
 }
 
+/**
+ *
+ */
 function eventId(event: SettledSemanticChangeEvent): CodexThreadContextEventId {
 	return Object.freeze({ feedId: event.feedId, sequence: event.cursor?.sequence ?? -1 });
 }
 
+/**
+ *
+ */
 function eventKey(event: CodexThreadContextEventId): string {
 	return JSON.stringify([event.feedId, event.sequence]);
 }
 
+/**
+ *
+ */
 function sameLink(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSnapshot): boolean {
 	return (
 		left.paneId === right.paneId &&
@@ -45,6 +54,9 @@ function sameLink(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSnaps
 	);
 }
 
+/**
+ *
+ */
 function freezeBinding(binding: CodexThreadContextBinding): CodexThreadContextBinding {
 	return Object.freeze({
 		paneId: binding.paneId,
@@ -57,6 +69,9 @@ function freezeBinding(binding: CodexThreadContextBinding): CodexThreadContextBi
 	});
 }
 
+/**
+ *
+ */
 function sameBinding(
 	left: CodexThreadContextBinding | null,
 	right: CodexThreadContextBinding | null,
@@ -74,6 +89,9 @@ function sameBinding(
 	);
 }
 
+/**
+ *
+ */
 function unboundOutcome(
 	event: SettledSemanticChangeEvent,
 	reason: "unbound" | "disposed",
@@ -93,6 +111,9 @@ function unboundOutcome(
 	});
 }
 
+/**
+ *
+ */
 function validateCapturedLink(binding: CodexThreadContextBinding): void {
 	const { link, paneId, target } = binding;
 	if (paneId.length === 0 || link.paneId !== paneId) {
@@ -124,6 +145,9 @@ function validateCapturedLink(binding: CodexThreadContextBinding): void {
 	}
 }
 
+/**
+ *
+ */
 export function createCodexThreadContextController(
 	options: CodexThreadContextControllerOptions,
 ): CodexThreadContextController {
@@ -136,10 +160,19 @@ export function createCodexThreadContextController(
 	const settled = new Map<string, CodexThreadContextDeliveryOutcome>();
 	const order: string[] = [];
 
+	/**
+	 *
+	 */
 	const token = (): CodexThreadContextBindingToken => Object.freeze({ revision });
+	/**
+	 *
+	 */
 	const snapshot = (): CodexThreadContextBindingSnapshot =>
 		Object.freeze({ token: token(), binding: active?.binding ?? null });
 
+	/**
+	 *
+	 */
 	const deliver = (
 		event: SettledSemanticChangeEvent,
 	): Promise<CodexThreadContextDeliveryOutcome> => {
@@ -172,6 +205,9 @@ export function createCodexThreadContextController(
 		void deliver(event);
 	});
 
+	/**
+	 *
+	 */
 	const compareAndSwap: CodexThreadContextController["compareAndSwap"] = ({ expected, next }) => {
 		if (disposed) {
 			throw new CodexThreadContextControllerError(
@@ -227,16 +263,25 @@ export function createCodexThreadContextController(
 			...options,
 			paneId: capturedBinding.paneId,
 			target: capturedBinding.target,
+			/**
+			 *
+			 */
 			currentExecution: () =>
 				executionAvailable && active?.revision === bindingRevision
 					? options.currentExecution()
 					: null,
+			/**
+			 *
+			 */
 			contextForEvent: (event) => hooks.contextForEvent(event, capturedBinding),
 		});
 		active = Object.freeze({ revision: bindingRevision, binding: capturedBinding, delivery });
 		return snapshot();
 	};
 
+	/**
+	 *
+	 */
 	const dispose = (): void => {
 		if (disposed) {
 			return;
@@ -252,6 +297,9 @@ export function createCodexThreadContextController(
 
 	return Object.freeze({
 		deliver,
+		/**
+		 *
+		 */
 		inspect: () =>
 			Object.freeze(
 				order.flatMap((key) => {
@@ -259,9 +307,15 @@ export function createCodexThreadContextController(
 					return outcome === undefined ? [] : [outcome];
 				}),
 			),
+		/**
+		 *
+		 */
 		get: (event: CodexThreadContextEventId) => settled.get(eventKey(event)),
 		snapshot,
 		compareAndSwap,
+		/**
+		 *
+		 */
 		replaceHooks(next: CodexThreadContextControllerHooks) {
 			if (disposed) {
 				throw new CodexThreadContextControllerError(
@@ -271,6 +325,9 @@ export function createCodexThreadContextController(
 			}
 			hooks = next;
 		},
+		/**
+		 *
+		 */
 		async childExit(child: ChildId, epoch: ChildEpoch) {
 			if (
 				active === null ||

@@ -1,24 +1,20 @@
-import type { CodexProcessLifecycle } from "../../codex-process/index.js";
+import type { CodexProcessLifecycle } from "@/runtime/codex-process";
 import type {
 	TransportServerNotification,
 	TransportServerRequest,
-} from "../../codex-transport/server-requests.js";
-import type { CodexTransport } from "../../codex-transport/index.js";
+} from "@/runtime/codex-transport/server-requests";
+import type { CodexTransport } from "@/runtime/codex-transport";
 import type {
 	BedrockSetupParams,
 	ClientRequestMethod,
 	CodexSessionRequestParams,
 	LoginAccountParams,
 	ResponseMethod,
-} from "../../codex-protocol/index.js";
-import type {
-	IdentityAuthority,
-	ThreadId,
-	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { SessionResponsePayloads } from "./results.js";
+} from "@/runtime/codex-protocol";
+import type { IdentityAuthority, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
+import type { SessionResponsePayloads } from "@/runtime/codex-session/lib/results";
 
-export type { BedrockSetupParams } from "../../codex-protocol/index.js";
+export type { BedrockSetupParams } from "@/runtime/codex-protocol";
 
 /**
  * Codex 0.151.0 reports this origin for our fixed app-server initialization.
@@ -146,6 +142,9 @@ export class CodexSessionError extends Error {
 	readonly code: CodexSessionErrorCode;
 	override readonly cause: unknown;
 
+	/**
+	 *
+	 */
 	constructor(code: CodexSessionErrorCode, message: string, cause?: unknown) {
 		super(message);
 		this.code = code;
@@ -156,6 +155,9 @@ export class CodexSessionError extends Error {
 export class CodexSessionStorageError extends CodexSessionError {
 	override readonly name = "CodexSessionStorageError";
 
+	/**
+	 *
+	 */
 	constructor(message: string, cause?: unknown) {
 		super("storage_mismatch", message, cause);
 	}
@@ -167,6 +169,9 @@ export class CodexSessionMutationError extends CodexSessionError {
 	readonly outcome: SessionMutationOutcome;
 	readonly retryEligible = false;
 
+	/**
+	 *
+	 */
 	constructor(method: string, outcome: SessionMutationOutcome, message: string, cause?: unknown) {
 		super("mutation_failed", message, cause);
 		this.method = method;

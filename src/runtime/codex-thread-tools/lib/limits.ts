@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CODEX_BROWSER_COMMAND_LEASE_MS } from "../../../shared/timing/timing.js";
+import { CODEX_BROWSER_COMMAND_LEASE_MS } from "@/shared/timing/timing";
 
 const WAIT_THREADS_TIMEOUT_MAX_MS = 120_000 as const;
 
@@ -10,6 +10,9 @@ if (WAIT_THREADS_TIMEOUT_MAX_MS >= CODEX_BROWSER_COMMAND_LEASE_MS) {
 
 const JsonValueSchema = z.json();
 
+/**
+ *
+ */
 function isWellFormedUnicode(value: string): boolean {
 	for (let index = 0; index < value.length; index++) {
 		const codeUnit = value.charCodeAt(index);
@@ -54,7 +57,13 @@ const boundedUtf8Text = (maximum: number) =>
 			}
 		});
 
+/**
+ *
+ */
 const nullableText = (maximum: number) => boundedText(maximum).nullable();
+/**
+ *
+ */
 const nullableUtf8Text = (maximum: number) => boundedUtf8Text(maximum).nullable();
 
 export {

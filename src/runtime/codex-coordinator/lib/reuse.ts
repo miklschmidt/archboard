@@ -1,5 +1,5 @@
-import type { ChildEpoch, ChildId } from "../../../shared/codex-workbench-identity/index.js";
-import { CODEX_SESSION_THREAD_SOURCE } from "../../codex-session/index.js";
+import type { ChildEpoch, ChildId } from "@/shared/codex-workbench-identity";
+import { CODEX_SESSION_THREAD_SOURCE } from "@/runtime/codex-session";
 import {
 	CodexCoordinatorError,
 	type CodexCoordinatorOptions,
@@ -8,10 +8,10 @@ import {
 	type CoordinatorEpochSnapshot,
 	type CoordinatorPersistedState,
 	type CoordinatorReviewHashes,
-} from "./contract.js";
-import { COORDINATOR_MODEL } from "./model.js";
-import { hashCoordinatorSettings } from "./review.js";
-import { errorMessage } from "./state.js";
+} from "@/runtime/codex-coordinator/lib/contract";
+import { COORDINATOR_MODEL } from "@/runtime/codex-coordinator/lib/model";
+import { hashCoordinatorSettings } from "@/runtime/codex-coordinator/lib/review";
+import { errorMessage } from "@/runtime/codex-coordinator/lib/state";
 
 const COORDINATOR_OPERATION_KIND = "coordinator_start" as const;
 const COORDINATOR_RPC = "thread/start" as const;
@@ -30,6 +30,9 @@ type CandidateDecision =
 			readonly operationId: string | null;
 	  };
 
+/**
+ *
+ */
 function assertCurrentEpoch(
 	snapshot: CoordinatorEpochSnapshot,
 	options: CodexCoordinatorOptions,
@@ -47,6 +50,9 @@ function assertCurrentEpoch(
 	}
 }
 
+/**
+ *
+ */
 async function decideCandidate(
 	candidate: CoordinatorPersistedState | null,
 	configured: CoordinatorConfiguredSettings,
@@ -224,6 +230,9 @@ async function decideCandidate(
 	}
 }
 
+/**
+ *
+ */
 function coordinatorRecords(
 	snapshot: CoordinatorEpochSnapshot,
 	childId: ChildId,
@@ -238,6 +247,9 @@ function coordinatorRecords(
 	);
 }
 
+/**
+ *
+ */
 function persistenceMismatch(
 	persistence: CoordinatorPersistedState,
 	record: CoordinatorEpochRecord,
@@ -297,6 +309,9 @@ function persistenceMismatch(
 	return null;
 }
 
+/**
+ *
+ */
 function inspectDecision(
 	candidate: CoordinatorPersistedState | null,
 	reason: string,

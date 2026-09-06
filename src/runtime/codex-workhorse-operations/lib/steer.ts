@@ -1,10 +1,10 @@
-import { createAdditionalContext, createTextUserInput } from "../../codex-instructions/index.js";
-import { CodexSessionMutationError } from "../../codex-session/index.js";
+import { createAdditionalContext, createTextUserInput } from "@/runtime/codex-instructions";
+import { CodexSessionMutationError } from "@/runtime/codex-session";
 import {
 	CodexWorkhorseOperationsError,
 	type SteerWorkhorseRequest,
 	type SteerWorkhorseResult,
-} from "./contract.js";
+} from "@/runtime/codex-workhorse-operations/lib/contract";
 import {
 	activeTurnFromClassification,
 	messageOf,
@@ -13,8 +13,11 @@ import {
 	threadIdWire,
 	validateBoundedInput,
 	type WorkhorseRuntime,
-} from "./internal.js";
+} from "@/runtime/codex-workhorse-operations/lib/internal";
 
+/**
+ *
+ */
 function assertExpectedTurn(
 	request: SteerWorkhorseRequest,
 	classification: Awaited<ReturnType<WorkhorseRuntime["classify"]>>,
@@ -27,6 +30,9 @@ function assertExpectedTurn(
 	}
 }
 
+/**
+ *
+ */
 async function revalidateSteer(
 	runtime: WorkhorseRuntime,
 	request: SteerWorkhorseRequest,
@@ -54,6 +60,9 @@ async function revalidateSteer(
 	}
 }
 
+/**
+ *
+ */
 export function createSteer(
 	runtime: WorkhorseRuntime,
 ): (request: SteerWorkhorseRequest) => Promise<SteerWorkhorseResult> {

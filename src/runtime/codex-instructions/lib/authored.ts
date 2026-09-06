@@ -24,10 +24,16 @@ type AuthoredInstructionName =
 	| "separator"
 	| "composedCoordinator";
 
+/**
+ *
+ */
 function sha256(bytes: Uint8Array): string {
 	return createHash("sha256").update(bytes).digest("hex");
 }
 
+/**
+ *
+ */
 function decodeCanonicalBytes(bytes: Buffer, label: string): string {
 	if (bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
 		throw new TypeError(`${label} must be UTF-8 without a BOM.`);
@@ -51,11 +57,17 @@ function decodeCanonicalBytes(bytes: Buffer, label: string): string {
 	return text;
 }
 
+/**
+ *
+ */
 function readCanonicalDocument(fileName: string, label: string): { bytes: Buffer; text: string } {
 	const bytes = readFileSync(new URL(`../${fileName}`, import.meta.url));
 	return { bytes, text: decodeCanonicalBytes(bytes, label) };
 }
 
+/**
+ *
+ */
 function assertDigest(label: string, bytes: Uint8Array, expected: string): string {
 	const actual = sha256(bytes);
 	if (actual !== expected) {
@@ -66,6 +78,9 @@ function assertDigest(label: string, bytes: Uint8Array, expected: string): strin
 	return actual;
 }
 
+/**
+ *
+ */
 function assertComposition(workhorse: string, extension: string): string {
 	if (!workhorse.endsWith("\n") || workhorse.endsWith("\n\n")) {
 		throw new TypeError("Workhorse instructions must end in exactly one LF before the separator.");
@@ -82,6 +97,9 @@ function assertComposition(workhorse: string, extension: string): string {
 	return composed;
 }
 
+/**
+ *
+ */
 function expectedDigestFor(name: AuthoredInstructionName): {
 	readonly label: string;
 	readonly expected: string;
@@ -131,6 +149,9 @@ function assertCanonicalInstructionBytes(
 	assertDigest(expected.label, bytes, expected.expected);
 }
 
+/**
+ *
+ */
 function loadAuthoredInstructions(): {
 	readonly workhorse: { readonly bytes: Buffer; readonly text: string };
 	readonly coordinatorExtension: { readonly bytes: Buffer; readonly text: string };
@@ -169,6 +190,9 @@ const AUTHORED_INSTRUCTION_DIGESTS = Object.freeze({
 	composedCoordinator: COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256,
 });
 
+/**
+ *
+ */
 function composeCoordinatorInstructions(): string {
 	return COORDINATOR_DEVELOPER_INSTRUCTIONS;
 }

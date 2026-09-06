@@ -1,5 +1,8 @@
-import type { CodexRealtimeBinding } from "./contract.js";
+import type { CodexRealtimeBinding } from "@/runtime/codex-realtime/lib/contract";
 
+/**
+ *
+ */
 function sameRealtimeBinding(
 	left: Readonly<CodexRealtimeBinding>,
 	right: Readonly<CodexRealtimeBinding>,
@@ -12,6 +15,9 @@ function sameRealtimeBinding(
 	);
 }
 
+/**
+ *
+ */
 function realtimeErrorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : "The Codex realtime request failed.";
 }

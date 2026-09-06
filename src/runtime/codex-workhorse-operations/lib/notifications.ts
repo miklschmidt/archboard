@@ -1,4 +1,4 @@
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import {
 	ATTENTION_FLAGS,
 	threadIdWire,
@@ -8,7 +8,7 @@ import {
 	sameBinding,
 	type RawNotification,
 	type WorkhorseRuntime,
-} from "./internal.js";
+} from "@/runtime/codex-workhorse-operations/lib/internal";
 
 type ProgressNotification = Extract<
 	RawNotification,
@@ -22,6 +22,9 @@ type ProgressNotification = Extract<
 	}
 >;
 
+/**
+ *
+ */
 function progressDetail(notification: ProgressNotification): string {
 	if ("delta" in notification.params && typeof notification.params.delta === "string") {
 		return notification.params.delta;
@@ -32,6 +35,9 @@ function progressDetail(notification: ProgressNotification): string {
 	return "workhorse progress";
 }
 
+/**
+ *
+ */
 function notificationThreadId(notification: RawNotification): string | null {
 	if (!("threadId" in notification.params) || typeof notification.params.threadId !== "string") {
 		return null;
@@ -39,6 +45,9 @@ function notificationThreadId(notification: RawNotification): string | null {
 	return notification.params.threadId;
 }
 
+/**
+ *
+ */
 export function createNotificationHandler(
 	runtime: WorkhorseRuntime,
 ): (event: TransportServerNotification) => void {

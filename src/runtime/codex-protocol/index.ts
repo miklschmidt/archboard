@@ -2,7 +2,7 @@ export {
 	CODEX_PROTOCOL_BINARY_VERSION,
 	CODEX_PROTOCOL_VERSION,
 	isSupportedCodexUserAgent,
-} from "./lib/version.js";
+} from "@/runtime/codex-protocol/lib/version";
 
 export {
 	BEDROCK_SETUP_POLICIES,
@@ -18,7 +18,7 @@ export {
 	SupportedLoginAccountParamsSchema,
 	UNSUPPORTED_ATTESTATION_ERROR,
 	UNSUPPORTED_TOKEN_REFRESH_ERROR,
-} from "./lib/authored.js";
+} from "@/runtime/codex-protocol/lib/authored";
 export type {
 	BedrockSetupParams,
 	InitializeCapabilities,
@@ -26,7 +26,7 @@ export type {
 	LoginPolicy,
 	LoginVariant,
 	SupportedLoginAccountParams,
-} from "./lib/authored.js";
+} from "@/runtime/codex-protocol/lib/authored";
 
 export {
 	CLIENT_NOTIFICATION_METHODS,
@@ -36,7 +36,7 @@ export {
 	RESPONSE_METHODS,
 	SERVER_NOTIFICATION_METHODS,
 	SERVER_REQUEST_METHODS,
-} from "./lib/methods.js";
+} from "@/runtime/codex-protocol/lib/methods";
 export type {
 	ClientNotificationMethod,
 	ClientRequestMethod,
@@ -44,7 +44,7 @@ export type {
 	ResponseMethod,
 	ServerNotificationMethod,
 	ServerRequestMethod,
-} from "./lib/methods.js";
+} from "@/runtime/codex-protocol/lib/methods";
 
 export {
 	decodeClientRequestParams,
@@ -61,7 +61,7 @@ export {
 	isSupportedServerRequestMethod,
 	PROTOCOL_RECOVERY_ACTION,
 	ProtocolDecodeError,
-} from "./lib/decoder.js";
+} from "@/runtime/codex-protocol/lib/decoder";
 export type {
 	DecodedClientNotification,
 	DecodedJsonRpcError,
@@ -72,7 +72,7 @@ export type {
 	ResponsePayloads,
 	ServerNotificationPayloads,
 	ServerRequestPayloads,
-} from "./lib/decoder.js";
+} from "@/runtime/codex-protocol/lib/decoder";
 
 export {
 	CLIENT_REQUEST_PARAM_SCHEMAS,
@@ -82,7 +82,7 @@ export {
 	ThreadQueueReorderParamsSchema,
 	ThreadQueueStartParamsSchema,
 	ThreadQueueUpdateParamsSchema,
-} from "./lib/client-request-schemas.js";
+} from "@/runtime/codex-protocol/lib/client-request-schemas";
 export type {
 	ClientRequestInput,
 	ClientRequestInputPayloads,
@@ -97,7 +97,7 @@ export type {
 	ThreadQueueReorderParams,
 	ThreadQueueStartParams,
 	ThreadQueueUpdateParams,
-} from "./lib/client-request-schemas.js";
+} from "@/runtime/codex-protocol/lib/client-request-schemas";
 
 export {
 	AccountSchema,
@@ -143,7 +143,7 @@ export {
 	TurnPlanStepStatusSchema,
 	TurnStatusSchema,
 	UserInputSchema,
-} from "./lib/core-schemas.js";
+} from "@/runtime/codex-protocol/lib/core-schemas";
 
 export {
 	AutoCompactTokenLimitScopeSchema,
@@ -172,11 +172,17 @@ export {
 	VerbositySchema,
 	WebSearchModeSchema,
 	WindowsSandboxSetupModeSchema,
-} from "./lib/config-schemas.js";
+} from "@/runtime/codex-protocol/lib/config-schemas";
 
-export { MisalignmentErrorDetailsSchema, MisalignmentSteerSchema } from "./lib/error-schemas.js";
+export {
+	MisalignmentErrorDetailsSchema,
+	MisalignmentSteerSchema,
+} from "@/runtime/codex-protocol/lib/error-schemas";
 
-export { ResponseItemSchema, ResponseUsageMetadataSchema } from "./lib/response-item-schemas.js";
+export {
+	ResponseItemSchema,
+	ResponseUsageMetadataSchema,
+} from "@/runtime/codex-protocol/lib/response-item-schemas";
 
 export {
 	CommandActionSchema,
@@ -188,7 +194,7 @@ export {
 	RealtimeOutputAudioDeltaSchema,
 	ThreadItemEntrySchema,
 	ThreadItemSchema,
-} from "./lib/item-schemas.js";
+} from "@/runtime/codex-protocol/lib/item-schemas";
 
 export {
 	LoadedThreadPageSchema,
@@ -203,7 +209,7 @@ export {
 	TurnItemsViewSchema,
 	TurnSchema,
 	TurnStartSchema,
-} from "./lib/thread-schemas.js";
+} from "@/runtime/codex-protocol/lib/thread-schemas";
 
 export {
 	AccountReadResponseSchema,
@@ -224,10 +230,10 @@ export {
 	ThreadStartResponseSchema,
 	ThreadTimelineListResponseSchema,
 	TurnSteerResponseSchema,
-} from "./lib/response-schemas.js";
-export type { ResponseSchemas } from "./lib/response-schemas.js";
+} from "@/runtime/codex-protocol/lib/response-schemas";
+export type { ResponseSchemas } from "@/runtime/codex-protocol/lib/response-schemas";
 
-export { CodexServerResponseSchema } from "./lib/server-response-schemas.js";
+export { CodexServerResponseSchema } from "@/runtime/codex-protocol/lib/server-response-schemas";
 
 export {
 	AccountReadParamsSchema,
@@ -246,8 +252,11 @@ export {
 	PermissionsRequestApprovalParamsSchema,
 	SERVER_REQUEST_SCHEMAS,
 	ToolRequestUserInputParamsSchema,
-} from "./lib/request-schemas.js";
-export type { ClientNotificationSchemas, ServerRequestSchemas } from "./lib/request-schemas.js";
+} from "@/runtime/codex-protocol/lib/request-schemas";
+export type {
+	ClientNotificationSchemas,
+	ServerRequestSchemas,
+} from "@/runtime/codex-protocol/lib/request-schemas";
 
 export {
 	AdditionalFileSystemPermissionsSchema,
@@ -263,10 +272,10 @@ export {
 	NetworkPolicyAmendmentSchema,
 	ParsedCommandSchema,
 	RequestPermissionProfileSchema,
-} from "./lib/approval-schemas.js";
+} from "@/runtime/codex-protocol/lib/approval-schemas";
 
 export {
 	SERVER_NOTIFICATION_SCHEMAS,
 	ServerNotificationEnvelopeSchema,
-} from "./lib/notification-schemas.js";
-export type { ServerNotificationSchemas } from "./lib/notification-schemas.js";
+} from "@/runtime/codex-protocol/lib/notification-schemas";
+export type { ServerNotificationSchemas } from "@/runtime/codex-protocol/lib/notification-schemas";

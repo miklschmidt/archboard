@@ -1,10 +1,10 @@
-import { createAdditionalContext, createTextUserInput } from "../../codex-instructions/index.js";
-import type { SessionTurn } from "../../codex-session/index.js";
+import { createAdditionalContext, createTextUserInput } from "@/runtime/codex-instructions";
+import type { SessionTurn } from "@/runtime/codex-session";
 import {
 	CodexWorkhorseOperationsError,
 	type DelegateToWorkhorseRequest,
 	type DelegateToWorkhorseResult,
-} from "./contract.js";
+} from "@/runtime/codex-workhorse-operations/lib/contract";
 import {
 	assertCreatedWorkhorse,
 	messageOf,
@@ -16,14 +16,20 @@ import {
 	validateBoundedInput,
 	type OperationState,
 	type WorkhorseRuntime,
-} from "./internal.js";
+} from "@/runtime/codex-workhorse-operations/lib/internal";
 
+/**
+ *
+ */
 function mutationErrorCode(
 	outcome: Exclude<OperationState["outcome"], "pending">,
 ): "transport_failure" | "outcome_unknown" {
 	return outcome === "outcome_unknown" ? "outcome_unknown" : "transport_failure";
 }
 
+/**
+ *
+ */
 async function invokeTurnStart(
 	runtime: WorkhorseRuntime,
 	state: OperationState,
@@ -210,6 +216,9 @@ async function invokeTurnStart(
 	});
 }
 
+/**
+ *
+ */
 export function createDelegate(
 	runtime: WorkhorseRuntime,
 ): (request: DelegateToWorkhorseRequest) => Promise<DelegateToWorkhorseResult> {
@@ -267,6 +276,9 @@ export function createDelegate(
 					result = await runtime.options.queue.add({
 						operationId,
 						prompt,
+						/**
+						 *
+						 */
 						beforeEffect: async () => {
 							const current = await runtime.classify(
 								binding,

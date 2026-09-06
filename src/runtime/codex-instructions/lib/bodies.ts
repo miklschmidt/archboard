@@ -1,16 +1,19 @@
 import path from "node:path";
 import { z } from "zod";
 
-import type { UserInputSchema } from "../../codex-protocol/index.js";
+import type { UserInputSchema } from "@/runtime/codex-protocol";
 import {
 	ArchboardContextSchema,
 	canonicalContext,
 	decodeCanonicalContext,
 	encodeCanonicalContext,
 	type ArchboardContext,
-} from "./context.js";
-import { WORKHORSE_DEVELOPER_INSTRUCTIONS } from "./authored.js";
+} from "@/runtime/codex-instructions/lib/context";
+import { WORKHORSE_DEVELOPER_INSTRUCTIONS } from "@/runtime/codex-instructions/lib/authored";
 
+/**
+ *
+ */
 const utf8Bytes = (value: string): number => Buffer.byteLength(value, "utf8");
 const boundedPrompt = z
 	.string()
@@ -42,6 +45,9 @@ const AdditionalContextEntrySchema = z.strictObject({
 	value: CanonicalContextValueSchema,
 });
 
+/**
+ *
+ */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) {
 		return value;
@@ -53,6 +59,9 @@ function freezeDeep<T>(value: T): T {
 	return value;
 }
 
+/**
+ *
+ */
 function frozenSchema<T extends z.ZodTypeAny>(schema: T) {
 	return schema.transform((value) => freezeDeep(value));
 }
@@ -148,10 +157,16 @@ const ThreadForkParamsRawSchema = z
 const ThreadForkParamsSchema = frozenSchema(ThreadForkParamsRawSchema);
 type ThreadForkParams = z.infer<typeof ThreadForkParamsSchema>;
 
+/**
+ *
+ */
 function isCanonicalCheckoutRoot(value: string): boolean {
 	return path.isAbsolute(value) && path.resolve(value) === value;
 }
 
+/**
+ *
+ */
 function parseOutput<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
 	const parsed = schema.safeParse(value);
 	if (!parsed.success) {
@@ -160,14 +175,20 @@ function parseOutput<T>(schema: z.ZodType<T>, value: unknown, label: string): T 
 	return freezeDeep(parsed.data);
 }
 
+/**
+ *
+ */
 function createTextUserInput(text: string): TextUserInput {
 	return parseOutput(
 		TextUserInputSchema,
 		{ type: "text", text, text_elements: [] },
 		"text user input",
-	) as TextUserInput;
+	);
 }
 
+/**
+ *
+ */
 function createAdditionalContext(context: ArchboardContext): AdditionalContext {
 	const value = encodeCanonicalContext(context);
 	return parseOutput(
@@ -184,6 +205,9 @@ interface TurnStartBuilderInput {
 	readonly context: ArchboardContext;
 }
 
+/**
+ *
+ */
 function createTurnStartParams(input: TurnStartBuilderInput): TurnStartParams {
 	const validated = TurnStartBuilderInputSchema.parse(input);
 	return parseOutput(
@@ -203,6 +227,9 @@ interface TurnSteerBuilderInput extends TurnStartBuilderInput {
 	readonly expectedTurnId: string;
 }
 
+/**
+ *
+ */
 function createTurnSteerParams(input: TurnSteerBuilderInput): TurnSteerParams {
 	const validated = TurnSteerBuilderInputSchema.parse(input);
 	return parseOutput(
@@ -228,6 +255,9 @@ const ThreadInjectItemsBuilderInputSchema = z.strictObject({
 	context: ArchboardContextSchema,
 });
 
+/**
+ *
+ */
 function createThreadInjectItemsParams(
 	input: ThreadInjectItemsBuilderInput,
 ): ThreadInjectItemsParams {
@@ -255,6 +285,9 @@ interface ThreadForkBuilderInput {
 	readonly beforeTurnId?: string;
 }
 
+/**
+ *
+ */
 function createThreadForkParams(input: ThreadForkBuilderInput): ThreadForkParams {
 	const validated = ThreadForkBuilderInputSchema.parse(input);
 	return parseOutput(
@@ -273,6 +306,9 @@ function createThreadForkParams(input: ThreadForkBuilderInput): ThreadForkParams
 	);
 }
 
+/**
+ *
+ */
 function createSelfThreadForkParams(
 	input: Omit<ThreadForkBuilderInput, "beforeTurnId"> & {
 		readonly executingTurnId: string;
@@ -292,6 +328,9 @@ function createSelfThreadForkParams(
 	return createThreadForkParams({ ...selfFork, beforeTurnId: executingTurnId });
 }
 
+/**
+ *
+ */
 function parseCanonicalAdditionalContext(value: unknown): ArchboardContext {
 	const parsed = AdditionalContextSchema.safeParse(value);
 	if (!parsed.success) {
