@@ -16,6 +16,8 @@ interface OpenerSettingsHostProps {
 	onSuccess: (message: string) => void;
 	onFailure: (notice: CodeTargetNotice) => void;
 	onClose: () => void;
+	/** Where focus returns once the dialog closes. */
+	finalFocus: () => HTMLElement | null;
 }
 
 /**
@@ -64,6 +66,7 @@ function OpenerSettingsHost(props: OpenerSettingsHostProps): React.JSX.Element {
 			onSave={handleSave}
 			onReset={handleReset}
 			onOpenChange={handleOpenChange}
+			finalFocus={props.finalFocus}
 		/>
 	);
 }

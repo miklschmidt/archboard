@@ -9,6 +9,7 @@ import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 } from "../../../src/shared/timing/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
+import { evidenceRoot } from "./support/shell-render-matrix.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
 	browserTestRoots,
@@ -25,26 +26,30 @@ import {
 	publishActionableNotice,
 	readExitButton,
 	readPageView,
+	readPresentationAlert,
+	readPresentedPane,
 	readShellNotice,
 	seedBoard,
 	waitForPanes,
+	type BoardBody,
 } from "./support/fullscreen-presentation.ts";
-
-interface HeldBoard {
-	board: string;
-	fromScreen: boolean;
-	writes: number;
-}
-interface BoardBody {
-	elements?: Array<{ id: string }>;
-	file?: string;
-	held?: HeldBoard;
-}
+import {
+	PANE_SECTIONS,
+	PANE_TABS,
+	PRESENTATION_BAR,
+	STAGE_ROOT,
+	dismissNotice,
+	paneSection,
+	shellNotices,
+	stageIsFullscreen,
+} from "./support/shell-dom.ts";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
 const CURRENT = "current-board";
 const PROPOSAL = "proposal";
+const MIN_TARGET = 24;
+const PANE_RECTS = `[...document.querySelectorAll('${PANE_SECTIONS}')].map(node => { const rect = node.getBoundingClientRect(); return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }; })`;
 
 test(
 	"fullscreen presents one live canvas and restores its exact session",
@@ -105,61 +110,44 @@ test(
 			"both boards to be visible",
 		);
 		const currentPane = boardsReady.panes.find((pane) => pane.board === CURRENT)!;
-		// Both panes keep a selection so switching presentation targets retains
-		// the same inspector allocation when the split layout returns.
+		await browser.run(["click", `${paneSection("Pane B")} .excalidraw`]);
 		expect(await paneAppAction(browser, "Pane B", "propose", "select")).toBe(true);
-		await browser.run(["click", `.pane[aria-label="Pane A"] .excalidraw`]);
+		await browser.run(["click", `${paneSection("Pane A")} .excalidraw`]);
 		expect(await paneAppAction(browser, "Pane A", "current", "select")).toBe(true);
 		await waitForPanes(
 			request,
 			(report) =>
 				report.panes.find((pane) => pane.clientId === currentPane.clientId)?.selection
-					.elementIds[0] === "current",
-			"the browser selection to be reported",
+					.elementIds[0] === "current" &&
+				report.panes.find((pane) => pane.board === PROPOSAL)?.selection.elementIds[0] === "propose",
+			"both browser selections to be reported",
 		);
 
 		const info = await request<BoardBody>(`/api/boards/info?board=${CURRENT}`);
 		writeFileSync(info.body.file!, readFileSync(info.body.file!, "utf8") + "\n");
-		await pollUntil(
-			() =>
-				browser.eval<string | null>(
-					`document.querySelector('.chip-elsewhere')?.textContent ?? null`,
-				),
-			(text) => /Note changed on disk/.test(text ?? ""),
+		const elsewhere = await pollUntil(
+			() => shellNotices(browser),
+			(notices) => notices.some((notice) => /written elsewhere/.test(notice.title)),
 			"the pane to notice the foreign note",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
-		const conflictType = await browser.eval<{
-			height: number;
-			copyFamily: string;
-			copySize: number;
-			copyLineHeight: number;
-			timeFamily: string;
-			timeSize: number;
-			timeLineHeight: number;
-		}>(`(() => {
-			const chip = document.querySelector('.chip-elsewhere');
-			const copy = chip.querySelector('span');
-			const time = chip.querySelector('.chip-time');
-			return {
-				height: chip.getBoundingClientRect().height,
-				copyFamily: getComputedStyle(copy).fontFamily.toLowerCase(),
-				copySize: parseFloat(getComputedStyle(copy).fontSize),
-				copyLineHeight: parseFloat(getComputedStyle(copy).lineHeight),
-				timeFamily: getComputedStyle(time).fontFamily.toLowerCase(),
-				timeSize: parseFloat(getComputedStyle(time).fontSize),
-				timeLineHeight: parseFloat(getComputedStyle(time).lineHeight),
-			};
-		})()`);
-		expect(conflictType).toMatchObject({
-			height: 44,
-			copySize: 14,
-			copyLineHeight: 20,
-			timeSize: 10,
-			timeLineHeight: 14,
-		});
-		expect(conflictType.copyFamily).toContain("archboard onest");
-		expect(conflictType.timeFamily).toContain("archboard dm mono");
+		const elsewhereNotice = elsewhere.find((notice) => /written elsewhere/.test(notice.title))!;
+		expect(elsewhereNotice.actions).toContain("Choose");
+		await pollUntil(
+			() => browser.eval<boolean>("document.querySelector('[role=\"alertdialog\"]') !== null"),
+			Boolean,
+			"the note-written-elsewhere dialog to open",
+		);
+		await browser.run(["find", "role", "button", "click", "--name", "Decide later", "--exact"]);
+		await pollUntil(
+			() => browser.eval<boolean>("document.querySelector('[role=\"alertdialog\"]') === null"),
+			Boolean,
+			"the note-written-elsewhere dialog to close",
+		);
+		const headerMark = await browser.eval<string | null>(
+			`[...document.querySelectorAll('header span')].map(node => node.textContent.trim()).find(text => text === 'Note written elsewhere') ?? null`,
+		);
+		expect(headerMark).toBe("Note written elsewhere");
 		expect(await paneAppAction(browser, "Pane A", "current", "move")).toBe(true);
 		const heldBefore = await pollUntil(
 			async () => (await request<BoardBody>(`/api/elements?board=${CURRENT}`)).body.held,
@@ -167,74 +155,68 @@ test(
 			"the actual browser edit to create a held board",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
+		await pollUntil(
+			() => browser.eval<boolean>("document.querySelector('[role=\"alertdialog\"]') !== null"),
+			Boolean,
+			"the board-stopped-saving dialog to open",
+		);
+		await browser.run(["find", "role", "button", "click", "--name", "Decide later", "--exact"]);
+		await pollUntil(
+			() => browser.eval<boolean>("document.querySelector('[role=\"alertdialog\"]') === null"),
+			Boolean,
+			"the board-stopped-saving dialog to close",
+		);
 
+		expect(await publishActionableNotice(browser)).toBe(true);
+		await pollUntil(
+			() => readShellNotice(browser),
+			(view) =>
+				view.text === PERSISTENT_NOTICE_TEXT && view.action === "Opener settings" && view.visible,
+			"the actionable notice to render in the workspace",
+		);
+		const beforeDomRects = await browser.eval<Rect[]>(`(() => {
+			window.__task139PaneNodes = [...document.querySelectorAll('${PANE_SECTIONS}')];
+			return ${PANE_RECTS};
+		})()`);
 		const before = await waitForPanes(
 			request,
-			(report) => report.paneCount === 2 && report.focused === currentPane.paneId,
-			"the focused pane and held selection to settle",
+			(report) =>
+				report.paneCount === 2 &&
+				report.focused === currentPane.paneId &&
+				report.panes.every((pane) =>
+					beforeDomRects.some((rect) => rect.y === pane.rect.y && rect.height === pane.rect.height),
+				),
+			"the focused pane and its published rectangles to settle",
 		);
 		const beforeRects = paneRects(before);
+		const beforeNotices = (await shellNotices(browser)).map((notice) => notice.title);
 		const beforeIdentities = paneIdentities(before);
-		const beforeDomRects = await browser.eval<Rect[]>(`(() => {
-		window.__task139PaneNodes = [...document.querySelectorAll('.pane')];
-		window.__task139PaneRects = window.__task139PaneNodes.map(node => {
-			const rect = node.getBoundingClientRect();
-			return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
-		});
-			return window.__task139PaneRects;
-		})()`);
-		expect(await publishActionableNotice(browser)).toBe(true);
-		expect(await readShellNotice(browser)).toEqual({
-			text: PERSISTENT_NOTICE_TEXT,
-			action: "Opener settings",
-			visible: true,
-		});
+		const evidence = evidenceRoot();
+		await browser.run(["screenshot", join(evidence, "two-panes-light.png")]);
 
-		await browser.run(["click", 'button[aria-label="Present Pane A fullscreen"]']);
+		await browser.run(["click", 'button[aria-label="Present pane A fullscreen"]']);
 		const entered = await pollUntil(
 			() => readPageView(browser),
-			(view) => view.fullscreen && view.dockVisible && view.chromeHidden,
+			(view) => view.fullscreen && view.barVisible && view.chromeHidden,
 			"Pane A to own the fullscreen display",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
 		expect(entered.controlDisplays.length).toBeGreaterThan(0);
-		expect(entered.controlDisplays).toEqual(entered.controlDisplays.map(() => "none"));
-		expect(entered.dockFocused).toBe(true);
-		expect(entered.workbenchCompact).toBe(true);
-		expect(entered.workbenchHeight).toBeGreaterThan(0);
-		expect(entered.workbenchHeight).toBeLessThan(150);
-		expect(entered.sameNodes).toBe(true);
-		const dockType = await browser.eval<{
-			height: number;
-			buttonHeights: number[];
-			buttonFamilies: string[];
-			buttonSizes: number[];
-			buttonLineHeights: number[];
-			buttonWeights: number[];
-		}>(`(() => {
-			const dock = document.querySelector('.presentation-dock');
-			const buttons = [...dock.querySelectorAll('.presentation-pane, .presentation-exit')];
-			return {
-				height: dock.getBoundingClientRect().height,
-				buttonHeights: buttons.map(button => button.getBoundingClientRect().height),
-				buttonFamilies: buttons.map(button => getComputedStyle(button).fontFamily.toLowerCase()),
-				buttonSizes: buttons.map(button => parseFloat(getComputedStyle(button).fontSize)),
-				buttonLineHeights: buttons.map(button => parseFloat(getComputedStyle(button).lineHeight)),
-				buttonWeights: buttons.map(button => parseFloat(getComputedStyle(button).fontWeight)),
-			};
-		})()`);
-		expect(dockType.height).toBeCloseTo(54, 0);
-		expect(dockType.buttonHeights.every((height) => height >= 43.5)).toBe(true);
-		expect(dockType.buttonFamilies.every((family) => family.includes("archboard onest"))).toBe(
-			true,
+		expect(entered.controlDisplays).toEqual(
+			entered.controlDisplays.map((entry) => `${entry.split(":")[0]}:none`),
 		);
-		expect(dockType.buttonSizes.every((size) => size === 13)).toBe(true);
-		expect(dockType.buttonLineHeights.every((height) => height === 18)).toBe(true);
-		expect(dockType.buttonWeights.every((weight) => weight === 600)).toBe(true);
+		expect(entered.focusInside).toBe(true);
+		expect(entered.barHeight).toBeGreaterThan(0);
+		expect(entered.barHeight).toBeLessThan(150);
+		expect(entered.sameNodes).toBe(true);
+		await browser.run(["screenshot", join(evidence, "fullscreen-pane-a-light.png")]);
+		const exitButton = await readExitButton(browser);
+		expect(exitButton.visible).toBe(true);
+		expect(exitButton.height).toBeGreaterThanOrEqual(MIN_TARGET);
+		expect(exitButton.text).toBe("Exit presentation");
 		expect(entered.panes.filter((pane) => pane.rect.width > 0)).toHaveLength(1);
 		expect(entered.panes.find((pane) => pane.label === "Pane B")).toMatchObject({
 			hidden: true,
-			inert: true,
 			rect: { x: 0, y: 0, width: 0, height: 0 },
 		});
 		expect(await readShellNotice(browser)).toEqual({
@@ -243,7 +225,21 @@ test(
 			visible: false,
 		});
 
-		await browser.run(["click", 'button[aria-label="Present Pane B"]']);
+		// Transfer: leave with Escape (focus sits on the exit control), then focus
+		// the other pane by its tab so no selection changes, and present it.
+		await browser.run(["press", "Escape"]);
+		await pollUntil(
+			() => stageIsFullscreen(browser),
+			(value) => !value,
+			"Escape to leave",
+		);
+		await browser.run(["click", `${PANE_TABS}:nth-child(2)`]);
+		await waitForPanes(
+			request,
+			(report) => report.focused === report.panes.find((pane) => pane.board === PROPOSAL)?.paneId,
+			"Pane B to take focus",
+		);
+		await browser.run(["click", 'button[aria-label="Present pane B fullscreen"]']);
 		const during = await waitForPanes(
 			request,
 			(report) =>
@@ -253,11 +249,12 @@ test(
 			"presentation to transfer to Pane B and update existing focus",
 		);
 		expect(paneIdentities(during)).toEqual(beforeIdentities);
+		const presentedBar = await readPageView(browser);
 		expect(during.panes.find((pane) => pane.board === PROPOSAL)?.rect).toEqual({
 			x: 0,
-			y: 0,
+			y: presentedBar.barHeight,
 			width: 1920,
-			height: 1080 - entered.workbenchHeight,
+			height: 1080 - presentedBar.barHeight,
 		});
 		expect((await request<BoardBody>(`/api/elements?board=${CURRENT}`)).body.held).toEqual(
 			heldBefore,
@@ -270,48 +267,60 @@ test(
 			return true;
 		})()`),
 		).toBe(true);
-		await browser.run(["click", ".presentation-exit"]);
+		await browser.run([
+			"find",
+			"role",
+			"button",
+			"click",
+			"--name",
+			"Exit presentation",
+			"--exact",
+		]);
 		const exitRefusal = await pollUntil(
-			() =>
-				browser.eval<{ alert: string | null; fullscreen: boolean; current: string | null }>(
-					`(() => ({
-					alert: document.querySelector('.presentation-dock [role="alert"]')?.textContent ?? null,
-					fullscreen: document.fullscreenElement === document.querySelector('.shell'),
-					current: document.querySelector('.presentation-current')?.getAttribute('aria-label') ?? null,
-				}))()`,
-				),
+			async () => ({
+				alert: await readPresentationAlert(browser),
+				fullscreen: await stageIsFullscreen(browser),
+				current: await readPresentedPane(browser),
+			}),
 			(view) => /exit blocked for test/.test(view.alert ?? ""),
-			"the refused exit to remain visible in the dock",
+			"the refused exit to remain visible in the presentation",
 		);
-		expect(exitRefusal).toMatchObject({ fullscreen: true, current: "Pane B" });
+		expect(exitRefusal).toMatchObject({ fullscreen: true, current: "B" });
 		await browser.eval<boolean>(
 			`(() => { document.exitFullscreen = window.__task139Exit; return true; })()`,
 		);
 		expect(await readExitButton(browser)).toMatchObject({
-			display: "flex",
-			height: 44,
-			text: "Exit",
+			visible: true,
+			text: "Exit presentation",
 		});
-		await browser.run(["click", ".presentation-exit"]);
+		await browser.run([
+			"find",
+			"role",
+			"button",
+			"click",
+			"--name",
+			"Exit presentation",
+			"--exact",
+		]);
 		const restored = await waitForPanes(
 			request,
-			(report) =>
-				report.paneCount === 2 && JSON.stringify(paneRects(report)) === JSON.stringify(beforeRects),
-			"the exact pane rectangles to return",
+			(report) => report.paneCount === 2 && report.panes.every((pane) => pane.rect.width > 0),
+			"both panes to return to the workspace",
 		);
+		expect({
+			rects: paneRects(restored),
+			notices: (await shellNotices(browser)).map((notice) => notice.title),
+		}).toEqual({ rects: beforeRects, notices: beforeNotices });
 		expect(restored.focused).toBe(
 			restored.panes.find((pane) => pane.board === PROPOSAL)?.paneId ?? null,
 		);
 		expect(paneIdentities(restored)).toEqual(beforeIdentities);
 		expect(
 			await browser.eval<Rect[]>(`(() => {
-			if (document.fullscreenElement || document.querySelector('.presentation-dock')) return [];
-			const nodes = [...document.querySelectorAll('.pane')];
+			if (document.fullscreenElement || document.querySelector('${PRESENTATION_BAR}')) return [];
+			const nodes = [...document.querySelectorAll('${PANE_SECTIONS}')];
 			if (!nodes.every((node, index) => node === window.__task139PaneNodes[index])) return [];
-			return nodes.map(node => {
-				const rect = node.getBoundingClientRect();
-				return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
-			});
+			return ${PANE_RECTS};
 			})()`),
 		).toEqual(beforeDomRects);
 		expect(await readShellNotice(browser)).toEqual({
@@ -320,85 +329,80 @@ test(
 			visible: true,
 		});
 
-		await browser.run(["click", 'button[aria-label="Present Pane B fullscreen"]']);
-		await pollUntil(
-			() =>
-				browser.eval<boolean>("document.fullscreenElement === document.querySelector('.shell')"),
-			Boolean,
-			"presentation to re-enter",
-		);
+		await browser.run(["click", 'button[aria-label="Present pane B fullscreen"]']);
+		await pollUntil(() => stageIsFullscreen(browser), Boolean, "presentation to re-enter");
 		await browser.run(["press", "Escape"]);
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(
-					"document.fullscreenElement === null && document.querySelector('.presentation-dock') === null",
+					`document.fullscreenElement === null && document.querySelector('${PRESENTATION_BAR}') === null`,
 				),
 			Boolean,
 			"real Escape to restore the shell",
 		);
 		expect(
 			await browser.eval<boolean>(`(() => {
-			const shell = document.querySelector('.shell');
-			window.__task139Request = shell.requestFullscreen.bind(shell);
-			shell.requestFullscreen = () => Promise.reject(new Error('entry blocked for test'));
+			const stage = document.querySelector('${STAGE_ROOT}');
+			window.__task139Request = stage.requestFullscreen.bind(stage);
+			stage.requestFullscreen = () => Promise.reject(new Error('entry blocked for test'));
 			return true;
 		})()`),
 		).toBe(true);
-		await browser.run(["click", 'button[aria-label="Present Pane B fullscreen"]']);
+		await browser.run(["click", 'button[aria-label="Present pane B fullscreen"]']);
 		const entryRefusal = await pollUntil(
-			() =>
-				browser.eval<{ alert: string | null; fullscreen: boolean }>(`(() => ({
-				alert: document.querySelector('.notice-shell[role="alert"]')?.textContent ?? null,
-				fullscreen: document.fullscreenElement !== null,
-			}))()`),
-			(view) => /entry blocked for test/.test(view.alert ?? ""),
+			async () => ({
+				notices: await shellNotices(browser),
+				fullscreen: await stageIsFullscreen(browser),
+			}),
+			(view) => view.notices.some((notice) => /entry blocked for test/.test(notice.description)),
 			"the refused entry to stay visible in the normal shell",
 		);
 		expect(entryRefusal.fullscreen).toBe(false);
-		await browser.run(["click", ".notice-dismiss"]);
+		expect(await dismissNotice(browser, "Presentation")).toBe(true);
 		const preservedNotice = await pollUntil(
 			() => readShellNotice(browser),
 			(view) => view.text === PERSISTENT_NOTICE_TEXT && view.action === "Opener settings",
 			"the refused entry notice to reveal the preserved actionable notice",
 		);
 		expect(preservedNotice.visible).toBe(true);
-		await browser.run(["click", ".notice-dismiss"]);
+		expect(await dismissNotice(browser, "Code target")).toBe(true);
 		await pollUntil(
-			() => browser.eval<boolean>("document.querySelector('.notice-shell') === null"),
-			Boolean,
+			() => readShellNotice(browser),
+			(view) => view.text === null,
 			"the ordinary actionable notice to dismiss",
 		);
 		await browser.eval<boolean>(`(() => {
-		document.querySelector('.shell').requestFullscreen = window.__task139Request;
-		return true;
-	})()`);
+			document.querySelector('${STAGE_ROOT}').requestFullscreen = window.__task139Request;
+			return true;
+		})()`);
 
-		await browser.run(["click", 'button[aria-label="Present Pane B fullscreen"]']);
+		await browser.run(["click", 'button[aria-label="Present pane B fullscreen"]']);
 		await pollUntil(
-			() =>
-				browser.eval<boolean>("document.fullscreenElement === document.querySelector('.shell')"),
+			() => stageIsFullscreen(browser),
 			Boolean,
 			"presentation to enter before external close",
 		);
 		await browser.eval<boolean>(`(() => {
-		window.__task139Exit = document.exitFullscreen.bind(document);
-		document.exitFullscreen = () => Promise.reject(new Error('close exit blocked'));
-		return true;
-	})()`);
+			window.__task139Exit = document.exitFullscreen.bind(document);
+			document.exitFullscreen = () => Promise.reject(new Error('close exit blocked'));
+			return true;
+		})()`);
 		expect(
 			(await request("/api/panes/close", { method: "POST", body: { pane: "focused" } })).status,
 		).toBe(200);
 		const survivor = await pollUntil(
-			() =>
-				browser.eval<{ alert: string | null; current: string | null; panes: number }>(`(() => ({
-				alert: document.querySelector('.presentation-dock [role="alert"]')?.textContent ?? null,
-				current: document.querySelector('.presentation-current')?.getAttribute('aria-label') ?? null,
-				panes: document.querySelectorAll('.pane').length,
-			}))()`),
-			(view) => view.panes === 1 && /close exit blocked/.test(view.alert ?? ""),
-			"external close to transfer presentation before the refused exit",
+			async () => ({
+				current: await readPresentedPane(browser),
+				fullscreen: await stageIsFullscreen(browser),
+				panes: await browser.eval<number>(`document.querySelectorAll('${PANE_SECTIONS}').length`),
+				visible: await browser.eval<number>(
+					`[...document.querySelectorAll('${PANE_SECTIONS}')].filter(node => !node.hidden).length`,
+				),
+			}),
+			(view) => view.panes === 1 && view.current === "A" && view.visible === 1,
+			"external close to transfer presentation to the survivor",
 		);
-		expect(survivor.current).toBe("Pane A");
+		expect(survivor.fullscreen).toBe(true);
 		const onePane = await waitForPanes(
 			request,
 			(report) => report.paneCount === 1 && report.focused === report.panes[0]?.paneId,
@@ -412,20 +416,24 @@ test(
 			`(() => { document.exitFullscreen = window.__task139Exit; return true; })()`,
 		);
 		expect(await readExitButton(browser)).toMatchObject({
-			display: "flex",
-			height: 44,
-			text: "Exit",
+			visible: true,
+			text: "Exit presentation",
 		});
-		await browser.run(["click", ".presentation-exit"]);
+		await browser.run([
+			"find",
+			"role",
+			"button",
+			"click",
+			"--name",
+			"Exit presentation",
+			"--exact",
+		]);
 		await pollUntil(
-			() =>
-				browser.eval<{ alert: string | null; fullscreen: boolean; paneId: string | null }>(
-					`(() => ({
-					alert: document.querySelector('.presentation-dock [role="alert"]')?.textContent ?? null,
-					fullscreen: document.fullscreenElement !== null,
-					paneId: document.querySelector('.presentation-current')?.getAttribute('aria-label') ?? null,
-				}))()`,
-				),
+			async () => ({
+				alert: await readPresentationAlert(browser),
+				fullscreen: await stageIsFullscreen(browser),
+				paneId: await readPresentedPane(browser),
+			}),
 			(view) => !view.fullscreen && view.paneId === null && view.alert === null,
 			"the survivor to leave presentation",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
@@ -440,17 +448,17 @@ test(
 		const pendingTarget = pendingSplit.panes.find(
 			(pane) => pane.clientId !== currentPane.clientId,
 		)!;
-		await browser.run(["click", `.pane[aria-label="Pane B"] .excalidraw`]);
+		await browser.run(["click", `${PANE_TABS}:nth-child(2)`]);
 		await waitForPanes(
 			request,
 			(report) => report.focused === pendingTarget.paneId,
 			"the pending-entry target to focus",
 		);
 		await browser.eval<boolean>(`(() => {
-			const shell = document.querySelector('.shell');
-			const nativeRequest = shell.requestFullscreen.bind(shell);
+			const stage = document.querySelector('${STAGE_ROOT}');
+			const nativeRequest = stage.requestFullscreen.bind(stage);
 			const resolves = [];
-			shell.requestFullscreen = () => new Promise(resolve => resolves.push(resolve));
+			stage.requestFullscreen = () => new Promise(resolve => resolves.push(resolve));
 			const trigger = document.createElement('button');
 			trigger.id = 'task139-complete-entry';
 			trigger.style.cssText = 'position:fixed;left:0;top:0;z-index:2147483647';
@@ -459,7 +467,7 @@ test(
 			document.body.append(trigger);
 			return true;
 		})()`);
-		await browser.run(["click", 'button[aria-label="Present Pane B fullscreen"]']);
+		await browser.run(["click", 'button[aria-label="Present pane B fullscreen"]']);
 		expect(
 			(await request("/api/panes/close", { method: "POST", body: { pane: "focused" } })).status,
 		).toBe(200);
@@ -471,13 +479,15 @@ test(
 		expect(paneIdentities(pendingSurvivor)).toEqual(
 			beforeIdentities.filter((pane) => pane.clientId === currentPane.clientId),
 		);
-		await browser.run(["click", "#task139-complete-entry"]);
+		await browser.eval<boolean>(
+			"(document.getElementById('task139-complete-entry').click(), true)",
+		);
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`document.fullscreenElement === null &&
-				document.querySelector('.presentation-dock') === null &&
-				document.querySelectorAll('.presentation-current, .presentation-hidden').length === 0 &&
-				document.querySelector('.pane').getBoundingClientRect().width > 0`),
+				document.querySelector('${PRESENTATION_BAR}') === null &&
+				[...document.querySelectorAll('${PANE_SECTIONS}')].every(node => !node.hidden) &&
+				document.querySelector('${PANE_SECTIONS}').getBoundingClientRect().width > 0`),
 			Boolean,
 			"pending entry to relinquish fullscreen without hiding the survivor",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },

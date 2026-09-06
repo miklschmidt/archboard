@@ -14,6 +14,8 @@ import {
 	registerCanvasBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import { fillArguments } from "./support/opener-settings-interaction.ts";
+import { dismissNotice, openSettingsItem, shellNotices } from "./support/shell-dom.ts";
 
 type Pane = { clientId: string; board: string; place: string };
 type Panes = { paneCount: number; panes: Pane[] };
@@ -154,22 +156,20 @@ async function changeOpenerCaptureThroughSettings(
 	marker: string,
 	exits: string,
 ): Promise<void> {
-	await browser.run(["click", 'button[aria-label="Opener settings"]']);
-	await pollUntil(
+	await openSettingsItem(browser, "Opener settings");
+	const draft = await pollUntil(
 		() =>
-			browser.eval<boolean>(
-				"Boolean(document.querySelector('.opener-argument input[aria-label=\"Argument 5\"]'))",
+			browser.eval<string | null>(
+				`[...document.querySelectorAll('[role="dialog"] textarea')].find(node => node.labels?.[0]?.textContent?.trim() === 'Arguments')?.value ?? null`,
 			),
-		Boolean,
+		(value) => value !== null && value.split("\n").length === 6,
 		"the rendered custom opener settings",
 	);
-	for (const [argument, value] of [
-		[3, capture],
-		[4, marker],
-		[5, exits],
-	] as const) {
-		await browser.run(["fill", `.opener-argument input[aria-label="Argument ${argument}"]`, value]);
-	}
+	const argv = draft!.split("\n");
+	argv[2] = capture;
+	argv[3] = marker;
+	argv[4] = exits;
+	await fillArguments(browser, argv);
 	await browser.run(["find", "role", "button", "click", "--name", "Save", "--exact"]);
 	await pollUntil(
 		() => browser.eval<boolean>("Boolean(document.querySelector('[role=\"dialog\"]'))"),
@@ -177,14 +177,11 @@ async function changeOpenerCaptureThroughSettings(
 		"the saved opener settings dialog to close",
 	);
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				"Boolean(document.querySelector('button[aria-label=\"Dismiss notice\"]'))",
-			),
-		Boolean,
+		() => shellNotices(browser),
+		(notices) => notices.some((notice) => notice.title === "Opener settings"),
 		"the opener settings save notice",
 	);
-	await browser.run(["click", 'button[aria-label="Dismiss notice"]']);
+	expect(await dismissNotice(browser, "Opener settings")).toBe(true);
 }
 
 test(
@@ -331,6 +328,8 @@ test(
 
 		const browser = resources.use(await createAgentBrowser());
 		await browser.run(["open", canvas.base]);
+		// The supported desktop viewport; the canvas keeps its size for pointer targets.
+		await browser.run(["set", "viewport", "1920", "1080"]);
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 		let panes = await pollUntil(
 			() => api<Panes>("/api/panes").then((response) => response.body),

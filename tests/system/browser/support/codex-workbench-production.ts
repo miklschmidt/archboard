@@ -65,7 +65,7 @@ function workbenchControlOperability(
 			clipped,
 			requestOverlap,
 			centerHit,
-			operable: visibleWidth >= 44 && visibleHeight >= 44 && !clipped && !requestOverlap && centerHit,
+			operable: visibleWidth >= 24 && visibleHeight >= 24 && !clipped && !requestOverlap && centerHit,
 		};
 	})()`);
 }

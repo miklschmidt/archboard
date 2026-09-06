@@ -55,6 +55,8 @@ interface AgentSettingsDialogProps {
 	onLinkThread: (selectionId: string) => void;
 	onUnlinkThread: () => void;
 	onOpenChange: (open: boolean) => void;
+	/** Where focus returns when the dialog closes: the control that opened it. */
+	finalFocus?: () => HTMLElement | null;
 }
 
 export type {

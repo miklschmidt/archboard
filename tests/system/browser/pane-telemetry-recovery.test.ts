@@ -113,7 +113,7 @@ test(
 
 		const installed = await browser.eval<boolean>(
 			inExcalidrawApp(`
-        const pane = document.querySelector('.pane-canvas');
+        const pane = document.querySelector('[data-slot="excalidraw-stage"]');
         const expected = ${JSON.stringify(published)};
         if (!pane || !expected?.rect || !expected?.viewport) return false;
         const nativeFetch = window.fetch.bind(window);
@@ -165,7 +165,7 @@ test(
 		expect(suppressed).toHaveLength(0); // check-fixed-point.mjs:1254
 
 		const restored = await browser.eval<boolean>(`(() => {
-      const pane = document.querySelector('.pane-canvas');
+      const pane = document.querySelector('[data-slot="excalidraw-stage"]');
       const expected = window.__task117PaneExpected;
       const app = window.__task117Excalidraw;
       if (!pane || !app || !expected) return false;

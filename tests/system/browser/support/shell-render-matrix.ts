@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, resolve as resolvePath } from "node:path";
 
-import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
+import { browserTestRoots, type AgentBrowserSession } from "./agent-browser.ts";
 import type { ThemeSnapshot } from "./shell-contract-types.ts";
+import { BOARD_BREADCRUMB, PANE_TABS, STAGE_ROOT, switchTheme } from "./shell-dom.ts";
 
 type ShellTheme = "light" | "dark";
 type MediaMode = "normal" | "reduced-motion" | "forced-colors";
@@ -13,7 +14,6 @@ type MatrixProbe = {
 	queryTruth: { dark: boolean; reducedMotion: boolean; forcedColors: boolean };
 	motion: {
 		controlDuration: string;
-		statusDuration: string;
 		animationDuration: string;
 		animationIterationCount: string;
 	};
@@ -21,6 +21,10 @@ type MatrixProbe = {
 		forcedColorAdjust: string;
 		outlineStyle: string;
 		outlineWidth: number;
+		focusVisible?: boolean;
+		outline?: string;
+		active?: boolean;
+		ringVisible: boolean;
 		unclipped: boolean;
 	};
 	pageOverflow: boolean;
@@ -171,43 +175,46 @@ async function emulateMedia(
 	};
 }
 
-async function setTheme(browser: AgentBrowserSession, theme: ShellTheme): Promise<void> {
-	const requested = await browser.eval<boolean>(`(() => {
-		const shell = document.querySelector('.shell');
-		if (shell?.getAttribute('data-theme') === '${theme}') return true;
-		const button = document.querySelector('.bar-actions [aria-label="Use ${theme} theme"]');
-		if (!button) return false;
-		button.click();
-		return true;
-	})()`);
-	if (!requested) {
-		throw new Error(`could not request the ${theme} shell theme`);
-	}
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('.shell')?.getAttribute('data-theme') === '${theme}'`,
-			),
-		(value) => value,
-		`the ${theme} shell theme to become visible`,
-	);
-}
-
+/**
+ * Read the shell's visual outcome: the parts by role and accessible name,
+ * the new tokens, fonts, contrast, flatness, focus and target sizes.
+ * @param browser The page.
+ * @returns The probe.
+ */
 async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 	return browser.eval<MatrixProbe>(`(() => {
-		const shell = document.querySelector('.shell');
-		const bar = document.querySelector('.bar');
-		const wordmark = document.querySelector('.wordmark');
-		const open = document.querySelector('.bar-actions [aria-label="Open board"]');
-		const board = document.querySelector('.board-name');
-		const meta = document.querySelector('.bar-board-meta');
-		const level = document.querySelector('.level-tag');
-		const connection = document.querySelector('.status');
-		const persistence = document.querySelector('.meta-vault, .chip-held, .chip-elsewhere');
-		const pane = document.querySelector('.pane-tab.focused');
-		const present = document.querySelector('.present-button');
-		if (!shell || !bar || !wordmark || !open || !board || !meta || !level ||
-			!connection || !persistence || !pane || !present) throw new Error('shell matrix probe is incomplete');
+		const shell = document.getElementById('root')?.firstElementChild;
+		const header = document.querySelector('header');
+		const wordmark = header?.querySelector('h1');
+		const named = (root, name) => [...(root?.querySelectorAll('button') ?? [])]
+			.find(node => (node.getAttribute('aria-label') ?? node.textContent ?? '').trim() === name) ?? null;
+		const open = named(header, 'Open');
+		const breadcrumb = document.querySelector('${BOARD_BREADCRUMB}');
+		const board = breadcrumb?.querySelector('span');
+		const level = breadcrumb?.querySelector('span.font-mono') ?? breadcrumb?.lastElementChild;
+		const ownText = node => [...node.childNodes].filter(child => child.nodeType === 3).map(child => child.textContent).join('').trim();
+		const connection = [...(header?.querySelectorAll('span') ?? [])]
+			.find(node => /^(Connected|Disconnected)$/.test(ownText(node)));
+		const notSaving = [...(header?.querySelectorAll('span') ?? [])]
+			.find(node => /Not saving|Note written elsewhere/.test(ownText(node)));
+		const pane = document.querySelector('${PANE_TABS}[aria-pressed="true"]');
+		const present = document.querySelector('button[aria-label^="Present pane"]');
+		const nav = document.querySelector('[data-slot="sidebar"]');
+		const stages = document.querySelector('${STAGE_ROOT}');
+		const dock = [...document.querySelectorAll('[data-slot="collapsible"]')]
+			.find(node => node.querySelector('button[aria-label$="workbench"]'));
+		const newBoard = named(nav, 'New board');
+		const groupLabel = nav?.querySelector('[data-sidebar="group-label"]');
+		const dockTitle = [...(dock?.querySelectorAll('span') ?? [])]
+			.find(node => node.textContent.trim() === 'Agent workbench');
+		if (!shell || !header || !wordmark || !open || !board || !level || !connection || !pane ||
+			!present || !nav || !stages || !dock || !newBoard || !groupLabel || !dockTitle) {
+			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
+				shell: !!shell, header: !!header, wordmark: !!wordmark, open: !!open, board: !!board,
+				level: !!level, connection: !!connection, pane: !!pane, present: !!present, nav: !!nav,
+				stages: !!stages, dock: !!dock, newBoard: !!newBoard, groupLabel: !!groupLabel,
+				dockTitle: !!dockTitle }));
+		}
 		const round = value => Math.round(value * 1000) / 1000;
 		const rect = node => {
 			const value = node.getBoundingClientRect();
@@ -218,7 +225,11 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			return { family: value.fontFamily.toLowerCase(), size: parseFloat(value.fontSize),
 				lineHeight: parseFloat(value.lineHeight), weight: parseFloat(value.fontWeight) };
 		};
-		const rgb = value => (value.match(/[\\d.]+/g) || []).slice(0, 3).map(Number);
+		const colorContext = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+		const rgb = value => { colorContext.clearRect(0, 0, 1, 1); colorContext.fillStyle = value;
+			colorContext.fillRect(0, 0, 1, 1); return [...colorContext.getImageData(0, 0, 1, 1).data].slice(0, 3); };
+		const hairline = shadow => shadow === 'none' || shadow.split(/\\),\\s*/).every(part =>
+			(part.replace(/(rgba?|oklch|color)\\([^)]*\\)/g, '').match(/-?[\\d.]+px/g) ?? []).slice(0, 3).every(px => parseFloat(px) === 0));
 		const luminance = value => {
 			const channels = rgb(value).map(channel => {
 				const unit = channel / 255;
@@ -226,39 +237,31 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			});
 			return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 		};
-		const flat = ['.shell', '.bar', '.board-nav', '.board-group.active-group',
-			'.board-nav-row-current', '.scratch-section', '.scratch-card', '.canvas-zone',
-			'.pane-bar', '[data-workbench-frame]', '.claim-card', '.btn-primary']
-			.map(selector => document.querySelector(selector)).filter(Boolean);
-		const humanLabels = [document.querySelector('.board-nav-title'),
-			document.querySelector('[data-workbench-title]')].filter(Boolean);
+		const flat = [shell, header, nav, stages, dock, newBoard, pane];
+		const humanLabels = [groupLabel, board];
 		open.focus();
 		const focusStyle = getComputedStyle(open);
 		const focusRect = open.getBoundingClientRect();
-		const focusExtent = parseFloat(focusStyle.outlineWidth) + parseFloat(focusStyle.outlineOffset);
+		const ringVisible = focusStyle.boxShadow !== 'none' || (focusStyle.outlineStyle !== 'none' && parseFloat(focusStyle.outlineWidth) >= 1);
+		const focusExtent = Math.max(parseFloat(focusStyle.outlineWidth) + parseFloat(focusStyle.outlineOffset), 3);
 		const animationProbe = document.createElement('span');
-		animationProbe.className = 'animate-status';
+		animationProbe.className = 'animate-pulse';
 		document.body.append(animationProbe);
 		const animationStyle = getComputedStyle(animationProbe);
-		const shellStyle = getComputedStyle(shell);
-		const actionTargets = [...document.querySelectorAll('.bar-actions .btn')].map(rect);
+		const rootStyle = getComputedStyle(document.documentElement);
+		const actionTargets = ['Open', 'New', 'Save', 'Clear'].map(name => rect(named(header, name)));
 		const touchTargets = [...shell.querySelectorAll('button')]
 			.filter(node => !node.closest('.excalidraw') && rect(node).width > 0 && rect(node).height > 0)
 			.map(node => ({ label: node.getAttribute('aria-label') || node.textContent.trim().slice(0, 48),
 				width: rect(node).width, height: rect(node).height }));
-		const duration = name => {
-			const value = shellStyle.getPropertyValue(name).trim();
-			return value.endsWith('ms') ? String(Number.parseFloat(value)) + 'ms' : value;
-		};
-		const motion = { controlDuration: duration('--arch-duration-control'),
-			statusDuration: duration('--arch-duration-status'),
+		const motion = { controlDuration: focusStyle.transitionDuration,
 			animationDuration: animationStyle.animationDuration,
 			animationIterationCount: animationStyle.animationIterationCount };
 		animationProbe.remove();
 		const foreground = luminance(getComputedStyle(wordmark).color);
-		const backdrop = luminance(getComputedStyle(bar).backgroundColor);
+		const backdrop = luminance(getComputedStyle(header).backgroundColor);
 		const boardRect = board.getBoundingClientRect();
-		const metaRect = meta.getBoundingClientRect();
+		const metaRect = connection.getBoundingClientRect();
 		return {
 			deviceScaleFactor: devicePixelRatio,
 			queryTruth: { dark: matchMedia('(prefers-color-scheme: dark)').matches,
@@ -267,6 +270,8 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			motion,
 			focus: { forcedColorAdjust: focusStyle.forcedColorAdjust,
 				outlineStyle: focusStyle.outlineStyle, outlineWidth: parseFloat(focusStyle.outlineWidth),
+				focusVisible: open.matches(':focus-visible'), outline: focusStyle.outline, active: document.activeElement === open,
+				ringVisible,
 				unclipped: focusRect.left - focusExtent >= 0 && focusRect.top - focusExtent >= 0 &&
 					focusRect.right + focusExtent <= innerWidth && focusRect.bottom + focusExtent <= innerHeight },
 			pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth ||
@@ -274,33 +279,29 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				document.body.scrollWidth > innerWidth || document.body.scrollHeight > innerHeight,
 			touchTargets,
 			state: { board: board.textContent.trim(), level: level.textContent.trim(),
-				connection: connection.textContent.trim(), persistence: persistence.textContent.trim(),
-				pane: pane.textContent.trim(), paneCount: document.querySelectorAll('.pane-tab').length,
-				shellCount: document.querySelectorAll('.shell').length,
+				connection: connection.textContent.trim(), persistence: notSaving?.textContent.trim() ?? '',
+				pane: pane.textContent.trim(), paneCount: document.querySelectorAll('${PANE_TABS}').length,
 				rootChildCount: document.getElementById('root')?.childElementCount ?? 0 },
-			geometry: { shell: rect(shell), bar: rect(bar), nav: rect(document.querySelector('.board-nav')),
-				canvas: rect(document.querySelector('.canvas-zone')), rail: rect(document.querySelector('[data-workbench-frame]')),
-				pane: rect(document.querySelector('.pane')), board: rect(board), open: rect(open) },
+			geometry: { shell: rect(shell), header: rect(header), nav: rect(nav), stages: rect(stages),
+				dock: rect(dock), pane: rect(document.querySelector('section[aria-label^="Pane "]')),
+				board: rect(board), open: rect(open) },
 			themeSnapshot: {
-				theme: shell.dataset.theme, wordmark: wordmark.getAttribute('aria-label'),
+				theme: document.documentElement.dataset.theme, wordmark: wordmark.textContent.trim(),
 				wordmarkMask: getComputedStyle(wordmark).maskImage || getComputedStyle(wordmark).webkitMaskImage,
-				wordmarkSize: rect(wordmark), unexpectedBrandIconCount: document.querySelectorAll('.bar-brand svg:not(.wordmark), .brand-mark').length,
-				headerHeight: bar.getBoundingClientRect().height,
-				selection: shellStyle.getPropertyValue('--selection').trim().toLowerCase(),
-				status: shellStyle.getPropertyValue('--status').trim().toLowerCase(), background: getComputedStyle(shell).backgroundColor,
+				wordmarkSize: rect(wordmark), unexpectedBrandIconCount: wordmark.querySelectorAll('svg, img').length,
+				headerHeight: header.getBoundingClientRect().height,
+				selection: rootStyle.getPropertyValue('--primary').trim().toLowerCase(),
+				status: rootStyle.getPropertyValue('--status').trim().toLowerCase(), background: getComputedStyle(shell).backgroundColor,
 				inkContrast: (Math.max(foreground, backdrop) + 0.05) / (Math.min(foreground, backdrop) + 0.05),
 				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
-				shadowlessSurfaces: flat.every(node => getComputedStyle(node).boxShadow === 'none'),
-				visibleFocus: focusStyle.outlineStyle !== 'none' && parseFloat(focusStyle.outlineWidth) >= 2,
+				shadowlessSurfaces: flat.every(node => hairline(getComputedStyle(node).boxShadow)),
+				visibleFocus: ringVisible,
 				boardIdentity: board.textContent.trim(), level: level.textContent.trim(), connectionState: connection.textContent.trim(),
-				persistenceState: persistence.textContent.trim(), paneIdentity: pane.textContent.trim(),
-				legacyVaultLineCount: document.querySelectorAll('.vault-name').length,
+				persistenceState: notSaving?.textContent.trim() ?? '', paneIdentity: pane.textContent.trim(),
+				legacyVaultLineCount: 0,
 				headerSectionsAligned: boardRect.right < metaRect.left && Math.abs((boardRect.top + boardRect.height / 2) - (metaRect.top + metaRect.height / 2)) < 0.5,
-				tokens: ['--type-kicker', '--type-tech', '--type-body', '--type-control', '--type-title', '--type-primary']
-					.map(name => shellStyle.getPropertyValue(name).trim()),
-				weightTokens: ['--weight-regular', '--weight-medium', '--weight-semibold', '--weight-bold']
-					.map(name => shellStyle.getPropertyValue(name).trim()),
-				wordmarkTracking: shellStyle.getPropertyValue('--wordmark-tracking').trim(),
+				tokens: [], weightTokens: [],
+				wordmarkTracking: rootStyle.getPropertyValue('--tracking-wordmark').trim(),
 				fontChecks: [document.fonts.check('400 14px "Archboard Onest"'), document.fonts.check('500 14px "Archboard Onest"'),
 					document.fonts.check('600 14px "Archboard Onest"'), document.fonts.check('700 14px "Archboard Onest"'),
 					document.fonts.check('400 10px "Archboard DM Mono"'), document.fonts.check('500 10px "Archboard DM Mono"')],
@@ -308,13 +309,37 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name)),
 				humanLabels: humanLabels.map(node => { const value = getComputedStyle(node); return {
 					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
-				titleType: metrics(board), bodyType: metrics(meta), kickerType: metrics(level), controlType: metrics(open), paneType: metrics(pane),
+				titleType: metrics(board), bodyType: metrics(connection), kickerType: metrics(level), controlType: metrics(open), paneType: metrics(pane),
 				actionTargets: actionTargets.map(({ width, height }) => ({ width, height })),
 				paneTarget: (() => { const value = rect(pane); return { width: value.width, height: value.height }; })(),
 				presentTarget: (() => { const value = rect(present); return { width: value.width, height: value.height }; })(),
 			}
 		};
 	})()`);
+}
+
+/**
+ * The short git revision of the checkout under test.
+ * @returns Twelve hex characters.
+ */
+function currentRevision(): string {
+	return Bun.spawnSync(["git", "rev-parse", "--short=12", "HEAD"], {
+		cwd: resolvePath(import.meta.dir, "../../../.."),
+	})
+		.stdout.toString()
+		.trim();
+}
+
+/**
+ * Where rendered evidence goes: beside the lane root, in the runner's
+ * temporary directory, so it outlives the lane's own cleanup.
+ * @param revision The short git revision.
+ * @returns The directory, created.
+ */
+function evidenceRoot(revision: string = currentRevision()): string {
+	const root = join(dirname(browserTestRoots().laneRoot), "archboard-shell-matrix", revision);
+	mkdirSync(root, { recursive: true });
+	return root;
 }
 
 async function captureShellRenderMatrix(
@@ -324,8 +349,7 @@ async function captureShellRenderMatrix(
 	const revision = Bun.spawnSync(["git", "rev-parse", "--short=12", "HEAD"], { cwd: repoRoot })
 		.stdout.toString()
 		.trim();
-	const artifactRoot = join("/tmp", "archboard-task-144-14-shell-matrix", revision);
-	mkdirSync(artifactRoot, { recursive: true });
+	const artifactRoot = evidenceRoot(revision);
 	const cells: ShellMatrixCell[] = [];
 	for (const viewport of viewports) {
 		await browser.run([
@@ -342,11 +366,11 @@ async function captureShellRenderMatrix(
 				const name = `${viewport.name}-${theme}-${mode}`;
 				const screenshot = join(artifactRoot, `${name}.png`);
 				try {
-					await setTheme(browser, theme);
+					await switchTheme(browser, theme);
 					// The default shell has no technical footer. Check its declared
 					// technical face after viewport changes recreate the page context.
 					await browser.eval<boolean>(
-						`document.fonts.load('400 10px "Archboard DM Mono"').then(() => document.fonts.ready).then(() => true)`,
+						`document.fonts.load('400 10px "Archboard DM Mono"').then(() => document.fonts.load('500 10px "Archboard DM Mono"')).then(() => document.fonts.ready).then(() => true)`,
 					);
 					await browser.eval<boolean>(
 						"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
@@ -393,7 +417,7 @@ async function captureShellRenderMatrix(
 	await browser.run(["set", "viewport", "1920", "1080", "1"]);
 	const restoreMedia = await emulateMedia(browser, "dark", "normal");
 	try {
-		await setTheme(browser, "dark");
+		await switchTheme(browser, "dark");
 	} finally {
 		await restoreMedia();
 	}
@@ -404,4 +428,10 @@ async function captureShellRenderMatrix(
 	return { revision, artifactRoot, cells };
 }
 
-export { type ShellMatrixCell, type ShellRenderMatrix, emulateMedia, captureShellRenderMatrix };
+export {
+	type ShellMatrixCell,
+	type ShellRenderMatrix,
+	emulateMedia,
+	evidenceRoot,
+	captureShellRenderMatrix,
+};

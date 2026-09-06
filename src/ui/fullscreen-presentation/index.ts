@@ -17,6 +17,12 @@ interface FullscreenPresentation {
 	readonly present: (paneId: string) => void;
 	readonly exit: () => void;
 	readonly clearError: () => void;
+	/**
+	 * The presented (or wanted) pane left the document. A presentation the
+	 * browser has already granted moves to the survivor so the person is never
+	 * left looking at nothing; a request still in flight is given up instead.
+	 */
+	readonly paneRemoved: (paneId: string, survivorPaneId: string | null) => void;
 	/** The root left the document; whatever it owned is given up. */
 	readonly rootRemoved: () => void;
 	readonly dispose: () => void;
@@ -250,6 +256,38 @@ function createFullscreenPresentation(root: HTMLElement): FullscreenPresentation
 		publish(null, null);
 	}
 
+	/**
+	 * The presented or wanted pane is gone.
+	 * @param paneId The pane that left.
+	 * @param survivorPaneId A pane that remains, or null when none does.
+	 */
+	function paneRemoved(paneId: string, survivorPaneId: string | null): void {
+		if (disposed || wantedPaneId !== paneId) {
+			return;
+		}
+		const granted = root.isConnected && ownsRoot();
+		if (survivorPaneId !== null && granted) {
+			wantedPaneId = survivorPaneId;
+			publish(survivorPaneId, snapshot.error);
+			return;
+		}
+		giveUp(granted);
+	}
+
+	/**
+	 * Nothing is wanted any more: leave a granted fullscreen, or forget a
+	 * request still in flight.
+	 * @param granted Whether the root owns fullscreen now.
+	 */
+	function giveUp(granted: boolean): void {
+		wantedPaneId = null;
+		if (granted) {
+			exit();
+		} else {
+			publish(null, null);
+		}
+	}
+
 	/** The root left the document. */
 	function rootRemoved(): void {
 		if (disposed) {
@@ -305,6 +343,7 @@ function createFullscreenPresentation(root: HTMLElement): FullscreenPresentation
 		present,
 		exit,
 		clearError,
+		paneRemoved,
 		rootRemoved,
 		dispose,
 	};

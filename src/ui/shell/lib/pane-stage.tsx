@@ -58,6 +58,38 @@ function paneById(panes: readonly ShellPane[], paneId: string): ShellPane | null
 	return panes.find((pane) => pane.status.paneId === paneId) ?? null;
 }
 
+/** Inputs for the presentation's own chrome. */
+interface PresentationChromeProps {
+	presentation: ShellPresentation | null;
+	presented: ShellPane | null;
+	voiceControls: React.ReactNode;
+	actions: ShellActions;
+}
+
+/**
+ * The bar above a presented pane and, when the presented pane is
+ * disconnected, the recovery message.
+ * @param props The presentation, the pane it names and the actions.
+ * @returns The chrome, or nothing in the workspace.
+ */
+function PresentationChrome(props: PresentationChromeProps): React.JSX.Element | null {
+	const { presentation, presented } = props;
+	if (presentation === null || presented === null) {
+		return null;
+	}
+	return (
+		<>
+			<PresentationBar
+				pane={presented}
+				error={presentation.kind === "live" ? (presentation.error ?? null) : null}
+				voiceControls={props.voiceControls}
+				actions={props.actions}
+			/>
+			{presentation.kind === "recovery" && <RecoveryMessage message={presentation.message} />}
+		</>
+	);
+}
+
 /**
  * One or two canvases side by side with a shared one-pixel separator, under
  * the presentation bar while a pane is presented.
@@ -74,10 +106,12 @@ function CanvasStages(props: CanvasStagesProps): React.JSX.Element {
 			data-presenting={presented ? "" : undefined}
 			className="bg-background flex min-h-0 min-w-0 flex-1 flex-col"
 		>
-			{presented && (
-				<PresentationBar pane={presented} voiceControls={voiceControls} actions={actions} />
-			)}
-			{presentation?.kind === "recovery" && <RecoveryMessage message={presentation.message} />}
+			<PresentationChrome
+				presentation={presentation}
+				presented={presented}
+				voiceControls={voiceControls}
+				actions={actions}
+			/>
 			<div className="flex min-h-0 min-w-0 flex-1">
 				{panes.map((pane, index) => (
 					<PaneStage

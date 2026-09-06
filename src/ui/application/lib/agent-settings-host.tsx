@@ -18,6 +18,8 @@ import {
 interface AgentSettingsHostProps {
 	owners: WorkbenchOwners;
 	onClose: () => void;
+	/** Where focus returns once the dialog closes. */
+	finalFocus: () => HTMLElement | null;
 }
 
 /**
@@ -65,6 +67,7 @@ function AgentSettingsHost(props: AgentSettingsHostProps): React.JSX.Element | n
 			onLinkThread={callbacks.onLinkThread}
 			onUnlinkThread={callbacks.onUnlinkThread}
 			onOpenChange={handleOpenChange}
+			finalFocus={props.finalFocus}
 		/>
 	);
 }

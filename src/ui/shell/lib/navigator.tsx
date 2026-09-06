@@ -148,6 +148,7 @@ function VariantRow(props: VariantRowProps): React.JSX.Element {
 				render={renderButton}
 				isActive={selected}
 				aria-current={selected ? "true" : undefined}
+				data-board-key={entry.key}
 				onClick={handleClick}
 				className="data-active:ring-primary h-auto flex-col items-stretch gap-1 py-1 data-active:ring-1"
 			>
@@ -259,6 +260,39 @@ function ScratchGroup(props: ScratchGroupProps): React.JSX.Element | null {
 interface BoardsGroupProps extends SelectableProps {
 	groups: NavigatorGroup[];
 	error: string | null;
+	/** True before the first listing has arrived. */
+	loading: boolean;
+}
+
+/** Inputs for the line shown when there is no group to list. */
+interface ListingStateProps {
+	loading: boolean;
+	error: string | null;
+	empty: boolean;
+}
+
+/**
+ * What the group says while it has no board to list: that the vault is
+ * being read, why the listing failed, or that no named board exists yet.
+ * @param props The listing state.
+ * @returns One line, or nothing while boards are listed.
+ */
+function ListingState(props: ListingStateProps): React.JSX.Element | null {
+	if (props.error !== null) {
+		return (
+			<p className="text-destructive px-2 py-1 text-xs" aria-live="polite">
+				{props.error}
+			</p>
+		);
+	}
+	if (!props.empty) {
+		return null;
+	}
+	return (
+		<p className="text-muted-foreground px-2 py-1 text-xs" aria-live="polite">
+			{props.loading ? "Reading the vault…" : "No named boards yet."}
+		</p>
+	);
 }
 
 /**
@@ -275,15 +309,12 @@ function BoardsGroup(props: BoardsGroupProps): React.JSX.Element {
 			<SidebarGroupAction
 				aria-label="Refresh boards"
 				title="Refresh boards"
+				className="top-2.5 size-6"
 				onClick={handleRefresh}
 			>
 				<RiRefreshLine />
 			</SidebarGroupAction>
-			{props.error !== null && (
-				<p className="text-destructive px-2 py-1 text-xs" aria-live="polite">
-					{props.error}
-				</p>
-			)}
+			<ListingState loading={props.loading} error={props.error} empty={props.groups.length === 0} />
 			<SidebarMenu>
 				{props.groups.map((group) => (
 					<BoardGroup
@@ -319,6 +350,7 @@ function Navigator(props: NavigatorProps): React.JSX.Element {
 				<BoardsGroup
 					groups={groupBoards(view)}
 					error={view.boardsError}
+					loading={view.boards.vault === ""}
 					selectedKey={view.selectedBoardKey}
 					theme={view.theme}
 					actions={actions}

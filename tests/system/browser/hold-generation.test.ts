@@ -76,6 +76,8 @@ async function openSeededBoard(resources: AsyncDisposableStack): Promise<{
 
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", canvas.base]);
+	// The supported desktop viewport; the canvas keeps its size for pointer targets.
+	await browser.run(["set", "viewport", "1920", "1080"]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/Headless/i);
 	const panes = await pollUntil(
 		async () => (await request<PaneList>("/api/panes")).body,
