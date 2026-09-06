@@ -289,10 +289,10 @@ element. Each case asserts that the pane and server documents agree and that
 the server contains the user's exact edit.
 
 It also owns the half of the board mutex only a renderer can answer
-(ADR 0016): a connected pane remains locally editable while another writer
-holds or claims the board, one single-flight hold retry eventually persists the
-edit, content revokes a claim, camera movement does not, and a disconnected
-pane still assumes the board is held rather than free.
+(ADR 0022): a claimed board is view mode for people while pan and zoom still
+report, a drag takes no hold and revokes nothing, the explicit take-back route
+releases the claim and the agent is told once, and a disconnected pane still
+assumes the board is held rather than free.
 
 Its hold-generation scenario delays hold A1, switches the pane from board A to
 board B and back to A, then starts delayed hold A2. Releasing A1 first must
