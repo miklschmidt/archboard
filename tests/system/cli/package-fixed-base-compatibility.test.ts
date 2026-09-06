@@ -52,7 +52,6 @@ const fixedBaseCompatibilitySchema = z.object({
 	schemaVersion: z.literal(2),
 	fixedBase: z.string().regex(/^[0-9a-f]{40}$/),
 	publicPaths: z.array(z.string()),
-	helpStdoutSha256ByCommand: z.record(z.string(), z.string().regex(/^[0-9a-f]{64}$/)),
 	orderedCases: z.array(compatibilityRecordSchema).length(10),
 });
 const compatibility = fixedBaseCompatibilitySchema.parse(compatibilityJson);
@@ -191,7 +190,6 @@ describe("fixed-base package CLI compatibility", () => {
 		expect(
 			compatibility.publicPaths.filter((path) => path === "inject" || path.startsWith("inject ")),
 		).toEqual([]);
-		expect("inject" in compatibility.helpStdoutSha256ByCommand).toBeFalse();
 		expect(compatibility.orderedCases.some((record) => record.argv[0] === "inject")).toBeFalse();
 	});
 

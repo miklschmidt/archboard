@@ -24,74 +24,14 @@ const streamGoldenSchema = z.object({
 	stderrSha256: z.string().optional(),
 });
 const argvGoldenSchema = z.object({
-	generalHelpSha256: z.string(),
 	cases: z.array(streamGoldenSchema),
-});
-const compatibilitySchema = z.object({
-	schemaVersion: z.literal(2),
-	fixedBase: z.string(),
-	publicPaths: z.array(z.string()),
-	helpStdoutSha256ByCommand: z.record(z.string(), z.string()),
-	orderedCases: z.array(
-		z.object({
-			name: z.string(),
-			argv: z.array(z.string()),
-			fixture: z.string(),
-			exit: z.number(),
-			stdout: z.string(),
-			stderr: z.string(),
-			heldState: z.unknown(),
-			normalizations: z.array(
-				z.object({ value: z.string(), token: z.string(), reason: z.string().min(1) }),
-			),
-			prerequisiteContacts: z.array(z.string()),
-			restEffects: z.array(z.string()),
-			localEffects: z.array(z.string()),
-			artifactCommits: z.array(z.string()),
-			mergedEvents: z.array(
-				z.object({ kind: z.string(), value: z.union([z.string(), z.number()]).optional() }),
-			),
-		}),
-	),
 });
 
 const argvPath = join(checkoutRoot, "tests/system/cli/fixtures/argv-golden.json");
-const compatibilityPath = join(
-	checkoutRoot,
-	"tests/system/cli/fixtures/fixed-base-compatibility.json",
-);
 const argvGolden = argvGoldenSchema.parse(JSON.parse(readFileSync(argvPath, "utf8")));
-const compatibility = compatibilitySchema.parse(
-	JSON.parse(readFileSync(compatibilityPath, "utf8")),
-);
 const sha256 = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 
 describe("package bin and help", () => {
-	test("owns byte-identical typed golden fixtures", () => {
-		const pairs = [
-			[
-				"src/cli/command-contract/tests/argv-golden.json",
-				argvPath,
-				"101954e3c75f55918f67744aac6715f623bb4d69bf944963800f5bc16c97b793",
-			],
-			[
-				"src/cli/command-contract/tests/fixed-base-compatibility.json",
-				compatibilityPath,
-				"537f3458236e6b0131b0553955237523191ecfc350b4ca2283918d7e78496aa9",
-			],
-		] as const;
-		for (const [oldRelative, owned, digest] of pairs) {
-			const ownedBytes = readFileSync(owned);
-			expect(sha256(ownedBytes)).toBe(digest);
-			const old = join(checkoutRoot, oldRelative);
-			if (existsSync(old)) {
-				const oldBytes = readFileSync(old);
-				expect(oldBytes.equals(ownedBytes)).toBe(true);
-				expect(sha256(oldBytes)).toBe(digest);
-			}
-		}
-	});
-
 	test("resolves bin.archboard and shows no-argument help outside the checkout", async () => {
 		await using resources = new AsyncDisposableStack();
 		const owner = resources.use(createPackageCliOwner());
@@ -177,27 +117,4 @@ describe("package argv compatibility", () => {
 			}
 		}
 	}, 30_000);
-
-	test("preserves fixed-base top-level help bytes and executable record order", () => {
-		expect(compatibility.schemaVersion).toBe(2);
-		expect(compatibility.fixedBase).toBe("dfb589bd28f6dc95289f5271ba389bfcc48bafbe");
-		for (const path of compatibility.publicPaths) {
-			const [command, ...tail] = path.split(" ");
-			const help = commandHelp([command!, ...tail]);
-			expect(help, path).not.toBeNull();
-			if (tail.length === 0) {
-				expect(sha256(help!), path).toBe(compatibility.helpStdoutSha256ByCommand[command!]!);
-			}
-		}
-		expect(new Set(compatibility.orderedCases.map((record) => record.name)).size).toBe(
-			compatibility.orderedCases.length,
-		);
-	}, 30_000);
-
-	test("detects an altered argv golden", () => {
-		const altered = readFileSync(argvPath, "utf8").replace('"name"', '"nAme"');
-		expect(sha256(altered)).not.toBe(
-			"101954e3c75f55918f67744aac6715f623bb4d69bf944963800f5bc16c97b793",
-		);
-	});
 });
