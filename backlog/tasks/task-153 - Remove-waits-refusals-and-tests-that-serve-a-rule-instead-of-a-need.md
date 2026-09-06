@@ -1,11 +1,11 @@
 ---
 id: TASK-153
 title: 'Remove waits, refusals and tests that serve a rule instead of a need'
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-06 14:09'
-updated_date: '2026-09-06 18:20'
+updated_date: '2026-09-06 18:46'
 labels: []
 dependencies: []
 priority: high
@@ -75,10 +75,18 @@ created: 2026-09-06 18:20
 ---
 Re-review of ea89db1c..a970611dddd3407412b6da21d9f67dd1cd7cc250: the recovery-command quoting P2 is resolved by be04bb5b. Source, destination and suggested save-as names consistently use correct POSIX single-quote escaping when required, including spaces and apostrophes. The focused board-version-conflict tests and held-board recovery system owner pass. No new findings in this fix. Verification in a disposable checkout at TARGET with confined HOME/XDG/vault/Codex state and memory-limited sequential processes: lint, fmt:check, both TypeScript projects and frontend build passed; 11 focused module tests (board-version-conflict, note-version, composer-controls), 8 held-board recovery system tests, and the human-version-refusal (2 cases), claim-interaction and codex-text-workbench browser owners passed. A separate existing-text variation of the refusal browser owner failed as described on TASK-152. The probe changed only its disposable test setup, restored it afterwards, and never modified product source. This was focused re-verification, not a new complete bun run check.
 ---
+
+author: @codex
+created: 2026-09-06 18:46
+---
+The shell-quoted recovery commands remain accepted; source, target and suggested save-as names preserve spaces and apostrophes. No outstanding findings. Final independent acceptance at 044d2a8d: zero Standards findings and zero Spec findings. Direct comparison with the prior reviewed tree 348d4738 confirms only the remaining canvas correction and its browser coverage changed in product/test source; previously accepted composer and quoting fixes are preserved after squashing. Reviewer reran lint, fmt:check, both TypeScript projects, frontend build, 6 note-version module tests, all 3 human-version-refusal browser scenarios and the claim-interaction browser owner in a disposable checkout with confined external state. All passed. Initial browser setup failed because the reviewer temporary path exceeded the agent-browser Unix socket path limit; shortening the confined root resolved setup, with no product changes. Logs: /tmp/archboard-review-044d2a8d.log and /tmp/archboard-review-044d2a8d-browser.log. Claude/user reports complete bun run check passed at 52bdf08a; git comparison confirms 044d2a8d differs only in TASK-152 metadata. The reviewer reran focused gates, not the complete check. All three behavioral review findings are now resolved; the approved lint exception remains withdrawn. This acceptance supersedes earlier open/revision-required review comments.
+---
 <!-- COMMENTS:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
 A person's hold behind any holder refuses at once; a pane stays editable through a blip (contact lost after CONTACT_LOST_MS); lock release news is immediate; layout settlement waits only on moved panes; recovery commands run as printed; approvals are valid inside their window; byte-equal board names skip the readdir; the epoch manifest is one atomically renamed file with unreadable meaning no prior epochs; test budgets moved to tests/system/support/timing.ts; the grep and ordering policy tests, five one-write owners and the browser runner's order refusals are gone. Verified with the complete bun run check on 8ba1aeae.
+
+The shell-quoted recovery commands remain accepted; source, target and suggested save-as names preserve spaces and apostrophes. No outstanding findings. Final review accepted at 044d2a8d; reviewer focused lint/type/build/module/browser verification passed, with complete-check evidence from Claude at source-identical 52bdf08a.
 <!-- SECTION:FINAL_SUMMARY:END -->
