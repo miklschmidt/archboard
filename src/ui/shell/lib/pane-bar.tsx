@@ -142,7 +142,7 @@ function PaneBar(props: PaneBarProps): React.JSX.Element {
 						key={pane.status.paneId}
 						value={pane.status.paneId}
 						aria-current={pane.status.paneId === activePaneId ? "true" : undefined}
-						className="border-border hover:bg-sidebar-accent aria-pressed:border-b-primary aria-pressed:text-foreground text-muted-foreground h-auto min-w-0 gap-3 rounded-none border-r border-b-2 border-b-transparent px-4 focus-visible:ring-inset aria-pressed:bg-transparent"
+						className="border-border hover:bg-sidebar-accent aria-pressed:border-b-primary aria-pressed:text-foreground text-muted-foreground h-auto min-w-0 gap-3 rounded-none! border-r border-b-2 border-b-transparent px-4 focus-visible:ring-inset aria-pressed:bg-transparent"
 					>
 						<span className="truncate">{paneLabel(pane, index)}</span>
 						<PaneStatusLine pane={pane} />
