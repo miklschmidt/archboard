@@ -13,7 +13,7 @@ import { waitFor } from "../canvas-state/support/http.ts";
 import {
 	TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS,
 	TEST_CANVAS_STARTUP_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+} from "../support/timing.ts";
 import {
 	buildOwnedCanvasEnvironment,
 	processExists,

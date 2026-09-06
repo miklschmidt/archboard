@@ -125,8 +125,16 @@ describe("board lifecycle", () => {
 			const collided = listBoards(caseVault).filter((board) => board.key === "payments");
 			expect(collided).toHaveLength(2);
 			expect(collided.every((board) => board.collidesWith?.length === 1)).toBeTrue();
+			// A byte-equal note is its own answer; a spelling on disk under neither
+			// name still resolves the same way every time (ADR 0010, TASK-153).
 			expect(vaultPathFor(parseBoardKey("payments"), caseVault)).toBe(
-				vaultPathFor(parseBoardKey("PAYMENTS"), caseVault),
+				path.join(caseVault, "payments.excalidraw.md"),
+			);
+			expect(vaultPathFor(parseBoardKey("Payments"), caseVault)).toBe(
+				path.join(caseVault, "Payments.excalidraw.md"),
+			);
+			expect(vaultPathFor(parseBoardKey("PAYMENTS"), caseVault)).toBe(
+				vaultPathFor(parseBoardKey("pAYMENTS"), caseVault),
 			);
 		} finally {
 			fs.rmSync(caseVault, { recursive: true, force: true });

@@ -25,7 +25,7 @@ import {
 	type CodeBinding,
 	type OpenerSelection,
 } from "../../../../src/shared/code-target/index.ts";
-import { TEST_OPENER_LIFECYCLE } from "../../../../src/shared/timing/timing.ts";
+import { TEST_OPENER_LIFECYCLE } from "../../support/timing.ts";
 import {
 	assertBefore,
 	type ProcessCompletion,

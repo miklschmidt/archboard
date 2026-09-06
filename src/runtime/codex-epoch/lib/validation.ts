@@ -303,7 +303,7 @@ export function assertManifestRelations(manifest: EpochManifest): void {
 	const operationIds = new Set<string>();
 	for (const record of manifest.records) {
 		if (operationIds.has(record.correlation.operationId)) {
-			throw epochError("corrupt_manifest", "duplicate operation identity in epoch manifest");
+			throw epochError("invalid_transition", "duplicate operation identity in epoch manifest");
 		}
 		operationIds.add(record.correlation.operationId);
 	}
@@ -321,7 +321,7 @@ export function assertManifestRelations(manifest: EpochManifest): void {
 		activeRecord.correlation.childId !== manifest.activeEpoch.childId ||
 		activeRecord.correlation.epoch !== manifest.activeEpoch.epoch
 	) {
-		throw epochError("corrupt_manifest", "active epoch does not match a committed epoch record");
+		throw epochError("invalid_transition", "active epoch does not match a committed epoch record");
 	}
 }
 

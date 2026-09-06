@@ -1014,8 +1014,12 @@ function foreignWriteTo(file: string, destination: Buffer | undefined): ForeignW
 interface WriteOptions {
 	/** The human's "overwrite it anyway". Never set by archboard on its own behalf. */
 	force?: boolean;
-	/** What a refusal should tell the caller to type. */
-	saveCommand: string;
+	/**
+	 * The board key the save was issued for, when it is not the note being
+	 * written (`board save --board <this> --as <that>`), so a refusal prints
+	 * the command that was actually run. Absent means a same-board save.
+	 */
+	savedFrom?: string;
 }
 
 /**
@@ -1044,7 +1048,7 @@ interface WriteOptions {
 function writeBoardContent(
 	board: BoardState,
 	content: BoardContent,
-	options: WriteOptions,
+	options: WriteOptions = {},
 ): {
 	file: string;
 	hash: string;
@@ -1077,7 +1081,7 @@ function writeBoardContent(
 			describeWriteConflict({
 				target: identity,
 				...foreign,
-				saveCommand: options.saveCommand,
+				...(options.savedFrom === undefined ? {} : { savedFrom: options.savedFrom }),
 			}),
 		);
 	}

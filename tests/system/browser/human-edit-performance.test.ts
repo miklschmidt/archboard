@@ -4,12 +4,12 @@ import path from "node:path";
 
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 
+import { REPORT_PROGRESS_MS } from "../../../src/shared/timing/timing.ts";
 import {
-	REPORT_PROGRESS_MS,
 	TEST_BROWSER_POLL_MS,
 	TEST_HUMAN_EDIT_PERFORMANCE_CASE_TIMEOUT_MS,
 	TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+} from "../support/timing.ts";
 import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { processExists, startOwnedCanvas } from "../support/owned-canvas.ts";

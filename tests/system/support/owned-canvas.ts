@@ -7,7 +7,7 @@ import {
 	TEST_CANVAS_HEALTH_REQUEST_TIMEOUT_MS,
 	TEST_CANVAS_SHUTDOWN_TIMEOUT_MS,
 	TEST_CANVAS_STARTUP_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+} from "./timing.ts";
 import {
 	buildOwnedCanvasEnvironment,
 	createOwnedCanvasPaths,

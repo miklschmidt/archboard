@@ -1,4 +1,4 @@
-import { TEST_WALL_CLOCK_BUDGET_MS } from "../../../../src/shared/timing/timing.ts";
+import { TEST_WALL_CLOCK_BUDGET_MS } from "../../support/timing.ts";
 
 interface TestWallClockDeclaration {
 	readonly test: string;

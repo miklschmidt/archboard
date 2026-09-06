@@ -78,8 +78,7 @@ bun tests/system/browser/run-browser-lane.ts --opt-in --focus tests/system/brows
 ```
 
 The code-target system owners run after `tests/system/process-contracts`. The
-browser runner checks the package command's paths and order against
-`BROWSER_TEST_PATHS`:
+package browser command runs the whole `BROWSER_TEST_PATHS` inventory:
 
 ```bash
 bun run test:system
@@ -143,7 +142,7 @@ Every transitional package check now has one final owner lane:
 | `test:bind`                                                                    | system             | `tests/system/process-contracts/`                                                                                    |
 | `test:obsidian`, `test:changes`, `test:reporting`, `test:lock`, `test:version` | modules and system | `src/runtime/engine/tests/`, `src/ui/canvas/tests/`, `tests/system/canvas-state/`, `tests/system/process-contracts/` |
 | `test:cli`, `test:install`, `test:repos`                                       | system             | `tests/system/cli/`                                                                                                  |
-| `test:one-write`                                                               | system             | `tests/system/process-contracts/*one-write.test.ts`, `write-boundary-policy.test.ts`                                 |
+| `test:one-write`                                                               | system             | `tests/system/process-contracts/promotion-delete-bridge-one-write.test.ts`                                           |
 | `test:doing`, `test:branch`, `test:side-by-side`, `test:staleness`             | system             | `tests/system/canvas-state/`                                                                                         |
 | `test:geometry`, `test:labels`                                                 | modules and system | `src/runtime/engine/tests/`, `tests/system/label-geometry/`                                                          |
 | `test:text`, `test:library`                                                    | modules            | `src/runtime/engine/tests/`                                                                                          |
@@ -183,17 +182,17 @@ The normal package command is the canonical normal lane. Focused diagnosis accep
 bun tests/system/browser/run-browser-lane.ts --focus tests/system/browser/<canonical-owner>.test.ts
 ```
 
-One `--focus` may name multiple canonical owners in canonical order. Missing,
-duplicate, reordered, unknown, recursive, changed-only, random, shard, and
-extra arguments are rejected before prerequisites or build. `--test-name` is
-the only focused-owner option: it requires one canonical owner and matches the
-complete test name exactly. Do not invoke an owner directly: the adapter is
-what makes browser work serial, headless, and clean after failures or
-interruption.
+One `--focus` may name any subset of the owners, in any order; a repeated path
+runs once. Only what would otherwise run the whole lane by mistake is refused
+before prerequisites or build: a path that is not an owner, a flag the runner
+does not know, or `--test-name` without exactly one owner. `--test-name` is
+the only focused-owner option and matches the complete test name exactly. Do
+not invoke an owner directly: the adapter is what makes browser work serial,
+headless, and clean after failures or interruption.
 
-`BROWSER_TEST_PATHS` is the normal order. `OPT_IN_BROWSER_TEST_PATHS` is disjoint
-and requires the explicit `--opt-in` mode. The runner rejects mixed, missing,
-duplicate, reordered, or unknown paths before it starts a browser.
+`BROWSER_TEST_PATHS` is the normal inventory and the order the package
+command runs it in. `OPT_IN_BROWSER_TEST_PATHS` is disjoint and requires the
+explicit `--opt-in` mode; a path from the other inventory is refused.
 
 ### Opt-in human edit performance (TASK-118)
 
@@ -402,8 +401,12 @@ failure matrices.
   local HTTP double also pins the public write contract: `--document` on add,
   update and delete, global board/`--doing` routing, clean success streams,
   structured refusal and usage exits, and CLI-owned import path resolution.
-- The one-write owners in `test:system` count writes on the wire through a proxy, so a
-  loop cannot pass itself off as a batch (TASK-068).
+- One one-write owner in `test:system`,
+  `promotion-delete-bridge-one-write.test.ts`, counts writes on the wire
+  through a proxy for the intents that are composed from several elements
+  (promote, delete many, bridge), so a loop cannot pass itself off as a batch
+  (TASK-068). Single-body routes have no other way to be one write and need no
+  proxy (TASK-153).
 - Normal lock owners prove reachable one-server exclusion. The opt-in topology
   owner proves two Archboard server processes cannot write one vault at once,
   which is the one thing an in-process mutex could not do (ADR 0016).

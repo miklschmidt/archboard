@@ -269,15 +269,14 @@ export function vaultPathFor(
 			`Refusing to resolve board "${boardKey(identity)}" outside the vault at ${root}`,
 		);
 	}
-	// Walk the vault a segment at a time, taking whatever spelling is on disk.
-	// The moment a segment has no match the rest is a path that does not exist,
-	// so the typed casing is the right name for it.
-	//
-	// No shortcut for a name that already matches byte for byte. It would be
-	// faster and it would make the answer depend on how the caller spelled the
-	// address, which is the one thing this must not do: a vault holding both
-	// `payments` and `Payments` is broken, but it has to be broken the same way
-	// for everybody until somebody renames one. `listBoards` reports it.
+	// A note at the byte-equal path is the answer, without a readdir. The only
+	// vault where this and the case-insensitive walk below disagree is one that
+	// already holds two case-variants of the same name, which ADR 0010 calls
+	// broken and `listBoards` already reports as a collision (TASK-153).
+	if (fs.existsSync(resolved)) return resolved;
+	// Otherwise walk the vault a segment at a time, taking whatever spelling is
+	// on disk. The moment a segment has no match the rest is a path that does
+	// not exist, so the typed casing is the right name for it.
 	const segments = `${base}${BOARD_FILE_SUFFIX}`.split("/");
 	let at = vault;
 	for (const [index, segment] of segments.entries()) {

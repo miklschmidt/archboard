@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-import { TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS } from "../support/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import {
 	openTestPane,

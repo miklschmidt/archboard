@@ -4,10 +4,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import type { Rect } from "../../../src/runtime/engine/panes.ts";
-import {
-	PANE_SETTLE_CAP_MS,
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-} from "../../../src/shared/timing/timing.ts";
+import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
+import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { evidenceRoot } from "./support/shell-render-matrix.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";

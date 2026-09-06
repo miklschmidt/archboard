@@ -140,11 +140,12 @@ export function createDynamicApprovalBrowserSchemas(
 		.strict()
 		.superRefine((approval, refinementContext) => {
 			validateIdentityAndBrowserEffect(approval.identity, approval.effect, refinementContext);
-			if (approval.expiresAtMs - approval.createdAtMs !== CODEX_APPROVAL_EXPIRY_MS) {
+			const window = approval.expiresAtMs - approval.createdAtMs;
+			if (window <= 0 || window > CODEX_APPROVAL_EXPIRY_MS) {
 				addIssue(
 					refinementContext,
 					["expiresAtMs"],
-					`approval expiry must be exactly ${CODEX_APPROVAL_EXPIRY_MS}ms after creation`,
+					`approval expiry must be after creation and at most ${CODEX_APPROVAL_EXPIRY_MS}ms after it`,
 				);
 			}
 			validateDecisionEcho(

@@ -10,7 +10,7 @@ import {
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderBoardNote } from "../../../../src/runtime/engine/board.js";
-import { TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS } from "../../../../src/shared/timing/timing.js";
+import { TEST_BOARD_INSPECTION_PACKAGE_PROCESS_GROUP_CLEANUP_MS } from "../../support/timing.ts";
 import type {
 	PackageInspectionOwner,
 	PackageProcessFixtureRun,

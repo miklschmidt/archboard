@@ -63,9 +63,7 @@ function ownedTarget(name = "observer-test") {
 	ownedKeys.add(owned.key);
 	owned.board.file = join(root, `${name}.excalidraw.md`);
 	if (!owned.board.baseline) {
-		ioModule.writeBoardContent(owned.board, ioModule.emptyContent(), {
-			saveCommand: "board save",
-		});
+		ioModule.writeBoardContent(owned.board, ioModule.emptyContent(), {});
 	}
 	return owned;
 }
@@ -229,9 +227,7 @@ describe.serial("post-commit pane observers", () => {
 
 		storeModule.recordBaseline(owned.board, boardFile, beforeHash, beforeVersion);
 		expect(() =>
-			ioModule.writeBoardContent(owned.board, ioModule.readBoardContent(owned.board), {
-				saveCommand: "board save",
-			}),
+			ioModule.writeBoardContent(owned.board, ioModule.readBoardContent(owned.board), {}),
 		).toThrow(ioModule.BoardWriteConflictError);
 		expect(atomicWriteSpy).toHaveBeenCalledTimes(1);
 		expect(readFileSync(boardFile)).toEqual(committed);
@@ -274,7 +270,7 @@ describe.serial("post-commit pane observers", () => {
 			const committed = ioModule.writeBoardContent(
 				owned.board,
 				{ elements: new Map([["archboard", boxElement("archboard")]]), files: new Map() },
-				{ saveCommand: "board save" },
+				{},
 			);
 			const boardFile = owned.board.file;
 			if (!boardFile) throw new Error("Owned external-write fixture has no board file.");

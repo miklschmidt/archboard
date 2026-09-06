@@ -99,9 +99,7 @@ describe.serial("board versions in notes", () => {
 		const identity = boardModule.makeIdentity({ board: "ledger-note", level: "service" });
 		const { board } = ownBoard(identity, "ledger-note.excalidraw.md");
 
-		const first = ioModule.writeBoardContent(board, contentOf(box("aaa", 10)), {
-			saveCommand: "board save",
-		});
+		const first = ioModule.writeBoardContent(board, contentOf(box("aaa", 10)), {});
 		const firstNote = readFileSync(board.file, "utf-8");
 		expect(first.version).toBe(1);
 		expect(firstNote).toMatch(/^version: 1$/m);
@@ -109,9 +107,11 @@ describe.serial("board versions in notes", () => {
 		expect(firstNote).toMatch(/^level: service$/m);
 		expect(ioModule.readNote(board.file)?.version).toBe(1);
 
-		const second = ioModule.writeBoardContent(board, contentOf(box("aaa", 10), box("bbb", 200)), {
-			saveCommand: "board save",
-		});
+		const second = ioModule.writeBoardContent(
+			board,
+			contentOf(box("aaa", 10), box("bbb", 200)),
+			{},
+		);
 		const secondNote = readFileSync(board.file, "utf-8");
 		expect(second.version).toBe(2);
 		expect(versionModule.versionNumber(secondNote)).toBe(2);
@@ -123,9 +123,9 @@ describe.serial("board versions in notes", () => {
 		const identity = boardModule.makeIdentity({ board: "same-document" });
 		const { board } = ownBoard(identity, "same-document.excalidraw.md");
 		const content = contentOf(box("aaa", 10), box("bbb", 200));
-		ioModule.writeBoardContent(board, content, { saveCommand: "board save" });
+		ioModule.writeBoardContent(board, content);
 		const before = readFileSync(board.file);
-		const again = ioModule.writeBoardContent(board, content, { saveCommand: "board save" });
+		const again = ioModule.writeBoardContent(board, content);
 		expect(readFileSync(board.file)).toEqual(before);
 		expect(again.version).toBe(1);
 	});
@@ -133,10 +133,8 @@ describe.serial("board versions in notes", () => {
 	test("stated versions override remembered versions and refusals teach the writer", () => {
 		const identity = boardModule.makeIdentity({ board: "precedence" });
 		const { key, board } = ownBoard(identity, "precedence.excalidraw.md");
-		ioModule.writeBoardContent(board, contentOf(box("one", 10)), { saveCommand: "board save" });
-		ioModule.writeBoardContent(board, contentOf(box("one", 10), box("two", 20)), {
-			saveCommand: "board save",
-		});
+		ioModule.writeBoardContent(board, contentOf(box("one", 10)));
+		ioModule.writeBoardContent(board, contentOf(box("one", 10), box("two", 20)), {});
 
 		const writer = "board-version-note-writer";
 		versionModule.rememberVersion(writer, 1);
@@ -167,7 +165,7 @@ describe.serial("board versions in notes", () => {
 	test("a nonnumeric human version is preserved and remains unversioned", () => {
 		const identity = boardModule.makeIdentity({ board: "theirs-note" });
 		const { board } = ownBoard(identity, "theirs-note.excalidraw.md");
-		ioModule.writeBoardContent(board, contentOf(box("ccc", 10)), { saveCommand: "board save" });
+		ioModule.writeBoardContent(board, contentOf(box("ccc", 10)));
 		const theirs = readFileSync(board.file, "utf-8").replace(
 			/^version: 1$/m,
 			"version: second draft",
@@ -180,9 +178,11 @@ describe.serial("board versions in notes", () => {
 			null,
 		);
 
-		const written = ioModule.writeBoardContent(board, contentOf(box("ccc", 10), box("ddd", 200)), {
-			saveCommand: "board save",
-		});
+		const written = ioModule.writeBoardContent(
+			board,
+			contentOf(box("ccc", 10), box("ddd", 200)),
+			{},
+		);
 		const note = readFileSync(board.file, "utf-8");
 		expect(note).toMatch(/^version: second draft$/m);
 		expect(written.version).toBeNull();
@@ -193,7 +193,7 @@ describe.serial("board versions in notes", () => {
 	test("legacy tracking migrates only inside the next one-write mutation", () => {
 		const identity = boardModule.makeIdentity({ board: "tracking-migration" });
 		const { board } = ownBoard(identity, "tracking-migration.excalidraw.md");
-		ioModule.writeBoardContent(board, contentOf(box("legacy", 10)), { saveCommand: "board save" });
+		ioModule.writeBoardContent(board, contentOf(box("legacy", 10)));
 		const note = readFileSync(board.file, "utf8");
 		const scene = JSON.parse(extractSceneJsonFromObsidianMd(note)) as {
 			elements: Array<Record<string, unknown>>;
@@ -228,7 +228,7 @@ describe.serial("board versions in notes", () => {
 
 		read.elements.set("requested", box("requested", 200));
 		atomicWriteSpy.mockClear();
-		const written = ioModule.writeBoardContent(board, read, { saveCommand: "board save" });
+		const written = ioModule.writeBoardContent(board, read);
 		expect(atomicWriteSpy.mock.calls).toHaveLength(1);
 		expect(written.version).toBe(2);
 		const reread = ioModule.readNote(board.file)!;
@@ -249,7 +249,7 @@ describe.serial("board versions in notes", () => {
 	test("an incomplete trusted note refuses without repair, version, or atomic write", () => {
 		const identity = boardModule.makeIdentity({ board: "strict-read" });
 		const { board } = ownBoard(identity, "strict-read.excalidraw.md");
-		ioModule.writeBoardContent(board, contentOf(box("strict", 10)), { saveCommand: "board save" });
+		ioModule.writeBoardContent(board, contentOf(box("strict", 10)));
 		const note = readFileSync(board.file, "utf8");
 		const scene = JSON.parse(extractSceneJsonFromObsidianMd(note)) as {
 			elements: Array<Record<string, unknown>>;
@@ -290,7 +290,7 @@ describe.serial("board versions in notes", () => {
 			],
 		});
 		atomicWriteSpy.mockClear();
-		ioModule.writeBoardContent(board, content, { saveCommand: "board save" });
+		ioModule.writeBoardContent(board, content);
 		expect(atomicWriteSpy.mock.calls).toHaveLength(1);
 		const note = readFileSync(board.file, "utf8");
 		expect(note).not.toContain('"mode"');
@@ -330,7 +330,7 @@ describe.serial("board versions in notes", () => {
 			link: humanLink,
 			customData: { archboard: { binding: { repo: "opaque", path: "opaque" } } },
 		});
-		ioModule.writeBoardContent(board, contentOf(canonical), { saveCommand: "board save" });
+		ioModule.writeBoardContent(board, contentOf(canonical));
 		const loaded = ioModule.readNote(board.file)!;
 		const presentation = { boardKey: "module/board", opaqueTarget };
 		const presented = presentElement(loaded.elements.get("bound")!, presentation);
@@ -339,7 +339,7 @@ describe.serial("board versions in notes", () => {
 			upserts: [HumanElementChangeSchema.parse(presented)],
 			presentationLinks: new Map([["bound", presentation]]),
 		});
-		ioModule.writeBoardContent(board, loaded, { saveCommand: "board save" });
+		ioModule.writeBoardContent(board, loaded);
 		const note = readFileSync(board.file, "utf8");
 		expect(note).not.toContain(opaqueTarget);
 		expect(note).toContain(humanLink);
@@ -351,7 +351,7 @@ describe.serial("board versions in notes", () => {
 		expect(persisted.link).toBe(humanLink);
 		expect(ioModule.readNote(board.file)!.elements.get("bound")?.link).toBe(humanLink);
 		const beforeIdempotentWrite = readFileSync(board.file);
-		ioModule.writeBoardContent(board, loaded, { saveCommand: "board save" });
+		ioModule.writeBoardContent(board, loaded);
 		expect(readFileSync(board.file)).toEqual(beforeIdempotentWrite);
 	});
 });
