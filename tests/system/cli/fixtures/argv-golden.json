@@ -1,7 +1,6 @@
 {
 	"base": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
 	"description": "Literal argv results owned by the current released command boundary.",
-	"generalHelpSha256": "1e9075e746e308af0937a1bc661848e5a739702e10c9ec9b2d1251d88920fe1f",
 	"cases": [
 		{
 			"name": "query command-level help remains an unknown flag",
