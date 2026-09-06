@@ -5,25 +5,21 @@ import {
 	canonicalContext,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-} from "../../codex-instructions/index.js";
-import type { ArchboardContext } from "../../codex-instructions/index.js";
-import type { EpochTransaction } from "../../codex-epoch/index.js";
+} from "@/runtime/codex-instructions";
+import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { EpochTransaction } from "@/runtime/codex-epoch";
 import {
 	CodexSessionMutationError,
 	type SessionParams,
 	type SessionThread,
 	type SessionTurn,
-} from "../../codex-session/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
+} from "@/runtime/codex-session";
+import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 import {
 	ARCHBOARD_APP_DYNAMIC_TOOLS,
 	ARCHBOARD_APP_MANIFEST_SHA256,
-} from "../../codex-thread-tools/index.js";
-import type {
-	OperationId,
-	ThreadId,
-	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-thread-tools";
+import type { OperationId, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,
@@ -33,8 +29,11 @@ import {
 	type DynamicRefusalReason,
 	type DynamicRelation,
 	type DynamicTargetAuthority,
-} from "./contract.js";
-import type { DynamicOperationSettlement, PreparedDynamicMutation } from "./effects.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
+import type {
+	DynamicOperationSettlement,
+	PreparedDynamicMutation,
+} from "@/runtime/codex-dynamic-tools/lib/effects";
 
 const MUTATION_KINDS = {
 	create_thread: { kind: "create_thread", rpc: "thread/start" },

@@ -1,9 +1,13 @@
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
-import { decodeJsonRpcError, decodeResponseEnvelope } from "../../codex-protocol/index.js";
-import type { RequestTombstone } from "./internals.js";
-import type { TransportIssue, TransportLateResponse, TransportLateResponseFor } from "./types.js";
-import type { ResponseMethod } from "../../codex-protocol/index.js";
-import { cloneAndFreeze, jsonByteLength } from "./public-values.js";
+import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import { decodeJsonRpcError, decodeResponseEnvelope } from "@/runtime/codex-protocol";
+import type { RequestTombstone } from "@/runtime/codex-transport/lib/internals";
+import type {
+	TransportIssue,
+	TransportLateResponse,
+	TransportLateResponseFor,
+} from "@/runtime/codex-transport/lib/types";
+import type { ResponseMethod } from "@/runtime/codex-protocol";
+import { cloneAndFreeze, jsonByteLength } from "@/runtime/codex-transport/lib/public-values";
 
 type RetainedTombstone = Readonly<
 	Omit<RequestTombstone, "correlation"> & {

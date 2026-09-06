@@ -67,7 +67,6 @@ function requirePath(value: string, name: string): string {
  * Build the child environment from the reviewed allowlist. The two Codex
  * roots are assigned last so ambient values can never win by insertion order
  * or precedence.
- *
  * @param input - Canonical private Codex roots and an optional reviewed ambient environment.
  * @returns The frozen allowlisted environment for the owned app-server child.
  */

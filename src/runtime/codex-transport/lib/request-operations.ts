@@ -5,28 +5,30 @@ import {
 	type ClientNotificationMethod,
 	type ClientRequestMethodWithoutParams,
 	type ResponseMethod,
-} from "../../codex-protocol/index.js";
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
-import { CODEX_REQUEST_SETTLEMENT_MS } from "../../../shared/timing/timing.js";
-import type {
-	IdentityAuthority,
-	WireRequestCorrelation,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-protocol";
+import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import { CODEX_REQUEST_SETTLEMENT_MS } from "@/shared/timing/timing";
+import type { IdentityAuthority, WireRequestCorrelation } from "@/shared/codex-workbench-identity";
 import {
 	CodexTransportClosedError,
 	CodexTransportRequestError,
 	CodexTransportUsageError,
 	CodexTransportWriteError,
 	type CodexRequestFailureReason,
-} from "./errors.js";
-import type { FrameWriterJob } from "./frame-writer.js";
+} from "@/runtime/codex-transport/lib/errors";
+import type { FrameWriterJob } from "@/runtime/codex-transport/lib/frame-writer";
 import type {
 	CodexTransportRequest,
 	CodexTransportRequestOptions,
 	CodexTransportResponse,
-} from "./types.js";
-import type { NotificationJob, PendingRequest, RequestJob, WriteJob } from "./internals.js";
-import { isRecord, jsonLine, wireKey } from "./wire.js";
+} from "@/runtime/codex-transport/lib/types";
+import type {
+	NotificationJob,
+	PendingRequest,
+	RequestJob,
+	WriteJob,
+} from "@/runtime/codex-transport/lib/internals";
+import { isRecord, jsonLine, wireKey } from "@/runtime/codex-transport/lib/wire";
 
 export interface OutboundOperationsOptions {
 	readonly identity: () => IdentityAuthority;

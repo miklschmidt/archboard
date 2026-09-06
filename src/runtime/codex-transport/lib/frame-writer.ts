@@ -1,7 +1,7 @@
 import type { Writable } from "node:stream";
 
-import { CODEX_APP_SERVER_CAPACITY } from "../../../shared/codex-app-server-capacity/index.js";
-import { CodexTransportWriteError } from "./errors.js";
+import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
+import { CodexTransportWriteError } from "@/runtime/codex-transport/lib/errors";
 
 type FrameWriterLane = "regular" | "response";
 

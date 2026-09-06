@@ -1,5 +1,5 @@
-import { boundTextDrift, labelAnchorOf, planLabelRepair } from "../../engine/labels.js";
-import { measureLinear } from "../../engine/geometry.js";
+import { boundTextDrift, labelAnchorOf, planLabelRepair } from "@/runtime/engine/labels";
+import { measureLinear } from "@/runtime/engine/geometry";
 import type {
 	COLLISION_PASSES,
 	ElementRef,
@@ -8,15 +8,15 @@ import type {
 	NodeRef,
 	ObstacleRef,
 	ScenePoint,
-} from "../schemas.js";
-import { InspectionFindingSchema } from "../schemas.js";
+} from "@/runtime/board-inspection/schemas";
+import { InspectionFindingSchema } from "@/runtime/board-inspection/schemas";
 import {
 	decodePath,
 	kindOf,
 	persistedConnectorPointChainEligibility,
 	stableDescription,
 	type DecodedRecord,
-} from "./decode.js";
+} from "@/runtime/board-inspection/lib/decode";
 import {
 	box,
 	aggregateBoxes,
@@ -30,7 +30,7 @@ import {
 	type ExactBox,
 	type ExactPoint,
 	type Segment,
-} from "./geometry.js";
+} from "@/runtime/board-inspection/lib/geometry";
 import {
 	archboardMetadata,
 	boundElementTargetCompatible,
@@ -43,15 +43,15 @@ import {
 	type InspectionModel,
 	type InspectionNode,
 	type InspectionObstacle,
-} from "./model.js";
+} from "@/runtime/board-inspection/lib/model";
 import {
 	buildSweepHierarchy,
 	sweepIntervalPairs,
 	type SweepPartition,
 	type SweepWork,
-} from "./interval-sweep.js";
-import { compareIdentity, compareIdentityLists } from "./ordering.js";
-import type { ValidBridgeDecoration } from "../bridge.js";
+} from "@/runtime/board-inspection/lib/interval-sweep";
+import { compareIdentity, compareIdentityLists } from "@/runtime/board-inspection/lib/ordering";
+import type { ValidBridgeDecoration } from "@/runtime/board-inspection/bridge";
 
 const BROAD_PHASE_COMPARISON_LIMIT = 2_000_000 as const;
 
@@ -382,7 +382,7 @@ function renderFindings(records: readonly DecodedRecord[]): InspectionFinding[] 
 					},
 					message: `Element ${record.id ?? `at source index ${record.sourceIndex}`} has invalid render geometry.`,
 					elements: [record.ref],
-					points: [{ x: raw.x as number, y: raw.y as number }],
+					points: [{ x: raw.x, y: raw.y }],
 					affected: record.evidenceBox,
 				}),
 			);
@@ -921,7 +921,7 @@ function connectorBindingFindings(
 					reason: "missing-binding-target",
 					severity: "error",
 					affectsCoverage: true,
-					details: { connectorId: record.id!, end, targetId: readableTargetId },
+					details: { connectorId: record.id, end, targetId: readableTargetId },
 					message: `Connector ${record.id} names missing target ${readableTargetId}.`,
 					elements: [record.ref],
 					affected: record.evidenceBox,
@@ -935,7 +935,7 @@ function connectorBindingFindings(
 					severity: "error",
 					affectsCoverage: true,
 					details: {
-						connectorId: record.id!,
+						connectorId: record.id,
 						end,
 						targetId: readableTargetId,
 						targetType: target.type ?? "unknown",
@@ -964,7 +964,7 @@ function connectorBindingFindings(
 						reason: "missing-binding-reciprocal",
 						severity: "error",
 						affectsCoverage: false,
-						details: { connectorId: record.id!, end, targetId: readableTargetId },
+						details: { connectorId: record.id, end, targetId: readableTargetId },
 						message: `Target ${readableTargetId} does not name connector ${record.id}.`,
 						elements: [record.ref, target.ref],
 						affected: affectedOf([record, target]),
@@ -1003,7 +1003,7 @@ function persistedEndpointFindings(record: DecodedRecord, raw: RawRecord): Inspe
 					severity: "error",
 					affectsCoverage: true,
 					details: {
-						connectorId: record.id!,
+						connectorId: record.id,
 						end,
 						inputTargetId: inputId,
 						bindingTargetId: typeof bindingId === "string" ? bindingId : null,
@@ -1067,7 +1067,7 @@ function boundElementFindings(
 					reason: entry.type === "text" ? "dangling-bound-text" : "dangling-bound-arrow",
 					severity: "error",
 					affectsCoverage: false,
-					details: { ownerId: record.id!, targetId: entry.id },
+					details: { ownerId: record.id, targetId: entry.id },
 					message: `Element ${record.id} names missing bound ${entry.type} ${entry.id}.`,
 					elements: [record.ref],
 					affected: record.evidenceBox,
@@ -2264,7 +2264,7 @@ function collisionFindings(
 		const partitions = new Map<string, SweepPartition>();
 		for (let labelIndex = 0; labelIndex < labelLabelItems.length; labelIndex += 1) {
 			const label = labelLabelItems[labelIndex]!;
-			const owner = model.confirmedLabels.get(label.id!)!;
+			const owner = model.confirmedLabels.get(label.id)!;
 			if (!partitions.has(owner)) {
 				partitions.set(owner, {
 					partition: owner,

@@ -4,13 +4,13 @@ import type {
 	LogicalToolCallCorrelation,
 	OperationId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import {
 	canonicalDynamicApprovalJson,
 	dynamicApprovalHashForCanonicalJson,
 	type DynamicApprovalCanonicalEffect,
-} from "../../../shared/codex-browser-model/index.js";
-import { CODEX_APPROVAL_EXPIRY_MS } from "../../../shared/timing/timing.js";
+} from "@/shared/codex-browser-model";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@/shared/timing/timing";
 import {
 	CodexDynamicOperationTerminalizationError,
 	CodexDynamicToolsError,
@@ -27,8 +27,8 @@ import {
 	type DynamicTargetAuthority,
 	type DynamicToolApprovalRequest,
 	type DynamicToolApprovalDecision,
-} from "./contract.js";
-import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
+import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 
 export interface DynamicIssuedOperations {
 	readonly resultOperationId: OperationId;

@@ -1,11 +1,10 @@
+import type { ChildEpoch, ChildId, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
 import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { ActiveEpoch, EpochManifest, EpochOperationRecord } from "./manifest.js";
-import type { CodexEpochFileSystem } from "./storage.js";
+	ActiveEpoch,
+	EpochManifest,
+	EpochOperationRecord,
+} from "@/runtime/codex-epoch/lib/manifest";
+import type { CodexEpochFileSystem } from "@/runtime/codex-epoch/lib/storage";
 
 type CodexEpochErrorCode =
 	| "invalid_input"

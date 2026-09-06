@@ -1,26 +1,18 @@
-import type {
-	CodexEpochStore,
-	EpochExecutionProof,
-	EpochTransaction,
-} from "../../codex-epoch/index.js";
-import type { ArchboardContext } from "../../codex-instructions/index.js";
-import type { CodexSession, SessionThread } from "../../codex-session/index.js";
+import type { CodexEpochStore, EpochExecutionProof, EpochTransaction } from "@/runtime/codex-epoch";
+import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { CodexSession, SessionThread } from "@/runtime/codex-session";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
 	ThreadLinkSource,
 	ThreadLinkTarget,
-} from "../../codex-thread-link/index.js";
-import type {
-	CodexWaitGraph,
-	OwnedWaitCleanupCause,
-	WaitOwner,
-} from "../../codex-wait-graph/index.js";
-import type { CodexTransport } from "../../codex-transport/index.js";
+} from "@/runtime/codex-thread-link";
+import type { CodexWaitGraph, OwnedWaitCleanupCause, WaitOwner } from "@/runtime/codex-wait-graph";
+import type { CodexTransport } from "@/runtime/codex-transport";
 import type {
 	DynamicServerRequest,
 	ReverseResponse,
-} from "../../codex-transport/server-requests.js";
+} from "@/runtime/codex-transport/server-requests";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -29,7 +21,7 @@ import type {
 	OperationId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import { randomUUID } from "node:crypto";
 import type {
 	ArchboardAppNamespaceSpec,
@@ -37,7 +29,7 @@ import type {
 	ToolArgument,
 	ToolArguments,
 	DynamicToolCallResponse,
-} from "../../codex-thread-tools/index.js";
+} from "@/runtime/codex-thread-tools";
 
 /** The only opaque authority value that may enter a dynamic effect. */
 declare const dynamicAuthorityBrand: unique symbol;

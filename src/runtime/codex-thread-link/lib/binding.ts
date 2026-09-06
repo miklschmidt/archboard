@@ -1,16 +1,16 @@
-import { CodexEpochError } from "../../codex-epoch/index.js";
-import { ADDITIONAL_CONTEXT_POLICY } from "../../codex-instructions/index.js";
+import { CodexEpochError } from "@/runtime/codex-epoch";
+import { ADDITIONAL_CONTEXT_POLICY } from "@/runtime/codex-instructions";
 import {
 	deepEqual,
 	cloneAndFreeze,
 	isEpochExecutionProof,
 	proofMatchesManifest,
-} from "./provenance.js";
+} from "@/runtime/codex-thread-link/lib/provenance";
 import {
 	isAllowedThreadLinkSource,
 	isExecutableThreadLinkStatus,
 	isThreadLinkStatus,
-} from "./classifier.js";
+} from "@/runtime/codex-thread-link/lib/classifier";
 import {
 	CodexThreadLinkConflictError,
 	CodexThreadLinkError,
@@ -26,7 +26,7 @@ import {
 	type ThreadLinkSource,
 	type ThreadLinkBindingStore,
 	type UnboundThreadLink,
-} from "./contract.js";
+} from "@/runtime/codex-thread-link/lib/contract";
 
 const REASON_VALUES = new Set<string>(
 	ADDITIONAL_CONTEXT_POLICY.threadLink.reasonPrecedence.map(({ reason }) => reason),

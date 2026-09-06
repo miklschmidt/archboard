@@ -1,8 +1,18 @@
-import { CodexTransportClosedError, CodexTransportWriteError } from "./errors.js";
-import type { CodexRequestFailureReason } from "./errors.js";
-import type { FrameWriterCallbacks, FrameWriterJob } from "./frame-writer.js";
-import type { PendingRequest, ReverseRecord, WriteJob } from "./internals.js";
-import type { TransportIssue } from "./types.js";
+import {
+	CodexTransportClosedError,
+	CodexTransportWriteError,
+} from "@/runtime/codex-transport/lib/errors";
+import type { CodexRequestFailureReason } from "@/runtime/codex-transport/lib/errors";
+import type {
+	FrameWriterCallbacks,
+	FrameWriterJob,
+} from "@/runtime/codex-transport/lib/frame-writer";
+import type {
+	PendingRequest,
+	ReverseRecord,
+	WriteJob,
+} from "@/runtime/codex-transport/lib/internals";
+import type { TransportIssue } from "@/runtime/codex-transport/lib/types";
 
 interface TransportWriterCallbacksOptions {
 	readonly emitIssue: (issue: TransportIssue) => void;

@@ -3,14 +3,14 @@ import {
 	ARCHBOARD_APP_NAMESPACE,
 	GeneralThreadToolNameSchema,
 	parseToolArguments,
-} from "../../codex-thread-tools/index.js";
-import type { ToolArguments } from "../../codex-thread-tools/index.js";
-import { CodexDynamicToolsError } from "./contract.js";
+} from "@/runtime/codex-thread-tools";
+import type { ToolArguments } from "@/runtime/codex-thread-tools";
+import { CodexDynamicToolsError } from "@/runtime/codex-dynamic-tools/lib/contract";
 import type {
 	CodexDynamicToolsOptions,
 	DynamicRefusalReason,
 	DynamicToolName,
-} from "./contract.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
 
 const DYNAMIC_PARAMS_KEYS = Object.freeze([
 	"threadId",

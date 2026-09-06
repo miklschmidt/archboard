@@ -1,4 +1,4 @@
-import { compareIdentity } from "./ordering.js";
+import { compareIdentity } from "@/runtime/board-inspection/lib/ordering";
 
 interface SweepInterval<T> {
 	id: string;
