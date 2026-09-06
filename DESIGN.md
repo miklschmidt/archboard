@@ -69,13 +69,9 @@ Spoken approval is state-gated. Realtime cannot emit a typed tool verdict, so a
 later ordinary coordinator turn classifies one host-bound final user reply and
 calls a dedicated typed resolver. Only the next matching final user item from
 the same realtime session may arm the immutable request; its item id and
-sequence are part of the authority. Assistant output, provisional user deltas,
-pre-prompt items, duplicates, and stale sessions cannot arm it. Target, effect,
+sequence are part of the authority. Target, effect,
 child epoch, realtime session and expiry are compare-and-swapped before
-one-time execution. A request that
-blocks the coordinator stays visual-only.
-
-ADR 0019 supersedes ADR 0005.
+one-time execution. A request that blocks the coordinator stays visual-only.
 
 ### 3. On-demand query — CLI
 
