@@ -210,6 +210,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		setHold,
 		editsWithdrawn,
 		noteVersionChanged,
+		stage: host.paneElement,
 	});
 
 	/**
