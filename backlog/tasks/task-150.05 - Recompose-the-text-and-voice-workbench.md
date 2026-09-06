@@ -1,10 +1,11 @@
 ---
 id: TASK-150.05
 title: Build the fresh text and voice workbench
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-05 13:58'
+updated_date: '2026-09-05 15:26'
 labels: []
 dependencies:
   - TASK-150.03
@@ -37,24 +38,29 @@ Build the wave presentation in TASK-150.05 with typed model-output level and lif
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Chat thread, message/content and composer presentation uses fresh official assistant-ui components and supported primitives where product contracts require composition. Supporting queue, approval, account and voice controls use the shared shadcn Base UI family, coherent theme and Remix icons; no old workbench presentation is ported.
-- [ ] #2 Message, approval, queue, captured-context, transcript and lifecycle presentation uses interfaces grounded in actual product contracts. No archived product implementation is ported here, and no second runtime or synthetic product state is introduced.
-- [ ] #3 The presentation represents the one private app-server session, explicit thread link, separate workhorse/coordinator, authority and recovery, with mute/stop controls available in collapsed and fullscreen compositions. Real runtime connection and lifecycle wiring belong to TASK-150.07.
-- [ ] #4 Composer, queue, approvals, disconnect/recovery, context/transcript, mute and fullscreen-stop presentation passes strict and appropriate non-browser checks. The presentation is ready for TASK-150.07 porting/integration, without claiming end-to-end operation. Browser execution waits for TASK-150.06 after integration is reported ready.
-- [ ] #5 Fresh workbench, transcript, queue, approval and voice presentation has no old stylesheet families, copied presentation wrappers, duplicate controls or feature-flagged legacy view.
-- [ ] #6 Known steer/queue and voice ownership constraints are represented in the integration contract. Any departure from suitable official assistant-ui component behavior is justified by an actual product requirement and decided by the orchestrating agent, not inherited automatically from old headless-only rules or workarounds.
-- [ ] #7 Voice presentation uses the official LiveKit wave renderer with typed model-output inputs, approved theme and accessible static/status presentation. It does not use microphone amplitude or introduce a LiveKit session; the narrow integration adaptation is documented and actual media wiring waits for TASK-150.07.
+- [x] #1 Chat thread, message/content and composer presentation uses fresh official assistant-ui components and supported primitives where product contracts require composition. Supporting queue, approval, account and voice controls use the shared shadcn Base UI family, coherent theme and Remix icons; no old workbench presentation is ported.
+- [x] #2 Message, approval, queue, captured-context, transcript and lifecycle presentation uses interfaces grounded in actual product contracts. No archived product implementation is ported here, and no second runtime or synthetic product state is introduced.
+- [x] #3 The presentation represents the one private app-server session, explicit thread link, separate workhorse/coordinator, authority and recovery, with mute/stop controls available in collapsed and fullscreen compositions. Real runtime connection and lifecycle wiring belong to TASK-150.07.
+- [x] #4 Composer, queue, approvals, disconnect/recovery, context/transcript, mute and fullscreen-stop presentation passes strict and appropriate non-browser checks. The presentation is ready for TASK-150.07 porting/integration, without claiming end-to-end operation. Browser execution waits for TASK-150.06 after integration is reported ready.
+- [x] #5 Fresh workbench, transcript, queue, approval and voice presentation has no old stylesheet families, copied presentation wrappers, duplicate controls or feature-flagged legacy view.
+- [x] #6 Known steer/queue and voice ownership constraints are represented in the integration contract. Any departure from suitable official assistant-ui component behavior is justified by an actual product requirement and decided by the orchestrating agent, not inherited automatically from old headless-only rules or workarounds.
+- [x] #7 Voice presentation uses the official LiveKit wave renderer with typed model-output inputs, approved theme and accessible static/status presentation. It does not use microphone amplitude or introduce a LiveKit session; the narrow integration adaptation is documented and actual media wiring waits for TASK-150.07.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-5. Build the fresh assistant-ui text and voice workbench. TASK-150.05.
-Depends on TASK-150.03. coordinator UI workers.
-Use shared shadcn controls for composer, queue operations, approval choices, thread/coordinator/account settings, voice controls and disclosure. Select official Field/Textarea/InputGroup/Select/Checkbox/RadioGroup components as the real input contracts require. Use official assistant-ui thread/message/content/composer components where they fit the actual workflows, built on the shared shadcn Base UI controls and theme. Install fresh upstream source rather than porting old workbench presentation. Keep assistant-ui's supported primitives for necessary product-specific composition; do not reinvent components available upstream or add a second authoritative product runtime.
-Keep product-specific projections for messages, approvals, queue, captured context, transcript and lifecycle. Preserve the one private app-server session, explicit thread link, separate workhorse/coordinator and visible authority/recovery. Keep live voice mute/stop reachable when collapsed and in fullscreen.
-Build new workbench/transcript/queue/approval/voice presentation with typed inputs/action callbacks grounded in actual message, approval, queue and lifecycle contracts. Copying and connecting archived implementations waits for TASK-150.07. Do not copy old frame/composer/control JSX or styles; do not expose a feature-flagged legacy view.
-Exit: composer, queue, approvals, connection/recovery, context/transcript, mute and fullscreen-stop presentation is implemented with strict and appropriate non-browser checks passing. The complete presentation is ready for TASK-150.07 porting and integration; no working end-to-end product claim is made. Controlled text/voice browser execution and rendered proof wait for TASK-150.06.
-
-Current execution constraints: preserve all completed corrections and the user's test deletions. Do not restore deleted tests or add repository-policy suites, configuration snapshots, dependency/version mirrors, tests of upstream tooling, or tests of test helpers. Use the existing lint/compiler commands and meaningful existing product checks. New strict lint adoption is limited to src/ui; remaining non-UI adoption is TASK-151. UI uses the existing root TypeScript project; do not create src/ui/tsconfig.json. Run analysis sequentially and keep the repository project guard on all lint/fix paths. No callbacks to previous tasks, fixed agent assignments, or extra interim review loops.
+Worker (2026-09-05): src/ui/workbench-thread holds official assistant-ui base-nova thread source (Remix icons, cn package, root-file layout, provenance README; attachments/suggestions removed as non-product); src/ui/workbench composes the product workbench over the shared codex-browser-model types (readiness/recovery, explicit thread link, separate coordinator, official Composer with Archboard send/steer/queue/stop intent controls, queue, approvals incl. dynamic and spoken, captured context with exact-bytes copy action, transcript, header controls reachable collapsed/fullscreen); src/ui/voice-wave adopts the LiveKit Agents UI wave renderer + shader (Apache-2.0, provenance) with a narrow model-output-level adapter hook, no livekit/motion deps, no microphone path; src/ui/voice-controls provides accessible start/mute/unmute/stop/restart. Coordinator decision: assistant-ui lint ownership is now by module (workbench-thread, workbench-runtime) with the transport/cloud/thread-list/queue/tool/voice prohibitions retained; @assistant-ui/react-markdown allowed from workbench-thread only.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Checkpoint 1e60b178: workbench-thread (official assistant-ui base-nova files, README provenance, override entries), workbench (typed WorkbenchView/WorkbenchActions over BrowserSnapshot; projections tested), voice-wave (LiveKit wave renderer + shader, Apache-2.0 LICENSE-NOTICE, model-output-level adapter, reduced-motion/WebGL fallbacks), voice-controls. Scoped UI lint exit 0; 27 focused tests pass confined. Coordinator decisions: @assistant-ui/react-markdown 0.14.14 + remark-gfm added for the official text renderer; one-line bun patch on @radix-ui/react-select 2.3.7 (onPlaced exact-optional spelling) instead of relaxing skipLibCheck; three documented statement-level suppressions in official files (no-autofocus on the edit composer; two exhaustive-deps mount-once effects in the shader host). The CLI's apply would have overwritten shared components, so registry payloads were placed by URL with digests recorded. tw-shimmer and the markdown dot.css are not loaded (documented).
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Official assistant-ui base-nova thread/composer source in workbench-thread, product workbench composition over the shared browser model (session, thread link, coordinator, send/steer/queue-instead/stop intent, queue, approvals incl. dynamic/spoken, captured context, transcript, collapsed/fullscreen header controls), LiveKit wave renderer with a model-output-only adapter, and accessible voice controls (commit 1e60b178). assistant-ui lint ownership replaced per-member allowlists with module ownership plus retained safety prohibitions. Verified by scoped strict lint and 27 pure-helper tests; runtime wiring in TASK-150.07, rendered proof in TASK-150.06.
+<!-- SECTION:FINAL_SUMMARY:END -->

@@ -1,10 +1,11 @@
 ---
 id: TASK-150.03
 title: 'Build fresh dialogs, forms and actionable feedback'
-status: To Do
-assignee: []
+status: Done
+assignee:
+  - '@claude'
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-05 13:58'
+updated_date: '2026-09-05 15:26'
 labels: []
 dependencies:
   - TASK-150.04
@@ -28,21 +29,31 @@ Browser-test execution is deferred to TASK-150.06 after all rebuild tasks report
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Board open, create, save-as, confirmation, external-change recovery, library installation, opener settings and agent settings use official shared Dialog or AlertDialog compositions and appropriate shared fields, inputs, choices and buttons.
-- [ ] #2 Dialog compositions represent the required recovery choices, supplied validation/busy/submission/error state, accessible names and official focus/Escape/keyboard behavior. Actual product validation, submission and recovery logic is copied and connected in TASK-150.07.
-- [ ] #3 Persistent actionable notices use a durable Alert-style presentation, and transient feedback is limited to messages whose loss cannot remove a recovery action.
-- [ ] #4 The retired shell/Modal.tsx, old ui/dialog and ui/button implementations, compatibility re-exports and old selector families are absent from active source and imports; new controls are actual official shadcn compositions.
-- [ ] #5 Success, invalid-input, busy, error and recovery presentation is implemented and passes strict plus appropriate non-browser checks. Product actions are integrated in TASK-150.07. Browser verification of focus, portals and complete workflows belongs to TASK-150.06.
+- [x] #1 Board open, create, save-as, confirmation, external-change recovery, library installation, opener settings and agent settings use official shared Dialog or AlertDialog compositions and appropriate shared fields, inputs, choices and buttons.
+- [x] #2 Dialog compositions represent the required recovery choices, supplied validation/busy/submission/error state, accessible names and official focus/Escape/keyboard behavior. Actual product validation, submission and recovery logic is copied and connected in TASK-150.07.
+- [x] #3 Persistent actionable notices use a durable Alert-style presentation, and transient feedback is limited to messages whose loss cannot remove a recovery action.
+- [x] #4 The retired shell/Modal.tsx, old ui/dialog and ui/button implementations, compatibility re-exports and old selector families are absent from active source and imports; new controls are actual official shadcn compositions.
+- [x] #5 Success, invalid-input, busy, error and recovery presentation is implemented and passes strict plus appropriate non-browser checks. Product actions are integrated in TASK-150.07. Browser verification of focus, portals and complete workflows belongs to TASK-150.06.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-4. Build fresh dialogs, forms and actionable feedback. TASK-150.03.
-Depends on TASK-150.04. coordinator UI workers.
-Use official Dialog and AlertDialog compositions for board open/create/save-as, confirmation, external-change recovery and library installation; Field, Input, Select or Combobox and Button for their fields and choices. Migrate opener and agent settings to the same family. Preserve exact recovery choices, validation, busy state, focus and submission behavior. Use Alert for persistent actionable notices; only use transient feedback where losing the message does not lose a recovery action.
-Build official component compositions with typed values, validation/busy/error presentation and action callbacks based on known product contracts. Real validation and recovery logic is ported and connected in TASK-150.07. The old shell/Modal.tsx, ui/dialog, ui/button and their selector families were retired at quarantine; none may be copied back, wrapped or re-exported.
-Exit: dialog presentation, official component interaction handling, accessible names and supplied validation/busy/error states are implemented; strict and appropriate non-browser checks pass. Product actions and recovery are integrated in TASK-150.07. Old dialog/form selectors have no consumers. Actual browser workflow verification waits for TASK-150.06.
+Worker (2026-09-05) builds three new modules with official shadcn compositions and typed values/callbacks: src/ui/board-dialogs (BoardDialog open/create/save-as with Field/Input/Select/Combobox, ConfirmDialog, ConflictDialog with the conflict's three outcomes, NoteWrittenElsewhereDialog, InstallLibraryDialog, ActionableAlert), src/ui/opener-settings (OpenerSettingsDialog over the shared code-target Zod schemas with test/save/reset busy states), src/ui/agent-settings (AgentSettingsDialog over shared codex-browser-model account/login/thread-link/coordinator types). Pure-helper Bun tests only. Real validation/recovery logic connects in TASK-150.07; shell hosting by the coordinator.
 
-Current execution constraints: preserve all completed corrections and the user's test deletions. Do not restore deleted tests or add repository-policy suites, configuration snapshots, dependency/version mirrors, tests of upstream tooling, or tests of test helpers. Use the existing lint/compiler commands and meaningful existing product checks. New strict lint adoption is limited to src/ui; remaining non-UI adoption is TASK-151. UI uses the existing root TypeScript project; do not create src/ui/tsconfig.json. Run analysis sequentially and keep the repository project guard on all lint/fix paths. No callbacks to previous tasks, fixed agent assignments, or extra interim review loops.
+Worker slice (dialogs): 1. src/ui/board-dialogs (BoardDialog open/create/save-as, ConfirmDialog, ConflictDialog, NoteWrittenElsewhereDialog, InstallLibraryDialog, ActionableAlert root) as official Dialog/AlertDialog compositions with typed request/outcome/issue/error/busy contracts and pure helpers in lib/. 2. src/ui/opener-settings (OpenerSettingsDialog over OpenerSettingsReply: RadioGroup selection with availability badges, custom command form validated through the shared Zod schema and isAbsoluteOrBareOpenerExecutable, Test/Save/Reset with independent busy, testResult and error Alerts). 3. src/ui/agent-settings (AgentSettingsDialog over BrowserAccount/BrowserLogin/BrowserThreadLink/BrowserThreadCandidates/BrowserSettings/BrowserCoordinator with per-section busy/error inputs and sign-in/cancel/link/unlink callbacks). 4. Bun tests for pure helpers only under each module's tests/. 5. Verify sequentially: fmt, lint (both stages), type-check, focused tests; no browser runs.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Dialog worker: added src/ui/board-dialogs (BoardDialog open/create/save-as, ConfirmDialog, ConflictDialog, NoteWrittenElsewhereDialog, InstallLibraryDialog, ActionableAlert root, shared dialog parts), src/ui/opener-settings (OpenerSettingsDialog over OpenerSettingsReply with shared-schema custom command check) and src/ui/agent-settings (AgentSettingsDialog over BrowserAccount/BrowserLogin/BrowserThreadLink/BrowserThreadCandidates/BrowserSettings/BrowserCoordinator). Callbacks are property function types; no fetch/socket/storage. Verified: bun run fmt exit 0; module-scoped strict UI lint exit 0; lint:repository exit 0 (lint:ui failures only in workbench-thread and voice-wave, not these modules); type-check clean for these modules (remaining errors in voice-wave and a radix node_modules d.ts); 23 focused Bun tests pass under a confined HOME/XDG_STATE_HOME/ARCHBOARD_VAULT/TMPDIR. Nothing staged or committed; no browser runs.
+
+Checkpoint de95bc86: board-dialogs (1691 lines), opener-settings (922), agent-settings (1036) as official Dialog/AlertDialog/Field/Input/Select/Combobox/RadioGroup/InputGroup/Alert compositions with typed request/outcome contracts; scoped UI lint exit 0; 23 focused pure-helper tests pass confined. Hosting from the shell happens in integration; browser focus/portal proof in TASK-150.06.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Official Dialog/AlertDialog/Field/Input/Select/Combobox/RadioGroup/InputGroup/Alert compositions for board open/create/save-as, confirmation, write-conflict (three outcomes), written-elsewhere recovery, library install, opener settings and agent settings with typed values, issues, busy and error inputs (commit de95bc86). Retired Modal/ui-dialog/ui-button never returned. Verified by scoped strict lint and 23 pure-helper tests; product actions connect in TASK-150.07, browser focus/portal proof in TASK-150.06.
+<!-- SECTION:FINAL_SUMMARY:END -->
