@@ -156,7 +156,7 @@ function OpenerSettingsDialog(props: OpenerSettingsDialogProps): React.JSX.Eleme
 	const { settings } = props;
 	return (
 		<Dialog open={props.open} onOpenChange={props.onOpenChange}>
-			<DialogContent className="sm:max-w-lg">
+			<DialogContent className="sm:max-w-lg" finalFocus={props.finalFocus}>
 				<DialogHeader>
 					<DialogTitle>Opener settings</DialogTitle>
 					<DialogDescription>
@@ -164,7 +164,13 @@ function OpenerSettingsDialog(props: OpenerSettingsDialogProps): React.JSX.Eleme
 					</DialogDescription>
 				</DialogHeader>
 				{settings ? (
-					<OpenerSettingsForm settings={settings} dialog={props} />
+					// Keyed by the saved selection: a reset or a save the host reloads
+					// starts the form again from what is now saved.
+					<OpenerSettingsForm
+						key={JSON.stringify(settings.selection)}
+						settings={settings}
+						dialog={props}
+					/>
 				) : (
 					<p aria-live="polite" className="text-muted-foreground text-sm">
 						Reading opener settings…

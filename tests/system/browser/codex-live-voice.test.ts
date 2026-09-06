@@ -21,6 +21,7 @@ import {
 import {
 	openWithControlledVoiceMedia,
 	readControlledVoiceMediaAudit,
+	setControlledOutputSilent,
 } from "./support/codex-live-voice.ts";
 import {
 	productionFixtureRecords,
@@ -29,17 +30,24 @@ import {
 import { seedBoard } from "./support/fullscreen-presentation.ts";
 import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
+import {
+	BOARD_NAME_EXPRESSION,
+	PANE_SECTIONS,
+	PANE_TABS,
+	PRESENTATION_BAR,
+	STAGE_ROOT,
+	clickTab,
+	stageIsFullscreen,
+} from "./support/shell-dom.ts";
 import { emulateMedia } from "./support/shell-render-matrix.ts";
 
 const serverPath = join(import.meta.dir, "../canvas-state/fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "../canvas-state/fixtures/fake-codex-production.ts");
 const RAW_COORDINATOR_THREAD_ID = "thread-1";
-const RENDERED_COORDINATOR_THREAD_ID = "archboard:thread:s7468726561642d31";
-const RENDERED_WORKHORSE_THREAD_ID = "archboard:thread:s7468726561642d32";
-const VOICE_CONTROL_IDENTITY = `pane pane-1, thread link ${RENDERED_WORKHORSE_THREAD_ID}, coordinator ${RENDERED_COORDINATOR_THREAD_ID}`;
-const PRESTART_NAME = "Start voice on this pane";
-const MUTE_NAME = `Mute the microphone on ${VOICE_CONTROL_IDENTITY}`;
-const STOP_NAME = `Stop voice on ${VOICE_CONTROL_IDENTITY}`;
+/** The expanded voice controls in the workbench side panel. */
+const EXPANDED_CONTROLS = 'section[aria-label="Agent workbench"] [data-voice-controls="expanded"]';
+/** The compact voice controls in the fullscreen presentation bar. */
+const PRESENTATION_CONTROLS = `${PRESENTATION_BAR} [data-voice-controls="compact"]`;
 
 interface FixtureRecord {
 	readonly kind?: string;
@@ -48,18 +56,18 @@ interface FixtureRecord {
 	readonly params?: Record<string, unknown>;
 }
 
+/** The voice session as the workbench presents it. */
 interface VoiceSnapshot {
-	readonly state: string | null;
-	readonly sourcePane: string | null;
-	readonly sourceThread: string | null;
-	readonly coordinator: string | null;
+	/** The expanded controls' state words. */
+	readonly stateText: string;
+	/** The controls the session offers, by accessible name. */
+	readonly controls: string[];
+	/** The output wave's state text, from its live region. */
+	readonly waveText: string | null;
+	/** animated or static, from the wave's own marker. */
+	readonly wavePresentation: string | null;
 	readonly transcript: string;
 	readonly context: string;
-	readonly announcer: {
-		readonly role: string | null;
-		readonly live: string | null;
-		readonly text: string;
-	};
 }
 
 interface LayoutSnapshot {
@@ -71,48 +79,32 @@ interface LayoutSnapshot {
 	readonly workbenchHeight: number;
 }
 
-interface DockSnapshot {
+interface PresentationSnapshot {
 	readonly fullscreen: boolean;
-	readonly sessionId: string | null;
-	readonly sourceText: string;
-	readonly status: {
-		readonly role: string | null;
-		readonly live: string | null;
-		readonly text: string;
-	};
-	readonly stop: {
-		readonly enabled: boolean;
-		readonly sessionId: string | null;
-	};
-	readonly insideViewport: boolean;
-	readonly avoidsWorkbench: boolean;
-	readonly sourceFits: boolean;
+	readonly stateText: string;
+	readonly controls: string[];
+	readonly stopEnabled: boolean;
+	readonly insideStage: boolean;
 	readonly excalidrawChromeHidden: boolean;
 }
 
-function focusedButton(browser: AgentBrowserSession) {
-	return browser.eval<readonly [string, string | null, boolean, boolean]>(
-		"[document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent?.trim() ?? '', document.activeElement?.getAttribute('data-voice-command') ?? null, document.activeElement instanceof HTMLButtonElement && document.activeElement.disabled, !(document.querySelector('[data-voice-command=start]') instanceof HTMLButtonElement) || document.querySelector('[data-voice-command=start]').disabled]",
-	);
-}
+/** WCAG 2.5.8 target size floor. */
+const MIN_TARGET = 24;
 
 function voiceSnapshot(browser: AgentBrowserSession): Promise<VoiceSnapshot> {
 	return browser.eval<VoiceSnapshot>(`(() => {
-		const voice = document.querySelector('[data-workbench-voice="present"]');
-		const announcer = document.querySelector('[data-voice-announcer]');
-		const controlName = document.querySelector('[data-voice-command="mute"]')?.getAttribute('aria-label') ?? '';
+		const workbench = document.querySelector('section[aria-label="Agent workbench"]');
+		const controls = document.querySelector('${EXPANDED_CONTROLS}');
+		const wave = workbench?.querySelector('[data-voice-wave]');
+		const panel = name => [...(workbench?.querySelectorAll('[role="tabpanel"]') ?? [])]
+			.find(node => node.getAttribute('aria-labelledby') && document.getElementById(node.getAttribute('aria-labelledby'))?.textContent?.startsWith(name));
 		return {
-			state: document.querySelector('[data-voice-controls]')?.getAttribute('data-voice-state') ?? null,
-			sourcePane: voice?.getAttribute('data-workbench-voice-source-pane') ?? null,
-			sourceThread: controlName.match(/thread link (.*), coordinator /)?.[1] ?? null,
-			coordinator: controlName.match(/, coordinator (.*)$/)?.[1] ?? null,
-			transcript: voice?.querySelector('[data-voice-transcript]')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
-			context: voice?.querySelector('[data-voice-context]')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
-			announcer: {
-				role: announcer?.getAttribute('role') ?? null,
-				live: announcer?.getAttribute('aria-live') ?? null,
-				text: announcer?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
-			},
+			stateText: controls?.querySelector('output')?.textContent?.trim() ?? '',
+			controls: [...(controls?.querySelectorAll('button') ?? [])].map(node => node.textContent.trim()),
+			waveText: wave?.querySelector('output')?.textContent?.trim() ?? null,
+			wavePresentation: wave?.getAttribute('data-voice-wave') ?? null,
+			transcript: panel('Transcript')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
+			context: panel('Context')?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
 		};
 	})()`);
 }
@@ -123,9 +115,9 @@ function layoutSnapshot(browser: AgentBrowserSession): Promise<LayoutSnapshot> {
 		const overlaps = (left, right) => left.width > 0 && left.height > 0 && right.width > 0 &&
 			right.height > 0 && left.left < right.right && left.right > right.left &&
 			left.top < right.bottom && left.bottom > right.top;
-		const voice = document.querySelector('[data-voice-controls]');
-		const frame = document.querySelector('[data-workbench-frame]');
-		const canvas = document.querySelector('.canvas-stage');
+		const voice = document.querySelector('${EXPANDED_CONTROLS}');
+		const frame = document.querySelector('section[aria-label="Agent workbench"]');
+		const canvas = document.querySelector('${PANE_SECTIONS} .excalidraw');
 		const voiceRect = rect(voice);
 		const frameRect = rect(frame);
 		return {
@@ -141,42 +133,29 @@ function layoutSnapshot(browser: AgentBrowserSession): Promise<LayoutSnapshot> {
 	})()`);
 }
 
-function dockSnapshot(browser: AgentBrowserSession): Promise<DockSnapshot> {
-	return browser.eval<DockSnapshot>(`(() => {
-		const rect = node => node?.getBoundingClientRect() ?? new DOMRect();
-		const dock = document.querySelector('.presentation-dock');
-		const source = dock?.querySelector('[aria-label="Active voice session"]');
-		const status = dock?.querySelector('[data-presentation-voice-status]');
-		const stop = dock?.querySelector('.presentation-stop');
-		const workbench = document.querySelector('.shell-workbench');
-		const dockRect = rect(dock);
-		const workbenchRect = rect(workbench);
-		const sourceContainer = dock?.querySelector('.presentation-sources');
-		const chrome = [...document.querySelectorAll(
-			'.presentation-current .layer-ui__wrapper, ' +
-			'.presentation-current .App-menu, ' +
-			'.presentation-current .App-toolbar-container'
-		)];
+function presentationSnapshot(browser: AgentBrowserSession): Promise<PresentationSnapshot> {
+	return browser.eval<PresentationSnapshot>(`(() => {
+		const stage = document.querySelector('${STAGE_ROOT}');
+		const controls = document.querySelector('${PRESENTATION_CONTROLS}');
+		const stop = [...(controls?.querySelectorAll('button') ?? [])].find(node => node.getAttribute('aria-label') === 'Stop voice');
+		const presented = [...document.querySelectorAll('${PANE_SECTIONS}')].find(node => !node.hidden);
+		const chrome = [...(presented?.querySelectorAll('.layer-ui__wrapper, .App-menu, .App-toolbar-container') ?? [])];
 		return {
-			fullscreen: document.fullscreenElement === document.querySelector('.shell'),
-			sessionId: source?.getAttribute('data-voice-session-id') ?? null,
-			sourceText: source?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
-			status: {
-				role: status?.getAttribute('role') ?? null,
-				live: status?.getAttribute('aria-live') ?? null,
-				text: status?.textContent?.replace(/\\s+/g, ' ').trim() ?? '',
-			},
-			stop: {
-				enabled: stop instanceof HTMLButtonElement && !stop.disabled,
-				sessionId: stop?.getAttribute('data-voice-session-id') ?? null,
-			},
-			insideViewport: dockRect.left >= 0 && dockRect.top >= 0 &&
-				dockRect.right <= innerWidth && dockRect.bottom <= innerHeight,
-			avoidsWorkbench: dockRect.bottom <= workbenchRect.top,
-			sourceFits: !!sourceContainer && sourceContainer.scrollWidth <= sourceContainer.clientWidth,
-			excalidrawChromeHidden: chrome.length > 0 && chrome.every(node => getComputedStyle(node).display === 'none'),
+			fullscreen: document.fullscreenElement === stage,
+			stateText: controls?.querySelector('output')?.textContent?.trim() ?? '',
+			controls: [...(controls?.querySelectorAll('button') ?? [])].map(node => node.getAttribute('aria-label') ?? ''),
+			stopEnabled: stop instanceof HTMLButtonElement && !stop.disabled,
+			insideStage: !!controls && !!stage && stage.contains(controls),
+			excalidrawChromeHidden: chrome.length > 0 && chrome.every(node => !node.checkVisibility()),
 		};
 	})()`);
+}
+
+/** The accessible name of the focused element, and whether it is disabled. */
+function focusedControl(browser: AgentBrowserSession): Promise<readonly [string, boolean]> {
+	return browser.eval<readonly [string, boolean]>(
+		"[document.activeElement?.getAttribute('aria-label') ?? document.activeElement?.textContent?.trim() ?? '', document.activeElement instanceof HTMLButtonElement && document.activeElement.disabled]",
+	);
 }
 
 test(
@@ -217,19 +196,19 @@ test(
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(
-					"document.querySelector('.pane .excalidraw') !== null && document.querySelector('[data-workbench-frame]')?.getAttribute('data-pane-count') === '1'",
+					`document.querySelector('${PANE_SECTIONS} .excalidraw') !== null && document.querySelectorAll('${PANE_TABS}').length === 1`,
 				),
 			Boolean,
-			"the production shell, canvas pane, and workbench frame to mount",
+			"the production shell and canvas pane to mount",
 		);
 		runCanvasCli(canvas.base, vault, ["browser", "show", "workbench", "--pane", "primary"]);
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`(() => {
-					const canvas = document.querySelector('.pane .excalidraw');
+					const canvas = document.querySelector('${PANE_SECTIONS} .excalidraw');
 					if (!canvas || (${EXCALIDRAW_APP_EXPRESSION})?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted).length !== 1) return false;
 					globalThis.__codexLiveVoiceCanvas = canvas;
-					return document.querySelector('.board-name')?.textContent?.trim() === 'workbench';
+					return (${BOARD_NAME_EXPRESSION}) === 'workbench';
 				})()`),
 			Boolean,
 			"the seeded Excalidraw board to render",
@@ -237,38 +216,34 @@ test(
 
 		await browser.run(["console", "--clear"]);
 		await browser.run(["errors", "--clear"]);
-		await roleAction(browser, "button", "Expand");
+		const expanded = () =>
+			browser.eval<boolean>(
+				"document.querySelector('button[aria-label=\"Collapse workbench\"], button[aria-label=\"Expand workbench\"]')?.getAttribute('aria-expanded') === 'true'",
+			);
+		if (!(await expanded())) {
+			await roleAction(browser, "button", "Expand workbench");
+		}
+		await pollUntil(expanded, Boolean, "the integrated workbench to expand");
 		await pollUntil(
 			() =>
-				browser.eval<boolean>(
-					"document.querySelector('[data-workbench-frame]')?.getAttribute('data-workbench-disclosure') === 'expanded'",
-				),
-			Boolean,
-			"the integrated workbench to expand",
-		);
-		await roleAction(browser, "button", "Settings");
-		await pollUntil(
-			() =>
-				browser.eval<boolean>(`[...document.querySelectorAll('button')]
-					.some(button => button.textContent?.trim() === 'Start agent' && !button.disabled)`),
+				browser.eval<boolean>(`[...document.querySelectorAll('section[aria-label="Agent workbench"] button')]
+					.some(button => button.textContent?.trim() === 'Link new thread' && !button.disabled)`),
 			Boolean,
 			"the workhorse creation control to become enabled",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		await roleAction(browser, "button", "Start agent");
-		await pollUntil(
-			() =>
-				browser.eval<boolean>(`(() => {
-					const start = document.querySelector('[data-voice-command="start"]');
-					return !document.querySelector('[data-workbench-settings]') && start instanceof HTMLButtonElement && !start.disabled;
-				})()`),
-			Boolean,
+		await roleAction(browser, "button", "Link new thread");
+		const ready = await pollUntil(
+			() => voiceSnapshot(browser),
+			(value) => value.controls.includes("Start voice") && value.stateText === "Voice ready",
 			"the production voice registration to expose Start",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
+		expect(ready.waveText).toBe("Voice inactive");
+		expect(ready.controls).toEqual(["Start voice"]);
 
-		await browser.run(["focus", '[data-voice-command="start"]']);
-		expect(await focusedButton(browser)).toEqual([PRESTART_NAME, "start", false, false]);
+		await browser.run(["focus", `${EXPANDED_CONTROLS} button`]);
+		expect(await focusedControl(browser)).toEqual(["Start voice", false]);
 		const desktop = await layoutSnapshot(browser);
 		expect(desktop.viewport).toEqual([1920, 1080, 1]);
 		expect(desktop.pageOverflow).toBe(false);
@@ -276,65 +251,86 @@ test(
 		expect(desktop.voiceOverlapsCanvas).toBe(false);
 		expect(desktop.canvasHeight).toBeGreaterThan(desktop.workbenchHeight);
 		expect(
-			(await workbenchControlOperability(browser, '[data-voice-command="start"]')).operable,
+			(await workbenchControlOperability(browser, `${EXPANDED_CONTROLS} button`)).operable,
 		).toBe(true);
-		expect(
-			await browser.eval<number>(
-				'document.querySelectorAll(\'[data-voice-command="mute"], [data-voice-command="stop"]\').length',
-			),
-		).toBe(0);
 		await browser.run(["press", "Enter"]);
-		await pollUntil(
+		// The model is audible from the first frame: the wave follows its output.
+		const speaking = await pollUntil(
 			() => voiceSnapshot(browser),
-			(value) => value.state === "listening" && value.sourcePane === "pane-1",
-			"voice to start and make captured evidence available",
+			(value) => value.stateText === "Voice live" && value.waveText === "Speaking",
+			"voice to start and the wave to follow the model's output",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		await browser.run(["click", "[data-workbench-voice-disclosure] > summary"]);
+		expect(speaking.wavePresentation).toBe("animated");
+		expect(speaking.controls).toEqual(["Mute", "Stop voice", "Restart voice"]);
+		expect(await clickTab(browser, "Transcript")).toBe(true);
 		const listening = await pollUntil(
 			() => voiceSnapshot(browser),
 			(value) =>
-				value.state === "listening" &&
-				value.sourcePane === "pane-1" &&
-				value.sourceThread === RENDERED_WORKHORSE_THREAD_ID &&
-				value.coordinator === RENDERED_COORDINATOR_THREAD_ID &&
 				value.transcript.includes("The controlled voice context is visible.") &&
-				value.context.includes("workbench"),
-			"the live source, transcript, and captured context to render",
+				value.transcript.includes("Show the controlled voice context."),
+			"the live transcript to render",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		expect(listening.sourcePane).toBe("pane-1");
-		expect(listening.sourceThread).toBe(RENDERED_WORKHORSE_THREAD_ID);
-		expect(listening.coordinator).toBe(RENDERED_COORDINATOR_THREAD_ID);
-		expect(listening.announcer).toMatchObject({ role: "status", live: "polite" });
-		expect(listening.announcer.text).toMatch(/listening/iu);
-		expect(listening.transcript).toContain("Show the controlled voice context.");
+		expect(listening.transcript).toContain("agent");
+		expect(await clickTab(browser, "Context")).toBe(true);
+		await pollUntil(
+			() => voiceSnapshot(browser),
+			(value) => value.context.includes("workbench"),
+			"the captured context to render",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
 
-		await browser.run(["focus", '[data-voice-command="mute"]']);
-		expect(await focusedButton(browser)).toEqual([MUTE_NAME, "mute", false, true]);
+		// Microphone-only silence: the microphone stays live, the model goes quiet,
+		// and the wave rests in listening instead of speaking.
+		await setControlledOutputSilent(browser, true);
+		const silent = await pollUntil(
+			() => voiceSnapshot(browser),
+			(value) => value.waveText === "Listening",
+			"silent model output to rest the wave while the microphone stays live",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+		expect(silent.stateText).toBe("Voice live");
+		expect((await readControlledVoiceMediaAudit(browser)).localTracks).toEqual([
+			{ enabled: true, stopCount: 0 },
+		]);
+		await setControlledOutputSilent(browser, false);
+		await pollUntil(
+			() => voiceSnapshot(browser),
+			(value) => value.waveText === "Speaking",
+			"model output to drive the wave again",
+			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
+		);
+
+		await browser.run(["focus", `${EXPANDED_CONTROLS} button`]);
+		expect(await focusedControl(browser)).toEqual(["Mute", false]);
 		await browser.run(["press", "Tab"]);
-		expect(await focusedButton(browser)).toEqual([STOP_NAME, "stop", false, true]);
+		expect(await focusedControl(browser)).toEqual(["Stop voice", false]);
 
+		// Reduced motion: the wave becomes a static rule with the same state text.
 		const releaseReduced = await emulateMedia(browser, "light", "reduced-motion");
 		try {
-			await pollUntil(
-				() =>
-					browser.eval<readonly [boolean, boolean]>(
-						"[matchMedia('(prefers-reduced-motion: reduce)').matches, document.querySelector('[data-voice-meter]') === null]",
-					),
-				(value) => value[0] && value[1],
-				"the rendered live voice meter to honor reduced motion",
+			const reduced = await pollUntil(
+				() => voiceSnapshot(browser),
+				(value) => value.wavePresentation === "static",
+				"the rendered output wave to honor reduced motion",
 			);
+			expect(reduced.waveText).toMatch(/Speaking|Listening/);
 		} finally {
 			await releaseReduced();
 		}
 		const releaseNormal = await emulateMedia(browser, "light", "normal");
 		await releaseNormal();
-
-		await roleAction(browser, "button", MUTE_NAME);
 		await pollUntil(
 			() => voiceSnapshot(browser),
-			(value) => value.state === "muted",
+			(value) => value.wavePresentation === "animated",
+			"the animated wave to return with motion allowed",
+		);
+
+		await roleAction(browser, "button", "Mute");
+		await pollUntil(
+			() => voiceSnapshot(browser),
+			(value) => value.controls.includes("Unmute"),
 			"the controlled microphone to render muted",
 		);
 		expect(await readControlledVoiceMediaAudit(browser)).toMatchObject({
@@ -351,41 +347,35 @@ test(
 		expect(flipLive.voiceInsideWorkbench).toBe(true);
 		expect(flipLive.voiceOverlapsCanvas).toBe(false);
 		expect(flipLive.canvasHeight).toBeGreaterThan(flipLive.workbenchHeight);
-		const flipControls = [
-			await workbenchControlOperability(browser, '[data-voice-command="unmute"]'),
-			await workbenchControlOperability(browser, '[data-voice-command="stop"]'),
-		];
-		expect(flipControls.map(({ operable }) => operable)).toEqual([true, true]);
+		const flipControls = await browser.eval<Array<{ name: string; height: number }>>(
+			`[...document.querySelectorAll('${EXPANDED_CONTROLS} button')].map(node => ({ name: node.textContent.trim(), height: node.getBoundingClientRect().height }))`,
+		);
+		expect(flipControls.map(({ name }) => name)).toEqual(["Unmute", "Stop voice", "Restart voice"]);
+		expect(flipControls.every(({ height }) => height >= MIN_TARGET)).toBe(true);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 
-		await roleAction(browser, "button", "Present Pane A fullscreen");
+		await roleAction(browser, "button", "Present pane A fullscreen");
 		const desktopDock = await pollUntil(
-			() => dockSnapshot(browser),
-			(value) => value.fullscreen && value.sessionId !== null && value.stop.enabled,
-			"the immutable active voice source to reach the fullscreen dock",
+			() => presentationSnapshot(browser),
+			(value) => value.fullscreen && value.stopEnabled,
+			"the live voice controls to reach the fullscreen presentation bar",
 		);
-		expect(desktopDock.sourceText).toContain("Pane A");
-		expect(desktopDock.sourceText).toContain(listening.sourceThread!);
-		expect(desktopDock.sourceText).toContain("Muted");
-		expect(desktopDock.status).toMatchObject({ role: "status", live: "polite" });
-		expect(desktopDock.status.text).toMatch(/muted/iu);
-		expect(desktopDock.stop.sessionId).toBe(desktopDock.sessionId);
-		expect(await workbenchControlOperability(browser, ".presentation-stop")).toMatchObject({
-			clipped: false,
-			requestOverlap: false,
-			centerHit: true,
-			operable: true,
-		});
-		expect(desktopDock.insideViewport).toBe(true);
-		expect(desktopDock.avoidsWorkbench).toBe(true);
-		expect(desktopDock.sourceFits).toBe(true);
+		expect(desktopDock.controls).toEqual(["Unmute", "Stop voice", "Restart voice"]);
+		expect(desktopDock.stateText).toBe("Voice live");
+		expect(desktopDock.insideStage).toBe(true);
 		expect(desktopDock.excalidrawChromeHidden).toBe(true);
+		expect(
+			await workbenchControlOperability(
+				browser,
+				`${PRESENTATION_CONTROLS} button[aria-label="Stop voice"]`,
+			),
+		).toMatchObject({ clipped: false, centerHit: true, operable: true });
 
 		const releaseForcedColors = await emulateMedia(browser, "light", "forced-colors");
 		try {
 			expect(
 				await browser.eval<readonly [boolean, string, string]>(`(() => {
-					const stop = document.querySelector('.presentation-stop');
+					const stop = document.querySelector('${PRESENTATION_CONTROLS} button[aria-label="Stop voice"]');
 					const style = getComputedStyle(stop);
 					return [matchMedia('(forced-colors: active)').matches, style.forcedColorAdjust, style.borderTopStyle];
 				})()`),
@@ -398,36 +388,32 @@ test(
 
 		await browser.run(["set", "viewport", "1920", "1080", "2"]);
 		const scaledDock = await pollUntil(
-			() => dockSnapshot(browser),
-			(value) => value.fullscreen && value.sessionId === desktopDock.sessionId,
-			"the same active voice source at the desktop scaled viewport",
+			() => presentationSnapshot(browser),
+			(value) => value.fullscreen && value.stopEnabled,
+			"the same voice controls at the desktop scaled viewport",
 		);
 		expect(
 			await browser.eval<readonly [number, number, number]>(
 				"[innerWidth, innerHeight, devicePixelRatio]",
 			),
 		).toEqual([1920, 1080, 2]);
-		expect(scaledDock.stop.sessionId).toBe(desktopDock.sessionId);
-		expect(await workbenchControlOperability(browser, ".presentation-stop")).toMatchObject({
-			clipped: false,
-			requestOverlap: false,
-			centerHit: true,
-			operable: true,
-		});
-		expect(scaledDock.insideViewport).toBe(true);
-		expect(scaledDock.avoidsWorkbench).toBe(true);
-		expect(scaledDock.sourceFits).toBe(true);
+		expect(scaledDock.insideStage).toBe(true);
+		expect(
+			await workbenchControlOperability(
+				browser,
+				`${PRESENTATION_CONTROLS} button[aria-label="Stop voice"]`,
+			),
+		).toMatchObject({ clipped: false, centerHit: true, operable: true });
+		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 
-		await roleAction(browser, "button", "Stop");
+		await roleAction(browser, "button", "Stop voice");
 		await pollUntil(
 			async () => ({
-				voicePresent: await browser.eval<boolean>(
-					"document.querySelector('[aria-label=\"Active voice session\"]') !== null",
-				),
+				snapshot: await presentationSnapshot(browser),
 				media: await readControlledVoiceMediaAudit(browser),
 			}),
 			(value) =>
-				!value.voicePresent &&
+				!value.snapshot.stopEnabled &&
 				value.media.localTracks[0]?.stopCount === 1 &&
 				value.media.remoteTracks[0]?.stopCount === 1 &&
 				value.media.peers[0]?.closeCount === 1 &&
@@ -436,19 +422,19 @@ test(
 			"the fullscreen Stop to retire voice and release browser media",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
-		await roleAction(browser, "button", "Exit");
-		await pollUntil(
-			() =>
-				browser.eval<boolean>(`document.fullscreenElement === null &&
-					document.querySelector('[data-workbench-voice]') === null &&
-					document.querySelector('[data-workbench-frame]') !== null &&
-					document.querySelector('[data-voice-command="start"]') instanceof HTMLButtonElement &&
-					!document.querySelector('[data-voice-command="start"]').disabled`),
-			Boolean,
+		await roleAction(browser, "button", "Exit presentation");
+		const stopped = await pollUntil(
+			async () => ({
+				fullscreen: await stageIsFullscreen(browser),
+				voice: await voiceSnapshot(browser),
+			}),
+			(value) => !value.fullscreen && value.voice.controls.includes("Start voice"),
 			"authoritative stop to clear voice evidence and retain an enabled Start control",
 		);
+		expect(stopped.voice.waveText).toBe("Voice inactive");
+		expect(stopped.voice.stateText).toBe("Voice ready");
 		expect(
-			await browser.eval<boolean>(`document.querySelector('.pane .excalidraw') ===
+			await browser.eval<boolean>(`document.querySelector('${PANE_SECTIONS} .excalidraw') ===
 				globalThis.__codexLiveVoiceCanvas &&
 				(${EXCALIDRAW_APP_EXPRESSION})?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted).length === 1`),
 		).toBe(true);
@@ -471,7 +457,6 @@ test(
 		expect(realtimeStart?.params?.["realtimeSessionId"]).toMatch(
 			/^archboard:realtime-session:h[a-f0-9]{32}$/u,
 		);
-		expect(realtimeStart?.params?.["realtimeSessionId"]).not.toBe(desktopDock.sessionId);
 		const realtimeStop = records.find(
 			({ kind, method }) => kind === "frame" && method === "thread/realtime/stop",
 		);

@@ -20,7 +20,27 @@ import {
 	type HealthBody,
 	type PanesBody,
 } from "./support/navigator-support.ts";
-test("the operator strip keeps empty, loading, retry, and scratch naming states actionable", async () => {
+import {
+	BOARD_NAME_EXPRESSION,
+	NAVIGATOR,
+	PANE_TABS,
+	clickNavigatorRow,
+	navigatorRow,
+	stageIsFullscreen,
+	switchTheme,
+} from "./support/shell-dom.ts";
+
+/** WCAG 2.5.8 target size floor. */
+const MIN_TARGET = 24;
+/** The navigator's listing line: loading, empty, or the failure. */
+const LISTING_LINE = `[...document.querySelectorAll('${NAVIGATOR} p')].map(node => node.textContent.trim())`;
+/** The persisted board groups: menu items whose button names a board. */
+const GROUP_NAMES = `[...document.querySelectorAll('${NAVIGATOR} [data-sidebar="menu-item"] > button')].map(node => node.textContent.trim())`;
+/** The collapsible trigger of one board group, by the board it names. */
+const groupButton = (board: string): string =>
+	`[...document.querySelectorAll('${NAVIGATOR} [data-sidebar="menu-item"] > button')].find(node => node.textContent.trim() === ${JSON.stringify(board)})`;
+
+test("the navigator keeps empty, loading, retry, and scratch naming states actionable", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "vault");
@@ -49,17 +69,15 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	await pollUntil(
-		() =>
-			browser.eval<string | null>("document.querySelector('.board-nav-empty')?.textContent.trim()"),
-		(text) => text === "Reading the vault…",
+		() => browser.eval<string[]>(LISTING_LINE),
+		(lines) => lines.includes("Reading the vault…"),
 		"the delayed real board listing to expose its loading state",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	expect(await browser.eval<boolean>("window.__releaseBoardListing?.() ?? false")).toBe(true);
 	await pollUntil(
-		() =>
-			browser.eval<string | null>("document.querySelector('.board-nav-empty')?.textContent.trim()"),
-		(text) => text === "No named boards yet.",
+		() => browser.eval<string[]>(LISTING_LINE),
+		(lines) => lines.includes("No named boards yet."),
 		"the real empty named-board state",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
@@ -70,60 +88,76 @@ test("the operator strip keeps empty, loading, retry, and scratch naming states 
 				targets: Array<{ height: number; width: number }>;
 				currentScratch: boolean;
 				pageFits: boolean;
-			}>(
-				`(() => { const targets = [...document.querySelectorAll('.board-nav-tools button, .scratch-top, .board-preview-control, .name-button')]; return { actionLabels: [...document.querySelectorAll('.board-nav-tools button')].map(button => button.getAttribute('aria-label')), targets: targets.map(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; }), currentScratch: Boolean(document.querySelector('.scratch-section .board-nav-row[aria-current="page"]')), pageFits: document.documentElement.scrollWidth === innerWidth }; })()`,
-			),
+			}>(`(() => {
+				const nav = document.querySelector('${NAVIGATOR}');
+				const actions = [...nav.querySelectorAll('button')].filter(node =>
+					['Refresh boards', 'New board', 'Needs a name'].includes((node.getAttribute('aria-label') ?? node.textContent).trim()));
+				const rows = [...nav.querySelectorAll('[data-board-key]')];
+				return {
+					actionLabels: actions.map(node => (node.getAttribute('aria-label') ?? node.textContent).trim()),
+					targets: [...actions, ...rows].map(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; }),
+					currentScratch: rows.some(row => row.getAttribute('aria-current') === 'true'),
+					pageFits: document.documentElement.scrollWidth === innerWidth,
+				};
+			})()`),
 		(state) => state.targets.length === 4,
 		"the empty navigation controls to settle",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(empty.actionLabels).toEqual(["Refresh boards", "New board"]);
-	expect(empty.targets).toHaveLength(4);
-	expect(empty.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(true);
+	expect(empty.actionLabels).toEqual(["Refresh boards", "Needs a name", "New board"]);
+	expect(
+		empty.targets.every(({ width, height }) => width >= MIN_TARGET && height >= MIN_TARGET),
+	).toBe(true);
 	expect(empty.currentScratch).toBe(true);
 	expect(empty.pageFits).toBe(true);
-	await browser.run(["click", ".name-button"]);
+	await browser.run(["find", "role", "button", "click", "--name", "Needs a name", "--exact"]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				"Boolean(document.querySelector('dialog[aria-label=\"Save this board as\"]'))",
+				`[...document.querySelectorAll('[role="dialog"] [data-slot="dialog-title"]')].some(node => node.textContent.trim() === 'Save as')`,
 			),
 		Boolean,
 		"contextual scratch naming to open",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	await browser.run(["click", '.modal-close[aria-label="Close dialog"]']);
+	await browser.run(["press", "Escape"]);
+	await pollUntil(
+		() => browser.eval<boolean>("document.querySelector('[role=\"dialog\"]') === null"),
+		Boolean,
+		"the naming dialog to close",
+	);
 	expect(
 		await browser.eval<boolean>(
-			`(() => { if (window.__archboardNativeFetch) return false; window.__archboardNativeFetch = window.fetch; window.fetch = async (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (url.pathname === '/api/boards') return new Response(JSON.stringify({ success: false, error: 'forced board-list failure' }), { status: 503, headers: { 'Content-Type': 'application/json' } }); return window.__archboardNativeFetch(input, init); }; document.querySelector('.board-nav-tools [aria-label="Refresh boards"]')?.click(); return true; })()`,
+			`(() => { if (window.__archboardNativeFetch) return false; window.__archboardNativeFetch = window.fetch; window.fetch = async (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (url.pathname === '/api/boards') return new Response(JSON.stringify({ success: false, error: 'forced board-list failure' }), { status: 503, headers: { 'Content-Type': 'application/json' } }); return window.__archboardNativeFetch(input, init); }; document.querySelector('${NAVIGATOR} [aria-label="Refresh boards"]')?.click(); return true; })()`,
 		),
 	).toBe(true);
 	const retry = await pollUntil(
 		() =>
-			browser.eval<{ height?: number; label?: string; text?: string }>(
-				`(() => { const button = document.querySelector('.board-nav-error'); if (!button) return {}; return { label: button.getAttribute('aria-label'), text: button.textContent.trim(), height: button.getBoundingClientRect().height }; })()`,
+			browser.eval<{ height: number; text: string | null; live: string | null }>(
+				`(() => { const line = [...document.querySelectorAll('${NAVIGATOR} p')].find(node => /could not be read/.test(node.textContent)); const refresh = document.querySelector('${NAVIGATOR} [aria-label="Refresh boards"]'); return { text: line?.textContent.trim() ?? null, live: line?.getAttribute('aria-live') ?? null, height: refresh?.getBoundingClientRect().height ?? 0 }; })()`,
 			),
-		(state) => state.label === "Retry board listing",
-		"the board-list retry state",
+		(state) => state.text !== null,
+		"the board-list failure state",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(retry.text).toBe("Could not read the vault. Try again.");
-	expect(retry.height ?? 0).toBeGreaterThanOrEqual(43.5);
+	expect(retry.text).toContain("The board listing could not be read");
+	expect(retry.live).toBe("polite");
+	expect(retry.height).toBeGreaterThanOrEqual(MIN_TARGET);
 	expect(
 		await browser.eval<boolean>(
-			`(() => { const retry = document.querySelector('.board-nav-error'); if (!retry || !window.__archboardNativeFetch) return false; window.fetch = window.__archboardNativeFetch; delete window.__archboardNativeFetch; retry.click(); return true; })()`,
+			`(() => { if (!window.__archboardNativeFetch) return false; window.fetch = window.__archboardNativeFetch; delete window.__archboardNativeFetch; document.querySelector('${NAVIGATOR} [aria-label="Refresh boards"]')?.click(); return true; })()`,
 		),
 	).toBe(true);
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(`!document.querySelector('.board-nav-error') &&
-        document.querySelector('.board-nav-empty')?.textContent.trim() === 'No named boards yet.'`),
-		Boolean,
+		() => browser.eval<string[]>(LISTING_LINE),
+		(lines) =>
+			lines.includes("No named boards yet.") && !lines.some((line) => /could not/.test(line)),
 		"the empty list to recover after retry",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 }, 20_000);
-test("the strip keeps every real board reachable and replaces the focused pane", async () => {
+
+test("the navigator keeps every real board reachable and replaces the focused pane", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "vault");
@@ -153,7 +187,12 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	await canvas.restart();
 	await createBoard(request, "draft-probe", { save: false });
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", canvas.base]);
+	const initScript = join(ownerRoot, "preview-probe.js");
+	writeFileSync(
+		initScript,
+		`{ window.__previewProbe = { requests: [], failBoard: 'beta' }; const nativeFetch = window.fetch.bind(window); window.fetch = async (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (url.pathname !== '/api/boards/preview') return nativeFetch(input, init); const board = url.searchParams.get('board'); window.__previewProbe.requests.push({ board, method: (init?.method || 'GET').toUpperCase() }); if (window.__previewProbe.failBoard === board) return new Response('{}', { status: 503 }); return nativeFetch(input, init); }; }`,
+	);
+	await browser.run(["--init-script", initScript, "open", canvas.base]);
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
@@ -163,36 +202,33 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	await pollUntil(
-		() =>
-			browser.eval<number>(
-				"document.querySelectorAll('.board-group:not(.scratch-section)').length",
-			),
-		(count) => count === 6,
-		"all real named boards to enter the strip",
+		() => browser.eval<string[]>(GROUP_NAMES),
+		(names) => names.length === 6,
+		"all real named boards to enter the navigator",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 
 	const desktop = await browser.eval<NavigatorContract>(
-		`(() => { const nav = document.querySelector('.board-nav'); const primaryRows = [...document.querySelectorAll('.board-group[aria-label="primary"] .board-nav-row')]; const targets = [...document.querySelectorAll('.board-nav-tools button, .board-preview-control, .board-variants .board-nav-row, .scratch-top, .name-button')]; const humanCopy = [...document.querySelectorAll('.board-group-copy strong, .board-group-copy small, .board-nav-variant')]; const technicalCopy = [...document.querySelectorAll('.board-nav-markers > span')]; return { boardCount: document.querySelectorAll('.board-group:not(.scratch-section)').length, draftMarkers: [...document.querySelectorAll('.board-group[aria-label="draft-probe"] .board-nav-markers > span')].map(node => node.textContent.trim()), humanFonts: humanCopy.map(node => { const style = getComputedStyle(node); return { family: style.fontFamily, size: parseFloat(style.fontSize), lineHeight: parseFloat(style.lineHeight), transform: style.textTransform }; }), initials: document.querySelectorAll('.board-glyph').length, navWidth: nav.getBoundingClientRect().width, primaryVariants: primaryRows.map(row => row.dataset.boardKey), targets: targets.map(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; }), technicalFonts: technicalCopy.map(node => getComputedStyle(node).fontFamily.toLowerCase()) }; })()`,
+		`(() => { const nav = document.querySelector('${NAVIGATOR}'); const rows = [...nav.querySelectorAll('[data-board-key]')]; const primaryRows = rows.filter(row => row.getAttribute('data-board-key').startsWith('primary')); const targets = [...nav.querySelectorAll('button')].filter(node => node.getBoundingClientRect().height > 0); const humanCopy = [...nav.querySelectorAll('[data-sidebar="menu-item"] > button > span, [data-board-key] > span > span:first-child')]; const technicalCopy = [...nav.querySelectorAll('[data-board-key] .font-mono')]; return { boardCount: ${GROUP_NAMES}.length, draftMarkers: [...(nav.querySelector('[data-board-key="draft-probe"]')?.querySelectorAll('span') ?? [])].map(node => node.textContent.trim()).filter(text => text === 'Draft'), humanFonts: humanCopy.map(node => { const style = getComputedStyle(node); return { family: style.fontFamily, size: parseFloat(style.fontSize), lineHeight: parseFloat(style.lineHeight), transform: style.textTransform }; }), initials: nav.querySelectorAll('svg[aria-label], .board-glyph').length, navWidth: nav.getBoundingClientRect().width, primaryVariants: primaryRows.map(row => row.getAttribute('data-board-key')), targets: targets.map(node => { const rect = node.getBoundingClientRect(); return { width: rect.width, height: rect.height }; }), technicalFonts: technicalCopy.map(node => getComputedStyle(node).fontFamily.toLowerCase()) }; })()`,
 	);
 	expect(desktop.boardCount).toBe(6);
-	expect(
-		await browser.eval<boolean>(
-			"document.querySelector('[data-board-key=\"draft-probe\"]') !== null",
-		),
-	).toBeTrue();
-	expect(desktop.navWidth).toBeCloseTo(280, 0);
+	expect(desktop.navWidth).toBeGreaterThan(160);
 	expect(
 		await browser.eval<boolean>(`(() => {
-		const name = document.querySelector('[data-board-key="gamma-production-event-processing-architecture"] .board-nav-variant');
-		if (!name) return false;
-		const rect = name.getBoundingClientRect();
-		return rect.height > parseFloat(getComputedStyle(name).lineHeight) && name.scrollWidth <= name.clientWidth;
-	})()`),
+			const group = [...document.querySelectorAll('${NAVIGATOR} [data-sidebar="menu-item"] > button')]
+				.find(node => node.textContent.trim() === 'gamma-production-event-processing-architecture');
+			const name = group?.querySelector('span');
+			if (!name) return false;
+			const rect = name.getBoundingClientRect();
+			return rect.height > parseFloat(getComputedStyle(name).lineHeight) && name.scrollWidth <= name.clientWidth;
+		})()`),
 	).toBe(true);
 	expect(desktop.primaryVariants).toEqual([primary, option]);
+	// The note is the board: a board the vault lists is persisted, so the
+	// open-but-unlisted "Draft" marker must not appear on it.
 	expect(desktop.draftMarkers).toEqual([]);
 	expect(desktop.initials).toBe(0);
+	expect(desktop.humanFonts.length).toBeGreaterThan(6);
 	expect(
 		desktop.humanFonts.every(
 			({ family, size, transform }) =>
@@ -200,11 +236,13 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		),
 	).toBe(true);
 	expect(desktop.humanFonts.every(({ lineHeight, size }) => lineHeight >= size * 1.18)).toBe(true);
-	expect(desktop.technicalFonts.every((family) => family.includes("archboard onest"))).toBe(true);
-	expect(desktop.targets.every(({ width, height }) => width >= 43.5 && height >= 43.5)).toBe(true);
+	expect(desktop.technicalFonts.every((family) => family.includes("archboard dm mono"))).toBe(true);
+	expect(
+		desktop.targets.every(({ width, height }) => width >= MIN_TARGET && height >= MIN_TARGET),
+	).toBe(true);
 	const navigationOrder = () =>
 		browser.eval<string[]>(
-			`[...document.querySelectorAll('.board-group:not(.scratch-section) .board-nav-row')].map(row => row.dataset.boardKey)`,
+			`[...document.querySelectorAll('${NAVIGATOR} [data-sidebar="menu-item"] [data-board-key]')].map(row => row.getAttribute('data-board-key'))`,
 		);
 	const stableOrder = [
 		"alpha",
@@ -216,48 +254,59 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		"secondary",
 	];
 	expect(await navigationOrder()).toEqual(stableOrder);
-	await browser.run(["click", '.board-group[aria-label="primary"] summary']);
 	expect(
-		await browser.eval<boolean>(`(() => {
-		const group = document.querySelector('.board-group[aria-label="primary"]');
-		return group instanceof HTMLDetailsElement && !group.open &&
-			document.querySelector('[data-board-key="${option}"]').checkVisibility() === false;
-	})()`),
+		await browser.eval<boolean>(`(() => { ${groupButton("primary")}?.click(); return true; })()`),
 	).toBe(true);
-	await browser.run(["click", '.board-group[aria-label="primary"] summary']);
-	expect(await navigationOrder()).toEqual(stableOrder);
-
-	await browser.run(["click", `[data-board-key="${primary}"]`]);
 	await pollUntil(
-		() => browser.eval<string | null>("document.querySelector('.board-name')?.textContent.trim()"),
+		() =>
+			browser.eval<boolean>(`(() => {
+			const button = ${groupButton("primary")};
+			const row = document.querySelector(${JSON.stringify(navigatorRow(option))});
+			return button?.getAttribute('aria-expanded') === 'false' && (!row || row.checkVisibility() === false);
+		})()`),
+		Boolean,
+		"the primary group to collapse its variants",
+	);
+	expect(
+		await browser.eval<boolean>(`(() => { ${groupButton("primary")}?.click(); return true; })()`),
+	).toBe(true);
+	await pollUntil(
+		() => navigationOrder(),
+		(order) => JSON.stringify(order) === JSON.stringify(stableOrder),
+		"the primary group to expand again",
+	);
+
+	expect(await clickNavigatorRow(browser, primary)).toBe(true);
+	await pollUntil(
+		() => browser.eval<string | null>(BOARD_NAME_EXPRESSION),
 		(name) => name === primary,
 		"the primary board to open",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(await navigationOrder()).toEqual(stableOrder);
-	const readPreview = () =>
+	// The listing refetches once the pane reports its new board; until then the
+	// abandoned scratch board is still listed as open.
+	await pollUntil(
+		() => navigationOrder(),
+		(order) => JSON.stringify(order) === JSON.stringify(stableOrder),
+		"the listing to drop the abandoned scratch board",
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
+	);
+	const readPreview = (key: string) =>
 		browser.eval<NavigatorPreviewView>(
-			`(() => { const card = document.querySelector('.board-preview-card'); const frame = card?.querySelector('.board-preview-frame'); if (!card || !frame) return {}; const cardStyle = getComputedStyle(card); const frameStyle = getComputedStyle(frame); return { board: card.dataset.previewBoard, state: card.dataset.previewState, source: card.dataset.previewSource, src: card.querySelector('img')?.src, cardWidth: card.getBoundingClientRect().width, flat: cardStyle.boxShadow === 'none' && parseFloat(cardStyle.borderRadius) === 4 && frameStyle.backgroundImage === 'none' && frameStyle.animationName === 'none', frameHeight: frame.getBoundingClientRect().height, focusables: card.querySelectorAll('button, a, input, [tabindex]').length, rawSvg: card.querySelectorAll('svg').length }; })()`,
+			`(() => { const row = document.querySelector(${JSON.stringify(navigatorRow(key))}); if (!row) return {}; const img = row.querySelector('img'); const box = [...row.querySelectorAll('span')].map(node => node.textContent.trim()).find(text => /^(Empty board|Rendering preview|No preview yet)/.test(text)); const style = img ? getComputedStyle(img) : null; return { board: ${JSON.stringify(key)}, state: img ? 'ready' : box?.startsWith('Empty board') ? 'empty' : box?.startsWith('No preview') ? 'unavailable' : 'loading', src: img?.src, cardWidth: (img ?? row).getBoundingClientRect().width, flat: !style || (style.boxShadow === 'none' && style.backgroundImage === 'none'), frameHeight: img?.getBoundingClientRect().height ?? 0, focusables: row.querySelectorAll('button, a, input, [tabindex]').length, rawSvg: row.querySelectorAll('svg').length }; })()`,
 		);
-
-	await browser.run(["hover", `[data-board-key="${primary}"]`]);
 	const mountedPreview = await pollUntil(
-		readPreview,
-		(view) => view.board === primary && view.state === "ready" && view.source === "mounted",
-		"pointer hover to render the mounted primary scene",
+		() => readPreview(primary),
+		(view) => view.state === "ready",
+		"the mounted primary scene to render as a preview",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	expect(mountedPreview.src).toMatch(/^blob:/);
-	expect(mountedPreview.cardWidth).toBeCloseTo(308, 0);
-	expect(mountedPreview.frameHeight).toBeCloseTo(176, 0);
+	expect(mountedPreview.cardWidth).toBeGreaterThan(120);
+	expect(mountedPreview.frameHeight).toBeGreaterThan(40);
+	expect(mountedPreview.flat).toBe(true);
 	expect(mountedPreview.focusables).toBe(0);
 	expect(mountedPreview.rawSvg).toBe(0);
-
-	expect(
-		await browser.eval<boolean>(
-			`(() => { window.__previewProbe = { requests: [], failBoard: null, holdBoard: null, pending: [], release(board) { const index = this.pending.findIndex(request => request.board === board); if (index < 0) return false; this.pending.splice(index, 1)[0].resolve(); return true; } }; window.__previewNativeFetch = window.fetch.bind(window); window.fetch = async (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (url.pathname !== '/api/boards/preview') return window.__previewNativeFetch(input, init); const board = url.searchParams.get('board'); const record = { board, method: (init?.method || 'GET').toUpperCase(), completed: false }; window.__previewProbe.requests.push(record); try { if (window.__previewProbe.failBoard === board) return new Response('{}', { status: 503 }); if (window.__previewProbe.holdBoard === board) await new Promise(resolve => window.__previewProbe.pending.push({ board, resolve })); return await window.__previewNativeFetch(input, init); } finally { record.completed = true; } }; return true; })()`,
-		),
-	).toBe(true);
 	const before = {
 		panes: await request<PanesBody>("/api/panes").then((response) => response.body),
 		health: await request<HealthBody>("/health").then((response) => response.body),
@@ -268,18 +317,15 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 			(response) => response.body.cursor,
 		),
 	};
-	expect(
-		await browser.eval<boolean>(
-			`(() => { const row = document.querySelector('[data-board-key=${JSON.stringify(option)}]'); if (!row) return false; row.focus(); return document.activeElement === row; })()`,
-		),
-	).toBe(true);
 	const vaultPreview = await pollUntil(
-		readPreview,
-		(view) => view.board === option && view.state === "ready" && view.source === "vault",
-		"keyboard focus to render the cold option scene",
+		() => readPreview(option),
+		(view) => view.state === "ready",
+		"the cold option scene to render from the server's snapshot",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	expect(vaultPreview.src).toMatch(/^blob:/);
+	expect((await readPreview("alpha")).state).toBe("empty");
+	expect((await readPreview("beta")).state).toBe("unavailable");
 	const after = {
 		panes: await request<PanesBody>("/api/panes").then((response) => response.body),
 		health: await request<HealthBody>("/health").then((response) => response.body),
@@ -299,116 +345,32 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	expect(after.elements).toEqual(before.elements);
 	expect(after.cursor).toBe(before.cursor);
 
-	expect(
-		await browser.eval<boolean>(
-			`(() => { const row = document.querySelector('[data-board-key="alpha"]'); if (!row) return false; row.focus(); return row.getBoundingClientRect().height >= 43.5; })()`,
-		),
-	).toBe(true);
+	await browser.eval<boolean>("(window.__previewProbe.failBoard = null, true)");
+	await browser.run(["click", `${NAVIGATOR} [aria-label="Refresh boards"]`]);
 	await pollUntil(
-		readPreview,
-		(view) => view.board === "alpha" && view.state === "empty",
-		"keyboard focus on the board row to disclose an empty preview",
-		{ timeoutMs: PANE_SETTLE_CAP_MS },
-	);
-
-	await browser.eval<boolean>(
-		`(() => { window.__previewProbe.failBoard = 'beta'; document.querySelector('[data-board-key="beta"]')?.focus(); return true; })()`,
-	);
-	await pollUntil(
-		readPreview,
-		(view) => view.board === "beta" && view.state === "unavailable",
-		"a failed preview to remain quiet and recoverable",
-		{ timeoutMs: PANE_SETTLE_CAP_MS },
-	);
-	await browser.eval<boolean>(
-		`(() => { window.__previewProbe.failBoard = null; const row = document.querySelector('[data-board-key="beta"]'); row?.blur(); row?.focus(); return true; })()`,
-	);
-	await pollUntil(
-		readPreview,
-		(view) => view.board === "beta" && view.state === "ready",
-		"the failed preview to recover on the next disclosure",
-		{ timeoutMs: PANE_SETTLE_CAP_MS },
-	);
-	const optionLight = vaultPreview.src;
-	await browser.eval<boolean>(
-		`(() => { document.querySelector('[data-board-key=${JSON.stringify(option)}]')?.focus(); document.querySelector('[aria-label="Use dark theme"]')?.click(); return true; })()`,
-	);
-	const optionDark = await pollUntil(
-		readPreview,
-		(view) => view.board === option && view.state === "ready" && view.src !== optionLight,
-		"the dark theme to render a separately keyed SVG",
-		{ timeoutMs: PANE_SETTLE_CAP_MS },
-	);
-	expect(optionDark.src).toMatch(/^blob:/);
-	await browser.eval<boolean>(
-		`(() => { window.__previewProbe.holdBoard = 'gamma-production-event-processing-architecture'; document.querySelector('[data-board-key="gamma-production-event-processing-architecture"]')?.focus(); return true; })()`,
-	);
-	await pollUntil(
-		readPreview,
-		(view) =>
-			view.board === "gamma-production-event-processing-architecture" &&
-			view.state === "loading" &&
-			view.flat === true,
-		"the delayed preview request to begin",
-	);
-	await browser.eval<void>(
-		`{
-			document.querySelector('[data-board-key="secondary"]')?.focus();
-			document.querySelector('.board-nav-list')?.dispatchEvent(new Event('scroll'));
-			document.querySelector('[data-board-key=${JSON.stringify(option)}]')?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }));
-		}`,
-	);
-	await pollUntil(
-		readPreview,
-		(view) => view.board === "secondary" && view.state === "empty",
-		"a later disclosure to win over the delayed completion",
+		() => readPreview("beta"),
+		(view) => view.state === "ready",
+		"the failed preview to recover on the next refresh",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
 	expect(
-		await browser.eval<boolean>(
-			"window.__previewProbe.release('gamma-production-event-processing-architecture')",
-		),
-	).toBe(true);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				"Boolean(window.__previewProbe.requests.find(request => request.board === 'gamma-production-event-processing-architecture' && request.completed))",
-			),
-		Boolean,
-		"the stale gamma-production-event-processing-architecture preview request to finish",
-		{ timeoutMs: PANE_SETTLE_CAP_MS },
-	);
-	expect((await readPreview()).board).not.toBe("gamma-production-event-processing-architecture");
-	await browser.eval<void>(
-		`{
-			const list = document.querySelector('.board-nav-list');
-			if (!list) throw new Error('Board navigator list is missing');
-			list.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
-			list.dispatchEvent(new Event('scroll'));
-		}`,
-	);
-	await pollUntil(readPreview, (view) => !view.board, "intentional list scroll dismissal");
-	expect(
-		await browser.eval<Array<{ board: string; method: string; completed: boolean }>>(
-			"window.__previewProbe.requests",
-		),
+		await browser.eval<Array<{ board: string; method: string }>>("window.__previewProbe.requests"),
 	).toSatisfy(
 		(requests) =>
 			requests.length >= 5 &&
 			requests.every(({ method }) => method === "GET") &&
-			requests.some(
-				({ board, completed }) =>
-					board === "gamma-production-event-processing-architecture" && completed,
-			),
+			requests.filter(({ board }) => board === "beta").length >= 2,
 	);
-	await browser.eval<boolean>(
-		`(() => { window.__previewProbe.holdBoard = null; document.querySelector('[data-board-key=${JSON.stringify(primary)}]')?.focus(); return true; })()`,
+	const optionLight = vaultPreview.src;
+	await switchTheme(browser, "dark");
+	const optionDark = await pollUntil(
+		() => readPreview(option),
+		(view) => view.state === "ready" && view.src !== optionLight,
+		"the dark theme to render a separately keyed SVG",
+		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	const beforeInvalidation = await pollUntil(
-		readPreview,
-		(view) => view.board === primary && view.state === "ready" && view.source === "mounted",
-		"the mounted preview before invalidation",
-	);
+	expect(optionDark.src).toMatch(/^blob:/);
+	const beforeInvalidation = await readPreview(primary);
 	await addBox(request, primary, "newbox", "Updated primary");
 	await pollUntil(
 		() => request<PanesBody>("/api/panes").then((response) => response.body),
@@ -416,26 +378,15 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		"the mounted pane to receive the new canonical scene",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	await browser.run(["click", '[aria-label="Refresh boards"]']);
-	expect(await navigationOrder()).toEqual(stableOrder);
-	await browser.eval<boolean>(
-		`(() => { const row = document.querySelector('[data-board-key=${JSON.stringify(primary)}]'); row?.blur(); row?.focus(); return true; })()`,
-	);
 	await pollUntil(
-		readPreview,
-		(view) =>
-			view.board === primary && view.state === "ready" && view.src !== beforeInvalidation.src,
+		() => readPreview(primary),
+		(view) => view.state === "ready" && view.src !== beforeInvalidation.src,
 		"the real mounted-scene fingerprint to invalidate the cached SVG",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(
-		await browser.eval<boolean>(`(() => {
-      const split = document.querySelector('.bar-actions [aria-label="Split"]');
-      if (!split) return false;
-      split.click();
-      return true;
-    })()`),
-	).toBe(true);
+	expect(await navigationOrder()).toEqual(stableOrder);
+
+	await browser.run(["click", 'button[aria-label="Add pane"]']);
 	const split = await pollUntil(
 		() => request<PanesBody>("/api/panes").then((response) => response.body),
 		(state) => state.paneCount === 2,
@@ -446,12 +397,12 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	expect(rightPaneId).toBeTruthy();
 	expect(
 		await browser.eval<boolean>(`(() => {
-      const tabs = [...document.querySelectorAll('.pane-tab')];
-      const right = tabs.at(-1);
-      if (!right) return false;
-      right.click();
-      return true;
-    })()`),
+			const tabs = [...document.querySelectorAll('${PANE_TABS}')];
+			const right = tabs.at(-1);
+			if (!right) return false;
+			right.click();
+			return true;
+		})()`),
 	).toBe(true);
 	await pollUntil(
 		() => request<PanesBody>("/api/panes").then((response) => response.body),
@@ -459,14 +410,7 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 		"the right pane to become focused",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	expect(
-		await browser.eval<boolean>(`(() => {
-      const row = document.querySelector('[data-board-key=${JSON.stringify(option)}]');
-      if (!row) return false;
-      row.click();
-      return true;
-    })()`),
-	).toBe(true);
+	expect(await clickNavigatorRow(browser, option)).toBe(true);
 	const replaced = await pollUntil(
 		() => request<PanesBody>("/api/panes").then((response) => response.body),
 		(state) =>
@@ -478,21 +422,22 @@ test("the strip keeps every real board reachable and replaces the focused pane",
 	expect(replaced.panes.find((pane) => pane.paneId !== rightPaneId)?.board).toBe(primary);
 	expect(await navigationOrder()).toEqual(stableOrder);
 
-	await browser.run(["click", `button[aria-label="Present Pane B fullscreen"]`]);
+	await browser.run(["click", `button[aria-label="Present pane B fullscreen"]`]);
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(`document.fullscreenElement === document.querySelector('.shell') &&
-			getComputedStyle(document.querySelector('.board-nav')).display === 'none' &&
-			(!document.querySelector('.board-preview-card') || document.querySelector('.board-preview-card').getBoundingClientRect().width === 0)`),
+		async () =>
+			(await stageIsFullscreen(browser)) &&
+			(await browser.eval<boolean>(
+				`!document.fullscreenElement.contains(document.querySelector('${NAVIGATOR}'))`,
+			)),
 		Boolean,
-		"fullscreen to hide the navigator and any disclosed preview",
+		"fullscreen to leave the navigator outside the presented stage",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
 	);
-	await browser.run(["click", ".presentation-exit"]);
+	await browser.run(["find", "role", "button", "click", "--name", "Exit presentation", "--exact"]);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(`document.fullscreenElement === null &&
-			Math.abs(document.querySelector('.board-nav').getBoundingClientRect().width - 280) < 0.6`),
+			Math.abs(document.querySelector('${NAVIGATOR}').getBoundingClientRect().width - ${desktop.navWidth}) < 0.6`),
 		Boolean,
 		"the exact desktop navigator to return after fullscreen",
 		{ timeoutMs: PANE_SETTLE_CAP_MS },

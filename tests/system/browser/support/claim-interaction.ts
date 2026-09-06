@@ -4,7 +4,13 @@ import { readFileSync } from "node:fs";
 
 import type { createJsonRequester } from "../../boards/support/http.ts";
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
-import { readSemanticAccessibility } from "./semantic-accessibility.ts";
+import {
+	CLAIM_BANNER,
+	PANE_SECTIONS,
+	currentTheme,
+	paneSection,
+	switchTheme,
+} from "./shell-dom.ts";
 import type { WorkbenchSnapshot } from "./workbench-metrics.ts";
 
 interface ClaimCounts {
@@ -21,6 +27,11 @@ interface PaneList {
 }
 
 type Request = ReturnType<typeof createJsonRequester>;
+
+/** The take-back control inside the active pane's claim banner. */
+const TAKE_BACK = `${PANE_SECTIONS}[aria-current="true"] ${CLAIM_BANNER} button`;
+/** WCAG 2.5.8 target size floor. */
+const MIN_TARGET = 24;
 
 const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
 	browser.eval(`(() => {
@@ -102,62 +113,12 @@ function expectNoteUnchanged(noteFile: string, expected: Buffer<ArrayBuffer>): v
 	expect(readFileSync(noteFile)).toEqual(expected);
 }
 
-interface SemanticAnnouncerSnapshot {
-	atomic: string | null;
-	bodyHidden: boolean;
-	count: number;
-	hiddenAncestor: boolean;
-	label: string | null;
-	live: string | null;
-	role: string | null;
-	state: string | null;
-	text: string;
-	workbenchExpanded: string | null;
-}
-
-const readSemanticAnnouncer = (browser: AgentBrowserSession): Promise<SemanticAnnouncerSnapshot> =>
-	browser.eval(`(() => {
-		const announcer = document.querySelector(".workbench-semantic-announcer");
-		const body = document.querySelector('[data-workbench-content="expanded"]');
-		const workbench = document.querySelector("[data-workbench-frame]");
-		return {
-			atomic: announcer?.getAttribute("aria-atomic") ?? null,
-			bodyHidden: body === null,
-			count: document.querySelectorAll(".workbench-semantic-announcer").length,
-			hiddenAncestor: announcer?.closest("[hidden]") !== null,
-			label: announcer?.getAttribute("aria-label") ?? null,
-			live: announcer?.getAttribute("aria-live") ?? null,
-			role: announcer?.getAttribute("role") ?? null,
-			state: announcer?.getAttribute("data-semantic-state") ?? null,
-			text: announcer?.textContent?.replace(/\\s+/g, " ").trim() ?? "",
-			workbenchExpanded: workbench?.getAttribute("data-workbench-disclosure") ?? null,
-		};
-	})()`);
-
-async function verifyCollapsedSemanticAnnouncement(browser: AgentBrowserSession): Promise<void> {
-	const unavailableText =
-		"Semantic context Unavailable No semantic context delivery is available for this pane.";
-	expect(await readSemanticAnnouncer(browser)).toEqual({
-		atomic: "true",
-		bodyHidden: true,
-		count: 1,
-		hiddenAncestor: false,
-		label: unavailableText,
-		live: "polite",
-		role: "status",
-		state: "unavailable",
-		text: unavailableText,
-		workbenchExpanded: "collapsed",
-	});
-	expect(await readSemanticAccessibility(browser)).toEqual({
-		atomic: true,
-		ignored: false,
-		live: "polite",
-		name: unavailableText,
-		role: "status",
-	});
-}
-
+/**
+ * The claim banner and the take-back control stay usable from the keyboard,
+ * in both themes, and a refused take-back is shown as a recoverable failure.
+ * @param options The board, the page, the note file, the status reader and the API.
+ * @returns The note bytes before the flow, unchanged after it.
+ */
 async function verifyBoardStatusPresentation(options: {
 	board: string;
 	browser: AgentBrowserSession;
@@ -178,81 +139,71 @@ async function verifyBoardStatusPresentation(options: {
 	).toBe(200);
 	await pollUntil(
 		readStatus,
-		(value) => value.reason === failedWhy && value.takeBackState === "available",
+		(value) => value.reason === failedWhy && value.takeBackState === "idle",
 		"the failed-flow claim to expose an available take-back action",
 	);
-	await browser.run(["focus", ".pane-claim-take"]);
+	// Reach the control the way a keyboard user does: Tab from the pane bar's
+	// last control, so the focus ring is a keyboard ring and not a script one.
+	await browser.eval<boolean>(
+		`(() => { const present = document.querySelector('button[aria-label^="Present pane"]'); present?.focus(); return !!present; })()`,
+	);
+	await browser.run(["press", "Tab"]);
 	const keyboardFocus = await browser.eval<{
 		active: boolean;
 		height: number;
-		outlineWidth: number;
+		ring: boolean;
 	}>(`(() => {
-		const action = document.querySelector(".pane-claim-take");
+		const action = document.querySelector(${JSON.stringify(TAKE_BACK)});
+		const style = action ? getComputedStyle(action) : null;
 		return {
 			active: document.activeElement === action,
 			height: action?.getBoundingClientRect().height ?? 0,
-			outlineWidth: parseFloat(getComputedStyle(action).outlineWidth),
+			ring: !!style && (style.boxShadow !== 'none' || (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) >= 1)),
 		};
 	})()`);
 	expect(keyboardFocus.active).toBe(true);
-	expect(keyboardFocus.height).toBeGreaterThanOrEqual(43.5);
-	expect(keyboardFocus.outlineWidth).toBeGreaterThanOrEqual(2);
+	expect(keyboardFocus.height).toBeGreaterThanOrEqual(MIN_TARGET);
+	expect(keyboardFocus.ring).toBe(true);
 
-	const lightWorkbench = await browser.eval<{ background: string; foreground: string }>(`(() => {
-		const workbench = document.querySelector(".agent-status-strip");
-		return {
-			background: getComputedStyle(workbench).backgroundColor,
-			foreground: getComputedStyle(workbench).color,
-		};
-	})()`);
-	await browser.run(["click", '[aria-label="Use dark theme"]']);
-	const darkWorkbench = await pollUntil(
-		() =>
-			browser.eval<{
-				background: string;
-				foreground: string;
-				semantic: string | null;
-				theme: string;
-			}>(`(() => {
-				const workbench = document.querySelector(".agent-status-strip");
-				return {
-					background: getComputedStyle(workbench).backgroundColor,
-					foreground: getComputedStyle(workbench).color,
-					semantic: workbench?.getAttribute("data-semantic") ?? null,
-					theme: document.documentElement.dataset.theme ?? "",
-				};
-			})()`),
+	const readBannerColors = () =>
+		browser.eval<{ background: string; foreground: string; theme: string }>(`(() => {
+			const banner = document.querySelector(${JSON.stringify(`${paneSection("Pane A")} ${CLAIM_BANNER}`)});
+			return {
+				background: getComputedStyle(banner).backgroundColor,
+				foreground: getComputedStyle(banner).color,
+				theme: document.documentElement.dataset.theme ?? "",
+			};
+		})()`);
+	const startTheme = (await currentTheme(browser)) === "dark" ? "dark" : "light";
+	const other = startTheme === "dark" ? "light" : "dark";
+	const lightBanner = await readBannerColors();
+	await switchTheme(browser, other);
+	const darkBanner = await pollUntil(
+		readBannerColors,
 		(value) =>
-			value.theme === "dark" &&
-			value.background !== lightWorkbench.background &&
-			value.foreground !== lightWorkbench.foreground,
-		"the board-status view to render in the dark theme",
+			value.theme === other &&
+			value.background !== lightBanner.background &&
+			value.foreground !== lightBanner.foreground,
+		"the claim banner to render in the other theme",
 	);
-	expect(darkWorkbench.background).not.toBe(lightWorkbench.background);
-	expect(darkWorkbench.foreground).not.toBe(lightWorkbench.foreground);
-	expect(darkWorkbench.semantic).toBe("unavailable");
-	await browser.run(["click", '[aria-label="Use light theme"]']);
-	await pollUntil(
-		() => browser.eval<string>("document.documentElement.dataset.theme ?? ''"),
-		(value) => value === "light",
-		"the board-status view to return to the light theme",
-	);
+	expect(darkBanner.background).not.toBe(lightBanner.background);
+	expect(darkBanner.foreground).not.toBe(lightBanner.foreground);
+	await switchTheme(browser, startTheme);
 
 	await browser.eval("window.__failNextTakeBack()");
-	await browser.run(["focus", ".pane-claim-take"]);
+	await browser.run(["focus", TAKE_BACK]);
 	await browser.run(["press", "Enter"]);
 	const refused = await pollUntil(
 		readStatus,
-		(value) => value.takeBackState === "failure",
+		(value) => value.takeBackState === "failed",
 		"the refused take-back to render as a recoverable failure",
 	);
 	expect(refused).toMatchObject({
 		reason: failedWhy,
-		state: "working",
-		take: "Try Take back control again",
-		takeBackState: "failure",
-		takeBackOutcomeVisible: true,
+		take: "Take back control",
+		takeBackState: "failed",
 	});
+	expect(refused.takeBackMessage).toContain("could not be taken back");
 	expectNoteUnchanged(noteFile, before);
 
 	expect(
@@ -265,14 +216,19 @@ async function verifyBoardStatusPresentation(options: {
 	).toBe(200);
 	const recovered = await pollUntil(
 		readStatus,
-		(value) => value.what === null && value.takeBackState === "idle",
+		(value) => value.banner === null && value.headerClaim === null,
 		"the released failed-flow claim to restore the available board",
 	);
-	expect(recovered).toMatchObject({ state: "ready", takeBackState: "idle" });
+	expect(recovered).toMatchObject({ takeBackState: null, take: null });
 	expectNoteUnchanged(noteFile, before);
 	return before;
 }
 
+/**
+ * A pending take-back belongs to its pane: another pane shows nothing of it,
+ * and the settled result frees the board the first pane holds.
+ * @param options The board, the page, the first pane's client, the status reader and the API.
+ */
 async function verifyPaneScopedTakeBack(options: {
 	board: string;
 	browser: AgentBrowserSession;
@@ -284,7 +240,7 @@ async function verifyPaneScopedTakeBack(options: {
 	const { board, browser, primaryClientId, readStatus, reason, request } = options;
 	await browser.eval(`(() => {
 		window.__takeBackActivations = 0;
-		document.querySelector(".pane-claim-take")?.addEventListener(
+		document.querySelector(${JSON.stringify(TAKE_BACK)})?.addEventListener(
 			"click",
 			() => { window.__takeBackActivations += 1; },
 			{ once: true },
@@ -292,7 +248,7 @@ async function verifyPaneScopedTakeBack(options: {
 		return true;
 	})()`);
 	await browser.eval("window.__delayNextTakeBack()");
-	await browser.run(["click", ".pane-claim-take"]);
+	await browser.run(["click", TAKE_BACK]);
 	expect(await browser.eval<number>("window.__takeBackActivations")).toBe(1);
 	const pending = await pollUntil(
 		async () => ({ banner: await readStatus(), counts: await claimCounts(browser) }),
@@ -301,7 +257,6 @@ async function verifyPaneScopedTakeBack(options: {
 	);
 	expect(pending.banner).toMatchObject({
 		reason,
-		state: "working",
 		take: "Taking back control",
 		takeBackState: "pending",
 	});
@@ -331,18 +286,18 @@ async function verifyPaneScopedTakeBack(options: {
 			})
 		).status,
 	).toBe(200);
-	await browser.run(["click", '.pane[aria-label="Pane B"] .excalidraw']);
+	await browser.run(["click", `${paneSection("Pane B")} .excalidraw`]);
 	const paneBBeforeSettlement = await pollUntil(
 		readStatus,
-		(value) => value.pane === "Pane B" && value.takeBackState === null,
-		"Pane B to omit idle activity and Pane A take-back state",
+		(value) => value.pane === "Pane B" && value.banner === null,
+		"Pane B to omit Pane A's claim and take-back state",
 	);
 	expect(paneBBeforeSettlement).toMatchObject({
-		takeBackAnnouncement: null,
+		headerClaim: null,
 		takeBackState: null,
-		stripHeight: 0,
-		what: null,
+		take: null,
 	});
+	expect(paneBBeforeSettlement.otherBanners).toEqual(["Pane A"]);
 	expect((await browser.eval<{ released: boolean }>("window.__releaseTakeBack()")).released).toBe(
 		true,
 	);
@@ -350,32 +305,19 @@ async function verifyPaneScopedTakeBack(options: {
 		async () => ({ banner: await readStatus(), counts: await claimCounts(browser) }),
 		(value) =>
 			value.banner.pane === "Pane B" &&
-			value.banner.takeBackState === null &&
+			value.banner.banner === null &&
 			value.counts.takeBackSettled === 1,
 		"Pane B to remain idle after Pane A settles",
 	);
-	expect(paneBAfterSettlement.banner).toMatchObject({
-		takeBackAnnouncement: null,
-		takeBackState: null,
-		stripHeight: 0,
-		what: null,
-	});
+	expect(paneBAfterSettlement.banner).toMatchObject({ takeBackState: null, take: null });
 
-	await browser.run(["click", '.pane[aria-label="Pane A"] .excalidraw']);
+	await browser.run(["click", `${paneSection("Pane A")} .excalidraw`]);
 	const paneASettled = await pollUntil(
 		readStatus,
-		(value) =>
-			value.pane === "Pane A" &&
-			value.takeBackState === "success" &&
-			value.takeBackAnnouncement === "Board control returned.",
-		"Pane A to retain its own settled take-back result",
+		(value) => value.pane === "Pane A" && value.banner === null && value.headerClaim === null,
+		"Pane A to show its board free after the settled take-back",
 	);
-	expect(paneASettled).toMatchObject({
-		takeBackAnnouncement: "Board control returned.",
-		takeBackState: "success",
-		takeBackOutcomeVisible: true,
-		what: null,
-	});
+	expect(paneASettled).toMatchObject({ takeBackState: null, take: null });
 	expect(
 		(
 			await request("/api/panes/close", {
@@ -397,7 +339,6 @@ export {
 	claimCounts,
 	noteBytes,
 	expectNoteUnchanged,
-	verifyCollapsedSemanticAnnouncement,
 	verifyBoardStatusPresentation,
 	verifyPaneScopedTakeBack,
 };

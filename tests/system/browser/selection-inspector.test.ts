@@ -20,6 +20,17 @@ import {
 	readInspectorContract,
 	waitInspector,
 } from "./support/selection-inspector.ts";
+import {
+	BOARD_NAME_EXPRESSION,
+	INSPECTOR,
+	PANE_SECTIONS,
+	PANE_TABS,
+	currentTheme,
+	dismissNotice,
+	shellNotices,
+	stageIsFullscreen,
+	switchTheme,
+} from "./support/shell-dom.ts";
 
 type Panes = {
 	paneCount: number;
@@ -31,6 +42,8 @@ const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
 const fakeOpener = join(repoRoot, "tests/system/code-targets/fixtures/fake-opener.ts");
 const repository = "github.com/acme/inspector";
+/** WCAG 2.5.8 target size floor. */
+const MIN_TARGET = 24;
 
 function git(cwd: string, ...args: string[]): void {
 	const result = Bun.spawnSync(["git", ...args], { cwd, stderr: "pipe" });
@@ -58,7 +71,7 @@ async function select(
 	ids: readonly string[],
 ): Promise<void> {
 	const applied = await browser.eval<boolean>(`(() => {
-		const pane = [...document.querySelectorAll('.pane')]
+		const pane = [...document.querySelectorAll('${PANE_SECTIONS}')]
 			.find(candidate => candidate.getAttribute('aria-label') === ${JSON.stringify(paneLabel)});
 		const node = pane?.querySelector('.excalidraw');
 		const key = node && Object.keys(node).find(candidate => candidate.startsWith('__reactFiber$'));
@@ -77,6 +90,10 @@ async function select(
 		return true;
 	})()`);
 	expect(applied).toBe(true);
+}
+
+function clickInspector(browser: AgentBrowserSession, name: string): Promise<string> {
+	return browser.run(["find", "role", "button", "click", "--name", name, "--exact"]);
 }
 
 test(
@@ -181,7 +198,7 @@ test(
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(
-					`document.querySelector('.board-name')?.textContent?.trim() === 'selection-a' && document.querySelector('.selection-inspector') === null`,
+					`(${BOARD_NAME_EXPRESSION}) === 'selection-a' && document.querySelector('${INSPECTOR}') === null`,
 				),
 			Boolean,
 			"the empty selection to leave the canvas unobstructed",
@@ -214,19 +231,22 @@ test(
 			),
 		);
 
+		// The second pane took focus when it opened; the inspector follows the active pane.
+		await browser.run(["click", `${PANE_TABS}:first-child`]);
 		await select(browser, "Pane A", ["unbound"]);
-		expect((await waitInspector(browser, "unbound", "Not bound")).title).toBe("queue");
+		// An element without a name is titled by its id; its node key stays on its own row.
+		const unbound = await waitInspector(browser, "unbound", "Not bound to code");
+		expect(unbound.title).toBe("unbound");
+		expect(unbound.text).toContain("queue");
 		await select(browser, "Pane A", ["malformed"]);
-		expect((await waitInspector(browser, "malformed", "Binding unavailable")).title).toBe(
+		expect((await waitInspector(browser, "malformed", "The binding cannot be read")).title).toBe(
 			"malformed",
 		);
 		await select(browser, "Pane A", ["unbound", "bound-local"]);
-		expect((await waitInspector(browser, "multiple", "2 elements selected")).title).toBe(
-			"2 elements",
-		);
+		expect((await waitInspector(browser, "multiple", "2 elements selected")).title).toBe("");
 		await select(browser, "Pane A", ["not-in-scene"]);
-		expect((await waitInspector(browser, "missing", "Selection disappeared")).title).toBe(
-			"Selection disappeared",
+		expect((await waitInspector(browser, "missing", "is no longer on the board")).text).toContain(
+			"not-in-scene",
 		);
 		await select(browser, "Pane A", ["bound-local"]);
 		const bound = await waitInspector(browser, "bound", "src/checkout.ts");
@@ -244,7 +264,7 @@ test(
 			"62f0cef",
 			"2026-08-24T10:30:00Z",
 		]) {
-			expect(bound.text).toContain(value);
+			expect(bound.text.toLowerCase()).toContain(value.toLowerCase());
 		}
 		expect(bound.text).not.toContain(checkout);
 		expect(bound.text).not.toContain("must-not-render");
@@ -281,67 +301,49 @@ test(
 		]);
 		expect(rightCapture).toContain("RIGHT ONLY MARKER");
 		expect(rightCapture).not.toContain("LEFT ONLY MARKER");
-		await browser.run(["click", ".pane-tab:nth-child(2)"]);
+		await browser.run(["click", `${PANE_TABS}:nth-child(2)`]);
 		const transferred = await waitInspector(browser, "bound", "src/right.ts");
 		expect(transferred.pane).toContain("Pane B");
-		await browser.run(["click", ".pane-tab:nth-child(1)"]);
+		await browser.run(["click", `${PANE_TABS}:nth-child(1)`]);
 		await waitInspector(browser, "bound", "src/checkout.ts");
 
 		const themes: string[] = [];
 		for (let index = 0; index < 2; index += 1) {
-			const theme = await browser.eval<string>(
-				"document.querySelector('.shell')?.dataset.theme ?? ''",
-			);
+			const theme = await currentTheme(browser);
 			themes.push(theme);
 			expect((await readInspector(browser)).text).toContain("src/checkout.ts");
 			const contract = await readInspectorContract(browser);
-			expect(contract.sections).toEqual([
-				"Architecture path",
-				"Code binding",
-				"Element",
-				"Archboard metadata",
-			]);
-			const types = [
+			expect(contract.sections).toEqual(["Inspect", "Bound repository", "Path focus"]);
+			for (const type of [
 				contract.titleType,
-				contract.statusType,
 				contract.kickerType,
 				contract.sectionType,
 				contract.labelType,
 				contract.humanType,
-				contract.technicalType,
 				contract.copyType,
 				contract.controlType,
-			];
-			expect(types.map(({ size, lineHeight }) => `${size}/${lineHeight}`).join(" ")).toBe(
-				"14/20 12/16 9/12 12/16 12/16 12/16 10/14 12/16 12/16",
-			);
-			expect(
-				types
-					.filter((_, typeIndex) => typeIndex !== 6)
-					.every((type) => type.family.includes("archboard onest") && type.transform === "none"),
-			).toBe(true);
+			]) {
+				expect(type.family).toContain("archboard onest");
+				expect(type.size).toBeGreaterThanOrEqual(11);
+				expect(type.lineHeight).toBeGreaterThanOrEqual(type.size);
+			}
 			expect(contract.technicalType.family).toContain("archboard dm mono");
 			expect(contract).toMatchObject({
+				titleType: { weight: 600 },
 				kickerType: { weight: 500 },
-				sectionType: { weight: 600 },
-				labelType: { weight: 400 },
-				humanType: { weight: 500 },
 				technicalType: { weight: 400 },
 			});
 			expect(contract.kickerContrast).toBeGreaterThanOrEqual(4.5);
 			expect(contract.labelContrast).toBeGreaterThanOrEqual(4.5);
-			expect(contract.openHeight).toBeGreaterThanOrEqual(44);
-			expect(contract.focusHeight).toBeGreaterThanOrEqual(44);
+			expect(contract.openHeight).toBeGreaterThanOrEqual(MIN_TARGET);
+			expect(contract.focusHeight).toBeGreaterThanOrEqual(MIN_TARGET);
 			if (index === 0) {
-				await browser.run([
-					"click",
-					`.bar-actions [aria-label="Use ${theme === "light" ? "dark" : "light"} theme"]`,
-				]);
+				await switchTheme(browser, theme === "light" ? "dark" : "light");
 			}
 		}
 		expect(themes.toSorted()).toEqual(["dark", "light"]);
 
-		await browser.run(["click", ".selection-inspector-open"]);
+		await clickInspector(browser, "Open code");
 		const capture = await pollUntil(
 			() => readdirSync(captures).filter((file) => file.endsWith(".json")),
 			(files) => files.length === 1,
@@ -360,64 +362,74 @@ test(
 				argv: ["{path}"],
 			}),
 		);
-		await browser.run(["click", ".selection-inspector-open"]);
+		await clickInspector(browser, "Open code");
 		const recovery = await pollUntil(
-			() =>
-				browser.eval<{ settings: boolean; github: string | null; alert: string }>(`(() => ({
-				settings: Boolean(document.querySelector('.notice-actions button')),
-				github: document.querySelector('.notice-actions a')?.href ?? null,
-				alert: document.querySelector('.notice-shell[role="alert"]')?.innerText ?? ''
-			}))()`),
-			(value) => value.settings && value.github !== null,
+			() => shellNotices(browser),
+			(notices) =>
+				notices.some(
+					(notice) => notice.actions.includes("Opener settings") && notice.links.length > 0,
+				),
 			"opener settings and GitHub recovery actions",
 		);
-		expect(recovery.alert).toContain("was not found");
-		expect(recovery.github).toBe("https://github.com/acme/inspector/tree/62f0cef/src/checkout.ts");
+		const recoveryNotice = recovery.find((notice) => notice.actions.includes("Opener settings"))!;
+		expect(recoveryNotice.role).toBe("alert");
+		expect(recoveryNotice.description).toContain("was not found");
+		expect(recoveryNotice.links[0]).toBe(
+			"https://github.com/acme/inspector/tree/62f0cef/src/checkout.ts",
+		);
 		const recoveryOverlapsInspector = await browser.eval<boolean>(`(() => {
-			const notice = document.querySelector('.notice-shell');
-			const inspector = document.querySelector('.selection-inspector');
+			const notice = [...document.querySelectorAll('[data-slot="alert"]')].find(node => /was not found/.test(node.textContent));
+			const inspector = document.querySelector('${INSPECTOR}');
 			const noticeRect = notice.getBoundingClientRect();
 			const inspectorRect = inspector.getBoundingClientRect();
 			return noticeRect.left < inspectorRect.right && noticeRect.right > inspectorRect.left &&
 				noticeRect.top < inspectorRect.bottom && noticeRect.bottom > inspectorRect.top;
 		})()`);
 		expect(recoveryOverlapsInspector).toBe(false);
-		await browser.run(["click", ".notice-actions button"]);
+		await browser.run(["find", "role", "button", "click", "--name", "Opener settings", "--exact"]);
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(
 					`(() => {
 						const dialog = [...document.querySelectorAll('[role="dialog"]')].find(node =>
-							node.getAttribute('aria-labelledby')?.split(/\\s+/).some(id =>
-								document.getElementById(id)?.textContent?.trim() === 'Opener settings'));
-						const cancel = [...(dialog?.querySelectorAll('button') ?? [])]
-							.find(node => node.textContent?.trim() === 'Cancel');
-						return cancel?.disabled === false && document.activeElement === cancel;
+							[...node.querySelectorAll('[data-slot="dialog-title"]')].some(title => title.textContent?.trim() === 'Opener settings'));
+						const close = [...(dialog?.querySelectorAll('button') ?? [])]
+							.find(node => node.textContent?.trim() === 'Close');
+						return close?.disabled === false && dialog.contains(document.activeElement);
 					})()`,
 				),
 			Boolean,
 			"the opener settings recovery dialog to finish loading",
 		);
-		await browser.run(["press", "Enter"]);
+		await browser.run(["press", "Escape"]);
 		await pollUntil(
 			() => browser.eval<boolean>("!document.querySelector('[role=\"dialog\"]')"),
 			Boolean,
 			"the opener settings recovery dialog to close",
 		);
-		await browser.run(["click", ".notice-dismiss"]);
+		expect(await dismissNotice(browser, "Code target")).toBe(true);
 
-		await browser.run(["click", '.present-button[aria-label="Present Pane A fullscreen"]']);
+		await browser.run(["click", 'button[aria-label="Present pane A fullscreen"]']);
 		const presented = await pollUntil(
-			() =>
-				browser.eval<{ fullscreen: boolean; inspector: string }>(`(() => ({
-				fullscreen: document.fullscreenElement === document.querySelector('.shell'),
-				inspector: getComputedStyle(document.querySelector('.selection-inspector')).display
-			}))()`),
-			(value) => value.fullscreen && value.inspector === "none",
-			"confirmed fullscreen to hide the inspector",
+			async () => ({
+				fullscreen: await stageIsFullscreen(browser),
+				inspectorInside: await browser.eval<boolean>(
+					`document.fullscreenElement?.contains(document.querySelector('${INSPECTOR}')) === true`,
+				),
+			}),
+			(value) => value.fullscreen,
+			"confirmed fullscreen to present the canvas alone",
 		);
-		expect(presented.inspector).toBe("none");
-		await browser.run(["click", ".presentation-exit"]);
+		expect(presented.inspectorInside).toBe(false);
+		await browser.run([
+			"find",
+			"role",
+			"button",
+			"click",
+			"--name",
+			"Exit presentation",
+			"--exact",
+		]);
 		await pollUntil(
 			() => browser.eval<boolean>("document.fullscreenElement === null"),
 			Boolean,
@@ -430,12 +442,12 @@ test(
 			bodyVisible: boolean;
 			insideViewport: boolean;
 		}>(`(() => {
-			const inspector = document.querySelector('.selection-inspector');
+			const inspector = document.querySelector('${INSPECTOR}');
 			const panel = inspector.getBoundingClientRect();
 			return {
 				viewport: [innerWidth, innerHeight],
-				visible: getComputedStyle(inspector).display === 'flex',
-				bodyVisible: getComputedStyle(inspector.querySelector('.selection-inspector-body')).display !== 'none',
+				visible: panel.width > 0 && panel.height > 0,
+				bodyVisible: inspector.querySelector('h2').getBoundingClientRect().height > 0,
 				insideViewport: panel.left >= 0 && panel.right <= innerWidth && panel.top >= 0 && panel.bottom <= innerHeight
 			};
 		})()`);

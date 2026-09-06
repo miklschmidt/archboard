@@ -23,6 +23,10 @@ interface Fullscreen {
 	readonly present: (paneId: string) => void;
 	readonly exit: () => void;
 	readonly clearError: () => void;
+	/** The presented or wanted pane closed; the survivor, if any, takes over. */
+	readonly paneRemoved: (paneId: string, survivorPaneId: string | null) => void;
+	/** The pane wanted on the stage, granted or not; null when nothing is wanted. */
+	readonly target: () => string | null;
 }
 
 /**
@@ -71,10 +75,20 @@ function useFullscreen(): Fullscreen {
 	);
 	const exit = useCallback((): void => presentation?.exit(), [presentation]);
 	const clearError = useCallback((): void => presentation?.clearError(), [presentation]);
+	const paneRemoved = useCallback(
+		(paneId: string, survivorPaneId: string | null): void =>
+			presentation?.paneRemoved(paneId, survivorPaneId),
+		[presentation],
+	);
+
+	const target = useCallback(
+		(): string | null => presentation?.getTargetPaneId() ?? null,
+		[presentation],
+	);
 
 	return useMemo(
-		() => ({ attachStage, stage, snapshot, present, exit, clearError }),
-		[attachStage, stage, snapshot, present, exit, clearError],
+		() => ({ attachStage, stage, snapshot, present, exit, clearError, paneRemoved, target }),
+		[attachStage, stage, snapshot, present, exit, clearError, paneRemoved, target],
 	);
 }
 
@@ -92,7 +106,7 @@ function shellPresentationOf(
 		return null;
 	}
 	if (connected) {
-		return { kind: "live", paneId: snapshot.paneId };
+		return { kind: "live", paneId: snapshot.paneId, error: snapshot.error };
 	}
 	return {
 		kind: "recovery",

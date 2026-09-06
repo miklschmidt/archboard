@@ -31,6 +31,25 @@ interface Reconciliation {
 }
 
 /**
+ * A recovery dialog raised for a state that has since ended, for this pane,
+ * decides nothing any more: another writer or command resolved it. Close it
+ * rather than offer outcomes for a hold or a write that no longer exists.
+ * @param kind Which recovery dialog.
+ * @param record The pane whose state cleared.
+ * @param dialogs The dialogs.
+ */
+function closeStaleDialog(
+	kind: "conflict" | "elsewhere",
+	record: PaneRecord,
+	dialogs: BoardDialogs,
+): void {
+	const { open } = dialogs.state;
+	if (open.kind === kind && open.context.clientId === record.status.clientId) {
+		dialogs.close();
+	}
+}
+
+/**
  * Keep the hold notice current and raise the conflict dialog once per hold.
  * @param paneId The pane.
  * @param inputs What to reconcile.
@@ -41,6 +60,7 @@ function reconcileHold(paneId: string, inputs: Reconciliation): void {
 	if (hold === null) {
 		dismiss(`hold:${paneId}`);
 		seen.hold = null;
+		closeStaleDialog("conflict", record, dialogs);
 		return;
 	}
 	raise(holdNotice(paneId, boardKey ?? hold.board, hold.writes));
@@ -61,6 +81,7 @@ function reconcileElsewhere(paneId: string, inputs: Reconciliation): void {
 	if (writtenElsewhere === null) {
 		dismiss(`elsewhere:${paneId}`);
 		seen.elsewhere = null;
+		closeStaleDialog("elsewhere", record, dialogs);
 		return;
 	}
 	raise(elsewhereNotice(paneId, boardKey ?? writtenElsewhere.board));

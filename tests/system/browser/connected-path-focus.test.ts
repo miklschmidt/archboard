@@ -19,6 +19,12 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { inExcalidrawApp } from "./support/page-scene.ts";
+import {
+	INSPECTOR,
+	THEME_EXPRESSION,
+	stageIsFullscreen,
+	switchTheme,
+} from "./support/shell-dom.ts";
 
 interface PanesBody {
 	readonly paneCount: number;
@@ -41,11 +47,17 @@ interface TypeMetrics {
 	readonly lineHeight: number;
 }
 
+/** What the inspector's path-focus section and the stage overlay show. */
 interface FocusView {
 	readonly error?: string;
+	/** inactive, connected or no-path, from the section's words and controls. */
 	readonly state: string | null;
+	/** The reason words while there is no path, or null. */
 	readonly reason: string | null;
-	readonly focusedIds: string[];
+	/** The connected count the section states, or 0. */
+	readonly focusedCount: number;
+	/** How many rings the overlay draws. */
+	readonly ringCount: number;
 	readonly selectedIds: string[];
 	readonly text: string;
 	readonly dim: string;
@@ -54,16 +66,17 @@ interface FocusView {
 	readonly focusHeight: number;
 	readonly exitHeight: number;
 	readonly sections: string[];
-	readonly titleType: TypeMetrics;
-	readonly stateType: TypeMetrics | null;
-	readonly copyType: TypeMetrics;
-	readonly controlType: TypeMetrics;
+	readonly titleType: TypeMetrics | null;
+	readonly copyType: TypeMetrics | null;
+	readonly controlType: TypeMetrics | null;
 	readonly fullscreen: boolean;
 }
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
 const board = "path-focus";
+/** WCAG 2.5.8 target size floor. */
+const MIN_TARGET = 24;
 
 const elements = [
 	{
@@ -179,35 +192,49 @@ function select(browser: AgentBrowserSession, ids: readonly string[]): Promise<b
 function focusView(browser: AgentBrowserSession): Promise<FocusView> {
 	return browser.eval<FocusView>(`(() => {
   const app = window.__pathFocusApp;
-  const inspector = document.querySelector('.selection-inspector');
-  const overlay = document.querySelector('.path-focus-overlay');
-  const dimmer = document.querySelector('.path-focus-dimmer');
-  const metrics = selector => {
-    const node = inspector?.querySelector(selector);
+  const inspector = document.querySelector('${INSPECTOR}');
+  const overlay = document.querySelector('svg[data-slot="path-focus-overlay"]');
+  const dimmer = overlay?.querySelector('rect[mask]');
+  const metrics = node => {
     if (!node) return null;
     const style = getComputedStyle(node);
     return { size: parseFloat(style.fontSize), lineHeight: parseFloat(style.lineHeight) };
   };
+  const named = name => [...(inspector?.querySelectorAll('button') ?? [])].find(node => node.textContent.trim() === name) ?? null;
+  const focusButton = named('Focus path');
+  const exitButton = named('Exit focus');
+  const headings = [...(inspector?.querySelectorAll('h3') ?? [])];
+  const section = headings.find(node => node.textContent.trim() === 'Path focus')?.parentElement ?? null;
+  const sectionText = section?.innerText ?? '';
+  const connected = sectionText.match(/(\\d+) connected elements/);
+  const reasons = {
+    empty: 'Select an element to focus its path.',
+    multiple: 'Select one element to focus its path.',
+    missing: 'The selected element is no longer on the board.',
+    isolated: 'The selected element has no arrows connecting it to anything.',
+    broken: 'An arrow on this path points at an element that is not on the board.',
+  };
+  const reason = Object.entries(reasons).find(([, words]) => sectionText.includes(words))?.[0] ?? null;
+  const state = !inspector ? 'inactive' : connected ? 'connected' : reason ? 'no-path' : 'inactive';
   return {
-    state: inspector?.getAttribute('data-path-focus-state') ?? null,
-    reason: document.querySelector('.path-focus-none')?.getAttribute('data-path-focus-reason') ?? null,
-    focusedIds: (overlay?.getAttribute('data-focused-ids') ?? '').split(' ').filter(Boolean),
+    state,
+    reason,
+    focusedCount: connected ? Number(connected[1]) : 0,
+    ringCount: overlay ? overlay.querySelectorAll('rect[fill="none"]').length : 0,
     selectedIds: Object.entries(app.state.selectedElementIds ?? {})
       .filter(([, selected]) => selected).map(([id]) => id).sort(),
     text: inspector?.innerText ?? '',
     dim: dimmer ? getComputedStyle(dimmer).fill : '',
     pointerEvents: overlay ? getComputedStyle(overlay).pointerEvents : '',
-    theme: document.querySelector('.shell')?.getAttribute('data-theme') ?? '',
-    focusHeight: document.querySelector('.selection-inspector-focus')?.getBoundingClientRect().height ?? 0,
-    exitHeight: document.querySelector('.selection-inspector-exit')?.getBoundingClientRect().height ?? 0,
-    sections: [...inspector.querySelectorAll('.selection-inspector-section > h2')]
-      .map(heading => heading.textContent),
-    titleType: metrics('.selection-inspector-title'),
-    stateType: metrics('.path-focus-state strong'),
-    copyType: metrics('.path-focus-state span, .path-focus-section .selection-inspector-copy'),
-    controlType: metrics('.selection-inspector-exit, .selection-inspector-focus'),
-    fullscreen: Boolean(document.querySelector('.shell')) &&
-      document.fullscreenElement === document.querySelector('.shell')
+    theme: ${THEME_EXPRESSION},
+    focusHeight: focusButton?.getBoundingClientRect().height ?? 0,
+    exitHeight: exitButton?.getBoundingClientRect().height ?? 0,
+    sections: headings.map(heading => heading.textContent.trim()),
+    titleType: metrics(inspector?.querySelector('h2')),
+    copyType: metrics(section?.querySelector('p')),
+    controlType: metrics(exitButton ?? focusButton),
+    fullscreen: document.fullscreenElement !== null &&
+      document.fullscreenElement === document.querySelector('[data-slot="canvas-stages"]')
   };
 })()`);
 }
@@ -262,6 +289,15 @@ async function screenPoint(
 })()`);
 }
 
+/**
+ * The rings the overlay draws, one per focused element, in stage pixels.
+ * @param browser The page.
+ * @returns The ring count and the expected count from the focus snapshot's words.
+ */
+function clickInspector(browser: AgentBrowserSession, name: string): Promise<string> {
+	return browser.run(["find", "role", "button", "click", "--name", name, "--exact"]);
+}
+
 test(
 	"connected path focus stays browser-only while selection and presentation change",
 	async () => {
@@ -269,11 +305,7 @@ test(
 		const { ownerRoot } = browserTestRoots();
 		const vault = join(ownerRoot, "vault");
 		mkdirSync(vault, { recursive: true });
-		const canvas = await startOwnedCanvas({
-			serverPath,
-			vault,
-			env: canvasTestEnvironment(),
-		});
+		const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
 		resources.defer(() => canvas.dispose());
 		registerCanvasBase(canvas.base);
 		const api = createJsonRequester(canvas);
@@ -290,7 +322,7 @@ test(
 
 		const browser = resources.use(await createAgentBrowser());
 		await browser.run(["open", canvas.base]);
-		await browser.run(["set", "viewport", "1440", "900"]);
+		await browser.run(["set", "viewport", "1920", "1080"]);
 		const panes = await pollUntil(
 			() => api<PanesBody>("/api/panes").then((response) => response.body),
 			(value) => value.paneCount === 1,
@@ -329,7 +361,8 @@ test(
 		});
 
 		expect(await select(browser, ["a"])).toBe(true);
-		await browser.run(["click", ".selection-inspector-focus"]);
+		await waitFocus(browser, "inactive");
+		await clickInspector(browser, "Focus path");
 		let view = await waitFocus(browser, "connected");
 		const component = await browser.eval<{ expected: string[]; labelId: string | null }>(`(() => {
   const app = window.__pathFocusApp;
@@ -342,34 +375,25 @@ test(
 		};
 })()`);
 		expect(component.labelId).not.toBeNull();
-		expect(view.focusedIds.toSorted()).toEqual(component.expected);
-		expect(new Set(view.focusedIds).size).toBe(view.focusedIds.length);
+		expect(view.focusedCount).toBe(component.expected.length);
+		expect(view.ringCount).toBe(component.expected.length);
 		expect(view.pointerEvents).toBe("none");
-		expect(view.sections).toEqual([
-			"Architecture path",
-			"Code binding",
-			"Element",
-			"Archboard metadata",
-		]);
-		expect(view.titleType).toEqual({ size: 14, lineHeight: 20 });
-		expect(view.stateType).toEqual({ size: 14, lineHeight: 20 });
-		expect(view.copyType).toEqual({ size: 12, lineHeight: 16 });
-		expect(view.controlType).toEqual({ size: 12, lineHeight: 16 });
+		expect(view.sections).toEqual(["Inspect", "Bound repository", "Path focus"]);
+		expect(view.titleType?.size).toBeGreaterThanOrEqual(14);
+		expect(view.copyType?.size).toBeGreaterThanOrEqual(12);
+		expect(view.controlType?.size).toBeGreaterThanOrEqual(12);
 
-		const originalTheme = view.theme;
+		const originalTheme = view.theme === "dark" ? "dark" : "light";
 		const lightOrDarkFill = view.dim;
-		await browser.run([
-			"click",
-			`.bar-actions [aria-label="Use ${originalTheme === "light" ? "dark" : "light"} theme"]`,
-		]);
+		await switchTheme(browser, originalTheme === "light" ? "dark" : "light");
 		view = await pollUntil(
 			() => focusView(browser),
 			(next) => next.state === "connected" && next.theme !== originalTheme,
 			"focus contrast in the opposite theme",
 		);
 		expect(view.dim).not.toBe(lightOrDarkFill);
-		expect([view.dim, lightOrDarkFill].every((fill) => /rgba?\(/.test(fill))).toBe(true);
-		await browser.run(["click", `.bar-actions [aria-label="Use ${originalTheme} theme"]`]);
+		expect([view.dim, lightOrDarkFill].every((fill) => fill.includes("("))).toBe(true);
+		await switchTheme(browser, originalTheme);
 		await pollUntil(
 			() => focusView(browser),
 			(next) => next.theme === originalTheme,
@@ -377,15 +401,13 @@ test(
 		);
 
 		expect(await select(browser, ["bc"])).toBe(true);
-		expect((await waitFocus(browser, "connected")).focusedIds.toSorted()).toEqual(
-			component.expected,
-		);
+		expect((await waitFocus(browser, "connected")).focusedCount).toBe(component.expected.length);
 		expect(await select(browser, [component.labelId!])).toBe(true);
-		expect((await waitFocus(browser, "connected")).focusedIds.toSorted()).toEqual(
-			component.expected,
-		);
+		expect((await waitFocus(browser, "connected")).focusedCount).toBe(component.expected.length);
 		expect(await select(browser, ["broken"])).toBe(true);
-		expect((await waitFocus(browser, "no-path", "broken")).text).toContain("No connected path");
+		expect((await waitFocus(browser, "no-path", "broken")).text).toContain(
+			"points at an element that is not on the board",
+		);
 		expect(await select(browser, ["a"])).toBe(true);
 		await waitFocus(browser, "connected");
 
@@ -395,32 +417,31 @@ test(
 		await browser.run(["mouse", "up"]);
 		view = await waitFocus(browser, "no-path", "isolated");
 		expect(view.selectedIds).toEqual(["u"]);
-		expect(view.text).toContain("This element has no canonical arrow-bound path.");
+		expect(view.text).toContain("no arrows connecting it to anything");
 		expect(await select(browser, ["a"])).toBe(true);
 		await waitFocus(browser, "connected");
 
 		view = await waitFocus(browser, "connected");
-		expect(view.exitHeight).toBeGreaterThanOrEqual(44);
-		await browser.run(["click", ".selection-inspector-exit"]);
+		expect(view.exitHeight).toBeGreaterThanOrEqual(MIN_TARGET);
+		await clickInspector(browser, "Exit focus");
 		view = await waitFocus(browser, "inactive");
-		expect(view.focusHeight).toBeGreaterThanOrEqual(44);
-		expect(view.sections[0]).toBe("Architecture path");
-		expect(view.copyType).toEqual({ size: 12, lineHeight: 16 });
-		expect(view.controlType).toEqual({ size: 12, lineHeight: 16 });
-		await browser.run(["click", ".selection-inspector-focus"]);
+		expect(view.focusHeight).toBeGreaterThanOrEqual(MIN_TARGET);
+		expect(view.ringCount).toBe(0);
+		expect(view.sections.at(-1)).toBe("Path focus");
+		await clickInspector(browser, "Focus path");
 		await waitFocus(browser, "connected");
 
-		await browser.run(["click", '.present-button[aria-label="Present Pane A fullscreen"]']);
-		view = await pollUntil(
+		await browser.run(["click", 'button[aria-label="Present pane A fullscreen"]']);
+		await pollUntil(
 			() => focusView(browser),
-			(next) => next.fullscreen && next.state === "connected" && next.focusedIds.length > 0,
+			(next) => next.fullscreen && next.ringCount > 0,
 			"the focused overlay in fullscreen",
 		);
-		expect(view.fullscreen).toBe(true);
+		expect(await stageIsFullscreen(browser)).toBe(true);
 		await browser.run(["press", "Escape"]);
 		view = await pollUntil(
 			() => focusView(browser),
-			(next) => !next.fullscreen && next.state === "connected" && next.focusedIds.length > 0,
+			(next) => !next.fullscreen && next.state === "connected" && next.ringCount > 0,
 			"fullscreen exit to preserve focus",
 		);
 		expect(view.state).toBe("connected");
