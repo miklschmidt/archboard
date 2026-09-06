@@ -147,7 +147,6 @@ async function prepareBoard(
 		async () => (await request<PaneList>("/api/panes")).body.panes,
 		(panes) => panes.some((pane) => pane.clientId === paneClient && pane.board === board),
 		`pane ${paneClient} to adopt ${board}`,
-		{ timeoutMs: 3_000 },
 	);
 	await pollUntil(
 		async () => ({
@@ -156,7 +155,6 @@ async function prepareBoard(
 		}),
 		(value) => value.boardTitle?.includes(board) === true && value.sentinel !== null,
 		`the focused pane to render ${board} and its sentinel`,
-		{ timeoutMs: 3_000 },
 	);
 	await browser.run(["click", ".excalidraw"]);
 	expect(await resetHoldRecorder(browser)).toBe(true);
@@ -296,7 +294,6 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 		() => browser.eval<boolean>("document.querySelector('[role=\"alertdialog\"]') !== null"),
 		Boolean,
 		"the board-stopped-saving dialog to open",
-		{ timeoutMs: 3_000 },
 	);
 	const stopped = await pollUntil(
 		async () => ({
@@ -305,7 +302,6 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 		}),
 		(value) => value.held?.board === RECOVERY_BOARD && /[Nn]ot saving/.test(value.mark),
 		"the note hold and its rendered status",
-		{ timeoutMs: 3_000 },
 	);
 	expect(stopped.held?.board).toBe(RECOVERY_BOARD);
 
@@ -351,7 +347,6 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 		}),
 		(value) => value.element !== null && value.files.includes("held-file"),
 		"the real pane to render the complete held copy",
-		{ timeoutMs: 3_000 },
 	);
 
 	const blockedBeforeSave = await request(`/api/boards/hold?board=${RECOVERY_BOARD}`, {
@@ -371,7 +366,6 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 		() => browser.eval<boolean>("document.querySelector('[role=\"alertdialog\"]') === null"),
 		Boolean,
 		"the resolved hold to close its recovery dialog",
-		{ timeoutMs: 3_000 },
 	);
 	const claimedAfterRecovery = await request(`/api/boards/hold?board=${RECOVERY_BOARD}`, {
 		method: "POST",
@@ -392,7 +386,6 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 		() => pageElement(browser, "theirs"),
 		(value) => value !== null,
 		"save-elsewhere to adopt the source note",
-		{ timeoutMs: 3_000 },
 	);
 	const [source, sourceFiles, target, targetFiles, panes, page, pageFiles] = await Promise.all([
 		request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`),
@@ -426,7 +419,6 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 		() => readHoldCounters(browser),
 		(value) => value.holdDone > countsBefore.holdDone,
 		"the first human hold attempt to lose to the authoritative mutex",
-		{ timeoutMs: 3_000 },
 	);
 	const localDelayed = await pageElement(browser, RECOVERY_SENTINEL_ID);
 	const serverDelayed = (
@@ -454,7 +446,6 @@ test("save-elsewhere recovery releases the old holder and queues a trusted drag"
 		() => documentsAgree(browser, request, RECOVERY_BOARD),
 		Boolean,
 		"one later hold retry to persist the still-visible edit",
-		{ timeoutMs: 3_000 },
 	);
 	expect(
 		(await request<ElementsBody>(`/api/elements?board=${RECOVERY_BOARD}`)).body.elements.find(
