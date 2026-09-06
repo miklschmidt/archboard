@@ -161,9 +161,17 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 		{ method: "GET", path: "/api/settings/opener", body: null },
 	]);
 
-	// Tab reaches every control, in reading order, and stays inside the dialog.
+	// The dialog opens on its first field, the opener choice group at its tab
+	// stop (TASK-150.08); from there Tab reaches every control in reading order
+	// and stays inside the dialog. The wrap past the last control is the dialog
+	// primitive's own.
+	await pollUntil(
+		() => focusedControl(browser),
+		(value) => value.focus === "Platform default" && value.focusInside,
+		"the opener choice group to hold the dialog's initial focus",
+		{ timeoutMs: 5_000 },
+	);
 	const focusOrder = [
-		"Custom command",
 		"Executable",
 		"Arguments",
 		"Test with repository",

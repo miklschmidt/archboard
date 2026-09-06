@@ -5,11 +5,15 @@
 //   - queue: the queue controller (target capture, pending and settlement);
 //   - approvals: the approvals controller (choice resolution, invalid results);
 //   - thread link: the thread-link controller (settlement feeds agent settings);
-//   - composer, stop, retry, intent, copy, voice: the runtime's own.
+//   - composer, stop, retry, intent, copy, voice: the runtime's own;
+//   - activity: the shell's rendered `doing` lines, handed in through context.
 
 import { useContext, useMemo, useSyncExternalStore } from "react";
 
-import { WorkbenchOwnersContext } from "@/ui/application/lib/workbench-context";
+import {
+	WorkbenchActivityContext,
+	WorkbenchOwnersContext,
+} from "@/ui/application/lib/workbench-context";
 import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import { Workbench, type WorkbenchActions, type WorkbenchView } from "@/ui/workbench";
 import type { WorkbenchRuntimeRenderContext } from "@/ui/workbench-runtime";
@@ -50,14 +54,16 @@ function ComposedWorkbench(props: ComposedWorkbenchProps): React.JSX.Element {
 		owners.approvalDecisions.getSnapshot,
 		owners.approvalDecisions.getSnapshot,
 	);
+	const activity = useContext(WorkbenchActivityContext);
 	const view = useMemo<WorkbenchView>(
 		() => ({
 			...context.view,
 			busyApprovals: decisions.busy,
 			approvalErrors: decisions.errors,
 			queueCommand,
+			activity,
 		}),
-		[context.view, decisions, queueCommand],
+		[context.view, decisions, queueCommand, activity],
 	);
 	const actions = useMemo<WorkbenchActions>(
 		() => ({

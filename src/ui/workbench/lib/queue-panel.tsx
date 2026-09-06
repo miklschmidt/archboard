@@ -1,6 +1,6 @@
 // The thread queue: ordered submissions with move, remove and send-now, the
 // queue's own pending or recovery state, and the command the controller has
-// on the wire or last settled.
+// on the wire or last settled, in a footer that never pushes the rows.
 
 import {
 	RiArrowDownSLine,
@@ -11,8 +11,8 @@ import {
 import { useCallback } from "react";
 
 import type { BrowserQueue } from "@/shared/codex-browser-model";
-import { Button } from "@/ui/components/button";
 import type { WorkbenchQueueActions, WorkbenchQueueCommandView } from "@/ui/workbench/contracts";
+import { IconAction } from "@/ui/workbench/lib/icon-action";
 import { PanelLine } from "@/ui/workbench/lib/panel-line";
 import {
 	queueEntryActions,
@@ -26,6 +26,8 @@ type QueueEntry = BrowserQueue["entries"][number];
 /** Inputs for the panel. */
 interface QueuePanelProps {
 	queue: BrowserQueue;
+	/** Whether a workhorse thread is linked: without one there is nothing to queue onto. */
+	linked: boolean;
 	/** The controller's command state; idle when no controller reports one. */
 	command: WorkbenchQueueCommandView;
 	actions: WorkbenchQueueActions;
@@ -39,35 +41,6 @@ interface QueueRowProps {
 	ownership: string | null;
 	available: QueueEntryActions;
 	actions: WorkbenchQueueActions;
-}
-
-/** Inputs for one row action. */
-interface RowActionProps {
-	label: string;
-	enabled: boolean;
-	onClick: () => void;
-	children: React.ReactNode;
-}
-
-/**
- * A 24px icon action whose hit area reaches 32px (the documented desktop
- * exception to the 44px target), so dense rows stay dense and still tappable.
- * @param props The label, availability, callback and icon.
- * @returns The button.
- */
-function RowAction(props: RowActionProps): React.JSX.Element {
-	return (
-		<Button
-			variant="ghost"
-			size="icon-xs"
-			aria-label={props.label}
-			disabled={!props.enabled}
-			onClick={props.onClick}
-			className="relative rounded-sm after:absolute after:-inset-1"
-		>
-			{props.children}
-		</Button>
-	);
 }
 
 /**
@@ -96,18 +69,18 @@ function QueueRow(props: QueueRowProps): React.JSX.Element {
 				</span>
 			</span>
 			<span className="-my-0.5 flex shrink-0 items-center">
-				<RowAction label="Move up" enabled={available.moveUp} onClick={moveUp}>
+				<IconAction label="Move up" disabled={!available.moveUp} onClick={moveUp}>
 					<RiArrowUpSLine />
-				</RowAction>
-				<RowAction label="Move down" enabled={available.moveDown} onClick={moveDown}>
+				</IconAction>
+				<IconAction label="Move down" disabled={!available.moveDown} onClick={moveDown}>
 					<RiArrowDownSLine />
-				</RowAction>
-				<RowAction label="Send now" enabled={available.sendNow} onClick={sendNow}>
+				</IconAction>
+				<IconAction label="Send now" disabled={!available.sendNow} onClick={sendNow}>
 					<RiSendPlaneLine />
-				</RowAction>
-				<RowAction label="Remove" enabled={available.remove} onClick={remove}>
+				</IconAction>
+				<IconAction label="Remove" disabled={!available.remove} onClick={remove}>
 					<RiDeleteBinLine />
-				</RowAction>
+				</IconAction>
 			</span>
 		</li>
 	);
@@ -143,36 +116,65 @@ function CommandLine(props: CommandLineProps): React.JSX.Element | null {
 	);
 }
 
+/** Inputs for the queue's own state line. */
+interface QueueStateLineProps {
+	queue: BrowserQueue;
+	linked: boolean;
+}
+
 /**
- * The queue panel.
- * @param props The queue, the command state and the callbacks.
- * @returns The state lines and the ordered list.
+ * The queue's state in words, saying why when nothing can be queued: no
+ * workhorse to queue onto, or a host that is recovering.
+ * @param props The queue and whether a thread is linked.
+ * @returns One line.
+ */
+function QueueStateLine(props: QueueStateLineProps): React.JSX.Element {
+	const state = queueStateText(props.queue);
+	if (state.recovering && !props.linked && props.queue.entries.length === 0) {
+		return <PanelLine tone="muted">Link a workhorse thread to queue work</PanelLine>;
+	}
+	return (
+		<PanelLine tone="muted">
+			{state.text}
+			{state.recovering ? " — actions resume when the host recovers" : ""}
+		</PanelLine>
+	);
+}
+
+/**
+ * The queue panel: the state line and the rows scroll; the command line
+ * sits in a footer of its own.
+ * @param props The queue, the link state, the command state and the callbacks.
+ * @returns The scrolling body and the footer.
  */
 function QueuePanel(props: QueuePanelProps): React.JSX.Element {
 	const { queue, command } = props;
-	const state = queueStateText(queue);
+	const settled = command.pending !== null || command.settlement !== null;
 	return (
-		<div className="flex flex-col gap-1">
-			<PanelLine tone="muted">
-				{state.text}
-				{state.recovering ? " — actions resume when the host recovers" : ""}
-			</PanelLine>
-			<CommandLine command={command} />
-			{queue.entries.length === 0 ? null : (
-				<ol aria-label="Queued submissions" className="divide-border mt-1 divide-y">
-					{queue.entries.map((entry, index) => (
-						<QueueRow
-							key={entry.submissionId}
-							entry={entry}
-							position={index + 1}
-							ownership={command.ownership[entry.submissionId] ?? null}
-							available={queueEntryActions(queue, index)}
-							actions={props.actions}
-						/>
-					))}
-				</ol>
+		<>
+			<div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-2">
+				<QueueStateLine queue={queue} linked={props.linked} />
+				{queue.entries.length === 0 ? null : (
+					<ol aria-label="Queued submissions" className="divide-border mt-1 divide-y">
+						{queue.entries.map((entry, index) => (
+							<QueueRow
+								key={entry.submissionId}
+								entry={entry}
+								position={index + 1}
+								ownership={command.ownership[entry.submissionId] ?? null}
+								available={queueEntryActions(queue, index)}
+								actions={props.actions}
+							/>
+						))}
+					</ol>
+				)}
+			</div>
+			{settled && (
+				<footer className="border-border bg-sidebar shrink-0 border-t px-3 py-1.5">
+					<CommandLine command={command} />
+				</footer>
 			)}
-		</div>
+		</>
 	);
 }
 

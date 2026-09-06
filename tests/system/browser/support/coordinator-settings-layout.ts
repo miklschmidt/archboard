@@ -103,7 +103,8 @@ async function assertCoordinatorSettingsLayout(
 					height: section.getBoundingClientRect().height,
 				};
 			})()`),
-		(value) => value !== null && value.state === state,
+		// The badge reads the state in words (TASK-150.08): "Ready", not the raw enum.
+		(value) => value !== null && value.state?.toLowerCase() === state,
 		`the coordinator section to read ${state}`,
 		{ timeoutMs: 5_000 },
 	);

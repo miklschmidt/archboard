@@ -314,10 +314,10 @@ test(
 			expect((await readInspector(browser)).text).toContain("src/checkout.ts");
 			const contract = await readInspectorContract(browser);
 			expect(contract.sections).toEqual(["Inspect", "Bound repository", "Path focus"]);
+			// The type roles (TASK-150.08): human text 11px or more in Onest; the
+			// section kickers are the 10px uppercase 600 role, readable by contrast.
 			for (const type of [
 				contract.titleType,
-				contract.kickerType,
-				contract.sectionType,
 				contract.labelType,
 				contract.humanType,
 				contract.copyType,
@@ -327,10 +327,14 @@ test(
 				expect(type.size).toBeGreaterThanOrEqual(11);
 				expect(type.lineHeight).toBeGreaterThanOrEqual(type.size);
 			}
+			for (const kicker of [contract.kickerType, contract.sectionType]) {
+				expect(kicker.family).toContain("archboard onest");
+				expect(kicker).toMatchObject({ size: 10, weight: 600, transform: "uppercase" });
+				expect(kicker.lineHeight).toBeGreaterThanOrEqual(kicker.size);
+			}
 			expect(contract.technicalType.family).toContain("archboard dm mono");
 			expect(contract).toMatchObject({
 				titleType: { weight: 600 },
-				kickerType: { weight: 500 },
 				technicalType: { weight: 400 },
 			});
 			expect(contract.kickerContrast).toBeGreaterThanOrEqual(4.5);

@@ -6,7 +6,7 @@ import { RiFileCopyLine } from "@remixicon/react";
 import { useCallback } from "react";
 
 import type { BrowserVoiceContext } from "@/shared/codex-browser-model";
-import { Button } from "@/ui/components/button";
+import { IconAction } from "@/ui/workbench/lib/icon-action";
 import { clockTime, counted, shortId } from "@/ui/workbench/lib/format";
 import { PanelLine } from "@/ui/workbench/lib/panel-line";
 
@@ -109,15 +109,14 @@ function VoiceContextPanel(props: VoiceContextPanelProps): React.JSX.Element {
 		<div className="flex flex-col gap-1.5">
 			<div className="flex items-center gap-2">
 				<Provenance voiceContext={voiceContext} />
-				<Button
+				<IconAction
+					label="Copy brief"
 					variant="outline"
-					size="icon-xs"
-					aria-label="Copy brief"
-					className="relative ms-auto shrink-0 rounded-sm after:absolute after:-inset-1"
+					className="ms-auto shrink-0"
 					onClick={handleCopy}
 				>
 					<RiFileCopyLine />
-				</Button>
+				</IconAction>
 			</div>
 			<pre className="border-border bg-muted/40 text-technical max-h-40 overflow-auto rounded-sm border p-2 font-mono whitespace-pre-wrap">
 				{voiceContext.canonicalBrief}

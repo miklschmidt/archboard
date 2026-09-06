@@ -57,7 +57,7 @@ function NoteWrittenElsewhereDialog(props: NoteWrittenElsewhereDialogProps): Rea
 	const choices = describeElsewhereOutcomes();
 	return (
 		<AlertDialog open={props.open} onOpenChange={props.onOpenChange}>
-			<AlertDialogContent className="data-[size=default]:sm:max-w-lg">
+			<AlertDialogContent className="data-[size=default]:sm:max-w-lg" finalFocus={props.finalFocus}>
 				<AlertDialogHeader>
 					<AlertDialogTitle>Note written elsewhere</AlertDialogTitle>
 					<AlertDialogDescription>

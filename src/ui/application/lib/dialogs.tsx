@@ -116,6 +116,7 @@ function Confirmations(props: ConfirmationsProps): React.JSX.Element | null {
 				error={error}
 				onConfirm={dialogs.confirm}
 				onOpenChange={onOpenChange}
+				finalFocus={dialogs.opener}
 			/>
 		);
 	}
@@ -131,6 +132,7 @@ function Confirmations(props: ConfirmationsProps): React.JSX.Element | null {
 				error={null}
 				onConfirm={dialogs.confirm}
 				onOpenChange={onOpenChange}
+				finalFocus={dialogs.opener}
 			/>
 		);
 	}
@@ -162,6 +164,7 @@ function RecoveryDialogs(props: RecoveryDialogsProps): React.JSX.Element | null 
 				error={error}
 				onOutcome={dialogs.chooseConflictOutcome}
 				onOpenChange={onOpenChange}
+				finalFocus={dialogs.opener}
 			/>
 		);
 	}
@@ -174,6 +177,7 @@ function RecoveryDialogs(props: RecoveryDialogsProps): React.JSX.Element | null 
 				error={error}
 				onOutcome={dialogs.chooseElsewhereOutcome}
 				onOpenChange={onOpenChange}
+				finalFocus={dialogs.opener}
 			/>
 		);
 	}
@@ -203,6 +207,7 @@ function BoardDialogsHost(props: BoardDialogsHostProps): React.JSX.Element {
 					error={error}
 					onSubmit={dialogs.submitBoard}
 					onOpenChange={onOpenChange}
+					finalFocus={dialogs.opener}
 				/>
 			)}
 			<Confirmations dialogs={dialogs} onOpenChange={onOpenChange} />

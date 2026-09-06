@@ -127,6 +127,14 @@ function describeThreadLink(link: BrowserThreadLink): StateSummary {
 	}
 }
 
+/** The listed thread statuses in words. */
+const THREAD_STATUS_LABELS: Readonly<Record<BrowserThreadLink["status"], string>> = {
+	notLoaded: "Not loaded",
+	idle: "Idle",
+	active: "Active",
+	systemError: "System error",
+};
+
 /**
  * The thread link's facts, identifiers in the mono face.
  * @param link The thread link record.
@@ -137,14 +145,18 @@ function threadLinkFacts(link: BrowserThreadLink): readonly FactRow[] {
 	if (link.threadId !== null) {
 		rows.push({ label: "Thread", value: String(link.threadId), technical: true });
 	}
-	rows.push({ label: "Status", value: link.status, technical: false });
+	rows.push({ label: "Status", value: THREAD_STATUS_LABELS[link.status], technical: false });
 	if (link.sourcePresentation !== null) {
 		rows.push({ label: "Source", value: link.sourcePresentation, technical: false });
 	}
-	rows.push({ label: "Loaded", value: link.loaded ? "yes" : "no", technical: false });
+	rows.push({
+		label: "Inventory",
+		value: link.loaded ? "Thread inventory loaded" : "Thread inventory not loaded yet",
+		technical: false,
+	});
 	rows.push({
 		label: "Direct input",
-		value: link.canAcceptDirectInput ? "accepted" : "not accepted",
+		value: link.canAcceptDirectInput ? "Direct input is accepted" : "Direct input is not accepted",
 		technical: false,
 	});
 	return rows;
@@ -175,6 +187,15 @@ const COORDINATOR_TONES: Readonly<Record<BrowserCoordinator["state"], BadgeTone>
 	failed: "destructive",
 };
 
+const COORDINATOR_LABELS: Readonly<Record<BrowserCoordinator["state"], string>> = {
+	unbound: "Unbound",
+	starting: "Starting",
+	ready: "Ready",
+	active: "Active",
+	reconnecting: "Reconnecting",
+	failed: "Failed",
+};
+
 /**
  * The coordinator's readiness in words.
  * @param coordinator The coordinator record.
@@ -182,7 +203,7 @@ const COORDINATOR_TONES: Readonly<Record<BrowserCoordinator["state"], BadgeTone>
  */
 function describeCoordinator(coordinator: BrowserCoordinator): StateSummary {
 	return {
-		label: coordinator.state,
+		label: COORDINATOR_LABELS[coordinator.state],
 		detail: reasonOf(coordinator.reason),
 		tone: COORDINATOR_TONES[coordinator.state],
 	};

@@ -23,7 +23,7 @@ function ConfirmDialog(props: ConfirmDialogProps): React.JSX.Element {
 	const cancelLabel = props.cancelLabel ?? "Cancel";
 	return (
 		<AlertDialog open={props.open} onOpenChange={props.onOpenChange}>
-			<AlertDialogContent>
+			<AlertDialogContent finalFocus={props.finalFocus}>
 				<AlertDialogHeader>
 					<AlertDialogTitle>{props.title}</AlertDialogTitle>
 					<AlertDialogDescription>{props.body}</AlertDialogDescription>

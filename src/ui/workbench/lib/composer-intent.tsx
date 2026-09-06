@@ -1,14 +1,13 @@
 // The Archboard-owned intent controls inside the official composer's action
 // row: how the next message is delivered (send, or steer the running turn),
-// whether it is queued instead, a Stop for the active turn, and the turn
-// state. The official Send button submits through the assistant-ui runtime,
-// which reads this intent. The workbench hands the values down through a
-// context so the official thread file only renders a slot.
+// whether it is queued instead, and the turn state. The official Send button
+// submits through the assistant-ui runtime, which reads this intent; the
+// official Cancel beside it is the one Stop while a turn runs. The workbench
+// hands the values down through a context so the official thread file only
+// renders a slot.
 
-import { RiStopLine } from "@remixicon/react";
 import { createContext, useCallback, useContext, useMemo } from "react";
 
-import { Button } from "@/ui/components/button";
 import { Checkbox } from "@/ui/components/checkbox";
 import { Label } from "@/ui/components/label";
 import { ToggleGroup, ToggleGroupItem } from "@/ui/components/toggle-group";
@@ -103,12 +102,6 @@ function ComposerIntentBar(props: ComposerIntentBarProps): React.JSX.Element {
 					Queue instead
 				</Label>
 			</span>
-			{running ? (
-				<Button variant="outline" size="xs" onClick={actions.stopTurn}>
-					<RiStopLine />
-					Stop
-				</Button>
-			) : null}
 			<span className="text-body text-muted-foreground ms-auto truncate">
 				{running ? "Turn running" : "Workhorse idle"}
 			</span>

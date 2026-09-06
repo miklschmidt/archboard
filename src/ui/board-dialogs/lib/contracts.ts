@@ -64,6 +64,8 @@ interface BoardDialogProps {
 	error: DialogError | null;
 	onSubmit: (request: BoardDialogRequest) => void;
 	onOpenChange: (open: boolean) => void;
+	/** Where focus returns once the dialog closes: the control that opened it. */
+	finalFocus?: (() => HTMLElement | null) | undefined;
 }
 
 /** Inputs for a destructive confirmation. */
@@ -80,6 +82,8 @@ interface ConfirmDialogProps {
 	error: DialogError | null;
 	onConfirm: () => void;
 	onOpenChange: (open: boolean) => void;
+	/** Where focus returns once the dialog closes: the control that opened it. */
+	finalFocus?: (() => HTMLElement | null) | undefined;
 }
 
 /**
@@ -111,6 +115,8 @@ interface ConflictDialogProps {
 	error: DialogError | null;
 	onOutcome: (outcome: ConflictOutcome) => void;
 	onOpenChange: (open: boolean) => void;
+	/** Where focus returns once the dialog closes: the control that opened it. */
+	finalFocus?: (() => HTMLElement | null) | undefined;
 }
 
 /**
@@ -127,6 +133,8 @@ interface NoteWrittenElsewhereDialogProps {
 	error: DialogError | null;
 	onOutcome: (outcome: ElsewhereOutcome) => void;
 	onOpenChange: (open: boolean) => void;
+	/** Where focus returns once the dialog closes: the control that opened it. */
+	finalFocus?: (() => HTMLElement | null) | undefined;
 }
 
 /** What the person asked to install. The source is never fetched here. */
@@ -148,6 +156,8 @@ interface InstallLibraryDialogProps {
 	error: DialogError | null;
 	onInstall: (request: InstallLibraryRequest) => void;
 	onOpenChange: (open: boolean) => void;
+	/** Where focus returns once the dialog closes: the control that opened it. */
+	finalFocus?: (() => HTMLElement | null) | undefined;
 }
 
 export type {
