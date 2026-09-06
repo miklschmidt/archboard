@@ -1,15 +1,15 @@
 import { z } from "zod";
 
-import { BridgeMetadataSchema } from "../../runtime/board-inspection/bridge.js";
-import type { BridgeMetadata } from "../../runtime/board-inspection/bridge.js";
-import { createBridge, removeBridge } from "../../runtime/engine/canvas-client.js";
-import { defineCommand } from "../command-contract/contract.js";
+import { BridgeMetadataSchema } from "@/runtime/board-inspection/bridge";
+import type { BridgeMetadata } from "@/runtime/board-inspection/bridge";
+import { createBridge, removeBridge } from "@/runtime/engine/canvas-client";
+import { defineCommand } from "@/cli/command-contract/contract";
 import {
 	BoardFingerprintSchema,
 	HoldReportSchema,
 	ServerElementSchema,
-} from "../command-contract/schemas.js";
-import { boardWriteRefusals } from "../command-contract/common.js";
+} from "@/cli/command-contract/schemas";
+import { boardWriteRefusals } from "@/cli/command-contract/common";
 
 const opaqueBackground = z
 	.string()

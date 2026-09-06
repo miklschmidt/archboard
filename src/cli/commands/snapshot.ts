@@ -5,12 +5,12 @@ import {
 	listSnapshots,
 	replaceSceneOnCanvas,
 	saveSnapshot,
-} from "../../runtime/engine/canvas-client.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import type { OptionParameter } from "../command-contract/contract.js";
-import { HoldReportSchema, ServerElementSchema } from "../command-contract/schemas.js";
-import { boardWriteRefusals, commonRefusals } from "../command-contract/common.js";
-import type { FlagSpecs } from "../command-contract/route-options.js";
+} from "@/runtime/engine/canvas-client";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import type { OptionParameter } from "@/cli/command-contract/contract";
+import { HoldReportSchema, ServerElementSchema } from "@/cli/command-contract/schemas";
+import { boardWriteRefusals, commonRefusals } from "@/cli/command-contract/common";
+import type { FlagSpecs } from "@/cli/command-contract/route-options";
 
 const SNAPSHOT_FLAG_SPEC = { force: { takesValue: false } } as const satisfies FlagSpecs;
 const snapshotFlagParameters = (): OptionParameter[] =>

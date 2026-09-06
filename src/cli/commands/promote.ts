@@ -1,10 +1,6 @@
 import { z } from "zod";
-import {
-	applyElementChanges,
-	getBoardInfo,
-	getElements,
-} from "../../runtime/engine/canvas-client.js";
-import type { ServerElement } from "../../runtime/engine/types.js";
+import { applyElementChanges, getBoardInfo, getElements } from "@/runtime/engine/canvas-client";
+import type { ServerElement } from "@/runtime/engine/types";
 import {
 	KINDS,
 	demotionSummary,
@@ -14,11 +10,11 @@ import {
 	promotionSummary,
 	resolveBinding,
 	validateNodeId,
-} from "../../runtime/engine/promote.js";
-import type { ElementUpdate } from "../../runtime/engine/promote.js";
-import { defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema } from "../command-contract/schemas.js";
-import { boardWriteRefusals } from "../command-contract/common.js";
+} from "@/runtime/engine/promote";
+import type { ElementUpdate } from "@/runtime/engine/promote";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { HoldReportSchema } from "@/cli/command-contract/schemas";
+import { boardWriteRefusals } from "@/cli/command-contract/common";
 
 function targetElements(ids: string[], board: ServerElement[]): ServerElement[] {
 	const byId = new Map(board.map((element) => [element.id, element]));

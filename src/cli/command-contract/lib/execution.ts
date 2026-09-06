@@ -4,13 +4,13 @@ import type {
 	CommandOutcomeDeclaration,
 	CommandContext,
 	OutputCase,
-} from "../contract.js";
-import { CliUsageError } from "../contract.js";
-import { HoldReportSchema } from "../schemas.js";
-import { CommanderArgvParser } from "./commander-adapter.js";
-import { processCommandHost } from "./host.js";
-import { applyHeld, commitArtifact, presentResult } from "./presentation.js";
-import { requirePrerequisite } from "./prerequisites.js";
+} from "@/cli/command-contract/contract";
+import { CliUsageError } from "@/cli/command-contract/contract";
+import { HoldReportSchema } from "@/cli/command-contract/schemas";
+import { CommanderArgvParser } from "@/cli/command-contract/lib/commander-adapter";
+import { processCommandHost } from "@/cli/command-contract/lib/host";
+import { applyHeld, commitArtifact, presentResult } from "@/cli/command-contract/lib/presentation";
+import { requirePrerequisite } from "@/cli/command-contract/lib/prerequisites";
 
 const commanderParser = new CommanderArgvParser();
 

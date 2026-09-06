@@ -1,4 +1,4 @@
-import type { DYNAMIC_APPROVAL_STATES } from "./dynamic-approval-effects.js";
+import type { DYNAMIC_APPROVAL_STATES } from "@/shared/codex-browser-model/lib/dynamic-approval-effects";
 import type { z } from "zod";
 
 type DynamicApprovalStateName = (typeof DYNAMIC_APPROVAL_STATES)[number];

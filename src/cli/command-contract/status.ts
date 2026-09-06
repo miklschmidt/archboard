@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { getHealth, getSyncStatus } from "../../runtime/engine/canvas-client.js";
-import { EXPRESS_SERVER_URL } from "../../runtime/engine/config.js";
-import { readPidFile } from "../../runtime/engine/pidfile.js";
-import { canvasPort, isCanvasHealth } from "../../runtime/engine/spawn.js";
-import { defineCommand } from "./contract.js";
-import { ServerStateSchema } from "./schemas.js";
+import { getHealth, getSyncStatus } from "@/runtime/engine/canvas-client";
+import { EXPRESS_SERVER_URL } from "@/runtime/engine/config";
+import { readPidFile } from "@/runtime/engine/pidfile";
+import { canvasPort, isCanvasHealth } from "@/runtime/engine/spawn";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { ServerStateSchema } from "@/cli/command-contract/schemas";
 
 const tail = z.array(z.string()).default([]);
 

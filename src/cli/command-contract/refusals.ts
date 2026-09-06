@@ -1,1 +1,5 @@
-export { boardRequiredRefusal, browserRefusal, serverRefusal } from "./lib/common.js";
+export {
+	boardRequiredRefusal,
+	browserRefusal,
+	serverRefusal,
+} from "@/cli/command-contract/lib/common";

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CANONICAL_ITEM_ID_MAX_LENGTH } from "../../codex-workbench-identity/index.js";
+import { CANONICAL_ITEM_ID_MAX_LENGTH } from "@/shared/codex-workbench-identity/index";
 
 const BrowserRealtimeIdentitySchemas = {
 	session: z.string().brand<"BrowserRealtimeSessionId">(),

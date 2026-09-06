@@ -1,8 +1,12 @@
 import { z } from "zod";
-import { boardConflictOf, saveBoard } from "../../runtime/engine/canvas-client.js";
-import { defineCommand } from "./contract.js";
-import { BoardAddressSchema, BoardWriteConflictSchema, HoldReportSchema } from "./schemas.js";
-import { boardWriteRefusals } from "./lib/common.js";
+import { boardConflictOf, saveBoard } from "@/runtime/engine/canvas-client";
+import { defineCommand } from "@/cli/command-contract/contract";
+import {
+	BoardAddressSchema,
+	BoardWriteConflictSchema,
+	HoldReportSchema,
+} from "@/cli/command-contract/schemas";
+import { boardWriteRefusals } from "@/cli/command-contract/lib/common";
 
 const BoardSaveInputSchema = z.object({ tokens: z.array(z.string()).default([]) });
 type BoardSaveInput = z.infer<typeof BoardSaveInputSchema>;

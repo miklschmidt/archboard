@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-import { parseRealtimeItemId, parseRealtimeSessionId } from "../../codex-realtime-host/index.js";
-import type { RealtimeItemId, RealtimeSessionId } from "../../codex-realtime-host/index.js";
-import { boundedText } from "./scalars.js";
-import type { IdentitySchemas } from "./scalars.js";
+import { parseRealtimeItemId, parseRealtimeSessionId } from "@/shared/codex-realtime-host/index";
+import type { RealtimeItemId, RealtimeSessionId } from "@/shared/codex-realtime-host/index";
+import { boundedText } from "@/shared/codex-browser-model/lib/scalars";
+import type { IdentitySchemas } from "@/shared/codex-browser-model/lib/scalars";
 
 const BROWSER_SPOKEN_APPROVAL_STATES = Object.freeze([
 	"idle",

@@ -1,4 +1,4 @@
-import type { RealtimePhase, RealtimeState } from "./contract.js";
+import type { RealtimePhase, RealtimeState } from "@/shared/codex-realtime-host/lib/contract";
 
 const REALTIME_PHASES = Object.freeze([
 	"idle",

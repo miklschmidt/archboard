@@ -5,8 +5,8 @@ import type {
 	OutcomePresentationStep,
 	OutputCase,
 	PendingArtifact,
-} from "../contract.js";
-import { processCommandHost } from "./host.js";
+} from "@/cli/command-contract/contract";
+import { processCommandHost } from "@/cli/command-contract/lib/host";
 
 const heldMessage = (held: unknown): string | null => {
 	if (!held || typeof held !== "object") {

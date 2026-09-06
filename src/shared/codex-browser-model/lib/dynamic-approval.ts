@@ -1,18 +1,18 @@
 import { z } from "zod";
 
-import { CODEX_APPROVAL_EXPIRY_MS } from "../../timing/timing.js";
-import { createDynamicApprovalBrowserSchemas } from "./dynamic-approval-browser.js";
-import { effectHashFor } from "./dynamic-approval-hash.js";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@/shared/timing/timing";
+import { createDynamicApprovalBrowserSchemas } from "@/shared/codex-browser-model/lib/dynamic-approval-browser";
+import { effectHashFor } from "@/shared/codex-browser-model/lib/dynamic-approval-hash";
 import {
 	createDynamicApprovalEffectSchemas,
 	DYNAMIC_APPROVAL_DECISIONS,
 	DYNAMIC_APPROVAL_NAMESPACE,
 	DYNAMIC_APPROVAL_STATES,
 	DYNAMIC_APPROVAL_TOOLS,
-} from "./dynamic-approval-effects.js";
-import type { DynamicApprovalEffectSchemas } from "./dynamic-approval-effects.js";
-import { NonNegativeIntegerSchema } from "./scalars.js";
-import type { IdentityContext, IdentitySchemas } from "./scalars.js";
+} from "@/shared/codex-browser-model/lib/dynamic-approval-effects";
+import type { DynamicApprovalEffectSchemas } from "@/shared/codex-browser-model/lib/dynamic-approval-effects";
+import { NonNegativeIntegerSchema } from "@/shared/codex-browser-model/lib/scalars";
+import type { IdentityContext, IdentitySchemas } from "@/shared/codex-browser-model/lib/scalars";
 
 const EffectHashSchema = z
 	.string()

@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { getElements, searchElements } from "../../runtime/engine/canvas-client.js";
-import { defineCommand } from "./contract.js";
-import { ServerElementSchema } from "./schemas.js";
-import { commonRefusals, tail } from "./lib/common.js";
+import { getElements, searchElements } from "@/runtime/engine/canvas-client";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { ServerElementSchema } from "@/cli/command-contract/schemas";
+import { commonRefusals, tail } from "@/cli/command-contract/lib/common";
 
 const QueryInputSchema = z.object({
 	type: z.string().optional(),

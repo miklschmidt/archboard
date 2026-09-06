@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { join } from "node:path";
-import { cliContractRegistry } from "../commands/run.js";
-import { introspectContracts } from "./introspection.js";
+import { cliContractRegistry } from "@/cli/commands/run";
+import { introspectContracts } from "@/cli/command-contract/introspection";
 
 const CLI_CONTRACT_ARTIFACT_NAMES = [
 	"cli-command-audit.md",

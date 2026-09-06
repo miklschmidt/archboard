@@ -1,5 +1,5 @@
-import type { AnyCommandContract } from "./contract.js";
-import { executeCommand } from "./lib/execution.js";
+import type { AnyCommandContract } from "@/cli/command-contract/contract";
+import { executeCommand } from "@/cli/command-contract/lib/execution";
 
 export async function runCommand(
 	contract: Readonly<AnyCommandContract>,

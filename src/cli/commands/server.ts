@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { canvasPort, ensureCanvasRunning, stopCanvas } from "../../runtime/engine/spawn.js";
-import { readPidFile } from "../../runtime/engine/pidfile.js";
-import { defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema } from "../command-contract/schemas.js";
+import { canvasPort, ensureCanvasRunning, stopCanvas } from "@/runtime/engine/spawn";
+import { readPidFile } from "@/runtime/engine/pidfile";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { HoldReportSchema } from "@/cli/command-contract/schemas";
 
 const IgnoredTailSchema = z.array(z.string()).default([]);
 

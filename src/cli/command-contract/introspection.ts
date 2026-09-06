@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AnyCommandContract } from "./contract.js";
+import type { AnyCommandContract } from "@/cli/command-contract/contract";
 
 interface RegistryContractEntry {
 	name: string;

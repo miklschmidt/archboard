@@ -3,9 +3,9 @@ import path from "node:path";
 
 import { z } from "zod";
 
-import { FindingCodeSchema, InspectionReportSchema } from "../../runtime/board-inspection/index.js";
-import type { InspectionFinding, InspectionReport } from "../../runtime/board-inspection/index.js";
-import { findingRasterDimensions } from "../../shared/finding-raster/index.js";
+import { FindingCodeSchema, InspectionReportSchema } from "@/runtime/board-inspection/index";
+import type { InspectionFinding, InspectionReport } from "@/runtime/board-inspection/index";
+import { findingRasterDimensions } from "@/shared/finding-raster/index";
 
 const HEX_SHA256 = /^[0-9a-f]{64}$/u;
 const FILE_NAME = /^\d{4,}-[A-Z_]+-[0-9a-f]{12}\.png$/u;

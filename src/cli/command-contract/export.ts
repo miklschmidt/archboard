@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { buildSceneFile } from "../../runtime/engine/scene-document.js";
-import { isObsidianExcalidrawMd, wrapSceneAsObsidianMd } from "../../runtime/engine/obsidian-md.js";
-import { CliUsageError, defineCommand } from "./contract.js";
-import type { PendingArtifact } from "./contract.js";
-import { HoldReportSchema, PendingArtifactSchema } from "./schemas.js";
-import { commonRefusals, tail } from "./lib/common.js";
+import { buildSceneFile } from "@/runtime/engine/scene-document";
+import { isObsidianExcalidrawMd, wrapSceneAsObsidianMd } from "@/runtime/engine/obsidian-md";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import type { PendingArtifact } from "@/cli/command-contract/contract";
+import { HoldReportSchema, PendingArtifactSchema } from "@/cli/command-contract/schemas";
+import { commonRefusals, tail } from "@/cli/command-contract/lib/common";
 
 const ExportInputSchema = z.object({
 	out: z.string().optional(),

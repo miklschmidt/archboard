@@ -4,20 +4,20 @@ import {
 	listBoardsOnCanvas,
 	newBoard,
 	openBoard,
-} from "../../runtime/engine/canvas-client.js";
-import type { BoardListResponse } from "../../runtime/engine/canvas-client.js";
-import { inspectCheckout } from "../../runtime/engine/git.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
+} from "@/runtime/engine/canvas-client";
+import type { BoardListResponse } from "@/runtime/engine/canvas-client";
+import { inspectCheckout } from "@/runtime/engine/git";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import {
 	BoardIdentityStateSchema,
 	HoldReportSchema,
 	PaneRefSchema,
-} from "../command-contract/schemas.js";
+} from "@/cli/command-contract/schemas";
 import {
 	commonRefusals,
 	serverBrowserRefusals,
 	serverRefusal,
-} from "../command-contract/common.js";
+} from "@/cli/command-contract/common";
 
 const usage = "board needs a subcommand: list, info, new, or save";
 const tokens = z.array(z.string()).default([]);

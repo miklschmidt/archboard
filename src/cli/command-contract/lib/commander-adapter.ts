@@ -1,6 +1,6 @@
 import { Command, Option } from "commander";
-import type { AnyCommandContract, TokenRecord } from "../contract.js";
-import { CliUsageError } from "../contract.js";
+import type { AnyCommandContract, TokenRecord } from "@/cli/command-contract/contract";
+import { CliUsageError } from "@/cli/command-contract/contract";
 
 function collect(value: string, previous: string[] = []): string[] {
 	return [...previous, value];

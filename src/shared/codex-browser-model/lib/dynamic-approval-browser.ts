@@ -1,14 +1,21 @@
 import { z } from "zod";
 
-import { CODEX_APPROVAL_EXPIRY_MS } from "../../timing/timing.js";
-import { DYNAMIC_APPROVAL_DECISIONS, DYNAMIC_APPROVAL_STATES } from "./dynamic-approval-effects.js";
-import { validateDynamicApprovalState } from "./dynamic-approval-lifecycle.js";
+import { CODEX_APPROVAL_EXPIRY_MS } from "@/shared/timing/timing";
+import {
+	DYNAMIC_APPROVAL_DECISIONS,
+	DYNAMIC_APPROVAL_STATES,
+} from "@/shared/codex-browser-model/lib/dynamic-approval-effects";
+import { validateDynamicApprovalState } from "@/shared/codex-browser-model/lib/dynamic-approval-lifecycle";
 import type {
 	createDynamicApprovalEffectSchemas,
 	DynamicApprovalEffectSchemas,
-} from "./dynamic-approval-effects.js";
-import { assertCurrentTarget, boundedText, NonNegativeIntegerSchema } from "./scalars.js";
-import type { IdentityContext, IdentitySchemas } from "./scalars.js";
+} from "@/shared/codex-browser-model/lib/dynamic-approval-effects";
+import {
+	assertCurrentTarget,
+	boundedText,
+	NonNegativeIntegerSchema,
+} from "@/shared/codex-browser-model/lib/scalars";
+import type { IdentityContext, IdentitySchemas } from "@/shared/codex-browser-model/lib/scalars";
 
 const EffectHashSchema = z
 	.string()

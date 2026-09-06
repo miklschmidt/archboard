@@ -1,4 +1,4 @@
-import { createBrowserSchemas } from "./lib/browser.js";
+import { createBrowserSchemas } from "@/shared/codex-browser-model/lib/browser";
 import {
 	createIdentitySchemas,
 	JsonValueSchema,
@@ -7,9 +7,9 @@ import {
 	NonNegativeIntegerSchema,
 	NullableNonNegativeIntegerSchema,
 	SafeUrlSchema,
-} from "./lib/scalars.js";
-import type { IdentityAuthorities } from "../codex-workbench-identity/index.js";
-import type { IdentityContext } from "./lib/scalars.js";
+} from "@/shared/codex-browser-model/lib/scalars";
+import type { IdentityAuthorities } from "@/shared/codex-workbench-identity/index";
+import type { IdentityContext } from "@/shared/codex-browser-model/lib/scalars";
 
 function createCodexBrowserModel(context: IdentityContext | IdentityAuthorities) {
 	const normalizedContext: IdentityContext =
@@ -38,7 +38,7 @@ export {
 	BROWSER_SPOKEN_APPROVAL_STATES,
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createBrowserSpokenApprovalSchema,
-} from "./lib/spoken-approval.js";
+} from "@/shared/codex-browser-model/lib/spoken-approval";
 export {
 	BROWSER_PERMISSION_FILE_ACCESS,
 	BROWSER_THREAD_CANDIDATE_LIMIT,
@@ -47,7 +47,7 @@ export {
 	BROWSER_VOICE_CONTEXT_ENTRY_LIMIT,
 	browserSnapshotRelationshipIssues,
 	DeliveryOutcomeSchema,
-} from "./lib/browser.js";
+} from "@/shared/codex-browser-model/lib/browser";
 export {
 	createDynamicApprovalSchemas,
 	canonicalDynamicApprovalJson,
@@ -57,7 +57,7 @@ export {
 	DYNAMIC_APPROVAL_NAMESPACE,
 	DYNAMIC_APPROVAL_STATES,
 	DYNAMIC_APPROVAL_TOOLS,
-} from "./lib/dynamic-approval.js";
+} from "@/shared/codex-browser-model/lib/dynamic-approval";
 export type {
 	BrowserAccount,
 	BrowserApproval,
@@ -83,7 +83,7 @@ export type {
 	BrowserVoiceContext,
 	BrowserSchemas,
 	DeliveryOutcome,
-} from "./lib/browser.js";
+} from "@/shared/codex-browser-model/lib/browser";
 export type {
 	BrowserDynamicApproval,
 	BrowserDynamicApprovalEffect,
@@ -106,11 +106,11 @@ export type {
 	DynamicCoordinationApprovalRequest,
 	DynamicCoordinationApprovalResponse,
 	DynamicCoordinationApprovalState,
-} from "./lib/dynamic-approval.js";
+} from "@/shared/codex-browser-model/lib/dynamic-approval";
 export type {
 	AnyIdentity,
 	CodexIdentity,
 	IdentityContext,
 	IdentitySchemas,
 	JsonValue,
-} from "./lib/scalars.js";
+} from "@/shared/codex-browser-model/lib/scalars";

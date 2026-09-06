@@ -4,10 +4,10 @@ import {
 	catalogueText,
 	insertStencil,
 	readCatalogue,
-} from "../../runtime/engine/library-catalogue.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema, ServerElementSchema } from "../command-contract/schemas.js";
-import { boardWriteRefusals, serverRefusal } from "../command-contract/common.js";
+} from "@/runtime/engine/library-catalogue";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { HoldReportSchema, ServerElementSchema } from "@/cli/command-contract/schemas";
+import { boardWriteRefusals, serverRefusal } from "@/cli/command-contract/common";
 
 const tail = z.array(z.string()).default([]);
 

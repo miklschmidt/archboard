@@ -4,8 +4,8 @@ import os from "node:os";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import type { CommandContext } from "../command-contract/contract.js";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import type { CommandContext } from "@/cli/command-contract/contract";
 
 const SKILL_NAME = "archboard";
 const RETIRED_SKILL_NAMES = ["excalidraw-skill"];

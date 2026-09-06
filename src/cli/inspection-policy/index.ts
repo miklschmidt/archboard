@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import type { TokenParameter } from "../command-contract/contract.js";
-import { CliUsageError } from "../command-contract/contract.js";
-import type { InspectionPolicyInput } from "../../runtime/board-inspection/index.js";
+import type { TokenParameter } from "@/cli/command-contract/contract";
+import { CliUsageError } from "@/cli/command-contract/contract";
+import type { InspectionPolicyInput } from "@/runtime/board-inspection/index";
 
 const InspectionOptionsInputSchema = z.object({
 	fontFamilies: z.array(z.string()).default([]),

@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { getChanges } from "../../runtime/engine/canvas-client.js";
-import type { ChangeFeedResponse } from "../../runtime/engine/canvas-client.js";
-import { defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema } from "../command-contract/schemas.js";
-import { commonRefusals } from "../command-contract/common.js";
+import { getChanges } from "@/runtime/engine/canvas-client";
+import type { ChangeFeedResponse } from "@/runtime/engine/canvas-client";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { HoldReportSchema } from "@/cli/command-contract/schemas";
+import { commonRefusals } from "@/cli/command-contract/common";
 
 const ChangesCursorInputSchema = z
 	.string()

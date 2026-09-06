@@ -259,4 +259,4 @@ export {
 	buildInternalCodeTargetUrl,
 	parseInternalCodeTargetUrl,
 };
-export { isAbsoluteOrBareOpenerExecutable } from "./executable.js";
+export { isAbsoluteOrBareOpenerExecutable } from "@/shared/code-target/executable";

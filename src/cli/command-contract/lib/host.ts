@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
-import { boardHoldSeen } from "../../../runtime/engine/canvas-client.js";
-import { writeFileAtomicExclusive } from "../../../runtime/engine/atomic-write.js";
-import type { PendingArtifact } from "../contract.js";
+import { boardHoldSeen } from "@/runtime/engine/canvas-client";
+import { writeFileAtomicExclusive } from "@/runtime/engine/atomic-write";
+import type { PendingArtifact } from "@/cli/command-contract/contract";
 
 export const processCommandHost = {
 	async readStdin() {

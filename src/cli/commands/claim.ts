@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { claimBoard, releaseBoardClaim } from "../../runtime/engine/canvas-client.js";
-import { defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema } from "../command-contract/schemas.js";
-import { claimRefusals, commonRefusals } from "../command-contract/common.js";
+import { claimBoard, releaseBoardClaim } from "@/runtime/engine/canvas-client";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { HoldReportSchema } from "@/cli/command-contract/schemas";
+import { claimRefusals, commonRefusals } from "@/cli/command-contract/common";
 
 const ClaimReasonInputSchema = z
 	.string({

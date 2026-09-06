@@ -2,19 +2,19 @@ import fs from "node:fs";
 
 import { z } from "zod";
 
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import { PendingArtifactSchema } from "../command-contract/schemas.js";
-import { boardRequiredRefusal, serverRefusal } from "../command-contract/refusals.js";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
+import { boardRequiredRefusal, serverRefusal } from "@/cli/command-contract/refusals";
 import {
 	InspectionOptionsInputSchema,
 	inspectionOptionParameters,
 	inspectionPolicyOf,
-} from "../inspection-policy/index.js";
-import { currentRequestedBoard, exportFindings } from "../../runtime/engine/canvas-client.js";
+} from "@/cli/inspection-policy/index";
+import { currentRequestedBoard, exportFindings } from "@/runtime/engine/canvas-client";
 import {
 	assembleFindingArtifacts,
 	FindingRenderManifestSchema,
-} from "../finding-rendering/index.js";
+} from "@/cli/finding-rendering/index";
 
 const RenderFindingsInputSchema = InspectionOptionsInputSchema.extend({
 	out: z.string().min(1, "render-findings requires --out <existing-empty-directory>"),
