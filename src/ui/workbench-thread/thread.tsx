@@ -63,6 +63,8 @@ export type ThreadGroupPart = MessagePrimitive.GroupedParts.GroupPart;
 export type ThreadComponents = {
 	AssistantMessage?: ComponentType | undefined;
 	Welcome?: ComponentType | undefined;
+	/** Archboard: rendered at the start of the composer's action row, before Send. */
+	ComposerFooter?: ComponentType | undefined;
 	ToolFallback?: ToolCallMessagePartComponent | undefined;
 	ToolGroup?: ComponentType<PropsWithChildren<{ group: ThreadGroupPart }>> | undefined;
 	ReasoningGroup?: ComponentType<PropsWithChildren<{ group: ThreadGroupPart }>> | undefined;
@@ -95,16 +97,16 @@ const ThreadHistorySkeleton: FC = () => (
 		className="animate-in fade-in fill-mode-both flex flex-col gap-y-6 [animation-delay:150ms] [animation-duration:200ms]"
 	>
 		<span className="sr-only">Loading conversation</span>
-		<Skeleton className="ml-auto h-9 w-2/5 rounded-xl motion-reduce:animate-none" />
+		<Skeleton className="ml-auto h-7 w-2/5 rounded-sm motion-reduce:animate-none" />
 		<div className="flex flex-col gap-y-2">
-			<Skeleton className="h-4 w-11/12 motion-reduce:animate-none" />
-			<Skeleton className="h-4 w-4/5 motion-reduce:animate-none" />
-			<Skeleton className="h-4 w-3/5 motion-reduce:animate-none" />
+			<Skeleton className="h-3 w-11/12 motion-reduce:animate-none" />
+			<Skeleton className="h-3 w-4/5 motion-reduce:animate-none" />
+			<Skeleton className="h-3 w-3/5 motion-reduce:animate-none" />
 		</div>
-		<Skeleton className="ml-auto h-9 w-1/3 rounded-xl motion-reduce:animate-none" />
+		<Skeleton className="ml-auto h-7 w-1/3 rounded-sm motion-reduce:animate-none" />
 		<div className="flex flex-col gap-y-2">
-			<Skeleton className="h-4 w-10/12 motion-reduce:animate-none" />
-			<Skeleton className="h-4 w-2/3 motion-reduce:animate-none" />
+			<Skeleton className="h-3 w-10/12 motion-reduce:animate-none" />
+			<Skeleton className="h-3 w-2/3 motion-reduce:animate-none" />
 		</div>
 	</div>
 );
@@ -126,10 +128,10 @@ const ThreadRoot: FC<{ isEmpty: boolean }> = ({ isEmpty }) => {
 		<ThreadPrimitive.Root
 			className="aui-root aui-thread-root bg-background @container flex h-full flex-col"
 			style={{
-				["--thread-max-width" as string]: "44rem",
+				["--thread-max-width" as string]: "none",
 				["--composer-bg" as string]: "var(--color-card)",
-				["--composer-radius" as string]: "1.5rem",
-				["--composer-padding" as string]: "8px",
+				["--composer-radius" as string]: "var(--radius-sm)",
+				["--composer-padding" as string]: "0px",
 			}}
 		>
 			<ThreadPrimitive.Viewport
@@ -139,7 +141,7 @@ const ThreadRoot: FC<{ isEmpty: boolean }> = ({ isEmpty }) => {
 			>
 				<div
 					className={cn(
-						"mx-auto flex w-full max-w-(--thread-max-width) flex-1 flex-col px-4 pt-4",
+						"mx-auto flex w-full max-w-(--thread-max-width) flex-1 flex-col px-3",
 						isEmpty && "justify-center",
 					)}
 				>
@@ -150,14 +152,16 @@ const ThreadRoot: FC<{ isEmpty: boolean }> = ({ isEmpty }) => {
 						<ThreadHistorySkeleton />
 					</AuiIf>
 
-					<div data-slot="aui_message-group" className="mb-14 flex flex-col gap-y-6 empty:hidden">
+					<div
+						data-slot="aui_message-group"
+						className="divide-border mb-3 flex flex-col divide-y empty:hidden"
+					>
 						<ThreadPrimitive.Messages>{() => <ThreadMessage />}</ThreadPrimitive.Messages>
 					</div>
 
 					<ThreadPrimitive.ViewportFooter
 						className={cn(
-							"aui-thread-viewport-footer bg-background flex flex-col gap-4 overflow-visible pb-4 md:pb-6",
-							!isEmpty && "sticky bottom-0 mt-auto rounded-t-(--composer-radius)",
+							"aui-thread-viewport-footer bg-background sticky bottom-0 mt-auto flex flex-col gap-2 overflow-visible pb-3",
 						)}
 					>
 						<ThreadScrollToBottom />
@@ -186,7 +190,7 @@ const ThreadScrollToBottom: FC = () => {
 			<TooltipIconButton
 				tooltip="Scroll to bottom"
 				variant="outline"
-				className="aui-thread-scroll-to-bottom dark:border-border dark:bg-background dark:hover:bg-accent absolute -top-12 z-10 self-center rounded-full p-4 disabled:invisible"
+				className="aui-thread-scroll-to-bottom dark:border-border dark:bg-background dark:hover:bg-accent absolute -top-9 z-10 size-7 self-center rounded-sm disabled:invisible"
 			>
 				<RiArrowDownLine />
 			</TooltipIconButton>
@@ -196,10 +200,13 @@ const ThreadScrollToBottom: FC = () => {
 
 const ThreadWelcome: FC = () => {
 	return (
-		<div className="aui-thread-welcome-root mb-6 flex flex-col items-center px-4 text-center">
-			<h1 className="aui-thread-welcome-message-inner fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-2xl font-medium tracking-tight duration-200">
-				How can I help you today?
+		<div className="aui-thread-welcome-root my-auto flex flex-col items-center gap-1 px-4 py-6 text-center">
+			<h1 className="aui-thread-welcome-message-inner fade-in slide-in-from-bottom-1 animate-in fill-mode-both text-title duration-200">
+				No turns yet
 			</h1>
+			<p className="text-body text-muted-foreground">
+				Send a message to the linked workhorse, or steer the running turn.
+			</p>
 		</div>
 	);
 };
@@ -209,11 +216,11 @@ const Composer: FC = () => {
 		<ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
 			<div
 				data-slot="aui_composer-shell"
-				className="border-border/60 focus-within:border-border dark:border-muted-foreground/15 dark:focus-within:border-muted-foreground/30 flex w-full cursor-text flex-col gap-2 rounded-(--composer-radius) border bg-(--composer-bg) p-(--composer-padding) transition-[border-color]"
+				className="border-border focus-within:border-ring flex min-h-[72px] w-full cursor-text flex-col rounded-(--composer-radius) border bg-(--composer-bg) p-(--composer-padding) transition-[border-color]"
 			>
 				<ComposerPrimitive.Input
-					placeholder="Send a message..."
-					className="aui-composer-input caret-primary placeholder:text-muted-foreground/60 max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none"
+					placeholder="Ask the workhorse or add context…"
+					className="aui-composer-input caret-primary placeholder:text-muted-foreground text-control max-h-48 min-h-9 w-full resize-none bg-transparent px-2.5 py-2 font-normal outline-none"
 					rows={1}
 					enterKeyHint="send"
 					aria-label="Message input"
@@ -225,8 +232,10 @@ const Composer: FC = () => {
 };
 
 const ComposerAction: FC = () => {
+	const { ComposerFooter } = useContext(ThreadComponentsContext);
 	return (
-		<div className="aui-composer-action-wrapper relative flex items-center justify-between">
+		<div className="aui-composer-action-wrapper border-border relative flex items-center justify-between gap-3 border-t px-2 py-1.5">
+			{ComposerFooter ? <ComposerFooter /> : null}
 			<div className="ms-auto flex items-center gap-1.5">
 				<AuiIf condition={(s) => !s.thread.isRunning}>
 					<ComposerPrimitive.Send asChild>
@@ -236,7 +245,7 @@ const ComposerAction: FC = () => {
 							type="button"
 							variant="default"
 							size="icon"
-							className="aui-composer-send size-7 rounded-full"
+							className="aui-composer-send size-7 rounded-sm"
 							aria-label="Send message"
 						>
 							<RiArrowUpLine className="aui-composer-send-icon size-4" />
@@ -249,7 +258,7 @@ const ComposerAction: FC = () => {
 							type="button"
 							variant="default"
 							size="icon"
-							className="aui-composer-cancel size-7 rounded-full"
+							className="aui-composer-cancel size-7 rounded-sm"
 							aria-label="Stop generating"
 						>
 							<RiStopFill className="aui-composer-cancel-icon size-3.5 fill-current" />
@@ -264,7 +273,7 @@ const ComposerAction: FC = () => {
 const MessageError: FC = () => {
 	return (
 		<MessagePrimitive.Error>
-			<ErrorPrimitive.Root className="aui-message-error-root border-destructive bg-destructive/10 text-destructive dark:bg-destructive/5 mt-2 rounded-md border p-3 text-sm dark:text-red-200">
+			<ErrorPrimitive.Root className="aui-message-error-root border-destructive bg-destructive/10 text-destructive dark:bg-destructive/5 text-body mt-2 rounded-sm border p-2 dark:text-red-200">
 				<ErrorPrimitive.Message className="aui-message-error-message line-clamp-2" />
 			</ErrorPrimitive.Root>
 		</MessagePrimitive.Error>
@@ -286,11 +295,11 @@ const AssistantMessage: FC = () => {
 		<MessagePrimitive.Root
 			data-slot="aui_assistant-message-root"
 			data-role="assistant"
-			className="fade-in slide-in-from-bottom-1 animate-in relative -mb-7.5 pb-7.5 duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto]"
+			className="fade-in slide-in-from-bottom-1 animate-in relative -mb-7.5 pt-3 pb-7.5 duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto]"
 		>
 			<div
 				data-slot="aui_assistant-message-content"
-				className="text-foreground px-2 leading-relaxed wrap-break-word"
+				className="text-foreground text-body px-2 wrap-break-word"
 			>
 				<MessagePrimitive.GroupedParts
 					groupBy={groupPartByType({
@@ -342,7 +351,7 @@ const AssistantMessage: FC = () => {
 								return (
 									<span
 										data-slot="aui_assistant-message-indicator"
-										className="animate-pulse font-sans"
+										className="text-status animate-pulse font-sans"
 										aria-label="Assistant is working"
 									>
 										{"●"}
@@ -399,10 +408,10 @@ const AssistantActionBar: FC = () => {
 					side="bottom"
 					align="start"
 					sideOffset={6}
-					className="aui-action-bar-more-content bg-popover text-popover-foreground data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:animate-out data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-hidden rounded-xl border p-1.5"
+					className="aui-action-bar-more-content bg-popover text-popover-foreground data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:animate-out data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-hidden rounded-md border p-1"
 				>
 					<ActionBarPrimitive.ExportMarkdown asChild>
-						<ActionBarMorePrimitive.Item className="aui-action-bar-more-item hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm outline-none select-none">
+						<ActionBarMorePrimitive.Item className="aui-action-bar-more-item hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground text-control flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 font-normal outline-none select-none">
 							<RiDownloadLine className="size-4" />
 							Export as Markdown
 						</ActionBarMorePrimitive.Item>
@@ -417,11 +426,11 @@ const UserMessage: FC = () => {
 	return (
 		<MessagePrimitive.Root
 			data-slot="aui_user-message-root"
-			className="fade-in slide-in-from-bottom-1 animate-in grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto] [&:where(>*)]:col-start-2"
+			className="fade-in slide-in-from-bottom-1 animate-in grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 py-3 duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto] [&:where(>*)]:col-start-2"
 			data-role="user"
 		>
 			<div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">
-				<div className="aui-user-message-content peer bg-muted text-foreground rounded-xl px-4 py-2 wrap-break-word empty:hidden">
+				<div className="aui-user-message-content peer bg-muted text-foreground text-body rounded-sm px-2.5 py-1.5 wrap-break-word empty:hidden">
 					<MessagePrimitive.Parts />
 				</div>
 				<div className="aui-user-action-bar-wrapper absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full">
@@ -457,25 +466,25 @@ const EditComposer: FC = () => {
 	return (
 		<MessagePrimitive.Root
 			data-slot="aui_edit-composer-wrapper"
-			className="flex flex-col px-2 [contain-intrinsic-size:auto_200px] [content-visibility:auto]"
+			className="flex flex-col px-2 py-3 [contain-intrinsic-size:auto_200px] [content-visibility:auto]"
 		>
-			<ComposerPrimitive.Root className="aui-edit-composer-root border-border/60 dark:border-muted-foreground/15 ms-auto flex w-full max-w-[85%] cursor-text flex-col rounded-(--composer-radius) border bg-(--composer-bg)">
+			<ComposerPrimitive.Root className="aui-edit-composer-root border-border focus-within:border-ring ms-auto flex w-full max-w-[85%] cursor-text flex-col rounded-(--composer-radius) border bg-(--composer-bg)">
 				{/* The person just chose Edit on this message: moving focus into the
 				    editor is the expected outcome, not a page-load focus steal. */}
 				{/* oxlint-disable jsx-a11y/no-autofocus */}
 				<ComposerPrimitive.Input
-					className="aui-edit-composer-input text-foreground min-h-14 w-full resize-none bg-transparent px-4 pt-3 pb-1 text-base outline-none"
+					className="aui-edit-composer-input text-foreground text-control min-h-12 w-full resize-none bg-transparent px-2.5 pt-2 pb-1 font-normal outline-none"
 					autoFocus
 				/>
 				{/* oxlint-enable jsx-a11y/no-autofocus */}
-				<div className="aui-edit-composer-footer mx-2.5 mb-2.5 flex items-center gap-1.5 self-end">
+				<div className="aui-edit-composer-footer mx-2 mb-2 flex items-center gap-1.5 self-end">
 					<ComposerPrimitive.Cancel asChild>
-						<Button variant="ghost" size="sm" className="h-8 rounded-full px-3.5">
+						<Button variant="ghost" size="sm" className="rounded-sm">
 							Cancel
 						</Button>
 					</ComposerPrimitive.Cancel>
 					<ComposerPrimitive.Send asChild>
-						<Button size="sm" className="h-8 rounded-full px-3.5">
+						<Button size="sm" className="rounded-sm">
 							Update
 						</Button>
 					</ComposerPrimitive.Send>
@@ -490,7 +499,7 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({ className, ...rest
 		<BranchPickerPrimitive.Root
 			hideWhenSingleBranch
 			className={cn(
-				"aui-branch-picker-root text-muted-foreground -ms-2 me-2 inline-flex items-center text-xs",
+				"aui-branch-picker-root text-muted-foreground text-technical -ms-2 me-2 inline-flex items-center font-mono",
 				className,
 			)}
 			{...rest}

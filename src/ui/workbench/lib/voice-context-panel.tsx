@@ -8,6 +8,7 @@ import { useCallback } from "react";
 import type { BrowserVoiceContext } from "@/shared/codex-browser-model";
 import { Button } from "@/ui/components/button";
 import { clockTime, counted, shortId } from "@/ui/workbench/lib/format";
+import { PanelLine } from "@/ui/workbench/lib/panel-line";
 
 type VoiceContextEntry = BrowserVoiceContext["entries"][number];
 
@@ -56,9 +57,9 @@ interface EntryRowProps {
 function EntryRow(props: EntryRowProps): React.JSX.Element {
 	const { entry } = props;
 	return (
-		<li className="flex items-baseline gap-2 py-1 text-[11px]">
-			<span className="w-14 shrink-0 font-medium">{entry.kind}</span>
-			<span className="text-muted-foreground min-w-0 truncate font-mono">
+		<li className="flex items-baseline gap-2 py-1.5">
+			<span className="text-body w-16 shrink-0 font-medium">{entry.kind}</span>
+			<span className="text-technical text-muted-foreground min-w-0 truncate font-mono">
 				{clockTime(entry.capturedAtMs)} · {freshnessText(entry, props.nowMs)} ·{" "}
 				{deliveryText(entry)}
 				{entry.reason === null ? "" : ` · ${entry.reason}`}
@@ -84,7 +85,7 @@ function Provenance(props: ProvenanceProps): React.JSX.Element {
 			? ""
 			: ` · ${context.entriesTruncated} omitted (${context.ownerEntriesTruncated} permanently)`;
 	return (
-		<p className="text-muted-foreground truncate font-mono text-[11px]">
+		<p className="text-technical text-muted-foreground min-w-0 truncate font-mono">
 			session {shortId(context.sessionId)} · ledger {shortId(context.ledgerId)} ·{" "}
 			{counted(context.entries.length, "entry", "entries")}
 			{omitted}
@@ -102,18 +103,23 @@ function VoiceContextPanel(props: VoiceContextPanelProps): React.JSX.Element {
 	const brief = voiceContext?.canonicalBrief ?? "";
 	const handleCopy = useCallback(() => onCopy(brief), [onCopy, brief]);
 	if (voiceContext === null) {
-		return <p className="text-muted-foreground text-xs">No voice context captured</p>;
+		return <PanelLine tone="muted">No voice context captured</PanelLine>;
 	}
 	return (
 		<div className="flex flex-col gap-1.5">
 			<div className="flex items-center gap-2">
 				<Provenance voiceContext={voiceContext} />
-				<Button variant="outline" size="xs" className="ms-auto shrink-0" onClick={handleCopy}>
+				<Button
+					variant="outline"
+					size="icon-xs"
+					aria-label="Copy brief"
+					className="relative ms-auto shrink-0 rounded-sm after:absolute after:-inset-1"
+					onClick={handleCopy}
+				>
 					<RiFileCopyLine />
-					Copy brief
 				</Button>
 			</div>
-			<pre className="bg-muted/40 max-h-40 overflow-auto rounded-sm p-2 font-mono text-[11px] leading-snug whitespace-pre-wrap">
+			<pre className="border-border bg-muted/40 text-technical max-h-40 overflow-auto rounded-sm border p-2 font-mono whitespace-pre-wrap">
 				{voiceContext.canonicalBrief}
 			</pre>
 			{voiceContext.entries.length === 0 ? null : (

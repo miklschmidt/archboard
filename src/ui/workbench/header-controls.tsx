@@ -1,7 +1,7 @@
 // The workbench pieces that stay reachable when the dock is collapsed and in
-// fullscreen: compact voice controls, the small output wave, and the count of
-// approvals waiting. The shell places this in its dock header; the host hands
-// it the session view, the voice view and the voice actions alone.
+// fullscreen: the count of approvals waiting, the small output wave, and the
+// compact voice controls. The shell places this in its dock header; the host
+// hands it the session view, the voice view and the voice actions alone.
 
 import { Badge } from "@/ui/components/badge";
 import { VoiceControlsCompact } from "@/ui/voice-controls";
@@ -48,8 +48,12 @@ function WorkbenchHeaderControls(props: WorkbenchHeaderControlsProps): React.JSX
 	return (
 		<div className="flex items-center gap-2">
 			{waiting === 0 ? null : (
-				<Badge variant="default" aria-label={`${waiting} approvals waiting`}>
-					{waiting}
+				<Badge
+					variant="default"
+					aria-label={`${waiting} approvals waiting`}
+					className="h-4 min-w-4 rounded-[2px] px-1"
+				>
+					<span className="text-technical font-mono font-medium">{waiting}</span>
 				</Badge>
 			)}
 			<VoiceOutputWave

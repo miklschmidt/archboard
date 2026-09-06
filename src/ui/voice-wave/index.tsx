@@ -36,8 +36,27 @@ interface VoiceOutputWaveProps {
 interface StaticWaveProps {
 	state: VoiceWaveState;
 	active: boolean;
+	size: VoiceOutputWaveSize;
+	showText: boolean;
 	className: string | undefined;
 }
+
+/**
+ * The dock wave is a 120×24 strip, not the renderer's square; larger presets
+ * keep the official square geometry.
+ */
+const WAVE_CLASS: Record<VoiceOutputWaveSize, string> = {
+	icon: "aspect-auto h-6 w-[120px]",
+	sm: "",
+	md: "",
+};
+
+/** The static rule's width per size, matching the animated wave's box. */
+const RULE_CLASS: Record<VoiceOutputWaveSize, string> = {
+	icon: "w-[120px]",
+	sm: "w-14",
+	md: "w-28",
+};
 
 /**
  * The static presentation: one status-coloured rule and the state text,
@@ -54,9 +73,17 @@ function StaticWave(props: StaticWaveProps): React.JSX.Element {
 		>
 			<span
 				aria-hidden="true"
-				className={cn("h-0.5 w-10 shrink-0 rounded-full", live ? "bg-status" : "bg-border")}
-			/>
-			<output aria-live="polite" className="text-muted-foreground truncate text-xs">
+				className={cn(
+					"flex h-6 shrink-0 items-center [mask-image:linear-gradient(90deg,transparent_0%,black_20%,black_80%,transparent_100%)]",
+					RULE_CLASS[props.size],
+				)}
+			>
+				<span className={cn("h-0.5 w-full", live ? "bg-status" : "bg-muted-foreground/40")} />
+			</span>
+			<output
+				aria-live="polite"
+				className={`text-body text-muted-foreground truncate ${props.showText ? "" : "sr-only"}`}
+			>
 				{waveStateText(props.state)}
 			</output>
 		</div>
@@ -73,10 +100,19 @@ function VoiceOutputWave(props: VoiceOutputWaveProps): React.JSX.Element {
 	const [webGl] = useState(webGlAvailable);
 	const [color] = useState(statusAccentColor);
 	const reducedMotion = props.reducedMotion === true || prefersReducedMotion;
+	const size = props.size ?? "sm";
+	const showText = props.showText === true;
 	if (reducedMotion || !webGl) {
-		return <StaticWave state={props.state} active={props.active} className={props.className} />;
+		return (
+			<StaticWave
+				state={props.state}
+				active={props.active}
+				size={size}
+				showText={showText}
+				className={props.className}
+			/>
+		);
 	}
-	const text = waveStateText(props.state);
 	return (
 		<div
 			data-voice-wave="animated"
@@ -84,22 +120,20 @@ function VoiceOutputWave(props: VoiceOutputWaveProps): React.JSX.Element {
 		>
 			<AgentAudioVisualizerWave
 				aria-hidden="true"
-				size={props.size ?? "sm"}
+				size={size}
 				state={props.state}
 				level={props.level}
 				active={props.active}
 				reducedMotion={false}
 				color={color}
 				colorShift={0}
+				className={WAVE_CLASS[size]}
 			/>
 			<output
 				aria-live="polite"
-				className={cn(
-					"text-muted-foreground truncate text-xs",
-					props.showText === true ? undefined : "sr-only",
-				)}
+				className={`text-body text-muted-foreground truncate ${showText ? "" : "sr-only"}`}
 			>
-				{text}
+				{waveStateText(props.state)}
 			</output>
 		</div>
 	);

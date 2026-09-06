@@ -1,5 +1,6 @@
-// The dock's side panel: the voice controls beside the output wave, then the
-// dense disclosures for queue, approvals, context and transcript as tabs.
+// The dock's right column: the voice row (output wave, state and controls)
+// over the dense panels for queue, approvals, context and transcript as flat
+// underlined tabs.
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/components/tabs";
@@ -18,6 +19,15 @@ interface SidePanelProps {
 	actions: WorkbenchActions;
 }
 
+/** Inputs for one tab label. */
+interface TabLabelProps {
+	label: string;
+	count: number;
+}
+
+/** The scrolling panel body under the tabs. */
+const PANEL_CLASS = "min-h-0 overflow-y-auto px-3 py-2";
+
 /**
  * How many approvals still wait for a decision.
  * @param snapshot The published snapshot.
@@ -34,13 +44,19 @@ function pendingApprovalCount(snapshot: BrowserSnapshot): number {
 }
 
 /**
- * A tab label with its count.
- * @param label The words.
- * @param count The count, shown when above zero.
- * @returns The label text.
+ * A kicker tab label with its count in mono, shown when above zero.
+ * @param props The words and the count.
+ * @returns The label.
  */
-function tabLabel(label: string, count: number): string {
-	return count === 0 ? label : `${label} ${count}`;
+function TabLabel(props: TabLabelProps): React.JSX.Element {
+	return (
+		<span className="text-kicker flex items-center gap-1.5 uppercase">
+			{props.label}
+			{props.count === 0 ? null : (
+				<span className="text-technical font-mono font-medium normal-case">{props.count}</span>
+			)}
+		</span>
+	);
 }
 
 /**
@@ -50,17 +66,19 @@ function tabLabel(label: string, count: number): string {
  */
 function SidePanel(props: SidePanelProps): React.JSX.Element {
 	const { snapshot, view, actions } = props;
-	const voiceLive = view.voice.controls.sessionState === "active";
+	const voiceLive =
+		view.voice.controls.sessionState === "active" ||
+		view.voice.controls.sessionState === "recovering";
 	return (
 		<aside
 			aria-label="Workbench panels"
-			className="border-border flex w-[24rem] shrink-0 flex-col border-l"
+			className="border-border bg-card flex w-[320px] shrink-0 flex-col border-l"
 		>
-			<div className="border-border flex items-center gap-2 border-b px-3 py-1.5">
+			<div className="border-border flex h-8 shrink-0 items-center gap-2 border-b px-3">
 				<VoiceOutputWave
 					state={view.voice.wave.state}
 					level={view.voice.wave.level}
-					active={voiceLive || view.voice.controls.sessionState === "recovering"}
+					active={voiceLive}
 					reducedMotion={view.reducedMotion}
 					size="icon"
 				/>
@@ -70,23 +88,25 @@ function SidePanel(props: SidePanelProps): React.JSX.Element {
 					className="min-w-0 flex-1"
 				/>
 			</div>
-			<Tabs defaultValue="queue" className="min-h-0 flex-1 gap-0 px-3 py-2">
-				<TabsList variant="line" className="w-full">
+			<Tabs defaultValue="queue" className="min-h-0 flex-1 gap-0">
+				<TabsList variant="underline" className="shrink-0 px-1">
 					<TabsTrigger value="queue">
-						{tabLabel("Queue", snapshot.queue.entries.length)}
+						<TabLabel label="Queue" count={snapshot.queue.entries.length} />
 					</TabsTrigger>
 					<TabsTrigger value="approvals">
-						{tabLabel("Approvals", pendingApprovalCount(snapshot))}
+						<TabLabel label="Approvals" count={pendingApprovalCount(snapshot)} />
 					</TabsTrigger>
-					<TabsTrigger value="context">Context</TabsTrigger>
+					<TabsTrigger value="context">
+						<TabLabel label="Context" count={0} />
+					</TabsTrigger>
 					<TabsTrigger value="transcript">
-						{tabLabel("Transcript", snapshot.voice.transcript.length)}
+						<TabLabel label="Transcript" count={snapshot.voice.transcript.length} />
 					</TabsTrigger>
 				</TabsList>
-				<TabsContent value="queue" className="min-h-0 overflow-y-auto pt-2">
+				<TabsContent value="queue" className={PANEL_CLASS}>
 					<QueuePanel queue={snapshot.queue} command={view.queueCommand} actions={actions.queue} />
 				</TabsContent>
-				<TabsContent value="approvals" className="min-h-0 overflow-y-auto pt-2">
+				<TabsContent value="approvals" className={PANEL_CLASS}>
 					<ApprovalsPanel
 						snapshot={snapshot}
 						busyApprovals={view.busyApprovals}
@@ -94,14 +114,14 @@ function SidePanel(props: SidePanelProps): React.JSX.Element {
 						actions={actions}
 					/>
 				</TabsContent>
-				<TabsContent value="context" className="min-h-0 overflow-y-auto pt-2">
+				<TabsContent value="context" className={PANEL_CLASS}>
 					<VoiceContextPanel
 						voiceContext={snapshot.voiceContext ?? null}
 						nowMs={view.nowMs}
 						onCopy={actions.copyVoiceContext}
 					/>
 				</TabsContent>
-				<TabsContent value="transcript" className="min-h-0 overflow-y-auto pt-2">
+				<TabsContent value="transcript" className={PANEL_CLASS}>
 					<TranscriptPanel voice={snapshot.voice} />
 				</TabsContent>
 			</Tabs>
