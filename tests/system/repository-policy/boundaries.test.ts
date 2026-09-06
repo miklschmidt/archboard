@@ -31,7 +31,7 @@ function run(cwd: string, cmd: string[]): CommandResult {
 }
 
 function repositoryOxlintConfig(): string {
-	const authored = fs.readFileSync(path.join(repoRoot, ".oxlintrc.jsonc"), "utf8");
+	const authored = fs.readFileSync(path.join(repoRoot, ".oxlintrc.baseline.jsonc"), "utf8");
 	const relativePlugin = '"./tools/oxlint-plugin-archboard.js"';
 	if (!authored.includes(relativePlugin)) {
 		throw new Error("repository Oxlint plugin path is missing");
