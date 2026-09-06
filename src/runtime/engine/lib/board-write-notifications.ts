@@ -6,7 +6,7 @@ import type { BoardWriteDelta, BoardWriteTarget } from "../board-write.js";
 import logger from "../logger.js";
 import { presentElements } from "../presentation.js";
 import type { PresentationContext, ReadonlyServerElement } from "../presentation.js";
-import type { ElementsChangedMessage, WebSocketMessage } from "../types.js";
+import type { CarriedVersion, ElementsChangedMessage, WebSocketMessage } from "../types.js";
 
 type ReadonlyBoardWriteDelta = ReadonlyBoardData<BoardWriteDelta>;
 type ReadonlyElementsChangedMessage = ReadonlyBoardData<ElementsChangedMessage>;
@@ -80,6 +80,7 @@ function tellPanesAboutWrite(
 	presentationLinks:
 		| Readonly<ReadonlyMap<string, Readonly<Pick<PresentationContext, "opaqueTarget">>>>
 		| undefined,
+	version: CarriedVersion,
 ): void {
 	const opaqueTargets = presentationLinks
 		? new Map(
@@ -105,6 +106,7 @@ function tellPanesAboutWrite(
 		}),
 		deleted: delta.deleted,
 		origin: clientId,
+		version,
 		timestamp,
 	};
 	tellPanesBestEffort(tellPanes, message, target.key);

@@ -54,6 +54,7 @@ function emptyPaneStatus(paneId: string): PaneStatus {
 		hold: null,
 		writtenElsewhere: null,
 		doing: [],
+		noteVersion: null,
 	};
 }
 

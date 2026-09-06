@@ -7,6 +7,7 @@ import type * as BoardModule from "../../../src/runtime/engine/board.ts";
 import type * as IoModule from "../../../src/runtime/engine/board-io.ts";
 import type { BoardState } from "../../../src/runtime/engine/board-store.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 
@@ -202,24 +203,27 @@ describe("malformed input", () => {
 		});
 		const file = (await request<BoardBody>("/api/boards/info?board=human-geometry")).body.file;
 		const before = fs.readFileSync(file);
-		const response = await request<ErrorBody>("/api/elements/changes?board=human-geometry", {
-			method: "POST",
-			body: {
-				upserts: [
-					{
-						id: "browser-text",
-						type: "text",
-						x: 40,
-						y: 160,
-						text: "browser",
-						fontFamily: 2,
-						autoResize: true,
-					},
-				],
-				deletes: [],
-				clientId: "a-browser",
+		const response = await request<ErrorBody>(
+			`/api/elements/changes${await humanWriteQuery(request, "human-geometry")}`,
+			{
+				method: "POST",
+				body: {
+					upserts: [
+						{
+							id: "browser-text",
+							type: "text",
+							x: 40,
+							y: 160,
+							text: "browser",
+							fontFamily: 2,
+							autoResize: true,
+						},
+					],
+					deletes: [],
+					clientId: "a-browser",
+				},
 			},
-		});
+		);
 		expect(response.status).toBe(400);
 		expect(response.body.error).toContain("invalid element browser-text (text) at element.width");
 		expect(fs.readFileSync(file).equals(before)).toBeTrue();

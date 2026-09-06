@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { WebSocket } from "ws";
 
 import { completeElement } from "../code-targets/support/elements.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { waitFor } from "../canvas-state/support/http.ts";
@@ -70,7 +71,7 @@ test("the newest accepted duplicate remains authoritative after reverse initiali
 		const originalMessages: Array<Record<string, unknown>> = [];
 		original = await openSocket(canvas.base, clientId, originalMessages);
 		await waitForInitial(originalMessages);
-		await request("/api/elements/changes?board=scratch", {
+		await request(`/api/elements/changes${await humanWriteQuery(request, "scratch")}`, {
 			method: "POST",
 			body: {
 				origin: "human",

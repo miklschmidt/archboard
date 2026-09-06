@@ -26,6 +26,7 @@ import {
 	humanPerformanceScene,
 } from "./fixtures/human-performance-scene.ts";
 import { readFsyncTrace, tracerPids } from "./fixtures/traced-canvas-process.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 
 interface ProbeResponse {
 	startedAt: number;
@@ -282,11 +283,14 @@ test(
 			body: { board: "performance", level: "service" },
 			doing: "checking human editing performance",
 		});
-		const seeded = await request<{ count: number }>("/api/elements/changes?board=performance", {
-			method: "POST",
-			body: { clientId: "fixture", upserts: humanPerformanceScene(), deletes: [] },
-			doing: "checking human editing performance",
-		});
+		const seeded = await request<{ count: number }>(
+			`/api/elements/changes${await humanWriteQuery(request, "performance")}`,
+			{
+				method: "POST",
+				body: { clientId: "fixture", upserts: humanPerformanceScene(), deletes: [] },
+				doing: "checking human editing performance",
+			},
+		);
 		expect(seeded.status).toBe(200);
 		expect(seeded.body.count).toBe(HUMAN_PERFORMANCE_FIXTURE_SIZE);
 		await request("/api/boards/save", {

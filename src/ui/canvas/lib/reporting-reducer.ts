@@ -202,6 +202,7 @@ function reportSucceeded(
 		baseline: baselineAfterCorrections(sent.report.nextBaseline, event.corrections),
 		fullReportNeeded: sent.fullReport ? false : state.fullReportNeeded,
 		deliveryQueued: false,
+		noteVersion: event.version,
 	};
 	const correctedScene = applyVisibleCorrections(
 		event.currentScene,
@@ -241,6 +242,55 @@ function reportsCancelled(state: ChangeReportingState, effects: Effects): Change
 }
 
 /**
+ * The person's unwritten edits are withdrawn (ADR 0022): nothing scheduled or
+ * in flight speaks for them any more, and the answer to a report still on the
+ * wire is not believed. The scene is replaced by the runtime right after this,
+ * through the same wholesale path a server frame takes, so the baseline moves
+ * with it.
+ * @param state The reporting state.
+ * @param effects Where effects go.
+ * @returns The next state, settled.
+ */
+function editsWithdrawn(state: ChangeReportingState, effects: Effects): ChangeReportingState {
+	const next = reportsCancelled(state, effects);
+	effects.push({ type: "publish_status" });
+	return { ...next, inFlightReport: null, fullReportNeeded: false };
+}
+
+/**
+ * The note moved past the version the report stated: the write was refused
+ * and the pane reconciles to the note (ADR 0022). The refusal's document is
+ * what the runtime replaces the scene with; the version is what the pane
+ * states next.
+ * @param state The reporting state.
+ * @param event The refusal.
+ * @param effects Where effects go.
+ * @returns The next state.
+ */
+function reportVersionRefused(
+	state: ChangeReportingState,
+	event: EventMap["report_version_refused"],
+	effects: Effects,
+): ChangeReportingState {
+	const next = editsWithdrawn(state, effects);
+	effects.push({ type: "release_if_idle" });
+	return { ...next, noteVersion: event.version };
+}
+
+/**
+ * The server said which note version the board on screen came from.
+ * @param state The reporting state.
+ * @param event The version.
+ * @returns The state, stating that version on its next write.
+ */
+function noteVersionLearned(
+	state: ChangeReportingState,
+	event: EventMap["note_version_learned"],
+): ChangeReportingState {
+	return state.noteVersion === event.version ? state : { ...state, noteVersion: event.version };
+}
+
+/**
  * Another board is on this pane: nothing scheduled for the old one may run.
  * @param state The reporting state.
  * @param effects Where effects go.
@@ -268,7 +318,7 @@ function flushRequested(
 	}
 	const report = diffAgainstBaseline(event.scene, state.baseline);
 	if (!isEmpty(report)) {
-		effects.push({ type: "send_beacon", report });
+		effects.push({ type: "send_beacon", report, expectVersion: state.noteVersion });
 	}
 	return state;
 }
@@ -408,7 +458,10 @@ const HANDLERS: Handlers = {
 	server_update_finished: serverUpdateFinished,
 	report_succeeded: reportSucceeded,
 	report_refused: withoutEvent(reportRefused),
+	report_version_refused: reportVersionRefused,
 	report_failed: withoutEvent(reportFailed),
+	note_version_learned: noteVersionLearned,
+	edits_withdrawn: withoutEvent(editsWithdrawn),
 	board_adopted: withoutEvent(boardAdopted),
 	reports_cancelled: withoutEvent(reportsCancelled),
 	full_report_cleared: fullReportCleared,

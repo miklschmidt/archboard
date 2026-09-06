@@ -59,7 +59,11 @@ interface LockRequest {
 	readonly waitMs?: number;
 	/** Lease duration, distinct from a claim's campaign deadline. */
 	readonly leaseMs?: number;
-	/** Only a human content hold sets this, and it revokes claims, never writes. */
+	/**
+	 * Only the person's explicit take-back sets this (ADR 0022). It ends a
+	 * standing claim and never a per-write hold; a content gesture never sets
+	 * it, because a claimed board is read-only to people until they ask.
+	 */
 	readonly revokeClaim?: boolean;
 	/** Cancels waiting, never a synchronous write already inside the boundary. */
 	readonly signal?: Readonly<AbortSignal>;

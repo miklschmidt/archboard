@@ -196,6 +196,53 @@ export interface WebSocketMessage {
 	doing?: DoingEntry;
 	/** On `board_doing`: the last few, oldest first, so a pane that has just arrived is not blank. */
 	recent?: DoingEntry[];
+	/**
+	 * On `initial_elements`, `board_switched`, `elements_changed` and a
+	 * `board_released` that carries elements: the note version the elements
+	 * came from, or null when the note carries none (ADR 0022). A pane states
+	 * it on its next write, so a write against a note that has moved is refused.
+	 */
+	version?: number | null;
+	/**
+	 * On `agent_activity`: every board this server serves that an agent holds
+	 * or has just written, as one snapshot. Boardless: every client hears it.
+	 */
+	activity?: AgentActivityEntry[];
+}
+
+/**
+ * What an agent is doing to one board, as every pane is shown it (ADR 0022).
+ * Sent whole on connect and whenever an agent's lock or `doing` line changes;
+ * an entry lingers a few seconds after an unclaimed write.
+ */
+export interface AgentActivityEntry {
+	/** The board key. */
+	board: string;
+	/** The agent's claim, or null when it holds no claim. */
+	claim: LockHolder | null;
+	/** The latest thing the agent said it was doing, or null. */
+	doing: DoingEntry | null;
+}
+
+/**
+ * Why a pane withdrew a person's unwritten edit (ADR 0022): the note moved
+ * past the version the pane was editing, or an agent's claim stands on the board.
+ */
+export type EditWithdrawalReason = "moved" | "claimed";
+
+/**
+ * A write refused because the note moved past the version the writer stated
+ * (ADR 0022). Mirrors `BoardVersionConflict` in `src/runtime/engine/board-version.ts`.
+ */
+export interface BoardVersionConflict {
+	board: string;
+	file?: string;
+	/** What the writer was working from. Null means it last saw no note version. */
+	expected: number | null;
+	actual: number | null;
+	/** How many writes the board moved. Negative means the note went backwards. */
+	movedBy: number;
+	message: string;
 }
 
 /**
@@ -231,12 +278,20 @@ export interface LockHolder {
 	 * A claim rather than one write: an agent has this board across everything it
 	 * is doing, not for the twenty milliseconds of a single write.
 	 *
-	 * The difference the pane cares about, because it is the difference between
-	 * a surface that flickers and a wall that has stopped. A claim is what gets a
-	 * banner naming the holder and their reason, and the one tap that takes it
-	 * back.
+	 * The difference the pane cares about: a claim makes the board read-only to
+	 * people while it stands (ADR 0022). A claim is what gets a banner naming
+	 * the holder and their reason, and the one control that releases it.
 	 */
 	claimed?: boolean;
+}
+
+/**
+ * Whether a holder is an agent's claim rather than one passing write.
+ * @param holder The lock holder, or null while the board is free.
+ * @returns The claim, or null when there is nothing to announce.
+ */
+export function agentClaim(holder: LockHolder | null): LockHolder | null {
+	return holder?.kind === "agent" && holder.claimed === true ? holder : null;
 }
 
 /** What one pane tells the shell about itself. */
@@ -270,4 +325,10 @@ export interface PaneStatus {
 	 * two metres away, and a transcript is a log nobody reads.
 	 */
 	doing: DoingEntry[];
+	/**
+	 * The note version this pane last saw, which its writes state (ADR 0022):
+	 * null before it has been told and when the note carries none. The shell's
+	 * Save and Clear state it too, since they are a person's writes.
+	 */
+	noteVersion: number | null;
 }

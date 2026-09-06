@@ -11,6 +11,7 @@ import { sceneFromServer } from "@/ui/canvas/lib/scene-boundary";
 import { CONTENT_MESSAGES } from "@/ui/canvas/lib/session-contracts";
 import type { CanvasFileOwner } from "@/ui/canvas/files";
 import type {
+	AgentActivityEntry,
 	BoardHold,
 	BoardIdentity,
 	DoingEntry,
@@ -33,6 +34,8 @@ interface MessageContext {
 	readonly applyServerScene: (elements: SceneElement[], withheldIds?: readonly string[]) => void;
 	readonly applyServerElements: (elements: SceneElement[]) => void;
 	readonly removeElements: (ids: readonly string[]) => void;
+	/** The note version the elements just applied came from; undefined is silence. */
+	readonly learnNoteVersion: (version: number | null | undefined) => void;
 	readonly adoptBoard: (key: string | undefined, identity: BoardIdentity | undefined) => void;
 	readonly dispatchReporting: (event: ChangeReportingEvent) => void;
 	readonly noteChange: () => void;
@@ -48,6 +51,7 @@ interface MessageContext {
 	readonly onLibraryChanged: ((items: LibraryItems) => void) | undefined;
 	readonly onLayoutRequest: ((request: "open" | "close") => void) | undefined;
 	readonly onBoardError: ((error: string) => void) | undefined;
+	readonly onAgentActivity: ((activity: readonly AgentActivityEntry[]) => void) | undefined;
 }
 
 type Handler = (context: MessageContext, data: WebSocketMessage) => void | Promise<void>;
@@ -68,6 +72,7 @@ async function initialElements(context: MessageContext, data: WebSocketMessage):
 	// Still this pane's board, so a half-typed label is still this pane's to
 	// keep: a reconnection mid-typing must not remove it from the scene.
 	context.applyServerScene(sceneFromServer(data.elements ?? []), context.currentWithheldIds());
+	context.learnNoteVersion(data.version);
 	if (data.files) {
 		context.files.addFiles(Object.values(data.files));
 	}
@@ -82,6 +87,7 @@ async function initialElements(context: MessageContext, data: WebSocketMessage):
  */
 function boardSwitched(context: MessageContext, data: WebSocketMessage): void {
 	context.applyServerScene(sceneFromServer(data.elements ?? []));
+	context.learnNoteVersion(data.version);
 	if (data.files) {
 		context.files.addFiles(Object.values(data.files));
 	}
@@ -134,6 +140,9 @@ function elementDeleted(context: MessageContext, data: WebSocketMessage): void {
  * @param data The message.
  */
 function elementsChanged(context: MessageContext, data: WebSocketMessage): void {
+	// Our own echo still says where the note is now: the write's reply said the
+	// same, and either may arrive first.
+	context.learnNoteVersion(data.version);
 	if (data.origin === context.clientId) {
 		return;
 	}
@@ -214,6 +223,7 @@ function boardReleased(context: MessageContext, data: WebSocketMessage): void {
 	if (Array.isArray(data.elements)) {
 		context.dispatchReporting({ type: "board_adopted" });
 		context.applyServerScene(sceneFromServer(data.elements));
+		context.learnNoteVersion(data.version);
 		replaceCanvasFiles(context.files, Object.values(data.files ?? {}));
 		context.noteChange();
 	} else {
@@ -233,6 +243,19 @@ function libraryChanged(context: MessageContext, data: WebSocketMessage): void {
 		// The server sends Excalidraw's own library items; the browser trusts them.
 		// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 		context.onLibraryChanged?.(data.items as LibraryItems);
+	}
+}
+
+/**
+ * Which boards an agent is working on, across this whole server (ADR 0022).
+ * Boardless and sent to every client; the shell replaces its whole map, so
+ * two panes hearing the same snapshot say the same thing twice, harmlessly.
+ * @param context The pane.
+ * @param data The message.
+ */
+function agentActivity(context: MessageContext, data: WebSocketMessage): void {
+	if (Array.isArray(data.activity)) {
+		context.onAgentActivity?.(data.activity);
 	}
 }
 
@@ -315,6 +338,7 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
 	board_note: boardNote,
 	board_doing: boardDoing,
 	board_error: boardError,
+	agent_activity: agentActivity,
 	canvas_cleared: canvasCleared,
 	board_hold: boardHold,
 	board_released: boardReleased,

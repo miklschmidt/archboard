@@ -13,6 +13,7 @@ import {
 } from "../../../src/shared/timing/timing.ts";
 import { findingElements, findingFile } from "../browser/fixtures/fixed-point-scene.ts";
 import { processExists, startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { createJsonRequester } from "./support/http.ts";
 import { pngRgbCounts } from "./support/png-colors.ts";
 
@@ -312,15 +313,20 @@ describe.serial("server-owned board rendering", () => {
 						body: { board: "mermaid", clientId: holder },
 						signal: AbortSignal.timeout(TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS),
 					});
-					const concurrentWrite = await request("/api/elements/changes?board=mermaid", {
-						method: "POST",
-						body: {
-							origin: "human",
-							clientId: holder,
-							upserts: [{ id: collision, type: "rectangle", x: 10, y: 10, width: 80, height: 40 }],
-							deletes: [],
+					const concurrentWrite = await request(
+						`/api/elements/changes${await humanWriteQuery(request, "mermaid")}`,
+						{
+							method: "POST",
+							body: {
+								origin: "human",
+								clientId: holder,
+								upserts: [
+									{ id: collision, type: "rectangle", x: 10, y: 10, width: 80, height: 40 },
+								],
+								deletes: [],
+							},
 						},
-					});
+					);
 					const concurrentState = await request<{ version: number }>(
 						"/api/boards/info?board=mermaid",
 					);

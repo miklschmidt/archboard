@@ -5,6 +5,7 @@ import path from "node:path";
 
 import { tempPathFor, writeFileAtomic } from "../../../src/runtime/engine/atomic-write.ts";
 import { labelTextIdFor } from "../../../src/runtime/engine/labels.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "./support/http.ts";
 import { openTestPane, type TestPane } from "./support/pane-websocket.ts";
@@ -202,14 +203,17 @@ describe("element writes", () => {
 			body: { board: "frontend", pane: "frontend-pane" },
 		});
 		await pane.adopt("frontend");
-		const changed = await request<WriteBody>("/api/elements/changes?board=frontend", {
-			method: "POST",
-			body: {
-				upserts: [{ id: "human1", type: "rectangle", x: 5, y: 5, width: 50, height: 30 }],
-				deletes: [],
-				clientId: "frontend-pane",
+		const changed = await request<WriteBody>(
+			`/api/elements/changes${await humanWriteQuery(request, "frontend")}`,
+			{
+				method: "POST",
+				body: {
+					upserts: [{ id: "human1", type: "rectangle", x: 5, y: 5, width: 50, height: 30 }],
+					deletes: [],
+					clientId: "frontend-pane",
+				},
 			},
-		});
+		);
 		expect(changed.status).toBe(200);
 		const read = await request<{ elements: Element[] }>("/api/elements?board=frontend");
 		expect(read.body.elements[0]?.source).toBe("frontend_sync");

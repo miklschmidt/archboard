@@ -59,7 +59,7 @@ async function claimBoard(
  * @returns The released process claim, or null when this canvas retained no claim for the board.
  */
 function releaseClaim(board: string): Claim | null {
-	// A late release after expiry or takeover is harmless and reports null.
+	// A late release after expiry or take-back is harmless and reports null.
 	const key = normalizeBoardKey(board);
 	const entry = processClaims.get(key);
 	if (entry === undefined) {

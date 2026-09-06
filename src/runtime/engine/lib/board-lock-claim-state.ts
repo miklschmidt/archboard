@@ -43,8 +43,8 @@ function liveClaim(board: string): ClaimEntry | null {
 }
 
 function noteClaimRevoked(board: string, lost: LockHolder, by: LockHolder | null): void {
-	// Both sides discover the same event here: a local human takeover at proven
-	// acquisition, or a later refused renewal after remote takeover. Only the
+	// Both sides discover the same event here: a local take-back at proven
+	// acquisition, or a later refused renewal after a remote take-back. Only the
 	// canvas that owned this claim records it, and it is consumed once.
 	const entry = processClaims.get(board);
 	if (!entry || entry.holder.id !== lost.id) {
@@ -65,7 +65,7 @@ function renewClaim(board: string): void {
 		return;
 	}
 	// Never call ordinary acquisition here. Retaking a free lease would restore
-	// a claim while the person who revoked it is still editing.
+	// a claim the person explicitly took back (ADR 0022).
 	noteClaimRevoked(board, entry.holder, boardLockState(board));
 }
 

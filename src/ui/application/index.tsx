@@ -33,6 +33,7 @@ import {
 } from "@/ui/application/lib/use-fullscreen";
 import { useNotices, type NoticeStack } from "@/ui/application/lib/use-notices";
 import { usePanes, type Panes } from "@/ui/application/lib/use-panes";
+import { useAgentActivity, type AgentActivity } from "@/ui/application/lib/use-agent-activity";
 import { useReducedMotion } from "@/ui/application/lib/use-reduced-motion";
 import { useStageEvents, type EscapeOrigin } from "@/ui/application/lib/use-stage-events";
 import { useWorkbench } from "@/ui/application/lib/use-workbench";
@@ -214,6 +215,7 @@ interface ShellViewSources {
 	readonly boards: Boards;
 	readonly fullscreen: Fullscreen;
 	readonly notices: NoticeStack;
+	readonly activity: AgentActivity;
 }
 
 /**
@@ -222,7 +224,7 @@ interface ShellViewSources {
  * @returns The view.
  */
 function useShellView(sources: ShellViewSources): ShellView {
-	const { theme, panes, boards, fullscreen, notices } = sources;
+	const { theme, panes, boards, fullscreen, notices, activity } = sources;
 	const canvases = useCanvases(panes, theme);
 	// The note states are read off the records; only event notices are state.
 	const allNotices = useMemo(
@@ -244,8 +246,18 @@ function useShellView(sources: ShellViewSources): ShellView {
 				previews: boards.previews,
 				presentation: shellPresentationOf(fullscreen.snapshot, presentedConnected),
 				notices: allNotices,
+				agentActivity: activity.map,
 			}),
-		[theme, panes, canvases, boards, fullscreen.snapshot, presentedConnected, allNotices],
+		[
+			theme,
+			panes,
+			canvases,
+			boards,
+			fullscreen.snapshot,
+			presentedConnected,
+			allNotices,
+			activity.map,
+		],
 	);
 }
 
@@ -318,6 +330,7 @@ function Application(): React.JSX.Element {
 		[panes.records, panes.list],
 	);
 	const boards = useBoards(panes.handles, heldKeys);
+	const agentActivity = useAgentActivity();
 	const workbench = useWorkbench(panes.handles, panes.list.activePaneId, openAgentSettings);
 	// A refused exit stays with the presentation, where the person is; a
 	// refused entry becomes a notice in the workspace they are still in.
@@ -358,7 +371,18 @@ function Application(): React.JSX.Element {
 	useBoardPlaceholders(panes);
 	useLibrarySync(panes, library);
 	// Bound each render, after the owners the events reach exist.
-	panes.bindEvents(paneEvents({ notices, library, boards, workbench, setTheme, panes, dialogs }));
+	panes.bindEvents(
+		paneEvents({
+			notices,
+			library,
+			boards,
+			workbench,
+			activity: agentActivity,
+			setTheme,
+			panes,
+			dialogs,
+		}),
+	);
 	afterDialogClose.bind(() => openPendingRecovery({ panes, dialogs }));
 
 	const openSettings = useCallback(
@@ -386,7 +410,7 @@ function Application(): React.JSX.Element {
 			createShellActions({ setTheme, panes, boards, dialogs, notices, fullscreen, openSettings }),
 		[setTheme, panes, boards, dialogs, notices, fullscreen, openSettings],
 	);
-	const view = useShellView({ theme, panes, boards, fullscreen, notices });
+	const view = useShellView({ theme, panes, boards, fullscreen, notices, activity: agentActivity });
 	const pathFocused = view.pathFocus.kind === "connected";
 	const stageEvents = useMemo(
 		() => ({

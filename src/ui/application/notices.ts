@@ -5,6 +5,7 @@ import type { CodeTargetNotice } from "@/shared/code-target";
 import type { PaneList } from "@/ui/application/pane-list";
 import { recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import type { ShellNotice } from "@/ui/shell";
+import type { EditWithdrawalReason } from "@/ui/types";
 
 /** The ids of the notices that carry a shell action, reported back by id. */
 const NOTICE_ACTIONS = Object.freeze({
@@ -117,6 +118,32 @@ function elsewhereNotice(paneId: string, board: string): ShellNotice {
 }
 
 /**
+ * A pane withdrew the person's unwritten edit and shows the note's state
+ * (ADR 0022). Said once per pane; a repeat replaces the words in place.
+ * @param paneId The pane.
+ * @param board The board key, or null when the pane names none.
+ * @param reason Why: the note moved, or an agent's claim stands.
+ * @returns The notice.
+ */
+function withdrawnNotice(
+	paneId: string,
+	board: string | null,
+	reason: EditWithdrawalReason,
+): ShellNotice {
+	const where = board === null ? `pane ${paneId}` : `${board} on pane ${paneId}`;
+	return {
+		id: `withdrawn:${paneId}`,
+		title: "Your change was withdrawn",
+		description:
+			reason === "moved"
+				? `The board moved before your change was written. ${where} now shows the note as it is.`
+				: `An agent claims this board, so it is read-only while the claim stands. ${where} now shows the board as the agent left it.`,
+		tone: "default",
+		actions: [],
+	};
+}
+
+/**
  * The note notices every pane's state asks for right now: a hold and a write
  * elsewhere each stay visible while they last (ADR 0006, TASK-062). Derived
  * from the records on every render rather than kept as state of their own.
@@ -198,5 +225,6 @@ export {
 	presentationNotice,
 	staleFrontendNotice,
 	withNotice,
+	withdrawnNotice,
 	withoutNotice,
 };

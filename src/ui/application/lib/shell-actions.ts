@@ -47,6 +47,7 @@ function contextFor(list: PaneList, record: PaneRecord): BoardCommandContext {
 	const { status } = record;
 	return {
 		clientId: status.clientId,
+		expectVersion: status.noteVersion,
 		boardKey: status.boardKey,
 		board: status.board,
 		// The server picks the primary pane when none is named; with two open,

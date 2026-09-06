@@ -2,11 +2,11 @@
 // request in flight, and the only function that calls Excalidraw's
 // programmatic scene update. Everything the reducer asks for is done here.
 
-import { CaptureUpdateAction } from "@excalidraw/excalidraw";
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 
 import {
 	BoardConflictError,
+	BoardVersionConflictError,
 	beaconChanges,
 	fetchElements,
 	fetchFiles,
@@ -29,7 +29,6 @@ import {
 	type SceneElement,
 	type SceneUpdate,
 } from "@/ui/canvas/change-reporting";
-import { elementsForScene } from "@/ui/canvas/elements";
 import {
 	cancelReportingTimer,
 	createReportingRuntime,
@@ -38,13 +37,9 @@ import {
 	timerOfEffect,
 	type ReportingRuntime,
 } from "@/ui/canvas/lib/reporting-runtime";
-import {
-	appStateForExcalidraw,
-	sceneFromExcalidraw,
-	sceneFromServer,
-	sceneToExcalidraw,
-} from "@/ui/canvas/lib/scene-boundary";
-import type { BoardHold } from "@/ui/types";
+import { idUnderEditor, sceneUpdateData } from "@/ui/canvas/lib/reporting-scene-update";
+import { sceneFromExcalidraw, sceneFromServer } from "@/ui/canvas/lib/scene-boundary";
+import type { BoardHold, EditWithdrawalReason, ServerElement } from "@/ui/types";
 
 /** What the runtime needs from its pane. */
 interface ReportingHost {
@@ -56,6 +51,16 @@ interface ReportingHost {
 	readonly noteChange: () => void;
 	readonly publishStatus: () => void;
 	readonly setHold: (hold: BoardHold | null) => void;
+	/** The person's unwritten edit was withdrawn and the note's state shown (ADR 0022). */
+	readonly editsWithdrawn: (reason: EditWithdrawalReason) => void;
+	/** The note version the pane states on its writes changed (ADR 0022). */
+	readonly noteVersionChanged: (version: number | null) => void;
+}
+
+/** What the refusal said the note holds, when it said. */
+interface WithdrawalNote {
+	readonly document?: readonly ServerElement[] | undefined;
+	readonly version?: number | null | undefined;
 }
 
 /** One pane's reporting runtime. */
@@ -82,6 +87,10 @@ interface Reporting {
 	readonly applyCamera: (appState: Record<string, unknown>) => void;
 	/** Re-read this pane's board from the server. */
 	readonly loadBoard: () => Promise<void>;
+	/** The server said which note version the board on screen came from. */
+	readonly learnNoteVersion: (version: number | null | undefined) => void;
+	/** An agent's claim stands: withdraw the person's unwritten edits (ADR 0022). */
+	readonly withdrawForClaim: (note: WithdrawalNote) => void;
 }
 
 type ApplyEffect = Extract<
@@ -104,38 +113,6 @@ function run<Type extends EffectType>(
 	effect: EffectMap[Type],
 ): void {
 	executors[type](effect);
-}
-
-/**
- * The text element a person has an editor open on, if any.
- *
- * Excalidraw keeps the element it opened the editor for under the id it had
- * at the time. Rename that element and the textarea submits into an element
- * the scene no longer holds (TASK-098).
- * @param api Excalidraw's API, if mounted.
- * @returns The id under the editor, or null.
- */
-function idUnderEditor(api: ExcalidrawImperativeAPI | null): string | null {
-	const editing = api?.getAppState().editingTextElement;
-	return editing ? editing.id : null;
-}
-
-/**
- * A scene update as Excalidraw's `updateScene` accepts it.
- * @param update What to apply.
- * @returns The update data.
- */
-function sceneUpdateData(
-	update: SceneUpdate,
-): Parameters<ExcalidrawImperativeAPI["updateScene"]>[0] {
-	return {
-		...(update.elements ? { elements: elementsForScene(sceneToExcalidraw(update.elements)) } : {}),
-		...(update.appState ? { appState: appStateForExcalidraw(update.appState) } : {}),
-		captureUpdate:
-			update.captureUpdate === "immediately"
-				? CaptureUpdateAction.IMMEDIATELY
-				: CaptureUpdateAction.NEVER,
-	};
 }
 
 /**
@@ -178,8 +155,12 @@ function createReporting(host: ReportingHost): Reporting {
 	 * @param event What happened.
 	 */
 	function dispatch(event: ChangeReportingEvent): void {
+		const before = runtime.state.noteVersion;
 		const result = reduce(runtime.state, event);
 		runtime.state = result.state;
+		if (result.state.noteVersion !== before) {
+			host.noteVersionChanged(result.state.noteVersion);
+		}
 		for (const effect of result.effects) {
 			execute(effect);
 		}
@@ -219,6 +200,7 @@ function createReporting(host: ReportingHost): Reporting {
 			host.boardKey(),
 			effect.report,
 			host.clientId,
+			effect.expectVersion,
 			effect.fullReport,
 		)
 			.then((reply) => {
@@ -231,18 +213,12 @@ function createReporting(host: ReportingHost): Reporting {
 						deletes: reply.corrections.deletes,
 					},
 					currentScene: currentScene(),
+					version: reply.fingerprint.version,
 				});
 				return reply;
 			})
 			.catch((error: unknown) => {
-				if (error instanceof BoardConflictError) {
-					if (error.held) {
-						host.setHold(error.held);
-					}
-					dispatch({ type: "report_refused", generation: effect.generation });
-				} else {
-					dispatch({ type: "report_failed", generation: effect.generation });
-				}
+				refused(error, effect.generation);
 				return null;
 			})
 			.finally(() => {
@@ -251,6 +227,34 @@ function createReporting(host: ReportingHost): Reporting {
 				}
 			});
 		runtime.reportPromise = request;
+	}
+
+	/**
+	 * A report did not land. A version conflict is the note deciding (ADR 0022):
+	 * the refusal's document replaces the scene, an open editor's element
+	 * carried over as any wholesale replacement carries it. A hash conflict is
+	 * the held-board recovery (ADR 0006); anything else is retried.
+	 * @param error What the request threw.
+	 * @param generation The generation the report was sent in.
+	 */
+	function refused(error: unknown, generation: number): void {
+		if (error instanceof BoardVersionConflictError) {
+			if (runtime.state.generation !== generation) {
+				return;
+			}
+			dispatch({ type: "report_version_refused", generation, version: error.version });
+			applyServerScene(sceneFromServer([...error.document]), currentWithheldIds());
+			host.editsWithdrawn("moved");
+			return;
+		}
+		if (error instanceof BoardConflictError) {
+			if (error.held) {
+				host.setHold(error.held);
+			}
+			dispatch({ type: "report_refused", generation });
+			return;
+		}
+		dispatch({ type: "report_failed", generation });
 	}
 
 	/**
@@ -312,7 +316,7 @@ function createReporting(host: ReportingHost): Reporting {
 	 * @param effect The beacon effect.
 	 */
 	function sendBeacon(effect: Extract<ChangeReportingEffect, { type: "send_beacon" }>): void {
-		beaconChanges(host.boardKey(), effect.report, host.clientId);
+		beaconChanges(host.boardKey(), effect.report, host.clientId, effect.expectVersion);
 	}
 
 	/**
@@ -451,6 +455,37 @@ function createReporting(host: ReportingHost): Reporting {
 		}
 	}
 
+	/**
+	 * The server said which note version the board on screen came from.
+	 * @param version The version, null for a note without one; undefined is silence.
+	 */
+	function learnNoteVersion(version: number | null | undefined): void {
+		if (version !== undefined) {
+			dispatch({ type: "note_version_learned", version });
+		}
+	}
+
+	/**
+	 * An agent's claim stands where the person just edited (ADR 0022): what
+	 * they drew is withdrawn and the board shows the note. The refusal carries
+	 * the note's document; failing that, the board is read again, because the
+	 * baseline is fingerprints and the note is the one place to read it from.
+	 * @param note The document and version the refusal carried, if any.
+	 */
+	function withdrawForClaim(note: WithdrawalNote): void {
+		if (!host.api()) {
+			return;
+		}
+		dispatch({ type: "edits_withdrawn" });
+		host.editsWithdrawn("claimed");
+		if (note.document === undefined) {
+			void loadBoard();
+			return;
+		}
+		learnNoteVersion(note.version);
+		applyServerScene(sceneFromServer([...note.document]), currentWithheldIds());
+	}
+
 	/** Report now, and wait for the answer. */
 	async function sendReport(): Promise<void> {
 		if (!host.api()) {
@@ -529,6 +564,8 @@ function createReporting(host: ReportingHost): Reporting {
 		removeElements,
 		applyCamera,
 		loadBoard,
+		learnNoteVersion,
+		withdrawForClaim,
 	};
 }
 

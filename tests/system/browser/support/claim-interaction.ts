@@ -4,21 +4,32 @@ import { readFileSync } from "node:fs";
 
 import type { createJsonRequester } from "../../boards/support/http.ts";
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
+import { EXCALIDRAW_APP_EXPRESSION } from "./page-scene.ts";
 import {
 	CLAIM_BANNER,
 	PANE_SECTIONS,
 	currentTheme,
+	navigatorRow,
 	paneSection,
 	switchTheme,
 } from "./shell-dom.ts";
 import type { WorkbenchSnapshot } from "./workbench-metrics.ts";
 
 interface ClaimCounts {
+	/** POST /api/boards/hold requests, releases excluded. */
 	holds: number;
-	pending: number;
+	/** POST /api/elements/changes requests started. */
 	sent: number;
+	/** Change reports the recorder is holding back. */
+	pending: number;
+	/** POST /api/boards/take-back requests. */
+	takeBacks: number;
 	takeBackPending: number;
 	takeBackSettled: number;
+	/** The last change report's URL, so its `expectVersion` can be read. */
+	lastReportUrl: string | null;
+	/** The last change report's status, once answered. */
+	lastReportStatus: number | null;
 }
 
 interface PaneList {
@@ -28,11 +39,24 @@ interface PaneList {
 
 type Request = ReturnType<typeof createJsonRequester>;
 
+/** What the navigator says about an agent's work on one board. */
+interface NavigatorActivity {
+	row: boolean;
+	marker: string | null;
+	doing: string | null;
+}
+
 /** The take-back control inside the active pane's claim banner. */
 const TAKE_BACK = `${PANE_SECTIONS}[aria-current="true"] ${CLAIM_BANNER} button`;
 /** WCAG 2.5.8 target size floor. */
 const MIN_TARGET = 24;
 
+/**
+ * Record the pane's holds, change reports and take-backs, and let an owner
+ * hold back the next change report or the next take-back, or refuse it.
+ * @param browser The page.
+ * @returns Resolves once installed.
+ */
 const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
 	browser.eval(`(() => {
 		window.__claimRecorder = {
@@ -40,9 +64,12 @@ const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
 			sent: 0,
 			delay: false,
 			pending: [],
+			takeBacks: 0,
 			takeBackMode: "pass",
 			takeBackPending: [],
 			takeBackSettled: 0,
+			lastReportUrl: null,
+			lastReportStatus: null,
 		};
 		window.__delayNextClaimReport = () => { window.__claimRecorder.delay = true; };
 		window.__delayNextTakeBack = () => { window.__claimRecorder.takeBackMode = "delay"; };
@@ -67,16 +94,22 @@ const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
 			const report = method === "POST" && url.includes("/api/elements/changes");
 			const hold = method === "POST" && url.includes("/api/boards/hold")
 				&& !url.includes("/api/boards/hold/release");
-			if (report) window.__claimRecorder.sent += 1;
+			const takeBack = method === "POST" && url.includes("/api/boards/take-back");
+			if (report) {
+				window.__claimRecorder.sent += 1;
+				window.__claimRecorder.lastReportUrl = url;
+				window.__claimRecorder.lastReportStatus = null;
+			}
 			if (hold) window.__claimRecorder.holds += 1;
-			if (hold && window.__claimRecorder.takeBackMode === "fail") {
+			if (takeBack) window.__claimRecorder.takeBacks += 1;
+			if (takeBack && window.__claimRecorder.takeBackMode === "fail") {
 				window.__claimRecorder.takeBackMode = "pass";
-				return Promise.resolve(new Response(JSON.stringify({ success: false }), {
+				return Promise.resolve(new Response(JSON.stringify({ success: false, error: "refused" }), {
 					status: 409,
 					headers: { "Content-Type": "application/json" },
 				}));
 			}
-			if (hold && window.__claimRecorder.takeBackMode === "delay") {
+			if (takeBack && window.__claimRecorder.takeBackMode === "delay") {
 				window.__claimRecorder.takeBackMode = "pass";
 				return new Promise((resolve, reject) => {
 					window.__claimRecorder.takeBackPending.push({
@@ -87,10 +120,15 @@ const installClaimRecorder = (browser: AgentBrowserSession): Promise<unknown> =>
 					});
 				});
 			}
-			if (!report || !window.__claimRecorder.delay) return invoke();
+			if (!report) return invoke();
+			const answered = () => invoke().then(response => {
+				window.__claimRecorder.lastReportStatus = response.status;
+				return response;
+			});
+			if (!window.__claimRecorder.delay) return answered();
 			window.__claimRecorder.delay = false;
 			return new Promise((resolve, reject) => {
-				window.__claimRecorder.pending.push({ release: () => invoke().then(resolve, reject) });
+				window.__claimRecorder.pending.push({ release: () => answered().then(resolve, reject) });
 			});
 		};
 		return { installed: true };
@@ -101,9 +139,64 @@ const claimCounts = (browser: AgentBrowserSession): Promise<ClaimCounts> =>
 		holds: window.__claimRecorder.holds,
 		sent: window.__claimRecorder.sent,
 		pending: window.__claimRecorder.pending.length,
+		takeBacks: window.__claimRecorder.takeBacks,
 		takeBackPending: window.__claimRecorder.takeBackPending.length,
 		takeBackSettled: window.__claimRecorder.takeBackSettled,
+		lastReportUrl: window.__claimRecorder.lastReportUrl,
+		lastReportStatus: window.__claimRecorder.lastReportStatus,
 	}))()`);
+
+const navigatorActivity = (
+	browser: AgentBrowserSession,
+	board: string,
+): Promise<NavigatorActivity> =>
+	browser.eval(`(() => {
+		const row = document.querySelector(${JSON.stringify(navigatorRow(board))});
+		const marker = row?.querySelector('[data-slot="agent-activity"]') ?? null;
+		const doing = row?.querySelector('[data-slot="agent-doing"]') ?? null;
+		return {
+			row: row !== null,
+			marker: marker ? marker.getAttribute('title') : null,
+			doing: doing ? doing.textContent.trim() : null,
+		};
+	})()`);
+/**
+ * Drag from a point on the claimed element; under a claim the canvas is in
+ * view mode, so the gesture pans rather than moves anything.
+ * @param browser The page.
+ * @param elementId The element to drag on.
+ */
+async function dragOn(browser: AgentBrowserSession, elementId: string): Promise<void> {
+	let priorPoint = "";
+	let stablePoints = 0;
+	const point = await pollUntil(
+		() =>
+			browser.eval<{ error?: string; inside?: boolean; x?: number; y?: number }>(`(() => {
+				const app = ${EXCALIDRAW_APP_EXPRESSION};
+				const element = app?.scene.getElementsIncludingDeleted()
+					.find(candidate => candidate.id === ${JSON.stringify(elementId)});
+				const canvas = document.querySelector(".excalidraw")?.getBoundingClientRect();
+				if (!app || !element || !canvas) return { error: "drag target is missing" };
+				const zoom = app.state.zoom?.value ?? 1;
+				const x = Math.round((element.x + 24 + app.state.scrollX) * zoom + app.state.offsetLeft);
+				const y = Math.round((element.y + 24 + app.state.scrollY) * zoom + app.state.offsetTop);
+				return { x, y, inside: x >= canvas.left && x <= canvas.right && y >= canvas.top && y <= canvas.bottom };
+			})()`),
+		(value) => {
+			const sample = `${value.x}:${value.y}`;
+			stablePoints = sample === priorPoint ? stablePoints + 1 : 0;
+			priorPoint = sample;
+			return value.inside === true && stablePoints >= 3;
+		},
+		"the claimed element to be framed inside the canvas",
+	);
+	await browser.run(["mouse", "move", String(point.x), String(point.y)]);
+	await browser.run(["mouse", "down"]);
+	for (let segment = 1; segment <= 4; segment += 1) {
+		await browser.run(["mouse", "move", String(point.x! + segment * 9), String(point.y)]);
+	}
+	await browser.run(["mouse", "up"]);
+}
 
 function noteBytes(noteFile: string): Buffer<ArrayBuffer> {
 	return readFileSync(noteFile);
@@ -335,8 +428,11 @@ async function verifyPaneScopedTakeBack(options: {
 
 export {
 	type ClaimCounts,
+	type NavigatorActivity,
 	installClaimRecorder,
 	claimCounts,
+	dragOn,
+	navigatorActivity,
 	noteBytes,
 	expectNoteUnchanged,
 	verifyBoardStatusPresentation,

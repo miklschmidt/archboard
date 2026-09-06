@@ -315,6 +315,9 @@ function releaseSavedHold<T>(
 				boardKey: request.source.key,
 				checkoutSnapshot: request.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT,
 			}),
+			// A pane replacing its scene with the source note states this version
+			// on its next write (ADR 0022).
+			version: source.version,
 			...boardFilesMessage(source),
 		};
 	}
@@ -398,6 +401,9 @@ function writeBoard<T>(
 			appliedAt,
 			checkoutSnapshot,
 			request.presentationLinks,
+			// The note after this write, which is what every pane states next; while
+			// the board is held the note has not moved and the loaded version stands.
+			content.version ?? null,
 		);
 	}
 

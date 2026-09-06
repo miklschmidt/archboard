@@ -23,6 +23,7 @@ import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import { TEST_CODE_TARGET_PRESENTATION_CASE_TIMEOUT_MS } from "../../../src/shared/timing/timing.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { openTestPane, waitForPaneMessage } from "../boards/support/pane-websocket.ts";
 import { completeElement } from "./support/elements.ts";
 import { assertIntroducedBindingPresentation } from "./support/presentation-routes.ts";
@@ -276,7 +277,7 @@ test(
 		const presentedEchoes = await read();
 		for (const [index, [id, link]] of echoCases.entries()) {
 			const presentedElement = presentedEchoes.get(id);
-			const changed = await api(`/api/elements/changes?board=targets`, {
+			const changed = await api(`/api/elements/changes${await humanWriteQuery(api, "targets")}`, {
 				method: "POST",
 				body: {
 					clientId: "echo-matrix",
@@ -329,7 +330,7 @@ test(
 		resources.defer(() => peerPane.close());
 		const humanPresented = (await read()).get("local-file")!;
 		const peerStart = peerPane.since();
-		const humanChange = await api(`/api/elements/changes?board=targets`, {
+		const humanChange = await api(`/api/elements/changes${await humanWriteQuery(api, "targets")}`, {
 			method: "POST",
 			body: {
 				origin: "human",
@@ -365,22 +366,25 @@ test(
 		expect(activationResponse.status, activationBody).toBe(200);
 		writeFileSync(registry, "[]\n");
 		const stalePeerStart = peerPane.since();
-		const stalePeerChange = await api(`/api/elements/changes?board=targets`, {
-			method: "POST",
-			body: {
-				origin: "human",
-				clientId: humanPane.clientId,
-				upserts: [
-					{
-						id: humanPresented.id,
-						x: humanPresented.x + 3,
-						link: humanPresented.link,
-						customData: humanPresented.customData,
-					},
-				],
-				deletes: [],
+		const stalePeerChange = await api(
+			`/api/elements/changes${await humanWriteQuery(api, "targets")}`,
+			{
+				method: "POST",
+				body: {
+					origin: "human",
+					clientId: humanPane.clientId,
+					upserts: [
+						{
+							id: humanPresented.id,
+							x: humanPresented.x + 3,
+							link: humanPresented.link,
+							customData: humanPresented.customData,
+						},
+					],
+					deletes: [],
+				},
 			},
-		});
+		);
 		expect(stalePeerChange.status).toBe(200);
 		const stalePeerMessage = await waitForPaneMessage(peerPane, stalePeerStart, "elements_changed");
 		const stalePeerElements = (stalePeerMessage?.["updated"] as ServerElement[] | undefined) ?? [];

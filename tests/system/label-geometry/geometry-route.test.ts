@@ -7,6 +7,7 @@ import { BOUND_ARROW_GAP, boundEndpoint } from "../../../src/runtime/engine/arro
 import { remeasureLinear } from "../../../src/runtime/engine/geometry.ts";
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import {
 	AcknowledgementRouteResponseSchema,
@@ -266,7 +267,7 @@ describe("geometry routes", () => {
 				[300, -270],
 			],
 		};
-		await write("POST", `/api/elements/changes${wires}`, {
+		await write("POST", `/api/elements/changes${await humanWriteQuery(request, "wires")}`, {
 			upserts: [rebound],
 			deletes: [],
 			clientId: "a-person",
@@ -290,7 +291,7 @@ describe("geometry routes", () => {
 				[900, 900],
 			],
 		};
-		await write("POST", `/api/elements/changes${wires}`, {
+		await write("POST", `/api/elements/changes${await humanWriteQuery(request, "wires")}`, {
 			upserts: [loosened],
 			deletes: [],
 			clientId: "a-person",
@@ -306,7 +307,7 @@ describe("geometry routes", () => {
 		await write("POST", `/api/elements/batch${wires}`, {
 			elements: [{ id: "d", ...capturedFocusedNode }],
 		});
-		await write("POST", `/api/elements/changes${wires}`, {
+		await write("POST", `/api/elements/changes${await humanWriteQuery(request, "wires")}`, {
 			upserts: [capturedUserArrow()],
 			deletes: [],
 			clientId: "a-person",
