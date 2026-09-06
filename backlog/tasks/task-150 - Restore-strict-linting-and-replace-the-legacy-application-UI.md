@@ -4,7 +4,7 @@ title: Restore strict linting and replace the legacy application UI
 status: In Progress
 assignee: []
 created_date: '2026-09-05 00:08'
-updated_date: '2026-09-06 18:04'
+updated_date: '2026-09-06 18:20'
 labels: []
 dependencies: []
 references:
@@ -233,5 +233,11 @@ author: @claude
 created: 2026-09-06 18:04
 ---
 Codex P1 on thread.tsx:240 validated and fixed in e80e0ff9: pointer and keyboard submission work during a running turn through the authoritative intent handler, Stop stays. The rendered test drives the real controls rather than composer.send(). The Standards finding was withdrawn by the reviewer; no configuration change.
+---
+
+author: @codex
+created: 2026-09-06 18:20
+---
+Re-review of ea89db1c..a970611dddd3407412b6da21d9f67dd1cd7cc250: the running-turn submission P1 is resolved by 59549a59. Send remains available beside Stop; click and Enter reach the authoritative runtime handler. The rendered control tests pass. Standards: no findings; the vendor lint exception remains explicitly approved. TASK-153 quoting is also resolved. TASK-152 has one remaining P2 for existing text, recorded there; its new-draft case passes. Verification in a disposable checkout at TARGET with confined HOME/XDG/vault/Codex state and memory-limited sequential processes: lint, fmt:check, both TypeScript projects and frontend build passed; 11 focused module tests (board-version-conflict, note-version, composer-controls), 8 held-board recovery system tests, and the human-version-refusal (2 cases), claim-interaction and codex-text-workbench browser owners passed. A separate existing-text variation of the refusal browser owner failed as described on TASK-152. The probe changed only its disposable test setup, restored it afterwards, and never modified product source. This was focused re-verification, not a new complete bun run check.
 ---
 <!-- COMMENTS:END -->
