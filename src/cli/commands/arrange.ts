@@ -6,12 +6,12 @@ import {
 	groupElements,
 	setElementsLocked,
 	ungroupElements,
-} from "../../runtime/engine/element-ops.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import type { OptionParameter } from "../command-contract/contract.js";
-import { HoldReportSchema } from "../command-contract/schemas.js";
-import { boardWriteRefusals } from "../command-contract/common.js";
-import type { FlagSpecs } from "../command-contract/route-options.js";
+} from "@/runtime/engine/element-ops";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import type { OptionParameter } from "@/cli/command-contract/contract";
+import { HoldReportSchema } from "@/cli/command-contract/schemas";
+import { boardWriteRefusals } from "@/cli/command-contract/common";
+import type { FlagSpecs } from "@/cli/command-contract/route-options";
 
 const AlignmentInputSchema = z.enum(["left", "center", "right", "top", "middle", "bottom"]);
 const DirectionInputSchema = z.enum(["horizontal", "vertical"]);

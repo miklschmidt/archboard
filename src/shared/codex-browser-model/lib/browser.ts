@@ -5,11 +5,11 @@ import {
 	CodexThreadStatusTypeSchema,
 	CodexTurnStatusSchema,
 	createCodexCommandExecutionApprovalDecisionSchema,
-} from "../../codex-app-server-contract/index.js";
-import type { CodexCommandExecutionApprovalDecision } from "../../codex-app-server-contract/index.js";
-import { parseRealtimeSessionId as parseBrowserRealtimeSessionId } from "../../codex-realtime-host/index.js";
+} from "@/shared/codex-app-server-contract/index";
+import type { CodexCommandExecutionApprovalDecision } from "@/shared/codex-app-server-contract/index";
+import { parseRealtimeSessionId as parseBrowserRealtimeSessionId } from "@/shared/codex-realtime-host/index";
 
-import { createDynamicApprovalSchemas } from "./dynamic-approval.js";
+import { createDynamicApprovalSchemas } from "@/shared/codex-browser-model/lib/dynamic-approval";
 import {
 	assertCurrentTarget,
 	boundedText,
@@ -17,9 +17,9 @@ import {
 	JsonValueSchema,
 	optionalNullableText,
 	SafeUrlSchema,
-} from "./scalars.js";
-import type { IdentityContext, IdentitySchemas } from "./scalars.js";
-import { createBrowserSpokenApprovalSchema } from "./spoken-approval.js";
+} from "@/shared/codex-browser-model/lib/scalars";
+import type { IdentityContext, IdentitySchemas } from "@/shared/codex-browser-model/lib/scalars";
+import { createBrowserSpokenApprovalSchema } from "@/shared/codex-browser-model/lib/spoken-approval";
 
 const TimestampSchema = z.number().int().nonnegative();
 const DeliveryOutcomeSchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);

@@ -8,7 +8,7 @@ import type {
 	InitializeResponse,
 	ServerNotification as GeneratedServerNotification,
 	ServerRequest as GeneratedServerRequest,
-} from "./generated/current/index.js";
+} from "@/shared/codex-app-server-contract/generated/current/index";
 import type {
 	CommandExecutionRequestApprovalResponse,
 	CommandExecutionApprovalDecision,
@@ -52,7 +52,7 @@ import type {
 	TurnSteerResponse,
 	TurnStatus,
 	ToolRequestUserInputResponse,
-} from "./generated/current/v2/index.js";
+} from "@/shared/codex-app-server-contract/generated/current/v2/index";
 
 /** JSON representation of one generated ts-rs bigint/i64 field. */
 const CodexSafeI64Schema = z.number().int().safe().brand<"CodexSafeI64">();

@@ -1,9 +1,9 @@
 import { z } from "zod";
-import { closePane, openPane } from "../../runtime/engine/canvas-client.js";
-import { paneWords } from "../../runtime/engine/panes.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema, PaneRefSchema } from "../command-contract/schemas.js";
-import { serverBrowserRefusals } from "../command-contract/common.js";
+import { closePane, openPane } from "@/runtime/engine/canvas-client";
+import { paneWords } from "@/runtime/engine/panes";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { HoldReportSchema, PaneRefSchema } from "@/cli/command-contract/schemas";
+import { serverBrowserRefusals } from "@/cli/command-contract/common";
 
 const usage =
 	"browser needs a subcommand: panes, open, close, show, selection, viewport, or capture.";

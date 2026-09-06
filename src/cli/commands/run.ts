@@ -1,12 +1,12 @@
-import { CliUsageError } from "../command-contract/contract.js";
-import type { AnyCommandContract } from "../command-contract/contract.js";
-import { exportContract } from "../command-contract/export.js";
-import { queryContract } from "../command-contract/query.js";
-import { updateContract, WRITE_ANSWER } from "../command-contract/update.js";
-import { viewportContract } from "../command-contract/viewport.js";
-import { statusContract } from "../command-contract/status.js";
-import { boardSaveContract } from "../command-contract/board-save.js";
-import { runCommand } from "../command-contract/runner.js";
+import { CliUsageError } from "@/cli/command-contract/contract";
+import type { AnyCommandContract } from "@/cli/command-contract/contract";
+import { exportContract } from "@/cli/command-contract/export";
+import { queryContract } from "@/cli/command-contract/query";
+import { updateContract, WRITE_ANSWER } from "@/cli/command-contract/update";
+import { viewportContract } from "@/cli/command-contract/viewport";
+import { statusContract } from "@/cli/command-contract/status";
+import { boardSaveContract } from "@/cli/command-contract/board-save";
+import { runCommand } from "@/cli/command-contract/runner";
 import {
 	BOARD_REFUSAL_CODES,
 	boardHoldSeen,
@@ -14,34 +14,39 @@ import {
 	setExpectedVersion,
 	setRequestedBoard,
 	setWriteDoing,
-} from "../../runtime/engine/canvas-client.js";
-import { packageVersion } from "../../runtime/engine/package-version.js";
-import { CLI_INTERRUPT_CLEANUP_MS } from "../../shared/timing/timing.js";
-import { startContract, stopContract } from "./server.js";
-import { addContract, applyContract, deleteContract, getContract } from "./elements.js";
-import * as scene from "./scene.js";
-import { panesContract, selectionContract } from "./selection.js";
-import { browserContract, paneCloseContract, paneOpenContract } from "./pane.js";
-import { demoteContract, promoteContract } from "./promote.js";
-import { repoAddContract, repoContract, repoForgetContract, repoListContract } from "./repo.js";
+} from "@/runtime/engine/canvas-client";
+import { packageVersion } from "@/runtime/engine/package-version";
+import { CLI_INTERRUPT_CLEANUP_MS } from "@/shared/timing/timing";
+import { startContract, stopContract } from "@/cli/commands/server";
+import { addContract, applyContract, deleteContract, getContract } from "@/cli/commands/elements";
+import * as scene from "@/cli/commands/scene";
+import { panesContract, selectionContract } from "@/cli/commands/selection";
+import { browserContract, paneCloseContract, paneOpenContract } from "@/cli/commands/pane";
+import { demoteContract, promoteContract } from "@/cli/commands/promote";
+import {
+	repoAddContract,
+	repoContract,
+	repoForgetContract,
+	repoListContract,
+} from "@/cli/commands/repo";
 import {
 	SNAPSHOT_FLAG_SPEC,
 	snapshotContract,
 	snapshotListContract,
 	snapshotRestoreContract,
 	snapshotSaveContract,
-} from "./snapshot.js";
+} from "@/cli/commands/snapshot";
 import {
 	boardContract,
 	boardInfoContract,
 	boardListContract,
 	boardNewContract,
 	browserShowContract,
-} from "./board.js";
-import { compareContract } from "./compare.js";
-import { checkContract } from "./check.js";
-import { changesContract } from "./changes.js";
-import { claimContract, releaseContract } from "./claim.js";
+} from "@/cli/commands/board";
+import { compareContract } from "@/cli/commands/compare";
+import { checkContract } from "@/cli/commands/check";
+import { changesContract } from "@/cli/commands/changes";
+import { claimContract, releaseContract } from "@/cli/commands/claim";
 import {
 	ARRANGE_FLAG_SPEC,
 	arrangeAlignContract,
@@ -52,12 +57,16 @@ import {
 	arrangeLockContract,
 	arrangeUngroupContract,
 	arrangeUnlockContract,
-} from "./arrange.js";
-import { installSkillContract } from "./install-skill.js";
-import { libraryContract, libraryInsertContract, libraryListContract } from "./library.js";
-import { bridgeContract, bridgeRemoveContract } from "./bridge.js";
-import { renderFindingsContract } from "./render-findings.js";
-import { childDiscoveryOptions } from "../command-contract/route-options.js";
+} from "@/cli/commands/arrange";
+import { installSkillContract } from "@/cli/commands/install-skill";
+import {
+	libraryContract,
+	libraryInsertContract,
+	libraryListContract,
+} from "@/cli/commands/library";
+import { bridgeContract, bridgeRemoveContract } from "@/cli/commands/bridge";
+import { renderFindingsContract } from "@/cli/commands/render-findings";
+import { childDiscoveryOptions } from "@/cli/command-contract/route-options";
 
 interface ContractCommand {
 	contract: AnyCommandContract;

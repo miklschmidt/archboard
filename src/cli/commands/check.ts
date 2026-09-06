@@ -1,17 +1,17 @@
 import { z } from "zod";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import { currentRequestedBoard } from "../../runtime/engine/canvas-client.js";
-import { readRawBoardElementsForInspection } from "../../runtime/engine/board-io.js";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { currentRequestedBoard } from "@/runtime/engine/canvas-client";
+import { readRawBoardElementsForInspection } from "@/runtime/engine/board-io";
 import {
 	CheckResultSchema,
 	formatInspectionText,
 	inspectBoard,
-} from "../../runtime/board-inspection/index.js";
+} from "@/runtime/board-inspection/index";
 import {
 	InspectionOptionsInputSchema,
 	inspectionOptionParameters,
 	inspectionPolicyOf,
-} from "../inspection-policy/index.js";
+} from "@/cli/inspection-policy/index";
 
 const CheckInputSchema = InspectionOptionsInputSchema.extend({
 	text: z.boolean().default(false),

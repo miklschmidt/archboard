@@ -8,19 +8,19 @@ import {
 	renderBoard,
 	sendMermaid,
 	boardHeading,
-} from "../../runtime/engine/canvas-client.js";
-import { importScene } from "../../runtime/engine/scene-document.js";
-import { describeScene } from "../../runtime/engine/describe.js";
-import { exportToExcalidrawUrl } from "../../runtime/engine/share-url.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import type { PendingArtifact } from "../command-contract/contract.js";
-import { HoldReportSchema, PendingArtifactSchema } from "../command-contract/schemas.js";
+} from "@/runtime/engine/canvas-client";
+import { importScene } from "@/runtime/engine/scene-document";
+import { describeScene } from "@/runtime/engine/describe";
+import { exportToExcalidrawUrl } from "@/runtime/engine/share-url";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import type { PendingArtifact } from "@/cli/command-contract/contract";
+import { HoldReportSchema, PendingArtifactSchema } from "@/cli/command-contract/schemas";
 import {
 	boardWriteRefusals,
 	commonRefusals,
 	doingRefusal,
 	serverBrowserRefusals,
-} from "../command-contract/common.js";
+} from "@/cli/command-contract/common";
 
 const DescribeInputSchema = z.object({ tail: z.array(z.string()).default([]) });
 type DescribeInput = z.infer<typeof DescribeInputSchema>;

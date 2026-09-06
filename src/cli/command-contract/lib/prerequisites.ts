@@ -1,7 +1,7 @@
-import { getHealth } from "../../../runtime/engine/canvas-client.js";
-import { EXPRESS_SERVER_URL } from "../../../runtime/engine/config.js";
-import { ensureCanvasRunning } from "../../../runtime/engine/spawn.js";
-import type { RuntimePrerequisite } from "../contract.js";
+import { getHealth } from "@/runtime/engine/canvas-client";
+import { EXPRESS_SERVER_URL } from "@/runtime/engine/config";
+import { ensureCanvasRunning } from "@/runtime/engine/spawn";
+import type { RuntimePrerequisite } from "@/cli/command-contract/contract";
 
 export async function requirePrerequisite(
 	prerequisite: RuntimePrerequisite,
