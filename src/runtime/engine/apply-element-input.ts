@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import { normalizeFontFamily } from "./types.js";
 import type { ServerElement } from "./types.js";
 import { bindingOf, boundEndpoint, centreOf } from "./arrow-binding.js";
@@ -101,6 +102,9 @@ function bumpVersion(
 ): void {
 	element.updatedAt = at;
 	element.version = ((previous ?? element).version || 0) + 1;
+	// Excalidraw snapshots compare this nonce, not the version or drawn fields.
+	// A server edit must advance that snapshot before the next human undo.
+	element.versionNonce = randomInt(0, 2 ** 31);
 }
 
 /**
