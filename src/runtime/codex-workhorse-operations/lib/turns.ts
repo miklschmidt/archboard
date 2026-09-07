@@ -1,223 +1,301 @@
-import { createAdditionalContext, createTextUserInput } from "@/runtime/codex-instructions";
-import type { SessionTurn } from "@/runtime/codex-session";
-import {
-	CodexWorkhorseOperationsError,
-	type DelegateToWorkhorseRequest,
-	type DelegateToWorkhorseResult,
+import { createTextUserInput } from "@/runtime/codex-instructions";
+import type { ThreadLinkClassification } from "@/runtime/codex-thread-link";
+import type { QueueAddResult } from "@/runtime/codex-workhorse-queue";
+import type { OperationId } from "@/shared/codex-workbench-identity";
+import type {
+	DelegateToWorkhorseRequest,
+	DelegateToWorkhorseResult,
+	WorkhorseCoordinatorCall,
+	WorkhorseOperationBinding,
 } from "@/runtime/codex-workhorse-operations/lib/contract";
 import {
-	assertCreatedWorkhorse,
+	invokeTurnStart,
+	mutationErrorCode,
+} from "@/runtime/codex-workhorse-operations/lib/direct-delegate";
+import {
+	selectOperationIdentity,
+	validateBoundedInput,
+	type OperationState,
+	type SettledDelivery,
+	type WorkhorseRuntime,
+} from "@/runtime/codex-workhorse-operations/lib/internal";
+import { assertCreatedWorkhorse } from "@/runtime/codex-workhorse-operations/lib/link-provenance";
+import {
 	messageOf,
 	operationError,
 	queueMutationOutcome,
-	selectOperationIdentity,
-	sessionMutationOutcome,
-	threadIdWire,
-	validateBoundedInput,
-	type OperationState,
-	type WorkhorseRuntime,
-} from "@/runtime/codex-workhorse-operations/lib/internal";
+} from "@/runtime/codex-workhorse-operations/lib/operation-errors";
 
-/**
- *
- */
-function mutationErrorCode(
-	outcome: Exclude<OperationState["outcome"], "pending">,
-): "transport_failure" | "outcome_unknown" {
-	return outcome === "outcome_unknown" ? "outcome_unknown" : "transport_failure";
+/** The host-issued identity one delegate runs under, in both typed and wire form. */
+interface DelegateIdentity {
+	readonly operationId: OperationId;
+	readonly operationIdWire: string;
 }
 
 /**
- *
+ * The prompt the workhorse receives: the delegate input, followed by any realtime transcript the
+ * coordinator captured since its last delegate.
+ * @param request - The delegate request.
+ * @returns The prompt text.
  */
-async function invokeTurnStart(
+function delegatePrompt(request: DelegateToWorkhorseRequest): string {
+	return request.transcriptDelta.length === 0
+		? request.input
+		: `${request.input}\n\nRealtime transcript context:\n${request.transcriptDelta}`;
+}
+
+/**
+ * Refuse a prompt that cannot be encoded as a Codex text input before any state is staged.
+ * @param prompt - The delegate prompt.
+ */
+function assertEncodablePrompt(prompt: string): void {
+	try {
+		createTextUserInput(prompt);
+	} catch (error) {
+		throw operationError("invalid_input", "The delegate input could not be encoded.", {
+			cause: error,
+		});
+	}
+}
+
+/**
+ * Re-classify the link and require an Archboard-created workhorse that is still active, the
+ * only state in which a delegate may be queued behind the running turn.
+ * @param runtime - The operations runtime.
+ * @param binding - The captured binding.
+ * @param call - The coordinator call.
+ */
+async function assertActiveForQueue(
+	runtime: WorkhorseRuntime,
+	binding: WorkhorseOperationBinding,
+	call: WorkhorseCoordinatorCall,
+): Promise<void> {
+	const current = await runtime.classify(binding, call, "delegate_to_workhorse");
+	assertCreatedWorkhorse(current.workhorse);
+	if (current.workhorse.link.status !== "active") {
+		throw operationError("busy", "The workhorse is no longer active for queueing.");
+	}
+}
+
+/**
+ * Settle and publish a queued delegate that threw, then surface it as an operations error.
+ * @param runtime - The operations runtime.
+ * @param state - The staged operation state.
+ * @param error - The thrown value.
+ * @param effectStarted - Whether the queue effect had been issued.
+ */
+function failQueuedDelegate(
 	runtime: WorkhorseRuntime,
 	state: OperationState,
-	request: DelegateToWorkhorseRequest,
+	error: unknown,
+	effectStarted: boolean,
+): never {
+	const requested = queueMutationOutcome(error, effectStarted);
+	const outcome = runtime.settleDurable(state, requested, messageOf(error));
+	if (outcome === "outcome_unknown") {
+		runtime.emit(state, "outcome_unknown", outcome, [], messageOf(error));
+	} else {
+		runtime.terminal(state, "failed", [], messageOf(error));
+	}
+	throw operationError(
+		mutationErrorCode(outcome),
+		"The queued delegate outcome was not delivered.",
+		{
+			operation: "delegate_to_workhorse",
+			outcome,
+			operationId: state.operationId,
+			cause: error,
+		},
+	);
+}
+
+/**
+ * Issue the queue add under the staged operation: re-check the link, add with a pre-effect check
+ * that re-checks it again, then re-check once more after the response.
+ * @param runtime - The operations runtime.
+ * @param state - The staged operation state.
+ * @param binding - The captured binding.
+ * @param call - The coordinator call.
+ * @param prompt - The delegate prompt.
+ * @returns The queue result.
+ */
+async function addQueuedDelegate(
+	runtime: WorkhorseRuntime,
+	state: OperationState,
+	binding: WorkhorseOperationBinding,
+	call: WorkhorseCoordinatorCall,
 	prompt: string,
-): Promise<DelegateToWorkhorseResult> {
+): Promise<QueueAddResult<OperationId>> {
+	let effectStarted = false;
 	try {
-		const validated = await runtime.classify(state.binding, request.call, "delegate_to_workhorse");
-		if (validated.workhorse.link.status !== "idle") {
-			throw operationError("busy", "The workhorse is no longer idle for direct delegation.");
-		}
-	} catch (error) {
-		const outcome = runtime.settleDurable(state, "not_delivered", messageOf(error));
-		runtime.terminal(state, "failed", [], messageOf(error));
-		throw operationError(
-			error instanceof CodexWorkhorseOperationsError ? error.code : "stale_link",
-			"The direct delegate lost authority before context construction.",
-			{
-				operation: "delegate_to_workhorse",
-				outcome,
-				operationId: state.operationId,
-				cause: error,
-			},
-		);
-	}
-	let context;
-	try {
-		context = runtime.options.contextFor({
+		await assertActiveForQueue(runtime, binding, call);
+		effectStarted = true;
+		const result = await runtime.options.queue.add({
 			operationId: state.operationId,
-			kind: "delegate_to_workhorse",
-			rpc: "turn/start",
+			prompt,
+			/**
+			 * The queue module's last check before the remote effect starts.
+			 * @returns The pending re-classification, which rejects when the link changed.
+			 */
+			beforeEffect: () => assertActiveForQueue(runtime, binding, call),
 		});
-		if (
-			context.operation.id !== state.operationIdWire ||
-			context.operation.kind !== "delegate_to_workhorse" ||
-			context.operation.rpc !== "turn/start" ||
-			context.operation.outcome !== null
-		) {
-			throw new TypeError("delegate context does not carry the current operation identity");
-		}
+		runtime.assertCurrentBinding(binding);
+		await runtime.classify(binding, call, "delegate_to_workhorse");
+		return result;
 	} catch (error) {
-		runtime.settleDurable(state, "not_delivered", "The delegate context was invalid.");
-		runtime.terminal(state, "failed", [], messageOf(error));
-		throw operationError("invalid_input", "The delegate context was not canonical.", {
-			operation: "delegate_to_workhorse",
-			outcome: "not_delivered",
-			operationId: state.operationId,
-			cause: error,
-		});
+		return failQueuedDelegate(runtime, state, error, effectStarted);
 	}
+}
 
-	let params;
-	try {
-		params = {
-			threadId: state.workhorseThreadId,
-			clientUserMessageId: state.operationIdWire,
-			input: [createTextUserInput(prompt)],
-			turnTrigger: "archboard",
-			additionalContext: createAdditionalContext(context),
-		} satisfies Parameters<WorkhorseRuntime["options"]["session"]["turnStart"]>[0];
-	} catch (error) {
-		runtime.settleDurable(state, "not_delivered", "The delegate input was invalid.");
-		runtime.terminal(state, "failed", [], messageOf(error));
-		throw operationError("invalid_input", "The delegate turn body was not canonical.", {
-			operation: "delegate_to_workhorse",
-			outcome: "not_delivered",
-			operationId: state.operationId,
-			cause: error,
-		});
+/**
+ * What the queue response proved: delivered only when the queue names exactly our submission,
+ * unknown when it claims delivery without naming it, otherwise whatever the queue said.
+ * @param resultOutcome - The outcome the queue module reported.
+ * @param hasExactQueueIdentity - Whether exactly one queue entry carried our client identity.
+ * @returns The outcome to settle durably.
+ */
+function requestedQueueOutcome(
+	resultOutcome: SettledDelivery,
+	hasExactQueueIdentity: boolean,
+): SettledDelivery {
+	if (hasExactQueueIdentity && resultOutcome !== "not_delivered") {
+		return "delivered";
 	}
+	return resultOutcome === "delivered" ? "outcome_unknown" : resultOutcome;
+}
 
-	try {
-		const validated = await runtime.classify(state.binding, request.call, "delegate_to_workhorse");
-		if (validated.workhorse.link.status !== "idle") {
-			throw operationError("busy", "The workhorse is no longer idle for direct delegation.");
+/**
+ * Publish how a queued delegate settled: queued once, unknown, or failed.
+ * @param runtime - The operations runtime.
+ * @param state - The operation state.
+ * @param outcome - The durably settled outcome.
+ * @param queue - The queue the response carried.
+ */
+function publishQueuedDelegate(
+	runtime: WorkhorseRuntime,
+	state: OperationState,
+	outcome: SettledDelivery,
+	queue: QueueAddResult<OperationId>["queue"],
+): void {
+	if (outcome === "delivered" && state.queuedSubmissionId !== null) {
+		if (!state.queuedEmitted) {
+			state.queuedEmitted = true;
+			runtime.emit(state, "queued", outcome, queue);
 		}
-	} catch (error) {
-		const outcome = runtime.settleDurable(state, "not_delivered", messageOf(error));
-		runtime.terminal(state, "failed", [], messageOf(error));
-		const code =
-			error instanceof CodexWorkhorseOperationsError ? error.code : ("stale_link" as const);
-		throw operationError(code, "The delegate link changed before delivery.", {
-			operation: "delegate_to_workhorse",
-			outcome,
-			operationId: state.operationId,
-			cause: error,
-		});
+		return;
 	}
-
-	let response: Awaited<ReturnType<WorkhorseRuntime["options"]["session"]["turnStart"]>>;
-	try {
-		response = await runtime.options.session.turnStart(params);
-	} catch (error) {
-		const requested = sessionMutationOutcome(error);
-		const outcome = runtime.settleDurable(state, requested, messageOf(error));
-		if (outcome === "outcome_unknown") {
-			runtime.emit(state, "outcome_unknown", outcome, [], messageOf(error));
-		} else {
-			runtime.terminal(state, "failed", [], messageOf(error));
-		}
-		throw operationError(mutationErrorCode(outcome), "The delegate turn was not delivered.", {
-			operation: "delegate_to_workhorse",
-			outcome,
-			operationId: state.operationId,
-			cause: error,
-		});
-	}
-
-	let turn: SessionTurn;
-	try {
-		turn = response.turn;
-		const turnId = runtime.options.identity.decoder.parseTurnId(turn.id);
-		if (turn.id !== turnId) {
-			throw new TypeError("turn identity is not canonical");
-		}
-		if (state.turnId !== null && state.turnId !== turnId) {
-			throw new TypeError("turn/start returned a different turn identity than observed");
-		}
-		state.turnId = turnId;
-		runtime.assertCurrentBinding(state.binding);
-		await runtime.classify(state.binding, request.call, "delegate_to_workhorse");
-	} catch (error) {
-		const outcome = runtime.settleDurable(
-			state,
-			"outcome_unknown",
-			"The delegate response could not be correlated to the current link.",
-		);
-		if (outcome === "outcome_unknown") {
-			runtime.emit(state, "outcome_unknown", outcome, [], messageOf(error));
-		}
-		throw operationError(
-			"outcome_unknown",
-			"The delegate response cannot be correlated; inspect before retrying.",
-			{
-				operation: "delegate_to_workhorse",
-				outcome,
-				operationId: state.operationId,
-				cause: error,
-			},
-		);
-	}
-
-	const outcome = runtime.settleDurable(state, "delivered", null);
-	if (outcome !== "delivered") {
+	if (outcome === "outcome_unknown") {
 		runtime.emit(
 			state,
 			"outcome_unknown",
 			outcome,
-			[],
-			"The delegate response could not be durably committed.",
+			queue,
+			"The queue response was not attributable; inspect the exact client identity.",
 		);
+		return;
+	}
+	runtime.terminal(state, "failed", queue, "The delegate was not queued.");
+}
+
+/**
+ * Delegate to an active workhorse by queueing behind its running turn.
+ * @param runtime - The operations runtime.
+ * @param request - The delegate request.
+ * @param binding - The captured binding.
+ * @param workhorse - The initial workhorse classification.
+ * @param identity - The operation identity.
+ * @param prompt - The delegate prompt.
+ * @returns The queued submission.
+ */
+async function queueDelegate(
+	runtime: WorkhorseRuntime,
+	request: DelegateToWorkhorseRequest,
+	binding: WorkhorseOperationBinding,
+	workhorse: ThreadLinkClassification,
+	identity: DelegateIdentity,
+	prompt: string,
+): Promise<DelegateToWorkhorseResult> {
+	assertCreatedWorkhorse(workhorse);
+	const state = runtime.stage({
+		...identity,
+		operation: "delegate_to_workhorse",
+		queueOperation: "add",
+		rpc: "thread/queue/add",
+		call: request.call,
+		binding,
+		workhorse,
+		clientUserMessageId: identity.operationIdWire,
+	});
+	const result = await addQueuedDelegate(runtime, state, binding, request.call, prompt);
+	const matches = result.queue.filter(
+		(submission) => submission.clientUserMessageId === identity.operationIdWire,
+	);
+	if (matches.length === 1) {
+		state.queuedSubmissionId = matches[0]!.id;
+	}
+	const outcome = runtime.settleDurable(
+		state,
+		requestedQueueOutcome(result.outcome, state.queuedSubmissionId !== null),
+		null,
+	);
+	publishQueuedDelegate(runtime, state, outcome, result.queue);
+	if (outcome !== "delivered" || state.queuedSubmissionId === null) {
 		throw operationError(
-			"outcome_unknown",
-			"The delegate response cannot be durably correlated; inspect before retrying.",
+			mutationErrorCode(outcome),
+			"The delegate queue outcome was not delivered.",
 			{
 				operation: "delegate_to_workhorse",
 				outcome,
-				operationId: state.operationId,
+				operationId: identity.operationId,
 			},
 		);
 	}
-	if (!state.terminalEmitted) {
-		runtime.activeTurns.set(threadIdWire(runtime.options, state.workhorseThreadId), state.turnId);
-		if (!state.startedEmitted) {
-			state.startedEmitted = true;
-			runtime.emit(state, "started", "delivered", []);
-		}
-		if (turn.status === "completed") {
-			runtime.terminal(state, "completed", [], null);
-		} else if (turn.status === "failed" || turn.status === "interrupted") {
-			runtime.terminal(
-				state,
-				"failed",
-				[],
-				"The delegate turn ended before further workhorse events.",
-			);
-		}
-	}
 	return Object.freeze({
-		mode: "started",
-		clientUserMessageId: state.operationIdWire,
-		queuedSubmissionId: null,
-		turnId: state.turnId,
+		mode: "queued",
+		clientUserMessageId: identity.operationIdWire,
+		queuedSubmissionId: state.queuedSubmissionId,
+		turnId: null,
 	});
 }
 
 /**
- *
+ * Run one delegate under the serialised operation queue: classify the link, then queue behind
+ * an active turn or start a turn directly on an idle workhorse.
+ * @param runtime - The operations runtime.
+ * @param request - The delegate request.
+ * @param identity - The operation identity.
+ * @returns The started turn or queued submission.
+ */
+async function runDelegate(
+	runtime: WorkhorseRuntime,
+	request: DelegateToWorkhorseRequest,
+	identity: DelegateIdentity,
+): Promise<DelegateToWorkhorseResult> {
+	const binding = runtime.currentBinding();
+	const validated = await runtime.classify(binding, request.call, "delegate_to_workhorse");
+	const prompt = delegatePrompt(request);
+	assertEncodablePrompt(prompt);
+	if (validated.workhorse.link.status === "active") {
+		return queueDelegate(runtime, request, binding, validated.workhorse, identity, prompt);
+	}
+	const state = runtime.stage({
+		...identity,
+		operation: "delegate_to_workhorse",
+		queueOperation: null,
+		call: request.call,
+		binding,
+		workhorse: validated.workhorse,
+		clientUserMessageId: identity.operationIdWire,
+	});
+	return invokeTurnStart(runtime, state, request, prompt);
+}
+
+/**
+ * Build the delegate port: bounded input and call checks run synchronously, the operation
+ * identity is selected before the work is enqueued, and the delegate itself runs serialised
+ * behind every earlier operation.
+ * @param runtime - The operations runtime.
+ * @returns The delegate function of the operations port.
  */
 export function createDelegate(
 	runtime: WorkhorseRuntime,
@@ -226,152 +304,12 @@ export function createDelegate(
 		validateBoundedInput(request.input, "delegate input");
 		validateBoundedInput(request.transcriptDelta, "transcript delta", true);
 		runtime.assertCall(request.call, "delegate_to_workhorse");
-		let operationIdentity;
+		let identity: DelegateIdentity;
 		try {
-			operationIdentity = selectOperationIdentity(
-				runtime,
-				"delegate_to_workhorse",
-				request.operationId,
-			);
+			identity = selectOperationIdentity(runtime, "delegate_to_workhorse", request.operationId);
 		} catch (error) {
 			return Promise.reject(error);
 		}
-		const { operationId, operationIdWire } = operationIdentity;
-		return runtime.enqueue(async () => {
-			const binding = runtime.currentBinding();
-			const validated = await runtime.classify(binding, request.call, "delegate_to_workhorse");
-			const prompt =
-				request.transcriptDelta.length === 0
-					? request.input
-					: `${request.input}\n\nRealtime transcript context:\n${request.transcriptDelta}`;
-			try {
-				createTextUserInput(prompt);
-			} catch (error) {
-				throw operationError("invalid_input", "The delegate input could not be encoded.", {
-					cause: error,
-				});
-			}
-			if (validated.workhorse.link.status === "active") {
-				assertCreatedWorkhorse(validated.workhorse);
-				const state = runtime.stage({
-					operationId,
-					operationIdWire,
-					operation: "delegate_to_workhorse",
-					queueOperation: "add",
-					rpc: "thread/queue/add",
-					call: request.call,
-					binding,
-					workhorse: validated.workhorse,
-					clientUserMessageId: operationIdWire,
-				});
-				let result;
-				let effectStarted = false;
-				try {
-					const staged = await runtime.classify(binding, request.call, "delegate_to_workhorse");
-					assertCreatedWorkhorse(staged.workhorse);
-					if (staged.workhorse.link.status !== "active") {
-						throw operationError("busy", "The workhorse is no longer active for queueing.");
-					}
-					effectStarted = true;
-					result = await runtime.options.queue.add({
-						operationId,
-						prompt,
-						/**
-						 *
-						 */
-						beforeEffect: async () => {
-							const current = await runtime.classify(
-								binding,
-								request.call,
-								"delegate_to_workhorse",
-							);
-							assertCreatedWorkhorse(current.workhorse);
-							if (current.workhorse.link.status !== "active") {
-								throw operationError("busy", "The workhorse is no longer active for queueing.");
-							}
-						},
-					});
-					runtime.assertCurrentBinding(binding);
-					await runtime.classify(binding, request.call, "delegate_to_workhorse");
-				} catch (error) {
-					const requested = queueMutationOutcome(error, effectStarted);
-					const outcome = runtime.settleDurable(state, requested, messageOf(error));
-					if (outcome === "outcome_unknown") {
-						runtime.emit(state, "outcome_unknown", outcome, [], messageOf(error));
-					} else {
-						runtime.terminal(state, "failed", [], messageOf(error));
-					}
-					throw operationError(
-						mutationErrorCode(outcome),
-						"The queued delegate outcome was not delivered.",
-						{
-							operation: "delegate_to_workhorse",
-							outcome,
-							operationId,
-							cause: error,
-						},
-					);
-				}
-				const matches = result.queue.filter(
-					(submission) => submission.clientUserMessageId === operationIdWire,
-				);
-				if (matches.length === 1) {
-					state.queuedSubmissionId = matches[0]!.id;
-				}
-				const hasExactQueueIdentity = state.queuedSubmissionId !== null;
-				const requestedOutcome =
-					(result.outcome === "delivered" || result.outcome === "outcome_unknown") &&
-					hasExactQueueIdentity
-						? "delivered"
-						: result.outcome === "delivered" && !hasExactQueueIdentity
-							? "outcome_unknown"
-							: result.outcome;
-				const outcome = runtime.settleDurable(state, requestedOutcome, null);
-				if (outcome === "delivered" && state.queuedSubmissionId !== null) {
-					if (!state.queuedEmitted) {
-						state.queuedEmitted = true;
-						runtime.emit(state, "queued", outcome, result.queue);
-					}
-				} else if (outcome === "outcome_unknown") {
-					runtime.emit(
-						state,
-						"outcome_unknown",
-						outcome,
-						result.queue,
-						"The queue response was not attributable; inspect the exact client identity.",
-					);
-				} else {
-					runtime.terminal(state, "failed", result.queue, "The delegate was not queued.");
-				}
-				if (outcome !== "delivered" || state.queuedSubmissionId === null) {
-					throw operationError(
-						mutationErrorCode(outcome),
-						"The delegate queue outcome was not delivered.",
-						{
-							operation: "delegate_to_workhorse",
-							outcome,
-							operationId,
-						},
-					);
-				}
-				return Object.freeze({
-					mode: "queued",
-					clientUserMessageId: operationIdWire,
-					queuedSubmissionId: state.queuedSubmissionId,
-					turnId: null,
-				});
-			}
-			const state = runtime.stage({
-				operationId,
-				operationIdWire,
-				operation: "delegate_to_workhorse",
-				queueOperation: null,
-				call: request.call,
-				binding,
-				workhorse: validated.workhorse,
-				clientUserMessageId: operationIdWire,
-			});
-			return invokeTurnStart(runtime, state, request, prompt);
-		});
+		return runtime.enqueue(() => runDelegate(runtime, request, identity));
 	};
 }

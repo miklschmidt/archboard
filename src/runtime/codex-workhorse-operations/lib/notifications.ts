@@ -176,17 +176,34 @@ function handleProgress(
 ): void {
 	const rawTurnId = notification.params.turnId;
 	for (const state of states) {
-		if (state.turnId === null || turnIdWire(runtime.options, state.turnId) !== rawTurnId) {
-			continue;
+		if (isProgressPublishable(runtime, state, rawTurnId)) {
+			runtime.emit(state, "progress", "delivered", [], progressDetail(notification));
 		}
-		if (state.outcome === "pending" || state.outcome === "outcome_unknown") {
-			runtime.correlateTurn(state, state.turnId);
-			if (!hasDeliveredOutcome(state)) {
-				continue;
-			}
-		}
-		runtime.emit(state, "progress", "delivered", [], progressDetail(notification));
 	}
+}
+
+/**
+ * Whether progress may be published for one operation: it must own the turn the notification
+ * names, and an operation that has not settled yet first has its turn confirmed.
+ * @param runtime - The operations runtime.
+ * @param state - The live operation.
+ * @param rawTurnId - The turn identity the notification carried, still in its undecoded wire
+ * form; it is compared against this operation's own serialized turn, never trusted as one.
+ * @returns True when the operation has a delivered outcome on that turn.
+ */
+function isProgressPublishable(
+	runtime: WorkhorseRuntime,
+	state: OperationState,
+	rawTurnId: unknown,
+): boolean {
+	if (state.turnId === null || turnIdWire(runtime.options, state.turnId) !== rawTurnId) {
+		return false;
+	}
+	if (state.outcome !== "pending" && state.outcome !== "outcome_unknown") {
+		return true;
+	}
+	runtime.correlateTurn(state, state.turnId);
+	return hasDeliveredOutcome(state);
 }
 
 /**

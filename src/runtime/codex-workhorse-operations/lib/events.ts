@@ -91,6 +91,29 @@ function stageTransaction(
 }
 
 /**
+ * Whether a staged record is the one that was requested: still staged and unsettled, and naming
+ * this operation's identity, kind and wire RPC.
+ * @param record - The record the epoch store staged.
+ * @param input - The staging input.
+ * @param rpc - The wire RPC the record must name.
+ * @returns True when every field matches the request.
+ */
+function isCanonicalStagedRecord(
+	record: EpochOperationRecord,
+	input: StageInput,
+	rpc: WorkhorseOperationRpc,
+): boolean {
+	return (
+		record.status === "staged" &&
+		record.outcome === "pending" &&
+		record.correlation.operationId === input.operationIdWire &&
+		record.operation.id === input.operationIdWire &&
+		record.operation.kind === input.operation &&
+		record.operation.rpc === rpc
+	);
+}
+
+/**
  * Check that the epoch store staged exactly the operation that was requested.
  * @param transaction - The staged transaction.
  * @param input - The staging input.
@@ -101,15 +124,7 @@ function assertCanonicalStagedRecord(
 	input: StageInput,
 	rpc: WorkhorseOperationRpc,
 ): void {
-	const record = transaction.record;
-	const canonical =
-		record.status === "staged" &&
-		record.outcome === "pending" &&
-		record.correlation.operationId === input.operationIdWire &&
-		record.operation.id === input.operationIdWire &&
-		record.operation.kind === input.operation &&
-		record.operation.rpc === rpc;
-	if (!canonical) {
+	if (!isCanonicalStagedRecord(transaction.record, input, rpc)) {
 		throw operationError(
 			"transaction_failed",
 			"The epoch store returned a non-canonical staged record.",

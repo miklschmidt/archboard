@@ -24,7 +24,6 @@ import {
 	spokenResponse,
 	workhorseResponse,
 	type IssuedOperationIdentity,
-	type WorkhorseOutcome,
 } from "@/runtime/codex-coordinator-tools/lib/tool-execution";
 
 /** What the executor needs from the dispatcher beyond its options. */
@@ -111,19 +110,19 @@ function cancelledSpokenResult(
 }
 
 /**
- * Resolve a spoken approval through the gate and report how it settled.
- * @param context - The execution context.
+ * Shape how a spoken approval settled once the gate has answered.
  * @param state - The wire call.
  * @param validated - The validated voice call.
+ * @param result - What the gate returned.
+ * @param spokenOperation - The gate's classifier operation identity, if it had one.
  * @returns The frozen dispatch result.
  */
-async function executeSpoken(
-	context: ExecutionContext,
+function spokenResult(
 	state: CallState,
 	validated: ValidatedVoiceCall,
-): Promise<CoordinatorToolDispatchResult> {
-	const spokenOperation = captureSpokenOperationIdentity(context.options);
-	const result = await context.options.spokenApproval.resolve(state.request);
+	result: Awaited<ReturnType<CodexCoordinatorToolsOptions["spokenApproval"]["resolve"]>>,
+	spokenOperation: IssuedOperationIdentity | null,
+): CoordinatorToolDispatchResult {
 	if (state.childDisconnected) {
 		return complete(spokenResponse(result, spokenOperation), true);
 	}
@@ -163,22 +162,25 @@ function cancelledWorkhorseResult(
 }
 
 /**
- * Re-validate the request after the effect so a result is delivered only to the call that is
- * still current, then build the success response.
+ * Shape a settled workhorse port result: honour a cancellation that raced the effect, then
+ * re-validate the request so a result is delivered only to the call that is still current.
  * @param context - The execution context.
  * @param state - The wire call.
  * @param validated - The validated workhorse call.
  * @param operation - The issued operation identity.
- * @param outcome - The tagged result.
+ * @param result - The result as the port produced it.
  * @returns The frozen dispatch result.
  */
-function deliverWorkhorseResult(
+function workhorseResult(
 	context: ExecutionContext,
 	state: CallState,
 	validated: ValidatedWorkhorseCall,
 	operation: IssuedOperationIdentity,
-	outcome: WorkhorseOutcome,
+	result: unknown,
 ): CoordinatorToolDispatchResult {
+	if (state.cancelled !== null) {
+		return cancelledWorkhorseResult(validated, operation);
+	}
 	try {
 		validateCoordinatorToolRequest(context.options, state.request);
 	} catch (error) {
@@ -189,49 +191,35 @@ function deliverWorkhorseResult(
 			error instanceof CoordinatorToolValidationError ? error.reason : "unknown_provenance";
 		return complete(refusedResponse(reason, errorMessage(error)), true);
 	}
-	return complete(workhorseResponse(context.options, outcome, operation), true);
+	return complete(workhorseResponse(context.options, validated.tool, operation, result), true);
 }
 
+/** What one validated call needs before it runs, or the refusal that stops it first. */
+type CallPlan =
+	| { readonly kind: "refused"; readonly result: CoordinatorToolDispatchResult }
+	| { readonly kind: "voice"; readonly validated: ValidatedVoiceCall }
+	| {
+			readonly kind: "workhorse";
+			readonly validated: ValidatedWorkhorseCall;
+			readonly operation: IssuedOperationIdentity;
+	  };
+
 /**
- * Run a workhorse tool under its issued operation and report the result or failure.
+ * Plan one validated call: a voice call runs as it is, a workhorse call runs under a freshly
+ * issued operation identity, and a host that cannot issue one refuses the call before any effect.
  * @param context - The execution context.
- * @param state - The wire call.
- * @param validated - The validated workhorse call.
- * @param operation - The issued operation identity.
- * @returns The frozen dispatch result.
+ * @param validated - The validated call.
+ * @returns The plan.
  */
-async function executeWorkhorse(
-	context: ExecutionContext,
-	state: CallState,
-	validated: ValidatedWorkhorseCall,
-	operation: IssuedOperationIdentity,
-): Promise<CoordinatorToolDispatchResult> {
-	try {
-		const outcome = await invokeWorkhorse(context.options.operations, validated, operation);
-		if (state.cancelled !== null) {
-			return cancelledWorkhorseResult(validated, operation);
-		}
-		return deliverWorkhorseResult(context, state, validated, operation, outcome);
-	} catch (error) {
-		return complete(responseForWorkhorseError(context.options, validated, error, operation), true);
+function planCall(context: ExecutionContext, validated: ValidatedCoordinatorToolCall): CallPlan {
+	if (validated.namespace === "archboard_voice") {
+		return { kind: "voice", validated };
 	}
-}
-
-/**
- * Issue the operation identity a workhorse call runs under, or the refusal when the host cannot.
- * @param context - The execution context.
- * @returns The identity, or the refusal to deliver instead.
- */
-function issuedWorkhorseOperation(
-	context: ExecutionContext,
-):
-	| { readonly ok: true; readonly operation: IssuedOperationIdentity }
-	| { readonly ok: false; readonly result: CoordinatorToolDispatchResult } {
 	try {
-		return { ok: true, operation: issueOperationIdentity(context.options) };
+		return { kind: "workhorse", validated, operation: issueOperationIdentity(context.options) };
 	} catch (error) {
 		return {
-			ok: false,
+			kind: "refused",
 			result: complete(
 				refusedResponse(
 					"system_error",
@@ -244,8 +232,10 @@ function issuedWorkhorseOperation(
 }
 
 /**
- * Execute one validated call exactly once: issue its operation, yield so a cancellation that
- * raced validation is honoured, then run the tool and shape its result.
+ * Execute one validated call exactly once: plan it, yield so a cancellation that raced validation
+ * is honoured, then run the tool and shape its result. The awaits on the gate and on the
+ * workhorse port live here, in one function, so the call settles in as few turns of the microtask
+ * queue as the ports themselves need.
  * @param context - The execution context.
  * @param state - The wire call.
  * @param validated - The validated call.
@@ -259,12 +249,10 @@ async function executeCall(
 	if (isAbandoned(context, state)) {
 		return unavailable(false);
 	}
-	const issued =
-		validated.namespace === "archboard_workhorse" ? issuedWorkhorseOperation(context) : null;
-	if (issued !== null && !issued.ok) {
-		return issued.result;
+	const plan = planCall(context, validated);
+	if (plan.kind === "refused") {
+		return plan.result;
 	}
-	const operation = issued === null ? null : issued.operation;
 
 	await Promise.resolve();
 	if (isAbandoned(context, state)) {
@@ -272,16 +260,24 @@ async function executeCall(
 	}
 
 	state.operationAttempted = true;
-	if (validated.namespace === "archboard_voice") {
-		return executeSpoken(context, state, validated);
+	if (plan.kind === "voice") {
+		const spokenOperation = captureSpokenOperationIdentity(context.options);
+		const result = await context.options.spokenApproval.resolve(state.request);
+		return spokenResult(state, plan.validated, result, spokenOperation);
 	}
-	if (operation === null) {
+	try {
+		const result = await invokeWorkhorse(
+			context.options.operations,
+			plan.validated,
+			plan.operation,
+		);
+		return workhorseResult(context, state, plan.validated, plan.operation, result);
+	} catch (error) {
 		return complete(
-			refusedResponse("system_error", "The workhorse call has no issued operation identity."),
+			responseForWorkhorseError(context.options, plan.validated, error, plan.operation),
 			true,
 		);
 	}
-	return executeWorkhorse(context, state, validated, operation);
 }
 
 export { type ExecutionContext, complete, errorMessage, executeCall, unavailable };

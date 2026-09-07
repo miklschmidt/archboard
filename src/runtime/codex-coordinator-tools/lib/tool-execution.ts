@@ -5,12 +5,9 @@ import {
 } from "@/runtime/codex-workhorse-operations";
 import {
 	DynamicToolRefusalReasonSchema,
-	type DelegateToWorkhorseResult,
+	type CoordinatorToolName,
 	type DynamicToolRefusalReason,
-	type InspectWorkhorseResult,
 	type ManageWorkhorseQueueInput,
-	type ManageWorkhorseQueueResult,
-	type SteerWorkhorseResult,
 } from "@/runtime/codex-coordinator-tool-contract";
 import type { OperationId } from "@/shared/codex-workbench-identity";
 import type {
@@ -22,6 +19,7 @@ import type {
 	ValidatedWorkhorseCall,
 } from "@/runtime/codex-coordinator-tools/lib/validation";
 import {
+	okPortResponse,
 	okResponse,
 	outcomeUnknownResponse,
 	refusedResponse,
@@ -32,12 +30,8 @@ interface IssuedOperationIdentity {
 	readonly wire: string;
 }
 
-/** A workhorse port result tagged with the tool that produced it. */
-type WorkhorseOutcome =
-	| { readonly tool: "inspect_workhorse"; readonly result: InspectWorkhorseResult }
-	| { readonly tool: "delegate_to_workhorse"; readonly result: DelegateToWorkhorseResult }
-	| { readonly tool: "manage_workhorse_queue"; readonly result: ManageWorkhorseQueueResult }
-	| { readonly tool: "steer_workhorse"; readonly result: SteerWorkhorseResult };
+/** The tools whose ok value is the result a workhorse port call produced. */
+type WorkhorseToolName = Exclude<CoordinatorToolName, "resolve_spoken_approval">;
 
 /**
  * Prove an operation identity is a current host-issued one and pair it with its wire form.
@@ -150,74 +144,63 @@ function queueRequest(
 	if (input.operation === "list") {
 		return { call, operation: "list" };
 	}
-	// oxlint-disable-next-line typescript(no-unsafe-type-assertion) -- the reviewed input schema carries submission ids as plain strings while the port brands them as issued QueuedSubmissionId; the port hands them to Codex unchanged, and the identity contract for branding them belongs to the operations module.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the reviewed input schema carries submission ids as plain strings while the port brands them as QueuedSubmissionId; the brand is nominal, the port passes the ids to Codex unchanged, and the session boundary parses them as issued identities before they reach the wire, so branding them here would only move that refusal.
 	return { call, operationId: operation.id, ...input } as ManageWorkhorseQueueRequest;
 }
 
 /**
- * Run one workhorse tool through the operations port and tag its result with the tool.
+ * Start one workhorse tool through the operations port. The port's promise is returned as it is,
+ * with its result widened to unknown, so the caller's single await sits directly on the port and
+ * the result is proven against the tool's reviewed schema when the response is built.
  * @param operations - The workhorse operations port.
  * @param validated - The validated workhorse call.
  * @param operation - The issued operation identity the effect runs under.
- * @returns The tagged result.
+ * @returns The port's pending result.
  */
 function invokeWorkhorse(
 	operations: CodexCoordinatorToolsOptions["operations"],
 	validated: ValidatedWorkhorseCall,
 	operation: IssuedOperationIdentity,
-): Promise<WorkhorseOutcome> {
+): Promise<unknown> {
 	const { call } = validated;
 	if (validated.tool === "inspect_workhorse") {
-		return operations
-			.inspect({ call, ...validated.input })
-			.then((result): WorkhorseOutcome => ({ tool: "inspect_workhorse", result }));
+		return operations.inspect({ call, ...validated.input });
 	}
 	if (validated.tool === "delegate_to_workhorse") {
-		return operations
-			.delegate({ call, ...validated.input, operationId: operation.id })
-			.then((result): WorkhorseOutcome => ({ tool: "delegate_to_workhorse", result }));
+		return operations.delegate({ call, ...validated.input, operationId: operation.id });
 	}
 	if (validated.tool === "manage_workhorse_queue") {
-		return operations
-			.manageQueue(queueRequest(call, validated.input, operation))
-			.then((result): WorkhorseOutcome => ({ tool: "manage_workhorse_queue", result }));
+		return operations.manageQueue(queueRequest(call, validated.input, operation));
 	}
-	return operations
-		.steer({
-			call,
-			expectedTurnId: validated.expectedTurnId,
-			...validated.input,
-			operationId: operation.id,
-		})
-		.then((result): WorkhorseOutcome => ({ tool: "steer_workhorse", result }));
+	return operations.steer({
+		call,
+		expectedTurnId: validated.expectedTurnId,
+		...validated.input,
+		operationId: operation.id,
+	});
 }
 
 /**
- * Build the successful response for a workhorse outcome under its still-current operation.
+ * Build the successful response for a workhorse port result under its still-current operation.
+ * The result is narrowed by the tool's reviewed result schema rather than by a static pairing of
+ * tool name and port type.
  * @param options - The dispatcher options carrying the operation authority.
- * @param outcome - The tagged result.
+ * @param tool - The tool that produced the result.
  * @param operation - The issued operation identity the effect ran under.
+ * @param result - The result as the port produced it.
  * @returns The frozen response.
  */
 function workhorseResponse(
 	options: CodexCoordinatorToolsOptions,
-	outcome: WorkhorseOutcome,
+	tool: WorkhorseToolName,
 	operation: IssuedOperationIdentity,
+	result: unknown,
 ): DynamicToolResponse {
 	const current = operationIdentity(options, operation.id);
 	if (current.id !== operation.id) {
 		throw new TypeError("The workhorse operation identity changed.");
 	}
-	if (outcome.tool === "inspect_workhorse") {
-		return okResponse(outcome.tool, current.wire, outcome.result);
-	}
-	if (outcome.tool === "delegate_to_workhorse") {
-		return okResponse(outcome.tool, current.wire, outcome.result);
-	}
-	if (outcome.tool === "manage_workhorse_queue") {
-		return okResponse(outcome.tool, current.wire, outcome.result);
-	}
-	return okResponse(outcome.tool, current.wire, outcome.result);
+	return okPortResponse(tool, current.wire, result);
 }
 
 /**
@@ -330,7 +313,7 @@ function spokenResponse(
 
 export {
 	type IssuedOperationIdentity,
-	type WorkhorseOutcome,
+	type WorkhorseToolName,
 	issueOperationIdentity,
 	captureSpokenOperationIdentity,
 	isMutation,

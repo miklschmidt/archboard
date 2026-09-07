@@ -225,6 +225,14 @@ type WorkhorseOperationErrorCode =
 	| "transaction_failed"
 	| "outcome_unknown";
 
+/** What is known about a failed operation beyond its code and message. */
+interface WorkhorseOperationErrorFacts {
+	readonly operation?: WorkhorseOperationName;
+	readonly outcome?: Exclude<WorkhorseOperationDelivery, "pending">;
+	readonly operationId?: OperationId;
+	readonly cause?: unknown;
+}
+
 class CodexWorkhorseOperationsError extends Error {
 	override readonly name = "CodexWorkhorseOperationsError";
 	readonly code: WorkhorseOperationErrorCode;
@@ -234,17 +242,17 @@ class CodexWorkhorseOperationsError extends Error {
 	override readonly cause: unknown;
 
 	/**
-	 *
+	 * Build the error, defaulting every optional fact to null so a caller can always ask what the
+	 * failure proved about delivery without checking whether the field exists.
+	 * @param code - Why the operation could not proceed.
+	 * @param message - The diagnostic for the caller.
+	 * @param options - The operation, settled outcome, operation identity and underlying cause,
+	 * as far as they are known at the point of failure.
 	 */
 	constructor(
 		code: WorkhorseOperationErrorCode,
 		message: string,
-		options: {
-			readonly operation?: WorkhorseOperationName;
-			readonly outcome?: Exclude<WorkhorseOperationDelivery, "pending">;
-			readonly operationId?: OperationId;
-			readonly cause?: unknown;
-		} = {},
+		options: WorkhorseOperationErrorFacts = {},
 	) {
 		super(message);
 		this.code = code;
