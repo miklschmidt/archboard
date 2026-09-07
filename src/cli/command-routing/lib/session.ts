@@ -15,15 +15,15 @@ import {
 	type RouteOwner,
 	commandSummary,
 	commandUsage,
-} from "@/cli/commands/lib/command-route";
-import { helpFor } from "@/cli/commands/lib/command-registry";
-import { dispatchedCommand } from "@/cli/commands/lib/command-dispatch";
-import { exitCodeFor, reportFailure } from "@/cli/commands/lib/cli-exit";
+} from "@/cli/command-routing/lib/route";
+import { helpFor } from "@/cli/command-routing/lib/registry";
+import { dispatchedCommand } from "@/cli/command-routing/lib/dispatch";
+import { exitCodeFor, reportFailure } from "@/cli/command-routing/lib/exit-codes";
 import {
 	takeBoardFlag,
 	takeDoingFlag,
 	takeExpectVersionFlag,
-} from "@/cli/commands/lib/global-flags";
+} from "@/cli/command-routing/lib/global-flags";
 
 /**
  * Prints the top-level help: every command's summary and the conventions shared by all.

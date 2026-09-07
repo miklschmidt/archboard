@@ -58,10 +58,12 @@ import {
 	type CliRegistryEntry,
 	type CommandRoute,
 	child,
+	cliSurfaceOf,
 	contract,
-} from "@/cli/commands/lib/command-route";
-import { cliSurfaceOf, helpFor, registryOf } from "@/cli/commands/lib/command-registry";
-import { runCliWith } from "@/cli/commands/lib/cli-session";
+	helpFor,
+	registryOf,
+	runCliWith,
+} from "@/cli/command-routing/index";
 
 // The one command table: every top-level command, its subcommands, and the help wording the
 // table owns. Dispatch, registry projection and help rendering live under lib/.
