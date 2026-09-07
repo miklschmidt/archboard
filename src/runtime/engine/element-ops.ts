@@ -16,11 +16,17 @@
 
 import type { ServerElement } from "@/runtime/engine/types";
 import { mintId } from "@/shared/ids/ids";
-import { applyElementChanges, batchCreateElementsOnCanvas, getElements } from "@/runtime/engine/canvas-client";
-import { extentOf } from "@/runtime/engine/geometry";
-
-type Alignment = "left" | "center" | "right" | "top" | "middle" | "bottom";
-type Direction = "horizontal" | "vertical";
+import {
+	applyElementChanges,
+	batchCreateElementsOnCanvas,
+	getElements,
+} from "@/runtime/engine/canvas-client";
+import {
+	type Alignment,
+	type Direction,
+	alignmentMoves,
+	distributionMoves,
+} from "@/runtime/engine/lib/element-ops-arrange";
 
 /**
  * The elements an operation was aimed at, in the order they were named.
@@ -29,6 +35,8 @@ type Direction = "horizontal" | "vertical";
  * the per-element version did by accident (a PUT to a missing id 404'd and was
  * counted as a failure) and is what an operation over a stale selection wants:
  * arrange the boxes that are still there.
+ * @param elementIds The elements, as the caller named them.
+ * @returns The ones the board holds.
  */
 async function targets(elementIds: string[]): Promise<ServerElement[]> {
 	const board = new Map((await getElements()).map((element) => [element.id, element]));
@@ -38,232 +46,175 @@ async function targets(elementIds: string[]): Promise<ServerElement[]> {
 }
 
 /**
- *
+ * Align a set of elements on one edge or centre.
+ * @param elementIds The elements, as the caller named them.
+ * @param alignment Which edge or centre they align on.
+ * @returns What was aligned, and how many elements moved.
+ * @throws {Error} When fewer than two of the named elements are on the board.
  */
 async function alignElements(
 	elementIds: string[],
 	alignment: Alignment,
 ): Promise<{ aligned: boolean; elementIds: string[]; alignment: Alignment; successCount: number }> {
 	const elementsToAlign = await targets(elementIds);
-
 	if (elementsToAlign.length < 2) {
 		throw new Error("Need at least 2 elements to align");
 	}
-
-	// Alignment is stated about edges, and an arrow's `x` is not its left edge —
-	// it is wherever the arrow was started from, which for a leftward arrow is
-	// its right edge (geometry.ts). So the target is worked out in extent space
-	// and then applied as a translation of the stored origin, which moves a box
-	// and an arrow by the same rule.
-	const boxes = new Map(elementsToAlign.map((el) => [el.id, extentOf(el)]));
-	/**
-	 *
-	 */
-	const box = (el: ServerElement) => boxes.get(el.id)!;
-	let edgeFn: (el: ServerElement) => { x?: number; y?: number };
-	switch (alignment) {
-		case "left": {
-			const minX = Math.min(...elementsToAlign.map((el) => box(el).x));
-			/**
-			 *
-			 */
-			edgeFn = () => ({ x: minX });
-			break;
-		}
-		case "right": {
-			const maxRight = Math.max(...elementsToAlign.map((el) => box(el).x + box(el).width));
-			/**
-			 *
-			 */
-			edgeFn = (el) => ({ x: maxRight - box(el).width });
-			break;
-		}
-		case "center": {
-			const centers = elementsToAlign.map((el) => box(el).x + box(el).width / 2);
-			const avgCenter = centers.reduce((a, b) => a + b, 0) / centers.length;
-			/**
-			 *
-			 */
-			edgeFn = (el) => ({ x: avgCenter - box(el).width / 2 });
-			break;
-		}
-		case "top": {
-			const minY = Math.min(...elementsToAlign.map((el) => box(el).y));
-			/**
-			 *
-			 */
-			edgeFn = () => ({ y: minY });
-			break;
-		}
-		case "bottom": {
-			const maxBottom = Math.max(...elementsToAlign.map((el) => box(el).y + box(el).height));
-			/**
-			 *
-			 */
-			edgeFn = (el) => ({ y: maxBottom - box(el).height });
-			break;
-		}
-		case "middle": {
-			const middles = elementsToAlign.map((el) => box(el).y + box(el).height / 2);
-			const avgMiddle = middles.reduce((a, b) => a + b, 0) / middles.length;
-			/**
-			 *
-			 */
-			edgeFn = (el) => ({ y: avgMiddle - box(el).height / 2 });
-			break;
-		}
-	}
-
-	const upserts = elementsToAlign.map((el) => {
-		const edge = edgeFn(el);
-		return Object.assign(
-			{ id: el.id },
-			edge.x === undefined ? {} : { x: el.x + (edge.x - box(el).x) },
-			edge.y === undefined ? {} : { y: el.y + (edge.y - box(el).y) },
-		);
-	});
+	const upserts = alignmentMoves(elementsToAlign, alignment);
 	await applyElementChanges({ upserts });
-
 	return { aligned: true, elementIds, alignment, successCount: upserts.length };
 }
 
 /**
- *
+ * Leave even gaps between a set of elements, along one axis.
+ * @param elementIds The elements, as the caller named them.
+ * @param direction Which axis to space them along.
+ * @returns What was distributed, and how many elements moved.
+ * @throws {Error} When fewer than three of the named elements are on the board.
  */
 async function distributeElements(
 	elementIds: string[],
 	direction: Direction,
 ): Promise<{ distributed: boolean; elementIds: string[]; direction: Direction; count: number }> {
 	const elementsToDist = await targets(elementIds);
-
 	if (elementsToDist.length < 3) {
 		throw new Error("Need at least 3 elements to distribute");
 	}
-
-	// Even gaps are gaps between edges, so this too reasons in extent space and
-	// writes back a translation of the stored origin (see alignElements).
-	const boxes = new Map(elementsToDist.map((el) => [el.id, extentOf(el)]));
-	/**
-	 *
-	 */
-	const box = (el: ServerElement) => boxes.get(el.id)!;
-	const upserts: { id: string; x?: number; y?: number }[] = [];
-
-	if (direction === "horizontal") {
-		// Sort by x position
-		elementsToDist.toSorted((a, b) => box(a).x - box(b).x);
-		const first = elementsToDist[0]!;
-		const last = elementsToDist[elementsToDist.length - 1]!;
-		const totalSpan = box(last).x + box(last).width - box(first).x;
-		const totalElementWidth = elementsToDist.reduce((sum, el) => sum + box(el).width, 0);
-		const gap = (totalSpan - totalElementWidth) / (elementsToDist.length - 1);
-
-		let currentX = box(first).x;
-		for (const el of elementsToDist) {
-			upserts.push({ id: el.id, x: el.x + (currentX - box(el).x) });
-			currentX += box(el).width + gap;
-		}
-	} else {
-		// Sort by y position
-		elementsToDist.toSorted((a, b) => box(a).y - box(b).y);
-		const first = elementsToDist[0]!;
-		const last = elementsToDist[elementsToDist.length - 1]!;
-		const totalSpan = box(last).y + box(last).height - box(first).y;
-		const totalElementHeight = elementsToDist.reduce((sum, el) => sum + box(el).height, 0);
-		const gap = (totalSpan - totalElementHeight) / (elementsToDist.length - 1);
-
-		let currentY = box(first).y;
-		for (const el of elementsToDist) {
-			upserts.push({ id: el.id, y: el.y + (currentY - box(el).y) });
-			currentY += box(el).height + gap;
-		}
-	}
-
-	await applyElementChanges({ upserts });
-
+	await applyElementChanges({ upserts: distributionMoves(elementsToDist, direction) });
 	return { distributed: true, elementIds, direction, count: elementsToDist.length };
 }
 
 /**
- *
+ * Lock or unlock a set of elements, so a person cannot move them by accident.
+ * @param elementIds The elements, as the caller named them.
+ * @param locked Whether to lock or unlock them.
+ * @returns What was locked, and how many elements it reached.
+ * @throws {Error} When none of the named elements are on the board.
  */
 async function setElementsLocked(
 	elementIds: string[],
 	locked: boolean,
 ): Promise<{ elementIds: string[]; successCount: number }> {
 	const elementsToLock = await targets(elementIds);
-
 	if (elementsToLock.length === 0) {
 		throw new Error(
 			`Failed to ${locked ? "lock" : "unlock"} any elements: none of ${elementIds.join(", ")} are on the board`,
 		);
 	}
-
 	await applyElementChanges({ upserts: elementsToLock.map((el) => ({ id: el.id, locked })) });
-
 	return { elementIds, successCount: elementsToLock.length };
 }
 
-// Group elements by appending a fresh groupId to each element's groupIds. The
-// board is the source of truth for who is in a group — `groupIds` is a native
-// Excalidraw field and it round-trips through the note — so every client sees
-// the same groups and a group outlives whatever made it.
 /**
+ * Group a set of elements by appending a fresh group id to each.
  *
+ * The board is the source of truth for who is in a group — `groupIds` is a
+ * native Excalidraw field and it round-trips through the note — so every
+ * client sees the same groups and a group outlives whatever made it. The id is
+ * appended rather than replacing what is there, so an element can be in more
+ * than one group.
+ * @param elementIds The elements, as the caller named them.
+ * @returns The group's id, and how many elements joined it.
+ * @throws {Error} When none of the named elements are on the board.
  */
 async function groupElements(
 	elementIds: string[],
 ): Promise<{ groupId: string; elementIds: string[]; successCount: number }> {
 	const groupId = mintId();
 	const elementsToGroup = await targets(elementIds);
-
 	if (elementsToGroup.length === 0) {
 		throw new Error(
 			`Failed to group any elements: none of ${elementIds.join(", ")} are on the board`,
 		);
 	}
-
-	// Append rather than replace, so an element can be in more than one group.
 	await applyElementChanges({
 		upserts: elementsToGroup.map((el) => ({
 			id: el.id,
-			groupIds: [...(el.groupIds || []), groupId],
+			groupIds: [...el.groupIds, groupId],
 		})),
 	});
-
 	return { groupId, elementIds, successCount: elementsToGroup.length };
 }
 
-// Ungroup by finding the group's members through their groupIds, which is the
-// only place membership is recorded. It used to accept a seeded member list for
-// groups a caller process had made and remembered; that map is gone, along with
-// the two bugs it caused (TASK-064).
 /**
+ * Break one group up.
  *
+ * Its members are found through their own `groupIds`, which is the only place
+ * membership is recorded. This used to accept a seeded member list for groups
+ * a caller process had made and remembered; that map is gone, along with the
+ * two bugs it caused (TASK-064). Only this group id is removed, so the other
+ * groups an element is in survive.
+ * @param groupId The group.
+ * @returns Which elements were in it.
+ * @throws {Error} When no element on the board is in that group.
  */
 async function ungroupElements(
 	groupId: string,
 ): Promise<{ groupId: string; ungrouped: boolean; elementIds: string[]; successCount: number }> {
-	const members = (await getElements()).filter((el) => (el.groupIds || []).includes(groupId));
-
+	const members = (await getElements()).filter((el) => el.groupIds.includes(groupId));
 	if (members.length === 0) {
 		throw new Error(`Group ${groupId} not found`);
 	}
-
-	// Remove only this groupId, so the other groups an element is in survive.
 	await applyElementChanges({
 		upserts: members.map((el) => ({
 			id: el.id,
-			groupIds: (el.groupIds || []).filter((gid) => gid !== groupId),
+			groupIds: el.groupIds.filter((gid) => gid !== groupId),
 		})),
 	});
-
 	const elementIds = members.map((el) => el.id);
 	return { groupId, ungrouped: true, elementIds, successCount: elementIds.length };
 }
 
 /**
- *
+ * One copy of an element, offset from the original and stamped as new.
+ * @param original The element being copied.
+ * @param offsetX How far right the copy sits.
+ * @param offsetY How far down.
+ * @param taken The names already spoken for, extended with the copy's own.
+ * @returns The copy.
+ */
+function copyOf(
+	original: ServerElement,
+	offsetX: number,
+	offsetY: number,
+	taken: Set<string>,
+): ServerElement {
+	const rest: Record<string, unknown> = Object.fromEntries(Object.entries(original));
+	for (const field of [
+		"createdAt",
+		"updatedAt",
+		"version",
+		"syncedAt",
+		"source",
+		"syncTimestamp",
+	]) {
+		delete rest[field];
+	}
+	const copyId = mintId(taken);
+	taken.add(copyId);
+	const now = new Date().toISOString();
+	// The copy is the original's own fields with a new name, place and stamp;
+	// the write boundary validates it before anything persists it.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- completed by the write-ingress converter
+	return {
+		...rest,
+		id: copyId,
+		x: original.x + offsetX,
+		y: original.y + offsetY,
+		createdAt: now,
+		updatedAt: now,
+		version: 1,
+	} as unknown as ServerElement;
+}
+
+/**
+ * Copy a set of elements, offset from the originals.
+ * @param elementIds The elements, as the caller named them.
+ * @param offsetX How far right the copies sit.
+ * @param offsetY How far down.
+ * @returns The copies as they were sent and as the board now holds them.
+ * @throws {Error} When none of the named elements are on the board, or the
+ * canvas cannot confirm the write.
  */
 async function duplicateElements(
 	elementIds: string[],
@@ -281,32 +232,10 @@ async function duplicateElements(
 	// is threaded through the mapping rather than filled from it afterwards, so
 	// each copy reserves its name at the moment it is minted.
 	const taken = new Set<string>(elementIds);
-	const duplicates: ServerElement[] = originals.map((original) => {
-		const {
-			createdAt: _createdAt,
-			updatedAt: _updatedAt,
-			version: _version,
-			syncedAt: _syncedAt,
-			source: _source,
-			syncTimestamp: _syncTimestamp,
-			...rest
-		} = original as unknown as Record<string, unknown>;
-		const copyId = mintId(taken);
-		taken.add(copyId);
-		return Object.assign({}, rest, {
-			id: copyId,
-			x: original.x + offsetX,
-			y: original.y + offsetY,
-			createdAt: new Date().toISOString(),
-			updatedAt: new Date().toISOString(),
-			version: 1,
-		}) as unknown as ServerElement;
-	});
-
+	const duplicates = originals.map((original) => copyOf(original, offsetX, offsetY, taken));
 	if (duplicates.length === 0) {
 		throw new Error("No elements could be duplicated (none found)");
 	}
-
 	// Already one write, and one that returns what it created.
 	const canvasElements = await batchCreateElementsOnCanvas(duplicates);
 	if (!canvasElements) {
