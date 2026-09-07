@@ -129,7 +129,10 @@ export function forceCloseLogger(target: winston.Logger = logger): void {
 }
 
 export { logger };
-// Modules outside the runtime area still import the default; it goes when
-// TASK-151 lands in every area.
-// oxlint-disable-next-line no-restricted-exports -- other areas import the default until TASK-151 lands everywhere
+// Three files in the server area still import the default —
+// canvas/lib/board-response.ts, canvas/lib/library-routes.ts and
+// browser-presentation/lib/owner.ts. They are being switched to the named
+// export in that area's own TASK-151 pass; this export and the disable below
+// come out at integration, once they have.
+// oxlint-disable-next-line no-restricted-exports -- the server area's importers land first
 export default logger;
