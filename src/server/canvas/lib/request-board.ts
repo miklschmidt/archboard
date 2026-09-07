@@ -1,10 +1,10 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { boards } from "@/runtime/engine/board-store";
+import { boards, SCRATCH_KEY } from "@/runtime/engine/board-store";
 import type { BoardState } from "@/runtime/engine/board-store";
 import { readBoardContent, resolveBoard, resolveInstalledBoard } from "@/runtime/engine/board-io";
 import type { BoardContent, ResolvedBoard, ResolvedBoardNote } from "@/runtime/engine/board-io";
-import { boardKey, makeIdentity, parseBoardKey, SCRATCH_KEY, validateLevel } from "@/runtime/engine/board";
+import { boardKey, makeIdentity, parseBoardKey, validateLevel } from "@/runtime/engine/board";
 import type { BoardIdentity } from "@/runtime/engine/board";
 import { recordLockCommit } from "@/runtime/engine/board-lock";
 import type { LockHolder } from "@/runtime/engine/board-lock";
