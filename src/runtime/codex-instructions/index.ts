@@ -11,18 +11,21 @@ export {
 	assertCanonicalInstructionBytes,
 	composeCoordinatorInstructions,
 	verifyAuthoredInstructionIntegrity,
-} from "./lib/authored.js";
-export type { AuthoredInstructionIntegrity, AuthoredInstructionName } from "./lib/authored.js";
+} from "@/runtime/codex-instructions/lib/authored";
+export type {
+	AuthoredInstructionIntegrity,
+	AuthoredInstructionName,
+} from "@/runtime/codex-instructions/lib/authored";
 
 export {
 	ArchboardContextSchema,
 	canonicalContext,
 	decodeCanonicalContext,
 	encodeCanonicalContext,
-} from "./lib/context.js";
-export type { ArchboardContext } from "./lib/context.js";
+} from "@/runtime/codex-instructions/lib/context";
+export type { ArchboardContext } from "@/runtime/codex-instructions/lib/context";
 
-export { ADDITIONAL_CONTEXT_POLICY } from "./lib/context-policy.js";
+export { ADDITIONAL_CONTEXT_POLICY } from "@/runtime/codex-instructions/lib/context-policy";
 export type {
 	AdditionalContextPolicy,
 	OperationKind,
@@ -30,7 +33,7 @@ export type {
 	OperationRpc,
 	ThreadLinkReason,
 	ThreadLinkState,
-} from "./lib/context-policy.js";
+} from "@/runtime/codex-instructions/lib/context-policy";
 
 export {
 	AdditionalContextSchema,
@@ -46,7 +49,7 @@ export {
 	ThreadInjectItemsParamsSchema,
 	TurnStartParamsSchema,
 	TurnSteerParamsSchema,
-} from "./lib/bodies.js";
+} from "@/runtime/codex-instructions/lib/bodies";
 export type {
 	AdditionalContext,
 	TextUserInput,
@@ -58,4 +61,4 @@ export type {
 	TurnStartParams,
 	TurnSteerBuilderInput,
 	TurnSteerParams,
-} from "./lib/bodies.js";
+} from "@/runtime/codex-instructions/lib/bodies";

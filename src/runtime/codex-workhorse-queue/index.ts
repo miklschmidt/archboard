@@ -1,5 +1,8 @@
-export { createCodexWorkhorseQueue } from "./lib/queue.js";
-export { CodexWorkhorseQueueError, WORKHORSE_QUEUE_OPERATIONS } from "./lib/contract.js";
+export { createCodexWorkhorseQueue } from "@/runtime/codex-workhorse-queue/lib/queue";
+export {
+	CodexWorkhorseQueueError,
+	WORKHORSE_QUEUE_OPERATIONS,
+} from "@/runtime/codex-workhorse-queue/lib/contract";
 export type {
 	CodexWorkhorseQueue,
 	CurrentWorkhorseQueueBinding,
@@ -28,4 +31,4 @@ export type {
 	WorkhorseQueueOptions,
 	WorkhorseQueueResult,
 	WorkhorseQueueSessionPort,
-} from "./lib/contract.js";
+} from "@/runtime/codex-workhorse-queue/lib/contract";

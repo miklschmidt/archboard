@@ -1,14 +1,14 @@
 import {
 	ARCHBOARD_APP_DYNAMIC_TOOLS,
 	ARCHBOARD_APP_MANIFEST_SHA256,
-} from "../../codex-thread-tools/index.js";
+} from "@/runtime/codex-thread-tools";
 import {
 	assertCanonicalInstructionBytes,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-} from "../../codex-instructions/index.js";
-import { CODEX_SESSION_THREAD_SOURCE } from "../../codex-session/index.js";
-import type { SessionParams } from "../../codex-session/index.js";
+} from "@/runtime/codex-instructions";
+import { CODEX_SESSION_THREAD_SOURCE } from "@/runtime/codex-session";
+import type { SessionParams } from "@/runtime/codex-session";
 
 const WORKHORSE_OPERATION_KIND = "create_thread";
 const WORKHORSE_CLEANUP_OPERATION_KIND = "thread_delete";
