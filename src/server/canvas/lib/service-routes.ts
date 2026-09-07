@@ -1,6 +1,6 @@
 import path from "path";
 import type { Express, NextFunction, Request, Response } from "express";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { boards, boardSummaries } from "@/runtime/engine/board-store";
 import { heldBoardKeys, holdOn, reportHold } from "@/runtime/engine/board-hold";
 import { frontendState, sourceState } from "@/runtime/engine/staleness";

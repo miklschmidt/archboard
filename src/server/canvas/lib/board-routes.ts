@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { selectionState } from "@/runtime/engine/types";
 import { boards, copyElements, recordBaseline } from "@/runtime/engine/board-store";
 import type { BoardState } from "@/runtime/engine/board-store";

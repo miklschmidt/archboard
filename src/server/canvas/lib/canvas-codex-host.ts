@@ -1,4 +1,4 @@
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { changeFeed } from "@/runtime/engine/change-feed";
 import { panesInOrder } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
