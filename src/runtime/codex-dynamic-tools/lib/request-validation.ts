@@ -102,7 +102,11 @@ function assertReviewedCatalogue(catalogue: unknown): void {
 		if (error instanceof CodexDynamicToolsError) {
 			throw error;
 		}
-		throw dynamicError("invalid_call", "The archboard_app catalogue could not be validated.", error);
+		throw dynamicError(
+			"invalid_call",
+			"The archboard_app catalogue could not be validated.",
+			error,
+		);
 	}
 }
 
@@ -273,7 +277,7 @@ function correlatedMutationCall(
 			return Object.freeze({ name, arguments: parseToolArguments(name, rawArguments) });
 		case "fork_thread":
 			return Object.freeze({ name, arguments: parseToolArguments(name, rawArguments) });
-		case "send_message_to_thread":
+		default:
 			return Object.freeze({ name, arguments: parseToolArguments(name, rawArguments) });
 	}
 }
@@ -293,7 +297,7 @@ function correlatedObservationCall(
 			return Object.freeze({ name, arguments: parseToolArguments(name, rawArguments) });
 		case "read_thread":
 			return Object.freeze({ name, arguments: parseToolArguments(name, rawArguments) });
-		case "wait_threads":
+		default:
 			return Object.freeze({ name, arguments: parseToolArguments(name, rawArguments) });
 	}
 }
@@ -332,7 +336,11 @@ function validateDynamicCall(request: unknown, options: CatalogueOptions): Valid
 	try {
 		return correlatedCall(name, envelope.params["arguments"]);
 	} catch (error) {
-		throw dynamicError("invalid_call", "The dynamic tool arguments failed the reviewed schema.", error);
+		throw dynamicError(
+			"invalid_call",
+			"The dynamic tool arguments failed the reviewed schema.",
+			error,
+		);
 	}
 }
 
