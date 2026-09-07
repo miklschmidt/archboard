@@ -114,7 +114,6 @@ class IdentityValidationError extends Error {
 	/**
 	 * Creates a refusal that names both the rule broken and, when known, the
 	 * identity domain it was broken in.
-	 *
 	 * @param code - Which validation rule refused the value.
 	 * @param message - The human-readable reason.
 	 * @param domain - The identity domain being validated, when one applies.
@@ -132,7 +131,6 @@ type IdentityValue<Domain extends IdentityDomain> = BrandedIdentity<Domain>;
 /**
  * Refuses a value with a typed validation error. Declared `never` so a caller
  * can `return fail(...)` inside a function that must otherwise produce a value.
- *
  * @param code - Which validation rule refused the value.
  * @param message - The human-readable reason.
  * @param domain - The identity domain being validated, when one applies.
@@ -144,7 +142,6 @@ function fail(code: IdentityValidationCode, message: string, domain?: IdentityDo
 
 /**
  * Tells whether a string names one of the identity domains.
- *
  * @param value - The domain segment of a wire value.
  * @returns True when it is a declared identity domain.
  */
@@ -156,18 +153,16 @@ function isIdentityDomain(value: string): value is IdentityDomain {
  * Brands a string that has already been validated as a canonical wire value
  * of `domain`. This is the one site that manufactures a branded identity; every
  * other path reaches a brand only by validating first.
- *
  * @param value - A string already checked against the wire pattern for `domain`.
  * @returns The same string, carrying the domain brand.
  */
 function brand<Domain extends IdentityDomain>(value: string): IdentityValue<Domain> {
-	// oxlint-disable-next-line typescript(no-unsafe-type-assertion) -- the brand is nominal-only; the callers validate the wire shape before branding
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the brand is nominal-only; the callers validate the wire shape before branding
 	return value as IdentityValue<Domain>;
 }
 
 /**
  * Splits a canonical wire value into its domain and token segments.
- *
  * @param value - The string to match.
  * @returns The two segments, or null when the string is not a wire value.
  */
@@ -184,7 +179,6 @@ function wireSegments(value: string): { readonly domain: string; readonly token:
 /**
  * Validates that a value is a canonical wire identity of `domain` and returns
  * its token, refusing with the most specific code available.
- *
  * @param value - The untrusted value.
  * @param domain - The domain the caller expects.
  * @returns The token segment after the domain.
@@ -216,7 +210,6 @@ function requireToken(value: unknown, domain: IdentityDomain): string {
 
 /**
  * Spells a canonical wire value from a domain and a token.
- *
  * @param domain - The identity domain.
  * @param token - The token, which must match the token grammar.
  * @returns The branded `archboard:<domain>:<token>` value.
@@ -234,7 +227,6 @@ function wireValue<Domain extends IdentityDomain>(
 
 /**
  * Mints a fresh random token for a host-owned identity.
- *
  * @returns Thirty-two lowercase hexadecimal characters.
  */
 function mintToken(): string {
@@ -243,7 +235,6 @@ function mintToken(): string {
 
 /**
  * Reads the token segment back out of a branded identity.
- *
  * @param value - A branded identity of any domain.
  * @returns The token after the domain segment.
  * @throws {IdentityValidationError} When the string is not canonical after all.
@@ -258,7 +249,6 @@ function tokenOf(value: BrandedIdentity<IdentityDomain>): string {
 
 /**
  * Mints a host-owned identity whose token is marked with the `h` prefix.
- *
  * @param domain - The identity domain to mint in.
  * @returns A fresh branded identity.
  */
@@ -268,7 +258,6 @@ function mintHostValue<Domain extends IdentityDomain>(domain: Domain): IdentityV
 
 /**
  * Validates an untrusted value as a wire identity of `domain` and brands it.
- *
  * @param value - The untrusted value.
  * @param domain - The domain the caller expects.
  * @returns The value, branded.
@@ -285,7 +274,6 @@ function parseValue<Domain extends IdentityDomain>(
 /**
  * Validates a child epoch, whose token is `<child token>.<epoch token>`, and
  * optionally checks that it belongs to one particular child.
- *
  * @param value - The untrusted value.
  * @param expectedChild - When given, the child the epoch must belong to.
  * @returns The value, branded as an epoch.
@@ -305,7 +293,6 @@ function parseEpochValue(value: unknown, expectedChild?: ChildId): ChildEpoch {
 
 /**
  * Mints a new epoch bound to `child`.
- *
  * @param child - The child the epoch belongs to.
  * @returns A fresh branded epoch.
  */
@@ -315,7 +302,6 @@ function mintEpochValue(child: ChildId): ChildEpoch {
 
 /**
  * Tells whether a UTF-16 code unit opens a surrogate pair.
- *
  * @param codeUnit - The code unit.
  * @returns True for a high surrogate.
  */
@@ -325,7 +311,6 @@ function isHighSurrogate(codeUnit: number): boolean {
 
 /**
  * Tells whether a UTF-16 code unit closes a surrogate pair.
- *
  * @param codeUnit - The code unit, or NaN past the end of the string.
  * @returns True for a low surrogate.
  */
@@ -336,7 +321,6 @@ function isLowSurrogate(codeUnit: number): boolean {
 /**
  * Tells whether a string has no lone surrogates, so its UTF-8 encoding is a
  * faithful and reversible spelling of it.
- *
  * @param value - The string to check.
  * @returns True when every surrogate is part of a complete pair.
  */
@@ -357,7 +341,6 @@ function isWellFormedUnicode(value: string): boolean {
 
 /**
  * Spells bytes as lowercase hexadecimal.
- *
  * @param bytes - The bytes to spell.
  * @returns Two hexadecimal characters per byte.
  */
@@ -372,7 +355,6 @@ function hex(bytes: Uint8Array): string {
 /**
  * Encodes a raw server-issued id into a token that fits the wire grammar
  * whatever characters the server used: hex of its UTF-8 bytes, marked `s`.
- *
  * @param raw - The id exactly as the server sent it.
  * @param domain - The domain it belongs to, for error messages.
  * @returns The `s`-prefixed hexadecimal token.
@@ -404,7 +386,6 @@ function encodeRawIdentity(raw: string, domain: IdentityDomain): string {
  * Encodes a JSON-RPC request id, which the protocol allows to be a string or
  * an integer, keeping the two kinds apart with different token markers so
  * the original can be given back unchanged.
- *
  * @param raw - The id as the server sent it.
  * @returns An `s`-prefixed token for a string, an `n`-prefixed one for an integer.
  * @throws {IdentityValidationError} When the id is neither, or too large.
@@ -433,7 +414,6 @@ function encodeRawJsonRpcRequestId(raw: JsonRpcRequestIdWireValue): string {
 
 /**
  * Reads the domain of an untrusted value that should be a wire identity.
- *
  * @param value - The untrusted value.
  * @returns The identity domain the value names.
  * @throws {IdentityValidationError} When the value is not a canonical workbench identity.

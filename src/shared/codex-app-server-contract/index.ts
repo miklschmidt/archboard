@@ -209,7 +209,6 @@ const CodexThreadStatusTypeSchema = z.enum(CODEX_THREAD_STATUS_TYPES);
 /**
  * Tells whether a value is one of the thread status types the app server
  * declares, so a status read off the wire narrows without a cast.
- *
  * @param value - Any value, usually `status.type` from a thread payload.
  * @returns True when the value names a declared thread status type.
  */
@@ -229,10 +228,9 @@ const CodexTurnStatusSchema = z.enum([
  * factory because a caller that already constrains strings (the browser
  * model's bounded text) can plug its own text and host schemas into the
  * amendment branches while keeping the vendor shape.
- *
- * @param options - Optional replacements for the plain string schema used by
- * the execpolicy amendment entries (`text`) and the network amendment host
- * (`host`, which defaults to `text`).
+ * @param options - Optional replacements for the plain string schemas.
+ * @param options.text - The schema for execpolicy amendment entries.
+ * @param options.host - The schema for the network amendment host; defaults to `text`.
  * @returns A zod union accepting the four bare decisions and both amendment forms.
  */
 function createCodexCommandExecutionApprovalDecisionSchema(
@@ -329,7 +327,6 @@ type CodexJsonValue =
 /**
  * Normalizes a JSON scalar, refusing the values JSON cannot carry: non-finite
  * numbers and bigints.
- *
  * @param value - A primitive that is not an object.
  * @param path - Where the value sits in the payload, for the error message.
  * @returns The scalar unchanged.
@@ -339,11 +336,8 @@ function normalizeScalar(value: unknown, path: string): CodexJsonValue {
 	if (value === null || typeof value === "string" || typeof value === "boolean") {
 		return value;
 	}
-	if (typeof value === "number" && Number.isFinite(value)) {
-		return value;
-	}
 	if (typeof value === "number") {
-		throw new TypeError(`${path} is not a finite JSON number`);
+		return normalizeNumber(value, path);
 	}
 	if (typeof value === "bigint") {
 		throw new TypeError(`${path} is bigint; Codex JSON i64 values must be safe numbers`);
@@ -352,9 +346,22 @@ function normalizeScalar(value: unknown, path: string): CodexJsonValue {
 }
 
 /**
+ * Accepts only the numbers JSON can spell.
+ * @param value - A number.
+ * @param path - Where the number sits in the payload, for the error message.
+ * @returns The number unchanged.
+ * @throws {TypeError} When the number is NaN or infinite.
+ */
+function normalizeNumber(value: number, path: string): number {
+	if (!Number.isFinite(value)) {
+		throw new TypeError(`${path} is not a finite JSON number`);
+	}
+	return value;
+}
+
+/**
  * Normalizes a JSON object, accepting only plain objects so a class instance
  * or a prototype-carrying value never reaches an ingress parser.
- *
  * @param value - A non-null, non-array object.
  * @param path - Where the object sits in the payload, for the error message.
  * @returns A fresh plain object with every entry normalized.
@@ -373,7 +380,6 @@ function normalizeObject(value: object, path: string): CodexJsonValue {
 /**
  * Recursively normalizes one untrusted value into the closed Codex JSON
  * vocabulary, naming the offending path when something is not JSON.
- *
  * @param value - Any value decoded from the app-server stream.
  * @param path - Where the value sits in the payload, for the error message.
  * @returns The equivalent value built only from JSON scalars, arrays and plain objects.
@@ -391,7 +397,6 @@ function normalizeValue(value: unknown, path: string): CodexJsonValue {
 
 /**
  * Normalizes untrusted app-server JSON before any handwritten ingress parser runs.
- *
  * @param value - The decoded payload, or undefined when a message carried none.
  * @returns The normalized payload, or undefined when there was none.
  * @throws {TypeError} When the payload is not Codex JSON.

@@ -71,6 +71,8 @@ const bridgePart = (role: "mask" | "redraw") =>
  * Strips the per-part fields from bridge metadata so both parts can be
  * compared against the receipt's shared facts.
  * @param metadata - One part's bridge metadata.
+ * @param metadata.role - Which part this is; dropped.
+ * @param metadata.background - The part's own background; dropped.
  * @returns The facts both parts must agree on.
  */
 const bridgeFactsWithoutRole = ({
