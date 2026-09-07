@@ -27,7 +27,7 @@ type SnapshotElement = BoardRenderJob["snapshot"]["elements"][number];
 function rendererElements(elements: BoardRenderJob["snapshot"]["elements"]): RendererElements {
 	// Excalidraw's nominal Radians/point brands have no runtime representation. Board I/O has
 	// already validated every persisted field before this renderer-only type restoration.
-	// oxlint-disable-next-line typescript(no-unsafe-type-assertion) -- brands only; every field was validated at board I/O
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- brands only; every field was validated at board I/O
 	return elements as unknown as RendererElements;
 }
 
@@ -39,7 +39,7 @@ function rendererElements(elements: BoardRenderJob["snapshot"]["elements"]): Ren
 function rendererFiles(files: BoardRenderJob["snapshot"]["files"]): RendererFiles {
 	// File ids and MIME values are validated at board I/O; Excalidraw's nominal brands disappear
 	// from the persisted JSON representation and are restored only at this renderer boundary.
-	// oxlint-disable-next-line typescript(no-unsafe-type-assertion) -- brands only; ids and MIME values were validated at board I/O
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- brands only; ids and MIME values were validated at board I/O
 	return files as unknown as RendererFiles;
 }
 
@@ -90,7 +90,7 @@ function requiredFonts(job: BoardRenderJob): Map<string, number> {
  */
 async function requireFonts(job: BoardRenderJob): Promise<void> {
 	for (const [name, size] of requiredFonts(job)) {
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- fonts are loaded and checked one at a time so a failure names the first unavailable face
+		// oxlint-disable-next-line no-await-in-loop -- fonts are loaded and checked one at a time so a failure names the first unavailable face
 		await document.fonts.load(`${size}px "${name}"`);
 		if (!document.fonts.check(`${size}px "${name}"`)) {
 			throw new RenderInputError(`Board render could not load required font "${name}".`);
@@ -150,7 +150,7 @@ function findingFrame(
 		y: spec.frame.y,
 		width: spec.frame.width,
 		height: spec.frame.height,
-		// oxlint-disable-next-line typescript(no-unsafe-type-assertion) -- Radians is a nominal brand over number; an unrotated frame is angle 0
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Radians is a nominal brand over number; an unrotated frame is angle 0
 		angle: 0 as ExcalidrawFrameLikeElement["angle"],
 		strokeColor: "transparent",
 		backgroundColor: "transparent",
@@ -309,7 +309,7 @@ async function renderBoard(job: BoardRenderJob): Promise<BoardRendererJobResult>
 	const outputs: BoardRenderOutput[] = [];
 	for (const spec of job.outputs) {
 		state.phase = `render-${spec.id}`;
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- the page exports one output at a time on the shared document, and outputs keep spec order
+		// oxlint-disable-next-line no-await-in-loop -- the page exports one output at a time on the shared document, and outputs keep spec order
 		outputs.push(await renderOutput(job, spec));
 	}
 	return { kind: "render", outputs };

@@ -146,8 +146,8 @@ function graphView(active: CodexWorkbenchComponents | null, paneId: string): Gra
 		active,
 		link,
 		executable: link.state === "executable" ? link : null,
-		workhorse: active.workhorse.snapshot() ?? null,
-		coordinator: active.coordinator.snapshot() ?? null,
+		workhorse: active.workhorse.snapshot(),
+		coordinator: active.coordinator.snapshot(),
 	};
 }
 

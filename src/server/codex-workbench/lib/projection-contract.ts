@@ -34,10 +34,7 @@ import type {
 	SessionThreadItem,
 	SessionTurn,
 } from "@/runtime/codex-session";
-import type {
-	ThreadLinkCandidate,
-	ThreadLinkSnapshot,
-} from "@/runtime/codex-thread-link";
+import type { ThreadLinkCandidate, ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
 import type { RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
 import type { SpokenApprovalSnapshot } from "@/runtime/codex-spoken-approval";
 

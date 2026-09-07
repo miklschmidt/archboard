@@ -27,9 +27,7 @@ const DEFAULT_SELECTION: OpenerSelection = { version: 1, kind: "platform" };
  * @returns True when the error carries the ENOENT code.
  */
 function isMissingFileError(error: unknown): boolean {
-	return (
-		typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT"
-	);
+	return typeof error === "object" && error !== null && "code" in error && error.code === "ENOENT";
 }
 
 /**

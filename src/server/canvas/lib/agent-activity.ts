@@ -92,7 +92,7 @@ function createAgentActivity(options: {
 			entries.delete(key);
 			publish();
 		}, ACTIVITY_LINGER_MS);
-		timer.unref?.();
+		timer.unref();
 		entry.linger = timer;
 	};
 

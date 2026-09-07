@@ -153,6 +153,29 @@ const waitOutStopGrace = async (
 	}
 };
 
+/** Every reason a canvas stop can carry, for narrowing an abort signal's own. */
+const STOP_REASONS: ReadonlySet<string> = new Set<CanvasApplicationStopReason>([
+	"server-error",
+	"startup-failed",
+	"test",
+]);
+
+/**
+ * The stop reason an abort carried, defaulting where the abort came from
+ * somewhere that named none. A signal is aborted with an arbitrary value, so
+ * anything but a known reason or a signal name is not one.
+ * @param reason What the signal was aborted with.
+ * @returns The stop reason.
+ */
+function stopReasonOf(reason: unknown): CanvasApplicationStopReason {
+	if (typeof reason !== "string") {
+		return "test";
+	}
+	return STOP_REASONS.has(reason) || reason.startsWith("SIG")
+		? (reason as CanvasApplicationStopReason)
+		: "test";
+}
+
 /**
  * Refuse to start the next resource once something has cancelled startup.
  * @param signal The startup signal, whose reason names what cancelled it.
@@ -161,10 +184,7 @@ function requireStartupNotCancelled(signal: AbortSignal): void {
 	if (!signal.aborted) {
 		return;
 	}
-	const reason: unknown = signal.reason;
-	throw new CanvasApplicationStartupCancelledError(
-		typeof reason === "string" ? (reason as CanvasApplicationStopReason) : "test",
-	);
+	throw new CanvasApplicationStartupCancelledError(stopReasonOf(signal.reason));
 }
 
 /**

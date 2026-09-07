@@ -245,6 +245,19 @@ function codexRefusal(message: Record<string, unknown>, error: string): Record<s
 }
 
 /**
+ * One socket frame as text. ws hands a frame over as a buffer, an array
+ * buffer, or the buffers a fragmented message arrived in.
+ * @param raw The frame.
+ * @returns Its text.
+ */
+function frameText(raw: RawData): string {
+	if (Array.isArray(raw)) {
+		return Buffer.concat(raw).toString("utf8");
+	}
+	return Buffer.from(raw instanceof ArrayBuffer ? new Uint8Array(raw) : raw).toString("utf8");
+}
+
+/**
  * Parse one socket frame as a Codex workbench request, ignoring everything else.
  * @param raw The frame.
  * @returns The request, or null when the frame is not one.
@@ -252,7 +265,7 @@ function codexRefusal(message: Record<string, unknown>, error: string): Record<s
 function codexRequestOf(raw: RawData): Record<string, unknown> | null {
 	let message: unknown;
 	try {
-		message = JSON.parse(raw.toString());
+		message = JSON.parse(frameText(raw));
 	} catch {
 		return null;
 	}

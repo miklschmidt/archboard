@@ -10,7 +10,10 @@ export {
 	fitBrowserSnapshotBounded,
 	projectCodexBrowserState,
 } from "@/server/codex-workbench/lib/projection";
-export { createBrowserLeaseLedger, createBrowserLeaseManager } from "@/server/codex-workbench/lib/lease";
+export {
+	createBrowserLeaseLedger,
+	createBrowserLeaseManager,
+} from "@/server/codex-workbench/lib/lease";
 export { CodexWorkbenchGatewayError } from "@/server/codex-workbench/lib/contract";
 
 export type {
