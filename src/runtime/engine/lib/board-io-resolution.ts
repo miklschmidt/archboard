@@ -4,7 +4,13 @@
 // the read once they pass.
 
 import { BoardResolutionError } from "@/runtime/engine/board-target";
-import { type BoardIdentity, boardKey, makeIdentity, parseBoardKey, SCRATCH_BOARD } from "@/runtime/engine/lib/board-address";
+import {
+	type BoardIdentity,
+	boardKey,
+	makeIdentity,
+	parseBoardKey,
+	SCRATCH_BOARD,
+} from "@/runtime/engine/lib/board-address";
 import { listBoards, type VaultBoard } from "@/runtime/engine/lib/board-vault-listing";
 import { errorMessage } from "@/runtime/engine/lib/board-errno";
 
@@ -54,7 +60,11 @@ function parseAskedKey(asked: string): BoardIdentity {
  * @param declaredKey The key the note's frontmatter claims.
  * @returns The error to throw.
  */
-function conflictingDeclaration(key: string, file: string, declaredKey: string): BoardResolutionError {
+function conflictingDeclaration(
+	key: string,
+	file: string,
+	declaredKey: string,
+): BoardResolutionError {
 	return new BoardResolutionError(
 		key,
 		"conflicting",
@@ -109,4 +119,10 @@ function existingNotesError(key: string, existing: VaultBoard[]): BoardResolutio
 	);
 }
 
-export { availableBoardKeys, parseAskedKey, conflictingDeclaration, candidateNoteFor, existingNotesError };
+export {
+	availableBoardKeys,
+	parseAskedKey,
+	conflictingDeclaration,
+	candidateNoteFor,
+	existingNotesError,
+};
