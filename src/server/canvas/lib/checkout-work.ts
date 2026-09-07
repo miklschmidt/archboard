@@ -33,14 +33,22 @@ interface CheckoutWorkOwner {
 }
 
 /**
- *
+ * The owner of this canvas's machine-local checkout work: it admits work while
+ * the canvas is running, cancels it when a request disconnects, and lets
+ * shutdown wait for what is already in flight.
+ * @returns The owner.
  */
 function createCheckoutWorkOwner(): CheckoutWorkOwner {
 	let accepting = true;
 	const active = new Set<ActiveCheckoutWork>();
 
 	/**
-	 *
+	 * Run one piece of checkout work under a cancellable signal of its own,
+	 * refusing it once the canvas has stopped admitting work.
+	 * @param name What the work is, for the refusal and the cancellation.
+	 * @param externalSignal A caller's signal that also cancels it, if it has one.
+	 * @param work The work.
+	 * @returns The work's result.
 	 */
 	function track<T>(
 		name: string,
@@ -53,9 +61,7 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 			);
 		}
 		const controller = new AbortController();
-		/**
-		 *
-		 */
+		/** Cancel this work with the caller's reason, or one naming the work. */
 		const cancel = (): void => {
 			controller.abort(externalSignal?.reason ?? new Error(`${name} canceled.`));
 		};
@@ -79,7 +85,12 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 	}
 
 	/**
-	 *
+	 * Run checkout work for one request, cancelling it if the caller hangs up.
+	 * @param request The request.
+	 * @param response Its response.
+	 * @param name What the work is.
+	 * @param work The work.
+	 * @returns The work's result.
 	 */
 	async function trackRequest<T>(
 		request: CheckoutRequest,
@@ -88,9 +99,7 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 		work: CheckoutTask<T>,
 	): Promise<T> {
 		const requestController = new AbortController();
-		/**
-		 *
-		 */
+		/** Cancel the work because the caller has gone. */
 		const cancel = (): void => {
 			requestController.abort(new Error(`${request.method} ${request.path} disconnected.`));
 		};
@@ -104,9 +113,7 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 		}
 	}
 
-	/**
-	 *
-	 */
+	/** Stop admitting checkout work and cancel everything already running. */
 	function quiesce(): void {
 		accepting = false;
 		for (const owner of active) {
@@ -115,7 +122,8 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 	}
 
 	/**
-	 *
+	 * Quiesce, then wait for every admitted piece of work to settle, so
+	 * shutdown never leaves checkout work running behind it.
 	 */
 	async function stop(): Promise<void> {
 		quiesce();
@@ -133,9 +141,7 @@ function createCheckoutWorkOwner(): CheckoutWorkOwner {
 		track,
 		trackRequest,
 		quiesce,
-		/**
-		 *
-		 */
+		/** Admit checkout work again, after a refused stop. */
 		resume() {
 			accepting = true;
 		},
