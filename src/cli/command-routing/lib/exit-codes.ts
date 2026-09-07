@@ -6,7 +6,7 @@ import {
 	boardHoldSeen,
 	formatBoardRefusal,
 } from "@/runtime/engine/canvas-client";
-import { type RouteOwner } from "@/cli/commands/lib/command-route";
+import { type RouteOwner } from "@/cli/command-routing/lib/route";
 
 /**
  * Reads the machine-readable code a canvas refusal or transport failure carries.
