@@ -6,15 +6,8 @@ import type {
 	CodexThreadCandidatesProjectionInput,
 } from "@/server/codex-workbench";
 import { boundedBrowserReason } from "@/server/canvas/lib/codex-workbench-readiness";
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-} from "@/shared/codex-workbench-identity";
-import {
-	EPOCH_THREAD_ATTACH_OPERATION,
-	type EpochOperationRecord,
-} from "@/runtime/codex-epoch";
+import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
+import { EPOCH_THREAD_ATTACH_OPERATION, type EpochOperationRecord } from "@/runtime/codex-epoch";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,

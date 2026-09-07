@@ -1,10 +1,7 @@
 import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
 import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
 import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
-import type {
-	CodexCoordinator,
-	CoordinatorPersistedState,
-} from "@/runtime/codex-coordinator";
+import type { CodexCoordinator, CoordinatorPersistedState } from "@/runtime/codex-coordinator";
 import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
 import type { CodexEpochStore } from "@/runtime/codex-epoch";
 import {

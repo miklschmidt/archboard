@@ -104,6 +104,7 @@ function createElementRoute(req: Request, res: Response): void {
 			/**
 			 * Log the creation once it has persisted.
 			 * @param outcome The write's outcome.
+			 * @param outcome.value What the mutation produced.
 			 */
 			afterPersist: ({ value }) => {
 				logger.info("Creating element via API", { type: value.stored.type, board: source.key });
@@ -111,6 +112,11 @@ function createElementRoute(req: Request, res: Response): void {
 			/**
 			 * The created element, and what the board became (TASK-075).
 			 * @param outcome The write's outcome.
+			 * @param outcome.content The board content after the write.
+			 * @param outcome.value What the mutation produced.
+			 * @param outcome.delta What the write created, updated and deleted.
+			 * @param outcome.written The persisted note, or null when nothing was written.
+			 * @param outcome.checkoutSnapshot The checkout overlay the answer presents through.
 			 * @returns The response body.
 			 */
 			answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
@@ -174,6 +180,10 @@ function updateElementRoute(req: Request, res: Response): void {
 			/**
 			 * The updated element, and what the board became.
 			 * @param outcome The write's outcome.
+			 * @param outcome.content The board content after the write.
+			 * @param outcome.value What the mutation produced.
+			 * @param outcome.written The persisted note, or null when nothing was written.
+			 * @param outcome.checkoutSnapshot The checkout overlay the answer presents through.
 			 * @returns The response body.
 			 */
 			answer: ({ content, value, written, checkoutSnapshot }) => ({
@@ -224,6 +234,7 @@ function clearElementsRoute(req: Request, res: Response): void {
 			 * Nothing is on this board, so nothing on it can be selected in any
 			 * pane showing it. A pane on another board keeps its pick.
 			 * @param outcome The write's outcome.
+			 * @param outcome.value What the mutation produced.
 			 */
 			afterPersist: ({ value }) => {
 				clearSelectionForBoard(source.key);
@@ -232,6 +243,7 @@ function clearElementsRoute(req: Request, res: Response): void {
 			/**
 			 * How many elements went.
 			 * @param outcome The write's outcome.
+			 * @param outcome.value What the mutation produced.
 			 * @returns The response body.
 			 */
 			answer: ({ value }) => ({
@@ -278,6 +290,11 @@ function deleteElementRoute(req: Request, res: Response): void {
 			/**
 			 * What was deleted, and what the board became.
 			 * @param outcome The write's outcome.
+			 * @param outcome.content The board content after the write.
+			 * @param outcome.value What the mutation produced.
+			 * @param outcome.delta What the write created, updated and deleted.
+			 * @param outcome.written The persisted note, or null when nothing was written.
+			 * @param outcome.checkoutSnapshot The checkout overlay the answer presents through.
 			 * @returns The response body.
 			 */
 			answer: ({ content, value, delta, written, checkoutSnapshot }) => ({
@@ -371,7 +388,10 @@ function searchElementsRoute(req: Request, res: Response): void {
 		results = filterByFields(results, filters);
 		res.json({
 			success: true,
-			elements: presentElements(results, { boardKey: key, checkoutSnapshot: checkoutSnapshotFor(res) }),
+			elements: presentElements(results, {
+				boardKey: key,
+				checkoutSnapshot: checkoutSnapshotFor(res),
+			}),
 			count: results.length,
 		});
 	} catch (error) {
@@ -398,11 +418,31 @@ function getElementRoute(req: Request, res: Response): void {
 		}
 		res.json({
 			success: true,
-			element: presentElement(element, { boardKey: key, checkoutSnapshot: checkoutSnapshotFor(res) }),
+			element: presentElement(element, {
+				boardKey: key,
+				checkoutSnapshot: checkoutSnapshotFor(res),
+			}),
 		});
 	} catch (error) {
 		answerBoardError(res, error, "Error fetching element:");
 	}
+}
+
+/**
+ * Why a batch was refused, when its body does not carry what the write needs.
+ * @param elements The `elements` body field.
+ * @param files The `files` body field.
+ * @param replacesScene Whether the body asked to replace the whole scene.
+ * @returns The refusal, or null when the body is usable.
+ */
+function batchRefusal(elements: unknown, files: unknown, replacesScene: boolean): string | null {
+	if (!Array.isArray(elements)) {
+		return "Expected an array of elements";
+	}
+	if (replacesScene && !Array.isArray(files)) {
+		return "Expected an array of files for scene replacement";
+	}
+	return null;
 }
 
 /**
@@ -416,22 +456,18 @@ function batchElementsRoute(req: Request, res: Response): void {
 		const source = boardTargetFromRequest(req, "Creating elements");
 		const { elements: elementsToCreate, files: replacementFiles, mutation } = bodyOf(req);
 		const replacesScene = mutation === SCENE_REPLACEMENT_MARKER;
-		if (!Array.isArray(elementsToCreate)) {
-			res.status(400).json({ success: false, error: "Expected an array of elements" });
+		const refusal = batchRefusal(elementsToCreate, replacementFiles, replacesScene);
+		if (refusal !== null) {
+			res.status(400).json({ success: false, error: refusal });
 			return;
 		}
-		if (replacesScene && !Array.isArray(replacementFiles)) {
-			res
-				.status(400)
-				.json({ success: false, error: "Expected an array of files for scene replacement" });
-			return;
-		}
+		const upserts = Array.isArray(elementsToCreate) ? elementsToCreate : [];
 		const replacementFileList = Array.isArray(replacementFiles) ? replacementFiles : [];
 		answerBoardWrite(res, {
 			source,
 			origin: "agent",
 			mutation: elementMutation<{ count: number }>(() => ({
-				input: { upserts: elementsToCreate, origin: "agent" },
+				input: { upserts, origin: "agent" },
 				...(replacesScene ? { replaceScene: { files: replacementFileList } } : {}),
 				/**
 				 * How many elements the batch created.
@@ -443,12 +479,19 @@ function batchElementsRoute(req: Request, res: Response): void {
 			...(replacesScene
 				? {
 						/** A replaced scene voids every pick on the board. */
-						afterPersist: () => clearSelectionForBoard(source.key),
+						afterPersist: () => {
+							clearSelectionForBoard(source.key);
+						},
 					}
 				: {}),
 			/**
 			 * What the batch produced, and what the board became.
 			 * @param outcome The write's outcome.
+			 * @param outcome.content The board content after the write.
+			 * @param outcome.value What the mutation produced.
+			 * @param outcome.delta What the write created, updated and deleted.
+			 * @param outcome.written The persisted note, or null when nothing was written.
+			 * @param outcome.checkoutSnapshot The checkout overlay the answer presents through.
 			 * @returns The response body.
 			 */
 			answer: ({ content, value, delta, written, checkoutSnapshot }) => ({

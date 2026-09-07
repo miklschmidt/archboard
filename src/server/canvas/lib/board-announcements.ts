@@ -20,7 +20,12 @@ import type { NoteWrittenElsewhere } from "@/runtime/engine/note-watch";
 import { RenderGeometryError } from "@/runtime/engine/geometry";
 import { NativeElementValidationError } from "@/runtime/engine/native-element";
 import { createAgentActivity } from "@/server/canvas/lib/agent-activity";
-import { broadcast, broadcastBoardless, sendToPane, syncLockWatch } from "@/server/canvas/lib/pane-registry";
+import {
+	broadcast,
+	broadcastBoardless,
+	sendToPane,
+	syncLockWatch,
+} from "@/server/canvas/lib/pane-registry";
 
 /**
  * A board's writer changed, so every pane holding it is told (ADR 0016).
@@ -52,7 +57,9 @@ const agentActivity = createAgentActivity({
 	 * Deliver one navigator message to every client.
 	 * @param message The boardless activity message.
 	 */
-	send: (message) => broadcastBoardless(message),
+	send: (message) => {
+		broadcastBoardless(message);
+	},
 	/**
 	 * The key a board is displayed under, which is the store's spelling of it
 	 * when the board is open and the normalized key otherwise.

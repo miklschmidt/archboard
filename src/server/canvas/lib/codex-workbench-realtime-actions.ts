@@ -1,13 +1,6 @@
 import type { BrowserActionContext, BrowserRealtimeActions } from "@/server/codex-workbench";
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-} from "@/shared/codex-workbench-identity";
-import {
-	parseRealtimeCorrelationId,
-	parseRealtimeSessionId,
-} from "@/shared/codex-realtime-host";
+import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
+import { parseRealtimeCorrelationId, parseRealtimeSessionId } from "@/shared/codex-realtime-host";
 import type { CodexWorkbenchComponents } from "@/server/canvas/lib/codex-workbench";
 
 type RealtimeComponents = Pick<CodexWorkbenchComponents, "coordinator" | "realtime" | "workhorse">;

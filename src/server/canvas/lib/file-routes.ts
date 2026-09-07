@@ -98,6 +98,7 @@ function addFilesRoute(req: Request, res: Response): void {
 			/**
 			 * How many images were kept, and which were not.
 			 * @param outcome The write's outcome.
+			 * @param outcome.value What the mutation produced.
 			 * @returns The response body.
 			 */
 			answer: ({ value }) => ({

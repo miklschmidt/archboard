@@ -268,7 +268,10 @@ function clearSelectionForBoard(boardKeyToClear: string): void {
 function referencePane(): PaneRegistration | null {
 	const existing = Array.from(panes.values());
 	return (
-		existing.find((pane) => pane.primary) ?? existing.find((pane) => pane.focused) ?? existing[0] ?? null
+		existing.find((pane) => pane.primary) ??
+		existing.find((pane) => pane.focused) ??
+		existing[0] ??
+		null
 	);
 }
 
@@ -458,7 +461,7 @@ async function settleAfterLayout(askedAt: string, moved: Iterable<string>): Prom
 		if (waitedOn.size === 0) {
 			return;
 		}
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- polling the registry: each check waits for the previous pause to elapse
+		// oxlint-disable-next-line no-await-in-loop -- polling the registry: each check waits for the previous pause to elapse
 		await sleep(50);
 	}
 }

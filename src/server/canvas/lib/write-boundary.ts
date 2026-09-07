@@ -1,6 +1,7 @@
 import type { Express, NextFunction, Request, Response } from "express";
 import { boards } from "@/runtime/engine/board-store";
 import { resolveInstalledBoard } from "@/runtime/engine/board-io";
+import type { ResolvedBoard } from "@/runtime/engine/board-io";
 import { boardKey, normalizeBoardKey, parseBoardKey } from "@/runtime/engine/board";
 import { BoardRequiredError } from "@/runtime/engine/board-target";
 import { holdOn, reportHold, writesBoardNote } from "@/runtime/engine/board-hold";
@@ -19,7 +20,11 @@ import {
 	statedVersion,
 } from "@/runtime/engine/board-version";
 import { announceDoing, refuseUndescribedWrite } from "@/server/canvas/lib/board-announcements";
-import { answerBoardError, checkoutSnapshotFor, refusalDocument } from "@/server/canvas/lib/board-response";
+import {
+	answerBoardError,
+	checkoutSnapshotFor,
+	refusalDocument,
+} from "@/server/canvas/lib/board-response";
 import { callerGone, trackMutationWork } from "@/server/canvas/lib/mutation-work";
 import {
 	boardOfRequest,
@@ -286,6 +291,57 @@ interface GuardedWrite {
  * @param guarded What the boundary established before the lock.
  * @param signal The mutation lease's abort signal.
  */
+/**
+ * Whether this write's stated or remembered version still matches the note,
+ * checked under the lock so no other archboard writer can land between the
+ * read and the write (TASK-091).
+ * @param key The board.
+ * @param writer Who is writing.
+ * @param expected The version the request stated, if it stated one.
+ * @param resolved The board resolved under the lock.
+ * @returns The conflict, or null when the write may proceed.
+ */
+function versionConflictOf(
+	key: string,
+	writer: RequestWriter,
+	expected: number | null | undefined,
+	resolved: ResolvedBoard | undefined,
+): ReturnType<typeof checkBoardVersion> {
+	const rememberedBy = claimedWriterId(key, writer);
+	const file = resolved?.board.file;
+	const stated = expected ?? undefined;
+	return checkBoardVersion({
+		board: key,
+		...(file === undefined ? {} : { file }),
+		writesNote: writesBoardNote(key),
+		...(stated === undefined ? {} : { stated }),
+		...(rememberedBy === undefined ? {} : { rememberedBy }),
+	});
+}
+
+/**
+ * The writer id a claim on this board is held under by this very writer, which
+ * is what makes the canvas's record of what it has been told this writer's.
+ * @param key The board.
+ * @param writer Who is writing.
+ * @returns The claimed id, or undefined when this writer does not hold the claim.
+ */
+function claimedWriterId(key: string, writer: RequestWriter): string | undefined {
+	if (writer.kind !== "agent") {
+		return undefined;
+	}
+	return claimWriterId(key) === writer.id ? writer.id : undefined;
+}
+
+/**
+ * Take the board, check the write's version under the lock and hand the
+ * request to its handler.
+ * @param req The request.
+ * @param res Its response.
+ * @param next The next middleware.
+ * @param guarded What the boundary established before the lock.
+ * @param signal The mutation lease's abort signal.
+ */
 async function takeBoardAndContinue(
 	req: Request,
 	res: Response,
@@ -320,16 +376,7 @@ async function takeBoardAndContinue(
 		answerBoardError(res, error);
 		return;
 	}
-	const rememberedBy =
-		writer.kind === "agent" && claimWriterId(key) === writer.id ? writer.id : undefined;
-	const file = resolvedBoardWrites.get(req)?.board.file;
-	const conflict = checkBoardVersion({
-		board: key,
-		...(file === undefined ? {} : { file }),
-		writesNote: writesBoardNote(key),
-		...(expected === undefined ? {} : { stated: expected }),
-		...(rememberedBy === undefined ? {} : { rememberedBy }),
-	});
+	const conflict = versionConflictOf(key, writer, expected, resolvedBoardWrites.get(req));
 	if (conflict) {
 		res.status(409).json({
 			success: false,
@@ -348,6 +395,36 @@ async function takeBoardAndContinue(
 }
 
 /**
+ * An agent says what it is doing, on this write, before it takes the board.
+ * Same boundary as the lock and for the same reason: this is the one place
+ * that knows a request is a board write, so a route added later cannot be the
+ * one that got away with saying nothing. A person is never made to narrate
+ * their own act.
+ * @param req The request.
+ * @param res Its response.
+ * @param key The board.
+ * @param writer Who is writing.
+ * @returns False once the undescribed write has been refused.
+ */
+function arrangeDoingAnnouncement(
+	req: Request,
+	res: Response,
+	key: string,
+	writer: RequestWriter,
+): boolean {
+	if (writer.kind !== "agent") {
+		return true;
+	}
+	const check = checkDoing(req.query["doing"]);
+	if (!check.ok) {
+		refuseUndescribedWrite(res, key, req.path, check.problem);
+		return false;
+	}
+	announceOnFinish(res, key, writer, check.doing);
+	return true;
+}
+
+/**
  * The write boundary itself: identify the writer, refuse a revoked claim, a
  * malformed precondition or an undescribed agent write, then take the board.
  * @param req The request.
@@ -357,7 +434,8 @@ async function takeBoardAndContinue(
 function guardBoardWrite(req: Request, res: Response, next: NextFunction): void {
 	const key = writeKeyOf(req);
 	if (key === null) {
-		return next();
+		next();
+		return;
 	}
 	// An agent whose claim was taken back hears about it here, before anything is
 	// written, because "you no longer have this board" is the answer to the write
@@ -380,16 +458,8 @@ function guardBoardWrite(req: Request, res: Response, next: NextFunction): void 
 		return;
 	}
 	rememberTold(res, key, writer);
-	// And an agent says what it is doing, on this write, before it takes the
-	// board. Same boundary as the lock and for the same reason: this is the one
-	// place that knows a request is a board write, so a route added later cannot
-	// be the one that got away with saying nothing.
-	if (writer.kind === "agent") {
-		const check = checkDoing(req.query["doing"]);
-		if (!check.ok) {
-			return refuseUndescribedWrite(res, key, req.path, check.problem);
-		}
-		announceOnFinish(res, key, writer, check.doing);
+	if (!arrangeDoingAnnouncement(req, res, key, writer)) {
+		return;
 	}
 	const guarded: GuardedWrite = { key, writer, expected: stated.expected };
 	void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>

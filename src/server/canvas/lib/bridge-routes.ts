@@ -2,8 +2,16 @@ import type { Express, Request, Response } from "express";
 import { mintId } from "@/shared/ids/ids";
 import type { ServerElement } from "@/runtime/engine/types";
 import type { BoardContent } from "@/runtime/engine/board-io";
-import { agentWriteAnswer, BoardMutationError, elementMutation } from "@/runtime/engine/board-write";
-import { BridgeRefusal, planBridgeCreate, planBridgeRemoval } from "@/runtime/board-inspection/bridge";
+import {
+	agentWriteAnswer,
+	BoardMutationError,
+	elementMutation,
+} from "@/runtime/engine/board-write";
+import {
+	BridgeRefusal,
+	planBridgeCreate,
+	planBridgeRemoval,
+} from "@/runtime/board-inspection/bridge";
 import { answerBoardError } from "@/server/canvas/lib/board-response";
 import {
 	answerBoardWrite,
@@ -91,6 +99,10 @@ function createBridgeRoute(req: Request, res: Response): void {
 			/**
 			 * Where the bridge sits, and what the board became.
 			 * @param outcome The write's outcome.
+			 * @param outcome.content The board content after the write.
+			 * @param outcome.value What the mutation produced.
+			 * @param outcome.written The persisted note, or null when nothing was written.
+			 * @param outcome.checkoutSnapshot The checkout overlay the answer presents through.
 			 * @returns The response body.
 			 */
 			answer: ({ content, value, written, checkoutSnapshot }) => ({
@@ -153,6 +165,10 @@ function deleteBridgeRoute(req: Request, res: Response): void {
 			/**
 			 * What was removed, and what the board became.
 			 * @param outcome The write's outcome.
+			 * @param outcome.content The board content after the write.
+			 * @param outcome.value What the mutation produced.
+			 * @param outcome.written The persisted note, or null when nothing was written.
+			 * @param outcome.checkoutSnapshot The checkout overlay the answer presents through.
 			 * @returns The response body.
 			 */
 			answer: ({ content, value, written, checkoutSnapshot }) => ({
@@ -160,7 +176,15 @@ function deleteBridgeRoute(req: Request, res: Response): void {
 				board: source.key,
 				bridgeId,
 				deleted: value.deleted,
-				...agentWriteAnswer(source.key, source.board, content, [], false, written, checkoutSnapshot),
+				...agentWriteAnswer(
+					source.key,
+					source.board,
+					content,
+					[],
+					false,
+					written,
+					checkoutSnapshot,
+				),
 			}),
 		});
 	} catch (error) {

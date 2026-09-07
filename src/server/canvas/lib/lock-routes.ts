@@ -200,6 +200,15 @@ async function takeClaim(
 }
 
 /**
+ * How long a claim asked for, when it asked for a usable length.
+ * @param asked The `forMs` body field.
+ * @returns The duration, or undefined when the claim named none.
+ */
+function claimDuration(asked: unknown): number | undefined {
+	return typeof asked === "number" && Number.isFinite(asked) ? asked : undefined;
+}
+
+/**
  * An agent is about to redraw this board and wants it until it says otherwise.
  *
  * The per-write lock fits most of what an agent does. It does not fit twenty
@@ -235,8 +244,7 @@ function claimRoute(req: Request, res: Response): void {
 		if (refuseRevokedClaim(res, key)) {
 			return;
 		}
-		const askedFor = bodyOf(req)["forMs"];
-		const forMs = typeof askedFor === "number" && Number.isFinite(askedFor) ? askedFor : undefined;
+		const forMs = claimDuration(bodyOf(req)["forMs"]);
 		void trackMutationWork(req, `${req.method} ${req.path} claim wait`, (signal) =>
 			takeClaim(key, reason, forMs, signal),
 		)
