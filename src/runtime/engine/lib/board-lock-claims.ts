@@ -31,7 +31,7 @@ async function claimBoard(
 	// Clamp rather than refuse an overlong request, while never making the claim
 	// shorter than the renewable lease beneath it.
 	const board = normalizeBoardKey(request.board);
-	const forMs = Math.min(Math.max(request.forMs ?? CLAIM_DEFAULT_MS, CLAIM_LEASE_MS), CLAIM_MAX_MS);
+	const forMs = campaignLength(request.forMs);
 	const existing = liveClaim(board);
 	const id = existing === null ? `claim-${newToken()}` : existing.holder.id;
 	const hold = await holdBoard({
@@ -49,6 +49,16 @@ async function claimBoard(
 	processClaims.set(board, entry);
 	entry.timer ??= startRenewing(board);
 	return { claim: claimOf(board, entry), created: existing === null };
+}
+
+/**
+ * How long a campaign runs for. An overlong request is clamped rather than
+ * refused, and a claim is never shorter than the renewable lease beneath it.
+ * @param asked What the caller asked for, when it asked.
+ * @returns The campaign's length in milliseconds.
+ */
+function campaignLength(asked: number | undefined): number {
+	return Math.min(Math.max(asked ?? CLAIM_DEFAULT_MS, CLAIM_LEASE_MS), CLAIM_MAX_MS);
 }
 
 /**
