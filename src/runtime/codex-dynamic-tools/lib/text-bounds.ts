@@ -48,7 +48,10 @@ function truncateUtf8(value: string, maximum: number): string {
  */
 function boundedMessage(value: string, fallback: string): string {
 	const normalized = value.trim();
-	return truncateUtf8(normalized.length === 0 ? fallback : normalized, RESPONSE_TEXT_MAX_UTF8_BYTES);
+	return truncateUtf8(
+		normalized.length === 0 ? fallback : normalized,
+		RESPONSE_TEXT_MAX_UTF8_BYTES,
+	);
 }
 
 /**

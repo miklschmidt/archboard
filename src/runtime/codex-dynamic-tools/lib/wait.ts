@@ -1,22 +1,25 @@
 import type { ChildId, DynamicToolCallId, ThreadId } from "@/shared/codex-workbench-identity";
-import {
-	ARCHBOARD_APP_MANIFEST_SHA256,
-	ARCHBOARD_APP_NAMESPACE,
-} from "@/runtime/codex-thread-tools";
-import {
-	CodexDynamicToolsError,
-	type CodexDynamicToolsOptions,
-	type DynamicCallerAuthority,
-	type DynamicTargetAuthority,
-	type DynamicWaitEvent,
-	type DynamicWaitOwner,
+import type {
+	CodexDynamicToolsOptions,
+	DynamicCallerAuthority,
+	DynamicTargetAuthority,
+	DynamicWaitEvent,
+	DynamicWaitOwner,
 } from "@/runtime/codex-dynamic-tools/lib/contract";
 import {
 	encodeDynamicCursor,
 	unwrapDynamicCursor,
 } from "@/runtime/codex-dynamic-tools/lib/cursors";
 import { assertWaitTargetAllowed } from "@/runtime/codex-dynamic-tools/lib/classification";
+import {
+	assertWaitArguments,
+	assertWaitCall,
+	dynamicError,
+	errorCode,
+	validateEvent,
+} from "@/runtime/codex-dynamic-tools/lib/wait-validation";
 
+/** What one settled wait call reports back to the caller. */
 interface WaitProjection {
 	readonly event: DynamicWaitEvent["event"];
 	readonly threadId: string | null;
@@ -24,54 +27,70 @@ interface WaitProjection {
 	readonly sequence: number;
 }
 
-function dynamicError(
-	code: "invalid_call" | "cycle" | "stale_child",
-	message: string,
-	cause?: unknown,
-) {
-	return new CodexDynamicToolsError(code, message, cause);
+/** The manifest call one wait takes ownership under. */
+interface WaitCall {
+	readonly callId: DynamicToolCallId;
+	readonly namespace: "archboard_app";
+	readonly tool: "wait_threads";
+	readonly manifestHash: string;
 }
 
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-	return value !== null && typeof value === "object" && !Array.isArray(value);
+/** Why a wait owner is being released. */
+type ReleaseCause = "settle" | "cancellation" | "interruption" | "disconnect";
+
+/** Everything one wait call is made of. */
+interface WaitInput {
+	readonly threadIds: readonly string[];
+	readonly timeoutMs: number;
+	readonly cursor?: string;
+	readonly caller: DynamicCallerAuthority;
+	readonly call: WaitCall;
+	readonly classifyTarget: (threadId: unknown) => Promise<DynamicTargetAuthority>;
+	readonly options: CodexDynamicToolsOptions;
 }
 
-function exactEventKeys(
-	value: Readonly<Record<string, unknown>>,
-	keys: readonly string[],
-): boolean {
-	return (
-		Reflect.ownKeys(value).every((key) => typeof key === "string" && keys.includes(key)) &&
-		keys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
-	);
+/** The wait's targets, resolved and cross-checked against the caller's authority. */
+interface WaitTargets {
+	readonly requestedWireIds: readonly string[];
+	readonly identityIds: readonly ThreadId[];
+	readonly byWireId: ReadonlyMap<string, DynamicTargetAuthority>;
 }
 
-function errorCode(error: unknown): string | undefined {
-	return typeof error === "object" && error !== null && "code" in error
-		? String((error as { readonly code: unknown }).code)
-		: undefined;
-}
-
+/**
+ * The query a wait's cursor is bound to, so a cursor cannot be replayed against a different
+ * set of threads than the one it was issued for.
+ * @param threadIds The wire ThreadIds the call named.
+ * @returns The frozen query.
+ */
 function waitQuery(
 	threadIds: readonly string[],
 ): Readonly<{ readonly threadIds: readonly string[] }> {
 	return Object.freeze({ threadIds: Object.freeze([...threadIds]) });
 }
 
+/**
+ * The values in a stable order with duplicates removed, which is what makes one wait's identity
+ * independent of the order the caller happened to name its threads in.
+ * @param values The values.
+ * @returns The sorted, frozen, unique values.
+ */
 function sortedUnique(values: readonly string[]): readonly string[] {
 	return Object.freeze(
 		[...new Set(values)].toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0)),
 	);
 }
 
+/**
+ * The owner identity one wait registers under: which child, caller, turn and call it is, which
+ * epoch it belongs to, and which targets it is waiting on.
+ * @param caller The caller's authority.
+ * @param call The manifest call.
+ * @param targets The target thread identities, in a stable order.
+ * @returns The frozen owner.
+ */
 function ownerFor(
 	caller: DynamicCallerAuthority,
-	call: {
-		readonly callId: DynamicToolCallId;
-		readonly namespace: "archboard_app";
-		readonly tool: "wait_threads";
-		readonly manifestHash: string;
-	},
+	call: WaitCall,
 	targets: readonly ThreadId[],
 ): DynamicWaitOwner {
 	return Object.freeze({
@@ -88,6 +107,11 @@ function ownerFor(
 	});
 }
 
+/**
+ * The part of a wait owner the dependency graph is keyed by.
+ * @param owner The wait owner.
+ * @returns The graph key.
+ */
 function graphOwner(owner: DynamicWaitOwner) {
 	return {
 		child: owner.child,
@@ -97,10 +121,17 @@ function graphOwner(owner: DynamicWaitOwner) {
 	} as const;
 }
 
+/**
+ * Release one wait owner from both the dependency graph and the lifecycle, reporting the graph's
+ * failure in preference to the lifecycle's so the first thing that went wrong is the one raised.
+ * @param options The dynamic tools options.
+ * @param owner The wait owner.
+ * @param cause Why the owner is being released.
+ */
 async function releaseWaitOwner(
 	options: CodexDynamicToolsOptions,
 	owner: DynamicWaitOwner,
-	cause: "settle" | "cancellation" | "interruption" | "disconnect",
+	cause: ReleaseCause,
 ): Promise<void> {
 	let graphError: unknown = null;
 	try {
@@ -121,127 +152,20 @@ async function releaseWaitOwner(
 	}
 }
 
-function validateEvent(
-	event: DynamicWaitEvent,
-	previousSequence: number,
-	targetIds: ReadonlySet<string>,
-	targets: ReadonlyMap<string, DynamicTargetAuthority>,
-): void {
-	if (!isRecord(event) || typeof event.event !== "string") {
-		throw dynamicError("invalid_call", "The wait authority returned an invalid event.");
-	}
-	const eventKeys =
-		event.event === "timeout"
-			? ["event", "threadId", "sequence", "cursor"]
-			: event.event === "completed" || event.event === "attention"
-				? [
-						"event",
-						"threadId",
-						"sequence",
-						"cursor",
-						...(event.event === "attention" &&
-						targets.get(typeof event.threadId === "string" ? event.threadId : "")?.status !==
-							"systemError"
-							? ["targetOwned"]
-							: []),
-					]
-				: null;
-	const systemErrorAttention =
-		event.event === "attention" &&
-		targets.get(typeof event.threadId === "string" ? event.threadId : "")?.status === "systemError";
-	if (
-		eventKeys === null ||
-		(!exactEventKeys(event, eventKeys) &&
-			!(
-				systemErrorAttention &&
-				exactEventKeys(event, ["event", "threadId", "sequence", "cursor", "targetOwned"])
-			))
-	) {
-		throw dynamicError("invalid_call", "The wait authority returned an invalid event shape.");
-	}
-	if (!Number.isSafeInteger(event.sequence) || event.sequence < 0) {
-		throw dynamicError("invalid_call", "The wait authority returned an invalid event sequence.");
-	}
-	if (
-		event.cursor !== null &&
-		(typeof event.cursor !== "string" || event.cursor.length === 0 || event.cursor.length > 1_024)
-	) {
-		throw dynamicError("invalid_call", "The wait authority returned an invalid event cursor.");
-	}
-	if (event.event === "timeout") {
-		if (event.threadId !== null || event.sequence !== previousSequence) {
-			throw dynamicError("invalid_call", "A timeout must not deliver a target event.");
-		}
-		return;
-	}
-	if (!targetIds.has(event.threadId)) {
-		throw dynamicError("invalid_call", "The wait authority returned an event for another thread.");
-	}
-	if (event.sequence <= previousSequence) {
-		throw dynamicError("invalid_call", "The wait authority returned an already-delivered event.");
-	}
-	if (event.event === "attention") {
-		const target = targets.get(event.threadId);
-		if (Object.prototype.hasOwnProperty.call(event, "targetOwned") && event.targetOwned !== true) {
-			throw dynamicError("invalid_call", "Attention ownership must be explicitly true.");
-		}
-		if (target === undefined || (target.status !== "systemError" && event.targetOwned !== true)) {
-			throw dynamicError("invalid_call", "Attention was not proven to belong to a wait target.");
-		}
-	}
-}
-
-async function waitForDynamicThreads(input: {
-	readonly threadIds: readonly string[];
-	readonly timeoutMs: number;
-	readonly cursor?: string;
-	readonly caller: DynamicCallerAuthority;
-	readonly call: {
-		readonly callId: DynamicToolCallId;
-		readonly namespace: "archboard_app";
-		readonly tool: "wait_threads";
-		readonly manifestHash: string;
-	};
-	readonly classifyTarget: (threadId: unknown) => Promise<DynamicTargetAuthority>;
-	readonly options: CodexDynamicToolsOptions;
-}): Promise<WaitProjection> {
-	if (
-		!Array.isArray(input.threadIds) ||
-		input.threadIds.length === 0 ||
-		input.threadIds.length > 8 ||
-		input.threadIds.some(
-			(threadId) => typeof threadId !== "string" || threadId.length === 0 || threadId.length > 128,
-		) ||
-		!Number.isSafeInteger(input.timeoutMs) ||
-		input.timeoutMs < 0 ||
-		input.timeoutMs > 120_000
-	) {
-		throw dynamicError("invalid_call", "The wait arguments are outside the reviewed bounds.");
-	}
-	if (
-		!isRecord(input.call) ||
-		!exactEventKeys(input.call, ["callId", "namespace", "tool", "manifestHash"]) ||
-		typeof input.call.callId !== "string" ||
-		input.call.callId.length === 0 ||
-		input.call.namespace !== ARCHBOARD_APP_NAMESPACE.name ||
-		input.call.tool !== "wait_threads" ||
-		input.call.manifestHash !== ARCHBOARD_APP_MANIFEST_SHA256
-	) {
-		throw dynamicError(
-			"invalid_call",
-			"The wait owner identity is not the reviewed manifest call.",
-		);
-	}
-	const requestedWireIds = sortedUnique(input.threadIds);
-	const cursor = unwrapDynamicCursor(input.cursor, {
-		child: input.caller.childId,
-		epoch: input.caller.epoch,
-		method: "wait_threads",
-		direction: "event",
-		query: waitQuery(requestedWireIds),
-	});
+/**
+ * Classify every thread the call named, refusing an authority that renames a thread under the
+ * boundary and one that hands back the same thread twice.
+ * @param input The wait call.
+ * @param requestedWireIds The wire ThreadIds the call named, in a stable order.
+ * @returns The resolved targets.
+ */
+async function resolveWaitTargets(
+	input: WaitInput,
+	requestedWireIds: readonly string[],
+): Promise<WaitTargets> {
 	const classified: DynamicTargetAuthority[] = [];
 	for (const threadId of requestedWireIds) {
+		// oxlint-disable-next-line eslint/no-await-in-loop -- each target is classified against the caller's authority in turn; a later refusal must not race an earlier one
 		const target = await input.classifyTarget(threadId);
 		if (target.wireThreadId !== threadId) {
 			throw dynamicError("invalid_call", "The target authority changed a wait ThreadId.");
@@ -253,16 +177,32 @@ async function waitForDynamicThreads(input: {
 	if (targetIds.length !== classified.length) {
 		throw dynamicError("invalid_call", "The wait target authority returned duplicate ThreadIds.");
 	}
-	const targetIdentityIds = Object.freeze(
-		classified
-			.map((target) => target.threadId)
-			.toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0)),
-	);
-	const owner = ownerFor(input.caller, input.call, targetIdentityIds);
-	const targetMap = new Map(classified.map((target) => [target.wireThreadId, target]));
+	return {
+		requestedWireIds,
+		identityIds: Object.freeze(
+			classified
+				.map((target) => target.threadId)
+				.toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0)),
+		),
+		byWireId: new Map(classified.map((target) => [target.wireThreadId, target])),
+	};
+}
+
+/**
+ * Take ownership of the wait: claim the dependency edges, refusing a wait that would close a
+ * cycle, and register the owner with the lifecycle, undoing the edges if that fails.
+ * @param input The wait call.
+ * @param owner The wait owner.
+ * @param targets The resolved targets.
+ */
+async function claimWaitOwnership(
+	input: WaitInput,
+	owner: DynamicWaitOwner,
+	targets: WaitTargets,
+): Promise<void> {
 	const graphResult = input.options.waitGraph.addEdgeSet({
 		owner: graphOwner(owner),
-		targets: targetIdentityIds,
+		targets: targets.identityIds,
 	});
 	if (!graphResult.ok) {
 		throw dynamicError("cycle", "The wait would create a dependency cycle.");
@@ -281,10 +221,103 @@ async function waitForDynamicThreads(input: {
 		}
 		throw dynamicError("invalid_call", "The wait owner could not be registered.", error);
 	}
+}
+
+/**
+ * The projection one settled event becomes, carrying a cursor bound to this call's own query so
+ * the next call resumes exactly where this one left off.
+ * @param input The wait call.
+ * @param event The settled event.
+ * @param requestedWireIds The wire ThreadIds the call named, in a stable order.
+ * @param resumedCursor The cursor this call resumed from, used when the event carries none.
+ * @returns The projection.
+ */
+function waitProjection(
+	input: WaitInput,
+	event: DynamicWaitEvent,
+	requestedWireIds: readonly string[],
+	resumedCursor: string | null,
+): WaitProjection {
+	return Object.freeze({
+		event: event.event,
+		threadId: event.threadId,
+		cursor: encodeDynamicCursor({
+			child: input.caller.childId,
+			epoch: input.caller.epoch,
+			method: "wait_threads",
+			direction: "event",
+			query: waitQuery(requestedWireIds),
+			cursor: event.cursor ?? resumedCursor,
+			sequence: event.sequence,
+		}),
+		sequence: event.sequence,
+	});
+}
+
+/**
+ * Tear down every wait this child owns, because the child itself is gone and no owner of its
+ * can settle any more. Cleanup reporting failures are swallowed: the teardown is terminal
+ * whether or not anything is left to hear about it.
+ * @param input The wait call.
+ * @param error What the lifecycle threw.
+ * @returns The refusal to raise.
+ */
+async function childGoneRefusal(input: WaitInput, error: unknown): Promise<never> {
+	try {
+		input.options.waitGraph.release({ cause: "child-exit", child: input.caller.childId });
+		await input.options.lifecycle.releaseWaitOwnersForChild({ child: input.caller.childId });
+	} catch {
+		/* The child teardown owner remains terminal even if cleanup reporting fails. */
+	}
+	throw dynamicError("stale_child", "The child disconnected before the wait settled.", error);
+}
+
+/** The codes that mean the child itself is gone rather than this one wait failing. */
+const CHILD_GONE_CODES = new Set(["child_exit", "child_disconnected", "stale_child"]);
+
+/**
+ * Why a failed wait's owner is being released, taken from the code the lifecycle raised.
+ * @param code The code the lifecycle raised, if any.
+ * @returns The release cause.
+ */
+function releaseCauseFor(code: string | undefined): ReleaseCause {
+	if (code === "interruption") {
+		return "interruption";
+	}
+	return code === "disconnect" ? "disconnect" : "cancellation";
+}
+
+/**
+ * Wait for the first thing to happen on any of the threads a caller named, and report it once.
+ *
+ * The call takes ownership of its targets before it blocks — claiming dependency edges that
+ * refuse a cycle, and registering an owner the lifecycle can release — so nothing can wait on a
+ * thread that is waiting on it, and nothing is left holding an owner if the caller goes away.
+ * Whatever the authority hands back is validated against what this call actually asked for
+ * before it is believed, and the owner is released exactly once on every path out.
+ * @param input The wait call.
+ * @returns What happened, and the cursor to resume from.
+ */
+async function waitForDynamicThreads(input: WaitInput): Promise<WaitProjection> {
+	assertWaitArguments(input.threadIds, input.timeoutMs);
+	assertWaitCall(input.call);
+	const requestedWireIds = sortedUnique(input.threadIds);
+	const cursor = unwrapDynamicCursor(input.cursor, {
+		child: input.caller.childId,
+		epoch: input.caller.epoch,
+		method: "wait_threads",
+		direction: "event",
+		query: waitQuery(requestedWireIds),
+	});
+	const targets = await resolveWaitTargets(input, requestedWireIds);
+	const owner = ownerFor(input.caller, input.call, targets.identityIds);
+	await claimWaitOwnership(input, owner, targets);
 	let released = false;
-	const releaseOnce = async (
-		cause: "settle" | "cancellation" | "interruption" | "disconnect",
-	): Promise<void> => {
+	/**
+	 * Release the owner the first time this is reached, so no path out releases it twice.
+	 * @param cause Why the owner is being released.
+	 */
+	const releaseOnce = async (cause: ReleaseCause): Promise<void> => {
 		if (released) {
 			return;
 		}
@@ -298,43 +331,16 @@ async function waitForDynamicThreads(input: {
 			timeoutMs: input.timeoutMs,
 			previousSequence: cursor.sequence,
 		});
-		validateEvent(event, cursor.sequence, new Set(requestedWireIds), targetMap);
+		validateEvent(event, cursor.sequence, new Set(requestedWireIds), targets.byWireId);
 		await releaseOnce("settle");
-		const eventCursor = event.cursor ?? cursor.cursor;
-		const outputCursor = encodeDynamicCursor({
-			child: input.caller.childId,
-			epoch: input.caller.epoch,
-			method: "wait_threads",
-			direction: "event",
-			query: waitQuery(requestedWireIds),
-			cursor: eventCursor,
-			sequence: event.sequence,
-		});
-		return Object.freeze({
-			event: event.event,
-			threadId: event.threadId,
-			cursor: outputCursor,
-			sequence: event.sequence,
-		});
+		return waitProjection(input, event, requestedWireIds, cursor.cursor);
 	} catch (error) {
 		const code = errorCode(error);
-		if (code === "child_exit" || code === "child_disconnected" || code === "stale_child") {
+		if (CHILD_GONE_CODES.has(code ?? "")) {
 			released = true;
-			try {
-				input.options.waitGraph.release({ cause: "child-exit", child: input.caller.childId });
-				await input.options.lifecycle.releaseWaitOwnersForChild({ child: input.caller.childId });
-			} catch {
-				/* The child teardown owner remains terminal even if cleanup reporting fails. */
-			}
-			throw dynamicError("stale_child", "The child disconnected before the wait settled.", error);
+			return await childGoneRefusal(input, error);
 		}
-		const cause =
-			code === "interruption"
-				? "interruption"
-				: code === "disconnect"
-					? "disconnect"
-					: "cancellation";
-		await releaseOnce(cause);
+		await releaseOnce(releaseCauseFor(code));
 		throw dynamicError(
 			"invalid_call",
 			"The wait call did not remain active until settlement.",
@@ -343,6 +349,7 @@ async function waitForDynamicThreads(input: {
 	}
 }
 
+/** The child a wait belongs to. */
 type DynamicWaitChild = ChildId;
 
 export { type WaitProjection, waitForDynamicThreads, type DynamicWaitChild };
