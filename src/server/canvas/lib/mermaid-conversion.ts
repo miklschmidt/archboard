@@ -1,7 +1,14 @@
 import type { Express, NextFunction, Request, Response } from "express";
 import { derivedId } from "@/shared/ids/ids";
-import { AgentElementInputSchema, type ElementInputRequest } from "@/runtime/engine/apply-element-input";
-import { agentWriteAnswer, BoardMutationError, elementMutation } from "@/runtime/engine/board-write";
+import {
+	AgentElementInputSchema,
+	type ElementInputRequest,
+} from "@/runtime/engine/apply-element-input";
+import {
+	agentWriteAnswer,
+	BoardMutationError,
+	elementMutation,
+} from "@/runtime/engine/board-write";
 import {
 	BoardRendererError,
 	DEFAULT_MERMAID_CONFIG,
@@ -309,6 +316,11 @@ function mountMermaidRoute(app: Express): void {
 					/**
 					 * The conversion's answer: what landed, plus the ordinary agent write answer.
 					 * @param outcome The write's outcome.
+					 * @param outcome.content The board content after the write.
+					 * @param outcome.value What the mutation produced.
+					 * @param outcome.delta What the write created, updated and deleted.
+					 * @param outcome.written The persisted note, or null when nothing was written.
+					 * @param outcome.checkoutSnapshot The checkout overlay the answer presents through.
 					 * @returns The response body.
 					 */
 					answer: ({ content, value, delta, written, checkoutSnapshot }) => ({

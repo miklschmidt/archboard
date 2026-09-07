@@ -69,6 +69,19 @@ function bindingOfRecord(candidate: Record<string, unknown>): CodeBinding | null
 }
 
 /**
+ * Whether a value is an object this walk has not already been through.
+ * @param candidate The value.
+ * @param seen The objects already visited.
+ * @returns True for an unvisited object.
+ */
+function isUnvisitedObject(
+	candidate: unknown,
+	seen: ReadonlySet<object>,
+): candidate is Record<string, unknown> {
+	return Boolean(candidate) && typeof candidate === "object" && !seen.has(candidate as object);
+}
+
+/**
  * Every code binding anywhere inside a request value, however it is nested.
  * @param value The request body or any part of it.
  * @returns The bindings found.
@@ -79,21 +92,15 @@ function codeBindingsInValue(value: unknown): CodeBinding[] {
 	const seen = new Set<object>();
 	while (pending.length > 0) {
 		const candidate = pending.pop();
-		if (!candidate || typeof candidate !== "object" || seen.has(candidate)) {
+		if (!isUnvisitedObject(candidate, seen)) {
 			continue;
 		}
 		seen.add(candidate);
-		if (Array.isArray(candidate)) {
-			pending.push(...candidate);
-			continue;
+		const binding = Array.isArray(candidate) ? null : bindingOfRecord(candidate);
+		if (binding) {
+			bindings.push(binding);
 		}
-		if (isRecord(candidate)) {
-			const binding = bindingOfRecord(candidate);
-			if (binding) {
-				bindings.push(binding);
-			}
-		}
-		pending.push(...Object.values(candidate));
+		pending.push(...(Array.isArray(candidate) ? candidate : Object.values(candidate)));
 	}
 	return bindings;
 }
@@ -189,10 +196,20 @@ function skipsCheckoutSnapshot(req: Request): boolean {
 	if (req.method !== "GET" && PROCESS_FREE_HUMAN_ROUTES.has(req.path)) {
 		return true;
 	}
-	if (req.method === "POST" && req.path === "/api/elements/changes") {
+	if (req.path === "/api/elements/changes") {
 		return bodyOf(req)["origin"] !== "agent";
 	}
-	return req.path.startsWith("/api/settings/opener") || req.path === "/api/code-targets/open";
+	return isCodeOpenerOwnedRoute(req.path);
+}
+
+/**
+ * Whether a route captures its own checkout authority at activation time, so
+ * settings and activation can never share authority accidentally.
+ * @param requestPath The route.
+ * @returns True for the code opener's settings and activation routes.
+ */
+function isCodeOpenerOwnedRoute(requestPath: string): boolean {
+	return requestPath.startsWith("/api/settings/opener") || requestPath === "/api/code-targets/open";
 }
 
 /**
@@ -236,7 +253,7 @@ async function settleInstalledSnapshot(
 ): Promise<void> {
 	let installedBindings = codeBindingsOf(readBoardContent(installed).elements.values());
 	for (;;) {
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- each capture must see the bindings the previous one settled
+		// oxlint-disable-next-line no-await-in-loop -- each capture must see the bindings the previous one settled
 		res.locals["checkoutSnapshot"] = await captureCheckoutSnapshot(req, res, installedBindings);
 		const refreshed = codeBindingsOf(readBoardContent(installed).elements.values());
 		if (JSON.stringify(refreshed) === JSON.stringify(installedBindings)) {
@@ -260,7 +277,8 @@ async function prepareCheckoutSnapshot(
 	next: NextFunction,
 ): Promise<void> {
 	if (skipsCheckoutSnapshot(req)) {
-		return next();
+		next();
+		return;
 	}
 	res.locals["checkoutSnapshot"] = await captureCheckoutSnapshot(
 		req,

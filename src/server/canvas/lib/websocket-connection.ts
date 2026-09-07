@@ -1,8 +1,13 @@
 import type { IncomingMessage } from "http";
 import { WebSocket, WebSocketServer } from "ws";
+import type { RawData } from "ws";
 import logger from "@/runtime/engine/logger";
 import { selectionState } from "@/runtime/engine/types";
-import type { ExcalidrawFile, InitialElementsMessage, WebSocketMessage } from "@/runtime/engine/types";
+import type {
+	ExcalidrawFile,
+	InitialElementsMessage,
+	WebSocketMessage,
+} from "@/runtime/engine/types";
 import { boards, SCRATCH_KEY } from "@/runtime/engine/board-store";
 import type { BoardState } from "@/runtime/engine/board-store";
 import { boardFilesMessage, emptyContent, readBoardContent } from "@/runtime/engine/board-io";
@@ -141,7 +146,7 @@ async function presentableScene(
 	let scene = first;
 	let bindings = codeBindingsOf(scene.content.elements.values());
 	for (;;) {
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- each capture must cover the bindings the previous read found
+		// oxlint-disable-next-line no-await-in-loop -- each capture must cover the bindings the previous read found
 		const checkoutSnapshot = await checkoutWork.track(
 			"WebSocket checkout presentation",
 			signal,
@@ -181,7 +186,10 @@ function sendInitialScene(
 		type: "initial_elements",
 		board: startingKey,
 		identity: board.identity,
-		elements: presentElements(content.elements.values(), { boardKey: startingKey, checkoutSnapshot }),
+		elements: presentElements(content.elements.values(), {
+			boardKey: startingKey,
+			checkoutSnapshot,
+		}),
 		// The version the pane states on its first write (ADR 0022).
 		version: content.version ?? null,
 		...boardFilesMessage(content),
@@ -241,7 +249,7 @@ function codexRefusal(message: Record<string, unknown>, error: string): Record<s
  * @param raw The frame.
  * @returns The request, or null when the frame is not one.
  */
-function codexRequestOf(raw: { toString(): string }): Record<string, unknown> | null {
+function codexRequestOf(raw: RawData): Record<string, unknown> | null {
 	let message: unknown;
 	try {
 		message = JSON.parse(raw.toString());
@@ -337,16 +345,27 @@ function announceToNewPane(
 	ws.send(JSON.stringify(agentActivity.snapshot()));
 }
 
+/** What one accepted socket is registered as, before it is presented anything. */
+interface RegisteredSocket {
+	/** The pane it presents, or null for a socket that named none. */
+	clientId: string | null;
+	/** The token this acceptance is stamped with, so a predecessor cannot take authority back. */
+	acceptanceToken: object | null;
+	/** Its Codex browser connection instance. */
+	codexInstance: BrowserConnectionInstance;
+	/** Aborts the checkout presentation when the socket closes or errors. */
+	signal: AbortSignal;
+}
+
 /**
- * Own one accepted socket for its whole life: register it, present its
- * opening scene, transfer pane authority to it, admit it to broadcasts and
- * route its Codex requests. The lifecycle creates and closes the server.
- * @param ws The accepted socket.
+ * Register one accepted socket and attach the listeners that retire it.
+ * @param ws The socket.
  * @param req The upgrade request, whose `?clientId=` names the pane.
+ * @returns What the socket is registered as.
  */
-async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): Promise<void> {
-	const codexSocketInstance = Object.freeze({});
-	codexSocketInstances.set(ws, codexSocketInstance);
+function registerSocket(ws: WebSocket, req: IncomingMessage): RegisteredSocket {
+	const codexInstance = Object.freeze({});
+	codexSocketInstances.set(ws, codexInstance);
 	const clientId = new URL(req.url ?? "/", "http://localhost").searchParams.get("clientId");
 	const acceptanceToken = clientId === null ? null : Object.freeze({});
 	if (clientId !== null && acceptanceToken !== null) {
@@ -363,55 +382,85 @@ async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): P
 		logger.error("WebSocket error:", error);
 		clients.delete(ws);
 	});
+	return { clientId, acceptanceToken, codexInstance, signal: checkoutController.signal };
+}
+
+/**
+ * Take pane authority and admit the socket to broadcasts.
+ *
+ * Ownership is registered before the checkout await, but content admission
+ * begins only after the initial scene is on the wire. A concurrent delta can
+ * therefore never overtake initialization and then be replaced by it.
+ * @param ws The socket.
+ * @param socket What it is registered as.
+ * @param startingKey The board it starts on.
+ * @returns False when a later socket had already taken this pane's authority.
+ */
+function admitSocket(ws: WebSocket, socket: RegisteredSocket, startingKey: string): boolean {
+	const { clientId, acceptanceToken } = socket;
+	if (clientId === null || acceptanceToken === null) {
+		clients.add(ws);
+		return true;
+	}
+	if (!takePaneAuthority(ws, clientId, acceptanceToken, startingKey)) {
+		return false;
+	}
+	clients.add(ws);
+	try {
+		codexWiring.codex.acceptBrowser?.(socket.codexInstance, clientId);
+	} catch (error) {
+		logger.error("Codex browser acceptance failed:", error);
+	}
+	return true;
+}
+
+/**
+ * The board a socket starts on, which this canvas must have open.
+ * @param key The board key.
+ * @returns The board.
+ */
+function openBoard(key: string): BoardState {
+	const board = boards.get(key);
+	if (board === undefined) {
+		throw new Error(`Board "${key}" is not open`);
+	}
+	return board;
+}
+
+/**
+ * Own one accepted socket for its whole life: register it, present its
+ * opening scene, transfer pane authority to it, admit it to broadcasts and
+ * route its Codex requests. The lifecycle creates and closes the server.
+ * @param ws The accepted socket.
+ * @param req The upgrade request, whose `?clientId=` names the pane.
+ */
+async function acceptWebSocketConnection(ws: WebSocket, req: IncomingMessage): Promise<void> {
+	const socket = registerSocket(ws, req);
 	// Which board this pane gets, and it is a board *for this pane* — not "the"
 	// board, which no longer exists as a single thing. A pane that has been here
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
-	const startingKey = clientId === null ? SCRATCH_KEY : boardForNewPane(clientId);
-	const board = boards.get(startingKey);
-	if (board === undefined) {
-		throw new Error(`Board "${startingKey}" is not open`);
-	}
+	const startingKey = socket.clientId === null ? SCRATCH_KEY : boardForNewPane(socket.clientId);
+	const board = openBoard(startingKey);
 	// Read out of the note, like everything else that sends a pane a whole board.
 	// Scratch is registered before the listener binds.
-	const presentable = await presentableScene(
-		ws,
-		board,
-		readStartingScene(board),
-		checkoutController.signal,
-	);
+	const presentable = await presentableScene(ws, board, readStartingScene(board), socket.signal);
 	if (presentable === null) {
 		return;
 	}
 	const { scene, checkoutSnapshot } = presentable;
 	await sendInitialScene(ws, startingKey, board, scene.content, checkoutSnapshot);
-	if (ws.readyState !== WebSocket.OPEN) {
+	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
-	}
-	if (
-		clientId !== null &&
-		acceptanceToken !== null &&
-		!takePaneAuthority(ws, clientId, acceptanceToken, startingKey)
-	) {
-		return;
-	}
-	// Ownership is registered before the checkout await, but content admission
-	// begins only after the initial scene is on the wire. A concurrent delta can
-	// therefore never overtake initialization and then be replaced by it.
-	clients.add(ws);
-	if (clientId !== null) {
-		try {
-			codexWiring.codex.acceptBrowser?.(codexSocketInstance, clientId);
-		} catch (error) {
-			logger.error("Codex browser acceptance failed:", error);
-		}
 	}
 	// There is a screen again, so the lock files of what is on it are worth
 	// reading (ADR 0016).
 	syncLockWatch();
-	logger.info(`New WebSocket connection established${clientId ? ` (client ${clientId})` : ""}`);
-	announceToNewPane(ws, clientId, startingKey, board, scene.renderError);
-	listenForCodexRequests(ws, clientId, codexSocketInstance);
+	logger.info(
+		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
+	);
+	announceToNewPane(ws, socket.clientId, startingKey, board, scene.renderError);
+	listenForCodexRequests(ws, socket.clientId, socket.codexInstance);
 }
 
 let wss: WebSocketServer | null = null;

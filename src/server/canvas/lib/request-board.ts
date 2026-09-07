@@ -160,8 +160,7 @@ function writeContextOf(res: Response): WriteBoundaryContext {
 function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void {
 	const afterPersist = request.afterPersist;
 	const context = writeContextOf(res);
-	const sourceLockHolder =
-		context.lockKey === request.source.key ? context.lockHolder : undefined;
+	const sourceLockHolder = context.lockKey === request.source.key ? context.lockHolder : undefined;
 	res.json(
 		writeBoard(
 			{
@@ -175,7 +174,11 @@ function answerBoardWrite<T>(res: Response, request: BoardWriteRequest<T>): void
 				afterPersist: (persisted) => {
 					if (persisted.written) {
 						context.writtenVersion = persisted.written.version;
-						if (context.lockKey !== undefined && context.lockToken !== undefined && persisted.target.key === context.lockKey) {
+						if (
+							context.lockKey !== undefined &&
+							context.lockToken !== undefined &&
+							persisted.target.key === context.lockKey
+						) {
 							recordLockCommit(context.lockKey, context.lockToken, persisted.written.hash);
 						}
 					}
@@ -207,6 +210,9 @@ const preparedBoardOpens = new WeakMap<Request, PreparedBoardOpen>();
  * name plus an explicit variant. The key form is what a human says and what
  * `board list` prints, so it is accepted everywhere a board is named.
  * @param params The address fields.
+ * @param params.board The board's name, or a key spelling both name and variant.
+ * @param params.variant The variant, when it is given separately.
+ * @param params.level The abstraction level, when the caller states one.
  * @returns The board identity.
  */
 function identityFromParams(params: {

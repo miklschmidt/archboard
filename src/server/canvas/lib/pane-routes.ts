@@ -158,6 +158,17 @@ const PaneSchema = z.object({
 });
 
 /**
+ * Why a pane's telemetry was refused, named at the field that was wrong.
+ * @param error What the schema reported.
+ * @returns The refusal message.
+ */
+function paneTelemetryRefusal(error: z.ZodError): string {
+	const issue = error.issues[0];
+	const field = issue && issue.path.length > 0 ? issue.path.join(".") : "request";
+	return `Invalid pane telemetry at ${field}: ${issue?.message ?? "invalid value"}`;
+}
+
+/**
  * A pane says what it is showing, and hears back whether it is out of date.
  *
  * This is the pulse a browser already has. A pane posts here when it connects,
@@ -172,12 +183,7 @@ const PaneSchema = z.object({
 function postPaneRoute(req: Request, res: Response): void {
 	const parsed = PaneSchema.safeParse(req.body);
 	if (!parsed.success) {
-		const issue = parsed.error.issues[0];
-		const field = issue?.path.length ? issue.path.join(".") : "request";
-		res.status(400).json({
-			success: false,
-			error: `Invalid pane telemetry at ${field}: ${issue?.message ?? "invalid value"}`,
-		});
+		res.status(400).json({ success: false, error: paneTelemetryRefusal(parsed.error) });
 		return;
 	}
 	const frontend = frontendState(parsed.data.build);

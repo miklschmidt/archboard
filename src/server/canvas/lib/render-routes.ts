@@ -6,7 +6,11 @@ import { BoardRequiredError } from "@/runtime/engine/board-target";
 import { BoardMutationError } from "@/runtime/engine/board-write";
 import { InspectionPolicyInputSchema, inspectBoard } from "@/runtime/board-inspection";
 import { findingRasterDimensions } from "@/shared/finding-raster";
-import { BoardRendererError, type BoardRenderSnapshot } from "@/server/board-rendering";
+import {
+	BoardRendererError,
+	type BoardRenderOutput,
+	type BoardRenderSnapshot,
+} from "@/server/board-rendering";
 import { answerBoardError } from "@/server/canvas/lib/board-response";
 import { boardRenderer } from "@/server/canvas/lib/canvas-owners";
 import { asyncEndpoint } from "@/server/canvas/lib/mutation-work";
@@ -53,6 +57,26 @@ function renderableSnapshot(
 }
 
 /**
+ * The single output a whole-board render must have produced.
+ * @param rendered What the renderer returned.
+ * @returns The output.
+ */
+function onlyRenderedOutput(
+	rendered: Awaited<ReturnType<typeof boardRenderer.execute>>,
+): BoardRenderOutput {
+	if (rendered.kind === "render" && rendered.outputs.length === 1) {
+		const output = rendered.outputs[0];
+		if (output !== undefined) {
+			return output;
+		}
+	}
+	if (rendered.kind === "render" && rendered.error) {
+		throw new BoardMutationError(422, rendered.error, "BOARD_NOT_RENDERABLE");
+	}
+	throw new BoardRendererError("Board renderer returned the wrong result shape.", "result");
+}
+
+/**
  * Render one board to an image: one persisted snapshot, no pane, camera or
  * browser client.
  * @param req The request.
@@ -93,16 +117,7 @@ async function renderBoardRoute(
 			},
 			signal,
 		);
-		if (rendered.kind !== "render") {
-			throw new BoardRendererError("Board renderer returned the wrong result shape.", "result");
-		}
-		const output = rendered.outputs[0];
-		if (output === undefined || rendered.outputs.length !== 1) {
-			if (rendered.error) {
-				throw new BoardMutationError(422, rendered.error, "BOARD_NOT_RENDERABLE");
-			}
-			throw new BoardRendererError("Board renderer returned the wrong result shape.", "result");
-		}
+		const output = onlyRenderedOutput(rendered);
 		res.json({
 			success: true,
 			board: snapshot.board,
@@ -136,6 +151,86 @@ function focusRequests(report: FindingReport): { findingIndex: number; focusBBox
 }
 
 /**
+ * The PNG each requested finding got, or the failure where the renderer
+ * produced none for it.
+ * @param requests The findings a render was asked for.
+ * @param outputs What the renderer produced.
+ * @returns One result per request, in request order.
+ */
+function findingResults(
+	requests: readonly { findingIndex: number }[],
+	outputs: readonly BoardRenderOutput[],
+): (
+	| { findingIndex: number; data: string }
+	| { findingIndex: number; failure: "renderer-failed" }
+)[] {
+	const byId = new Map(outputs.map((output) => [output.id, output]));
+	return requests.map(({ findingIndex }) => {
+		const output = byId.get(String(findingIndex));
+		return output
+			? { findingIndex, data: output.data }
+			: { findingIndex, failure: "renderer-failed" as const };
+	});
+}
+
+/**
+ * One focused PNG output per requested finding, at the raster size its focus
+ * box asks for.
+ * @param requests The findings a render was asked for.
+ * @returns The renderer outputs.
+ */
+function focusOutputs(requests: readonly { findingIndex: number; focusBBox: FocusBox }[]) {
+	return requests.map(({ findingIndex, focusBBox }) => ({
+		id: String(findingIndex),
+		kind: "focus" as const,
+		format: "png" as const,
+		background: true as const,
+		frame: focusBBox,
+		...findingRasterDimensions(focusBBox),
+	}));
+}
+
+/**
+ * Inspect one board and render a focused PNG for every finding that has a
+ * focus box, from the same persisted snapshot the inspection used.
+ * @param req The request, whose body carries the inspection policy.
+ * @param asked The board as the caller named it.
+ * @param signal Aborts the render.
+ * @returns The answer body: the report, and a result per rendered finding.
+ */
+async function inspectedFindings(
+	req: Request,
+	asked: string,
+	signal: AbortSignal,
+): Promise<Record<string, unknown>> {
+	const policy = InspectionPolicyInputSchema.parse(bodyOf(req)["policy"] ?? {});
+	const snapshot = readBoardInspectionSnapshot(asked);
+	const report = inspectBoard(snapshot.elements, policy);
+	const requests = focusRequests(report);
+	const scene = snapshot.renderScene;
+	const base = {
+		board: snapshot.board,
+		sourceFingerprint: snapshot.fingerprint,
+		report,
+		sourceRenderable: scene !== null,
+	};
+	if (scene === null || requests.length === 0) {
+		return { ...base, results: [] };
+	}
+	const rendered = await boardRenderer.execute(
+		{ kind: "render", snapshot: copiedRenderSnapshot(scene), outputs: focusOutputs(requests) },
+		signal,
+	);
+	if (rendered.kind !== "render") {
+		throw new BoardRendererError("Finding renderer returned the wrong result shape.", "result");
+	}
+	if (rendered.error) {
+		return { ...base, sourceRenderable: false, results: [], error: rendered.error };
+	}
+	return { ...base, results: findingResults(requests, rendered.outputs) };
+}
+
+/**
  * Render a focused PNG per finding, from the same persisted snapshot the
  * inspection used.
  * @param req The request.
@@ -155,51 +250,9 @@ async function exportFindingsRoute(
 			res.status(400).json({ success: false, error: "Rendering findings requires a board." });
 			return;
 		}
-		const policy = InspectionPolicyInputSchema.parse(bodyOf(req)["policy"] ?? {});
-		const snapshot = readBoardInspectionSnapshot(asked);
-		const report = inspectBoard(snapshot.elements, policy);
-		const requests = focusRequests(report);
-		const base = {
-			board: snapshot.board,
-			sourceFingerprint: snapshot.fingerprint,
-			report,
-			sourceRenderable: snapshot.renderScene !== null,
-		};
-		if (!snapshot.renderScene || requests.length === 0) {
-			res.json({ ...base, results: [] });
-			return;
-		}
-		const rendered = await boardRenderer.execute(
-			{
-				kind: "render",
-				snapshot: copiedRenderSnapshot(snapshot.renderScene),
-				outputs: requests.map(({ findingIndex, focusBBox }) => ({
-					id: String(findingIndex),
-					kind: "focus" as const,
-					format: "png" as const,
-					background: true as const,
-					frame: focusBBox,
-					...findingRasterDimensions(focusBBox),
-				})),
-			},
-			signal,
-		);
-		if (rendered.kind !== "render") {
-			throw new BoardRendererError("Finding renderer returned the wrong result shape.", "result");
-		}
-		if (rendered.error) {
-			res.json({ ...base, sourceRenderable: false, results: [], error: rendered.error });
-			return;
-		}
-		const byId = new Map(rendered.outputs.map((output) => [output.id, output]));
-		const results = requests.map(({ findingIndex }) => {
-			const output = byId.get(String(findingIndex));
-			return output
-				? { findingIndex, data: output.data }
-				: { findingIndex, failure: "renderer-failed" as const };
-		});
+		const body = await inspectedFindings(req, asked, signal);
 		if (!res.destroyed) {
-			res.json({ ...base, results });
+			res.json(body);
 		}
 	} catch (error) {
 		if (!res.destroyed) {
