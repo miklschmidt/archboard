@@ -128,7 +128,7 @@ function fitTimelineTurns(snapshot: BrowserSnapshot, limit: number): BrowserSnap
 	 */
 	const withTurns = (candidate: readonly BrowserTimelineTurn[]): BrowserSnapshot => ({
 		...snapshot,
-		timeline: { ...timeline, turns: candidate },
+		timeline: { ...timeline, turns: [...candidate] },
 	});
 	/**
 	 * Whether a candidate turn list keeps the snapshot within budget.

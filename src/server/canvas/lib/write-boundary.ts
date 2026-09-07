@@ -269,7 +269,7 @@ function giveBackOnResponseEnd(res: Response, key: string, holderId: string): vo
 interface GuardedWrite {
 	key: string;
 	writer: RequestWriter;
-	expected: number | undefined;
+	expected: number | null | undefined;
 }
 
 /**
