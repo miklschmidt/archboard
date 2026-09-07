@@ -39,18 +39,23 @@ class CdpTimeoutError extends Error {
  * @returns Whether the event is a diagnostic.
  */
 function isDiagnosticEvent(event: CdpEvent): boolean {
-	if (event.method === "Runtime.consoleAPICalled" || event.method === "Runtime.exceptionThrown") {
-		return true;
-	}
-	if (event.method === "Network.loadingFailed") {
+	if (ALWAYS_DIAGNOSTIC_METHODS.has(event.method)) {
 		return true;
 	}
 	if (event.method === "Network.responseReceived") {
 		const status = recordAt(event.params, "response")?.["status"];
 		return typeof status === "number" && status >= 400;
 	}
-	return event.method === "Log.entryAdded";
+	return false;
 }
+
+/** Events that are diagnostics whatever they carry. */
+const ALWAYS_DIAGNOSTIC_METHODS = new Set([
+	"Runtime.consoleAPICalled",
+	"Runtime.exceptionThrown",
+	"Network.loadingFailed",
+	"Log.entryAdded",
+]);
 
 /** The DevTools connection to one renderer target. */
 class Cdp {
@@ -109,10 +114,18 @@ class Cdp {
 				reject(new CdpTimeoutError(method, timeoutMs));
 			}, timeoutMs);
 			this.#pending.set(id, {
+				/**
+				 * Answer the caller with the command's result.
+				 * @param result The result the browser returned.
+				 */
 				resolve: (result) => {
 					clearTimeout(timeout);
 					fulfill(result);
 				},
+				/**
+				 * Fail the caller, cancelling the timeout first.
+				 * @param reason Why the command failed.
+				 */
 				reject: (reason) => {
 					clearTimeout(timeout);
 					reject(reason);

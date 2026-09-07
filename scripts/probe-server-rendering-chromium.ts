@@ -37,7 +37,7 @@ import {
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 } from "./probe-server-rendering-chromium/proof-values.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import type { CleanupAudit } from "./probe-server-rendering-chromium/renderer-process.ts";
+import type { CleanupAudit } from "./probe-server-rendering-chromium/renderer-cleanup.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { RendererSession } from "./probe-server-rendering-chromium/renderer-session.ts";
 
@@ -106,6 +106,8 @@ async function runRendererPhase(
  * @param primary The acquired renderer.
  * @param fixtureUrl The fixture page URL.
  * @param evidence The evidence gathered before the renderer was acquired.
+ * @param evidence.malformedBoard How the note reader rejected a malformed board.
+ * @param evidence.partialAcquisition The per-stage partial-acquisition cleanup evidence.
  * @throws {Error} When any render or proof fails.
  */
 async function runPrimaryPhase(

@@ -15,6 +15,10 @@ import { describeValue, isRecord, snippet, type JsonRecord } from "./proof-value
 import { RendererAcquisitionError, RendererJobError } from "./renderer-errors.ts";
 import {
 	auditRendererCleanup,
+	type CleanupAudit,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./renderer-cleanup.ts";
+import {
 	captureRendererProcessGroup,
 	captureRendererProcessGroupCandidate,
 	injectAcquisitionFailure,
@@ -23,7 +27,6 @@ import {
 	reserveLoopbackPort,
 	residentBytes,
 	terminateProcessGroupForProof,
-	type CleanupAudit,
 	type RendererAcquisitionFailure,
 	type RendererProcessGroupCandidate,
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
@@ -84,6 +87,7 @@ async function waitForDevTools(
 	while (Date.now() < deadline) {
 		if (child.exitCode !== null) {
 			throw new Error(
+				// oxlint-disable-next-line no-await-in-loop -- the loop ends here; the exit message needs the settled stderr
 				`Chromium exited during startup (${child.exitCode}): ${snippet(await stderrText())}`,
 			);
 		}
@@ -133,6 +137,18 @@ async function stageImmediateFailure(cdp: Cdp, name: string): Promise<void> {
 			`Immediate failure did not stage ${name} at intentional-timeout: ${JSON.stringify(staged)}.`,
 		);
 	}
+}
+
+/**
+ * Whether a page proof state has settled, and how.
+ * @param state The page's proof state.
+ * @returns `ready`, `failed`, or undefined while the fixture is still working.
+ */
+function readyOrFailed(state: JsonRecord): "ready" | "failed" | undefined {
+	if (state["phase"] === "ready") {
+		return "ready";
+	}
+	return state["status"] === "failed" ? "failed" : undefined;
 }
 
 /** One acquired headless Chromium and the jobs run in it. */
@@ -448,18 +464,30 @@ class RendererSession {
 		while (Date.now() < deadline) {
 			// oxlint-disable-next-line no-await-in-loop -- polling one page state; each read follows the previous
 			state = await this.proofState();
-			if (state["phase"] === "ready") {
+			const settled = readyOrFailed(state);
+			if (settled === "ready") {
 				return;
 			}
-			if (state["status"] === "failed") {
+			if (settled === "failed") {
 				break;
 			}
 			// oxlint-disable-next-line no-await-in-loop -- polling one page state; each sleep follows the previous read
 			await Bun.sleep(50);
 		}
-		throw new Error(
+		throw new Error(this.notReadyMessage(state));
+	}
+
+	/**
+	 * The message for a fixture that failed or never reported ready, with the
+	 * page's last state and its diagnostics.
+	 * @param state The last proof state read.
+	 * @returns The error message.
+	 */
+	private notReadyMessage(state: JsonRecord): string {
+		const diagnostics = this.#cdp?.diagnostics() ?? [];
+		return (
 			`Renderer fixture did not become ready in phase ${describeValue(state["phase"] ?? "unknown")}; ` +
-				`page diagnostics=${JSON.stringify(this.#cdp?.diagnostics() ?? [])}; proof=${JSON.stringify(state)}`,
+			`page diagnostics=${JSON.stringify(diagnostics)}; proof=${JSON.stringify(state)}`
 		);
 	}
 
