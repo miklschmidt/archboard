@@ -31,6 +31,20 @@ function addIssue(context: z.RefinementCtx, path: string[], message: string): vo
 	context.addIssue({ code: "custom", path, message });
 }
 
+/** The parts of any effect that decide whether a create's initial turn is its own operation. */
+interface CreateTurnFacts {
+	readonly tool: string;
+	readonly mutationOperationId: string;
+	readonly initialTurnOperationId: string | null;
+}
+
+/** The parts of a browser fork or send effect that must agree on the target thread. */
+interface TargetEchoFacts {
+	readonly tool: "fork_thread" | "send_message_to_thread";
+	readonly target: string;
+	readonly arguments: { readonly threadId: string };
+}
+
 /** The parts of a fork effect that decide whether it may start a turn. */
 interface ForkTurnFacts {
 	readonly arguments: { readonly prompt: string | null };
@@ -45,14 +59,13 @@ interface ForkTurnFacts {
  * @param refinementContext - Where issues are recorded.
  */
 function validateForkInitialTurn(effect: ForkTurnFacts, refinementContext: z.RefinementCtx): void {
-	if (effect.arguments.prompt === null && effect.initialTurnOperationId !== null) {
-		addIssue(refinementContext, ["initialTurnOperationId"], "unprompted fork cannot start a turn");
-	}
-	if (effect.arguments.prompt !== null && effect.initialTurnOperationId === null) {
+	const prompted = effect.arguments.prompt !== null;
+	const startsTurn = effect.initialTurnOperationId !== null;
+	if (prompted !== startsTurn) {
 		addIssue(
 			refinementContext,
 			["initialTurnOperationId"],
-			"prompted fork requires an initial turn",
+			prompted ? "prompted fork requires an initial turn" : "unprompted fork cannot start a turn",
 		);
 	}
 	if (
@@ -73,11 +86,7 @@ function validateForkInitialTurn(effect: ForkTurnFacts, refinementContext: z.Ref
  * @param refinementContext - Where issues are recorded.
  */
 function validateCreateInitialTurn(
-	effect: {
-		readonly tool: string;
-		readonly mutationOperationId: string;
-		readonly initialTurnOperationId: string | null;
-	},
+	effect: CreateTurnFacts,
 	refinementContext: z.RefinementCtx,
 ): void {
 	if (
@@ -98,14 +107,7 @@ function validateCreateInitialTurn(
  * @param effect - A fork or send effect in its browser form.
  * @param refinementContext - Where issues are recorded.
  */
-function validateTargetEcho(
-	effect: {
-		readonly tool: "fork_thread" | "send_message_to_thread";
-		readonly target: string;
-		readonly arguments: { readonly threadId: string };
-	},
-	refinementContext: z.RefinementCtx,
-): void {
+function validateTargetEcho(effect: TargetEchoFacts, refinementContext: z.RefinementCtx): void {
 	if (effect.target !== effect.arguments.threadId) {
 		const label = effect.tool === "fork_thread" ? "fork" : "send";
 		addIssue(refinementContext, ["target"], `target must echo ${label} arguments.threadId`);
