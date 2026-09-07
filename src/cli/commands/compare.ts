@@ -141,6 +141,10 @@ const compareContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Compare has one output shape.
+		 * @returns The JSON case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server"],
@@ -161,6 +165,12 @@ const compareContract = defineCommand({
 			description: "Read the semantic comparison",
 		},
 	],
+	/**
+	 * Resolves the board pair, then asks the canvas for the full semantic comparison.
+	 * @param input - The parsed compare input.
+	 * @param context - The command execution context.
+	 * @returns The validated comparison.
+	 */
 	async handler(input, context) {
 		const request = context.parse(CompareRequestStageSchema, input);
 		await context.require("server", "compare");

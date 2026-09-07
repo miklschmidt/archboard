@@ -105,6 +105,10 @@ const claimContract = defineCommand({
 				presentation: ["diagnostics", "result", "held-note"],
 			},
 		],
+		/**
+		 * Claim has one output shape.
+		 * @returns The JSON case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board"],
@@ -118,6 +122,13 @@ const claimContract = defineCommand({
 			description: "Take or extend the claim",
 		},
 	],
+	/**
+	 * Takes or extends the caller's lease on the requested board and explains, in the person's
+	 * words, what the claim means for the panes showing it.
+	 * @param input - The parsed claim input.
+	 * @param context - The command execution context.
+	 * @returns The claim state plus a diagnostic describing the lease.
+	 */
 	async handler(input, context) {
 		await context.require("server", "claim");
 		const result = await claimBoard({
@@ -173,6 +184,10 @@ const releaseContract = defineCommand({
 				presentation: ["diagnostics", "result", "held-note"],
 			},
 		],
+		/**
+		 * Release has one output shape.
+		 * @returns The JSON case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board"],
@@ -186,6 +201,12 @@ const releaseContract = defineCommand({
 			description: "Release the claim",
 		},
 	],
+	/**
+	 * Ends this caller's claim on the requested board, or reports that none was held here.
+	 * @param _input - The parsed release input (unused: the board comes from the request context).
+	 * @param context - The command execution context.
+	 * @returns The release state plus a diagnostic saying what happened.
+	 */
 	async handler(_input, context) {
 		await context.require("server", "release");
 		const result = await releaseBoardClaim();

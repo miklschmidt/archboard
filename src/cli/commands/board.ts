@@ -5,9 +5,9 @@ import {
 	newBoard,
 	openBoard,
 } from "@/runtime/engine/canvas-client";
-import type { BoardListResponse } from "@/runtime/engine/canvas-client";
-import { inspectCheckout } from "@/runtime/engine/git";
+import type { BoardListResponse, BoardResponse } from "@/runtime/engine/canvas-client";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import type { CommandContext } from "@/cli/command-contract/contract";
 import {
 	BoardIdentityStateSchema,
 	HoldReportSchema,
@@ -18,55 +18,16 @@ import {
 	serverBrowserRefusals,
 	serverRefusal,
 } from "@/cli/command-contract/common";
+import {
+	boardListText,
+	collisionDiagnostics,
+	repoIdentityHere,
+} from "@/cli/commands/lib/board-listing";
+import { parseStage } from "@/cli/commands/lib/staged-tokens";
+import type { Stage } from "@/cli/commands/lib/staged-tokens";
 
 const usage = "board needs a subcommand: list, info, new, or save";
 const tokens = z.array(z.string()).default([]);
-type Stage = { positionals: string[]; flags: Record<string, string | boolean> };
-function parseStage(
-	values: string[],
-	specs: Readonly<Record<string, "flag" | "value">>,
-	context: z.RefinementCtx,
-): Stage | typeof z.NEVER {
-	const positionals: string[] = [];
-	const flags: Record<string, string | boolean> = {};
-	for (let index = 0; index < values.length; index += 1) {
-		const token = values[index]!;
-		if (!token.startsWith("--")) {
-			positionals.push(token);
-			continue;
-		}
-		let name = token.slice(2);
-		let inline: string | undefined;
-		const equals = name.indexOf("=");
-		if (equals !== -1) {
-			inline = name.slice(equals + 1);
-			name = name.slice(0, equals);
-		}
-		const spec = specs[name];
-		if (!spec) {
-			context.addIssue({ code: "custom", message: `Unknown flag --${name}` });
-			return z.NEVER;
-		}
-		if (spec === "flag") {
-			if (inline !== undefined) {
-				context.addIssue({ code: "custom", message: `Flag --${name} does not take a value` });
-				return z.NEVER;
-			}
-			flags[name] = true;
-			continue;
-		}
-		const value = inline ?? values[index + 1];
-		if (value === undefined) {
-			context.addIssue({ code: "custom", message: `Flag --${name} requires a value` });
-			return z.NEVER;
-		}
-		if (inline === undefined) {
-			index += 1;
-		}
-		flags[name] = value;
-	}
-	return { positionals, flags };
-}
 const BoardNamespaceInputSchema = z.object({ tokens });
 type BoardNamespaceInput = z.infer<typeof BoardNamespaceInputSchema>;
 const BoardNamespaceResultSchema = z.never();
@@ -91,50 +52,42 @@ const boardContract = defineCommand({
 	result: BoardNamespaceResultSchema,
 	output: {
 		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Namespace refusal" }],
+		/**
+		 * Selects the only output case; the namespace itself never succeeds.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
 	effects: [],
 	refusals: [],
 	relationships: [],
+	/**
+	 * Refuses the bare namespace with the subcommand usage line.
+	 * @returns Never; the usage error is the whole behaviour.
+	 */
 	async handler() {
 		throw new CliUsageError(usage);
 	},
 });
 
-async function repoIdentityHere(signal: AbortSignal): Promise<string> {
-	const checkout = await inspectCheckout(process.cwd(), { signal });
-	if (!checkout) {
-		throw new CliUsageError(
-			`${process.cwd()} is not inside a git repository, so there is no repository to look for. Name one with --repo <host/owner/name>, or drop the filter to list every board.`,
-		);
+/**
+ * Resolves the repository filter of `board list` from `--here` or `--repo`,
+ * noting the discovered checkout on stderr when `--here` was used.
+ * @param stage - The parsed list options.
+ * @param context - The command context used for diagnostics and cancellation.
+ * @returns The repository identity to filter by, or undefined for every board.
+ */
+async function repoFilterOf(stage: Stage, context: CommandContext): Promise<string | undefined> {
+	if (stage.flags["here"]) {
+		const repo = await repoIdentityHere(context.signal);
+		context.diagnostic(`Standing in ${repo}.`);
+		return repo;
 	}
-	return checkout.identity;
-}
-function boardListText(result: BoardListResponse): string {
-	if (result.repo) {
-		if (result.boards.length === 0) {
-			return `No board in ${result.vault} has a node bound to ${result.repo} (${result.scanned ?? 0} board(s) read).`;
-		}
-		const lines = [`Boards describing ${result.repo}:`];
-		for (const entry of result.boards) {
-			const level = entry.identity?.level ? `, ${entry.identity.level}` : "";
-			lines.push(`  ${entry.key} (${entry.identity?.variant ?? "current"}${level})`);
-			for (const node of entry.nodes ?? []) {
-				lines.push(
-					`    ${node.name ?? node.node}${node.kind ? ` [${node.kind}]` : ""} -> ${node.path}`,
-				);
-			}
-		}
-		lines.push(`Show one with \`browser show ${result.boards[0]!.key} --pane <spec>\`.`);
-		return lines.join("\n");
+	if (typeof stage.flags["repo"] === "string") {
+		return stage.flags["repo"];
 	}
-	if (result.boards.length === 0) {
-		return `No boards in ${result.vault} yet.`;
-	}
-	return [`Boards in ${result.vault}:`, ...result.boards.map((entry) => `  ${entry.key}`)].join(
-		"\n",
-	);
+	return undefined;
 }
 
 const BoardListInputSchema = z.object({ tokens });
@@ -162,6 +115,23 @@ const BoardListJsonResultSchema = z.looseObject({
 type BoardListJsonResult = z.infer<typeof BoardListJsonResultSchema>;
 const BoardListResultSchema = z.union([BoardListJsonResultSchema, z.string()]);
 type BoardListResult = z.infer<typeof BoardListResultSchema>;
+
+/**
+ * Shapes the server listing into the json result, keeping the repository
+ * filter facts and the unreadable-note count only when the server reported them.
+ * @param result - The server's listing.
+ * @returns The validated json result.
+ */
+function boardListJson(result: BoardListResponse): BoardListJsonResult {
+	return BoardListJsonResultSchema.parse({
+		success: true as const,
+		vault: result.vault,
+		...(result.repo ? { repo: result.repo, scanned: result.scanned } : {}),
+		...(result.unreadable ? { unreadable: result.unreadable } : {}),
+		boards: result.boards,
+	});
+}
+
 const boardListContract = defineCommand({
 	path: ["board", "list"],
 	summary: "List boards in the vault or describing one repository",
@@ -209,6 +179,12 @@ const boardListContract = defineCommand({
 				presentation: ["diagnostics", "result"],
 			},
 		],
+		/**
+		 * Chooses the text case when the staged tokens carry `--text`; the
+		 * tokens are not parsed yet at selection time, so the flag is looked up.
+		 * @param input - The ingress input holding the staged tokens.
+		 * @returns The output case id.
+		 */
 		select: (input) => (input.tokens.includes("--text") ? "text" : "json"),
 	},
 	prerequisites: ["server"],
@@ -217,46 +193,28 @@ const boardListContract = defineCommand({
 	relationships: [
 		{ method: "GET", path: "/api/boards", cardinality: "one", description: "List boards" },
 	],
+	/**
+	 * Lists boards, optionally narrowed to one repository, and refuses a
+	 * server too old to honour the filter rather than listing everything.
+	 * @param input - The ingress input holding the staged tokens.
+	 * @param context - The command context.
+	 * @returns The listing as text or json with collision diagnostics.
+	 */
 	async handler(input, context) {
 		await context.require("server", "board list");
 		const stage = context.parse(BoardListStageSchema, input.tokens);
-		let repo: string | undefined;
-		if (stage.flags["here"]) {
-			repo = await repoIdentityHere(context.signal);
-			context.diagnostic(`Standing in ${repo}.`);
-		} else if (typeof stage.flags["repo"] === "string") {
-			repo = stage.flags["repo"];
-		}
+		const repo = await repoFilterOf(stage, context);
 		const result = await listBoardsOnCanvas(repo);
 		if (repo && !result.repo) {
 			throw new Error(
 				`The canvas server is older than this CLI and ignored the repository filter, so this would have listed every board as though each described ${repo}. Restart it (\`canvas stop\` then \`canvas start\`) and try again.`,
 			);
 		}
-		const diagnostics: string[] = [];
-		const reported = new Set<string>();
-		for (const entry of result.boards.filter((candidate) => candidate.collidesWith?.length)) {
-			if (reported.has(entry.key)) {
-				continue;
-			}
-			reported.add(entry.key);
-			diagnostics.push(
-				`"${entry.key}" is the address of ${(entry.collidesWith?.length ?? 0) + 1} notes that differ only in casing or accents: ${[entry.file, ...(entry.collidesWith ?? [])].join(", ")}. Board names are case-insensitive, so only ${entry.file} is reachable. Rename or delete the others.`,
-			);
-		}
+		const diagnostics = collisionDiagnostics(result);
 		if (stage.flags["text"]) {
 			return { result: boardListText(result), diagnostics };
 		}
-		return {
-			result: BoardListJsonResultSchema.parse({
-				success: true as const,
-				vault: result.vault,
-				...(result.repo ? { repo: result.repo, scanned: result.scanned } : {}),
-				...(result.unreadable ? { unreadable: result.unreadable } : {}),
-				boards: result.boards,
-			}),
-			diagnostics,
-		};
+		return { result: boardListJson(result), diagnostics };
 	},
 });
 
@@ -310,6 +268,10 @@ const boardInfoContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board"],
@@ -323,6 +285,13 @@ const boardInfoContract = defineCommand({
 			description: "Read board state",
 		},
 	],
+	/**
+	 * Reads the named board's identity and save state after rejecting any
+	 * option, since `board info` takes none.
+	 * @param input - The ingress input holding the staged tokens.
+	 * @param context - The command context.
+	 * @returns The validated board state.
+	 */
 	async handler(input, context) {
 		await context.require("server", "board info");
 		context.parse(BoardInfoStageSchema, input.tokens);
@@ -391,6 +360,10 @@ const boardNewContract = defineCommand({
 				presentation: ["diagnostics", "result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server"],
@@ -404,6 +377,12 @@ const boardNewContract = defineCommand({
 			description: "Create the board",
 		},
 	],
+	/**
+	 * Creates one empty persisted board at the staged address.
+	 * @param input - The ingress input holding the staged tokens.
+	 * @param context - The command context.
+	 * @returns The new board's state and a note naming its file.
+	 */
 	async handler(input, context) {
 		await context.require("server", "board new");
 		const stage = context.parse(BoardNewStageSchema, input.tokens);
@@ -432,13 +411,40 @@ const BrowserShowStageSchema = z
 			context.addIssue({ code: "custom", message: "browser show needs a board name" });
 			return z.NEVER;
 		}
-		if (typeof stage.flags["pane"] !== "string" || !stage.flags["pane"].trim()) {
+		const pane = stage.flags["pane"];
+		if (typeof pane !== "string" || !pane.trim()) {
 			context.addIssue({ code: "custom", message: "browser show requires --pane <spec>" });
 			return z.NEVER;
 		}
-		return { name, flags: stage.flags };
+		return { name, pane, flags: stage.flags };
 	});
 type BrowserShowStage = z.infer<typeof BrowserShowStageSchema>;
+
+/**
+ * Tells the person where the board is now showing and what surprised the
+ * server on the way: an already-open board or a note whose frontmatter
+ * disagrees with its path.
+ * @param result - The server's open receipt.
+ * @returns The diagnostics printed after the json result.
+ */
+function browserShowDiagnostics(result: BoardResponse): string[] {
+	const diagnostics = [
+		result.pane
+			? `"${result.board}" is showing in ${result.pane.place === "the only pane" ? "the only pane" : `the ${result.pane.place} pane`}. Commands still name it: \`--board ${result.board}\`.`
+			: `"${result.board}" is loaded, but no pane is open, so nothing is showing it.`,
+	];
+	if (result.source === "memory") {
+		diagnostics.push(
+			`"${result.board}" was already open here, so this only pointed a pane at it. Pass --reload to re-read its address off disk, which is also what un-sticks a board after a write was refused.`,
+		);
+	}
+	if (result.declaredKey) {
+		diagnostics.push(
+			`Note: this file's frontmatter says it is board "${result.declaredKey}", not "${result.board}". The path is the address, so it opened as the path says; saving rewrites the frontmatter to match.`,
+		);
+	}
+	return diagnostics;
+}
 const BrowserShowResultSchema = BoardIdentityStateSchema.extend({
 	success: z.literal(true),
 	source: z.enum(["vault", "memory"]),
@@ -486,6 +492,10 @@ const browserShowContract = defineCommand({
 				presentation: ["diagnostics", "result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "browser"],
@@ -494,6 +504,13 @@ const browserShowContract = defineCommand({
 	relationships: [
 		{ method: "POST", path: "/api/boards/open", cardinality: "one", description: "Open the board" },
 	],
+	/**
+	 * Points one live pane at a named board; the browser prerequisite is only
+	 * checked after the tokens parse so a usage mistake wins over a missing browser.
+	 * @param input - The ingress input holding the staged tokens.
+	 * @param context - The command context.
+	 * @returns The opened board's state with placement diagnostics.
+	 */
 	async handler(input, context) {
 		await context.require("server", "browser show");
 		const stage = context.parse(BrowserShowStageSchema, input.tokens);
@@ -503,24 +520,12 @@ const browserShowContract = defineCommand({
 			...(typeof stage.flags["variant"] === "string" ? { variant: stage.flags["variant"] } : {}),
 			...(typeof stage.flags["level"] === "string" ? { level: stage.flags["level"] } : {}),
 			...(stage.flags["reload"] ? { reload: true } : {}),
-			pane: stage.flags["pane"] as string,
+			pane: stage.pane,
 		});
-		const diagnostics = [
-			result.pane
-				? `"${result.board}" is showing in ${result.pane.place === "the only pane" ? "the only pane" : `the ${result.pane.place} pane`}. Commands still name it: \`--board ${result.board}\`.`
-				: `"${result.board}" is loaded, but no pane is open, so nothing is showing it.`,
-		];
-		if (result.source === "memory") {
-			diagnostics.push(
-				`"${result.board}" was already open here, so this only pointed a pane at it. Pass --reload to re-read its address off disk, which is also what un-sticks a board after a write was refused.`,
-			);
-		}
-		if (result.declaredKey) {
-			diagnostics.push(
-				`Note: this file's frontmatter says it is board "${result.declaredKey}", not "${result.board}". The path is the address, so it opened as the path says; saving rewrites the frontmatter to match.`,
-			);
-		}
-		return { result: BrowserShowResultSchema.parse(result), diagnostics };
+		return {
+			result: BrowserShowResultSchema.parse(result),
+			diagnostics: browserShowDiagnostics(result),
+		};
 	},
 });
 
