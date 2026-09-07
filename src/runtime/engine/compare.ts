@@ -87,15 +87,12 @@
 //     boundary round these three" survives.
 
 import { withoutValidBridgeDecorations } from "@/runtime/board-inspection/bridge";
-import { CLUSTER_GAP, sameCentre } from "@/runtime/engine/layout";
+import { CLUSTER_GAP } from "@/runtime/engine/layout";
 import type {
-	ChangedNode,
+	ClusterChange,
 	CompareResult,
 	CompareSideInput,
-	NodeFacts,
-	RelationChange,
 	SideSummary,
-	UnchangedNode,
 } from "@/runtime/engine/lib/compare-contract";
 import {
 	buildBoard,
@@ -103,25 +100,26 @@ import {
 	reframeRegions,
 } from "@/runtime/engine/lib/compare-board-model";
 import type { BoardModel } from "@/runtime/engine/lib/compare-board-model";
-import { formatBinding } from "@/runtime/engine/lib/compare-node-model";
-import {
-	cosmeticFields,
-	diffFields,
-	diffPartitions,
-	layoutFields,
-	MAX_RELATION_PAIRS,
-	nodeFacts,
-	relationOf,
-	semanticFields,
-} from "@/runtime/engine/lib/compare-diff";
+import { diffPartitions } from "@/runtime/engine/lib/compare-diff";
 import { inferReroutes, matchEdges } from "@/runtime/engine/lib/compare-edge-diff";
+import { type NodeDiff, diffNodes } from "@/runtime/engine/lib/compare-node-diff";
+import {
+	type RelationDiff,
+	diffRelations,
+	relatedPairsOf,
+} from "@/runtime/engine/lib/compare-relations";
+import {
+	divergentFrameWarning,
+	joinWarnings,
+	relationBudgetWarning,
+} from "@/runtime/engine/lib/compare-warnings";
 
 /**
- *
- */
-const pairKey = (x: string, y: string): string => (x < y ? `${x}\0${y}` : `${y}\0${x}`);
-/**
- *
+ * What one side of the comparison is: which board, where it came from, and
+ * how much of it there is.
+ * @param input The board as the caller named it.
+ * @param model The board as the comparison read it.
+ * @returns The summary.
  */
 const sideSummaryOf = (input: CompareSideInput, model: BoardModel): SideSummary => ({
 	board: input.key,
@@ -137,13 +135,10 @@ const sideSummaryOf = (input: CompareSideInput, model: BoardModel): SideSummary 
 });
 
 /**
- *
- */
-const bindingField = (binding: string | undefined): { binding: string } | Record<string, never> =>
-	binding === undefined ? {} : { binding };
-
-/**
- *
+ * The words on a board's plain shapes, which is all a label-match hint has
+ * to go on.
+ * @param model The board.
+ * @returns The labels.
  */
 const plainLabels = (model: BoardModel): Set<string> =>
 	new Set(
@@ -189,7 +184,10 @@ const LAYOUT_CANNOT_EXPRESS = [
 ];
 
 /**
- *
+ * The structured semantic diff between two variants of a board.
+ * @param fromInput The board being compared from.
+ * @param toInput The board being compared to.
+ * @returns Everything a narrating agent needs to explain the difference.
  */
 function compareBoards(fromInput: CompareSideInput, toInput: CompareSideInput): CompareResult {
 	const from = { ...fromInput, elements: withoutValidBridgeDecorations(fromInput.elements) };
@@ -206,288 +204,158 @@ function compareBoards(fromInput: CompareSideInput, toInput: CompareSideInput): 
 	reframeRegions(A, sharedIds);
 	reframeRegions(B, sharedIds);
 
-	// --- nodes ----------------------------------------------------------------
-	const allNodeIds = new Set([...A.nodes.keys(), ...B.nodes.keys()]);
-	const added: NodeFacts[] = [];
-	const removed: NodeFacts[] = [];
-	const changed: ChangedNode[] = [];
-	const unchanged: UnchangedNode[] = [];
-	const moved: CompareResult["layout"]["moved"] = [];
-	let layoutSignalsChanged = 0;
-	let shared = 0;
-
-	for (const id of [...allNodeIds].toSorted()) {
-		const a = A.nodes.get(id);
-		const b = B.nodes.get(id);
-		if (a && !b) {
-			removed.push(nodeFacts(a, A.clusters));
-			continue;
-		}
-		if (!a && b) {
-			added.push(nodeFacts(b, B.clusters));
-			continue;
-		}
-		if (!a || !b) {
-			continue;
-		}
-		shared++;
-
-		const semantic = diffFields(
-			semanticFields(a, from.identity.variant),
-			semanticFields(b, to.identity.variant),
-		);
-		const cosmetic = diffFields(cosmeticFields(a), cosmeticFields(b));
-		const layout = diffFields(
-			layoutFields(a, A.clusters, A.groups, sharedIds),
-			layoutFields(b, B.clusters, B.groups, sharedIds),
-		);
-		// Anchoring the frame to the shared nodes stops arrivals and departures
-		// renaming anybody's region, but a *shared* node dragged to a new extreme
-		// still stretches the frame, and its stationary neighbours are handed new
-		// region names for it. Region is read off the centre and nothing else, so
-		// a centre that did not move is proof the new name came from the frame:
-		// report it and the feed says "X moved", which is false about X.
-		//
-		// Only ever true when both sides are in one coordinate system — the same
-		// board a moment apart, or a variant copied from its sibling — which is
-		// exactly where "moved" is read as a claim about something someone did.
-		// Two independently drawn variants never trip it, and there the anchored
-		// frame carries the weight on its own.
-		//
-		// A board rearranged wholesale is untouched by this: every centre moved,
-		// so nothing is suppressed and every move is still reported.
-		if (layout["region"] && sameCentre(a.box, b.box)) {
-			delete layout["region"];
-		}
-		layoutSignalsChanged += Object.keys(layout).length;
-		if (Object.keys(layout).length > 0) {
-			moved.push({ node: id, name: b.name, changes: layout });
-		}
-
-		if (Object.keys(semantic).length > 0) {
-			changed.push({
-				node: id,
-				name: b.name,
-				changes: semantic,
-				...(Object.keys(cosmetic).length > 0 ? { cosmeticChanges: cosmetic } : {}),
-				...(Object.keys(layout).length > 0 ? { layoutChanges: layout } : {}),
-				from: nodeFacts(a, A.clusters),
-				to: nodeFacts(b, B.clusters),
-			});
-		} else {
-			const binding = formatBinding(b.binding);
-			unchanged.push({
-				node: id,
-				name: b.name,
-				...(b.kind ? { kind: b.kind } : {}),
-				...bindingField(binding),
-				...(Object.keys(layout).length > 0 ? { layoutChanges: layout } : {}),
-				...(Object.keys(cosmetic).length > 0 ? { cosmeticChanges: cosmetic } : {}),
-				facts: nodeFacts(b, B.clusters),
-			});
-		}
-	}
-
-	// --- edges ----------------------------------------------------------------
+	const nodes = diffNodes({ from, to, A, B, sharedIds });
 	const edgeDiff = matchEdges(A.edges, B.edges);
-	const rerouted = inferReroutes(edgeDiff.removed, edgeDiff.added);
-
-	// --- layout ---------------------------------------------------------------
-	const clusterChanges = diffPartitions(A.clusters, B.clusters);
-	const groupChanges = diffPartitions(A.groups, B.groups);
-
-	// Relations, over the pairs that are actually related on either side.
-	const relatedPairs = new Set<string>();
-	const reason = new Map<string, Set<"edge" | "cluster">>();
-	/**
-	 *
-	 */
-	const mark = (x: string, y: string, why: "edge" | "cluster"): void => {
-		if (x === y) {
-			return;
-		}
-		if (!A.nodes.has(x) || !B.nodes.has(x) || !A.nodes.has(y) || !B.nodes.has(y)) {
-			return;
-		}
-		const key = pairKey(x, y);
-		relatedPairs.add(key);
-		const set = reason.get(key) ?? new Set();
-		set.add(why);
-		reason.set(key, set);
-	};
-	for (const e of [...A.edges, ...B.edges]) {
-		mark(e.from, e.to, "edge");
-	}
-	for (const c of [...A.clusters, ...B.clusters]) {
-		if (c.members.length > 40) {
-			// A 40-member blob is not a statement about any pair.
-			continue;
-		}
-		for (let i = 0; i < c.members.length; i++) {
-			for (let j = i + 1; j < c.members.length; j++) {
-				const x = c.members.at(i);
-				const y = c.members.at(j);
-				if (x !== undefined && y !== undefined) {
-					mark(x, y, "cluster");
-				}
-			}
-		}
-	}
-
-	const relationChanges: RelationChange[] = [];
-	let relationsCompared = 0;
-	if (relatedPairs.size > MAX_RELATION_PAIRS) {
-		warnings.push(
-			`${relatedPairs.size} related node pairs is past the ${MAX_RELATION_PAIRS}-pair budget for the ` +
-				"relative-direction pass, so relation changes were not computed. Every other layout signal " +
-				"(cluster, container, group, region, prominence) is complete.",
-		);
-	} else {
-		for (const key of relatedPairs) {
-			const [x, y] = key.split("\0");
-			const fromX = x === undefined ? undefined : A.nodes.get(x);
-			const fromY = y === undefined ? undefined : A.nodes.get(y);
-			const toX = x === undefined ? undefined : B.nodes.get(x);
-			const toY = y === undefined ? undefined : B.nodes.get(y);
-			const why = reason.get(key);
-			if (x === undefined || y === undefined || !fromX || !fromY || !toX || !toY || !why) {
-				continue;
-			}
-			const before = relationOf(fromX.box, fromY.box);
-			const after = relationOf(toX.box, toY.box);
-			relationsCompared++;
-			if (before === after) {
-				continue;
-			}
-			let related: "edge" | "cluster" | "edge+cluster" = "cluster";
-			if (why.has("edge")) {
-				related = why.has("cluster") ? "edge+cluster" : "edge";
-			}
-			relationChanges.push({
-				a: x,
-				b: y,
-				from: before,
-				to: after,
-				related,
-			});
-		}
-		layoutSignalsChanged += relationChanges.length;
-	}
-
-	// Measured on the region frames, since those are what the region names are
-	// thirds of. Both are drawn round the same set of nodes, so a divergence
-	// here is a real difference in how the two boards lay those nodes out.
-	const boxAspectDiverged = hasDivergentAspect(A.regionFrame, B.regionFrame);
-	if (boxAspectDiverged) {
-		warnings.push(
-			"The two boards frame the nodes they share differently enough (aspect ratio differs by more than half " +
-				'again) that region names are not directly comparable — "top-left" on one is not the same physical ' +
-				"place as on the other. Read cluster, container and relation changes instead; region changes here may " +
-				"be an artefact of the frame rather than anything anyone moved.",
-		);
-	}
-
-	// --- plain elements -------------------------------------------------------
-	const labelsA = plainLabels(A);
-	const labelsB = plainLabels(B);
-
-	// --- warnings that are about the comparison itself ------------------------
-	//
-	// Whether the join found anything at all. Without it, an empty diff would be
-	// indistinguishable from two identical boards, and "nothing changed" is the
-	// most damaging thing to say wrongly.
-	const comparable = shared > 0 || (A.elements.length === 0 && B.elements.length === 0);
-
-	if (A.nodes.size === 0 && B.nodes.size === 0 && !comparable) {
-		warnings.push(
-			"Neither board has a single promoted node, so there is nothing to compare on and the empty node and " +
-				'edge sections below mean "could not be compared", not "unchanged" — summary.comparable is false. ' +
-				"Everything that is known is in the plain-element inventory. Promote the boxes on both boards " +
-				"(`promote --kind ...`) to give them the node ids this diff joins on.",
-		);
-	} else if (A.nodes.size === 0 || B.nodes.size === 0) {
-		const empty = A.nodes.size === 0 ? from.key : to.key;
-		warnings.push(
-			`"${empty}" has no promoted nodes at all, so every node on the other board reads as added or removed. ` +
-				"That is an artefact of nothing having been promoted, not a statement about the architecture.",
-		);
-	} else if (shared === 0) {
-		warnings.push(
-			"The two boards share no node ids, so nothing could be joined and every node reads as added or removed. " +
-				"The boards were promoted independently: re-promote with matching `--node` ids (or promote the " +
-				"proposal from a copy of the current board) to make them comparable.",
-		);
-		const overlap = [...new Set([...A.nodes.values()].map((n) => n.name))].filter((name) =>
-			[...B.nodes.values()].some((n) => n.name === name),
-		);
-		if (overlap.length > 0) {
-			warnings.push(
-				`${overlap.length} node name(s) do appear on both boards despite the ids differing — ` +
-					`${overlap.slice(0, 12).join(", ")}${overlap.length > 12 ? ", …" : ""}. Same label, different node ` +
-					"id: almost certainly the same architectural unit promoted twice.",
-			);
-		}
-	}
+	const layout = diffLayout(A, B, nodes, warnings);
 
 	// "Identical" is a claim about the architecture, so it is only ever made when
 	// there was an architecture to compare: an unpromoted board differs from
 	// another unpromoted board in every visible way and this diff cannot see any
 	// of it.
-	const identical =
-		comparable &&
-		added.length === 0 &&
-		removed.length === 0 &&
-		changed.length === 0 &&
-		edgeDiff.added.length === 0 &&
-		edgeDiff.removed.length === 0 &&
-		edgeDiff.changed.length === 0 &&
-		layoutSignalsChanged === 0;
+	const comparable = nodes.shared > 0 || (A.elements.length === 0 && B.elements.length === 0);
+	warnings.push(...joinWarnings(A, B, from, to, nodes.shared, comparable));
 
 	return {
 		success: true,
 		from: sideSummaryOf(from, A),
 		to: sideSummaryOf(to, B),
-		summary: {
-			comparable,
-			identical,
-			sharedNodes: shared,
-			nodesAdded: added.length,
-			nodesRemoved: removed.length,
-			nodesChanged: changed.length,
-			nodesUnchanged: unchanged.length,
-			nodesMovedOnly: unchanged.filter((u) => u.layoutChanges).length,
-			edgesAdded: edgeDiff.added.length,
-			edgesRemoved: edgeDiff.removed.length,
-			edgesChanged: edgeDiff.changed.length,
-			edgesUnchanged: edgeDiff.unchanged.length,
-			layoutSignalsChanged,
+		summary: summaryOf(nodes, edgeDiff, layout, comparable),
+		nodes: {
+			added: nodes.added,
+			removed: nodes.removed,
+			changed: nodes.changed,
+			unchanged: nodes.unchanged,
 		},
-		nodes: { added, removed, changed, unchanged },
 		edges: {
 			added: edgeDiff.added,
 			removed: edgeDiff.removed,
 			changed: edgeDiff.changed,
 			unchanged: edgeDiff.unchanged,
-			rerouted,
+			rerouted: inferReroutes(edgeDiff.removed, edgeDiff.added),
 			unresolved: { from: A.unresolved, to: B.unresolved },
 		},
 		layout: {
 			method: LAYOUT_METHOD,
 			cannotExpress: LAYOUT_CANNOT_EXPRESS,
-			clusters: { from: A.clusters, to: B.clusters, changes: clusterChanges },
-			groups: { from: A.groups, to: B.groups, changes: groupChanges },
-			moved,
-			relations: { compared: relationsCompared, changes: relationChanges },
-			boxAspectDiverged,
+			clusters: { from: A.clusters, to: B.clusters, changes: layout.clusters },
+			groups: { from: A.groups, to: B.groups, changes: layout.groups },
+			moved: nodes.moved,
+			relations: { compared: layout.relations.compared, changes: layout.relations.changes },
+			boxAspectDiverged: layout.boxAspectDiverged,
 		},
-		plain: {
-			from: A.plain,
-			to: B.plain,
-			labelOnlyOnFrom: [...labelsA].filter((l) => !labelsB.has(l)).toSorted(),
-			labelOnlyOnTo: [...labelsB].filter((l) => !labelsA.has(l)).toSorted(),
-			labelOnBoth: [...labelsA].filter((l) => labelsB.has(l)).toSorted(),
-		},
+		plain: plainComparison(A, B),
 		warnings,
+	};
+}
+
+/** What the layout pass found, beyond the moves the node pass reported. */
+interface LayoutDiff {
+	clusters: ClusterChange[];
+	groups: ClusterChange[];
+	relations: RelationDiff;
+	boxAspectDiverged: boolean;
+}
+
+/**
+ * How the two boards lay their nodes out differently: which clusters and
+ * groups changed, which pairs lie differently, and whether the two frames are
+ * comparable at all.
+ * @param A One board.
+ * @param B The other.
+ * @param nodes What the node pass found, whose layout signal count this adds to.
+ * @param warnings The comparison's warnings, extended in place.
+ * @returns The layout differences.
+ */
+function diffLayout(A: BoardModel, B: BoardModel, nodes: NodeDiff, warnings: string[]): LayoutDiff {
+	const related = relatedPairsOf(A, B);
+	const relations = diffRelations(A, B, related);
+	if (relations.overBudget) {
+		warnings.push(relationBudgetWarning(related.pairs.size));
+	} else {
+		nodes.layoutSignalsChanged += relations.changes.length;
+	}
+	// Measured on the region frames, since those are what the region names are
+	// thirds of. Both are drawn round the same set of nodes, so a divergence
+	// here is a real difference in how the two boards lay those nodes out.
+	const boxAspectDiverged = hasDivergentAspect(A.regionFrame, B.regionFrame);
+	if (boxAspectDiverged) {
+		warnings.push(divergentFrameWarning());
+	}
+	return {
+		clusters: diffPartitions(A.clusters, B.clusters),
+		groups: diffPartitions(A.groups, B.groups),
+		relations,
+		boxAspectDiverged,
+	};
+}
+
+/**
+ * The comparison in numbers, and whether it found anything to compare.
+ * @param nodes What the node pass found.
+ * @param edges What the connector pass found.
+ * @param layout What the layout pass found.
+ * @param comparable Whether there was an architecture to compare.
+ * @returns The summary.
+ */
+function summaryOf(
+	nodes: NodeDiff,
+	edges: ReturnType<typeof matchEdges>,
+	layout: LayoutDiff,
+	comparable: boolean,
+): CompareResult["summary"] {
+	return {
+		comparable,
+		identical: comparable && isIdentical(nodes, edges),
+		sharedNodes: nodes.shared,
+		nodesAdded: nodes.added.length,
+		nodesRemoved: nodes.removed.length,
+		nodesChanged: nodes.changed.length,
+		nodesUnchanged: nodes.unchanged.length,
+		nodesMovedOnly: nodes.unchanged.filter((u) => u.layoutChanges).length,
+		edgesAdded: edges.added.length,
+		edgesRemoved: edges.removed.length,
+		edgesChanged: edges.changed.length,
+		edgesUnchanged: edges.unchanged.length,
+		layoutSignalsChanged: nodes.layoutSignalsChanged,
+		...(layout.boxAspectDiverged ? {} : {}),
+	};
+}
+
+/**
+ * Whether nothing about the architecture differs: no node or connector added,
+ * removed or changed, and no layout signal moved.
+ * @param nodes What the node pass found.
+ * @param edges What the connector pass found.
+ * @returns True when the two boards say the same thing.
+ */
+function isIdentical(nodes: NodeDiff, edges: ReturnType<typeof matchEdges>): boolean {
+	const touched = [
+		nodes.added,
+		nodes.removed,
+		nodes.changed,
+		edges.added,
+		edges.removed,
+		edges.changed,
+	];
+	return touched.every((list) => list.length === 0) && nodes.layoutSignalsChanged === 0;
+}
+
+/**
+ * The plain shapes each board holds, and which of their labels appear on one
+ * side or on both — a hint, and marked as the heuristic it is.
+ * @param A One board.
+ * @param B The other.
+ * @returns The plain-element comparison.
+ */
+function plainComparison(A: BoardModel, B: BoardModel): CompareResult["plain"] {
+	const labelsA = plainLabels(A);
+	const labelsB = plainLabels(B);
+	return {
+		from: A.plain,
+		to: B.plain,
+		labelOnlyOnFrom: [...labelsA].filter((l) => !labelsB.has(l)).toSorted(),
+		labelOnlyOnTo: [...labelsB].filter((l) => !labelsA.has(l)).toSorted(),
+		labelOnBoth: [...labelsA].filter((l) => labelsB.has(l)).toSorted(),
 	};
 }
 
