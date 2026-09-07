@@ -1,11 +1,8 @@
-import { spawn as nodeSpawn } from "node:child_process";
-
 import {
 	createCodexDiagnosticsBuffer,
 	type CodexDiagnosticsBuffer,
 } from "@/runtime/codex-process/lib/diagnostics";
 import type { CodexChildEnvironment } from "@/runtime/codex-process/lib/environment";
-import { verifyCodexExecutable } from "@/runtime/codex-process/lib/executable";
 import {
 	CODEX_APP_SERVER_ARGUMENTS,
 	CODEX_PROCESS_STDERR_MAX_BYTES,
@@ -18,22 +15,22 @@ import {
 	type CodexProcessSnapshot,
 	type CodexProcessState,
 	type CodexProcessTestOptions,
-	type SpawnChild,
 	type Timer,
 } from "@/runtime/codex-process/lib/process-contract";
-import {
-	createCodexProcessGroupOperations,
-	type CodexProcessGroupIdentity,
-} from "@/runtime/codex-process/lib/process-group";
+import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/lib/process-group";
 import {
 	createProcessGroupCleanup,
 	type ProcessGroupCleanup,
 } from "@/runtime/codex-process/lib/process-group-cleanup";
-import { diagnosticSecrets, truncateUtf8 } from "@/runtime/codex-process/lib/process-startup-checks";
 import {
-	prepareCodexStorage,
-	type PreparedCodexStorage,
-} from "@/runtime/codex-process/lib/storage";
+	diagnosticSecrets,
+	truncateUtf8,
+} from "@/runtime/codex-process/lib/process-startup-checks";
+import type { PreparedCodexStorage } from "@/runtime/codex-process/lib/storage";
+import {
+	resolveDependencies,
+	type OwnerDependencies,
+} from "@/runtime/codex-process/lib/owner-dependencies";
 
 const PUBLIC_DIAGNOSTIC_MAX_BYTES = CODEX_PROCESS_STDERR_MAX_BYTES;
 
@@ -59,18 +56,6 @@ interface ChildRecord {
 	readinessTimer: Timer | undefined;
 	groupCleanup: Promise<void> | undefined;
 	error?: Error;
-}
-
-/** The resolved dependency seams, defaults applied. */
-interface OwnerDependencies {
-	readonly spawnChild: SpawnChild;
-	readonly verifyExecutable: (executablePath: string) => ReturnType<typeof verifyCodexExecutable>;
-	readonly prepareStorage: typeof prepareCodexStorage;
-	readonly fileSystem: NonNullable<CodexProcessTestOptions["dependencies"]>["fileSystem"];
-	readonly processGroup: ReturnType<typeof createCodexProcessGroupOperations>;
-	readonly now: () => number;
-	readonly schedule: (callback: () => void, delayMs: number) => Timer;
-	readonly cancel: (timer: Timer) => void;
 }
 
 /**
@@ -122,25 +107,6 @@ interface ProcessOwnerState {
 }
 
 /**
- * Apply the production defaults to the injectable seams.
- * @param options - The process options.
- * @returns The resolved dependencies.
- */
-function resolveDependencies(options: CodexProcessTestOptions): OwnerDependencies {
-	const dependencies = options.dependencies ?? {};
-	return {
-		spawnChild: dependencies.spawn ?? nodeSpawn,
-		verifyExecutable: dependencies.verifyExecutable ?? verifyCodexExecutable,
-		prepareStorage: dependencies.prepareStorage ?? prepareCodexStorage,
-		fileSystem: dependencies.fileSystem,
-		processGroup: dependencies.processGroup ?? createCodexProcessGroupOperations(),
-		now: dependencies.now ?? Date.now,
-		schedule: dependencies.schedule ?? ((callback, delayMs) => setTimeout(callback, delayMs)),
-		cancel: dependencies.cancel ?? ((timer) => clearTimeout(timer)),
-	};
-}
-
-/**
  * Redact and bound text before it becomes part of any public message.
  * @param state - The owner state.
  * @param text - The raw text.
@@ -170,7 +136,10 @@ function safeCauseMessage(state: ProcessOwnerState, cause: unknown): string {
  * @param error - The internal error.
  * @returns The public error.
  */
-function sanitizeProcessError(state: ProcessOwnerState, error: CodexProcessError): CodexProcessError {
+function sanitizeProcessError(
+	state: ProcessOwnerState,
+	error: CodexProcessError,
+): CodexProcessError {
 	return new CodexProcessError({
 		code: error.code,
 		terminal: error.terminal,
@@ -244,10 +213,26 @@ function createOwnerState(options: CodexProcessTestOptions): ProcessOwnerState {
 			{
 				now: dependencies.now,
 				schedule: dependencies.schedule,
-				cancel: (timer) => cancelTimer(state, timer),
+				/**
+				 * Cancel a timer through the owner, so a cancel failure is charged to it.
+				 * @param timer - The timer to cancel.
+				 */
+				cancel: (timer): void => {
+					cancelTimer(state, timer);
+				},
 			},
 			{
+				/**
+				 * Build the terminal failure a cleanup breach becomes.
+				 * @param message - The reason.
+				 * @returns The terminal error.
+				 */
 				failure: (message) => shutdownError(state, message),
+				/**
+				 * Describe a caught value for a public message.
+				 * @param cause - The caught value.
+				 * @returns The redacted description.
+				 */
 				safeCauseMessage: (cause) => safeCauseMessage(state, cause),
 			},
 		),
@@ -291,19 +276,32 @@ function createOwnerState(options: CodexProcessTestOptions): ProcessOwnerState {
 }
 
 /**
+ * The pid the snapshot reports: the current child's, or an unproven child's while the owner
+ * is still deciding whether that child is its own.
+ * @param state - The owner state.
+ * @returns The pid, or null when no child is spawned.
+ */
+function snapshotPid(state: ProcessOwnerState): number | null {
+	const current = state.current?.child.pid;
+	if (current !== undefined) {
+		return current;
+	}
+	return state.unprovenChildren.values().next().value?.child.pid ?? null;
+}
+
+/**
  * Read the public snapshot of the owner.
  * @param state - The owner state.
  * @returns The frozen snapshot.
  */
 function snapshot(state: ProcessOwnerState): CodexProcessSnapshot {
-	const unprovenChild = state.unprovenChildren.values().next().value;
 	return Object.freeze({
 		state: state.state,
-		pid: state.current?.child.pid ?? unprovenChild?.child.pid ?? null,
+		pid: snapshotPid(state),
 		executablePath: state.executablePath,
 		argv: Object.freeze([...state.argv]),
 		cwd: state.cwd,
-		ready: state.current?.ready ?? false,
+		ready: state.current?.ready === true,
 		accountReady: state.accountReady,
 		restartAttempt: state.restartAttempt,
 		nextRestartAtMs: state.nextRestartAtMs,
@@ -342,9 +340,7 @@ function listenerFailure(
  * @returns True while a child, group or unproven child remains.
  */
 function ownsChildren(state: ProcessOwnerState): boolean {
-	return (
-		state.current !== undefined || state.groups.size > 0 || state.unprovenChildren.size > 0
-	);
+	return state.current !== undefined || state.groups.size > 0 || state.unprovenChildren.size > 0;
 }
 
 /**
@@ -354,7 +350,11 @@ function ownsChildren(state: ProcessOwnerState): boolean {
  * @param kind - Which listener set failed.
  * @param cause - What the listener threw.
  */
-function retireListener(state: ProcessOwnerState, kind: "snapshot" | "child", cause: unknown): void {
+function retireListener(
+	state: ProcessOwnerState,
+	kind: "snapshot" | "child",
+	cause: unknown,
+): void {
 	terminalFailure(state, listenerFailure(state, kind, cause));
 	if (!state.stopping && ownsChildren(state)) void state.hooks.stop().catch(() => undefined);
 }
