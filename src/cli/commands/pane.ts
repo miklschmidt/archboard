@@ -47,12 +47,20 @@ const browserContract = defineCommand({
 	result: PaneNamespaceResultSchema,
 	output: {
 		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Namespace refusal" }],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
 	effects: [],
 	refusals: [],
 	relationships: [],
+	/**
+	 * Refuses the bare namespace with its subcommand usage line.
+	 * @returns Never; the usage error is the whole behaviour.
+	 */
 	async handler() {
 		throw new CliUsageError(usage);
 	},
@@ -109,6 +117,10 @@ const paneOpenContract = defineCommand({
 				presentation: ["diagnostics", "result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "browser"],
@@ -117,6 +129,12 @@ const paneOpenContract = defineCommand({
 	relationships: [
 		{ method: "POST", path: "/api/panes/open", cardinality: "one", description: "Open the pane" },
 	],
+	/**
+	 * Splits the browser canvas into one more pane and says where it landed.
+	 * @param input - The ingress input holding the staged tokens.
+	 * @param context - The command context.
+	 * @returns The opened pane with a diagnostic naming it.
+	 */
 	async handler(input, context) {
 		await context.require("server", "Opening a pane");
 		context.parse(PaneOpenStageSchema, input.tokens);
@@ -191,6 +209,10 @@ const paneCloseContract = defineCommand({
 				presentation: ["diagnostics", "result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "browser"],
@@ -204,6 +226,13 @@ const paneCloseContract = defineCommand({
 			description: "Close the selected pane",
 		},
 	],
+	/**
+	 * Takes one pane off screen, reminding the person that the board it showed
+	 * is still open on the canvas.
+	 * @param input - The ingress input holding the staged tokens.
+	 * @param context - The command context.
+	 * @returns The closed pane with a diagnostic naming it.
+	 */
 	async handler(input, context) {
 		await context.require("server", "Closing a pane");
 		const request = context.parse(PaneCloseStageSchema, input.tokens);

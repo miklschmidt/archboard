@@ -52,6 +52,11 @@ const outputs = {
 			presentation: ["result"] as const,
 		},
 	] as const,
+	/**
+	 * Chooses the text case when --text was passed and the JSON view otherwise.
+	 * @param input - The parsed report input.
+	 * @returns The output case id.
+	 */
 	select: (input: { text: boolean }) => (input.text ? "text" : "json"),
 };
 
@@ -95,6 +100,12 @@ const selectionContract = defineCommand({
 			description: "Read the current selection",
 		},
 	],
+	/**
+	 * Reads the selection of one connected pane without changing it.
+	 * @param input - The parsed selection input.
+	 * @param context - The command execution context.
+	 * @returns The human-readable report under --text, otherwise the structured selection.
+	 */
 	async handler(input, context) {
 		await context.require("server", "browser selection");
 		await context.require("browser", "browser selection");
@@ -169,6 +180,12 @@ const panesContract = defineCommand({
 	relationships: [
 		{ method: "GET", path: "/api/panes", cardinality: "one", description: "Read pane view state" },
 	],
+	/**
+	 * Reads the pane layout and per-pane view state; no panes at all is a valid answer.
+	 * @param input - The parsed panes input.
+	 * @param context - The command execution context.
+	 * @returns The human-readable report under --text, otherwise the structured pane state.
+	 */
 	async handler(input, context) {
 		await context.require("server", "panes");
 		const report = await getPanes();

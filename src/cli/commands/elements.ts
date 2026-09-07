@@ -8,13 +8,23 @@ import {
 import type { ElementInput } from "@/runtime/engine/canvas-client";
 import type { ServerElement } from "@/runtime/engine/types";
 import { defineCommand } from "@/cli/command-contract/contract";
-import type { CommandContext } from "@/cli/command-contract/contract";
 import {
 	BoardFingerprintSchema,
 	HoldReportSchema,
 	ServerElementSchema,
 } from "@/cli/command-contract/schemas";
 import { boardWriteRefusals, commonRefusals } from "@/cli/command-contract/common";
+import {
+	AddPayloadStageSchema,
+	ApplyPayloadStageSchema,
+	InlineElementStageSchema,
+	readJsonText,
+} from "@/cli/commands/lib/element-payloads";
+import type {
+	AddPayloadStage,
+	ApplyPayloadStage,
+	InlineElementStage,
+} from "@/cli/commands/lib/element-payloads";
 
 const tail = z.array(z.string()).default([]);
 const documentOption = {
@@ -40,106 +50,36 @@ const ignoredTail = {
 	description: "Legacy ignored positional content",
 };
 
-async function readJsonText(context: CommandContext, file: string | undefined): Promise<string> {
-	return file !== undefined && file !== "-"
-		? context.readTextFile(context.resolvePath(file))
-		: await context.readStdin();
-}
-
-const jsonText = (emptyMessage: string, invalidPrefix: string) =>
-	z.string().transform((raw, context) => {
-		if (!raw.trim()) {
-			context.addIssue({ code: "custom", message: emptyMessage });
-			return z.NEVER;
-		}
-		try {
-			return JSON.parse(raw) as unknown;
-		} catch (error) {
-			context.addIssue({
-				code: "custom",
-				message: `${invalidPrefix}: ${(error as Error).message}`,
-			});
-			return z.NEVER;
-		}
-	});
-
-const ApplyPayloadStageSchema = jsonText(
-	"No patch provided (pass a file argument or pipe JSON to stdin)",
-	"Invalid JSON patch",
-).transform((raw, context) => {
-	const record =
-		raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
-	const create = (
-		Array.isArray(raw) ? raw : Array.isArray(record["create"]) ? record["create"] : []
-	).filter((value): value is ElementInput => Boolean(value && typeof value === "object"));
-	const rawUpdates = Array.isArray(record["update"]) ? record["update"] : [];
-	const deletes = Array.isArray(record["delete"])
-		? record["delete"].filter((value): value is string => typeof value === "string")
-		: [];
-	if (create.length === 0 && rawUpdates.length === 0 && deletes.length === 0) {
-		context.addIssue({ code: "custom", message: "Patch has no create/update/delete operations" });
-		return z.NEVER;
-	}
-	const updates: { id: string; updates: Record<string, unknown> }[] = [];
-	for (const value of rawUpdates) {
-		if (!value || typeof value !== "object" || Array.isArray(value)) {
-			context.addIssue({
-				code: "custom",
-				message: 'Every update entry must be an object with an "id"',
-			});
-			return z.NEVER;
-		}
-		const update = value as Record<string, unknown>;
-		if (typeof update["id"] !== "string" || !update["id"]) {
-			context.addIssue({ code: "custom", message: 'Every update entry needs an "id"' });
-			return z.NEVER;
-		}
-		const { set, id, ...rest } = update;
-		if (set === undefined) {
-			updates.push({ id, updates: rest });
-			continue;
-		}
-		if (!set || typeof set !== "object" || Array.isArray(set)) {
-			context.addIssue({ code: "custom", message: 'Update entry "set" must be an object' });
-			return z.NEVER;
-		}
-		if (Object.keys(rest).length > 0) {
-			context.addIssue({
-				code: "custom",
-				message: 'Use either direct update fields or "set", not both',
-			});
-			return z.NEVER;
-		}
-		updates.push({ id, updates: set as Record<string, unknown> });
-	}
-	return { create, updates, deletes };
-});
-type ApplyPayloadStage = z.infer<typeof ApplyPayloadStageSchema>;
-
-const AddPayloadStageSchema = jsonText(
-	"No elements provided (pass a file argument or pipe JSON to stdin)",
-	"Invalid JSON elements",
-).transform((raw) =>
-	(Array.isArray(raw) ? raw : [raw]).filter((value): value is ElementInput =>
-		Boolean(value && typeof value === "object"),
-	),
-);
-type AddPayloadStage = z.infer<typeof AddPayloadStageSchema>;
-const InlineElementStageSchema = z.string().transform((raw, context) => {
-	try {
-		return [JSON.parse(raw) as ElementInput];
-	} catch (error) {
-		context.addIssue({
-			code: "custom",
-			message: `Invalid JSON in --one: ${(error as Error).message}`,
-		});
-		return z.NEVER;
-	}
-});
-type InlineElementStage = z.infer<typeof InlineElementStageSchema>;
-
+/**
+ * Turns the `--document` flag into the request field the server reads, and
+ * nothing at all when the flag is absent so the request stays minimal.
+ * @param document - Whether the caller asked for the complete board document.
+ * @returns The request field to spread into the server call.
+ */
 const documentAsked = (document: boolean): { document?: boolean } =>
 	document ? { document: true } : {};
+
+/**
+ * Checks every updated and deleted id against the board before anything is
+ * written, and shapes the updates as upserts keyed by id.
+ * @param patch - The normalised patch.
+ * @returns The upserts for the update entries; empty when the patch only creates.
+ */
+async function resolvedUpdates(
+	patch: ApplyPayloadStage,
+): Promise<(Partial<ServerElement> & { id: string })[]> {
+	if (patch.updates.length === 0 && patch.deletes.length === 0) {
+		return [];
+	}
+	const onBoard = new Set((await getElements()).map((element) => element.id));
+	const missing = [...patch.updates.map((update) => update.id), ...patch.deletes].find(
+		(id) => !onBoard.has(id),
+	);
+	if (missing !== undefined) {
+		throw new Error(`Element ${missing} not found`);
+	}
+	return patch.updates.map((normalized) => ({ ...normalized.updates, id: normalized.id }));
+}
 
 const ApplyInputSchema = z.object({
 	file: z.string().optional(),
@@ -189,6 +129,10 @@ const applyContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board", "doing"],
@@ -208,24 +152,17 @@ const applyContract = defineCommand({
 			description: "Apply the complete patch",
 		},
 	],
+	/**
+	 * Applies one validated patch as one board write; the payload is parsed
+	 * before the server is required so a bad patch never needs a server.
+	 * @param input - The parsed apply options.
+	 * @param context - The command context.
+	 * @returns The patch receipt with counts and the touched elements.
+	 */
 	async handler(input, context) {
 		const patch = context.parse(ApplyPayloadStageSchema, await readJsonText(context, input.file));
 		await context.require("server", "apply");
-		const updates: (Partial<ServerElement> & { id: string })[] = [];
-		if (patch.updates.length > 0 || patch.deletes.length > 0) {
-			const onBoard = new Set((await getElements()).map((element) => element.id));
-			for (const normalized of patch.updates) {
-				if (!onBoard.has(normalized.id)) {
-					throw new Error(`Element ${normalized.id} not found`);
-				}
-				updates.push({ ...normalized.updates, id: normalized.id });
-			}
-			for (const id of patch.deletes) {
-				if (!onBoard.has(id)) {
-					throw new Error(`Element ${id} not found`);
-				}
-			}
-		}
+		const updates = await resolvedUpdates(patch);
 		const result = await applyElementChanges({
 			upserts: [...patch.create, ...updates],
 			deletes: patch.deletes,
@@ -303,6 +240,10 @@ const addContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board", "doing"],
@@ -316,6 +257,13 @@ const addContract = defineCommand({
 			description: "Create the batch",
 		},
 	],
+	/**
+	 * Creates the elements given inline with `--one` or as a JSON array from a
+	 * file or stdin, in one batch write.
+	 * @param input - The parsed add options.
+	 * @param context - The command context.
+	 * @returns The creation receipt with the created elements.
+	 */
 	async handler(input, context) {
 		let elements: ElementInput[];
 		if (input.one !== undefined) {
@@ -376,6 +324,10 @@ const deleteContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board", "doing"],
@@ -395,6 +347,13 @@ const deleteContract = defineCommand({
 			description: "Delete all ids",
 		},
 	],
+	/**
+	 * Deletes the named elements in one write, refusing when any id is not on
+	 * the board so a typo never deletes half a list.
+	 * @param input - The parsed delete options.
+	 * @param context - The command context.
+	 * @returns The deletion receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "delete");
 		const onBoard = new Set((await getElements()).map((element) => element.id));
@@ -450,6 +409,10 @@ const getContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board"],
@@ -463,6 +426,12 @@ const getContract = defineCommand({
 			description: "Read the element",
 		},
 	],
+	/**
+	 * Reads one element by id.
+	 * @param input - The parsed get options.
+	 * @param context - The command context.
+	 * @returns The server-owned element.
+	 */
 	async handler(input, context) {
 		await context.require("server", "get");
 		return { result: GetResultSchema.parse(await getElementStrict(input.id)) };

@@ -17,19 +17,25 @@ const opaqueBackground = z
 	.transform((value) => value.toLowerCase())
 	.pipe(z.string().regex(/^#[0-9a-f]{6}$/u, "--background must be opaque #RRGGBB"));
 
+/**
+ * Reads one coordinate token of `--at`, accepting only a non-blank finite number.
+ * @param token - The token on one side of the comma, if present.
+ * @returns The coordinate, or undefined when the token is missing, blank or not finite.
+ */
+function finiteCoordinate(token: string | undefined): number | undefined {
+	const trimmed = token?.trim() ?? "";
+	if (trimmed.length === 0) {
+		return undefined;
+	}
+	const value = Number(trimmed);
+	return Number.isFinite(value) ? value : undefined;
+}
+
 const atPoint = z.string().transform((value, context) => {
 	const pieces = value.split(",");
-	const xToken = pieces[0]?.trim() ?? "";
-	const yToken = pieces[1]?.trim() ?? "";
-	const x = Number(xToken);
-	const y = Number(yToken);
-	if (
-		pieces.length !== 2 ||
-		xToken.length === 0 ||
-		yToken.length === 0 ||
-		!Number.isFinite(x) ||
-		!Number.isFinite(y)
-	) {
+	const x = finiteCoordinate(pieces[0]);
+	const y = finiteCoordinate(pieces[1]);
+	if (pieces.length !== 2 || x === undefined || y === undefined) {
 		context.addIssue({ code: "custom", message: "--at must be finite x,y coordinates" });
 		return z.NEVER;
 	}
@@ -44,6 +50,12 @@ const bridgeRefusal = {
 		"The named sources, crossing, style, span, or provenance cannot form the requested bridge.",
 };
 
+/**
+ * Describes one of the two bridge parts: an unbound, ungrouped line whose
+ * metadata records the bridge facts and which role the line plays.
+ * @param role - Whether the part masks the under connector or redraws the over one.
+ * @returns The strict element schema of that part.
+ */
 const bridgePart = (role: "mask" | "redraw") =>
 	ServerElementSchema.extend({
 		type: z.literal("line"),
@@ -55,11 +67,72 @@ const bridgePart = (role: "mask" | "redraw") =>
 		}),
 	});
 
+/**
+ * Strips the per-part fields from bridge metadata so both parts can be
+ * compared against the receipt's shared facts.
+ * @param metadata - One part's bridge metadata.
+ * @returns The facts both parts must agree on.
+ */
 const bridgeFactsWithoutRole = ({
 	role: _role,
 	background: _background,
 	...facts
 }: BridgeMetadata) => facts;
+
+type BridgeReceiptFacts = {
+	bridgeId: string;
+	overConnectorId: string;
+	underConnectorId: string;
+	overSegmentIndex: number;
+	underSegmentIndex: number;
+	crossing: { x: number; y: number };
+};
+type BridgePartElement = z.infer<ReturnType<typeof bridgePart>>;
+
+/**
+ * Checks that the receipt's ids are consistent: two distinct sources, the
+ * mask carrying the bridge id, and neither part reusing a source id.
+ * @param facts - The receipt's shared facts.
+ * @param mask - The mask part.
+ * @param redraw - The redraw part.
+ * @returns Whether the ids agree.
+ */
+function bridgeIdsAgree(
+	facts: BridgeReceiptFacts,
+	mask: BridgePartElement,
+	redraw: BridgePartElement,
+): boolean {
+	const sourceIds = new Set([facts.overConnectorId, facts.underConnectorId]);
+	return (
+		facts.overConnectorId !== facts.underConnectorId &&
+		mask.id === facts.bridgeId &&
+		redraw.id !== facts.bridgeId &&
+		!sourceIds.has(mask.id) &&
+		!sourceIds.has(redraw.id)
+	);
+}
+
+/**
+ * Checks that both parts carry the receipt's facts and the same background.
+ * @param facts - The receipt's shared facts.
+ * @param mask - The mask part.
+ * @param redraw - The redraw part.
+ * @returns Whether the metadata agrees.
+ */
+function bridgeMetadataAgrees(
+	facts: BridgeReceiptFacts,
+	mask: BridgePartElement,
+	redraw: BridgePartElement,
+): boolean {
+	const expected = JSON.stringify(facts);
+	const maskMetadata = mask.customData.archboard.bridge;
+	const redrawMetadata = redraw.customData.archboard.bridge;
+	return (
+		JSON.stringify(bridgeFactsWithoutRole(maskMetadata)) === expected &&
+		JSON.stringify(bridgeFactsWithoutRole(redrawMetadata)) === expected &&
+		maskMetadata.background === redrawMetadata.background
+	);
+}
 
 const BridgeInputSchema = z.object({
 	over: z.string().min(1, "--over is required"),
@@ -83,7 +156,7 @@ const BridgeResultSchema = z
 	})
 	.superRefine((result, context) => {
 		const [mask, redraw] = result.elements;
-		const expected = {
+		const facts: BridgeReceiptFacts = {
 			bridgeId: result.bridgeId,
 			overConnectorId: result.overConnectorId,
 			underConnectorId: result.underConnectorId,
@@ -91,19 +164,7 @@ const BridgeResultSchema = z
 			underSegmentIndex: result.underSegmentIndex,
 			crossing: result.crossing,
 		};
-		const maskMetadata = mask.customData.archboard.bridge;
-		const redrawMetadata = redraw.customData.archboard.bridge;
-		const sourceIds = new Set([result.overConnectorId, result.underConnectorId]);
-		if (
-			result.overConnectorId === result.underConnectorId ||
-			mask.id !== result.bridgeId ||
-			redraw.id === result.bridgeId ||
-			sourceIds.has(mask.id) ||
-			sourceIds.has(redraw.id) ||
-			JSON.stringify(bridgeFactsWithoutRole(maskMetadata)) !== JSON.stringify(expected) ||
-			JSON.stringify(bridgeFactsWithoutRole(redrawMetadata)) !== JSON.stringify(expected) ||
-			maskMetadata.background !== redrawMetadata.background
-		) {
+		if (!bridgeIdsAgree(facts, mask, redraw) || !bridgeMetadataAgrees(facts, mask, redraw)) {
 			context.addIssue({ code: "custom", message: "Bridge receipt facts do not agree." });
 		}
 	});
@@ -159,6 +220,10 @@ const bridgeContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board", "doing"],
@@ -172,6 +237,13 @@ const bridgeContract = defineCommand({
 			description: "Plan and create both bridge parts in one mutation",
 		},
 	],
+	/**
+	 * Creates both bridge parts in one server mutation and validates the receipt
+	 * before it is shown, so an inconsistent bridge is refused rather than reported.
+	 * @param input - The parsed bridge options.
+	 * @param context - The command context.
+	 * @returns The validated bridge receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "bridge");
 		const { at, ...required } = input;
@@ -229,6 +301,10 @@ const bridgeRemoveContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board", "doing"],
@@ -242,6 +318,12 @@ const bridgeRemoveContract = defineCommand({
 			description: "Resolve provenance and delete both parts in one mutation",
 		},
 	],
+	/**
+	 * Deletes one bridge's mask and redraw pair by the mask's id.
+	 * @param input - The parsed removal options.
+	 * @param context - The command context.
+	 * @returns The validated removal receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "bridge remove");
 		return {

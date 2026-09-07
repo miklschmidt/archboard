@@ -1,280 +1,21 @@
 import fs from "node:fs";
 import path from "node:path";
-import os from "node:os";
-import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { z } from "zod";
-import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { defineCommand } from "@/cli/command-contract/contract";
 import type { CommandContext } from "@/cli/command-contract/contract";
+import {
+	SKILL_NAME,
+	type SkillDestination,
+	countFiles,
+	findSkillSource,
+	resolveAgent,
+	resolveExplicitDir,
+	resolveInvocation,
+	resolveTarget,
+} from "@/cli/commands/lib/skill-destination";
+import { applyBlock, chooseDoc, writeSetup } from "@/cli/commands/lib/repo-setup-block";
 
-const SKILL_NAME = "archboard";
 const RETIRED_SKILL_NAMES = ["excalidraw-skill"];
-
-// Installing the skill is only half of setting a repo up. The other half is
-// writing down what the next agent in that repo cannot discover: where the
-// vault is, how to invoke the binary, and which boards cover this code. That
-// lives in the repo's own CLAUDE.md or AGENTS.md, between these markers so a
-// re-run replaces the block instead of appending a second copy.
-const BLOCK_BEGIN = "<!-- archboard:begin -->";
-const BLOCK_END = "<!-- archboard:end -->";
-
-// The assumed vault when nobody says otherwise: local to the repo being set
-// up. A cross-repo vault is still the better answer for a diagram whose boxes
-// span five checkouts, but it is the answer somebody has to choose, and the
-// cost of guessing wrong here is a directory nobody used.
-const LOCAL_VAULT_DIR = path.join(".archboard", "vault");
-
-// Matches the default in core/config.ts. Only a URL that differs from it is
-// worth writing down, because only then is it something an agent cannot guess.
-const DEFAULT_CANVAS_URL = "http://127.0.0.1:3000";
-
-// The checkout layout is <root>/{src,skills,bin,...}; this module lives at
-// src/cli/commands/, so the root is three levels up. Resolving relative to the
-// module path keeps this working from any cwd.
-function packageRoot(): string {
-	return fileURLToPath(new URL("../../..", import.meta.url));
-}
-
-function findSkillSource(): string {
-	const source = path.join(packageRoot(), "skills", SKILL_NAME);
-	if (!fs.existsSync(path.join(source, "SKILL.md"))) {
-		throw new Error(`Bundled skill not found at ${source} (broken install?)`);
-	}
-	return source;
-}
-
-function expandHome(input: string): string {
-	if (input === "~") {
-		return os.homedir();
-	}
-	if (input.startsWith(`~${path.sep}`)) {
-		return path.join(os.homedir(), input.slice(2));
-	}
-	return input;
-}
-
-function resolveSkillsRoot(target: string): string {
-	if (target === "agents") {
-		return path.join(os.homedir(), ".agents", "skills");
-	}
-	if (target === "claude") {
-		return path.join(os.homedir(), ".claude", "skills");
-	}
-	if (target === "codex") {
-		throw new CliUsageError(
-			"--target codex is obsolete. The default install root is ~/.agents/skills; use --dir <skills-root> for a custom location.",
-		);
-	}
-	throw new CliUsageError(
-		`Unknown --target ${target}. Supported targets: claude. Omit --target for ~/.agents/skills, or use --dir <skills-root> for a custom location.`,
-	);
-}
-
-function resolveTarget(target: string): { root: string; target: string; mode: string } {
-	const root = resolveSkillsRoot(target);
-	return { root, target: path.join(root, SKILL_NAME), mode: `target:${target}` };
-}
-
-function resolveAgent(agent: string): {
-	root: string;
-	target: string;
-	mode: string;
-	targetSpec: string;
-} {
-	const targetSpec = agent === "codex" ? "agents" : agent === "claude-code" ? "claude" : undefined;
-	if (!targetSpec) {
-		throw new CliUsageError(`Unknown --agent ${agent}. Supported agents: codex, claude-code.`);
-	}
-	const resolved = resolveTarget(targetSpec);
-	return { ...resolved, mode: `agent:${agent}`, targetSpec };
-}
-
-function countFiles(dir: string): number {
-	let count = 0;
-	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-		if (entry.isDirectory()) {
-			count += countFiles(path.join(dir, entry.name));
-		} else {
-			count++;
-		}
-	}
-	return count;
-}
-
-function realpathOrNull(candidate: string): string | null {
-	try {
-		return fs.realpathSync(candidate);
-	} catch {
-		return null;
-	}
-}
-
-/**
- * How the next agent should type "archboard".
- *
- * The skill's every example says `archboard`, which is a lie in any repo where
- * nobody linked it onto PATH. So check: an `archboard` on PATH counts only
- * when it actually resolves to this build. Otherwise return the absolute
- * path of the entry point that is running right now, which always works.
- */
-function resolveInvocation(): { command: string; onPath: boolean } {
-	const root = packageRoot();
-	const wrapper = path.join(root, "bin", "canvas");
-	const entry = path.join(root, "src", "bin.ts");
-	const ours = new Set(
-		[wrapper, entry].map(realpathOrNull).filter((value): value is string => value !== null),
-	);
-
-	for (const dir of (process.env["PATH"] ?? "").split(path.delimiter)) {
-		if (!dir) {
-			continue;
-		}
-		const resolved = realpathOrNull(path.join(dir, "archboard"));
-		if (resolved && ours.has(resolved)) {
-			return { command: "archboard", onPath: true };
-		}
-	}
-
-	if (fs.existsSync(wrapper)) {
-		return { command: wrapper, onPath: false };
-	}
-	return { command: `bun ${entry}`, onPath: false };
-}
-
-/** The git repository containing `from`, or `from` itself when there is none. */
-function findRepoRoot(from: string): string {
-	let dir = path.resolve(from);
-	for (;;) {
-		if (fs.existsSync(path.join(dir, ".git"))) {
-			return dir;
-		}
-		const parent = path.dirname(dir);
-		if (parent === dir) {
-			return path.resolve(from);
-		}
-		dir = parent;
-	}
-}
-
-/**
- * Which file the next agent will actually read.
- *
- * An existing CLAUDE.md wins, then an existing AGENTS.md. Creating the other
- * one alongside is how a repo ends up with two agent docs that disagree, so it
- * never happens: a repo with neither gets the one matching the skill target.
- */
-function chooseDoc(repo: string, targetSpec: string): { file: string; existed: boolean } {
-	for (const name of ["CLAUDE.md", "AGENTS.md"]) {
-		const candidate = path.join(repo, name);
-		if (fs.existsSync(candidate)) {
-			return { file: candidate, existed: true };
-		}
-	}
-	const created = targetSpec === "claude" ? "CLAUDE.md" : "AGENTS.md";
-	return { file: path.join(repo, created), existed: false };
-}
-
-function renderBlock(options: {
-	vault: string;
-	command: string;
-	onPath: boolean;
-	skill: string;
-	canvasUrl?: string;
-}): string {
-	const { vault, command, onPath, skill, canvasUrl } = options;
-	const cli = onPath ? "archboard" : command;
-	const env = [`export ARCHBOARD_VAULT=${vault}`];
-	if (canvasUrl) {
-		env.push(`export EXPRESS_SERVER_URL=${canvasUrl}`);
-	}
-
-	return [
-		BLOCK_BEGIN,
-		"<!-- Written by `archboard install-skill`. Re-running replaces this block, so keep",
-		'     your own notes under "Boards for this repo" and they will survive. -->',
-		"## Architecture canvas (archboard)",
-		"",
-		"Architecture diagrams for this repo live on an archboard canvas: a live",
-		"Excalidraw board an agent draws on and a human rearranges. The commands are in",
-		`the \`archboard\` skill at \`${skill}\`. Below is the part of the setup that`,
-		"only this machine knows.",
-		"",
-		"### Environment",
-		"",
-		"Boards are `.excalidraw.md` notes in an Obsidian vault. This repo uses:",
-		"",
-		"```bash",
-		...env,
-		"```",
-		"",
-		"Every archboard command needs that in its environment, and so does the canvas",
-		"server, which is what does the vault I/O. If your shell does not carry",
-		"variables from one command to the next, prefix each command instead:",
-		"",
-		"```bash",
-		`ARCHBOARD_VAULT=${vault} ${cli} board list`,
-		"```",
-		"",
-		"The server keeps the vault it was started with. `board list` prints the vault",
-		`in use. If that is not the one above, run \`${cli} stop\` and try again with the`,
-		"variable set.",
-		"",
-		"### Running the CLI",
-		"",
-		onPath
-			? "The CLI is on PATH as `archboard`, which is the name the skill uses."
-			: `The CLI is not on PATH here, so \`archboard\` will not resolve. Use the absolute\npath wherever the skill says \`archboard\`:`,
-		"",
-		"```bash",
-		`${cli} status`,
-		"```",
-		"",
-		"archboard runs its TypeScript directly, so bun has to be on PATH for any of",
-		"this to work.",
-		"",
-		`The canvas server starts on the first command and serves ${canvasUrl ?? "http://127.0.0.1:3000"}.`,
-		"Open that in a browser to watch, or to let a human move things. Drawing,",
-		"reading and saving a board all work without one; screenshots and image export",
-		"do not.",
-		"",
-		"### Boards for this repo",
-		"",
-		"Fill this in. Nothing links a repo to its boards automatically, so an agent",
-		"that finds nothing here has to ask.",
-		"",
-		"- Boards: none recorded yet. Make one with",
-		`  \`${cli} board new <name> --level service\`, draw on it, then`,
-		`  \`${cli} board save --board <name>\`.`,
-		"- Level vocabulary: `system`, `service`, `module`, unless this project says",
-		"  otherwise here.",
-		"- Conventions and gotchas an agent cannot read off the source: none recorded yet.",
-		BLOCK_END,
-		"",
-	].join("\n");
-}
-
-/** Replace the managed block in place, or append it when there is none. */
-function applyBlock(existing: string, block: string): string {
-	const start = existing.indexOf(BLOCK_BEGIN);
-	const end = existing.indexOf(BLOCK_END);
-	if (start !== -1 && end > start) {
-		const after = existing.slice(end + BLOCK_END.length).replace(/^\n/u, "");
-		return existing.slice(0, start) + block + after;
-	}
-	if (!existing.trim()) {
-		return block;
-	}
-	return existing.replace(/\n*$/u, "\n\n") + block;
-}
-
-function gitIgnores(repo: string, target: string): boolean {
-	try {
-		execFileSync("git", ["-C", repo, "check-ignore", "-q", target], { stdio: "ignore" });
-		return true;
-	} catch {
-		return false;
-	}
-}
 
 const InstallSkillInputSchema = z.object({
 	dir: z.string().optional(),
@@ -289,36 +30,52 @@ const InstallSkillInputSchema = z.object({
 	tail: z.array(z.string()).default([]),
 });
 type InstallSkillInput = z.infer<typeof InstallSkillInputSchema>;
-const InstallSkillRequestSchema = InstallSkillInputSchema.superRefine((input, context) => {
+
+/**
+ * The request problems the input schema cannot express field by field: at most one destination
+ * spelling, --doc and --no-doc exclusive, and only supported agent and target names.
+ * @param input - The parsed install input.
+ * @returns One message per problem found, in check order.
+ */
+function installRequestIssues(input: InstallSkillInput): string[] {
+	const issues: string[] = [];
 	const destinations = [input.dir, input.target, input.agent].filter(
 		(value) => value !== undefined,
 	);
 	if (destinations.length > 1) {
-		context.addIssue({
-			code: "custom",
-			message: "Use only one of --dir <skills-root>, --agent <agent>, or --target claude",
-		});
+		issues.push("Use only one of --dir <skills-root>, --agent <agent>, or --target claude");
 	}
 	if (input.noDoc && input.doc !== undefined) {
-		context.addIssue({ code: "custom", message: "Use either --doc <file> or --no-doc, not both" });
+		issues.push("Use either --doc <file> or --no-doc, not both");
 	}
 	if (input.agent !== undefined && !["codex", "claude-code"].includes(input.agent)) {
-		context.addIssue({
-			code: "custom",
-			message: `Unknown --agent ${input.agent}. Supported agents: codex, claude-code.`,
-		});
+		issues.push(`Unknown --agent ${input.agent}. Supported agents: codex, claude-code.`);
 	}
-	if (input.target === "codex") {
-		context.addIssue({
-			code: "custom",
-			message:
-				"--target codex is obsolete. The default install root is ~/.agents/skills; use --dir <skills-root> for a custom location.",
-		});
-	} else if (input.target !== undefined && !["agents", "claude"].includes(input.target)) {
-		context.addIssue({
-			code: "custom",
-			message: `Unknown --target ${input.target}. Supported targets: claude. Omit --target for ~/.agents/skills, or use --dir <skills-root> for a custom location.`,
-		});
+	const target = targetIssue(input.target);
+	if (target !== undefined) {
+		issues.push(target);
+	}
+	return issues;
+}
+
+/**
+ * The problem with a --target spelling, if any: the obsolete codex target or an unknown name.
+ * @param target - The target spelling, if given.
+ * @returns The message, or undefined when the target is absent or supported.
+ */
+function targetIssue(target: string | undefined): string | undefined {
+	if (target === "codex") {
+		return "--target codex is obsolete. The default install root is ~/.agents/skills; use --dir <skills-root> for a custom location.";
+	}
+	if (target !== undefined && !["agents", "claude"].includes(target)) {
+		return `Unknown --target ${target}. Supported targets: claude. Omit --target for ~/.agents/skills, or use --dir <skills-root> for a custom location.`;
+	}
+	return undefined;
+}
+
+const InstallSkillRequestSchema = InstallSkillInputSchema.superRefine((input, context) => {
+	for (const message of installRequestIssues(input)) {
+		context.addIssue({ code: "custom", message });
 	}
 });
 type InstallSkillRequest = z.infer<typeof InstallSkillRequestSchema>;
@@ -355,51 +112,99 @@ const InstallSkillResultSchema = z.union([
 ]);
 type InstallSkillResult = z.infer<typeof InstallSkillResultSchema>;
 
-async function executeInstallSkill(
-	input: InstallSkillInput,
-	context: CommandContext,
-): Promise<InstallSkillResult> {
-	const source = findSkillSource();
+interface ResolvedDestination extends SkillDestination {
+	/** The target spelling the repo doc choice keys on: "dir" for an explicit root. */
+	docTargetSpec: string;
+}
 
-	if (input.printSource) {
-		return {
-			success: true,
-			skill: SKILL_NAME,
-			source,
-			files: countFiles(source),
-		};
+/**
+ * Resolves where the skill goes from whichever destination spelling was used: --dir wins,
+ * then --agent, then --target (defaulting to the agents root).
+ * @param input - The validated install request.
+ * @returns The destination and the target spelling the doc choice reuses.
+ */
+function resolveDestination(input: InstallSkillRequest): ResolvedDestination {
+	if (input.dir) {
+		return { ...resolveExplicitDir(input.dir), docTargetSpec: "dir" };
 	}
-	input = context.parse(InstallSkillRequestSchema, input);
-
-	const explicitDir = input.dir;
-	const agentSpec = input.agent;
+	if (input.agent) {
+		const agent = resolveAgent(input.agent);
+		return { ...agent, docTargetSpec: agent.targetSpec };
+	}
 	const targetSpec = input.target ?? "agents";
-	const explicitRoot = explicitDir ? path.resolve(expandHome(explicitDir)) : undefined;
-	const agentTarget = agentSpec ? resolveAgent(agentSpec) : undefined;
-	const resolved = explicitRoot
-		? { root: explicitRoot, target: path.join(explicitRoot, SKILL_NAME), mode: "dir" }
-		: (agentTarget ?? resolveTarget(targetSpec));
-	const { root, target, mode } = resolved;
+	return { ...resolveTarget(targetSpec), docTargetSpec: targetSpec };
+}
 
-	// Replace, never overlay: stale files from older skill versions (e.g. the
-	// pre-1.1 scripts/*.cjs helpers) must not survive an upgrade.
+/**
+ * The existing install at the target, refusing to manage a symlink somebody else placed.
+ * @param target - The skill directory to replace.
+ * @returns The lstat result, or undefined when nothing is there yet.
+ */
+function existingInstall(target: string): fs.Stats | undefined {
 	let lstat: fs.Stats | undefined;
 	try {
 		lstat = fs.lstatSync(target);
 	} catch {
 		/* target does not exist yet */
 	}
-
 	if (lstat?.isSymbolicLink()) {
 		throw new Error(
 			`${target} is a symlink; refusing to replace it. Remove it manually if you want the CLI to manage this install.`,
 		);
 	}
+	return lstat;
+}
 
-	// Stage into a sibling temp dir, then swap
+/**
+ * Whether a path exists at all, symlinks included.
+ * @param candidate - The path to check.
+ * @returns True when lstat succeeds.
+ */
+function pathExists(candidate: string): boolean {
+	try {
+		fs.lstatSync(candidate);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * A rename must not leave two discoverable names for the same skill. Removes retired names
+ * only after the new copy is in place, so a failed install never takes away the working
+ * legacy copy first.
+ * @param root - The skills root.
+ * @param target - The freshly installed skill directory, which is never removed.
+ * @param context - The command context that receives the diagnostics.
+ */
+function removeRetiredInstalls(root: string, target: string, context: CommandContext): void {
+	for (const retiredName of RETIRED_SKILL_NAMES) {
+		const retired = path.join(root, retiredName);
+		if (retired === target || !pathExists(retired)) {
+			continue;
+		}
+		fs.rmSync(retired, { recursive: true, force: true });
+		context.diagnostic(`Removed retired install at ${retired}`);
+	}
+}
+
+/**
+ * Copies the skill into the root by staging into a sibling temp dir and swapping it in.
+ * Replace, never overlay: stale files from older skill versions (e.g. the pre-1.1
+ * scripts/*.cjs helpers) must not survive an upgrade.
+ * @param source - The bundled skill directory.
+ * @param destination - The skills root and target directory.
+ * @param context - The command context that receives the diagnostics.
+ */
+function installSkillFiles(
+	source: string,
+	destination: SkillDestination,
+	context: CommandContext,
+): void {
+	const { root, target } = destination;
+	const lstat = existingInstall(target);
 	fs.mkdirSync(root, { recursive: true });
 	const staging = fs.mkdtempSync(path.join(root, `.${SKILL_NAME}-staging-`));
-
 	try {
 		fs.cpSync(source, staging, { recursive: true });
 		if (lstat) {
@@ -407,170 +212,66 @@ async function executeInstallSkill(
 			context.diagnostic(`Replaced existing install at ${target}`);
 		}
 		fs.renameSync(staging, target);
-
-		// A rename must not leave two discoverable names for the same skill.
-		// Remove these only after the new copy is in place, so a failed install
-		// never takes away the working legacy copy first.
-		for (const retiredName of RETIRED_SKILL_NAMES) {
-			const retired = path.join(root, retiredName);
-			let retiredExists = false;
-			try {
-				fs.lstatSync(retired);
-				retiredExists = true;
-			} catch {
-				/* retired install does not exist */
-			}
-			if (retired === target || !retiredExists) {
-				continue;
-			}
-			fs.rmSync(retired, { recursive: true, force: true });
-			context.diagnostic(`Removed retired install at ${retired}`);
-		}
+		removeRetiredInstalls(root, target, context);
 	} catch (error) {
 		fs.rmSync(staging, { recursive: true, force: true });
 		throw error;
 	}
-
-	const setup = input.noDoc
-		? undefined
-		: await writeSetup({
-				...(input.repo === undefined ? {} : { repoSpec: input.repo }),
-				...(input.vault === undefined ? {} : { vaultSpec: input.vault }),
-				...(input.doc === undefined ? {} : { docSpec: input.doc }),
-				targetSpec: explicitRoot ? "dir" : (agentTarget?.targetSpec ?? targetSpec),
-				skill: target,
-				assumeYes: input.yes,
-				context,
-			});
-
-	return {
-		success: true,
-		skill: SKILL_NAME,
-		mode,
-		root,
-		target,
-		files: countFiles(target),
-		...(setup ? { setup } : {}),
-	};
-}
-
-interface SetupResult {
-	repo: string;
-	vault: string;
-	vaultCreated: boolean;
-	vaultIgnored: boolean;
-	doc: string;
-	docCreated: boolean;
-	blockUpdated: boolean;
-	command: string;
-	onPath: boolean;
 }
 
 /**
- * Write the setup into the repo's own agent doc.
- *
- * Everything an agent needs beyond the skill is machine-specific: the vault
- * path, whether the binary is on PATH, which boards cover this code. Left in
- * the installing human's head it is invisible, so it goes in the file the next
- * agent reads before it does anything else.
+ * Writes the repo setup block unless --no-doc asked for the skill files alone.
+ * @param input - The validated install request.
+ * @param destination - Where the skill was installed.
+ * @param context - The command context.
+ * @returns The setup written, or undefined when skipped or refused for this checkout.
  */
-async function writeSetup(options: {
-	repoSpec?: string;
-	vaultSpec?: string;
-	docSpec?: string;
-	targetSpec: string;
-	skill: string;
-	assumeYes: boolean;
-	context: CommandContext;
-}): Promise<SetupResult | undefined> {
-	const repo = options.repoSpec
-		? path.resolve(expandHome(options.repoSpec))
-		: findRepoRoot(process.cwd());
-
-	// Installing from inside the archboard checkout is a maintainer re-running
-	// the command, not a repo being set up. Its CLAUDE.md is authored, and a
-	// generated block does not belong in it.
-	if (path.resolve(repo) === path.resolve(packageRoot())) {
-		options.context.diagnostic(
-			"This is the archboard checkout itself, so no setup block was written. Point --repo at the repository you want to set up.",
-		);
+async function writeRequestedSetup(
+	input: InstallSkillRequest,
+	destination: ResolvedDestination,
+	context: CommandContext,
+): Promise<InstallSkillSetupResult | undefined> {
+	if (input.noDoc) {
 		return undefined;
 	}
-
-	// A vault local to the repo is the assumed answer; an ARCHBOARD_VAULT
-	// already in the environment is somebody having answered already.
-	const suggested = process.env["ARCHBOARD_VAULT"]
-		? path.resolve(process.env["ARCHBOARD_VAULT"])
-		: path.join(repo, LOCAL_VAULT_DIR);
-	const vault = options.vaultSpec
-		? path.resolve(expandHome(options.vaultSpec))
-		: options.assumeYes
-			? suggested
-			: path.resolve(
-					expandHome(
-						await options.context.prompt(
-							"Where should this repo keep its boards? (an Obsidian vault, shared or local)",
-							suggested,
-						),
-					),
-				);
-
-	const vaultCreated = !fs.existsSync(vault);
-	fs.mkdirSync(vault, { recursive: true });
-
-	const chosen = options.docSpec
-		? {
-				file: path.resolve(expandHome(options.docSpec)),
-				existed: fs.existsSync(path.resolve(expandHome(options.docSpec))),
-			}
-		: chooseDoc(repo, options.targetSpec);
-
-	const existing = chosen.existed ? fs.readFileSync(chosen.file, "utf-8") : "";
-	const blockUpdated = existing.includes(BLOCK_BEGIN);
-	const { command, onPath } = resolveInvocation();
-	// A canvas on a non-default URL is part of the environment too, and the one
-	// thing a fresh agent has no way of guessing.
-	const canvasUrl =
-		process.env["EXPRESS_SERVER_URL"] && process.env["EXPRESS_SERVER_URL"] !== DEFAULT_CANVAS_URL
-			? process.env["EXPRESS_SERVER_URL"]
-			: undefined;
-	const block = renderBlock({
-		vault,
-		command,
-		onPath,
-		skill: options.skill,
-		...(canvasUrl === undefined ? {} : { canvasUrl }),
+	return await writeSetup({
+		...(input.repo === undefined ? {} : { repoSpec: input.repo }),
+		...(input.vault === undefined ? {} : { vaultSpec: input.vault }),
+		...(input.doc === undefined ? {} : { docSpec: input.doc }),
+		targetSpec: destination.docTargetSpec,
+		skill: destination.target,
+		assumeYes: input.yes,
+		context,
 	});
+}
 
-	fs.mkdirSync(path.dirname(chosen.file), { recursive: true });
-	fs.writeFileSync(chosen.file, applyBlock(existing, block), "utf-8");
-
-	const inRepo = vault.startsWith(repo + path.sep);
-	const ignored = gitIgnores(repo, vault);
-
-	options.context.diagnostic(
-		`${blockUpdated ? "Updated" : "Wrote"} the archboard setup in ${chosen.file}`,
-	);
-	options.context.diagnostic(`Boards for this repo: ${vault}`);
-	if (inRepo && !ignored) {
-		options.context.diagnostic(
-			`That vault is inside the repo and not ignored, so boards will show up in git status. Commit them, or add ${path.relative(repo, vault)}/ to .gitignore.`,
-		);
+/**
+ * Runs the install: reports the bundled source under --print-source, otherwise validates
+ * the request, installs the skill files and writes the repo setup.
+ * @param input - The parsed install input.
+ * @param context - The command context.
+ * @returns The source report or the install receipt.
+ */
+async function executeInstallSkill(
+	input: InstallSkillInput,
+	context: CommandContext,
+): Promise<InstallSkillResult> {
+	const source = findSkillSource();
+	if (input.printSource) {
+		return { success: true, skill: SKILL_NAME, source, files: countFiles(source) };
 	}
-	options.context.diagnostic(
-		`Now fill in "Boards for this repo" in ${path.basename(chosen.file)}: which board covers this code, and any gotcha an agent cannot read off the source.`,
-	);
-
+	const request = context.parse(InstallSkillRequestSchema, input);
+	const destination = resolveDestination(request);
+	installSkillFiles(source, destination, context);
+	const setup = await writeRequestedSetup(request, destination, context);
 	return {
-		repo,
-		vault,
-		vaultCreated,
-		vaultIgnored: ignored,
-		doc: chosen.file,
-		docCreated: !chosen.existed,
-		blockUpdated,
-		command,
-		onPath,
+		success: true,
+		skill: SKILL_NAME,
+		mode: destination.mode,
+		root: destination.root,
+		target: destination.target,
+		files: countFiles(destination.target),
+		...(setup ? { setup } : {}),
 	};
 }
 
@@ -684,12 +385,22 @@ const installSkillContract = defineCommand({
 				description: "Installed source or destination details",
 			},
 		],
+		/**
+		 * Install-skill has one output shape.
+		 * @returns The JSON case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
 	effects: ["local-read", "local-write"],
 	refusals: [],
 	relationships: [],
+	/**
+	 * Installs the skill and, unless told not to, writes the repo setup block.
+	 * @param input - The parsed install input.
+	 * @param context - The command execution context.
+	 * @returns The install result.
+	 */
 	async handler(input, context) {
 		return { result: await executeInstallSkill(input, context) };
 	},

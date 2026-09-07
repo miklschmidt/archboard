@@ -1,22 +1,9 @@
-import { CliUsageError } from "@/cli/command-contract/contract";
-import type { AnyCommandContract } from "@/cli/command-contract/contract";
 import { exportContract } from "@/cli/command-contract/export";
 import { queryContract } from "@/cli/command-contract/query";
 import { updateContract, WRITE_ANSWER } from "@/cli/command-contract/update";
 import { viewportContract } from "@/cli/command-contract/viewport";
 import { statusContract } from "@/cli/command-contract/status";
 import { boardSaveContract } from "@/cli/command-contract/board-save";
-import { runCommand } from "@/cli/command-contract/runner";
-import {
-	BOARD_REFUSAL_CODES,
-	boardHoldSeen,
-	formatBoardRefusal,
-	setExpectedVersion,
-	setRequestedBoard,
-	setWriteDoing,
-} from "@/runtime/engine/canvas-client";
-import { packageVersion } from "@/runtime/engine/package-version";
-import { CLI_INTERRUPT_CLEANUP_MS } from "@/shared/timing/timing";
 import { startContract, stopContract } from "@/cli/commands/server";
 import { addContract, applyContract, deleteContract, getContract } from "@/cli/commands/elements";
 import * as scene from "@/cli/commands/scene";
@@ -67,38 +54,17 @@ import {
 import { bridgeContract, bridgeRemoveContract } from "@/cli/commands/bridge";
 import { renderFindingsContract } from "@/cli/commands/render-findings";
 import { childDiscoveryOptions } from "@/cli/command-contract/route-options";
+import {
+	type CliRegistryEntry,
+	type CommandRoute,
+	child,
+	contract,
+} from "@/cli/commands/lib/command-route";
+import { cliSurfaceOf, helpFor, registryOf } from "@/cli/commands/lib/command-registry";
+import { runCliWith } from "@/cli/commands/lib/cli-session";
 
-interface ContractCommand {
-	contract: AnyCommandContract;
-	handlerOwner: string;
-}
-
-type RouteOwner = ContractCommand;
-
-interface CommandRoute {
-	owner: RouteOwner;
-	summary?: string;
-	usage?: string;
-	children?: Readonly<Record<string, CommandRoute>>;
-	bare?:
-		| { kind: "default"; child: string; withLeadingOptions: boolean }
-		| { kind: "namespace-refusal"; message: string };
-	childDiscovery?: {
-		kind: "first-positional";
-		options: Readonly<Record<string, "flag" | "value">>;
-	};
-}
-
-const commandSummary = (route: CommandRoute) => route.summary ?? route.owner.contract.summary;
-const commandUsage = (route: CommandRoute) => route.usage ?? route.owner.contract.usage;
-
-const contract = (value: AnyCommandContract, handlerOwner: string): ContractCommand => ({
-	contract: value,
-	handlerOwner,
-});
-
-const child = (owner: RouteOwner): CommandRoute => ({ owner });
-
+// The one command table: every top-level command, its subcommands, and the help wording the
+// table owns. Dispatch, registry projection and help rendering live under lib/.
 const COMMANDS: Record<string, CommandRoute> = {
 	bridge: {
 		owner: contract(bridgeContract, "src/cli/commands/bridge.ts"),
@@ -481,478 +447,37 @@ const COMMANDS: Record<string, CommandRoute> = {
 };
 
 /**
- * Every way the CLI can be invoked, as `{ name, subcommands }` — the command
- * table read as data for contract and documentation checks.
+ * Every way the CLI can be invoked, as `{ name, subcommands }`: the command table read as
+ * data for contract and documentation checks.
+ * @returns One entry per top-level command with its subcommand names.
  */
 function cliSurface(): { name: string; subcommands: readonly string[] }[] {
-	return Object.entries(COMMANDS).map(([name, route]) => ({
-		name,
-		subcommands: Object.keys(route.children ?? {}),
-	}));
+	return cliSurfaceOf(COMMANDS);
 }
 
-/** The one registry projected as all current canonical contract paths. */
-interface CliRegistryEntry {
-	name: string;
-	parent: string | null;
-	classification: "board" | "browser" | "neither";
-	handlerOwner: string;
-	parserOwner: string;
-	bare?: CommandRoute["bare"];
-	childDiscovery?: CommandRoute["childDiscovery"];
-	contract: AnyCommandContract;
-}
-
-const boardNamespaces = new Set(["board", "arrange", "snapshot", "compare"]);
-const sessionRelationships = [
-	"/api/selection",
-	"/api/panes",
-	"/api/viewport",
-	"/api/browser/",
-	"/api/boards/open",
-];
-
-function commandClassification(command: AnyCommandContract): CliRegistryEntry["classification"] {
-	if (command.path[0] === "browser") {
-		return "browser";
-	}
-	if (command.prerequisites.includes("board") || boardNamespaces.has(command.path[0] ?? "")) {
-		return "board";
-	}
-	return "neither";
-}
-
-function assertCommandArchitecture(entry: CliRegistryEntry): void {
-	const { classification, contract: command, name } = entry;
-	const hasBrowserPrerequisite = command.prerequisites.includes("browser");
-	const hasBrowserEffect = command.effects.includes("browser");
-	const writesBoard = command.effects.includes("write");
-	const usesSessionInput = command.parameters.some(
-		(parameter) =>
-			"spellings" in parameter && parameter.spellings.some((spelling) => spelling === "--pane"),
-	);
-	const usesSessionRelationship = command.relationships.some((relationship) =>
-		sessionRelationships.some((prefix) => relationship.path.startsWith(prefix)),
-	);
-
-	if (
-		(hasBrowserPrerequisite || hasBrowserEffect || usesSessionInput || usesSessionRelationship) &&
-		classification !== "browser"
-	) {
-		throw new Error(`${name} consumes browser-session state but is classified ${classification}.`);
-	}
-	if (classification === "browser" && command.path[0] !== "browser") {
-		throw new Error(`${name} is a browser operation outside the browser namespace.`);
-	}
-	if (classification === "browser" && writesBoard) {
-		throw new Error(`${name} is a browser operation that writes a board note.`);
-	}
-	if (
-		classification === "board" &&
-		(hasBrowserPrerequisite || hasBrowserEffect || usesSessionInput || usesSessionRelationship)
-	) {
-		throw new Error(`${name} is a board operation with a browser-session dependency.`);
-	}
-}
-
-function parserOwner(owner: RouteOwner): string {
-	return owner.contract.parameters.some((parameter) => parameter.route === "staged-tokens")
-		? "CommandContract staged token parser"
-		: "CommandContract concrete Commander parser";
-}
-
-function flattenRoute(
-	name: string,
-	route: CommandRoute,
-	parent: string | null,
-): CliRegistryEntry[] {
-	const current: CliRegistryEntry = {
-		name,
-		parent,
-		classification: commandClassification(route.owner.contract),
-		handlerOwner: route.owner.handlerOwner,
-		parserOwner: parserOwner(route.owner),
-		...(route.bare ? { bare: route.bare } : {}),
-		...(route.childDiscovery ? { childDiscovery: route.childDiscovery } : {}),
-		contract: route.owner.contract,
-	};
-	return [
-		current,
-		...Object.entries(route.children ?? {}).flatMap(([segment, nested]) =>
-			flattenRoute(`${name} ${segment}`, nested, name),
-		),
-	];
-}
-
+/**
+ * The contract registry: every command and subcommand, classified and architecture-checked.
+ * @returns The registry entries in table order.
+ */
 function cliContractRegistry(): CliRegistryEntry[] {
-	const entries = Object.entries(COMMANDS).flatMap(([name, route]) =>
-		flattenRoute(name, route, null),
-	);
-	for (const entry of entries) {
-		assertCommandArchitecture(entry);
-	}
-	return entries;
+	return registryOf(COMMANDS);
 }
 
-/** Render one help topic from the same route and contract registry used for dispatch. */
+/**
+ * Renders one help topic from the same route and contract registry used for dispatch.
+ * @param topic - The words after `help`.
+ * @returns The help text, or null when the topic names no command.
+ */
 function commandHelp(topic: readonly string[]): string | null {
-	const [name, childName, ...tail] = topic;
-	if (!name || tail.length > 0) {
-		return null;
-	}
-	const root = COMMANDS[name];
-	if (!root) {
-		return null;
-	}
-	const route = childName ? root.children?.[childName] : root;
-	if (!route) {
-		return null;
-	}
-	const base = `Usage: archboard ${commandUsage(route)}\n  ${commandSummary(route)}\n`;
-	if (!childName) {
-		return base;
-	}
-	const prerequisites = route.owner.contract.prerequisites.join(", ") || "none";
-	const effects = route.owner.contract.effects.join(", ") || "none";
-	return (
-		`${base}  ${route.owner.contract.description}\n` +
-		`  Prerequisites: ${prerequisites}. Effects: ${effects}.\n`
-	);
-}
-
-function dispatchedCommand(
-	name: string,
-	rest: readonly string[],
-): {
-	root: CommandRoute;
-	selected: RouteOwner;
-	argv: string[];
-} | null {
-	const root = COMMANDS[name];
-	if (!root) {
-		return null;
-	}
-	let selectedRoute = root;
-	let childIndex: number | undefined;
-	const direct = rest[0] ? root.children?.[rest[0]] : undefined;
-	if (direct) {
-		selectedRoute = direct;
-		childIndex = 0;
-	} else if (root.childDiscovery?.kind === "first-positional") {
-		for (let index = 0; index < rest.length; index += 1) {
-			const token = rest[index]!;
-			if (!token.startsWith("--")) {
-				const discovered = root.children?.[token];
-				if (discovered) {
-					selectedRoute = discovered;
-					childIndex = index;
-				}
-				break;
-			}
-			const [spelling, inlineValue] = token.slice(2).split("=", 2);
-			const option = root.childDiscovery.options[spelling!];
-			if (!option) {
-				break;
-			}
-			if (option === "value" && inlineValue === undefined) {
-				index += 1;
-			}
-		}
-	}
-	if (childIndex === undefined && !root.childDiscovery && root.bare?.kind === "namespace-refusal") {
-		throw new CliUsageError(root.bare.message);
-	}
-	if (
-		childIndex === undefined &&
-		root.bare?.kind === "default" &&
-		(rest.length === 0 || (root.bare.withLeadingOptions && rest[0]?.startsWith("--")))
-	) {
-		selectedRoute = root.children?.[root.bare.child] ?? root;
-	}
-	const selected = selectedRoute.owner;
-	const argv = rest.filter((_, index) => index !== childIndex);
-	return { root, selected, argv };
-}
-
-function printHelp(): void {
-	const lines = [
-		`archboard ${packageVersion()} — Excalidraw architecture canvas for AI coding agents`,
-		"",
-		"Usage:",
-		"  archboard                  Show this help",
-		"  archboard <command> [...]  Drive the canvas from the command line",
-		"",
-		"  Inside the archboard checkout, `./bin/canvas <command>` runs the CLI from",
-		"  src/ with bun, from any cwd. There is no build step, and the package is",
-		"  private — there is nothing to install from npm.",
-		"",
-		"Commands:",
-		...Object.entries(COMMANDS).map(
-			([name, command]) => `  ${name.padEnd(14)} ${commandSummary(command)}`,
-		),
-		"",
-		"Conventions:",
-		"  Results are JSON on stdout — except `describe` (plain text), `browser selection --text`,",
-		"  and raw-content output when --out is omitted (`export` scene JSON,",
-		"  `browser capture --format svg`).",
-		"  Diagnostics go to stderr.",
-		"  Named-board reads, writes, Mermaid conversion, inspection, PNG/SVG rendering, and export",
-		"    use the persisted vault note through the server and need no browser connection.",
-		"  Only `browser ...` commands inspect or control a live pane. Real-browser checks verify",
-		"    browser behavior and Excalidraw fidelity; they are not board-work prerequisites.",
-		"  --board <key> is global and REQUIRED on every command that touches a board. There is no",
-		'    default: a browser pane is never an authority for "the board" (ADR 0020). A call',
-		"    without it is refused, and the refusal lists persisted boards.",
-		'  --doing "..." is global and REQUIRED on every command that CHANGES a board. One short line',
-		'    in the present tense — "adding the payment queue" — which goes up on the canvas as the',
-		"    write lands, so the person at the board can see what you are up to. A write without it is",
-		"    refused. It is never written to the note. A claim's --reason is the overall reason; this is the",
-		"    step, and neither stands in for the other.",
-		"  --expect-version <n> is global: the version of the board you were working from, from the",
-		"    fingerprint on your last write or from `board info`. The write is refused if the board has",
-		"    moved past it, naming both versions. You need it only where the canvas cannot know who you",
-		"    are — a CLI process with no claim. Under a claim it fills the version in for you.",
-		"  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required,",
-		"               5 board write refused (held, claim revoked, version moved, or the",
-		"               note changed on disk).",
-		"               check only: 6 warnings, 7 errors, 8 indeterminate coverage.",
-		"  Canvas-driving commands auto-start the server (disable with EXCALIDRAW_NO_AUTOSTART=1).",
-		"  Canvas URL comes from EXPRESS_SERVER_URL (default http://127.0.0.1:3000) or --url.",
-		"",
-		"Run `archboard help <command>` for per-command usage.",
-	];
-	process.stdout.write(`${lines.join("\n")}\n`);
-}
-
-function exitCodeFor(error: unknown, command?: RouteOwner): number {
-	if (error instanceof CliUsageError) {
-		return 2;
-	}
-	const code = (error as Error & { code?: string }).code;
-	if (command && code !== undefined) {
-		const declared = command.contract.refusals.find((refusal) => refusal.code === code);
-		if (declared) {
-			return declared.exit;
-		}
-	}
-	if (code === "CANVAS_UNREACHABLE") {
-		return 3;
-	}
-	if (code === "BROWSER_REQUIRED") {
-		return 4;
-	}
-	// Every refusal leaves the board unwritten, so they share the exit status a
-	// script already watches for. The attached body says whether another holder,
-	// a revoked claim, a moved version or a changed note stopped it.
-	if (code === "BOARD_CONFLICT" || (code !== undefined && BOARD_REFUSAL_CODES.has(code))) {
-		return 5;
-	}
-	// A missing board is a mistake at the keyboard, like any other usage error.
-	if (code === "BOARD_REQUIRED") {
-		return 2;
-	}
-	return 1;
+	return helpFor(COMMANDS, topic);
 }
 
 /**
- * Pull `--board <key>` out of the arguments before the command sees it.
- *
- * Global, like `--url`, because it applies to every canvas request a command
- * makes rather than to one of them. It is the only way to name the persisted
- * board for a command because there is no active or default board (ADR 0020).
- * Stripped here so no command has to declare it and none can forget to pass it
- * on.
+ * Runs one CLI invocation and sets the process exit code.
+ * @param argv - The arguments after the executable name.
  */
-function takeBoardFlag(argv: string[]): string | null {
-	return takeGlobalFlag(argv, "board");
-}
-
-/**
- * And `--doing "..."`, for the same reason (TASK-095).
- *
- * Global because a command may make several requests and each of them is the
- * same act: `import` clears the board and then batches the scene in, and both
- * are "restoring the payment path from the export". Stripped before the
- * command's own parser sees it, so no command declares it and none can be the
- * one that dropped it.
- *
- * Not refused here. The canvas knows which routes are board writes and it is
- * the only side that should; a second list on this side would be a second
- * answer to the same question, and the two would drift.
- */
-function takeDoingFlag(argv: string[]): string | null {
-	return takeGlobalFlag(argv, "doing");
-}
-
-/**
- * And `--expect-version <n>`, which says what the writer was editing (TASK-091).
- *
- * Global for the same reason: a command that makes several requests is making
- * them about one board, so the expectation belongs to the invocation rather
- * than to whichever request happens to be the write.
- *
- * A number here and refused if it is not, because a mistyped precondition that
- * was quietly dropped would leave the writer believing it had one.
- */
-function takeExpectVersionFlag(argv: string[]): number | null {
-	const raw = takeGlobalFlag(argv, "expect-version");
-	if (raw === null) {
-		return null;
-	}
-	if (!/^\d+$/u.test(raw.trim())) {
-		throw new CliUsageError(
-			`--expect-version takes a whole number — the version your last write reported, or the one ` +
-				`\`board info\` says. Got ${JSON.stringify(raw)}.`,
-		);
-	}
-	return Number(raw.trim());
-}
-
-function takeGlobalFlag(argv: string[], name: string): string | null {
-	for (let i = 0; i < argv.length; i++) {
-		const token = argv[i]!;
-		if (token === `--${name}`) {
-			const value = argv[i + 1];
-			if (value === undefined) {
-				throw new CliUsageError(`Flag --${name} requires a value`);
-			}
-			argv.splice(i, 2);
-			return value;
-		}
-		if (token.startsWith(`--${name}=`)) {
-			argv.splice(i, 1);
-			return token.slice(name.length + 3);
-		}
-	}
-	return null;
-}
-
-async function runInterruptibleCommand(
-	commandContract: AnyCommandContract,
-	argv: readonly string[],
-): Promise<void> {
-	const controller = new AbortController();
-	let interrupted: NodeJS.Signals | undefined;
-	let forceTimer: ReturnType<typeof setTimeout> | undefined;
-	const remove = (): void => {
-		process.off("SIGINT", interrupt);
-		process.off("SIGTERM", interrupt);
-	};
-	const interrupt = (signal: NodeJS.Signals): void => {
-		if (interrupted) {
-			return;
-		}
-		interrupted = signal;
-		controller.abort(new Error(`CLI interrupted by ${signal}.`));
-		forceTimer = setTimeout(() => {
-			remove();
-			process.kill(process.pid, signal);
-		}, CLI_INTERRUPT_CLEANUP_MS);
-	};
-	process.on("SIGINT", interrupt);
-	process.on("SIGTERM", interrupt);
-	try {
-		await runCommand(commandContract, argv, controller.signal);
-	} finally {
-		remove();
-		if (forceTimer !== undefined) {
-			clearTimeout(forceTimer);
-		}
-		if (interrupted) {
-			process.kill(process.pid, interrupted);
-		}
-	}
-}
-
 async function runCli(argv: string[]): Promise<void> {
-	const [name, ...rest] = argv;
-
-	if (!name || name === "help" || name === "--help" || name === "-h") {
-		const help = name === "help" ? commandHelp(rest) : null;
-		if (help) {
-			process.stdout.write(help);
-		} else {
-			printHelp();
-		}
-		return;
-	}
-
-	if (name === "--version" || name === "-v" || name === "version") {
-		process.stdout.write(`${packageVersion()}\n`);
-		return;
-	}
-
-	const command = COMMANDS[name];
-	if (!command) {
-		const retired: Record<string, string> = {
-			pane: "Use `archboard browser open` or `archboard browser close <pane>`.",
-			panes: "Use `archboard browser panes`.",
-			selection: "Use `archboard browser selection --pane <spec>`.",
-			viewport: "Use `archboard browser viewport --pane <spec> ...`.",
-			screenshot: "Use `archboard browser capture --pane <spec> ...`.",
-		};
-		if (retired[name]) {
-			process.stderr.write(`Command "${name}" was removed. ${retired[name]}\n`);
-			process.exitCode = 2;
-			return;
-		}
-		const migration =
-			name === "inject"
-				? " Board changes now reach the linked Codex workbench; inspect or test the connection there."
-				: "";
-		process.stderr.write(
-			`Unknown command "${name}".${migration} Run \`archboard help\` for the list.\n`,
-		);
-		process.exitCode = 2;
-		return;
-	}
-	let selected: RouteOwner = command.owner;
-
-	try {
-		if (name === "board" && rest[0] === "open") {
-			throw new CliUsageError(
-				"`board open` was removed. Use `browser show <board> --pane <spec>`.",
-			);
-		}
-		if (
-			name === "board" &&
-			rest.some((token) => token === "--pane" || token.startsWith("--pane="))
-		) {
-			throw new CliUsageError(
-				"Board commands do not change panes. Use `browser show <board> --pane <spec>`.",
-			);
-		}
-		setRequestedBoard(takeBoardFlag(rest));
-		setWriteDoing(takeDoingFlag(rest));
-		setExpectedVersion(takeExpectVersionFlag(rest));
-		const dispatched = dispatchedCommand(name, rest)!;
-		selected = dispatched.selected;
-		const commandArgv = dispatched.argv;
-		await runInterruptibleCommand(selected.contract, commandArgv);
-	} catch (error) {
-		if (!(error as Error & { quiet?: boolean }).quiet) {
-			process.stderr.write(`Error: ${formatBoardRefusal(error) ?? (error as Error).message}\n`);
-		}
-		// A refused write does not stop the board being drawn on, it stops the
-		// board being saved (ADR 0006, TASK-079). The refusal above has already
-		// listed the three outcomes, so this says only the part it does not: what
-		// happens to everything drawn between now and the choice.
-		const held = boardHoldSeen();
-		const errorCode = (error as Error & { code?: string }).code;
-		const contractRefusal =
-			errorCode === "BOARD_CONFLICT" ||
-			(errorCode !== undefined && BOARD_REFUSAL_CODES.has(errorCode));
-		if (held && contractRefusal) {
-			process.stderr.write(
-				`"${held.board}" has stopped saving. Changes from here are held on the canvas ` +
-					"and reach no note until one of those three is run.\n",
-			);
-		}
-		if (error instanceof CliUsageError) {
-			process.stderr.write(`Usage: archboard ${commandUsage(command)}\n`);
-		}
-		process.exitCode = exitCodeFor(error, selected);
-	}
+	await runCliWith(COMMANDS, argv);
 }
 
 export { cliSurface, type CliRegistryEntry, cliContractRegistry, commandHelp, runCli };

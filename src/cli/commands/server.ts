@@ -47,6 +47,10 @@ const startContract = defineCommand({
 				presentation: ["diagnostics", "result", "held-note"],
 			},
 		],
+		/**
+		 * Start has one output shape.
+		 * @returns The JSON case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
@@ -67,6 +71,11 @@ const startContract = defineCommand({
 			description: "Identity probe before and after a possible local spawn",
 		},
 	],
+	/**
+	 * Starts the canvas even when automatic start is opted out, reporting whether a process
+	 * was spawned or one was already serving.
+	 * @returns The running state, plus a diagnostic when the canvas was already up.
+	 */
 	async handler() {
 		const result = await ensureCanvasRunning({ force: true });
 		return {
@@ -123,6 +132,10 @@ const stopContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Stop has one output shape.
+		 * @returns The JSON case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
@@ -144,6 +157,10 @@ const stopContract = defineCommand({
 			description: "Identity check before signaling a local process",
 		},
 	],
+	/**
+	 * Stops the local canvas after it identifies itself as this service; a held board refuses.
+	 * @returns The stop result from the spawn owner.
+	 */
 	async handler() {
 		return { result: await stopCanvas() };
 	},

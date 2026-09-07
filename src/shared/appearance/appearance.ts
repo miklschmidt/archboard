@@ -32,22 +32,33 @@ const DEFAULT_SHAPE_BACKGROUND = "#ffffff";
 // what the tracked skill reference tells agents to use.
 const DEFAULT_FILL_STYLE = "solid";
 
-// Excalidraw's own test: "transparent", or an 8-digit hex with a zero alpha.
+/**
+ * Tells whether a hex colour spells a fully transparent alpha: `#rgba` with a
+ * trailing `0`, or `#rrggbbaa` with a trailing `00`.
+ *
+ * @param c - A trimmed, lower-cased colour string.
+ * @returns True when the string is a hex colour whose alpha channel is zero.
+ */
+function hasZeroHexAlpha(c: string): boolean {
+	if (!c.startsWith("#")) {
+		return false;
+	}
+	return (c.length === 5 && c[4] === "0") || (c.length === 9 && c.slice(7) === "00");
+}
+
+/**
+ * Excalidraw's own test for an interior that is not painted: missing, empty,
+ * the word "transparent", or a hex colour with a zero alpha.
+ *
+ * @param color - The raw `backgroundColor` value of an element, of any type.
+ * @returns True when the element's interior would not be painted.
+ */
 function isTransparentBackground(color: unknown): boolean {
 	if (typeof color !== "string" || color === "") {
 		return true;
 	}
 	const c = color.trim().toLowerCase();
-	if (c === "transparent") {
-		return true;
-	}
-	if (c.length === 5 && c.startsWith("#") && c[4] === "0") {
-		return true;
-	}
-	if (c.length === 9 && c.startsWith("#") && c.slice(7) === "00") {
-		return true;
-	}
-	return false;
+	return c === "transparent" || hasZeroHexAlpha(c);
 }
 
 // A promoted node is worth telling apart from a scratch box, and kind is the
@@ -62,6 +73,12 @@ const KIND_BACKGROUND: Record<string, string> = {
 	external: "#e9ecef", // light gray
 };
 
+/**
+ * Picks the pastel fill that matches a promoted node's kind.
+ *
+ * @param kind - The architecture node kind, such as `service` or `queue`.
+ * @returns The kind's fill, or the neutral default for an unknown kind.
+ */
 function backgroundForKind(kind: string): string {
 	return KIND_BACKGROUND[kind] ?? DEFAULT_SHAPE_BACKGROUND;
 }
