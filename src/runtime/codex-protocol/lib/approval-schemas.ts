@@ -3,10 +3,14 @@ import { z } from "zod";
 import {
 	CodexCommandExecutionApprovalDecisionSchema,
 	CodexFileChangeApprovalDecisionSchema,
-} from "../../../shared/codex-app-server-contract/index.js";
+} from "@/shared/codex-app-server-contract";
 
-import { FileChangeSchema } from "./item-schemas.js";
-import { CodexSafeI64Schema, JsonValueSchema, NonNegativeIntegerSchema } from "./scalars.js";
+import { FileChangeSchema } from "@/runtime/codex-protocol/lib/item-schemas";
+import {
+	CodexSafeI64Schema,
+	JsonValueSchema,
+	NonNegativeIntegerSchema,
+} from "@/runtime/codex-protocol/lib/scalars";
 
 const NonNegativeCodexSafeI64Schema = CodexSafeI64Schema.refine((value) => value >= 0, {
 	message: "Expected a non-negative safe i64",

@@ -2,8 +2,11 @@ export {
 	CALLBACK_BUFFER_LIMIT,
 	createCodexCoordinatorCallbacks,
 	installCodexCoordinatorCallbacks,
-} from "./lib/callbacks.js";
-export { coordinatorCallbackKey, normalizeCoordinatorCallback } from "./lib/normalize.js";
+} from "@/runtime/codex-coordinator-callbacks/lib/callbacks";
+export {
+	coordinatorCallbackKey,
+	normalizeCoordinatorCallback,
+} from "@/runtime/codex-coordinator-callbacks/lib/normalize";
 export {
 	CALLBACK_MAX_ARRAY_ENTRIES,
 	CALLBACK_MAX_ID_UTF8_BYTES,
@@ -11,8 +14,11 @@ export {
 	CALLBACK_MAX_STRING_UTF8_BYTES,
 	CALLBACK_MAX_UTF8_BYTES,
 	encodeCoordinatorCallback,
-} from "./lib/encoding.js";
-export { createCoordinatorCallbackRealtimePort, sameRealtimeGeneration } from "./lib/realtime.js";
+} from "@/runtime/codex-coordinator-callbacks/lib/encoding";
+export {
+	createCoordinatorCallbackRealtimePort,
+	sameRealtimeGeneration,
+} from "@/runtime/codex-coordinator-callbacks/lib/realtime";
 
 export type {
 	CallbackBufferOverflowReason,
@@ -37,6 +43,6 @@ export type {
 	CoordinatorOperationCallback,
 	CoordinatorSemanticCallback,
 	SemanticCallbackSource,
-} from "./lib/contract.js";
+} from "@/runtime/codex-coordinator-callbacks/lib/contract";
 
-export type { CoordinatorCallbackRealtimePortOptions } from "./lib/realtime.js";
+export type { CoordinatorCallbackRealtimePortOptions } from "@/runtime/codex-coordinator-callbacks/lib/realtime";

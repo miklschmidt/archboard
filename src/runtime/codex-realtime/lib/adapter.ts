@@ -1,6 +1,5 @@
 import {
 	INITIAL_REALTIME_STATE,
-	parseRealtimeItemId,
 	transitionRealtimeState,
 	type AnswerSdp,
 	type AppendOutcome,
@@ -8,22 +7,39 @@ import {
 	type AppendTextRequest,
 	type CommandOutcome,
 	type CreateOfferSdp,
-	type RealtimeCorrelationId,
+	type RealtimeCorrelation,
+	type RealtimeDiagnosticCode,
 	type RealtimeSemanticEvent,
 	type RealtimeSemanticEventListener,
-	type RealtimeSessionId as BrowserRealtimeSessionId,
+	type RealtimeState,
 	type RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
-import type { CodexRealtimeAdapter, CodexRealtimeAdapterOptions } from "./contract.js";
-import { realtimeErrorMessage, sameRealtimeBinding } from "./binding.js";
-import * as phase from "./phase.js";
-import { exactNotification, orderedRecords } from "./records.js";
-import { runRealtimeMutation } from "./mutation.js";
-import { createRealtimeStartParams } from "./start-policy.js";
-import { realtimeGeneration, type ActiveRealtimeSession } from "./state.js";
-const TIMELINE_PAGE_LIMIT = 100;
+} from "@/shared/codex-realtime-host";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
+import type {
+	CodexRealtimeAdapter,
+	CodexRealtimeAdapterOptions,
+} from "@/runtime/codex-realtime/lib/contract";
+import { sameRealtimeBinding } from "@/runtime/codex-realtime/lib/binding";
+import { runRealtimeMutation } from "@/runtime/codex-realtime/lib/mutation";
+import {
+	failStart,
+	settleAnswer,
+	startNegotiation,
+} from "@/runtime/codex-realtime/lib/negotiation";
+import { reduceRealtimeNotification } from "@/runtime/codex-realtime/lib/notifications";
+import * as phase from "@/runtime/codex-realtime/lib/phase";
+import { exactNotification, orderedRecords } from "@/runtime/codex-realtime/lib/records";
+import { recoverRealtimeSession } from "@/runtime/codex-realtime/lib/recovery";
+import type { RealtimeSessionOps } from "@/runtime/codex-realtime/lib/session-ops";
+import { realtimeGeneration, type ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
 
+/**
+ * The server half of one browser realtime session: it owns at most one active session, turns
+ * Codex notifications into state and transcript events, and answers the browser's requests with
+ * outcomes that say whether Codex actually received them.
+ * @param options - The session, identity authority, brief source and binding source.
+ * @returns The adapter.
+ */
 export function createCodexRealtimeAdapter(
 	options: CodexRealtimeAdapterOptions,
 ): CodexRealtimeAdapter {
@@ -31,6 +47,11 @@ export function createCodexRealtimeAdapter(
 	let active: ActiveRealtimeSession | null = null;
 	let retainedTranscript: readonly RealtimeTranscriptRecord[] = [];
 	let disposed = false;
+
+	/**
+	 * Deliver one event to every listener; a listener that throws cannot stop protocol reduction.
+	 * @param event - The event to deliver.
+	 */
 	const emit = (event: RealtimeSemanticEvent): void => {
 		for (const listener of Array.from(listeners)) {
 			try {
@@ -40,11 +61,18 @@ export function createCodexRealtimeAdapter(
 			}
 		}
 	};
+
+	/**
+	 * Publish a diagnostic for the session.
+	 * @param session - The session the diagnostic concerns.
+	 * @param code - Which layer failed.
+	 * @param message - The failure text.
+	 */
 	const emitDiagnostic = (
 		session: ActiveRealtimeSession,
-		code: "realtime" | "app_server" | "coordinator" | "protocol",
+		code: RealtimeDiagnosticCode,
 		message: string,
-	): void =>
+	): void => {
 		emit({
 			kind: "diagnostic",
 			sessionId: session.browserSessionId,
@@ -52,10 +80,14 @@ export function createCodexRealtimeAdapter(
 			code,
 			message,
 		});
-	const state = (
-		session: ActiveRealtimeSession,
-		value: Extract<RealtimeSemanticEvent, { kind: "state" }>["state"],
-	): void => {
+	};
+
+	/**
+	 * Apply one state transition through the shared transition table and publish the result.
+	 * @param session - The session to transition.
+	 * @param value - The requested next state.
+	 */
+	const state = (session: ActiveRealtimeSession, value: RealtimeState): void => {
 		session.state = transitionRealtimeState(session.state, value);
 		emit({
 			kind: "state",
@@ -64,27 +96,50 @@ export function createCodexRealtimeAdapter(
 			state: session.state,
 		});
 	};
-	const states = (
-		session: ActiveRealtimeSession,
-		values: readonly Parameters<typeof state>[1][],
-	) => {
+
+	/**
+	 * Apply several state transitions in order.
+	 * @param session - The session to transition.
+	 * @param values - The requested next states.
+	 */
+	const states = (session: ActiveRealtimeSession, values: readonly RealtimeState[]): void => {
 		for (const value of values) {
 			state(session, value);
 		}
 	};
+
+	/**
+	 * Keep the session's transcript readable after it ends and release it as the active session.
+	 * @param session - The session to retire.
+	 */
+	const retire = (session: ActiveRealtimeSession): void => {
+		retainedTranscript = orderedRecords(session);
+		if (active === session) {
+			active = null;
+		}
+	};
+
+	/**
+	 * Close the session: walk it to closed, retire it, and reject a still-pending answer.
+	 * @param session - The session to close.
+	 */
 	const finalize = (session: ActiveRealtimeSession): void => {
 		states(session, phase.closingStates(session.state));
-		retainedTranscript = orderedRecords(session);
 		if (!session.answerSettled) {
 			session.answerSettled = true;
 			session.rejectAnswer(
 				new Error("Codex closed the realtime session before negotiation completed."),
 			);
 		}
-		if (active === session) {
-			active = null;
-		}
+		retire(session);
 	};
+
+	/**
+	 * Whether the session is still the live one under a binding that has not changed and an
+	 * epoch that is still current.
+	 * @param session - The session to check.
+	 * @returns True when every delivery to the session is still meaningful.
+	 */
 	const bindingIsCurrent = (session: ActiveRealtimeSession): boolean => {
 		const current = options.currentBinding();
 		return (
@@ -96,61 +151,54 @@ export function createCodexRealtimeAdapter(
 		);
 	};
 
+	/**
+	 * Whether a browser request names the live session exactly.
+	 * @param session - The session to check.
+	 * @param request - The browser request.
+	 * @returns True when the request may act on the session.
+	 */
 	const requestIsCurrent = (
 		session: ActiveRealtimeSession,
-		request: {
-			readonly sessionId: BrowserRealtimeSessionId;
-			readonly correlationId: RealtimeCorrelationId;
-		},
+		request: RealtimeCorrelation,
 	): boolean =>
 		bindingIsCurrent(session) &&
 		request.sessionId === session.browserSessionId &&
 		request.correlationId === session.correlationId;
 
+	/**
+	 * Publish the session's whole ordered transcript, one record per event.
+	 * @param session - The session whose transcript to publish.
+	 */
 	const publishTranscript = (session: ActiveRealtimeSession): void => {
 		for (const record of orderedRecords(session)) {
 			emit({ kind: "transcript", record });
 		}
 	};
 
-	const settleAnswer = (session: ActiveRealtimeSession): void => {
-		if (
-			session.answerSettled ||
-			session.state.phase !== "negotiating" ||
-			!session.startReturned ||
-			!session.started ||
-			session.answerSdp === null
-		) {
-			return;
-		}
-		if (!bindingIsCurrent(session)) {
-			session.answerSettled = true;
-			session.rejectAnswer(new Error("The realtime coordinator identity changed during start."));
-			return;
-		}
-		session.answerSettled = true;
-		state(session, { phase: "negotiating", reason: "answer_received" });
-		state(session, { phase: "listening", reason: "negotiation_succeeded" });
-		session.resolveAnswer({
-			sessionId: session.browserSessionId,
-			correlationId: session.correlationId,
-			sdp: session.answerSdp,
-		});
+	const ops: RealtimeSessionOps = {
+		options,
+		emitDiagnostic,
+		state,
+		states,
+		publishTranscript,
+		/**
+		 * Settle the answer through the negotiation reducer.
+		 * @param session - The session whose answer may be ready.
+		 */
+		settleAnswer: (session) => {
+			settleAnswer(ops, session);
+		},
+		finalize,
+		retire,
+		bindingIsCurrent,
+		requestIsCurrent,
 	};
 
-	const failStart = (session: ActiveRealtimeSession, error: unknown): void => {
-		if (session.answerSettled) {
-			return;
-		}
-		session.answerSettled = true;
-		emitDiagnostic(session, "app_server", realtimeErrorMessage(error));
-		const failure = phase.appServerFailureState(session.state, realtimeErrorMessage(error));
-		if (failure) {
-			state(session, failure);
-		}
-		session.rejectAnswer(error instanceof Error ? error : new Error(realtimeErrorMessage(error)));
-	};
-
+	/**
+	 * Accept the browser's offer, open the one active session and start negotiation with Codex.
+	 * @param offer - The browser's offer SDP and correlation.
+	 * @returns The answer SDP once Codex has started the session.
+	 */
 	const createOffer = (offer: CreateOfferSdp): Promise<AnswerSdp> => {
 		if (disposed) {
 			return Promise.reject(new Error("The Codex realtime adapter is disposed."));
@@ -172,13 +220,12 @@ export function createCodexRealtimeAdapter(
 			rejectAnswer = reject;
 		});
 		const wireSessionId = options.identity.issuer.mintRealtimeSessionId();
-		const semanticBrief = options.freshSemanticBrief(wireSessionId);
 		const session: ActiveRealtimeSession = {
 			binding,
 			browserSessionId: offer.sessionId,
 			correlationId: offer.correlationId,
 			wireSessionId,
-			semanticBrief,
+			semanticBrief: options.freshSemanticBrief(wireSessionId),
 			answer,
 			resolveAnswer,
 			rejectAnswer,
@@ -195,194 +242,37 @@ export function createCodexRealtimeAdapter(
 		state(session, { phase: "requesting_permission", reason: "start_requested" });
 		state(session, { phase: "negotiating", reason: "permission_granted" });
 		state(session, { phase: "negotiating", reason: "offer_created" });
-		void Promise.resolve()
-			.then(() => {
-				if (session.answerSettled) {
-					return;
-				}
-				if (!bindingIsCurrent(session)) {
-					finalize(session);
-					return;
-				}
-				return options.session.realtimeStart(
-					createRealtimeStartParams({
-						threadId: binding.coordinatorThreadId,
-						realtimeSessionId: session.wireSessionId,
-						sdp: offer.sdp,
-						semanticBrief,
-					}),
-				);
-			})
-			.then(
-				() => {
-					if (session.answerSettled) {
-						return;
-					}
-					session.startReturned = true;
-					return settleAnswer(session);
-				},
-				(error: unknown) => failStart(session, error),
-			);
+		startNegotiation(ops, session, offer.sdp);
 		return answer;
 	};
 
-	const upsertLiveItem = (
-		session: ActiveRealtimeSession,
-		item: {
-			readonly id: string;
-			readonly realtimeSessionId: string;
-			readonly type: string;
-			readonly role?: RealtimeTranscriptRecord["role"];
-			readonly text?: string;
-		},
-		status: "provisional" | "final",
-		identityMode: "introduce" | "reference",
-	): void => {
-		if (item.realtimeSessionId !== session.wireSessionId || item.type !== "transcriptSegment") {
-			return;
-		}
-		if (item.role === undefined || item.text === undefined) {
-			return;
-		}
-		let itemId;
-		try {
-			itemId =
-				identityMode === "introduce"
-					? options.identity.decoder.adoptItemId(item.id)
-					: options.identity.decoder.resolveItemId(item.id);
-			parseRealtimeItemId(itemId);
-		} catch {
-			return;
-		}
-		const existing = session.entries.get(itemId);
-		if (identityMode === "reference" && existing === undefined) {
-			return;
-		}
-		session.entries.set(itemId, {
-			itemId,
-			role: item.role,
-			status,
-			text: item.text,
-			order: existing?.order ?? session.nextLiveOrder++,
-		});
-		if (item.role === "assistant") {
-			states(session, phase.assistantStates(session.state, status));
-		} else if (status === "final") {
-			states(session, phase.inputStates(session.state));
-		}
-		publishTranscript(session);
-	};
-
+	/**
+	 * Reduce a server notification when it belongs exactly to the live session.
+	 * @param event - The correlated notification.
+	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		const session = active;
 		if (
-			!session ||
+			session === null ||
 			!exactNotification(session, event, options.identity.decoder) ||
 			!bindingIsCurrent(session)
 		) {
 			return;
 		}
-		const notification = event.notification;
-		switch (notification.method) {
-			case "thread/realtime/sdp":
-				if (session.answerSettled || session.state.phase !== "negotiating") {
-					break;
-				}
-				session.answerSdp = notification.params.sdp;
-				settleAnswer(session);
-				break;
-			case "thread/realtime/started":
-				if (session.answerSettled || session.state.phase !== "negotiating") {
-					break;
-				}
-				if (
-					notification.params.realtimeSessionId !== session.wireSessionId ||
-					notification.params.version !== "v3"
-				) {
-					emitDiagnostic(
-						session,
-						"protocol",
-						"Codex reported a mismatched realtime start identity.",
-					);
-					return;
-				}
-				session.started = true;
-				settleAnswer(session);
-				break;
-			case "thread/realtime/item/started":
-				upsertLiveItem(session, notification.params.item, "provisional", "introduce");
-				break;
-			case "thread/realtime/item/transcript/delta": {
-				let itemId;
-				try {
-					itemId = options.identity.decoder.resolveItemId(notification.params.itemId);
-					parseRealtimeItemId(itemId);
-				} catch {
-					break;
-				}
-				const entry = session.entries.get(itemId);
-				if (entry) {
-					entry.text += notification.params.delta;
-					entry.status = "provisional";
-					publishTranscript(session);
-				}
-				break;
-			}
-			case "thread/realtime/item/completed":
-				upsertLiveItem(session, notification.params.item, "final", "reference");
-				if (
-					notification.params.item.type === "realtimeSessionClosed" &&
-					notification.params.item.realtimeSessionId === session.wireSessionId
-				) {
-					if (notification.params.item.outcome === "failed") {
-						emitDiagnostic(session, "realtime", "Codex closed the realtime session as failed.");
-					}
-					finalize(session);
-				}
-				break;
-			case "thread/realtime/error":
-				emitDiagnostic(session, "app_server", notification.params.message);
-				{
-					const failure = phase.realtimeFailureState(session.state, notification.params.message);
-					if (failure) {
-						const ownsPendingStart = !session.answerSettled;
-						if (ownsPendingStart) {
-							session.answerSettled = true;
-						}
-						state(session, failure);
-						if (ownsPendingStart) {
-							session.rejectAnswer(new Error(notification.params.message));
-						}
-					}
-				}
-				break;
-			case "thread/realtime/closed":
-				emitDiagnostic(
-					session,
-					"realtime",
-					notification.params.reason ?? "Codex closed the realtime session.",
-				);
-				finalize(session);
-				break;
-			case "thread/realtime/itemAdded":
-			case "thread/realtime/transcript/delta":
-			case "thread/realtime/transcript/done":
-			case "thread/realtime/outputAudio/delta":
-				emitDiagnostic(
-					session,
-					"protocol",
-					`${notification.method} is outside the WebRTC item-scoped contract.`,
-				);
-				break;
-		}
+		reduceRealtimeNotification(ops, session, event.notification);
 	};
 
+	/**
+	 * Run one mutation for a browser request, diagnosing failures under the layer that owns them.
+	 * @param session - The live session.
+	 * @param request - The browser request.
+	 * @param invoke - Performs the mutation.
+	 * @param kind - Whether an append (realtime layer) or a command (app-server layer).
+	 * @returns The outcome to report.
+	 */
 	const mutationOutcome = async (
 		session: ActiveRealtimeSession,
-		request: {
-			readonly sessionId: BrowserRealtimeSessionId;
-			readonly correlationId: RealtimeCorrelationId;
-		},
+		request: RealtimeCorrelation,
 		invoke: () => Promise<unknown>,
 		kind: "append" | "command",
 	): Promise<AppendOutcome> =>
@@ -393,21 +283,41 @@ export function createCodexRealtimeAdapter(
 			(message) => emitDiagnostic(session, kind === "append" ? "realtime" : "app_server", message),
 		);
 
-	const currentFor = (request: {
-		readonly sessionId: BrowserRealtimeSessionId;
-		readonly correlationId: RealtimeCorrelationId;
-	}): ActiveRealtimeSession | null => {
+	/**
+	 * The active session when a browser request names it.
+	 * @param request - The browser request.
+	 * @returns The session, or null when the request names no live session.
+	 */
+	const currentFor = (request: RealtimeCorrelation): ActiveRealtimeSession | null => {
 		const session = active;
-		return session &&
+		return session !== null &&
 			request.sessionId === session.browserSessionId &&
 			request.correlationId === session.correlationId
 			? session
 			: null;
 	};
 
+	/**
+	 * Advance the phase once an append was delivered, since Codex now holds new input.
+	 * @param session - The live session.
+	 * @param outcome - The append outcome.
+	 * @returns The same outcome.
+	 */
+	const afterAppend = (session: ActiveRealtimeSession, outcome: AppendOutcome): AppendOutcome => {
+		if (outcome.outcome === "delivered") {
+			states(session, phase.inputStates(session.state));
+		}
+		return outcome;
+	};
+
+	/**
+	 * Append typed user text to the live session.
+	 * @param request - The text and its correlation.
+	 * @returns The append outcome.
+	 */
 	const appendText = (request: AppendTextRequest): Promise<AppendOutcome> => {
 		const session = currentFor(request);
-		if (!session) {
+		if (session === null) {
 			return Promise.resolve({ ...request, outcome: "not_delivered", reason: "not_ready" });
 		}
 		return mutationOutcome(
@@ -420,17 +330,17 @@ export function createCodexRealtimeAdapter(
 					role: "user",
 				}),
 			"append",
-		).then((outcome) => {
-			if (outcome.outcome === "delivered") {
-				states(session, phase.inputStates(session.state));
-			}
-			return outcome;
-		});
+		).then((outcome) => afterAppend(session, outcome));
 	};
 
+	/**
+	 * Append a transcribed speech segment to the live session.
+	 * @param request - The speech text and its correlation.
+	 * @returns The append outcome.
+	 */
 	const appendSpeech = (request: AppendSpeechRequest): Promise<AppendOutcome> => {
 		const session = currentFor(request);
-		if (!session) {
+		if (session === null) {
 			return Promise.resolve({ ...request, outcome: "not_delivered", reason: "not_ready" });
 		}
 		return mutationOutcome(
@@ -442,21 +352,22 @@ export function createCodexRealtimeAdapter(
 					text: request.text,
 				}),
 			"append",
-		).then((outcome) => {
-			if (outcome.outcome === "delivered") {
-				states(session, phase.inputStates(session.state));
-			}
-			return outcome;
-		});
+		).then((outcome) => afterAppend(session, outcome));
 	};
 
+	/**
+	 * Stop the live session; only a confirmed stop closes it, anything else leaves a recoverable
+	 * error so the browser can decide.
+	 * @param request - The stop request.
+	 * @returns The command outcome.
+	 */
 	const stop: CodexRealtimeAdapter["stop"] = async (request) => {
 		const session = currentFor(request);
-		if (!session) {
+		if (session === null) {
 			return { ...request, outcome: "not_delivered", reason: "not_ready" };
 		}
 		const stopping = phase.stopState(session.state);
-		if (!stopping) {
+		if (stopping === null) {
 			return { ...request, outcome: "not_delivered", reason: "not_ready" };
 		}
 		state(session, stopping);
@@ -481,105 +392,26 @@ export function createCodexRealtimeAdapter(
 		return outcome;
 	};
 
-	const recover: CodexRealtimeAdapter["recover"] = async (request) => {
+	/**
+	 * Recover the live session's transcript from the coordinator thread's timeline.
+	 * @param request - The recovery request.
+	 * @returns The command outcome.
+	 */
+	const recover: CodexRealtimeAdapter["recover"] = (request) => {
 		const session = currentFor(request);
-		if (!session) {
-			return { ...request, outcome: "not_delivered", reason: "not_ready" };
+		if (session === null) {
+			return Promise.resolve({ ...request, outcome: "not_delivered", reason: "not_ready" });
 		}
-		if (session.state.phase !== "recoverable_error") {
-			return { ...request, outcome: "not_delivered", reason: "not_ready" };
-		}
-		const cursors = new Set<string>();
-		const transcriptEntries: Array<{
-			readonly id: string;
-			readonly role: RealtimeTranscriptRecord["role"];
-			readonly text: string;
-			readonly position: number;
-		}> = [];
-		let cursor: string | null = null;
-		try {
-			for (;;) {
-				if (!requestIsCurrent(session, request)) {
-					return { ...request, outcome: "not_delivered", reason: "stale_session" };
-				}
-				const page = await options.session.timelineListPage({
-					threadId: session.binding.coordinatorThreadId,
-					cursor,
-					limit: TIMELINE_PAGE_LIMIT,
-				});
-				if (!requestIsCurrent(session, request)) {
-					return { ...request, outcome: "outcome_unknown", reason: "response_lost" };
-				}
-				if (
-					page.activeRealtimeSessionAtPageStart !== null &&
-					page.activeRealtimeSessionAtPageStart !== session.wireSessionId
-				) {
-					throw new Error("Timeline recovery belongs to another realtime session.");
-				}
-				for (const entry of page.data) {
-					if (entry.type !== "realtime" || entry.item.type !== "transcriptSegment") {
-						continue;
-					}
-					if (entry.item.realtimeSessionId !== session.wireSessionId) {
-						continue;
-					}
-					transcriptEntries.push({
-						id: entry.item.id,
-						role: entry.item.role,
-						text: entry.item.text,
-						position: entry.position,
-					});
-				}
-				if (page.nextCursor === null) {
-					break;
-				}
-				if (cursors.has(page.nextCursor)) {
-					throw new Error("Timeline recovery cursor loop detected.");
-				}
-				cursors.add(page.nextCursor);
-				cursor = page.nextCursor;
-			}
-			const itemIds = options.identity.decoder.adoptCodexResponseIdentities({
-				itemIds: transcriptEntries.map((entry) => entry.id),
-			}).itemIds;
-			const recoveredEntries = new Map(session.entries);
-			for (const [index, entry] of transcriptEntries.entries()) {
-				const itemId = itemIds[index]!;
-				recoveredEntries.set(itemId, {
-					itemId,
-					role: entry.role,
-					status: "final",
-					text: entry.text,
-					order: entry.position,
-				});
-			}
-			session.entries.clear();
-			for (const [itemId, entry] of recoveredEntries) {
-				session.entries.set(itemId, entry);
-			}
-			publishTranscript(session);
-			state(session, { phase: "idle", reason: "recovered" });
-			retainedTranscript = orderedRecords(session);
-			if (active === session) {
-				active = null;
-			}
-			return { ...request, outcome: "delivered" };
-		} catch (error) {
-			if (!requestIsCurrent(session, request)) {
-				return { ...request, outcome: "outcome_unknown", reason: "response_lost" };
-			}
-			emitDiagnostic(session, "protocol", realtimeErrorMessage(error));
-			state(session, {
-				phase: "recoverable_error",
-				reason: "recovery_failed",
-				message: realtimeErrorMessage(error),
-			});
-			return { ...request, outcome: "outcome_unknown", reason: "transport_failure" };
-		}
+		return recoverRealtimeSession(ops, session, request);
 	};
 
 	return Object.freeze({
 		createOffer,
+		/**
+		 * Subscribe to state, transcript and diagnostic events.
+		 * @param listener - The subscriber.
+		 * @returns Unsubscribes the listener.
+		 */
 		onSemanticEvent: (listener: RealtimeSemanticEventListener) => {
 			listeners.add(listener);
 			return () => listeners.delete(listener);
@@ -589,16 +421,27 @@ export function createCodexRealtimeAdapter(
 		stop,
 		recover,
 		onNotification,
-		transcript: () => (active ? orderedRecords(active) : retainedTranscript),
+		/**
+		 * The live session's transcript, or the last session's once it ended.
+		 * @returns The ordered transcript records.
+		 */
+		transcript: () => (active === null ? retainedTranscript : orderedRecords(active)),
+		/**
+		 * The live session's generation identity.
+		 * @returns The generation, or null with no live session.
+		 */
 		generation: () => (active === null ? null : realtimeGeneration(active)),
+		/**
+		 * Drop listeners, retain the live transcript and reject a still-pending start.
+		 */
 		dispose: () => {
 			disposed = true;
 			listeners.clear();
-			if (active) {
+			if (active !== null) {
 				retainedTranscript = orderedRecords(active);
 			}
-			if (active && !active.answerSettled) {
-				failStart(active, new Error("The Codex realtime adapter was disposed."));
+			if (active !== null && !active.answerSettled) {
+				failStart(ops, active, new Error("The Codex realtime adapter was disposed."));
 			}
 			active = null;
 		},

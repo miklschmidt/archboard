@@ -1,5 +1,5 @@
-import type { CoordinatorSnapshot } from "../../codex-coordinator/index.js";
-import type { CodexSession, SessionParams } from "../../codex-session/index.js";
+import type { CoordinatorSnapshot } from "@/runtime/codex-coordinator";
+import type { CodexSession, SessionParams } from "@/runtime/codex-session";
 import type {
 	PaneFocusEvent,
 	PaneSelectionEvent,
@@ -7,21 +7,21 @@ import type {
 	SemanticChangeSignificance,
 	SemanticContextPublisher,
 	SettledSemanticChangeEvent,
-} from "../../codex-semantic-context/index.js";
+} from "@/runtime/codex-semantic-context";
 import type {
 	CodexThreadLinkClassifier,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkClassification,
 	ThreadLinkTarget,
-} from "../../codex-thread-link/index.js";
+} from "@/runtime/codex-thread-link";
 import type {
 	CodexWorkhorseOperations,
 	WorkhorseOperationEvent,
-} from "../../codex-workhorse-operations/index.js";
+} from "@/runtime/codex-workhorse-operations";
 import type {
 	RealtimeCorrelationId,
 	RealtimeSessionId as BrowserRealtimeSessionId,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "@/shared/codex-realtime-host";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -31,7 +31,7 @@ import type {
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 
 type SemanticCallbackSource = SettledSemanticChangeEvent | PaneFocusEvent | PaneSelectionEvent;
 type CoordinatorCallbackSource = WorkhorseOperationEvent | SemanticCallbackSource;

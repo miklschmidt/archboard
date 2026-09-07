@@ -1,10 +1,18 @@
-import type { SessionQueuedSubmission } from "../../codex-session/index.js";
+import type { SessionQueuedSubmission } from "@/runtime/codex-session";
 import {
 	CodexWorkhorseQueueError,
 	type QueueSnapshot,
 	type WorkhorseQueueMutation,
-} from "./contract.js";
+} from "@/runtime/codex-workhorse-queue/lib/contract";
 
+/**
+ * The submission a mutation names, taken from the current authoritative queue. A mutation may only ever target a submission the queue actually holds, so a stale id is refused before any effect.
+ * @param queue - The current authoritative queue.
+ * @param submissionId - The submission the caller named.
+ * @param operation - The mutation being made, for the refusal message.
+ * @returns The target submission.
+ * @throws {CodexWorkhorseQueueError} When the queue holds no such submission.
+ */
 function queueMutationTarget(
 	queue: QueueSnapshot,
 	submissionId: SessionQueuedSubmission["id"],
@@ -21,6 +29,12 @@ function queueMutationTarget(
 	);
 }
 
+/**
+ * Refuse a reorder that is not exactly the current queue's ids, each once. A partial order would silently drop or duplicate submissions.
+ * @param queue - The current authoritative queue.
+ * @param orderedSubmissionIds - The order the caller asked for.
+ * @throws {CodexWorkhorseQueueError} When the order is not a permutation of the queue.
+ */
 function assertCompleteOrder(
 	queue: QueueSnapshot,
 	orderedSubmissionIds: readonly SessionQueuedSubmission["id"][],

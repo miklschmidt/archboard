@@ -1,17 +1,14 @@
 import { z } from "zod";
 
-import {
-	CodexThreadStatusSchema,
-	CodexTurnStatusSchema,
-} from "../../../shared/codex-app-server-contract/index.js";
+import { CodexThreadStatusSchema, CodexTurnStatusSchema } from "@/shared/codex-app-server-contract";
 
 import {
 	FiniteNumberSchema,
 	IntegerSchema,
 	NonNegativeIntegerSchema,
 	looseObject,
-} from "./scalars.js";
-import { MisalignmentErrorDetailsSchema } from "./error-schemas.js";
+} from "@/runtime/codex-protocol/lib/scalars";
+import { MisalignmentErrorDetailsSchema } from "@/runtime/codex-protocol/lib/error-schemas";
 
 const PlanTypeSchema = z.enum([
 	"free",

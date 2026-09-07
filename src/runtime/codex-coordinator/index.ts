@@ -1,4 +1,4 @@
-export { createCodexCoordinator } from "./lib/coordinator.js";
+export { createCodexCoordinator } from "@/runtime/codex-coordinator/lib/coordinator";
 export {
 	COORDINATOR_EFFORT,
 	COORDINATOR_MODEL,
@@ -7,9 +7,15 @@ export {
 	createCoordinatorThreadStartParams,
 	listCoordinatorModels,
 	selectCoordinatorModel,
-} from "./lib/model.js";
-export { COORDINATOR_CATALOGUE_HASH, hashCoordinatorSettings } from "./lib/review.js";
-export { CodexCoordinatorError, COORDINATOR_CAPABILITY_POLICY } from "./lib/contract.js";
+} from "@/runtime/codex-coordinator/lib/model";
+export {
+	COORDINATOR_CATALOGUE_HASH,
+	hashCoordinatorSettings,
+} from "@/runtime/codex-coordinator/lib/review";
+export {
+	CodexCoordinatorError,
+	COORDINATOR_CAPABILITY_POLICY,
+} from "@/runtime/codex-coordinator/lib/contract";
 export type {
 	CodexCoordinator,
 	CodexCoordinatorOptions,
@@ -42,5 +48,5 @@ export type {
 	CoordinatorThreadLinkTarget,
 	CoordinatorThreadSettings,
 	CoordinatorThreadStartParams,
-} from "./lib/contract.js";
-export type { CoordinatorModelSelection } from "./lib/model.js";
+} from "@/runtime/codex-coordinator/lib/contract";
+export type { CoordinatorModelSelection } from "@/runtime/codex-coordinator/lib/model";
