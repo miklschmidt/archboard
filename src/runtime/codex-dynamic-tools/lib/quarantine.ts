@@ -1,8 +1,6 @@
 import type { DynamicToolCallResponse } from "@/runtime/codex-thread-tools";
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 import {
-	CodexDynamicEpochQuarantinedError,
-	CodexDynamicOperationTerminalizationError,
 	type CodexDynamicToolsOptions,
 	type DynamicFatalLifecycleFault,
 	type DynamicMutationQuarantineIdentity,
@@ -10,7 +8,6 @@ import {
 	type DynamicMutationTerminalProof,
 } from "@/runtime/codex-dynamic-tools/lib/contract";
 import {
-	blockedDynamicResponse,
 	createOrdinaryWireOwners,
 	deferred,
 	DYNAMIC_QUARANTINE_WIRE_CAP,
@@ -20,74 +17,37 @@ import {
 	exactShutdownOwner,
 	exactTeardownProof,
 	logicalKey,
-	mutationIdentity,
 	requestEpochKey,
 	requestWireKey,
 	type QuarantineLogicalOwner,
 	type QuarantineWireOwner,
 } from "@/runtime/codex-dynamic-tools/lib/quarantine-support";
+import { createQuarantineDispatch } from "@/runtime/codex-dynamic-tools/lib/quarantine-dispatch";
+import {
+	beyondRecovery,
+	exactChildExit,
+	inspectQuarantines,
+	retireLogicalOwners,
+	pendingWire,
+	quarantineError,
+	type DynamicQuarantineDispatcher,
+	type LogicalRunOwner,
+} from "@/runtime/codex-dynamic-tools/lib/quarantine-owners";
 
-interface DynamicQuarantineDispatcher {
-	readonly dispatch: (
-		request: DynamicServerRequest,
-		run: () => Promise<DispatchCandidate>,
-	) => Promise<DynamicToolCallResponse>;
-	readonly inspect: () => DynamicMutationQuarantineInspection;
-	readonly dispose: () => void;
-}
+/** Why an epoch is being torn down fail-closed. */
+type ShutdownReason =
+	| "poison_acquisition_failed"
+	| "wire_capacity_exceeded"
+	| "response_write_failed";
 
-function exactChildExit(value: unknown, quarantine: EpochQuarantineOwner): boolean {
-	return (
-		value !== null &&
-		typeof value === "object" &&
-		!Array.isArray(value) &&
-		"child" in value &&
-		value.child === quarantine.child &&
-		"epoch" in value &&
-		value.epoch === quarantine.epoch &&
-		"exited" in value &&
-		value.exited === true &&
-		Object.keys(value).toSorted().join(",") === "child,epoch,exited"
-	);
-}
-
-function quarantineError(message: string, cause?: unknown): CodexDynamicEpochQuarantinedError {
-	return new CodexDynamicEpochQuarantinedError(message, cause);
-}
-
-function pendingWire(
-	request: DynamicServerRequest,
-	response: DynamicToolCallResponse,
-	kind: QuarantineWireOwner["kind"],
-	ownerKey: string | null,
-): QuarantineWireOwner {
-	const key = requestWireKey(request);
-	if (key === null) {
-		throw new Error("A dynamic request has no exact wire identity.");
-	}
-	return {
-		key,
-		requestId: request.requestId,
-		request,
-		response,
-		kind,
-		logicalKey: ownerKey,
-		deferred: deferred<DynamicToolCallResponse>(),
-		writeAttempted: false,
-		settled: false,
-	};
-}
-
-interface LogicalRunSignal {
-	readonly response: DynamicToolCallResponse;
-	readonly quarantine: EpochQuarantineOwner | null;
-}
-
-interface LogicalRunOwner {
-	readonly signal: ReturnType<typeof deferred<LogicalRunSignal>>;
-	retained: boolean;
-}
-
+/**
+ * The one boundary every dynamic reverse request passes through, so that a mutation whose
+ * terminality cannot be established never simply disappears: its epoch is poisoned, its
+ * response is held, and every later call on that epoch is either joined to it or blocked until
+ * the epoch either recovers and delivers what it owes or is torn down fail-closed.
+ * @param options The dynamic tools options.
+ * @returns The dispatcher.
+ */
 function createDynamicQuarantineDispatcher(
 	options: CodexDynamicToolsOptions,
 ): DynamicQuarantineDispatcher {
@@ -96,6 +56,14 @@ function createDynamicQuarantineDispatcher(
 	const ordinaryWires = createOrdinaryWireOwners();
 	const logicalRuns = new Map<string, LogicalRunOwner>();
 
+	/**
+	 * Record that an epoch has gone fatal and tell the lifecycle, keeping local ownership even
+	 * when the lifecycle cannot be told.
+	 * @param quarantine The quarantined epoch.
+	 * @param reason Why it went fatal.
+	 * @param message Human-readable explanation.
+	 * @param cause The underlying thrown value.
+	 */
 	const reportFatal = (
 		quarantine: EpochQuarantineOwner,
 		reason: DynamicFatalLifecycleFault["reason"],
@@ -118,6 +86,12 @@ function createDynamicQuarantineDispatcher(
 		}
 	};
 
+	/**
+	 * Drop a quarantined epoch without delivering what it was holding, rejecting every call that
+	 * was waiting on it. This is what a fail-closed teardown or a child exit leaves behind.
+	 * @param quarantine The quarantined epoch.
+	 * @param error What every waiting call is rejected with.
+	 */
 	const clearWithoutResponses = (quarantine: EpochQuarantineOwner, error: unknown): void => {
 		if (quarantines.get(quarantine.key) === quarantine) {
 			quarantines.delete(quarantine.key);
@@ -137,9 +111,17 @@ function createDynamicQuarantineDispatcher(
 		quarantine.overflowDeferred = null;
 	};
 
+	/**
+	 * Tear an epoch down fail-closed, because nothing it is holding can be delivered safely any
+	 * more. The epoch goes fatal if ownership of the shutdown cannot be taken, or if the teardown
+	 * does not prove the child's session and transport actually closed.
+	 * @param quarantine The quarantined epoch.
+	 * @param reason Why the shutdown is being started.
+	 * @param cause The underlying thrown value.
+	 */
 	const startShutdown = (
 		quarantine: EpochQuarantineOwner,
-		reason: "poison_acquisition_failed" | "wire_capacity_exceeded" | "response_write_failed",
+		reason: ShutdownReason,
 		cause: unknown,
 	): void => {
 		if (quarantine.shutdownStarted || quarantine.state === "fatal") {
@@ -167,22 +149,7 @@ function createDynamicQuarantineDispatcher(
 			return;
 		}
 		void owner.teardown.then(
-			(proof) => {
-				if (!exactTeardownProof(proof, quarantine)) {
-					reportFatal(
-						quarantine,
-						reason,
-						"Fail-closed shutdown returned invalid exact teardown proof.",
-						proof,
-					);
-					return undefined;
-				}
-				clearWithoutResponses(
-					quarantine,
-					quarantineError("The exact child session and transport closed fail-closed.", cause),
-				);
-				return undefined;
-			},
+			(proof) => settledTeardown(quarantine, reason, cause, proof),
 			(error) => {
 				reportFatal(
 					quarantine,
@@ -195,6 +162,43 @@ function createDynamicQuarantineDispatcher(
 		);
 	};
 
+	/**
+	 * Act on the teardown proof a fail-closed shutdown returned: clear the epoch when the proof
+	 * holds, and go fatal when it does not.
+	 * @param quarantine The quarantined epoch.
+	 * @param reason Why the shutdown was started.
+	 * @param cause The underlying thrown value.
+	 * @param proof What the teardown returned.
+	 * @returns Nothing.
+	 */
+	const settledTeardown = (
+		quarantine: EpochQuarantineOwner,
+		reason: ShutdownReason,
+		cause: unknown,
+		proof: Parameters<typeof exactTeardownProof>[0],
+	): undefined => {
+		if (!exactTeardownProof(proof, quarantine)) {
+			reportFatal(
+				quarantine,
+				reason,
+				"Fail-closed shutdown returned invalid exact teardown proof.",
+				proof,
+			);
+			return undefined;
+		}
+		clearWithoutResponses(
+			quarantine,
+			quarantineError("The exact child session and transport closed fail-closed.", cause),
+		);
+		return undefined;
+	};
+
+	/**
+	 * Write out everything a recovered epoch was holding, one response at a time. The first write
+	 * that fails stops the rest and tears the epoch down fail-closed, because a partly delivered
+	 * recovery is worse than none.
+	 * @param quarantine The quarantined epoch.
+	 */
 	const writeRecoveredWires = async (quarantine: EpochQuarantineOwner): Promise<void> => {
 		for (const wire of quarantine.wireOwners.values()) {
 			if (wire.settled || wire.writeAttempted) {
@@ -202,6 +206,7 @@ function createDynamicQuarantineDispatcher(
 			}
 			wire.writeAttempted = true;
 			try {
+				// oxlint-disable-next-line eslint/no-await-in-loop -- the held responses are written to the child's stdio in order; concurrent writes would interleave frames
 				await options.transport.respond(wire.request, "codex-dynamic-tools", {
 					result: wire.response,
 				});
@@ -216,29 +221,45 @@ function createDynamicQuarantineDispatcher(
 		quarantines.delete(quarantine.key);
 	};
 
+	/**
+	 * Whether an epoch is one this dispatcher is still holding and can still act on.
+	 * @param quarantine The quarantined epoch.
+	 * @returns Whether the epoch is live here.
+	 */
+	const stillOwned = (quarantine: EpochQuarantineOwner): boolean => {
+		if (disposed || !quarantine.active) {
+			return false;
+		}
+		return quarantines.get(quarantine.key) === quarantine;
+	};
+
+	/**
+	 * Refuse to finish a quarantine this dispatcher no longer holds, or one whose only way out is
+	 * a fail-closed teardown.
+	 * @param quarantine The quarantined epoch.
+	 */
+	const assertRecoverable = (quarantine: EpochQuarantineOwner): void => {
+		if (!stillOwned(quarantine)) {
+			throw quarantineError("The dynamic mutation quarantine is no longer active.");
+		}
+		if (beyondRecovery(quarantine.state)) {
+			throw quarantineError("The dynamic mutation quarantine requires fail-closed teardown.");
+		}
+	};
+
+	/**
+	 * Try to finish a quarantine: retire what the epoch still owes, and if nothing is left
+	 * unresolved, deliver the responses it was holding. Anything that fails leaves the epoch
+	 * poisoned rather than pretending the mutation was accounted for.
+	 * @param quarantine The quarantined epoch.
+	 * @returns The proof that the epoch's mutations are terminal.
+	 */
 	const completeQuarantine = async (
 		quarantine: EpochQuarantineOwner,
 	): Promise<DynamicMutationTerminalProof> => {
-		if (disposed || quarantines.get(quarantine.key) !== quarantine || !quarantine.active) {
-			throw quarantineError("The dynamic mutation quarantine is no longer active.");
-		}
-		const recoveredState = quarantine.state as string;
-		if (recoveredState === "shutdown_pending" || recoveredState === "fatal") {
-			throw quarantineError("The dynamic mutation quarantine requires fail-closed teardown.");
-		}
+		assertRecoverable(quarantine);
 		quarantine.state = "terminalizing";
-		let firstError: unknown = null;
-		for (const owner of quarantine.logicalOwners.values()) {
-			try {
-				owner.settlement.retireUnsettled();
-			} catch (error) {
-				firstError ??= error;
-			}
-		}
-		const unresolved = [...quarantine.logicalOwners.values()].reduce(
-			(count, owner) => count + owner.settlement.unresolvedOperationCount(),
-			0,
-		);
+		const { firstError, unresolved } = retireLogicalOwners(quarantine);
 		if (firstError !== null || unresolved !== 0) {
 			quarantine.state = "poisoned";
 			throw firstError instanceof Error
@@ -246,13 +267,48 @@ function createDynamicQuarantineDispatcher(
 				: quarantineError("The poisoned epoch still owns unresolved operation identities.");
 		}
 		await writeRecoveredWires(quarantine);
-		const postWriteState = quarantine.state as string;
-		if (postWriteState === "shutdown_pending" || postWriteState === "fatal") {
+		if (beyondRecovery(quarantine.state)) {
 			throw quarantineError("A recovered response could not be delivered safely.");
 		}
 		return Object.freeze({ terminal: true, unresolvedOperationCount: 0 });
 	};
 
+	/**
+	 * Act on the child-exit proof a poisoned epoch's owner returned: an epoch whose child exited
+	 * while it was still holding a response cannot deliver it, so it is cleared.
+	 * @param quarantine The quarantined epoch.
+	 * @param exit What the owner returned.
+	 * @returns Nothing.
+	 */
+	const settledChildExit = (quarantine: EpochQuarantineOwner, exit: unknown): undefined => {
+		if (!exactChildExit(exit, quarantine)) {
+			reportFatal(
+				quarantine,
+				"invalid_child_exit_proof",
+				"Mutation quarantine received invalid exact child-exit proof.",
+				exit,
+			);
+			return undefined;
+		}
+		if (!quarantine.active) {
+			for (const logical of quarantine.logicalOwners.values()) {
+				logicalRuns.delete(logical.key);
+			}
+			return undefined;
+		}
+		clearWithoutResponses(
+			quarantine,
+			quarantineError("The exact child epoch exited while its response was quarantined."),
+		);
+		return undefined;
+	};
+
+	/**
+	 * Poison the epoch a mutation could not be accounted for in, taking ownership of its recovery
+	 * so nothing else can execute on it until it either recovers or is torn down.
+	 * @param quarantine The quarantined epoch.
+	 * @param identity The mutation that could not be accounted for.
+	 */
 	const poison = (
 		quarantine: EpochQuarantineOwner,
 		identity: DynamicMutationQuarantineIdentity,
@@ -262,7 +318,13 @@ function createDynamicQuarantineDispatcher(
 			owner = exactPoisonOwner(
 				options.lifecycle.poisonEpochAndOwnMutationQuarantine({
 					identity,
-					retryTerminalization: () => completeQuarantine(quarantine),
+					/**
+					 * Try again to finish the quarantine, which is how the lifecycle asks the boundary
+					 * whether the epoch can now deliver what it owes.
+					 * @returns The proof that the epoch's mutations are terminal.
+					 */
+					retryTerminalization: (): Promise<DynamicMutationTerminalProof> =>
+						completeQuarantine(quarantine),
 				}),
 				identity,
 			);
@@ -272,28 +334,7 @@ function createDynamicQuarantineDispatcher(
 			return;
 		}
 		void owner.childExit.then(
-			(exit) => {
-				if (!exactChildExit(exit, quarantine)) {
-					reportFatal(
-						quarantine,
-						"invalid_child_exit_proof",
-						"Mutation quarantine received invalid exact child-exit proof.",
-						exit,
-					);
-					return undefined;
-				}
-				if (!quarantine.active) {
-					for (const logical of quarantine.logicalOwners.values()) {
-						logicalRuns.delete(logical.key);
-					}
-					return undefined;
-				}
-				clearWithoutResponses(
-					quarantine,
-					quarantineError("The exact child epoch exited while its response was quarantined."),
-				);
-				return undefined;
-			},
+			(exit) => settledChildExit(quarantine, exit),
 			(error) => {
 				if (quarantine.active) {
 					reportFatal(
@@ -308,6 +349,35 @@ function createDynamicQuarantineDispatcher(
 		);
 	};
 
+	/**
+	 * Refuse to hold any more of an epoch's reverse requests, because it is already holding as
+	 * many as the transport's reviewed capacity allows. The epoch is torn down fail-closed and
+	 * every waiting call settles on that teardown.
+	 * @param quarantine The quarantined epoch.
+	 * @returns The response every overflowing call gets.
+	 */
+	const overflowWire = (quarantine: EpochQuarantineOwner): Promise<DynamicToolCallResponse> => {
+		quarantine.overflowed = true;
+		quarantine.overflowDeferred ??= deferred<DynamicToolCallResponse>();
+		startShutdown(
+			quarantine,
+			"wire_capacity_exceeded",
+			new Error("The quarantined epoch exceeded the accepted reverse-request capacity."),
+		);
+		return quarantine.overflowDeferred.promise;
+	};
+
+	/**
+	 * Hold one reverse request against a quarantined epoch, joining the owner already holding it
+	 * when there is one, and tearing the epoch down when it is holding more than the reviewed
+	 * reverse-request capacity allows.
+	 * @param quarantine The quarantined epoch.
+	 * @param request The server request.
+	 * @param response The response it will get once the epoch recovers.
+	 * @param kind Whether the request carries a logical mutation or is simply blocked.
+	 * @param ownerKey The logical owner it belongs to, when it belongs to one.
+	 * @returns The response, once the epoch settles.
+	 */
 	const admitWire = (
 		quarantine: EpochQuarantineOwner,
 		request: DynamicServerRequest,
@@ -324,14 +394,7 @@ function createDynamicQuarantineDispatcher(
 			return existing.deferred.promise;
 		}
 		if (quarantine.wireOwners.size >= DYNAMIC_QUARANTINE_WIRE_CAP) {
-			quarantine.overflowed = true;
-			quarantine.overflowDeferred ??= deferred<DynamicToolCallResponse>();
-			startShutdown(
-				quarantine,
-				"wire_capacity_exceeded",
-				new Error("The quarantined epoch exceeded the accepted reverse-request capacity."),
-			);
-			return quarantine.overflowDeferred.promise;
+			return overflowWire(quarantine);
 		}
 		const wire = pendingWire(request, response, kind, ownerKey);
 		quarantine.wireOwners.set(wire.key, wire);
@@ -341,6 +404,14 @@ function createDynamicQuarantineDispatcher(
 		return wire.deferred.promise;
 	};
 
+	/**
+	 * Put a mutation whose terminality could not be established into quarantine, creating the
+	 * epoch's owner if this is the first such mutation on it, and poisoning the epoch.
+	 * @param identity The mutation.
+	 * @param request The server request.
+	 * @param candidate What the dispatch produced.
+	 * @returns The response, once the epoch settles.
+	 */
 	const enterQuarantine = (
 		identity: DynamicMutationQuarantineIdentity,
 		request: DynamicServerRequest,
@@ -385,178 +456,28 @@ function createDynamicQuarantineDispatcher(
 		return result;
 	};
 
-	const send = async (
-		request: DynamicServerRequest,
-		response: DynamicToolCallResponse,
-	): Promise<DynamicToolCallResponse> => {
-		try {
-			await options.transport.respond(request, "codex-dynamic-tools", {
-				result: response,
-			});
-		} catch {
-			/* The exact response remains terminal when a non-quarantined child disconnects. */
-		}
-		return response;
-	};
+	const dispatch = createQuarantineDispatch({
+		options,
+		quarantines,
+		ordinaryWires,
+		logicalRuns,
+		/**
+		 * Whether the boundary has been disposed.
+		 * @returns Whether it is disposed.
+		 */
+		isDisposed: (): boolean => disposed,
+		admitWire,
+		enterQuarantine,
+	});
 
-	const joinLogicalRun = (
-		owner: LogicalRunOwner,
-		request: DynamicServerRequest,
-	): Promise<DynamicToolCallResponse> =>
-		owner.signal.promise.then(({ response, quarantine }) => {
-			if (quarantine === null || !quarantine.active) {
-				return send(request, response);
-			}
-			return admitWire(quarantine, request, response, "logical", logicalKeyFor(request));
-		});
+	/**
+	 * What the boundary is holding right now.
+	 * @returns The inspection.
+	 */
+	const inspect = (): DynamicMutationQuarantineInspection =>
+		inspectQuarantines(quarantines, ordinaryWires);
 
-	const logicalKeyFor = (request: DynamicServerRequest): string | null => {
-		const identity = mutationIdentity(request, options);
-		return identity === null ? null : logicalKey(identity);
-	};
-
-	const dispatch = (
-		request: DynamicServerRequest,
-		run: () => Promise<DispatchCandidate>,
-	): Promise<DynamicToolCallResponse> => {
-		const wireKey = requestWireKey(request);
-		if (wireKey === null) {
-			return run().then((candidate) => {
-				if (candidate.settlement !== null) {
-					throw quarantineError("A mutation cannot execute without exact wire identity.");
-				}
-				return send(request, candidate.response);
-			});
-		}
-		const ordinaryExisting = ordinaryWires.get(wireKey);
-		if (ordinaryExisting !== undefined) {
-			return ordinaryExisting;
-		}
-		const key = requestEpochKey(request);
-		const quarantine = key === null ? undefined : quarantines.get(key);
-		if (quarantine?.active) {
-			const existing = quarantine.wireOwners.get(wireKey);
-			if (existing !== undefined) {
-				return existing.deferred.promise;
-			}
-			if (!options.transport.ownsPendingReverseRequest(request, "codex-dynamic-tools")) {
-				return Promise.reject(
-					quarantineError("The dynamic transport no longer owns this reverse request."),
-				);
-			}
-			const identity = mutationIdentity(request, options);
-			const ownerKey = identity === null ? null : logicalKey(identity);
-			const logical = ownerKey === null ? undefined : quarantine.logicalOwners.get(ownerKey);
-			return admitWire(
-				quarantine,
-				request,
-				logical?.response ?? blockedDynamicResponse(),
-				logical === undefined ? "blocked" : "logical",
-				logical?.key ?? null,
-			);
-		}
-		if (disposed) {
-			return Promise.reject(quarantineError("Dynamic tools are disposed."));
-		}
-		if (!options.transport.ownsPendingReverseRequest(request, "codex-dynamic-tools")) {
-			return Promise.reject(
-				quarantineError("The dynamic transport no longer owns this reverse request."),
-			);
-		}
-
-		const execute = (): Promise<DynamicToolCallResponse> => {
-			const identity = mutationIdentity(request, options);
-			const ownerKey = identity === null ? null : logicalKey(identity);
-			if (ownerKey !== null) {
-				const existing = logicalRuns.get(ownerKey);
-				if (existing !== undefined) {
-					return joinLogicalRun(existing, request);
-				}
-			}
-			const runOwner =
-				ownerKey === null ? null : { signal: deferred<LogicalRunSignal>(), retained: false };
-			if (ownerKey !== null && runOwner !== null) {
-				logicalRuns.set(ownerKey, runOwner);
-				void runOwner.signal.promise.catch(() => undefined);
-			}
-			const operation = run().then(async (candidate) => {
-				if (candidate.settlement === null) {
-					const response = await send(request, candidate.response);
-					runOwner?.signal.resolve({ response, quarantine: null });
-					return response;
-				}
-				try {
-					candidate.settlement.retireUnsettled();
-					const response = await send(request, candidate.response);
-					runOwner?.signal.resolve({ response, quarantine: null });
-					return response;
-				} catch (error) {
-					if (!(error instanceof CodexDynamicOperationTerminalizationError) || identity === null) {
-						throw error;
-					}
-					const response = enterQuarantine(identity, request, candidate);
-					const epochOwner = quarantines.get(requestEpochKey(request) ?? "");
-					if (epochOwner === undefined) {
-						throw new Error("The unresolved mutation has no quarantine.", { cause: error });
-					}
-					if (runOwner !== null) {
-						runOwner.retained = true;
-					}
-					runOwner?.signal.resolve({ response: candidate.response, quarantine: epochOwner });
-					return response;
-				}
-			});
-			return operation.then(
-				(response) => {
-					if (ownerKey !== null && runOwner !== null && !runOwner.retained) {
-						logicalRuns.delete(ownerKey);
-					}
-					return response;
-				},
-				(error) => {
-					runOwner?.signal.reject(error);
-					if (ownerKey !== null && runOwner !== null && !runOwner.retained) {
-						logicalRuns.delete(ownerKey);
-					}
-					throw error;
-				},
-			);
-		};
-		return ordinaryWires.own(wireKey, execute);
-	};
-
-	const inspect = (): DynamicMutationQuarantineInspection => {
-		const active = [...quarantines.values()].filter((quarantine) => quarantine.active);
-		const entries = active.flatMap((quarantine) => {
-			const blocked = [...quarantine.wireOwners.values()].filter(
-				(wire) => wire.kind === "blocked",
-			).length;
-			return [...quarantine.logicalOwners.values()].map((owner) =>
-				Object.freeze({
-					identity: owner.identity,
-					state: quarantine.state,
-					unresolvedOperationCount: owner.settlement.unresolvedOperationCount(),
-					wireCount: owner.wireKeys.size,
-					blockedWireCount: blocked,
-					overflowed: quarantine.overflowed,
-				}),
-			);
-		});
-		return Object.freeze({
-			epochCount: active.length,
-			callCount: entries.length,
-			ordinaryInFlightWireCount: ordinaryWires.size(),
-			wireCount: active.reduce((count, owner) => count + owner.wireOwners.size, 0),
-			blockedWireCount: active.reduce(
-				(count, owner) =>
-					count + [...owner.wireOwners.values()].filter((wire) => wire.kind === "blocked").length,
-				0,
-			),
-			fatalEpochCount: active.filter((owner) => owner.state === "fatal").length,
-			entries: Object.freeze(entries),
-		});
-	};
-
+	/** Drop everything the boundary is holding, rejecting every call still waiting on it. */
 	const dispose = (): void => {
 		if (disposed) {
 			return;
