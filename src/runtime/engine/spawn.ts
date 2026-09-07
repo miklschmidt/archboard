@@ -11,8 +11,6 @@ import {
 	noVaultMessage,
 } from "@/runtime/engine/config";
 import {
-	getHealth,
-	CANVAS_SERVICE_NAME,
 	foreignServiceError,
 	markCanvasIdentityVerified,
 	type HealthStatus,
@@ -33,77 +31,16 @@ import {
 	type CanvasStartupProtocolReader,
 } from "@/runtime/engine/canvas-startup-cleanup";
 import { codedError, errorCode, errorMessage } from "@/runtime/engine/lib/thrown-error";
-
-const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
-
-/**
- * The port the canvas URL names, with the scheme's default when it names none.
- * @returns The port number; 3000 when the URL cannot be parsed.
- */
-function canvasPort(): number {
-	try {
-		const url = new URL(EXPRESS_SERVER_URL);
-		return parseInt(url.port, 10) || (url.protocol === "https:" ? 443 : 80);
-	} catch {
-		return 3000;
-	}
-}
-
-/**
- * The host the canvas URL names.
- * @returns The hostname; the IPv4 loopback when the URL cannot be parsed.
- */
-function canvasHostname(): string {
-	try {
-		return new URL(EXPRESS_SERVER_URL).hostname;
-	} catch {
-		return "127.0.0.1";
-	}
-}
-
-/**
- * The HOST the spawned server must bind so that health probes against
- * EXPRESS_SERVER_URL actually reach it: a `[::1]` URL needs an IPv6 bind.
- * @returns The bind address without URL brackets.
- */
-function spawnBindHost(): string {
-	const hostname = canvasHostname();
-	if (hostname === "localhost") {
-		return "127.0.0.1";
-	}
-	return hostname.replace(/^\[|\]$/g, "");
-}
-
-/**
- * Whether the canvas URL points at this machine, which is the only place an
- * auto-start can put a server.
- * @returns True for a loopback host.
- */
-function isLoopbackUrl(): boolean {
-	return LOOPBACK_HOSTS.has(canvasHostname());
-}
-
-/**
- * The error a caller gets when no canvas answers and none will be started.
- * @param reason Why, in a clause that follows the URL.
- * @returns An error carrying the `CANVAS_UNREACHABLE` code.
- */
-function unreachableError(reason: string): Error {
-	return codedError(
-		`Canvas server is not reachable at ${EXPRESS_SERVER_URL} (${reason}). ` +
-			`Start it with \`archboard start\` (\`./bin/canvas start\` in the repo) or \`bun src/server.ts\`.`,
-		"CANVAS_UNREACHABLE",
-	);
-}
-
-/**
- * A start that was refused, in the server's or the launcher's own words.
- * @param message The refusal text.
- * @returns An error carrying the `CANVAS_UNREACHABLE` code.
- */
-function startupRefusal(message: string): Error {
-	return codedError(message.trim(), "CANVAS_UNREACHABLE");
-}
+import {
+	canvasPort,
+	healthOrNull,
+	heldCanvasError,
+	isCanvasHealth,
+	isLoopbackUrl,
+	spawnBindHost,
+	startupRefusal,
+	unreachableError,
+} from "@/runtime/engine/lib/canvas-spawn-target";
 
 /**
  * Whether a server's exit message says another canvas owns the port or the
@@ -159,74 +96,45 @@ function processIsStopped(pid: number): boolean {
 	}
 }
 
-/**
- * Probe `/health`, treating any failure as no answer.
- * @param timeoutMs How long to wait for the probe.
- * @returns The health payload, or null when nothing usable answered.
- */
-async function healthOrNull(timeoutMs = 500): Promise<HealthStatus | null> {
-	try {
-		return await getHealth(timeoutMs);
-	} catch {
-		return null;
-	}
-}
-
-/**
- * The refusal a stop earns when the canvas holds work that exists only in memory.
- * @param health The canvas's health payload.
- * @returns An error carrying the `CANVAS_HELD` code, or null when nothing is held.
- */
-function heldCanvasError(health: HealthStatus | null): Error | null {
-	if (!health?.held_boards || health.held_boards.length === 0) {
-		return null;
-	}
-	const boards = health.held_boards.map((hold) => `"${hold.board}"`).join(", ");
-	return codedError(
-		[
-			`Canvas shutdown refused because held work exists only in process memory on ${boards}.`,
-			...health.held_boards.map((hold) => hold.message),
-		].join("\n\n"),
-		"CANVAS_HELD",
-	);
-}
-
-/**
- * Whether a `/health` payload came from OUR canvas server (the v1.1+ identity
- * marker). Anything else answering the port is a foreign service.
- * @param health The payload, or null when nothing answered.
- * @returns True only for this canvas service.
- */
-function isCanvasHealth(health: { service?: string } | null): boolean {
-	return health?.service === CANVAS_SERVICE_NAME;
-}
-
 interface EnsureResult {
 	url: string;
 	spawned: boolean;
 }
 
+/** How long readiness may take, and whether this is an explicit start. */
+interface EnsureOptions {
+	timeoutMs?: number;
+	force?: boolean;
+}
+
 /**
- * Refuse an auto-start that the configuration or the environment rules out,
- * before any process is spawned.
- * @param force True for the explicit `start` command, which overrides the opt-outs.
+ * Refuse an auto-start the operator has switched off. An explicit `start` is
+ * user intent and overrides both opt-outs.
+ * @throws {Error} When auto-start is disabled.
  */
-function refuseUnlessAutoStartAllowed(force: boolean): void {
-	if (!force) {
-		if (EXCALIDRAW_NO_AUTOSTART) {
-			throw unreachableError("auto-start disabled by EXCALIDRAW_NO_AUTOSTART=1");
-		}
-		if (!ENABLE_CANVAS_SYNC) {
-			throw unreachableError("auto-start disabled because ENABLE_CANVAS_SYNC=false");
-		}
+function refuseDisabledAutoStart(): void {
+	if (EXCALIDRAW_NO_AUTOSTART) {
+		throw unreachableError("auto-start disabled by EXCALIDRAW_NO_AUTOSTART=1");
 	}
+	if (!ENABLE_CANVAS_SYNC) {
+		throw unreachableError("auto-start disabled because ENABLE_CANVAS_SYNC=false");
+	}
+}
+
+/**
+ * Refuse a start the machine could not carry out.
+ *
+ * The canvas refuses to start without a vault (ADR 0015), and it is spawned
+ * detached with its stdio thrown away, so its refusal would land nowhere and
+ * the caller would wait eight seconds to be told the server "did not become
+ * healthy". Ask the same questions here, where somebody is reading.
+ * @throws {Error} When the URL is not loopback, there is no vault, or the
+ * package-local Codex runtime cannot be verified.
+ */
+function refuseUnstartableCanvas(): void {
 	if (!isLoopbackUrl()) {
 		throw unreachableError("refusing to auto-start a non-loopback canvas URL");
 	}
-	// The canvas refuses to start without a vault (ADR 0015), and it is spawned
-	// detached with its stdio thrown away, so its refusal would land nowhere and
-	// the caller would wait eight seconds to be told the server "did not become
-	// healthy". Ask the same question here, where somebody is reading.
 	if (!ARCHBOARD_VAULT) {
 		throw codedError(noVaultMessage(), "CANVAS_UNREACHABLE");
 	}
@@ -239,6 +147,19 @@ function refuseUnlessAutoStartAllowed(force: boolean): void {
 				: "Codex startup refused because the exact package-local runtime could not be verified.",
 		);
 	}
+}
+
+/**
+ * Refuse an auto-start that the configuration or the environment rules out,
+ * before any process is spawned.
+ * @param force True for the explicit `start` command, which overrides the opt-outs.
+ * @throws {Error} When this canvas may not, or could not, be started.
+ */
+function refuseUnlessAutoStartAllowed(force: boolean): void {
+	if (!force) {
+		refuseDisabledAutoStart();
+	}
+	refuseUnstartableCanvas();
 }
 
 interface ChildExit {
@@ -368,7 +289,9 @@ async function cleanupFailedStart(spawned: SpawnedCanvas, failure: Error): Promi
 			 * Signal the server unless it already exited.
 			 * @param signal The signal to send.
 			 */
-			signalCanvas: (signal) => signalSpawnedCanvas(spawned, signal),
+			signalCanvas: (signal) => {
+				signalSpawnedCanvas(spawned, signal);
+			},
 			inspectGroup: groupOperations.inspect,
 			signalGroup: groupOperations.signal,
 		},
@@ -391,21 +314,22 @@ async function cleanupFailedStart(spawned: SpawnedCanvas, failure: Error): Promi
 	throw terminalMessage === null ? failure : startupRefusal(terminalMessage);
 }
 
+/** Where a concurrent owner's refusal is kept until the deadline. */
+interface DeferredFailure {
+	failure: Error | null;
+}
+
 /**
- * The failure to clean up after when the spawned server has died or the
- * protocol broke, or null while it may still become healthy. A concurrent
- * owner's refusal is deferred rather than returned, so the wait continues
- * against the canvas that won.
+ * What a server's exit before readiness amounts to.
+ *
+ * A concurrent owner's refusal is deferred rather than returned, so the wait
+ * continues against the canvas that won.
  * @param spawned The spawned server.
  * @param deferred Where a concurrent-owner refusal is kept for the deadline.
  * @returns The failure to act on now, or null to keep waiting.
  */
-function startFailureOf(spawned: SpawnedCanvas, deferred: { failure: Error | null }): Error | null {
+function exitFailureOf(spawned: SpawnedCanvas, deferred: DeferredFailure): Error | null {
 	const { observed, protocol } = spawned;
-	const failure = observed.failure ?? protocol.failure();
-	if (failure !== null) {
-		return startupRefusal(`Canvas server could not start. ${failure.message}`);
-	}
 	if (observed.exit === null) {
 		return null;
 	}
@@ -421,15 +345,33 @@ function startFailureOf(spawned: SpawnedCanvas, deferred: { failure: Error | nul
 }
 
 /**
+ * The failure to clean up after when the spawned server has died or the
+ * protocol broke, or null while it may still become healthy.
+ * @param spawned The spawned server.
+ * @param deferred Where a concurrent-owner refusal is kept for the deadline.
+ * @returns The failure to act on now, or null to keep waiting.
+ */
+function startFailureOf(spawned: SpawnedCanvas, deferred: DeferredFailure): Error | null {
+	const failure = spawned.observed.failure ?? spawned.protocol.failure();
+	if (failure !== null) {
+		return startupRefusal(`Canvas server could not start. ${failure.message}`);
+	}
+	return exitFailureOf(spawned, deferred);
+}
+
+/**
  * Poll `/health` until the spawned server identifies itself, or fail with
  * whatever stopped it.
  * @param spawned The spawned server.
  * @param timeoutMs How long readiness may take.
  * @returns The canvas URL once it answers as itself.
  */
-async function awaitCanvasReadiness(spawned: SpawnedCanvas, timeoutMs: number): Promise<EnsureResult> {
+async function awaitCanvasReadiness(
+	spawned: SpawnedCanvas,
+	timeoutMs: number,
+): Promise<EnsureResult> {
 	const deadline = Date.now() + timeoutMs;
-	const deferred: { failure: Error | null } = { failure: null };
+	const deferred: DeferredFailure = { failure: null };
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- readiness is one probe after another until the deadline
 		if (isCanvasHealth(await healthOrNull(400))) {
@@ -469,10 +411,10 @@ async function awaitCanvasReadiness(spawned: SpawnedCanvas, timeoutMs: number): 
  * answers.
  * @param options How long readiness may take, and whether this is an explicit start.
  * @returns The canvas URL and whether this call started the server.
+ * @throws {Error} When another service holds the port, or the canvas may not
+ * be started.
  */
-async function ensureCanvasRunning(
-	options: { timeoutMs?: number; force?: boolean } = {},
-): Promise<EnsureResult> {
+async function ensureCanvasRunning(options: EnsureOptions = {}): Promise<EnsureResult> {
 	const timeoutMs = options.timeoutMs ?? CANVAS_STARTUP_READINESS_MS;
 
 	const existing = await healthOrNull();
