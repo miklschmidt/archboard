@@ -14,7 +14,9 @@ const CALLBACK_SCHEMA = 1;
 const encoder = new TextEncoder();
 
 /**
- *
+ * Refuse an object that does not carry exactly the keys the closed callback schema declares, so a field added upstream cannot travel to the coordinator unreviewed.
+ * @param value - The object to check.
+ * @param expected - Every key the schema declares.
  */
 function requireExactKeys(value: object, expected: readonly string[]): void {
 	const actual = Object.keys(value).toSorted();
@@ -25,7 +27,9 @@ function requireExactKeys(value: object, expected: readonly string[]): void {
 }
 
 /**
- *
+ * Refuse an object carrying a key the schema does not allow, where some declared keys are optional.
+ * @param value - The object to check.
+ * @param allowed - The keys the schema permits.
  */
 function requireAllowedKeys(value: object, allowed: readonly string[]): void {
 	if (Object.keys(value).some((key) => !allowed.includes(key))) {
@@ -34,14 +38,19 @@ function requireAllowedKeys(value: object, allowed: readonly string[]): void {
 }
 
 /**
- *
+ * The encoded size of a string, which is what every callback limit is measured in.
+ * @param value - The string to measure.
+ * @returns Its length in UTF-8 bytes.
  */
 function utf8(value: string): number {
 	return encoder.encode(value).byteLength;
 }
 
 /**
- *
+ * Refuse an empty or oversized string; a present field is never the empty string in an encoded callback.
+ * @param value - The string, or null when the field is absent.
+ * @returns The same value.
+ * @throws {TypeError} When the string is empty or exceeds the per-string limit.
  */
 function requireString(value: string | null): string | null {
 	if (value !== null && (value.length === 0 || utf8(value) > CALLBACK_MAX_STRING_UTF8_BYTES)) {
@@ -51,7 +60,10 @@ function requireString(value: string | null): string | null {
 }
 
 /**
- *
+ * Refuse an identity that exceeds the tighter identity limit.
+ * @param value - The identity, or null.
+ * @returns The same value.
+ * @throws {TypeError} When the identity is empty or too long.
  */
 function requireId(value: string | null): string | null {
 	const checked = requireString(value);
@@ -62,7 +74,11 @@ function requireId(value: string | null): string | null {
 }
 
 /**
- *
+ * Refuse a list that is too long or holds an empty, null or oversized entry.
+ * @param values - The list to check.
+ * @param entryBytes - The per-entry byte limit.
+ * @returns The checked entries.
+ * @throws {TypeError} When the list or one of its entries exceeds its limit.
  */
 function requireArray(values: readonly string[], entryBytes: number): readonly string[] {
 	if (values.length > CALLBACK_MAX_ARRAY_ENTRIES) {
@@ -81,7 +97,9 @@ function requireArray(values: readonly string[], entryBytes: number): readonly s
 }
 
 /**
- *
+ * The wire RPC one queue operation is delivered by; the pair is checked so a callback cannot claim a queue operation its RPC does not match.
+ * @param operation - The queue operation named by the callback.
+ * @returns The RPC, or null when the operation is not a queue operation.
  */
 function queueRpc(operation: unknown): string | null {
 	switch (operation) {
@@ -101,7 +119,9 @@ function queueRpc(operation: unknown): string | null {
 }
 
 /**
- *
+ * Encode one epoch operation record: the durable proof of what was attempted, with every string checked against its limit.
+ * @param record - The epoch record.
+ * @returns The encodable record.
  */
 function operationRecord(record: EpochOperationRecord) {
 	return {
@@ -135,7 +155,9 @@ function operationRecord(record: EpochOperationRecord) {
 }
 
 /**
- *
+ * Encode a thread-link epoch proof, which is either an execution proof carrying a manifest revision or a bare record.
+ * @param value - The proof, or null or undefined when there is none.
+ * @returns The encodable proof, or null.
  */
 function proof(value: ThreadLinkEpochProof | null | undefined) {
 	if (value === null || value === undefined) {
@@ -152,7 +174,9 @@ function proof(value: ThreadLinkEpochProof | null | undefined) {
 }
 
 /**
- *
+ * Encode a callback's correlation against the closed schema: it proves the shape of the correlation, the captured link and the voice generation before any of it is serialized.
+ * @param value - The callback correlation.
+ * @returns The encodable correlation.
  */
 function correlation(value: CoordinatorCallbackCorrelation) {
 	requireExactKeys(value, [
@@ -262,80 +286,127 @@ function correlation(value: CoordinatorCallbackCorrelation) {
 	};
 }
 
+/** The keys an operation callback carries, exactly. */
+const OPERATION_CALLBACK_KEYS: readonly string[] = [
+	"kind",
+	"type",
+	"operation",
+	"queueOperation",
+	"rpc",
+	"outcome",
+	"correlation",
+	"queuedSubmissionIds",
+	"detail",
+];
+
+/** The reviewed operation callback discriminants. */
+const OPERATION_CALLBACK_TYPES: ReadonlySet<string> = new Set([
+	"accepted",
+	"queued",
+	"started",
+	"progress",
+	"attention",
+	"completed",
+	"failed",
+	"outcome_unknown",
+]);
+
+/** The three workhorse operations a callback may report. */
+const CALLBACK_OPERATIONS: ReadonlySet<string> = new Set([
+	"delegate_to_workhorse",
+	"manage_workhorse_queue",
+	"steer_workhorse",
+]);
+
 /**
- *
+ * Refuse an operation callback whose outcome does not follow from its type: only `failed` chooses
+ * its own outcome, and every other type asserts one fixed outcome.
+ * @param callback - The operation callback.
+ */
+function assertOutcomeMatchesType(
+	callback: Extract<CoordinatorCallback, { kind: "operation" }>,
+): void {
+	const expected =
+		callback.type === "accepted"
+			? "pending"
+			: callback.type === "outcome_unknown"
+				? "outcome_unknown"
+				: callback.type === "failed"
+					? callback.outcome
+					: "delivered";
+	if (callback.outcome !== expected) {
+		throw new TypeError("Operation callback discriminant and outcome do not match.");
+	}
+}
+
+/** The wire RPC each turn-level operation is delivered by. */
+const TURN_RPC_BY_OPERATION: Readonly<Record<"delegate_to_workhorse" | "steer_workhorse", string>> =
+	Object.freeze({
+		delegate_to_workhorse: "turn/start",
+		steer_workhorse: "turn/steer",
+	});
+
+/**
+ * Refuse an operation callback whose wire RPC does not follow from its operation, and a non-queue
+ * callback that nevertheless names a queue operation.
+ * @param callback - The operation callback.
+ */
+function assertRpcMatchesOperation(
+	callback: Extract<CoordinatorCallback, { kind: "operation" }>,
+): void {
+	if (callback.operation === "manage_workhorse_queue") {
+		if (callback.rpc !== queueRpc(callback.queueOperation)) {
+			throw new TypeError("Operation callback queue tuple does not match.");
+		}
+		return;
+	}
+	if (callback.queueOperation !== null) {
+		throw new TypeError("Non-queue callback has a queue operation.");
+	}
+	if (callback.rpc !== TURN_RPC_BY_OPERATION[callback.operation]) {
+		throw new TypeError("Turn callback RPC does not match its operation.");
+	}
+}
+
+/**
+ * Encode an operation callback as its closed document, refusing anything whose type, outcome,
+ * operation and RPC do not agree with each other.
+ * @param callback - The normalized operation callback.
+ * @returns The encodable document.
+ */
+function operationCallbackDocument(callback: Extract<CoordinatorCallback, { kind: "operation" }>) {
+	requireExactKeys(callback, OPERATION_CALLBACK_KEYS);
+	if (!OPERATION_CALLBACK_TYPES.has(callback.type)) {
+		throw new TypeError("Unknown operation callback discriminant.");
+	}
+	if (!CALLBACK_OPERATIONS.has(callback.operation)) {
+		throw new TypeError("Unknown callback operation.");
+	}
+	assertOutcomeMatchesType(callback);
+	assertRpcMatchesOperation(callback);
+	return {
+		schema: CALLBACK_SCHEMA,
+		kind: callback.kind,
+		type: callback.type,
+		operation: callback.operation,
+		queueOperation: callback.queueOperation,
+		rpc: callback.rpc,
+		outcome: callback.outcome,
+		correlation: correlation(callback.correlation),
+		queuedSubmissionIds: requireArray(callback.queuedSubmissionIds, CALLBACK_MAX_ID_UTF8_BYTES),
+		detail: requireString(callback.detail),
+	};
+}
+
+/**
+ * Encode one normalized callback as the closed document that goes on the wire, refusing anything
+ * whose fields do not agree with each other.
+ * @param callback - The normalized callback.
+ * @returns The encodable document.
  */
 function callbackDocument(callback: CoordinatorCallback) {
 	if (callback.kind === "operation") {
-		requireExactKeys(callback, [
-			"kind",
-			"type",
-			"operation",
-			"queueOperation",
-			"rpc",
-			"outcome",
-			"correlation",
-			"queuedSubmissionIds",
-			"detail",
-		]);
-		if (
-			![
-				"accepted",
-				"queued",
-				"started",
-				"progress",
-				"attention",
-				"completed",
-				"failed",
-				"outcome_unknown",
-			].includes(callback.type)
-		) {
-			throw new TypeError("Unknown operation callback discriminant.");
-		}
-		if (
-			!["delegate_to_workhorse", "manage_workhorse_queue", "steer_workhorse"].includes(
-				callback.operation,
-			)
-		) {
-			throw new TypeError("Unknown callback operation.");
-		}
-		const expectedOutcome =
-			callback.type === "accepted"
-				? "pending"
-				: callback.type === "outcome_unknown"
-					? "outcome_unknown"
-					: callback.type === "failed"
-						? callback.outcome
-						: "delivered";
-		if (callback.outcome !== expectedOutcome) {
-			throw new TypeError("Operation callback discriminant and outcome do not match.");
-		}
-		if (callback.operation === "manage_workhorse_queue") {
-			const expectedRpc = queueRpc(callback.queueOperation);
-			if (expectedRpc === null || callback.rpc !== expectedRpc) {
-				throw new TypeError("Operation callback queue tuple does not match.");
-			}
-		} else if (callback.queueOperation !== null) {
-			throw new TypeError("Non-queue callback has a queue operation.");
-		}
-		if (callback.operation === "delegate_to_workhorse" && callback.rpc !== "turn/start") {
-			throw new TypeError("Delegate callback RPC does not match.");
-		}
-		if (callback.operation === "steer_workhorse" && callback.rpc !== "turn/steer") {
-			throw new TypeError("Steer callback RPC does not match.");
-		}
-		return {
-			schema: CALLBACK_SCHEMA,
-			kind: callback.kind,
-			type: callback.type,
-			operation: callback.operation,
-			queueOperation: callback.queueOperation,
-			rpc: callback.rpc,
-			outcome: callback.outcome,
-			correlation: correlation(callback.correlation),
-			queuedSubmissionIds: requireArray(callback.queuedSubmissionIds, CALLBACK_MAX_ID_UTF8_BYTES),
-			detail: requireString(callback.detail),
-		};
+		return operationCallbackDocument(callback);
 	}
 	requireExactKeys(callback, [
 		"kind",
@@ -384,7 +455,9 @@ function callbackDocument(callback: CoordinatorCallback) {
 }
 
 /**
- *
+ * Serialize a value with object keys in sorted order, so the same callback always produces byte-identical text and can be compared and deduplicated as a string.
+ * @param value - The value to serialize.
+ * @returns The canonical JSON text.
  */
 function canonicalJson(value: unknown): string {
 	if (value === null || typeof value !== "object") {
@@ -400,7 +473,10 @@ function canonicalJson(value: unknown): string {
 }
 
 /**
- *
+ * Encode one callback as the canonical JSON the coordinator receives, refusing anything past the message limit rather than truncating it.
+ * @param callback - The normalized callback.
+ * @returns The canonical JSON text.
+ * @throws {TypeError} When the encoded callback exceeds its UTF-8 message limit.
  */
 function encodeCoordinatorCallback(callback: CoordinatorCallback): string {
 	const text = canonicalJson(callbackDocument(callback));
