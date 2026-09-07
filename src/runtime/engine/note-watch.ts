@@ -152,6 +152,20 @@ function lookIsCurrent(
 }
 
 /**
+ * The note this board is watching, when there is one worth watching.
+ *
+ * A board that has stopped saving is not watched: the hold is this state one
+ * step further on and says more about it.
+ * @param board The board to look at.
+ * @returns Its key and note path, or null.
+ */
+function watchedNoteOf(board: string): { key: string; file: string } | null {
+	const key = normalizeBoardKey(board);
+	const state = boards.get(key);
+	return state?.file && !holdOn(key) ? { key, file: state.file } : null;
+}
+
+/**
  * Who wrote this note last, if it was not archboard.
  *
  * The answer to send a pane, and the whole of what this module knows. Null for
@@ -162,30 +176,24 @@ function lookIsCurrent(
  * @returns The mark to send a pane, or null when there is nothing to say.
  */
 function noteWrittenElsewhere(board: string): NoteWrittenElsewhere | null {
-	const key = normalizeBoardKey(board);
-	const state = boards.get(key);
-	if (!state?.file || holdOn(key)) {
+	const watched = watchedNoteOf(board);
+	if (!watched) {
 		return null;
 	}
-
-	const file = state.file;
+	const { key, file } = watched;
 	const stat = statNote(file);
 	if (stat === null) {
 		looks().delete(key);
 		return null;
 	}
-
 	// The baseline is half of the comparison, so it is half of the gate.
 	const baselineHash = baselineHashFor(file);
 	const seen = looks().get(key);
 	if (lookIsCurrent(seen, file, stat, baselineHash)) {
 		return seen.answer;
 	}
-
-	let bytes: Buffer;
-	try {
-		bytes = fs.readFileSync(file);
-	} catch {
+	const bytes = readNoteBytes(file);
+	if (bytes === null) {
 		looks().delete(key);
 		return null;
 	}
@@ -234,6 +242,35 @@ function forgetNoteWatch(): void {
 }
 
 /**
+ * Read a note's bytes, where it is still readable.
+ * @param file The note's path.
+ * @returns The bytes, or null when the read failed.
+ */
+function readNoteBytes(file: string): Buffer | null {
+	try {
+		return fs.readFileSync(file);
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Whether one board's baseline is a newer look at this note than the best one
+ * found so far.
+ * @param baseline The board's baseline, if it has one.
+ * @param file The note's path.
+ * @param best The newest baseline found so far.
+ * @returns True when this one is newer.
+ */
+function isNewerBaseline(
+	baseline: { file: string; at: string } | undefined,
+	file: string,
+	best: { at: string } | null,
+): boolean {
+	return baseline?.file === file && (best === null || baseline.at > best.at);
+}
+
+/**
  * The hash of what archboard most recently wrote to a note, across every board
  * state that names that file.
  * @param file The note's path.
@@ -242,9 +279,8 @@ function forgetNoteWatch(): void {
 function baselineHashFor(file: string): string {
 	let best: { hash: string; at: string } | null = null;
 	for (const board of boards.values()) {
-		const baseline = board.baseline;
-		if (baseline?.file === file && (best === null || baseline.at > best.at)) {
-			best = baseline;
+		if (isNewerBaseline(board.baseline, file, best)) {
+			best = board.baseline ?? best;
 		}
 	}
 	return best?.hash ?? "";
