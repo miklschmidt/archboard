@@ -18,7 +18,7 @@ import path from "node:path";
 import { VAULT_STATE_DIR } from "@/runtime/engine/board";
 import { writeFileAtomic } from "@/runtime/engine/atomic-write";
 import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 
 // The v2 library item, which is what both this store and Excalidraw speak.
 // `elements` is deliberately loose: they are Excalidraw elements, we never

@@ -133,7 +133,7 @@ function drainBounded(
 		let error: Error | undefined;
 		try {
 			for (;;) {
-				// oxlint-disable-next-line eslint(no-await-in-loop) -- a stream is read one chunk after another
+				// oxlint-disable-next-line no-await-in-loop -- a stream is read one chunk after another
 				const { done, value } = await reader.read();
 				if (done) {
 					break;
@@ -180,7 +180,7 @@ async function processGroupDisappeared(pgid: number): Promise<boolean> {
 		if (Date.now() >= deadline) {
 			return false;
 		}
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- polling one interval at a time
+		// oxlint-disable-next-line no-await-in-loop -- polling one interval at a time
 		await new Promise((resolve) => setTimeout(resolve, GIT_PROCESS_GROUP_POLL_MS));
 	}
 }

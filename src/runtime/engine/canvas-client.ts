@@ -1,4 +1,4 @@
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import type { SelectionReport } from "@/runtime/engine/describe";
 import type { PanesReport } from "@/runtime/engine/panes";
 import type { ServerElement } from "@/runtime/engine/types";

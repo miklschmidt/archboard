@@ -42,7 +42,7 @@ function renderContent(
 		// buildScene types the scene as the generic record Excalidraw reads, but its
 		// elements are the expanded copies of the ServerElements handed in above
 		// with the server fields kept, so they are board elements by construction.
-		// oxlint-disable-next-line typescript(no-unsafe-type-assertion) -- see above: expanded copies of this board's own elements
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see above: expanded copies of this board's own elements
 		(scene["elements"] as ServerElement[]).map(packElementTracking),
 		{ boardKey: boardKey(identity) },
 	);
