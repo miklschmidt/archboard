@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const oxlint = path.join(repoRoot, "node_modules/.bin/oxlint");
-const plugin = path.join(repoRoot, "tools/oxlint-plugin-archboard.js");
+const plugin = path.join(repoRoot, "tools/oxlint-plugin-archboard.ts");
 
 interface CommandResult {
 	exitCode: number;
@@ -32,7 +32,7 @@ function run(cwd: string, cmd: string[]): CommandResult {
 
 function repositoryOxlintConfig(): string {
 	const authored = fs.readFileSync(path.join(repoRoot, ".oxlintrc.baseline.jsonc"), "utf8");
-	const relativePlugin = '"./tools/oxlint-plugin-archboard.js"';
+	const relativePlugin = '"./tools/oxlint-plugin-archboard.ts"';
 	if (!authored.includes(relativePlugin)) {
 		throw new Error("repository Oxlint plugin path is missing");
 	}

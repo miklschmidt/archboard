@@ -1,21 +1,34 @@
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
 import type { BinaryFiles } from "@excalidraw/excalidraw/types";
 
-import { projectPreviewSnapshot } from "../src/ui/board-preview/index.js";
-import { readNote } from "../src/runtime/engine/board-io.js";
-import { isBlockId } from "../src/shared/ids/ids.js";
+import { projectPreviewSnapshot } from "@/ui/board-preview";
+import { readNote } from "@/runtime/engine/board-io";
+import { isBlockId } from "@/shared/ids/ids";
+import {
+	importDependency,
+	installDom,
+	isRecord,
+	registerFonts,
+	requireFunction,
+	type JsonRecord,
+	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
+} from "./probe-server-rendering-emulation/emulated-dom.ts";
 
 const root = resolve(import.meta.dir, "..");
 const fixtureRoot = resolve(root, "docs/design/server-rendering-boundary-fixtures");
 const fixtureNote = join(fixtureRoot, "board.excalidraw.md");
 const manifest = join(fixtureRoot, "emulation/package.json");
 const lockfile = join(fixtureRoot, "emulation/bun.lock");
+const fontDirectory = join(root, "node_modules/@excalidraw/excalidraw/dist/dev/fonts/Excalifont");
 const installTimeoutMs = 20_000;
 const cleanupTimeoutMs = 5_000;
 
+/**
+ * Refuse to run without every fixture the emulation reads.
+ * @throws {Error} When a fixture file is absent.
+ */
 function requirePreflight(): void {
 	for (const file of [fixtureNote, manifest, lockfile, join(fixtureRoot, "diagram.mmd")]) {
 		if (!existsSync(file)) {
@@ -24,6 +37,12 @@ function requirePreflight(): void {
 	}
 }
 
+/**
+ * The disposable report directory this proof owns.
+ * @param argv The command-line arguments, which must be empty.
+ * @returns A fresh temporary directory.
+ * @throws {Error} When arguments were passed.
+ */
 function ownedOutputDirectory(argv: readonly string[]): string {
 	if (argv.length > 0) {
 		throw new Error(
@@ -33,25 +52,47 @@ function ownedOutputDirectory(argv: readonly string[]): string {
 	return mkdtempSync(join(tmpdir(), "archboard-server-rendering-emulation-proof-"));
 }
 
+/**
+ * Whether a persisted file entry is a complete PNG export file under its id.
+ * @param id The file id it is stored under.
+ * @param file The persisted file record.
+ * @returns Whether every export field is present and consistent.
+ */
+function isPngExportFile(id: string, file: JsonRecord): boolean {
+	const dataUrl = file["dataURL"];
+	return (
+		file["id"] === id &&
+		file["mimeType"] === "image/png" &&
+		typeof dataUrl === "string" &&
+		dataUrl.startsWith("data:image/png;base64,") &&
+		typeof file["created"] === "number"
+	);
+}
+
+/**
+ * Validate persisted files as Excalidraw export files.
+ * @param files The persisted files keyed by id.
+ * @returns The same files typed for export.
+ * @throws {Error} When any file is incomplete.
+ */
 function exportFiles(files: Record<string, unknown>): BinaryFiles {
 	for (const [id, raw] of Object.entries(files)) {
-		if (!raw || typeof raw !== "object") {
+		if (!isRecord(raw)) {
 			throw new Error(`Persisted file ${id} is invalid.`);
 		}
-		const file = raw as Record<string, unknown>;
-		if (
-			file["id"] !== id ||
-			file["mimeType"] !== "image/png" ||
-			typeof file["dataURL"] !== "string" ||
-			!file["dataURL"].startsWith("data:image/png;base64,") ||
-			typeof file["created"] !== "number"
-		) {
+		if (!isPngExportFile(id, raw)) {
 			throw new Error(`Persisted file ${id} is not a complete PNG export file.`);
 		}
 	}
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- every entry was validated above; Excalidraw brands FileId and DataURL nominally
 	return files as unknown as BinaryFiles;
 }
 
+/**
+ * The canonical persisted board projected to a render input.
+ * @returns The elements, files and app state the export functions take.
+ * @throws {Error} When the fixture cannot be read or is not the expected board.
+ */
 function fixtureInput(): Record<string, unknown> {
 	const content = readNote(fixtureNote);
 	if (!content) {
@@ -77,6 +118,28 @@ function fixtureInput(): Record<string, unknown> {
 	};
 }
 
+/**
+ * Stop a child that outlived its deadline: SIGTERM, then SIGKILL.
+ * @param child The child to stop.
+ */
+async function stopChild(child: Bun.Subprocess): Promise<void> {
+	if (child.exitCode === null) {
+		child.kill("SIGTERM");
+	}
+	await Promise.race([child.exited, Bun.sleep(cleanupTimeoutMs - 1_000)]);
+	if (child.exitCode === null) {
+		child.kill("SIGKILL");
+	}
+	await Promise.race([child.exited, Bun.sleep(1_000)]);
+}
+
+/**
+ * Install the emulation dependencies from the tracked manifest and lockfile
+ * into a disposable directory.
+ * @param directory The directory to install into.
+ * @returns The installer's output.
+ * @throws {Error} When the install fails or exceeds its timeout.
+ */
 async function install(directory: string): Promise<{ stdout: string; stderr: string }> {
 	mkdirSync(directory);
 	await Bun.write(join(directory, "package.json"), readFileSync(manifest));
@@ -87,8 +150,8 @@ async function install(directory: string): Promise<{ stdout: string; stderr: str
 		stdout: "pipe",
 		stderr: "pipe",
 	});
-	const stdout = new Response(child.stdout as ReadableStream<Uint8Array>).text();
-	const stderr = new Response(child.stderr as ReadableStream<Uint8Array>).text();
+	const stdout = new Response(child.stdout).text();
+	const stderr = new Response(child.stderr).text();
 	let timeout: ReturnType<typeof setTimeout> | undefined;
 	try {
 		await Promise.race([
@@ -104,14 +167,7 @@ async function install(directory: string): Promise<{ stdout: string; stderr: str
 			}),
 		]);
 	} catch (error) {
-		if (child.exitCode === null) {
-			child.kill("SIGTERM");
-		}
-		await Promise.race([child.exited, Bun.sleep(cleanupTimeoutMs - 1_000)]);
-		if (child.exitCode === null) {
-			child.kill("SIGKILL");
-		}
-		await Promise.race([child.exited, Bun.sleep(1_000)]);
+		await stopChild(child);
 		throw error;
 	} finally {
 		if (timeout) {
@@ -125,175 +181,103 @@ async function install(directory: string): Promise<{ stdout: string; stderr: str
 	return output;
 }
 
-function fontFiles(directory: string): string[] {
-	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-		const path = join(directory, entry.name);
-		if (entry.isDirectory()) {
-			return fontFiles(path);
-		}
-		return path.endsWith(".woff2") ? [path] : [];
-	});
-}
-
-interface GlobalRestore {
-	installed: string[];
-	restore(): boolean;
-}
-
-function installDom(
-	window: Record<string, unknown>,
-	canvas: Record<string, unknown>,
-): GlobalRestore {
-	if (!window["FontFace"]) {
-		window["FontFace"] = class FontFace {
-			readonly style: string;
-			readonly weight: string;
-			readonly stretch: string;
-			readonly unicodeRange: string;
-			readonly status = "loaded";
-			constructor(
-				readonly family: string,
-				readonly source: string,
-				readonly descriptors: Record<string, string> = {},
-			) {
-				this.style = descriptors["style"] ?? "normal";
-				this.weight = descriptors["weight"] ?? "normal";
-				this.stretch = descriptors["stretch"] ?? "normal";
-				this.unicodeRange = descriptors["unicodeRange"] ?? "U+0-10FFFF";
-			}
-			async load(): Promise<this> {
-				return this;
-			}
+/**
+ * Capture console output during the render so stray diagnostics fail the proof.
+ * @param sink Receives each captured line.
+ * @returns The step that restores the real console.
+ */
+function captureConsole(sink: string[]): () => void {
+	const original = { log: console.log, warn: console.warn, error: console.error };
+	for (const method of ["log", "warn", "error"] as const) {
+		/**
+		 * Record a console call instead of printing it.
+		 * @param values The logged values.
+		 */
+		console[method] = (...values: unknown[]) => {
+			sink.push(`${method}: ${values.map(String).join(" ")}`.slice(0, 1_000));
 		};
 	}
-	const document = window["document"] as Record<string, unknown>;
-	const faces = new Set<unknown>();
-	document["fonts"] = {
-		add: (face: unknown) => faces.add(face),
-		has: (face: unknown) => faces.has(face),
-		delete: (face: unknown) => faces.delete(face),
-		clear: () => faces.clear(),
-		check: () => true,
-		ready: Promise.resolve(),
+	return () => {
+		Object.assign(console, original);
 	};
-	const names = [
-		"window",
-		"document",
-		"navigator",
-		"HTMLElement",
-		"HTMLCanvasElement",
-		"HTMLImageElement",
-		"SVGElement",
-		"SVGSVGElement",
-		"CSSStyleSheet",
-		"CSSStyleDeclaration",
-		"Element",
-		"Node",
-		"Document",
-		"DOMParser",
-		"XMLSerializer",
-		"getComputedStyle",
-		"requestAnimationFrame",
-		"cancelAnimationFrame",
-		"ResizeObserver",
-		"MutationObserver",
-		"CustomEvent",
-		"Event",
-		"EventTarget",
-		"File",
-		"FileReader",
-		"FontFace",
-		"localStorage",
-		"sessionStorage",
-		"location",
-		"matchMedia",
-		"devicePixelRatio",
-	];
-	const before = new Map(
-		names.map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
-	);
-	const backing = new WeakMap<object, Record<string, unknown>>();
-	const createCanvas = canvas["createCanvas"] as (
-		width: number,
-		height: number,
-	) => Record<string, unknown>;
-	const nativeFor = (element: Record<string, unknown>) => {
-		const present = backing.get(element);
-		if (present) {
-			return present;
-		}
-		const native = createCanvas(Number(element["width"]) || 300, Number(element["height"]) || 150);
-		Object.assign(native, {
-			setAttribute: () => undefined,
-			removeAttribute: () => undefined,
-			style: {},
-		});
-		backing.set(element, native);
-		return native;
-	};
-	const htmlCanvas = window["HTMLCanvasElement"] as { prototype: Record<string, unknown> };
-	Object.assign(htmlCanvas.prototype, {
-		getContext(this: Record<string, unknown>, type: string, ...args: unknown[]) {
-			const context = (
-				nativeFor(this)["getContext"] as (...values: unknown[]) => Record<string, unknown>
-			)(type, ...args);
-			return context;
-		},
-		toDataURL(this: Record<string, unknown>, type = "image/png") {
-			return (nativeFor(this)["toDataURL"] as (mime: string) => string)(type);
-		},
-		toBlob(this: Record<string, unknown>, callback: (blob: Blob) => void, type = "image/png") {
-			const buffer = (nativeFor(this)["toBuffer"] as (mime: string) => Uint8Array)(type);
-			const copy = new ArrayBuffer(buffer.byteLength);
-			new Uint8Array(copy).set(buffer);
-			callback(new Blob([copy], { type }));
-		},
-	});
-	for (const name of names) {
-		const replacement = window[name];
-		if (replacement !== undefined) {
-			Object.defineProperty(globalThis, name, {
-				configurable: true,
-				writable: true,
-				value: replacement,
-			});
-		}
+}
+
+/**
+ * The name of a thrown value.
+ * @param error The caught value.
+ * @returns The error's name, or the value as text.
+ */
+function errorName(error: unknown): string {
+	return error instanceof Error ? error.name : String(error);
+}
+
+/**
+ * Convert the fixture diagram and a malformed one through Mermaid, recording
+ * how each is handled.
+ * @returns The valid element count and the malformed diagram's outcome.
+ */
+async function probeMermaid(): Promise<{ validElementCount: number; malformed: string }> {
+	const { DEFAULT_MERMAID_CONFIG } = await import("@/server/board-rendering");
+	const { parseMermaidToExcalidraw } = await import("@excalidraw/mermaid-to-excalidraw");
+	const diagram = readFileSync(join(fixtureRoot, "diagram.mmd"), "utf8");
+	const valid = await parseMermaidToExcalidraw(diagram, DEFAULT_MERMAID_CONFIG);
+	let malformed = "accepted";
+	try {
+		await parseMermaidToExcalidraw("flowchart LR\n  invalid[", DEFAULT_MERMAID_CONFIG);
+	} catch (error) {
+		malformed = errorName(error);
 	}
-	for (const [name, replacement] of Object.entries({
-		Image: canvas["Image"],
-		Path2D: canvas["Path2D"],
-		ImageData: canvas["ImageData"],
-		CanvasRenderingContext2D: canvas["CanvasRenderingContext2D"],
-	})) {
-		before.set(name, Object.getOwnPropertyDescriptor(globalThis, name));
-		Object.defineProperty(globalThis, name, {
-			configurable: true,
-			writable: true,
-			value: replacement,
-		});
-	}
+	return { validElementCount: valid.elements.length, malformed };
+}
+
+interface ExportEvidence {
+	pngBytes: number;
+	svgBytes: number;
+	hasLabel: boolean;
+	hasImage: boolean;
+}
+
+/**
+ * Export the canonical board to PNG and SVG through Excalidraw.
+ * @returns What the exports contained.
+ */
+async function exportFixture(): Promise<ExportEvidence> {
+	const { exportToBlob, exportToSvg } = await import("@excalidraw/excalidraw");
+	const rawInput = fixtureInput();
+	// The persisted fixture is fully validated above; this boundary restores Excalidraw's nominal element brands after deserialization.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- see the line above
+	const input = rawInput as Parameters<typeof exportToBlob>[0] & Parameters<typeof exportToSvg>[0];
+	const png = await exportToBlob({ ...input, mimeType: "image/png" });
+	const svg = new XMLSerializer().serializeToString(await exportToSvg(input));
 	return {
-		installed: [...before.keys()],
-		restore: () => {
-			for (const [name, descriptor] of before) {
-				if (descriptor) {
-					Object.defineProperty(globalThis, name, descriptor);
-				} else {
-					Reflect.deleteProperty(globalThis, name);
-				}
-			}
-			return [...before].every(([name, descriptor]) => {
-				const restored = Object.getOwnPropertyDescriptor(globalThis, name);
-				return JSON.stringify(restored) === JSON.stringify(descriptor);
-			});
-		},
+		pngBytes: png.size,
+		svgBytes: svg.length,
+		hasLabel: svg.includes("Service API"),
+		hasImage: svg.includes("data:image/png;base64"),
 	};
+}
+
+/**
+ * Export the canonical board under the emulated DOM and reproduce the Mermaid gap.
+ * @returns The export and Mermaid evidence.
+ * @throws {Error} When the render or the Mermaid gap is not as expected.
+ */
+async function renderUnderEmulation(): Promise<JsonRecord> {
+	const exported = await exportFixture();
+	const mermaid = await probeMermaid();
+	if (exported.pngBytes < 1 || !exported.hasLabel || !exported.hasImage) {
+		throw new Error("Emulation did not render the canonical board fixture.");
+	}
+	if (mermaid.validElementCount !== 0 || mermaid.malformed === "accepted") {
+		throw new Error(`Emulation no longer reproduces the Mermaid gap: ${JSON.stringify(mermaid)}`);
+	}
+	return { export: exported, mermaid };
 }
 
 const output = ownedOutputDirectory(Bun.argv.slice(2));
 const dependencyRoot = join(output, "dependencies");
 const reportPath = join(output, "report.json");
-let report: Record<string, unknown> = {
+let report: JsonRecord = {
 	status: "failed",
 	output: { directory: output, disposable: true },
 };
@@ -302,97 +286,43 @@ let failure: unknown = null;
 try {
 	requirePreflight();
 	const installed = await install(dependencyRoot);
-	const happy = (await import(
-		pathToFileURL(join(dependencyRoot, "node_modules/happy-dom/lib/index.js")).href
-	)) as {
-		Window: new (options?: Record<string, unknown>) => Record<string, unknown>;
-	};
-	const canvas = (await import(
-		pathToFileURL(join(dependencyRoot, "node_modules/@napi-rs/canvas/index.js")).href
-	)) as Record<string, unknown>;
-	const window = new happy.Window({ url: "http://archboard.local/" });
-	const globals = installDom(window, canvas);
-	const fonts = fontFiles(
-		join(root, "node_modules/@excalidraw/excalidraw/dist/dev/fonts/Excalifont"),
-	);
-	const fontRegistry = canvas["GlobalFonts"] as {
-		registerFromPath(path: string, family: string): boolean;
-		removeAll(): void;
-	};
-	const registeredFonts = fonts.filter((font) => fontRegistry.registerFromPath(font, "Excalifont"));
-	if (fonts.length === 0 || registeredFonts.length !== fonts.length) {
-		throw new Error(
-			`Emulation font preflight failed: discovered ${fonts.length}, registered ${registeredFonts.length}.`,
-		);
+	const happy = await importDependency(dependencyRoot, "happy-dom/lib/index.js");
+	const canvas = await importDependency(dependencyRoot, "@napi-rs/canvas/index.js");
+	const window = Reflect.construct(requireFunction(happy, "Window"), [
+		{ url: "http://archboard.local/" },
+	]);
+	if (!isRecord(window)) {
+		throw new Error("happy-dom did not construct a window.");
 	}
+	const globals = installDom(window, canvas);
+	const fonts = registerFonts(canvas, fontDirectory);
 	report = {
 		status: "running",
 		output: { directory: output, disposable: true },
 		dependencyManifest: manifest,
 		install: { stdout: installed.stdout.slice(-2_000), stderr: installed.stderr.slice(-2_000) },
 		globals: { installed: globals.installed, restored: false },
-		fonts: { discovered: fonts.length, registered: registeredFonts.length },
+		fonts: { discovered: fonts.discovered, registered: fonts.registered },
 	};
 	const runtimeConsole: string[] = [];
-	const originalConsole = Object.fromEntries(
-		(["log", "warn", "error"] as const).map((method) => [method, console[method]]),
-	) as Pick<Console, "log" | "warn" | "error">;
-	for (const method of ["log", "warn", "error"] as const) {
-		console[method] = (...values: unknown[]) => {
-			runtimeConsole.push(`${method}: ${values.map(String).join(" ")}`.slice(0, 1_000));
-		};
-	}
+	const releaseConsole = captureConsole(runtimeConsole);
 	let renderFailure: unknown = null;
+	let restored = false;
 	try {
-		const { exportToBlob, exportToSvg } = await import("@excalidraw/excalidraw");
-		const { DEFAULT_MERMAID_CONFIG } = await import("../src/server/board-rendering/index.js");
-		const { parseMermaidToExcalidraw } = await import("@excalidraw/mermaid-to-excalidraw");
-		const rawInput = fixtureInput();
-		// The persisted fixture is fully validated above; this boundary restores Excalidraw's nominal element brands after deserialization.
-		const input = rawInput as Parameters<typeof exportToBlob>[0] &
-			Parameters<typeof exportToSvg>[0];
-		const png = await exportToBlob({ ...input, mimeType: "image/png" });
-		const svg = new XMLSerializer().serializeToString(await exportToSvg(input));
-		const diagram = readFileSync(join(fixtureRoot, "diagram.mmd"), "utf8");
-		const valid = await parseMermaidToExcalidraw(diagram, DEFAULT_MERMAID_CONFIG);
-		let malformed = "accepted";
-		try {
-			await parseMermaidToExcalidraw("flowchart LR\n  invalid[", DEFAULT_MERMAID_CONFIG);
-		} catch (error) {
-			malformed = error instanceof Error ? error.name : String(error);
-		}
-		report = {
-			...report,
-			status: "passed",
-			export: {
-				pngBytes: png.size,
-				svgBytes: svg.length,
-				hasLabel: svg.includes("Service API"),
-				hasImage: svg.includes("data:image/png;base64"),
-			},
-			mermaid: { validElementCount: valid.elements.length, malformed },
-		};
-		if (png.size < 1 || !svg.includes("Service API") || !svg.includes("data:image/png;base64")) {
-			throw new Error("Emulation did not render the canonical board fixture.");
-		}
-		if (valid.elements.length !== 0 || malformed === "accepted") {
-			throw new Error(
-				`Emulation no longer reproduces the Mermaid gap: ${JSON.stringify(report["mermaid"])}`,
-			);
-		}
+		report = { ...report, status: "passed", ...(await renderUnderEmulation()) };
 		if (runtimeConsole.length > 0) {
 			throw new Error(`Emulation emitted runtime diagnostics: ${JSON.stringify(runtimeConsole)}`);
 		}
 	} catch (error) {
 		renderFailure = error;
 	} finally {
-		Object.assign(console, originalConsole);
-		fontRegistry.removeAll();
-		const restored = globals.restore();
-		(report["globals"] as Record<string, unknown>)["restored"] = restored;
+		releaseConsole();
+		fonts.removeAll();
+		restored = globals.restore();
+		report["globals"] = { installed: globals.installed, restored };
 		report["runtimeConsole"] = runtimeConsole.slice(-20);
 	}
-	if (!(report["globals"] as Record<string, unknown>)["restored"]) {
+	if (!restored) {
 		throw new Error("Emulation did not restore every installed global.");
 	}
 	if (renderFailure) {

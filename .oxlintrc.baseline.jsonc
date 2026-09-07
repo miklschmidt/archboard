@@ -14,7 +14,7 @@
 		"react",
 		"react-perf",
 	],
-	"jsPlugins": ["./tools/oxlint-plugin-archboard.js"],
+	"jsPlugins": ["./tools/oxlint-plugin-archboard.ts"],
 	"env": {
 		"browser": true,
 		"node": true,
