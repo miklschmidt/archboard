@@ -20,6 +20,11 @@ interface StreamReaderAttachment {
 	readonly dispose: () => void;
 }
 
+/**
+ * Normalises whatever a stream delivers into bytes plus their UTF-8 text.
+ * @param chunk The data event payload; streams may hand out strings, Buffers or byte arrays.
+ * @returns The bytes and their decoded text.
+ */
 function toBuffer(chunk: unknown): { readonly buffer: Buffer; readonly text: string } {
 	if (typeof chunk === "string") {
 		const buffer = Buffer.from(chunk, "utf8");
@@ -36,7 +41,22 @@ function toBuffer(chunk: unknown): { readonly buffer: Buffer; readonly text: str
 	return { buffer: Buffer.from(text, "utf8"), text };
 }
 
-/** Install bounded stdout framing and an independently flowing stderr drain. */
+/**
+ * Strips the carriage return a CRLF line leaves before its newline.
+ * @param line The line bytes without the newline.
+ * @returns The line without a trailing carriage return.
+ */
+function withoutCarriageReturn(line: Buffer): Buffer {
+	return line.at(-1) === 0x0d ? line.subarray(0, line.byteLength - 1) : line;
+}
+
+/**
+ * Installs bounded newline framing on stdout and an independently flowing stderr drain.
+ * @param stdout The child's stdout, read as JSON lines.
+ * @param stderr The child's stderr, forwarded as diagnostic text.
+ * @param handlers What to do with lines, chunks, ends and faults.
+ * @returns A handle that detaches every listener once.
+ */
 function attachCodexStreamReader(
 	stdout: Readable,
 	stderr: Readable,
@@ -47,6 +67,7 @@ function attachCodexStreamReader(
 	let stdoutFinished = false;
 	let failed = false;
 
+	/** Reports the first over-long line and stops reading; the transport closes on it. */
 	const failOversized = (): void => {
 		if (disposed || failed) {
 			return;
@@ -61,6 +82,37 @@ function attachCodexStreamReader(
 		handlers.onFrameTooLarge();
 	};
 
+	/**
+	 * Keeps a chunk's trailing partial line for the next chunk, within the partial-frame bound.
+	 * @param tail The bytes after the last newline.
+	 */
+	const retainPartial = (tail: Buffer): void => {
+		if (stdoutBuffer.byteLength + tail.byteLength > CODEX_APP_SERVER_CAPACITY.partialFrameBytes) {
+			failOversized();
+		} else {
+			stdoutBuffer = Buffer.concat([stdoutBuffer, tail]);
+		}
+	};
+
+	/**
+	 * Completes a line from the retained partial plus the bytes up to a newline.
+	 * @param part The bytes of the current chunk before the newline.
+	 * @returns False when the completed line breached the bound and reading stopped.
+	 */
+	const completeLine = (part: Buffer): boolean => {
+		if (stdoutBuffer.byteLength + part.byteLength > CODEX_APP_SERVER_CAPACITY.partialFrameBytes) {
+			failOversized();
+			return false;
+		}
+		handlers.onLine(withoutCarriageReturn(Buffer.concat([stdoutBuffer, part])));
+		stdoutBuffer = Buffer.alloc(0);
+		return true;
+	};
+
+	/**
+	 * Splits a stdout chunk into complete lines, retaining any trailing partial line.
+	 * @param chunk The data event payload.
+	 */
 	const consumeStdout = (chunk: unknown): void => {
 		if (disposed || failed) {
 			return;
@@ -70,34 +122,17 @@ function attachCodexStreamReader(
 		while (offset < buffer.byteLength) {
 			const newline = buffer.indexOf(0x0a, offset);
 			if (newline < 0) {
-				const tail = buffer.subarray(offset);
-				if (
-					stdoutBuffer.byteLength + tail.byteLength >
-					CODEX_APP_SERVER_CAPACITY.partialFrameBytes
-				) {
-					failOversized();
-				} else {
-					stdoutBuffer = Buffer.concat([stdoutBuffer, tail]);
-				}
+				retainPartial(buffer.subarray(offset));
 				return;
 			}
-			const part = buffer.subarray(offset, newline);
-			const complete = stdoutBuffer.byteLength + part.byteLength;
-			if (complete > CODEX_APP_SERVER_CAPACITY.partialFrameBytes) {
-				failOversized();
+			if (!completeLine(buffer.subarray(offset, newline))) {
 				return;
-			} else {
-				let line = Buffer.concat([stdoutBuffer, part]);
-				if (line.at(-1) === 0x0d) {
-					line = line.subarray(0, line.byteLength - 1);
-				}
-				handlers.onLine(line);
-				stdoutBuffer = Buffer.alloc(0);
 			}
 			offset = newline + 1;
 		}
 	};
 
+	/** Reports a dangling partial frame, then tells the transport stdout is over. */
 	const finishStdout = (): void => {
 		if (disposed || stdoutFinished) {
 			return;
@@ -116,6 +151,11 @@ function attachCodexStreamReader(
 		stdoutBuffer = Buffer.alloc(0);
 		handlers.onStdoutEnd();
 	};
+
+	/**
+	 * Forwards a stderr chunk as bytes and text.
+	 * @param chunk The data event payload.
+	 */
 	const onStderrData = (chunk: unknown): void => {
 		if (disposed) {
 			return;
@@ -133,6 +173,7 @@ function attachCodexStreamReader(
 	stderr.on("data", onStderrData);
 	stderr.on("error", onStderrError);
 
+	/** Removes every listener this attachment installed; later calls do nothing. */
 	const dispose = (): void => {
 		if (disposed) {
 			return;

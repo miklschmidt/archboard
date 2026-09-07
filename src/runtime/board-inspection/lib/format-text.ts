@@ -1,247 +1,123 @@
 import type { CheckResult, InspectionFinding } from "@/runtime/board-inspection/schemas";
 
-const assertNever = (value: never): never => {
-	throw new Error(`Unhandled inspection finding: ${JSON.stringify(value)}`);
+type FindingCode = InspectionFinding["code"];
+type ReasonsOf<Code extends FindingCode> = Extract<InspectionFinding, { code: Code }>["reason"];
+
+/**
+ * Every finding reason the text format knows, per code. The mapped type requires a
+ * key for each schema reason, so adding a reason to the schema fails here at
+ * compile time until the formatter acknowledges it.
+ */
+const CLOSED_REASONS: { readonly [Code in FindingCode]: { readonly [Reason in ReasonsOf<Code>]: true } } = {
+	INVALID_RENDER_GEOMETRY: {
+		"non-data-input": true,
+		"invalid-render-fields": true,
+		"unlocatable-record": true,
+	},
+	STALE_LINEAR_DIMENSIONS: { width: true, height: true, "width-and-height": true },
+	BROKEN_REFERENCE: {
+		"invalid-element-identity": true,
+		"duplicate-element-id": true,
+		"missing-binding-target": true,
+		"invalid-binding-target-type": true,
+		"missing-binding-reciprocal": true,
+		"malformed-start-binding": true,
+		"malformed-end-binding": true,
+		"malformed-bound-elements": true,
+		"malformed-container-id": true,
+		"dangling-bound-text": true,
+		"dangling-bound-arrow": true,
+		"bound-element-target-type-mismatch": true,
+		"conflicting-bound-label-owner": true,
+		"persisted-agent-endpoint": true,
+		"invalid-node-metadata": true,
+		"invalid-code-binding": true,
+		"derived-link-persisted": true,
+		"invalid-library-attribution": true,
+	},
+	LABEL_CORRUPTION: {
+		orphan: true,
+		duplicate: true,
+		"missing-reciprocal": true,
+		"conflicting-owner": true,
+		drift: true,
+		"persisted-seed": true,
+	},
+	FONT_POLICY_VIOLATION: {
+		"missing-font-family": true,
+		"disallowed-font-family": true,
+		"invalid-font-family": true,
+	},
+	UNSUPPORTED_GEOMETRY: {
+		"unsupported-type": true,
+		rotation: true,
+		curve: true,
+		"rounded-or-elbowed": true,
+	},
+	AMBIGUOUS_GEOMETRY: {
+		"points-missing": true,
+		"points-not-array": true,
+		"points-empty": true,
+		"points-one-point": true,
+		"malformed-point": true,
+		"absolute-point-overflow": true,
+		"unrepresentable-coordinate-span": true,
+		"unrepresentable-focus-padding": true,
+		"zero-length": true,
+		"collinear-overlap": true,
+	},
+	INSPECTION_LIMIT_EXCEEDED: {
+		"broad-phase-comparison-ceiling": true,
+		"input-complexity-ceiling": true,
+	},
+	CONNECTOR_PENETRATES_NODE: { "leaf-footprint-interior": true },
+	CONNECTOR_PENETRATES_OBSTACLE: { "obstacle-footprint-interior": true },
+	CONNECTOR_PENETRATES_TEXT: { "text-interior": true },
+	CONNECTOR_INTERSECTION_UNMARKED: { "proper-interior-crossing": true },
+	NODE_OVERLAP: { "leaf-footprint-overlap": true },
+	LABEL_OVERLAP: { "label-node-overlap": true, "label-label-overlap": true },
+	BRIDGE_PROVENANCE_INVALID: { "incomplete-decoration": true, "stale-decoration": true },
 };
 
-type FindingFor<Code extends InspectionFinding["code"]> = Extract<
-	InspectionFinding,
-	{ code: Code }
->;
-
-function verifyInvalidRender(finding: FindingFor<"INVALID_RENDER_GEOMETRY">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "non-data-input":
-		case "invalid-render-fields":
-		case "unlocatable-record":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyStaleLinear(finding: FindingFor<"STALE_LINEAR_DIMENSIONS">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "width":
-		case "height":
-		case "width-and-height":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyBrokenReference(finding: FindingFor<"BROKEN_REFERENCE">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "invalid-element-identity":
-		case "duplicate-element-id":
-		case "missing-binding-target":
-		case "invalid-binding-target-type":
-		case "missing-binding-reciprocal":
-		case "malformed-start-binding":
-		case "malformed-end-binding":
-		case "malformed-bound-elements":
-		case "malformed-container-id":
-		case "dangling-bound-text":
-		case "dangling-bound-arrow":
-		case "bound-element-target-type-mismatch":
-		case "conflicting-bound-label-owner":
-		case "persisted-agent-endpoint":
-		case "invalid-node-metadata":
-		case "invalid-code-binding":
-		case "derived-link-persisted":
-		case "invalid-library-attribution":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyLabelCorruption(finding: FindingFor<"LABEL_CORRUPTION">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "orphan":
-		case "duplicate":
-		case "missing-reciprocal":
-		case "conflicting-owner":
-		case "drift":
-		case "persisted-seed":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyFontPolicy(finding: FindingFor<"FONT_POLICY_VIOLATION">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "missing-font-family":
-		case "disallowed-font-family":
-		case "invalid-font-family":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyUnsupportedGeometry(finding: FindingFor<"UNSUPPORTED_GEOMETRY">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "unsupported-type":
-		case "rotation":
-		case "curve":
-		case "rounded-or-elbowed":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyAmbiguousGeometry(finding: FindingFor<"AMBIGUOUS_GEOMETRY">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "points-missing":
-		case "points-not-array":
-		case "points-empty":
-		case "points-one-point":
-		case "malformed-point":
-		case "absolute-point-overflow":
-		case "unrepresentable-coordinate-span":
-		case "unrepresentable-focus-padding":
-		case "zero-length":
-		case "collinear-overlap":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyInspectionLimit(finding: FindingFor<"INSPECTION_LIMIT_EXCEEDED">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "broad-phase-comparison-ceiling":
-		case "input-complexity-ceiling":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyNodePenetration(finding: FindingFor<"CONNECTOR_PENETRATES_NODE">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "leaf-footprint-interior":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyObstaclePenetration(finding: FindingFor<"CONNECTOR_PENETRATES_OBSTACLE">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "obstacle-footprint-interior":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyTextPenetration(finding: FindingFor<"CONNECTOR_PENETRATES_TEXT">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "text-interior":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyConnectorIntersection(finding: FindingFor<"CONNECTOR_INTERSECTION_UNMARKED">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "proper-interior-crossing":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyNodeOverlap(finding: FindingFor<"NODE_OVERLAP">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "leaf-footprint-overlap":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyLabelOverlap(finding: FindingFor<"LABEL_OVERLAP">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "label-node-overlap":
-		case "label-label-overlap":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
-function verifyBridgeProvenance(finding: FindingFor<"BRIDGE_PROVENANCE_INVALID">): void {
-	const { reason } = finding;
-	switch (reason) {
-		case "incomplete-decoration":
-		case "stale-decoration":
-			return;
-		default:
-			return assertNever(reason);
-	}
-}
-
+/**
+ * Refuse to format a finding whose code and reason the closed table does not know.
+ * @param finding the schema-parsed finding
+ */
 function verifyClosedFinding(finding: InspectionFinding): void {
-	switch (finding.code) {
-		case "INVALID_RENDER_GEOMETRY":
-			return verifyInvalidRender(finding);
-		case "STALE_LINEAR_DIMENSIONS":
-			return verifyStaleLinear(finding);
-		case "BROKEN_REFERENCE":
-			return verifyBrokenReference(finding);
-		case "LABEL_CORRUPTION":
-			return verifyLabelCorruption(finding);
-		case "FONT_POLICY_VIOLATION":
-			return verifyFontPolicy(finding);
-		case "UNSUPPORTED_GEOMETRY":
-			return verifyUnsupportedGeometry(finding);
-		case "AMBIGUOUS_GEOMETRY":
-			return verifyAmbiguousGeometry(finding);
-		case "INSPECTION_LIMIT_EXCEEDED":
-			return verifyInspectionLimit(finding);
-		case "CONNECTOR_PENETRATES_NODE":
-			return verifyNodePenetration(finding);
-		case "CONNECTOR_PENETRATES_OBSTACLE":
-			return verifyObstaclePenetration(finding);
-		case "CONNECTOR_PENETRATES_TEXT":
-			return verifyTextPenetration(finding);
-		case "CONNECTOR_INTERSECTION_UNMARKED":
-			return verifyConnectorIntersection(finding);
-		case "NODE_OVERLAP":
-			return verifyNodeOverlap(finding);
-		case "LABEL_OVERLAP":
-			return verifyLabelOverlap(finding);
-		case "BRIDGE_PROVENANCE_INVALID":
-			return verifyBridgeProvenance(finding);
-		default:
-			return assertNever(finding);
+	const reasons: Readonly<Record<string, true>> = CLOSED_REASONS[finding.code];
+	if (!Object.hasOwn(reasons, finding.reason)) {
+		throw new Error(`Unhandled inspection finding: ${JSON.stringify(finding)}`);
 	}
 }
 
+/**
+ * Render a report box as comma-separated numbers.
+ * @param value the box, or null
+ * @returns `x,y,width,height` or `null`
+ */
 const bbox = (value: CheckResult["findings"][number]["affectedBBox"]): string =>
 	value ? `${value.x},${value.y},${value.width},${value.height}` : "null";
 
+/**
+ * Render the identities a finding names: element ids, node ids and obstacle ids.
+ * @param finding the finding
+ * @returns the comma-joined identities, or `none`
+ */
+function identitiesOf(finding: InspectionFinding): string {
+	return (
+		[
+			...finding.elements.map((ref) => ref.id ?? `sourceIndex:${ref.sourceIndex}`),
+			...finding.nodes.map((ref) => `node:${ref.id}`),
+			...finding.obstacles.map((ref) => ref.id),
+		].join(",") || "none"
+	);
+}
+
+/**
+ * Format a check result as the stable line-oriented text the CLI prints.
+ * @param result the check result including its board name
+ * @returns the text report
+ */
 export function formatInspectionText(result: CheckResult): string {
 	const allowed =
 		result.policy.allowedFontFamilies === "any"
@@ -257,16 +133,10 @@ export function formatInspectionText(result: CheckResult): string {
 	];
 	for (const finding of result.findings) {
 		verifyClosedFinding(finding);
-		const identities =
-			[
-				...finding.elements.map((ref) => ref.id ?? `sourceIndex:${ref.sourceIndex}`),
-				...finding.nodes.map((ref) => `node:${ref.id}`),
-				...finding.obstacles.map((ref) => ref.id),
-			].join(",") || "none";
 		const points = finding.points.map((entry) => `${entry.x},${entry.y}`).join(";") || "none";
 		lines.push(`${finding.severity} ${finding.code}/${finding.reason}: ${finding.message}`);
 		lines.push(
-			`  identities=${identities} points=${points} affectedBBox=${bbox(finding.affectedBBox)} focusBBox=${bbox(finding.focusBBox)}`,
+			`  identities=${identitiesOf(finding)} points=${points} affectedBBox=${bbox(finding.affectedBBox)} focusBBox=${bbox(finding.focusBBox)}`,
 		);
 	}
 	return lines.join("\n");
