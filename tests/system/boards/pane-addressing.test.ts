@@ -179,7 +179,10 @@ describe("pane addressing", () => {
 	});
 
 	test("keeps every public pane spelling aligned with CLI help", async () => {
-		const paneSource = fs.readFileSync(path.join(repoRoot, "src/runtime/engine/panes.ts"), "utf8");
+		const paneSource = fs.readFileSync(
+			path.join(repoRoot, "src/runtime/engine/lib/panes-addressing.ts"),
+			"utf8",
+		);
 		const specs = paneSource.match(/const PANE_SPECS\s*=\s*["']([^"']+)["']/)?.[1] ?? "";
 		const cliSource = fs.readFileSync(path.join(repoRoot, "src/cli/commands/run.ts"), "utf8");
 		const named = ["left", "right", "top", "bottom", "focused", "primary"];

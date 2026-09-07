@@ -41,14 +41,28 @@
 // That is what a label *says*. Where it *sits* is a question of the same shape:
 // the container decides, Excalidraw recomputes it at draw time, and so the
 // stored coordinates can be wrong for a long while with nothing on screen to
-// show it (`boundTextPlacement`, TASK-034).
+// show it (lib/labels-placement.ts, TASK-034).
 
-import { measureLinear } from "./geometry.js";
-import { derivedId, type IdsInUse } from "../../shared/ids/ids.js";
-import type {
-	RuntimeBoardElement,
-	WritableVendorElement,
-} from "../../shared/board-elements/index.js";
+import {
+	type BoundRef,
+	type BoundTextPlacement,
+	type LabelledElement,
+	indexById,
+	isText,
+	live,
+	num,
+} from "@/runtime/engine/lib/labels-model";
+import {
+	anchorSlack,
+	boundTextPlacement,
+	labelAnchorOf,
+} from "@/runtime/engine/lib/labels-placement";
+import {
+	type DuplicateLabel,
+	type LabelRepairPlan,
+	planLabelRepair as planRepair,
+} from "@/runtime/engine/lib/labels-repair";
+import { derivedId, type IdsInUse } from "@/shared/ids/ids";
 
 /**
  * The name the text element for a container's label answers to.
@@ -58,50 +72,41 @@ import type {
  * name it had, without anybody having to record it. Derived in the shape every
  * id is minted in, so the note writer has nothing to rename and an echo cannot
  * rename a label out from under somebody typing into it (`ids.ts`, TASK-069).
- *
- * `inUse` is every id on the board, including deleted ones: a label expanded
+ * @param containerId The container the label belongs to.
+ * @param inUse Every id on the board, including deleted ones: a label expanded
  * where an earlier one was cleared must not be handed the cleared element's
  * name back.
+ * @returns The text element's id.
  */
-export function labelTextIdFor(containerId: string, inUse?: IdsInUse): string {
+function labelTextIdFor(containerId: string, inUse?: IdsInUse): string {
 	return derivedId(`${containerId}:label`, inUse);
 }
 
-/** A `boundElements` entry: a shape's forward reference to a text or arrow. */
-export type BoundRef = RuntimeBoardElement["boundElements"] extends readonly (infer Ref)[] | null
-	? Ref
-	: never;
-
 /**
- * The subset of an element this module reasons about. Deliberately structural
- * — server elements, Excalidraw elements and elements parsed out of a saved
- * `.excalidraw` file all satisfy it, and none of them need converting first.
+ * Record one binding, keeping the first spelling of it and ignoring repeats.
+ * @param found The groups being built.
+ * @param seen Which texts each container has already claimed.
+ * @param container The container's id.
+ * @param textId The text's id.
  */
-type OptionalIngress<T> = { [Key in keyof T]?: T[Key] | undefined };
-type LabelCommon = Pick<WritableVendorElement, "id" | "type"> &
-	OptionalIngress<Pick<WritableVendorElement, "isDeleted" | "x" | "y" | "width" | "height">> & {
-		createdAt?: RuntimeBoardElement["createdAt"] | undefined;
-		boundElements?: readonly Readonly<BoundRef>[] | null | undefined;
-	};
-type LabelTextFields = OptionalIngress<
-	Pick<
-		Extract<WritableVendorElement, { type: "text" }>,
-		"containerId" | "text" | "textAlign" | "verticalAlign"
-	>
->;
-type LabelPoint = Extract<
-	WritableVendorElement,
-	{ type: "arrow" | "line" | "freedraw" }
->["points"][number];
-type LabelPathFields = { points?: readonly Readonly<LabelPoint>[] | undefined };
-export type LabelledElement = LabelCommon & LabelTextFields & LabelPathFields;
-
-function isText(element: LabelledElement | undefined): boolean {
-	return !!element && element.type === "text";
-}
-
-function live(element: LabelledElement): boolean {
-	return element.isDeleted !== true;
+function recordBinding(
+	found: Map<string, string[]>,
+	seen: Map<string, Set<string>>,
+	container: string,
+	textId: string,
+): void {
+	const texts = seen.get(container) ?? new Set<string>();
+	if (texts.has(textId)) {
+		return;
+	}
+	texts.add(textId);
+	seen.set(container, texts);
+	const list = found.get(container);
+	if (list) {
+		list.push(textId);
+	} else {
+		found.set(container, [textId]);
+	}
 }
 
 /**
@@ -114,203 +119,88 @@ function live(element: LabelledElement): boolean {
  * at something that is not a text element, is not a binding — it is a
  * leftover. The container's own list is consulted first, so the first id in
  * each group is the text Excalidraw actually draws.
+ * @param elements The scene.
+ * @returns Text ids per container id, container's own order first.
  */
-export function boundTextsByContainer(elements: readonly LabelledElement[]): Map<string, string[]> {
-	const byId = new Map<string, LabelledElement>();
-	for (const element of elements) {
-		if (element && typeof element.id === "string" && live(element)) byId.set(element.id, element);
-	}
-
+function boundTextsByContainer(elements: readonly LabelledElement[]): Map<string, string[]> {
+	const byId = indexById(elements.filter(live));
 	const found = new Map<string, string[]>();
 	const seen = new Map<string, Set<string>>();
-	const record = (container: string, textId: string): void => {
-		const texts = seen.get(container) ?? new Set<string>();
-		if (texts.has(textId)) return;
-		texts.add(textId);
-		seen.set(container, texts);
-		const list = found.get(container);
-		if (list) list.push(textId);
-		else found.set(container, [textId]);
-	};
-
 	for (const element of elements) {
-		if (!live(element) || !Array.isArray(element.boundElements)) continue;
-		for (const ref of element.boundElements) {
-			if (ref?.type !== "text" || typeof ref.id !== "string") continue;
-			if (!isText(byId.get(ref.id))) continue;
-			record(element.id, ref.id);
+		for (const textId of textRefsOf(element, byId)) {
+			recordBinding(found, seen, element.id, textId);
 		}
 	}
-
 	for (const element of elements) {
-		if (!live(element) || !isText(element)) continue;
-		const container = element.containerId;
-		if (typeof container !== "string" || !container) continue;
-		if (!byId.has(container)) continue;
-		record(container, element.id);
+		const container = containerNamedBy(element, byId);
+		if (container !== undefined) {
+			recordBinding(found, seen, container, element.id);
+		}
 	}
-
 	return found;
 }
 
-// ---------------------------------------------------------------------------
-// Where a label sits
-// ---------------------------------------------------------------------------
-
 /**
- * A bound label has no opinion about where it is. Its container decides, and
- * the stored coordinates have to say so.
- *
- * Excalidraw recomputes a bound text's position from its container every time
- * it draws one, so a label whose stored x/y is nonsense still *looks* right.
- * That is what made this hide: moving a box through the API updated the box
- * and left its text element where it was, the board redrew perfectly, and
- * nothing complained. What is wrong is the record, and every reader that works
- * from coordinates rather than pixels inherits it — the scene bounding box,
- * and therefore zoom-to-fit and the crop of an image export, and the relative
- * position signals in layout.ts that `describe` and `compare` are built on. On
- * one real board a label had been left 1170px from the arrow it belongs to,
- * pushing the scene box out by a phantom 630x203 region of empty canvas that
- * every screenshot then framed (TASK-034).
- *
- * So the rule Excalidraw draws by is written down here, in the same module as
- * the rest of the seed/bound-text model, and the server applies it whenever it
- * moves a container itself. A change report coming the other way does not need
- * it: there Excalidraw has already placed the label, and it is the authority.
+ * The text one entry of a container's `boundElements` names.
+ * @param ref One entry of the list.
+ * @param byId Live elements by id.
+ * @returns The text's id, or undefined when the entry names no live text.
  */
-
-/** The top-left a bound text must have, given the container it belongs to. */
-export interface BoundTextPlacement {
-	x: number;
-	y: number;
-}
-
-/** Excalidraw 0.18.1's inset between a container and its bound text box. */
-const BOUND_TEXT_PADDING = 5;
-
-function num(value: unknown): number | undefined {
-	return typeof value === "number" && Number.isFinite(value) ? value : undefined;
-}
-
-function isLinear(element: LabelledElement): boolean {
-	return element.type === "arrow" || element.type === "line";
+function boundTextIdOf(
+	ref: Readonly<BoundRef> | null | undefined,
+	byId: ReadonlyMap<string, LabelledElement>,
+): string | undefined {
+	// A malformed entry is a leftover, not a binding: it can be null, or name an
+	// id that is not a string, and neither is a reference to anything.
+	if (ref?.type !== "text" || typeof ref.id !== "string") {
+		return undefined;
+	}
+	return isText(byId.get(ref.id)) ? ref.id : undefined;
 }
 
 /**
- * The point a container hangs its label from: the centre of a shape, the
- * midpoint of an arrow.
- *
- * An arrow measures itself from its own `points` rather than from the stored
- * width and height, because those are the bounding box of a path the server
- * re-routes without re-measuring — stale on exactly the arrows this matters
- * for. Which midpoint follows Excalidraw: the middle vertex of an odd-length
- * path, the midpoint of the middle segment of an even one, so a two-point
- * arrow labels itself halfway along.
+ * The text elements a live container's own list names, ignoring references
+ * to things the scene does not hold or that are not text.
+ * @param element The container.
+ * @param byId Live elements by id.
+ * @returns The text ids, in the container's own order.
  */
-export function labelAnchorOf(container: LabelledElement): BoundTextPlacement | undefined {
-	const x = num(container.x);
-	const y = num(container.y);
-	if (x === undefined || y === undefined) return undefined;
-
-	if (isLinear(container)) {
-		const points = container.points;
-		if (!Array.isArray(points) || points.length < 2) return undefined;
-		const at = (i: number): BoundTextPlacement | undefined => {
-			const point = points[i];
-			const px = num(point?.[0]);
-			const py = num(point?.[1]);
-			return px === undefined || py === undefined ? undefined : { x: x + px, y: y + py };
-		};
-		if (points.length % 2 === 1) return at((points.length - 1) / 2);
-		const a = at(points.length / 2 - 1);
-		const b = at(points.length / 2);
-		if (!a || !b) return undefined;
-		return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+function textRefsOf(
+	element: LabelledElement,
+	byId: ReadonlyMap<string, LabelledElement>,
+): string[] {
+	if (!live(element) || !Array.isArray(element.boundElements)) {
+		return [];
 	}
-
-	const width = num(container.width) ?? 0;
-	const height = num(container.height) ?? 0;
-	return { x: x + width / 2, y: y + height / 2 };
-}
-
-/** How far from its anchor a label may honestly sit, and still be that label. */
-function anchorSlack(container: LabelledElement): number {
-	// Half the container's own diagonal: enough for a top-aligned or
-	// left-aligned label, which Excalidraw parks against an edge rather than in
-	// the middle, and nowhere near enough for a label the board has forgotten
-	// about. Plus a few pixels so bound-text padding and rounding are never the
-	// thing that fails a board.
-	const SLACK = 8;
-	if (isLinear(container)) {
-		const path = measureLinear(container.points);
-		return Math.hypot(path?.width ?? 0, path?.height ?? 0) / 2 + SLACK;
+	const ids: string[] = [];
+	for (const ref of element.boundElements) {
+		const id = boundTextIdOf(ref, byId);
+		if (id !== undefined) {
+			ids.push(id);
+		}
 	}
-	return Math.hypot(num(container.width) ?? 0, num(container.height) ?? 0) / 2 + SLACK;
+	return ids;
 }
 
 /**
- * Where this container's label belongs under Excalidraw's placement rules.
- * Linear labels sit on the path midpoint. Other containers place the label
- * within their padded inner box according to its horizontal and vertical
- * alignment; ellipses and diamonds narrow that box to fit inside their edges.
- *
- * Undefined when the answer is not knowable — a container with no coordinates,
- * an arrow with no path, a text with no measurements — because moving a label
- * to a guess is worse than leaving it where it is.
+ * The container a live text names, when the scene holds it.
+ * @param element The element.
+ * @param byId Live elements by id.
+ * @returns The container's id, or undefined.
  */
-export function boundTextPlacement(
-	container: LabelledElement,
-	text: LabelledElement,
-): BoundTextPlacement | undefined {
-	const anchor = labelAnchorOf(container);
-	if (!anchor) return undefined;
-	const width = num(text.width);
-	const height = num(text.height);
-	if (width === undefined || height === undefined) return undefined;
-	if (isLinear(container)) return { x: anchor.x - width / 2, y: anchor.y - height / 2 };
-
-	const containerX = num(container.x);
-	const containerY = num(container.y);
-	const containerWidth = num(container.width) ?? 0;
-	const containerHeight = num(container.height) ?? 0;
-	if (containerX === undefined || containerY === undefined) return undefined;
-
-	let offsetX = BOUND_TEXT_PADDING;
-	let offsetY = BOUND_TEXT_PADDING;
-	let usableWidth = containerWidth - BOUND_TEXT_PADDING * 2;
-	let usableHeight = containerHeight - BOUND_TEXT_PADDING * 2;
-	if (container.type === "ellipse") {
-		offsetX += (containerWidth / 2) * (1 - Math.SQRT1_2);
-		offsetY += (containerHeight / 2) * (1 - Math.SQRT1_2);
-		usableWidth = Math.round((containerWidth / 2) * Math.SQRT2) - BOUND_TEXT_PADDING * 2;
-		usableHeight = Math.round((containerHeight / 2) * Math.SQRT2) - BOUND_TEXT_PADDING * 2;
-	} else if (container.type === "diamond") {
-		offsetX += containerWidth / 4;
-		offsetY += containerHeight / 4;
-		usableWidth = Math.round(containerWidth / 2) - BOUND_TEXT_PADDING * 2;
-		usableHeight = Math.round(containerHeight / 2) - BOUND_TEXT_PADDING * 2;
+function containerNamedBy(
+	element: LabelledElement,
+	byId: ReadonlyMap<string, LabelledElement>,
+): string | undefined {
+	const container = element.containerId;
+	if (!live(element) || !isText(element) || typeof container !== "string" || !container) {
+		return undefined;
 	}
-
-	const x = containerX + offsetX;
-	const y = containerY + offsetY;
-	return {
-		x:
-			text.textAlign === "left"
-				? x
-				: text.textAlign === "right"
-					? x + usableWidth - width
-					: x + (usableWidth - width) / 2,
-		y:
-			text.verticalAlign === "top"
-				? y
-				: text.verticalAlign === "bottom"
-					? y + usableHeight - height
-					: y + (usableHeight - height) / 2,
-	};
+	return byId.has(container) ? container : undefined;
 }
 
 /** One bound text whose stored position no longer matches its container. */
-export interface BoundTextMove {
+interface BoundTextMove {
 	id: string;
 	containerId: string;
 	x: number;
@@ -320,41 +210,89 @@ export interface BoundTextMove {
 }
 
 /**
- * The moves that would put every bound text back where its container draws it.
- *
- * Give it `containerIds` to settle only the containers something just touched,
- * which is what the server wants after an update; leave it out to sweep a whole
- * scene, which is what a repair wants. Only the keeper text of each container
- * is moved — the one Excalidraw actually draws — so a board that still has
- * duplicates to clear is not rearranged behind that job's back.
+ * The move that would put one container's keeper text back where the
+ * container draws it.
  *
  * A move under half a pixel is not a move. Saying so keeps an update that
  * changed nothing from bumping a text element's version and waking the change
  * feed for a rounding error.
+ * @param containerId The container.
+ * @param textId The keeper text.
+ * @param byId Elements by id.
+ * @returns The move, or undefined when nothing worth reporting moves.
  */
-export function recentreBoundTexts(
+function moveFor(
+	containerId: string,
+	textId: string | undefined,
+	byId: ReadonlyMap<string, LabelledElement>,
+): BoundTextMove | undefined {
+	const container = byId.get(containerId);
+	const text = textId === undefined ? undefined : byId.get(textId);
+	const wantedAt = placementOf(container, text);
+	if (!text || !wantedAt) {
+		return undefined;
+	}
+	const distance = distanceTo(text, wantedAt);
+	if (distance < 0.5) {
+		return undefined;
+	}
+	return { id: text.id, containerId, x: wantedAt.x, y: wantedAt.y, distance };
+}
+
+/**
+ * Where a label belongs, when both it and its container are on the board.
+ * @param container The container, when the board holds it.
+ * @param text The label, when the board holds it.
+ * @returns The placement, or undefined.
+ */
+function placementOf(
+	container: LabelledElement | undefined,
+	text: LabelledElement | undefined,
+): BoundTextPlacement | undefined {
+	return container && text ? boundTextPlacement(container, text) : undefined;
+}
+
+/**
+ * How far a label would travel to reach a placement. A label with no stored
+ * position is treated as already there, so an unreadable record is reported
+ * as no move rather than as a move to nowhere.
+ * @param text The label.
+ * @param wantedAt Where it belongs.
+ * @returns The distance in px.
+ */
+function distanceTo(text: LabelledElement, wantedAt: BoundTextPlacement): number {
+	const dx = wantedAt.x - (num(text.x) ?? wantedAt.x);
+	const dy = wantedAt.y - (num(text.y) ?? wantedAt.y);
+	return Math.hypot(dx, dy);
+}
+
+/**
+ * The moves that would put every bound text back where its container draws it.
+ *
+ * Only the keeper text of each container is moved — the one Excalidraw
+ * actually draws — so a board that still has duplicates to clear is not
+ * rearranged behind that job's back.
+ * @param elements The scene.
+ * @param containerIds Settle only these containers, which is what the server
+ * wants after an update; leave it out to sweep a whole scene, which is what a
+ * repair wants.
+ * @returns The moves.
+ */
+function recentreBoundTexts(
 	elements: readonly LabelledElement[],
 	containerIds?: readonly string[],
 ): BoundTextMove[] {
-	const byId = new Map<string, LabelledElement>();
-	for (const element of elements) {
-		if (element && typeof element.id === "string") byId.set(element.id, element);
-	}
+	const byId = indexById(elements);
 	const wanted = containerIds ? new Set(containerIds) : undefined;
-
 	const moves: BoundTextMove[] = [];
 	for (const [containerId, textIds] of boundTextsByContainer(elements)) {
-		if (wanted && !wanted.has(containerId)) continue;
-		const container = byId.get(containerId);
-		const text = byId.get(textIds[0] as string);
-		if (!container || !text) continue;
-		const wantedAt = boundTextPlacement(container, text);
-		if (!wantedAt) continue;
-		const dx = wantedAt.x - (num(text.x) ?? wantedAt.x);
-		const dy = wantedAt.y - (num(text.y) ?? wantedAt.y);
-		const distance = Math.hypot(dx, dy);
-		if (distance < 0.5) continue;
-		moves.push({ id: text.id, containerId, x: wantedAt.x, y: wantedAt.y, distance });
+		if (wanted && !wanted.has(containerId)) {
+			continue;
+		}
+		const move = moveFor(containerId, textIds[0], byId);
+		if (move) {
+			moves.push(move);
+		}
 	}
 	return moves;
 }
@@ -371,15 +309,19 @@ export function recentreBoundTexts(
  * which is reported, which arrives, which moves it again. That is the shape of
  * the loop TASK-024 was about, and it is not worth re-entering to correct a
  * pixel. So the pane acts only where the record is plainly wrong.
+ * @param elements The scene.
+ * @returns The moves for drifted labels only.
  */
-export function rescueDriftedBoundTexts(elements: readonly LabelledElement[]): BoundTextMove[] {
+function rescueDriftedBoundTexts(elements: readonly LabelledElement[]): BoundTextMove[] {
 	const lost = new Set(boundTextDrift(elements).map((entry) => entry.textId));
-	if (lost.size === 0) return [];
+	if (lost.size === 0) {
+		return [];
+	}
 	return recentreBoundTexts(elements).filter((move) => lost.has(move.id));
 }
 
 /** A bound text sitting further from its container than the container allows. */
-export interface BoundTextDrift {
+interface BoundTextDrift {
 	containerId: string;
 	containerType: string;
 	textId: string;
@@ -391,6 +333,99 @@ export interface BoundTextDrift {
 }
 
 /**
+ * How far one label's centre sits from its container's anchor.
+ * @param text The label.
+ * @param anchor The container's anchor.
+ * @returns The distance in px, or undefined when the label has no coordinates.
+ */
+function distanceFromAnchor(text: LabelledElement, anchor: BoundTextPlacement): number | undefined {
+	const x = num(text.x);
+	const y = num(text.y);
+	if (x === undefined || y === undefined) {
+		return undefined;
+	}
+	const centreX = x + (num(text.width) ?? 0) / 2;
+	const centreY = y + (num(text.height) ?? 0) / 2;
+	return Math.hypot(centreX - anchor.x, centreY - anchor.y);
+}
+
+/**
+ * The labels of one container that sit further from it than its own size can
+ * account for.
+ * @param container The container.
+ * @param containerId Its id.
+ * @param textIds Its labels.
+ * @param byId Elements by id.
+ * @returns The drift entries.
+ */
+function driftOf(
+	container: LabelledElement,
+	containerId: string,
+	textIds: readonly string[],
+	byId: ReadonlyMap<string, LabelledElement>,
+): BoundTextDrift[] {
+	const anchor = labelAnchorOf(container);
+	if (!anchor) {
+		return [];
+	}
+	const allowed = anchorSlack(container);
+	const drifted: BoundTextDrift[] = [];
+	for (const textId of textIds) {
+		const text = byId.get(textId);
+		const distance = driftDistance(text, anchor, allowed);
+		if (distance !== undefined) {
+			drifted.push(describeDrift(container, containerId, textId, text?.text, distance, allowed));
+		}
+	}
+	return drifted;
+}
+
+/**
+ * How far a label has drifted, when it has drifted further than its
+ * container can account for.
+ * @param text The label, when the board holds it.
+ * @param anchor The container's anchor.
+ * @param allowed The most that container's own size can account for.
+ * @returns The distance, or undefined when the label is where it belongs.
+ */
+function driftDistance(
+	text: LabelledElement | undefined,
+	anchor: BoundTextPlacement,
+	allowed: number,
+): number | undefined {
+	const distance = text ? distanceFromAnchor(text, anchor) : undefined;
+	return distance !== undefined && distance > allowed ? distance : undefined;
+}
+
+/**
+ * One drifted label, as the record a report prints.
+ * @param container The container it belongs to.
+ * @param containerId The container's id.
+ * @param textId The label's id.
+ * @param text The label's words, when it has any.
+ * @param distance How far it sits from the anchor.
+ * @param allowed The most the container can account for.
+ * @returns The drift record.
+ */
+function describeDrift(
+	container: LabelledElement,
+	containerId: string,
+	textId: string,
+	text: string | undefined,
+	distance: number,
+	allowed: number,
+): BoundTextDrift {
+	return {
+		containerId,
+		containerType: container.type,
+		textId,
+		text: text ?? "",
+		distance,
+		allowed,
+	};
+}
+
+/**
  * Every bound text the board has lost track of.
  *
  * The test is deliberately generous — a label may sit as far from its anchor
@@ -398,157 +433,45 @@ export interface BoundTextDrift {
  * Excalidraw offers — because the failure this catches is not a label a few
  * pixels off. It is a label the board left behind entirely, hundreds of pixels
  * from the thing it names, dragging the scene's bounding box with it.
+ * @param elements The scene.
+ * @returns The drifted labels, furthest first.
  */
-export function boundTextDrift(elements: readonly LabelledElement[]): BoundTextDrift[] {
-	const byId = new Map<string, LabelledElement>();
-	for (const element of elements) {
-		if (element && typeof element.id === "string") byId.set(element.id, element);
-	}
-
+function boundTextDrift(elements: readonly LabelledElement[]): BoundTextDrift[] {
+	const byId = indexById(elements);
 	const drifted: BoundTextDrift[] = [];
-	const labelled = boundTextsByContainer(elements);
-	for (const [containerId, textIds] of labelled) {
+	for (const [containerId, textIds] of boundTextsByContainer(elements)) {
 		const container = byId.get(containerId);
-		if (!container) continue;
-		const anchor = labelAnchorOf(container);
-		if (!anchor) continue;
-		for (const textId of textIds) {
-			const text = byId.get(textId);
-			if (!text) continue;
-			const x = num(text.x);
-			const y = num(text.y);
-			if (x === undefined || y === undefined) continue;
-			const centreX = x + (num(text.width) ?? 0) / 2;
-			const centreY = y + (num(text.height) ?? 0) / 2;
-			const distance = Math.hypot(centreX - anchor.x, centreY - anchor.y);
-			const allowed = anchorSlack(container);
-			if (distance <= allowed) continue;
-			drifted.push({
-				containerId,
-				containerType: container.type ?? "unknown",
-				textId,
-				text: String(text.text ?? ""),
-				distance,
-				allowed,
-			});
+		if (container) {
+			drifted.push(...driftOf(container, containerId, textIds, byId));
 		}
 	}
 	return drifted.toSorted((a, b) => b.distance - a.distance);
 }
 
-// ---------------------------------------------------------------------------
-// Repair
-// ---------------------------------------------------------------------------
-
-/** One container that ended up with more bound text elements than it can show. */
-export interface DuplicateLabel {
-	containerId: string;
-	containerType: string;
-	/** The text element the container keeps — the one Excalidraw renders. */
-	keep: string;
-	/** The copies nobody can see, which every later pass would keep breeding. */
-	remove: string[];
-	text: string;
-}
-
-export interface LabelRepairPlan {
-	duplicates: DuplicateLabel[];
-	/** Text element ids to delete, across every container. */
-	removeIds: string[];
-	/** Containers whose `boundElements` still name a text that must go. */
-	rebind: Array<{ id: string; boundElements: BoundRef[] }>;
-	/** Bound texts whose container is gone: reported, never deleted. */
-	orphanIds: string[];
-}
-
 /**
- * What it would take to make each container's label singular again.
- *
- * The keeper is the first text in the container's own `boundElements`, because
- * that is the one Excalidraw draws — keeping any other one would silently
- * change what the board says. Where the container names none of them (its list
- * was lost in a sync), the oldest text wins: it is the original, and the copies
- * are what the loop added.
+ * What it would take to make each container's label singular again
+ * (lib/labels-repair.ts holds the rules).
+ * @param elements The scene.
+ * @returns The repair plan.
  */
-export function planLabelRepair(elements: readonly LabelledElement[]): LabelRepairPlan {
-	const byId = new Map<string, LabelledElement>();
-	for (const element of elements) {
-		if (element && typeof element.id === "string") byId.set(element.id, element);
-	}
-
-	const labelled = boundTextsByContainer(elements);
-	const duplicates: DuplicateLabel[] = [];
-	const removeIds: string[] = [];
-	const rebind: Array<{ id: string; boundElements: BoundRef[] }> = [];
-
-	for (const [containerId, textIds] of labelled) {
-		const container = byId.get(containerId);
-		if (!container) continue;
-
-		const textIdSet = new Set(textIds);
-		let named: Readonly<BoundRef> | undefined;
-		if (Array.isArray(container.boundElements))
-			for (const ref of container.boundElements) {
-				if (ref?.type === "text" && textIdSet.has(ref.id)) {
-					named = ref;
-					break;
-				}
-			}
-		const keep = named?.id ?? oldest(textIds, byId);
-		const remove = textIds.filter((id) => id !== keep);
-
-		if (remove.length > 0) {
-			duplicates.push({
-				containerId,
-				containerType: container.type ?? "unknown",
-				keep,
-				remove,
-				text: String(byId.get(keep)?.text ?? ""),
-			});
-			removeIds.push(...remove);
-		}
-
-		// Rewrite the container's list whenever it names a doomed text or fails to
-		// name the keeper. Arrow bindings in the same list are left alone.
-		const current = Array.isArray(container.boundElements) ? container.boundElements : [];
-		const gone = new Set(remove);
-		const wanted: BoundRef[] = [];
-		let namesDoomed = false,
-			namesKeeper = false,
-			textCount = 0;
-		for (const ref of current) {
-			if (!ref) continue;
-			if (gone.has(ref.id)) namesDoomed = true;
-			if (ref.type === "text") {
-				textCount += 1;
-				if (ref.id === keep) namesKeeper = true;
-			} else wanted.push(ref);
-		}
-		wanted.push({ id: keep, type: "text" });
-		const extraTexts = textCount > 1;
-		if (namesDoomed || !namesKeeper || extraTexts) {
-			rebind.push({ id: containerId, boundElements: wanted });
-		}
-	}
-
-	const orphanIds: string[] = [];
-	for (const element of elements) {
-		if (!isText(element) || !live(element)) continue;
-		const container = element.containerId;
-		if (typeof container === "string" && container && !byId.has(container)) {
-			orphanIds.push(element.id);
-		}
-	}
-
-	return { duplicates, removeIds, rebind, orphanIds };
+function planLabelRepair(elements: readonly LabelledElement[]): LabelRepairPlan {
+	return planRepair(elements, boundTextsByContainer(elements));
 }
 
-function oldest(ids: readonly string[], byId: Map<string, LabelledElement>): string {
-	let best = ids[0] as string;
-	for (const id of ids) {
-		const a = byId.get(id)?.createdAt;
-		const b = byId.get(best)?.createdAt;
-		if (typeof a === "string" && (typeof b !== "string" || a < b)) best = id;
-	}
-	return best;
-}
+export {
+	type BoundRef,
+	type BoundTextDrift,
+	type BoundTextMove,
+	type BoundTextPlacement,
+	type DuplicateLabel,
+	type LabelRepairPlan,
+	type LabelledElement,
+	boundTextDrift,
+	boundTextPlacement,
+	boundTextsByContainer,
+	labelAnchorOf,
+	labelTextIdFor,
+	planLabelRepair,
+	recentreBoundTexts,
+	rescueDriftedBoundTexts,
+};

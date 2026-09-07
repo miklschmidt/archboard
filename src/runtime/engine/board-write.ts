@@ -4,14 +4,7 @@
 // the destination through board-io, records the change feed, tells the panes,
 // and shapes the HTTP answer. There is deliberately no await between the read
 // and the write (ADR 0015).
-import { isDeepStrictEqual } from "node:util";
-
-import { type ExcalidrawFile, type ServerElement, type WebSocketMessage } from "./types.js";
-import {
-	type AppliedElementInput,
-	applyElementInput,
-	type ElementInputRequest,
-} from "./apply-element-input.js";
+import { type ServerElement } from "@/runtime/engine/types";
 import {
 	beginHold,
 	holdMessage,
@@ -20,8 +13,8 @@ import {
 	releaseHold as releaseNoteHold,
 	reportHold,
 	writesBoardNote,
-} from "./board-hold.js";
-import { releaseHold as releaseBoardLock, type LockHolder } from "./board-lock.js";
+} from "@/runtime/engine/board-hold";
+import { releaseHold as releaseBoardLock } from "@/runtime/engine/board-lock";
 import {
 	boardFilesMessage,
 	type BoardContent,
@@ -30,193 +23,49 @@ import {
 	renderContent,
 	settleBoardContent,
 	writeBoardContent,
-} from "./board-io.js";
-import { type BoardState, copyElements, recordBaseline } from "./board-store.js";
-import { hashBoardBytes } from "./board.js";
-import { type ChangeOrigin, changeFeed } from "./change-feed.js";
-import {
-	presentElements,
-	stripBindingPresentationLinks,
-	type PresentationContext,
-} from "./presentation.js";
-import { usableDrawnFiles } from "./embedded-files.js";
-import logger from "./logger.js";
-import { EMPTY_CHECKOUT_SNAPSHOT, type CheckoutSnapshot } from "../code-target/index.js";
+} from "@/runtime/engine/board-io";
+import { copyElements, recordBaseline } from "@/runtime/engine/board-store";
+import { hashBoardBytes } from "@/runtime/engine/board";
+import { type ChangeOrigin, changeFeed } from "@/runtime/engine/change-feed";
+import { presentElements, stripBindingPresentationLinks } from "@/runtime/engine/presentation";
+import { usableDrawnFiles } from "@/runtime/engine/embedded-files";
+import { logger } from "@/runtime/engine/logger";
+import { EMPTY_CHECKOUT_SNAPSHOT, type CheckoutSnapshot } from "@/runtime/code-target";
 import {
 	notificationDelta,
 	tellPanesAboutWrite,
 	tellPanesBestEffort,
 	type TellPanes,
-} from "./lib/board-write-notifications.js";
-
-type WrittenNote = ReturnType<typeof writeBoardContent>;
-
-interface BoardWriteTarget {
-	key: string;
-	board: BoardState;
-}
-
-interface BoardWriteDelta {
-	created: ServerElement[];
-	updated: ServerElement[];
-	deleted: string[];
-	filesAdded?: ExcalidrawFile[];
-	filesDeleted?: string[];
-	filesReplaced?: ExcalidrawFile[];
-}
-
-interface BoardMutationResult<T> {
-	value: T;
-	delta?: Partial<BoardWriteDelta>;
-	/** A pane-intended document captured before input repair/settlement. */
-	requestedElements?: ServerElement[];
-	/** A valid no-op does not write, notify panes, or advance the feed. */
-	write?: boolean;
-	/** A pane supplied its whole scene rather than a delta. */
-	wholeScene?: boolean;
-	/** Supplied file candidates whose exact membership follows canonical settlement. */
-	replacementFiles?: readonly unknown[];
-}
-
-type BoardMutation<T> = (
-	content: BoardContent,
-	destinationBefore: BoardContent,
-) => BoardMutationResult<T>;
-
-interface ElementMutationPlan<T> {
-	input: ElementInputRequest;
-	/** Embedded-file candidates produced with these elements, merged in the same note write. */
-	addFiles?: readonly unknown[];
-	/** Replace the complete scene, including embedded-file membership. */
-	replaceScene?: { files: readonly unknown[] };
-	/** Present for a pane change report; true means its input is the whole scene. */
-	wholeScene?: boolean;
-	value: (applied: AppliedElementInput, content: BoardContent) => T;
-}
-
-const SCENE_REPLACEMENT_MARKER = "replace-scene" as const;
-
-interface BoardWriteAnswerContext<T> {
-	source: BoardWriteTarget;
-	target: BoardWriteTarget;
-	content: BoardContent;
-	/** The request-local document after input conversion and before canonical settlement. */
-	submittedElements: ServerElement[];
-	value: T;
-	delta: BoardWriteDelta;
-	written: WrittenNote | null;
-	appliedAt: string;
-	checkoutSnapshot: CheckoutSnapshot;
-}
-
-interface BoardWriteRequest<T> {
-	source: BoardWriteTarget;
-	origin: ChangeOrigin;
-	mutation: BoardMutation<T>;
-	/** The exact source lease observed by the write boundary; never inferred from pane state. */
-	sourceLockHolder?: LockHolder;
-	/** The pane that already has a human change on screen and must skip its echo. */
-	clientId?: string | null;
-	/** An explicit save writes this target and resolves any hold after persistence. */
-	save?: {
-		target: BoardWriteTarget;
-		force?: boolean;
-	};
-	afterPersist?: (context: BoardWriteAnswerContext<T>) => void;
-	answer: (context: BoardWriteAnswerContext<T>) => Record<string, unknown>;
-	checkoutSnapshot?: CheckoutSnapshot;
-	/** Exact request-echo targets that can be reused for peer presentation without filesystem work. */
-	presentationLinks?: ReadonlyMap<string, PresentationContext>;
-}
-
-class BoardMutationError extends Error {
-	constructor(
-		readonly status: number,
-		message: string,
-		readonly code?: string,
-	) {
-		super(message);
-		this.name = "BoardMutationError";
-	}
-}
-
-const completeDelta = (delta?: Partial<BoardWriteDelta>): BoardWriteDelta => ({
-	created: delta?.created ?? [],
-	updated: delta?.updated ?? [],
-	deleted: delta?.deleted ?? [],
-	...(delta?.filesAdded ? { filesAdded: delta.filesAdded } : {}),
-	...(delta?.filesDeleted ? { filesDeleted: delta.filesDeleted } : {}),
-	...(delta?.filesReplaced ? { filesReplaced: delta.filesReplaced } : {}),
-});
-
-function copyContent(content: BoardContent): BoardContent {
-	return {
-		...content,
-		elements: new Map(
-			copyElements(content.elements.values()).map((element) => [element.id, element]),
-		),
-		// File records are never mutated during a board write. Copy the map so
-		// membership can change without cloning base64 image payloads.
-		files: new Map(content.files),
-	};
-}
+} from "@/runtime/engine/lib/board-write-notifications";
+import type { CanonicalCorrections } from "@/runtime/engine/lib/board-write-answers";
+import {
+	agentWriteAnswer,
+	canonicalCorrections,
+	humanWriteAnswer,
+} from "@/runtime/engine/lib/board-write-answers";
+import type {
+	BoardMutation,
+	BoardMutationResult,
+	BoardWriteAnswerContext,
+	BoardWriteDelta,
+	BoardWriteRequest,
+	BoardWriteTarget,
+	ElementMutationPlan,
+	WrittenNote,
+} from "@/runtime/engine/lib/board-write-contract";
+import {
+	BoardMutationError,
+	SCENE_REPLACEMENT_MARKER,
+	completeDelta,
+	copyContent,
+} from "@/runtime/engine/lib/board-write-contract";
+import { elementMutation } from "@/runtime/engine/lib/board-write-mutation";
 
 /**
- * Build an element mutation without giving a route direct access to the
- * converter. applyElementInput remains one stage inside writeBoard.
+ * Advance the change feed to what the board now holds.
+ * @param target The board that was written.
+ * @param origin Who wrote it.
  */
-function elementMutation<T>(
-	prepare: (content: BoardContent) => ElementMutationPlan<T>,
-): BoardMutation<T> {
-	return (content) => {
-		const plan = prepare(content);
-		if (plan.wholeScene || plan.replaceScene) {
-			content.elements.clear();
-		}
-		if (plan.replaceScene) {
-			content.files.clear();
-		}
-		const applied = applyElementInput(content.elements, {
-			...plan.input,
-			...(plan.wholeScene || plan.replaceScene
-				? { deletes: [] }
-				: plan.input.deletes === undefined
-					? {}
-					: { deletes: plan.input.deletes }),
-		});
-		const addedFiles = plan.addFiles
-			? usableDrawnFiles(content.elements.values(), plan.addFiles).filter(
-					(file) => content.files.get(file.id) !== file,
-				)
-			: [];
-		for (const file of addedFiles) {
-			content.files.set(file.id, file);
-		}
-		const changed =
-			applied.created.length > 0 ||
-			applied.updated.length > 0 ||
-			applied.deleted.length > 0 ||
-			addedFiles.length > 0 ||
-			plan.replaceScene !== undefined;
-		return {
-			value: plan.value(applied, content),
-			delta: {
-				created: applied.created,
-				updated: applied.updated,
-				deleted: applied.deleted,
-				...(addedFiles.length > 0 ? { filesAdded: addedFiles } : {}),
-			},
-			...(plan.replaceScene ? { replacementFiles: plan.replaceScene.files } : {}),
-			requestedElements: applied.requested,
-			// When wholeScene is present this is a pane report. Empty deltas do not
-			// write, while a full report must replace the held copy even when empty.
-			...(plan.wholeScene === undefined
-				? {}
-				: { write: plan.wholeScene || changed, wholeScene: plan.wholeScene }),
-		};
-	};
-}
-
 function recordChange(target: BoardWriteTarget, origin: ChangeOrigin): void {
 	changeFeed.record(
 		target.key,
@@ -226,6 +75,83 @@ function recordChange(target: BoardWriteTarget, origin: ChangeOrigin): void {
 	);
 }
 
+/**
+ * Keep a write the note cannot take yet, in memory and reported as held.
+ * @param request The write in progress.
+ * @param target The board being written.
+ * @param content The settled document.
+ * @param wholeScene Whether the writer restated the whole scene.
+ * @returns Null, because no note was written.
+ */
+function holdInsteadOfWriting<T>(
+	request: BoardWriteRequest<T>,
+	target: BoardWriteTarget,
+	content: BoardContent,
+	wholeScene: boolean,
+): null {
+	const { bytes } = renderContent(target.board.identity, content);
+	content.hash = hashBoardBytes(bytes);
+	holdWrite(target.key, content, wholeScene);
+	recordChange(target, request.origin);
+	return null;
+}
+
+/**
+ * How board-io is asked to write: forced only where the caller said so, and
+ * always naming the board this document came from.
+ * @param request The write in progress.
+ * @returns The write options.
+ */
+function writeOptionsFor<T>(request: BoardWriteRequest<T>): {
+	force?: boolean;
+	savedFrom: string;
+} {
+	return {
+		...(request.save?.force === undefined ? {} : { force: request.save.force }),
+		savedFrom: request.source.key,
+	};
+}
+
+/**
+ * Stop saving this board, when the note has moved under us and nobody has
+ * already noticed.
+ *
+ * An explicit save is exempt: it is the caller's own decision about which note
+ * wins, so its conflict belongs to the caller rather than to a hold.
+ * @param request The write in progress.
+ * @param target The board being written.
+ * @param error What board-io threw.
+ * @param tellPanes How to reach the panes.
+ */
+function beginHoldOnConflict<T>(
+	request: BoardWriteRequest<T>,
+	target: BoardWriteTarget,
+	error: unknown,
+	tellPanes: TellPanes,
+): void {
+	if (!(error instanceof BoardWriteConflictError) || isHeld(target.key) || request.save) {
+		return;
+	}
+	const hold = beginHold(target.key, error.conflict, readBoardContent(target.board));
+	logger.warn(`Board "${target.key}" has stopped saving: ${holdMessage(target.key, hold)}`);
+	tellPanesBestEffort(
+		tellPanes,
+		{ type: "board_hold", hold: reportHold(target.key, hold) },
+		target.key,
+	);
+}
+
+/**
+ * Put the settled document where it belongs: the note, or the hold when this
+ * board is not saving.
+ * @param request The write in progress.
+ * @param target The board being written.
+ * @param content The settled document.
+ * @param wholeScene Whether the writer restated the whole scene.
+ * @param tellPanes How to reach the panes.
+ * @returns What was written, or null when the write was held.
+ * @throws {BoardWriteConflictError} When the note moved under this write.
+ */
 function persist<T>(
 	request: BoardWriteRequest<T>,
 	target: BoardWriteTarget,
@@ -243,29 +169,14 @@ function persist<T>(
 	settleBoardContent(content);
 
 	if (!request.save && !writesBoardNote(target.key)) {
-		const { bytes } = renderContent(target.board.identity, content);
-		content.hash = hashBoardBytes(bytes);
-		holdWrite(target.key, content, wholeScene);
-		recordChange(target, request.origin);
-		return null;
+		return holdInsteadOfWriting(request, target, content, wholeScene);
 	}
 
 	let written: WrittenNote;
 	try {
-		written = writeBoardContent(target.board, content, {
-			...(request.save?.force === undefined ? {} : { force: request.save.force }),
-			savedFrom: request.source.key,
-		});
+		written = writeBoardContent(target.board, content, writeOptionsFor(request));
 	} catch (error) {
-		if (error instanceof BoardWriteConflictError && !isHeld(target.key) && !request.save) {
-			const hold = beginHold(target.key, error.conflict, readBoardContent(target.board));
-			logger.warn(`Board "${target.key}" has stopped saving: ${holdMessage(target.key, hold)}`);
-			tellPanesBestEffort(
-				tellPanes,
-				{ type: "board_hold", hold: reportHold(target.key, hold) },
-				target.key,
-			);
-		}
+		beginHoldOnConflict(request, target, error, tellPanes);
 		throw error;
 	}
 
@@ -277,6 +188,61 @@ function persist<T>(
 	return written;
 }
 
+/**
+ * The source note a pane must adopt when its held document was saved
+ * elsewhere.
+ *
+ * The held document went to the destination, but panes keep their source
+ * address. Carrying the source note on the release itself lets a pane replace
+ * its scene before it clears pending held reporting.
+ * @param request The write in progress.
+ * @returns The fields to send with the release.
+ * @throws {Error} When the source note cannot supply a conflict baseline.
+ */
+function adoptedSourceDocument<T>(request: BoardWriteRequest<T>): Record<string, unknown> {
+	const sourceFile = request.source.board.file;
+	if (!sourceFile) {
+		throw new Error(`Board "${request.source.key}" has no source note to adopt.`);
+	}
+	const source = readBoardContent(request.source.board);
+	if (!source.hash || source.version === undefined) {
+		throw new Error(`Board "${request.source.key}" source note has no conflict baseline.`);
+	}
+	recordBaseline(request.source.board, sourceFile, source.hash, source.version);
+	return {
+		identity: request.source.board.identity,
+		elements: presentElements(source.elements.values(), {
+			boardKey: request.source.key,
+			checkoutSnapshot: request.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT,
+		}),
+		// A pane replacing its scene with the source note states this version
+		// on its next write (ADR 0022).
+		version: source.version,
+		...boardFilesMessage(source),
+	};
+}
+
+/**
+ * Let go of the lease this write came in on.
+ *
+ * A successful terminal resolution must not leave the next source writer
+ * waiting on a pane callback. Only the authoritative human lease that entered
+ * this write may be released; an agent, claim, or replacement holder survives.
+ * @param request The write in progress.
+ */
+function releaseHumanLease<T>(request: BoardWriteRequest<T>): void {
+	if (request.sourceLockHolder?.kind === "human") {
+		releaseBoardLock(request.source.key, request.sourceLockHolder.id);
+	}
+}
+
+/**
+ * Report that a held board is saving again, once an explicit save has
+ * persisted its document.
+ * @param request The write in progress.
+ * @param target The board that was written.
+ * @param tellPanes How to reach the panes.
+ */
 function releaseSavedHold<T>(
 	request: BoardWriteRequest<T>,
 	target: BoardWriteTarget,
@@ -294,54 +260,66 @@ function releaseSavedHold<T>(
 	logger.info(
 		`Board "${request.source.key}" is saving again (${outcome}), after ${hold.writes} held change(s).`,
 	);
-	let sourceDocument: Record<string, unknown> = {};
-	if (outcome === "elsewhere") {
-		// The held document was written to the destination, but panes keep their
-		// source address. Carry the source note on the release itself so the pane
-		// replaces its scene before clearing pending held reporting.
-		const sourceFile = request.source.board.file;
-		if (!sourceFile) {
-			throw new Error(`Board "${request.source.key}" has no source note to adopt.`);
-		}
-		const source = readBoardContent(request.source.board);
-		if (!source.hash || source.version === undefined) {
-			throw new Error(`Board "${request.source.key}" source note has no conflict baseline.`);
-		}
-		recordBaseline(request.source.board, sourceFile, source.hash, source.version);
-		sourceDocument = {
-			identity: request.source.board.identity,
-			elements: presentElements(source.elements.values(), {
-				boardKey: request.source.key,
-				checkoutSnapshot: request.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT,
-			}),
-			// A pane replacing its scene with the source note states this version
-			// on its next write (ADR 0022).
-			version: source.version,
-			...boardFilesMessage(source),
-		};
-	}
-	// A successful terminal resolution must not leave the next source writer
-	// waiting on a pane callback. Only the authoritative human lease that entered
-	// this write may be released; an agent, claim, or replacement holder survives.
-	if (request.sourceLockHolder?.kind === "human") {
-		releaseBoardLock(request.source.key, request.sourceLockHolder.id);
-	}
+	const sourceDocument = outcome === "elsewhere" ? adoptedSourceDocument(request) : {};
+	releaseHumanLease(request);
 	tellPanesBestEffort(
 		tellPanes,
-		{ type: "board_released", hold: report, outcome, ...sourceDocument } as WebSocketMessage,
+		{ type: "board_released", hold: report, outcome, ...sourceDocument },
 		request.source.key,
 	);
 }
 
+/** One write, worked out in full before anything is persisted. */
+interface WritePlan<T> {
+	target: BoardWriteTarget;
+	/** The destination as it stood before this write, for the pane broadcast. */
+	destinationBefore: BoardContent;
+	content: BoardContent;
+	mutation: BoardMutationResult<T>;
+	delta: BoardWriteDelta;
+	shouldWrite: boolean;
+	submittedElements: ServerElement[];
+	appliedAt: string;
+	checkoutSnapshot: CheckoutSnapshot;
+}
+
 /**
- * Run one complete board write. Everything before persist works on a fresh
- * copy, so a mutation that throws cannot leave an earlier upsert applied.
+ * Which board this write lands on: the one an explicit save named, else the
+ * one it came in on.
+ * @param request The write in progress.
+ * @returns The target.
  */
-function writeBoard<T>(
-	request: BoardWriteRequest<T>,
-	tellPanes: TellPanes,
-): Record<string, unknown> {
-	const target = request.save?.target ?? request.source;
+function writeTargetOf<T>(request: BoardWriteRequest<T>): BoardWriteTarget {
+	return request.save?.target ?? request.source;
+}
+
+/**
+ * Replace the document's file membership, where the mutation restated it.
+ * @param content The settled document.
+ * @param mutation What the mutation reported.
+ * @param delta The delta to record the replacement on.
+ */
+function applyReplacementFiles<T>(
+	content: BoardContent,
+	mutation: BoardMutationResult<T>,
+	delta: BoardWriteDelta,
+): void {
+	if (!mutation.replacementFiles) {
+		return;
+	}
+	const files = usableDrawnFiles(content.elements.values(), mutation.replacementFiles);
+	content.files = new Map(files.map((file) => [file.id, file]));
+	delta.filesReplaced = files;
+}
+
+/**
+ * Run the mutation and settle the result, all on an isolated copy, so that
+ * nothing is persisted until the whole write is known to have worked.
+ * @param request The write in progress.
+ * @returns Everything the write needs from here on.
+ */
+function planWrite<T>(request: BoardWriteRequest<T>): WritePlan<T> {
+	const target = writeTargetOf(request);
 	const sourceContent = readBoardContent(request.source.board);
 	const destinationBefore =
 		target.key === request.source.key ? sourceContent : readBoardContent(target.board);
@@ -350,7 +328,6 @@ function writeBoard<T>(
 	const delta = completeDelta(mutation.delta);
 	const shouldWrite = mutation.write ?? true;
 	const appliedAt = new Date().toISOString();
-	const checkoutSnapshot = request.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT;
 
 	// Element input owns its conversion stage and exposes the pane-intended
 	// document from immediately before repair. Other mutation kinds retain the
@@ -360,162 +337,94 @@ function writeBoard<T>(
 	// Final settlement belongs to board-io. Run it for every request, including
 	// a valid no-op, before this document can enter a hold or success answer.
 	settleBoardContent(content);
-	if (mutation.replacementFiles) {
-		const files = usableDrawnFiles(content.elements.values(), mutation.replacementFiles);
-		content.files = new Map(files.map((file) => [file.id, file]));
-		delta.filesReplaced = files;
-	}
+	applyReplacementFiles(content, mutation, delta);
 
-	let written: WrittenNote | null = null;
-	if (shouldWrite) {
-		written = persist(request, target, content, mutation.wholeScene === true, tellPanes);
-	}
-
-	const context: BoardWriteAnswerContext<T> = {
-		source: request.source,
+	return {
 		target,
+		destinationBefore,
 		content,
-		submittedElements,
-		value: mutation.value,
+		mutation,
 		delta,
-		written,
+		shouldWrite,
+		submittedElements,
 		appliedAt,
-		checkoutSnapshot,
+		checkoutSnapshot: request.checkoutSnapshot ?? EMPTY_CHECKOUT_SNAPSHOT,
 	};
-
-	if (shouldWrite) {
-		request.afterPersist?.(context);
-		if (written) {
-			releaseSavedHold(request, target, tellPanes);
-		}
-		// The mutation delta describes what the caller named. Panes need every
-		// canonical side effect of the persisted document as well: repaired arrow
-		// back-references, dependent labels, and deletions outside that input.
-		const broadcast = notificationDelta(destinationBefore.elements, content.elements, delta);
-		tellPanesAboutWrite(
-			tellPanes,
-			target,
-			broadcast,
-			request.clientId ?? null,
-			appliedAt,
-			checkoutSnapshot,
-			request.presentationLinks,
-			// The note after this write, which is what every pane states next; while
-			// the board is held the note has not moved and the loaded version stands.
-			content.version ?? null,
-		);
-	}
-
-	return request.answer(context);
-}
-
-interface CanonicalCorrections {
-	upserts: ServerElement[];
-	deletes: string[];
 }
 
 /**
- * What canonical settlement changed after the pane's input had been applied.
- *
- * Compare the two complete documents in their outbound presentation form. The
- * persisted board remains portable, while a derived machine-local code link is
- * an intentional browser overlay and must not appear as a correction on every
- * drag. A renamed id naturally becomes one delete and one upsert.
+ * Everything that happens once the write has landed: the caller's own
+ * follow-up, the hold release, and the pane broadcast.
+ * @param request The write in progress.
+ * @param plan What the write worked out.
+ * @param context What the answer will be shaped from.
+ * @param tellPanes How to reach the panes.
  */
-function canonicalCorrections(
-	submitted: Iterable<ServerElement>,
-	canonical: Iterable<ServerElement>,
-	boardKey: string,
-	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
-): CanonicalCorrections {
-	const before = new Map(
-		presentElements(submitted, { boardKey, checkoutSnapshot }).map((element) => [
-			element.id,
-			element,
-		]),
+function afterWrite<T>(
+	request: BoardWriteRequest<T>,
+	plan: WritePlan<T>,
+	context: BoardWriteAnswerContext<T>,
+	tellPanes: TellPanes,
+): void {
+	request.afterPersist?.(context);
+	if (context.written) {
+		releaseSavedHold(request, plan.target, tellPanes);
+	}
+	// The mutation delta describes what the caller named. Panes need every
+	// canonical side effect of the persisted document as well: repaired arrow
+	// back-references, dependent labels, and deletions outside that input.
+	const broadcast = notificationDelta(
+		plan.destinationBefore.elements,
+		plan.content.elements,
+		plan.delta,
 	);
-	const after = new Map(
-		presentElements(canonical, { boardKey, checkoutSnapshot }).map((element) => [
-			element.id,
-			element,
-		]),
+	tellPanesAboutWrite(
+		tellPanes,
+		plan.target,
+		broadcast,
+		request.clientId ?? null,
+		plan.appliedAt,
+		plan.checkoutSnapshot,
+		request.presentationLinks,
+		// The note after this write, which is what every pane states next; while
+		// the board is held the note has not moved and the loaded version stands.
+		plan.content.version ?? null,
 	);
-	const deletes = [...before.keys()].filter((id) => !after.has(id));
-	const upserts: ServerElement[] = [];
-	for (const [id, element] of after) {
-		const prior = before.get(id);
-		if (!prior || !isDeepStrictEqual(prior, element)) {
-			upserts.push(element);
-		}
-	}
-	return { upserts, deletes };
 }
 
-/** A persisted human report gets a compact canonical acknowledgement. */
-function humanWriteAnswer(
-	context: BoardWriteAnswerContext<unknown>,
-	wantsFullDocument: boolean,
+/**
+ * Run one complete board write. Everything before persist works on a fresh
+ * copy, so a mutation that throws cannot leave an earlier upsert applied.
+ * @param request What to write, and how to answer.
+ * @param tellPanes How to reach the panes.
+ * @returns The answer body for the route.
+ */
+function writeBoard<T>(
+	request: BoardWriteRequest<T>,
+	tellPanes: TellPanes,
 ): Record<string, unknown> {
-	const { source, content, submittedElements, written, checkoutSnapshot } = context;
-	return {
-		corrections: canonicalCorrections(
-			submittedElements,
-			content.elements.values(),
-			source.key,
-			checkoutSnapshot,
-		),
-		fingerprint: boardFingerprint(source.board, content, written),
-		...(wantsFullDocument
-			? {
-					document: presentElements(content.elements.values(), {
-						boardKey: source.key,
-						checkoutSnapshot,
-					}),
-				}
-			: {}),
-	};
-}
+	const plan = planWrite(request);
+	const written = plan.shouldWrite
+		? persist(request, plan.target, plan.content, plan.mutation.wholeScene === true, tellPanes)
+		: null;
 
-/** What an agent gets after a write, small unless it asked for the document. */
-function agentWriteAnswer(
-	boardKey: string,
-	board: BoardState,
-	content: BoardContent,
-	touched: ServerElement[],
-	wantsDocument: boolean,
-	written?: WrittenNote | null,
-	checkoutSnapshot: CheckoutSnapshot = EMPTY_CHECKOUT_SNAPSHOT,
-): Record<string, unknown> {
-	return {
-		elements: presentElements(touched, { boardKey, checkoutSnapshot }),
-		fingerprint: boardFingerprint(board, content, written),
-		...(wantsDocument
-			? { document: presentElements(content.elements.values(), { boardKey, checkoutSnapshot }) }
-			: {}),
+	const context: BoardWriteAnswerContext<T> = {
+		source: request.source,
+		target: plan.target,
+		content: plan.content,
+		submittedElements: plan.submittedElements,
+		value: plan.mutation.value,
+		delta: plan.delta,
+		written,
+		appliedAt: plan.appliedAt,
+		checkoutSnapshot: plan.checkoutSnapshot,
 	};
-}
 
-function boardFingerprint(
-	board: BoardState,
-	content: BoardContent,
-	written?: WrittenNote | null,
-): { elements: number; note: string; version: number | null } {
-	if (written) {
-		return { elements: content.elements.size, note: written.hash, version: written.version };
+	if (plan.shouldWrite) {
+		afterWrite(request, plan, context, tellPanes);
 	}
-	if (content.hash) {
-		return {
-			elements: content.elements.size,
-			note: content.hash,
-			version: content.version ?? null,
-		};
-	}
-	const { bytes } = renderContent(board.identity, content);
-	return {
-		elements: content.elements.size,
-		note: hashBoardBytes(bytes),
-		version: content.version ?? null,
-	};
+
+	return request.answer(context);
 }
 
 export {

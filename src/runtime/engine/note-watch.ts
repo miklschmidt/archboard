@@ -41,11 +41,11 @@
 
 import fs from "node:fs";
 
-import { holdOn } from "./board-hold.js";
-import { type ForeignWrite, foreignWriteTo } from "./board-io.js";
-import { boards } from "./board-store.js";
-import { normalizeBoardKey } from "./board.js";
-import { type VersionMove, describeVersionMove } from "./board-version.js";
+import { holdOn } from "@/runtime/engine/board-hold";
+import { type ForeignWrite, foreignWriteTo } from "@/runtime/engine/board-io";
+import { boards } from "@/runtime/engine/board-store";
+import { normalizeBoardKey } from "@/runtime/engine/board";
+import { type VersionMove, describeVersionMove } from "@/runtime/engine/board-version";
 
 /**
  * A board whose note has been written by something that is not archboard.
@@ -96,10 +96,74 @@ interface Looked {
 
 const processLooks = new Map<string, Looked>();
 const processAnnounced = new Map<string, string | null>();
-const processSink = { notify: null as NoteSink | null };
-const looks = () => processLooks;
-const announced = () => processAnnounced;
-const sinkHolder = () => processSink;
+const processSink: { notify: NoteSink | null } = { notify: null };
+/**
+ * What the gate saw last time per board.
+ * @returns The process-wide look cache.
+ */
+const looks = (): Map<string, Looked> => processLooks;
+/**
+ * The last stamp told to the panes per board.
+ * @returns The process-wide announcement record.
+ */
+const announced = (): Map<string, string | null> => processAnnounced;
+/**
+ * Where the news goes, wrapped so the server can set it once.
+ * @returns The holder of the current sink.
+ */
+const sinkHolder = (): { notify: NoteSink | null } => processSink;
+
+/**
+ * The note's size and modification time, or null for a note that is not there.
+ * Not there is not somebody else's work; it is a board nobody has written yet,
+ * and the next write creates it. The same answer the refusal gives.
+ * @param file The note's path.
+ * @returns The stat, or null when the note does not exist.
+ */
+function statNote(file: string): fs.Stats | null {
+	try {
+		return fs.statSync(file);
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Whether the last look at a board is still current: same note, same size and
+ * mtime, and the same baseline on archboard's side.
+ * @param seen The cached look, if any.
+ * @param file The note's path.
+ * @param stat The note's current stat.
+ * @param baselineHash What archboard last wrote there.
+ * @returns True when nothing on either side has moved.
+ */
+function lookIsCurrent(
+	seen: Looked | undefined,
+	file: string,
+	stat: fs.Stats,
+	baselineHash: string,
+): seen is Looked {
+	return (
+		seen?.file === file &&
+		seen.mtimeMs === stat.mtimeMs &&
+		seen.size === stat.size &&
+		seen.baselineHash === baselineHash
+	);
+}
+
+/**
+ * The note this board is watching, when there is one worth watching.
+ *
+ * A board that has stopped saving is not watched: the hold is this state one
+ * step further on and says more about it.
+ * @param board The board to look at.
+ * @returns Its key and note path, or null.
+ */
+function watchedNoteOf(board: string): { key: string; file: string } | null {
+	const key = normalizeBoardKey(board);
+	const state = boards.get(key);
+	return state?.file && !holdOn(key) ? { key, file: state.file } : null;
+}
 
 /**
  * Who wrote this note last, if it was not archboard.
@@ -108,44 +172,28 @@ const sinkHolder = () => processSink;
  * a board whose note is the one archboard last wrote, for a board with no note
  * yet, and for a board that has stopped saving — that last one because the hold
  * is this state one step further on and says more about it.
+ * @param board The board to look at.
+ * @returns The mark to send a pane, or null when there is nothing to say.
  */
 function noteWrittenElsewhere(board: string): NoteWrittenElsewhere | null {
-	const key = normalizeBoardKey(board);
-	const state = boards.get(key);
-	if (!state?.file) {
+	const watched = watchedNoteOf(board);
+	if (!watched) {
 		return null;
 	}
-	if (holdOn(key)) {
-		return null;
-	}
-
-	const file = state.file;
-	let stat: fs.Stats | undefined;
-	try {
-		stat = fs.statSync(file);
-	} catch {
-		// Not there is not somebody else's work; it is a board nobody has written
-		// yet, and the next write creates it. The same answer the refusal gives.
+	const { key, file } = watched;
+	const stat = statNote(file);
+	if (stat === null) {
 		looks().delete(key);
 		return null;
 	}
-
 	// The baseline is half of the comparison, so it is half of the gate.
 	const baselineHash = baselineHashFor(file);
 	const seen = looks().get(key);
-	if (
-		seen?.file === file &&
-		seen.mtimeMs === stat.mtimeMs &&
-		seen.size === stat.size &&
-		seen.baselineHash === baselineHash
-	) {
+	if (lookIsCurrent(seen, file, stat, baselineHash)) {
 		return seen.answer;
 	}
-
-	let bytes: Buffer;
-	try {
-		bytes = fs.readFileSync(file);
-	} catch {
+	const bytes = readNoteBytes(file);
+	if (bytes === null) {
 		looks().delete(key);
 		return null;
 	}
@@ -160,6 +208,7 @@ function noteWrittenElsewhere(board: string): NoteWrittenElsewhere | null {
  * What the sweep calls. On transitions only: a mark that arrived once is a
  * mark, and a mark re-sent every second is a message the socket carries a
  * thousand times an hour for nothing.
+ * @param board The board the sweep is on.
  */
 function refreshNoteWatch(board: string): void {
 	const key = normalizeBoardKey(board);
@@ -180,6 +229,7 @@ function refreshNoteWatch(board: string): void {
  * Where the news goes. A sink rather than an import for the reason the lock has
  * one: this module must not know what a pane is, and a check must be able to
  * watch without standing a browser up.
+ * @param sink What to call with each transition, or null to stop telling anybody.
  */
 function onNoteWrittenElsewhere(sink: NoteSink | null): void {
 	sinkHolder().notify = sink;
@@ -191,15 +241,46 @@ function forgetNoteWatch(): void {
 	announced().clear();
 }
 
+/**
+ * Read a note's bytes, where it is still readable.
+ * @param file The note's path.
+ * @returns The bytes, or null when the read failed.
+ */
+function readNoteBytes(file: string): Buffer | null {
+	try {
+		return fs.readFileSync(file);
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Whether one board's baseline is a newer look at this note than the best one
+ * found so far.
+ * @param baseline The board's baseline, if it has one.
+ * @param file The note's path.
+ * @param best The newest baseline found so far.
+ * @returns True when this one is newer.
+ */
+function isNewerBaseline(
+	baseline: { file: string; at: string } | undefined,
+	file: string,
+	best: { at: string } | null,
+): boolean {
+	return baseline?.file === file && (best === null || baseline.at > best.at);
+}
+
+/**
+ * The hash of what archboard most recently wrote to a note, across every board
+ * state that names that file.
+ * @param file The note's path.
+ * @returns The newest baseline hash, or an empty string when archboard never wrote it.
+ */
 function baselineHashFor(file: string): string {
 	let best: { hash: string; at: string } | null = null;
 	for (const board of boards.values()) {
-		const baseline = board.baseline;
-		if (!baseline || baseline.file !== file) {
-			continue;
-		}
-		if (!best || baseline.at > best.at) {
-			best = baseline;
+		if (isNewerBaseline(board.baseline, file, best)) {
+			best = board.baseline ?? best;
 		}
 	}
 	return best?.hash ?? "";
@@ -214,6 +295,9 @@ function baselineHashFor(file: string): string {
  * board, and that taking it costs the canvas. The rest is ADR 0006's advice,
  * which is worth repeating wherever this state is displayed because it is the
  * only thing that prevents it.
+ * @param board The board the note belongs to.
+ * @param foreign What the write-boundary comparison found, or null for nothing.
+ * @returns The mark, or null when the note is the one archboard wrote.
  */
 function describe(board: string, foreign: ForeignWrite | null): NoteWrittenElsewhere | null {
 	if (!foreign) {

@@ -1,28 +1,39 @@
-import type { Box } from "../layout.js";
+import type { Box } from "@/runtime/engine/layout";
 import type {
-	ChangedEdge,
 	ClusterChange,
 	ClusterFacts,
-	CompareResult,
-	EdgeFacts,
 	FieldChange,
 	NodeFacts,
-} from "./compare-contract.js";
-import { bindingIdentity, formatBinding } from "./compare-node-model.js";
-import type { EdgeModel, NodeModel } from "./compare-node-model.js";
+} from "@/runtime/engine/lib/compare-contract";
+import { bindingIdentity, formatBinding } from "@/runtime/engine/lib/compare-node-model";
+import type { EdgeModel, NodeModel } from "@/runtime/engine/lib/compare-node-model";
+import { isRecord } from "@/runtime/engine/lib/unknown-record";
 
+/**
+ * A value as text that two of them can be compared by: keys in order, and
+ * fields nobody set left out.
+ * @param v The value.
+ * @returns The canonical text.
+ */
 const canonical = (v: unknown): string => {
-	if (v === null || typeof v !== "object") {
-		return JSON.stringify(v) ?? "null";
+	if (!isRecord(v)) {
+		// `undefined` has no JSON spelling; nothing else here is missing one.
+		return v === undefined ? "null" : JSON.stringify(v);
 	}
 	if (Array.isArray(v)) {
 		return `[${v.map((value) => canonical(value)).join(",")}]`;
 	}
-	const entries = Object.entries(v as Record<string, unknown>)
+	const entries = Object.entries(v)
 		.filter(([, val]) => val !== undefined)
 		.toSorted(([x], [y]) => (x < y ? -1 : 1));
 	return `{${entries.map(([k, val]) => `${JSON.stringify(k)}:${canonical(val)}`).join(",")}}`;
 };
+/**
+ * What one connector says, which is what a comparison reports changing: its
+ * words, its kind, and how it is drawn.
+ * @param e The connector.
+ * @returns Its fields.
+ */
 const edgeFields = (e: EdgeModel): Record<string, unknown> => ({
 	label: e.label,
 	kind: e.kind,
@@ -33,6 +44,12 @@ const edgeFields = (e: EdgeModel): Record<string, unknown> => ({
 	...(e.extra ? { extra: e.extra } : {}),
 });
 
+/**
+ * Whether two values say the same thing.
+ * @param a One value.
+ * @param b The other.
+ * @returns True when they are the same, key order aside.
+ */
 function sameJson(a: unknown, b: unknown): boolean {
 	if (a === b) {
 		return true;
@@ -43,47 +60,110 @@ function sameJson(a: unknown, b: unknown): boolean {
 	return canonical(a) === canonical(b);
 }
 
+/**
+ * Everything a report says about one node: what it is, what it is drawn as,
+ * where it sits, and what it joins.
+ * @param m The node.
+ * @param clusters The board's proximity clusters, for who it sits with.
+ * @returns The facts.
+ */
 function nodeFacts(m: NodeModel, clusters: ClusterFacts[]): NodeFacts {
-	const cluster = clusters.find((c) => c.id === m.clusterId);
-	const bindingText = formatBinding(m.binding);
 	return {
 		node: m.node,
 		name: m.name,
-		...(m.label ? { label: m.label } : {}),
-		...(m.declaredName ? { declaredName: m.declaredName } : {}),
-		...(m.kind ? { kind: m.kind } : {}),
-		...(m.level ? { level: m.level } : {}),
-		...(m.variant ? { variant: m.variant } : {}),
-		...(m.binding !== undefined ? { binding: m.binding } : {}),
-		...(bindingText !== undefined ? { bindingText } : {}),
-		...(m.link ? { link: m.link } : {}),
-		...(Object.keys(m.extra).length > 0 ? { extra: m.extra } : {}),
+		...statedFields(m),
 		elementIds: m.elements.map((el) => el.id),
 		elementCount: m.elements.length,
 		types: [...new Set(m.elements.map((el) => el.type))],
-		cosmetic: {
-			type: m.primary.type,
-			...(m.primary.backgroundColor ? { backgroundColor: m.primary.backgroundColor } : {}),
-			...(m.primary.strokeColor ? { strokeColor: m.primary.strokeColor } : {}),
-			width: Math.round(m.box.w),
-			height: Math.round(m.box.h),
-		},
-		layout: {
-			cluster: m.clusterId,
-			// Who it sits with, not where: the set is what compares across boards.
-			clusterWith: cluster ? cluster.members.filter((n) => n !== m.node) : [],
-			clusterSize: cluster ? cluster.size : 0,
-			container: m.container,
-			group: m.group,
-			region: m.region,
-			prominence: m.prominence,
-		},
+		cosmetic: cosmeticFacts(m),
+		layout: layoutFacts(m, clusters),
 		degree: { in: m.in.length, out: m.out.length },
 		out: [...m.out].toSorted(),
 		in: [...m.in].toSorted(),
 	};
 }
 
+/**
+ * The fields a node states only when it has them, so a report never carries
+ * an empty one.
+ * @param m The node.
+ * @returns The fields it states.
+ */
+function statedFields(m: NodeModel): Partial<NodeFacts> {
+	return { ...namedFields(m), ...boundFields(m) };
+}
+
+/**
+ * What a node calls itself, where it says so.
+ * @param m The node.
+ * @returns The name fields it states.
+ */
+function namedFields(m: NodeModel): Partial<NodeFacts> {
+	return {
+		...(m.label ? { label: m.label } : {}),
+		...(m.declaredName ? { declaredName: m.declaredName } : {}),
+		...(m.kind ? { kind: m.kind } : {}),
+		...(m.level ? { level: m.level } : {}),
+		...(m.variant ? { variant: m.variant } : {}),
+	};
+}
+
+/**
+ * What a node points at, where it points at anything.
+ * @param m The node.
+ * @returns The binding, link and metadata fields it states.
+ */
+function boundFields(m: NodeModel): Partial<NodeFacts> {
+	const bindingText = formatBinding(m.binding);
+	return {
+		...(m.binding !== undefined ? { binding: m.binding } : {}),
+		...(bindingText !== undefined ? { bindingText } : {}),
+		...(m.link ? { link: m.link } : {}),
+		...(Object.keys(m.extra).length > 0 ? { extra: m.extra } : {}),
+	};
+}
+
+/**
+ * How a node is drawn, as a report says it.
+ * @param m The node.
+ * @returns The shape, its colours and its size.
+ */
+function cosmeticFacts(m: NodeModel): NodeFacts["cosmetic"] {
+	return {
+		type: m.primary.type,
+		...(m.primary.backgroundColor ? { backgroundColor: m.primary.backgroundColor } : {}),
+		...(m.primary.strokeColor ? { strokeColor: m.primary.strokeColor } : {}),
+		width: Math.round(m.box.w),
+		height: Math.round(m.box.h),
+	};
+}
+
+/**
+ * Where a node sits, as a report says it.
+ * @param m The node.
+ * @param clusters The board's proximity clusters.
+ * @returns Its cluster, its companions, and what contains it.
+ */
+function layoutFacts(m: NodeModel, clusters: ClusterFacts[]): NodeFacts["layout"] {
+	const cluster = clusters.find((c) => c.id === m.clusterId);
+	return {
+		cluster: m.clusterId,
+		// Who it sits with, not where: the set is what compares across boards.
+		clusterWith: cluster ? cluster.members.filter((n) => n !== m.node) : [],
+		clusterSize: cluster ? cluster.size : 0,
+		container: m.container,
+		group: m.group,
+		region: m.region,
+		prominence: m.prominence,
+	};
+}
+
+/**
+ * Which fields differ between two sides, and what each was and became.
+ * @param from The fields on one side.
+ * @param to The fields on the other.
+ * @returns One entry per field that differs.
+ */
 function diffFields(
 	from: Record<string, unknown>,
 	to: Record<string, unknown>,
@@ -97,13 +177,17 @@ function diffFields(
 	return changes;
 }
 
+/**
+ * What a node means, as the fields a comparison reports: its name, kind and
+ * level, what it binds to, and how many elements draw it.
+ * @param m The node.
+ * @param boardVariant The variant this board is, which decides whether the
+ * node's own variant is an anomaly worth reporting.
+ * @returns The fields.
+ */
 function semanticFields(m: NodeModel, boardVariant: string): Record<string, unknown> {
-	const label =
-		m.label && m.label.toLocaleLowerCase() !== m.declaredName?.toLocaleLowerCase()
-			? m.label
-			: undefined;
 	return {
-		label,
+		label: labelWorthReporting(m),
 		declaredName: m.declaredName,
 		kind: m.kind,
 		level: m.level,
@@ -123,6 +207,26 @@ function semanticFields(m: NodeModel, boardVariant: string): Record<string, unkn
 	};
 }
 
+/**
+ * A node's label, when it says something its declared name does not: a label
+ * that merely repeats the name is not a second fact to compare.
+ * @param m The node.
+ * @returns The label, or undefined.
+ */
+function labelWorthReporting(m: NodeModel): string | undefined {
+	const declared = m.declaredName?.toLocaleLowerCase();
+	if (!m.label || m.label.toLocaleLowerCase() === declared) {
+		return undefined;
+	}
+	return m.label;
+}
+
+/**
+ * How a node is drawn, as the fields a comparison reports separately from
+ * what it means.
+ * @param m The node.
+ * @returns The fields.
+ */
 function cosmeticFields(m: NodeModel): Record<string, unknown> {
 	return {
 		shape: m.primary.type,
@@ -133,6 +237,15 @@ function cosmeticFields(m: NodeModel): Record<string, unknown> {
 	};
 }
 
+/**
+ * Where a node sits, as the fields a comparison reports: who it sits with,
+ * who it is grouped with, and what contains it.
+ * @param m The node.
+ * @param clusters The board's proximity clusters.
+ * @param groups The board's explicit groups.
+ * @param shared The nodes both boards hold.
+ * @returns The fields.
+ */
 function layoutFields(
 	m: NodeModel,
 	clusters: ClusterFacts[],
@@ -148,6 +261,13 @@ function layoutFields(
 	// existed on one side joining this cluster is a fact about that node, and it
 	// is reported in that node's own facts. Counting it here as well would make
 	// every neighbour of an added node look like it had been moved.
+	/**
+	 * The other nodes in one cluster or group.
+	 * @param list The clusters or groups to look in.
+	 * @param id Which one.
+	 * @param onlyShared Whether to count only nodes both boards hold.
+	 * @returns The companions, or none when the cluster is not there.
+	 */
 	const companions = (list: ClusterFacts[], id: string | null, onlyShared: boolean): string[] => {
 		const found = list.find((c) => c.id === id);
 		if (!found) {
@@ -168,120 +288,203 @@ function layoutFields(
 	};
 }
 
-// Partition diff, used for both proximity clusters and explicit groups. The
-// correspondence is by shared membership: a `to` cluster fed by two `from`
-// clusters is a merge, a `from` cluster whose members land in two `to` clusters
-// is a split, and a cluster made only of new nodes was formed.
+/**
+ * What happened to each cluster, for both proximity clusters and explicit
+ * groups.
+ *
+ * The correspondence is by shared membership: a `to` cluster fed by two `from`
+ * clusters is a merge, a `from` cluster whose members land in two `to`
+ * clusters is a split, and a cluster made only of new nodes was formed.
+ * @param from The clusters on one side.
+ * @param to The clusters on the other.
+ * @returns One change per cluster on either side.
+ */
 function diffPartitions(from: ClusterFacts[], to: ClusterFacts[]): ClusterChange[] {
-	const fromOf = new Map<string, string>();
-	for (const c of from) {
-		for (const n of c.members) {
-			fromOf.set(n, c.id);
-		}
-	}
-	const toOf = new Map<string, string>();
-	for (const c of to) {
-		for (const n of c.members) {
-			toOf.set(n, c.id);
-		}
-	}
+	const fromOf = clusterOfNode(from);
+	const toOf = clusterOfNode(to);
 
 	const changes: ClusterChange[] = [];
 	const seenFrom = new Set<string>();
 
 	for (const t of to) {
-		const sources = new Set(t.members.map((n) => fromOf.get(n)).filter(Boolean) as string[]);
-		const shared = t.members.filter((n) => fromOf.has(n));
+		const sources = sourcesOf(t, fromOf);
 		for (const s of sources) {
 			seenFrom.add(s);
 		}
-
-		if (sources.size === 0) {
-			changes.push({
-				kind: "formed",
-				from: [],
-				to: [t.id],
-				sharedMembers: [],
-				joined: t.members,
-				left: [],
-			});
-			continue;
-		}
-		const sourceMembers = new Set<string>();
-		for (const s of sources) {
-			const c = from.find((x) => x.id === s);
-			if (!c) {
-				continue;
-			}
-			for (const n of c.members) {
-				sourceMembers.add(n);
-			}
-		}
-		const joined = t.members.filter((n) => !sourceMembers.has(n));
-		const left = [...sourceMembers].filter((n) => toOf.get(n) !== t.id);
-		// Did any source cluster lose members to a different `to` cluster?
-		const splitSources = [...sources].filter((s) => {
-			const c = from.find((x) => x.id === s);
-			return c !== undefined && new Set(c.members.map((n) => toOf.get(n) ?? "·gone")).size > 1;
-		});
-		let kind: ClusterChange["kind"] = "split";
-		if (sources.size > 1) {
-			kind = "merged";
-		} else if (splitSources.length === 0 && joined.length === 0 && left.length === 0) {
-			kind = "stable";
-		}
-		changes.push({
-			kind,
-			from: [...sources].toSorted(),
-			to: [t.id],
-			sharedMembers: shared.toSorted(),
-			joined: joined.toSorted(),
-			left: left.toSorted(),
-		});
+		changes.push(sources.size === 0 ? formed(t) : changeInto(t, sources, from, toOf));
 	}
 
 	for (const f of from) {
-		if (seenFrom.has(f.id)) {
-			continue;
+		if (!seenFrom.has(f.id)) {
+			changes.push({
+				kind: "dissolved",
+				from: [f.id],
+				to: [],
+				sharedMembers: [],
+				joined: [],
+				left: f.members,
+			});
 		}
-		changes.push({
-			kind: "dissolved",
-			from: [f.id],
-			to: [],
-			sharedMembers: [],
-			joined: [],
-			left: f.members,
-		});
 	}
 
 	return changes;
 }
 
-// Coarse direction from a to b: which way a human would point. The dominant
-// axis names the relation and the other axis qualifies it when it is at least
-// half as large, so a box diagonally up-left reads as "above-left" and not as
-// an arbitrary pick between the two.
+/**
+ * Which cluster each node is in.
+ * @param clusters The clusters.
+ * @returns The cluster id by node.
+ */
+function clusterOfNode(clusters: ClusterFacts[]): Map<string, string> {
+	const of = new Map<string, string>();
+	for (const cluster of clusters) {
+		for (const member of cluster.members) {
+			of.set(member, cluster.id);
+		}
+	}
+	return of;
+}
+
+/**
+ * The clusters on the other side that fed this one.
+ * @param t The cluster.
+ * @param fromOf Which cluster each node was in before.
+ * @returns The source cluster ids.
+ */
+function sourcesOf(t: ClusterFacts, fromOf: ReadonlyMap<string, string>): Set<string> {
+	const sources = new Set<string>();
+	for (const member of t.members) {
+		const source = fromOf.get(member);
+		if (source !== undefined) {
+			sources.add(source);
+		}
+	}
+	return sources;
+}
+
+/**
+ * A cluster made only of nodes that were in none before.
+ * @param t The cluster.
+ * @returns The change.
+ */
+function formed(t: ClusterFacts): ClusterChange {
+	return { kind: "formed", from: [], to: [t.id], sharedMembers: [], joined: t.members, left: [] };
+}
+
+/**
+ * What became of the clusters that fed one: merged when several did, split
+ * when one lost members elsewhere, stable when nobody moved.
+ * @param t The cluster.
+ * @param sources The clusters that fed it.
+ * @param from The clusters on the other side.
+ * @param toOf Which cluster each node is in now.
+ * @returns The change.
+ */
+function changeInto(
+	t: ClusterFacts,
+	sources: ReadonlySet<string>,
+	from: ClusterFacts[],
+	toOf: ReadonlyMap<string, string>,
+): ClusterChange {
+	const sourceMembers = membersOf(sources, from);
+	const joined = t.members.filter((n) => !sourceMembers.has(n));
+	const left = [...sourceMembers].filter((n) => toOf.get(n) !== t.id);
+	const scattered = [...sources].some((s) => scatters(s, from, toOf));
+	return {
+		kind: kindOf(sources.size, scattered, joined.length + left.length),
+		from: [...sources].toSorted(),
+		to: [t.id],
+		sharedMembers: t.members.filter((n) => sourceMembers.has(n)).toSorted(),
+		joined: joined.toSorted(),
+		left: left.toSorted(),
+	};
+}
+
+/**
+ * Every node the source clusters held.
+ * @param sources The source cluster ids.
+ * @param from The clusters on the other side.
+ * @returns Their members.
+ */
+function membersOf(sources: ReadonlySet<string>, from: ClusterFacts[]): Set<string> {
+	const members = new Set<string>();
+	for (const cluster of from) {
+		if (sources.has(cluster.id)) {
+			for (const member of cluster.members) {
+				members.add(member);
+			}
+		}
+	}
+	return members;
+}
+
+/**
+ * Whether one source cluster lost members to more than one cluster.
+ * @param id The source cluster.
+ * @param from The clusters on the other side.
+ * @param toOf Which cluster each node is in now.
+ * @returns True when its members ended up apart.
+ */
+function scatters(id: string, from: ClusterFacts[], toOf: ReadonlyMap<string, string>): boolean {
+	const cluster = from.find((x) => x.id === id);
+	if (!cluster) {
+		return false;
+	}
+	return new Set(cluster.members.map((n) => toOf.get(n) ?? "·gone")).size > 1;
+}
+
+/**
+ * What to call this change.
+ * @param sourceCount How many clusters fed it.
+ * @param scattered Whether any source lost members elsewhere.
+ * @param moved How many nodes joined or left.
+ * @returns The kind.
+ */
+function kindOf(sourceCount: number, scattered: boolean, moved: number): ClusterChange["kind"] {
+	if (sourceCount > 1) {
+		return "merged";
+	}
+	return !scattered && moved === 0 ? "stable" : "split";
+}
+
+/**
+ * Coarse direction from one box to another: which way a human would point.
+ *
+ * The dominant axis names the relation and the other axis qualifies it when it
+ * is at least half as large, so a box diagonally up-left reads as "above-left"
+ * rather than as an arbitrary pick between the two.
+ * @param a The box the direction is from.
+ * @param b The box it is toward.
+ * @returns The relation, as the word a report uses.
+ */
 function relationOf(a: Box, b: Box): string {
-	const ax = a.x + a.w / 2,
-		ay = a.y + a.h / 2;
-	const bx = b.x + b.w / 2,
-		by = b.y + b.h / 2;
-	const dx = bx - ax,
-		dy = by - ay;
-	const adx = Math.abs(dx),
-		ady = Math.abs(dy);
+	const dx = b.x + b.w / 2 - (a.x + a.w / 2);
+	const dy = b.y + b.h / 2 - (a.y + a.h / 2);
+	const adx = Math.abs(dx);
+	const ady = Math.abs(dy);
 	if (adx < 1 && ady < 1) {
 		return "on-top-of";
 	}
-	// A is left-of b when b is further right.
+	const names = directionNames(dx, dy);
+	const dominant = adx >= ady ? names.horizontal : names.vertical;
+	const weaker = Math.min(adx, ady);
+	return weaker >= Math.max(adx, ady) * 0.5 ? names.corner : dominant;
+}
+
+/**
+ * What each axis of a direction is called. A is left-of b when b is further
+ * right, and the corner names the two together.
+ * @param dx How far right b is.
+ * @param dy How far down b is.
+ * @returns The horizontal, vertical and corner names.
+ */
+function directionNames(
+	dx: number,
+	dy: number,
+): { horizontal: string; vertical: string; corner: string } {
 	const horizontal = dx > 0 ? "left-of" : "right-of";
 	const vertical = dy > 0 ? "above" : "below";
-	if (adx >= ady) {
-		return ady >= adx * 0.5
-			? `${vertical}-${horizontal === "left-of" ? "left" : "right"}`
-			: horizontal;
-	}
-	return adx >= ady * 0.5 ? `${vertical}-${horizontal === "left-of" ? "left" : "right"}` : vertical;
+	return { horizontal, vertical, corner: `${vertical}-${dx > 0 ? "left" : "right"}` };
 }
 
 // The pairwise pass is the only place with a budget, and it is declared rather
@@ -289,150 +492,14 @@ function relationOf(a: Box, b: Box): string {
 // generous by two orders of magnitude for anything real.
 const MAX_RELATION_PAIRS = 20_000;
 
-// ---------------------------------------------------------------------------
-// Edge matching
-// ---------------------------------------------------------------------------
-
-const edgeKey = (e: EdgeFacts): string => `${e.from}\0${e.to}`;
-
-const bucketEdges = (list: EdgeModel[]): Map<string, EdgeModel[]> => {
-	const map = new Map<string, EdgeModel[]>();
-	for (const edge of list) {
-		const key = edgeKey(edge);
-		const entries = map.get(key) ?? [];
-		entries.push(edge);
-		map.set(key, entries);
-	}
-	return map;
-};
-
-const byAnchor = (list: EdgeFacts[], end: "source" | "target"): Map<string, EdgeFacts[]> => {
-	const map = new Map<string, EdgeFacts[]>();
-	for (const edge of list) {
-		const anchor = end === "source" ? edge.from : edge.to;
-		const entries = map.get(anchor) ?? [];
-		entries.push(edge);
-		map.set(anchor, entries);
-	}
-	return map;
-};
-
-function matchEdges(
-	from: EdgeModel[],
-	to: EdgeModel[],
-): {
-	added: EdgeFacts[];
-	removed: EdgeFacts[];
-	changed: ChangedEdge[];
-	unchanged: EdgeFacts[];
-} {
-	const fromMap = bucketEdges(from);
-	const toMap = bucketEdges(to);
-
-	const added: EdgeFacts[] = [];
-	const removed: EdgeFacts[] = [];
-	const changed: ChangedEdge[] = [];
-	const unchanged: EdgeFacts[] = [];
-
-	for (const key of new Set([...fromMap.keys(), ...toMap.keys()])) {
-		const lefts = [...(fromMap.get(key) ?? [])];
-		const rights = [...(toMap.get(key) ?? [])];
-
-		// Parallel edges between the same pair: match by label first, so renaming
-		// one of two arrows does not read as one removed and one added.
-		for (let i = lefts.length - 1; i >= 0; i--) {
-			const left = lefts.at(i);
-			if (!left) {
-				continue;
-			}
-			const j = rights.findIndex((right) => (right.label ?? "") === (left.label ?? ""));
-			if (j === -1) {
-				continue;
-			}
-			const [l] = lefts.splice(i, 1);
-			const [r] = rights.splice(j, 1);
-			if (!l || !r) {
-				continue;
-			}
-			const changes = diffFields(edgeFields(l), edgeFields(r));
-			if (Object.keys(changes).length === 0) {
-				unchanged.push(r);
-			} else {
-				changed.push({ from: r.from, to: r.to, changes, fromFacts: l, toFacts: r });
-			}
-		}
-		// Whatever is left pairs up positionally: same endpoints, different label.
-		while (lefts.length > 0 && rights.length > 0) {
-			const l = lefts.shift();
-			const r = rights.shift();
-			if (!l || !r) {
-				break;
-			}
-			const changes = diffFields(edgeFields(l), edgeFields(r));
-			if (Object.keys(changes).length === 0) {
-				unchanged.push(r);
-			} else {
-				changed.push({ from: r.from, to: r.to, changes, fromFacts: l, toFacts: r });
-			}
-		}
-		removed.push(...lefts);
-		added.push(...rights);
-	}
-
-	return { added, removed, changed, unchanged };
-}
-
-// Reroutes: a removed edge and an added edge that share exactly one endpoint,
-// one-to-one on that endpoint. An inference, offered alongside added/removed
-// rather than instead of it, because "A now points at C instead of B" is the
-// sentence a human would say and reconstructing it from two lists is work the
-// consumer should not have to redo.
-function inferReroutes(
-	removed: EdgeFacts[],
-	added: EdgeFacts[],
-): CompareResult["edges"]["rerouted"] {
-	const out: CompareResult["edges"]["rerouted"] = [];
-	for (const end of ["source", "target"] as const) {
-		const rem = byAnchor(removed, end);
-		const add = byAnchor(added, end);
-		for (const [anchor, rs] of rem) {
-			const as = add.get(anchor);
-			if (!as || rs.length !== 1 || as.length !== 1) {
-				continue;
-			}
-			const r = rs.at(0);
-			const a = as.at(0);
-			if (!r || !a) {
-				continue;
-			}
-			const was = end === "source" ? r.to : r.from;
-			const now = end === "source" ? a.to : a.from;
-			if (was === now) {
-				continue;
-			}
-			out.push({
-				anchor,
-				end,
-				was,
-				now,
-				anchorName: end === "source" ? a.fromName : a.toName,
-				wasName: end === "source" ? r.toName : r.fromName,
-				nowName: end === "source" ? a.toName : a.fromName,
-			});
-		}
-	}
-	return out;
-}
-
 export {
 	nodeFacts,
 	diffFields,
+	edgeFields,
 	semanticFields,
 	cosmeticFields,
 	layoutFields,
 	diffPartitions,
 	relationOf,
 	MAX_RELATION_PAIRS,
-	matchEdges,
-	inferReroutes,
 };
