@@ -21,6 +21,12 @@ class BoardRequiredError extends Error {
 	/** Persisted board keys the caller can choose from. */
 	readonly available: string[];
 
+	/**
+	 * The refusal a caller that named no board gets, with the boards it could
+	 * have named.
+	 * @param available The persisted board keys.
+	 * @param what What needed a board, when the caller can be told.
+	 */
 	constructor(available: string[], what?: string) {
 		super(boardRequiredMessage(available, what));
 		this.name = "BoardRequiredError";
@@ -35,6 +41,14 @@ class BoardResolutionError extends Error {
 	readonly code = "BOARD_RESOLUTION_FAILED";
 	readonly status: number;
 
+	/**
+	 * A named board that cannot resolve to one valid note.
+	 * @param board The board key that was named.
+	 * @param reason Why it did not resolve.
+	 * @param message What to tell the caller.
+	 * @param files The notes that were found, where any were.
+	 * @param options The error this one is raised from, where there is one.
+	 */
 	constructor(
 		readonly board: string,
 		readonly reason: BoardResolutionFailure,
@@ -48,6 +62,13 @@ class BoardResolutionError extends Error {
 	}
 }
 
+/**
+ * The refusal a caller that named no board reads: what it was for, what the
+ * vault holds, and how to name one.
+ * @param availableBoards The persisted board keys.
+ * @param what What needed a board, when the caller can be told.
+ * @returns The message.
+ */
 function boardRequiredMessage(availableBoards: string[], what?: string): string {
 	const subject = what ? `${what} needs a board` : "This needs a board";
 	const available =
@@ -62,7 +83,11 @@ function boardRequiredMessage(availableBoards: string[], what?: string): string 
 	);
 }
 
-/** Is this the refusal, rather than some other failure? */
+/**
+ * Whether this is the no-board-named refusal rather than some other failure.
+ * @param error The thrown value.
+ * @returns The refusal, or null.
+ */
 function boardRequiredOf(error: unknown): BoardRequiredError | null {
 	return error instanceof BoardRequiredError ? error : null;
 }

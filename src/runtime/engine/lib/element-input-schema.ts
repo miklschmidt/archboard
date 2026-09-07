@@ -1,7 +1,6 @@
 import { z } from "zod";
 
-import { EXCALIDRAW_ELEMENT_TYPES } from "../types.js";
-import type { ExcalidrawElementType } from "../types.js";
+import { BOARD_ELEMENT_TYPES } from "@/shared/board-elements";
 
 const PointSchema = z.union([
 	z.tuple([z.number(), z.number()]),
@@ -19,9 +18,7 @@ const BindingInputSchema = z
 	.nullable();
 
 const ElementFields = {
-	type: z.enum(
-		Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]],
-	),
+	type: z.enum(BOARD_ELEMENT_TYPES),
 	x: z.number(),
 	y: z.number(),
 	width: z.number().optional(),
@@ -93,14 +90,7 @@ type AgentElementInput = z.input<typeof AgentElementInputSchema>;
 
 const HumanElementChangeSchema = z.looseObject({
 	id: z.string(),
-	type: z
-		.enum(
-			Object.values(EXCALIDRAW_ELEMENT_TYPES) as [
-				ExcalidrawElementType,
-				...ExcalidrawElementType[],
-			],
-		)
-		.optional(),
+	type: z.enum(BOARD_ELEMENT_TYPES).optional(),
 });
 type HumanElementChangeInput = z.input<typeof HumanElementChangeSchema>;
 

@@ -90,19 +90,40 @@ interface ClaimEntry {
 	timer: ReturnType<typeof setInterval> | null;
 }
 
+/**
+ * This canvas, as a lease names it: a host and a pid, so a refusal can say
+ * the board is held on another machine.
+ * @returns The process name.
+ */
 function processName(): string {
 	return `${os.hostname()}:${process.pid}`;
 }
 
+/**
+ * A duration as a person reads one.
+ * @param ms The duration in milliseconds.
+ * @returns The duration in seconds, to one decimal.
+ */
 function seconds(ms: number): string {
 	return `${(ms / 1000).toFixed(1)} s`;
 }
 
+/**
+ * A moment as a wall clock, which is how a refusal says when a hold began.
+ * @param iso The timestamp.
+ * @returns The time of day, or the timestamp itself when it is not one.
+ */
 function clock(iso: string): string {
 	const at = new Date(iso);
 	return Number.isNaN(at.getTime()) ? iso : at.toTimeString().slice(0, 8);
 }
 
+/**
+ * Who is holding the board, in the words a refusal uses: a person, an agent,
+ * or an agent that has claimed it, with the reason it gave.
+ * @param holder The holder.
+ * @returns The description.
+ */
 function describeWriter(holder: Readonly<LockHolder>): string {
 	if (holder.kind === "human") {
 		return "the person at the canvas";
@@ -119,6 +140,14 @@ function describeWriter(holder: Readonly<LockHolder>): string {
 	return "an agent";
 }
 
+/**
+ * The sentence a bounded wait ends with: who has the board, since when, for
+ * how long, on which canvas, and how long this caller waited.
+ * @param board The board key.
+ * @param holder Who has it, when the wait could still see them.
+ * @param waitedMs How long this caller waited.
+ * @returns The message.
+ */
 function describeHold(
 	board: string,
 	holder: Readonly<LockHolder> | null,
@@ -141,6 +170,12 @@ class BoardHeldError extends Error {
 	public readonly holder: Readonly<LockHolder> | null;
 	public readonly waitedMs: number;
 
+	/**
+	 * A refusal naming who has the board and how long this caller waited.
+	 * @param board The board key.
+	 * @param holder Who has it, when the wait could still see them.
+	 * @param waitedMs How long this caller waited.
+	 */
 	public constructor(board: string, holder: Readonly<LockHolder> | null, waitedMs: number) {
 		super(describeHold(board, holder, waitedMs));
 		this.name = "BoardHeldError";

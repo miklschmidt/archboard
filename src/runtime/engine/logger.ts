@@ -9,6 +9,7 @@ import { homedir, tmpdir } from "os";
  * across unrelated project and cloud-synced folders.
  *
  * LOG_FILE_PATH can still override this default.
+ * @returns The path to write to.
  */
 function defaultLogPath(): string {
 	if (process.platform === "darwin") {
@@ -25,6 +26,11 @@ function defaultLogPath(): string {
 
 const LOG_FILE_PATH = process.env["LOG_FILE_PATH"] || defaultLogPath();
 
+/**
+ * Make sure the log file's directory exists and is writable before winston opens it.
+ * @param filePath The log file to prepare for.
+ * @returns The same path, once its directory is known to accept writes.
+ */
 function ensureWritableLogFile(filePath: string): string {
 	const logDir = path.dirname(filePath);
 	fs.mkdirSync(logDir, { recursive: true });
@@ -32,6 +38,12 @@ function ensureWritableLogFile(filePath: string): string {
 	return filePath;
 }
 
+/**
+ * The log file this process will write: the configured or platform default
+ * path, falling back to the temp directory when that path cannot be written
+ * and nobody asked for it explicitly.
+ * @returns A writable log file path.
+ */
 function resolveLogFilePath(): string {
 	try {
 		return ensureWritableLogFile(LOG_FILE_PATH);
@@ -58,7 +70,7 @@ const logger: winston.Logger = winston.createLogger({
 				info["metadata"] && Object.keys(info["metadata"]).length
 					? ` ${JSON.stringify(info["metadata"])}`
 					: "";
-			return `${String(info["timestamp"])} [${String(info.level)}] ${String(info.message)}${extra}`;
+			return `${String(info["timestamp"])} [${info.level}] ${String(info.message)}${extra}`;
 		}),
 	),
 
@@ -75,17 +87,25 @@ const logger: winston.Logger = winston.createLogger({
 	],
 });
 
-/** Flush every queued record and close each transport before process exit. */
+/**
+ * Flush every queued record and close each transport before process exit.
+ * @param target The logger to finish; the process logger by default.
+ */
 export async function closeLogger(target: winston.Logger = logger): Promise<void> {
 	if (target.writableFinished || target.destroyed) {
 		target.close();
 		return;
 	}
 	await new Promise<void>((resolve, reject) => {
+		/** Settle once the stream has flushed, dropping the failure listener. */
 		const finished = (): void => {
 			target.off("error", failed);
 			resolve();
 		};
+		/**
+		 * Settle with the stream's failure, dropping the finish listener.
+		 * @param error What the stream reported.
+		 */
 		const failed = (error: Error): void => {
 			target.off("finish", finished);
 			reject(error);
@@ -97,7 +117,10 @@ export async function closeLogger(target: winston.Logger = logger): Promise<void
 	target.close();
 }
 
-/** Terminal fallback for a logger whose normal stream finalization failed. */
+/**
+ * Terminal fallback for a logger whose normal stream finalization failed.
+ * @param target The logger to tear down; the process logger by default.
+ */
 export function forceCloseLogger(target: winston.Logger = logger): void {
 	for (const transport of target.transports) {
 		transport.destroy();
@@ -106,8 +129,5 @@ export function forceCloseLogger(target: winston.Logger = logger): void {
 	target.close();
 }
 
-// The engine area's own TASK-151 pass owns this file and adds the same named
-// export; on merge keep one `export { logger };` and drop the default.
 export { logger };
 
-export default logger;
