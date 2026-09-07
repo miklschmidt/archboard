@@ -27,11 +27,11 @@ import { forgetClaimState } from "@/runtime/engine/lib/board-lock-claim-state";
 import { forgetLockState, watchBoardLocks } from "@/runtime/engine/lib/board-lock-state";
 
 /**
- *
+ * Forget what this process remembers about who has which board, and stop
+ * watching. Process-memory cleanup only: it deliberately does not modify the
+ * authoritative vault leases; releasing one is `releaseHold`.
  */
 function forgetLockAnnouncements(): void {
-	// This is process-memory cleanup only. It deliberately does not modify the
-	// authoritative vault leases; releasing one is `releaseHold`.
 	forgetLockState();
 	forgetClaimState();
 	watchBoardLocks(null);
