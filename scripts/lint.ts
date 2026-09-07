@@ -25,12 +25,23 @@ const optionsSchema = z.object({
 		.optional(),
 });
 
+/**
+ * Run a tool for its output alone, before the real lint starts.
+ * @param argv The command and its arguments.
+ * @returns The tool's standard output.
+ * @throws {Error} When the tool exits non-zero; the message carries both streams.
+ */
 function metadata(argv: string[]): string {
 	const result = Bun.spawnSync(argv, { cwd: repository, stdout: "pipe", stderr: "pipe" });
 	if (result.exitCode !== 0) throw new Error(result.stdout.toString() + result.stderr.toString());
 	return result.stdout.toString();
 }
 
+/**
+ * Whether this invocation will start the type-aware backend, either by a
+ * command-line flag or through the resolved configuration.
+ * @returns Whether project-scope checks must run first.
+ */
 function usesTypes(): boolean {
 	if (
 		argumentsFromCaller.some((argument) =>
@@ -44,16 +55,48 @@ function usesTypes(): boolean {
 	return parsed.options?.typeAware === true || parsed.options?.typeCheck === true;
 }
 
-function checkProjectScope(): void {
-	if (
-		argumentsFromCaller.some(
-			(argument) => argument === "--stdin" || argument.startsWith("--stdin-filename"),
-		)
+/**
+ * Whether a nested tsconfig.json or jsconfig.json sits between a file and the
+ * repository root, which would change which project tsgolint selects.
+ * @param filename The absolute path of a lint target.
+ * @returns Whether such a nested project file exists.
+ */
+function hasNestedProject(filename: string): boolean {
+	for (
+		let directory = dirname(filename);
+		directory !== repository;
+		directory = dirname(directory)
 	) {
-		throw new Error(
-			"Type-aware lint requires declared repository files. Write stdin to a repository TypeScript input before linting it.",
-		);
+		if (["tsconfig.json", "jsconfig.json"].some((name) => existsSync(join(directory, name)))) {
+			return true;
+		}
 	}
+	return false;
+}
+
+/**
+ * The reason one lint target cannot be linted type-aware, if any.
+ * @param target The target as Oxlint lists it.
+ * @param declared The absolute paths the repository tsconfig.json declares.
+ * @returns The problem line, or undefined when the target is declared and unnested.
+ */
+function targetProblem(target: string, declared: ReadonlySet<string>): string | undefined {
+	const filename = resolve(repository, target);
+	const local = relative(repository, filename);
+	if (local.startsWith("../") || isAbsolute(local) || !declared.has(filename)) {
+		return `${target}: not a declared root in the repository tsconfig.json`;
+	}
+	if (hasNestedProject(filename)) {
+		return `${target}: nested tsconfig.json or jsconfig.json would change project selection`;
+	}
+	return undefined;
+}
+
+/**
+ * The absolute paths of every file the repository TypeScript project declares.
+ * @returns The declared roots.
+ */
+function declaredRoots(): Set<string> {
 	const project = programSchema.parse(
 		JSON.parse(
 			metadata([
@@ -64,32 +107,30 @@ function checkProjectScope(): void {
 			]),
 		),
 	);
-	const declared = new Set(project.files.map((file) => resolve(repository, file)));
+	return new Set(project.files.map((file) => resolve(repository, file)));
+}
+
+/**
+ * Refuse stdin input and any target outside the declared repository project
+ * before the type-aware backend can search for a project of its own.
+ * @throws {Error} When an input is undeclared, nested under another project, or stdin.
+ */
+function checkProjectScope(): void {
+	if (
+		argumentsFromCaller.some(
+			(argument) => argument === "--stdin" || argument.startsWith("--stdin-filename"),
+		)
+	) {
+		throw new Error(
+			"Type-aware lint requires declared repository files. Write stdin to a repository TypeScript input before linting it.",
+		);
+	}
+	const declared = declaredRoots();
 	const targets = metadata([...metadataArguments, "--debug", "files"])
 		.trim()
 		.split("\n")
 		.filter(Boolean);
-	const problems: string[] = [];
-	for (const target of targets) {
-		const filename = resolve(repository, target);
-		const local = relative(repository, filename);
-		if (local.startsWith("../") || isAbsolute(local) || !declared.has(filename)) {
-			problems.push(`${target}: not a declared root in the repository tsconfig.json`);
-			continue;
-		}
-		for (
-			let directory = dirname(filename);
-			directory !== repository;
-			directory = dirname(directory)
-		) {
-			if (["tsconfig.json", "jsconfig.json"].some((name) => existsSync(join(directory, name)))) {
-				problems.push(
-					`${target}: nested tsconfig.json or jsconfig.json would change project selection`,
-				);
-				break;
-			}
-		}
-	}
+	const problems = targets.flatMap((target) => targetProblem(target, declared) ?? []);
 	if (problems.length)
 		throw new Error(
 			`Type-aware lint refused before analyzer startup:\n${problems.join("\n")}\n` +
