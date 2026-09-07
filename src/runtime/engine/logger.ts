@@ -130,4 +130,3 @@ export function forceCloseLogger(target: winston.Logger = logger): void {
 }
 
 export { logger };
-
