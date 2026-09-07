@@ -30,7 +30,12 @@ type BridgePlan = ReturnType<typeof planBridgeCreate>;
  */
 function bridgeField(body: Record<string, unknown>, name: string): string {
 	const value = body[name];
-	return typeof value === "string" ? value : value === undefined ? "" : String(value);
+	if (typeof value === "string") {
+		return value;
+	}
+	// Anything else is a malformed request the planner refuses by name, so it
+	// is passed through in a shape that cannot read as a real element id.
+	return typeof value === "number" || typeof value === "boolean" ? String(value) : "";
 }
 
 /**

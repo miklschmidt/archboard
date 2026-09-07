@@ -158,9 +158,7 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 					timeout = setTimeout(() => resolve(false), options.drainTimeoutMs);
 				}),
 			]);
-			if (timeout !== null) {
-				clearTimeout(timeout);
-			}
+			clearTimeout(timeout ?? undefined);
 			drained.delete(onDrain);
 			if (settled || active.size === 0) {
 				return;

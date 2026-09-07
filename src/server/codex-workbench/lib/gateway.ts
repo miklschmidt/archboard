@@ -18,7 +18,10 @@ import type {
 } from "@/shared/codex-workbench-identity";
 import { parseApprovalResponse } from "@/runtime/codex-approvals";
 import { SupportedLoginAccountParamsSchema } from "@/runtime/codex-protocol";
-import { createBrowserLeaseManager, type BrowserLeaseManager } from "@/server/codex-workbench/lib/lease";
+import {
+	createBrowserLeaseManager,
+	type BrowserLeaseManager,
+} from "@/server/codex-workbench/lib/lease";
 import {
 	CodexWorkbenchGatewayError,
 	type BrowserActionContext,

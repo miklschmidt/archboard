@@ -225,30 +225,23 @@ async function createRendererFixture(
 	testHooks: RendererFixtureTestHooks = {},
 ): Promise<RendererFixture> {
 	const build = locateRendererBuild(resolve(testHooks.buildRoot ?? defaultBuildRoot));
-	let server: ReturnType<typeof Bun.serve> | null = null;
-	let fixture: RendererFixture | null = null;
+	const server = Bun.serve({
+		hostname: "127.0.0.1",
+		port: 0,
+		development: false,
+		/**
+		 * Serves the one built file a request names.
+		 * @param request The incoming request.
+		 * @returns The file response, or 404.
+		 */
+		fetch: (request) => serveRendererFile(request, build),
+	});
+	const fixture = fixtureFor(server);
 	try {
-		server = Bun.serve({
-			hostname: "127.0.0.1",
-			port: 0,
-			development: false,
-			/**
-			 * Serves the one built file a request names.
-			 * @param request The incoming request.
-			 * @returns The file response, or 404.
-			 */
-			fetch: (request) => serveRendererFile(request, build),
-		});
-		const createdFixture = fixtureFor(server);
-		fixture = createdFixture;
-		await testHooks.afterListen?.(createdFixture);
-		return createdFixture;
+		await testHooks.afterListen?.(fixture);
+		return fixture;
 	} catch (error) {
-		if (fixture) {
-			await fixture.close();
-		} else if (server) {
-			await server.stop(true);
-		}
+		await fixture.close();
 		throw error;
 	}
 }

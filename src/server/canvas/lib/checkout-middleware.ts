@@ -78,7 +78,7 @@ function isUnvisitedObject(
 	candidate: unknown,
 	seen: ReadonlySet<object>,
 ): candidate is Record<string, unknown> {
-	return Boolean(candidate) && typeof candidate === "object" && !seen.has(candidate as object);
+	return candidate !== null && typeof candidate === "object" && !seen.has(candidate);
 }
 
 /**
