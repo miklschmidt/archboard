@@ -87,13 +87,29 @@ function sessionMutationOutcome(error: unknown): SettledDelivery {
  * @returns The outcome to settle durably.
  */
 function queueMutationOutcome(error: unknown, effectStarted = true): SettledDelivery {
-	if (error instanceof CodexWorkhorseOperationsError || isUndecidableQueueError(error)) {
+	if (isUndecidableFailure(error)) {
 		return effectStarted ? "outcome_unknown" : "not_delivered";
 	}
-	if (error instanceof CodexWorkhorseQueueError && error.outcome !== null) {
-		return error.outcome;
-	}
-	return "not_delivered";
+	return assertedQueueOutcome(error) ?? "not_delivered";
+}
+
+/**
+ * Recognise a failure that says nothing about the remote effect: a refusal raised by this module
+ * after the effect may have started, or a queue error whose code is itself undecidable.
+ * @param error - The thrown value.
+ * @returns Whether the remote outcome is undecidable from this error alone.
+ */
+function isUndecidableFailure(error: unknown): boolean {
+	return error instanceof CodexWorkhorseOperationsError || isUndecidableQueueError(error);
+}
+
+/**
+ * The delivery outcome a queue error asserts, when it asserts one.
+ * @param error - The thrown value.
+ * @returns The asserted outcome, or null when the error asserts none.
+ */
+function assertedQueueOutcome(error: unknown): SettledDelivery | null {
+	return error instanceof CodexWorkhorseQueueError ? error.outcome : null;
 }
 
 /**

@@ -129,6 +129,32 @@ function okResponse<Name extends CoordinatorToolName>(
 }
 
 /**
+ * Build the successful response for one tool from the result its port produced, proving the
+ * result against the tool's reviewed schema at runtime. This is how a port result whose static
+ * type the dispatcher does not track becomes a checked response.
+ * @param name - The tool that succeeded.
+ * @param operationId - The wire form of the host-issued operation identity.
+ * @param value - The result as the port produced it.
+ * @returns The frozen response.
+ */
+function okPortResponse(
+	name: CoordinatorToolName,
+	operationId: string,
+	value: unknown,
+): DynamicToolResponse {
+	const canonical = CANONICAL_RESULT_SCHEMAS[name].parse(value);
+	parseCoordinatorToolResult(name, canonical);
+	return responseForEnvelope(
+		{
+			tag: "ok",
+			operationId: requireOperationId(operationId),
+			value: canonical,
+		},
+		true,
+	);
+}
+
+/**
  * Build a refusal response.
  * @param reason - The reviewed refusal reason.
  * @param message - The diagnostic for the caller.
@@ -192,6 +218,7 @@ function parseResponseText(response: DynamicToolResponse): DynamicToolResponse {
 
 export {
 	type DynamicToolEnvelope,
+	okPortResponse,
 	okResponse,
 	refusedResponse,
 	approvalRequiredResponse,

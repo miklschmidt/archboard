@@ -17,6 +17,7 @@ import {
 	errorMessage,
 	executeCall,
 	unavailable,
+	type ExecutionContext,
 } from "@/runtime/codex-coordinator-tools/lib/call-execution";
 import {
 	createReplayLedger,
@@ -38,6 +39,21 @@ import {
  * A no-op placeholder for the cancellation waker until the promise executor installs the real one.
  */
 function ignoreCancellation(): void {}
+
+/** The child and epoch an exit notification names. */
+interface ChildExit {
+	readonly child: ChildId;
+	readonly epoch: ChildEpoch;
+}
+
+/**
+ * The result for a wire call that was cancelled while waiting on the logical call it aliases:
+ * nothing was attempted on its behalf, so it is answered as no longer executing.
+ * @returns The unavailable result.
+ */
+function cancelled(): CoordinatorToolDispatchResult {
+	return unavailable(false);
+}
 
 /**
  * The refusal for a replay whose arguments differ from the logical call it claims to repeat.
@@ -80,6 +96,14 @@ export function createCodexCoordinatorTools(
 	let epochClosed = false;
 	const ledger = createReplayLedger();
 	const { liveWireCalls, retainedWireCalls, liveLogicalCalls, retainedLogicalCalls } = ledger;
+
+	/**
+	 * Whether this dispatcher has been disposed. Read through a function so a call in flight sees
+	 * a disposal that happened during one of its awaits.
+	 * @returns True once dispose has run.
+	 */
+	const isDisposed = (): boolean => disposed;
+	const executionContext: ExecutionContext = { options, disposed: isDisposed };
 
 	/**
 	 * The key of the logical call the host is executing right now.
@@ -155,11 +179,6 @@ export function createCodexCoordinatorTools(
 		state: CallState,
 		logical: LogicalCallState,
 	): Promise<CoordinatorToolDispatchResult> => {
-		/**
-		 * The result for an alias that was cancelled while waiting.
-		 * @returns The unavailable result.
-		 */
-		const cancelled = (): CoordinatorToolDispatchResult => unavailable(false);
 		let terminal: CoordinatorToolDispatchResult;
 		if (state === logical.owner) {
 			const disconnected = state.cancellation.then(() =>
@@ -247,7 +266,7 @@ export function createCodexCoordinatorTools(
 			promise: null,
 		};
 		liveLogicalCalls.set(key, logical);
-		logical.promise = executeCall({ options, disposed: () => disposed }, state, validated)
+		logical.promise = executeCall(executionContext, state, validated)
 			.catch((error: unknown) =>
 				complete(
 					refusedResponse(
@@ -393,7 +412,7 @@ export function createCodexCoordinatorTools(
 	 * @param exit - The exited child and epoch.
 	 * @returns True when it is ours.
 	 */
-	const isOwnChild = (exit: { readonly child: ChildId; readonly epoch: ChildEpoch }): boolean =>
+	const isOwnChild = (exit: ChildExit): boolean =>
 		exit.child === options.identity.validator.childId &&
 		exit.epoch === options.identity.validator.epoch;
 
@@ -402,7 +421,7 @@ export function createCodexCoordinatorTools(
 	 * forget everything.
 	 * @param exit - The exited child and epoch.
 	 */
-	const onChildExit = (exit: { readonly child: ChildId; readonly epoch: ChildEpoch }): void => {
+	const onChildExit = (exit: ChildExit): void => {
 		if (!isOwnChild(exit)) {
 			return;
 		}
