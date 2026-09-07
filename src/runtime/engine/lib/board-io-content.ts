@@ -142,6 +142,46 @@ function ingestFile(id: string, raw: unknown): ExcalidrawFile | null {
 }
 
 /**
+ * The elements a scene states, refusing a scene that names one id twice.
+ * @param sceneElements The scene's raw element records.
+ * @param context What is being read, for error messages.
+ * @returns The elements by id.
+ * @throws {Error} When an element is malformed, or an id repeats.
+ */
+function ingestElements(sceneElements: unknown[], context: string): Map<string, ServerElement> {
+	const elements = new Map<string, ServerElement>();
+	for (const raw of sceneElements) {
+		const element = validatePersistedBoardElement(raw, context);
+		if (elements.has(element.id)) {
+			throw new Error(`${context}: duplicate element id ${element.id}`);
+		}
+		elements.set(element.id, element);
+	}
+	return elements;
+}
+
+/**
+ * The scene's images, keyed as the elements point at them.
+ *
+ * A record this cannot read is dropped rather than refused: an unusable image
+ * is a missing picture, and the board around it is still the board.
+ * @param sceneFiles The scene's raw `files` map, when it has one.
+ * @returns The files by id.
+ */
+function ingestFiles(
+	sceneFiles: Record<string, unknown> | null | undefined,
+): Map<string, ExcalidrawFile> {
+	const files = new Map<string, ExcalidrawFile>();
+	for (const [id, raw] of Object.entries(sceneFiles ?? {})) {
+		const file = ingestFile(id, raw);
+		if (file) {
+			files.set(id, file);
+		}
+	}
+	return files;
+}
+
+/**
  * Take a scene into the maps a request works against: its elements, and the
  * images those elements draw.
  *
@@ -157,34 +197,20 @@ function ingestFile(id: string, raw: unknown): ExcalidrawFile | null {
  * @param sceneFiles The scene's raw `files` map, when it has one.
  * @param context What is being read, for error messages.
  * @returns The element and file maps.
+ * @throws {Error} When an element is malformed, an id repeats, or the scene's
+ * geometry could not be rendered.
  */
 function ingestScene(
 	sceneElements: unknown[],
 	sceneFiles?: Record<string, unknown> | null,
 	context = "scene",
 ): { elements: Map<string, ServerElement>; files: Map<string, ExcalidrawFile> } {
-	const elements = new Map<string, ServerElement>();
-	for (const raw of sceneElements) {
-		const element = validatePersistedBoardElement(raw, context);
-		if (elements.has(element.id)) {
-			throw new Error(`${context}: duplicate element id ${element.id}`);
-		}
-		elements.set(element.id, element);
-	}
-
+	const elements = ingestElements(sceneElements, context);
 	// A note already in the vault gets no silent repair. Refuse the whole scene
 	// here, before any caller can register it or send it to a pane, and let the
 	// existing board-open error path put the actionable geometry error on screen.
 	validateRenderGeometry(elements.values());
-
-	const files = new Map<string, ExcalidrawFile>();
-	for (const [id, raw] of Object.entries(sceneFiles ?? {})) {
-		const file = ingestFile(id, raw);
-		if (file) {
-			files.set(id, file);
-		}
-	}
-	return { elements, files };
+	return { elements, files: ingestFiles(sceneFiles) };
 }
 
 /**

@@ -92,6 +92,24 @@ function vaultBoardAt(file: string, vault: string): VaultBoard | null {
 }
 
 /**
+ * Add one directory entry to `found`, when it is a board note.
+ * @param entry The directory entry.
+ * @param full Its absolute path.
+ * @param vault The resolved vault root.
+ * @param found The list being built.
+ */
+function collectBoardNote(
+	entry: fs.Dirent,
+	full: string,
+	vault: string,
+	found: VaultBoard[],
+): void {
+	if (!entry.isFile() || !entry.name.endsWith(BOARD_FILE_SUFFIX)) return;
+	const board = vaultBoardAt(full, vault);
+	if (board) found.push(board);
+}
+
+/**
  * Collect every board note below one directory into `found`, skipping
  * dot-directories (.obsidian, .git, .trash) and unreadable directories.
  * @param dir The directory to walk.
@@ -108,13 +126,8 @@ function collectBoards(dir: string, vault: string, found: VaultBoard[]): void {
 	for (const entry of entries) {
 		if (entry.name.startsWith(".")) continue;
 		const full = path.join(dir, entry.name);
-		if (entry.isDirectory()) {
-			collectBoards(full, vault, found);
-			continue;
-		}
-		if (!entry.isFile() || !entry.name.endsWith(BOARD_FILE_SUFFIX)) continue;
-		const board = vaultBoardAt(full, vault);
-		if (board) found.push(board);
+		if (entry.isDirectory()) collectBoards(full, vault, found);
+		else collectBoardNote(entry, full, vault, found);
 	}
 }
 

@@ -128,18 +128,31 @@ function normalizeBoardName(name: string): string {
 }
 
 /**
- * Refuse one path segment of a board name that could not be a file name or
- * a wiki-link, naming the segment in the error so the human can fix it.
+ * Refuse a path segment that is not a name at all: empty, a directory
+ * traversal, or padded with whitespace a file system would keep.
  * @param name The whole name, for the error message.
  * @param segment One `/`-separated segment of it.
+ * @throws {Error} When the segment is one of those.
  */
-function validateNameSegment(name: string, segment: string): void {
+function refuseUnusableSegment(name: string, segment: string): void {
 	if (segment === "" || segment === "." || segment === "..") {
 		throw new Error(`Invalid board name "${name}": "${segment}" is not a usable path segment`);
 	}
 	if (segment !== segment.trim()) {
-		throw new Error(`Invalid board name "${name}": path segments must not be padded with whitespace`);
+		throw new Error(
+			`Invalid board name "${name}": path segments must not be padded with whitespace`,
+		);
 	}
+}
+
+/**
+ * Refuse a path segment holding a character that breaks a path, an Obsidian
+ * link, or the address grammar itself.
+ * @param name The whole name, for the error message.
+ * @param segment One `/`-separated segment of it.
+ * @throws {Error} When the segment holds one.
+ */
+function refuseReservedCharacters(name: string, segment: string): void {
 	if (NAME_SEGMENT_BAD_RE.test(segment)) {
 		throw new Error(
 			`Invalid board name "${name}": "@ \\ : * ? " < > | [ ] # ^" are reserved ` +
@@ -149,6 +162,18 @@ function validateNameSegment(name: string, segment: string): void {
 	if (hasControlCharacter(segment)) {
 		throw new Error(`Invalid board name "${name}": control characters are not allowed`);
 	}
+}
+
+/**
+ * Refuse one path segment of a board name that could not be a file name or
+ * a wiki-link, naming the segment in the error so the human can fix it.
+ * @param name The whole name, for the error message.
+ * @param segment One `/`-separated segment of it.
+ * @throws {Error} When the segment is not usable.
+ */
+function validateNameSegment(name: string, segment: string): void {
+	refuseUnusableSegment(name, segment);
+	refuseReservedCharacters(name, segment);
 }
 
 /**
@@ -205,13 +230,20 @@ function validateLevel(level: string): string {
 	return trimmed;
 }
 
+/** A board as somebody typed it. */
+interface IdentityInput {
+	board: string;
+	variant?: string;
+	level?: string;
+}
+
 /**
  * Build a validated identity from what a caller typed, defaulting the variant
  * to `current` and keeping the typed casing only when it differs from the key.
  * @param input The name, and optionally a variant and level.
  * @returns The identity, ready to key a board by.
  */
-function makeIdentity(input: { board: string; variant?: string; level?: string }): BoardIdentity {
+function makeIdentity(input: IdentityInput): BoardIdentity {
 	const typed = validateBoardName(input.board);
 	const key = normalizeBoardName(typed);
 	return {
@@ -301,11 +333,26 @@ function entryMatching(dir: string, wanted: string): string | null {
 
 /**
  * Walk the vault a segment at a time, taking whatever spelling is on disk.
+ * A board's note name, without the suffix: the board's own name, and the
+ * variant after an `@` when it is not the current one.
+ * @param identity The board.
+ * @returns The base name.
+ * @throws {Error} When the name or variant is not usable.
+ */
+function noteBaseName(identity: Pick<BoardIdentity, "board" | "variant" | "displayName">): string {
+	const name = validateBoardName(boardDisplayName(identity));
+	const variant = validateVariant(identity.variant);
+	return variant === CURRENT_VARIANT ? name : `${name}@${variant}`;
+}
+
+/**
+ * The path with each existing segment spelled as the filesystem has it.
+ *
  * The moment a segment has no match the rest is a path that does not exist,
  * so the typed casing is the right name for it.
  * @param vault The resolved vault root.
  * @param relative The note path relative to the vault, as typed.
- * @returns The path with each existing segment spelled as the filesystem has it.
+ * @returns The path.
  */
 function caseInsensitivePath(vault: string, relative: string): string {
 	const segments = relative.split("/");
@@ -341,9 +388,7 @@ function vaultPathFor(
 	if (identity.board === SCRATCH_BOARD && identity.variant === CURRENT_VARIANT) {
 		return path.join(path.resolve(root), VAULT_STATE_DIR, `${SCRATCH_BOARD}${BOARD_FILE_SUFFIX}`);
 	}
-	const name = validateBoardName(boardDisplayName(identity));
-	const variant = validateVariant(identity.variant);
-	const base = variant === CURRENT_VARIANT ? name : `${name}@${variant}`;
+	const base = noteBaseName(identity);
 	const vault = path.resolve(root);
 	const resolved = path.resolve(vault, `${base}${BOARD_FILE_SUFFIX}`);
 	if (!resolved.startsWith(vault + path.sep)) {

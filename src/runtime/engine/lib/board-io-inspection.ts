@@ -70,28 +70,48 @@ function projectElements(elements: readonly unknown[]): ServerElement[] | null {
 }
 
 /**
+ * The three things a scene file record has to carry beside its id.
+ * @param raw The record.
+ * @returns The fields, or null when any of them is missing or mis-typed.
+ */
+function fileFields(raw: Record<string, unknown>): Omit<ExcalidrawFile, "id"> | null {
+	const dataURL = raw["dataURL"];
+	const mimeType = raw["mimeType"];
+	const created = raw["created"];
+	if (typeof dataURL !== "string" || typeof mimeType !== "string") {
+		return null;
+	}
+	if (typeof created !== "number" || !Number.isFinite(created)) {
+		return null;
+	}
+	return { dataURL, mimeType, created };
+}
+
+/**
  * One scene file record, exactly as the renderer needs it.
+ *
+ * A record whose own `id` disagrees with the key it is filed under is not a
+ * file this scene can draw: the elements point at the key.
  * @param id The key in the scene's `files` map.
  * @param raw The value under that key.
  * @returns The record, or null when any field is missing or mis-typed.
  */
 function projectFile(id: string, raw: unknown): ExcalidrawFile | null {
-	if (!isRecord(raw) || Array.isArray(raw)) {
+	if (!isRecord(raw) || Array.isArray(raw) || raw["id"] !== id) {
 		return null;
 	}
-	const dataURL = raw["dataURL"];
-	const mimeType = raw["mimeType"];
-	const created = raw["created"];
-	if (
-		raw["id"] !== id ||
-		typeof dataURL !== "string" ||
-		typeof mimeType !== "string" ||
-		typeof created !== "number" ||
-		!Number.isFinite(created)
-	) {
-		return null;
-	}
-	return { id, dataURL, mimeType, created };
+	const fields = fileFields(raw);
+	return fields ? { id, ...fields } : null;
+}
+
+/**
+ * The scene's `files` map, when it has one that is a map at all.
+ * @param record The scene as a record, or null for a bare element array.
+ * @returns The map, or null when the scene states something that is not one.
+ */
+function statedFiles(record: Record<string, unknown> | null): Record<string, unknown> | null {
+	const rawFiles = record?.["files"] ?? {};
+	return isRecord(rawFiles) && !Array.isArray(rawFiles) ? rawFiles : null;
 }
 
 /**
@@ -99,9 +119,11 @@ function projectFile(id: string, raw: unknown): ExcalidrawFile | null {
  * @param record The scene as a record, or null for a bare element array.
  * @returns The files keyed by id.
  */
-function projectFiles(record: Record<string, unknown> | null): Record<string, ExcalidrawFile> | null {
-	const rawFiles = record?.["files"] ?? {};
-	if (!isRecord(rawFiles) || Array.isArray(rawFiles)) {
+function projectFiles(
+	record: Record<string, unknown> | null,
+): Record<string, ExcalidrawFile> | null {
+	const rawFiles = statedFiles(record);
+	if (!rawFiles) {
 		return null;
 	}
 	const files: Record<string, ExcalidrawFile> = {};
