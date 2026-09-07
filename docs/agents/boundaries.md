@@ -138,5 +138,4 @@ Run `bun run lint` for code and boundary lint. Run `bun run check` for lint,
 formatting, type checking, and all four normal native test lanes. Explicit
 `test:opt-in:*` package commands own capacity, test tooling, unsupported
 topologies, and browser performance outside that normal gate. `bun run fix`
-applies safe Oxlint fixes, formats the repository, then validates the
-distributable skills.
+applies safe Oxlint fixes and formats the repository.

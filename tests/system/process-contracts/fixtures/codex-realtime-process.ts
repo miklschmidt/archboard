@@ -263,6 +263,10 @@ async function createHarness(
 		adapter = createCodexRealtimeAdapter({
 			session,
 			identity,
+			boardCatalogue: {
+				read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+				subscribe: () => () => {},
+			},
 			freshSemanticBrief: () => '{"source":"fresh-process-brief","board":"Architecture"}',
 			currentBinding: () => (current === generation && !closed ? binding : null),
 		});

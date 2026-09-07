@@ -783,15 +783,21 @@ function createCodexThreadLinkClassifier(
 	return Object.freeze({ classify });
 }
 
-/** Empty roots are hidden by Codex's preview-filtered history list before the first turn. */
+/** History omits empty roots and may omit a loaded root's direct-input capability. */
 async function readOwnedCreatedRoot(
 	options: CodexThreadLinkClassifierOptions,
 	target: ThreadLinkTarget,
 	persisted: readonly SessionThread[],
 	loaded: readonly ThreadId[],
 ): Promise<SessionThread | null> {
+	const matching = persisted.filter((row) => row.id === target.threadId);
+	const listed = matching[0];
 	if (
-		persisted.some((row) => row.id === target.threadId) ||
+		matching.length > 1 ||
+		(listed !== undefined &&
+			(observedDirectInput(listed) !== null ||
+				sourceOf(listed) !== CODEX_SESSION_THREAD_SOURCE ||
+				!isExecutableThreadLinkStatus(statusOf(listed)))) ||
 		loaded.filter((id) => id === target.threadId).length !== 1
 	) {
 		return null;
@@ -854,7 +860,8 @@ function classifyFromExhausted(
 	const evidence = durableEvidence(options, target);
 	const matchingThreads = persisted.filter((thread) => thread.id === target.threadId);
 	const matchingLoaded = loaded.filter((threadId) => threadId === target.threadId);
-	const thread = matchingThreads.length === 1 ? cloneAndFreeze(matchingThreads[0]!) : ownedRoot;
+	const thread =
+		ownedRoot ?? (matchingThreads.length === 1 ? cloneAndFreeze(matchingThreads[0]!) : null);
 	const observation = observationFor(thread, matchingLoaded.length, matchingThreads.length);
 	const refusal = classifyReason(
 		target,

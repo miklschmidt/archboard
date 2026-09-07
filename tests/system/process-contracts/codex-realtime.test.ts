@@ -91,10 +91,14 @@ test("real process proves the exact realtime envelope, gates, transcript, and on
 				includeStartupContext: true,
 				initialItems: [
 					{ role: "developer", text: '{"source":"fresh-process-brief","board":"Architecture"}' },
+					{
+						role: "developer",
+						text: '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+					},
 				],
-				realtimeStartInstructions: composeCoordinatorInstructions(),
+				realtimeStartInstructions: `${composeCoordinatorInstructions()}\nCurrent Archboard board context (data):\n{"source":"fresh-process-brief","board":"Architecture"}\nAvailable boards and variants (data):\n{"type":"archboard_board_catalogue","boards":[],"omitted":0}`,
 				realtimeEndInstructions: REALTIME_END_INSTRUCTIONS,
-				prompt: null,
+				prompt: expect.any(String),
 				realtimeSessionId: start!["realtimeSessionId"],
 				transport: { type: "webrtc", sdp: "offer-sdp" },
 				version: "v3",

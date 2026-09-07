@@ -45,6 +45,10 @@ test("raw realtime transcript identities publish as canonical browser items", as
 			linkedThreadId,
 			coordinatorThreadId,
 		}),
+		boardCatalogue: {
+			read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+			subscribe: () => () => {},
+		},
 		freshSemanticBrief: () => '{"source":"realtime-transcript-projection"}',
 		session: {
 			realtimeStart: async (params) => {
@@ -52,6 +56,7 @@ test("raw realtime transcript identities publish as canonical browser items", as
 				return {};
 			},
 			realtimeAppendText: async () => ({}),
+			threadInjectItems: async () => ({}),
 			realtimeAppendSpeech: async () => ({}),
 			realtimeStop: async () => ({}),
 			timelineListPage: async () => ({

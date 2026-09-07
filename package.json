@@ -32,7 +32,7 @@
 		"postinstall": "bun run generate:codex-contract",
 		"sync:skills": "bun scripts/sync-skills.ts",
 		"lint": "bun run ensure:codex-contract && bun run lint:repository && bun run lint:ui",
-		"fix": "bun scripts/lint.ts --disable-nested-config --fix . && bun scripts/lint.ts --type-aware --threads 1 --fix --config src/ui/.oxlintrc.jsonc src/ui && bun run lint && bun run fmt && bun test tests/system/repository-policy/skills.test.ts",
+		"fix": "bun scripts/lint.ts --disable-nested-config --fix . && bun scripts/lint.ts --type-aware --threads 1 --fix --config src/ui/.oxlintrc.jsonc src/ui && bun run lint && bun run fmt",
 		"fmt": "oxfmt . '!dist/**' '!node_modules/**' '!backlog/**' '!src/shared/codex-app-server-contract/generated/**'",
 		"fmt:check": "oxfmt --check . '!dist/**' '!node_modules/**' '!backlog/**' '!src/shared/codex-app-server-contract/generated/**'",
 		"check": "bun run lint && bun run fmt:check && bun run test",
