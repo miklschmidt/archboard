@@ -9,6 +9,7 @@ import type { CodeTargetNotice } from "@/shared/code-target";
 import {
 	boardErrorNotice,
 	codeTargetShellNotice,
+	failureNotice,
 	staleFrontendNotice,
 	withdrawnNotice,
 } from "@/ui/application/notices";
@@ -171,6 +172,13 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		notices.raise(boardErrorNotice(paneId, error));
 	}
 	/**
+	 * A board link could not be followed.
+	 * @param error The refusal and recovery guidance.
+	 */
+	function onBoardLinkError(error: string): void {
+		notices.raise(failureNotice("board-link", "Open linked board", error));
+	}
+	/**
 	 * This tab runs a bundle the canvas no longer serves.
 	 * @param message What the server said.
 	 */
@@ -231,6 +239,7 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 	}
 	return {
 		onBoardError,
+		onBoardLinkError,
 		onAgentActivity,
 		onEditsWithdrawn,
 		onStaleFrontend,

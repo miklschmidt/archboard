@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-06 23:01'
-updated_date: '2026-09-07 00:01'
+updated_date: '2026-09-07 00:11'
 labels: []
 dependencies: []
 priority: high
@@ -61,6 +61,8 @@ TASK-156 coordination arrived while my remaining-browser run was already active.
 The interrupted runner exited 143 and its PID was gone before coordination handoff. TASK-156 then reported its complete serial browser lane passed and explicitly released the exclusive browser/heavy-check slot. Started a final unchanged bun run check under that exclusive slot; this run will be the final complete-gate evidence.
 
 Final exclusive validation: TMPDIR=/tmp bun run check exited 0 on the unchanged implementation. Lint, formatting and both TypeScript projects passed. All 3003 tests passed: 2660 module tests (288 files, 22.80s), 309 system tests (79 files, 143.37s), 9 repository tests (2 files, 2.60s), and 25 browser tests across all 20 normal owners. The undo owner passed creation (7.07s) and modification (6.80s), 60 assertions total, verifying full canvas/persisted-note content after ordinary and post-agent drag/undo/redo plus valid native version increments. All three stale-write refusal cases passed (10.15s) and showNoteScene remains byte-for-byte unchanged. Fullscreen passed in this final complete run (7.38s). Earlier timeouts, their base-source reproduction, and the interrupted overlap run remain recorded above but are not the final gate outcome. The live server and vault were not used; all test state was disposable under short /tmp paths. No lint rules or justified shadcn exceptions changed.
+
+Integration review: Standards and Spec found no actionable findings against f45057c7. Integrated with TASK-156 and the user-requested Astra/medium workhorse profile on codex/task-143-144-workbench. Complete bun run check passed on the combined tree, including both undo scenarios and all three refusal scenarios. Browser inventories retain both new owners.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
