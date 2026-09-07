@@ -53,6 +53,7 @@ interface SourceState {
  *
  * Everything outside `src/` is dropped. Editing a dependency is not a thing
  * this is about, and a change under `dist/` is the other half, below.
+ * @returns When the source was read and which file has moved since, if any.
  */
 function sourceState(): SourceState {
 	let newestFile: string | null = null;
@@ -81,6 +82,11 @@ function sourceState(): SourceState {
 	};
 }
 
+/**
+ * Every `src/` TypeScript file this process has evaluated so far, accumulated
+ * across calls so a module that was loaded lazily is not forgotten.
+ * @returns Absolute paths of the loaded source files.
+ */
 function loadedSourceFiles(): string[] {
 	const registry = moduleRegistry();
 	const prefix = srcDir + path.sep;
@@ -98,11 +104,10 @@ function loadedSourceFiles(): string[] {
  * rather than a specification: under a runtime that does not do this the list
  * is empty and nothing is ever reported stale, which is the safe way to be
  * wrong.
+ * @returns The module cache keyed by path, or null when the runtime has none.
  */
 function moduleRegistry(): Record<string, unknown> | null {
-	const host = globalThis as { require?: { cache?: Record<string, unknown> } };
-	const cache = typeof require !== "undefined" ? require.cache : host.require?.cache;
-	return cache ?? null;
+	return typeof require === "undefined" ? null : require.cache;
 }
 
 // ─── The tab's half ───────────────────────────────────────────
@@ -125,6 +130,20 @@ interface FrontendState {
 
 const BUILT_ASSET = /^\/assets\//;
 
+/**
+ * Whether a reported entry script is a hashed vite bundle rather than a dev
+ * server's source file or nothing at all.
+ * @param entry The entry script name, or null.
+ * @returns True when the name can be compared build to build.
+ */
+function isBuiltAsset(entry: string | null): entry is string {
+	return entry !== null && BUILT_ASSET.test(entry);
+}
+
+/**
+ * The entry script the built frontend names right now.
+ * @returns The hashed asset path from `dist/frontend/index.html`, or null when nothing is built.
+ */
 function frontendBuild(): string | null {
 	try {
 		const html = fs.readFileSync(path.join(repoRoot, "dist", "frontend", "index.html"), "utf-8");
@@ -142,16 +161,13 @@ function frontendBuild(): string | null {
  * served by the vite dev server names its source file, not a hashed bundle, and
  * a canvas with no `dist/frontend` has nothing to compare against; in both
  * cases the honest answer is nothing at all rather than a guess.
+ * @param loadedBuild The entry script the tab says it loaded.
+ * @returns Both names, whether they differ, and what to tell the tab.
  */
 function frontendState(loadedBuild: string | null | undefined): FrontendState {
 	const current = frontendBuild();
 	const reported = loadedBuild ?? null;
-	const comparable =
-		current !== null &&
-		reported !== null &&
-		BUILT_ASSET.test(current) &&
-		BUILT_ASSET.test(reported);
-	const stale = comparable && current !== reported;
+	const stale = isBuiltAsset(current) && isBuiltAsset(reported) && current !== reported;
 	return {
 		current,
 		loaded: reported,

@@ -30,8 +30,8 @@
 // worse. So the line is capped and the list is short, and both caps are here
 // rather than in the middleware, the pane and the injector separately.
 
-import { normalizeBoardKey } from "./board.js";
-import type { HolderKind } from "./board-lock.js";
+import { normalizeBoardKey } from "@/runtime/engine/board";
+import type { HolderKind } from "@/runtime/engine/board-lock";
 
 /**
  * The longest line worth putting on a wall.
@@ -69,6 +69,12 @@ interface Store {
 }
 
 const processStore: Store = { byBoard: new Map<string, DoingEntry[]>() };
+/**
+ * Where the lines are kept, which is this process and nowhere else: what an
+ * agent said it was doing is a fact about a canvas that is running, not one
+ * the vault has a file for.
+ * @returns The store.
+ */
 const store = (): Store => processStore;
 
 /** A line as it must arrive, or the reason it is refused. */
@@ -80,6 +86,8 @@ type DoingCheck = { ok: true; doing: string } | { ok: false; problem: string };
  * Newlines collapse rather than being refused — a shell heredoc is not a
  * mistake worth a round trip — but length and emptiness are refusals, because
  * both mean the caller has not actually said anything.
+ * @param raw What the caller wrote.
+ * @returns The line, or why it is refused.
  */
 function checkDoing(raw: unknown): DoingCheck {
 	if (typeof raw !== "string" || !raw.trim()) {
@@ -110,6 +118,9 @@ function checkDoing(raw: unknown): DoingCheck {
  * the same sentence about one board inside five writes therefore read as one
  * line. That is the cheaper of the two mistakes: the other one is a list that
  * is the same sentence five times, which is what this is for.
+ * @param board Which board it was said about.
+ * @param entry What was said, and who said it.
+ * @returns The board's lines, oldest first.
  */
 function recordDoing(board: string, entry: DoingEntry): DoingEntry[] {
 	const key = normalizeBoardKey(board);
@@ -122,7 +133,11 @@ function recordDoing(board: string, entry: DoingEntry): DoingEntry[] {
 	return list;
 }
 
-/** The last few things said about this board, oldest first. */
+/**
+ * The last few things said about this board, oldest first.
+ * @param board Which board.
+ * @returns The lines.
+ */
 function recentDoing(board: string): DoingEntry[] {
 	return store().byBoard.get(normalizeBoardKey(board)) ?? [];
 }
@@ -133,6 +148,7 @@ function recentDoing(board: string): DoingEntry[] {
  * Nothing calls this on the ordinary path — the list is meant to outlive the
  * work it describes for as long as somebody might still be looking at the
  * board. It exists for the checks, which run several boards through one canvas.
+ * @param board Which board, or every board when omitted.
  */
 function forgetDoing(board?: string): void {
 	const { byBoard } = store();

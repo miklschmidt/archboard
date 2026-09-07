@@ -50,6 +50,11 @@ interface InvalidRenderGeometry {
 class RenderGeometryError extends Error {
 	public readonly invalid: InvalidRenderGeometry[];
 
+	/**
+	 * Refuse a document, naming every element that is wrong rather than the
+	 * first one, so one repair pass can fix all of them.
+	 * @param invalid The elements whose geometry cannot be rendered.
+	 */
 	public constructor(invalid: InvalidRenderGeometry[]) {
 		const details = invalid
 			.map((element) => `${element.id} (${element.type}): ${element.fields.join(", ")}`)
@@ -71,20 +76,80 @@ interface Extent {
 	height: number;
 }
 
+/** One point of a path, as offsets from the element's origin. */
+interface PathPoint {
+	x: number;
+	y: number;
+}
+
+/** The corners of a path, as offsets from the element's origin. */
+interface PathExtrema {
+	minX: number;
+	minY: number;
+	maxX: number;
+	maxY: number;
+}
+
+/**
+ * A number a shape can actually be drawn with.
+ * @param v Whatever the element carried.
+ * @returns The number, or undefined for anything that is not a finite one.
+ */
 const finite = (v: unknown): number | undefined =>
 	typeof v === "number" && Number.isFinite(v) ? v : undefined;
 
 /**
- * Refuse a document Excalidraw cannot render without producing a non-finite
- * camera. Report the whole document in one pass so a caller can repair every
- * offending element rather than discovering one field per write.
+ * A coordinate, reading a missing one as 0.
  *
- * Tombstones are intentionally ignored. Excalidraw does not render them, and
- * malformed history must not prevent a valid live document from being saved.
+ * Every caller here is placing an element on a board next to its neighbours,
+ * and one element excusing itself from the frame is a worse answer than one
+ * drawn at the origin.
+ * @param value Whatever the element carried.
+ * @returns The coordinate.
  */
+function coordinate(value: unknown): number {
+	return finite(value) ?? 0;
+}
+
 /**
- * @param elements elements to inspect
- * @returns all live elements with invalid render geometry
+ * A name an error message can use.
+ * @param value Whatever the element carried.
+ * @param placeholder What to say when it carries nothing usable.
+ * @returns The name.
+ */
+function nameOrPlaceholder(value: unknown, placeholder: string): string {
+	return typeof value === "string" && value ? value : placeholder;
+}
+
+/**
+ * What is wrong with one element's geometry, when anything is.
+ * @param element The element.
+ * @returns The report, or undefined when every field is finite.
+ */
+function invalidGeometryOf(element: RenderGeometryElement): InvalidRenderGeometry | undefined {
+	const fields = (["x", "y", "width", "height"] as const).filter(
+		(field) => finite(element[field]) === undefined,
+	);
+	if (fields.length === 0) {
+		return undefined;
+	}
+	return {
+		id: nameOrPlaceholder(element.id, "<unnamed>"),
+		type: nameOrPlaceholder(element.type, "<unknown>"),
+		fields,
+	};
+}
+
+/**
+ * Every live element Excalidraw could not render without producing a
+ * non-finite camera.
+ *
+ * The whole document in one pass, so a caller can repair every offending
+ * element rather than discovering one field per write. Tombstones are
+ * intentionally ignored: Excalidraw does not render them, and malformed
+ * history must not prevent a valid live document from being saved.
+ * @param elements The elements to inspect.
+ * @returns All live elements with invalid render geometry.
  */
 function collectInvalidRenderGeometry(
 	elements: Iterable<RenderGeometryElement>,
@@ -94,30 +159,20 @@ function collectInvalidRenderGeometry(
 		if (element.isDeleted === true) {
 			continue;
 		}
-		const fields = (["x", "y", "width", "height"] as const).filter(
-			(field) => finite(element[field]) === undefined,
-		);
-		if (fields.length === 0) {
-			continue;
+		const found = invalidGeometryOf(element);
+		if (found) {
+			invalid.push(found);
 		}
-		invalid.push({
-			id: typeof element.id === "string" && element.id ? element.id : "<unnamed>",
-			type: typeof element.type === "string" && element.type ? element.type : "<unknown>",
-			fields,
-		});
 	}
 	return invalid;
 }
 
 /**
  * Refuse a document Excalidraw cannot render without producing a non-finite
- * camera. Report the whole document in one pass so a caller can repair every
- * offending element rather than discovering one field per write.
- *
- * Tombstones are intentionally ignored. Excalidraw does not render them, and
- * malformed history must not prevent a valid live document from being saved.
- *
- * @param elements complete document to validate
+ * camera.
+ * @param elements The complete document to validate.
+ * @throws {RenderGeometryError} When any live element's geometry is not
+ * finite, naming every one of them.
  */
 function validateRenderGeometry(elements: Iterable<RenderGeometryElement>): void {
 	const invalid = collectInvalidRenderGeometry(elements);
@@ -132,65 +187,60 @@ const DEFAULT_LINEAR_POINTS = [
 	[100, 0],
 ] as const;
 
-/** Valid native point tuples, in the shape used by geometry consumers. */
 /**
- * @param points candidate native points
- * @returns valid numeric point tuples, or undefined when none exist
+ * One point of a path, when it is one.
+ * @param point The candidate point.
+ * @returns The pair, or undefined when it is not a pair of finite numbers.
  */
-function pointsOf(points: unknown): { x: number; y: number }[] | undefined {
+function pointOf(point: unknown): PathPoint | undefined {
+	if (!Array.isArray(point) || point.length !== 2) {
+		return undefined;
+	}
+	const x = finite(point[0]);
+	const y = finite(point[1]);
+	if (x === undefined || y === undefined) {
+		return undefined;
+	}
+	return { x, y };
+}
+
+/**
+ * Valid native point tuples, in the shape used by geometry consumers.
+ * @param points The candidate native points.
+ * @returns The valid ones, or undefined when there are none.
+ */
+function pointsOf(points: unknown): PathPoint[] | undefined {
 	if (!Array.isArray(points) || points.length === 0) {
 		return undefined;
 	}
-	const normalized: { x: number; y: number }[] = [];
-	for (const point of points) {
-		if (!Array.isArray(point) || point.length !== 2) {
-			continue;
-		}
-		const x = finite(point[0]);
-		const y = finite(point[1]);
-		if (x !== undefined && y !== undefined) {
-			normalized.push({ x, y });
-		}
-	}
+	const normalized: PathPoint[] = points.flatMap((point) => pointOf(point) ?? []);
 	return normalized.length === 0 ? undefined : normalized;
 }
 
 /**
- * @param points candidate path
- * @returns path offsets, dropping anything that is not a pair of numbers
+ * The corners of a path.
+ * @param points The candidate path.
+ * @returns The offsets, dropping anything that is not a pair of numbers, or
+ * undefined when nothing measurable is left.
  */
-function pathExtrema(
-	points: unknown,
-): { minX: number; minY: number; maxX: number; maxY: number } | undefined {
+function pathExtrema(points: unknown): PathExtrema | undefined {
 	const normalized = pointsOf(points);
 	if (!normalized) {
 		return undefined;
 	}
-	const first = normalized.at(0);
+	const first = normalized[0];
 	if (first === undefined) {
 		return undefined;
 	}
-	let minX = first.x,
-		maxX = minX,
-		minY = first.y,
-		maxY = minY;
-	for (let index = 1; index < normalized.length; index += 1) {
-		const current = normalized[index];
-		if (current === undefined) {
-			continue;
-		}
-		if (current.x < minX) {
-			minX = current.x;
-		}
-		if (current.x > maxX) {
-			maxX = current.x;
-		}
-		if (current.y < minY) {
-			minY = current.y;
-		}
-		if (current.y > maxY) {
-			maxY = current.y;
-		}
+	let minX = first.x;
+	let maxX = first.x;
+	let minY = first.y;
+	let maxY = first.y;
+	for (const current of normalized) {
+		minX = Math.min(minX, current.x);
+		maxX = Math.max(maxX, current.x);
+		minY = Math.min(minY, current.y);
+		maxY = Math.max(maxY, current.y);
 	}
 	return { minX, minY, maxX, maxY };
 }
@@ -199,13 +249,9 @@ function pathExtrema(
  * How big a path is. Not a second opinion about the element's size — for a
  * linear element this *is* its size, which is why the server has to state it
  * again every time it writes new points.
- *
- * Undefined when the path says nothing measurable, because a guessed size is
- * worse than the stale one it would replace.
- */
-/**
- * @param points candidate linear path
- * @returns measured size, or undefined when the path is not measurable
+ * @param points The candidate linear path.
+ * @returns The measured size, or undefined when the path says nothing
+ * measurable: a guessed size is worse than the stale one it would replace.
  */
 function measureLinear(points: unknown): { width: number; height: number } | undefined {
 	const offsets = pathExtrema(points);
@@ -218,10 +264,10 @@ function measureLinear(points: unknown): { width: number; height: number } | und
 	};
 }
 
-/** Does this element carry a path, and therefore keep its size in it? */
 /**
- * @param element element to inspect
- * @returns whether it carries a measurable path
+ * Does this element carry a path, and therefore keep its size in it?
+ * @param element The element to inspect.
+ * @returns Whether it carries a measurable path.
  */
 function isPathElement(element: Measurable | null | undefined): boolean {
 	return pathExtrema(element?.points) !== undefined;
@@ -234,20 +280,14 @@ function isPathElement(element: Measurable | null | undefined): boolean {
  * runs leftwards or upwards reports the board it covers rather than the board
  * to the right of where it started. For everything else it is the stored
  * `x, y, width, height`, which for those elements is already the answer.
- *
- * A missing coordinate reads as 0 rather than as undefined: every caller here
- * is placing an element on a board next to its neighbours, and one element
- * excusing itself from the frame is a worse answer than one drawn at the
- * origin.
- */
-/**
- * @param element element to measure
- * @returns its axis-aligned scene extent
+ * @param element The element to measure.
+ * @returns Its axis-aligned scene extent.
  */
 function extentOf(element: Measurable | null | undefined): Extent {
-	const x = finite(element?.x) ?? 0;
-	const y = finite(element?.y) ?? 0;
-	const offsets = pathExtrema(element?.points);
+	const el: Measurable = element ?? {};
+	const x = coordinate(el.x);
+	const y = coordinate(el.y);
+	const offsets = pathExtrema(el.points);
 	if (offsets) {
 		return {
 			x: x + offsets.minX,
@@ -256,7 +296,7 @@ function extentOf(element: Measurable | null | undefined): Extent {
 			height: offsets.maxY - offsets.minY,
 		};
 	}
-	return { x, y, width: finite(element?.width) ?? 0, height: finite(element?.height) ?? 0 };
+	return { x, y, width: coordinate(el.width), height: coordinate(el.height) };
 }
 
 /** A region of board to ask a question about. Any side may be unbounded. */
@@ -279,11 +319,9 @@ interface Region {
  *
  * Inclusive on every edge, so an element flush against a boundary is inside
  * it, and a point-sized element is judged the same way a box is.
- */
-/**
- * @param element element to measure
- * @param region region to compare with
- * @returns whether any part of the element overlaps the region
+ * @param element The element to measure.
+ * @param region The region to compare with.
+ * @returns Whether any part of the element overlaps the region.
  */
 function overlapsRegion(element: Measurable | null | undefined, region: Region): boolean {
 	const extent = extentOf(element);
@@ -295,33 +333,41 @@ function overlapsRegion(element: Measurable | null | undefined, region: Region):
 	);
 }
 
+// Half a pixel, matching the rest of the repo: a rounding error is not a
+// resize, and bumping an element's version for one wakes the change feed over
+// nothing.
+const REMEASURE_TOLERANCE = 0.5;
+
+/**
+ * Whether a stored dimension still agrees with the measured one.
+ * @param stored What the element says its size is.
+ * @param measured What its path says.
+ * @returns True when the two agree within tolerance. A dimension the element
+ * does not carry never agrees: there is nothing there to be right.
+ */
+function withinTolerance(stored: number | undefined, measured: number): boolean {
+	return stored !== undefined && Math.abs(stored - measured) < REMEASURE_TOLERANCE;
+}
+
 /**
  * The element's `width`/`height` restated from its path, when the two have
- * drifted apart. Undefined when there is nothing to correct, so a caller can
- * use the answer as "is there an update to make" without a second comparison.
- *
- * Half a pixel of tolerance, matching the rest of the repo: a rounding error
- * is not a resize, and bumping an element's version for one wakes the change
- * feed over nothing.
- */
-/**
- * @param element path element to remeasure
- * @returns corrected dimensions when the stored size drifted
+ * drifted apart.
+ * @param element The path element to remeasure.
+ * @returns The corrected dimensions, or undefined when there is nothing to
+ * correct — so a caller can use the answer as "is there an update to make"
+ * without a second comparison.
  */
 function remeasureLinear(
 	element: Measurable | null | undefined,
 ): { width: number; height: number } | undefined {
-	const measured = measureLinear(element?.points);
+	const el: Measurable = element ?? {};
+	const measured = measureLinear(el.points);
 	if (!measured) {
 		return undefined;
 	}
-	const width = finite(element?.width);
-	const height = finite(element?.height);
 	if (
-		width !== undefined &&
-		height !== undefined &&
-		Math.abs(width - measured.width) < 0.5 &&
-		Math.abs(height - measured.height) < 0.5
+		withinTolerance(finite(el.width), measured.width) &&
+		withinTolerance(finite(el.height), measured.height)
 	) {
 		return undefined;
 	}

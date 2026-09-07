@@ -11,9 +11,9 @@ import type {
 	RectangleElement,
 	RuntimeBoardElement,
 	TextElement,
-} from "../../shared/board-elements/index.js";
-import type { DoingEntry } from "./board-doing.js";
-import type { LockHolder } from "./lib/board-lock-contracts.js";
+} from "@/shared/board-elements";
+import type { DoingEntry } from "@/runtime/engine/board-doing";
+import type { LockHolder } from "@/runtime/engine/lib/board-lock-contracts";
 
 type ExcalidrawElement = PersistedBoardElement;
 type ExcalidrawTextElement = TextElement;
@@ -39,6 +39,8 @@ const EXCALIDRAW_ELEMENT_TYPES: Record<string, ExcalidrawElementType> = {
 	LINE: "line",
 	IMAGE: "image",
 } as const;
+
+const ELEMENT_TYPE_NAMES = new Set<unknown>(Object.values(EXCALIDRAW_ELEMENT_TYPES));
 
 // API Response types
 interface ApiResponse<T = unknown> {
@@ -319,7 +321,13 @@ interface ExcalidrawFile {
 	created: number;
 }
 
-// Validation function for Excalidraw elements
+/**
+ * Whether an element carries enough to be one at all: a type Excalidraw
+ * draws, and a place to draw it.
+ * @param element The element.
+ * @returns True; anything else throws, naming what was wrong.
+ * @throws {Error} When a required field or the type is missing or unknown.
+ */
 function validateElement(element: Partial<ServerElement>): element is ServerElement {
 	const requiredFields: (keyof ServerElement)[] = ["type", "x", "y"];
 	const hasRequiredFields = requiredFields.every((field) => field in element);
@@ -328,19 +336,34 @@ function validateElement(element: Partial<ServerElement>): element is ServerElem
 		throw new Error(`Missing required fields: ${requiredFields.join(", ")}`);
 	}
 
-	if (!Object.values(EXCALIDRAW_ELEMENT_TYPES).includes(element.type as ExcalidrawElementType)) {
+	if (!isElementType(element.type)) {
 		throw new Error(`Invalid element type: ${element.type}`);
 	}
 
 	return true;
 }
 
+/**
+ * Whether a value names one of the element types Excalidraw draws.
+ * @param value The value.
+ * @returns True when it is one.
+ */
+function isElementType(value: unknown): value is ExcalidrawElementType {
+	return ELEMENT_TYPE_NAMES.has(value);
+}
+
 // Ids are minted in src/shared/ids/ids.ts and nowhere else. See the header there for
 // why the shape they come out in is not negotiable.
 
-// Normalize fontFamily from string names to numeric values that Excalidraw expects
-// Excalidraw uses: 1 = Virgil (handwritten), 2 = Helvetica (sans-serif), 3 = Cascadia (monospace)
-// 5 = Excalifont, 6 = Nunito, 7 = Lilita One, 8 = Comic Shanns
+/**
+ * The `fontFamily` number Excalidraw expects, from the name a caller wrote.
+ *
+ * Excalidraw numbers its families: 1 = Virgil (handwritten), 2 = Helvetica
+ * (sans-serif), 3 = Cascadia (monospace), 5 = Excalifont, 6 = Nunito,
+ * 7 = Lilita One, 8 = Comic Shanns.
+ * @param fontFamily The family as a name or as its number.
+ * @returns The number, or undefined when the caller named none.
+ */
 function normalizeFontFamily(fontFamily: string | number | undefined): number | undefined {
 	if (fontFamily === undefined) {
 		return undefined;
