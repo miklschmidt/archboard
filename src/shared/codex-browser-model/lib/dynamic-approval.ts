@@ -313,7 +313,9 @@ function createDynamicApprovalSchemas(identity: IdentitySchemas, context: Identi
 		dynamicApprovalHashForCanonicalJson,
 		/**
 		 * Computes the effect hash a request must carry for this identity and effect.
-		 * @param input - The parsed identity and canonical effect.
+		 * @param input - The request being hashed.
+		 * @param input.identity - The parsed identity.
+		 * @param input.effect - The parsed canonical effect.
 		 * @returns The `sha256:`-prefixed digest.
 		 */
 		effectHashForRequest: (input: {
