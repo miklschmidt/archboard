@@ -16,6 +16,7 @@ interface CodexEpochFileSystem {
 	readonly realpathSync: (path: string) => string;
 }
 
+/** The production file system, bound so the epoch store never reaches for globals. */
 const defaultCodexEpochFileSystem: CodexEpochFileSystem = {
 	openSync: nodeFs.openSync,
 	writeSync: nodeFs.writeSync,
@@ -23,12 +24,23 @@ const defaultCodexEpochFileSystem: CodexEpochFileSystem = {
 	closeSync: nodeFs.closeSync,
 	renameSync: nodeFs.renameSync,
 	unlinkSync: nodeFs.unlinkSync,
+	/**
+	 * Read a whole file as bytes.
+	 * @param path - The file to read.
+	 * @returns The file bytes.
+	 */
 	readFileSync: (path) => nodeFs.readFileSync(path),
 	mkdirSync: nodeFs.mkdirSync,
 	lstatSync: nodeFs.lstatSync,
 	realpathSync: nodeFs.realpathSync,
 };
 
+/**
+ * Create the epoch directory if needed and prove it is a private directory: not a symbolic
+ * link, and not readable by anyone else.
+ * @param fileSystem - The file-system seam.
+ * @param directory - The epoch root.
+ */
 function ensureEpochDirectory(fileSystem: CodexEpochFileSystem, directory: string): void {
 	fileSystem.mkdirSync(directory, { recursive: true, mode: 0o700 });
 	const stats = fileSystem.lstatSync(directory);
@@ -44,6 +56,9 @@ function ensureEpochDirectory(fileSystem: CodexEpochFileSystem, directory: strin
  * The manifest text, or null when there is no usable manifest: missing, not a
  * regular file, unreadable, or not UTF-8. The caller treats null as "no prior
  * epochs", which is the safe direction (every earlier thread is inspect-only).
+ * @param fileSystem - The file-system seam.
+ * @param filePath - The manifest path.
+ * @returns The manifest text, or null when there is no usable manifest.
  */
 function readManifestText(fileSystem: CodexEpochFileSystem, filePath: string): string | null {
 	try {
@@ -58,8 +73,34 @@ function readManifestText(fileSystem: CodexEpochFileSystem, filePath: string): s
 }
 
 /**
+ * Write every byte to an open descriptor, refusing a write that reports no progress rather
+ * than looping forever.
+ * @param fileSystem - The file-system seam.
+ * @param descriptor - The open descriptor.
+ * @param bytes - The bytes to write.
+ */
+function writeAllBytes(
+	fileSystem: CodexEpochFileSystem,
+	descriptor: number,
+	bytes: Uint8Array,
+): void {
+	let offset = 0;
+	while (offset < bytes.byteLength) {
+		const written = fileSystem.writeSync(descriptor, bytes, offset, bytes.byteLength - offset);
+		if (!Number.isInteger(written) || written <= 0) {
+			throw new Error("short write");
+		}
+		offset += written;
+	}
+}
+
+/**
  * One temp write, one fsync, one rename. A failure anywhere before the rename
  * leaves the previous manifest untouched and removes the temp file.
+ * @param fileSystem - The file-system seam.
+ * @param targetPath - The manifest path to publish.
+ * @param temporaryPath - The temporary file written first.
+ * @param contents - The manifest text.
  */
 function writeFileAtomic(
 	fileSystem: CodexEpochFileSystem,
@@ -71,14 +112,7 @@ function writeFileAtomic(
 	let descriptor: number | null = null;
 	try {
 		descriptor = fileSystem.openSync(temporaryPath, "wx", 0o600);
-		let offset = 0;
-		while (offset < bytes.byteLength) {
-			const written = fileSystem.writeSync(descriptor, bytes, offset, bytes.byteLength - offset);
-			if (!Number.isInteger(written) || written <= 0) {
-				throw new Error("short write");
-			}
-			offset += written;
-		}
+		writeAllBytes(fileSystem, descriptor, bytes);
 		fileSystem.fsyncSync(descriptor);
 		fileSystem.closeSync(descriptor);
 		descriptor = null;
