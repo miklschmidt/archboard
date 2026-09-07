@@ -29,6 +29,7 @@ import type { CodexWorkbenchGateway } from "@/server/codex-workbench";
 import { CodexWorkbenchCompositionError } from "@/server/canvas/lib/codex-workbench-error";
 import { appendFailure } from "@/server/canvas/lib/codex-workbench-failures";
 import { CODEX_GENERATION_REGISTRATION_KEYS } from "@/server/canvas/lib/codex-workbench-generation-contract";
+import { shutdownSteps } from "@/server/canvas/lib/codex-workbench-shutdown-steps";
 import {
 	createCodexWorkbenchRequestRouter,
 	type CodexWorkbenchRequestOwners,
@@ -194,7 +195,13 @@ function emptyRegistrations(): GenerationRegistrations {
 	};
 }
 
-/** Clear ownership before invoking cleanup so a throwing disposer is unreachable. */
+/**
+ * Release every registration a generation holds. Ownership is cleared before
+ * each disposer runs, so a disposer that throws cannot be reached twice.
+ * @param registrations What the generation registered.
+ * @param label What these registrations were, for the failure.
+ * @returns The failures the release produced, or null when it was clean.
+ */
 function releaseRegistrations(registrations: GenerationRegistrations, label: string): Error | null {
 	let failure: Error | null = null;
 	for (const key of CODEX_GENERATION_REGISTRATION_KEYS) {
@@ -227,15 +234,42 @@ async function settleChildExit(
 	const { approvals, coordinatorTools, gateway, semanticDelivery, spokenApproval } =
 		state.components;
 	let failure: Error | null = null;
-	for (const operation of [
+	const owners: (() => Promise<unknown> | void)[] = [
+		/**
+		 * The approval broker settles what it had pending for this child.
+		 * @returns Resolves once it has.
+		 */
 		() => approvals.childExit({ child, epoch }),
+		/**
+		 * The semantic delivery controller drops what it was carrying for it.
+		 * @returns Resolves once it has.
+		 */
 		() => semanticDelivery.childExit(child, epoch),
+		/**
+		 * The spoken approval gate settles what it was waiting on.
+		 * @returns Resolves once it has.
+		 */
 		() => spokenApproval.onChildExit({ child, epoch }),
+		/**
+		 * The coordinator tool dispatcher settles its own calls.
+		 * @returns Resolves once it has.
+		 */
 		() => coordinatorTools.onChildExit({ child, epoch }),
+		/**
+		 * The dynamic wait and quarantine owner is retired, because ordinary
+		 * settlement never reaches it.
+		 * @returns Resolves once it has.
+		 */
 		() => state.hooks.retireDynamicLifecycle(child, epoch),
+		/**
+		 * The browser gateway tells every connection the child has gone.
+		 * @returns Resolves once it has.
+		 */
 		() => gateway.childExit(child, epoch),
-	]) {
+	];
+	for (const operation of owners) {
 		try {
+			// oxlint-disable-next-line no-await-in-loop -- child-exit owners settle in this order, each fully before the next
 			await Promise.resolve().then(operation);
 		} catch (error) {
 			failure = appendFailure(failure, error, "Codex child-exit cleanup failed.");
@@ -287,7 +321,12 @@ function installRegistrations(
 	}
 }
 
-/** Build generation dispatch and teardown around a complete, freshly assembled graph. */
+/**
+ * Build generation dispatch and teardown around a complete, freshly assembled
+ * graph.
+ * @param options The graph, its identity ledger, its hooks, and the activation check.
+ * @returns The generation.
+ */
 function createCodexWorkbenchGenerationLifecycle(
 	options: CreateCodexWorkbenchGenerationLifecycleOptions,
 ): CodexWorkbenchGeneration {
@@ -354,9 +393,8 @@ function createCodexWorkbenchGenerationLifecycle(
 		}
 	};
 	/**
-	 * Register this generation and initialize its session, undoing the
-	 * registration when initialization fails so a half-installed graph never
-	 * dispatches.
+	 * Register this generation, and initialize its session the first time it is
+	 * activated.
 	 */
 	const activate = async (): Promise<void> => {
 		state.assertActivationCurrent();
@@ -371,9 +409,16 @@ function createCodexWorkbenchGenerationLifecycle(
 		}
 		state.registrations = installRegistrations(state, activeRouter, onNotification);
 		state.active = true;
-		if (state.initialized) {
-			return;
+		if (!state.initialized) {
+			await initializeSession();
 		}
+	};
+
+	/**
+	 * Initialize this generation's session, undoing the registration when the
+	 * initialization fails so a half-installed graph never dispatches.
+	 */
+	const initializeSession = async (): Promise<void> => {
 		try {
 			await state.hooks.initializeSession(components.session, components);
 			state.assertActivationCurrent();
@@ -394,6 +439,7 @@ function createCodexWorkbenchGenerationLifecycle(
 			throw failure;
 		}
 	};
+
 	/**
 	 * Settle this generation against its child's exit, once.
 	 * @param exit What the transport reported.
@@ -428,7 +474,6 @@ function createCodexWorkbenchGenerationLifecycle(
 		} catch (error) {
 			failure = appendFailure(failure, error, "Codex dispatch revocation failed.");
 		}
-		const cause = reason === "shutdown" ? "host_shutdown" : "child_disconnected";
 		const operation = (async (): Promise<void> => {
 			/**
 			 * Run one teardown step, keeping its failure beside the others rather than
@@ -442,28 +487,9 @@ function createCodexWorkbenchGenerationLifecycle(
 					failure = appendFailure(failure, error, "Codex workbench shutdown failed.");
 				}
 			};
-			const childSettlement = state.childSettlement;
-			if (reason === "child_exit" && childSettlement !== null) {
-				await attempt(() => childSettlement);
-			}
-			await attempt(() => state.hooks.stopBrowser(components.gateway, reason));
-			await attempt(() => state.hooks.stopRealtime(components.realtime));
-			await attempt(() => components.realtime.dispose());
-			await attempt(() => components.semanticPublisher.dispose());
-			await attempt(() => state.hooks.stopQueue(components.queue));
-			await attempt(() => state.hooks.cancelDynamicApprovalsAndWaits(components, cause));
-			await attempt(() => state.hooks.settleOrdinaryRequests(components.approvals, cause));
-			await attempt(() => components.session[CODEX_SESSION_CONTROL].dispose());
-			await attempt(() => components.callbacks.dispose());
-			await attempt(() => components.spokenApproval.dispose());
-			await attempt(() => components.semanticDelivery.dispose());
-			await attempt(() => components.coordinatorTools.dispose());
-			await attempt(() => components.dynamicTools.dispose());
-			if (reason === "shutdown") {
-				await attempt(() => components.transport.shutdown());
-			}
-			if (reason === "shutdown" && childSettlement !== null) {
-				await attempt(() => childSettlement);
+			for (const step of shutdownSteps(state, reason)) {
+				// oxlint-disable-next-line no-await-in-loop -- owners are disposed in this order, each fully before the next
+				await attempt(step);
 			}
 			if (failure !== null) {
 				throw failure;
@@ -518,4 +544,5 @@ export type {
 	CodexWorkbenchState,
 	CodexWorkbenchStopReason,
 	CreateCodexWorkbenchGenerationLifecycleOptions,
+	GenerationState,
 };
