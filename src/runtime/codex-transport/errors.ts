@@ -6,11 +6,11 @@ export {
 	CodexTransportRequestError,
 	CodexTransportUsageError,
 	CodexTransportWriteError,
-} from "./lib/errors.js";
+} from "@/runtime/codex-transport/lib/errors";
 
 export type {
 	CodexRemoteError,
 	CodexRequestFailureReason,
 	CodexRequestOutcome,
 	TransportRemoteErrorSummary,
-} from "./lib/errors.js";
+} from "@/runtime/codex-transport/lib/errors";

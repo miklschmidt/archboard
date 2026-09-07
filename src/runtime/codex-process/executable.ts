@@ -3,5 +3,8 @@ export {
 	CodexExecutableError,
 	resolveProjectCodexExecutable,
 	verifyCodexExecutable,
-} from "./lib/executable.js";
-export type { CodexExecutableFailureCode, VerifiedCodexExecutable } from "./lib/executable.js";
+} from "@/runtime/codex-process/lib/executable";
+export type {
+	CodexExecutableFailureCode,
+	VerifiedCodexExecutable,
+} from "@/runtime/codex-process/lib/executable";

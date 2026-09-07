@@ -5,24 +5,20 @@ import type {
 	EpochOperationRecord,
 	EpochOperationStatus,
 	EpochOperationOutcome,
-} from "../../codex-epoch/index.js";
+} from "@/runtime/codex-epoch";
 import type {
 	CodexSession,
 	SessionLoadedThreadPageResult,
 	SessionThread,
 	SessionThreadPageResult,
 	SessionThreadSource,
-} from "../../codex-session/index.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-session";
+import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
 import type {
 	ThreadLinkReason as AuthoredThreadLinkReason,
 	ThreadLinkState as AuthoredThreadLinkState,
-} from "../../codex-instructions/index.js";
-import type { AdditionalContextPolicy } from "../../codex-instructions/index.js";
+} from "@/runtime/codex-instructions";
+import type { AdditionalContextPolicy } from "@/runtime/codex-instructions";
 
 type ThreadLinkReason = AuthoredThreadLinkReason;
 type ThreadLinkReasonCode = ThreadLinkReason;
@@ -155,6 +151,13 @@ class CodexThreadLinkError extends Error {
 	readonly code: ThreadLinkClassificationErrorCode;
 	override readonly cause: unknown;
 
+	/**
+	 * Records why classification or binding refused, so a caller can tell a stale link from an
+	 * unreadable authority.
+	 * @param code Which kind of refusal this is.
+	 * @param message What the caller should do about it.
+	 * @param cause The underlying failure, when one caused this refusal.
+	 */
 	constructor(code: ThreadLinkClassificationErrorCode, message: string, cause?: unknown) {
 		super(message);
 		this.code = code;
@@ -165,6 +168,10 @@ class CodexThreadLinkError extends Error {
 class CodexThreadLinkConflictError extends CodexThreadLinkError {
 	override readonly name: string = "CodexThreadLinkConflictError";
 
+	/**
+	 * Reports that the authority moved under the caller, who must re-read and retry.
+	 * @param message What changed and what to re-read.
+	 */
 	constructor(message: string) {
 		super("conflict", message);
 	}
