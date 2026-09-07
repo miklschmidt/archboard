@@ -33,9 +33,9 @@ import {
 	loadFace,
 	type FaceDescriptor,
 	type LoadedFace,
-} from "./fonts.js";
+} from "@/runtime/engine/fonts";
 
-export { canMeasure } from "./fonts.js";
+export { canMeasure } from "@/runtime/engine/fonts";
 
 // Characters a browser lays out as zero width: soft hyphen, zero-width space,
 // the joiners, and the byte-order mark.

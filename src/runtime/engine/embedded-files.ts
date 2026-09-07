@@ -1,5 +1,8 @@
-import { type ExcalidrawFile, type ServerElement } from "./types.js";
+import { type ExcalidrawFile, type ServerElement } from "@/runtime/engine/types";
 
+/**
+ *
+ */
 function usableEmbeddedFile(raw: unknown): ExcalidrawFile | null {
 	if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
 		return null;
@@ -22,6 +25,9 @@ function usableEmbeddedFile(raw: unknown): ExcalidrawFile | null {
 	};
 }
 
+/**
+ *
+ */
 function drawnFileIds(elements: Iterable<ServerElement>): Set<string> {
 	const ids = new Set<string>();
 	for (const element of elements) {
@@ -32,6 +38,9 @@ function drawnFileIds(elements: Iterable<ServerElement>): Set<string> {
 	return ids;
 }
 
+/**
+ *
+ */
 function usableDrawnFiles(
 	elements: Iterable<ServerElement>,
 	rawFiles: readonly unknown[],

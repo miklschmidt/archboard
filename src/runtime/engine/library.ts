@@ -15,10 +15,10 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { VAULT_STATE_DIR } from "./board.js";
-import { writeFileAtomic } from "./atomic-write.js";
-import { ARCHBOARD_VAULT } from "./config.js";
-import logger from "./logger.js";
+import { VAULT_STATE_DIR } from "@/runtime/engine/board";
+import { writeFileAtomic } from "@/runtime/engine/atomic-write";
+import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
+import logger from "@/runtime/engine/logger";
 
 // The v2 library item, which is what both this store and Excalidraw speak.
 // `elements` is deliberately loose: they are Excalidraw elements, we never
@@ -61,6 +61,9 @@ const LIBRARY_FILE = "library.excalidrawlib";
 // everything else. Resolved from src/runtime/engine/ back to the repo root.
 const CURATED_DIR = path.resolve(import.meta.dirname, "../../../libraries");
 
+/**
+ *
+ */
 function libraryFilePath(): string | null {
 	if (!ARCHBOARD_VAULT) {
 		return null;
@@ -74,10 +77,16 @@ function libraryFilePath(): string | null {
 // library site: version 1 is a bare array of element arrays, version 2 wraps
 // each in an item with an id and a name. Everything past this function is v2.
 
+/**
+ *
+ */
 function deriveId(setName: string, index: number): string {
 	return crypto.createHash("sha256").update(`${setName}:${index}`).digest("hex").slice(0, 20);
 }
 
+/**
+ *
+ */
 function parseLibraryDocument(parsed: unknown, setName: string): LibraryItem[] {
 	if (!parsed || typeof parsed !== "object") {
 		throw new Error(`${setName}: not a library file`);
@@ -123,6 +132,9 @@ function parseLibraryDocument(parsed: unknown, setName: string): LibraryItem[] {
 	return items;
 }
 
+/**
+ *
+ */
 function parseLibraryFile(json: string, setName: string): LibraryItem[] {
 	return parseLibraryDocument(JSON.parse(json), setName);
 }
@@ -167,11 +179,17 @@ function curatedSets(): { name: string; items: LibraryItem[] }[] {
 // With no vault configured this is not a cache at all; it is process state.
 const cache = { state: null as LibraryState | null };
 
+/**
+ *
+ */
 function emptyState(): LibraryState {
 	const file = libraryFilePath();
 	return { items: [], seeded: [], origins: {}, file, vaultBacked: file !== null };
 }
 
+/**
+ *
+ */
 function readFromDisk(
 	file: string,
 ): { items: LibraryItem[]; seeded: string[]; origins: Record<string, string> } | null {
@@ -197,6 +215,9 @@ function readFromDisk(
 	}
 }
 
+/**
+ *
+ */
 function persist(state: LibraryState): void {
 	if (!state.file) {
 		return;

@@ -1,10 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { LOCK_WATCH_MS } from "../../../shared/timing/timing.js";
-import { VAULT_STATE_DIR, normalizeBoardKey, requireVaultRoot } from "../board.js";
-import logger from "../logger.js";
-import type { LockHandoff, LockHolder, LockRecord, LockSink } from "./board-lock-contracts.js";
+import { LOCK_WATCH_MS } from "@/shared/timing/timing";
+import { VAULT_STATE_DIR, normalizeBoardKey, requireVaultRoot } from "@/runtime/engine/board";
+import logger from "@/runtime/engine/logger";
+import type { LockHandoff, LockHolder, LockRecord, LockSink } from "@/runtime/engine/lib/board-lock-contracts";
 
 const processAnnounced = new Map<string, string>();
 const processSink = { notify: null as LockSink | null };
@@ -16,14 +16,23 @@ const processWatcher: {
 
 // Timestamps and tokens belong to the lease record. Tokens distinguish
 // acquisitions even inside one pid and also name atomic-write temp files.
+/**
+ *
+ */
 function stamp(at: number): string {
 	return new Date(at).toISOString();
 }
 
+/**
+ *
+ */
 function newToken(): string {
 	return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+/**
+ *
+ */
 function lockPathFor(board: string): string {
 	// One percent-encoded filename per normalized board keeps nested board names
 	// from becoming directories and makes this the sole vault lock-path owner.
@@ -35,10 +44,16 @@ function lockPathFor(board: string): string {
 	);
 }
 
+/**
+ *
+ */
 function handoffPathFor(board: string): string {
 	return `${lockPathFor(board)}.handoff`;
 }
 
+/**
+ *
+ */
 function readHandoff(file: string): LockHandoff | null {
 	// A malformed receipt proves nothing. Unlike a lease, it is optional evidence
 	// about the previous note commit and may safely be discarded.
@@ -60,6 +75,9 @@ function readHandoff(file: string): LockHandoff | null {
 	}
 }
 
+/**
+ *
+ */
 function readRecord(file: string): LockRecord | null {
 	// Missing, truncated, invalid JSON, or a record without its lease/token reads
 	// as free. Treating corruption as held would create the permanent flag the
@@ -84,6 +102,9 @@ function readRecord(file: string): LockRecord | null {
 	}
 }
 
+/**
+ *
+ */
 function writeJsonRecord(file: string, record: object, token = newToken()): void {
 	// Rename ensures readers see the complete old record or complete new record,
 	// never a torn lease that could admit a second writer. No fsync is required:
@@ -105,10 +126,16 @@ function writeJsonRecord(file: string, record: object, token = newToken()): void
 	}
 }
 
+/**
+ *
+ */
 function writeRecord(file: string, record: LockRecord): void {
 	writeJsonRecord(file, record, record.token);
 }
 
+/**
+ *
+ */
 function writeHandoff(board: string, record: LockRecord): void {
 	// The handoff is written before lease removal. Failure loses optional proof,
 	// but must never keep every future writer behind an already committed lease.
@@ -124,6 +151,9 @@ function writeHandoff(board: string, record: LockRecord): void {
 	});
 }
 
+/**
+ *
+ */
 function takeHandoff(board: string, predecessor: LockRecord | null): string | undefined {
 	// Consume every receipt, valid or not, so it is one-use. Trust it only when
 	// id, process, original since time, and token exactly match the blocker this
@@ -149,6 +179,9 @@ function takeHandoff(board: string, predecessor: LockRecord | null): string | un
 	return handoff.hash;
 }
 
+/**
+ *
+ */
 function liveRecord(record: LockRecord | null): LockRecord | null {
 	if (!record) {
 		return null;
@@ -157,16 +190,25 @@ function liveRecord(record: LockRecord | null): LockRecord | null {
 	return Number.isFinite(until) && until > Date.now() ? record : null;
 }
 
+/**
+ *
+ */
 function holderOf(record: LockRecord): LockHolder {
 	const { token: _token, committedHash: _committedHash, ...holder } = record;
 	return holder;
 }
 
+/**
+ *
+ */
 function boardLockState(board: string): LockHolder | null {
 	const live = liveRecord(readRecord(lockPathFor(normalizeBoardKey(board))));
 	return live ? holderOf(live) : null;
 }
 
+/**
+ *
+ */
 function announce(board: string, holder: LockHolder | null): void {
 	// Renewal changes `until` but not whether a pane may draw, so expiry is absent
 	// from this fingerprint. Holder/start/reason/claim changes remain real news.
@@ -180,10 +222,16 @@ function announce(board: string, holder: LockHolder | null): void {
 	processSink.notify?.(board, holder);
 }
 
+/**
+ *
+ */
 function announceHeld(board: string, holder: LockHolder): void {
 	announce(board, holder);
 }
 
+/**
+ *
+ */
 function announceFree(board: string): void {
 	// Release news goes out at once (TASK-153): a pane left believing a free
 	// board is held is a pane refusing edits for no reason. Re-read rather than
@@ -192,6 +240,9 @@ function announceFree(board: string): void {
 	announce(board, boardLockState(board));
 }
 
+/**
+ *
+ */
 function recordLockCommit(board: string, leaseToken: string, hash: string): boolean {
 	// Attach the note hash only when the exact enclosing lease still owns the
 	// file. This is best-effort proof; persistence has already succeeded.
@@ -211,6 +262,9 @@ function recordLockCommit(board: string, leaseToken: string, hash: string): bool
 	}
 }
 
+/**
+ *
+ */
 function releaseHold(board: string, holderId: string): boolean {
 	// Release only if it is still ours. A lapsed lease may already belong to a
 	// successor, and unlinking that record would admit a third writer.
@@ -237,6 +291,9 @@ function releaseHold(board: string, holderId: string): boolean {
 	return true;
 }
 
+/**
+ *
+ */
 function renewRecord(board: string, id: string, leaseMs: number): LockHolder | null {
 	// Renewal answers only "do I still have this?" It refuses to acquire a free
 	// or rival lease, preventing a remotely revoked claim from resurrecting.
@@ -251,6 +308,9 @@ function renewRecord(board: string, id: string, leaseMs: number): LockHolder | n
 	return holderOf(renewed);
 }
 
+/**
+ *
+ */
 function sweepBoardLocks(): void {
 	const boards = processWatcher.boards?.() ?? [];
 	for (const board of new Set(boards.map(normalizeBoardKey))) {
@@ -267,6 +327,9 @@ function sweepBoardLocks(): void {
 	}
 }
 
+/**
+ *
+ */
 function watchBoardLocks(boards: (() => string[]) | null): void {
 	// A lock file cannot call another canvas. Poll only while a browser supplies
 	// boards that are actually on screen; with no pane, nobody can be misled.
@@ -288,14 +351,23 @@ function watchBoardLocks(boards: (() => string[]) | null): void {
 	processWatcher.timer = timer;
 }
 
+/**
+ *
+ */
 function onBoardSweep(sink: ((board: string) => void) | null): void {
 	processSweep.also = sink;
 }
 
+/**
+ *
+ */
 function onBoardLockChanged(sink: LockSink | null): void {
 	processSink.notify = sink;
 }
 
+/**
+ *
+ */
 function forgetLockState(): void {
 	// Drop only this process's remembered announcements. Vault records remain
 	// authoritative and untouched.

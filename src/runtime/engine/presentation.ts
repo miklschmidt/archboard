@@ -1,14 +1,14 @@
-import { CodeBindingSchema, type CodeBinding } from "../../shared/code-target/index.js";
+import { CodeBindingSchema, type CodeBinding } from "@/shared/code-target";
 import {
 	resolveLocalCodeTarget,
 	resolveLocalCodeTargets,
 	EMPTY_CHECKOUT_SNAPSHOT,
 	type CheckoutSnapshot,
-} from "../code-target/index.js";
-import { presentationTargetForBinding } from "../code-target/presentation.js";
-import type { ReadonlyBoardData } from "../../shared/board-elements/index.js";
-import { readElementMetadata } from "./metadata.js";
-import { type ServerElement } from "./types.js";
+} from "@/runtime/code-target";
+import { presentationTargetForBinding } from "@/runtime/code-target/presentation";
+import type { ReadonlyBoardData } from "@/shared/board-elements";
+import { readElementMetadata } from "@/runtime/engine/metadata";
+import { type ServerElement } from "@/runtime/engine/types";
 
 export interface PresentationContext {
 	boardKey: string;
@@ -31,6 +31,9 @@ interface PresentationMarker {
 
 const PRESENTATION_MARKER_KEY = "presentationTarget";
 
+/**
+ *
+ */
 function markerOf(element: { customData?: unknown }): PresentationMarker | undefined {
 	const custom = element.customData;
 	if (!custom || typeof custom !== "object" || Array.isArray(custom)) {
@@ -50,6 +53,9 @@ function markerOf(element: { customData?: unknown }): PresentationMarker | undef
 		: undefined;
 }
 
+/**
+ *
+ */
 function withoutMarker<T extends object>(element: T): T {
 	const custom = (element as { customData?: unknown }).customData;
 	if (!custom || typeof custom !== "object" || Array.isArray(custom)) {
@@ -79,6 +85,9 @@ function withoutMarker<T extends object>(element: T): T {
 	return result;
 }
 
+/**
+ *
+ */
 function targetFor(
 	element: ReadonlyServerElement,
 	context: ReadonlyPresentationContext,
@@ -92,6 +101,9 @@ function withLink(
 	link: string | null,
 	boardKey: string,
 ): ReadonlyServerElement;
+/**
+ *
+ */
 function withLink(
 	element: ReadonlyServerElement,
 	link: string | null,
@@ -118,11 +130,17 @@ function withLink(
 	};
 }
 
+/**
+ *
+ */
 function bindingOf(element: ReadonlyServerElement): CodeBinding | undefined {
 	const parsed = CodeBindingSchema.safeParse(readElementMetadata(element).archboard?.binding);
 	return parsed.success ? parsed.data : undefined;
 }
 
+/**
+ *
+ */
 export function codeBindingsOf(elements: Iterable<ReadonlyServerElement>): CodeBinding[] {
 	return Array.from(elements).flatMap((element) => {
 		const binding = bindingOf(element);
@@ -130,6 +148,9 @@ export function codeBindingsOf(elements: Iterable<ReadonlyServerElement>): CodeB
 	});
 }
 
+/**
+ *
+ */
 function isDerivedTarget(
 	element: ReadonlyServerElement,
 	incoming: unknown,
@@ -152,6 +173,9 @@ function isDerivedTarget(
 	return targetFor(element, context) === incoming;
 }
 
+/**
+ *
+ */
 export function stripBindingPresentationLink(
 	element: ServerElement,
 	context: PresentationContext,
@@ -160,6 +184,9 @@ export function stripBindingPresentationLink(
 	return isDerivedTarget(element, element.link, context) ? { ...canonical, link: null } : canonical;
 }
 
+/**
+ *
+ */
 export function stripBindingPresentationLinks(
 	elements: Iterable<ServerElement>,
 	context: PresentationContext,
@@ -168,6 +195,9 @@ export function stripBindingPresentationLinks(
 	return values.map((element) => stripBindingPresentationLink(element, context));
 }
 
+/**
+ *
+ */
 export function presentElement(
 	element: ServerElement,
 	context: PresentationContext,
@@ -194,6 +224,9 @@ export function presentElements(
 	elements: Iterable<ReadonlyServerElement>,
 	context: ReadonlyPresentationContext,
 ): readonly ReadonlyServerElement[];
+/**
+ *
+ */
 export function presentElements(
 	elements: Iterable<ReadonlyServerElement>,
 	context: ReadonlyPresentationContext,
@@ -244,6 +277,9 @@ export function stripPresentationMarker<T extends object>(element: T): T {
 	return withoutMarker(element);
 }
 
+/**
+ *
+ */
 export function canonicalLinkAfterPresentationEcho(
 	existing: ServerElement | undefined,
 	incoming: unknown,

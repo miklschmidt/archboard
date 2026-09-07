@@ -32,7 +32,7 @@ interface Bindable {
 	roundness?: { type?: number; value?: number } | null;
 }
 
-import type { ElementBinding } from "../../shared/board-elements/index.js";
+import type { ElementBinding } from "@/shared/board-elements";
 
 /** Excalidraw's ordinary point binding, used by the non-elbow router. */
 type ArrowBinding = ElementBinding;
@@ -52,6 +52,9 @@ interface Point {
  */
 const BOUND_ARROW_GAP = 4;
 
+/**
+ *
+ */
 const num = (v: unknown, fallback = 0): number =>
 	typeof v === "number" && Number.isFinite(v) ? v : fallback;
 
@@ -63,6 +66,9 @@ function centreOf(shape: Bindable): Point {
 	};
 }
 
+/**
+ *
+ */
 function rotate(point: Point, about: Point, angle: number): Point {
 	if (angle === 0) {
 		return point;
@@ -85,7 +91,13 @@ function rotatePinned(point: Point, about: Point, angle: number): Point {
 	};
 }
 
+/**
+ *
+ */
 const cross = (a: Point, b: Point): number => a.x * b.y - a.y * b.x;
+/**
+ *
+ */
 const minus = (a: Point, b: Point): Point => ({ x: a.x - b.x, y: a.y - b.y });
 
 /**
@@ -162,8 +174,14 @@ function focusPointOf(shape: Bindable, focus: number, adjacent: Point): Point {
 
 	// Which of the four sides of the scaled shape the adjacent point is beyond,
 	// and — for the sign of `focus` — whether it has passed the far end of it.
+	/**
+	 *
+	 */
 	const beyond = (from: number, to: number): boolean =>
 		cross(minus(adjacent, c[from]!), minus(c[to]!, c[from]!)) > 0;
+	/**
+	 *
+	 */
 	const before = (from: number, to: number): boolean =>
 		cross(minus(adjacent, c[from]!), minus(c[to]!, c[from]!)) < 0;
 
@@ -213,11 +231,20 @@ function rectangleCornerRadius(shape: Bindable): number {
 
 type Cubic = readonly [Point, Point, Point, Point];
 
+/**
+ *
+ */
 function shifted(point: Point, offset: Point): Point {
 	return { x: point.x + offset.x, y: point.y + offset.y };
 }
 
+/**
+ *
+ */
 function roundedCorner(from: Point, corner: Point, to: Point, offset: Point): Cubic {
+	/**
+	 *
+	 */
 	const toward = (point: Point): Point => ({
 		x: point.x + (2 / 3) * (corner.x - point.x),
 		y: point.y + (2 / 3) * (corner.y - point.y),
@@ -241,6 +268,9 @@ function cornerOffset(corner: Point, centre: Point, gap: number): Point {
 	return { x: (x / length) * gap, y: (y / length) * gap };
 }
 
+/**
+ *
+ */
 function pointOnCubic(curve: Cubic, t: number): Point {
 	const [p0, p1, p2, p3] = curve;
 	return {
@@ -261,6 +291,9 @@ type Segment = readonly [Point, Point];
 
 const INTERSECTION_PRECISION = 1e-4;
 
+/**
+ *
+ */
 function distanceToSegment(point: Point, [from, to]: Segment): number {
 	const x = point.x - from.x;
 	const y = point.y - from.y;
@@ -275,6 +308,9 @@ function distanceToSegment(point: Point, [from, to]: Segment): number {
 	return Math.sqrt(awayX * awayX + awayY * awayY);
 }
 
+/**
+ *
+ */
 function segmentIntersection(first: Segment, second: Segment): Point | null {
 	const a1 = first[1].y - first[0].y;
 	const b1 = first[0].x - first[1].x;
@@ -296,6 +332,9 @@ function segmentIntersection(first: Segment, second: Segment): Point | null {
 		: null;
 }
 
+/**
+ *
+ */
 function curveIntersectsBounds(curve: Cubic, line: Segment): boolean {
 	const xs = curve.map((point) => point.x);
 	const ys = curve.map((point) => point.y);
@@ -329,6 +368,9 @@ function curveSegmentIntersection(curve: Cubic, line: Segment): Point | null {
 	if (!curveIntersectsBounds(curve, line)) {
 		return null;
 	}
+	/**
+	 *
+	 */
 	const valueAt = (t: number, s: number): Point => {
 		const onCurve = pointOnCubic(curve, t);
 		return {
@@ -336,6 +378,9 @@ function curveSegmentIntersection(curve: Cubic, line: Segment): Point | null {
 			y: onCurve.y - (line[0].y + s * (line[1].y - line[0].y)),
 		};
 	};
+	/**
+	 *
+	 */
 	const gradient = (
 		component: (value: Point) => number,
 		t: number,
@@ -347,6 +392,9 @@ function curveSegmentIntersection(curve: Cubic, line: Segment): Point | null {
 			(component(valueAt(t, s + delta)) - component(valueAt(t, s - delta))) / (2 * delta),
 		];
 	};
+	/**
+	 *
+	 */
 	const solve = (initialT: number, initialS: number): readonly [number, number] | null => {
 		let t = initialT;
 		let s = initialS;
@@ -489,6 +537,9 @@ function crossings(shape: Bindable, origin: Point, direction: Point, gap: number
 		return [];
 	}
 	const found: number[] = [];
+	/**
+	 *
+	 */
 	const keep = (t: number) => {
 		if (Number.isFinite(t) && t >= 0) {
 			found.push(t);

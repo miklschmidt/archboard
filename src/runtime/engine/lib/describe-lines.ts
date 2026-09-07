@@ -1,6 +1,6 @@
-import { DEFAULT_SHAPE_BACKGROUND } from "../../../shared/appearance/appearance.js";
-import type { ServerElement } from "../types.js";
-import { CLUSTER_GAP, regionName } from "../layout.js";
+import { DEFAULT_SHAPE_BACKGROUND } from "@/shared/appearance/appearance";
+import type { ServerElement } from "@/runtime/engine/types";
+import { CLUSTER_GAP, regionName } from "@/runtime/engine/layout";
 import {
 	KIND_ORDER,
 	UNTYPED,
@@ -8,8 +8,8 @@ import {
 	hasText,
 	pairs,
 	renderCounts,
-} from "./describe-scene-model.js";
-import type { DeepReadonly, Edge, Folded, Item, NodeFold } from "./describe-scene-model.js";
+} from "@/runtime/engine/lib/describe-scene-model";
+import type { DeepReadonly, Edge, Folded, Item, NodeFold } from "@/runtime/engine/lib/describe-scene-model";
 
 type SceneItem = DeepReadonly<Item>;
 type SceneEdge = DeepReadonly<Edge>;
@@ -21,6 +21,9 @@ interface SceneBox {
 	maxY: number;
 }
 
+/**
+ *
+ */
 function appendStats(
 	args: DeepReadonly<{
 		allElements: ServerElement[];
@@ -85,6 +88,9 @@ function appendStats(
 	return lines;
 }
 
+/**
+ *
+ */
 function appendGraphNotes(
 	nodes: readonly SceneItem[],
 	edges: readonly SceneEdge[],
@@ -116,6 +122,9 @@ function appendGraphNotes(
 	return lines;
 }
 
+/**
+ *
+ */
 function appendClusters(
 	realClusters: readonly (readonly SceneItem[])[],
 	clusters: readonly (readonly SceneItem[])[],
@@ -150,6 +159,9 @@ function appendClusters(
 	return lines;
 }
 
+/**
+ *
+ */
 function geometry(i: SceneItem): string {
 	const parts = [`at (${Math.round(i.x)}, ${Math.round(i.y)})`];
 	if (i.w || i.h) {
@@ -158,6 +170,9 @@ function geometry(i: SceneItem): string {
 	return parts.join(" | ");
 }
 
+/**
+ *
+ */
 function nodeLine(n: SceneItem, showLevel: boolean): string {
 	// Node identity leads: it is the join key across variants and boards, and
 	// the only handle that survives a redraw.
@@ -185,6 +200,9 @@ function nodeLine(n: SceneItem, showLevel: boolean): string {
 }
 
 // Only the things the main line didn't already say.
+/**
+ *
+ */
 function nodeExtras(n: SceneItem): string {
 	const parts: string[] = [];
 	// The link is only worth a line when it says something the binding didn't:
@@ -209,6 +227,9 @@ function nodeExtras(n: SceneItem): string {
 	return parts.join(" | ");
 }
 
+/**
+ *
+ */
 function plainLine(o: SceneItem): string {
 	const { el } = o;
 	const parts = [`[${el.id}] ${el.type}`, geometry(o)];
@@ -236,7 +257,7 @@ function plainLine(o: SceneItem): string {
 	if (Object.keys(o.meta.foreign).length > 0) {
 		parts.push(`customData: ${pairs(o.meta.foreign)}`);
 	}
-	if (el.locked === true) {
+	if (el.locked) {
 		parts.push("(locked)");
 	}
 	if (el.groupIds.length > 0) {
@@ -249,6 +270,9 @@ function plainLine(o: SceneItem): string {
 // The one sentence an agent can speak verbatim
 // ---------------------------------------------------------------------------
 
+/**
+ *
+ */
 function plural(n: number, word: string): string {
 	const noun = word === "external" ? "external system" : word;
 	if (n === 1) {
@@ -257,6 +281,9 @@ function plural(n: number, word: string): string {
 	return `${n} ${noun}${noun.endsWith("s") ? "" : "s"}`;
 }
 
+/**
+ *
+ */
 function joinList(parts: readonly string[]): string {
 	if (parts.length <= 1) {
 		return parts[0] ?? "";
@@ -264,6 +291,9 @@ function joinList(parts: readonly string[]): string {
 	return `${parts.slice(0, -1).join(", ")} and ${parts.at(-1)}`;
 }
 
+/**
+ *
+ */
 function summarise(
 	s: DeepReadonly<{
 		nodes: SceneItem[];
@@ -324,6 +354,9 @@ function summarise(
 // services selected"), so `summary` comes first and the per-element lines are
 // the same ones `describe` uses.
 
+/**
+ *
+ */
 function selectionSummary(items: readonly SceneItem[], missing: number): string {
 	if (items.length === 0 && missing === 0) {
 		return "Nothing is selected on the board.";
@@ -331,6 +364,9 @@ function selectionSummary(items: readonly SceneItem[], missing: number): string 
 
 	const nodes = items.filter((i) => i.isNode);
 	const plain = items.filter((i) => !i.isNode);
+	/**
+	 *
+	 */
 	const named = (list: readonly SceneItem[]): string =>
 		joinList(list.slice(0, 6).map((i) => `"${i.name}"`)) +
 		(list.length > 6 ? `, and ${list.length - 6} more` : "");

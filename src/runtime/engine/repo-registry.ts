@@ -20,9 +20,9 @@
 
 import fs from "fs";
 import path from "path";
-import { writeFileAtomic } from "./atomic-write.js";
-import { inspectCheckout } from "./git.js";
-import { stateDir } from "./state-dir.js";
+import { writeFileAtomic } from "@/runtime/engine/atomic-write";
+import { inspectCheckout } from "@/runtime/engine/git";
+import { stateDir } from "@/runtime/engine/state-dir";
 
 type RepoSource = "declared" | "observed";
 
@@ -54,6 +54,9 @@ function registryPath(): string {
 	return process.env["ARCHBOARD_REPOS"] || path.join(stateDir(), FILE_NAME);
 }
 
+/**
+ *
+ */
 function normalize(entry: unknown): RegisteredRepo | null {
 	if (!entry || typeof entry !== "object") {
 		return null;
@@ -109,6 +112,9 @@ function listRepos(): RegisteredRepoStatus[] {
 	);
 }
 
+/**
+ *
+ */
 function isCheckout(root: string): boolean {
 	try {
 		return fs.statSync(root).isDirectory();
@@ -124,6 +130,9 @@ function isCheckout(root: string): boolean {
 // The temp-file-and-rename used to be written out here. It is `writeFileAtomic`
 // now, shared with the board note and the library, because a repository with
 // two atomic-write idioms has one of them going stale (TASK-061).
+/**
+ *
+ */
 function write(entries: RegisteredRepo[]): boolean {
 	const file = registryPath();
 	const body = JSON.stringify(entries, null, 2) + "\n";
@@ -136,6 +145,9 @@ function write(entries: RegisteredRepo[]): boolean {
 	}
 }
 
+/**
+ *
+ */
 function upsert(entry: RegisteredRepo): void {
 	const entries = readRegistry().filter((existing) => existing.repo !== entry.repo);
 	entries.push(entry);

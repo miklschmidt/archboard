@@ -23,9 +23,12 @@
 // watcher lets panes on another canvas learn that state before their next
 // write. A disconnected pane fails closed outside this module.
 
-import { forgetClaimState } from "./lib/board-lock-claim-state.js";
-import { forgetLockState, watchBoardLocks } from "./lib/board-lock-state.js";
+import { forgetClaimState } from "@/runtime/engine/lib/board-lock-claim-state";
+import { forgetLockState, watchBoardLocks } from "@/runtime/engine/lib/board-lock-state";
 
+/**
+ *
+ */
 function forgetLockAnnouncements(): void {
 	// This is process-memory cleanup only. It deliberately does not modify the
 	// authoritative vault leases; releasing one is `releaseHold`.
@@ -39,7 +42,7 @@ export {
 	holdBoard,
 	sleep,
 	withBoardLock,
-} from "./lib/board-lock-acquisition.js";
+} from "@/runtime/engine/lib/board-lock-acquisition";
 export {
 	BoardHeldError,
 	type Claim,
@@ -49,14 +52,14 @@ export {
 	type LockHolder,
 	type LockRequest,
 	type LockSink,
-} from "./lib/board-lock-contracts.js";
+} from "@/runtime/engine/lib/board-lock-contracts";
 export {
 	claimBoard,
 	claimOn,
 	claimWriterId,
 	releaseClaim,
 	takeClaimRevocation,
-} from "./lib/board-lock-claims.js";
+} from "@/runtime/engine/lib/board-lock-claims";
 export {
 	boardLockState,
 	onBoardLockChanged,
@@ -64,5 +67,5 @@ export {
 	recordLockCommit,
 	releaseHold,
 	watchBoardLocks,
-} from "./lib/board-lock-state.js";
+} from "@/runtime/engine/lib/board-lock-state";
 export { forgetLockAnnouncements };

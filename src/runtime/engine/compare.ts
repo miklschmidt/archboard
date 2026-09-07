@@ -86,8 +86,8 @@
 //   · they participate as containment parents, which is how "someone drew a
 //     boundary round these three" survives.
 
-import { withoutValidBridgeDecorations } from "../board-inspection/bridge.js";
-import { CLUSTER_GAP, sameCentre } from "./layout.js";
+import { withoutValidBridgeDecorations } from "@/runtime/board-inspection/bridge";
+import { CLUSTER_GAP, sameCentre } from "@/runtime/engine/layout";
 import type {
 	ChangedNode,
 	CompareResult,
@@ -96,10 +96,10 @@ import type {
 	RelationChange,
 	SideSummary,
 	UnchangedNode,
-} from "./lib/compare-contract.js";
-import { buildBoard, hasDivergentAspect, reframeRegions } from "./lib/compare-board-model.js";
-import type { BoardModel } from "./lib/compare-board-model.js";
-import { formatBinding } from "./lib/compare-node-model.js";
+} from "@/runtime/engine/lib/compare-contract";
+import { buildBoard, hasDivergentAspect, reframeRegions } from "@/runtime/engine/lib/compare-board-model";
+import type { BoardModel } from "@/runtime/engine/lib/compare-board-model";
+import { formatBinding } from "@/runtime/engine/lib/compare-node-model";
 import {
 	cosmeticFields,
 	diffFields,
@@ -111,9 +111,15 @@ import {
 	nodeFacts,
 	relationOf,
 	semanticFields,
-} from "./lib/compare-diff.js";
+} from "@/runtime/engine/lib/compare-diff";
 
+/**
+ *
+ */
 const pairKey = (x: string, y: string): string => (x < y ? `${x}\0${y}` : `${y}\0${x}`);
+/**
+ *
+ */
 const sideSummaryOf = (input: CompareSideInput, model: BoardModel): SideSummary => ({
 	board: input.key,
 	identity: input.identity,
@@ -127,9 +133,15 @@ const sideSummaryOf = (input: CompareSideInput, model: BoardModel): SideSummary 
 	regionFrame: model.regionFrame,
 });
 
+/**
+ *
+ */
 const bindingField = (binding: string | undefined): { binding: string } | Record<string, never> =>
 	binding === undefined ? {} : { binding };
 
+/**
+ *
+ */
 const plainLabels = (model: BoardModel): Set<string> =>
 	new Set(
 		model.plain.labelled.map((labelled) => labelled.label).filter((label) => label !== undefined),
@@ -173,6 +185,9 @@ const LAYOUT_CANNOT_EXPRESS = [
 	"Size, colour and stroke are reported per node as `cosmetic` and never counted as a change to the architecture.",
 ];
 
+/**
+ *
+ */
 function compareBoards(fromInput: CompareSideInput, toInput: CompareSideInput): CompareResult {
 	const from = { ...fromInput, elements: withoutValidBridgeDecorations(fromInput.elements) };
 	const to = { ...toInput, elements: withoutValidBridgeDecorations(toInput.elements) };
@@ -281,6 +296,9 @@ function compareBoards(fromInput: CompareSideInput, toInput: CompareSideInput): 
 	// Relations, over the pairs that are actually related on either side.
 	const relatedPairs = new Set<string>();
 	const reason = new Map<string, Set<"edge" | "cluster">>();
+	/**
+	 *
+	 */
 	const mark = (x: string, y: string, why: "edge" | "cluster"): void => {
 		if (x === y) {
 			return;
@@ -487,5 +505,5 @@ export type {
 	ClusterChange,
 	RelationChange,
 	CompareResult,
-} from "./lib/compare-contract.js";
+} from "@/runtime/engine/lib/compare-contract";
 export { compareBoards };

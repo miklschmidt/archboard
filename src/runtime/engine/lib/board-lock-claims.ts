@@ -1,6 +1,6 @@
-import { CLAIM_DEFAULT_MS, CLAIM_LEASE_MS, CLAIM_MAX_MS } from "../../../shared/timing/timing.js";
-import { normalizeBoardKey } from "../board.js";
-import { holdBoard } from "./board-lock-acquisition.js";
+import { CLAIM_DEFAULT_MS, CLAIM_LEASE_MS, CLAIM_MAX_MS } from "@/shared/timing/timing";
+import { normalizeBoardKey } from "@/runtime/engine/board";
+import { holdBoard } from "@/runtime/engine/lib/board-lock-acquisition";
 import {
 	claimOf,
 	dropClaim,
@@ -8,13 +8,12 @@ import {
 	processClaims,
 	processRevocations,
 	startRenewing,
-} from "./board-lock-claim-state.js";
-import type { Claim, ClaimEntry, ClaimRevocation } from "./board-lock-contracts.js";
-import { newToken, releaseHold } from "./board-lock-state.js";
+} from "@/runtime/engine/lib/board-lock-claim-state";
+import type { Claim, ClaimEntry, ClaimRevocation } from "@/runtime/engine/lib/board-lock-contracts";
+import { newToken, releaseHold } from "@/runtime/engine/lib/board-lock-state";
 
 /**
  * Claim a board for an agent campaign, or extend this canvas's existing claim.
- *
  * @param request Board, reason, bounded campaign duration, wait, and cancellation evidence.
  * @returns The active claim and whether this call created its holder identity.
  */
@@ -54,7 +53,6 @@ async function claimBoard(
 
 /**
  * Release this canvas's claim without treating an already-ended claim as an error.
- *
  * @param board Board key or alias.
  * @returns The released process claim, or null when this canvas retained no claim for the board.
  */
@@ -72,7 +70,6 @@ function releaseClaim(board: string): Claim | null {
 
 /**
  * Read this canvas's live claim, expiring it first when its campaign deadline passed.
- *
  * @param board Board key or alias.
  * @returns The live claim, or null.
  */
@@ -84,7 +81,6 @@ function claimOn(board: string): Claim | null {
 
 /**
  * Resolve the holder identity an agent write should reenter for this board.
- *
  * @param board Board key or alias.
  * @returns The live claim holder id, or null for an ordinary per-write acquisition.
  */
@@ -98,7 +94,6 @@ function claimWriterId(board: string): string | null {
 
 /**
  * Consume the one-shot notice that this canvas's claim was taken back.
- *
  * @param board Board key or alias.
  * @returns The revocation once, or null after it has been consumed.
  */

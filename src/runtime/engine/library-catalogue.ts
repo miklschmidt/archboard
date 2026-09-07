@@ -20,14 +20,14 @@
 //                      to make, so insertion refuses and names the candidates
 //                      rather than picking one.
 
-import { getLibrary, batchCreateElementsStrict } from "./canvas-client.js";
-import type { ServerElement } from "./types.js";
-import { LIBRARY_NAME_OVERLAY } from "./library-names.js";
-import { extentOf } from "./geometry.js";
-import { mintId } from "../../shared/ids/ids.js";
-import type { RuntimeBoardElement } from "../../shared/board-elements/index.js";
-import { AmbiguousStencilError } from "./lib/ambiguous-stencil-error.js";
-import { UnknownStencilError } from "./lib/unknown-stencil-error.js";
+import { getLibrary, batchCreateElementsStrict } from "@/runtime/engine/canvas-client";
+import type { ServerElement } from "@/runtime/engine/types";
+import { LIBRARY_NAME_OVERLAY } from "@/runtime/engine/library-names";
+import { extentOf } from "@/runtime/engine/geometry";
+import { mintId } from "@/shared/ids/ids";
+import type { RuntimeBoardElement } from "@/shared/board-elements";
+import { AmbiguousStencilError } from "@/runtime/engine/lib/ambiguous-stencil-error";
+import { UnknownStencilError } from "@/runtime/engine/lib/unknown-stencil-error";
 
 /** One stencil, described well enough to be picked without being drawn. */
 interface CatalogueEntry {
@@ -77,6 +77,9 @@ interface StoredItem {
 	elements: RawElement[];
 }
 
+/**
+ *
+ */
 function resolvedName(item: { id: string; name?: string | null }): string | null {
 	return item.name ?? LIBRARY_NAME_OVERLAY[item.id] ?? null;
 }
@@ -85,6 +88,9 @@ function resolvedName(item: { id: string; name?: string | null }): string | null
 // stores an origin and a path, not a top-left and a size, so a stencil with a
 // leftward arrow in it used to be listed at the wrong size (geometry.ts,
 // TASK-038).
+/**
+ *
+ */
 function boundingBox(elements: RawElement[]): { width: number; height: number } {
 	if (elements.length === 0) {
 		return { width: 0, height: 0 };
@@ -99,6 +105,9 @@ function boundingBox(elements: RawElement[]): { width: number; height: number } 
 
 const TEXT_BUDGET = 60;
 
+/**
+ *
+ */
 function stencilText(elements: RawElement[]): string | null {
 	const words: string[] = [];
 	for (const el of elements) {
@@ -117,6 +126,9 @@ function stencilText(elements: RawElement[]): string | null {
 	return joined.length > TEXT_BUDGET ? `${joined.slice(0, TEXT_BUDGET - 1)}…` : joined;
 }
 
+/**
+ *
+ */
 function entryOf(item: StoredItem, source: string | null): CatalogueEntry {
 	const { width, height } = boundingBox(item.elements);
 	const name = resolvedName(item);
@@ -141,6 +153,9 @@ interface LoadedCatalogue extends Catalogue {
 	stored: Map<string, StoredItem>;
 }
 
+/**
+ *
+ */
 async function loadCatalogue(): Promise<LoadedCatalogue> {
 	const state = await getLibrary();
 	const items = state.items as unknown as StoredItem[];
@@ -269,6 +284,9 @@ function chooseStencil(items: CatalogueEntry[], query: StencilQuery): CatalogueE
 // The library site still serves items in Excalidraw's pre-split format,
 // where what is now "arrow" (a connector, with bindings and arrowheads) was
 // still called "draw". Nothing downstream understands that type name.
+/**
+ *
+ */
 function normalizeType(type: string | undefined): NativeValue<"type"> {
 	switch (type) {
 		case "draw": {
@@ -290,6 +308,9 @@ function normalizeType(type: string | undefined): NativeValue<"type"> {
 	}
 }
 
+/**
+ *
+ */
 function remapElements(
 	elements: RawElement[],
 	targetX: number,
@@ -297,6 +318,9 @@ function remapElements(
 	attribution: Record<string, unknown>,
 ): unknown[] {
 	const taken = new Set<string>();
+	/**
+	 *
+	 */
 	const freshId = (): string => {
 		const id = mintId(taken);
 		taken.add(id);
@@ -316,6 +340,9 @@ function remapElements(
 			}
 		}
 	}
+	/**
+	 *
+	 */
 	const mapId = (id: string | undefined | null): string | undefined | null =>
 		id === null || id === undefined ? id : (idMap.get(id) ?? id);
 
@@ -388,7 +415,6 @@ interface InsertResult {
  * Throws `UnknownStencilError` when nothing matches and `AmbiguousStencilError`
  * when a name belongs to more than one library — both are the caller's to
  * answer, so neither is guessed at here.
- *
  * @param query stencil identity and target coordinates
  * @returns the created board elements and resolved stencil identity
  */
@@ -409,7 +435,7 @@ async function insertStencil(
 		library: { item: entry.name, itemId: entry.id, source: entry.source },
 	};
 	const elements = remapElements(
-		item.elements as Record<string, unknown>[],
+		item.elements,
 		query.x,
 		query.y,
 		attribution,

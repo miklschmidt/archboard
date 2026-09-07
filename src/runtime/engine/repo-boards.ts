@@ -18,9 +18,9 @@
 // truth that can be wrong, and the truth is cheap enough to read.
 
 import fs from "fs";
-import { type ServerElement } from "./types.js";
-import { type BoardIdentity, extractSceneElements, listBoards, requireVaultRoot } from "./board.js";
-import { archboardBlock } from "./promote.js";
+import { type ServerElement } from "@/runtime/engine/types";
+import { type BoardIdentity, extractSceneElements, listBoards, requireVaultRoot } from "@/runtime/engine/board";
+import { archboardBlock } from "@/runtime/engine/promote";
 
 /** One node on a board, bound to the repository being asked about. */
 interface BoundNode {
@@ -59,6 +59,9 @@ interface OpenBoard {
 	file?: string;
 }
 
+/**
+ *
+ */
 function labelOf(el: ServerElement, elements: ServerElement[]): string | undefined {
 	const direct = el.type === "text" ? el.text : undefined;
 	if (direct) {

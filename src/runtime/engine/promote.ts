@@ -1,23 +1,23 @@
 import path from "node:path";
-import type { ServerElement } from "./types.js";
+import type { ServerElement } from "@/runtime/engine/types";
 import {
 	DEFAULT_FILL_STYLE,
 	DEFAULT_SHAPE_BACKGROUND,
 	FILLABLE_TYPES,
 	backgroundForKind,
 	isTransparentBackground,
-} from "../../shared/appearance/appearance.js";
-import { extentOf } from "./geometry.js";
-import { archboardBlock, nodeIdOf, nodeIdsOnBoard, readElementMetadata } from "./metadata.js";
-import type { ArchboardBlock, LogicalAddress } from "./metadata.js";
+} from "@/shared/appearance/appearance";
+import { extentOf } from "@/runtime/engine/geometry";
+import { archboardBlock, nodeIdOf, nodeIdsOnBoard, readElementMetadata } from "@/runtime/engine/metadata";
+import type { ArchboardBlock, LogicalAddress } from "@/runtime/engine/metadata";
 import type {
 	BindingOrigin,
 	BindingRequest,
 	BindingSource,
 	ResolvedBinding,
-} from "./lib/promotion-binding.js";
-import { formatAddress, resolveBinding } from "./lib/promotion-binding.js";
-import type { Kind } from "./lib/promotion-identity.js";
+} from "@/runtime/engine/lib/promotion-binding";
+import { formatAddress, resolveBinding } from "@/runtime/engine/lib/promotion-binding";
+import type { Kind } from "@/runtime/engine/lib/promotion-identity";
 import {
 	KINDS,
 	normalizeKind,
@@ -25,8 +25,11 @@ import {
 	slugify,
 	uniqueNodeId,
 	validateNodeId,
-} from "./lib/promotion-identity.js";
+} from "@/runtime/engine/lib/promotion-identity";
 
+/**
+ *
+ */
 const areaOf = (el: ServerElement): number => {
 	const extent = extentOf(el);
 	return extent.width * extent.height;
@@ -85,6 +88,9 @@ interface PromotionPlan {
 	updates: ElementUpdate[];
 }
 
+/**
+ *
+ */
 function labelOf(el: ServerElement, board: ServerElement[]): string | undefined {
 	const direct = el.type === "text" ? el.text : undefined;
 	if (direct) {
@@ -107,6 +113,9 @@ function labelOf(el: ServerElement, board: ServerElement[]): string | undefined 
 // its label is one thing, not two. Promotion has to agree: promoting a
 // container promotes its label element too, and a label whose container is
 // also selected never becomes a node of its own.
+/**
+ *
+ */
 function partition(
 	targets: ServerElement[],
 	board: ServerElement[],
@@ -129,6 +138,9 @@ function partition(
 			labelsByContainer.set(container, list);
 		}
 	}
+	/**
+	 *
+	 */
 	const isFoldedLabel = (el: ServerElement): boolean =>
 		el.type === "text" &&
 		typeof el.containerId === "string" &&
@@ -150,6 +162,9 @@ function partition(
 // wearing the neutral default. A colour someone actually chose is never
 // overwritten. Demotion deliberately does not undo it: reverting to
 // transparent would take the interior hit-test away again.
+/**
+ *
+ */
 function fillFor(
 	el: ServerElement,
 	kind: Kind,
@@ -167,6 +182,9 @@ function fillFor(
 	return { backgroundColor: backgroundForKind(kind), fillStyle: DEFAULT_FILL_STYLE };
 }
 
+/**
+ *
+ */
 function mergedCustomData(el: ServerElement, block: ArchboardBlock): Record<string, unknown> {
 	const existing = (
 		el.customData && typeof el.customData === "object" ? el.customData : {}
@@ -188,6 +206,9 @@ function mergedCustomData(el: ServerElement, block: ArchboardBlock): Record<stri
 // the copy comparable with its origin, and rewriting any of them would sever
 // the join the diff is built on. Elements that were never promoted are
 // returned as they are, and so is every other `customData` key.
+/**
+ *
+ */
 function restampVariant(elements: ServerElement[], variant: string): ServerElement[] {
 	return elements.map((el) => {
 		const block = readElementMetadata(el).archboard;
@@ -218,6 +239,9 @@ function restampVariant(elements: ServerElement[], variant: string): ServerEleme
 // the shared thing is the kind and each shape keeps its own identity. A name
 // or a binding is refused there, because those are per-node and the caller
 // only supplied one.
+/**
+ *
+ */
 function planPromotion(request: PromotionRequest): PromotionPlan {
 	const { targets, board, kind, binding } = request;
 	if (targets.length === 0) {
@@ -363,6 +387,9 @@ interface DemotionPlan {
 	updates: ElementUpdate[];
 }
 
+/**
+ *
+ */
 function planDemotion(targets: ServerElement[], board: ServerElement[]): DemotionPlan {
 	if (targets.length === 0) {
 		throw new PromotionError("Nothing to demote — no elements selected and no --ids given.");
@@ -433,6 +460,9 @@ function planDemotion(targets: ServerElement[], board: ServerElement[]): Demotio
 
 // Speakable results
 
+/**
+ *
+ */
 function promotionSummary(plan: PromotionPlan, note?: string): string {
 	const lines: string[] = [];
 	if (plan.nodes.length === 1) {
@@ -456,6 +486,9 @@ function promotionSummary(plan: PromotionPlan, note?: string): string {
 	return lines.join(" ");
 }
 
+/**
+ *
+ */
 function demotionSummary(plan: DemotionPlan): string {
 	const named = plan.nodes.map((n) => `"${n.name ?? n.node ?? "?"}"`).join(", ");
 	const count = plan.updates.length;

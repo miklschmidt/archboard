@@ -2,9 +2,9 @@ import {
 	BOARD_ELEMENT_TYPES,
 	type PersistedBoardElement,
 	type RuntimeBoardElement,
-} from "../../../shared/board-elements/index.js";
-import { buildValidatedElement } from "./native-element-builders.js";
-import { NativeElementValidationError, fail, recordAt } from "./native-element-validation.js";
+} from "@/shared/board-elements";
+import { buildValidatedElement } from "@/runtime/engine/lib/native-element-builders";
+import { NativeElementValidationError, fail, recordAt } from "@/runtime/engine/lib/native-element-validation";
 
 const TYPES = new Set<string>(BOARD_ELEMENT_TYPES);
 

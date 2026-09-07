@@ -1,24 +1,24 @@
-import { normalizeFontFamily } from "./types.js";
-import type { ServerElement } from "./types.js";
-import { bindingOf, boundEndpoint, centreOf } from "./arrow-binding.js";
+import { normalizeFontFamily } from "@/runtime/engine/types";
+import type { ServerElement } from "@/runtime/engine/types";
+import { bindingOf, boundEndpoint, centreOf } from "@/runtime/engine/arrow-binding";
 import {
 	expandForBoard,
 	relabelBoundTexts,
 	repairIndices,
 	settleDeletions,
-} from "./expand-elements.js";
+} from "@/runtime/engine/expand-elements";
 import {
 	DEFAULT_LINEAR_POINTS,
 	pointsOf,
 	remeasureLinear,
 	validateRenderGeometry,
-} from "./geometry.js";
-import { copyElements } from "./board-store.js";
-import { mintId } from "../../shared/ids/ids.js";
-import { recentreBoundTexts } from "./labels.js";
-import type { LegacyElementIngress } from "../../shared/board-elements/index.js";
-import { validatePersistedBoardElement } from "./lib/native-element.js";
-import { stripUntrustedTrackingClaims } from "./metadata.js";
+} from "@/runtime/engine/geometry";
+import { copyElements } from "@/runtime/engine/board-store";
+import { mintId } from "@/shared/ids/ids";
+import { recentreBoundTexts } from "@/runtime/engine/labels";
+import type { LegacyElementIngress } from "@/shared/board-elements";
+import { validatePersistedBoardElement } from "@/runtime/engine/lib/native-element";
+import { stripUntrustedTrackingClaims } from "@/runtime/engine/metadata";
 export {
 	AgentElementInputSchema,
 	CREATE_ELEMENT_JSON_SCHEMA,
@@ -27,26 +27,26 @@ export {
 	PointSchema,
 	UPDATE_ELEMENT_JSON_SCHEMA,
 	UpdateElementSchema,
-} from "./lib/element-input-schema.js";
-export type { AgentElementInput, HumanElementChangeInput } from "./lib/element-input-schema.js";
-export { wellFormAgentStatement } from "./lib/agent-element-input.js";
+} from "@/runtime/engine/lib/element-input-schema";
+export type { AgentElementInput, HumanElementChangeInput } from "@/runtime/engine/lib/element-input-schema";
+export { wellFormAgentStatement } from "@/runtime/engine/lib/agent-element-input";
 import {
 	type AgentElementInput,
 	type HumanElementChangeInput,
 	UpdateElementSchema,
-} from "./lib/element-input-schema.js";
+} from "@/runtime/engine/lib/element-input-schema";
 import {
 	agentLabelIntentOf,
 	buildAgentElement,
 	spendArrowRefs,
 	wellFormAgentStatement,
 	withAgentLabelIntent,
-} from "./lib/agent-element-input.js";
+} from "@/runtime/engine/lib/agent-element-input";
 import {
 	canonicalLinkAfterPresentationEcho,
 	stripPresentationMarker,
 	type PresentationContext,
-} from "./presentation.js";
+} from "@/runtime/engine/presentation";
 
 export type ElementInputRequest =
 	| {
@@ -75,9 +75,15 @@ export interface AppliedElementInput {
 	deleted: string[];
 }
 
+/**
+ *
+ */
 const hasOwn = (value: object, key: PropertyKey): boolean =>
 	Object.prototype.hasOwnProperty.call(value, key);
 
+/**
+ *
+ */
 function mergeCustomData(existing: unknown, incoming: unknown): unknown {
 	if (!incoming || typeof incoming !== "object" || Array.isArray(incoming)) {
 		return incoming;
@@ -94,6 +100,9 @@ function mergeCustomData(existing: unknown, incoming: unknown): unknown {
 	};
 }
 
+/**
+ *
+ */
 function bumpVersion(
 	element: ServerElement,
 	previous?: ServerElement,
@@ -119,6 +128,9 @@ interface ElementMerge {
 	reboundArrow: boolean;
 }
 
+/**
+ *
+ */
 function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): ElementMerge {
 	const statement = wellFormAgentStatement(raw, existing.type);
 	if (statement["type"] !== undefined && statement["type"] !== existing.type) {
@@ -191,6 +203,9 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 		}
 	}
 
+	/**
+	 *
+	 */
 	const changed = (key: string) => hasOwn(statement, key);
 	if (changed("points")) {
 		sizeFromPath(element);
@@ -222,6 +237,9 @@ function mergeElementUpdate(existing: ServerElement, raw: AgentElementInput): El
 	};
 }
 
+/**
+ *
+ */
 function sizeFromPath(element: ServerElement): boolean {
 	const measured = remeasureLinear(element);
 	if (!measured) {
@@ -232,6 +250,9 @@ function sizeFromPath(element: ServerElement): boolean {
 	return true;
 }
 
+/**
+ *
+ */
 function pathOf(
 	element: Extract<ServerElement, { type: "arrow" | "line" }>,
 ): { x: number; y: number }[] {
@@ -241,6 +262,9 @@ function pathOf(
 	return points.map((point) => ({ x: element.x + point.x, y: element.y + point.y }));
 }
 
+/**
+ *
+ */
 function resolveArrowBindings(
 	written: ServerElement[],
 	board: Map<string, ServerElement>,
@@ -262,6 +286,9 @@ function resolveArrowBindings(
 		}
 		const startBinding = bindingOf(dynamic["startBinding"]);
 		const endBinding = bindingOf(dynamic["endBinding"]);
+		/**
+		 *
+		 */
 		const inputGeometry = (target: ServerElement | undefined): ServerElement | undefined =>
 			target && inputSquareIds.has(target.id) ? { ...target, roundness: null } : target;
 		const startElement = inputGeometry(
@@ -292,12 +319,18 @@ function resolveArrowBindings(
 	}
 }
 
+/**
+ *
+ */
 function rerouteBoundArrows(movedId: string, board: Map<string, ServerElement>): ServerElement[] {
 	const rerouted: ServerElement[] = [];
 	for (const element of board.values()) {
 		if (element.type !== "arrow" && element.type !== "line") {
 			continue;
 		}
+		/**
+		 *
+		 */
 		const joins = (binding: unknown) => bindingOf(binding)?.elementId === movedId;
 		const dynamic = element as unknown as Record<string, unknown>;
 		if (!joins(dynamic["startBinding"]) && !joins(dynamic["endBinding"])) {
@@ -310,6 +343,9 @@ function rerouteBoundArrows(movedId: string, board: Map<string, ServerElement>):
 	return rerouted;
 }
 
+/**
+ *
+ */
 function settleBoundTexts(
 	containerIds: string[],
 	board: Map<string, ServerElement>,
@@ -328,6 +364,9 @@ function settleBoundTexts(
 	return moved;
 }
 
+/**
+ *
+ */
 function restateLabels(
 	written: LegacyElementIngress[],
 	board: Map<string, ServerElement>,
@@ -340,6 +379,9 @@ function restateLabels(
 	return restated;
 }
 
+/**
+ *
+ */
 function settleAfterWrite(movedIds: string[], board: Map<string, ServerElement>): ServerElement[] {
 	const containers: string[] = [];
 	const moved = new Map<string, ServerElement>();
@@ -365,6 +407,9 @@ function settleAfterWrite(movedIds: string[], board: Map<string, ServerElement>)
 	return [...moved.values()];
 }
 
+/**
+ *
+ */
 function settleDocument(
 	applied: Pick<AppliedElementInput, "created" | "updated" | "deleted">,
 	board: Map<string, ServerElement>,
@@ -401,6 +446,9 @@ interface PreparedElementInput {
 	moved?: string[];
 }
 
+/**
+ *
+ */
 function applyAgentInput(
 	board: Map<string, ServerElement>,
 	upserts: AgentElementInput[],
@@ -420,7 +468,10 @@ function applyAgentInput(
 	);
 	const minted = new Set<string>();
 	const inputSquareIds = new Set<string>();
-	const taken = { has: (id: string) => board.has(id) || statedIds.has(id) || minted.has(id) };
+	const taken = { /**
+	 *
+	 */
+	has: (id: string) => board.has(id) || statedIds.has(id) || minted.has(id) };
 
 	for (const input of upserts) {
 		const rawId = typeof input.id === "string" && input.id.length > 0 ? input.id : undefined;
@@ -498,6 +549,9 @@ function applyAgentInput(
 	return { created, updated, namedIds, moved };
 }
 
+/**
+ *
+ */
 function applyHumanInput(
 	board: Map<string, ServerElement>,
 	upserts: HumanElementChangeInput[],
@@ -511,7 +565,7 @@ function applyHumanInput(
 	const now = new Date().toISOString();
 	for (const raw of upserts) {
 		const sanitized = stripUntrustedTrackingClaims(
-			stripPresentationMarker(raw) as unknown as Record<string, unknown>,
+			stripPresentationMarker(raw),
 		);
 		const {
 			board: _board,

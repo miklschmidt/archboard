@@ -4,7 +4,7 @@ import type {
 	PersistedArchboardEnvelope,
 	RuntimeBoardElement,
 	RuntimeElementTracking,
-} from "../../shared/board-elements/index.js";
+} from "@/shared/board-elements";
 
 type ArchboardBlock = ArchboardElementMetadata;
 
@@ -17,6 +17,9 @@ interface ElementMetadataCarrier {
 	readonly customData?: unknown;
 }
 
+/**
+ *
+ */
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -73,11 +76,17 @@ function stripUntrustedTrackingClaims(value: Record<string, unknown>): Record<st
 	return cleaned;
 }
 
+/**
+ *
+ */
 function customDataOf(element: ElementMetadataCarrier): Readonly<Record<string, unknown>> {
 	const custom = element.customData;
 	return isRecord(custom) ? custom : {};
 }
 
+/**
+ *
+ */
 function envelopeOf(element: ElementMetadataCarrier): PersistedArchboardEnvelope | undefined {
 	const candidate = customDataOf(element)["archboard"];
 	return candidate && typeof candidate === "object" && !Array.isArray(candidate)
@@ -87,6 +96,9 @@ function envelopeOf(element: ElementMetadataCarrier): PersistedArchboardEnvelope
 
 // ADR 0003 makes the namespace the boundary. Tracking is storage bookkeeping,
 // not semantic metadata, and is deliberately filtered from every caller.
+/**
+ *
+ */
 function readElementMetadata(element: ElementMetadataCarrier): ElementMetadata {
 	const values = customDataOf(element);
 	const envelope = envelopeOf(element);
@@ -118,7 +130,7 @@ function hydrateElementTracking(element: RuntimeBoardElement): RuntimeBoardEleme
 		TRACKING_KEYS.flatMap((key) => (envelope[key] === undefined ? [] : [[key, envelope[key]]])),
 	) as RuntimeElementTracking;
 	const customData = stripTrackingClaims(element.customData);
-	const hydrated = { ...element, ...tracking } as RuntimeBoardElement;
+	const hydrated = { ...element, ...tracking };
 	if (customData && typeof customData === "object" && Object.keys(customData).length > 0) {
 		Object.assign(hydrated, { customData });
 	} else {
@@ -183,15 +195,24 @@ function semanticElementProjection(element: RuntimeBoardElement): RuntimeBoardEl
 	return projected;
 }
 
+/**
+ *
+ */
 function archboardBlock(element: RuntimeBoardElement): ArchboardElementMetadata | undefined {
 	return readElementMetadata(element).archboard;
 }
 
+/**
+ *
+ */
 function nodeIdOf(element: RuntimeBoardElement): string | undefined {
 	const node = readElementMetadata(element).archboard?.node;
 	return typeof node === "string" && node ? node : undefined;
 }
 
+/**
+ *
+ */
 function nodeIdsOnBoard(elements: RuntimeBoardElement[]): Set<string> {
 	const ids = new Set<string>();
 	for (const element of elements) {
@@ -203,6 +224,9 @@ function nodeIdsOnBoard(elements: RuntimeBoardElement[]): Set<string> {
 	return ids;
 }
 
+/**
+ *
+ */
 function logicalAddressOf(element: RuntimeBoardElement): LogicalAddress | undefined {
 	const binding = readElementMetadata(element).archboard?.binding;
 	return binding && typeof binding.path === "string" ? binding : undefined;

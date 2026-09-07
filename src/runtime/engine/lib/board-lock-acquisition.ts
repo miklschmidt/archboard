@@ -6,9 +6,9 @@ import {
 	LOCK_POLL_MS,
 	LOCK_STEAL_GUARD_MS,
 	LOCK_WAIT_CAP_MS,
-} from "../../../shared/timing/timing.js";
-import { normalizeBoardKey } from "../board.js";
-import { noteClaimRevoked, processClaims } from "./board-lock-claim-state.js";
+} from "@/shared/timing/timing";
+import { normalizeBoardKey } from "@/runtime/engine/board";
+import { noteClaimRevoked, processClaims } from "@/runtime/engine/lib/board-lock-claim-state";
 import {
 	BoardHeldError,
 	processName,
@@ -16,7 +16,7 @@ import {
 	type LockHold,
 	type LockRecord,
 	type LockRequest,
-} from "./board-lock-contracts.js";
+} from "@/runtime/engine/lib/board-lock-contracts";
 import {
 	announceHeld,
 	holderOf,
@@ -28,11 +28,14 @@ import {
 	stamp,
 	takeHandoff,
 	writeRecord,
-} from "./board-lock-state.js";
+} from "@/runtime/engine/lib/board-lock-state";
 
 class BoardLockCancelledError extends Error {
 	readonly code = "BOARD_LOCK_CANCELLED";
 
+	/**
+	 *
+	 */
 	constructor(readonly board: string) {
 		super(`Waiting to write "${board}" was canceled because the request disconnected.`);
 		this.name = "BoardLockCancelledError";
@@ -45,12 +48,18 @@ type Attempt =
 	| { ok: true; record: LockRecord; created: boolean }
 	| { ok: false; record: LockRecord | null };
 
+/**
+ *
+ */
 function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => {
 		setTimeout(resolve, ms);
 	});
 }
 
+/**
+ *
+ */
 function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promise<void> {
 	// Waiting is filesystem polling because another process has no signal it can
 	// send here. Abort removes both timer and listener so disconnected requests
@@ -60,6 +69,9 @@ function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promi
 	}
 	return new Promise((resolve, reject) => {
 		let timer: ReturnType<typeof setTimeout> | null = null;
+		/**
+		 *
+		 */
 		const settle = (cancelled: boolean): void => {
 			if (timer === null) {
 				return;
@@ -73,6 +85,9 @@ function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promi
 				resolve();
 			}
 		};
+		/**
+		 *
+		 */
 		const onAbort = (): void => {
 			settle(true);
 		};
@@ -86,6 +101,9 @@ function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promi
 	});
 }
 
+/**
+ *
+ */
 async function attempt(
 	board: string,
 	who: { id: string; kind: HolderKind; reason?: string; claimed?: boolean },
@@ -103,6 +121,9 @@ async function attempt(
 		live && revoke && who.kind === "human" && live.claimed && live.id !== who.id,
 	);
 
+	/**
+	 *
+	 */
 	const endsClaimHere = (taker: LockRecord): void => {
 		// A process claim can outlive a momentarily lapsed/deleted lease. End it
 		// only after this taker's acquisition is proven, including a reentrant
@@ -192,6 +213,9 @@ async function attempt(
 	return { ok: true, record, created: true };
 }
 
+/**
+ *
+ */
 async function holdBoard(request: LockRequest): Promise<LockHold> {
 	// Waiting is for agents. The expected blocker is a person's short gesture
 	// hold or another agent's per-write hold, both about to clear, so an agent
@@ -275,6 +299,9 @@ async function holdBoard(request: LockRequest): Promise<LockHold> {
 	);
 }
 
+/**
+ *
+ */
 async function withBoardLock<T>(request: LockRequest, write: () => T): Promise<T> {
 	// `write` is intentionally synchronous. An await inside the note's
 	// read-modify-write would admit a second request into the very cycle this

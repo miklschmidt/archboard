@@ -1,8 +1,8 @@
-import { type ServerElement } from "./types.js";
-import type { LegacyElementIngress } from "../../shared/board-elements/index.js";
-import { expandElements } from "./expand-elements.js";
-import { drawnFileIds } from "./embedded-files.js";
-import { extractSceneJsonFromObsidianMd, isObsidianExcalidrawMd } from "./obsidian-md.js";
+import { type ServerElement } from "@/runtime/engine/types";
+import type { LegacyElementIngress } from "@/shared/board-elements";
+import { expandElements } from "@/runtime/engine/expand-elements";
+import { drawnFileIds } from "@/runtime/engine/embedded-files";
+import { extractSceneJsonFromObsidianMd, isObsidianExcalidrawMd } from "@/runtime/engine/obsidian-md";
 
 interface ExportedScene {
 	scene: Record<string, unknown>;
@@ -49,7 +49,7 @@ function buildScene(
 
 /** Build a file document from the board returned by the canvas server. */
 async function buildSceneFile(): Promise<ExportedScene> {
-	const { getElements, getFiles } = await import("./canvas-client.js");
+	const { getElements, getFiles } = await import("@/runtime/engine/canvas-client");
 	const [elementsResult, filesResult] = await Promise.allSettled([getElements(), getFiles()]);
 	if (elementsResult.status === "rejected") {
 		throw elementsResult.reason;
@@ -70,7 +70,7 @@ async function importScene(options: {
 	mode: "replace" | "merge";
 }): Promise<ImportResult> {
 	const { batchCreateElementsOnCanvas, postFiles, replaceSceneOnCanvas } =
-		await import("./canvas-client.js");
+		await import("@/runtime/engine/canvas-client");
 	let raw = options.data;
 	if (isObsidianExcalidrawMd(raw)) {
 		raw = extractSceneJsonFromObsidianMd(raw);

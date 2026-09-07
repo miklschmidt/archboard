@@ -20,7 +20,7 @@
 // used one would measure slightly wide, which is the failure to prefer over a
 // wrong contextual rule applied everywhere.
 
-import { Reader } from "./font-file.js";
+import { Reader } from "@/runtime/engine/font-file";
 
 // The scripts whose default LangSys decides which lookups apply. A feature no
 // matching script references is off, which is how a font ships a feature for
@@ -32,6 +32,9 @@ const GSUB_DEFAULT = ["ccmp", "locl", "rlig", "liga"];
 
 type CoverageMap = Map<number, number>;
 
+/**
+ *
+ */
 function coverage(buf: Buffer, off: number): CoverageMap {
 	const r = new Reader(buf, off);
 	const format = r.u16();
@@ -57,6 +60,9 @@ function coverage(buf: Buffer, off: number): CoverageMap {
 	return map;
 }
 
+/**
+ *
+ */
 function classDef(buf: Buffer, off: number): Map<number, number> {
 	const r = new Reader(buf, off);
 	const format = r.u16();
@@ -166,6 +172,9 @@ function header(buf: Buffer, scripts: readonly string[]): Header {
 	return { features, wanted, lookupOffsets };
 }
 
+/**
+ *
+ */
 function lookupsForFeatures(buf: Buffer, h: Header, tags: readonly string[]): number[] {
 	const indices = new Set<number>();
 	for (const feature of h.features) {
@@ -185,6 +194,9 @@ function lookupsForFeatures(buf: Buffer, h: Header, tags: readonly string[]): nu
 	return [...indices].toSorted((a, b) => a - b);
 }
 
+/**
+ *
+ */
 function readLookup(buf: Buffer, off: number): { lookupType: number; subs: number[] } {
 	const r = new Reader(buf, off);
 	const lookupType = r.u16();
@@ -220,6 +232,9 @@ interface PairSubtable {
 	lookup(first: number, second: number): number | undefined;
 }
 
+/**
+ *
+ */
 function pairSubtable(buf: Buffer, off: number): PairSubtable {
 	const r = new Reader(buf, off);
 	const posFormat = r.u16();
@@ -244,7 +259,7 @@ function pairSubtable(buf: Buffer, off: number): PairSubtable {
 			if (first === undefined) {
 				continue;
 			}
-			const pr = new Reader(buf, offsets[i] as number);
+			const pr = new Reader(buf, offsets[i]);
 			const n = pr.u16();
 			for (let j = 0; j < n; j++) {
 				const second = pr.u16();
@@ -253,7 +268,10 @@ function pairSubtable(buf: Buffer, off: number): PairSubtable {
 				pairs.set(`${first},${second}`, value);
 			}
 		}
-		return { lookup: (a, b) => pairs.get(`${a},${b}`) };
+		return { /**
+		 *
+		 */
+		lookup: (a, b) => pairs.get(`${a},${b}`) };
 	}
 
 	if (posFormat === 2) {
@@ -276,6 +294,9 @@ function pairSubtable(buf: Buffer, off: number): PairSubtable {
 			table.push(row);
 		}
 		return {
+			/**
+			 *
+			 */
 			lookup: (a, b) => {
 				if (!cov.has(a)) {
 					return undefined;
@@ -285,7 +306,10 @@ function pairSubtable(buf: Buffer, off: number): PairSubtable {
 		};
 	}
 
-	return { lookup: () => undefined };
+	return { /**
+	 *
+	 */
+	lookup: () => undefined };
 }
 
 interface Kerning {
@@ -293,6 +317,9 @@ interface Kerning {
 	kern(first: number, second: number): number;
 }
 
+/**
+ *
+ */
 function buildGpos(buf: Buffer): Kerning {
 	const h = header(buf, SCRIPTS);
 	const lookups: PairSubtable[][] = [];
@@ -313,6 +340,9 @@ function buildGpos(buf: Buffer): Kerning {
 
 	return {
 		// Each lookup applies once; inside a lookup the first matching subtable wins.
+		/**
+		 *
+		 */
 		kern(first: number, second: number): number {
 			let total = 0;
 			for (const subtables of lookups) {
@@ -336,6 +366,9 @@ interface Substitution {
 	apply(glyphs: readonly number[], i: number): { glyphs: number[]; consumed: number } | null;
 }
 
+/**
+ *
+ */
 function singleSubst(buf: Buffer, off: number): Substitution {
 	const r = new Reader(buf, off);
 	const format = r.u16();
@@ -357,6 +390,9 @@ function singleSubst(buf: Buffer, off: number): Substitution {
 		}
 	}
 	return {
+		/**
+		 *
+		 */
 		apply: (glyphs, i) => {
 			const replacement = map.get(glyphs[i] as number);
 			return replacement === undefined ? null : { glyphs: [replacement], consumed: 1 };
@@ -364,6 +400,9 @@ function singleSubst(buf: Buffer, off: number): Substitution {
 	};
 }
 
+/**
+ *
+ */
 function ligatureSubst(buf: Buffer, off: number): Substitution {
 	const r = new Reader(buf, off);
 	r.u16(); // substFormat
@@ -408,6 +447,9 @@ function ligatureSubst(buf: Buffer, off: number): Substitution {
 	}
 
 	return {
+		/**
+		 *
+		 */
 		apply(glyphs, i) {
 			const list = ligatures.get(glyphs[i] as number);
 			if (!list) {
@@ -446,6 +488,9 @@ function chainContextSubst(
 	const r = new Reader(buf, off);
 	const format = r.u16();
 
+	/**
+	 *
+	 */
 	const runNested = (
 		glyphs: readonly number[],
 		i: number,
@@ -527,6 +572,9 @@ function chainContextSubst(
 		}
 
 		return {
+			/**
+			 *
+			 */
 			apply(glyphs, i) {
 				const rules = rulesByFirst.get(glyphs[i] as number);
 				if (!rules) {
@@ -584,6 +632,9 @@ function chainContextSubst(
 			records.push({ sequenceIndex: r.u16(), lookupListIndex: r.u16() });
 		}
 		return {
+			/**
+			 *
+			 */
 			apply(glyphs, i) {
 				for (let k = 0; k < backtrack.length; k++) {
 					if (!(backtrack[k] as CoverageMap).has(glyphs[i - 1 - k] as number)) {
@@ -607,7 +658,10 @@ function chainContextSubst(
 
 	// Format 2 is class-based chaining. No shipped family uses it; measuring
 	// without it costs a substitution, never a wrong one.
-	return { apply: () => null };
+	return { /**
+	 *
+	 */
+	apply: () => null };
 }
 
 interface Substitutions {
@@ -615,10 +669,16 @@ interface Substitutions {
 	substitute(glyphs: readonly number[]): number[];
 }
 
+/**
+ *
+ */
 function buildGsub(buf: Buffer): Substitutions {
 	const h = header(buf, SCRIPTS);
 	const built = new Map<number, Substitution | null>();
 
+	/**
+	 *
+	 */
 	function getLookup(index: number): Substitution | null {
 		if (built.has(index)) {
 			return built.get(index) as Substitution | null;
@@ -639,6 +699,9 @@ function buildGsub(buf: Buffer): Substitutions {
 		const built1: Substitution | null =
 			subtables.length > 0
 				? {
+						/**
+						 *
+						 */
 						apply(glyphs, i) {
 							for (const subtable of subtables) {
 								const hit = subtable.apply(glyphs, i);
@@ -659,6 +722,9 @@ function buildGsub(buf: Buffer): Substitutions {
 		.filter((lookup): lookup is Substitution => lookup !== null);
 
 	return {
+		/**
+		 *
+		 */
 		substitute(glyphs: readonly number[]): number[] {
 			let out = [...glyphs];
 			for (const lookup of lookups) {

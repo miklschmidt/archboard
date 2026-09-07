@@ -93,29 +93,47 @@ class Reader {
 	readonly b: Buffer;
 	p: number;
 
+	/**
+	 *
+	 */
 	constructor(buf: Buffer, pos = 0) {
 		this.b = buf;
 		this.p = pos;
 	}
 
+	/**
+	 *
+	 */
 	u8(): number {
 		return this.b[this.p++] as number;
 	}
+	/**
+	 *
+	 */
 	u16(): number {
 		const v = this.b.readUInt16BE(this.p);
 		this.p += 2;
 		return v;
 	}
+	/**
+	 *
+	 */
 	i16(): number {
 		const v = this.b.readInt16BE(this.p);
 		this.p += 2;
 		return v;
 	}
+	/**
+	 *
+	 */
 	u32(): number {
 		const v = this.b.readUInt32BE(this.p);
 		this.p += 4;
 		return v;
 	}
+	/**
+	 *
+	 */
 	tag(): string {
 		const v = this.b.toString("ascii", this.p, this.p + 4);
 		this.p += 4;

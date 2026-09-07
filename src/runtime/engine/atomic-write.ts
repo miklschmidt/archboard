@@ -150,6 +150,9 @@ function writeFileAtomicExclusive(file: string, data: string | Buffer): void {
 // directory has been synced. Best effort: opening a directory for reading is
 // not portable, and a platform that refuses gives up durability of the rename
 // rather than the write, which is the smaller of the two.
+/**
+ *
+ */
 function fsyncDir(dir: string): void {
 	let handle: number | undefined;
 	try {

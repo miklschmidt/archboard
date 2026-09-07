@@ -16,9 +16,9 @@
 // a closed tab or an unsplit takes its registration with it, so there are no
 // ghosts. No pane at all is the normal state of a headless canvas, not an error.
 
-import { type ServerElement } from "./types.js";
-import { type BoardIdentity, boardKey, parseBoardKey } from "./board.js";
-import { nameSelection } from "./describe.js";
+import { type ServerElement } from "@/runtime/engine/types";
+import { type BoardIdentity, boardKey, parseBoardKey } from "@/runtime/engine/board";
+import { nameSelection } from "@/runtime/engine/describe";
 
 /** A rectangle. Page coordinates for `rect`, scene coordinates for `viewport`. */
 interface Rect {
@@ -135,6 +135,9 @@ const BAND = 24;
 /** Beyond this many selected ids, the report says how many rather than which. */
 const MAX_IDS = 20;
 
+/**
+ *
+ */
 const readingOrder = (a: PaneRegistration, b: PaneRegistration): number =>
 	Math.abs(a.rect.y - b.rect.y) > BAND ? a.rect.y - b.rect.y : a.rect.x - b.rect.x;
 
@@ -150,6 +153,9 @@ function bands(values: number[]): number[] {
 	return out;
 }
 
+/**
+ *
+ */
 const bandIndex = (edges: number[], value: number): number => {
 	let index = 0;
 	edges.forEach((edge, i) => {
@@ -160,6 +166,9 @@ const bandIndex = (edges: number[], value: number): number => {
 	return index;
 };
 
+/**
+ *
+ */
 function arrangementOf(panes: PaneRegistration[]): Arrangement {
 	if (panes.length === 0) {
 		return "none";
@@ -184,6 +193,9 @@ function arrangementOf(panes: PaneRegistration[]): Arrangement {
 const ROW_NAMES = ["top", "middle", "bottom"];
 const COLUMN_NAMES = ["left", "middle", "right"];
 
+/**
+ *
+ */
 function placeOf(
 	pane: PaneRegistration,
 	index: number,
@@ -292,6 +304,9 @@ function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneR
 		);
 	}
 	const wanted = spec.trim().toLowerCase();
+	/**
+	 *
+	 */
 	const list = (): string =>
 		ordered.map((entry) => `${entry.position}. ${entry.place} (${entry.pane.board})`).join(", ");
 
@@ -352,8 +367,14 @@ function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
 	);
 }
 
+/**
+ *
+ */
 const round = (n: number): number => Math.round(n);
 
+/**
+ *
+ */
 function selectionOf(pane: PaneRegistration, context: PaneContext): PaneSelection {
 	const picked = context.selection(pane.clientId);
 	const ids = picked?.elementIds ?? [];
@@ -391,6 +412,9 @@ function selectionOf(pane: PaneRegistration, context: PaneContext): PaneSelectio
 	};
 }
 
+/**
+ *
+ */
 function boardPhrase(identity: BoardIdentity): string {
 	const name =
 		identity.variant === "current" ? identity.board : `${identity.board}@${identity.variant}`;
@@ -398,6 +422,9 @@ function boardPhrase(identity: BoardIdentity): string {
 	return `${name} (${detail})`;
 }
 
+/**
+ *
+ */
 function paneLine(pane: PaneReport): string {
 	const view = pane.viewport;
 	const parts = [

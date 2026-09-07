@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { inspectCheckout } from "../git.js";
-import type { LogicalAddress } from "../metadata.js";
-import { checkoutFor, knownRepoNames, rememberRepo } from "../repo-registry.js";
-import { PromotionError } from "./promotion-identity.js";
+import { inspectCheckout } from "@/runtime/engine/git";
+import type { LogicalAddress } from "@/runtime/engine/metadata";
+import { checkoutFor, knownRepoNames, rememberRepo } from "@/runtime/engine/repo-registry";
+import { PromotionError } from "@/runtime/engine/lib/promotion-identity";
 
 // ---------------------------------------------------------------------------
 // Binding — a logical address, not a machine path
@@ -51,6 +51,9 @@ interface ResolvedBinding {
 	note?: string;
 }
 
+/**
+ *
+ */
 function registeredHere(): string {
 	const known = knownRepoNames();
 	return known.length > 0
@@ -68,7 +71,7 @@ function registeredHere(): string {
  * it just gets no link.
  *
  * Never throws for a path that does not resolve. It throws for a path that
- * *cannot* resolve by intent: a relative path on a surface with no working
+ * cannot* resolve by intent: a relative path on a surface with no working
  * directory, where any answer would be an accident.
  *
  * @param request - The logical or filesystem binding requested by the caller.
@@ -88,6 +91,9 @@ async function resolveBinding(
 
 	// The address exactly as the caller stated it: what gets recorded when this
 	// machine has nothing to check it against.
+	/**
+	 *
+	 */
 	const asStated = (): LogicalAddress => ({
 		...(named ? { repo: named } : {}),
 		path: raw.replace(/^\.\//u, ""),
@@ -207,6 +213,9 @@ async function resolveBinding(
 	};
 }
 
+/**
+ *
+ */
 function formatAddress(a: LogicalAddress): string {
 	const repo = a.repo ? `${a.repo}:` : "";
 	const branch = a.branch ? `@${a.branch}` : "";

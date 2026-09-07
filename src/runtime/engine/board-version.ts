@@ -7,9 +7,9 @@
 
 import fs from "node:fs";
 
-import type { BoardIdentity } from "./board.js";
-import { CURRENT_VARIANT, boardDisplayName, boardKey } from "./board.js";
-import { readFrontmatterValue, setFrontmatterValue } from "./obsidian-md.js";
+import type { BoardIdentity } from "@/runtime/engine/board";
+import { CURRENT_VARIANT, boardDisplayName, boardKey } from "@/runtime/engine/board";
+import { readFrontmatterValue, setFrontmatterValue } from "@/runtime/engine/obsidian-md";
 
 const FRONTMATTER_VERSION = "version";
 const FRONTMATTER_PROBE_BYTES = 16 * 1024;
@@ -51,6 +51,9 @@ interface BoardVersionConflict {
 
 type StatedVersionResult = { ok: true; expected?: number | null } | { ok: false; problem: string };
 
+/**
+ *
+ */
 function noteVersion(content: string): NoteVersion {
 	const raw = readFrontmatterValue(content, FRONTMATTER_VERSION);
 	if (raw === undefined) {
@@ -131,12 +134,21 @@ function describeVersionMove(
 // the shell would leave alone is printed bare; anything else is single-quoted,
 // the one quoting every POSIX shell reads literally (TASK-153).
 const PLAIN_WORD_RE = /^[A-Za-z0-9@%+=:,./_-]+$/;
+/**
+ *
+ */
 const shellWord = (word: string): string =>
 	PLAIN_WORD_RE.test(word) ? word : `'${word.replaceAll("'", "'\\''")}'`;
 
+/**
+ *
+ */
 const clock = (iso: string | undefined): string =>
 	iso ? new Date(iso).toISOString().replace("T", " ").slice(0, 19) + " UTC" : "unknown";
 
+/**
+ *
+ */
 function suggestSaveAsName(
 	identity: Pick<BoardIdentity, "board" | "variant" | "displayName">,
 ): string {
@@ -145,6 +157,9 @@ function suggestSaveAsName(
 	return `${boardDisplayName(identity)}@${suffix}`;
 }
 
+/**
+ *
+ */
 function describeWriteConflict(input: {
 	target: BoardIdentity;
 	file: string;
@@ -206,6 +221,9 @@ function describeWriteConflict(input: {
 	};
 }
 
+/**
+ *
+ */
 function describeVersionConflict(input: {
 	board: string;
 	file?: string;
@@ -302,22 +320,37 @@ function statedVersion(raw: unknown, writer: "human" | "agent"): StatedVersionRe
 
 const processRememberedVersions = new Map<string, number | null>();
 
+/**
+ *
+ */
 function rememberedVersions(): Map<string, number | null> {
 	return processRememberedVersions;
 }
 
+/**
+ *
+ */
 function rememberedVersion(writer: string | undefined): number | null | undefined {
 	return writer ? rememberedVersions().get(writer) : undefined;
 }
 
+/**
+ *
+ */
 function rememberVersion(writer: string, version: number | null): void {
 	rememberedVersions().set(writer, version);
 }
 
+/**
+ *
+ */
 function forgetRememberedVersion(writer: string): void {
 	rememberedVersions().delete(writer);
 }
 
+/**
+ *
+ */
 function forgetRememberedVersions(prefix: string): void {
 	for (const writer of rememberedVersions().keys()) {
 		if (writer.startsWith(prefix)) {

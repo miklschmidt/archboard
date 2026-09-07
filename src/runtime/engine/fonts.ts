@@ -25,8 +25,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseFont, type ParsedFont } from "./font-file.js";
-import { buildGpos, buildGsub, type Kerning, type Substitutions } from "./font-layout.js";
+import { parseFont, type ParsedFont } from "@/runtime/engine/font-file";
+import { buildGpos, buildGsub, type Kerning, type Substitutions } from "@/runtime/engine/font-layout";
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -175,7 +175,7 @@ function readRegistry(): Map<string, FamilyDescriptor> {
 			if (!uri) {
 				continue;
 			}
-			const spec = e[2] ?? (e[4] ? sharedRanges.get(e[4] as string) : undefined);
+			const spec = e[2] ?? (e[4] ? sharedRanges.get(e[4]) : undefined);
 			faces.push({
 				file: path.join(EXCALIDRAW_DIST, uri.replace(/^\.\//, "")),
 				ranges: parseUnicodeRange(spec),
@@ -214,7 +214,7 @@ function readRegistry(): Map<string, FamilyDescriptor> {
 			if (!literal) {
 				continue;
 			}
-			name = literal[1] as string;
+			name = literal[1];
 		}
 		const faces = faceLists.get(m[3] as string);
 		if (!faces) {
@@ -247,6 +247,9 @@ function readRegistry(): Map<string, FamilyDescriptor> {
 
 /** The registry, read once per process. */
 const registry = readRegistry();
+/**
+ *
+ */
 function fontRegistry(): Map<string, FamilyDescriptor> {
 	return registry;
 }

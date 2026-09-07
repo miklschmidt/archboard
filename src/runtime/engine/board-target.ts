@@ -21,6 +21,9 @@ class BoardRequiredError extends Error {
 	/** Persisted board keys the caller can choose from. */
 	readonly available: string[];
 
+	/**
+	 *
+	 */
 	constructor(available: string[], what?: string) {
 		super(boardRequiredMessage(available, what));
 		this.name = "BoardRequiredError";
@@ -35,6 +38,9 @@ class BoardResolutionError extends Error {
 	readonly code = "BOARD_RESOLUTION_FAILED";
 	readonly status: number;
 
+	/**
+	 *
+	 */
 	constructor(
 		readonly board: string,
 		readonly reason: BoardResolutionFailure,
@@ -48,6 +54,9 @@ class BoardResolutionError extends Error {
 	}
 }
 
+/**
+ *
+ */
 function boardRequiredMessage(availableBoards: string[], what?: string): string {
 	const subject = what ? `${what} needs a board` : "This needs a board";
 	const available =
