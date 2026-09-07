@@ -578,6 +578,12 @@ export function createCanvasCodexWorkbenchInstallation(
 							childId: workhorse.childId,
 							epoch: workhorse.epoch,
 							operationId: workhorse.operationId,
+							provenance: requireCreated(created, "epoch").assertCurrent({
+								childId: workhorse.childId,
+								epoch: workhorse.epoch,
+								operationId: workhorse.operationId,
+								threadId: workhorse.threadId,
+							}).record,
 						},
 					};
 				},

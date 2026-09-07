@@ -297,6 +297,7 @@ function asyncEndpoint(
 
 interface Wiring {
 	codex: {
+		publishPaneContext: ((clientId: string, kind: "focus" | "selection") => void) | null;
 		acceptBrowser: ((instance: BrowserConnectionInstance, browserId: string) => void) | null;
 		closeBrowser:
 			| ((instance: BrowserConnectionInstance, browserId: string) => Promise<void>)
@@ -318,6 +319,7 @@ let wss: WebSocketServer | null = null;
 let canvasLifetime: ReturnType<typeof createCanvasApplicationLifetime> | null = null;
 const wiring: Wiring = {
 	codex: {
+		publishPaneContext: null,
 		acceptBrowser: null,
 		closeBrowser: null,
 		drainBrowsers: null,
@@ -2804,6 +2806,7 @@ app.post("/api/selection", (req: Request, res: Response) => {
 
 	logger.info(`Selection from ${clientId}: ${elementIds.length} element(s)`);
 	broadcastSelection();
+	wiring.codex.publishPaneContext?.(clientId, "selection");
 
 	res.json({
 		success: true,
@@ -2909,12 +2912,16 @@ app.post("/api/panes", (req: Request, res: Response) => {
 	if (!live) {
 		return res.json({ success: true, registered: false, paneCount: panes.size, staleFrontend });
 	}
-	const isNew = !panes.has(registration.clientId);
+	const previous = panes.get(registration.clientId);
+	const isNew = previous === undefined;
 	panes.set(registration.clientId, registration);
 	// A pane that was asked for has arrived. Registration is the acknowledgement
 	// — see the pane layout section below for why it is that and not a reply.
 	if (isNew) {
 		notePaneOpened(registration);
+	}
+	if (previous?.focused !== registration.focused || previous.board !== registration.board) {
+		wiring.codex.publishPaneContext?.(registration.clientId, "focus");
 	}
 	res.json({ success: true, registered: true, paneCount: panes.size, staleFrontend });
 
@@ -3670,6 +3677,7 @@ function switchPaneTo(
 		selectionState.current = null;
 		broadcastSelection();
 	}
+	wiring.codex.publishPaneContext?.(pane.clientId, "focus");
 
 	sendToPane(
 		pane.clientId,
@@ -4670,9 +4678,26 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				throw new Error("The installed identity decoders do not match the active graph.");
 			}
 			active = components;
+			wiring.codex.publishPaneContext = (clientId, kind) => {
+				const pane = panes.get(clientId);
+				if (
+					pane === undefined ||
+					components.semanticDelivery.snapshot().binding?.paneId !== pane.paneId
+				) {
+					return;
+				}
+				try {
+					const input = semanticInput(paneBoards.get(clientId) ?? pane.board, null, pane.paneId);
+					if (kind === "selection") components.semanticPublisher.publishPaneSelection(input);
+					else components.semanticPublisher.publishPaneFocus(input);
+				} catch (error) {
+					logger.error(`Cannot publish ${kind} context for pane ${pane.paneId}:`, error);
+				}
+			};
 			return () => {
 				if (active === components) {
 					active = null;
+					wiring.codex.publishPaneContext = null;
 				}
 			};
 		},
@@ -4727,6 +4752,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 let codexApplication: ReturnType<typeof createCanvasCodexWorkbenchApplication> | null = null;
 
 function resetCodexWorkbenchWiring(): void {
+	wiring.codex.publishPaneContext = null;
 	wiring.codex.acceptBrowser = null;
 	wiring.codex.closeBrowser = null;
 	wiring.codex.drainBrowsers = null;
