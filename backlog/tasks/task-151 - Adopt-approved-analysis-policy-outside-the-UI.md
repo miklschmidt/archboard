@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-05 12:28'
-updated_date: '2026-09-06 21:44'
+updated_date: '2026-09-06 21:49'
 labels: []
 dependencies: []
 references:
@@ -41,4 +41,6 @@ User-approved scope (2026-09-06): the full UI policy (JSDoc on every function, c
 
 <!-- SECTION:NOTES:BEGIN -->
 Scope measurement (2026-09-06, worktree .claude/worktrees/task-151, branch claude/task-151-analysis-policy from bb651bd9). Non-UI inventory: src/runtime 487 files/120k lines, src/server 111/33k, src/shared 864/18k (820 generated declaration files, 9.3k lines), src/cli 49/11k, scripts 7/2.9k, tools 1 JS/979, tests 205/48k; 320 test files outside src/ui; 37 authored non-UI files exceed 600 lines (largest src/server/canvas/lib/application.ts at 5190). Probe: src/ui/.oxlintrc.jsonc run type-aware, one worker, in a 16 GiB memory-capped systemd scope over src/runtime src/server src/shared src/cli src/bin.ts src/server.ts scripts tests (browser.ts excluded, it is a frontend-project root). Result: 14113 diagnostics in 889 files. By rule: require-jsdoc 6451, archboard/absolute-imports 3537, no-unsafe-type-assertion 1209, complexity>6 1042, no-await-in-loop 405, no-unnecessary-condition 354, require-param 351, require-returns 350, no-unnecessary-type-assertion 118, await-thenable 70, consistent-return 40, max-lines 36, remainder under 100 total. By area: tests 6376, src/runtime 5175, src/server 1596, src/cli 504, scripts 220, src/shared 237. The frontend files and vite.config.js/tools plugin JS were not probed: they are not roots of the repository tsconfig.json and the guard refuses them.
+
+Foundation committed at e985590a on claude/task-151-analysis-policy: root .oxlintrc.jsonc is the policy (moved from src/ui, plugin and shadcn override paths adjusted, ignore patterns exactly the baseline lane's inventory, vite.config.ts default-export override), .oxlintrc.baseline.jsonc is the pre-policy baseline owning tests/**, src/*/*/tests/**, frontend/** and browser.ts; lint:baseline and lint:policy replace lint:repository and lint:ui; vite.config.js became vite.config.ts; boundaries.test.ts reads the baseline config; strict-analysis.md and strict-analysis-policy.json record the adopted scope. Verified: baseline lane, policy lane over src/ui, boundaries test, root tsc and the Vite build all pass. Six area agents fanned out from e985590a in separate worktrees (engine; server; codex-dynamic-tools/board-inspection/transport/process/thread-link/epoch; the other eighteen runtime modules; cli/shared/bin; scripts and the tools plugin conversion).
 <!-- SECTION:NOTES:END -->

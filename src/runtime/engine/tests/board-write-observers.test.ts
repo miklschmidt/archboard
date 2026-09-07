@@ -21,7 +21,7 @@ let storeModule: typeof BoardStoreModule;
 let writeModule: typeof BoardWriteModule;
 let lockModule: typeof BoardLockModule;
 let timingModule: typeof TimingModule;
-let logger: typeof LoggerModule.default;
+let logger: typeof LoggerModule.logger;
 let atomicWriteSpy: ReturnType<typeof spyOn>;
 const ownedKeys = new Set<string>();
 
@@ -48,7 +48,7 @@ beforeAll(async () => {
 	writeModule = await import("../board-write.js");
 	lockModule = await import("../board-lock.js");
 	timingModule = await import("../../../shared/timing/timing.js");
-	logger = (await import("../logger.js")).default;
+	logger = (await import("../logger.js")).logger;
 });
 
 afterAll(() => {
