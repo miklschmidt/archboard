@@ -312,3 +312,16 @@ describe("bridge validation", () => {
 		expect(() => planBridgeRemoval(parts, "missing")).toThrow();
 	});
 });
+
+describe("malformed notes", () => {
+	test("survives a board whose elements omit fields the type declares", () => {
+		// A note is hand-editable and the snapshot boundary copies what it holds, so an
+		// omitted field must produce a finding rather than throw out of the whole pipeline.
+		const sparse = [
+			{ customData: { archboard: { bridge: { nope: 1 } } } },
+			{ id: "Line01", type: "line", x: 0, y: 0, width: 10, height: 0 },
+		] as unknown as readonly ServerElement[];
+		const report = inspectBoard(sparse);
+		expect(Array.isArray(report.findings)).toBe(true);
+	});
+});

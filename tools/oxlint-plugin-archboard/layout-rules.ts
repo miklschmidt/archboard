@@ -139,7 +139,7 @@ function isViteDenyEntry(filename: string, node: NodeOf<"Literal">): boolean {
 	const list = node.parent;
 	const holder = list.parent;
 	return (
-		filename.endsWith("/vite.config.js") &&
+		filename.endsWith("/vite.config.ts") &&
 		list.type === "ArrayExpression" &&
 		holder?.type === "Property" &&
 		holder.key.type === "Identifier" &&

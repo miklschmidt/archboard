@@ -334,8 +334,9 @@ function assembleReport(input: ReportInput): InspectionReport {
  * @param value the field
  * @returns the value, or null when it is empty
  */
-function nonEmpty(value: string): string | null {
-	return value.length > 0 ? value : null;
+function nonEmpty(value: string | undefined): string | null {
+	// A malformed note can omit the field altogether, not merely leave it empty.
+	return value !== undefined && value.length > 0 ? value : null;
 }
 
 /**

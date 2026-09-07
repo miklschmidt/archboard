@@ -215,7 +215,10 @@ function structuralPairs(elements: readonly ServerElement[]): {
  * @returns true when the part is entangled
  */
 function isEntangled(part: ServerElement): boolean {
-	return part.groupIds.length !== 0 || isBound(part);
+	// A note may omit groupIds entirely; the snapshot boundary keeps it omitted, so the
+	// declared type is wider than what a malformed board actually carries.
+	// oxlint-disable-next-line typescript/no-unnecessary-condition -- declared, not validated
+	return (part.groupIds?.length ?? 0) !== 0 || isBound(part);
 }
 
 /**

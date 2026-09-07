@@ -278,20 +278,6 @@ interface GuardedWrite {
 }
 
 /**
- * Take the board and check the write's version under the lock, then hand the
- * request to its handler. Under the lock, so no other archboard writer can land
- * between the version being read and the note being written; before `next()`,
- * so a refusal writes nothing (TASK-091). On refusal the board is given straight
- * back: the handlers that would do that on `finish` are registered only once
- * the request goes through, and a request that never reaches the handler never
- * took the board for any longer than this.
- * @param req The request.
- * @param res Its response.
- * @param next The next middleware.
- * @param guarded What the boundary established before the lock.
- * @param signal The mutation lease's abort signal.
- */
-/**
  * Whether this write's stated or remembered version still matches the note,
  * checked under the lock so no other archboard writer can land between the
  * read and the write (TASK-091).
@@ -334,8 +320,13 @@ function claimedWriterId(key: string, writer: RequestWriter): string | undefined
 }
 
 /**
- * Take the board, check the write's version under the lock and hand the
- * request to its handler.
+ * Take the board and check the write's version under the lock, then hand the
+ * request to its handler. Under the lock, so no other archboard writer can land
+ * between the version being read and the note being written; before `next()`,
+ * so a refusal writes nothing (TASK-091). On refusal the board is given straight
+ * back: the handlers that would do that on `finish` are registered only once
+ * the request goes through, and a request that never reaches the handler never
+ * took the board for any longer than this.
  * @param req The request.
  * @param res Its response.
  * @param next The next middleware.

@@ -81,6 +81,20 @@ class BridgeRefusal extends Error {
 }
 
 /**
+ * A stroke field as the note may actually have left it.
+ *
+ * The element type declares these fields present, but board inspection reads a note through the
+ * snapshot boundary, which copies whatever was there and leaves an omitted field omitted. Naming
+ * the widening here keeps it in one place instead of at every field.
+ * @param value the field the note carried, if it carried one
+ * @param fallback what the renderer draws when it did not
+ * @returns the value to judge
+ */
+function defaulted<Value>(value: Value | undefined, fallback: Value): Value {
+	return value ?? fallback;
+}
+
+/**
  * The stroke a bridge copies from the connector it draws over, with the renderer's defaults
  * filled in for whatever the element leaves out.
  * @param element the over-connector
@@ -98,12 +112,14 @@ function strokeStyleOf(element: ServerElement): StrokeStyle | null {
  * @returns the stroke fields to validate
  */
 function strokeFieldsOf(element: ServerElement): Record<string, unknown> {
+	// A note need not spell out a field the renderer defaults, so fill those in before
+	// the schema judges the stroke.
 	return {
-		strokeColor: element.strokeColor,
-		strokeWidth: element.strokeWidth,
-		strokeStyle: element.strokeStyle,
-		roughness: element.roughness,
-		opacity: element.opacity,
+		strokeColor: defaulted(element.strokeColor, "#1e1e1e"),
+		strokeWidth: defaulted(element.strokeWidth, 2),
+		strokeStyle: defaulted(element.strokeStyle, "solid"),
+		roughness: defaulted(element.roughness, 1),
+		opacity: defaulted(element.opacity, 100),
 	};
 }
 

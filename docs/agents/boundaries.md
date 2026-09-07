@@ -73,10 +73,11 @@ All JavaScript-like source inside either test owner is TypeScript. The pre-task
 600-physical-line limit to all authored UI source, including tests, comments and
 blank lines. Put large test data in a named non-TypeScript fixture instead.
 
-Local imports in `src/ui` use `@/` aliases, including same-module imports,
-re-exports and dynamic/type imports. The private-module and area rules still
-apply. UI JavaScript source is rejected. Adoption outside the UI is deferred to
-TASK-151; existing non-UI relative imports keep their current policy.
+Local imports use `@/` aliases, including same-module imports, re-exports and
+dynamic/type imports. The private-module and area rules still apply, and
+JavaScript source is rejected. This holds for every authored source file
+(TASK-151), not only `src/ui`. The alias resolves into `src/` alone, so the few
+sibling imports in `scripts/` and `tools/` stay relative and say so on the line.
 
 Oxlint also rejects generic `core`, `utils`, `misc`, `migration`, and `compatibility` buckets. Name
 the module for the behavior it owns.
