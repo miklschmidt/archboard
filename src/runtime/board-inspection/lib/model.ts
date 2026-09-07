@@ -1,835 +1,17 @@
-import type { NodeRef, ObstacleRef } from "@/runtime/board-inspection/schemas";
 import type { DecodedRecord } from "@/runtime/board-inspection/lib/decode";
-import { aggregateBoxes, contains, type ExactBox } from "@/runtime/board-inspection/lib/geometry";
-import { sweepIntervalPairs, type SweepWork } from "@/runtime/board-inspection/lib/interval-sweep";
-import { compareIdentity, obstacleIdentity } from "@/runtime/board-inspection/lib/ordering";
-
-interface InspectionNode {
-	id: string;
-	members: DecodedRecord[];
-	bodies: DecodedRecord[];
-	labels: DecodedRecord[];
-	aggregate: ExactBox | null;
-	body: ExactBox;
-	boundaries: DecodedRecord[];
-	parentId: string | null;
-	children: string[];
-	ref: NodeRef;
-}
-
-interface InspectionObstacle {
-	id: string;
-	kind: "library-component" | "grouped-component";
-	members: DecodedRecord[];
-	box: ExactBox;
-	ref: ObstacleRef;
-}
-
-interface AggregateCoordinateFailure {
-	scope: "semantic-node-body" | "semantic-node-aggregate" | "obstacle-component";
-	subjectId: string;
-	members: DecodedRecord[];
-}
-
-type BlockingBindingIssue =
-	| "not-object"
-	| "array"
-	| "missing-element-id"
-	| "empty-element-id"
-	| "non-string-element-id";
-
-interface BindingTargetClassification {
-	readableTargetId: string | null;
-	blockingIssue: BlockingBindingIssue | null;
-}
-
-interface ConnectorEndpointClassification {
-	nodeAnalysisEligible: boolean;
-	startElement: string | undefined;
-	endElement: string | undefined;
-	startNode: string | undefined;
-	endNode: string | undefined;
-}
-
-interface LabelOwnershipClassification {
-	labelId: string;
-	forwardOwnerId: string | null;
-	reverseOwnerIds: string[];
-	candidateOwnerIds: string[];
-	resolvedOwnerId: string | null;
-	state: "none" | "forward-only" | "reverse-only" | "matching" | "conflicting" | "blocked";
-}
-
-type BoundElementIssue =
-	| "not-array"
-	| "entry-not-object"
-	| "missing-id"
-	| "empty-id"
-	| "non-string-id"
-	| "missing-type"
-	| "invalid-type";
-
-interface BoundElementsClassification {
-	readableEntries: Array<{ id: string; type: "text" | "arrow" }>;
-	problems: Array<{ issue: BoundElementIssue; entryIndex: number | null }>;
-}
-
-interface InspectionModel {
-	byId: Map<string, DecodedRecord>;
-	duplicateIds: Set<string>;
-	nodes: Map<string, InspectionNode>;
-	nodeOfElement: Map<string, string>;
-	confirmedLabels: Map<string, string>;
-	labelOwnership: Map<string, LabelOwnershipClassification>;
-	connectorEndpoints: Map<string, ConnectorEndpointClassification>;
-	containerOnlyIds: Set<string>;
-	qualifyingGroupedObstacleElementIds: Set<string>;
-	obstacles: InspectionObstacle[];
-	aggregateFailures: AggregateCoordinateFailure[];
-	hierarchyWork: SweepWork;
-	containerBoundaryWork: SweepWork;
-}
-
-const CLOSED = new Set(["rectangle", "ellipse", "diamond", "frame"]);
-const OBSTACLE_BODY = new Set(["rectangle", "ellipse", "diamond"]);
-
-function orderedIdentities(values: readonly string[]): string[] {
-	return [...values].toSorted(compareIdentity);
-}
-
-function collected<T, U>(values: readonly T[], mapValue: (value: T) => U): U[] {
-	return values.map(mapValue);
-}
-
-function filteredValues<T>(values: readonly T[], keep: (value: T) => boolean): T[] {
-	return values.filter(keep);
-}
-
-function object(value: unknown): Readonly<Record<string, unknown>> | null {
-	return value && typeof value === "object" && !Array.isArray(value)
-		? (value as Readonly<Record<string, unknown>>)
-		: null;
-}
-
-function classifyBoundElements(value: unknown): BoundElementsClassification {
-	const readableEntries: BoundElementsClassification["readableEntries"] = [];
-	const problems: BoundElementsClassification["problems"] = [];
-	if (!Array.isArray(value)) {
-		return { readableEntries, problems: [{ issue: "not-array", entryIndex: null }] };
-	}
-	value.forEach((entry, entryIndex) => {
-		const item = object(entry);
-		let issue: BoundElementIssue | null = null;
-		if (!item) {
-			issue = "entry-not-object";
-		} else if (!("id" in item)) {
-			issue = "missing-id";
-		} else if (item["id"] === "") {
-			issue = "empty-id";
-		} else if (typeof item["id"] !== "string") {
-			issue = "non-string-id";
-		} else if (!("type" in item)) {
-			issue = "missing-type";
-		} else if (item["type"] !== "text" && item["type"] !== "arrow") {
-			issue = "invalid-type";
-		} else {
-			readableEntries.push({ id: item["id"], type: item["type"] });
-		}
-		if (issue) {
-			problems.push({ issue, entryIndex });
-		}
-	});
-	return { readableEntries, problems };
-}
-
-function classifyBindingTarget(value: unknown): BindingTargetClassification {
-	if (!value || typeof value !== "object") {
-		return {
-			readableTargetId: null,
-			blockingIssue: Array.isArray(value) ? "array" : "not-object",
-		};
-	}
-	if (Array.isArray(value)) {
-		return { readableTargetId: null, blockingIssue: "array" };
-	}
-	if (!("elementId" in value)) {
-		return { readableTargetId: null, blockingIssue: "missing-element-id" };
-	}
-	if (value.elementId === "") {
-		return { readableTargetId: null, blockingIssue: "empty-element-id" };
-	}
-	if (typeof value.elementId !== "string") {
-		return { readableTargetId: null, blockingIssue: "non-string-element-id" };
-	}
-	return { readableTargetId: value.elementId, blockingIssue: null };
-}
-
-function boundElementTargetCompatible(declaredType: "text" | "arrow", actualType: string): boolean {
-	return declaredType === "text"
-		? actualType === "text"
-		: actualType === "arrow" || actualType === "line";
-}
-
-function archboardMetadata(record: DecodedRecord): Readonly<Record<string, unknown>> | null {
-	return object(object(record.raw?.customData)?.["archboard"]);
-}
-
-function nodeId(record: DecodedRecord): string | null {
-	const value = archboardMetadata(record)?.["node"];
-	return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function groupIds(record: DecodedRecord): string[] {
-	const raw = record.raw?.groupIds;
-	if (!Array.isArray(raw)) {
-		return [];
-	}
-	return raw.filter((value): value is string => typeof value === "string" && value.length > 0);
-}
-
-function libraryAttribution(record: DecodedRecord): {
-	valid: boolean;
-	item?: string;
-	source?: string;
-	issues: string[];
-} | null {
-	const custom = object(record.raw?.customData);
-	if (!custom || !("library" in custom)) {
-		return null;
-	}
-	const library = object(custom["library"]);
-	if (!library) {
-		return { valid: false, issues: ["library must be an object"] };
-	}
-	const item =
-		typeof library["itemId"] === "string" && library["itemId"].length > 0
-			? library["itemId"]
-			: typeof library["item"] === "string" && library["item"].length > 0
-				? library["item"]
-				: undefined;
-	const issues: string[] = [];
-	if (!item) {
-		issues.push("itemId or item must be a nonempty string");
-	}
-	if (
-		library["source"] !== undefined &&
-		(typeof library["source"] !== "string" || library["source"].length === 0)
-	) {
-		issues.push("source must be a nonempty string");
-	}
-	return {
-		valid: issues.length === 0,
-		...(item ? { item } : {}),
-		...(typeof library["source"] === "string" && library["source"].length > 0
-			? { source: library["source"] }
-			: {}),
-		issues,
-	};
-}
-
-function validBoundary(record: DecodedRecord): boolean {
-	const angle = record.raw?.angle;
-	return (
-		!!record.id &&
-		!!record.box &&
-		record.box.width > 0 &&
-		record.box.height > 0 &&
-		!!record.type &&
-		CLOSED.has(record.type) &&
-		(angle === undefined || angle === 0)
-	);
-}
-
-function buildLabelClassifications(
-	live: readonly DecodedRecord[],
-	byId: ReadonlyMap<string, DecodedRecord>,
-	duplicateIds: ReadonlySet<string>,
-): Pick<InspectionModel, "labelOwnership" | "confirmedLabels"> {
-	const reverseLabelOwners = new Map<string, Set<string>>();
-	const labelsWithBlockedReverseClassification = new Set<string>();
-	for (let ownerIndex = 0; ownerIndex < live.length; ownerIndex += 1) {
-		const owner = live[ownerIndex]!;
-		if (!owner.id || owner.raw?.boundElements == null) {
-			continue;
-		}
-		const bounds = classifyBoundElements(owner.raw.boundElements);
-		for (
-			let referenceIndex = 0;
-			referenceIndex < bounds.readableEntries.length;
-			referenceIndex += 1
-		) {
-			const reference = bounds.readableEntries[referenceIndex]!;
-			if (reference.type !== "text" || byId.get(reference.id)?.type !== "text") {
-				continue;
-			}
-			if (!owner.usableId) {
-				labelsWithBlockedReverseClassification.add(reference.id);
-				continue;
-			}
-			const owners = reverseLabelOwners.get(reference.id) ?? new Set<string>();
-			owners.add(owner.id);
-			reverseLabelOwners.set(reference.id, owners);
-			if (bounds.problems.length > 0) {
-				labelsWithBlockedReverseClassification.add(reference.id);
-			}
-		}
-	}
-	const labelOwnership = new Map<string, LabelOwnershipClassification>();
-	const confirmedLabels = new Map<string, string>();
-	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
-		const record = live[recordIndex]!;
-		if (record.type !== "text" || !record.usableId || !record.id) {
-			continue;
-		}
-		const rawContainer = record.raw?.containerId;
-		const blocked =
-			(rawContainer !== undefined &&
-				rawContainer !== null &&
-				(typeof rawContainer !== "string" || rawContainer.length === 0)) ||
-			labelsWithBlockedReverseClassification.has(record.id) ||
-			(typeof rawContainer === "string" && duplicateIds.has(rawContainer));
-		const forwardOwnerId =
-			typeof rawContainer === "string" && rawContainer.length > 0 ? rawContainer : null;
-		const reverseOwners = reverseLabelOwners.get(record.id);
-		const reverseOwnerInput = reverseOwners ? [...reverseOwners] : [];
-		const reverseOwnerIds = orderedIdentities(reverseOwnerInput);
-		const candidateOwnerSet = new Set<string>();
-		if (forwardOwnerId) {
-			candidateOwnerSet.add(forwardOwnerId);
-		}
-		for (let index = 0; index < reverseOwnerIds.length; index += 1) {
-			candidateOwnerSet.add(reverseOwnerIds[index]!);
-		}
-		const candidateOwnerInput = [...candidateOwnerSet];
-		const candidateOwnerIds = orderedIdentities(candidateOwnerInput);
-		let state: LabelOwnershipClassification["state"];
-		let resolvedOwnerId: string | null = null;
-		if (blocked) {
-			state = "blocked";
-		} else if (forwardOwnerId && reverseOwnerIds.length === 0) {
-			state = "forward-only";
-			resolvedOwnerId = forwardOwnerId;
-		} else if (!forwardOwnerId && reverseOwnerIds.length === 1) {
-			state = "reverse-only";
-			resolvedOwnerId = reverseOwnerIds[0]!;
-		} else if (
-			forwardOwnerId &&
-			reverseOwnerIds.length === 1 &&
-			reverseOwnerIds[0] === forwardOwnerId
-		) {
-			state = "matching";
-			resolvedOwnerId = forwardOwnerId;
-		} else if (forwardOwnerId || reverseOwnerIds.length > 0) {
-			state = "conflicting";
-		} else {
-			state = "none";
-		}
-		const classification = {
-			labelId: record.id,
-			forwardOwnerId,
-			reverseOwnerIds,
-			candidateOwnerIds,
-			resolvedOwnerId,
-			state,
-		};
-		labelOwnership.set(record.id, classification);
-		if (resolvedOwnerId && resolvedOwnerId !== record.id && byId.has(resolvedOwnerId)) {
-			confirmedLabels.set(record.id, resolvedOwnerId);
-		}
-	}
-	return { labelOwnership, confirmedLabels };
-}
-
-function buildNodes(
-	live: readonly DecodedRecord[],
-	byId: ReadonlyMap<string, DecodedRecord>,
-	confirmedLabels: ReadonlyMap<string, string>,
-): Pick<InspectionModel, "nodes" | "nodeOfElement" | "aggregateFailures"> {
-	const grouped = new Map<string, DecodedRecord[]>();
-	const nodeOfElement = new Map<string, string>();
-	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
-		const record = live[recordIndex]!;
-		const node = nodeId(record);
-		if (!node || !record.usableId || !record.id || !record.box) {
-			continue;
-		}
-		const members = grouped.get(node) ?? [];
-		members.push(record);
-		grouped.set(node, members);
-		nodeOfElement.set(record.id, node);
-	}
-	for (const [labelId, containerId] of confirmedLabels) {
-		const owner = nodeOfElement.get(containerId);
-		const label = byId.get(labelId);
-		if (!owner || !label || nodeOfElement.has(labelId) || !label.box) {
-			continue;
-		}
-		grouped.get(owner)!.push(label);
-		nodeOfElement.set(labelId, owner);
-	}
-
-	const nodes = new Map<string, InspectionNode>();
-	const aggregateFailures: AggregateCoordinateFailure[] = [];
-	for (const [id, members] of grouped) {
-		const labels = filteredValues(members, (record) => confirmedLabels.has(record.id ?? ""));
-		const bodies = filteredValues(members, (record) => !confirmedLabels.has(record.id ?? ""));
-		const bodyMembers = bodies.length > 0 ? bodies : members;
-		const bodyResult = aggregateBoxes(collected(bodyMembers, (record) => record.box!));
-		const aggregateResult = aggregateBoxes(collected(members, (record) => record.box!));
-		if (bodyResult.kind !== "representable") {
-			aggregateFailures.push({
-				scope: "semantic-node-body",
-				subjectId: id,
-				members: bodyMembers,
-			});
-			for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
-				const member = members[memberIndex]!;
-				if (member.id) {
-					nodeOfElement.delete(member.id);
-				}
-			}
-			continue;
-		}
-		const aggregate = aggregateResult.kind === "representable" ? aggregateResult.box : null;
-		if (!aggregate) {
-			aggregateFailures.push({
-				scope: "semantic-node-aggregate",
-				subjectId: id,
-				members,
-			});
-		}
-		const elementIds = orderedIdentities(collected(bodies, (record) => record.id!));
-		const labelElementIds = orderedIdentities(collected(labels, (record) => record.id!));
-		nodes.set(id, {
-			id,
-			members,
-			bodies,
-			labels,
-			aggregate,
-			body: bodyResult.box,
-			boundaries: filteredValues(bodies, validBoundary),
-			parentId: null,
-			children: [],
-			ref: { id, elementIds, labelElementIds },
-		});
-	}
-	return { nodes, nodeOfElement, aggregateFailures };
-}
-
-interface BinaryFactor {
-	significand: bigint;
-	exponent: number;
-}
-
-function binaryFactor(value: number): BinaryFactor {
-	if (value === 0) {
-		return { significand: 0n, exponent: 0 };
-	}
-	const view = new DataView(new ArrayBuffer(8));
-	view.setFloat64(0, value, false);
-	const bits = view.getBigUint64(0, false);
-	const storedExponent = Number((bits >> 52n) & 0x7ffn);
-	const fraction = bits & 0x000f_ffff_ffff_ffffn;
-	return storedExponent === 0
-		? { significand: fraction, exponent: -1074 }
-		: {
-				significand: (1n << 52n) | fraction,
-				exponent: storedExponent - 1023 - 52,
-			};
-}
-
-function areaFactor(box: ExactBox): BinaryFactor {
-	const width = binaryFactor(box.width);
-	const height = binaryFactor(box.height);
-	return {
-		significand: width.significand * height.significand,
-		exponent: width.exponent + height.exponent,
-	};
-}
-
-function bitLength(value: bigint): number {
-	return value === 0n ? 0 : value.toString(2).length;
-}
-
-function compareAreaFactors(aa: BinaryFactor, bb: BinaryFactor): number {
-	if (aa.significand === 0n || bb.significand === 0n) {
-		return aa.significand === bb.significand ? 0 : aa.significand === 0n ? -1 : 1;
-	}
-	const aMagnitude = bitLength(aa.significand) + aa.exponent;
-	const bMagnitude = bitLength(bb.significand) + bb.exponent;
-	if (aMagnitude !== bMagnitude) {
-		return aMagnitude < bMagnitude ? -1 : 1;
-	}
-	const commonExponent = Math.min(aa.exponent, bb.exponent);
-	const alignedA = aa.significand << BigInt(aa.exponent - commonExponent);
-	const alignedB = bb.significand << BigInt(bb.exponent - commonExponent);
-	return alignedA === alignedB ? 0 : alignedA < alignedB ? -1 : 1;
-}
-
-function assignNodeHierarchy(nodes: Map<string, InspectionNode>): SweepWork {
-	const children = [...nodes.values()];
-	const boundaries: Array<{ owner: InspectionNode; boundary: DecodedRecord }> = [];
-	for (let ownerIndex = 0; ownerIndex < children.length; ownerIndex += 1) {
-		const owner = children[ownerIndex]!;
-		for (let boundaryIndex = 0; boundaryIndex < owner.boundaries.length; boundaryIndex += 1) {
-			boundaries.push({ owner, boundary: owner.boundaries[boundaryIndex]! });
-		}
-	}
-	const childAreas = new Map<string, BinaryFactor>();
-	for (let childIndex = 0; childIndex < children.length; childIndex += 1) {
-		const child = children[childIndex]!;
-		childAreas.set(child.id, areaFactor(child.body));
-	}
-	const boundaryAreas = new Map<DecodedRecord, BinaryFactor>();
-	for (let boundaryIndex = 0; boundaryIndex < boundaries.length; boundaryIndex += 1) {
-		const { boundary } = boundaries[boundaryIndex]!;
-		boundaryAreas.set(boundary, areaFactor(boundary.box!));
-	}
-	const selectedByChild = new Map<string, { owner: InspectionNode; boundary: DecodedRecord }>();
-	const candidateOrder = (
-		a: { owner: InspectionNode; boundary: DecodedRecord },
-		b: { owner: InspectionNode; boundary: DecodedRecord },
-	) =>
-		compareAreaFactors(boundaryAreas.get(a.boundary)!, boundaryAreas.get(b.boundary)!) ||
-		compareIdentity(a.boundary.id!, b.boundary.id!) ||
-		compareIdentity(a.owner.id, b.owner.id);
-	const work = sweepIntervalPairs(
-		collected(children, (child) => ({
-			id: child.id,
-			min: child.body.x,
-			max: child.body.x + child.body.width,
-			value: child,
-			semantics: {
-				partition: child.id,
-				excludedPartitions: new Set([child.id]),
-			},
-		})),
-		collected(boundaries, ({ owner, boundary }) => ({
-			id: boundary.id!,
-			min: boundary.box!.x,
-			max: boundary.box!.x + boundary.box!.width,
-			value: { owner, boundary },
-			semantics: {
-				partition: owner.id,
-				excludedPartitions: new Set([owner.id]),
-			},
-		})),
-		false,
-		(childInterval, boundaryInterval) => {
-			const child = childInterval.value;
-			const { owner, boundary } = boundaryInterval.value;
-			if (boundaryInterval.min > childInterval.min || boundaryInterval.max < childInterval.max) {
-				return;
-			}
-			if (
-				compareAreaFactors(boundaryAreas.get(boundary)!, childAreas.get(child.id)!) <= 0 ||
-				!contains(boundary.box!, child.body)
-			) {
-				return;
-			}
-			const candidate = { owner, boundary };
-			const selected = selectedByChild.get(child.id);
-			if (!selected || candidateOrder(candidate, selected) < 0) {
-				selectedByChild.set(child.id, candidate);
-			}
-		},
-	);
-	for (let childIndex = 0; childIndex < children.length; childIndex += 1) {
-		const child = children[childIndex]!;
-		const selected = selectedByChild.get(child.id);
-		if (selected) {
-			child.parentId = selected.owner.id;
-		}
-	}
-	work.peakSelections = selectedByChild.size;
-	for (const node of nodes.values()) {
-		if (node.parentId) {
-			nodes.get(node.parentId)!.children.push(node.id);
-		}
-	}
-	for (const node of nodes.values()) {
-		node.children = orderedIdentities(node.children);
-	}
-	return work;
-}
-
-function buildConnectorEndpoints(
-	live: readonly DecodedRecord[],
-	nodeOfElement: ReadonlyMap<string, string>,
-	duplicateIds: ReadonlySet<string>,
-): Map<string, ConnectorEndpointClassification> {
-	const connectorEndpoints = new Map<string, ConnectorEndpointClassification>();
-	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
-		const record = live[recordIndex]!;
-		if (!record.usableId || !record.id || (record.type !== "arrow" && record.type !== "line")) {
-			continue;
-		}
-		const endpoint = (end: "start" | "end") => {
-			const value = record.raw?.[`${end}Binding`];
-			if (value == null) {
-				return { blocked: false, element: undefined, node: undefined };
-			}
-			const target = classifyBindingTarget(value);
-			return {
-				blocked:
-					target.blockingIssue !== null ||
-					(target.readableTargetId !== null && duplicateIds.has(target.readableTargetId)),
-				element: target.readableTargetId ?? undefined,
-				node: target.readableTargetId ? nodeOfElement.get(target.readableTargetId) : undefined,
-			};
-		};
-		const start = endpoint("start");
-		const end = endpoint("end");
-		connectorEndpoints.set(record.id, {
-			nodeAnalysisEligible: !start.blocked && !end.blocked,
-			startElement: start.element,
-			endElement: end.element,
-			startNode: start.node,
-			endNode: end.node,
-		});
-	}
-	return connectorEndpoints;
-}
-
-function findContainerOnlyIds(
-	live: readonly DecodedRecord[],
-	nodes: ReadonlyMap<string, InspectionNode>,
-	nodeOfElement: ReadonlyMap<string, string>,
-): { ids: Set<string>; work: SweepWork } {
-	const containerOnlyIds = new Set<string>();
-	const boundaries = filteredValues(live, (record) => {
-		return !nodeOfElement.has(record.id ?? "") && validBoundary(record);
-	});
-	const nodeValues = [...nodes.values()];
-	const work = sweepIntervalPairs(
-		collected(boundaries, (record) => ({
-			id: record.id!,
-			min: record.box!.x,
-			max: record.box!.x + record.box!.width,
-			value: record,
-			semantics: { partition: record.id!, excludedPartitions: new Set<string>() },
-		})),
-		collected(nodeValues, (node) => ({
-			id: node.id,
-			min: node.body.x,
-			max: node.body.x + node.body.width,
-			value: node,
-			semantics: { partition: node.id, excludedPartitions: new Set<string>() },
-		})),
-		false,
-		(boundary, node) => {
-			if (contains(boundary.value.box!, node.value.body)) {
-				containerOnlyIds.add(boundary.value.id!);
-			}
-		},
-	);
-	return { ids: containerOnlyIds, work };
-}
-
-function buildObstacles(
-	live: readonly DecodedRecord[],
-	nodeOfElement: ReadonlyMap<string, string>,
-	confirmedLabels: ReadonlyMap<string, string>,
-	containerOnlyIds: ReadonlySet<string>,
-): Pick<
-	InspectionModel,
-	"obstacles" | "qualifyingGroupedObstacleElementIds" | "aggregateFailures"
-> {
-	const eligible = filteredValues(live, (record) => {
-		const angle = record.raw?.angle;
-		return (
-			record.usableId &&
-			!!record.id &&
-			!!record.type &&
-			!!record.box &&
-			record.box.width > 0 &&
-			record.box.height > 0 &&
-			OBSTACLE_BODY.has(record.type) &&
-			(angle === undefined || angle === 0) &&
-			!nodeOfElement.has(record.id) &&
-			!confirmedLabels.has(record.id) &&
-			!containerOnlyIds.has(record.id)
-		);
-	});
-	const parent = new Map<string, string>();
-	const groupsById = new Map<string, string[]>();
-	for (let recordIndex = 0; recordIndex < eligible.length; recordIndex += 1) {
-		const record = eligible[recordIndex]!;
-		parent.set(record.id!, record.id!);
-		const groups = groupIds(record);
-		groupsById.set(record.id!, groups);
-	}
-	const find = (id: string): string => {
-		let current = id;
-		while (true) {
-			const next = parent.get(current);
-			if (next === current) {
-				break;
-			}
-			current = next!;
-		}
-		let next = id;
-		while (true) {
-			if (parent.get(next) === current) {
-				break;
-			}
-			const previous = parent.get(next)!;
-			parent.set(next, current);
-			next = previous;
-		}
-		return current;
-	};
-	const join = (a: string, b: string) => {
-		const aa = find(a),
-			bb = find(b);
-		if (aa === bb) {
-			return;
-		}
-		if (compareIdentity(aa, bb) < 0) {
-			parent.set(bb, aa);
-		} else {
-			parent.set(aa, bb);
-		}
-	};
-	const firstByGroup = new Map<string, string>();
-	for (let recordIndex = 0; recordIndex < eligible.length; recordIndex += 1) {
-		const record = eligible[recordIndex]!;
-		const groups = groupsById.get(record.id!) ?? [];
-		for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
-			const group = groups[groupIndex]!;
-			const first = firstByGroup.get(group);
-			if (first) {
-				join(first, record.id!);
-			} else {
-				firstByGroup.set(group, record.id!);
-			}
-		}
-	}
-	const components = new Map<string, DecodedRecord[]>();
-	for (let recordIndex = 0; recordIndex < eligible.length; recordIndex += 1) {
-		const record = eligible[recordIndex]!;
-		const root = find(record.id!);
-		const members = components.get(root) ?? [];
-		members.push(record);
-		components.set(root, members);
-	}
-	const obstacles: InspectionObstacle[] = [];
-	const qualifyingGroupedObstacleElementIds = new Set<string>();
-	const aggregateFailures: AggregateCoordinateFailure[] = [];
-	for (const members of components.values()) {
-		const validLibrary = filteredValues(members, (record) =>
-			Boolean(libraryAttribution(record)?.valid),
-		);
-		const sharedGroup = members.length >= 2;
-		if (validLibrary.length === 0 && !sharedGroup) {
-			continue;
-		}
-		if (sharedGroup) {
-			for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
-				const member = members[memberIndex]!;
-				qualifyingGroupedObstacleElementIds.add(member.id!);
-			}
-		}
-		const elementIds = orderedIdentities(collected(members, (record) => record.id!));
-		const uniqueGroups = new Set<string>();
-		for (let memberIndex = 0; memberIndex < members.length; memberIndex += 1) {
-			const member = members[memberIndex]!;
-			const memberGroups = groupsById.get(member.id!) ?? [];
-			for (let groupIndex = 0; groupIndex < memberGroups.length; groupIndex += 1) {
-				uniqueGroups.add(memberGroups[groupIndex]!);
-			}
-		}
-		const groups = orderedIdentities([...uniqueGroups]);
-		const library = collected(validLibrary, (record) => {
-			const attr = libraryAttribution(record)!;
-			return {
-				elementId: record.id!,
-				item: attr.item!,
-				...(attr.source ? { source: attr.source } : {}),
-			};
-		});
-		const orderedLibrary = library.toSorted((a, b) => compareIdentity(a.elementId, b.elementId));
-		const obstacleResult = aggregateBoxes(collected(members, (record) => record.box!));
-		const kind =
-			validLibrary.length > 0 ? ("library-component" as const) : ("grouped-component" as const);
-		const id = obstacleIdentity(elementIds);
-		if (obstacleResult.kind !== "representable") {
-			aggregateFailures.push({ scope: "obstacle-component", subjectId: id, members });
-			continue;
-		}
-		obstacles.push({
-			id,
-			kind,
-			members,
-			box: obstacleResult.box,
-			ref: { id, kind, elementIds, groupIds: groups, library: orderedLibrary },
-		});
-	}
-	return {
-		obstacles: obstacles.toSorted((a, b) => compareIdentity(a.id, b.id)),
-		qualifyingGroupedObstacleElementIds,
-		aggregateFailures,
-	};
-}
-
-function buildInspectionModel(records: readonly DecodedRecord[]): InspectionModel {
-	const live = records.filter((record) => Boolean(record.live && record.raw));
-	const byId = new Map<string, DecodedRecord>();
-	const duplicateIds = new Set<string>();
-	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
-		const record = live[recordIndex]!;
-		if (record.id && !record.usableId) {
-			duplicateIds.add(record.id);
-		}
-	}
-	for (let recordIndex = 0; recordIndex < live.length; recordIndex += 1) {
-		const record = live[recordIndex]!;
-		if (record.usableId && record.id) {
-			byId.set(record.id, record);
-		}
-	}
-	const { labelOwnership, confirmedLabels } = buildLabelClassifications(live, byId, duplicateIds);
-	const {
-		nodes,
-		nodeOfElement,
-		aggregateFailures: nodeAggregateFailures,
-	} = buildNodes(live, byId, confirmedLabels);
-	const hierarchyWork = assignNodeHierarchy(nodes);
-	const connectorEndpoints = buildConnectorEndpoints(live, nodeOfElement, duplicateIds);
-	const containerOnly = findContainerOnlyIds(live, nodes, nodeOfElement);
-	const containerOnlyIds = containerOnly.ids;
-	const {
-		obstacles,
-		qualifyingGroupedObstacleElementIds,
-		aggregateFailures: obstacleAggregateFailures,
-	} = buildObstacles(live, nodeOfElement, confirmedLabels, containerOnlyIds);
-	const aggregateFailures = [...nodeAggregateFailures, ...obstacleAggregateFailures];
-	return {
-		byId,
-		duplicateIds,
-		nodes,
-		nodeOfElement,
-		confirmedLabels,
-		labelOwnership,
-		connectorEndpoints,
-		containerOnlyIds,
-		qualifyingGroupedObstacleElementIds,
-		obstacles,
-		aggregateFailures,
-		hierarchyWork,
-		containerBoundaryWork: containerOnly.work,
-	};
-}
-
-function semanticParents(model: InspectionModel, startingNodeId: string | undefined): Set<string> {
-	const found = new Set<string>();
-	let current = startingNodeId ? model.nodes.get(startingNodeId)?.parentId : null;
-	while (current && !found.has(current)) {
-		found.add(current);
-		current = model.nodes.get(current)?.parentId ?? null;
-	}
-	return found;
-}
+import {
+	classifyBindingTarget,
+	classifyBoundElements,
+	orderedIdentities,
+	type ConnectorEndpointClassification,
+	type InspectionModel,
+	type LabelOwnershipClassification,
+} from "@/runtime/board-inspection/lib/inspection-model";
+import { assignNodeHierarchy, buildNodes } from "@/runtime/board-inspection/lib/node-hierarchy";
+import {
+	buildObstacles,
+	findContainerOnlyIds,
+} from "@/runtime/board-inspection/lib/obstacle-components";
 
 export {
 	type InspectionNode,
@@ -842,13 +24,324 @@ export {
 	type BoundElementIssue,
 	type BoundElementsClassification,
 	type InspectionModel,
+	KNOWN_ELEMENT_TYPES,
 	classifyBoundElements,
 	classifyBindingTarget,
 	boundElementTargetCompatible,
 	archboardMetadata,
+	isPlainRecord,
 	nodeId,
 	groupIds,
 	libraryAttribution,
-	buildInspectionModel,
-	semanticParents,
-};
+} from "@/runtime/board-inspection/lib/inspection-model";
+
+/** Text labels each container names in its boundElements, and the labels whose reverse side cannot be read. */
+interface ReverseLabelOwners {
+	readonly ownersByLabel: ReadonlyMap<string, ReadonlySet<string>>;
+	readonly blockedLabels: ReadonlySet<string>;
+}
+
+/**
+ * Record one container's text references from its boundElements.
+ * @param owner the container record
+ * @param byId live records by usable id
+ * @param owners the accumulating owners per label, updated in place
+ * @param blocked the accumulating blocked labels, updated in place
+ */
+function recordReverseOwner(
+	owner: DecodedRecord,
+	byId: ReadonlyMap<string, DecodedRecord>,
+	owners: Map<string, Set<string>>,
+	blocked: Set<string>,
+): void {
+	if (!owner.id || owner.raw?.boundElements == null) {
+		return;
+	}
+	const bounds = classifyBoundElements(owner.raw.boundElements);
+	for (const reference of bounds.readableEntries) {
+		if (reference.type !== "text" || byId.get(reference.id)?.type !== "text") {
+			continue;
+		}
+		if (!owner.usableId) {
+			blocked.add(reference.id);
+			continue;
+		}
+		const labelOwners = owners.get(reference.id) ?? new Set<string>();
+		labelOwners.add(owner.id);
+		owners.set(reference.id, labelOwners);
+		if (bounds.problems.length > 0) {
+			blocked.add(reference.id);
+		}
+	}
+}
+
+/**
+ * Collect which containers name each text label in their boundElements.
+ * @param live the live decoded records
+ * @param byId live records by usable id
+ * @returns owners per label and the labels whose reverse side is blocked
+ */
+function reverseLabelOwners(
+	live: readonly DecodedRecord[],
+	byId: ReadonlyMap<string, DecodedRecord>,
+): ReverseLabelOwners {
+	const ownersByLabel = new Map<string, Set<string>>();
+	const blockedLabels = new Set<string>();
+	for (const owner of live) {
+		recordReverseOwner(owner, byId, ownersByLabel, blockedLabels);
+	}
+	return { ownersByLabel, blockedLabels };
+}
+
+/**
+ * Whether a label's ownership cannot be classified: an unreadable or duplicate container id, or a blocked reverse side.
+ * @param labelId the label id
+ * @param rawContainer the label's raw containerId
+ * @param reverse the reverse owners collected from containers
+ * @param duplicateIds ids shared by more than one live record
+ * @returns true when classification is blocked
+ */
+function ownershipBlocked(
+	labelId: string,
+	rawContainer: unknown,
+	reverse: ReverseLabelOwners,
+	duplicateIds: ReadonlySet<string>,
+): boolean {
+	const unreadableContainer =
+		rawContainer !== undefined &&
+		rawContainer !== null &&
+		(typeof rawContainer !== "string" || rawContainer.length === 0);
+	return (
+		unreadableContainer ||
+		reverse.blockedLabels.has(labelId) ||
+		(typeof rawContainer === "string" && duplicateIds.has(rawContainer))
+	);
+}
+
+/**
+ * Resolve the ownership state from the forward and reverse sides.
+ * @param blocked whether classification is blocked
+ * @param forwardOwnerId the container the label names, or null
+ * @param reverseOwnerIds the containers naming the label, in identity order
+ * @returns the state and the owner it resolves to, if any
+ */
+function ownershipState(
+	blocked: boolean,
+	forwardOwnerId: string | null,
+	reverseOwnerIds: readonly string[],
+): Pick<LabelOwnershipClassification, "state" | "resolvedOwnerId"> {
+	if (blocked) {
+		return { state: "blocked", resolvedOwnerId: null };
+	}
+	if (forwardOwnerId && reverseOwnerIds.length === 0) {
+		return { state: "forward-only", resolvedOwnerId: forwardOwnerId };
+	}
+	if (!forwardOwnerId && reverseOwnerIds.length === 1) {
+		return { state: "reverse-only", resolvedOwnerId: reverseOwnerIds[0]! };
+	}
+	if (forwardOwnerId && reverseOwnerIds.length === 1 && reverseOwnerIds[0] === forwardOwnerId) {
+		return { state: "matching", resolvedOwnerId: forwardOwnerId };
+	}
+	if (forwardOwnerId || reverseOwnerIds.length > 0) {
+		return { state: "conflicting", resolvedOwnerId: null };
+	}
+	return { state: "none", resolvedOwnerId: null };
+}
+
+/**
+ * Classify one text label's ownership from both sides.
+ * @param record the text record with a usable id
+ * @param labelId the label id
+ * @param reverse the reverse owners collected from containers
+ * @param duplicateIds ids shared by more than one live record
+ * @returns the label's ownership classification
+ */
+function classifyLabelOwnership(
+	record: DecodedRecord,
+	labelId: string,
+	reverse: ReverseLabelOwners,
+	duplicateIds: ReadonlySet<string>,
+): LabelOwnershipClassification {
+	const rawContainer = record.raw?.containerId;
+	const blocked = ownershipBlocked(labelId, rawContainer, reverse, duplicateIds);
+	const forwardOwnerId =
+		typeof rawContainer === "string" && rawContainer.length > 0 ? rawContainer : null;
+	const reverseOwnerIds = orderedIdentities([...(reverse.ownersByLabel.get(labelId) ?? [])]);
+	const candidateOwnerIds = orderedIdentities([
+		...new Set([...(forwardOwnerId ? [forwardOwnerId] : []), ...reverseOwnerIds]),
+	]);
+	return {
+		labelId,
+		forwardOwnerId,
+		reverseOwnerIds,
+		candidateOwnerIds,
+		...ownershipState(blocked, forwardOwnerId, reverseOwnerIds),
+	};
+}
+
+/**
+ * Classify every text label's ownership and confirm the labels with one resolved container.
+ * @param live the live decoded records
+ * @param byId live records by usable id
+ * @param duplicateIds ids shared by more than one live record
+ * @returns ownership per label and container per confirmed label
+ */
+function buildLabelClassifications(
+	live: readonly DecodedRecord[],
+	byId: ReadonlyMap<string, DecodedRecord>,
+	duplicateIds: ReadonlySet<string>,
+): Pick<InspectionModel, "labelOwnership" | "confirmedLabels"> {
+	const reverse = reverseLabelOwners(live, byId);
+	const labelOwnership = new Map<string, LabelOwnershipClassification>();
+	const confirmedLabels = new Map<string, string>();
+	for (const record of live) {
+		if (record.type !== "text" || !record.usableId || !record.id) {
+			continue;
+		}
+		const classification = classifyLabelOwnership(record, record.id, reverse, duplicateIds);
+		labelOwnership.set(record.id, classification);
+		const { resolvedOwnerId } = classification;
+		if (resolvedOwnerId && resolvedOwnerId !== record.id && byId.has(resolvedOwnerId)) {
+			confirmedLabels.set(record.id, resolvedOwnerId);
+		}
+	}
+	return { labelOwnership, confirmedLabels };
+}
+
+interface EndpointFacts {
+	readonly blocked: boolean;
+	readonly element: string | undefined;
+	readonly node: string | undefined;
+}
+
+/**
+ * Classify one binding end of a connector.
+ * @param value the raw binding value
+ * @param nodeOfElement the node of each member element
+ * @param duplicateIds ids shared by more than one live record
+ * @returns whether node analysis is blocked, and the target element and node
+ */
+function endpointFacts(
+	value: unknown,
+	nodeOfElement: ReadonlyMap<string, string>,
+	duplicateIds: ReadonlySet<string>,
+): EndpointFacts {
+	if (value == null) {
+		return { blocked: false, element: undefined, node: undefined };
+	}
+	const target = classifyBindingTarget(value);
+	const targetId = target.readableTargetId;
+	return {
+		blocked: target.blockingIssue !== null || (targetId !== null && duplicateIds.has(targetId)),
+		element: targetId ?? undefined,
+		node: targetId ? nodeOfElement.get(targetId) : undefined,
+	};
+}
+
+/**
+ * Classify both endpoints of every usable connector.
+ * @param live the live decoded records
+ * @param nodeOfElement the node of each member element
+ * @param duplicateIds ids shared by more than one live record
+ * @returns endpoint classification per connector id
+ */
+function buildConnectorEndpoints(
+	live: readonly DecodedRecord[],
+	nodeOfElement: ReadonlyMap<string, string>,
+	duplicateIds: ReadonlySet<string>,
+): Map<string, ConnectorEndpointClassification> {
+	const connectorEndpoints = new Map<string, ConnectorEndpointClassification>();
+	for (const record of live) {
+		if (!record.usableId || !record.id || (record.type !== "arrow" && record.type !== "line")) {
+			continue;
+		}
+		const start = endpointFacts(record.raw?.startBinding, nodeOfElement, duplicateIds);
+		const end = endpointFacts(record.raw?.endBinding, nodeOfElement, duplicateIds);
+		connectorEndpoints.set(record.id, {
+			nodeAnalysisEligible: !start.blocked && !end.blocked,
+			startElement: start.element,
+			endElement: end.element,
+			startNode: start.node,
+			endNode: end.node,
+		});
+	}
+	return connectorEndpoints;
+}
+
+/**
+ * Index live records by usable id and collect the ids that are duplicated.
+ * @param live the live decoded records
+ * @returns records by usable id and the duplicate id set
+ */
+function indexLiveRecords(live: readonly DecodedRecord[]): {
+	byId: Map<string, DecodedRecord>;
+	duplicateIds: Set<string>;
+} {
+	const byId = new Map<string, DecodedRecord>();
+	const duplicateIds = new Set<string>();
+	for (const record of live) {
+		if (record.id && !record.usableId) {
+			duplicateIds.add(record.id);
+		}
+	}
+	for (const record of live) {
+		if (record.usableId && record.id) {
+			byId.set(record.id, record);
+		}
+	}
+	return { byId, duplicateIds };
+}
+
+/**
+ * Build the semantic model detectors read: identities, labels, nodes, connectors and obstacles.
+ * @param records the decoded records
+ * @returns the inspection model
+ */
+function buildInspectionModel(records: readonly DecodedRecord[]): InspectionModel {
+	const live = records.filter((record) => record.live && record.raw !== null);
+	const { byId, duplicateIds } = indexLiveRecords(live);
+	const { labelOwnership, confirmedLabels } = buildLabelClassifications(live, byId, duplicateIds);
+	const nodeBuild = buildNodes(live, byId, confirmedLabels);
+	const hierarchyWork = assignNodeHierarchy(nodeBuild.nodes);
+	const connectorEndpoints = buildConnectorEndpoints(live, nodeBuild.nodeOfElement, duplicateIds);
+	const containerOnly = findContainerOnlyIds(live, nodeBuild.nodes, nodeBuild.nodeOfElement);
+	const obstacleBuild = buildObstacles(
+		live,
+		nodeBuild.nodeOfElement,
+		confirmedLabels,
+		containerOnly.ids,
+	);
+	return {
+		byId,
+		duplicateIds,
+		nodes: nodeBuild.nodes,
+		nodeOfElement: nodeBuild.nodeOfElement,
+		confirmedLabels,
+		labelOwnership,
+		connectorEndpoints,
+		containerOnlyIds: containerOnly.ids,
+		qualifyingGroupedObstacleElementIds: obstacleBuild.qualifyingGroupedObstacleElementIds,
+		obstacles: obstacleBuild.obstacles,
+		aggregateFailures: [...nodeBuild.aggregateFailures, ...obstacleBuild.aggregateFailures],
+		hierarchyWork,
+		containerBoundaryWork: containerOnly.work,
+	};
+}
+
+/**
+ * Every ancestor node of a starting node, nearest first, stopping at cycles.
+ * @param model the inspection model
+ * @param startingNodeId the node to start from, if any
+ * @returns the ancestor node ids
+ */
+function semanticParents(model: InspectionModel, startingNodeId: string | undefined): Set<string> {
+	const found = new Set<string>();
+	let current = startingNodeId ? model.nodes.get(startingNodeId)?.parentId : null;
+	while (current && !found.has(current)) {
+		found.add(current);
+		current = model.nodes.get(current)?.parentId ?? null;
+	}
+	return found;
+}
+
+export { buildInspectionModel, semanticParents };

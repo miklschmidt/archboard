@@ -51,6 +51,12 @@ type ResponseOwner =
 
 type DynamicDispatcherOwner = Exclude<ResponseOwner, "codex-approvals" | "codex-session">;
 
+/** The owners allowed to register a dynamic dispatcher, checked where a registration enters. */
+const DYNAMIC_DISPATCHER_OWNERS: readonly DynamicDispatcherOwner[] = Object.freeze([
+	"codex-dynamic-tools",
+	"codex-coordinator-tools",
+]);
+
 const HUMAN_APPROVAL_METHODS = Object.freeze([
 	"item/commandExecution/requestApproval",
 	"item/fileChange/requestApproval",
@@ -342,6 +348,7 @@ export {
 	type CodexTransportChild,
 	type ResponseOwner,
 	type DynamicDispatcherOwner,
+	DYNAMIC_DISPATCHER_OWNERS,
 	HUMAN_APPROVAL_METHODS,
 	type HumanApprovalMethod,
 	SESSION_SERVER_REQUEST_METHODS,
