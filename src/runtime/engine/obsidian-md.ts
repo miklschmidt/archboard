@@ -179,9 +179,7 @@ function rawTextOf(record: Record<string, unknown>): unknown {
  * @returns True when the element gets a block reference.
  */
 function isLiveTextElement(el: unknown): el is Record<string, unknown> & { id: string } {
-	return (
-		isRecord(el) && el["type"] === "text" && !el["isDeleted"] && typeof el["id"] === "string"
-	);
+	return isRecord(el) && el["type"] === "text" && !el["isDeleted"] && typeof el["id"] === "string";
 }
 
 /**
