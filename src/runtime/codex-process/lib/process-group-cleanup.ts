@@ -276,13 +276,23 @@ function createProcessGroupCleanup(
 	};
 
 	/**
-	 * TERM the group and give it the grace period, but never past the deadline.
+	 * Signal the group with TERM, unless inspecting it first shows it has already gone. This
+	 * is deliberately synchronous: a group that is already quiescent must cost no waiting.
 	 * @param input - The group, its close promise and the composed deadline.
-	 * @returns True when members remain after the grace period.
+	 * @returns True when TERM was sent and the group must be given its grace period.
 	 */
-	const termPhase = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
+	const initiateTerm = (input: ProcessGroupCleanupInput): boolean => {
 		if (!stillOwned(input.identity, "clean up the Codex process group")) return false;
 		sendSignal(input.identity, "SIGTERM");
+		return true;
+	};
+
+	/**
+	 * Give a TERMed group its grace period, ending early only when the group has gone.
+	 * @param input - The group, its close promise and the composed deadline.
+	 * @returns False when the group is already quiescent, so nothing needs escalating.
+	 */
+	const awaitTermGrace = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
 		const termAtMs = Math.min(input.deadlineAtMs, clock.now() + CODEX_TERM_GRACE_MS);
 		const firstEvent = await waitForClosedOrAt(input.childClosed, termAtMs);
 		if (!stillOwned(input.identity, "finish TERM cleanup of the Codex process group")) return false;
@@ -296,16 +306,30 @@ function createProcessGroupCleanup(
 	};
 
 	/**
-	 * KILL the group and wait for it to drain before the deadline.
+	 * Escalate to KILL: signal the group and re-inspect it at once, so a group that dies on the
+	 * signal is finished without waiting at all.
 	 * @param input - The group, its close promise and the composed deadline.
-	 * @returns True when the group must be inspected one final time.
+	 * @returns True when the group is still owned and must be drained.
 	 */
-	const killPhase = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
+	const escalateKill = (input: ProcessGroupCleanupInput): boolean => {
 		if (!stillOwned(input.identity, "escalate the Codex process group")) return false;
 		sendSignal(input.identity, "SIGKILL");
-		if (!stillOwned(input.identity, "verify KILL cleanup of the Codex process group")) return false;
-		if (clock.now() >= input.deadlineAtMs) return true;
-		if (!(await killDrained(input))) return false;
+		return stillOwned(input.identity, "verify KILL cleanup of the Codex process group");
+	};
+
+	/**
+	 * Wait for a killed group to close, then hold until the composed deadline so a group that
+	 * only appears to have died is inspected once more at the end.
+	 * @param input - The group, its close promise and the composed deadline.
+	 * @returns False when the group closed and ownership has lapsed, so nothing remains to check.
+	 */
+	const drainKilledGroup = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
+		const killEvent = await waitForClosedOrAt(input.childClosed, input.deadlineAtMs);
+		if (
+			killEvent === "closed" &&
+			!stillOwned(input.identity, "verify KILL cleanup of the Codex process group")
+		)
+			return false;
 		if (clock.now() < input.deadlineAtMs) {
 			await waitUntil(input.deadlineAtMs);
 		}
@@ -313,15 +337,14 @@ function createProcessGroupCleanup(
 	};
 
 	/**
-	 * Wait for the killed group to close, and re-check ownership once it does: a group that
-	 * closed and is no longer ours needs no final inspection.
+	 * Drain a killed group while the composed deadline still allows it; a deadline that has
+	 * already passed leaves the group to the final inspection.
 	 * @param input - The group, its close promise and the composed deadline.
 	 * @returns False when the group closed and ownership has lapsed.
 	 */
-	const killDrained = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
-		const killEvent = await waitForClosedOrAt(input.childClosed, input.deadlineAtMs);
-		if (killEvent !== "closed") return true;
-		return stillOwned(input.identity, "verify KILL cleanup of the Codex process group");
+	const drainIfTimeRemains = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
+		if (clock.now() >= input.deadlineAtMs) return true;
+		return drainKilledGroup(input);
 	};
 
 	/**
@@ -330,8 +353,10 @@ function createProcessGroupCleanup(
 	 * @param input - The group, its close promise and the composed deadline.
 	 */
 	const cleanup = async (input: ProcessGroupCleanupInput): Promise<void> => {
-		if (!(await termPhase(input))) return;
-		if (!(await killPhase(input))) return;
+		if (!initiateTerm(input)) return;
+		if (!(await awaitTermGrace(input))) return;
+		if (!escalateKill(input)) return;
+		if (!(await drainIfTimeRemains(input))) return;
 		const status = inspect(input.identity);
 		if (status !== "quiescent") {
 			throw groupFailure(status, "complete composed Codex shutdown");

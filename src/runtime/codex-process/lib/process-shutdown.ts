@@ -116,7 +116,10 @@ function assertAllSettled(
  * @param deadlineAtMs - The composed shutdown deadline.
  */
 function assertQuiescent(state: ProcessOwnerState, deadlineAtMs: number): void {
-	if (state.dependencies.now() >= deadlineAtMs || ownsChildren(state))
+	// The composed deadline is enforced by settleBeforeDeadline, which rejects when it expires
+	// before the work finishes; this second reading of the clock only catches time passing
+	// after that, so it is not what proves lateness.
+	if (state.dependencies.now() > deadlineAtMs || ownsChildren(state))
 		throw shutdownError(
 			state,
 			"Codex shutdown did not prove that the child and its process group are quiescent. Recovery: inspect the retained ownership and retry stop.",
