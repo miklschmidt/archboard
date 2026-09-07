@@ -53,6 +53,94 @@ Then say what you infer before acting on it. "You pulled TokenStore out of the
 auth cluster — should it become its own module, or just stop importing from
 `service.ts`?" is better than silently generating a refactor plan.
 
+## Levels and drill-down
+
+A level says which abstraction the board discusses. Choose `system` for an
+overview of systems and their relationships, `service` for the collaborating
+services inside a system, and `module` for the code modules inside a service.
+These are the vocabulary in use; validation also accepts other slug-shaped
+levels, but do not invent a new tier just to label a proposal or a visual zone.
+Kind says what a node is (for example, a queue); level says at what abstraction
+it is being discussed. Neither field changes geometry or creates navigation.
+
+Set a new board's level with `board new <name> --level system`. To correct an
+existing board's metadata, use `board save --board <key> --level service
+--doing "setting the board's abstraction level"` without `--as` or `--variant`.
+Inspect it with `board info --board <key>`.
+
+A promoted node with no `customData.archboard.level` inherits its board's
+level. Usually omit `promote --level`; the inherited value is not stamped on
+the element. Use `promote --level service` only to record an intentional
+difference, such as a service-level node on a system overview. The effective
+level is the explicit override, otherwise the board's level. A target board's
+level does not set the source node's override. `get <id> --board <key>` shows
+the element's explicit metadata; combine that with `board info` to resolve
+inheritance. `describe` is a summary and may omit a level shared by every node.
+
+Use a drill-down when a node's internals deserve their own coherent board and
+would distract from the overview. Create a separate board for that subject;
+a variant instead describes an alternative state of the same subject. Link to
+an existing internals board when one already covers it.
+
+The browser follows an element's `link: "[[board-key]]"` in the pane where the
+link was clicked. Use the exact key returned by `board list`, without the
+`.excalidraw.md` filename suffix. A bare key selects `current`; `[[name@variant]]`
+selects that proposal explicitly, and folder-qualified keys work as in the CLI.
+Aliases and heading/block anchors are not supported by Archboard's board-link
+handler. A level alone never supplies a target. Obsidian's broader link syntax
+and successful link persistence do not prove Archboard browser navigation.
+
+For example, create a system overview and a service-level board of internals
+using unused names. The JSON inputs below omit IDs so Archboard mints them;
+take the rectangle ID from the `add` result, as in `cli-workflows.md`.
+
+```bash
+archboard board new payments --level system
+archboard board new payments-internals --level service
+
+printf '%s' '[{"type":"rectangle","x":80,"y":80,"width":240,"height":100,"label":{"text":"Payments"}}]' > overview.json
+archboard add --board payments --doing "drawing the payments overview" overview.json
+# Set payments_id to the returned rectangle ID, not its bound text ID.
+archboard promote --board payments --ids "$payments_id" --kind service \
+  --name Payments --doing "identifying the payments node"
+archboard update "$payments_id" --board payments \
+  --set '{"link":"[[payments-internals]]"}' --doing "linking payments to its internals"
+
+printf '%s' '[{"type":"rectangle","x":80,"y":80,"width":240,"height":100,"label":{"text":"Payment API"}}]' > internals.json
+archboard add --board payments-internals --doing "drawing the payment API" internals.json
+# Set api_id to the returned rectangle ID.
+archboard promote --board payments-internals --ids "$api_id" --kind service \
+  --name "Payment API" --doing "identifying the payment API"
+
+archboard board info --board payments
+archboard board info --board payments-internals
+archboard get "$payments_id" --board payments
+archboard describe --board payments-internals
+archboard check --board payments --strict
+archboard check --board payments-internals --strict
+```
+
+The overview node inherits `system` and the API node inherits `service`.
+If the overview node should explicitly be at `service`, re-promote its existing
+ID with `--level service` and the same kind/name, then inspect it again. This
+changes the override, not the link or the target board.
+
+Creating and inspecting these boards needs no browser. An agent follows the
+target by reading its key and calling `describe --board payments-internals`.
+When a live browser demonstration is requested, discover panes with
+`browser panes --text`, show the overview with `browser show payments --pane
+<spec>`, select Payments and click its displayed link. Verify that this pane
+now shows `payments-internals` and its API node; `browser panes --text` reports
+the new board key. Use Board navigation to return to `payments`, or show it
+explicitly in the same pane. A missing target leaves the pane in place and
+reports a failure; check `board list`, repair the link or create the intended
+board, then click again. Do not create boards merely by following links.
+
+An element has one visible link slot. A code binding's derived target currently
+occupies that slot when it resolves; preserve that code action and put the
+drill-down on a separate unbound element when both need to be visible. Do not
+replace a binding with a machine-local URL to work around this.
+
 ## Nodes carry the code binding
 
 A shape becomes architecture when it is promoted. Use `archboard help promote`
