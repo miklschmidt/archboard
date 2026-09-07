@@ -7,12 +7,29 @@ import { createHash } from "node:crypto";
  * @param value - Any JSON-compatible value.
  * @returns The canonical JSON text.
  */
+/**
+ * One scalar as fingerprint text.
+ * @param value - The scalar value.
+ * @returns Its JSON text, with the values JSON cannot represent written as null.
+ */
+function jsonScalarText(value: unknown): string {
+	// The lib typing promises a string, but JSON.stringify yields undefined for undefined,
+	// functions and symbols; a fingerprint must serialise those as null, not as "undefined".
+	const primitive: unknown = JSON.stringify(value);
+	return typeof primitive === "string" ? primitive : "null";
+}
+
+/**
+ * Serialize a value with object keys in sorted order, so the same effect always fingerprints the
+ * same way whatever order its fields arrived in.
+ * @param value - The value to serialize.
+ * @returns The stable JSON text.
+ */
 function stableJson(value: unknown): string {
 	if (value === null || typeof value !== "object") {
 		// The lib typing promises a string, but JSON.stringify yields undefined
 		// for undefined, functions and symbols; that case must serialise as null.
-		const primitive: string | undefined = JSON.stringify(value);
-		return primitive === undefined ? "null" : primitive;
+		return jsonScalarText(value);
 	}
 	if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
 	return `{${Object.keys(value)
