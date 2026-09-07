@@ -153,38 +153,74 @@ interface CommandContract<Shape extends z.ZodRawShape, Result> {
 	): Promise<CommandExecution<Result>>;
 }
 
-function defineCommand<Shape extends z.ZodRawShape, Result>(
-	contract: CommandContract<Shape, Result>,
-): CommandContract<Shape, Result> {
+/** Which streams each policy insists an outcome write, and what to say when it does not. */
+const STREAM_REQUIREMENTS: Readonly<
+	Record<OutcomeStreamPolicy, { stdout: boolean; stderr: boolean; complaint: string }>
+> = {
+	"stdout-only": { stdout: true, stderr: false, complaint: "violates stdout-only" },
+	"stderr-only": { stdout: false, stderr: true, complaint: "violates stderr-only" },
+	"stdout-and-stderr": { stdout: true, stderr: true, complaint: "needs both streams" },
+};
+
+/**
+ * Refuses an option whose spelling another parameter already claims, or one
+ * that collects repeats without taking a value to collect.
+ * @param contract - The contract being defined.
+ * @param parameter - The option to check.
+ * @param spellings - Spellings claimed so far; this option's are added to it.
+ * @throws {Error} When a spelling is claimed twice, or an append option takes no value.
+ */
+function assertOptionSpellings(
+	contract: CommandContract<z.ZodRawShape, unknown>,
+	parameter: OptionParameter,
+	spellings: Set<string>,
+): void {
+	for (const spelling of parameter.spellings) {
+		if (spellings.has(spelling)) {
+			throw new Error(`${contract.path.join(" ")}: duplicate token spelling ${spelling}`);
+		}
+		spellings.add(spelling);
+	}
+	if (parameter.occurrences === "append" && parameter.value === "none") {
+		throw new Error(
+			`${contract.path.join(" ")}: append option ${parameter.spellings[0]} needs a value`,
+		);
+	}
+}
+
+/**
+ * Refuses parameters the ingress schema cannot receive, duplicate option
+ * spellings, and a positional after a repeatable one, which could never be
+ * given a value of its own.
+ * @param contract - The contract being defined.
+ * @throws {Error} Naming the first parameter that breaks one of those rules.
+ */
+function assertParameters(contract: CommandContract<z.ZodRawShape, unknown>): void {
 	const inputKeys = new Set(Object.keys(contract.input.ingress.shape));
 	const spellings = new Set<string>();
 	let sawRepeatablePositional = false;
-
 	for (const parameter of contract.parameters) {
 		if (!inputKeys.has(parameter.key)) {
 			throw new Error(`${contract.path.join(" ")}: token ${parameter.key} has no Zod ingress key`);
 		}
 		if (parameter.kind === "option") {
-			for (const spelling of parameter.spellings) {
-				if (spellings.has(spelling)) {
-					throw new Error(`${contract.path.join(" ")}: duplicate token spelling ${spelling}`);
-				}
-				spellings.add(spelling);
-			}
-			if (parameter.occurrences === "append" && parameter.value === "none") {
-				throw new Error(
-					`${contract.path.join(" ")}: append option ${parameter.spellings[0]} needs a value`,
-				);
-			}
+			assertOptionSpellings(contract, parameter, spellings);
 			continue;
 		}
-
 		if (sawRepeatablePositional) {
 			throw new Error(`${contract.path.join(" ")}: no positional may follow a repeatable one`);
 		}
 		sawRepeatablePositional = parameter.repeatable === true;
 	}
+}
 
+/**
+ * Refuses an output case that writes a file without a schema to validate it,
+ * or declares an artifact it will never write.
+ * @param contract - The contract being defined.
+ * @throws {Error} Naming the first case that does either.
+ */
+function assertOutputCases(contract: CommandContract<z.ZodRawShape, unknown>): void {
 	for (const outputCase of contract.output.cases) {
 		if (outputCase.mode === "file-receipt" && !outputCase.artifact) {
 			throw new Error(`${contract.path.join(" ")}: file output ${outputCase.id} needs a schema`);
@@ -193,7 +229,35 @@ function defineCommand<Shape extends z.ZodRawShape, Result>(
 			throw new Error(`${contract.path.join(" ")}: only file output may declare an artifact`);
 		}
 	}
+}
 
+/**
+ * Refuses an outcome whose presentation does not write the streams its own
+ * stream policy promises.
+ * @param contract - The contract being defined.
+ * @param outcome - The outcome to check.
+ * @throws {Error} When the presentation and the stream policy disagree.
+ */
+function assertOutcomeStream(
+	contract: CommandContract<z.ZodRawShape, unknown>,
+	outcome: CommandOutcomeDeclaration,
+): void {
+	const required = STREAM_REQUIREMENTS[outcome.stream];
+	const writesStdout = outcome.presentation.includes("result");
+	const writesStderr = outcome.presentation.some((step) => step !== "result");
+	if (writesStdout !== required.stdout || writesStderr !== required.stderr) {
+		throw new Error(`${contract.path.join(" ")}: outcome ${outcome.id} ${required.complaint}`);
+	}
+}
+
+/**
+ * Refuses duplicate outcome ids, an outcome that claims exit 0 (ordinary
+ * success is never a declared outcome), and one whose streams do not match
+ * its policy.
+ * @param contract - The contract being defined.
+ * @throws {Error} Naming the first outcome that breaks one of those rules.
+ */
+function assertOutcomes(contract: CommandContract<z.ZodRawShape, unknown>): void {
 	const outcomeIds = new Set<string>();
 	for (const outcome of contract.outcomes ?? []) {
 		if (outcomeIds.has(outcome.id)) {
@@ -203,19 +267,25 @@ function defineCommand<Shape extends z.ZodRawShape, Result>(
 		if (!Number.isInteger(outcome.exit) || outcome.exit <= 0) {
 			throw new Error(`${contract.path.join(" ")}: outcome ${outcome.id} needs a nonzero exit`);
 		}
-		const writesStdout = outcome.presentation.includes("result");
-		const writesStderr = outcome.presentation.some((step) => step !== "result");
-		if (outcome.stream === "stdout-only" && (!writesStdout || writesStderr)) {
-			throw new Error(`${contract.path.join(" ")}: outcome ${outcome.id} violates stdout-only`);
-		}
-		if (outcome.stream === "stderr-only" && (writesStdout || !writesStderr)) {
-			throw new Error(`${contract.path.join(" ")}: outcome ${outcome.id} violates stderr-only`);
-		}
-		if (outcome.stream === "stdout-and-stderr" && (!writesStdout || !writesStderr)) {
-			throw new Error(`${contract.path.join(" ")}: outcome ${outcome.id} needs both streams`);
-		}
+		assertOutcomeStream(contract, outcome);
 	}
+}
 
+/**
+ * Checks a command contract against the rules a contract must satisfy before
+ * anything can run it, and returns it unchanged. Declaring a command through
+ * this function is what makes those rules a definition-time failure rather
+ * than something a person meets at the command line.
+ * @param contract - The contract to check.
+ * @returns The same contract.
+ * @throws {Error} Naming the first rule the contract breaks.
+ */
+function defineCommand<Shape extends z.ZodRawShape, Result>(
+	contract: CommandContract<Shape, Result>,
+): CommandContract<Shape, Result> {
+	assertParameters(contract);
+	assertOutputCases(contract);
+	assertOutcomes(contract);
 	return contract;
 }
 
