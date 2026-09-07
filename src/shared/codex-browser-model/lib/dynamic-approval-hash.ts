@@ -16,7 +16,6 @@ const EFFECT_HASH_PATTERN = /^sha256:[0-9a-f]{64}$/u;
 
 /**
  * Rotates a 32-bit word right, the SHA-256 primitive.
- *
  * @param value - The word.
  * @param amount - How many bits to rotate by.
  * @returns The rotated word.
@@ -27,7 +26,6 @@ function rotateRight(value: number, amount: number): number {
 
 /**
  * Hashes canonical compact JSON without making the shared browser model Node-only.
- *
  * @param value - The text to hash, encoded as UTF-8.
  * @returns The digest as sixty-four lowercase hexadecimal characters.
  */
@@ -104,7 +102,6 @@ function sha256(value: string): string {
 
 /**
  * Tells whether a string is spelled as an effect hash: `sha256:` and a digest.
- *
  * @param value - The string to test.
  * @returns True when it matches the effect hash form.
  */
@@ -114,7 +111,6 @@ function isEffectHash(value: string): boolean {
 
 /**
  * Spells the effect hash of a canonical effect body.
- *
  * @param value - The canonical compact JSON of the effect.
  * @returns The `sha256:`-prefixed digest.
  */

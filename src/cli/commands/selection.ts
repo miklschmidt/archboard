@@ -55,6 +55,7 @@ const outputs = {
 	/**
 	 * Chooses the text case when --text was passed and the JSON view otherwise.
 	 * @param input - The parsed report input.
+	 * @param input.text - Whether `--text` was given.
 	 * @returns The output case id.
 	 */
 	select: (input: { text: boolean }) => (input.text ? "text" : "json"),

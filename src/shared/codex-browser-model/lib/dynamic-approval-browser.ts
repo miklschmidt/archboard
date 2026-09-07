@@ -22,6 +22,12 @@ const EffectHashSchema = z
 	.regex(/^sha256:[0-9a-f]{64}$/u, "effect hash must be sha256 plus 64 lowercase hex characters");
 const PaneIdSchema = boundedText(128);
 
+/**
+ * Records one custom validation issue at a path.
+ * @param context - The refinement context of the schema being checked.
+ * @param path - Where in the value the issue sits.
+ * @param message - What is wrong.
+ */
 function addIssue(context: z.RefinementCtx, path: string[], message: string): void {
 	context.addIssue({ code: "custom", path, message });
 }
@@ -31,23 +37,38 @@ type DynamicApprovalIdentityValue = z.infer<
 	DynamicApprovalEffectSchemas["DynamicApprovalIdentitySchema"]
 >;
 
+/** Every field of a dynamic approval identity; two identities are the same when all agree. */
+const IDENTITY_FIELDS = [
+	"child",
+	"epoch",
+	"threadId",
+	"turnId",
+	"callId",
+	"namespace",
+	"tool",
+	"manifestHash",
+	"operationId",
+] as const satisfies readonly (keyof DynamicApprovalIdentityValue)[];
+
+/**
+ * Tells whether two approval identities name the same logical call.
+ * @param left - One identity.
+ * @param right - The other.
+ * @returns True when every field agrees.
+ */
 function sameIdentity(
 	left: DynamicApprovalIdentityValue,
 	right: DynamicApprovalIdentityValue,
 ): boolean {
-	return (
-		left.child === right.child &&
-		left.epoch === right.epoch &&
-		left.threadId === right.threadId &&
-		left.turnId === right.turnId &&
-		left.callId === right.callId &&
-		left.namespace === right.namespace &&
-		left.tool === right.tool &&
-		left.manifestHash === right.manifestHash &&
-		left.operationId === right.operationId
-	);
+	return IDENTITY_FIELDS.every((field) => left[field] === right[field]);
 }
 
+/**
+ * Tells whether two captured links name the same thread in the same child epoch.
+ * @param left - One link.
+ * @param right - The other.
+ * @returns True when thread, child and epoch all agree.
+ */
 function sameLink(
 	left: { readonly threadId: string; readonly childId: string; readonly epoch: string },
 	right: { readonly threadId: string; readonly childId: string; readonly epoch: string },
@@ -57,6 +78,16 @@ function sameLink(
 	);
 }
 
+/**
+ * Builds the browser-facing dynamic approval schemas: the approval record the
+ * pane shows, the response command it sends back, and the pending-aware
+ * response parser that refuses a response for any approval but the one it
+ * was minted for.
+ * @param identity - The session's identity schemas.
+ * @param context - The validator that knows the current child and epoch.
+ * @param effectSchemas - The effect and identity schemas the approval embeds.
+ * @returns The schemas, under their canonical and coordination-era names.
+ */
 export function createDynamicApprovalBrowserSchemas(
 	identity: IdentitySchemas,
 	context: IdentityContext,
@@ -190,35 +221,17 @@ export function createDynamicApprovalBrowserSchemas(
 					error instanceof Error ? error.message : "response target is not current",
 				);
 			}
-			if (
-				response.identity.child !== response.childId ||
-				response.identity.epoch !== response.epoch
-			) {
-				addIssue(
-					refinementContext,
-					["identity"],
-					"response identity does not match current child epoch",
-				);
-			}
-			if (
-				response.capturedLink.childId !== response.childId ||
-				response.capturedLink.epoch !== response.epoch
-			) {
-				addIssue(
-					refinementContext,
-					["capturedLink"],
-					"captured link is not bound to current child epoch",
-				);
-			}
-			if (response.capturedLink.threadId !== response.identity.threadId) {
-				addIssue(
-					refinementContext,
-					["capturedLink", "threadId"],
-					"captured link cannot retarget the caller",
-				);
-			}
+			validateResponseBinding(response, refinementContext);
 		});
 
+	/**
+	 * Builds the response schema for one pending approval, so a response is
+	 * accepted only when its lease, pane, link, identity and effect hash all
+	 * match the approval the pane was shown.
+	 * @param pending - The approval record, parsed again so a caller cannot hand in a forgery.
+	 * @returns The response schema narrowed to that approval.
+	 * @throws {Error} When the approval is not pending or has no binding.
+	 */
 	const createDynamicApprovalResponseSchema = (pending: unknown) => {
 		const pendingApproval = BrowserDynamicApprovalSchema.parse(pending);
 		if (pendingApproval.state !== "pending" || pendingApproval.binding === null) {
@@ -259,9 +272,60 @@ export function createDynamicApprovalBrowserSchemas(
 			}
 		});
 	};
+	/**
+	 * Parses a response against the pending approval it answers.
+	 * @param pending - The approval record.
+	 * @param response - The untrusted response command.
+	 * @returns The validated response.
+	 */
 	const parseDynamicApprovalResponse = (pending: unknown, response: unknown) =>
 		createDynamicApprovalResponseSchema(pending).parse(response);
 
+	/**
+	 * Checks that a response's identity and captured link are bound to the
+	 * child epoch it names and that the link does not retarget the caller.
+	 * @param response - The parsed response command.
+	 * @param refinementContext - Where issues are recorded.
+	 */
+	function validateResponseBinding(
+		response: z.infer<typeof BrowserDynamicApprovalResponseSchema>,
+		refinementContext: z.RefinementCtx,
+	): void {
+		if (
+			response.identity.child !== response.childId ||
+			response.identity.epoch !== response.epoch
+		) {
+			addIssue(
+				refinementContext,
+				["identity"],
+				"response identity does not match current child epoch",
+			);
+		}
+		if (
+			response.capturedLink.childId !== response.childId ||
+			response.capturedLink.epoch !== response.epoch
+		) {
+			addIssue(
+				refinementContext,
+				["capturedLink"],
+				"captured link is not bound to current child epoch",
+			);
+		}
+		if (response.capturedLink.threadId !== response.identity.threadId) {
+			addIssue(
+				refinementContext,
+				["capturedLink", "threadId"],
+				"captured link cannot retarget the caller",
+			);
+		}
+	}
+
+	/**
+	 * A terminal decision arm for one outcome and the single cause that produces it.
+	 * @param outcome - The decision outcome.
+	 * @param cause - The cause that outcome always carries.
+	 * @returns The strict decision schema.
+	 */
 	function decision(
 		outcome: "approved" | "declined" | "expired",
 		cause: "person_approved" | "person_declined" | "deadline_reached",
@@ -277,6 +341,14 @@ export function createDynamicApprovalBrowserSchemas(
 			.strict();
 	}
 
+	/**
+	 * Checks that the effect the pane is shown belongs to the logical call in
+	 * the identity: same tool, same operation, and a target that echoes the
+	 * arguments rather than pointing somewhere else.
+	 * @param approvalIdentity - The logical call the approval is for.
+	 * @param approvalEffect - The effect as projected for the browser.
+	 * @param refinementContext - Where issues are recorded.
+	 */
 	function validateIdentityAndBrowserEffect(
 		approvalIdentity: DynamicApprovalIdentityValue,
 		approvalEffect: BrowserDynamicApprovalEffectValue,
@@ -303,42 +375,64 @@ export function createDynamicApprovalBrowserSchemas(
 			addIssue(refinementContext, ["effect", "target"], "target must echo effect arguments");
 		}
 		if (approvalEffect.tool === "fork_thread") {
-			if (approvalEffect.effectiveBoundary.relation === "self") {
-				if (approvalEffect.arguments.threadId !== approvalIdentity.threadId) {
-					addIssue(
-						refinementContext,
-						["effect", "arguments", "threadId"],
-						"self fork must target its caller",
-					);
-				}
-				if (approvalEffect.effectiveBoundary.beforeTurnId !== approvalIdentity.turnId) {
-					addIssue(
-						refinementContext,
-						["effect", "effectiveBoundary"],
-						"self fork boundary must be caller turn",
-					);
-				}
-			} else {
-				if (approvalEffect.arguments.threadId === approvalIdentity.threadId) {
-					addIssue(
-						refinementContext,
-						["effect", "effectiveBoundary"],
-						"other fork cannot target its caller",
-					);
-				}
-				if (
-					approvalEffect.effectiveBoundary.beforeTurnId !== approvalEffect.arguments.beforeTurnId
-				) {
-					addIssue(
-						refinementContext,
-						["effect", "effectiveBoundary"],
-						"fork boundary must echo beforeTurnId",
-					);
-				}
-			}
+			validateForkBoundary(approvalIdentity, approvalEffect, refinementContext);
 		}
 	}
 
+	/**
+	 * Checks a fork's effective boundary against its relation to the caller: a
+	 * self fork targets the caller at the caller's turn, any other fork targets
+	 * another thread at the turn its arguments named.
+	 * @param approvalIdentity - The logical call the approval is for.
+	 * @param approvalEffect - A fork effect.
+	 * @param refinementContext - Where issues are recorded.
+	 */
+	function validateForkBoundary(
+		approvalIdentity: DynamicApprovalIdentityValue,
+		approvalEffect: Extract<BrowserDynamicApprovalEffectValue, { readonly tool: "fork_thread" }>,
+		refinementContext: z.RefinementCtx,
+	): void {
+		if (approvalEffect.effectiveBoundary.relation === "self") {
+			if (approvalEffect.arguments.threadId !== approvalIdentity.threadId) {
+				addIssue(
+					refinementContext,
+					["effect", "arguments", "threadId"],
+					"self fork must target its caller",
+				);
+			}
+			if (approvalEffect.effectiveBoundary.beforeTurnId !== approvalIdentity.turnId) {
+				addIssue(
+					refinementContext,
+					["effect", "effectiveBoundary"],
+					"self fork boundary must be caller turn",
+				);
+			}
+			return;
+		}
+		if (approvalEffect.arguments.threadId === approvalIdentity.threadId) {
+			addIssue(
+				refinementContext,
+				["effect", "effectiveBoundary"],
+				"other fork cannot target its caller",
+			);
+		}
+		if (approvalEffect.effectiveBoundary.beforeTurnId !== approvalEffect.arguments.beforeTurnId) {
+			addIssue(
+				refinementContext,
+				["effect", "effectiveBoundary"],
+				"fork boundary must echo beforeTurnId",
+			);
+		}
+	}
+
+	/**
+	 * Checks that a terminal decision echoes the approval it settles, so a
+	 * decision can never be replayed onto another approval.
+	 * @param approvalIdentity - The logical call the approval is for.
+	 * @param approvalEffectHash - The approval's effect hash.
+	 * @param decisionValue - The decision, or null while the approval is open.
+	 * @param refinementContext - Where issues are recorded.
+	 */
 	function validateDecisionEcho(
 		approvalIdentity: DynamicApprovalIdentityValue,
 		approvalEffectHash: string,

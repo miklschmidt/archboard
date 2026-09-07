@@ -21,10 +21,105 @@ const DYNAMIC_APPROVAL_STATES = [
 
 const AuthorityTokenSchema = boundedText(4096);
 
+/**
+ * Records one custom validation issue at a path.
+ * @param context - The refinement context of the schema being checked.
+ * @param path - Where in the value the issue sits.
+ * @param message - What is wrong.
+ */
 function addIssue(context: z.RefinementCtx, path: string[], message: string): void {
 	context.addIssue({ code: "custom", path, message });
 }
 
+/** The parts of a fork effect that decide whether it may start a turn. */
+interface ForkTurnFacts {
+	readonly arguments: { readonly prompt: string | null };
+	readonly mutationOperationId: string;
+	readonly initialTurnOperationId: string | null;
+}
+
+/**
+ * Checks that a fork starts a turn exactly when it carries a prompt, and that
+ * the turn has an operation id of its own rather than reusing the mutation's.
+ * @param effect - A fork effect, in either its canonical or browser form.
+ * @param refinementContext - Where issues are recorded.
+ */
+function validateForkInitialTurn(effect: ForkTurnFacts, refinementContext: z.RefinementCtx): void {
+	if (effect.arguments.prompt === null && effect.initialTurnOperationId !== null) {
+		addIssue(refinementContext, ["initialTurnOperationId"], "unprompted fork cannot start a turn");
+	}
+	if (effect.arguments.prompt !== null && effect.initialTurnOperationId === null) {
+		addIssue(
+			refinementContext,
+			["initialTurnOperationId"],
+			"prompted fork requires an initial turn",
+		);
+	}
+	if (
+		effect.initialTurnOperationId !== null &&
+		effect.initialTurnOperationId === effect.mutationOperationId
+	) {
+		addIssue(
+			refinementContext,
+			["initialTurnOperationId"],
+			"fork initial turn needs its own OperationId",
+		);
+	}
+}
+
+/**
+ * Checks that a create effect's initial turn has an operation id of its own.
+ * @param effect - An effect of any tool; only `create_thread` is checked.
+ * @param refinementContext - Where issues are recorded.
+ */
+function validateCreateInitialTurn(
+	effect: {
+		readonly tool: string;
+		readonly mutationOperationId: string;
+		readonly initialTurnOperationId: string | null;
+	},
+	refinementContext: z.RefinementCtx,
+): void {
+	if (
+		effect.tool === "create_thread" &&
+		effect.initialTurnOperationId === effect.mutationOperationId
+	) {
+		addIssue(
+			refinementContext,
+			["initialTurnOperationId"],
+			"create initial turn needs its own OperationId",
+		);
+	}
+}
+
+/**
+ * Checks that a browser effect's target echoes the thread its arguments name,
+ * so the pane can never show one thread while the call acts on another.
+ * @param effect - A fork or send effect in its browser form.
+ * @param refinementContext - Where issues are recorded.
+ */
+function validateTargetEcho(
+	effect: {
+		readonly tool: "fork_thread" | "send_message_to_thread";
+		readonly target: string;
+		readonly arguments: { readonly threadId: string };
+	},
+	refinementContext: z.RefinementCtx,
+): void {
+	if (effect.target !== effect.arguments.threadId) {
+		const label = effect.tool === "fork_thread" ? "fork" : "send";
+		addIssue(refinementContext, ["target"], `target must echo ${label} arguments.threadId`);
+	}
+}
+
+/**
+ * Builds the identity and effect schemas of a dynamic approval: who is
+ * calling, in which epoch and operation, and exactly what the tool would do,
+ * in the canonical form the hash covers and the projected form the browser sees.
+ * @param identity - The session's identity schemas.
+ * @param context - The validator for the current epoch and, when present, operation ids.
+ * @returns The identity schema and both effect schemas.
+ */
 function createDynamicApprovalEffectSchemas(identity: IdentitySchemas, context: IdentityContext) {
 	const {
 		ChildEpochSchema,
@@ -129,42 +224,9 @@ function createDynamicApprovalEffectSchemas(identity: IdentitySchemas, context: 
 				.strict(),
 		])
 		.superRefine((effect, refinementContext) => {
-			if (
-				effect.tool === "create_thread" &&
-				effect.initialTurnOperationId === effect.mutationOperationId
-			) {
-				addIssue(
-					refinementContext,
-					["initialTurnOperationId"],
-					"create initial turn needs its own OperationId",
-				);
-			}
-			if (effect.tool !== "fork_thread") {
-				return;
-			}
-			if (effect.arguments.prompt === null && effect.initialTurnOperationId !== null) {
-				addIssue(
-					refinementContext,
-					["initialTurnOperationId"],
-					"unprompted fork cannot start a turn",
-				);
-			}
-			if (effect.arguments.prompt !== null && effect.initialTurnOperationId === null) {
-				addIssue(
-					refinementContext,
-					["initialTurnOperationId"],
-					"prompted fork requires an initial turn",
-				);
-			}
-			if (
-				effect.initialTurnOperationId !== null &&
-				effect.initialTurnOperationId === effect.mutationOperationId
-			) {
-				addIssue(
-					refinementContext,
-					["initialTurnOperationId"],
-					"fork initial turn needs its own OperationId",
-				);
+			validateCreateInitialTurn(effect, refinementContext);
+			if (effect.tool === "fork_thread") {
+				validateForkInitialTurn(effect, refinementContext);
 			}
 		});
 
@@ -205,47 +267,13 @@ function createDynamicApprovalEffectSchemas(identity: IdentitySchemas, context: 
 				.strict(),
 		])
 		.superRefine((effect, refinementContext) => {
-			if (
-				effect.tool === "create_thread" &&
-				effect.initialTurnOperationId === effect.mutationOperationId
-			) {
-				addIssue(
-					refinementContext,
-					["initialTurnOperationId"],
-					"create initial turn needs its own OperationId",
-				);
+			validateCreateInitialTurn(effect, refinementContext);
+			if (effect.tool === "create_thread") {
+				return;
 			}
+			validateTargetEcho(effect, refinementContext);
 			if (effect.tool === "fork_thread") {
-				if (effect.target !== effect.arguments.threadId) {
-					addIssue(refinementContext, ["target"], "target must echo fork arguments.threadId");
-				}
-				if (effect.arguments.prompt === null && effect.initialTurnOperationId !== null) {
-					addIssue(
-						refinementContext,
-						["initialTurnOperationId"],
-						"unprompted fork cannot start a turn",
-					);
-				}
-				if (effect.arguments.prompt !== null && effect.initialTurnOperationId === null) {
-					addIssue(
-						refinementContext,
-						["initialTurnOperationId"],
-						"prompted fork requires an initial turn",
-					);
-				}
-				if (
-					effect.initialTurnOperationId !== null &&
-					effect.initialTurnOperationId === effect.mutationOperationId
-				) {
-					addIssue(
-						refinementContext,
-						["initialTurnOperationId"],
-						"fork initial turn needs its own OperationId",
-					);
-				}
-			}
-			if (effect.tool === "send_message_to_thread" && effect.target !== effect.arguments.threadId) {
-				addIssue(refinementContext, ["target"], "target must echo send arguments.threadId");
+				validateForkInitialTurn(effect, refinementContext);
 			}
 		});
 

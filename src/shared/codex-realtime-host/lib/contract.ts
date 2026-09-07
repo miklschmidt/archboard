@@ -19,7 +19,6 @@ type RealtimeItemId = z.infer<typeof BrowserRealtimeIdentitySchemas.item>;
 
 /**
  * Narrows an untrusted value to a realtime session id.
- *
  * @param value - The raw value from the wire.
  * @returns The validated session id.
  * @throws {ZodError} when the value is not a well-formed session id.
@@ -30,7 +29,6 @@ function parseRealtimeSessionId(value: unknown): RealtimeSessionId {
 
 /**
  * Narrows an untrusted value to a realtime correlation id.
- *
  * @param value - The raw value from the wire.
  * @returns The validated correlation id.
  * @throws {ZodError} when the value is not a well-formed correlation id.
@@ -41,7 +39,6 @@ function parseRealtimeCorrelationId(value: unknown): RealtimeCorrelationId {
 
 /**
  * Narrows an untrusted value to a realtime item id.
- *
  * @param value - The raw value from the wire.
  * @returns The validated item id.
  * @throws {ZodError} when the value is not a well-formed item id.

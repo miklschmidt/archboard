@@ -76,6 +76,12 @@ type DynamicApprovalCanonicalInput = {
 	readonly effect: DynamicApprovalCanonicalEffect;
 };
 
+/**
+ * Hashes the canonical JSON of an approval, the value both host and browser
+ * must agree on before a decision may be applied.
+ * @param value - The canonical compact JSON.
+ * @returns The `sha256:`-prefixed digest.
+ */
 function dynamicApprovalHashForCanonicalJson(value: string): string {
 	return effectHashFor(value);
 }
@@ -88,6 +94,12 @@ type DynamicApprovalEffectValue = z.infer<
 	DynamicApprovalEffectSchemas["DynamicApprovalEffectSchema"]
 >;
 
+/**
+ * Rebuilds a tool's arguments with only its known fields in a fixed order, so
+ * the canonical JSON is the same however the input object was assembled.
+ * @param argumentsValue - The arguments of any of the three tools.
+ * @returns An equivalent object with the fields in canonical order.
+ */
 function canonicalArguments(
 	argumentsValue: DynamicApprovalCanonicalEffect["arguments"],
 ): DynamicApprovalCanonicalEffect["arguments"] {
@@ -104,6 +116,11 @@ function canonicalArguments(
 	return { prompt: argumentsValue.prompt };
 }
 
+/**
+ * Rebuilds a fork boundary with its fields in canonical order.
+ * @param boundary - The effective boundary, null for tools without one.
+ * @returns An equivalent boundary, or null.
+ */
 function canonicalBoundary(
 	boundary: DynamicApprovalCanonicalEffect["effectiveBoundary"],
 ): DynamicApprovalCanonicalEffect["effectiveBoundary"] {
@@ -116,6 +133,14 @@ function canonicalBoundary(
 	return { relation: "other", beforeTurnId: boundary.beforeTurnId };
 }
 
+/**
+ * Checks that the canonical effect belongs to the logical call in the
+ * identity: same tool, same operation, and for a fork a boundary that agrees
+ * with its relation to the caller.
+ * @param approvalIdentity - The logical call the approval is for.
+ * @param approvalEffect - The canonical effect.
+ * @param refinementContext - Where issues are recorded.
+ */
 function validateIdentityAndEffect(
 	approvalIdentity: DynamicApprovalIdentityValue,
 	approvalEffect: DynamicApprovalEffectValue,
@@ -135,19 +160,24 @@ function validateIdentityAndEffect(
 			message: "mutation OperationId must be the call OperationId",
 		});
 	}
-	if (approvalEffect.tool === "create_thread") {
-		if (approvalEffect.targetAuthority !== null) {
-			refinementContext.addIssue({
-				code: "custom",
-				path: ["effect", "targetAuthority"],
-				message: "create has no target authority",
-			});
-		}
-		return;
+	if (approvalEffect.tool === "fork_thread") {
+		validateForkRelation(approvalIdentity, approvalEffect, refinementContext);
 	}
-	if (approvalEffect.tool !== "fork_thread") {
-		return;
-	}
+}
+
+/**
+ * Checks a fork's effective boundary against its relation to the caller: a
+ * self fork targets the caller at the caller's turn, any other fork targets
+ * another thread at the turn its arguments named.
+ * @param approvalIdentity - The logical call the approval is for.
+ * @param approvalEffect - A canonical fork effect.
+ * @param refinementContext - Where issues are recorded.
+ */
+function validateForkRelation(
+	approvalIdentity: DynamicApprovalIdentityValue,
+	approvalEffect: Extract<DynamicApprovalEffectValue, { readonly tool: "fork_thread" }>,
+	refinementContext: z.RefinementCtx,
+): void {
 	if (approvalEffect.effectiveBoundary.relation === "self") {
 		if (approvalEffect.arguments.threadId !== approvalIdentity.threadId) {
 			refinementContext.addIssue({
@@ -181,6 +211,12 @@ function validateIdentityAndEffect(
 	}
 }
 
+/**
+ * Spells an approval's identity and effect as compact JSON with every field
+ * in a fixed order, the text the effect hash is computed over.
+ * @param input - The identity and canonical effect.
+ * @returns The canonical JSON.
+ */
 function canonicalDynamicApprovalJson(input: DynamicApprovalCanonicalInput): string {
 	const { identity: approvalIdentity, effect: approvalEffect } = input;
 	return JSON.stringify({
@@ -209,6 +245,12 @@ function canonicalDynamicApprovalJson(input: DynamicApprovalCanonicalInput): str
 	});
 }
 
+/**
+ * The canonical JSON of a parsed identity and effect, ready to hash.
+ * @param approvalIdentity - The parsed identity.
+ * @param approvalEffect - The parsed canonical effect.
+ * @returns The canonical JSON.
+ */
 function canonicalHashInput(
 	approvalIdentity: z.infer<EffectSchemas["DynamicApprovalIdentitySchema"]>,
 	approvalEffect: z.infer<EffectSchemas["DynamicApprovalEffectSchema"]>,
@@ -216,6 +258,14 @@ function canonicalHashInput(
 	return canonicalDynamicApprovalJson({ identity: approvalIdentity, effect: approvalEffect });
 }
 
+/**
+ * Builds every dynamic approval schema: the canonical request the host
+ * validates and hashes, the effect and identity schemas it embeds, and the
+ * browser-facing record and response schemas.
+ * @param identity - The session's identity schemas.
+ * @param context - The validator for the current epoch and, when present, operation ids.
+ * @returns The schemas plus the canonical JSON and hashing helpers.
+ */
 function createDynamicApprovalSchemas(identity: IdentitySchemas, context: IdentityContext) {
 	const effectSchemas = createDynamicApprovalEffectSchemas(identity, context);
 	const { DynamicApprovalIdentitySchema, DynamicApprovalEffectSchema } = effectSchemas;
@@ -261,6 +311,11 @@ function createDynamicApprovalSchemas(identity: IdentitySchemas, context: Identi
 		DynamicCoordinationApprovalRequestSchema: DynamicApprovalRequestSchema,
 		canonicalDynamicApprovalJson,
 		dynamicApprovalHashForCanonicalJson,
+		/**
+		 * Computes the effect hash a request must carry for this identity and effect.
+		 * @param input - The parsed identity and canonical effect.
+		 * @returns The `sha256:`-prefixed digest.
+		 */
 		effectHashForRequest: (input: {
 			identity: DynamicApprovalIdentityValue;
 			effect: DynamicApprovalEffectValue;

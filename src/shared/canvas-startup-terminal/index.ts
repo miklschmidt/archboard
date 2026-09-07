@@ -34,7 +34,6 @@ type CanvasStartupProtocolEvent =
 
 /**
  * A pid or pgid as the kernel hands it out: a positive safe integer.
- *
  * @param value - Any JSON value read from the startup pipe.
  * @returns True when the value is a positive integer.
  */
@@ -45,8 +44,9 @@ function positiveInteger(value: unknown): value is number {
 /**
  * Builds the ownership record the canvas child writes once it owns the Codex
  * process group, so the launcher can clean that group up if the child dies.
- *
- * @param input - The canvas pid and the process-group identity it now owns.
+ * @param input - The facts the launcher needs to clean up after the child.
+ * @param input.canvasPid - The canvas child's pid.
+ * @param input.codexGroup - The process-group identity it now owns.
  * @returns A frozen ownership record carrying the protocol tag.
  */
 function canvasStartupOwnershipRecord(input: {
@@ -64,8 +64,10 @@ function canvasStartupOwnershipRecord(input: {
 /**
  * Builds the terminal record the canvas child writes on the way out, stating
  * whether it proved its own cleanup so the launcher knows what is left to do.
- *
- * @param input - The canvas pid, whether cleanup was proven, and an optional message.
+ * @param input - What the child can say about its own exit.
+ * @param input.canvasPid - The canvas child's pid.
+ * @param input.cleanupProven - Whether the child proved its cleanup completed.
+ * @param input.message - An optional explanation for the launcher's log.
  * @returns A frozen terminal record carrying the protocol tag.
  */
 function canvasStartupTerminalRecord(input: {
@@ -112,7 +114,6 @@ const terminalBodySchema = z.looseObject({
  * Parses one line the canvas child wrote to the startup pipe into a typed
  * record, refusing anything that is not exactly an ownership or terminal
  * record of this protocol version.
- *
  * @param line - One newline-delimited JSON line from the pipe.
  * @returns The frozen ownership or terminal record the line spells.
  * @throws {Error} when the line is not a valid record of either kind.
@@ -148,7 +149,6 @@ function parseCanvasStartupProtocolRecord(line: string): CanvasStartupProtocolRe
 /**
  * Tells whether a write failure means the launcher has already gone away,
  * which is expected rather than an error.
- *
  * @param error - The value thrown by the write.
  * @returns True for a closed or invalid pipe descriptor.
  */
@@ -159,7 +159,6 @@ function isDepartedReader(error: unknown): boolean {
 
 /**
  * Reads the launcher's pipe descriptor from the environment.
- *
  * @returns The descriptor number, or null when no launcher is listening.
  * @throws {Error} when the environment names a descriptor that cannot be a pipe.
  */
@@ -177,7 +176,6 @@ function launcherDescriptor(): number | null {
 
 /**
  * Report to the exact launcher pipe. A departed launcher is an expected closed reader.
- *
  * @param record - The ownership or terminal record to write as one JSON line.
  */
 function writeCanvasStartupProtocolRecord(record: CanvasStartupProtocolRecord): void {

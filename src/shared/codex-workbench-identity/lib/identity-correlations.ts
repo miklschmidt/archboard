@@ -62,7 +62,6 @@ const TOOL_CORRELATION_KEYS = [
 
 /**
  * Stable identity for one logical dynamic-tool call across wire retries and owners.
- *
  * @param call - The correlation to key.
  * @returns A JSON array of every field, in declaration order, as one string.
  */
@@ -81,7 +80,6 @@ function logicalToolCallKey(call: LogicalToolCallCorrelation): string {
 
 /**
  * Tells whether a value is a non-array object, so its keys can be read.
- *
  * @param value - The untrusted value.
  * @returns True for a plain record shape.
  */
@@ -91,7 +89,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 /**
  * Refuses a record that carries any key, string or symbol, outside `keys`.
- *
  * @param record - The record to inspect.
  * @param keys - The only keys allowed.
  * @throws {IdentityValidationError} As `extra-field` when another key is present.
@@ -99,14 +96,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function assertOnlyKeys(record: Record<string, unknown>, keys: readonly string[]): void {
 	for (const key of Reflect.ownKeys(record)) {
 		if (typeof key !== "string" || !keys.includes(key)) {
-			return fail("extra-field", "An identity correlation contains an unexpected field.");
+			fail("extra-field", "An identity correlation contains an unexpected field.");
 		}
 	}
 }
 
 /**
  * Refuses a record missing any of `keys` as an own property.
- *
  * @param record - The record to inspect.
  * @param keys - The keys that must all be present.
  * @throws {IdentityValidationError} As `invalid-shape` naming the first missing key.
@@ -114,14 +110,13 @@ function assertOnlyKeys(record: Record<string, unknown>, keys: readonly string[]
 function assertAllKeys(record: Record<string, unknown>, keys: readonly string[]): void {
 	for (const key of keys) {
 		if (!Object.prototype.hasOwnProperty.call(record, key)) {
-			return fail("invalid-shape", `Missing correlation field "${key}".`);
+			fail("invalid-shape", `Missing correlation field "${key}".`);
 		}
 	}
 }
 
 /**
  * Narrows an untrusted value to a record with exactly the given keys.
- *
  * @param value - The untrusted value.
  * @param keys - The complete key set the record must have.
  * @returns The value as a record.
@@ -139,7 +134,6 @@ function requireRecord(value: unknown, keys: readonly string[]): Record<string, 
 /**
  * Validates a bounded text field of a correlation: non-empty, trimmed, short,
  * and free of NUL.
- *
  * @param value - The untrusted value.
  * @param field - The field name, for the error message.
  * @returns The text unchanged.
@@ -162,7 +156,6 @@ function assertText(value: unknown, field: string): string {
 
 /**
  * Refuses a correlation that names another child or an earlier epoch.
- *
  * @param child - The child the correlation names.
  * @param epoch - The epoch the correlation names.
  * @param currentChild - This session's child.
@@ -176,16 +169,15 @@ function assertCurrent(
 	currentEpoch: ChildEpoch,
 ): void {
 	if (child !== currentChild) {
-		return fail("wrong-child", "The correlation belongs to another child.");
+		fail("wrong-child", "The correlation belongs to another child.");
 	}
 	if (epoch !== currentEpoch) {
-		return fail("stale-epoch", "The correlation belongs to a stale child epoch.");
+		fail("stale-epoch", "The correlation belongs to a stale child epoch.");
 	}
 }
 
 /**
  * Refuses an identity this session never issued, whatever its shape.
- *
  * @param value - The branded identity.
  * @param domain - Its domain.
  * @param issued - The issuance ledger, by domain.
@@ -197,18 +189,13 @@ function assertIssued<Domain extends IdentityDomain>(
 	issued: ReadonlyMap<IdentityDomain, ReadonlySet<string>>,
 ): void {
 	if (!issued.get(domain)?.has(value)) {
-		return fail(
-			"unissued",
-			`The ${domain} identity was not issued by this workbench session.`,
-			domain,
-		);
+		fail("unissued", `The ${domain} identity was not issued by this workbench session.`, domain);
 	}
 }
 
 /**
  * Decodes a wire request correlation and proves every part of it current
  * and issued here.
- *
  * @param value - The untrusted record.
  * @param childId - This session's child.
  * @param epoch - This session's epoch.
@@ -236,7 +223,6 @@ function parseWireRequestCorrelationValue(
 /**
  * Decodes a logical tool-call correlation and proves every identity in it
  * current and issued here, and every text field bounded.
- *
  * @param value - The untrusted record.
  * @param childId - This session's child.
  * @param epoch - This session's epoch.

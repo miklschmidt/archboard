@@ -140,7 +140,6 @@ const INITIAL_REALTIME_STATE: RealtimeState = Object.freeze({
 });
 /**
  * Looks up the reasons a phase may move to another.
- *
  * @param from - The phase the session is in.
  * @param to - The phase it would enter.
  * @returns The allowed reasons, empty when the move is never allowed.
@@ -151,7 +150,6 @@ function reasons(from: RealtimePhase, to: RealtimePhase): readonly string[] {
 
 /**
  * Tells whether the transition table permits moving to `next` for its reason.
- *
  * @param current - The state the session is in.
  * @param next - The state and reason proposed.
  * @returns True when the table lists that reason for that move.
@@ -163,7 +161,6 @@ function canTransitionRealtimeState(current: RealtimeState, next: RealtimeState)
 /**
  * Refuses an illegal transition with a message naming what would have been
  * allowed, so a caller learns the table rather than guessing.
- *
  * @param current - The state the session is in.
  * @param next - The state and reason proposed.
  * @throws {TypeError} when the table does not permit the move.
@@ -183,7 +180,6 @@ function assertRealtimeTransition(current: RealtimeState, next: RealtimeState): 
 }
 /**
  * Moves the session to `next` after checking the transition is legal.
- *
  * @param current - The state the session is in.
  * @param next - The state and reason to move to.
  * @returns A frozen copy of `next`.

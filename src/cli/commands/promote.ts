@@ -151,6 +151,7 @@ const output = {
 	/**
 	 * Chooses the text summary when `--text` was given, otherwise the json receipt.
 	 * @param input - The parsed options, of which only the text flag matters.
+	 * @param input.text - Whether `--text` was given.
 	 * @returns The output case id.
 	 */
 	select: (input: { text: boolean }) => (input.text ? "text" : "json"),

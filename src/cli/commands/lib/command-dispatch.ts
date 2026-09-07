@@ -82,6 +82,7 @@ function selectedChild(root: CommandRoute, rest: readonly string[]): ChildSelect
  * Whether a namespace's default child applies: nothing follows the name, or only options do
  * and the route allows leading options.
  * @param bare - The route's default-child rule.
+ * @param bare.withLeadingOptions - Whether options before any child still select the default.
  * @param rest - The arguments after the command name.
  * @returns True when the default child should run.
  */

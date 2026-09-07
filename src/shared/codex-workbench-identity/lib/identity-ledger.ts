@@ -103,7 +103,6 @@ interface StagedResponseIdentity<Domain extends ResponseAdoptionDomain> {
 /**
  * Records a token as issued in `domain` and remembers the raw value it stands
  * for, so it can later be proven issued and serialized back.
- *
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @param token - The token to spell the wire value from.
@@ -129,7 +128,6 @@ function issue<Domain extends IdentityDomain>(
 
 /**
  * Records an already-branded identity as issued.
- *
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @param value - The branded identity.
@@ -147,7 +145,6 @@ function issueExisting<Domain extends IdentityDomain>(
 
 /**
  * Mints and records a host-owned identity.
- *
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @returns The fresh branded identity.
@@ -162,7 +159,6 @@ function mint<Domain extends IdentityDomain>(
 
 /**
  * Mints and records a new epoch for the ledger's child.
- *
  * @param ledger - The ledger to write to.
  * @returns The fresh branded epoch.
  */
@@ -175,7 +171,6 @@ function mintEpoch(ledger: IdentityLedger): ChildEpoch {
 /**
  * Mints an operation identity bound to the current epoch, retrying a bounded
  * number of times should the random nonce collide with one already issued.
- *
  * @param ledger - The ledger to write to.
  * @returns The fresh branded operation identity.
  * @throws {IdentityValidationError} As `issuance-exhausted` after too many collisions.
@@ -196,7 +191,6 @@ function mintOperation(ledger: IdentityLedger): OperationId {
 
 /**
  * Adopts a raw server-issued string id into `domain`, recording it as issued.
- *
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @param rawValue - The id as the server sent it.
@@ -218,7 +212,6 @@ function adopt<Domain extends AdoptableDomain>(
 /**
  * Tells whether a raw value is a JSON-RPC id the protocol allows: a string
  * or a safe integer.
- *
  * @param rawValue - The id as the server sent it.
  * @returns True when it may be adopted.
  */
@@ -229,7 +222,6 @@ function isJsonRpcRequestIdWireValue(rawValue: unknown): rawValue is JsonRpcRequ
 /**
  * Adopts a raw server-issued JSON-RPC request id, which may be a string or an
  * integer, recording it as issued.
- *
  * @param ledger - The ledger to write to.
  * @param rawValue - The id as the server sent it.
  * @returns The branded request id.
@@ -249,7 +241,6 @@ function adoptJsonRpcRequestId(ledger: IdentityLedger, rawValue: unknown): JsonR
 
 /**
  * Validates one raw response identity without recording it yet.
- *
  * @param domain - The identity domain.
  * @param rawValue - The id as the server sent it.
  * @returns The staged identity, ready to commit.
@@ -271,7 +262,6 @@ function stageResponseIdentity<Domain extends ResponseAdoptionDomain>(
 
 /**
  * Stages every raw identity of one domain from a response.
- *
  * @param domain - The identity domain.
  * @param values - The raw ids, absent when the response carried none.
  * @returns The staged identities in the same order.
@@ -285,7 +275,6 @@ function stageResponseIdentities<Domain extends ResponseAdoptionDomain>(
 
 /**
  * Records staged identities as issued.
- *
  * @param ledger - The ledger to write to.
  * @param values - The staged identities.
  * @returns The branded identities in the same order.
@@ -301,7 +290,6 @@ function commitResponseIdentities<Domain extends ResponseAdoptionDomain>(
  * Validates a complete decoded response before adopting any identity from it.
  * Staging every domain first makes a hostile late field fail without trusting
  * the valid identities that preceded it in the response.
- *
  * @param ledger - The ledger to write to.
  * @param batch - The raw identities collected from one response.
  * @returns The branded identities, frozen, in the batch's order.
@@ -330,7 +318,6 @@ function adoptCodexResponseIdentities(
 
 /**
  * Parses an untrusted value as an identity of `domain` that this ledger issued.
- *
  * @param ledger - The ledger to check against.
  * @param domain - The identity domain.
  * @param value - The untrusted value.
@@ -350,7 +337,6 @@ function parseIssued<Domain extends IdentityDomain>(
 /**
  * Parses an untrusted value as an operation identity issued in the current
  * epoch of this ledger.
- *
  * @param ledger - The ledger to check against.
  * @param value - The untrusted value.
  * @returns The branded operation identity.
@@ -365,7 +351,6 @@ function parseOperation(ledger: IdentityLedger, value: unknown): OperationId {
 
 /**
  * Parses an untrusted value as the current child epoch of this ledger.
- *
  * @param ledger - The ledger to check against.
  * @param value - The untrusted value.
  * @returns The branded epoch.
@@ -380,7 +365,6 @@ function parseIssuedEpoch(ledger: IdentityLedger, value: unknown): ChildEpoch {
 /**
  * Resolves a raw Codex id to the identity this ledger already adopted for it,
  * refusing an id that was never adopted.
- *
  * @param ledger - The ledger to check against.
  * @param domain - The identity domain.
  * @param rawValue - The id as the server sent it.
@@ -400,7 +384,6 @@ function resolve<Domain extends "thread" | "item">(
 
 /**
  * Gives back the raw wire value an issued identity stands for.
- *
  * @param ledger - The ledger to read from.
  * @param value - The branded identity.
  * @param domain - Its domain, already checked by the caller.
@@ -422,7 +405,6 @@ function rawValueOf(
 
 /**
  * Serializes a Codex identity back to the string the server knows it by.
- *
  * @param ledger - The ledger to read from.
  * @param value - The branded identity.
  * @returns The server's raw id as a string.
@@ -439,7 +421,6 @@ function serialize(ledger: IdentityLedger, value: CodexIdentity): string {
 /**
  * Serializes a JSON-RPC request identity back to the exact value, string or
  * integer, the server used.
- *
  * @param ledger - The ledger to read from.
  * @param value - The branded request id.
  * @returns The server's raw id.
@@ -458,7 +439,6 @@ function serializeJsonRpc(
 
 /**
  * Builds a wire request correlation for a request id this ledger issued.
- *
  * @param ledger - The ledger to check against.
  * @param input - The request id.
  * @returns The frozen correlation bound to the current child and epoch.
@@ -475,7 +455,6 @@ function createWireRequestCorrelation(
 /**
  * Builds a logical tool-call correlation from identities this ledger issued
  * and bounded text fields.
- *
  * @param ledger - The ledger to check against.
  * @param input - The identities and text of the call.
  * @returns The frozen correlation bound to the current child and epoch.

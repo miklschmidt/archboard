@@ -35,7 +35,6 @@ const DEFAULT_FILL_STYLE = "solid";
 /**
  * Tells whether a hex colour spells a fully transparent alpha: `#rgba` with a
  * trailing `0`, or `#rrggbbaa` with a trailing `00`.
- *
  * @param c - A trimmed, lower-cased colour string.
  * @returns True when the string is a hex colour whose alpha channel is zero.
  */
@@ -49,7 +48,6 @@ function hasZeroHexAlpha(c: string): boolean {
 /**
  * Excalidraw's own test for an interior that is not painted: missing, empty,
  * the word "transparent", or a hex colour with a zero alpha.
- *
  * @param color - The raw `backgroundColor` value of an element, of any type.
  * @returns True when the element's interior would not be painted.
  */
@@ -75,7 +73,6 @@ const KIND_BACKGROUND: Record<string, string> = {
 
 /**
  * Picks the pastel fill that matches a promoted node's kind.
- *
  * @param kind - The architecture node kind, such as `service` or `queue`.
  * @returns The kind's fill, or the neutral default for an unknown kind.
  */
