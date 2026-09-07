@@ -1,27 +1,50 @@
 import type {
 	CoordinatorCallbackDelivery,
 	CoordinatorCallbacks,
-} from "../../../runtime/codex-coordinator-callbacks/index.js";
-import type { CodexRealtimeGeneration } from "../../../runtime/codex-realtime/index.js";
-import type { BrowserVoiceContext } from "../../../shared/codex-browser-model/index.js";
+} from "@/runtime/codex-coordinator-callbacks";
+import type { CodexRealtimeGeneration } from "@/runtime/codex-realtime";
+import type { BrowserVoiceContext } from "@/shared/codex-browser-model";
 
+/**
+ * Whether one delivery was captured under exactly the realtime generation now
+ * running: voice evidence from a previous session is not this session's.
+ * @param delivery The recorded delivery.
+ * @param generation The realtime generation now running.
+ * @returns True when the delivery belongs to it.
+ */
 function sameGeneration(
 	delivery: CoordinatorCallbackDelivery,
 	generation: CodexRealtimeGeneration,
 ): boolean {
 	const captured = delivery.callback?.correlation.realtimeGeneration;
-	return (
-		captured !== null &&
-		captured !== undefined &&
-		captured.childId === generation.child &&
-		captured.epoch === generation.epoch &&
-		captured.coordinatorThreadId === generation.coordinatorThreadId &&
-		captured.wireSessionId === generation.wireSessionId &&
-		captured.browserSessionId === generation.browserSessionId &&
-		captured.browserCorrelationId === generation.browserCorrelationId
-	);
+	if (captured === null || captured === undefined) {
+		return false;
+	}
+	const capturedIdentity = [
+		captured.childId,
+		captured.epoch,
+		captured.coordinatorThreadId,
+		captured.wireSessionId,
+		captured.browserSessionId,
+		captured.browserCorrelationId,
+	];
+	const runningIdentity = [
+		generation.child,
+		generation.epoch,
+		generation.coordinatorThreadId,
+		generation.wireSessionId,
+		generation.browserSessionId,
+		generation.browserCorrelationId,
+	];
+	return capturedIdentity.every((part, index) => part === runningIdentity[index]);
 }
 
+/**
+ * What kind of thing one delivery was, in the vocabulary the browser shows:
+ * an operation's own callback, a semantic change, or the callback's own type.
+ * @param delivery The recorded delivery.
+ * @returns The entry kind.
+ */
 function entryKind(
 	delivery: CoordinatorCallbackDelivery,
 ): BrowserVoiceContext["entries"][number]["kind"] {
@@ -35,6 +58,12 @@ function entryKind(
 	return callback.type;
 }
 
+/**
+ * One recorded delivery as the browser shows it, saying whether it was ever
+ * attempted and what became of it.
+ * @param delivery The recorded delivery.
+ * @returns The entry.
+ */
 function browserEntry(
 	delivery: CoordinatorCallbackDelivery,
 ): BrowserVoiceContext["entries"][number] {
@@ -57,7 +86,12 @@ function browserEntry(
 		: { ...shared, attempted: false, attemptedAtMs: null, outcome: "not_delivered" };
 }
 
-/** Project only evidence captured under the exact active realtime generation. */
+/**
+ * Project only evidence captured under the exact active realtime generation.
+ * @param generation The realtime generation now running, or null for none.
+ * @param callbacks Where the recorded deliveries are read from.
+ * @returns The voice context, or null while no session is running.
+ */
 export function projectCanvasVoiceContext(
 	generation: CodexRealtimeGeneration | null,
 	callbacks: Pick<CoordinatorCallbacks, "inspectHistory">,

@@ -1,4 +1,4 @@
-export { installProductionCodexWorkbench } from "./lib/codex-workbench.js";
-export { createCanvasCodexWorkbenchInstallation } from "./lib/codex-workbench-production.js";
-export type { InstallProductionCodexWorkbenchOptions } from "./lib/codex-workbench.js";
-export type { CanvasCodexWorkbenchHost } from "./lib/codex-workbench-production.js";
+export { installProductionCodexWorkbench } from "@/server/canvas/lib/codex-workbench";
+export { createCanvasCodexWorkbenchInstallation } from "@/server/canvas/lib/codex-workbench-production";
+export type { InstallProductionCodexWorkbenchOptions } from "@/server/canvas/lib/codex-workbench";
+export type { CanvasCodexWorkbenchHost } from "@/server/canvas/lib/codex-workbench-production";
