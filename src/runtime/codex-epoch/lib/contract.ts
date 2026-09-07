@@ -24,6 +24,13 @@ class CodexEpochError extends Error {
 	readonly code: CodexEpochErrorCode;
 	override readonly cause: unknown;
 
+	/**
+	 * Record which epoch refusal this is, so a caller can tell a stale generation from an
+	 * unreadable store.
+	 * @param code - Which refusal this is.
+	 * @param message - What the caller should do about it.
+	 * @param cause - The underlying failure, when one caused this refusal.
+	 */
 	constructor(code: CodexEpochErrorCode, message: string, cause?: unknown) {
 		super(message);
 		this.name = "CodexEpochError";
