@@ -1,330 +1,51 @@
-import { z } from "zod";
-
-import type { AgentElementInput } from "../engine/apply-element-input.js";
-import type { ServerElement } from "../engine/types.js";
-import { readElementMetadata } from "../engine/metadata.js";
+import type { AgentElementInput } from "@/runtime/engine/apply-element-input";
+import type { ServerElement } from "@/runtime/engine/types";
+import { point, type ExactPoint } from "@/runtime/board-inspection/lib/geometry";
 import {
-	decodePath,
-	decodeRecords,
-	persistedConnectorPointChainEligibility,
-	type DecodedRecord,
-} from "./lib/decode.js";
-import { intersectSegments, point, type ExactPoint, type Segment } from "./lib/geometry.js";
+	BridgeMetadataSchema,
+	BridgeRefusal,
+	normalizeBackground,
+	strokeStyleOf,
+	type BridgeMetadata,
+	type PlanBridgeCreateInput,
+	type StrokeStyle,
+} from "@/runtime/board-inspection/lib/bridge-contract";
 import {
-	INSPECTION_FIELDS,
-	type SnapshotField,
-	type SnapshotRecord,
-} from "./lib/input-snapshot.js";
-import { compareIdentity } from "./lib/ordering.js";
-import { type BridgeIncompleteIssue, type BridgeStaleIssue } from "./schemas.js";
+	bridgeLine,
+	crossingCandidates,
+	supportedConnector,
+	type CrossingCandidate,
+} from "@/runtime/board-inspection/lib/bridge-parts";
+import { staleIssue, structuralPairs } from "@/runtime/board-inspection/lib/bridge-staleness";
+import type {
+	InvalidBridgeDecoration,
+	ValidBridgeDecoration,
+} from "@/runtime/board-inspection/lib/bridge-contract";
 
-export { BridgeIncompleteIssueSchema, BridgeStaleIssueSchema } from "./schemas.js";
+export {
+	BridgeIncompleteIssueSchema,
+	BridgeStaleIssueSchema,
+} from "@/runtime/board-inspection/schemas";
 
-const finite = z.number().finite();
-const hexColour = z
-	.string()
-	.regex(/^#[0-9a-f]{6}$/, "Bridge background must be an opaque #RRGGBB colour.");
+export {
+	BridgeMetadataSchema,
+	BridgeRefusal,
+	BridgeRoleSchema,
+	type BridgeMetadata,
+	type BridgePart,
+	type InvalidBridgeDecoration,
+	type PlanBridgeCreateInput,
+	type ValidBridgeDecoration,
+} from "@/runtime/board-inspection/lib/bridge-contract";
 
-export const BridgeRoleSchema = z.enum(["mask", "redraw"]);
-export const BridgeMetadataSchema = z.strictObject({
-	bridgeId: z.string().min(1),
-	role: BridgeRoleSchema,
-	overConnectorId: z.string().min(1),
-	underConnectorId: z.string().min(1),
-	overSegmentIndex: z.number().int().nonnegative(),
-	underSegmentIndex: z.number().int().nonnegative(),
-	crossing: z.strictObject({ x: finite, y: finite }),
-	background: hexColour,
-});
-export type BridgeMetadata = z.infer<typeof BridgeMetadataSchema>;
+export { bridgeMetadataOf, hasBridgeMarker } from "@/runtime/board-inspection/lib/bridge-parts";
 
-export interface BridgePart {
-	readonly element: ServerElement;
-	readonly metadata: BridgeMetadata;
-}
-
-export interface ValidBridgeDecoration {
-	readonly bridgeId: string;
-	readonly mask: BridgePart;
-	readonly redraw: BridgePart;
-}
-
-export type InvalidBridgeDecoration =
-	| {
-			readonly bridgeId: string | null;
-			readonly reason: "incomplete-decoration";
-			readonly issue: BridgeIncompleteIssue;
-			readonly elements: readonly ServerElement[];
-	  }
-	| {
-			readonly bridgeId: string;
-			readonly reason: "stale-decoration";
-			readonly issue: BridgeStaleIssue;
-			readonly elements: readonly ServerElement[];
-	  };
-
-export class BridgeRefusal extends Error {
-	readonly code = "BRIDGE_REFUSED";
-
-	constructor(message: string) {
-		super(message);
-		this.name = "BridgeRefusal";
-	}
-}
-
-const own = (value: object, key: PropertyKey): boolean =>
-	Object.prototype.hasOwnProperty.call(value, key);
-
-function bridgeCandidate(element: ServerElement): { present: boolean; value?: unknown } {
-	const custom = element.customData;
-	if (!custom || typeof custom !== "object" || Array.isArray(custom)) {
-		return { present: false };
-	}
-	const archboard = custom.archboard;
-	if (!archboard || typeof archboard !== "object" || Array.isArray(archboard)) {
-		return { present: false };
-	}
-	return own(archboard, "bridge")
-		? { present: true, value: (archboard as Record<string, unknown>)["bridge"] }
-		: { present: false };
-}
-
-export function hasBridgeMarker(element: ServerElement): boolean {
-	return bridgeCandidate(element).present;
-}
-
-export function bridgeMetadataOf(element: ServerElement): BridgeMetadata | null {
-	const candidate = bridgeCandidate(element);
-	if (!candidate.present) {
-		return null;
-	}
-	const parsed = BridgeMetadataSchema.safeParse(candidate.value);
-	return parsed.success ? parsed.data : null;
-}
-
-const supportedAngle = (value: unknown): boolean => value === undefined || value === 0;
-
-function supportedConnector(
-	element: ServerElement,
-	sourceIndex: number,
-): {
-	record: DecodedRecord;
-	segments: Segment[];
-} | null {
-	const dynamic = element as unknown as Record<string, unknown>;
-	if (
-		(element.type !== "arrow" && element.type !== "line") ||
-		element.isDeleted ||
-		!supportedAngle(element.angle) ||
-		dynamic["curve"] !== undefined ||
-		dynamic["curveKind"] !== undefined
-	) {
-		return null;
-	}
-	const [record] = decodeRecords([element as unknown as SnapshotRecord]);
-	if (!record?.live || !record.usableId) {
-		return null;
-	}
-	const decoded = decodePath(record);
-	if (!decoded.ok || !decoded.scenePoints || decoded.zeroSegments.length > 0) {
-		return null;
-	}
-	if (!persistedConnectorPointChainEligibility(record, decoded).eligible) {
-		return null;
-	}
-	const segments = decoded.scenePoints.slice(0, -1).map((a, index) => ({
-		connectorId: element.id,
-		sourceIndex,
-		index,
-		a,
-		b: decoded.scenePoints![index + 1]!,
-	}));
-	return { record, segments };
-}
-
-const StrokeStyleSchema = z.strictObject({
-	strokeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-	strokeWidth: finite.positive(),
-	strokeStyle: z.enum(["solid", "dashed", "dotted"]),
-	roughness: finite.min(0).max(2),
-	opacity: finite.positive().max(100),
-});
-type StrokeStyle = z.infer<typeof StrokeStyleSchema>;
-
-function strokeStyleOf(element: ServerElement): StrokeStyle | null {
-	const parsed = StrokeStyleSchema.safeParse({
-		strokeColor: element.strokeColor ?? "#1e1e1e",
-		strokeWidth: element.strokeWidth ?? 2,
-		strokeStyle: element.strokeStyle ?? "solid",
-		roughness: element.roughness ?? 1,
-		opacity: element.opacity ?? 100,
-	});
-	return parsed.success ? parsed.data : null;
-}
-
-function normalizeBackground(value: string): string {
-	const normalized = value.toLowerCase();
-	if (!/^#[0-9a-f]{6}$/.test(normalized)) {
-		throw new BridgeRefusal("--background must be an opaque six-digit #RRGGBB colour.");
-	}
-	return normalized;
-}
-
-const samePoint = (a: ExactPoint, b: ExactPoint): boolean =>
-	point(a).x === b.x && point(a).y === b.y;
-
-const sameFacts = (a: BridgeMetadata, b: BridgeMetadata): boolean =>
-	a.bridgeId === b.bridgeId &&
-	a.overConnectorId === b.overConnectorId &&
-	a.underConnectorId === b.underConnectorId &&
-	a.overSegmentIndex === b.overSegmentIndex &&
-	a.underSegmentIndex === b.underSegmentIndex &&
-	a.crossing.x === b.crossing.x &&
-	a.crossing.y === b.crossing.y &&
-	a.background === b.background;
-
-function canonicalBridgeLine(
-	partId: string,
-	expectedInput: Record<string, unknown>,
-): Record<string, unknown> {
-	const points = expectedInput["points"] as [[number, number], [number, number]];
-	return {
-		...expectedInput,
-		id: partId,
-		width: Math.abs(points[1][0] - points[0][0]),
-		height: Math.abs(points[1][1] - points[0][1]),
-	};
-}
-
-// These are written by the server or converter rather than bridgeLine. They do
-// not change the generated decoration's semantic projection.
-const BRIDGE_VOLATILE_FIELDS = new Set<SnapshotField>(["index", "createdAt", "source"]);
-
-function lineMatches(part: ServerElement, expectedInput: Record<string, unknown>): boolean {
-	const actual = part as unknown as Record<string, unknown>;
-	const expected = canonicalBridgeLine(part.id, expectedInput);
-	for (const [key, value] of Object.entries(expected)) {
-		if (key === "customData") {
-			const expectedCustomData = value as { archboard: { bridge: BridgeMetadata } };
-			const actualArchboard = readElementMetadata(part).archboard;
-			if (
-				!actualArchboard ||
-				Object.keys(actualArchboard).length !== 1 ||
-				!own(actualArchboard, "bridge")
-			) {
-				return false;
-			}
-			const actualBridge = BridgeMetadataSchema.safeParse(
-				(actualArchboard as Record<string, unknown>)["bridge"],
-			);
-			if (
-				!actualBridge.success ||
-				JSON.stringify(actualBridge.data) !== JSON.stringify(expectedCustomData.archboard.bridge)
-			) {
-				return false;
-			}
-			continue;
-		}
-		if (JSON.stringify(actual[key]) !== JSON.stringify(value)) {
-			return false;
-		}
-	}
-	for (const field of INSPECTION_FIELDS) {
-		if (
-			!own(expected, field) &&
-			!BRIDGE_VOLATILE_FIELDS.has(field) &&
-			actual[field] !== undefined
-		) {
-			return false;
-		}
-	}
-	return true;
-}
-
-const bridgeBlock = (metadata: BridgeMetadata) => ({ archboard: { bridge: metadata } });
-
-function bridgeLine(
-	metadata: BridgeMetadata,
-	a: ExactPoint,
-	b: ExactPoint,
-	style: StrokeStyle,
-	mask: boolean,
-): AgentElementInput {
-	return {
-		...(mask ? { id: metadata.bridgeId } : {}),
-		type: "line",
-		x: a.x,
-		y: a.y,
-		points: [
-			[0, 0],
-			[b.x - a.x, b.y - a.y],
-		],
-		angle: 0,
-		strokeColor: mask ? metadata.background : style.strokeColor,
-		backgroundColor: "transparent",
-		fillStyle: "solid",
-		strokeWidth: mask ? style.strokeWidth + 4 : style.strokeWidth,
-		strokeStyle: mask ? "solid" : style.strokeStyle,
-		roughness: mask ? 0 : style.roughness,
-		opacity: mask ? 100 : style.opacity,
-		groupIds: [],
-		frameId: null,
-		roundness: null,
-		isDeleted: false,
-		boundElements: null,
-		link: null,
-		locked: false,
-		lastCommittedPoint: null,
-		startBinding: null,
-		endBinding: null,
-		startArrowhead: null,
-		endArrowhead: null,
-		customData: bridgeBlock(metadata),
-	} satisfies AgentElementInput;
-}
-
-interface CrossingCandidate {
-	over: Segment;
-	under: Segment;
-	point: ExactPoint;
-}
-
-function crossingCandidates(
-	over: readonly Segment[],
-	under: readonly Segment[],
-): CrossingCandidate[] {
-	const candidates: CrossingCandidate[] = [];
-	for (const overSegment of over) {
-		for (const underSegment of under) {
-			const hit = intersectSegments(
-				overSegment.a,
-				overSegment.b,
-				underSegment.a,
-				underSegment.b,
-				0.5,
-			);
-			if (hit.kind === "proper") {
-				candidates.push({ over: overSegment, under: underSegment, point: hit.point });
-			}
-		}
-	}
-	return candidates.toSorted(
-		(a, b) =>
-			a.over.index - b.over.index ||
-			a.under.index - b.under.index ||
-			point(a.point).x - point(b.point).x ||
-			point(a.point).y - point(b.point).y,
-	);
-}
-
-export interface PlanBridgeCreateInput {
-	readonly elements: readonly ServerElement[];
-	readonly bridgeId: string;
-	readonly overConnectorId: string;
-	readonly underConnectorId: string;
-	readonly background: string;
-	readonly at?: ExactPoint;
-}
+/** The smallest over-segment a bridge can be drawn on without touching its ends. */
+const MINIMUM_SEGMENT_LENGTH = 16;
+/** The smallest half-span a bridge spans, before the stroke width widens it. */
+const MINIMUM_HALF_SPAN = 6;
+/** How near an --at point must be to a crossing to select it. */
+const AT_TOLERANCE = 0.5;
 
 export interface BridgeCreatePlan {
 	readonly bridgeId: string;
@@ -336,13 +57,17 @@ export interface BridgeCreatePlan {
 	readonly inputs: readonly [AgentElementInput, AgentElementInput];
 }
 
-export function planBridgeCreate(input: PlanBridgeCreateInput): BridgeCreatePlan {
-	if (!input.bridgeId) {
-		throw new BridgeRefusal("A bridge ID is required.");
-	}
-	if (input.overConnectorId === input.underConnectorId) {
-		throw new BridgeRefusal("--over and --under must name distinct connectors.");
-	}
+/**
+ * Resolve the two connectors a bridge is asked for, refusing anything a bridge cannot be
+ * drawn against.
+ * @param input the caller's request
+ * @returns the two elements with their segments and the over-connector's stroke
+ */
+function planSources(input: PlanBridgeCreateInput): {
+	over: NonNullable<ReturnType<typeof supportedConnector>>;
+	under: NonNullable<ReturnType<typeof supportedConnector>>;
+	style: StrokeStyle;
+} {
 	const byId = new Map(input.elements.map((element) => [element.id, element]));
 	const overElement = byId.get(input.overConnectorId);
 	const underElement = byId.get(input.underConnectorId);
@@ -363,40 +88,87 @@ export function planBridgeCreate(input: PlanBridgeCreateInput): BridgeCreatePlan
 	if (!style) {
 		throw new BridgeRefusal("The over-connector has an unusable stroke style.");
 	}
-	const candidates = crossingCandidates(over.segments, under.segments);
+	return { over, under, style };
+}
+
+/**
+ * Choose the one crossing a bridge is drawn at, refusing an ambiguous board rather than
+ * guessing which crossing the caller meant.
+ * @param candidates every proper crossing of the two connectors
+ * @param at the point the caller named, when they named one
+ * @returns the selected crossing
+ */
+function selectCrossing(
+	candidates: readonly CrossingCandidate[],
+	at: ExactPoint | undefined,
+): CrossingCandidate {
 	if (candidates.length === 0) {
 		throw new BridgeRefusal("The named connectors have no proper interior intersection.");
 	}
-	const matches = input.at
-		? candidates.filter(
-				(candidate) =>
-					Math.hypot(candidate.point.x - input.at!.x, candidate.point.y - input.at!.y) <= 0.5,
-			)
-		: candidates;
+	const matches =
+		at === undefined
+			? candidates
+			: candidates.filter(
+					(candidate) =>
+						Math.hypot(candidate.point.x - at.x, candidate.point.y - at.y) <= AT_TOLERANCE,
+				);
 	if (matches.length !== 1) {
 		throw new BridgeRefusal(
-			input.at
+			at
 				? "--at must identify exactly one proper intersection within 0.5 px."
 				: "The connectors cross more than once; provide --at x,y to select one.",
 		);
 	}
-	const selected = matches[0]!;
+	return matches[0]!;
+}
+
+/**
+ * The two ends of the span a bridge covers: half a span either side of the crossing, along
+ * the over-segment, with enough segment left on both sides for the bridge to sit inside it.
+ * @param selected the selected crossing
+ * @param style the over-connector's stroke
+ * @returns the two ends of the span
+ */
+function bridgeSpan(
+	selected: CrossingCandidate,
+	style: StrokeStyle,
+): { a: ExactPoint; b: ExactPoint } {
 	const dx = selected.over.b.x - selected.over.a.x;
 	const dy = selected.over.b.y - selected.over.a.y;
 	const length = Math.hypot(dx, dy);
-	if (!Number.isFinite(length) || length < 16) {
+	if (!Number.isFinite(length) || length < MINIMUM_SEGMENT_LENGTH) {
 		throw new BridgeRefusal("The selected over-segment is too short for a bridge.");
 	}
 	const ux = dx / length;
 	const uy = dy / length;
 	const along =
 		(selected.point.x - selected.over.a.x) * ux + (selected.point.y - selected.over.a.y) * uy;
-	const halfSpan = Math.max(6, style.strokeWidth * 2 + 2);
+	const halfSpan = Math.max(MINIMUM_HALF_SPAN, style.strokeWidth * 2 + 2);
 	if (along < halfSpan || length - along < halfSpan) {
 		throw new BridgeRefusal("The selected crossing lacks enough over-segment span for a bridge.");
 	}
-	const a = { x: selected.point.x - ux * halfSpan, y: selected.point.y - uy * halfSpan };
-	const b = { x: selected.point.x + ux * halfSpan, y: selected.point.y + uy * halfSpan };
+	return {
+		a: { x: selected.point.x - ux * halfSpan, y: selected.point.y - uy * halfSpan },
+		b: { x: selected.point.x + ux * halfSpan, y: selected.point.y + uy * halfSpan },
+	};
+}
+
+/**
+ * Plan the two lines that draw one bridge: a mask that hides the crossing and a redraw that
+ * puts the over-connector back on top of it.
+ * @param input the connectors to bridge, the background to mask with, and any chosen crossing
+ * @returns the plan, naming what it bridges and the two inputs to create
+ */
+export function planBridgeCreate(input: PlanBridgeCreateInput): BridgeCreatePlan {
+	if (!input.bridgeId) {
+		throw new BridgeRefusal("A bridge ID is required.");
+	}
+	if (input.overConnectorId === input.underConnectorId) {
+		throw new BridgeRefusal("--over and --under must name distinct connectors.");
+	}
+	const { over, under, style } = planSources(input);
+	const selected = selectCrossing(crossingCandidates(over.segments, under.segments), input.at);
+	const { a, b } = bridgeSpan(selected, style);
 	const shared = {
 		bridgeId: input.bridgeId,
 		overConnectorId: input.overConnectorId,
@@ -419,138 +191,19 @@ export function planBridgeCreate(input: PlanBridgeCreateInput): BridgeCreatePlan
 	};
 }
 
-function structuralPairs(elements: readonly ServerElement[]): {
-	valid: ValidBridgeDecoration[];
-	invalid: InvalidBridgeDecoration[];
-} {
-	const invalid: InvalidBridgeDecoration[] = [];
-	const grouped = new Map<string, BridgePart[]>();
-	for (const element of elements) {
-		const marker = bridgeCandidate(element);
-		if (!marker.present) {
-			continue;
-		}
-		const parsed = BridgeMetadataSchema.safeParse(marker.value);
-		if (!parsed.success) {
-			const partial =
-				marker.value && typeof marker.value === "object" && !Array.isArray(marker.value)
-					? (marker.value as Record<string, unknown>)
-					: null;
-			invalid.push({
-				bridgeId:
-					typeof partial?.["bridgeId"] === "string" && partial["bridgeId"].length > 0
-						? partial["bridgeId"]
-						: null,
-				reason: "incomplete-decoration",
-				issue: "malformed-metadata",
-				elements: [element],
-			});
-			continue;
-		}
-		const group = grouped.get(parsed.data.bridgeId) ?? [];
-		group.push({ element, metadata: parsed.data });
-		grouped.set(parsed.data.bridgeId, group);
-	}
-	const valid: ValidBridgeDecoration[] = [];
-	for (const [bridgeId, parts] of grouped) {
-		const masks = parts.filter((part) => part.metadata.role === "mask");
-		const redraws = parts.filter((part) => part.metadata.role === "redraw");
-		let issue: BridgeIncompleteIssue | null = null;
-		if (parts.some((part) => part.element.type !== "line")) {
-			issue = "non-line-part";
-		} else if (
-			parts.some(
-				(part) =>
-					part.element.isDeleted ||
-					typeof part.element.id !== "string" ||
-					part.element.id.length === 0,
-			)
-		) {
-			issue = "malformed-metadata";
-		} else if (masks.length === 0) {
-			issue = "missing-mask";
-		} else if (redraws.length === 0) {
-			issue = "missing-redraw";
-		} else if (masks.length > 1) {
-			issue = "duplicate-mask";
-		} else if (redraws.length > 1) {
-			issue = "duplicate-redraw";
-		} else if (masks[0]!.element.id !== bridgeId) {
-			issue = "mask-id-mismatch";
-		} else if (masks[0]!.element.id === redraws[0]!.element.id) {
-			issue = "conflicting-facts";
-		} else if (!sameFacts(masks[0]!.metadata, redraws[0]!.metadata)) {
-			issue = "conflicting-facts";
-		}
-		if (issue) {
-			invalid.push({
-				bridgeId,
-				reason: "incomplete-decoration",
-				issue,
-				elements: parts.map((part) => part.element),
-			});
-		} else {
-			valid.push({ bridgeId, mask: masks[0]!, redraw: redraws[0]! });
-		}
-	}
-	return { valid: valid.toSorted((a, b) => compareIdentity(a.bridgeId, b.bridgeId)), invalid };
-}
-
-function staleIssue(
-	pair: ValidBridgeDecoration,
+/**
+ * Re-plan a decoration from the facts it records, so a stale check can compare the board with
+ * what a bridge for those facts would look like now.
+ * @param facts the decoration's metadata
+ * @param elements the board's elements
+ * @returns the plan, or null when those facts no longer plan a bridge at all
+ */
+function replanFrom(
+	facts: BridgeMetadata,
 	elements: readonly ServerElement[],
-): BridgeStaleIssue | null {
-	for (const part of [pair.mask.element, pair.redraw.element]) {
-		if (
-			(part.groupIds?.length ?? 0) !== 0 ||
-			((part.type === "arrow" || part.type === "line") &&
-				(part.startBinding != null || part.endBinding != null))
-		) {
-			return "geometry-mismatch";
-		}
-	}
-	const byId = new Map(elements.map((element) => [element.id, element]));
-	const facts = pair.mask.metadata;
-	const occurrences = (id: string) => elements.filter((element) => element.id === id);
-	const overMatches = occurrences(facts.overConnectorId);
-	const underMatches = occurrences(facts.underConnectorId);
-	if (overMatches.length === 0 || underMatches.length === 0) {
-		return "missing-source";
-	}
-	if (
-		overMatches.length !== 1 ||
-		underMatches.length !== 1 ||
-		occurrences(pair.mask.element.id).length !== 1 ||
-		occurrences(pair.redraw.element.id).length !== 1
-	) {
-		return "unsupported-source";
-	}
-	const overElement = byId.get(facts.overConnectorId);
-	const underElement = byId.get(facts.underConnectorId);
-	if (!overElement || !underElement) {
-		return "missing-source";
-	}
-	const over = supportedConnector(overElement, elements.indexOf(overElement));
-	const under = supportedConnector(underElement, elements.indexOf(underElement));
-	if (!over || !under) {
-		return "unsupported-source";
-	}
-	const overSegment = over.segments[facts.overSegmentIndex];
-	const underSegment = under.segments[facts.underSegmentIndex];
-	if (!overSegment || !underSegment) {
-		return "crossing-moved";
-	}
-	const hit = intersectSegments(overSegment.a, overSegment.b, underSegment.a, underSegment.b, 0.5);
-	if (hit.kind !== "proper" || !samePoint(hit.point, facts.crossing)) {
-		return "crossing-moved";
-	}
-	const style = strokeStyleOf(overElement);
-	if (!style) {
-		return "unsupported-source";
-	}
-	let expected: BridgeCreatePlan;
+): { readonly inputs: readonly [AgentElementInput, AgentElementInput] } | null {
 	try {
-		expected = planBridgeCreate({
+		return planBridgeCreate({
 			elements,
 			bridgeId: facts.bridgeId,
 			overConnectorId: facts.overConnectorId,
@@ -559,51 +212,16 @@ function staleIssue(
 			at: facts.crossing,
 		});
 	} catch {
-		return "crossing-moved";
+		return null;
 	}
-	if (!lineMatches(pair.redraw.element, expected.inputs[1])) {
-		return "style-mismatch";
-	}
-	if (!lineMatches(pair.mask.element, expected.inputs[0])) {
-		return "geometry-mismatch";
-	}
-	const liveOrder = elements
-		.map((element, position) => ({ element, position }))
-		.filter(({ element }) => !element.isDeleted)
-		.toSorted(
-			(a, b) =>
-				(typeof a.element.index === "string" && typeof b.element.index === "string"
-					? compareIdentity(a.element.index, b.element.index)
-					: 0) || a.position - b.position,
-		);
-	const maskPosition = liveOrder.findIndex(({ element }) => element === pair.mask.element);
-	const redrawPosition = liveOrder.findIndex(({ element }) => element === pair.redraw.element);
-	const overPosition = liveOrder.findIndex(({ element }) => element === overElement);
-	const underPosition = liveOrder.findIndex(({ element }) => element === underElement);
-	const duplicatePartIndex = liveOrder.some(
-		({ element }) =>
-			element !== pair.mask.element &&
-			element !== pair.redraw.element &&
-			(element.index === pair.mask.element.index || element.index === pair.redraw.element.index),
-	);
-	if (
-		typeof pair.mask.element.index !== "string" ||
-		typeof pair.redraw.element.index !== "string" ||
-		typeof overElement.index !== "string" ||
-		typeof underElement.index !== "string" ||
-		overPosition < 0 ||
-		underPosition < 0 ||
-		duplicatePartIndex ||
-		compareIdentity(pair.mask.element.index, pair.redraw.element.index) >= 0 ||
-		maskPosition <= overPosition ||
-		maskPosition <= underPosition ||
-		redrawPosition !== maskPosition + 1
-	) {
-		return "z-order-invalid";
-	}
-	return null;
 }
 
+/**
+ * Validate every bridge decoration on a board: which ones are complete and still describe the
+ * board, and which ones are incomplete or stale.
+ * @param elements the board's elements
+ * @returns the valid decorations and the invalid ones with their reasons
+ */
 export function validateBridgeDecorations(elements: readonly ServerElement[]): {
 	readonly valid: readonly ValidBridgeDecoration[];
 	readonly invalid: readonly InvalidBridgeDecoration[];
@@ -615,21 +233,28 @@ export function validateBridgeDecorations(elements: readonly ServerElement[]): {
 		if (invalid.some((candidate) => candidate.bridgeId === pair.bridgeId)) {
 			continue;
 		}
-		const issue = staleIssue(pair, elements);
-		if (issue) {
-			invalid.push({
-				bridgeId: pair.bridgeId,
-				reason: "stale-decoration",
-				issue,
-				elements: [pair.mask.element, pair.redraw.element],
-			});
-		} else {
+		const issue = staleIssue(pair, elements, replanFrom);
+		if (issue === null) {
 			valid.push(pair);
+			continue;
 		}
+		invalid.push({
+			bridgeId: pair.bridgeId,
+			reason: "stale-decoration",
+			issue,
+			elements: [pair.mask.element, pair.redraw.element],
+		});
 	}
 	return { valid, invalid };
 }
 
+/**
+ * Whether an element is half of a bridge decoration that is currently valid, which is what
+ * keeps it out of the semantic projection.
+ * @param element the element
+ * @param elements the board's elements
+ * @returns true when the element is part of a valid decoration
+ */
 export function isBridgeDecoration(
 	element: ServerElement,
 	elements: readonly ServerElement[],
@@ -639,6 +264,12 @@ export function isBridgeDecoration(
 	);
 }
 
+/**
+ * The board without the elements that are valid bridge decorations, which is the board the
+ * semantic layers read.
+ * @param elements the board's elements
+ * @returns the remaining elements, in board order
+ */
 export function withoutValidBridgeDecorations(elements: readonly ServerElement[]): ServerElement[] {
 	const ids = new Set(
 		validateBridgeDecorations(elements).valid.flatMap((pair) => [
@@ -649,6 +280,13 @@ export function withoutValidBridgeDecorations(elements: readonly ServerElement[]
 	return elements.filter((element) => !ids.has(element.id));
 }
 
+/**
+ * The two elements that removing one bridge deletes, refusing a bridge whose decoration is
+ * not exactly one complete pair.
+ * @param elements the board's elements
+ * @param bridgeId the bridge to remove
+ * @returns the mask and redraw element ids
+ */
 export function planBridgeRemoval(
 	elements: readonly ServerElement[],
 	bridgeId: string,

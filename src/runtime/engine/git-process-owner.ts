@@ -14,6 +14,11 @@ const started = new Promise<void>((resolve) => {
 	startCommand = resolve;
 });
 
+/**
+ * React to the parent's IPC commands: `start` releases the command, `release`
+ * lets this owner exit once its parent has inspected the process group.
+ * @param message Whatever arrived on the IPC channel.
+ */
 const onMessage = (message: unknown): void => {
 	if (typeof message === "object" && message !== null && "kind" in message) {
 		if (message.kind === "start") {
@@ -26,12 +31,15 @@ const onMessage = (message: unknown): void => {
 };
 process.on("message", onMessage);
 
+/**
+ * Send the command's outcome to the parent over IPC.
+ * @param result The exit status, signal or spawn failure.
+ */
 function report(result: GitOwnerResult): void {
-	const send = process.send;
-	if (!send) {
+	if (!process.send) {
 		throw new Error("Git process owner requires its Bun IPC channel.");
 	}
-	send(result);
+	process.send(result);
 }
 
 const command = process.argv.slice(2);
@@ -59,10 +67,9 @@ try {
 report(result);
 await released;
 process.off("message", onMessage);
-const disconnect = process.disconnect;
 if (process.connected) {
-	if (!disconnect) {
+	if (!process.disconnect) {
 		throw new Error("Git process owner cannot close its Bun IPC channel.");
 	}
-	disconnect.call(process);
+	process.disconnect();
 }

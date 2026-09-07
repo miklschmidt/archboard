@@ -5,12 +5,15 @@ import type {
 	RealtimeState,
 	RealtimeTranscriptRecord,
 	RealtimeTranscriptRole,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "@/shared/codex-realtime-host";
 import type {
 	ItemId,
 	RealtimeSessionId as WireRealtimeSessionId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { CodexRealtimeBinding, CodexRealtimeGeneration } from "./contract.js";
+} from "@/shared/codex-workbench-identity";
+import type {
+	CodexRealtimeBinding,
+	CodexRealtimeGeneration,
+} from "@/runtime/codex-realtime/lib/contract";
 
 interface RealtimeTranscriptEntry {
 	readonly itemId: ItemId;
@@ -26,6 +29,7 @@ interface ActiveRealtimeSession {
 	readonly correlationId: RealtimeCorrelationId;
 	readonly wireSessionId: WireRealtimeSessionId;
 	readonly semanticBrief: string;
+	readonly boardCatalogue: string;
 	readonly answer: Promise<AnswerSdp>;
 	readonly resolveAnswer: (answer: AnswerSdp) => void;
 	readonly rejectAnswer: (error: Error) => void;
@@ -39,6 +43,12 @@ interface ActiveRealtimeSession {
 	stopCatalogueUpdates: (() => void) | null;
 }
 
+/**
+ * The frozen identity of one realtime start, everything a later delivery must match to be
+ * counted as belonging to this session.
+ * @param session - The live session.
+ * @returns The session's generation record.
+ */
 function realtimeGeneration(session: ActiveRealtimeSession): CodexRealtimeGeneration {
 	return Object.freeze({
 		...session.binding,

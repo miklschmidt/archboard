@@ -14,8 +14,8 @@ process.env["NO_COLOR"] = "1";
 
 const argv = process.argv.slice(2);
 // Must run before importing anything that reads runtime configuration.
-const { applyCliBootstrap } = await import("./cli/command-contract/bootstrap.js");
+const { applyCliBootstrap } = await import("@/cli/command-contract/bootstrap");
 applyCliBootstrap(argv);
 
-const { runCli } = await import("./cli/commands/run.js");
+const { runCli } = await import("@/cli/commands/run");
 await runCli(argv);

@@ -1,5 +1,5 @@
-export { createCanvasCodexWorkbenchApplication } from "./lib/codex-workbench-application.js";
+export { createCanvasCodexWorkbenchApplication } from "@/server/canvas/lib/codex-workbench-application";
 export type {
 	CanvasCodexWorkbenchApplicationOptions,
 	CanvasCodexWorkbenchModule,
-} from "./lib/codex-workbench-application.js";
+} from "@/server/canvas/lib/codex-workbench-application";

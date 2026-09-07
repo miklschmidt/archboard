@@ -1,26 +1,13 @@
-import { CodexEpochError, type EpochExecutionRequest } from "../../codex-epoch/index.js";
-import { CodexSessionMutationError, type SessionParams } from "../../codex-session/index.js";
+import { CodexSessionMutationError, type SessionParams } from "@/runtime/codex-session";
 import {
 	createThreadInjectItemsParams,
-	type ArchboardContext,
 	type ThreadInjectItemsParams,
-} from "../../codex-instructions/index.js";
+} from "@/runtime/codex-instructions";
+import type { SettledSemanticChangeEvent } from "@/runtime/codex-semantic-context";
 import type {
-	SemanticCursor,
-	SettledSemanticChangeEvent,
-} from "../../codex-semantic-context/index.js";
-import type {
-	ThreadLink,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkClassification,
-	ThreadLinkSnapshot,
-} from "../../codex-thread-link/index.js";
-import { CodexThreadLinkError, type ThreadLinkReasonCode } from "../../codex-thread-link/index.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-thread-link";
 import type {
 	CodexThreadContextDelivery,
 	CodexThreadContextDeliveryOptions,
@@ -28,435 +15,84 @@ import type {
 	CodexThreadContextDeliveryReason,
 	CodexThreadContextDeliveryState,
 	CodexThreadContextEventId,
-	CodexThreadContextExecution,
-} from "./contract.js";
+} from "@/runtime/codex-thread-context/lib/contract";
+import { contextMatchesEvent } from "@/runtime/codex-thread-context/lib/context-match";
+import {
+	afterAttemptReason,
+	finalReason,
+} from "@/runtime/codex-thread-context/lib/delivery-guards";
+import type { DeliveryState } from "@/runtime/codex-thread-context/lib/delivery-state";
+import {
+	canonicalSemanticCursorToken,
+	eventId,
+	eventKey,
+} from "@/runtime/codex-thread-context/lib/event-identity";
+import {
+	classificationErrorReason,
+	eventReason,
+	executionReason,
+	generationReason,
+	readExecution,
+	targetLinkReason,
+} from "@/runtime/codex-thread-context/lib/refusal-reasons";
 
-interface DeliveryTarget {
-	readonly threadId: ThreadId;
-	readonly childId: ChildId;
-	readonly epoch: ChildEpoch;
-	readonly operationId: string;
-}
+type Reason = CodexThreadContextDeliveryReason;
+type Outcome = CodexThreadContextDeliveryOutcome;
+type Options = CodexThreadContextDeliveryOptions;
 
-interface DeliveryState {
-	readonly event: SettledSemanticChangeEvent;
-	readonly id: CodexThreadContextEventId;
+/** One delivery phase either yields its value or names why delivery stops. */
+type Step<Value> =
+	| { readonly ok: true; readonly value: Value }
+	| { readonly ok: false; readonly reason: Reason };
+
+/** What the synchronous preparation captured before any authority read. */
+interface PreparedDelivery {
 	readonly initialBinding: ThreadLinkBindingSnapshot;
 	readonly payload: ThreadInjectItemsParams;
 }
 
-/** The opaque board cursor carried by the canonical context for one feed event. */
-function canonicalSemanticCursorToken(cursor: SemanticCursor): string {
-	return `${cursor.feedId}:${cursor.sequence}`;
+/** How the single injection attempt ended. */
+interface AttemptResult {
+	readonly state: CodexThreadContextDeliveryState;
+	readonly reason: Reason;
 }
 
-const keyFor = (event: CodexThreadContextEventId): string =>
-	JSON.stringify([event.feedId, event.sequence]);
-
-function eventId(event: SettledSemanticChangeEvent): CodexThreadContextEventId {
-	return Object.freeze({ feedId: event.feedId, sequence: event.cursor?.sequence ?? -1 });
+/**
+ * Wraps a phase value as a successful step.
+ * @param value - The phase's result.
+ * @returns The successful step.
+ */
+function stepValue<Value>(value: Value): Step<Value> {
+	return { ok: true, value };
 }
 
-function generationReason(
-	childId: ChildId,
-	epoch: ChildEpoch,
-	target: DeliveryTarget,
-): CodexThreadContextDeliveryReason | null {
-	if (childId !== target.childId) {
-		return "stale_child";
-	}
-	if (epoch !== target.epoch) {
-		return "prior_epoch";
-	}
-	return null;
+/**
+ * Wraps a refusal reason as a failed step.
+ * @param reason - Why delivery stops here.
+ * @returns The failed step.
+ */
+function stepFailure<Value>(reason: Reason): Step<Value> {
+	return { ok: false, reason };
 }
 
-function epochErrorReason(error: unknown): CodexThreadContextDeliveryReason {
-	if (error instanceof CodexEpochError) {
-		if (error.code === "stale_child") {
-			return "stale_child";
-		}
-		if (error.code === "prior_epoch") {
-			return "prior_epoch";
-		}
-		if (error.code === "unknown_provenance") {
-			return "unknown_provenance";
-		}
-	}
-	return "thread_revalidation_failed";
-}
-
-function linkReason(link: ThreadLinkSnapshot): CodexThreadContextDeliveryReason {
-	return link.state === "unbound" ? "unbound" : (link.reason ?? "unknown_provenance");
-}
-
-function sameSource(left: ThreadLink["source"], right: ThreadLink["source"]): boolean {
-	if (typeof left === "string" || typeof right === "string") {
-		return left === right;
-	}
-	return JSON.stringify(left) === JSON.stringify(right);
-}
-
-function sameLink(left: ThreadLinkSnapshot, right: ThreadLinkSnapshot): boolean {
-	if (left.state !== right.state) {
-		return false;
-	}
-	if (left.state === "unbound" || right.state === "unbound") {
-		return true;
-	}
-	if (left.threadId !== right.threadId) {
-		return false;
-	}
-	if (left.source === null || right.source === null) {
-		return left.source === right.source;
-	}
-	if (!sameSource(left.source, right.source)) {
-		return false;
-	}
-	if (left.status !== right.status || left.loaded !== right.loaded) {
-		return false;
-	}
-	if (left.canAcceptDirectInput !== right.canAcceptDirectInput) {
-		return false;
-	}
-	if (left.state === "executable" && right.state === "executable") {
-		return left.childId === right.childId && left.epoch === right.epoch;
-	}
-	if (left.state === "inspect_only" && right.state === "inspect_only") {
-		return left.reason === right.reason;
-	}
-	return false;
-}
-
-function sameBinding(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSnapshot): boolean {
-	return (
-		left.paneId === right.paneId &&
-		left.revision === right.revision &&
-		sameLink(left.link, right.link)
-	);
-}
-
-function sameStringValues(left: readonly string[], right: readonly string[]): boolean {
-	return left.length === right.length && left.every((value, index) => value === right[index]);
-}
-
-function readExecution(
-	options: CodexThreadContextDeliveryOptions,
-): CodexThreadContextExecution | null {
-	try {
-		return options.currentExecution();
-	} catch {
-		return null;
-	}
-}
-
-function executionReason(
-	execution: CodexThreadContextExecution | null,
-	identity: CodexThreadContextDeliveryOptions["identity"],
-	target: DeliveryTarget,
-): CodexThreadContextDeliveryReason | null {
-	if (execution === null) {
-		return "child_exit";
-	}
-	const currentGeneration = generationReason(execution.childId, execution.epoch, target);
-	if (currentGeneration !== null) {
-		return currentGeneration;
-	}
-	if (!identity.validator.isCurrentEpoch(execution.childId, execution.epoch)) {
-		return (
-			generationReason(execution.childId, execution.epoch, {
-				threadId: target.threadId,
-				childId: identity.validator.childId,
-				epoch: identity.validator.epoch,
-				operationId: target.operationId,
-			}) ?? "unknown_provenance"
-		);
-	}
-	return null;
-}
-
-function targetLinkReason(
-	link: ThreadLinkSnapshot,
-	target: DeliveryTarget,
-): CodexThreadContextDeliveryReason | null {
-	if (link.state !== "executable") {
-		return linkReason(link);
-	}
-	if (link.threadId !== target.threadId) {
-		return "link_changed";
-	}
-	if (link.childId !== target.childId) {
-		return "stale_child";
-	}
-	if (link.epoch !== target.epoch) {
-		return "prior_epoch";
-	}
-	return null;
-}
-
-function eventLinkReason(
-	event: SettledSemanticChangeEvent,
-): CodexThreadContextDeliveryReason | null {
-	if (event.threadLink.state === "executable") {
-		return null;
-	}
-	if (event.threadLink.state === "unbound") {
-		return "unbound";
-	}
-	return isThreadLinkReasonCode(event.threadLink.reason)
-		? event.threadLink.reason
-		: "unknown_provenance";
-}
-
-function isThreadLinkReasonCode(value: string | null): value is ThreadLinkReasonCode {
-	switch (value) {
-		case "stale_child":
-		case "prior_epoch":
-		case "thread_start_outcome_unknown":
-		case "unknown_provenance":
-		case "thread_list_missing":
-		case "thread_list_ambiguous":
-		case "thread_loaded_list_ambiguous":
-		case "thread_source_custom":
-		case "thread_source_subagent":
-		case "thread_source_unknown":
-		case "thread_status_not_loaded":
-		case "thread_status_system_error":
-		case "thread_loaded_list_missing":
-		case "direct_input_false":
-		case "direct_input_unknown":
-			return true;
-		default:
-			return false;
-	}
-}
-
-function eventReason(
-	event: SettledSemanticChangeEvent,
-	options: CodexThreadContextDeliveryOptions,
-	lastSequence: number,
-): CodexThreadContextDeliveryReason | null {
-	if (event.kind !== "settled_change" || event.source !== "settled_change") {
-		return "invalid_event";
-	}
-	if (event.origin === "agent") {
-		return "agent_only";
-	}
-	if (event.origin !== "human" && event.origin !== "mixed") {
-		return "invalid_event";
-	}
-	if (event.change.significance === "cosmetic") {
-		return "cosmetic";
-	}
-	if (event.change.significance !== "layout" && event.change.significance !== "structural") {
-		return "invalid_event";
-	}
-	if (event.cursor === null) {
-		return "invalid_event";
-	}
-	if (!Number.isInteger(event.cursor.sequence) || event.cursor.sequence < 0) {
-		return "invalid_event";
-	}
-	if (event.feedId !== options.feedId || event.cursor.feedId !== options.feedId) {
-		return "stale_cursor";
-	}
-	if (
-		event.change.feedId !== event.feedId ||
-		event.change.cursor.feedId !== event.cursor.feedId ||
-		event.change.cursor.sequence !== event.cursor.sequence ||
-		event.change.origin !== event.origin
-	) {
-		return "invalid_event";
-	}
-	if (event.pane.paneId !== options.paneId) {
-		return "invalid_event";
-	}
-	if (event.staleness.state !== "current" || event.freshness.state !== "fresh") {
-		return "stale_event";
-	}
-	const linkReasonValue = eventLinkReason(event);
-	if (linkReasonValue !== null) {
-		return linkReasonValue;
-	}
-	if (event.child.id === null || event.child.epoch === null) {
-		return "unknown_provenance";
-	}
-	if (event.workhorse.threadId === null) {
-		return "unknown_provenance";
-	}
-	const target = options.target;
-	const generation = generationReason(event.child.id, event.child.epoch, target);
-	if (generation !== null) {
-		return generation;
-	}
-	if (event.workhorse.threadId !== target.threadId) {
-		return "link_changed";
-	}
-	if (event.cursor.sequence <= lastSequence) {
-		return "stale_cursor";
-	}
-	return null;
-}
-
-function eventIdentityReason(
-	event: SettledSemanticChangeEvent,
-	expected: CodexThreadContextEventId,
-): CodexThreadContextDeliveryReason | null {
-	const current = eventId(event);
-	return current.feedId === expected.feedId && current.sequence === expected.sequence
-		? null
-		: "stale_cursor";
-}
-
-function contextMatchesEvent(
-	event: SettledSemanticChangeEvent,
-	context: ArchboardContext,
-	target: DeliveryTarget,
-	paneId: string,
-): boolean {
-	if (event.cursor === null || event.version === null) {
-		return false;
-	}
-	const cursor = canonicalSemanticCursorToken(event.cursor);
-
-	return (
-		context.paneId === paneId &&
-		context.board.note === event.board.note &&
-		context.board.version === event.version &&
-		context.board.cursor === cursor &&
-		context.threadLink.state === event.threadLink.state &&
-		context.threadLink.reason === event.threadLink.reason &&
-		context.child.id === event.child.id &&
-		context.child.epoch === event.child.epoch &&
-		context.child.id === target.childId &&
-		context.child.epoch === target.epoch &&
-		context.workhorse.threadId === event.workhorse.threadId &&
-		context.workhorse.threadId === target.threadId &&
-		context.workhorse.turnId === event.workhorse.turnId &&
-		context.coordinator.threadId === event.coordinator.threadId &&
-		context.coordinator.realtimeSessionId === event.coordinator.realtimeSessionId &&
-		context.semantic.brief === event.brief &&
-		context.semantic.capturedAtMs === event.freshness.capturedAtMs &&
-		context.semantic.freshUntilMs === event.freshness.freshUntilMs &&
-		context.semantic.truncated === event.truncated &&
-		context.focus.paneId === (event.pane.focused ? event.pane.paneId : null) &&
-		context.focus.capturedAtMs === event.freshness.capturedAtMs &&
-		sameStringValues(context.selection.elementIds, event.selection) &&
-		context.selection.capturedAtMs === event.freshness.capturedAtMs &&
-		context.claim.holder === event.claim.holder &&
-		context.claim.doing === event.claim.doing &&
-		sameStringValues(context.ambiguity, event.ambiguity) &&
-		context.operation.id === null
-	);
-}
-
-function requestFor(target: DeliveryTarget): EpochExecutionRequest {
-	return {
-		childId: target.childId,
-		epoch: target.epoch,
-		operationId: target.operationId,
-		threadId: target.threadId,
-	};
-}
-
-function finalReason(
-	state: DeliveryState,
-	options: CodexThreadContextDeliveryOptions,
-	classification: ThreadLinkClassification,
-	highestReservedSequence: () => number,
-): CodexThreadContextDeliveryReason | null {
-	const identityFailure = eventIdentityReason(state.event, state.id);
-	if (identityFailure !== null) {
-		return identityFailure;
-	}
-	const eventFailure = eventReason(state.event, options, -1);
-	if (eventFailure !== null) {
-		return eventFailure;
-	}
-	const execution = readExecution(options);
-	const currentExecutionReason = executionReason(execution, options.identity, options.target);
-	if (currentExecutionReason !== null) {
-		return currentExecutionReason;
-	}
-	let currentBinding: ThreadLinkBindingSnapshot;
-	try {
-		currentBinding = options.threadLink.read(options.paneId);
-	} catch {
-		return "link_changed";
-	}
-	if (!sameBinding(currentBinding, state.initialBinding)) {
-		return "link_changed";
-	}
-	if (!sameLink(currentBinding.link, classification.link)) {
-		return "link_changed";
-	}
-	const currentLinkReason = targetLinkReason(currentBinding.link, options.target);
-	if (currentLinkReason !== null) {
-		return currentLinkReason;
-	}
-	if (typeof options.target.operationId !== "string" || options.target.operationId.length === 0) {
-		return "unknown_provenance";
-	}
-	try {
-		options.epoch.assertCurrent(requestFor(options.target));
-	} catch (error) {
-		return epochErrorReason(error);
-	}
-	const now = options.now();
-	if (!Number.isFinite(now) || now >= state.event.freshness.freshUntilMs) {
-		return "stale_event";
-	}
-	if (state.id.feedId === options.feedId && state.id.sequence < highestReservedSequence()) {
-		return "stale_cursor";
-	}
-	return null;
-}
-
-function afterAttemptReason(
-	state: DeliveryState,
-	options: CodexThreadContextDeliveryOptions,
-): CodexThreadContextDeliveryReason | null {
-	try {
-		const identityFailure = eventIdentityReason(state.event, state.id);
-		if (identityFailure !== null) {
-			return identityFailure;
-		}
-		if (eventReason(state.event, options, -1) !== null) {
-			return "stale_event";
-		}
-	} catch {
-		return "stale_event";
-	}
-	const execution = readExecution(options);
-	const executionFailure = executionReason(execution, options.identity, options.target);
-	if (executionFailure !== null) {
-		return executionFailure;
-	}
-	let currentBinding: ThreadLinkBindingSnapshot;
-	try {
-		currentBinding = options.threadLink.read(options.paneId);
-	} catch {
-		return "link_changed";
-	}
-	if (!sameBinding(currentBinding, state.initialBinding)) {
-		return "link_changed";
-	}
-	try {
-		options.epoch.assertCurrent(requestFor(options.target));
-	} catch (error) {
-		return epochErrorReason(error);
-	}
-	return null;
-}
-
+/**
+ * The immutable outcome record for one event identity.
+ * @param event - The settled semantic change.
+ * @param options - The delivery options naming pane and target.
+ * @param state - Whether the event was delivered, refused, or its response was lost.
+ * @param reason - The stable reason for anything but a delivery.
+ * @param attempted - Whether `thread/inject_items` was called.
+ * @param payload - The canonical body, when it was built before refusal or attempt.
+ * @returns The frozen outcome.
+ */
 function outcome(
 	event: SettledSemanticChangeEvent,
-	options: CodexThreadContextDeliveryOptions,
+	options: Options,
 	state: CodexThreadContextDeliveryState,
-	reason: CodexThreadContextDeliveryReason | null,
+	reason: Reason | null,
 	attempted: boolean,
 	payload: ThreadInjectItemsParams | null,
-): CodexThreadContextDeliveryOutcome {
+): Outcome {
 	return Object.freeze({
 		kind: "thread_context_delivery",
 		event: eventId(event),
@@ -472,170 +108,348 @@ function outcome(
 	});
 }
 
+/**
+ * An outcome for an event refused before any injection attempt.
+ * @param event - The settled semantic change.
+ * @param options - The delivery options.
+ * @param reason - Why it was refused.
+ * @param payload - The canonical body, when it had already been built.
+ * @returns The frozen `not_delivered` outcome.
+ */
+function refused(
+	event: SettledSemanticChangeEvent,
+	options: Options,
+	reason: Reason,
+	payload: ThreadInjectItemsParams | null = null,
+): Outcome {
+	return outcome(event, options, "not_delivered", reason, false, payload);
+}
+
+/**
+ * Whether a session error proves the mutation never reached the app-server.
+ * @param error - Whatever the session threw.
+ * @returns True for a known `not_delivered` mutation error.
+ */
 function isKnownNotDelivered(error: unknown): boolean {
 	return error instanceof CodexSessionMutationError && error.outcome === "not_delivered";
 }
 
+/**
+ * Whether a session error means the mutation may have reached the app-server.
+ * @param error - Whatever the session threw.
+ * @returns True for a known `outcome_unknown` mutation error.
+ */
 function isKnownUnknown(error: unknown): boolean {
 	return error instanceof CodexSessionMutationError && error.outcome === "outcome_unknown";
 }
 
-async function deliverOne(
-	event: SettledSemanticChangeEvent,
-	options: CodexThreadContextDeliveryOptions,
-	lastSequence: number,
-	highestReservedSequence: () => number,
-): Promise<CodexThreadContextDeliveryOutcome> {
-	const reason = eventReason(event, options, lastSequence);
-	if (reason !== null) {
-		return outcome(event, options, "not_delivered", reason, false, null);
-	}
-
+/**
+ * Checks the delivery target itself carries an operation id and is the
+ * identity authority's current generation.
+ * @param options - The delivery options.
+ * @returns The refusal reason, or null when the target is usable.
+ */
+function targetAuthorityReason(options: Options): Reason | null {
 	const target = options.target;
-	const targetGeneration = generationReason(target.childId, target.epoch, {
+	const generation = generationReason(target.childId, target.epoch, {
 		threadId: target.threadId,
 		childId: options.identity.validator.childId,
 		epoch: options.identity.validator.epoch,
 		operationId: target.operationId,
 	});
-	if (
-		typeof target.operationId !== "string" ||
-		target.operationId.length === 0 ||
-		targetGeneration
-	) {
-		return outcome(
-			event,
-			options,
-			"not_delivered",
-			targetGeneration ?? "unknown_provenance",
-			false,
-			null,
-		);
+	if (generation !== null) {
+		return generation;
 	}
-
-	const initialExecution = readExecution(options);
-	const initialExecutionReason = executionReason(initialExecution, options.identity, target);
-	if (initialExecutionReason !== null || initialExecution === null) {
-		return outcome(
-			event,
-			options,
-			"not_delivered",
-			initialExecutionReason ?? "child_exit",
-			false,
-			null,
-		);
+	if (typeof target.operationId !== "string" || target.operationId.length === 0) {
+		return "unknown_provenance";
 	}
+	return null;
+}
 
-	let initialBinding: ThreadLinkBindingSnapshot;
+/**
+ * Everything checked before the pane binding is read: the event, the target
+ * and the live child capability.
+ * @param event - The settled semantic change.
+ * @param options - The delivery options.
+ * @param lastSequence - The highest sequence reserved before this event.
+ * @returns The refusal reason, or null when delivery may continue.
+ */
+function preflightReason(
+	event: SettledSemanticChangeEvent,
+	options: Options,
+	lastSequence: number,
+): Reason | null {
+	const eventFailure = eventReason(event, options, lastSequence);
+	if (eventFailure !== null) {
+		return eventFailure;
+	}
+	const targetFailure = targetAuthorityReason(options);
+	if (targetFailure !== null) {
+		return targetFailure;
+	}
+	return executionReason(readExecution(options), options.identity, options.target);
+}
+
+/**
+ * Reads the pane's current binding and checks it is executable for the target.
+ * @param options - The delivery options.
+ * @returns The binding, or the reason it cannot be used.
+ */
+function readInitialBinding(options: Options): Step<ThreadLinkBindingSnapshot> {
+	let binding: ThreadLinkBindingSnapshot;
 	try {
-		initialBinding = options.threadLink.read(options.paneId);
+		binding = options.threadLink.read(options.paneId);
 	} catch {
-		return outcome(event, options, "not_delivered", "link_changed", false, null);
+		return stepFailure("link_changed");
 	}
-	if (initialBinding.paneId !== options.paneId) {
-		return outcome(event, options, "not_delivered", "link_changed", false, null);
+	if (binding.paneId !== options.paneId) {
+		return stepFailure("link_changed");
 	}
-	const initialLinkReason = targetLinkReason(initialBinding.link, target);
-	if (initialLinkReason !== null) {
-		return outcome(event, options, "not_delivered", initialLinkReason, false, null);
-	}
+	const linkFailure = targetLinkReason(binding.link, options.target);
+	return linkFailure === null ? stepValue(binding) : stepFailure(linkFailure);
+}
 
-	let payload: ThreadInjectItemsParams;
+/**
+ * Builds the canonical injection body from the adapter's context, refusing a
+ * context that is not exactly the event.
+ * @param event - The settled semantic change.
+ * @param options - The delivery options carrying the context adapter.
+ * @returns The body, or `invalid_context`.
+ */
+function buildPayload(
+	event: SettledSemanticChangeEvent,
+	options: Options,
+): Step<ThreadInjectItemsParams> {
 	try {
 		const context = options.contextForEvent(event);
-		if (!contextMatchesEvent(event, context, target, options.paneId)) {
-			return outcome(event, options, "not_delivered", "invalid_context", false, null);
+		if (!contextMatchesEvent(event, context, options.target, options.paneId)) {
+			return stepFailure("invalid_context");
 		}
-		payload = createThreadInjectItemsParams({ threadId: target.threadId, context });
+		return stepValue(createThreadInjectItemsParams({ threadId: options.target.threadId, context }));
 	} catch {
-		return outcome(event, options, "not_delivered", "invalid_context", false, null);
+		return stepFailure("invalid_context");
 	}
+}
 
-	// This is deliberately the last asynchronous authority read. The synchronous
-	// guard and the one inject_items call follow it without another await.
+/**
+ * The last asynchronous authority read: classifies the target thread and
+ * requires an executable link with a durable proof.
+ * @param options - The delivery options carrying the classifier.
+ * @returns The classification, or the reason it refuses the target.
+ */
+async function classifyTarget(options: Options): Promise<Step<ThreadLinkClassification>> {
 	let classification: ThreadLinkClassification;
 	try {
-		classification = await options.threadLink.classify(target);
+		classification = await options.threadLink.classify(options.target);
 	} catch (error) {
-		const classificationReason =
-			error instanceof CodexThreadLinkError && error.code === "current_epoch_unavailable"
-				? "unknown_provenance"
-				: "thread_revalidation_failed";
-		return outcome(event, options, "not_delivered", classificationReason, false, payload);
+		return stepFailure(classificationErrorReason(error));
 	}
-	const classificationReason = targetLinkReason(classification.link, target);
-	if (classificationReason !== null) {
-		return outcome(event, options, "not_delivered", classificationReason, false, payload);
+	const linkFailure = targetLinkReason(classification.link, options.target);
+	if (linkFailure !== null) {
+		return stepFailure(linkFailure);
 	}
-	if (classification.proof === null) {
-		return outcome(event, options, "not_delivered", "unknown_provenance", false, payload);
-	}
+	return classification.proof === null
+		? stepFailure("unknown_provenance")
+		: stepValue(classification);
+}
 
-	let sessionPayload: SessionParams<"thread/inject_items">;
+/**
+ * Converts the canonical body into the session's typed parameters.
+ * @param options - The delivery options carrying the identity decoder.
+ * @param payload - The canonical body.
+ * @returns The session parameters, or `unknown_provenance` when the thread id does not decode.
+ */
+function sessionPayloadFor(
+	options: Options,
+	payload: ThreadInjectItemsParams,
+): Step<SessionParams<"thread/inject_items">> {
 	try {
-		sessionPayload = {
+		return stepValue({
 			...payload,
 			threadId: options.identity.decoder.parseThreadId(payload.threadId),
-		};
+		});
 	} catch {
-		return outcome(event, options, "not_delivered", "unknown_provenance", false, payload);
+		return stepFailure("unknown_provenance");
 	}
+}
 
-	const state: DeliveryState = {
-		event,
-		id: eventId(event),
-		initialBinding,
-		payload,
-	};
-	const finalGuardReason = finalReason(state, options, classification, highestReservedSequence);
-	if (finalGuardReason !== null) {
-		return outcome(event, options, "not_delivered", finalGuardReason, false, payload);
-	}
-
+/**
+ * The one `thread/inject_items` attempt. A synchronous throw from the session
+ * is a rejection unless it is a known unknown; a rejected response is a
+ * rejection when the session proves non-delivery and a lost response otherwise.
+ * @param options - The delivery options carrying the session.
+ * @param sessionPayload - The typed injection parameters.
+ * @returns How the attempt ended, or null when the response arrived.
+ */
+async function attemptInjection(
+	options: Options,
+	sessionPayload: SessionParams<"thread/inject_items">,
+): Promise<AttemptResult | null> {
+	let response: Promise<unknown>;
 	try {
-		const response = options.session.threadInjectItems(sessionPayload);
-		try {
-			await response;
-		} catch (error) {
-			if (isKnownNotDelivered(error)) {
-				return outcome(event, options, "not_delivered", "session_rejected", true, payload);
-			}
-			return outcome(event, options, "outcome_unknown", "response_lost", true, payload);
-		}
+		response = options.session.threadInjectItems(sessionPayload);
 	} catch (error) {
-		if (isKnownUnknown(error)) {
-			return outcome(event, options, "outcome_unknown", "response_lost", true, payload);
-		}
-		return outcome(event, options, "not_delivered", "session_rejected", true, payload);
+		return isKnownUnknown(error)
+			? { state: "outcome_unknown", reason: "response_lost" }
+			: { state: "not_delivered", reason: "session_rejected" };
 	}
+	try {
+		await response;
+	} catch (error) {
+		return isKnownNotDelivered(error)
+			? { state: "not_delivered", reason: "session_rejected" }
+			: { state: "outcome_unknown", reason: "response_lost" };
+	}
+	return null;
+}
 
-	let afterReason: CodexThreadContextDeliveryReason | null;
+/**
+ * Settles an attempt whose response arrived: the outcome is `delivered` only
+ * when every authority the attempt relied on is still intact.
+ * @param state - The delivery state.
+ * @param options - The delivery options.
+ * @returns The final outcome.
+ */
+function settleAfterAttempt(state: DeliveryState, options: Options): Outcome {
+	let afterReason: Reason | null;
 	try {
 		afterReason = afterAttemptReason(state, options);
 	} catch {
-		return outcome(event, options, "outcome_unknown", "response_lost", true, payload);
+		return outcome(state.event, options, "outcome_unknown", "response_lost", true, state.payload);
 	}
 	if (afterReason !== null) {
-		return outcome(event, options, "outcome_unknown", afterReason, true, payload);
+		return outcome(state.event, options, "outcome_unknown", afterReason, true, state.payload);
 	}
-	return outcome(event, options, "delivered", null, true, payload);
+	return outcome(state.event, options, "delivered", null, true, state.payload);
 }
 
-function createDelivery(
-	options: CodexThreadContextDeliveryOptions,
-	subscribe: boolean,
-): CodexThreadContextDelivery {
-	const pending = new Map<string, Promise<CodexThreadContextDeliveryOutcome>>();
-	const settled = new Map<string, CodexThreadContextDeliveryOutcome>();
+/**
+ * Runs the asynchronous half of a delivery: classification, the synchronous
+ * final guard and the single injection attempt.
+ * @param event - The settled semantic change.
+ * @param options - The delivery options.
+ * @param prepared - The binding and payload captured synchronously.
+ * @param highestReservedSequence - Reads the highest sequence reserved so far.
+ * @returns The final outcome.
+ */
+async function deliverPrepared(
+	event: SettledSemanticChangeEvent,
+	options: Options,
+	prepared: PreparedDelivery,
+	highestReservedSequence: () => number,
+): Promise<Outcome> {
+	const { payload } = prepared;
+	// This is deliberately the last asynchronous authority read. The synchronous
+	// guard and the one inject_items call follow it without another await.
+	const classified = await classifyTarget(options);
+	if (!classified.ok) {
+		return refused(event, options, classified.reason, payload);
+	}
+	const session = sessionPayloadFor(options, payload);
+	if (!session.ok) {
+		return refused(event, options, session.reason, payload);
+	}
+	const state: DeliveryState = {
+		event,
+		id: eventId(event),
+		initialBinding: prepared.initialBinding,
+		payload,
+	};
+	const finalGuardReason = finalReason(state, options, classified.value, highestReservedSequence);
+	if (finalGuardReason !== null) {
+		return refused(event, options, finalGuardReason, payload);
+	}
+	const attempt = await attemptInjection(options, session.value);
+	if (attempt !== null) {
+		return outcome(event, options, attempt.state, attempt.reason, true, payload);
+	}
+	return settleAfterAttempt(state, options);
+}
+
+/**
+ * Delivers one event once: every refusal before the attempt is
+ * `not_delivered` with its reason, and nothing here ever retries.
+ * @param event - The settled semantic change.
+ * @param options - The delivery options.
+ * @param lastSequence - The highest sequence reserved before this event.
+ * @param highestReservedSequence - Reads the highest sequence reserved so far.
+ * @returns The final outcome.
+ */
+async function deliverOne(
+	event: SettledSemanticChangeEvent,
+	options: Options,
+	lastSequence: number,
+	highestReservedSequence: () => number,
+): Promise<Outcome> {
+	const preflight = preflightReason(event, options, lastSequence);
+	if (preflight !== null) {
+		return refused(event, options, preflight);
+	}
+	const binding = readInitialBinding(options);
+	if (!binding.ok) {
+		return refused(event, options, binding.reason);
+	}
+	const payload = buildPayload(event, options);
+	if (!payload.ok) {
+		return refused(event, options, payload.reason);
+	}
+	return deliverPrepared(
+		event,
+		options,
+		{ initialBinding: binding.value, payload: payload.value },
+		highestReservedSequence,
+	);
+}
+
+/**
+ * The once-only delivery port: an event ledger keyed by event identity, a
+ * reserved-sequence watermark, and optionally the publisher subscription.
+ * @param options - The delivery options.
+ * @param subscribe - Whether this port subscribes to the publisher itself.
+ * @returns The delivery port.
+ */
+function createDelivery(options: Options, subscribe: boolean): CodexThreadContextDelivery {
+	const pending = new Map<string, Promise<Outcome>>();
+	const settled = new Map<string, Outcome>();
 	const firstSeenKeys: string[] = [];
 	let highestReservedSequence = -1;
 	let disposed = false;
 
-	const deliver = (
-		event: SettledSemanticChangeEvent,
-	): Promise<CodexThreadContextDeliveryOutcome> => {
-		const id = eventId(event);
-		const key = keyFor(id);
+	/**
+	 * Advances the feed watermark for a newly seen event.
+	 * @param event - The settled semantic change.
+	 * @returns The watermark before this event was reserved.
+	 */
+	const reserveSequence = (event: SettledSemanticChangeEvent): number => {
+		const previousSequence = highestReservedSequence;
+		const sequence = event.cursor?.sequence ?? -1;
+		if (event.feedId === options.feedId && sequence > highestReservedSequence) {
+			highestReservedSequence = sequence;
+		}
+		return previousSequence;
+	};
+
+	/**
+	 * Starts the delivery of a first-seen event; an unexpected throw settles it
+	 * as a revalidation failure rather than an unsettled promise.
+	 * @param event - The settled semantic change.
+	 * @param previousSequence - The watermark before this event was reserved.
+	 * @returns The outcome promise.
+	 */
+	const start = (event: SettledSemanticChangeEvent, previousSequence: number): Promise<Outcome> =>
+		(disposed
+			? Promise.resolve(refused(event, options, "disposed"))
+			: deliverOne(event, options, previousSequence, () => highestReservedSequence)
+		).catch(() => refused(event, options, "thread_revalidation_failed"));
+
+	/**
+	 * Delivers an event once: a pending or settled identity returns its
+	 * existing outcome instead of a second attempt.
+	 * @param event - The settled semantic change.
+	 * @returns The outcome promise shared by every caller for this identity.
+	 */
+	const deliver = (event: SettledSemanticChangeEvent): Promise<Outcome> => {
+		const key = eventKey(eventId(event));
 		const existing = pending.get(key);
 		if (existing !== undefined) {
 			return existing;
@@ -644,27 +458,12 @@ function createDelivery(
 		if (settledOutcome !== undefined) {
 			return Promise.resolve(settledOutcome);
 		}
-
 		firstSeenKeys.push(key);
-		const previousSequence = highestReservedSequence;
-		const sequence = event.cursor?.sequence ?? -1;
-		if (event.feedId === options.feedId && sequence > highestReservedSequence) {
-			highestReservedSequence = sequence;
-		}
-
-		const promise = (
-			disposed
-				? Promise.resolve(outcome(event, options, "not_delivered", "disposed", false, null))
-				: deliverOne(event, options, previousSequence, () => highestReservedSequence)
-		)
-			.catch(() =>
-				outcome(event, options, "not_delivered", "thread_revalidation_failed", false, null),
-			)
-			.then((result) => {
-				pending.delete(key);
-				settled.set(key, result);
-				return result;
-			});
+		const promise = start(event, reserveSequence(event)).then((result) => {
+			pending.delete(key);
+			settled.set(key, result);
+			return result;
+		});
 		pending.set(key, promise);
 		return promise;
 	};
@@ -677,6 +476,10 @@ function createDelivery(
 
 	return Object.freeze({
 		deliver,
+		/**
+		 * Settled outcomes in first-seen order.
+		 * @returns The frozen list of outcomes.
+		 */
 		inspect: () =>
 			Object.freeze(
 				firstSeenKeys.flatMap((key) => {
@@ -684,7 +487,15 @@ function createDelivery(
 					return result === undefined ? [] : [result];
 				}),
 			),
-		get: (event: CodexThreadContextEventId) => settled.get(keyFor(event)),
+		/**
+		 * Looks up the settled outcome for one event identity.
+		 * @param event - The event identity.
+		 * @returns The outcome, or undefined while pending or never seen.
+		 */
+		get: (event: CodexThreadContextEventId) => settled.get(eventKey(event)),
+		/**
+		 * Stops the subscription; later events settle as `disposed`.
+		 */
 		dispose: () => {
 			if (disposed) {
 				return;
@@ -695,15 +506,23 @@ function createDelivery(
 	});
 }
 
-function createCodexThreadContextDelivery(
-	options: CodexThreadContextDeliveryOptions,
-): CodexThreadContextDelivery {
+/**
+ * The public delivery port, subscribed to the publisher for its lifetime.
+ * @param options - The delivery options.
+ * @returns The delivery port.
+ */
+function createCodexThreadContextDelivery(options: Options): CodexThreadContextDelivery {
 	return createDelivery(options, true);
 }
 
-/** Module-internal leaf for the process-lifetime binding controller's sole subscription. */
+/**
+ * Module-internal leaf for the process-lifetime binding controller's sole
+ * subscription: the controller feeds events in, so this port must not subscribe.
+ * @param options - The delivery options.
+ * @returns The delivery port.
+ */
 function createUnsubscribedCodexThreadContextDelivery(
-	options: CodexThreadContextDeliveryOptions,
+	options: Options,
 ): CodexThreadContextDelivery {
 	return createDelivery(options, false);
 }

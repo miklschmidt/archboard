@@ -8,7 +8,7 @@ import type {
 	InitializeResponse,
 	ServerNotification as GeneratedServerNotification,
 	ServerRequest as GeneratedServerRequest,
-} from "./generated/current/index.js";
+} from "@/shared/codex-app-server-contract/generated/current/index";
 import type {
 	CommandExecutionRequestApprovalResponse,
 	CommandExecutionApprovalDecision,
@@ -52,7 +52,7 @@ import type {
 	TurnSteerResponse,
 	TurnStatus,
 	ToolRequestUserInputResponse,
-} from "./generated/current/v2/index.js";
+} from "@/shared/codex-app-server-contract/generated/current/v2/index";
 
 /** JSON representation of one generated ts-rs bigint/i64 field. */
 const CodexSafeI64Schema = z.number().int().safe().brand<"CodexSafeI64">();
@@ -206,8 +206,14 @@ const CODEX_THREAD_STATUS_TYPES = [
 type CodexThreadStatusType = (typeof CODEX_THREAD_STATUS_TYPES)[number];
 const CodexThreadStatusTypeSchema = z.enum(CODEX_THREAD_STATUS_TYPES);
 
+/**
+ * Tells whether a value is one of the thread status types the app server
+ * declares, so a status read off the wire narrows without a cast.
+ * @param value - Any value, usually `status.type` from a thread payload.
+ * @returns True when the value names a declared thread status type.
+ */
 function isCodexThreadStatusType(value: unknown): value is CodexThreadStatusType {
-	return CODEX_THREAD_STATUS_TYPES.includes(value as CodexThreadStatusType);
+	return CodexThreadStatusTypeSchema.safeParse(value).success;
 }
 
 const CodexTurnStatusSchema = z.enum([
@@ -217,6 +223,16 @@ const CodexTurnStatusSchema = z.enum([
 	"inProgress",
 ] satisfies readonly CodexTurnStatus[]);
 
+/**
+ * Builds the schema for a command-execution approval decision. It is a
+ * factory because a caller that already constrains strings (the browser
+ * model's bounded text) can plug its own text and host schemas into the
+ * amendment branches while keeping the vendor shape.
+ * @param options - Optional replacements for the plain string schemas.
+ * @param options.text - The schema for execpolicy amendment entries.
+ * @param options.host - The schema for the network amendment host; defaults to `text`.
+ * @returns A zod union accepting the four bare decisions and both amendment forms.
+ */
 function createCodexCommandExecutionApprovalDecisionSchema(
 	options: {
 		readonly text?: z.ZodType<string>;
@@ -308,26 +324,51 @@ type CodexJsonValue =
 	| CodexJsonValue[]
 	| { [key: string]: CodexJsonValue };
 
-function normalizeValue(value: unknown, path: string): CodexJsonValue {
+/**
+ * Normalizes a JSON scalar, refusing the values JSON cannot carry: non-finite
+ * numbers and bigints.
+ * @param value - A primitive that is not an object.
+ * @param path - Where the value sits in the payload, for the error message.
+ * @returns The scalar unchanged.
+ * @throws {TypeError} When the scalar is not representable in Codex JSON.
+ */
+function normalizeScalar(value: unknown, path: string): CodexJsonValue {
 	if (value === null || typeof value === "string" || typeof value === "boolean") {
 		return value;
 	}
 	if (typeof value === "number") {
-		if (!Number.isFinite(value)) {
-			throw new TypeError(`${path} is not a finite JSON number`);
-		}
-		return value;
+		return normalizeNumber(value, path);
 	}
 	if (typeof value === "bigint") {
 		throw new TypeError(`${path} is bigint; Codex JSON i64 values must be safe numbers`);
 	}
-	if (Array.isArray(value)) {
-		return value.map((entry, index) => normalizeValue(entry, `${path}[${index}]`));
+	throw new TypeError(`${path} is not a JSON value`);
+}
+
+/**
+ * Accepts only the numbers JSON can spell.
+ * @param value - A number.
+ * @param path - Where the number sits in the payload, for the error message.
+ * @returns The number unchanged.
+ * @throws {TypeError} When the number is NaN or infinite.
+ */
+function normalizeNumber(value: number, path: string): number {
+	if (!Number.isFinite(value)) {
+		throw new TypeError(`${path} is not a finite JSON number`);
 	}
-	if (typeof value !== "object") {
-		throw new TypeError(`${path} is not a JSON value`);
-	}
-	const prototype = Object.getPrototypeOf(value);
+	return value;
+}
+
+/**
+ * Normalizes a JSON object, accepting only plain objects so a class instance
+ * or a prototype-carrying value never reaches an ingress parser.
+ * @param value - A non-null, non-array object.
+ * @param path - Where the object sits in the payload, for the error message.
+ * @returns A fresh plain object with every entry normalized.
+ * @throws {TypeError} When the object has a prototype other than Object or null.
+ */
+function normalizeObject(value: object, path: string): CodexJsonValue {
+	const prototype: unknown = Object.getPrototypeOf(value);
 	if (prototype !== Object.prototype && prototype !== null) {
 		throw new TypeError(`${path} is not a plain JSON object`);
 	}
@@ -336,7 +377,30 @@ function normalizeValue(value: unknown, path: string): CodexJsonValue {
 	);
 }
 
-/** Normalizes untrusted app-server JSON before any handwritten ingress parser runs. */
+/**
+ * Recursively normalizes one untrusted value into the closed Codex JSON
+ * vocabulary, naming the offending path when something is not JSON.
+ * @param value - Any value decoded from the app-server stream.
+ * @param path - Where the value sits in the payload, for the error message.
+ * @returns The equivalent value built only from JSON scalars, arrays and plain objects.
+ * @throws {TypeError} When the value or anything inside it is not Codex JSON.
+ */
+function normalizeValue(value: unknown, path: string): CodexJsonValue {
+	if (Array.isArray(value)) {
+		return value.map((entry, index) => normalizeValue(entry, `${path}[${index}]`));
+	}
+	if (typeof value === "object" && value !== null) {
+		return normalizeObject(value, path);
+	}
+	return normalizeScalar(value, path);
+}
+
+/**
+ * Normalizes untrusted app-server JSON before any handwritten ingress parser runs.
+ * @param value - The decoded payload, or undefined when a message carried none.
+ * @returns The normalized payload, or undefined when there was none.
+ * @throws {TypeError} When the payload is not Codex JSON.
+ */
 function normalizeCodexJsonWire(value: unknown): CodexJsonValue | undefined {
 	if (value === undefined) {
 		return undefined;

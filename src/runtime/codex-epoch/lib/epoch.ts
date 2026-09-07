@@ -7,16 +7,16 @@ import {
 	emptyManifest,
 	encodeManifest,
 	manifestBytesHash,
-} from "./manifest.js";
+} from "@/runtime/codex-epoch/lib/manifest";
 import {
 	defaultCodexEpochFileSystem,
 	ensureEpochDirectory,
 	readManifestText,
 	writeFileAtomic,
-} from "./storage.js";
-import { CodexEpochError } from "./contract.js";
-import { assertSafeStorageRoots } from "./path-safety.js";
-import type { EpochManifest, EpochOperationRecord } from "./manifest.js";
+} from "@/runtime/codex-epoch/lib/storage";
+import { CodexEpochError } from "@/runtime/codex-epoch/lib/contract";
+import { assertSafeStorageRoots } from "@/runtime/codex-epoch/lib/path-safety";
+import type { EpochManifest, EpochOperationRecord } from "@/runtime/codex-epoch/lib/manifest";
 import type {
 	CodexEpochStore,
 	CodexEpochStoreOptions,
@@ -29,7 +29,7 @@ import type {
 	EpochStageInput,
 	EpochTransaction,
 	Mutation,
-} from "./contract.js";
+} from "@/runtime/codex-epoch/lib/contract";
 import {
 	EPOCH_START_KIND,
 	assertCurrentGeneration,
@@ -55,7 +55,13 @@ import {
 	sameRecordInput,
 	timestamp,
 	uncertainProvenance,
-} from "./validation.js";
+} from "@/runtime/codex-epoch/lib/validation";
+/**
+ * Create the durable epoch ledger: the record of which child epoch owns which thread, kept
+ * outside both Codex storage roots so Codex can never rewrite Archboard's own evidence.
+ * @param options - Where the ledger lives, the Codex roots it must avoid, and its seams.
+ * @returns The store.
+ */
 export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpochStore {
 	const fileSystem = options.fileSystem ?? defaultCodexEpochFileSystem;
 	const rootDirectory = normalizeRoot(options.rootDirectory);
@@ -70,6 +76,10 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 	let nextTemporaryId = 0;
 	let closed = false;
 
+	/**
+	 * Read the durable state as it is now.
+	 * @returns The manifest, its CAS token and where it lives.
+	 */
 	const snapshot = (): EpochSnapshot => {
 		assertOpen();
 		const state = readDisk();
@@ -80,6 +90,12 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 		};
 	};
 
+	/**
+	 * Record an operation as staged before it is attempted, so an attempt that never settles
+	 * still leaves durable evidence that it was made.
+	 * @param input - The operation to stage.
+	 * @returns The transaction its settlement is quoted against.
+	 */
 	const stageOperation = (input: EpochStageInput): EpochTransaction => {
 		const prepared = prepareInput(input);
 		const expected = input.expected === undefined ? undefined : prepareCas(input.expected);
@@ -135,6 +151,11 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 					activeEpoch: current.manifest.activeEpoch,
 					records: [...current.manifest.records, record],
 				},
+				/**
+				 * The staged transaction, quoted against the manifest this write published.
+				 * @param manifest - The published manifest.
+				 * @returns The transaction its settlement must present.
+				 */
 				result: (manifest) =>
 					Object.freeze({
 						record,
@@ -144,6 +165,11 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 		});
 	};
 
+	/**
+	 * Stage the operation that starts a child epoch.
+	 * @param input - The epoch start to stage.
+	 * @returns The transaction its commit is quoted against.
+	 */
 	const stageEpoch = (input: EpochStageInput): EpochTransaction => {
 		if (input.kind !== EPOCH_START_KIND) {
 			throw epochError("invalid_input", "epoch staging must use kind epoch_start");
@@ -151,6 +177,12 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 		return stageOperation(input);
 	};
 
+	/**
+	 * Settle a staged operation as delivered, recording what it reached.
+	 * @param transaction - The staged transaction.
+	 * @param confirmation - What was observed, when anything.
+	 * @returns The committed record.
+	 */
 	const commitOperation = (
 		transaction: EpochTransaction,
 		confirmation?: EpochConfirmation,
@@ -170,24 +202,26 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 				reason: record.operation.kind === EPOCH_START_KIND ? "epoch committed" : "effect confirmed",
 				updatedAtMs: timestamp(now(), "updatedAtMs", record.createdAtMs),
 			});
-			const activeEpoch =
-				record.operation.kind === EPOCH_START_KIND
-					? {
-							childId: record.correlation.childId,
-							epoch: record.correlation.epoch,
-							operationId: record.correlation.operationId,
-						}
-					: current.manifest.activeEpoch;
 			return {
 				payload: {
-					activeEpoch,
+					activeEpoch: activeEpochAfter(record, current.manifest.activeEpoch),
 					records: replaceRecord(current.manifest.records, committed),
 				},
+				/**
+				 * The committed record, which does not depend on the published manifest.
+				 * @returns The committed record.
+				 */
 				result: () => committed,
 			};
 		});
 	};
 
+	/**
+	 * Settle a staged epoch start, which makes that child epoch the active one.
+	 * @param transaction - The staged epoch-start transaction.
+	 * @param confirmation - What was observed, when anything.
+	 * @returns The committed record.
+	 */
 	const commitEpoch = (
 		transaction: EpochTransaction,
 		confirmation?: EpochConfirmation,
@@ -198,9 +232,20 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 		return commitOperation(transaction, confirmation);
 	};
 
+	/**
+	 * Stage and commit a child epoch in one step, for a start that cannot fail in between.
+	 * @param input - The epoch start.
+	 * @returns The committed record.
+	 */
 	const startEpoch = (input: EpochStageInput): EpochOperationRecord =>
 		commitEpoch(stageEpoch(input));
 
+	/**
+	 * Settle a staged operation that provably never reached Codex.
+	 * @param transaction - The staged transaction.
+	 * @param reason - Why it was rolled back.
+	 * @returns The rolled-back record.
+	 */
 	const rollbackOperation = (
 		transaction: EpochTransaction,
 		reason: string,
@@ -220,11 +265,23 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 					activeEpoch: current.manifest.activeEpoch,
 					records: replaceRecord(current.manifest.records, rolledBack),
 				},
+				/**
+				 * The rolled-back record, which does not depend on the published manifest.
+				 * @returns The rolled-back record.
+				 */
 				result: () => rolledBack,
 			};
 		});
 	};
 
+	/**
+	 * Settle a staged operation whose outcome cannot be established, which makes anything it
+	 * may have touched inspect-only until an exact confirmation arrives.
+	 * @param transaction - The staged transaction.
+	 * @param reason - Why the outcome is unknown.
+	 * @param confirmation - Whatever was observed, when anything.
+	 * @returns The inspect-only record.
+	 */
 	const markOutcomeUnknown = (
 		transaction: EpochTransaction,
 		reason: string,
@@ -246,11 +303,22 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 					activeEpoch: current.manifest.activeEpoch,
 					records: replaceRecord(current.manifest.records, unknown),
 				},
+				/**
+				 * The inspect-only record, which does not depend on the published manifest.
+				 * @returns The inspect-only record.
+				 */
 				result: () => unknown,
 			};
 		});
 	};
 
+	/**
+	 * Promote an inspect-only record to committed once an exact correlation proves what it
+	 * reached, which is the only way an unknown outcome becomes executable again.
+	 * @param transaction - The transaction the record belongs to.
+	 * @param confirmation - The exact correlation observed.
+	 * @returns The committed record.
+	 */
 	const confirmOutcome = (
 		transaction: EpochTransaction,
 		confirmation: EpochConfirmation,
@@ -263,15 +331,7 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 			if (record.status !== "inspect_only" || record.outcome !== "outcome_unknown") {
 				throw epochError("invalid_transition", "only an outcome_unknown record can be confirmed");
 			}
-			if (record.operation.kind !== EPOCH_START_KIND) {
-				assertCurrentGeneration(current.manifest, record.correlation);
-			} else if (
-				current.manifest.activeEpoch !== null &&
-				(current.manifest.activeEpoch.childId !== record.correlation.childId ||
-					current.manifest.activeEpoch.epoch !== record.correlation.epoch)
-			) {
-				throw epochError("stale_child", "an older epoch cannot be confirmed after replacement");
-			}
+			assertConfirmableGeneration(current.manifest, record);
 			const provenance = committedProvenance(record, confirmation, now);
 			assertExactConfirmation(record.provenance, provenance);
 			assertThreadProvenanceEligible(current.manifest, record, provenance.threadId);
@@ -283,24 +343,26 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 				reason: "effect confirmed by exact correlation",
 				updatedAtMs: timestamp(now(), "updatedAtMs", record.createdAtMs),
 			});
-			const activeEpoch =
-				record.operation.kind === EPOCH_START_KIND
-					? {
-							childId: record.correlation.childId,
-							epoch: record.correlation.epoch,
-							operationId: record.correlation.operationId,
-						}
-					: current.manifest.activeEpoch;
 			return {
 				payload: {
-					activeEpoch,
+					activeEpoch: activeEpochAfter(record, current.manifest.activeEpoch),
 					records: replaceRecord(current.manifest.records, confirmed),
 				},
+				/**
+				 * The confirmed record, which does not depend on the published manifest.
+				 * @returns The confirmed record.
+				 */
 				result: () => confirmed,
 			};
 		});
 	};
 
+	/**
+	 * Prove that an operation is committed, delivered, and owned by the active child epoch,
+	 * which is what a caller must hold before acting on the thread it created.
+	 * @param request - The identity to prove.
+	 * @returns The proof, naming the record and the manifest revision it was read at.
+	 */
 	const assertCurrent = (request: EpochExecutionRequest): EpochExecutionProof => {
 		const prepared = prepareExecutionRequest(request);
 		const current = readDisk();
@@ -318,29 +380,18 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 				`operation ${prepared.operationId} has no durable provenance`,
 			);
 		}
-		if (record.correlation.childId !== prepared.childId) {
-			throw epochError("stale_child", "the operation provenance belongs to a replaced child");
-		}
-		if (record.correlation.epoch !== prepared.epoch) {
-			throw epochError("prior_epoch", "the operation provenance belongs to a prior epoch");
-		}
-		if (record.status === "inspect_only") {
-			throw epochError(
-				"inspect_only",
-				`operation ${prepared.operationId} is inspect-only after an uncertain outcome`,
-			);
-		}
-		if (record.status !== "committed" || record.outcome !== "delivered") {
-			throw epochError(
-				"not_executable",
-				`operation ${prepared.operationId} is not executable in its current state`,
-			);
-		}
+		assertRecordGeneration(record, prepared.childId, prepared.epoch);
+		assertRecordExecutable(record, prepared.operationId);
 		assertExecutionThread(record, prepared.threadId);
 		assertThreadProvenanceEligible(current.manifest, record, record.provenance.threadId);
 		return { record, manifestRevision: current.manifest.revision };
 	};
 
+	/**
+	 * Whether an identity would prove current, without raising the reason it would not.
+	 * @param request - The identity to test.
+	 * @returns True when the proof would succeed.
+	 */
 	const canExecute = (request: EpochExecutionRequest): boolean => {
 		try {
 			assertCurrent(request);
@@ -350,8 +401,12 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 		}
 	};
 
-	const close = (): void => void (closed = true);
+	/** Close the store; every later operation is refused. */
+	const close = (): void => {
+		closed = true;
+	};
 
+	/** Refuse to act through a store that has been closed. */
 	function assertOpen(): void {
 		if (closed) {
 			throw epochError("closed", "codex epoch store is closed");
@@ -363,6 +418,7 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 	 * manifest reads as "no prior epochs". Every thread from before is then
 	 * inspect-only and the next write replaces the file, which is the safe
 	 * direction for a ledger whose only job is to refuse resuming older threads.
+	 * @returns The manifest on disk with the digest of its bytes, or an empty manifest.
 	 */
 	function readDisk(): DiskState {
 		const raw = readManifestText(fileSystem, manifestPath);
@@ -378,8 +434,14 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 		}
 	}
 
-	// Every operation is synchronous and the server is one process, so writes
-	// are serialised by the call stack; there is no lock and nothing to wait on.
+	/**
+	 * Read, transform and publish the durable state under an optional compare-and-swap.
+	 * Every operation is synchronous and the server is one process, so writes are serialised
+	 * by the call stack; there is no lock and nothing to wait on.
+	 * @param expected - The state the caller believes is on disk, when it holds a token.
+	 * @param action - Produces the next payload and the caller's result.
+	 * @returns Whatever the action's result produced from the published manifest.
+	 */
 	function mutate<T>(
 		expected: EpochCasToken | undefined,
 		action: (current: DiskState) => Mutation<T>,
@@ -404,6 +466,11 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 		return mutation.result(next);
 	}
 
+	/**
+	 * Publish a manifest through one temporary file and a rename, under a name no concurrent
+	 * writer in this process can collide with.
+	 * @param manifest - The manifest to publish.
+	 */
 	function writeState(manifest: EpochManifest): void {
 		const temporaryPath = join(
 			rootDirectory,
@@ -434,6 +501,93 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 	};
 }
 
+/**
+ * Refuse a proof for a record that belongs to a replaced child or a prior epoch.
+ * @param record - The durable record.
+ * @param childId - The child the caller claims.
+ * @param epoch - The epoch the caller claims.
+ */
+function assertRecordGeneration(
+	record: EpochOperationRecord,
+	childId: EpochOperationRecord["correlation"]["childId"],
+	epoch: EpochOperationRecord["correlation"]["epoch"],
+): void {
+	if (record.correlation.childId !== childId) {
+		throw epochError("stale_child", "the operation provenance belongs to a replaced child");
+	}
+	if (record.correlation.epoch !== epoch) {
+		throw epochError("prior_epoch", "the operation provenance belongs to a prior epoch");
+	}
+}
+
+/**
+ * Refuse a proof for a record that did not settle as delivered: an inspect-only record says
+ * so by name, and anything else is simply not executable yet.
+ * @param record - The durable record.
+ * @param operationId - The operation, for the refusal message.
+ */
+function assertRecordExecutable(record: EpochOperationRecord, operationId: string): void {
+	if (record.status === "inspect_only") {
+		throw epochError(
+			"inspect_only",
+			`operation ${operationId} is inspect-only after an uncertain outcome`,
+		);
+	}
+	if (record.status !== "committed" || record.outcome !== "delivered") {
+		throw epochError(
+			"not_executable",
+			`operation ${operationId} is not executable in its current state`,
+		);
+	}
+}
+
+/**
+ * The active epoch after a record settles: an epoch start becomes the active epoch, and any
+ * other operation leaves it as it was.
+ * @param record - The record that just settled.
+ * @param current - The active epoch before it settled.
+ * @returns The active epoch to publish.
+ */
+function activeEpochAfter(
+	record: EpochOperationRecord,
+	current: EpochManifest["activeEpoch"],
+): EpochManifest["activeEpoch"] {
+	if (record.operation.kind !== EPOCH_START_KIND) {
+		return current;
+	}
+	return {
+		childId: record.correlation.childId,
+		epoch: record.correlation.epoch,
+		operationId: record.correlation.operationId,
+	};
+}
+
+/**
+ * Refuse to confirm a record the current generation no longer admits: an ordinary operation
+ * must belong to the active epoch, and an epoch start cannot be confirmed once replaced.
+ * @param manifest - The durable manifest.
+ * @param record - The record being confirmed.
+ */
+function assertConfirmableGeneration(manifest: EpochManifest, record: EpochOperationRecord): void {
+	if (record.operation.kind !== EPOCH_START_KIND) {
+		assertCurrentGeneration(manifest, record.correlation);
+		return;
+	}
+	const active = manifest.activeEpoch;
+	if (
+		active !== null &&
+		(active.childId !== record.correlation.childId || active.epoch !== record.correlation.epoch)
+	) {
+		throw epochError("stale_child", "an older epoch cannot be confirmed after replacement");
+	}
+}
+
+/**
+ * Report a storage failure, keeping an epoch error that already says something more precise.
+ * @param message - What could not be done.
+ * @param cause - The underlying failure.
+ * @returns The error to raise.
+ */
 function storageError(message: string, cause: unknown): CodexEpochError {
 	return cause instanceof CodexEpochError ? cause : epochError("storage_failure", message, cause);
 }

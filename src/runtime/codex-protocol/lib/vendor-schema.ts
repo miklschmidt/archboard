@@ -1,13 +1,12 @@
 import type { z } from "zod";
 
-import type { CodexIngressConformance } from "../../../shared/codex-app-server-contract/index.js";
+import type { CodexIngressConformance } from "@/shared/codex-app-server-contract";
 
 type SchemaConformance<Wire, Schema extends z.ZodType> = Schema &
 	CodexIngressConformance<Wire, z.input<Schema>, z.output<Schema>>;
 
 /**
  * Proves every handwritten ingress schema against its normalized generated wire type.
- *
  * @returns An identity validator whose parameter enforces every method's wire conformance.
  */
 export function codexIngressSchemas<WireByMethod extends object>() {

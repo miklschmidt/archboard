@@ -1,571 +1,64 @@
-import {
-	createSelfThreadForkParams,
-	createThreadForkParams,
-	createTurnStartParams,
-	canonicalContext,
-	WORKHORSE_DEVELOPER_INSTRUCTIONS,
-	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-} from "../../codex-instructions/index.js";
-import type { ArchboardContext } from "../../codex-instructions/index.js";
-import type { EpochTransaction } from "../../codex-epoch/index.js";
-import {
-	CodexSessionMutationError,
-	type SessionParams,
-	type SessionThread,
-	type SessionTurn,
-} from "../../codex-session/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/server-requests.js";
-import {
-	ARCHBOARD_APP_DYNAMIC_TOOLS,
-	ARCHBOARD_APP_MANIFEST_SHA256,
-} from "../../codex-thread-tools/index.js";
-import type {
-	OperationId,
-	ThreadId,
-	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { EpochTransaction } from "@/runtime/codex-epoch";
+import type { SessionThread, SessionTurn } from "@/runtime/codex-session";
+import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
 import {
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,
 	type DynamicCallerAuthority,
 	type DynamicContextAuthority,
 	type DynamicImmutableEffect,
-	type DynamicRefusalReason,
 	type DynamicRelation,
 	type DynamicTargetAuthority,
-} from "./contract.js";
-import type { DynamicOperationSettlement, PreparedDynamicMutation } from "./effects.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
+import type {
+	DynamicOperationSettlement,
+	PreparedDynamicMutation,
+} from "@/runtime/codex-dynamic-tools/lib/effects";
+import {
+	MUTATION_KINDS,
+	dynamicReason,
+	operationWire,
+	refusalMessage,
+	remoteOutcome,
+	settle,
+	type MutationExecution,
+} from "@/runtime/codex-dynamic-tools/lib/mutation-staging";
+import {
+	executeInitialTurn,
+	targetThreadSource,
+	forkParams,
+	initialOperationId,
+	initialOperationWire,
+	notDeliveredInitial,
+	readFreshContext,
+	threadStartParams,
+	turnParams,
+} from "@/runtime/codex-dynamic-tools/lib/mutation-context";
+import {
+	forkedThread,
+	initialTurnReport,
+	refusal,
+	stageMutation,
+	threadStateAfterInitialTurn,
+	undeliveredThread,
+} from "@/runtime/codex-dynamic-tools/lib/mutation-results";
 
-const MUTATION_KINDS = {
-	create_thread: { kind: "create_thread", rpc: "thread/start" },
-	fork_thread: { kind: "fork_thread", rpc: "thread/fork" },
-	send_message_to_thread: { kind: "send_message_to_thread", rpc: "turn/start" },
-} as const;
-
-type MutationExecution =
-	| { readonly kind: "ok"; readonly operationId: string; readonly value: unknown }
-	| { readonly kind: "outcome_unknown"; readonly operationId: string }
-	| { readonly kind: "refused"; readonly reason: DynamicRefusalReason; readonly message: string };
-
-interface StageOptions {
-	readonly options: CodexDynamicToolsOptions;
-	readonly caller: DynamicCallerAuthority;
-	readonly operationId: OperationId;
-	readonly kind: string;
-	readonly rpc: string;
-}
-
-function freezeDeep<T>(value: T): T {
-	if (typeof value !== "object" || value === null || Object.isFrozen(value)) {
-		return value;
-	}
-	for (const child of Object.values(value as Record<string, unknown>)) {
-		freezeDeep(child);
-	}
-	return Object.freeze(value);
-}
-
-function truncateUtf8(value: string, maximum: number): string {
-	if (Buffer.byteLength(value, "utf8") <= maximum) {
-		return value;
-	}
-	const ellipsis = "…";
-	const budget = maximum - Buffer.byteLength(ellipsis, "utf8");
-	let result = "";
-	for (const character of value) {
-		if (Buffer.byteLength(result + character, "utf8") > budget) {
-			break;
-		}
-		result += character;
-	}
-	return `${result}${ellipsis}`;
-}
-
-function operationWire(options: CodexDynamicToolsOptions, operationId: OperationId): string {
-	try {
-		options.operationId.validateCurrentUnconsumedOperationId(operationId);
-		const serialized = options.operationId.serializeForOwnedWireFields(operationId);
-		if (typeof serialized !== "string" || serialized.length === 0) {
-			throw new Error("the operation serializer returned an empty value");
-		}
-		return serialized;
-	} catch (error) {
-		if (error instanceof CodexDynamicToolsError) {
-			throw error;
-		}
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The host could not validate a canonical dynamic operation identity.",
-			error,
-		);
-	}
-}
-
-function stage(options: StageOptions): EpochTransaction {
-	try {
-		const expected = options.options.epoch.snapshot().cas;
-		return options.options.epoch.stageOperation({
-			childId: options.caller.childId,
-			epoch: options.caller.epoch,
-			operationId: operationWire(options.options, options.operationId),
-			kind: options.kind,
-			rpc: options.rpc,
-			workspaceRoot: options.options.checkoutRoot,
-			instructionHash: WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-			manifestHash: ARCHBOARD_APP_MANIFEST_SHA256,
-			expected,
-		});
-	} catch (error) {
-		if (error instanceof CodexDynamicToolsError) {
-			throw error;
-		}
-		throw epochError(error, "The local dynamic operation could not be staged.");
-	}
-}
-
-function epochError(error: unknown, message: string): CodexDynamicToolsError {
-	const code =
-		(error as { readonly code?: unknown })?.code === "stale_child"
-			? "stale_child"
-			: (error as { readonly code?: unknown })?.code === "prior_epoch"
-				? "prior_epoch"
-				: (error as { readonly code?: unknown })?.code === "unknown_provenance"
-					? "unknown_provenance"
-					: "system_error";
-	return new CodexDynamicToolsError(code, message, error);
-}
-
-function remoteOutcome(error: unknown): "not_delivered" | "outcome_unknown" {
-	if (error instanceof CodexSessionMutationError) {
-		return error.outcome;
-	}
-	if (
-		typeof error === "object" &&
-		error !== null &&
-		((error as { readonly outcome?: unknown }).outcome === "outcome_unknown" ||
-			(error as { readonly outcome?: unknown }).outcome === "not_delivered")
-	) {
-		return (error as { readonly outcome: "not_delivered" | "outcome_unknown" }).outcome;
-	}
-	return "not_delivered";
-}
-
-interface DurableSettlementResult {
-	readonly durable: boolean;
-}
-
-function settle(
-	options: CodexDynamicToolsOptions,
-	settlement: DynamicOperationSettlement,
-	operationId: OperationId,
-	transaction: EpochTransaction,
-	outcome: "delivered" | "not_delivered" | "outcome_unknown",
-	confirmation?: {
-		readonly threadId?: ThreadId | null;
-		readonly turnId?: TurnId | null;
-		readonly threadSource?: string | null;
-	},
-): DurableSettlementResult {
-	let durable = true;
-	try {
-		if (outcome === "delivered") {
-			options.epoch.commitOperation(transaction, confirmation);
-		} else if (outcome === "not_delivered") {
-			options.epoch.rollbackOperation(transaction, "dynamic mutation was not delivered");
-		} else {
-			options.epoch.markOutcomeUnknown(
-				transaction,
-				"dynamic mutation settlement is unknown",
-				confirmation,
-			);
-		}
-	} catch {
-		durable = false;
-	}
-	if (durable || outcome !== "not_delivered") {
-		settlement.consume(operationId);
-	} else {
-		settlement.retire(operationId);
-	}
-	return { durable };
-}
-
-function initialTurnValue(
-	delivery: "delivered" | "not_delivered" | "outcome_unknown",
-	operationId: string,
-	turn: SessionTurn | null,
-	errorMessage: string | null,
-): Readonly<Record<string, unknown>> {
-	if (delivery === "delivered") {
-		return freezeDeep({
-			delivery,
-			turnId: turn === null ? null : String(turn.id),
-			operationId,
-			reason: null,
-		});
-	}
-	return freezeDeep({
-		delivery,
-		turnId: null,
-		operationId,
-		reason: errorMessage === null ? null : truncateUtf8(errorMessage, 512),
-	});
-}
-
-function notDeliveredInitial(
-	operationId: string,
-	message: string,
-): Readonly<Record<string, unknown>> {
-	return initialTurnValue("not_delivered", operationId, null, message);
-}
-
-function unknownInitial(operationId: string): Readonly<Record<string, unknown>> {
-	return initialTurnValue(
-		"outcome_unknown",
-		operationId,
-		null,
-		"The request may have taken effect. Inspect authoritative state before another mutation.",
-	);
-}
-
-function turnParams(
-	targetThreadId: ThreadId,
-	operationId: string,
-	prompt: string,
-	context: ArchboardContext,
-): SessionParams<"turn/start"> {
-	const built = createTurnStartParams({
-		threadId: targetThreadId,
-		clientUserMessageId: operationId,
-		prompt,
-		context,
-	});
-	return {
-		...built,
-		threadId: targetThreadId,
-	};
-}
-
-function forkParams(
-	caller: DynamicCallerAuthority,
-	target: DynamicTargetAuthority,
-	relation: DynamicRelation,
-	boundary: TurnId | null,
-	checkoutRoot: string,
-): SessionParams<"thread/fork"> {
-	if (relation === "self") {
-		if (boundary !== caller.turnId) {
-			throw new CodexDynamicToolsError(
-				"invalid_call",
-				"A self-fork must use the executing turn boundary.",
-			);
-		}
-		const built = createSelfThreadForkParams({
-			threadId: target.threadId,
-			cwd: checkoutRoot,
-			executingTurnId: caller.turnId,
-		});
-		const threadId: ThreadId = target.threadId;
-		const beforeTurnId: TurnId = caller.turnId;
-		return {
-			threadId,
-			beforeTurnId,
-			cwd: built.cwd,
-			runtimeWorkspaceRoots: built.runtimeWorkspaceRoots,
-			developerInstructions: built.developerInstructions,
-			ephemeral: built.ephemeral,
-			threadSource: built.threadSource,
-			excludeTurns: built.excludeTurns,
-		} satisfies SessionParams<"thread/fork">;
-	}
-	const built = createThreadForkParams({
-		threadId: target.threadId,
-		cwd: checkoutRoot,
-		...(boundary === null ? {} : { beforeTurnId: boundary }),
-	});
-	const threadId: ThreadId = target.threadId;
-	if (boundary === null) {
-		return {
-			threadId,
-			cwd: built.cwd,
-			runtimeWorkspaceRoots: built.runtimeWorkspaceRoots,
-			developerInstructions: built.developerInstructions,
-			ephemeral: built.ephemeral,
-			threadSource: built.threadSource,
-			excludeTurns: built.excludeTurns,
-		} satisfies SessionParams<"thread/fork">;
-	}
-	return {
-		threadId,
-		beforeTurnId: boundary,
-		cwd: built.cwd,
-		runtimeWorkspaceRoots: built.runtimeWorkspaceRoots,
-		developerInstructions: built.developerInstructions,
-		ephemeral: built.ephemeral,
-		threadSource: built.threadSource,
-		excludeTurns: built.excludeTurns,
-	} satisfies SessionParams<"thread/fork">;
-}
-
-function threadStartParams(checkoutRoot: string): SessionParams<"thread/start"> {
-	return {
-		cwd: checkoutRoot,
-		runtimeWorkspaceRoots: [checkoutRoot],
-		serviceName: "archboard",
-		developerInstructions: WORKHORSE_DEVELOPER_INSTRUCTIONS,
-		ephemeral: false,
-		historyMode: "paginated",
-		sessionStartSource: "startup",
-		threadSource: "archboard",
-		dynamicTools: [...ARCHBOARD_APP_DYNAMIC_TOOLS],
-		experimentalRawEvents: false,
-	};
-}
-
-function targetThreadSource(thread: SessionThread): string | null {
-	return typeof thread.source === "string" ? thread.source : null;
-}
-
-function initialOperationId(prepared: PreparedDynamicMutation): OperationId {
-	if (prepared.operations.initialTurnOperationId === null) {
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The initial-turn operation identity is missing.",
-		);
-	}
-	return prepared.operations.initialTurnOperationId;
-}
-
-function dynamicReason(error: unknown): DynamicRefusalReason {
-	if (error instanceof CodexDynamicToolsError) {
-		if (
-			error.code === "invalid_call" ||
-			error.code === "not_ready" ||
-			error.code === "not_loaded" ||
-			error.code === "not_controllable" ||
-			error.code === "system_error" ||
-			error.code === "stale_child" ||
-			error.code === "prior_epoch" ||
-			error.code === "unknown_provenance" ||
-			error.code === "approval_declined" ||
-			error.code === "cycle" ||
-			error.code === "busy" ||
-			error.code === "expired" ||
-			error.code === "unsupported"
-		) {
-			return error.code;
-		}
-	}
-	return "system_error";
-}
-
-function refusalMessage(error: unknown, fallback: string): string {
-	return error instanceof Error && error.message.length > 0 ? error.message : fallback;
-}
-
-async function assertBeforeEffect(
-	options: CodexDynamicToolsOptions,
-	request: DynamicServerRequest,
-	caller: DynamicCallerAuthority,
-): Promise<void> {
-	try {
-		await options.lifecycle.assertCallExecuting({ request, caller, phase: "before_effect" });
-	} catch (error) {
-		if (error instanceof CodexDynamicToolsError) {
-			throw error;
-		}
-		const code = (error as { readonly code?: unknown })?.code;
-		if (
-			code === "stale_child" ||
-			code === "prior_epoch" ||
-			code === "unknown_provenance" ||
-			code === "not_loaded" ||
-			code === "not_controllable" ||
-			code === "system_error"
-		) {
-			throw new CodexDynamicToolsError(code, "The dynamic call is no longer executable.", error);
-		}
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The dynamic call is no longer executing before its effect.",
-			error,
-		);
-	}
-}
-
-async function readFreshContext(input: {
-	readonly options: CodexDynamicToolsOptions;
-	readonly caller: DynamicCallerAuthority;
-	readonly authority: DynamicContextAuthority;
-	readonly operationId: OperationId;
-	readonly kind:
-		| "create_thread_initial_turn"
-		| "fork_thread_initial_turn"
-		| "send_message_to_thread";
-	readonly targetThreadId?: ThreadId;
-}): Promise<ArchboardContext> {
-	try {
-		const fresh = await input.options.context.readOneFreshArchboardContext({
-			caller: input.caller,
-			authority: input.authority,
-			operationId: input.operationId,
-			kind: input.kind,
-			rpc: "turn/start",
-			...(input.targetThreadId === undefined ? {} : { targetThreadId: input.targetThreadId }),
-		});
-		return validateFreshContext({
-			context: fresh,
-			caller: input.caller,
-			authority: input.authority,
-			operationId: input.operationId,
-			kind: input.kind,
-			options: input.options,
-		});
-	} catch (error) {
-		if (error instanceof CodexDynamicToolsError) {
-			throw error;
-		}
-		throw new CodexDynamicToolsError(
-			"unknown_provenance",
-			"Fresh Archboard context was unavailable.",
-			error,
-		);
-	}
-}
-
-function initialOperationWire(prepared: PreparedDynamicMutation): string {
-	const operationId = prepared.effect.initialTurnOperationId;
-	if (operationId === null) {
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The initial-turn operation identity is missing.",
-		);
-	}
-	return operationId;
-}
-
-function validateFreshContext(input: {
-	readonly context: ArchboardContext;
-	readonly caller: DynamicCallerAuthority;
-	readonly authority: DynamicContextAuthority;
-	readonly operationId: OperationId;
-	readonly kind:
-		| "create_thread_initial_turn"
-		| "fork_thread_initial_turn"
-		| "send_message_to_thread";
-	readonly options: CodexDynamicToolsOptions;
-}): ArchboardContext {
-	let canonical: ArchboardContext;
-	try {
-		canonical = canonicalContext(input.context);
-	} catch (error) {
-		throw new CodexDynamicToolsError(
-			"unknown_provenance",
-			"The context authority returned invalid Archboard context.",
-			error,
-		);
-	}
-	const operationWireId = operationWire(input.options, input.operationId);
-	if (
-		canonical.paneId !== input.authority.paneId ||
-		input.authority.childId !== input.caller.childId ||
-		input.authority.epoch !== input.caller.epoch ||
-		input.authority.threadId !== input.caller.threadId ||
-		input.authority.turnId !== input.caller.turnId ||
-		canonical.child.id !== input.caller.childId ||
-		canonical.child.epoch !== input.caller.epoch ||
-		canonical.workhorse.threadId !== input.caller.wireThreadId ||
-		canonical.workhorse.turnId !== input.caller.wireTurnId ||
-		canonical.threadLink.state !== "executable" ||
-		canonical.threadLink.reason !== null ||
-		canonical.operation.id !== operationWireId ||
-		canonical.operation.kind !== input.kind ||
-		canonical.operation.rpc !== "turn/start" ||
-		canonical.operation.outcome !== null
-	) {
-		throw new CodexDynamicToolsError(
-			"unknown_provenance",
-			"Fresh context does not match the executing caller and operation.",
-		);
-	}
-	return canonical;
-}
-
-async function executeInitialTurn(input: {
-	readonly prepared: PreparedDynamicMutation;
-	readonly request: DynamicServerRequest;
-	readonly caller: DynamicCallerAuthority;
-	readonly context: ArchboardContext;
-	readonly targetThread: SessionThread;
-	readonly prompt: string;
-	readonly kind: "create_thread_initial_turn" | "fork_thread_initial_turn";
-	readonly options: CodexDynamicToolsOptions;
-	readonly operationSettlement: DynamicOperationSettlement;
-}): Promise<{
-	readonly delivery: "delivered" | "not_delivered" | "outcome_unknown";
-	readonly turn: SessionTurn | null;
-	readonly message: string | null;
-}> {
-	const operationId = initialOperationId(input.prepared);
-	const operationWireId = operationWire(input.options, operationId);
-	let transaction: EpochTransaction;
-	try {
-		await assertBeforeEffect(input.options, input.request, input.caller);
-		transaction = stage({
-			options: input.options,
-			caller: input.caller,
-			operationId,
-			kind: input.kind,
-			rpc: "turn/start",
-		});
-	} catch (error) {
-		return {
-			delivery: "not_delivered",
-			turn: null,
-			message: refusalMessage(error, "The initial turn could not be staged."),
-		};
-	}
-	let result: { readonly turn: SessionTurn };
-	try {
-		result = await input.options.session.turnStart(
-			turnParams(input.targetThread.id, operationWireId, input.prompt, input.context),
-		);
-	} catch (error) {
-		const outcome = remoteOutcome(error);
-		if (outcome === "outcome_unknown") {
-			settle(
-				input.options,
-				input.operationSettlement,
-				operationId,
-				transaction,
-				"outcome_unknown",
-				{
-					threadId: input.targetThread.id,
-					threadSource: targetThreadSource(input.targetThread),
-				},
-			);
-			return {
-				delivery: "outcome_unknown",
-				turn: null,
-				message:
-					"The request may have taken effect. Inspect authoritative state before another mutation.",
-			};
-		}
-		settle(input.options, input.operationSettlement, operationId, transaction, "not_delivered");
-		return {
-			delivery: "not_delivered",
-			turn: null,
-			message: refusalMessage(error, "The initial turn was not delivered."),
-		};
-	}
-	settle(input.options, input.operationSettlement, operationId, transaction, "delivered", {
-		threadId: input.targetThread.id,
-		turnId: result.turn.id,
-		threadSource: targetThreadSource(input.targetThread),
-	});
-	return { delivery: "delivered", turn: result.turn, message: null };
-}
-
+/**
+ * Create a new thread on behalf of a child, and start its first turn.
+ *
+ * The thread and its first turn are staged and settled separately, so a thread that exists but
+ * whose first turn did not run is reported as exactly that. A local record that could not be
+ * made durable stops the first turn from being attempted at all, because nothing would then
+ * account for it.
+ * @param prepared The prepared mutation.
+ * @param request The server request.
+ * @param caller The caller's authority.
+ * @param contextAuthority The pane-link authority the effect runs under.
+ * @param options The dynamic tools options.
+ * @param operationSettlement How the call's operation identities are settled.
+ * @returns What the mutation did.
+ */
 async function executeCreate(
 	prepared: PreparedDynamicMutation,
 	request: DynamicServerRequest,
@@ -586,40 +79,30 @@ async function executeCreate(
 			kind: "create_thread_initial_turn",
 		});
 	} catch (error) {
-		return {
-			kind: "refused",
-			reason: dynamicReason(error),
-			message: refusalMessage(error, "Fresh Archboard context was unavailable."),
-		};
+		return refusal(error, "Fresh Archboard context was unavailable.");
 	}
 	let transaction: EpochTransaction;
 	try {
-		await assertBeforeEffect(options, request, caller);
-		transaction = stage({
+		transaction = await stageMutation(
 			options,
+			request,
 			caller,
 			operationId,
-			kind: MUTATION_KINDS.create_thread.kind,
-			rpc: MUTATION_KINDS.create_thread.rpc,
-		});
+			MUTATION_KINDS.create_thread,
+		);
 	} catch (error) {
-		return {
-			kind: "refused",
-			reason: dynamicReason(error),
-			message: refusalMessage(error, "The create operation could not be staged."),
-		};
+		return refusal(error, "The create operation could not be staged.");
 	}
 	let thread: SessionThread;
 	try {
 		thread = (await options.session.threadStart(threadStartParams(options.checkoutRoot))).thread;
 	} catch (error) {
-		const outcome = remoteOutcome(error);
-		if (outcome === "outcome_unknown") {
-			settle(options, operationSettlement, operationId, transaction, "outcome_unknown");
-			return { kind: "outcome_unknown", operationId: operationWireId };
-		}
-		settle(options, operationSettlement, operationId, transaction, "not_delivered");
-		return { kind: "refused", reason: "not_ready", message: "The thread start was not delivered." };
+		return undeliveredThread(error, "The thread start was not delivered.", operationWireId, {
+			options,
+			operationSettlement,
+			operationId,
+			transaction,
+		});
 	}
 	const outerSettlement = settle(
 		options,
@@ -653,15 +136,7 @@ async function executeCreate(
 		caller,
 		context,
 		targetThread: thread,
-		prompt: (() => {
-			if (prepared.effect.tool !== "create_thread") {
-				throw new CodexDynamicToolsError(
-					"invalid_call",
-					"The create effect tool changed before execution.",
-				);
-			}
-			return prepared.effect.arguments.prompt;
-		})(),
+		prompt: createPromptOf(prepared),
 		kind: "create_thread_initial_turn",
 		options,
 		operationSettlement,
@@ -672,20 +147,178 @@ async function executeCreate(
 		operationId: operationWireId,
 		value: {
 			threadId: String(thread.id),
-			state: initial.delivery === "outcome_unknown" ? "inspect_only" : "executable",
-			initialTurn:
-				initial.delivery === "outcome_unknown"
-					? unknownInitial(initialId)
-					: initial.delivery === "delivered"
-						? initialTurnValue("delivered", initialId, initial.turn, null)
-						: notDeliveredInitial(
-								initialId,
-								initial.message ?? "The initial turn was not delivered.",
-							),
+			state: threadStateAfterInitialTurn(initial.delivery),
+			initialTurn: initialTurnReport(initial, initialId),
 		},
 	};
 }
 
+/**
+ * The prompt a create's first turn says, refusing an effect that is no longer a create.
+ * @param prepared The prepared mutation.
+ * @returns The prompt.
+ */
+function createPromptOf(prepared: PreparedDynamicMutation): string {
+	if (prepared.effect.tool !== "create_thread") {
+		throw new CodexDynamicToolsError(
+			"invalid_call",
+			"The create effect tool changed before execution.",
+		);
+	}
+	return prepared.effect.arguments.prompt;
+}
+
+/**
+ * The prompt a fork's first turn says, when the fork was asked to start one.
+ * @param prepared The prepared mutation.
+ * @returns The prompt.
+ */
+function forkPromptOf(prepared: PreparedDynamicMutation): string {
+	if (prepared.effect.tool !== "fork_thread" || prepared.effect.arguments.prompt === null) {
+		throw new CodexDynamicToolsError(
+			"invalid_call",
+			"A fork with an initial-turn operation requires a prompt.",
+		);
+	}
+	return prepared.effect.arguments.prompt;
+}
+
+/**
+ * The Archboard context a fork's first turn runs in, or the refusal to report when it could not
+ * be read.
+ * @param prepared The prepared mutation.
+ * @param caller The caller's authority.
+ * @param contextAuthority The pane-link authority the effect runs under.
+ * @param options The dynamic tools options.
+ * @returns The context, or the refusal.
+ */
+async function readForkContext(
+	prepared: PreparedDynamicMutation,
+	caller: DynamicCallerAuthority,
+	contextAuthority: DynamicContextAuthority,
+	options: CodexDynamicToolsOptions,
+): Promise<
+	{ kind: "ready"; context: ArchboardContext } | (MutationExecution & { kind: "refused" })
+> {
+	try {
+		return {
+			kind: "ready",
+			context: await readFreshContext({
+				options,
+				caller,
+				authority: contextAuthority,
+				operationId: initialOperationId(prepared),
+				kind: "fork_thread_initial_turn",
+			}),
+		};
+	} catch (error) {
+		return {
+			kind: "refused",
+			reason: dynamicReason(error),
+			message: refusalMessage(error, "Fresh Archboard context was unavailable."),
+		};
+	}
+}
+
+/** What a fork's first turn will say, and the context it will say it in. */
+interface ForkInitialTurn {
+	readonly prompt: string;
+	readonly context: ArchboardContext;
+}
+
+/** Everything making the forked thread needs. */
+interface ForkThreadInput {
+	readonly prepared: PreparedDynamicMutation;
+	readonly request: DynamicServerRequest;
+	readonly caller: DynamicCallerAuthority;
+	readonly target: DynamicTargetAuthority;
+	readonly relation: DynamicRelation;
+	readonly options: CodexDynamicToolsOptions;
+	readonly operationSettlement: DynamicOperationSettlement;
+	readonly operationWireId: string;
+}
+
+/** The forked thread, or the execution to report instead of one. */
+type ForkThreadResult =
+	| { readonly kind: "forked"; readonly thread: SessionThread; readonly durable: boolean }
+	| { readonly kind: "failed"; readonly execution: MutationExecution };
+
+/**
+ * Stage the fork, carry it out, and record what it did, so the caller is left either with the
+ * thread it made or with the execution to report in its place.
+ * @param input Everything making the thread needs.
+ * @returns The thread, or what to report instead.
+ */
+async function forkThread(input: ForkThreadInput): Promise<ForkThreadResult> {
+	const operationId = input.prepared.operations.mutationOperationId;
+	let transaction: EpochTransaction;
+	try {
+		transaction = await stageMutation(
+			input.options,
+			input.request,
+			input.caller,
+			operationId,
+			MUTATION_KINDS.fork_thread,
+		);
+	} catch (error) {
+		return { kind: "failed", execution: refusal(error, "The fork operation could not be staged.") };
+	}
+	let thread: SessionThread;
+	try {
+		thread = (
+			await input.options.session.threadFork(
+				forkParams(
+					input.caller,
+					input.target,
+					input.relation,
+					input.prepared.boundary,
+					input.options.checkoutRoot,
+				),
+			)
+		).thread;
+	} catch (error) {
+		return {
+			kind: "failed",
+			execution: undeliveredThread(
+				error,
+				"The thread fork was not delivered.",
+				input.operationWireId,
+				{
+					options: input.options,
+					operationSettlement: input.operationSettlement,
+					operationId,
+					transaction,
+				},
+			),
+		};
+	}
+	const settled = settle(
+		input.options,
+		input.operationSettlement,
+		operationId,
+		transaction,
+		"delivered",
+		{ threadId: thread.id, threadSource: targetThreadSource(thread) },
+	);
+	return { kind: "forked", thread, durable: settled.durable };
+}
+
+/**
+ * Fork one thread on behalf of a child, and start its first turn when the fork asked for one.
+ *
+ * A fork that asked for no first turn reports that it asked for none rather than that one
+ * failed; a fork whose local record could not be made durable stops before its first turn,
+ * because nothing would then account for it.
+ * @param prepared The prepared mutation.
+ * @param request The server request.
+ * @param caller The caller's authority.
+ * @param contextAuthority The pane-link authority the effect runs under.
+ * @param target The thread being forked.
+ * @param relation How the caller stands to that thread.
+ * @param options The dynamic tools options.
+ * @param operationSettlement How the call's operation identities are settled.
+ * @returns What the mutation did.
+ */
 async function executeFork(
 	prepared: PreparedDynamicMutation,
 	request: DynamicServerRequest,
@@ -696,138 +329,91 @@ async function executeFork(
 	options: CodexDynamicToolsOptions,
 	operationSettlement: DynamicOperationSettlement,
 ): Promise<MutationExecution> {
-	const operationId = prepared.operations.mutationOperationId;
-	const operationWireId = operationWire(options, operationId);
-	const boundary = prepared.boundary;
-	let prompt: string | null = null;
-	let context: ArchboardContext | null = null;
+	const operationWireId = operationWire(options, prepared.operations.mutationOperationId);
+	let first: ForkInitialTurn | null = null;
 	if (prepared.effect.initialTurnOperationId !== null) {
-		if (prepared.effect.tool !== "fork_thread" || prepared.effect.arguments.prompt === null) {
-			throw new CodexDynamicToolsError(
-				"invalid_call",
-				"A fork with an initial-turn operation requires a prompt.",
-			);
+		const read = await readForkContext(prepared, caller, contextAuthority, options);
+		if (read.kind === "refused") {
+			return read;
 		}
-		prompt = prepared.effect.arguments.prompt;
-		try {
-			context = await readFreshContext({
-				options,
-				caller,
-				authority: contextAuthority,
-				operationId: initialOperationId(prepared),
-				kind: "fork_thread_initial_turn",
-			});
-		} catch (error) {
-			return {
-				kind: "refused",
-				reason: dynamicReason(error),
-				message: refusalMessage(error, "Fresh Archboard context was unavailable."),
-			};
-		}
+		first = { prompt: forkPromptOf(prepared), context: read.context };
 	}
-	let transaction: EpochTransaction;
-	try {
-		await assertBeforeEffect(options, request, caller);
-		transaction = stage({
-			options,
-			caller,
-			operationId,
-			kind: MUTATION_KINDS.fork_thread.kind,
-			rpc: MUTATION_KINDS.fork_thread.rpc,
-		});
-	} catch (error) {
-		return {
-			kind: "refused",
-			reason: dynamicReason(error),
-			message: refusalMessage(error, "The fork operation could not be staged."),
-		};
-	}
-	let thread: SessionThread;
-	try {
-		thread = (
-			await options.session.threadFork(
-				forkParams(caller, target, relation, boundary, options.checkoutRoot),
-			)
-		).thread;
-	} catch (error) {
-		const outcome = remoteOutcome(error);
-		if (outcome === "outcome_unknown") {
-			settle(options, operationSettlement, operationId, transaction, "outcome_unknown");
-			return { kind: "outcome_unknown", operationId: operationWireId };
-		}
-		settle(options, operationSettlement, operationId, transaction, "not_delivered");
-		return { kind: "refused", reason: "not_ready", message: "The thread fork was not delivered." };
-	}
-	const outerSettlement = settle(
+	const made = await forkThread({
+		prepared,
+		request,
+		caller,
+		target,
+		relation,
 		options,
 		operationSettlement,
-		operationId,
-		transaction,
-		"delivered",
-		{
-			threadId: thread.id,
-			threadSource: targetThreadSource(thread),
-		},
-	);
-	if (prepared.effect.initialTurnOperationId === null) {
-		return {
-			kind: "ok",
-			operationId: operationWireId,
-			value: {
-				threadId: String(thread.id),
-				state: "executable",
-				initialTurn: { delivery: "not_requested", turnId: null, operationId: null, reason: null },
-			},
-		};
+		operationWireId,
+	});
+	if (made.kind !== "forked") {
+		return made.execution;
 	}
-	if (!outerSettlement.durable) {
-		return {
-			kind: "ok",
-			operationId: operationWireId,
-			value: {
-				threadId: String(thread.id),
-				state: "executable",
-				initialTurn: notDeliveredInitial(
-					initialOperationWire(prepared),
-					"The thread was forked, but its local durable settlement failed before the initial turn.",
-				),
-			},
-		};
+	if (first === null) {
+		return forkedThread(made.thread, operationWireId, {
+			delivery: "not_requested",
+			turnId: null,
+			operationId: null,
+			reason: null,
+		});
 	}
-	if (prompt === null || context === null) {
-		throw new CodexDynamicToolsError("invalid_call", "The fork initial-turn context is missing.");
+	if (!made.durable) {
+		return forkedThread(
+			made.thread,
+			operationWireId,
+			notDeliveredInitial(
+				initialOperationWire(prepared),
+				"The thread was forked, but its local durable settlement failed before the initial turn.",
+			),
+		);
 	}
 	const initial = await executeInitialTurn({
 		prepared,
 		request,
 		caller,
-		context,
-		targetThread: thread,
-		prompt,
+		context: first.context,
+		targetThread: made.thread,
+		prompt: first.prompt,
 		kind: "fork_thread_initial_turn",
 		options,
 		operationSettlement,
 	});
-	const initialId = initialOperationWire(prepared);
-	return {
-		kind: "ok",
-		operationId: operationWireId,
-		value: {
-			threadId: String(thread.id),
-			state: initial.delivery === "outcome_unknown" ? "inspect_only" : "executable",
-			initialTurn:
-				initial.delivery === "outcome_unknown"
-					? unknownInitial(initialId)
-					: initial.delivery === "delivered"
-						? initialTurnValue("delivered", initialId, initial.turn, null)
-						: notDeliveredInitial(
-								initialId,
-								initial.message ?? "The initial turn was not delivered.",
-							),
-		},
-	};
+	return forkedThread(
+		made.thread,
+		operationWireId,
+		initialTurnReport(initial, initialOperationWire(prepared)),
+		threadStateAfterInitialTurn(initial.delivery),
+	);
 }
 
+/**
+ * The prompt a send says, refusing an effect that is no longer a send.
+ * @param prepared The prepared mutation.
+ * @returns The prompt.
+ */
+function sendPromptOf(prepared: PreparedDynamicMutation): string {
+	if (prepared.effect.tool !== "send_message_to_thread") {
+		throw new CodexDynamicToolsError(
+			"invalid_call",
+			"The send effect tool changed before execution.",
+		);
+	}
+	return prepared.effect.arguments.prompt;
+}
+
+/**
+ * Send one message to a thread on behalf of a child, as a new turn on that thread.
+ * @param prepared The prepared mutation.
+ * @param request The server request.
+ * @param caller The caller's authority.
+ * @param contextAuthority The pane-link authority the effect runs under.
+ * @param target The thread being written to.
+ * @param options The dynamic tools options.
+ * @param operationSettlement How the call's operation identities are settled.
+ * @returns What the mutation did.
+ */
 async function executeSend(
 	prepared: PreparedDynamicMutation,
 	request: DynamicServerRequest,
@@ -850,46 +436,25 @@ async function executeSend(
 			targetThreadId: target.threadId,
 		});
 	} catch (error) {
-		return {
-			kind: "refused",
-			reason: dynamicReason(error),
-			message: refusalMessage(error, "Fresh Archboard context was unavailable."),
-		};
+		return refusal(error, "Fresh Archboard context was unavailable.");
 	}
 	let transaction: EpochTransaction;
 	try {
-		await assertBeforeEffect(options, request, caller);
-		transaction = stage({
+		transaction = await stageMutation(
 			options,
+			request,
 			caller,
 			operationId,
-			kind: MUTATION_KINDS.send_message_to_thread.kind,
-			rpc: MUTATION_KINDS.send_message_to_thread.rpc,
-		});
+			MUTATION_KINDS.send_message_to_thread,
+		);
 	} catch (error) {
-		return {
-			kind: "refused",
-			reason: dynamicReason(error),
-			message: refusalMessage(error, "The send operation could not be staged."),
-		};
+		return refusal(error, "The send operation could not be staged.");
 	}
 	let turn: SessionTurn;
 	try {
 		turn = (
 			await options.session.turnStart(
-				turnParams(
-					target.threadId,
-					operationWireId,
-					prepared.effect.tool === "send_message_to_thread"
-						? prepared.effect.arguments.prompt
-						: (() => {
-								throw new CodexDynamicToolsError(
-									"invalid_call",
-									"The send effect tool changed before execution.",
-								);
-							})(),
-					context,
-				),
+				turnParams(target.threadId, operationWireId, sendPromptOf(prepared), context),
 			)
 		).turn;
 	} catch (error) {
@@ -919,6 +484,11 @@ async function executeSend(
 	};
 }
 
+/**
+ * The thread an effect names, when it names one.
+ * @param effect The effect.
+ * @returns The thread, or null for a create.
+ */
 function effectTargetThreadId(effect: DynamicImmutableEffect): string | null {
 	if (effect.tool === "create_thread") {
 		return null;

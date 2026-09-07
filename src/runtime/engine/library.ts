@@ -15,10 +15,12 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { VAULT_STATE_DIR } from "./board.js";
-import { writeFileAtomic } from "./atomic-write.js";
-import { ARCHBOARD_VAULT } from "./config.js";
-import logger from "./logger.js";
+import { VAULT_STATE_DIR } from "@/runtime/engine/board";
+import { writeFileAtomic } from "@/runtime/engine/atomic-write";
+import { ARCHBOARD_VAULT } from "@/runtime/engine/config";
+import { logger } from "@/runtime/engine/logger";
+import { errorMessage } from "@/runtime/engine/lib/thrown-error";
+import { isRecord, numberAt, stringAt } from "@/runtime/engine/lib/unknown-record";
 
 // The v2 library item, which is what both this store and Excalidraw speak.
 // `elements` is deliberately loose: they are Excalidraw elements, we never
@@ -61,6 +63,10 @@ const LIBRARY_FILE = "library.excalidrawlib";
 // everything else. Resolved from src/runtime/engine/ back to the repo root.
 const CURATED_DIR = path.resolve(import.meta.dirname, "../../../libraries");
 
+/**
+ * Where the library is kept.
+ * @returns The path, or null when there is no vault to write one to.
+ */
 function libraryFilePath(): string | null {
 	if (!ARCHBOARD_VAULT) {
 		return null;
@@ -74,65 +80,177 @@ function libraryFilePath(): string | null {
 // library site: version 1 is a bare array of element arrays, version 2 wraps
 // each in an item with an id and a name. Everything past this function is v2.
 
+/**
+ * A stable id for a v1 item, which carries none of its own.
+ *
+ * Derived from the set and the position rather than minted, so that reading
+ * the same curated file twice produces the same ids and the second read merges
+ * rather than duplicating.
+ * @param setName The curated set's basename.
+ * @param index Where the item sits in it.
+ * @returns The id.
+ */
 function deriveId(setName: string, index: number): string {
 	return crypto.createHash("sha256").update(`${setName}:${index}`).digest("hex").slice(0, 20);
 }
 
+/**
+ * The item list a library document carries, under either of the two keys the
+ * library site publishes.
+ * @param document The parsed file.
+ * @returns The entries, or none when it holds no list at all.
+ */
+function libraryEntriesOf(document: Record<string, unknown>): unknown[] {
+	if (Array.isArray(document["libraryItems"])) {
+		return document["libraryItems"];
+	}
+	return Array.isArray(document["library"]) ? document["library"] : [];
+}
+
+/**
+ * One entry as a v2 item record, when it is one.
+ * @param entry The entry as it was published.
+ * @returns The record, or null for a v1 entry, which is its elements.
+ */
+function entryRecord(entry: unknown): Record<string, unknown> | null {
+	return isRecord(entry) && !Array.isArray(entry) ? entry : null;
+}
+
+/**
+ * The elements one entry states, in either format.
+ * @param entry The entry as it was published.
+ * @param record The same entry as a v2 record, when it is one.
+ * @returns The elements, or none.
+ */
+function statedElements(entry: unknown, record: Record<string, unknown> | null): unknown[] {
+	const stated = Array.isArray(entry) ? entry : record?.["elements"];
+	return Array.isArray(stated) ? stated : [];
+}
+
+/**
+ * The elements that still exist. Excalidraw tombstones a deleted element
+ * rather than removing it, and a stencil made only of tombstones draws nothing.
+ * @param elements The stated elements.
+ * @returns The ones that are not tombstones.
+ */
+function liveElements(elements: readonly unknown[]): unknown[] {
+	return elements.filter((el) => isRecord(el) && el["isDeleted"] !== true);
+}
+
+/**
+ * An item's id.
+ *
+ * Its own is kept when it has one, so that installing the same library from
+ * the site later merges with the seeded copy instead of duplicating it —
+ * Excalidraw merges library items by id.
+ * @param record The v2 record, when there is one.
+ * @param setName The curated set's basename.
+ * @param index Where the item sits in it.
+ * @returns The id.
+ */
+function itemId(record: Record<string, unknown> | null, setName: string, index: number): string {
+	const stated = record ? stringAt(record, "id") : undefined;
+	return stated || deriveId(setName, index);
+}
+
+/**
+ * Whether an item was published or is somebody's own work in progress.
+ * @param record The v2 record, when there is one.
+ * @returns The status.
+ */
+function itemStatus(record: Record<string, unknown> | null): LibraryItem["status"] {
+	return record?.["status"] === "unpublished" ? "unpublished" : "published";
+}
+
+/**
+ * When an item was made, falling back to now for a format that never said.
+ * @param record The v2 record, when there is one.
+ * @returns The timestamp.
+ */
+function itemCreated(record: Record<string, unknown> | null): number {
+	const stated = record ? numberAt(record, "created", 0) : 0;
+	return stated || Date.now();
+}
+
+/**
+ * An item's name, present only where the file actually carried one: the v1
+ * format has no names at all.
+ * @param record The v2 record, when there is one.
+ * @returns The `name` field, or nothing.
+ */
+function itemName(record: Record<string, unknown> | null): { name?: string } {
+	const stated = record ? stringAt(record, "name") : undefined;
+	return stated ? { name: stated } : {};
+}
+
+/**
+ * One published entry as a library item.
+ * @param entry The entry as it was published.
+ * @param setName The curated set's basename.
+ * @param index Where the entry sits in it.
+ * @returns The item, or null when it draws nothing.
+ */
+function libraryItemOf(entry: unknown, setName: string, index: number): LibraryItem | null {
+	const record = entryRecord(entry);
+	const elements = liveElements(statedElements(entry, record));
+	if (elements.length === 0) {
+		return null;
+	}
+	return {
+		id: itemId(record, setName, index),
+		status: itemStatus(record),
+		elements,
+		created: itemCreated(record),
+		...itemName(record),
+	};
+}
+
+/**
+ * Every stencil a library document holds, in v2 form whichever format it came
+ * in.
+ * @param parsed The parsed file.
+ * @param setName What to call it in errors and derived ids.
+ * @returns The items.
+ * @throws {Error} When the file is not a library at all.
+ */
 function parseLibraryDocument(parsed: unknown, setName: string): LibraryItem[] {
-	if (!parsed || typeof parsed !== "object") {
+	if (!isRecord(parsed)) {
 		throw new Error(`${setName}: not a library file`);
 	}
-	const document = parsed as Record<string, unknown>;
-	let raw: unknown[] = [];
-	if (Array.isArray(document["libraryItems"])) {
-		raw = document["libraryItems"];
-	} else if (Array.isArray(document["library"])) {
-		raw = document["library"];
-	}
-
 	const items: LibraryItem[] = [];
-	for (const [index, entry] of raw.entries()) {
-		// v1: the item *is* its elements.
-		const record =
-			entry && typeof entry === "object" && !Array.isArray(entry)
-				? (entry as Record<string, unknown>)
-				: null;
-		const elements = Array.isArray(entry) ? entry : record?.["elements"];
-		if (!Array.isArray(elements) || elements.length === 0) {
-			continue;
-		}
-		const item: LibraryItem = {
-			// An item's own id is kept when it has one, so that installing the same
-			// library from the site later merges with the seeded copy instead of
-			// duplicating it — Excalidraw merges library items by id.
-			id: (record && typeof record["id"] === "string" && record["id"]) || deriveId(setName, index),
-			status: record?.["status"] === "unpublished" ? "unpublished" : "published",
-			elements: elements.filter(
-				(el: unknown) =>
-					el && typeof el === "object" && (el as Record<string, unknown>)["isDeleted"] !== true,
-			),
-			created: (record && typeof record["created"] === "number" && record["created"]) || Date.now(),
-		};
-		if (record && typeof record["name"] === "string" && record["name"]) {
-			item.name = record["name"];
-		}
-		if (item.elements.length > 0) {
+	for (const [index, entry] of libraryEntriesOf(parsed).entries()) {
+		const item = libraryItemOf(entry, setName, index);
+		if (item) {
 			items.push(item);
 		}
 	}
 	return items;
 }
 
+/**
+ * Every stencil a .excalidrawlib file holds.
+ * @param json The file's contents.
+ * @param setName What to call it in errors and derived ids.
+ * @returns The items.
+ * @throws {Error} When the file is not a library, or not JSON at all.
+ */
 function parseLibraryFile(json: string, setName: string): LibraryItem[] {
 	return parseLibraryDocument(JSON.parse(json), setName);
 }
 
-/** The curated sets that ship with archboard, by file basename. */
-/** @returns the curated sets that ship with archboard, by file basename */
-function curatedSets(): { name: string; items: LibraryItem[] }[] {
-	let files: string[];
+/** One curated set, named after the file it shipped in. */
+interface CuratedSet {
+	name: string;
+	items: LibraryItem[];
+}
+
+/**
+ * The curated set files that ship with archboard.
+ * @returns Their basenames, sorted, or none when the directory is missing.
+ */
+function curatedFiles(): string[] {
 	try {
-		files = fs
+		return fs
 			.readdirSync(CURATED_DIR)
 			.filter((f) => f.endsWith(".excalidrawlib"))
 			.toSorted();
@@ -140,17 +258,24 @@ function curatedSets(): { name: string; items: LibraryItem[] }[] {
 		logger.warn(`No curated libraries found at ${CURATED_DIR}`);
 		return [];
 	}
-	const sets: { name: string; items: LibraryItem[] }[] = [];
-	for (const file of files) {
+}
+
+/**
+ * The curated sets that ship with archboard, by file basename.
+ *
+ * One unreadable set is skipped rather than fatal: the rest of the palette is
+ * still worth having.
+ * @returns The sets, in file order.
+ */
+function curatedSets(): CuratedSet[] {
+	const sets: CuratedSet[] = [];
+	for (const file of curatedFiles()) {
 		const name = file.replace(/\.excalidrawlib$/u, "");
 		try {
 			const contents = fs.readFileSync(path.join(CURATED_DIR, file), "utf8");
-			sets.push({
-				name,
-				items: parseLibraryFile(contents, name),
-			});
+			sets.push({ name, items: parseLibraryFile(contents, name) });
 		} catch (error) {
-			logger.warn(`Skipping curated library ${file}: ${(error as Error).message}`);
+			logger.warn(`Skipping curated library ${file}: ${errorMessage(error)}`);
 		}
 	}
 	return sets;
@@ -167,36 +292,83 @@ function curatedSets(): { name: string; items: LibraryItem[] }[] {
 // With no vault configured this is not a cache at all; it is process state.
 const cache = { state: null as LibraryState | null };
 
+/**
+ * A library with nothing in it, knowing where it would be written.
+ * @returns The empty state.
+ */
 function emptyState(): LibraryState {
 	const file = libraryFilePath();
 	return { items: [], seeded: [], origins: {}, file, vaultBacked: file !== null };
 }
 
-function readFromDisk(
-	file: string,
-): { items: LibraryItem[]; seeded: string[]; origins: Record<string, string> } | null {
+/** What the stored library file says, beyond its items. */
+interface StoredLibrary {
+	items: LibraryItem[];
+	seeded: string[];
+	origins: Record<string, string>;
+}
+
+/**
+ * Which curated sets the stored file records as already offered.
+ * @param archboard Our own bookkeeping key, when the file carries one.
+ * @returns The set names.
+ */
+function storedSeeded(archboard: Record<string, unknown> | undefined): string[] {
+	const seeded = archboard?.["seeded"];
+	return Array.isArray(seeded) ? seeded.filter((s): s is string => typeof s === "string") : [];
+}
+
+/**
+ * Which curated set each stored item came from.
+ * @param archboard Our own bookkeeping key, when the file carries one.
+ * @returns Item id to set name, keeping only the entries that name one.
+ */
+function storedOrigins(archboard: Record<string, unknown> | undefined): Record<string, string> {
+	const origins = archboard?.["origins"];
+	if (!isRecord(origins)) {
+		return {};
+	}
+	const kept: Record<string, string> = {};
+	for (const [id, source] of Object.entries(origins)) {
+		if (typeof source === "string") {
+			kept[id] = source;
+		}
+	}
+	return kept;
+}
+
+/**
+ * The library as the vault holds it.
+ *
+ * A corrupt library must not take the canvas server down with it, and it must
+ * not be silently replaced either: the bad file keeps its name until a write
+ * moves it aside.
+ * @param file Where the library is kept.
+ * @returns What it holds, or null when there is nothing readable there.
+ */
+function readFromDisk(file: string): StoredLibrary | null {
 	if (!fs.existsSync(file)) {
 		return null;
 	}
 	try {
-		const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
-		const seeded = Array.isArray(parsed?.archboard?.seeded)
-			? parsed.archboard.seeded.filter((s: unknown) => typeof s === "string")
-			: [];
-		const origins =
-			parsed?.archboard?.origins && typeof parsed.archboard.origins === "object"
-				? (parsed.archboard.origins as Record<string, string>)
-				: {};
-		return { items: parseLibraryDocument(parsed, "library"), seeded, origins };
+		const parsed: unknown = JSON.parse(fs.readFileSync(file, "utf8"));
+		const stated = isRecord(parsed) ? parsed["archboard"] : undefined;
+		const archboard = isRecord(stated) ? stated : undefined;
+		return {
+			items: parseLibraryDocument(parsed, "library"),
+			seeded: storedSeeded(archboard),
+			origins: storedOrigins(archboard),
+		};
 	} catch (error) {
-		// A corrupt library must not take the canvas server down with it, and it
-		// must not be silently replaced either: the bad file keeps its name until
-		// a write moves it aside.
-		logger.error(`Could not read the library at ${file}: ${(error as Error).message}`);
+		logger.error(`Could not read the library at ${file}: ${errorMessage(error)}`);
 		return null;
 	}
 }
 
+/**
+ * Write the library out, when there is a vault to write it to.
+ * @param state The library to persist.
+ */
 function persist(state: LibraryState): void {
 	if (!state.file) {
 		return;
@@ -219,27 +391,32 @@ function persist(state: LibraryState): void {
 }
 
 /**
- * The library, seeding any curated set that has never been offered.
+ * Fill a fresh state from the vault, where there is one to read.
+ * @param state The state to fill, edited in place.
+ */
+function loadStoredState(state: LibraryState): void {
+	if (!state.file) {
+		return;
+	}
+	const stored = readFromDisk(state.file);
+	if (!stored) {
+		return;
+	}
+	state.items = stored.items;
+	state.seeded = stored.seeded;
+	state.origins = stored.origins;
+}
+
+/**
+ * Offer every curated set that has never been offered before.
  *
  * Seeded items go in at the end, so a human's own stencils stay at the top of
- * the palette where they put them.
+ * the palette where they put them. A set is marked as offered whether or not
+ * any of its items were new, so deleting one means deleting it.
+ * @param state The state to seed, edited in place.
+ * @returns How many items were added.
  */
-/** @returns the library after seeding any newly available curated sets */
-function readLibrary(): LibraryState {
-	if (cache.state) {
-		return cache.state;
-	}
-
-	const state = emptyState();
-	if (state.file) {
-		const stored = readFromDisk(state.file);
-		if (stored) {
-			state.items = stored.items;
-			state.seeded = stored.seeded;
-			state.origins = stored.origins;
-		}
-	}
-
+function seedCuratedSets(state: LibraryState): number {
 	const known = new Set(state.items.map((item) => item.id));
 	let added = 0;
 	for (const set of curatedSets()) {
@@ -257,19 +434,32 @@ function readLibrary(): LibraryState {
 			added++;
 		}
 	}
+	return added;
+}
+
+/**
+ * The library, seeding any curated set that has never been offered.
+ * @returns The library after seeding any newly available curated sets.
+ */
+function readLibrary(): LibraryState {
+	if (cache.state) {
+		return cache.state;
+	}
+	const state = emptyState();
+	loadStoredState(state);
+	const added = seedCuratedSets(state);
 	if (added > 0) {
 		logger.info(`Seeded ${added} library items from ${state.seeded.length} curated sets`);
 		persist(state);
 	}
-
 	cache.state = state;
 	return cache.state;
 }
 
-/** Replace the library with what a browser reports it to now be. */
 /**
- * @param items complete library reported by a browser
- * @returns the persisted library state
+ * Replace the library with what a browser reports it to now be.
+ * @param items The complete library, as the browser holds it.
+ * @returns The persisted library state.
  */
 function writeLibrary(items: LibraryItem[]): LibraryState {
 	const state = readLibrary();

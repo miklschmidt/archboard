@@ -1,0 +1,127 @@
+// The pre-policy repository baseline (TASK-151): it owns tests/**, the module tests
+// under src/*/*/tests/**, frontend/** and src/server/board-rendering/browser.ts.
+// Every other authored source file is owned by the policy in .oxlintrc.jsonc.
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"plugins": [
+		"unicorn",
+		"typescript",
+		"oxc",
+		"import",
+		"jsx-a11y",
+		"promise",
+		"node",
+		"react",
+		"react-perf",
+	],
+	"jsPlugins": ["./tools/oxlint-plugin-archboard.ts"],
+	"env": {
+		"browser": true,
+		"node": true,
+		"es2023": true,
+	},
+	"globals": {
+		"Bun": "readonly",
+	},
+	"options": {
+		"denyWarnings": true,
+		"maxWarnings": 0,
+		"reportUnusedDisableDirectives": "error",
+	},
+	"ignorePatterns": [
+		"dist/**",
+		"node_modules/**",
+		"backlog/**",
+		".agents/**",
+		".claude/**",
+		"docs/design/vendor/**",
+		"src/shared/codex-app-server-contract/generated/**",
+		"src/ui/**",
+	],
+	"settings": {
+		"react": {
+			"version": "19.2.8",
+		},
+	},
+	"rules": {
+		"complexity": [
+			"error",
+			{
+				"max": 60,
+				"variant": "classic",
+			},
+		],
+		"no-console": "error",
+		"import/no-cycle": "error",
+		"import/no-relative-parent-imports": "off",
+		"typescript/consistent-type-imports": "error",
+		"typescript/no-require-imports": "error",
+		"typescript/no-explicit-any": "error",
+		"react/jsx-no-undef": "error",
+		"react/no-danger": "error",
+		"react/react-in-jsx-scope": "off",
+		"archboard/no-anonymous-jsx-handlers": "error",
+		"archboard/assistant-ui-imports": "error",
+		"archboard/no-catch-all-exports": "error",
+		"archboard/no-compatibility-identifiers": "error",
+		"archboard/no-generic-buckets": "error",
+		"archboard/mapped-source-paths": "error",
+		"archboard/import-boundaries": "error",
+		"archboard/module-entrypoints": "error",
+		"archboard/root-implementation-modules": "error",
+		"archboard/state-files-pure": "error",
+		"archboard/no-archive-references": "error",
+	},
+	"overrides": [
+		{
+			"files": [
+				"src/**/*.ts",
+				"src/**/*.tsx",
+				"frontend/**/*.ts",
+				"frontend/**/*.tsx",
+				"tests/system/**/*.ts",
+				"scripts/**/*.ts",
+				"tools/**/*.ts",
+				"tools/**/*.js",
+			],
+			"rules": {
+				"no-await-in-loop": "off",
+				"typescript/no-unsafe-type-assertion": "off",
+				"typescript/no-unnecessary-type-assertion": "off",
+				"typescript/no-base-to-string": "off",
+				"typescript/no-unnecessary-condition": "off",
+				"typescript/no-unnecessary-type-conversion": "off",
+				"typescript/consistent-return": "off",
+			},
+		},
+		{
+			"files": [
+				"scripts/generate-cli-contract.ts",
+				"scripts/generate-codex-app-server-contract.ts",
+				"scripts/sync-skills.ts",
+			],
+			"rules": {
+				"no-console": "off",
+			},
+		},
+		{
+			"files": ["src/*/*/tests/**/*.ts", "src/*/*/tests/**/*.tsx", "tests/system/**/*.ts"],
+			"rules": {
+				"max-lines": [
+					"error",
+					{
+						"max": 500,
+						"skipBlankLines": false,
+						"skipComments": false,
+					},
+				],
+			},
+		},
+	],
+	"categories": {
+		"correctness": "error",
+		"suspicious": "error",
+		"perf": "error",
+		"nursery": "error",
+	},
+}
