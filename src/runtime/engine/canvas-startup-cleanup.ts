@@ -1,179 +1,31 @@
+// Proving that a failed canvas start left nothing running.
+//
+// A start that died may have taken Codex process groups with it, or may not
+// have. The canvas is asked first, because only it knows what it owned; if its
+// own account does not arrive, this takes the groups it did report and drives
+// them down itself, one bounded step at a time. Nothing here guesses: an
+// unproven cleanup is said out loud, with the pids to inspect.
+
 import type {
 	CanvasStartupProcessGroupIdentity,
 	CanvasStartupProtocolEvent,
 	CanvasStartupProtocolRecord,
 } from "@/shared/canvas-startup-terminal";
-import { parseCanvasStartupProtocolRecord } from "@/shared/canvas-startup-terminal";
-import type { Readable } from "node:stream";
 import type {
 	CodexProcessGroupInspection,
 	CodexProcessGroupSignal,
 } from "@/runtime/codex-process/process-group";
-import { CODEX_COMPOSED_SHUTDOWN_MS, CODEX_TERM_GRACE_MS } from "@/shared/timing/timing";
-import { asError, errorMessage } from "@/runtime/engine/lib/thrown-error";
-
-interface FailedCanvasCleanupTiming {
-	readonly shutdownDeadlineMs: number;
-	readonly applicationGraceMs: number;
-	readonly pollMs: number;
-}
-
-/**
- * Production policy. Tests replace this function through a preload-only partial mock.
- * @returns The deadline, application grace and poll interval for one failed start.
- */
-function failedCanvasCleanupTiming(): FailedCanvasCleanupTiming {
-	return Object.freeze({
-		shutdownDeadlineMs: CODEX_COMPOSED_SHUTDOWN_MS,
-		applicationGraceMs: CODEX_TERM_GRACE_MS,
-		pollMs: 25,
-	});
-}
-
-interface FailedCanvasCleanupProtocol {
-	/** Null means no protocol event arrived within this slice of the one cleanup deadline. */
-	readonly next: (maxWaitMs: number) => Promise<CanvasStartupProtocolEvent | null>;
-}
-
-interface CanvasStartupProtocolReader extends FailedCanvasCleanupProtocol {
-	readonly failure: () => Error | null;
-	readonly terminalMessage: () => string | null;
-	readonly destroy: () => void;
-}
-
-interface ProtocolWaiter {
-	readonly resolve: (event: CanvasStartupProtocolEvent | null) => void;
-	readonly timer: ReturnType<typeof setTimeout>;
-}
-
-/**
- * Read the canvas startup protocol off the server's fd 3: one JSON record per
- * line, queued until the cleanup state machine asks for the next event.
- * @param stream The pipe from the spawned server, or null when there is none.
- * @returns The reader the cleanup consumes, with its failure and terminal message.
- */
-function createCanvasStartupProtocolReader(stream: Readable | null): CanvasStartupProtocolReader {
-	const events: CanvasStartupProtocolEvent[] = [];
-	let buffer = "";
-	let closed = stream === null;
-	let protocolFailure: Error | null = null;
-	let message: string | null = null;
-	let terminalSeen = false;
-	let waiter: ProtocolWaiter | null = null;
-	/**
-	 * Hand an event to the waiting consumer, or queue it for the next ask.
-	 * @param event The parsed event.
-	 */
-	const push = (event: CanvasStartupProtocolEvent): void => {
-		if (waiter !== null) {
-			const current = waiter;
-			waiter = null;
-			clearTimeout(current.timer);
-			current.resolve(event);
-			return;
-		}
-		events.push(event);
-	};
-	/**
-	 * Parse one complete line into an event, recording a terminal record's message.
-	 * @param line One protocol line without its newline.
-	 */
-	const consumeLine = (line: string): void => {
-		try {
-			const record: CanvasStartupProtocolRecord = parseCanvasStartupProtocolRecord(line);
-			if (record.kind === "terminal") {
-				terminalSeen = true;
-				message = record.message;
-			}
-			push({ kind: "record", record });
-		} catch (error) {
-			protocolFailure = asError(error);
-			push({ kind: "invalid", message: protocolFailure.message });
-		}
-	};
-	/**
-	 * Buffer a chunk and consume every complete line in it.
-	 * @param chunk What the pipe delivered.
-	 */
-	const onData = (chunk: Buffer | string): void => {
-		buffer += typeof chunk === "string" ? chunk : chunk.toString("utf8");
-		let newline = buffer.indexOf("\n");
-		while (newline >= 0) {
-			const line = buffer.slice(0, newline);
-			buffer = buffer.slice(newline + 1);
-			consumeLine(line);
-			newline = buffer.indexOf("\n");
-		}
-	};
-	/** Mark the pipe closed; closing before a terminal record is a protocol failure. */
-	const onClose = (): void => {
-		closed = true;
-		if (!terminalSeen) {
-			protocolFailure = new Error(
-				"The canvas startup cleanup protocol closed before terminal proof.",
-			);
-		}
-		push({ kind: "closed" });
-	};
-	stream?.on("data", onData);
-	stream?.once("close", onClose);
-	if (stream === null) {
-		events.push({ kind: "closed" });
-	}
-	/**
-	 * The next event: queued, closed, or awaited within a bound.
-	 * @param maxWaitMs How long to wait for one to arrive.
-	 * @returns The event, or null when none arrived in time.
-	 */
-	const next = (maxWaitMs: number): Promise<CanvasStartupProtocolEvent | null> => {
-		const ready = events.shift();
-		if (ready !== undefined) {
-			return Promise.resolve(ready);
-		}
-		if (closed) {
-			return Promise.resolve({ kind: "closed" });
-		}
-		if (maxWaitMs <= 0) {
-			return Promise.resolve(null);
-		}
-		if (waiter !== null) {
-			return Promise.reject(new Error("The canvas startup cleanup protocol already has a waiter."));
-		}
-		return new Promise((resolve) => {
-			const timer = setTimeout(() => {
-				waiter = null;
-				resolve(null);
-			}, maxWaitMs);
-			waiter = { resolve, timer };
-		});
-	};
-	/** Detach from the pipe and release anybody still waiting on it. */
-	const destroy = (): void => {
-		stream?.off("data", onData);
-		stream?.off("close", onClose);
-		stream?.destroy();
-		if (waiter !== null) {
-			const current = waiter;
-			waiter = null;
-			clearTimeout(current.timer);
-			current.resolve(null);
-		}
-	};
-	return {
-		/**
-		 * The protocol failure seen so far.
-		 * @returns The failure, or null while the protocol is intact.
-		 */
-		failure: () => protocolFailure,
-		/**
-		 * The message the terminal record carried.
-		 * @returns The message, or null before a terminal record.
-		 */
-		terminalMessage: () => message,
-		next,
-		destroy,
-	};
-}
+import { errorMessage } from "@/runtime/engine/lib/thrown-error";
+import type {
+	CanvasStartupProtocolReader,
+	FailedCanvasCleanupProtocol,
+	FailedCanvasCleanupTiming,
+} from "@/runtime/engine/lib/canvas-startup-protocol";
+import {
+	createCanvasStartupProtocolReader,
+	failedCanvasCleanupTiming,
+	validateTiming,
+} from "@/runtime/engine/lib/canvas-startup-protocol";
 
 interface FailedCanvasCleanupOperations {
 	readonly now: () => number;
@@ -276,24 +128,6 @@ function stoppedCanvasGroups(
 			.join("; ") +
 		"."
 	);
-}
-
-/**
- * Refuse timing that could make the state machine spin or never finish.
- * @param timing The policy to check.
- */
-function validateTiming(timing: FailedCanvasCleanupTiming): void {
-	for (const [name, value] of Object.entries(timing)) {
-		if (!Number.isFinite(value) || value < 0) {
-			throw new Error(`Failed canvas cleanup ${name} must be a non-negative finite duration.`);
-		}
-	}
-	if (timing.pollMs <= 0) {
-		throw new Error("Failed canvas cleanup pollMs must be greater than zero.");
-	}
-	if (timing.applicationGraceMs > timing.shutdownDeadlineMs) {
-		throw new Error("Failed canvas cleanup application grace cannot exceed its deadline.");
-	}
 }
 
 /**
@@ -419,7 +253,11 @@ class TransferredGroups {
 			try {
 				this.operations.signalGroup(state.identity, signal);
 			} catch (cause) {
-				throw new GroupOperationFailure({ identity: state.identity, operation: "signalling", cause });
+				throw new GroupOperationFailure({
+					identity: state.identity,
+					operation: "signalling",
+					cause,
+				});
 			}
 		}
 	}
@@ -549,7 +387,9 @@ function sameGroup(
 	a: CanvasStartupProcessGroupIdentity,
 	b: CanvasStartupProcessGroupIdentity,
 ): boolean {
-	return a.leaderPid === b.leaderPid && a.pgid === b.pgid && a.leaderStartTime === b.leaderStartTime;
+	return (
+		a.leaderPid === b.leaderPid && a.pgid === b.pgid && a.leaderStartTime === b.leaderStartTime
+	);
 }
 
 /** What one protocol event means for the wait on the canvas's own cleanup. */
@@ -561,17 +401,17 @@ type ProtocolStep =
 const CONTINUE: ProtocolStep = { kind: "continue" };
 
 /**
- * Interpret one protocol event, collecting transferred groups on the way.
+ * The reason to stop reading, when the event is not a record this cleanup can
+ * act on: the grace ran out, the protocol broke or closed, or the record named
+ * some other canvas.
  * @param event The event, or null when the grace ran out.
  * @param canvasPid The pid the records must name.
- * @param groups The groups reported so far; extended in place.
- * @returns Whether to keep waiting, stop with a reason, or accept the proof.
+ * @returns The stop, or null when the event is a usable record.
  */
-function protocolStep(
+function eventStop(
 	event: CanvasStartupProtocolEvent | null,
 	canvasPid: number,
-	groups: CanvasStartupProcessGroupIdentity[],
-): ProtocolStep {
+): ProtocolStep | null {
 	if (event === null) {
 		return { kind: "stop", reason: "The canvas cleanup proof timed out." };
 	}
@@ -587,20 +427,56 @@ function protocolStep(
 			reason: `The canvas cleanup protocol named pid ${event.record.canvasPid} instead of ${canvasPid}.`,
 		};
 	}
-	if (event.record.kind === "ownership") {
-		const ownedGroup = event.record.codexGroup;
+	return null;
+}
+
+/**
+ * Interpret one record the canvas wrote about its own cleanup.
+ * @param record The record.
+ * @param groups The groups reported so far; extended in place.
+ * @returns Whether to keep waiting, stop with a reason, or accept the proof.
+ */
+function recordStep(
+	record: CanvasStartupProtocolRecord,
+	groups: CanvasStartupProcessGroupIdentity[],
+): ProtocolStep {
+	if (record.kind === "ownership") {
+		const ownedGroup = record.codexGroup;
 		if (!groups.some((group) => sameGroup(group, ownedGroup))) {
 			groups.push(ownedGroup);
 		}
 		return CONTINUE;
 	}
-	if (event.record.cleanup === "proven") {
+	if (record.cleanup === "proven") {
 		return { kind: "proven" };
 	}
 	return {
 		kind: "stop",
-		reason: event.record.message ?? "The canvas reported that application cleanup was not proven.",
+		reason: record.message ?? "The canvas reported that application cleanup was not proven.",
 	};
+}
+
+/**
+ * Interpret one protocol event, collecting transferred groups on the way.
+ * @param event The event, or null when the grace ran out.
+ * @param canvasPid The pid the records must name.
+ * @param groups The groups reported so far; extended in place.
+ * @returns Whether to keep waiting, stop with a reason, or accept the proof.
+ */
+function protocolStep(
+	event: CanvasStartupProtocolEvent | null,
+	canvasPid: number,
+	groups: CanvasStartupProcessGroupIdentity[],
+): ProtocolStep {
+	const stop = eventStop(event, canvasPid);
+	if (stop) {
+		return stop;
+	}
+	// eventStop returns a stop for every event that is not a usable record, so
+	// anything reaching here has one.
+	return event?.kind === "record"
+		? recordStep(event.record, groups)
+		: { kind: "stop", reason: "The canvas cleanup protocol closed before terminal proof." };
 }
 
 /**
@@ -644,6 +520,28 @@ function noGroupTransferred(transferReason: string): string {
 }
 
 /**
+ * The result once the canvas has proved its own cleanup: proven, unless the
+ * process itself is still there, which is a cleanup nobody has finished.
+ * @param options The cleanup inputs.
+ * @param groups The groups the canvas reported.
+ * @param deadlineAtMs When the whole cleanup must be done.
+ * @returns Proven, or the reason the pid outlived its own proof.
+ */
+async function afterApplicationProof(
+	options: CompleteFailedCanvasCleanupOptions,
+	groups: readonly CanvasStartupProcessGroupIdentity[],
+	deadlineAtMs: number,
+): Promise<FailedCanvasCleanupResult> {
+	if (!(await reapOuter(options.operations, deadlineAtMs))) {
+		return unproven(
+			groups.at(-1) ?? null,
+			`The canvas proved application cleanup but pid ${options.canvasPid} did not reap before the cleanup deadline.`,
+		);
+	}
+	return { cleanup: "proven", owner: "application", group: groups.at(-1) ?? null };
+}
+
+/**
  * Finish one failed public start under one absolute deadline.
  *
  * The canvas owns cleanup until it proves completion or the launcher freezes it.
@@ -666,13 +564,7 @@ async function completeFailedCanvasCleanup(
 	}
 	const outcome = await awaitApplicationProof(options, applicationGraceAtMs, groups);
 	if (outcome.kind === "proven") {
-		if (!(await reapOuter(operations, deadlineAtMs))) {
-			return unproven(
-				groups.at(-1) ?? null,
-				`The canvas proved application cleanup but pid ${options.canvasPid} did not reap before the cleanup deadline.`,
-			);
-		}
-		return { cleanup: "proven", owner: "application", group: groups.at(-1) ?? null };
+		return afterApplicationProof(options, groups, deadlineAtMs);
 	}
 	if (groups.length > 0) {
 		return takeCleanupOwnership(groups, options, applicationGraceAtMs, deadlineAtMs);
