@@ -38,32 +38,47 @@ export type ArchboardAppNamespaceSpec = z.infer<typeof ArchboardAppManifestSchem
 export type ArchboardAppToolSpec = ArchboardAppNamespaceSpec["tools"][number];
 
 /**
- *
+ * Freeze a value and everything reachable from it, so the loaded manifest cannot be changed by
+ * anything that reads it.
+ * @param value - The value to freeze.
+ * @returns The same value, frozen.
  */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) {
 		return value;
 	}
-	for (const child of Object.values(value as Record<string, unknown>)) {
+	for (const child of Object.values(value)) {
 		freezeDeep(child);
 	}
 	return Object.freeze(value);
 }
 
 /**
- *
+ * Decode the manifest bytes as UTF-8, refusing a byte-order mark or invalid UTF-8. The manifest's
+ * exact bytes are hashed, so how they decode is part of the reviewed artifact.
+ * @param buffer - The manifest bytes.
+ * @returns The decoded text.
+ * @throws {TypeError} When the bytes are not plain UTF-8.
  */
-function decodeManifestBytes(bytes: Uint8Array): string {
-	const buffer = Buffer.from(bytes);
+function decodeManifestText(buffer: Buffer): string {
 	if (buffer.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
 		throw new TypeError("archboard_app manifest must be UTF-8 without a BOM.");
 	}
-	let text: string;
 	try {
-		text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+		return new TextDecoder("utf-8", { fatal: true }).decode(buffer);
 	} catch (error) {
 		throw new TypeError("archboard_app manifest is not valid UTF-8.", { cause: error });
 	}
+}
+
+/**
+ * Refuse manifest text whose line endings or terminator are not the reviewed ones, or that does
+ * not encode back to the exact bytes that were hashed.
+ * @param text - The decoded text.
+ * @param buffer - The bytes it was decoded from.
+ * @throws {TypeError} When the text is not canonical.
+ */
+function assertCanonicalManifestText(text: string, buffer: Buffer): void {
 	if (text.includes("\r")) {
 		throw new TypeError("archboard_app manifest must use LF line endings.");
 	}
@@ -73,18 +88,37 @@ function decodeManifestBytes(bytes: Uint8Array): string {
 	if (!Buffer.from(text, "utf8").equals(buffer)) {
 		throw new TypeError("archboard_app manifest does not round-trip as UTF-8.");
 	}
+}
+
+/**
+ * Decode the manifest bytes into the exact reviewed text.
+ * @param bytes - The manifest bytes.
+ * @returns The decoded, canonical text.
+ * @throws {TypeError} When the bytes are not the reviewed encoding.
+ */
+function decodeManifestBytes(bytes: Uint8Array): string {
+	const buffer = Buffer.from(bytes);
+	const text = decodeManifestText(buffer);
+	assertCanonicalManifestText(text, buffer);
 	return text;
 }
 
 /**
- *
+ * The SHA-256 of the manifest bytes, which is what the reviewed digest is compared against.
+ * @param bytes - The manifest bytes.
+ * @returns The hex digest.
  */
 function digest(bytes: Uint8Array): string {
 	return createHash("sha256").update(bytes).digest("hex");
 }
 
 /**
- *
+ * Load the archboard_app manifest from bytes: prove the digest is the reviewed one, decode it as
+ * strict JSON, and prove its tools are the reviewed names in the reviewed order. A drifted digest
+ * is refused outright, because the manifest hash is what a workhorse's tool binding is proven by.
+ * @param bytes - The manifest bytes.
+ * @returns The text, the parsed manifest and its digest.
+ * @throws {TypeError} When the bytes are not the reviewed manifest.
  */
 function parseManifestBytes(bytes: Uint8Array): {
 	readonly text: string;
@@ -120,7 +154,13 @@ export const ARCHBOARD_APP_MANIFEST = LOADED_MANIFEST.manifest;
 export const ARCHBOARD_APP_NAMESPACE = ARCHBOARD_APP_MANIFEST;
 export const ARCHBOARD_APP_DYNAMIC_TOOLS = Object.freeze([ARCHBOARD_APP_NAMESPACE] as const);
 
-/** Re-validate candidate bytes against the reviewed manifest, including its digest. */
+/**
+ * Re-validate candidate bytes against the reviewed manifest, including its digest, so a manifest
+ * read from anywhere else is proven to be the one that was reviewed.
+ * @param candidate - The candidate manifest text or bytes.
+ * @returns The parsed manifest.
+ * @throws {TypeError} When the candidate is not the reviewed manifest.
+ */
 export function parseArchboardAppManifest(
 	candidate: string | Uint8Array,
 ): ArchboardAppNamespaceSpec {
@@ -129,7 +169,11 @@ export function parseArchboardAppManifest(
 	).manifest;
 }
 
-/** Assert that candidate bytes are the exact reviewed eager namespace manifest. */
+/**
+ * Assert that candidate bytes are the exact reviewed eager namespace manifest.
+ * @param candidate - The candidate manifest text or bytes.
+ * @throws {TypeError} When the candidate is not the reviewed manifest.
+ */
 export function assertCanonicalArchboardAppManifest(candidate: string | Uint8Array): void {
 	parseArchboardAppManifest(candidate);
 }
