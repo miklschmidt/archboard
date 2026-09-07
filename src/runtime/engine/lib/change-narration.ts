@@ -1,5 +1,5 @@
-import type { FieldChange } from "../compare.js";
-import type { SemanticChange } from "../changes.js";
+import type { FieldChange } from "@/runtime/engine/compare";
+import type { SemanticChange } from "@/runtime/engine/changes";
 
 type DeepReadonly<T> = T extends readonly (infer Item)[]
 	? readonly DeepReadonly<Item>[]
@@ -7,16 +7,28 @@ type DeepReadonly<T> = T extends readonly (infer Item)[]
 		? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
 		: T;
 
+/**
+ *
+ */
 const changeRank = (model: DeepReadonly<{ changes: object }>): number =>
 	["cluster", "container", "group"].some((key) => key in model.changes) ? 0 : 1;
 
+/**
+ *
+ */
 const quoted = (name: string): string => (name.startsWith("an ") ? name : `"${name}"`);
 
+/**
+ *
+ */
 const encodeValue = (value: unknown): string => {
 	const encoded: unknown = JSON.stringify(value);
 	return typeof encoded === "string" ? encoded : "none";
 };
 
+/**
+ *
+ */
 function list(names: readonly string[], limit = 3): string {
 	if (names.length <= limit) {
 		return names.join(", ");
@@ -30,6 +42,9 @@ function list(names: readonly string[], limit = 3): string {
  * Ranked, not summed: a headline that tried to mention everything would be
  * unreadable in the one place it is used, which is a line the agent may end up
  * speaking. Everything else is still in `narrateChange` and in `detail`.
+ */
+/**
+ *
  */
 function headlineFor(change: DeepReadonly<SemanticChange>): string {
 	const c = change.counts;
@@ -88,6 +103,9 @@ function headlineFor(change: DeepReadonly<SemanticChange>): string {
 		const more = n.changed.length > 1 ? ` (+${n.changed.length - 1} more)` : "";
 		return `${quoted(ch.name)} changed: ${fields}${more}`;
 	}
+	/**
+	 *
+	 */
 	const named = (node: string): string => quoted(change.names[node] ?? node);
 	if (change.layout.clusters.length > 0) {
 		const cl = change.layout.clusters.at(0);
@@ -113,13 +131,22 @@ function headlineFor(change: DeepReadonly<SemanticChange>): string {
 	return "nothing this model can name changed";
 }
 
+/**
+ *
+ */
 function describeFieldChanges(
 	changes: Readonly<Record<string, DeepReadonly<FieldChange>>>,
 	names?: Readonly<Record<string, string>>,
 ): string {
 	// `cluster` and `clusterWith` hold node ids, and the empty case is the one
 	// that matters most — a node on its own, which "[]" says badly.
+	/**
+	 *
+	 */
 	const named = (node: string): string => quoted(names?.[node] ?? node);
+	/**
+	 *
+	 */
 	const company = (value: unknown): string => {
 		if (!Array.isArray(value)) {
 			return encodeValue(value);
@@ -153,11 +180,20 @@ function describeFieldChanges(
  * dropped, never by cutting a line in half. The full structure is always
  * available from the feed.
  */
+/**
+ *
+ */
 function narrateChange(change: DeepReadonly<SemanticChange>, maxChars = 1800): string {
 	const lines: string[] = [];
 	// Never print a node id: a synthetic one means nothing to a reader, and a
 	// real one is not what anybody calls the box.
+	/**
+	 *
+	 */
 	const named = (node: string): string => quoted(change.names[node] ?? node);
+	/**
+	 *
+	 */
 	const namedList = (ids: readonly string[], limit = 3): string =>
 		list(
 			ids.map((node) => named(node)),

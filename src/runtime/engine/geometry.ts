@@ -50,6 +50,9 @@ interface InvalidRenderGeometry {
 class RenderGeometryError extends Error {
 	public readonly invalid: InvalidRenderGeometry[];
 
+	/**
+	 *
+	 */
 	public constructor(invalid: InvalidRenderGeometry[]) {
 		const details = invalid
 			.map((element) => `${element.id} (${element.type}): ${element.fields.join(", ")}`)
@@ -71,6 +74,9 @@ interface Extent {
 	height: number;
 }
 
+/**
+ *
+ */
 const finite = (v: unknown): number | undefined =>
 	typeof v === "number" && Number.isFinite(v) ? v : undefined;
 
@@ -116,7 +122,6 @@ function collectInvalidRenderGeometry(
  *
  * Tombstones are intentionally ignored. Excalidraw does not render them, and
  * malformed history must not prevent a valid live document from being saved.
- *
  * @param elements complete document to validate
  */
 function validateRenderGeometry(elements: Iterable<RenderGeometryElement>): void {

@@ -5,11 +5,14 @@ import type {
 	PersistedArchboardEnvelope,
 	PersistedBoardElement,
 	RuntimeElementTracking,
-} from "../../../shared/board-elements/index.js";
+} from "@/shared/board-elements";
 
 class NativeElementValidationError extends Error {
 	public readonly status = 400;
 
+	/**
+	 *
+	 */
 	public constructor(message: string) {
 		super(message);
 		this.name = "NativeElementValidationError";
@@ -23,6 +26,9 @@ type PersistedArm<Kind extends PersistedBoardElement["type"]> = Extract<
 type PersistedBase = Omit<PersistedArm<"rectangle">, "type">;
 type FixedPointBinding = NonNullable<ElbowArrowElement["startBinding"]>;
 
+/**
+ *
+ */
 function fail(
 	context: string,
 	id: string | undefined,
@@ -34,6 +40,9 @@ function fail(
 	);
 }
 
+/**
+ *
+ */
 function recordAt(
 	value: unknown,
 	context: string,
@@ -47,6 +56,9 @@ function recordAt(
 	return value as Record<string, unknown>;
 }
 
+/**
+ *
+ */
 function finite(
 	value: unknown,
 	context: string,
@@ -60,6 +72,9 @@ function finite(
 	return value;
 }
 
+/**
+ *
+ */
 function point(
 	value: unknown,
 	context: string,
@@ -76,6 +91,9 @@ function point(
 	];
 }
 
+/**
+ *
+ */
 function nullablePoint(
 	value: unknown,
 	context: string,
@@ -86,6 +104,9 @@ function nullablePoint(
 	return value === null ? null : point(value, context, id, type, path);
 }
 
+/**
+ *
+ */
 function points(
 	value: unknown,
 	minimum: number,
@@ -100,6 +121,9 @@ function points(
 	return value.map((candidate, index) => point(candidate, context, id, type, `${path}[${index}]`));
 }
 
+/**
+ *
+ */
 function bindingRecord(
 	value: unknown,
 	allowed: ReadonlySet<string>,
@@ -123,6 +147,9 @@ function bindingRecord(
 	return record;
 }
 
+/**
+ *
+ */
 function pointBindingAt(
 	value: unknown,
 	context: string,
@@ -148,6 +175,9 @@ function pointBindingAt(
 	} satisfies ElementBinding;
 }
 
+/**
+ *
+ */
 function fixedPointBindingAt(
 	value: unknown,
 	context: string,
@@ -174,6 +204,9 @@ function fixedPointBindingAt(
 	} satisfies FixedPointBinding;
 }
 
+/**
+ *
+ */
 function stringAt(
 	value: unknown,
 	context: string,
@@ -187,6 +220,9 @@ function stringAt(
 	return value;
 }
 
+/**
+ *
+ */
 function booleanAt(
 	value: unknown,
 	context: string,
@@ -200,6 +236,9 @@ function booleanAt(
 	return value;
 }
 
+/**
+ *
+ */
 function nullableBooleanAt(
 	value: unknown,
 	context: string,
@@ -210,6 +249,9 @@ function nullableBooleanAt(
 	return value === null ? null : booleanAt(value, context, id, type, path);
 }
 
+/**
+ *
+ */
 function nullableStringAt(
 	value: unknown,
 	context: string,
@@ -220,6 +262,9 @@ function nullableStringAt(
 	return value === null ? null : stringAt(value, context, id, type, path);
 }
 
+/**
+ *
+ */
 function fillStyleAt(
 	value: unknown,
 	context: string,
@@ -239,6 +284,9 @@ function fillStyleAt(
 	}
 }
 
+/**
+ *
+ */
 function strokeStyleAt(
 	value: unknown,
 	context: string,
@@ -257,6 +305,9 @@ function strokeStyleAt(
 	}
 }
 
+/**
+ *
+ */
 function arrowheadAt(
 	value: unknown,
 	context: string,
@@ -291,6 +342,9 @@ function arrowheadAt(
 	}
 }
 
+/**
+ *
+ */
 function roundnessAt(
 	value: unknown,
 	context: string,
@@ -313,6 +367,9 @@ function roundnessAt(
 	};
 }
 
+/**
+ *
+ */
 function boundElementsAt(
 	value: unknown,
 	context: string,
@@ -346,6 +403,9 @@ const TRACKING_KEYS = [
 	"syncTimestamp",
 ] as const satisfies readonly (keyof RuntimeElementTracking)[];
 
+/**
+ *
+ */
 function customDataAt(
 	value: unknown,
 	context: string,
@@ -383,6 +443,9 @@ function customDataAt(
 	return custom;
 }
 
+/**
+ *
+ */
 function persistedBase(
 	initial: Record<string, unknown>,
 	context: string,
@@ -439,6 +502,9 @@ function persistedBase(
 	} satisfies PersistedBase;
 }
 
+/**
+ *
+ */
 function runtimeTrackingAt(
 	initial: Record<string, unknown>,
 	context: string,

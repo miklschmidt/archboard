@@ -1,11 +1,14 @@
-import type { ServerElement } from "../types.js";
-import { readElementMetadata } from "../metadata.js";
-import type { LogicalAddress } from "../metadata.js";
-import { architectureLabel } from "../../board-inspection/architecture.js";
-import type { ArchitectureFacts } from "../../board-inspection/architecture.js";
-import type { Box } from "../layout.js";
-import type { EdgeFacts, UnresolvedConnector } from "./compare-contract.js";
+import type { ServerElement } from "@/runtime/engine/types";
+import { readElementMetadata } from "@/runtime/engine/metadata";
+import type { LogicalAddress } from "@/runtime/engine/metadata";
+import { architectureLabel } from "@/runtime/board-inspection/architecture";
+import type { ArchitectureFacts } from "@/runtime/board-inspection/architecture";
+import type { Box } from "@/runtime/engine/layout";
+import type { EdgeFacts, UnresolvedConnector } from "@/runtime/engine/lib/compare-contract";
 
+/**
+ *
+ */
 function formatBinding(binding: LogicalAddress | string | undefined): string | undefined {
 	if (binding === undefined) {
 		return undefined;
@@ -23,6 +26,9 @@ function formatBinding(binding: LogicalAddress | string | undefined): string | u
 // of the code. `commit` and `confirmedAt` are when it was last *confirmed*, and
 // re-promoting an unchanged node moves both — treating that as a change would
 // fill the diff with reconfirmation noise. Both are still carried in the facts.
+/**
+ *
+ */
 function bindingIdentity(binding: LogicalAddress | string | undefined): string | undefined {
 	if (binding === undefined) {
 		return undefined;
@@ -62,6 +68,9 @@ interface NodeModel {
 
 type EdgeModel = EdgeFacts;
 
+/**
+ *
+ */
 function labelOfAll(el: ServerElement, all: ServerElement[]): string | undefined {
 	return architectureLabel(el, all);
 }
@@ -72,6 +81,9 @@ interface NodeBuildResult {
 	nodes: Map<string, NodeModel>;
 }
 
+/**
+ *
+ */
 function buildNodes(facts: ArchitectureFacts): NodeBuildResult {
 	const all = facts.elements as ServerElement[];
 	const models: NodeModel[] = [];
@@ -101,7 +113,7 @@ function buildNodes(facts: ArchitectureFacts): NodeBuildResult {
 			...(typeof block.kind === "string" ? { kind: block.kind } : {}),
 			...(typeof block.level === "string" ? { level: block.level } : {}),
 			...(typeof block.variant === "string" ? { variant: block.variant } : {}),
-			...(block.binding !== undefined ? { binding: block.binding as LogicalAddress | string } : {}),
+			...(block.binding !== undefined ? { binding: block.binding } : {}),
 			...(link ? { link } : {}),
 			extra,
 			box: fact.aggregateNodeFootprint,
@@ -124,6 +136,9 @@ interface EdgeBuildResult {
 	promotedConnectors: { node: string; from: string; to: string }[];
 }
 
+/**
+ *
+ */
 function buildEdges(
 	facts: ArchitectureFacts,
 	nodes: Map<string, NodeModel>,
@@ -182,6 +197,9 @@ function buildEdges(
 			});
 			continue;
 		}
+		/**
+		 *
+		 */
 		const endLabel = (id: string | undefined): string | undefined => {
 			const endpoint = id === undefined ? undefined : byId.get(id);
 			return endpoint === undefined ? undefined : labelOfAll(endpoint, all);

@@ -1,19 +1,19 @@
-import logger from "./logger.js";
-import type { SelectionReport } from "./describe.js";
-import type { PanesReport } from "./panes.js";
-import type { ServerElement } from "./types.js";
-import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from "./config.js";
+import logger from "@/runtime/engine/logger";
+import type { SelectionReport } from "@/runtime/engine/describe";
+import type { PanesReport } from "@/runtime/engine/panes";
+import type { ServerElement } from "@/runtime/engine/types";
+import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from "@/runtime/engine/config";
 import {
 	type BoardWriteConflict,
 	expectedVersion,
 	forgetRememberedVersions,
 	rememberVersion as rememberBoardVersion,
-} from "./board-version.js";
-import type { HoldReport } from "./board-hold.js";
-import type { Claim } from "./board-lock.js";
-import type { CompareResult } from "./compare.js";
-import type { InspectionPolicyInput, InspectionReport } from "../board-inspection/index.js";
-import { SCENE_REPLACEMENT_MARKER } from "./board-write.js";
+} from "@/runtime/engine/board-version";
+import type { HoldReport } from "@/runtime/engine/board-hold";
+import type { Claim } from "@/runtime/engine/board-lock";
+import type { CompareResult } from "@/runtime/engine/compare";
+import type { InspectionPolicyInput, InspectionReport } from "@/runtime/board-inspection";
+import { SCENE_REPLACEMENT_MARKER } from "@/runtime/engine/board-write";
 
 // API Response types
 export interface ApiResponse {
@@ -50,14 +50,23 @@ export const BOARD_REFUSAL_CODES = new Set([
 // not silently pick one; it produces a refusal that says what to pass.
 let requestedBoard: string | null = null;
 
+/**
+ *
+ */
 export function setRequestedBoard(key: string | null): void {
 	requestedBoard = key?.trim() || null;
 }
 
+/**
+ *
+ */
 export function currentRequestedBoard(): string | null {
 	return requestedBoard;
 }
 
+/**
+ *
+ */
 function addQuery(path: string, key: string, value: string | number): string {
 	return `${path}${path.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}`;
 }
@@ -72,6 +81,9 @@ function addQuery(path: string, key: string, value: string | number): string {
 // One-shot process, so it lasts exactly one command.
 let heldBoard: HoldReport | null = null;
 
+/**
+ *
+ */
 export function boardHoldSeen(): HoldReport | null {
 	return heldBoard;
 }
@@ -97,10 +109,16 @@ function withBoard(path: string): string {
 // from being written into the note, which is the one thing this must never be.
 let writeDoing: string | null = null;
 
+/**
+ *
+ */
 export function setWriteDoing(doing: string | null): void {
 	writeDoing = doing?.trim() || null;
 }
 
+/**
+ *
+ */
 export function currentWriteDoing(): string | null {
 	return writeDoing;
 }
@@ -126,6 +144,9 @@ export function currentWriteDoing(): string | null {
 // it is one command long.
 let statedVersion: number | null | undefined;
 
+/**
+ *
+ */
 export function setExpectedVersion(version: number | null): void {
 	statedVersion = version === null || Number.isNaN(version) ? undefined : version;
 }
@@ -163,10 +184,16 @@ function rememberVersion(data: unknown): void {
 	if (found !== undefined) rememberBoardVersion(clientVersionWriter(requestedBoard), found);
 }
 
+/**
+ *
+ */
 function clientVersionWriter(board: string): string {
 	return `client:${board.toLowerCase()}`;
 }
 
+/**
+ *
+ */
 function sameBoard(answered: unknown): boolean {
 	return (
 		typeof answered === "string" &&
@@ -175,6 +202,9 @@ function sameBoard(answered: unknown): boolean {
 	);
 }
 
+/**
+ *
+ */
 function readVersion(from: unknown, key = "version"): number | null | undefined {
 	if (!from || typeof from !== "object") return undefined;
 	const value = (from as Record<string, unknown>)[key];
@@ -215,6 +245,9 @@ function withWriteClaims(path: string, method?: string): string {
 
 // The legacy direct batch caller treats a connection failure as no canvas.
 // The CLI uses the strict wrappers below and receives hard failures instead.
+/**
+ *
+ */
 async function syncBatchToCanvas(
 	data: Array<ElementInput | ServerElement>,
 	write: WriteOptions = {},
@@ -259,6 +292,9 @@ async function syncBatchToCanvas(
 	}
 }
 
+/**
+ *
+ */
 function isConnectionFailure(error: unknown): boolean {
 	const value = error as {
 		name?: string;
@@ -300,6 +336,9 @@ export type ElementInput = Record<string, unknown>;
 
 // Sync disabled echoes the input for the legacy direct caller; a failed
 // canvas request returns null so the caller cannot claim the batch landed.
+/**
+ *
+ */
 export async function batchCreateElementsOnCanvas(
 	elementsData: Array<ElementInput | ServerElement>,
 	options: WriteOptions = {},
@@ -308,7 +347,7 @@ export async function batchCreateElementsOnCanvas(
 		return { elements: elementsData.map((element) => Object.assign({} as ServerElement, element)) };
 	}
 	const result = await syncBatchToCanvas(elementsData, options);
-	return result?.elements ? (result as unknown as WriteAnswer) : null;
+	return result?.elements ? (result) : null;
 }
 
 /** Replace one board scene through the existing atomic batch write. */
@@ -333,6 +372,9 @@ export async function replaceSceneOnCanvas(
 
 // ---- Typed REST wrappers used by the CLI ----
 
+/**
+ *
+ */
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	await assertCanvasIdentity();
 	// Every canvas request carries the board when one was named. Attached here
@@ -359,6 +401,9 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	return data as T;
 }
 
+/**
+ *
+ */
 function responseError(data: unknown, response: Response): Error {
 	const body = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
 	const error = new Error(
@@ -371,7 +416,7 @@ function responseError(data: unknown, response: Response): Error {
 	// said, or read the board after the refusal.
 	if (body["conflict"]) {
 		error.code = "BOARD_CONFLICT";
-		error.conflict = body["conflict"] as BoardWriteConflict;
+		error.conflict = body["conflict"];
 	} else if (typeof body["code"] === "string") {
 		error.code = body["code"];
 		if (Array.isArray(body["available"])) error.available = body["available"];
@@ -380,6 +425,9 @@ function responseError(data: unknown, response: Response): Error {
 	return error;
 }
 
+/**
+ *
+ */
 function isBoardRefusal(data: unknown): data is BoardRefusal {
 	if (!data || typeof data !== "object") return false;
 	const body = data as Record<string, unknown>;
@@ -392,6 +440,9 @@ function isBoardRefusal(data: unknown): data is BoardRefusal {
 	);
 }
 
+/**
+ *
+ */
 export function boardRefusalOf(error: unknown): BoardRefusal | null {
 	const refusal =
 		error && typeof error === "object" ? (error as { refusal?: unknown }).refusal : undefined;
@@ -407,22 +458,34 @@ export function formatBoardRefusal(error: unknown): string | null {
 }
 
 // A save the server refused because the destination changed underneath it.
+/**
+ *
+ */
 export function boardConflictOf(error: unknown): BoardWriteConflict | null {
 	const conflict =
 		error && typeof error === "object" ? (error as { conflict?: unknown }).conflict : undefined;
 	return conflict && typeof conflict === "object" ? (conflict as BoardWriteConflict) : null;
 }
 
+/**
+ *
+ */
 export async function getElements(): Promise<ServerElement[]> {
 	const data = await requestJson<ApiResponse>("/api/elements");
 	return data.elements || [];
 }
 
+/**
+ *
+ */
 export async function searchElements(queryParams: URLSearchParams): Promise<ServerElement[]> {
 	const data = await requestJson<ApiResponse>(`/api/elements/search?${queryParams}`);
 	return data.elements || [];
 }
 
+/**
+ *
+ */
 export async function clearCanvas(): Promise<ApiResponse> {
 	return requestJson<ApiResponse>("/api/elements/clear", { method: "DELETE" });
 }
@@ -447,6 +510,9 @@ export interface BridgeRemovalResponse extends WriteAnswer {
 	elements: [];
 }
 
+/**
+ *
+ */
 export async function createBridge(input: {
 	over: string;
 	under: string;
@@ -460,6 +526,9 @@ export async function createBridge(input: {
 	});
 }
 
+/**
+ *
+ */
 export async function removeBridge(bridgeId: string): Promise<BridgeRemovalResponse> {
 	return requestJson<BridgeRemovalResponse>(`/api/bridges/${encodeURIComponent(bridgeId)}`, {
 		method: "DELETE",
@@ -468,6 +537,9 @@ export async function removeBridge(bridgeId: string): Promise<BridgeRemovalRespo
 
 // What a human currently has picked on the board. Ids plus enough semantic
 // detail (label, node-ness, kind, binding) to act on without a scene fetch.
+/**
+ *
+ */
 export async function getSelection(
 	pane: string,
 ): Promise<SelectionReport & { success: boolean; board: string }> {
@@ -479,6 +551,9 @@ export async function getSelection(
 // What the human is currently looking at: one entry per pane on screen, with
 // the board it holds, where it sits, how much of it is in view, and what is
 // picked in it. View state only — cheap enough to read every turn.
+/**
+ *
+ */
 export async function getPanes(): Promise<PanesReport & { success: boolean; activeBoard: string }> {
 	return requestJson<PanesReport & { success: boolean; activeBoard: string }>("/api/panes");
 }
@@ -548,6 +623,9 @@ export interface ClaimReleaseReply {
 	claim: Claim | null;
 }
 
+/**
+ *
+ */
 export async function claimBoard(params: { reason: string; forMs?: number }): Promise<ClaimReply> {
 	return requestJson<ClaimReply>("/api/boards/claim", {
 		method: "POST",
@@ -559,6 +637,9 @@ export async function claimBoard(params: { reason: string; forMs?: number }): Pr
 	});
 }
 
+/**
+ *
+ */
 export async function releaseBoardClaim(): Promise<ClaimReleaseReply> {
 	return requestJson<ClaimReleaseReply>("/api/boards/claim/release", {
 		method: "POST",
@@ -567,11 +648,17 @@ export async function releaseBoardClaim(): Promise<ClaimReleaseReply> {
 	});
 }
 
+/**
+ *
+ */
 export async function getFiles(): Promise<Record<string, unknown>> {
 	const data = await requestJson<{ files?: Record<string, unknown> }>("/api/files");
 	return data.files || {};
 }
 
+/**
+ *
+ */
 export async function postFiles(files: unknown[]): Promise<void> {
 	await requestJson("/api/files", {
 		method: "POST",
@@ -582,6 +669,9 @@ export async function postFiles(files: unknown[]): Promise<void> {
 
 // A picture of one pane. `pane` names which — without it the pane that answers
 // for the browser is photographed, which with a single pane is that pane.
+/**
+ *
+ */
 export async function captureBrowser(
 	format: "png" | "svg",
 	background = true,
@@ -606,6 +696,9 @@ export interface FindingExportResponse {
 	}>;
 }
 
+/**
+ *
+ */
 export async function exportFindings(
 	policy: InspectionPolicyInput,
 ): Promise<FindingExportResponse> {
@@ -630,6 +723,9 @@ export interface BoardRenderResponse {
 	backgroundColor: string;
 }
 
+/**
+ *
+ */
 export async function renderBoard(input: {
 	format: "png" | "svg";
 	background: boolean;
@@ -643,6 +739,9 @@ export async function renderBoard(input: {
 	});
 }
 
+/**
+ *
+ */
 export async function setViewport(
 	params: Record<string, unknown>,
 ): Promise<{ success: boolean; message?: string }> {
@@ -653,6 +752,9 @@ export async function setViewport(
 	});
 }
 
+/**
+ *
+ */
 export async function saveSnapshot(
 	name: string,
 ): Promise<{ elementCount: number; createdAt: string }> {
@@ -663,6 +765,9 @@ export async function saveSnapshot(
 	});
 }
 
+/**
+ *
+ */
 export async function listSnapshots(): Promise<{
 	success: boolean;
 	snapshots: unknown[];
@@ -671,6 +776,9 @@ export async function listSnapshots(): Promise<{
 	return requestJson("/api/snapshots");
 }
 
+/**
+ *
+ */
 export async function getSnapshot(
 	name: string,
 ): Promise<{ name: string; board?: string; elements: ServerElement[]; createdAt: string }> {
@@ -769,6 +877,9 @@ export interface BoardListResponse {
 
 // One line naming the board a read is about. Best effort: an older canvas
 // server, or one that cannot reach its vault, still answers scene questions.
+/**
+ *
+ */
 export async function boardHeading(): Promise<string> {
 	try {
 		const current = await getBoardInfo();
@@ -782,6 +893,9 @@ export async function boardHeading(): Promise<string> {
 // Every board, or only the ones describing one repository. The identity is
 // resolved by the caller: the canvas server's working directory is nobody's
 // (ADR 0011), so it never turns a path into a repository.
+/**
+ *
+ */
 export async function listBoardsOnCanvas(repo?: string): Promise<BoardListResponse> {
 	const query = repo ? `?repo=${encodeURIComponent(repo)}` : "";
 	return requestJson<BoardListResponse>(`/api/boards${query}`);
@@ -789,10 +903,16 @@ export async function listBoardsOnCanvas(repo?: string): Promise<BoardListRespon
 
 // One board's identity and save state. There is no "the current board" to ask
 // about: the board is named, like everywhere else (ADR 0009).
+/**
+ *
+ */
 export async function getBoardInfo(): Promise<BoardResponse> {
 	return requestJson<BoardResponse>("/api/boards/info");
 }
 
+/**
+ *
+ */
 async function postBoard(path: string, body: Record<string, unknown>): Promise<BoardResponse> {
 	return requestJson<BoardResponse>(path, {
 		method: "POST",
@@ -801,6 +921,9 @@ async function postBoard(path: string, body: Record<string, unknown>): Promise<B
 	});
 }
 
+/**
+ *
+ */
 export async function openBoard(params: {
 	board: string;
 	variant?: string;
@@ -812,6 +935,9 @@ export async function openBoard(params: {
 	return postBoard("/api/boards/open", params);
 }
 
+/**
+ *
+ */
 export async function newBoard(params: {
 	board: string;
 	variant?: string;
@@ -820,6 +946,9 @@ export async function newBoard(params: {
 	return postBoard("/api/boards/new", params);
 }
 
+/**
+ *
+ */
 export async function saveBoard(params: {
 	name?: string;
 	variant?: string;
@@ -835,6 +964,9 @@ export async function saveBoard(params: {
 // A structured semantic diff between two boards. Read-only on the server: it
 // reads whichever copy of each side is authoritative (memory when the board is
 // open, the vault note otherwise) and never touches the board on screen.
+/**
+ *
+ */
 export async function compareBoardsOnCanvas(params: {
 	from: string;
 	to?: string;
@@ -879,6 +1011,9 @@ export interface ChangeFeedResponse {
 	feed?: Record<string, unknown>;
 }
 
+/**
+ *
+ */
 export async function getChanges(params: {
 	since?: number;
 	board?: string;
@@ -897,6 +1032,9 @@ export async function getChanges(params: {
 // The direct batch wrapper above swallows connection failures for its legacy
 // caller; the CLI wants hard failures with real error messages instead.
 
+/**
+ *
+ */
 export async function createElementStrict(element: ElementInput): Promise<ServerElement> {
 	const data = await requestJson<ApiResponse>("/api/elements", {
 		method: "POST",
@@ -906,6 +1044,9 @@ export async function createElementStrict(element: ElementInput): Promise<Server
 	return data.element!;
 }
 
+/**
+ *
+ */
 export async function updateElementStrict(
 	element: ElementInput & { id: string },
 	options: WriteOptions = {},
@@ -921,10 +1062,16 @@ export async function updateElementStrict(
 	return data as WriteAnswer & { element: ServerElement };
 }
 
+/**
+ *
+ */
 export async function deleteElementStrict(id: string): Promise<ApiResponse> {
 	return requestJson<ApiResponse>(`/api/elements/${id}`, { method: "DELETE" });
 }
 
+/**
+ *
+ */
 export async function getElementStrict(id: string): Promise<ServerElement> {
 	const data = await requestJson<ApiResponse>(`/api/elements/${id}`);
 	if (!data.element) {
@@ -1002,6 +1149,9 @@ export interface ElementChangesResult {
 	document?: ServerElement[];
 }
 
+/**
+ *
+ */
 export async function batchCreateElementsStrict(
 	elements: Array<ElementInput | ServerElement>,
 	options: WriteOptions = {},
@@ -1020,6 +1170,9 @@ export async function batchCreateElementsStrict(
 // Identity marker the canvas server puts in /health (v1.1+)
 export const CANVAS_SERVICE_NAME = "mcp-excalidraw-canvas";
 
+/**
+ *
+ */
 export function foreignServiceError(): Error {
 	const error = new Error(
 		`Something is answering at ${EXPRESS_SERVER_URL} but does not identify as this canvas server ` +
@@ -1042,10 +1195,16 @@ const IDENTITY_TTL_MS = 3000;
 let identityVerifiedAt = 0;
 let identityProbe: Promise<void> | null = null;
 
+/**
+ *
+ */
 export function markCanvasIdentityVerified(): void {
 	identityVerifiedAt = Date.now();
 }
 
+/**
+ *
+ */
 async function assertCanvasIdentity(): Promise<void> {
 	if (Date.now() - identityVerifiedAt < IDENTITY_TTL_MS) return;
 
@@ -1118,6 +1277,9 @@ export interface HealthStatus {
 	frontendBuild?: string | null;
 }
 
+/**
+ *
+ */
 export async function getHealth(timeoutMs = 2000): Promise<HealthStatus> {
 	const response = await fetch(`${EXPRESS_SERVER_URL}/health`, {
 		signal: AbortSignal.timeout(timeoutMs),
@@ -1128,6 +1290,9 @@ export async function getHealth(timeoutMs = 2000): Promise<HealthStatus> {
 	return (await response.json()) as HealthStatus;
 }
 
+/**
+ *
+ */
 export async function getSyncStatus(): Promise<Record<string, unknown>> {
 	return requestJson("/api/sync/status");
 }
@@ -1149,6 +1314,9 @@ export interface LibraryResponse {
 	vaultBacked: boolean;
 }
 
+/**
+ *
+ */
 export async function getLibrary(): Promise<LibraryResponse> {
 	return requestJson<LibraryResponse>("/api/library");
 }

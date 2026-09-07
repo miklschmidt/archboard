@@ -11,7 +11,7 @@
 // Extracted here because `describe` and `compare` must agree: a cluster the
 // read-back names has to be the same cluster the diff says was split.
 
-import { extentOf, type Measurable } from "./geometry.js";
+import { extentOf, type Measurable } from "@/runtime/engine/geometry";
 
 interface Box {
 	x: number;
@@ -28,6 +28,9 @@ interface Box {
 // wrong region and outside the frame — and those signals are what an agent narrates back when a
 // user rearranges the board (TASK-038). `geometry.ts` does the measuring;
 // this is the adapter into Box's vocabulary.
+/**
+ *
+ */
 function boxOf(element: Measurable | null | undefined): Box {
 	const extent = extentOf(element);
 	return { x: extent.x, y: extent.y, w: extent.width, h: extent.height };
@@ -48,9 +51,18 @@ const CLUSTER_GAP = 160;
 // Connected components under "within CLUSTER_GAP of each other", largest first.
 // Union-find rather than a distance matrix so a chain of near-neighbours reads
 // as one cluster, which is how a human sees a row of boxes.
+/**
+ *
+ */
 function clusterBoxes<T extends Box>(items: T[], gap = CLUSTER_GAP): T[][] {
 	const parent = items.map((_, i) => i);
+	/**
+	 *
+	 */
 	const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i]!)));
+	/**
+	 *
+	 */
 	const near = (a: T, b: T) =>
 		a.x - gap < b.x + b.w &&
 		b.x - gap < a.x + a.w &&
@@ -76,6 +88,9 @@ function clusterBoxes<T extends Box>(items: T[], gap = CLUSTER_GAP): T[][] {
 
 // The box round a set of boxes. Null for an empty set, which is the only
 // honest answer: a frame drawn round nothing has no thirds.
+/**
+ *
+ */
 function boundingBoxOf(boxes: Box[]): BoundingBox | null {
 	if (boxes.length === 0) {
 		return null;
@@ -93,6 +108,9 @@ function boundingBoxOf(boxes: Box[]): BoundingBox | null {
 // has been assigned, it came from the frame moving and not from the shape.
 // Absolute, and therefore only ever true when the two sides share a coordinate
 // system — which is the case it is for.
+/**
+ *
+ */
 function sameCentre(a: Box, b: Box, tolerance = 1): boolean {
 	return (
 		Math.abs(a.x + a.w / 2 - (b.x + b.w / 2)) <= tolerance &&
@@ -109,6 +127,9 @@ function sameCentre(a: Box, b: Box, tolerance = 1): boolean {
 // every name inside it. `compare` therefore draws it round the nodes both
 // boards have, not round everything on each board, so that arriving and
 // departing nodes cannot rename their neighbours' whereabouts.
+/**
+ *
+ */
 const third = (v: number, lo: number, hi: number): number => {
 	if (hi - lo < 1) {
 		return 1;
@@ -117,6 +138,9 @@ const third = (v: number, lo: number, hi: number): number => {
 	return t < 0.34 ? 0 : t < 0.67 ? 1 : 2;
 };
 
+/**
+ *
+ */
 function regionName(cx: number, cy: number, box: BoundingBox): string {
 	const rows = ["top", "middle", "bottom"];
 	const cols = ["left", "centre", "right"];

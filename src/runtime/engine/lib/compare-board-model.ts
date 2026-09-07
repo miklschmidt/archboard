@@ -1,20 +1,20 @@
-import type { ServerElement } from "../types.js";
+import type { ServerElement } from "@/runtime/engine/types";
 import {
 	architectureFacts,
 	isArchitectureConnectorType,
-} from "../../board-inspection/architecture.js";
-import { readElementMetadata } from "../metadata.js";
-import { CLUSTER_GAP, boundingBoxOf, boxOf, clusterBoxes, regionName } from "../layout.js";
-import type { Box, BoundingBox } from "../layout.js";
+} from "@/runtime/board-inspection/architecture";
+import { readElementMetadata } from "@/runtime/engine/metadata";
+import { CLUSTER_GAP, boundingBoxOf, boxOf, clusterBoxes, regionName } from "@/runtime/engine/layout";
+import type { Box, BoundingBox } from "@/runtime/engine/layout";
 import type {
 	ClusterFacts,
 	CompareSideInput,
 	PlainElement,
 	PlainSide,
 	UnresolvedConnector,
-} from "./compare-contract.js";
-import { buildEdges, buildNodes, labelOfAll } from "./compare-node-model.js";
-import type { EdgeModel, NodeModel } from "./compare-node-model.js";
+} from "@/runtime/engine/lib/compare-contract";
+import { buildEdges, buildNodes, labelOfAll } from "@/runtime/engine/lib/compare-node-model";
+import type { EdgeModel, NodeModel } from "@/runtime/engine/lib/compare-node-model";
 
 interface BoardModel {
 	key: string;
@@ -38,6 +38,9 @@ const CONTAINER_TYPES = new Set(["rectangle", "ellipse", "diamond", "frame"]);
 // an explicit act, so metadata outranks the drawn type (TASK-053).
 const isConnector = isArchitectureConnectorType;
 
+/**
+ *
+ */
 function prominenceOf(area: number, median: number): NodeModel["prominence"] {
 	if (median <= 0) {
 		return "typical";
@@ -48,6 +51,9 @@ function prominenceOf(area: number, median: number): NodeModel["prominence"] {
 	return area > median * 1.7 ? "larger" : "typical";
 }
 
+/**
+ *
+ */
 function buildBoard(input: CompareSideInput): BoardModel {
 	const facts = architectureFacts(input.elements);
 	const all = [...facts.elements];
@@ -92,6 +98,9 @@ function buildBoard(input: CompareSideInput): BoardModel {
 	// dependency, and now it is part of a shape. Usually the trace of a
 	// selection that swept up an arrow it did not mean. Demote it to get the
 	// edge back.
+	/**
+	 *
+	 */
 	const nameOfNode = (id: string): string => nodes.get(id)?.name ?? id;
 	for (const { node, from, to } of promotedConnectors) {
 		warnings.push(
@@ -171,6 +180,9 @@ function buildBoard(input: CompareSideInput): BoardModel {
 	const containerCandidates = all.filter(
 		(el) => CONTAINER_TYPES.has(el.type) && (el.width || 0) > 0 && (el.height || 0) > 0,
 	);
+	/**
+	 *
+	 */
 	const containerKey = (el: ServerElement): string => {
 		const node = nodeOfElement.get(el.id);
 		if (node) {
@@ -327,10 +339,16 @@ function buildBoard(input: CompareSideInput): BoardModel {
 // Below two shared nodes there is nothing to anchor to (one node's box, or
 // none, gives a frame that names everything "centre"), so the board's own node
 // box stands and the pre-existing caveat applies unchanged.
+/**
+ *
+ */
 function reframeRegions(model: BoardModel, shared: Set<string>): void {
 	const anchors = [...model.nodes.values()].filter((m) => shared.has(m.node)).map((m) => m.box);
 	const frame = anchors.length >= 2 ? boundingBoxOf(anchors) : model.nodeBox;
 	model.regionFrame = frame;
+	/**
+	 *
+	 */
 	const at = (x: number, y: number, w: number, h: number): string =>
 		frame ? regionName(x + w / 2, y + h / 2, frame) : "centre";
 
@@ -361,9 +379,15 @@ function reframeRegions(model: BoardModel, shared: Set<string>): void {
 	}
 }
 
+/**
+ *
+ */
 const aspect = (box: BoundingBox | null): number | null =>
 	box && box.maxY - box.minY > 1 ? (box.maxX - box.minX) / (box.maxY - box.minY) : null;
 
+/**
+ *
+ */
 function hasDivergentAspect(a: BoundingBox | null, b: BoundingBox | null): boolean {
 	const aspectA = aspect(a);
 	const aspectB = aspect(b);

@@ -44,13 +44,13 @@
 
 import { EventEmitter } from "events";
 import { randomUUID } from "crypto";
-import type { ServerElement } from "./types.js";
-import type { BoardIdentity } from "./board.js";
-import { copyElements } from "./board-store.js";
-import { diffBoardStates, narrateChange } from "./changes.js";
-import type { SemanticChange } from "./changes.js";
-import { DEFAULT_SETTLE_MAX_MS, DEFAULT_SETTLE_MS } from "../../shared/timing/timing.js";
-import logger from "./logger.js";
+import type { ServerElement } from "@/runtime/engine/types";
+import type { BoardIdentity } from "@/runtime/engine/board";
+import { copyElements } from "@/runtime/engine/board-store";
+import { diffBoardStates, narrateChange } from "@/runtime/engine/changes";
+import type { SemanticChange } from "@/runtime/engine/changes";
+import { DEFAULT_SETTLE_MAX_MS, DEFAULT_SETTLE_MS } from "@/shared/timing/timing";
+import logger from "@/runtime/engine/logger";
 
 /** Who moved. Determined by which surface reported the mutation, not by content. */
 type ChangeOrigin = "human" | "agent" | "mixed";
@@ -299,6 +299,9 @@ class ChangeFeed extends EventEmitter {
 		return out;
 	}
 
+	/**
+	 *
+	 */
 	onChange(listener: (event: ChangeEvent) => void): () => void {
 		this.on("change", listener);
 		return () => this.off("change", listener);

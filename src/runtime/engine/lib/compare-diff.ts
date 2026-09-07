@@ -1,4 +1,4 @@
-import type { Box } from "../layout.js";
+import type { Box } from "@/runtime/engine/layout";
 import type {
 	ChangedEdge,
 	ClusterChange,
@@ -7,10 +7,13 @@ import type {
 	EdgeFacts,
 	FieldChange,
 	NodeFacts,
-} from "./compare-contract.js";
-import { bindingIdentity, formatBinding } from "./compare-node-model.js";
-import type { EdgeModel, NodeModel } from "./compare-node-model.js";
+} from "@/runtime/engine/lib/compare-contract";
+import { bindingIdentity, formatBinding } from "@/runtime/engine/lib/compare-node-model";
+import type { EdgeModel, NodeModel } from "@/runtime/engine/lib/compare-node-model";
 
+/**
+ *
+ */
 const canonical = (v: unknown): string => {
 	if (v === null || typeof v !== "object") {
 		return JSON.stringify(v) ?? "null";
@@ -23,6 +26,9 @@ const canonical = (v: unknown): string => {
 		.toSorted(([x], [y]) => (x < y ? -1 : 1));
 	return `{${entries.map(([k, val]) => `${JSON.stringify(k)}:${canonical(val)}`).join(",")}}`;
 };
+/**
+ *
+ */
 const edgeFields = (e: EdgeModel): Record<string, unknown> => ({
 	label: e.label,
 	kind: e.kind,
@@ -33,6 +39,9 @@ const edgeFields = (e: EdgeModel): Record<string, unknown> => ({
 	...(e.extra ? { extra: e.extra } : {}),
 });
 
+/**
+ *
+ */
 function sameJson(a: unknown, b: unknown): boolean {
 	if (a === b) {
 		return true;
@@ -43,6 +52,9 @@ function sameJson(a: unknown, b: unknown): boolean {
 	return canonical(a) === canonical(b);
 }
 
+/**
+ *
+ */
 function nodeFacts(m: NodeModel, clusters: ClusterFacts[]): NodeFacts {
 	const cluster = clusters.find((c) => c.id === m.clusterId);
 	const bindingText = formatBinding(m.binding);
@@ -84,6 +96,9 @@ function nodeFacts(m: NodeModel, clusters: ClusterFacts[]): NodeFacts {
 	};
 }
 
+/**
+ *
+ */
 function diffFields(
 	from: Record<string, unknown>,
 	to: Record<string, unknown>,
@@ -97,6 +112,9 @@ function diffFields(
 	return changes;
 }
 
+/**
+ *
+ */
 function semanticFields(m: NodeModel, boardVariant: string): Record<string, unknown> {
 	const label =
 		m.label && m.label.toLocaleLowerCase() !== m.declaredName?.toLocaleLowerCase()
@@ -123,6 +141,9 @@ function semanticFields(m: NodeModel, boardVariant: string): Record<string, unkn
 	};
 }
 
+/**
+ *
+ */
 function cosmeticFields(m: NodeModel): Record<string, unknown> {
 	return {
 		shape: m.primary.type,
@@ -133,6 +154,9 @@ function cosmeticFields(m: NodeModel): Record<string, unknown> {
 	};
 }
 
+/**
+ *
+ */
 function layoutFields(
 	m: NodeModel,
 	clusters: ClusterFacts[],
@@ -148,6 +172,9 @@ function layoutFields(
 	// existed on one side joining this cluster is a fact about that node, and it
 	// is reported in that node's own facts. Counting it here as well would make
 	// every neighbour of an added node look like it had been moved.
+	/**
+	 *
+	 */
 	const companions = (list: ClusterFacts[], id: string | null, onlyShared: boolean): string[] => {
 		const found = list.find((c) => c.id === id);
 		if (!found) {
@@ -172,6 +199,9 @@ function layoutFields(
 // correspondence is by shared membership: a `to` cluster fed by two `from`
 // clusters is a merge, a `from` cluster whose members land in two `to` clusters
 // is a split, and a cluster made only of new nodes was formed.
+/**
+ *
+ */
 function diffPartitions(from: ClusterFacts[], to: ClusterFacts[]): ClusterChange[] {
 	const fromOf = new Map<string, string>();
 	for (const c of from) {
@@ -261,6 +291,9 @@ function diffPartitions(from: ClusterFacts[], to: ClusterFacts[]): ClusterChange
 // axis names the relation and the other axis qualifies it when it is at least
 // half as large, so a box diagonally up-left reads as "above-left" and not as
 // an arbitrary pick between the two.
+/**
+ *
+ */
 function relationOf(a: Box, b: Box): string {
 	const ax = a.x + a.w / 2,
 		ay = a.y + a.h / 2;
@@ -293,8 +326,14 @@ const MAX_RELATION_PAIRS = 20_000;
 // Edge matching
 // ---------------------------------------------------------------------------
 
+/**
+ *
+ */
 const edgeKey = (e: EdgeFacts): string => `${e.from}\0${e.to}`;
 
+/**
+ *
+ */
 const bucketEdges = (list: EdgeModel[]): Map<string, EdgeModel[]> => {
 	const map = new Map<string, EdgeModel[]>();
 	for (const edge of list) {
@@ -306,6 +345,9 @@ const bucketEdges = (list: EdgeModel[]): Map<string, EdgeModel[]> => {
 	return map;
 };
 
+/**
+ *
+ */
 const byAnchor = (list: EdgeFacts[], end: "source" | "target"): Map<string, EdgeFacts[]> => {
 	const map = new Map<string, EdgeFacts[]>();
 	for (const edge of list) {
@@ -317,6 +359,9 @@ const byAnchor = (list: EdgeFacts[], end: "source" | "target"): Map<string, Edge
 	return map;
 };
 
+/**
+ *
+ */
 function matchEdges(
 	from: EdgeModel[],
 	to: EdgeModel[],
@@ -387,6 +432,9 @@ function matchEdges(
 // rather than instead of it, because "A now points at C instead of B" is the
 // sentence a human would say and reconstructing it from two lists is work the
 // consumer should not have to redo.
+/**
+ *
+ */
 function inferReroutes(
 	removed: EdgeFacts[],
 	added: EdgeFacts[],

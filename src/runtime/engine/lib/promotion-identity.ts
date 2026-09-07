@@ -9,6 +9,9 @@ class PromotionError extends Error {
 	public override name = "PromotionError";
 }
 
+/**
+ *
+ */
 function normalizeKind(raw: string): Kind {
 	const normalized = raw.trim().toLowerCase();
 	const kind = KINDS.find((candidate) => candidate === normalized);
@@ -23,6 +26,9 @@ function normalizeKind(raw: string): Kind {
 
 const NODE_ID_MAX = 48;
 
+/**
+ *
+ */
 function slugify(text: string): string {
 	return (
 		text
@@ -39,6 +45,9 @@ function slugify(text: string): string {
 
 // Explicit node values use the same shape so ids remain comparable across
 // boards. An empty slug is rejected rather than silently renamed.
+/**
+ *
+ */
 function validateNodeId(raw: string): string {
 	const slug = slugify(raw);
 	if (slug.length === 0) {
@@ -49,6 +58,9 @@ function validateNodeId(raw: string): string {
 
 // Uniqueness is per board. `taken` contains ids used by every other node, so
 // re-promoting the same node keeps its identity.
+/**
+ *
+ */
 function uniqueNodeId(base: string, taken: Set<string>): string {
 	const stem = base.length > 0 ? base : "node";
 	if (!taken.has(stem)) {
