@@ -20,10 +20,7 @@ import type {
 	ThreadLinkSnapshot,
 } from "@/runtime/codex-thread-link";
 import type { AnswerSdp } from "@/shared/codex-realtime-host";
-import type {
-	ApprovalOwnerView,
-	ApprovalResponse,
-} from "@/runtime/codex-approvals";
+import type { ApprovalOwnerView, ApprovalResponse } from "@/runtime/codex-approvals";
 import type { SupportedLoginAccountParams } from "@/runtime/codex-protocol";
 import type {
 	BrowserGatewayAccountReadResult,
@@ -360,7 +357,14 @@ export class CodexWorkbenchGatewayError extends Error {
 	override readonly cause: unknown;
 
 	/**
-	 *
+	 * Name a browser gateway failure, carrying what the caller needs to decide
+	 * what became of the command it was delivering.
+	 * @param code Which failure this is.
+	 * @param message What happened.
+	 * @param options What is known about the command it happened to.
+	 * @param options.outcome What became of the command.
+	 * @param options.commandId The command, when the failure names one.
+	 * @param options.cause The failure underneath, when there is one.
 	 */
 	constructor(
 		code: BrowserGatewayErrorCode,

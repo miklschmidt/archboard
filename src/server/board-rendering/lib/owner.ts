@@ -12,7 +12,11 @@ import {
 	BOARD_RENDER_JOB_TIMEOUT_MS,
 	BOARD_RENDER_STARTUP_TIMEOUT_MS,
 } from "@/shared/timing/timing";
-import type { BoardRendererJob, BoardRendererJobResult, RendererPageState } from "@/server/board-rendering/lib/contract";
+import type {
+	BoardRendererJob,
+	BoardRendererJobResult,
+	RendererPageState,
+} from "@/server/board-rendering/lib/contract";
 import {
 	createRendererFixture,
 	type RendererFixture,
@@ -336,10 +340,13 @@ async function loopbackPortIsAvailable(port: number | null): Promise<boolean> {
 	}
 	let server: ReturnType<typeof Bun.serve> | null = null;
 	try {
-		server = Bun.serve({ hostname: "127.0.0.1", port, /**
-		 *
-		 */
-		fetch: () => new Response("audit") });
+		server = Bun.serve({
+			hostname: "127.0.0.1",
+			port /**
+			 *
+			 */,
+			fetch: () => new Response("audit"),
+		});
 		return true;
 	} catch {
 		return false;

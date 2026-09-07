@@ -46,10 +46,13 @@ export function deepFreeze<T>(value: T): T {
  * @returns The encoded byte length.
  */
 function wireBytes(value: unknown): number {
-	// JSON.stringify answers undefined for a value JSON cannot carry; the lib
-	// typing hides that, and a gateway value must never be one.
-	const encoded: string | undefined = JSON.stringify(value);
-	if (encoded === undefined) throw new Error("browser gateway produced a non-JSON value");
+	// JSON.stringify answers undefined for a value JSON cannot carry — a bare
+	// undefined, a function, a symbol — which the lib typing hides. A gateway
+	// value must never be one, so the check reads through an unknown.
+	const encoded: unknown = JSON.stringify(value);
+	if (typeof encoded !== "string") {
+		throw new Error("browser gateway produced a non-JSON value");
+	}
 	return new TextEncoder().encode(encoded).byteLength;
 }
 
