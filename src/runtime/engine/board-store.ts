@@ -25,8 +25,8 @@
 // alone; only explicit open, creation and write bookkeeping install a record
 // after resolving the vault note (ADR 0020).
 
-import { type ServerElement } from "./types.js";
-import { type BoardIdentity, boardKey, makeIdentity, SCRATCH_BOARD } from "./board.js";
+import { type ServerElement } from "@/runtime/engine/types";
+import { type BoardIdentity, boardKey, makeIdentity, SCRATCH_BOARD } from "@/runtime/engine/board";
 
 interface BoardState {
 	identity: BoardIdentity;
@@ -66,10 +66,36 @@ interface BoardState {
 	savedAt?: string;
 }
 
+/** What archboard last saw at one path. */
+interface FileBaseline {
+	hash: string;
+	at: string;
+	version: number | null;
+}
+
+/** One open board, as a surface lists it. */
+interface BoardSummary {
+	key: string;
+	identity: BoardIdentity;
+	elementCount: number;
+	placeholder: boolean;
+	file?: string;
+	savedAt?: string;
+	loadedAt?: string;
+}
+
+/** How to count one board's elements, which only board-io can answer. */
+type ElementCounter = (board: BoardState) => number;
+
 // The boards this canvas process has open. Which board each pane is holding
 // must not change under somebody at a wall display.
 const boards = new Map<string, BoardState>();
 
+/**
+ * A board this canvas now has open, knowing nothing about it yet.
+ * @param identity Which board it is.
+ * @returns The record.
+ */
 function newBoardState(identity: BoardIdentity): BoardState {
 	return { identity };
 }
@@ -90,11 +116,19 @@ if (!boards.has(SCRATCH_KEY)) {
 	boards.set(SCRATCH_KEY, newBoardState(makeIdentity({ board: SCRATCH_BOARD })));
 }
 
-/** Every board this canvas has open, for the message that lists them. */
+/**
+ * Every board this canvas has open, for the message that lists them.
+ * @returns Their keys, in a stable order.
+ */
 function openBoardKeys(): string[] {
 	return Array.from(boards.keys()).toSorted();
 }
 
+/**
+ * The record for one board, made if this canvas did not already have it open.
+ * @param identity Which board it is.
+ * @returns Its key and its record.
+ */
 function getOrCreateBoard(identity: BoardIdentity): { key: string; board: BoardState } {
 	const key = boardKey(identity);
 	const existing = boards.get(key);
@@ -138,6 +172,8 @@ function getOrCreateBoard(identity: BoardIdentity): { key: string; board: BoardS
  * nested ones. `customData` is the semantic channel (ADR 0003) and
  * `boundElements` is how a label belongs to its container, so a shallow copy
  * would leave exactly the parts worth protecting shared.
+ * @param elements The elements to copy.
+ * @returns Copies that share nothing with them.
  */
 function copyElements(elements: Iterable<ServerElement>): ServerElement[] {
 	return Array.from(elements, (element) => structuredClone(element));
@@ -148,10 +184,14 @@ function copyElements(elements: Iterable<ServerElement>): ServerElement[] {
 // belongs to the path: `board save --as other` writes a file that a different
 // open board may be the one that read it. Where more than one board has a
 // claim, the newest wins — that is the last moment archboard actually looked.
-function baselineForFile(
-	file: string,
-): { hash: string; at: string; version: number | null } | null {
-	let best: { hash: string; at: string; version: number | null } | null = null;
+/**
+ * The most recent bytes archboard has seen at one path.
+ * @param file The note's path.
+ * @returns Its hash, when it was read, and the version it carried, or null
+ * when archboard has never read it.
+ */
+function baselineForFile(file: string): FileBaseline | null {
+	let best: FileBaseline | null = null;
 	for (const board of boards.values()) {
 		const baseline = board.baseline;
 		if (!baseline || baseline.file !== file) {
@@ -164,6 +204,14 @@ function baselineForFile(
 	return best;
 }
 
+/**
+ * Record that archboard has just seen these bytes at this path, which is what
+ * the next write's conflict check compares against.
+ * @param board The board that read or wrote it.
+ * @param file The note's path.
+ * @param hash The sha-256 of its bytes.
+ * @param version The version it carried, or null for a note that carries none.
+ */
 function recordBaseline(
 	board: BoardState,
 	file: string,
@@ -178,15 +226,12 @@ function recordBaseline(
 // notes is board-io's job. Injected rather than imported, because board-io
 // reads and writes through this registry and a cycle between them would be a
 // worse shape than one argument.
-function boardSummaries(elementCount: (board: BoardState) => number): Array<{
-	key: string;
-	identity: BoardIdentity;
-	elementCount: number;
-	placeholder: boolean;
-	file?: string;
-	savedAt?: string;
-	loadedAt?: string;
-}> {
+/**
+ * Every open board, as a surface lists them.
+ * @param elementCount How to count one board's elements.
+ * @returns One summary per open board.
+ */
+function boardSummaries(elementCount: ElementCounter): BoardSummary[] {
 	return Array.from(boards.entries()).map(([key, board]) =>
 		Object.assign(
 			{

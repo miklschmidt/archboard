@@ -29,14 +29,18 @@ interface OpenTypePath {
 	toPathData(decimalPlaces?: number): string;
 }
 
+interface LocalizedName {
+	en?: string;
+}
+
 interface OpenTypeFont {
 	names: {
-		fontFamily: { en?: string };
-		fontSubfamily: { en?: string };
-		preferredFamily?: { en?: string };
-		preferredSubfamily?: { en?: string };
-		postScriptName: { en?: string };
-		version: { en?: string };
+		fontFamily: LocalizedName;
+		fontSubfamily: LocalizedName;
+		preferredFamily?: LocalizedName;
+		preferredSubfamily?: LocalizedName;
+		postScriptName: LocalizedName;
+		version: LocalizedName;
 	};
 	getPath(
 		text: string,
@@ -51,17 +55,60 @@ interface OpenTypeModule {
 	loadSync(filename: string): OpenTypeFont;
 }
 
-const require = createRequire(import.meta.url);
-const opentype = require("opentype.js") as OpenTypeModule;
+/**
+ * Whether a loaded module exposes opentype.js's synchronous font loader; the
+ * package ships no type declarations, so this is the boundary that types it.
+ * @param value The module namespace.
+ * @returns Whether `loadSync` is callable on it.
+ */
+function isOpenTypeModule(value: unknown): value is OpenTypeModule {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"loadSync" in value &&
+		typeof value.loadSync === "function"
+	);
+}
 
+/**
+ * Load opentype.js through CommonJS, the entry its package resolves for Bun.
+ * @returns The typed module.
+ * @throws {Error} When the module has no `loadSync`.
+ */
+function loadOpenType(): OpenTypeModule {
+	const loaded: unknown = createRequire(import.meta.url)("opentype.js");
+	if (!isOpenTypeModule(loaded)) {
+		throw new Error("opentype.js did not expose loadSync");
+	}
+	return loaded;
+}
+
+const opentype = loadOpenType();
+
+/**
+ * The SHA-256 of a file as lowercase hex.
+ * @param filename The file to hash.
+ * @returns The digest.
+ */
 function sha256(filename: string): string {
 	return createHash("sha256").update(fs.readFileSync(filename)).digest("hex");
 }
 
+/**
+ * Format a coordinate with at most four decimals and no trailing zeros.
+ * @param value The number to format.
+ * @returns The compact decimal string.
+ */
 function decimal(value: number): string {
 	return Number(value.toFixed(4)).toString();
 }
 
+/**
+ * Shift a path command's control points in place.
+ * @param command The command to move.
+ * @param dx The horizontal shift.
+ * @param dy The vertical shift.
+ */
 function translate(command: PathCommand, dx: number, dy: number): void {
 	for (const key of ["x", "x1", "x2"] as const) {
 		if (command[key] !== undefined) {
@@ -75,26 +122,85 @@ function translate(command: PathCommand, dx: number, dy: number): void {
 	}
 }
 
-function renderWordmarkSvg(): string {
+/**
+ * Refuse to render from anything but the pinned Onest Medium file.
+ * @throws {Error} When the font file's hash differs from the recorded one.
+ */
+function requirePinnedSource(): void {
 	const actualHash = sha256(sourcePath);
 	if (actualHash !== WORDMARK_SOURCE_SHA256) {
 		throw new Error(
 			`Onest Medium source hash mismatch: expected ${WORDMARK_SOURCE_SHA256}, received ${actualHash}`,
 		);
 	}
+}
 
+/**
+ * Describe a font's family, subfamily and version for an error message.
+ * @param font The loaded font.
+ * @returns The description, with `?` for missing names.
+ */
+function describeFont(font: OpenTypeFont): string {
+	const { names } = font;
+	const family = firstName(names.preferredFamily, names.fontFamily);
+	const subfamily = firstName(names.preferredSubfamily, names.fontSubfamily);
+	return `${family} / ${subfamily} / ${names.version.en ?? "?"}`;
+}
+
+/**
+ * The first English name present among the candidates, or `?`.
+ * @param preferred The preferred name table, when the font has one.
+ * @param fallback The plain name table.
+ * @returns The name to show.
+ */
+function firstName(preferred: LocalizedName | undefined, fallback: LocalizedName): string {
+	return preferred?.en ?? fallback.en ?? "?";
+}
+
+/**
+ * Whether the loaded font's own metadata names Onest Medium 1.000.
+ * @param font The loaded font.
+ * @returns Whether every expected name matches.
+ */
+function isOnestMedium(font: OpenTypeFont): boolean {
+	const { names } = font;
+	return (
+		isPreferredOnestMedium(names) &&
+		names.postScriptName.en === "Onest-Medium" &&
+		names.version.en?.includes("1.000") === true
+	);
+}
+
+/**
+ * Whether the preferred family and subfamily name Onest Medium.
+ * @param names The font's name tables.
+ * @returns Whether both preferred names match.
+ */
+function isPreferredOnestMedium(names: OpenTypeFont["names"]): boolean {
+	return names.preferredFamily?.en === "Onest" && names.preferredSubfamily?.en === "Medium";
+}
+
+/**
+ * Load the pinned font after checking both its bytes and its metadata.
+ * @returns The loaded font.
+ * @throws {Error} When the metadata is not Onest Medium 1.000.
+ */
+function loadWordmarkFont(): OpenTypeFont {
+	requirePinnedSource();
 	const font = opentype.loadSync(sourcePath);
-	if (
-		font.names.preferredFamily?.en !== "Onest" ||
-		font.names.preferredSubfamily?.en !== "Medium" ||
-		font.names.postScriptName.en !== "Onest-Medium" ||
-		!font.names.version.en?.includes("1.000")
-	) {
-		throw new Error(
-			`Unexpected wordmark source metadata: ${font.names.preferredFamily?.en ?? font.names.fontFamily.en ?? "?"} / ${font.names.preferredSubfamily?.en ?? font.names.fontSubfamily.en ?? "?"} / ${font.names.version.en ?? "?"}`,
-		);
+	if (!isOnestMedium(font)) {
+		throw new Error(`Unexpected wordmark source metadata: ${describeFont(font)}`);
 	}
+	return font;
+}
 
+/**
+ * Render the wordmark as an SVG with its outline moved to the origin, so the
+ * asset is reproducible from the pinned font alone.
+ * @returns The SVG document text.
+ */
+function renderWordmarkSvg(): string {
+	const font = loadWordmarkFont();
 	const outline = font.getPath(WORDMARK_TEXT, 0, 0, WORDMARK_FONT_SIZE_PX, {
 		kerning: true,
 		letterSpacing: WORDMARK_TRACKING_EM,
@@ -120,6 +226,12 @@ interface CliOptions {
 	outputPath: string;
 }
 
+/**
+ * Parse `--check` and `--out <file>` from the command line.
+ * @param args The arguments after the script name.
+ * @returns The options with the default output path applied.
+ * @throws {Error} On an unknown argument or a missing `--out` filename.
+ */
 function parseOptions(args: string[]): CliOptions {
 	let check = false;
 	let outputPath = defaultOutputPath;
@@ -143,18 +255,32 @@ function parseOptions(args: string[]): CliOptions {
 	return { check, outputPath };
 }
 
+/**
+ * Refuse a missing or stale generated wordmark.
+ * @param outputPath The generated asset's path.
+ * @param expected The freshly rendered SVG.
+ * @throws {Error} When the file is absent or differs from the rendering.
+ */
+function checkGenerated(outputPath: string, expected: string): void {
+	if (!fs.existsSync(outputPath)) {
+		throw new Error(`Generated wordmark is missing: ${outputPath}`);
+	}
+	if (fs.readFileSync(outputPath, "utf8") !== expected) {
+		throw new Error(
+			`Generated wordmark is stale: run \`bun run generate:wordmark\` (${outputPath})`,
+		);
+	}
+}
+
+/**
+ * Render the wordmark and either verify the tracked asset or write it.
+ * @param args The command-line arguments; defaults to the process's.
+ */
 function runGenerator(args = process.argv.slice(2)): void {
 	const options = parseOptions(args);
 	const expected = renderWordmarkSvg();
 	if (options.check) {
-		if (!fs.existsSync(options.outputPath)) {
-			throw new Error(`Generated wordmark is missing: ${options.outputPath}`);
-		}
-		if (fs.readFileSync(options.outputPath, "utf8") !== expected) {
-			throw new Error(
-				`Generated wordmark is stale: run \`bun run generate:wordmark\` (${options.outputPath})`,
-			);
-		}
+		checkGenerated(options.outputPath, expected);
 		return;
 	}
 	fs.mkdirSync(path.dirname(options.outputPath), { recursive: true });

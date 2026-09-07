@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { looseObject } from "./scalars.js";
+import { looseObject } from "@/runtime/codex-protocol/lib/scalars";
 
 const MisalignmentSteerSchema = looseObject({ message: z.string() });
 

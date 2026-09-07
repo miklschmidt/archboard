@@ -4,10 +4,10 @@ import {
 	catalogueText,
 	insertStencil,
 	readCatalogue,
-} from "../../runtime/engine/library-catalogue.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema, ServerElementSchema } from "../command-contract/schemas.js";
-import { boardWriteRefusals, serverRefusal } from "../command-contract/common.js";
+} from "@/runtime/engine/library-catalogue";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { HoldReportSchema, ServerElementSchema } from "@/cli/command-contract/schemas";
+import { boardWriteRefusals, serverRefusal } from "@/cli/command-contract/common";
 
 const tail = z.array(z.string()).default([]);
 
@@ -36,12 +36,20 @@ const libraryContract = defineCommand({
 	result: LibraryNamespaceResultSchema,
 	output: {
 		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Namespace refusal" }],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
 	effects: [],
 	refusals: [],
 	relationships: [],
+	/**
+	 * Refuses the bare namespace with its subcommand usage line.
+	 * @returns Never; the usage error is the whole behaviour.
+	 */
 	async handler() {
 		throw new CliUsageError(
 			"Usage: library list [--text] | library insert <name> --x <x> --y <y> [--source <file>] [--id <libraryItemId>]",
@@ -116,6 +124,11 @@ const libraryListContract = defineCommand({
 				presentation: ["result"],
 			},
 		],
+		/**
+		 * Chooses the human catalogue when `--text` was given, otherwise the json one.
+		 * @param input - The parsed list options.
+		 * @returns The output case id.
+		 */
 		select: (input) => (input.text ? "text" : "json"),
 	},
 	prerequisites: ["server"],
@@ -124,6 +137,12 @@ const libraryListContract = defineCommand({
 	relationships: [
 		{ method: "GET", path: "/api/library", cardinality: "one", description: "Read the catalogue" },
 	],
+	/**
+	 * Reads the stencil catalogue the server holds.
+	 * @param input - The parsed list options.
+	 * @param context - The command context.
+	 * @returns The catalogue as text or json.
+	 */
 	async handler(input, context) {
 		await context.require("server", "library list");
 		const catalogue = await readCatalogue();
@@ -140,6 +159,18 @@ const LibraryInsertInputSchema = z.object({
 	tail,
 });
 type LibraryInsertInput = z.infer<typeof LibraryInsertInputSchema>;
+
+/**
+ * Coerces the `--x` and `--y` option values to a finite point.
+ * @param x - The raw `--x` value.
+ * @param y - The raw `--y` value.
+ * @returns The point, or undefined when either coordinate is not a finite number.
+ */
+function finitePoint(x: string, y: string): { x: number; y: number } | undefined {
+	const point = { x: Number(x), y: Number(y) };
+	return Number.isFinite(point.x) && Number.isFinite(point.y) ? point : undefined;
+}
+
 const LibraryInsertStageSchema = z
 	.object({
 		name: z.string().optional(),
@@ -164,15 +195,51 @@ const LibraryInsertStageSchema = z
 			});
 			return z.NEVER;
 		}
-		const x = Number(input.x);
-		const y = Number(input.y);
-		if (!Number.isFinite(x) || !Number.isFinite(y)) {
+		const point = finitePoint(input.x, input.y);
+		if (point === undefined) {
 			context.addIssue({ code: "custom", message: "--x and --y must be numbers" });
 			return z.NEVER;
 		}
-		return { name: input.name, source: input.source, itemId: input.id, x, y };
+		return { name: input.name, source: input.source, itemId: input.id, x: point.x, y: point.y };
 	});
 type LibraryInsertStage = z.infer<typeof LibraryInsertStageSchema>;
+
+/**
+ * Builds the catalogue insertion request, naming only the selectors given.
+ * @param request - The validated insert stage.
+ * @returns The request for the catalogue.
+ */
+function insertRequest(request: LibraryInsertStage): {
+	x: number;
+	y: number;
+	name?: string;
+	source?: string;
+	itemId?: string;
+} {
+	return {
+		x: request.x,
+		y: request.y,
+		...(request.name === undefined ? {} : { name: request.name }),
+		...(request.source === undefined ? {} : { source: request.source }),
+		...(request.itemId === undefined ? {} : { itemId: request.itemId }),
+	};
+}
+
+/**
+ * Translates a catalogue lookup failure into a usage error that says how to
+ * fix the request; other failures are left to propagate.
+ * @param error - The value the catalogue threw.
+ * @returns The usage error to throw instead, or undefined to rethrow the original.
+ */
+function insertUsageError(error: unknown): CliUsageError | undefined {
+	if (error instanceof AmbiguousStencilError) {
+		return new CliUsageError(`${error.message} Disambiguate with --source or --id.`);
+	}
+	if (error instanceof Error && error.name === "UnknownStencilError") {
+		return new CliUsageError(`${error.message} Use "library list" to see what is available.`);
+	}
+	return undefined;
+}
 const LibraryInsertResultSchema = z.looseObject({
 	success: z.literal(true),
 	name: z.string().nullable(),
@@ -258,6 +325,10 @@ const libraryInsertContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board", "doing"],
@@ -272,27 +343,24 @@ const libraryInsertContract = defineCommand({
 			description: "Insert the stencil",
 		},
 	],
+	/**
+	 * Copies one catalogue stencil onto the board in one write, turning an
+	 * unknown or ambiguous stencil name into a usage error.
+	 * @param input - The parsed insert options.
+	 * @param context - The command context.
+	 * @returns The insertion receipt.
+	 */
 	async handler(input, context) {
 		const request = context.parse(LibraryInsertStageSchema, input);
 		await context.require("server", "library insert");
 		try {
 			return {
-				result: LibraryInsertResultSchema.parse(
-					await insertStencil({
-						x: request.x,
-						y: request.y,
-						...(request.name === undefined ? {} : { name: request.name }),
-						...(request.source === undefined ? {} : { source: request.source }),
-						...(request.itemId === undefined ? {} : { itemId: request.itemId }),
-					}),
-				),
+				result: LibraryInsertResultSchema.parse(await insertStencil(insertRequest(request))),
 			};
 		} catch (error) {
-			if (error instanceof AmbiguousStencilError) {
-				throw new CliUsageError(`${error.message} Disambiguate with --source or --id.`);
-			}
-			if (error instanceof Error && error.name === "UnknownStencilError") {
-				throw new CliUsageError(`${error.message} Use "library list" to see what is available.`);
+			const usage = insertUsageError(error);
+			if (usage) {
+				throw usage;
 			}
 			throw error;
 		}

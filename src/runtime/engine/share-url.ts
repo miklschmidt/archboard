@@ -1,9 +1,17 @@
 import { deflateSync } from "zlib";
 import { webcrypto } from "crypto";
-import { type ServerElement } from "./types.js";
-import { expandElements } from "./expand-elements.js";
+import { type ServerElement } from "@/runtime/engine/types";
+import { expandElements } from "@/runtime/engine/expand-elements";
+import { z } from "zod";
 
-// Excalidraw's concatBuffers: [4-byte version=1][4-byte len][chunk]...
+const uploadReceipt = z.object({ id: z.string() });
+
+/**
+ * Excalidraw's own `concatBuffers` framing: a 4-byte version (1), then each
+ * chunk as a 4-byte length followed by its bytes.
+ * @param bufs The chunks to frame, in order.
+ * @returns One buffer excalidraw.com can split back into the chunks.
+ */
 function concatBuffers(...bufs: Uint8Array[]): Uint8Array {
 	let total = 4; // version header
 	for (const b of bufs) {
@@ -22,9 +30,13 @@ function concatBuffers(...bufs: Uint8Array[]): Uint8Array {
 	return out;
 }
 
-// Export elements to a shareable excalidraw.com URL. The diagram is
-// encrypted client-side (AES-GCM 128) and uploaded; the decryption key only
-// lives in the URL fragment.
+/**
+ * Export elements to a shareable excalidraw.com URL. The diagram is encrypted
+ * client-side (AES-GCM 128) and uploaded; the decryption key lives only in the
+ * URL fragment, so excalidraw.com never sees the drawing.
+ * @param urlExportElements The board's elements, in the stored shape.
+ * @returns The shareable URL carrying the upload id and the key.
+ */
 export async function exportToExcalidrawUrl(urlExportElements: ServerElement[]): Promise<string> {
 	if (urlExportElements.length === 0) {
 		throw new Error("Canvas is empty — nothing to export");
@@ -87,7 +99,7 @@ export async function exportToExcalidrawUrl(urlExportElements: ServerElement[]):
 		);
 	}
 
-	const uploadResult = (await uploadResponse.json()) as { id: string };
+	const uploadResult = uploadReceipt.parse(await uploadResponse.json());
 
 	// Export key as JWK to get the "k" field
 	const jwk = await webcrypto.subtle.exportKey("jwk", cryptoKey);

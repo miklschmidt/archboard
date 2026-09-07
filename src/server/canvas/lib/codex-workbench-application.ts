@@ -2,7 +2,7 @@ import type {
 	CodexWorkbenchOwner,
 	CodexWorkbenchSnapshot,
 	InstallProductionCodexWorkbenchOptions,
-} from "./codex-workbench.js";
+} from "@/server/canvas/lib/codex-workbench";
 
 interface CanvasCodexWorkbenchModule {
 	readonly installProductionCodexWorkbench: (
@@ -22,6 +22,8 @@ interface CanvasCodexWorkbenchApplicationOptions {
  * this owner publishes none of its own. It keeps exactly the one closure-local
  * guard `prepare` needs so a second installation cannot start a second child,
  * and it hands `start`/`stop`/`forceStop` straight to the stage.
+ * @param options The workbench module and how to build its installation.
+ * @returns The application-stage owner.
  */
 function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchApplicationOptions): {
 	readonly prepare: () => Promise<CodexWorkbenchSnapshot>;
@@ -33,6 +35,13 @@ function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchAppl
 	let shutdownPromise: Promise<void> | null = null;
 	let shutdownRequested = false;
 
+	/**
+	 * Stop the workbench, without waiting for a startup still in flight: the
+	 * owner invalidates its startup ticket, refuses readiness and reaps the
+	 * process group, and waiting here would keep a pre-readiness signal from
+	 * ever reaching the child it has to stop.
+	 * @returns Resolves once the workbench has stopped.
+	 */
 	const shutdown = (): Promise<void> => {
 		shutdownRequested = true;
 		if (shutdownPromise !== null) {
@@ -68,6 +77,11 @@ function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchAppl
 		return shutdownPromise;
 	};
 
+	/**
+	 * Install and start one production Codex workbench, refusing a second
+	 * installation while one stands and tearing down a startup that failed.
+	 * @returns The snapshot the workbench reached.
+	 */
 	const prepare = (): Promise<CodexWorkbenchSnapshot> => {
 		if (preparePromise !== null) {
 			return preparePromise;
@@ -83,6 +97,7 @@ function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchAppl
 			try {
 				owner = options.module.installProductionCodexWorkbench(options.installation());
 				const snapshot = await owner.start();
+				// oxlint-disable-next-line typescript/no-unnecessary-condition -- stop() sets this from another task while the start above is awaited; the narrowing from the declaration does not survive that
 				if (shutdownRequested) {
 					throw new Error("The Codex workbench was stopped during startup.");
 				}
@@ -90,27 +105,11 @@ function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchAppl
 				return snapshot;
 			} catch (error) {
 				installed = false;
-				if (!shutdownRequested) {
-					let cleanupFailure: unknown = null;
-					try {
-						await owner?.shutdown();
-					} catch (cleanupError) {
-						cleanupFailure = cleanupError;
-					}
-					// A failed terminal cleanup keeps its owner reachable for the
-					// stage's force pass; a clean one releases it for a later retry.
-					if (cleanupFailure !== null) {
-						throw new AggregateError(
-							[error, cleanupFailure],
-							"Codex workbench startup and terminal cleanup both failed.",
-							{ cause: error },
-						);
-					}
-					if (!shutdownRequested) {
-						owner = null;
-					}
+				// oxlint-disable-next-line typescript/no-unnecessary-condition -- stop() sets this from another task while the start above is awaited; the narrowing from the declaration does not survive that
+				if (shutdownRequested) {
+					throw error;
 				}
-				throw error;
+				throw await abandonPreparation(error);
 			} finally {
 				preparePromise = null;
 			}
@@ -119,6 +118,33 @@ function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchAppl
 	};
 
 	return Object.freeze({ prepare, shutdown });
+
+	/**
+	 * Tear down a workbench whose startup failed. A failed terminal cleanup
+	 * keeps its owner reachable for the stage's force pass; a clean one
+	 * releases it for a later retry.
+	 * @param error What the startup threw.
+	 * @returns The failure to throw.
+	 */
+	async function abandonPreparation(error: unknown): Promise<unknown> {
+		let cleanupFailure: unknown = null;
+		try {
+			await owner?.shutdown();
+		} catch (thrown) {
+			cleanupFailure = thrown;
+		}
+		if (cleanupFailure !== null) {
+			return new AggregateError(
+				[error, cleanupFailure],
+				"Codex workbench startup and terminal cleanup both failed.",
+				{ cause: error },
+			);
+		}
+		if (!shutdownRequested) {
+			owner = null;
+		}
+		return error;
+	}
 }
 
 export {

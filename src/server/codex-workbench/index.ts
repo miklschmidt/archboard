@@ -1,4 +1,4 @@
-export { createCodexWorkbenchGateway } from "./lib/gateway.js";
+export { createCodexWorkbenchGateway } from "@/server/codex-workbench/lib/gateway";
 export {
 	BROWSER_DELTA_MAX_BYTES,
 	BROWSER_SNAPSHOT_MAX_BYTES,
@@ -9,9 +9,12 @@ export {
 	diffBrowserSnapshots,
 	fitBrowserSnapshotBounded,
 	projectCodexBrowserState,
-} from "./lib/projection.js";
-export { createBrowserLeaseLedger, createBrowserLeaseManager } from "./lib/lease.js";
-export { CodexWorkbenchGatewayError } from "./lib/contract.js";
+} from "@/server/codex-workbench/lib/projection";
+export {
+	createBrowserLeaseLedger,
+	createBrowserLeaseManager,
+} from "@/server/codex-workbench/lib/lease";
+export { CodexWorkbenchGatewayError } from "@/server/codex-workbench/lib/contract";
 
 export type {
 	BrowserAccount,
@@ -33,7 +36,7 @@ export type {
 	BrowserTimeline,
 	BrowserVoice,
 	DeliveryOutcome,
-} from "../../shared/codex-browser-model/index.js";
+} from "@/shared/codex-browser-model";
 
 export type {
 	BrowserAccountActions,
@@ -76,7 +79,7 @@ export type {
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
 	CodexWorkbenchGatewayOptions,
-} from "./lib/contract.js";
+} from "@/server/codex-workbench/lib/contract";
 
 export type {
 	BrowserAccountProjectionInput,
@@ -96,4 +99,4 @@ export type {
 	DynamicApprovalOwnerBinding,
 	DynamicApprovalOwnerRequest,
 	DynamicApprovalOwnerView,
-} from "./lib/projection-contract.js";
+} from "@/server/codex-workbench/lib/projection-contract";

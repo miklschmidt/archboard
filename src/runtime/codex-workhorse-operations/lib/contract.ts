@@ -1,21 +1,17 @@
-import type {
-	CodexEpochStore,
-	EpochExecutionProof,
-	EpochTransaction,
-} from "../../codex-epoch/index.js";
-import type { ArchboardContext } from "../../codex-instructions/index.js";
-import type { CodexSession, SessionParams, SessionTurn } from "../../codex-session/index.js";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
+import type { CodexEpochStore, EpochExecutionProof, EpochTransaction } from "@/runtime/codex-epoch";
+import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { CodexSession, SessionParams, SessionTurn } from "@/runtime/codex-session";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkClassification,
 	ThreadLinkTarget,
-} from "../../codex-thread-link/index.js";
+} from "@/runtime/codex-thread-link";
 import type {
 	CodexWorkhorseQueue,
 	WorkhorseQueueOperation as QueueOperation,
 	WorkhorseQueueMutation,
-} from "../../codex-workhorse-queue/index.js";
+} from "@/runtime/codex-workhorse-queue";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -26,8 +22,8 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { CodexThreadStatusType } from "../../../shared/codex-app-server-contract/index.js";
+} from "@/shared/codex-workbench-identity";
+import type { CodexThreadStatusType } from "@/shared/codex-app-server-contract";
 
 /** The only four operations the coordinator may dispatch to its workhorse. */
 const WORKHORSE_OPERATION_NAMES = Object.freeze([
@@ -229,6 +225,14 @@ type WorkhorseOperationErrorCode =
 	| "transaction_failed"
 	| "outcome_unknown";
 
+/** What is known about a failed operation beyond its code and message. */
+interface WorkhorseOperationErrorFacts {
+	readonly operation?: WorkhorseOperationName;
+	readonly outcome?: Exclude<WorkhorseOperationDelivery, "pending">;
+	readonly operationId?: OperationId;
+	readonly cause?: unknown;
+}
+
 class CodexWorkhorseOperationsError extends Error {
 	override readonly name = "CodexWorkhorseOperationsError";
 	readonly code: WorkhorseOperationErrorCode;
@@ -237,15 +241,18 @@ class CodexWorkhorseOperationsError extends Error {
 	readonly operationId: OperationId | null;
 	override readonly cause: unknown;
 
+	/**
+	 * Build the error, defaulting every optional fact to null so a caller can always ask what the
+	 * failure proved about delivery without checking whether the field exists.
+	 * @param code - Why the operation could not proceed.
+	 * @param message - The diagnostic for the caller.
+	 * @param options - The operation, settled outcome, operation identity and underlying cause,
+	 * as far as they are known at the point of failure.
+	 */
 	constructor(
 		code: WorkhorseOperationErrorCode,
 		message: string,
-		options: {
-			readonly operation?: WorkhorseOperationName;
-			readonly outcome?: Exclude<WorkhorseOperationDelivery, "pending">;
-			readonly operationId?: OperationId;
-			readonly cause?: unknown;
-		} = {},
+		options: WorkhorseOperationErrorFacts = {},
 	) {
 		super(message);
 		this.code = code;

@@ -1,7 +1,7 @@
-import type { BoardIdentity } from "../board.js";
-import type { ServerElement } from "../types.js";
-import type { BoundingBox } from "../layout.js";
-import type { ArchboardBlock, LogicalAddress } from "../metadata.js";
+import type { BoardIdentity } from "@/runtime/engine/board";
+import type { ServerElement } from "@/runtime/engine/types";
+import type { BoundingBox } from "@/runtime/engine/layout";
+import type { ArchboardBlock, LogicalAddress } from "@/runtime/engine/metadata";
 
 interface CompareSideInput {
 	key: string;

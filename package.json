@@ -31,8 +31,8 @@
 		"production": "bun run build && bun run canvas",
 		"postinstall": "bun run generate:codex-contract",
 		"sync:skills": "bun scripts/sync-skills.ts",
-		"lint": "bun run ensure:codex-contract && bun run lint:repository && bun run lint:ui",
-		"fix": "bun scripts/lint.ts --disable-nested-config --fix . && bun scripts/lint.ts --type-aware --threads 1 --fix --config src/ui/.oxlintrc.jsonc src/ui && bun run lint && bun run fmt",
+		"lint": "bun run ensure:codex-contract && bun run lint:baseline && bun run lint:policy",
+		"fix": "bun scripts/lint.ts --disable-nested-config --fix --config .oxlintrc.baseline.jsonc tests frontend src/server/board-rendering/browser.ts src/runtime/*/tests src/server/*/tests src/shared/*/tests src/cli/*/tests && bun scripts/lint.ts --type-aware --threads 1 --fix --config .oxlintrc.jsonc src scripts tools vite.config.ts && bun run lint && bun run fmt",
 		"fmt": "oxfmt . '!dist/**' '!node_modules/**' '!backlog/**' '!src/shared/codex-app-server-contract/generated/**'",
 		"fmt:check": "oxfmt --check . '!dist/**' '!node_modules/**' '!backlog/**' '!src/shared/codex-app-server-contract/generated/**'",
 		"check": "bun run lint && bun run fmt:check && bun run test",
@@ -53,8 +53,8 @@
 		"generate:cli-contract": "bun scripts/generate-cli-contract.ts",
 		"generate:wordmark": "bun scripts/generate-wordmark.ts",
 		"shadcn": "shadcn",
-		"lint:repository": "bun scripts/lint.ts --disable-nested-config .",
-		"lint:ui": "bun scripts/lint.ts --type-aware --threads 1 --deny-warnings --max-warnings 0 --report-unused-disable-directives-severity error --config src/ui/.oxlintrc.jsonc src/ui"
+		"lint:baseline": "bun scripts/lint.ts --disable-nested-config --config .oxlintrc.baseline.jsonc tests frontend src/server/board-rendering/browser.ts src/runtime/*/tests src/server/*/tests src/shared/*/tests src/cli/*/tests",
+		"lint:policy": "bun scripts/lint.ts --type-aware --threads 1 --deny-warnings --max-warnings 0 --report-unused-disable-directives-severity error --config .oxlintrc.jsonc src scripts tools vite.config.ts"
 	},
 	"dependencies": {
 		"@assistant-ui/react": "0.15.17",

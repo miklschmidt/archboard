@@ -1,8 +1,32 @@
 import { z } from "zod";
-import { setViewport } from "../../runtime/engine/canvas-client.js";
-import { defineCommand } from "./contract.js";
-import { HoldReportSchema } from "./schemas.js";
-import { serverRefusal, tail } from "./lib/common.js";
+import { setViewport } from "@/runtime/engine/canvas-client";
+import type { CommandContext } from "@/cli/command-contract/contract";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { HoldReportSchema } from "@/cli/command-contract/schemas";
+import { serverRefusal, tail } from "@/cli/command-contract/lib/common";
+
+/** The camera instructions a move may carry; exactly one of them must be given. */
+interface CameraModes {
+	readonly fit: boolean;
+	readonly ids?: string | undefined;
+	readonly element?: string | undefined;
+	readonly zoom?: string | undefined;
+	readonly offsetX?: string | undefined;
+	readonly offsetY?: string | undefined;
+}
+
+/**
+ * Counts how many things a camera move was told to do. Explicit zoom and
+ * offsets count as one instruction between them, because they set one camera.
+ * @param value - The parsed camera flags.
+ * @returns How many distinct instructions were given.
+ */
+function cameraModeCount(value: CameraModes): number {
+	const manual =
+		value.zoom !== undefined || value.offsetX !== undefined || value.offsetY !== undefined;
+	return [value.fit, value.ids !== undefined, value.element !== undefined, manual].filter(Boolean)
+		.length;
+}
 
 const ViewportInputSchema = z
 	.object({
@@ -17,12 +41,7 @@ const ViewportInputSchema = z
 		tail,
 	})
 	.superRefine((value, context) => {
-		const manual =
-			value.zoom !== undefined || value.offsetX !== undefined || value.offsetY !== undefined;
-		const modes = [value.fit, value.ids !== undefined, value.element !== undefined, manual].filter(
-			Boolean,
-		).length;
-		if (modes !== 1) {
+		if (cameraModeCount(value) !== 1) {
 			context.addIssue({
 				code: "custom",
 				message:
@@ -40,6 +59,12 @@ const ViewportInputSchema = z
 	});
 type ViewportInput = z.infer<typeof ViewportInputSchema>;
 
+/**
+ * The schema for a camera number, naming the flag in its refusal so the person
+ * knows which of several numeric flags was not a number.
+ * @param flag - The flag's name, without its dashes.
+ * @returns The schema, which yields the number.
+ */
 const finiteNumber = (flag: string) =>
 	z.string().transform((value, context) => {
 		const parsed = Number(value);
@@ -66,6 +91,53 @@ const ViewportResultSchema = z.object({
 	held: HoldReportSchema.optional(),
 });
 type ViewportResult = z.infer<typeof ViewportResultSchema>;
+
+/**
+ * Turns the camera flags into the request the browser answers, validating each
+ * number as it goes and sending only what was actually asked for.
+ * @param input - The parsed command input.
+ * @param context - The command context, which validates the ids and numbers.
+ * @returns The camera fields of the viewport request.
+ */
+function cameraRequest(input: ViewportInput, context: CommandContext): Record<string, unknown> {
+	const request: Record<string, unknown> = {};
+	if (input.fit) {
+		request["scrollToContent"] = true;
+	}
+	if (input.ids !== undefined) {
+		request["scrollToElementIds"] = context.parse(viewportIdsSchema, input.ids);
+	}
+	if (input.element !== undefined) {
+		request["scrollToElementId"] = input.element;
+	}
+	assignCameraNumbers(request, input, context);
+	return request;
+}
+
+/**
+ * Adds the numeric camera values that were given, each validated under the
+ * name of the flag it came from.
+ * @param request - The request being built.
+ * @param input - The parsed command input.
+ * @param context - The command context, which validates each number.
+ */
+function assignCameraNumbers(
+	request: Record<string, unknown>,
+	input: ViewportInput,
+	context: CommandContext,
+): void {
+	const numbers: readonly [string, string, string | undefined][] = [
+		["zoom", "zoom", input.zoom],
+		["offsetX", "offset-x", input.offsetX],
+		["offsetY", "offset-y", input.offsetY],
+		["viewportZoomFactor", "zoom-factor", input.zoomFactor],
+	];
+	for (const [field, flag, value] of numbers) {
+		if (value !== undefined) {
+			request[field] = context.parse(finiteNumber(flag), value);
+		}
+	}
+}
 
 const viewportContract = defineCommand({
 	path: ["browser", "viewport"],
@@ -182,6 +254,10 @@ const viewportContract = defineCommand({
 				description: "Viewport acknowledgement",
 			},
 		],
+		/**
+		 * A camera move always answers with the acknowledgement; there is no second shape.
+		 * @returns The only output case's id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "browser"],
@@ -203,28 +279,17 @@ const viewportContract = defineCommand({
 			description: "One browser camera request",
 		},
 	],
+	/**
+	 * Moves one pane's camera, in whichever of the mutually exclusive ways the
+	 * input asked for.
+	 * @param input - The parsed command input.
+	 * @param context - The command context.
+	 * @returns The browser's acknowledgement as the command's result.
+	 */
 	async handler(input, context) {
 		await context.require("server", "Moving the camera");
 		await context.require("browser", "Moving the camera");
-		const ids = input.ids === undefined ? undefined : context.parse(viewportIdsSchema, input.ids);
-		const result = await setViewport({
-			...(input.fit ? { scrollToContent: true } : {}),
-			...(ids !== undefined ? { scrollToElementIds: ids } : {}),
-			...(input.element !== undefined ? { scrollToElementId: input.element } : {}),
-			...(input.zoom !== undefined
-				? { zoom: context.parse(finiteNumber("zoom"), input.zoom) }
-				: {}),
-			...(input.offsetX !== undefined
-				? { offsetX: context.parse(finiteNumber("offset-x"), input.offsetX) }
-				: {}),
-			...(input.offsetY !== undefined
-				? { offsetY: context.parse(finiteNumber("offset-y"), input.offsetY) }
-				: {}),
-			...(input.zoomFactor !== undefined
-				? { viewportZoomFactor: context.parse(finiteNumber("zoom-factor"), input.zoomFactor) }
-				: {}),
-			pane: input.pane,
-		});
+		const result = await setViewport({ ...cameraRequest(input, context), pane: input.pane });
 		return { result };
 	},
 });

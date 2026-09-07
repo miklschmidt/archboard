@@ -2,15 +2,9 @@ import type {
 	RealtimeCorrelation,
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
-import {
-	IdentityValidationError,
-	type TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type {
-	DynamicServerRequest,
-	TransportServerNotification,
-} from "../../codex-transport/index.js";
+} from "@/shared/codex-realtime-host";
+import { IdentityValidationError, type TurnId } from "@/shared/codex-workbench-identity";
+import type { DynamicServerRequest, TransportServerNotification } from "@/runtime/codex-transport";
 import type {
 	CodexSpokenApprovalGate,
 	CodexSpokenApprovalGateOptions,
@@ -18,43 +12,51 @@ import type {
 	SpokenApprovalFallbackReason,
 	SpokenApprovalSnapshot,
 	SpokenApprovalToolResult,
-} from "./contract.js";
-import { CodexSpokenApprovalError } from "./contract.js";
-import { EMPTY_SPOKEN_APPROVAL_SNAPSHOT, type ActiveSlot } from "./state.js";
+} from "@/runtime/codex-spoken-approval/lib/contract";
+import { CodexSpokenApprovalError } from "@/runtime/codex-spoken-approval/lib/contract";
+
+/** The child and epoch an exit notification names. */
+interface ChildExit {
+	readonly child: ActiveSlot["child"];
+	readonly epoch: ActiveSlot["epoch"];
+}
 import {
-	recordKey,
+	EMPTY_SPOKEN_APPROVAL_SNAPSHOT,
+	type ActiveSlot,
+} from "@/runtime/codex-spoken-approval/lib/state";
+import {
 	sameRealtime,
 	validateArm,
 	validSequence,
 	type CoordinatorIdentity,
-} from "./validation.js";
+} from "@/runtime/codex-spoken-approval/lib/validation";
 import {
 	resolveSpokenApproval,
 	startClassifier,
 	type ClassifierTurnHost,
-} from "./classifier-turn.js";
+} from "@/runtime/codex-spoken-approval/lib/classifier-turn";
+import {
+	answerRefusal,
+	armedSlot,
+	clearTimer,
+	finalUserFields,
+	isBaselineRecord,
+	isForeignTurn,
+	isWatchedTurnNotification,
+	sessionEventRefusal,
+	refusal,
+	rejectTurnReady,
+} from "@/runtime/codex-spoken-approval/lib/gate-state";
 
-function clearTimer(slot: ActiveSlot): void {
-	if (slot.timer === null) {
-		return;
-	}
-	clearTimeout(slot.timer);
-	slot.timer = null;
-}
-
-function rejectTurnReady(slot: ActiveSlot, error: unknown): void {
-	const ready = slot.turnReady;
-	if (ready === null || ready.settled) {
-		return;
-	}
-	ready.settled = true;
-	ready.reject(error);
-}
-
-function refusal(reason: "not_ready", message: string): SpokenApprovalToolResult {
-	return Object.freeze({ tag: "refused", reason, message });
-}
-
+/**
+ * Build the spoken approval gate: the module that lets a person answer one command-execution
+ * approval aloud. It arms on an effect the assistant has just read out, watches the voice
+ * transcript for the person's answer, asks the coordinator to classify it, and settles the
+ * approval from the classifier's resolver call. Anything it cannot prove sends the person to the
+ * visual approval surface instead, which is why every refusal carries a fallback reason.
+ * @param options - The approval broker, realtime host, session, identity authority and callbacks.
+ * @returns The gate.
+ */
 export function createCodexSpokenApprovalGate(
 	options: CodexSpokenApprovalGateOptions,
 ): CodexSpokenApprovalGate {
@@ -63,6 +65,10 @@ export function createCodexSpokenApprovalGate(
 	let active: ActiveSlot | null = null;
 	let disposed = false;
 
+	/**
+	 * Hand the current snapshot to whoever is presenting the gate. A presenter that throws is ignored: it cannot change the gate's own fail-closed state.
+	 * @param snapshot - The snapshot to publish.
+	 */
 	const notify = (snapshot: SpokenApprovalSnapshot): void => {
 		try {
 			options.onChange?.(snapshot);
@@ -71,6 +77,11 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 * Tell the host the person must answer visually instead. The snapshot remains the authoritative signal, so a callback that throws changes nothing.
+	 * @param reason - Why voice cannot settle this approval.
+	 * @param snapshot - The snapshot at the moment of the fallback.
+	 */
 	const notifyFallback = (
 		reason: SpokenApprovalFallbackReason,
 		snapshot: SpokenApprovalSnapshot,
@@ -82,6 +93,11 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 * Publish the gate's current state as an immutable snapshot: what is pending, what the person was read, what they said, and how it settled.
+	 * @param slot - The armed gate.
+	 * @returns The published snapshot.
+	 */
 	const publish = (slot: ActiveSlot): SpokenApprovalSnapshot => {
 		currentSnapshot = Object.freeze({
 			state: slot.phase,
@@ -96,9 +112,7 @@ export function createCodexSpokenApprovalGate(
 			effectFingerprint: slot.approvalBinding.effect,
 			effectPromptItemId: slot.effectPrompt.itemId,
 			effectPromptSequence: slot.effectPrompt.sequence,
-			finalUserItemId: slot.finalUser?.itemId ?? null,
-			finalUserSequence: slot.finalUser?.sequence ?? null,
-			finalUserText: slot.finalUser?.text ?? null,
+			...finalUserFields(slot),
 			operationId: slot.classifier.operationId,
 			classifierTurnId: slot.classifierTurnId,
 			resolverCallId: slot.resolverCallId,
@@ -110,6 +124,12 @@ export function createCodexSpokenApprovalGate(
 		return currentSnapshot;
 	};
 
+	/**
+	 * Fall back before a gate was ever armed, which is what an arm that fails validation produces.
+	 * @param reason - Why the gate could not be armed.
+	 * @param requestId - The approval the arm was for, when it is known.
+	 * @returns The published snapshot.
+	 */
 	const fallbackWithoutSlot = (
 		reason: SpokenApprovalFallbackReason,
 		requestId: SpokenApprovalSnapshot["requestId"] = null,
@@ -125,6 +145,11 @@ export function createCodexSpokenApprovalGate(
 		return currentSnapshot;
 	};
 
+	/**
+	 * Give up on answering this approval aloud. The gate stops watching, any waiting resolver call is failed, and the person is sent to the visual surface. A gate that has already settled or fallen back stays as it is.
+	 * @param slot - The armed gate.
+	 * @param reason - Why voice can no longer settle it.
+	 */
 	const enterFallback = (slot: ActiveSlot, reason: SpokenApprovalFallbackReason): void => {
 		if (slot.phase === "settled" || slot.phase === "visual_fallback") {
 			return;
@@ -137,6 +162,10 @@ export function createCodexSpokenApprovalGate(
 		notifyFallback(reason, snapshot);
 	};
 
+	/**
+	 * The clock, defensively: an unusable time is reported as none rather than allowed to make expiry arithmetic meaningless.
+	 * @returns The current time, or null.
+	 */
 	const currentTime = (): number | null => {
 		try {
 			const value = now();
@@ -146,6 +175,10 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 * The host's current voice correlation, or null when it cannot be read.
+	 * @returns The correlation, or null.
+	 */
 	const currentRealtime = (): RealtimeCorrelation | null => {
 		try {
 			return options.currentRealtime();
@@ -154,6 +187,10 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 * The host's current coordinator identity, or null when there is none or it cannot be read.
+	 * @returns The coordinator, or null.
+	 */
 	const currentCoordinator = (): CoordinatorIdentity | null => {
 		try {
 			const snapshot = options.coordinator.snapshot();
@@ -175,6 +212,11 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 * Whether a gate is still the active one and still able to be answered aloud.
+	 * @param slot - The gate to check, or null.
+	 * @returns True when the gate is live.
+	 */
 	const isLive = (slot: ActiveSlot | null): slot is ActiveSlot =>
 		slot !== null &&
 		active === slot &&
@@ -188,6 +230,11 @@ export function createCodexSpokenApprovalGate(
 		currentCoordinator,
 		currentRealtime,
 		currentTime,
+		/**
+		 * The voice transcript, read through the host so the gate always validates against what the
+		 * session says now rather than a copy taken earlier.
+		 * @returns The transcript records.
+		 */
 		transcript: () => options.realtime.transcript(),
 	};
 
@@ -203,7 +250,13 @@ export function createCodexSpokenApprovalGate(
 		enterFallback,
 	};
 
-	const arm = (input: SpokenApprovalArmInput): SpokenApprovalSnapshot => {
+	/**
+	 * Refuse to arm a gate this module cannot own: it has been disposed, or a spoken approval is
+	 * still pending. Only one approval is ever spoken at a time, so a second one goes to the
+	 * visual surface rather than competing for the person's voice.
+	 * @throws {CodexSpokenApprovalError} When the gate is disposed or already armed.
+	 */
+	const assertArmable = (): void => {
 		if (disposed) {
 			throw new CodexSpokenApprovalError(
 				"disposed",
@@ -216,49 +269,40 @@ export function createCodexSpokenApprovalGate(
 				"Only one spoken approval may be pending at a time; use the visual approval surface for the second request.",
 			);
 		}
+	};
+
+	/**
+	 * Arm the gate on one approval the assistant has just read aloud, capturing everything the gate
+	 * will later re-check and starting the timer that gives up at its expiry. An arm that cannot be
+	 * validated publishes a visual fallback instead.
+	 * @param input - The arm request.
+	 * @returns The published snapshot.
+	 */
+	const arm = (input: SpokenApprovalArmInput): SpokenApprovalSnapshot => {
+		assertArmable();
 		active = null;
 		currentSnapshot = EMPTY_SPOKEN_APPROVAL_SNAPSHOT;
 		const result = validateArm(validationHost, input);
 		if (!result.ok) {
 			return fallbackWithoutSlot(result.reason, input.requestId);
 		}
-		const slot: ActiveSlot = {
-			requestId: input.requestId,
-			approvalId: result.approval.approvalId,
-			approvalFamily: "command_execution",
-			approvalBinding: result.approval.binding,
-			approvalExpiresAtMs: result.approval.expiresAtMs,
-			expiresAtMs: result.expiresAtMs,
-			child: result.coordinator.child,
-			epoch: result.coordinator.epoch,
-			coordinatorThreadId: result.coordinator.threadId,
-			realtime: result.realtime,
-			effectSummary: result.effectSummary,
-			effectPrompt: Object.freeze({ ...input.effectPrompt }),
-			classifier: Object.freeze({
-				operationId: result.operationId,
-				clientUserMessageId: result.clientUserMessageId,
-				context: result.context,
-			}),
-			baselineRecordKeys: result.baselineRecordKeys,
-			phase: "awaiting_user",
-			reason: null,
-			finalUser: null,
-			startedTurnId: null,
-			classifierTurnId: null,
-			resolverCallId: null,
-			turnCompleted: false,
-			turnReady: null,
-			pendingResolverRequest: null,
-			settlement: null,
-			timer: null,
-		};
+		const slot = armedSlot(input, result);
 		active = slot;
 		const snapshot = publish(slot);
 		if (!isLive(slot)) {
 			return currentSnapshot;
 		}
-		const delay = Math.max(0, result.expiresAtMs - (currentTime() ?? result.expiresAtMs));
+		armExpiryTimer(slot);
+		return snapshot;
+	};
+
+	/**
+	 * Start the timer that gives up on the spoken gate at its expiry. The timer is unreferenced so
+	 * a pending spoken approval never keeps the process alive on its own.
+	 * @param slot - The armed gate.
+	 */
+	const armExpiryTimer = (slot: ActiveSlot): void => {
+		const delay = Math.max(0, slot.expiresAtMs - (currentTime() ?? slot.expiresAtMs));
 		slot.timer = setTimeout(() => {
 			if (isLive(slot)) {
 				enterFallback(slot, "timeout");
@@ -267,125 +311,149 @@ export function createCodexSpokenApprovalGate(
 		if (typeof slot.timer.unref === "function") {
 			slot.timer.unref();
 		}
-		return snapshot;
 	};
 
+	/**
+	 * Take one event from the voice session: a transcript record while the gate waits for the
+	 * person, or a session event that says the session can no longer carry an answer.
+	 * @param event - The realtime semantic event.
+	 */
 	const onSemanticEvent = (event: RealtimeSemanticEvent): void => {
 		const slot = active;
 		if (!isLive(slot)) {
 			return;
 		}
 		if (event.kind === "transcript") {
-			const record: RealtimeTranscriptRecord = event.record;
-			if (!sameRealtime(record, slot.realtime)) {
+			if (sameRealtime(event.record, slot.realtime)) {
+				onTranscriptRecord(slot, event.record);
+			} else {
 				enterFallback(slot, "stale_realtime_session");
-				return;
 			}
-			if (slot.phase !== "awaiting_user") {
-				return;
-			}
-			if (!validSequence(record.sequence)) {
-				enterFallback(slot, "stale_state");
-				return;
-			}
-			if (slot.baselineRecordKeys.has(recordKey(record))) {
-				return;
-			}
-			if (record.sequence <= slot.effectPrompt.sequence) {
-				return;
-			}
-			if (record.role === "assistant") {
-				enterFallback(slot, "assistant_only");
-				return;
-			}
-			if (record.status !== "final") {
-				return;
-			}
-			if (record.text.length === 0) {
-				enterFallback(slot, "missing_user_final");
-				return;
-			}
-			startClassifier(classifierHost, slot, record);
 			return;
 		}
-		if (
-			event.sessionId !== slot.realtime.sessionId ||
-			event.correlationId !== slot.realtime.correlationId
-		) {
-			enterFallback(slot, "stale_realtime_session");
-			return;
-		}
-		if (event.kind === "diagnostic") {
-			enterFallback(slot, "realtime_unavailable");
-			return;
-		}
-		if (
-			event.state.phase === "closed" ||
-			event.state.phase === "recoverable_error" ||
-			event.state.phase === "terminal_error" ||
-			event.state.phase === "idle"
-		) {
-			enterFallback(slot, "realtime_unavailable");
+		const reason = sessionEventRefusal(slot, event);
+		if (reason !== null) {
+			enterFallback(slot, reason);
 		}
 	};
 
+	/**
+	 * Take one transcript record from this gate's own voice session while it waits for the person
+	 * to answer. The person's first final utterance after the effect prompt is what the classifier
+	 * is asked about; the assistant speaking again means they were asked something else, and an
+	 * empty final utterance means there is nothing to classify.
+	 * @param slot - The armed gate.
+	 * @param record - The transcript record.
+	 */
+	const onTranscriptRecord = (slot: ActiveSlot, record: RealtimeTranscriptRecord): void => {
+		if (slot.phase !== "awaiting_user") {
+			return;
+		}
+		if (!validSequence(record.sequence)) {
+			enterFallback(slot, "stale_state");
+			return;
+		}
+		if (isBaselineRecord(slot, record)) {
+			return;
+		}
+		const reason = answerRefusal(record);
+		if (reason !== null) {
+			enterFallback(slot, reason);
+			return;
+		}
+		if (record.status === "final") {
+			startClassifier(classifierHost, slot, record);
+		}
+	};
+
+	/**
+	 * Take one turn notification on the coordinator thread. The gate is watching for exactly one
+	 * turn: the classifier's. A turn that is not this gate's own, or a classifier turn that ends
+	 * without a resolver call, means the classifier is gone and the person must answer visually.
+	 * @param event - The transport notification.
+	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		const slot = active;
-		if (!isLive(slot)) {
-			return;
-		}
 		const notification = event.notification;
-		if (notification.method !== "turn/started" && notification.method !== "turn/completed") {
+		if (!isLive(slot) || !isWatchedTurnNotification(slot, notification)) {
 			return;
 		}
-		if (notification.params.threadId !== slot.coordinatorThreadId) {
+		const turnId = notifiedTurnId(slot, event.correlation, notification.params.turn.id);
+		if (turnId === null) {
 			return;
 		}
-		if (event.correlation.child !== slot.child || event.correlation.epoch !== slot.epoch) {
+		if (notification.method === "turn/started") {
+			onTurnStarted(slot, turnId);
+			return;
+		}
+		onTurnCompleted(slot, turnId);
+	};
+
+	/**
+	 * The turn a notification names, once it is proven to belong to this gate's own child and
+	 * epoch. A notification that cannot be trusted falls the gate back rather than being ignored:
+	 * the gate is waiting on a turn, so an unreadable notification leaves it waiting forever.
+	 * @param slot - The armed gate.
+	 * @param correlation - The notification's child and epoch correlation.
+	 * @param rawTurnId - The turn identity the notification carried, undecoded.
+	 * @returns The turn identity, or null when the gate has fallen back instead.
+	 */
+	const notifiedTurnId = (
+		slot: ActiveSlot,
+		correlation: TransportServerNotification["correlation"],
+		rawTurnId: unknown,
+	): TurnId | null => {
+		if (correlation.child !== slot.child || correlation.epoch !== slot.epoch) {
 			enterFallback(slot, "stale_state");
-			return;
+			return null;
 		}
 		try {
-			options.identity.validator.assertCurrentEpoch(
-				event.correlation.child,
-				event.correlation.epoch,
-			);
+			options.identity.validator.assertCurrentEpoch(correlation.child, correlation.epoch);
 		} catch {
 			enterFallback(slot, "stale_state");
-			return;
+			return null;
 		}
-		let turnId: TurnId;
 		try {
-			turnId = options.identity.decoder.parseTurnId(notification.params.turn.id);
+			return options.identity.decoder.parseTurnId(rawTurnId);
 		} catch (error) {
 			enterFallback(
 				slot,
 				error instanceof IdentityValidationError ? "stale_state" : "classifier_lost",
 			);
+			return null;
+		}
+	};
+
+	/**
+	 * Adopt the turn the classifier started. Before the classifier runs, a turn on the coordinator
+	 * thread that is not the classifier's is somebody else's work and the gate gives up on voice;
+	 * afterwards, a second, different turn means the classifier turn was replaced.
+	 * @param slot - The armed gate.
+	 * @param turnId - The turn that started.
+	 */
+	const onTurnStarted = (slot: ActiveSlot, turnId: TurnId): void => {
+		if (slot.phase === "awaiting_user" || slot.phase === "awaiting_resolver") {
+			if (slot.classifierTurnId !== turnId) {
+				enterFallback(slot, "stale_state");
+			}
 			return;
 		}
-		if (notification.method === "turn/started") {
-			if (slot.phase === "awaiting_user" || slot.phase === "awaiting_resolver") {
-				if (slot.classifierTurnId !== turnId) {
-					enterFallback(slot, "stale_state");
-				}
-				return;
-			}
-			if (slot.startedTurnId !== null && slot.startedTurnId !== turnId) {
-				enterFallback(slot, "classifier_lost");
-				return;
-			}
-			if (slot.classifierTurnId !== null && slot.classifierTurnId !== turnId) {
-				enterFallback(slot, "classifier_lost");
-				return;
-			}
-			slot.startedTurnId = turnId;
+		if (isForeignTurn(slot, turnId)) {
+			enterFallback(slot, "classifier_lost");
 			return;
 		}
-		if (
-			(slot.startedTurnId !== null && slot.startedTurnId !== turnId) ||
-			(slot.classifierTurnId !== null && slot.classifierTurnId !== turnId)
-		) {
+		slot.startedTurnId = turnId;
+	};
+
+	/**
+	 * Record that the classifier's turn ended. A classifier that finishes without having called
+	 * the resolver has not answered, so the gate falls back rather than waiting for a call that
+	 * will never come.
+	 * @param slot - The armed gate.
+	 * @param turnId - The turn that completed.
+	 */
+	const onTurnCompleted = (slot: ActiveSlot, turnId: TurnId): void => {
+		if (isForeignTurn(slot, turnId)) {
 			enterFallback(slot, "classifier_lost");
 			return;
 		}
@@ -402,6 +470,11 @@ export function createCodexSpokenApprovalGate(
 		}
 	};
 
+	/**
+	 * Resolve the pending spoken approval from a coordinator voice call.
+	 * @param request - The resolver call.
+	 * @returns The tool result.
+	 */
 	const resolve = (request: DynamicServerRequest): Promise<SpokenApprovalToolResult> => {
 		const slot = active;
 		if (!isLive(slot)) {
@@ -412,10 +485,12 @@ export function createCodexSpokenApprovalGate(
 		return resolveSpokenApproval(classifierHost, slot, request);
 	};
 
-	const onChildExit = (exit: {
-		readonly child: ActiveSlot["child"];
-		readonly epoch: ActiveSlot["epoch"];
-	}): void => {
+	/**
+	 * Give up on voice when the Codex child the gate belongs to exits: whatever the person says now
+	 * cannot be classified by a coordinator that is gone.
+	 * @param exit - The exited child and epoch.
+	 */
+	const onChildExit = (exit: ChildExit): void => {
 		const slot = active;
 		if (!isLive(slot)) {
 			return;
@@ -428,11 +503,18 @@ export function createCodexSpokenApprovalGate(
 	const unsubscribe = options.realtime.onSemanticEvent(onSemanticEvent);
 	return Object.freeze({
 		arm,
+		/**
+		 * The gate's current snapshot.
+		 * @returns The snapshot.
+		 */
 		snapshot: () => currentSnapshot,
 		onSemanticEvent,
 		onNotification,
 		resolve,
 		onChildExit,
+		/**
+		 * Stop for good: unsubscribe from the voice session and fall any armed gate back to the visual surface, so a pending approval is never left waiting on a disposed gate.
+		 */
 		dispose: () => {
 			if (disposed) {
 				return;
@@ -446,4 +528,4 @@ export function createCodexSpokenApprovalGate(
 	});
 }
 
-export { CodexSpokenApprovalError } from "./contract.js";
+export { CodexSpokenApprovalError } from "@/runtime/codex-spoken-approval/lib/contract";

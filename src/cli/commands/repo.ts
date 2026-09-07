@@ -5,8 +5,8 @@ import {
 	listRepos,
 	registryPath,
 	RepoRegistryError,
-} from "../../runtime/engine/repo-registry.js";
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
+} from "@/runtime/engine/repo-registry";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 
 const usage = "Usage: repo list [--text] | repo add [dir] | repo forget <identity>";
 const tail = z.array(z.string()).default([]);
@@ -37,12 +37,20 @@ const repoContract = defineCommand({
 	result: RepoNamespaceResultSchema,
 	output: {
 		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Namespace refusal" }],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
 	effects: [],
 	refusals: [],
 	relationships: [],
+	/**
+	 * Refuses the bare namespace with its subcommand usage line.
+	 * @returns Never; the usage error is the whole behaviour.
+	 */
 	async handler() {
 		throw new CliUsageError(usage);
 	},
@@ -108,12 +116,22 @@ const repoListContract = defineCommand({
 				description: "Human-readable registry",
 			},
 		],
+		/**
+		 * Chooses the human listing when `--text` was given, otherwise the json one.
+		 * @param input - The parsed list options.
+		 * @returns The output case id.
+		 */
 		select: (input) => (input.text ? "text" : "json"),
 	},
 	prerequisites: [],
 	effects: ["local-read"],
 	refusals: [],
 	relationships: [],
+	/**
+	 * Lists the registered checkouts, noting the ones whose directory is gone.
+	 * @param input - The parsed list options.
+	 * @returns The registry as text or json.
+	 */
 	async handler(input) {
 		const repos = listRepos();
 		if (!input.text) {
@@ -177,12 +195,23 @@ const repoAddContract = defineCommand({
 				presentation: ["diagnostics", "result"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
 	effects: ["local-read", "local-write"],
 	refusals: [],
 	relationships: [],
+	/**
+	 * Registers the checkout at the given directory, or the working directory,
+	 * turning a registry refusal into a usage error.
+	 * @param input - The parsed add options.
+	 * @param context - The command context.
+	 * @returns The registered entry with a hint on how to bind through it.
+	 */
 	async handler(input, context) {
 		let entry;
 		try {
@@ -248,12 +277,22 @@ const repoForgetContract = defineCommand({
 				presentation: ["diagnostics", "result"],
 			},
 		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
 	effects: ["local-read", "local-write"],
 	refusals: [],
 	relationships: [],
+	/**
+	 * Forgets one registered identity, explaining what that does and does not
+	 * change for bindings that already name it.
+	 * @param input - The parsed forget options.
+	 * @returns The forget receipt with its explanation.
+	 */
 	async handler(input) {
 		const forgotten = forgetRepo(input.identity);
 		const known = forgotten ? [] : listRepos().map((entry) => entry.repo);

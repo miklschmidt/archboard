@@ -8,15 +8,18 @@ export {
 	GeneralThreadToolNameSchema,
 	assertCanonicalArchboardAppManifest,
 	parseArchboardAppManifest,
-} from "./lib/manifest.js";
+} from "@/runtime/codex-thread-tools/lib/manifest";
 export type {
 	ArchboardAppNamespaceSpec,
 	ArchboardAppToolSpec,
 	GeneralThreadToolName,
-} from "./lib/manifest.js";
+} from "@/runtime/codex-thread-tools/lib/manifest";
 
-export { TOOL_ARGUMENT_SCHEMAS, parseToolArguments } from "./lib/arguments.js";
-export type { ToolArgument, ToolArguments } from "./lib/arguments.js";
+export {
+	TOOL_ARGUMENT_SCHEMAS,
+	parseToolArguments,
+} from "@/runtime/codex-thread-tools/lib/arguments";
+export type { ToolArgument, ToolArguments } from "@/runtime/codex-thread-tools/lib/arguments";
 
 export {
 	DynamicToolCallResponseSchema,
@@ -24,18 +27,21 @@ export {
 	ToolDeliverySchema,
 	parseDynamicToolCallResponse,
 	parseToolResultEnvelope,
-} from "./lib/results.js";
+} from "@/runtime/codex-thread-tools/lib/results";
 export type {
 	DynamicToolCallResponse,
 	ParsedDynamicToolCallResponse,
 	ToolResultEnvelope,
-} from "./lib/results.js";
+} from "@/runtime/codex-thread-tools/lib/results";
 
 export {
 	ARCHBOARD_APP_TOOL_BINDING,
 	archboardAppDynamicToolsFor,
 	archboardAppToolBindingFor,
-} from "./lib/binding.js";
-export type { ArchboardAppToolBinding, ToolInstallationRequest } from "./lib/binding.js";
+} from "@/runtime/codex-thread-tools/lib/binding";
+export type {
+	ArchboardAppToolBinding,
+	ToolInstallationRequest,
+} from "@/runtime/codex-thread-tools/lib/binding";
 
-export { WAIT_THREADS_TIMEOUT_MAX_MS } from "./lib/limits.js";
+export { WAIT_THREADS_TIMEOUT_MAX_MS } from "@/runtime/codex-thread-tools/lib/limits";

@@ -31,8 +31,8 @@
 // which is why the pane marks it continuously rather than mentioning it once,
 // and why the mark says what it is waiting for.
 
-import type { BoardContent } from "./board-io.js";
-import type { BoardWriteConflict } from "./board-version.js";
+import type { BoardContent } from "@/runtime/engine/lib/board-io-content";
+import type { BoardWriteConflict } from "@/runtime/engine/board-version";
 
 interface BoardHold {
 	/** The refusal that started it, three outcomes and all (ADR 0006). */
@@ -68,15 +68,29 @@ interface BoardHold {
 // contains work because the held copy exists only in this process.
 const holds = new Map<string, BoardHold>();
 
+/**
+ * The hold on a board, if it has stopped saving.
+ * @param key The board key.
+ * @returns The hold, or undefined while the board saves normally.
+ */
 function holdOn(key: string): BoardHold | undefined {
 	return holds.get(key);
 }
 
+/**
+ * Whether a board has stopped saving.
+ * @param key The board key.
+ * @returns True while a hold is in place.
+ */
 function isHeld(key: string): boolean {
 	return holds.has(key);
 }
 
-/** Whether an ordinary write reaches the note rather than the held copy. */
+/**
+ * Whether an ordinary write reaches the note rather than the held copy.
+ * @param key The board key.
+ * @returns True when the note is being written.
+ */
 function writesBoardNote(key: string): boolean {
 	return !isHeld(key);
 }
@@ -89,6 +103,10 @@ function writesBoardNote(key: string): boolean {
  * second refusal on a board already held leaves the first conflict in place —
  * it is the one that describes when the board stopped saving, and the human is
  * being asked to choose about that.
+ * @param key The board key.
+ * @param conflict The refusal that stopped the board saving.
+ * @param content The board as the refused request found it.
+ * @returns The hold now in place, new or existing.
  */
 function beginHold(key: string, conflict: BoardWriteConflict, content: BoardContent): BoardHold {
 	const existing = holds.get(key);
@@ -100,7 +118,13 @@ function beginHold(key: string, conflict: BoardWriteConflict, content: BoardCont
 	return hold;
 }
 
-/** Take a write into the held copy rather than into the note. */
+/**
+ * Take a write into the held copy rather than into the note.
+ * @param key The board key.
+ * @param content The document after the write.
+ * @param fromScreen Whether a pane reported its whole screen.
+ * @returns The hold, or undefined when the board is not held.
+ */
 function holdWrite(key: string, content: BoardContent, fromScreen = false): BoardHold | undefined {
 	const hold = holds.get(key);
 	if (!hold) {
@@ -120,6 +144,8 @@ function holdWrite(key: string, content: BoardContent, fromScreen = false): Boar
  * Every one of them ends here and each has already decided what the held copy
  * was worth: reload threw it away, overwrite wrote it over the note,
  * save-elsewhere wrote it to another one. Nothing chooses on its own.
+ * @param key The board key.
+ * @returns The hold that ended, or undefined when there was none.
  */
 function releaseHold(key: string): BoardHold | undefined {
 	const hold = holds.get(key);
@@ -127,7 +153,10 @@ function releaseHold(key: string): BoardHold | undefined {
 	return hold;
 }
 
-/** Every board this canvas has stopped saving, for an answer that lists them. */
+/**
+ * Every board this canvas has stopped saving, for an answer that lists them.
+ * @returns Sorted board keys.
+ */
 function heldBoardKeys(): string[] {
 	return Array.from(holds.keys()).toSorted();
 }
@@ -148,6 +177,12 @@ interface HoldReport {
 	message: string;
 }
 
+/**
+ * A hold as a caller is told about it, message included.
+ * @param key The board key.
+ * @param hold The hold.
+ * @returns The report.
+ */
 function reportHold(key: string, hold: BoardHold): HoldReport {
 	return {
 		board: key,
@@ -159,6 +194,12 @@ function reportHold(key: string, hold: BoardHold): HoldReport {
 	};
 }
 
+/**
+ * A timestamp as a wall-clock time for a message, or the raw text when it
+ * does not parse.
+ * @param iso An ISO timestamp.
+ * @returns `HH:MM:SS`.
+ */
 const clock = (iso: string): string => {
 	const at = new Date(iso);
 	return Number.isNaN(at.getTime()) ? iso : at.toTimeString().slice(0, 8);
@@ -171,6 +212,9 @@ const clock = (iso: string): string => {
  * been lost, and here are the three things that end it — in the same three
  * lines and the same order the refusal itself uses, because a person who has
  * seen one has seen the other.
+ * @param key The board key.
+ * @param hold The hold.
+ * @returns The message, several lines.
  */
 function holdMessage(key: string, hold: BoardHold): string {
 	const outcomes = hold.conflict.outcomes;

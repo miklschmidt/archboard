@@ -1,10 +1,6 @@
 import { z } from "zod";
-import {
-	applyElementChanges,
-	getBoardInfo,
-	getElements,
-} from "../../runtime/engine/canvas-client.js";
-import type { ServerElement } from "../../runtime/engine/types.js";
+import { applyElementChanges, getBoardInfo, getElements } from "@/runtime/engine/canvas-client";
+import type { ServerElement } from "@/runtime/engine/types";
 import {
 	KINDS,
 	demotionSummary,
@@ -14,12 +10,25 @@ import {
 	promotionSummary,
 	resolveBinding,
 	validateNodeId,
-} from "../../runtime/engine/promote.js";
-import type { ElementUpdate } from "../../runtime/engine/promote.js";
-import { defineCommand } from "../command-contract/contract.js";
-import { HoldReportSchema } from "../command-contract/schemas.js";
-import { boardWriteRefusals } from "../command-contract/common.js";
+} from "@/runtime/engine/promote";
+import type {
+	BindingRequest,
+	ElementUpdate,
+	PromotionPlan,
+	ResolvedBinding,
+} from "@/runtime/engine/promote";
+import { defineCommand } from "@/cli/command-contract/contract";
+import { HoldReportSchema } from "@/cli/command-contract/schemas";
+import { boardWriteRefusals } from "@/cli/command-contract/common";
+import { errorMessage } from "@/cli/commands/lib/thrown-message";
 
+/**
+ * Looks up the named elements on the board, refusing the whole request when
+ * any id is missing so a promotion never silently covers fewer elements.
+ * @param ids - The element ids named with `--ids`.
+ * @param board - Every element on the board.
+ * @returns The named elements in the order they were named.
+ */
 function targetElements(ids: string[], board: ServerElement[]): ServerElement[] {
 	const byId = new Map(board.map((element) => [element.id, element]));
 	const missing = ids.filter((id) => !byId.has(id));
@@ -28,10 +37,72 @@ function targetElements(ids: string[], board: ServerElement[]): ServerElement[] 
 	}
 	return ids.map((id) => byId.get(id)!);
 }
+/**
+ * Writes the planned element updates as one change, or nothing when the plan
+ * changed no element.
+ * @param updates - The planner's element updates.
+ */
 async function applyUpdates(updates: ElementUpdate[]): Promise<void> {
 	if (updates.length > 0) {
-		await applyElementChanges({ upserts: updates as (Partial<ServerElement> & { id: string })[] });
+		await applyElementChanges({ upserts: updates.map((update) => ({ ...update })) });
 	}
+}
+/**
+ * Builds the binding request from the `--path`, `--repo`, `--branch` and
+ * `--commit` options, omitting the ones not given.
+ * @param input - The parsed promote options.
+ * @param path - The binding path, already known to be present.
+ * @returns The binding request for the resolver.
+ */
+function bindingRequest(input: PromoteInput, path: string): BindingRequest {
+	return {
+		path,
+		...(input.repo ? { repo: input.repo } : {}),
+		...(input.branch ? { branch: input.branch } : {}),
+		...(input.commit ? { commit: input.commit } : {}),
+	};
+}
+/**
+ * Collects the optional node overrides a promotion may carry.
+ * @param input - The parsed promote options.
+ * @returns The overrides that were given.
+ */
+function nodeOverrides(input: PromoteInput): {
+	name?: string;
+	variant?: string;
+	level?: string;
+	each?: true;
+} {
+	return {
+		...(input.name ? { name: input.name } : {}),
+		...(input.variant ? { variant: input.variant } : {}),
+		...(input.level ? { level: input.level } : {}),
+		...(input.each ? { each: true } : {}),
+	};
+}
+/**
+ * Shapes the json receipt of a promotion, adding the binding resolution facts
+ * only when a binding was requested.
+ * @param plan - The executed promotion plan.
+ * @param summary - The human summary of the plan.
+ * @param binding - The resolved binding, if one was requested.
+ * @returns The validated json result.
+ */
+function promoteJsonResult(
+	plan: PromotionPlan,
+	summary: string,
+	binding: ResolvedBinding | undefined,
+): PromoteJsonResult {
+	return PromoteJsonResultSchema.parse({
+		success: true as const,
+		summary,
+		nodes: plan.nodes,
+		elementsUpdated: plan.updates.length,
+		...(binding
+			? { binding: { resolvedFrom: binding.resolvedFrom, resolved: binding.resolved } }
+			: {}),
+		...(binding && !binding.resolved ? { bindingResolved: false } : {}),
+	});
 }
 const tail = z.array(z.string()).default([]);
 const commonParameters = [
@@ -77,6 +148,12 @@ const output = {
 			presentation: ["result"] as const,
 		},
 	] as const,
+	/**
+	 * Chooses the text summary when `--text` was given, otherwise the json receipt.
+	 * @param input - The parsed options, of which only the text flag matters.
+	 * @param input.text - Whether `--text` was given.
+	 * @returns The output case id.
+	 */
 	select: (input: { text: boolean }) => (input.text ? "text" : "json"),
 };
 
@@ -113,7 +190,7 @@ const PromotionDeclarationStageSchema = PromoteInputSchema.transform((input, con
 			nodeId: input.node ? validateNodeId(input.node) : undefined,
 		};
 	} catch (error) {
-		context.addIssue({ code: "custom", message: (error as Error).message });
+		context.addIssue({ code: "custom", message: errorMessage(error) });
 		return z.NEVER;
 	}
 });
@@ -300,6 +377,14 @@ const promoteContract = defineCommand({
 			description: "Apply promotion",
 		},
 	],
+	/**
+	 * Promotes the named elements to a node in one write: the declaration is
+	 * validated before the server is required, the ids and binding after the
+	 * board was read, and the binding is resolved against the working directory.
+	 * @param input - The parsed promote options.
+	 * @param context - The command context.
+	 * @returns The summary as text, or the json receipt with binding facts.
+	 */
 	async handler(input, context) {
 		const declaration = context.parse(PromotionDeclarationStageSchema, input);
 		await context.require("server", "promote");
@@ -309,12 +394,7 @@ const promoteContract = defineCommand({
 		context.parse(PromotionBindingStageSchema, input);
 		const binding = input.path
 			? await resolveBinding(
-					{
-						path: input.path,
-						...(input.repo ? { repo: input.repo } : {}),
-						...(input.branch ? { branch: input.branch } : {}),
-						...(input.commit ? { commit: input.commit } : {}),
-					},
+					bindingRequest(input, input.path),
 					{ kind: "cwd", dir: process.cwd() },
 					{ signal: context.signal },
 				)
@@ -325,30 +405,16 @@ const promoteContract = defineCommand({
 			board,
 			kind: declaration.kind,
 			boardVariant: identity.identity.variant,
-			...(input.name ? { name: input.name } : {}),
 			...(declaration.nodeId ? { nodeId: declaration.nodeId } : {}),
 			...(binding ? { binding } : {}),
-			...(input.variant ? { variant: input.variant } : {}),
-			...(input.level ? { level: input.level } : {}),
-			...(input.each ? { each: true } : {}),
+			...nodeOverrides(input),
 		});
 		await applyUpdates(plan.updates);
 		const summary = promotionSummary(plan, binding?.note);
 		if (input.text) {
 			return { result: summary };
 		}
-		return {
-			result: PromoteJsonResultSchema.parse({
-				success: true as const,
-				summary,
-				nodes: plan.nodes,
-				elementsUpdated: plan.updates.length,
-				...(binding
-					? { binding: { resolvedFrom: binding.resolvedFrom, resolved: binding.resolved } }
-					: {}),
-				...(binding && !binding.resolved ? { bindingResolved: false } : {}),
-			}),
-		};
+		return { result: promoteJsonResult(plan, summary, binding) };
 	},
 });
 
@@ -402,6 +468,12 @@ const demoteContract = defineCommand({
 			description: "Apply demotion",
 		},
 	],
+	/**
+	 * Turns the nodes owning the named elements back into plain elements in one write.
+	 * @param input - The parsed demote options.
+	 * @param context - The command context.
+	 * @returns The summary as text, or the json receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "demote");
 		const board = await getElements();

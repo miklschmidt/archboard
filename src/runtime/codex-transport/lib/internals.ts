@@ -1,11 +1,8 @@
-import type { ResponseMethod } from "../../codex-protocol/index.js";
-import type { TransportServerRequest } from "./types.js";
-import type { FrameWriterJob } from "./frame-writer.js";
-import type {
-	JsonRpcRequestId,
-	WireRequestCorrelation,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { CodexRequestFailureReason } from "./errors.js";
+import type { ResponseMethod } from "@/runtime/codex-protocol";
+import type { TransportServerRequest } from "@/runtime/codex-transport/lib/types";
+import type { FrameWriterJob } from "@/runtime/codex-transport/lib/frame-writer";
+import type { JsonRpcRequestId, WireRequestCorrelation } from "@/shared/codex-workbench-identity";
+import type { CodexRequestFailureReason } from "@/runtime/codex-transport/lib/errors";
 
 interface PendingRequest {
 	readonly key: string;

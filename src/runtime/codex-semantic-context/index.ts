@@ -3,7 +3,7 @@ export {
 	SemanticContextLifecycleError,
 	SEMANTIC_LISTENER_DIAGNOSTIC_POLICY,
 	createSemanticContextPublisher,
-} from "./lib/publisher.js";
+} from "@/runtime/codex-semantic-context/lib/publisher";
 
 export type {
 	FreshBriefSource,
@@ -47,6 +47,6 @@ export type {
 	SettledChangeSource,
 	SettledChangeSourceEvent,
 	SettledSemanticChangeEvent,
-} from "./lib/types.js";
+} from "@/runtime/codex-semantic-context/lib/types";
 
-export { SEMANTIC_CONTEXT_LIMITS } from "./lib/limits.js";
+export { SEMANTIC_CONTEXT_LIMITS } from "@/runtime/codex-semantic-context/lib/limits";

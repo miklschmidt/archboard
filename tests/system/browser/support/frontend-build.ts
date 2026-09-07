@@ -14,7 +14,7 @@ type RunFrontendBuild = (request: FrontendBuildRequest) => Promise<void>;
 
 const INPUT_DIRECTORIES = ["frontend", "src"] as const;
 const INPUT_FILES = [
-	"vite.config.js",
+	"vite.config.ts",
 	"tsconfig.frontend.json",
 	"package.json",
 	"bun.lock",

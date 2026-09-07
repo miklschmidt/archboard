@@ -1,4 +1,4 @@
-import type { DYNAMIC_APPROVAL_STATES } from "./dynamic-approval-effects.js";
+import type { DYNAMIC_APPROVAL_STATES } from "@/shared/codex-browser-model/lib/dynamic-approval-effects";
 import type { z } from "zod";
 
 type DynamicApprovalStateName = (typeof DYNAMIC_APPROVAL_STATES)[number];
@@ -159,20 +159,68 @@ const APPROVAL_RELATIONS: Record<DynamicApprovalStateName, readonly ApprovalRela
 	],
 };
 
+/** The relation facts, in the order they are compared. */
+const RELATION_FIELDS = [
+	"decision",
+	"cause",
+	"delivery",
+	"toolResult",
+	"binding",
+	"resumable",
+] as const satisfies readonly (keyof ApprovalRelation)[];
+
+/**
+ * Reads the decision outcome and cause an approval carries, `none` for an
+ * approval that has no decision yet.
+ * @param decision - The approval's decision, or null.
+ * @returns The outcome and cause as relation facts.
+ */
+function decisionFacts(decision: ApprovalRelationValue["decision"]): {
+	readonly decision: string;
+	readonly cause: string;
+} {
+	return decision === null
+		? { decision: "none", cause: "none" }
+		: { decision: decision.outcome, cause: decision.cause };
+}
+
+/**
+ * Projects an approval onto the relation facts its state arm is described by.
+ * @param approval - The approval record.
+ * @returns The same fields an `ApprovalRelation` names, with absent values as `none`.
+ */
+function relationOfApproval(
+	approval: ApprovalRelationValue,
+): Readonly<Record<keyof ApprovalRelation, string | boolean>> {
+	return {
+		...decisionFacts(approval.decision),
+		delivery: approval.delivery ?? "none",
+		toolResult: approval.toolResult ?? "none",
+		binding: approval.binding === null ? "none" : "required",
+		resumable: approval.resumable,
+	};
+}
+
+/**
+ * Tells whether an approval's fields match one arm of its state.
+ * @param approval - The approval record.
+ * @param relation - One allowed arm of the approval's state.
+ * @returns True when every relation fact agrees.
+ */
 function matchesApprovalRelation(
 	approval: ApprovalRelationValue,
 	relation: ApprovalRelation,
 ): boolean {
-	return (
-		(approval.decision?.outcome ?? "none") === relation.decision &&
-		(approval.decision?.cause ?? "none") === relation.cause &&
-		(approval.delivery ?? "none") === relation.delivery &&
-		(approval.toolResult ?? "none") === relation.toolResult &&
-		(approval.binding === null ? "none" : "required") === relation.binding &&
-		approval.resumable === relation.resumable
-	);
+	const actual = relationOfApproval(approval);
+	return RELATION_FIELDS.every((field) => actual[field] === relation[field]);
 }
 
+/**
+ * Refuses an approval whose decision, delivery, tool result, binding and
+ * resumable flag do not form one of the arms its state allows.
+ * @param approval - The approval record.
+ * @param refinementContext - Where the issue is recorded.
+ */
 export function validateDynamicApprovalState(
 	approval: ApprovalRelationValue,
 	refinementContext: ApprovalIssueContext,

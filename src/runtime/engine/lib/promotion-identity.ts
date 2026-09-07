@@ -5,10 +5,17 @@
 const KINDS = ["service", "queue", "datastore", "gateway", "external"] as const;
 type Kind = (typeof KINDS)[number];
 
+/** A refusal a caller can put in front of a person as it stands. */
 class PromotionError extends Error {
 	public override name = "PromotionError";
 }
 
+/**
+ * One of the kinds a node can be.
+ * @param raw What the caller said.
+ * @returns The kind.
+ * @throws {PromotionError} When it is not one, naming the ones that are.
+ */
 function normalizeKind(raw: string): Kind {
 	const normalized = raw.trim().toLowerCase();
 	const kind = KINDS.find((candidate) => candidate === normalized);
@@ -23,6 +30,14 @@ function normalizeKind(raw: string): Kind {
 
 const NODE_ID_MAX = 48;
 
+/**
+ * Words as a node id: lowercase, letters and digits, hyphens between.
+ *
+ * Accents are stripped rather than encoded, so a name typed with them and one
+ * typed without produce the same id and the same cross-board join.
+ * @param text The words.
+ * @returns The slug, which may be empty when nothing survives.
+ */
 function slugify(text: string): string {
 	return (
 		text
@@ -37,8 +52,16 @@ function slugify(text: string): string {
 	);
 }
 
-// Explicit node values use the same shape so ids remain comparable across
-// boards. An empty slug is rejected rather than silently renamed.
+/**
+ * A node id a caller named, in the shape every node id has.
+ *
+ * Explicit node values use the same shape so ids remain comparable across
+ * boards.
+ * @param raw What the caller said.
+ * @returns The id.
+ * @throws {PromotionError} When nothing usable survives, rather than silently
+ * renaming it.
+ */
 function validateNodeId(raw: string): string {
 	const slug = slugify(raw);
 	if (slug.length === 0) {
@@ -47,8 +70,18 @@ function validateNodeId(raw: string): string {
 	return slug;
 }
 
-// Uniqueness is per board. `taken` contains ids used by every other node, so
-// re-promoting the same node keeps its identity.
+/**
+ * A node id nothing else on the board answers to.
+ *
+ * Uniqueness is per board, and `taken` holds the ids used by every *other*
+ * node, so re-promoting the same node keeps its identity rather than sliding
+ * to name-2.
+ * @param base The id it would prefer.
+ * @param taken The ids already spoken for.
+ * @returns The id.
+ * @throws {PromotionError} When ten thousand boards' worth of suffixes are
+ * all taken.
+ */
 function uniqueNodeId(base: string, taken: Set<string>): string {
 	const stem = base.length > 0 ? base : "node";
 	if (!taken.has(stem)) {

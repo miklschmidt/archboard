@@ -31,6 +31,7 @@ const ARCHBOARD_VAULT = process.env["ARCHBOARD_VAULT"] || undefined;
  * the repo's own agent doc (TASK-036), and on the ordinary path it has run
  * long before anybody starts a canvas. This is the backstop for the run where
  * it has not.
+ * @returns The refusal text, ready to print.
  */
 function noVaultMessage(): string {
 	return [

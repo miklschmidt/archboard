@@ -1,5 +1,8 @@
-export { createCodexWorkhorseOperations } from "./lib/operations.js";
-export { CodexWorkhorseOperationsError, WORKHORSE_OPERATION_NAMES } from "./lib/contract.js";
+export { createCodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations/lib/operations";
+export {
+	CodexWorkhorseOperationsError,
+	WORKHORSE_OPERATION_NAMES,
+} from "@/runtime/codex-workhorse-operations/lib/contract";
 export type {
 	CodexWorkhorseOperations,
 	CurrentWorkhorseCoordinatorCall,
@@ -34,4 +37,4 @@ export type {
 	WorkhorseOperationTurnStartParams,
 	WorkhorseOperationTurnSteerParams,
 	WorkhorseTurnOperation,
-} from "./lib/contract.js";
+} from "@/runtime/codex-workhorse-operations/lib/contract";

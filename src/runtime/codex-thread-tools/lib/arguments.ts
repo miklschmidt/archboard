@@ -1,7 +1,14 @@
 import { z } from "zod";
 
-import { GeneralThreadToolNameSchema, type GeneralThreadToolName } from "./manifest.js";
-import { WAIT_THREADS_TIMEOUT_MAX_MS, JsonValueSchema, boundedText } from "./limits.js";
+import {
+	GeneralThreadToolNameSchema,
+	type GeneralThreadToolName,
+} from "@/runtime/codex-thread-tools/lib/manifest";
+import {
+	WAIT_THREADS_TIMEOUT_MAX_MS,
+	JsonValueSchema,
+	boundedText,
+} from "@/runtime/codex-thread-tools/lib/limits";
 
 const ThreadIdSchema = boundedText(128);
 const CursorSchema = boundedText(1024);
@@ -65,16 +72,29 @@ export type ToolArguments = {
 
 export type ToolArgument<Name extends GeneralThreadToolName> = ToolArguments[Name];
 
+/**
+ * Freeze a value and everything reachable from it, so parsed arguments cannot be changed by the
+ * code that acts on them.
+ * @param value - The value to freeze.
+ * @returns The same value, frozen.
+ */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) {
 		return value;
 	}
-	for (const child of Object.values(value as Record<string, unknown>)) {
+	for (const child of Object.values(value)) {
 		freezeDeep(child);
 	}
 	return Object.freeze(value);
 }
 
+/**
+ * Refuse arguments, naming every schema issue so a malformed call can be diagnosed from the
+ * message alone.
+ * @param label - What was being parsed.
+ * @param issues - The schema issues.
+ * @throws {TypeError} Always.
+ */
 function invalid(label: string, issues: readonly { readonly message: string }[]): never {
 	throw new TypeError(`Invalid ${label}: ${issues.map((issue) => issue.message).join("; ")}`);
 }
@@ -87,6 +107,15 @@ export function parseToolArguments(
 	name: unknown,
 	value: unknown,
 ): ToolArguments[GeneralThreadToolName];
+/**
+ * Parse one tool call's arguments: the tool must be a reviewed one, the value must be plain JSON,
+ * and it must satisfy that tool's own argument schema. The result is frozen, so the code that
+ * acts on a call cannot change what the call said.
+ * @param name - The tool being called.
+ * @param value - The raw arguments.
+ * @returns The frozen, parsed arguments.
+ * @throws {TypeError} When the tool or its arguments are not reviewed ones.
+ */
 export function parseToolArguments(
 	name: unknown,
 	value: unknown,
@@ -103,5 +132,5 @@ export function parseToolArguments(
 	if (!parsed.success) {
 		invalid(`${parsedName.data} arguments`, parsed.error.issues);
 	}
-	return freezeDeep(parsed.data) as ToolArguments[GeneralThreadToolName];
+	return freezeDeep(parsed.data);
 }

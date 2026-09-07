@@ -1,4 +1,4 @@
 export {
 	NativeElementValidationError,
 	validatePersistedBoardElement,
-} from "./lib/native-element.js";
+} from "@/runtime/engine/lib/native-element";

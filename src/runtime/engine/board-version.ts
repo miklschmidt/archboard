@@ -7,9 +7,9 @@
 
 import fs from "node:fs";
 
-import type { BoardIdentity } from "./board.js";
-import { CURRENT_VARIANT, boardDisplayName, boardKey } from "./board.js";
-import { readFrontmatterValue, setFrontmatterValue } from "./obsidian-md.js";
+import type { BoardIdentity } from "@/runtime/engine/board";
+import { CURRENT_VARIANT, boardDisplayName, boardKey } from "@/runtime/engine/board";
+import { readFrontmatterValue, setFrontmatterValue } from "@/runtime/engine/obsidian-md";
 
 const FRONTMATTER_VERSION = "version";
 const FRONTMATTER_PROBE_BYTES = 16 * 1024;
@@ -51,6 +51,51 @@ interface BoardVersionConflict {
 
 type StatedVersionResult = { ok: true; expected?: number | null } | { ok: false; problem: string };
 
+/** What a refused save knows about the two copies it could not reconcile. */
+interface WriteConflictInput {
+	target: BoardIdentity;
+	file: string;
+	reason: BoardConflictReason;
+	expectedHash?: string;
+	actualHash: string;
+	lastReadAt?: string;
+	fileModifiedAt?: string;
+	expectedVersion?: number | null;
+	actualVersion?: number | null;
+	/** The board the save read from, which is only interesting when it differs. */
+	savedFrom?: string;
+}
+
+/** What a refused write knows about the version it was made against. */
+interface VersionConflictInput {
+	board: string;
+	file?: string;
+	expected: number | null;
+	actual: number | null;
+}
+
+/** Where the version a write is checked against may come from. */
+interface ExpectedVersionInput {
+	/** What the writer stated, when it stated anything. */
+	stated?: number | null;
+	/** Which writer to fall back on what it was last told. */
+	rememberedBy?: string;
+}
+
+/** One write, as the version check sees it. */
+interface VersionCheckInput extends ExpectedVersionInput {
+	board: string;
+	file?: string;
+	/** False for a write that never reaches the note, which nothing checks. */
+	writesNote: boolean;
+}
+
+/**
+ * What a note says its version is: a count archboard wrote, something else's
+ * value, or nothing.
+ * @param content The note.
+ * @returns The version as the note states it.
+ */
 function noteVersion(content: string): NoteVersion {
 	const raw = readFrontmatterValue(content, FRONTMATTER_VERSION);
 	if (raw === undefined) {
@@ -62,13 +107,24 @@ function noteVersion(content: string): NoteVersion {
 	return { kind: "at", value: Number(raw.trim()) };
 }
 
-/** The count a note carries, or null when it carries none archboard can read. */
+/**
+ * The count a note carries.
+ * @param content The note.
+ * @returns The count, or null when it carries none archboard can read.
+ */
 function versionNumber(content: string): number | null {
 	const version = noteVersion(content);
 	return version.kind === "at" ? version.value : null;
 }
 
-/** Read only the note head because the frontmatter precedes a possibly large scene. */
+/**
+ * The count the note in one file carries.
+ *
+ * Only the note head is read, because the frontmatter precedes a scene that
+ * can be megabytes.
+ * @param file The note's path.
+ * @returns The count, or null when the file is unreadable or carries none.
+ */
 function versionOfNoteAt(file: string): number | null {
 	try {
 		const handle = fs.openSync(file, "r");
@@ -84,7 +140,12 @@ function versionOfNoteAt(file: string): number | null {
 	}
 }
 
-/** Which way a note's count moved since archboard last wrote it. */
+/**
+ * Which way a note's count moved since archboard last wrote it.
+ * @param baseline What archboard last wrote.
+ * @param now What the note says now.
+ * @returns The direction, or "unknown" when either side carries no count.
+ */
 function versionMove(baseline: number | null | undefined, now: number | null): VersionMove {
 	if (baseline === null || baseline === undefined || now === null) {
 		return "unknown";
@@ -95,7 +156,13 @@ function versionMove(baseline: number | null | undefined, now: number | null): V
 	return now > baseline ? "ahead" : "behind";
 }
 
-/** The sentence shared by the write refusal and the pane's changed-note mark. */
+/**
+ * The sentence shared by the write refusal and the pane's changed-note mark.
+ * @param move Which way the count moved.
+ * @param baseline What archboard last wrote.
+ * @param now What the note says now.
+ * @returns The sentence.
+ */
 function describeVersionMove(
 	move: VersionMove,
 	baseline?: number | null,
@@ -117,7 +184,7 @@ function describeVersionMove(
 				`The note is at version ${now} and archboard last wrote ${baseline}, so another archboard ` +
 				`wrote it ${(now ?? 0) - (baseline ?? 0)} time(s) since.`
 			);
-		case "unknown":
+		default:
 			return (
 				"Neither side carries a version archboard can order by, so which of the two is newer cannot " +
 				"be said from the note alone."
@@ -131,12 +198,28 @@ function describeVersionMove(
 // the shell would leave alone is printed bare; anything else is single-quoted,
 // the one quoting every POSIX shell reads literally (TASK-153).
 const PLAIN_WORD_RE = /^[A-Za-z0-9@%+=:,./_-]+$/;
+/**
+ * One word of a recovery command, as a shell reads it.
+ * @param word The word.
+ * @returns The word, quoted where a shell would otherwise split or pair it.
+ */
 const shellWord = (word: string): string =>
 	PLAIN_WORD_RE.test(word) ? word : `'${word.replaceAll("'", "'\\''")}'`;
 
+/**
+ * A moment as a refusal prints it.
+ * @param iso The timestamp, when there is one.
+ * @returns The moment in UTC, or "unknown".
+ */
 const clock = (iso: string | undefined): string =>
 	iso ? new Date(iso).toISOString().replace("T", " ").slice(0, 19) + " UTC" : "unknown";
 
+/**
+ * The name a refusal offers for keeping both copies: the board's own name,
+ * marked as the one that came off the canvas.
+ * @param identity The board being saved.
+ * @returns The suggested name.
+ */
 function suggestSaveAsName(
 	identity: Pick<BoardIdentity, "board" | "variant" | "displayName">,
 ): string {
@@ -145,18 +228,15 @@ function suggestSaveAsName(
 	return `${boardDisplayName(identity)}@${suffix}`;
 }
 
-function describeWriteConflict(input: {
-	target: BoardIdentity;
-	file: string;
-	reason: BoardConflictReason;
-	expectedHash?: string;
-	actualHash: string;
-	lastReadAt?: string;
-	fileModifiedAt?: string;
-	expectedVersion?: number | null;
-	actualVersion?: number | null;
-	savedFrom?: string;
-}): BoardWriteConflict {
+/**
+ * The refusal a save gets when the destination changed underneath it (ADR
+ * 0006): what happened, which way the note's count moved, and the three
+ * commands that resolve it.
+ * @param input The board, its note, why the save was refused, and what each
+ * side's hash and version were.
+ * @returns The conflict, message and all.
+ */
+function describeWriteConflict(input: WriteConflictInput): BoardWriteConflict {
 	const key = boardKey(input.target);
 	// Every outcome is typed as printed. The two that write name the board the
 	// save is issued for and say what they are doing, because the write boundary
@@ -171,17 +251,9 @@ function describeWriteConflict(input: {
 		overwrite: `board save --board ${from}${as} --force --doing "keeping the canvas"`,
 		saveAs: `board save --board ${from} --as ${shellWord(suggestSaveAsName(input.target))} --doing "keeping both"`,
 	};
-	const lead =
-		input.reason === "changed"
-			? `Refusing to save "${key}": ${input.file} changed on disk after archboard read it, so saving would ` +
-				"delete that change. Nothing was written.\n" +
-				`archboard read the note at ${clock(input.lastReadAt)}; the file was last modified ${clock(input.fileModifiedAt)}.`
-			: `Refusing to save "${key}": there is already a note at ${input.file} that archboard has never read, ` +
-				"so it cannot tell what saving would delete. Nothing was written.\n" +
-				`That file was last modified ${clock(input.fileModifiedAt)}.`;
 	const move = versionMove(input.expectedVersion, input.actualVersion ?? null);
 	const message = [
-		lead,
+		conflictLead(key, input),
 		describeVersionMove(move, input.expectedVersion, input.actualVersion),
 		"Excalidraw scenes do not merge, so one of the two copies has to lose. Choose which:",
 		`  reload     take the note, discard the canvas   ->  ${outcomes.reload}`,
@@ -192,47 +264,77 @@ function describeWriteConflict(input: {
 		board: key,
 		file: input.file,
 		reason: input.reason,
-		...(input.expectedHash ? { expectedHash: input.expectedHash } : {}),
-		actualHash: input.actualHash,
-		...(input.lastReadAt ? { lastReadAt: input.lastReadAt } : {}),
-		...(input.fileModifiedAt ? { fileModifiedAt: input.fileModifiedAt } : {}),
+		...evidenceFields(input),
 		versionMove: move,
-		...(typeof input.expectedVersion === "number"
-			? { expectedVersion: input.expectedVersion }
-			: {}),
-		...(typeof input.actualVersion === "number" ? { actualVersion: input.actualVersion } : {}),
 		outcomes,
 		message,
 	};
 }
 
-function describeVersionConflict(input: {
-	board: string;
-	file?: string;
-	expected: number | null;
-	actual: number | null;
-}): BoardVersionConflict {
+/**
+ * What the refusal opens with: whether the note changed after archboard read
+ * it, or was never read at all, and when each happened.
+ * @param key The board key.
+ * @param input What the refused save knows.
+ * @returns The opening lines.
+ */
+function conflictLead(key: string, input: WriteConflictInput): string {
+	if (input.reason === "changed") {
+		return (
+			`Refusing to save "${key}": ${input.file} changed on disk after archboard read it, so saving would ` +
+			"delete that change. Nothing was written.\n" +
+			`archboard read the note at ${clock(input.lastReadAt)}; the file was last modified ${clock(input.fileModifiedAt)}.`
+		);
+	}
+	return (
+		`Refusing to save "${key}": there is already a note at ${input.file} that archboard has never read, ` +
+		"so it cannot tell what saving would delete. Nothing was written.\n" +
+		`That file was last modified ${clock(input.fileModifiedAt)}.`
+	);
+}
+
+/**
+ * The hashes, times and versions behind a refusal, each stated only where it
+ * is known.
+ * @param input What the refused save knows.
+ * @returns The fields.
+ */
+function evidenceFields(
+	input: WriteConflictInput,
+): Pick<BoardWriteConflict, "actualHash"> & Partial<BoardWriteConflict> {
+	return {
+		...(input.expectedHash ? { expectedHash: input.expectedHash } : {}),
+		actualHash: input.actualHash,
+		...(input.lastReadAt ? { lastReadAt: input.lastReadAt } : {}),
+		...(input.fileModifiedAt ? { fileModifiedAt: input.fileModifiedAt } : {}),
+		...(typeof input.expectedVersion === "number"
+			? { expectedVersion: input.expectedVersion }
+			: {}),
+		...(typeof input.actualVersion === "number" ? { actualVersion: input.actualVersion } : {}),
+	};
+}
+
+/**
+ * The refusal a write gets when the board has moved past the version its
+ * writer was working from (TASK-091).
+ * @param input The board, its note, the version the writer stated and the one
+ * the note is at.
+ * @returns The conflict, message and all.
+ */
+function describeVersionConflict(input: VersionConflictInput): BoardVersionConflict {
 	const { board, expected, actual } = input;
 	const from = expected === null ? "a board with no note yet" : `version ${expected}`;
 	const now =
 		actual === null
 			? "the note carries no version archboard can read"
 			: `the board is at ${actual}`;
-	const moved = (actual ?? 0) - (expected ?? 0);
-	const since =
-		actual !== null && expected !== null && actual > expected
-			? `Another writer has been here ${actual - expected} time(s) since the version you were working from.`
-			: actual !== null && expected !== null
-				? "The note is behind the version you were working from, so it was reverted or an older copy was restored."
-				: actual === null
-					? "A note archboard has never written carries no version, so this board is not the one you read."
-					: "This board had no note when you last saw it and has one now, so somebody has written it since.";
+	const since = describeMovement(expected, actual);
 	return {
 		board,
-		...(input.file ? { file: input.file } : {}),
+		...fileField(input.file),
 		expected,
 		actual,
-		movedBy: moved,
+		movedBy: (actual ?? 0) - (expected ?? 0),
 		message: [
 			`Refusing to write "${board}": you were working from ${from}, and ${now}. Nothing was written.`,
 			since,
@@ -244,25 +346,63 @@ function describeVersionConflict(input: {
 }
 
 /**
+ * What happened between the version a writer was working from and the one the
+ * board is at.
+ * @param expected What the writer was working from.
+ * @param actual What the board is at.
+ * @returns The sentence.
+ */
+function describeMovement(expected: number | null, actual: number | null): string {
+	if (actual === null) {
+		return "A note archboard has never written carries no version, so this board is not the one you read.";
+	}
+	if (expected === null) {
+		return "This board had no note when you last saw it and has one now, so somebody has written it since.";
+	}
+	if (actual > expected) {
+		return `Another writer has been here ${actual - expected} time(s) since the version you were working from.`;
+	}
+	return "The note is behind the version you were working from, so it was reverted or an older copy was restored.";
+}
+
+/**
  * Stamp a rendered note as one edit, unless it is byte-identical to the note
- * already at the destination. A foreign `version` property is preserved.
+ * already at the destination. A foreign `version` property is preserved: an
+ * editor that keeps its own value there is not overruled.
+ * @param rendered The note as it was rendered.
+ * @param destination The note already at the destination, when there is one.
+ * @returns The note to write, and the version it now carries.
  */
 function stampBoardVersion(
-	rendered: { note: string; bytes: Buffer },
+	rendered: RenderedNote,
 	destination: Buffer | undefined,
-): { note: string; bytes: Buffer; version: number | null } {
-	const current = destination
-		? noteVersion(destination.toString("utf-8"))
-		: { kind: "none" as const };
+): RenderedNote & { version: number | null } {
+	const current = destinationVersion(destination);
 	if (current.kind === "foreign") {
 		return { ...rendered, version: null };
 	}
-	if (destination && rendered.bytes.equals(destination)) {
-		return { ...rendered, version: current.kind === "at" ? current.value : null };
+	const at = current.kind === "at" ? current.value : null;
+	if (destination?.equals(rendered.bytes)) {
+		return { ...rendered, version: at };
 	}
-	const next = (current.kind === "at" ? current.value : 0) + 1;
+	const next = (at ?? 0) + 1;
 	const note = setFrontmatterValue(rendered.note, FRONTMATTER_VERSION, String(next));
 	return { note, bytes: Buffer.from(note, "utf-8"), version: next };
+}
+
+/**
+ * What the note already at the destination says its version is.
+ * @param destination The note there, when there is one.
+ * @returns The version, or none when the destination is empty.
+ */
+function destinationVersion(destination: Buffer | undefined): NoteVersion {
+	return destination ? noteVersion(destination.toString("utf-8")) : { kind: "none" };
+}
+
+/** A note as it was rendered, before anything stamps it. */
+interface RenderedNote {
+	note: string;
+	bytes: Buffer;
 }
 
 /**
@@ -274,19 +414,13 @@ function stampBoardVersion(
  * means. An agent may stay silent, because under a claim the canvas remembers
  * what it last told that writer; a pane has no remembered path and must
  * always state, `0` when it has seen no note yet.
+ * @param raw What the write stated.
+ * @param writer Which side wrote it, which decides what silence means.
+ * @returns The version it was editing, or why the statement is not one.
  */
 function statedVersion(raw: unknown, writer: "human" | "agent"): StatedVersionResult {
 	if (raw === undefined || raw === "") {
-		if (writer === "agent") {
-			return { ok: true };
-		}
-		return {
-			ok: false,
-			problem:
-				"`expectVersion` is required on a pane's write: the version the pane last saw, as " +
-				"`initial_elements`, `board_switched`, `elements_changed` or the last write's fingerprint " +
-				"reported it, or 0 when it has seen no note yet. Got nothing.",
-		};
+		return silentVersion(writer);
 	}
 	if (typeof raw !== "string" || !/^\d+$/.test(raw.trim())) {
 		return {
@@ -300,24 +434,67 @@ function statedVersion(raw: unknown, writer: "human" | "agent"): StatedVersionRe
 	return { ok: true, expected: stated === 0 ? null : stated };
 }
 
+/**
+ * What a write that stated no version means. An agent may stay silent,
+ * because under a claim the canvas remembers what it last told that writer; a
+ * pane has no remembered path and must always state one.
+ * @param writer Which side wrote it.
+ * @returns Silence accepted, or why it is refused.
+ */
+function silentVersion(writer: "human" | "agent"): StatedVersionResult {
+	if (writer === "agent") {
+		return { ok: true };
+	}
+	return {
+		ok: false,
+		problem:
+			"`expectVersion` is required on a pane's write: the version the pane last saw, as " +
+			"`initial_elements`, `board_switched`, `elements_changed` or the last write's fingerprint " +
+			"reported it, or 0 when it has seen no note yet. Got nothing.",
+	};
+}
+
 const processRememberedVersions = new Map<string, number | null>();
 
+/**
+ * What each writer in this process was last told about a board.
+ * @returns The remembered versions, by writer.
+ */
 function rememberedVersions(): Map<string, number | null> {
 	return processRememberedVersions;
 }
 
+/**
+ * What one writer was last told.
+ * @param writer The writer, when the caller knows which.
+ * @returns The version, null for a board with no note, undefined when it has
+ * been told nothing.
+ */
 function rememberedVersion(writer: string | undefined): number | null | undefined {
 	return writer ? rememberedVersions().get(writer) : undefined;
 }
 
+/**
+ * Record what one writer has just been told.
+ * @param writer The writer.
+ * @param version The version, or null for a board with no note.
+ */
 function rememberVersion(writer: string, version: number | null): void {
 	rememberedVersions().set(writer, version);
 }
 
+/**
+ * Forget what one writer was told, which is what ending its claim does.
+ * @param writer The writer.
+ */
 function forgetRememberedVersion(writer: string): void {
 	rememberedVersions().delete(writer);
 }
 
+/**
+ * Forget what every writer of one kind was told.
+ * @param prefix Which writers, by the prefix their names share.
+ */
 function forgetRememberedVersions(prefix: string): void {
 	for (const writer of rememberedVersions().keys()) {
 		if (writer.startsWith(prefix)) {
@@ -326,25 +503,26 @@ function forgetRememberedVersions(prefix: string): void {
 	}
 }
 
-/** Stated wins over remembered. The note's current number is not a source. */
-function expectedVersion(input: {
-	stated?: number | null;
-	rememberedBy?: string;
-}): number | null | undefined {
+/**
+ * The version a write is checked against. Stated wins over remembered, and
+ * the note's own current number is not a source: checking a write against
+ * what the note says now would pass every write.
+ * @param input What the writer stated, and which writer to fall back on.
+ * @returns The version, null for a board with no note, undefined when nothing
+ * says one.
+ */
+function expectedVersion(input: ExpectedVersionInput): number | null | undefined {
 	return input.stated !== undefined ? input.stated : rememberedVersion(input.rememberedBy);
 }
 
 /**
  * Check one write while its caller holds the board lock. Reading remembered
  * state here means a preceding waiter can update it before this write checks.
+ * @param input The board, its note, whether this write reaches the note at
+ * all, and what the writer says it was editing.
+ * @returns The conflict, or null when the write may go ahead.
  */
-function checkBoardVersion(input: {
-	board: string;
-	file?: string;
-	writesNote: boolean;
-	stated?: number | null;
-	rememberedBy?: string;
-}): BoardVersionConflict | null {
+function checkBoardVersion(input: VersionCheckInput): BoardVersionConflict | null {
 	if (!input.writesNote) {
 		return null;
 	}
@@ -356,18 +534,34 @@ function checkBoardVersion(input: {
 	if (actual === expected) {
 		return null;
 	}
+	// The refusal is the writer's telling: its next write goes against what the
+	// note is really at rather than against the number just refused.
 	if (input.rememberedBy) {
 		rememberVersion(input.rememberedBy, actual);
 	}
 	return describeVersionConflict({
 		board: input.board,
-		...(input.file ? { file: input.file } : {}),
+		...fileField(input.file),
 		expected,
 		actual,
 	});
 }
 
-/** Record the current note version as something this writer has just been told. */
+/**
+ * The note's path as a field a report states only when the board has one.
+ * @param file The path, when the board has a note.
+ * @returns The field, or nothing.
+ */
+function fileField(file: string | undefined): { file: string } | Record<string, never> {
+	return file === undefined ? {} : { file };
+}
+
+/**
+ * Record the current note version as something this writer has just been told.
+ * @param writer The writer.
+ * @param file The note's path, when the board has one.
+ * @returns The version recorded.
+ */
 function rememberVersionAt(writer: string, file?: string): number | null {
 	const version = file ? versionOfNoteAt(file) : null;
 	rememberVersion(writer, version);

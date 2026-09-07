@@ -1,4 +1,4 @@
-import type { CodexServerResponseByMethod } from "../../../shared/codex-app-server-contract/index.js";
+import type { CodexServerResponseByMethod } from "@/shared/codex-app-server-contract";
 import type {
 	ApprovalId,
 	ChildEpoch,
@@ -9,13 +9,13 @@ import type {
 	JsonRpcRequestId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	HumanApprovalMethod,
 	ReverseResponse,
 	TransportServerRequest,
 	TransportServerRequestListener,
-} from "../../codex-transport/server-requests.js";
+} from "@/runtime/codex-transport/server-requests";
 
 type Unsubscribe = () => void;
 
@@ -351,6 +351,12 @@ export class CodexApprovalError extends Error {
 	readonly code: CodexApprovalErrorCode;
 	readonly requestId: JsonRpcRequestId | undefined;
 
+	/**
+	 * Creates a refusal the caller can act on by code rather than by message.
+	 * @param code - The machine-readable refusal.
+	 * @param message - The operator-facing explanation.
+	 * @param requestId - The approval the refusal concerns, when one is known.
+	 */
 	constructor(code: CodexApprovalErrorCode, message: string, requestId?: JsonRpcRequestId) {
 		super(message);
 		this.code = code;

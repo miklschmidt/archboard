@@ -1,46 +1,46 @@
 export {
 	createCanvasBrowserGatewayOptions,
 	createCanvasOrdinaryApprovalActions,
-} from "./lib/codex-workbench-browser-gateway.js";
-export type { CanvasBrowserBindingState } from "./lib/codex-workbench-browser-gateway.js";
-export { projectCanvasBrowserReadiness } from "./lib/codex-workbench-readiness.js";
+} from "@/server/canvas/lib/codex-workbench-browser-gateway";
+export type { CanvasBrowserBindingState } from "@/server/canvas/lib/codex-workbench-browser-gateway";
+export { projectCanvasBrowserReadiness } from "@/server/canvas/lib/codex-workbench-readiness";
 export type {
 	CanvasReadinessInput,
 	CanvasReadinessProcessFacts,
-} from "./lib/codex-workbench-readiness.js";
-export { createCanvasDynamicApprovalOwner } from "./lib/codex-workbench-approvals.js";
+} from "@/server/canvas/lib/codex-workbench-readiness";
+export { createCanvasDynamicApprovalOwner } from "@/server/canvas/lib/codex-workbench-approvals";
 export type {
 	CanvasDynamicApprovalOwner,
 	CanvasDynamicApprovalOwnerOptions,
-} from "./lib/codex-workbench-approvals.js";
-export { createCanvasDynamicAuthorityAdapters } from "./lib/codex-workbench-authority.js";
+} from "@/server/canvas/lib/codex-workbench-approvals";
+export { createCanvasDynamicAuthorityAdapters } from "@/server/canvas/lib/codex-workbench-authority";
 export type {
 	CanvasDynamicAuthorityAdapters,
 	CanvasDynamicAuthorityOptions,
-} from "./lib/codex-workbench-authority.js";
+} from "@/server/canvas/lib/codex-workbench-authority";
 export {
 	createCanvasDynamicLifecycleOwner,
 	createCanvasDynamicOperationIdAdapter,
-} from "./lib/codex-workbench-operation-lifecycle.js";
+} from "@/server/canvas/lib/codex-workbench-operation-lifecycle";
 export type {
 	CanvasDynamicLifecycleOwner,
 	CanvasDynamicLifecycleOwnerOptions,
-} from "./lib/codex-workbench-operation-lifecycle.js";
+} from "@/server/canvas/lib/codex-workbench-operation-lifecycle";
 export {
 	createCanvasBrowserProjectionBudget,
 	createCanvasTimelineOwner,
-} from "./lib/codex-workbench-timeline.js";
+} from "@/server/canvas/lib/codex-workbench-timeline";
 export type {
 	CanvasBrowserProjectionBudget,
 	CanvasTimelineOwner,
 	CanvasTimelineOwnerOptions,
-} from "./lib/codex-workbench-timeline.js";
-export { createCanvasCanonicalTextActions } from "./lib/codex-workbench-text-actions.js";
-export { createCanvasRealtimeActions } from "./lib/codex-workbench-realtime-actions.js";
-export { requireExactSemanticPane } from "./lib/codex-workbench-semantic-pane.js";
+} from "@/server/canvas/lib/codex-workbench-timeline";
+export { createCanvasCanonicalTextActions } from "@/server/canvas/lib/codex-workbench-text-actions";
+export { createCanvasRealtimeActions } from "@/server/canvas/lib/codex-workbench-realtime-actions";
+export { requireExactSemanticPane } from "@/server/canvas/lib/codex-workbench-semantic-pane";
 export {
 	bindThreadContextToReadyWorkhorse,
 	clearCanvasThreadContextForLease,
 	createCanvasThreadCandidateInventory,
 	createCanvasThreadLinkActions,
-} from "./lib/codex-workbench-thread-links.js";
+} from "@/server/canvas/lib/codex-workbench-thread-links";

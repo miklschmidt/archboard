@@ -3,11 +3,18 @@ import { z } from "zod";
 import {
 	CodexThreadStatusTypeSchema,
 	CodexTurnStatusSchema,
-} from "../../../shared/codex-app-server-contract/index.js";
+} from "@/shared/codex-app-server-contract";
 
-import { GeneralThreadToolNameSchema, type GeneralThreadToolName } from "./manifest.js";
-import { parseStrictJson } from "./json.js";
-import { boundedText, boundedUtf8Text, nullableUtf8Text } from "./limits.js";
+import {
+	GeneralThreadToolNameSchema,
+	type GeneralThreadToolName,
+} from "@/runtime/codex-thread-tools/lib/manifest";
+import { parseStrictJson } from "@/runtime/codex-thread-tools/lib/json";
+import {
+	boundedText,
+	boundedUtf8Text,
+	nullableUtf8Text,
+} from "@/runtime/codex-thread-tools/lib/limits";
 
 const IdentitySchema = boundedText(128);
 const CursorSchema = boundedUtf8Text(1024);
@@ -153,6 +160,11 @@ const OutcomeUnknownEnvelopeSchema = z.strictObject({
 	),
 });
 
+/**
+ * The ok envelope schema for one tool, which differs between tools only by the value it carries.
+ * @param value - That tool's result value schema.
+ * @returns The envelope schema.
+ */
 function okEnvelope(value: z.ZodTypeAny) {
 	return z.strictObject({
 		tag: z.literal("ok"),
@@ -197,30 +209,94 @@ export interface ParsedDynamicToolCallResponse<Name extends GeneralThreadToolNam
 	readonly envelope: ToolResultEnvelope<Name>;
 }
 
+/**
+ * Freeze a value and everything reachable from it, so a parsed envelope cannot be changed by
+ * anything that reads it.
+ * @param value - The value to freeze.
+ * @returns The same value, frozen.
+ */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) {
 		return value;
 	}
-	for (const child of Object.values(value as Record<string, unknown>)) {
+	for (const child of Object.values(value)) {
 		freezeDeep(child);
 	}
 	return Object.freeze(value);
 }
 
-function schemaFor(name: unknown): z.ZodTypeAny {
+/**
+ * The reviewed tool name a caller supplied, refused when it is not one of the archboard_app
+ * tools; every later step reads the name from here rather than trusting the caller's value.
+ * @param name - The claimed tool name.
+ * @returns The reviewed name.
+ * @throws {TypeError} When the name is not a reviewed tool.
+ */
+function toolNameFor(name: unknown): GeneralThreadToolName {
 	const parsedName = GeneralThreadToolNameSchema.safeParse(name);
 	if (!parsedName.success) {
 		throw new TypeError(`Unknown archboard_app tool: ${String(name)}.`);
 	}
-	return TOOL_RESULT_ENVELOPE_SCHEMAS[parsedName.data];
+	return parsedName.data;
 }
 
+/**
+ * The result envelope schema one tool's results are proven against.
+ * @param name - The reviewed tool name.
+ * @returns That tool's envelope schema.
+ */
+function schemaFor(name: GeneralThreadToolName): z.ZodTypeAny {
+	return TOOL_RESULT_ENVELOPE_SCHEMAS[name];
+}
+
+/**
+ * Refuse a result, naming every schema issue so a malformed envelope can be diagnosed from the
+ * message alone.
+ * @param label - What was being parsed.
+ * @param issues - The schema issues.
+ * @throws {TypeError} Always.
+ */
 function invalidResult(label: string, issues: readonly { readonly message: string }[]): never {
 	throw new TypeError(`Invalid ${label}: ${issues.map((issue) => issue.message).join("; ")}`);
 }
 
 type JsonRecord = Record<string, unknown>;
 
+/**
+ * Read a schema-checked value as a JSON object. The canonical rewriters below run only on values
+ * the tool's own schema has already accepted, so this is a proof of that, not a second parse.
+ * @param value - The schema-checked value.
+ * @returns The value as a record.
+ * @throws {TypeError} When the value is not an object.
+ */
+function asJsonRecord(value: unknown): JsonRecord {
+	if (typeof value !== "object" || value === null || Array.isArray(value)) {
+		throw new TypeError("A schema-checked tool result field is not a JSON object.");
+	}
+	return { ...value };
+}
+
+/**
+ * Read a schema-checked value as a JSON array, for the same reason as `asJsonRecord`.
+ * @param value - The schema-checked value.
+ * @returns The value as an array.
+ * @throws {TypeError} When the value is not an array.
+ */
+function asJsonArray(value: unknown): readonly unknown[] {
+	if (!Array.isArray(value)) {
+		throw new TypeError("A schema-checked tool result field is not a JSON array.");
+	}
+	return value;
+}
+
+/**
+ * Rebuild an object with exactly the reviewed keys in the reviewed order, so a canonical envelope
+ * serializes to the same bytes whatever order the tool produced its fields in.
+ * @param value - The source object.
+ * @param keys - The reviewed keys, in order.
+ * @param overrides - Fields to take from here instead of the source.
+ * @returns The reordered object.
+ */
 function orderedObject(
 	value: JsonRecord,
 	keys: readonly string[],
@@ -235,21 +311,36 @@ function orderedObject(
 	return result;
 }
 
+/**
+ * The canonical form of a thread result's initial turn.
+ * @param value - The schema-checked initial turn.
+ * @returns The reordered turn.
+ */
 function canonicalInitialTurn(value: unknown): JsonRecord {
-	return orderedObject(value as JsonRecord, ["delivery", "turnId", "operationId", "reason"]);
+	return orderedObject(asJsonRecord(value), ["delivery", "turnId", "operationId", "reason"]);
 }
 
+/**
+ * The canonical form of a create or fork result.
+ * @param value - The schema-checked result value.
+ * @returns The reordered value.
+ */
 function canonicalThreadValue(value: unknown): JsonRecord {
-	const record = value as JsonRecord;
+	const record = asJsonRecord(value);
 	return orderedObject(record, ["threadId", "state", "initialTurn"], {
 		initialTurn: canonicalInitialTurn(record["initialTurn"]),
 	});
 }
 
+/**
+ * The canonical form of a list result, including each listed thread.
+ * @param value - The schema-checked result value.
+ * @returns The reordered value.
+ */
 function canonicalListValue(value: unknown): JsonRecord {
-	const record = value as JsonRecord;
-	const threads = (record["threads"] as readonly unknown[]).map((thread) =>
-		orderedObject(thread as JsonRecord, [
+	const record = asJsonRecord(value);
+	const threads = asJsonArray(record["threads"]).map((thread) =>
+		orderedObject(asJsonRecord(thread), [
 			"threadId",
 			"title",
 			"status",
@@ -263,10 +354,15 @@ function canonicalListValue(value: unknown): JsonRecord {
 	return orderedObject(record, ["threads", "nextCursor"], { threads });
 }
 
+/**
+ * The canonical form of a read result, including each turn it carries.
+ * @param value - The schema-checked result value.
+ * @returns The reordered value.
+ */
 function canonicalReadValue(value: unknown): JsonRecord {
-	const record = value as JsonRecord;
-	const turns = (record["turns"] as readonly unknown[]).map((turn) =>
-		orderedObject(turn as JsonRecord, [
+	const record = asJsonRecord(value);
+	const turns = asJsonArray(record["turns"]).map((turn) =>
+		orderedObject(asJsonRecord(turn), [
 			"turnId",
 			"status",
 			"summary",
@@ -277,24 +373,38 @@ function canonicalReadValue(value: unknown): JsonRecord {
 	return orderedObject(record, ["threadId", "turns", "nextCursor"], { turns });
 }
 
+/**
+ * The canonical form of one tool's ok value, by tool.
+ * @param name - The reviewed tool name.
+ * @param value - The schema-checked result value.
+ * @returns The reordered value.
+ */
 function canonicalToolValue(name: GeneralThreadToolName, value: unknown): JsonRecord {
-	switch (name) {
-		case "create_thread":
-		case "fork_thread":
-			return canonicalThreadValue(value);
-		case "list_threads":
-			return canonicalListValue(value);
-		case "read_thread":
-			return canonicalReadValue(value);
-		case "send_message_to_thread":
-			return orderedObject(value as JsonRecord, ["threadId", "delivery"]);
-		case "wait_threads":
-			return orderedObject(value as JsonRecord, ["event", "threadId", "cursor"]);
+	if (name === "create_thread" || name === "fork_thread") {
+		return canonicalThreadValue(value);
 	}
+	if (name === "list_threads") {
+		return canonicalListValue(value);
+	}
+	if (name === "read_thread") {
+		return canonicalReadValue(value);
+	}
+	if (name === "send_message_to_thread") {
+		return orderedObject(asJsonRecord(value), ["threadId", "delivery"]);
+	}
+	return orderedObject(asJsonRecord(value), ["event", "threadId", "cursor"]);
 }
 
+/**
+ * The canonical form of one result envelope, by tag. Serializing this must reproduce the exact
+ * text the tool sent: that is how a result is proven to be canonical compact JSON.
+ * @param name - The reviewed tool name.
+ * @param value - The schema-checked envelope.
+ * @returns The reordered envelope.
+ * @throws {TypeError} When the envelope carries an unreviewed tag.
+ */
 function canonicalEnvelope(name: GeneralThreadToolName, value: unknown): JsonRecord {
-	const record = value as JsonRecord;
+	const record = asJsonRecord(value);
 	switch (record["tag"]) {
 		case "ok":
 			return orderedObject(record, ["tag", "operationId", "value"], {
@@ -319,22 +429,32 @@ export function parseToolResultEnvelope(
 	name: unknown,
 	text: string,
 ): ToolResultEnvelope<GeneralThreadToolName>;
+/**
+ * Parse one tool result envelope from the exact text a tool sent: strict JSON, the tool's own
+ * envelope schema, and then a proof that the text is already the canonical compact form. A result
+ * that means the right thing but is spelled differently is refused, because the text is what the
+ * coordinator's transcript will hold.
+ * @param name - The tool the result belongs to.
+ * @param text - The envelope text as sent.
+ * @returns The frozen envelope.
+ * @throws {TypeError} When the tool, the envelope or its spelling is not the reviewed one.
+ */
 export function parseToolResultEnvelope(
 	name: unknown,
 	text: string,
 ): ToolResultEnvelope<GeneralThreadToolName> {
-	const label = `${String(name)} result envelope`;
+	const toolName = toolNameFor(name);
+	const label = `${toolName} result envelope`;
 	const value = parseStrictJson(text, label);
-	const parsed = schemaFor(name).safeParse(value);
+	const parsed = schemaFor(toolName).safeParse(value);
 	if (!parsed.success) {
 		invalidResult(label, parsed.error.issues);
 	}
-	const canonicalText = JSON.stringify(
-		canonicalEnvelope(name as GeneralThreadToolName, parsed.data),
-	);
+	const canonicalText = JSON.stringify(canonicalEnvelope(toolName, parsed.data));
 	if (canonicalText !== text) {
 		throw new TypeError(`${label} must use canonical compact JSON.`);
 	}
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- schemaFor(toolName) is that tool's own envelope schema, so its parsed output is that tool's envelope by construction; the schema table is keyed by tool name and TypeScript cannot follow that through a ZodTypeAny lookup
 	return freezeDeep(parsed.data) as ToolResultEnvelope<GeneralThreadToolName>;
 }
 
@@ -346,6 +466,15 @@ export function parseDynamicToolCallResponse(
 	name: unknown,
 	response: unknown,
 ): ParsedDynamicToolCallResponse<GeneralThreadToolName>;
+/**
+ * Parse a dynamic tool call response as this tool's result: the response envelope first, then the
+ * single text item it carries, parsed as that tool's result envelope. This is the only way a
+ * tool's result enters Archboard.
+ * @param name - The tool that was called.
+ * @param response - The raw dynamic tool call response.
+ * @returns The content items, the success flag, and the parsed envelope.
+ * @throws {TypeError} When the response or its envelope is not the reviewed shape.
+ */
 export function parseDynamicToolCallResponse(
 	name: unknown,
 	response: unknown,
@@ -366,5 +495,5 @@ export function parseDynamicToolCallResponse(
 		contentItems: parsed.data.contentItems,
 		success: parsed.data.success,
 		envelope,
-	}) as ParsedDynamicToolCallResponse<GeneralThreadToolName>;
+	});
 }

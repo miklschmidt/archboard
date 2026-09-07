@@ -4,23 +4,23 @@ export {
 	resetOpenerSelection,
 	saveOpenerSelection,
 	type OpenerConfigurationResult,
-} from "./lib/configuration.js";
+} from "@/server/code-opener/lib/configuration";
 export {
 	planOpenerCommand,
 	type OpenerPlan,
 	type OpenerPlanFailure,
 	type OpenerPlanSuccess,
-} from "./lib/planning.js";
+} from "@/server/code-opener/lib/planning";
 export {
 	checkBrowserCsrf,
 	type BrowserCsrfHeaders,
 	type BrowserCsrfKind,
 	type BrowserCsrfResult,
-} from "./lib/browser-csrf.js";
-export { launchOpener, type LaunchResult } from "./lib/launch.js";
+} from "@/server/code-opener/lib/browser-csrf";
+export { launchOpener, type LaunchResult } from "@/server/code-opener/lib/launch";
 export {
 	createCodeOpenerPreguard,
 	createCodeOpenerRouter,
 	isCodeOpenerBodyRoute,
 	type CodeOpenerRouteDependencies,
-} from "./lib/routes.js";
+} from "@/server/code-opener/lib/routes";

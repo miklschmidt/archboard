@@ -1,4 +1,4 @@
-import type { RealtimePhase, RealtimeState } from "./contract.js";
+import type { RealtimePhase, RealtimeState } from "@/shared/codex-realtime-host/lib/contract";
 
 const REALTIME_PHASES = Object.freeze([
 	"idle",
@@ -138,12 +138,33 @@ const INITIAL_REALTIME_STATE: RealtimeState = Object.freeze({
 	phase: "idle",
 	reason: "created",
 });
+/**
+ * Looks up the reasons a phase may move to another.
+ * @param from - The phase the session is in.
+ * @param to - The phase it would enter.
+ * @returns The allowed reasons, empty when the move is never allowed.
+ */
 function reasons(from: RealtimePhase, to: RealtimePhase): readonly string[] {
 	return REALTIME_TRANSITIONS[from][to] ?? [];
 }
+
+/**
+ * Tells whether the transition table permits moving to `next` for its reason.
+ * @param current - The state the session is in.
+ * @param next - The state and reason proposed.
+ * @returns True when the table lists that reason for that move.
+ */
 function canTransitionRealtimeState(current: RealtimeState, next: RealtimeState): boolean {
 	return reasons(current.phase, next.phase).includes(next.reason);
 }
+
+/**
+ * Refuses an illegal transition with a message naming what would have been
+ * allowed, so a caller learns the table rather than guessing.
+ * @param current - The state the session is in.
+ * @param next - The state and reason proposed.
+ * @throws {TypeError} when the table does not permit the move.
+ */
 function assertRealtimeTransition(current: RealtimeState, next: RealtimeState): void {
 	if (canTransitionRealtimeState(current, next)) {
 		return;
@@ -157,6 +178,12 @@ function assertRealtimeTransition(current: RealtimeState, next: RealtimeState): 
 		`Illegal realtime transition from ${current.phase} to ${next.phase} for reason ${next.reason}.${suffix}`,
 	);
 }
+/**
+ * Moves the session to `next` after checking the transition is legal.
+ * @param current - The state the session is in.
+ * @param next - The state and reason to move to.
+ * @returns A frozen copy of `next`.
+ */
 function transitionRealtimeState(current: RealtimeState, next: RealtimeState): RealtimeState {
 	assertRealtimeTransition(current, next);
 	return Object.freeze({ ...next });

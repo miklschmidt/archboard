@@ -1,4 +1,4 @@
-export { createCodexTransport } from "./lib/transport.js";
+export { createCodexTransport } from "@/runtime/codex-transport/lib/transport";
 
 export type {
 	CodexTransport,
@@ -7,4 +7,4 @@ export type {
 	CodexTransportRequestOptions,
 	CodexTransportResponse,
 	TransportRequestFailure,
-} from "./lib/types.js";
+} from "@/runtime/codex-transport/lib/types";

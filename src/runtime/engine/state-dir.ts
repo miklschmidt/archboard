@@ -12,6 +12,7 @@ import { homedir } from "os";
  *
  * The directory keeps the old `excalidraw-canvas` spelling deliberately:
  * renaming it would orphan a running server's pidfile, and nothing prints it.
+ * @returns The platform's state directory for archboard.
  */
 export function stateDir(): string {
 	if (process.platform === "darwin") {

@@ -1,4 +1,4 @@
-import type { CodexSession, SessionQueuedSubmission } from "../../codex-session/index.js";
+import type { CodexSession, SessionQueuedSubmission } from "@/runtime/codex-session";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -6,7 +6,7 @@ import type {
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 
 /** The only queue operations exposed to Archboard callers. */
 const WORKHORSE_QUEUE_OPERATIONS = Object.freeze([
@@ -156,6 +156,14 @@ type WorkhorseQueueErrorCode =
 	| "transport_failure"
 	| "reconciliation_failed";
 
+/** What is known about a queue failure beyond its code and message. */
+interface WorkhorseQueueErrorFacts {
+	readonly operation?: WorkhorseQueueOperation;
+	readonly outcome?: QueueMutationOutcome;
+	readonly queue?: QueueSnapshot | null;
+	readonly cause?: unknown;
+}
+
 class CodexWorkhorseQueueError extends Error {
 	override readonly name = "CodexWorkhorseQueueError";
 	readonly code: WorkhorseQueueErrorCode;
@@ -164,15 +172,18 @@ class CodexWorkhorseQueueError extends Error {
 	readonly queue: QueueSnapshot | null;
 	override readonly cause: unknown;
 
+	/**
+	 * Build the error, defaulting every optional fact to null so a caller can always ask what the
+	 * failure proved about delivery and about the queue without checking whether the field exists.
+	 * @param code - Why the queue refused.
+	 * @param message - The diagnostic for the caller.
+	 * @param options - The operation, settled outcome, queue snapshot and underlying cause, as far
+	 * as they are known at the point of failure.
+	 */
 	constructor(
 		code: WorkhorseQueueErrorCode,
 		message: string,
-		options: {
-			readonly operation?: WorkhorseQueueOperation;
-			readonly outcome?: QueueMutationOutcome;
-			readonly queue?: QueueSnapshot | null;
-			readonly cause?: unknown;
-		} = {},
+		options: WorkhorseQueueErrorFacts = {},
 	) {
 		super(message);
 		this.code = code;

@@ -1,12 +1,9 @@
-import type { ApprovalSettlement, CodexApprovalBroker } from "../../codex-approvals/index.js";
-import type { CodexCoordinator } from "../../codex-coordinator/index.js";
-import type { CodexRealtimeAdapter } from "../../codex-realtime/index.js";
-import type { CodexSession } from "../../codex-session/index.js";
-import type {
-	DynamicServerRequest,
-	TransportServerNotification,
-} from "../../codex-transport/index.js";
-import type { ArchboardContext } from "../../codex-instructions/index.js";
+import type { ApprovalSettlement, CodexApprovalBroker } from "@/runtime/codex-approvals";
+import type { CodexCoordinator } from "@/runtime/codex-coordinator";
+import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
+import type { CodexSession } from "@/runtime/codex-session";
+import type { DynamicServerRequest, TransportServerNotification } from "@/runtime/codex-transport";
+import type { ArchboardContext } from "@/runtime/codex-instructions";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -16,17 +13,17 @@ import type {
 	JsonRpcRequestId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	RealtimeCorrelation,
 	RealtimeItemId,
 	RealtimeSemanticEvent,
 	RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
+} from "@/shared/codex-realtime-host";
 import type {
 	DynamicToolRefusalReason,
 	ResolveSpokenApprovalInput,
-} from "../../codex-coordinator-tool-contract/index.js";
+} from "@/runtime/codex-coordinator-tool-contract";
 
 type SpokenApprovalGateState =
 	| "idle"
@@ -152,6 +149,12 @@ class CodexSpokenApprovalError extends Error {
 	override readonly name = "CodexSpokenApprovalError";
 	readonly code: CodexSpokenApprovalErrorCode;
 
+	/**
+	 * Build the error, naming which of the two refusals it is so a caller can tell a disposed gate
+	 * from one that is already busy with another approval.
+	 * @param code - Why the gate refused.
+	 * @param message - The diagnostic for the caller.
+	 */
 	constructor(code: CodexSpokenApprovalErrorCode, message: string) {
 		super(message);
 		this.code = code;

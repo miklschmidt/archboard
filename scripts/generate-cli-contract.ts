@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
 	CLI_CONTRACT_ARTIFACT_NAMES,
 	renderCliContractArtifacts,
-} from "../src/cli/command-contract/artifacts.js";
+} from "@/cli/command-contract/artifacts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outputFlag = process.argv.indexOf("--output-dir");

@@ -2,29 +2,28 @@ import type {
 	ApprovalSnapshot,
 	CodexApprovalBroker,
 	SpokenApprovalEffectPresentation,
-} from "../../codex-approvals/index.js";
-import {
-	ARCHBOARD_VOICE_MANIFEST_SHA256,
-	type DynamicToolRefusalReason,
-} from "../../codex-coordinator-tool-contract/index.js";
-import { ArchboardContextSchema, type ArchboardContext } from "../../codex-instructions/index.js";
-import type { SpokenApprovalArmInput, SpokenApprovalFallbackReason } from "./contract.js";
-import type { ActiveSlot } from "./state.js";
-import {
-	IdentityValidationError,
-	type IdentityAuthority,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/runtime/codex-approvals";
+import { ArchboardContextSchema, type ArchboardContext } from "@/runtime/codex-instructions";
 import type {
-	RealtimeCorrelation,
-	RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/index.js";
-import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "../../../shared/timing/timing.js";
+	SpokenApprovalArmInput,
+	SpokenApprovalFallbackReason,
+} from "@/runtime/codex-spoken-approval/lib/contract";
+import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
+import type { RealtimeCorrelation, RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
+import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
+import { CODEX_SPOKEN_GATE_EXPIRY_MS } from "@/shared/timing/timing";
+import {
+	failure,
+	failureForIdentity,
+	oneLine,
+	recordKey,
+	safeErrorMessage,
+	sameBinding,
+	sameRealtime,
+	sameSpokenEffectPresentation,
+	validSequence,
+	type CallValidationFailure,
+} from "@/runtime/codex-spoken-approval/lib/validation-primitives";
 
 interface CoordinatorIdentity {
 	readonly child: ChildId;
@@ -59,258 +58,422 @@ type ArmValidationResult =
 			readonly expiresAtMs: number;
 	  };
 
+/**
+ * A refused arm, naming the fallback reason the caller reports to the person.
+ * @param reason - Why the gate cannot be armed.
+ * @returns The refusal.
+ */
 function invalid(reason: SpokenApprovalFallbackReason): ArmValidationResult {
 	return { ok: false, reason };
 }
 
-function sameRealtime(left: RealtimeCorrelation, right: RealtimeCorrelation): boolean {
-	return left.sessionId === right.sessionId && left.correlationId === right.correlationId;
+/** The one-line fields an arm request carries, once each has been checked. */
+interface ArmInputText {
+	readonly effectSummary: string;
+	readonly operationId: string;
+	readonly clientUserMessageId: string;
 }
 
-function recordKey(record: RealtimeTranscriptRecord): string {
-	return `${record.sessionId}\u0000${record.correlationId}\u0000${record.itemId}`;
-}
-
-function sameBinding(
-	left: ApprovalSnapshot["binding"],
-	right: ApprovalSnapshot["binding"],
-): boolean {
-	return (
-		left.child === right.child &&
-		left.epoch === right.epoch &&
-		left.link === right.link &&
-		left.target === right.target &&
-		left.effect === right.effect
-	);
-}
-
-function sameSpokenEffectPresentation(
-	presentation: SpokenApprovalEffectPresentation,
-	approval: ApprovalSnapshot,
-): boolean {
-	return (
-		presentation.requestId === approval.requestId &&
-		presentation.family === approval.family &&
-		presentation.child === approval.child &&
-		presentation.epoch === approval.epoch &&
-		presentation.threadId === approval.threadId &&
-		presentation.turnId === approval.turnId &&
-		presentation.itemId === approval.itemId &&
-		presentation.approvalId === approval.approvalId &&
-		sameBinding(presentation.binding, approval.binding)
-	);
-}
-
-function safeErrorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
-}
-
-function oneLine(value: unknown, label: string): string {
-	if (
-		typeof value !== "string" ||
-		value.length === 0 ||
-		value.includes("\r") ||
-		value.includes("\n")
-	) {
-		throw new TypeError(`${label} must be a non-empty one-line value.`);
-	}
-	if (Buffer.byteLength(value, "utf8") > 256) {
-		throw new TypeError(`${label} must be at most 256 UTF-8 bytes.`);
-	}
-	return value;
-}
-
-function validSequence(value: unknown): value is number {
-	return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
-}
-
-interface CallValidationFailure {
-	readonly fallback: SpokenApprovalFallbackReason;
-	readonly refusal: DynamicToolRefusalReason;
-	readonly message: string;
-}
-
-function failure(
-	fallback: SpokenApprovalFallbackReason,
-	refusal: DynamicToolRefusalReason,
-	message: string,
-): CallValidationFailure {
-	return { fallback, refusal, message };
-}
-
-function failureForIdentity(error: unknown): CallValidationFailure {
-	if (error instanceof IdentityValidationError) {
-		if (error.code === "wrong-child") {
-			return failure(
-				"stale_realtime_session",
-				"stale_child",
-				"The spoken approval belongs to another Codex child.",
-			);
-		}
-		if (error.code === "stale-epoch") {
-			return failure(
-				"stale_state",
-				"prior_epoch",
-				"The spoken approval belongs to a prior Codex child epoch.",
-			);
-		}
-	}
-	return failure(
-		"stale_state",
-		"unknown_provenance",
-		`The spoken approval identity is no longer current: ${safeErrorMessage(error)}`,
-	);
-}
-
-function validateArm(host: ValidationHost, input: SpokenApprovalArmInput): ArmValidationResult {
-	let effectSummary: string;
-	let operationId: string;
-	let clientUserMessageId: string;
+/**
+ * The arm request's one-line text fields. Each is bounded and single-line because it is spoken
+ * aloud and correlated by exact value; anything else is refused as bad context.
+ * @param input - The arm request.
+ * @returns The checked fields, or null when any is not a bounded one-line value.
+ */
+function armInputText(input: SpokenApprovalArmInput): ArmInputText | null {
 	try {
-		effectSummary = oneLine(input.effectSummary, "effect summary");
-		operationId = oneLine(input.classifier.operationId, "classifier operation id");
-		clientUserMessageId = oneLine(
-			input.classifier.clientUserMessageId,
-			"classifier client message id",
-		);
+		return {
+			effectSummary: oneLine(input.effectSummary, "effect summary"),
+			operationId: oneLine(input.classifier.operationId, "classifier operation id"),
+			clientUserMessageId: oneLine(
+				input.classifier.clientUserMessageId,
+				"classifier client message id",
+			),
+		};
 	} catch {
-		return invalid("invalid_context");
+		return null;
 	}
-	if (!validSequence(input.effectPrompt.sequence)) {
-		return invalid("invalid_effect_prompt");
-	}
+}
+
+/** The host state an arm runs against, or the refusal that stops it. */
+type ArmHostState =
+	| {
+			readonly ok: true;
+			readonly coordinator: CoordinatorIdentity;
+			readonly realtime: RealtimeCorrelation;
+	  }
+	| { readonly ok: false; readonly result: ArmValidationResult };
+
+/**
+ * The coordinator and voice session an arm must run against: both must exist, the voice session
+ * must be the one the request names, and the coordinator must still be on the current epoch.
+ * @param host - The validation host.
+ * @param input - The arm request.
+ * @returns The host state, or the refusal.
+ */
+function armHostState(host: ValidationHost, input: SpokenApprovalArmInput): ArmHostState {
 	const coordinator = host.currentCoordinator();
 	if (coordinator === null) {
-		return invalid("coordinator_unavailable");
+		return { ok: false, result: invalid("coordinator_unavailable") };
 	}
 	const realtime = host.currentRealtime();
 	if (realtime === null || !sameRealtime(realtime, input.realtime)) {
-		return invalid("realtime_unavailable");
+		return { ok: false, result: invalid("realtime_unavailable") };
 	}
 	try {
 		host.identity.validator.assertCurrentEpoch(coordinator.child, coordinator.epoch);
 	} catch {
-		return invalid("stale_state");
+		return { ok: false, result: invalid("stale_state") };
 	}
+	return { ok: true, coordinator, realtime };
+}
+
+/** The approval an arm is for, or the refusal that stops it. */
+type ArmApproval =
+	| { readonly ok: true; readonly approval: ApprovalSnapshot }
+	| { readonly ok: false; readonly result: ArmValidationResult };
+
+/**
+ * The pending approval an arm is for. Only a pending command-execution approval on the
+ * coordinator's own child and epoch may be spoken; everything else falls back to the visual
+ * surface rather than being resolved by voice.
+ * @param host - The validation host.
+ * @param input - The arm request.
+ * @param coordinator - The current coordinator.
+ * @returns The approval, or the refusal.
+ */
+function armApproval(
+	host: ValidationHost,
+	input: SpokenApprovalArmInput,
+	coordinator: CoordinatorIdentity,
+): ArmApproval {
 	let approval: ApprovalSnapshot | undefined;
 	let eligibility: ReturnType<ValidationHost["approvalBroker"]["spokenEligibility"]>;
 	try {
 		approval = host.approvalBroker.get(input.requestId);
 		eligibility = host.approvalBroker.spokenEligibility(input.requestId);
 	} catch {
-		return invalid("approval_unavailable");
+		return { ok: false, result: invalid("approval_unavailable") };
 	}
 	if (approval === undefined) {
-		return invalid("approval_unavailable");
+		return { ok: false, result: invalid("approval_unavailable") };
 	}
+	const reason = spokenArmRefusal(approval, eligibility, coordinator);
+	return reason === null ? { ok: true, approval } : { ok: false, result: invalid(reason) };
+}
+
+/**
+ * Whether an approval belongs to the coordinator's own child and epoch.
+ * @param approval - The approval.
+ * @param coordinator - The current coordinator.
+ * @returns True when both match.
+ */
+function sameCoordinatorEpoch(
+	approval: ApprovalSnapshot,
+	coordinator: CoordinatorIdentity,
+): boolean {
+	return approval.child === coordinator.child && approval.epoch === coordinator.epoch;
+}
+
+/**
+ * Why an approval may not have a spoken gate armed on it: it is not pending, not eligible, not a
+ * command execution, or not on the coordinator's own child and epoch. Only a command execution is
+ * ever resolved by voice; everything else is answered on the visual surface.
+ * @param approval - The approval the arm is for.
+ * @param eligibility - What the broker says about spoken resolution.
+ * @param coordinator - The current coordinator.
+ * @returns The fallback reason, or null when the approval may be armed.
+ */
+function spokenArmRefusal(
+	approval: ApprovalSnapshot,
+	eligibility: ReturnType<ValidationHost["approvalBroker"]["spokenEligibility"]>,
+	coordinator: CoordinatorIdentity,
+): SpokenApprovalFallbackReason | null {
 	if (!eligibility.eligible || approval.state !== "pending") {
-		return invalid(eligibility.reason === "not_pending" ? "approval_unavailable" : "not_eligible");
+		return eligibility.reason === "not_pending" ? "approval_unavailable" : "not_eligible";
 	}
 	if (approval.family !== "command_execution") {
-		return invalid("not_eligible");
+		return "not_eligible";
 	}
-	if (approval.child !== coordinator.child || approval.epoch !== coordinator.epoch) {
-		return invalid("stale_state");
-	}
+	return sameCoordinatorEpoch(approval, coordinator) ? null : "stale_state";
+}
+
+/**
+ * The effect presentation the person was actually read, refused unless it describes exactly this
+ * approval and says exactly what the arm request claims was said aloud.
+ * @param host - The validation host.
+ * @param input - The arm request.
+ * @param approval - The pending approval.
+ * @param effectSummary - The summary the arm request claims was spoken.
+ * @returns The presentation, or null when it does not match.
+ */
+function armPresentation(
+	host: ValidationHost,
+	input: SpokenApprovalArmInput,
+	approval: ApprovalSnapshot,
+	effectSummary: string,
+): SpokenApprovalEffectPresentation | null {
 	let presentation: SpokenApprovalEffectPresentation;
 	try {
 		presentation = host.approvalBroker.spokenEffectPresentation(input.requestId);
 	} catch {
+		return null;
+	}
+	const matches =
+		sameSpokenEffectPresentation(presentation, approval) &&
+		presentation.effectSummary === effectSummary;
+	return matches ? presentation : null;
+}
+
+/**
+ * Validate a request to arm the spoken approval gate: the request's own fields, the host state it
+ * runs against, the approval it is for, and the effect that was actually read aloud. Every
+ * refusal names the fallback reason the caller reports, because a spoken gate that cannot be armed
+ * must send the person to the visual surface rather than fail silently.
+ * @param host - The validation host.
+ * @param input - The arm request.
+ * @returns The validated arm, or the refusal.
+ */
+function validateArm(host: ValidationHost, input: SpokenApprovalArmInput): ArmValidationResult {
+	const text = armInputText(input);
+	if (text === null) {
+		return invalid("invalid_context");
+	}
+	if (!validSequence(input.effectPrompt.sequence)) {
 		return invalid("invalid_effect_prompt");
 	}
-	if (
-		!sameSpokenEffectPresentation(presentation, approval) ||
-		presentation.effectSummary !== effectSummary
-	) {
+	const state = armHostState(host, input);
+	if (!state.ok) {
+		return state.result;
+	}
+	const approval = armApproval(host, input, state.coordinator);
+	if (!approval.ok) {
+		return approval.result;
+	}
+	const presentation = armPresentation(host, input, approval.approval, text.effectSummary);
+	if (presentation === null) {
 		return invalid("invalid_effect_prompt");
 	}
 	return validateArmContext(host, input, {
 		effectSummary: presentation.effectSummary,
-		operationId,
-		clientUserMessageId,
-		approval,
-		coordinator,
-		realtime,
+		operationId: text.operationId,
+		clientUserMessageId: text.clientUserMessageId,
+		approval: approval.approval,
+		coordinator: state.coordinator,
+		realtime: state.realtime,
 	});
 }
 
-function validateArmContext(
-	host: ValidationHost,
-	input: SpokenApprovalArmInput,
-	values: {
-		readonly effectSummary: string;
-		readonly operationId: string;
-		readonly clientUserMessageId: string;
-		readonly approval: ApprovalSnapshot;
-		readonly coordinator: CoordinatorIdentity;
-		readonly realtime: RealtimeCorrelation;
-	},
-): ArmValidationResult {
-	const parsedContext = ArchboardContextSchema.safeParse(input.classifier.context);
-	if (!parsedContext.success) {
-		return invalid("invalid_context");
-	}
-	const context = parsedContext.data;
+/** What the arm has already established by the time its context is checked. */
+interface ArmContextValues {
+	readonly effectSummary: string;
+	readonly operationId: string;
+	readonly clientUserMessageId: string;
+	readonly approval: ApprovalSnapshot;
+	readonly coordinator: CoordinatorIdentity;
+	readonly realtime: RealtimeCorrelation;
+}
+
+/**
+ * Whether the classifier context names exactly this operation, child, coordinator thread and
+ * voice session. The classifier speaks on the coordinator's behalf, so a context that names
+ * anything else would let one conversation's approval be resolved from another.
+ * @param context - The decoded classifier context.
+ * @param values - What the arm has established.
+ * @returns True when every field matches.
+ */
+function armContextMatches(context: ArchboardContext, values: ArmContextValues): boolean {
 	const operation = context.operation;
-	if (
-		operation.id === null ||
-		operation.id !== values.operationId ||
-		operation.kind !== "spoken_approval_classifier" ||
-		operation.rpc !== "turn/start" ||
-		operation.outcome !== null ||
-		context.child.id !== values.coordinator.child ||
-		context.child.epoch !== values.coordinator.epoch ||
-		context.coordinator.threadId !== values.coordinator.threadId ||
-		context.coordinator.realtimeSessionId !== values.realtime.sessionId
-	) {
-		return invalid("invalid_context");
-	}
-	let records: readonly RealtimeTranscriptRecord[];
-	try {
-		records = host.transcript();
-	} catch {
-		return invalid("realtime_unavailable");
-	}
+	const checks = [
+		operation.id !== null,
+		operation.id === values.operationId,
+		operation.kind === "spoken_approval_classifier",
+		operation.rpc === "turn/start",
+		operation.outcome === null,
+		context.child.id === values.coordinator.child,
+		context.child.epoch === values.coordinator.epoch,
+		context.coordinator.threadId === values.coordinator.threadId,
+		context.coordinator.realtimeSessionId === values.realtime.sessionId,
+	];
+	return checks.every((matched) => matched);
+}
+
+/**
+ * The transcript record of the effect prompt: the assistant's own final utterance of exactly the
+ * effect summary. The gate is armed against that utterance, so anything else means the person was
+ * not asked what Archboard thinks they were asked.
+ * @param records - The transcript records.
+ * @param input - The arm request.
+ * @param effectSummary - The summary that must have been spoken.
+ * @returns The prompt record, or null when no record matches.
+ */
+function armPromptRecord(
+	records: readonly RealtimeTranscriptRecord[],
+	input: SpokenApprovalArmInput,
+	effectSummary: string,
+): RealtimeTranscriptRecord | null {
 	const prompt = records.find(
 		(record) =>
 			sameRealtime(record, input.realtime) &&
 			record.itemId === input.effectPrompt.itemId &&
 			record.sequence === input.effectPrompt.sequence,
 	);
-	if (
-		prompt?.role !== "assistant" ||
-		prompt?.status !== "final" ||
-		prompt?.text.length === 0 ||
-		prompt.text !== values.effectSummary
-	) {
-		return invalid("invalid_effect_prompt");
+	if (prompt === undefined) {
+		return null;
 	}
-	const baselineRecordKeys = new Set<string>();
+	const matches =
+		prompt.role === "assistant" &&
+		prompt.status === "final" &&
+		prompt.text.length > 0 &&
+		prompt.text === effectSummary;
+	return matches ? prompt : null;
+}
+
+/**
+ * Why one transcript record means the gate must not be armed: it has no usable sequence, or it
+ * came after the effect prompt, where another assistant utterance means the person was asked
+ * something else and anything the person said means they have already answered. An interrupted
+ * record is the exception: it is the person cutting the prompt short, not answering it.
+ * @param record - The transcript record.
+ * @param prompt - The effect prompt record.
+ * @returns The fallback reason, or null when the record is part of the baseline.
+ */
+function baselineRecordRefusal(
+	record: RealtimeTranscriptRecord,
+	prompt: RealtimeTranscriptRecord,
+): SpokenApprovalFallbackReason | null {
+	if (!validSequence(record.sequence)) {
+		return "stale_state";
+	}
+	if (record.sequence <= prompt.sequence) {
+		return null;
+	}
+	if (record.role === "assistant") {
+		return "assistant_only";
+	}
+	return record.status === "interrupted" ? null : "user_already_spoke";
+}
+
+/** The transcript baseline an arm is taken against, or the refusal that stops it. */
+type ArmBaseline =
+	| { readonly ok: true; readonly keys: ReadonlySet<string> }
+	| { readonly ok: false; readonly result: ArmValidationResult };
+
+/**
+ * The transcript as it stood when the gate was armed. Nothing may have been said after the effect
+ * prompt: another assistant utterance would mean the person was asked something else, and anything
+ * the person said would mean they have already answered.
+ * @param records - The transcript records.
+ * @param input - The arm request.
+ * @param prompt - The effect prompt record.
+ * @returns The baseline record keys, or the refusal.
+ */
+function armBaseline(
+	records: readonly RealtimeTranscriptRecord[],
+	input: SpokenApprovalArmInput,
+	prompt: RealtimeTranscriptRecord,
+): ArmBaseline {
+	const keys = new Set<string>();
 	for (const record of records) {
 		if (!sameRealtime(record, input.realtime)) {
 			continue;
 		}
-		if (!validSequence(record.sequence)) {
-			return invalid("stale_state");
+		const reason = baselineRecordRefusal(record, prompt);
+		if (reason !== null) {
+			return { ok: false, result: invalid(reason) };
 		}
-		baselineRecordKeys.add(recordKey(record));
-		if (record.sequence <= prompt.sequence) {
-			continue;
-		}
-		if (record.role === "assistant") {
-			return invalid("assistant_only");
-		}
-		if (record.status !== "interrupted") {
-			return invalid("user_already_spoke");
-		}
+		keys.add(recordKey(record));
 	}
+	return { ok: true, keys };
+}
+
+/**
+ * When the spoken gate expires: the sooner of the approval's own expiry and the gate's fixed
+ * window, so voice never holds an approval open longer than the approval itself.
+ * @param host - The validation host.
+ * @param values - What the arm has established.
+ * @returns The expiry, or the refusal when time is unknown or already past it.
+ */
+function armExpiry(
+	host: ValidationHost,
+	values: ArmContextValues,
+):
+	| { readonly ok: true; readonly expiresAtMs: number }
+	| { readonly ok: false; readonly result: ArmValidationResult } {
 	const time = host.currentTime();
 	if (time === null || !Number.isFinite(values.approval.expiresAtMs)) {
-		return invalid("stale_state");
+		return { ok: false, result: invalid("stale_state") };
 	}
 	const expiresAtMs = Math.min(values.approval.expiresAtMs, time + CODEX_SPOKEN_GATE_EXPIRY_MS);
 	if (time >= expiresAtMs) {
-		return invalid("timeout");
+		return { ok: false, result: invalid("timeout") };
+	}
+	return { ok: true, expiresAtMs };
+}
+
+/** The transcript and the effect prompt inside it, or the refusal that stops the arm. */
+type ArmTranscript =
+	| {
+			readonly ok: true;
+			readonly records: readonly RealtimeTranscriptRecord[];
+			readonly prompt: RealtimeTranscriptRecord;
+	  }
+	| { readonly ok: false; readonly result: ArmValidationResult };
+
+/**
+ * Read the transcript and find the effect prompt in it. Both are needed together: the prompt is
+ * what the gate is armed against, and the transcript around it is the baseline.
+ * @param host - The validation host.
+ * @param input - The arm request.
+ * @param effectSummary - The summary that must have been spoken.
+ * @returns The transcript and prompt, or the refusal.
+ */
+function armTranscript(
+	host: ValidationHost,
+	input: SpokenApprovalArmInput,
+	effectSummary: string,
+): ArmTranscript {
+	let records: readonly RealtimeTranscriptRecord[];
+	try {
+		records = host.transcript();
+	} catch {
+		return { ok: false, result: invalid("realtime_unavailable") };
+	}
+	const prompt = armPromptRecord(records, input, effectSummary);
+	return prompt === null
+		? { ok: false, result: invalid("invalid_effect_prompt") }
+		: { ok: true, records, prompt };
+}
+
+/**
+ * Validate the classifier context and transcript behind an arm: the context must name this
+ * conversation, the effect must have been read aloud, nothing may have been said since, and the
+ * gate must still have time to run.
+ * @param host - The validation host.
+ * @param input - The arm request.
+ * @param values - What the arm has already established.
+ * @returns The validated arm, or the refusal.
+ */
+function validateArmContext(
+	host: ValidationHost,
+	input: SpokenApprovalArmInput,
+	values: ArmContextValues,
+): ArmValidationResult {
+	const parsedContext = ArchboardContextSchema.safeParse(input.classifier.context);
+	if (!parsedContext.success || !armContextMatches(parsedContext.data, values)) {
+		return invalid("invalid_context");
+	}
+	const transcript = armTranscript(host, input, values.effectSummary);
+	if (!transcript.ok) {
+		return transcript.result;
+	}
+	const baseline = armBaseline(transcript.records, input, transcript.prompt);
+	if (!baseline.ok) {
+		return baseline.result;
+	}
+	const expiry = armExpiry(host, values);
+	if (!expiry.ok) {
+		return expiry.result;
 	}
 	return {
 		ok: true,
@@ -320,183 +483,10 @@ function validateArmContext(
 		approval: values.approval,
 		coordinator: values.coordinator,
 		realtime: values.realtime,
-		context,
-		baselineRecordKeys,
-		expiresAtMs,
+		context: parsedContext.data,
+		baselineRecordKeys: baseline.keys,
+		expiresAtMs: expiry.expiresAtMs,
 	};
-}
-
-function validateResolverCall(
-	host: Omit<ValidationHost, "transcript">,
-	slot: ActiveSlot,
-	request: DynamicServerRequest,
-	requireTurn: boolean,
-): CallValidationFailure | null {
-	if (request.owner !== "codex-coordinator-tools") {
-		return failure(
-			"ambiguous",
-			"invalid_call",
-			"Only coordinator-owned voice calls can resolve a spoken approval.",
-		);
-	}
-	try {
-		host.identity.decoder.parseJsonRpcRequestId(request.requestId);
-		host.identity.decoder.parseWireRequestCorrelation(request.correlation);
-		host.identity.decoder.parseLogicalToolCallCorrelation(request.logicalCall);
-	} catch (error) {
-		return failureForIdentity(error);
-	}
-	if (
-		request.correlation.requestId !== request.requestId ||
-		request.logicalCall.child !== request.child ||
-		request.logicalCall.epoch !== request.epoch
-	) {
-		return failure(
-			"stale_state",
-			"unknown_provenance",
-			"The voice call correlation is internally inconsistent.",
-		);
-	}
-	if (request.child !== slot.child || request.correlation.child !== slot.child) {
-		return failure(
-			"stale_realtime_session",
-			"stale_child",
-			"The voice call belongs to another Codex child.",
-		);
-	}
-	if (request.epoch !== slot.epoch || request.correlation.epoch !== slot.epoch) {
-		return failure(
-			"stale_state",
-			"prior_epoch",
-			"The voice call belongs to a prior Codex child epoch.",
-		);
-	}
-	try {
-		host.identity.validator.assertCurrentEpoch(request.child, request.epoch);
-	} catch (error) {
-		return failureForIdentity(error);
-	}
-	if (
-		request.logicalCall.threadId !== slot.coordinatorThreadId ||
-		request.params.threadId !== slot.coordinatorThreadId ||
-		request.params.threadId !== request.logicalCall.threadId ||
-		request.logicalCall.namespace !== "archboard_voice" ||
-		request.params.namespace !== "archboard_voice" ||
-		request.logicalCall.tool !== "resolve_spoken_approval" ||
-		request.params.tool !== "resolve_spoken_approval" ||
-		request.logicalCall.manifestHash !== ARCHBOARD_VOICE_MANIFEST_SHA256 ||
-		request.params.turnId !== request.logicalCall.turnId ||
-		request.params.callId !== request.logicalCall.callId
-	) {
-		return failure(
-			"ambiguous",
-			"invalid_call",
-			"The voice call does not match the reviewed resolver contract.",
-		);
-	}
-	const coordinator = host.currentCoordinator();
-	if (coordinator === null) {
-		return failure(
-			"stale_state",
-			"not_ready",
-			"The coordinator is no longer ready for spoken approval resolution.",
-		);
-	}
-	if (coordinator.child !== slot.child) {
-		return failure(
-			"stale_realtime_session",
-			"stale_child",
-			"The coordinator child changed while the spoken approval was pending.",
-		);
-	}
-	if (coordinator.epoch !== slot.epoch) {
-		return failure(
-			"stale_state",
-			"prior_epoch",
-			"The coordinator epoch changed while the spoken approval was pending.",
-		);
-	}
-	if (coordinator.threadId !== slot.coordinatorThreadId) {
-		return failure(
-			"stale_state",
-			"unknown_provenance",
-			"The coordinator thread changed while the spoken approval was pending.",
-		);
-	}
-	const realtime = host.currentRealtime();
-	if (realtime === null || !sameRealtime(realtime, slot.realtime)) {
-		return failure(
-			"stale_realtime_session",
-			"unknown_provenance",
-			"The realtime session changed while the spoken approval was pending.",
-		);
-	}
-	const time = host.currentTime();
-	if (time === null || time >= slot.expiresAtMs) {
-		return failure(
-			"timeout",
-			"expired",
-			"The spoken approval gate has expired; use the visual approval surface.",
-		);
-	}
-	const approval = host.approvalBroker.get(slot.requestId);
-	if (approval === undefined) {
-		return failure(
-			"resolver_lost",
-			"not_ready",
-			"The pending approval is no longer known to the approval broker.",
-		);
-	}
-	if (approval.state === "expired") {
-		return failure(
-			"timeout",
-			"expired",
-			"The visual approval expired before the spoken resolver ran.",
-		);
-	}
-	if (approval.state !== "pending") {
-		return failure("stale_state", "not_ready", "The approval is no longer pending.");
-	}
-	if (
-		approval.approvalId !== slot.approvalId ||
-		approval.family !== slot.approvalFamily ||
-		approval.expiresAtMs !== slot.approvalExpiresAtMs ||
-		!sameBinding(approval.binding, slot.approvalBinding)
-	) {
-		return failure(
-			"changed_effect",
-			"unknown_provenance",
-			"The approval target or effect changed while the spoken gate was pending.",
-		);
-	}
-	let eligibility;
-	try {
-		eligibility = host.approvalBroker.spokenEligibility(slot.requestId);
-	} catch {
-		return failure(
-			"resolver_lost",
-			"not_ready",
-			"The approval broker could not revalidate the spoken approval.",
-		);
-	}
-	if (!eligibility.eligible) {
-		return failure(
-			eligibility.reason === "stale_ownership" ? "changed_effect" : "ambiguous",
-			eligibility.reason === "stale_ownership" ? "unknown_provenance" : "unsupported",
-			"The pending approval is no longer eligible for spoken resolution.",
-		);
-	}
-	if (requireTurn) {
-		const expectedTurn = slot.classifierTurnId ?? slot.startedTurnId;
-		if (expectedTurn !== null && request.logicalCall.turnId !== expectedTurn) {
-			return failure(
-				"ambiguous",
-				"invalid_call",
-				"The resolver call did not come from the classifier turn.",
-			);
-		}
-	}
-	return null;
 }
 
 export {
@@ -510,6 +500,8 @@ export {
 	oneLine,
 	validSequence,
 	type CallValidationFailure,
+	failure,
+	failureForIdentity,
 	validateArm,
-	validateResolverCall,
 };
+export { validateResolverCall } from "@/runtime/codex-spoken-approval/lib/resolver-validation";

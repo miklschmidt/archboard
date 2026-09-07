@@ -1,22 +1,22 @@
-import type { CodexEpochStore } from "../../codex-epoch/index.js";
-import type { CodexSession } from "../../codex-session/index.js";
-import type { ArchboardContext, ThreadInjectItemsParams } from "../../codex-instructions/index.js";
+import type { CodexEpochStore } from "@/runtime/codex-epoch";
+import type { CodexSession } from "@/runtime/codex-session";
+import type { ArchboardContext, ThreadInjectItemsParams } from "@/runtime/codex-instructions";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkReasonCode,
 	ThreadLinkTarget,
-} from "../../codex-thread-link/index.js";
+} from "@/runtime/codex-thread-link";
 import type {
 	SemanticContextPublisher,
 	SettledSemanticChangeEvent,
-} from "../../codex-semantic-context/index.js";
+} from "@/runtime/codex-semantic-context";
 import type {
 	ChildEpoch,
 	ChildId,
 	IdentityAuthority,
 	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 
 /** The one exact child capability a delivery is allowed to use. */
 interface CodexThreadContextExecution {
@@ -144,6 +144,12 @@ type CodexThreadContextControllerErrorCode =
 class CodexThreadContextControllerError extends Error {
 	override readonly name = "CodexThreadContextControllerError";
 
+	/**
+	 * Names the controller rule that refused the call.
+	 * @param code - The stable rule identifier callers branch on.
+	 * @param message - The human-readable explanation.
+	 * @param cause - The underlying failure, when an authority check threw.
+	 */
 	constructor(
 		readonly code: CodexThreadContextControllerErrorCode,
 		message: string,

@@ -3,10 +3,18 @@ import { z } from "zod";
 import {
 	NetworkApprovalProtocolSchema,
 	RequestPermissionProfileSchema,
-} from "./approval-schemas.js";
-import { TokenUsageBreakdownSchema } from "./config-schemas.js";
-import { ResponseItemSchema, ResponseUsageMetadataSchema } from "./response-item-schemas.js";
-import { CodexSafeI64Schema, FiniteNumberSchema, JsonValueSchema, looseObject } from "./scalars.js";
+} from "@/runtime/codex-protocol/lib/approval-schemas";
+import { TokenUsageBreakdownSchema } from "@/runtime/codex-protocol/lib/config-schemas";
+import {
+	ResponseItemSchema,
+	ResponseUsageMetadataSchema,
+} from "@/runtime/codex-protocol/lib/response-item-schemas";
+import {
+	CodexSafeI64Schema,
+	FiniteNumberSchema,
+	JsonValueSchema,
+	looseObject,
+} from "@/runtime/codex-protocol/lib/scalars";
 
 const HookRunSummarySchema = looseObject({
 	id: z.string(),
