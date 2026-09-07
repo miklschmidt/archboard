@@ -5,9 +5,11 @@ import fs from "fs";
 
 import { baselineForFile } from "@/runtime/engine/board-store";
 import { hashBoardBytes } from "@/runtime/engine/board";
+import { type BoardIdentity } from "@/runtime/engine/board";
 import {
 	type BoardWriteConflict,
 	type VersionMove,
+	describeWriteConflict,
 	versionMove,
 	versionNumber,
 } from "@/runtime/engine/board-version";
@@ -77,7 +79,9 @@ type Baseline = ReturnType<typeof baselineForFile>;
  * @param expected The baseline for the path, or null when there is none.
  * @returns The reason and, when known, the expected hash and read time.
  */
-function baselineFacts(expected: Baseline): Pick<ForeignWrite, "reason" | "expectedHash" | "lastReadAt"> {
+function baselineFacts(
+	expected: Baseline,
+): Pick<ForeignWrite, "reason" | "expectedHash" | "lastReadAt"> {
 	return expected
 		? { reason: "changed", expectedHash: expected.hash, lastReadAt: expected.at }
 		: { reason: "unseen" };
@@ -135,4 +139,41 @@ function foreignWriteTo(file: string, destination: Buffer | undefined): ForeignW
 	};
 }
 
-export { BoardWriteConflictError, type ForeignWrite, type WriteOptions, foreignWriteTo };
+/**
+ * Refuse a write onto a note somebody else has moved.
+ *
+ * The difference between what archboard last saw at this path and what is
+ * there now is somebody's work (ADR 0006). `--force` is the human's "overwrite
+ * it anyway" and is never set by archboard on its own behalf.
+ * @param file The note's path.
+ * @param identity The board being written.
+ * @param destination The bytes currently at the path, if any.
+ * @param options Force, and which board the save was issued for.
+ * @throws {BoardWriteConflictError} When the note is not the one archboard left.
+ */
+function refuseForeignWrite(
+	file: string,
+	identity: BoardIdentity,
+	destination: Buffer | undefined,
+	options: WriteOptions,
+): void {
+	const foreign = options.force ? null : foreignWriteTo(file, destination);
+	if (!foreign) {
+		return;
+	}
+	throw new BoardWriteConflictError(
+		describeWriteConflict({
+			target: identity,
+			...foreign,
+			...(options.savedFrom === undefined ? {} : { savedFrom: options.savedFrom }),
+		}),
+	);
+}
+
+export {
+	BoardWriteConflictError,
+	type ForeignWrite,
+	type WriteOptions,
+	foreignWriteTo,
+	refuseForeignWrite,
+};
