@@ -1,3 +1,24 @@
+// Checking one element against the shape a note may hold.
+//
+// The scalar readers each part is checked with are in
+// `native-element-readers.ts`, and are re-exported here so a caller checking
+// an element reaches for one place. Every reader takes the same four things
+// beside its value: the context the caller is in, the element's id and type
+// where they are known, and the path within the element.
+
+import {
+	NativeElementValidationError,
+	booleanAt,
+	fail,
+	finite,
+	nullableBooleanAt,
+	nullablePoint,
+	nullableStringAt,
+	point,
+	points,
+	recordAt,
+	stringAt,
+} from "@/runtime/engine/lib/native-element-readers";
 import type {
 	BoundElement,
 	ElbowArrowElement,
@@ -7,18 +28,6 @@ import type {
 	RuntimeElementTracking,
 } from "@/shared/board-elements";
 
-class NativeElementValidationError extends Error {
-	public readonly status = 400;
-
-	/**
-	 *
-	 */
-	public constructor(message: string) {
-		super(message);
-		this.name = "NativeElementValidationError";
-	}
-}
-
 type PersistedArm<Kind extends PersistedBoardElement["type"]> = Extract<
 	PersistedBoardElement,
 	{ type: Kind }
@@ -27,102 +36,15 @@ type PersistedBase = Omit<PersistedArm<"rectangle">, "type">;
 type FixedPointBinding = NonNullable<ElbowArrowElement["startBinding"]>;
 
 /**
- *
- */
-function fail(
-	context: string,
-	id: string | undefined,
-	type: string | undefined,
-	path: string,
-): never {
-	throw new NativeElementValidationError(
-		`${context}: invalid element${id ? ` ${id}` : ""}${type ? ` (${type})` : ""} at ${path}`,
-	);
-}
-
-/**
- *
- */
-function recordAt(
-	value: unknown,
-	context: string,
-	id: string | undefined,
-	type: string | undefined,
-	path: string,
-): Record<string, unknown> {
-	if (!value || typeof value !== "object" || Array.isArray(value)) {
-		fail(context, id, type, path);
-	}
-	return value as Record<string, unknown>;
-}
-
-/**
- *
- */
-function finite(
-	value: unknown,
-	context: string,
-	id: string | undefined,
-	type: string | undefined,
-	path: string,
-): number {
-	if (typeof value !== "number" || !Number.isFinite(value)) {
-		fail(context, id, type, path);
-	}
-	return value;
-}
-
-/**
- *
- */
-function point(
-	value: unknown,
-	context: string,
-	id: string | undefined,
-	type: string | undefined,
-	path: string,
-): [number, number] {
-	if (!Array.isArray(value) || value.length !== 2) {
-		fail(context, id, type, path);
-	}
-	return [
-		finite(value[0], context, id, type, `${path}[0]`),
-		finite(value[1], context, id, type, `${path}[1]`),
-	];
-}
-
-/**
- *
- */
-function nullablePoint(
-	value: unknown,
-	context: string,
-	id: string | undefined,
-	type: string | undefined,
-	path: string,
-): [number, number] | null {
-	return value === null ? null : point(value, context, id, type, path);
-}
-
-/**
- *
- */
-function points(
-	value: unknown,
-	minimum: number,
-	context: string,
-	id: string | undefined,
-	type: string | undefined,
-	path: string,
-): [number, number][] {
-	if (!Array.isArray(value) || value.length < minimum) {
-		fail(context, id, type, path);
-	}
-	return value.map((candidate, index) => point(candidate, context, id, type, `${path}[${index}]`));
-}
-
-/**
- *
+ * One binding as a record, refusing a field the binding's kind does not
+ * carry: an unknown key here is a shape nothing else on the board reads.
+ * @param value The value.
+ * @param allowed The fields this kind of binding carries.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @param path Where in the element the value is.
+ * @returns The record, or null for an end bound to nothing.
  */
 function bindingRecord(
 	value: unknown,
@@ -148,7 +70,13 @@ function bindingRecord(
 }
 
 /**
- *
+ * One ordinary arrow binding: which shape, how far round it, how far short.
+ * @param value The value.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @param path Where in the element the value is.
+ * @returns The binding, or null for an end bound to nothing.
  */
 function pointBindingAt(
 	value: unknown,
@@ -169,14 +97,21 @@ function pointBindingAt(
 		return null;
 	}
 	return {
-		elementId: record["elementId"] as string,
+		elementId: stringAt(record["elementId"], context, id, type, `${path}.elementId`),
 		focus: finite(record["focus"], context, id, type, `${path}.focus`),
 		gap: finite(record["gap"], context, id, type, `${path}.gap`),
 	} satisfies ElementBinding;
 }
 
 /**
- *
+ * One elbowed arrow's binding, which also names the point on the shape the
+ * arrow is pinned to.
+ * @param value The value.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @param path Where in the element the value is.
+ * @returns The binding, or null for an end bound to nothing.
  */
 function fixedPointBindingAt(
 	value: unknown,
@@ -197,7 +132,7 @@ function fixedPointBindingAt(
 		return null;
 	}
 	return {
-		elementId: record["elementId"] as string,
+		elementId: stringAt(record["elementId"], context, id, type, `${path}.elementId`),
 		focus: finite(record["focus"], context, id, type, `${path}.focus`),
 		gap: finite(record["gap"], context, id, type, `${path}.gap`),
 		fixedPoint: point(record["fixedPoint"], context, id, type, `${path}.fixedPoint`),
@@ -205,65 +140,12 @@ function fixedPointBindingAt(
 }
 
 /**
- *
- */
-function stringAt(
-	value: unknown,
-	context: string,
-	id: string | undefined,
-	type: string | undefined,
-	path: string,
-): string {
-	if (typeof value !== "string") {
-		fail(context, id, type, path);
-	}
-	return value;
-}
-
-/**
- *
- */
-function booleanAt(
-	value: unknown,
-	context: string,
-	id: string | undefined,
-	type: string | undefined,
-	path: string,
-): boolean {
-	if (typeof value !== "boolean") {
-		fail(context, id, type, path);
-	}
-	return value;
-}
-
-/**
- *
- */
-function nullableBooleanAt(
-	value: unknown,
-	context: string,
-	id: string,
-	type: string,
-	path: string,
-): boolean | null {
-	return value === null ? null : booleanAt(value, context, id, type, path);
-}
-
-/**
- *
- */
-function nullableStringAt(
-	value: unknown,
-	context: string,
-	id: string | undefined,
-	type: string | undefined,
-	path: string,
-): string | null {
-	return value === null ? null : stringAt(value, context, id, type, path);
-}
-
-/**
- *
+ * The value as one of Excalidraw's fill styles.
+ * @param value The value.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @returns The fill style.
  */
 function fillStyleAt(
 	value: unknown,
@@ -279,13 +161,18 @@ function fillStyleAt(
 			return value;
 		}
 		default: {
-			fail(context, id, type, "element.fillStyle");
+			return fail(context, id, type, "element.fillStyle");
 		}
 	}
 }
 
 /**
- *
+ * The value as one of Excalidraw's stroke styles.
+ * @param value The value.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @returns The stroke style.
  */
 function strokeStyleAt(
 	value: unknown,
@@ -300,13 +187,19 @@ function strokeStyleAt(
 			return value;
 		}
 		default: {
-			fail(context, id, type, "element.strokeStyle");
+			return fail(context, id, type, "element.strokeStyle");
 		}
 	}
 }
 
 /**
- *
+ * The value as one of Excalidraw's arrowheads.
+ * @param value The value.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @param path Where in the element the value is.
+ * @returns The arrowhead, or null for an end that draws none.
  */
 function arrowheadAt(
 	value: unknown,
@@ -318,32 +211,47 @@ function arrowheadAt(
 	if (value === null) {
 		return null;
 	}
-	if (typeof value !== "string") {
+	if (!isArrowhead(value)) {
 		fail(context, id, type, path);
 	}
-	switch (value) {
-		case "arrow":
-		case "bar":
-		case "dot":
-		case "circle":
-		case "circle_outline":
-		case "triangle":
-		case "triangle_outline":
-		case "diamond":
-		case "diamond_outline":
-		case "crowfoot_one":
-		case "crowfoot_many":
-		case "crowfoot_one_or_many": {
-			return value;
-		}
-		default: {
-			fail(context, id, type, path);
-		}
-	}
+	return value;
+}
+
+/** Every arrowhead Excalidraw draws. */
+const ARROWHEADS = [
+	"arrow",
+	"bar",
+	"dot",
+	"circle",
+	"circle_outline",
+	"triangle",
+	"triangle_outline",
+	"diamond",
+	"diamond_outline",
+	"crowfoot_one",
+	"crowfoot_many",
+	"crowfoot_one_or_many",
+] as const satisfies readonly NonNullable<PersistedArm<"arrow">["startArrowhead"]>[];
+
+const ARROWHEAD_NAMES = new Set<unknown>(ARROWHEADS);
+
+/**
+ * Whether a value names one of Excalidraw's arrowheads.
+ * @param value The value.
+ * @returns True when it is one.
+ */
+function isArrowhead(value: unknown): value is (typeof ARROWHEADS)[number] {
+	return ARROWHEAD_NAMES.has(value);
 }
 
 /**
- *
+ * The value as Excalidraw's roundness record: which of its three rules, and
+ * the radius the fixed rule carries.
+ * @param value The value.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @returns The roundness, or null for a sharp element.
  */
 function roundnessAt(
 	value: unknown,
@@ -368,7 +276,13 @@ function roundnessAt(
 }
 
 /**
- *
+ * The value as a shape's forward references to the texts and arrows bound to
+ * it.
+ * @param value The value.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @returns The references, or null for an element that binds nothing.
  */
 function boundElementsAt(
 	value: unknown,
@@ -382,17 +296,36 @@ function boundElementsAt(
 	if (!Array.isArray(value)) {
 		fail(context, id, type, "element.boundElements");
 	}
-	return value.map((raw, index) => {
-		const path = `element.boundElements[${index}]`;
-		const bound = recordAt(raw, context, id, type, path);
-		if (typeof bound["id"] !== "string" || !bound["id"]) {
-			fail(context, id, type, `${path}.id`);
-		}
-		if (bound["type"] !== "text" && bound["type"] !== "arrow") {
-			fail(context, id, type, `${path}.type`);
-		}
-		return { id: bound["id"], type: bound["type"] } satisfies BoundElement;
-	});
+	return value.map((raw, index) =>
+		boundElementAt(raw, context, id, type, `element.boundElements[${index}]`),
+	);
+}
+
+/**
+ * One `boundElements` entry: which element, and whether it is the label or an
+ * arrow.
+ * @param raw The entry.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @param path Where in the element the entry is.
+ * @returns The reference.
+ */
+function boundElementAt(
+	raw: unknown,
+	context: string,
+	id: string,
+	type: string,
+	path: string,
+): BoundElement {
+	const bound = recordAt(raw, context, id, type, path);
+	if (typeof bound["id"] !== "string" || !bound["id"]) {
+		fail(context, id, type, `${path}.id`);
+	}
+	if (bound["type"] !== "text" && bound["type"] !== "arrow") {
+		fail(context, id, type, `${path}.type`);
+	}
+	return { id: bound["id"], type: bound["type"] } satisfies BoundElement;
 }
 
 const TRACKING_KEYS = [
@@ -403,8 +336,19 @@ const TRACKING_KEYS = [
 	"syncTimestamp",
 ] as const satisfies readonly (keyof RuntimeElementTracking)[];
 
+const TRACKING_KEY_NAMES = new Set<string>(TRACKING_KEYS);
+
 /**
+ * The value as `customData`, archboard's metadata channel (ADR 0003).
  *
+ * Another plugin's keys are carried through as they are; archboard's own
+ * envelope is read field by field, and the tracking fields in it must be
+ * text, because that is what everything downstream reads them as.
+ * @param value The value.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @returns The metadata.
  */
 function customDataAt(
 	value: unknown,
@@ -420,31 +364,47 @@ function customDataAt(
 		}
 	}
 	if ("archboard" in record) {
-		const rawEnvelope = recordAt(
-			record["archboard"],
-			context,
-			id,
-			type,
-			"element.customData.archboard",
-		);
-		const envelope: PersistedArchboardEnvelope = {};
-		for (const [key, entry] of Object.entries(rawEnvelope)) {
-			if (!TRACKING_KEYS.includes(key as (typeof TRACKING_KEYS)[number])) {
-				envelope[key] = entry;
-				continue;
-			}
-			if (typeof entry !== "string") {
-				fail(context, id, type, `element.customData.archboard.${key}`);
-			}
-			Object.assign(envelope, { [key]: entry });
-		}
-		custom.archboard = envelope;
+		custom.archboard = archboardEnvelopeAt(record["archboard"], context, id, type);
 	}
 	return custom;
 }
 
 /**
- *
+ * The `customData.archboard` envelope, with its tracking fields checked.
+ * @param value The envelope as stored.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @returns The envelope.
+ */
+function archboardEnvelopeAt(
+	value: unknown,
+	context: string,
+	id: string,
+	type: string,
+): PersistedArchboardEnvelope {
+	const raw = recordAt(value, context, id, type, "element.customData.archboard");
+	const envelope: PersistedArchboardEnvelope = {};
+	for (const [key, entry] of Object.entries(raw)) {
+		if (!TRACKING_KEY_NAMES.has(key)) {
+			envelope[key] = entry;
+			continue;
+		}
+		if (typeof entry !== "string") {
+			fail(context, id, type, `element.customData.archboard.${key}`);
+		}
+		Object.assign(envelope, { [key]: entry });
+	}
+	return envelope;
+}
+
+/**
+ * The properties every element carries, whatever its type.
+ * @param initial The element as stored.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @returns The checked base.
  */
 function persistedBase(
 	initial: Record<string, unknown>,
@@ -452,6 +412,8 @@ function persistedBase(
 	id: string,
 	type: string,
 ): PersistedBase {
+	// The five geometry fields are read first, before anything else can refuse:
+	// an element that is not on the canvas at all is the more useful complaint.
 	const x = finite(initial["x"], context, id, type, "element.x");
 	const y = finite(initial["y"], context, id, type, "element.y");
 	const width = finite(initial["width"], context, id, type, "element.width");
@@ -481,16 +443,9 @@ function persistedBase(
 		seed: finite(initial["seed"], context, id, type, "element.seed"),
 		version: finite(initial["version"], context, id, type, "element.version"),
 		versionNonce: finite(initial["versionNonce"], context, id, type, "element.versionNonce"),
-		index:
-			initial["index"] === null
-				? null
-				: stringAt(initial["index"], context, id, type, "element.index"),
+		index: nullableStringAt(initial["index"], context, id, type, "element.index"),
 		isDeleted: booleanAt(initial["isDeleted"], context, id, type, "element.isDeleted"),
-		groupIds: Array.isArray(initial["groupIds"])
-			? initial["groupIds"].map((entry, at) =>
-					stringAt(entry, context, id, type, `element.groupIds[${at}]`),
-				)
-			: fail(context, id, type, "element.groupIds"),
+		groupIds: groupIdsAt(initial["groupIds"], context, id, type),
 		frameId: nullableStringAt(initial["frameId"], context, id, type, "element.frameId"),
 		boundElements: boundElementsAt(initial["boundElements"], context, id, type),
 		updated: finite(initial["updated"], context, id, type, "element.updated"),
@@ -503,7 +458,28 @@ function persistedBase(
 }
 
 /**
- *
+ * The groups an element belongs to.
+ * @param value The value.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @returns The group ids.
+ */
+function groupIdsAt(value: unknown, context: string, id: string, type: string): string[] {
+	if (!Array.isArray(value)) {
+		fail(context, id, type, "element.groupIds");
+	}
+	return value.map((entry, at) => stringAt(entry, context, id, type, `element.groupIds[${at}]`));
+}
+
+/**
+ * The bookkeeping archboard keeps beside an element: when it was made, when
+ * it last changed, and whether a human drew it.
+ * @param initial The element as stored.
+ * @param context What the caller was doing.
+ * @param id The element's id.
+ * @param type The element's type.
+ * @returns The tracking fields the element carries.
  */
 function runtimeTrackingAt(
 	initial: Record<string, unknown>,
