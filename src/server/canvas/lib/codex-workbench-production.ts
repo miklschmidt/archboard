@@ -7,10 +7,7 @@ import {
 } from "@/runtime/codex-process/executable";
 import { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
 import { createCoordinatorCallbackRealtimePort } from "@/runtime/codex-coordinator-callbacks";
-import {
-	ArchboardContextSchema,
-	type ArchboardContext,
-} from "@/runtime/codex-instructions";
+import { ArchboardContextSchema, type ArchboardContext } from "@/runtime/codex-instructions";
 import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/process-group";
 import type { TransportServerNotification } from "@/runtime/codex-transport";
 import type {
@@ -819,10 +816,12 @@ export function createCanvasCodexWorkbenchInstallation(
 					...options,
 					// Child lifecycle transitions change readiness without any browser
 					// command, so the owned process is the gateway's change source.
-					lifecycle: { /**
-					 *
-					 */
-					onChange: (listener) => input.process.subscribe(() => listener()) },
+					lifecycle: {
+						/**
+						 *
+						 */
+						onChange: (listener) => input.process.subscribe(() => listener()),
+					},
 				};
 			},
 		};

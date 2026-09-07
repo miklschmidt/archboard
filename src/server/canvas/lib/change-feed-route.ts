@@ -39,7 +39,11 @@ function eventStripper(wantDetail: boolean): (event: ChangeEvent) => unknown {
  * @param coalesce Whether a net diff was asked for.
  * @returns The response body.
  */
-function cursorAheadAnswer(board: string, since: number, coalesce: boolean): Record<string, unknown> {
+function cursorAheadAnswer(
+	board: string,
+	since: number,
+	coalesce: boolean,
+): Record<string, unknown> {
 	return {
 		success: true,
 		board,
@@ -63,7 +67,11 @@ function cursorAheadAnswer(board: string, since: number, coalesce: boolean): Rec
  * @param wantDetail Whether the caller asked for detail.
  * @returns The response body.
  */
-function coalescedAnswer(board: string, since: number, wantDetail: boolean): Record<string, unknown> {
+function coalescedAnswer(
+	board: string,
+	since: number,
+	wantDetail: boolean,
+): Record<string, unknown> {
 	const netDiff = changeFeed.coalesce(since, board);
 	if (!netDiff) {
 		return {
@@ -100,14 +108,24 @@ function coalescedAnswer(board: string, since: number, wantDetail: boolean): Rec
 }
 
 /**
+ * The cursor a request asked to read from.
+ * @param raw The `since` query value.
+ * @returns The cursor, or null when it is not one.
+ */
+function cursorOf(raw: unknown): number | null {
+	const since = Number(raw ?? 0);
+	return Number.isFinite(since) && since >= 0 ? since : null;
+}
+
+/**
  * Read the change feed after a cursor, live or coalesced.
  * @param req The request.
  * @param res Its response.
  */
 function changeFeedRoute(req: Request, res: Response): void {
 	try {
-		const since = Number(req.query["since"] ?? 0);
-		if (!Number.isFinite(since) || since < 0) {
+		const since = cursorOf(req.query["since"]);
+		if (since === null) {
 			res
 				.status(400)
 				.json({ success: false, error: "since must be a cursor from a previous response" });

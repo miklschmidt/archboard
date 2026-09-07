@@ -1,9 +1,7 @@
 import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
 import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
 import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
-import type {
-	CodexSession,
-} from "@/runtime/codex-session";
+import type { CodexSession } from "@/runtime/codex-session";
 import type {
 	DynamicServerRequest,
 	TransportServerRequest,

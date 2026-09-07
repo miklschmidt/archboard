@@ -3,7 +3,11 @@ import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { createCodeOpenerPreguard, createCodeOpenerRouter, isCodeOpenerBodyRoute } from "@/server/code-opener";
+import {
+	createCodeOpenerPreguard,
+	createCodeOpenerRouter,
+	isCodeOpenerBodyRoute,
+} from "@/server/code-opener";
 import { mountBoardRoutes } from "@/server/canvas/lib/board-routes";
 import { mountBridgeRoutes } from "@/server/canvas/lib/bridge-routes";
 import { mountBrowserPresentation } from "@/server/canvas/lib/browser-presentation-mount";

@@ -7,10 +7,7 @@ import type {
 } from "@/runtime/codex-session";
 import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
-import type {
-	ThreadId,
-	TrustedIdentityDecoder,
-} from "@/shared/codex-workbench-identity";
+import type { ThreadId, TrustedIdentityDecoder } from "@/shared/codex-workbench-identity";
 import type {
 	BrowserConnectionInstance,
 	CodexTimelineItemProjectionInput,

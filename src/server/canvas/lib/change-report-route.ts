@@ -210,13 +210,18 @@ function changeReportRoute(req: Request, res: Response): void {
 				return {
 					input,
 					wholeScene: fullReport,
-					/** A change report carries no value of its own. */
+					/**
+					 * A change report carries no value of its own.
+					 * @returns Null.
+					 */
 					value: () => null,
 				};
 			}),
 			/**
 			 * Log what the report did once it has persisted.
 			 * @param outcome The write's outcome.
+			 * @param outcome.content The board content after the write.
+			 * @param outcome.delta What the write created, updated and deleted.
 			 */
 			afterPersist: ({ content, delta }) => {
 				const who = clientId ?? (writerKind === "agent" ? "an agent" : "an unidentified client");

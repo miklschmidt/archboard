@@ -94,31 +94,52 @@ function pairWithSibling(fromKey: string): ComparePair {
 }
 
 /**
+ * One side of a comparison as the request named it.
+ * @param req The request.
+ * @param name The query parameter.
+ * @returns The board as spelled, or null when the request named none.
+ */
+function namedBoard(req: Request, name: string): string | null {
+	const asked = queryString(req, name)?.trim();
+	return asked ? asked : null;
+}
+
+/**
+ * Refuse a pair whose two sides are the same board.
+ * @param pair The pair, or an existing refusal.
+ * @returns The pair, or the refusal.
+ */
+function refuseIdenticalSides(pair: ComparePair): ComparePair {
+	if (pair.refusal !== undefined || pair.from !== pair.to) {
+		return pair;
+	}
+	return {
+		refusal: {
+			success: false,
+			error: `Both sides name the same board ("${pair.from}"), so there is nothing to compare.`,
+		},
+	};
+}
+
+/**
  * The two sides a compare request names, or the refusal.
  * @param req The request.
  * @returns The pair, or the refusal.
  */
 function comparePairOf(req: Request): ComparePair {
-	const fromParam = queryString(req, "from")?.trim() ?? "";
-	if (!fromParam) {
+	const fromParam = namedBoard(req, "from");
+	if (fromParam === null) {
 		return {
 			refusal: { success: false, error: "compare needs at least one board: ?from=payments" },
 		};
 	}
+	const toParam = namedBoard(req, "to");
 	const fromKey = boardKey(parseBoardKey(fromParam));
-	const toParam = queryString(req, "to")?.trim() ?? "";
-	const pair: ComparePair = toParam
-		? { from: fromKey, to: boardKey(parseBoardKey(toParam)) }
-		: pairWithSibling(fromKey);
-	if (pair.refusal === undefined && pair.from === pair.to) {
-		return {
-			refusal: {
-				success: false,
-				error: `Both sides name the same board ("${pair.from}"), so there is nothing to compare.`,
-			},
-		};
-	}
-	return pair;
+	const pair: ComparePair =
+		toParam === null
+			? pairWithSibling(fromKey)
+			: { from: fromKey, to: boardKey(parseBoardKey(toParam)) };
+	return refuseIdenticalSides(pair);
 }
 
 /**

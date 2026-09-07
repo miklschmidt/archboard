@@ -60,7 +60,7 @@ function canConnect(host: string, port: number): Promise<boolean> {
  */
 async function findExistingLoopbackListener(port: number): Promise<string | null> {
 	for (const host of LOOPBACK_ADDRESSES) {
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- the first listener found answers; probing both at once would open a second socket for nothing
+		// oxlint-disable-next-line no-await-in-loop -- the first listener found answers; probing both at once would open a second socket for nothing
 		if (await canConnect(host, port)) {
 			return host;
 		}

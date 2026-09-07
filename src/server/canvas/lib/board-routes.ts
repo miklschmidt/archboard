@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import logger from "@/runtime/engine/logger";
 import { selectionState } from "@/runtime/engine/types";
-import { boards, copyElements, getOrCreateBoard, recordBaseline } from "@/runtime/engine/board-store";
+import { boards, copyElements, recordBaseline } from "@/runtime/engine/board-store";
 import type { BoardState } from "@/runtime/engine/board-store";
 import {
 	boardFilesMessage,
@@ -17,21 +17,13 @@ import type { BoardContent } from "@/runtime/engine/board-io";
 import { BoardLockCancelledError, withBoardLock } from "@/runtime/engine/board-lock";
 import {
 	boardKey,
-	classifyBoardSave,
 	hashBoardBytes,
 	listBoards,
 	parseBoardKey,
 	requireVaultRoot,
-	validateLevel,
-	validateVariant,
-	vaultPathFor,
 } from "@/runtime/engine/board";
-import type { BoardIdentity } from "@/runtime/engine/board";
-import { holdOn } from "@/runtime/engine/board-hold";
-import { restampVariant } from "@/runtime/engine/promote";
 import { boardsForRepo } from "@/runtime/engine/repo-boards";
 import { changeFeed } from "@/runtime/engine/change-feed";
-import type { BoardWriteTarget } from "@/runtime/engine/board-write";
 import { presentElements, stripBindingPresentationLinks } from "@/runtime/engine/presentation";
 import { EMPTY_CHECKOUT_SNAPSHOT, type CheckoutSnapshot } from "@/runtime/code-target";
 import type { PaneRegistration } from "@/runtime/engine/panes";
@@ -53,17 +45,15 @@ import {
 	sendToPane,
 } from "@/server/canvas/lib/pane-registry";
 import {
-	answerBoardWrite,
 	BoardAddressSchema,
 	boardFromRequest,
 	boardOfRequest,
-	boardTargetFromRequest,
 	bodyOf,
 	identityFromAddress,
-	identityFromParams,
 	identityResponse,
 	preparedBoardOpens,
 } from "@/server/canvas/lib/request-board";
+import { saveBoardRoute } from "@/server/canvas/lib/board-save-route";
 import { holderFromRequest } from "@/server/canvas/lib/write-boundary";
 
 // ─── Boards ───────────────────────────────────────────────────
@@ -114,17 +104,7 @@ function switchPaneTo(
 	// and the scene the pane receives. Callers that have just read the note pass
 	// it in rather than making this read it again.
 	const content = known ?? readBoardContent(board);
-	// A board arriving wholesale is not a change anybody made, so the feed takes
-	// the new state as its baseline rather than reporting several hundred
-	// additions and burying the first real edit under them. Only when the board
-	// was not already on screen somewhere: another pane may be part way through
-	// an edit on it, and resetting would swallow that.
-	const alreadyShown = boardsOnScreen().some(
-		(shown) => shown.board === key && shown.paneId !== pane?.paneId,
-	);
-	if (!alreadyShown) {
-		changeFeed.reset(key, board.identity, () => boardElements(board));
-	}
+	rebaselineFeedUnlessShownElsewhere(board, key, pane);
 	if (!pane) {
 		return board;
 	}
@@ -147,6 +127,33 @@ function switchPaneTo(
 	// touch, not after the write it is about to make has been refused (ADR 0016).
 	tellPaneAboutLock(pane.clientId, key);
 	return board;
+}
+
+/**
+ * Take the arriving board as the feed's new baseline, unless another pane is
+ * already showing it.
+ *
+ * A board arriving wholesale is not a change anybody made, so the feed takes
+ * the new state as its baseline rather than reporting several hundred
+ * additions and burying the first real edit under them. Not when the board was
+ * already on screen somewhere: another pane may be part way through an edit on
+ * it, and resetting would swallow that.
+ * @param board The board.
+ * @param key Its key.
+ * @param pane The pane it is arriving in, or null when nothing is on screen.
+ */
+function rebaselineFeedUnlessShownElsewhere(
+	board: BoardState,
+	key: string,
+	pane: PaneRegistration | null,
+): void {
+	const shownElsewhere = boardsOnScreen().some(
+		(shown) => shown.board === key && shown.paneId !== pane?.paneId,
+	);
+	if (shownElsewhere) {
+		return;
+	}
+	changeFeed.reset(key, board.identity, () => boardElements(board));
 }
 
 /**
@@ -294,6 +301,76 @@ function reswitchOtherPanes(
 }
 
 /**
+ * Record the note just read as the baseline the next write is checked against,
+ * refusing a board that turned out to have no persisted note.
+ * @param board The board.
+ * @param key Its key.
+ * @param content The content just read.
+ */
+function recordOpenedBaseline(board: BoardState, key: string, content: BoardContent): void {
+	if (!board.file || !content.hash) {
+		throw new Error(`Board "${key}" has no persisted note.`);
+	}
+	recordBaseline(board, board.file, content.hash, content.version ?? null);
+	board.loadedAt = new Date().toISOString();
+}
+
+/**
+ * What the log says about an open: which board, how big, where it landed and
+ * what a reload discarded.
+ * @param key The board key.
+ * @param board The board.
+ * @param content Its content.
+ * @param pane The pane it landed in, or null.
+ * @param ended The hold a reload ended, or null.
+ * @returns The log line.
+ */
+function openedBoardLine(
+	key: string,
+	board: BoardState,
+	content: BoardContent,
+	pane: PaneRegistration | null,
+	ended: ReturnType<typeof releaseBoardHold>,
+): string {
+	const where = pane ? ` into pane ${pane.paneId}` : " (no pane open)";
+	const discarded = ended
+		? `, discarding ${ended.writes} change(s) held since it stopped saving`
+		: "";
+	return `Board opened: "${key}" (${content.elements.size} elements) from ${board.file}${where}${discarded}`;
+}
+
+/**
+ * Show the opened board in its pane, and on a reload in every other pane
+ * holding it, ending the hold a reload discards.
+ *
+ * ADR 0006's first outcome: take the note, discard the canvas. It is the one
+ * outcome that ends a hold by throwing the held copy away, so a reload is the
+ * moment everything drawn since the board stopped saving is gone (TASK-079).
+ * It costs what the human was told it costs.
+ * @param res The response, which carries the checkout snapshot.
+ * @param pane The pane the open was addressed to, or null.
+ * @param key The board key.
+ * @param content The content just read.
+ * @param reload Whether the caller asked to discard the held copy.
+ * @returns The hold a reload ended, or null.
+ */
+function showOpenedBoard(
+	res: Response,
+	pane: PaneRegistration | null,
+	key: string,
+	content: BoardContent,
+	reload: boolean,
+): ReturnType<typeof releaseBoardHold> {
+	const ended = reload ? releaseBoardHold(key, "reload") : null;
+	const checkoutSnapshot = checkoutSnapshotFor(res);
+	switchPaneTo(pane, key, content, checkoutSnapshot);
+	if (reload) {
+		reswitchOtherPanes(pane, key, content, checkoutSnapshot);
+	}
+	return ended;
+}
+
+/**
  * Open a board from the vault onto the canvas.
  * @param req The request.
  * @param res Its response.
@@ -306,32 +383,13 @@ function openBoardRoute(req: Request, res: Response): void {
 		const reload = params.reload === true;
 		const alreadyRegistered = boards.has(key) && !reload;
 		const { board, content } = installForOpen(req, key, reload);
-		if (asked.level) {
-			board.identity = { ...board.identity, level: asked.level };
-		}
+		board.identity = asked.level ? { ...board.identity, level: asked.level } : board.identity;
 		const pane = paneFromRequest(params.pane);
 		// The bytes just read are what the panes are about to be shown, so they are
 		// the baseline the next write is checked against.
-		if (!board.file || !content.hash) {
-			throw new Error(`Board "${key}" has no persisted note.`);
-		}
-		recordBaseline(board, board.file, content.hash, content.version ?? null);
-		board.loadedAt = new Date().toISOString();
-		// ADR 0006's first outcome: take the note, discard the canvas. It is the
-		// one outcome that ends a hold by throwing the held copy away, so this is
-		// the moment everything drawn since the board stopped saving is gone
-		// (TASK-079). It costs what the human was told it costs.
-		const ended = reload ? releaseBoardHold(key, "reload") : null;
-		const checkoutSnapshot = checkoutSnapshotFor(res);
-		switchPaneTo(pane, key, content, checkoutSnapshot);
-		if (reload) {
-			reswitchOtherPanes(pane, key, content, checkoutSnapshot);
-		}
-		logger.info(
-			`Board opened: "${key}" (${content.elements.size} elements) from ${board.file}` +
-				(pane ? ` into pane ${pane.paneId}` : " (no pane open)") +
-				(ended ? `, discarding ${ended.writes} change(s) held since it stopped saving` : ""),
-		);
+		recordOpenedBaseline(board, key, content);
+		const ended = showOpenedBoard(res, pane, key, content, reload);
+		logger.info(openedBoardLine(key, board, content, pane, ended));
 		res.json({
 			success: true,
 			...identityResponse(key, board, content),
@@ -375,162 +433,6 @@ function newBoardRoute(req: Request, res: Response): void {
 			});
 	} catch (error) {
 		answerBoardError(res, error, "Error creating board:");
-	}
-}
-
-/**
- * The identity a save writes to. With a name, this is a save-as; without one,
- * the board keeps its own identity and only the fields actually passed are
- * changed.
- *
- * Either way the level comes across unless the caller states another one.
- * A branch is the same subject at the same abstraction tier, and level is
- * board identity from a vocabulary the project grew on purpose, so
- * `--as payments@option-a` must not quietly produce a proposal at no level
- * while the board it came from sits at system (TASK-039). `--variant`
- * always did this, by keeping the source's identity; `--as` built a fresh
- * one and dropped it.
- * @param body The request body.
- * @param sourceIdentity The identity of the board being saved.
- * @returns The target identity.
- */
-function saveTargetIdentity(
-	body: Record<string, unknown>,
-	sourceIdentity: BoardIdentity,
-): BoardIdentity {
-	const rawLevel = body["level"] ?? sourceIdentity.level;
-	const level = rawLevel ? String(rawLevel) : undefined;
-	const name = body["name"];
-	const variant = body["variant"];
-	if (name) {
-		return identityFromParams({
-			board: String(name),
-			...(typeof variant === "string" ? { variant } : {}),
-			...(level ? { level } : {}),
-		});
-	}
-	return {
-		...sourceIdentity,
-		...(variant ? { variant: validateVariant(String(variant)) } : {}),
-		...(level ? { level: validateLevel(String(level)) } : {}),
-	};
-}
-
-/**
- * The delta a branching save reports: what the destination gained, kept and lost.
- * @param saved The elements written.
- * @param destinationBefore The destination's content before the save.
- * @returns The delta.
- */
-function branchDelta(
-	saved: ReturnType<typeof restampVariant>,
-	destinationBefore: BoardContent,
-): { created: typeof saved; updated: typeof saved; deleted: string[] } {
-	const savedIds = new Set(saved.map((element) => element.id));
-	return {
-		created: saved.filter((element) => !destinationBefore.elements.has(element.id)),
-		updated: saved.filter((element) => destinationBefore.elements.has(element.id)),
-		deleted: Array.from(destinationBefore.elements.keys()).filter((id) => !savedIds.has(id)),
-	};
-}
-
-/**
- * Write a board to the vault. With no address it saves the board the canvas is
- * holding under its own identity; with one it saves as that board instead
- * (which is also how the scratch board gets a name).
- * @param req The request.
- * @param res Its response.
- */
-function saveBoardRoute(req: Request, res: Response): void {
-	try {
-		const body = bodyOf(req);
-		const source = boardTargetFromRequest(req, "Saving a board");
-		// The human's "overwrite it anyway" — one of the three outcomes a conflict
-		// offers. Never set by archboard on its own behalf.
-		const force = body["force"] === true;
-		const targetIdentity = saveTargetIdentity(body, source.board.identity);
-		const file = vaultPathFor(targetIdentity);
-		const targetKey = boardKey(targetIdentity);
-		// Saving under another address is branching, and the branch is a board of
-		// its own variant, so every node on it is restamped to say so. Without
-		// that, `save --as payments@option-a` leaves twelve nodes claiming
-		// "current" and compare reports the whole board changed (TASK-035). A
-		// plain save is deliberately left alone: a node that records a foreign
-		// variant on a board nobody branched really was copied in, and that is
-		// what `variantAnomaly` is for.
-		const kind = classifyBoardSave(source.key, targetKey);
-		// Both senses of "wrote somewhere else": naming scratch and branching a
-		// board that has a home.
-		const branched = kind !== "same-board";
-		const { board: savedBoard } = getOrCreateBoard(targetIdentity);
-		savedBoard.file = file;
-		const target: BoardWriteTarget = { key: targetKey, board: savedBoard };
-		const heldSource = holdOn(source.key);
-		answerBoardWrite(res, {
-			source,
-			origin: "agent",
-			// Save is the explicit resolution for a held board. It writes the note
-			// chosen by the person instead of adding another change to the held copy.
-			save: { target, force },
-			/**
-			 * Restamp the elements for a branch and report the destination's delta.
-			 * @param content The source content under the lock.
-			 * @param destinationBefore The destination's content before the save.
-			 * @returns The (empty) value and, for a branch, the delta.
-			 */
-			mutation: (content, destinationBefore) => {
-				const saved = branched
-					? restampVariant(Array.from(content.elements.values()), targetIdentity.variant)
-					: Array.from(content.elements.values());
-				content.elements = new Map(saved.map((element) => [element.id, element]));
-				return {
-					value: null,
-					...(branched ? { delta: branchDelta(saved, destinationBefore) } : {}),
-				};
-			},
-			/**
-			 * Log the save once it has persisted.
-			 * @param outcome The write's outcome.
-			 */
-			afterPersist: ({ content, written }) => {
-				logger.info(
-					`Board saved: "${targetKey}" (${written?.elementCount ?? content.elements.size} elements) -> ${file}` +
-						(branched ? ` [${kind}]` : ""),
-				);
-			},
-			/**
-			 * Where the board was saved, and which hold that resolved.
-			 * @param outcome The write's outcome.
-			 * @returns The response body.
-			 */
-			answer: ({ content, written }) => {
-				if (!written) {
-					throw new Error(`Saving "${targetKey}" did not write its note.`);
-				}
-				return {
-					success: true,
-					...identityResponse(targetKey, savedBoard, content),
-					file,
-					elements: written.elementCount,
-					overwrote: written.overwrote,
-					...(force && written.overwrote ? { forced: true } : {}),
-					saveKind: kind,
-					savedFrom: source.key,
-					...(heldSource
-						? {
-								resolvedHold: {
-									board: source.key,
-									outcome: branched ? "elsewhere" : "overwrite",
-									writes: heldSource.writes,
-									since: heldSource.since,
-								},
-							}
-						: {}),
-				};
-			},
-		});
-	} catch (error) {
-		answerBoardError(res, error, "Error saving board:");
 	}
 }
 
