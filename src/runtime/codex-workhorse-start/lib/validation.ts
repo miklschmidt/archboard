@@ -26,14 +26,20 @@ interface ValidatedWorkhorseStart {
 }
 
 /**
- *
+ * Every field of a thread/start response that must match the authored workhorse profile, named so
+ * a refusal can say exactly which ones did not. The decoded response already proves each field is
+ * present; these checks prove it holds the value Archboard asked for.
+ * @param response - The decoded thread/start response.
+ * @param options - The start options carrying the checkout root.
+ * @param threadId - The thread identity adopted from the response.
+ * @returns One entry per field, true where the field does not match.
  */
-function validateWorkhorseStartResponse(
+function startProfileMismatches(
 	response: WorkhorseStartResponse,
 	options: CodexWorkhorseStartOptions,
-): ValidatedWorkhorseStart {
-	const threadId = options.identity.decoder.parseThreadId(response.thread.id);
-	const mismatches = Object.entries({
+	threadId: ThreadId,
+): Readonly<Record<string, boolean>> {
+	return {
 		"thread.id": response.thread.id !== threadId,
 		model: response.model.length === 0,
 		modelProvider: response.modelProvider.length === 0,
@@ -48,12 +54,25 @@ function validateWorkhorseStartResponse(
 		"thread.source": response.thread.source !== WORKHORSE_THREAD_SOURCE,
 		"thread.threadSource": response.thread.threadSource !== WORKHORSE_THREAD_SOURCE_TAG,
 		"thread.ephemeral": response.thread.ephemeral,
-		approvalPolicy: response.approvalPolicy === undefined || response.approvalPolicy === null,
-		approvalsReviewer:
-			response.approvalsReviewer === undefined || response.approvalsReviewer === null,
-		sandbox: response.sandbox === undefined || response.sandbox === null,
 		activePermissionProfile: !Object.hasOwn(response, "activePermissionProfile"),
-	})
+	};
+}
+
+/**
+ * Prove a thread/start response is the workhorse Archboard authored, and reduce it to the facts
+ * the pane keeps. A response that differs anywhere is refused whole: a workhorse that is not the
+ * authored profile is not one Archboard will drive.
+ * @param response - The decoded thread/start response.
+ * @param options - The start options carrying the identity authority and checkout root.
+ * @returns The thread, its adopted identity and the start facts.
+ * @throws {Error} When any field does not match the authored profile.
+ */
+function validateWorkhorseStartResponse(
+	response: WorkhorseStartResponse,
+	options: CodexWorkhorseStartOptions,
+): ValidatedWorkhorseStart {
+	const threadId = options.identity.decoder.parseThreadId(response.thread.id);
+	const mismatches = Object.entries(startProfileMismatches(response, options, threadId))
 		.filter(([, mismatched]) => mismatched)
 		.map(([field]) => field);
 	if (mismatches.length > 0) {
@@ -82,8 +101,61 @@ function validateWorkhorseStartResponse(
 	return Object.freeze({ thread: cloneAndFreeze(response.thread), threadId, facts });
 }
 
+/** The operation one committed epoch record must describe. */
+interface ExpectedWorkhorseOperation {
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+	readonly operationId: OperationId;
+	readonly threadId: ThreadId;
+	readonly checkoutRoot: string;
+	/** The operation kind the record must name. */
+	readonly kind: string;
+	/** The wire RPC the record must name. */
+	readonly rpc: string;
+}
+
 /**
- *
+ * Whether a durable epoch record is the committed, delivered proof of one workhorse operation on
+ * this child, thread and checkout, authored from these exact instructions and tool manifest.
+ * Every field is checked, because a record that agrees only in part proves nothing.
+ * @param record - The durable record.
+ * @param expected - The operation the record must describe.
+ * @returns True when every field matches.
+ */
+function isCommittedRecord(
+	record: EpochOperationRecord,
+	expected: ExpectedWorkhorseOperation,
+): boolean {
+	const checks = [
+		record.correlation.childId === expected.childId,
+		record.correlation.epoch === expected.epoch,
+		record.correlation.operationId === expected.operationId,
+		record.operation.id === expected.operationId,
+		record.operation.kind === expected.kind,
+		record.operation.rpc === expected.rpc,
+		record.status === "committed",
+		record.outcome === "delivered",
+		record.provenance.childId === expected.childId,
+		record.provenance.epoch === expected.epoch,
+		record.provenance.threadId === expected.threadId,
+		record.provenance.threadSource === WORKHORSE_THREAD_SOURCE,
+		record.provenance.workspaceRoot === expected.checkoutRoot,
+		record.provenance.instructionHash === WORKHORSE_INSTRUCTION_HASH,
+		record.provenance.manifestHash === WORKHORSE_MANIFEST_HASH,
+		record.provenance.confirmedAtMs !== null,
+	];
+	return checks.every((matched) => matched);
+}
+
+/**
+ * Whether a record is the committed proof that this workhorse thread was started.
+ * @param record - The durable record.
+ * @param childId - The Codex child the start ran on.
+ * @param epoch - That child's epoch.
+ * @param operationId - The start operation identity.
+ * @param threadId - The started thread.
+ * @param checkoutRoot - The checkout the workhorse was started against.
+ * @returns True when the record proves the start.
  */
 function isCommittedStartRecord(
 	record: EpochOperationRecord,
@@ -93,28 +165,26 @@ function isCommittedStartRecord(
 	threadId: ThreadId,
 	checkoutRoot: string,
 ): boolean {
-	return (
-		record.correlation.childId === childId &&
-		record.correlation.epoch === epoch &&
-		record.correlation.operationId === operationId &&
-		record.operation.id === operationId &&
-		record.operation.kind === WORKHORSE_OPERATION_KIND &&
-		record.operation.rpc === WORKHORSE_RPC &&
-		record.status === "committed" &&
-		record.outcome === "delivered" &&
-		record.provenance.childId === childId &&
-		record.provenance.epoch === epoch &&
-		record.provenance.threadId === threadId &&
-		record.provenance.threadSource === WORKHORSE_THREAD_SOURCE &&
-		record.provenance.workspaceRoot === checkoutRoot &&
-		record.provenance.instructionHash === WORKHORSE_INSTRUCTION_HASH &&
-		record.provenance.manifestHash === WORKHORSE_MANIFEST_HASH &&
-		record.provenance.confirmedAtMs !== null
-	);
+	return isCommittedRecord(record, {
+		childId,
+		epoch,
+		operationId,
+		threadId,
+		checkoutRoot,
+		kind: WORKHORSE_OPERATION_KIND,
+		rpc: WORKHORSE_RPC,
+	});
 }
 
 /**
- *
+ * Whether an execution proof is the committed proof of this workhorse start.
+ * @param proof - The epoch execution proof.
+ * @param childId - The Codex child the start ran on.
+ * @param epoch - That child's epoch.
+ * @param operationId - The start operation identity.
+ * @param threadId - The started thread.
+ * @param checkoutRoot - The checkout the workhorse was started against.
+ * @returns True when the proof's record proves the start.
  */
 function isCurrentStartProof(
 	proof: EpochExecutionProof,
@@ -128,7 +198,14 @@ function isCurrentStartProof(
 }
 
 /**
- *
+ * Whether a record is the committed proof that this workhorse thread was deleted.
+ * @param record - The durable record.
+ * @param childId - The Codex child the cleanup ran on.
+ * @param epoch - That child's epoch.
+ * @param operationId - The cleanup operation identity.
+ * @param threadId - The deleted thread.
+ * @param checkoutRoot - The checkout the workhorse belonged to.
+ * @returns True when the record proves the deletion.
  */
 function isCommittedCleanupRecord(
 	record: EpochOperationRecord,
@@ -138,48 +215,53 @@ function isCommittedCleanupRecord(
 	threadId: ThreadId,
 	checkoutRoot: string,
 ): boolean {
-	return (
-		record.correlation.childId === childId &&
-		record.correlation.epoch === epoch &&
-		record.correlation.operationId === operationId &&
-		record.operation.id === operationId &&
-		record.operation.kind === WORKHORSE_CLEANUP_OPERATION_KIND &&
-		record.operation.rpc === WORKHORSE_CLEANUP_RPC &&
-		record.status === "committed" &&
-		record.outcome === "delivered" &&
-		record.provenance.childId === childId &&
-		record.provenance.epoch === epoch &&
-		record.provenance.threadId === threadId &&
-		record.provenance.threadSource === WORKHORSE_THREAD_SOURCE &&
-		record.provenance.workspaceRoot === checkoutRoot &&
-		record.provenance.instructionHash === WORKHORSE_INSTRUCTION_HASH &&
-		record.provenance.manifestHash === WORKHORSE_MANIFEST_HASH &&
-		record.provenance.confirmedAtMs !== null
-	);
+	return isCommittedRecord(record, {
+		childId,
+		epoch,
+		operationId,
+		threadId,
+		checkoutRoot,
+		kind: WORKHORSE_CLEANUP_OPERATION_KIND,
+		rpc: WORKHORSE_CLEANUP_RPC,
+	});
 }
 
-/** Deletion is permitted only for the exact newly-created, empty, idle root. */
+/**
+ * Deletion is permitted only for the exact newly-created, empty, idle root this start produced:
+ * a thread with a turn, a fork, or a parent is somebody's work, not Archboard's to remove.
+ * @param thread - The thread being considered for deletion.
+ * @param started - What the start proved about the thread it created.
+ * @returns True when the thread is that exact root.
+ */
 function isExactIdleWorkhorseRoot(
 	thread: WorkhorseThread,
 	started: ValidatedWorkhorseStart,
 ): boolean {
-	return (
-		thread.id === started.threadId &&
-		thread.cwd === started.facts.cwd &&
-		thread.modelProvider === started.facts.modelProvider &&
-		thread.historyMode === started.facts.historyMode &&
-		thread.source === started.facts.source &&
-		thread.threadSource === started.facts.threadSource &&
-		!thread.ephemeral &&
-		thread.forkedFromId === null &&
-		thread.parentThreadId === null &&
-		thread.turns.length === 0 &&
-		thread.status.type === "idle"
-	);
+	const checks = [
+		thread.id === started.threadId,
+		thread.cwd === started.facts.cwd,
+		thread.modelProvider === started.facts.modelProvider,
+		thread.historyMode === started.facts.historyMode,
+		thread.source === started.facts.source,
+		thread.threadSource === started.facts.threadSource,
+		!thread.ephemeral,
+		thread.forkedFromId === null,
+		thread.parentThreadId === null,
+		thread.turns.length === 0,
+		thread.status.type === "idle",
+	];
+	return checks.every((matched) => matched);
 }
 
 /**
- *
+ * Whether the pane's binding is the executable link to this workhorse thread on this child.
+ * `loaded` is not re-checked: an executable link already carries it.
+ * @param binding - The pane's thread-link binding.
+ * @param paneId - The pane the workhorse belongs to.
+ * @param childId - The Codex child it runs on.
+ * @param epoch - That child's epoch.
+ * @param threadId - The workhorse thread.
+ * @returns True when the binding is that executable link.
  */
 function isExecutableWorkhorseBinding(
 	binding: ThreadLinkBindingSnapshot,
@@ -189,15 +271,15 @@ function isExecutableWorkhorseBinding(
 	threadId: ThreadId,
 ): boolean {
 	const link: ThreadLinkSnapshot = binding.link;
-	return (
-		binding.paneId === paneId &&
-		link.state === "executable" &&
-		link.childId === childId &&
-		link.epoch === epoch &&
-		link.threadId === threadId &&
-		link.loaded &&
-		link.canAcceptDirectInput
-	);
+	const checks = [
+		binding.paneId === paneId,
+		link.state === "executable",
+		link.childId === childId,
+		link.epoch === epoch,
+		link.threadId === threadId,
+		link.canAcceptDirectInput,
+	];
+	return checks.every((matched) => matched);
 }
 
 export {
