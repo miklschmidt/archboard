@@ -13,12 +13,17 @@ import { boardWriteRefusals, commonRefusals } from "@/cli/command-contract/commo
 import type { FlagSpecs } from "@/cli/command-contract/route-options";
 
 const SNAPSHOT_FLAG_SPEC = { force: { takesValue: false } } as const satisfies FlagSpecs;
+/**
+ * Spells the shared snapshot flag spec as option parameters, so every snapshot subcommand
+ * advertises the same flags the namespace router discovers. Every snapshot flag is a bare switch.
+ * @returns One option parameter per flag in the spec.
+ */
 const snapshotFlagParameters = (): OptionParameter[] =>
-	Object.entries(SNAPSHOT_FLAG_SPEC).map(([name, spec]) => ({
+	Object.keys(SNAPSHOT_FLAG_SPEC).map((name) => ({
 		kind: "option",
 		key: name,
 		spellings: [`--${name}`],
-		value: spec.takesValue ? "required" : "none",
+		value: "none",
 		description: `${name} option`,
 	}));
 const tail = z.array(z.string()).default([]);
@@ -55,12 +60,19 @@ const snapshotContract = defineCommand({
 	result: SnapshotNamespaceResultSchema,
 	output: {
 		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Namespace refusal" }],
+		/**
+		 * The namespace has one (refusal) output shape.
+		 * @returns The JSON case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
 	effects: [],
 	refusals: [],
 	relationships: [],
+	/**
+	 * The bare namespace never runs; reaching it means no subcommand was named.
+	 */
 	async handler() {
 		throw new CliUsageError("Usage: snapshot save|list|restore [name]");
 	},
@@ -126,6 +138,10 @@ const snapshotSaveContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Save has one output shape.
+		 * @returns The JSON case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board"],
@@ -139,6 +155,12 @@ const snapshotSaveContract = defineCommand({
 			description: "Save the snapshot",
 		},
 	],
+	/**
+	 * Saves the requested board under the given snapshot name.
+	 * @param input - The parsed save input.
+	 * @param context - The command execution context.
+	 * @returns The saved snapshot's name, element count and creation time.
+	 */
 	async handler(input, context) {
 		await context.require("server", "snapshot save");
 		const request = context.parse(SnapshotSaveStageSchema, input);
@@ -194,6 +216,10 @@ const snapshotListContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * List has one output shape.
+		 * @returns The JSON case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board"],
@@ -202,10 +228,16 @@ const snapshotListContract = defineCommand({
 	relationships: [
 		{ method: "GET", path: "/api/snapshots", cardinality: "one", description: "List snapshots" },
 	],
+	/**
+	 * Lists the snapshots the canvas holds for the requested board.
+	 * @param _input - The parsed list input (unused: the board comes from the request context).
+	 * @param context - The command execution context.
+	 * @returns The validated snapshot listing.
+	 */
 	async handler(_input, context) {
 		await context.require("server", "snapshot list");
 		const result = await listSnapshots();
-		return { result: SnapshotListResultSchema.parse(result.snapshots ?? []) };
+		return { result: SnapshotListResultSchema.parse(result.snapshots) };
 	},
 });
 
@@ -278,6 +310,10 @@ const snapshotRestoreContract = defineCommand({
 				presentation: ["result", "held-note"],
 			},
 		],
+		/**
+		 * Restore has one output shape.
+		 * @returns The JSON case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board", "doing"],
@@ -303,6 +339,13 @@ const snapshotRestoreContract = defineCommand({
 			description: "Replace the target with the element-only snapshot",
 		},
 	],
+	/**
+	 * Reads the snapshot and the target board, refuses a cross-board restore without --force, then
+	 * replaces the board with the snapshot's elements in one write.
+	 * @param input - The parsed restore input.
+	 * @param context - The command execution context.
+	 * @returns The restored snapshot name, target board and element count.
+	 */
 	async handler(input, context) {
 		await context.require("server", "snapshot restore");
 		const request = context.parse(SnapshotRestoreRequestStageSchema, input);

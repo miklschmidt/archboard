@@ -20,6 +20,20 @@ const CheckInputSchema = InspectionOptionsInputSchema.extend({
 });
 type CheckInput = z.infer<typeof CheckInputSchema>;
 const CheckCommandResultSchema = z.union([CheckResultSchema, z.string()]);
+type CheckResult = z.infer<typeof CheckResultSchema>;
+
+/**
+ * Picks the strict-mode outcome for a completed inspection. Indeterminate coverage wins over any
+ * severity because a report that may have missed findings cannot vouch for a clean board.
+ * @param result - The parsed inspection report.
+ * @returns The outcome id that maps to a nonzero strict exit, or undefined when the board is clean.
+ */
+function strictOutcome(result: CheckResult): "indeterminate" | "errors" | "warnings" | undefined {
+	if (result.coverage === "indeterminate") return "indeterminate";
+	if (result.counts.bySeverity.error > 0) return "errors";
+	if (result.counts.bySeverity.warning > 0) return "warnings";
+	return undefined;
+}
 
 const checkContract = defineCommand({
 	path: ["check"],
@@ -83,6 +97,11 @@ const checkContract = defineCommand({
 				presentation: ["result"],
 			},
 		],
+		/**
+		 * Chooses the text case when --text was passed and the JSON report otherwise.
+		 * @param input - The parsed check input.
+		 * @returns The output case id.
+		 */
 		select: (input) => (input.text ? "text" : "json"),
 	},
 	outcomes: [
@@ -116,6 +135,12 @@ const checkContract = defineCommand({
 	effects: ["local-read"],
 	refusals: [],
 	relationships: [],
+	/**
+	 * Inspects the named note directly from disk and reports findings; under --strict the
+	 * outcome id carries the exit code.
+	 * @param input - The parsed check input.
+	 * @returns The report (or its text rendering) and the strict outcome when one applies.
+	 */
 	async handler(input) {
 		if (input.tail.length > 0) {
 			throw new CliUsageError("check takes no positional arguments");
@@ -127,15 +152,7 @@ const checkContract = defineCommand({
 		}
 		const report = inspectBoard(readRawBoardElementsForInspection(board), policy);
 		const result = CheckResultSchema.parse({ board, ...report });
-		const outcome = !input.strict
-			? undefined
-			: result.coverage === "indeterminate"
-				? "indeterminate"
-				: result.counts.bySeverity.error > 0
-					? "errors"
-					: result.counts.bySeverity.warning > 0
-						? "warnings"
-						: undefined;
+		const outcome = input.strict ? strictOutcome(result) : undefined;
 		return {
 			result: input.text ? formatInspectionText(result) : result,
 			...(outcome ? { outcome } : {}),

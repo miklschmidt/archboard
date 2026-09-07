@@ -12,21 +12,43 @@ import type { OptionParameter } from "@/cli/command-contract/contract";
 import { HoldReportSchema } from "@/cli/command-contract/schemas";
 import { boardWriteRefusals } from "@/cli/command-contract/common";
 import type { FlagSpecs } from "@/cli/command-contract/route-options";
+import {
+	ArrangeAlignStageSchema,
+	ArrangeDistributeStageSchema,
+	ArrangeDuplicateStageSchema,
+	ArrangeGroupStageSchema,
+	ArrangeLockStageSchema,
+	ArrangeUngroupStageSchema,
+	ArrangeUnlockStageSchema,
+	arrangementStage,
+} from "@/cli/commands/lib/arrangement-stages";
+import type {
+	ArrangeAlignStage,
+	ArrangeDistributeStage,
+	ArrangeDuplicateStage,
+	ArrangeGroupStage,
+	ArrangeLockStage,
+	ArrangeUngroupStage,
+	ArrangeUnlockStage,
+} from "@/cli/commands/lib/arrangement-stages";
 
-const AlignmentInputSchema = z.enum(["left", "center", "right", "top", "middle", "bottom"]);
-const DirectionInputSchema = z.enum(["horizontal", "vertical"]);
 const ARRANGE_FLAG_SPEC = {
 	ids: { takesValue: true },
 	to: { takesValue: true },
 	group: { takesValue: true },
 	offset: { takesValue: true },
 } as const satisfies FlagSpecs;
+/**
+ * Declares every arrange flag as a contract option. Each arrange flag carries a
+ * value, so the option is always value-required.
+ * @returns One option parameter per flag in the arrange flag specification.
+ */
 const optionParameters = (): OptionParameter[] =>
-	Object.entries(ARRANGE_FLAG_SPEC).map(([name, spec]) => ({
+	Object.keys(ARRANGE_FLAG_SPEC).map((name) => ({
 		kind: "option",
 		key: name,
 		spellings: [`--${name}`],
-		value: spec.takesValue ? "required" : "none",
+		value: "required",
 		description: `${name} option`,
 	}));
 const tailParameter = {
@@ -55,6 +77,10 @@ const output = {
 			presentation: ["result", "held-note"] as const,
 		},
 	] as const,
+	/**
+	 * Selects the only output case.
+	 * @returns The json case id.
+	 */
 	select: () => "json",
 };
 const relationships = [
@@ -71,111 +97,6 @@ const relationships = [
 		description: "Apply the arrangement in one write",
 	},
 ];
-
-function parsedIds(value: string | undefined, usage: string, context: z.RefinementCtx) {
-	if (!value?.trim()) {
-		context.addIssue({ code: "custom", message: usage });
-		return z.NEVER;
-	}
-	return value
-		.split(",")
-		.map((item) => item.trim())
-		.filter(Boolean);
-}
-
-const ArrangeAlignStageSchema = z
-	.object({ ids: z.string().optional(), to: z.string().optional() })
-	.transform((input, context) => {
-		const ids = parsedIds(
-			input.ids,
-			"Usage: arrange align --ids a,b,c --to left|center|right|top|middle|bottom",
-			context,
-		);
-		if (ids === z.NEVER) {
-			return z.NEVER;
-		}
-		const alignment = AlignmentInputSchema.safeParse(input.to);
-		if (!alignment.success) {
-			context.addIssue({
-				code: "custom",
-				message: "arrange align requires --to left|center|right|top|middle|bottom",
-			});
-			return z.NEVER;
-		}
-		return { ids, alignment: alignment.data };
-	});
-type ArrangeAlignStage = z.infer<typeof ArrangeAlignStageSchema>;
-
-const ArrangeDistributeStageSchema = z
-	.object({ ids: z.string().optional(), to: z.string().optional() })
-	.transform((input, context) => {
-		const ids = parsedIds(
-			input.ids,
-			"Usage: arrange distribute --ids a,b,c --to horizontal|vertical",
-			context,
-		);
-		if (ids === z.NEVER) {
-			return z.NEVER;
-		}
-		const direction = DirectionInputSchema.safeParse(input.to);
-		if (!direction.success) {
-			context.addIssue({
-				code: "custom",
-				message: "arrange distribute requires --to horizontal|vertical",
-			});
-			return z.NEVER;
-		}
-		return { ids, direction: direction.data };
-	});
-type ArrangeDistributeStage = z.infer<typeof ArrangeDistributeStageSchema>;
-
-const idsStage = (usage: string) =>
-	z.object({ ids: z.string().optional() }).transform((input, context) => {
-		const ids = parsedIds(input.ids, usage, context);
-		return ids === z.NEVER ? z.NEVER : { ids };
-	});
-const ArrangeGroupStageSchema = idsStage("Usage: arrange group --ids a,b,c");
-type ArrangeGroupStage = z.infer<typeof ArrangeGroupStageSchema>;
-const ArrangeLockStageSchema = idsStage("Usage: arrange lock --ids a,b,c");
-type ArrangeLockStage = z.infer<typeof ArrangeLockStageSchema>;
-const ArrangeUnlockStageSchema = idsStage("Usage: arrange unlock --ids a,b,c");
-type ArrangeUnlockStage = z.infer<typeof ArrangeUnlockStageSchema>;
-
-const ArrangeUngroupStageSchema = z.object({
-	group: z.string({ error: "Usage: arrange ungroup --group <groupId>" }).min(1),
-});
-type ArrangeUngroupStage = z.infer<typeof ArrangeUngroupStageSchema>;
-
-const ArrangeDuplicateStageSchema = z
-	.object({ ids: z.string().optional(), offset: z.string().optional() })
-	.transform((input, context) => {
-		const ids = parsedIds(
-			input.ids,
-			"Usage: arrange duplicate --ids a,b,c [--offset 20,20]",
-			context,
-		);
-		if (ids === z.NEVER) {
-			return z.NEVER;
-		}
-		if (input.offset === undefined) {
-			return { ids, offsetX: 20, offsetY: 20 };
-		}
-		const parts = input.offset.split(",").map((part) => Number(part.trim()));
-		if (parts.length !== 2 || parts.some(Number.isNaN)) {
-			context.addIssue({ code: "custom", message: '--offset expects "x,y"' });
-			return z.NEVER;
-		}
-		return { ids, offsetX: parts[0]!, offsetY: parts[1]! };
-	});
-type ArrangeDuplicateStage = z.infer<typeof ArrangeDuplicateStageSchema>;
-
-const arrangementStage = (name: string, schema: z.ZodType) => ({
-	name,
-	when: "after-server" as const,
-	description: "Validated arrangement arguments",
-	rules: ["Parse comma-separated element ids and validate action-specific options"],
-	schema,
-});
 
 const ArrangeNamespaceInputSchema = z.object({
 	...ArrangeInputShape,
@@ -204,12 +125,20 @@ const arrangeContract = defineCommand({
 	result: ArrangeNamespaceResultSchema,
 	output: {
 		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Namespace refusal" }],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: [],
 	effects: [],
 	refusals: [],
 	relationships: [],
+	/**
+	 * Refuses the bare namespace with its subcommand usage line.
+	 * @returns Never; the usage error is the whole behaviour.
+	 */
 	async handler() {
 		throw new CliUsageError(
 			"Usage: arrange align|distribute|group|ungroup|lock|unlock|duplicate ...",
@@ -244,6 +173,12 @@ const arrangeAlignContract = defineCommand({
 	effects: ["read", "write"],
 	refusals: boardWriteRefusals,
 	relationships,
+	/**
+	 * Aligns the named elements along the requested edge or axis, in one board write after the server answered.
+	 * @param input - The parsed arrange options.
+	 * @param context - The command context.
+	 * @returns The server's arrangement receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "arrange align");
 		const request = context.parse(ArrangeAlignStageSchema, input);
@@ -278,6 +213,12 @@ const arrangeDistributeContract = defineCommand({
 	effects: ["read", "write"],
 	refusals: boardWriteRefusals,
 	relationships,
+	/**
+	 * Spreads the named elements evenly in the requested direction, in one board write after the server answered.
+	 * @param input - The parsed arrange options.
+	 * @param context - The command context.
+	 * @returns The server's arrangement receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "arrange distribute");
 		const request = context.parse(ArrangeDistributeStageSchema, input);
@@ -311,6 +252,12 @@ const arrangeGroupContract = defineCommand({
 	effects: ["read", "write"],
 	refusals: boardWriteRefusals,
 	relationships,
+	/**
+	 * Groups the named elements, in one board write after the server answered.
+	 * @param input - The parsed arrange options.
+	 * @param context - The command context.
+	 * @returns The server's arrangement receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "arrange group");
 		const request = context.parse(ArrangeGroupStageSchema, input);
@@ -345,6 +292,12 @@ const arrangeUngroupContract = defineCommand({
 	effects: ["read", "write"],
 	refusals: boardWriteRefusals,
 	relationships,
+	/**
+	 * Dissolves the named group, in one board write after the server answered.
+	 * @param input - The parsed arrange options.
+	 * @param context - The command context.
+	 * @returns The server's arrangement receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "arrange ungroup");
 		const request = context.parse(ArrangeUngroupStageSchema, input);
@@ -352,6 +305,12 @@ const arrangeUngroupContract = defineCommand({
 	},
 });
 
+/**
+ * Builds the receipt schema of lock and unlock, which differ only in the
+ * literal flag that names what happened.
+ * @param key - The receipt field set to true.
+ * @returns The receipt schema for that action.
+ */
 const lockResult = (key: "locked" | "unlocked") =>
 	z.looseObject({
 		[key]: z.literal(true),
@@ -380,6 +339,12 @@ const arrangeLockContract = defineCommand({
 	effects: ["read", "write"],
 	refusals: boardWriteRefusals,
 	relationships,
+	/**
+	 * Locks the named elements against canvas edits, in one board write after the server answered.
+	 * @param input - The parsed arrange options.
+	 * @param context - The command context.
+	 * @returns The server's arrangement receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "arrange lock");
 		const request = context.parse(ArrangeLockStageSchema, input);
@@ -413,6 +378,12 @@ const arrangeUnlockContract = defineCommand({
 	effects: ["read", "write"],
 	refusals: boardWriteRefusals,
 	relationships,
+	/**
+	 * Unlocks the named elements, in one board write after the server answered.
+	 * @param input - The parsed arrange options.
+	 * @param context - The command context.
+	 * @returns The server's arrangement receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "arrange unlock");
 		const request = context.parse(ArrangeUnlockStageSchema, input);
@@ -453,6 +424,12 @@ const arrangeDuplicateContract = defineCommand({
 	effects: ["read", "write"],
 	refusals: boardWriteRefusals,
 	relationships,
+	/**
+	 * Copies the named elements at the requested offset, in one board write after the server answered.
+	 * @param input - The parsed arrange options.
+	 * @param context - The command context.
+	 * @returns The server's arrangement receipt.
+	 */
 	async handler(input, context) {
 		await context.require("server", "arrange duplicate");
 		const request = context.parse(ArrangeDuplicateStageSchema, input);
