@@ -6,7 +6,10 @@ class AmbiguousStencilError extends Error {
 	public readonly candidates: CatalogueEntry[];
 
 	/**
-	 *
+	 * Refuse a name several libraries answer to, naming every one of them so
+	 * the caller can say which it meant.
+	 * @param wanted The name that was asked for.
+	 * @param candidates The stencils that answer to it.
 	 */
 	public constructor(wanted: string, candidates: CatalogueEntry[]) {
 		super(
