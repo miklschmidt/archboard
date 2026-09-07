@@ -11,8 +11,16 @@
 
 import crypto from "crypto";
 import { type ServerElement } from "@/runtime/engine/types";
-import { isObsidianExcalidrawMd, extractSceneJsonFromObsidianMd, wrapSceneAsObsidianMd } from "@/runtime/engine/obsidian-md";
-import { type BoardIdentity, identityFrontmatter, isScratchKey } from "@/runtime/engine/lib/board-address";
+import {
+	isObsidianExcalidrawMd,
+	extractSceneJsonFromObsidianMd,
+	wrapSceneAsObsidianMd,
+} from "@/runtime/engine/obsidian-md";
+import {
+	type BoardIdentity,
+	identityFrontmatter,
+	isScratchKey,
+} from "@/runtime/engine/lib/board-address";
 import { isRecord } from "@/runtime/engine/lib/unknown-record";
 
 export {
