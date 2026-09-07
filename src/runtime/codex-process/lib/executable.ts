@@ -37,6 +37,11 @@ class CodexExecutableError extends Error {
 	readonly code: CodexExecutableFailureCode;
 	readonly executablePath: string;
 
+	/**
+	 * Record which executable failed verification and why, so the process owner
+	 * can map the failure to a terminal process failure code.
+	 * @param init - The failure code, the executable path examined, and the message.
+	 */
 	constructor(init: {
 		readonly code: CodexExecutableFailureCode;
 		readonly executablePath: string;
@@ -49,6 +54,11 @@ class CodexExecutableError extends Error {
 	}
 }
 
+/**
+ * Copy only the environment keys the `--version` proof needs, so ambient
+ * secrets never reach the verification child.
+ * @returns A frozen minimal environment for the bounded version probe.
+ */
 function verificationEnvironment(): NodeJS.ProcessEnv {
 	const environment: NodeJS.ProcessEnv = {};
 	for (const key of VERIFICATION_ENVIRONMENT_KEYS) {
@@ -64,7 +74,13 @@ function verificationEnvironment(): NodeJS.ProcessEnv {
 	return Object.freeze(environment);
 }
 
-function absolutePath(candidate: string): string {
+/**
+ * Require an absolute executable path, because PATH lookup is disabled for
+ * the Codex child.
+ * @param candidate - The configured executable path, untrusted.
+ * @returns The resolved absolute path.
+ */
+function absolutePath(candidate: unknown): string {
 	if (typeof candidate !== "string" || candidate.length === 0 || candidate.includes("\0")) {
 		throw new CodexExecutableError({
 			code: "not_absolute",
@@ -82,22 +98,26 @@ function absolutePath(candidate: string): string {
 	return path.resolve(candidate);
 }
 
+/**
+ * Decide whether a failed `--version` probe was the bounded timeout firing
+ * rather than the executable refusing to answer.
+ * @param cause - The value thrown by execFileSync.
+ * @returns True when the probe was killed by its timeout.
+ */
 function verificationTimedOut(cause: unknown): boolean {
 	if (cause === null || typeof cause !== "object") {
 		return false;
 	}
-	const value = cause as {
-		readonly code?: unknown;
-		readonly killed?: unknown;
-		readonly signal?: unknown;
-	};
-	return (
-		value.code === "ETIMEDOUT" ||
-		(value.killed === true && (value.signal === "SIGKILL" || value.signal === "SIGTERM"))
-	);
+	const code = "code" in cause ? cause.code : undefined;
+	const killed = "killed" in cause ? cause.killed : undefined;
+	const signal = "signal" in cause ? cause.signal : undefined;
+	return code === "ETIMEDOUT" || (killed === true && (signal === "SIGKILL" || signal === "SIGTERM"));
 }
 
-/** Resolve only the package-local wrapper selected by the pinned dependency. */
+/**
+ * Resolve only the package-local wrapper selected by the pinned dependency.
+ * @returns The absolute path of the checkout-local Codex wrapper.
+ */
 function resolveProjectCodexExecutable(): string {
 	const require = createRequire(import.meta.url);
 	const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
@@ -124,12 +144,12 @@ function resolveProjectCodexExecutable(): string {
 	return absolute;
 }
 
-/** Verify the exact pinned executable without consulting PATH or ambient args. */
-function verifyCodexExecutable(
-	candidate: string,
-	options: { readonly execFileSync?: typeof execFileSync } = {},
-): VerifiedCodexExecutable {
-	const executablePath = absolutePath(candidate);
+/**
+ * Prove the path names an existing, regular, executable file before anything
+ * is run from it.
+ * @param executablePath - The absolute executable path.
+ */
+function assertExecutableFile(executablePath: string): void {
 	let stats: fs.Stats;
 	try {
 		stats = fs.statSync(executablePath);
@@ -156,11 +176,17 @@ function verifyCodexExecutable(
 			message: `The configured Codex executable is not executable: ${executablePath}. Run bun install to restore its executable mode, then retry.`,
 		});
 	}
+}
 
-	let version: string;
+/**
+ * Run the bounded `--version` proof and return what the executable reported.
+ * @param executablePath - The verified executable path.
+ * @param execute - The synchronous spawner, injectable for tests.
+ * @returns The trimmed version text.
+ */
+function reportedVersion(executablePath: string, execute: typeof execFileSync): string {
 	try {
-		const execute = options.execFileSync ?? execFileSync;
-		version = execute(executablePath, ["--version"], {
+		return execute(executablePath, ["--version"], {
 			encoding: "utf8",
 			env: verificationEnvironment(),
 			maxBuffer: CODEX_EXECUTABLE_PROOF_MAX_BYTES,
@@ -185,6 +211,21 @@ function verifyCodexExecutable(
 			message: `Could not run ${executablePath} --version. Run bun install to restore the exact Codex ${CODEX_PROTOCOL_BINARY_VERSION} runtime; PATH lookup is disabled.`,
 		});
 	}
+}
+
+/**
+ * Verify the exact pinned executable without consulting PATH or ambient args.
+ * @param candidate - The configured executable path.
+ * @param options - An injectable synchronous spawner for the version proof.
+ * @returns The resolved path together with the pinned version it reported.
+ */
+function verifyCodexExecutable(
+	candidate: string,
+	options: { readonly execFileSync?: typeof execFileSync } = {},
+): VerifiedCodexExecutable {
+	const executablePath = absolutePath(candidate);
+	assertExecutableFile(executablePath);
+	const version = reportedVersion(executablePath, options.execFileSync ?? execFileSync);
 	if (version !== CODEX_PROTOCOL_BINARY_VERSION) {
 		throw new CodexExecutableError({
 			code: "wrong_version",
