@@ -151,6 +151,13 @@ class CodexThreadLinkError extends Error {
 	readonly code: ThreadLinkClassificationErrorCode;
 	override readonly cause: unknown;
 
+	/**
+	 * Records why classification or binding refused, so a caller can tell a stale link from an
+	 * unreadable authority.
+	 * @param code Which kind of refusal this is.
+	 * @param message What the caller should do about it.
+	 * @param cause The underlying failure, when one caused this refusal.
+	 */
 	constructor(code: ThreadLinkClassificationErrorCode, message: string, cause?: unknown) {
 		super(message);
 		this.code = code;
@@ -161,6 +168,10 @@ class CodexThreadLinkError extends Error {
 class CodexThreadLinkConflictError extends CodexThreadLinkError {
 	override readonly name: string = "CodexThreadLinkConflictError";
 
+	/**
+	 * Reports that the authority moved under the caller, who must re-read and retry.
+	 * @param message What changed and what to re-read.
+	 */
 	constructor(message: string) {
 		super("conflict", message);
 	}
