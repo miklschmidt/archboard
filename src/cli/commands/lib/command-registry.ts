@@ -41,7 +41,7 @@ function commandClassification(command: AnyCommandContract): CliRegistryEntry["c
 	if (command.path[0] === "browser") {
 		return "browser";
 	}
-	if (command.prerequisites.includes("board") || boardNamespaces.has(command.path[0] ?? "")) {
+	if (command.prerequisites.includes("board") || boardNamespaces.has(command.path[0])) {
 		return "board";
 	}
 	return "neither";

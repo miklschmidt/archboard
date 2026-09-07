@@ -48,14 +48,27 @@ function installRequestIssues(input: InstallSkillInput): string[] {
 	if (input.noDoc && input.doc !== undefined) {
 		issues.push("Use either --doc <file> or --no-doc, not both");
 	}
-	if (input.agent !== undefined && !["codex", "claude-code"].includes(input.agent)) {
-		issues.push(`Unknown --agent ${input.agent}. Supported agents: codex, claude-code.`);
+	const agent = agentIssue(input.agent);
+	if (agent !== undefined) {
+		issues.push(agent);
 	}
 	const target = targetIssue(input.target);
 	if (target !== undefined) {
 		issues.push(target);
 	}
 	return issues;
+}
+
+/**
+ * The problem with an --agent spelling, if any: a name this installer does not know.
+ * @param agent - The agent spelling, if given.
+ * @returns The message, or undefined when the agent is absent or supported.
+ */
+function agentIssue(agent: string | undefined): string | undefined {
+	if (agent !== undefined && !["codex", "claude-code"].includes(agent)) {
+		return `Unknown --agent ${agent}. Supported agents: codex, claude-code.`;
+	}
+	return undefined;
 }
 
 /**

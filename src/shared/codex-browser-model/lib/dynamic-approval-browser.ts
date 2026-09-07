@@ -63,16 +63,20 @@ function sameIdentity(
 	return IDENTITY_FIELDS.every((field) => left[field] === right[field]);
 }
 
+/** The thread a pane captured, and the child epoch it captured it in. */
+interface CapturedLinkFacts {
+	readonly threadId: string;
+	readonly childId: string;
+	readonly epoch: string;
+}
+
 /**
  * Tells whether two captured links name the same thread in the same child epoch.
  * @param left - One link.
  * @param right - The other.
  * @returns True when thread, child and epoch all agree.
  */
-function sameLink(
-	left: { readonly threadId: string; readonly childId: string; readonly epoch: string },
-	right: { readonly threadId: string; readonly childId: string; readonly epoch: string },
-): boolean {
+function sameLink(left: CapturedLinkFacts, right: CapturedLinkFacts): boolean {
 	return (
 		left.threadId === right.threadId && left.childId === right.childId && left.epoch === right.epoch
 	);
