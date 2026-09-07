@@ -98,13 +98,35 @@ function exportFiles(files: Record<string, unknown>): BinaryFiles {
  */
 function hasBoundFixtureRelationships(elements: readonly NonDeletedExcalidrawElement[]): boolean {
 	const byId = new Map(elements.map((element) => [element.id, element]));
-	const service = byId.get("svc");
-	const label = byId.get("label");
-	const arrow = byId.get("arrow");
+	return (
+		hasLabelBinding(byId.get("svc"), byId.get("label")) && joinsServiceToStore(byId.get("arrow"))
+	);
+}
+
+/**
+ * Whether the fixture's label is a text element contained by the service, bound both ways.
+ * @param service The service element, when present.
+ * @param label The label element, when present.
+ * @returns Whether the container binding survived the read.
+ */
+function hasLabelBinding(
+	service: NonDeletedExcalidrawElement | undefined,
+	label: NonDeletedExcalidrawElement | undefined,
+): boolean {
 	return (
 		service?.boundElements?.some((binding) => binding.id === "label") === true &&
 		label?.type === "text" &&
-		label.containerId === "svc" &&
+		label.containerId === "svc"
+	);
+}
+
+/**
+ * Whether the fixture's arrow still binds the service to the store.
+ * @param arrow The arrow element, when present.
+ * @returns Whether both endpoint bindings survived the read.
+ */
+function joinsServiceToStore(arrow: NonDeletedExcalidrawElement | undefined): boolean {
+	return (
 		arrow?.type === "arrow" &&
 		arrow.startBinding?.elementId === "svc" &&
 		arrow.endBinding?.elementId === "store"
