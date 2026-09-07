@@ -1,7 +1,8 @@
 import fs from "node:fs";
 import { join } from "node:path";
-import { cliContractRegistry } from "../commands/run.js";
-import { introspectContracts } from "./introspection.js";
+import { z } from "zod";
+import { cliContractRegistry } from "@/cli/commands/run";
+import { introspectContracts } from "@/cli/command-contract/introspection";
 
 const CLI_CONTRACT_ARTIFACT_NAMES = [
 	"cli-command-audit.md",
@@ -9,41 +10,61 @@ const CLI_CONTRACT_ARTIFACT_NAMES = [
 	"command-contract-proof.md",
 ] as const;
 
-interface AuditEntry {
-	path: unknown;
-	classification: unknown;
-	parserOwner: unknown;
-	stdout: unknown;
-	result: unknown;
-	prerequisites: unknown;
-	relationships: unknown;
-	semantics: unknown;
-	ordering: unknown;
-	nextFields: unknown;
-	workflow: unknown;
-}
+/** One audit cell: a sentence, or a list rendered as one. */
+const AuditCellSchema = z.union([z.string(), z.array(z.string())]);
 
-interface AuditWorkflow {
-	name: string;
-	classification: string;
-	decision: string;
-	evidence: string;
-	commands: string[];
-	followUpTask?: string;
-}
+/** The audit columns this renderer prints; the canonical JSON carries more. */
+const AuditEntrySchema = z.object({
+	path: AuditCellSchema,
+	classification: AuditCellSchema,
+	parserOwner: AuditCellSchema,
+	stdout: AuditCellSchema,
+	result: AuditCellSchema,
+	prerequisites: AuditCellSchema,
+	relationships: AuditCellSchema,
+	semantics: AuditCellSchema,
+	ordering: AuditCellSchema,
+	nextFields: AuditCellSchema,
+	workflow: AuditCellSchema,
+});
 
-interface CliAudit {
-	reviewedBase: string;
-	surface: { commands: number; subcommands: number; paths: number };
-	entries: AuditEntry[];
-	workflows: AuditWorkflow[];
-}
+const AuditWorkflowSchema = z.object({
+	name: z.string(),
+	classification: z.string(),
+	decision: z.string(),
+	evidence: z.string(),
+	commands: z.array(z.string()),
+	followUpTask: z.string().nullable().optional(),
+});
 
-const cell = (value: unknown): string =>
-	(Array.isArray(value) ? value.join("; ") : String(value ?? ""))
+const CliAuditSchema = z.object({
+	reviewedBase: z.string(),
+	surface: z.object({ commands: z.number(), subcommands: z.number(), paths: z.number() }),
+	entries: z.array(AuditEntrySchema),
+	workflows: z.array(AuditWorkflowSchema),
+});
+
+/**
+ * Renders one audit value as a Markdown table cell, escaping the pipe and
+ * flattening newlines so a sentence cannot break the table it sits in.
+ * @param value - The audit value, a sentence or a list.
+ * @returns The cell text.
+ */
+function cell(value: z.infer<typeof AuditCellSchema>): string {
+	return (Array.isArray(value) ? value.join("; ") : value)
 		.replaceAll("|", "\\|")
 		.replaceAll("\n", " ");
+}
 
+/**
+ * Formats generated content the way the repository formats its own files, so
+ * a generated artifact never differs from a committed one by whitespace alone.
+ * @param root - The repository root.
+ * @param name - The generated file's name, which decides how it is formatted.
+ * @param content - The content to format.
+ * @returns The formatted content.
+ * @throws {Error} When the formatter refuses the content.
+ */
 function format(root: string, name: string, content: string): string {
 	const formatted = Bun.spawnSync(
 		["bunx", "oxfmt", "--stdin-filepath", join(root, "docs", "design", "generated", name)],
@@ -60,10 +81,18 @@ function format(root: string, name: string, content: string): string {
 	return formatted.stdout.toString();
 }
 
+/**
+ * Renders every generated CLI contract artifact from the two sources that
+ * decide them: the reviewed audit JSON, and the live command registry with the
+ * public metadata its contracts declare.
+ * @param root - The repository root.
+ * @returns The formatted artifacts by file name, with the audit, proof, registry and routes they were built from.
+ * @throws {Error} When the audit JSON does not match the shape this renderer prints.
+ */
 async function renderCliContractArtifacts(root: string) {
-	const audit = JSON.parse(
-		fs.readFileSync(join(root, "docs", "design", "cli-command-audit.json"), "utf8"),
-	) as CliAudit;
+	const audit = CliAuditSchema.parse(
+		JSON.parse(fs.readFileSync(join(root, "docs", "design", "cli-command-audit.json"), "utf8")),
+	);
 	const registry = cliContractRegistry();
 	const proof = introspectContracts(registry);
 	const routes = registry.map(

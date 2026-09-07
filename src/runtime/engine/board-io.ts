@@ -7,7 +7,9 @@
 // elements in the maps the routes work against. Resolving which file, reading
 // it, and interpreting what came back are three jobs and only the middle one
 // is shared — that middle one used to exist twice, and the second copy is what
-// let TASK-085's fix miss the path every request takes.
+// let TASK-085's fix miss the path every request takes. Interpreting what came
+// back is lib/board-io-content.ts; working out which file is
+// lib/board-io-resolution.ts; the read stays here.
 //
 // `writeBoardContent` reads the destination too and deliberately does not go
 // through it: it hashes whatever bytes are there, including bytes that are not
@@ -43,16 +45,10 @@
 import fs from "fs";
 import path from "path";
 
-import { type ExcalidrawFile, type ServerElement } from "./types.js";
-import { writeFileAtomic, writeFileAtomicExclusive } from "./atomic-write.js";
-import { holdOn } from "./board-hold.js";
-import {
-	type BoardState,
-	baselineForFile,
-	getOrCreateBoard,
-	recordBaseline,
-} from "./board-store.js";
-import { BoardRequiredError, BoardResolutionError } from "./board-target.js";
+import { writeFileAtomic, writeFileAtomicExclusive } from "@/runtime/engine/atomic-write";
+import { holdOn } from "@/runtime/engine/board-hold";
+import { type BoardState, getOrCreateBoard, recordBaseline } from "@/runtime/engine/board-store";
+import { BoardRequiredError, BoardResolutionError } from "@/runtime/engine/board-target";
 import {
 	type BoardIdentity,
 	boardKey,
@@ -61,164 +57,51 @@ import {
 	identityFromVaultPath,
 	listBoards,
 	makeIdentity,
-	parseBoardKey,
-	renderBoardNote,
 	requireVaultRoot,
 	sceneJsonWithEmbeddedImages,
-	SCRATCH_BOARD,
 	vaultPathFor,
-} from "./board.js";
+} from "@/runtime/engine/board";
+import { stampBoardVersion, versionNumber } from "@/runtime/engine/board-version";
+import { isObsidianExcalidrawMd } from "@/runtime/engine/obsidian-md";
+import { errnoCode, errorMessage } from "@/runtime/engine/lib/board-errno";
 import {
-	type BoardWriteConflict,
-	type VersionMove,
-	describeWriteConflict,
-	stampBoardVersion,
-	versionMove,
-	versionNumber,
-} from "./board-version.js";
-import { validateRenderGeometry } from "./geometry.js";
-import { derivedId, isBlockId } from "../../shared/ids/ids.js";
-import type { BoardRenderSnapshot } from "../../shared/board-rendering/index.js";
-import { isObsidianExcalidrawMd, renameElementId } from "./obsidian-md.js";
-import { stripBindingPresentationLinks } from "./presentation.js";
-import { buildScene } from "./scene-document.js";
-import { packElementTracking } from "./metadata.js";
-import { validatePersistedBoardElement } from "./lib/native-element.js";
-
-/**
- * One board, as one request found it.
- *
- * `elements` and `files` are what the note held, in the maps the routes work
- * against. `note` is the note's own text, carried so a write can put its
- * frontmatter and prose back verbatim, and `hash` is what those bytes hashed to
- * — the thing a write checks the destination against before it replaces it
- * (ADR 0006).
- *
- * Both are absent when there is nothing at the path yet: a board somebody has
- * just made, or a scratch board in a vault that has never held one.
- */
-interface BoardContent {
-	elements: Map<string, ServerElement>;
-	files: Map<string, ExcalidrawFile>;
-	note?: string;
-	hash?: string;
-	/**
-	 * Which edit of the board the note was, when it was read (TASK-091). Null for
-	 * a note that carries no version archboard can read, absent for a board with
-	 * no note behind it yet.
-	 */
-	version?: number | null;
-}
-
-/**
- * A board's images in the shape carried by scene messages, or nothing when it
- * has none. Every whole-board frame needs these records or image elements
- * render as holes (TASK-060).
- */
-function boardFilesMessage(content: BoardContent): {
-	files?: Record<string, ExcalidrawFile>;
-} {
-	if (content.files.size === 0) {
-		return {};
-	}
-	return { files: Object.fromEntries(content.files) };
-}
-
-/**
- * A note, plus the identity of the board it turned out to hold.
- *
- * What `browser show` needs and a per-request read does not: a request already
- * knows which board it is working on, and opening one is the act that finds
- * out.
- */
-interface LoadedBoard extends NoteFile {
-	identity: BoardIdentity;
-	// What the note's own frontmatter claims, when that is a different board
-	// than the one being opened — a note renamed or moved in Obsidian since it
-	// was last saved. The path is the address, so that is what the caller gets;
-	// the next save rewrites the frontmatter and the disagreement goes away.
-	// Surfaced rather than silently reconciled, because it usually means a human
-	// moved something and may not have meant to.
-	declaredKey?: string;
-}
-
-/** A board with nothing in it, for a note that is not there yet. */
-function emptyContent(): BoardContent {
-	return { elements: new Map(), files: new Map() };
-}
-
-/**
- * Take a scene into the maps a request works against: its elements, and the
- * images those elements draw.
- *
- * Mirrors the batch-create path — ids preserved, server bookkeeping stamped —
- * so a board read from a note behaves exactly like one that was just drawn.
- *
- * The images used to be dropped here. An image element came back from a note
- * and its data did not, so the board reopened with a hole where the picture
- * was. That was a rendering failure while the process was the copy that
- * mattered; now the note is rewritten from what was read, so anything not read
- * back is deleted on the next write (TASK-060).
- */
-function ingestScene(
-	sceneElements: unknown[],
-	sceneFiles?: Record<string, unknown> | null,
-	context = "scene",
-): { elements: Map<string, ServerElement>; files: Map<string, ExcalidrawFile> } {
-	const elements = new Map<string, ServerElement>();
-	for (const raw of sceneElements) {
-		const element = validatePersistedBoardElement(raw, context);
-		if (elements.has(element.id)) {
-			throw new Error(`${context}: duplicate element id ${element.id}`);
-		}
-		elements.set(element.id, element);
-	}
-
-	// A note already in the vault gets no silent repair. Refuse the whole scene
-	// here, before any caller can register it or send it to a pane, and let the
-	// existing board-open error path put the actionable geometry error on screen.
-	validateRenderGeometry(elements.values());
-
-	const files = new Map<string, ExcalidrawFile>();
-	if (sceneFiles && typeof sceneFiles === "object") {
-		for (const [id, raw] of Object.entries(sceneFiles)) {
-			if (!raw || typeof raw !== "object") {
-				continue;
-			}
-			const file = raw as Partial<ExcalidrawFile>;
-			if (typeof file.dataURL !== "string") {
-				continue;
-			}
-			files.set(id, {
-				id,
-				dataURL: file.dataURL,
-				mimeType: typeof file.mimeType === "string" ? file.mimeType : "image/png",
-				created: typeof file.created === "number" ? file.created : Date.now(),
-			});
-		}
-	}
-	return { elements, files };
-}
-
-/**
- * A note as it was found on disk.
- *
- * Whatever is true of reading a note is true here, because this is the only
- * place it happens: the `.excalidraw.md` refusal, the hash the next write is
- * checked against, and the pictures the Obsidian plugin moved out into vault
- * files.
- */
-interface NoteFile {
-	file: string;
-	/** The whole note, so a write can put its frontmatter and prose back verbatim. */
-	raw: string;
-	/** sha-256 of the bytes it was decoded from: the baseline operand (ADR 0006). */
-	hash: string;
-	/** Which edit of the board it was, or null when it carries no count (TASK-091). */
-	version: number | null;
-	/** The drawing, with any image the plugin moved out of it put back. */
-	sceneJson: string;
-}
+	type BoardAccess,
+	type BoardContent,
+	type LoadedBoard,
+	type NoteFile,
+	type ResolvedBoard,
+	type ResolvedBoardNote,
+	type InstallBoardOptions,
+	copyHeldContent,
+	emptyContent,
+	ingestScene,
+	materializeResolvedBoard,
+	parseLoadedScene,
+	resolvedBoardContent,
+	sceneParts,
+} from "@/runtime/engine/lib/board-io-content";
+import {
+	type BoardInspectionSnapshot,
+	projectBoardRenderSnapshot,
+	renderSnapshotFingerprint,
+	sceneElementsOf,
+} from "@/runtime/engine/lib/board-io-inspection";
+import {
+	availableBoardKeys,
+	candidateNoteFor,
+	conflictingDeclaration,
+	existingNotesError,
+	parseAskedKey,
+} from "@/runtime/engine/lib/board-io-resolution";
+import { type WriteOptions, refuseForeignWrite } from "@/runtime/engine/lib/board-io-conflict";
+import {
+	chosenDisplayName,
+	declaredKeyOf,
+	loadedIdentity,
+} from "@/runtime/engine/lib/board-io-identity";
+import { renderContent } from "@/runtime/engine/lib/board-io-note-render";
+import { settleBoardContent } from "@/runtime/engine/lib/board-io-settlement";
+import { type VaultBoard } from "@/runtime/engine/lib/board-vault-listing";
 
 /**
  * Read one note. THE one read: everything else here and in `board.ts` is
@@ -233,9 +116,10 @@ interface NoteFile {
  * callers: it reads one migrated note through each caller below and asserts they agree on
  * the bytes, the hash, the picture and the refusal, and it asserts that exactly
  * one line in `src/` calls `sceneJsonWithEmbeddedImages`.
- *
- * `null` for a note that is not there. A board somebody has just made has no
- * file yet and that is not an error.
+ * @param file The note's path.
+ * @param root The vault root, for following moved pictures.
+ * @returns The note as found, or null for a note that is not there: a board
+ * somebody has just made has no file yet and that is not an error.
  */
 function readNoteFile(file: string, root = requireVaultRoot()): NoteFile | null {
 	let bytes: Buffer;
@@ -244,7 +128,7 @@ function readNoteFile(file: string, root = requireVaultRoot()): NoteFile | null 
 		// so decoding is a separate step that cannot get between the two.
 		bytes = fs.readFileSync(file);
 	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+		if (errnoCode(error) === "ENOENT") {
 			return null;
 		}
 		throw error;
@@ -279,7 +163,10 @@ function readNoteFile(file: string, root = requireVaultRoot()): NoteFile | null 
  *
  * Two jobs on top of the read, and only these two: turn an identity into a
  * path, and say what the note's own frontmatter claims. The bytes come back
- * exactly as unknown other read gets them.
+ * exactly as any other read gets them.
+ * @param identity The board to open.
+ * @param root The vault root.
+ * @returns The note and its identity, or null when there is no note.
  */
 function readBoardFile(
 	identity: Pick<BoardIdentity, "board" | "variant" | "displayName">,
@@ -289,166 +176,46 @@ function readBoardFile(
 	if (!note) {
 		return null;
 	}
-
 	const asked = makeIdentity({ board: identity.board, variant: identity.variant });
 	const declared = identityFromFrontmatter(note.raw);
-	// Casing comes from the note, not from whoever typed the address: the note
-	// is where a human chose it and the address is case-insensitive either way.
-	// Its own frontmatter first, then the filename, then the address.
-	const onDisk = identityFromVaultPath(note.file, root);
-	const displayName =
-		(declared && boardKey(declared) === boardKey(asked) ? declared.displayName : undefined) ??
-		(onDisk && boardKey(onDisk) === boardKey(asked) ? onDisk.displayName : undefined) ??
-		asked.displayName;
+	const displayName = chosenDisplayName(asked, declared, identityFromVaultPath(note.file, root));
 	return {
 		...note,
-		identity: {
-			...asked,
-			...(declared?.level ? { level: declared.level } : {}),
-			...(displayName ? { displayName } : {}),
-		},
-		...(declared && boardKey(declared) !== boardKey(asked)
-			? { declaredKey: boardKey(declared) }
-			: {}),
+		identity: loadedIdentity(asked, declared, displayName),
+		...declaredKeyOf(asked, declared),
 	};
 }
 
-/** The elements and images a note holds, plus the bytes they came out of. */
+/**
+ * The elements and images a note holds, plus the bytes they came out of.
+ * @param file The note's path.
+ * @returns The board content, or null when there is no note.
+ */
 function readNote(file: string): BoardContent | null {
 	const note = readNoteFile(file);
 	if (!note) {
 		return null;
 	}
-	const scene = JSON.parse(note.sceneJson);
-	const { elements, files } = ingestScene(
-		Array.isArray(scene) ? scene : (scene.elements ?? []),
-		Array.isArray(scene) ? null : scene.files,
-		file,
-	);
+	const parts = sceneParts(JSON.parse(note.sceneJson), file);
+	const { elements, files } = ingestScene(parts.elements, parts.files, file);
 	return { elements, files, note: note.raw, hash: note.hash, version: note.version };
 }
 
-function parseLoadedScene(loaded: LoadedBoard): unknown {
-	try {
-		return JSON.parse(loaded.sceneJson);
-	} catch (error) {
-		throw new BoardResolutionError(
-			boardKey(loaded.identity),
-			"malformed",
-			`Board "${boardKey(loaded.identity)}" has malformed drawing JSON in ${loaded.file}. Repair or restore that note, then retry.`,
-			[loaded.file],
-			{ cause: error },
-		);
-	}
-}
-
-function contentFromLoadedBoard(loaded: LoadedBoard): BoardContent {
-	const scene = parseLoadedScene(loaded);
-	try {
-		const { elements, files } = ingestScene(
-			Array.isArray(scene) ? scene : ((scene as { elements?: unknown[] })?.elements ?? []),
-			Array.isArray(scene) ? null : (scene as { files?: Record<string, unknown> })?.files,
-			loaded.file,
-		);
-		return {
-			elements,
-			files,
-			note: loaded.raw,
-			hash: loaded.hash,
-			version: loaded.version,
-		};
-	} catch (error) {
-		if (error instanceof BoardResolutionError) {
-			throw error;
-		}
-		throw new BoardResolutionError(
-			boardKey(loaded.identity),
-			"malformed",
-			`Board "${boardKey(loaded.identity)}" cannot be read from ${loaded.file}: ${(error as Error).message} Repair or restore that note, then retry.`,
-			[loaded.file],
-			{ cause: error },
-		);
-	}
-}
-
-interface BoardAccess {
-	key: string;
-	board: BoardState;
-	content: BoardContent;
-}
-
-interface ResolvedBoard extends BoardAccess {
-	/** The exact persisted load used to build content, for same-load lifecycle observers. */
-	loaded: LoadedBoard;
-}
-
-interface InstallBoardOptions {
-	/** Establish a missing baseline from this exact load while the caller holds the board lock. */
-	write?: boolean;
-	/** A waiter may accept only this exact hash from the released lease it observed. */
-	trustedPredecessorHash?: string;
-	/** Explicit reload takes the persisted note and discards any held document. */
-	ignoreHold?: boolean;
-}
-
-function availableBoardKeys(root: string): string[] {
-	try {
-		return listBoards(root)
-			.map((entry) => entry.key)
-			.filter((key, index, all) => all.indexOf(key) === index)
-			.toSorted();
-	} catch {
-		return [];
-	}
-}
-
-interface ResolvedBoardNote {
-	key: string;
-	loaded: LoadedBoard;
-}
-
-function resolveBoardNote(asked?: string | null, what?: string): ResolvedBoardNote {
-	const root = requireVaultRoot();
-	if (asked === undefined || asked === null || asked.trim() === "") {
-		throw new BoardRequiredError(availableBoardKeys(root), what);
-	}
-
-	let identity: BoardIdentity;
-	try {
-		identity = parseBoardKey(asked);
-	} catch (error) {
-		throw new BoardResolutionError(
-			asked,
-			"malformed",
-			`Board address ${JSON.stringify(asked)} is invalid: ${(error as Error).message} Run \`board list\` and pass one exact board key.`,
-			[],
-			{ cause: error },
-		);
-	}
-	const key = boardKey(identity);
-	const candidates =
-		key === boardKey(makeIdentity({ board: SCRATCH_BOARD }))
-			? []
-			: listBoards(root).filter((entry) => entry.key === key);
-	if (candidates.length > 1) {
-		const files = candidates.map((entry) => entry.file).toSorted();
-		throw new BoardResolutionError(
-			key,
-			"ambiguous",
-			`Board "${key}" matches ${files.length} notes: ${files.join(", ")}. Rename or remove the duplicate notes so one key names one board.`,
-			files,
-		);
-	}
-	const candidate = candidates[0];
-	if (candidate?.declaredKey) {
-		throw new BoardResolutionError(
-			key,
-			"conflicting",
-			`Board "${key}" resolves to ${candidate.file}, but that note declares itself as "${candidate.declaredKey}". Make the note path and frontmatter name agree, then retry.`,
-			[candidate.file],
-		);
-	}
-
+/**
+ * Read the one note a resolved address names, turning a failed or missing
+ * read into the refusal that says what to do about it.
+ * @param identity The board asked for.
+ * @param key Its key, for the messages.
+ * @param candidate The listed note, when the listing had one.
+ * @param root The vault root.
+ * @returns The loaded note.
+ */
+function loadResolvedNote(
+	identity: BoardIdentity,
+	key: string,
+	candidate: VaultBoard | undefined,
+	root: string,
+): LoadedBoard {
 	let loaded: LoadedBoard | null;
 	try {
 		loaded = readBoardFile(identity, root);
@@ -456,7 +223,7 @@ function resolveBoardNote(asked?: string | null, what?: string): ResolvedBoardNo
 		throw new BoardResolutionError(
 			key,
 			"malformed",
-			`Board "${key}" cannot be read from the vault: ${(error as Error).message} Repair or restore its note, then retry.`,
+			`Board "${key}" cannot be read from the vault: ${errorMessage(error)} Repair or restore its note, then retry.`,
 			candidate ? [candidate.file] : [],
 			{ cause: error },
 		);
@@ -468,66 +235,53 @@ function resolveBoardNote(asked?: string | null, what?: string): ResolvedBoardNo
 			`Board "${key}" was not found in the vault at ${root}. Run \`board list\` to see what exists, or \`board new ${key}\` to create it.`,
 		);
 	}
+	return loaded;
+}
+
+/**
+ * Resolve one explicit address to exactly one valid persisted note, or refuse
+ * with the reason: nothing named, a bad address, several notes, a note that
+ * disagrees with its own frontmatter, an unreadable note, or no note at all.
+ * @param asked The address as typed, if any.
+ * @param what What is being done, for the "needs a board" refusal.
+ * @returns The key and the loaded note.
+ */
+function resolveBoardNote(asked?: string | null, what?: string): ResolvedBoardNote {
+	const root = requireVaultRoot();
+	if (asked === undefined || asked === null || asked.trim() === "") {
+		throw new BoardRequiredError(availableBoardKeys(root), what);
+	}
+	const identity = parseAskedKey(asked);
+	const key = boardKey(identity);
+	const candidate = candidateNoteFor(key, root);
+	const loaded = loadResolvedNote(identity, key, candidate, root);
 	if (loaded.declaredKey) {
-		throw new BoardResolutionError(
-			key,
-			"conflicting",
-			`Board "${key}" resolves to ${loaded.file}, but that note declares itself as "${loaded.declaredKey}". Make the note path and frontmatter name agree, then retry.`,
-			[loaded.file],
-		);
+		throw conflictingDeclaration(key, loaded.file, loaded.declaredKey);
 	}
 	return { key, loaded };
 }
 
-/** Resolve one explicit address to exactly one valid persisted note. */
+/**
+ * Resolve one explicit address to exactly one valid persisted note and the
+ * board behind it, without touching session bookkeeping.
+ * @param asked The address as typed, if any.
+ * @param what What is being done, for the "needs a board" refusal.
+ * @returns The board, its content and the exact load.
+ */
 function resolveBoard(asked?: string | null, what?: string): ResolvedBoard {
-	const resolution = resolveBoardNote(asked, what);
-	const { key, loaded } = resolution;
+	const { key, loaded } = resolveBoardNote(asked, what);
 	const content = resolvedBoardContent(key, loaded);
 	const board: BoardState = { identity: loaded.identity, file: loaded.file };
 	return { key, board, content, loaded };
 }
 
-/** A held board has one live document, and its note is deliberately not it. */
-function copyHeldContent(content: BoardContent): BoardContent {
-	return {
-		...content,
-		elements: new Map(content.elements),
-		files: new Map(content.files),
-	};
-}
-
-function resolvedBoardContent(key: string, loaded: LoadedBoard): BoardContent {
-	const hold = holdOn(key);
-	return hold ? copyHeldContent(hold.content) : contentFromLoadedBoard(loaded);
-}
-
-/** Install one already-resolved load for explicit open/create/write bookkeeping. */
-function materializeResolvedBoard(
-	resolution: ResolvedBoardNote,
-	options: InstallBoardOptions = {},
-): ResolvedBoard {
-	const { key, loaded } = resolution;
-	const content = options.ignoreHold
-		? contentFromLoadedBoard(loaded)
-		: resolvedBoardContent(key, loaded);
-	const { board } = getOrCreateBoard(loaded.identity);
-	board.file = loaded.file;
-	const followsTrustedPredecessor =
-		options.write &&
-		options.trustedPredecessorHash === loaded.hash &&
-		board.baseline?.file === loaded.file &&
-		board.baseline.hash !== loaded.hash;
-	if (
-		options.write &&
-		(!board.baseline || board.baseline.file !== loaded.file || followsTrustedPredecessor)
-	) {
-		recordBaseline(board, loaded.file, loaded.hash, loaded.version);
-	}
-	return { key, board, content, loaded };
-}
-
-/** Resolve and install a board only for an operation that needs session bookkeeping. */
+/**
+ * Resolve and install a board only for an operation that needs session bookkeeping.
+ * @param asked The address as typed, if any.
+ * @param what What is being done, for the "needs a board" refusal.
+ * @param options Whether to take the note over a hold, and whether a write follows.
+ * @returns The registered board, its content and the exact load.
+ */
 function resolveInstalledBoard(
 	asked?: string | null,
 	what?: string,
@@ -536,19 +290,19 @@ function resolveInstalledBoard(
 	return materializeResolvedBoard(resolveBoardNote(asked, what), options);
 }
 
-/** Publish and register a canonical empty board without touching browser state. */
+/**
+ * Publish and register a canonical empty board without touching browser state.
+ * The note is created exclusively, so two writers racing to the same name
+ * leave one note and one refusal rather than one note written twice.
+ * @param identity The board to create.
+ * @returns The registered board and its empty content.
+ */
 function createBoard(identity: BoardIdentity): BoardAccess {
 	const root = requireVaultRoot();
 	const key = boardKey(identity);
 	const existing = listBoards(root).filter((entry) => entry.key === key);
 	if (existing.length > 0) {
-		const files = existing.map((entry) => entry.file).toSorted();
-		throw new BoardResolutionError(
-			key,
-			existing.length > 1 ? "ambiguous" : "conflicting",
-			`Board "${key}" already has ${existing.length === 1 ? "a note" : `${existing.length} notes`} in the vault at ${files.join(", ")}. Use another name, or resolve the existing note${existing.length === 1 ? "" : "s"} before retrying.`,
-			files,
-		);
+		throw existingNotesError(key, existing);
 	}
 	const file = vaultPathFor(identity, root);
 	const content = emptyContent();
@@ -558,7 +312,7 @@ function createBoard(identity: BoardIdentity): BoardAccess {
 	try {
 		writeFileAtomicExclusive(file, stamped.bytes);
 	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+		if (errnoCode(error) !== "EEXIST") {
 			throw error;
 		}
 		throw new BoardResolutionError(
@@ -591,143 +345,30 @@ function createBoard(identity: BoardIdentity): BoardAccess {
  * This stops before ingestScene. In particular, it does not mint ids, stamp
  * server fields, validate render geometry, deduplicate into a map, register a
  * board, or establish a write baseline.
+ * @param key The board key.
+ * @returns The scene's element records as the note holds them.
  */
 function readRawBoardElementsForInspection(key: string): readonly unknown[] {
 	return readBoardInspectionSnapshot(key).elements;
 }
 
-interface BoardInspectionSnapshot {
-	board: string;
-	elements: readonly unknown[];
-	fingerprint: string;
-	renderScene: BoardRenderSnapshot | null;
-}
-
-/** Validate and project one persisted scene for the browser renderer. */
-function projectBoardRenderSnapshot(scene: unknown): BoardInspectionSnapshot["renderScene"] {
-	const sceneRecord = !Array.isArray(scene) && scene && typeof scene === "object" ? scene : null;
-	const elements = Array.isArray(scene)
-		? scene
-		: sceneRecord
-			? Reflect.get(sceneRecord, "elements")
-			: undefined;
-	if (!Array.isArray(elements)) {
-		return null;
-	}
-	const ids = new Set<string>();
-	const projected: ServerElement[] = [];
-	for (const raw of elements) {
-		try {
-			const element = validatePersistedBoardElement(raw, "inspection scene");
-			if (ids.has(element.id)) {
-				return null;
-			}
-			ids.add(element.id);
-			projected.push(element);
-		} catch {
-			return null;
-		}
-	}
-	try {
-		validateRenderGeometry(projected);
-	} catch {
-		return null;
-	}
-	const rawFiles = sceneRecord ? (Reflect.get(sceneRecord, "files") ?? {}) : {};
-	if (!rawFiles || typeof rawFiles !== "object" || Array.isArray(rawFiles)) {
-		return null;
-	}
-	const files: Record<string, ExcalidrawFile> = {};
-	for (const [id, raw] of Object.entries(rawFiles)) {
-		if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-			return null;
-		}
-		const fileId = Reflect.get(raw, "id");
-		const dataURL = Reflect.get(raw, "dataURL");
-		const mimeType = Reflect.get(raw, "mimeType");
-		const created = Reflect.get(raw, "created");
-		if (
-			fileId !== id ||
-			typeof dataURL !== "string" ||
-			typeof mimeType !== "string" ||
-			typeof created !== "number" ||
-			!Number.isFinite(created)
-		) {
-			return null;
-		}
-		files[id] = { id, dataURL, mimeType, created };
-	}
-	const rawAppState = sceneRecord ? Reflect.get(sceneRecord, "appState") : undefined;
-	const background =
-		rawAppState && typeof rawAppState === "object" && !Array.isArray(rawAppState)
-			? Reflect.get(rawAppState, "viewBackgroundColor")
-			: undefined;
-	return {
-		elements: projected,
-		files,
-		appState: {
-			viewBackgroundColor: typeof background === "string" ? background : "#ffffff",
-		},
-	};
-}
-
-function hydratedFileFingerprintProjection(scene: unknown): readonly unknown[] {
-	if (Array.isArray(scene) || !scene || typeof scene !== "object") {
-		return [];
-	}
-	const sceneRecord = scene as Record<string, unknown>;
-	if (!Object.hasOwn(sceneRecord, "files")) {
-		return [];
-	}
-	const rawFiles = sceneRecord["files"];
-	if (!rawFiles || typeof rawFiles !== "object" || Array.isArray(rawFiles)) {
-		return [["invalid-files-value", rawFiles]];
-	}
-	return Object.keys(rawFiles)
-		.toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0))
-		.map((id) => {
-			const raw = (rawFiles as Record<string, unknown>)[id];
-			if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
-				return [id, ["invalid-file-value", raw]];
-			}
-			const file = raw as Record<string, unknown>;
-			const field = (name: string) =>
-				Object.hasOwn(file, name) ? ["present", file[name]] : ["missing"];
-			return [id, field("id"), field("mimeType"), field("created"), field("dataURL")];
-		});
-}
-
-function renderSnapshotFingerprint(noteHash: string, scene: unknown): string {
-	const files = hydratedFileFingerprintProjection(scene);
-	return hashBoardBytes(
-		Buffer.from(`archboard-render-snapshot-v1\n${JSON.stringify([noteHash, files])}`, "utf8"),
-	);
-}
-
-/** One named note read shared by inspection and focused rendering. */
+/**
+ * One named note read shared by inspection and focused rendering.
+ * @param key The board key.
+ * @returns The raw elements, a render projection and a fingerprint of both.
+ */
 function readBoardInspectionSnapshot(key: string): BoardInspectionSnapshot {
 	const { key: resolvedKey, loaded: note } = resolveBoardNote(key, "Inspecting a board");
-	const file = note.file;
 	const scene = parseLoadedScene(note);
-	if (Array.isArray(scene)) {
-		const renderScene = projectBoardRenderSnapshot(scene);
-		return {
-			board: resolvedKey,
-			elements: scene,
-			fingerprint: renderSnapshotFingerprint(note.hash, scene),
-			renderScene,
-		};
+	const elements = sceneElementsOf(scene);
+	if (!elements) {
+		throw new Error(`${note.file} has no elements array in its Drawing payload.`);
 	}
-	const elements = scene && typeof scene === "object" ? Reflect.get(scene, "elements") : undefined;
-	if (!Array.isArray(elements)) {
-		throw new Error(`${file} has no elements array in its Drawing payload.`);
-	}
-	const renderScene = projectBoardRenderSnapshot(scene);
 	return {
 		board: resolvedKey,
 		elements,
 		fingerprint: renderSnapshotFingerprint(note.hash, scene),
-		renderScene,
+		renderScene: projectBoardRenderSnapshot(scene),
 	};
 }
 
@@ -752,6 +393,8 @@ function readBoardInspectionSnapshot(key: string): BoardInspectionSnapshot {
  * elements inside them are shared, so a write path that edited one in place
  * rather than replacing it would still reach through; that is TASK-084 and it
  * is no worse here than on the note.
+ * @param board The open board.
+ * @returns Its content: the held copy, the note, or empty.
  */
 function readBoardContent(board: BoardState): BoardContent {
 	const hold = holdOn(boardKey(board.identity));
@@ -765,261 +408,16 @@ function readBoardContent(board: BoardState): BoardContent {
 }
 
 /**
- * The note a board's content would be written as.
- *
- * `existingNote` is what is at the destination: its frontmatter and prose are
- * carried across verbatim and only the identity keys are touched, which is what
- * keeps two writes of an unchanged board byte-identical. It defaults to the note
- * this content came out of, and a write passes the destination's instead —
- * `board save --as other` writes a file some other note's frontmatter belongs
- * to.
+ * The destination as it stands right now, not as this request found it.
+ * @param file The note's path.
+ * @returns Its bytes, or undefined when nothing is there to conflict with.
  */
-function renderContent(
-	identity: BoardState["identity"],
-	content: BoardContent,
-	existingNote: string | null | undefined = content.note,
-): { note: string; bytes: Buffer; elementCount: number } {
-	const files = boardFilesMessage(content).files ?? {};
-	const { scene, elementCount } = buildScene(
-		stripBindingPresentationLinks(
-			Array.from(content.elements.values(), (element) => packElementTracking(element)),
-			{ boardKey: boardKey(identity) },
-		),
-		files,
-		{ keepServerFields: true },
-	);
-	// expandElements normalizes a missing link to null, so apply the same
-	// portability rule once more to the normalized copies.
-	scene["elements"] = stripBindingPresentationLinks(
-		(scene["elements"] as ServerElement[]).map(packElementTracking),
-		{ boardKey: boardKey(identity) },
-	);
-	const note = renderBoardNote(scene, existingNote, identity);
-	return { note, bytes: Buffer.from(note, "utf-8"), elementCount };
-}
-
-/**
- * Give every text element an id that can be written as a block reference,
- * before the note writer has to.
- *
- * A text element's block id is its element id, and a block reference cannot
- * hold more than eight characters (`src/shared/ids/ids.ts`), so `wrapSceneAsObsidianMd`
- * renames a longer one on the way into a note. Nothing archboard mints needs
- * that (TASK-069), and a pane settles what Excalidraw minted before it reports
- * it, because renaming a text element somebody has an editor open on is how
- * typed characters disappear (TASK-098). So what still arrives here needing a
- * name is what a caller supplied and what came out of a note archboard did not
- * write.
- *
- * While the process held the board, the two spellings could sit side by side:
- * the store said one thing, the note said another, and nobody compared them.
- * The note is the board now, so that rename decides the element's real name —
- * and it used to happen after the write's answer had already been computed, so
- * an agent was told an id the board did not hold and a pane rendered a document
- * whose next read would come back with the element renamed under it.
- *
- * So it happens here, once, on the way in: the map, the answer, the broadcast
- * and the note all say the same name. `wrapSceneAsObsidianMd` keeps its own
- * rename for notes archboard did not write.
- *
- * Deterministic, through the same `derivedId` the note writer used, so a board
- * already in a vault keeps the ids it has.
- */
-/**
- * A text element carries the text the note's `## Text Elements` block lists.
- *
- * `rawText` is the Obsidian Excalidraw plugin's field: the text as somebody
- * wrote it, before links are resolved, and the note writer fills it in from the
- * element's own text when there is none. That used to happen on a copy on its
- * way into a file, so the board never had it — and a text element an agent
- * created came back from its own note carrying a field the pane had never been
- * sent (`tests/system/browser/live-session-convergence.test.ts` catches it).
- *
- * Filled rather than restated: a note the plugin wrote can hold a `rawText`
- * that is genuinely different from its `text` — a `[[wikilink]]` against what
- * it resolves to — and overwriting that would throw away the link.
- */
-function settleRawText(content: BoardContent): void {
-	for (const element of content.elements.values()) {
-		if (element.type !== "text" || element.isDeleted) {
-			continue;
-		}
-		if (typeof element.rawText === "string" && element.rawText !== "") {
-			continue;
-		}
-		element.rawText = element.originalText || element.text;
+function destinationBytes(file: string): Buffer | undefined {
+	try {
+		return fs.readFileSync(file);
+	} catch {
+		return undefined;
 	}
-}
-
-function settleBlockIds(content: BoardContent): void {
-	const foreign = Array.from(content.elements.values()).filter(
-		(element) => element.type === "text" && !element.isDeleted && !isBlockId(element.id),
-	);
-	if (foreign.length === 0) {
-		return;
-	}
-	const elements = Array.from(content.elements.values());
-	const taken = { has: (id: string) => content.elements.has(id) };
-	for (const element of foreign) {
-		const oldId = element.id;
-		const newId = derivedId(oldId, taken);
-		renameElementId(elements, oldId, newId);
-		content.elements.delete(oldId);
-		content.elements.set(newId, element);
-	}
-}
-
-/**
- * A shape an arrow is bound to says so, in its own `boundElements`.
- *
- * Excalidraw's model is two-sided: the arrow names the shape in `startBinding`
- * and `endBinding`, and the shape names the arrow back. The exporter has always
- * patched the second half in on the way into a file, and the board never had
- * it — which was survivable while the note and the store were different
- * documents, and is not now that they are one. The pane was handed a shape with
- * no reference to the arrow, the note was written with one, and the next read
- * brought back a document the pane did not have
- * (`tests/system/browser/live-session-convergence.test.ts` catches it).
- *
- * So the board gets it too, before the write, in the same pass as the block
- * ids: what the caller is told, what the panes are sent and what the note holds
- * are one document.
- */
-function settleBoundArrows(content: BoardContent): void {
-	for (const arrow of content.elements.values()) {
-		if (arrow.type !== "arrow" && arrow.type !== "line") {
-			continue;
-		}
-		const ends = [arrow.startBinding?.elementId, arrow.endBinding?.elementId];
-		for (const shapeId of ends) {
-			if (typeof shapeId !== "string") {
-				continue;
-			}
-			const shape = content.elements.get(shapeId);
-			if (!shape || shape.id === arrow.id) {
-				continue;
-			}
-			const bound = Array.isArray(shape.boundElements) ? shape.boundElements : [];
-			if (bound.some((entry) => entry?.id === arrow.id)) {
-				continue;
-			}
-			shape.boundElements = [...bound, { id: arrow.id, type: "arrow" as const }];
-		}
-	}
-}
-
-/**
- * Finish the one board document that can enter a hold, a note or an answer.
- * Keep this order beside the settlement functions it owns. Validation after
- * them proves the document a caller receives is the document persistence sees.
- */
-function settleBoardContent(content: BoardContent): void {
-	settleBlockIds(content);
-	settleBoundArrows(content);
-	settleRawText(content);
-	validateRenderGeometry(content.elements.values());
-}
-
-/**
- * A write archboard would not make, because somebody else has been here.
- *
- * Carries the conflict as data — the three outcomes and which one costs what —
- * so a surface can offer them rather than reword them (ADR 0006).
- */
-class BoardWriteConflictError extends Error {
-	readonly conflict: BoardWriteConflict;
-	constructor(conflict: BoardWriteConflict) {
-		super(conflict.message);
-		this.name = "BoardWriteConflictError";
-		this.conflict = conflict;
-	}
-}
-
-/**
- * What archboard found at a path that it did not put there.
- *
- * Shaped so that `describeWriteConflict` can be spread straight onto it, which
- * is the point: one set of facts, and the refusal and the mark are two ways of
- * saying it.
- */
-interface ForeignWrite {
-	file: string;
-	reason: "changed" | "unseen";
-	expectedHash?: string;
-	actualHash: string;
-	lastReadAt?: string;
-	fileModifiedAt: string;
-	/**
-	 * Which way the note's version moved between archboard's last write here and
-	 * now (TASK-091). The hash establishes that these are not archboard's bytes;
-	 * this says who wrote them. `unchanged` is the foreign writer named — a
-	 * version key is carried across a save verbatim by everything that does not
-	 * maintain it — `behind` is a revert or a pull, `ahead` is another archboard.
-	 */
-	versionMove: VersionMove;
-	/** What archboard last wrote there, and what the note says now. */
-	expectedVersion: number | null;
-	actualVersion: number | null;
-}
-
-/**
- * Has something that is not archboard written this note?
- *
- * ADR 0006's comparison, on its own, because two things ask it. A write asks in
- * order to refuse, and it asks about the bytes it has already read. The mark in
- * the board bar asks about a board nobody is writing, so that a person drawing
- * on a copy the vault no longer holds finds out before their next edit is
- * refused rather than after (TASK-062).
- *
- * They must not be two comparisons. The mark's whole claim is that it shows the
- * state in which the next write *would* be refused, and a second implementation
- * of the same question is a second implementation that drifts — showing a mark
- * over a write that would go through, or staying quiet over one that would not.
- * So the bytes come in from whoever read them and only the comparison lives
- * here.
- *
- * Nothing at the path is not somebody else's work: an empty destination is what
- * a `board new` writes into, and the write goes ahead. Bytes archboard has
- * never read are, because it cannot tell what writing over them would delete —
- * that is the `unseen` half of the same refusal.
- */
-function foreignWriteTo(file: string, destination: Buffer | undefined): ForeignWrite | null {
-	if (!destination) {
-		return null;
-	}
-	const actualHash = hashBoardBytes(destination);
-	// Asked of the whole registry rather than of one board, because a baseline
-	// belongs to a path: `board save --as other` writes a file some other open
-	// board is the one that read.
-	const expected = baselineForFile(file);
-	if (expected?.hash === actualHash) {
-		return null;
-	}
-	// Read only once the bytes are already known to differ: the version answers
-	// "who wrote this", which is a question that only arises after the hash has
-	// said somebody did. The hash still decides, and this only ever describes.
-	const actualVersion = versionNumber(destination.toString("utf-8"));
-	return {
-		file,
-		reason: expected ? "changed" : "unseen",
-		...(expected ? { expectedHash: expected.hash, lastReadAt: expected.at } : {}),
-		actualHash,
-		fileModifiedAt: fs.statSync(file).mtime.toISOString(),
-		versionMove: versionMove(expected?.version ?? null, actualVersion),
-		expectedVersion: expected?.version ?? null,
-		actualVersion,
-	};
-}
-
-interface WriteOptions {
-	/** The human's "overwrite it anyway". Never set by archboard on its own behalf. */
-	force?: boolean;
-	/**
-	 * The board key the save was issued for, when it is not the note being
-	 * written (`board save --board <this> --as <that>`), so a refusal prints
-	 * the command that was actually run. Absent means a same-board save.
-	 */
-	savedFrom?: string;
 }
 
 /**
@@ -1044,6 +442,10 @@ interface WriteOptions {
  *
  * Nothing is written when the check fails, so a refused write leaves the vault
  * exactly as it found it, empty directories included.
+ * @param board The open board, which must have a note path.
+ * @param content The board to write; settled in place first.
+ * @param options Force, and which board the save was issued for.
+ * @returns Where it was written, what the bytes hashed to, and the note's new version.
  */
 function writeBoardContent(
 	board: BoardState,
@@ -1066,25 +468,8 @@ function writeBoardContent(
 	// what the note will say are the same document.
 	settleBoardContent(content);
 
-	// The destination as it stands right now, not as this request found it.
-	let destination: Buffer | undefined;
-	try {
-		destination = fs.readFileSync(file);
-	} catch {
-		/* nothing there: nothing to conflict with */
-	}
-	const overwrote = destination !== undefined;
-
-	const foreign = options.force ? null : foreignWriteTo(file, destination);
-	if (foreign) {
-		throw new BoardWriteConflictError(
-			describeWriteConflict({
-				target: identity,
-				...foreign,
-				...(options.savedFrom === undefined ? {} : { savedFrom: options.savedFrom }),
-			}),
-		);
-	}
+	const destination = destinationBytes(file);
+	refuseForeignWrite(file, identity, destination, options);
 
 	const rendered = renderContent(
 		identity,
@@ -1094,7 +479,6 @@ function writeBoardContent(
 		destination?.toString("utf-8"),
 	);
 	const { note, bytes, version } = stampBoardVersion(rendered, destination);
-	const { elementCount } = rendered;
 	// The folder for a nested name, made after the check rather than before it,
 	// so a refused write leaves no directory behind.
 	fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -1107,38 +491,51 @@ function writeBoardContent(
 	// What archboard has now seen at this path is what it just wrote — the
 	// operand the *next* write's check compares against, both halves of it.
 	recordBaseline(board, file, hash, version);
-	return { file, hash, note, elementCount, overwrote, version };
+	return {
+		file,
+		hash,
+		note,
+		elementCount: rendered.elementCount,
+		overwrote: destination !== undefined,
+		version,
+	};
 }
 
 export {
 	type BoardContent,
-	boardFilesMessage,
 	type LoadedBoard,
-	emptyContent,
-	ingestScene,
 	type NoteFile,
-	readNoteFile,
-	readBoardFile,
-	readNote,
 	type BoardAccess,
 	type ResolvedBoard,
 	type InstallBoardOptions,
 	type ResolvedBoardNote,
+	boardFilesMessage,
+	emptyContent,
+	ingestScene,
+	materializeResolvedBoard,
+} from "@/runtime/engine/lib/board-io-content";
+export {
+	type BoardInspectionSnapshot,
+	projectBoardRenderSnapshot,
+} from "@/runtime/engine/lib/board-io-inspection";
+export {
+	BoardWriteConflictError,
+	type ForeignWrite,
+	type WriteOptions,
+	foreignWriteTo,
+} from "@/runtime/engine/lib/board-io-conflict";
+export { renderContent } from "@/runtime/engine/lib/board-io-note-render";
+export { settleBoardContent } from "@/runtime/engine/lib/board-io-settlement";
+export {
+	readNoteFile,
+	readBoardFile,
+	readNote,
 	resolveBoardNote,
 	resolveBoard,
-	materializeResolvedBoard,
 	resolveInstalledBoard,
 	createBoard,
 	readRawBoardElementsForInspection,
-	type BoardInspectionSnapshot,
-	projectBoardRenderSnapshot,
 	readBoardInspectionSnapshot,
 	readBoardContent,
-	renderContent,
-	settleBoardContent,
-	BoardWriteConflictError,
-	type ForeignWrite,
-	foreignWriteTo,
-	type WriteOptions,
 	writeBoardContent,
 };

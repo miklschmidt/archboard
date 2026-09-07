@@ -2,7 +2,7 @@ export {
 	BROWSER_GATEWAY_ACTIONS,
 	BROWSER_GATEWAY_ERROR_CODES,
 	BROWSER_SNAPSHOT_DELTA_KEYS,
-} from "./lib/envelope.js";
+} from "@/shared/codex-browser-gateway/lib/envelope";
 
 export type {
 	BrowserGatewayAccountReadResult,
@@ -15,4 +15,4 @@ export type {
 	BrowserSnapshotDelta,
 	BrowserSnapshotDeltaKey,
 	BrowserSnapshotDeltaKeysAreExhaustive,
-} from "./lib/envelope.js";
+} from "@/shared/codex-browser-gateway/lib/envelope";

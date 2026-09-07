@@ -4,19 +4,19 @@ import type {
 	EpochOperationRecord,
 	EpochSnapshot,
 	EpochTransaction,
-} from "../../codex-epoch/index.js";
+} from "@/runtime/codex-epoch";
 import type {
 	CodexSession,
 	SessionParams,
 	SessionResponse,
 	SessionThread,
-} from "../../codex-session/index.js";
+} from "@/runtime/codex-session";
 import type {
 	CodexThreadLinkPort,
 	ThreadLinkBindingSnapshot,
 	ThreadLinkCasToken,
 	ThreadLinkTarget,
-} from "../../codex-thread-link/index.js";
+} from "@/runtime/codex-thread-link";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -25,7 +25,7 @@ import type {
 	OperationId,
 	ThreadId,
 	TrustedIdentityDecoder,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 
 type WorkhorseThreadStartParams = SessionParams<"thread/start">;
 type WorkhorseStartResponse = SessionResponse<"thread/start">;
@@ -129,7 +129,7 @@ interface CodexWorkhorseStart {
 	readonly start: (input: WorkhorseStartInput) => Promise<WorkhorseSnapshot>;
 	readonly snapshot: () => WorkhorseSnapshot;
 }
-import type { CODEX_SESSION_THREAD_SOURCE } from "../../codex-session/index.js";
+import type { CODEX_SESSION_THREAD_SOURCE } from "@/runtime/codex-session";
 
 export {
 	type WorkhorseThreadStartParams,

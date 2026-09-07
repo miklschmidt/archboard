@@ -1,7 +1,13 @@
 {
 	"task": "TASK-150",
-	"deferredTask": "TASK-151",
-	"scope": "src/ui/**",
+	"adoptedOutsideUiBy": "TASK-151",
+	"scope": ["src/**", "scripts/**", "tools/**", "vite.config.ts"],
+	"baselineScope": [
+		"tests/**",
+		"src/*/*/tests/**",
+		"frontend/**",
+		"src/server/board-rendering/browser.ts"
+	],
 	"oxlint": "1.80.0",
 	"tsgolint": "7.0.2001",
 	"categories": ["correctness", "suspicious", "perf"],

@@ -1,4 +1,4 @@
-export { createCodexApprovalBroker } from "./lib/broker.js";
+export { createCodexApprovalBroker } from "@/runtime/codex-approvals/lib/broker";
 export type {
 	ApprovalBinding,
 	ApprovalBindingInput,
@@ -34,6 +34,6 @@ export type {
 	SpokenEligibilityReason,
 	TerminalApprovalState,
 	UserInputApprovalRequest,
-} from "./lib/contract.js";
-export { CodexApprovalError } from "./lib/contract.js";
-export { parseApprovalResponse } from "./lib/response.js";
+} from "@/runtime/codex-approvals/lib/contract";
+export { CodexApprovalError } from "@/runtime/codex-approvals/lib/contract";
+export { parseApprovalResponse } from "@/runtime/codex-approvals/lib/response";

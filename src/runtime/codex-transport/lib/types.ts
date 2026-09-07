@@ -8,7 +8,7 @@ import type {
 	ResponsePayloads,
 	ServerRequestMethod,
 	ServerRequestPayloads,
-} from "../../codex-protocol/index.js";
+} from "@/runtime/codex-protocol";
 import type {
 	ChildEpoch,
 	ChildId,
@@ -17,7 +17,7 @@ import type {
 	LogicalToolCallCorrelation,
 	ThreadId,
 	WireRequestCorrelation,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	CodexRemoteError,
 	CodexRequestFailureReason,
@@ -26,7 +26,7 @@ import type {
 	TransportRemoteErrorSummary,
 	CodexTransportRemoteError,
 	CodexTransportWriteError,
-} from "./errors.js";
+} from "@/runtime/codex-transport/lib/errors";
 
 /** The subset of the Node child-process contract that the transport needs. */
 type CodexTransportChild = Pick<
@@ -50,6 +50,12 @@ type ResponseOwner =
 	| "codex-session";
 
 type DynamicDispatcherOwner = Exclude<ResponseOwner, "codex-approvals" | "codex-session">;
+
+/** The owners allowed to register a dynamic dispatcher, checked where a registration enters. */
+const DYNAMIC_DISPATCHER_OWNERS: readonly DynamicDispatcherOwner[] = Object.freeze([
+	"codex-dynamic-tools",
+	"codex-coordinator-tools",
+]);
 
 const HUMAN_APPROVAL_METHODS = Object.freeze([
 	"item/commandExecution/requestApproval",
@@ -342,6 +348,7 @@ export {
 	type CodexTransportChild,
 	type ResponseOwner,
 	type DynamicDispatcherOwner,
+	DYNAMIC_DISPATCHER_OWNERS,
 	HUMAN_APPROVAL_METHODS,
 	type HumanApprovalMethod,
 	SESSION_SERVER_REQUEST_METHODS,

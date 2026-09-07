@@ -1,12 +1,12 @@
 export {
 	createCanvasCodexBrowserSocketOwner,
 	createCanvasCodexBrowserSocketSend,
-} from "./lib/codex-workbench-browser.js";
+} from "@/server/canvas/lib/codex-workbench-browser";
 
 export type {
 	CanvasCodexBrowserSocketOwner,
 	CanvasCodexBrowserSocketOwnerOptions,
 	CanvasCodexBrowserSocketSend,
 	CanvasCodexBrowserWebSocket,
-} from "./lib/codex-workbench-browser.js";
-export type { BrowserConnectionInstance } from "../codex-workbench/index.js";
+} from "@/server/canvas/lib/codex-workbench-browser";
+export type { BrowserConnectionInstance } from "@/server/codex-workbench";

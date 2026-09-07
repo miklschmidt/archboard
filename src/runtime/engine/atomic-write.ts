@@ -34,10 +34,108 @@ import path from "node:path";
  * before it even reaches the `.excalidraw.md` test. It also keeps a `.tmp`
  * suffix, so nothing that walks a vault by extension can mistake it for a
  * board. The pid keeps two processes writing the same path apart.
+ * @param file The destination being written.
+ * @returns The temp path to write through.
  */
 function tempPathFor(file: string): string {
 	const dir = path.dirname(file);
 	return path.join(dir, `.${path.basename(file)}.${process.pid}.tmp`);
+}
+
+/** Which file a name pointed at, so a later look can tell it is still that one. */
+interface FileIdentity {
+	dev: number;
+	ino: number;
+}
+
+/**
+ * Close a file handle, where there is one, without turning a cleanup failure
+ * into the failure the caller hears about.
+ * @param handle The handle, or nothing.
+ */
+function closeQuietly(handle: number | undefined): void {
+	if (handle === undefined) {
+		return;
+	}
+	try {
+		fs.closeSync(handle);
+	} catch {
+		/* already gone */
+	}
+}
+
+/**
+ * Remove a file that may never have existed.
+ * @param file The path to remove.
+ */
+function unlinkQuietly(file: string): void {
+	try {
+		fs.unlinkSync(file);
+	} catch {
+		/* never created, or already gone */
+	}
+}
+
+/**
+ * Remove the temp name once the destination has been committed.
+ *
+ * A transient cleanup failure after the hard-link commit is not a publication
+ * failure, so the removal is retried once; a second failure is left to the
+ * caller, which by then already knows the commit stands.
+ * @param tmp The temp path.
+ */
+function removeTempAfterCommit(tmp: string): void {
+	try {
+		fs.unlinkSync(tmp);
+	} catch {
+		fs.unlinkSync(tmp);
+	}
+}
+
+/**
+ * Whether a name still points at the file this call committed.
+ * @param file The destination.
+ * @param identity What the committed inode was.
+ * @returns True when the destination is still that inode.
+ */
+function sameFile(file: string, identity: FileIdentity | undefined): boolean {
+	if (identity === undefined) {
+		return false;
+	}
+	try {
+		const stats = fs.lstatSync(file);
+		return stats.dev === identity.dev && stats.ino === identity.ino;
+	} catch {
+		/* missing or no longer the inode this call committed */
+		return false;
+	}
+}
+
+/**
+ * Decide what a failure after the commit point actually means.
+ *
+ * The hard link either happened or it did not. If the destination is still the
+ * inode this call published, whatever failed afterwards was cleanup, and the
+ * publication stands. If it is not, somebody else's file is there and the
+ * original failure is the truth.
+ * @param file The destination.
+ * @param tmp The temp path.
+ * @param identity What the committed inode was.
+ * @param error What was thrown after the commit.
+ * @throws {unknown} The original error, when the destination is no longer ours.
+ */
+function keepCommitOrThrow(
+	file: string,
+	tmp: string,
+	identity: FileIdentity | undefined,
+	error: unknown,
+): void {
+	const stillOurs = sameFile(file, identity);
+	unlinkQuietly(tmp);
+	if (!stillOurs) {
+		throw error;
+	}
+	fsyncDir(path.dirname(file));
 }
 
 /**
@@ -46,6 +144,9 @@ function tempPathFor(file: string): string {
  * Throws what the underlying write threw, having removed the temp file first,
  * so a failure leaves the destination exactly as it was and the directory no
  * untidier than it found it.
+ * @param file Where the bytes go.
+ * @param data The bytes.
+ * @throws {unknown} Whatever the underlying write threw.
  */
 function writeFileAtomic(file: string, data: string | Buffer): void {
 	const tmp = tempPathFor(file);
@@ -61,18 +162,8 @@ function writeFileAtomic(file: string, data: string | Buffer): void {
 		fs.renameSync(tmp, file);
 		fsyncDir(path.dirname(file));
 	} catch (error) {
-		if (handle !== undefined) {
-			try {
-				fs.closeSync(handle);
-			} catch {
-				/* already gone */
-			}
-		}
-		try {
-			fs.unlinkSync(tmp);
-		} catch {
-			/* never created, or already renamed */
-		}
+		closeQuietly(handle);
+		unlinkQuietly(tmp);
 		throw error;
 	}
 }
@@ -83,12 +174,15 @@ function writeFileAtomic(file: string, data: string | Buffer): void {
  * The hard link is the commit point: it either creates `file` as another name
  * for the fully synced temp inode or fails with EEXIST. This is the narrow
  * artifact-set counterpart to the replace-in-place note writer above.
+ * @param file Where the bytes go.
+ * @param data The bytes.
+ * @throws {unknown} Whatever the underlying write threw, unless the commit stands.
  */
 function writeFileAtomicExclusive(file: string, data: string | Buffer): void {
 	const tmp = tempPathFor(file);
 	let handle: number | undefined;
 	let committed = false;
-	let committedIdentity: { dev: number; ino: number } | undefined;
+	let committedIdentity: FileIdentity | undefined;
 	try {
 		handle = fs.openSync(tmp, "w");
 		fs.writeFileSync(handle, data);
@@ -99,49 +193,15 @@ function writeFileAtomicExclusive(file: string, data: string | Buffer): void {
 		handle = undefined;
 		fs.linkSync(tmp, file);
 		committed = true;
-		try {
-			fs.unlinkSync(tmp);
-		} catch {
-			// A transient cleanup failure after the hard-link commit is not a
-			// publication failure. Retry once before verifying the committed name.
-			fs.unlinkSync(tmp);
-		}
+		removeTempAfterCommit(tmp);
 		fsyncDir(path.dirname(file));
 	} catch (error) {
-		if (handle !== undefined) {
-			try {
-				fs.closeSync(handle);
-			} catch {
-				/* already gone */
-			}
-		}
+		closeQuietly(handle);
 		if (committed) {
-			let destinationStillOwnsCommit = false;
-			try {
-				const destinationStats = fs.lstatSync(file);
-				destinationStillOwnsCommit =
-					committedIdentity !== undefined &&
-					destinationStats.dev === committedIdentity.dev &&
-					destinationStats.ino === committedIdentity.ino;
-			} catch {
-				/* missing or no longer the inode this call committed */
-			}
-			try {
-				fs.unlinkSync(tmp);
-			} catch {
-				/* cleanup remains best effort after the committed link */
-			}
-			if (destinationStillOwnsCommit) {
-				fsyncDir(path.dirname(file));
-				return;
-			}
-			throw error;
+			keepCommitOrThrow(file, tmp, committedIdentity, error);
+			return;
 		}
-		try {
-			fs.unlinkSync(tmp);
-		} catch {
-			/* never created, or already unlinked */
-		}
+		unlinkQuietly(tmp);
 		throw error;
 	}
 }
@@ -149,7 +209,15 @@ function writeFileAtomicExclusive(file: string, data: string | Buffer): void {
 // The rename itself is a directory change, and it is durable only once the
 // directory has been synced. Best effort: opening a directory for reading is
 // not portable, and a platform that refuses gives up durability of the rename
-// rather than the write, which is the smaller of the two.
+/**
+ * Make a directory's own change durable.
+ *
+ * The rename itself is a directory change, and it is durable only once the
+ * directory has been synced. Best effort: opening a directory for reading is
+ * not portable, and a platform that refuses gives up durability of the rename
+ * rather than of the write, which is the smaller of the two.
+ * @param dir The directory whose entry changed.
+ */
 function fsyncDir(dir: string): void {
 	let handle: number | undefined;
 	try {

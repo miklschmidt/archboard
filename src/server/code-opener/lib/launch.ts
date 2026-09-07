@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-import type { OpenerCommand } from "../../../shared/code-target/index.js";
+import type { OpenerCommand } from "@/shared/code-target";
 
 type LaunchResult =
 	| { ok: true }
@@ -11,6 +11,11 @@ type ResolvedOpenerCommand =
 	| { ok: true; command: OpenerCommand }
 	| { ok: false; code: "OPENER_UNAVAILABLE"; error: string };
 
+/**
+ * Tells whether a path names a regular file this process may execute.
+ * @param candidate An absolute path.
+ * @returns True for an executable regular file.
+ */
 function executableFile(candidate: string): boolean {
 	try {
 		if (!fs.statSync(candidate).isFile()) {
@@ -23,6 +28,11 @@ function executableFile(candidate: string): boolean {
 	}
 }
 
+/**
+ * Finds the executable an opener names, on PATH for a bare name or in place for an absolute one.
+ * @param executable The executable as the selection spells it.
+ * @returns The path to run, or null when nothing runnable was found.
+ */
 function resolveExecutable(executable: string): string | null {
 	if (path.posix.isAbsolute(executable) || path.win32.isAbsolute(executable)) {
 		return executableFile(executable) ? executable : null;
@@ -30,6 +40,11 @@ function resolveExecutable(executable: string): string | null {
 	return Bun.which(executable) ?? null;
 }
 
+/**
+ * Resolves a planned command's executable so a launch can name what it will run.
+ * @param command The planned opener command.
+ * @returns The command with its executable resolved, or the unavailability failure.
+ */
 function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerCommand {
 	const executable = resolveExecutable(command.executable);
 	return executable
@@ -41,6 +56,11 @@ function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerCommand {
 			};
 }
 
+/**
+ * Starts the opener detached, reporting only whether the process came up.
+ * @param command The planned opener command.
+ * @returns Success once the child spawned, or the failure that prevented it.
+ */
 async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 	const resolved = resolveOpenerCommand(command);
 	if (!resolved.ok) {
@@ -49,6 +69,10 @@ async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 	return new Promise((resolve) => {
 		let settled = false;
 		let child: ReturnType<typeof spawn>;
+		/**
+		 * Settles the launch once, detaching the listeners that could settle it again.
+		 * @param result The launch outcome.
+		 */
 		const finish = (result: LaunchResult): void => {
 			if (settled) {
 				return;
@@ -58,10 +82,15 @@ async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 			child.removeListener("error", onError);
 			resolve(result);
 		};
+		/** Lets the opener outlive this process once it has started. */
 		const onSpawn = (): void => {
 			child.unref();
 			finish({ ok: true });
 		};
+		/**
+		 * Reports a child that could not start.
+		 * @param error The spawn error.
+		 */
 		const onError = (error: Error): void => {
 			finish({
 				ok: false,

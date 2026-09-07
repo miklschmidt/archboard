@@ -3,7 +3,7 @@ export {
 	COORDINATOR_TOOLS_OWNER,
 	COORDINATOR_REPLAY_LIMITS,
 	CodexCoordinatorToolsError,
-} from "./lib/contract.js";
+} from "@/runtime/codex-coordinator-tools/lib/contract";
 export type {
 	CodexCoordinatorToolsOptions,
 	CoordinatorDynamicDispatcher,
@@ -28,20 +28,20 @@ export type {
 	CoordinatorToolValueFor,
 	CoordinatorToolsServerRequest,
 	DynamicToolResponse,
-} from "./lib/contract.js";
+} from "@/runtime/codex-coordinator-tools/lib/contract";
 
-export { createCodexCoordinatorTools } from "./lib/dispatcher.js";
+export { createCodexCoordinatorTools } from "@/runtime/codex-coordinator-tools/lib/dispatcher";
 export {
 	CoordinatorToolValidationError,
 	isCoordinatorToolRequest,
 	validateCoordinatorToolRequest,
-} from "./lib/validation.js";
-export type { ValidatedCoordinatorToolCall } from "./lib/validation.js";
+} from "@/runtime/codex-coordinator-tools/lib/validation";
+export type { ValidatedCoordinatorToolCall } from "@/runtime/codex-coordinator-tools/lib/validation";
 export {
 	approvalRequiredResponse,
 	okResponse,
 	outcomeUnknownResponse,
 	parseResponseText,
 	refusedResponse,
-} from "./lib/response.js";
-export type { DynamicToolEnvelope } from "./lib/response.js";
+} from "@/runtime/codex-coordinator-tools/lib/response";
+export type { DynamicToolEnvelope } from "@/runtime/codex-coordinator-tools/lib/response";

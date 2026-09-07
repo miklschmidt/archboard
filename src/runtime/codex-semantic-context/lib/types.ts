@@ -4,7 +4,7 @@ import type {
 	RealtimeSessionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 
 type SemanticChangeOrigin = "human" | "agent" | "mixed";
 type SemanticChangeSignificance = "layout" | "structural" | "cosmetic";

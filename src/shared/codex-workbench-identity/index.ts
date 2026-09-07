@@ -8,7 +8,7 @@ export {
 	logicalToolCallKey,
 	restoreIdentityAuthorities,
 	restoreIdentityAuthority,
-} from "./lib/identity.js";
+} from "@/shared/codex-workbench-identity/lib/identity";
 
 export type {
 	AnyIdentity,
@@ -45,4 +45,4 @@ export type {
 	TrustedOperationIdDecoder,
 	WireRequestCorrelation,
 	WireRequestCorrelationInput,
-} from "./lib/identity.js";
+} from "@/shared/codex-workbench-identity/lib/identity";

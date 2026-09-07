@@ -1,4 +1,4 @@
-import { createBrowserSchemas } from "./lib/browser.js";
+import { createBrowserSchemas } from "@/shared/codex-browser-model/lib/browser";
 import {
 	createIdentitySchemas,
 	JsonValueSchema,
@@ -7,10 +7,17 @@ import {
 	NonNegativeIntegerSchema,
 	NullableNonNegativeIntegerSchema,
 	SafeUrlSchema,
-} from "./lib/scalars.js";
-import type { IdentityAuthorities } from "../codex-workbench-identity/index.js";
-import type { IdentityContext } from "./lib/scalars.js";
+} from "@/shared/codex-browser-model/lib/scalars";
+import type { IdentityAuthorities } from "@/shared/codex-workbench-identity/index";
+import type { IdentityContext } from "@/shared/codex-browser-model/lib/scalars";
 
+/**
+ * Builds the complete browser model, every identity and DTO schema, bound to
+ * one identity authority so nothing the browser exchanges can name a child,
+ * epoch or identity the session did not issue.
+ * @param context - The identity authorities, or a decoder-and-validator context with an optional operation capability.
+ * @returns The identity schemas together with the browser DTO and command schemas.
+ */
 function createCodexBrowserModel(context: IdentityContext | IdentityAuthorities) {
 	const normalizedContext: IdentityContext =
 		"identity" in context ? { ...context.identity, operation: context.operation } : context;
@@ -38,7 +45,7 @@ export {
 	BROWSER_SPOKEN_APPROVAL_STATES,
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createBrowserSpokenApprovalSchema,
-} from "./lib/spoken-approval.js";
+} from "@/shared/codex-browser-model/lib/spoken-approval";
 export {
 	BROWSER_PERMISSION_FILE_ACCESS,
 	BROWSER_THREAD_CANDIDATE_LIMIT,
@@ -47,7 +54,7 @@ export {
 	BROWSER_VOICE_CONTEXT_ENTRY_LIMIT,
 	browserSnapshotRelationshipIssues,
 	DeliveryOutcomeSchema,
-} from "./lib/browser.js";
+} from "@/shared/codex-browser-model/lib/browser";
 export {
 	createDynamicApprovalSchemas,
 	canonicalDynamicApprovalJson,
@@ -57,7 +64,7 @@ export {
 	DYNAMIC_APPROVAL_NAMESPACE,
 	DYNAMIC_APPROVAL_STATES,
 	DYNAMIC_APPROVAL_TOOLS,
-} from "./lib/dynamic-approval.js";
+} from "@/shared/codex-browser-model/lib/dynamic-approval";
 export type {
 	BrowserAccount,
 	BrowserApproval,
@@ -83,7 +90,7 @@ export type {
 	BrowserVoiceContext,
 	BrowserSchemas,
 	DeliveryOutcome,
-} from "./lib/browser.js";
+} from "@/shared/codex-browser-model/lib/browser";
 export type {
 	BrowserDynamicApproval,
 	BrowserDynamicApprovalEffect,
@@ -106,11 +113,11 @@ export type {
 	DynamicCoordinationApprovalRequest,
 	DynamicCoordinationApprovalResponse,
 	DynamicCoordinationApprovalState,
-} from "./lib/dynamic-approval.js";
+} from "@/shared/codex-browser-model/lib/dynamic-approval";
 export type {
 	AnyIdentity,
 	CodexIdentity,
 	IdentityContext,
 	IdentitySchemas,
 	JsonValue,
-} from "./lib/scalars.js";
+} from "@/shared/codex-browser-model/lib/scalars";

@@ -1,39 +1,34 @@
-import type { EpochOperationRecord, EpochTransaction } from "../../codex-epoch/index.js";
-import { CodexSessionMutationError } from "../../codex-session/index.js";
-import type { ThreadLinkClassification } from "../../codex-thread-link/index.js";
-import {
-	CodexWorkhorseQueueError,
-	type WorkhorseQueueMutation,
-} from "../../codex-workhorse-queue/index.js";
-import type { TransportServerNotification } from "../../codex-transport/server-requests.js";
+import type { EpochTransaction } from "@/runtime/codex-epoch";
+import type { ThreadLinkClassification } from "@/runtime/codex-thread-link";
+import type { WorkhorseQueueMutation } from "@/runtime/codex-workhorse-queue";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import type {
 	OperationId,
 	QueuedSubmissionId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import {
-	CodexWorkhorseOperationsError,
-	type WorkhorseCoordinatorCall,
-	type WorkhorseOperationBinding,
-	type WorkhorseOperationClassification,
-	type WorkhorseOperationCorrelation,
-	type WorkhorseOperationDelivery,
-	type WorkhorseOperationEvent,
-	type WorkhorseOperationEventListener,
-	type WorkhorseOperationName,
-	type WorkhorseOperationOptions,
-	type WorkhorseOperationRpc,
-	type WorkhorseOperationTarget,
-} from "./contract.js";
+} from "@/shared/codex-workbench-identity";
+import type {
+	WorkhorseCoordinatorCall,
+	WorkhorseOperationBinding,
+	WorkhorseOperationClassification,
+	WorkhorseOperationCorrelation,
+	WorkhorseOperationDelivery,
+	WorkhorseOperationEvent,
+	WorkhorseOperationEventListener,
+	WorkhorseOperationName,
+	WorkhorseOperationOptions,
+	WorkhorseOperationRpc,
+	WorkhorseOperationTarget,
+} from "@/runtime/codex-workhorse-operations/lib/contract";
+import { operationError } from "@/runtime/codex-workhorse-operations/lib/operation-errors";
 
 const INPUT_LIMIT_BYTES = 4_096;
-const WORKHORSE_CREATION_KIND = "create_thread";
-const WORKHORSE_THREAD_SOURCE = "archboard";
 const ATTENTION_FLAGS: ReadonlySet<string> = new Set(["waitingOnApproval", "waitingOnUserInput"]);
 
 type MutationOperation = Exclude<WorkhorseOperationName, "inspect_workhorse">;
 type QueueMutation = WorkhorseQueueMutation;
+type SettledDelivery = Exclude<WorkhorseOperationDelivery, "pending">;
 
 interface OperationState {
 	readonly operationId: OperationId;
@@ -110,9 +105,9 @@ interface WorkhorseEvents {
 	readonly stage: (input: StageInput) => OperationState;
 	readonly settleDurable: (
 		state: OperationState,
-		requested: Exclude<WorkhorseOperationDelivery, "pending">,
+		requested: SettledDelivery,
 		detail: string | null,
-	) => Exclude<WorkhorseOperationDelivery, "pending">;
+	) => SettledDelivery;
 	readonly terminal: (
 		state: OperationState,
 		type: "completed" | "failed",
@@ -136,14 +131,32 @@ interface WorkhorseRuntime extends WorkhorseValidation, WorkhorseEvents {
 	readonly enqueue: <Value>(work: () => Promise<Value>) => Promise<Value>;
 }
 
+/** The fields that make two coordinator calls the same logical call. */
+const CALL_IDENTITY_KEYS = [
+	"child",
+	"epoch",
+	"threadId",
+	"turnId",
+	"callId",
+	"namespace",
+	"tool",
+	"manifestHash",
+] as const satisfies readonly (keyof WorkhorseCoordinatorCall)[];
+
+/**
+ * Freeze a value with its type preserved, so snapshots handed to callers stay immutable.
+ * @param value - The value to freeze.
+ * @returns The same value, frozen.
+ */
 function freeze<T>(value: T): T {
 	return Object.freeze(value);
 }
 
-function messageOf(error: unknown): string {
-	return error instanceof Error ? error.message : "unknown error";
-}
-
+/**
+ * Trim a detail string to the input byte budget so an event never carries unbounded text.
+ * @param value - The detail text to bound.
+ * @returns The text unchanged when it fits, otherwise a byte-bounded prefix with an ellipsis.
+ */
 function boundedDetail(value: string): string {
 	if (Buffer.byteLength(value, "utf8") <= INPUT_LIMIT_BYTES) {
 		return value;
@@ -163,19 +176,23 @@ function boundedDetail(value: string): string {
 	return `${prefix}${suffix}`;
 }
 
+/**
+ * Compare two coordinator calls field by field; a call is trusted only when every identity
+ * component matches the one the host is currently executing.
+ * @param left - One coordinator call.
+ * @param right - The other coordinator call.
+ * @returns Whether both calls name the same logical tool call.
+ */
 function sameCall(left: WorkhorseCoordinatorCall, right: WorkhorseCoordinatorCall): boolean {
-	return (
-		left.child === right.child &&
-		left.epoch === right.epoch &&
-		left.threadId === right.threadId &&
-		left.turnId === right.turnId &&
-		left.callId === right.callId &&
-		left.namespace === right.namespace &&
-		left.tool === right.tool &&
-		left.manifestHash === right.manifestHash
-	);
+	return CALL_IDENTITY_KEYS.every((key) => left[key] === right[key]);
 }
 
+/**
+ * Compare two operation targets by child, epoch, thread and operation identity.
+ * @param left - One target.
+ * @param right - The other target.
+ * @returns Whether both targets name the same linked thread under the same ownership.
+ */
 function sameTarget(left: WorkhorseOperationTarget, right: WorkhorseOperationTarget): boolean {
 	return (
 		left.childId === right.childId &&
@@ -185,6 +202,12 @@ function sameTarget(left: WorkhorseOperationTarget, right: WorkhorseOperationTar
 	);
 }
 
+/**
+ * Compare two bindings, including both linked targets.
+ * @param left - One binding.
+ * @param right - The other binding.
+ * @returns Whether both bindings link the same coordinator and workhorse under the same epoch.
+ */
 function sameBinding(left: WorkhorseOperationBinding, right: WorkhorseOperationBinding): boolean {
 	return (
 		left.childId === right.childId &&
@@ -194,10 +217,20 @@ function sameBinding(left: WorkhorseOperationBinding, right: WorkhorseOperationB
 	);
 }
 
+/**
+ * Copy a target so later changes by the composition root cannot alter a captured operation.
+ * @param target - The live target.
+ * @returns A frozen copy.
+ */
 function snapshotTarget(target: WorkhorseOperationTarget): WorkhorseOperationTarget {
 	return freeze({ ...target });
 }
 
+/**
+ * Copy a binding and both of its targets for the lifetime of one operation.
+ * @param binding - The live binding.
+ * @returns A frozen copy with frozen targets.
+ */
 function snapshotBinding(binding: WorkhorseOperationBinding): WorkhorseOperationBinding {
 	return freeze({
 		childId: binding.childId,
@@ -207,10 +240,22 @@ function snapshotBinding(binding: WorkhorseOperationBinding): WorkhorseOperation
 	});
 }
 
+/**
+ * Copy a coordinator call so the event correlation keeps the call as it was accepted.
+ * @param call - The live call.
+ * @returns A frozen copy.
+ */
 function snapshotCall(call: WorkhorseCoordinatorCall): WorkhorseCoordinatorCall {
 	return freeze({ ...call });
 }
 
+/**
+ * Resolve the wire RPC an operation will issue, which the durable record must name exactly.
+ * @param operation - The mutating workhorse operation.
+ * @param queueOperation - The queue mutation when the operation goes through the queue.
+ * @param rpcOverride - An explicit RPC when the caller already decided the route.
+ * @returns The RPC method name recorded for the operation.
+ */
 function operationRpc(
 	operation: MutationOperation,
 	queueOperation?: QueueMutation,
@@ -231,67 +276,12 @@ function operationRpc(
 	return `thread/queue/${queueOperation}`;
 }
 
-function operationError(
-	code: ConstructorParameters<typeof CodexWorkhorseOperationsError>[0],
-	message: string,
-	options: ConstructorParameters<typeof CodexWorkhorseOperationsError>[2] = {},
-): CodexWorkhorseOperationsError {
-	return new CodexWorkhorseOperationsError(code, message, options);
-}
-
-function mapLinkReason(
-	reason: string,
-): ConstructorParameters<typeof CodexWorkhorseOperationsError>[0] {
-	switch (reason) {
-		case "stale_child":
-			return "stale_child";
-		case "prior_epoch":
-			return "prior_epoch";
-		case "thread_status_not_loaded":
-			return "not_loaded";
-		case "thread_status_system_error":
-			return "system_error";
-		case "direct_input_false":
-		case "direct_input_unknown":
-			return "not_controllable";
-		case "thread_start_outcome_unknown":
-		case "unknown_provenance":
-		case "thread_list_missing":
-		case "thread_list_ambiguous":
-		case "thread_loaded_list_ambiguous":
-		case "thread_source_custom":
-		case "thread_source_subagent":
-		case "thread_source_unknown":
-		case "thread_loaded_list_missing":
-			return "unknown_provenance";
-		default:
-			return "not_ready";
-	}
-}
-
-function sessionMutationOutcome(error: unknown): Exclude<WorkhorseOperationDelivery, "pending"> {
-	return error instanceof CodexSessionMutationError ? error.outcome : "outcome_unknown";
-}
-
-function queueMutationOutcome(
-	error: unknown,
-	effectStarted = true,
-): Exclude<WorkhorseOperationDelivery, "pending"> {
-	if (error instanceof CodexWorkhorseOperationsError) {
-		return effectStarted ? "outcome_unknown" : "not_delivered";
-	}
-	if (
-		error instanceof CodexWorkhorseQueueError &&
-		(error.code === "reconciliation_failed" || error.code === "stale_link")
-	) {
-		return effectStarted ? "outcome_unknown" : "not_delivered";
-	}
-	if (error instanceof CodexWorkhorseQueueError && error.outcome !== null) {
-		return error.outcome;
-	}
-	return "not_delivered";
-}
-
+/**
+ * Refuse caller text that is empty or larger than the input byte budget.
+ * @param value - The caller-supplied text.
+ * @param label - How the text is named in the refusal.
+ * @param allowEmpty - Whether an empty string is acceptable.
+ */
 function validateBoundedInput(value: string, label: string, allowEmpty = false): void {
 	if (typeof value !== "string" || (!allowEmpty && value.length === 0)) {
 		throw operationError("invalid_input", `${label} must be nonempty text.`);
@@ -304,6 +294,14 @@ function validateBoundedInput(value: string, label: string, allowEmpty = false):
 	}
 }
 
+/**
+ * Choose the operation identity for a mutation: the caller's when the dispatcher already owns
+ * the effect, otherwise a freshly minted one, and prove it is current before any effect.
+ * @param runtime - The operations runtime holding the operation authority.
+ * @param operation - The operation being identified, for the refusal message.
+ * @param candidate - The caller-supplied identity, if any.
+ * @returns The validated identity with its wire serialization.
+ */
 function selectOperationIdentity(
 	runtime: WorkhorseRuntime,
 	operation: MutationOperation,
@@ -324,6 +322,11 @@ function selectOperationIdentity(
 	}
 }
 
+/**
+ * Read the single in-progress turn from a classification, if exactly one exists.
+ * @param classification - The classified linked thread.
+ * @returns The active turn identity, or null when none or several turns are in progress.
+ */
 function activeTurnFromClassification(
 	classification: WorkhorseOperationClassification,
 ): TurnId | null {
@@ -334,14 +337,32 @@ function activeTurnFromClassification(
 	return active.length === 1 ? active[0]!.id : null;
 }
 
+/**
+ * Serialize a thread identity to the wire form used as a map key and in notifications.
+ * @param options - The operation options holding the identity decoder.
+ * @param threadId - The trusted thread identity.
+ * @returns The wire string.
+ */
 function threadIdWire(options: WorkhorseOperationOptions, threadId: ThreadId): string {
 	return options.identity.decoder.serializeCodexIdentity(threadId);
 }
 
+/**
+ * Serialize a turn identity to the wire form found in notifications.
+ * @param options - The operation options holding the identity decoder.
+ * @param turnId - The trusted turn identity.
+ * @returns The wire string.
+ */
 function turnIdWire(options: WorkhorseOperationOptions, turnId: TurnId): string {
 	return options.identity.decoder.serializeCodexIdentity(turnId);
 }
 
+/**
+ * Adopt a raw turn identity from a notification through the trusted decoder.
+ * @param options - The operation options holding the identity decoder.
+ * @param value - The raw wire turn identity.
+ * @returns The trusted turn identity.
+ */
 function turnIdFromRaw(options: WorkhorseOperationOptions, value: string): TurnId {
 	const adopted = options.identity.decoder.adoptCodexResponseIdentities({ turnIds: [value] });
 	const turnId = adopted.turnIds[0];
@@ -351,88 +372,35 @@ function turnIdFromRaw(options: WorkhorseOperationOptions, value: string): TurnI
 	return turnId;
 }
 
+/**
+ * Collect the client identities of the user messages in a turn; they are how a queued or
+ * started submission is matched back to the operation that sent it.
+ * @param turn - The turn from a turn lifecycle notification.
+ * @returns The client identities present on user messages.
+ */
 function userMessageClientIds(turn: TurnNotification["params"]["turn"]): readonly string[] {
 	return turn.items.flatMap((item) =>
 		item.type === "userMessage" && item.clientId !== null ? [item.clientId] : [],
 	);
 }
 
+/**
+ * Project a queue snapshot to its submission identities.
+ * @param queue - The queue entries.
+ * @returns A frozen list of identities in queue order.
+ */
 function queueIds(
 	queue: readonly { readonly id: QueuedSubmissionId }[],
 ): readonly QueuedSubmissionId[] {
 	return freeze(queue.map(({ id }) => id));
 }
 
-function recordMatchesTarget(
-	record: EpochOperationRecord,
-	target: WorkhorseOperationTarget,
-): boolean {
-	return (
-		record.correlation.childId === target.childId &&
-		record.correlation.epoch === target.epoch &&
-		record.provenance.childId === target.childId &&
-		record.provenance.epoch === target.epoch &&
-		record.provenance.threadId === target.threadId &&
-		record.correlation.operationId === target.operationId &&
-		record.provenance.threadSource !== null
-	);
-}
-
-function assertExecutableClassification(
-	classification: ThreadLinkClassification,
-	target: WorkhorseOperationTarget,
-	label: string,
-): void {
-	if (classification.link.state !== "executable") {
-		const reason = classification.link.reason ?? "unknown_provenance";
-		throw operationError(
-			mapLinkReason(reason),
-			`${label} is inspect-only: ${reason}. Re-read the current linked state before retrying.`,
-		);
-	}
-	if (
-		classification.link.childId !== target.childId ||
-		classification.link.epoch !== target.epoch ||
-		classification.link.threadId !== target.threadId ||
-		!classification.link.loaded ||
-		!classification.link.canAcceptDirectInput ||
-		classification.proof === null ||
-		!recordMatchesTarget(classification.proof.record, target) ||
-		classification.proof.record.status !== "committed" ||
-		classification.proof.record.outcome !== "delivered"
-	) {
-		throw operationError(
-			"unknown_provenance",
-			`${label} lost its current executable provenance; inspect the link before retrying.`,
-		);
-	}
-}
-
-function assertCreatedWorkhorse(classification: ThreadLinkClassification): void {
-	if (!isCreatedWorkhorse(classification)) {
-		throw operationError(
-			"unknown_provenance",
-			"Queue access is restricted to the created Archboard workhorse with proven ownership.",
-		);
-	}
-}
-
-function isCreatedWorkhorse(classification: ThreadLinkClassification): boolean {
-	return (
-		classification.link.state === "executable" &&
-		classification.link.source === "appServer" &&
-		classification.proof?.record.operation.kind === WORKHORSE_CREATION_KIND &&
-		classification.proof.record.provenance.threadSource === WORKHORSE_THREAD_SOURCE
-	);
-}
-
 export {
 	INPUT_LIMIT_BYTES,
-	WORKHORSE_CREATION_KIND,
-	WORKHORSE_THREAD_SOURCE,
 	ATTENTION_FLAGS,
 	type MutationOperation,
 	type QueueMutation,
+	type SettledDelivery,
 	type OperationState,
 	type RawNotification,
 	type TurnNotification,
@@ -441,7 +409,6 @@ export {
 	type WorkhorseEvents,
 	type WorkhorseRuntime,
 	freeze,
-	messageOf,
 	boundedDetail,
 	sameCall,
 	sameTarget,
@@ -450,10 +417,6 @@ export {
 	snapshotBinding,
 	snapshotCall,
 	operationRpc,
-	operationError,
-	mapLinkReason,
-	sessionMutationOutcome,
-	queueMutationOutcome,
 	validateBoundedInput,
 	selectOperationIdentity,
 	activeTurnFromClassification,
@@ -462,8 +425,4 @@ export {
 	turnIdFromRaw,
 	userMessageClientIds,
 	queueIds,
-	recordMatchesTarget,
-	assertExecutableClassification,
-	assertCreatedWorkhorse,
-	isCreatedWorkhorse,
 };

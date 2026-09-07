@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import type { CodexServerNotificationParamsByMethod } from "../../../shared/codex-app-server-contract/index.js";
+import type { CodexServerNotificationParamsByMethod } from "@/shared/codex-app-server-contract";
 import {
 	AuthModeSchema,
 	PlanTypeSchema,
@@ -11,14 +11,17 @@ import {
 	ThreadGoalSchema,
 	TurnErrorSchema,
 	TurnPlanStepSchema,
-} from "./core-schemas.js";
+} from "@/runtime/codex-protocol/lib/core-schemas";
 import {
 	RateLimitSnapshotSchema,
 	ThreadSettingsSchema,
 	ThreadTokenUsageSchema,
-} from "./config-schemas.js";
-import { FileUpdateChangeSchema, ThreadItemSchema } from "./item-schemas.js";
-import type { ServerNotificationMethod } from "./methods.js";
+} from "@/runtime/codex-protocol/lib/config-schemas";
+import {
+	FileUpdateChangeSchema,
+	ThreadItemSchema,
+} from "@/runtime/codex-protocol/lib/item-schemas";
+import type { ServerNotificationMethod } from "@/runtime/codex-protocol/lib/methods";
 import {
 	AccountLoginCompletedSchema,
 	AppInfoSchema,
@@ -40,10 +43,15 @@ import {
 	TextRangeSchema,
 	ThreadRealtimeItemAddedSchema,
 	TurnModerationMetadataSchema,
-} from "./notification-support-schemas.js";
-import { FiniteNumberSchema, JsonObjectSchema, RequestIdSchema, looseObject } from "./scalars.js";
-import { ThreadSchema, TurnSchema } from "./thread-schemas.js";
-import { codexIngressSchemas } from "./vendor-schema.js";
+} from "@/runtime/codex-protocol/lib/notification-support-schemas";
+import {
+	FiniteNumberSchema,
+	JsonObjectSchema,
+	RequestIdSchema,
+	looseObject,
+} from "@/runtime/codex-protocol/lib/scalars";
+import { ThreadSchema, TurnSchema } from "@/runtime/codex-protocol/lib/thread-schemas";
+import { codexIngressSchemas } from "@/runtime/codex-protocol/lib/vendor-schema";
 
 const ThreadIdSchema = looseObject({ threadId: z.string() });
 const ThreadTurnSchema = looseObject({ threadId: z.string(), turn: TurnSchema });
