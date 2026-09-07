@@ -36,6 +36,7 @@ interface ActiveRealtimeSession {
 	answerSdp: string | null;
 	answerSettled: boolean;
 	nextLiveOrder: number;
+	stopCatalogueUpdates: (() => void) | null;
 }
 
 function realtimeGeneration(session: ActiveRealtimeSession): CodexRealtimeGeneration {

@@ -37,9 +37,14 @@ interface CodexRealtimeAdapterOptions {
 		| "realtimeAppendSpeech"
 		| "realtimeStop"
 		| "timelineListPage"
+		| "threadInjectItems"
 	>;
 	readonly identity: IdentityAuthority;
 	readonly freshSemanticBrief: (wireSessionId: RealtimeSessionId) => FreshSemanticBrief["brief"];
+	readonly boardCatalogue: {
+		readonly read: () => string;
+		readonly subscribe: (onChange: () => void, onError: (error: Error) => void) => () => void;
+	};
 	readonly currentBinding: () => CodexRealtimeBinding | null;
 }
 

@@ -53,6 +53,10 @@ function harness(): Harness {
 	const adapter = createCodexRealtimeAdapter({
 		identity,
 		currentBinding: () => binding,
+		boardCatalogue: {
+			read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+			subscribe: () => () => {},
+		},
 		freshSemanticBrief: () => '{"source":"notification-identity-test"}',
 		session: {
 			realtimeStart: async (params) => {
@@ -60,6 +64,7 @@ function harness(): Harness {
 				return {};
 			},
 			realtimeAppendText: async () => ({}),
+			threadInjectItems: async () => ({}),
 			realtimeAppendSpeech: async () => ({}),
 			realtimeStop: async () => ({}),
 			timelineListPage: async () => ({

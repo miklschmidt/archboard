@@ -94,6 +94,10 @@ function raceHarness(): RaceHarness {
 	const adapter = createCodexRealtimeAdapter({
 		identity,
 		currentBinding: () => binding,
+		boardCatalogue: {
+			read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+			subscribe: () => () => {},
+		},
 		freshSemanticBrief: () => '{"source":"race"}',
 		session: {
 			realtimeStart: (params) => {
@@ -104,6 +108,7 @@ function raceHarness(): RaceHarness {
 				return start.promise;
 			},
 			realtimeAppendText: () => append.promise,
+			threadInjectItems: async () => ({}),
 			realtimeAppendSpeech: async () => ({}),
 			realtimeStop: () => stop.promise,
 			timelineListPage: () => timeline.promise,

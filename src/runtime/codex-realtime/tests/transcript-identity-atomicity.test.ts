@@ -69,6 +69,10 @@ function harness(): Harness {
 			linkedThreadId,
 			coordinatorThreadId,
 		}),
+		boardCatalogue: {
+			read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+			subscribe: () => () => {},
+		},
 		freshSemanticBrief: () => '{"source":"transcript-identity-atomicity"}',
 		session: {
 			realtimeStart: async (params) => {
@@ -76,6 +80,7 @@ function harness(): Harness {
 				return {};
 			},
 			realtimeAppendText: async () => ({}),
+			threadInjectItems: async () => ({}),
 			realtimeAppendSpeech: async () => ({}),
 			realtimeStop: async () => ({}),
 			timelineListPage: async (params) => {
