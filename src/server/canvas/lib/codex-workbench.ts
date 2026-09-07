@@ -1,9 +1,6 @@
 import { createCodexProcess } from "@/runtime/codex-process";
 import { createCodexTransport } from "@/runtime/codex-transport";
-import {
-	createIdentityAuthorities,
-	createIdentityLedger,
-} from "@/shared/codex-workbench-identity";
+import { createIdentityAuthorities, createIdentityLedger } from "@/shared/codex-workbench-identity";
 import { CodexWorkbenchCompositionError } from "@/server/canvas/lib/codex-workbench-error";
 import {
 	CODEX_WORKBENCH_OWNER,

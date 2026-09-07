@@ -286,22 +286,14 @@ export function createCanvasRealtimeActions(
 		/**
 		 * Stop the session a browser that has gone was speaking through.
 		 * @param context The pane and its connection.
-		 * @param reason Why the browser stopped listening.
-		 * @returns The stop, when there is one to wait on.
+		 * @returns When the session this browser was speaking through has stopped.
 		 */
-		onBrowserDisconnect: (context, reason) => {
-			if (
-				reason !== "browser_disconnected" &&
-				reason !== "child_disconnected" &&
-				reason !== "gateway_shutdown"
-			) {
-				return;
-			}
+		onBrowserDisconnect: async (context) => {
 			const active = activeRealtime;
 			if (active === null || active.connection !== context.connection) {
 				return;
 			}
-			return serialize(() => stopActive(active));
+			await serialize(() => stopActive(active));
 		},
 	};
 	return Object.freeze(actions);

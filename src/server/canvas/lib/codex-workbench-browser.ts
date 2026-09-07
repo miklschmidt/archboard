@@ -326,114 +326,115 @@ function createCanvasCodexBrowserSocketOwner(
 	 * each arm re-reads the action it is keyed by, which is what narrows the
 	 * request to the payload that arm answers.
 	 */
-	const requests: Readonly<Record<BrowserRequest["action"], (call: BrowserRequestCall) => Promise<void>>> =
-		{
-			/**
-			 * Answer with the pane's current snapshot.
-			 * @param call The request, the connection it acts on, and the socket.
-			 */
-			connect: async (call) => {
-				const { request, connection, transport } = call;
-				await sendPublishedResult(transport, request, connection, connection.snapshot());
-			},
-			/**
-			 * Re-read cached owner state before projecting it: this is what makes a
-			 * queue refresh a genuine read rather than a redraw of the last command.
-			 * @param call The request, the connection it acts on, and the socket.
-			 */
-			snapshot: async (call) => {
-				const { request, connection, transport } = call;
-				await connection.refreshProjection();
-				await sendPublishedResult(transport, request, connection, connection.snapshot());
-			},
-			/**
-			 * Take the pane's write lease.
-			 * @param call The request, the connection it acts on, and the socket.
-			 */
-			claimLease: async (call) => {
-				const { request, connection, transport } = call;
-				await sendResult(transport, request, connection.claimLease());
-			},
-			/**
-			 * Keep the pane's write lease.
-			 * @param call The request, the connection it acts on, and the socket.
-			 */
-			renewLease: async (call) => {
-				const { request, connection, transport } = call;
-				await sendResult(transport, request, connection.renewLease());
-			},
-			/**
-			 * Give up the pane's write lease.
-			 * @param call The request, the connection it acts on, and the socket.
-			 */
-			releaseLease: async (call) => {
-				const { request, connection, transport } = call;
-				await sendResult(transport, request, connection.releaseLease());
-			},
-			/**
-			 * Say whether this pane can play voice yet.
-			 * @param call The request, the connection it acts on, and the socket.
-			 */
-			mediaReady: async (call) => {
-				const { request, connection, transport } = call;
-				if (request.action !== "mediaReady") return;
-				await sendPublishedResult(
-					transport,
-					request,
-					connection,
-					connection.setMediaReady(request.ready),
-				);
-			},
-			/**
-			 * Read the Codex account.
-			 * @param call The request, the connection it acts on, and the socket.
-			 */
-			accountRead: async (call) => {
-				const { request, connection, transport } = call;
-				await sendPublishedResult(transport, request, connection, await connection.accountRead());
-			},
-			/**
-			 * Run one workbench command.
-			 * @param call The request, the connection it acts on, and the socket.
-			 */
-			command: async (call) => {
-				const { request, connection, transport } = call;
-				if (request.action !== "command") return;
-				await sendPublishedResult(
-					transport,
-					request,
-					connection,
-					await connection.command(request.command),
-				);
-			},
-			/**
-			 * Start publishing events to this socket, replacing any earlier
-			 * subscription it had.
-			 * @param call The request, the connection it acts on, and the socket.
-			 */
-			subscribe: async (call) => {
-				const { request, connection, transport, instance } = call;
-				subscriptions.get(instance)?.();
-				const unsubscribe = connection.subscribe((message: BrowserGatewayMessage) => {
-					const publication = (async (): Promise<void> => {
-						await transport.send({ type: "codex_workbench_event", message });
-						connection.confirmPublished(message);
-					})();
-					trackPublication(publication, connection, message);
-				});
-				subscriptions.set(instance, unsubscribe);
-				await sendPublishedResult(transport, request, connection, connection.snapshot());
-			},
-			/**
-			 * Close this socket's connection.
-			 * @param call The request, the connection it acts on, and the socket.
-			 */
-			close: async (call) => {
-				const { request, transport, instance, browserId } = call;
-				await close(instance, browserId);
-				await sendResult(transport, request, null);
-			},
-		};
+	const requests: Readonly<
+		Record<BrowserRequest["action"], (call: BrowserRequestCall) => Promise<void>>
+	> = {
+		/**
+		 * Answer with the pane's current snapshot.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		connect: async (call) => {
+			const { request, connection, transport } = call;
+			await sendPublishedResult(transport, request, connection, connection.snapshot());
+		},
+		/**
+		 * Re-read cached owner state before projecting it: this is what makes a
+		 * queue refresh a genuine read rather than a redraw of the last command.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		snapshot: async (call) => {
+			const { request, connection, transport } = call;
+			await connection.refreshProjection();
+			await sendPublishedResult(transport, request, connection, connection.snapshot());
+		},
+		/**
+		 * Take the pane's write lease.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		claimLease: async (call) => {
+			const { request, connection, transport } = call;
+			await sendResult(transport, request, connection.claimLease());
+		},
+		/**
+		 * Keep the pane's write lease.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		renewLease: async (call) => {
+			const { request, connection, transport } = call;
+			await sendResult(transport, request, connection.renewLease());
+		},
+		/**
+		 * Give up the pane's write lease.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		releaseLease: async (call) => {
+			const { request, connection, transport } = call;
+			await sendResult(transport, request, connection.releaseLease());
+		},
+		/**
+		 * Say whether this pane can play voice yet.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		mediaReady: async (call) => {
+			const { request, connection, transport } = call;
+			if (request.action !== "mediaReady") return;
+			await sendPublishedResult(
+				transport,
+				request,
+				connection,
+				connection.setMediaReady(request.ready),
+			);
+		},
+		/**
+		 * Read the Codex account.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		accountRead: async (call) => {
+			const { request, connection, transport } = call;
+			await sendPublishedResult(transport, request, connection, await connection.accountRead());
+		},
+		/**
+		 * Run one workbench command.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		command: async (call) => {
+			const { request, connection, transport } = call;
+			if (request.action !== "command") return;
+			await sendPublishedResult(
+				transport,
+				request,
+				connection,
+				await connection.command(request.command),
+			);
+		},
+		/**
+		 * Start publishing events to this socket, replacing any earlier
+		 * subscription it had.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		subscribe: async (call) => {
+			const { request, connection, transport, instance } = call;
+			subscriptions.get(instance)?.();
+			const unsubscribe = connection.subscribe((message: BrowserGatewayMessage) => {
+				const publication = (async (): Promise<void> => {
+					await transport.send({ type: "codex_workbench_event", message });
+					connection.confirmPublished(message);
+				})();
+				trackPublication(publication, connection, message);
+			});
+			subscriptions.set(instance, unsubscribe);
+			await sendPublishedResult(transport, request, connection, connection.snapshot());
+		},
+		/**
+		 * Close this socket's connection.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		close: async (call) => {
+			const { request, transport, instance, browserId } = call;
+			await close(instance, browserId);
+			await sendResult(transport, request, null);
+		},
+	};
 
 	/**
 	 * Take one request off the socket: parse it, resolve the connection it acts
