@@ -51,6 +51,7 @@ import { diffBoardStates, narrateChange } from "@/runtime/engine/changes";
 import type { SemanticChange } from "@/runtime/engine/changes";
 import { DEFAULT_SETTLE_MAX_MS, DEFAULT_SETTLE_MS } from "@/shared/timing/timing";
 import { logger } from "@/runtime/engine/logger";
+import { errorMessage } from "@/runtime/engine/lib/thrown-error";
 
 /** Who moved. Determined by which surface reported the mutation, not by content. */
 type ChangeOrigin = "human" | "agent" | "mixed";
@@ -121,6 +122,66 @@ interface Checkpoint {
 	elements: ServerElement[];
 }
 
+/**
+ * Take the pending window's tally and close it, leaving the watch armed for
+ * the next mutation.
+ * @param watch The board being settled.
+ * @returns What the window collected, or null when nothing landed in it.
+ */
+function takePending(watch: BoardWatch): { mutations: number; origins: Set<ChangeOrigin> } | null {
+	if (watch.timer) {
+		clearTimeout(watch.timer);
+	}
+	watch.timer = null;
+	if (watch.mutations === 0) {
+		return null;
+	}
+	const taken = { mutations: watch.mutations, origins: watch.origins };
+	watch.mutations = 0;
+	watch.origins = new Set();
+	watch.firstPendingAt = null;
+	return taken;
+}
+
+/**
+ * Who a window's changes are attributed to. A window that saw both a person
+ * and an agent is neither of them.
+ * @param origins Every surface that reported into the window.
+ * @returns The origin to report.
+ */
+function pendingOriginOf(origins: ReadonlySet<ChangeOrigin>): ChangeOrigin {
+	if (origins.size > 1) {
+		return "mixed";
+	}
+	return origins.values().next().value ?? "agent";
+}
+
+/** A settled difference that an event can be made of. */
+type ReportableChange = SemanticChange & { significance: ChangeEvent["significance"] };
+
+/**
+ * Whether a settled difference is worth telling anybody about. Cosmetic and
+ * unnamed changes stay silent, and the baseline stays where it was.
+ * @param change What the diff found.
+ * @returns True when it is worth an event.
+ */
+function worthSaying(change: SemanticChange): change is ReportableChange {
+	return change.significance === "structural" || change.significance === "layout";
+}
+
+/**
+ * Add to a ring, dropping the oldest entry once it is full.
+ * @param ring The ring.
+ * @param item What to add.
+ * @param cap How much history is worth keeping.
+ */
+function pushCapped<T>(ring: T[], item: T, cap: number): void {
+	ring.push(item);
+	if (ring.length > cap) {
+		ring.shift();
+	}
+}
+
 class ChangeFeed extends EventEmitter {
 	/**
 	 * Identifies this feed, and therefore this canvas process.
@@ -137,7 +198,10 @@ class ChangeFeed extends EventEmitter {
 	private checkpoints: Checkpoint[] = [];
 	private nextCursor = 1;
 
-	/** The cursor a caller starting now should use to mean "from here on". */
+	/**
+	 * The cursor a caller starting now should use to mean "from here on".
+	 * @returns The most recently issued cursor.
+	 */
 	get cursor(): number {
 		return this.nextCursor - 1;
 	}
@@ -148,6 +212,9 @@ class ChangeFeed extends EventEmitter {
 	 * Called when a board is opened, created or switched to: the whole board
 	 * arriving at once is not a change anybody made, and reporting it as several
 	 * hundred additions would bury the first real edit.
+	 * @param key Which board.
+	 * @param identity Which board it is, for the events.
+	 * @param read How to read the board as it now stands.
 	 */
 	reset(key: string, identity: BoardIdentity, read: () => ServerElement[]): void {
 		const existing = this.watches.get(key);
@@ -172,6 +239,10 @@ class ChangeFeed extends EventEmitter {
 	 *
 	 * Deliberately cheap and deliberately ignorant of the mutation: the feed
 	 * never looks at element deltas, only at the state they settle into.
+	 * @param key Which board.
+	 * @param identity Which board it is, for the events.
+	 * @param read How to read the board as it now stands.
+	 * @param origin Which surface reported it.
 	 */
 	record(
 		key: string,
@@ -206,41 +277,54 @@ class ChangeFeed extends EventEmitter {
 			clearTimeout(watch.timer);
 		}
 		watch.timer = setTimeout(() => this.settle(key), SETTLE_MS);
-		watch.timer.unref?.();
+		watch.timer.unref();
 	}
 
-	/** Force the pending window closed now. Used by tests and by `changes --coalesce`. */
+	/**
+	 * The difference between the baseline and the board as it stands.
+	 *
+	 * A diff that throws must not take the canvas with it: the feed is a side
+	 * channel, and every route that feeds it has already succeeded.
+	 * @param watch The board being settled.
+	 * @param after The board as it now stands.
+	 * @param key Which board, for the log line.
+	 * @returns The difference, or null when it could not be taken.
+	 */
+	private diffOrNull(
+		watch: BoardWatch,
+		after: ServerElement[],
+		key: string,
+	): SemanticChange | null {
+		try {
+			return diffBoardStates(watch.baseline, after, watch.identity, watch.key);
+		} catch (error) {
+			logger.warn(`Change feed could not diff "${key}": ${errorMessage(error)}`);
+			return null;
+		}
+	}
+
+	/**
+	 * Force the pending window closed now. Used by tests and by
+	 * `changes --coalesce`.
+	 * @param key Which board.
+	 * @returns The event, or null when there was nothing worth saying.
+	 */
 	settle(key: string): ChangeEvent | null {
 		const watch = this.watches.get(key);
 		if (!watch) {
 			return null;
 		}
-		if (watch.timer) {
-			clearTimeout(watch.timer);
-		}
-		watch.timer = null;
-		if (watch.mutations === 0) {
+		const pending = takePending(watch);
+		if (!pending) {
 			return null;
 		}
-
-		const mutations = watch.mutations;
-		const origins = watch.origins;
-		watch.mutations = 0;
-		watch.origins = new Set();
-		watch.firstPendingAt = null;
 
 		const after = watch.read();
-		let change: SemanticChange;
-		try {
-			change = diffBoardStates(watch.baseline, after, watch.identity, watch.key);
-		} catch (error) {
-			// A diff that throws must not take the canvas with it: the feed is a
-			// side channel, and every route that feeds it has already succeeded.
-			logger.warn(`Change feed could not diff "${key}": ${(error as Error).message}`);
+		const change = this.diffOrNull(watch, after, key);
+		if (!change) {
 			return null;
 		}
-
-		if (change.significance !== "structural" && change.significance !== "layout") {
+		if (!worthSaying(change)) {
 			// Nothing worth saying — and the baseline stays put, so the next nudge
 			// is measured from the last thing anybody was told about.
 			return null;
@@ -253,32 +337,25 @@ class ChangeFeed extends EventEmitter {
 			identity: watch.identity,
 			at,
 			since: watch.baselineAt,
-			origin: origins.size > 1 ? "mixed" : (origins.values().next().value ?? "agent"),
+			origin: pendingOriginOf(pending.origins),
 			significance: change.significance,
 			headline: change.headline,
 			text: narrateChange(change),
 			change,
-			mutations,
+			mutations: pending.mutations,
 			elementCount: after.length,
 		};
 
-		this.checkpoints.push({
-			cursor: event.cursor,
-			board: key,
-			at: watch.baselineAt,
-			elements: watch.baseline,
-		});
-		if (this.checkpoints.length > MAX_CHECKPOINTS) {
-			this.checkpoints.shift();
-		}
+		pushCapped(
+			this.checkpoints,
+			{ cursor: event.cursor, board: key, at: watch.baselineAt, elements: watch.baseline },
+			MAX_CHECKPOINTS,
+		);
 
 		watch.baseline = copyElements(after);
 		watch.baselineAt = at;
 
-		this.events.push(event);
-		if (this.events.length > MAX_EVENTS) {
-			this.events.shift();
-		}
+		pushCapped(this.events, event, MAX_EVENTS);
 
 		logger.info(
 			`Change event ${event.cursor} on "${key}" (${event.origin}, ${event.significance}): ${event.headline}`,
@@ -287,7 +364,10 @@ class ChangeFeed extends EventEmitter {
 		return event;
 	}
 
-	/** Flush every board with a pending window. */
+	/**
+	 * Flush every board with a pending window.
+	 * @returns The events that were worth saying.
+	 */
 	settleAll(): ChangeEvent[] {
 		const out: ChangeEvent[] = [];
 		for (const key of this.watches.keys()) {
@@ -300,14 +380,21 @@ class ChangeFeed extends EventEmitter {
 	}
 
 	/**
-	 *
+	 * Hear about every event this feed emits from now on.
+	 * @param listener What to call with each event.
+	 * @returns A function that stops listening.
 	 */
 	onChange(listener: (event: ChangeEvent) => void): () => void {
 		this.on("change", listener);
 		return () => this.off("change", listener);
 	}
 
-	/** Events after `since`, oldest first. */
+	/**
+	 * Events after `since`, oldest first.
+	 * @param since The cursor the caller last saw.
+	 * @param board One board, or every board when omitted.
+	 * @returns The events.
+	 */
 	since(since: number, board?: string): ChangeEvent[] {
 		return this.events.filter((e) => e.cursor > since && (!board || e.board === board));
 	}
@@ -319,6 +406,10 @@ class ChangeFeed extends EventEmitter {
 	 * net difference, not four events to reconcile. Returns null when the
 	 * checkpoint that far back has been dropped from the ring, so the caller can
 	 * say "I lost the thread" instead of quietly diffing from the wrong place.
+	 * @param since The cursor the caller last saw.
+	 * @param board Which board.
+	 * @returns The single diff and the events it covers, or null when the
+	 * checkpoint that far back has been dropped.
 	 */
 	coalesce(
 		since: number,
@@ -350,7 +441,11 @@ class ChangeFeed extends EventEmitter {
 		};
 	}
 
-	/** For the status surfaces: what the feed is watching and how far along it is. */
+	/**
+	 * For the status surfaces: what the feed is watching and how far along it
+	 * is.
+	 * @returns The feed's identity, its cursor, its windows, and its boards.
+	 */
 	status(): {
 		feedId: string;
 		cursor: number;
