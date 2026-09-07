@@ -114,6 +114,8 @@ object frozen later in this document and is never serialized as a string.
 
 ```json
 {
+	"model": "gpt-6-astra",
+	"config": { "model_reasoning_effort": "medium" },
 	"cwd": "<canonical-checkout-root>",
 	"runtimeWorkspaceRoots": ["<same-canonical-checkout-root>"],
 	"serviceName": "archboard",
@@ -158,10 +160,10 @@ profiles intentionally omit `modelProvider`, `approvalPolicy`,
 `personality`, `multiAgentMode`, `projectId`, `environments`,
 `selectedCapabilityRoots`, and `mockExperimentalField`. Omission preserves the
 dedicated child's reviewed config/default environment and therefore normal
-shell, web, repository, and approval capabilities. Workhorse `model`,
-`allowProviderModelFallback`, `serviceTier`, and `config` are also omitted so
-the configured workhorse defaults remain authoritative and are recorded from
-the returned thread.
+shell, web, repository, and approval capabilities. The workhorse explicitly
+uses `model: "gpt-6-astra"` and `config: { model_reasoning_effort: "medium" }`.
+Workhorse `allowProviderModelFallback` and `serviceTier` remain omitted;
+effective settings are recorded from the returned thread.
 
 After coordinator start, Archboard sends exactly one of:
 

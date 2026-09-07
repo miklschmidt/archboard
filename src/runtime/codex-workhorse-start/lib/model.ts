@@ -28,6 +28,8 @@ const WORKHORSE_MANIFEST_HASH = ARCHBOARD_APP_MANIFEST_SHA256;
 function createWorkhorseThreadStartParams(checkoutRoot: string): SessionParams<"thread/start"> {
 	assertCanonicalInstructionBytes("workhorse", WORKHORSE_DEVELOPER_INSTRUCTIONS);
 	return {
+		model: "gpt-6-astra",
+		config: { model_reasoning_effort: "medium" },
 		cwd: checkoutRoot,
 		runtimeWorkspaceRoots: [checkoutRoot],
 		serviceName: "archboard",
