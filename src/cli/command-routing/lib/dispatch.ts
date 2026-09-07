@@ -2,8 +2,8 @@
 // subcommand, one discovered after leading options, the route's default child, or the
 // namespace itself.
 import { CliUsageError } from "@/cli/command-contract/contract";
-import { type CommandRoute, type RouteOwner } from "@/cli/commands/lib/command-route";
-import { childOf } from "@/cli/commands/lib/command-registry";
+import { type CommandRoute, type RouteOwner } from "@/cli/command-routing/lib/route";
+import { childOf } from "@/cli/command-routing/lib/registry";
 
 interface DispatchedCommand {
 	root: CommandRoute;

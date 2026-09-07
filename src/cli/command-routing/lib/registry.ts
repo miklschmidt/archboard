@@ -8,7 +8,7 @@ import {
 	type RouteOwner,
 	commandSummary,
 	commandUsage,
-} from "@/cli/commands/lib/command-route";
+} from "@/cli/command-routing/lib/route";
 
 const boardNamespaces = new Set(["board", "arrange", "snapshot", "compare"]);
 const sessionRelationships = [
