@@ -145,7 +145,10 @@ class CodexThreadContextControllerError extends Error {
 	override readonly name = "CodexThreadContextControllerError";
 
 	/**
-	 *
+	 * Names the controller rule that refused the call.
+	 * @param code - The stable rule identifier callers branch on.
+	 * @param message - The human-readable explanation.
+	 * @param cause - The underlying failure, when an authority check threw.
 	 */
 	constructor(
 		readonly code: CodexThreadContextControllerErrorCode,

@@ -29,6 +29,7 @@ import {
 	SERVER_NOTIFICATION_SCHEMAS,
 } from "@/runtime/codex-protocol/lib/notification-schemas";
 import { JsonValueSchema, RequestIdSchema } from "@/runtime/codex-protocol/lib/scalars";
+import { formatIssues, normalizeIssues } from "@/runtime/codex-protocol/lib/issue-normalization";
 
 export type ProtocolDirection =
 	| "response"
@@ -48,185 +49,6 @@ export interface ProtocolDecodeErrorInit {
 	readonly recoveryAction?: string;
 }
 
-type IssuePath = readonly (string | number)[];
-type IssueRecord = Record<string, unknown>;
-
-/**
- *
- */
-function isIssueRecord(value: unknown): value is IssueRecord {
-	return !!value && typeof value === "object" && !Array.isArray(value);
-}
-
-/**
- *
- */
-function issuePath(issue: unknown): IssuePath {
-	if (!isIssueRecord(issue) || !Array.isArray(issue["path"])) {
-		return [];
-	}
-	return issue["path"].map((segment) =>
-		typeof segment === "string" || typeof segment === "number" ? segment : String(segment),
-	);
-}
-
-/**
- *
- */
-function unionBranches(issue: IssueRecord): unknown[][] | undefined {
-	if (issue["code"] !== "invalid_union" || !Array.isArray(issue["errors"])) {
-		return undefined;
-	}
-	const branches: unknown[][] = [];
-	for (const branch of issue["errors"]) {
-		if (!Array.isArray(branch)) {
-			return undefined;
-		}
-		branches.push(branch);
-	}
-	return branches;
-}
-
-/**
- *
- */
-function valueAtPath(value: unknown, path: IssuePath): unknown {
-	let current = value;
-	for (const segment of path) {
-		if (Array.isArray(current)) {
-			const index = typeof segment === "number" ? segment : Number(segment);
-			if (!Number.isInteger(index)) {
-				return undefined;
-			}
-			current = current[index];
-		} else if (isIssueRecord(current)) {
-			current = current[String(segment)];
-		} else {
-			return undefined;
-		}
-	}
-	return current;
-}
-
-/**
- *
- */
-function issuePaths(issue: unknown, prefix: IssuePath = []): IssuePath[] {
-	if (!isIssueRecord(issue)) {
-		return [prefix];
-	}
-	const path = [...prefix, ...issuePath(issue)];
-	const branches = unionBranches(issue);
-	if (!branches?.length) {
-		return [path];
-	}
-	return branches.flatMap((branch) =>
-		branch.length ? branch.flatMap((child) => issuePaths(child, path)) : [path],
-	);
-}
-
-interface UnionBranchScore {
-	readonly depth: number;
-	readonly inputKeyMatches: number;
-	readonly index: number;
-}
-
-/**
- *
- */
-function branchScore(
-	branch: readonly unknown[],
-	unionValue: unknown,
-	index: number,
-): UnionBranchScore {
-	const paths = branch.flatMap((issue) => issuePaths(issue));
-	const depth = Math.max(0, ...paths.map((path) => path.length));
-	const inputKeys = isIssueRecord(unionValue) ? new Set(Object.keys(unionValue)) : undefined;
-	const inputKeyMatches = inputKeys
-		? paths.reduce(
-				(matches, path) =>
-					matches + (path[0] !== undefined && inputKeys.has(String(path[0])) ? 1 : 0),
-				0,
-			)
-		: 0;
-	return { depth, inputKeyMatches, index };
-}
-
-/**
- *
- */
-function isBetterBranch(candidate: UnionBranchScore, current: UnionBranchScore): boolean {
-	if (candidate.depth !== current.depth) {
-		return candidate.depth > current.depth;
-	}
-	if (candidate.inputKeyMatches !== current.inputKeyMatches) {
-		return candidate.inputKeyMatches > current.inputKeyMatches;
-	}
-	return candidate.index > current.index;
-}
-
-/**
- *
- */
-function deepestBranch(
-	branches: readonly (readonly unknown[])[],
-	unionValue: unknown,
-): readonly unknown[] | undefined {
-	let selected: readonly unknown[] | undefined;
-	let selectedScore: UnionBranchScore | undefined;
-	for (const [index, branch] of branches.entries()) {
-		const score = branchScore(branch, unionValue, index);
-		if (!selectedScore || isBetterBranch(score, selectedScore)) {
-			selected = branch;
-			selectedScore = score;
-		}
-	}
-	return selected;
-}
-
-/**
- *
- */
-function withIssuePath(issue: IssueRecord, path: IssuePath): IssueRecord {
-	return { ...issue, path };
-}
-
-/**
- *
- */
-function isFunctionCallOutputBodyUnion(issue: IssueRecord): boolean {
-	// FunctionCallOutputBodySchema is the one intentional regular union at an
-	// output field; retain its containing issue for the documented exception.
-	const path = issuePath(issue);
-	return path[path.length - 1] === "output";
-}
-
-/**
- *
- */
-function normalizeIssue(issue: unknown, prefix: IssuePath, rootValue: unknown): unknown[] {
-	if (!isIssueRecord(issue)) {
-		return [issue];
-	}
-	const path = [...prefix, ...issuePath(issue)];
-	const branches = unionBranches(issue);
-	if (!branches || isFunctionCallOutputBodyUnion(issue)) {
-		return [withIssuePath(issue, path)];
-	}
-	const selected = deepestBranch(branches, valueAtPath(rootValue, path));
-	if (!selected) {
-		return [withIssuePath(issue, path)];
-	}
-	return selected.flatMap((child) => normalizeIssue(child, path, rootValue));
-}
-
-/**
- *
- */
-function normalizeIssues(issues: readonly unknown[], value: unknown): readonly unknown[] {
-	return issues.flatMap((issue) => normalizeIssue(issue, [], value));
-}
-
 /** A versioned wire contract failed before an untyped payload could escape. */
 export class ProtocolDecodeError extends Error {
 	readonly method: string;
@@ -236,7 +58,9 @@ export class ProtocolDecodeError extends Error {
 	readonly issues: readonly unknown[];
 
 	/**
-	 *
+	 * Builds the error with a message that names the version, direction, method, every
+	 * normalized issue and the recovery step, so a log line alone is actionable.
+	 * @param init - The failing method and direction, with optional issues and recovery text.
 	 */
 	constructor(init: ProtocolDecodeErrorInit) {
 		const recoveryAction = init.recoveryAction ?? PROTOCOL_RECOVERY_ACTION;
@@ -256,25 +80,15 @@ export class ProtocolDecodeError extends Error {
 }
 
 /**
- *
+ * Normalizes a wire value and validates it against one schema, converting every failure into
+ * a ProtocolDecodeError so callers never see raw zod or normalization errors.
+ * @param method - The protocol method the value belongs to.
+ * @param direction - Which side of the protocol the value travelled.
+ * @param schema - The schema that owns the value.
+ * @param value - The raw wire value.
+ * @returns The decoded value.
  */
-function formatIssues(issues: readonly unknown[]): string {
-	return issues
-		.map((issue) => {
-			if (!issue || typeof issue !== "object") {
-				return String(issue);
-			}
-			const candidate = issue as { path?: unknown; message?: unknown };
-			const path = Array.isArray(candidate.path) ? candidate.path.join(".") : "payload";
-			return `${path}: ${String(candidate.message ?? "invalid value")}`;
-		})
-		.join("; ");
-}
-
-/**
- *
- */
-function decodeSchema<T extends z.ZodTypeAny>(
+function decodeSchema<T extends z.ZodType>(
 	method: string,
 	direction: ProtocolDirection,
 	schema: T,
@@ -302,26 +116,45 @@ function decodeSchema<T extends z.ZodTypeAny>(
 }
 
 /**
- *
+ * Builds the refusal for a method the bound protocol version does not declare.
+ * @param method - The unknown method name.
+ * @param direction - Which side of the protocol it arrived on.
+ * @returns The error to throw.
  */
-function methodSchema<T extends Record<string, z.ZodTypeAny>>(
-	schemas: T,
+function unknownMethodError(method: string, direction: ProtocolDirection): ProtocolDecodeError {
+	return new ProtocolDecodeError({
+		method,
+		direction,
+		recoveryAction: `${PROTOCOL_RECOVERY_ACTION}; do not handle this unknown method until Codex 0.151.0 is reviewed`,
+	});
+}
+
+type MethodSchemas = Readonly<Record<string, z.ZodType>>;
+
+/**
+ * Looks up the schema for a method by its own key only, so inherited names such as
+ * `constructor` can never resolve to a schema.
+ * @param schemas - The per-method schema table.
+ * @param method - The method name from the wire.
+ * @param direction - Which side of the protocol the value travelled.
+ * @returns The schema that owns the method.
+ */
+function methodSchema(
+	schemas: MethodSchemas,
 	method: string,
 	direction: ProtocolDirection,
-) {
-	const schema = schemas[method as keyof T];
+): z.ZodType {
+	const schema = Object.hasOwn(schemas, method) ? schemas[method] : undefined;
 	if (!schema) {
-		throw new ProtocolDecodeError({
-			method,
-			direction,
-			recoveryAction: `${PROTOCOL_RECOVERY_ACTION}; do not handle this unknown method until Codex 0.151.0 is reviewed`,
-		});
+		throw unknownMethodError(method, direction);
 	}
 	return schema;
 }
 
 /**
- *
+ * Reads the method name out of an undecoded envelope for error messages only.
+ * @param value - The raw envelope.
+ * @returns The method name, or a placeholder when there is none.
  */
 function methodHint(value: unknown): string {
 	if (!value || typeof value !== "object" || Array.isArray(value)) {
@@ -335,15 +168,36 @@ export type ResponsePayloads = {
 	[M in ResponseMethod]: z.infer<(typeof RESPONSE_SCHEMAS)[M]>;
 };
 
-/**
- *
- */
 export function decodeClientRequestParams<Method extends ClientRequestMethod>(
 	method: Method,
 	params: unknown,
-): ClientRequestParams<Method> {
+): ClientRequestParams<Method>;
+/**
+ * Decodes the params of a request Archboard is about to send, so nothing leaves the process
+ * that the bound protocol version would not accept.
+ * @param method - The client request method.
+ * @param params - The candidate params.
+ * @returns The decoded params.
+ */
+export function decodeClientRequestParams(method: string, params: unknown): unknown {
 	const schema = methodSchema(CLIENT_REQUEST_PARAM_SCHEMAS, method, "client-request");
-	return decodeSchema(method, "client-request", schema, params) as ClientRequestParams<Method>;
+	return decodeSchema(method, "client-request", schema, params);
+}
+
+/**
+ * Refuses an initialize response from any Codex other than the bound version.
+ * @param userAgent - The server's reported user agent.
+ */
+function assertSupportedUserAgent(userAgent: string): void {
+	if (!isSupportedCodexUserAgent(userAgent)) {
+		throw new ProtocolDecodeError({
+			method: "initialize",
+			direction: "response",
+			issues: [{ path: ["userAgent"], message: `expected Codex ${CODEX_PROTOCOL_VERSION}` }],
+			recoveryAction:
+				"stop the child, run the recorded Codex 0.151.0 binary, and reconnect after reviewing the incompatible payload",
+		});
+	}
 }
 
 export function decodeResponse<M extends ResponseMethod>(
@@ -352,28 +206,26 @@ export function decodeResponse<M extends ResponseMethod>(
 ): ResponsePayloads[M];
 export function decodeResponse(method: string, payload: unknown): unknown;
 /**
- *
+ * Decodes a response result by its request method, with the version handshake enforced on
+ * the initialize response.
+ * @param method - The request method the response answers.
+ * @param payload - The raw result.
+ * @returns The decoded result.
  */
 export function decodeResponse(method: string, payload: unknown): unknown {
-	const schema = methodSchema(RESPONSE_SCHEMAS, method, "response");
-	const decoded = decodeSchema(method, "response", schema, payload);
 	if (method === "initialize") {
-		const userAgent = (decoded as { userAgent: string }).userAgent;
-		if (!isSupportedCodexUserAgent(userAgent)) {
-			throw new ProtocolDecodeError({
-				method,
-				direction: "response",
-				issues: [{ path: ["userAgent"], message: `expected Codex ${CODEX_PROTOCOL_VERSION}` }],
-				recoveryAction:
-					"stop the child, run the recorded Codex 0.151.0 binary, and reconnect after reviewing the incompatible payload",
-			});
-		}
+		const initialized = decodeSchema(method, "response", RESPONSE_SCHEMAS.initialize, payload);
+		assertSupportedUserAgent(initialized.userAgent);
+		return initialized;
 	}
-	return decoded;
+	const schema = methodSchema(RESPONSE_SCHEMAS, method, "response");
+	return decodeSchema(method, "response", schema, payload);
 }
 
 /**
- *
+ * Decodes login params and refuses the two ChatGPT variants Archboard does not implement.
+ * @param value - The candidate login params.
+ * @returns The decoded, supported login params.
  */
 export function decodeLoginAccountParams(value: unknown) {
 	const decoded = decodeSchema(
@@ -407,7 +259,9 @@ export type DecodedClientNotification = z.infer<
 >;
 
 /**
- *
+ * Decodes a notification Archboard is about to send.
+ * @param value - The candidate notification envelope.
+ * @returns The decoded notification.
  */
 export function decodeClientNotification(value: unknown): DecodedClientNotification {
 	const envelope = decodeSchema(
@@ -433,7 +287,10 @@ export type DecodedServerNotification = {
 }[keyof ServerNotificationPayloads];
 
 /**
- *
+ * Decodes a notification received from the server: envelope first, then the params by the
+ * schema the method owns.
+ * @param value - The raw notification envelope.
+ * @returns The decoded notification, correlated by method.
  */
 export function decodeServerNotification(value: unknown): DecodedServerNotification {
 	const envelope = decodeSchema(
@@ -444,6 +301,7 @@ export function decodeServerNotification(value: unknown): DecodedServerNotificat
 	);
 	const schema = methodSchema(SERVER_NOTIFICATION_SCHEMAS, envelope.method, "server-notification");
 	const params = decodeSchema(envelope.method, "server-notification", schema, envelope.params);
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- methodSchema resolved the schema by envelope.method from SERVER_NOTIFICATION_SCHEMAS, whose keys are exactly the union's methods, so method and params correlate by construction; TypeScript cannot express that for a string-keyed lookup
 	return { ...envelope, params } as DecodedServerNotification;
 }
 
@@ -458,9 +316,31 @@ export type DecodedServerRequest = {
 	};
 }[ServerRequestMethod];
 
+/**
+ * Refuses the two server requests whose capability Archboard explicitly disabled at
+ * initialize, naming the JSON-RPC reply the caller must send instead.
+ * @param method - The decoded server request method.
+ */
+function assertServerRequestCapability(method: ServerRequestMethod): void {
+	if (method === "account/chatgptAuthTokens/refresh" || method === "attestation/generate") {
+		throw new ProtocolDecodeError({
+			method,
+			direction: "server-request",
+			issues: [{ path: ["method"], message: "capability was explicitly disabled by Archboard" }],
+			recoveryAction:
+				method === "attestation/generate"
+					? "reply with JSON-RPC -32601 Attestation is not supported by this client"
+					: "reply with JSON-RPC -32601 Client-managed ChatGPT token refresh is not supported",
+		});
+	}
+}
+
 export function decodeServerRequest(value: unknown): DecodedServerRequest;
 /**
- *
+ * Decodes a request received from the server: envelope, then params by method, then the
+ * capability check so a disabled request is refused with the reply the caller must send.
+ * @param value - The raw request envelope.
+ * @returns The decoded request, correlated by method.
  */
 export function decodeServerRequest(value: unknown): DecodedServerRequest {
 	const envelope = decodeSchema(
@@ -469,33 +349,28 @@ export function decodeServerRequest(value: unknown): DecodedServerRequest {
 		ServerRequestEnvelopeSchema,
 		value,
 	);
-	const schema = methodSchema(SERVER_REQUEST_SCHEMAS, envelope.method, "server-request");
-	const params = decodeSchema(envelope.method, "server-request", schema, envelope.params);
-	if (
-		envelope.method === "account/chatgptAuthTokens/refresh" ||
-		envelope.method === "attestation/generate"
-	) {
-		throw new ProtocolDecodeError({
-			method: envelope.method,
-			direction: "server-request",
-			issues: [{ path: ["method"], message: "capability was explicitly disabled by Archboard" }],
-			recoveryAction:
-				envelope.method === "attestation/generate"
-					? "reply with JSON-RPC -32601 Attestation is not supported by this client"
-					: "reply with JSON-RPC -32601 Client-managed ChatGPT token refresh is not supported",
-		});
+	const method = envelope.method;
+	if (!isSupportedServerRequestMethod(method)) {
+		throw unknownMethodError(method, "server-request");
 	}
-	return {
-		id: envelope.id,
-		method: envelope.method as ServerRequestMethod,
-		params,
-	} as DecodedServerRequest;
+	const params = decodeSchema(
+		method,
+		"server-request",
+		SERVER_REQUEST_SCHEMAS[method],
+		envelope.params,
+	);
+	assertServerRequestCapability(method);
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- params were decoded by SERVER_REQUEST_SCHEMAS[method], so method and params correlate by construction; TypeScript cannot narrow a generic indexed lookup to one member of the distributed union
+	return { id: envelope.id, method, params } as DecodedServerRequest;
 }
 
 export type DecodedJsonRpcError = z.infer<typeof JsonRpcErrorSchema>;
 
 /**
- *
+ * Decodes a JSON-RPC error envelope.
+ * @param value - The raw error envelope.
+ * @param method - The method the error answers, when known.
+ * @returns The decoded error.
  */
 export function decodeJsonRpcError(value: unknown, method = "<unknown>"): DecodedJsonRpcError {
 	return decodeSchema(method, "json-rpc-error", JsonRpcErrorSchema, value);
@@ -509,7 +384,10 @@ const JsonRpcResultEnvelopeSchema = z.strictObject({
 });
 
 /**
- *
+ * Decodes a whole JSON-RPC result envelope for a known request method.
+ * @param method - The request method the envelope answers.
+ * @param value - The raw envelope.
+ * @returns The request id and the decoded result.
  */
 export function decodeResponseEnvelope<M extends ResponseMethod>(
 	method: M,
@@ -526,28 +404,36 @@ export function decodeResponseEnvelope<M extends ResponseMethod>(
 }
 
 /**
- *
+ * Narrows a method name to the responses this protocol decodes.
+ * @param method - Any method name.
+ * @returns Whether a response decoder exists for it.
  */
 export function isSupportedResponseMethod(method: string): method is ResponseMethod {
 	return (RESPONSE_METHODS as readonly string[]).includes(method);
 }
 
 /**
- *
+ * Narrows a method name to the requests Archboard may send.
+ * @param method - Any method name.
+ * @returns Whether the request is part of the bound contract.
  */
 export function isSupportedClientRequestMethod(method: string): method is ClientRequestMethod {
 	return (CLIENT_REQUEST_METHODS as readonly string[]).includes(method);
 }
 
 /**
- *
+ * Narrows a method name to the requests the server may send to Archboard.
+ * @param method - Any method name.
+ * @returns Whether a server request decoder exists for it.
  */
 export function isSupportedServerRequestMethod(method: string): method is ServerRequestMethod {
 	return (Object.keys(SERVER_REQUEST_SCHEMAS) as readonly string[]).includes(method);
 }
 
 /**
- *
+ * Narrows a method name to the notifications Archboard may send.
+ * @param method - Any method name.
+ * @returns Whether the notification is part of the bound contract.
  */
 export function isSupportedClientNotificationMethod(
 	method: string,

@@ -194,7 +194,9 @@ class CodexCoordinatorToolsError extends Error {
 	readonly code: "disposed" | "duplicate";
 
 	/**
-	 *
+	 * Build a dispatcher failure the composition root can tell apart by code.
+	 * @param code - Whether the dispatcher is gone or the request identity was already used.
+	 * @param message - The diagnostic for the caller.
 	 */
 	constructor(code: "disposed" | "duplicate", message: string) {
 		super(message);

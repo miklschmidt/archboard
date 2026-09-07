@@ -143,7 +143,10 @@ export class CodexSessionError extends Error {
 	override readonly cause: unknown;
 
 	/**
-	 *
+	 * Builds a session error carrying a stable code callers can branch on.
+	 * @param code - The machine-readable failure class.
+	 * @param message - The human-readable explanation.
+	 * @param cause - The underlying error, when one exists.
 	 */
 	constructor(code: CodexSessionErrorCode, message: string, cause?: unknown) {
 		super(message);
@@ -156,7 +159,9 @@ export class CodexSessionStorageError extends CodexSessionError {
 	override readonly name = "CodexSessionStorageError";
 
 	/**
-	 *
+	 * Builds the storage-proof refusal, always under the storage_mismatch code.
+	 * @param message - What the storage proof refused.
+	 * @param cause - The underlying error, when one exists.
 	 */
 	constructor(message: string, cause?: unknown) {
 		super("storage_mismatch", message, cause);
@@ -170,7 +175,12 @@ export class CodexSessionMutationError extends CodexSessionError {
 	readonly retryEligible = false;
 
 	/**
-	 *
+	 * Builds a mutation failure that records whether the mutation provably never reached
+	 * Codex or may have taken effect, which decides whether a caller may retry.
+	 * @param method - The mutating protocol method.
+	 * @param outcome - Whether delivery is known to have failed or is unknown.
+	 * @param message - The human-readable explanation.
+	 * @param cause - The underlying error, when one exists.
 	 */
 	constructor(method: string, outcome: SessionMutationOutcome, message: string, cause?: unknown) {
 		super("mutation_failed", message, cause);

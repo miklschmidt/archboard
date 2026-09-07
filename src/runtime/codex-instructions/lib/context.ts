@@ -2,20 +2,22 @@ import { z } from "zod";
 
 import {
 	ADDITIONAL_CONTEXT_POLICY,
-	type OperationKind,
 	type OperationOutcome,
-	type OperationRpc,
-	type ThreadLinkReason,
-	type ThreadLinkState,
 } from "@/runtime/codex-instructions/lib/context-policy";
 
 /**
- *
+ * UTF-8 byte length of a string, the unit every context size limit is written in.
+ * @param value - The text to measure.
+ * @returns The number of UTF-8 bytes.
  */
 const utf8Bytes = (value: string): number => Buffer.byteLength(value, "utf8");
 
 /**
- *
+ * A string schema capped by UTF-8 byte length rather than character count, because the byte
+ * budget is what the app-server context slot enforces.
+ * @param maxBytes - The inclusive byte limit.
+ * @param label - Names the field in the validation message.
+ * @returns The bounded string schema.
  */
 function boundedUtf8Text(maxBytes: number, label: string) {
 	return z.string().refine((value) => utf8Bytes(value) <= maxBytes, {
@@ -24,7 +26,10 @@ function boundedUtf8Text(maxBytes: number, label: string) {
 }
 
 /**
- *
+ * Like boundedUtf8Text but also refusing the empty string.
+ * @param maxBytes - The inclusive byte limit.
+ * @param label - Names the field in the validation message.
+ * @returns The bounded non-empty string schema.
  */
 function nonEmptyBoundedUtf8Text(maxBytes: number, label: string) {
 	return z
@@ -44,31 +49,30 @@ const DoingSchema = boundedUtf8Text(512, "doing");
 const threadLinkStateValues = [
 	...ADDITIONAL_CONTEXT_POLICY.threadLink.reasonNullStates,
 	...ADDITIONAL_CONTEXT_POLICY.threadLink.reasonRequiredStates,
-] as [ThreadLinkState, ...ThreadLinkState[]];
+];
 const threadLinkReasonValues = ADDITIONAL_CONTEXT_POLICY.threadLink.reasonPrecedence.map(
 	({ reason }) => reason,
-) as [ThreadLinkReason, ...ThreadLinkReason[]];
-const operationKindValues = ADDITIONAL_CONTEXT_POLICY.operation.producers.map(
-	({ kind }) => kind,
-) as [OperationKind, ...OperationKind[]];
+);
+const operationKindValues = ADDITIONAL_CONTEXT_POLICY.operation.producers.map(({ kind }) => kind);
 const operationRpcValues = [
 	...new Set(ADDITIONAL_CONTEXT_POLICY.operation.producers.flatMap(({ rpcs }) => rpcs)),
-] as [OperationRpc, ...OperationRpc[]];
-const operationOutcomeValues = ADDITIONAL_CONTEXT_POLICY.operation.tupleStates
-	.filter(({ outcome }) => outcome !== "null")
-	.map(({ outcome }) => outcome) as [OperationOutcome, ...OperationOutcome[]];
-const deliveredOutcomeSchema = z.literal(operationOutcomeValues[0]);
-const notDeliveredOutcomeSchema = z.literal(operationOutcomeValues[1]);
-const outcomeUnknownSchema = z.literal(operationOutcomeValues[2]);
+];
+const deliveredOutcomeSchema = z.literal("delivered" satisfies OperationOutcome);
+const notDeliveredOutcomeSchema = z.literal("not_delivered" satisfies OperationOutcome);
+const outcomeUnknownSchema = z.literal("outcome_unknown" satisfies OperationOutcome);
 
 /**
- *
+ * Freeze a parsed value and everything reachable from it so a canonical context cannot be edited
+ * after validation.
+ * @param value - The value to freeze in place.
+ * @returns The same value, now frozen at every level.
  */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) {
 		return value;
 	}
-	for (const child of Object.values(value as Record<string, unknown>)) {
+	const children: readonly unknown[] = Object.values(value);
+	for (const child of children) {
 		freezeDeep(child);
 	}
 	Object.freeze(value);
@@ -89,8 +93,8 @@ const ArchboardContextRawSchema = z.strictObject({
 			reason: z.enum(threadLinkReasonValues).nullable(),
 		})
 		.superRefine((value, refinementContext) => {
-			const reasonNullStates = ADDITIONAL_CONTEXT_POLICY.threadLink
-				.reasonNullStates as readonly string[];
+			const reasonNullStates: readonly string[] =
+				ADDITIONAL_CONTEXT_POLICY.threadLink.reasonNullStates;
 			if (reasonNullStates.includes(value.state)) {
 				if (value.reason !== null) {
 					refinementContext.addIssue({
@@ -180,7 +184,8 @@ const ArchboardContextRawSchema = z.strictObject({
 			const producer = ADDITIONAL_CONTEXT_POLICY.operation.producers.find(
 				({ kind }) => kind === value.kind,
 			);
-			if (producer !== undefined && (producer.rpcs as readonly string[]).includes(value.rpc)) {
+			const allowedRpcs: readonly string[] = producer?.rpcs ?? [];
+			if (allowedRpcs.includes(value.rpc)) {
 				return;
 			}
 			refinementContext.addIssue({
@@ -196,7 +201,10 @@ const ArchboardContextSchema = ArchboardContextRawSchema.transform((value) => fr
 type ArchboardContext = z.infer<typeof ArchboardContextSchema>;
 
 /**
- *
+ * Rebuild the operation tuple in its reviewed field order so the encoded JSON is byte-stable
+ * whatever order the caller's object had.
+ * @param value - A validated operation tuple.
+ * @returns An equal tuple with fields in policy order.
  */
 function orderedOperation(value: ArchboardContext["operation"]): ArchboardContext["operation"] {
 	if (value.id === null) {
@@ -215,7 +223,10 @@ function orderedOperation(value: ArchboardContext["operation"]): ArchboardContex
 }
 
 /**
- *
+ * Rebuild a context with every field in its reviewed order and every array copied, so the
+ * canonical encoding depends only on values.
+ * @param value - A validated context.
+ * @returns An equal context in canonical field order.
  */
 function orderedContext(value: ArchboardContext): ArchboardContext {
 	return {
@@ -266,7 +277,9 @@ function orderedContext(value: ArchboardContext): ArchboardContext {
 }
 
 /**
- *
+ * Validate untrusted input as an Archboard context and return the frozen canonical form.
+ * @param input - Any value claiming to be a context.
+ * @returns The frozen, canonically ordered context.
  */
 function validateContext(input: unknown): ArchboardContext {
 	const parsed = ArchboardContextSchema.safeParse(input);
@@ -277,28 +290,29 @@ function validateContext(input: unknown): ArchboardContext {
 }
 
 /**
- *
+ * The canonical (validated, ordered, frozen) form of a context the caller already typed.
+ * @param input - A context value.
+ * @returns The canonical context.
  */
 function canonicalContext(input: ArchboardContext): ArchboardContext {
 	return validateContext(input);
 }
 
 /**
- *
+ * Encode a context as the one compact JSON text the app-server context slot carries.
+ * @param input - A context value.
+ * @returns The canonical JSON text.
  */
 function encodeCanonicalContext(input: ArchboardContext): string {
-	const encoded = JSON.stringify(canonicalContext(input));
-	if (encoded === undefined) {
-		throw new TypeError("Archboard context could not be encoded as JSON.");
-	}
-	return encoded;
+	return JSON.stringify(canonicalContext(input));
 }
 
-/** Parse only the exact compact field order emitted by encodeCanonicalContext. */
+/**
+ * Parse only the exact compact field order emitted by encodeCanonicalContext.
+ * @param encoded - The JSON text to decode.
+ * @returns The decoded canonical context.
+ */
 function decodeCanonicalContext(encoded: string): ArchboardContext {
-	if (typeof encoded !== "string") {
-		throw new TypeError("Canonical context must be a string.");
-	}
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(encoded) as unknown;

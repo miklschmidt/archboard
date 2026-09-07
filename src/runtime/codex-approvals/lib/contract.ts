@@ -352,7 +352,10 @@ export class CodexApprovalError extends Error {
 	readonly requestId: JsonRpcRequestId | undefined;
 
 	/**
-	 *
+	 * Creates a refusal the caller can act on by code rather than by message.
+	 * @param code - The machine-readable refusal.
+	 * @param message - The operator-facing explanation.
+	 * @param requestId - The approval the refusal concerns, when one is known.
 	 */
 	constructor(code: CodexApprovalErrorCode, message: string, requestId?: JsonRpcRequestId) {
 		super(message);

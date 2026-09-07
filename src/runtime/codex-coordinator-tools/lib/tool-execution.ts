@@ -1,25 +1,26 @@
 import {
 	CodexWorkhorseOperationsError,
-	type CodexWorkhorseOperations,
+	type ManageWorkhorseQueueRequest,
+	type WorkhorseCoordinatorCall,
 } from "@/runtime/codex-workhorse-operations";
-import type {
-	DelegateToWorkhorseInput,
-	DelegateToWorkhorseResult,
-	DynamicToolRefusalReason,
-	InspectWorkhorseInput,
-	InspectWorkhorseResult,
-	ManageWorkhorseQueueInput,
-	ManageWorkhorseQueueResult,
-	ResolveSpokenApprovalInput,
-	SteerWorkhorseInput,
-	SteerWorkhorseResult,
+import {
+	DynamicToolRefusalReasonSchema,
+	type DelegateToWorkhorseResult,
+	type DynamicToolRefusalReason,
+	type InspectWorkhorseResult,
+	type ManageWorkhorseQueueInput,
+	type ManageWorkhorseQueueResult,
+	type SteerWorkhorseResult,
 } from "@/runtime/codex-coordinator-tool-contract";
 import type { OperationId } from "@/shared/codex-workbench-identity";
 import type {
 	CodexCoordinatorToolsOptions,
 	DynamicToolResponse,
 } from "@/runtime/codex-coordinator-tools/lib/contract";
-import type { ValidatedCoordinatorToolCall } from "@/runtime/codex-coordinator-tools/lib/validation";
+import type {
+	ValidatedCoordinatorToolCall,
+	ValidatedWorkhorseCall,
+} from "@/runtime/codex-coordinator-tools/lib/validation";
 import {
 	okResponse,
 	outcomeUnknownResponse,
@@ -31,8 +32,18 @@ interface IssuedOperationIdentity {
 	readonly wire: string;
 }
 
+/** A workhorse port result tagged with the tool that produced it. */
+type WorkhorseOutcome =
+	| { readonly tool: "inspect_workhorse"; readonly result: InspectWorkhorseResult }
+	| { readonly tool: "delegate_to_workhorse"; readonly result: DelegateToWorkhorseResult }
+	| { readonly tool: "manage_workhorse_queue"; readonly result: ManageWorkhorseQueueResult }
+	| { readonly tool: "steer_workhorse"; readonly result: SteerWorkhorseResult };
+
 /**
- *
+ * Prove an operation identity is a current host-issued one and pair it with its wire form.
+ * @param options - The dispatcher options carrying the operation authority.
+ * @param value - The candidate identity in any form.
+ * @returns The typed identity and its wire text.
  */
 function operationIdentity(
 	options: CodexCoordinatorToolsOptions,
@@ -44,14 +55,18 @@ function operationIdentity(
 }
 
 /**
- *
+ * Mint the host operation identity one workhorse effect will run under.
+ * @param options - The dispatcher options carrying the operation authority.
+ * @returns The fresh identity.
  */
 function issueOperationIdentity(options: CodexCoordinatorToolsOptions): IssuedOperationIdentity {
 	return operationIdentity(options, options.operation.issuer.mintOperationId());
 }
 
 /**
- *
+ * Read the spoken-approval gate's current classifier operation identity, if it has a valid one.
+ * @param options - The dispatcher options carrying the gate and operation authority.
+ * @returns The identity, or null when the gate has none or it is not current.
  */
 function captureSpokenOperationIdentity(
 	options: CodexCoordinatorToolsOptions,
@@ -65,136 +80,153 @@ function captureSpokenOperationIdentity(
 }
 
 /**
- *
+ * A diagnostic from any thrown value.
+ * @param error - Whatever was thrown.
+ * @returns Its message, or a placeholder.
  */
 function errorMessage(error: unknown): string {
 	return error instanceof Error && error.message.length > 0 ? error.message : "unknown error";
 }
 
 /**
- *
+ * Read one field off a thrown value without assuming its shape.
+ * @param error - Whatever was thrown.
+ * @param field - The property to read.
+ * @returns The property value, or undefined when the error is not an object.
  */
 function errorField(error: unknown, field: string): unknown {
 	return error !== null && typeof error === "object" ? Reflect.get(error, field) : undefined;
 }
 
 /**
- *
+ * Classify what a workhorse error says about the effect it interrupted.
+ * @param error - Whatever the workhorse port threw.
+ * @returns The delivery outcome it names, or null when it names none.
  */
 function outcomeFromError(error: unknown): "not_delivered" | "outcome_unknown" | null {
+	if (error instanceof CodexWorkhorseOperationsError && error.code === "outcome_unknown") {
+		return "outcome_unknown";
+	}
 	const outcome = errorField(error, "outcome");
 	return outcome === "not_delivered" || outcome === "outcome_unknown" ? outcome : null;
 }
 
 /**
- *
+ * Read the reviewed refusal reason a thrown error carries as its code, if any.
+ * @param error - Whatever was thrown.
+ * @returns The refusal reason, or null when the code is not a reviewed reason.
  */
 function refusalFromError(error: unknown): DynamicToolRefusalReason | null {
-	const code = errorField(error, "code");
-	if (
-		code === "invalid_call" ||
-		code === "not_ready" ||
-		code === "not_loaded" ||
-		code === "not_controllable" ||
-		code === "system_error" ||
-		code === "stale_child" ||
-		code === "prior_epoch" ||
-		code === "unknown_provenance" ||
-		code === "approval_declined" ||
-		code === "cycle" ||
-		code === "busy" ||
-		code === "expired" ||
-		code === "unsupported"
-	) {
-		return code;
-	}
-	return null;
+	const code = DynamicToolRefusalReasonSchema.safeParse(errorField(error, "code"));
+	return code.success ? code.data : null;
 }
 
 /**
- *
+ * Whether a call changes workhorse state, so an unproven outcome must be reported as unknown
+ * rather than refused.
+ * @param call - The validated call.
+ * @returns True for every workhorse tool except reads.
  */
 function isMutation(call: ValidatedCoordinatorToolCall): boolean {
 	return (
 		call.tool === "delegate_to_workhorse" ||
 		call.tool === "steer_workhorse" ||
-		(call.tool === "manage_workhorse_queue" &&
-			(call.input as ManageWorkhorseQueueInput).operation !== "list")
+		(call.tool === "manage_workhorse_queue" && call.input.operation !== "list")
 	);
 }
 
 /**
- *
+ * Build the queue request for the workhorse port, attaching the issued operation to mutations.
+ * @param call - The coordinator call.
+ * @param input - The parsed queue input.
+ * @param operation - The issued operation identity.
+ * @returns The port request.
  */
-function invokeWorkhorse(
-	operations: CodexCoordinatorToolsOptions["operations"],
-	validated: ValidatedCoordinatorToolCall,
+function queueRequest(
+	call: WorkhorseCoordinatorCall,
+	input: ManageWorkhorseQueueInput,
 	operation: IssuedOperationIdentity,
-): Promise<unknown> {
-	switch (validated.tool) {
-		case "inspect_workhorse":
-			return operations.inspect({
-				call: validated.call,
-				...(validated.input as InspectWorkhorseInput),
-			});
-		case "delegate_to_workhorse":
-			return operations.delegate({
-				call: validated.call,
-				...(validated.input as DelegateToWorkhorseInput),
-				operationId: operation.id,
-			});
-		case "manage_workhorse_queue": {
-			const input = validated.input as ManageWorkhorseQueueInput;
-			return operations.manageQueue({
-				call: validated.call,
-				...(input.operation === "list" ? {} : { operationId: operation.id }),
-				...input,
-			} as Parameters<CodexWorkhorseOperations["manageQueue"]>[0]);
-		}
-		case "steer_workhorse":
-			if (validated.expectedTurnId === null) {
-				return Promise.reject(new Error("The host did not supply expectedTurnId."));
-			}
-			return operations.steer({
-				call: validated.call,
-				expectedTurnId: validated.expectedTurnId,
-				...(validated.input as SteerWorkhorseInput),
-				operationId: operation.id,
-			});
-		case "resolve_spoken_approval":
-			return Promise.reject(new Error("voice calls do not use the workhorse operations port"));
+): ManageWorkhorseQueueRequest {
+	if (input.operation === "list") {
+		return { call, operation: "list" };
 	}
+	// oxlint-disable-next-line typescript(no-unsafe-type-assertion) -- the reviewed input schema carries submission ids as plain strings while the port brands them as issued QueuedSubmissionId; the port hands them to Codex unchanged, and the identity contract for branding them belongs to the operations module.
+	return { call, operationId: operation.id, ...input } as ManageWorkhorseQueueRequest;
 }
 
 /**
- *
+ * Run one workhorse tool through the operations port and tag its result with the tool.
+ * @param operations - The workhorse operations port.
+ * @param validated - The validated workhorse call.
+ * @param operation - The issued operation identity the effect runs under.
+ * @returns The tagged result.
+ */
+function invokeWorkhorse(
+	operations: CodexCoordinatorToolsOptions["operations"],
+	validated: ValidatedWorkhorseCall,
+	operation: IssuedOperationIdentity,
+): Promise<WorkhorseOutcome> {
+	const { call } = validated;
+	if (validated.tool === "inspect_workhorse") {
+		return operations
+			.inspect({ call, ...validated.input })
+			.then((result): WorkhorseOutcome => ({ tool: "inspect_workhorse", result }));
+	}
+	if (validated.tool === "delegate_to_workhorse") {
+		return operations
+			.delegate({ call, ...validated.input, operationId: operation.id })
+			.then((result): WorkhorseOutcome => ({ tool: "delegate_to_workhorse", result }));
+	}
+	if (validated.tool === "manage_workhorse_queue") {
+		return operations
+			.manageQueue(queueRequest(call, validated.input, operation))
+			.then((result): WorkhorseOutcome => ({ tool: "manage_workhorse_queue", result }));
+	}
+	return operations
+		.steer({
+			call,
+			expectedTurnId: validated.expectedTurnId,
+			...validated.input,
+			operationId: operation.id,
+		})
+		.then((result): WorkhorseOutcome => ({ tool: "steer_workhorse", result }));
+}
+
+/**
+ * Build the successful response for a workhorse outcome under its still-current operation.
+ * @param options - The dispatcher options carrying the operation authority.
+ * @param outcome - The tagged result.
+ * @param operation - The issued operation identity the effect ran under.
+ * @returns The frozen response.
  */
 function workhorseResponse(
 	options: CodexCoordinatorToolsOptions,
-	validated: ValidatedCoordinatorToolCall,
+	outcome: WorkhorseOutcome,
 	operation: IssuedOperationIdentity,
-	result: unknown,
 ): DynamicToolResponse {
 	const current = operationIdentity(options, operation.id);
 	if (current.id !== operation.id) {
 		throw new TypeError("The workhorse operation identity changed.");
 	}
-	switch (validated.tool) {
-		case "inspect_workhorse":
-			return okResponse(validated.tool, current.wire, result as InspectWorkhorseResult);
-		case "delegate_to_workhorse":
-			return okResponse(validated.tool, current.wire, result as DelegateToWorkhorseResult);
-		case "manage_workhorse_queue":
-			return okResponse(validated.tool, current.wire, result as ManageWorkhorseQueueResult);
-		case "steer_workhorse":
-			return okResponse(validated.tool, current.wire, result as SteerWorkhorseResult);
-		case "resolve_spoken_approval":
-			throw new Error("voice calls do not use the workhorse response port");
+	if (outcome.tool === "inspect_workhorse") {
+		return okResponse(outcome.tool, current.wire, outcome.result);
 	}
+	if (outcome.tool === "delegate_to_workhorse") {
+		return okResponse(outcome.tool, current.wire, outcome.result);
+	}
+	if (outcome.tool === "manage_workhorse_queue") {
+		return okResponse(outcome.tool, current.wire, outcome.result);
+	}
+	return okResponse(outcome.tool, current.wire, outcome.result);
 }
 
 /**
- *
+ * Whether a thrown error belongs to this call's operation; an error naming no operation is taken
+ * as this call's own.
+ * @param options - The dispatcher options carrying the operation authority.
+ * @param error - Whatever the workhorse port threw.
+ * @param operation - The issued operation identity the effect ran under.
+ * @returns False only when the error names a different or invalid operation.
  */
 function errorUsesOperation(
 	options: CodexCoordinatorToolsOptions,
@@ -213,7 +245,35 @@ function errorUsesOperation(
 }
 
 /**
- *
+ * The response for an error whose delivery outcome could not be classified.
+ * @param validated - The validated call.
+ * @param error - Whatever the workhorse port threw.
+ * @param operation - The issued operation identity the effect ran under.
+ * @returns A refusal when the error names a reviewed reason or the call was a read, otherwise an
+ * unknown outcome.
+ */
+function unclassifiedErrorResponse(
+	validated: ValidatedCoordinatorToolCall,
+	error: unknown,
+	operation: IssuedOperationIdentity,
+): DynamicToolResponse {
+	const reason = refusalFromError(error);
+	if (reason !== null) {
+		return refusedResponse(reason, errorMessage(error));
+	}
+	if (isMutation(validated)) {
+		return outcomeUnknownResponse(operation.wire);
+	}
+	return refusedResponse("system_error", `The workhorse tool failed: ${errorMessage(error)}`);
+}
+
+/**
+ * Translate a workhorse port failure into the response the coordinator receives.
+ * @param options - The dispatcher options carrying the operation authority.
+ * @param validated - The validated call.
+ * @param error - Whatever the workhorse port threw.
+ * @param operation - The issued operation identity the effect ran under.
+ * @returns The frozen response.
  */
 function responseForWorkhorseError(
 	options: CodexCoordinatorToolsOptions,
@@ -231,10 +291,7 @@ function responseForWorkhorseError(
 		);
 	}
 	const outcome = outcomeFromError(error);
-	if (
-		outcome === "outcome_unknown" ||
-		(error instanceof CodexWorkhorseOperationsError && error.code === "outcome_unknown")
-	) {
+	if (outcome === "outcome_unknown") {
 		return outcomeUnknownResponse(operation.wire);
 	}
 	if (outcome === "not_delivered") {
@@ -243,18 +300,14 @@ function responseForWorkhorseError(
 			`The workhorse operation was not delivered: ${errorMessage(error)}`,
 		);
 	}
-	const reason = refusalFromError(error);
-	if (reason !== null) {
-		return refusedResponse(reason, errorMessage(error));
-	}
-	if (isMutation(validated)) {
-		return outcomeUnknownResponse(operation.wire);
-	}
-	return refusedResponse("system_error", `The workhorse tool failed: ${errorMessage(error)}`);
+	return unclassifiedErrorResponse(validated, error, operation);
 }
 
 /**
- *
+ * Build the response for a settled spoken approval.
+ * @param result - What the spoken approval gate returned.
+ * @param operation - The gate's classifier operation identity captured before resolving.
+ * @returns The frozen response.
  */
 function spokenResponse(
 	result: Awaited<ReturnType<CodexCoordinatorToolsOptions["spokenApproval"]["resolve"]>>,
@@ -275,15 +328,9 @@ function spokenResponse(
 	});
 }
 
-/**
- *
- */
-function spokenInput(call: ValidatedCoordinatorToolCall): ResolveSpokenApprovalInput {
-	return call.input as ResolveSpokenApprovalInput;
-}
-
 export {
 	type IssuedOperationIdentity,
+	type WorkhorseOutcome,
 	issueOperationIdentity,
 	captureSpokenOperationIdentity,
 	isMutation,
@@ -291,5 +338,4 @@ export {
 	workhorseResponse,
 	responseForWorkhorseError,
 	spokenResponse,
-	spokenInput,
 };

@@ -4,7 +4,10 @@ import type { TransportServerNotification } from "@/runtime/codex-transport/serv
 import type { ActiveRealtimeSession } from "@/runtime/codex-realtime/lib/state";
 
 /**
- *
+ * The session's transcript as browser records in stable order: recovered timeline position
+ * first, live arrival order after, item id as the tie-break.
+ * @param session - The session whose entries to project.
+ * @returns The ordered transcript records.
  */
 function orderedRecords(session: ActiveRealtimeSession): readonly RealtimeTranscriptRecord[] {
 	return [...session.entries.values()]
@@ -21,7 +24,12 @@ function orderedRecords(session: ActiveRealtimeSession): readonly RealtimeTransc
 }
 
 /**
- *
+ * Whether a server notification belongs exactly to this session's child epoch and coordinator
+ * thread; anything else, including an undecodable thread id, is ignored rather than guessed.
+ * @param session - The session receiving notifications.
+ * @param event - The correlated notification.
+ * @param identity - Decodes wire thread ids.
+ * @returns True when the notification is this session's.
  */
 function exactNotification(
 	session: ActiveRealtimeSession,
