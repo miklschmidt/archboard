@@ -7,7 +7,7 @@ const previousVault = process.env["ARCHBOARD_VAULT"];
 const vault = mkdtempSync(join(tmpdir(), "archboard-board-claim-"));
 process.env["ARCHBOARD_VAULT"] = vault;
 const lock = await import("../board-lock.ts");
-const logger = (await import("../logger.ts")).default;
+const logger = (await import("../logger.ts")).logger;
 const { CLAIM_LEASE_MS, LOCK_LEASE_MS, LOCK_POLL_MS, LOCK_STEAL_GUARD_MS } =
 	await import("../../../shared/timing/timing.ts");
 const originalWarn = logger.warn;
