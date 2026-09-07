@@ -22,6 +22,7 @@ import { exactNotification, orderedRecords } from "./records.js";
 import { runRealtimeMutation } from "./mutation.js";
 import { createRealtimeStartParams } from "./start-policy.js";
 import { realtimeGeneration, type ActiveRealtimeSession } from "./state.js";
+import { watchCatalogueUpdates } from "./catalogue-updates.js";
 const TIMELINE_PAGE_LIMIT = 100;
 
 export function createCodexRealtimeAdapter(
@@ -73,6 +74,7 @@ export function createCodexRealtimeAdapter(
 		}
 	};
 	const finalize = (session: ActiveRealtimeSession): void => {
+		session.stopCatalogueUpdates?.();
 		states(session, phase.closingStates(session.state));
 		retainedTranscript = orderedRecords(session);
 		if (!session.answerSettled) {
@@ -139,6 +141,7 @@ export function createCodexRealtimeAdapter(
 	};
 
 	const failStart = (session: ActiveRealtimeSession, error: unknown): void => {
+		session.stopCatalogueUpdates?.();
 		if (session.answerSettled) {
 			return;
 		}
@@ -173,6 +176,7 @@ export function createCodexRealtimeAdapter(
 		});
 		const wireSessionId = options.identity.issuer.mintRealtimeSessionId();
 		const semanticBrief = options.freshSemanticBrief(wireSessionId);
+		const boardCatalogue = options.boardCatalogue.read();
 		const session: ActiveRealtimeSession = {
 			binding,
 			browserSessionId: offer.sessionId,
@@ -189,8 +193,22 @@ export function createCodexRealtimeAdapter(
 			answerSdp: null,
 			answerSettled: false,
 			nextLiveOrder: 1_000_000_000,
+			stopCatalogueUpdates: null,
 		};
 		active = session;
+		try {
+			session.stopCatalogueUpdates = watchCatalogueUpdates(
+				options,
+				session,
+				boardCatalogue,
+				() => bindingIsCurrent(session),
+				(message) => emitDiagnostic(session, "coordinator", message),
+			);
+		} catch (error) {
+			active = null;
+			session.rejectAnswer(error instanceof Error ? error : new Error(String(error)));
+			return answer;
+		}
 		retainedTranscript = [];
 		state(session, { phase: "requesting_permission", reason: "start_requested" });
 		state(session, { phase: "negotiating", reason: "permission_granted" });
@@ -210,6 +228,7 @@ export function createCodexRealtimeAdapter(
 						realtimeSessionId: session.wireSessionId,
 						sdp: offer.sdp,
 						semanticBrief,
+						boardCatalogue,
 					}),
 				);
 			})
@@ -347,6 +366,7 @@ export function createCodexRealtimeAdapter(
 					if (failure) {
 						const ownsPendingStart = !session.answerSettled;
 						if (ownsPendingStart) {
+							session.stopCatalogueUpdates?.();
 							session.answerSettled = true;
 						}
 						state(session, failure);
@@ -460,6 +480,7 @@ export function createCodexRealtimeAdapter(
 			return { ...request, outcome: "not_delivered", reason: "not_ready" };
 		}
 		state(session, stopping);
+		session.stopCatalogueUpdates?.();
 		const outcome: CommandOutcome = await mutationOutcome(
 			session,
 			request,
@@ -561,6 +582,7 @@ export function createCodexRealtimeAdapter(
 			state(session, { phase: "idle", reason: "recovered" });
 			retainedTranscript = orderedRecords(session);
 			if (active === session) {
+				session.stopCatalogueUpdates?.();
 				active = null;
 			}
 			return { ...request, outcome: "delivered" };
@@ -595,6 +617,7 @@ export function createCodexRealtimeAdapter(
 			disposed = true;
 			listeners.clear();
 			if (active) {
+				active.stopCatalogueUpdates?.();
 				retainedTranscript = orderedRecords(active);
 			}
 			if (active && !active.answerSettled) {

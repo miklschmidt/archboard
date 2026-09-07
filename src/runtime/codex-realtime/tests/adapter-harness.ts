@@ -34,9 +34,11 @@ interface FakeSession {
 	readonly speeches: SessionParams<"thread/realtime/appendSpeech">[];
 	readonly stops: SessionParams<"thread/realtime/stop">[];
 	readonly timelineRequests: SessionParams<"thread/timeline/list">[];
+	readonly injections: SessionParams<"thread/inject_items">[];
 	timelinePages: TimelinePage[];
 	appendSpeechFailure: Error | null;
 	afterAppendText: (() => void) | null;
+	afterInjection: (() => void) | null;
 }
 
 function fakeSession(): FakeSession {
@@ -45,15 +47,18 @@ function fakeSession(): FakeSession {
 	const speeches: SessionParams<"thread/realtime/appendSpeech">[] = [];
 	const stops: SessionParams<"thread/realtime/stop">[] = [];
 	const timelineRequests: SessionParams<"thread/timeline/list">[] = [];
+	const injections: SessionParams<"thread/inject_items">[] = [];
 	const state: FakeSession = {
 		starts,
 		texts,
 		speeches,
 		stops,
 		timelineRequests,
+		injections,
 		timelinePages: [],
 		appendSpeechFailure: null,
 		afterAppendText: null,
+		afterInjection: null,
 		port: {
 			realtimeStart: async (params) => {
 				starts.push(params);
@@ -62,6 +67,11 @@ function fakeSession(): FakeSession {
 			realtimeAppendText: async (params) => {
 				texts.push(params);
 				state.afterAppendText?.();
+				return {};
+			},
+			threadInjectItems: async (params) => {
+				injections.push(params);
+				state.afterInjection?.();
 				return {};
 			},
 			realtimeAppendSpeech: async (params) => {
@@ -106,7 +116,12 @@ const LINKED_WIRE_THREAD_ID = "linked-thread";
 const COORDINATOR_WIRE_THREAD_ID = "coordinator-thread";
 
 const transitionFailures: string[] = [];
-function harness(): Harness {
+function harness(
+	boardCatalogue: CodexRealtimeAdapterOptions["boardCatalogue"] = {
+		read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+		subscribe: () => () => {},
+	},
+): Harness {
 	const identity = createIdentityAuthority();
 	const adopted = identity.decoder.adoptCodexResponseIdentities({
 		threadIds: [LINKED_WIRE_THREAD_ID, COORDINATOR_WIRE_THREAD_ID, "other-thread"],
@@ -129,6 +144,7 @@ function harness(): Harness {
 	const adapter = createCodexRealtimeAdapter({
 		session: session.port,
 		identity,
+		boardCatalogue,
 		freshSemanticBrief: () => semanticBrief(),
 		currentBinding: () => bindingState.binding,
 	});

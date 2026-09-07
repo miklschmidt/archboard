@@ -116,6 +116,10 @@ describe("production Codex generation ownership", () => {
 			const production = owned.value.bindings(generationInput(1)).realtime(components);
 			const adapter = createCodexRealtimeAdapter({
 				...production,
+				boardCatalogue: {
+					read: () => '{"type":"archboard_board_catalogue","boards":[],"omitted":0}',
+					subscribe: () => () => {},
+				},
 				identity: authorities.identity,
 				session: {
 					realtimeStart: async (params) => {
@@ -123,6 +127,7 @@ describe("production Codex generation ownership", () => {
 						return {};
 					},
 					realtimeAppendText: async () => ({}),
+					threadInjectItems: async () => ({}),
 					realtimeAppendSpeech: async () => ({}),
 					realtimeStop: async () => ({}),
 					timelineListPage: async () => ({

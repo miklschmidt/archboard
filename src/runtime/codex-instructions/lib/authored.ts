@@ -4,12 +4,12 @@ import { readFileSync } from "node:fs";
 const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 =
 	"257b4ab944737418ee0713b4a748405446f8bc009d0dfc4557b099cd2c1038e6" as const;
 const COORDINATOR_ROLE_EXTENSION_SHA256 =
-	"c187f85f75515bf07091904f96fee503080f23ce84afb606674e040c80e2d87b" as const;
+	"9d59e308c7dfb37af911cdd9784e474081abf65d8842bddc37463e392dcf7fd6" as const;
 const COORDINATOR_SEPARATOR = "\n--- ARCHBOARD COORDINATOR ROLE ---\n" as const;
 const COORDINATOR_SEPARATOR_SHA256 =
 	"e64743b591f47a59eea6118686fc5b9f0bcca3e2d4e6af2dd8acfe55fe97653a" as const;
 const COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256 =
-	"de6b52ca41c65ea73cdf24e2ecaf9fa0c1c2ea68178119c252f266f8ac90b61c" as const;
+	"429728d2dd467224e7ff375ec599720bc7bc1071cf122285a7bd99e8eb3ef3dc" as const;
 
 interface AuthoredInstructionIntegrity {
 	readonly workhorseSha256: string;

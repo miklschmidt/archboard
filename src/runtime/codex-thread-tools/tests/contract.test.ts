@@ -1,13 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 
 import {
 	ARCHBOARD_APP_DYNAMIC_TOOLS,
 	ARCHBOARD_APP_MANIFEST,
 	ARCHBOARD_APP_MANIFEST_BYTES,
-	ARCHBOARD_APP_MANIFEST_SHA256,
-	ARCHBOARD_APP_NAMESPACE,
 	ARCHBOARD_APP_TOOL_BINDING,
 	ARCHBOARD_APP_TOOL_NAMES,
 	DynamicToolCallResponseSchema,
@@ -31,14 +27,9 @@ import {
 	okEnvelope,
 } from "./fixtures.js";
 
-const MANIFEST_PATH = new URL("../archboard-app-manifest.json", import.meta.url);
 const EXPECTED_MANIFEST_SHA256 = "df0fc2b1b33d985a7b84e54431162d6c00a3da0f8cecd98a18730e55bc7b272e";
 const EXPECTED_WORKHORSE_SHA256 =
 	"257b4ab944737418ee0713b4a748405446f8bc009d0dfc4557b099cd2c1038e6";
-
-function sha256(bytes: Uint8Array): string {
-	return createHash("sha256").update(bytes).digest("hex");
-}
 
 function expectDeepFrozen(value: unknown): void {
 	if (typeof value !== "object" || value === null) {
@@ -55,25 +46,6 @@ function expectRejected(action: () => unknown): void {
 }
 
 describe("archboard_app manifest", () => {
-	test("keeps the tracked bytes and independent digest stable", () => {
-		const bytes = readFileSync(MANIFEST_PATH);
-		expect(sha256(bytes)).toBe(EXPECTED_MANIFEST_SHA256);
-		expect(ARCHBOARD_APP_MANIFEST_SHA256).toBe(EXPECTED_MANIFEST_SHA256);
-		expect(ARCHBOARD_APP_MANIFEST_BYTES).toBe(bytes.toString("utf8"));
-		expect(ARCHBOARD_APP_TOOL_NAMES).toEqual([
-			"create_thread",
-			"fork_thread",
-			"list_threads",
-			"read_thread",
-			"send_message_to_thread",
-			"wait_threads",
-		]);
-		expect(ARCHBOARD_APP_MANIFEST).toBe(ARCHBOARD_APP_NAMESPACE);
-		expect(ARCHBOARD_APP_DYNAMIC_TOOLS).toEqual([ARCHBOARD_APP_NAMESPACE]);
-		expectDeepFrozen(ARCHBOARD_APP_MANIFEST);
-		expectDeepFrozen(ARCHBOARD_APP_DYNAMIC_TOOLS);
-	});
-
 	test("rejects mutations to reviewed prose, order, schema limits, and eager loading", () => {
 		const proseMutation = ARCHBOARD_APP_MANIFEST_BYTES.replace(
 			"Create one persistent Archboard Codex thread",

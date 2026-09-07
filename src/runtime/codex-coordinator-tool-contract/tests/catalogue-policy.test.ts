@@ -1,5 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import path from "node:path";
 
 import {
 	ARCHBOARD_VOICE_NAMESPACE,
@@ -16,16 +15,6 @@ import {
 	DynamicToolResponseSchema,
 	UnknownDynamicToolResponseSchema,
 } from "../index.js";
-import {
-	definitionsOutsideOwner,
-	hasJsonCatalogueDefinition,
-	hasTypeScriptCatalogueDefinition,
-	ownerOfDefinition,
-	realCatalogueDefinitions,
-} from "./catalogue-ownership.js";
-
-const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../../../..");
-const ownerRoot = path.join(repoRoot, "src/runtime/codex-coordinator-tool-contract");
 
 function expectDeepFrozen(value: unknown): void {
 	expect(Object.isFrozen(value)).toBe(true);
@@ -334,46 +323,4 @@ describe("dynamic wire envelopes and metadata", () => {
 			expectDeepFrozen(value);
 		}
 	});
-});
-
-test("structurally detects outside-owner namespace definitions without prose false positives", () => {
-	const fakeTypeScript = `const duplicate = { type: "namespace", name: "archboard_workhorse", tools: [] };`;
-	const fakeCatalogue = `const duplicate = { namespace: "archboard_voice", tools: [] };`;
-	const fakeJson = JSON.stringify({
-		type: "namespace",
-		name: "archboard_voice",
-		description: "duplicate",
-		tools: [],
-	});
-	const importOnly = `import { ARCHBOARD_WORKHORSE_NAMESPACE } from "./catalogue.js";`;
-	const proseOnly = `const note = "archboard_workhorse is named here, not defined";`;
-
-	expect(hasTypeScriptCatalogueDefinition(fakeTypeScript)).toBe(true);
-	expect(hasTypeScriptCatalogueDefinition(fakeCatalogue)).toBe(true);
-	expect(hasJsonCatalogueDefinition(fakeJson)).toBe(true);
-	expect(hasTypeScriptCatalogueDefinition(importOnly)).toBe(false);
-	expect(hasTypeScriptCatalogueDefinition(proseOnly)).toBe(false);
-	expect(
-		definitionsOutsideOwner(
-			[
-				{ fileName: path.join(repoRoot, "src/fake-catalogue.ts"), source: fakeTypeScript },
-				{ fileName: path.join(repoRoot, "src/fake-manifest.json"), source: fakeJson },
-				{ fileName: path.join(repoRoot, "src/prose.ts"), source: proseOnly },
-			],
-			ownerRoot,
-		),
-	).toEqual([
-		path.join(repoRoot, "src/fake-catalogue.ts"),
-		path.join(repoRoot, "src/fake-manifest.json"),
-	]);
-});
-
-test("keeps real namespace definitions in one owner", () => {
-	const definitions = realCatalogueDefinitions(path.join(repoRoot, "src"));
-	expect(definitions.length).toBeGreaterThanOrEqual(2);
-	expect(definitions.every((file) => file.startsWith(ownerRoot + path.sep))).toBe(true);
-	expect(new Set(definitions.map((file) => ownerOfDefinition(file, ownerRoot)))).toEqual(
-		new Set([ownerRoot]),
-	);
-	expect(definitions.filter((file) => path.extname(file) === ".json")).toHaveLength(2);
 });

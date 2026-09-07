@@ -33,6 +33,17 @@ coordinator receives the same instructions plus its role extension, and each
 realtime start carries a compact role-bearing semantic brief (repository,
 workhorse, coordinator, board, pane, version, selection, claim, doing state,
 change cursor, board description) within the generated item and token limits.
+The coordinator's primary objective is board work and it must read the
+`archboard` skill before handling its first request. Realtime's `prompt` gives
+the voice model its own board-focused role and handoff instructions;
+`realtimeStartInstructions` supplies coordinator mode instructions and the same
+board brief to ordinary coordinator turns. These fields reach different models.
+Both models also receive a bounded catalogue of vault board addresses and
+variants at voice start. A recursive vault watch sends a replacement catalogue
+as quiet developer items to both histories when the inventory changes, including
+unopened boards and external creation or deletion. Content-only writes are
+deduplicated. Catalogue delivery belongs to that exact voice session and ends
+with it; an unconfirmed injection is reported and never retried automatically.
 There is no hook process, hook trust grant or second context diff.
 
 ### 2. Mid-conversation context — the bound app-server session

@@ -33,7 +33,49 @@ function createdRoot(fixture: RealEpochFixture): ReturnType<typeof thread> {
 	};
 }
 
-describe("owned roots before their first user message", () => {
+describe("owned roots with incomplete history metadata", () => {
+	test("keeps the coordinator executable when its first turn adds a history row without capability", async () => {
+		await withFixture({ threadId: "new-root", source: "vscode" }, async (fixture) => {
+			const row = createdRoot(fixture);
+			const result = await classifyCodexThreadLink(
+				{
+					epoch: fixture.store,
+					session: {
+						threadListPage: async () => threadPage([{ ...row, canAcceptDirectInput: null }]),
+						threadLoadedListPage: async () => loadedPage([row.id]),
+						threadRead: async () => ({ thread: row }),
+					},
+				},
+				fixture.target,
+			);
+			expect(result.link).toMatchObject({ state: "executable", reason: null });
+			expect(result.observation.persistedRows).toBe(1);
+		});
+	});
+
+	test("preserves a live refusal when history omits capability", async () => {
+		await withFixture({ threadId: "new-root", source: "vscode" }, async (fixture) => {
+			const row = createdRoot(fixture);
+			for (const canAcceptDirectInput of [false, null]) {
+				const result = await classifyCodexThreadLink(
+					{
+						epoch: fixture.store,
+						session: {
+							threadListPage: async () => threadPage([{ ...row, canAcceptDirectInput: null }]),
+							threadLoadedListPage: async () => loadedPage([row.id]),
+							threadRead: async () => ({ thread: { ...row, canAcceptDirectInput } }),
+						},
+					},
+					fixture.target,
+				);
+				expect(result.link).toMatchObject({
+					state: "inspect_only",
+					reason: canAcceptDirectInput === false ? "direct_input_false" : "direct_input_unknown",
+				});
+			}
+		});
+	});
+
 	test("classifies a proved created root omitted from history through its exact live read", async () => {
 		await withFixture({ threadId: "new-root", source: "vscode" }, async (fixture) => {
 			const row = createdRoot(fixture);

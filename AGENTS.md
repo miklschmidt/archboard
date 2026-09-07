@@ -70,6 +70,9 @@ with the reason). These are the rules that will not stop you:
 
 ## Test policy
 
+**Mandatory: Never write tests that test contents of files. Tests should test
+runtime behavior, not static content.**
+
 Give each non-obvious regression one cheapest credible owner: types and lint
 for structural rules, focused unit or integration owners for hidden behaviour,
 rendered or browser owners for visible workflows, process or system owners only

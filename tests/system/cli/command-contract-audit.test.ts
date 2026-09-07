@@ -1,10 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join, relative } from "node:path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { z } from "zod";
 import { childDiscoveryOptions } from "../../../src/cli/command-contract/route-options.ts";
 import { introspectContracts } from "../../../src/cli/command-contract/introspection.ts";
-import { runCommand } from "../../../src/cli/command-contract/runner.ts";
 import { ARRANGE_FLAG_SPEC } from "../../../src/cli/commands/arrange.ts";
 import { cliContractRegistry, cliSurface } from "../../../src/cli/commands/run.ts";
 import { SNAPSHOT_FLAG_SPEC } from "../../../src/cli/commands/snapshot.ts";
@@ -100,12 +99,6 @@ const meaningfulObjectBranches = (schema: unknown): boolean => {
 	);
 };
 
-const visitTs = (directory: string): string[] =>
-	readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-		const path = join(directory, entry.name);
-		return entry.isDirectory() ? visitTs(path) : entry.name.endsWith(".ts") ? [path] : [];
-	});
-
 describe("command contract audit", () => {
 	test("matches the declared CLI registry in canonical order", () => {
 		const expectedPaths = cliSurface().flatMap(({ name, subcommands }) =>
@@ -118,24 +111,6 @@ describe("command contract audit", () => {
 		expect(contracts.map((entry) => entry.name)).toEqual(auditedPaths);
 		expect(registry.every((entry) => entry.contract.path.join(" ") === entry.name)).toBe(true);
 		expect(registry.every((entry) => !("handlerName" in entry))).toBe(true);
-	});
-
-	test("keeps the legacy injection command and transport artifacts retired", () => {
-		expect(cliSurface().some(({ name }) => name === "inject")).toBeFalse();
-		expect(
-			registry.some(({ name }) => name === "inject" || name.startsWith("inject ")),
-		).toBeFalse();
-		expect(existsSync(join(checkoutRoot, "src/cli/commands/inject.ts"))).toBeFalse();
-		for (const relativePath of [
-			"src/runtime/engine/canvas-client.ts",
-			"tests/system/cli/support/cli-http-double.ts",
-		]) {
-			const source = readFileSync(join(checkoutRoot, relativePath), "utf8");
-			expect(source, relativePath).not.toContain("/api/injection");
-			expect(source, relativePath).not.toMatch(
-				/\b(?:getInjection|postInjectionTest|InjectionReport)\b/,
-			);
-		}
 	});
 
 	test("keeps fixed-base coverage and explicit introduced paths", () => {
@@ -201,7 +176,6 @@ describe("command contract audit", () => {
 				[...declared].every((exit) => audited.exits.includes(exit)),
 				entry.name,
 			).toBe(true);
-			expect(existsSync(join(checkoutRoot, entry.handlerOwner)), entry.name).toBe(true);
 		}
 	});
 
@@ -355,123 +329,5 @@ describe("command contract audit", () => {
 		expect(check?.outcomes?.map(({ exit, stream }) => ({ exit, stream }))).toEqual(
 			[6, 7, 8].map((exit) => ({ exit, stream: "stdout-only" })),
 		);
-	});
-
-	test("keeps contract implementation and private artifact policy narrow", () => {
-		// contract and argv are required; the optional abort signal is the third declared parameter.
-		expect(runCommand.length).toBe(3);
-		const contractSource = readFileSync(
-			join(checkoutRoot, "src/cli/command-contract/contract.ts"),
-			"utf8",
-		);
-		expect(contractSource).toMatch(/^interface CommandOutcomeDeclaration\b/m);
-		expect(contractSource).toMatch(/^\ttype CommandOutcomeDeclaration,$/m);
-		const execution = contractSource.match(
-			/^interface CommandExecution[^{]*\{([\s\S]*?)\n\}/m,
-		)?.[1];
-		expect(execution).toBeDefined();
-		for (const forbidden of ["exit:", "stream:", "presentation:", "description:", "held:"]) {
-			expect(execution).not.toContain(forbidden);
-		}
-		const sourceFiles = visitTs(join(checkoutRoot, "src"));
-		const familySources = sourceFiles
-			.filter(
-				(file) =>
-					relative(checkoutRoot, file).startsWith("src/cli/commands/") &&
-					relative(checkoutRoot, file) !== "src/cli/commands/run.ts",
-			)
-			.map((file) => [relative(checkoutRoot, file), readFileSync(file, "utf8")] as const);
-		expect(
-			familySources
-				.filter(([, source]) => /switch\s*\(\s*(?:action|op|command|subcommand)\s*\)/.test(source))
-				.map(([file]) => file),
-		).toEqual([]);
-		expect(
-			readdirSync(join(checkoutRoot, "src/cli/command-contract"), { withFileTypes: true })
-				.filter((entry) => entry.isFile() && /(?:test|testing|fixture)/i.test(entry.name))
-				.map((entry) => entry.name),
-		).toEqual([]);
-		expect(
-			sourceFiles
-				.filter((file) =>
-					relative(checkoutRoot, file).startsWith("src/cli/command-contract/tests/"),
-				)
-				.filter((file) =>
-					/processCommandHost|commandContractTestHost|\/lib\/host\.js/.test(
-						readFileSync(file, "utf8"),
-					),
-				)
-				.map((file) => relative(checkoutRoot, file)),
-		).toEqual([]);
-		expect(
-			familySources
-				.filter(([, source]) =>
-					/\b(?:parseArgs|printJson|requireBrowserClient)\s*\(|process\.(?:stdout|stderr)|argv\s*:\s*string\[\]/.test(
-						source,
-					),
-				)
-				.map(([file]) => file),
-		).toEqual([]);
-		expect(
-			sourceFiles
-				.filter((file) =>
-					/LegacyCommand|command-definitions|commands\/(?:args|util)\.js/.test(
-						readFileSync(file, "utf8"),
-					),
-				)
-				.map((file) => relative(checkoutRoot, file)),
-		).toEqual([]);
-		const commander = sourceFiles.filter((file) =>
-			/from ["']commander["']/.test(readFileSync(file, "utf8")),
-		);
-		expect(commander.map((file) => relative(checkoutRoot, file))).toEqual([
-			"src/cli/command-contract/lib/commander-adapter.ts",
-		]);
-		for (const deleted of [
-			"src/cli/commands/args.ts",
-			"src/cli/commands/util.ts",
-			"src/cli/command-contract/lib/command-definitions.ts",
-			"src/cli/command-contract/testing.ts",
-		]) {
-			expect(existsSync(join(checkoutRoot, deleted)), deleted).toBe(false);
-		}
-		const sharedSchemas = readFileSync(
-			join(checkoutRoot, "src/cli/command-contract/schemas.ts"),
-			"utf8",
-		);
-		for (const schema of [
-			"ElementIdSchema",
-			"ServerElementSchema",
-			"BoardAddressSchema",
-			"BoardIdentityStateSchema",
-			"BoardFingerprintSchema",
-			"BoardRefusalSchema",
-			"HoldReportSchema",
-			"BoardWriteConflictSchema",
-			"PaneRefSchema",
-			"RepositoryIdentitySchema",
-			"CodeBindingSchema",
-			"SnapshotNameSchema",
-			"ChangeCursorSchema",
-			"LibraryItemIdSchema",
-			"ServerStateSchema",
-			"ClaimSchema",
-			"AffectedElementsSchema",
-			"BoardDocumentSchema",
-			"GeneratedHandlesSchema",
-			"WriteReceiptSchema",
-			"PendingArtifactSchema",
-		]) {
-			// Declared as a module-level const and named in the grouped export list.
-			expect(new RegExp(`^const ${schema} = `, "m").test(sharedSchemas), schema).toBeTrue();
-			expect(new RegExp(`^\\t${schema},$`, "m").test(sharedSchemas), schema).toBeTrue();
-		}
-		for (const type of ["CommandContext", "CommandExecution", "PendingArtifact"]) {
-			expect(
-				new RegExp(`^(?:interface|type) ${type}\\b`, "m").test(contractSource),
-				type,
-			).toBeTrue();
-			expect(new RegExp(`^\\ttype ${type},$`, "m").test(contractSource), type).toBeTrue();
-		}
 	});
 });

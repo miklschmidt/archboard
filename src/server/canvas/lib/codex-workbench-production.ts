@@ -21,6 +21,10 @@ import type { LogicalToolCallCorrelation } from "../../../shared/codex-workbench
 import type { WorkhorseOperationBinding } from "../../../runtime/codex-workhorse-operations/index.js";
 import type { BrowserLeaseLedger } from "../../codex-workbench/index.js";
 import { stateDir } from "../../../runtime/engine/state-dir.js";
+import {
+	readBoardCatalogue,
+	watchBoardCatalogue,
+} from "../../../runtime/engine/board-catalogue.js";
 import type {
 	CodexWorkbenchComponents,
 	CodexWorkbenchGenerationHooks,
@@ -373,6 +377,7 @@ export function createCanvasCodexWorkbenchInstallation(
 			workhorse: () => ({ checkoutRoot: host.checkoutRoot }),
 			semanticPublisher: () => host.semanticPublisher,
 			realtime: (created) => ({
+				boardCatalogue: { read: readBoardCatalogue, subscribe: watchBoardCatalogue },
 				freshSemanticBrief: (wireSessionId) => {
 					const freshInput = host.semanticPublisher.fresh.read();
 					return requireCreated(created, "semanticPublisher").freshBriefFor({

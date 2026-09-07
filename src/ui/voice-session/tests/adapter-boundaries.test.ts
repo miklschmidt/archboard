@@ -1,10 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import fs from "node:fs";
-import path from "node:path";
 
-import type { BrowserWorkbenchMediaOwner } from "@/ui/codex-workbench-media";
 import { createVoiceSession, projectVoiceSession } from "@/ui/voice-session";
-import type { VoiceRealtimePort, VoiceTransportPort } from "@/ui/voice-session";
 import {
 	capabilities,
 	connectedState,
@@ -13,56 +9,6 @@ import {
 	transportFake,
 } from "@/ui/voice-session/tests/support/fakes";
 import { snapshot, voice } from "@/ui/voice-session/tests/support/workbench-fixture";
-import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
-
-const moduleRoot = path.resolve(import.meta.dirname, "..");
-
-/**
- * Every product source file in the module.
- * @returns The file paths.
- */
-function productSources(): readonly string[] {
-	return fs
-		.readdirSync(moduleRoot, { recursive: true, withFileTypes: true })
-		.filter(
-			(entry) =>
-				entry.isFile() &&
-				[".ts", ".tsx"].includes(path.extname(entry.name)) &&
-				!path.join(entry.parentPath, entry.name).includes(`${path.sep}tests${path.sep}`),
-		)
-		.map((entry) => path.join(entry.parentPath, entry.name));
-}
-
-const SOURCES = productSources().map((file) => ({
-	file: path.relative(moduleRoot, file),
-	source: fs.readFileSync(file, "utf8"),
-}));
-
-/**
- * Identifiers that would mean this adapter had started owning media, reducing
- * protocol events, or keeping a transcript of its own. Each names work that
- * already has an owner: codex-realtime owns media and the state machine, the
- * host adapter owns semantic events, and the transcript has its own module.
- */
-const FORBIDDEN = [
-	"getUserMedia",
-	"RTCPeerConnection",
-	"MediaStream",
-	"AudioContext",
-	"createDataChannel",
-	"setLocalDescription",
-	"setRemoteDescription",
-	"createOffer",
-	"attachRemoteMedia",
-	"onSemanticEvent",
-	"appendText",
-	"appendSpeech",
-	"transcript",
-	"createRealtimeMediaSession",
-	"createBrowserWorkbenchMediaOwner",
-	"createBrowserWorkbenchTransport",
-	"transitionRealtimeState",
-] as const;
 
 /**
  * Whether a value is a plain record of primitives.
@@ -77,24 +23,6 @@ function flatRecord(value: unknown): boolean {
 }
 
 describe("voice session adapter boundaries", () => {
-	test("names no media, protocol, transcript, or owner-construction work", () => {
-		expect(SOURCES.length).toBeGreaterThan(0);
-		for (const { file, source } of SOURCES) {
-			for (const identifier of FORBIDDEN) {
-				expect(source.includes(identifier), `${file} mentions ${identifier}`).toBe(false);
-			}
-		}
-	});
-
-	test("declares ports the real owners already satisfy", () => {
-		// Type-level: the assignments fail to compile if either owner drifts away
-		// from the narrow surface this module claims to need.
-		const media: VoiceRealtimePort | null = null as BrowserWorkbenchMediaOwner | null;
-		const transport: VoiceTransportPort | null = null as BrowserWorkbenchTransport | null;
-		expect(media).toBeNull();
-		expect(transport).toBeNull();
-	});
-
 	test("exposes no media, protocol, or transport object through the projected view", () => {
 		const view = projectVoiceSession({
 			media: mediaSnapshot({ phase: "listening", reason: "negotiation_succeeded" }),

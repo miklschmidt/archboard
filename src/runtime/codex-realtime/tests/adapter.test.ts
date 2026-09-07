@@ -34,7 +34,9 @@ describe("Codex realtime adapter", () => {
 		if (!start?.realtimeSessionId) {
 			throw new Error("Start request missing.");
 		}
-		expect(start.realtimeStartInstructions).toContain("persistent voice coordinator");
+		expect(start.realtimeStartInstructions).toContain(semanticBrief());
+		expect(start.prompt).toBeString();
+		expect(start.prompt?.length).toBeGreaterThan(0);
 		expect(start).toEqual({
 			threadId: h.coordinatorThreadId,
 			clientManagedHandoffs: false,
@@ -44,11 +46,14 @@ describe("Codex realtime adapter", () => {
 			codexResponseHandoffMode: "bemTags",
 			outputModality: "audio",
 			includeStartupContext: true,
-			initialItems: [{ role: "developer", text: semanticBrief() }],
+			initialItems: [
+				{ role: "developer", text: semanticBrief() },
+				{ role: "developer", text: '{"type":"archboard_board_catalogue","boards":[],"omitted":0}' },
+			],
 			realtimeStartInstructions: start.realtimeStartInstructions,
 			realtimeEndInstructions:
 				"Finish the current sentence, preserve unresolved approvals for the visual workbench, and leave no work waiting on voice.",
-			prompt: null,
+			prompt: start.prompt,
 			realtimeSessionId: start.realtimeSessionId,
 			transport: { type: "webrtc", sdp: "offer-sdp" },
 			version: "v3",

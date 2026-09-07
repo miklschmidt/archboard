@@ -1,6 +1,4 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import path from "node:path";
 
 import type { RealtimeMediaSession } from "@/ui/codex-realtime";
 import { createBrowserWorkbenchMediaOwner } from "@/ui/codex-workbench-media";
@@ -226,20 +224,6 @@ test("a transport without a snapshot reports backoff through the transport-only 
 		expect(transport.disposeCount).toBe(0);
 	} finally {
 		await owner.dispose();
-	}
-});
-
-test("the media owner source has no raw-socket or transport-construction fallback", () => {
-	const root = path.resolve(import.meta.dirname, "../lib");
-	const owner = readFileSync(path.join(root, "media-owner.ts"), "utf8");
-	const state = readFileSync(path.join(root, "media-state.ts"), "utf8");
-	expect(state).toContain(
-		"readonly attach: (transport: BrowserWorkbenchTransport) => Promise<BrowserWorkbenchMediaState>",
-	);
-	for (const source of [owner, state]) {
-		expect(source).not.toContain("BrowserWorkbenchSocket");
-		expect(source).not.toContain("createBrowserWorkbenchTransport");
-		expect(source).not.toContain("attach_failed");
 	}
 });
 
