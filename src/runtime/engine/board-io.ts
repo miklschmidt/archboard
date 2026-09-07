@@ -61,7 +61,7 @@ import {
 	sceneJsonWithEmbeddedImages,
 	vaultPathFor,
 } from "@/runtime/engine/board";
-import { describeWriteConflict, stampBoardVersion, versionNumber } from "@/runtime/engine/board-version";
+import { stampBoardVersion, versionNumber } from "@/runtime/engine/board-version";
 import { isObsidianExcalidrawMd } from "@/runtime/engine/obsidian-md";
 import { errnoCode, errorMessage } from "@/runtime/engine/lib/board-errno";
 import {
@@ -93,11 +93,12 @@ import {
 	existingNotesError,
 	parseAskedKey,
 } from "@/runtime/engine/lib/board-io-resolution";
+import { type WriteOptions, refuseForeignWrite } from "@/runtime/engine/lib/board-io-conflict";
 import {
-	BoardWriteConflictError,
-	type WriteOptions,
-	foreignWriteTo,
-} from "@/runtime/engine/lib/board-io-conflict";
+	chosenDisplayName,
+	declaredKeyOf,
+	loadedIdentity,
+} from "@/runtime/engine/lib/board-io-identity";
 import { renderContent } from "@/runtime/engine/lib/board-io-note-render";
 import { settleBoardContent } from "@/runtime/engine/lib/board-io-settlement";
 import { type VaultBoard } from "@/runtime/engine/lib/board-vault-listing";
@@ -153,30 +154,6 @@ function readNoteFile(file: string, root = requireVaultRoot()): NoteFile | null 
 }
 
 /**
- * The display name a note's own frontmatter or filename chose for the board
- * being asked for. Casing comes from the note, not from whoever typed the
- * address: the note is where a human chose it and the address is
- * case-insensitive either way. Its own frontmatter first, then the filename,
- * then the address.
- * @param asked The identity as asked.
- * @param declared What the frontmatter declares, if anything.
- * @param onDisk What the file name implies, if anything.
- * @returns The display name to carry, if any.
- */
-function chosenDisplayName(
-	asked: BoardIdentity,
-	declared: BoardIdentity | null,
-	onDisk: BoardIdentity | null,
-): string | undefined {
-	const key = boardKey(asked);
-	return (
-		(declared && boardKey(declared) === key ? declared.displayName : undefined) ??
-		(onDisk && boardKey(onDisk) === key ? onDisk.displayName : undefined) ??
-		asked.displayName
-	);
-}
-
-/**
  * A board note, and who the note says it is.
  *
  * The address being opened is the identity, because that is how the file was
@@ -204,14 +181,8 @@ function readBoardFile(
 	const displayName = chosenDisplayName(asked, declared, identityFromVaultPath(note.file, root));
 	return {
 		...note,
-		identity: {
-			...asked,
-			...(declared?.level ? { level: declared.level } : {}),
-			...(displayName ? { displayName } : {}),
-		},
-		...(declared && boardKey(declared) !== boardKey(asked)
-			? { declaredKey: boardKey(declared) }
-			: {}),
+		identity: loadedIdentity(asked, declared, displayName),
+		...declaredKeyOf(asked, declared),
 	};
 }
 
@@ -498,16 +469,7 @@ function writeBoardContent(
 	settleBoardContent(content);
 
 	const destination = destinationBytes(file);
-	const foreign = options.force ? null : foreignWriteTo(file, destination);
-	if (foreign) {
-		throw new BoardWriteConflictError(
-			describeWriteConflict({
-				target: identity,
-				...foreign,
-				...(options.savedFrom === undefined ? {} : { savedFrom: options.savedFrom }),
-			}),
-		);
-	}
+	refuseForeignWrite(file, identity, destination, options);
 
 	const rendered = renderContent(
 		identity,

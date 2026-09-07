@@ -9,6 +9,7 @@ import { homedir, tmpdir } from "os";
  * across unrelated project and cloud-synced folders.
  *
  * LOG_FILE_PATH can still override this default.
+ * @returns The path to write to.
  */
 function defaultLogPath(): string {
 	if (process.platform === "darwin") {
