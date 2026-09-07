@@ -1,1177 +1,67 @@
-import type { CodexApprovalBroker } from "@/runtime/codex-approvals";
-import type { CoordinatorCallbacks } from "@/runtime/codex-coordinator-callbacks";
-import type { CoordinatorToolDispatcher } from "@/runtime/codex-coordinator-tools";
-import type { CodexCoordinator, CoordinatorPersistedState } from "@/runtime/codex-coordinator";
-import type { CodexDynamicTools } from "@/runtime/codex-dynamic-tools";
-import type { CodexEpochStore } from "@/runtime/codex-epoch";
-import {
-	CodexProcessError,
-	type CodexProcess,
-	type CodexProcessChild,
-	type CodexProcessSnapshot,
-} from "@/runtime/codex-process";
-import type { CodexRealtimeAdapter } from "@/runtime/codex-realtime";
-import type { SemanticContextPublisher } from "@/runtime/codex-semantic-context";
-import {
-	CODEX_SESSION_CONTROL,
-	type CodexSession,
-	type ControlledCodexSession,
-} from "@/runtime/codex-session";
-import type { CodexSpokenApprovalGate } from "@/runtime/codex-spoken-approval";
-import type { CodexThreadContextController } from "@/runtime/codex-thread-context";
-import type { CodexThreadLinkPort } from "@/runtime/codex-thread-link";
-import type { CodexTransport } from "@/runtime/codex-transport";
-import type { CodexWorkhorseOperations } from "@/runtime/codex-workhorse-operations";
-import type { CodexWorkhorseQueue } from "@/runtime/codex-workhorse-queue";
-import type { CodexWorkhorseStart } from "@/runtime/codex-workhorse-start";
 import type {
-	ChildEpoch,
-	ChildId,
-	IdentityAuthorities,
-	IdentityLedger,
-	OperationId,
-} from "@/shared/codex-workbench-identity";
-import type { CodexWorkbenchGateway } from "@/server/codex-workbench";
+	CodexProcess,
+	CodexProcessChild,
+	CodexProcessSnapshot,
+} from "@/runtime/codex-process";
+import type { IdentityAuthorities } from "@/shared/codex-workbench-identity";
 import { CodexWorkbenchCompositionError } from "@/server/canvas/lib/codex-workbench-error";
-import { CODEX_GENERATION_REGISTRATION_KEYS } from "@/server/canvas/lib/codex-workbench-generation-contract";
+import { appendFailure, failureMessage } from "@/server/canvas/lib/codex-workbench-failures";
 import {
-	createCodexWorkbenchRequestRouter,
-	type CodexWorkbenchRequestOwners,
-	type CodexWorkbenchRequestRouter,
-} from "@/server/canvas/lib/codex-workbench-routing";
-
-const CODEX_WORKBENCH_OWNER = "archboard-canvas-codex-workbench" as const;
-
-type CodexWorkbenchState = "idle" | "starting" | "ready" | "stopping" | "failed";
-type CodexWorkbenchStopReason = "shutdown" | "child_exit";
-type CodexTransportExit = Parameters<Parameters<CodexTransport["onExit"]>[0]>[0];
-
-interface CodexWorkbenchSnapshot {
-	readonly owner: typeof CODEX_WORKBENCH_OWNER;
-	readonly state: CodexWorkbenchState;
-	readonly generation: number;
-	readonly childPid: number | null;
-	readonly ready: boolean;
-	readonly failure: string | null;
-}
-
-interface CodexWorkbenchComponents {
-	readonly identity: IdentityAuthorities;
-	readonly epoch: CodexEpochStore;
-	readonly transport: CodexTransport;
-	readonly session: ControlledCodexSession;
-	readonly threadLink: CodexThreadLinkPort;
-	readonly workhorse: CodexWorkhorseStart;
-	readonly semanticPublisher: SemanticContextPublisher;
-	readonly realtime: CodexRealtimeAdapter;
-	readonly approvals: CodexApprovalBroker;
-	readonly dynamicTools: CodexDynamicTools;
-	readonly coordinatorTools: CoordinatorToolDispatcher;
-	readonly semanticDelivery: CodexThreadContextController;
-	readonly coordinator: CodexCoordinator;
-	readonly queue: CodexWorkhorseQueue<OperationId>;
-	readonly operations: CodexWorkhorseOperations;
-	readonly callbacks: CoordinatorCallbacks;
-	readonly spokenApproval: CodexSpokenApprovalGate;
-	readonly gateway: CodexWorkbenchGateway;
-}
-
-interface CodexWorkbenchGenerationHooks {
-	readonly threadContext: Parameters<CodexThreadContextController["replaceHooks"]>[0];
-	readonly onNotification: Parameters<CodexTransport["onServerNotification"]>[0];
-	readonly installIdentityDecoders: (identity: IdentityAuthorities) => void;
-	readonly installLifecycleSignals: (components: CodexWorkbenchComponents) => () => void;
-	readonly installApprovalProjection: (components: CodexWorkbenchComponents) => () => void;
-	readonly installBrowserGateway: (gateway: CodexWorkbenchGateway) => () => void;
-	readonly initializeSession: (
-		session: CodexSession,
-		components: CodexWorkbenchComponents,
-	) => Promise<void>;
-	readonly stopBrowser: (
-		gateway: CodexWorkbenchGateway,
-		reason: CodexWorkbenchStopReason,
-	) => Promise<void>;
-	readonly stopRealtime: (realtime: CodexRealtimeAdapter) => Promise<void>;
-	readonly stopQueue: (queue: CodexWorkhorseQueue<OperationId>) => Promise<void> | void;
-	/**
-	 * Retire the generation's dynamic wait and quarantine owner on child exit.
-	 * Ordinary settlement never reaches it, so an in-flight wait would otherwise
-	 * outlive the child that owns it.
-	 */
-	readonly retireDynamicLifecycle: (child: ChildId, epoch: ChildEpoch) => Promise<void> | void;
-	readonly cancelDynamicApprovalsAndWaits: (
-		components: CodexWorkbenchComponents,
-		cause: "host_shutdown" | "child_disconnected",
-	) => Promise<void>;
-	readonly settleOrdinaryRequests: (
-		approvals: CodexApprovalBroker,
-		cause: "host_shutdown" | "child_disconnected",
-	) => Promise<void>;
-}
-
-interface GenerationRegistrations {
-	transportRequest: (() => void) | null;
-	transportNotification: (() => void) | null;
-	lifecycleSignals: (() => void) | null;
-	browserGateway: (() => void) | null;
-	approvalProjection: (() => void) | null;
-}
-
-interface GenerationState {
-	readonly components: CodexWorkbenchComponents;
-	readonly owners: CodexWorkbenchRequestOwners;
-	readonly hooks: CodexWorkbenchGenerationHooks;
-	readonly assertActivationCurrent: () => void;
-	registrations: GenerationRegistrations;
-	active: boolean;
-	initialized: boolean;
-	stopped: boolean;
-	stopPromise: Promise<void> | null;
-	stopComplete: boolean;
-	finishComplete: boolean;
-	childSettlement: Promise<void> | null;
-}
-
-interface CodexWorkbenchGeneration {
-	readonly components: CodexWorkbenchComponents;
-	readonly identityLedger: IdentityLedger;
-	readonly transport: CodexTransport;
-	readonly gateway: CodexWorkbenchGateway;
-	readonly activate: () => Promise<void>;
-	readonly deactivate: () => void;
-	readonly retireChild: (exit: CodexTransportExit) => Promise<void>;
-	readonly stop: (reason: CodexWorkbenchStopReason) => Promise<void>;
-	readonly finishStop: () => void;
-}
-
-interface CreateCodexWorkbenchGenerationLifecycleOptions {
-	readonly components: CodexWorkbenchComponents;
-	readonly identityLedger: IdentityLedger;
-	readonly hooks: CodexWorkbenchGenerationHooks;
-	readonly assertActivationCurrent: () => void;
-}
-
-class GenerationInstallError extends Error {
-	override readonly name = "CodexWorkbenchGenerationInstallError";
-	override readonly cause: unknown;
-
-	/**
-	 *
-	 */
-	constructor(
-		readonly stage: string,
-		readonly cleanupFailure: Error | null,
-		cause: unknown,
-	) {
-		super(`Codex generation installation failed at ${stage}.`);
-		const error = cause instanceof Error ? cause : new Error(String(cause));
-		this.cause =
-			cleanupFailure === null
-				? error
-				: new AggregateError(
-						[error, cleanupFailure],
-						"Codex generation installation and partial cleanup both failed.",
-					);
-	}
-}
-
-/**
- *
- */
-function failureMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
-}
-
-/**
- *
- */
-function appendFailure(current: Error | null, next: unknown, message: string): Error {
-	const nextError = next instanceof Error ? next : new Error(String(next));
-	return current === null ? nextError : new AggregateError([current, nextError], message);
-}
-
-/**
- *
- */
-function emptyRegistrations(): GenerationRegistrations {
-	return {
-		transportRequest: null,
-		transportNotification: null,
-		lifecycleSignals: null,
-		browserGateway: null,
-		approvalProjection: null,
-	};
-}
-
-/** Clear ownership before invoking cleanup so a throwing disposer is unreachable. */
-function releaseRegistrations(registrations: GenerationRegistrations, label: string): Error | null {
-	let failure: Error | null = null;
-	for (const key of CODEX_GENERATION_REGISTRATION_KEYS) {
-		const cleanup = registrations[key];
-		registrations[key] = null;
-		if (cleanup === null) {
-			continue;
-		}
-		try {
-			cleanup();
-		} catch (error) {
-			failure = appendFailure(failure, error, `${label} ${key} cleanup failed.`);
-		}
-	}
-	return failure;
-}
-
-/**
- *
- */
-async function settleChildExit(
-	state: GenerationState,
-	child: Parameters<CodexWorkbenchGateway["childExit"]>[0],
-	epoch: Parameters<CodexWorkbenchGateway["childExit"]>[1],
-): Promise<void> {
-	const { approvals, coordinatorTools, gateway, semanticDelivery, spokenApproval } =
-		state.components;
-	let failure: Error | null = null;
-	for (const operation of [
-		() => approvals.childExit({ child, epoch }),
-		() => semanticDelivery.childExit(child, epoch),
-		() => spokenApproval.onChildExit({ child, epoch }),
-		() => coordinatorTools.onChildExit({ child, epoch }),
-		() => state.hooks.retireDynamicLifecycle(child, epoch),
-		() => gateway.childExit(child, epoch),
-	]) {
-		try {
-			await Promise.resolve().then(operation);
-		} catch (error) {
-			failure = appendFailure(failure, error, "Codex child-exit cleanup failed.");
-		}
-	}
-	if (failure !== null) {
-		throw failure;
-	}
-}
-
-/**
- *
- */
-function installRegistrations(
-	state: GenerationState,
-	router: CodexWorkbenchRequestRouter,
-	onNotification: Parameters<CodexTransport["onServerNotification"]>[0],
-): GenerationRegistrations {
-	const registrations = emptyRegistrations();
-	let stage = "transportRequest";
-	try {
-		registrations.transportRequest = state.components.transport.onServerRequest(router.route);
-		stage = "transportNotification";
-		registrations.transportNotification =
-			state.components.transport.onServerNotification(onNotification);
-		stage = "threadContext";
-		state.components.semanticDelivery.replaceHooks(state.hooks.threadContext);
-		stage = "identityDecoders";
-		state.hooks.installIdentityDecoders(state.components.identity);
-		stage = "lifecycleSignals";
-		registrations.lifecycleSignals = state.hooks.installLifecycleSignals(state.components);
-		stage = "browserGateway";
-		registrations.browserGateway = state.hooks.installBrowserGateway(state.components.gateway);
-		stage = "approvalProjection";
-		registrations.approvalProjection = state.hooks.installApprovalProjection(state.components);
-		return registrations;
-	} catch (error) {
-		throw new GenerationInstallError(
-			stage,
-			releaseRegistrations(registrations, "Partial Codex generation"),
-			error,
-		);
-	}
-}
-
-/** Build generation dispatch and teardown around a complete, freshly assembled graph. */
-function createCodexWorkbenchGenerationLifecycle(
-	options: CreateCodexWorkbenchGenerationLifecycleOptions,
-): CodexWorkbenchGeneration {
-	const components = options.components;
-	const owners = Object.freeze({
-		approvals: components.approvals,
-		dynamicTools: components.dynamicTools,
-		coordinatorTools: components.coordinatorTools,
-		session: components.session,
-	});
-	const router = createCodexWorkbenchRequestRouter(owners);
-	const state: GenerationState = {
-		components,
-		owners,
-		hooks: options.hooks,
-		assertActivationCurrent: options.assertActivationCurrent,
-		registrations: emptyRegistrations(),
-		active: false,
-		initialized: false,
-		stopped: false,
-		stopPromise: null,
-		stopComplete: false,
-		finishComplete: false,
-		childSettlement: null,
-	};
-
-	/**
-	 *
-	 */
-	const onNotification: Parameters<CodexTransport["onServerNotification"]>[0] = (event) => {
-		if (!state.active || state.stopped) {
-			return;
-		}
-		state.hooks.onNotification(event);
-		components.session[CODEX_SESSION_CONTROL].onNotification(event);
-		components.coordinator.onNotification(event);
-		components.operations.onNotification(event);
-		components.realtime.onNotification(event);
-		components.spokenApproval.onNotification(event);
-	};
-	const activeRouter: CodexWorkbenchRequestRouter = {
-		/**
-		 *
-		 */
-		route: (request) => {
-			if (!state.active || state.stopped) {
-				return;
-			}
-			router.route(request);
-		},
-	};
-	/**
-	 *
-	 */
-	const deactivate = (): void => {
-		state.active = false;
-		const registrations = state.registrations;
-		state.registrations = emptyRegistrations();
-		const failure = releaseRegistrations(registrations, "Retired Codex generation");
-		if (failure !== null) {
-			throw failure;
-		}
-	};
-	/**
-	 *
-	 */
-	const activate = async (): Promise<void> => {
-		state.assertActivationCurrent();
-		if (state.stopped) {
-			throw new CodexWorkbenchCompositionError(
-				"not_started",
-				"A retired Codex generation cannot be activated.",
-			);
-		}
-		if (state.active) {
-			return;
-		}
-		state.registrations = installRegistrations(state, activeRouter, onNotification);
-		state.active = true;
-		if (state.initialized) {
-			return;
-		}
-		try {
-			await state.hooks.initializeSession(components.session, components);
-			state.assertActivationCurrent();
-			if (state.stopped) {
-				throw new CodexWorkbenchCompositionError(
-					"not_started",
-					"A retired Codex generation cannot publish initialized readiness.",
-				);
-			}
-			state.initialized = true;
-		} catch (error) {
-			let failure: Error = error instanceof Error ? error : new Error(String(error));
-			try {
-				deactivate();
-			} catch (cleanupError) {
-				failure = appendFailure(failure, cleanupError, "Codex activation cleanup failed.");
-			}
-			throw failure;
-		}
-	};
-	/**
-	 *
-	 */
-	const retireChild = (exit: CodexTransportExit): Promise<void> => {
-		if (state.childSettlement !== null) {
-			return state.childSettlement;
-		}
-		const settlement = settleChildExit(state, exit.child, exit.epoch);
-		state.childSettlement = settlement;
-		return settlement;
-	};
-
-	/**
-	 *
-	 */
-	const stop = (reason: CodexWorkbenchStopReason): Promise<void> => {
-		if (state.stopComplete) {
-			return Promise.resolve();
-		}
-		if (state.stopPromise !== null) {
-			return state.stopPromise;
-		}
-		state.stopped = true;
-		let failure: Error | null = null;
-		try {
-			deactivate();
-		} catch (error) {
-			failure = appendFailure(failure, error, "Codex dispatch revocation failed.");
-		}
-		const cause = reason === "shutdown" ? "host_shutdown" : "child_disconnected";
-		const operation = (async (): Promise<void> => {
-			/**
-			 *
-			 */
-			const attempt = async (cleanup: () => Promise<unknown> | void): Promise<void> => {
-				try {
-					await cleanup();
-				} catch (error) {
-					failure = appendFailure(failure, error, "Codex workbench shutdown failed.");
-				}
-			};
-			const childSettlement = state.childSettlement;
-			if (reason === "child_exit" && childSettlement !== null) {
-				await attempt(() => childSettlement);
-			}
-			await attempt(() => state.hooks.stopBrowser(components.gateway, reason));
-			await attempt(() => state.hooks.stopRealtime(components.realtime));
-			await attempt(() => components.realtime.dispose());
-			await attempt(() => components.semanticPublisher.dispose());
-			await attempt(() => state.hooks.stopQueue(components.queue));
-			await attempt(() => state.hooks.cancelDynamicApprovalsAndWaits(components, cause));
-			await attempt(() => state.hooks.settleOrdinaryRequests(components.approvals, cause));
-			await attempt(() => components.session[CODEX_SESSION_CONTROL].dispose());
-			await attempt(() => components.callbacks.dispose());
-			await attempt(() => components.spokenApproval.dispose());
-			await attempt(() => components.semanticDelivery.dispose());
-			await attempt(() => components.coordinatorTools.dispose());
-			await attempt(() => components.dynamicTools.dispose());
-			if (reason === "shutdown") {
-				await attempt(() => components.transport.shutdown());
-			}
-			if (reason === "shutdown" && childSettlement !== null) {
-				await attempt(() => childSettlement);
-			}
-			if (failure !== null) {
-				throw failure;
-			}
-		})().finally(() => {
-			state.stopPromise = null;
-			state.stopComplete = true;
-		});
-		state.stopPromise = operation;
-		return operation;
-	};
-
-	/**
-	 *
-	 */
-	const finishStop = (): void => {
-		if (state.finishComplete) {
-			return;
-		}
-		state.finishComplete = true;
-		let failure: Error | null = null;
-		for (const dispose of [() => components.approvals.dispose(), () => components.epoch.close()]) {
-			try {
-				dispose();
-			} catch (error) {
-				failure = appendFailure(failure, error, "Codex final cleanup failed.");
-			}
-		}
-		if (failure !== null) {
-			throw failure;
-		}
-	};
-
-	return Object.freeze({
-		components,
-		identityLedger: options.identityLedger,
-		transport: components.transport,
-		gateway: components.gateway,
-		activate,
-		deactivate,
-		retireChild,
-		stop,
-		finishStop,
-	});
-}
-
-interface CodexWorkbenchStableKernel {
-	readonly identityLedger: IdentityLedger;
-	readonly transport: CodexTransport;
-}
-
-interface CodexWorkbenchKernelAcquisition {
-	readonly kernel: CodexWorkbenchStableKernel;
-	readonly identity: IdentityAuthorities;
-}
-
-interface CodexWorkbenchGenerationInput {
-	readonly generation: number;
-	readonly child: CodexProcessChild;
-	readonly process: CodexProcess;
-	readonly kernel: CodexWorkbenchStableKernel | null;
-	readonly initialIdentity: IdentityAuthorities | null;
-	readonly adoptedSession: "login-capable" | "thread-capable" | null;
-	readonly adoptedCoordinator: CoordinatorPersistedState | null;
-	readonly assertActivationCurrent: () => void;
-	readonly markSessionReady: (accountReady: boolean) => void;
-	/**
-	 * The one terminal path a generation may take to end its own epoch. It
-	 * revokes public dispatch, cleans every live graph, and stops the child, so a
-	 * fail-closed epoch teardown cannot leave the owner reporting "ready".
-	 */
-	readonly shutdownOwner: () => Promise<CodexWorkbenchSnapshot>;
-}
-
-type CodexWorkbenchGenerationFactory = (
-	input: CodexWorkbenchGenerationInput,
-) => Promise<CodexWorkbenchGeneration>;
-
-interface CodexWorkbenchOwnerOptions {
-	readonly createProcess: () => CodexProcess;
-	readonly createKernel: (input: CodexWorkbenchGenerationInput) => CodexWorkbenchKernelAcquisition;
-	readonly createGeneration: CodexWorkbenchGenerationFactory;
-}
-
-interface CodexWorkbenchOwner {
-	readonly start: () => Promise<CodexWorkbenchSnapshot>;
-	readonly snapshot: () => CodexWorkbenchSnapshot;
-	readonly gateway: () => CodexWorkbenchGateway;
-	readonly shutdown: () => Promise<CodexWorkbenchSnapshot>;
-}
-
-type CodexWorkbenchOwnerSlots = CodexWorkbenchOwner;
-
-interface CodexWorkbenchExitHandler {
-	handle: (event: CodexTransportExit) => void;
-}
-
-interface CodexWorkbenchExitBridge {
-	event: CodexTransportExit | null;
-	handler: CodexWorkbenchExitHandler | null;
-}
-
-interface CodexWorkbenchOwnerRuntime {
-	readonly process: CodexProcess;
-	identityLedger: IdentityLedger | null;
-	transport: CodexTransport | null;
-	operation: number;
-	sessionInitialized: boolean;
-	accountReady: boolean;
-	released: boolean;
-	readonly exitBridge: CodexWorkbenchExitBridge;
-}
-
-/**
- * The owner's process-lifetime publication. It lives for one canvas application
- * lifetime inside `installCodexWorkbenchOwnerLifecycle` and is never handed to a
- * caller: backend source changes take effect only through a full restart
- * (ADR 0021), so no module replacement ever observes it.
- */
-interface CodexWorkbenchOwnerPublication {
-	generation: number;
-	state: CodexWorkbenchState;
-	failure: string | null;
-	current: CodexWorkbenchOwnerSlots | null;
-	runtime: CodexWorkbenchOwnerRuntime | null;
-}
-
-const releasedSnapshots = new WeakMap<CodexWorkbenchOwnerRuntime, CodexWorkbenchSnapshot>();
-
-/**
- *
- */
-function emptyPublication(): CodexWorkbenchOwnerPublication {
-	return { generation: 0, state: "idle", failure: null, current: null, runtime: null };
-}
-
-/**
- *
- */
-function isCurrentRuntime(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-): boolean {
-	return published.runtime === runtime && !runtime.released;
-}
-
-/**
- *
- */
-function ownsTicket(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-	ticket: number,
-): boolean {
-	return isCurrentRuntime(published, runtime) && runtime.operation === ticket;
-}
-
-/**
- *
- */
-function reserveTicket(runtime: CodexWorkbenchOwnerRuntime): number {
-	runtime.operation += 1;
-	return runtime.operation;
-}
-
-/**
- *
- */
-function snapshot(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-): CodexWorkbenchSnapshot {
-	const current = isCurrentRuntime(published, runtime);
-	if (!current) {
-		return (
-			releasedSnapshots.get(runtime) ??
-			Object.freeze({
-				owner: CODEX_WORKBENCH_OWNER,
-				state: "idle",
-				generation: 0,
-				childPid: null,
-				ready: false,
-				failure: null,
-			})
-		);
-	}
-	return Object.freeze({
-		owner: CODEX_WORKBENCH_OWNER,
-		state: published.state,
-		generation: published.generation,
-		childPid: runtime.process.currentChild()?.pid ?? null,
-		ready: published.state === "ready",
-		failure: published.failure,
-	});
-}
-
-/**
- *
- */
-function terminalProcessAcquisitionFailure(current: CodexProcessSnapshot): Error | null {
-	if (current.state !== "terminal_failure") {
-		return null;
-	}
-	return new CodexProcessError({
-		code: current.failure?.code ?? "shutdown_failed",
-		terminal: true,
-		message:
-			current.failure?.message ??
-			"The Codex process became terminal before the workbench acquired a replacement child.",
-	});
-}
-
-/**
- *
- */
-function revokePublicDispatch(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-): void {
-	if (published.runtime === runtime) {
-		published.current = null;
-	}
-}
-
-/**
- *
- */
-function releaseRegistration(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-	state: CodexWorkbenchState,
-	failure: string | null,
-): void {
-	if (runtime.released) {
-		return;
-	}
-	releasedSnapshots.set(
-		runtime,
-		Object.freeze({
-			owner: CODEX_WORKBENCH_OWNER,
-			state,
-			generation: state === "failed" ? published.generation : 0,
-			childPid: null,
-			ready: false,
-			failure,
-		}),
-	);
-	runtime.released = true;
-	runtime.exitBridge.handler = null;
-	runtime.identityLedger = null;
-	runtime.transport = null;
-	if (published.runtime !== runtime) {
-		return;
-	}
-	published.state = state;
-	published.failure = failure;
-	published.current = null;
-	published.runtime = null;
-}
-
-/**
- *
- */
-function stopProcess(
-	local: OwnerLocalState,
-	runtime: CodexWorkbenchOwnerRuntime,
-): Promise<Error | null> {
-	if (local.processStopPromise !== null) {
-		return local.processStopPromise;
-	}
-	const attempt = (async (): Promise<Error | null> => {
-		try {
-			await runtime.process.stop();
-			return null;
-		} catch (error) {
-			return error instanceof Error ? error : new Error(String(error));
-		}
-	})();
-	const operation = attempt.then((result) => {
-		// A failed verified stop keeps the process owner reachable. A later
-		// application force pass must perform a fresh TERM/KILL-and-observe
-		// attempt rather than replay the first failure forever.
-		if (result !== null && local.processStopPromise === operation) {
-			local.processStopPromise = null;
-		}
-		return result;
-	});
-	local.processStopPromise = operation;
-	return operation;
-}
-
-interface CandidateReadiness {
-	initialized: boolean;
-	accountReady: boolean;
-}
-
-type LifecycleTransactionPhase = "starting" | "candidate_activation" | "committed" | "invalidated";
-
-interface LifecycleTransaction {
-	readonly ticket: number;
-	readonly child: CodexProcessChild;
-	phase: LifecycleTransactionPhase;
-	transport: CodexTransport | null;
-}
-
-interface GenerationResource {
-	readonly generation: CodexWorkbenchGeneration;
-	cleanup: Promise<Error | null> | null;
-}
-
-interface OwnerLocalState {
-	currentGeneration: CodexWorkbenchGeneration | null;
-	transaction: LifecycleTransaction | null;
-	readonly resources: Map<CodexWorkbenchGeneration, GenerationResource>;
-	readonly cleanupHistory: WeakMap<CodexWorkbenchGeneration, Promise<Error | null>>;
-	startPromise: Promise<CodexWorkbenchSnapshot> | null;
-	shutdownPromise: Promise<CodexWorkbenchSnapshot> | null;
-	processStopPromise: Promise<Error | null> | null;
-	nextChild: ((child: CodexProcessChild) => void) | null;
-	processChildUnsubscribe: (() => void) | null;
-	recoveryBarrier: Promise<Error | null>;
-	restart: (() => void) | null;
-}
-
-/**
- *
- */
-function ownsProcessChild(process: CodexProcess, child: CodexProcessChild): boolean {
-	const current = process.currentChild();
-	return (
-		current !== null &&
-		current.pid === child.pid &&
-		current.stdin === child.stdin &&
-		current.stdout === child.stdout &&
-		current.stderr === child.stderr
-	);
-}
-
-/**
- *
- */
-function ownsTransaction(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-	local: OwnerLocalState,
-	transaction: LifecycleTransaction,
-): boolean {
-	if (
-		local.transaction !== transaction ||
-		transaction.phase === "invalidated" ||
-		transaction.phase === "committed" ||
-		!ownsTicket(published, runtime, transaction.ticket) ||
-		published.state !== "starting" ||
-		runtime.exitBridge.event !== null ||
-		!ownsProcessChild(runtime.process, transaction.child)
-	) {
-		return false;
-	}
-	const transport = transaction.transport;
-	if (transport === null) {
-		return true;
-	}
-	try {
-		return transport.inspect().state === "open";
-	} catch {
-		return false;
-	}
-}
-
-/**
- *
- */
-function assertTransaction(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-	local: OwnerLocalState,
-	transaction: LifecycleTransaction,
-	message: string,
-): void {
-	if (!ownsTransaction(published, runtime, local, transaction)) {
-		throw new CodexWorkbenchCompositionError("not_started", message);
-	}
-}
-
-/**
- *
- */
-function invalidateTransaction(local: OwnerLocalState): void {
-	if (local.transaction !== null) {
-		local.transaction.phase = "invalidated";
-	}
-	local.transaction = null;
-}
-
-/**
- *
- */
-function ownGeneration(
-	local: OwnerLocalState,
-	generation: CodexWorkbenchGeneration,
-): GenerationResource {
-	const existing = local.resources.get(generation);
-	if (existing !== undefined) {
-		return existing;
-	}
-	const resource: GenerationResource = { generation, cleanup: null };
-	local.resources.set(generation, resource);
-	return resource;
-}
-
-/**
- *
- */
-function beginGenerationCleanup(
-	local: OwnerLocalState,
-	generation: CodexWorkbenchGeneration,
-	reason: CodexWorkbenchStopReason,
-): Promise<Error | null> {
-	const completed = local.cleanupHistory.get(generation);
-	if (completed !== undefined) {
-		return completed;
-	}
-	const resource = ownGeneration(local, generation);
-	if (resource.cleanup !== null) {
-		return resource.cleanup;
-	}
-	let stop: Promise<void>;
-	try {
-		stop = generation.stop(reason);
-	} catch (error) {
-		stop = Promise.reject(error);
-	}
-	const cleanup = (async (): Promise<Error | null> => {
-		let failure: Error | null = null;
-		try {
-			await stop;
-		} catch (error) {
-			failure = appendFailure(failure, error, "Codex graph shutdown failed.");
-		}
-		try {
-			generation.finishStop();
-		} catch (error) {
-			failure = appendFailure(failure, error, "Codex final listener cleanup failed.");
-		}
-		local.resources.delete(generation);
-		return failure;
-	})();
-	resource.cleanup = cleanup;
-	local.cleanupHistory.set(generation, cleanup);
-	return cleanup;
-}
-
-/**
- *
- */
-function attachExitBridge(runtime: CodexWorkbenchOwnerRuntime, transport: CodexTransport): void {
-	if (runtime.transport !== transport) {
-		throw new CodexWorkbenchCompositionError(
-			"startup_failed",
-			"The retained child-exit bridge does not own the acquired transport.",
-		);
-	}
-	const bridge = runtime.exitBridge;
-	// This is the only process-lifetime listener. Its closure reaches exactly the
-	// terminal latch and replaceable source handler, never lifecycle authority.
-	transport.onExit((event) => {
-		if (bridge.event !== null) {
-			return;
-		}
-		bridge.event = Object.freeze({ ...event });
-		bridge.handler?.handle(bridge.event);
-	});
-}
-
-/**
- *
- */
-function generationInput(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-	local: OwnerLocalState,
-	transaction: LifecycleTransaction,
-	generation: number,
-	child: CodexProcessChild,
-	readiness: CandidateReadiness,
-	initialIdentity: IdentityAuthorities | null = null,
-	adoptedCoordinator: CoordinatorPersistedState | null = null,
-): CodexWorkbenchGenerationInput {
-	const kernel =
-		runtime.identityLedger === null || runtime.transport === null
-			? null
-			: { identityLedger: runtime.identityLedger, transport: runtime.transport };
-	return Object.freeze({
-		generation,
-		child,
-		process: runtime.process,
-		kernel,
-		initialIdentity,
-		adoptedSession: runtime.sessionInitialized
-			? runtime.accountReady
-				? "thread-capable"
-				: "login-capable"
-			: null,
-		adoptedCoordinator,
-		/**
-		 *
-		 */
-		assertActivationCurrent: () =>
-			assertTransaction(
-				published,
-				runtime,
-				local,
-				transaction,
-				"A retired Codex activation cannot mutate production readiness.",
-			),
-		/**
-		 *
-		 */
-		markSessionReady: (accountReady: boolean) => {
-			assertTransaction(
-				published,
-				runtime,
-				local,
-				transaction,
-				"A retired Codex activation cannot publish session readiness.",
-			);
-			readiness.initialized = true;
-			readiness.accountReady = accountReady;
-		},
-		/**
-		 *
-		 */
-		shutdownOwner: () => terminalShutdown(published, runtime, local),
-	});
-}
-
-/**
- *
- */
-function terminalShutdown(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-	local: OwnerLocalState,
-	priorFailure: Error | null = null,
-): Promise<CodexWorkbenchSnapshot> {
-	if (local.shutdownPromise !== null) {
-		return local.shutdownPromise;
-	}
-	reserveTicket(runtime);
-	invalidateTransaction(local);
-	revokePublicDispatch(published, runtime);
-	runtime.exitBridge.handler = null;
-	local.nextChild = null;
-	const processChildUnsubscribe = local.processChildUnsubscribe;
-	local.processChildUnsubscribe = null;
-	processChildUnsubscribe?.();
-	if (isCurrentRuntime(published, runtime)) {
-		published.state = "stopping";
-	}
-	let synchronousFailure = priorFailure;
-	local.currentGeneration = null;
-	// Each stop call revokes one graph before this function reaches its first await.
-	const graphCleanups = Array.from(local.resources.keys(), (generation) =>
-		beginGenerationCleanup(local, generation, "shutdown"),
-	);
-	const operation = (async (): Promise<CodexWorkbenchSnapshot> => {
-		let failure = synchronousFailure;
-		for (const cleanup of graphCleanups) {
-			const cleanupFailure = await cleanup;
-			if (cleanupFailure !== null) {
-				failure = appendFailure(failure, cleanupFailure, "Codex graph shutdown failed.");
-			}
-		}
-		const processFailure = await stopProcess(local, runtime);
-		if (processFailure !== null) {
-			failure = appendFailure(failure, processFailure, "Codex process shutdown failed.");
-		}
-		releaseRegistration(
-			published,
-			runtime,
-			failure === null ? "idle" : "failed",
-			failure === null ? null : failureMessage(failure),
-		);
-		if (failure !== null) {
-			throw new CodexWorkbenchCompositionError(
-				"shutdown_failed",
-				"The production Codex workbench did not shut down cleanly.",
-				failure,
-			);
-		}
-		return snapshot(published, runtime);
-	})().finally(() => {
-		synchronousFailure = null;
-		local.shutdownPromise = null;
-	});
-	local.shutdownPromise = operation;
-	return operation;
-}
-
-/**
- *
- */
-function observeChildExit(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-	local: OwnerLocalState,
-	exit: CodexTransportExit,
-): void {
-	if (!isCurrentRuntime(published, runtime) || runtime.exitBridge.event !== exit) {
-		return;
-	}
-	const ledger = runtime.identityLedger;
-	if (ledger === null || exit.child !== ledger.childId || exit.epoch !== ledger.epoch) {
-		return;
-	}
-	reserveTicket(runtime);
-	invalidateTransaction(local);
-	revokePublicDispatch(published, runtime);
-	published.state = "starting";
-	published.failure = null;
-	let failure: Error | null = null;
-	const settlementOwner = local.currentGeneration;
-	local.currentGeneration = null;
-	let settlement: Promise<void> = Promise.resolve();
-	if (settlementOwner !== null) {
-		try {
-			settlement = settlementOwner.retireChild(exit);
-		} catch (error) {
-			settlement = Promise.reject(error);
-		}
-	}
-	const graphCleanups = Array.from(local.resources.keys(), (generation) =>
-		beginGenerationCleanup(local, generation, "child_exit"),
-	);
-	const operation = (async (): Promise<Error | null> => {
-		try {
-			await settlement;
-		} catch (error) {
-			failure = appendFailure(failure, error, "Codex child settlement failed.");
-		}
-		for (const cleanup of graphCleanups) {
-			const cleanupFailure = await cleanup;
-			if (cleanupFailure !== null) {
-				failure = appendFailure(failure, cleanupFailure, "Codex child graph cleanup failed.");
-			}
-		}
-		return failure;
-	})();
-	local.recoveryBarrier = operation;
-	runtime.identityLedger = null;
-	runtime.transport = null;
-	runtime.sessionInitialized = false;
-	runtime.accountReady = false;
-	runtime.exitBridge.event = null;
-	local.restart?.();
-}
-
-/**
- *
- */
-function replaceExitHandler(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-	local: OwnerLocalState,
-): CodexWorkbenchExitHandler {
-	const handler: CodexWorkbenchExitHandler = {
-		/**
-		 *
-		 */
-		handle: (event) => observeChildExit(published, runtime, local, event),
-	};
-	runtime.exitBridge.handler = handler;
-	return handler;
-}
-
-/**
- *
- */
-function publishReadySlots(
-	published: CodexWorkbenchOwnerPublication,
-	runtime: CodexWorkbenchOwnerRuntime,
-	local: OwnerLocalState,
-	generation: CodexWorkbenchGeneration,
-): CodexWorkbenchOwnerSlots {
-	const slots: CodexWorkbenchOwnerSlots = {
-		/**
-		 *
-		 */
-		start: () => Promise.resolve(snapshot(published, runtime)),
-		/**
-		 *
-		 */
-		shutdown: () => terminalShutdown(published, runtime, local),
-		/**
-		 *
-		 */
-		snapshot: () => snapshot(published, runtime),
-		/**
-		 *
-		 */
-		gateway: () => {
-			if (!isCurrentRuntime(published, runtime) || published.state !== "ready") {
-				throw new CodexWorkbenchCompositionError(
-					"not_started",
-					"The production Codex workbench browser gateway is not ready.",
-				);
-			}
-			return generation.gateway;
-		},
-	};
-	published.current = slots;
-	replaceExitHandler(published, runtime, local);
-	return slots;
-}
+	CODEX_WORKBENCH_OWNER,
+	createCodexWorkbenchGenerationLifecycle,
+	type CodexTransportExit,
+	type CodexWorkbenchComponents,
+	type CodexWorkbenchGeneration,
+	type CodexWorkbenchGenerationHooks,
+	type CodexWorkbenchSnapshot,
+	type CodexWorkbenchState,
+	type CodexWorkbenchStopReason,
+	type CreateCodexWorkbenchGenerationLifecycleOptions,
+} from "@/server/canvas/lib/codex-workbench-generation-lifecycle";
+import {
+	assertTransaction,
+	attachExitBridge,
+	beginGenerationCleanup,
+	emptyPublication,
+	invalidateTransaction,
+	isCurrentRuntime,
+	ownGeneration,
+	ownsProcessChild,
+	ownsTicket,
+	releaseRegistration,
+	reserveTicket,
+	snapshot,
+	stopProcess,
+	terminalProcessAcquisitionFailure,
+	type CandidateReadiness,
+	type CodexWorkbenchExitBridge,
+	type CodexWorkbenchExitHandler,
+	type CodexWorkbenchGenerationFactory,
+	type CodexWorkbenchGenerationInput,
+	type CodexWorkbenchKernelAcquisition,
+	type CodexWorkbenchOwner,
+	type CodexWorkbenchOwnerOptions,
+	type CodexWorkbenchOwnerPublication,
+	type CodexWorkbenchOwnerRuntime,
+	type CodexWorkbenchOwnerSlots,
+	type CodexWorkbenchStableKernel,
+	type LifecycleTransaction,
+	type OwnerLocalState,
+} from "@/server/canvas/lib/codex-workbench-owner-state";
+import {
+	generationInput,
+	publishReadySlots,
+	replaceExitHandler,
+	terminalShutdown,
+} from "@/server/canvas/lib/codex-workbench-owner-transitions";
 
 /**
  * Install one stable process port for one canvas application lifetime. Every
  * graph remains only in replaceable source closures, and the publication that
  * dispatches to them is owner-local: nothing outside this call can observe or
  * hand back a previous lifetime's state (ADR 0021).
+ * @param options How to create the process, the kernel and each generation.
+ * @returns The owner.
  */
 function installCodexWorkbenchOwnerLifecycle(
 	options: CodexWorkbenchOwnerOptions,
@@ -1220,7 +110,9 @@ function installCodexWorkbenchOwnerLifecycle(
 	replaceExitHandler(published, runtime, local);
 	local.processChildUnsubscribe = runtime.process.onChild((child) => local.nextChild?.(child));
 	/**
-	 *
+	 * The owner's current dispatch, refused while there is none: a workbench
+	 * between generations answers nothing rather than answering wrongly.
+	 * @returns The slots.
 	 */
 	const dispatchSlots = (): CodexWorkbenchOwnerSlots => {
 		if (published.current === null) {
@@ -1232,9 +124,116 @@ function installCodexWorkbenchOwnerLifecycle(
 		return published.current;
 	};
 
+	/**
+	 * Make a built generation the current one: check it adopted the kernel this
+	 * startup acquired, activate it, and publish it as ready. Every step
+	 * re-checks that this startup is still the owner's, so a superseded startup
+	 * cannot publish anything.
+	 * @param candidate The generation.
+	 * @param transaction The transaction that built it.
+	 * @param readiness What its session reached.
+	 */
+	const commitGeneration = async (
+		candidate: CodexWorkbenchGeneration,
+		transaction: LifecycleTransaction,
+		readiness: CandidateReadiness,
+	): Promise<void> => {
+		if (
+			runtime.identityLedger !== candidate.identityLedger ||
+			runtime.transport !== candidate.transport
+		) {
+			throw new CodexWorkbenchCompositionError(
+				"startup_failed",
+				"The first Codex generation did not adopt its synchronously acquired kernel.",
+			);
+		}
+		assertTransaction(
+			published,
+			runtime,
+			local,
+			transaction,
+			"A retired Codex startup cannot activate a generation.",
+		);
+		transaction.phase = "candidate_activation";
+		local.currentGeneration = candidate;
+		await candidate.activate();
+		assertTransaction(
+			published,
+			runtime,
+			local,
+			transaction,
+			"A retired Codex startup cannot publish readiness.",
+		);
+		runtime.sessionInitialized = readiness.initialized;
+		runtime.accountReady = readiness.accountReady;
+		published.state = "ready";
+		transaction.phase = "committed";
+		local.transaction = null;
+		publishReadySlots(published, runtime, local, candidate);
+	};
+
+	/**
+	 * Give up on a startup that failed: tear down whatever generation it had
+	 * built, stop the process it acquired, release the runtime, and report every
+	 * failure the abandonment itself produced beside the original one.
+	 * @param error What the startup threw.
+	 * @param candidate The generation it had built, when it had one.
+	 * @param ticket The startup's ticket, so a superseded startup releases nothing.
+	 * @returns The failure to throw.
+	 */
+	const abandonStartup = async (
+		error: unknown,
+		candidate: CodexWorkbenchGeneration | null,
+		ticket: number,
+	): Promise<Error> => {
+		let failure = error instanceof Error ? error : new Error(String(error));
+		if (candidate !== null) {
+			const cleanupFailure = await beginGenerationCleanup(local, candidate, "shutdown");
+			if (local.currentGeneration === candidate) {
+				local.currentGeneration = null;
+			}
+			if (cleanupFailure !== null) {
+				failure = appendFailure(failure, cleanupFailure, "Codex startup and cleanup both failed.");
+			}
+		}
+		if (ownsTicket(published, runtime, ticket)) {
+			failure = await releaseFailedStartup(failure);
+		}
+		return new CodexWorkbenchCompositionError(
+			"startup_failed",
+			"The production Codex workbench did not become ready.",
+			failure,
+		);
+	};
+
+	/**
+	 * Release the runtime a failed startup was holding: stop listening for a
+	 * child, stop the process, and publish the failure as the owner's state.
+	 * @param priorFailure What the startup already failed with.
+	 * @returns That failure, with the process stop's own failure beside it.
+	 */
+	const releaseFailedStartup = async (priorFailure: Error): Promise<Error> => {
+		let failure = priorFailure;
+		runtime.exitBridge.handler = null;
+		local.nextChild = null;
+		const processChildUnsubscribe = local.processChildUnsubscribe;
+		local.processChildUnsubscribe = null;
+		processChildUnsubscribe?.();
+		const processFailure = await stopProcess(local, runtime);
+		if (processFailure !== null) {
+			failure = appendFailure(failure, processFailure, "Codex startup process cleanup failed.");
+		}
+		invalidateTransaction(local);
+		releaseRegistration(published, runtime, "failed", failureMessage(failure));
+		return failure;
+	};
+
 	const initialSlots: CodexWorkbenchOwnerSlots = {
 		/**
-		 *
+		 * Start one generation: acquire a child and its kernel, build the graph
+		 * against them, activate it, and publish it as ready. A start that fails
+		 * anywhere tears down whatever it acquired and releases the runtime.
+		 * @returns The snapshot the owner reached.
 		 */
 		start: () => {
 			if (local.startPromise !== null) {
@@ -1271,7 +270,9 @@ function installCodexWorkbenchOwnerLifecycle(
 				});
 				let acceptedChild = false;
 				/**
-				 *
+				 * Take the first child the process produces, acquire its kernel, and
+				 * hand both to the startup. A later child is not this startup's.
+				 * @param child The child.
 				 */
 				const receiveChild = (child: CodexProcessChild) => {
 					if (acceptedChild) {
@@ -1317,7 +318,9 @@ function installCodexWorkbenchOwnerLifecycle(
 				};
 				local.nextChild = receiveChild;
 				/**
-				 *
+				 * Fail the startup when the process becomes terminal before it
+				 * produced a child: waiting longer cannot produce one.
+				 * @param current What the process reports.
 				 */
 				const observeProcess = (current: CodexProcessSnapshot): void => {
 					if (!ownsTicket(published, runtime, ticket) || local.nextChild !== receiveChild) {
@@ -1369,84 +372,10 @@ function installCodexWorkbenchOwnerLifecycle(
 						transaction,
 						"A retired Codex startup cannot install child-exit observation.",
 					);
-					if (
-						runtime.identityLedger !== candidate.identityLedger ||
-						runtime.transport !== candidate.transport
-					) {
-						throw new CodexWorkbenchCompositionError(
-							"startup_failed",
-							"The first Codex generation did not adopt its synchronously acquired kernel.",
-						);
-					}
-					assertTransaction(
-						published,
-						runtime,
-						local,
-						transaction,
-						"A retired Codex startup cannot activate a generation.",
-					);
-					transaction.phase = "candidate_activation";
-					local.currentGeneration = candidate;
-					await candidate.activate();
-					assertTransaction(
-						published,
-						runtime,
-						local,
-						transaction,
-						"A retired Codex startup cannot continue after activation.",
-					);
-					await processStart;
-					assertTransaction(
-						published,
-						runtime,
-						local,
-						transaction,
-						"A retired Codex startup cannot publish readiness.",
-					);
-					runtime.sessionInitialized = readiness.initialized;
-					runtime.accountReady = readiness.accountReady;
-					published.state = "ready";
-					transaction.phase = "committed";
-					local.transaction = null;
-					publishReadySlots(published, runtime, local, candidate);
+					await commitGeneration(candidate, transaction, readiness);
 					return snapshot(published, runtime);
 				} catch (error) {
-					let failure = error instanceof Error ? error : new Error(String(error));
-					if (candidate !== null) {
-						const cleanupFailure = await beginGenerationCleanup(local, candidate, "shutdown");
-						if (local.currentGeneration === candidate) {
-							local.currentGeneration = null;
-						}
-						if (cleanupFailure !== null) {
-							failure = appendFailure(
-								failure,
-								cleanupFailure,
-								"Codex startup and cleanup both failed.",
-							);
-						}
-					}
-					if (ownsTicket(published, runtime, ticket)) {
-						runtime.exitBridge.handler = null;
-						local.nextChild = null;
-						const processChildUnsubscribe = local.processChildUnsubscribe;
-						local.processChildUnsubscribe = null;
-						processChildUnsubscribe?.();
-						const processFailure = await stopProcess(local, runtime);
-						if (processFailure !== null) {
-							failure = appendFailure(
-								failure,
-								processFailure,
-								"Codex startup process cleanup failed.",
-							);
-						}
-						invalidateTransaction(local);
-						releaseRegistration(published, runtime, "failed", failureMessage(failure));
-					}
-					throw new CodexWorkbenchCompositionError(
-						"startup_failed",
-						"The production Codex workbench did not become ready.",
-						failure,
-					);
+					throw await abandonStartup(error, candidate, ticket);
 				} finally {
 					processSnapshotUnsubscribe?.();
 					if (local.nextChild === receiveChild) {
@@ -1459,16 +388,16 @@ function installCodexWorkbenchOwnerLifecycle(
 			return operation;
 		},
 		/**
-		 *
+		 * Shut the workbench down.
+		 * @returns The snapshot it ended in.
 		 */
 		shutdown: () => terminalShutdown(published, runtime, local),
 		/**
-		 *
+		 * What the workbench reports about itself.
+		 * @returns The snapshot.
 		 */
 		snapshot: () => snapshot(published, runtime),
-		/**
-		 *
-		 */
+		/** A workbench that is not ready has no browser gateway to hand out. */
 		gateway: () => {
 			throw new CodexWorkbenchCompositionError(
 				"not_started",
@@ -1478,7 +407,9 @@ function installCodexWorkbenchOwnerLifecycle(
 	};
 	published.current = initialSlots;
 	/**
-	 *
+	 * Start again after a child exit: the owner returns to its initial dispatch
+	 * and begins a new generation, and a start that fails is the new state
+	 * rather than something a caller must be told twice.
 	 */
 	local.restart = () => {
 		if (!isCurrentRuntime(published, runtime) || runtime.released) {
@@ -1489,22 +420,26 @@ function installCodexWorkbenchOwnerLifecycle(
 	};
 	return Object.freeze({
 		/**
-		 *
+		 * Start the workbench, through whichever dispatch is current.
+		 * @returns The snapshot the owner reached.
 		 */
 		start: () => dispatchSlots().start(),
 		// Keep terminal ownership in this returned handle after public dispatch
 		// is revoked. The Canvas lifetime may need one force retry to prove the
 		// detached process group is gone.
 		/**
-		 *
+		 * Shut the workbench down for good.
+		 * @returns The snapshot it ended in.
 		 */
 		shutdown: () => terminalShutdown(published, runtime, local),
 		/**
-		 *
+		 * What the workbench reports about itself.
+		 * @returns The snapshot.
 		 */
 		snapshot: () => snapshot(published, runtime),
 		/**
-		 *
+		 * The browser gateway of whichever generation is current.
+		 * @returns The gateway.
 		 */
 		gateway: () => dispatchSlots().gateway(),
 	});
@@ -1512,25 +447,27 @@ function installCodexWorkbenchOwnerLifecycle(
 
 export {
 	CODEX_WORKBENCH_OWNER,
-	type CodexWorkbenchState,
-	type CodexWorkbenchStopReason,
-	type CodexTransportExit,
-	type CodexWorkbenchSnapshot,
-	type CodexWorkbenchComponents,
-	type CodexWorkbenchGenerationHooks,
-	type CodexWorkbenchGeneration,
-	type CreateCodexWorkbenchGenerationLifecycleOptions,
 	createCodexWorkbenchGenerationLifecycle,
-	type CodexWorkbenchStableKernel,
-	type CodexWorkbenchKernelAcquisition,
-	type CodexWorkbenchGenerationInput,
-	type CodexWorkbenchGenerationFactory,
-	type CodexWorkbenchOwnerOptions,
-	type CodexWorkbenchOwner,
-	type CodexWorkbenchOwnerSlots,
-	type CodexWorkbenchExitHandler,
-	type CodexWorkbenchExitBridge,
-	type CodexWorkbenchOwnerRuntime,
-	type CodexWorkbenchOwnerPublication,
 	installCodexWorkbenchOwnerLifecycle,
+};
+export type {
+	CodexTransportExit,
+	CodexWorkbenchComponents,
+	CodexWorkbenchExitBridge,
+	CodexWorkbenchExitHandler,
+	CodexWorkbenchGeneration,
+	CodexWorkbenchGenerationFactory,
+	CodexWorkbenchGenerationHooks,
+	CodexWorkbenchGenerationInput,
+	CodexWorkbenchKernelAcquisition,
+	CodexWorkbenchOwner,
+	CodexWorkbenchOwnerOptions,
+	CodexWorkbenchOwnerPublication,
+	CodexWorkbenchOwnerRuntime,
+	CodexWorkbenchOwnerSlots,
+	CodexWorkbenchSnapshot,
+	CodexWorkbenchStableKernel,
+	CodexWorkbenchState,
+	CodexWorkbenchStopReason,
+	CreateCodexWorkbenchGenerationLifecycleOptions,
 };
