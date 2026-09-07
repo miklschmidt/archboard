@@ -124,6 +124,15 @@ function refineObstacleLibrary(obstacle: ObstacleRefShape, context: RefinementCo
 			);
 		}
 	}
+	refineLibraryPresence(obstacle, context);
+}
+
+/**
+ * Refine that library attribution is present exactly for the obstacle kinds that carry it.
+ * @param obstacle the parsed shape
+ * @param context the refinement context
+ */
+function refineLibraryPresence(obstacle: ObstacleRefShape, context: RefinementContext): void {
 	if (obstacle.kind === "library-component" && obstacle.library.length === 0) {
 		issue(context, ["library"], "Library-component obstacles require library attribution.");
 	}
@@ -133,16 +142,27 @@ function refineObstacleLibrary(obstacle: ObstacleRefShape, context: RefinementCo
 }
 
 /**
+ * Whether a grouped obstacle carries the evidence its kind requires: more than one element,
+ * and the group that binds them.
+ * @param obstacle the parsed shape
+ * @returns true when the evidence is present
+ */
+function hasGroupEvidence(obstacle: ObstacleRefShape): boolean {
+	return obstacle.elementIds.length >= 2 && obstacle.groupIds.length > 0;
+}
+
+/**
  * Refine group evidence and the deterministic obstacle id.
  * @param obstacle the parsed shape
  * @param context the refinement context
  */
 function refineObstacleIdentity(obstacle: ObstacleRefShape, context: RefinementContext): void {
-	if (
-		obstacle.kind === "grouped-component" &&
-		(obstacle.elementIds.length < 2 || obstacle.groupIds.length === 0)
-	) {
-		issue(context, ["kind"], "Grouped-component obstacles require multiple elements and group evidence.");
+	if (obstacle.kind === "grouped-component" && !hasGroupEvidence(obstacle)) {
+		issue(
+			context,
+			["kind"],
+			"Grouped-component obstacles require multiple elements and group evidence.",
+		);
 	}
 	if (obstacle.elementIds.length > 1 && obstacle.groupIds.length === 0) {
 		issue(context, ["groupIds"], "Multi-element obstacles require qualifying group evidence.");
