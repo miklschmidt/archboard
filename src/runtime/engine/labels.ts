@@ -141,6 +141,24 @@ function boundTextsByContainer(elements: readonly LabelledElement[]): Map<string
 }
 
 /**
+ * The text one entry of a container's `boundElements` names.
+ * @param ref One entry of the list.
+ * @param byId Live elements by id.
+ * @returns The text's id, or undefined when the entry names no live text.
+ */
+function boundTextIdOf(
+	ref: Readonly<BoundRef> | null | undefined,
+	byId: ReadonlyMap<string, LabelledElement>,
+): string | undefined {
+	// A malformed entry is a leftover, not a binding: it can be null, or name an
+	// id that is not a string, and neither is a reference to anything.
+	if (ref?.type !== "text" || typeof ref.id !== "string") {
+		return undefined;
+	}
+	return isText(byId.get(ref.id)) ? ref.id : undefined;
+}
+
+/**
  * The text elements a live container's own list names, ignoring references
  * to things the scene does not hold or that are not text.
  * @param element The container.
@@ -154,9 +172,14 @@ function textRefsOf(
 	if (!live(element) || !Array.isArray(element.boundElements)) {
 		return [];
 	}
-	return element.boundElements
-		.filter((ref) => ref.type === "text" && isText(byId.get(ref.id)))
-		.map((ref) => ref.id);
+	const ids: string[] = [];
+	for (const ref of element.boundElements) {
+		const id = boundTextIdOf(ref, byId);
+		if (id !== undefined) {
+			ids.push(id);
+		}
+	}
+	return ids;
 }
 
 /**
@@ -170,7 +193,7 @@ function containerNamedBy(
 	byId: ReadonlyMap<string, LabelledElement>,
 ): string | undefined {
 	const container = element.containerId;
-	if (!live(element) || !isText(element) || typeof container !== "string") {
+	if (!live(element) || !isText(element) || typeof container !== "string" || !container) {
 		return undefined;
 	}
 	return byId.has(container) ? container : undefined;
