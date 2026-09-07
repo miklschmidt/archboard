@@ -18,12 +18,29 @@ import { structuralFindings } from "@/runtime/board-inspection/lib/detect-elemen
 import { labelFindings } from "@/runtime/board-inspection/lib/detect-labels";
 import { collisionFindings } from "@/runtime/board-inspection/lib/detect-collisions";
 
+/** What a caller may change about one detection run. */
+interface DetectionOptions {
+	/** The eligible-pair ceiling, when a caller runs under its own rather than the module bound. */
+	comparisonLimit?: number;
+}
+
+/**
+ * Run every detector family over one decoded board and publish what they found. The families
+ * run in a fixed order and their findings are ordered once at the end, so one board always
+ * produces one report.
+ * @param records the decoded records
+ * @param policy the inspection policy
+ * @param initialFindings findings the input scan and bridge validation already produced
+ * @param validBridges the bridge decorations that are current, which detectors read through
+ * @param options the eligible-pair ceiling, when a caller sets its own
+ * @returns the findings, the comparisons made, and the coarse work counters
+ */
 function detectBoard(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
 	initialFindings: readonly InspectionFinding[] = [],
 	validBridges: readonly ValidBridgeDecoration[] = [],
-	options: { comparisonLimit?: number } = {},
+	options: DetectionOptions = {},
 ): DetectionResult {
 	const findings = [...initialFindings];
 	findings.push(...renderFindings(records), ...identityFindings(records));

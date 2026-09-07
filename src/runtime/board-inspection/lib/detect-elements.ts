@@ -1,19 +1,13 @@
 import type { InspectionFinding, InspectionPolicy } from "@/runtime/board-inspection/schemas";
-import {
-	kindOf,
-	stableDescription,
-	type DecodedRecord,
-} from "@/runtime/board-inspection/lib/decode";
+import { stableDescription, type DecodedRecord } from "@/runtime/board-inspection/lib/decode";
 import { type Segment } from "@/runtime/board-inspection/lib/geometry";
 import {
 	archboardMetadata,
-	boundElementTargetCompatible,
-	classifyBoundElements,
 	groupIds,
 	libraryAttribution,
 	type InspectionModel,
 } from "@/runtime/board-inspection/lib/model";
-import { affectedOf, make } from "@/runtime/board-inspection/lib/finding-builder";
+import { make } from "@/runtime/board-inspection/lib/finding-builder";
 import {
 	connectorBindingFindings,
 	connectorGeometryFindings,
@@ -21,470 +15,312 @@ import {
 	type RawRecord,
 	type RecordMap,
 } from "@/runtime/board-inspection/lib/detect-connectors";
+import {
+	boundElementFindings,
+	containerFindings,
+	incomingReferenceIds,
+} from "@/runtime/board-inspection/lib/detect-element-references";
+import {
+	fontFindings,
+	libraryFindings,
+	metadataFindings,
+} from "@/runtime/board-inspection/lib/detect-element-metadata";
+import {
+	CLOSED_ELEMENT_TYPES,
+	KNOWN_ELEMENT_TYPES,
+} from "@/runtime/board-inspection/lib/element-types";
 
-function boundElementFindings(
-	record: DecodedRecord,
-	raw: RawRecord,
-	byId: RecordMap,
-	duplicateIds: ReadonlySet<string>,
-): InspectionFinding[] {
-	const bounds = raw["boundElements"];
-	if (bounds == null) {
-		return [];
-	}
-	const findings: InspectionFinding[] = [];
-	const { readableEntries, problems } = classifyBoundElements(bounds);
-	for (const problem of problems) {
-		findings.push(
-			make({
-				code: "BROKEN_REFERENCE",
-				reason: "malformed-bound-elements",
-				severity: "error",
-				affectsCoverage: true,
-				details: {
-					ownerId: record.id,
-					sourceIndex: record.sourceIndex,
-					rawKind: kindOf(bounds),
-					entryIndex: problem.entryIndex,
-					issue: problem.issue,
-					readableEntries,
-					classificationBlocked: true,
-				},
-				message: `Element ${record.id ?? record.sourceIndex} has malformed boundElements.`,
-				elements: [record.ref],
-				affected: record.evidenceBox,
-			}),
-		);
-	}
-	if (!record.usableId || !record.id) {
-		return findings;
-	}
-	for (const entry of readableEntries) {
-		if (duplicateIds.has(entry.id)) {
-			continue;
-		}
-		const target = byId.get(entry.id);
-		if (!target) {
-			findings.push(
-				make({
-					code: "BROKEN_REFERENCE",
-					reason: entry.type === "text" ? "dangling-bound-text" : "dangling-bound-arrow",
-					severity: "error",
-					affectsCoverage: false,
-					details: { ownerId: record.id, targetId: entry.id },
-					message: `Element ${record.id} names missing bound ${entry.type} ${entry.id}.`,
-					elements: [record.ref],
-					affected: record.evidenceBox,
-				}),
-			);
-		} else if (
-			target.type !== null &&
-			KNOWN_ELEMENT_TYPES.has(target.type) &&
-			!boundElementTargetCompatible(entry.type, target.type)
-		) {
-			findings.push(
-				make({
-					code: "BROKEN_REFERENCE",
-					reason: "bound-element-target-type-mismatch",
-					severity: "error",
-					affectsCoverage: true,
-					details: {
-						ownerId: record.id,
-						targetId: entry.id,
-						declaredType: entry.type,
-						actualType: target.type,
-					},
-					message: `Element ${record.id} declares ${entry.id} as bound ${entry.type}, but it is ${target.type}.`,
-					elements: [record.ref, target.ref],
-					affected: affectedOf([record, target]),
-				}),
-			);
-		}
-	}
-	return findings;
+/** The run's segment budget, counted up as each connector's path is walked. */
+interface SegmentWork {
+	pathSegmentChecks: number;
 }
 
-function metadataFindings(record: DecodedRecord, raw: RawRecord): InspectionFinding[] {
-	const findings: InspectionFinding[] = [];
+/**
+ * Whether a closed element carries an angle that does not read as a finite number, which is a
+ * rotation nothing can measure and so evidence the element was meant to be laid out.
+ * @param record the element
+ * @returns true when the angle is present and unreadable
+ */
+function malformedClosedAngle(record: DecodedRecord): boolean {
+	if (!CLOSED_ELEMENT_TYPES.has(record.type ?? "")) {
+		return false;
+	}
+	const angle = record.raw?.angle;
+	if (angle === undefined) {
+		return false;
+	}
+	return typeof angle !== "number" || !Number.isFinite(angle);
+}
+
+/** The element types that are always standing in a role by being what they are. */
+const ROLE_BEARING_TYPES = new Set(["arrow", "line", "text"]);
+
+/** The raw fields whose mere presence shows an element was standing in some role. */
+const ROLE_EVIDENCE_FIELDS = [
+	"boundElements",
+	"containerId",
+	"startBinding",
+	"endBinding",
+	"points",
+] as const;
+
+/**
+ * Whether an element's own fields show it was standing in a role.
+ * @param record the element
+ * @returns true when any role-bearing field is present
+ */
+function fieldRoleEvidence(record: DecodedRecord): boolean {
+	const raw = record.raw;
+	if (!raw) {
+		return false;
+	}
+	return ROLE_EVIDENCE_FIELDS.some((field) => raw[field] !== undefined);
+}
+
+/**
+ * Whether an element's metadata and attributions show it was standing in a role: a library
+ * component, a group member, or a member of a semantic node.
+ * @param record the element
+ * @returns true when any of them is present
+ */
+function metadataRoleEvidence(record: DecodedRecord): boolean {
+	if (libraryAttribution(record) !== null || groupIds(record).length > 0) {
+		return true;
+	}
 	const metadata = archboardMetadata(record);
-	if (
-		metadata &&
-		"node" in metadata &&
-		(typeof metadata["node"] !== "string" || metadata["node"].length === 0) &&
-		record.id
-	) {
-		findings.push(
-			make({
-				code: "BROKEN_REFERENCE",
-				reason: "invalid-node-metadata",
-				severity: "error",
-				affectsCoverage: true,
-				details: { elementId: record.id, valueKind: kindOf(metadata["node"]) },
-				message: `Element ${record.id} has invalid node metadata.`,
-				elements: [record.ref],
-				affected: record.evidenceBox,
-			}),
-		);
-	}
-	const binding = metadata?.["binding"];
-	if (binding === undefined || !record.id) {
-		return findings;
-	}
-	const object =
-		binding && typeof binding === "object" && !Array.isArray(binding)
-			? (binding as Record<string, unknown>)
-			: null;
-	const issues: string[] = [];
-	if (!object) {
-		issues.push("binding must be an object");
-	} else {
-		if (typeof object["path"] !== "string" || !object["path"]) {
-			issues.push("path must be a nonempty string");
-		}
-		if (
-			typeof object["path"] === "string" &&
-			(object["path"].startsWith("/") || object["path"].split("/").includes(".."))
-		) {
-			issues.push("path must be repository-relative and usable");
-		}
-		if (object["repo"] !== undefined && typeof object["repo"] !== "string") {
-			issues.push("repo must be a string");
-		}
-	}
-	if (issues.length) {
-		findings.push(
-			make({
-				code: "BROKEN_REFERENCE",
-				reason: "invalid-code-binding",
-				severity: "error",
-				affectsCoverage: false,
-				details: { elementId: record.id, issues },
-				message: `Element ${record.id} has an invalid code binding.`,
-				elements: [record.ref],
-				affected: record.evidenceBox,
-			}),
-		);
-	}
-	if (typeof raw["link"] === "string" && raw["link"]) {
-		findings.push(
-			make({
-				code: "BROKEN_REFERENCE",
-				reason: "derived-link-persisted",
-				severity: "error",
-				affectsCoverage: false,
-				details: { elementId: record.id, link: raw["link"] },
-				message: `Element ${record.id} persists a derived binding link.`,
-				elements: [record.ref],
-				affected: record.evidenceBox,
-			}),
-		);
-	}
-	return findings;
+	return metadata !== null && "node" in metadata;
 }
 
-function fontFindings(
-	record: DecodedRecord,
-	raw: RawRecord,
-	policy: InspectionPolicy,
-): InspectionFinding[] {
-	if (record.type !== "text") {
-		return [];
+/**
+ * Whether an element was evidently standing in some role on the board. Geometry the inspection
+ * cannot model is only worth reporting on an element something was relying on; an element with
+ * no role at all costs the board nothing by not being modelled.
+ * @param record the element
+ * @param hasIncomingReference whether anything on the board points at it
+ * @returns true when the element was standing in a role
+ */
+function hasCoverageRoleEvidence(record: DecodedRecord, hasIncomingReference: boolean): boolean {
+	if (hasIncomingReference || malformedClosedAngle(record)) {
+		return true;
 	}
-	const allowed = policy.allowedFontFamilies;
-	const points = record.box
-		? [
-				{
-					x: record.box.x + record.box.width / 2,
-					y: record.box.y + record.box.height / 2,
-				},
-			]
-		: [];
-	if (!("fontFamily" in raw) || raw["fontFamily"] === undefined) {
-		return allowed !== "any" && !allowed.includes(1)
-			? [
-					make({
-						code: "FONT_POLICY_VIOLATION",
-						reason: "missing-font-family",
-						severity: "warning",
-						affectsCoverage: false,
-						details: { effectiveFamily: 1, allowedFamilies: allowed },
-						message: `Text ${record.id ?? record.sourceIndex} uses legacy font family 1.`,
-						elements: [record.ref],
-						points,
-						affected: record.evidenceBox,
-					}),
-				]
-			: [];
+	if (ROLE_BEARING_TYPES.has(record.type ?? "")) {
+		return true;
 	}
-	if (
-		typeof raw["fontFamily"] !== "number" ||
-		!Number.isInteger(raw["fontFamily"]) ||
-		![1, 2, 3, 5, 6, 7, 8].includes(raw["fontFamily"])
-	) {
-		return [
-			make({
-				code: "FONT_POLICY_VIOLATION",
-				reason: "invalid-font-family",
-				severity: "warning",
-				affectsCoverage: false,
-				details: {
-					rawType: kindOf(raw["fontFamily"]),
-					rawDescription: stableDescription(raw["fontFamily"]),
-					allowedFamilies: allowed,
-				},
-				message: `Text ${record.id ?? record.sourceIndex} has invalid persisted fontFamily.`,
-				elements: [record.ref],
-				points,
-				affected: record.evidenceBox,
-			}),
-		];
-	}
-	return allowed !== "any" && !allowed.includes(raw["fontFamily"] as 1 | 2 | 3 | 5 | 6 | 7 | 8)
-		? [
-				make({
-					code: "FONT_POLICY_VIOLATION",
-					reason: "disallowed-font-family",
-					severity: "warning",
-					affectsCoverage: false,
-					details: {
-						rawFamily: raw["fontFamily"],
-						effectiveFamily: raw["fontFamily"],
-						allowedFamilies: allowed,
-					},
-					message: `Text ${record.id ?? record.sourceIndex} uses disallowed font family ${raw["fontFamily"]}.`,
-					elements: [record.ref],
-					points,
-					affected: record.evidenceBox,
-				}),
-			]
-		: [];
+	return metadataRoleEvidence(record) || fieldRoleEvidence(record);
 }
 
-function containerFindings(record: DecodedRecord, raw: RawRecord): InspectionFinding[] {
-	if (
-		record.type !== "text" ||
-		raw["containerId"] == null ||
-		(typeof raw["containerId"] === "string" && raw["containerId"].length > 0)
-	) {
-		return [];
+/**
+ * Whether a non-connector element carries a rotation. Connectors report their own rotation
+ * against their path, so they are left to the connector detector.
+ * @param record the element
+ * @param raw the element's raw fields
+ * @returns true when the element is rotated
+ */
+function rotatedElement(record: DecodedRecord, raw: RawRecord): boolean {
+	if (record.type === "arrow" || record.type === "line") {
+		return false;
 	}
-	return [
-		make({
-			code: "BROKEN_REFERENCE",
-			reason: "malformed-container-id",
-			severity: "error",
-			affectsCoverage: true,
-			details: {
-				textId: record.id,
-				sourceIndex: record.sourceIndex,
-				rawKind: kindOf(raw["containerId"]),
-				rawDescription: stableDescription(raw["containerId"]),
-				issue: raw["containerId"] === "" ? "empty-container-id" : "non-string-container-id",
-				ownerClassificationBlocked: true,
-			},
-			message: `Text ${record.id ?? record.sourceIndex} has a malformed containerId.`,
-			elements: [record.ref],
-			affected: record.evidenceBox,
-		}),
-	];
+	return raw["angle"] !== undefined && raw["angle"] !== 0;
 }
 
-function libraryFindings(record: DecodedRecord, model: InspectionModel): InspectionFinding[] {
-	const library = libraryAttribution(record);
-	if (!library || library.valid || !record.id) {
-		return [];
-	}
-	const rescuedByGroup = model.qualifyingGroupedObstacleElementIds.has(record.id);
-	const shared = {
-		code: "BROKEN_REFERENCE",
-		reason: "invalid-library-attribution",
-		severity: "error",
-		message: `Element ${record.id} has invalid library attribution.`,
+/**
+ * The finding for a rotated element, whose angle the inspection's axis-aligned model does not
+ * stand for.
+ * @param record the element
+ * @param raw the element's raw fields
+ * @returns the finding
+ */
+function rotationFinding(record: DecodedRecord, raw: RawRecord): InspectionFinding {
+	const angle = raw["angle"];
+	return make({
+		code: "UNSUPPORTED_GEOMETRY",
+		reason: "rotation",
+		severity: "warning",
+		affectsCoverage: true,
+		details: {
+			angle: typeof angle === "number" && Number.isFinite(angle) ? angle : stableDescription(angle),
+		},
+		message: `Element ${record.id ?? record.sourceIndex} is rotated.`,
 		elements: [record.ref],
 		affected: record.evidenceBox,
-	} as const;
-	return rescuedByGroup
-		? [
-				make({
-					...shared,
-					affectsCoverage: false,
-					details: {
-						elementId: record.id,
-						issues: library.issues,
-						rescuedByGroup: true,
-					},
-				}),
-			]
-		: [
-				make({
-					...shared,
-					affectsCoverage: true,
-					details: {
-						elementId: record.id,
-						issues: library.issues,
-						rescuedByGroup: false,
-					},
-				}),
-			];
+	});
 }
 
-const KNOWN_ELEMENT_TYPES = new Set([
-	"rectangle",
-	"ellipse",
-	"diamond",
-	"frame",
-	"text",
-	"arrow",
-	"line",
-	"image",
-	"freedraw",
-]);
-
-function hasCoverageRoleEvidence(record: DecodedRecord, hasIncomingReference: boolean): boolean {
-	const raw = record.raw;
-	const metadata = archboardMetadata(record);
-	const malformedClosedAngle =
-		["rectangle", "ellipse", "diamond", "frame"].includes(record.type ?? "") &&
-		raw?.angle !== undefined &&
-		(typeof raw.angle !== "number" || !Number.isFinite(raw.angle));
-	return (
-		hasIncomingReference ||
-		malformedClosedAngle ||
-		record.type === "arrow" ||
-		record.type === "line" ||
-		record.type === "text" ||
-		libraryAttribution(record) !== null ||
-		groupIds(record).length > 0 ||
-		(metadata !== null && "node" in metadata) ||
-		raw?.boundElements !== undefined ||
-		raw?.containerId !== undefined ||
-		raw?.startBinding !== undefined ||
-		raw?.endBinding !== undefined ||
-		raw?.points !== undefined
-	);
+/**
+ * Whether an element's persisted type is one the inspection knows how to reason about.
+ * @param raw the element's raw fields
+ * @returns true when the type is a known one
+ */
+function knownType(raw: RawRecord): boolean {
+	const rawType = raw["type"];
+	if (typeof rawType !== "string" || rawType.length === 0) {
+		return false;
+	}
+	return KNOWN_ELEMENT_TYPES.has(rawType);
 }
 
+/**
+ * The finding for an element of a type the inspection does not model, which it therefore
+ * describes but does not measure.
+ * @param record the element
+ * @param raw the element's raw fields
+ * @returns the finding
+ */
+function unsupportedTypeFinding(record: DecodedRecord, raw: RawRecord): InspectionFinding {
+	const rawType = raw["type"];
+	const described = typeof rawType === "string" ? rawType : stableDescription(rawType);
+	return make({
+		code: "UNSUPPORTED_GEOMETRY",
+		reason: "unsupported-type",
+		severity: "warning",
+		affectsCoverage: true,
+		details: { rawType: described },
+		message: `Element ${record.id ?? record.sourceIndex} has unsupported type ${described}.`,
+		elements: [record.ref],
+		affected: record.evidenceBox,
+	});
+}
+
+/**
+ * The geometry the inspection will not model on a non-connector element: a rotation, and a type
+ * it does not know. Both are only reported on an element that was standing in a role, so a
+ * board is not told about geometry nothing was relying on.
+ * @param record the element
+ * @param raw the element's raw fields
+ * @param hasIncomingReference whether anything on the board points at it
+ * @returns the findings
+ */
 function unsupportedGeometryFindings(
 	record: DecodedRecord,
 	raw: RawRecord,
 	hasIncomingReference: boolean,
 ): InspectionFinding[] {
-	const findings: InspectionFinding[] = [];
-	if (
-		record.type !== "arrow" &&
-		record.type !== "line" &&
-		raw["angle"] !== undefined &&
-		raw["angle"] !== 0 &&
-		hasCoverageRoleEvidence(record, hasIncomingReference)
-	) {
-		findings.push(
-			make({
-				code: "UNSUPPORTED_GEOMETRY",
-				reason: "rotation",
-				severity: "warning",
-				affectsCoverage: true,
-				details: {
-					angle:
-						typeof raw["angle"] === "number" && Number.isFinite(raw["angle"])
-							? raw["angle"]
-							: stableDescription(raw["angle"]),
-				},
-				message: `Element ${record.id ?? record.sourceIndex} is rotated.`,
-				elements: [record.ref],
-				affected: record.evidenceBox,
-			}),
-		);
+	const rotated = rotatedElement(record, raw);
+	const unsupportedType = !knownType(raw);
+	if (!rotated && !unsupportedType) {
+		return [];
 	}
-	const rawType = raw["type"];
-	const canonicalType = typeof rawType === "string" && rawType.length > 0;
-	if (
-		(!canonicalType || !KNOWN_ELEMENT_TYPES.has(typeof rawType === "string" ? rawType : "")) &&
-		hasCoverageRoleEvidence(record, hasIncomingReference)
-	) {
-		const rawTypeDescription = typeof rawType === "string" ? rawType : stableDescription(rawType);
-		findings.push(
-			make({
-				code: "UNSUPPORTED_GEOMETRY",
-				reason: "unsupported-type",
-				severity: "warning",
-				affectsCoverage: true,
-				details: { rawType: rawTypeDescription },
-				message: `Element ${record.id ?? record.sourceIndex} has unsupported type ${rawTypeDescription}.`,
-				elements: [record.ref],
-				affected: record.evidenceBox,
-			}),
-		);
+	if (!hasCoverageRoleEvidence(record, hasIncomingReference)) {
+		return [];
+	}
+	const findings: InspectionFinding[] = [];
+	if (rotated) {
+		findings.push(rotationFinding(record, raw));
+	}
+	if (unsupportedType) {
+		findings.push(unsupportedTypeFinding(record, raw));
 	}
 	return findings;
 }
 
-function incomingReferenceIds(records: readonly DecodedRecord[]): ReadonlySet<string> {
-	const ids = new Set<string>();
-	const add = (value: unknown) => {
-		if (typeof value === "string" && value.length > 0) {
-			ids.add(value);
-		}
-	};
-	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
-		const raw = record.raw!;
-		add(raw.containerId);
-		for (const end of ["start", "end"] as const) {
-			const binding = raw[`${end}Binding`];
-			if (binding && typeof binding === "object" && !Array.isArray(binding)) {
-				add((binding as RawRecord)["elementId"]);
-			}
-		}
-		if (!Array.isArray(raw.boundElements)) {
-			continue;
-		}
-		for (const entry of raw.boundElements) {
-			if (entry && typeof entry === "object" && !Array.isArray(entry)) {
-				add((entry as RawRecord)["id"]);
-			}
-		}
-	}
-	return ids;
+/**
+ * A connector's own findings: its path geometry, its bindings, and any input-only endpoint it
+ * has persisted.
+ * @param record the connector
+ * @param raw the connector's raw fields
+ * @param policy the run's policy
+ * @param model the inspection model
+ * @param segments the run's segments, added to in place
+ * @param work the run's segment budget, advanced in place
+ * @returns the findings
+ */
+function connectorFindings(
+	record: DecodedRecord,
+	raw: RawRecord,
+	policy: InspectionPolicy,
+	model: InspectionModel,
+	segments: Segment[],
+	work: SegmentWork,
+): InspectionFinding[] {
+	const findings = [
+		...connectorGeometryFindings(record, raw, policy, segments, work),
+		...connectorBindingFindings(record, raw, model.byId, model.duplicateIds),
+	];
+	return record.usableId ? [...findings, ...persistedEndpointFindings(record, raw)] : findings;
 }
 
+/**
+ * Everything one element says about itself: its bindings and bound elements, its container, its
+ * metadata, its library attribution, its font, and any geometry the inspection will not model.
+ * @param record the element
+ * @param raw the element's raw fields
+ * @param context the run's policy, model, segments and budget
+ * @param hasIncomingReference whether anything on the board points at it
+ * @returns the findings
+ */
+function recordFindings(
+	record: DecodedRecord,
+	raw: RawRecord,
+	context: StructuralContext,
+	hasIncomingReference: boolean,
+): InspectionFinding[] {
+	const byId: RecordMap = context.model.byId;
+	const findings: InspectionFinding[] = [];
+	if (record.type === "arrow" || record.type === "line") {
+		findings.push(
+			...connectorFindings(
+				record,
+				raw,
+				context.policy,
+				context.model,
+				context.segments,
+				context.work,
+			),
+		);
+	}
+	findings.push(...boundElementFindings(record, raw, byId, context.model.duplicateIds));
+	findings.push(...containerFindings(record, raw));
+	findings.push(...metadataFindings(record, raw));
+	if (record.usableId) {
+		findings.push(...libraryFindings(record, context.model));
+	}
+	findings.push(...fontFindings(record, raw, context.policy));
+	findings.push(...unsupportedGeometryFindings(record, raw, hasIncomingReference));
+	return findings;
+}
+
+/** What one structural pass carries across the records it walks. */
+interface StructuralContext {
+	policy: InspectionPolicy;
+	model: InspectionModel;
+	segments: Segment[];
+	work: SegmentWork;
+}
+
+/**
+ * Walk the board's live records once, collecting everything each of them says about itself and
+ * the connector segments the later sweeps compare against each other.
+ * @param records the decoded records
+ * @param policy the run's policy
+ * @param model the inspection model
+ * @returns the findings, the segments, and how much segment work the pass did
+ */
 function structuralFindings(
 	records: readonly DecodedRecord[],
 	policy: InspectionPolicy,
 	model: InspectionModel,
-): {
-	findings: InspectionFinding[];
-	segments: Segment[];
-	pathSegmentChecks: number;
-} {
-	const findings: InspectionFinding[] = [];
-	const segments: Segment[] = [];
-	const work = { pathSegmentChecks: 0 };
-	const byId = model.byId;
+): { findings: InspectionFinding[]; segments: Segment[]; pathSegmentChecks: number } {
+	const context: StructuralContext = {
+		policy,
+		model,
+		segments: [],
+		work: { pathSegmentChecks: 0 },
+	};
 	const incomingReferences = incomingReferenceIds(records);
-	for (const record of records.filter((candidate) => candidate.live && candidate.raw)) {
-		const raw = record.raw!;
-		if (record.type === "arrow" || record.type === "line") {
-			findings.push(...connectorGeometryFindings(record, raw, policy, segments, work));
-			findings.push(...connectorBindingFindings(record, raw, byId, model.duplicateIds));
-			if (record.usableId) {
-				findings.push(...persistedEndpointFindings(record, raw));
-			}
+	const findings: InspectionFinding[] = [];
+	for (const record of records) {
+		const raw = record.raw;
+		if (!record.live || !raw) {
+			continue;
 		}
-		findings.push(...boundElementFindings(record, raw, byId, model.duplicateIds));
-		findings.push(...containerFindings(record, raw));
-		findings.push(...metadataFindings(record, raw));
-		if (record.usableId) {
-			findings.push(...libraryFindings(record, model));
-		}
-		findings.push(...fontFindings(record, raw, policy));
-		findings.push(
-			...unsupportedGeometryFindings(
-				record,
-				raw,
-				record.id !== null && incomingReferences.has(record.id),
-			),
-		);
+		const referenced = record.id !== null && incomingReferences.has(record.id);
+		findings.push(...recordFindings(record, raw, context, referenced));
 	}
-	return { findings, segments, pathSegmentChecks: work.pathSegmentChecks };
+	return {
+		findings,
+		segments: context.segments,
+		pathSegmentChecks: context.work.pathSegmentChecks,
+	};
 }
 
 export { structuralFindings };
