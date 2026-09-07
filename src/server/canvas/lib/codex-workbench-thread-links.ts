@@ -67,7 +67,7 @@ function namedTarget(
  */
 function readyWorkhorseTarget(snapshot: WorkhorseSnapshot): ReadyWorkhorseTarget | null {
 	const binding = snapshot.binding;
-	if (snapshot.state !== "ready" || binding === null || binding.link.state !== "executable") {
+	if (snapshot.state !== "ready" || binding?.link.state !== "executable") {
 		return null;
 	}
 	return namedTarget(snapshot, binding);
@@ -532,16 +532,8 @@ function createCanvasThreadLinkActions(
 		 * Release the thread context this browser held, so a pane that is gone
 		 * leaves nothing published on its behalf.
 		 * @param context The pane and its connection.
-		 * @param reason Why the browser stopped listening.
 		 */
-		onBrowserDisconnect: (context, reason) => {
-			if (
-				reason !== "browser_disconnected" &&
-				reason !== "child_disconnected" &&
-				reason !== "gateway_shutdown"
-			) {
-				return;
-			}
+		onBrowserDisconnect: (context) => {
 			const token = controllerTokens.get(context.connection);
 			controllerTokens.delete(context.connection);
 			if (token !== undefined) {

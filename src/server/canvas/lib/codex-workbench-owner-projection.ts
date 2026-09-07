@@ -123,7 +123,7 @@ function semanticPanel(
 			outcome: delivery.outcome,
 			reason: delivery.reason,
 		},
-		freshness: publisher.freshBrief()?.freshness ?? null,
+		freshness: publisher.freshBrief().freshness,
 	};
 }
 

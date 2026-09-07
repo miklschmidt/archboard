@@ -215,6 +215,7 @@ function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 				throw new Error("Board renderer stopped during startup.");
 			}
 			const acquired = await RendererSession.acquire(fixture.url, resolved);
+			// oxlint-disable-next-line typescript/no-unnecessary-condition -- stop() sets this from another task while the acquire above is awaited; the narrowing from the check before it does not survive that
 			if (stopping) {
 				await acquired.close();
 				throw new Error("Board renderer stopped during startup.");
@@ -269,6 +270,7 @@ function createBoardRenderingOwner(options: BoardRenderingOwnerOptions = {}) {
 			}
 			queued -= 1;
 			state.value = "active";
+			// oxlint-disable-next-line typescript/no-unnecessary-condition -- stop() clears this while the job waits its turn in the queue above, after the admission check narrowed it
 			if (!accepting) {
 				rejectResult(
 					new BoardRendererError("Board renderer stopped before queued work began.", "shutdown"),

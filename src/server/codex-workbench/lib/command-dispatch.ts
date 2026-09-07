@@ -176,6 +176,7 @@ function invokeBrowserAction(
 ): Promise<BrowserActionResult> {
 	const action: (value: never, owner: BrowserActionContext) => Promise<BrowserActionResult> =
 		dispatch[command.command];
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the table is keyed by the command's own name, so this entry takes exactly this command; no expressible signature says so
 	return action(command as never, context);
 }
 

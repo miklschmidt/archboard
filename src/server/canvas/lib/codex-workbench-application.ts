@@ -97,6 +97,7 @@ function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchAppl
 			try {
 				owner = options.module.installProductionCodexWorkbench(options.installation());
 				const snapshot = await owner.start();
+				// oxlint-disable-next-line typescript/no-unnecessary-condition -- stop() sets this from another task while the start above is awaited; the narrowing from the declaration does not survive that
 				if (shutdownRequested) {
 					throw new Error("The Codex workbench was stopped during startup.");
 				}
@@ -104,6 +105,7 @@ function createCanvasCodexWorkbenchApplication(options: CanvasCodexWorkbenchAppl
 				return snapshot;
 			} catch (error) {
 				installed = false;
+				// oxlint-disable-next-line typescript/no-unnecessary-condition -- stop() sets this from another task while the start above is awaited; the narrowing from the declaration does not survive that
 				if (shutdownRequested) {
 					throw error;
 				}

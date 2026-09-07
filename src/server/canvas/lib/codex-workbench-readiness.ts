@@ -43,7 +43,7 @@ export function boundedBrowserReason(value: string | null | undefined, fallback:
  * @returns The collapsed text.
  */
 function collapseWhitespace(value: string): string {
-	return [...value]
+	return Array.from(value)
 		.map((character) => {
 			const code = character.codePointAt(0) ?? 0;
 			return code < 0x20 || code === 0x7f ? " " : character;
@@ -103,6 +103,16 @@ function accountReadiness(input: CanvasReadinessInput): BrowserReadiness {
 }
 
 /**
+ * Refuse an observed account state nothing here spells out. The parameter is
+ * `never`, so a state added to the adapter's vocabulary fails to compile until
+ * it has an arm above.
+ * @param account What was observed.
+ */
+function unobservedAccountState(account: never): never {
+	throw new TypeError(`Unsupported observed Codex account state: ${JSON.stringify(account)}`);
+}
+
+/**
  * The readiness the account adapter's own last observation reports, when no
  * account response has been read.
  * @param account What the adapter last observed.
@@ -122,6 +132,8 @@ function observedAccountReadiness(
 			return { kind: "readiness", state: "login_capable" };
 		case "unknown":
 			return { kind: "readiness", state: "initialized" };
+		default:
+			return unobservedAccountState(account);
 	}
 }
 
@@ -262,21 +274,22 @@ function haltedReadiness(
 	process: Exclude<CanvasReadinessProcessFacts, { state: "running" | "backoff" }>,
 	failure: CanvasReadinessProcessFacts["failure"],
 ): BrowserReadiness {
+	const failureMessage = failure?.message ?? null;
 	if (process.state === "terminal_failure") {
 		return {
 			kind: "readiness",
 			state: "stopped",
-			reason: boundedBrowserReason(failure?.message, "The Codex app server stopped."),
+			reason: boundedBrowserReason(failureMessage, "The Codex app server stopped."),
 		};
 	}
 	if (NOT_RUNNING_STATES.has(process.state)) {
 		return {
 			kind: "readiness",
 			state: "stopped",
-			reason: boundedBrowserReason(failure?.message, "The Codex app server is not running."),
+			reason: boundedBrowserReason(failureMessage, "The Codex app server is not running."),
 		};
 	}
-	const restartFailure = process.restartAttempt > 0 ? failure?.message : null;
+	const restartFailure = process.restartAttempt > 0 ? failureMessage : null;
 	return {
 		kind: "readiness",
 		state: "reconnecting",

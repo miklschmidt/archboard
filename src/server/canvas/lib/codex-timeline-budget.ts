@@ -217,12 +217,12 @@ function createCanvasBrowserProjectionBudget(
 	assertBrowserSnapshotBudget(maxBytes);
 	const budget = Object.freeze({
 		maxTurns: boundedBudgetValue(
-			input?.maxTurns,
+			input.maxTurns,
 			DEFAULT_BROWSER_PROJECTION_BUDGET.maxTurns,
 			DEFAULT_BROWSER_PROJECTION_BUDGET.maxTurns,
 		),
 		maxItemsPerTurn: boundedBudgetValue(
-			input?.maxItemsPerTurn,
+			input.maxItemsPerTurn,
 			DEFAULT_BROWSER_PROJECTION_BUDGET.maxItemsPerTurn,
 			DEFAULT_BROWSER_PROJECTION_BUDGET.maxItemsPerTurn,
 		),
