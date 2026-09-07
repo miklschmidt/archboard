@@ -24,4 +24,16 @@ function stringAt(record: Record<string, unknown>, key: string): string | undefi
 	return typeof value === "string" ? value : undefined;
 }
 
-export { isRecord, stringAt };
+/**
+ * The number at one key of a record, or a fallback when it is not a number.
+ * @param record The record to read.
+ * @param key The property to read.
+ * @param fallback The value used when the property is absent or not a number.
+ * @returns The number.
+ */
+function numberAt(record: Record<string, unknown>, key: string, fallback: number): number {
+	const value = record[key];
+	return typeof value === "number" ? value : fallback;
+}
+
+export { isRecord, numberAt, stringAt };

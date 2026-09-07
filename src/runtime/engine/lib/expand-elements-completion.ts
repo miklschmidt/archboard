@@ -5,7 +5,7 @@
 import { BOUND_ARROW_GAP } from "@/runtime/engine/arrow-binding";
 import { lineHeightOf } from "@/runtime/engine/fonts";
 import { DEFAULT_LINEAR_POINTS, measureLinear } from "@/runtime/engine/geometry";
-import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
+import { isRecord, numberAt, stringAt } from "@/runtime/engine/lib/unknown-record";
 import { canMeasure, measureText } from "@/runtime/engine/measure-text";
 import { normalizeFontFamily } from "@/runtime/engine/types";
 import { fnv1a } from "@/shared/ids/ids";
@@ -16,12 +16,32 @@ const DEFAULT_TEXT_ALIGN = "left"; // for a standalone text; a bound one is cent
 const DEFAULT_VERTICAL_ALIGN = "top";
 const DEFAULT_STROKE_WIDTH = 2;
 
+/** An ordered list of keys and the value each takes when the input left it out. */
+type Defaults = ReadonlyArray<readonly [key: string, fallback: unknown]>;
+
 /** Where seeds, nonces and `updated` timestamps come from during one conversion. */
 interface Stamps {
 	/** A seed or nonce for one key. */
 	seedFor: (key: string) => number;
 	/** The `updated` timestamp for one element. */
 	updatedFor: (el: Record<string, unknown>) => number;
+}
+
+/**
+ * Set each defaulted key on the element, in order, from the input or the
+ * fallback. Sequential assignment keeps the key order a spread would give.
+ * @param base The element being completed.
+ * @param rest The input fields.
+ * @param defaults The keys and fallbacks.
+ */
+function applyDefaults(
+	base: Record<string, unknown>,
+	rest: Record<string, unknown>,
+	defaults: Defaults,
+): void {
+	for (const [key, fallback] of defaults) {
+		base[key] = rest[key] ?? fallback;
+	}
 }
 
 /**
@@ -77,6 +97,33 @@ function stampsFor(deterministic: boolean): Stamps {
 }
 
 /**
+ * The binding fields a straight arrow keeps.
+ * @param value The binding as written.
+ * @returns The completed binding.
+ */
+function straightBinding(value: Record<string, unknown>): Record<string, unknown> {
+	return {
+		elementId: value["elementId"],
+		focus: value["focus"] ?? 0,
+		gap: value["gap"] ?? BOUND_ARROW_GAP,
+	};
+}
+
+/**
+ * The binding fields an elbowed arrow keeps, `fixedPoint` included.
+ * @param value The binding as written.
+ * @returns The completed binding.
+ */
+function elbowedBinding(value: Record<string, unknown>): Record<string, unknown> {
+	return {
+		elementId: value["elementId"],
+		fixedPoint: value["fixedPoint"],
+		focus: value["focus"] ?? 0,
+		gap: value["gap"] ?? BOUND_ARROW_GAP,
+	};
+}
+
+/**
  * Complete one input binding without carrying input-only or unknown keys into
  * the board.
  * @param value The binding as written.
@@ -90,11 +137,7 @@ function completeBinding(value: unknown, elbowed: boolean): Record<string, unkno
 	if (!isRecord(value) || Array.isArray(value)) {
 		return { value };
 	}
-	const focus = value["focus"] ?? 0;
-	const gap = value["gap"] ?? BOUND_ARROW_GAP;
-	return elbowed
-		? { elementId: value["elementId"], fixedPoint: value["fixedPoint"], focus, gap }
-		: { elementId: value["elementId"], focus, gap };
+	return elbowed ? elbowedBinding(value) : straightBinding(value);
 }
 
 /**
@@ -110,14 +153,20 @@ function measurePoints(base: Record<string, unknown>): void {
 }
 
 /**
- * The fields an elbowed arrow carries beyond a straight one.
+ * Complete both ends of an arrow or line from the bindings the input names.
  * @param base The element being completed.
  * @param rest The input fields.
+ * @param elbowed Whether the arrow is elbowed.
  */
-function completeElbowedFields(base: Record<string, unknown>, rest: Record<string, unknown>): void {
-	base["fixedSegments"] = rest["fixedSegments"] ?? null;
-	base["startIsSpecial"] = rest["startIsSpecial"] ?? null;
-	base["endIsSpecial"] = rest["endIsSpecial"] ?? null;
+function completeBindings(
+	base: Record<string, unknown>,
+	rest: Record<string, unknown>,
+	elbowed: boolean,
+): void {
+	base["startBinding"] =
+		rest["startBinding"] !== undefined ? completeBinding(rest["startBinding"], elbowed) : null;
+	base["endBinding"] =
+		rest["endBinding"] !== undefined ? completeBinding(rest["endBinding"], elbowed) : null;
 }
 
 /**
@@ -136,18 +185,21 @@ function completeLinearFields(
 	base["points"] = rest["points"] ?? DEFAULT_LINEAR_POINTS.map((point) => point.slice());
 	measurePoints(base);
 	base["lastCommittedPoint"] = null;
-	base["startBinding"] =
-		rest["startBinding"] !== undefined ? completeBinding(rest["startBinding"], elbowed) : null;
-	base["endBinding"] =
-		rest["endBinding"] !== undefined ? completeBinding(rest["endBinding"], elbowed) : null;
-	base["startArrowhead"] = rest["startArrowhead"] ?? null;
-	base["endArrowhead"] = rest["endArrowhead"] ?? (type === "arrow" ? "arrow" : null);
+	completeBindings(base, rest, elbowed);
+	applyDefaults(base, rest, [
+		["startArrowhead", null],
+		["endArrowhead", type === "arrow" ? "arrow" : null],
+	]);
 	if (type !== "arrow") {
 		return;
 	}
 	base["elbowed"] = elbowed;
 	if (elbowed) {
-		completeElbowedFields(base, rest);
+		applyDefaults(base, rest, [
+			["fixedSegments", null],
+			["startIsSpecial", null],
+			["endIsSpecial", null],
+		]);
 	}
 }
 
@@ -158,12 +210,17 @@ function completeLinearFields(
  * @param base The element being completed.
  * @param rest The input fields.
  */
-function completeFreedrawFields(base: Record<string, unknown>, rest: Record<string, unknown>): void {
+function completeFreedrawFields(
+	base: Record<string, unknown>,
+	rest: Record<string, unknown>,
+): void {
 	base["points"] = rest["points"] ?? [];
 	measurePoints(base);
-	base["pressures"] = rest["pressures"] ?? [];
-	base["simulatePressure"] = rest["simulatePressure"] ?? true;
-	base["lastCommittedPoint"] = rest["lastCommittedPoint"] ?? null;
+	applyDefaults(base, rest, [
+		["pressures", []],
+		["simulatePressure", true],
+		["lastCommittedPoint", null],
+	]);
 }
 
 /**
@@ -172,10 +229,12 @@ function completeFreedrawFields(base: Record<string, unknown>, rest: Record<stri
  * @param rest The input fields.
  */
 function completeImageFields(base: Record<string, unknown>, rest: Record<string, unknown>): void {
-	base["fileId"] = rest["fileId"] ?? null;
-	base["status"] = rest["status"] ?? "pending";
-	base["scale"] = rest["scale"] ?? [1, 1];
-	base["crop"] = rest["crop"] ?? null;
+	applyDefaults(base, rest, [
+		["fileId", null],
+		["status", "pending"],
+		["scale", [1, 1]],
+		["crop", null],
+	]);
 }
 
 /**
@@ -186,8 +245,9 @@ function completeImageFields(base: Record<string, unknown>, rest: Record<string,
 function fontFamilyOf(rest: Record<string, unknown>): number {
 	const named = rest["fontFamily"];
 	return (
-		normalizeFontFamily(typeof named === "string" || typeof named === "number" ? named : undefined) ??
-		DEFAULT_FONT_FAMILY
+		normalizeFontFamily(
+			typeof named === "string" || typeof named === "number" ? named : undefined,
+		) ?? DEFAULT_FONT_FAMILY
 	);
 }
 
@@ -203,9 +263,11 @@ function completeTextFields(base: Record<string, unknown>, rest: Record<string, 
 	base["fontSize"] = rest["fontSize"] ?? DEFAULT_FONT_SIZE;
 	const fontFamily = fontFamilyOf(rest);
 	base["fontFamily"] = fontFamily;
-	base["textAlign"] = rest["textAlign"] ?? DEFAULT_TEXT_ALIGN;
-	base["verticalAlign"] = rest["verticalAlign"] ?? DEFAULT_VERTICAL_ALIGN;
-	base["autoResize"] = rest["autoResize"] ?? true;
+	applyDefaults(base, rest, [
+		["textAlign", DEFAULT_TEXT_ALIGN],
+		["verticalAlign", DEFAULT_VERTICAL_ALIGN],
+		["autoResize", true],
+	]);
 	base["lineHeight"] =
 		typeof rest["lineHeight"] === "number" ? rest["lineHeight"] : lineHeightOf(fontFamily);
 	base["containerId"] = rest["containerId"] ?? null;
@@ -235,34 +297,37 @@ function makeBaseElement(
 	stamps: Stamps,
 ): Record<string, unknown> {
 	const id = String(el["id"]);
-	return {
-		...rest,
-		angle: rest["angle"] ?? 0,
-		strokeColor: rest["strokeColor"] ?? "#1e1e1e",
-		backgroundColor: rest["backgroundColor"] ?? "transparent",
-		fillStyle: rest["fillStyle"] ?? "solid",
-		strokeWidth: rest["strokeWidth"] ?? DEFAULT_STROKE_WIDTH,
-		strokeStyle: rest["strokeStyle"] ?? "solid",
-		roughness: rest["roughness"] ?? 1,
-		opacity: rest["opacity"] ?? 100,
-		groupIds: rest["groupIds"] ?? [],
-		frameId: rest["frameId"] ?? null,
+	const base: Record<string, unknown> = { ...rest };
+	applyDefaults(base, rest, [
+		["angle", 0],
+		["strokeColor", "#1e1e1e"],
+		["backgroundColor", "transparent"],
+		["fillStyle", "solid"],
+		["strokeWidth", DEFAULT_STROKE_WIDTH],
+		["strokeStyle", "solid"],
+		["roughness", 1],
+		["opacity", 100],
+		["groupIds", []],
+		["frameId", null],
 		// Rounded, because `currentItemRoundness` is `round` and a box a human
 		// draws is rounded. `convertToExcalidrawElements` produced `null` here,
 		// which is that converter declining to choose rather than Excalidraw
 		// wanting square corners, and adopting it would have made every
 		// agent-drawn box differ from every user-drawn one.
-		roundness: rest["roundness"] ?? (isRoundedShape(el["type"]) ? { type: 3 } : null),
-		seed: rest["seed"] ?? stamps.seedFor(`${id}:seed`),
-		version: rest["version"] ?? 1,
-		versionNonce: rest["versionNonce"] ?? stamps.seedFor(`${id}:nonce`),
-		index: rest["index"] ?? null,
-		isDeleted: rest["isDeleted"] ?? false,
-		boundElements: rest["boundElements"] ?? null,
-		updated: stamps.updatedFor(el),
-		link: rest["link"] ?? null,
-		locked: rest["locked"] ?? false,
-	};
+		["roundness", isRoundedShape(el["type"]) ? { type: 3 } : null],
+		["seed", stamps.seedFor(`${id}:seed`)],
+		["version", 1],
+		["versionNonce", stamps.seedFor(`${id}:nonce`)],
+		["index", null],
+		["isDeleted", false],
+		["boundElements", null],
+	]);
+	base["updated"] = stamps.updatedFor(el);
+	applyDefaults(base, rest, [
+		["link", null],
+		["locked", false],
+	]);
+	return base;
 }
 
 /**
@@ -285,12 +350,11 @@ function sizeText(element: Record<string, unknown>): void {
 	if (element["autoResize"] === false) {
 		return;
 	}
-	const fontFamily =
-		typeof element["fontFamily"] === "number" ? element["fontFamily"] : DEFAULT_FONT_FAMILY;
+	const fontFamily = numberAt(element, "fontFamily", DEFAULT_FONT_FAMILY);
 	if (!canMeasure(fontFamily)) {
 		return;
 	}
-	const fontSize = typeof element["fontSize"] === "number" ? element["fontSize"] : DEFAULT_FONT_SIZE;
+	const fontSize = numberAt(element, "fontSize", DEFAULT_FONT_SIZE);
 	const lineHeight = typeof element["lineHeight"] === "number" ? element["lineHeight"] : undefined;
 	const measured = measureText(stringAt(element, "text") ?? "", fontSize, fontFamily, lineHeight);
 	element["width"] = measured.width;

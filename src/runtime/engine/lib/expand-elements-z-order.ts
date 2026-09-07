@@ -6,6 +6,9 @@
 import { generateKeyBetween } from "fractional-indexing";
 import type { ServerElement } from "@/runtime/engine/types";
 
+/** Anything that may carry an `index`. */
+type Indexed = { index?: string | null };
+
 /**
  * Whether a value is an index key the fractional-indexing scheme accepts.
  * @param key The candidate key.
@@ -93,16 +96,23 @@ function indexPosition(key: string): number | null {
  */
 function inZOrder<T extends { index?: string | null }>(elements: T[]): T[] {
 	return elements
-		.map((element, position) => ({ element, position }))
+		.map((element, position) => ({ element, position, key: indexKeyOf(element) }))
 		.toSorted((a, b) => {
-			const ai = typeof a.element.index === "string" ? a.element.index : null;
-			const bi = typeof b.element.index === "string" ? b.element.index : null;
-			if (ai !== null && bi !== null && ai !== bi) {
-				return ai < bi ? -1 : 1;
+			if (a.key !== null && b.key !== null && a.key !== b.key) {
+				return a.key < b.key ? -1 : 1;
 			}
 			return a.position - b.position;
 		})
 		.map(({ element }) => element);
+}
+
+/**
+ * The index key an element carries, when it carries one.
+ * @param element The element.
+ * @returns The key, or null.
+ */
+function indexKeyOf(element: Indexed): string | null {
+	return typeof element.index === "string" ? element.index : null;
 }
 
 /**
@@ -198,7 +208,7 @@ function repairIndices(board: Map<string, ServerElement>): ServerElement[] {
 	const wanted = settledIndices(ordered);
 	for (const [at, element] of ordered.entries()) {
 		const index = wanted[at];
-		if (index === null || index === undefined) {
+		if (typeof index !== "string") {
 			settled.push(element);
 			continue;
 		}

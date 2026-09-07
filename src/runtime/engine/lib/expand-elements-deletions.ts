@@ -3,6 +3,15 @@
 import type { ServerElement } from "@/runtime/engine/types";
 import { isRecord } from "@/runtime/engine/lib/unknown-record";
 
+/** A `boundElements` entry of a server element. */
+type BoundRef = NonNullable<ServerElement["boundElements"]>[number];
+
+/** The arrow bindings a deletion cuts. */
+interface BindingCuts {
+	startBinding?: null;
+	endBinding?: null;
+}
+
 /**
  * Whether a `boundElements` entry names a deleted element.
  * @param ref The entry.
@@ -20,7 +29,9 @@ function refersToGone(ref: unknown, gone: ReadonlySet<string>): boolean {
  * @returns True when the binding must be cut.
  */
 function bindsToGone(binding: unknown, gone: ReadonlySet<string>): boolean {
-	return isRecord(binding) && typeof binding["elementId"] === "string" && gone.has(binding["elementId"]);
+	return (
+		isRecord(binding) && typeof binding["elementId"] === "string" && gone.has(binding["elementId"])
+	);
 }
 
 /**
@@ -48,6 +59,38 @@ function removeOrphanedLabels(board: Map<string, ServerElement>, gone: Set<strin
 }
 
 /**
+ * The element's refs without those naming deleted elements, when any did.
+ * @param element The element.
+ * @param gone The deleted ids.
+ * @returns The refs to keep, or undefined when none were cut.
+ */
+function loosenedRefs(element: ServerElement, gone: ReadonlySet<string>): BoundRef[] | undefined {
+	const refs = Array.isArray(element.boundElements) ? element.boundElements : null;
+	if (refs === null) {
+		return undefined;
+	}
+	const kept = refs.filter((ref: BoundRef) => !refersToGone(ref, gone));
+	return kept.length === refs.length ? undefined : kept;
+}
+
+/**
+ * The arrow bindings that name deleted elements, each cut to null.
+ * @param element The element.
+ * @param gone The deleted ids.
+ * @returns The cuts; empty when nothing is cut.
+ */
+function bindingCuts(element: ServerElement, gone: ReadonlySet<string>): BindingCuts {
+	const cuts: BindingCuts = {};
+	if ("startBinding" in element && bindsToGone(element.startBinding, gone)) {
+		cuts.startBinding = null;
+	}
+	if ("endBinding" in element && bindsToGone(element.endBinding, gone)) {
+		cuts.endBinding = null;
+	}
+	return cuts;
+}
+
+/**
  * One element with every reference to a deleted element cut, or null when it
  * referenced none.
  * @param element The element.
@@ -58,20 +101,12 @@ function withoutGoneReferences(
 	element: ServerElement,
 	gone: ReadonlySet<string>,
 ): ServerElement | null {
-	const refs = Array.isArray(element.boundElements) ? element.boundElements : null;
-	const kept = refs?.filter((ref: unknown) => !refersToGone(ref, gone));
-	const loosened = refs !== null && kept !== undefined && kept.length !== refs.length;
-	const unbindStart = "startBinding" in element && bindsToGone(element.startBinding, gone);
-	const unbindEnd = "endBinding" in element && bindsToGone(element.endBinding, gone);
-	if (!loosened && !unbindStart && !unbindEnd) {
+	const kept = loosenedRefs(element, gone);
+	const cuts = bindingCuts(element, gone);
+	if (kept === undefined && Object.keys(cuts).length === 0) {
 		return null;
 	}
-	return {
-		...element,
-		...(loosened ? { boundElements: kept } : {}),
-		...(unbindStart ? { startBinding: null } : {}),
-		...(unbindEnd ? { endBinding: null } : {}),
-	};
+	return { ...element, ...(kept === undefined ? {} : { boundElements: kept }), ...cuts };
 }
 
 /**
