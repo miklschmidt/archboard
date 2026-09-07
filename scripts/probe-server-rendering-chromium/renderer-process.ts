@@ -1,6 +1,7 @@
-// The operating-system side of a renderer: its process tree, loopback port,
-// setsid process group, and the cleanup audit that proves nothing survived.
-import { existsSync, readFileSync, rmSync } from "node:fs";
+// The operating-system side of a renderer: its process tree, its loopback
+// port and its setsid process group. The audit that proves these were
+// released after a run lives in renderer-cleanup.ts.
+import { existsSync, readFileSync } from "node:fs";
 
 import {
 	processGroupExists,
@@ -12,9 +13,9 @@ import {
 	type CodexProcessGroupIdentity,
 } from "@/runtime/codex-process/process-group";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { cleanupPollMs, cleanupTimeoutMs } from "./proof-environment.ts";
+import { cleanupPollMs } from "./proof-environment.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import { errorMessage, snippet } from "./proof-values.ts";
+import { errorMessage } from "./proof-values.ts";
 
 const processGroups = createCodexProcessGroupOperations();
 
@@ -30,41 +31,6 @@ type RendererAcquisitionFailure =
 interface RendererProcessGroupCandidate {
 	readonly leader: ProcessIdentity;
 	readonly expectedGroup: number;
-}
-
-interface CleanupAudit {
-	pids: number[];
-	processGroup: number | null;
-	processGroupProven: boolean;
-	candidateLeaderPid: number | null;
-	candidateLeaderStartTime: string | null;
-	groupAbsent: boolean;
-	groupError: string | null;
-	survivors: number[];
-	leaderSettled: boolean;
-	stdoutSettled: boolean;
-	stderrSettled: boolean;
-	pipesSettled: boolean;
-	clean: boolean;
-	profile: string | null;
-	profileRemoved: boolean;
-	port: number | null;
-	portReleased: boolean;
-	stdout: string;
-	stderr: string;
-}
-
-/** Everything a renderer session holds that cleanup must release. */
-interface RendererResources {
-	child: Bun.Subprocess | null;
-	candidate: RendererProcessGroupCandidate | null;
-	processGroup: CodexProcessGroupIdentity | null;
-	stdout: Promise<string> | null;
-	stderr: Promise<string> | null;
-	profile: string | null;
-	port: number | null;
-	/** Every pid observed in the renderer's tree, sorted. */
-	pids: number[];
 }
 
 /**
@@ -161,7 +127,7 @@ function reserveLoopbackPort(): number {
 		fetch: () => new Response("reserved"),
 	});
 	const { port } = server;
-	server.stop(true);
+	void server.stop(true);
 	if (typeof port !== "number") {
 		throw new Error("Could not reserve a loopback port.");
 	}
@@ -192,7 +158,7 @@ function loopbackPortIsAvailable(port: number | null): boolean {
 	} catch {
 		return false;
 	} finally {
-		server?.stop(true);
+		void server?.stop(true);
 	}
 }
 
@@ -318,221 +284,6 @@ async function captureRendererProcessGroup(
 }
 
 /**
- * The text of a settled output pipe, or a marker when it did not settle.
- * @param promise The pipe's text promise, if the pipe was opened.
- * @param settled Whether the promise settled before the cleanup deadline.
- * @returns The (shortened) text or a marker.
- */
-async function settledPipeText(promise: Promise<string> | null, settled: boolean): Promise<string> {
-	if (!settled) {
-		return "[pipe did not settle before cleanup deadline]";
-	}
-	try {
-		return snippet(await (promise ?? Promise.resolve("")));
-	} catch (error) {
-		return `[pipe failed: ${errorMessage(error)}]`;
-	}
-}
-
-/**
- * Send SIGTERM to the renderer group; escalate to SIGKILL when it lingers.
- * @param group The proven group.
- * @param cleanupStartedAt The epoch millisecond cleanup started.
- * @param deadline The epoch millisecond deadline.
- * @returns Whether the group disappeared.
- */
-async function terminateGroup(
-	group: CodexProcessGroupIdentity,
-	cleanupStartedAt: number,
-	deadline: number,
-): Promise<boolean> {
-	processGroups.signal(group, "SIGTERM");
-	const absent = await waitForProcessGroupAbsence(
-		group,
-		cleanupStartedAt + Math.max(0, cleanupTimeoutMs - 1_000),
-	);
-	if (absent || !processGroupExists(group.pgid)) {
-		return absent;
-	}
-	processGroups.signal(group, "SIGKILL");
-	return await waitForProcessGroupAbsence(group, deadline);
-}
-
-interface GroupCleanup {
-	processGroup: CodexProcessGroupIdentity | null;
-	processGroupProven: boolean;
-	groupAbsent: boolean;
-	groupError: string | null;
-}
-
-/**
- * Prove the renderer's group when it was not yet proven at spawn time.
- * @param resources The renderer's resources.
- * @param deadline The epoch millisecond deadline.
- * @returns The group, whether it is proven, and any error proving it.
- */
-async function proveGroup(
-	resources: RendererResources,
-	deadline: number,
-): Promise<Pick<GroupCleanup, "processGroup" | "processGroupProven" | "groupError">> {
-	const { child, candidate, processGroup } = resources;
-	if (!child || processGroup) {
-		return { processGroup, processGroupProven: processGroup !== null, groupError: null };
-	}
-	if (!candidate) {
-		return {
-			processGroup,
-			processGroupProven: false,
-			groupError: "Chromium spawned without a guarded process-group candidate.",
-		};
-	}
-	try {
-		return {
-			processGroup: await captureRendererProcessGroup(candidate, deadline),
-			processGroupProven: true,
-			groupError: null,
-		};
-	} catch (error) {
-		return {
-			processGroup,
-			processGroupProven: false,
-			groupError: `Could not prove Chromium's process group during cleanup: ${errorMessage(error)}`,
-		};
-	}
-}
-
-/**
- * Prove and terminate the renderer's process group.
- * @param resources The renderer's resources.
- * @param cleanupStartedAt The epoch millisecond cleanup started.
- * @param deadline The epoch millisecond deadline.
- * @returns The group outcome.
- */
-async function cleanUpGroup(
-	resources: RendererResources,
-	cleanupStartedAt: number,
-	deadline: number,
-): Promise<GroupCleanup> {
-	const proven = await proveGroup(resources, deadline);
-	let groupAbsent = resources.child === null;
-	let { groupError } = proven;
-	const group = proven.processGroup;
-	if (group && processGroupExists(group.pgid)) {
-		try {
-			groupAbsent = await terminateGroup(group, cleanupStartedAt, deadline);
-		} catch (error) {
-			groupAbsent = false;
-			groupError = errorMessage(error);
-		}
-	}
-	if (group && groupError === null) {
-		groupAbsent = !processGroupExists(group.pgid);
-	}
-	return { ...proven, groupAbsent, groupError };
-}
-
-/**
- * Wait for every observed pid to leave procfs, until the deadline.
- * @param pids The observed pids.
- * @param deadline The epoch millisecond deadline.
- * @returns The pids still present.
- */
-async function waitForSurvivors(pids: readonly number[], deadline: number): Promise<number[]> {
-	let survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
-	while (survivors.length > 0 && Date.now() < deadline) {
-		// oxlint-disable-next-line no-await-in-loop -- polling procfs; each sleep must follow the previous check
-		await Bun.sleep(cleanupPollMs);
-		survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
-	}
-	return survivors;
-}
-
-/**
- * Whether the leader and its output pipes settled before the deadline.
- * @param resources The renderer's resources.
- * @param deadline The epoch millisecond deadline.
- * @returns The three settlement flags.
- */
-async function settleStreams(
-	resources: RendererResources,
-	deadline: number,
-): Promise<Pick<CleanupAudit, "leaderSettled" | "stdoutSettled" | "stderrSettled">> {
-	const { child, stdout, stderr } = resources;
-	const [leaderSettled, stdoutSettled, stderrSettled] = await Promise.all([
-		child ? settlesBefore(child.exited, deadline) : Promise.resolve(true),
-		stdout ? settlesBefore(stdout, deadline) : Promise.resolve(child === null),
-		stderr ? settlesBefore(stderr, deadline) : Promise.resolve(child === null),
-	]);
-	return { leaderSettled, stdoutSettled, stderrSettled };
-}
-
-/**
- * Remove the renderer profile once its group is gone.
- * @param profile The profile directory, if one was created.
- * @param groupAbsent Whether the group is gone.
- * @returns Whether no profile remains on disk.
- */
-function removeProfile(profile: string | null, groupAbsent: boolean): boolean {
-	if (groupAbsent && profile) {
-		rmSync(profile, { recursive: true, force: true });
-	}
-	return !profile || (groupAbsent && !existsSync(profile));
-}
-
-/**
- * Whether an audit proves every resource released.
- * @param audit The audit without its `clean` verdict.
- * @param resources The renderer's resources.
- * @returns The verdict.
- */
-function isClean(audit: Omit<CleanupAudit, "clean">, resources: RendererResources): boolean {
-	return (
-		audit.groupAbsent &&
-		audit.groupError === null &&
-		(!resources.child || audit.processGroupProven) &&
-		audit.survivors.length === 0 &&
-		audit.leaderSettled &&
-		audit.pipesSettled &&
-		audit.profileRemoved &&
-		audit.portReleased
-	);
-}
-
-/**
- * Release a renderer's resources and prove that they were released: the
- * process group, every observed pid, the output pipes, the profile and the port.
- * @param resources The renderer's resources.
- * @returns The audit, `clean` when nothing survived.
- */
-async function auditRendererCleanup(resources: RendererResources): Promise<CleanupAudit> {
-	const cleanupStartedAt = Date.now();
-	const deadline = cleanupStartedAt + cleanupTimeoutMs;
-	const group = await cleanUpGroup(resources, cleanupStartedAt, deadline);
-	const streams = await settleStreams(resources, deadline);
-	const survivors = await waitForSurvivors(resources.pids, deadline);
-	const profileRemoved = removeProfile(resources.profile, group.groupAbsent);
-	const audit: Omit<CleanupAudit, "clean"> = {
-		pids: resources.pids,
-		processGroup: group.processGroup?.pgid ?? resources.candidate?.expectedGroup ?? null,
-		processGroupProven: group.processGroupProven,
-		candidateLeaderPid: resources.candidate?.leader.pid ?? null,
-		candidateLeaderStartTime: resources.candidate?.leader.startTime ?? null,
-		groupAbsent: group.groupAbsent,
-		groupError: group.groupError,
-		survivors,
-		...streams,
-		pipesSettled: streams.stdoutSettled && streams.stderrSettled,
-		profile: resources.profile,
-		profileRemoved,
-		port: resources.port,
-		portReleased: loopbackPortIsAvailable(resources.port),
-		stdout: await settledPipeText(resources.stdout, streams.stdoutSettled),
-		stderr: await settledPipeText(resources.stderr, streams.stderrSettled),
-	};
-	return { ...audit, clean: isClean(audit, resources) };
-}
-
-/**
  * Send SIGTERM to a renderer's group, for the child-exit proof.
  * @param group The proven group.
  */
@@ -543,18 +294,18 @@ function terminateProcessGroupForProof(group: CodexProcessGroupIdentity): void {
 }
 
 export {
-	auditRendererCleanup,
 	captureRendererProcessGroup,
 	captureRendererProcessGroupCandidate,
 	injectAcquisitionFailure,
 	loopbackPortIsAvailable,
 	ownedProcessIds,
 	pipe,
+	processGroups,
 	reserveLoopbackPort,
 	residentBytes,
+	settlesBefore,
 	terminateProcessGroupForProof,
-	type CleanupAudit,
+	waitForProcessGroupAbsence,
 	type RendererAcquisitionFailure,
 	type RendererProcessGroupCandidate,
-	type RendererResources,
 };

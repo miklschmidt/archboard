@@ -259,7 +259,7 @@ function timeoutOracle(
 	name: string,
 	elapsedMs: number,
 ): TimeoutOracleRejectionError | RendererJobError {
-	if (!(error instanceof RendererJobError) || error.job !== name) {
+	if (!isJobFailure(error, name)) {
 		return new TimeoutOracleRejectionError("job", error);
 	}
 	if (error.phase["phase"] !== "intentional-timeout") {
@@ -268,14 +268,41 @@ function timeoutOracle(
 	if (!(error.cause instanceof CdpTimeoutError)) {
 		return new TimeoutOracleRejectionError("cause", error);
 	}
-	if (error.cause.method !== "Runtime.evaluate" || error.cause.timeoutMs !== jobTimeoutMs) {
+	if (!isEvaluateTimeout(error.cause)) {
 		return new TimeoutOracleRejectionError("method", error);
 	}
+	return withinTimeoutBounds(elapsedMs)
+		? error
+		: new TimeoutOracleRejectionError("duration", error);
+}
+
+/**
+ * Whether a failure is the named job's own renderer failure.
+ * @param error The failure to examine.
+ * @param name The expected job name.
+ * @returns Whether it is a `RendererJobError` for that job.
+ */
+function isJobFailure(error: unknown, name: string): error is RendererJobError {
+	return error instanceof RendererJobError && error.job === name;
+}
+
+/**
+ * Whether a DevTools timeout is the page evaluation's own job allowance.
+ * @param cause The timeout error.
+ * @returns Whether it timed out `Runtime.evaluate` at the job allowance.
+ */
+function isEvaluateTimeout(cause: CdpTimeoutError): boolean {
+	return cause.method === "Runtime.evaluate" && cause.timeoutMs === jobTimeoutMs;
+}
+
+/**
+ * Whether an elapsed time lands in the intentional timeout's window.
+ * @param elapsedMs How long the job took to fail.
+ * @returns Whether the duration is neither too early nor too late.
+ */
+function withinTimeoutBounds(elapsedMs: number): boolean {
 	const bounds = timeoutBounds();
-	if (elapsedMs < bounds.earliestMs || elapsedMs > bounds.latestMs) {
-		return new TimeoutOracleRejectionError("duration", error);
-	}
-	return error;
+	return elapsedMs >= bounds.earliestMs && elapsedMs <= bounds.latestMs;
 }
 
 /**
@@ -330,7 +357,27 @@ function isImmediateFailureCause(rejection: TimeoutOracleRejectionError): boolea
  */
 async function proveImmediateFailureIsNotTimeout(session: RendererSession): Promise<JsonRecord> {
 	const startedAt = performance.now();
-	let rejection: TimeoutOracleRejectionError | null = null;
+	const rejection = await rejectionOfImmediateFailure(session);
+	const elapsedMs = performance.now() - startedAt;
+	requireImmediateFailureRejection(rejection, elapsedMs);
+	const cause = rejection.cause instanceof RendererJobError ? rejection.cause : undefined;
+	return {
+		elapsedMs,
+		rejection: rejection.message,
+		phase: cause?.phase,
+		cause: cause?.cause instanceof Error ? cause.cause.name : "unknown",
+	};
+}
+
+/**
+ * Run the staged immediate-failure job and collect the oracle's rejection.
+ * @param session The renderer.
+ * @returns The rejection.
+ * @throws {Error} When the job did not fail, or failed in a way the oracle accepted.
+ */
+async function rejectionOfImmediateFailure(
+	session: RendererSession,
+): Promise<TimeoutOracleRejectionError> {
 	try {
 		await requireRuntimeEvaluateTimeout(
 			session,
@@ -338,16 +385,26 @@ async function proveImmediateFailureIsNotTimeout(session: RendererSession): Prom
 			"immediate-evaluation-failure",
 		);
 	} catch (error) {
-		if (!(error instanceof TimeoutOracleRejectionError)) {
-			throw error;
+		if (error instanceof TimeoutOracleRejectionError) {
+			return error;
 		}
-		rejection = error;
+		throw error;
 	}
-	const elapsedMs = performance.now() - startedAt;
-	if (!rejection || rejection.reason !== "cause") {
-		throw new Error(
-			`Immediate failure did not prove a non-timeout cause: ${rejection?.reason ?? "no rejection"}.`,
-		);
+	throw new Error("Immediate failure did not prove a non-timeout cause: no rejection.");
+}
+
+/**
+ * Refuse a rejection that is not the staged job being refused on its cause, promptly.
+ * @param rejection The oracle's rejection.
+ * @param elapsedMs How long the staged job took to fail.
+ * @throws {Error} When the rejection reason, job, phase or duration is wrong.
+ */
+function requireImmediateFailureRejection(
+	rejection: TimeoutOracleRejectionError,
+	elapsedMs: number,
+): void {
+	if (rejection.reason !== "cause") {
+		throw new Error(`Immediate failure did not prove a non-timeout cause: ${rejection.reason}.`);
 	}
 	if (!isImmediateFailureCause(rejection)) {
 		throw new Error(
@@ -359,13 +416,6 @@ async function proveImmediateFailureIsNotTimeout(session: RendererSession): Prom
 	if (elapsedMs > Math.ceil(jobTimeoutMs * 0.05)) {
 		throw new Error(`Immediate differently caused failure took ${elapsedMs.toFixed(1)} ms.`);
 	}
-	const cause = rejection.cause instanceof RendererJobError ? rejection.cause : undefined;
-	return {
-		elapsedMs,
-		rejection: rejection.message,
-		phase: cause?.phase,
-		cause: cause?.cause instanceof Error ? cause.cause.name : "unknown",
-	};
 }
 
 /**
@@ -398,21 +448,35 @@ async function proveRendererAcquisitionCleanup(
 		if (!(error instanceof RendererAcquisitionError)) {
 			throw error;
 		}
-		if (!error.cleanup.clean || !error.cleanup.profileRemoved || !error.cleanup.portReleased) {
-			throw new Error(
-				`Injected renderer acquisition ${stage} did not clean up: ${JSON.stringify(error.cleanup)}`,
-				{ cause: error },
-			);
-		}
-		if (!PRE_SPAWN_STAGES.has(stage) && !provedProcessCleanup(error)) {
-			throw new Error(
-				`Injected post-spawn acquisition ${stage} did not prove group and pipe cleanup: ${JSON.stringify(error.cleanup)}`,
-				{ cause: error },
-			);
-		}
+		requireRendererCleanupProven(error, stage);
 		return { stage, failureStage: error.stage, cleanup: error.cleanup };
 	}
 	throw new Error(`Injected renderer acquisition failure ${stage} was accepted.`);
+}
+
+/**
+ * Refuse an injected renderer failure whose cleanup left anything behind.
+ * @param error The acquisition failure.
+ * @param stage The stage that was injected.
+ * @throws {Error} When the audit does not prove every resource released.
+ */
+function requireRendererCleanupProven(
+	error: RendererAcquisitionError,
+	stage: (typeof RENDERER_ACQUISITION_STAGES)[number],
+): void {
+	const { cleanup } = error;
+	if (!cleanup.clean || !cleanup.profileRemoved || !cleanup.portReleased) {
+		throw new Error(
+			`Injected renderer acquisition ${stage} did not clean up: ${JSON.stringify(cleanup)}`,
+			{ cause: error },
+		);
+	}
+	if (!PRE_SPAWN_STAGES.has(stage) && !provedProcessCleanup(error)) {
+		throw new Error(
+			`Injected post-spawn acquisition ${stage} did not prove group and pipe cleanup: ${JSON.stringify(cleanup)}`,
+			{ cause: error },
+		);
+	}
 }
 
 /**

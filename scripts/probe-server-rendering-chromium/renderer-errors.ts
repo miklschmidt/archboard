@@ -2,7 +2,7 @@
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
 import { describeValue, errorMessage, type JsonRecord } from "./proof-values.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no alias root; @/ resolves only into src/
-import type { CleanupAudit } from "./renderer-process.ts";
+import type { CleanupAudit } from "./renderer-cleanup.ts";
 
 /** A renderer job that failed, with the page's own account of where. */
 class RendererJobError extends Error {
