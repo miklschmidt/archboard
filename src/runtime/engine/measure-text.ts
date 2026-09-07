@@ -43,33 +43,69 @@ const IGNORABLE = new Set([0x00ad, 0x200b, 0x200c, 0x200d, 0xfeff]);
 
 const SPACE = 0x20;
 
+/** A face and its parsed file. */
+interface Face {
+	descriptor: FaceDescriptor;
+	loaded: LoadedFace;
+}
+
 /**
- * The face a character comes from.
- *
- * Within a family the last `@font-face` whose `unicode-range` covers the
- * character wins, as CSS says; families are tried in the order the stack
- * declares them.
+ * Whether a face's declared `unicode-range` covers a character.
+ * @param descriptor The face.
+ * @param codepoint The character.
+ * @returns True when covered, or when the face declares no range.
  */
-function faceFor(
-	codepoint: number,
-	stack: readonly FaceDescriptor[][],
-): { descriptor: FaceDescriptor; loaded: LoadedFace } | undefined {
+function covers(descriptor: FaceDescriptor, codepoint: number): boolean {
+	const ranges = descriptor.ranges;
+	return ranges === null || ranges.some(([a, b]) => codepoint >= a && codepoint <= b);
+}
+
+/**
+ * The parsed face for a descriptor, or undefined when its file cannot be read.
+ * @param descriptor The face.
+ * @returns The parsed face.
+ */
+function tryLoad(descriptor: FaceDescriptor): LoadedFace | undefined {
+	try {
+		return loadFace(descriptor.file);
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * The face within one family that draws a character: the last `@font-face`
+ * whose `unicode-range` covers it and whose file has the glyph, as CSS says.
+ * @param codepoint The character.
+ * @param faces The family's faces in declaration order.
+ * @returns The face, or undefined when the family has none for it.
+ */
+function familyFaceFor(codepoint: number, faces: readonly FaceDescriptor[]): Face | undefined {
+	for (let i = faces.length - 1; i >= 0; i--) {
+		const descriptor = faces[i];
+		if (!descriptor || !covers(descriptor, codepoint)) {
+			continue;
+		}
+		const loaded = tryLoad(descriptor);
+		if (loaded?.font.cmap.has(codepoint)) {
+			return { descriptor, loaded };
+		}
+	}
+	return undefined;
+}
+
+/**
+ * The face a character comes from, trying families in the order the stack
+ * declares them.
+ * @param codepoint The character.
+ * @param stack Each family's faces, first family first.
+ * @returns The face, or undefined when no shipped file covers the character.
+ */
+function faceFor(codepoint: number, stack: readonly FaceDescriptor[][]): Face | undefined {
 	for (const faces of stack) {
-		for (let i = faces.length - 1; i >= 0; i--) {
-			const descriptor = faces[i] as FaceDescriptor;
-			const ranges = descriptor.ranges;
-			if (ranges !== null && !ranges.some(([a, b]) => codepoint >= a && codepoint <= b)) {
-				continue;
-			}
-			let loaded: LoadedFace;
-			try {
-				loaded = loadFace(descriptor.file);
-			} catch {
-				continue;
-			}
-			if (loaded.font.cmap.has(codepoint)) {
-				return { descriptor, loaded };
-			}
+		const face = familyFaceFor(codepoint, faces);
+		if (face) {
+			return face;
 		}
 	}
 	return undefined;
@@ -83,6 +119,9 @@ function faceFor(
  * the declared `unicode-range` rather than by which file has the glyph. On the
  * version shipped today those five agree on `A`'s advance, so no width can
  * tell the two rules apart and this can.
+ * @param codepoint The character.
+ * @param fontFamily The family number.
+ * @returns The woff2 path, or undefined when nothing shipped covers the character.
  */
 export function faceFileFor(codepoint: number, fontFamily: number): string | undefined {
 	return faceFor(codepoint, faceStack(fontFamily))?.descriptor.file;
@@ -95,12 +134,158 @@ export interface LineMeasurement {
 	missing: string[];
 }
 
+/** Consecutive characters of one word drawn from one face. */
+interface Run {
+	face: LoadedFace | undefined;
+	chars: string[];
+}
+
+/** A word, or one space, as the runs it is shaped in. */
+interface Word {
+	runs: Run[];
+	isSpace: boolean;
+}
+
+/**
+ * Split a line into words and each word into single-face runs. A subset
+ * boundary changes which file a glyph is drawn from but not whether it kerns
+ * against its neighbour, while a space stops shaping outright.
+ * @param text The line.
+ * @param stack The family's face stack.
+ * @returns The words in order; ignorable characters are dropped.
+ */
+function wordsOf(text: string, stack: readonly FaceDescriptor[][]): Word[] {
+	const words: Word[] = [];
+	let word: Word | null = null;
+	for (const ch of text) {
+		const codepoint = ch.codePointAt(0) ?? 0;
+		if (IGNORABLE.has(codepoint)) {
+			continue;
+		}
+		word = wordFor(words, word, codepoint === SPACE);
+		appendToRun(word, ch, faceFor(codepoint, stack)?.loaded);
+	}
+	return words;
+}
+
+/**
+ * The word a character belongs to: the one being built, or a new one for the
+ * first character, any space, and the character after a space.
+ * @param words The words so far, extended when a new one opens.
+ * @param word The word being built, or null before the first character.
+ * @param isSpace Whether the character is a space.
+ * @returns The word to append to.
+ */
+function wordFor(words: Word[], word: Word | null, isSpace: boolean): Word {
+	if (word && !isSpace && !word.isSpace) {
+		return word;
+	}
+	const next: Word = { runs: [], isSpace };
+	words.push(next);
+	return next;
+}
+
+/**
+ * Append a character to the word's last run, or open a new run when the face
+ * changes. The parsed face is the run key, not the descriptor, because
+ * `loadFace` caches one object per file.
+ * @param word The word.
+ * @param ch The character.
+ * @param face The character's face.
+ */
+function appendToRun(word: Word, ch: string, face: LoadedFace | undefined): void {
+	let run = word.runs[word.runs.length - 1];
+	if (!run || run.face !== face) {
+		run = { face, chars: [] };
+		word.runs.push(run);
+	}
+	run.chars.push(ch);
+}
+
+/** The glyph a run ended on, so the next run can kern against it. */
+interface Previous {
+	face: LoadedFace;
+	glyph: number;
+}
+
+/**
+ * The advance of one run in font units, kerned against the run before it
+ * when both come from the same face.
+ * @param run The run, whose face is set.
+ * @param face The run's face.
+ * @param previous The glyph before the run, when one kerns into it.
+ * @returns The units and the run's last glyph.
+ */
+function runUnits(
+	run: Run,
+	face: LoadedFace,
+	previous: Previous | null,
+): { units: number; last: Previous | null } {
+	const { font, gsub } = face;
+	let glyphs = run.chars.map((ch) => font.cmap.get(ch.codePointAt(0) ?? 0) ?? 0);
+	if (gsub) {
+		glyphs = gsub.substitute(glyphs);
+	}
+	let units = 0;
+	let last = previous;
+	for (const glyph of glyphs) {
+		units += (font.advances[glyph] ?? 0) + kernInto(last, face, glyph);
+		last = { face, glyph };
+	}
+	return { units, last };
+}
+
+/**
+ * The pair kern between the previous glyph and this one, when both are drawn
+ * from the same face and it kerns at all.
+ * @param last The previous glyph, when any.
+ * @param face The current face.
+ * @param glyph The current glyph.
+ * @returns The kern in font units, 0 when none applies.
+ */
+function kernInto(last: Previous | null, face: LoadedFace, glyph: number): number {
+	if (last?.face !== face || !face.gpos) {
+		return 0;
+	}
+	return face.gpos.kern(last.glyph, glyph);
+}
+
+/**
+ * Sum every run's advance, per units-per-em. Advances are integers in font
+ * units, so they are summed as integers and scaled once —
+ * `units * fontSize / unitsPerEm`, in that order, per distinct units-per-em
+ * rather than per run. Every other arrangement leaves an ulp behind:
+ * dividing as each advance is added gave `AuthService` 114.50000000000001
+ * against the browser's 114.5, scaling an em figure afterwards gave `Queue`
+ * 58.760000000000005, and scaling per run gave `a standalone caption`
+ * 203.66000000000003 because it is three words. A note carrying a width one
+ * ulp off a browser's is a difference something downstream has to either
+ * notice or hide.
+ * @param words The line's words.
+ * @param missing Collects the characters no face covers.
+ * @returns Units by units-per-em.
+ */
+function unitsPerEm(words: readonly Word[], missing: string[]): Map<number, number> {
+	const unitsPer = new Map<number, number>();
+	for (const { runs } of words) {
+		let previous: Previous | null = null;
+		for (const run of runs) {
+			if (!run.face) {
+				missing.push(...run.chars);
+				previous = null;
+				continue;
+			}
+			const measured = runUnits(run, run.face, previous);
+			previous = measured.last;
+			const em = run.face.font.unitsPerEm;
+			unitsPer.set(em, (unitsPer.get(em) ?? 0) + measured.units);
+		}
+	}
+	return unitsPer;
+}
+
 /**
  * One line of text, in pixels at `fontSize`.
- *
- * Split into words first and into single-face runs inside a word, because a
- * subset boundary changes which file a glyph is drawn from but not whether it
- * kerns against its neighbour — while a space stops shaping outright.
  *
  * A kern across a subset boundary is left at zero. Chrome applies one for
  * Nunito, and neither of the two files says what it is: they number their
@@ -108,84 +293,31 @@ export interface LineMeasurement {
  * Chrome's answer. It costs at most 2.34 px at fontSize 20, on 511 of 58,564
  * Latin pairs, in the one family that shows it. Excalifont — the family
  * archboard writes — has no disagreement of this kind anywhere.
+ * @param text The line.
+ * @param fontSize The font size in pixels.
+ * @param fontFamily The family number.
+ * @returns The width and the characters nothing covered.
  */
 export function measureLine(text: string, fontSize: number, fontFamily: number): LineMeasurement {
 	const stack = faceStack(fontFamily);
 	if (stack.length === 0) {
 		return { width: 0, missing: Array.from(text) };
 	}
-
-	interface Run {
-		face: LoadedFace | undefined;
-		chars: string[];
-	}
-	const words: Array<{ runs: Run[] }> = [];
-	let word: { runs: Run[]; isSpace: boolean } | null = null;
-
-	for (const ch of text) {
-		const codepoint = ch.codePointAt(0) as number;
-		if (IGNORABLE.has(codepoint)) {
-			continue;
-		}
-		const isSpace = codepoint === SPACE;
-		if (!word || isSpace || word.isSpace) {
-			word = { runs: [], isSpace };
-			words.push(word);
-		}
-		// The parsed face, not the descriptor, because runs are split on face
-		// identity and `loadFace` is what caches one object per file.
-		const face = faceFor(codepoint, stack)?.loaded;
-		let run = word.runs[word.runs.length - 1];
-		if (!run || run.face !== face) {
-			run = { face, chars: [] };
-			word.runs.push(run);
-		}
-		run.chars.push(ch);
-	}
-
-	// Advances are integers in font units, so they are summed as integers and
-	// scaled once — `units * fontSize / unitsPerEm`, in that order, per distinct
-	// units-per-em rather than per run. Every other arrangement leaves an ulp
-	// behind: dividing as each advance is added gave `AuthService`
-	// 114.50000000000001 against the browser's 114.5, scaling an em figure
-	// afterwards gave `Queue` 58.760000000000005, and scaling per run gave
-	// `a standalone caption` 203.66000000000003 because it is three words. A
-	// note carrying a width one ulp off a browser's is a difference something
-	// downstream has to either notice or hide.
-	const unitsPer = new Map<number, number>();
 	const missing: string[] = [];
-	for (const { runs } of words) {
-		let previous: { face: LoadedFace; glyph: number } | null = null;
-		for (const run of runs) {
-			if (!run.face) {
-				missing.push(...run.chars);
-				previous = null;
-				continue;
-			}
-			const { font, gsub, gpos } = run.face;
-			let glyphs = run.chars.map((ch) => font.cmap.get(ch.codePointAt(0) as number) as number);
-			if (gsub) {
-				glyphs = gsub.substitute(glyphs);
-			}
-			let units = 0;
-			for (const glyph of glyphs) {
-				units += font.advances[glyph] ?? 0;
-				if (previous && previous.face === run.face && gpos) {
-					units += gpos.kern(previous.glyph, glyph);
-				}
-				previous = { face: run.face, glyph };
-			}
-			unitsPer.set(font.unitsPerEm, (unitsPer.get(font.unitsPerEm) ?? 0) + units);
-		}
-	}
 	let width = 0;
-	for (const [unitsPerEm, units] of unitsPer) {
-		width += (units * fontSize) / unitsPerEm;
+	for (const [em, units] of unitsPerEm(wordsOf(text, stack), missing)) {
+		width += (units * fontSize) / em;
 	}
 	return { width, missing };
 }
 
-/** One line of text, in pixels at `fontSize`. */
+/**
+ * One line of text, in pixels at `fontSize`.
+ * @param text The line.
+ * @param fontSize The font size in pixels.
+ * @param fontFamily The family number.
+ * @returns The width.
+ */
 export function measureLineWidth(text: string, fontSize: number, fontFamily: number): number {
 	return measureLine(text, fontSize, fontFamily).width;
 }
@@ -204,6 +336,11 @@ export interface TextSize {
  * `lineHeight` is taken from the element when it carries one, because a board
  * that has been through an older Excalidraw may hold a different value and the
  * element's own record is what that Excalidraw will render from.
+ * @param text The text, possibly several lines.
+ * @param fontSize The font size in pixels.
+ * @param fontFamily The family number.
+ * @param lineHeight The element's own line height, when it carries one.
+ * @returns The size and the characters nothing covered.
  */
 export function measureText(
 	text: string,
@@ -211,7 +348,7 @@ export function measureText(
 	fontFamily: number,
 	lineHeight?: number,
 ): TextSize {
-	const lines = String(text ?? "").split("\n");
+	const lines = text.split("\n");
 	let width = 0;
 	const missing: string[] = [];
 	for (const line of lines) {

@@ -50,7 +50,7 @@ import { copyElements } from "@/runtime/engine/board-store";
 import { diffBoardStates, narrateChange } from "@/runtime/engine/changes";
 import type { SemanticChange } from "@/runtime/engine/changes";
 import { DEFAULT_SETTLE_MAX_MS, DEFAULT_SETTLE_MS } from "@/shared/timing/timing";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 
 /** Who moved. Determined by which surface reported the mutation, not by content. */
 type ChangeOrigin = "human" | "agent" | "mixed";

@@ -431,7 +431,7 @@ async function awaitCanvasReadiness(spawned: SpawnedCanvas, timeoutMs: number): 
 	const deadline = Date.now() + timeoutMs;
 	const deferred: { failure: Error | null } = { failure: null };
 	while (Date.now() < deadline) {
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- readiness is one probe after another until the deadline
+		// oxlint-disable-next-line no-await-in-loop -- readiness is one probe after another until the deadline
 		if (isCanvasHealth(await healthOrNull(400))) {
 			markCanvasIdentityVerified();
 			spawned.protocol.destroy();
@@ -445,7 +445,7 @@ async function awaitCanvasReadiness(spawned: SpawnedCanvas, timeoutMs: number): 
 		if (failure !== null) {
 			return cleanupFailedStart(spawned, failure);
 		}
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- the poll interval between probes
+		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
 		await new Promise((resolve) => setTimeout(resolve, 250));
 	}
 	return cleanupFailedStart(
@@ -538,7 +538,7 @@ function verifiedCanvasPid(health: HealthStatus): number | null {
 async function awaitCanvasStop(port: number, pid: number): Promise<StopResult> {
 	const deadline = Date.now() + 5000;
 	while (Date.now() < deadline) {
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- one probe after another until the server is gone
+		// oxlint-disable-next-line no-await-in-loop -- one probe after another until the server is gone
 		const postSignalHealth = await healthOrNull(300);
 		if (!postSignalHealth) {
 			removePidFile(port);
@@ -548,7 +548,7 @@ async function awaitCanvasStop(port: number, pid: number): Promise<StopResult> {
 		if (postSignalHold) {
 			throw postSignalHold;
 		}
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- the poll interval between probes
+		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
 		await new Promise((resolve) => setTimeout(resolve, 200));
 	}
 	throw new Error(`Canvas server (pid ${pid}) did not stop within 5s.`);

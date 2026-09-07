@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { LOCK_WATCH_MS } from "@/shared/timing/timing";
 import { VAULT_STATE_DIR, normalizeBoardKey, requireVaultRoot } from "@/runtime/engine/board";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import type { LockHandoff, LockHolder, LockRecord, LockSink } from "@/runtime/engine/lib/board-lock-contracts";
 
 const processAnnounced = new Map<string, string>();

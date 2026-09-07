@@ -131,5 +131,5 @@ export function forceCloseLogger(target: winston.Logger = logger): void {
 export { logger };
 // Modules outside the runtime area still import the default; it goes when
 // TASK-151 lands in every area.
-// oxlint-disable-next-line eslint(no-restricted-exports) -- other areas import the default until TASK-151 lands everywhere
+// oxlint-disable-next-line no-restricted-exports -- other areas import the default until TASK-151 lands everywhere
 export default logger;

@@ -338,7 +338,7 @@ async function freezeCanvas(
 		!operations.canvasStopped() &&
 		operations.now() < deadlineAtMs
 	) {
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- polling the frozen state one interval at a time
+		// oxlint-disable-next-line no-await-in-loop -- polling the frozen state one interval at a time
 		await operations.wait(Math.min(timing.pollMs, remaining(operations.now, deadlineAtMs)));
 	}
 	return operations.canvasExited() || operations.canvasStopped();
@@ -431,7 +431,7 @@ class TransferredGroups {
 	 */
 	async waitWhileOwned(pollMs: number, untilMs: number): Promise<void> {
 		while (this.anyOwned() && this.operations.now() < untilMs) {
-			// oxlint-disable-next-line eslint(no-await-in-loop) -- polling group state one interval at a time
+			// oxlint-disable-next-line no-await-in-loop -- polling group state one interval at a time
 			await this.operations.wait(Math.min(pollMs, remaining(this.operations.now, untilMs)));
 			this.reinspectOwned();
 		}
@@ -617,7 +617,7 @@ async function awaitApplicationProof(
 ): Promise<Exclude<ProtocolStep, { kind: "continue" }>> {
 	const { operations, protocol } = options;
 	while (operations.now() < applicationGraceAtMs) {
-		// oxlint-disable-next-line eslint(no-await-in-loop) -- protocol events are consumed in order
+		// oxlint-disable-next-line no-await-in-loop -- protocol events are consumed in order
 		const event = await protocol.next(remaining(operations.now, applicationGraceAtMs));
 		const step = protocolStep(event, options.canvasPid, groups);
 		if (step.kind !== "continue") {

@@ -26,7 +26,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseFont, type ParsedFont } from "@/runtime/engine/font-file";
-import { buildGpos, buildGsub, type Kerning, type Substitutions } from "@/runtime/engine/font-layout";
+import {
+	buildGpos,
+	buildGsub,
+	type Kerning,
+	type Substitutions,
+} from "@/runtime/engine/font-layout";
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
@@ -68,10 +73,23 @@ const FALLBACKS: Record<string, string[]> = { Excalifont: ["Xiaolai"] };
 // ── Reading the bundle ──────────────────────────────────────────────────────
 
 /**
+ * A capture group of a match that the pattern always fills; "" where the
+ * pattern did not.
+ * @param match The match.
+ * @param index The group number.
+ * @returns The captured text.
+ */
+function group(match: RegExpMatchArray, index: number): string {
+	return match[index] ?? "";
+}
+
+/**
  * The chunk carrying the font registry.
  *
  * Named by content hash, so it is found by what it contains. Two markers,
  * because one of them alone matches often enough to be worth pairing.
+ * @returns The chunk's path and source.
+ * @throws {Error} When the bundle or the registry chunk is missing.
  */
 function registryChunk(): { file: string; source: string } {
 	let entries: string[];
@@ -96,28 +114,43 @@ function registryChunk(): { file: string; source: string } {
 	);
 }
 
-/** `U+20-7e,U+a0` and friends, as ranges. */
+/**
+ * One part of a `unicode-range` descriptor as a range: `U+20-7e`, `U+4??`
+ * or a single code point.
+ * @param part The part, without its `U+` prefix.
+ * @returns The inclusive range.
+ */
+function parseRangePart(part: string): [number, number] {
+	if (part.includes("-")) {
+		const [a, b] = part.split("-");
+		return [parseInt(a ?? "", 16), parseInt(b ?? "", 16)];
+	}
+	if (part.includes("?")) {
+		return [parseInt(part.replace(/\?/g, "0"), 16), parseInt(part.replace(/\?/g, "f"), 16)];
+	}
+	const value = parseInt(part, 16);
+	return [value, value];
+}
+
+/**
+ * `U+20-7e,U+a0` and friends, as ranges.
+ * @param spec The descriptor.
+ * @returns The ranges, or null for no descriptor (the whole of unicode).
+ */
 function parseUnicodeRange(spec: string | undefined): Array<[number, number]> | null {
 	if (!spec) {
 		return null;
 	}
-	const ranges: Array<[number, number]> = [];
-	for (const part of spec.split(/,\s*/)) {
-		const body = part.trim().replace(/^U\+/i, "");
-		if (body.includes("-")) {
-			const [a, b] = body.split("-");
-			ranges.push([parseInt(a as string, 16), parseInt(b as string, 16)]);
-		} else if (body.includes("?")) {
-			ranges.push([parseInt(body.replace(/\?/g, "0"), 16), parseInt(body.replace(/\?/g, "f"), 16)]);
-		} else {
-			const value = parseInt(body, 16);
-			ranges.push([value, value]);
-		}
-	}
-	return ranges;
+	return spec.split(/,\s*/).map((part) => parseRangePart(part.trim().replace(/^U\+/i, "")));
 }
 
-/** Read a `{...}` object literal starting at `open`, balanced. */
+/**
+ * Read a `{...}` object literal starting at `open`, balanced.
+ * @param source The bundle source.
+ * @param open The offset of the opening brace.
+ * @returns The literal's text.
+ * @throws {Error} When the braces never balance.
+ */
 function objectLiteralAt(source: string, open: number): string {
 	let depth = 0;
 	for (let i = open; i < source.length; i++) {
@@ -135,6 +168,182 @@ function objectLiteralAt(source: string, open: number): string {
 }
 
 /**
+ * `var x="./fonts/Family/File.woff2"`: the files, by minified variable name.
+ * @param source The bundle source.
+ * @returns File paths by variable.
+ */
+function readFiles(source: string): Map<string, string> {
+	const files = new Map<string, string>();
+	for (const m of source.matchAll(/var\s+([A-Za-z_$][\w$]*)\s*=\s*"(\.\/fonts\/[^"]+)"/g)) {
+		files.set(group(m, 1), group(m, 2));
+	}
+	return files;
+}
+
+/**
+ * `{LATIN:"U+...",...}`: the shared unicode-range constants.
+ * @param source The bundle source.
+ * @returns Descriptors by constant name.
+ */
+function readSharedRanges(source: string): Map<string, string> {
+	const sharedRanges = new Map<string, string>();
+	const rangesAt = source.indexOf('{LATIN:"');
+	if (rangesAt !== -1) {
+		for (const m of objectLiteralAt(source, rangesAt).matchAll(/([A-Z_]+):"([^"]+)"/g)) {
+			sharedRanges.set(group(m, 1), group(m, 2));
+		}
+	}
+	return sharedRanges;
+}
+
+/**
+ * The faces one `[{uri:x,descriptors:{...}}]` list declares.
+ * @param body The list's source.
+ * @param files File paths by variable.
+ * @param sharedRanges Descriptors by constant name.
+ * @returns The faces whose file is known.
+ */
+function readFaces(
+	body: string,
+	files: ReadonlyMap<string, string>,
+	sharedRanges: ReadonlyMap<string, string>,
+): FaceDescriptor[] {
+	const faces: FaceDescriptor[] = [];
+	const entry =
+		/\{uri:([A-Za-z_$][\w$]*)(?:,descriptors:\{unicodeRange:(?:"([^"]*)"|(\w+)\.(\w+))(?:,\w+:"[^"]*")*\})?\}/g;
+	for (const e of body.matchAll(entry)) {
+		const uri = files.get(group(e, 1));
+		if (!uri) {
+			continue;
+		}
+		const spec = e[2] ?? (e[4] ? sharedRanges.get(e[4]) : undefined);
+		faces.push({
+			file: path.join(EXCALIDRAW_DIST, uri.replace(/^\.\//, "")),
+			ranges: parseUnicodeRange(spec),
+		});
+	}
+	return faces;
+}
+
+/**
+ * `var y=[{uri:x,descriptors:{...}}]`: every family's face list, by variable.
+ * @param source The bundle source.
+ * @param files File paths by variable.
+ * @param sharedRanges Descriptors by constant name.
+ * @returns Face lists by variable, omitting empty ones.
+ */
+function readFaceLists(
+	source: string,
+	files: ReadonlyMap<string, string>,
+	sharedRanges: ReadonlyMap<string, string>,
+): Map<string, FaceDescriptor[]> {
+	const faceLists = new Map<string, FaceDescriptor[]>();
+	for (const m of source.matchAll(/var\s+([A-Za-z_$][\w$]*)\s*=\s*(\[\{uri:[^;]*?\])\s*;/g)) {
+		const faces = readFaces(group(m, 2), files, sharedRanges);
+		if (faces.length > 0) {
+			faceLists.set(group(m, 1), faces);
+		}
+	}
+	return faceLists;
+}
+
+/**
+ * `Ie={Virgil:1,Helvetica:2,...}`: the `fontFamily` numbers.
+ * @param source The bundle source.
+ * @returns Numbers by family name.
+ */
+function readNumbers(source: string): Map<string, number> {
+	const numbers = new Map<string, number>();
+	const enumAt = source.indexOf("{Virgil:");
+	if (enumAt !== -1) {
+		for (const m of objectLiteralAt(source, enumAt).matchAll(/(?:"([^"]+)"|(\w+)):(\d+)/g)) {
+			numbers.set(m[1] ?? group(m, 2), Number(m[3]));
+		}
+	}
+	return numbers;
+}
+
+/**
+ * `{[Ie.Excalifont]:{metrics:{...,lineHeight:1.25},...}}`: the metrics, by
+ * family. Keyed through the same enum, so the names line up.
+ * @param source The bundle source.
+ * @returns Line heights by family name.
+ */
+function readLineHeights(source: string): Map<string, number> {
+	const lineHeights = new Map<string, number>();
+	const metrics = /\[\w+(?:\.(\w+)|\["([^"]+)"\])\]:\{metrics:\{[^}]*lineHeight:([\d.]+)\}/g;
+	for (const m of source.matchAll(metrics)) {
+		lineHeights.set(m[1] ?? group(m, 2), Number(m[3]));
+	}
+	return lineHeights;
+}
+
+/**
+ * The family name one registration call gives: a string literal, or a
+ * variable such as `Mn="Xiaolai"` resolved against the source.
+ * @param source The bundle source.
+ * @param m The registration match.
+ * @returns The name, or undefined when the variable has no literal.
+ */
+function registeredName(source: string, m: RegExpMatchArray): string | undefined {
+	if (m[1] !== undefined) {
+		return m[1];
+	}
+	const literal = source.match(new RegExp(`\\b${group(m, 2)}\\s*=\\s*"([^"]+)"`));
+	return literal?.[1];
+}
+
+/** What one registration call in the bundle's `init()` says. */
+interface Registration {
+	name: string;
+	faces: FaceDescriptor[];
+}
+
+/**
+ * `init(){...n("Excalifont",...sc)...}`: which face list each family gets.
+ * @param source The bundle source.
+ * @param faceLists Face lists by variable.
+ * @returns Every registration whose name and faces resolve, in source order.
+ */
+function readRegistrations(
+	source: string,
+	faceLists: ReadonlyMap<string, FaceDescriptor[]>,
+): Registration[] {
+	const out: Registration[] = [];
+	for (const m of source.matchAll(/\bn\((?:"([^"]+)"|(\w+)),\.\.\.([A-Za-z_$][\w$]*)\)/g)) {
+		const name = registeredName(source, m);
+		const faces = faceLists.get(group(m, 3));
+		if (name !== undefined && faces) {
+			out.push({ name, faces });
+		}
+	}
+	return out;
+}
+
+/**
+ * One family's descriptor, with the number and line height the bundle gives
+ * it when it gives them.
+ * @param name The family name.
+ * @param faces The family's faces.
+ * @param numbers Numbers by family name.
+ * @param lineHeights Line heights by family name.
+ * @returns The descriptor.
+ */
+function describeFamily(
+	name: string,
+	faces: FaceDescriptor[],
+	numbers: ReadonlyMap<string, number>,
+	lineHeights: ReadonlyMap<string, number>,
+): FamilyDescriptor {
+	const descriptor: FamilyDescriptor = { name, lineHeight: lineHeights.get(name) ?? 1.25, faces };
+	const number = numbers.get(name);
+	if (number !== undefined) {
+		descriptor.fontFamily = number;
+	}
+	return descriptor;
+}
+
+/**
  * Every family Excalidraw registers, with its files and its line height.
  *
  * Four things are pulled out of the minified bundle, in the order they depend
@@ -146,96 +355,24 @@ function objectLiteralAt(source: string, open: number): string {
  *   `init(){...n("Excalifont",...y)...}`  which face list belongs to which name
  *
  * The last is what makes the directory name irrelevant: `Lilita` on disk is
- * the family `Lilita One`, and only the registration says so.
+ * the family `Lilita One`, and only the registration says so. A family
+ * registered twice keeps the registration with more faces.
+ * @returns Families by name.
+ * @throws {Error} When the bundle yields no families.
  */
 function readRegistry(): Map<string, FamilyDescriptor> {
 	const { source } = registryChunk();
-
-	const files = new Map<string, string>();
-	for (const m of source.matchAll(/var\s+([A-Za-z_$][\w$]*)\s*=\s*"(\.\/fonts\/[^"]+)"/g)) {
-		files.set(m[1] as string, m[2] as string);
-	}
-
-	const sharedRanges = new Map<string, string>();
-	const rangesAt = source.indexOf('{LATIN:"');
-	if (rangesAt !== -1) {
-		for (const m of objectLiteralAt(source, rangesAt).matchAll(/([A-Z_]+):"([^"]+)"/g)) {
-			sharedRanges.set(m[1] as string, m[2] as string);
-		}
-	}
-
-	const faceLists = new Map<string, FaceDescriptor[]>();
-	for (const m of source.matchAll(/var\s+([A-Za-z_$][\w$]*)\s*=\s*(\[\{uri:[^;]*?\])\s*;/g)) {
-		const faces: FaceDescriptor[] = [];
-		const body = m[2] as string;
-		const entry =
-			/\{uri:([A-Za-z_$][\w$]*)(?:,descriptors:\{unicodeRange:(?:"([^"]*)"|(\w+)\.(\w+))(?:,\w+:"[^"]*")*\})?\}/g;
-		for (const e of body.matchAll(entry)) {
-			const uri = files.get(e[1] as string);
-			if (!uri) {
-				continue;
-			}
-			const spec = e[2] ?? (e[4] ? sharedRanges.get(e[4]) : undefined);
-			faces.push({
-				file: path.join(EXCALIDRAW_DIST, uri.replace(/^\.\//, "")),
-				ranges: parseUnicodeRange(spec),
-			});
-		}
-		if (faces.length > 0) {
-			faceLists.set(m[1] as string, faces);
-		}
-	}
-
-	// `Ie={Virgil:1,Helvetica:2,...}` — the `fontFamily` numbers.
-	const numbers = new Map<string, number>();
-	const enumAt = source.indexOf("{Virgil:");
-	if (enumAt !== -1) {
-		for (const m of objectLiteralAt(source, enumAt).matchAll(/(?:"([^"]+)"|(\w+)):(\d+)/g)) {
-			numbers.set((m[1] ?? m[2]) as string, Number(m[3]));
-		}
-	}
-
-	// `{[Ie.Excalifont]:{metrics:{...,lineHeight:1.25},...}}` — the metrics, by
-	// family. Keyed through the same enum, so the names line up.
-	const lineHeights = new Map<string, number>();
-	const metrics = /\[\w+(?:\.(\w+)|\["([^"]+)"\])\]:\{metrics:\{[^}]*lineHeight:([\d.]+)\}/g;
-	for (const m of source.matchAll(metrics)) {
-		lineHeights.set((m[1] ?? m[2]) as string, Number(m[3]));
-	}
-
-	// `init(){...n("Excalifont",...sc)...}` — which face list each family gets.
+	const faceLists = readFaceLists(source, readFiles(source), readSharedRanges(source));
+	const numbers = readNumbers(source);
+	const lineHeights = readLineHeights(source);
 	const registry = new Map<string, FamilyDescriptor>();
-	for (const m of source.matchAll(/\bn\((?:"([^"]+)"|(\w+)),\.\.\.([A-Za-z_$][\w$]*)\)/g)) {
-		let name = m[1];
-		if (name === undefined) {
-			// A family registered through a variable: `Mn="Xiaolai"`.
-			const varName = m[2] as string;
-			const literal = source.match(new RegExp(`\\b${varName}\\s*=\\s*"([^"]+)"`));
-			if (!literal) {
-				continue;
-			}
-			name = literal[1];
-		}
-		const faces = faceLists.get(m[3] as string);
-		if (!faces) {
-			continue;
-		}
+	for (const { name, faces } of readRegistrations(source, faceLists)) {
 		const existing = registry.get(name);
 		if (existing && existing.faces.length >= faces.length) {
 			continue;
 		}
-		const descriptor: FamilyDescriptor = {
-			name,
-			lineHeight: lineHeights.get(name) ?? 1.25,
-			faces,
-		};
-		const number = numbers.get(name);
-		if (number !== undefined) {
-			descriptor.fontFamily = number;
-		}
-		registry.set(name, descriptor);
+		registry.set(name, describeFamily(name, faces, numbers, lineHeights));
 	}
-
 	if (registry.size === 0) {
 		throw new Error(
 			`Read no font families out of the Excalidraw bundle at ${EXCALIDRAW_DIST}. ` +
@@ -247,14 +384,20 @@ function readRegistry(): Map<string, FamilyDescriptor> {
 
 /** The registry, read once per process. */
 const registry = readRegistry();
+
 /**
- *
+ * Every family Excalidraw ships, by name.
+ * @returns The registry.
  */
 function fontRegistry(): Map<string, FamilyDescriptor> {
 	return registry;
 }
 
-/** The family a `fontFamily` number names, or undefined for a number nothing uses. */
+/**
+ * The family a `fontFamily` number names.
+ * @param fontFamily The number.
+ * @returns The family, or undefined for a number nothing uses.
+ */
 function familyOf(fontFamily: number): FamilyDescriptor | undefined {
 	for (const family of fontRegistry().values()) {
 		if (family.fontFamily === fontFamily) {
@@ -273,6 +416,8 @@ function familyOf(fontFamily: number): FamilyDescriptor | undefined {
  * covers a character wins; across the stack the *first* family that has the
  * character wins. Flattening would put Xiaolai's 209 subsets in front of
  * Excalifont's Latin.
+ * @param fontFamily The number.
+ * @returns Each family's faces, first family first; empty for an unknown number.
  */
 function faceStack(fontFamily: number): FaceDescriptor[][] {
 	const family = familyOf(fontFamily);
@@ -297,6 +442,8 @@ function faceStack(fontFamily: number): FaceDescriptor[][] {
  * file for: it resolves to whatever the viewer's system calls Helvetica, which
  * is not the same thing on two machines. A board carrying it has no honest
  * server-side width, so nothing here invents one.
+ * @param fontFamily The number.
+ * @returns True when a file-backed face exists.
  */
 function canMeasure(fontFamily: number): boolean {
 	return faceStack(fontFamily).length > 0;
@@ -305,9 +452,10 @@ function canMeasure(fontFamily: number): boolean {
 /**
  * Excalidraw's own `lineHeight` for a family — the whole of how it computes a
  * text element's height, along with the font size and the number of lines.
- *
  * The default is Excalifont's, which is what Excalidraw falls back to for a
  * family it does not recognise.
+ * @param fontFamily The number.
+ * @returns The line height multiplier.
  */
 function lineHeightOf(fontFamily: number): number {
 	return familyOf(fontFamily)?.lineHeight ?? 1.25;
@@ -330,6 +478,8 @@ const faceCache = new Map<string, LoadedFace>();
  * `unicode-range` and most strings touch one of them. It is what makes
  * Excalifont's CJK fallback affordable: Xiaolai ships 209 subsets, and a board
  * with no CJK on it parses none of them.
+ * @param file The woff2 path.
+ * @returns The parsed face with its layout tables.
  */
 function loadFace(file: string): LoadedFace {
 	const already = faceCache.get(file);
