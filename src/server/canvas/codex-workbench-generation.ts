@@ -3,7 +3,7 @@ export {
 	CodexWorkbenchCompositionError,
 	composeCodexWorkbenchGeneration,
 	createProductionCodexWorkbenchFactories,
-} from "./lib/codex-workbench.js";
+} from "@/server/canvas/lib/codex-workbench";
 export type {
 	CodexWorkbenchComponentFactories,
 	CodexWorkbenchComponents,
@@ -14,4 +14,4 @@ export type {
 	ComposeCodexWorkbenchGenerationOptions,
 	ProductionCodexWorkbenchBindings,
 	CodexWorkbenchStopReason,
-} from "./lib/codex-workbench.js";
+} from "@/server/canvas/lib/codex-workbench";
