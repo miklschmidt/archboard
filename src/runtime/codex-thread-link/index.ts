@@ -66,12 +66,25 @@ export interface CodexThreadLinkOptions extends Omit<CodexThreadLinkClassifierOp
 
 type CandidateTargets = Awaited<ReturnType<typeof discoverCodexThreadLinkCandidates>>["targets"];
 
-/** Combine deterministic classification with a proof-checked pane binding boundary. */
+/**
+ * Combines deterministic classification with a proof-checked pane binding boundary, so a pane
+ * only ever adopts a link that was classified against the live authorities a moment earlier.
+ * @param options The session, the durable epoch authority, and any live epoch source.
+ * @returns The port panes bind and classify through.
+ */
 export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThreadLinkPort {
 	const classifier = createCodexThreadLinkClassifier(options);
 	const binding = createCodexThreadLinkBindingController(options);
 	let discoveryGeneration = 0;
 	let candidateTargets: CandidateTargets = new Map();
+
+	/**
+	 * Classifies twice through the live authorities, then adopts the second result by CAS.
+	 * @param paneId The pane.
+	 * @param expected The pane's CAS token, or null for a first binding.
+	 * @param target The thread to classify.
+	 * @returns The new binding snapshot.
+	 */
 	const classifyAndBind: CodexThreadLinkPort["classifyAndBind"] = async (
 		paneId,
 		expected,
@@ -83,6 +96,11 @@ export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThr
 		const fresh = await classifier.classify(target);
 		return binding.commitClassified(paneId, expected, fresh);
 	};
+	/**
+	 * Publishes a candidate listing and retains its targets, discarding a listing that a newer
+	 * discovery has already replaced.
+	 * @returns The candidates a browser may offer for explicit binding.
+	 */
 	const discoverCandidates: CodexThreadLinkPort["discoverCandidates"] = async () => {
 		const generation = ++discoveryGeneration;
 		candidateTargets = new Map();
@@ -95,6 +113,13 @@ export function createCodexThreadLink(options: CodexThreadLinkOptions): CodexThr
 		candidateTargets = new Map(inventory.targets);
 		return inventory.result;
 	};
+	/**
+	 * Resolves one opaque candidate exactly once, then adopts it through fresh classification.
+	 * @param paneId The pane.
+	 * @param expected The pane's CAS token, or null for a first binding.
+	 * @param selectionId The candidate the browser chose.
+	 * @returns The new binding snapshot.
+	 */
 	const bindCandidate: CodexThreadLinkPort["bindCandidate"] = async (
 		paneId,
 		expected,
