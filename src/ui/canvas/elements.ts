@@ -32,6 +32,7 @@ import type { ServerElement } from "@/ui/types";
 /**
  * Strip the server's own bookkeeping, which is not board content and which
  * Excalidraw has no field for, and hand the element to Excalidraw as its own.
+ * Keep native `version` and `versionNonce`: Excalidraw uses both for history.
  * @param element A validated element as the server sent it.
  * @returns The same element without runtime tracking keys, typed as Excalidraw's.
  */
@@ -39,7 +40,6 @@ const cleanElementForExcalidraw = (element: ServerElement): ExcalidrawElement =>
 	const {
 		createdAt: _createdAt,
 		updatedAt: _updatedAt,
-		version: _version,
 		syncedAt: _syncedAt,
 		source: _source,
 		syncTimestamp: _syncTimestamp,
