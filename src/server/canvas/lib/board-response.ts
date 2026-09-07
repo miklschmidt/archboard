@@ -10,7 +10,10 @@ import type { CheckoutSnapshot } from "@/runtime/code-target";
 import { boardErrorBody, boardErrorStatus } from "@/server/canvas/lib/board-error";
 
 /**
- *
+ * The checkout overlay this request already captured, or the empty one for a
+ * route that captures none.
+ * @param response The response the middleware put it on.
+ * @returns The snapshot.
  */
 function checkoutSnapshotFor(
 	response: Readonly<
@@ -45,7 +48,12 @@ function refusalDocument(
 }
 
 /**
- *
+ * A failure's body, with the held board's current note attached when the
+ * failure is that somebody else has it: a 409 is exactly when the three
+ * outcomes are worth saying (ADR 0006).
+ * @param error Whatever a route threw.
+ * @param checkoutSnapshot The checkout overlay the document presents through.
+ * @returns The response body.
  */
 function contextualBoardErrorBody(
 	error: unknown,
