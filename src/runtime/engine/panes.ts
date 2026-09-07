@@ -16,368 +16,195 @@
 // a closed tab or an unsplit takes its registration with it, so there are no
 // ghosts. No pane at all is the normal state of a headless canvas, not an error.
 
-import { type ServerElement } from "@/runtime/engine/types";
 import { type BoardIdentity, boardKey, parseBoardKey } from "@/runtime/engine/board";
 import { nameSelection } from "@/runtime/engine/describe";
-
-/** A rectangle. Page coordinates for `rect`, scene coordinates for `viewport`. */
-interface Rect {
-	x: number;
-	y: number;
-	width: number;
-	height: number;
-}
-
-/**
- * What one pane tells the server about itself.
- *
- * The pane reports the board key it *adopted*, never the server's idea of what
- * it should be holding. That is what makes this report a description of the
- * scene rather than a restatement of server state: if a pane were somehow
- * rendering a board the server did not think it had, this would say so.
- */
-interface PaneRegistration {
-	/** The pane's identity to the server: also its websocket and selection key. */
-	clientId: string;
-	/** Stable within the tab, and what the human sees on the pane tab. */
-	paneId: string;
-	/** Board key, e.g. `payments` or `payments@option-a`. */
-	board: string;
-	/** Is this the default pane for browser capture and viewport requests? */
-	primary: boolean;
-	/** Is this the pane the user last interacted with? */
-	focused: boolean;
-	elementCount: number;
-	/** Where the pane sits in the page, in CSS pixels. */
-	rect: Rect;
-	/** Which part of the board is on screen, in scene coordinates. */
-	viewport: Rect & { zoom: number };
-	/**
-	 * The entry script this tab loaded, e.g. `/assets/index-B1qk9.js`. Absent
-	 * from a tab served by the vite dev server, and from any client that is not
-	 * a browser (TASK-056).
-	 */
-	build?: string;
-	at: string;
-}
-
-interface PaneSelection {
-	count: number;
-	/** Capped: a select-all must not make this report expensive. */
-	elementIds: string[];
-	moreIds: number;
-	nodeCount: number;
-	names: string[];
-	/** One phrase, e.g. `2 nodes — "Gateway", "Payments"`. */
-	summary: string;
-	at: string | null;
-}
-
-interface PaneReport {
-	paneId: string;
-	clientId: string;
-	/** 1-based, in reading order. */
-	position: number;
-	/** Where it is, said the way a human would: `left`, `right`, `top`… */
-	place: string;
-	focused: boolean;
-	primary: boolean;
-	board: string;
-	identity: BoardIdentity;
-	elementCount: number;
-	viewport: Rect & { zoom: number };
-	rect: Rect;
-	selection: PaneSelection;
-	/** When this pane last told the server about itself. */
-	at: string;
-}
-
-type Arrangement =
-	| "none"
-	| "single"
-	| "side-by-side"
-	| "stacked"
-	| "grid"
-	/**
-	 * Two panes in the same place: separate tabs or windows, not a split. Worth
-	 * its own name because "the left one" means nothing here, and an agent that
-	 * assumed a split would point the human at the wrong screen.
-	 */
-	| "overlapping";
-
-interface PanesReport {
-	paneCount: number;
-	arrangement: Arrangement;
-	/** paneId of the pane the user last interacted with. */
-	focused: string | null;
-	/** Are all panes showing the same board? */
-	sameBoard: boolean;
-	panes: PaneReport[];
-	summary: string;
-	text: string;
-}
-
-/** What the report needs from the server, without importing the server. */
-interface PaneContext {
-	/** The identity the board registry holds for a key, if it holds one. */
-	identity(board: string): BoardIdentity | null;
-	/** The board's elements — used only to name what is selected, never listed. */
-	elements(board: string): ServerElement[];
-	/** What this client last reported picking. */
-	selection(clientId: string): { elementIds: string[]; at: string } | null;
-	/** Where to open the canvas, for the no-pane case. */
-	canvasUrl?: string;
-}
-
-/** Panes within this many pixels of each other are in the same row or column. */
-const BAND = 24;
-
-/** Beyond this many selected ids, the report says how many rather than which. */
-const MAX_IDS = 20;
+import {
+	type Arrangement,
+	type PaneContext,
+	type PaneRegistration,
+	type PaneReport,
+	type PaneSelection,
+	type PanesReport,
+	MAX_IDS,
+	arrangementOf,
+	panesInOrder,
+} from "@/runtime/engine/lib/panes-layout";
+import {
+	HOW_TO_OPEN_A_PANE,
+	MAX_PANES,
+	paneWords,
+	resolvePaneSpec,
+	soloPane,
+} from "@/runtime/engine/lib/panes-addressing";
 
 /**
- *
+ * What the read-out says beyond naming the panes: the things an agent needs
+ * to know that are not visible in the list itself.
+ * @param panes The panes on screen.
+ * @param arrangement How they are laid out.
+ * @param sameBoard Whether they all show one board.
+ * @returns The lines, in the order they are read.
  */
-const readingOrder = (a: PaneRegistration, b: PaneRegistration): number =>
-	Math.abs(a.rect.y - b.rect.y) > BAND ? a.rect.y - b.rect.y : a.rect.x - b.rect.x;
-
-/** Distinct positions along one axis, collapsing anything within a band. */
-function bands(values: number[]): number[] {
-	const sorted = [...values].toSorted((a, b) => a - b);
-	const out: number[] = [];
-	for (const value of sorted) {
-		if (out.length === 0 || value - out[out.length - 1]! > BAND) {
-			out.push(value);
-		}
+function advice(
+	panes: readonly PaneReport[],
+	arrangement: Arrangement,
+	sameBoard: boolean,
+): string[] {
+	const lines: string[] = [];
+	if (arrangement === "overlapping") {
+		// Not a split: two browsers on the same canvas. Saying so stops a thread
+		// offering "the left one" as a way to tell them apart.
+		lines.push(
+			"These are separate tabs or windows on the same canvas, not a split — nothing is to the left of anything.",
+		);
 	}
-	return out;
+	if (panes.length === 1) {
+		// One pane is one board on screen, and a comparison needs two. Said here
+		// because this is the report an agent reads every turn, and an agent that
+		// does not know a second pane is obtainable reuses the first one — which
+		// means overwriting whatever the human was looking at.
+		lines.push(
+			`Only one board is on screen. To put another beside it, keeping this one: ${HOW_TO_OPEN_A_PANE}`,
+		);
+	}
+	lines.push(...boardAdvice(panes, sameBoard));
+	return lines;
 }
 
 /**
- *
+ * What the read-out says about which boards the panes are on.
+ * @param panes The panes on screen.
+ * @param sameBoard Whether they all show one board.
+ * @returns The lines.
  */
-const bandIndex = (edges: number[], value: number): number => {
-	let index = 0;
-	edges.forEach((edge, i) => {
-		if (value - edge > -BAND) {
-			index = i;
-		}
-	});
-	return index;
+function boardAdvice(panes: readonly PaneReport[], sameBoard: boolean): string[] {
+	if (!sameBoard) {
+		// The consequence of disagreement, said where the disagreement is visible:
+		// a caller that names no board is refused rather than guessed at (ADR 0009).
+		const other = panes.find((p) => p.board !== panes[0]!.board)!.board;
+		return [
+			"The panes disagree, so commands that name no board are refused until one is named — " +
+				`\`--board ${panes[0]!.board}\`, or \`--board ${other}\`.`,
+		];
+	}
+	if (panes.length > 1) {
+		// Said once, not per pane. Two identical lines used to need explaining
+		// because the server could not do anything else; now they are a choice, and
+		// what a reader needs is how to make the other one.
+		return [
+			"These panes are all on the same board. Point one somewhere else with " +
+				"`browser show <name> --pane <left|right|…>`.",
+		];
+	}
+	return [];
+}
+
+/**
+ * The read-out when nothing is on screen.
+ * @param arrangement How the panes are laid out, which is "none".
+ * @param context Where to read the canvas URL from.
+ * @returns The report.
+ */
+function emptyReport(arrangement: Arrangement, context: PaneContext): PanesReport {
+	const where = context.canvasUrl
+		? ` Open ${context.canvasUrl} to put it in front of somebody.`
+		: "";
+	const summary = `No pane is open, so nothing is on screen.${where}`;
+	return {
+		paneCount: 0,
+		arrangement,
+		focused: null,
+		sameBoard: true,
+		panes: [],
+		summary,
+		text:
+			summary + "\nThe board itself is unaffected — it lives on the server, not in the browser.",
+	};
+}
+
+/**
+ * One pane as the report holds it.
+ * @param pane The pane.
+ * @param index Where it sits in reading order.
+ * @param place The phrase that names where it is.
+ * @param context Where to read its board and selection from.
+ * @returns The pane's entry.
+ */
+function paneReport(
+	pane: PaneRegistration,
+	index: number,
+	place: string,
+	context: PaneContext,
+): PaneReport {
+	const identity = context.identity(pane.board) ?? parseBoardKey(pane.board);
+	return {
+		paneId: pane.paneId,
+		clientId: pane.clientId,
+		position: index + 1,
+		place,
+		focused: pane.focused,
+		primary: pane.primary,
+		board: boardKey(identity),
+		identity,
+		elementCount: pane.elementCount,
+		viewport: pane.viewport,
+		rect: pane.rect,
+		selection: selectionOf(pane, context),
+		at: pane.at,
+	};
+}
+
+const LAYOUT_PHRASE: Record<string, string> = {
+	grid: "in a grid",
+	overlapping: "in the same place",
+	"side-by-side": "side by side",
+	stacked: "stacked",
 };
 
 /**
- *
+ * How many panes there are and how they sit, in the words a report opens with.
+ * @param arrangement How they are laid out.
+ * @param count How many there are.
+ * @returns The phrase.
  */
-function arrangementOf(panes: PaneRegistration[]): Arrangement {
-	if (panes.length === 0) {
-		return "none";
+function layoutPhrase(arrangement: Arrangement, count: number): string {
+	if (arrangement === "single") {
+		return "1 pane on screen";
 	}
-	if (panes.length === 1) {
-		return "single";
-	}
-	const rows = bands(panes.map((p) => p.rect.y)).length;
-	const columns = bands(panes.map((p) => p.rect.x)).length;
-	if (rows === 1 && columns === 1) {
-		return "overlapping";
-	}
-	if (rows === 1) {
-		return "side-by-side";
-	}
-	if (columns === 1) {
-		return "stacked";
-	}
-	return "grid";
-}
-
-const ROW_NAMES = ["top", "middle", "bottom"];
-const COLUMN_NAMES = ["left", "middle", "right"];
-
-/**
- *
- */
-function placeOf(
-	pane: PaneRegistration,
-	index: number,
-	panes: PaneRegistration[],
-	arrangement: Arrangement,
-): string {
-	switch (arrangement) {
-		case "single":
-			return "the only pane";
-		case "side-by-side": {
-			if (panes.length === 2) {
-				return index === 0 ? "left" : "right";
-			}
-			if (panes.length === 3) {
-				return COLUMN_NAMES[index]!;
-			}
-			return `column ${index + 1} of ${panes.length}`;
-		}
-		case "stacked": {
-			if (panes.length === 2) {
-				return index === 0 ? "top" : "bottom";
-			}
-			if (panes.length === 3) {
-				return ROW_NAMES[index]!;
-			}
-			return `row ${index + 1} of ${panes.length}`;
-		}
-		case "overlapping":
-			return `tab ${index + 1} of ${panes.length}`;
-		default: {
-			const rows = bands(panes.map((p) => p.rect.y));
-			const columns = bands(panes.map((p) => p.rect.x));
-			return `row ${bandIndex(rows, pane.rect.y) + 1}, column ${bandIndex(columns, pane.rect.x) + 1}`;
-		}
-	}
+	return `${count} panes, ${LAYOUT_PHRASE[arrangement] ?? arrangement}`;
 }
 
 /**
- * The panes in reading order, each with the phrase that names where it is.
- *
- * Shared on purpose: the report and pane addressing (`--pane right`) have to
- * agree about which one "right" is, and they can only be guaranteed to agree
- * by asking the same function.
+ * What the panes are showing, named once when they all show the same board.
+ * @param panes The panes.
+ * @param sameBoard Whether they all show one board.
+ * @returns The phrase.
  */
-function panesInOrder(
-	registrations: PaneRegistration[],
-): Array<{ pane: PaneRegistration; position: number; place: string }> {
-	const ordered = [...registrations].toSorted(readingOrder);
-	const arrangement = arrangementOf(ordered);
-	return ordered.map((pane, index) => ({
-		pane,
-		position: index + 1,
-		place: placeOf(pane, index, ordered, arrangement),
-	}));
-}
-
-/** Everything `--pane` accepts, for the message that lists them. */
-// Every spelling here has to be taught, and a spelling that is never needed is
-// a spelling that can only drift. `only` used to be accepted and named nowhere:
-// it matched just when one pane was open, and that is exactly when --pane can be
-// left off, because `soloPane` resolves it. Closing the last pane is refused, so
-// it had no use there either (TASK-050).
-const PANE_SPECS =
-	"a place (left, right, top, bottom), a position (1, 2), `focused`, `primary`, or a pane id";
-
-/**
- * How many panes the shell will lay out.
- *
- * A product fact, not a limit of this module: the shell's grid has a column
- * rule for two panes and its own button stops offering another past that
- * (src/ui/shell, the pane bar and its add-pane control). It lives here because the
- * server has to refuse a third pane before it asks the browser for one, and
- * because the message that says "no such pane" has to know whether making one
- * is still possible.
- */
-const MAX_PANES = 2;
-
-/**
- * A pane's place, in a sentence.
- *
- * `place` is a phrase, not a word — "left", but also "the only pane" — so
- * dropping it into "in the ... pane" produced "in the the only pane pane".
- */
-function paneWords(place: string): string {
-	return place.startsWith("the ") ? place : `the ${place} pane`;
-}
-
-/** The command that makes a pane, said the same way everywhere it is offered. */
-const HOW_TO_OPEN_A_PANE =
-	"Open one with `archboard browser open`, which splits the live canvas and answers with the pane it made.";
-
-/**
- * Which pane a caller means by `left`, `2`, `focused`, `pane-1`…
- *
- * Deliberately refuses rather than picks when a spec matches nothing or more
- * than one thing — putting a board on the wrong half of the screen is cheap to
- * notice, but so is saying which half, and a canvas that quietly ignores the
- * half you asked for teaches you to stop trusting the flag.
- */
-function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneRegistration {
-	const ordered = panesInOrder(registrations);
-	if (ordered.length === 0) {
-		throw new Error(
-			`No pane is open, so there is nowhere to put a board — "${spec}" names nothing. ` +
-				"Open the canvas in a browser first, then retry the browser command.",
-		);
+function showingPhrase(panes: readonly PaneReport[], sameBoard: boolean): string {
+	if (sameBoard) {
+		return `, showing ${boardPhrase(panes[0]!.identity)}`;
 	}
-	const wanted = spec.trim().toLowerCase();
-	/**
-	 *
-	 */
-	const list = (): string =>
-		ordered.map((entry) => `${entry.position}. ${entry.place} (${entry.pane.board})`).join(", ");
-
-	const matches = ordered.filter(
-		(entry) =>
-			entry.place.toLowerCase() === wanted ||
-			entry.pane.paneId.toLowerCase() === wanted ||
-			entry.pane.clientId === spec.trim() ||
-			String(entry.position) === wanted ||
-			(wanted === "focused" && entry.pane.focused) ||
-			(wanted === "primary" && entry.pane.primary),
-	);
-
-	if (matches.length === 1) {
-		return matches[0]!.pane;
-	}
-	if (matches.length > 1) {
-		throw new Error(
-			`"${spec}" matches ${matches.length} panes (${matches.map((m) => m.place).join(", ")}), ` +
-				`so which one is not decided. Panes on screen: ${list()}.`,
-		);
-	}
-	// Nothing here can point a board at a pane that does not exist, and until
-	// TASK-033 nothing could make one either — the human had to click Split,
-	// which is not available to a voice thread. So the refusal carries the
-	// command that makes one, while there is still room in the browser layout.
-	const makeOne = ordered.length < MAX_PANES ? ` ${HOW_TO_OPEN_A_PANE}` : "";
-	throw new Error(
-		`No pane called "${spec}". Panes on screen: ${list()}. ` +
-			`--pane takes ${PANE_SPECS}.${makeOne}`,
-	);
+	return `, showing ${panes.map((p) => boardPhrase(p.identity)).join(" and ")}`;
 }
 
 /**
- * The pane a caller who named none means — when there is only one, that one.
- *
- * With two panes on screen there is no such pane and this refuses, for the
- * same reason a board has to be named: the answers on offer are "wherever you
- * last clicked" and "whichever we listed first", and both put a board on a
- * half of the screen nobody chose. Which half is cheaper to get wrong than
- * which board, but it is still a guess, and refusing costs one flag.
- *
- * No pane at all is not a refusal: nothing is on screen, so a board can be
- * loaded without being shown.
- */
-function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
-	const ordered = panesInOrder(registrations);
-	if (ordered.length === 0) {
-		return null;
-	}
-	if (ordered.length === 1) {
-		return ordered[0]!.pane;
-	}
-	throw new Error(
-		`${ordered.length} panes are open, so this needs a pane as well as a board — ` +
-			`--pane ${ordered.map((entry) => entry.place).join(" | ")}. ` +
-			`They are showing ${ordered.map((entry) => `${entry.pane.board} (${entry.place})`).join(", ")}.`,
-	);
-}
-
-/**
- *
+ * A coordinate as a report prints it: whole pixels, because a viewport read
+ * to six decimal places says nothing more than one read to none.
+ * @param n The coordinate.
+ * @returns The rounded value.
  */
 const round = (n: number): number => Math.round(n);
 
 /**
- *
+ * What one pane has picked, named rather than counted where it can be.
+ * @param pane The pane.
+ * @param context Where to read the board and the selection from.
+ * @returns The selection, with the sentence a report reads out.
  */
 function selectionOf(pane: PaneRegistration, context: PaneContext): PaneSelection {
 	const picked = context.selection(pane.clientId);
 	const ids = picked?.elementIds ?? [];
+	const at = picked?.at ?? null;
 	if (ids.length === 0) {
 		return {
 			count: 0,
@@ -386,34 +213,63 @@ function selectionOf(pane: PaneRegistration, context: PaneContext): PaneSelectio
 			nodeCount: 0,
 			names: [],
 			summary: "nothing selected",
-			at: picked?.at ?? null,
+			at,
 		};
 	}
-
 	const named = nameSelection(ids, context.elements(pane.board));
-	const things =
-		named.nodeCount === named.count
-			? `${named.count} node${named.count === 1 ? "" : "s"}`
-			: `${named.count} element${named.count === 1 ? "" : "s"}${named.nodeCount > 0 ? ` (${named.nodeCount} node${named.nodeCount === 1 ? "" : "s"})` : ""}`;
-	const list =
-		named.names.length > 0
-			? ` — ${named.names.map((n) => `"${n}"`).join(", ")}${named.more > 0 ? `, and ${named.more} more` : ""}`
-			: "";
-	const missing = named.missing > 0 ? `, ${named.missing} no longer on the board` : "";
-
 	return {
 		count: ids.length,
 		elementIds: ids.slice(0, MAX_IDS),
 		moreIds: Math.max(0, ids.length - MAX_IDS),
 		nodeCount: named.nodeCount,
 		names: named.names,
-		summary: `${things}${list}${missing}`,
-		at: picked?.at ?? null,
+		summary: describeSelection(named),
+		at,
 	};
 }
 
 /**
- *
+ * What a selection is, in one phrase: how many things, what they are called,
+ * and how many of them the board no longer holds.
+ * @param named The selection, already named.
+ * @returns The sentence.
+ */
+function describeSelection(named: ReturnType<typeof nameSelection>): string {
+	const things =
+		named.nodeCount === named.count
+			? `${named.count} ${plural("node", named.count)}`
+			: `${named.count} ${plural("element", named.count)}${nodesAmong(named.nodeCount)}`;
+	const list =
+		named.names.length > 0
+			? ` — ${named.names.map((n) => `"${n}"`).join(", ")}${named.more > 0 ? `, and ${named.more} more` : ""}`
+			: "";
+	const missing = named.missing > 0 ? `, ${named.missing} no longer on the board` : "";
+	return `${things}${list}${missing}`;
+}
+
+/**
+ * How many of a selection's elements are nodes, said only where some are.
+ * @param nodeCount How many nodes.
+ * @returns The parenthetical, or nothing.
+ */
+function nodesAmong(nodeCount: number): string {
+	return nodeCount > 0 ? ` (${nodeCount} ${plural("node", nodeCount)})` : "";
+}
+
+/**
+ * A word, pluralised by the number in front of it.
+ * @param word The singular.
+ * @param count How many.
+ * @returns The word as it reads.
+ */
+function plural(word: string, count: number): string {
+	return count === 1 ? word : `${word}s`;
+}
+
+/**
+ * A board as a report names it: its key, and what variant and level it is.
+ * @param identity The board.
+ * @returns The phrase.
  */
 function boardPhrase(identity: BoardIdentity): string {
 	const name =
@@ -423,7 +279,10 @@ function boardPhrase(identity: BoardIdentity): string {
 }
 
 /**
- *
+ * One pane as a line of the read-out: where it is, what it shows, what is in
+ * view, and what is picked.
+ * @param pane The pane.
+ * @returns The line.
  */
 function paneLine(pane: PaneReport): string {
 	const view = pane.viewport;
@@ -447,105 +306,28 @@ function paneLine(pane: PaneReport): string {
  * Build the read-out. Cost is one pass over the registry plus, for each pane
  * that has something selected, one pass over its board to name it — not over
  * the elements themselves, which never appear here.
+ * @param registrations The panes on screen.
+ * @param context Where to read boards, selections and the canvas URL from.
+ * @returns The report, and the text an agent reads out.
  */
 function buildPanesReport(registrations: PaneRegistration[], context: PaneContext): PanesReport {
-	const ordered = panesInOrder(registrations).map((entry) => entry.pane);
-	const places = panesInOrder(registrations).map((entry) => entry.place);
+	const inOrder = panesInOrder(registrations);
+	const ordered = inOrder.map((entry) => entry.pane);
 	const arrangement = arrangementOf(ordered);
-
 	if (ordered.length === 0) {
-		const where = context.canvasUrl
-			? ` Open ${context.canvasUrl} to put it in front of somebody.`
-			: "";
-		const summary = `No pane is open, so nothing is on screen.${where}`;
-		return {
-			paneCount: 0,
-			arrangement,
-			focused: null,
-			sameBoard: true,
-			panes: [],
-			summary,
-			text:
-				summary + "\nThe board itself is unaffected — it lives on the server, not in the browser.",
-		};
+		return emptyReport(arrangement, context);
 	}
-
-	const panes: PaneReport[] = ordered.map((pane, index) => {
-		const identity = context.identity(pane.board) ?? parseBoardKey(pane.board);
-		return {
-			paneId: pane.paneId,
-			clientId: pane.clientId,
-			position: index + 1,
-			place: places[index]!,
-			focused: pane.focused,
-			primary: pane.primary,
-			board: boardKey(identity),
-			identity,
-			elementCount: pane.elementCount,
-			viewport: pane.viewport,
-			rect: pane.rect,
-			selection: selectionOf(pane, context),
-			at: pane.at,
-		};
-	});
-
-	const boardsShown = new Set(panes.map((p) => p.board));
-	const sameBoard = boardsShown.size === 1;
+	const panes: PaneReport[] = inOrder.map((entry, index) =>
+		paneReport(entry.pane, index, entry.place, context),
+	);
+	const sameBoard = new Set(panes.map((p) => p.board)).size === 1;
 	const focused = panes.find((p) => p.focused)?.paneId ?? null;
-
-	const LAYOUT_PHRASE: Record<string, string> = {
-		grid: "in a grid",
-		overlapping: "in the same place",
-		"side-by-side": "side by side",
-		stacked: "stacked",
-	};
-	const layout =
-		arrangement === "single"
-			? "1 pane on screen"
-			: `${panes.length} panes, ${LAYOUT_PHRASE[arrangement] ?? arrangement}`;
-	const showing = sameBoard
-		? `, showing ${boardPhrase(panes[0]!.identity)}`
-		: `, showing ${panes.map((p) => boardPhrase(p.identity)).join(" and ")}`;
-	const summary = `${layout}${showing}.`;
-
-	const lines = [summary];
-	if (arrangement === "overlapping") {
-		// Not a split: two browsers on the same canvas. Saying so stops a thread
-		// offering "the left one" as a way to tell them apart.
-		lines.push(
-			"These are separate tabs or windows on the same canvas, not a split — nothing is to the left of anything.",
-		);
-	}
-	// One pane is one board on screen, and a comparison needs two. Said here
-	// because this is the report an agent reads every turn, and an agent that
-	// does not know a second pane is obtainable reuses the first one — which
-	// means overwriting whatever the human was looking at.
-	if (panes.length === 1) {
-		lines.push(
-			`Only one board is on screen. To put another beside it, keeping this one: ${HOW_TO_OPEN_A_PANE}`,
-		);
-	}
-	// Said once, not per pane. Two identical lines used to need explaining
-	// because the server could not do anything else; now they are a choice, and
-	// what a reader needs is how to make the other one.
-	if (panes.length > 1 && sameBoard) {
-		lines.push(
-			"These panes are all on the same board. Point one somewhere else with " +
-				"`browser show <name> --pane <left|right|…>`.",
-		);
-	}
-	// The consequence of disagreement, said where the disagreement is visible: a
-	// caller that names no board is refused rather than guessed at (ADR 0009).
-	if (!sameBoard) {
-		lines.push(
-			"The panes disagree, so commands that name no board are refused until one is named — " +
-				`\`--board ${panes[0]!.board}\`, or \`--board ${panes.find((p) => p.board !== panes[0]!.board)!.board}\`.`,
-		);
-	}
-	for (const pane of panes) {
-		lines.push(`  ${paneLine(pane)}`);
-	}
-
+	const summary = `${layoutPhrase(arrangement, panes.length)}${showingPhrase(panes, sameBoard)}.`;
+	const lines = [
+		summary,
+		...advice(panes, arrangement, sameBoard),
+		...panes.map((pane) => `  ${paneLine(pane)}`),
+	];
 	return {
 		paneCount: panes.length,
 		arrangement,
@@ -557,19 +339,21 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 	};
 }
 
+export type {
+	Arrangement,
+	PaneContext,
+	PaneRegistration,
+	PaneReport,
+	PaneSelection,
+	PanesReport,
+	Rect,
+} from "@/runtime/engine/lib/panes-layout";
 export {
-	type Rect,
-	type PaneRegistration,
-	type PaneSelection,
-	type PaneReport,
-	type Arrangement,
-	type PanesReport,
-	type PaneContext,
-	panesInOrder,
-	MAX_PANES,
-	paneWords,
 	HOW_TO_OPEN_A_PANE,
+	MAX_PANES,
+	buildPanesReport,
+	paneWords,
+	panesInOrder,
 	resolvePaneSpec,
 	soloPane,
-	buildPanesReport,
 };
