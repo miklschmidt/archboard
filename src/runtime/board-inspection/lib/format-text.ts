@@ -8,7 +8,9 @@ type ReasonsOf<Code extends FindingCode> = Extract<InspectionFinding, { code: Co
  * key for each schema reason, so adding a reason to the schema fails here at
  * compile time until the formatter acknowledges it.
  */
-const CLOSED_REASONS: { readonly [Code in FindingCode]: { readonly [Reason in ReasonsOf<Code>]: true } } = {
+const CLOSED_REASONS: {
+	readonly [Code in FindingCode]: { readonly [Reason in ReasonsOf<Code>]: true };
+} = {
 	INVALID_RENDER_GEOMETRY: {
 		"non-data-input": true,
 		"invalid-render-fields": true,

@@ -117,7 +117,7 @@ class IdentityComponents {
 	 */
 	find(id: string): string {
 		let root = id;
-		for (let next = this.#parent.get(root); next !== undefined && next !== root; ) {
+		for (let next = this.#parent.get(root); next !== undefined && next !== root;) {
 			root = next;
 			next = this.#parent.get(root);
 		}
@@ -150,6 +150,39 @@ class IdentityComponents {
 }
 
 /**
+ * Join every pair of bodies that share a group id, so one group becomes one component.
+ * @param eligible the eligible bodies
+ * @param groupsById the readable group ids per body id
+ * @param components the accumulating components, joined in place
+ */
+function joinSharedGroups(
+	eligible: readonly ObstacleBody[],
+	groupsById: ReadonlyMap<string, readonly string[]>,
+	components: IdentityComponents,
+): void {
+	const firstByGroup = new Map<string, string>();
+	for (const record of eligible) {
+		for (const group of groupsById.get(record.id) ?? []) {
+			const first = firstByGroup.get(group);
+			if (first === undefined) {
+				firstByGroup.set(group, record.id);
+			} else {
+				components.join(first, record.id);
+			}
+		}
+	}
+}
+
+/**
+ * Whether a body carries library attribution that reads cleanly.
+ * @param record the body
+ * @returns true when the attribution is valid
+ */
+function hasValidLibraryAttribution(record: ObstacleBody): boolean {
+	return libraryAttribution(record)?.valid === true;
+}
+
+/**
  * Connect eligible bodies that share a group id into components.
  * @param eligible the eligible bodies
  * @param groupsById the readable group ids per body id
@@ -163,17 +196,7 @@ function connectedComponents(
 	for (const record of eligible) {
 		components.add(record.id);
 	}
-	const firstByGroup = new Map<string, string>();
-	for (const record of eligible) {
-		for (const group of groupsById.get(record.id) ?? []) {
-			const first = firstByGroup.get(group);
-			if (first) {
-				components.join(first, record.id);
-			} else {
-				firstByGroup.set(group, record.id);
-			}
-		}
-	}
+	joinSharedGroups(eligible, groupsById, components);
 	const membersByRoot = new Map<string, ObstacleBody[]>();
 	for (const record of eligible) {
 		const root = components.find(record.id);
@@ -208,7 +231,9 @@ function componentGroupIds(
  * @param validLibrary the members with valid library attribution
  * @returns attribution entries in element identity order
  */
-function componentLibrary(validLibrary: readonly ObstacleBody[]): InspectionObstacle["ref"]["library"] {
+function componentLibrary(
+	validLibrary: readonly ObstacleBody[],
+): InspectionObstacle["ref"]["library"] {
 	return validLibrary
 		.map((record) => {
 			const attribution = libraryAttribution(record)!;
@@ -227,6 +252,26 @@ type ObstacleBuild = Pick<
 >;
 
 /**
+ * Record every member of a component that qualifies as an obstacle through a shared group,
+ * which is the evidence a grouped obstacle rests on.
+ * @param members the component members
+ * @param sharedGroup whether the component qualifies through a group at all
+ * @param output the accumulating obstacle build, updated in place
+ */
+function recordQualifyingGroup(
+	members: readonly ObstacleBody[],
+	sharedGroup: boolean,
+	output: ObstacleBuild,
+): void {
+	if (!sharedGroup) {
+		return;
+	}
+	for (const member of members) {
+		output.qualifyingGroupedObstacleElementIds.add(member.id);
+	}
+}
+
+/**
  * Turn one component into an obstacle, or record why its box has no finite span.
  * @param members the component members
  * @param groupsById the readable group ids per body id
@@ -237,21 +282,21 @@ function admitComponent(
 	groupsById: ReadonlyMap<string, readonly string[]>,
 	output: ObstacleBuild,
 ): void {
-	const validLibrary = members.filter((record) => Boolean(libraryAttribution(record)?.valid));
+	const validLibrary = members.filter(hasValidLibraryAttribution);
 	const sharedGroup = members.length >= 2;
 	if (validLibrary.length === 0 && !sharedGroup) {
 		return;
 	}
-	if (sharedGroup) {
-		for (const member of members) {
-			output.qualifyingGroupedObstacleElementIds.add(member.id);
-		}
-	}
+	recordQualifyingGroup(members, sharedGroup, output);
 	const elementIds = orderedIdentities(members.map((record) => record.id));
 	const id = obstacleIdentity(elementIds);
 	const obstacleResult = aggregateBoxes(members.map((record) => record.box));
 	if (obstacleResult.kind !== "representable") {
-		output.aggregateFailures.push({ scope: "obstacle-component", subjectId: id, members: [...members] });
+		output.aggregateFailures.push({
+			scope: "obstacle-component",
+			subjectId: id,
+			members: [...members],
+		});
 		return;
 	}
 	const kind = validLibrary.length > 0 ? "library-component" : "grouped-component";

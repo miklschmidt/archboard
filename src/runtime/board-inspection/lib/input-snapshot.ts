@@ -247,7 +247,11 @@ function nonDataScalarIssue(value: unknown): NonDataInputIssue | null {
  * @param path where the issue sits inside the record
  * @param issue what was found there
  */
-function refuse(scan: RecordScan, path: readonly InspectionPathToken[], issue: NonDataInputIssue): void {
+function refuse(
+	scan: RecordScan,
+	path: readonly InspectionPathToken[],
+	issue: NonDataInputIssue,
+): void {
 	scan.blocked = true;
 	scan.issues.push({ sourceIndex: scan.sourceIndex, path, issue });
 }
@@ -265,7 +269,10 @@ function claim(
 	path: readonly InspectionPathToken[],
 	unitKind: InputUnitKind,
 ): void {
-	scan.budget.claim(units, stopContext(scan.completedRecordCount, scan.sourceIndex, path, unitKind));
+	scan.budget.claim(
+		units,
+		stopContext(scan.completedRecordCount, scan.sourceIndex, path, unitKind),
+	);
 }
 
 /**

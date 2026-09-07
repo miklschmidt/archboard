@@ -296,6 +296,39 @@ function libraryItemOf(library: PlainRecord): string | undefined {
 }
 
 /**
+ * What is wrong with a record's library attribution, if anything.
+ * @param item the item the attribution names, when it reads cleanly
+ * @param source the raw source field
+ * @returns the issues, empty when the attribution is valid
+ */
+function libraryAttributionIssues(item: string | undefined, source: unknown): string[] {
+	const issues: string[] = [];
+	if (!item) {
+		issues.push("itemId or item must be a nonempty string");
+	}
+	if (source !== undefined && !nonemptyString(source)) {
+		issues.push("source must be a nonempty string");
+	}
+	return issues;
+}
+
+/**
+ * The attribution facts for a library object that read cleanly enough to inspect.
+ * @param item the item the attribution names, when it reads cleanly
+ * @param source the raw source field
+ * @returns the facts, carrying only the fields that read cleanly
+ */
+function attributionFacts(item: string | undefined, source: unknown): LibraryAttributionFacts {
+	const issues = libraryAttributionIssues(item, source);
+	return {
+		valid: issues.length === 0,
+		...(item ? { item } : {}),
+		...(nonemptyString(source) ? { source } : {}),
+		issues,
+	};
+}
+
+/**
  * The library attribution a record carries, with the issues that make it invalid.
  * @param record the decoded record
  * @returns the attribution facts, or null when the record carries none
@@ -309,21 +342,7 @@ function libraryAttribution(record: DecodedRecord): LibraryAttributionFacts | nu
 	if (!library) {
 		return { valid: false, issues: ["library must be an object"] };
 	}
-	const item = libraryItemOf(library);
-	const source = library["source"];
-	const issues: string[] = [];
-	if (!item) {
-		issues.push("itemId or item must be a nonempty string");
-	}
-	if (source !== undefined && !nonemptyString(source)) {
-		issues.push("source must be a nonempty string");
-	}
-	return {
-		valid: issues.length === 0,
-		...(item ? { item } : {}),
-		...(nonemptyString(source) ? { source } : {}),
-		issues,
-	};
+	return attributionFacts(libraryItemOf(library), library["source"]);
 }
 
 /**

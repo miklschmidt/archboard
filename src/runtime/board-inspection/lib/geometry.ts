@@ -247,6 +247,35 @@ function clipEdge(range: [number, number], p: number, q: number): boolean {
 }
 
 /**
+ * Whether a parameter along a segment lands on the segment itself.
+ * @param value the parameter
+ * @returns true when it lies between the endpoints inclusive
+ */
+function withinUnit(value: number): boolean {
+	return value >= 0 && value <= 1;
+}
+
+/**
+ * The edges of a box after the tolerance inset, when an interior remains.
+ * @param target the box
+ * @param tolerance the inset applied to each side
+ * @returns the inset edges, or null when the inset leaves no interior
+ */
+function insetBounds(
+	target: ExactBox,
+	tolerance: number,
+): { left: number; top: number; right: number; bottom: number } | null {
+	const left = target.x + tolerance;
+	const top = target.y + tolerance;
+	const right = target.x + target.width - tolerance;
+	const bottom = target.y + target.height - tolerance;
+	if (right <= left || bottom <= top) {
+		return null;
+	}
+	return { left, top, right, bottom };
+}
+
+/**
  * Liang-Barsky clipping. Null means no interior span beyond tolerance.
  * @param a the segment start
  * @param b the segment end
@@ -260,13 +289,11 @@ function segmentInsideBox(
 	target: ExactBox,
 	tolerance: number,
 ): { entry: ExactPoint; exit: ExactPoint } | null {
-	const left = target.x + tolerance;
-	const top = target.y + tolerance;
-	const right = target.x + target.width - tolerance;
-	const bottom = target.y + target.height - tolerance;
-	if (right <= left || bottom <= top) {
+	const inset = insetBounds(target, tolerance);
+	if (inset === null) {
 		return null;
 	}
+	const { left, top, right, bottom } = inset;
 	const dx = b.x - a.x;
 	const dy = b.y - a.y;
 	const range: [number, number] = [0, 1];
@@ -334,6 +361,11 @@ function parallelIntersection(
 	if (hi - lo <= tolerance) {
 		return hi >= lo ? { kind: "contact" } : { kind: "none" };
 	}
+	/**
+	 * The point on the first segment at one coordinate along the shared axis.
+	 * @param value the coordinate
+	 * @returns the point
+	 */
 	const at = (value: number): ExactPoint => {
 		const ratio = Math.abs(r[axis]) <= Number.EPSILON ? 0 : (value - a[axis]) / r[axis];
 		return { x: a.x + ratio * r.x, y: a.y + ratio * r.y };
@@ -389,7 +421,7 @@ function intersectSegments(
 	}
 	const t = cross(ca, s) / denominator;
 	const u = cross(ca, r) / denominator;
-	if (t < 0 || t > 1 || u < 0 || u > 1) {
+	if (!withinUnit(t) || !withinUnit(u)) {
 		return { kind: "none" };
 	}
 	const hit = { x: a.x + t * r.x, y: a.y + t * r.y };

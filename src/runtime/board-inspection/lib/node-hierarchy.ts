@@ -14,6 +14,29 @@ import { compareIdentity } from "@/runtime/board-inspection/lib/ordering";
 type NodeMembership = Pick<InspectionModel, "nodes" | "nodeOfElement" | "aggregateFailures">;
 
 /**
+ * Whether a record can be a node member at all: uniquely identified, and locatable.
+ * @param record the live record
+ * @returns true when the record can join a node
+ */
+function isLocatableMember(record: DecodedRecord): boolean {
+	return record.usableId && record.id !== null && record.box !== null;
+}
+
+/**
+ * The node a record declares membership of, when the record can be a member at all: it must
+ * be uniquely identified and locatable.
+ * @param record the live record
+ * @returns the node id, or null when the record cannot join one
+ */
+function declaredNodeId(record: DecodedRecord): string | null {
+	const node = nodeId(record);
+	if (node === null || !isLocatableMember(record)) {
+		return null;
+	}
+	return node;
+}
+
+/**
  * Group live records by the semantic node they declare, keeping only locatable, uniquely identified members.
  * @param live the live decoded records
  * @returns members per node id and the node of each member element
@@ -25,14 +48,14 @@ function groupDeclaredMembers(live: readonly DecodedRecord[]): {
 	const grouped = new Map<string, DecodedRecord[]>();
 	const nodeOfElement = new Map<string, string>();
 	for (const record of live) {
-		const node = nodeId(record);
-		if (!node || !record.usableId || !record.id || !record.box) {
+		const node = declaredNodeId(record);
+		if (node === null) {
 			continue;
 		}
 		const members = grouped.get(node) ?? [];
 		members.push(record);
 		grouped.set(node, members);
-		nodeOfElement.set(record.id, node);
+		nodeOfElement.set(record.id!, node);
 	}
 	return { grouped, nodeOfElement };
 }
@@ -62,6 +85,23 @@ function attachConfirmedLabels(
 }
 
 /**
+ * Forget that a set of records belonged to a node, which is what happens when the node's body
+ * turns out to have no finite span: nothing may be analysed against a node that does not exist.
+ * @param members the node's member records
+ * @param nodeOfElement the node of each member element, pruned in place
+ */
+function forgetMembership(
+	members: readonly DecodedRecord[],
+	nodeOfElement: Map<string, string>,
+): void {
+	for (const member of members) {
+		if (member.id !== null) {
+			nodeOfElement.delete(member.id);
+		}
+	}
+}
+
+/**
  * Build one node from its members, or record why its body has no finite span.
  * @param id the node id
  * @param members the node's member records, labels included
@@ -74,18 +114,16 @@ function buildNode(
 	members: readonly DecodedRecord[],
 	confirmedLabels: ReadonlyMap<string, string>,
 	nodeOfElement: Map<string, string>,
-): { node: InspectionNode; failure: AggregateCoordinateFailure | null } | { failure: AggregateCoordinateFailure } {
+):
+	| { node: InspectionNode; failure: AggregateCoordinateFailure | null }
+	| { failure: AggregateCoordinateFailure } {
 	const labels = members.filter((record) => confirmedLabels.has(record.id ?? ""));
 	const bodies = members.filter((record) => !confirmedLabels.has(record.id ?? ""));
 	const bodyMembers = bodies.length > 0 ? bodies : members;
 	const bodyResult = aggregateBoxes(bodyMembers.map((record) => record.box!));
 	if (bodyResult.kind !== "representable") {
-		for (const member of members) {
-			if (member.id) {
-				nodeOfElement.delete(member.id);
-			}
-		}
-		return { failure: { scope: "semantic-node-body", subjectId: id, members: bodyMembers } };
+		forgetMembership(members, nodeOfElement);
+		return { failure: { scope: "semantic-node-body", subjectId: id, members: [...bodyMembers] } };
 	}
 	const aggregateResult = aggregateBoxes(members.map((record) => record.box!));
 	const aggregate = aggregateResult.kind === "representable" ? aggregateResult.box : null;
@@ -252,10 +290,22 @@ function selectParents(
 		boundaries.map(({ boundary }) => [boundary, areaFactor(boundary.box!)]),
 	);
 	const selectedByChild = new Map<string, BoundaryCandidate>();
+	/**
+	 * Order boundary candidates by area, then by identity, so selection is deterministic.
+	 * @param a the first candidate
+	 * @param b the second candidate
+	 * @returns -1, 0 or 1
+	 */
 	const candidateOrder = (a: BoundaryCandidate, b: BoundaryCandidate): number =>
 		compareAreaFactors(boundaryAreas.get(a.boundary)!, boundaryAreas.get(b.boundary)!) ||
 		compareIdentity(a.boundary.id!, b.boundary.id!) ||
 		compareIdentity(a.owner.id, b.owner.id);
+	/**
+	 * Whether a boundary is strictly larger than a child node and contains its body.
+	 * @param candidate the boundary candidate
+	 * @param child the child node
+	 * @returns true when the boundary encloses the child
+	 */
 	const encloses = (candidate: BoundaryCandidate, child: InspectionNode): boolean =>
 		compareAreaFactors(boundaryAreas.get(candidate.boundary)!, childAreas.get(child.id)!) > 0 &&
 		contains(candidate.boundary.box!, child.body);

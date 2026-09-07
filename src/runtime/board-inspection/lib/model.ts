@@ -3,6 +3,7 @@ import {
 	classifyBindingTarget,
 	classifyBoundElements,
 	orderedIdentities,
+	type BoundElementsClassification,
 	type ConnectorEndpointClassification,
 	type InspectionModel,
 	type LabelOwnershipClassification,
@@ -58,20 +59,55 @@ function recordReverseOwner(
 		return;
 	}
 	const bounds = classifyBoundElements(owner.raw.boundElements);
+	const hasProblems = bounds.problems.length > 0;
 	for (const reference of bounds.readableEntries) {
-		if (reference.type !== "text" || byId.get(reference.id)?.type !== "text") {
-			continue;
+		if (isTextReference(reference, byId)) {
+			recordLabelOwner(owner, reference.id, hasProblems, owners, blocked);
 		}
-		if (!owner.usableId) {
-			blocked.add(reference.id);
-			continue;
-		}
-		const labelOwners = owners.get(reference.id) ?? new Set<string>();
-		labelOwners.add(owner.id);
-		owners.set(reference.id, labelOwners);
-		if (bounds.problems.length > 0) {
-			blocked.add(reference.id);
-		}
+	}
+}
+
+/** One boundElements entry that read cleanly. */
+type ReadableBoundEntry = BoundElementsClassification["readableEntries"][number];
+
+/**
+ * Whether a boundElements entry names a text element that is present among the live records.
+ * @param reference the readable boundElements entry
+ * @param byId live records by usable id
+ * @returns true when the entry names a live text element
+ */
+function isTextReference(
+	reference: ReadableBoundEntry,
+	byId: ReadonlyMap<string, DecodedRecord>,
+): boolean {
+	return reference.type === "text" && byId.get(reference.id)?.type === "text";
+}
+
+/**
+ * Record that one container names a text label, blocking the label instead when the container
+ * cannot be identified or its boundElements did not read cleanly.
+ * @param owner the container record
+ * @param labelId the label it names
+ * @param hasProblems whether the container's boundElements had unreadable entries
+ * @param owners the accumulating owners per label, updated in place
+ * @param blocked the accumulating blocked labels, updated in place
+ */
+function recordLabelOwner(
+	owner: DecodedRecord,
+	labelId: string,
+	hasProblems: boolean,
+	owners: Map<string, Set<string>>,
+	blocked: Set<string>,
+): void {
+	if (!owner.usableId || !owner.id) {
+		blocked.add(labelId);
+		return;
+	}
+	const labelOwners = owners.get(labelId) ?? new Set<string>();
+	labelOwners.add(owner.id);
+	owners.set(labelId, labelOwners);
+	if (hasProblems) {
+		blocked.add(labelId);
 	}
 }
 
@@ -107,15 +143,22 @@ function ownershipBlocked(
 	reverse: ReverseLabelOwners,
 	duplicateIds: ReadonlySet<string>,
 ): boolean {
-	const unreadableContainer =
-		rawContainer !== undefined &&
-		rawContainer !== null &&
-		(typeof rawContainer !== "string" || rawContainer.length === 0);
-	return (
-		unreadableContainer ||
-		reverse.blockedLabels.has(labelId) ||
-		(typeof rawContainer === "string" && duplicateIds.has(rawContainer))
-	);
+	if (isUnreadableContainerId(rawContainer) || reverse.blockedLabels.has(labelId)) {
+		return true;
+	}
+	return typeof rawContainer === "string" && duplicateIds.has(rawContainer);
+}
+
+/**
+ * Whether a label's containerId is present but not a readable identity.
+ * @param rawContainer the label's raw containerId
+ * @returns true when the forward side cannot be read
+ */
+function isUnreadableContainerId(rawContainer: unknown): boolean {
+	if (rawContainer === undefined || rawContainer === null) {
+		return false;
+	}
+	return typeof rawContainer !== "string" || rawContainer.length === 0;
 }
 
 /**
@@ -133,19 +176,46 @@ function ownershipState(
 	if (blocked) {
 		return { state: "blocked", resolvedOwnerId: null };
 	}
-	if (forwardOwnerId && reverseOwnerIds.length === 0) {
-		return { state: "forward-only", resolvedOwnerId: forwardOwnerId };
+	if (forwardOwnerId === null) {
+		return reverseOnlyState(reverseOwnerIds);
 	}
-	if (!forwardOwnerId && reverseOwnerIds.length === 1) {
+	return forwardState(forwardOwnerId, reverseOwnerIds);
+}
+
+/**
+ * The state of a label no container is named by, judged only on which containers name it.
+ * @param reverseOwnerIds the containers naming the label, in identity order
+ * @returns the state and the owner it resolves to, if any
+ */
+function reverseOnlyState(
+	reverseOwnerIds: readonly string[],
+): Pick<LabelOwnershipClassification, "state" | "resolvedOwnerId"> {
+	if (reverseOwnerIds.length === 1) {
 		return { state: "reverse-only", resolvedOwnerId: reverseOwnerIds[0]! };
 	}
-	if (forwardOwnerId && reverseOwnerIds.length === 1 && reverseOwnerIds[0] === forwardOwnerId) {
-		return { state: "matching", resolvedOwnerId: forwardOwnerId };
-	}
-	if (forwardOwnerId || reverseOwnerIds.length > 0) {
+	if (reverseOwnerIds.length > 1) {
 		return { state: "conflicting", resolvedOwnerId: null };
 	}
 	return { state: "none", resolvedOwnerId: null };
+}
+
+/**
+ * The state of a label that names a container, judged on whether that container agrees.
+ * @param forwardOwnerId the container the label names
+ * @param reverseOwnerIds the containers naming the label, in identity order
+ * @returns the state and the owner it resolves to, if any
+ */
+function forwardState(
+	forwardOwnerId: string,
+	reverseOwnerIds: readonly string[],
+): Pick<LabelOwnershipClassification, "state" | "resolvedOwnerId"> {
+	if (reverseOwnerIds.length === 0) {
+		return { state: "forward-only", resolvedOwnerId: forwardOwnerId };
+	}
+	if (reverseOwnerIds.length === 1 && reverseOwnerIds[0] === forwardOwnerId) {
+		return { state: "matching", resolvedOwnerId: forwardOwnerId };
+	}
+	return { state: "conflicting", resolvedOwnerId: null };
 }
 
 /**
@@ -195,14 +265,15 @@ function buildLabelClassifications(
 	const labelOwnership = new Map<string, LabelOwnershipClassification>();
 	const confirmedLabels = new Map<string, string>();
 	for (const record of live) {
-		if (record.type !== "text" || !record.usableId || !record.id) {
+		const labelId = classifiableLabelId(record);
+		if (labelId === null) {
 			continue;
 		}
-		const classification = classifyLabelOwnership(record, record.id, reverse, duplicateIds);
-		labelOwnership.set(record.id, classification);
-		const { resolvedOwnerId } = classification;
-		if (resolvedOwnerId && resolvedOwnerId !== record.id && byId.has(resolvedOwnerId)) {
-			confirmedLabels.set(record.id, resolvedOwnerId);
+		const classification = classifyLabelOwnership(record, labelId, reverse, duplicateIds);
+		labelOwnership.set(labelId, classification);
+		const owner = confirmedOwnerId(classification, labelId, byId);
+		if (owner !== null) {
+			confirmedLabels.set(labelId, owner);
 		}
 	}
 	return { labelOwnership, confirmedLabels };
@@ -252,12 +323,12 @@ function buildConnectorEndpoints(
 ): Map<string, ConnectorEndpointClassification> {
 	const connectorEndpoints = new Map<string, ConnectorEndpointClassification>();
 	for (const record of live) {
-		if (!record.usableId || !record.id || (record.type !== "arrow" && record.type !== "line")) {
+		if (!isUsableConnector(record)) {
 			continue;
 		}
 		const start = endpointFacts(record.raw?.startBinding, nodeOfElement, duplicateIds);
 		const end = endpointFacts(record.raw?.endBinding, nodeOfElement, duplicateIds);
-		connectorEndpoints.set(record.id, {
+		connectorEndpoints.set(record.id!, {
 			nodeAnalysisEligible: !start.blocked && !end.blocked,
 			startElement: start.element,
 			endElement: end.element,
@@ -266,6 +337,78 @@ function buildConnectorEndpoints(
 		});
 	}
 	return connectorEndpoints;
+}
+
+/**
+ * The id of a text record that can be classified: one identity, readable, and unique.
+ * @param record the live record
+ * @returns the label id, or null when the record is not a classifiable label
+ */
+function classifiableLabelId(record: DecodedRecord): string | null {
+	if (record.type !== "text" || !record.usableId || !record.id) {
+		return null;
+	}
+	return record.id;
+}
+
+/**
+ * The container a label is confirmed to belong to: one resolved owner that is not the label
+ * itself and is present among the live records.
+ * @param classification the label's ownership classification
+ * @param labelId the label id
+ * @param byId live records by usable id
+ * @returns the container id, or null when nothing is confirmed
+ */
+function confirmedOwnerId(
+	classification: LabelOwnershipClassification,
+	labelId: string,
+	byId: ReadonlyMap<string, DecodedRecord>,
+): string | null {
+	const { resolvedOwnerId } = classification;
+	if (resolvedOwnerId === null || resolvedOwnerId === labelId || !byId.has(resolvedOwnerId)) {
+		return null;
+	}
+	return resolvedOwnerId;
+}
+
+/**
+ * Whether a record is a connector whose identity can carry an endpoint classification.
+ * @param record the live record
+ * @returns true for a uniquely identified arrow or line
+ */
+function isUsableConnector(record: DecodedRecord): boolean {
+	if (!record.usableId || !record.id) {
+		return false;
+	}
+	return record.type === "arrow" || record.type === "line";
+}
+
+/**
+ * Whether a record names an identity that more than one live record claims.
+ * @param record the live record
+ * @returns true when the identity is duplicated
+ */
+function isDuplicateIdentity(record: DecodedRecord): boolean {
+	return Boolean(record.id) && !record.usableId;
+}
+
+/**
+ * Whether a record names an identity nothing else claims.
+ * @param record the live record
+ * @returns true when the identity can index the record
+ */
+function isUsableIdentity(record: DecodedRecord): boolean {
+	return record.usableId && record.id !== null;
+}
+
+/**
+ * The parent of one node, if it has one the model knows.
+ * @param model the inspection model
+ * @param nodeId the node to look up
+ * @returns the parent node id, or null
+ */
+function parentOf(model: InspectionModel, nodeId: string): string | null {
+	return model.nodes.get(nodeId)?.parentId ?? null;
 }
 
 /**
@@ -280,13 +423,13 @@ function indexLiveRecords(live: readonly DecodedRecord[]): {
 	const byId = new Map<string, DecodedRecord>();
 	const duplicateIds = new Set<string>();
 	for (const record of live) {
-		if (record.id && !record.usableId) {
-			duplicateIds.add(record.id);
+		if (isDuplicateIdentity(record)) {
+			duplicateIds.add(record.id!);
 		}
 	}
 	for (const record of live) {
-		if (record.usableId && record.id) {
-			byId.set(record.id, record);
+		if (isUsableIdentity(record)) {
+			byId.set(record.id!, record);
 		}
 	}
 	return { byId, duplicateIds };
@@ -336,10 +479,10 @@ function buildInspectionModel(records: readonly DecodedRecord[]): InspectionMode
  */
 function semanticParents(model: InspectionModel, startingNodeId: string | undefined): Set<string> {
 	const found = new Set<string>();
-	let current = startingNodeId ? model.nodes.get(startingNodeId)?.parentId : null;
-	while (current && !found.has(current)) {
+	let current = startingNodeId === undefined ? null : parentOf(model, startingNodeId);
+	while (current !== null && !found.has(current)) {
 		found.add(current);
-		current = model.nodes.get(current)?.parentId ?? null;
+		current = parentOf(model, current);
 	}
 	return found;
 }
