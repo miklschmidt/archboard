@@ -51,6 +51,16 @@ function linkTarget(link: string): string {
 function vaultFilesByName(root: string): Map<string, string[]> {
 	const byName = new Map<string, string[]>();
 	/**
+	 * Remember one file under its lowercased name.
+	 * @param full The absolute path.
+	 * @param name The file's own name.
+	 */
+	const record = (full: string, name: string): void => {
+		const found = byName.get(name.toLowerCase());
+		if (found) found.push(full);
+		else byName.set(name.toLowerCase(), [full]);
+	};
+	/**
 	 * Add every file below one directory, skipping `.git`.
 	 * @param dir The directory to walk.
 	 */
@@ -63,15 +73,8 @@ function vaultFilesByName(root: string): Map<string, string[]> {
 		}
 		for (const entry of entries) {
 			const full = path.join(dir, entry.name);
-			if (entry.isDirectory()) {
-				if (entry.name === ".git") continue;
-				walk(full);
-			} else if (entry.isFile()) {
-				const name = entry.name.toLowerCase();
-				const found = byName.get(name);
-				if (found) found.push(full);
-				else byName.set(name, [full]);
-			}
+			if (entry.isDirectory() && entry.name !== ".git") walk(full);
+			else if (entry.isFile()) record(full, entry.name);
 		}
 	};
 	walk(root);
@@ -88,6 +91,22 @@ function fileInsideVault(vault: string, candidate: string): string | null {
 	const resolved = path.resolve(candidate);
 	if (resolved !== vault && !resolved.startsWith(vault + path.sep)) return null;
 	return fs.existsSync(resolved) && fs.statSync(resolved).isFile() ? resolved : null;
+}
+
+/**
+ * Where a link points if it points somewhere plainly: relative to the vault
+ * root, or relative to the note it was written in.
+ * @param target The link's path, as written.
+ * @param notePath The note the link appears in.
+ * @param root The vault root.
+ * @returns The absolute file path, or null.
+ */
+function directTarget(target: string, notePath: string, root: string): string | null {
+	const vault = path.resolve(root);
+	return (
+		fileInsideVault(vault, path.join(vault, target)) ??
+		fileInsideVault(vault, path.join(path.dirname(notePath), target))
+	);
 }
 
 /**
@@ -110,11 +129,10 @@ function resolveVaultLink(
 ): string | null {
 	const target = linkTarget(link);
 	if (target === "" || path.isAbsolute(target)) return null;
-	const vault = path.resolve(root);
-	const direct =
-		fileInsideVault(vault, path.join(vault, target)) ??
-		fileInsideVault(vault, path.join(path.dirname(notePath), target));
+	const direct = directTarget(target, notePath, root);
 	if (direct) return direct;
+	// One match in the whole vault is an answer; several is a name the note did
+	// not say enough about, and none is a link to nothing.
 	const matches = byName().get(path.basename(target).toLowerCase()) ?? [];
 	return matches.length === 1 ? matches[0]! : null;
 }
