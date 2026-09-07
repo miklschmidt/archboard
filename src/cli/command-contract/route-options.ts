@@ -19,11 +19,11 @@ type ChildDiscoveryOptions<Spec extends FlagSpecs> = {
 function childDiscoveryOptions<const Spec extends FlagSpecs>(
 	spec: Spec,
 ): ChildDiscoveryOptions<Spec> {
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- Object.fromEntries loses the key
-	// types Object.entries produced; the mapped type keys off the same takesValue this maps over.
-	return Object.fromEntries(
+	const options = Object.fromEntries(
 		Object.entries(spec).map(([name, option]) => [name, option.takesValue ? "value" : "flag"]),
-	) as ChildDiscoveryOptions<Spec>;
+	);
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- fromEntries loses the keys entries produced; the mapped type keys off the same takesValue mapped over here
+	return options as ChildDiscoveryOptions<Spec>;
 }
 
 export { type FlagSpec, type FlagSpecs, type ChildDiscoveryOptions, childDiscoveryOptions };

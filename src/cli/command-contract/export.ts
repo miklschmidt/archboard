@@ -35,6 +35,31 @@ type ExportContent = z.infer<typeof ExportContentSchema>;
 const ExportResultSchema = z.union([ExportContentSchema, ExportReceiptSchema]);
 type ExportResult = z.infer<typeof ExportResultSchema>;
 
+/**
+ * Refuses to export over a file that exists and is not an Obsidian Excalidraw
+ * note, unless the person said to overwrite it. An empty file is not something
+ * anybody loses.
+ * @param resolved - The destination path, or undefined when writing to stdout.
+ * @param existing - The destination's current content, when it has any.
+ * @param force - Whether the person passed `--force`.
+ * @throws {CliUsageError} When the destination holds something else.
+ */
+function assertOverwritable(
+	resolved: string | undefined,
+	existing: string | undefined,
+	force: boolean,
+): void {
+	if (existing === undefined || existing.trim() === "" || force) {
+		return;
+	}
+	if (!isObsidianExcalidrawMd(existing)) {
+		throw new CliUsageError(
+			`${resolved} exists and is not an Obsidian .excalidraw.md file; exporting would overwrite it. ` +
+				"Pass --force to overwrite it anyway (its frontmatter is still preserved).",
+		);
+	}
+}
+
 const exportContract = defineCommand({
 	path: ["export"],
 	summary: "Export the scene as .excalidraw JSON or Obsidian .excalidraw.md",
@@ -111,6 +136,12 @@ const exportContract = defineCommand({
 				artifact: PendingArtifactSchema,
 			},
 		],
+		/**
+		 * An export names a file or it does not: with `--out` the command
+		 * publishes a receipt for the file it wrote, without it the scene itself.
+		 * @param input - The parsed command input.
+		 * @returns The output case's id.
+		 */
 		select: (input) => (input.out === undefined ? "raw" : "file"),
 	},
 	prerequisites: ["server", "board"],
@@ -130,6 +161,15 @@ const exportContract = defineCommand({
 			description: "Best-effort image files",
 		},
 	],
+	/**
+	 * Serializes the scene in the requested format and either publishes it or
+	 * stages it as a file. An existing destination that is not an Obsidian
+	 * drawing is refused unless the person insisted, because exporting over it
+	 * would destroy a note this command did not write.
+	 * @param input - The parsed command input.
+	 * @param context - The command context.
+	 * @returns The scene content, or the file receipt with the staged artifact.
+	 */
 	async handler(input, context) {
 		const format = context.parse(resolvedExportFormatSchema, {
 			format: input.format,
@@ -138,17 +178,7 @@ const exportContract = defineCommand({
 		const resolved = input.out ? context.resolvePath(input.out) : undefined;
 		const existing =
 			resolved && format === "obsidian" ? context.readOptionalTextFile(resolved) : undefined;
-		if (
-			existing !== undefined &&
-			existing.trim() !== "" &&
-			!isObsidianExcalidrawMd(existing) &&
-			!input.force
-		) {
-			throw new CliUsageError(
-				`${resolved} exists and is not an Obsidian .excalidraw.md file; exporting would overwrite it. ` +
-					"Pass --force to overwrite it anyway (its frontmatter is still preserved).",
-			);
-		}
+		assertOverwritable(resolved, existing, input.force);
 		await context.require("server", "Exporting the scene");
 		const { scene, elementCount } = await buildSceneFile();
 		const content =

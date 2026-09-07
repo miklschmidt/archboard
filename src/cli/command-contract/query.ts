@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { getElements, searchElements } from "@/runtime/engine/canvas-client";
+import type { CommandContext } from "@/cli/command-contract/contract";
 import { defineCommand } from "@/cli/command-contract/contract";
 import { ServerElementSchema } from "@/cli/command-contract/schemas";
 import { commonRefusals, tail } from "@/cli/command-contract/lib/common";
@@ -15,14 +16,44 @@ type QueryInput = z.infer<typeof QueryInputSchema>;
 const QueryResultSchema = z.array(ServerElementSchema);
 type QueryResult = z.infer<typeof QueryResultSchema>;
 
-const bboxSchema = z.string().transform((value, context) => {
-	const parts = value.split(",").map((part) => Number(part.trim()));
-	if (parts.length !== 4 || parts.some(Number.isNaN)) {
-		context.addIssue({ code: "custom", message: '--bbox expects "x_min,y_min,x_max,y_max"' });
-		return z.NEVER;
+const BBOX_MESSAGE = '--bbox expects "x_min,y_min,x_max,y_max"';
+const bboxCoordinate = z
+	.number({ error: BBOX_MESSAGE })
+	.refine((value) => !Number.isNaN(value), BBOX_MESSAGE);
+const bboxSchema = z
+	.string()
+	.transform((value) => value.split(",").map((part) => Number(part.trim())))
+	.pipe(
+		z.tuple([bboxCoordinate, bboxCoordinate, bboxCoordinate, bboxCoordinate], {
+			error: BBOX_MESSAGE,
+		}),
+	);
+
+/** The spellings a filter value may use for something other than text. */
+const FILTER_LITERALS = new Map<string, boolean | null>([
+	["true", true],
+	["false", false],
+	["null", null],
+]);
+
+/**
+ * Reads a filter value as the JSON scalar it spells, so `locked=true` matches
+ * a boolean field and `weight=3` a numeric one. The raw text is kept beside
+ * this by the caller, so a field that really holds "true" still matches.
+ * @param raw - The text after the equals sign.
+ * @returns The value's coerced form, which is the text itself when it spells nothing else.
+ */
+function coerceFilterValue(raw: string): string | number | boolean | null {
+	const literal = FILTER_LITERALS.get(raw);
+	if (literal !== undefined) {
+		return literal;
 	}
-	return parts as [number, number, number, number];
-});
+	const numeric = Number(raw);
+	if (raw.trim() !== "" && !Number.isNaN(numeric)) {
+		return numeric;
+	}
+	return raw;
+}
 
 const filterPairSchema = z.string().transform((value, context) => {
 	const equals = value.indexOf("=");
@@ -31,42 +62,105 @@ const filterPairSchema = z.string().transform((value, context) => {
 		return z.NEVER;
 	}
 	const raw = value.slice(equals + 1);
-	const coerced =
-		raw === "true"
-			? true
-			: raw === "false"
-				? false
-				: raw === "null"
-					? null
-					: raw.trim() !== "" && !Number.isNaN(Number(raw))
-						? Number(raw)
-						: raw;
-	return { key: value.slice(0, equals), raw, coerced };
+	return { key: value.slice(0, equals), raw, coerced: coerceFilterValue(raw) };
 });
 
+const filterObjectSchema = z.record(z.string(), z.unknown());
 const filterJsonSchema = z.string().transform((value, context) => {
+	let parsed: unknown;
 	try {
-		const parsed: unknown = JSON.parse(value);
-		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-			throw new Error("expected object");
-		}
-		return parsed as Record<string, unknown>;
+		parsed = JSON.parse(value);
 	} catch (error) {
 		context.addIssue({
 			code: "custom",
-			message: `Invalid JSON in --filter-json: ${(error as Error).message}`,
+			message: `Invalid JSON in --filter-json: ${error instanceof Error ? error.message : String(error)}`,
 		});
 		return z.NEVER;
 	}
+	const object = filterObjectSchema.safeParse(parsed);
+	if (!object.success || Array.isArray(parsed)) {
+		context.addIssue({ code: "custom", message: "Invalid JSON in --filter-json: expected object" });
+		return z.NEVER;
+	}
+	return object.data;
 });
 
+/**
+ * Follows a dotted path into a decoded element, so a filter can name a nested
+ * field such as `customData.archboard.kind`.
+ * @param value - The element to look inside.
+ * @param dotPath - The field path, its segments separated by dots.
+ * @returns The value at that path, or undefined when the path leaves the object.
+ */
 function lookupPath(value: unknown, dotPath: string): unknown {
-	return dotPath.split(".").reduce((current, key) => {
-		if (!current || typeof current !== "object") {
+	let current = value;
+	for (const key of dotPath.split(".")) {
+		if (current === null || typeof current !== "object") {
 			return undefined;
 		}
-		return (current as Record<string, unknown>)[key];
-	}, value);
+		const next: unknown = Reflect.get(current, key);
+		current = next;
+	}
+	return current;
+}
+
+/**
+ * Builds the search the server can answer on its own. Only type and bounding
+ * box are the server's to filter; everything else is applied here afterwards.
+ * @param input - The parsed command input.
+ * @param context - The command context, which validates the bounding box.
+ * @returns The query parameters, empty when the server has nothing to narrow by.
+ */
+function serverQuery(input: QueryInput, context: CommandContext): URLSearchParams {
+	const query = new URLSearchParams();
+	if (input.type !== undefined) {
+		query.set("type", input.type);
+	}
+	if (input.bbox !== undefined) {
+		const [xMin, yMin, xMax, yMax] = context.parse(bboxSchema, input.bbox);
+		query.set("x_min", String(xMin));
+		query.set("y_min", String(yMin));
+		query.set("x_max", String(xMax));
+		query.set("y_max", String(yMax));
+	}
+	return query;
+}
+
+/**
+ * Builds one predicate per typed filter the person gave. A value matches
+ * either as the text they typed or as the scalar it spells, and a field
+ * holding a list matches when any of its entries does.
+ * @param input - The parsed command input.
+ * @param context - The command context, which validates each filter.
+ * @returns The predicates, all of which an element must satisfy.
+ */
+function clientPredicates(
+	input: QueryInput,
+	context: CommandContext,
+): ((element: unknown) => boolean)[] {
+	const predicates: ((element: unknown) => boolean)[] = [];
+	for (const value of input.filter) {
+		const { key, raw, coerced } = context.parse(filterPairSchema, value);
+		predicates.push((element) => {
+			const actual = lookupPath(element, key);
+			if (Array.isArray(actual)) {
+				return actual.some((candidate) => candidate === raw || candidate === coerced);
+			}
+			return actual === raw || actual === coerced;
+		});
+	}
+	if (input.filterJson === undefined) {
+		return predicates;
+	}
+	for (const [key, expected] of Object.entries(context.parse(filterJsonSchema, input.filterJson))) {
+		predicates.push((element) => {
+			const actual = lookupPath(element, key);
+			return Array.isArray(actual)
+				? actual.some((candidate) => candidate === expected)
+				: actual === expected;
+		});
+	}
+	return predicates;
 }
 
 const queryContract = defineCommand({
@@ -143,6 +237,10 @@ const queryContract = defineCommand({
 				description: "Bare element array",
 			},
 		],
+		/**
+		 * A query always answers with the element array; there is no second shape.
+		 * @returns The only output case's id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board"],
@@ -162,48 +260,23 @@ const queryContract = defineCommand({
 			description: "Type or bbox search",
 		},
 	],
+	/**
+	 * Reads the board, narrowing on the server where it can and applying the
+	 * typed predicates here, and publishes the elements that match.
+	 * @param input - The parsed command input.
+	 * @param context - The command context.
+	 * @returns The matching elements as the command's result.
+	 */
 	async handler(input, context) {
 		await context.require("server", "Querying elements");
-		const query = new URLSearchParams();
-		if (input.type !== undefined) {
-			query.set("type", input.type);
-		}
-		if (input.bbox !== undefined) {
-			const [xMin, yMin, xMax, yMax] = context.parse(bboxSchema, input.bbox);
-			query.set("x_min", String(xMin));
-			query.set("y_min", String(yMin));
-			query.set("x_max", String(xMax));
-			query.set("y_max", String(yMax));
-		}
-
-		let results = query.size > 0 ? await searchElements(query) : await getElements();
-		const predicates: ((element: unknown) => boolean)[] = [];
-		for (const value of input.filter) {
-			const { key, raw, coerced } = context.parse(filterPairSchema, value);
-			predicates.push((element) => {
-				const actual = lookupPath(element, key);
-				if (Array.isArray(actual)) {
-					return actual.some((candidate) => candidate === raw || candidate === coerced);
-				}
-				return actual === raw || actual === coerced;
-			});
-		}
-		if (input.filterJson !== undefined) {
-			for (const [key, expected] of Object.entries(
-				context.parse(filterJsonSchema, input.filterJson),
-			)) {
-				predicates.push((element) => {
-					const actual = lookupPath(element, key);
-					return Array.isArray(actual)
-						? actual.some((candidate) => candidate === expected)
-						: actual === expected;
-				});
-			}
-		}
-		if (predicates.length > 0) {
-			results = results.filter((element) => predicates.every((test) => test(element)));
-		}
-		return { result: QueryResultSchema.parse(results) };
+		const query = serverQuery(input, context);
+		const results = query.size > 0 ? await searchElements(query) : await getElements();
+		const predicates = clientPredicates(input, context);
+		const matching =
+			predicates.length > 0
+				? results.filter((element) => predicates.every((test) => test(element)))
+				: results;
+		return { result: QueryResultSchema.parse(matching) };
 	},
 });
 
