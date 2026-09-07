@@ -47,7 +47,10 @@ interface ProcessGroupCleanup extends ProcessGroupDeadline {
  * handle is even assigned, and the scheduling code must observe that.
  * @returns The latch with its settle and inspection operations.
  */
-function createSettleLatch(): { readonly settle: () => boolean; readonly isSettled: () => boolean } {
+function createSettleLatch(): {
+	readonly settle: () => boolean;
+	readonly isSettled: () => boolean;
+} {
 	const latch = { settled: false };
 	return Object.freeze({
 		/**
@@ -302,16 +305,23 @@ function createProcessGroupCleanup(
 		sendSignal(input.identity, "SIGKILL");
 		if (!stillOwned(input.identity, "verify KILL cleanup of the Codex process group")) return false;
 		if (clock.now() >= input.deadlineAtMs) return true;
-		const killEvent = await waitForClosedOrAt(input.childClosed, input.deadlineAtMs);
-		if (
-			killEvent === "closed" &&
-			!stillOwned(input.identity, "verify KILL cleanup of the Codex process group")
-		)
-			return false;
+		if (!(await killDrained(input))) return false;
 		if (clock.now() < input.deadlineAtMs) {
 			await waitUntil(input.deadlineAtMs);
 		}
 		return true;
+	};
+
+	/**
+	 * Wait for the killed group to close, and re-check ownership once it does: a group that
+	 * closed and is no longer ours needs no final inspection.
+	 * @param input - The group, its close promise and the composed deadline.
+	 * @returns False when the group closed and ownership has lapsed.
+	 */
+	const killDrained = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
+		const killEvent = await waitForClosedOrAt(input.childClosed, input.deadlineAtMs);
+		if (killEvent !== "closed") return true;
+		return stillOwned(input.identity, "verify KILL cleanup of the Codex process group");
 	};
 
 	/**

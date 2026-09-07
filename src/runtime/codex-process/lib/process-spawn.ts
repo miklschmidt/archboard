@@ -26,17 +26,14 @@ import {
 	exactArguments,
 	executableFailureCode,
 } from "@/runtime/codex-process/lib/process-startup-checks";
-import {
-	CodexStorageError,
-	type PreparedCodexStorage,
-} from "@/runtime/codex-process/lib/storage";
+import { CodexStorageError, type PreparedCodexStorage } from "@/runtime/codex-process/lib/storage";
 import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/lib/process-group";
 
 /**
- * Make a startup failure terminal and rethrow it so the caller unwinds.
+ * Make a startup failure terminal and rethrow it so the caller unwinds. The function never
+ * returns.
  * @param state - The owner state.
  * @param error - The startup failure.
- * @returns Never; always throws.
  */
 function failStartup(state: ProcessOwnerState, error: CodexProcessError): never {
 	terminalFailure(state, error);

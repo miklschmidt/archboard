@@ -97,7 +97,10 @@ function retainedValue(ambient: CodexAmbientEnvironment, key: string): string | 
 	const value = ambient[key];
 	if (value === undefined) return undefined;
 	if (typeof value !== "string") {
-		throw new CodexEnvironmentError(`Retained environment key ${key} must have a string value.`, key);
+		throw new CodexEnvironmentError(
+			`Retained environment key ${key} must have a string value.`,
+			key,
+		);
 	}
 	if (value.includes("\0")) {
 		throw new CodexEnvironmentError(`Retained environment key ${key} contains a NUL byte.`, key);
