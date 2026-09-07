@@ -197,6 +197,28 @@ function isLiveMember(stat: ProcStat, pgid: number): boolean {
 }
 
 /**
+ * What one scanned process contributes to the member count: one when it is a live member of
+ * the owned group, zero when it is not, or the verdict that stops the whole scan.
+ * @param identity - The captured identity.
+ * @param pid - The process to inspect.
+ * @returns The contribution, or a verdict that ends the scan.
+ */
+function memberVerdict(
+	identity: CodexProcessGroupIdentity,
+	pid: number,
+): 0 | 1 | "reused" | "unproven" {
+	let stat: ProcStat | undefined;
+	try {
+		stat = readProcStat(pid);
+	} catch {
+		return "unproven";
+	}
+	if (!stat) return 0;
+	if (pid === identity.leaderPid && stat.startTime !== identity.leaderStartTime) return "reused";
+	return isLiveMember(stat, identity.pgid) ? 1 : 0;
+}
+
+/**
  * Count live members of the owned group by scanning every process, refusing
  * as soon as the leader identity is seen to have been reused.
  * @param identity - The captured identity.
@@ -209,15 +231,9 @@ function countMembers(
 ): number | "reused" | "unproven" {
 	let memberCount = 0;
 	for (const pid of pids) {
-		let stat: ProcStat | undefined;
-		try {
-			stat = readProcStat(pid);
-		} catch {
-			return "unproven";
-		}
-		if (!stat) continue;
-		if (pid === identity.leaderPid && stat.startTime !== identity.leaderStartTime) return "reused";
-		if (isLiveMember(stat, identity.pgid)) memberCount += 1;
+		const verdict = memberVerdict(identity, pid);
+		if (typeof verdict === "string") return verdict;
+		memberCount += verdict;
 	}
 	return memberCount;
 }

@@ -33,6 +33,18 @@ type CodexExecutableFailureCode =
 	| "wrong_version"
 	| "outside_checkout";
 
+/** The seam that runs the bounded `--version` proof, injected by tests. */
+interface CodexExecutableVerificationOptions {
+	readonly execFileSync?: typeof execFileSync;
+}
+
+/** What a failed executable verification records about itself. */
+interface CodexExecutableErrorInit {
+	readonly code: CodexExecutableFailureCode;
+	readonly executablePath: string;
+	readonly message: string;
+}
+
 class CodexExecutableError extends Error {
 	readonly code: CodexExecutableFailureCode;
 	readonly executablePath: string;
@@ -42,11 +54,7 @@ class CodexExecutableError extends Error {
 	 * can map the failure to a terminal process failure code.
 	 * @param init - The failure code, the executable path examined, and the message.
 	 */
-	constructor(init: {
-		readonly code: CodexExecutableFailureCode;
-		readonly executablePath: string;
-		readonly message: string;
-	}) {
+	constructor(init: CodexExecutableErrorInit) {
 		super(init.message);
 		this.name = "CodexExecutableError";
 		this.code = init.code;
@@ -109,9 +117,21 @@ function verificationTimedOut(cause: unknown): boolean {
 		return false;
 	}
 	const code = "code" in cause ? cause.code : undefined;
-	const killed = "killed" in cause ? cause.killed : undefined;
+	return code === "ETIMEDOUT" || killedBySignal(cause);
+}
+
+/**
+ * Whether a spawn failure says the child was killed by one of the signals the bounded probe
+ * uses to stop an executable that will not answer.
+ * @param cause - The value thrown by execFileSync, already known to be an object.
+ * @returns True when the probe reported a kill by TERM or KILL.
+ */
+function killedBySignal(cause: object): boolean {
+	if (!("killed" in cause) || cause.killed !== true) {
+		return false;
+	}
 	const signal = "signal" in cause ? cause.signal : undefined;
-	return code === "ETIMEDOUT" || (killed === true && (signal === "SIGKILL" || signal === "SIGTERM"));
+	return signal === "SIGKILL" || signal === "SIGTERM";
 }
 
 /**
@@ -221,7 +241,7 @@ function reportedVersion(executablePath: string, execute: typeof execFileSync): 
  */
 function verifyCodexExecutable(
 	candidate: string,
-	options: { readonly execFileSync?: typeof execFileSync } = {},
+	options: CodexExecutableVerificationOptions = {},
 ): VerifiedCodexExecutable {
 	const executablePath = absolutePath(candidate);
 	assertExecutableFile(executablePath);

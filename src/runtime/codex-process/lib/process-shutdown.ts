@@ -1,6 +1,9 @@
 import { CODEX_COMPOSED_SHUTDOWN_MS } from "@/shared/timing/timing";
 import { ensureGroupCleanup } from "@/runtime/codex-process/lib/process-child";
-import type { CodexProcessError, CodexProcessSnapshot } from "@/runtime/codex-process/lib/process-contract";
+import type {
+	CodexProcessError,
+	CodexProcessSnapshot,
+} from "@/runtime/codex-process/lib/process-contract";
 import {
 	clearRestart,
 	ownsChildren,

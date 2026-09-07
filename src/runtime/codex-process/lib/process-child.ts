@@ -7,9 +7,7 @@ import {
 import {
 	CodexProcessError,
 	type ChildExit,
-	type CodexProcessChild,
 	type CodexProcessExit,
-	type CodexProcessLifecycle,
 } from "@/runtime/codex-process/lib/process-contract";
 import {
 	clearReadiness,
@@ -19,7 +17,6 @@ import {
 	publish,
 	rejectPendingStart,
 	releaseStorage,
-	resolvePendingStart,
 	retireListener,
 	safeCauseMessage,
 	sanitizeProcessError,
@@ -34,143 +31,13 @@ import {
 	strictConfigHint,
 } from "@/runtime/codex-process/lib/process-startup-checks";
 
+import { publicChild } from "@/runtime/codex-process/lib/child-generation";
+
 const STRICT_CONFIG_MATCH_WINDOW = 256;
 
 /**
- * Decide whether a lifecycle signal still belongs to the live child: the same
- * record, the same generation, not yet closed, and still an owned group.
- * @param state - The owner state.
- * @param record - The child generation the capability was minted for.
- * @param generation - The generation number the capability carries.
- * @returns True when the signal may act.
- */
-function isCurrentGeneration(
-	state: ProcessOwnerState,
-	record: ChildRecord,
-	generation: number,
-): boolean {
-	return (
-		state.current === record &&
-		record.generation === generation &&
-		!record.closedHandled &&
-		state.groups.has(record)
-	);
-}
-
-/**
- * Accept the app-server's typed readiness for the live child and settle the
- * pending start.
- * @param state - The owner state.
- * @param record - The child generation.
- * @param generation - The generation number the capability carries.
- */
-function markAppServerReady(state: ProcessOwnerState, record: ChildRecord, generation: number): void {
-	if (!isCurrentGeneration(state, record, generation) || state.stopping) return;
-	if (state.state !== "running" || record.ready) return;
-	record.ready = true;
-	record.strictHint = false;
-	record.strictTail = "";
-	clearReadiness(state, record);
-	publish(state);
-	resolvePendingStart(state);
-}
-
-/**
- * Accept account readiness for a ready live child, which resets the restart
- * budget.
- * @param state - The owner state.
- * @param record - The child generation.
- * @param generation - The generation number the capability carries.
- */
-function markAccountReady(state: ProcessOwnerState, record: ChildRecord, generation: number): void {
-	if (!isCurrentGeneration(state, record, generation) || state.state !== "running") return;
-	if (!record.ready) return;
-	state.accountReady = true;
-	state.restartAttempt = 0;
-	state.lastFailure = null;
-	publish(state);
-}
-
-/**
- * Accept a terminal failure reported by the transport for the live child and
- * stop the owner.
- * @param state - The owner state.
- * @param record - The child generation.
- * @param generation - The generation number the capability carries.
- * @param message - What failed.
- * @param cause - The underlying failure, when any.
- */
-function markTerminalFailure(
-	state: ProcessOwnerState,
-	record: ChildRecord,
-	generation: number,
-	message: string,
-	cause?: unknown,
-): void {
-	if (!isCurrentGeneration(state, record, generation) || state.stopping) return;
-	if (state.state !== "running") return;
-	const detail = cause === undefined ? message : `${message}: ${safeCauseMessage(state, cause)}`;
-	terminalFailure(
-		state,
-		new CodexProcessError({
-			code: "strict_config_rejected",
-			terminal: true,
-			message: publicDiagnostic(state, detail),
-		}),
-	);
-	void state.hooks.stop().catch(() => undefined);
-}
-
-/**
- * Mint the lifecycle capability bound to exactly this child generation.
- * @param state - The owner state.
- * @param record - The child generation.
- * @returns The frozen lifecycle capability.
- */
-function childLifecycle(state: ProcessOwnerState, record: ChildRecord): CodexProcessLifecycle {
-	const { generation } = record;
-	return Object.freeze({
-		markAppServerReady: () => markAppServerReady(state, record, generation),
-		markAccountReady: () => markAccountReady(state, record, generation),
-		markTerminalFailure: (message: string, cause?: unknown) =>
-			markTerminalFailure(state, record, generation, message, cause),
-	});
-}
-
-/**
- * Expose a child generation as the public handle with live exit fields.
- * @param state - The owner state.
- * @param record - The child generation.
- * @returns The frozen public child.
- */
-function publicChild(state: ProcessOwnerState, record: ChildRecord): CodexProcessChild {
-	const child: CodexProcessChild = {
-		pid: record.child.pid!,
-		get exitCode() {
-			return record.child.exitCode;
-		},
-		get signalCode() {
-			return record.child.signalCode;
-		},
-		stdin: record.child.stdin,
-		stdout: record.child.stdout,
-		stderr: record.child.stderr,
-		lifecycle: childLifecycle(state, record),
-		on(event, listener) {
-			record.child.on(event, listener);
-			return child;
-		},
-		removeListener(event, listener) {
-			record.child.removeListener(event, listener);
-			return child;
-		},
-	};
-	return Object.freeze(child);
-}
-
-/**
- * Record that a child's process group has drained, releasing the record once
- * its close has also been handled.
+ * Mark a child generation quiescent once its process group has drained, and forget the
+ * generation when its close has also been handled.
  * @param state - The owner state.
  * @param record - The child generation.
  */
@@ -268,7 +135,10 @@ function observeGroupCleanup(
  * @param record - The child generation.
  * @returns The exit classification.
  */
-function classifyExit(state: ProcessOwnerState, record: ChildRecord): CodexProcessExit["classification"] {
+function classifyExit(
+	state: ProcessOwnerState,
+	record: ChildRecord,
+): CodexProcessExit["classification"] {
 	if (state.stopping) return "requested";
 	if (record.strictHint) return "strict_config";
 	return record.ready ? "crash" : "early_exit";
@@ -414,8 +284,9 @@ function recoverFromExit(
 	);
 	void cleanup.then(
 		() => {
-			if (state.stopping || state.state !== "group_cleanup") return;
-			scheduleRestart(state, exit, classification);
+			if (!state.stopping && state.state === "group_cleanup") {
+				scheduleRestart(state, exit, classification);
+			}
 			return undefined;
 		},
 		(cause: unknown) => groupCleanupFailed(state, cause),
@@ -465,7 +336,13 @@ function routeClosedChild(
 	if (classification === "strict_config") {
 		terminalFailure(
 			state,
-			exitError(state, "strict_config", exit, true, " Check config.toml and the exact strict argv."),
+			exitError(
+				state,
+				"strict_config",
+				exit,
+				true,
+				" Check config.toml and the exact strict argv.",
+			),
 		);
 		observeGroupCleanup(state, record, deadlineAtMs);
 		return;

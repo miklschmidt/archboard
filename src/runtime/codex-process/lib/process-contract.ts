@@ -19,7 +19,11 @@ import type {
 	PreparedCodexStorage,
 } from "@/runtime/codex-process/lib/storage";
 
-const CODEX_APP_SERVER_ARGUMENTS = Object.freeze(["app-server", "--stdio", "--strict-config"] as const);
+const CODEX_APP_SERVER_ARGUMENTS = Object.freeze([
+	"app-server",
+	"--stdio",
+	"--strict-config",
+] as const);
 const CODEX_PROCESS_STDERR_MAX_BYTES = 64 * 1024;
 
 type CodexProcessState =
@@ -159,6 +163,15 @@ interface CodexProcess {
 	readonly subscribe: (listener: (snapshot: CodexProcessSnapshot) => void) => () => void;
 }
 
+/** What a process-owner failure records about itself. */
+interface CodexProcessErrorInit {
+	readonly code: CodexProcessFailureCode;
+	readonly message: string;
+	readonly terminal: boolean;
+	/** Accepted for internal call-site compatibility but never retained publicly. */
+	readonly cause?: unknown;
+}
+
 class CodexProcessError extends Error {
 	readonly code: CodexProcessFailureCode;
 	readonly terminal: boolean;
@@ -167,13 +180,7 @@ class CodexProcessError extends Error {
 	 * Classify a process-owner failure and record whether it ends the owner.
 	 * @param init - The failure code, message, terminality, and an internal cause never retained publicly.
 	 */
-	constructor(init: {
-		readonly code: CodexProcessFailureCode;
-		readonly message: string;
-		readonly terminal: boolean;
-		/** Accepted for internal call-site compatibility but never retained publicly. */
-		readonly cause?: unknown;
-	}) {
+	constructor(init: CodexProcessErrorInit) {
 		super(init.message);
 		this.name = "CodexProcessError";
 		this.code = init.code;

@@ -109,16 +109,28 @@ function resetForStart(state: ProcessOwnerState): void {
  */
 async function start(state: ProcessOwnerState): Promise<CodexProcessSnapshot> {
 	if (state.state === "running" || state.state === "starting") return waitForReadiness(state);
-	if (state.state === "backoff" || state.state === "group_cleanup")
-		return Promise.resolve(snapshot(state));
+	const settled = settledAnswer(state);
+	if (settled) return settled;
 	if (state.state === "stopping" && state.stopPromise) {
 		await state.stopPromise;
 		return start(state);
 	}
-	if (state.state === "terminal_failure" && state.terminalError)
-		return Promise.reject(state.terminalError);
 	resetForStart(state);
 	return beginStart(state);
+}
+
+/**
+ * The answer a state that is neither running nor startable gives instead of starting: a
+ * waiting owner reports itself, and a failed one reports why it stopped.
+ * @param state - The owner state.
+ * @returns The answer, or null when the owner should go on to start.
+ */
+function settledAnswer(state: ProcessOwnerState): Promise<CodexProcessSnapshot> | null {
+	if (state.state === "backoff" || state.state === "group_cleanup")
+		return Promise.resolve(snapshot(state));
+	if (state.state === "terminal_failure" && state.terminalError)
+		return Promise.reject(state.terminalError);
+	return null;
 }
 
 /**
@@ -161,8 +173,15 @@ function onChild(
  */
 function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProcess {
 	const state = createOwnerState(options);
+	/**
+	 * Close the cycle the state module cannot: stopping the owner.
+	 * @returns The snapshot once the group is quiescent.
+	 */
 	state.hooks.stop = () => stop(state);
-	state.hooks.spawnAttempt = () => spawnAttempt(state);
+	/** Close the cycle the state module cannot: spawning the next attempt. */
+	state.hooks.spawnAttempt = (): void => {
+		spawnAttempt(state);
+	};
 	/**
 	 * Subscribe to snapshot changes.
 	 * @param listener - Receives each published snapshot.
@@ -173,10 +192,31 @@ function createCodexProcessInternal(options: CodexProcessTestOptions): CodexProc
 		return () => state.listeners.delete(listener);
 	};
 	return Object.freeze({
+		/**
+		 * Start the child, or join what the owner is already doing.
+		 * @returns The snapshot once the app-server is ready, or the state's own answer.
+		 */
 		start: () => start(state),
+		/**
+		 * Stop the child and its process group.
+		 * @returns The snapshot once the group is quiescent.
+		 */
 		stop: () => stop(state),
+		/**
+		 * Read the owner's public state.
+		 * @returns The frozen snapshot.
+		 */
 		snapshot: () => snapshot(state),
+		/**
+		 * Read the live spawned child.
+		 * @returns The public child handle, or null.
+		 */
 		currentChild: () => currentChild(state),
+		/**
+		 * Subscribe to spawned children, receiving the live one immediately.
+		 * @param listener - Receives each spawned child.
+		 * @returns The unsubscribe.
+		 */
 		onChild: (listener: (child: CodexProcessChild) => void) => onChild(state, listener),
 		subscribe,
 	});
