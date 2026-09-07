@@ -362,17 +362,55 @@ function ownsTransaction(
 	local: OwnerLocalState,
 	transaction: LifecycleTransaction,
 ): boolean {
-	if (
-		local.transaction !== transaction ||
-		transaction.phase === "invalidated" ||
-		transaction.phase === "committed" ||
-		!ownsTicket(published, runtime, transaction.ticket) ||
-		published.state !== "starting" ||
-		runtime.exitBridge.event !== null ||
-		!ownsProcessChild(runtime.process, transaction.child)
-	) {
-		return false;
-	}
+	return (
+		isOpenTransaction(local, transaction) &&
+		stillStartingFor(published, runtime, transaction) &&
+		transportStillOpen(transaction)
+	);
+}
+
+/**
+ * Whether a transaction is the one in flight and has not already ended.
+ * @param local The owner's own state.
+ * @param transaction The transaction.
+ * @returns True when it is still open.
+ */
+function isOpenTransaction(local: OwnerLocalState, transaction: LifecycleTransaction): boolean {
+	return (
+		local.transaction === transaction &&
+		transaction.phase !== "invalidated" &&
+		transaction.phase !== "committed"
+	);
+}
+
+/**
+ * Whether the owner is still starting under this transaction's own ticket,
+ * against the child it acquired, with no child exit observed since.
+ * @param published What the owner publishes.
+ * @param runtime The runtime.
+ * @param transaction The transaction.
+ * @returns True when nothing has superseded it.
+ */
+function stillStartingFor(
+	published: CodexWorkbenchOwnerPublication,
+	runtime: CodexWorkbenchOwnerRuntime,
+	transaction: LifecycleTransaction,
+): boolean {
+	return (
+		ownsTicket(published, runtime, transaction.ticket) &&
+		published.state === "starting" &&
+		runtime.exitBridge.event === null &&
+		ownsProcessChild(runtime.process, transaction.child)
+	);
+}
+
+/**
+ * Whether the transport a transaction acquired is still open, which a
+ * transaction that has not acquired one yet cannot fail.
+ * @param transaction The transaction.
+ * @returns True when it may still act.
+ */
+function transportStillOpen(transaction: LifecycleTransaction): boolean {
 	const transport = transaction.transport;
 	if (transport === null) {
 		return true;
