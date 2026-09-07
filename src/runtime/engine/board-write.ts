@@ -40,7 +40,7 @@ import {
 	type PresentationContext,
 } from "@/runtime/engine/presentation";
 import { usableDrawnFiles } from "@/runtime/engine/embedded-files";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { EMPTY_CHECKOUT_SNAPSHOT, type CheckoutSnapshot } from "@/runtime/code-target";
 import {
 	notificationDelta,

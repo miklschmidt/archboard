@@ -3,7 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import type { ReadonlyBoardData } from "@/shared/board-elements";
 import type { CheckoutSnapshot } from "@/runtime/code-target";
 import type { BoardWriteDelta, BoardWriteTarget } from "@/runtime/engine/board-write";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { presentElements } from "@/runtime/engine/presentation";
 import type { PresentationContext, ReadonlyServerElement } from "@/runtime/engine/presentation";
 import type { CarriedVersion, ElementsChangedMessage, WebSocketMessage } from "@/runtime/engine/types";
