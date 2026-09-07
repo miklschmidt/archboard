@@ -20,14 +20,19 @@
 //                      to make, so insertion refuses and names the candidates
 //                      rather than picking one.
 
-import { getLibrary, batchCreateElementsStrict } from "@/runtime/engine/canvas-client";
+import {
+	getLibrary,
+	batchCreateElementsStrict,
+	type LibraryResponse,
+} from "@/runtime/engine/canvas-client";
 import type { ServerElement } from "@/runtime/engine/types";
 import { LIBRARY_NAME_OVERLAY } from "@/runtime/engine/library-names";
 import { extentOf } from "@/runtime/engine/geometry";
-import { mintId } from "@/shared/ids/ids";
-import type { RuntimeBoardElement } from "@/shared/board-elements";
 import { AmbiguousStencilError } from "@/runtime/engine/lib/ambiguous-stencil-error";
 import { UnknownStencilError } from "@/runtime/engine/lib/unknown-stencil-error";
+import type { RawElement } from "@/runtime/engine/lib/library-raw-element";
+import { rawElementOf } from "@/runtime/engine/lib/library-raw-element";
+import { remapStencil } from "@/runtime/engine/lib/library-stencil-placement";
 
 /** One stencil, described well enough to be picked without being drawn. */
 interface CatalogueEntry {
@@ -42,6 +47,7 @@ interface CatalogueEntry {
 	text: string | null;
 }
 
+/** The whole palette, and where it is kept. */
 interface Catalogue {
 	count: number;
 	seeded: string[];
@@ -50,27 +56,7 @@ interface Catalogue {
 	items: CatalogueEntry[];
 }
 
-type NativeKeys<Element> = Element extends Element ? keyof Element : never;
-type NativeValue<Key extends PropertyKey> = RuntimeBoardElement extends infer Element
-	? Element extends RuntimeBoardElement
-		? Key extends keyof Element
-			? Element[Key]
-			: never
-		: never
-	: never;
-
-/** Partial library JSON, projected from native fields plus its legacy reference metadata. */
-type RawElement = {
-	[
-		Key in Exclude<NativeKeys<RuntimeBoardElement>, "type" | "startBinding" | "endBinding">
-	]?: NativeValue<Key>;
-} & {
-	type?: NativeValue<"type"> | "draw";
-	startBinding?: Partial<NonNullable<NativeValue<"startBinding">>> | null;
-	endBinding?: Partial<NonNullable<NativeValue<"endBinding">>> | null;
-	boundElementIds?: string[];
-};
-
+/** One palette item as it is stored, elements and all. */
 interface StoredItem {
 	id: string;
 	name?: string | null;
@@ -78,18 +64,44 @@ interface StoredItem {
 }
 
 /**
- *
+ * One palette item, with its elements read as stencil elements.
+ * @param item The item as the canvas served it.
+ * @returns The stored item.
  */
-function resolvedName(item: { id: string; name?: string | null }): string | null {
+function storedItemOf(item: LibraryResponse["items"][number]): StoredItem {
+	return {
+		id: item.id,
+		name: item.name ?? null,
+		elements: item.elements.map((element) => rawElementOf(element)),
+	};
+}
+
+/** What identifies a palette item well enough to name it. */
+interface NameableItem {
+	id: string;
+	name?: string | null;
+}
+
+/**
+ * What a stencil is called: its own name, else the overlay's, else nothing.
+ *
+ * The v1 library format carries no names, so most shipped stencils are named
+ * only by `library-names.ts`.
+ * @param item The stored item.
+ * @returns The name, or null when nothing names it.
+ */
+function resolvedName(item: NameableItem): string | null {
 	return item.name ?? LIBRARY_NAME_OVERLAY[item.id] ?? null;
 }
 
-// How big the stencil is, measured rather than assumed: a connector inside it
-// stores an origin and a path, not a top-left and a size, so a stencil with a
-// leftward arrow in it used to be listed at the wrong size (geometry.ts,
-// TASK-038).
 /**
+ * How big a stencil is.
  *
+ * Measured rather than assumed: a connector inside it stores an origin and a
+ * path, not a top-left and a size, so a stencil with a leftward arrow in it
+ * used to be listed at the wrong size (geometry.ts, TASK-038).
+ * @param elements The stencil's elements.
+ * @returns Its width and height, rounded.
  */
 function boundingBox(elements: RawElement[]): { width: number; height: number } {
 	if (elements.length === 0) {
@@ -106,9 +118,11 @@ function boundingBox(elements: RawElement[]): { width: number; height: number } 
 const TEXT_BUDGET = 60;
 
 /**
- *
+ * The distinct lines of text drawn inside a stencil, in the order they appear.
+ * @param elements The stencil's elements.
+ * @returns The lines, whitespace collapsed and duplicates dropped.
  */
-function stencilText(elements: RawElement[]): string | null {
+function stencilWords(elements: RawElement[]): string[] {
 	const words: string[] = [];
 	for (const el of elements) {
 		if (typeof el.text !== "string") {
@@ -119,6 +133,19 @@ function stencilText(elements: RawElement[]): string | null {
 			words.push(line);
 		}
 	}
+	return words;
+}
+
+/**
+ * What a stencil says, in one short phrase.
+ *
+ * This is what tells "Server" from "Device" when neither carries a name worth
+ * reading, so it is worth a listing column of its own.
+ * @param elements The stencil's elements.
+ * @returns The phrase, truncated to fit a listing, or null when it is silent.
+ */
+function stencilText(elements: RawElement[]): string | null {
+	const words = stencilWords(elements);
 	if (words.length === 0) {
 		return null;
 	}
@@ -127,7 +154,10 @@ function stencilText(elements: RawElement[]): string | null {
 }
 
 /**
- *
+ * One stencil described well enough to be chosen without being drawn.
+ * @param item The stored item.
+ * @param source The curated set it came from, or null when a human installed it.
+ * @returns The catalogue entry.
  */
 function entryOf(item: StoredItem, source: string | null): CatalogueEntry {
 	const { width, height } = boundingBox(item.elements);
@@ -148,17 +178,19 @@ function entryOf(item: StoredItem, source: string | null): CatalogueEntry {
 	};
 }
 
+/** The catalogue plus the elements behind it, which only insertion needs. */
 interface LoadedCatalogue extends Catalogue {
 	/** The elements behind each entry, by id. Only insertion needs them. */
 	stored: Map<string, StoredItem>;
 }
 
 /**
- *
+ * The whole palette, described and with its elements kept to one side.
+ * @returns The catalogue and the stored items behind it.
  */
 async function loadCatalogue(): Promise<LoadedCatalogue> {
 	const state = await getLibrary();
-	const items = state.items as unknown as StoredItem[];
+	const items = state.items.map((item) => storedItemOf(item));
 	const stored = new Map(items.map((item) => [item.id, item]));
 	return {
 		count: items.length,
@@ -167,22 +199,27 @@ async function loadCatalogue(): Promise<LoadedCatalogue> {
 		vaultBacked: state.vaultBacked,
 		// Elements are the bulk of a library and say nothing an agent can use to
 		// pick a stencil, so the listing carries what identifies one instead.
-		items: items.map((item) => entryOf(item, state.origins?.[item.id] ?? null)),
+		items: items.map((item) => entryOf(item, state.origins[item.id] ?? null)),
 		stored,
 	};
 }
 
-/** @returns what is in the palette */
+/**
+ * What is in the palette.
+ * @returns The catalogue, without the elements behind it.
+ */
 async function readCatalogue(): Promise<Catalogue> {
 	const { stored: _stored, ...catalogue } = await loadCatalogue();
 	return catalogue;
 }
 
 /**
- * @param catalogue catalogue to render
- * @returns the same catalogue as a table, for a human or a narrow context
+ * What the listing says before the stencils themselves: how many there are,
+ * where they are kept, and how to ask for one.
+ * @param catalogue The catalogue to render.
+ * @returns The opening lines.
  */
-function catalogueText(catalogue: Catalogue): string {
+function catalogueHeader(catalogue: Catalogue): string[] {
 	const lines: string[] = [
 		catalogue.count === 0 ? "The library is empty." : `${catalogue.count} stencils in the library.`,
 		catalogue.vaultBacked
@@ -198,22 +235,42 @@ function catalogueText(catalogue: Catalogue): string {
 		"Insert one by name, adding its source when two libraries use that name.",
 		"",
 	);
+	return lines;
+}
+
+/**
+ * One stencil as a row of the listing.
+ * @param item The catalogue entry.
+ * @param nameColumn How wide the name column is across the whole listing.
+ * @param sourceColumn How wide the source column is.
+ * @returns The row.
+ */
+function catalogueRow(item: CatalogueEntry, nameColumn: number, sourceColumn: number): string {
+	const parts = [
+		(item.name ?? "—").padEnd(nameColumn),
+		`${item.width}x${item.height}`.padStart(9),
+		`${item.elements} el`.padStart(7),
+		(item.source ?? "installed").padEnd(sourceColumn),
+		item.id,
+	];
+	return `  ${parts.join(" ")}${item.text ? `  "${item.text}"` : ""}`;
+}
+
+/**
+ * The catalogue as a table, for a human or a narrow context.
+ * @param catalogue The catalogue to render.
+ * @returns The table.
+ */
+function catalogueText(catalogue: Catalogue): string {
 	const nameColumn = Math.max(4, ...catalogue.items.map((item) => (item.name ?? "—").length));
 	const sourceColumn = Math.max(
 		9,
 		...catalogue.items.map((item) => (item.source ?? "installed").length),
 	);
-	for (const item of catalogue.items) {
-		const parts = [
-			(item.name ?? "—").padEnd(nameColumn),
-			`${item.width}x${item.height}`.padStart(9),
-			`${item.elements} el`.padStart(7),
-			(item.source ?? "installed").padEnd(sourceColumn),
-			item.id,
-		];
-		lines.push(`  ${parts.join(" ")}${item.text ? `  "${item.text}"` : ""}`);
-	}
-	return lines.join("\n");
+	return [
+		...catalogueHeader(catalogue),
+		...catalogue.items.map((item) => catalogueRow(item, nameColumn, sourceColumn)),
+	].join("\n");
 }
 
 // ─── choosing one ─────────────────────────────────────────────────────────
@@ -222,6 +279,7 @@ function catalogueText(catalogue: Catalogue): string {
 // what it takes to answer it and neither says how — the phrasing of the retry
 // is a surface's own business, since one has flags and the other has fields.
 
+/** How a caller says which stencil it means. */
 interface StencilQuery {
 	name?: string;
 	source?: string;
@@ -229,87 +287,81 @@ interface StencilQuery {
 }
 
 /**
- * @param items catalogue entries to search
- * @param query caller's stencil identity
- * @returns the uniquely selected stencil
+ * The one stencil with this id.
+ * @param items The catalogue entries to search.
+ * @param itemId The id the caller gave.
+ * @returns The entry.
+ * @throws {UnknownStencilError} When no stencil has that id.
  */
-function chooseStencil(items: CatalogueEntry[], query: StencilQuery): CatalogueEntry {
-	let candidates = items;
-
-	if (query.itemId) {
-		candidates = candidates.filter((entry) => entry.id === query.itemId);
-		if (candidates.length === 0) {
-			throw new UnknownStencilError(`No library item with id "${query.itemId}".`);
-		}
-		const [match] = candidates;
-		if (match === undefined) {
-			throw new UnknownStencilError(`No library item with id "${query.itemId}".`);
-		}
-		return match;
-	}
-
-	const wanted = (query.name ?? "").toLowerCase();
-	candidates = candidates.filter((entry) => entry.name?.toLowerCase() === wanted);
-	if (query.source) {
-		candidates = candidates.filter((entry) => entry.source === query.source);
-	}
-
-	if (candidates.length === 0) {
-		throw new UnknownStencilError(
-			`No library item named "${query.name}"${query.source ? ` from "${query.source}"` : ""}.`,
-		);
-	}
-	if (candidates.length > 1) {
-		throw new AmbiguousStencilError(query.name ?? "", candidates);
-	}
-	const [match] = candidates;
+function stencilById(items: CatalogueEntry[], itemId: string): CatalogueEntry {
+	const match = items.find((entry) => entry.id === itemId);
 	if (match === undefined) {
-		throw new UnknownStencilError(
-			`No library item named "${query.name}"${query.source ? ` from "${query.source}"` : ""}.`,
-		);
+		throw new UnknownStencilError(`No library item with id "${itemId}".`);
 	}
 	return match;
 }
 
-// ─── placing one ──────────────────────────────────────────────────────────
-//
-// A library item's elements are authored at whatever coordinates the artist
-// used. Dropping a copy onto the board means: pick a fresh id for every
-// element (so a second insert of the same item never collides with the
-// first), rewrite every internal reference to an old id (group membership,
-// arrow bindings, bound-text/bound-element lists) to match, and shift every
-// element by the same offset so the group's own geometry survives untouched
-// while its top-left corner lands where the caller asked.
-
-// The library site still serves items in Excalidraw's pre-split format,
-// where what is now "arrow" (a connector, with bindings and arrowheads) was
-// still called "draw". Nothing downstream understands that type name.
 /**
- *
+ * The refusal for a name nothing answers to, quoting the source when the
+ * caller narrowed by one.
+ * @param query The caller's stencil identity.
+ * @returns The error to throw.
  */
-function normalizeType(type: string | undefined): NativeValue<"type"> {
-	switch (type) {
-		case "draw": {
-			return "arrow";
-		}
-		case "rectangle":
-		case "ellipse":
-		case "diamond":
-		case "arrow":
-		case "text":
-		case "line":
-		case "freedraw":
-		case "image": {
-			return type;
-		}
-		default: {
-			return "rectangle";
-		}
-	}
+function noSuchStencil(query: StencilQuery): UnknownStencilError {
+	const from = query.source ? ` from "${query.source}"` : "";
+	return new UnknownStencilError(`No library item named "${query.name}"${from}.`);
 }
 
 /**
+ * The one stencil with this name.
  *
+ * A name is unique only within the library it came from — "Database" exists in
+ * four — so a name shared by several is the caller's choice to make, not ours.
+ * @param items The catalogue entries to search.
+ * @param query The caller's stencil identity.
+ * @returns The entry.
+ * @throws {UnknownStencilError} When nothing answers to the name.
+ * @throws {AmbiguousStencilError} When several do.
+ */
+function stencilByName(items: CatalogueEntry[], query: StencilQuery): CatalogueEntry {
+	const name = query.name ?? "";
+	const wanted = name.toLowerCase();
+	let candidates = items.filter((entry) => entry.name?.toLowerCase() === wanted);
+	if (query.source) {
+		candidates = candidates.filter((entry) => entry.source === query.source);
+	}
+	if (candidates.length > 1) {
+		throw new AmbiguousStencilError(name, candidates);
+	}
+	const [match] = candidates;
+	if (match === undefined) {
+		throw noSuchStencil(query);
+	}
+	return match;
+}
+
+/**
+ * The one stencil a caller means.
+ * @param items The catalogue entries to search.
+ * @param query The caller's stencil identity.
+ * @returns The uniquely selected stencil.
+ * @throws {UnknownStencilError} When nothing matches.
+ * @throws {AmbiguousStencilError} When a name belongs to more than one library.
+ */
+function chooseStencil(items: CatalogueEntry[], query: StencilQuery): CatalogueEntry {
+	return query.itemId ? stencilById(items, query.itemId) : stencilByName(items, query);
+}
+
+/**
+ * A stencil's elements as a copy to drop on the board.
+ *
+ * Kept loosely typed at the boundary because a caller decides for itself how
+ * much of a raw library element it needs to look at.
+ * @param elements The stored elements.
+ * @param targetX Where the copy's left edge lands.
+ * @param targetY Where the copy's top edge lands.
+ * @param attribution What to record on each element about where it came from.
+ * @returns The elements to create.
  */
 function remapElements(
 	elements: RawElement[],
@@ -317,88 +369,10 @@ function remapElements(
 	targetY: number,
 	attribution: Record<string, unknown>,
 ): unknown[] {
-	const taken = new Set<string>();
-	/**
-	 *
-	 */
-	const freshId = (): string => {
-		const id = mintId(taken);
-		taken.add(id);
-		return id;
-	};
-	const idMap = new Map<string, string>();
-	for (const el of elements) {
-		if (typeof el.id === "string") {
-			idMap.set(el.id, freshId());
-		}
-	}
-	const groupMap = new Map<string, string>();
-	for (const el of elements) {
-		for (const g of el.groupIds ?? []) {
-			if (!groupMap.has(g)) {
-				groupMap.set(g, freshId());
-			}
-		}
-	}
-	/**
-	 *
-	 */
-	const mapId = (id: string | undefined | null): string | undefined | null =>
-		id === null || id === undefined ? id : (idMap.get(id) ?? id);
-
-	// Where the stencil starts, so the drop lands under the pointer. Measured,
-	// for the same reason as boundingBox above.
-	const boxes = elements.map((element) => extentOf(element));
-	const minX = Math.min(...boxes.map((b) => b.x));
-	const minY = Math.min(...boxes.map((b) => b.y));
-	const dx = targetX - minX;
-	const dy = targetY - minY;
-
-	return elements.map((raw) => {
-		const el = structuredClone(raw);
-		el.type = normalizeType(el.type);
-		el.id = mapId(el.id) ?? freshId();
-		el.x = (el.x ?? 0) + dx;
-		el.y = (el.y ?? 0) + dy;
-		if (Array.isArray(el.groupIds)) {
-			el.groupIds = el.groupIds.map((g) => groupMap.get(g) ?? g);
-		}
-		if (Array.isArray(el.boundElementIds)) {
-			el.boundElementIds = el.boundElementIds.map((id) => mapId(id) ?? id);
-		}
-		if (Array.isArray(el.boundElements)) {
-			el.boundElements = el.boundElements.map((b) => ({ ...b, id: mapId(b.id) ?? b.id }));
-		}
-		// The binding is remapped and that is the whole of it. It used to be
-		// copied into `start`/`end` as well, so that the server's routing — which
-		// read only those — would see it; that routing reads the binding now, and
-		// the binding is the one that carries the `focus` and `gap` the stencil's
-		// artist drew with (TASK-088).
-		if (el.startBinding && typeof el.startBinding === "object") {
-			const mapped = mapId(el.startBinding.elementId);
-			el.startBinding = {
-				...el.startBinding,
-				...(mapped === null || mapped === undefined ? {} : { elementId: mapped }),
-			};
-		}
-		if (el.endBinding && typeof el.endBinding === "object") {
-			const mapped = mapId(el.endBinding.elementId);
-			el.endBinding = {
-				...el.endBinding,
-				...(mapped === null || mapped === undefined ? {} : { elementId: mapped }),
-			};
-		}
-		if (typeof el.containerId === "string") {
-			el.containerId = mapId(el.containerId) ?? el.containerId;
-		}
-		if (typeof el.frameId === "string") {
-			el.frameId = mapId(el.frameId) ?? el.frameId;
-		}
-		el.customData = { ...el.customData, ...attribution };
-		return el;
-	});
+	return remapStencil(elements, targetX, targetY, attribution);
 }
 
+/** What one insertion did. */
 interface InsertResult {
 	success: true;
 	name: string | null;
@@ -411,12 +385,11 @@ interface InsertResult {
 
 /**
  * Copy a stencil onto the board with its top-left corner at (x, y).
- *
- * Throws `UnknownStencilError` when nothing matches and `AmbiguousStencilError`
- * when a name belongs to more than one library — both are the caller's to
- * answer, so neither is guessed at here.
- * @param query stencil identity and target coordinates
- * @returns the created board elements and resolved stencil identity
+ * @param query The stencil identity and target coordinates.
+ * @returns The created board elements and the resolved stencil identity.
+ * @throws {UnknownStencilError} When nothing matches; the caller's to answer,
+ * so it is not guessed at here.
+ * @throws {AmbiguousStencilError} When a name belongs to more than one library.
  */
 async function insertStencil(
 	query: StencilQuery & { x: number; y: number },
@@ -434,13 +407,8 @@ async function insertStencil(
 	const attribution = {
 		library: { item: entry.name, itemId: entry.id, source: entry.source },
 	};
-	const elements = remapElements(
-		item.elements,
-		query.x,
-		query.y,
-		attribution,
-	);
-	const creation = await batchCreateElementsStrict(elements as Record<string, unknown>[]);
+	const elements = remapStencil(item.elements, query.x, query.y, attribution);
+	const creation = await batchCreateElementsStrict(elements);
 	const { elements: created } = creation;
 
 	return {
