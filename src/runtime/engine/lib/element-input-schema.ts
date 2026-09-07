@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-import { EXCALIDRAW_ELEMENT_TYPES } from "../types.js";
-import type { ExcalidrawElementType } from "../types.js";
+import { EXCALIDRAW_ELEMENT_TYPES } from "@/runtime/engine/types";
+import type { ExcalidrawElementType } from "@/runtime/engine/types";
 
 const PointSchema = z.union([
 	z.tuple([z.number(), z.number()]),

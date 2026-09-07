@@ -30,8 +30,8 @@
 // worse. So the line is capped and the list is short, and both caps are here
 // rather than in the middleware, the pane and the injector separately.
 
-import { normalizeBoardKey } from "./board.js";
-import type { HolderKind } from "./board-lock.js";
+import { normalizeBoardKey } from "@/runtime/engine/board";
+import type { HolderKind } from "@/runtime/engine/board-lock";
 
 /**
  * The longest line worth putting on a wall.
@@ -69,6 +69,9 @@ interface Store {
 }
 
 const processStore: Store = { byBoard: new Map<string, DoingEntry[]>() };
+/**
+ *
+ */
 const store = (): Store => processStore;
 
 /** A line as it must arrive, or the reason it is refused. */

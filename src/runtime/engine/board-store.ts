@@ -25,8 +25,8 @@
 // alone; only explicit open, creation and write bookkeeping install a record
 // after resolving the vault note (ADR 0020).
 
-import { type ServerElement } from "./types.js";
-import { type BoardIdentity, boardKey, makeIdentity, SCRATCH_BOARD } from "./board.js";
+import { type ServerElement } from "@/runtime/engine/types";
+import { type BoardIdentity, boardKey, makeIdentity, SCRATCH_BOARD } from "@/runtime/engine/board";
 
 interface BoardState {
 	identity: BoardIdentity;
@@ -70,6 +70,9 @@ interface BoardState {
 // must not change under somebody at a wall display.
 const boards = new Map<string, BoardState>();
 
+/**
+ *
+ */
 function newBoardState(identity: BoardIdentity): BoardState {
 	return { identity };
 }
@@ -95,6 +98,9 @@ function openBoardKeys(): string[] {
 	return Array.from(boards.keys()).toSorted();
 }
 
+/**
+ *
+ */
 function getOrCreateBoard(identity: BoardIdentity): { key: string; board: BoardState } {
 	const key = boardKey(identity);
 	const existing = boards.get(key);
@@ -148,6 +154,9 @@ function copyElements(elements: Iterable<ServerElement>): ServerElement[] {
 // belongs to the path: `board save --as other` writes a file that a different
 // open board may be the one that read it. Where more than one board has a
 // claim, the newest wins — that is the last moment archboard actually looked.
+/**
+ *
+ */
 function baselineForFile(
 	file: string,
 ): { hash: string; at: string; version: number | null } | null {
@@ -164,6 +173,9 @@ function baselineForFile(
 	return best;
 }
 
+/**
+ *
+ */
 function recordBaseline(
 	board: BoardState,
 	file: string,
@@ -178,6 +190,9 @@ function recordBaseline(
 // notes is board-io's job. Injected rather than imported, because board-io
 // reads and writes through this registry and a cycle between them would be a
 // worse shape than one argument.
+/**
+ *
+ */
 function boardSummaries(elementCount: (board: BoardState) => number): Array<{
 	key: string;
 	identity: BoardIdentity;

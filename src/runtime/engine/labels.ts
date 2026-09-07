@@ -43,12 +43,12 @@
 // stored coordinates can be wrong for a long while with nothing on screen to
 // show it (`boundTextPlacement`, TASK-034).
 
-import { measureLinear } from "./geometry.js";
-import { derivedId, type IdsInUse } from "../../shared/ids/ids.js";
+import { measureLinear } from "@/runtime/engine/geometry";
+import { derivedId, type IdsInUse } from "@/shared/ids/ids";
 import type {
 	RuntimeBoardElement,
 	WritableVendorElement,
-} from "../../shared/board-elements/index.js";
+} from "@/shared/board-elements";
 
 /**
  * The name the text element for a container's label answers to.
@@ -96,10 +96,16 @@ type LabelPoint = Extract<
 type LabelPathFields = { points?: readonly Readonly<LabelPoint>[] | undefined };
 export type LabelledElement = LabelCommon & LabelTextFields & LabelPathFields;
 
+/**
+ *
+ */
 function isText(element: LabelledElement | undefined): boolean {
 	return !!element && element.type === "text";
 }
 
+/**
+ *
+ */
 function live(element: LabelledElement): boolean {
 	return element.isDeleted !== true;
 }
@@ -123,6 +129,9 @@ export function boundTextsByContainer(elements: readonly LabelledElement[]): Map
 
 	const found = new Map<string, string[]>();
 	const seen = new Map<string, Set<string>>();
+	/**
+	 *
+	 */
 	const record = (container: string, textId: string): void => {
 		const texts = seen.get(container) ?? new Set<string>();
 		if (texts.has(textId)) return;
@@ -188,10 +197,16 @@ export interface BoundTextPlacement {
 /** Excalidraw 0.18.1's inset between a container and its bound text box. */
 const BOUND_TEXT_PADDING = 5;
 
+/**
+ *
+ */
 function num(value: unknown): number | undefined {
 	return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
+/**
+ *
+ */
 function isLinear(element: LabelledElement): boolean {
 	return element.type === "arrow" || element.type === "line";
 }
@@ -215,6 +230,9 @@ export function labelAnchorOf(container: LabelledElement): BoundTextPlacement | 
 	if (isLinear(container)) {
 		const points = container.points;
 		if (!Array.isArray(points) || points.length < 2) return undefined;
+		/**
+		 *
+		 */
 		const at = (i: number): BoundTextPlacement | undefined => {
 			const point = points[i];
 			const px = num(point?.[0]);
@@ -543,6 +561,9 @@ export function planLabelRepair(elements: readonly LabelledElement[]): LabelRepa
 	return { duplicates, removeIds, rebind, orphanIds };
 }
 
+/**
+ *
+ */
 function oldest(ids: readonly string[], byId: Map<string, LabelledElement>): string {
 	let best = ids[0] as string;
 	for (const id of ids) {

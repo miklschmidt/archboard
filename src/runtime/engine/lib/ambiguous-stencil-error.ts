@@ -1,10 +1,13 @@
-import type { CatalogueEntry } from "../library-catalogue.js";
+import type { CatalogueEntry } from "@/runtime/engine/library-catalogue";
 
 /** A name that more than one library uses. */
 class AmbiguousStencilError extends Error {
 	public readonly wanted: string;
 	public readonly candidates: CatalogueEntry[];
 
+	/**
+	 *
+	 */
 	public constructor(wanted: string, candidates: CatalogueEntry[]) {
 		super(
 			`"${wanted}" is a name ${candidates.length} libraries use: ${candidates

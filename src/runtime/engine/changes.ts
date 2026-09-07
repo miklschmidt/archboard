@@ -1,9 +1,9 @@
 // Diff settled states through `compareBoards`, assigning temporary
 // `el:<elementId>` identities to anonymous shapes. Structural and layout
 // changes produce events; cosmetic and unnamed changes stay silent.
-import type { ServerElement } from "./types.js";
-import type { BoardIdentity } from "./board.js";
-import { compareBoards } from "./compare.js";
+import type { ServerElement } from "@/runtime/engine/types";
+import type { BoardIdentity } from "@/runtime/engine/board";
+import { compareBoards } from "@/runtime/engine/compare";
 import type {
 	ChangedEdge,
 	ChangedNode,
@@ -13,9 +13,9 @@ import type {
 	FieldChange,
 	NodeFacts,
 	RelationChange,
-} from "./compare.js";
-import { nodeIdOf, readElementMetadata } from "./metadata.js";
-import { headlineFor, narrateChange } from "./lib/change-narration.js";
+} from "@/runtime/engine/compare";
+import { nodeIdOf, readElementMetadata } from "@/runtime/engine/metadata";
+import { headlineFor, narrateChange } from "@/runtime/engine/lib/change-narration";
 
 type DeepReadonly<T> = T extends ClusterChange | RelationChange
 	? Readonly<T>
@@ -30,11 +30,17 @@ const ANON_NODE_PREFIX = "el:";
 
 const CONNECTOR_TYPES = new Set(["arrow", "line"]);
 
+/**
+ *
+ */
 function isAnonymousNode(node: string): boolean {
 	return node.startsWith(ANON_NODE_PREFIX);
 }
 
 // Return identified copies without mutating the stored board elements.
+/**
+ *
+ */
 function withSyntheticNodeIds<const Elements extends readonly ServerElement[]>(
 	elements: Elements,
 ): ServerElement[] | Extract<Elements, never> {
@@ -151,6 +157,9 @@ interface SemanticChange {
 	detail: CompareResult;
 }
 
+/**
+ *
+ */
 function refOf(facts: DeepReadonly<NodeFacts>): NodeRef {
 	const anonymous = isAnonymousNode(facts.node);
 	const { type } = facts.cosmetic;
@@ -165,6 +174,9 @@ function refOf(facts: DeepReadonly<NodeFacts>): NodeRef {
 	};
 }
 
+/**
+ *
+ */
 function edgeRefOf(edge: DeepReadonly<EdgeFacts>): EdgeRef {
 	return {
 		from: edge.from,
@@ -185,6 +197,9 @@ interface IdentityPair {
 
 // Stable element overlap resolves promotion's logical-id transition before
 // comparison, preventing false node and cluster departures or arrivals.
+/**
+ *
+ */
 const nodeByElement = <const Elements extends readonly ServerElement[]>(
 	elements: Elements,
 ): Map<Elements[number]["id"], string> => {
@@ -198,6 +213,9 @@ const nodeByElement = <const Elements extends readonly ServerElement[]>(
 	return map;
 };
 
+/**
+ *
+ */
 function identityPairs<const Elements extends readonly ServerElement[]>(
 	before: Elements,
 	after: Elements,
@@ -238,6 +256,9 @@ function identityPairs<const Elements extends readonly ServerElement[]>(
 	return pairs;
 }
 
+/**
+ *
+ */
 function applyIdentityPairs<const Elements extends readonly ServerElement[]>(
 	before: Elements,
 	pairs: readonly DeepReadonly<IdentityPair>[],
@@ -269,6 +290,9 @@ function applyIdentityPairs<const Elements extends readonly ServerElement[]>(
 // Ignore the browser's shape-plus-bound-text storage transition.
 const STORAGE_ARTEFACT_FIELDS = new Set(["elementCount"]);
 
+/**
+ *
+ */
 function withoutStorageArtefacts(
 	changes: Readonly<Record<string, DeepReadonly<FieldChange>>>,
 ): Record<string, FieldChange> {
@@ -282,10 +306,16 @@ function withoutStorageArtefacts(
 	return kept;
 }
 
+/**
+ *
+ */
 function changedNodeOf(changed: DeepReadonly<ChangedNode>): NodeFieldChange {
 	return { ...refOf(changed.to), changes: changed.changes };
 }
 
+/**
+ *
+ */
 function changedEdgeOf(
 	changed: DeepReadonly<ChangedEdge>,
 ): EdgeRef & { changes: Record<string, FieldChange> } {
@@ -293,6 +323,9 @@ function changedEdgeOf(
 }
 
 // Diff two moments using the same board identity on both sides.
+/**
+ *
+ */
 function diffBoardStates<const Elements extends readonly ServerElement[]>(
 	before: Elements,
 	after: Elements,
@@ -433,6 +466,9 @@ function diffBoardStates<const Elements extends readonly ServerElement[]>(
 	}
 
 	const names: Record<string, string> = {};
+	/**
+	 *
+	 */
 	const remember = (facts: DeepReadonly<NodeFacts>): void => {
 		names[facts.node] = refOf(facts).name;
 	};

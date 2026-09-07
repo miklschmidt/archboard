@@ -14,10 +14,10 @@
 // once the note is the only copy of the board (ADR 0015), and twenty separate
 // acquisitions of the board's lock with nineteen gaps between them (ADR 0016).
 
-import type { ServerElement } from "./types.js";
-import { mintId } from "../../shared/ids/ids.js";
-import { applyElementChanges, batchCreateElementsOnCanvas, getElements } from "./canvas-client.js";
-import { extentOf } from "./geometry.js";
+import type { ServerElement } from "@/runtime/engine/types";
+import { mintId } from "@/shared/ids/ids";
+import { applyElementChanges, batchCreateElementsOnCanvas, getElements } from "@/runtime/engine/canvas-client";
+import { extentOf } from "@/runtime/engine/geometry";
 
 type Alignment = "left" | "center" | "right" | "top" | "middle" | "bottom";
 type Direction = "horizontal" | "vertical";
@@ -37,6 +37,9 @@ async function targets(elementIds: string[]): Promise<ServerElement[]> {
 		.filter((element): element is ServerElement => !!element);
 }
 
+/**
+ *
+ */
 async function alignElements(
 	elementIds: string[],
 	alignment: Alignment,
@@ -53,38 +56,59 @@ async function alignElements(
 	// and then applied as a translation of the stored origin, which moves a box
 	// and an arrow by the same rule.
 	const boxes = new Map(elementsToAlign.map((el) => [el.id, extentOf(el)]));
+	/**
+	 *
+	 */
 	const box = (el: ServerElement) => boxes.get(el.id)!;
 	let edgeFn: (el: ServerElement) => { x?: number; y?: number };
 	switch (alignment) {
 		case "left": {
 			const minX = Math.min(...elementsToAlign.map((el) => box(el).x));
+			/**
+			 *
+			 */
 			edgeFn = () => ({ x: minX });
 			break;
 		}
 		case "right": {
 			const maxRight = Math.max(...elementsToAlign.map((el) => box(el).x + box(el).width));
+			/**
+			 *
+			 */
 			edgeFn = (el) => ({ x: maxRight - box(el).width });
 			break;
 		}
 		case "center": {
 			const centers = elementsToAlign.map((el) => box(el).x + box(el).width / 2);
 			const avgCenter = centers.reduce((a, b) => a + b, 0) / centers.length;
+			/**
+			 *
+			 */
 			edgeFn = (el) => ({ x: avgCenter - box(el).width / 2 });
 			break;
 		}
 		case "top": {
 			const minY = Math.min(...elementsToAlign.map((el) => box(el).y));
+			/**
+			 *
+			 */
 			edgeFn = () => ({ y: minY });
 			break;
 		}
 		case "bottom": {
 			const maxBottom = Math.max(...elementsToAlign.map((el) => box(el).y + box(el).height));
+			/**
+			 *
+			 */
 			edgeFn = (el) => ({ y: maxBottom - box(el).height });
 			break;
 		}
 		case "middle": {
 			const middles = elementsToAlign.map((el) => box(el).y + box(el).height / 2);
 			const avgMiddle = middles.reduce((a, b) => a + b, 0) / middles.length;
+			/**
+			 *
+			 */
 			edgeFn = (el) => ({ y: avgMiddle - box(el).height / 2 });
 			break;
 		}
@@ -103,6 +127,9 @@ async function alignElements(
 	return { aligned: true, elementIds, alignment, successCount: upserts.length };
 }
 
+/**
+ *
+ */
 async function distributeElements(
 	elementIds: string[],
 	direction: Direction,
@@ -116,6 +143,9 @@ async function distributeElements(
 	// Even gaps are gaps between edges, so this too reasons in extent space and
 	// writes back a translation of the stored origin (see alignElements).
 	const boxes = new Map(elementsToDist.map((el) => [el.id, extentOf(el)]));
+	/**
+	 *
+	 */
 	const box = (el: ServerElement) => boxes.get(el.id)!;
 	const upserts: { id: string; x?: number; y?: number }[] = [];
 
@@ -154,6 +184,9 @@ async function distributeElements(
 	return { distributed: true, elementIds, direction, count: elementsToDist.length };
 }
 
+/**
+ *
+ */
 async function setElementsLocked(
 	elementIds: string[],
 	locked: boolean,
@@ -175,6 +208,9 @@ async function setElementsLocked(
 // board is the source of truth for who is in a group — `groupIds` is a native
 // Excalidraw field and it round-trips through the note — so every client sees
 // the same groups and a group outlives whatever made it.
+/**
+ *
+ */
 async function groupElements(
 	elementIds: string[],
 ): Promise<{ groupId: string; elementIds: string[]; successCount: number }> {
@@ -202,6 +238,9 @@ async function groupElements(
 // only place membership is recorded. It used to accept a seeded member list for
 // groups a caller process had made and remembered; that map is gone, along with
 // the two bugs it caused (TASK-064).
+/**
+ *
+ */
 async function ungroupElements(
 	groupId: string,
 ): Promise<{ groupId: string; ungrouped: boolean; elementIds: string[]; successCount: number }> {
@@ -223,6 +262,9 @@ async function ungroupElements(
 	return { groupId, ungrouped: true, elementIds, successCount: elementIds.length };
 }
 
+/**
+ *
+ */
 async function duplicateElements(
 	elementIds: string[],
 	offsetX = 20,

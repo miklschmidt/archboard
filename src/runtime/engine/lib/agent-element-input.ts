@@ -2,16 +2,19 @@ import {
 	DEFAULT_FILL_STYLE,
 	DEFAULT_SHAPE_BACKGROUND,
 	FILLABLE_TYPES,
-} from "../../../shared/appearance/appearance.js";
-import { mintId } from "../../../shared/ids/ids.js";
-import type { LegacyElementIngress } from "../../../shared/board-elements/index.js";
-import { bindingFromRef } from "../arrow-binding.js";
-import { DEFAULT_LINEAR_POINTS } from "../geometry.js";
-import { EXCALIDRAW_ELEMENT_TYPES, normalizeFontFamily } from "../types.js";
-import { stripUntrustedTrackingClaims } from "../metadata.js";
-import { CreateElementSchema } from "./element-input-schema.js";
-import type { AgentElementInput } from "./element-input-schema.js";
+} from "@/shared/appearance/appearance";
+import { mintId } from "@/shared/ids/ids";
+import type { LegacyElementIngress } from "@/shared/board-elements";
+import { bindingFromRef } from "@/runtime/engine/arrow-binding";
+import { DEFAULT_LINEAR_POINTS } from "@/runtime/engine/geometry";
+import { EXCALIDRAW_ELEMENT_TYPES, normalizeFontFamily } from "@/runtime/engine/types";
+import { stripUntrustedTrackingClaims } from "@/runtime/engine/metadata";
+import { CreateElementSchema } from "@/runtime/engine/lib/element-input-schema";
+import type { AgentElementInput } from "@/runtime/engine/lib/element-input-schema";
 
+/**
+ *
+ */
 const hasOwn = (value: object, key: PropertyKey): boolean =>
 	Object.prototype.hasOwnProperty.call(value, key);
 
@@ -21,6 +24,9 @@ type AgentElementStatement = LegacyElementIngress & {
 	readonly [agentLabelIntent]?: string;
 };
 
+/**
+ *
+ */
 function withAgentLabelIntent<T extends object>(value: T, label: unknown): T {
 	if (typeof label === "string") {
 		Object.defineProperty(value, agentLabelIntent, { value: label, enumerable: false });
@@ -33,6 +39,9 @@ function agentLabelIntentOf(value: object): string | undefined {
 	return (value as AgentElementStatement)[agentLabelIntent];
 }
 
+/**
+ *
+ */
 function normalizePoints(points: unknown): unknown {
 	if (!Array.isArray(points)) {
 		return points;
@@ -106,6 +115,9 @@ function wellFormAgentStatement(
 	return statement;
 }
 
+/**
+ *
+ */
 function spendArrowRefs(element: Record<string, unknown>, stated: Record<string, unknown>): void {
 	if (element["type"] !== "arrow" && element["type"] !== "line") {
 		return;
@@ -126,6 +138,9 @@ function spendArrowRefs(element: Record<string, unknown>, stated: Record<string,
 	}
 }
 
+/**
+ *
+ */
 function buildAgentElement(
 	raw: AgentElementInput,
 	inUse: { has(id: string): boolean },
@@ -158,7 +173,7 @@ function buildAgentElement(
 	}
 	spendArrowRefs(
 		element as unknown as Record<string, unknown>,
-		elementParams as Record<string, unknown>,
+		elementParams,
 	);
 	return withAgentLabelIntent(element, agentLabelIntentOf(statement));
 }

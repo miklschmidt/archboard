@@ -1,7 +1,7 @@
-import type { ServerElement } from "./types.js";
-import { boxOf } from "./layout.js";
-import { semanticElementProjection } from "./metadata.js";
-import { withoutValidBridgeDecorations } from "../board-inspection/bridge.js";
+import type { ServerElement } from "@/runtime/engine/types";
+import { boxOf } from "@/runtime/engine/layout";
+import { semanticElementProjection } from "@/runtime/engine/metadata";
+import { withoutValidBridgeDecorations } from "@/runtime/board-inspection/bridge";
 import {
 	KIND_ORDER,
 	UNTYPED,
@@ -15,8 +15,8 @@ import {
 	readingOrder,
 	renderCounts,
 	toItem,
-} from "./lib/describe-scene-model.js";
-import type { Edge, Item } from "./lib/describe-scene-model.js";
+} from "@/runtime/engine/lib/describe-scene-model";
+import type { Edge, Item } from "@/runtime/engine/lib/describe-scene-model";
 import {
 	appendClusters,
 	appendGraphNotes,
@@ -26,7 +26,7 @@ import {
 	plainLine,
 	selectionSummary,
 	summarise,
-} from "./lib/describe-lines.js";
+} from "@/runtime/engine/lib/describe-lines";
 
 // Build an AI-readable description of the current canvas.
 // Above this, nodes lose their extras line.
@@ -36,12 +36,18 @@ const NODE_LIST_LIMIT = 120;
 const EDGE_LIST_LIMIT = 60;
 const OTHER_LIST_LIMIT = 40;
 
+/**
+ *
+ */
 function nodeDetailLines(item: Item, showLevel: boolean, terse: boolean): readonly string[] {
 	const line = `    ${nodeLine(item, showLevel)}`;
 	const extra = terse ? "" : nodeExtras(item);
 	return hasText(extra) ? [line, `        + ${extra}`] : [line];
 }
 
+/**
+ *
+ */
 function describeScene(inputElements: readonly ServerElement[]): string {
 	const allElements = withoutValidBridgeDecorations(
 		inputElements.map((element) => semanticElementProjection(element)),
@@ -76,6 +82,9 @@ function describeScene(inputElements: readonly ServerElement[]): string {
 	// Names resolve for every element, folded members included, so an arrow
 	// drawn to a member still names its node.
 	const nameOf = new Map(allItems.map((i) => [i.el.id, i.name]));
+	/**
+	 *
+	 */
 	const primary = (id: string | undefined): string | undefined =>
 		id === undefined || id.length === 0 ? id : (nodeFold.primaryOf.get(id) ?? id);
 
@@ -128,6 +137,9 @@ function describeScene(inputElements: readonly ServerElement[]): string {
 	}
 
 	const degree = new Map<string, { in: number; out: number }>();
+	/**
+	 *
+	 */
 	const bump = (id: string | undefined, dir: "in" | "out"): void => {
 		if (id === undefined || id.length === 0) {
 			return;
@@ -316,6 +328,9 @@ interface SelectionReport {
 	text: string;
 }
 
+/**
+ *
+ */
 function selectedElement(item: Item): SelectedElement {
 	return {
 		id: item.el.id,
@@ -338,6 +353,9 @@ function selectedElement(item: Item): SelectedElement {
 // Build the selection read-out. `allElements` is the server's current scene —
 // selection is stored as ids only, and the semantic detail is resolved here so
 // the wire payload from the browser stays tiny.
+/**
+ *
+ */
 function buildSelectionReport(
 	selection: {
 		readonly elementIds: readonly string[];
@@ -426,7 +444,6 @@ interface SelectionNames {
  * through the same folding as the full report (bound text into its container, a
  * multi-element node into one thing) so the two never disagree about how many
  * things are selected or what they are called.
- *
  * @param ids selected element ids
  * @param allElements current board elements
  * @param max maximum number of names to return

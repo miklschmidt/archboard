@@ -1,12 +1,12 @@
 import { isDeepStrictEqual } from "node:util";
 
-import type { ReadonlyBoardData } from "../../../shared/board-elements/index.js";
-import type { CheckoutSnapshot } from "../../code-target/index.js";
-import type { BoardWriteDelta, BoardWriteTarget } from "../board-write.js";
-import logger from "../logger.js";
-import { presentElements } from "../presentation.js";
-import type { PresentationContext, ReadonlyServerElement } from "../presentation.js";
-import type { CarriedVersion, ElementsChangedMessage, WebSocketMessage } from "../types.js";
+import type { ReadonlyBoardData } from "@/shared/board-elements";
+import type { CheckoutSnapshot } from "@/runtime/code-target";
+import type { BoardWriteDelta, BoardWriteTarget } from "@/runtime/engine/board-write";
+import logger from "@/runtime/engine/logger";
+import { presentElements } from "@/runtime/engine/presentation";
+import type { PresentationContext, ReadonlyServerElement } from "@/runtime/engine/presentation";
+import type { CarriedVersion, ElementsChangedMessage, WebSocketMessage } from "@/runtime/engine/types";
 
 type ReadonlyBoardWriteDelta = ReadonlyBoardData<BoardWriteDelta>;
 type ReadonlyElementsChangedMessage = ReadonlyBoardData<ElementsChangedMessage>;
@@ -22,10 +22,16 @@ interface PendingPaneNotification {
 const paneNotificationQueues = new Map<string, PendingPaneNotification[]>();
 const scheduledPaneNotifications = new Set<string>();
 
+/**
+ *
+ */
 function reportPaneNotificationFailure(board: string, error: unknown): void {
 	logger.warn(`Board "${board}" pane notification failed after the write boundary`, error);
 }
 
+/**
+ *
+ */
 function schedulePaneNotificationFlush(board: string): void {
 	if (scheduledPaneNotifications.has(board)) {
 		return;
@@ -57,6 +63,9 @@ function schedulePaneNotificationFlush(board: string): void {
 	});
 }
 
+/**
+ *
+ */
 function tellPanesBestEffort(
 	tellPanes: TellPanes,
 	message: ReadonlyWebSocketMessage,
@@ -70,6 +79,9 @@ function tellPanesBestEffort(
 	schedulePaneNotificationFlush(board);
 }
 
+/**
+ *
+ */
 function tellPanesAboutWrite(
 	tellPanes: TellPanes,
 	target: Readonly<Pick<BoardWriteTarget, "key">>,
@@ -126,6 +138,9 @@ function tellPanesAboutWrite(
 	}
 }
 
+/**
+ *
+ */
 function notificationDelta(
 	before: Readonly<ReadonlyMap<string, ReadonlyServerElement>>,
 	after: Readonly<ReadonlyMap<string, ReadonlyServerElement>>,

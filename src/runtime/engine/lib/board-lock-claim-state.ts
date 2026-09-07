@@ -1,17 +1,23 @@
-import { forgetRememberedVersion } from "../board-version.js";
-import { CLAIM_LEASE_MS, LOCK_RENEW_MS } from "../../../shared/timing/timing.js";
-import type { Claim, ClaimEntry, ClaimRevocation, LockHolder } from "./board-lock-contracts.js";
-import { boardLockState, releaseHold, renewRecord, stamp } from "./board-lock-state.js";
+import { forgetRememberedVersion } from "@/runtime/engine/board-version";
+import { CLAIM_LEASE_MS, LOCK_RENEW_MS } from "@/shared/timing/timing";
+import type { Claim, ClaimEntry, ClaimRevocation, LockHolder } from "@/runtime/engine/lib/board-lock-contracts";
+import { boardLockState, releaseHold, renewRecord, stamp } from "@/runtime/engine/lib/board-lock-state";
 
 const processClaims = new Map<string, ClaimEntry>();
 const processRevocations = new Map<string, ClaimRevocation>();
 
 // Claims are process knowledge layered over the vault lease. The canvas, not a
 // command-lived agent, survives between writes and can renew on its behalf.
+/**
+ *
+ */
 function claimOf(board: string, entry: ClaimEntry): Claim {
 	return { board, holder: entry.holder, expires: stamp(entry.expires) };
 }
 
+/**
+ *
+ */
 function stopRenewing(entry: ClaimEntry): void {
 	if (entry.timer) {
 		clearInterval(entry.timer);
@@ -19,6 +25,9 @@ function stopRenewing(entry: ClaimEntry): void {
 	entry.timer = null;
 }
 
+/**
+ *
+ */
 function dropClaim(board: string, entry: ClaimEntry): void {
 	// Ending the process claim also ends renewal and its remembered write
 	// identity. It does not undo anything already committed to the note.
@@ -27,6 +36,9 @@ function dropClaim(board: string, entry: ClaimEntry): void {
 	processClaims.delete(board);
 }
 
+/**
+ *
+ */
 function liveClaim(board: string): ClaimEntry | null {
 	const entry = processClaims.get(board);
 	if (!entry) {
@@ -42,6 +54,9 @@ function liveClaim(board: string): ClaimEntry | null {
 	return null;
 }
 
+/**
+ *
+ */
 function noteClaimRevoked(board: string, lost: LockHolder, by: LockHolder | null): void {
 	// Both sides discover the same event here: a local take-back at proven
 	// acquisition, or a later refused renewal after a remote take-back. Only the
@@ -54,6 +69,9 @@ function noteClaimRevoked(board: string, lost: LockHolder, by: LockHolder | null
 	processRevocations.set(board, { claim: claimOf(board, entry), by });
 }
 
+/**
+ *
+ */
 function renewClaim(board: string): void {
 	const entry = liveClaim(board);
 	if (!entry) {
@@ -69,6 +87,9 @@ function renewClaim(board: string): void {
 	noteClaimRevoked(board, entry.holder, boardLockState(board));
 }
 
+/**
+ *
+ */
 function startRenewing(board: string): ReturnType<typeof setInterval> {
 	// The short lease bounds a dead canvas; repeated renewal makes a long claim
 	// long. This timer never moves the separate claim expiry.
@@ -79,6 +100,9 @@ function startRenewing(board: string): ReturnType<typeof setInterval> {
 	return timer;
 }
 
+/**
+ *
+ */
 function forgetClaimState(): void {
 	for (const [board, entry] of processClaims) {
 		dropClaim(board, entry);

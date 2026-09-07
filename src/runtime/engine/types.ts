@@ -11,9 +11,9 @@ import type {
 	RectangleElement,
 	RuntimeBoardElement,
 	TextElement,
-} from "../../shared/board-elements/index.js";
-import type { DoingEntry } from "./board-doing.js";
-import type { LockHolder } from "./lib/board-lock-contracts.js";
+} from "@/shared/board-elements";
+import type { DoingEntry } from "@/runtime/engine/board-doing";
+import type { LockHolder } from "@/runtime/engine/lib/board-lock-contracts";
 
 type ExcalidrawElement = PersistedBoardElement;
 type ExcalidrawTextElement = TextElement;
@@ -320,6 +320,9 @@ interface ExcalidrawFile {
 }
 
 // Validation function for Excalidraw elements
+/**
+ *
+ */
 function validateElement(element: Partial<ServerElement>): element is ServerElement {
 	const requiredFields: (keyof ServerElement)[] = ["type", "x", "y"];
 	const hasRequiredFields = requiredFields.every((field) => field in element);
@@ -341,6 +344,9 @@ function validateElement(element: Partial<ServerElement>): element is ServerElem
 // Normalize fontFamily from string names to numeric values that Excalidraw expects
 // Excalidraw uses: 1 = Virgil (handwritten), 2 = Helvetica (sans-serif), 3 = Cascadia (monospace)
 // 5 = Excalifont, 6 = Nunito, 7 = Lilita One, 8 = Comic Shanns
+/**
+ *
+ */
 function normalizeFontFamily(fontFamily: string | number | undefined): number | undefined {
 	if (fontFamily === undefined) {
 		return undefined;

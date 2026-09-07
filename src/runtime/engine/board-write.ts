@@ -6,12 +6,12 @@
 // and the write (ADR 0015).
 import { isDeepStrictEqual } from "node:util";
 
-import { type ExcalidrawFile, type ServerElement, type WebSocketMessage } from "./types.js";
+import { type ExcalidrawFile, type ServerElement } from "@/runtime/engine/types";
 import {
 	type AppliedElementInput,
 	applyElementInput,
 	type ElementInputRequest,
-} from "./apply-element-input.js";
+} from "@/runtime/engine/apply-element-input";
 import {
 	beginHold,
 	holdMessage,
@@ -20,8 +20,8 @@ import {
 	releaseHold as releaseNoteHold,
 	reportHold,
 	writesBoardNote,
-} from "./board-hold.js";
-import { releaseHold as releaseBoardLock, type LockHolder } from "./board-lock.js";
+} from "@/runtime/engine/board-hold";
+import { releaseHold as releaseBoardLock, type LockHolder } from "@/runtime/engine/board-lock";
 import {
 	boardFilesMessage,
 	type BoardContent,
@@ -30,24 +30,24 @@ import {
 	renderContent,
 	settleBoardContent,
 	writeBoardContent,
-} from "./board-io.js";
-import { type BoardState, copyElements, recordBaseline } from "./board-store.js";
-import { hashBoardBytes } from "./board.js";
-import { type ChangeOrigin, changeFeed } from "./change-feed.js";
+} from "@/runtime/engine/board-io";
+import { type BoardState, copyElements, recordBaseline } from "@/runtime/engine/board-store";
+import { hashBoardBytes } from "@/runtime/engine/board";
+import { type ChangeOrigin, changeFeed } from "@/runtime/engine/change-feed";
 import {
 	presentElements,
 	stripBindingPresentationLinks,
 	type PresentationContext,
-} from "./presentation.js";
-import { usableDrawnFiles } from "./embedded-files.js";
-import logger from "./logger.js";
-import { EMPTY_CHECKOUT_SNAPSHOT, type CheckoutSnapshot } from "../code-target/index.js";
+} from "@/runtime/engine/presentation";
+import { usableDrawnFiles } from "@/runtime/engine/embedded-files";
+import logger from "@/runtime/engine/logger";
+import { EMPTY_CHECKOUT_SNAPSHOT, type CheckoutSnapshot } from "@/runtime/code-target";
 import {
 	notificationDelta,
 	tellPanesAboutWrite,
 	tellPanesBestEffort,
 	type TellPanes,
-} from "./lib/board-write-notifications.js";
+} from "@/runtime/engine/lib/board-write-notifications";
 
 type WrittenNote = ReturnType<typeof writeBoardContent>;
 
@@ -130,6 +130,9 @@ interface BoardWriteRequest<T> {
 }
 
 class BoardMutationError extends Error {
+	/**
+	 *
+	 */
 	constructor(
 		readonly status: number,
 		message: string,
@@ -140,6 +143,9 @@ class BoardMutationError extends Error {
 	}
 }
 
+/**
+ *
+ */
 const completeDelta = (delta?: Partial<BoardWriteDelta>): BoardWriteDelta => ({
 	created: delta?.created ?? [],
 	updated: delta?.updated ?? [],
@@ -149,6 +155,9 @@ const completeDelta = (delta?: Partial<BoardWriteDelta>): BoardWriteDelta => ({
 	...(delta?.filesReplaced ? { filesReplaced: delta.filesReplaced } : {}),
 });
 
+/**
+ *
+ */
 function copyContent(content: BoardContent): BoardContent {
 	return {
 		...content,
@@ -217,6 +226,9 @@ function elementMutation<T>(
 	};
 }
 
+/**
+ *
+ */
 function recordChange(target: BoardWriteTarget, origin: ChangeOrigin): void {
 	changeFeed.record(
 		target.key,
@@ -226,6 +238,9 @@ function recordChange(target: BoardWriteTarget, origin: ChangeOrigin): void {
 	);
 }
 
+/**
+ *
+ */
 function persist<T>(
 	request: BoardWriteRequest<T>,
 	target: BoardWriteTarget,
@@ -277,6 +292,9 @@ function persist<T>(
 	return written;
 }
 
+/**
+ *
+ */
 function releaseSavedHold<T>(
 	request: BoardWriteRequest<T>,
 	target: BoardWriteTarget,
@@ -328,7 +346,7 @@ function releaseSavedHold<T>(
 	}
 	tellPanesBestEffort(
 		tellPanes,
-		{ type: "board_released", hold: report, outcome, ...sourceDocument } as WebSocketMessage,
+		{ type: "board_released", hold: report, outcome, ...sourceDocument },
 		request.source.key,
 	);
 }
@@ -495,6 +513,9 @@ function agentWriteAnswer(
 	};
 }
 
+/**
+ *
+ */
 function boardFingerprint(
 	board: BoardState,
 	content: BoardContent,

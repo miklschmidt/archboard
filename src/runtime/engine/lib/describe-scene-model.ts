@@ -1,11 +1,14 @@
-import type { ServerElement } from "../types.js";
+import type { ServerElement } from "@/runtime/engine/types";
 import { z } from "zod";
-import { CLUSTER_GAP, boxOf, clusterBoxes } from "../layout.js";
-import { readElementMetadata } from "../metadata.js";
-import type { ArchboardBlock } from "../metadata.js";
+import { CLUSTER_GAP, boxOf, clusterBoxes } from "@/runtime/engine/layout";
+import { readElementMetadata } from "@/runtime/engine/metadata";
+import type { ArchboardBlock } from "@/runtime/engine/metadata";
 
 const UnknownRecordSchema = z.record(z.string(), z.unknown());
 
+/**
+ *
+ */
 function hasText(value: string | null | undefined): value is string {
 	return value !== null && value !== undefined && value.length > 0;
 }
@@ -54,6 +57,9 @@ interface Meta {
 	readonly foreign: Readonly<Record<string, unknown>>;
 }
 
+/**
+ *
+ */
 function scalarText(v: unknown): string {
 	if (typeof v === "string") {
 		return v;
@@ -69,6 +75,9 @@ function scalarText(v: unknown): string {
 	}
 }
 
+/**
+ *
+ */
 function pairs(o: Record<string, unknown>, max = 160): string {
 	const s = Object.entries(o)
 		.map(([k, v]) => `${k}=${scalarText(v)}`)
@@ -78,6 +87,9 @@ function pairs(o: Record<string, unknown>, max = 160): string {
 
 // A binding may be a bare path or a logical address (repo + path + branch +
 // commit). Render both as one short string a person can read out.
+/**
+ *
+ */
 function formatBinding(v: unknown): string | undefined {
 	if (typeof v === "string") {
 		const trimmed = v.trim();
@@ -99,6 +111,9 @@ function formatBinding(v: unknown): string | undefined {
 	return `${repo}${path ?? "?"}${branch}${commit}`;
 }
 
+/**
+ *
+ */
 function bindingPathOf(v: unknown): string | undefined {
 	if (typeof v === "string") {
 		const trimmed = v.trim();
@@ -110,6 +125,9 @@ function bindingPathOf(v: unknown): string | undefined {
 		: undefined;
 }
 
+/**
+ *
+ */
 function formatMeta(block: ArchboardBlock | undefined, foreign: Record<string, unknown>): Meta {
 	const extra: Record<string, unknown> = {};
 	if (!block) {
@@ -211,6 +229,9 @@ interface Edge {
 // its type: 74 of the 111 shipped stencils contain a line and 10 are made of
 // nothing else, and a datastore promoted from one of those used to read as no
 // node at all (TASK-053).
+/**
+ *
+ */
 const isConnector = (t: string): boolean => t === "arrow" || t === "line";
 
 // A labelled shape comes back from a frontend sync as a shape plus a separate
@@ -224,6 +245,9 @@ interface Folded {
 	readonly labelOf: ReadonlyMap<string, string>;
 }
 
+/**
+ *
+ */
 function foldBoundText(
 	all: readonly DeepReadonly<ServerElement>[],
 	byId: ReadonlyMap<string, DeepReadonly<ServerElement>>,
@@ -247,6 +271,9 @@ function foldBoundText(
 	return { hidden, labelOf };
 }
 
+/**
+ *
+ */
 function toItem(el: ServerElement, folded: Folded): Item {
 	const metadata = readElementMetadata(el);
 	const meta = formatMeta(metadata.archboard, metadata.foreign);
@@ -286,11 +313,17 @@ interface NodeFold {
 }
 
 // Reading order: top-to-bottom in coarse rows, then left-to-right.
+/**
+ *
+ */
 const readingOrder = (a: DeepReadonly<Item>, b: DeepReadonly<Item>): number => {
 	const row = Math.floor(a.y / 50) - Math.floor(b.y / 50);
 	return row !== 0 ? row : a.x - b.x;
 };
 
+/**
+ *
+ */
 function foldNodes(items: readonly DeepReadonly<Item>[]): NodeFold {
 	const groups = new Map<string, DeepReadonly<Item>[]>();
 	for (const item of items) {
@@ -331,6 +364,9 @@ function foldNodes(items: readonly DeepReadonly<Item>[]): NodeFold {
 	};
 }
 
+/**
+ *
+ */
 function bindingOf(el: unknown, end: "start" | "end"): string | undefined {
 	const parsedElement = UnknownRecordSchema.safeParse(el);
 	const record = parsedElement.success ? parsedElement.data : {};
@@ -341,6 +377,9 @@ function bindingOf(el: unknown, end: "start" | "end"): string | undefined {
 	return typeof id === "string" ? id : undefined;
 }
 
+/**
+ *
+ */
 function counts(values: readonly (string | undefined)[]): Record<string, number> {
 	const out: Record<string, number> = {};
 	for (const v of values) {
@@ -352,6 +391,9 @@ function counts(values: readonly (string | undefined)[]): Record<string, number>
 	return out;
 }
 
+/**
+ *
+ */
 function renderCounts(c: Readonly<Record<string, number>>, order?: readonly string[]): string {
 	const keys = Object.keys(c).toSorted((a, b) => {
 		const ia = order ? order.indexOf(a) : -1;
@@ -374,6 +416,9 @@ function renderCounts(c: Readonly<Record<string, number>>, order?: readonly stri
 // same cluster the diff says was split. Only the budget is local: below three
 // nodes there is nothing worth saying, and above four hundred the pairwise pass
 // is not worth its cost inside a description.
+/**
+ *
+ */
 function clusterNodes(nodes: DeepReadonly<Item>[]): readonly (readonly DeepReadonly<Item>[])[] {
 	if (nodes.length < 3 || nodes.length > 400) {
 		return [];

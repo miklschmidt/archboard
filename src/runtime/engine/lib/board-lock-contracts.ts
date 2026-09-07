@@ -90,19 +90,31 @@ interface ClaimEntry {
 	timer: ReturnType<typeof setInterval> | null;
 }
 
+/**
+ *
+ */
 function processName(): string {
 	return `${os.hostname()}:${process.pid}`;
 }
 
+/**
+ *
+ */
 function seconds(ms: number): string {
 	return `${(ms / 1000).toFixed(1)} s`;
 }
 
+/**
+ *
+ */
 function clock(iso: string): string {
 	const at = new Date(iso);
 	return Number.isNaN(at.getTime()) ? iso : at.toTimeString().slice(0, 8);
 }
 
+/**
+ *
+ */
 function describeWriter(holder: Readonly<LockHolder>): string {
 	if (holder.kind === "human") {
 		return "the person at the canvas";
@@ -119,6 +131,9 @@ function describeWriter(holder: Readonly<LockHolder>): string {
 	return "an agent";
 }
 
+/**
+ *
+ */
 function describeHold(
 	board: string,
 	holder: Readonly<LockHolder> | null,
@@ -141,6 +156,9 @@ class BoardHeldError extends Error {
 	public readonly holder: Readonly<LockHolder> | null;
 	public readonly waitedMs: number;
 
+	/**
+	 *
+	 */
 	public constructor(board: string, holder: Readonly<LockHolder> | null, waitedMs: number) {
 		super(describeHold(board, holder, waitedMs));
 		this.name = "BoardHeldError";

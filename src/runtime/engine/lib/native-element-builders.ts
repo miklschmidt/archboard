@@ -3,8 +3,8 @@ import type {
 	NonElbowArrowElement,
 	PersistedBoardElement,
 	RuntimeBoardElement,
-} from "../../../shared/board-elements/index.js";
-import { hydrateElementTracking } from "../metadata.js";
+} from "@/shared/board-elements";
+import { hydrateElementTracking } from "@/runtime/engine/metadata";
 import {
 	arrowheadAt,
 	booleanAt,
@@ -22,11 +22,14 @@ import {
 	runtimeTrackingAt,
 	stringAt,
 	type PersistedArm,
-} from "./native-element-validation.js";
+} from "@/runtime/engine/lib/native-element-validation";
 
 type PersistedNonElbowArrow = Extract<PersistedArm<"arrow">, NonElbowArrowElement>;
 type PersistedElbowArrow = Extract<PersistedArm<"arrow">, ElbowArrowElement>;
 
+/**
+ *
+ */
 function fixedSegmentsAt(
 	value: unknown,
 	context: string,
@@ -55,6 +58,9 @@ function fixedSegmentsAt(
 	});
 }
 
+/**
+ *
+ */
 export function buildValidatedElement(
 	initial: Record<string, unknown>,
 	context: string,
@@ -64,6 +70,9 @@ export function buildValidatedElement(
 	const base = persistedBase(initial, context, id, type);
 	const { id: baseId, ...baseFields } = base;
 	const tracking = runtimeTrackingAt(initial, context, id, type);
+	/**
+	 *
+	 */
 	const finish = (element: PersistedBoardElement): RuntimeBoardElement =>
 		hydrateElementTracking({ ...element, ...tracking });
 	switch (type) {
