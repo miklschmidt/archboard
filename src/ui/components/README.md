@@ -18,7 +18,7 @@ colour variants, Remix imports and import paths. Markup, focus handling,
 keyboard behaviour and state mechanics stay official.
 
 The lint policy for exactly these files is the override at the end of
-`src/ui/.oxlintrc.jsonc` (TASK-150.02): compiler, type-aware safety, React
+`.oxlintrc.jsonc` (TASK-150.02): compiler, type-aware safety, React
 correctness and accessibility checks stay on; authored-code style,
 module-layout and file-length rules are off. Regenerate that list when a
 component is added or removed.

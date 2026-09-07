@@ -324,15 +324,24 @@ function normalizeLegacyRequest(
 		};
 		return deepFreeze(result);
 	}
-	const result: ExecCommandApprovalRequest = {
-		family: "exec_command",
-		method: request.method,
-		request,
-		params: request.params,
-		...common,
-		approvalId: identity.approvalId,
-	};
-	return deepFreeze(result);
+	// Named rather than assumed: the union holds exactly two methods today, so the
+	// compiler reads this as redundant, and that is the point. A third legacy method
+	// would reach unreachableRequest instead of being normalized as an exec_command.
+	// oxlint-disable-next-line typescript/no-unnecessary-condition -- exhaustiveness, not narrowing
+	if (request.method === "execCommandApproval") {
+		const result: ExecCommandApprovalRequest = {
+			family: "exec_command",
+			method: request.method,
+			request,
+			params: request.params,
+			...common,
+			approvalId: identity.approvalId,
+		};
+		return deepFreeze(result);
+	}
+	// Named rather than defaulted: a legacy method added to the union must be given
+	// its own family here instead of silently arriving as an exec_command.
+	return unreachableRequest(request);
 }
 
 /**

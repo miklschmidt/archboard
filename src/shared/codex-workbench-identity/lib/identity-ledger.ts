@@ -106,7 +106,8 @@ interface StagedResponseIdentity<Domain extends ResponseAdoptionDomain> {
  * @param ledger - The ledger to write to.
  * @param domain - The identity domain.
  * @param token - The token to spell the wire value from.
- * @param raw - The server's raw value, or the token itself for a host identity.
+ * @param raw - The value the token stands for: the server's own value, or for a host
+ * identity the unprefixed nonce the token was spelled from.
  * @returns The branded identity.
  */
 function issue<Domain extends IdentityDomain>(

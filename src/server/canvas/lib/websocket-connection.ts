@@ -443,7 +443,8 @@ function openBoard(key: string): BoardState {
 /**
  * Own one accepted socket for its whole life: register it, present its
  * opening scene, transfer pane authority to it, admit it to broadcasts and
- * route its Codex requests. The lifecycle creates and closes the server.
+ * route its Codex requests. Creating and closing the server itself belongs to
+ * startWebSocketServer and closeWebSocketServer; this owns one socket only.
  * @param ws The accepted socket.
  * @param req The upgrade request, whose `?clientId=` names the pane.
  */

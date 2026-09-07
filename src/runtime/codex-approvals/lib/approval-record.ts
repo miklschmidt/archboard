@@ -16,6 +16,11 @@ import {
 	failedSettlement,
 	toSpokenEffectPresentation,
 } from "@/runtime/codex-approvals/lib/response";
+import {
+	type ApprovalResponseByKind,
+	type ApprovalResponseHandlers,
+	handleApprovalResponse,
+} from "@/runtime/codex-approvals/lib/approval-family-dispatch";
 import type { ChildEpoch, ChildId } from "@/shared/codex-workbench-identity";
 import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
 
@@ -92,7 +97,9 @@ export function belongsToChild(record: ApprovalRecord, exit: ChildExit): boolean
  * @param decision - The decision the response carried.
  * @returns The decision as the broker records it.
  */
-function verdictDecision(decision: unknown): ApprovalDecision {
+function verdictDecision(
+	decision: ApprovalResponseByKind["command_execution" | "file_change"]["decision"],
+): ApprovalDecision {
 	if (decision === "decline") {
 		return "declined";
 	}
@@ -105,7 +112,12 @@ function verdictDecision(decision: unknown): ApprovalDecision {
  * @param decision - The decision the response carried.
  * @returns The decision as the broker records it.
  */
-function patchDecision(decision: unknown): ApprovalDecision {
+function patchDecision(
+	decision: ApprovalResponseByKind["apply_patch" | "exec_command"]["decision"],
+): ApprovalDecision {
+	// The decision is wire data whose type the contract declares; the null check stays
+	// because a denial is read out of the object and a null one would throw here.
+	// oxlint-disable-next-line typescript/no-unnecessary-condition -- declared, not validated
 	if (typeof decision === "object" && decision !== null && "denied" in decision) {
 		return "declined";
 	}
@@ -117,31 +129,71 @@ function patchDecision(decision: unknown): ApprovalDecision {
  * @param action - The action the response carried.
  * @returns The decision as the broker records it.
  */
-function elicitationDecision(action: string): ApprovalDecision {
+function elicitationDecision(
+	action: ApprovalResponseByKind["elicitation"]["action"],
+): ApprovalDecision {
 	if (action === "accept") {
 		return "approved";
 	}
 	return action === "decline" ? "declined" : "cancelled";
 }
 
+/** Every family's decision reader, keyed by the family it answers. */
+const APPROVAL_DECISIONS: ApprovalResponseHandlers<ApprovalDecision> = {
+	/**
+	 * Read a command-execution approval's verdict.
+	 * @param response - The answered command-execution approval.
+	 * @returns What its verdict decided.
+	 */
+	command_execution: (response) => verdictDecision(response.decision),
+	/**
+	 * Read a file-change approval's verdict.
+	 * @param response - The answered file-change approval.
+	 * @returns What its verdict decided.
+	 */
+	file_change: (response) => verdictDecision(response.decision),
+	/**
+	 * Read an elicitation's action.
+	 * @param response - The answered elicitation.
+	 * @returns What its action decided.
+	 */
+	elicitation: (response) => elicitationDecision(response.action),
+	/**
+	 * Read a patch approval's decision.
+	 * @param response - The answered patch approval.
+	 * @returns What its decision decided.
+	 */
+	apply_patch: (response) => patchDecision(response.decision),
+	/**
+	 * Read a command approval's decision.
+	 * @param response - The answered command approval.
+	 * @returns What its decision decided.
+	 */
+	exec_command: (response) => patchDecision(response.decision),
+	/**
+	 * Decide a user-input answer.
+	 * @returns Approved: user input carries content, not a verdict.
+	 */
+	user_input: () => "approved",
+	/**
+	 * Decide a permissions answer.
+	 * @returns Approved: a permissions answer carries content, not a verdict.
+	 */
+	permissions: () => "approved",
+};
+
 /**
  * What one answered approval decided. Every family reduces to approved, declined or cancelled; the
  * families that carry content rather than a verdict always approve, because there is nothing in
  * them to decline with.
+ *
+ * The table names every family, so a family added to the generated contract fails to compile here
+ * rather than defaulting a new kind of request to approved.
  * @param response - The validated response.
  * @returns The decision as the broker records it.
  */
 export function approvalDecision(response: ApprovalResponse): ApprovalDecision {
-	if (response.approvalKind === "command_execution" || response.approvalKind === "file_change") {
-		return verdictDecision(response.decision);
-	}
-	if (response.approvalKind === "elicitation") {
-		return elicitationDecision(response.action);
-	}
-	if (response.approvalKind === "apply_patch" || response.approvalKind === "exec_command") {
-		return patchDecision(response.decision);
-	}
-	return "approved";
+	return handleApprovalResponse(APPROVAL_DECISIONS, response.approvalKind, response);
 }
 
 /**

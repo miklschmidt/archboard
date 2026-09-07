@@ -411,9 +411,10 @@ function coordinatorRecords(
 }
 
 /**
- * Whether the retained settings are still the reviewed ones. The model and effort are fixed by
- * the reviewed constants, so only the service tier can drift: it is advertised per account, and a
- * coordinator retained under a tier the account no longer has must be replaced.
+ * Whether the retained settings are still the reviewed ones. The comparison is against what the
+ * retained coordinator was actually given, not against the reviewed constants: the service tier is
+ * advertised per account and can be withdrawn, and the model and effort are evidence of what a
+ * coordinator started under, which a constant bump leaves behind.
  * @param persistence - The retained coordinator.
  * @param configured - The settings the coordinator must have been given.
  * @param reviewed - The reviewed hashes.
@@ -424,6 +425,17 @@ function settingsMismatchReason(
 	configured: CoordinatorConfiguredSettings,
 	reviewed: CoordinatorReviewHashes,
 ): string | null {
+	// Both sides are typed from the reviewed constants, so the compiler reads these two
+	// comparisons as redundant. They are not: the left side is retained evidence of what a
+	// coordinator was actually started under, which a constant bump leaves behind.
+	// oxlint-disable-next-line typescript/no-unnecessary-condition -- retained evidence, not a constant
+	if (persistence.settings.configured.model !== configured.model) {
+		return "The retained coordinator model does not match the reviewed model.";
+	}
+	// oxlint-disable-next-line typescript/no-unnecessary-condition -- retained evidence, not a constant
+	if (persistence.settings.configured.effort !== configured.effort) {
+		return "The retained coordinator effort does not match the reviewed effort.";
+	}
 	if (persistence.settings.configured.serviceTier !== configured.serviceTier) {
 		return "The retained coordinator service-tier choice is no longer advertised.";
 	}

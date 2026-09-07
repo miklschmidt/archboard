@@ -22,7 +22,25 @@ const COORDINATOR_THREAD_SOURCE = CODEX_SESSION_THREAD_SOURCE;
  * @returns The thread identity, or null.
  */
 function startedThreadIdOrNull(started: CoordinatorStartResponse): ThreadId | null {
-	return started.thread.id.length === 0 ? null : started.thread.id;
+	// This runs from the catch of the very assertion that would have proved the
+	// response's shape, so it reads unvalidated wire data and must not dereference
+	// blindly: a second throw here escapes before the transaction is marked unknown,
+	// which leaves the epoch staged and every later ensure inspect-only.
+	return threadIdOrNull(started);
+}
+
+/** A thread/start response as the wire may actually have sent it, not as the contract declares it. */
+type LooseStartResponse = { readonly thread?: { readonly id?: ThreadId } };
+
+/**
+ * The thread id a start response carries, reading the response as the wire may actually have
+ * sent it rather than as the contract declares it.
+ * @param response - The thread/start response.
+ * @returns The thread identity, or null when the response names none.
+ */
+function threadIdOrNull(response: LooseStartResponse): ThreadId | null {
+	const id = response.thread?.id;
+	return id === undefined || id.length === 0 ? null : id;
 }
 
 /**
