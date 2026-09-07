@@ -11,10 +11,17 @@ type InitializeResponse = ResponsePayloads["initialize"];
 type ConfigResponse = ResponsePayloads["config/read"];
 type RequirementsResponse = ResponsePayloads["configRequirements/read"];
 
+/** What the storage proof compares: the prepared facts and the three handshake responses. */
+interface StorageProofInput {
+	readonly storage: CodexSessionStorage;
+	readonly initialize: InitializeResponse;
+	readonly config: ConfigResponse;
+	readonly requirements: RequirementsResponse;
+}
+
 /**
  * Refuses the storage proof with one uniform error class.
  * @param detail - What was refused.
- * @returns Never; always throws.
  */
 function fail(detail: string): never {
 	throw new CodexSessionStorageError(`Codex storage proof refused: ${detail}`);
@@ -44,10 +51,10 @@ function isWithin(parent: string, child: string): boolean {
  */
 function requireAbsolutePath(value: unknown, label: string): string {
 	if (typeof value !== "string" || value.length === 0 || value.includes("\0")) {
-		return fail(`${label} must be a nonempty absolute path`);
+		fail(`${label} must be a nonempty absolute path`);
 	}
 	if (!path.isAbsolute(value) || path.resolve(value) !== value) {
-		return fail(`${label} must be an absolute canonical path`);
+		fail(`${label} must be an absolute canonical path`);
 	}
 	return value;
 }
@@ -67,10 +74,10 @@ function assertNoSymlinkComponents(candidate: string, label: string): void {
 		try {
 			stats = fs.lstatSync(current);
 		} catch {
-			return fail(`${label} contains a missing or unreadable path component`);
+			fail(`${label} contains a missing or unreadable path component`);
 		}
 		if (stats.isSymbolicLink()) {
-			return fail(`${label} contains a symbolic-link component`);
+			fail(`${label} contains a symbolic-link component`);
 		}
 	}
 }
@@ -89,10 +96,10 @@ function canonicalPath(value: unknown, label: string): string {
 	try {
 		canonical = fs.realpathSync(candidate);
 	} catch {
-		return fail(`${label} does not resolve to an existing path`);
+		fail(`${label} does not resolve to an existing path`);
 	}
 	if (!path.isAbsolute(canonical) || canonical !== candidate) {
-		return fail(`${label} is redirected from its prepared canonical path`);
+		fail(`${label} is redirected from its prepared canonical path`);
 	}
 	return canonical;
 }
@@ -116,7 +123,7 @@ function currentUserId(): number | undefined {
  */
 function assertRestrictiveMode(stats: fs.Stats, label: string, mode: number): void {
 	if (process.platform !== "win32" && (stats.mode & 0o777) !== mode) {
-		return fail(`${label} is not restrictive`);
+		fail(`${label} is not restrictive`);
 	}
 }
 
@@ -130,10 +137,10 @@ function assertRestrictiveMode(stats: fs.Stats, label: string, mode: number): vo
 function assertOwnerAndMode(stats: fs.Stats, label: string, mode: number): void {
 	const owner = currentUserId();
 	if (process.platform !== "win32" && owner === undefined) {
-		return fail(`could not prove ownership of ${label}`);
+		fail(`could not prove ownership of ${label}`);
 	}
 	if (owner !== undefined && stats.uid !== owner) {
-		return fail(`${label} is not owned by the current user`);
+		fail(`${label} is not owned by the current user`);
 	}
 	assertRestrictiveMode(stats, label, mode);
 }
@@ -150,10 +157,10 @@ function assertDirectory(value: unknown, label: string): string {
 	try {
 		stats = fs.lstatSync(canonical);
 	} catch {
-		return fail(`${label} could not be inspected`);
+		fail(`${label} could not be inspected`);
 	}
 	if (!stats.isDirectory()) {
-		return fail(`${label} is not a directory`);
+		fail(`${label} is not a directory`);
 	}
 	assertOwnerAndMode(stats, label, 0o700);
 	return canonical;
@@ -171,10 +178,10 @@ function assertConfigFile(value: unknown, label: string): string {
 	try {
 		stats = fs.lstatSync(canonical);
 	} catch {
-		return fail(`${label} could not be inspected`);
+		fail(`${label} could not be inspected`);
 	}
 	if (!stats.isFile()) {
-		return fail(`${label} is not a regular file`);
+		fail(`${label} is not a regular file`);
 	}
 	assertOwnerAndMode(stats, label, 0o600);
 	return canonical;
@@ -188,7 +195,7 @@ function assertConfigFile(value: unknown, label: string): string {
  */
 function assertRootAgreement(value: unknown, label: string, prepared: string): void {
 	if (canonicalPath(value, label) !== prepared) {
-		return fail(`${label} does not match the prepared storage root`);
+		fail(`${label} does not match the prepared storage root`);
 	}
 }
 
@@ -201,7 +208,7 @@ function assertRootAgreement(value: unknown, label: string, prepared: string): v
  */
 function assertSqliteValue(value: unknown, label: string, prepared: string): void {
 	if (typeof value !== "string") {
-		return fail(`${label} is missing or null`);
+		fail(`${label} is missing or null`);
 	}
 	assertRootAgreement(value, label, prepared);
 }
@@ -214,10 +221,10 @@ function assertSqliteValue(value: unknown, label: string, prepared: string): voi
 function assertOrigin(config: ConfigResponse, configPath: string): void {
 	const origin = config.origins["sqlite_home"];
 	if (origin?.name.type !== "user") {
-		return fail("sqlite_home origin is not the user layer");
+		fail("sqlite_home origin is not the user layer");
 	}
 	if (origin.name.file !== configPath || origin.name.profile !== null) {
-		return fail("sqlite_home origin is not the prepared CODEX_HOME/config.toml");
+		fail("sqlite_home origin is not the prepared CODEX_HOME/config.toml");
 	}
 }
 
@@ -240,24 +247,19 @@ function assertRequirements(requirements: RequirementsResponse, sqliteHome: stri
  * Verify server-reported storage without creating, rewriting, or locking anything.
  * @param input - The prepared storage facts and the three decoded handshake responses.
  */
-export function proveCodexStorage(input: {
-	readonly storage: CodexSessionStorage;
-	readonly initialize: InitializeResponse;
-	readonly config: ConfigResponse;
-	readonly requirements: RequirementsResponse;
-}): void {
+export function proveCodexStorage(input: StorageProofInput): void {
 	const codexHome = assertDirectory(input.storage.codexHome, "prepared CODEX_HOME");
 	const sqliteHome = assertDirectory(input.storage.sqliteHome, "prepared CODEX_SQLITE_HOME");
 	const configPath = assertConfigFile(input.storage.configPath, "prepared config.toml");
 	if (configPath !== path.join(codexHome, "config.toml")) {
-		return fail("prepared config.toml is outside CODEX_HOME");
+		fail("prepared config.toml is outside CODEX_HOME");
 	}
 	if (
 		codexHome === sqliteHome ||
 		isWithin(codexHome, sqliteHome) ||
 		isWithin(sqliteHome, codexHome)
 	) {
-		return fail("prepared Codex roots collide");
+		fail("prepared Codex roots collide");
 	}
 
 	assertRootAgreement(input.initialize.codexHome, "initialize.codexHome", codexHome);

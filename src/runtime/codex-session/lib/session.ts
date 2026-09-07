@@ -3,39 +3,32 @@ import {
 	decodeResponse,
 	INITIALIZE_CAPABILITIES,
 	InitializeCapabilitiesSchema,
-	isClientRequestMethodWithoutParams,
-	LOGIN_POLICIES,
-	ProtocolDecodeError,
-	SupportedLoginAccountParamsSchema,
-	UNSUPPORTED_ATTESTATION_ERROR,
-	UNSUPPORTED_TOKEN_REFRESH_ERROR,
-	type ClientRequestMethod,
 	type ClientRequestParams,
-	type ResponseMethod,
 	type ResponsePayloads,
 } from "@/runtime/codex-protocol";
 import type { CodexTransport, CodexTransportResponse } from "@/runtime/codex-transport";
-import type {
-	TransportServerRequest,
-	TransportServerNotification,
-} from "@/runtime/codex-transport/server-requests";
+import type { TransportServerNotification } from "@/runtime/codex-transport/server-requests";
 import {
 	CodexSessionError,
 	CodexSessionMutationError,
 	CODEX_SESSION_CONTROL,
-	type CodexSession,
 	type ControlledCodexSession,
 	type CodexSessionOptions,
-	type SessionParams,
-	type SessionServerRequest,
-	type SessionMutationOutcome,
 } from "@/runtime/codex-session/lib/contract";
 import {
+	createRequestParamsSerializer,
+	type OutboundMethod,
+} from "@/runtime/codex-session/lib/request-identities";
+import {
 	adoptSessionResponse,
-	SESSION_PROTOCOL_METHODS,
-	type SessionRequestIdentityField,
 	type SessionResponsePayloads,
 } from "@/runtime/codex-session/lib/results";
+import { createReverseRequestHandlers } from "@/runtime/codex-session/lib/reverse-requests";
+import { mutationFailure } from "@/runtime/codex-session/lib/session-failures";
+import {
+	createSessionOperations,
+	type SessionGate,
+} from "@/runtime/codex-session/lib/session-operations";
 import { proveCodexStorage } from "@/runtime/codex-session/lib/storage-proof";
 
 const CLIENT_INFO = Object.freeze({
@@ -46,10 +39,11 @@ const CLIENT_INFO = Object.freeze({
 const INITIALIZE_OPTIONS = Object.freeze({ idempotent: false, retryEligible: false });
 const READ_OPTIONS = Object.freeze({ idempotent: true, retryEligible: false });
 const MUTATION_OPTIONS = Object.freeze({ idempotent: false, retryEligible: false });
-const INVALID_PARAMS_CODE = -32602;
 
-type OutboundMethod = Extract<ClientRequestMethod, ResponseMethod>;
-
+/**
+ * How far this session has got. Every phase before `login-capable` is part of initialization, and
+ * `failed` is terminal: a failed session is replaced, never retried.
+ */
 type SessionPhase =
 	| "transport-connected"
 	| "initializing"
@@ -58,73 +52,15 @@ type SessionPhase =
 	| "login-capable"
 	| "thread-capable"
 	| "failed";
-type SessionGate = "login-capable" | "thread-capable";
+
+/** The request options one call is sent with, which say whether it may be retried. */
+type RequestOptions = typeof READ_OPTIONS | typeof MUTATION_OPTIONS | typeof INITIALIZE_OPTIONS;
 
 /**
- *
+ * The initialize parameters Archboard sends, built from the authored capability policy inside
+ * the session so the public wire decoder still checks what this session asked for.
+ * @returns The initialize parameters.
  */
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-	return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-/**
- *
- */
-function requestParams(value: unknown): Readonly<Record<string, unknown>> {
-	if (value === undefined) {
-		return {};
-	}
-	if (!isRecord(value)) {
-		throw new CodexSessionError(
-			"invalid_request",
-			"Codex session request parameters must be a JSON object.",
-		);
-	}
-	return value;
-}
-
-/**
- *
- */
-function hasOutcome(
-	value: unknown,
-): value is { readonly outcome: "not_delivered" | "outcome_unknown" } {
-	return (
-		isRecord(value) &&
-		(value["outcome"] === "not_delivered" || value["outcome"] === "outcome_unknown")
-	);
-}
-
-/**
- *
- */
-function mutationFailure(method: string, error: unknown): CodexSessionMutationError {
-	if (error instanceof CodexSessionMutationError) {
-		return error;
-	}
-	const outcome: SessionMutationOutcome = hasOutcome(error)
-		? error.outcome
-		: error instanceof ProtocolDecodeError
-			? "outcome_unknown"
-			: "not_delivered";
-	const message =
-		outcome === "outcome_unknown"
-			? `Codex mutation ${method} has an unknown outcome; inspect authoritative state before retrying.`
-			: `Codex mutation ${method} was not delivered.`;
-	return new CodexSessionMutationError(method, outcome, message, error);
-}
-
-/**
- *
- */
-function mutationOutcome(error: unknown): SessionMutationOutcome | undefined {
-	if (error instanceof CodexSessionMutationError) {
-		return error.outcome;
-	}
-	return hasOutcome(error) ? error.outcome : undefined;
-}
-
-/** Applies the authored policy inside the session before the public wire decoder runs. */
 function authoredSessionInitializeParams(): ClientRequestParams<"initialize"> {
 	return {
 		clientInfo: CLIENT_INFO,
@@ -133,7 +69,23 @@ function authoredSessionInitializeParams(): ClientRequestParams<"initialize"> {
 }
 
 /**
- *
+ * Turn a transport failure on a mutation into a mutation error that states the outcome, and
+ * leave a read's failure as it is.
+ * @param method - The method that failed.
+ * @param error - The thrown value.
+ * @param mutation - Whether the call was a mutation.
+ */
+function rethrowRequestFailure(method: string, error: unknown, mutation: boolean): never {
+	throw mutation ? mutationFailure(method, error) : error;
+}
+
+/**
+ * Build the one Codex app-server session Archboard holds: it owns initialization and the storage
+ * proof, gates every call on how far initialization got, proves each request's identities against
+ * the current child, and reports a failed mutation as delivered, not delivered, or unknown.
+ * @param options - The transport, identity authority, storage paths, lifecycle callbacks,
+ * notification sink and clock this session runs on.
+ * @returns The session, together with the control channel its owner drives it through.
  */
 export function createCodexSession(options: CodexSessionOptions): ControlledCodexSession {
 	const transport: CodexTransport = options.transport;
@@ -149,113 +101,12 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	const bufferedNotifications: TransportServerNotification[] = [];
 	const unsubscribers: Array<() => void> = [];
 	let disposed = false;
-	const requestIdentitySerializers = {
-		/**
-		 *
-		 */
-		threadId: (value: unknown) =>
-			identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value)),
-		/**
-		 *
-		 */
-		parentThreadId: (value: unknown) =>
-			identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value)),
-		/**
-		 *
-		 */
-		ancestorThreadId: (value: unknown) =>
-			identity.decoder.serializeCodexIdentity(identity.decoder.parseThreadId(value)),
-		/**
-		 *
-		 */
-		turnId: (value: unknown) =>
-			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
-		/**
-		 *
-		 */
-		lastTurnId: (value: unknown) =>
-			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
-		/**
-		 *
-		 */
-		beforeTurnId: (value: unknown) =>
-			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
-		/**
-		 *
-		 */
-		expectedTurnId: (value: unknown) =>
-			identity.decoder.serializeCodexIdentity(identity.decoder.parseTurnId(value)),
-		/**
-		 *
-		 */
-		queuedSubmissionId: (value: unknown) =>
-			identity.decoder.serializeCodexIdentity(identity.decoder.parseQueuedSubmissionId(value)),
-		/**
-		 *
-		 */
-		queuedSubmissionIds: (value: unknown) => {
-			if (!Array.isArray(value)) {
-				throw new TypeError("queuedSubmissionIds must be an array of issued identities.");
-			}
-			return value.map((candidate) =>
-				identity.decoder.serializeCodexIdentity(
-					identity.decoder.parseQueuedSubmissionId(candidate),
-				),
-			);
-		},
-		/**
-		 *
-		 */
-		loginId: (value: unknown) =>
-			identity.decoder.serializeCodexIdentity(identity.decoder.parseLoginId(value)),
-		/**
-		 *
-		 */
-		realtimeSessionId: (value: unknown) => identity.decoder.parseRealtimeSessionId(value),
-	} satisfies Record<SessionRequestIdentityField, (value: unknown) => unknown>;
-	/**
-	 *
-	 */
-	const serializeIdentityField = (field: SessionRequestIdentityField, value: unknown): unknown => {
-		if (value === undefined || value === null) {
-			return value;
-		}
-		try {
-			return requestIdentitySerializers[field](value);
-		} catch (error) {
-			throw new CodexSessionError(
-				"invalid_identity",
-				`Codex request field ${field} is not an issued identity for this child.`,
-				error,
-			);
-		}
-	};
+	const serializeRequestParams = createRequestParamsSerializer(identity);
 
 	/**
-	 *
-	 */
-	const serializeRequestParams = <Method extends OutboundMethod>(
-		method: Method,
-		value: unknown,
-	): ClientRequestParams<Method> => {
-		if (isClientRequestMethodWithoutParams(method)) {
-			return value as ClientRequestParams<Method>;
-		}
-		const params = requestParams(value);
-		const serialized = Object.fromEntries(
-			Object.entries(params).filter(([, fieldValue]) => fieldValue !== undefined),
-		);
-		const fields = SESSION_PROTOCOL_METHODS[method].requestIdentities;
-		for (const field of fields) {
-			if (Object.hasOwn(serialized, field)) {
-				serialized[field] = serializeIdentityField(field, serialized[field]);
-			}
-		}
-		return serialized as ClientRequestParams<Method>;
-	};
-
-	/**
-	 *
+	 * Adopt what the account says about readiness, keeping the phase and the account flag in step
+	 * unless initialization already failed.
+	 * @param ready - Whether thread operations are allowed.
 	 */
 	const setAccountReadiness = (ready: boolean): void => {
 		accountReady = ready;
@@ -265,7 +116,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	};
 
 	/**
-	 *
+	 * Hand one notification to the consumer. A consumer that throws is ignored, because this
+	 * session, not its consumer, owns the decoded event boundary.
+	 * @param event - The decoded notification.
 	 */
 	const deliverNotification = (event: TransportServerNotification): void => {
 		if (!notificationSink) {
@@ -279,7 +132,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	};
 
 	/**
-	 *
+	 * Take one notification from the transport, buffering it until initialization has finished so
+	 * a consumer never sees an event from a session that is not yet usable.
+	 * @param event - The decoded notification.
 	 */
 	const onNotification = (event: TransportServerNotification): void => {
 		if (disposed || notificationsStopped) {
@@ -293,7 +148,7 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	};
 
 	/**
-	 *
+	 * Open the notification channel and drain what initialization buffered, in arrival order.
 	 */
 	const publishNotifications = (): void => {
 		notificationsPublished = true;
@@ -308,7 +163,9 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	};
 
 	/**
-	 *
+	 * Refuse a call the session is not far enough along to make, naming which of the two reasons
+	 * it is: initialization has not finished, or the account is not ready for thread work.
+	 * @param gate - The readiness the call requires.
 	 */
 	const requireGate = (gate: SessionGate): void => {
 		if (phase === "failed") {
@@ -332,37 +189,17 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	};
 
 	/**
-	 *
+	 * Prove that a response came back from the child epoch the request was sent to; a mutation
+	 * whose correlation cannot be trusted has an unknown outcome, because it may have happened.
+	 * @param method - The method that answered.
+	 * @param response - The transport response.
+	 * @param mutation - Whether the call was a mutation.
 	 */
-	const requestDecoded = async <Method extends OutboundMethod>(
-		method: Method,
-		params: unknown,
-		requestOptions: typeof READ_OPTIONS | typeof MUTATION_OPTIONS | typeof INITIALIZE_OPTIONS,
+	const assertResponseEpoch = (
+		method: OutboundMethod,
+		response: CodexTransportResponse<OutboundMethod>,
 		mutation: boolean,
-	): Promise<SessionResponsePayloads[Method]> => {
-		let decodedParams: ClientRequestParams<Method>;
-		try {
-			decodedParams = decodeClientRequestParams(method, serializeRequestParams(method, params));
-		} catch (error) {
-			if (mutation) {
-				throw new CodexSessionMutationError(
-					method,
-					"not_delivered",
-					`Codex mutation ${method} was rejected before delivery.`,
-					error,
-				);
-			}
-			throw error;
-		}
-		let response: CodexTransportResponse<Method>;
-		try {
-			response = await transport.request(method, decodedParams, requestOptions);
-		} catch (error) {
-			if (mutation) {
-				throw mutationFailure(method, error);
-			}
-			throw error;
-		}
+	): void => {
 		try {
 			identity.validator.assertCurrentEpoch(response.correlation.child, response.correlation.epoch);
 		} catch (error) {
@@ -381,15 +218,21 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 			}
 			throw failure;
 		}
-		let decoded: ResponsePayloads[Method];
-		try {
-			decoded = decodeResponse(method, response.result);
-		} catch (error) {
-			if (mutation) {
-				throw mutationFailure(method, error);
-			}
-			throw error;
-		}
+	};
+
+	/**
+	 * Adopt the identities a decoded response carries as issued to this child. A mutation whose
+	 * identities cannot be trusted has an unknown outcome for the same reason as a bad epoch.
+	 * @param method - The method that answered.
+	 * @param decoded - The decoded response payload.
+	 * @param mutation - Whether the call was a mutation.
+	 * @returns The response with its identities adopted.
+	 */
+	const adoptResponse = <Method extends OutboundMethod>(
+		method: Method,
+		decoded: ResponsePayloads[Method],
+		mutation: boolean,
+	): SessionResponsePayloads[Method] => {
 		try {
 			return adoptSessionResponse(method, decoded, identity.decoder);
 		} catch (error) {
@@ -411,7 +254,58 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	};
 
 	/**
-	 *
+	 * Send one request and return its decoded, identity-adopted result. This is the single path
+	 * every session call takes, so each failure point states the same thing about delivery.
+	 * @param method - The protocol method.
+	 * @param params - The caller's parameters.
+	 * @param requestOptions - Whether the call is idempotent or retry-eligible.
+	 * @param mutation - Whether a failure must be reported as a mutation outcome.
+	 * @returns The decoded response.
+	 */
+	const requestDecoded = async <Method extends OutboundMethod>(
+		method: Method,
+		params: unknown,
+		requestOptions: RequestOptions,
+		mutation: boolean,
+	): Promise<SessionResponsePayloads[Method]> => {
+		let decodedParams: ClientRequestParams<Method>;
+		try {
+			decodedParams = decodeClientRequestParams(method, serializeRequestParams(method, params));
+		} catch (error) {
+			if (mutation) {
+				throw new CodexSessionMutationError(
+					method,
+					"not_delivered",
+					`Codex mutation ${method} was rejected before delivery.`,
+					error,
+				);
+			}
+			throw error;
+		}
+		let response: CodexTransportResponse<Method>;
+		try {
+			response = await transport.request(method, decodedParams, requestOptions);
+		} catch (error) {
+			return rethrowRequestFailure(method, error, mutation);
+		}
+		assertResponseEpoch(method, response, mutation);
+		let decoded: ResponsePayloads[Method];
+		try {
+			decoded = decodeResponse(method, response.result);
+		} catch (error) {
+			return rethrowRequestFailure(method, error, mutation);
+		}
+		return adoptResponse(method, decoded, mutation);
+	};
+
+	/**
+	 * Make one read: gate it, send it, and let its failure travel as it is. Asynchronous even
+	 * where it only throws, so a closed gate reaches the caller as a rejection like every other
+	 * failure rather than as a synchronous throw.
+	 * @param method - The protocol method.
+	 * @param params - The caller's parameters.
+	 * @param gate - The readiness the read requires.
+	 * @returns The decoded response.
 	 */
 	const read = async <Method extends OutboundMethod>(
 		method: Method,
@@ -423,7 +317,13 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 	};
 
 	/**
-	 *
+	 * Make one mutation: gate it, prepare its parameters, send it, and report every failure as a
+	 * mutation error so the caller always learns what happened to the remote effect.
+	 * @param method - The protocol method.
+	 * @param params - The caller's parameters.
+	 * @param gate - The readiness the mutation requires, if any.
+	 * @param prepare - A last check on the parameters before they are sent.
+	 * @returns The decoded response.
 	 */
 	const mutate = async <Method extends OutboundMethod>(
 		method: Method,
@@ -444,159 +344,20 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
-	/**
-	 *
-	 */
-	const validateLogin = (value: unknown): unknown => {
-		const variant =
-			isRecord(value) && typeof value["type"] === "string" ? value["type"] : undefined;
-		const policy = LOGIN_POLICIES.find((candidate) => candidate.variant === variant);
-		if (policy?.policy === "refused") {
-			throw new CodexSessionError(
-				"unsupported_login",
-				`The reviewed login variant ${JSON.stringify(variant)} is refused before RPC.`,
-			);
-		}
-		if (variant === "profile" || variant === "environment") {
-			throw new CodexSessionError(
-				"unsupported_login",
-				`The reviewed Bedrock ${variant} setup is refused before RPC.`,
-			);
-		}
-		const supported = SupportedLoginAccountParamsSchema.safeParse(value);
-		if (!supported.success) {
-			throw new CodexSessionError(
-				"unsupported_login",
-				"The login variant is not supported by the reviewed Archboard session.",
-			);
-		}
-		return supported.data;
-	};
+	const reverseRequests = createReverseRequestHandlers({
+		transport,
+		identity,
+		now,
+		/**
+		 * Whether this session has been disposed.
+		 * @returns True once dispose has run.
+		 */
+		isDisposed: () => disposed,
+	});
 
 	/**
-	 *
-	 */
-	const validateReverseRequest = (
-		request: SessionServerRequest,
-		method: SessionServerRequest["method"],
-	): void => {
-		if (request.owner !== "codex-session" || request.method !== method) {
-			throw new CodexSessionError(
-				"invalid_request",
-				"The reverse request is not owned by this session.",
-			);
-		}
-		try {
-			identity.validator.assertCurrentEpoch(request.child, request.epoch);
-			identity.validator.assertCurrentEpoch(request.correlation.child, request.correlation.epoch);
-		} catch (error) {
-			throw new CodexSessionError(
-				"invalid_identity",
-				"The reverse request is not from the current Codex child epoch.",
-				error,
-			);
-		}
-	};
-
-	/**
-	 *
-	 */
-	const validateCurrentThread = (
-		request: Extract<SessionServerRequest, { method: "currentTime/read" }>,
-	): void => {
-		const threadId = request.params.threadId;
-		if (typeof threadId !== "string" || threadId.length === 0 || threadId.includes("\0")) {
-			throw new CodexSessionError(
-				"invalid_identity",
-				"currentTime/read requires a nonempty current ThreadId.",
-			);
-		}
-		try {
-			identity.decoder.parseThreadId(threadId);
-		} catch (error) {
-			throw new CodexSessionError(
-				"invalid_identity",
-				"currentTime/read ThreadId is not valid for this child.",
-				error,
-			);
-		}
-	};
-
-	/**
-	 *
-	 */
-	const respondCurrentTime = async (
-		request: Extract<SessionServerRequest, { method: "currentTime/read" }>,
-	): Promise<void> => {
-		validateReverseRequest(request, "currentTime/read");
-		validateCurrentThread(request);
-		const result: ResponsePayloads["currentTime/read"] = {
-			currentTimeAt: Math.floor(now() / 1000),
-		};
-		await transport.respond(request, "codex-session", {
-			result,
-		});
-	};
-
-	/**
-	 *
-	 */
-	const respondUnsupportedTokenRefresh = async (
-		request: Extract<SessionServerRequest, { method: "account/chatgptAuthTokens/refresh" }>,
-	): Promise<void> => {
-		validateReverseRequest(request, "account/chatgptAuthTokens/refresh");
-		await transport.respond(request, "codex-session", { error: UNSUPPORTED_TOKEN_REFRESH_ERROR });
-	};
-
-	/**
-	 *
-	 */
-	const respondUnsupportedAttestation = async (
-		request: Extract<SessionServerRequest, { method: "attestation/generate" }>,
-	): Promise<void> => {
-		validateReverseRequest(request, "attestation/generate");
-		await transport.respond(request, "codex-session", { error: UNSUPPORTED_ATTESTATION_ERROR });
-	};
-
-	/**
-	 *
-	 */
-	const respondInvalidReverseRequest = (request: SessionServerRequest): void => {
-		void transport
-			.respond(request, "codex-session", {
-				error: {
-					code: INVALID_PARAMS_CODE,
-					message: "The reverse request is not valid for the current Codex child epoch.",
-				},
-			})
-			.catch(() => undefined);
-	};
-
-	/**
-	 *
-	 */
-	const onServerRequest = (request: TransportServerRequest): void => {
-		if (disposed) {
-			return;
-		}
-		if (request.owner !== "codex-session") {
-			return;
-		}
-		const operation =
-			request.method === "currentTime/read"
-				? respondCurrentTime(request)
-				: request.method === "account/chatgptAuthTokens/refresh"
-					? respondUnsupportedTokenRefresh(request)
-					: respondUnsupportedAttestation(request);
-		void operation.catch((error: unknown) => {
-			if (error instanceof CodexSessionError) {
-				respondInvalidReverseRequest(request);
-			}
-		});
-	};
-
-	/**
-	 *
+	 * Stop this session for good: no further notification is published, nothing buffered is
+	 * delivered, and every transport listener it installed is removed in reverse order.
 	 */
 	const dispose = (): void => {
 		if (disposed) {
@@ -612,11 +373,14 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 
 	if ((options.listenerOwnership ?? "self") === "self") {
 		unsubscribers.push(transport.onServerNotification(onNotification));
-		unsubscribers.push(transport.onServerRequest(onServerRequest));
+		unsubscribers.push(transport.onServerRequest(reverseRequests.onServerRequest));
 	}
 
 	/**
-	 *
+	 * Run the app-server handshake exactly once: initialize, write `initialized`, read the config
+	 * requirements and config, and prove that the child is using Archboard's own storage before
+	 * any call is allowed out. A failure here is terminal for the session.
+	 * @returns The initialize result.
 	 */
 	const initialize = async (): Promise<SessionResponsePayloads["initialize"]> => {
 		if (phase !== "transport-connected") {
@@ -671,216 +435,28 @@ export function createCodexSession(options: CodexSessionOptions): ControlledCode
 		}
 	};
 
-	/**
-	 *
-	 */
-	const configRead = (params?: SessionParams<"config/read">) =>
-		read("config/read", params, "login-capable");
-	/**
-	 *
-	 */
-	const accountRead = async (params?: SessionParams<"account/read">) => {
-		const result = await read("account/read", params, "login-capable");
-		if (result.account === null) {
-			setAccountReadiness(false);
-		} else {
-			setAccountReadiness(true);
-			lifecycle?.markAccountReady();
-		}
-		return result;
-	};
-	/**
-	 *
-	 */
-	const accountLogin = (params: Parameters<CodexSession["accountLogin"]>[0]) =>
-		mutate("account/login/start", params, "login-capable", validateLogin);
-	/**
-	 *
-	 */
-	const accountLoginCancel = (params: SessionParams<"account/login/cancel">) =>
-		mutate("account/login/cancel", params, "login-capable");
-	/**
-	 *
-	 */
-	const accountLogout = async () => {
-		const restoreReady = accountReady && phase === "thread-capable";
-		if (restoreReady) {
-			setAccountReadiness(false);
-		}
-		try {
-			const result = await mutate("account/logout", undefined, "login-capable");
-			setAccountReadiness(false);
-			return result;
-		} catch (error) {
-			if (restoreReady && mutationOutcome(error) === "not_delivered") {
-				setAccountReadiness(true);
-			} else {
-				setAccountReadiness(false);
-			}
-			throw error;
-		}
-	};
-	/**
-	 *
-	 */
-	const modelList = (params?: SessionParams<"model/list">) =>
-		read("model/list", params, "login-capable");
-	/**
-	 *
-	 */
-	const threadStart = (params: SessionParams<"thread/start">) =>
-		mutate("thread/start", params, "thread-capable");
-	/**
-	 *
-	 */
-	const threadFork = (params: SessionParams<"thread/fork">) =>
-		mutate("thread/fork", params, "thread-capable");
-	/**
-	 *
-	 */
-	const threadListPage = (params?: SessionParams<"thread/list">) =>
-		read("thread/list", params, "thread-capable");
-	/**
-	 *
-	 */
-	const threadLoadedListPage = (params?: SessionParams<"thread/loaded/list">) =>
-		read("thread/loaded/list", params, "thread-capable");
-	/**
-	 *
-	 */
-	const threadRead = (params: SessionParams<"thread/read">) =>
-		read("thread/read", params, "thread-capable");
-	/**
-	 *
-	 */
-	const threadTurnsListPage = (params: SessionParams<"thread/turns/list">) =>
-		read("thread/turns/list", params, "thread-capable");
-	/**
-	 *
-	 */
-	const threadItemsListPage = (params: SessionParams<"thread/items/list">) =>
-		read("thread/items/list", params, "thread-capable");
-	/**
-	 *
-	 */
-	const threadDelete = (params: SessionParams<"thread/delete">) =>
-		mutate("thread/delete", params, "thread-capable");
-	/**
-	 *
-	 */
-	const threadSettingsUpdate = (params: SessionParams<"thread/settings/update">) =>
-		mutate("thread/settings/update", params, "thread-capable");
-	/**
-	 *
-	 */
-	const turnStart = (params: SessionParams<"turn/start">) =>
-		mutate("turn/start", params, "thread-capable");
-	/**
-	 *
-	 */
-	const turnSteer = (params: SessionParams<"turn/steer">) =>
-		mutate("turn/steer", params, "thread-capable");
-	/**
-	 *
-	 */
-	const turnInterrupt = (params: SessionParams<"turn/interrupt">) =>
-		mutate("turn/interrupt", params, "thread-capable");
-	/**
-	 *
-	 */
-	const queueAdd = (params: SessionParams<"thread/queue/add">) =>
-		mutate("thread/queue/add", params, "thread-capable");
-	/**
-	 *
-	 */
-	const queueListPage = (params: SessionParams<"thread/queue/list">) =>
-		read("thread/queue/list", params, "thread-capable");
-	/**
-	 *
-	 */
-	const queueUpdate = (params: SessionParams<"thread/queue/update">) =>
-		mutate("thread/queue/update", params, "thread-capable");
-	/**
-	 *
-	 */
-	const queueDelete = (params: SessionParams<"thread/queue/delete">) =>
-		mutate("thread/queue/delete", params, "thread-capable");
-	/**
-	 *
-	 */
-	const queueReorder = (params: SessionParams<"thread/queue/reorder">) =>
-		mutate("thread/queue/reorder", params, "thread-capable");
-	/**
-	 *
-	 */
-	const queueStart = (params: SessionParams<"thread/queue/start">) =>
-		mutate("thread/queue/start", params, "thread-capable");
-	/**
-	 *
-	 */
-	const threadInjectItems = (params: SessionParams<"thread/inject_items">) =>
-		mutate("thread/inject_items", params, "thread-capable");
-	/**
-	 *
-	 */
-	const realtimeStart = (params: SessionParams<"thread/realtime/start">) =>
-		mutate("thread/realtime/start", params, "thread-capable");
-	/**
-	 *
-	 */
-	const realtimeAppendText = (params: SessionParams<"thread/realtime/appendText">) =>
-		mutate("thread/realtime/appendText", params, "thread-capable");
-	/**
-	 *
-	 */
-	const realtimeAppendSpeech = (params: SessionParams<"thread/realtime/appendSpeech">) =>
-		mutate("thread/realtime/appendSpeech", params, "thread-capable");
-	/**
-	 *
-	 */
-	const realtimeStop = (params: SessionParams<"thread/realtime/stop">) =>
-		mutate("thread/realtime/stop", params, "thread-capable");
-	/**
-	 *
-	 */
-	const timelineListPage = (params: SessionParams<"thread/timeline/list">) =>
-		read("thread/timeline/list", params, "thread-capable");
+	const operations = createSessionOperations({
+		read,
+		mutate,
+		setAccountReadiness,
+		/**
+		 * Whether thread operations are open right now.
+		 * @returns True while the account is ready and the session is thread-capable.
+		 */
+		isThreadReady: () => accountReady && phase === "thread-capable",
+		lifecycle,
+	});
 
 	return Object.freeze({
-		[CODEX_SESSION_CONTROL]: Object.freeze({ onNotification, onServerRequest, dispose }),
+		[CODEX_SESSION_CONTROL]: Object.freeze({
+			onNotification,
+			onServerRequest: reverseRequests.onServerRequest,
+			dispose,
+		}),
 		initialize,
-		configRead,
-		accountRead,
-		accountLogin,
-		accountLoginCancel,
-		accountLogout,
-		modelList,
-		threadStart,
-		threadFork,
-		threadListPage,
-		threadLoadedListPage,
-		threadRead,
-		threadTurnsListPage,
-		threadItemsListPage,
-		threadDelete,
-		threadSettingsUpdate,
-		turnStart,
-		turnSteer,
-		turnInterrupt,
-		queueAdd,
-		queueListPage,
-		queueUpdate,
-		queueDelete,
-		queueReorder,
-		queueStart,
-		threadInjectItems,
-		realtimeStart,
-		realtimeAppendText,
-		realtimeAppendSpeech,
-		realtimeStop,
-		timelineListPage,
-		respondCurrentTime,
-		respondUnsupportedTokenRefresh,
-		respondUnsupportedAttestation,
+		...operations,
+		respondCurrentTime: reverseRequests.respondCurrentTime,
+		respondUnsupportedTokenRefresh: reverseRequests.respondUnsupportedTokenRefresh,
+		respondUnsupportedAttestation: reverseRequests.respondUnsupportedAttestation,
 	});
 }
