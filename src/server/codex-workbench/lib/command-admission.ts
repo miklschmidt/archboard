@@ -279,6 +279,10 @@ function createCommandAdmission(
 	};
 
 	return (state, command) => {
+		// A lease that has run out is ended before the command is checked, so a
+		// command arriving after the deadline is refused as expired rather than
+		// admitted under a lease nothing has retired yet.
+		owners.leases.expireIfDue();
 		const record = currentLeaseOrThrow(
 			owners.leases.manager,
 			command.commandId,
