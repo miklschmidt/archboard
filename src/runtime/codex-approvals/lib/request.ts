@@ -114,18 +114,44 @@ export function completeBinding(
 	request: BindingSource,
 	input: ApprovalBindingInput | undefined,
 ): ApprovalBinding {
-	const link = bindingLink(request, input);
-	const candidate = {
-		child: input?.child ?? request.child,
-		epoch: input?.epoch ?? request.epoch,
-		link,
-		target: input?.target ?? request.binding.target,
-		effect: input?.effect ?? request.binding.effect,
+	const candidate = bindingCandidate(request, input);
+	assertBindingText(candidate);
+	return Object.freeze(candidate);
+}
+
+/**
+ * The completed binding: each field taken from the caller when they supplied one, and from the
+ * request itself when they did not.
+ * @param request - The request whose binding is completed.
+ * @param input - The caller's partial binding, if any.
+ * @returns The completed binding, before its text is checked.
+ */
+function bindingCandidate(
+	request: BindingSource,
+	input: ApprovalBindingInput | undefined,
+): ApprovalBinding {
+	const supplied = input ?? {};
+	return {
+		child: supplied.child ?? request.child,
+		epoch: supplied.epoch ?? request.epoch,
+		link: bindingLink(request, input),
+		target: supplied.target ?? request.binding.target,
+		effect: supplied.effect ?? request.binding.effect,
 	};
-	if (candidate.link !== null) bindingText(candidate.link, "link");
+}
+
+/**
+ * Prove every text field of a completed binding is usable. A binding is what an answer is proven
+ * against later, so an empty or oversized field is refused now rather than at settlement.
+ * @param candidate - The completed binding.
+ * @throws {CodexApprovalError} When any field is not bounded text.
+ */
+function assertBindingText(candidate: ApprovalBinding): void {
+	if (candidate.link !== null) {
+		bindingText(candidate.link, "link");
+	}
 	bindingText(candidate.target, "target");
 	bindingText(candidate.effect, "effect");
-	return Object.freeze(candidate);
 }
 
 /**
@@ -313,7 +339,6 @@ function normalizeLegacyRequest(
  * Fails when a method reaches a normaliser that handles no such method, which
  * the type system rules out but the code path analysis cannot see.
  * @param request - The request no branch handled.
- * @returns Never.
  */
 function unreachableRequest(request: never): never {
 	throw new CodexApprovalError(

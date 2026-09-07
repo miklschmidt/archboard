@@ -99,17 +99,24 @@ function optionalApprovalId(authority: IdentityAuthority, raw: unknown): Approva
 	return adopt(raw, authority.decoder.parseApprovalId, authority.decoder.adoptApprovalId);
 }
 
+/** The raw ids an item-addressed approval request carries. */
+interface ItemAddressedParams {
+	readonly threadId: unknown;
+	readonly turnId: unknown;
+	readonly itemId: unknown;
+}
+
 /**
  * Adopts the thread, turn and item ids of an item-addressed request and builds
  * the item identity from them.
  * @param authority - The session identity authority.
- * @param params - The request parameters carrying the raw ids.
+ * @param params - The request parameters carrying the raw thread, turn and item ids.
  * @param approvalId - The raw approval id, when the method carries one.
  * @returns The adopted ids and the identity built from them.
  */
 function itemIdentity(
 	authority: IdentityAuthority,
-	params: { readonly threadId: unknown; readonly turnId: unknown; readonly itemId: unknown },
+	params: ItemAddressedParams,
 	approvalId: unknown,
 ): ItemIdentityFields {
 	const threadId = adopt(
@@ -252,7 +259,6 @@ function targetFor(identity: ApprovalRequestIdentity): string {
  * Fails when a new identity kind reaches the target renderer, which the type
  * system rules out but the code path analysis cannot see.
  * @param identity - The identity no branch handled.
- * @returns Never.
  */
 function unreachableIdentity(identity: never): never {
 	throw new CodexApprovalError(
