@@ -46,7 +46,9 @@ export interface CanvasDynamicAuthorityAdapters {
 type TargetFactsBase = Omit<DynamicTargetAuthority, "authority" | "role" | "linkClassification">;
 
 /** One turn item, as the classified thread carries it. */
-type ClassifiedItem = NonNullable<ThreadLinkClassification["thread"]>["turns"][number]["items"][number];
+type ClassifiedItem = NonNullable<
+	ThreadLinkClassification["thread"]
+>["turns"][number]["items"][number];
 
 /**
  * The most recent committed operation that owns one thread, whichever epoch
@@ -375,8 +377,7 @@ export function createCanvasDynamicAuthorityAdapters(
 			if (logicalCall === undefined) throw new Error("The caller authority has no logical call.");
 			const facts = await targetFacts(caller.threadId);
 			const epochFacts = callerEpochFacts(facts.base);
-			if (epochFacts === null)
-				throw new Error("The dynamic caller left its current child epoch.");
+			if (epochFacts === null) throw new Error("The dynamic caller left its current child epoch.");
 			const call = logicalCallItem(facts.classification, logicalCall);
 			if (!callIsExecuting(facts.base, call, logicalCall))
 				throw new Error("The exact logical dynamic call is no longer executing.");

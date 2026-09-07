@@ -85,7 +85,7 @@ function subscribeToSources(
 	);
 	const childExitSource = options.lifecycle?.onChildExit;
 	if (childExitSource !== undefined) {
-		unsubscribers.push(childExitSource(onChildExit) ?? (() => undefined));
+		unsubscribers.push(childExitSource(onChildExit));
 	}
 	return unsubscribers;
 }

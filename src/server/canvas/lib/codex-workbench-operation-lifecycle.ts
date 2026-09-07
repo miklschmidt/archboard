@@ -280,6 +280,7 @@ function createCanvasDynamicLifecycleOwner(
 			readonly request: DynamicServerRequest;
 			readonly caller: DynamicCallerAuthority;
 		}) => {
+			// oxlint-disable-next-line typescript/no-unnecessary-condition -- shutdown() sets this from another task; the narrowing from the declaration does not see it
 			if (stopped || !input.caller.executing || input.caller.status !== "active") {
 				throw new Error("The logical dynamic call is no longer executing.");
 			}

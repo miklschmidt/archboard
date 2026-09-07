@@ -67,7 +67,7 @@ function createGatewayBinding(
 			 */
 			contextForOperation: (commandContext, operation) => {
 				const threadId = commandContext.link.threadId;
-				if (threadId === null || threadId === undefined) {
+				if (threadId === null) {
 					throw new Error("A browser command has no executable thread link.");
 				}
 				return host.contextForOperation(

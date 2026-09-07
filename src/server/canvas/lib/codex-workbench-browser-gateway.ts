@@ -347,7 +347,7 @@ function createCanvasBrowserGatewayOptions(
 		 */
 		refresh: async (context): Promise<void> => {
 			const link = context.binding.link;
-			if (link.state !== "executable" || link.threadId === null) {
+			if (link.state !== "executable") {
 				return;
 			}
 			await coalescedReread(link.threadId);

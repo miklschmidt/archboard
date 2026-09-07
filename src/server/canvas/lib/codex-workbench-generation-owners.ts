@@ -73,7 +73,7 @@ type BindingSnapshot =
  * @returns True when it names a complete ready thread.
  */
 function namesReadyThread(snapshot: BindingSnapshot | undefined): boolean {
-	if (snapshot === undefined || snapshot.state !== "ready") {
+	if (snapshot?.state !== "ready") {
 		return false;
 	}
 	const parts = [snapshot.threadId, snapshot.childId, snapshot.epoch, snapshot.operationId];

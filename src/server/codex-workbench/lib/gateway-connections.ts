@@ -278,6 +278,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 				do {
 					publishQueued = false;
 					for (const state of states.values()) connections.publishConnection(state);
+					// oxlint-disable-next-line typescript/no-unnecessary-condition -- publishConnection sets this again when a listener publishes during the pass; the assignment above narrowed it
 				} while (publishQueued);
 				connections.acknowledgeReadyTerminals();
 			} finally {
@@ -455,7 +456,7 @@ function createBrowserConnections(owners: BrowserConnectionOwners): BrowserConne
 		try {
 			const binding = connections.readBinding(state.paneId);
 			const link = binding.link;
-			if (link.state !== "executable" || link.childId === null || link.epoch === null) {
+			if (link.state !== "executable") {
 				return null;
 			}
 			return {

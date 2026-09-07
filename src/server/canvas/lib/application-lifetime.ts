@@ -147,6 +147,7 @@ const waitOutStopGrace = async (
 			}),
 		]);
 	} finally {
+		// oxlint-disable-next-line typescript/no-unnecessary-condition -- the timer is set inside the promise executor above, which the narrowing from the declaration does not see
 		if (timeout !== null) {
 			clearTimeout(timeout);
 		}
@@ -161,6 +162,16 @@ const STOP_REASONS: ReadonlySet<string> = new Set<CanvasApplicationStopReason>([
 ]);
 
 /**
+ * Whether one string is a stop reason: a named one, or a signal name. A signal
+ * is not enumerable at runtime, so its name is recognised by its prefix.
+ * @param value The string the abort carried.
+ * @returns True when it is a stop reason.
+ */
+function isStopReason(value: string): value is CanvasApplicationStopReason {
+	return STOP_REASONS.has(value) || value.startsWith("SIG");
+}
+
+/**
  * The stop reason an abort carried, defaulting where the abort came from
  * somewhere that named none. A signal is aborted with an arbitrary value, so
  * anything but a known reason or a signal name is not one.
@@ -168,12 +179,10 @@ const STOP_REASONS: ReadonlySet<string> = new Set<CanvasApplicationStopReason>([
  * @returns The stop reason.
  */
 function stopReasonOf(reason: unknown): CanvasApplicationStopReason {
-	if (typeof reason !== "string") {
+	if (typeof reason !== "string" || !isStopReason(reason)) {
 		return "test";
 	}
-	return STOP_REASONS.has(reason) || reason.startsWith("SIG")
-		? (reason as CanvasApplicationStopReason)
-		: "test";
+	return reason;
 }
 
 /**

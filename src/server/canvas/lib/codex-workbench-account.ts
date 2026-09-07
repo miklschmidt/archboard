@@ -63,6 +63,16 @@ function bedrockAccessKeyLoginParams(
 }
 
 /**
+ * Refuse a sign-in variant nothing here spells out. The parameter is `never`,
+ * so a variant added to the browser vocabulary fails to compile until it has
+ * an arm above.
+ * @param login The sign-in.
+ */
+function unsupportedLogin(login: never): never {
+	throw new TypeError(`Unsupported Codex sign-in: ${JSON.stringify(login)}`);
+}
+
+/**
  * One sign-in as the session takes it, whichever way the person is signing in.
  * @param login The sign-in the browser asked for.
  * @returns The session parameters.
@@ -77,6 +87,8 @@ function sessionLoginParams(login: BrowserLogin): SessionLoginParams {
 			return { type: login.type, apiKey: login.apiKey, region: login.region };
 		case "amazonBedrockAccessKeys":
 			return bedrockAccessKeyLoginParams(login);
+		default:
+			return unsupportedLogin(login);
 	}
 }
 

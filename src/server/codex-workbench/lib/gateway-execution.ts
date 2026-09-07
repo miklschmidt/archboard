@@ -120,7 +120,7 @@ function deliveredExtras(
 	outcome: DeliveryOutcome,
 	result: BrowserActionResult,
 ): Record<string, unknown> {
-	if (result === undefined || result === null) {
+	if (result === undefined) {
 		return {};
 	}
 	if (command.command === "realtimeStart") {

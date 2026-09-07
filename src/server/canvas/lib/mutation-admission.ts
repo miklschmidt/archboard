@@ -158,6 +158,7 @@ function createCanvasMutationAdmission(options: CanvasMutationAdmissionOptions) 
 					timeout = setTimeout(() => resolve(false), options.drainTimeoutMs);
 				}),
 			]);
+			// oxlint-disable-next-line typescript/no-unnecessary-condition -- the timer is set inside the promise executor above, which the narrowing from the declaration does not see
 			clearTimeout(timeout ?? undefined);
 			drained.delete(onDrain);
 			if (settled || active.size === 0) {

@@ -10,6 +10,26 @@ function isJsonRecord(value: unknown): value is JsonRecord {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+/**
+ * How the failure underneath is worded into a renderer failure's message.
+ * A plain object is written out rather than stringified, so the message says
+ * what the cause was instead of `[object Object]`.
+ * @param cause The failure underneath, when there is one.
+ * @returns The tail of the message, empty when there is no cause.
+ */
+function causeText(cause: unknown): string {
+	if (cause === undefined) {
+		return "";
+	}
+	if (cause instanceof Error) {
+		return ` Cause: ${cause.message}`;
+	}
+	if (typeof cause === "string") {
+		return ` Cause: ${cause}`;
+	}
+	return ` Cause: ${JSON.stringify(cause)}`;
+}
+
 /** A board render that failed, naming the phase it failed in. */
 class BoardRendererError extends Error {
 	readonly code = "BOARD_RENDERER_FAILED";
@@ -28,12 +48,7 @@ class BoardRendererError extends Error {
 		readonly diagnostics: readonly JsonRecord[] = [],
 		cause?: unknown,
 	) {
-		const causeMessage =
-			cause instanceof Error
-				? ` Cause: ${cause.message}`
-				: cause === undefined
-					? ""
-					: ` Cause: ${String(cause)}`;
+		const causeMessage = causeText(cause);
 		super(
 			`${message} Renderer phase: ${phase}.${
 				diagnostics.length > 0 ? ` Diagnostics: ${JSON.stringify(diagnostics.slice(-12))}.` : ""

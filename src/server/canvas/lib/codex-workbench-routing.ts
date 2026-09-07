@@ -37,7 +37,7 @@ type RequestRouteTable = Readonly<Record<TransportServerRequest["method"], Reque
  * @param request The request no route claimed.
  */
 function unroutedRequest(request: TransportServerRequest): never {
-	throw new TypeError(`Unreachable Codex server request: ${String(request.method)}`);
+	throw new TypeError(`Unreachable Codex server request: ${request.method}`);
 }
 
 /**
@@ -152,6 +152,7 @@ function createCodexWorkbenchRequestRouter(
 		 */
 		route: (request: TransportServerRequest): void => {
 			const route = ROUTES[request.method];
+			// oxlint-disable-next-line typescript/no-unnecessary-condition -- the table is total over the method union, but the child is not the type system: an unlisted method must be refused, not dispatched
 			if (route === undefined) {
 				unroutedRequest(request);
 			}
