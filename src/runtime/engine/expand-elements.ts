@@ -249,12 +249,33 @@ function expandElements(
 	// board holds the rest: settling a partial document's indices would
 	// renumber it against elements it cannot see.
 	const ordered = forStore ? converted : restateIndices(converted);
-	return ordered.map((element) =>
+	return validated(ordered, deterministic);
+}
+
+/**
+ * The converted elements checked against the persisted shape, in canonical
+ * key order when the conversion is deterministic.
+ * @param elements The converted elements.
+ * @param deterministic Whether the output must be byte-stable.
+ * @returns The validated elements.
+ */
+function validated(
+	elements: readonly Record<string, unknown>[],
+	deterministic: boolean,
+): RuntimeBoardElement[] {
+	const checked = elements.map((element) =>
 		validatePersistedBoardElement(
-			deterministic ? canonicalizeKeys(element) : element,
+			element,
 			`write ingress element ${stringAt(element, "id") ?? ""}`,
 		),
 	);
+	if (!deterministic) {
+		return checked;
+	}
+	// canonicalizeKeys copies a value changing only the order of its keys, so
+	// a validated element stays the element the validator returned.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- key order is the only difference
+	return canonicalizeKeys(checked) as RuntimeBoardElement[];
 }
 
 /**
@@ -290,32 +311,75 @@ function mendLabelRefs(
 	board: ReadonlyMap<string, ServerElement>,
 	writtenTextIds: ReadonlySet<string>,
 ): LegacyElementIngress {
-	/**
-	 * A replacement that keeps the label the agent asked for.
-	 * @param value The replacement.
-	 * @returns The replacement carrying the label intent.
-	 */
-	const replace = (value: LegacyElementIngress): LegacyElementIngress =>
-		withAgentLabelIntent(value, agentLabelIntentOf(element));
 	const textIds = labelled.get(element.id) ?? [];
 	const refs = Array.isArray(element.boundElements) ? element.boundElements : [];
-	// A reference to a text element the board does not hold is not a label,
-	// and leaving it would suppress the real one.
-	const live = refs.filter(
-		(ref: WrittenRef) =>
+	const live = liveRefs(refs, textIds, board, writtenTextIds);
+	const named = live.some((ref) => ref.type === "text" && textIds.includes(ref.id));
+	const firstTextId = textIds[0];
+	if (named || firstTextId === undefined) {
+		return withLiveRefs(element, live, refs.length);
+	}
+	return keepingIntent(element, {
+		...element,
+		boundElements: [...live, { id: firstTextId, type: "text" }],
+	});
+}
+
+/**
+ * A replacement for a written element that keeps the label the agent asked
+ * for, which lives beside the element rather than in it.
+ * @param element The written element.
+ * @param value The replacement.
+ * @returns The replacement carrying the label intent.
+ */
+function keepingIntent(
+	element: LegacyElementIngress,
+	value: LegacyElementIngress,
+): LegacyElementIngress {
+	return withAgentLabelIntent(value, agentLabelIntentOf(element));
+}
+
+/**
+ * The element with only its live refs, or the element itself when none were
+ * dropped.
+ * @param element The written element.
+ * @param live The refs that point at something.
+ * @param written How many refs the element carried.
+ * @returns The element, replaced only when a ref was dropped.
+ */
+function withLiveRefs(
+	element: LegacyElementIngress,
+	live: WrittenRef[],
+	written: number,
+): LegacyElementIngress {
+	if (live.length === written) {
+		return element;
+	}
+	return keepingIntent(element, { ...element, boundElements: live.length > 0 ? live : null });
+}
+
+/**
+ * The refs worth keeping. A reference to a text element the board does not
+ * hold is not a label, and leaving it would suppress the real one.
+ * @param refs The written element's refs.
+ * @param textIds The board's labels for the element.
+ * @param board The board.
+ * @param writtenTextIds Text elements the write itself carries.
+ * @returns The refs that point at something.
+ */
+function liveRefs(
+	refs: readonly WrittenRef[],
+	textIds: readonly string[],
+	board: ReadonlyMap<string, ServerElement>,
+	writtenTextIds: ReadonlySet<string>,
+): WrittenRef[] {
+	return refs.filter(
+		(ref) =>
 			ref.type !== "text" ||
 			textIds.includes(ref.id) ||
 			board.has(ref.id) ||
 			writtenTextIds.has(ref.id),
 	);
-	const named = live.some((ref) => ref.type === "text" && textIds.includes(ref.id));
-	const firstTextId = textIds[0];
-	if (named || firstTextId === undefined) {
-		return live.length === refs.length
-			? element
-			: replace({ ...element, boundElements: live.length > 0 ? live : null });
-	}
-	return replace({ ...element, boundElements: [...live, { id: firstTextId, type: "text" }] });
 }
 
 /**
@@ -382,17 +446,38 @@ function renamedLabel(
 	container: LegacyElementIngress,
 	labelled: ReadonlyMap<string, string[]>,
 	board: ReadonlyMap<string, ServerElement>,
-): { existing: ServerElement; wanted: string } | null {
-	const wanted = container.type === "text" ? undefined : agentLabelIntentOf(container);
+): { existing: Extract<ServerElement, { type: "text" }>; wanted: string } | null {
+	const wanted = labelIntentOf(container);
 	if (wanted === undefined) {
 		return null;
 	}
-	const textId = labelled.get(container.id)?.[0];
-	const existing = textId === undefined ? undefined : board.get(textId);
+	const existing = labelTextOn(board, labelled.get(container.id)?.[0]);
 	if (existing?.type !== "text" || existing.text === wanted) {
 		return null;
 	}
 	return { existing, wanted };
+}
+
+/**
+ * The label an agent asked for on a container; a text element labels nothing.
+ * @param container The written element.
+ * @returns The label text, or undefined.
+ */
+function labelIntentOf(container: LegacyElementIngress): string | undefined {
+	return container.type === "text" ? undefined : agentLabelIntentOf(container);
+}
+
+/**
+ * The board's element for a label id, when there is one.
+ * @param board The board.
+ * @param textId The label's id, when the container has a label.
+ * @returns The element, or undefined.
+ */
+function labelTextOn(
+	board: ReadonlyMap<string, ServerElement>,
+	textId: string | undefined,
+): ServerElement | undefined {
+	return textId === undefined ? undefined : board.get(textId);
 }
 
 /**

@@ -28,12 +28,7 @@ const FRONTMATTER_KEY_RE = /^(?:(["'])(.*?)\1|([^:#\s][^:]*?))\s*:(?:\s|$)/;
 
 // A bare scalar that YAML would misread: an indicator at the start, an
 // embedded ": " or " #", or a line break.
-const YAML_UNSAFE_SCALAR: readonly RegExp[] = [
-	/^[-?:,[\]{}#&*!|>'"%@`]/,
-	/:\s/,
-	/\s#/,
-	/[\r\n]/,
-];
+const YAML_UNSAFE_SCALAR: readonly RegExp[] = [/^[-?:,[\]{}#&*!|>'"%@`]/, /:\s/, /\s#/, /[\r\n]/];
 
 type FrontmatterScan =
 	| { kind: "none" }

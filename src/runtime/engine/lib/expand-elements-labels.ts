@@ -38,7 +38,11 @@ const ELEMENT_TYPES = new Set<string>(BOARD_ELEMENT_TYPES);
  * @returns True when the record is a `LabelledElement`.
  */
 function isLabelled(record: Record<string, unknown>): record is LabelledElement {
-	return typeof record["id"] === "string" && typeof record["type"] === "string" && ELEMENT_TYPES.has(record["type"]);
+	return (
+		typeof record["id"] === "string" &&
+		typeof record["type"] === "string" &&
+		ELEMENT_TYPES.has(record["type"])
+	);
 }
 
 /**
@@ -68,7 +72,9 @@ function isTrustedTextRef(binding: unknown, context: LabelContext): boolean {
  */
 function hasBoundText(base: Record<string, unknown>, context: LabelContext): boolean {
 	const bound = base["boundElements"];
-	return Array.isArray(bound) && bound.some((binding: unknown) => isTrustedTextRef(binding, context));
+	return (
+		Array.isArray(bound) && bound.some((binding: unknown) => isTrustedTextRef(binding, context))
+	);
 }
 
 /**
@@ -158,15 +164,24 @@ function appendLabel(
 	];
 	const labelElement = labelElementFor(textId, el, base, rest, labelText, context);
 	sizeText(labelElement);
-	const placement =
-		isLabelled(base) && isLabelled(labelElement)
-			? boundTextPlacement(base, labelElement)
-			: undefined;
+	placeLabel(base, labelElement);
+	context.boundTextElements.push(labelElement);
+}
+
+/**
+ * Move a sized label to where its container anchors it.
+ * @param base The container.
+ * @param labelElement The label, moved in place.
+ */
+function placeLabel(base: Record<string, unknown>, labelElement: Record<string, unknown>): void {
+	if (!isLabelled(base) || !isLabelled(labelElement)) {
+		return;
+	}
+	const placement = boundTextPlacement(base, labelElement);
 	if (placement) {
 		labelElement["x"] = placement.x;
 		labelElement["y"] = placement.y;
 	}
-	context.boundTextElements.push(labelElement);
 }
 
 export { type LabelContext, appendLabel };
