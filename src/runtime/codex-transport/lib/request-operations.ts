@@ -219,7 +219,19 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 	 * Registers a request as pending, arms its abort and settlement timer, and queues its frame.
 	 * @param input The request's identity, frame and promise callbacks.
 	 */
-	const trackRequest = <Method extends ResponseMethod>(input: TrackedRequestInput<Method>): void => {
+	const trackRequest = <Method extends ResponseMethod>(
+		input: TrackedRequestInput<Method>,
+	): void => {
+		/**
+		 * Resolves the caller's promise with the settled response.
+		 * @param value The response the transport settled the request with.
+		 */
+		const resolveResponse = (value: unknown): void => {
+			// The transport settles a pending request only with the response decoded for that
+			// request's own method, so the value is the response type this method promised.
+			// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- settled with this method's own decoded response
+			input.resolve(value as CodexTransportResponse<Method>);
+		};
 		const pending: PendingRequest = {
 			key: wireKey(options.identity().decoder.serializeJsonRpcRequestId(input.wireId)),
 			wireId: input.wireId,
@@ -227,10 +239,7 @@ export function createOutboundOperations(options: OutboundOperationsOptions): Ou
 			correlation: input.correlation,
 			retryEligible:
 				input.requestOptions.retryEligible === true || input.requestOptions.idempotent === true,
-			// The transport settles a pending request only with the response decoded for that
-			// request's own method, so the value is the response type this method promised.
-			// oxlint-disable-next-line typescript(no-unsafe-type-assertion) -- settled with this method's own decoded response
-			resolve: (value) => input.resolve(value as CodexTransportResponse<Method>),
+			resolve: resolveResponse,
 			reject: input.reject,
 			signal: input.requestOptions.signal,
 			job: undefined,

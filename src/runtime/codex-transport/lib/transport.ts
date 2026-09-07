@@ -1,10 +1,12 @@
-import { CODEX_APP_SERVER_CAPACITY } from "@/shared/codex-app-server-capacity";
 import type { IdentityAuthority } from "@/shared/codex-workbench-identity";
 import { CODEX_COMPOSED_SHUTDOWN_MS } from "@/shared/timing/timing";
 import {
+	attachChildListeners,
+	destroyQuietly,
+	type ChildAttachment,
+} from "@/runtime/codex-transport/lib/child-attachment";
+import {
 	CodexTransportClosedError,
-	CodexTransportRemoteError,
-	CodexTransportRequestError,
 	type CodexRequestFailureReason,
 } from "@/runtime/codex-transport/lib/errors";
 import {
@@ -16,6 +18,9 @@ import { createTransportEvents } from "@/runtime/codex-transport/lib/events";
 import { createInboundRouter } from "@/runtime/codex-transport/lib/inbound-router";
 import { createLateResponseStore } from "@/runtime/codex-transport/lib/late-responses";
 import { createOutboundOperations } from "@/runtime/codex-transport/lib/request-operations";
+import { createRequestSettlement } from "@/runtime/codex-transport/lib/request-settlement";
+import { createReverseLedger } from "@/runtime/codex-transport/lib/reverse-ledger";
+import { transportSnapshot } from "@/runtime/codex-transport/lib/snapshot";
 import {
 	attachCodexStreamReader,
 	type StreamReaderAttachment,
@@ -26,6 +31,7 @@ import type {
 	CodexTransportChild,
 	CodexTransportOptions,
 	DynamicDispatcherRegistration,
+	TransportLateResponse,
 	TransportServerRequest,
 	TransportSnapshot,
 } from "@/runtime/codex-transport/lib/types";
@@ -35,16 +41,38 @@ import type {
 	ReverseRecord,
 	WriteJob,
 } from "@/runtime/codex-transport/lib/internals";
-import { cloneAndFreeze } from "@/runtime/codex-transport/lib/public-values";
-import { jsonLine, wireKey, type WireId } from "@/runtime/codex-transport/lib/wire";
+import { protocolErrorFrame, wireKey, type WireId } from "@/runtime/codex-transport/lib/wire";
 
 const PROTOCOL_ERROR_MESSAGE = "Codex transport is shutting down.";
-const ignoreTerminalStreamError = (_error: Error): void => {};
+const INTERNAL_ERROR_CODE = -32603;
 
+type TransportState = "open" | "closing" | "closed";
+type CloseReason = Extract<
+	CodexRequestFailureReason,
+	"child-exit" | "stdout-error" | "write-error" | "shutdown" | "frame-too-large"
+>;
+type ChildExit = { readonly code: number | null; readonly signal: NodeJS.Signals | null };
+type WriteLane = "regular" | "response";
+
+/**
+ * The lane a job is written on when the caller did not choose one.
+ * @param job The job.
+ * @returns The response lane for reverse responses and protocol errors, otherwise regular.
+ */
+function defaultLane(job: WriteJob): WriteLane {
+	return job.kind === "reverse-response" || job.kind === "protocol-error" ? "response" : "regular";
+}
+
+/**
+ * Creates the transport over one Codex app-server child: framed stdio, request settlement,
+ * reverse-request ownership, and a composed shutdown.
+ * @param options The child, its identity authority, and any dispatchers to register.
+ * @returns The transport.
+ */
 export function createCodexTransport(options: CodexTransportOptions): CodexTransport {
 	const child: CodexTransportChild = options.child;
 	let identity: IdentityAuthority = options.identity;
-	let state: "open" | "closing" | "closed" = "open";
+	let state: TransportState = "open";
 	let inputEndStarted = false;
 	let inputFinished = false;
 	let shutdownTimer: ReturnType<typeof setTimeout> | undefined;
@@ -52,159 +80,70 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 	let resolveShutdown: (() => void) | undefined;
 	let shutdownSetupComplete = false;
 	let exitEmitted = false;
-	let writer: FrameWriter<WriteJob> | undefined;
 	let streamAttachment: StreamReaderAttachment | undefined;
-	let childListenersAttached = false;
-	let stdinListenersAttached = false;
-	let terminalErrorSinksAttached = false;
-	const isClosed = (): boolean => state === "closed";
+	let childAttachment: ChildAttachment | undefined;
 	const pendingRequests = new Map<string, PendingRequest>();
 	const tombstones = new Map<string, RequestTombstone>();
 	const reverseRequests = new Map<string, ReverseRecord>();
 	const completedReverseIds = new Set<string>();
 	const reverseHandles = new WeakMap<TransportServerRequest, ReverseRecord>();
 	const dynamicDispatchers = new Map<string, DynamicDispatcherRegistration>();
-	let pendingReverseBytes = 0;
 	const events = createTransportEvents();
 	const emitIssue = events.emitIssue;
 	const lateResponseStore = createLateResponseStore(emitIssue);
-	const lateResponses = lateResponseStore.values;
-	const retainLateResponse = lateResponseStore.retain;
-	const retainCompletedReverseId = (key: string): void => {
-		if (completedReverseIds.size >= CODEX_APP_SERVER_CAPACITY.retention.completedReverseIds) {
-			const oldest = completedReverseIds.values().next().value;
-			if (oldest !== undefined) {
-				completedReverseIds.delete(oldest);
-			}
-		}
-		completedReverseIds.add(key);
-	};
-	const retainTombstone = (tombstone: RequestTombstone): void => {
-		if (tombstones.size >= CODEX_APP_SERVER_CAPACITY.retention.requestTombstones) {
-			const oldest = tombstones.keys().next().value;
-			if (oldest !== undefined) {
-				tombstones.delete(oldest);
-			}
-		}
-		tombstones.set(tombstone.key, tombstone);
-	};
-	const removePending = (pending: PendingRequest): boolean => {
-		if (pendingRequests.get(pending.key) !== pending) {
-			return false;
-		}
-		pendingRequests.delete(pending.key);
-		pending.settled = true;
-		if (pending.timer !== undefined) {
-			clearTimeout(pending.timer);
-		}
-		if (pending.signal && pending.abortListener) {
-			pending.signal.removeEventListener("abort", pending.abortListener);
-		}
-		return true;
-	};
+	const settlement = createRequestSettlement({ pendingRequests, tombstones });
+	const ledger = createReverseLedger({ reverseRequests, reverseHandles, completedReverseIds });
 
-	const settleFailure = (pending: PendingRequest, reason: CodexRequestFailureReason): void => {
-		if (!removePending(pending)) {
-			return;
-		}
-		const outcome = pending.accepted ? "outcome_unknown" : "not_delivered";
-		const retryEligible = outcome === "not_delivered" || pending.retryEligible;
-		retainTombstone({
-			key: pending.key,
-			wireId: pending.wireId,
-			method: pending.method,
-			correlation: pending.correlation,
-			retryEligible,
-			accepted: pending.accepted,
-			settlement: outcome,
-			reason,
-		});
-		pending.reject(
-			new CodexTransportRequestError({
-				method: pending.method,
-				correlation: pending.correlation,
-				outcome,
-				reason,
-				accepted: pending.accepted,
-				retryEligible,
-			}),
-		);
-	};
+	/**
+	 * The current state, read through a call so closures see the live value rather than the
+	 * narrowing TypeScript applies at the assignment site.
+	 * @returns The state.
+	 */
+	const currentState = (): TransportState => state;
 
-	const settleDelivered = (pending: PendingRequest, result: unknown): void => {
-		if (!removePending(pending)) {
-			return;
-		}
-		retainTombstone({
-			key: pending.key,
-			wireId: pending.wireId,
-			method: pending.method,
-			correlation: pending.correlation,
-			retryEligible: pending.retryEligible,
-			accepted: pending.accepted,
-			settlement: "delivered",
-		});
-		pending.resolve(
-			Object.freeze({
-				method: pending.method,
-				correlation: pending.correlation,
-				result: cloneAndFreeze(result),
-			}),
-		);
-	};
+	/**
+	 * Whether the transport has closed.
+	 * @returns True once closed.
+	 */
+	const isClosed = (): boolean => currentState() === "closed";
 
-	const settleRemoteError = (
-		pending: PendingRequest,
-		rpcError: { readonly code: number; readonly message: string; readonly data?: unknown },
-	): void => {
-		if (!removePending(pending)) {
-			return;
-		}
-		retainTombstone({
-			key: pending.key,
-			wireId: pending.wireId,
-			method: pending.method,
-			correlation: pending.correlation,
-			retryEligible: pending.retryEligible,
-			accepted: pending.accepted,
-			settlement: "delivered",
-		});
-		pending.reject(
-			new CodexTransportRemoteError({
-				method: pending.method,
-				correlation: pending.correlation,
-				rpcError,
-			}),
-		);
-	};
-	const removeQueuedJob = (job: FrameWriterJob<WriteJob>): boolean => writer?.remove(job) ?? false;
-	const acceptReverseResponse = (record: ReverseRecord): void => {
-		if (record.responded || reverseRequests.get(record.key) !== record) {
-			return;
-		}
-		record.responding = false;
-		record.responded = true;
-		reverseRequests.delete(record.key);
-		reverseHandles.delete(record.request);
-		pendingReverseBytes = Math.max(0, pendingReverseBytes - record.bytes);
-		retainCompletedReverseId(record.key);
-	};
+	/**
+	 * The current identity authority.
+	 * @returns The authority.
+	 */
+	const currentIdentity = (): IdentityAuthority => identity;
 
-	const releaseReverseResponse = (record: ReverseRecord): void => {
-		if (record.responded || reverseRequests.get(record.key) !== record) {
-			return;
-		}
-		record.responding = false;
-	};
-	const enqueue = (job: WriteJob, pending?: PendingRequest, lane?: "regular" | "response") => {
-		if (!writer) {
-			throw new CodexTransportClosedError("transport-closed");
-		}
-		const actualLane =
-			lane ??
-			(job.kind === "reverse-response" || job.kind === "protocol-error" ? "response" : "regular");
-		if (state !== "open" && !(state === "closing" && actualLane === "response")) {
-			throw new CodexTransportClosedError(state === "closing" ? "shutdown" : "transport-closed");
+	/**
+	 * The closed error for the current state.
+	 * @returns A shutdown error while closing, otherwise a transport-closed error.
+	 */
+	const closedError = (): CodexTransportClosedError =>
+		new CodexTransportClosedError(currentState() === "closing" ? "shutdown" : "transport-closed");
+
+	/**
+	 * Whether a lane accepts frames in the current state: both while open, only the response
+	 * lane while closing.
+	 * @param lane The lane.
+	 * @returns True when a frame may be queued on it.
+	 */
+	const laneOpen = (lane: WriteLane): boolean =>
+		currentState() === "open" || (currentState() === "closing" && lane === "response");
+
+	/**
+	 * Queues a frame on the writer.
+	 * @param job The job.
+	 * @param pending The pending request the job carries, so it can be pulled back.
+	 * @param lane The lane, when the caller chooses one.
+	 * @returns The queued frame.
+	 */
+	const enqueue = (
+		job: WriteJob,
+		pending?: PendingRequest,
+		lane?: WriteLane,
+	): FrameWriterJob<WriteJob> => {
+		const actualLane = lane ?? defaultLane(job);
+		if (!laneOpen(actualLane)) {
+			throw closedError();
 		}
 		const queued: FrameWriterJob<WriteJob> = { frame: job.frame, value: job };
 		if (pending) {
@@ -214,17 +153,38 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		return queued;
 	};
 
+	/**
+	 * Queues a job on the regular lane for an outbound request or notification.
+	 * @param job The job.
+	 * @param pending The pending request the job carries.
+	 * @returns The queued frame.
+	 */
+	const enqueueRegular = (job: WriteJob, pending?: PendingRequest): FrameWriterJob<WriteJob> =>
+		enqueue(job, pending, "regular");
+
+	/**
+	 * Queues a job for the inbound router, which chooses the lane itself.
+	 * @param job The job.
+	 * @param lane The lane.
+	 */
+	const enqueueRouted = (job: WriteJob, lane?: WriteLane): void => {
+		enqueue(job, undefined, lane);
+	};
+
+	/**
+	 * Answers a reverse frame with a JSON-RPC error on the response lane.
+	 * @param wireId The frame's wire id.
+	 * @param code The error code.
+	 * @param message The error message.
+	 * @returns True when the error was queued and the id retained as answered.
+	 */
 	const enqueueProtocolError = (wireId: WireId, code: number, message: string): boolean => {
-		if (state === "closed" || inputEndStarted) {
+		if (isClosed() || inputEndStarted) {
 			return false;
 		}
 		let frame: Buffer;
 		try {
-			frame = jsonLine(
-				{ id: wireId, error: { code, message } },
-				"protocol error",
-				CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes,
-			);
+			frame = protocolErrorFrame(wireId, code, message);
 		} catch {
 			emitIssue({
 				kind: "write-error",
@@ -247,51 +207,48 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		if (isClosed()) {
 			return false;
 		}
-		retainCompletedReverseId(key);
+		ledger.retainCompletedId(key);
 		return true;
 	};
 
+	/** Stops reading the child and listening to its lifecycle. */
 	const detachInput = (): void => {
 		streamAttachment?.dispose();
 		streamAttachment = undefined;
-		if (childListenersAttached) {
-			child.removeListener("error", onChildError);
-			child.removeListener("exit", onChildExit);
-			childListenersAttached = false;
-		}
-		if (stdinListenersAttached) {
-			child.stdin.removeListener("error", onStdinError);
-			child.stdin.removeListener("finish", onStdinFinish);
-			stdinListenersAttached = false;
-		}
-		if (!terminalErrorSinksAttached) {
-			child.stdin.on("error", ignoreTerminalStreamError);
-			child.stdout.on("error", ignoreTerminalStreamError);
-			child.stderr.on("error", ignoreTerminalStreamError);
-			child.on("error", ignoreTerminalStreamError);
-			terminalErrorSinksAttached = true;
-		}
+		childAttachment?.detach();
 	};
 
+	/** Forgets everything scoped to the child epoch that ended. */
 	const clearEpochRetention = (): void => {
 		tombstones.clear();
 		completedReverseIds.clear();
 		dynamicDispatchers.clear();
 	};
 
+	/** Cancels the composed shutdown bound, if armed. */
+	const cancelShutdownTimer = (): void => {
+		if (shutdownTimer !== undefined) {
+			clearTimeout(shutdownTimer);
+		}
+		shutdownTimer = undefined;
+	};
+
+	/** Resolves a waiting shutdown promise and cancels its bound timer. */
 	const resolveShutdownIfWaiting = (): void => {
 		if (!resolveShutdown) {
 			return;
 		}
 		const resolve = resolveShutdown;
 		resolveShutdown = undefined;
-		if (shutdownTimer !== undefined) {
-			clearTimeout(shutdownTimer);
-		}
-		shutdownTimer = undefined;
+		cancelShutdownTimer();
 		resolve();
 	};
-	const emitExitOnce = (code: number | null, signal: NodeJS.Signals | null): void => {
+
+	/**
+	 * Publishes the child's exit once.
+	 * @param exit The exit, or undefined when the transport closed before the child exited.
+	 */
+	const emitExitOnce = (exit: ChildExit | undefined): void => {
 		if (exitEmitted) {
 			return;
 		}
@@ -300,223 +257,272 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 			Object.freeze({
 				child: identity.validator.childId,
 				epoch: identity.validator.epoch,
-				code,
-				signal,
+				code: exit?.code ?? null,
+				signal: exit?.signal ?? null,
 			}),
 		);
 	};
 
-	const closeTransport = (
-		reason: Extract<
-			CodexRequestFailureReason,
-			"child-exit" | "stdout-error" | "write-error" | "shutdown" | "frame-too-large"
-		>,
-		exit?: { readonly code: number | null; readonly signal: NodeJS.Signals | null },
-	): void => {
-		if (state === "closed") {
+	/**
+	 * Fails every pending request and abandons every queued frame and reverse request.
+	 * @param reason What the requests are charged to.
+	 */
+	const abandonWork = (reason: CloseReason): void => {
+		for (const pending of pendingRequests.values()) {
+			settlement.settleFailure(pending, reason);
+		}
+		writer.abort(new CodexTransportClosedError(reason));
+		ledger.forgetAll();
+	};
+
+	/**
+	 * Closes the transport abruptly: the child died, a stream failed, or a frame overran.
+	 * @param reason Why it closed.
+	 * @param exit The child's exit, when the close was caused by it.
+	 */
+	const closeTransport = (reason: CloseReason, exit?: ChildExit): void => {
+		if (isClosed()) {
 			if (exit !== undefined) {
-				emitExitOnce(exit.code, exit.signal);
+				emitExitOnce(exit);
 			}
 			return;
 		}
 		state = "closed";
-		if (shutdownTimer !== undefined) {
-			clearTimeout(shutdownTimer);
-		}
-		shutdownTimer = undefined;
+		cancelShutdownTimer();
 		detachInput();
 		if (reason === "frame-too-large") {
-			try {
-				child.stdout.destroy();
-			} catch {
-				// The child owner remains responsible for terminating the process.
-			}
+			destroyQuietly(child.stdout);
 		}
-		for (const pending of pendingRequests.values()) {
-			settleFailure(pending, reason);
-		}
-		writer?.abort(new CodexTransportClosedError(reason));
-		for (const record of reverseRequests.values()) {
-			reverseHandles.delete(record.request);
-		}
-		reverseRequests.clear();
-		pendingReverseBytes = 0;
+		abandonWork(reason);
 		clearEpochRetention();
 		resolveShutdownIfWaiting();
 		if (reason !== "shutdown" || exit !== undefined) {
-			emitExitOnce(exit?.code ?? null, exit?.signal ?? null);
+			emitExitOnce(exit);
 		}
 	};
 
-	const finishShutdown = (): void => {
-		if (state !== "closing" || !shutdownSetupComplete) {
+	/**
+	 * Whether the writer still has frames to hand to stdin.
+	 * @returns True while a write is in flight or queued.
+	 */
+	const writerBusy = (): boolean => {
+		const writerState = writer.inspect();
+		return (
+			writerState.writeInFlight || writerState.queuedFrames + writerState.responseQueuedFrames > 0
+		);
+	};
+
+	/** Ends stdin once, finishing the shutdown when the stream confirms. */
+	const endInput = (): void => {
+		if (inputEndStarted) {
 			return;
 		}
-		const writerState = writer?.inspect();
-		const queuedFrames =
-			(writerState?.queuedFrames ?? 0) + (writerState?.responseQueuedFrames ?? 0);
-		if (writerState?.writeInFlight || queuedFrames > 0) {
-			return;
-		}
-		if (!inputEndStarted) {
-			inputEndStarted = true;
-			try {
-				child.stdin.end(() => {
-					inputFinished = true;
-					finishShutdown();
-				});
-			} catch {
-				emitIssue({ kind: "write-error", direction: "write", detail: "Closing Codex stdin threw" });
+		inputEndStarted = true;
+		try {
+			child.stdin.end(() => {
 				inputFinished = true;
-			}
+				finishShutdown();
+			});
+		} catch {
+			emitIssue({ kind: "write-error", direction: "write", detail: "Closing Codex stdin threw" });
+			inputFinished = true;
 		}
+	};
+
+	/** Advances a composed shutdown: drain the writer, end stdin, then close. */
+	const finishShutdown = (): void => {
+		if (currentState() !== "closing" || !shutdownSetupComplete || writerBusy()) {
+			return;
+		}
+		endInput();
 		if (!inputFinished) {
 			return;
 		}
 		state = "closed";
 		detachInput();
-		writer?.dispose();
+		writer.dispose();
 		clearEpochRetention();
 		resolveShutdownIfWaiting();
 	};
 
-	const inspect = (): TransportSnapshot => {
-		const writerState = writer?.inspect();
-		return Object.freeze({
-			state,
-			pendingRequests: pendingRequests.size,
-			pendingReverseRequests: reverseRequests.size,
-			pendingReverseBytes,
-			queuedFrames: writerState?.queuedFrames ?? 0,
-			queuedBytes: writerState?.queuedBytes ?? 0,
-			responseQueuedFrames: writerState?.responseQueuedFrames ?? 0,
-			responseQueuedBytes: writerState?.responseQueuedBytes ?? 0,
-			writeInFlight: writerState?.writeInFlight ?? false,
-			maxQueuedFrames: CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedFrames,
-			maxQueuedBytes: CODEX_APP_SERVER_CAPACITY.outbound.regularQueuedBytes,
-			maxResponseQueuedFrames: CODEX_APP_SERVER_CAPACITY.outbound.responseReservedFrames,
-			maxResponseQueuedBytes: CODEX_APP_SERVER_CAPACITY.outbound.responseReservedBytes,
-			maxPendingReverseRequests: CODEX_APP_SERVER_CAPACITY.outbound.pendingReverseRequests,
-			maxPendingReverseBytes: CODEX_APP_SERVER_CAPACITY.outbound.pendingReverseBytes,
-		});
+	/**
+	 * Describes the transport's queues against their bounds.
+	 * @returns The snapshot.
+	 */
+	const inspect = (): TransportSnapshot =>
+		transportSnapshot(
+			{
+				state: currentState(),
+				pendingRequests: pendingRequests.size,
+				pendingReverseRequests: reverseRequests.size,
+				pendingReverseBytes: ledger.pendingBytes(),
+			},
+			writer.inspect(),
+		);
+
+	/**
+	 * Answers one unanswered reverse request with the shutdown error.
+	 * @param record The reverse record.
+	 */
+	const refuseForShutdown = (record: ReverseRecord): void => {
+		enqueueProtocolError(record.wireId, INTERNAL_ERROR_CODE, PROTOCOL_ERROR_MESSAGE);
 	};
 
+	/** Gives up on a shutdown whose stdin did not drain within the composed bound. */
+	const abortShutdown = (): void => {
+		emitIssue({
+			kind: "shutdown-timeout",
+			direction: "write",
+			detail: "Codex stdin did not drain before the composed shutdown bound",
+		});
+		writer.abort(new CodexTransportClosedError("shutdown"));
+		state = "closed";
+		detachInput();
+		clearEpochRetention();
+		destroyQuietly(child.stdin);
+		resolveShutdownIfWaiting();
+	};
+
+	/**
+	 * Shuts the transport down: fails pending requests, refuses reverse requests, drains the
+	 * response lane, and ends stdin within the composed bound.
+	 * @returns A promise resolved once the transport has closed.
+	 */
 	const shutdown = (): Promise<void> => {
-		if (state === "closed") {
+		if (isClosed()) {
 			return Promise.resolve();
 		}
 		if (shutdownPromise) {
 			return shutdownPromise;
 		}
 		state = "closing";
-		shutdownPromise = new Promise<void>((resolve) => {
+		const promise = new Promise<void>((resolve) => {
 			resolveShutdown = resolve;
 		});
+		shutdownPromise = promise;
 		for (const pending of pendingRequests.values()) {
-			settleFailure(pending, "shutdown");
+			settlement.settleFailure(pending, "shutdown");
 		}
-		writer?.drop(() => false, new CodexTransportClosedError("shutdown"));
-		for (const record of Array.from(reverseRequests.values())) {
-			enqueueProtocolError(record.wireId, -32603, PROTOCOL_ERROR_MESSAGE);
-			reverseHandles.delete(record.request);
-			reverseRequests.delete(record.key);
-			pendingReverseBytes -= record.bytes;
-		}
-		pendingReverseBytes = 0;
-		if (isClosed()) {
-			shutdownSetupComplete = true;
-			return shutdownPromise;
-		}
+		writer.drop(() => false, new CodexTransportClosedError("shutdown"));
+		ledger.drain(refuseForShutdown);
 		shutdownSetupComplete = true;
-		shutdownTimer = setTimeout(() => {
-			emitIssue({
-				kind: "shutdown-timeout",
-				direction: "write",
-				detail: "Codex stdin did not drain before the composed shutdown bound",
-			});
-			writer?.abort(new CodexTransportClosedError("shutdown"));
-			state = "closed";
-			detachInput();
-			clearEpochRetention();
-			try {
-				child.stdin.destroy();
-			} catch {
-				// The process owner remains responsible for terminating the child.
-			}
-			resolveShutdownIfWaiting();
-		}, CODEX_COMPOSED_SHUTDOWN_MS);
+		if (isClosed()) {
+			return promise;
+		}
+		shutdownTimer = setTimeout(abortShutdown, CODEX_COMPOSED_SHUTDOWN_MS);
 		finishShutdown();
-		return shutdownPromise;
+		return promise;
 	};
 
+	/** Closes on a stdin stream error. */
 	const onStdinError = (): void => {
 		emitIssue({ kind: "write-error", direction: "write", detail: "Codex stdin emitted an error" });
 		closeTransport("write-error");
 	};
+
+	/** Records that stdin finished so a shutdown can complete. */
 	const onStdinFinish = (): void => {
 		inputFinished = true;
 		finishShutdown();
 	};
+
+	/** Closes on a child process error. */
 	const onChildError = (): void => {
 		emitIssue({ kind: "read-error", direction: "stdout", detail: "Codex child emitted an error" });
 		closeTransport("child-exit");
 	};
+
+	/**
+	 * Closes on the child's exit, as a shutdown when one was in progress.
+	 * @param code The exit code.
+	 * @param signal The terminating signal.
+	 */
 	const onChildExit = (code: number | null, signal: NodeJS.Signals | null): void => {
-		closeTransport(state === "closing" ? "shutdown" : "child-exit", { code, signal });
+		closeTransport(currentState() === "closing" ? "shutdown" : "child-exit", { code, signal });
 	};
 
-	writer = createFrameWriter(
+	/** Closes on a stdout stream error. */
+	const onStdoutError = (): void => {
+		emitIssue({ kind: "read-error", direction: "stdout", detail: "Codex stdout emitted an error" });
+		closeTransport("stdout-error");
+	};
+
+	/** Closes when stdout ends, as a shutdown when one was in progress. */
+	const onStdoutEnd = (): void => {
+		closeTransport(currentState() === "closing" ? "shutdown" : "stdout-error");
+	};
+
+	/** Closes when a stdout line overran the frame bound. */
+	const onFrameTooLarge = (): void => {
+		closeTransport("frame-too-large");
+	};
+
+	/** Reports a stderr stream error without closing; stderr is diagnostic only. */
+	const onStderrError = (): void => {
+		emitIssue({
+			kind: "stderr-error",
+			direction: "stderr",
+			detail: "Codex stderr emitted an error",
+		});
+	};
+
+	const writer: FrameWriter<WriteJob> = createFrameWriter(
 		child.stdin,
 		createTransportWriterCallbacks({
 			emitIssue,
-			settleFailure,
-			acceptReverseResponse,
-			releaseReverseResponse,
+			settleFailure: settlement.settleFailure,
+			acceptReverseResponse: ledger.accept,
+			releaseReverseResponse: ledger.release,
 			closeTransport,
 			finishShutdown,
 		}),
 	);
 
 	const outbound = createOutboundOperations({
-		identity: () => identity,
-		state: () => state,
+		identity: currentIdentity,
+		state: currentState,
 		pendingRequests,
-		removeQueuedJob,
-		settleFailure,
-		enqueue: (job, pending) => enqueue(job, pending, "regular"),
+		removeQueuedJob: writer.remove,
+		settleFailure: settlement.settleFailure,
+		enqueue: enqueueRegular,
 	});
 	const router = createInboundRouter({
-		identity: () => identity,
-		state: () => state,
+		identity: currentIdentity,
+		state: currentState,
 		pendingRequests,
 		tombstones,
 		reverseRequests,
 		completedReverseIds,
 		reverseHandles,
-		pendingReverseBytes: {
-			get: () => pendingReverseBytes,
-			add: (bytes) => (pendingReverseBytes += bytes),
-			remove: (bytes) => (pendingReverseBytes = Math.max(0, pendingReverseBytes - bytes)),
-		},
+		reverseBytes: ledger,
 		dynamicDispatchers,
 		emitIssue,
 		emitServerRequest: events.emitServerRequest,
 		emitServerNotification: events.emitServerNotification,
-		settleFailure,
-		settleDelivered,
-		settleRemoteError,
-		retainLateResponse,
-		retainCompletedReverseId,
-		enqueue: (job, lane) => enqueue(job, undefined, lane),
+		settleFailure: settlement.settleFailure,
+		settleDelivered: settlement.settleDelivered,
+		settleRemoteError: settlement.settleRemoteError,
+		retainLateResponse: lateResponseStore.retain,
+		retainCompletedReverseId: ledger.retainCompletedId,
+		enqueue: enqueueRouted,
 		enqueueProtocolError,
 	});
 
+	/**
+	 * Registers a dynamic dispatcher while the transport is open.
+	 * @param registration The owner, namespace and manifest hash.
+	 */
 	const registerDynamicDispatcher = (registration: DynamicDispatcherRegistration): void => {
-		if (state !== "open") {
-			throw new CodexTransportClosedError(state === "closing" ? "shutdown" : "transport-closed");
+		if (currentState() !== "open") {
+			throw closedError();
 		}
 		router.registerDynamicDispatcher(registration);
 	};
+
+	/**
+	 * Replaces the identity authority over the same child epoch.
+	 * @param replacement The new authority; it must keep the exact child and epoch.
+	 */
 	const replaceIdentity = (replacement: IdentityAuthority): void => {
 		if (
 			replacement.validator.childId !== identity.validator.childId ||
@@ -528,64 +534,50 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		}
 		identity = replacement;
 	};
-	const ownsPendingReverseRequest = (
-		request: TransportServerRequest,
-		owner: TransportServerRequest["owner"],
-	): boolean => {
-		const record = reverseHandles.get(request);
-		return (
-			record?.request.owner === owner &&
-			!record.responded &&
-			!record.responding &&
-			reverseRequests.get(record.key) === record
-		);
-	};
 
-	child.stdin.on("error", onStdinError);
-	child.stdin.on("finish", onStdinFinish);
-	stdinListenersAttached = true;
-	child.on("error", onChildError);
-	child.on("exit", onChildExit);
-	childListenersAttached = true;
-	if (child.exitCode !== null || child.signalCode !== null) {
-		onChildExit(child.exitCode, child.signalCode);
-	}
-	if (state === "open") {
+	/**
+	 * Copies the late-response log.
+	 * @returns The retained late responses, oldest first.
+	 */
+	const inspectLateResponses = (): readonly TransportLateResponse[] =>
+		Object.freeze([...lateResponseStore.values]);
+
+	/** Attaches to the child's streams and exit, then registers the initial dispatchers. */
+	const start = (): void => {
+		childAttachment = attachChildListeners(child, {
+			onStdinError,
+			onStdinFinish,
+			onChildError,
+			onChildExit,
+		});
+		if (child.exitCode !== null || child.signalCode !== null) {
+			onChildExit(child.exitCode, child.signalCode);
+		}
+		if (isClosed()) {
+			return;
+		}
 		streamAttachment = attachCodexStreamReader(child.stdout, child.stderr, {
 			onLine: router.handleLine,
 			onIssue: events.emitIssue,
-			onFrameTooLarge: () => closeTransport("frame-too-large"),
-			onStdoutError: () => {
-				emitIssue({
-					kind: "read-error",
-					direction: "stdout",
-					detail: "Codex stdout emitted an error",
-				});
-				closeTransport("stdout-error");
-			},
-			onStdoutEnd: () => closeTransport(state === "closing" ? "shutdown" : "stdout-error"),
+			onFrameTooLarge,
+			onStdoutError,
+			onStdoutEnd,
 			onStderr: events.emitStderr,
-			onStderrError: () =>
-				emitIssue({
-					kind: "stderr-error",
-					direction: "stderr",
-					detail: "Codex stderr emitted an error",
-				}),
+			onStderrError,
 		});
-	}
-
-	if (state === "open") {
 		for (const registration of options.dynamicDispatchers ?? []) {
 			registerDynamicDispatcher(registration);
 		}
-	}
+	};
+
+	start();
 
 	return Object.freeze({
 		replaceIdentity,
 		request: outbound.request,
 		sendNotification: outbound.sendNotification,
 		registerDynamicDispatcher,
-		ownsPendingReverseRequest,
+		ownsPendingReverseRequest: ledger.ownedBy,
 		respond: router.respond,
 		onServerRequest: events.onServerRequest,
 		onServerNotification: events.onServerNotification,
@@ -593,7 +585,7 @@ export function createCodexTransport(options: CodexTransportOptions): CodexTrans
 		onStderr: events.onStderr,
 		onExit: events.onExit,
 		inspect,
-		inspectLateResponses: () => Object.freeze([...lateResponses]),
+		inspectLateResponses,
 		inspectIssues: events.inspectIssues,
 		inspectStderr: events.inspectStderr,
 		shutdown,

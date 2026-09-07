@@ -415,6 +415,21 @@ export function jsonLine(
 }
 
 /**
+ * Encodes the JSON-RPC error frame that answers a refused reverse frame.
+ * @param wireId The refused frame's id.
+ * @param code The error code.
+ * @param message The error message.
+ * @returns The frame bytes, within the reverse-response bound.
+ */
+export function protocolErrorFrame(wireId: WireId, code: number, message: string): Buffer {
+	return jsonLine(
+		{ id: wireId, error: { code, message } },
+		"protocol error",
+		CODEX_APP_SERVER_CAPACITY.outbound.maxReverseResponseBytes,
+	);
+}
+
+/**
  * Whether a decode failure is the decoder's own refusal of a capability Archboard disabled,
  * which the router answers with a method-not-found error instead of treating as malformed.
  * @param error The decode failure.

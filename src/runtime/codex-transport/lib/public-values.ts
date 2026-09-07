@@ -8,6 +8,11 @@ import { encodeJsonText } from "@/runtime/codex-transport/lib/wire";
  */
 function cloneAndFreeze<T>(value: T): T {
 	const seen = new WeakMap<object, unknown>();
+	/**
+	 * Copies one value, reusing the copy already made for a repeated reference.
+	 * @param current The value.
+	 * @returns The frozen copy, or the scalar itself.
+	 */
 	const copy = (current: unknown): unknown => {
 		if (current === null || typeof current !== "object") {
 			return current;
@@ -18,6 +23,11 @@ function cloneAndFreeze<T>(value: T): T {
 		}
 		return Array.isArray(current) ? copyArray(current) : copyRecord(current);
 	};
+	/**
+	 * Copies an array, registering the copy before descending so cycles terminate.
+	 * @param current The array.
+	 * @returns The frozen copy.
+	 */
 	const copyArray = (current: readonly unknown[]): readonly unknown[] => {
 		const array: unknown[] = [];
 		seen.set(current, array);
@@ -26,6 +36,11 @@ function cloneAndFreeze<T>(value: T): T {
 		}
 		return Object.freeze(array);
 	};
+	/**
+	 * Copies an object's own enumerable members as non-writable properties.
+	 * @param current The object.
+	 * @returns The frozen copy.
+	 */
 	const copyRecord = (current: object): Readonly<Record<string, unknown>> => {
 		const object: Record<string, unknown> = {};
 		seen.set(current, object);
@@ -41,7 +56,7 @@ function cloneAndFreeze<T>(value: T): T {
 		return Object.freeze(object);
 	};
 	// The copy reproduces the source shape member by member; only identity and mutability change.
-	// oxlint-disable-next-line typescript(no-unsafe-type-assertion) -- structural copy of T is a T
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- structural copy of T is a T
 	return copy(value) as T;
 }
 

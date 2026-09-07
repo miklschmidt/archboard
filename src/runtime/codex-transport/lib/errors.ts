@@ -133,6 +133,23 @@ class CodexTransportOwnershipError extends CodexTransportError {
 	}
 }
 
+/** What a request failure records about the request and its settlement. */
+interface CodexTransportRequestErrorInput {
+	readonly method: string;
+	readonly correlation: WireRequestCorrelation;
+	readonly outcome: CodexRequestOutcome;
+	readonly reason: CodexRequestFailureReason;
+	readonly accepted: boolean;
+	readonly retryEligible: boolean;
+}
+
+/** What a remote error records about the request it answered. */
+interface CodexTransportRemoteErrorInput {
+	readonly method: string;
+	readonly correlation: WireRequestCorrelation;
+	readonly rpcError: CodexRemoteError;
+}
+
 /** A request settled without a Codex answer; it says whether Codex may have seen it. */
 class CodexTransportRequestError extends CodexTransportError {
 	override readonly name = "CodexTransportRequestError";
@@ -147,14 +164,7 @@ class CodexTransportRequestError extends CodexTransportError {
 	 * Records the settlement so the caller can decide whether a retry is safe.
 	 * @param input The request's method, correlation, outcome, reason, and retry facts.
 	 */
-	constructor(input: {
-		readonly method: string;
-		readonly correlation: WireRequestCorrelation;
-		readonly outcome: CodexRequestOutcome;
-		readonly reason: CodexRequestFailureReason;
-		readonly accepted: boolean;
-		readonly retryEligible: boolean;
-	}) {
+	constructor(input: CodexTransportRequestErrorInput) {
 		const remoteStatus =
 			input.outcome === "outcome_unknown" ? "outcome is unknown" : "was not delivered";
 		super(
@@ -181,11 +191,7 @@ class CodexTransportRemoteError extends CodexTransportError {
 	 * Retains the redacted remote error with the request it answered.
 	 * @param input The request's method and correlation with the JSON-RPC error received.
 	 */
-	constructor(input: {
-		readonly method: string;
-		readonly correlation: WireRequestCorrelation;
-		readonly rpcError: CodexRemoteError;
-	}) {
+	constructor(input: CodexTransportRemoteErrorInput) {
 		super(
 			`Codex request ${input.method} returned JSON-RPC error ${input.rpcError.code}: ${truncateRemoteMessage(input.rpcError.message)}`,
 		);
