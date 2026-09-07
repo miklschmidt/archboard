@@ -1,5 +1,5 @@
 import net from "net";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 
 const PORT = parseInt(process.env["PORT"] || "3000", 10);
 const HOST = process.env["HOST"] || "127.0.0.1";

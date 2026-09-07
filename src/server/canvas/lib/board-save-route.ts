@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { getOrCreateBoard } from "@/runtime/engine/board-store";
 import type { BoardContent } from "@/runtime/engine/board-io";
 import {

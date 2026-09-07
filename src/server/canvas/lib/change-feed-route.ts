@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { changeFeed } from "@/runtime/engine/change-feed";
 import type { ChangeEvent } from "@/runtime/engine/change-feed";
 import { narrateChange } from "@/runtime/engine/changes";

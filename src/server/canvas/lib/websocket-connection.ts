@@ -1,7 +1,7 @@
 import type { IncomingMessage } from "http";
 import { WebSocket, WebSocketServer } from "ws";
 import type { RawData } from "ws";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { selectionState } from "@/runtime/engine/types";
 import type {
 	ExcalidrawFile,

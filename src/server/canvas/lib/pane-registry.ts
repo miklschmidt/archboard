@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { selectionState } from "@/runtime/engine/types";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { panesInOrder, resolvePaneSpec, soloPane } from "@/runtime/engine/panes";

@@ -1,4 +1,4 @@
-import logger, { closeLogger, forceCloseLogger } from "@/runtime/engine/logger";
+import { closeLogger, forceCloseLogger, logger } from "@/runtime/engine/logger";
 import { heldBoardKeys } from "@/runtime/engine/board-hold";
 import { ARCHBOARD_VAULT, noVaultMessage } from "@/runtime/engine/config";
 import { removePidFile } from "@/runtime/engine/pidfile";

@@ -106,4 +106,8 @@ export function forceCloseLogger(target: winston.Logger = logger): void {
 	target.close();
 }
 
+// The engine area's own TASK-151 pass owns this file and adds the same named
+// export; on merge keep one `export { logger };` and drop the default.
+export { logger };
+
 export default logger;

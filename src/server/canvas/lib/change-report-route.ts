@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { isHeld } from "@/runtime/engine/board-hold";
 import {
 	AgentElementInputSchema,

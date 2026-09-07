@@ -2,7 +2,7 @@ import express from "express";
 import type { Response } from "express";
 import { z } from "zod";
 import { boardFilesMessage, readBoardContent } from "@/runtime/engine/board-io";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { resolvePaneSpec } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { presentElements } from "@/runtime/engine/presentation";
