@@ -247,12 +247,11 @@ function mergedStatementFor(
 		merged["customData"] = element.customData;
 	}
 	// The merged fields are the element's own and the statement's, both already
-	// checked; `type` is restated from the element the board holds.
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- both halves are checked statements
-	return withAgentLabelIntent(
-		merged as unknown as LegacyElementIngress,
-		agentLabelIntentOf(statement),
-	);
+	// checked; `type` is restated from the element the board holds, and the
+	// converter completes and validates the result before anything persists it.
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- completed by the write-ingress converter
+	const statementForConverter = merged as unknown as LegacyElementIngress;
+	return withAgentLabelIntent(statementForConverter, agentLabelIntentOf(statement));
 }
 
 /**
