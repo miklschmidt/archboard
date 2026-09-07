@@ -1,4 +1,4 @@
-export { createCodexEpochStore } from "./lib/epoch.js";
+export { createCodexEpochStore } from "@/runtime/codex-epoch/lib/epoch";
 export type {
 	CodexEpochErrorCode,
 	CodexEpochStore,
@@ -10,10 +10,10 @@ export type {
 	EpochSnapshot,
 	EpochStageInput,
 	EpochTransaction,
-} from "./lib/contract.js";
-export { CodexEpochError } from "./lib/contract.js";
-export type { CodexEpochFileSystem } from "./lib/storage.js";
-export { defaultCodexEpochFileSystem } from "./lib/storage.js";
+} from "@/runtime/codex-epoch/lib/contract";
+export { CodexEpochError } from "@/runtime/codex-epoch/lib/contract";
+export type { CodexEpochFileSystem } from "@/runtime/codex-epoch/lib/storage";
+export { defaultCodexEpochFileSystem } from "@/runtime/codex-epoch/lib/storage";
 export {
 	CODEX_EPOCH_MANIFEST_SCHEMA,
 	decodeManifest,
@@ -21,7 +21,7 @@ export {
 	encodeManifest,
 	EPOCH_THREAD_ATTACH_OPERATION,
 	resolveThreadOwnershipProvenance,
-} from "./lib/manifest.js";
+} from "@/runtime/codex-epoch/lib/manifest";
 export type {
 	ActiveEpoch,
 	EpochManifest,
@@ -34,4 +34,4 @@ export type {
 	EpochProvenance,
 	EpochThreadOwnership,
 	EpochThreadOwnershipProvenance,
-} from "./lib/manifest.js";
+} from "@/runtime/codex-epoch/lib/manifest";
