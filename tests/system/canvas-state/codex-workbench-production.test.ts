@@ -6,7 +6,10 @@ import { processExists, startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
 	openApplicationSocket,
 	prepareProductionFixture,
-	type WorkbenchResult,
+	productionRecords as records,
+	productionSnapshot as snapshots,
+	productionLeaseTarget as leaseTarget,
+	productionPane as pane,
 } from "./support/codex-production.ts";
 import { createIdentityAuthorities } from "../../../src/shared/codex-workbench-identity/index.js";
 import { humanWriteQuery } from "../support/note-version.ts";
@@ -21,58 +24,6 @@ const FOREIGN_FIXTURE_THREAD_ID = "thread-foreign";
 
 const serverPath = join(import.meta.dir, "fixtures/codex-production-server.ts");
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");
-
-interface FixtureRecord {
-	readonly kind?: string;
-	readonly id?: string;
-	readonly method?: string;
-	readonly pid?: number;
-	readonly params?: Record<string, unknown>;
-	readonly frame?: { readonly id?: unknown; readonly result?: unknown; readonly error?: unknown };
-}
-
-const records = (path: string): FixtureRecord[] => {
-	const contents = readFileSync(path, "utf8");
-	const lines = contents.split("\n");
-	if (!contents.endsWith("\n")) {
-		lines.pop();
-	}
-	return lines.filter(Boolean).map((line) => JSON.parse(line) as FixtureRecord);
-};
-
-const snapshots = (result: WorkbenchResult): Record<string, unknown> => {
-	if (!result.ok) {
-		throw new Error(result.error ?? "The workbench snapshot failed.");
-	}
-	const message = result.value as { readonly snapshot?: Record<string, unknown> } | undefined;
-	if (message?.snapshot === undefined) {
-		throw new Error("The workbench returned no snapshot.");
-	}
-	return message.snapshot;
-};
-
-const leaseTarget = (result: WorkbenchResult): Record<string, unknown> => {
-	if (!result.ok || result.value === undefined) {
-		throw new Error(result.error ?? "The workbench lease failed.");
-	}
-	return {
-		commandId: result.value["commandId"],
-		paneId: result.value["paneId"],
-		childId: result.value["childId"],
-		epoch: result.value["epoch"],
-	};
-};
-
-const pane = (clientId: string, paneId: string, focused: boolean, primary: boolean) => ({
-	clientId,
-	paneId,
-	primary,
-	focused,
-	elementCount: 0,
-	board: "scratch",
-	rect: { x: focused ? 640 : 0, y: 0, width: 640, height: 800 },
-	viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 },
-});
 
 describe.serial("actual production Codex composition", () => {
 	test("src/server.ts crosses every browser, protocol, semantic, approval, and cleanup seam", async () => {

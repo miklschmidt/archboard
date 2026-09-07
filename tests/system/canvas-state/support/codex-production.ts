@@ -230,3 +230,60 @@ export {
 	prepareProductionFixture,
 	openApplicationSocket,
 };
+
+interface FixtureRecord {
+	readonly kind?: string;
+	readonly id?: string;
+	readonly method?: string;
+	readonly pid?: number;
+	readonly params?: Record<string, unknown>;
+	readonly frame?: { readonly id?: unknown; readonly result?: unknown; readonly error?: unknown };
+}
+
+export const productionRecords = (path: string): FixtureRecord[] => {
+	const contents = readFileSync(path, "utf8");
+	const lines = contents.split("\n");
+	if (!contents.endsWith("\n")) {
+		lines.pop();
+	}
+	return lines.filter(Boolean).map((line) => JSON.parse(line) as FixtureRecord);
+};
+
+export const productionSnapshot = (result: WorkbenchResult): Record<string, unknown> => {
+	if (!result.ok) {
+		throw new Error(result.error ?? "The workbench snapshot failed.");
+	}
+	const message = result.value as { readonly snapshot?: Record<string, unknown> } | undefined;
+	if (message?.snapshot === undefined) {
+		throw new Error("The workbench returned no snapshot.");
+	}
+	return message.snapshot;
+};
+
+export const productionLeaseTarget = (result: WorkbenchResult): Record<string, unknown> => {
+	if (!result.ok || result.value === undefined) {
+		throw new Error(result.error ?? "The workbench lease failed.");
+	}
+	return {
+		commandId: result.value["commandId"],
+		paneId: result.value["paneId"],
+		childId: result.value["childId"],
+		epoch: result.value["epoch"],
+	};
+};
+
+export const productionPane = (
+	clientId: string,
+	paneId: string,
+	focused: boolean,
+	primary: boolean,
+) => ({
+	clientId,
+	paneId,
+	primary,
+	focused,
+	elementCount: 0,
+	board: "scratch",
+	rect: { x: focused ? 640 : 0, y: 0, width: 640, height: 800 },
+	viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 },
+});
