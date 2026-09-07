@@ -21,6 +21,8 @@ describe("codex workhorse start profile", () => {
 		const params = createWorkhorseThreadStartParams(CHECKOUT_ROOT);
 
 		expect(Object.keys(params)).toEqual([
+			"model",
+			"config",
 			"cwd",
 			"runtimeWorkspaceRoots",
 			"serviceName",
@@ -33,6 +35,8 @@ describe("codex workhorse start profile", () => {
 			"experimentalRawEvents",
 		]);
 		expect(params).toMatchObject({
+			model: "gpt-6-astra",
+			config: { model_reasoning_effort: "medium" },
 			cwd: CHECKOUT_ROOT,
 			runtimeWorkspaceRoots: [CHECKOUT_ROOT],
 			serviceName: "archboard",
@@ -50,7 +54,6 @@ describe("codex workhorse start profile", () => {
 	test("does not silently turn inherited policy into explicit request fields", () => {
 		const params = createWorkhorseThreadStartParams(CHECKOUT_ROOT);
 		const intentionallyOmitted = [
-			"model",
 			"modelProvider",
 			"allowProviderModelFallback",
 			"serviceTier",
@@ -58,7 +61,6 @@ describe("codex workhorse start profile", () => {
 			"approvalsReviewer",
 			"sandbox",
 			"permissions",
-			"config",
 			"baseInstructions",
 			"personality",
 			"multiAgentMode",
