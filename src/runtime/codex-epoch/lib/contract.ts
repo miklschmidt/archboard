@@ -1,11 +1,10 @@
+import type { ChildEpoch, ChildId, ThreadId, TurnId } from "@/shared/codex-workbench-identity";
 import type {
-	ChildEpoch,
-	ChildId,
-	ThreadId,
-	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import type { ActiveEpoch, EpochManifest, EpochOperationRecord } from "./manifest.js";
-import type { CodexEpochFileSystem } from "./storage.js";
+	ActiveEpoch,
+	EpochManifest,
+	EpochOperationRecord,
+} from "@/runtime/codex-epoch/lib/manifest";
+import type { CodexEpochFileSystem } from "@/runtime/codex-epoch/lib/storage";
 
 type CodexEpochErrorCode =
 	| "invalid_input"
@@ -25,6 +24,13 @@ class CodexEpochError extends Error {
 	readonly code: CodexEpochErrorCode;
 	override readonly cause: unknown;
 
+	/**
+	 * Record which epoch refusal this is, so a caller can tell a stale generation from an
+	 * unreadable store.
+	 * @param code - Which refusal this is.
+	 * @param message - What the caller should do about it.
+	 * @param cause - The underlying failure, when one caused this refusal.
+	 */
 	constructor(code: CodexEpochErrorCode, message: string, cause?: unknown) {
 		super(message);
 		this.name = "CodexEpochError";

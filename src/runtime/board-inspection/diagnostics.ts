@@ -1,14 +1,18 @@
-import { inspectBoard } from "./index.js";
-import type { InspectionFinding, InspectionPolicyInput, InspectionReport } from "./schemas.js";
-import { decodeRecords } from "./lib/decode.js";
-import { detectBoard } from "./lib/detectors.js";
-import { snapshotInspectionInput } from "./lib/input-snapshot.js";
+import { inspectBoard } from "@/runtime/board-inspection";
+import type {
+	InspectionFinding,
+	InspectionPolicyInput,
+	InspectionReport,
+} from "@/runtime/board-inspection/schemas";
+import { decodeRecords } from "@/runtime/board-inspection/lib/decode";
+import { detectBoard } from "@/runtime/board-inspection/lib/detectors";
+import { snapshotInspectionInput } from "@/runtime/board-inspection/lib/input-snapshot";
 import {
 	buildSweepHierarchy,
 	emptySweepWork,
 	sweepIntervalPairs,
 	type SweepWork,
-} from "./lib/interval-sweep.js";
+} from "@/runtime/board-inspection/lib/interval-sweep";
 
 interface InspectionWorkDiagnostics {
 	inputUnits: number;
@@ -50,18 +54,31 @@ interface ComparisonBudgetDiagnostics {
 	broadPhaseComparisons: number;
 }
 
-/** Pure development probe for semantic pair enumeration and coarse work scaling. */
-function diagnoseSweepCompatibility(input: {
+/** What one sweep probe runs: two interval sets, their semantics, and where to stop. */
+interface SweepCompatibilityProbe {
 	left: readonly SweepDiagnosticInterval[];
 	right: readonly SweepDiagnosticInterval[];
 	sameSet: boolean;
 	hierarchyParents?: ReadonlyMap<string, string | null | undefined>;
 	stopAfterPairs?: number;
-}): SweepCompatibilityDiagnostics {
+}
+
+/**
+ * Pure development probe for semantic pair enumeration and coarse work scaling.
+ * @param input the two interval sets, whether they are the same set, any hierarchy the
+ * exclusions consult, and the pair count to stop after
+ * @returns the pairs the sweep enumerated and the work it did
+ */
+function diagnoseSweepCompatibility(input: SweepCompatibilityProbe): SweepCompatibilityDiagnostics {
 	const work = emptySweepWork();
 	const hierarchy = input.hierarchyParents
 		? buildSweepHierarchy(input.hierarchyParents)
 		: undefined;
+	/**
+	 * Turn probe intervals into sweep intervals carrying the probe's own semantics.
+	 * @param items the probe intervals
+	 * @returns the sweep intervals
+	 */
 	const intervals = (items: readonly SweepDiagnosticInterval[]) =>
 		items.map((item) => ({
 			id: item.id,
@@ -89,7 +106,12 @@ function diagnoseSweepCompatibility(input: {
 	return { pairs, work };
 }
 
-/** Pure development probe for comparison-limit behavior at a representative budget. */
+/**
+ * Pure development probe for comparison-limit behavior at a representative budget.
+ * @param records the caller-owned input records
+ * @param comparisonLimit the eligible-pair ceiling to run under
+ * @returns the findings the run retained and how many comparisons it made
+ */
 function diagnoseComparisonBudget(
 	records: readonly unknown[],
 	comparisonLimit: number,
@@ -111,13 +133,22 @@ function diagnoseComparisonBudget(
 	};
 }
 
-/** Pure module-root development evidence; product report bytes contain no work counters. */
+/**
+ * Pure module-root development evidence; product report bytes contain no work counters.
+ * @param records the caller-owned input records
+ * @param policyInput the inspection policy, when the caller supplies one
+ * @returns the report together with the coarse semantic work the run did
+ */
 function inspectBoardDiagnostics(
 	records: readonly unknown[],
 	policyInput?: InspectionPolicyInput,
 ): BoardInspectionDiagnostics {
 	const report = inspectBoard(records, policyInput);
 	const snapshot = snapshotInspectionInput(records);
+	/**
+	 * The counters a run that did no semantic work reports.
+	 * @returns the zeroed counters, carrying the input units the snapshot measured
+	 */
 	const empty = (): InspectionWorkDiagnostics => ({
 		inputUnits: snapshot.inputUnits,
 		broadPhaseEvents: 0,

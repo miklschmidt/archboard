@@ -1,16 +1,13 @@
-import {
-	logicalToolCallKey,
-	type JsonRpcRequestId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import { logicalToolCallKey, type JsonRpcRequestId } from "@/shared/codex-workbench-identity";
 import {
 	ARCHBOARD_APP_MANIFEST_SHA256,
 	ARCHBOARD_APP_NAMESPACE,
 	type DynamicToolCallResponse,
-} from "../../codex-thread-tools/index.js";
+} from "@/runtime/codex-thread-tools";
 import {
 	CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP,
 	type DynamicServerRequest,
-} from "../../codex-transport/index.js";
+} from "@/runtime/codex-transport";
 import {
 	type CodexDynamicToolsOptions,
 	type DynamicEpochTeardownProof,
@@ -19,10 +16,10 @@ import {
 	type DynamicMutationQuarantineOwner,
 	type DynamicMutationQuarantineState,
 	type DynamicMutationToolName,
-} from "./contract.js";
-import type { DynamicOperationSettlement } from "./effects.js";
-import { validateDynamicCall } from "./request-validation.js";
-import { invalidDynamicResponse } from "./response.js";
+} from "@/runtime/codex-dynamic-tools/lib/contract";
+import type { DynamicOperationSettlement } from "@/runtime/codex-dynamic-tools/lib/effects";
+import { validateDynamicCall } from "@/runtime/codex-dynamic-tools/lib/request-validation";
+import { invalidDynamicResponse } from "@/runtime/codex-dynamic-tools/lib/response";
 
 const DYNAMIC_QUARANTINE_WIRE_CAP = CODEX_TRANSPORT_PENDING_REVERSE_REQUEST_CAP;
 
@@ -80,6 +77,11 @@ interface EpochQuarantineOwner {
 	overflowDeferred: Deferred<DynamicToolCallResponse> | null;
 }
 
+/**
+ * A promise with its settlement handed back, so an owner can be registered before whatever
+ * settles it has run.
+ * @returns The deferred.
+ */
 function deferred<Value>(): Deferred<Value> {
 	let resolve!: (value: Value) => void;
 	let reject!: (error: unknown) => void;
@@ -90,8 +92,19 @@ function deferred<Value>(): Deferred<Value> {
 	return Object.freeze({ promise, resolve, reject });
 }
 
+/**
+ * The owners of the wire calls that are not in quarantine: one owner per key, so a repeated
+ * call joins the operation already running under that key rather than starting a second one.
+ * @returns The owner registry.
+ */
 function createOrdinaryWireOwners(): OrdinaryWireOwners {
 	const owners = new Map<string, Deferred<DynamicToolCallResponse>>();
+	/**
+	 * Run an operation under a key, or join the one already running under it.
+	 * @param key The owner key.
+	 * @param run What to run when nothing owns the key yet.
+	 * @returns The response, whoever ran it.
+	 */
 	const own = (
 		key: string,
 		run: () => Promise<DynamicToolCallResponse>,
@@ -102,42 +115,95 @@ function createOrdinaryWireOwners(): OrdinaryWireOwners {
 		}
 		const owner = deferred<DynamicToolCallResponse>();
 		owners.set(key, owner);
-		let operation: Promise<DynamicToolCallResponse>;
-		try {
-			operation = run();
-		} catch (error) {
-			operation = Promise.reject(error);
-		}
-		void operation.then(
-			(response) => {
-				if (owners.get(key) === owner) {
-					owners.delete(key);
-				}
-				owner.resolve(response);
-				return undefined;
-			},
-			(error) => {
-				if (owners.get(key) === owner) {
-					owners.delete(key);
-				}
-				owner.reject(error);
-				return undefined;
-			},
-		);
+		settleOwner(owners, key, owner, startOperation(run));
 		return owner.promise;
 	};
 	return Object.freeze({
-		get: (key: string) => owners.get(key)?.promise,
+		/**
+		 * The operation already running under a key, if there is one.
+		 * @param key The owner key.
+		 * @returns The operation, or undefined.
+		 */
+		get: (key: string): Promise<DynamicToolCallResponse> | undefined => owners.get(key)?.promise,
 		own,
-		size: () => owners.size,
-		clear: () => owners.clear(),
+		/**
+		 * How many keys are owned right now.
+		 * @returns The owner count.
+		 */
+		size: (): number => owners.size,
+		/** Drop every owner, which is what an epoch teardown leaves behind. */
+		clear: (): void => {
+			owners.clear();
+		},
 	});
 }
 
+/**
+ * Start an operation, turning a synchronous throw into a rejection so every path settles the
+ * owner rather than leaving it registered with nothing to settle it.
+ * @param run What to run.
+ * @returns The operation.
+ */
+function startOperation(
+	run: () => Promise<DynamicToolCallResponse>,
+): Promise<DynamicToolCallResponse> {
+	try {
+		return run();
+	} catch (error) {
+		return Promise.reject(error);
+	}
+}
+
+/**
+ * Settle one owner from its operation and release the key, leaving a key that has since been
+ * taken by a newer owner alone.
+ * @param owners The owner registry.
+ * @param key The owner key.
+ * @param owner The owner to settle.
+ * @param operation The operation that settles it.
+ */
+function settleOwner(
+	owners: Map<string, Deferred<DynamicToolCallResponse>>,
+	key: string,
+	owner: Deferred<DynamicToolCallResponse>,
+	operation: Promise<DynamicToolCallResponse>,
+): void {
+	/** Release the key if this owner still holds it. */
+	const release = (): void => {
+		if (owners.get(key) === owner) {
+			owners.delete(key);
+		}
+	};
+	void operation.then(
+		(response) => {
+			release();
+			owner.resolve(response);
+			return undefined;
+		},
+		(error) => {
+			release();
+			owner.reject(error);
+			return undefined;
+		},
+	);
+}
+
+/**
+ * Whether a tool name is one of the three that mutate.
+ * @param value The tool name.
+ * @returns Whether it mutates.
+ */
 function isMutationTool(value: string): value is DynamicMutationToolName {
 	return value === "create_thread" || value === "fork_thread" || value === "send_message_to_thread";
 }
 
+/**
+ * The quarantine identity of a mutation call, or nothing when the request is not one. A request
+ * the boundary cannot validate is not a mutation as far as quarantine is concerned.
+ * @param request The server request.
+ * @param options The dynamic tools options.
+ * @returns The identity, or null.
+ */
 function mutationIdentity(
 	request: DynamicServerRequest,
 	options: CodexDynamicToolsOptions,
@@ -164,43 +230,74 @@ function mutationIdentity(
 	});
 }
 
+/**
+ * The key one logical mutation call is owned under.
+ * @param identity The quarantine identity.
+ * @returns The logical key.
+ */
 function logicalKey(identity: DynamicMutationQuarantineIdentity): string {
 	return logicalToolCallKey(identity);
 }
 
+/**
+ * The key one child epoch is quarantined under.
+ * @param child The child.
+ * @param epoch The epoch.
+ * @returns The key, or null when either is not a string.
+ */
 function epochKey(child: unknown, epoch: unknown): string | null {
 	return typeof child === "string" && typeof epoch === "string"
 		? JSON.stringify([child, epoch])
 		: null;
 }
 
+/**
+ * A value as a plain record of its own fields, which is how the quarantine boundary reads
+ * anything it did not itself build.
+ * @param value Untrusted value.
+ * @returns The fields, or null when the value is not a plain object.
+ */
+function fieldsOf(value: unknown): Readonly<Record<string, unknown>> | null {
+	if (value === null || typeof value !== "object" || Array.isArray(value)) {
+		return null;
+	}
+	return Object.fromEntries(Object.entries(value));
+}
+
+/**
+ * The epoch key a request belongs to.
+ * @param value The request's logical call.
+ * @returns The key, or null when the call does not name a child epoch.
+ */
 function requestEpochKey(value: unknown): string | null {
-	if (value === null || typeof value !== "object" || Array.isArray(value)) {
+	const fields = fieldsOf(value);
+	if (fields === null || !("child" in fields) || !("epoch" in fields)) {
 		return null;
 	}
-	if (!("child" in value) || !("epoch" in value)) {
-		return null;
-	}
-	return epochKey(value.child, value.epoch);
+	return epochKey(fields["child"], fields["epoch"]);
 }
 
+/**
+ * The wire key a request is owned under, which is its child epoch plus its own request id.
+ * @param value The request.
+ * @returns The key, or null when the request does not name all three.
+ */
 function requestWireKey(value: unknown): string | null {
-	if (value === null || typeof value !== "object" || Array.isArray(value)) {
+	const fields = fieldsOf(value);
+	if (fields === null) {
 		return null;
 	}
-	if (!("child" in value) || !("epoch" in value) || !("requestId" in value)) {
+	const parts = ["child", "epoch", "requestId"].map((name) => fields[name]);
+	if (!parts.every((part) => typeof part === "string")) {
 		return null;
 	}
-	if (
-		typeof value.child !== "string" ||
-		typeof value.epoch !== "string" ||
-		typeof value.requestId !== "string"
-	) {
-		return null;
-	}
-	return JSON.stringify([value.child, value.epoch, value.requestId]);
+	return JSON.stringify(parts);
 }
 
+/**
+ * The response a child gets while its epoch is recovering from a mutation it cannot account for.
+ * @returns The refusal response.
+ */
 function blockedDynamicResponse(): DynamicToolCallResponse {
 	return invalidDynamicResponse(
 		"invalid_call",
@@ -208,63 +305,102 @@ function blockedDynamicResponse(): DynamicToolCallResponse {
 	);
 }
 
-function exactKeys(value: object, keys: readonly string[]): boolean {
+/**
+ * Whether a value carries exactly the named keys and nothing else.
+ * @param value The record to check.
+ * @param keys The keys it must carry.
+ * @returns Whether the keys match exactly.
+ */
+function exactKeys(value: Readonly<Record<string, unknown>>, keys: readonly string[]): boolean {
 	return Object.keys(value).toSorted().join(",") === [...keys].toSorted().join(",");
 }
 
+/**
+ * Whether a value the lifecycle port returned names the child epoch it was asked about.
+ * @param fields The value's own fields.
+ * @param child The child it must name.
+ * @param epoch The epoch it must name.
+ * @returns Whether both match.
+ */
+function namesEpoch(
+	fields: Readonly<Record<string, unknown>>,
+	child: unknown,
+	epoch: unknown,
+): boolean {
+	return fields["child"] === child && fields["epoch"] === epoch;
+}
+
+/**
+ * Cross-check the poisoned-epoch owner the lifecycle port returned. The port's declared type
+ * says what the owner should be; this reads the value's own fields, so a port that returns
+ * something else is refused rather than believed on the strength of the type.
+ * @param value What the port returned.
+ * @param identity The identity the owner must be for.
+ * @returns The owner, when it is the exact one.
+ */
 function exactPoisonOwner(
 	value: DynamicMutationQuarantineOwner,
 	identity: DynamicMutationQuarantineIdentity,
 ): DynamicMutationQuarantineOwner {
-	if (
-		value === null ||
-		typeof value !== "object" ||
-		value.child !== identity.child ||
-		value.epoch !== identity.epoch ||
-		typeof value.poisoned !== "boolean" ||
-		!value.poisoned ||
-		!(value.childExit instanceof Promise) ||
-		!exactKeys(value, ["child", "childExit", "epoch", "poisoned"])
-	) {
+	const fields = fieldsOf(value);
+	if (fields === null || !exactKeys(fields, ["child", "childExit", "epoch", "poisoned"])) {
+		throw new Error("The lifecycle port did not return the exact poisoned epoch owner.");
+	}
+	if (!namesEpoch(fields, identity.child, identity.epoch)) {
+		throw new Error("The lifecycle port did not return the exact poisoned epoch owner.");
+	}
+	if (fields["poisoned"] !== true || !(fields["childExit"] instanceof Promise)) {
 		throw new Error("The lifecycle port did not return the exact poisoned epoch owner.");
 	}
 	return value;
 }
 
+/**
+ * Cross-check the fail-closed shutdown owner the lifecycle port returned, reading the value's
+ * own fields rather than trusting the port's declared type.
+ * @param value What the port returned.
+ * @param epoch The epoch the owner must be for.
+ * @returns The owner, when it is the exact one.
+ */
 function exactShutdownOwner(
 	value: DynamicFailClosedShutdownOwner,
 	epoch: EpochQuarantineOwner,
 ): DynamicFailClosedShutdownOwner {
-	if (
-		value === null ||
-		typeof value !== "object" ||
-		value.child !== epoch.child ||
-		value.epoch !== epoch.epoch ||
-		typeof value.shutdownInitiated !== "boolean" ||
-		!value.shutdownInitiated ||
-		!(value.teardown instanceof Promise) ||
-		!exactKeys(value, ["child", "epoch", "shutdownInitiated", "teardown"])
-	) {
+	const fields = fieldsOf(value);
+	if (fields === null || !exactKeys(fields, ["child", "epoch", "shutdownInitiated", "teardown"])) {
+		throw new Error("The lifecycle port did not return the exact fail-closed shutdown owner.");
+	}
+	if (!namesEpoch(fields, epoch.child, epoch.epoch)) {
+		throw new Error("The lifecycle port did not return the exact fail-closed shutdown owner.");
+	}
+	if (fields["shutdownInitiated"] !== true || !(fields["teardown"] instanceof Promise)) {
 		throw new Error("The lifecycle port did not return the exact fail-closed shutdown owner.");
 	}
 	return value;
 }
 
+/**
+ * Whether the teardown proof the lifecycle port returned is the exact one for this epoch, with
+ * both the session and the transport reported closed.
+ * @param value What the port returned.
+ * @param epoch The epoch the proof must be for.
+ * @returns Whether the proof holds.
+ */
 function exactTeardownProof(
 	value: DynamicEpochTeardownProof,
 	epoch: EpochQuarantineOwner,
 ): boolean {
-	return (
-		value !== null &&
-		typeof value === "object" &&
-		value.child === epoch.child &&
-		value.epoch === epoch.epoch &&
-		typeof value.sessionClosed === "boolean" &&
-		value.sessionClosed &&
-		typeof value.transportClosed === "boolean" &&
-		value.transportClosed &&
-		exactKeys(value, ["child", "epoch", "sessionClosed", "transportClosed"])
-	);
+	const fields = fieldsOf(value);
+	if (
+		fields === null ||
+		!exactKeys(fields, ["child", "epoch", "sessionClosed", "transportClosed"])
+	) {
+		return false;
+	}
+	if (!namesEpoch(fields, epoch.child, epoch.epoch)) {
+		return false;
+	}
+	return fields["sessionClosed"] === true && fields["transportClosed"] === true;
 }
 
 export {
@@ -277,6 +413,7 @@ export {
 	type EpochQuarantineOwner,
 	deferred,
 	createOrdinaryWireOwners,
+	fieldsOf,
 	mutationIdentity,
 	logicalKey,
 	epochKey,
