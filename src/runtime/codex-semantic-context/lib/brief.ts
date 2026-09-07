@@ -53,7 +53,9 @@ interface FitParts {
 }
 
 /**
- *
+ * An independent copy of a normalized context, so fitting a brief can trim fields in place without changing the context the caller holds.
+ * @param context - The normalized context.
+ * @returns The mutable copy.
  */
 function copyContext(context: NormalizedContext): BriefContext {
 	return {
@@ -73,7 +75,10 @@ function copyContext(context: NormalizedContext): BriefContext {
 }
 
 /**
- *
+ * The brief as the object that gets serialized. Its field order is the brief's wire order, and every field the coordinator reads comes from here.
+ * @param context - The context being rendered.
+ * @param parts - The parts that vary while the brief is being fitted.
+ * @returns The object to serialize.
  */
 function serializableBrief(
 	context: BriefContext,
@@ -106,20 +111,44 @@ function serializableBrief(
 }
 
 /**
- *
+ * The brief's text, which is what its byte size is measured on.
+ * @param context - The context being rendered.
+ * @param parts - The parts that vary while the brief is being fitted.
+ * @returns The serialized brief.
  */
 function render(context: BriefContext, parts: FitParts): string {
 	return JSON.stringify(serializableBrief(context, parts));
 }
 
 /**
- *
+ * Refuse a non-finite time: a brief's freshness is arithmetic on timestamps, so an infinite or NaN one would make freshness meaningless rather than wrong.
+ * @param value - The claimed time.
+ * @param field - The field being checked, for the refusal message.
+ * @returns The time.
  */
 function timestamp(value: number, field: string): number {
 	if (!Number.isFinite(value)) {
 		fail(field, "must be finite");
 	}
 	return value;
+}
+
+/**
+ * A trimmed identity as it appears in a brief. A brief is display text under a byte ceiling: an
+ * identity that does not fit is replaced by an ellipsis, which is not an issued identity. The
+ * brief keeps the field's own type so a reader can still see which identity was trimmed away.
+ * @param original - The identity being trimmed, which fixes the field's type.
+ * @param trimmed - The trimmed text, or null when the field is absent.
+ * @returns The trimmed text, in the field's identity type.
+ */
+function trimmedIdentity<Identity extends string>(
+	original: Identity | null,
+	trimmed: string | null,
+): Identity | null {
+	// The original is read only for its type: it is what says which identity is being trimmed.
+	void original;
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a trimmed identity is display text, not an issued identity; nothing reads a brief's identity fields as identities, and the ellipsis is what makes the trimming visible
+	return trimmed as Identity | null;
 }
 
 interface TextSlot {
@@ -130,7 +159,10 @@ interface TextSlot {
 }
 
 /**
- *
+ * Fit one text field into whatever room the brief has left: empty it, measure what that freed, then put back as much of the original as fits. A field that cannot fit at all keeps its minimum, which is the ellipsis that shows something was dropped.
+ * @param parts - The parts being fitted.
+ * @param context - The context being fitted.
+ * @param slot - The field to fit.
  */
 function fitTextSlot(parts: FitParts, context: BriefContext, slot: TextSlot): void {
 	if (slot.original === null) {
@@ -145,7 +177,11 @@ function fitTextSlot(parts: FitParts, context: BriefContext, slot: TextSlot): vo
 }
 
 /**
- *
+ * Fit as many entries of a list as the brief has room for, in order, stopping at the first one that does not fit rather than dropping arbitrary entries.
+ * @param parts - The parts being fitted.
+ * @param context - The context being fitted.
+ * @param original - The entries in order.
+ * @param set - Installs the kept entries.
  */
 function fitArray(
 	parts: FitParts,
@@ -166,7 +202,16 @@ function fitArray(
 }
 
 /**
- *
+ * Fit the whole brief under its byte ceiling. A brief that already fits is kept as it is; otherwise the lists are dropped, every text field is reduced to its minimum, and the freed room is given back field by field. The two qualified cursor identities are never trimmed: a brief that cannot hold them is refused, because a brief that cannot say which cursor it belongs to is not usable.
+ * @param context - The context to render.
+ * @param feedId - The feed the brief belongs to.
+ * @param selection - The selected element ids.
+ * @param ambiguity - The ambiguity reasons.
+ * @param description - The change description.
+ * @param freshness - The brief's freshness window.
+ * @param staleness - The brief's staleness state.
+ * @param truncated - Whether anything was already dropped before fitting.
+ * @returns The fitted parts and the rendered brief.
  */
 function fitAggregate(
 	context: BriefContext,
@@ -207,7 +252,8 @@ function fitAggregate(
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 *
+			 * Install the trimmed repository back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.repository = value ?? SEMANTIC_CONTEXT_ELLIPSIS;
@@ -218,7 +264,8 @@ function fitAggregate(
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 *
+			 * Install the trimmed board.key back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.board = { ...context.board, key: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
@@ -229,10 +276,11 @@ function fitAggregate(
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 *
+			 * Install the trimmed child.id back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
-				context.child = { ...context.child, id: value as typeof context.child.id };
+				context.child = { ...context.child, id: trimmedIdentity(context.child.id, value) };
 			},
 		},
 		{
@@ -240,10 +288,14 @@ function fitAggregate(
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 *
+			 * Install the trimmed child.epoch back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
-				context.child = { ...context.child, epoch: value as typeof context.child.epoch };
+				context.child = {
+					...context.child,
+					epoch: trimmedIdentity(context.child.epoch, value),
+				};
 			},
 		},
 		{
@@ -251,12 +303,13 @@ function fitAggregate(
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 *
+			 * Install the trimmed workhorse.threadId back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.workhorse = {
 					...context.workhorse,
-					threadId: value as typeof context.workhorse.threadId,
+					threadId: trimmedIdentity(context.workhorse.threadId, value),
 				};
 			},
 		},
@@ -265,12 +318,13 @@ function fitAggregate(
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 *
+			 * Install the trimmed workhorse.turnId back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.workhorse = {
 					...context.workhorse,
-					turnId: value as typeof context.workhorse.turnId,
+					turnId: trimmedIdentity(context.workhorse.turnId, value),
 				};
 			},
 		},
@@ -279,12 +333,13 @@ function fitAggregate(
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 *
+			 * Install the trimmed coordinator.threadId back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.coordinator = {
 					...context.coordinator,
-					threadId: value as typeof context.coordinator.threadId,
+					threadId: trimmedIdentity(context.coordinator.threadId, value),
 				};
 			},
 		},
@@ -293,12 +348,13 @@ function fitAggregate(
 			empty: null,
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 *
+			 * Install the trimmed coordinator.realtimeSessionId back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.coordinator = {
 					...context.coordinator,
-					realtimeSessionId: value as typeof context.coordinator.realtimeSessionId,
+					realtimeSessionId: trimmedIdentity(context.coordinator.realtimeSessionId, value),
 				};
 			},
 		},
@@ -307,7 +363,8 @@ function fitAggregate(
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 *
+			 * Install the trimmed board.note back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.board = { ...context.board, note: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
@@ -318,7 +375,8 @@ function fitAggregate(
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 *
+			 * Install the trimmed pane.paneId back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.pane = { ...context.pane, paneId: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
@@ -329,7 +387,8 @@ function fitAggregate(
 			empty: "",
 			minimum: "",
 			/**
-			 *
+			 * Install the trimmed original: parts.description back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				parts.description = value ?? "";
@@ -340,7 +399,8 @@ function fitAggregate(
 			empty: null,
 			minimum: null,
 			/**
-			 *
+			 * Install the trimmed doing back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.doing = value;
@@ -351,7 +411,8 @@ function fitAggregate(
 			empty: null,
 			minimum: null,
 			/**
-			 *
+			 * Install the trimmed claim.doing back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.claim = { ...context.claim, doing: value };
@@ -362,7 +423,8 @@ function fitAggregate(
 			empty: null,
 			minimum: null,
 			/**
-			 *
+			 * Install the trimmed threadLink.reason back into the brief's context.
+			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
 				context.threadLink = { ...context.threadLink, reason: value };
@@ -401,7 +463,65 @@ function fitAggregate(
 }
 
 /**
- *
+ * Cap a list at the reviewed number of entries, reporting whether anything was dropped so the
+ * brief can say it was truncated rather than quietly showing less than happened.
+ * @param entries - The entries in order.
+ * @param maximum - The reviewed ceiling.
+ * @returns The kept entries and whether any were dropped.
+ */
+function capEntries(
+	entries: readonly string[],
+	maximum: number,
+): { readonly entries: string[]; readonly truncated: boolean } {
+	return entries.length > maximum
+		? { entries: entries.slice(0, maximum), truncated: true }
+		: { entries: [...entries], truncated: false };
+}
+
+/**
+ * The freshness window a brief carries: a person's gesture is fresh for a fixed span after it was
+ * captured, and stale afterwards, whatever else has happened since.
+ * @param capturedAtMs - When the gesture was captured.
+ * @param observedAtMs - When the brief is being built.
+ * @returns The frozen freshness.
+ */
+function freshnessAt(capturedAtMs: number, observedAtMs: number): SemanticFreshness {
+	const freshUntilMs = capturedAtMs + CODEX_SEMANTIC_FRESHNESS_MS;
+	return deepFreeze({
+		capturedAtMs,
+		freshUntilMs,
+		state: observedAtMs < freshUntilMs ? "fresh" : "stale",
+	});
+}
+
+/**
+ * Everything that makes a brief stale, including the expiry of its own freshness window, so the
+ * coordinator is never handed a stale brief that does not say why.
+ * @param contextReasons - The reasons the context already carried.
+ * @param freshness - The brief's freshness window.
+ * @returns The staleness state and its reasons.
+ */
+function stalenessFor(
+	contextReasons: readonly string[],
+	freshness: SemanticFreshness,
+): SemanticStaleness {
+	const reasons = uniqueSorted([...contextReasons]);
+	if (freshness.state === "stale") {
+		reasons.push("semantic freshness window expired");
+	}
+	return { state: reasons.length > 0 ? "stale" : "current", reasons };
+}
+
+/**
+ * Build the semantic brief for one event: normalize its context, cap what is too long, work out
+ * its freshness and staleness, then fit the whole thing under the brief's byte ceiling. The brief
+ * is what the coordinator actually reads, so everything dropped on the way is reported as
+ * truncation rather than silently omitted.
+ * @param input - The semantic context of the event.
+ * @param feedId - The feed the event belongs to.
+ * @param clock - The clock used to decide freshness.
+ * @param metadata - The source, origin, capture time and any extra ambiguity or stale reasons.
+ * @returns Every field of the brief, including its rendered text and byte size.
  */
 function buildSemanticBrief(
 	input: SemanticContextInput,
@@ -418,36 +538,24 @@ function buildSemanticBrief(
 		metadata.additionalStaleReasons,
 	);
 	const extraAmbiguity = boundedReasons(metadata.additionalAmbiguity ?? [], "event.ambiguity");
-	let selection = [...context.selection];
-	let ambiguity = uniqueSorted([...context.ambiguity, ...extraAmbiguity.value]);
-	let truncated = context.truncated || metadata.inputTruncated === true || extraAmbiguity.truncated;
-	if (selection.length > SEMANTIC_CONTEXT_LIMITS.selectionEntries) {
-		selection = selection.slice(0, SEMANTIC_CONTEXT_LIMITS.selectionEntries);
-		truncated = true;
-	}
-	if (ambiguity.length > SEMANTIC_CONTEXT_LIMITS.ambiguityEntries) {
-		ambiguity = ambiguity.slice(0, SEMANTIC_CONTEXT_LIMITS.ambiguityEntries);
-		truncated = true;
-	}
-	const freshUntilMs = capturedAtMs + CODEX_SEMANTIC_FRESHNESS_MS;
-	const freshness: SemanticFreshness = deepFreeze({
-		capturedAtMs,
-		freshUntilMs,
-		state: observedAtMs < freshUntilMs ? "fresh" : "stale",
-	});
-	const staleReasons = uniqueSorted([...context.staleReasons]);
-	if (freshness.state === "stale") {
-		staleReasons.push("semantic freshness window expired");
-	}
-	const staleness: SemanticStaleness = {
-		state: staleReasons.length > 0 ? "stale" : "current",
-		reasons: staleReasons,
-	};
+	const selection = capEntries([...context.selection], SEMANTIC_CONTEXT_LIMITS.selectionEntries);
+	const ambiguity = capEntries(
+		uniqueSorted([...context.ambiguity, ...extraAmbiguity.value]),
+		SEMANTIC_CONTEXT_LIMITS.ambiguityEntries,
+	);
+	const truncated =
+		context.truncated ||
+		metadata.inputTruncated === true ||
+		extraAmbiguity.truncated ||
+		selection.truncated ||
+		ambiguity.truncated;
+	const freshness = freshnessAt(capturedAtMs, observedAtMs);
+	const staleness = stalenessFor(context.staleReasons, freshness);
 	const fitted = fitAggregate(
 		copyContext(context),
 		feedId,
-		selection,
-		ambiguity,
+		selection.entries,
+		ambiguity.entries,
 		context.description,
 		freshness,
 		staleness,
@@ -468,14 +576,14 @@ function buildSemanticBrief(
 		},
 		pane: context.pane,
 		version: context.board.version,
-		selection: Object.freeze([...selection]),
+		selection: Object.freeze([...selection.entries]),
 		claim: context.claim,
 		doing: context.doing,
 		cursor: context.cursor,
 		description: context.description,
 		freshness,
 		truncated: fitted.truncated,
-		ambiguity: Object.freeze([...ambiguity]),
+		ambiguity: Object.freeze([...ambiguity.entries]),
 		staleness: deepFreeze(staleness),
 		brief: fitted.brief,
 		bytes: byteLength(fitted.brief),

@@ -7,6 +7,7 @@ import {
 	feedIdValue,
 	fail,
 	textValue,
+	type BoundedValue,
 } from "@/runtime/codex-semantic-context/lib/normalize";
 import type {
 	FreshSemanticBrief,
@@ -26,7 +27,188 @@ import type {
 	SettledSemanticChangeEvent,
 } from "@/runtime/codex-semantic-context/lib/types";
 
+import {
+	errorDetails,
+	LISTENER_DIAGNOSTIC_ERROR_NAME_FALLBACK,
+	LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE,
+} from "@/runtime/codex-semantic-context/lib/listener-diagnostics";
+
 export { SemanticContextInputError } from "@/runtime/codex-semantic-context/lib/normalize";
+
+export class SemanticContextLifecycleError extends Error {
+	readonly phase: "registration" | "dispose";
+	readonly causes: readonly unknown[];
+
+	/**
+	 * Build the lifecycle failure, keeping every cause: a registration or dispose that fails partway leaves several failures, and losing any of them would hide what is still subscribed.
+	 * @param phase - Whether the failure happened while registering or while disposing.
+	 * @param causes - Everything that was thrown, in the order it happened.
+	 */
+	constructor(phase: "registration" | "dispose", causes: readonly unknown[]) {
+		super(
+			`Semantic context ${phase} failed with ${causes.length} error${causes.length === 1 ? "" : "s"}.`,
+		);
+		this.name = "SemanticContextLifecycleError";
+		this.phase = phase;
+		this.causes = Object.freeze([...causes]);
+	}
+}
+
+/**
+ * Whether a settled change is one Archboard delivers at all. An agent's own change would tell the
+ * coordinator what it already knows, and a cosmetic one carries no design intent; both are dropped
+ * rather than delivered as noise. An unreviewed origin or significance is refused outright.
+ * @param event - The settled change the feed reported.
+ * @returns True when the change should be published.
+ * @throws {Error} When the change names an origin or significance that is not reviewed.
+ */
+function isDeliverableChange(event: SettledChangeSourceEvent): boolean {
+	if (!validOrigin(event.origin)) {
+		fail("change.origin", "is invalid");
+	}
+	if (!validSignificance(event.significance)) {
+		fail("change.significance", "is invalid");
+	}
+	return event.origin !== "agent" && event.significance !== "cosmetic";
+}
+
+/**
+ * What a change's own timestamp leaves ambiguous: it was too long to keep in full, or it could
+ * not be read at all and the publisher's clock stood in for it. Both are recorded on the brief so
+ * the coordinator is never given a capture time that quietly means something else.
+ * @param timestampTruncated - Whether the timestamp text was shortened.
+ * @param capture - What the capture step decided.
+ * @returns The ambiguity reasons, which is empty when the timestamp was exact.
+ */
+function captureAmbiguity(timestampTruncated: boolean, capture: SemanticCapture): string[] {
+	const reasons: string[] = [];
+	if (timestampTruncated) {
+		reasons.push("settled event timestamp was truncated");
+	}
+	if (capture.ambiguous) {
+		reasons.push("settled event timestamp was invalid; capture time was used");
+	}
+	return reasons;
+}
+
+/**
+ * The stale reason for a change whose board is not the board its context describes, which means
+ * the brief and the change are talking about different boards.
+ * @param eventBoard - The board the change named.
+ * @param contextBoard - The board the context names.
+ * @returns The reasons, which is empty when the two agree.
+ */
+function boardMismatchReasons(eventBoard: string, contextBoard: string): string[] {
+	return eventBoard === contextBoard
+		? []
+		: [`settled event names board "${eventBoard}" but context names "${contextBoard}"`];
+}
+
+/**
+ * Build one published brief from its fields: the brief's own kind, every field `buildSemanticBrief`
+ * produced, and whatever that kind adds. The kind and its extra fields are what distinguish the
+ * published event types from one another; nothing else about a brief changes between them.
+ * @param fields - The fields the brief builder produced.
+ * @param kind - The kind of brief being published.
+ * @param extra - The fields this kind adds.
+ * @returns The frozen event.
+ */
+function withKind<Event extends SemanticBrief>(
+	fields: ReturnType<typeof buildSemanticBrief>,
+	kind: Event["kind"],
+	extra: Record<string, unknown> = {},
+): Event {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- each caller names the event type whose kind it passes and supplies exactly that kind's extra fields; TypeScript cannot tie the literal kind to the union member through an open extra record
+	return deepFreeze({ kind, ...fields, ...extra }) as Event;
+}
+
+/**
+ * Prove the configured feed identity is a valid one before any event is published under it.
+ * @param feedId - The configured feed identity.
+ * @returns The same identity.
+ */
+function validateFeedId(feedId: string): string {
+	return feedIdValue(feedId, "feedId");
+}
+
+/**
+ * Whether a settled change names one of the three reviewed origins. Origin decides whether a
+ * change is delivered at all, so an unrecognised one is refused rather than guessed at.
+ * @param value - The claimed origin.
+ * @returns True for a reviewed origin.
+ */
+function validOrigin(value: unknown): value is SemanticChangeOrigin {
+	return value === "human" || value === "agent" || value === "mixed";
+}
+
+/**
+ * Whether a settled change names one of the three reviewed significances.
+ * @param value - The claimed significance.
+ * @returns True for a reviewed significance.
+ */
+function validSignificance(value: unknown): value is "layout" | "structural" | "cosmetic" {
+	return value === "layout" || value === "structural" || value === "cosmetic";
+}
+
+/**
+ * The feed cursor a settled change carries, refused unless it is a whole non-negative number: a
+ * settled change without a usable cursor cannot be ordered against the rest of the feed.
+ * @param value - The claimed cursor.
+ * @returns The cursor.
+ * @throws {Error} When the cursor is not a non-negative safe integer.
+ */
+function sourceCursor(value: unknown): number {
+	if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
+		fail("change.cursor", "must be a non-negative safe integer");
+	}
+	return value;
+}
+
+/** One settled change's fields, after each has been checked against its own limit. */
+interface SettledChangeFields {
+	readonly cursor: number;
+	readonly board: BoundedValue<string>;
+	readonly at: BoundedValue<string>;
+	readonly capture: SemanticCapture;
+}
+
+/** When a change was captured, and whether that time had to be inferred. */
+interface SemanticCapture {
+	readonly capturedAtMs: number;
+	readonly ambiguous: boolean;
+}
+
+/**
+ * When a settled change was captured. An unparseable timestamp falls back to the clock and is
+ * reported as ambiguous, so the brief says the time is approximate rather than inventing one.
+ * @param at - The timestamp the change carried.
+ * @param clock - The publisher's clock.
+ * @returns The capture time and whether it was inferred.
+ */
+function dateCapture(at: string, clock: () => number): SemanticCapture {
+	const parsed = Date.parse(at);
+	return Number.isFinite(parsed)
+		? { capturedAtMs: parsed, ambiguous: false }
+		: { capturedAtMs: clock(), ambiguous: true };
+}
+
+/**
+ * Run every cleanup in reverse order, collecting failures rather than stopping: one source that
+ * cannot be unsubscribed must not leave the others subscribed.
+ * @param cleanups - The cleanups, in the order they were made.
+ * @returns Everything that was thrown.
+ */
+function cleanupAll(cleanups: readonly SemanticUnsubscribe[]): unknown[] {
+	const errors: unknown[] = [];
+	for (let index = cleanups.length - 1; index >= 0; index--) {
+		try {
+			cleanups[index]!();
+		} catch (error) {
+			errors.push(error);
+		}
+	}
+	return errors;
+}
 
 const LISTENER_DIAGNOSTIC_MAX_DROPPED_COUNT = Number.MAX_SAFE_INTEGER;
 const LISTENER_DIAGNOSTIC_MAX_ENTRIES = 64;
@@ -66,146 +248,10 @@ export const SEMANTIC_LISTENER_DIAGNOSTIC_POLICY: SemanticListenerDiagnosticPoli
 		LISTENER_DIAGNOSTIC_BATCH_SUFFIX_BYTES,
 });
 
-const LISTENER_DIAGNOSTIC_FALLBACK_NAME = "ThrownValue";
-const LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE = "listener failure details unavailable";
-const LISTENER_DIAGNOSTIC_ERROR_NAME_FALLBACK = "Error";
-
-export class SemanticContextLifecycleError extends Error {
-	readonly phase: "registration" | "dispose";
-	readonly causes: readonly unknown[];
-
-	/**
-	 *
-	 */
-	constructor(phase: "registration" | "dispose", causes: readonly unknown[]) {
-		super(
-			`Semantic context ${phase} failed with ${causes.length} error${causes.length === 1 ? "" : "s"}.`,
-		);
-		this.name = "SemanticContextLifecycleError";
-		this.phase = phase;
-		this.causes = Object.freeze([...causes]);
-	}
-}
-
 /**
- *
- */
-function withKind(
-	fields: ReturnType<typeof buildSemanticBrief>,
-	kind: SemanticBrief["kind"],
-	extra: Record<string, unknown> = {},
-): SemanticBrief {
-	return deepFreeze({ kind, ...fields, ...extra }) as SemanticBrief;
-}
-
-/**
- *
- */
-function validateFeedId(feedId: string): string {
-	return feedIdValue(feedId, "feedId");
-}
-
-/**
- *
- */
-function validOrigin(value: unknown): value is SemanticChangeOrigin {
-	return value === "human" || value === "agent" || value === "mixed";
-}
-
-/**
- *
- */
-function validSignificance(value: unknown): value is "layout" | "structural" | "cosmetic" {
-	return value === "layout" || value === "structural" || value === "cosmetic";
-}
-
-/**
- *
- */
-function sourceCursor(value: unknown): number {
-	if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
-		fail("change.cursor", "must be a non-negative safe integer");
-	}
-	return value;
-}
-
-/**
- *
- */
-function dateCapture(
-	at: string,
-	clock: () => number,
-): { capturedAtMs: number; ambiguous: boolean } {
-	const parsed = Date.parse(at);
-	return Number.isFinite(parsed)
-		? { capturedAtMs: parsed, ambiguous: false }
-		: { capturedAtMs: clock(), ambiguous: true };
-}
-
-/**
- *
- */
-function cleanupAll(cleanups: readonly SemanticUnsubscribe[]): unknown[] {
-	const errors: unknown[] = [];
-	for (let index = cleanups.length - 1; index >= 0; index--) {
-		try {
-			cleanups[index]!();
-		} catch (error) {
-			errors.push(error);
-		}
-	}
-	return errors;
-}
-
-/**
- *
- */
-function errorDetails(error: unknown): { errorName: string; message: string } {
-	let isError: boolean;
-	try {
-		isError = error instanceof Error;
-	} catch {
-		return {
-			errorName: LISTENER_DIAGNOSTIC_FALLBACK_NAME,
-			message: LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE,
-		};
-	}
-	if (isError) {
-		let errorName: unknown;
-		let message: unknown;
-		try {
-			errorName = (error as Error).name;
-		} catch {
-			errorName = LISTENER_DIAGNOSTIC_ERROR_NAME_FALLBACK;
-		}
-		try {
-			message = (error as Error).message;
-		} catch {
-			message = LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE;
-		}
-		return {
-			errorName:
-				typeof errorName === "string" && errorName.length > 0
-					? errorName
-					: LISTENER_DIAGNOSTIC_ERROR_NAME_FALLBACK,
-			message:
-				typeof message === "string" && message.length > 0
-					? message
-					: LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE,
-		};
-	}
-	try {
-		return { errorName: LISTENER_DIAGNOSTIC_FALLBACK_NAME, message: String(error) };
-	} catch {
-		return {
-			errorName: LISTENER_DIAGNOSTIC_FALLBACK_NAME,
-			message: LISTENER_DIAGNOSTIC_FALLBACK_MESSAGE,
-		};
-	}
-}
-
-/**
- *
+ * Build the publisher that turns a person's gestures and settled board changes into semantic briefs and hands them to its subscribers. It subscribes to its sources on construction and unsubscribes on dispose; a listener that throws is recorded as a failure rather than allowed to stop delivery to the rest.
+ * @param options - The feed and pane sources, the context readers, the diagnostics policy and the clock.
+ * @returns The publisher.
  */
 export function createSemanticContextPublisher(
 	options: SemanticContextPublisherOptions,
@@ -220,7 +266,11 @@ export function createSemanticContextPublisher(
 	let disposed = false;
 
 	/**
-	 *
+	 * Record that one listener threw, under the diagnostics policy's own limits: past the entry limit only a count is kept, so a listener failing on every event cannot grow this without bound.
+	 * @param port - The port the event was published on.
+	 * @param eventKind - The kind of brief being delivered.
+	 * @param listenerIndex - Which listener failed, in subscription order.
+	 * @param error - What it threw.
 	 */
 	const recordListenerFailure = (
 		port: SemanticPublisherPort,
@@ -253,7 +303,11 @@ export function createSemanticContextPublisher(
 	};
 
 	/**
-	 *
+	 * Deliver one event to every listener, in subscription order, over a copy of the set so a listener that subscribes or unsubscribes during delivery cannot change who receives this event. A listener that throws is recorded and the rest still receive it.
+	 * @param listeners - The listeners to deliver to.
+	 * @param event - The event to deliver.
+	 * @param port - The port being published on.
+	 * @param eventKind - The kind of brief being delivered.
 	 */
 	const emit = <Event>(
 		listeners: Iterable<(event: Event) => void>,
@@ -271,7 +325,7 @@ export function createSemanticContextPublisher(
 	};
 
 	/**
-	 *
+	 * Refuse any use of a disposed publisher, so a source that outlives its publisher cannot publish through it.
 	 */
 	const ensureLive = (): void => {
 		if (disposed) {
@@ -280,7 +334,10 @@ export function createSemanticContextPublisher(
 	};
 
 	/**
-	 *
+	 * Subscribe one listener and return the cleanup that removes it. The cleanup is safe to call twice: the second call does nothing rather than removing a listener somebody else added.
+	 * @param listeners - The set to subscribe to.
+	 * @param listener - The listener to add.
+	 * @returns The unsubscribe.
 	 */
 	const subscribe = <Event>(
 		listeners: Set<(event: Event) => void>,
@@ -299,7 +356,9 @@ export function createSemanticContextPublisher(
 	};
 
 	/**
-	 *
+	 * Publish that a pane took or lost focus, with the context as it was at that moment.
+	 * @param input - The semantic context of the pane.
+	 * @returns The published event.
 	 */
 	function publishPaneFocus(input: SemanticContextInput): PaneFocusEvent {
 		ensureLive();
@@ -309,19 +368,21 @@ export function createSemanticContextPublisher(
 			origin: null,
 			capturedAtMs,
 		});
-		const event = withKind(fields, "pane_focus", {
+		const event = withKind<PaneFocusEvent>(fields, "pane_focus", {
 			focus: {
 				paneId: fields.pane.paneId,
 				focused: fields.pane.focused,
 				capturedAtMs,
 			},
-		}) as PaneFocusEvent;
+		});
 		emit(focusListeners, event, "pane_focus", "pane_focus");
 		return event;
 	}
 
 	/**
-	 *
+	 * Publish what a person has selected in a pane, with the context as it was at that moment.
+	 * @param input - The semantic context of the pane.
+	 * @returns The published event.
 	 */
 	function publishPaneSelection(input: SemanticContextInput): PaneSelectionEvent {
 		ensureLive();
@@ -331,15 +392,17 @@ export function createSemanticContextPublisher(
 			origin: null,
 			capturedAtMs,
 		});
-		const event = withKind(fields, "pane_selection", {
+		const event = withKind<PaneSelectionEvent>(fields, "pane_selection", {
 			selectionCapturedAtMs: capturedAtMs,
-		}) as PaneSelectionEvent;
+		});
 		emit(selectionListeners, event, "pane_selection", "pane_selection");
 		return event;
 	}
 
 	/**
-	 *
+	 * Build a brief for a context the caller supplies, without publishing it: this is what a caller asks for when it needs the current state rather than a change to it.
+	 * @param input - The semantic context to describe.
+	 * @returns The fresh brief.
 	 */
 	function freshBriefFor(input: SemanticContextInput): FreshSemanticBrief {
 		ensureLive();
@@ -349,30 +412,25 @@ export function createSemanticContextPublisher(
 			origin: null,
 			capturedAtMs,
 		});
-		return withKind(fields, "fresh_brief") as FreshSemanticBrief;
+		return withKind<FreshSemanticBrief>(fields, "fresh_brief");
 	}
 
 	/**
-	 *
+	 * Build a brief for the current state, read through the publisher's own fresh-context source.
+	 * @returns The fresh brief.
 	 */
 	function freshBrief(): FreshSemanticBrief {
 		return freshBriefFor(options.fresh.read());
 	}
 
 	/**
-	 *
+	 * Take one settled change from the feed and publish it, unless it is one Archboard does not
+	 * deliver: an agent's own change, or a cosmetic one. Everything else is normalized into a brief
+	 * and emitted once.
+	 * @param event - The settled change the feed reported.
 	 */
 	const onSettledChange = (event: SettledChangeSourceEvent): void => {
-		if (disposed) {
-			return;
-		}
-		if (!validOrigin(event.origin)) {
-			fail("change.origin", "is invalid");
-		}
-		if (!validSignificance(event.significance)) {
-			fail("change.significance", "is invalid");
-		}
-		if (event.origin === "agent" || event.significance === "cosmetic") {
+		if (disposed || !isDeliverableChange(event)) {
 			return;
 		}
 		const eventCursor = sourceCursor(event.cursor);
@@ -390,12 +448,28 @@ export function createSemanticContextPublisher(
 			recordListenerFailure("settled_change", "settled_change", 0, error);
 			return;
 		}
-		const staleReasons =
-			context.board.key === eventBoard.value
-				? []
-				: [
-						`settled event names board "${eventBoard.value}" but context names "${context.board.key}"`,
-					];
+		publishSettledChange(event, context, {
+			cursor: eventCursor,
+			board: eventBoard,
+			at: eventAt,
+			capture,
+		});
+	};
+
+	/**
+	 * Build and emit the brief for one settled change. A settled change must carry a cursor: it is
+	 * how the coordinator orders this change against the rest of the feed, so a brief without one
+	 * is refused rather than delivered unordered.
+	 * @param event - The settled change the feed reported.
+	 * @param context - The semantic context of the board it changed.
+	 * @param settled - The change's checked cursor, board, timestamp and capture time.
+	 */
+	const publishSettledChange = (
+		event: SettledChangeSourceEvent,
+		context: SemanticContextInput,
+		settled: SettledChangeFields,
+	): void => {
+		const staleReasons = boardMismatchReasons(settled.board.value, context.board.key);
 		const changeText = textValue(
 			event.text,
 			"change.text",
@@ -405,32 +479,29 @@ export function createSemanticContextPublisher(
 		const fields = buildSemanticBrief(context, feedId, clock, {
 			source: "settled_change",
 			origin: event.origin,
-			cursorOverride: { feedId, sequence: eventCursor },
-			capturedAtMs: capture.capturedAtMs,
+			cursorOverride: { feedId, sequence: settled.cursor },
+			capturedAtMs: settled.capture.capturedAtMs,
 			additionalAmbiguity: [
 				...staleReasons,
-				...(eventAt.truncated ? ["settled event timestamp was truncated"] : []),
-				...(capture.ambiguous
-					? ["settled event timestamp was invalid; capture time was used"]
-					: []),
+				...captureAmbiguity(settled.at.truncated, settled.capture),
 			],
 			additionalStaleReasons: staleReasons,
-			inputTruncated: eventBoard.truncated || eventAt.truncated || changeText.truncated,
+			inputTruncated: settled.board.truncated || settled.at.truncated || changeText.truncated,
 		});
 		if (fields.cursor === null) {
 			fail("change.cursor", "settled changes require a cursor");
 		}
-		const published = withKind(fields, "settled_change", {
+		const published = withKind<SettledSemanticChangeEvent>(fields, "settled_change", {
 			change: {
 				feedId,
 				cursor: fields.cursor,
-				board: eventBoard.value,
-				at: eventAt.value,
+				board: settled.board.value,
+				at: settled.at.value,
 				origin: event.origin,
 				significance: event.significance,
 				text: changeText.value,
 			},
-		}) as SettledSemanticChangeEvent;
+		});
 		emit(settledListeners, published, "settled_change", "settled_change");
 	};
 
@@ -450,7 +521,8 @@ export function createSemanticContextPublisher(
 	}
 
 	/**
-	 *
+	 * Take the listener failures recorded since the last drain, together with how many were dropped past the policy's limit, and reset both.
+	 * @returns The frozen batch.
 	 */
 	function drainListenerFailures(): SemanticListenerFailureBatch {
 		const drained = {
@@ -462,7 +534,8 @@ export function createSemanticContextPublisher(
 	}
 
 	/**
-	 *
+	 * Stop for good: unsubscribe from every source and forget every listener. Cleanup failures are collected and raised together, because a source that could not be unsubscribed is still delivering.
+	 * @throws {SemanticContextLifecycleError} When any source cleanup failed.
 	 */
 	function dispose(): void {
 		if (disposed) {
@@ -480,17 +553,23 @@ export function createSemanticContextPublisher(
 
 	return Object.freeze({
 		/**
-		 *
+		 * Subscribe to settled board changes.
+		 * @param listener - The listener to add.
+		 * @returns The unsubscribe.
 		 */
 		subscribeSettledChange: (listener: (event: SettledSemanticChangeEvent) => void) =>
 			subscribe(settledListeners, listener),
 		/**
-		 *
+		 * Subscribe to pane focus changes.
+		 * @param listener - The listener to add.
+		 * @returns The unsubscribe.
 		 */
 		subscribePaneFocus: (listener: (event: PaneFocusEvent) => void) =>
 			subscribe(focusListeners, listener),
 		/**
-		 *
+		 * Subscribe to pane selection changes.
+		 * @param listener - The listener to add.
+		 * @returns The unsubscribe.
 		 */
 		subscribePaneSelection: (listener: (event: PaneSelectionEvent) => void) =>
 			subscribe(selectionListeners, listener),
