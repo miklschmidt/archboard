@@ -20,6 +20,11 @@ const source = path.join(repoRoot, "skills");
 const agentSkills = path.join(repoRoot, ".agents", "skills");
 const claudeSkills = path.join(repoRoot, ".claude", "skills");
 
+/**
+ * The skills authored under a directory: every subdirectory holding a SKILL.md.
+ * @param sourceDir The tracked skills directory.
+ * @returns The skill directory names, in directory order.
+ */
 function discover(sourceDir: string): string[] {
 	if (!fs.existsSync(sourceDir)) {
 		return [];
