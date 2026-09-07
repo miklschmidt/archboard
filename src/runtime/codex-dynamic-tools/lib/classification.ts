@@ -88,7 +88,10 @@ function assertTargetInCallerEpoch(caller: CallerView, target: TargetView, messa
  */
 function assertTargetProvenance(target: TargetView): void {
 	if (target.ownership === "foreign") {
-		throw dynamicError("unknown_provenance", "Foreign thread provenance cannot receive a mutation.");
+		throw dynamicError(
+			"unknown_provenance",
+			"Foreign thread provenance cannot receive a mutation.",
+		);
 	}
 	if (!isAllowedSource(target.source)) {
 		throw dynamicError("unknown_provenance", "The target source is not executable provenance.");
@@ -154,7 +157,10 @@ function assertForkRelation(relation: DynamicRelation, status: DynamicStatus): v
 		throw dynamicError("busy", "The non-self fork target is already active.");
 	}
 	if (relation === "self" && status !== "active") {
-		throw dynamicError("cycle", "A self-fork is allowed only at the executing active turn boundary.");
+		throw dynamicError(
+			"cycle",
+			"A self-fork is allowed only at the executing active turn boundary.",
+		);
 	}
 }
 
@@ -173,7 +179,11 @@ function assertMutationTargetAllowed(
 	if (!isDynamicStatus(target.status)) {
 		throw dynamicError("invalid_call", "The target status is not in the reviewed target table.");
 	}
-	assertTargetInCallerEpoch(caller, target, "The target is not in the caller's current child epoch.");
+	assertTargetInCallerEpoch(
+		caller,
+		target,
+		"The target is not in the caller's current child epoch.",
+	);
 	assertTargetProvenance(target);
 	assertTargetControllable(target);
 	const relation = relationOf(caller, target);

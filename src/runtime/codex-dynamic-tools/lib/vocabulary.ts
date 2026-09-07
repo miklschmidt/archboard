@@ -3,7 +3,11 @@ import type { GeneralThreadToolName } from "@/runtime/codex-thread-tools";
 import { isCodexThreadStatusType } from "@/shared/codex-app-server-contract";
 
 type DynamicToolName = GeneralThreadToolName;
-const DYNAMIC_MUTATION_TOOL_NAMES = ["create_thread", "fork_thread", "send_message_to_thread"] as const;
+const DYNAMIC_MUTATION_TOOL_NAMES = [
+	"create_thread",
+	"fork_thread",
+	"send_message_to_thread",
+] as const;
 type DynamicMutationToolName = (typeof DYNAMIC_MUTATION_TOOL_NAMES)[number];
 type DynamicReadToolName = "list_threads" | "read_thread";
 type DynamicStatus = SessionThread["status"]["type"];
