@@ -1,9 +1,9 @@
 import { Router as createRouter } from "express";
 import type { RequestHandler, Router as ExpressRouter } from "express";
 import { z } from "zod";
-import { readLibrary, writeLibrary } from "../../../runtime/engine/library.js";
-import type { LibraryItem } from "../../../runtime/engine/library.js";
-import logger from "../../../runtime/engine/logger.js";
+import { readLibrary, writeLibrary } from "@/runtime/engine/library";
+import type { LibraryItem } from "@/runtime/engine/library";
+import { logger } from "@/runtime/engine/logger";
 
 const LibraryStatusSchema = z.enum(["published", "unpublished"]);
 const OptionalLibraryStatusSchema = LibraryStatusSchema.optional();
@@ -40,10 +40,20 @@ interface LibraryRouteDependencies {
 	notifyLibraryChanged: (notification: LibraryChangedNotification) => void;
 }
 
+/**
+ * What a library failure says.
+ * @param error Whatever the library store threw.
+ * @returns Its message, or its string form for a non-Error.
+ */
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ * Answer with the whole stencil library, which the browser reads when it mounts.
+ * @param _request The request; the library is not board-scoped.
+ * @param response Its response.
+ */
 const readLibraryRoute: RequestHandler = (_request, response): void => {
 	try {
 		const state = readLibrary();
@@ -61,6 +71,12 @@ const readLibraryRoute: RequestHandler = (_request, response): void => {
 	}
 };
 
+/**
+ * One stored library item from what the browser sent, defaulting the fields
+ * Excalidraw leaves out.
+ * @param item The item as written.
+ * @returns The item as stored.
+ */
 function libraryItemFromRequest(item: LibraryWriteInput): LibraryItem {
 	return {
 		id: item.id,
@@ -73,13 +89,21 @@ function libraryItemFromRequest(item: LibraryWriteInput): LibraryItem {
 
 /**
  * Create the complete server-side stencil-library HTTP boundary.
- *
  * @param dependencies Narrow notification boundary for successful writes.
  * @returns Router that owns both library endpoints.
  */
 function createLibraryRouter(dependencies: Readonly<LibraryRouteDependencies>): ExpressRouter {
 	const router = createRouter();
 	router.get("/api/library", readLibraryRoute);
+	/**
+	 * Replace the library with what the browser sent, and tell every other tab.
+	 *
+	 * The browser sends the whole set because that is what Excalidraw provides
+	 * it — there is no library delta to be had — and last write wins, which is
+	 * honest for a palette two tabs are unlikely to edit at once.
+	 * @param request The request.
+	 * @param response Its response.
+	 */
 	const writeLibraryRoute: RequestHandler = (request, response): void => {
 		try {
 			const body = LibraryWriteSchema.parse(request.body ?? {});

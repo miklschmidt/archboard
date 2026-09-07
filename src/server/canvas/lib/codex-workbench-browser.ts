@@ -7,8 +7,8 @@ import type {
 	BrowserSnapshot,
 	BrowserWorkbenchConnection,
 	CodexWorkbenchGateway,
-} from "../../codex-workbench/index.js";
-import type { BrowserGatewayAction } from "../../../shared/codex-browser-gateway/index.js";
+} from "@/server/codex-workbench";
+import type { BrowserGatewayAction } from "@/shared/codex-browser-gateway";
 
 const RequestIdSchema = z.string().min(1).max(128);
 const RequestBase = { type: z.literal("codex_workbench_request"), requestId: RequestIdSchema };
@@ -19,6 +19,8 @@ const RequestBase = { type: z.literal("codex_workbench_request"), requestId: Req
  * is a compile error rather than a request refused at runtime. The arms stay
  * written out because their payloads differ; only the action vocabulary is
  * shared.
+ * @param action The action.
+ * @returns The literal schema for it.
  */
 function gatewayAction<Action extends BrowserGatewayAction>(action: Action): z.ZodLiteral<Action> {
 	return z.literal(action);
@@ -54,11 +56,21 @@ interface CanvasCodexBrowserWebSocket {
 	readonly send: (data: string, callback: (error?: Error) => void) => void;
 }
 
-/** Adapt the production callback-based WebSocket into an awaitable send boundary. */
+/**
+ * Adapt the production callback-based WebSocket into an awaitable send
+ * boundary.
+ * @param socket The socket.
+ * @returns The send boundary.
+ */
 function createCanvasCodexBrowserSocketSend(
 	socket: CanvasCodexBrowserWebSocket,
 ): CanvasCodexBrowserSocketSend {
 	return Object.freeze({
+		/**
+		 * Send one message and wait for the socket to have taken it, so a failed
+		 * write is a failed publication rather than a silent one.
+		 * @param message The message.
+		 */
 		send: async (message: unknown): Promise<void> => {
 			if (socket.readyState !== WebSocket.OPEN) {
 				throw new Error("The Codex browser WebSocket is not open.");
@@ -101,10 +113,31 @@ interface CanvasCodexBrowserSocketOwner {
 	readonly dispose: () => void;
 }
 
+/** Everything one ingress arm answers a request from. */
+interface BrowserRequestCall {
+	readonly request: BrowserRequest;
+	readonly connection: BrowserWorkbenchConnection;
+	readonly transport: CanvasCodexBrowserSocketSend;
+	readonly instance: BrowserConnectionInstance;
+	readonly browserId: string;
+}
+
+/**
+ * What one failure says to the browser, whether or not it was thrown as an
+ * Error.
+ * @param error What failed.
+ * @returns The wording.
+ */
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ * Answer one request.
+ * @param transport The socket.
+ * @param request What was asked.
+ * @param value The answer.
+ */
 async function sendResult(
 	transport: CanvasCodexBrowserSocketSend,
 	request: BrowserRequest,
@@ -119,6 +152,15 @@ async function sendResult(
 	});
 }
 
+/**
+ * Answer one request with a snapshot, and only then tell the gateway the
+ * browser has it: a publication the socket never took must not be counted.
+ * @param transport The socket.
+ * @param request What was asked.
+ * @param connection The gateway connection.
+ * @param value The answer.
+ * @param value.snapshot The snapshot the browser now has.
+ */
 async function sendPublishedResult(
 	transport: CanvasCodexBrowserSocketSend,
 	request: BrowserRequest,
@@ -129,7 +171,11 @@ async function sendPublishedResult(
 	connection.confirmPublished(value.snapshot);
 }
 
-/** Own the public canvas WebSocket bridge for one installed gateway generation. */
+/**
+ * Own the public canvas WebSocket bridge for one installed gateway generation.
+ * @param options The gateway, and how a browser's pane is resolved.
+ * @returns The owner.
+ */
 function createCanvasCodexBrowserSocketOwner(
 	options: CanvasCodexBrowserSocketOwnerOptions,
 ): CanvasCodexBrowserSocketOwner {
@@ -144,6 +190,13 @@ function createCanvasCodexBrowserSocketOwner(
 	let publicationFailure: Error | null = null;
 	let disposed = false;
 
+	/**
+	 * The gateway connection one socket is served by, replaced when the browser
+	 * has moved to another pane.
+	 * @param instance The socket.
+	 * @param browserId The browser.
+	 * @returns The connection.
+	 */
 	const connectionFor = (
 		instance: BrowserConnectionInstance,
 		browserId: string,
@@ -166,6 +219,12 @@ function createCanvasCodexBrowserSocketOwner(
 		return connection;
 	};
 
+	/**
+	 * Take ownership of one accepted socket, deferring a browser that has not
+	 * registered its pane yet.
+	 * @param instance The socket.
+	 * @param browserId The browser.
+	 */
 	const accept = (instance: BrowserConnectionInstance, browserId: string): void => {
 		if (disposed) {
 			throw new Error("The Codex browser socket owner is stopped.");
@@ -176,6 +235,13 @@ function createCanvasCodexBrowserSocketOwner(
 		connectionFor(instance, browserId);
 	};
 
+	/**
+	 * Hold one publication until it settles, so teardown waits for it and its
+	 * failure is not lost.
+	 * @param publication The publication.
+	 * @param connection The connection it was published on.
+	 * @param message What was published.
+	 */
 	const trackPublication = (
 		publication: Promise<void>,
 		connection: BrowserWorkbenchConnection,
@@ -194,6 +260,14 @@ function createCanvasCodexBrowserSocketOwner(
 		);
 	};
 
+	/**
+	 * Tell the browser one request failed, and why.
+	 * @param transport The socket.
+	 * @param requestId What was asked, when the request parsed.
+	 * @param action What it asked for, when the request parsed.
+	 * @param error What failed.
+	 * @returns When the socket has taken the refusal.
+	 */
 	const failure = async (
 		transport: CanvasCodexBrowserSocketSend,
 		requestId: string | null,
@@ -208,82 +282,13 @@ function createCanvasCodexBrowserSocketOwner(
 			error: errorMessage(error),
 		});
 
-	const handle = async (
-		instance: BrowserConnectionInstance,
-		browserId: string,
-		input: unknown,
-		transport: CanvasCodexBrowserSocketSend,
-	): Promise<void> => {
-		const parsed = BrowserRequestSchema.safeParse(input);
-		if (!parsed.success) {
-			await failure(transport, null, null, new Error("The Codex browser request is malformed."));
-			return;
-		}
-		const request = parsed.data;
-		try {
-			const connection = connectionFor(instance, browserId);
-			switch (request.action) {
-				case "connect":
-					await sendPublishedResult(transport, request, connection, connection.snapshot());
-					return;
-				case "snapshot":
-					// The browser asked for current state, so cached owner state is
-					// re-read before it is projected: this is what makes a queue
-					// refresh a genuine read rather than a redraw of the last command.
-					await connection.refreshProjection();
-					await sendPublishedResult(transport, request, connection, connection.snapshot());
-					return;
-				case "claimLease":
-					await sendResult(transport, request, connection.claimLease());
-					return;
-				case "renewLease":
-					await sendResult(transport, request, connection.renewLease());
-					return;
-				case "releaseLease":
-					await sendResult(transport, request, connection.releaseLease());
-					return;
-				case "mediaReady":
-					await sendPublishedResult(
-						transport,
-						request,
-						connection,
-						connection.setMediaReady(request.ready),
-					);
-					return;
-				case "accountRead":
-					await sendPublishedResult(transport, request, connection, await connection.accountRead());
-					return;
-				case "command":
-					await sendPublishedResult(
-						transport,
-						request,
-						connection,
-						await connection.command(request.command),
-					);
-					return;
-				case "subscribe": {
-					subscriptions.get(instance)?.();
-					const unsubscribe = connection.subscribe((message: BrowserGatewayMessage) => {
-						const publication = (async (): Promise<void> => {
-							await transport.send({ type: "codex_workbench_event", message });
-							connection.confirmPublished(message);
-						})();
-						trackPublication(publication, connection, message);
-					});
-					subscriptions.set(instance, unsubscribe);
-					await sendPublishedResult(transport, request, connection, connection.snapshot());
-					return;
-				}
-				case "close":
-					await close(instance, browserId);
-					await sendResult(transport, request, null);
-					return;
-			}
-		} catch (error) {
-			await failure(transport, request.requestId, request.action, error);
-		}
-	};
-
+	/**
+	 * Close one socket's connection, once: a second close is the first one's
+	 * outcome, so a close is never done twice.
+	 * @param instance The socket.
+	 * @param browserId The browser.
+	 * @returns The close.
+	 */
 	const close = (instance: BrowserConnectionInstance, browserId: string): Promise<void> => {
 		const existing = closePromises.get(instance);
 		if (existing !== undefined) {
@@ -315,8 +320,157 @@ function createCanvasCodexBrowserSocketOwner(
 		return owned;
 	};
 
+	/**
+	 * One ingress arm per action the browser can send. The table is keyed by the
+	 * action vocabulary itself, so an action without an arm fails to compile;
+	 * each arm re-reads the action it is keyed by, which is what narrows the
+	 * request to the payload that arm answers.
+	 */
+	const requests: Readonly<
+		Record<BrowserRequest["action"], (call: BrowserRequestCall) => Promise<void>>
+	> = {
+		/**
+		 * Answer with the pane's current snapshot.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		connect: async (call) => {
+			const { request, connection, transport } = call;
+			await sendPublishedResult(transport, request, connection, connection.snapshot());
+		},
+		/**
+		 * Re-read cached owner state before projecting it: this is what makes a
+		 * queue refresh a genuine read rather than a redraw of the last command.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		snapshot: async (call) => {
+			const { request, connection, transport } = call;
+			await connection.refreshProjection();
+			await sendPublishedResult(transport, request, connection, connection.snapshot());
+		},
+		/**
+		 * Take the pane's write lease.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		claimLease: async (call) => {
+			const { request, connection, transport } = call;
+			await sendResult(transport, request, connection.claimLease());
+		},
+		/**
+		 * Keep the pane's write lease.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		renewLease: async (call) => {
+			const { request, connection, transport } = call;
+			await sendResult(transport, request, connection.renewLease());
+		},
+		/**
+		 * Give up the pane's write lease.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		releaseLease: async (call) => {
+			const { request, connection, transport } = call;
+			await sendResult(transport, request, connection.releaseLease());
+		},
+		/**
+		 * Say whether this pane can play voice yet.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		mediaReady: async (call) => {
+			const { request, connection, transport } = call;
+			if (request.action !== "mediaReady") return;
+			await sendPublishedResult(
+				transport,
+				request,
+				connection,
+				connection.setMediaReady(request.ready),
+			);
+		},
+		/**
+		 * Read the Codex account.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		accountRead: async (call) => {
+			const { request, connection, transport } = call;
+			await sendPublishedResult(transport, request, connection, await connection.accountRead());
+		},
+		/**
+		 * Run one workbench command.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		command: async (call) => {
+			const { request, connection, transport } = call;
+			if (request.action !== "command") return;
+			await sendPublishedResult(
+				transport,
+				request,
+				connection,
+				await connection.command(request.command),
+			);
+		},
+		/**
+		 * Start publishing events to this socket, replacing any earlier
+		 * subscription it had.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		subscribe: async (call) => {
+			const { request, connection, transport, instance } = call;
+			subscriptions.get(instance)?.();
+			const unsubscribe = connection.subscribe((message: BrowserGatewayMessage) => {
+				const publication = (async (): Promise<void> => {
+					await transport.send({ type: "codex_workbench_event", message });
+					connection.confirmPublished(message);
+				})();
+				trackPublication(publication, connection, message);
+			});
+			subscriptions.set(instance, unsubscribe);
+			await sendPublishedResult(transport, request, connection, connection.snapshot());
+		},
+		/**
+		 * Close this socket's connection.
+		 * @param call The request, the connection it acts on, and the socket.
+		 */
+		close: async (call) => {
+			const { request, transport, instance, browserId } = call;
+			await close(instance, browserId);
+			await sendResult(transport, request, null);
+		},
+	};
+
+	/**
+	 * Take one request off the socket: parse it, resolve the connection it acts
+	 * on, and answer it or say why it failed.
+	 * @param instance The socket.
+	 * @param browserId The browser.
+	 * @param input The request bytes as they arrived.
+	 * @param transport The socket.
+	 */
+	const handle = async (
+		instance: BrowserConnectionInstance,
+		browserId: string,
+		input: unknown,
+		transport: CanvasCodexBrowserSocketSend,
+	): Promise<void> => {
+		const parsed = BrowserRequestSchema.safeParse(input);
+		if (!parsed.success) {
+			await failure(transport, null, null, new Error("The Codex browser request is malformed."));
+			return;
+		}
+		const request = parsed.data;
+		try {
+			const connection = connectionFor(instance, browserId);
+			await requests[request.action]({ request, connection, transport, instance, browserId });
+		} catch (error) {
+			await failure(transport, request.requestId, request.action, error);
+		}
+	};
+
+	/**
+	 * Wait for every close and publication this generation owns, and fail with
+	 * everything that failed rather than the first thing.
+	 */
 	const drain = async (): Promise<void> => {
 		while (activeCloses.size > 0 || activePublications.size > 0) {
+			// oxlint-disable-next-line no-await-in-loop -- settling one round can start another; the loop is what waits for the work to actually stop arriving
 			await Promise.allSettled([...activeCloses, ...activePublications]);
 		}
 		const failures = closeFailures.splice(0);
@@ -333,6 +487,7 @@ function createCanvasCodexBrowserSocketOwner(
 		);
 	};
 
+	/** Stop this owner: no socket is served, and nothing is published, after it. */
 	const dispose = (): void => {
 		if (disposed) {
 			return;

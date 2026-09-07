@@ -1,182 +1,51 @@
 import type {
 	BrowserActionContext,
 	BrowserActionResult,
-	BrowserAccountProjectionInput,
-	BrowserOwnerProjection,
 	BrowserProjectionPort,
-	BrowserOrdinaryApprovalActions,
 	BrowserWorkbenchActions,
 	BrowserLeaseLedger,
-	CodexQueueProjectionInput,
 	CodexWorkbenchGatewayOptions,
-} from "../../codex-workbench/index.js";
-import type { CodexApprovalBroker } from "../../../runtime/codex-approvals/index.js";
-import type { TransportServerNotification } from "../../../runtime/codex-transport/index.js";
-import type { SessionQueuedSubmission } from "../../../runtime/codex-session/index.js";
-import type {
-	OperationAuthority,
-	OperationId,
-	ThreadId,
-} from "../../../shared/codex-workbench-identity/index.js";
-import { CODEX_QUEUE_REREAD_FLOOR_MS } from "../../../shared/timing/timing.js";
-import type { ArchboardContext } from "../../../runtime/codex-instructions/index.js";
-import type { CodexWorkbenchComponents } from "./codex-workbench.js";
-import type { CanvasDynamicApprovalOwner } from "./codex-workbench-approvals.js";
+} from "@/server/codex-workbench";
+import type { TransportServerNotification } from "@/runtime/codex-transport";
+import type { SessionQueuedSubmission } from "@/runtime/codex-session";
+import type { OperationId, ThreadId } from "@/shared/codex-workbench-identity";
+import { CODEX_QUEUE_REREAD_FLOOR_MS } from "@/shared/timing/timing";
+import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { CodexWorkbenchComponents } from "@/server/canvas/lib/codex-workbench";
+import type { CanvasDynamicApprovalOwner } from "@/server/canvas/lib/codex-workbench-approvals";
 import type {
 	CanvasBrowserProjectionBudget,
 	CanvasTimelineOwner,
-} from "./codex-workbench-timeline.js";
+} from "@/server/canvas/lib/codex-workbench-timeline";
 import {
 	createCanvasThreadCandidateInventory,
 	createCanvasThreadLinkActions,
-} from "./codex-workbench-thread-links.js";
-import { createCanvasCanonicalTextActions } from "./codex-workbench-text-actions.js";
-import { createCanvasBrowserAccountOwner } from "./codex-workbench-account.js";
-import { createCanvasRealtimeActions } from "./codex-workbench-realtime-actions.js";
-import { projectCanvasVoiceContext } from "./codex-workbench-voice-context.js";
+} from "@/server/canvas/lib/codex-workbench-thread-links";
+import { createCanvasCanonicalTextActions } from "@/server/canvas/lib/codex-workbench-text-actions";
+import { createCanvasBrowserAccountOwner } from "@/server/canvas/lib/codex-workbench-account";
+import { createCanvasRealtimeActions } from "@/server/canvas/lib/codex-workbench-realtime-actions";
+import type { CanvasReadinessProcessFacts } from "@/server/canvas/lib/codex-workbench-readiness";
+import { createCanvasOrdinaryApprovalActions } from "@/server/canvas/lib/codex-workbench-ordinary-approvals";
 import {
-	projectCanvasBrowserReadiness,
-	type CanvasReadinessProcessFacts,
-} from "./codex-workbench-readiness.js";
+	queueOwnerView,
+	UNAVAILABLE_QUEUE,
+	type CanvasBrowserBindingState,
+} from "@/server/canvas/lib/codex-workbench-browser-state";
+import { readBrowserOwnerProjection } from "@/server/canvas/lib/codex-workbench-owner-projection";
 
 /**
- * The account, login, and queue facts this adapter learns from its own command
- * results. Readiness is never stored: it is derived from the live owned
- * process, session, account, and coordinator facts on every projection read.
+ * Run one queue mutation and answer the browser the one way every mutation is
+ * answered, so no action invents its own outcome shape.
+ * @param operation The mutation.
+ * @returns The browser outcome.
  */
-interface CanvasBrowserBindingState {
-	account: BrowserAccountProjectionInput;
-	login: BrowserOwnerProjection["login"];
-	queue: CodexQueueProjectionInput;
-	/** The workhorse thread the cached submissions were read for. */
-	queueThreadId: ThreadId | null;
+async function runMutation(operation: () => Promise<unknown>): Promise<BrowserActionResult> {
+	await operation();
+	return { outcome: "delivered" };
 }
 
-const UNAVAILABLE_QUEUE: CodexQueueProjectionInput = { kind: "codex_queue", submissions: null };
-
-/**
- * Which Archboard operation queued a submission, if Archboard queued it at all.
- *
- * The queue port sets `clientUserMessageId` to the serialized OperationId on
- * every add it makes, and an OperationId is its own wire string, so the
- * authoritative list carries the answer. The operation authority only recognises
- * identities it issued in the current child epoch: anything else — another
- * client's submission, the workhorse's own, or a prior epoch's — is foreign, and
- * this pane has no authority to reorder it.
- */
-function archboardOperation(
-	submission: SessionQueuedSubmission,
-	operations: OperationAuthority,
-): OperationId | null {
-	try {
-		return operations.decoder.parseOperationId(submission.clientUserMessageId);
-	} catch {
-		return null;
-	}
-}
-
-function queueOwnerView(
-	queue: readonly SessionQueuedSubmission[],
-	operations: OperationAuthority,
-): CodexQueueProjectionInput {
-	return {
-		kind: "codex_queue",
-		submissions: queue.map((submission) => ({
-			id: submission.id,
-			input: submission.input,
-			operationId: archboardOperation(submission, operations),
-		})),
-	};
-}
-
-function visibleApprovalViews(approvals: CodexApprovalBroker) {
-	return approvals
-		.inspectViews()
-		.filter(
-			(view) =>
-				view.snapshot.state === "staged" ||
-				view.snapshot.state === "pending" ||
-				view.terminalDelivery !== null,
-		);
-}
-
-/** Bind all seven ordinary approval families to one exact pane lifecycle. */
-function createCanvasOrdinaryApprovalActions(
-	approvals: CodexApprovalBroker,
-): BrowserOrdinaryApprovalActions {
-	const actions: BrowserOrdinaryApprovalActions = {
-		pending: (requestId) => {
-			try {
-				if (approvals.get(requestId)?.state !== "pending") {
-					return null;
-				}
-				return approvals.view(requestId);
-			} catch {
-				return null;
-			}
-		},
-		resolve: async (command) => {
-			const settlement = await approvals.resolve({
-				requestId: command.requestId,
-				approvalId: command.approvalId,
-				response: command.response,
-			});
-			return { outcome: settlement.outcome };
-		},
-		acknowledge: (requestId) => approvals.acknowledge(requestId),
-		unpresentedTerminals: () =>
-			approvals
-				.inspectViews()
-				.filter((view) => view.terminalDelivery === "after_publish")
-				.map((view) => view.request.requestId),
-		acknowledgePublished: (requestIds) => {
-			for (const requestId of new Set(requestIds)) {
-				try {
-					const view = approvals.view(requestId);
-					if (view.terminalDelivery === "after_publish") {
-						approvals.acknowledge(requestId);
-					}
-				} catch {
-					// Another lifecycle boundary may already have acknowledged the terminal.
-				}
-			}
-		},
-		onBrowserDisconnect: async (context, reason) => {
-			if (context.link.state !== "executable") {
-				return;
-			}
-			const authoredReason =
-				reason === "gateway_shutdown"
-					? "host shutdown"
-					: reason === "child_disconnected"
-						? "child disconnected"
-						: "browser disconnected";
-			const exactPaneLink = `pane:${context.paneId}`;
-			const pending = approvals
-				.inspect()
-				.filter(
-					(snapshot) =>
-						snapshot.state === "pending" &&
-						snapshot.child === context.childId &&
-						snapshot.epoch === context.epoch &&
-						snapshot.threadId === context.link.threadId &&
-						snapshot.binding.link === exactPaneLink,
-				);
-			await Promise.all(
-				pending.map(async (snapshot) => {
-					await approvals.cancel(snapshot.requestId, authoredReason);
-					if (approvals.get(snapshot.requestId) !== undefined) {
-						approvals.acknowledge(snapshot.requestId);
-					}
-				}),
-			);
-		},
-	};
-	return Object.freeze(actions);
-}
-
-/** Closed browser projection/actions over the already-created runtime owners. */
-function createCanvasBrowserGatewayOptions(input: {
+/** Everything the browser half of one generation's gateway is closed over. */
+interface CanvasBrowserGatewayInput {
 	readonly components: Omit<CodexWorkbenchComponents, "gateway">;
 	readonly dynamicApprovals: CanvasDynamicApprovalOwner;
 	readonly state: CanvasBrowserBindingState;
@@ -200,8 +69,23 @@ function createCanvasBrowserGatewayOptions(input: {
 			readonly rpc: "turn/start" | "turn/steer";
 		},
 	) => ArchboardContext;
-}): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink"> {
+}
+
+/**
+ * Closed browser projection/actions over the already-created runtime owners.
+ * @param input The runtime owners, the cached facts they fill in, the pane-side
+ * owners, and the clock the re-read floor is measured on.
+ * @returns The projection and actions half of the gateway's options.
+ */
+function createCanvasBrowserGatewayOptions(
+	input: CanvasBrowserGatewayInput,
+): Omit<CodexWorkbenchGatewayOptions, "identity" | "threadLink"> {
 	const { components, dynamicApprovals, state } = input;
+	/**
+	 * Record one authoritative listing as the queue this pane's link is on.
+	 * @param result What the queue port answered.
+	 * @returns That same result, so a caller can go on using it.
+	 */
 	const updateQueue = <Result extends { readonly queue: readonly SessionQueuedSubmission[] }>(
 		result: Result,
 	): Result => {
@@ -209,19 +93,22 @@ function createCanvasBrowserGatewayOptions(input: {
 		state.queueThreadId = components.workhorse.snapshot().threadId;
 		return result;
 	};
+	/** Forget the cached queue, so no pane is shown another link's submissions. */
 	const clearQueue = (): void => {
 		state.queue = UNAVAILABLE_QUEUE;
 		state.queueThreadId = null;
 	};
+	/**
+	 * A fresh operation identity for one browser-initiated mutation.
+	 * @returns The operation.
+	 */
 	const issueOperation = (): OperationId => components.identity.operation.issuer.mintOperationId();
-	// Kept beside the action table so every mutation returns the same browser outcome shape.
-	// eslint-disable-next-line unicorn/consistent-function-scoping
-	const run = async (operation: () => Promise<unknown>): Promise<BrowserActionResult> => {
-		await operation();
-		return { outcome: "delivered" };
-	};
-	// A thread link change re-targets every queue: the cached submissions belong
-	// to the previous thread and must not be presented for the new one.
+	/**
+	 * Read the queue for the link this pane has just moved to.
+	 *
+	 * A thread link change re-targets every queue: the cached submissions belong
+	 * to the previous thread and must not be presented for the new one.
+	 */
 	const refreshLinkedQueue = async (): Promise<void> => {
 		clearQueue();
 		if (components.workhorse.snapshot().state !== "ready") {
@@ -255,6 +142,9 @@ function createCanvasBrowserGatewayOptions(input: {
 			clearQueue();
 		}
 	};
+	const now = input.now ?? Date.now;
+	let inFlightReread: { readonly threadId: ThreadId; readonly read: Promise<void> } | null = null;
+	let lastRereadAtMs: { readonly threadId: ThreadId; readonly atMs: number } | null = null;
 	/**
 	 * One authoritative re-read at a time, per thread link, no faster than the
 	 * reviewed floor.
@@ -265,17 +155,15 @@ function createCanvasBrowserGatewayOptions(input: {
 	 * the read that just finished — so a looping client cannot amplify app-server
 	 * traffic. The floor is keyed to the link, so navigating to another workhorse
 	 * always reads rather than reusing the previous link's timing.
+	 * @param threadId The link's thread.
+	 * @returns The read this request is served by.
 	 */
-	const now = input.now ?? Date.now;
-	let inFlightReread: { readonly threadId: ThreadId; readonly read: Promise<void> } | null = null;
-	let lastRereadAtMs: { readonly threadId: ThreadId; readonly atMs: number } | null = null;
 	const coalescedReread = (threadId: ThreadId): Promise<void> => {
-		if (inFlightReread !== null && inFlightReread.threadId === threadId) {
+		if (inFlightReread?.threadId === threadId) {
 			return inFlightReread.read;
 		}
 		if (
-			lastRereadAtMs !== null &&
-			lastRereadAtMs.threadId === threadId &&
+			lastRereadAtMs?.threadId === threadId &&
 			now() - lastRereadAtMs.atMs < CODEX_QUEUE_REREAD_FLOOR_MS
 		) {
 			return Promise.resolve();
@@ -308,6 +196,12 @@ function createCanvasBrowserGatewayOptions(input: {
 	const actions: BrowserWorkbenchActions = {
 		account: {
 			...account.actions,
+			/**
+			 * Read the account, and the queue with it: an account read is the one
+			 * command a pane sends when it first has a workhorse to ask about.
+			 * @param context The pane.
+			 * @returns What the account owner answered.
+			 */
 			read: async (context) => {
 				const result = await account.actions.read(context);
 				if (components.workhorse.snapshot().state === "ready") {
@@ -317,17 +211,41 @@ function createCanvasBrowserGatewayOptions(input: {
 			},
 		},
 		threadLinks: {
+			/**
+			 * Re-read the threads this pane could link to.
+			 * @param command The refresh.
+			 * @param context The pane.
+			 * @returns What the link owner answered.
+			 */
 			refresh: (command, context) => threadLinks.refresh(command, context),
+			/**
+			 * Start a new workhorse thread and link this pane to it.
+			 * @param command The creation.
+			 * @param context The pane.
+			 * @returns What the link owner answered.
+			 */
 			create: async (command, context) => {
 				const result = await threadLinks.create(command, context);
 				await refreshLinkedQueue();
 				return result;
 			},
+			/**
+			 * Link this pane to a thread that already exists.
+			 * @param command The attachment.
+			 * @param context The pane.
+			 * @returns What the link owner answered.
+			 */
 			attach: async (command, context) => {
 				const result = await threadLinks.attach(command, context);
 				await refreshLinkedQueue();
 				return result;
 			},
+			/**
+			 * Move this pane's link to another thread.
+			 * @param command The relink.
+			 * @param context The pane.
+			 * @returns What the link owner answered.
+			 */
 			relink: async (command, context) => {
 				const result = await threadLinks.relink(command, context);
 				await refreshLinkedQueue();
@@ -343,15 +261,25 @@ function createCanvasBrowserGatewayOptions(input: {
 			contextForOperation: input.contextForOperation,
 		}),
 		queue: {
+			/**
+			 * Queue one prompt behind whatever the workhorse is doing.
+			 * @param command The prompt.
+			 * @returns The browser outcome.
+			 */
 			add: (command) =>
-				run(
+				runMutation(
 					async () =>
 						void updateQueue(
 							await components.queue.add({ operationId: issueOperation(), prompt: command.prompt }),
 						),
 				),
+			/**
+			 * Rewrite one queued prompt.
+			 * @param command Which submission, and its new prompt.
+			 * @returns The browser outcome.
+			 */
 			update: (command) =>
-				run(
+				runMutation(
 					async () =>
 						void updateQueue(
 							await components.queue.update({
@@ -361,8 +289,13 @@ function createCanvasBrowserGatewayOptions(input: {
 							}),
 						),
 				),
+			/**
+			 * Drop one queued prompt.
+			 * @param command Which submission.
+			 * @returns The browser outcome.
+			 */
 			delete: (command) =>
-				run(
+				runMutation(
 					async () =>
 						void updateQueue(
 							await components.queue.delete({
@@ -371,8 +304,13 @@ function createCanvasBrowserGatewayOptions(input: {
 							}),
 						),
 				),
+			/**
+			 * Put the queue in the order the person dragged it into.
+			 * @param command The order.
+			 * @returns The browser outcome.
+			 */
 			reorder: (command) =>
-				run(
+				runMutation(
 					async () =>
 						void updateQueue(
 							await components.queue.reorder({
@@ -381,8 +319,13 @@ function createCanvasBrowserGatewayOptions(input: {
 							}),
 						),
 				),
+			/**
+			 * Run one queued prompt now rather than in turn.
+			 * @param command Which submission.
+			 * @returns The browser outcome.
+			 */
 			start: (command) =>
-				run(
+				runMutation(
 					async () =>
 						void updateQueue(
 							await components.queue.start({
@@ -397,139 +340,40 @@ function createCanvasBrowserGatewayOptions(input: {
 		dynamicApprovals: dynamicApprovals.browser,
 	};
 	const projection: BrowserProjectionPort = {
+		/**
+		 * Bring the queue up to date before the next snapshot is read, for a
+		 * pane whose link can actually run turns.
+		 * @param context The pane.
+		 */
 		refresh: async (context): Promise<void> => {
 			const link = context.binding.link;
-			if (link.state !== "executable" || link.threadId === null) {
+			if (link.state !== "executable") {
 				return;
 			}
 			await coalescedReread(link.threadId);
 		},
-		read: (
-			context: Parameters<CodexWorkbenchGatewayOptions["projection"]["read"]>[0],
-		): BrowserOwnerProjection => {
-			if (context.lease?.state === "active") {
-				dynamicApprovals.bindLease(context.paneId, context.lease.commandId);
-			}
-			const coordinator = components.coordinator.snapshot();
-			const workhorse = components.workhorse.snapshot();
-			const latestSemantic = components.semanticDelivery.inspect().at(-1);
-			const semanticBinding = components.semanticDelivery.snapshot().binding;
-			// Delivery history is process-wide; only the exact current binding may
-			// publish its result and freshness into this pane's snapshot.
-			const semantic =
-				semanticBinding !== null &&
-				semanticBinding.paneId === context.paneId &&
-				semanticBinding.link.revision === context.binding.revision &&
-				semanticBinding.target.threadId === context.binding.link.threadId &&
-				semanticBinding.target.childId === context.binding.link.childId &&
-				semanticBinding.target.epoch === context.binding.link.epoch &&
-				latestSemantic?.paneId === context.paneId &&
-				latestSemantic.targetThreadId === semanticBinding.target.threadId &&
-				latestSemantic.targetChildId === semanticBinding.target.childId &&
-				latestSemantic.targetEpoch === semanticBinding.target.epoch &&
-				latestSemantic.targetOperationId === semanticBinding.target.operationId
-					? latestSemantic
-					: undefined;
-			const freshSemantic =
-				semantic === undefined ? null : components.semanticPublisher.freshBrief();
-			const realtimeGeneration = components.realtime.generation();
-			const voiceContext = projectCanvasVoiceContext(realtimeGeneration, components.callbacks);
-			const readiness = projectCanvasBrowserReadiness({
-				process: input.process(),
-				account: state.account,
-				login: state.login,
-				coordinatorReady: coordinator.state === "ready",
-			});
-			return {
-				readiness,
-				account: state.account,
-				login: state.login,
-				threadCandidates: candidates.read(),
-				timeline: input.timeline.read(
-					context.paneId,
-					context.binding.revision,
-					context.binding.link,
-					readiness.state === "thread_capable",
-					context.connection,
-				),
-				// Cached submissions belong to one workhorse thread; a pane looking at
-				// another link is told the queue is unavailable, never shown the wrong one.
-				queue:
-					state.queueThreadId !== null && state.queueThreadId === context.binding.link.threadId
-						? state.queue
-						: UNAVAILABLE_QUEUE,
-				settings: [
-					...(workhorse.start === null
-						? []
-						: [
-								{
-									kind: "codex_thread_settings" as const,
-									owner: "workhorse" as const,
-									settings: {
-										model: workhorse.start.model,
-										effort: null,
-										serviceTier: workhorse.start.serviceTier,
-										approvalPolicy: workhorse.start.approvalPolicy,
-										approvalsReviewer: workhorse.start.approvalsReviewer,
-										sandboxPolicy: workhorse.start.sandbox,
-										activePermissionProfile: workhorse.start.activePermissionProfile,
-									},
-								},
-							]),
-					...(coordinator.effective === null ||
-					coordinator.approvalPolicy === null ||
-					coordinator.approvalsReviewer === null ||
-					coordinator.sandboxPolicy === null
-						? []
-						: [
-								{
-									kind: "codex_thread_settings" as const,
-									owner: "coordinator" as const,
-									settings: {
-										model: coordinator.effective.model,
-										effort: coordinator.effective.effort,
-										serviceTier: coordinator.effective.serviceTier,
-										approvalPolicy: coordinator.approvalPolicy,
-										approvalsReviewer: coordinator.approvalsReviewer,
-										sandboxPolicy: coordinator.sandboxPolicy,
-										activePermissionProfile: coordinator.activePermissionProfile,
-									},
-								},
-							]),
-				],
-				approvals: visibleApprovalViews(components.approvals),
-				dynamicApprovals: dynamicApprovals.pending(),
-				semantic: {
-					kind: "codex_semantic",
-					outcome:
-						semantic === undefined
-							? null
-							: {
-									targetThreadId: semantic.targetThreadId,
-									outcome: semantic.outcome,
-									reason: semantic.reason,
-								},
-					freshness: freshSemantic?.freshness ?? null,
+		/**
+		 * One complete snapshot of the workbench as this pane is shown it.
+		 * @param context The pane, its binding, and its lease.
+		 * @returns The projection.
+		 */
+		read: (context) =>
+			readBrowserOwnerProjection(
+				{
+					components,
+					dynamicApprovals,
+					state,
+					candidates,
+					timeline: input.timeline,
+					process: input.process,
 				},
-				coordinator: {
-					kind: "codex_coordinator",
-					state: coordinator.state,
-					threadId: coordinator.threadId,
-					configured: coordinator.configured,
-					effective: coordinator.effective,
-					reason: coordinator.reason,
-				},
-				voice: {
-					kind: "codex_voice",
-					mediaReady: context.mediaReady,
-					generation: realtimeGeneration,
-					coordinatorState: coordinator.state,
-					transcript: components.realtime.transcript(),
-				},
-				spokenApproval: components.spokenApproval.snapshot(),
-				voiceContext,
-			};
-		},
+				context,
+			),
+		/**
+		 * Say when anything a snapshot is read from has changed.
+		 * @param listener What to call.
+		 * @returns How to stop listening.
+		 */
 		onChange: (listener) => {
 			const unsubscribe = input.onChange(listener);
 			const unsubscribeAccount = account.subscribe(listener);
@@ -538,6 +382,13 @@ function createCanvasBrowserGatewayOptions(input: {
 				unsubscribe();
 			};
 		},
+		/**
+		 * Forget the timeline retained for a pane whose browser has gone.
+		 * @param disconnect What disconnected.
+		 * @param disconnect.paneId The pane.
+		 * @param disconnect.connection Its browser connection.
+		 * @returns Nothing the gateway waits on.
+		 */
 		onBrowserDisconnect: ({ paneId, connection }) => input.timeline.retire(paneId, connection),
 	};
 	return {
@@ -549,7 +400,7 @@ function createCanvasBrowserGatewayOptions(input: {
 }
 
 export {
-	type CanvasBrowserBindingState,
-	createCanvasOrdinaryApprovalActions,
 	createCanvasBrowserGatewayOptions,
+	createCanvasOrdinaryApprovalActions,
+	type CanvasBrowserBindingState,
 };
