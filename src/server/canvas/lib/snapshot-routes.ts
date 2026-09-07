@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { snapshots } from "@/runtime/engine/types";
 import type { Snapshot } from "@/runtime/engine/types";
 import { copyElements } from "@/runtime/engine/board-store";

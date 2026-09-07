@@ -1,5 +1,5 @@
 import type { Response } from "express";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import type { ServerElement, WebSocketMessage } from "@/runtime/engine/types";
 import { boards } from "@/runtime/engine/board-store";
 import type { BoardState } from "@/runtime/engine/board-store";

@@ -2,7 +2,7 @@ import type { Response } from "express";
 import { BoardHeldError } from "@/runtime/engine/board-lock";
 import { readBoardContent } from "@/runtime/engine/board-io";
 import { boards } from "@/runtime/engine/board-store";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { presentElements } from "@/runtime/engine/presentation";
 import type { ServerElement } from "@/runtime/engine/types";
 import { EMPTY_CHECKOUT_SNAPSHOT } from "@/runtime/code-target";

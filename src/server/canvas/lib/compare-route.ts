@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { resolveBoard } from "@/runtime/engine/board-io";
 import { boardKey, CURRENT_VARIANT, listBoards, parseBoardKey } from "@/runtime/engine/board";
 import { compareBoards } from "@/runtime/engine/compare";

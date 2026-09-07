@@ -3,7 +3,7 @@ import type { RequestHandler, Router as ExpressRouter } from "express";
 import { z } from "zod";
 import { readLibrary, writeLibrary } from "@/runtime/engine/library";
 import type { LibraryItem } from "@/runtime/engine/library";
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 
 const LibraryStatusSchema = z.enum(["published", "unpublished"]);
 const OptionalLibraryStatusSchema = LibraryStatusSchema.optional();

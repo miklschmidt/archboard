@@ -1,4 +1,4 @@
-import logger from "@/runtime/engine/logger";
+import { logger } from "@/runtime/engine/logger";
 import { selectionState, snapshots } from "@/runtime/engine/types";
 import { boards, getOrCreateBoard, recordBaseline } from "@/runtime/engine/board-store";
 import { createBoard, readBoardContent, readBoardFile } from "@/runtime/engine/board-io";
