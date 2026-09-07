@@ -1,18 +1,6 @@
-import type {
-	ChildEpoch,
-	ChildId,
-	LogicalToolCallCorrelation,
-	OperationId,
-	TurnId,
-} from "@/shared/codex-workbench-identity";
-import {
-	canonicalDynamicApprovalJson,
-	dynamicApprovalHashForCanonicalJson,
-	type DynamicApprovalCanonicalEffect,
-} from "@/shared/codex-browser-model";
+import type { ChildEpoch, ChildId, TurnId } from "@/shared/codex-workbench-identity";
 import { CODEX_APPROVAL_EXPIRY_MS } from "@/shared/timing/timing";
 import {
-	CodexDynamicOperationTerminalizationError,
 	CodexDynamicToolsError,
 	type CodexDynamicToolsOptions,
 	type DynamicApprovalIdentity,
@@ -20,34 +8,39 @@ import {
 	type DynamicContextAuthority,
 	type DynamicImmutableEffect,
 	type DynamicMutationToolName,
-	type DynamicOperationIdPort,
-	type DynamicOperationTerminalDisposition,
-	type DynamicOperationTerminalResult,
 	type DynamicRelation,
 	type DynamicTargetAuthority,
 	type DynamicToolApprovalRequest,
 	type DynamicToolApprovalDecision,
 } from "@/runtime/codex-dynamic-tools/lib/contract";
 import type { DynamicServerRequest } from "@/runtime/codex-transport/server-requests";
+import {
+	createPrompt,
+	dynamicEffectHash,
+	forkArguments,
+	freezeDeep,
+	hasExactKeys,
+	identityFor,
+	normalizedArguments,
+	sendArguments,
+	summaryFor,
+	type EffectArguments,
+} from "@/runtime/codex-dynamic-tools/lib/effect-values";
+import {
+	createDynamicOperationRecoverySettlement,
+	createDynamicOperationSettlement,
+	issueMutationOperations,
+	issueReadOperation,
+	operationIdsForRetirement,
+	operationWire,
+	operationWireForIssuedResult,
+	operationWireForResult,
+	terminalizeDynamicOperationId,
+	type DynamicIssuedOperations,
+	type DynamicOperationSettlement,
+} from "@/runtime/codex-dynamic-tools/lib/operation-identity";
 
-export interface DynamicIssuedOperations {
-	readonly resultOperationId: OperationId;
-	readonly mutationOperationId: OperationId;
-	readonly initialTurnOperationId: OperationId | null;
-}
-
-/**
- * Owns the terminal transition for the operation identities issued by one
- * mutation call. Keeping this state beside the prepared effect prevents a
- * late error path from reusing an identity or leaving it current forever.
- */
-export interface DynamicOperationSettlement {
-	readonly consume: (operationId: OperationId) => void;
-	readonly retire: (operationId: OperationId) => void;
-	readonly retireUnsettled: () => void;
-	readonly unresolvedOperationCount: () => number;
-}
-
+/** One mutation, as it stands once a person could be asked to approve it. */
 export interface PreparedDynamicMutation {
 	readonly identity: DynamicApprovalIdentity;
 	readonly effect: DynamicImmutableEffect;
@@ -59,377 +52,169 @@ export interface PreparedDynamicMutation {
 	readonly boundary: TurnId | null;
 }
 
-function freezeDeep<T>(value: T): T {
-	if (typeof value !== "object" || value === null || Object.isFrozen(value)) return value;
-	for (const child of Object.values(value as Record<string, unknown>)) freezeDeep(child);
-	return Object.freeze(value);
+/** Which child epoch something belongs to. */
+export type DynamicEpochIdentity = Readonly<{
+	readonly childId: ChildId;
+	readonly epoch: ChildEpoch;
+}>;
+
+/** The operation identities a mutation is carried out under, serialized for the wire. */
+interface MutationWireIdentities {
+	readonly outerOperationId: string;
+	readonly initialTurnOperationId: string | null;
 }
 
-function hasExactKeys(value: object, keys: readonly string[]): boolean {
-	return (
-		Reflect.ownKeys(value).every((key) => typeof key === "string" && keys.includes(key)) &&
-		keys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
-	);
-}
-
-function truncateUtf8(value: string, maximum: number): string {
-	if (Buffer.byteLength(value, "utf8") <= maximum) return value;
-	const ellipsis = "…";
-	const budget = maximum - Buffer.byteLength(ellipsis, "utf8");
-	let result = "";
-	for (const character of value) {
-		if (Buffer.byteLength(result + character, "utf8") > budget) break;
-		result += character;
-	}
-	return `${result}${ellipsis}`;
-}
-
-function operationWire(options: CodexDynamicToolsOptions, operationId: OperationId): string {
-	try {
-		options.operationId.validateCurrentUnconsumedOperationId(operationId);
-		const serialized = options.operationId.serializeForOwnedWireFields(operationId);
-		if (typeof serialized !== "string" || serialized.length === 0)
-			throw new Error("the operation serializer returned an empty value");
-		return serialized;
-	} catch (error) {
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The host could not validate a canonical dynamic operation identity.",
-			error,
-		);
-	}
-}
-
-function identityFor(
-	call: LogicalToolCallCorrelation,
-	operationId: string,
-): DynamicApprovalIdentity {
-	return freezeDeep({
-		child: call.child,
-		epoch: call.epoch,
-		threadId: call.threadId,
-		turnId: call.turnId,
-		callId: call.callId,
-		namespace: call.namespace,
-		tool: call.tool,
-		manifestHash: call.manifestHash,
-		operationId,
-	});
-}
-
-export function dynamicEffectHash(
-	identity: DynamicApprovalIdentity,
-	effect: DynamicImmutableEffect,
-): string {
-	let canonicalEffect: DynamicApprovalCanonicalEffect;
-	if (effect.tool === "fork_thread") {
-		const boundary = effect.effectiveBoundary;
-		if (boundary.relation === "self") {
-			if (boundary.beforeTurnId === null)
-				throw new TypeError("a self fork needs the executing turn as its boundary");
-			canonicalEffect = {
-				...effect,
-				effectiveBoundary: { relation: "self", beforeTurnId: boundary.beforeTurnId },
-			};
-		} else {
-			canonicalEffect = {
-				...effect,
-				effectiveBoundary: { relation: "other", beforeTurnId: boundary.beforeTurnId },
-			};
-		}
-	} else canonicalEffect = effect;
-	return dynamicApprovalHashForCanonicalJson(
-		canonicalDynamicApprovalJson({ identity, effect: canonicalEffect }),
-	);
-}
-
-function summaryFor(
-	tool: DynamicMutationToolName,
-	argumentsValue: DynamicImmutableEffect["arguments"],
-): string {
-	let text: string;
-	switch (tool) {
-		case "create_thread":
-			if (!("prompt" in argumentsValue) || typeof argumentsValue.prompt !== "string")
-				throw new CodexDynamicToolsError("invalid_call", "The create effect prompt is invalid.");
-			text = `Create thread: ${argumentsValue.prompt}`;
-			break;
-		case "fork_thread":
-			if (
-				!("threadId" in argumentsValue) ||
-				!("beforeTurnId" in argumentsValue) ||
-				typeof argumentsValue.threadId !== "string" ||
-				(argumentsValue.prompt !== null && typeof argumentsValue.prompt !== "string")
-			)
-				throw new CodexDynamicToolsError("invalid_call", "The fork effect arguments are invalid.");
-			text = `Fork thread ${argumentsValue.threadId}${argumentsValue.prompt === null ? "" : `: ${argumentsValue.prompt}`}`;
-			break;
-		case "send_message_to_thread":
-			if (
-				!("threadId" in argumentsValue) ||
-				typeof argumentsValue.threadId !== "string" ||
-				typeof argumentsValue.prompt !== "string"
-			)
-				throw new CodexDynamicToolsError("invalid_call", "The send effect arguments are invalid.");
-			text = `Send message to thread ${argumentsValue.threadId}: ${argumentsValue.prompt}`;
-			break;
-	}
-	return truncateUtf8(text, 512);
-}
-
-function normalizedArguments(
-	tool: DynamicMutationToolName,
-	value: DynamicImmutableEffect["arguments"],
-): DynamicImmutableEffect["arguments"] {
-	if (tool === "create_thread") {
-		if (!Object.prototype.hasOwnProperty.call(value, "prompt") || typeof value.prompt !== "string")
-			throw new CodexDynamicToolsError("invalid_call", "The create effect prompt is invalid.");
-		return freezeDeep({ prompt: value.prompt });
-	}
-	if (tool === "send_message_to_thread") {
-		if (
-			!("threadId" in value) ||
-			typeof value.threadId !== "string" ||
-			typeof value.prompt !== "string"
-		)
-			throw new CodexDynamicToolsError("invalid_call", "The send effect arguments are invalid.");
-		return freezeDeep({ threadId: value.threadId, prompt: value.prompt });
-	}
-	if (
-		!("threadId" in value) ||
-		!("beforeTurnId" in value) ||
-		typeof value.threadId !== "string" ||
-		(value.beforeTurnId !== null && typeof value.beforeTurnId !== "string") ||
-		(value.prompt !== null && typeof value.prompt !== "string")
-	)
-		throw new CodexDynamicToolsError("invalid_call", "The fork effect arguments are invalid.");
-	return freezeDeep({
-		threadId: value.threadId,
-		beforeTurnId: value.beforeTurnId,
-		prompt: value.prompt,
-	});
-}
-
-export function issueMutationOperations(
-	options: CodexDynamicToolsOptions,
-	hasInitialTurn: boolean,
-): DynamicIssuedOperations {
-	const mutationOperationId = options.operationId.issueCanonicalOperationId();
-	try {
-		return Object.freeze({
-			resultOperationId: mutationOperationId,
-			mutationOperationId,
-			initialTurnOperationId: hasInitialTurn
-				? options.operationId.issueCanonicalOperationId()
-				: null,
-		});
-	} catch (error) {
-		try {
-			terminalizeDynamicOperationId(options.operationId, mutationOperationId, "retired");
-		} catch (retirementError) {
-			throw retirementError instanceof CodexDynamicOperationTerminalizationError
-				? retirementError
-				: new CodexDynamicToolsError(
-						"system_error",
-						"The partially issued dynamic operation could not be retired.",
-						retirementError,
-					);
-		}
-		throw error;
-	}
-}
-
-function exactTerminalResult(
-	value: unknown,
-	operationId: OperationId,
-): DynamicOperationTerminalResult {
-	if (
-		typeof value !== "object" ||
-		value === null ||
-		!hasExactKeys(value, ["operationId", "disposition", "terminal"])
-	)
-		throw new Error("the terminal operation result shape is not exact");
-	const result = value as Readonly<Record<string, unknown>>;
-	if (
-		result["operationId"] !== operationId ||
-		(result["disposition"] !== "consumed" && result["disposition"] !== "retired") ||
-		result["terminal"] !== true
-	)
-		throw new Error("the terminal operation result does not match the issued identity");
-	return Object.freeze({ operationId, disposition: result["disposition"], terminal: true });
-}
-
-function readTerminalResult(
-	port: DynamicOperationIdPort,
-	operationId: OperationId,
-): DynamicOperationTerminalResult | null {
-	const observed = port.readCanonicalOperationTerminalResult(operationId);
-	if (observed !== null) return exactTerminalResult(observed, operationId);
-	port.validateCurrentUnconsumedOperationId(operationId);
-	return null;
+/** Everything a mutation's effect is built from besides its own arguments. */
+interface EffectContext {
+	readonly caller: DynamicCallerAuthority;
+	readonly target: DynamicTargetAuthority | null;
+	readonly relation: DynamicRelation | null;
+	readonly contextAuthority: DynamicContextAuthority;
+	readonly boundary: TurnId | null;
+	readonly wire: MutationWireIdentities;
 }
 
 /**
- * Cross the host terminal boundary with an idempotent operation. A thrown
- * attempt is inspected and retried only while the host still reports the ID
- * current. Returning means the requested host disposition is proven.
+ * The effect a create mutation carries. A create starts a turn as well as a thread, so it needs
+ * both identities before it can be described.
+ * @param argumentsValue The raw arguments.
+ * @param context What the effect is built from.
+ * @returns The effect.
  */
-export function terminalizeDynamicOperationId(
-	port: DynamicOperationIdPort,
-	operationId: OperationId,
-	disposition: DynamicOperationTerminalDisposition,
-): DynamicOperationTerminalResult {
-	const causes: unknown[] = [];
-	for (let attempt = 0; attempt < 2; attempt++) {
-		try {
-			const result = exactTerminalResult(
-				port.terminalizeCanonicalOperationId({ operationId, disposition }),
-				operationId,
-			);
-			if (result.disposition !== disposition)
-				throw new CodexDynamicOperationTerminalizationError(
-					operationId,
-					disposition,
-					"The host terminalized the dynamic operation with another disposition.",
-				);
-			return result;
-		} catch (error) {
-			if (error instanceof CodexDynamicOperationTerminalizationError) throw error;
-			causes.push(error);
-		}
-
-		try {
-			const observed = readTerminalResult(port, operationId);
-			if (observed === null) continue;
-			if (observed.disposition !== disposition)
-				throw new CodexDynamicOperationTerminalizationError(
-					operationId,
-					disposition,
-					"The host reports another terminal disposition for the dynamic operation.",
-					Object.freeze([...causes]),
-				);
-			return observed;
-		} catch (error) {
-			if (error instanceof CodexDynamicOperationTerminalizationError) throw error;
-			causes.push(error);
-		}
-	}
-
-	throw new CodexDynamicOperationTerminalizationError(
-		operationId,
-		disposition,
-		"The host could not prove the dynamic operation terminal after idempotent settlement.",
-		Object.freeze(causes),
-	);
-}
-
-export function createDynamicOperationSettlement(
-	options: CodexDynamicToolsOptions,
-	operations: DynamicIssuedOperations,
-): DynamicOperationSettlement {
-	const owned = Object.freeze(operationIdsForRetirement(operations));
-	if (new Set(owned).size !== owned.length) {
-		for (const operationId of new Set(owned))
-			terminalizeDynamicOperationId(options.operationId, operationId, "retired");
+function createEffect(
+	argumentsValue: EffectArguments,
+	context: EffectContext,
+): DynamicImmutableEffect {
+	const initialTurnOperationId = context.wire.initialTurnOperationId;
+	if (initialTurnOperationId === null) {
 		throw new CodexDynamicToolsError(
-			"system_error",
-			"The dynamic operation authority issued duplicate identities for one call.",
+			"invalid_call",
+			"A create operation requires an initial-turn identity.",
 		);
 	}
-	const requested = new Map<OperationId, DynamicOperationTerminalDisposition>();
-	const terminal = new Map<OperationId, DynamicOperationTerminalDisposition>();
-
-	const terminalize = (
-		operationId: OperationId,
-		kind: "consume" | "retire",
-		deferUnresolved: boolean,
-	): void => {
-		if (!owned.includes(operationId))
-			throw new CodexDynamicToolsError(
-				"system_error",
-				"The dynamic operation settlement received an identity it does not own.",
-			);
-		if (terminal.has(operationId))
-			throw new CodexDynamicToolsError(
-				"system_error",
-				"The dynamic operation identity was settled more than once.",
-			);
-		const disposition = kind === "consume" ? "consumed" : "retired";
-		const priorRequest = requested.get(operationId);
-		if (priorRequest !== undefined && priorRequest !== disposition)
-			throw new CodexDynamicToolsError(
-				"system_error",
-				"The dynamic operation settlement changed its requested disposition.",
-			);
-		requested.set(operationId, disposition);
-		try {
-			const result = terminalizeDynamicOperationId(options.operationId, operationId, disposition);
-			terminal.set(operationId, result.disposition);
-		} catch (error) {
-			if (deferUnresolved && error instanceof CodexDynamicOperationTerminalizationError) return;
-			throw error;
-		}
-	};
-
-	const retireUnsettled = (): void => {
-		let firstError: unknown = null;
-		for (const operationId of owned) {
-			if (terminal.has(operationId)) continue;
-			try {
-				terminalize(
-					operationId,
-					requested.get(operationId) === "consumed" ? "consume" : "retire",
-					false,
-				);
-			} catch (error) {
-				firstError ??= error;
-			}
-		}
-		if (firstError !== null) throw firstError;
-	};
-
-	return Object.freeze({
-		consume: (operationId: OperationId): void => terminalize(operationId, "consume", true),
-		retire: (operationId: OperationId): void => terminalize(operationId, "retire", true),
-		retireUnsettled,
-		unresolvedOperationCount: (): number => owned.length - terminal.size,
+	const prompt = createPrompt(normalizedArguments("create_thread", argumentsValue));
+	return freezeDeep({
+		tool: "create_thread",
+		arguments: { prompt },
+		callerAuthority: context.caller.authority,
+		targetAuthority: null,
+		contextAuthority: context.contextAuthority.token,
+		effectiveBoundary: null,
+		mutationOperationId: context.wire.outerOperationId,
+		initialTurnOperationId,
+		visualSummary: summaryFor("create_thread", { prompt }),
 	});
 }
 
-export function createDynamicOperationRecoverySettlement(
-	options: CodexDynamicToolsOptions,
-	error: CodexDynamicOperationTerminalizationError,
-): DynamicOperationSettlement {
-	let terminal = false;
-	const retry = (deferUnresolved: boolean): void => {
-		if (terminal) return;
-		try {
-			terminalizeDynamicOperationId(options.operationId, error.operationId, error.disposition);
-			terminal = true;
-		} catch (retryError) {
-			if (deferUnresolved && retryError instanceof CodexDynamicOperationTerminalizationError)
-				return;
-			throw retryError;
-		}
-	};
-	return Object.freeze({
-		consume: (): void => retry(true),
-		retire: (): void => retry(true),
-		retireUnsettled: (): void => retry(false),
-		unresolvedOperationCount: (): number => (terminal ? 0 : 1),
+/**
+ * The effect a fork mutation carries. A fork names both the thread it forks and the turn it
+ * forks before, and needs the caller's relation to that thread to say which of the two it is.
+ * @param argumentsValue The raw arguments.
+ * @param context What the effect is built from.
+ * @returns The effect.
+ */
+function forkEffect(
+	argumentsValue: EffectArguments,
+	context: EffectContext,
+): DynamicImmutableEffect {
+	const target = context.target;
+	const relation = context.relation;
+	if (target === null || relation === null) {
+		throw new CodexDynamicToolsError(
+			"invalid_call",
+			"A fork operation requires target authority and relation.",
+		);
+	}
+	const fork = forkArguments(normalizedArguments("fork_thread", argumentsValue));
+	const effectArguments = { ...fork };
+	return freezeDeep({
+		tool: "fork_thread",
+		arguments: effectArguments,
+		callerAuthority: context.caller.authority,
+		targetAuthority: target.authority,
+		contextAuthority: context.contextAuthority.token,
+		effectiveBoundary: {
+			relation,
+			beforeTurnId: context.boundary === null ? null : String(context.boundary),
+		},
+		mutationOperationId: context.wire.outerOperationId,
+		initialTurnOperationId: context.wire.initialTurnOperationId,
+		visualSummary: summaryFor("fork_thread", effectArguments),
 	});
 }
 
-export function issueReadOperation(options: CodexDynamicToolsOptions): {
-	readonly resultOperationId: OperationId;
-} {
-	return Object.freeze({ resultOperationId: options.operationId.issueCanonicalOperationId() });
+/**
+ * The effect a send mutation carries.
+ * @param argumentsValue The raw arguments.
+ * @param context What the effect is built from.
+ * @returns The effect.
+ */
+function sendEffect(
+	argumentsValue: EffectArguments,
+	context: EffectContext,
+): DynamicImmutableEffect {
+	const target = context.target;
+	if (target === null) {
+		throw new CodexDynamicToolsError("invalid_call", "A send operation requires target authority.");
+	}
+	const send = sendArguments(normalizedArguments("send_message_to_thread", argumentsValue));
+	const effectArguments = { ...send };
+	return freezeDeep({
+		tool: "send_message_to_thread",
+		arguments: effectArguments,
+		callerAuthority: context.caller.authority,
+		targetAuthority: target.authority,
+		contextAuthority: context.contextAuthority.token,
+		effectiveBoundary: null,
+		mutationOperationId: context.wire.outerOperationId,
+		initialTurnOperationId: null,
+		visualSummary: summaryFor("send_message_to_thread", effectArguments),
+	});
 }
 
+/**
+ * The effect one mutation carries, whichever of the three it is.
+ * @param tool The mutation tool.
+ * @param argumentsValue The raw arguments.
+ * @param context What the effect is built from.
+ * @returns The effect.
+ */
+function effectFor(
+	tool: DynamicMutationToolName,
+	argumentsValue: EffectArguments,
+	context: EffectContext,
+): DynamicImmutableEffect {
+	if (tool === "create_thread") {
+		return createEffect(argumentsValue, context);
+	}
+	return tool === "fork_thread"
+		? forkEffect(argumentsValue, context)
+		: sendEffect(argumentsValue, context);
+}
+
+/**
+ * Everything one mutation is made of before it is put to a person.
+ *
+ * The effect is frozen through and hashed with the identity it will be carried out under, so a
+ * person approves exactly the mutation that will run: nothing about it can be changed between
+ * the approval and the effect without the hash no longer matching.
+ * @param request The server request.
+ * @param tool The mutation tool.
+ * @param argumentsValue The raw arguments.
+ * @param caller The caller's authority.
+ * @param target The target's authority, when the mutation names one.
+ * @param relation How the caller stands to the target, when the mutation needs it.
+ * @param contextAuthority The context token the effect is carried out under.
+ * @param operations The identities the call was issued.
+ * @param options The dynamic tools options.
+ * @param boundary The turn a fork stops before, when the mutation is a fork.
+ * @param nowMs The current time.
+ * @returns The prepared mutation.
+ */
 export function prepareMutation(
 	request: DynamicServerRequest,
 	tool: DynamicMutationToolName,
-	argumentsValue: DynamicImmutableEffect["arguments"],
+	argumentsValue: EffectArguments,
 	caller: DynamicCallerAuthority,
 	target: DynamicTargetAuthority | null,
 	relation: DynamicRelation | null,
@@ -439,98 +224,22 @@ export function prepareMutation(
 	boundary: TurnId | null,
 	nowMs: number,
 ): PreparedDynamicMutation {
-	const outerOperationId = operationWire(options, operations.mutationOperationId);
-	const initialTurnOperationId =
-		operations.initialTurnOperationId === null
-			? null
-			: operationWire(options, operations.initialTurnOperationId);
-	const identity = identityFor(request.logicalCall, outerOperationId);
-	let effect: DynamicImmutableEffect;
-	if (tool === "create_thread") {
-		if (initialTurnOperationId === null)
-			throw new CodexDynamicToolsError(
-				"invalid_call",
-				"A create operation requires an initial-turn identity.",
-			);
-		const effectArguments = normalizedArguments(tool, argumentsValue);
-		if (!("prompt" in effectArguments) || typeof effectArguments.prompt !== "string")
-			throw new CodexDynamicToolsError("invalid_call", "The create effect prompt is invalid.");
-		effect = freezeDeep({
-			tool,
-			arguments: { prompt: effectArguments.prompt },
-			callerAuthority: caller.authority,
-			targetAuthority: null,
-			contextAuthority: contextAuthority.token,
-			effectiveBoundary: null,
-			mutationOperationId: outerOperationId,
-			initialTurnOperationId,
-			visualSummary: summaryFor(tool, { prompt: effectArguments.prompt }),
-		});
-	} else if (tool === "fork_thread") {
-		if (target === null || relation === null)
-			throw new CodexDynamicToolsError(
-				"invalid_call",
-				"A fork operation requires target authority and relation.",
-			);
-		const effectArguments = normalizedArguments(tool, argumentsValue);
-		if (
-			!("threadId" in effectArguments) ||
-			!("beforeTurnId" in effectArguments) ||
-			typeof effectArguments.threadId !== "string" ||
-			(effectArguments.beforeTurnId !== null && typeof effectArguments.beforeTurnId !== "string") ||
-			(effectArguments.prompt !== null && typeof effectArguments.prompt !== "string")
-		)
-			throw new CodexDynamicToolsError("invalid_call", "The fork effect arguments are invalid.");
-		effect = freezeDeep({
-			tool,
-			arguments: {
-				threadId: effectArguments.threadId,
-				beforeTurnId: effectArguments.beforeTurnId,
-				prompt: effectArguments.prompt,
-			},
-			callerAuthority: caller.authority,
-			targetAuthority: target.authority,
-			contextAuthority: contextAuthority.token,
-			effectiveBoundary: {
-				relation,
-				beforeTurnId: boundary === null ? null : String(boundary),
-			},
-			mutationOperationId: outerOperationId,
-			initialTurnOperationId,
-			visualSummary: summaryFor(tool, {
-				threadId: effectArguments.threadId,
-				beforeTurnId: effectArguments.beforeTurnId,
-				prompt: effectArguments.prompt,
-			}),
-		});
-	} else {
-		if (target === null)
-			throw new CodexDynamicToolsError(
-				"invalid_call",
-				"A send operation requires target authority.",
-			);
-		const effectArguments = normalizedArguments(tool, argumentsValue);
-		if (
-			!("threadId" in effectArguments) ||
-			typeof effectArguments.threadId !== "string" ||
-			typeof effectArguments.prompt !== "string"
-		)
-			throw new CodexDynamicToolsError("invalid_call", "The send effect arguments are invalid.");
-		effect = freezeDeep({
-			tool,
-			arguments: { threadId: effectArguments.threadId, prompt: effectArguments.prompt },
-			callerAuthority: caller.authority,
-			targetAuthority: target.authority,
-			contextAuthority: contextAuthority.token,
-			effectiveBoundary: null,
-			mutationOperationId: outerOperationId,
-			initialTurnOperationId: null,
-			visualSummary: summaryFor(tool, {
-				threadId: effectArguments.threadId,
-				prompt: effectArguments.prompt,
-			}),
-		});
-	}
+	const wire: MutationWireIdentities = {
+		outerOperationId: operationWire(options, operations.mutationOperationId),
+		initialTurnOperationId:
+			operations.initialTurnOperationId === null
+				? null
+				: operationWire(options, operations.initialTurnOperationId),
+	};
+	const identity = identityFor(request.logicalCall, wire.outerOperationId);
+	const effect = effectFor(tool, argumentsValue, {
+		caller,
+		target,
+		relation,
+		contextAuthority,
+		boundary,
+		wire,
+	});
 	const hash = dynamicEffectHash(identity, effect);
 	const requestValue: DynamicToolApprovalRequest = freezeDeep({
 		identity,
@@ -551,122 +260,142 @@ export function prepareMutation(
 	});
 }
 
-export function operationWireForResult(
-	options: CodexDynamicToolsOptions,
-	operationId: OperationId,
-): string {
-	try {
-		const serialized = options.operationId.serializeForOwnedWireFields(operationId);
-		if (typeof serialized !== "string" || serialized.length === 0)
-			throw new Error("the operation serializer returned an empty value");
-		return serialized;
-	} catch (error) {
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The host could not serialize the canonical dynamic operation identity.",
-			error,
-		);
+/** The fields an approval decision carries. */
+const DECISION_KEYS = ["outcome", "identity", "effectHash", "decidedAtMs", "cause"] as const;
+
+/** The fields an approval identity carries. */
+const IDENTITY_KEYS = [
+	"child",
+	"epoch",
+	"threadId",
+	"turnId",
+	"callId",
+	"namespace",
+	"tool",
+	"manifestHash",
+	"operationId",
+] as const;
+
+/** How a decision may have been reached, by outcome. */
+const DECISION_CAUSES = {
+	approved: ["person_approved"],
+	declined: ["person_declined"],
+	expired: ["deadline_reached"],
+	cancelled: ["call_cancelled", "caller_turn_interrupted", "host_shutdown"],
+	disconnected: ["browser_disconnected", "child_disconnected"],
+} as const;
+
+/** What an approval hash looks like. */
+const EFFECT_HASH_PATTERN = /^sha256:[0-9a-f]{64}$/u;
+
+/**
+ * Build a refusal about an approval decision.
+ * @param message Human-readable explanation.
+ * @returns The refusal error.
+ */
+function decisionError(message: string): CodexDynamicToolsError {
+	return new CodexDynamicToolsError("invalid_call", message);
+}
+
+/**
+ * Refuse a decision that is not the reviewed shape, or whose outcome is not one the boundary
+ * knows what to do with.
+ * @param decision The decision.
+ */
+function assertDecisionShapeAndOutcome(decision: DynamicToolApprovalDecision): void {
+	// The decision comes from the browser: it is read through its own fields, so one that does
+	// not match the shape the contract type claims is refused rather than believed.
+	const fields: unknown = decision;
+	if (typeof fields !== "object" || fields === null || !hasExactKeys(fields, DECISION_KEYS)) {
+		throw decisionError("The approval decision shape is not exact.");
+	}
+	if (!Object.prototype.hasOwnProperty.call(DECISION_CAUSES, decision.outcome)) {
+		throw decisionError("The approval decision outcome is not recognized.");
 	}
 }
 
-/** Serialize a newly issued result identity before it is exposed on the wire. */
-export function operationWireForIssuedResult(
-	options: CodexDynamicToolsOptions,
-	operationId: OperationId,
-): string {
-	try {
-		options.operationId.validateCurrentUnconsumedOperationId(operationId);
-	} catch (error) {
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The host could not validate a canonical dynamic operation identity.",
-			error,
-		);
+/**
+ * Refuse a decision whose cause is not one its own outcome can be reached by, which would say
+ * the person's answer and the reason for it disagree.
+ * @param decision The decision.
+ */
+function assertDecisionCause(decision: DynamicToolApprovalDecision): void {
+	const causes: readonly string[] = DECISION_CAUSES[decision.outcome];
+	if (!causes.includes(decision.cause)) {
+		throw decisionError("The approval decision has an invalid terminal cause.");
 	}
-	return operationWireForResult(options, operationId);
 }
 
+/**
+ * Refuse a decision whose identity is not exactly the request's own, since a decision that
+ * names another call would authorize a mutation nobody was asked about.
+ * @param decision The decision.
+ * @param request The request it answers.
+ */
+function assertDecisionIdentity(
+	decision: DynamicToolApprovalDecision,
+	request: DynamicToolApprovalRequest,
+): void {
+	const identity: unknown = decision.identity;
+	if (typeof identity !== "object" || identity === null || !hasExactKeys(identity, IDENTITY_KEYS)) {
+		throw decisionError("The approval decision identity shape is not exact.");
+	}
+	if (JSON.stringify(identity) !== JSON.stringify(request.identity)) {
+		throw decisionError("The approval decision identity is not exact.");
+	}
+}
+
+/**
+ * Refuse anything an approval decision could say that its request did not ask: another shape,
+ * an outcome or cause the boundary does not know, another call's identity, another effect's
+ * hash, or a decision made before the request existed.
+ * @param decision The decision.
+ * @param request The request it answers.
+ */
 export function validateDecisionShape(
 	decision: DynamicToolApprovalDecision,
 	request: DynamicToolApprovalRequest,
 ): void {
+	assertDecisionShapeAndOutcome(decision);
+	assertDecisionCause(decision);
+	assertDecisionIdentity(decision, request);
 	if (
-		typeof decision !== "object" ||
-		decision === null ||
-		!hasExactKeys(decision, ["outcome", "identity", "effectHash", "decidedAtMs", "cause"])
-	)
-		throw new CodexDynamicToolsError("invalid_call", "The approval decision shape is not exact.");
-	if (
-		decision.outcome !== "approved" &&
-		decision.outcome !== "declined" &&
-		decision.outcome !== "expired" &&
-		decision.outcome !== "cancelled" &&
-		decision.outcome !== "disconnected"
-	)
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The approval decision outcome is not recognized.",
-		);
-	if (
-		typeof decision.identity !== "object" ||
-		decision.identity === null ||
-		!hasExactKeys(decision.identity, [
-			"child",
-			"epoch",
-			"threadId",
-			"turnId",
-			"callId",
-			"namespace",
-			"tool",
-			"manifestHash",
-			"operationId",
-		])
-	)
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The approval decision identity shape is not exact.",
-		);
-	if (
-		(decision.outcome === "approved" && decision.cause !== "person_approved") ||
-		(decision.outcome === "declined" && decision.cause !== "person_declined") ||
-		(decision.outcome === "expired" && decision.cause !== "deadline_reached") ||
-		(decision.outcome === "cancelled" &&
-			decision.cause !== "call_cancelled" &&
-			decision.cause !== "caller_turn_interrupted" &&
-			decision.cause !== "host_shutdown") ||
-		(decision.outcome === "disconnected" &&
-			decision.cause !== "browser_disconnected" &&
-			decision.cause !== "child_disconnected")
-	)
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The approval decision has an invalid terminal cause.",
-		);
-	if (JSON.stringify(decision.identity) !== JSON.stringify(request.identity))
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The approval decision identity is not exact.",
-		);
-	if (
-		!/^sha256:[0-9a-f]{64}$/u.test(decision.effectHash) ||
+		!EFFECT_HASH_PATTERN.test(decision.effectHash) ||
 		decision.effectHash !== request.effectHash
-	)
-		throw new CodexDynamicToolsError(
-			"invalid_call",
-			"The approval decision effect hash is not exact.",
-		);
-	if (!Number.isSafeInteger(decision.decidedAtMs) || decision.decidedAtMs < request.createdAtMs)
-		throw new CodexDynamicToolsError("invalid_call", "The approval decision timestamp is invalid.");
+	) {
+		throw decisionError("The approval decision effect hash is not exact.");
+	}
+	if (!Number.isSafeInteger(decision.decidedAtMs) || decision.decidedAtMs < request.createdAtMs) {
+		throw decisionError("The approval decision timestamp is invalid.");
+	}
 }
 
+/**
+ * Whether an approval request has run out of time.
+ * @param request The request.
+ * @param nowMs The current time.
+ * @returns Whether it has expired.
+ */
 export function approvalExpiry(request: DynamicToolApprovalRequest, nowMs: number): boolean {
 	return nowMs >= request.expiresAtMs;
 }
 
+/**
+ * Whether a decision means the child itself disconnected rather than the approval being
+ * answered.
+ * @param decision The decision.
+ * @returns Whether the child disconnected.
+ */
 export function isChildDisconnect(decision: DynamicToolApprovalDecision): boolean {
 	return decision.cause === "child_disconnected";
 }
 
+/**
+ * Whether a decision leaves the mutation still needing an approval: nobody answered, so the
+ * caller must ask again rather than treat the silence as a refusal.
+ * @param decision The decision.
+ * @returns Whether an approval is still required.
+ */
 export function isApprovalRequired(decision: DynamicToolApprovalDecision): boolean {
 	return (
 		decision.outcome === "cancelled" ||
@@ -674,17 +403,16 @@ export function isApprovalRequired(decision: DynamicToolApprovalDecision): boole
 	);
 }
 
-export function operationIdsForRetirement(
-	operations: DynamicIssuedOperations,
-): readonly OperationId[] {
-	return Object.freeze(
-		operations.initialTurnOperationId === null
-			? [operations.mutationOperationId]
-			: [operations.mutationOperationId, operations.initialTurnOperationId],
-	);
-}
-
-export type DynamicEpochIdentity = Readonly<{
-	readonly childId: ChildId;
-	readonly epoch: ChildEpoch;
-}>;
+export {
+	type DynamicIssuedOperations,
+	type DynamicOperationSettlement,
+	createDynamicOperationRecoverySettlement,
+	createDynamicOperationSettlement,
+	dynamicEffectHash,
+	issueMutationOperations,
+	issueReadOperation,
+	operationIdsForRetirement,
+	operationWireForIssuedResult,
+	operationWireForResult,
+	terminalizeDynamicOperationId,
+};
