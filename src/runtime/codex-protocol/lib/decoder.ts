@@ -272,7 +272,8 @@ export function decodeClientNotification(value: unknown): DecodedClientNotificat
 	);
 	const method = envelope.method;
 	const schema = methodSchema(CLIENT_NOTIFICATION_SCHEMAS, method, "client-notification");
-	return decodeSchema(method, "client-notification", schema, value);
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- methodSchema resolved the schema by method from CLIENT_NOTIFICATION_SCHEMAS, whose keys are exactly the union's methods, so the decoded value has that method's shape by construction; TypeScript cannot express that for a string-keyed lookup
+	return decodeSchema(method, "client-notification", schema, value) as DecodedClientNotification;
 }
 
 export type ServerNotificationPayloads = {

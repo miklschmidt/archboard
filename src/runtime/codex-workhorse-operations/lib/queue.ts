@@ -40,6 +40,10 @@ import {
 } from "@/runtime/codex-workhorse-operations/lib/operation-errors";
 
 type MutableQueueRequest = Exclude<ManageWorkhorseQueueRequest, { readonly operation: "list" }>;
+/** The part of a classification result a queue mutation needs: the workhorse side. */
+interface ClassifiedWorkhorse {
+	readonly workhorse: WorkhorseOperationClassification;
+}
 type MutationResult = Exclude<WorkhorseQueueResult<OperationId>, QueueListResult>;
 type StartResult = QueueStartResult<OperationId>;
 
@@ -169,27 +173,28 @@ function invokeQueueMutation(
 	beforeEffect: QueueBeforeEffect,
 ): Promise<MutationResult> {
 	const queue = runtime.options.queue;
-	switch (request.operation) {
-		case "add":
-			return queue.add({ operationId, prompt: request.prompt, beforeEffect });
-		case "update":
-			return queue.update({
-				operationId,
-				submissionId: request.submissionId,
-				prompt: request.prompt,
-				beforeEffect,
-			});
-		case "delete":
-			return queue.delete({ operationId, submissionId: request.submissionId, beforeEffect });
-		case "reorder":
-			return queue.reorder({
-				operationId,
-				orderedSubmissionIds: request.orderedSubmissionIds,
-				beforeEffect,
-			});
-		case "start":
-			return queue.start({ operationId, submissionId: request.submissionId, beforeEffect });
+	if (request.operation === "add") {
+		return queue.add({ operationId, prompt: request.prompt, beforeEffect });
 	}
+	if (request.operation === "update") {
+		return queue.update({
+			operationId,
+			submissionId: request.submissionId,
+			prompt: request.prompt,
+			beforeEffect,
+		});
+	}
+	if (request.operation === "delete") {
+		return queue.delete({ operationId, submissionId: request.submissionId, beforeEffect });
+	}
+	if (request.operation === "reorder") {
+		return queue.reorder({
+			operationId,
+			orderedSubmissionIds: request.orderedSubmissionIds,
+			beforeEffect,
+		});
+	}
+	return queue.start({ operationId, submissionId: request.submissionId, beforeEffect });
 }
 
 /**
@@ -344,7 +349,6 @@ function publishOutcome(
  * @param state - The staged operation state.
  * @param error - The thrown value.
  * @param effectStarted - Whether the remote effect had been issued.
- * @returns Never; the error is always thrown.
  */
 function failQueueMutation(
 	runtime: WorkhorseRuntime,
@@ -381,7 +385,7 @@ async function mutateQueue(
 	runtime: WorkhorseRuntime,
 	request: MutableQueueRequest,
 	binding: WorkhorseOperationBinding,
-	validated: { readonly workhorse: WorkhorseOperationClassification },
+	validated: ClassifiedWorkhorse,
 	operationId: OperationId,
 	operationIdWire: string,
 ): Promise<ManageWorkhorseQueueResult> {

@@ -288,9 +288,26 @@ function publishTurnStart(
 		state.startedEmitted = true;
 		runtime.emit(state, "started", "delivered", []);
 	}
+	publishEndedTurn(runtime, state, turn);
+}
+
+/**
+ * Publish the terminal event for a turn that had already ended by the time turn/start answered,
+ * so the operation does not wait for notifications that will never arrive.
+ * @param runtime - The operations runtime.
+ * @param state - The delivered operation state.
+ * @param turn - The returned turn.
+ */
+function publishEndedTurn(
+	runtime: WorkhorseRuntime,
+	state: OperationState,
+	turn: SessionTurn,
+): void {
 	if (turn.status === "completed") {
 		runtime.terminal(state, "completed", [], null);
-	} else if (turn.status === "failed" || turn.status === "interrupted") {
+		return;
+	}
+	if (turn.status === "failed" || turn.status === "interrupted") {
 		runtime.terminal(
 			state,
 			"failed",
