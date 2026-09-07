@@ -42,7 +42,10 @@ interface ActiveRealtimeSession {
 }
 
 /**
- *
+ * The frozen identity of one realtime start, everything a later delivery must match to be
+ * counted as belonging to this session.
+ * @param session - The live session.
+ * @returns The session's generation record.
  */
 function realtimeGeneration(session: ActiveRealtimeSession): CodexRealtimeGeneration {
 	return Object.freeze({

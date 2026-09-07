@@ -74,32 +74,56 @@ const CanonicalNamespaceSchema = z
 	.strict();
 
 /**
- *
+ * Hashes exact manifest bytes so a reviewed digest can be compared byte for byte.
+ * @param bytes - The manifest content exactly as stored on disk or supplied by a caller.
+ * @returns The lowercase hexadecimal SHA-256 digest of the bytes.
  */
 function sha256(bytes: Uint8Array): string {
 	return createHash("sha256").update(bytes).digest("hex");
 }
 
 /**
- *
+ * Decodes bytes as strict UTF-8, refusing anything the decoder cannot represent losslessly.
+ * @param bytes - The candidate manifest bytes.
+ * @param label - Names the manifest in the refusal message.
+ * @returns The decoded text.
  */
-function decodeCanonicalBytes(bytes: Buffer, label: string): string {
-	if (bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
-		throw new TypeError(`${label} must be UTF-8 without a BOM.`);
-	}
-
-	let text: string;
+function decodeStrictUtf8(bytes: Buffer, label: string): string {
 	try {
-		text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+		return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 	} catch (error) {
 		throw new TypeError(`${label} is not valid UTF-8.`, { cause: error });
 	}
+}
+
+/**
+ * Refuses text whose line endings would make two reviewed manifests hash differently
+ * while reading the same: carriage returns, a missing terminal newline, or a doubled one.
+ * @param text - The decoded manifest text.
+ * @param label - Names the manifest in the refusal message.
+ */
+function assertCanonicalLineEndings(text: string, label: string): void {
 	if (text.includes("\r")) {
 		throw new TypeError(`${label} must use LF line endings.`);
 	}
 	if (!text.endsWith("\n") || text.endsWith("\n\n")) {
 		throw new TypeError(`${label} must end in exactly one terminal LF.`);
 	}
+}
+
+/**
+ * Decodes manifest bytes only when they are in the one canonical encoding the reviewed
+ * digest was computed over: BOM-less UTF-8, LF endings, one terminal newline, round-trippable.
+ * @param bytes - The candidate manifest bytes.
+ * @param label - Names the manifest in refusal messages.
+ * @returns The canonical manifest text.
+ */
+function decodeCanonicalBytes(bytes: Buffer, label: string): string {
+	if (bytes.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf]))) {
+		throw new TypeError(`${label} must be UTF-8 without a BOM.`);
+	}
+	const text = decodeStrictUtf8(bytes, label);
+	assertCanonicalLineEndings(text, label);
 	if (!Buffer.from(text, "utf8").equals(bytes)) {
 		throw new TypeError(`${label} contains bytes that do not round-trip as UTF-8.`);
 	}
@@ -107,7 +131,10 @@ function decodeCanonicalBytes(bytes: Buffer, label: string): string {
 }
 
 /**
- *
+ * Parses canonical manifest text into a closed namespace, so no unreviewed field survives.
+ * @param text - The canonical manifest text.
+ * @param label - Names the manifest in the refusal message.
+ * @returns The validated namespace.
  */
 function parseManifestText(text: string, label: string): CanonicalNamespace {
 	let value: unknown;
@@ -120,13 +147,16 @@ function parseManifestText(text: string, label: string): CanonicalNamespace {
 }
 
 /**
- *
+ * Freezes a value and everything reachable from it, so a reviewed contract cannot be
+ * mutated after load by any consumer holding a reference.
+ * @param value - The value to freeze in place.
+ * @returns The same value, now deeply frozen.
  */
 function deepFreeze<T>(value: T): T {
 	if (typeof value !== "object" || value === null || Object.isFrozen(value)) {
 		return value;
 	}
-	for (const child of Object.values(value as Record<string, unknown>)) {
+	for (const child of Object.values(value)) {
 		deepFreeze(child);
 	}
 	Object.freeze(value);
@@ -134,19 +164,45 @@ function deepFreeze<T>(value: T): T {
 }
 
 /**
- *
+ * Looks up the reviewed tool order for a namespace.
+ * @param namespace - The namespace whose tools are expected.
+ * @returns The tool names in their reviewed order.
  */
 function expectedToolNames(namespace: NamespaceName): readonly string[] {
 	return EXPECTED_TOOL_NAMES[namespace];
 }
 
 /**
- *
+ * Checks one manifest tool against its reviewed position: the expected name and a closed
+ * input schema, because the coordinator may only call exactly what was reviewed.
+ * @param namespace - The namespace the tool belongs to.
+ * @param tool - The parsed tool entry.
+ * @param index - The tool's position in the manifest.
+ * @param expectedToolName - The reviewed name for that position, if any.
+ */
+function assertToolEntry(
+	namespace: NamespaceName,
+	tool: CanonicalTool,
+	index: number,
+	expectedToolName: string | undefined,
+): void {
+	if (tool.name !== expectedToolName) {
+		throw new TypeError(
+			`${namespace} tool ${index} must be ${expectedToolName ?? "<missing>"}; received ${tool.name}.`,
+		);
+	}
+	if (tool.inputSchema["additionalProperties"] !== false) {
+		throw new TypeError(`${namespace}.${tool.name} must use a closed input schema.`);
+	}
+}
+
+/**
+ * Verifies a parsed manifest is the namespace it claims, with exactly the reviewed tools in
+ * the reviewed order. Type and eager loading are already fixed by the closed schema.
+ * @param manifest - The parsed namespace.
+ * @param expectedName - The namespace the caller asked for.
  */
 function assertManifestShape(manifest: CanonicalNamespace, expectedName: NamespaceName): void {
-	if (manifest.type !== "namespace") {
-		throw new TypeError(`${expectedName} must be a namespace.`);
-	}
 	if (manifest.name !== expectedName) {
 		throw new TypeError(`Expected ${expectedName}, received ${manifest.name}.`);
 	}
@@ -157,18 +213,7 @@ function assertManifestShape(manifest: CanonicalNamespace, expectedName: Namespa
 		);
 	}
 	for (const [index, tool] of manifest.tools.entries()) {
-		const expectedToolName = expectedNames[index];
-		if (tool.name !== expectedToolName) {
-			throw new TypeError(
-				`${expectedName} tool ${index} must be ${expectedToolName ?? "<missing>"}; received ${tool.name}.`,
-			);
-		}
-		if (tool.deferLoading) {
-			throw new TypeError(`${expectedName}.${tool.name} must remain eager.`);
-		}
-		if (tool.inputSchema["additionalProperties"] !== false) {
-			throw new TypeError(`${expectedName}.${tool.name} must use a closed input schema.`);
-		}
+		assertToolEntry(expectedName, tool, index, expectedNames[index]);
 	}
 }
 
@@ -179,7 +224,10 @@ interface LoadedManifest {
 }
 
 /**
- *
+ * Reads a reviewed manifest file beside this module and refuses it unless its bytes hash to
+ * the fixed reviewed digest, so a silent edit cannot change what the coordinator may call.
+ * @param namespace - The namespace whose manifest file to load.
+ * @returns The canonical text, the frozen parsed namespace and the verified digest.
  */
 function loadManifest(namespace: NamespaceName): LoadedManifest {
 	const label = `${namespace} manifest`;
@@ -216,7 +264,9 @@ interface CoordinatorManifestIntegrity {
 }
 
 /**
- *
+ * Selects the loaded namespace for a name.
+ * @param namespace - The namespace name.
+ * @returns The frozen reviewed namespace.
  */
 function manifestFor(namespace: NamespaceName): CanonicalNamespace {
 	return namespace === "archboard_workhorse"
@@ -225,14 +275,20 @@ function manifestFor(namespace: NamespaceName): CanonicalNamespace {
 }
 
 /**
- *
+ * Looks up the fixed reviewed digest for a namespace.
+ * @param namespace - The namespace name.
+ * @returns The reviewed SHA-256 digest.
  */
 function expectedDigest(namespace: NamespaceName): string {
 	return MANIFEST_DIGESTS[namespace];
 }
 
 /**
- *
+ * Validates caller-supplied manifest bytes or text the same way the file on disk is
+ * validated: exact digest first, then canonical encoding, then shape.
+ * @param namespace - The namespace the candidate claims to be.
+ * @param candidate - The manifest as text or raw bytes.
+ * @returns The parsed namespace.
  */
 function parseCandidate(
 	namespace: NamespaceName,
@@ -252,20 +308,27 @@ function parseCandidate(
 	return manifest;
 }
 
-/** Validate a reviewed namespace from exact bytes or a closed object snapshot. */
+/**
+ * Validate a reviewed namespace from exact bytes or a closed object snapshot.
+ * @param namespace - The namespace the candidate claims to be.
+ * @param candidate - Manifest text, raw bytes, or an already-parsed object.
+ */
 function assertCanonicalManifest(namespace: NamespaceName, candidate: unknown): void {
 	const expected = manifestFor(namespace);
 	const received =
 		typeof candidate === "string" || candidate instanceof Uint8Array
 			? parseCandidate(namespace, candidate)
-			: (CanonicalNamespaceSchema.parse(candidate) as CanonicalNamespace);
+			: CanonicalNamespaceSchema.parse(candidate);
 	assertManifestShape(received, namespace);
 	if (JSON.stringify(received) !== JSON.stringify(expected)) {
 		throw new TypeError(`${namespace} manifest does not match the reviewed snapshot.`);
 	}
 }
 
-/** Re-read both canonical files and verify their fixed reviewed digests. */
+/**
+ * Re-read both canonical files and verify their fixed reviewed digests.
+ * @returns The verified digest of each manifest.
+ */
 function verifyCoordinatorManifestIntegrity(): CoordinatorManifestIntegrity {
 	const workhorse = loadManifest("archboard_workhorse");
 	const voice = loadManifest("archboard_voice");
@@ -273,7 +336,10 @@ function verifyCoordinatorManifestIntegrity(): CoordinatorManifestIntegrity {
 }
 
 /**
- *
+ * Finds one reviewed tool declaration by name.
+ * @param namespace - The namespace that declares the tool.
+ * @param toolName - The tool to look up.
+ * @returns The reviewed tool declaration.
  */
 function canonicalTool(namespace: NamespaceName, toolName: CoordinatorToolName): CanonicalTool {
 	const tool = manifestFor(namespace).tools.find((candidate) => candidate.name === toolName);
@@ -305,4 +371,5 @@ export {
 	assertCanonicalManifest,
 	verifyCoordinatorManifestIntegrity,
 	canonicalTool,
+	deepFreeze,
 };

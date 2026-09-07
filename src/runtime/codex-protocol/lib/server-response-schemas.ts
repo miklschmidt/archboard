@@ -19,7 +19,9 @@ import {
 } from "@/runtime/codex-protocol/lib/scalars";
 
 /**
- *
+ * Proves a handwritten schema for a reply Archboard sends to a server request against the
+ * generated wire type, so a protocol bump fails at type-check rather than on the wire.
+ * @returns An identity function that only accepts a schema whose output conforms to the wire type.
  */
 function codexOutputSchema<Wire>() {
 	return <Schema extends z.ZodType>(

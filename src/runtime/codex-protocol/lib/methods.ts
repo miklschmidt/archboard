@@ -124,7 +124,9 @@ type ServerRequestMethod = (typeof SERVER_REQUEST_METHODS)[number];
 type ServerNotificationMethod = (typeof SERVER_NOTIFICATION_METHODS)[number];
 
 /**
- *
+ * Narrows a method name to the requests whose params are omitted from the wire entirely.
+ * @param method - Any method name.
+ * @returns Whether the method is sent without params.
  */
 function isClientRequestMethodWithoutParams(
 	method: string,
