@@ -1,67 +1,13 @@
 import { types as nodeTypes } from "node:util";
 
-const INSPECTION_INPUT_COMPLEXITY_LIMIT = 1_000_000 as const;
-
-type InputUnitKind = "record" | "field" | "array-entry" | "string-code-unit";
-type InspectionPathToken = string | number;
-
-interface InputStopContext {
-	readonly completedRecordCount: number;
-	readonly sourceIndex: number | null;
-	readonly path: readonly InspectionPathToken[];
-	readonly unitKind: InputUnitKind;
-}
-
-class InputComplexityCeilingReached extends Error {
-	readonly limit = INSPECTION_INPUT_COMPLEXITY_LIMIT;
-	readonly attempted = 1_000_001 as const;
-
-	/**
-	 * Record where the input scan stopped so the report can name the exact unit.
-	 * @param context the record, path and unit kind that exceeded the ceiling
-	 */
-	constructor(readonly context: InputStopContext) {
-		super("Inspection input stopped at the input complexity ceiling.");
-		this.name = "InputComplexityCeilingReached";
-	}
-}
-
-/**
- * Whether a unit claim is a non-negative safe integer.
- * @param units the claimed unit count
- * @returns true when the claim can be accounted exactly
- */
-const validUnits = (units: number): boolean => Number.isSafeInteger(units) && units >= 0;
-
-class InputComplexityAccumulator {
-	#inputUnits = 0;
-
-	/**
-	 * Units claimed so far.
-	 * @returns the running unit total
-	 */
-	get inputUnits(): number {
-		return this.#inputUnits;
-	}
-
-	/**
-	 * Claim input units against the fixed ceiling, stopping the scan when they do not fit.
-	 * @param units the units this piece of input costs
-	 * @param context where the scan is, reported if the ceiling is reached
-	 */
-	claim(units: number, context: InputStopContext): void {
-		if (!validUnits(units)) {
-			throw new Error(`Invalid input complexity claim: ${units}`);
-		}
-		if (units === 0) {
-			return;
-		}
-		if (units > INSPECTION_INPUT_COMPLEXITY_LIMIT - this.#inputUnits) {
-			throw new InputComplexityCeilingReached(context);
-		}
-		this.#inputUnits += units;
-	}
-}
+import {
+	INSPECTION_INPUT_COMPLEXITY_LIMIT,
+	InputComplexityAccumulator,
+	InputComplexityCeilingReached,
+	type InputStopContext,
+	type InputUnitKind,
+	type InspectionPathToken,
+} from "@/runtime/board-inspection/lib/input-complexity";
 
 const INSPECTION_FIELDS = [
 	"id",
@@ -304,6 +250,10 @@ function scanArray(scan: RecordScan, task: ValueTask, values: readonly unknown[]
 			kind: "value",
 			value: descriptor.value,
 			path: [...path, index],
+			/**
+			 * Place the copied element at its index.
+			 * @param entry the copied value
+			 */
 			assign: (entry) => {
 				output[index] = entry;
 			},
@@ -341,6 +291,10 @@ function scanPlainObject(scan: RecordScan, task: ValueTask, source: object): voi
 			kind: "value",
 			value: descriptor.value,
 			path: [...path, field],
+			/**
+			 * Place the copied field on the copied object.
+			 * @param fieldValue the copied value
+			 */
 			assign: (fieldValue) => {
 				output[field] = fieldValue;
 			},
@@ -460,6 +414,7 @@ function scanRootRecord(
 		kind: "value",
 		value: rootValue,
 		path: [],
+		/** The root copy is kept by the scan itself, so nothing is assigned here. */
 		assign: () => {},
 	});
 	const limit = drainTasks(scan);
@@ -529,6 +484,28 @@ function claimRecordUnit(
 }
 
 /**
+ * Whether an input slot is defined by an accessor, which the snapshot never invokes: reading
+ * it would run caller-owned code inside the inspection.
+ * @param descriptor the slot's property descriptor, when it has one
+ * @returns true when the slot must be refused unread
+ */
+function isAccessorSlot(descriptor: PropertyDescriptor | undefined): boolean {
+	return descriptor !== undefined && !("value" in descriptor);
+}
+
+/**
+ * Record that one input slot was refused because it is an accessor, keeping the slot in the
+ * output so every record still answers to its own source index.
+ * @param sourceIndex the refused slot
+ * @param output the accumulating snapshot, updated in place
+ */
+function refuseAccessorRecord(sourceIndex: number, output: SnapshotAccumulator): void {
+	output.issues.push({ sourceIndex, path: [], issue: "accessor", admittedRecord: null });
+	output.records.push(null);
+	output.completedRecordCount += 1;
+}
+
+/**
  * Read and copy one root record into the accumulator.
  * @param input the caller-owned input array
  * @param sourceIndex the record to read
@@ -543,10 +520,8 @@ function admitRecord(
 	output: SnapshotAccumulator,
 ): InputComplexityCeilingReached | null {
 	const rootDescriptor = Object.getOwnPropertyDescriptor(input, String(sourceIndex));
-	if (rootDescriptor && !("value" in rootDescriptor)) {
-		output.issues.push({ sourceIndex, path: [], issue: "accessor", admittedRecord: null });
-		output.records.push(null);
-		output.completedRecordCount += 1;
+	if (isAccessorSlot(rootDescriptor)) {
+		refuseAccessorRecord(sourceIndex, output);
 		return null;
 	}
 	const scanned = scanRootRecord(
