@@ -180,7 +180,11 @@ class CodexCoordinatorError extends Error {
 	override readonly cause: unknown;
 
 	/**
-	 *
+	 * Build the error, naming which reviewed refusal it is so a caller can tell a coordinator that
+	 * could not be started from one that must be inspected instead.
+	 * @param code - Why the coordinator refused.
+	 * @param message - The diagnostic for the caller.
+	 * @param cause - The underlying failure, when there is one.
 	 */
 	constructor(code: CoordinatorErrorCode, message: string, cause?: unknown) {
 		super(message);
