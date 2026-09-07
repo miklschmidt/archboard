@@ -150,7 +150,10 @@ class CodexSpokenApprovalError extends Error {
 	readonly code: CodexSpokenApprovalErrorCode;
 
 	/**
-	 *
+	 * Build the error, naming which of the two refusals it is so a caller can tell a disposed gate
+	 * from one that is already busy with another approval.
+	 * @param code - Why the gate refused.
+	 * @param message - The diagnostic for the caller.
 	 */
 	constructor(code: CodexSpokenApprovalErrorCode, message: string) {
 		super(message);
