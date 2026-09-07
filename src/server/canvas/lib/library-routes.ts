@@ -41,14 +41,18 @@ interface LibraryRouteDependencies {
 }
 
 /**
- *
+ * What a library failure says.
+ * @param error Whatever the library store threw.
+ * @returns Its message, or its string form for a non-Error.
  */
 function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
 /**
- *
+ * Answer with the whole stencil library, which the browser reads when it mounts.
+ * @param _request The request; the library is not board-scoped.
+ * @param response Its response.
  */
 const readLibraryRoute: RequestHandler = (_request, response): void => {
 	try {
@@ -68,7 +72,10 @@ const readLibraryRoute: RequestHandler = (_request, response): void => {
 };
 
 /**
- *
+ * One stored library item from what the browser sent, defaulting the fields
+ * Excalidraw leaves out.
+ * @param item The item as written.
+ * @returns The item as stored.
  */
 function libraryItemFromRequest(item: LibraryWriteInput): LibraryItem {
 	return {
@@ -89,7 +96,13 @@ function createLibraryRouter(dependencies: Readonly<LibraryRouteDependencies>): 
 	const router = createRouter();
 	router.get("/api/library", readLibraryRoute);
 	/**
+	 * Replace the library with what the browser sent, and tell every other tab.
 	 *
+	 * The browser sends the whole set because that is what Excalidraw provides
+	 * it — there is no library delta to be had — and last write wins, which is
+	 * honest for a palette two tabs are unlikely to edit at once.
+	 * @param request The request.
+	 * @param response Its response.
 	 */
 	const writeLibraryRoute: RequestHandler = (request, response): void => {
 		try {
