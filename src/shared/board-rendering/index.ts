@@ -1,4 +1,4 @@
-import type { RuntimeBoardElement } from "../board-elements/index.js";
+import type { RuntimeBoardElement } from "@/shared/board-elements/index";
 
 interface BoardRenderFile {
 	readonly id: string;

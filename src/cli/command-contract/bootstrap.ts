@@ -1,3 +1,10 @@
+/**
+ * Moves a leading `--url` out of the arguments and into the environment, in
+ * either spelling. It must run before anything reads runtime configuration,
+ * which is why it is a separate step from ordinary argument parsing.
+ * @param argv - The process arguments, edited in place to remove the flag.
+ * @param environment - Where the URL is recorded; the process environment by default.
+ */
 export function applyCliBootstrap(
 	argv: string[],
 	environment: Record<string, string | undefined> = process.env,

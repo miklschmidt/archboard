@@ -20,10 +20,16 @@ import type {
 	ThreadId,
 	TurnId,
 	TrustedIdentityDecoder,
-} from "../../codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity/index";
 
 const JsonValueSchema = z.json();
 
+/**
+ * A non-empty string bounded in both characters and UTF-8 bytes, without NUL,
+ * so a browser payload can never exceed what its wire budget assumed.
+ * @param maximum - The limit, applied to both the length and the encoded byte size.
+ * @returns The string schema.
+ */
 const boundedText = (maximum: number) =>
 	z
 		.string()
@@ -35,6 +41,12 @@ const boundedText = (maximum: number) =>
 			`text exceeds ${maximum} UTF-8 bytes`,
 		);
 
+/**
+ * Like {@link boundedText} but allows the empty string, for bodies that may
+ * legitimately be blank on the wire.
+ * @param maximum - The limit, applied to both the length and the encoded byte size.
+ * @returns The string schema.
+ */
 const boundedWireText = (maximum: number) =>
 	z
 		.string()
@@ -45,8 +57,18 @@ const boundedWireText = (maximum: number) =>
 			`text exceeds ${maximum} UTF-8 bytes`,
 		);
 
+/**
+ * Bounded text that may be null.
+ * @param maximum - The limit, applied to both the length and the encoded byte size.
+ * @returns The nullable string schema.
+ */
 const nullableText = (maximum: number) => boundedText(maximum).nullable();
 
+/**
+ * Bounded text that may be null or absent.
+ * @param maximum - The limit, applied to both the length and the encoded byte size.
+ * @returns The optional, nullable string schema.
+ */
 const optionalNullableText = (maximum: number) => boundedText(maximum).nullable().optional();
 
 const SafeUrlSchema = boundedText(2048).refine((value) => {
@@ -83,6 +105,12 @@ type IdentityContext = Pick<IdentityAuthority, "decoder" | "validator"> & {
 	readonly operation?: Pick<OperationAuthority, "decoder" | "validator">;
 };
 
+/**
+ * Wraps one authority parser as a zod schema, so a refusal from the identity
+ * authority surfaces as an ordinary validation issue instead of a throw.
+ * @param parse - The authority's parser for one identity domain.
+ * @returns A schema that yields the branded identity or an issue.
+ */
 function authorityIdentity<Identity extends string>(
 	parse: (value: unknown) => Identity,
 ): z.ZodType<Identity> {
@@ -99,6 +127,13 @@ function authorityIdentity<Identity extends string>(
 	});
 }
 
+/**
+ * Builds one schema per identity domain over the session's authority. The
+ * operation schema refuses everything when no operation authority is supplied,
+ * because a browser context without one must never accept an operation id.
+ * @param context - The decoder and validator, plus the operation capability when present.
+ * @returns The per-domain schemas and a union that accepts any of them.
+ */
 function createIdentitySchemas(context: IdentityContext): IdentitySchemas {
 	const decoder: TrustedIdentityDecoder = context.decoder;
 	const identities = {
@@ -138,6 +173,13 @@ function createIdentitySchemas(context: IdentityContext): IdentitySchemas {
 	};
 }
 
+/**
+ * Refuses a target addressed to another child or an earlier epoch.
+ * @param context - The validator that knows the current child and epoch.
+ * @param value - The target being addressed.
+ * @param value.childId - The child the target names.
+ * @param value.epoch - The epoch the target names.
+ */
 function assertCurrentTarget(
 	context: Pick<IdentityValidator, "assertCurrentEpoch">,
 	value: { childId: ChildId; epoch: ChildEpoch },
