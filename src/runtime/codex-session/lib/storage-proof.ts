@@ -12,14 +12,19 @@ type ConfigResponse = ResponsePayloads["config/read"];
 type RequirementsResponse = ResponsePayloads["configRequirements/read"];
 
 /**
- *
+ * Refuses the storage proof with one uniform error class.
+ * @param detail - What was refused.
+ * @returns Never; always throws.
  */
 function fail(detail: string): never {
 	throw new CodexSessionStorageError(`Codex storage proof refused: ${detail}`);
 }
 
 /**
- *
+ * Tests strict containment of one path inside another.
+ * @param parent - The candidate ancestor directory.
+ * @param child - The path that may lie inside it.
+ * @returns Whether child is strictly inside parent.
  */
 function isWithin(parent: string, child: string): boolean {
 	const relative = path.relative(parent, child);
@@ -32,7 +37,10 @@ function isWithin(parent: string, child: string): boolean {
 }
 
 /**
- *
+ * Accepts only a nonempty, NUL-free, absolute path that is already in resolved form.
+ * @param value - The candidate path.
+ * @param label - Names the path in refusal messages.
+ * @returns The accepted path.
  */
 function requireAbsolutePath(value: unknown, label: string): string {
 	if (typeof value !== "string" || value.length === 0 || value.includes("\0")) {
@@ -45,7 +53,10 @@ function requireAbsolutePath(value: unknown, label: string): string {
 }
 
 /**
- *
+ * Walks every component of a path and refuses a symbolic link anywhere along it, so a
+ * prepared storage root cannot be redirected after preparation.
+ * @param candidate - The absolute path to inspect.
+ * @param label - Names the path in refusal messages.
  */
 function assertNoSymlinkComponents(candidate: string, label: string): void {
 	const parsed = path.parse(candidate);
@@ -65,7 +76,11 @@ function assertNoSymlinkComponents(candidate: string, label: string): void {
 }
 
 /**
- *
+ * Resolves a path and requires that resolution changes nothing, proving the path is exactly
+ * the one that was prepared.
+ * @param value - The candidate path.
+ * @param label - Names the path in refusal messages.
+ * @returns The canonical path.
  */
 function canonicalPath(value: unknown, label: string): string {
 	const candidate = requireAbsolutePath(value, label);
@@ -83,7 +98,8 @@ function canonicalPath(value: unknown, label: string): string {
 }
 
 /**
- *
+ * Reads the current user id where the platform has one.
+ * @returns The uid, or undefined on Windows or when it cannot be read.
  */
 function currentUserId(): number | undefined {
 	if (process.platform === "win32") {
@@ -93,7 +109,23 @@ function currentUserId(): number | undefined {
 }
 
 /**
- *
+ * Requires a POSIX mode to be exactly the prepared restrictive mode.
+ * @param stats - The inspected file or directory.
+ * @param label - Names the path in refusal messages.
+ * @param mode - The required permission bits.
+ */
+function assertRestrictiveMode(stats: fs.Stats, label: string, mode: number): void {
+	if (process.platform !== "win32" && (stats.mode & 0o777) !== mode) {
+		return fail(`${label} is not restrictive`);
+	}
+}
+
+/**
+ * Requires a storage path to be owned by the current user and, on POSIX, to carry exactly
+ * the prepared restrictive mode.
+ * @param stats - The inspected file or directory.
+ * @param label - Names the path in refusal messages.
+ * @param mode - The required permission bits.
  */
 function assertOwnerAndMode(stats: fs.Stats, label: string, mode: number): void {
 	const owner = currentUserId();
@@ -103,13 +135,14 @@ function assertOwnerAndMode(stats: fs.Stats, label: string, mode: number): void 
 	if (owner !== undefined && stats.uid !== owner) {
 		return fail(`${label} is not owned by the current user`);
 	}
-	if (process.platform !== "win32" && (stats.mode & 0o777) !== mode) {
-		return fail(`${label} is not restrictive`);
-	}
+	assertRestrictiveMode(stats, label, mode);
 }
 
 /**
- *
+ * Proves a prepared storage root is a private directory owned by the current user.
+ * @param value - The candidate directory path.
+ * @param label - Names the path in refusal messages.
+ * @returns The canonical directory path.
  */
 function assertDirectory(value: unknown, label: string): string {
 	const canonical = canonicalPath(value, label);
@@ -127,7 +160,10 @@ function assertDirectory(value: unknown, label: string): string {
 }
 
 /**
- *
+ * Proves the prepared config file is a private regular file owned by the current user.
+ * @param value - The candidate file path.
+ * @param label - Names the path in refusal messages.
+ * @returns The canonical file path.
  */
 function assertConfigFile(value: unknown, label: string): string {
 	const canonical = canonicalPath(value, label);
@@ -145,7 +181,10 @@ function assertConfigFile(value: unknown, label: string): string {
 }
 
 /**
- *
+ * Requires a server-reported path to canonicalize to the prepared root.
+ * @param value - The path the server reported.
+ * @param label - Names the path in refusal messages.
+ * @param prepared - The canonical prepared root.
  */
 function assertRootAgreement(value: unknown, label: string, prepared: string): void {
 	if (canonicalPath(value, label) !== prepared) {
@@ -154,7 +193,11 @@ function assertRootAgreement(value: unknown, label: string, prepared: string): v
 }
 
 /**
- *
+ * Requires the effective sqlite_home config value to be present and to agree with the
+ * prepared root.
+ * @param value - The effective config value.
+ * @param label - Names the value in refusal messages.
+ * @param prepared - The canonical prepared root.
  */
 function assertSqliteValue(value: unknown, label: string, prepared: string): void {
 	if (typeof value !== "string") {
@@ -164,7 +207,9 @@ function assertSqliteValue(value: unknown, label: string, prepared: string): voi
 }
 
 /**
- *
+ * Requires sqlite_home to originate from the prepared user config file and no other layer.
+ * @param config - The decoded config/read response.
+ * @param configPath - The canonical prepared config.toml path.
  */
 function assertOrigin(config: ConfigResponse, configPath: string): void {
 	const origin = config.origins["sqlite_home"];
@@ -177,7 +222,9 @@ function assertOrigin(config: ConfigResponse, configPath: string): void {
 }
 
 /**
- *
+ * Requires any managed sqliteHome requirement to agree with the prepared root.
+ * @param requirements - The decoded configRequirements/read response.
+ * @param sqliteHome - The canonical prepared sqlite root.
  */
 function assertRequirements(requirements: RequirementsResponse, sqliteHome: string): void {
 	const managed = requirements.requirements;
@@ -189,7 +236,10 @@ function assertRequirements(requirements: RequirementsResponse, sqliteHome: stri
 	}
 }
 
-/** Verify server-reported storage without creating, rewriting, or locking anything. */
+/**
+ * Verify server-reported storage without creating, rewriting, or locking anything.
+ * @param input - The prepared storage facts and the three decoded handshake responses.
+ */
 export function proveCodexStorage(input: {
 	readonly storage: CodexSessionStorage;
 	readonly initialize: InitializeResponse;

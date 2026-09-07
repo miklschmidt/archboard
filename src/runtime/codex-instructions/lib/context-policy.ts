@@ -1,20 +1,19 @@
-type DeepReadonly<Value> = Value extends readonly unknown[]
-	? { readonly [Key in keyof Value]: DeepReadonly<Value[Key]> }
-	: Value extends object
-		? { readonly [Key in keyof Value]: DeepReadonly<Value[Key]> }
-		: Value;
-
 /**
- *
+ * Freeze a policy literal and everything reachable from it at runtime. The literal is declared
+ * `as const`, so its type is already deeply readonly; this makes the object match that type.
+ * @param value - The literal to freeze in place.
+ * @returns The same value, now frozen at every level.
  */
-function deepFreeze<Value>(value: Value): DeepReadonly<Value> {
+function deepFreeze<Value>(value: Value): Value {
 	if (typeof value !== "object" || value === null) {
-		return value as DeepReadonly<Value>;
+		return value;
 	}
-	for (const child of Object.values(value as Record<string, unknown>)) {
+	const children: readonly unknown[] = Object.values(value);
+	for (const child of children) {
 		deepFreeze(child);
 	}
-	return Object.freeze(value) as DeepReadonly<Value>;
+	Object.freeze(value);
+	return value;
 }
 
 const reasonNullStates = ["unbound", "executable"] as const;

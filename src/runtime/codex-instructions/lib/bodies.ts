@@ -12,7 +12,9 @@ import {
 import { WORKHORSE_DEVELOPER_INSTRUCTIONS } from "@/runtime/codex-instructions/lib/authored";
 
 /**
- *
+ * UTF-8 byte length of a string, the unit the prompt budget is written in.
+ * @param value - The text to measure.
+ * @returns The number of UTF-8 bytes.
  */
 const utf8Bytes = (value: string): number => Buffer.byteLength(value, "utf8");
 const boundedPrompt = z
@@ -46,13 +48,17 @@ const AdditionalContextEntrySchema = z.strictObject({
 });
 
 /**
- *
+ * Freeze a parsed value and everything reachable from it so a built request body cannot be
+ * edited between validation and the wire.
+ * @param value - The value to freeze in place.
+ * @returns The same value, now frozen at every level.
  */
 function freezeDeep<T>(value: T): T {
 	if (typeof value !== "object" || value === null) {
 		return value;
 	}
-	for (const child of Object.values(value as Record<string, unknown>)) {
+	const children: readonly unknown[] = Object.values(value);
+	for (const child of children) {
 		freezeDeep(child);
 	}
 	Object.freeze(value);
@@ -60,7 +66,9 @@ function freezeDeep<T>(value: T): T {
 }
 
 /**
- *
+ * Wrap a schema so its parsed output is deep-frozen.
+ * @param schema - The schema whose output to freeze.
+ * @returns The freezing schema.
  */
 function frozenSchema<T extends z.ZodTypeAny>(schema: T) {
 	return schema.transform((value) => freezeDeep(value));
@@ -158,14 +166,22 @@ const ThreadForkParamsSchema = frozenSchema(ThreadForkParamsRawSchema);
 type ThreadForkParams = z.infer<typeof ThreadForkParamsSchema>;
 
 /**
- *
+ * Whether a path is absolute and already in its lexically resolved form, the only spelling a
+ * forked workhorse may receive as its checkout root.
+ * @param value - The candidate path.
+ * @returns True when the path needs no normalisation.
  */
 function isCanonicalCheckoutRoot(value: string): boolean {
 	return path.isAbsolute(value) && path.resolve(value) === value;
 }
 
 /**
- *
+ * Validate a body this module built against its own output schema and freeze it, so a builder
+ * bug surfaces here rather than as an app-server rejection.
+ * @param schema - The output schema.
+ * @param value - The body to check.
+ * @param label - Names the body in the thrown error.
+ * @returns The frozen, validated body.
  */
 function parseOutput<T>(schema: z.ZodType<T>, value: unknown, label: string): T {
 	const parsed = schema.safeParse(value);
@@ -176,7 +192,9 @@ function parseOutput<T>(schema: z.ZodType<T>, value: unknown, label: string): T 
 }
 
 /**
- *
+ * Build the one user input shape Archboard sends: plain text with no text elements.
+ * @param text - The prompt text.
+ * @returns The validated text input item.
  */
 function createTextUserInput(text: string): TextUserInput {
 	return parseOutput(
@@ -187,7 +205,9 @@ function createTextUserInput(text: string): TextUserInput {
 }
 
 /**
- *
+ * Wrap a context as the `additionalContext` entry that rides on turn/start and turn/steer.
+ * @param context - The context to encode.
+ * @returns The validated additional-context body.
  */
 function createAdditionalContext(context: ArchboardContext): AdditionalContext {
 	const value = encodeCanonicalContext(context);
@@ -206,7 +226,9 @@ interface TurnStartBuilderInput {
 }
 
 /**
- *
+ * Build turn/start parameters carrying the prompt and the canonical context.
+ * @param input - The thread, message id, prompt and context.
+ * @returns The validated turn/start parameters.
  */
 function createTurnStartParams(input: TurnStartBuilderInput): TurnStartParams {
 	const validated = TurnStartBuilderInputSchema.parse(input);
@@ -228,7 +250,10 @@ interface TurnSteerBuilderInput extends TurnStartBuilderInput {
 }
 
 /**
- *
+ * Build turn/steer parameters carrying the prompt, the canonical context and the turn expected
+ * to still be running.
+ * @param input - The thread, message id, prompt, context and expected turn.
+ * @returns The validated turn/steer parameters.
  */
 function createTurnSteerParams(input: TurnSteerBuilderInput): TurnSteerParams {
 	const validated = TurnSteerBuilderInputSchema.parse(input);
@@ -256,7 +281,9 @@ const ThreadInjectItemsBuilderInputSchema = z.strictObject({
 });
 
 /**
- *
+ * Build thread/inject_items parameters that deliver a canonical context as one developer message.
+ * @param input - The thread and context.
+ * @returns The validated thread/inject_items parameters.
  */
 function createThreadInjectItemsParams(
 	input: ThreadInjectItemsBuilderInput,
@@ -286,7 +313,10 @@ interface ThreadForkBuilderInput {
 }
 
 /**
- *
+ * Build thread/fork parameters for a workhorse: the reviewed developer instructions, the checkout
+ * as the single workspace root, and no inherited turns.
+ * @param input - The source thread, checkout and optional fork boundary.
+ * @returns The validated thread/fork parameters.
  */
 function createThreadForkParams(input: ThreadForkBuilderInput): ThreadForkParams {
 	const validated = ThreadForkBuilderInputSchema.parse(input);
@@ -307,7 +337,10 @@ function createThreadForkParams(input: ThreadForkBuilderInput): ThreadForkParams
 }
 
 /**
- *
+ * Build thread/fork parameters for a thread forking itself mid-turn: the boundary is always the
+ * executing turn, and any caller-supplied boundary is ignored on purpose.
+ * @param input - The source thread, checkout and executing turn.
+ * @returns The validated thread/fork parameters.
  */
 function createSelfThreadForkParams(
 	input: Omit<ThreadForkBuilderInput, "beforeTurnId"> & {
@@ -329,7 +362,9 @@ function createSelfThreadForkParams(
 }
 
 /**
- *
+ * Decode the context carried by an `additionalContext` body, refusing any other shape.
+ * @param value - The body to decode.
+ * @returns The decoded canonical context.
  */
 function parseCanonicalAdditionalContext(value: unknown): ArchboardContext {
 	const parsed = AdditionalContextSchema.safeParse(value);

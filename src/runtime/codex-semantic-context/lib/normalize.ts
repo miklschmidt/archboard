@@ -43,7 +43,10 @@ class SemanticContextInputError extends Error {
 	readonly field: string;
 
 	/**
-	 *
+	 * Names the context field that failed validation so the adapter that
+	 * supplied it can be corrected.
+	 * @param field - The dotted path of the offending field.
+	 * @param message - What the field must satisfy.
 	 */
 	constructor(field: string, message: string) {
 		super(`${field}: ${message}`);
@@ -53,21 +56,41 @@ class SemanticContextInputError extends Error {
 }
 
 /**
- *
+ * Throws the input error for one field.
+ * @param field - The dotted path of the offending field.
+ * @param message - What the field must satisfy.
  */
 function fail(field: string, message: string): never {
 	throw new SemanticContextInputError(field, message);
 }
 
 /**
- *
+ * UTF-8 size of a string.
+ * @param value - The text.
+ * @returns The byte count of its UTF-8 encoding.
  */
 function byteLength(value: string): number {
 	return new TextEncoder().encode(value).byteLength;
 }
 
+/** Control characters JSON spells with a two-character escape. */
+const JSON_SHORT_ESCAPES: ReadonlySet<number> = new Set([0x08, 0x09, 0x0a, 0x0c, 0x0d]);
+
 /**
- *
+ * Whether a one-code-unit character is an unpaired surrogate, which
+ * JSON.stringify writes as a six-byte `\uXXXX` escape.
+ * @param character - One code point as iterated from a string.
+ * @returns True for a lone surrogate.
+ */
+function isLoneSurrogate(character: string): boolean {
+	const codeUnit = character.charCodeAt(0);
+	return character.length === 1 && codeUnit >= 0xd800 && codeUnit <= 0xdfff;
+}
+
+/**
+ * UTF-8 bytes one code point occupies inside a JSON string token.
+ * @param character - One code point as iterated from a string.
+ * @returns Its encoded size, escapes included.
  */
 function jsonStringPayloadBytes(character: string): number {
 	const codeUnit = character.charCodeAt(0);
@@ -75,21 +98,16 @@ function jsonStringPayloadBytes(character: string): number {
 		return 2;
 	}
 	if (codeUnit <= 0x1f) {
-		return codeUnit === 0x08 ||
-			codeUnit === 0x09 ||
-			codeUnit === 0x0a ||
-			codeUnit === 0x0c ||
-			codeUnit === 0x0d
-			? 2
-			: 6;
+		return JSON_SHORT_ESCAPES.has(codeUnit) ? 2 : 6;
 	}
-	if (character.length === 1 && codeUnit >= 0xd800 && codeUnit <= 0xdfff) {
-		return 6;
-	}
-	return byteLength(character);
+	return isLoneSurrogate(character) ? 6 : byteLength(character);
 }
 
-/** UTF-8 bytes occupied by JSON.stringify(value), including its quotes. */
+/**
+ * UTF-8 bytes occupied by JSON.stringify(value), including its quotes.
+ * @param value - The text.
+ * @returns The encoded size of the JSON string token.
+ */
 function jsonStringByteLength(value: string): number {
 	let bytes = 2;
 	for (const character of value) {
@@ -98,27 +116,41 @@ function jsonStringByteLength(value: string): number {
 	return bytes;
 }
 
-/** Clips a string by its JSON-encoded UTF-8 size without splitting a code point. */
-function clipJsonUtf8(value: string, maximum: number): BoundedValue<string> {
+/**
+ * Whether a string's JSON token fits a byte budget, stopping the count as soon
+ * as the budget is exceeded.
+ * @param value - The text.
+ * @param maximum - The byte budget for the JSON string token.
+ * @returns True when the whole token fits.
+ */
+function fitsJsonUtf8(value: string, maximum: number): boolean {
 	let encodedBytes = 2;
 	for (const character of value) {
 		encodedBytes += jsonStringPayloadBytes(character);
 		if (encodedBytes > maximum) {
-			break;
+			return false;
 		}
 	}
-	if (encodedBytes <= maximum) {
+	return true;
+}
+
+/**
+ * Clips a string by its JSON-encoded UTF-8 size without splitting a code point.
+ * @param value - The text.
+ * @param maximum - The byte budget for the JSON string token.
+ * @returns The text, clipped with an ellipsis when it did not fit.
+ */
+function clipJsonUtf8(value: string, maximum: number): BoundedValue<string> {
+	if (fitsJsonUtf8(value, maximum)) {
 		return { value, truncated: false };
 	}
-
 	const suffix = SEMANTIC_CONTEXT_ELLIPSIS;
 	const suffixBytes = jsonStringByteLength(suffix);
 	if (suffixBytes > maximum) {
 		return { value: "", truncated: true };
 	}
-
 	const kept: string[] = [];
-	encodedBytes = suffixBytes;
+	let encodedBytes = suffixBytes;
 	for (const character of value) {
 		const characterBytes = jsonStringPayloadBytes(character);
 		if (encodedBytes + characterBytes > maximum) {
@@ -131,7 +163,11 @@ function clipJsonUtf8(value: string, maximum: number): BoundedValue<string> {
 }
 
 /**
- *
+ * Validates a feed identity: it is never clipped, only refused, because a
+ * clipped feed id would silently name a different feed.
+ * @param value - The candidate feed id.
+ * @param field - The dotted path used in errors.
+ * @returns The feed id unchanged.
  */
 function feedIdValue(value: unknown, field: string): string {
 	const result = textValue(value, field, SEMANTIC_CONTEXT_LIMITS.cursorBytes);
@@ -148,7 +184,10 @@ function feedIdValue(value: unknown, field: string): string {
 }
 
 /**
- *
+ * Clips a string to a raw UTF-8 byte budget without splitting a code point.
+ * @param value - The text.
+ * @param maximum - The byte budget.
+ * @returns The text, clipped with an ellipsis when it did not fit.
  */
 function clipUtf8(value: string, maximum: number): BoundedValue<string> {
 	if (byteLength(value) <= maximum) {
@@ -172,7 +211,12 @@ function clipUtf8(value: string, maximum: number): BoundedValue<string> {
 }
 
 /**
- *
+ * Validates a text field and clips it to its byte budget.
+ * @param value - The candidate text.
+ * @param field - The dotted path used in errors.
+ * @param maximum - The byte budget.
+ * @param required - Whether blank text is refused.
+ * @returns The clipped text.
  */
 function textValue(
 	value: unknown,
@@ -193,7 +237,11 @@ function textValue(
 }
 
 /**
- *
+ * Validates an optional text field, where null means absent.
+ * @param value - The candidate text or null.
+ * @param field - The dotted path used in errors.
+ * @param maximum - The byte budget.
+ * @returns The clipped text, or null.
  */
 function nullableTextValue(
 	value: unknown,
@@ -208,16 +256,14 @@ function nullableTextValue(
 }
 
 /**
- *
+ * Refuses an identity that is empty, contains NUL, or exceeds the identity
+ * byte budget; identities are never clipped because a clipped identity names
+ * something else.
+ * @param value - The candidate identity.
+ * @param field - The dotted path used in errors.
  */
-function identityValue<Identity extends string>(
-	value: Identity | null | undefined,
-	field: string,
-): Identity | null {
-	if (value === null || value === undefined) {
-		return null;
-	}
-	if (typeof value !== "string" || value.length === 0) {
+function assertIdentityText(value: string, field: string): void {
+	if (value.length === 0) {
 		fail(field, "must be a non-empty identity");
 	}
 	if (value.includes("\0")) {
@@ -226,11 +272,33 @@ function identityValue<Identity extends string>(
 	if (byteLength(value) > SEMANTIC_CONTEXT_LIMITS.identityBytes) {
 		fail(field, `must not exceed ${SEMANTIC_CONTEXT_LIMITS.identityBytes} UTF-8 bytes`);
 	}
+}
+
+/**
+ * Validates an optional identity, where null and undefined both mean absent.
+ * @param value - The candidate identity.
+ * @param field - The dotted path used in errors.
+ * @returns The identity unchanged, or null.
+ */
+function identityValue<Identity extends string>(
+	value: Identity | null | undefined,
+	field: string,
+): Identity | null {
+	if (value === null || value === undefined) {
+		return null;
+	}
+	if (typeof value !== "string") {
+		fail(field, "must be a non-empty identity");
+	}
+	assertIdentityText(value, field);
 	return value;
 }
 
 /**
- *
+ * Validates an optional non-negative safe integer.
+ * @param value - The candidate number or null.
+ * @param field - The dotted path used in errors.
+ * @returns The number, or null.
  */
 function numberValue(value: unknown, field: string): number | null {
 	if (value === null) {
@@ -248,33 +316,45 @@ interface NormalizedCursor {
 }
 
 /**
- *
+ * Whether a value is a non-array object whose keys can be inspected.
+ * @param value - Any value.
+ * @returns True for a plain object or class instance.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Refuses a cursor object carrying anything but `feedId` and `sequence`.
+ * @param value - The cursor object.
  */
 function exactCursorKeys(value: Record<string, unknown>): void {
 	const keys = Reflect.ownKeys(value);
 	if (
 		keys.length !== 2 ||
 		keys.some((key) => typeof key !== "string") ||
-		keys.map(String).toSorted().join("\u0000") !== "feedId\u0000sequence"
+		keys.map(String).toSorted().join(" ") !== "feedId sequence"
 	) {
 		fail("cursor", "must contain only feedId and sequence");
 	}
 }
 
 /**
- *
+ * Validates a cursor and notes when it belongs to another feed.
+ * @param value - The candidate cursor or null.
+ * @param currentFeedId - The feed this publisher serves.
+ * @returns The frozen cursor and a stale reason when the feed differs.
  */
 function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCursor {
 	if (value === null) {
 		return { value: null, staleReason: null };
 	}
-	if (typeof value !== "object" || Array.isArray(value)) {
+	if (!isRecord(value)) {
 		fail("cursor", "must be null or {feedId, sequence}");
 	}
-	const record = value as Record<string, unknown>;
-	exactCursorKeys(record);
-	const feedId = feedIdValue(record["feedId"], "cursor.feedId");
-	const sequence = numberValue(record["sequence"], "cursor.sequence");
+	exactCursorKeys(value);
+	const feedId = feedIdValue(value["feedId"], "cursor.feedId");
+	const sequence = numberValue(value["sequence"], "cursor.sequence");
 	if (sequence === null) {
 		fail("cursor.sequence", "must be a number");
 	}
@@ -289,48 +369,68 @@ function normalizeCursor(value: unknown, currentFeedId: string): NormalizedCurso
 }
 
 /**
- *
+ * De-duplicates and sorts strings by code unit so output is deterministic.
+ * @param values - The strings.
+ * @returns The unique strings in sorted order.
  */
 function uniqueSorted(values: readonly string[]): string[] {
 	return [...new Set(values)].toSorted((left, right) => (left < right ? -1 : left > right ? 1 : 0));
 }
 
 /**
- *
+ * Whether a value is an object whose own values can be walked.
+ * @param value - Any value.
+ * @returns True for any non-null object, arrays included.
+ */
+function isObjectLike(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+/**
+ * Freezes a value and everything reachable from it.
+ * @param value - The value to freeze.
+ * @returns The same value, now frozen.
  */
 function deepFreeze<Value>(value: Value): Value {
-	if (value === null || typeof value !== "object" || Object.isFrozen(value)) {
+	if (!isObjectLike(value) || Object.isFrozen(value)) {
 		return value;
 	}
 	Object.freeze(value);
-	for (const child of Object.values(value as Record<string, unknown>)) {
+	for (const child of Object.values(value)) {
 		deepFreeze(child);
 	}
 	return value;
 }
 
 /**
- *
+ * Validates a claim holder.
+ * @param value - The candidate holder.
+ * @returns The holder.
  */
 function claimHolder(value: unknown): SemanticClaimHolder {
 	if (value === "human" || value === "agent" || value === "none") {
 		return value;
 	}
-	fail("claim.holder", "must be human, agent, or none");
+	return fail("claim.holder", "must be human, agent, or none");
 }
 
 /**
- *
+ * Validates a thread-link state.
+ * @param value - The candidate state.
+ * @returns The state.
  */
 function threadLinkState(value: unknown): "executable" | "inspect_only" | "unbound" {
 	if (value === "executable" || value === "inspect_only" || value === "unbound") {
 		return value;
 	}
-	fail("threadLink.state", "must be executable, inspect_only, or unbound");
+	return fail("threadLink.state", "must be executable, inspect_only, or unbound");
 }
 
 /**
- *
+ * Validates a boolean field.
+ * @param value - The candidate boolean.
+ * @param field - The dotted path used in errors.
+ * @returns The boolean.
  */
 function booleanValue(value: unknown, field: string): boolean {
 	if (typeof value !== "boolean") {
@@ -340,7 +440,11 @@ function booleanValue(value: unknown, field: string): boolean {
 }
 
 /**
- *
+ * Validates a list of reason strings, clipping each, de-duplicating, and
+ * capping the count.
+ * @param values - The candidate reasons.
+ * @param field - The dotted path used in errors.
+ * @returns The bounded reasons.
  */
 function boundedReasons(values: readonly unknown[], field: string): BoundedValue<string[]> {
 	const entries = values.map((value, index) =>
@@ -356,7 +460,193 @@ function boundedReasons(values: readonly unknown[], field: string): BoundedValue
 }
 
 /**
- *
+ * Validates the board block.
+ * @param board - The board input.
+ * @returns The frozen board with its version.
+ */
+function normalizeBoard(
+	board: SemanticContextInput["board"],
+): BoundedValue<NormalizedContext["board"]> {
+	const key = textValue(board.key, "board.key", SEMANTIC_CONTEXT_LIMITS.boardKeyBytes);
+	const note = textValue(board.note, "board.note", SEMANTIC_CONTEXT_LIMITS.noteBytes);
+	const version = numberValue(board.version, "board.version");
+	return {
+		value: deepFreeze({ key: key.value, note: note.value, version }),
+		truncated: key.truncated || note.truncated,
+	};
+}
+
+/**
+ * Validates the pane block.
+ * @param pane - The pane input.
+ * @returns The frozen pane.
+ */
+function normalizePane(pane: SemanticContextInput["pane"]): BoundedValue<SemanticPane> {
+	const paneId = textValue(pane.paneId, "pane.paneId", SEMANTIC_CONTEXT_LIMITS.paneIdBytes);
+	const focused = booleanValue(pane.focused, "pane.focused");
+	return {
+		value: deepFreeze({ paneId: paneId.value, focused }),
+		truncated: paneId.truncated,
+	};
+}
+
+/**
+ * Validates the claim block; an absent claim means nobody holds the board.
+ * @param claim - The claim input, if supplied.
+ * @returns The frozen claim.
+ */
+function normalizeClaim(claim: SemanticContextInput["claim"]): BoundedValue<SemanticClaim> {
+	const input = claim ?? { holder: "none" as const, doing: null };
+	const holder = claimHolder(input.holder);
+	const doing = nullableTextValue(input.doing, "claim.doing", SEMANTIC_CONTEXT_LIMITS.doingBytes);
+	return {
+		value: deepFreeze({ holder, doing: doing.value }),
+		truncated: doing.truncated,
+	};
+}
+
+/**
+ * Validates the child block.
+ * @param child - The child input, if supplied.
+ * @returns The frozen child identities.
+ */
+function normalizeChild(child: SemanticContextInput["child"]): SemanticChild {
+	return deepFreeze({
+		id: identityValue(child?.id, "child.id"),
+		epoch: identityValue(child?.epoch, "child.epoch"),
+	});
+}
+
+/**
+ * Validates the thread-link block; an absent link is unbound.
+ * @param threadLink - The thread-link input, if supplied.
+ * @returns The frozen thread link.
+ */
+function normalizeThreadLink(
+	threadLink: SemanticContextInput["threadLink"],
+): BoundedValue<SemanticThreadLink> {
+	const reason = nullableTextValue(
+		threadLink?.reason ?? null,
+		"threadLink.reason",
+		SEMANTIC_CONTEXT_LIMITS.reasonBytes,
+	);
+	return {
+		value: deepFreeze({
+			state: threadLinkState(threadLink?.state ?? "unbound"),
+			reason: reason.value,
+		}),
+		truncated: reason.truncated,
+	};
+}
+
+/**
+ * Validates the workhorse block.
+ * @param workhorse - The workhorse input, if supplied.
+ * @returns The frozen workhorse identities.
+ */
+function normalizeWorkhorse(workhorse: SemanticContextInput["workhorse"]): SemanticWorkhorse {
+	return deepFreeze({
+		threadId: identityValue(workhorse?.threadId, "workhorse.threadId"),
+		turnId: identityValue(workhorse?.turnId, "workhorse.turnId"),
+	});
+}
+
+/**
+ * Validates the coordinator block.
+ * @param coordinator - The coordinator input, if supplied.
+ * @returns The frozen coordinator identities.
+ */
+function normalizeCoordinator(
+	coordinator: SemanticContextInput["coordinator"],
+): SemanticCoordinator {
+	return deepFreeze({
+		threadId: identityValue(coordinator?.threadId, "coordinator.threadId"),
+		realtimeSessionId: identityValue(
+			coordinator?.realtimeSessionId,
+			"coordinator.realtimeSessionId",
+		),
+	});
+}
+
+/**
+ * Validates the selection: each id is clipped and the list de-duplicated, but
+ * the count is only reported as over budget here; the brief applies the cap.
+ * @param selection - The selection input.
+ * @returns The frozen unique ids.
+ */
+function normalizeSelection(
+	selection: SemanticContextInput["selection"],
+): BoundedValue<readonly string[]> {
+	if (!Array.isArray(selection)) {
+		fail("selection", "must be an array");
+	}
+	const entries = selection.map((id, index) =>
+		textValue(id, `selection[${index}]`, SEMANTIC_CONTEXT_LIMITS.selectionIdBytes),
+	);
+	const unique = uniqueSorted(entries.map((entry) => entry.value));
+	return {
+		value: deepFreeze(unique),
+		truncated:
+			entries.some((entry) => entry.truncated) ||
+			unique.length > SEMANTIC_CONTEXT_LIMITS.selectionEntries,
+	};
+}
+
+/**
+ * Validates the ambiguity list and appends the cursor's stale reason to it.
+ * @param ambiguity - The ambiguity input, if supplied.
+ * @param cursorReasons - The reason the cursor is stale, if it is.
+ * @returns The frozen bounded reasons.
+ */
+function normalizeAmbiguity(
+	ambiguity: SemanticContextInput["ambiguity"],
+	cursorReasons: readonly string[],
+): BoundedValue<readonly string[]> {
+	const input = ambiguity ?? [];
+	if (!Array.isArray(input)) {
+		fail("ambiguity", "must be an array");
+	}
+	const bounded = boundedReasons([...input, ...cursorReasons], "ambiguity");
+	return { value: deepFreeze(bounded.value), truncated: bounded.truncated };
+}
+
+/**
+ * Collects every reason the context is stale: the source's own flag and
+ * reasons, the cursor's feed mismatch, and reasons the caller adds.
+ * @param input - The whole context input.
+ * @param cursorReasons - The reason the cursor is stale, if it is.
+ * @param additionalStaleReasons - Reasons supplied by the publisher.
+ * @returns The frozen bounded reasons.
+ */
+function normalizeStaleReasons(
+	input: SemanticContextInput,
+	cursorReasons: readonly string[],
+	additionalStaleReasons: readonly string[],
+): BoundedValue<readonly string[]> {
+	const staleReasons = input.staleReasons ?? [];
+	if (!Array.isArray(staleReasons)) {
+		fail("staleReasons", "must be an array");
+	}
+	const bounded = boundedReasons(
+		[
+			...(input.stale === true ? ["source marked this context stale"] : []),
+			...staleReasons,
+			...cursorReasons,
+			...additionalStaleReasons,
+		],
+		"staleReasons",
+	);
+	return { value: deepFreeze(bounded.value), truncated: bounded.truncated };
+}
+
+/**
+ * Validates and bounds a complete context input, field by field in a fixed
+ * order so the first invalid field is the one reported.
+ * @param input - The scalar context from the composition adapter.
+ * @param currentFeedId - The feed this publisher serves.
+ * @param cursorOverride - A cursor that replaces the input's, when the feed supplies one.
+ * @param additionalStaleReasons - Reasons supplied by the publisher.
+ * @returns The frozen normalized context.
  */
 function normalizeContext(
 	input: SemanticContextInput,
@@ -369,110 +659,56 @@ function normalizeContext(
 		"repository",
 		SEMANTIC_CONTEXT_LIMITS.repositoryBytes,
 	);
-	const boardKey = textValue(input.board?.key, "board.key", SEMANTIC_CONTEXT_LIMITS.boardKeyBytes);
-	const note = textValue(input.board?.note, "board.note", SEMANTIC_CONTEXT_LIMITS.noteBytes);
-	const version = numberValue(input.board?.version, "board.version");
-	const paneId = textValue(input.pane?.paneId, "pane.paneId", SEMANTIC_CONTEXT_LIMITS.paneIdBytes);
-	const focused = booleanValue(input.pane?.focused, "pane.focused");
+	const board = normalizeBoard(input.board);
+	const pane = normalizePane(input.pane);
 	const description = textValue(
 		input.description,
 		"description",
 		SEMANTIC_CONTEXT_LIMITS.descriptionBytes,
 		false,
 	);
-	const claimInput = input.claim ?? { holder: "none" as const, doing: null };
-	const holder = claimHolder(claimInput.holder);
-	const claimDoing = nullableTextValue(
-		claimInput.doing,
-		"claim.doing",
-		SEMANTIC_CONTEXT_LIMITS.doingBytes,
-	);
+	const claim = normalizeClaim(input.claim);
 	const doing = nullableTextValue(input.doing, "doing", SEMANTIC_CONTEXT_LIMITS.doingBytes);
-	const child = deepFreeze({
-		id: identityValue(input.child?.id, "child.id"),
-		epoch: identityValue(input.child?.epoch, "child.epoch"),
-	});
-	const threadLinkReason = nullableTextValue(
-		input.threadLink?.reason ?? null,
-		"threadLink.reason",
-		SEMANTIC_CONTEXT_LIMITS.reasonBytes,
-	);
-	const threadLink = deepFreeze({
-		state: threadLinkState(input.threadLink?.state ?? "unbound"),
-		reason: threadLinkReason.value,
-	});
-	const workhorse = deepFreeze({
-		threadId: identityValue(input.workhorse?.threadId, "workhorse.threadId"),
-		turnId: identityValue(input.workhorse?.turnId, "workhorse.turnId"),
-	});
-	const coordinator = deepFreeze({
-		threadId: identityValue(input.coordinator?.threadId, "coordinator.threadId"),
-		realtimeSessionId: identityValue(
-			input.coordinator?.realtimeSessionId,
-			"coordinator.realtimeSessionId",
-		),
-	});
+	const child = normalizeChild(input.child);
+	const threadLink = normalizeThreadLink(input.threadLink);
+	const workhorse = normalizeWorkhorse(input.workhorse);
+	const coordinator = normalizeCoordinator(input.coordinator);
 	const cursor = normalizeCursor(
 		cursorOverride === undefined ? input.cursor : cursorOverride,
 		currentFeedId,
 	);
 	const cursorReasons = cursor.staleReason === null ? [] : [cursor.staleReason];
-	if (!Array.isArray(input.selection)) {
-		fail("selection", "must be an array");
-	}
-	const selectionEntries = input.selection.map((id, index) =>
-		textValue(id, `selection[${index}]`, SEMANTIC_CONTEXT_LIMITS.selectionIdBytes),
-	);
-	const selection = uniqueSorted(selectionEntries.map((entry) => entry.value));
-	const ambiguityInput = input.ambiguity ?? [];
-	if (!Array.isArray(ambiguityInput)) {
-		fail("ambiguity", "must be an array");
-	}
-	const ambiguity = boundedReasons([...ambiguityInput, ...cursorReasons], "ambiguity");
-	if (!Array.isArray(input.staleReasons ?? [])) {
-		fail("staleReasons", "must be an array");
-	}
-	const staleReasons = boundedReasons(
-		[
-			...(input.stale === true ? ["source marked this context stale"] : []),
-			...(input.staleReasons ?? []),
-			...cursorReasons,
-			...additionalStaleReasons,
-		],
-		"staleReasons",
-	);
-	const truncated =
-		repository.truncated ||
-		boardKey.truncated ||
-		note.truncated ||
-		paneId.truncated ||
-		threadLinkReason.truncated ||
-		description.truncated ||
-		claimDoing.truncated ||
-		doing.truncated ||
-		selectionEntries.some((entry) => entry.truncated) ||
-		selection.length > SEMANTIC_CONTEXT_LIMITS.selectionEntries ||
-		ambiguity.truncated ||
-		staleReasons.truncated;
+	const selection = normalizeSelection(input.selection);
+	const ambiguity = normalizeAmbiguity(input.ambiguity, cursorReasons);
+	const staleReasons = normalizeStaleReasons(input, cursorReasons, additionalStaleReasons);
+	const parts: readonly BoundedValue<unknown>[] = [
+		repository,
+		board,
+		pane,
+		threadLink,
+		description,
+		claim,
+		doing,
+		selection,
+		ambiguity,
+		staleReasons,
+	];
 	return {
 		repository: repository.value,
 		child,
-		threadLink,
+		threadLink: threadLink.value,
 		workhorse,
 		coordinator,
-		board: deepFreeze({ key: boardKey.value, note: note.value, version }),
-		pane: deepFreeze({ paneId: paneId.value, focused }),
-		selection: deepFreeze(selection),
-		claim: deepFreeze({
-			holder,
-			doing: claimDoing.value,
-		}),
+		board: board.value,
+		pane: pane.value,
+		selection: selection.value,
+		claim: claim.value,
 		doing: doing.value,
 		cursor: cursor.value,
 		description: description.value,
-		ambiguity: deepFreeze(ambiguity.value),
-		staleReasons: deepFreeze(staleReasons.value),
-		truncated,
+		ambiguity: ambiguity.value,
+		staleReasons: staleReasons.value,
+		truncated: parts.some((part) => part.truncated),
 	};
 }
 

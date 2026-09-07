@@ -366,7 +366,11 @@ type ExactSessionProtocolMethodTable<Table extends SessionProtocolMethodTable> =
 type NoExtraSessionProtocolMethods<Table> =
 	Exclude<keyof Table, ResponseMethod> extends never ? unknown : never;
 /**
- *
+ * Accepts the method table only when it names every branded request field of every method
+ * exactly once and declares no method outside the protocol, so a drift in the generated
+ * request types fails here at type-check.
+ * @param table - The per-method identity descriptors.
+ * @returns The same table, now proven exhaustive.
  */
 function defineSessionProtocolMethods<const Table extends SessionProtocolMethodTable>(
 	table: Readonly<
