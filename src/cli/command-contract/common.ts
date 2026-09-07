@@ -14,4 +14,4 @@ export {
 	serverBrowserRefusals,
 	tail,
 	WRITE_ANSWER,
-} from "./lib/common.js";
+} from "@/cli/command-contract/lib/common";

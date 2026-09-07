@@ -1,6 +1,6 @@
-import type { BrowserSnapshot, DeliveryOutcome } from "../../codex-browser-model/index.js";
-import type { BrowserCommandId, TurnId } from "../../codex-workbench-identity/index.js";
-import type { AnswerSdp } from "../../codex-realtime-host/index.js";
+import type { BrowserSnapshot, DeliveryOutcome } from "@/shared/codex-browser-model/index";
+import type { BrowserCommandId, TurnId } from "@/shared/codex-workbench-identity/index";
+import type { AnswerSdp } from "@/shared/codex-realtime-host/index";
 
 /**
  * The wire envelope the Codex workbench gateway speaks: the request actions it

@@ -61,8 +61,23 @@ interface IdsInUse {
 	readonly has: (id: string) => boolean;
 }
 
-const NOTHING_IN_USE: IdsInUse = { has: () => false };
+/**
+ * The empty set of ids: the default for a mint that has nothing to avoid.
+ */
+const NOTHING_IN_USE: IdsInUse = {
+	/**
+	 * Reports that no id is in use.
+	 * @returns Always false.
+	 */
+	has: () => false,
+};
 
+/**
+ * Spells a hash as an id, taking the alphabet index from the low bits first
+ * so every one of the `ID_LENGTH` characters is decided by the hash.
+ * @param bits - The hash to spell, as an unsigned big integer.
+ * @returns An id of exactly `ID_LENGTH` characters from the block-id alphabet.
+ */
 function encode(bits: bigint): string {
 	let remaining = bits;
 	let id = "";
@@ -90,7 +105,12 @@ function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
 	}
 }
 
-// FNV-1a 32-bit — a stable positive int from a string.
+/**
+ * FNV-1a 32-bit: a stable positive integer from a string, so a derived id
+ * is the same on every run and every machine.
+ * @param str - The text to hash.
+ * @returns The unsigned 32-bit FNV-1a hash of the text.
+ */
 function fnv1a(str: string): number {
 	let h = 0x81_1c_9d_c5;
 	for (let i = 0; i < str.length; i++) {

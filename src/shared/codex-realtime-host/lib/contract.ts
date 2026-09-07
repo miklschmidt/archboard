@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { CANONICAL_ITEM_ID_MAX_LENGTH } from "../../codex-workbench-identity/index.js";
+import { CANONICAL_ITEM_ID_MAX_LENGTH } from "@/shared/codex-workbench-identity/index";
 
 const BrowserRealtimeIdentitySchemas = {
 	session: z.string().brand<"BrowserRealtimeSessionId">(),
@@ -17,14 +17,32 @@ type RealtimeSessionId = z.infer<typeof BrowserRealtimeIdentitySchemas.session>;
 type RealtimeCorrelationId = z.infer<typeof BrowserRealtimeIdentitySchemas.correlation>;
 type RealtimeItemId = z.infer<typeof BrowserRealtimeIdentitySchemas.item>;
 
+/**
+ * Narrows an untrusted value to a realtime session id.
+ * @param value - The raw value from the wire.
+ * @returns The validated session id.
+ * @throws {ZodError} when the value is not a well-formed session id.
+ */
 function parseRealtimeSessionId(value: unknown): RealtimeSessionId {
 	return BrowserRealtimeIdentitySchemas.session.parse(value);
 }
 
+/**
+ * Narrows an untrusted value to a realtime correlation id.
+ * @param value - The raw value from the wire.
+ * @returns The validated correlation id.
+ * @throws {ZodError} when the value is not a well-formed correlation id.
+ */
 function parseRealtimeCorrelationId(value: unknown): RealtimeCorrelationId {
 	return BrowserRealtimeIdentitySchemas.correlation.parse(value);
 }
 
+/**
+ * Narrows an untrusted value to a realtime item id.
+ * @param value - The raw value from the wire.
+ * @returns The validated item id.
+ * @throws {ZodError} when the value is not a well-formed item id.
+ */
 function parseRealtimeItemId(value: unknown): RealtimeItemId {
 	return BrowserRealtimeIdentitySchemas.item.parse(value);
 }

@@ -2,25 +2,30 @@ import fs from "node:fs";
 
 import { z } from "zod";
 
-import { CliUsageError, defineCommand } from "../command-contract/contract.js";
-import { PendingArtifactSchema } from "../command-contract/schemas.js";
-import { boardRequiredRefusal, serverRefusal } from "../command-contract/refusals.js";
+import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
+import { boardRequiredRefusal, serverRefusal } from "@/cli/command-contract/refusals";
 import {
 	InspectionOptionsInputSchema,
 	inspectionOptionParameters,
 	inspectionPolicyOf,
-} from "../inspection-policy/index.js";
-import { currentRequestedBoard, exportFindings } from "../../runtime/engine/canvas-client.js";
+} from "@/cli/inspection-policy/index";
+import { currentRequestedBoard, exportFindings } from "@/runtime/engine/canvas-client";
 import {
 	assembleFindingArtifacts,
 	FindingRenderManifestSchema,
-} from "../finding-rendering/index.js";
+} from "@/cli/finding-rendering/index";
 
 const RenderFindingsInputSchema = InspectionOptionsInputSchema.extend({
 	out: z.string().min(1, "render-findings requires --out <existing-empty-directory>"),
 	tail: z.array(z.string()).default([]),
 });
 
+/**
+ * Refuses an output directory that does not exist or already holds files, so a render never
+ * mixes its artifacts with somebody else's.
+ * @param directory - The resolved --out path.
+ */
 function requireEmptyDirectory(directory: string): void {
 	let stat: fs.Stats;
 	try {
@@ -75,6 +80,10 @@ const renderFindingsContract = defineCommand({
 				artifact: PendingArtifactSchema,
 			},
 		],
+		/**
+		 * Render-findings has one output shape.
+		 * @returns The manifest case id.
+		 */
 		select: () => "manifest",
 	},
 	prerequisites: ["server", "board"],
@@ -88,6 +97,13 @@ const renderFindingsContract = defineCommand({
 			description: "One correlated persisted-snapshot finding export",
 		},
 	],
+	/**
+	 * Validates the output directory before contacting the canvas, then renders the findings of
+	 * one persisted snapshot and assembles the artifact set.
+	 * @param input - The parsed render-findings input.
+	 * @param context - The command execution context.
+	 * @returns The manifest and the pending artifact to commit.
+	 */
 	async handler(input, context) {
 		if (input.tail.length > 0) {
 			throw new CliUsageError("render-findings takes no positional arguments");

@@ -1,9 +1,13 @@
 import { z } from "zod";
-import { updateElementStrict } from "../../runtime/engine/canvas-client.js";
-import { defineCommand } from "./contract.js";
-import type { CommandContext } from "./contract.js";
-import { BoardFingerprintSchema, HoldReportSchema, ServerElementSchema } from "./schemas.js";
-import { commonRefusals, tail, WRITE_ANSWER } from "./lib/common.js";
+import { updateElementStrict } from "@/runtime/engine/canvas-client";
+import { defineCommand } from "@/cli/command-contract/contract";
+import type { CommandContext } from "@/cli/command-contract/contract";
+import {
+	BoardFingerprintSchema,
+	HoldReportSchema,
+	ServerElementSchema,
+} from "@/cli/command-contract/schemas";
+import { commonRefusals, tail, WRITE_ANSWER } from "@/cli/command-contract/lib/common";
 
 const UpdateInputSchema = z.object({
 	id: z.preprocess(
@@ -18,6 +22,27 @@ const UpdateInputSchema = z.object({
 type UpdateInput = z.infer<typeof UpdateInputSchema>;
 
 const updatesSchema = z.record(z.string(), z.unknown());
+
+/**
+ * Says what is wrong with JSON updates that would not parse, naming the place
+ * they came from so the person knows which input to correct.
+ * @param source - Whether the JSON came from `--set` or from a file or stdin.
+ * @param error - What JSON.parse threw.
+ * @returns The message to report.
+ */
+function invalidUpdatesMessage(source: "inline" | "stream", error: unknown): string {
+	const reason = error instanceof Error ? error.message : String(error);
+	return source === "inline"
+		? `Invalid JSON in --set: ${reason}`
+		: `Invalid JSON updates: ${reason}`;
+}
+
+/**
+ * The schema for a JSON object of element updates, reading its refusals in the
+ * words of the input the updates arrived through.
+ * @param source - Whether the JSON came from `--set` or from a file or stdin.
+ * @returns The schema, which yields the updates as a record.
+ */
 const jsonUpdatesSchema = (source: "inline" | "stream") =>
 	z
 		.string()
@@ -33,20 +58,15 @@ const jsonUpdatesSchema = (source: "inline" | "stream") =>
 			try {
 				parsed = JSON.parse(raw);
 			} catch (error) {
-				context.addIssue({
-					code: "custom",
-					message:
-						source === "inline"
-							? `Invalid JSON in --set: ${(error as Error).message}`
-							: `Invalid JSON updates: ${(error as Error).message}`,
-				});
+				context.addIssue({ code: "custom", message: invalidUpdatesMessage(source, error) });
 				return z.NEVER;
 			}
-			if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+			const updates = updatesSchema.safeParse(parsed);
+			if (!updates.success || Array.isArray(parsed)) {
 				context.addIssue({ code: "custom", message: "Updates must be a JSON object" });
 				return z.NEVER;
 			}
-			return parsed as Record<string, unknown>;
+			return updates.data;
 		})
 		.pipe(updatesSchema);
 const UpdateResultSchema = z.object({
@@ -59,6 +79,13 @@ const UpdateResultSchema = z.object({
 });
 type UpdateResult = z.infer<typeof UpdateResultSchema>;
 
+/**
+ * Reads the updates from wherever this invocation put them: inline after
+ * `--set`, in a named file, or on standard input.
+ * @param input - The parsed command input.
+ * @param context - The command context, which owns the reads and the validation.
+ * @returns The updates as a record of element fields.
+ */
 async function updateInput(input: UpdateInput, context: CommandContext) {
 	if (input.set !== undefined) {
 		return context.parse(jsonUpdatesSchema("inline"), input.set);
@@ -134,6 +161,10 @@ const updateContract = defineCommand({
 				description: "Versioned write result",
 			},
 		],
+		/**
+		 * An update always answers with the versioned write receipt.
+		 * @returns The only output case's id.
+		 */
 		select: () => "json",
 	},
 	prerequisites: ["server", "board", "doing"],
@@ -179,6 +210,14 @@ const updateContract = defineCommand({
 			description: "Exactly one board write",
 		},
 	],
+	/**
+	 * Applies the updates to one element in a single version-checked write, and
+	 * publishes the element, the board's new fingerprint, and the whole board
+	 * when `--document` asked for it.
+	 * @param input - The parsed command input.
+	 * @param context - The command context.
+	 * @returns The write receipt as the command's result.
+	 */
 	async handler(input, context) {
 		const updates = await updateInput(input, context);
 		await context.require("server", "Updating an element");
@@ -205,4 +244,4 @@ export {
 	type UpdateResult,
 	updateContract,
 };
-export { WRITE_ANSWER } from "./lib/common.js";
+export { WRITE_ANSWER } from "@/cli/command-contract/lib/common";
