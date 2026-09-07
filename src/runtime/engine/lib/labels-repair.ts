@@ -37,6 +37,20 @@ interface LabelRepairPlan {
 }
 
 /**
+ * A container's bound references, with anything the note left null dropped.
+ *
+ * Label repair runs over boards that are already broken, so a list holding a null
+ * entry is exactly the input it exists to survive: reading one as a reference
+ * would crash the repair instead of planning it.
+ * @param container the labelled element
+ * @returns the references worth reading
+ */
+function boundRefsOf(container: LabelledElement): readonly BoundRef[] {
+	if (!Array.isArray(container.boundElements)) return [];
+	return container.boundElements.filter((ref) => ref !== null && ref !== undefined);
+}
+
+/**
  * The text a container keeps: the first text in its own `boundElements`,
  * because that is the one Excalidraw draws, else the oldest of its texts,
  * which is the original the loop copied.
@@ -51,7 +65,7 @@ function keeperOf(
 	byId: ReadonlyMap<string, LabelledElement>,
 ): string {
 	const textIdSet = new Set(textIds);
-	const refs = Array.isArray(container.boundElements) ? container.boundElements : [];
+	const refs = boundRefsOf(container);
 	const named = refs.find((ref) => ref.type === "text" && textIdSet.has(ref.id));
 	return named?.id ?? oldest(textIds, byId);
 }
@@ -72,7 +86,7 @@ function rebindFor(
 	keep: string,
 	remove: readonly string[],
 ): Rebind | undefined {
-	const current = Array.isArray(container.boundElements) ? container.boundElements : [];
+	const current = boundRefsOf(container);
 	const gone = new Set(remove);
 	const texts = current.filter((ref) => ref.type === "text");
 	const namesDoomed = current.some((ref) => gone.has(ref.id));

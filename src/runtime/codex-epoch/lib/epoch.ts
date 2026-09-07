@@ -502,12 +502,6 @@ export function createCodexEpochStore(options: CodexEpochStoreOptions): CodexEpo
 }
 
 /**
- * Report a storage failure, keeping an epoch error that already says something more precise.
- * @param message - What could not be done.
- * @param cause - The underlying failure.
- * @returns The error to raise.
- */
-/**
  * Refuse a proof for a record that belongs to a replaced child or a prior epoch.
  * @param record - The durable record.
  * @param childId - The child the caller claims.

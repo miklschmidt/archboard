@@ -1,13 +1,6 @@
 import { createHash } from "node:crypto";
 
 /**
- * Serialises a value as JSON with object keys in sorted order, so two
- * requests with the same content fingerprint identically whatever order Codex
- * emitted their keys in.
- * @param value - Any JSON-compatible value.
- * @returns The canonical JSON text.
- */
-/**
  * One scalar as fingerprint text.
  * @param value - The scalar value.
  * @returns Its JSON text, with the values JSON cannot represent written as null.

@@ -147,7 +147,7 @@ against the pinned 0.15.17 package. One was missing:
 ## Lint policy
 
 These files are on the exact-file override at the end of
-`src/ui/.oxlintrc.jsonc`: compiler, type-aware safety, React correctness and
+`.oxlintrc.jsonc`: compiler, type-aware safety, React correctness and
 accessibility checks stay on; authored-code style, JSDoc, react-perf, module
 layout and file length are off. `thread.tsx` carries one documented
 statement-level suppression (`jsx-a11y/no-autofocus`, edit composer).

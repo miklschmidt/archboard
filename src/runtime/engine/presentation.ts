@@ -389,5 +389,6 @@ export function canonicalLinkAfterPresentationEcho(
 	if (isDerivedTarget(existing, incoming, context)) {
 		return existing.link;
 	}
-	return stated ?? existing.link;
+	// `??` would also swallow an explicit null, which is how a link is cleared.
+	return stated === undefined ? existing.link : stated;
 }

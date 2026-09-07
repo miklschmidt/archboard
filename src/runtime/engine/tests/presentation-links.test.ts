@@ -194,3 +194,11 @@ test("opaque presentation is reused only while fresh checkout authority agrees",
 		presentElement(canonical, { ...context, opaqueTarget, checkoutSnapshot: unavailable }).link,
 	).toBe("https://github.com/acme/payments/tree/HEAD/src/index.ts");
 });
+
+test("clearing a link on a bound node clears it, rather than restoring the old one", () => {
+	const canonical = bound("file:///human-authored.ts");
+	expect(canonicalLinkAfterPresentationEcho(canonical, null, context)).toBeNull();
+	expect(canonicalLinkAfterPresentationEcho(canonical, undefined, context)).toBe(
+		"file:///human-authored.ts",
+	);
+});
