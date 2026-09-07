@@ -5,6 +5,7 @@ import type {
 	CommandContext,
 	HeldPolicy,
 	OutputCase,
+	PendingArtifact,
 } from "@/cli/command-contract/contract";
 import { CliUsageError } from "@/cli/command-contract/contract";
 import { HoldReportSchema } from "@/cli/command-contract/schemas";
@@ -139,7 +140,9 @@ function createCommandContext(signal: AbortSignal): CommandContext {
 		 * Writes one diagnostic line to stderr.
 		 * @param message - The line, without its newline.
 		 */
-		diagnostic: (message) => processCommandHost.writeStderr(`${message}\n`),
+		diagnostic: (message) => {
+			processCommandHost.writeStderr(`${message}\n`);
+		},
 	};
 }
 
@@ -158,10 +161,48 @@ function observedHold(heldPolicy: HeldPolicy): unknown {
 }
 
 /**
+ * Validates whatever the handler staged against the case's artifact schema,
+ * insisting on nothing staged when the case declares no artifact.
+ * @param outputCase - The selected output case.
+ * @param pending - What the handler staged, if anything.
+ * @returns The validated artifact, or undefined.
+ */
+function validatedArtifact(outputCase: OutputCase, pending: unknown): PendingArtifact | undefined {
+	return outputCase.artifact ? outputCase.artifact.parse(pending) : z.undefined().parse(pending);
+}
+
+/**
+ * Validates and publishes what a handler produced: the result the contract
+ * declares, the artifact its output case declares, and the exit code of a
+ * selected outcome. Nothing reaches stdout before all of it validates.
+ * @param contract - The command that ran.
+ * @param input - The parsed input, which selects the output case.
+ * @param execution - What the handler returned.
+ */
+function publishExecution(
+	contract: AnyCommandContract,
+	input: unknown,
+	execution: Awaited<ReturnType<AnyCommandContract["handler"]>>,
+): void {
+	const outcome = selectedOutcome(contract, execution.outcome);
+	const outputCase = selectedCase(contract, input);
+	const heldPolicy = outcome?.held ?? outputCase.held;
+	const held = observedHold(heldPolicy);
+	const result = contract.result.parse(applyHeld(execution.result, held, heldPolicy));
+	commitArtifact(outputCase, validatedArtifact(outputCase, execution.pendingArtifact));
+	const presentation = { outputCase, result, held, diagnostics: execution.diagnostics ?? [] };
+	if (outcome) {
+		presentResult({ ...presentation, outcome });
+		processCommandHost.setExitCode(outcome.exit);
+		return;
+	}
+	presentResult(presentation);
+}
+
+/**
  * Runs one command end to end: parse the argv the contract declares, hand the
- * handler its input and capabilities, then validate and present exactly what
- * the contract's output policy allows. Every result and artifact is validated
- * before anything reaches stdout.
+ * handler its input and capabilities, then publish exactly what the contract's
+ * output policy allows.
  * @param contract - The command to run.
  * @param argv - The arguments after the command path.
  * @param signal - The abort signal the command runs under.
@@ -173,26 +214,6 @@ export async function executeCommand(
 ): Promise<void> {
 	const tokens = await commanderParser.parse(contract, argv);
 	const input = parseInput(contract.input.ingress, tokens);
-	const context = createCommandContext(signal);
-	const execution = await contract.handler(input, context);
-	const outcome = selectedOutcome(contract, execution.outcome);
-	const outputCase = selectedCase(contract, input);
-	const heldPolicy = outcome?.held ?? outputCase.held;
-	const held = observedHold(heldPolicy);
-	const publicResult = applyHeld(execution.result, held, heldPolicy);
-	const validatedResult = contract.result.parse(publicResult);
-	const artifact = outputCase.artifact
-		? outputCase.artifact.parse(execution.pendingArtifact)
-		: z.undefined().parse(execution.pendingArtifact);
-	commitArtifact(outputCase, artifact);
-	presentResult({
-		outputCase,
-		result: validatedResult,
-		held,
-		diagnostics: execution.diagnostics ?? [],
-		...(outcome ? { outcome } : {}),
-	});
-	if (outcome) {
-		processCommandHost.setExitCode(outcome.exit);
-	}
+	const execution = await contract.handler(input, createCommandContext(signal));
+	publishExecution(contract, input, execution);
 }
