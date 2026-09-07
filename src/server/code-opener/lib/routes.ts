@@ -15,6 +15,7 @@ import {
 	OpenerSettingsTestRequestSchema,
 	type CodeBinding,
 	type CodeTargetFailureCode,
+	type CodeTargetOpenRequest,
 	type OpenerSelection,
 } from "@/shared/code-target";
 import {
@@ -27,9 +28,21 @@ import { githubUrlForBinding } from "@/runtime/code-target/presentation";
 import { resolveBoard } from "@/runtime/engine/board-io";
 import { readElementMetadata } from "@/runtime/engine/metadata";
 import { checkBrowserCsrf, type BrowserCsrfKind } from "@/server/code-opener/lib/browser-csrf";
-import { readOpenerSelection, resetOpenerSelection, saveOpenerSelection } from "@/server/code-opener/lib/configuration";
-import { launchOpener, resolveOpenerCommand, type LaunchResult } from "@/server/code-opener/lib/launch";
-import { planOpenerCommand, validateOpenerSelection, type OpenerPlan } from "@/server/code-opener/lib/planning";
+import {
+	readOpenerSelection,
+	resetOpenerSelection,
+	saveOpenerSelection,
+} from "@/server/code-opener/lib/configuration";
+import {
+	launchOpener,
+	resolveOpenerCommand,
+	type LaunchResult,
+} from "@/server/code-opener/lib/launch";
+import {
+	planOpenerCommand,
+	validateOpenerSelection,
+	type OpenerPlan,
+} from "@/server/code-opener/lib/planning";
 
 type BindingLookup =
 	| { ok: true; binding: CodeBinding }
@@ -38,6 +51,15 @@ type BindingLookup =
 			code: "BOARD_NOT_FOUND" | "ELEMENT_NOT_FOUND" | "BINDING_UNAVAILABLE";
 			error: string;
 	  };
+
+interface RouteFailure {
+	code: CodeTargetFailureCode;
+	error: string;
+}
+
+type ActivationRequest =
+	| { ok: true; request: CodeTargetOpenRequest }
+	| { ok: false; failure: RouteFailure };
 
 const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
 	"charset.unsupported",
@@ -50,10 +72,26 @@ const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
 	"stream.encoding.set",
 	"stream.not.readable",
 ]);
+
+/** HTTP statuses for the failure codes that are not a plain 422 refusal. */
+const FAILURE_STATUSES: Readonly<Partial<Record<CodeTargetFailureCode, number>>> = {
+	CROSS_ORIGIN_REFUSED: 403,
+	BOARD_NOT_FOUND: 404,
+	ELEMENT_NOT_FOUND: 404,
+	CHECKOUT_IDENTITY_CHANGED: 409,
+	OPENER_SPAWN_FAILED: 500,
+	OPENER_CONFIG_INVALID: 500,
+};
+
 /**
- *
+ * Hands the request to the next handler; the preguard only refuses, it never answers a success.
+ * @param _request The request, unused here.
+ * @param _response The response, unused here.
+ * @param next Continues to the canvas's own handler.
  */
-const pass: RequestHandler = (_request, _response, next) => next();
+const pass: RequestHandler = (_request, _response, next) => {
+	next();
+};
 
 export interface CodeOpenerRouteDependencies {
 	bindingForElement(board: string, element: string): BindingLookup;
@@ -76,14 +114,26 @@ export interface CodeOpenerRouteDependencies {
 }
 
 /**
- *
+ * Renders a thrown value as the message a route answers with.
+ * @param error The thrown value.
+ * @returns The error's message, or the value's string form when it is not an Error.
+ */
+function failureMessage(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Reads the code binding an element on a held board carries.
+ * @param boardKey The board the element lives on.
+ * @param elementId The element whose binding is wanted.
+ * @returns The binding, or which of board, element or binding was missing.
  */
 function canonicalBinding(boardKey: string, elementId: string): BindingLookup {
 	let content;
 	try {
 		content = resolveBoard(boardKey, "A code-target activation").content;
 	} catch (error) {
-		return { ok: false, code: "BOARD_NOT_FOUND", error: (error as Error).message };
+		return { ok: false, code: "BOARD_NOT_FOUND", error: failureMessage(error) };
 	}
 	const element = content.elements.get(elementId);
 	if (!element) {
@@ -102,7 +152,10 @@ function canonicalBinding(boardKey: string, elementId: string): BindingLookup {
 const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 	bindingForElement: canonicalBinding,
 	/**
-	 *
+	 * Resolves a binding against a fresh checkout snapshot limited to that binding.
+	 * @param binding The code binding to resolve.
+	 * @param signal Cancels the snapshot when the request is abandoned.
+	 * @returns The local code target, or why it could not be resolved.
 	 */
 	resolveTarget: async (binding, signal) =>
 		resolveLocalCodeTarget(
@@ -111,17 +164,28 @@ const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {
 		),
 	launch: launchOpener,
 	/**
-	 *
+	 * Runs checkout work directly; the canvas supplies request-scoped scheduling in production.
+	 * @param _request The request, unused here.
+	 * @param _response The response, unused here.
+	 * @param _name The work's name, unused here.
+	 * @param work The checkout work.
+	 * @returns The work's result.
 	 */
 	runCheckout: async (_request, _response, _name, work) => work(new AbortController().signal),
 	/**
-	 *
+	 * Runs mutation work directly; the canvas supplies request-scoped scheduling in production.
+	 * @param _request The request, unused here.
+	 * @param _name The work's name, unused here.
+	 * @param work The mutation work.
+	 * @returns The work's result.
 	 */
 	runMutation: async (_request, _name, work) => work(new AbortController().signal),
 };
 
 /**
- *
+ * Builds the middleware that refuses cross-origin browser requests before any body is read.
+ * @param kind Whether the guarded route reads settings or mutates state.
+ * @returns The Express guard middleware.
  */
 function guard(kind: BrowserCsrfKind) {
 	return (request: Request, response: Response, next: NextFunction): void => {
@@ -145,7 +209,9 @@ function guard(kind: BrowserCsrfKind) {
 }
 
 /**
- *
+ * Adapts an async handler so a rejection reaches Express's error pipeline instead of hanging.
+ * @param handler The async route handler.
+ * @returns A request handler Express can mount.
  */
 function asyncEndpoint(
 	handler: (request: Request, response: Response) => Promise<void>,
@@ -156,22 +222,24 @@ function asyncEndpoint(
 }
 
 /**
- *
+ * Maps a failure code to the HTTP status a route answers with.
+ * @param code The failure code.
+ * @returns The status; refusals without a specific status are 422.
  */
 function statusFor(code: CodeTargetFailureCode): number {
-	if (code === "CROSS_ORIGIN_REFUSED") return 403;
-	if (code === "BOARD_NOT_FOUND" || code === "ELEMENT_NOT_FOUND") return 404;
-	if (code === "CHECKOUT_IDENTITY_CHANGED") return 409;
-	if (code === "OPENER_SPAWN_FAILED" || code === "OPENER_CONFIG_INVALID") return 500;
-	return 422;
+	return FAILURE_STATUSES[code] ?? 422;
 }
 
 /**
- *
+ * Answers a failure, attaching the actions a person can take next.
+ * @param response The response to write.
+ * @param failure The failure code and message.
+ * @param status The HTTP status; defaults to the code's status.
+ * @param binding The binding whose GitHub link is offered as a fallback, when known.
  */
 function sendFailure(
 	response: Response,
-	failure: { code: CodeTargetFailureCode; error: string },
+	failure: RouteFailure,
 	status = statusFor(failure.code),
 	binding?: CodeBinding,
 ): void {
@@ -191,21 +259,39 @@ function sendFailure(
 }
 
 /**
- *
+ * Tells whether a thrown value is one of the body parser's own failures.
+ * @param error The value the body parser passed to the error pipeline.
+ * @returns True when the error's type is a known body-parser failure.
+ */
+function isBodyParserFailure(error: unknown): boolean {
+	return (
+		typeof error === "object" &&
+		error !== null &&
+		"type" in error &&
+		typeof error.type === "string" &&
+		BODY_PARSER_FAILURES.has(error.type)
+	);
+}
+
+/**
+ * Builds the error handler that turns a body-parser failure into a 400 refusal.
+ * @returns The Express error handler.
  */
 function bodyFailure(): ErrorRequestHandler {
 	return (error, _request, response, next) => {
-		const kind =
-			typeof error === "object" && error !== null && "type" in error
-				? (error as { type?: unknown }).type
-				: undefined;
-		if (typeof kind !== "string" || !BODY_PARSER_FAILURES.has(kind)) return next(error);
+		if (!isBodyParserFailure(error)) {
+			next(error);
+			return;
+		}
 		sendFailure(response, { code: "REQUEST_INVALID", error: "The request body is invalid." }, 400);
 	};
 }
 
 /**
- *
+ * Tells whether a request targets one of the opener routes that read a JSON body.
+ * @param method The HTTP method.
+ * @param pathname The request path.
+ * @returns True for the body-carrying opener routes.
  */
 export function isCodeOpenerBodyRoute(method: string, pathname: string): boolean {
 	return (
@@ -216,7 +302,8 @@ export function isCodeOpenerBodyRoute(method: string, pathname: string): boolean
 }
 
 /**
- *
+ * Builds the router mounted ahead of the canvas that guards and parses the opener routes.
+ * @returns The preguard router.
  */
 export function createCodeOpenerPreguard(): Router {
 	const router = Router();
@@ -231,7 +318,11 @@ export function createCodeOpenerPreguard(): Router {
 }
 
 /**
- *
+ * Plans the opener command for a target and launches it when the plan succeeds.
+ * @param selection The opener selection to plan with.
+ * @param target The path to open.
+ * @param launch The launcher to run the planned command.
+ * @returns The launch result, or the plan failure that prevented a launch.
  */
 async function planAndLaunch(
 	selection: OpenerSelection,
@@ -243,7 +334,30 @@ async function planAndLaunch(
 }
 
 /**
- *
+ * Reads an activation request, refusing query parameters and malformed bodies.
+ * @param request The incoming activation request.
+ * @returns The typed request, or the 400 failure to answer with.
+ */
+function parseActivationRequest(request: Request): ActivationRequest {
+	if (request.url.includes("?")) {
+		return {
+			ok: false,
+			failure: { code: "REQUEST_INVALID", error: "Activation query parameters are not accepted." },
+		};
+	}
+	const parsed = CodeTargetOpenRequestSchema.safeParse(request.body);
+	return parsed.success
+		? { ok: true, request: parsed.data }
+		: {
+				ok: false,
+				failure: { code: "REQUEST_INVALID", error: "The activation request is invalid." },
+			};
+}
+
+/**
+ * Builds the opener routes: settings read, save, reset and test, and code-target activation.
+ * @param overrides Dependencies replaced by the canvas or by tests.
+ * @returns The opener router.
  */
 export function createCodeOpenerRouter(
 	overrides: Partial<CodeOpenerRouteDependencies> = {},
@@ -353,22 +467,12 @@ export function createCodeOpenerRouter(
 		"/api/code-targets/open",
 		asyncEndpoint((request, response) =>
 			dependencies.runMutation(request, "POST /api/code-targets/open launch", async (signal) => {
-				if (request.url.includes("?")) {
-					return sendFailure(
-						response,
-						{ code: "REQUEST_INVALID", error: "Activation query parameters are not accepted." },
-						400,
-					);
-				}
-				const parsed = CodeTargetOpenRequestSchema.safeParse(request.body);
-				if (!parsed.success) {
-					return sendFailure(
-						response,
-						{ code: "REQUEST_INVALID", error: "The activation request is invalid." },
-						400,
-					);
-				}
-				const found = dependencies.bindingForElement(parsed.data.board, parsed.data.element);
+				const activation = parseActivationRequest(request);
+				if (!activation.ok) return sendFailure(response, activation.failure, 400);
+				const found = dependencies.bindingForElement(
+					activation.request.board,
+					activation.request.element,
+				);
 				if (!found.ok) return sendFailure(response, found);
 				const target = await dependencies.resolveTarget(found.binding, signal);
 				if (!target.ok) return sendFailure(response, target, statusFor(target.code), found.binding);

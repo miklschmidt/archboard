@@ -1,4 +1,4 @@
-export { default, startServer } from "@/server/canvas/lib/application";
+export { app, startServer } from "@/server/canvas/lib/application";
 export { canvasStartupFailureMessage } from "@/server/canvas/lib/startup-error";
 export {
 	CanvasApplicationBusyError,
