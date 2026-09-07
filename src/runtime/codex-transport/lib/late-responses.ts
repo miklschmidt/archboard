@@ -153,7 +153,7 @@ function createLateResponseStore(
 		}
 		// The record was decoded with the tombstone's own method, so its payload matches that
 		// method; TypeScript cannot fold the widened member back into the method-indexed union.
-		// oxlint-disable-next-line typescript(no-unsafe-type-assertion) -- payload decoded for its own method
+		// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- payload decoded for its own method
 		values.push(cloneAndFreeze(late) as TransportLateResponse);
 		emitIssue({
 			kind: "duplicate-response",
