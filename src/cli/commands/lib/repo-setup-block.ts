@@ -87,7 +87,12 @@ function chooseDoc(repo: string, targetSpec: string): { file: string; existed: b
 /**
  * Renders the managed setup block: the environment, how to run the CLI here, and the section
  * a human fills in about which boards cover the repo.
- * @param options - The vault, invocation, skill path and optional non-default canvas URL.
+ * @param options - What the block must tell a reader about this checkout.
+ * @param options.vault - The vault path to export.
+ * @param options.command - How the CLI is invoked when it is not on PATH.
+ * @param options.onPath - Whether `archboard` resolves on PATH.
+ * @param options.skill - Where the installed skill lives.
+ * @param options.canvasUrl - The canvas URL when it is not the default.
  * @returns The block text, markers included, ending in a newline.
  */
 function renderBlock(options: {

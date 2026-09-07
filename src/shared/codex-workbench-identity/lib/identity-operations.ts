@@ -24,7 +24,6 @@ const OPERATION_NONCE_PATTERN = /^[0-9a-f]{32}$/u;
 
 /**
  * Spells an operation identity from the epoch it is issued in and a nonce.
- *
  * @param epoch - The current child epoch.
  * @param nonce - Thirty-two lowercase hexadecimal characters.
  * @returns The branded operation identity.
@@ -52,7 +51,6 @@ function operationWireValue(epoch: ChildEpoch, nonce: unknown): OperationId {
 /**
  * Names why an operation's epoch token is not the current one: it belongs to
  * an earlier epoch of the same child, or to another child altogether.
- *
  * @param epochToken - The epoch token carried by the operation.
  * @param childId - The current child.
  * @returns Never; always refuses with the matching code.
@@ -68,7 +66,6 @@ function refuseForeignEpoch(epochToken: string, childId: ChildId): never {
 /**
  * Validates an operation identity against the current child and epoch and
  * returns its token.
- *
  * @param value - The untrusted value.
  * @param childId - The current child.
  * @param epoch - The current epoch.

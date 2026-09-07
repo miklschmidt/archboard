@@ -15,7 +15,6 @@ import type { IdentityContext } from "@/shared/codex-browser-model/lib/scalars";
  * Builds the complete browser model, every identity and DTO schema, bound to
  * one identity authority so nothing the browser exchanges can name a child,
  * epoch or identity the session did not issue.
- *
  * @param context - The identity authorities, or a decoder-and-validator context with an optional operation capability.
  * @returns The identity schemas together with the browser DTO and command schemas.
  */
