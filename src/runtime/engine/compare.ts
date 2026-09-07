@@ -97,21 +97,24 @@ import type {
 	SideSummary,
 	UnchangedNode,
 } from "@/runtime/engine/lib/compare-contract";
-import { buildBoard, hasDivergentAspect, reframeRegions } from "@/runtime/engine/lib/compare-board-model";
+import {
+	buildBoard,
+	hasDivergentAspect,
+	reframeRegions,
+} from "@/runtime/engine/lib/compare-board-model";
 import type { BoardModel } from "@/runtime/engine/lib/compare-board-model";
 import { formatBinding } from "@/runtime/engine/lib/compare-node-model";
 import {
 	cosmeticFields,
 	diffFields,
 	diffPartitions,
-	inferReroutes,
 	layoutFields,
-	matchEdges,
 	MAX_RELATION_PAIRS,
 	nodeFacts,
 	relationOf,
 	semanticFields,
 } from "@/runtime/engine/lib/compare-diff";
+import { inferReroutes, matchEdges } from "@/runtime/engine/lib/compare-edge-diff";
 
 /**
  *
