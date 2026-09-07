@@ -1,30 +1,12 @@
 import type {
 	BrowserAccount,
 	BrowserCoordinator,
-	BrowserDynamicApproval,
-	BrowserDynamicApprovalEffect,
 	BrowserQueue,
 	BrowserSemanticDelivery,
 	BrowserSettings,
-	BrowserSnapshot,
-	BrowserSpokenApproval,
-	BrowserSchemas,
-	BrowserThreadLink,
-	BrowserThreadLinkSourcePresentation,
-	BrowserTimeline,
+	BrowserVoice,
 } from "@/shared/codex-browser-model";
-import { BROWSER_THREAD_CANDIDATE_LIMIT } from "@/shared/codex-browser-model";
-import {
-	IdentityValidationError,
-	type TrustedIdentityDecoder,
-	type TurnId,
-} from "@/shared/codex-workbench-identity";
 import type { ApprovalOwnerView } from "@/runtime/codex-approvals";
-import type {
-	SpokenApprovalFallbackReason,
-	SpokenApprovalSnapshot,
-} from "@/runtime/codex-spoken-approval";
-import type { BrowserSnapshotDelta } from "@/server/codex-workbench/lib/contract";
 import type {
 	BrowserProjectionInput,
 	BrowserProjectionResult,
@@ -33,11 +15,32 @@ import type {
 	CodexQueuedSubmissionProjectionInput,
 	CodexSemanticProjectionInput,
 	CodexSettingsProjectionInput,
-	CodexTimelineItemProjectionInput,
 	CodexVoiceProjectionInput,
-	DynamicApprovalOwnerView,
 } from "@/server/codex-workbench/lib/projection-contract";
 import { projectApproval } from "@/server/codex-workbench/lib/approval-projection";
+import {
+	projectDynamicApproval,
+	type DynamicProjectionIdentity,
+	type DynamicProjectionModel,
+} from "@/server/codex-workbench/lib/dynamic-approval-projection";
+import { projectSpokenApproval } from "@/server/codex-workbench/lib/spoken-approval-projection";
+import {
+	projectThreadCandidates,
+	projectThreadLink,
+	projectTimeline,
+} from "@/server/codex-workbench/lib/thread-projection";
+import { deepFreeze } from "@/server/codex-workbench/lib/snapshot-bounds";
+
+export {
+	BROWSER_DELTA_MAX_BYTES,
+	BROWSER_SNAPSHOT_MAX_BYTES,
+	BROWSER_SNAPSHOT_MIN_BYTES,
+	assertBrowserDeltaBounded,
+	assertBrowserSnapshotBounded,
+	assertBrowserSnapshotBudget,
+	diffBrowserSnapshots,
+	fitBrowserSnapshotBounded,
+} from "@/server/codex-workbench/lib/snapshot-bounds";
 
 type CodexAccountType = NonNullable<
 	Extract<
@@ -45,6 +48,7 @@ type CodexAccountType = NonNullable<
 		{ readonly kind: "codex_account_response" }
 	>["response"]["account"]
 >["type"];
+type SandboxPolicy = CodexSettingsProjectionInput["settings"]["sandboxPolicy"];
 
 const BROWSER_ACCOUNT_TYPE_BY_CODEX_TYPE = {
 	apiKey: "apiKey",
@@ -62,21 +66,24 @@ const SECRET_KEYS = new Set([
 ]);
 
 /**
- *
+ * Whether any object reachable from the value carries a key that names a secret.
+ * @param value The value to search.
+ * @param seen Objects already visited, so a cycle terminates.
+ * @returns True when a secret-bearing key is present anywhere.
  */
 function containsSecretKey(value: unknown, seen = new Set<object>()): boolean {
-	if (value === null || typeof value !== "object") return false;
-	if (seen.has(value)) return false;
+	if (value === null || typeof value !== "object" || seen.has(value)) return false;
 	seen.add(value);
 	if (Array.isArray(value)) return value.some((entry) => containsSecretKey(entry, seen));
-	for (const [key, entry] of Object.entries(value)) {
-		if (SECRET_KEYS.has(key) || containsSecretKey(entry, seen)) return true;
-	}
-	return false;
+	return Object.entries(value).some(
+		([key, entry]) => SECRET_KEYS.has(key) || containsSecretKey(entry, seen),
+	);
 }
 
 /**
- *
+ * Project the account as the browser presents it, from a Codex read or a host-known state.
+ * @param input The account projection input.
+ * @returns The browser account.
  */
 function projectAccount(input: BrowserProjectionInput["account"]): BrowserAccount {
 	if (input.kind !== "codex_account_response") return input;
@@ -90,7 +97,9 @@ function projectAccount(input: BrowserProjectionInput["account"]): BrowserAccoun
 }
 
 /**
- *
+ * Project one owner's thread settings for the browser.
+ * @param input The settings projection input.
+ * @returns The browser settings.
  */
 function projectSettings(input: CodexSettingsProjectionInput): BrowserSettings {
 	const settings = input.settings;
@@ -114,7 +123,9 @@ function projectSettings(input: CodexSettingsProjectionInput): BrowserSettings {
 }
 
 /**
- *
+ * Copy the approval policy, keeping only the granular fields the browser presents.
+ * @param policy The Codex approval policy.
+ * @returns The browser approval policy.
  */
 function projectApprovalPolicy(
 	policy: CodexSettingsProjectionInput["settings"]["approvalPolicy"],
@@ -132,23 +143,40 @@ function projectApprovalPolicy(
 }
 
 /**
- *
+ * The browser's word for a sandbox's network flag.
+ * @param networkAccess Whether the sandbox allows network access.
+ * @returns The network presentation.
  */
-function projectSandbox(
-	policy: CodexSettingsProjectionInput["settings"]["sandboxPolicy"],
-): BrowserSettings["sandbox"] {
+function sandboxNetwork(networkAccess: boolean): BrowserSettings["sandbox"]["network"] {
+	return networkAccess ? "enabled" : "restricted";
+}
+
+/**
+ * Fail at compile time when a sandbox policy is left unprojected; at run time
+ * the call always throws, naming the policy.
+ * @param policy The policy no arm handled.
+ */
+function unprojectedSandbox(policy: never): never {
+	throw new Error(`the sandbox policy ${JSON.stringify(policy)} has no browser projection`);
+}
+
+/**
+ * Project the sandbox policy as the mode and network access the browser presents.
+ * @param policy The Codex sandbox policy.
+ * @returns The browser sandbox presentation.
+ */
+function projectSandbox(policy: SandboxPolicy): BrowserSettings["sandbox"] {
 	switch (policy.type) {
 		case "dangerFullAccess":
 			return { mode: "full_access", network: "unspecified" };
 		case "readOnly":
-			return { mode: "read_only", network: policy.networkAccess ? "enabled" : "restricted" };
+			return { mode: "read_only", network: sandboxNetwork(policy.networkAccess) };
 		case "externalSandbox":
 			return { mode: "external", network: policy.networkAccess };
 		case "workspaceWrite":
-			return {
-				mode: "workspace_write",
-				network: policy.networkAccess ? "enabled" : "restricted",
-			};
+			return { mode: "workspace_write", network: sandboxNetwork(policy.networkAccess) };
+		default:
+			return unprojectedSandbox(policy);
 	}
 }
 
@@ -171,6 +199,10 @@ function projectSandbox(
  * An executable link is only ever `idle` or `active`, and a queue is published
  * only for the link it was read for, so there is no unloaded or errored arm to
  * map here.
+ * @param submissions The pending submissions.
+ * @param link The pane's thread link.
+ * @param approvals The owner's approvals.
+ * @returns The queue status.
  */
 function projectQueueStatus(
 	submissions: readonly CodexQueuedSubmissionProjectionInput[],
@@ -180,16 +212,17 @@ function projectQueueStatus(
 	if (submissions.length === 0) return "empty";
 	if (link.status !== "active") return "queued";
 	const blocked = approvals.some(
-		(view) =>
-			view.snapshot.state === "pending" &&
-			link.threadId !== null &&
-			view.snapshot.threadId === link.threadId,
+		(view) => view.snapshot.state === "pending" && view.snapshot.threadId === link.threadId,
 	);
 	return blocked ? "approval_blocked" : "running";
 }
 
 /**
- *
+ * Project the workhorse queue for the browser.
+ * @param input The queue projection input.
+ * @param link The pane's thread link.
+ * @param approvals The owner's approvals.
+ * @returns The browser queue.
  */
 function projectQueue(
 	input: CodexQueueProjectionInput,
@@ -219,259 +252,79 @@ function projectQueue(
 	};
 }
 
-type BrowserTimelineItem = BrowserTimeline["turns"][number]["items"][number];
-type BrowserTimelineApprovalStatus = Extract<
-	BrowserTimelineItem,
-	{ readonly media: "approval" }
->["status"];
-
 /**
- *
- */
-function projectTimelineApprovalStatus(
-	state: Extract<CodexTimelineItemProjectionInput, { readonly kind: "approval_request" }>["state"],
-): BrowserTimelineApprovalStatus {
-	switch (state) {
-		case "pending":
-			return "pending";
-		case "settled":
-			return "resolved";
-		case "cancelled":
-			return "cancelled";
-	}
-}
-
-/**
- *
- */
-function projectTimelineItem(item: CodexTimelineItemProjectionInput): BrowserTimelineItem {
-	switch (item.kind) {
-		case "agent_message":
-			return { media: "text", itemId: item.item.id, text: item.item.text };
-		case "tool_call":
-			return {
-				media: "tool",
-				itemId: item.item.id,
-				name: item.item.tool,
-				status: item.item.status,
-			};
-		case "command_execution":
-			return {
-				media: "command",
-				itemId: item.item.id,
-				command: item.item.command,
-				status: item.item.status,
-			};
-		case "file_change":
-			return { media: "fileChange", itemId: item.item.id, status: item.item.status };
-		case "reasoning_summary":
-			return { media: "reasoning", itemId: item.item.id, text: item.text };
-		case "plan":
-			return { media: "plan", itemId: item.item.id, text: item.item.text };
-		case "approval_request":
-			return {
-				media: "approval",
-				itemId: item.identity.itemId,
-				approvalId: item.identity.approvalId,
-				status: projectTimelineApprovalStatus(item.state),
-			};
-	}
-}
-
-/**
- *
- */
-function projectTimeline(input: BrowserProjectionInput["timeline"]): BrowserTimeline | null {
-	if (input === null) return null;
-	return {
-		kind: "timeline",
-		threadId: input.threadId,
-		turns: input.turns.map((entry) => ({
-			turnId: entry.turn.id,
-			status: entry.turn.status,
-			items: entry.items.map(projectTimelineItem),
-			summary: entry.presentation.summary,
-			outputsIncluded: entry.presentation.outputs.included,
-			outputsTruncated: entry.presentation.outputs.truncated,
-		})),
-		nextCursor: input.cursor,
-	};
-}
-
-type ThreadCandidateInput = Extract<
-	BrowserProjectionInput["threadCandidates"],
-	{ readonly state: "listed" }
->["candidates"][number];
-
-/**
- * One source presentation mapper for both shapes the classifier emits: the
- * nested session source a bound link carries, and the flattened source a
- * discovered candidate carries.
- */
-function projectThreadLinkSource(
-	source:
-		| Exclude<BrowserProjectionInput["threadLink"]["source"], null>
-		| ThreadCandidateInput["source"],
-): BrowserThreadLinkSourcePresentation {
-	if (typeof source === "string") {
-		switch (source) {
-			case "cli":
-			case "vscode":
-			case "exec":
-			case "appServer":
-				return "standard";
-			case "custom":
-				return "custom";
-			case "subAgent":
-				return "subagent";
-			case "unknown":
-				return "unknown";
-		}
-	}
-	if ("custom" in source) return "custom";
-	if ("subAgent" in source) return "subagent";
-	return "unknown";
-}
-
-/**
- * Map the host inventory into the browser vocabulary and bound it. Nothing here
- * reclassifies a record or joins the two Codex lists a second time: TASK-143.01.09
- * owns that, and this projection carries its verdict through unchanged.
- */
-function projectThreadCandidates(
-	input: BrowserProjectionInput["threadCandidates"],
-): BrowserSnapshot["threadCandidates"] {
-	if (input.state === "unknown")
-		return {
-			kind: "thread_candidates",
-			state: "unknown",
-			records: [],
-			truncated: false,
-			reason: null,
-		};
-	if (input.state === "unavailable")
-		return {
-			kind: "thread_candidates",
-			state: "unavailable",
-			records: [],
-			truncated: false,
-			reason: input.reason,
-		};
-	const records = input.candidates.slice(0, BROWSER_THREAD_CANDIDATE_LIMIT).map((candidate) => ({
-		kind: "thread_candidate" as const,
-		selectionId: candidate.selectionId,
-		threadId: candidate.threadId,
-		state: candidate.state,
-		reason: candidate.reason,
-		sourcePresentation: projectThreadLinkSource(candidate.source),
-		status: candidate.status,
-		loaded: candidate.loaded,
-		canAcceptDirectInput: candidate.canAcceptDirectInput,
-	}));
-	return {
-		kind: "thread_candidates",
-		state: "listed",
-		records,
-		truncated: records.length < input.candidates.length,
-		reason: null,
-	};
-}
-
-/**
- *
- */
-function projectThreadLink(input: BrowserProjectionInput["threadLink"]): BrowserThreadLink {
-	switch (input.state) {
-		case "unbound":
-			return {
-				kind: input.kind,
-				state: input.state,
-				childId: input.childId,
-				epoch: input.epoch,
-				threadId: input.threadId,
-				sourcePresentation: null,
-				status: input.status,
-				loaded: input.loaded,
-				canAcceptDirectInput: input.canAcceptDirectInput,
-				reason: input.reason,
-			};
-		case "inspect_only":
-			return {
-				kind: input.kind,
-				state: input.state,
-				childId: input.childId,
-				epoch: input.epoch,
-				threadId: input.threadId,
-				sourcePresentation: projectThreadLinkSource(input.source),
-				status: input.status,
-				loaded: input.loaded,
-				canAcceptDirectInput: input.canAcceptDirectInput,
-				reason: input.reason,
-			};
-		case "executable":
-			return {
-				kind: input.kind,
-				state: input.state,
-				childId: input.childId,
-				epoch: input.epoch,
-				threadId: input.threadId,
-				sourcePresentation: "standard",
-				status: input.status,
-				loaded: input.loaded,
-				canAcceptDirectInput: input.canAcceptDirectInput,
-				reason: input.reason,
-			};
-	}
-}
-
-/**
- *
+ * Project the last semantic delivery, when the host holds a complete, fresh record of one.
+ * @param input The semantic projection input.
+ * @returns The browser semantic delivery, or null.
  */
 function projectSemantic(input: CodexSemanticProjectionInput): BrowserSemanticDelivery | null {
-	if (input.outcome === null || input.outcome.targetThreadId === null || input.freshness === null)
-		return null;
+	const { outcome, freshness } = input;
+	if (outcome === null || freshness === null) return null;
+	if (outcome.targetThreadId === null) return null;
 	return {
 		kind: "semantic_delivery",
-		threadId: input.outcome.targetThreadId,
-		delivery: input.outcome.outcome,
-		capturedAtMs: input.freshness.capturedAtMs,
-		freshUntilMs: input.freshness.freshUntilMs,
-		reason: input.outcome.reason,
+		threadId: outcome.targetThreadId,
+		delivery: outcome.outcome,
+		capturedAtMs: freshness.capturedAtMs,
+		freshUntilMs: freshness.freshUntilMs,
+		reason: outcome.reason,
 	};
 }
 
 /**
- *
+ * Project the coordinator for the browser; an inspect-only coordinator presents as failed.
+ * @param input The coordinator projection input.
+ * @returns The browser coordinator.
  */
 function projectCoordinator(input: CodexCoordinatorProjectionInput): BrowserCoordinator {
+	const configured = input.configured ?? { model: null, effort: null };
+	const effective = input.effective ?? { model: null, effort: null, serviceTier: null };
 	return {
 		kind: "coordinator",
 		state: input.state === "inspect_only" ? "failed" : input.state,
 		threadId: input.threadId,
 		activeTurnId: null,
-		configuredModel: input.configured?.model ?? null,
-		configuredEffort: input.configured?.effort ?? null,
-		model: input.effective?.model ?? null,
-		effort: input.effective?.effort ?? null,
-		serviceTier: input.effective?.serviceTier ?? null,
+		configuredModel: configured.model,
+		configuredEffort: configured.effort,
+		model: effective.model,
+		effort: effective.effort,
+		serviceTier: effective.serviceTier,
 		reason: input.reason,
 	};
 }
 
 /**
- *
+ * The voice state for this socket: unavailable without browser media, active
+ * while a realtime generation runs, ready only when the coordinator is.
+ * @param input The voice projection input.
+ * @returns The browser voice state.
+ */
+function voiceState(input: CodexVoiceProjectionInput): BrowserVoice["state"] {
+	if (!input.mediaReady) return "unavailable";
+	if (input.generation !== null) return "active";
+	return input.coordinatorState === "ready" ? "ready" : "unavailable";
+}
+
+/**
+ * The realtime session the browser owns, when its media is ready and a generation runs.
+ * @param input The voice projection input.
+ * @returns The browser session id, or null.
+ */
+function realtimeSessionId(input: CodexVoiceProjectionInput): string | null {
+	if (!input.mediaReady) return null;
+	return input.generation?.browserSessionId ?? null;
+}
+
+/**
+ * Project the voice channel for the browser.
+ * @param input The voice projection input.
+ * @returns The browser voice presentation.
  */
 function projectVoice(input: CodexVoiceProjectionInput) {
 	return {
 		kind: "voice",
-		state: !input.mediaReady
-			? "unavailable"
-			: input.generation !== null
-				? "active"
-				: input.coordinatorState === "ready"
-					? "ready"
-					: "unavailable",
-		realtimeSessionId: input.mediaReady ? (input.generation?.browserSessionId ?? null) : null,
+		state: voiceState(input),
+		realtimeSessionId: realtimeSessionId(input),
 		transcript: input.transcript.map((record) => ({
 			itemId: record.itemId,
 			sequence: record.sequence,
@@ -485,381 +338,12 @@ function projectVoice(input: CodexVoiceProjectionInput) {
 }
 
 /**
- *
- */
-function joinedSpokenApproval(
-	snapshot: SpokenApprovalSnapshot,
-	approvals: readonly ApprovalOwnerView[],
-): BrowserSpokenApproval["approval"] {
-	if (snapshot.requestId === null) return null;
-	const matches = approvals.filter((owner) => owner.snapshot.requestId === snapshot.requestId);
-	if (matches.length !== 1) return null;
-	const owner = matches[0]!;
-	const approval = owner.snapshot;
-	if (
-		approval.family !== "command_execution" ||
-		approval.approvalId !== snapshot.approvalId ||
-		approval.child !== snapshot.child ||
-		approval.epoch !== snapshot.epoch ||
-		approval.binding.effect !== snapshot.effectFingerprint
-	)
-		return null;
-	return {
-		requestId: approval.requestId,
-		approvalId: approval.approvalId,
-		threadId: approval.threadId,
-		binding: {
-			child: approval.binding.child,
-			epoch: approval.binding.epoch,
-			target: approval.binding.target,
-			effect: approval.binding.effect,
-		},
-	};
-}
-
-/**
- *
- */
-function spokenGate(snapshot: SpokenApprovalSnapshot): BrowserSpokenApproval["gate"] {
-	if (
-		snapshot.coordinatorThreadId === null ||
-		snapshot.realtimeSessionId === null ||
-		snapshot.effectSummary === null ||
-		snapshot.effectSummary.trim().length === 0 ||
-		snapshot.effectFingerprint === null ||
-		snapshot.effectFingerprint.trim().length === 0 ||
-		snapshot.effectPromptItemId === null ||
-		snapshot.effectPromptSequence === null ||
-		!Number.isSafeInteger(snapshot.effectPromptSequence) ||
-		snapshot.effectPromptSequence < 0 ||
-		snapshot.expiresAtMs === null ||
-		!Number.isSafeInteger(snapshot.expiresAtMs) ||
-		snapshot.expiresAtMs < 0
-	)
-		return null;
-	return {
-		coordinatorThreadId: snapshot.coordinatorThreadId,
-		realtimeSessionId: snapshot.realtimeSessionId,
-		effectSummary: snapshot.effectSummary,
-		effectFingerprint: snapshot.effectFingerprint,
-		effectPrompt: {
-			itemId: snapshot.effectPromptItemId,
-			sequence: snapshot.effectPromptSequence,
-		},
-		expiresAtMs: snapshot.expiresAtMs,
-	};
-}
-
-/**
- *
- */
-function capturedSpokenUserFinal(
-	snapshot: SpokenApprovalSnapshot,
-): BrowserSpokenApproval["capturedUserFinal"] {
-	if (
-		snapshot.finalUserItemId === null ||
-		snapshot.finalUserSequence === null ||
-		!Number.isSafeInteger(snapshot.finalUserSequence) ||
-		snapshot.finalUserSequence < 0 ||
-		snapshot.finalUserText === null ||
-		snapshot.finalUserText.length === 0
-	)
-		return null;
-	return {
-		itemId: snapshot.finalUserItemId,
-		sequence: snapshot.finalUserSequence,
-		text: snapshot.finalUserText,
-	};
-}
-
-/**
- *
- */
-function spokenSettlement(snapshot: SpokenApprovalSnapshot): BrowserSpokenApproval["settlement"] {
-	if (snapshot.settlement === null) return null;
-	if (
-		snapshot.settlement.requestId !== snapshot.requestId ||
-		snapshot.settlement.family !== "command_execution"
-	)
-		return null;
-	return {
-		state: snapshot.settlement.state,
-		outcome: snapshot.settlement.outcome,
-		reason: snapshot.settlement.reason,
-	};
-}
-
-/**
- *
- */
-function browserFallbackState(
-	reason: SpokenApprovalFallbackReason,
-	settlement: BrowserSpokenApproval["settlement"],
-): Extract<
-	BrowserSpokenApproval["state"],
-	"expired" | "visual_fallback" | "outcome_unknown" | "stale_session"
-> {
-	switch (reason) {
-		case "timeout":
-			return "expired";
-		case "resolver_lost":
-			return settlement === null || settlement.outcome === "outcome_unknown"
-				? "outcome_unknown"
-				: "visual_fallback";
-		case "changed_effect":
-		case "stale_realtime_session":
-		case "stale_state":
-			return "stale_session";
-		case "approval_unavailable":
-		case "not_eligible":
-		case "coordinator_unavailable":
-		case "realtime_unavailable":
-		case "invalid_context":
-		case "invalid_effect_prompt":
-		case "user_already_spoke":
-		case "missing_user_final":
-		case "assistant_only":
-		case "ambiguous":
-		case "classifier_lost":
-		case "child_exit":
-		case "disposed":
-			return "visual_fallback";
-	}
-}
-
-/**
- *
- */
-function projectSpokenApproval(
-	model: Pick<BrowserSchemas, "BrowserSpokenApprovalSchema">,
-	snapshot: SpokenApprovalSnapshot,
-	approvals: readonly ApprovalOwnerView[],
-	coordinator: CodexCoordinatorProjectionInput,
-	voice: CodexVoiceProjectionInput,
-): BrowserSpokenApproval {
-	const approval = joinedSpokenApproval(snapshot, approvals);
-	const gate = spokenGate(snapshot);
-	const capturedUserFinal = capturedSpokenUserFinal(snapshot);
-	const settlement = spokenSettlement(snapshot);
-	const exactSettlement = snapshot.settlement === null || settlement !== null;
-	const exactCore =
-		approval !== null &&
-		gate !== null &&
-		exactSettlement &&
-		coordinator.threadId === gate.coordinatorThreadId &&
-		voice.generation?.browserSessionId === gate.realtimeSessionId;
-	/**
-	 *
-	 */
-	const stale = (): BrowserSpokenApproval =>
-		model.BrowserSpokenApprovalSchema.parse({
-			kind: "spoken_approval",
-			state: "stale_session",
-			approval,
-			gate,
-			capturedUserFinal,
-			settlement,
-			reason: "stale_state",
-		});
-	/**
-	 *
-	 */
-	const missingUserFinal = (): BrowserSpokenApproval =>
-		model.BrowserSpokenApprovalSchema.parse({
-			kind: "spoken_approval",
-			state: "visual_fallback",
-			approval,
-			gate,
-			capturedUserFinal: null,
-			settlement,
-			reason: "missing_user_final",
-		});
-	/**
-	 *
-	 */
-	const parse = (
-		state: BrowserSpokenApproval["state"],
-		reason: SpokenApprovalFallbackReason | null,
-	): BrowserSpokenApproval => {
-		const browserReason: BrowserSpokenApproval["reason"] = reason;
-		return model.BrowserSpokenApprovalSchema.parse({
-			kind: "spoken_approval",
-			state,
-			approval,
-			gate,
-			capturedUserFinal,
-			settlement,
-			reason: browserReason,
-		});
-	};
-
-	switch (snapshot.state) {
-		case "idle":
-			return model.BrowserSpokenApprovalSchema.parse({
-				kind: "spoken_approval",
-				state: "idle",
-				approval: null,
-				gate: null,
-				capturedUserFinal: null,
-				settlement: null,
-				reason: null,
-			});
-		case "awaiting_user":
-			if (!exactCore || capturedUserFinal !== null || snapshot.reason !== null) return stale();
-			return parse("armed", null);
-		case "classifying":
-		case "awaiting_resolver":
-		case "resolving":
-			if (!exactCore || snapshot.reason !== null) return stale();
-			if (capturedUserFinal === null || capturedUserFinal.sequence <= gate.effectPrompt.sequence)
-				return missingUserFinal();
-			return parse("resolving", null);
-		case "settled":
-			if (!exactCore || snapshot.reason !== null || settlement === null) return stale();
-			if (capturedUserFinal === null || capturedUserFinal.sequence <= gate.effectPrompt.sequence)
-				return missingUserFinal();
-			return parse("settled", null);
-		case "visual_fallback": {
-			if (snapshot.reason === null) return stale();
-			const state = browserFallbackState(snapshot.reason, settlement);
-			if (state === "expired" && !exactCore) return stale();
-			if (snapshot.reason === "resolver_lost") {
-				if (!exactCore) return stale();
-				if (capturedUserFinal === null || capturedUserFinal.sequence <= gate.effectPrompt.sequence)
-					return missingUserFinal();
-			}
-			return parse(state, snapshot.reason);
-		}
-	}
-}
-
-type DynamicProjectionModel = Pick<
-	BrowserSchemas,
-	| "BrowserDynamicApprovalEffectSchema"
-	| "BrowserDynamicApprovalSchema"
-	| "BrowserSnapshotSchema"
-	| "BrowserSpokenApprovalSchema"
->;
-
-type DynamicProjectionIdentity = Pick<
-	TrustedIdentityDecoder,
-	"adoptThreadId" | "adoptTurnId" | "parseTurnId"
->;
-
-/** Dynamic boundaries may already carry an authority-issued turn; request arguments stay raw. */
-function adoptBoundaryTurnId(identity: DynamicProjectionIdentity, value: string): TurnId {
-	try {
-		return identity.parseTurnId(value);
-	} catch (error) {
-		if (!(error instanceof IdentityValidationError) || error.code !== "invalid-shape") throw error;
-		return identity.adoptTurnId(value);
-	}
-}
-
-/**
- *
- */
-function projectDynamicApprovalEffect(
-	model: DynamicProjectionModel,
-	identity: DynamicProjectionIdentity,
-	request: DynamicApprovalOwnerView["request"],
-): BrowserDynamicApprovalEffect {
-	const effect = request.effect;
-	if (effect.tool === "create_thread")
-		return model.BrowserDynamicApprovalEffectSchema.parse({
-			tool: effect.tool,
-			arguments: { prompt: effect.arguments.prompt },
-			target: null,
-			effectiveBoundary: null,
-			mutationOperationId: effect.mutationOperationId,
-			initialTurnOperationId: effect.initialTurnOperationId,
-			visualSummary: effect.visualSummary,
-		});
-
-	const threadId = identity.adoptThreadId(effect.arguments.threadId);
-	if (effect.tool === "fork_thread") {
-		const requestedBeforeTurnId =
-			effect.arguments.beforeTurnId === null
-				? null
-				: identity.adoptTurnId(effect.arguments.beforeTurnId);
-		const effectiveBeforeTurnId =
-			effect.effectiveBoundary.beforeTurnId === null
-				? null
-				: adoptBoundaryTurnId(identity, effect.effectiveBoundary.beforeTurnId);
-		return model.BrowserDynamicApprovalEffectSchema.parse({
-			tool: effect.tool,
-			arguments: {
-				threadId,
-				beforeTurnId: requestedBeforeTurnId,
-				prompt: effect.arguments.prompt,
-			},
-			target: threadId,
-			effectiveBoundary: {
-				relation: effect.effectiveBoundary.relation,
-				beforeTurnId: effectiveBeforeTurnId,
-			},
-			mutationOperationId: effect.mutationOperationId,
-			initialTurnOperationId: effect.initialTurnOperationId,
-			visualSummary: effect.visualSummary,
-		});
-	}
-
-	return model.BrowserDynamicApprovalEffectSchema.parse({
-		tool: effect.tool,
-		arguments: { threadId, prompt: effect.arguments.prompt },
-		target: threadId,
-		effectiveBoundary: null,
-		mutationOperationId: effect.mutationOperationId,
-		initialTurnOperationId: null,
-		visualSummary: effect.visualSummary,
-	});
-}
-
-/**
- *
- */
-function projectDynamicApproval(
-	model: DynamicProjectionModel,
-	identity: DynamicProjectionIdentity,
-	owner: DynamicApprovalOwnerView,
-): BrowserDynamicApproval {
-	const { request, binding } = owner;
-	return model.BrowserDynamicApprovalSchema.parse({
-		kind: "dynamic_approval",
-		state: "pending",
-		identity: {
-			child: request.identity.child,
-			epoch: request.identity.epoch,
-			threadId: request.identity.threadId,
-			turnId: request.identity.turnId,
-			callId: request.identity.callId,
-			namespace: request.identity.namespace,
-			tool: request.identity.tool,
-			manifestHash: request.identity.manifestHash,
-			operationId: request.identity.operationId,
-		},
-		effect: projectDynamicApprovalEffect(model, identity, request),
-		effectHash: request.effectHash,
-		createdAtMs: request.createdAtMs,
-		expiresAtMs: request.expiresAtMs,
-		decision: null,
-		delivery: null,
-		toolResult: null,
-		binding: {
-			commandId: binding.commandId,
-			paneId: binding.paneId,
-			capturedLink: {
-				threadId: binding.capturedLink.threadId,
-				childId: binding.capturedLink.childId,
-				epoch: binding.capturedLink.epoch,
-			},
-		},
-		resumable: false,
-	});
-}
-
-/**
- *
+ * Project the owners' state into one validated browser snapshot, refusing
+ * input that carries a secret or that the browser contract cannot represent.
+ * @param model The browser schema owner.
+ * @param identity The trusted identity decoder.
+ * @param input The owners' state for one pane.
+ * @returns The projected snapshot, or the refusal.
  */
 export function projectCodexBrowserState(
 	model: DynamicProjectionModel,
@@ -912,170 +396,4 @@ export function projectCodexBrowserState(
 			message: "The normalized owner state cannot be represented by the browser contract.",
 		});
 	}
-}
-
-export const BROWSER_SNAPSHOT_MAX_BYTES = 1_048_576;
-export const BROWSER_SNAPSHOT_MIN_BYTES = 32_768;
-export const BROWSER_DELTA_MAX_BYTES = 262_144;
-
-type BrowserSnapshotKey = Exclude<keyof BrowserSnapshot, "kind" | "version">;
-const SNAPSHOT_KEYS: readonly BrowserSnapshotKey[] = [
-	"readiness",
-	"account",
-	"login",
-	"threadLink",
-	"threadCandidates",
-	"timeline",
-	"queue",
-	"settings",
-	"approvals",
-	"dynamicApprovals",
-	"semantic",
-	"coordinator",
-	"voice",
-	"spokenApproval",
-	"voiceContext",
-	"lease",
-	"operation",
-];
-
-/**
- *
- */
-function deepFreeze<T>(value: T): T {
-	if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
-		Object.freeze(value);
-		for (const child of Object.values(value)) deepFreeze(child);
-	}
-	return value;
-}
-
-/**
- *
- */
-function wireBytes(value: unknown): number {
-	const encoded = JSON.stringify(value);
-	if (encoded === undefined) throw new Error("browser gateway produced a non-JSON value");
-	return new TextEncoder().encode(encoded).byteLength;
-}
-
-/**
- *
- */
-function assertBounded(value: unknown, limit: number, kind: string): void {
-	if (wireBytes(value) > limit) throw new Error(`the browser ${kind} exceeds its wire-size bound`);
-}
-
-/**
- *
- */
-export function assertBrowserSnapshotBudget(limit: number): void {
-	if (
-		!Number.isSafeInteger(limit) ||
-		limit < BROWSER_SNAPSHOT_MIN_BYTES ||
-		limit > BROWSER_SNAPSHOT_MAX_BYTES
-	)
-		throw new Error(
-			`the browser snapshot budget must be between ${BROWSER_SNAPSHOT_MIN_BYTES} and ${BROWSER_SNAPSHOT_MAX_BYTES} bytes`,
-		);
-}
-
-/**
- *
- */
-function truncateTimelineTurn(
-	turn: BrowserTimeline["turns"][number],
-	items: BrowserTimeline["turns"][number]["items"],
-): BrowserTimeline["turns"][number] {
-	return { ...turn, items, outputsTruncated: true };
-}
-
-/** Fit variable-size histories after every competing snapshot field is present. */
-export function fitBrowserSnapshotBounded(
-	snapshot: BrowserSnapshot,
-	limit = BROWSER_SNAPSHOT_MAX_BYTES,
-): BrowserSnapshot {
-	assertBrowserSnapshotBudget(limit);
-	if (wireBytes(snapshot) <= limit) return snapshot;
-	let turns = snapshot.timeline?.turns.slice() ?? [];
-	let voiceContext = snapshot.voiceContext ?? null;
-	/**
-	 *
-	 */
-	const candidate = (): BrowserSnapshot => ({
-		...snapshot,
-		timeline: snapshot.timeline === null ? null : { ...snapshot.timeline, turns },
-		voiceContext,
-	});
-	while (snapshot.timeline !== null && turns.length > 0) {
-		const lastIndex = turns.length - 1;
-		const last = turns[lastIndex]!;
-		let items = last.items;
-		turns[lastIndex] = truncateTimelineTurn(last, items);
-		while (items.length > 0 && wireBytes(candidate()) > limit) {
-			items = items.slice(0, -1);
-			turns[lastIndex] = truncateTimelineTurn(last, items);
-		}
-		if (wireBytes(candidate()) <= limit) return deepFreeze(candidate());
-		if (turns.length === 1) {
-			if (snapshot.timeline.nextCursor === null) break;
-			turns = [];
-			if (wireBytes(candidate()) <= limit) return deepFreeze(candidate());
-			break;
-		}
-		turns = turns.slice(0, -1);
-		const preceding = turns.at(-1)!;
-		turns[turns.length - 1] = truncateTimelineTurn(preceding, preceding.items);
-	}
-	while (voiceContext !== null && voiceContext.entries.length > 0) {
-		voiceContext = Object.assign({}, voiceContext, {
-			entriesTruncated: voiceContext.entriesTruncated + 1,
-			entries: voiceContext.entries.slice(1),
-		});
-		if (wireBytes(candidate()) <= limit) return deepFreeze(candidate());
-	}
-	const fitted = candidate();
-	assertBounded(fitted, limit, "snapshot");
-	return deepFreeze(fitted);
-}
-
-/**
- *
- */
-function sameWireValue(left: unknown, right: unknown): boolean {
-	return JSON.stringify(left) === JSON.stringify(right);
-}
-
-/**
- *
- */
-export function diffBrowserSnapshots(
-	previous: BrowserSnapshot,
-	next: BrowserSnapshot,
-): BrowserSnapshotDelta | null {
-	const delta: Record<string, unknown> = {};
-	for (const key of SNAPSHOT_KEYS) {
-		if (!sameWireValue(previous[key], next[key])) delta[key] = next[key];
-	}
-	if (Object.keys(delta).length === 0) return null;
-	assertBounded(delta, BROWSER_DELTA_MAX_BYTES, "delta");
-	return deepFreeze(delta);
-}
-
-/**
- *
- */
-export function assertBrowserSnapshotBounded(
-	snapshot: BrowserSnapshot,
-	limit = BROWSER_SNAPSHOT_MAX_BYTES,
-): void {
-	assertBrowserSnapshotBudget(limit);
-	assertBounded(snapshot, limit, "snapshot");
-}
-
-/**
- *
- */
-export function assertBrowserDeltaBounded(delta: BrowserSnapshotDelta): void {
-	assertBounded(delta, BROWSER_DELTA_MAX_BYTES, "delta");
 }

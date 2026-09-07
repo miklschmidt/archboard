@@ -12,7 +12,9 @@ type ResolvedOpenerCommand =
 	| { ok: false; code: "OPENER_UNAVAILABLE"; error: string };
 
 /**
- *
+ * Tells whether a path names a regular file this process may execute.
+ * @param candidate An absolute path.
+ * @returns True for an executable regular file.
  */
 function executableFile(candidate: string): boolean {
 	try {
@@ -27,7 +29,9 @@ function executableFile(candidate: string): boolean {
 }
 
 /**
- *
+ * Finds the executable an opener names, on PATH for a bare name or in place for an absolute one.
+ * @param executable The executable as the selection spells it.
+ * @returns The path to run, or null when nothing runnable was found.
  */
 function resolveExecutable(executable: string): string | null {
 	if (path.posix.isAbsolute(executable) || path.win32.isAbsolute(executable)) {
@@ -37,7 +41,9 @@ function resolveExecutable(executable: string): string | null {
 }
 
 /**
- *
+ * Resolves a planned command's executable so a launch can name what it will run.
+ * @param command The planned opener command.
+ * @returns The command with its executable resolved, or the unavailability failure.
  */
 function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerCommand {
 	const executable = resolveExecutable(command.executable);
@@ -51,7 +57,9 @@ function resolveOpenerCommand(command: OpenerCommand): ResolvedOpenerCommand {
 }
 
 /**
- *
+ * Starts the opener detached, reporting only whether the process came up.
+ * @param command The planned opener command.
+ * @returns Success once the child spawned, or the failure that prevented it.
  */
 async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 	const resolved = resolveOpenerCommand(command);
@@ -62,7 +70,8 @@ async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 		let settled = false;
 		let child: ReturnType<typeof spawn>;
 		/**
-		 *
+		 * Settles the launch once, detaching the listeners that could settle it again.
+		 * @param result The launch outcome.
 		 */
 		const finish = (result: LaunchResult): void => {
 			if (settled) {
@@ -73,15 +82,14 @@ async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 			child.removeListener("error", onError);
 			resolve(result);
 		};
-		/**
-		 *
-		 */
+		/** Lets the opener outlive this process once it has started. */
 		const onSpawn = (): void => {
 			child.unref();
 			finish({ ok: true });
 		};
 		/**
-		 *
+		 * Reports a child that could not start.
+		 * @param error The spawn error.
 		 */
 		const onError = (error: Error): void => {
 			finish({
