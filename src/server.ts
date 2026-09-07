@@ -1,8 +1,7 @@
 import { isMainModule } from "@/runtime/engine/entry";
-import application, { canvasStartupFailureMessage, startServer } from "@/server/canvas";
+import { app, canvasStartupFailureMessage, startServer } from "@/server/canvas";
 
-export { startServer };
-export default application;
+export { app, startServer };
 
 if (isMainModule(import.meta.url)) {
 	void startServer().catch((error: unknown) => {
