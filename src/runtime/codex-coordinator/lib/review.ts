@@ -23,14 +23,23 @@ const COORDINATOR_CATALOGUE_HASH = createHash("sha256")
 	.digest("hex");
 
 /**
- *
+ * The digest of one coordinator's settings, taken over their canonical form so the same settings
+ * always hash the same way whatever order Codex reported them in.
+ * @param settings - The coordinator's settings.
+ * @returns The hex digest.
  */
 function hashCoordinatorSettings(settings: CoordinatorSettings): string {
 	return createHash("sha256").update(canonicalJson(settings), "utf8").digest("hex");
 }
 
 /**
- *
+ * The hashes that say this coordinator is the reviewed one: its composed instructions, its two
+ * tool manifests, the catalogue they form, and its settings. The instruction and manifest digests
+ * are re-derived here and compared against the reviewed constants, so a drifted artifact refuses
+ * to start a coordinator rather than quietly changing what it is.
+ * @param settingsHash - The digest of the coordinator's settings.
+ * @returns The frozen review hashes.
+ * @throws {Error} When any reviewed digest has drifted.
  */
 function reviewedCoordinatorHashes(settingsHash: string): CoordinatorReviewHashes {
 	const instruction = verifyAuthoredInstructionIntegrity();
@@ -51,20 +60,19 @@ function reviewedCoordinatorHashes(settingsHash: string): CoordinatorReviewHashe
 	});
 }
 
+/** The JSON scalars settings may hold, each with a single canonical spelling. */
+const CANONICAL_SCALARS: ReadonlySet<string> = new Set(["string", "boolean", "number"]);
+
 /**
- *
+ * Serialize settings with object keys in sorted order, so the same settings always produce the
+ * same bytes and therefore the same digest. A value that is not JSON is refused rather than
+ * serialized into something the digest cannot describe.
+ * @param value - The settings value.
+ * @returns The canonical JSON text.
+ * @throws {TypeError} When the settings hold a value JSON cannot represent.
  */
 function canonicalJson(value: unknown): string {
-	if (value === null) {
-		return "null";
-	}
-	if (typeof value === "string") {
-		return JSON.stringify(value);
-	}
-	if (typeof value === "boolean") {
-		return value ? "true" : "false";
-	}
-	if (typeof value === "number") {
+	if (value === null || CANONICAL_SCALARS.has(typeof value)) {
 		return JSON.stringify(value);
 	}
 	if (Array.isArray(value)) {
@@ -80,7 +88,9 @@ function canonicalJson(value: unknown): string {
 }
 
 /**
- *
+ * Whether a value is a plain object whose keys can be sorted.
+ * @param value - Any value.
+ * @returns True for a non-null, non-array object.
  */
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return value !== null && typeof value === "object" && !Array.isArray(value);
