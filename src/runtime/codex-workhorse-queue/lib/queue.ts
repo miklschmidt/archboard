@@ -1,5 +1,3 @@
-import { createTextUserInput, type TextUserInput } from "@/runtime/codex-instructions";
-import { CodexSessionMutationError } from "@/runtime/codex-session";
 import type { SessionQueuedSubmission } from "@/runtime/codex-session";
 import {
 	CodexWorkhorseQueueError,
@@ -19,7 +17,6 @@ import {
 	type QueueUpdateResult,
 	type WorkhorseQueueBinding,
 	type WorkhorseQueueMutation,
-	type WorkhorseQueueOperationIdPort,
 	type WorkhorseQueueOptions,
 	type WorkhorseQueueOperation,
 } from "@/runtime/codex-workhorse-queue/lib/contract";
@@ -40,8 +37,65 @@ import {
 	queueStartClientUserMessageId,
 	queueStartTarget,
 } from "@/runtime/codex-workhorse-queue/lib/start-correlation";
+import {
+	inputForPrompt,
+	mutationOutcome,
+	operationIdPort,
+	queueError,
+} from "@/runtime/codex-workhorse-queue/lib/mutation-inputs";
 
 const QUEUE_PAGE_LIMIT = 100;
+
+/** One page of the authoritative queue, as the session reports it. */
+type QueueListPage = Awaited<ReturnType<WorkhorseQueueOptions<string>["session"]["queueListPage"]>>;
+
+/**
+ * Take one page's submissions, refusing a page whose shape or identities cannot be trusted: a
+ * duplicate or empty id would make the queue unattributable.
+ * @param page - The page the app-server returned.
+ * @param seenSubmissionIds - The identities already taken from earlier pages.
+ * @param submissions - The submissions collected so far, appended to in place.
+ */
+function collectQueuePage(
+	page: QueueListPage,
+	seenSubmissionIds: Set<string>,
+	submissions: SessionQueuedSubmission[],
+): void {
+	if (page.nextCursor !== null && typeof page.nextCursor !== "string") {
+		throw queueError("invalid_result", "The workhorse returned an invalid queue page.");
+	}
+	for (const submission of page.data) {
+		if (submission.id.length === 0 || seenSubmissionIds.has(submission.id)) {
+			throw queueError(
+				"invalid_result",
+				"The workhorse queue contains a duplicate or empty submission id.",
+			);
+		}
+		seenSubmissionIds.add(submission.id);
+		submissions.push(submission);
+	}
+}
+
+/**
+ * The cursor to read next, refusing a cursor already followed so a queue that keeps handing
+ * back the same page cannot page forever.
+ * @param nextCursor - The cursor the page carried.
+ * @param seenCursors - The cursors already followed.
+ * @returns The next cursor, or null when the queue is fully read.
+ */
+function nextQueueCursor(nextCursor: string | null, seenCursors: Set<string>): string | null {
+	if (nextCursor === null) {
+		return null;
+	}
+	if (seenCursors.has(nextCursor)) {
+		throw queueError(
+			"repeated_cursor",
+			"The workhorse queue returned a repeated pagination cursor.",
+		);
+	}
+	seenCursors.add(nextCursor);
+	return nextCursor;
+}
 
 type MutationResponse = unknown;
 type MutationRequest<OperationIdValue extends string> =
@@ -52,67 +106,9 @@ type MutationRequest<OperationIdValue extends string> =
 	| QueueStartRequest<OperationIdValue>;
 
 /**
- *
- */
-function queueError(
-	code: ConstructorParameters<typeof CodexWorkhorseQueueError>[0],
-	message: string,
-	options: ConstructorParameters<typeof CodexWorkhorseQueueError>[2] = {},
-): CodexWorkhorseQueueError {
-	return new CodexWorkhorseQueueError(code, message, options);
-}
-
-/**
- *
- */
-function inputForPrompt(prompt: string): TextUserInput {
-	try {
-		return createTextUserInput(prompt);
-	} catch (error) {
-		throw queueError(
-			"invalid_input",
-			"Queue prompts must be nonempty text within the authored limit.",
-			{
-				cause: error,
-			},
-		);
-	}
-}
-
-/**
- *
- */
-function mutationOutcome(error: unknown): QueueMutationOutcome {
-	return error instanceof CodexSessionMutationError ? error.outcome : "outcome_unknown";
-}
-
-/**
- *
- */
-function operationIdPort<OperationIdValue extends string>(
-	port: WorkhorseQueueOperationIdPort<OperationIdValue>,
-	operation: WorkhorseQueueMutation,
-	operationId: OperationIdValue,
-): string | null {
-	try {
-		port.assertCurrent(operationId);
-		if (operation !== "add") return null;
-		const serialized = port.serialize(operationId);
-		if (typeof serialized !== "string" || serialized.length === 0)
-			throw new TypeError("the serialized operation identity must not be empty");
-		return serialized;
-	} catch (error) {
-		if (error instanceof CodexWorkhorseQueueError) throw error;
-		throw queueError(
-			"invalid_input",
-			"The queue mutation requires a current host-issued operation identity.",
-			{ operation, cause: error },
-		);
-	}
-}
-
-/**
- *
+ * Build the module that owns the workhorse's submission queue. Every command runs behind the ones before it, against a binding proven current on both sides of each remote call, and each mutation is reconciled against a fresh authoritative read before it may be called delivered.
+ * @param options - The session, binding accessor, identity authority and operation identity port.
+ * @returns The queue module.
  */
 export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	options: WorkhorseQueueOptions<OperationIdValue>,
@@ -121,7 +117,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	let closed = false;
 
 	/**
-	 *
+	 * Run one unit of work after every command enqueued before it, refusing outright once the queue is closed.
+	 * @param work - The command to run when its turn comes.
+	 * @returns What the command produced.
 	 */
 	const enqueue = <Value>(work: () => Promise<Value>): Promise<Value> => {
 		if (closed)
@@ -137,7 +135,8 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	};
 
 	/**
-	 *
+	 * The coordinator-and-workhorse binding the queue works through, refused when the pane has no linked workhorse yet.
+	 * @returns A frozen copy of the current binding.
 	 */
 	const currentBinding = (): WorkhorseQueueBinding => {
 		const binding = options.currentBinding();
@@ -150,7 +149,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	};
 
 	/**
-	 *
+	 * Whether a captured binding is still the host's current one, on a child epoch that is still current.
+	 * @param binding - The binding captured when the command started.
+	 * @returns True when the binding still holds.
 	 */
 	const isCurrentBinding = (binding: WorkhorseQueueBinding): boolean => {
 		const current = options.currentBinding();
@@ -162,7 +163,10 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	};
 
 	/**
-	 *
+	 * Refuse a command whose link changed. Called around every remote call, because a queue read or mutation that spans a link change belongs to neither link.
+	 * @param binding - The binding captured when the command started.
+	 * @param operation - The operation being refused, when there is one.
+	 * @param outcome - The delivery outcome to report, when it is known.
 	 */
 	const assertCurrentBinding = (
 		binding: WorkhorseQueueBinding,
@@ -185,7 +189,8 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		| { readonly binding?: never; readonly error: unknown };
 
 	/**
-	 *
+	 * Capture the current binding before the command is queued, keeping a refusal as a value so it can be reported without entering the queue.
+	 * @returns The binding, or the error that stopped it.
 	 */
 	const captureBinding = (): AcceptedBinding => {
 		try {
@@ -196,7 +201,10 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	};
 
 	/**
-	 *
+	 * Queue one command against the binding captured at call time, re-proving that binding when the command's turn comes.
+	 * @param operation - The operation the command performs.
+	 * @param work - The command, given the captured binding.
+	 * @returns What the command produced.
 	 */
 	const enqueueForBinding = <Value>(
 		operation: WorkhorseQueueOperation,
@@ -211,65 +219,65 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	};
 
 	/**
-	 *
+	 * Read one page of the authoritative queue, proving the binding still holds on both sides of
+	 * the read.
+	 * @param binding - The coordinator and workhorse the queue belongs to.
+	 * @param cursor - The page to read, or null for the first.
+	 * @returns The page the app-server returned.
+	 */
+	const readQueuePage = async (
+		binding: WorkhorseQueueBinding,
+		cursor: string | null,
+	): Promise<Awaited<ReturnType<typeof options.session.queueListPage>>> => {
+		assertCurrentBinding(binding);
+		try {
+			const page = await options.session.queueListPage({
+				threadId: binding.workhorseThreadId,
+				cursor,
+				limit: QUEUE_PAGE_LIMIT,
+			});
+			assertCurrentBinding(binding);
+			return page;
+		} catch (error) {
+			if (error instanceof CodexWorkhorseQueueError) {
+				throw error;
+			}
+			throw queueError(
+				"transport_failure",
+				"The authoritative workhorse queue could not be read.",
+				{
+					cause: error,
+				},
+			);
+		}
+	};
+
+	/**
+	 * Read the whole authoritative queue, page by page, re-checking the binding around every read
+	 * so a queue is never assembled across a link that changed underneath it.
+	 * @param binding - The coordinator and workhorse the queue belongs to.
+	 * @returns The frozen queue.
 	 */
 	const readAuthoritative = async (binding: WorkhorseQueueBinding): Promise<QueueSnapshot> => {
 		const seenCursors = new Set<string>();
 		const seenSubmissionIds = new Set<string>();
 		const submissions: SessionQueuedSubmission[] = [];
 		let cursor: string | null = null;
-
-		for (;;) {
-			assertCurrentBinding(binding);
-			let page: Awaited<ReturnType<typeof options.session.queueListPage>>;
-			try {
-				page = await options.session.queueListPage({
-					threadId: binding.workhorseThreadId,
-					cursor,
-					limit: QUEUE_PAGE_LIMIT,
-				});
-			} catch (error) {
-				throw queueError(
-					"transport_failure",
-					"The authoritative workhorse queue could not be read.",
-					{
-						cause: error,
-					},
-				);
-			}
-			assertCurrentBinding(binding);
-			if (
-				!Array.isArray(page.data) ||
-				(page.nextCursor !== null && typeof page.nextCursor !== "string")
-			)
-				throw queueError("invalid_result", "The workhorse returned an invalid queue page.");
-			for (const submission of page.data) {
-				if (
-					submission === null ||
-					typeof submission.id !== "string" ||
-					submission.id.length === 0 ||
-					seenSubmissionIds.has(submission.id)
-				)
-					throw queueError(
-						"invalid_result",
-						"The workhorse queue contains a duplicate or empty submission id.",
-					);
-				seenSubmissionIds.add(submission.id);
-				submissions.push(submission);
-			}
-			if (page.nextCursor === null) return snapshot(submissions);
-			if (seenCursors.has(page.nextCursor))
-				throw queueError(
-					"repeated_cursor",
-					"The workhorse queue returned a repeated pagination cursor.",
-				);
-			seenCursors.add(page.nextCursor);
-			cursor = page.nextCursor;
-		}
+		do {
+			// oxlint-disable-next-line no-await-in-loop -- pagination is sequential by contract: each page's cursor comes from the one before it, and the binding is re-checked between reads
+			const page = await readQueuePage(binding, cursor);
+			collectQueuePage(page, seenSubmissionIds, submissions);
+			cursor = nextQueueCursor(page.nextCursor, seenCursors);
+		} while (cursor !== null);
+		return snapshot(submissions);
 	};
 
 	/**
-	 *
+	 * Re-read the authoritative queue after a mutation. A read that fails leaves the mutation unreconciled: it is reported as unknown rather than guessed at, and a link change during the read is reported as such.
+	 * @param binding - The binding the mutation ran under.
+	 * @param operation - The mutation that was made.
+	 * @param outcome - What the mutation itself settled as.
+	 * @returns The queue as the app-server now reports it.
 	 */
 	const freshAfterMutation = async (
 		binding: WorkhorseQueueBinding,
@@ -294,7 +302,14 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	};
 
 	/**
-	 *
+	 * Run one queue mutation end to end: prove the identity and binding, read the queue before, let the caller's pre-effect check run last, issue the mutation, then re-read and reconcile. A mutation only counts as delivered when the fresh queue accounts for it exactly.
+	 * @param operation - The mutation being made.
+	 * @param binding - The binding captured for the command.
+	 * @param request - The mutation request as it will be recorded.
+	 * @param invoke - Issues the mutation against the session.
+	 * @param validateBefore - Checks the queue before the effect and names the target.
+	 * @param reconciles - Whether the queue after the mutation accounts for it exactly.
+	 * @returns The operation, its identity, its settled outcome and the fresh queue.
 	 */
 	const runMutation = async <
 		Operation extends WorkhorseQueueMutation,
@@ -369,7 +384,8 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 	};
 
 	/**
-	 *
+	 * Read the authoritative queue.
+	 * @returns The current queue.
 	 */
 	const list = (): Promise<QueueListResult> =>
 		enqueueForBinding("list", async (binding) => {
@@ -379,7 +395,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		});
 
 	/**
-	 *
+	 * Queue one prompt behind the running turn, under the client identity that makes the new submission attributable to this operation.
+	 * @param request - The prompt, operation identity and pre-effect check.
+	 * @returns The mutation result and the fresh queue.
 	 */
 	const add = (
 		request: QueueAddRequest<OperationIdValue>,
@@ -413,7 +431,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		});
 
 	/**
-	 *
+	 * Replace a queued submission's prompt, keeping its own client identity.
+	 * @param request - The submission, prompt, operation identity and pre-effect check.
+	 * @returns The mutation result and the fresh queue.
 	 */
 	const update = (
 		request: QueueUpdateRequest<OperationIdValue>,
@@ -443,7 +463,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		});
 
 	/**
-	 *
+	 * Remove one queued submission.
+	 * @param request - The submission, operation identity and pre-effect check.
+	 * @returns The mutation result and the fresh queue.
 	 */
 	const remove = (
 		request: QueueDeleteRequest<OperationIdValue>,
@@ -469,7 +491,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		);
 
 	/**
-	 *
+	 * Reorder the queue, refusing an order that is not exactly the current queue's ids.
+	 * @param request - The complete order, operation identity and pre-effect check.
+	 * @returns The mutation result and the fresh queue.
 	 */
 	const reorder = (
 		request: QueueReorderRequest<OperationIdValue>,
@@ -498,7 +522,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		);
 
 	/**
-	 *
+	 * Start one queued submission now, reporting the turn it started and the client identity it carried so the caller can correlate the turn to its own submission.
+	 * @param request - The submission, operation identity and pre-effect check.
+	 * @returns The mutation result, the started turn and the client identity.
 	 */
 	const start = (
 		request: QueueStartRequest<OperationIdValue>,
@@ -538,7 +564,9 @@ export function createCodexWorkhorseQueue<OperationIdValue extends string>(
 		});
 
 	/**
-	 *
+	 * Close the queue and wait for the commands already accepted to finish. Nothing new is
+	 * accepted after this, so a shutdown never leaves a mutation half-reconciled.
+	 * @returns When the last accepted command has settled.
 	 */
 	const shutdown = async (): Promise<void> => {
 		closed = true;
