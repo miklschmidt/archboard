@@ -2,527 +2,397 @@ import { measureLinear } from "@/runtime/engine/geometry";
 import type { InspectionFinding, InspectionPolicy } from "@/runtime/board-inspection/schemas";
 import {
 	decodePath,
-	kindOf,
 	persistedConnectorPointChainEligibility,
 	stableDescription,
 	type DecodedRecord,
 } from "@/runtime/board-inspection/lib/decode";
+import { pointBox, type ExactPoint, type Segment } from "@/runtime/board-inspection/lib/geometry";
+import { make } from "@/runtime/board-inspection/lib/finding-builder";
+import type { RawRecord, RecordMap } from "@/runtime/board-inspection/lib/connector-records";
 import {
-	pointBox,
-	type ExactBox,
-	type ExactPoint,
-	type Segment,
-} from "@/runtime/board-inspection/lib/geometry";
+	decodedPathEvidence,
+	storedExtent,
+	unusablePathFinding,
+	type PathEvidence,
+} from "@/runtime/board-inspection/lib/connector-evidence";
 import {
-	classifyBindingTarget,
-	type BlockingBindingIssue,
-} from "@/runtime/board-inspection/lib/model";
-import { affectedOf, make } from "@/runtime/board-inspection/lib/finding-builder";
+	connectorBindingFindings,
+	persistedEndpointFindings,
+} from "@/runtime/board-inspection/lib/detect-connector-bindings";
 
-type RecordMap = ReadonlyMap<string, DecodedRecord>;
-type RawRecord = Readonly<Record<string, unknown>>;
-
-const locatableOrigin = (raw: RawRecord): raw is RawRecord & { x: number; y: number } =>
-	typeof raw["x"] === "number" &&
-	Number.isFinite(raw["x"]) &&
-	typeof raw["y"] === "number" &&
-	Number.isFinite(raw["y"]);
-
-const storedExtent = (record: DecodedRecord, raw: RawRecord): ExactBox | null =>
-	record.evidenceBox ?? (locatableOrigin(raw) ? { x: raw.x, y: raw.y, width: 0, height: 0 } : null);
-
-function decodedPathEvidence(
-	record: DecodedRecord,
-	raw: RawRecord,
-	scenePoints: readonly ExactPoint[] | null | undefined,
-): { points: readonly ExactPoint[]; affected: ExactBox | null } {
-	if (scenePoints === null || (scenePoints === undefined && !locatableOrigin(raw))) {
-		return { points: [], affected: null };
-	}
-	const points = scenePoints ?? [];
-	const pathBox = points.length > 0 ? pointBox(points) : null;
-	return {
-		points,
-		affected: pathBox ?? storedExtent(record, raw),
-	};
+/** The run's segment budget, counted up as each connector's path is walked. */
+interface SegmentWork {
+	pathSegmentChecks: number;
 }
 
-function unusablePathFinding(record: DecodedRecord, raw: RawRecord): InspectionFinding {
-	const decoded = decodePath(record);
-	if (decoded.ok) {
-		throw new Error("usable connector path passed to unusablePathFinding");
-	}
-	if (decoded.issue === "absolute-point-overflow") {
-		const evidence = decodedPathEvidence(record, raw, decoded.scenePoints);
-		return make({
-			code: "AMBIGUOUS_GEOMETRY",
-			reason: "absolute-point-overflow",
-			severity: "warning",
-			affectsCoverage: true,
-			details: {
-				connectorId: record.id,
-				sourceIndex: record.sourceIndex,
-				pointIndex: decoded.pointIndex,
-				issue: "absolute path coordinate or segment arithmetic exceeded finite inspection range",
-			},
-			message: `Connector ${record.id ?? record.sourceIndex} overflows absolute path coordinates.`,
-			elements: [record.ref],
-			...evidence,
-		});
-	}
-	if (decoded.issue === "malformed-point") {
-		const evidence = decodedPathEvidence(record, raw, decoded.scenePoints);
-		return make({
-			code: "AMBIGUOUS_GEOMETRY",
-			reason: "malformed-point",
-			severity: "warning",
-			affectsCoverage: true,
-			details: {
-				connectorId: record.id,
-				sourceIndex: record.sourceIndex,
-				pointIndex: decoded.pointIndex,
-				issue: "point must contain two finite numbers",
-			},
-			message: `Connector ${record.id ?? record.sourceIndex} has a malformed point.`,
-			elements: [record.ref],
-			...evidence,
-		});
-	}
-	const evidence = decodedPathEvidence(record, raw, decoded.scenePoints);
-	const shared = {
-		code: "AMBIGUOUS_GEOMETRY" as const,
-		severity: "warning" as const,
-		affectsCoverage: true as const,
-		message: `Connector ${record.id ?? record.sourceIndex} has no usable path.`,
+/**
+ * The finding for a rotated connector, whose stored angle the inspection does not model.
+ * @param record the connector
+ * @param angle the raw angle
+ * @param evidence what the finding can point at
+ * @returns the finding
+ */
+function rotationFinding(
+	record: DecodedRecord,
+	angle: unknown,
+	evidence: PathEvidence,
+): InspectionFinding {
+	return make({
+		code: "UNSUPPORTED_GEOMETRY",
+		reason: "rotation",
+		severity: "warning",
+		affectsCoverage: true,
+		details: {
+			angle: typeof angle === "number" && Number.isFinite(angle) ? angle : stableDescription(angle),
+		},
+		message: `Connector ${record.id ?? record.sourceIndex} is rotated.`,
 		elements: [record.ref],
 		...evidence,
-	};
-	switch (decoded.issue) {
-		case "missing":
-			return make({
-				...shared,
-				reason: "points-missing",
-				details: {
-					connectorId: record.id,
-					sourceIndex: record.sourceIndex,
-					rawPointsKind: "missing",
-					rawPointsDescription: "missing",
-					pointCount: null,
-					minimumRequired: 2,
-					issue: "missing",
-				},
-			});
-		case "non-array":
-			return make({
-				...shared,
-				reason: "points-not-array",
-				details: {
-					connectorId: record.id,
-					sourceIndex: record.sourceIndex,
-					rawPointsKind: kindOf(raw["points"]),
-					rawPointsDescription: stableDescription(raw["points"]),
-					pointCount: null,
-					minimumRequired: 2,
-					issue: "non-array",
-				},
-			});
-		case "empty":
-			return make({
-				...shared,
-				reason: "points-empty",
-				details: {
-					connectorId: record.id,
-					sourceIndex: record.sourceIndex,
-					rawPointsKind: "array",
-					rawPointsDescription: "array",
-					pointCount: 0,
-					minimumRequired: 2,
-					issue: "empty",
-				},
-			});
-		case "one-point":
-			return make({
-				...shared,
-				reason: "points-one-point",
-				details: {
-					connectorId: record.id,
-					sourceIndex: record.sourceIndex,
-					rawPointsKind: "array",
-					rawPointsDescription: "array",
-					pointCount: 1,
-					minimumRequired: 2,
-					issue: "insufficient-cardinality",
-				},
-			});
+	});
+}
+
+/**
+ * The finding for a curved connector, whose curve the inspection's straight segments cannot
+ * stand for.
+ * @param record the connector
+ * @param raw the connector's raw fields
+ * @param evidence what the finding can point at
+ * @returns the finding
+ */
+function curveFinding(
+	record: DecodedRecord,
+	raw: RawRecord,
+	evidence: PathEvidence,
+): InspectionFinding {
+	return make({
+		code: "UNSUPPORTED_GEOMETRY",
+		reason: "curve",
+		severity: "warning",
+		affectsCoverage: true,
+		details: { curveKind: stableDescription(raw["curveKind"] ?? raw["curve"]) },
+		message: `Connector ${record.id ?? record.sourceIndex} is curved.`,
+		elements: [record.ref],
+		...evidence,
+	});
+}
+
+/** What an ineligible point chain was found to be. */
+type Ineligibility = Exclude<
+	ReturnType<typeof persistedConnectorPointChainEligibility>,
+	{ eligible: true }
+>;
+
+/**
+ * What to say about a point chain the inspection will not follow.
+ * @param record the connector
+ * @param eligibility why the chain is ineligible
+ * @returns the message
+ */
+function ineligibilityMessage(record: DecodedRecord, eligibility: Ineligibility): string {
+	const subject = `Connector ${record.id ?? record.sourceIndex}`;
+	if (eligibility.issue === "elbow-coordinate-limit") {
+		return `${subject} has elbow point ${eligibility.pointIndex} ${eligibility.axis} coordinate ${eligibility.coordinate} exceeding ±1,000,000.`;
+	}
+	if (eligibility.issue === "malformed-elbowed") {
+		return `${subject} has malformed elbowed metadata.`;
+	}
+	return `${subject} has fixedSegments metadata without elbowed geometry.`;
+}
+
+/**
+ * The finding for a connector whose rounding or elbow metadata puts its point chain outside
+ * what the inspection follows.
+ * @param record the connector
+ * @param raw the connector's raw fields
+ * @param eligibility why the chain is ineligible
+ * @param evidence what the finding can point at
+ * @returns the finding
+ */
+function ineligibleChainFinding(
+	record: DecodedRecord,
+	raw: RawRecord,
+	eligibility: Ineligibility,
+	evidence: PathEvidence,
+): InspectionFinding {
+	return make({
+		code: "UNSUPPORTED_GEOMETRY",
+		reason: "rounded-or-elbowed",
+		severity: "warning",
+		affectsCoverage: true,
+		details: {
+			roundness: raw["roundness"] == null ? null : stableDescription(raw["roundness"]),
+			elbowed: raw["elbowed"] === true,
+			fixedSegments: raw["fixedSegments"] != null,
+		},
+		message: ineligibilityMessage(record, eligibility),
+		elements: [record.ref],
+		...evidence,
+	});
+}
+
+/**
+ * The geometry the inspection does not model: rotation, curvature, and point chains its
+ * segment model cannot stand for. A connector with any of these is described but not measured.
+ * @param record the connector
+ * @param raw the connector's raw fields
+ * @param evidence what the findings can point at
+ * @returns the findings
+ */
+function unsupportedGeometryFindings(
+	record: DecodedRecord,
+	raw: RawRecord,
+	evidence: PathEvidence,
+): InspectionFinding[] {
+	const findings: InspectionFinding[] = [];
+	const angle = raw["angle"];
+	if (rotated(angle)) {
+		findings.push(rotationFinding(record, angle, evidence));
+	}
+	if (curved(raw)) {
+		findings.push(curveFinding(record, raw, evidence));
+	}
+	const ineligible = ineligibleChain(record);
+	if (ineligible !== null) {
+		findings.push(ineligibleChainFinding(record, raw, ineligible, evidence));
+	}
+	return findings;
+}
+
+/**
+ * Whether a connector carries a rotation, which the inspection's axis-aligned model does not
+ * stand for.
+ * @param angle the raw angle
+ * @returns true when the connector is rotated
+ */
+function rotated(angle: unknown): boolean {
+	return angle !== undefined && angle !== 0;
+}
+
+/**
+ * Whether a connector carries curvature, which its straight segments do not stand for.
+ * @param raw the connector's raw fields
+ * @returns true when the connector is curved
+ */
+function curved(raw: RawRecord): boolean {
+	return raw["curve"] !== undefined || raw["curveKind"] !== undefined;
+}
+
+/**
+ * Why a decoded connector's point chain is one the inspection will not follow.
+ * @param record the connector
+ * @returns the ineligibility, or null when the chain is followed
+ */
+function ineligibleChain(record: DecodedRecord): Ineligibility | null {
+	const decoded = decodePath(record);
+	if (!decoded.ok) {
+		return null;
+	}
+	const eligibility = persistedConnectorPointChainEligibility(record, decoded);
+	return eligibility.eligible ? null : eligibility;
+}
+
+/**
+ * The findings for segments of zero length, which name a point on the path but no direction.
+ * @param record the connector
+ * @param zeroSegments the indexes of the zero-length segments
+ * @param scenePoints the decoded path, when it has one
+ * @returns the findings
+ */
+function zeroLengthFindings(
+	record: DecodedRecord,
+	zeroSegments: readonly number[],
+	scenePoints: readonly ExactPoint[] | null,
+): InspectionFinding[] {
+	return zeroSegments.map((segmentIndex) => {
+		const point = scenePoints?.[segmentIndex];
+		return make({
+			code: "AMBIGUOUS_GEOMETRY",
+			reason: "zero-length",
+			severity: "warning",
+			affectsCoverage: true,
+			details: { connectorId: record.id, sourceIndex: record.sourceIndex, segmentIndex },
+			message: `Connector ${record.id ?? record.sourceIndex} has a zero-length segment.`,
+			elements: [record.ref],
+			points: point === undefined ? [] : [point],
+			affected: point === undefined ? null : pointBox([point]),
+		});
+	});
+}
+
+/**
+ * Add this connector's drawable segments to the run's collection, counting every segment it
+ * looked at against the run's budget. Zero-length segments name no direction and are skipped.
+ * @param connectorId the connector's identity
+ * @param sourceIndex where the connector sat in the input
+ * @param scenePoints the decoded path
+ * @param zeroSegments the indexes of the zero-length segments
+ * @param segments the run's segments, added to in place
+ * @param work the run's counters, advanced in place
+ */
+function collectSegments(
+	connectorId: string,
+	sourceIndex: number,
+	scenePoints: readonly ExactPoint[],
+	zeroSegments: readonly number[],
+	segments: Segment[],
+	work: SegmentWork,
+): void {
+	const skip = new Set(zeroSegments);
+	for (let index = 0; index < scenePoints.length - 1; index += 1) {
+		work.pathSegmentChecks += 1;
+		const a = scenePoints[index];
+		const b = scenePoints[index + 1];
+		if (skip.has(index) || a === undefined || b === undefined) {
+			continue;
+		}
+		segments.push({ connectorId, sourceIndex, index, a, b });
 	}
 }
 
+/**
+ * A connector's stored width and height, when both read as finite numbers.
+ * @param raw the connector's raw fields
+ * @returns the stored size, or null when it does not read
+ */
+function storedSize(raw: RawRecord): { width: number; height: number } | null {
+	const width = raw["width"];
+	const height = raw["height"];
+	if (typeof width !== "number" || !Number.isFinite(width)) {
+		return null;
+	}
+	return typeof height === "number" && Number.isFinite(height) ? { width, height } : null;
+}
+
+/**
+ * The finding for stored dimensions that no longer match the path they describe, which is what
+ * makes a connector render at a size its own points disagree with.
+ * @param record the connector
+ * @param raw the connector's raw fields
+ * @param policy the run's policy, which sets how far apart the two may drift
+ * @param scenePoints the decoded path
+ * @returns the finding, or null when the stored dimensions still hold
+ */
+function staleDimensionFinding(
+	record: DecodedRecord,
+	raw: RawRecord,
+	policy: InspectionPolicy,
+	scenePoints: readonly ExactPoint[],
+): InspectionFinding | null {
+	const measured = measureLinear(raw["points"]);
+	const stored = storedSize(raw);
+	if (!measured || stored === null) {
+		return null;
+	}
+	const widthDelta = Math.abs(stored.width - measured.width);
+	const heightDelta = Math.abs(stored.height - measured.height);
+	const reason = staleReason(widthDelta, heightDelta, policy.dimensionTolerance);
+	if (reason === null) {
+		return null;
+	}
+	return make({
+		code: "STALE_LINEAR_DIMENSIONS",
+		reason,
+		severity: "error",
+		affectsCoverage: false,
+		details: {
+			storedWidth: stored.width,
+			storedHeight: stored.height,
+			measuredWidth: measured.width,
+			measuredHeight: measured.height,
+			widthDelta,
+			heightDelta,
+		},
+		message: `Connector ${record.id ?? record.sourceIndex} has stale stored dimensions.`,
+		elements: [record.ref],
+		points: scenePoints,
+		affected: pointBox(scenePoints),
+	});
+}
+
+/**
+ * Which stored dimension no longer describes the path, if either does not.
+ * @param widthDelta how far the stored width is from the measured one
+ * @param heightDelta how far the stored height is from the measured one
+ * @param tolerance how far apart the run's policy lets them drift
+ * @returns the reason, or null when both dimensions still hold
+ */
+function staleReason(
+	widthDelta: number,
+	heightDelta: number,
+	tolerance: number,
+): "width" | "height" | "width-and-height" | null {
+	const staleWidth = widthDelta >= tolerance;
+	const staleHeight = heightDelta >= tolerance;
+	if (staleWidth && staleHeight) {
+		return "width-and-height";
+	}
+	if (staleWidth) {
+		return "width";
+	}
+	return staleHeight ? "height" : null;
+}
+
+/**
+ * Whether a connector's path can be measured against the rest of the board: it must have a
+ * usable identity, a decoded path, and no geometry the inspection declined to model.
+ * @param record the connector
+ * @param unsupported how many unsupported-geometry findings it already has
+ * @param scenePoints the decoded path, when it has one
+ * @returns true when the path is worth measuring
+ */
+function measurable(
+	record: DecodedRecord,
+	unsupported: number,
+	scenePoints: readonly ExactPoint[] | null,
+): boolean {
+	if (unsupported > 0 || scenePoints === null) {
+		return false;
+	}
+	return record.usableId && record.id !== null;
+}
+
+/**
+ * Everything a connector's own geometry says: the geometry the inspection will not model, the
+ * path that cannot be used at all, its zero-length segments, and stored dimensions its points
+ * no longer agree with. A connector whose geometry is described but not modelled contributes
+ * no segments to the run.
+ * @param record the connector
+ * @param raw the connector's raw fields
+ * @param policy the run's policy
+ * @param segments the run's segments, added to in place
+ * @param work the run's counters, advanced in place
+ * @returns the geometry findings
+ */
 function connectorGeometryFindings(
 	record: DecodedRecord,
 	raw: RawRecord,
 	policy: InspectionPolicy,
 	segments: Segment[],
-	work: { pathSegmentChecks: number },
+	work: SegmentWork,
 ): InspectionFinding[] {
-	const findings: InspectionFinding[] = [];
-	const refs = [record.ref];
 	const decoded = decodePath(record);
-	const pathEvidence = decodedPathEvidence(record, raw, decoded.scenePoints);
-	const angle = raw["angle"];
-	const unsupportedRotation = angle !== undefined && angle !== 0;
-	if (unsupportedRotation) {
-		findings.push(
-			make({
-				code: "UNSUPPORTED_GEOMETRY",
-				reason: "rotation",
-				severity: "warning",
-				affectsCoverage: true,
-				details: {
-					angle:
-						typeof angle === "number" && Number.isFinite(angle) ? angle : stableDescription(angle),
-				},
-				message: `Connector ${record.id ?? record.sourceIndex} is rotated.`,
-				elements: refs,
-				...pathEvidence,
-			}),
-		);
-	}
-	const unsupportedCurve = raw["curve"] !== undefined || raw["curveKind"] !== undefined;
-	if (unsupportedCurve) {
-		findings.push(
-			make({
-				code: "UNSUPPORTED_GEOMETRY",
-				reason: "curve",
-				severity: "warning",
-				affectsCoverage: true,
-				details: { curveKind: stableDescription(raw["curveKind"] ?? raw["curve"]) },
-				message: `Connector ${record.id ?? record.sourceIndex} is curved.`,
-				elements: refs,
-				...pathEvidence,
-			}),
-		);
-	}
-	const eligibility = decoded.ok ? persistedConnectorPointChainEligibility(record, decoded) : null;
-	if (eligibility && !eligibility.eligible) {
-		findings.push(
-			make({
-				code: "UNSUPPORTED_GEOMETRY",
-				reason: "rounded-or-elbowed",
-				severity: "warning",
-				affectsCoverage: true,
-				details: {
-					roundness: raw["roundness"] == null ? null : stableDescription(raw["roundness"]),
-					elbowed: raw["elbowed"] === true,
-					fixedSegments: raw["fixedSegments"] != null,
-				},
-				message:
-					eligibility.issue === "elbow-coordinate-limit"
-						? `Connector ${record.id ?? record.sourceIndex} has elbow point ${eligibility.pointIndex} ${eligibility.axis} coordinate ${eligibility.coordinate} exceeding ±1,000,000.`
-						: eligibility.issue === "malformed-elbowed"
-							? `Connector ${record.id ?? record.sourceIndex} has malformed elbowed metadata.`
-							: `Connector ${record.id ?? record.sourceIndex} has fixedSegments metadata without elbowed geometry.`,
-				elements: refs,
-				...pathEvidence,
-			}),
-		);
-	}
+	const evidence = decodedPathEvidence(record, raw, decoded.scenePoints);
+	const unsupported = unsupportedGeometryFindings(record, raw, evidence);
 	if (!decoded.ok) {
-		return [...findings, unusablePathFinding(record, raw)];
+		return [...unsupported, unusablePathFinding(record, raw)];
 	}
-	for (const segmentIndex of decoded.zeroSegments) {
-		findings.push(
-			make({
-				code: "AMBIGUOUS_GEOMETRY",
-				reason: "zero-length",
-				severity: "warning",
-				affectsCoverage: true,
-				details: { connectorId: record.id, sourceIndex: record.sourceIndex, segmentIndex },
-				message: `Connector ${record.id ?? record.sourceIndex} has a zero-length segment.`,
-				elements: refs,
-				points: decoded.scenePoints ? [decoded.scenePoints[segmentIndex]!] : [],
-				affected: decoded.scenePoints ? pointBox([decoded.scenePoints[segmentIndex]!]) : null,
-			}),
-		);
-	}
-	const unsupported = unsupportedRotation || unsupportedCurve || eligibility?.eligible === false;
-	if (unsupported || !record.usableId || !record.id || !decoded.scenePoints) {
+	const findings = [
+		...unsupported,
+		...zeroLengthFindings(record, decoded.zeroSegments, decoded.scenePoints),
+	];
+	if (!measurable(record, unsupported.length, decoded.scenePoints) || !decoded.scenePoints) {
 		return findings;
 	}
-	const zeroSegments = new Set(decoded.zeroSegments);
-	for (let index = 0; index < decoded.scenePoints.length - 1; index += 1) {
-		work.pathSegmentChecks += 1;
-		if (zeroSegments.has(index)) {
-			continue;
-		}
-		segments.push({
-			connectorId: record.id,
-			sourceIndex: record.sourceIndex,
-			index,
-			a: decoded.scenePoints[index]!,
-			b: decoded.scenePoints[index + 1]!,
-		});
-	}
-	const measured = measureLinear(raw["points"]);
-	if (
-		!measured ||
-		typeof raw["width"] !== "number" ||
-		!Number.isFinite(raw["width"]) ||
-		typeof raw["height"] !== "number" ||
-		!Number.isFinite(raw["height"])
-	) {
-		return findings;
-	}
-	const widthDelta = Math.abs(raw["width"] - measured.width),
-		heightDelta = Math.abs(raw["height"] - measured.height);
-	const staleWidth = widthDelta >= policy.dimensionTolerance,
-		staleHeight = heightDelta >= policy.dimensionTolerance;
-	if (staleWidth || staleHeight) {
-		findings.push(
-			make({
-				code: "STALE_LINEAR_DIMENSIONS",
-				reason: staleWidth && staleHeight ? "width-and-height" : staleWidth ? "width" : "height",
-				severity: "error",
-				affectsCoverage: false,
-				details: {
-					storedWidth: raw["width"],
-					storedHeight: raw["height"],
-					measuredWidth: measured.width,
-					measuredHeight: measured.height,
-					widthDelta,
-					heightDelta,
-				},
-				message: `Connector ${record.id ?? record.sourceIndex} has stale stored dimensions.`,
-				elements: refs,
-				points: decoded.scenePoints,
-				affected: pointBox(decoded.scenePoints),
-			}),
-		);
-	}
-	return findings;
-}
-
-type BindingIssue =
-	| BlockingBindingIssue
-	| "missing-focus"
-	| "nonfinite-focus"
-	| "missing-gap"
-	| "nonfinite-gap"
-	| "invalid-fixed-point";
-type BindingInspection =
-	| {
-			binding: Record<string, unknown> | null;
-			issue: BlockingBindingIssue;
-			readableTargetId: null;
-			classificationBlocked: true;
-	  }
-	| {
-			binding: Record<string, unknown>;
-			issue: Exclude<BindingIssue, BlockingBindingIssue> | null;
-			readableTargetId: string;
-			classificationBlocked: false;
-	  };
-
-function bindingIssue(value: unknown): BindingInspection {
-	const binding =
-		value && typeof value === "object" && !Array.isArray(value)
-			? (value as Record<string, unknown>)
-			: null;
-	const target = classifyBindingTarget(value);
-	if (target.blockingIssue) {
-		return {
-			binding,
-			issue: target.blockingIssue,
-			readableTargetId: null,
-			classificationBlocked: true,
-		};
-	}
-	let issue: Exclude<BindingIssue, BlockingBindingIssue> | null = null;
-	if (binding) {
-		if (!("focus" in binding)) {
-			issue = "missing-focus";
-		} else if (typeof binding["focus"] !== "number" || !Number.isFinite(binding["focus"])) {
-			issue = "nonfinite-focus";
-		} else if (!("gap" in binding)) {
-			issue = "missing-gap";
-		} else if (typeof binding["gap"] !== "number" || !Number.isFinite(binding["gap"])) {
-			issue = "nonfinite-gap";
-		} else if (
-			binding["fixedPoint"] != null &&
-			(!Array.isArray(binding["fixedPoint"]) ||
-				binding["fixedPoint"].length !== 2 ||
-				binding["fixedPoint"].some((n) => typeof n !== "number" || !Number.isFinite(n)))
-		) {
-			issue = "invalid-fixed-point";
-		}
-	}
-	return {
-		binding: binding!,
-		issue,
-		readableTargetId: target.readableTargetId!,
-		classificationBlocked: false,
-	};
-}
-
-function connectorBindingFindings(
-	record: DecodedRecord,
-	raw: RawRecord,
-	byId: RecordMap,
-	duplicateIds: ReadonlySet<string>,
-): InspectionFinding[] {
-	const findings: InspectionFinding[] = [];
-	for (const end of ["start", "end"] as const) {
-		const value = raw[`${end}Binding`];
-		if (value == null) {
-			continue;
-		}
-		const { issue, readableTargetId, classificationBlocked } = bindingIssue(value);
-		if (issue) {
-			const shared = {
-				code: "BROKEN_REFERENCE",
-				reason: `malformed-${end}-binding` as const,
-				severity: "error",
-				message: `Connector ${record.id ?? record.sourceIndex} has a malformed ${end} binding.`,
-				elements: [record.ref],
-				affected: record.evidenceBox,
-			} as const;
-			if (classificationBlocked) {
-				findings.push(
-					make({
-						...shared,
-						affectsCoverage: true,
-						details: {
-							connectorId: record.id,
-							sourceIndex: record.sourceIndex,
-							rawKind: kindOf(value),
-							issue,
-							readableTargetId,
-							classificationBlocked: true,
-						},
-					}),
-				);
-			} else {
-				findings.push(
-					make({
-						...shared,
-						affectsCoverage: false,
-						details: {
-							connectorId: record.id,
-							sourceIndex: record.sourceIndex,
-							rawKind: kindOf(value),
-							issue,
-							readableTargetId,
-							classificationBlocked: false,
-						},
-					}),
-				);
-			}
-		}
-		if (!readableTargetId || !record.usableId || !record.id || duplicateIds.has(readableTargetId)) {
-			continue;
-		}
-		const target = byId.get(readableTargetId);
-		if (!target) {
-			findings.push(
-				make({
-					code: "BROKEN_REFERENCE",
-					reason: "missing-binding-target",
-					severity: "error",
-					affectsCoverage: true,
-					details: { connectorId: record.id, end, targetId: readableTargetId },
-					message: `Connector ${record.id} names missing target ${readableTargetId}.`,
-					elements: [record.ref],
-					affected: record.evidenceBox,
-				}),
-			);
-		} else if (target.type === "arrow" || target.type === "line") {
-			findings.push(
-				make({
-					code: "BROKEN_REFERENCE",
-					reason: "invalid-binding-target-type",
-					severity: "error",
-					affectsCoverage: true,
-					details: {
-						connectorId: record.id,
-						end,
-						targetId: readableTargetId,
-						targetType: target.type ?? "unknown",
-					},
-					message: `Connector ${record.id} binds to another connector.`,
-					elements: [record.ref, target.ref],
-					affected: affectedOf([record, target]),
-				}),
-			);
-		} else {
-			const targetBounds = target.raw?.boundElements;
-			if (
-				!Array.isArray(targetBounds) ||
-				!targetBounds.some(
-					(entry) =>
-						entry &&
-						typeof entry === "object" &&
-						!Array.isArray(entry) &&
-						(entry as Record<string, unknown>)["id"] === record.id &&
-						(entry as Record<string, unknown>)["type"] === "arrow",
-				)
-			) {
-				findings.push(
-					make({
-						code: "BROKEN_REFERENCE",
-						reason: "missing-binding-reciprocal",
-						severity: "error",
-						affectsCoverage: false,
-						details: { connectorId: record.id, end, targetId: readableTargetId },
-						message: `Target ${readableTargetId} does not name connector ${record.id}.`,
-						elements: [record.ref, target.ref],
-						affected: affectedOf([record, target]),
-					}),
-				);
-			}
-		}
-	}
-	return findings;
-}
-
-function persistedEndpointFindings(record: DecodedRecord, raw: RawRecord): InspectionFinding[] {
-	if (!record.id) {
-		return [];
-	}
-	const findings: InspectionFinding[] = [];
-	for (const end of ["start", "end"] as const) {
-		const input = raw[end];
-		if (!input || typeof input !== "object" || Array.isArray(input)) {
-			continue;
-		}
-		const inputId = (input as Record<string, unknown>)["id"];
-		if (typeof inputId !== "string" || !inputId) {
-			continue;
-		}
-		const binding = raw[`${end}Binding`];
-		const bindingId =
-			binding && typeof binding === "object" && !Array.isArray(binding)
-				? (binding as Record<string, unknown>)["elementId"]
-				: null;
-		if (bindingId !== inputId) {
-			findings.push(
-				make({
-					code: "BROKEN_REFERENCE",
-					reason: "persisted-agent-endpoint",
-					severity: "error",
-					affectsCoverage: true,
-					details: {
-						connectorId: record.id,
-						end,
-						inputTargetId: inputId,
-						bindingTargetId: typeof bindingId === "string" ? bindingId : null,
-					},
-					message: `Connector ${record.id} persists an input-only ${end} endpoint.`,
-					elements: [record.ref],
-					affected: record.evidenceBox,
-				}),
-			);
-		}
-	}
-	return findings;
+	collectSegments(
+		record.id ?? "",
+		record.sourceIndex,
+		decoded.scenePoints,
+		decoded.zeroSegments,
+		segments,
+		work,
+	);
+	const stale = staleDimensionFinding(record, raw, policy, decoded.scenePoints);
+	return stale === null ? findings : [...findings, stale];
 }
 
 export {
