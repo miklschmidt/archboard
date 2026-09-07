@@ -1,286 +1,237 @@
-import type { FieldChange } from "@/runtime/engine/compare";
+// The change as compact lines, for a reader with a token budget — a hook's
+// additional context, or an injected item. Nothing here is invented: every
+// line restates one field of the change.
+//
+// `maxChars` truncates by dropping whole lines and saying how many were
+// dropped, never by cutting a line in half. The full structure is always
+// available from the feed.
+
 import type { SemanticChange } from "@/runtime/engine/changes";
+import type {
+	EdgeRef,
+	EdgeReroute,
+	NodeIdentityChange,
+	NodeRef,
+} from "@/runtime/engine/lib/change-refs";
+import type { DeepReadonly, NameIndex } from "@/runtime/engine/lib/change-phrasing";
+import {
+	describeFieldChanges,
+	namedBy,
+	namedList,
+	quoted,
+} from "@/runtime/engine/lib/change-phrasing";
 
-type DeepReadonly<T> = T extends readonly (infer Item)[]
-	? readonly DeepReadonly<Item>[]
-	: T extends object
-		? { readonly [Key in keyof T]: DeepReadonly<T[Key]> }
-		: T;
+/** How many cluster lines are worth printing before they repeat themselves. */
+const CLUSTER_LINE_LIMIT = 2;
 
-/**
- *
- */
-const changeRank = (model: DeepReadonly<{ changes: object }>): number =>
-	["cluster", "container", "group"].some((key) => key in model.changes) ? 0 : 1;
-
-/**
- *
- */
-const quoted = (name: string): string => (name.startsWith("an ") ? name : `"${name}"`);
-
-/**
- *
- */
-const encodeValue = (value: unknown): string => {
-	const encoded: unknown = JSON.stringify(value);
-	return typeof encoded === "string" ? encoded : "none";
-};
+/** How many relative-position lines are worth printing. */
+const RELATION_LINE_LIMIT = 8;
 
 /**
- *
+ * A shape that became a node, said with what it used to be so the reader can
+ * tell a promotion from an arrival.
+ * @param id The identity change.
+ * @returns The line.
  */
-function list(names: readonly string[], limit = 3): string {
-	if (names.length <= limit) {
-		return names.join(", ");
-	}
-	return `${names.slice(0, limit).join(", ")} and ${names.length - limit} more`;
-}
-
-/*
- * One sentence naming the most consequential thing in the change.
- *
- * Ranked, not summed: a headline that tried to mention everything would be
- * unreadable in the one place it is used, which is a line the agent may end up
- * speaking. Everything else is still in `narrateChange` and in `detail`.
- */
-/**
- *
- */
-function headlineFor(change: DeepReadonly<SemanticChange>): string {
-	const c = change.counts;
-	const n = change.nodes;
-	const e = change.edges;
-
-	if (n.identity.length > 0) {
-		const first = n.identity.at(0);
-		if (!first) {
-			return "nothing this model can name changed";
-		}
-		let verb = "renamed";
-		if (first.what === "promoted") {
-			verb = "promoted";
-		} else if (first.what === "demoted") {
-			verb = "demoted";
-		}
-		const more = c.identityChanges > 1 ? ` (+${c.identityChanges - 1} more)` : "";
-		return `${quoted(first.to.name)} ${verb}${first.what === "promoted" && first.to.kind !== undefined ? ` to a ${first.to.kind}` : ""}${more}`;
-	}
-	if (e.removed.length > 0 || e.rerouted.length > 0) {
-		if (e.rerouted.length > 0) {
-			const r = e.rerouted.at(0);
-			if (!r) {
-				return "nothing this model can name changed";
-			}
-			return `${quoted(r.anchorName)}'s ${r.end === "source" ? "incoming" : "outgoing"} edge now goes to ${quoted(r.nowName)}, not ${quoted(r.wasName)}`;
-		}
-		const r = e.removed.at(0);
-		if (!r) {
-			return "nothing this model can name changed";
-		}
-		const more = e.removed.length > 1 ? ` (+${e.removed.length - 1} more)` : "";
-		return `the edge ${quoted(r.fromName)} → ${quoted(r.toName)} was cut${more}`;
-	}
-	if (n.removed.length > 0) {
-		return `${list(n.removed.map((x) => quoted(x.name)))} ${n.removed.length === 1 ? "is" : "are"} gone from the board`;
-	}
-	if (n.added.length > 0) {
-		return `${list(n.added.map((x) => quoted(x.name)))} appeared on the board`;
-	}
-	if (e.added.length > 0) {
-		const a = e.added.at(0);
-		if (!a) {
-			return "nothing this model can name changed";
-		}
-		const more = e.added.length > 1 ? ` (+${e.added.length - 1} more)` : "";
-		return `a new edge ${quoted(a.fromName)} → ${quoted(a.toName)}${more}`;
-	}
-	if (n.changed.length > 0) {
-		const ch = n.changed.at(0);
-		if (!ch) {
-			return "nothing this model can name changed";
-		}
-		const fields = Object.keys(ch.changes).join(", ");
-		const more = n.changed.length > 1 ? ` (+${n.changed.length - 1} more)` : "";
-		return `${quoted(ch.name)} changed: ${fields}${more}`;
-	}
-	/**
-	 *
-	 */
-	const named = (node: string): string => quoted(change.names[node] ?? node);
-	if (change.layout.clusters.length > 0) {
-		const cl = change.layout.clusters.at(0);
-		if (!cl) {
-			return "nothing this model can name changed";
-		}
-		const who = [...cl.joined, ...cl.left];
-		return `the grouping changed — a cluster ${cl.kind}${who.length > 0 ? `, ${list(who.map((node) => named(node)))} moved between clusters` : ""}`;
-	}
-	if (c.nodesMoved > 0) {
-		// Not every "moved" is equally meaningful: containment, grouping and
-		// cluster membership say who a node now belongs with, whereas region only
-		// says roughly where it sits and is the coarsest thing this can notice.
-		// Headline the ones that name a relationship when there are any.
-		const ordered = [...change.nodes.moved].toSorted((a, b) => changeRank(a) - changeRank(b));
-		const deliberate = ordered.filter((m) => changeRank(m) === 0);
-		const subjects = (deliberate.length > 0 ? deliberate : ordered).map((m) => quoted(m.name));
-		return `${list(subjects)} moved`;
-	}
-	if (change.significance === "cosmetic") {
-		return "only appearance changed";
-	}
-	return "nothing this model can name changed";
+function promotionLine(id: DeepReadonly<NodeIdentityChange>): string {
+	const was =
+		id.from.anonymous && id.from.name.startsWith("an ")
+			? `was ${id.from.name}`
+			: `was a plain ${id.from.type} labelled "${id.from.name}"`;
+	const kind = id.to.kind !== undefined ? ` to a ${id.to.kind}` : "";
+	const bound = id.to.binding !== undefined ? ` bound to ${id.to.binding}` : "";
+	return `promoted ${quoted(id.to.name)}${kind}${bound} (${was})`;
 }
 
 /**
- *
+ * One shape's identity change.
+ * @param id The identity change.
+ * @returns The line.
  */
-function describeFieldChanges(
-	changes: Readonly<Record<string, DeepReadonly<FieldChange>>>,
-	names?: Readonly<Record<string, string>>,
+function identityLine(id: DeepReadonly<NodeIdentityChange>): string {
+	if (id.what === "promoted") {
+		return promotionLine(id);
+	}
+	if (id.what === "demoted") {
+		return `demoted ${quoted(id.from.name)} back to a plain ${id.to.type}`;
+	}
+	return `renamed the node ${quoted(id.from.name)} to ${quoted(id.to.name)}`;
+}
+
+/**
+ * A node that arrived, said with whatever it is bound to.
+ * @param node The node.
+ * @returns The line.
+ */
+function addedNodeLine(node: DeepReadonly<NodeRef>): string {
+	const bound = node.binding !== undefined ? ` bound to ${node.binding}` : "";
+	return `new ${node.kind ?? "node"} ${quoted(node.name)}${bound}`;
+}
+
+/**
+ * A node that left.
+ * @param node The node.
+ * @returns The line.
+ */
+function removedNodeLine(node: DeepReadonly<NodeRef>): string {
+	const kind = node.kind !== undefined ? ` (${node.kind})` : "";
+	return `${quoted(node.name)}${kind} was removed`;
+}
+
+/**
+ * A connector that was drawn, said with its label when it carries one.
+ * @param edge The connector.
+ * @returns The line.
+ */
+function addedEdgeLine(edge: DeepReadonly<EdgeRef>): string {
+	const label = edge.label !== undefined ? ` ("${edge.label}")` : "";
+	return `new edge ${quoted(edge.fromName)} → ${quoted(edge.toName)}${label}`;
+}
+
+/**
+ * A connector that kept one end and moved the other.
+ * @param r The reroute.
+ * @returns The line.
+ */
+function rerouteLine(r: DeepReadonly<EdgeReroute>): string {
+	const prep = r.end === "source" ? "from" : "to";
+	return `rerouted: ${quoted(r.anchorName)}'s edge ${prep} ${quoted(r.wasName)} now ${prep} ${quoted(r.nowName)}`;
+}
+
+/**
+ * Everything that happened to the board's nodes as identities and arrivals.
+ * @param change The whole change.
+ * @returns The lines.
+ */
+function nodeLines(change: DeepReadonly<SemanticChange>): string[] {
+	return [
+		...change.nodes.identity.map((id) => identityLine(id)),
+		...change.nodes.added.map((node) => addedNodeLine(node)),
+		...change.nodes.removed.map((node) => removedNodeLine(node)),
+		...change.nodes.changed.map(
+			(node) => `${quoted(node.name)}: ${describeFieldChanges(node.changes, change.names)}`,
+		),
+	];
+}
+
+/**
+ * Everything that happened to the board's connectors.
+ * @param change The whole change.
+ * @returns The lines.
+ */
+function edgeLines(change: DeepReadonly<SemanticChange>): string[] {
+	return [
+		...change.edges.added.map((edge) => addedEdgeLine(edge)),
+		...change.edges.removed.map(
+			(edge) => `edge cut: ${quoted(edge.fromName)} → ${quoted(edge.toName)}`,
+		),
+		...change.edges.rerouted.map((r) => rerouteLine(r)),
+		...change.edges.changed.map(
+			(edge) =>
+				`edge ${quoted(edge.fromName)} → ${quoted(edge.toName)}: ${describeFieldChanges(edge.changes)}`,
+		),
+	];
+}
+
+/**
+ * One cluster's arrivals and departures.
+ * @param cl The cluster change.
+ * @param names Node id to reader-facing name.
+ * @returns The line.
+ */
+function clusterLine(
+	cl: DeepReadonly<SemanticChange>["layout"]["clusters"][number],
+	names: NameIndex,
 ): string {
-	// `cluster` and `clusterWith` hold node ids, and the empty case is the one
-	// that matters most — a node on its own, which "[]" says badly.
-	/**
-	 *
-	 */
-	const named = (node: string): string => quoted(names?.[node] ?? node);
-	/**
-	 *
-	 */
-	const company = (value: unknown): string => {
-		if (!Array.isArray(value)) {
-			return encodeValue(value);
-		}
-		if (value.length === 0) {
-			return "on its own";
-		}
-		const memberNames: string[] = [];
-		for (const member of value as unknown[]) {
-			memberNames.push(named(String(member)));
-		}
-		return `with ${memberNames.join(", ")}`;
-	};
-	const descriptions: string[] = [];
-	for (const [field, change] of Object.entries(changes)) {
-		descriptions.push(
-			field === "cluster" || field === "clusterWith"
-				? `sits ${company(change.to)} (was ${company(change.from)})`
-				: `${field} ${encodeValue(change.from)} → ${encodeValue(change.to)}`,
-		);
+	const parts: string[] = [];
+	if (cl.joined.length > 0) {
+		parts.push(`joined by ${namedList(names, cl.joined)}`);
 	}
-	return descriptions.join("; ");
+	if (cl.left.length > 0) {
+		parts.push(`left by ${namedList(names, cl.left)}`);
+	}
+	const detail = parts.length > 0 ? `: ${parts.join(", ")}` : "";
+	const around =
+		cl.sharedMembers.length > 0 ? ` (around ${namedList(names, cl.sharedMembers)})` : "";
+	return `cluster ${cl.kind}${detail}${around}`;
 }
 
-/*
- * The change as compact lines, for a reader with a token budget — a hook's
- * additional context, or an injected item. Nothing here is invented: every
- * line restates one field of the change.
- *
- * `maxChars` truncates by dropping whole lines and saying how many were
- * dropped, never by cutting a line in half. The full structure is always
- * available from the feed.
- */
 /**
+ * The board's clusters, capped.
  *
+ * A board that broke into five clusters produces five entries describing the
+ * same event from five sides, and the per-node "sits with" lines say it better.
+ * @param change The whole change.
+ * @returns The lines.
  */
-function narrateChange(change: DeepReadonly<SemanticChange>, maxChars = 1800): string {
-	const lines: string[] = [];
-	// Never print a node id: a synthetic one means nothing to a reader, and a
-	// real one is not what anybody calls the box.
-	/**
-	 *
-	 */
-	const named = (node: string): string => quoted(change.names[node] ?? node);
-	/**
-	 *
-	 */
-	const namedList = (ids: readonly string[], limit = 3): string =>
-		list(
-			ids.map((node) => named(node)),
-			limit,
-		);
+function clusterLines(change: DeepReadonly<SemanticChange>): string[] {
+	const lines = change.layout.clusters
+		.slice(0, CLUSTER_LINE_LIMIT)
+		.map((cl) => clusterLine(cl, change.names));
+	if (change.layout.clusters.length > CLUSTER_LINE_LIMIT) {
+		const rest = change.layout.clusters.length - CLUSTER_LINE_LIMIT;
+		lines.push(`… and ${rest} other cluster change(s) from the same rearrangement`);
+	}
+	return lines;
+}
 
-	for (const id of change.nodes.identity) {
-		if (id.what === "promoted") {
-			const was =
-				id.from.anonymous && id.from.name.startsWith("an ")
-					? `was ${id.from.name}`
-					: `was a plain ${id.from.type} labelled "${id.from.name}"`;
-			lines.push(
-				`promoted ${quoted(id.to.name)}${id.to.kind !== undefined ? ` to a ${id.to.kind}` : ""}${id.to.binding !== undefined ? ` bound to ${id.to.binding}` : ""} (${was})`,
-			);
-		} else if (id.what === "demoted") {
-			lines.push(`demoted ${quoted(id.from.name)} back to a plain ${id.to.type}`);
-		} else {
-			lines.push(`renamed the node ${quoted(id.from.name)} to ${quoted(id.to.name)}`);
-		}
-	}
-	for (const node of change.nodes.added) {
-		lines.push(
-			`new ${node.kind ?? "node"} ${quoted(node.name)}${node.binding !== undefined ? ` bound to ${node.binding}` : ""}`,
-		);
-	}
-	for (const node of change.nodes.removed) {
-		lines.push(
-			`${quoted(node.name)}${node.kind !== undefined ? ` (${node.kind})` : ""} was removed`,
-		);
-	}
-	for (const node of change.nodes.changed) {
-		lines.push(`${quoted(node.name)}: ${describeFieldChanges(node.changes, change.names)}`);
-	}
-	for (const edge of change.edges.added) {
-		lines.push(
-			`new edge ${quoted(edge.fromName)} → ${quoted(edge.toName)}${edge.label !== undefined ? ` ("${edge.label}")` : ""}`,
-		);
-	}
-	for (const edge of change.edges.removed) {
-		lines.push(`edge cut: ${quoted(edge.fromName)} → ${quoted(edge.toName)}`);
-	}
-	for (const r of change.edges.rerouted) {
-		lines.push(
-			`rerouted: ${quoted(r.anchorName)}'s edge ${r.end === "source" ? "from" : "to"} ${quoted(r.wasName)} now ${r.end === "source" ? "from" : "to"} ${quoted(r.nowName)}`,
-		);
-	}
-	for (const edge of change.edges.changed) {
-		lines.push(
-			`edge ${quoted(edge.fromName)} → ${quoted(edge.toName)}: ${describeFieldChanges(edge.changes)}`,
-		);
-	}
-	// One board-level line per cluster, but only a couple: a board that broke
-	// into five clusters produces five entries describing the same event from
-	// five sides, and the per-node "sits with" lines below say it better.
-	for (const cl of change.layout.clusters.slice(0, 2)) {
-		const parts: string[] = [];
-		if (cl.joined.length > 0) {
-			parts.push(`joined by ${namedList(cl.joined)}`);
-		}
-		if (cl.left.length > 0) {
-			parts.push(`left by ${namedList(cl.left)}`);
-		}
-		lines.push(
-			`cluster ${cl.kind}${parts.length > 0 ? `: ${parts.join(", ")}` : ""}${cl.sharedMembers.length > 0 ? ` (around ${namedList(cl.sharedMembers)})` : ""}`,
-		);
-	}
-	if (change.layout.clusters.length > 2) {
-		lines.push(
-			`… and ${change.layout.clusters.length - 2} other cluster change(s) from the same rearrangement`,
-		);
-	}
-	for (const g of change.layout.groups) {
-		lines.push(
-			`group ${g.kind}${g.joined.length > 0 ? `: +${namedList(g.joined)}` : ""}${g.left.length > 0 ? `: -${namedList(g.left)}` : ""}`,
-		);
-	}
-	for (const m of change.nodes.moved) {
-		lines.push(`${quoted(m.name)} moved: ${describeFieldChanges(m.changes, change.names)}`);
-	}
-	for (const rel of change.layout.relations.slice(0, 8)) {
-		lines.push(`${named(rel.a)} is now ${rel.to} ${named(rel.b)} (was ${rel.from})`);
-	}
-	if (change.layout.relations.length > 8) {
-		lines.push(`… and ${change.layout.relations.length - 8} other relative-position changes`);
-	}
+/**
+ * One explicit group's arrivals and departures.
+ * @param g The group change.
+ * @param names Node id to reader-facing name.
+ * @returns The line.
+ */
+function groupLine(
+	g: DeepReadonly<SemanticChange>["layout"]["groups"][number],
+	names: NameIndex,
+): string {
+	const joined = g.joined.length > 0 ? `: +${namedList(names, g.joined)}` : "";
+	const left = g.left.length > 0 ? `: -${namedList(names, g.left)}` : "";
+	return `group ${g.kind}${joined}${left}`;
+}
 
+/**
+ * How the board is arranged now: its clusters, its groups, and the nodes that
+ * only moved.
+ * @param change The whole change.
+ * @returns The lines.
+ */
+function layoutLines(change: DeepReadonly<SemanticChange>): string[] {
+	return [
+		...clusterLines(change),
+		...change.layout.groups.map((g) => groupLine(g, change.names)),
+		...change.nodes.moved.map(
+			(m) => `${quoted(m.name)} moved: ${describeFieldChanges(m.changes, change.names)}`,
+		),
+	];
+}
+
+/**
+ * Which nodes now sit where relative to which, capped.
+ * @param change The whole change.
+ * @returns The lines.
+ */
+function relationLines(change: DeepReadonly<SemanticChange>): string[] {
+	const lines = change.layout.relations
+		.slice(0, RELATION_LINE_LIMIT)
+		.map(
+			(rel) =>
+				`${namedBy(change.names, rel.a)} is now ${rel.to} ${namedBy(change.names, rel.b)} (was ${rel.from})`,
+		);
+	if (change.layout.relations.length > RELATION_LINE_LIMIT) {
+		const rest = change.layout.relations.length - RELATION_LINE_LIMIT;
+		lines.push(`… and ${rest} other relative-position changes`);
+	}
+	return lines;
+}
+
+/**
+ * As many whole lines as fit, with a count of the ones that did not.
+ * @param lines Every line the change produced.
+ * @param maxChars The budget.
+ * @returns The bullet list.
+ */
+function withinBudget(lines: readonly string[], maxChars: number): string {
 	const kept: string[] = [];
 	let used = 0;
 	for (const line of lines) {
@@ -296,4 +247,17 @@ function narrateChange(change: DeepReadonly<SemanticChange>, maxChars = 1800): s
 	return kept.map((l) => `- ${l}`).join("\n");
 }
 
-export { headlineFor, narrateChange };
+/**
+ * The whole change as a compact bullet list.
+ * @param change The whole change.
+ * @param maxChars The budget; lines past it are dropped whole and counted.
+ * @returns The bullet list.
+ */
+function narrateChange(change: DeepReadonly<SemanticChange>, maxChars = 1800): string {
+	return withinBudget(
+		[...nodeLines(change), ...edgeLines(change), ...layoutLines(change), ...relationLines(change)],
+		maxChars,
+	);
+}
+
+export { narrateChange };
