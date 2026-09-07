@@ -8,9 +8,9 @@ import {
 	ThreadRealtimeItemSchema,
 	TurnErrorSchema,
 	TurnStatusSchema,
-} from "./core-schemas.js";
-import { ThreadItemSchema } from "./item-schemas.js";
-import { FiniteNumberSchema, looseObject } from "./scalars.js";
+} from "@/runtime/codex-protocol/lib/core-schemas";
+import { ThreadItemSchema } from "@/runtime/codex-protocol/lib/item-schemas";
+import { FiniteNumberSchema, looseObject } from "@/runtime/codex-protocol/lib/scalars";
 
 const TurnItemsViewSchema = z.enum(["notLoaded", "summary", "full"]);
 

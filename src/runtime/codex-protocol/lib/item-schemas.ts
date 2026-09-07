@@ -6,8 +6,12 @@ import {
 	MessagePhaseSchema,
 	ReasoningEffortSchema,
 	UserInputSchema,
-} from "./core-schemas.js";
-import { FiniteNumberSchema, JsonValueSchema, looseObject } from "./scalars.js";
+} from "@/runtime/codex-protocol/lib/core-schemas";
+import {
+	FiniteNumberSchema,
+	JsonValueSchema,
+	looseObject,
+} from "@/runtime/codex-protocol/lib/scalars";
 
 const HookPromptFragmentSchema = looseObject({ text: z.string(), hookRunId: z.string() });
 

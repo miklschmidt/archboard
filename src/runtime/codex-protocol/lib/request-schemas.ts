@@ -3,9 +3,12 @@ import { z } from "zod";
 import type {
 	CodexClientNotificationByMethod,
 	CodexServerRequestParamsByMethod,
-} from "../../../shared/codex-app-server-contract/index.js";
-import { CommandActionSchema } from "./item-schemas.js";
-import type { ClientNotificationMethod, ServerRequestMethod } from "./methods.js";
+} from "@/shared/codex-app-server-contract";
+import { CommandActionSchema } from "@/runtime/codex-protocol/lib/item-schemas";
+import type {
+	ClientNotificationMethod,
+	ServerRequestMethod,
+} from "@/runtime/codex-protocol/lib/methods";
 import {
 	AdditionalPermissionProfileSchema,
 	ApplyPatchApprovalParamsSchema,
@@ -16,9 +19,13 @@ import {
 	NetworkApprovalContextSchema,
 	NetworkPolicyAmendmentSchema,
 	RequestPermissionProfileSchema,
-} from "./approval-schemas.js";
-import { JsonValueSchema, RequestIdSchema, looseObject } from "./scalars.js";
-import { codexIngressSchemas } from "./vendor-schema.js";
+} from "@/runtime/codex-protocol/lib/approval-schemas";
+import {
+	JsonValueSchema,
+	RequestIdSchema,
+	looseObject,
+} from "@/runtime/codex-protocol/lib/scalars";
+import { codexIngressSchemas } from "@/runtime/codex-protocol/lib/vendor-schema";
 
 const ClientInfoSchema = z.strictObject({
 	name: z.string(),

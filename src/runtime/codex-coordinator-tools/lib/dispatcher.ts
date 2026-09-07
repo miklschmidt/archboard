@@ -1,12 +1,5 @@
-import type {
-	DynamicServerRequest,
-	TransportServerRequest,
-} from "../../codex-transport/server-requests.js";
-import type {
-	ChildEpoch,
-	ChildId,
-	JsonRpcRequestId,
-} from "../../../shared/codex-workbench-identity/index.js";
+import type { TransportServerRequest } from "@/runtime/codex-transport/server-requests";
+import type { ChildEpoch, ChildId, JsonRpcRequestId } from "@/shared/codex-workbench-identity";
 import {
 	COORDINATOR_TOOLS_OWNER,
 	COORDINATOR_REPLAY_LIMITS,
@@ -18,19 +11,21 @@ import {
 	type CoordinatorReplayStateSnapshot,
 	type CoordinatorToolsServerRequest,
 	type DynamicToolResponse,
-} from "./contract.js";
-import { outcomeUnknownResponse, refusedResponse } from "./response.js";
+} from "@/runtime/codex-coordinator-tools/lib/contract";
 import {
-	captureSpokenOperationIdentity,
-	invokeWorkhorse,
-	isMutation,
-	issueOperationIdentity,
-	responseForWorkhorseError,
-	spokenInput,
-	spokenResponse,
-	workhorseResponse,
-	type IssuedOperationIdentity,
-} from "./tool-execution.js";
+	complete,
+	errorMessage,
+	executeCall,
+	unavailable,
+	type ExecutionContext,
+} from "@/runtime/codex-coordinator-tools/lib/call-execution";
+import {
+	createReplayLedger,
+	type CallState,
+	type LogicalCallState,
+	type TerminalLogicalCallState,
+} from "@/runtime/codex-coordinator-tools/lib/replay-ledger";
+import { refusedResponse } from "@/runtime/codex-coordinator-tools/lib/response";
 import {
 	CoordinatorToolValidationError,
 	callKey,
@@ -38,53 +33,32 @@ import {
 	logicalCallKey,
 	validateCoordinatorToolRequest,
 	type ValidatedCoordinatorToolCall,
-} from "./validation.js";
+} from "@/runtime/codex-coordinator-tools/lib/validation";
 
-interface CallState {
-	readonly wireKey: string;
-	readonly request: DynamicServerRequest;
-	logicalKey: string | null;
-	operationAttempted: boolean;
-	responseAttempted: boolean;
-	cancelled: CoordinatorToolCancellation | null;
-	childDisconnected: boolean;
-	readonly cancellation: Promise<void>;
-	readonly wakeCancellation: () => void;
-	promise: Promise<CoordinatorToolDispatchResult> | null;
-}
-
-interface LogicalCallState {
-	readonly key: string;
-	readonly inputFingerprint: string;
-	readonly owner: CallState;
-	acceptedAliases: number;
-	promise: Promise<CoordinatorToolDispatchResult> | null;
-}
-
-interface TerminalLogicalCallState {
-	readonly key: string;
-	readonly inputFingerprint: string;
-	readonly terminal: CoordinatorToolDispatchResult;
-}
-
-interface TerminalWireCallState {
-	readonly logicalKey: string | null;
-	readonly terminal: CoordinatorToolDispatchResult;
-}
-
-function errorMessage(error: unknown): string {
-	return error instanceof Error && error.message.length > 0 ? error.message : "unknown error";
-}
-
-function complete(
-	response: DynamicToolResponse,
-	attempted: boolean,
-): CoordinatorToolDispatchResult {
-	return Object.freeze({ response, attempted });
-}
-
+/**
+ * A no-op placeholder for the cancellation waker until the promise executor installs the real one.
+ */
 function ignoreCancellation(): void {}
 
+/** The child and epoch an exit notification names. */
+interface ChildExit {
+	readonly child: ChildId;
+	readonly epoch: ChildEpoch;
+}
+
+/**
+ * The result for a wire call that was cancelled while waiting on the logical call it aliases:
+ * nothing was attempted on its behalf, so it is answered as no longer executing.
+ * @returns The unavailable result.
+ */
+function cancelled(): CoordinatorToolDispatchResult {
+	return unavailable(false);
+}
+
+/**
+ * The refusal for a replay whose arguments differ from the logical call it claims to repeat.
+ * @returns The frozen response.
+ */
 function mismatchResponse(): DynamicToolResponse {
 	return refusedResponse(
 		"invalid_call",
@@ -93,6 +67,12 @@ function mismatchResponse(): DynamicToolResponse {
 	);
 }
 
+/**
+ * Whether a validation failure means the request never belonged here, so the app-server should
+ * see the call itself fail rather than a refusal from a tool that ran.
+ * @param reason - The validation failure reason.
+ * @returns True for provenance and identity failures.
+ */
 function isBoundaryRefusal(reason: CoordinatorToolValidationError["reason"]): boolean {
 	return (
 		reason === "invalid_call" ||
@@ -102,68 +82,44 @@ function isBoundaryRefusal(reason: CoordinatorToolValidationError["reason"]): bo
 	);
 }
 
+/**
+ * Create the dispatcher that executes the coordinator's dynamic tool calls exactly once per
+ * logical call, answers wire retries from what it remembers, and never lets a cancelled or
+ * disconnected call start a new effect.
+ * @param options - The authorities, ports and transport the dispatcher works through.
+ * @returns The dispatcher.
+ */
 export function createCodexCoordinatorTools(
 	options: CodexCoordinatorToolsOptions,
 ): CoordinatorToolDispatcher {
 	let disposed = false;
 	let epochClosed = false;
-	const liveWireCalls = new Map<string, CallState>();
-	const retainedWireCalls = new Map<string, TerminalWireCallState>();
-	const liveLogicalCalls = new Map<string, LogicalCallState>();
-	const retainedLogicalCalls = new Map<string, TerminalLogicalCallState>();
+	const ledger = createReplayLedger();
+	const { liveWireCalls, retainedWireCalls, liveLogicalCalls, retainedLogicalCalls } = ledger;
 
-	const removeRetainedLogical = (key: string): void => {
-		retainedLogicalCalls.delete(key);
-		for (const [wireKey, wire] of retainedWireCalls) {
-			if (wire.logicalKey === key) {
-				retainedWireCalls.delete(wireKey);
-			}
-		}
-	};
+	/**
+	 * Whether this dispatcher has been disposed. Read through a function so a call in flight sees
+	 * a disposal that happened during one of its awaits.
+	 * @returns True once dispose has run.
+	 */
+	const isDisposed = (): boolean => disposed;
+	const executionContext: ExecutionContext = { options, disposed: isDisposed };
 
-	const retainWire = (key: string, value: TerminalWireCallState): void => {
-		retainedWireCalls.delete(key);
-		retainedWireCalls.set(key, value);
-		while (retainedWireCalls.size > COORDINATOR_REPLAY_LIMITS.retainedWireCalls) {
-			const oldest = retainedWireCalls.keys().next().value as string | undefined;
-			if (oldest === undefined) {
-				break;
-			}
-			retainedWireCalls.delete(oldest);
-		}
-	};
-
-	const retainLogical = (value: TerminalLogicalCallState): void => {
-		retainedLogicalCalls.delete(value.key);
-		retainedLogicalCalls.set(value.key, value);
-		while (retainedLogicalCalls.size > COORDINATOR_REPLAY_LIMITS.retainedLogicalCalls) {
-			const oldest = retainedLogicalCalls.keys().next().value as string | undefined;
-			if (oldest === undefined) {
-				break;
-			}
-			removeRetainedLogical(oldest);
-		}
-	};
-
+	/**
+	 * The key of the logical call the host is executing right now.
+	 * @returns The key, or null when no call is executing.
+	 */
 	const currentLogicalKey = (): string | null => {
 		const current = options.authority.currentCall();
 		return current === null ? null : logicalCallKey(current);
 	};
 
-	const pruneStaleTerminals = (): void => {
-		const current = currentLogicalKey();
-		for (const key of retainedLogicalCalls.keys()) {
-			if (key !== current) {
-				removeRetainedLogical(key);
-			}
-		}
-		for (const [wireKey, wire] of retainedWireCalls) {
-			if (wire.logicalKey !== null && wire.logicalKey !== current) {
-				retainedWireCalls.delete(wireKey);
-			}
-		}
-	};
-
+	/**
+	 * Take a wire call out of the live set and, unless the epoch closed, remember its result.
+	 * @param state - The wire call.
+	 * @param terminal - Its settled result.
+	 * @param retain - Whether a later retry may be answered from this result.
+	 */
 	const retireWire = (
 		state: CallState,
 		terminal: CoordinatorToolDispatchResult,
@@ -173,10 +129,15 @@ export function createCodexCoordinatorTools(
 			liveWireCalls.delete(state.wireKey);
 		}
 		if (!epochClosed && retain) {
-			retainWire(state.wireKey, { logicalKey: state.logicalKey, terminal });
+			ledger.retainWire(state.wireKey, { logicalKey: state.logicalKey, terminal });
 		}
 	};
 
+	/**
+	 * Send the wire response at most once; a disconnected child gets nothing.
+	 * @param state - The wire call.
+	 * @param response - The response to send.
+	 */
 	const respondOnce = async (state: CallState, response: DynamicToolResponse): Promise<void> => {
 		if (state.responseAttempted || state.childDisconnected) {
 			return;
@@ -189,6 +150,13 @@ export function createCodexCoordinatorTools(
 		}
 	};
 
+	/**
+	 * Respond to a wire call and retire it.
+	 * @param state - The wire call.
+	 * @param response - The response to send.
+	 * @param retain - Whether a later retry may be answered from this result.
+	 * @returns The settled result.
+	 */
 	const finish = async (
 		state: CallState,
 		response: DynamicToolResponse,
@@ -200,120 +168,17 @@ export function createCodexCoordinatorTools(
 		return terminal;
 	};
 
-	const unavailable = (attempted: boolean): CoordinatorToolDispatchResult =>
-		complete(
-			refusedResponse(
-				"invalid_call",
-				"The coordinator tool call is no longer executing; submit a new call.",
-				true,
-			),
-			attempted,
-		);
-
-	const execute = async (
-		state: CallState,
-		validated: ValidatedCoordinatorToolCall,
-	): Promise<CoordinatorToolDispatchResult> => {
-		if (state.cancelled !== null || state.childDisconnected || disposed) {
-			return unavailable(false);
-		}
-
-		let operation: IssuedOperationIdentity | null = null;
-		if (validated.namespace === "archboard_workhorse") {
-			try {
-				operation = issueOperationIdentity(options);
-			} catch (error) {
-				return complete(
-					refusedResponse(
-						"system_error",
-						`The host could not issue a current operation identity: ${errorMessage(error)}`,
-					),
-					false,
-				);
-			}
-		}
-
-		await Promise.resolve();
-		if (state.cancelled !== null || state.childDisconnected || disposed) {
-			return unavailable(false);
-		}
-
-		state.operationAttempted = true;
-		if (validated.namespace === "archboard_voice") {
-			const input = spokenInput(validated);
-			const spokenOperation = captureSpokenOperationIdentity(options);
-			const result = await options.spokenApproval.resolve(state.request);
-			if (state.childDisconnected) {
-				return complete(spokenResponse(result, spokenOperation), true);
-			}
-			if (state.cancelled !== null) {
-				if (result.tag === "refused") {
-					return complete(spokenResponse(result, spokenOperation), true);
-				}
-				if (spokenOperation === null) {
-					return complete(
-						refusedResponse(
-							"system_error",
-							"The cancelled spoken approval has no current classifier operation identity.",
-							true,
-						),
-						true,
-					);
-				}
-				return complete(outcomeUnknownResponse(spokenOperation.wire), true);
-			}
-			if (result.tag === "ok" && input.verdict !== result.value.verdict) {
-				return complete(
-					refusedResponse("invalid_call", "The spoken gate returned a different verdict.", true),
-					true,
-				);
-			}
-			return complete(spokenResponse(result, spokenOperation), true);
-		}
-
-		if (operation === null) {
-			return complete(
-				refusedResponse("system_error", "The workhorse call has no issued operation identity."),
-				true,
-			);
-		}
-		try {
-			const result = await invokeWorkhorse(options.operations, validated, operation);
-			if (state.cancelled !== null) {
-				if (isMutation(validated)) {
-					return complete(outcomeUnknownResponse(operation.wire), true);
-				}
-				return complete(
-					refusedResponse(
-						"invalid_call",
-						"The coordinator tool call was cancelled before its read result could be delivered.",
-						true,
-					),
-					true,
-				);
-			}
-			try {
-				validateCoordinatorToolRequest(options, state.request);
-			} catch (error) {
-				if (isMutation(validated)) {
-					return complete(outcomeUnknownResponse(operation.wire), true);
-				}
-				const reason =
-					error instanceof CoordinatorToolValidationError ? error.reason : "unknown_provenance";
-				return complete(refusedResponse(reason, errorMessage(error)), true);
-			}
-			return complete(workhorseResponse(options, validated, operation, result), true);
-		} catch (error) {
-			const response = responseForWorkhorseError(options, validated, error, operation);
-			return complete(response, true);
-		}
-	};
-
+	/**
+	 * Wait for the logical call a wire call belongs to and answer the wire call from it, unless
+	 * the wire call is cancelled or its child disconnects first.
+	 * @param state - The wire call.
+	 * @param logical - The logical call it belongs to or aliases.
+	 * @returns The settled result.
+	 */
 	const settleWire = async (
 		state: CallState,
 		logical: LogicalCallState,
 	): Promise<CoordinatorToolDispatchResult> => {
-		const cancelled = (): CoordinatorToolDispatchResult => unavailable(false);
 		let terminal: CoordinatorToolDispatchResult;
 		if (state === logical.owner) {
 			const disconnected = state.cancellation.then(() =>
@@ -322,11 +187,7 @@ export function createCodexCoordinatorTools(
 			terminal = await Promise.race([logical.promise!, disconnected]);
 		} else {
 			const settled = await Promise.race([logical.promise!, state.cancellation.then(cancelled)]);
-			if (state.cancelled !== null) {
-				terminal = cancelled();
-			} else {
-				terminal = settled;
-			}
+			terminal = state.cancelled === null ? settled : cancelled();
 		}
 		state.operationAttempted = terminal.attempted;
 		if (state.childDisconnected) {
@@ -336,6 +197,101 @@ export function createCodexCoordinatorTools(
 		return finish(state, terminal.response);
 	};
 
+	/**
+	 * Attach a wire retry to the logical call that is still executing, if its arguments match and
+	 * the alias limit allows.
+	 * @param state - The wire call.
+	 * @param live - The executing logical call.
+	 * @param validated - The retry's validated call.
+	 * @returns The settled result.
+	 */
+	const replayLive = (
+		state: CallState,
+		live: LogicalCallState,
+		validated: ValidatedCoordinatorToolCall,
+	): Promise<CoordinatorToolDispatchResult> => {
+		if (live.inputFingerprint !== validated.inputFingerprint) {
+			return finish(state, mismatchResponse());
+		}
+		if (live.acceptedAliases >= COORDINATOR_REPLAY_LIMITS.aliasesPerLiveLogicalCall) {
+			return finish(
+				state,
+				refusedResponse(
+					"invalid_call",
+					"The logical tool call has reached its concurrent replay limit.",
+					true,
+				),
+			);
+		}
+		live.acceptedAliases += 1;
+		return settleWire(state, live);
+	};
+
+	/**
+	 * Answer a wire retry from a logical call that already settled, if its arguments match.
+	 * @param state - The wire call.
+	 * @param retained - The settled logical call.
+	 * @param validated - The retry's validated call.
+	 * @returns The settled result.
+	 */
+	const replayRetained = (
+		state: CallState,
+		retained: TerminalLogicalCallState,
+		validated: ValidatedCoordinatorToolCall,
+	): Promise<CoordinatorToolDispatchResult> => {
+		if (retained.inputFingerprint !== validated.inputFingerprint) {
+			return finish(state, mismatchResponse());
+		}
+		state.operationAttempted = retained.terminal.attempted;
+		return finish(state, retained.terminal.response);
+	};
+
+	/**
+	 * Start executing a new logical call owned by this wire call.
+	 * @param state - The wire call.
+	 * @param key - The logical call key.
+	 * @param validated - The validated call.
+	 * @returns The settled result.
+	 */
+	const startLogical = (
+		state: CallState,
+		key: string,
+		validated: ValidatedCoordinatorToolCall,
+	): Promise<CoordinatorToolDispatchResult> => {
+		const logical: LogicalCallState = {
+			key,
+			inputFingerprint: validated.inputFingerprint,
+			owner: state,
+			acceptedAliases: 0,
+			promise: null,
+		};
+		liveLogicalCalls.set(key, logical);
+		logical.promise = executeCall(executionContext, state, validated)
+			.catch((error: unknown) =>
+				complete(
+					refusedResponse(
+						"system_error",
+						`The coordinator tool call failed: ${errorMessage(error)}`,
+					),
+					state.operationAttempted,
+				),
+			)
+			.then((terminal) => {
+				liveLogicalCalls.delete(key);
+				if (!epochClosed && currentLogicalKey() === key) {
+					ledger.retainLogical({ key, inputFingerprint: logical.inputFingerprint, terminal });
+				}
+				return terminal;
+			});
+		return settleWire(state, logical);
+	};
+
+	/**
+	 * Validate a wire call and route it to a fresh execution, a live logical call, or a retained
+	 * result.
+	 * @param state - The wire call.
+	 * @returns The settled result.
+	 */
 	const runWire = async (state: CallState): Promise<CoordinatorToolDispatchResult> => {
 		let validated: ValidatedCoordinatorToolCall;
 		try {
@@ -352,66 +308,21 @@ export function createCodexCoordinatorTools(
 		state.logicalKey = key;
 		const live = liveLogicalCalls.get(key);
 		if (live !== undefined) {
-			if (live.inputFingerprint !== validated.inputFingerprint) {
-				return finish(state, mismatchResponse());
-			}
-			if (live.acceptedAliases >= COORDINATOR_REPLAY_LIMITS.aliasesPerLiveLogicalCall) {
-				return finish(
-					state,
-					refusedResponse(
-						"invalid_call",
-						"The logical tool call has reached its concurrent replay limit.",
-						true,
-					),
-				);
-			}
-			live.acceptedAliases += 1;
-			return settleWire(state, live);
+			return replayLive(state, live, validated);
 		}
 		const retained = retainedLogicalCalls.get(key);
 		if (retained !== undefined) {
-			if (retained.inputFingerprint !== validated.inputFingerprint) {
-				return finish(state, mismatchResponse());
-			}
-			state.operationAttempted = retained.terminal.attempted;
-			return finish(state, retained.terminal.response);
+			return replayRetained(state, retained, validated);
 		}
-
-		const logical: LogicalCallState = {
-			key,
-			inputFingerprint: validated.inputFingerprint,
-			owner: state,
-			acceptedAliases: 0,
-			promise: null,
-		};
-		liveLogicalCalls.set(key, logical);
-		{
-			const owned = logical;
-			owned.promise = execute(state, validated)
-				.catch((error: unknown) =>
-					complete(
-						refusedResponse(
-							"system_error",
-							`The coordinator tool call failed: ${errorMessage(error)}`,
-						),
-						state.operationAttempted,
-					),
-				)
-				.then((terminal) => {
-					liveLogicalCalls.delete(key);
-					if (!epochClosed && currentLogicalKey() === key) {
-						retainLogical({
-							key,
-							inputFingerprint: owned.inputFingerprint,
-							terminal,
-						});
-					}
-					return terminal;
-				});
-		}
-		return settleWire(state, logical);
+		return startLogical(state, key, validated);
 	};
 
+	/**
+	 * Accept one wire request, answering an exact repeat from memory and refusing a second
+	 * distinct request under the same identity.
+	 * @param request - The coordinator-owned dynamic tool request.
+	 * @returns The settled result.
+	 */
 	const dispatch = (
 		request: CoordinatorToolsServerRequest,
 	): Promise<CoordinatorToolDispatchResult> => {
@@ -423,7 +334,7 @@ export function createCodexCoordinatorTools(
 				),
 			);
 		}
-		pruneStaleTerminals();
+		ledger.pruneStaleTerminals(currentLogicalKey());
 		const key = callKey(request);
 		const retained = retainedWireCalls.get(key);
 		if (retained !== undefined) {
@@ -463,6 +374,10 @@ export function createCodexCoordinatorTools(
 		return promise;
 	};
 
+	/**
+	 * Listener entry point: dispatch the requests this module owns and ignore the rest.
+	 * @param request - Any server request from the transport.
+	 */
 	const onServerRequest = (request: TransportServerRequest): void => {
 		if (!isCoordinatorToolRequest(request)) {
 			return;
@@ -470,6 +385,11 @@ export function createCodexCoordinatorTools(
 		void dispatch(request).catch(() => undefined);
 	};
 
+	/**
+	 * Mark a live call cancelled, unless it has already answered, and wake whatever waits on it.
+	 * @param requestId - The wire request id.
+	 * @param cause - Why the call is cancelled.
+	 */
 	const cancel = (
 		requestId: JsonRpcRequestId,
 		cause: CoordinatorToolCancellation["cause"],
@@ -487,11 +407,22 @@ export function createCodexCoordinatorTools(
 		state.wakeCancellation();
 	};
 
-	const onChildExit = (exit: { readonly child: ChildId; readonly epoch: ChildEpoch }): void => {
-		if (
-			exit.child !== options.identity.validator.childId ||
-			exit.epoch !== options.identity.validator.epoch
-		) {
+	/**
+	 * Whether an exit names the child and epoch this dispatcher serves.
+	 * @param exit - The exited child and epoch.
+	 * @returns True when it is ours.
+	 */
+	const isOwnChild = (exit: ChildExit): boolean =>
+		exit.child === options.identity.validator.childId &&
+		exit.epoch === options.identity.validator.epoch;
+
+	/**
+	 * Mark every live call of an exited child disconnected so no response or retry can follow, then
+	 * forget everything.
+	 * @param exit - The exited child and epoch.
+	 */
+	const onChildExit = (exit: ChildExit): void => {
+		if (!isOwnChild(exit)) {
 			return;
 		}
 		epochClosed = true;
@@ -505,12 +436,12 @@ export function createCodexCoordinatorTools(
 				state.wakeCancellation();
 			}
 		}
-		liveWireCalls.clear();
-		retainedWireCalls.clear();
-		liveLogicalCalls.clear();
-		retainedLogicalCalls.clear();
+		ledger.clear();
 	};
 
+	/**
+	 * Shut the dispatcher down: cancel every live call for host shutdown and forget everything.
+	 */
 	const dispose = (): void => {
 		if (disposed) {
 			return;
@@ -524,23 +455,14 @@ export function createCodexCoordinatorTools(
 			});
 			state.wakeCancellation();
 		}
-		liveWireCalls.clear();
-		retainedWireCalls.clear();
-		liveLogicalCalls.clear();
-		retainedLogicalCalls.clear();
+		ledger.clear();
 	};
 
-	const replayState = (): CoordinatorReplayStateSnapshot =>
-		Object.freeze({
-			liveWireCount: liveWireCalls.size,
-			retainedWireCount: retainedWireCalls.size,
-			liveLogicalCount: liveLogicalCalls.size,
-			retainedLogicalCount: retainedLogicalCalls.size,
-			retainedFingerprintBytes: [...retainedLogicalCalls.values()].reduce(
-				(total, value) => total + value.inputFingerprint.length,
-				0,
-			),
-		});
+	/**
+	 * Count-only replay ownership inspection.
+	 * @returns The counts.
+	 */
+	const replayState = (): CoordinatorReplayStateSnapshot => ledger.snapshot();
 
 	return Object.freeze({ dispatch, onServerRequest, cancel, onChildExit, replayState, dispose });
 }

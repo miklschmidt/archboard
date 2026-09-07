@@ -1,10 +1,7 @@
-import type { ApprovalBinding, ApprovalSettlement } from "../../codex-approvals/index.js";
-import type { ArchboardContext } from "../../codex-instructions/index.js";
-import type { DynamicServerRequest } from "../../codex-transport/index.js";
-import type {
-	RealtimeCorrelation,
-	RealtimeTranscriptRecord,
-} from "../../../shared/codex-realtime-host/index.js";
+import type { ApprovalBinding, ApprovalSettlement } from "@/runtime/codex-approvals";
+import type { ArchboardContext } from "@/runtime/codex-instructions";
+import type { DynamicServerRequest } from "@/runtime/codex-transport";
+import type { RealtimeCorrelation, RealtimeTranscriptRecord } from "@/shared/codex-realtime-host";
 import type {
 	ApprovalId,
 	ChildEpoch,
@@ -13,13 +10,13 @@ import type {
 	JsonRpcRequestId,
 	ThreadId,
 	TurnId,
-} from "../../../shared/codex-workbench-identity/index.js";
+} from "@/shared/codex-workbench-identity";
 import type {
 	SpokenApprovalArmInput,
 	SpokenApprovalFallbackReason,
 	SpokenApprovalGateState,
 	SpokenApprovalSnapshot,
-} from "./contract.js";
+} from "@/runtime/codex-spoken-approval/lib/contract";
 
 type LiveGateState = Exclude<SpokenApprovalGateState, "idle" | "settled" | "visual_fallback">;
 type TerminalGateState = Exclude<SpokenApprovalGateState, "idle" | LiveGateState>;

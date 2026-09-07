@@ -5,15 +5,29 @@ import type {
 	CodexInitializeCapabilities,
 	CodexLoginAccountParams,
 	CodexOutputConformance,
-} from "../../../shared/codex-app-server-contract/index.js";
-import { boundedText, JsonValueSchema, optionalNullableText } from "./scalars.js";
+} from "@/shared/codex-app-server-contract";
+import {
+	boundedText,
+	JsonValueSchema,
+	optionalNullableText,
+} from "@/runtime/codex-protocol/lib/scalars";
 
+/**
+ * Proves a handwritten schema for a value Archboard sends to Codex against the generated
+ * wire type, so a protocol bump fails at type-check rather than on the wire.
+ * @returns An identity function that only accepts a schema whose output conforms to the wire type.
+ */
 function codexOutputSchema<Wire>() {
 	return <Schema extends z.ZodType>(
 		schema: Schema & CodexOutputConformance<Wire, z.output<Schema>>,
 	): Schema => schema;
 }
 
+/**
+ * Proves a handwritten schema for a value Archboard receives from Codex against the generated
+ * wire type in both its input and output shapes.
+ * @returns An identity function that only accepts a schema conforming to the wire type.
+ */
 function codexIngressSchema<Wire>() {
 	return <Schema extends z.ZodType>(
 		schema: Schema & CodexIngressConformance<Wire, z.input<Schema>, z.output<Schema>>,
@@ -64,6 +78,13 @@ const LoginPolicySchema = z
 	.object({ variant: LoginVariantSchema, policy: z.enum(["supported", "refused"]) })
 	.strict();
 
+/**
+ * Builds the schema for one fixed login policy row, so the policy table can only be the
+ * reviewed table and nothing else.
+ * @param variant - The login variant the row describes.
+ * @param policy - Whether Archboard supports or refuses that variant.
+ * @returns A closed schema matching exactly that row.
+ */
 const ExactLoginPolicySchema = <
 	Variant extends (typeof LOGIN_VARIANTS)[number],
 	Policy extends "supported" | "refused",
