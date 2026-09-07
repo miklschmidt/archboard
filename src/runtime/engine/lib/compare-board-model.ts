@@ -4,7 +4,13 @@ import {
 	isArchitectureConnectorType,
 } from "@/runtime/board-inspection/architecture";
 import { readElementMetadata } from "@/runtime/engine/metadata";
-import { CLUSTER_GAP, boundingBoxOf, boxOf, clusterBoxes, regionName } from "@/runtime/engine/layout";
+import {
+	CLUSTER_GAP,
+	boundingBoxOf,
+	boxOf,
+	clusterBoxes,
+	regionName,
+} from "@/runtime/engine/layout";
 import type { Box, BoundingBox } from "@/runtime/engine/layout";
 import type {
 	ClusterFacts,
