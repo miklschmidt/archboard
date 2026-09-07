@@ -299,6 +299,18 @@ leave A2 owned, schedule no stale retry, and persist A2's edit. This is the
 browser-level guard that board adoption advances the hold generation and that
 late promise completion cannot clear a newer same-board attempt.
 
+### Human undo and redo (TASK-155)
+
+`human-undo.test.ts` owns the mixed agent/human history contract (TASK-155).
+Two short real-browser cases use trusted pointer drags and keyboard undo/redo
+after agent creation and modification. They compare all content fields with
+the persisted note after each move, undo and redo, and keep ordinary human
+undo/redo before the agent write. Canonical writes refresh Excalidraw's
+`versionNonce`, and the pane keeps the native `version`, so accepted agent
+work becomes the baseline for the next human action. The three stale-write
+refusal scenarios remain in `human-version-refusal.test.ts`, including closing
+an existing text editor while its element is absent before restoring the note.
+
 ### Typed-text contracts (TASK-098)
 
 Draws a text element with the text tool and adds a label to a box with a
