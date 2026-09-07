@@ -93,7 +93,7 @@ let server: Server | undefined;
 let baseUrl = "";
 
 beforeAll(async () => {
-	const { default: application } = await import("../index.js");
+	const { app: application } = await import("../index.js");
 	server = application.listen(0, "127.0.0.1");
 	await once(server, "listening");
 	const address = server.address();

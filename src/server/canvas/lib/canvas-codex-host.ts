@@ -37,7 +37,6 @@ import {
 	browserLeaseLedger,
 	codexSocketInstances,
 	currentSocketsByClient,
-	paneBoards,
 	panes,
 } from "@/server/canvas/lib/pane-registry";
 import { messageOf } from "@/server/canvas/lib/request-board";
