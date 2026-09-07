@@ -185,7 +185,7 @@ function resolveEmbeddedImages(
  * @param root The vault root.
  * @returns The scene JSON, with resolved images merged into its `files`.
  */
-function sceneJsonWithEmbeddedImages(note: string, notePath: string, root: string): string {
+export function sceneJsonWithEmbeddedImages(note: string, notePath: string, root: string): string {
 	const sceneJson = extractSceneJsonFromObsidianMd(note);
 	const resolved = resolveEmbeddedImages(note, notePath, root);
 	if (Object.keys(resolved).length === 0) return sceneJson;
@@ -195,4 +195,4 @@ function sceneJsonWithEmbeddedImages(note: string, notePath: string, root: strin
 	return JSON.stringify({ ...scene, files: { ...existing, ...resolved } });
 }
 
-export { resolveEmbeddedImages, sceneJsonWithEmbeddedImages };
+export { resolveEmbeddedImages };
