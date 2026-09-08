@@ -11,6 +11,7 @@ import { createRequester, waitFor } from "../canvas-state/support/http.ts";
 import { processExists } from "../support/owned-canvas.ts";
 import {
 	approveOrdinary,
+	codexWorkbenchRoot,
 	extendFixture,
 	type FixtureRecord,
 	type CanvasProcess,
@@ -63,11 +64,9 @@ describe.serial("composed Codex process lifecycle", () => {
 				throw new Error(`Replacement connection failed.\n${canvas!.output()}`, { cause: error });
 			});
 
-			const configPath = join(
-				fixture.root,
-				"state/excalidraw-canvas/codex-workbench/codex-home/config.toml",
-			);
-			const sqliteHome = join(fixture.root, "state/excalidraw-canvas/codex-workbench/sqlite-home");
+			const root = codexWorkbenchRoot(fixture.root);
+			const configPath = join(root, "codex-home/config.toml");
+			const sqliteHome = join(root, "sqlite-home");
 			await waitFor(
 				() => (existsSync(configPath) ? true : undefined),
 				"Codex config materialization",

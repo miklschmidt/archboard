@@ -1,3 +1,5 @@
+import { declareTestWallClockBudget } from "../repository-policy/support/test-wall-clock.ts";
+import { editingModifier } from "./support/keyboard.ts";
 // Accepted agent work is the starting point for a person's next undoable move.
 import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
@@ -9,7 +11,7 @@ import type { AgentElementInput } from "../../../src/runtime/engine/apply-elemen
 import type { ServerElement } from "../../../src/runtime/engine/types.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
-import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
+import { TEST_HUMAN_UNDO_CASE_TIMEOUT_MS } from "../support/timing.ts";
 import {
 	browserTestRoots,
 	canvasTestEnvironment,
@@ -27,6 +29,18 @@ for (const operation of ["creation", "modification"] as const) {
 	test(
 		`human move undo and redo preserve agent ${operation} in the canvas and note`,
 		async () => {
+			if (process.platform === "darwin") {
+				declareTestWallClockBudget({
+					test: `human move undo and redo preserve agent ${operation} in the canvas and note`,
+					reason:
+						"Two real pointer drags, undo and redo must agree with the persisted note; macOS Chromium input acknowledgements add about 20 seconds.",
+					outerBoundMs: TEST_HUMAN_UNDO_CASE_TIMEOUT_MS,
+					task: "TASK-163",
+					evidence:
+						"Chrome for Testing on macOS completed all 30 creation assertions in 30.76 seconds; each of four mouse-move acknowledgements took about 5.04 seconds.",
+				});
+			}
+
 			await using resources = new AsyncDisposableStack();
 			const root = mkdtempSync(join(browserTestRoots().ownerRoot, "undo-"));
 			resources.defer(() => rmSync(root, { recursive: true, force: true }));
@@ -125,12 +139,12 @@ for (const operation of ["creation", "modification"] as const) {
 				expect(moved.find((element) => element.id === id)?.x).not.toBe(target.x);
 				expect(moved.find((element) => element.id === id)!.version).toBeGreaterThan(target.version);
 				await agreement(moved);
-				await browser.run(["press", "Control+z"]);
+				await browser.run(["press", `${editingModifier}+z`]);
 				// Read the whole document: unchanged properties and unrelated elements
 				// must survive, including when the box was just created by the agent.
 				expect(snapshotOf(await scene())).toEqual(snapshotOf(before));
 				await agreement(before);
-				await browser.run(["press", "Control+Shift+z"]);
+				await browser.run(["press", `${editingModifier}+Shift+z`]);
 				await agreement(moved);
 			};
 
@@ -154,6 +168,6 @@ for (const operation of ["creation", "modification"] as const) {
 			await agreement(persisted());
 			await moveUndoRedo(id);
 		},
-		TEST_BROWSER_COMMAND_TIMEOUT_MS,
+		TEST_HUMAN_UNDO_CASE_TIMEOUT_MS,
 	);
 }

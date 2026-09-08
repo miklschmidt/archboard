@@ -384,6 +384,11 @@ test(
 
 		// Nothing brings it back: the next write lands against the new version
 		// and the note holds no text the person typed into the withdrawn editor.
+		// Closing the editor applies two server scenes. Let their render and
+		// queued completion callbacks finish before injecting another scene edit.
+		await browser.eval<boolean>(
+			"new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(true))))",
+		);
 		await browser.run(["press", "Escape"]);
 		const sentBefore = (await claimCounts(browser)).sent;
 		expect((await move(browser, "auth", 25)).ok).toBe(true);

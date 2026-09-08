@@ -19,10 +19,10 @@ import {
 	captureDetachedProcessGroup,
 	processGroupExists,
 	processGroupHasOtherMember,
-	signalOwnedProcessGroup,
 	type ProcessGroupIdentity,
 } from "@/runtime/engine/process-group";
 import { asError, errorMessage } from "@/runtime/engine/lib/thrown-error";
+import { stopAndKillOwnedGroup } from "@/runtime/engine/lib/git-group-termination";
 import { GitCommandError } from "@/runtime/engine/lib/git-failure";
 import type { GitFailure } from "@/runtime/engine/lib/git-failure";
 import { drainBounded } from "@/runtime/engine/lib/git-output";
@@ -168,6 +168,7 @@ interface Termination {
 class GitRun {
 	termination: Termination | undefined;
 	groupSignalError: Error | undefined;
+	groupTermination: Promise<void> = Promise.resolve();
 	readonly terminationSignal: Promise<void>;
 	private terminationStarted!: () => void;
 
@@ -175,7 +176,10 @@ class GitRun {
 	 * Track one command against its detached group.
 	 * @param group The owner's process group.
 	 */
-	constructor(private readonly group: ProcessGroupIdentity) {
+	constructor(
+		private readonly group: ProcessGroupIdentity,
+		private readonly child: OwnerProcess,
+	) {
 		this.terminationSignal = new Promise<void>((resolve) => {
 			this.terminationStarted = resolve;
 		});
@@ -196,11 +200,11 @@ class GitRun {
 			...(cause === undefined ? {} : { cause: asError(cause) }),
 		};
 		this.terminationStarted();
-		try {
-			signalOwnedProcessGroup(this.group, "SIGKILL");
-		} catch (error) {
-			this.groupSignalError = asError(error);
-		}
+		this.groupTermination = stopAndKillOwnedGroup(this.group, this.child).catch(
+			(error: unknown) => {
+				this.groupSignalError = asError(error);
+			},
+		);
 	}
 }
 
@@ -336,6 +340,7 @@ async function terminationError(
 	group: ProcessGroupIdentity,
 	exitCode: number | undefined,
 ): Promise<GitCommandError> {
+	await run.groupTermination;
 	const gone = await processGroupDisappeared(group.group);
 	if (run.groupSignalError || !gone) {
 		return cleanupError(run, termination, exitCode);
@@ -506,7 +511,7 @@ async function startCommand(
 ): Promise<RunningCommand> {
 	const { child, ownerResult, finishOwner } = spawnGitOwner(cwd, args, options.executable ?? "git");
 	const group = await captureOwnerGroup(child);
-	const run = new GitRun(group);
+	const run = new GitRun(group, child);
 	const stdout = drainBounded(
 		child.stdout,
 		() => run.terminate("output"),

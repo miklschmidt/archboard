@@ -51,3 +51,20 @@ jobs:
           ARCHBOARD_CI_EXCLUDED_BROWSER_OWNERS: all
           ARCHBOARD_CI_EXCLUDED_SYSTEM_OWNER: tests/system/code-targets/opener-persistence.test.ts
         run: bun run check
+
+  macos-processes:
+    name: macOS native process ownership
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Verify native ownership, storage, and board paths
+        run: bun test --isolate --max-concurrency=1 src/shared/process-observation/tests src/runtime/codex-process/tests src/runtime/engine/tests/git-async.test.ts src/server/board-rendering/tests/renderer-process.test.ts tests/system/boards/board-lifecycle.test.ts tests/system/process-contracts/codex-workbench-storage.test.ts

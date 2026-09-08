@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { readProcessObservation } from "../../../../src/shared/process-observation/index.ts";
 
 interface ProcessIdentity {
 	pid: number;
@@ -7,17 +8,11 @@ interface ProcessIdentity {
 }
 
 function identity(pid: number): ProcessIdentity {
-	const raw = readFileSync(`/proc/${pid}/stat`, "utf8");
-	const close = raw.lastIndexOf(")");
-	const fields = raw
-		.slice(close + 2)
-		.trim()
-		.split(/\s+/);
-	const startTime = fields[19];
-	if (!startTime) {
-		throw new Error(`Process ${pid} did not expose a start time.`);
+	const observation = readProcessObservation(pid);
+	if (!observation) {
+		throw new Error(`Process ${pid} disappeared before its identity was read.`);
 	}
-	return { pid, startTime };
+	return { pid, startTime: observation.startTime };
 }
 
 function holdOpen(): void {

@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import {
+	chmodSync,
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	realpathSync,
+	writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import type { ZodType } from "zod";
 import {
@@ -17,6 +24,7 @@ import {
 	type RepositorySpawn,
 } from "./support/repository-fixture.ts";
 import { packageBin } from "./support/package-cli.ts";
+import { listProcessGroupObservations, readProcessObservation } from "@/shared/process-observation";
 
 function decodeRepository<T>(result: RepositorySpawn, schema: ZodType<T>): T {
 	const diagnostic = repositoryFailure(result);
@@ -37,19 +45,12 @@ const alphaIdentity = "github.com/acme/alpha";
 const betaIdentity = "github.com/acme/beta";
 
 function processExists(pid: number): boolean {
-	return existsSync(`/proc/${pid}`);
+	const observation = readProcessObservation(pid);
+	return observation !== undefined && observation.state !== "zombie";
 }
 
 function processGroupExists(pgid: number): boolean {
-	try {
-		process.kill(-pgid, 0);
-		return true;
-	} catch (cause) {
-		if ((cause as NodeJS.ErrnoException).code === "ESRCH") {
-			return false;
-		}
-		throw cause;
-	}
+	return listProcessGroupObservations(pgid).some((observation) => observation.state !== "zombie");
 }
 
 async function within<T>(promise: Promise<T>, message: string): Promise<T> {
@@ -173,7 +174,7 @@ describe("repository binding resolution", () => {
 		}
 		const { inspectCheckout } = await import("../../../src/runtime/engine/git.ts");
 		expect(await inspectCheckout(checkout)).toEqual({
-			root: checkout,
+			root: realpathSync(checkout),
 			identity: "github.com/acme/unborn",
 		});
 	});
@@ -332,22 +333,34 @@ test("an interrupted repository command reaps its detached Git group", async () 
 	const marker = join(fixture.root, "git-pids");
 	const descendantMarker = `${marker}.descendant`;
 	const helperReady = `${marker}.helper-ready`;
+	const helperPid = `${marker}.helper-pid`;
 	const releaseLeader = `${marker}.release-leader`;
-	const setsid = Bun.which("setsid");
-	if (!setsid) {
-		throw new Error("setsid is required for leader-exited cleanup coverage.");
-	}
 	mkdirSync(bin);
+	const detachedHelper = join(bin, "detached-helper.ts");
+	writeFileSync(
+		detachedHelper,
+		`const [command, pidPath] = process.argv.slice(2);
+if (!command || !pidPath) throw new Error("detached helper arguments are required");
+const child = Bun.spawn(["/bin/sh", "-c", command], {
+	detached: true,
+	stdin: "ignore",
+	stdout: "ignore",
+	stderr: "ignore",
+});
+if (child.pid === undefined) throw new Error("detached helper did not return a pid");
+await Bun.write(pidPath, String(child.pid) + "\\n");
+`,
+	);
 	writeFileSync(
 		join(bin, "git"),
 		`#!/bin/sh
 (
   sleep 60 </dev/null >/dev/null 2>&1 &
   echo "$!" > ${JSON.stringify(descendantMarker)}
-  exec ${JSON.stringify(setsid)} /bin/sh -c ${JSON.stringify(`echo ready > ${JSON.stringify(helperReady)}; sleep 60`)}
+  ${JSON.stringify(process.execPath)} ${JSON.stringify(detachedHelper)} ${JSON.stringify(`echo ready > ${JSON.stringify(helperReady)}; sleep 60`)} ${JSON.stringify(helperPid)}
 ) &
-helper=$!
-while [ ! -e ${JSON.stringify(descendantMarker)} ] || [ ! -e ${JSON.stringify(helperReady)} ]; do sleep 0.01; done
+while [ ! -e ${JSON.stringify(descendantMarker)} ] || [ ! -e ${JSON.stringify(helperReady)} ] || [ ! -e ${JSON.stringify(helperPid)} ]; do sleep 0.01; done
+helper=$(cat ${JSON.stringify(helperPid)})
 echo "$$ $(cat ${JSON.stringify(descendantMarker)}) $helper $PPID" > ${JSON.stringify(marker)}
 while [ ! -e ${JSON.stringify(releaseLeader)} ]; do sleep 0.01; done
 exit 0
@@ -370,6 +383,7 @@ exit 0
 		new Response(child.stderr).text(),
 	]);
 	let gitPids: number[] = [];
+	const cleanupGroups = new Set<number>();
 	let primaryFailure: unknown;
 	let cleanupFailure: unknown;
 	try {
@@ -381,40 +395,63 @@ exit 0
 			await Bun.sleep(5);
 		}
 		gitPids = readFileSync(marker, "utf8").trim().split(/\s+/u).map(Number);
-		const [leader, descendant, helper, ownerGroup] = gitPids;
+		const [leader, descendant, helper, ownerPid] = gitPids;
 		if (
 			leader === undefined ||
 			descendant === undefined ||
 			helper === undefined ||
-			ownerGroup === undefined
+			ownerPid === undefined
 		) {
 			throw new Error(`Malformed fake Git process record: ${JSON.stringify(gitPids)}`);
 		}
+		const leaderObservation = readProcessObservation(leader);
+		const ownerObservation = readProcessObservation(ownerPid);
+		const cliObservation = readProcessObservation(child.pid);
+		const helperObservation = readProcessObservation(helper);
+		for (const observation of [
+			leaderObservation,
+			ownerObservation,
+			cliObservation,
+			helperObservation,
+		]) {
+			if (observation !== undefined) cleanupGroups.add(observation.pgid);
+		}
+		if (
+			leaderObservation === undefined ||
+			ownerObservation === undefined ||
+			cliObservation === undefined ||
+			helperObservation === undefined
+		) {
+			throw new Error("The interrupted repository process tree vanished before capture.");
+		}
+		const gitGroup = leaderObservation.pgid;
+		const cliGroup = cliObservation.pgid;
+		expect(gitGroup, "Git's spawned owner must lead the detached group under test").toBe(ownerPid);
+		expect(cliGroup, "the CLI fixture must lead its detached owner group").toBe(child.pid);
+		expect(helperObservation.pgid, "the helper must lead its detached cleanup group").toBe(helper);
+		expect(ownerObservation.pgid, "Git's owner must remain in its detached group").toBe(gitGroup);
 		expect(
 			processExists(descendant),
 			"the redirected Git descendant must exist before its leader exits",
 		).toBeTrue();
 		expect(
-			processGroupExists(ownerGroup),
+			processGroupExists(gitGroup),
 			"the detached Git owner group must be observable",
 		).toBeTrue();
 		writeFileSync(releaseLeader, "released\n");
-		await waitForProcessAbsence(leader);
-		let cliExited = false;
-		void child.exited.then(() => {
-			cliExited = true;
-			return undefined;
-		});
 		process.kill(child.pid, "SIGTERM");
-		await Bun.sleep(Math.floor(GIT_PROCESS_GROUP_CLEANUP_MS / 2));
-		expect(cliExited, "the CLI exited before the post-leader Git group proof settled").toBeFalse();
+		await waitForProcessAbsence(leader);
+		expect(
+			processExists(helper),
+			"Git cleanup must not signal an unrelated detached group",
+		).toBeTrue();
 		killGroup(helper);
 		await within(child.exited, "the interrupted CLI leader did not settle");
 		await within(
 			output.then(() => undefined),
 			"the interrupted CLI pipes did not settle",
 		);
-		await waitForGroupAbsence(ownerGroup);
+		await waitForGroupAbsence(gitGroup);
 		for (const pid of gitPids) {
 			expect(processExists(pid), `Git process ${pid} remained when the CLI exited`).toBeFalse();
 		}
@@ -422,10 +459,7 @@ exit 0
 		primaryFailure = cause;
 	} finally {
 		try {
-			const groups = new Set(
-				[gitPids[2], gitPids[3], child.pid].filter((pid): pid is number => pid !== undefined),
-			);
-			for (const pgid of groups) {
+			for (const pgid of cleanupGroups) {
 				killGroup(pgid);
 			}
 			try {
@@ -435,7 +469,7 @@ exit 0
 				Promise.allSettled([child.exited, output]).then(() => undefined),
 				"the interrupted CLI owner did not settle during cleanup",
 			);
-			for (const pgid of groups) {
+			for (const pgid of cleanupGroups) {
 				await waitForGroupAbsence(pgid);
 			}
 			for (const pid of gitPids) {

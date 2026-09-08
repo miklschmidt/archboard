@@ -1,19 +1,16 @@
 import {
-	accessSync,
-	constants,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	readdirSync,
 	rmSync,
-	statSync,
 	unlinkSync,
 } from "node:fs";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
@@ -33,7 +30,13 @@ import {
 	type BrowserTestPath,
 	validateBrowserSelection,
 } from "./support/agent-browser.ts";
+import {
+	browserExecutableForLane,
+	CouldNotRunError,
+	resolveBrowserExecutable,
+} from "./support/browser-executable.ts";
 import { ensureFreshFrontend, type FrontendBuildRequest } from "./support/frontend-build.ts";
+import { processIdsWithEnvironmentMarkers } from "./support/process-environment-census.ts";
 
 export {
 	BROWSER_ADAPTER_PATH,
@@ -47,7 +50,8 @@ export {
 export type { BrowserSelection, BrowserTestPath } from "./support/agent-browser.ts";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-class CouldNotRunError extends Error {}
+// agent-browser's Darwin daemon socket is limited to 103 bytes; the native temp root is much longer.
+const laneTempParent = process.platform === "darwin" ? "/private/tmp" : tmpdir();
 class InterruptedError extends Error {
 	constructor(
 		readonly signal: "SIGINT" | "SIGTERM",
@@ -111,36 +115,8 @@ function probe(command: string, argv: readonly string[], label: string): void {
 	}
 }
 
-function configuredBrowserExecutable(): string | undefined {
-	const configured = process.env["AGENT_BROWSER_EXECUTABLE_PATH"];
-	if (!configured) return undefined;
-	if (!isAbsolute(configured)) {
-		throw new CouldNotRunError(`AGENT_BROWSER_EXECUTABLE_PATH must be absolute: ${configured}`);
-	}
-	const executable = resolve(configured);
-	let stat: ReturnType<typeof statSync>;
-	try {
-		stat = statSync(executable);
-	} catch (error) {
-		throw new CouldNotRunError(`AGENT_BROWSER_EXECUTABLE_PATH does not exist: ${executable}`, {
-			cause: error,
-		});
-	}
-	if (!stat.isFile()) {
-		throw new CouldNotRunError(`AGENT_BROWSER_EXECUTABLE_PATH is not a file: ${executable}`);
-	}
-	try {
-		accessSync(executable, constants.X_OK);
-	} catch (error) {
-		throw new CouldNotRunError(`AGENT_BROWSER_EXECUTABLE_PATH is not executable: ${executable}`, {
-			cause: error,
-		});
-	}
-	return executable;
-}
-
 function verifyPrerequisites(selection: BrowserSelection): string | undefined {
-	const browserExecutable = configuredBrowserExecutable();
+	const browserExecutable = resolveBrowserExecutable();
 	probe("agent-browser", ["--version"], "agent-browser");
 	if (selection.files.includes(HUMAN_PERFORMANCE_BROWSER_OWNER))
 		probe("strace", ["--version"], "strace");
@@ -173,6 +149,8 @@ function ownerEnvironment(
 		ARCHBOARD_TEST_BROWSER_OWNER_ROOT: ownerRoot,
 	};
 	if (browserExecutable) env["AGENT_BROWSER_EXECUTABLE_PATH"] = browserExecutable;
+	const rendererExecutable = process.env["ARCHBOARD_RENDERER_CHROMIUM"];
+	if (rendererExecutable) env["ARCHBOARD_RENDERER_CHROMIUM"] = rendererExecutable;
 	if (file === HUMAN_PERFORMANCE_BROWSER_OWNER) {
 		env["AGENT_BROWSER_DEFAULT_TIMEOUT"] = String(TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS);
 	}
@@ -230,22 +208,11 @@ function processGroupExists(processGroup: number): boolean {
 }
 
 function markedProcesses(ownerRoot: string, namespace: string, session: string): number[] {
-	const wanted = [
+	return processIdsWithEnvironmentMarkers([
 		`ARCHBOARD_TEST_BROWSER_OWNER_ROOT=${ownerRoot}`,
 		`AGENT_BROWSER_NAMESPACE=${namespace}`,
 		`AGENT_BROWSER_SESSION=${session}`,
-	];
-	const found: number[] = [];
-	for (const entry of readdirSync("/proc", { withFileTypes: true })) {
-		if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) continue;
-		try {
-			const env = readFileSync(join("/proc", entry.name, "environ"), "utf8").split("\0");
-			if (wanted.some((item) => env.includes(item))) found.push(Number(entry.name));
-		} catch {
-			// Processes can exit while the audit walks /proc.
-		}
-	}
-	return found;
+	]);
 }
 
 function namespaceArtifacts(directory: string): string[] {
@@ -421,8 +388,9 @@ async function runSelection(
 	let result: number | undefined;
 	let runFailure: unknown;
 	try {
-		laneRoot = mkdtempSync(join(tmpdir(), "ab-lane-"));
+		laneRoot = mkdtempSync(join(laneTempParent, "ab-lane-"));
 		resources.defer(() => rmSync(laneRoot, { recursive: true, force: true }));
+		const laneBrowserExecutable = browserExecutableForLane(laneRoot, browserExecutable);
 		if (interruptionSignal()) await raiseInterruption();
 		await ensureFreshFrontend(repoRoot, async (request) => {
 			if (interruptionSignal()) await raiseInterruption();
@@ -440,7 +408,7 @@ async function runSelection(
 			const name = String(index + 1).padStart(2, "0");
 			const ownerRoot = join(laneRoot, name);
 			mkdirSync(join(ownerRoot, "tmp"), { recursive: true });
-			const env = ownerEnvironment(file, laneRoot, ownerRoot, browserExecutable);
+			const env = ownerEnvironment(file, laneRoot, ownerRoot, laneBrowserExecutable);
 			current = spawnOwner(file, env, selection.testName);
 			const processGroup = current.pid;
 			try {

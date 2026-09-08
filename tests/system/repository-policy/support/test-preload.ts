@@ -1,10 +1,19 @@
 import { afterAll, beforeEach, onTestFinished } from "bun:test";
+import { realpathSync } from "node:fs";
+import { tmpdir } from "node:os";
 
 import {
 	clearTestWallClockDeclaration,
 	createTestWallClockReporter,
 	takeTestWallClockDeclaration,
 } from "./test-wall-clock.ts";
+
+// macOS exposes its temporary directory through /var -> /private/var. Fixtures
+// use the same physical directory with canonical ancestry; explicit symlink
+// refusal cases still construct and pass their own symbolic-link paths.
+if (process.platform === "darwin") {
+	process.env["TMPDIR"] = realpathSync(tmpdir());
+}
 
 const monotonicNowMs = Bun.nanoseconds.bind(Bun);
 const reporter = createTestWallClockReporter(() => monotonicNowMs() / 1_000_000);

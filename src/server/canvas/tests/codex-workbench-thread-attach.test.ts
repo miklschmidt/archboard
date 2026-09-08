@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -14,7 +14,7 @@ import {
 } from "../codex-workbench-adapters.js";
 
 test("attach records genuine current-child provenance before making the link executable", async () => {
-	const root = mkdtempSync(join("/tmp", "archboard-attach-owner-"));
+	const root = realpathSync(mkdtempSync(join("/tmp", "archboard-attach-owner-")));
 	const epochRoot = join(root, "epoch");
 	const codexHome = join(root, "codex-home");
 	const sqliteHome = join(root, "codex-sqlite");

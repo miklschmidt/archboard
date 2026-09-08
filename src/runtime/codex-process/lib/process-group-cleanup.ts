@@ -1,4 +1,4 @@
-import { CODEX_TERM_GRACE_MS } from "@/shared/timing/timing";
+import { CODEX_TERM_GRACE_MS, PROCESS_GROUP_OBSERVATION_POLL_MS } from "@/shared/timing/timing";
 import type { CodexProcessError } from "@/runtime/codex-process/lib/process-contract";
 import type {
 	CodexProcessGroupIdentity,
@@ -260,6 +260,21 @@ function createProcessGroupCleanup(
 	};
 
 	/**
+	 * Decide whether KILL cleanup still needs to drain. Ownership was proved
+	 * immediately before signalling, so a short unproven exit transition can
+	 * be polled without sending another signal. Reuse still fails immediately.
+	 * @param identity - The owned group.
+	 * @param action - What cleanup is attempting, for the failure message.
+	 * @returns False when quiescent, true while owned or transiently unproven.
+	 */
+	const needsKillDrain = (identity: CodexProcessGroupIdentity, action: string): boolean => {
+		const status = inspect(identity);
+		if (status === "quiescent") return false;
+		if (status === "reused") throw groupFailure(status, action);
+		return true;
+	};
+
+	/**
 	 * Deliver one signal to the group, converting a signalling failure into a
 	 * terminal process error.
 	 * @param identity - The owned group.
@@ -314,24 +329,25 @@ function createProcessGroupCleanup(
 	const escalateKill = (input: ProcessGroupCleanupInput): boolean => {
 		if (!stillOwned(input.identity, "escalate the Codex process group")) return false;
 		sendSignal(input.identity, "SIGKILL");
-		return stillOwned(input.identity, "verify KILL cleanup of the Codex process group");
+		return needsKillDrain(input.identity, "verify KILL cleanup of the Codex process group");
 	};
 
 	/**
-	 * Wait for a killed group to close, then hold until the composed deadline so a group that
-	 * only appears to have died is inspected once more at the end.
+	 * Wait for a killed group to close, then poll it until it is quiescent or the
+	 * composed deadline expires.
 	 * @param input - The group, its close promise and the composed deadline.
 	 * @returns False when the group closed and ownership has lapsed, so nothing remains to check.
 	 */
 	const drainKilledGroup = async (input: ProcessGroupCleanupInput): Promise<boolean> => {
-		const killEvent = await waitForClosedOrAt(input.childClosed, input.deadlineAtMs);
-		if (
-			killEvent === "closed" &&
-			!stillOwned(input.identity, "verify KILL cleanup of the Codex process group")
-		)
-			return false;
-		if (clock.now() < input.deadlineAtMs) {
-			await waitUntil(input.deadlineAtMs);
+		await waitForClosedOrAt(input.childClosed, input.deadlineAtMs);
+		while (clock.now() < input.deadlineAtMs) {
+			if (!needsKillDrain(input.identity, "verify KILL cleanup of the Codex process group")) {
+				return false;
+			}
+			// oxlint-disable-next-line no-await-in-loop -- each observation follows the prior pause in one bounded poll
+			await waitUntil(
+				Math.min(input.deadlineAtMs, clock.now() + PROCESS_GROUP_OBSERVATION_POLL_MS),
+			);
 		}
 		return true;
 	};

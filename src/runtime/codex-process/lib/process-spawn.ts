@@ -251,7 +251,7 @@ function spawnStage(state: ProcessOwnerState, cwd: string): Child {
  */
 function retainUnprovenChild(state: ProcessOwnerState, child: Child, cause: unknown): void {
 	const error = new CodexProcessError({
-		code: "spawn_failed",
+		code: "process_group_unavailable",
 		terminal: true,
 		message: `Could not prove ownership of the Codex process group after spawn. Recovery: refuse restart until the child-group boundary is available.`,
 		cause,

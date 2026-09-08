@@ -24,6 +24,8 @@ import {
 	canvasChildPids,
 	loggedRequestFailure,
 	publicStartEnvironment,
+	publicStateRoot,
+	publicWorkbenchRoot,
 	runPublicCanvas,
 	runPublicCanvasAsync,
 	writePublicCodexExecutable,
@@ -82,21 +84,15 @@ describe.serial("production Codex setup cleanup", () => {
 				expect(lines, scenario).toHaveLength(1);
 				expect(lines[0], scenario).toMatch(/Codex|canvas child/iu);
 				expect(lines[0], scenario).not.toMatch(/\bat\s+\S+|AggregateError/iu);
-				expect(
-					readFileSync(
-						join(root, "state/excalidraw-canvas/codex-workbench/pre-existing-sentinel"),
-						"utf8",
-					),
-				).toBe("preserve me");
+				expect(readFileSync(join(publicWorkbenchRoot(root), "pre-existing-sentinel"), "utf8")).toBe(
+					"preserve me",
+				);
 				if (existsSync(pidLog)) {
 					const pid = Number(readFileSync(pidLog, "utf8"));
 					expect(processExists(pid), `${scenario}:pid ${pid}`).toBeFalse();
 				}
 				const port = Number(new URL(base).port);
-				expect(
-					existsSync(join(root, `state/excalidraw-canvas/server-${port}.pid`)),
-					scenario,
-				).toBeFalse();
+				expect(existsSync(join(publicStateRoot(root), `server-${port}.pid`)), scenario).toBeFalse();
 				await expect(
 					fetch(`${base}/health`, { signal: AbortSignal.timeout(100) }),
 				).rejects.toThrow();
@@ -214,12 +210,7 @@ describe.serial("production Codex setup cleanup", () => {
 			expect(processExists(canvasPid)).toBeFalse();
 			expect(processExists(childPids[0]!)).toBeFalse();
 			expect(
-				existsSync(
-					join(
-						root,
-						"state/excalidraw-canvas/codex-workbench/codex-home/.archboard-codex-process.lock",
-					),
-				),
+				existsSync(join(publicWorkbenchRoot(root), "codex-home/.archboard-codex-process.lock")),
 			).toBeFalse();
 		} finally {
 			await socket?.close();

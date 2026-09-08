@@ -366,6 +366,32 @@ function caseInsensitivePath(vault: string, relative: string): string {
 }
 
 /**
+ * Whether an existing candidate has exactly the spelling the caller supplied.
+ * `existsSync` alone cannot answer this on a case-insensitive filesystem: APFS
+ * reports that `payments` exists when the directory entry is `Payments`.
+ *
+ * Real paths are used only to compare the path relative to the vault. The
+ * returned board path stays lexical, so a symlink is neither followed into the
+ * result nor allowed to bypass the containment check below.
+ * @param vault The resolved vault root.
+ * @param candidate The resolved candidate inside the vault.
+ * @param relative The candidate path relative to the vault, as typed.
+ * @returns True when the candidate exists under that exact relative spelling.
+ */
+function byteEqualPathExists(vault: string, candidate: string, relative: string): boolean {
+	if (!fs.existsSync(candidate)) return false;
+	try {
+		const actualRelative = path.relative(
+			fs.realpathSync.native(vault),
+			fs.realpathSync.native(candidate),
+		);
+		return actualRelative === relative.split("/").join(path.sep);
+	} catch {
+		return false;
+	}
+}
+
+/**
  * Where a board lives. The identity is validated on the way in, so this cannot
  * escape the vault; the containment check is kept anyway because a silent
  * escape here writes a file into someone's home directory.
@@ -390,7 +416,8 @@ function vaultPathFor(
 	}
 	const base = noteBaseName(identity);
 	const vault = path.resolve(root);
-	const resolved = path.resolve(vault, `${base}${BOARD_FILE_SUFFIX}`);
+	const relative = `${base}${BOARD_FILE_SUFFIX}`;
+	const resolved = path.resolve(vault, relative);
 	if (!resolved.startsWith(vault + path.sep)) {
 		throw new Error(
 			`Refusing to resolve board "${boardKey(identity)}" outside the vault at ${root}`,
@@ -400,8 +427,8 @@ function vaultPathFor(
 	// vault where this and the case-insensitive walk below disagree is one that
 	// already holds two case-variants of the same name, which ADR 0010 calls
 	// broken and `listBoards` already reports as a collision (TASK-153).
-	if (fs.existsSync(resolved)) return resolved;
-	return caseInsensitivePath(vault, `${base}${BOARD_FILE_SUFFIX}`);
+	if (byteEqualPathExists(vault, resolved, relative)) return resolved;
+	return caseInsensitivePath(vault, relative);
 }
 
 /**

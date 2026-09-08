@@ -1,6 +1,6 @@
 import type { ServerElement } from "../../../../src/runtime/engine/types.ts";
 
-import type { AgentBrowserSession } from "./agent-browser.ts";
+import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
 
 type PageEvaluator = Pick<AgentBrowserSession, "eval">;
 
@@ -237,24 +237,41 @@ async function dragPageElement(
 	dx: number,
 	dy: number,
 ): Promise<void> {
-	const point = await browser.eval<{ x?: number; y?: number }>(
-		inExcalidrawApp(`
-		const element = app.scene.getElementsIncludingDeleted()
-			.find(candidate => candidate.id === ${JSON.stringify(id)});
-		if (!element) return {};
-		const zoom = app.state.zoom?.value ?? 1;
-		return {
-			x: Math.round((element.x + element.width / 2 + app.state.scrollX) * zoom + app.state.offsetLeft),
-			y: Math.round((element.y + element.height / 2 + app.state.scrollY) * zoom + app.state.offsetTop),
-		};
-	`),
+	let priorPoint = "";
+	let stablePoints = 0;
+	const point = await pollUntil(
+		() =>
+			browser.eval<{ error?: string; inside?: boolean; x?: number; y?: number }>(
+				inExcalidrawApp(`
+				const element = app.scene.getElementsIncludingDeleted()
+					.find(candidate => candidate.id === ${JSON.stringify(id)});
+				const canvas = document.querySelector('.excalidraw')?.getBoundingClientRect();
+				if (!element || !canvas) return { error: 'drag target is missing' };
+				const zoom = app.state.zoom?.value ?? 1;
+				const x = Math.round((element.x + element.width / 2 + app.state.scrollX) * zoom + app.state.offsetLeft);
+				const y = Math.round((element.y + element.height / 2 + app.state.scrollY) * zoom + app.state.offsetTop);
+				return { x, y, inside: x >= canvas.left && x <= canvas.right && y >= canvas.top && y <= canvas.bottom };
+			`),
+			),
+		(value) => {
+			const sample = `${value.x}:${value.y}`;
+			stablePoints = sample === priorPoint ? stablePoints + 1 : 0;
+			priorPoint = sample;
+			return value.inside === true && stablePoints >= 3;
+		},
+		`the rendered element ${id} to have a stable pointer target inside the canvas`,
 	);
 	if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) {
 		throw new Error(`The rendered element ${id} has no pointer target.`);
 	}
 	await browser.run(["mouse", "move", String(point.x), String(point.y)]);
 	await browser.run(["mouse", "down"]);
-	await browser.run(["mouse", "move", String(point.x! + dx), String(point.y! + dy)]);
+	await browser.run([
+		"mouse",
+		"move",
+		String(Math.round(point.x! + dx)),
+		String(Math.round(point.y! + dy)),
+	]);
 	await browser.run(["mouse", "up"]);
 }
 
