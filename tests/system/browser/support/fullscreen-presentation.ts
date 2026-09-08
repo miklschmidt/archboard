@@ -4,7 +4,13 @@ import type { PaneReport, PanesReport, Rect } from "../../../../src/runtime/engi
 import { PANE_SETTLE_CAP_MS } from "../../../../src/shared/timing/timing.ts";
 import type { createJsonRequester } from "../../boards/support/http.ts";
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
-import { PANE_SECTIONS, PRESENTATION_BAR, SHELL_NOTICES, STAGE_ROOT } from "./shell-dom.ts";
+import {
+	PANE_SECTIONS,
+	PRESENTATION_BAR,
+	SHELL_NOTICES,
+	STAGE_ROOT,
+	shellNotices,
+} from "./shell-dom.ts";
 
 type PanesBody = PanesReport & { success: boolean };
 /** A board read with its held state, as the owners compare it across a presentation. */
@@ -65,6 +71,16 @@ async function waitForPanes(
 		accepts,
 		description,
 		{ timeoutMs: PANE_SETTLE_CAP_MS },
+	);
+}
+
+async function waitForStableHeldNotice(browser: AgentBrowserSession, board: string): Promise<void> {
+	await pollUntil(
+		() => shellNotices(browser),
+		(notices) =>
+			notices.some((notice) => notice.title === `${board} has stopped saving`) &&
+			!notices.some((notice) => notice.title === `${board} was written elsewhere`),
+		"the held note notice to replace the transient written-elsewhere notice",
 	);
 }
 
@@ -227,4 +243,5 @@ export {
 	PERSISTENT_NOTICE_TEXT,
 	publishActionableNotice,
 	readShellNotice,
+	waitForStableHeldNotice,
 };

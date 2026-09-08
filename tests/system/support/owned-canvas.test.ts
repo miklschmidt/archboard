@@ -151,7 +151,7 @@ describe("owned canvas direct lifecycle", () => {
 	});
 
 	test("only accepts exact disposable namespace roots for emergency removal", () => {
-		const temporary = path.resolve(os.tmpdir());
+		const temporary = fs.realpathSync(path.resolve(os.tmpdir()));
 		expect(
 			isOwnedCanvasNamespaceRoot(path.join(temporary, "archboard-owned-canvas-Ab3xY9")),
 		).toBeTrue();
@@ -305,7 +305,18 @@ describe("owned canvas direct lifecycle", () => {
 			expect(new Set(namespaces.map(({ lock }) => lock)).size).toBe(2);
 			for (const [index, namespace] of namespaces.entries()) {
 				const paths = [first, second][index]!.paths;
-				const workbench = path.join(paths.xdgState, "excalidraw-canvas", "codex-workbench");
+				const workbench =
+					process.platform === "darwin"
+						? path.join(
+								paths.home,
+								"Library",
+								"Application Support",
+								"excalidraw-canvas",
+								"codex-workbench",
+							)
+						: process.platform === "win32"
+							? path.join(paths.home, "AppData", "Local", "Excalidraw-Canvas", "codex-workbench")
+							: path.join(paths.xdgState, "excalidraw-canvas", "codex-workbench");
 				expect(namespace).toMatchObject({
 					home: paths.home,
 					xdgConfig: paths.xdgConfig,
@@ -395,7 +406,9 @@ describe("owned canvas direct lifecycle", () => {
 		const paths = JSON.parse(
 			/^Owned canvas paths: (.+)$/m.exec(failure?.message ?? "")?.[1] ?? "null",
 		) as { root?: string } | null;
-		expect(paths?.root).toStartWith(path.join(os.tmpdir(), "archboard-owned-canvas-"));
+		expect(paths?.root).toStartWith(
+			path.join(fs.realpathSync(os.tmpdir()), "archboard-owned-canvas-"),
+		);
 		expect(fs.existsSync(paths!.root!)).toBeFalse();
 		expect(fs.existsSync(vault)).toBeFalse();
 	});

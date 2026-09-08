@@ -28,6 +28,7 @@ import {
 	readPresentedPane,
 	readShellNotice,
 	seedBoard,
+	waitForStableHeldNotice,
 	waitForPanes,
 	type BoardBody,
 } from "./support/fullscreen-presentation.ts";
@@ -164,6 +165,7 @@ test(
 			Boolean,
 			"the board-stopped-saving dialog to close",
 		);
+		await waitForStableHeldNotice(browser, CURRENT);
 
 		expect(await publishActionableNotice(browser)).toBe(true);
 		await pollUntil(

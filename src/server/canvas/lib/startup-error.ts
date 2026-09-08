@@ -40,6 +40,7 @@ const CODEX_STARTUP_REFUSALS = new Set([
 	"binary_wrong_version",
 	"storage_refused",
 	"startup_timeout",
+	"process_group_unavailable",
 ]);
 
 /** The Codex process failures a reinstall is the answer to. */

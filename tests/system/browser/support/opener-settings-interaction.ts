@@ -1,3 +1,4 @@
+import { editingModifier } from "./keyboard.ts";
 import { expect } from "bun:test";
 
 import { pollUntil, type AgentBrowserSession } from "./agent-browser.ts";
@@ -17,6 +18,19 @@ function roleAction(
 	});
 }
 
+/** agent-browser omits the CDP macOS selectAll command; select only, then type normally. */
+async function selectFieldText(browser: AgentBrowserSession): Promise<void> {
+	if (process.platform === "darwin") {
+		expect(
+			await browser.eval<boolean>(
+				"(() => { const field = document.activeElement; if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return false; field.setSelectionRange(0, field.value.length); return field.selectionStart === 0 && field.selectionEnd === field.value.length; })()",
+			),
+		).toBe(true);
+	} else {
+		await browser.run(["press", `${editingModifier}+a`]);
+	}
+}
+
 /**
  * Replace a labelled field's value from the keyboard: select all, delete, type.
  * @param browser The page.
@@ -29,7 +43,7 @@ async function fillLabel(
 	value: string,
 ): Promise<void> {
 	await browser.run(["find", "label", label, "click", "--exact"]);
-	await browser.run(["press", "Control+a"]);
+	await selectFieldText(browser);
 	await browser.run(["press", "Backspace"]);
 	await browser.run(["keyboard", "type", value]);
 }
@@ -92,7 +106,7 @@ async function fillArguments(
 	lines: readonly string[],
 ): Promise<void> {
 	await browser.run(["find", "label", "Arguments", "click", "--exact"]);
-	await browser.run(["press", "Control+a"]);
+	await selectFieldText(browser);
 	await browser.run(["press", "Backspace"]);
 	for (const [index, line] of lines.entries()) {
 		if (index > 0) {

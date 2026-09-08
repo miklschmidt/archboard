@@ -2,6 +2,7 @@ import {
 	lstatSync,
 	mkdirSync,
 	mkdtempSync,
+	realpathSync,
 	readFileSync,
 	readdirSync,
 	rmSync,
@@ -25,7 +26,7 @@ const MANIFEST_HASH = "2".repeat(64);
 
 describe("codex epoch review remediations", () => {
 	test("rejects a parent symlink into Codex storage before creating the epoch root", () => {
-		const parent = mkdtempSync(join("/tmp", "archboard-codex-parent-link-"));
+		const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-codex-parent-link-")));
 		const codexHome = join(parent, "codex-home");
 		const sqliteHome = join(parent, "codex-sqlite");
 		const linkedParent = join(parent, "linked-parent");
@@ -95,7 +96,7 @@ interface TestState {
 }
 
 function withState<T>(callback: (state: TestState) => T): T {
-	const parent = mkdtempSync(join("/tmp", "archboard-codex-remediation-"));
+	const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-codex-remediation-")));
 	const state: TestState = {
 		root: join(parent, "epoch"),
 		codexHome: join(parent, "codex-home"),

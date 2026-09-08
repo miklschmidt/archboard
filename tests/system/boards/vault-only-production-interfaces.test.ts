@@ -2,13 +2,14 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
 
 import { listBoards, parseBoardKey, renderBoardNote } from "../../../src/runtime/engine/board.ts";
 import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 import { createJsonRequester } from "./support/http.ts";
+import { filesystemIsCaseSensitive } from "./support/filesystem.ts";
+import { runCanvasCli } from "./support/run-cli.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const root = mkdtempSync(join(tmpdir(), "archboard-vault-only-"));
@@ -40,31 +41,18 @@ function runCli(
 	args: string[],
 	options: { input?: string; expectedStatus?: number } = {},
 ): { stdout: string; stderr: string } {
-	const result = spawnSync(
-		"timeout",
-		["--signal=TERM", "--kill-after=5s", "20s", join(repoRoot, "bin/canvas"), ...args],
-		{
-			cwd: repoRoot,
-			encoding: "utf8",
-			input: options.input,
-			env: {
-				...process.env,
-				ARCHBOARD_VAULT: vault,
-				EXPRESS_SERVER_URL: canvas.base,
-				EXCALIDRAW_NO_AUTOSTART: "1",
-			},
-		},
-	);
+	const result = runCanvasCli({
+		repoRoot,
+		vault,
+		base: canvas.base,
+		args,
+		input: options.input,
+	});
 	expect(result.status, result.stderr).toBe(options.expectedStatus ?? 0);
 	return { stdout: result.stdout, stderr: result.stderr };
 }
 
-interface Refusal {
-	code?: string;
-	reason?: string;
-	error?: string;
-	files?: string[];
-}
+type Refusal = { code?: string; reason?: string; error?: string; files?: string[] };
 
 beforeAll(async () => {
 	mkdirSync(vault);
@@ -442,18 +430,25 @@ describe.serial("vault-only production interfaces", () => {
 	});
 
 	test("returns one browser-independent resolution refusal family", async () => {
+		const caseSensitive = filesystemIsCaseSensitive(root);
 		putNote("Case", note("Case"));
-		putNote("case", note("case"));
+		// Case-insensitive APFS/NTFS cannot materialize the duplicate entries
+		// needed for a real ambiguity. Keep the ambiguity owner on filesystems
+		// where the vault can actually contain both notes, and verify alias
+		// resolution on filesystems that collapse the spellings.
+		if (caseSensitive) {
+			putNote("case", note("case"));
+		}
 		putNote("conflict", note("conflict", "other"));
 		putNote("broken", note("broken").replace('"elements": []', '"elements":'));
 
-		const cases = [
+		const cases: Array<readonly [string, string, string]> = [
 			["missing", "/api/elements?board=absent", "missing"],
-			["ambiguous", "/api/elements?board=case", "ambiguous"],
+			...(caseSensitive ? [["ambiguous", "/api/elements?board=case", "ambiguous"] as const] : []),
 			["malformed address", "/api/elements?board=../escape", "malformed"],
 			["malformed note", "/api/elements?board=broken", "malformed"],
 			["conflicting", "/api/elements?board=conflict", "conflicting"],
-		] as const;
+		];
 		for (const [name, url, reason] of cases) {
 			const result = await request<Refusal>(url);
 			expect(result.status, name).toBeGreaterThanOrEqual(400);
@@ -462,6 +457,10 @@ describe.serial("vault-only production interfaces", () => {
 				reason,
 			});
 			expect(result.body.error, name).not.toMatch(/open (?:a )?pane|open it first/i);
+		}
+		if (!caseSensitive) {
+			const caseInsensitive = await request<Refusal>("/api/elements?board=case");
+			expect(caseInsensitive.status).toBe(200);
 		}
 	});
 

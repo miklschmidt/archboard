@@ -194,26 +194,33 @@ archboard export --board payments --out docs/architecture.excalidraw
 
 ## On macOS
 
-Archboard was developed on Linux. Most of it is platform-neutral, and the two
-places that are not already handle darwin: the pidfile goes to
-`~/Library/Application Support`, and so do the logs.
+Archboard supports Linux and macOS. On macOS, machine-local state lives under
+`~/Library/Application Support/excalidraw-canvas`, and logs go to
+`~/Library/Logs/archboard.log`. Process ownership is verified through the native
+macOS process API; Linux uses `/proc`.
 
-Three things to know.
+Server-side rendering uses Chromium or Google Chrome. On macOS it discovers
+their standard `/Applications` installs as well as executable names on `PATH`.
+Set `ARCHBOARD_RENDERER_CHROMIUM` to use another executable location. It starts
+its own headless browser with a temporary profile; `setsid` is not required.
+The macOS browser child uses the native account home for operating-system
+services while keeping its profile and temporary files private. It uses a mock
+keychain so temporary browser launches do not open macOS keychain dialogs.
+
+A managed Chrome installation can enforce becoming the default browser even
+for temporary profiles. If it opens system prompts, use Chrome for Testing
+and set `ARCHBOARD_RENDERER_CHROMIUM` to its executable before starting
+archboard. This keeps the managed browser's policy and your default browser
+unchanged.
 
 `bin/canvas` calls `realpath`, which modern macOS has but older versions do
 not. If the symlink route above gives you `realpath: command not found`, either
 `brew install coreutils` or run `bun /path/to/archboard/src/bin.ts` directly.
 
-**Board names are case-sensitive here and your filesystem probably is not.**
-APFS is case-insensitive by default, so `payments` and `Payments` are two
-boards in archboard and one file on disk. You will not lose work over it: a
-save onto a note archboard has not read is refused rather than overwritten
-(ADR 0006), and a note whose frontmatter disagrees with its path says so. But
-you will get a puzzling refusal. Pick one casing per board and stay with it
-until TASK-032 settles this.
-
-That also means a vault is not yet portable between macOS and Linux if any two
-board names differ only in case.
+Board addresses are case-insensitive and Unicode-normalized on both platforms,
+while note filenames preserve their original casing (ADR 0010). A legacy vault
+containing names that differ only in case must have those collisions resolved;
+`archboard board list` reports them.
 
 ## Telling an agent which board covers this repo
 

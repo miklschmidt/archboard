@@ -345,7 +345,7 @@ export const threadFixture = {
 export const emptyResponse = {};
 
 export function makeStorage(): { readonly root: string; readonly storage: CodexSessionStorage } {
-	const root = mkdtempSync(path.join(os.tmpdir(), "archboard-session-"));
+	const root = realpathSync(mkdtempSync(path.join(os.tmpdir(), "archboard-session-")));
 	const codexHome = path.join(root, "codex-home");
 	const sqliteHome = path.join(root, "sqlite-home");
 	const configPath = path.join(codexHome, "config.toml");

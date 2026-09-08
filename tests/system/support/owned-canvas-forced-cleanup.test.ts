@@ -13,6 +13,29 @@ const group = (pid: number): CodexProcessGroupIdentity => ({
 });
 
 describe("owned canvas forced cleanup", () => {
+	test("waits through a transient unproven census before signalling an owned group", async () => {
+		const descendant = group(99);
+		const inspections: Array<"unproven" | "owned" | "quiescent"> = [
+			"unproven",
+			"owned",
+			"quiescent",
+		];
+		const signals: string[] = [];
+		await completeCapturedCanvasCleanup({
+			groups: [descendant],
+			operations: {
+				inspect: () => inspections.shift() ?? "quiescent",
+				signal(_identity, signal) {
+					signals.push(signal);
+				},
+			},
+			parent: { exited: true },
+			removeStorageLock() {},
+		});
+
+		expect(signals).toEqual(["SIGTERM"]);
+	});
+
 	test("attempts later captured child groups after an earlier group fails", () => {
 		const first = group(101);
 		const second = group(202);
@@ -74,6 +97,7 @@ describe("owned canvas forced cleanup", () => {
 		const descendant = group(303);
 		const parentFailure = new Error("owned parent remains unsettled");
 		let descendantInspections = 0;
+		let descendantSignals = 0;
 		let lockRemovalAttempts = 0;
 		let surfaced: unknown;
 		try {
@@ -85,7 +109,7 @@ describe("owned canvas forced cleanup", () => {
 						return "unproven";
 					},
 					signal() {
-						// An unproven identity must never be signalled.
+						descendantSignals += 1;
 					},
 				},
 				parent: { exited: false, failure: parentFailure },
@@ -107,6 +131,7 @@ describe("owned canvas forced cleanup", () => {
 				"Owned canvas child group 303 did not become quiescent after forced canvas death (unproven).",
 		});
 		expect(descendantInspections).toBeGreaterThan(0);
+		expect(descendantSignals).toBe(0);
 		expect(lockRemovalAttempts).toBe(0);
 	});
 });

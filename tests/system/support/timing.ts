@@ -115,6 +115,9 @@ const TEST_CANVAS_SHUTDOWN_TIMEOUT_MS = 1000;
  */
 const TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS = 20_000;
 
+/** Bound the shipped CLI below the surrounding vault workflow case deadline. */
+const TEST_VAULT_CLI_TIMEOUT_MS = 20_000;
+
 /**
  * Two shutdown intervals beyond TEST_CANVAS_CHILD_EXIT_TIMEOUT_MS let the Bun
  * case receive rejection, assert it, and dispose a retained generation.
@@ -180,6 +183,12 @@ const TEST_NOTE_WATCH_CLEAR_TIMEOUT_MS = LOCK_WATCH_MS;
 /** Ordinary browser commands stay at 30s; the 10k-element initial render gets three windows, finite and not an SLA. */
 const TEST_BROWSER_COMMAND_TIMEOUT_MS = BROWSER_EXPORT_TIMEOUT_MS;
 
+/** Four real pointer moves add roughly 20 seconds of Chromium ACK latency on macOS. */
+const TEST_HUMAN_UNDO_CASE_TIMEOUT_MS =
+	process.platform === "darwin"
+		? 2 * TEST_BROWSER_COMMAND_TIMEOUT_MS
+		: TEST_BROWSER_COMMAND_TIMEOUT_MS;
+
 const TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS = 3 * TEST_BROWSER_COMMAND_TIMEOUT_MS;
 
 /** The 10,000-element real-browser performance owner measured 55.9-76.84s; eight command windows preserve its existing finite case bound. */
@@ -222,6 +231,8 @@ const TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS = 400;
 const TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS = 2000;
 
 export {
+	TEST_HUMAN_UNDO_CASE_TIMEOUT_MS,
+	TEST_VAULT_CLI_TIMEOUT_MS,
 	TEST_GIT_FIXTURE_START_MS,
 	TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS,
 	TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS,

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
@@ -6,8 +6,10 @@ import { type ProcessIdentity } from "@/runtime/engine/process-group";
 import {
 	createCodexProcessGroupOperations,
 	type CodexProcessGroupIdentity,
+	type CodexProcessGroupOperations,
 } from "@/runtime/codex-process/process-group";
 import { BoardRendererError, isJsonRecord } from "@/server/board-rendering/lib/renderer-failure";
+import { listProcessObservations, type ProcessObservation } from "@/shared/process-observation";
 
 /** The checkout the renderer runs from, which is also its working directory. */
 const repositoryRoot = resolve(import.meta.dir, "../../../..");
@@ -16,9 +18,10 @@ const repositoryRoot = resolve(import.meta.dir, "../../../..");
 const processGroups = createCodexProcessGroupOperations();
 
 // Chromium adds two long singleton-directory segments below TMPDIR. Keep the
-// owned root short enough for Linux's Unix-socket path limit even when the
+// owned root short enough for Unix-socket path limits even when the
 // canvas itself inherited a deeply nested test or launcher TMPDIR.
-const rendererTempParent = process.platform === "linux" ? "/tmp" : tmpdir();
+const rendererTempParent =
+	process.platform === "darwin" ? "/private/tmp" : process.platform === "linux" ? "/tmp" : tmpdir();
 
 /** How long each process poll waits before looking again. */
 const PROCESS_POLL_MS = 25;
@@ -228,28 +231,30 @@ async function settlesBefore(promise: Promise<unknown>, deadline: number): Promi
 }
 
 /**
- * Wait until a process group is provably gone, giving up at once when it was
- * reused or was never proved to be this owner's.
+ * Wait until a process group is provably gone. A reused leader ends the audit
+ * immediately; a temporarily unreadable census is retried without signalling.
  * @param identity The process group.
  * @param deadline When to give up.
+ * @param groups The ownership operations, injectable by the focused regression owner.
  * @returns True when the group is gone.
  */
 async function waitForGroupAbsence(
 	identity: CodexProcessGroupIdentity,
 	deadline: number,
+	groups: CodexProcessGroupOperations = processGroups,
 ): Promise<boolean> {
 	while (Date.now() < deadline) {
-		const state = processGroups.inspect(identity);
+		const state = groups.inspect(identity);
 		if (state === "quiescent") {
 			return true;
 		}
-		if (state === "reused" || state === "unproven") {
+		if (state === "reused") {
 			return false;
 		}
 		// oxlint-disable-next-line no-await-in-loop -- the group is polled: each look waits for the previous pause
 		await Bun.sleep(Math.min(PROCESS_POLL_MS, Math.max(0, deadline - Date.now())));
 	}
-	return processGroups.inspect(identity) === "quiescent";
+	return groups.inspect(identity) === "quiescent";
 }
 
 /**
@@ -307,49 +312,58 @@ async function captureGroup(
 /**
  * Every process now under one leader, read from the process tree, so teardown
  * can prove each of them went.
- * @param pid The leader.
- * @returns The pids, lowest first.
+ * @param identity The exact leader identity.
+ * @returns The observed process identities, ordered by pid.
  */
-function ownedProcessIds(pid: number): number[] {
+function ownedProcesses(identity: ProcessIdentity): ProcessObservation[] {
+	const census = listProcessObservations();
+	const root = census.find(
+		(observation) =>
+			observation.pid === identity.pid && observation.startTime === identity.startTime,
+	);
+	return root ? processTree(root, childrenByParent(census)) : [];
+}
+
+/**
+ * Index one complete process census by parent identity.
+ * @param census The immutable process-table snapshot.
+ * @returns Each observed parent pid and its children.
+ */
+function childrenByParent(
+	census: readonly ProcessObservation[],
+): ReadonlyMap<number, readonly ProcessObservation[]> {
+	const byParent = new Map<number, ProcessObservation[]>();
+	for (const observation of census) {
+		const children = byParent.get(observation.parentPid) ?? [];
+		children.push(observation);
+		byParent.set(observation.parentPid, children);
+	}
+	return byParent;
+}
+
+/**
+ * Walk the descendants present in one immutable process census.
+ * @param root The exact owned leader.
+ * @param byParent The census indexed by parent pid.
+ * @returns The leader and descendants, ordered by pid.
+ */
+function processTree(
+	root: ProcessObservation,
+	byParent: ReadonlyMap<number, readonly ProcessObservation[]>,
+): ProcessObservation[] {
+	const owned: ProcessObservation[] = [];
+	const pending = [root];
 	const seen = new Set<number>();
-	visitProcessTree(pid, seen);
-	return [...seen].toSorted((left, right) => left - right);
-}
-
-/**
- * Walk one process and its children into the set, tolerating a child that
- * exits between the directory check and the process-tree read.
- * @param candidate The process.
- * @param seen Where to record it.
- */
-function visitProcessTree(candidate: number, seen: Set<number>): void {
-	if (seen.has(candidate) || !existsSync(`/proc/${candidate}`)) {
-		return;
+	while (pending.length > 0) {
+		const candidate = pending.pop();
+		if (!candidate || seen.has(candidate.pid)) {
+			continue;
+		}
+		seen.add(candidate.pid);
+		owned.push(candidate);
+		pending.push(...(byParent.get(candidate.pid) ?? []));
 	}
-	seen.add(candidate);
-	for (const child of childProcessIds(candidate)) {
-		visitProcessTree(child, seen);
-	}
-}
-
-/**
- * The processes one process has now, read from its task's children list.
- * @param candidate The process.
- * @returns Its children's pids, or none when the list cannot be read.
- */
-function childProcessIds(candidate: number): number[] {
-	let listed: string;
-	try {
-		listed = readFileSync(`/proc/${candidate}/task/${candidate}/children`, "utf8");
-	} catch {
-		// A child can exit between the directory check and the process-tree read.
-		return [];
-	}
-	return listed
-		.trim()
-		.split(/\s+/)
-		.map((child) => Number(child))
-		.filter((parsed) => Number.isInteger(parsed) && parsed > 0);
+	return owned.toSorted((left, right) => left.pid - right.pid);
 }
 
 export {
@@ -358,7 +372,7 @@ export {
 	capturePipe,
 	captureGroup,
 	loopbackPortIsAvailable,
-	ownedProcessIds,
+	ownedProcesses,
 	processGroups,
 	rawProcessGroupAbsent,
 	readablePipe,

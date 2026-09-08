@@ -21,7 +21,13 @@ interface VaultEntry {
 }
 
 function assertOwnedVault(vault: string): string {
-	const resolved = realpathSync(vault);
+	// Darwin cannot realpath a mode-000 file. Resolve its parent while refusing
+	// final-component symlinks, so the unreadable-file fixture stays unreadable.
+	const info = lstatSync(vault);
+	if (info.isSymbolicLink()) {
+		throw new Error(`Refusing symlinked package vault: ${vault}`);
+	}
+	const resolved = join(realpathSync(path.dirname(vault)), path.basename(vault));
 	if (!resolved.startsWith(vaultPrefix)) {
 		throw new Error(`Refusing unsafe package vault: ${resolved}`);
 	}

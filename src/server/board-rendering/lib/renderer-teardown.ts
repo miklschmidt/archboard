@@ -1,7 +1,11 @@
 import { existsSync, rmSync } from "node:fs";
 
 import type { ProcessIdentity } from "@/runtime/engine/process-group";
-import type { CodexProcessGroupIdentity } from "@/runtime/codex-process/process-group";
+import type {
+	CodexProcessGroupIdentity,
+	CodexProcessGroupInspection,
+	CodexProcessGroupOperations,
+} from "@/runtime/codex-process/process-group";
 import {
 	captureGroup,
 	loopbackPortIsAvailable,
@@ -11,6 +15,7 @@ import {
 	waitForGroupAbsence,
 	type CapturedPipe,
 } from "@/server/board-rendering/lib/renderer-process";
+import { readProcessObservation, type ProcessObservation } from "@/shared/process-observation";
 
 /** How long each poll waits before looking again. */
 const TEARDOWN_POLL_MS = 25;
@@ -38,7 +43,8 @@ interface RendererSessionResources {
 	readonly group: CodexProcessGroupIdentity | null;
 	readonly stdout: CapturedPipe | null;
 	readonly stderr: CapturedPipe | null;
-	readonly observed: readonly number[];
+	readonly observed: readonly ProcessObservation[];
+	readonly observationErrors: readonly string[];
 	readonly profile: string | null;
 	readonly tempRoot: string | null;
 	readonly port: number | null;
@@ -84,6 +90,7 @@ async function provenGroup(
  * @param cleanupTimeoutMs How long the whole teardown may take.
  * @param deadline When to give up.
  * @param errors Where to record a failure.
+ * @param groups The ownership operations, injectable by the focused regression owner.
  * @returns Whether the group is gone.
  */
 async function endGroup(
@@ -91,22 +98,73 @@ async function endGroup(
 	cleanupTimeoutMs: number,
 	deadline: number,
 	errors: string[],
+	groups: CodexProcessGroupOperations = processGroups,
 ): Promise<boolean> {
 	try {
-		if (processGroups.inspect(group) === "owned") {
-			processGroups.signal(group, "SIGTERM");
-		}
-		const termDeadline = Date.now() + Math.max(0, cleanupTimeoutMs - 1_000);
-		const wentOnTerm = await waitForGroupAbsence(group, termDeadline);
-		if (wentOnTerm || processGroups.inspect(group) !== "owned") {
-			return wentOnTerm;
-		}
-		processGroups.signal(group, "SIGKILL");
-		return await waitForGroupAbsence(group, deadline);
+		const forceReserveMs = Math.min(1_000, Math.floor(cleanupTimeoutMs / 2));
+		const gracefulBudgetMs = Math.max(0, cleanupTimeoutMs - forceReserveMs);
+		const ownershipDeadline = Math.max(Date.now(), deadline - forceReserveMs);
+		const initial = await waitForActionableGroup(group, ownershipDeadline, groups);
+		return initial === "quiescent"
+			? true
+			: initial === "owned"
+				? await finishOwnedGroup(group, gracefulBudgetMs, forceReserveMs, deadline, groups)
+				: false;
 	} catch (error) {
 		errors.push(messageOf(error));
 		return false;
 	}
+}
+
+/**
+ * Send TERM to a proved owned group, observe its grace, then use the reserved
+ * end of the overall deadline for KILL only after ownership is proved again.
+ * @param group The exact group captured after spawn.
+ * @param gracefulBudgetMs The maximum TERM grace from when TERM is sent.
+ * @param forceReserveMs The part of the overall deadline reserved for KILL.
+ * @param deadline The overall cleanup deadline.
+ * @param groups The ownership operations.
+ * @returns Whether the group became provably absent.
+ */
+async function finishOwnedGroup(
+	group: CodexProcessGroupIdentity,
+	gracefulBudgetMs: number,
+	forceReserveMs: number,
+	deadline: number,
+	groups: CodexProcessGroupOperations,
+): Promise<boolean> {
+	groups.signal(group, "SIGTERM");
+	const gracefulDeadline = Math.min(deadline - forceReserveMs, Date.now() + gracefulBudgetMs);
+	const wentOnTerm = await waitForGroupAbsence(group, gracefulDeadline, groups);
+	if (wentOnTerm || groups.inspect(group) !== "owned") {
+		return wentOnTerm;
+	}
+	groups.signal(group, "SIGKILL");
+	return await waitForGroupAbsence(group, deadline, groups);
+}
+
+/**
+ * Wait through a transient unreadable census until group ownership can drive
+ * teardown, without signalling anything meanwhile.
+ * @param group The exact group captured after spawn.
+ * @param deadline The end of the graceful part of cleanup.
+ * @param groups The ownership operations.
+ * @returns The first actionable inspection, or the final unproven state.
+ */
+async function waitForActionableGroup(
+	group: CodexProcessGroupIdentity,
+	deadline: number,
+	groups: CodexProcessGroupOperations,
+): Promise<CodexProcessGroupInspection> {
+	while (Date.now() < deadline) {
+		const state = groups.inspect(group);
+		if (state !== "unproven") {
+			return state;
+		}
+		// oxlint-disable-next-line no-await-in-loop -- ownership is re-read only after the prior poll interval
+		await Bun.sleep(Math.min(TEARDOWN_POLL_MS, Math.max(0, deadline - Date.now())));
+	}
+	return groups.inspect(group);
 }
 
 /**
@@ -157,18 +215,57 @@ async function endProcessGroup(
 
 /**
  * Wait for every process the session observed to leave the process table.
- * @param pids The processes it observed.
+ * @param observed The process identities it observed.
  * @param deadline When to give up.
  * @returns Whatever is still there.
  */
-async function waitForSurvivors(pids: readonly number[], deadline: number): Promise<number[]> {
-	let survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
+async function waitForSurvivors(
+	observed: readonly ProcessObservation[],
+	deadline: number,
+): Promise<number[]> {
+	let survivors = survivingProcessIds(observed);
 	while (survivors.length > 0 && Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- survivors are re-read after each pause, one round at a time
 		await Bun.sleep(Math.min(TEARDOWN_POLL_MS, Math.max(0, deadline - Date.now())));
-		survivors = pids.filter((pid) => existsSync(`/proc/${pid}`));
+		survivors = survivingProcessIds(observed);
 	}
 	return survivors;
+}
+
+/**
+ * Return identities from an earlier observation that the kernel still matches exactly.
+ * @param observed The exact identities recorded during the session.
+ * @returns Pids still naming the same process birth.
+ */
+function survivingProcessIds(observed: readonly ProcessObservation[]): number[] {
+	return observed
+		.filter((identity) => {
+			const current = readProcessObservation(identity.pid);
+			return current?.startTime === identity.startTime;
+		})
+		.map(({ pid }) => pid);
+}
+
+/**
+ * Prove the observed processes gone, recording an observation failure as a failed audit.
+ * @param resources Everything the session acquired.
+ * @param pids The public pid projection of the observed identities.
+ * @param deadline When to give up.
+ * @param errors Where to record an observation failure.
+ * @returns Pids that still name their recorded process births.
+ */
+async function auditProcessSurvivors(
+	resources: RendererSessionResources,
+	pids: readonly number[],
+	deadline: number,
+	errors: string[],
+): Promise<number[]> {
+	try {
+		return await waitForSurvivors(resources.observed, deadline);
+	} catch (error) {
+		errors.push(`Renderer process survival could not be proved: ${messageOf(error)}`);
+		return [...pids];
+	}
 }
 
 /**
@@ -298,12 +395,14 @@ async function releasedResources(resources: RendererSessionResources): Promise<{
 async function tearDownRendererSession(
 	resources: RendererSessionResources,
 ): Promise<RendererSessionCleanup> {
-	const errors: string[] = [];
-	const pids = [...resources.observed].toSorted((left, right) => left - right);
+	const errors = [...resources.observationErrors];
+	const pids = [...new Set(resources.observed.map(({ pid }) => pid))].toSorted(
+		(left, right) => left - right,
+	);
 	const deadline = Date.now() + resources.cleanupTimeoutMs;
 	const groupAbsent = await endProcessGroup(resources, deadline, errors);
 	const settled = await settleOutputs(resources, deadline, errors);
-	const survivors = await waitForSurvivors(pids, deadline);
+	const survivors = await auditProcessSurvivors(resources, pids, deadline, errors);
 	const processesGone = survivors.length === 0;
 	const outputsSettled = allSettled(settled);
 	if (groupAbsent && processesGone && outputsSettled) {
@@ -328,5 +427,5 @@ async function tearDownRendererSession(
 	};
 }
 
-export { tearDownRendererSession };
+export { endGroup, tearDownRendererSession };
 export type { RendererSessionCleanup, RendererSessionResources };

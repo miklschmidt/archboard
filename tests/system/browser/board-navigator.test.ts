@@ -193,6 +193,7 @@ test("the navigator keeps every real board reachable and replaces the focused pa
 		`{ window.__previewProbe = { requests: [], failBoard: 'beta' }; const nativeFetch = window.fetch.bind(window); window.fetch = async (input, init) => { const requestUrl = typeof input === 'string' ? input : input.url; const url = new URL(requestUrl, location.href); if (url.pathname !== '/api/boards/preview') return nativeFetch(input, init); const board = url.searchParams.get('board'); window.__previewProbe.requests.push({ board, method: (init?.method || 'GET').toUpperCase() }); if (window.__previewProbe.failBoard === board) return new Response('{}', { status: 503 }); return nativeFetch(input, init); }; }`,
 	);
 	await browser.run(["--init-script", initScript, "open", canvas.base]);
+	await switchTheme(browser, "light");
 	expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "bun:test";
@@ -11,7 +11,7 @@ const MANIFEST_HASH = "2".repeat(64);
 
 describe("codex epoch settlement", () => {
 	test("settles an unknown outcome only with its exact positive correlation", () => {
-		const parent = mkdtempSync(join("/tmp", "archboard-codex-settlement-"));
+		const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-codex-settlement-")));
 		const root = join(parent, "epoch");
 		const codexHome = join(parent, "codex-home");
 		const sqliteHome = join(parent, "codex-sqlite");
@@ -61,7 +61,7 @@ describe("codex epoch settlement", () => {
 	});
 
 	test("settles an initial turn only with its exact recorded thread and turn", () => {
-		const parent = mkdtempSync(join("/tmp", "archboard-codex-settlement-"));
+		const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-codex-settlement-")));
 		const root = join(parent, "epoch");
 		const codexHome = join(parent, "codex-home");
 		const sqliteHome = join(parent, "codex-sqlite");

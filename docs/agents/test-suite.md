@@ -22,6 +22,11 @@ browser lane. All normal owners remain mandatory locally; TASK-141 and TASK-142
 own restoring the system owner and the normal browser inventory to hosted
 coverage.
 
+A separate macOS CI job exercises the native process observer, Codex lifecycle,
+Git cleanup, renderer cleanup polling, storage paths, and board filename casing.
+This catches platform-specific failures that the Ubuntu suite cannot exercise;
+it does not replace any local gate.
+
 The supported normal topology is one Archboard server, one package-local bound
 Codex app-server, and one human editor. Short races inside that topology stay in
 their cheapest product owner. These commands contain everything outside it:
@@ -175,6 +180,17 @@ for named-board runtime operations. The lane:
   namespace, socket, session, canvas listener, and headless allowlisted
   environment, and audits all of them during cleanup. The code-target system
   owners also reap controlled fake processes and capture/release files.
+
+On macOS the server-owned Chromium child uses the native account home because
+its operating-system services fail with a synthetic home. The server and Codex
+homes remain isolated, and Chromium still owns a private profile and temporary
+directory that teardown must remove. Both renderer and browser-lane launches use
+a mock keychain to prevent dialogs or writes to the person's macOS keychain.
+
+For a managed Chrome installation that enforces the default-browser policy,
+use Chrome for Testing. Set both `AGENT_BROWSER_EXECUTABLE_PATH` and
+`ARCHBOARD_RENDERER_CHROMIUM` to its executable. Run the browser lane serially;
+each owner must finish cleanup before the next starts.
 
 The normal package command is the canonical normal lane. Focused diagnosis accepts:
 

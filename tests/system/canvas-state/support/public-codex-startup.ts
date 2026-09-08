@@ -2,15 +2,15 @@ import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 import { join } from "node:path";
 
+import { listProcessObservations } from "@/shared/process-observation";
+
 const repositoryRoot = join(import.meta.dir, "../../../..");
 const publicPreload = join(import.meta.dir, "../fixtures/public-codex-startup-preload.ts");
 
 function canvasChildPids(pid: number): number[] {
-	return readFileSync(`/proc/${pid}/task/${pid}/children`, "utf8")
-		.trim()
-		.split(/\s+/u)
-		.filter(Boolean)
-		.map(Number);
+	return listProcessObservations()
+		.filter((observation) => observation.state !== "zombie" && observation.parentPid === pid)
+		.map((observation) => observation.pid);
 }
 
 function publicStartEnvironment(
@@ -19,7 +19,7 @@ function publicStartEnvironment(
 	executable?: string,
 ): NodeJS.ProcessEnv {
 	const state = join(root, "state");
-	const persistent = join(state, "excalidraw-canvas/codex-workbench");
+	const persistent = publicWorkbenchRoot(root);
 	for (const directory of ["home", "config", "cache", "tmp", "vault", "state"]) {
 		mkdirSync(join(root, directory), { recursive: true, mode: 0o700 });
 	}
@@ -80,10 +80,32 @@ async function loggedRequestFailure(base: string, root: string) {
 	return {
 		status: response.status,
 		health: await (await fetch(`${base}/health`)).json(),
-		logged: readFileSync(join(root, "state/archboard/archboard.log"), "utf8").includes(
-			"Unhandled error",
-		),
+		logged: readFileSync(publicLogPath(root), "utf8").includes("Unhandled error"),
 	};
+}
+
+function publicLogPath(root: string): string {
+	if (process.platform === "darwin") {
+		return join(root, "home/Library/Logs/archboard.log");
+	}
+	if (process.platform === "win32") {
+		return join(root, "home/AppData/Local/Archboard/archboard.log");
+	}
+	return join(root, "state/archboard/archboard.log");
+}
+
+function publicStateRoot(root: string): string {
+	if (process.platform === "darwin") {
+		return join(root, "home/Library/Application Support/excalidraw-canvas");
+	}
+	if (process.platform === "win32") {
+		return join(root, "home/AppData/Local/Excalidraw-Canvas");
+	}
+	return join(root, "state/excalidraw-canvas");
+}
+
+function publicWorkbenchRoot(root: string): string {
+	return join(publicStateRoot(root), "codex-workbench");
 }
 
 export {
@@ -93,4 +115,7 @@ export {
 	runPublicCanvas,
 	runPublicCanvasAsync,
 	loggedRequestFailure,
+	publicLogPath,
+	publicStateRoot,
+	publicWorkbenchRoot,
 };

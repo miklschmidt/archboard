@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -128,7 +128,7 @@ class FakeThreadLink implements WorkhorseThreadLinkPort {
 }
 
 function makeFixture(linkOutcome?: ThreadLinkBindingSnapshot): WorkhorseFixture {
-	const parent = mkdtempSync(join("/tmp", "archboard-workhorse-start-"));
+	const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-workhorse-start-")));
 	const epochRoot = join(parent, "epoch");
 	const codexHome = join(parent, "codex-home");
 	const sqliteHome = join(parent, "codex-sqlite");

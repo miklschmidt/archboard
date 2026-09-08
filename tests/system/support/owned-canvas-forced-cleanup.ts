@@ -7,31 +7,25 @@ import {
 	type CodexProcessGroupIdentity,
 	type CodexProcessGroupOperations,
 } from "../../../src/runtime/codex-process/process-group.ts";
-import { processExists } from "./owned-canvas-ownership.ts";
+import { listProcessObservations, readProcessObservation } from "@/shared/process-observation";
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 function directChildGroups(parentPid: number): CodexProcessGroupIdentity[] {
-	let childPids: number[];
-	try {
-		childPids = fs
-			.readFileSync(`/proc/${parentPid}/task/${parentPid}/children`, "utf8")
-			.trim()
-			.split(/\s+/u)
-			.filter(Boolean)
-			.map(Number);
-	} catch (error) {
-		if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-			return [];
-		}
-		throw error;
-	}
+	const children = listProcessObservations().filter(
+		(observation) => observation.state !== "zombie" && observation.parentPid === parentPid,
+	);
 	const operations = createCodexProcessGroupOperations();
-	return childPids.flatMap((pid) => {
+	return children.flatMap((child) => {
 		try {
-			return [operations.capture(pid)];
+			const group = operations.capture(child.pid);
+			if (group.leaderStartTime !== child.startTime || group.pgid !== child.pgid) {
+				throw new Error(`Child process ${child.pid} changed while its group was captured.`);
+			}
+			return [group];
 		} catch (error) {
-			if (!processExists(pid)) {
+			const fresh = readProcessObservation(child.pid);
+			if (fresh === undefined || fresh.startTime !== child.startTime || fresh.pgid !== child.pgid) {
 				return [];
 			}
 			throw error;
@@ -39,25 +33,54 @@ function directChildGroups(parentPid: number): CodexProcessGroupIdentity[] {
 	});
 }
 
+type GroupOperations = Pick<CodexProcessGroupOperations, "inspect" | "signal">;
+
+async function inspectUntilProven(
+	group: CodexProcessGroupIdentity,
+	operations: GroupOperations,
+	deadline: number,
+): Promise<ReturnType<GroupOperations["inspect"]>> {
+	let status = operations.inspect(group);
+	while (status === "unproven" && Date.now() < deadline) {
+		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
+		status = operations.inspect(group);
+	}
+	return status;
+}
+
+async function waitForQuiescence(
+	group: CodexProcessGroupIdentity,
+	operations: GroupOperations,
+	deadline: number,
+): Promise<ReturnType<GroupOperations["inspect"]>> {
+	let status = operations.inspect(group);
+	while ((status === "owned" || status === "unproven") && Date.now() < deadline) {
+		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
+		status = operations.inspect(group);
+	}
+	return status;
+}
+
 async function stopChildGroup(
 	group: CodexProcessGroupIdentity,
-	operations: Pick<CodexProcessGroupOperations, "inspect" | "signal">,
+	operations: GroupOperations,
 ): Promise<void> {
-	if (operations.inspect(group) === "owned") {
-		operations.signal(group, "SIGTERM");
-	}
 	let deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
-	while (operations.inspect(group) === "owned" && Date.now() < deadline) {
-		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
+	let status = await inspectUntilProven(group, operations, deadline);
+	if (status === "quiescent") return;
+	if (status !== "owned") {
+		throw new Error(
+			`Owned canvas child group ${group.pgid} did not become quiescent after forced canvas death (${status}).`,
+		);
 	}
-	if (operations.inspect(group) === "owned") {
+	operations.signal(group, "SIGTERM");
+	deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
+	status = await waitForQuiescence(group, operations, deadline);
+	if (status === "owned") {
 		operations.signal(group, "SIGKILL");
 	}
 	deadline = Date.now() + TEST_CANVAS_SHUTDOWN_TIMEOUT_MS;
-	while (operations.inspect(group) === "owned" && Date.now() < deadline) {
-		await sleep(TEST_CANVAS_HEALTH_POLL_MS);
-	}
-	const final = operations.inspect(group);
+	const final = status === "owned" ? await waitForQuiescence(group, operations, deadline) : status;
 	if (final !== "quiescent") {
 		throw new Error(
 			`Owned canvas child group ${group.pgid} did not become quiescent after forced canvas death (${final}).`,
@@ -131,9 +154,17 @@ function captureForcedCanvasCleanup(options: {
 	xdgState: string;
 }): ForcedCanvasCleanup {
 	const groups = directChildGroups(options.canvasPid);
+	const stateRoot =
+		process.platform === "darwin"
+			? join(
+					fs.realpathSync(join(options.xdgState, "..", "home")),
+					"Library",
+					"Application Support",
+					"excalidraw-canvas",
+				)
+			: join(fs.realpathSync(options.xdgState), "excalidraw-canvas");
 	const storageLock = join(
-		fs.realpathSync(options.xdgState),
-		"excalidraw-canvas",
+		stateRoot,
 		"codex-workbench",
 		"codex-home",
 		".archboard-codex-process.lock",

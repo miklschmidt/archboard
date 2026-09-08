@@ -21,6 +21,7 @@ import type { FixtureRecord } from "./support/codex-workbench-lifecycle.ts";
 const { join } = path;
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/canvas-state/fixtures/fake-codex-production.ts");
+const processObservationModule = join(repoRoot, "src/shared/process-observation/index.ts");
 
 function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, "defer">>): string {
 	const root = mkdtempSync(join(tmpdir(), "archboard-replacement-census-"));
@@ -37,7 +38,7 @@ function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, 
 			)
 			.replace(
 				'import { appendFileSync, readFileSync } from "node:fs";',
-				'import { appendFileSync, readFileSync, readdirSync } from "node:fs";',
+				`import { appendFileSync, readFileSync } from "node:fs";\nimport { listProcessObservations } from ${JSON.stringify(processObservationModule)};`,
 			)
 			.replace(
 				'record({ kind: "app_server_spawn", pid: process.pid, args: process.argv.slice(2) });',
@@ -45,16 +46,9 @@ function replacementCensusSource(resources: Readonly<Pick<AsyncDisposableStack, 
 const startupControl = JSON.parse(readFileSync(controlPath, "utf8")) as { priorGroup?: unknown };
 if (Number.isSafeInteger(startupControl.priorGroup)) {
 	const priorGroup = Number(startupControl.priorGroup);
-	const members = readdirSync("/proc", { withFileTypes: true }).flatMap((entry) => {
-		if (!entry.isDirectory() || !/^\d+$/u.test(entry.name)) return [];
-		try {
-			const stat = readFileSync("/proc/" + entry.name + "/stat", "utf8");
-			const fields = stat.slice(stat.lastIndexOf(")") + 2).trim().split(/\s+/u);
-			return Number(fields[2]) === priorGroup && fields[0] !== "Z" && fields[0] !== "X"
-				? [Number(entry.name)]
-				: [];
-		} catch { return []; }
-	});
+	const members = listProcessObservations()
+		.filter((observation) => observation.state !== "zombie" && observation.pgid === priorGroup)
+		.map((observation) => observation.pid);
 	record({ kind: "prior_group_census_at_spawn", group: priorGroup, members });
 }`,
 			),
