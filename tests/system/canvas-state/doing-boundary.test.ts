@@ -38,7 +38,11 @@ describe.serial("doing write boundary", () => {
 		const canvas = await startOwnedCanvas({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
-			env: { LOG_FILE_PATH: join(root, "canvas.log") },
+			env: {
+				LOG_FILE_PATH: join(root, "canvas.log"),
+				// Write refusals must not depend on renderer availability.
+				ARCHBOARD_RENDERER_CHROMIUM: join(root, "missing-chromium"),
+			},
 		});
 		resources.defer(() => canvas.dispose());
 		const request = createRequester(canvas);
