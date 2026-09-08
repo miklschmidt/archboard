@@ -10,6 +10,7 @@ import {
 	createArtifactFixture,
 } from "./support/artifact-fixture.ts";
 import { checkoutRoot } from "./support/package-cli.ts";
+import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 
 const proofSchema = z.object({
 	schemaVersion: z.literal(7),
@@ -47,64 +48,71 @@ function validateArtifacts(directory: string): void {
 }
 
 describe("command contract artifact generation", () => {
-	test("generates exact typed bytes and public proof views twice from absent directories", () => {
-		using fixture = createArtifactFixture();
-		const statusBefore = fixture.status();
-		expect(statusBefore.status, artifactFailure(statusBefore)).toBe(0);
-		expect(existsSync(fixture.first)).toBe(false);
-		expect(existsSync(fixture.second)).toBe(false);
-		const first = fixture.generate(fixture.first);
-		const second = fixture.generate(fixture.second);
-		expect(first.status, artifactFailure(first)).toBe(0);
-		expect(second.status, artifactFailure(second)).toBe(0);
-		expect(first.stderr, artifactFailure(first)).toContain("bun scripts/generate-cli-contract.ts");
-		expect(second.stderr, artifactFailure(second)).toContain(
-			"bun scripts/generate-cli-contract.ts",
-		);
-		expect(fixture.files(fixture.first)).toEqual(artifactNames.toSorted());
-		expect(fixture.files(fixture.second)).toEqual(artifactNames.toSorted());
-		for (const name of artifactNames) {
-			expect(fixture.bytes(fixture.first, name)).toEqual(fixture.bytes(fixture.second, name));
-		}
-		validateArtifacts(fixture.first);
-		validateArtifacts(fixture.second);
-		const proof = proofSchema.parse(
-			JSON.parse(fixture.bytes(fixture.first, "command-contract-proof.json").toString()),
-		);
-		expect(proof.routes.map((route) => route.name)).toEqual(
-			proof.contracts.map((contract) => contract.name),
-		);
-		expect(proof.routes).toEqual(
-			cliContractRegistry().map(({ contract: _contract, ...route }) => route),
-		);
-		const proofJson = fixture.bytes(fixture.first, "command-contract-proof.json").toString();
-		expect(proof.routes.every((route) => !("handlerName" in route))).toBeTrue();
-		for (const privateName of ["pendingArtifact", "artifactSchema", "CommanderArgvParser"]) {
-			expect(proofJson, privateName).not.toContain(privateName);
-		}
-		expect(proofJson).not.toMatch(/"stdout"\s*:/);
-		const proofMarkdown = fixture.bytes(fixture.first, "command-contract-proof.md").toString();
-		expect(proofMarkdown).not.toMatch(/^Usage: `archboard/m);
-		expect(proofMarkdown.match(/^Usage:\n\n```text\narchboard /gm)).toHaveLength(
-			proof.contracts.length,
-		);
-		const auditMarkdown = fixture.bytes(fixture.first, "cli-command-audit.md").toString();
-		expect(auditMarkdown.match(/^\| +`[^`]+` +\|/gm)).toHaveLength(audit.entries.length);
-		for (const workflow of audit.workflows) {
-			expect(auditMarkdown, workflow.name).toContain(`### ${workflow.name}`);
-		}
-		for (const name of artifactNames) {
-			const ignored = fixture.git([
-				"check-ignore",
-				"--quiet",
-				join("docs", "design", "generated", name),
-			]);
-			expect(ignored.status, artifactFailure(ignored)).toBe(0);
-		}
-		const statusAfter = fixture.status();
-		expect(statusAfter.status, artifactFailure(statusAfter)).toBe(0);
-		expect(statusAfter.stdout, artifactFailure(statusAfter)).toBe(statusBefore.stdout);
-	});
+	// Two cold generators took 13.3s under a half-CPU quota (TASK-162).
+	test(
+		"generates exact typed bytes and public proof views twice from absent directories",
+		() => {
+			using fixture = createArtifactFixture();
+			const statusBefore = fixture.status();
+			expect(statusBefore.status, artifactFailure(statusBefore)).toBe(0);
+			expect(existsSync(fixture.first)).toBe(false);
+			expect(existsSync(fixture.second)).toBe(false);
+			const first = fixture.generate(fixture.first);
+			const second = fixture.generate(fixture.second);
+			expect(first.status, artifactFailure(first)).toBe(0);
+			expect(second.status, artifactFailure(second)).toBe(0);
+			expect(first.stderr, artifactFailure(first)).toContain(
+				"bun scripts/generate-cli-contract.ts",
+			);
+			expect(second.stderr, artifactFailure(second)).toContain(
+				"bun scripts/generate-cli-contract.ts",
+			);
+			expect(fixture.files(fixture.first)).toEqual(artifactNames.toSorted());
+			expect(fixture.files(fixture.second)).toEqual(artifactNames.toSorted());
+			for (const name of artifactNames) {
+				expect(fixture.bytes(fixture.first, name)).toEqual(fixture.bytes(fixture.second, name));
+			}
+			validateArtifacts(fixture.first);
+			validateArtifacts(fixture.second);
+			const proof = proofSchema.parse(
+				JSON.parse(fixture.bytes(fixture.first, "command-contract-proof.json").toString()),
+			);
+			expect(proof.routes.map((route) => route.name)).toEqual(
+				proof.contracts.map((contract) => contract.name),
+			);
+			expect(proof.routes).toEqual(
+				cliContractRegistry().map(({ contract: _contract, ...route }) => route),
+			);
+			const proofJson = fixture.bytes(fixture.first, "command-contract-proof.json").toString();
+			expect(proof.routes.every((route) => !("handlerName" in route))).toBeTrue();
+			for (const privateName of ["pendingArtifact", "artifactSchema", "CommanderArgvParser"]) {
+				expect(proofJson, privateName).not.toContain(privateName);
+			}
+			expect(proofJson).not.toMatch(/"stdout"\s*:/);
+			const proofMarkdown = fixture.bytes(fixture.first, "command-contract-proof.md").toString();
+			expect(proofMarkdown).not.toMatch(/^Usage: `archboard/m);
+			expect(proofMarkdown.match(/^Usage:\n\n```text\narchboard /gm)).toHaveLength(
+				proof.contracts.length,
+			);
+			const auditMarkdown = fixture.bytes(fixture.first, "cli-command-audit.md").toString();
+			expect(auditMarkdown.match(/^\| +`[^`]+` +\|/gm)).toHaveLength(audit.entries.length);
+			for (const workflow of audit.workflows) {
+				expect(auditMarkdown, workflow.name).toContain(`### ${workflow.name}`);
+			}
+			for (const name of artifactNames) {
+				const ignored = fixture.git([
+					"check-ignore",
+					"--quiet",
+					join("docs", "design", "generated", name),
+				]);
+				expect(ignored.status, artifactFailure(ignored)).toBe(0);
+			}
+			const statusAfter = fixture.status();
+			expect(statusAfter.status, artifactFailure(statusAfter)).toBe(0);
+			expect(statusAfter.stdout, artifactFailure(statusAfter)).toBe(statusBefore.stdout);
+		},
+		TEST_WALL_CLOCK_BUDGET_MS,
+	);
 
 	test("reports generated files in the declared write order", () => {
 		using fixture = createArtifactFixture();
