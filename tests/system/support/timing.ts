@@ -212,13 +212,13 @@ const TEST_BOARD_RENDERER_STARTUP_FAILURE_TIMEOUT_MS = 3000;
 /** The static fixture performs six loopback reads and starts no Chromium process. */
 const TEST_BOARD_RENDERER_FIXTURE_TIMEOUT_MS = 1000;
 
-/** Lazy Chromium startup plus concurrent PNG/SVG measured below 2s; no routine case gets a product-timeout sum. */
-const TEST_SERVER_RENDERING_CASE_TIMEOUT_MS = 5000;
+/** Cold PNG/SVG workflows measured 11.49–13.09s under a half-CPU quota (TASK-162), within the normal wall-clock ceiling. */
+const TEST_SERVER_RENDERING_CASE_TIMEOUT_MS = TEST_WALL_CLOCK_BUDGET_MS;
 
 /** A healthy pre-render human hold is immediate; 400ms fails the focused owner before a product lease can expire. */
 const TEST_SERVER_RENDERING_HOLD_TIMEOUT_MS = 400;
 
-/** Missing Chromium is a preflight refusal and should never approach the 5s product startup bound. */
+/** Missing Chromium is a preflight refusal and should never approach the product startup bound. */
 const TEST_SERVER_RENDERING_FAILURE_CASE_TIMEOUT_MS = 2000;
 
 export {
