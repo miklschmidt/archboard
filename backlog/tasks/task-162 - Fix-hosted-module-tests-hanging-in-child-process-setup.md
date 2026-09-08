@@ -1,11 +1,11 @@
 ---
 id: TASK-162
 title: Restore hosted CLI and board-rendering CI
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-08 00:40'
-updated_date: '2026-09-08 02:52'
+updated_date: '2026-09-08 03:02'
 labels: []
 dependencies: []
 references:
@@ -13,6 +13,8 @@ references:
   - 'https://github.com/miklschmidt/archboard/actions/runs/34175436997'
   - 'https://github.com/miklschmidt/archboard/actions/runs/34176058299'
   - 'https://github.com/miklschmidt/archboard/actions/runs/34177519450'
+  - 'https://github.com/miklschmidt/archboard/actions/runs/34181573987'
+  - 'https://github.com/miklschmidt/archboard/actions/runs/34181659211'
 priority: high
 type: bug
 ordinal: 314000
@@ -28,13 +30,13 @@ The banner push exposed an aggregate CLI compatibility timeout, Chromium sandbox
 <!-- AC:BEGIN -->
 - [x] #1 The failing hosted module cases complete successfully without weakening lint, type, test assertions or CI coverage.
 - [x] #2 A repeatable focused reproduction demonstrates the cause and passes after the fix.
-- [ ] #3 GitHub Actions succeeds for the pushed fix commit.
+- [x] #3 GitHub Actions succeeds for the pushed fix commit.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Give independent CLI compatibility modes separate cases with their original assertions and deadlines. Use the installed sandboxed Chrome binary on the hosted runner. Validate write intent before Mermaid preparation while preserving renderer cancellation and board-lock phase reporting. Apply a measured ten-second cold renderer startup deadline and the existing twenty-second test ceiling to composite rendering workflows. Run the full local gate, commit and push each focused fix, and monitor GitHub Actions until the latest revision passes.
+Give independent CLI compatibility modes separate cases with their original assertions and deadlines. Use installed sandboxed Chrome on the hosted runner. Validate write intent before Mermaid preparation while preserving cancellation and board-lock reporting. Apply the measured ten-second cold renderer startup deadline and the existing twenty-second test ceiling to composite rendering and artifact-generation cases. Verify the complete local gate and the pushed hosted gate, then remove temporary diagnostics.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -67,4 +69,12 @@ The artifact aggregate passes in 4416 ms with one CPU, fails at 5174 ms with hal
 The implemented artifact budget passes the unchanged four-case owner locally (56 assertions) and two half-CPU repetitions of the aggregate at 15.28 and 14.71 seconds (86 assertions), within the existing twenty-second ceiling. Diagnostic branch run 34181046413 includes this test fix and retains the temporary observer so any recurring broader process stall can still be captured. A full normal local gate is running before the main-branch commit.
 
 The complete normal bun run check passes with the artifact budget change, including all browser owners. Diagnostic run 34181046413 passes the artifact case in 3692 ms and the vault workflow in 4148 ms, but its first renderer fails to open the Chrome control port within startup, causing the two concurrent first renders to exceed their twenty-second case ceiling. This is a control-port startup failure, not the earlier measured renderer-page delay. Extend the temporary observer to inspect Chrome state and independently probe its loopback control port.
+
+Verified main commit 1a9bf229317c26bf14a323be946770b0af661c5a with successful run 34181573987: 2660 module, 305 hosted system, and 8 repository tests passed; only the existing hosted exclusion was skipped. The complete local bun run check also passed, including all 306 system tests and every browser owner. Separate diagnostic run 34181659211 passed and independently observed the Chrome control port answering HTTP 200. The earlier intermittent process/control-port stalls did not recur in these two runs; the captures do not establish an upstream Bun defect, so no speculative runtime change is claimed. The temporary remote branch and worktree are removed, and diagnostic scripts and logs remain outside the repository.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Restored green hosted CI with independent CLI compatibility cases, sandboxed Chrome discovery, write validation before Mermaid rendering, and measured startup/composite-test budgets. Verified the full normal local check, the pushed main run 34181573987, and independent diagnostic run 34181659211. Preserved all assertions, lint/type rules, and existing CI coverage; removed temporary diagnostics from the repository.
+<!-- SECTION:FINAL_SUMMARY:END -->
