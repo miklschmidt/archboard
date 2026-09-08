@@ -2,10 +2,14 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import path from "node:path";
 import type { Readable } from "node:stream";
+import { readProcessObservation } from "@/shared/process-observation";
 
 import { CodexProcessError } from "../process.js";
 import { createCodexProcessForTesting as createCodexProcess } from "../testing.js";
-import { CODEX_TERM_GRACE_MS } from "../../../shared/timing/timing.js";
+import {
+	CODEX_TERM_GRACE_MS,
+	PROCESS_GROUP_OBSERVATION_POLL_MS,
+} from "../../../shared/timing/timing.js";
 import {
 	fixture,
 	processOptions as options,
@@ -17,15 +21,7 @@ import {
 import { driveManual, fakeLifecycle, manualScheduler } from "./lifecycle-support.js";
 
 function processState(pid: number): string | undefined {
-	try {
-		const stat = fs.readFileSync(`/proc/${pid}/stat`, "utf8");
-		return stat
-			.slice(stat.lastIndexOf(")") + 2)
-			.trim()
-			.split(/\s+/u)[0];
-	} catch {
-		return undefined;
-	}
+	return readProcessObservation(pid)?.state;
 }
 
 describe("Codex process lifecycle", () => {
@@ -157,7 +153,7 @@ describe("Codex process lifecycle", () => {
 				failure = cause;
 			}
 			expect(failure).toBeInstanceOf(CodexProcessError);
-			expect((failure as CodexProcessError).code).toBe("spawn_failed");
+			expect((failure as CodexProcessError).code).toBe("process_group_unavailable");
 			expect(owner.snapshot()).toMatchObject({ state: "terminal_failure", pid: null });
 			expect(owner.currentChild()).toBeNull();
 			expect((await driveManual(owner.stop(), lifecycle.clock)).state).toBe("stopped");
@@ -324,8 +320,11 @@ describe("Codex process lifecycle", () => {
 			});
 			expect(stopped.state).toBe("stopped");
 			expect(stopped.lastExit?.classification).toBe("early_exit");
-			expect(clock.now()).toBe(CODEX_TERM_GRACE_MS);
-			expect([undefined, "Z", "X"]).toContain(processState(descendantPid));
+			expect(clock.now()).toBeGreaterThanOrEqual(CODEX_TERM_GRACE_MS);
+			expect(clock.now()).toBeLessThanOrEqual(
+				CODEX_TERM_GRACE_MS + PROCESS_GROUP_OBSERVATION_POLL_MS,
+			);
+			expect([undefined, "zombie"]).toContain(processState(descendantPid));
 		} finally {
 			try {
 				if (owner) {
@@ -405,10 +404,13 @@ describe("Codex process lifecycle", () => {
 		if (leaderPid === undefined || descendantPid === undefined) {
 			throw new Error("Expected the leader and descendant process ids.");
 		}
-		expect([undefined, "Z", "X"]).toContain(processState(leaderPid));
-		expect([undefined, "Z", "X"]).toContain(processState(descendantPid));
+		expect([undefined, "zombie"]).toContain(processState(leaderPid));
+		expect([undefined, "zombie"]).toContain(processState(descendantPid));
 		expect(fs.existsSync(root)).toBe(false);
-		expect(clock.now()).toBe(CODEX_TERM_GRACE_MS);
+		expect(clock.now()).toBeGreaterThanOrEqual(CODEX_TERM_GRACE_MS);
+		expect(clock.now()).toBeLessThanOrEqual(
+			CODEX_TERM_GRACE_MS + PROCESS_GROUP_OBSERVATION_POLL_MS,
+		);
 	});
 
 	test("sends TERM, then KILL, to a child that refuses TERM", async () => {

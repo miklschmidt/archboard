@@ -155,6 +155,11 @@
 			"argv": ["install-skill", "--dir", "{{SKILL_ROOT}}", "--repo", "/proc", "--yes"],
 			"normalizations": [
 				{
+					"value": "fixedBaseRepo",
+					"token": "/proc",
+					"reason": "The fixed-base repository probe uses a local broken document symlink on every supported Unix filesystem."
+				},
+				{
 					"value": "outside",
 					"token": "{{OUTSIDE}}",
 					"reason": "The CLI compatibility harness uses a fresh temporary directory."

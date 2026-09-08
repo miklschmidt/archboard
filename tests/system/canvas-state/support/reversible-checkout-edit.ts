@@ -22,7 +22,8 @@ const status = (cwd: string): string => {
 
 const timestamp = (nanoseconds: bigint): string => {
 	const billion = 1_000_000_000n;
-	return `@${nanoseconds / billion}.${String(nanoseconds % billion).padStart(9, "0")}`;
+	const wholeSecond = new Date(Number(nanoseconds / billion) * 1000).toISOString().slice(0, 19);
+	return `${wholeSecond}.${String(nanoseconds % billion).padStart(9, "0")}Z`;
 };
 
 function reversibleCheckoutEdit(cwd: string, paths: string[]): ReversibleCheckoutEdit {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import compatibilityJson from "./fixtures/fixed-base-compatibility.json";
@@ -14,7 +14,7 @@ import {
 } from "./support/package-cli.ts";
 
 const normalizationSchema = z.object({
-	value: z.enum(["outside", "closedUrl", "foreignUrl"]),
+	value: z.enum(["outside", "closedUrl", "foreignUrl", "fixedBaseRepo"]),
 	token: z.string(),
 	reason: z.string(),
 });
@@ -56,7 +56,12 @@ const fixedBaseCompatibilitySchema = z.object({
 });
 const compatibility = fixedBaseCompatibilitySchema.parse(compatibilityJson);
 type CompatibilityRecord = z.infer<typeof compatibilityRecordSchema>;
-type Runtime = { outside: string; closedUrl: string; foreignUrl?: string };
+type Runtime = {
+	outside: string;
+	closedUrl: string;
+	foreignUrl?: string;
+	fixedBaseRepo?: string;
+};
 
 const normalize = (value: string, record: CompatibilityRecord, runtime: Runtime) =>
 	record.normalizations.reduce(
@@ -66,7 +71,9 @@ const normalize = (value: string, record: CompatibilityRecord, runtime: Runtime)
 
 const argvFor = (record: CompatibilityRecord, owner: PackageCliOwner) =>
 	record.argv.map((token) =>
-		token.replaceAll("{{SKILL_ROOT}}", join(owner.outside, "compat-skills")),
+		token
+			.replaceAll("{{SKILL_ROOT}}", join(owner.outside, "compat-skills"))
+			.replaceAll("/proc", join(owner.outside, "fixed-base-repo")),
 	);
 
 const prepare = (record: CompatibilityRecord, owner: PackageCliOwner) => {
@@ -74,7 +81,13 @@ const prepare = (record: CompatibilityRecord, owner: PackageCliOwner) => {
 		return;
 	}
 	const skillRoot = join(owner.outside, "compat-skills");
+	const fixedBaseRepo = join(owner.outside, "fixed-base-repo");
 	rmSync(skillRoot, { recursive: true, force: true });
+	rmSync(fixedBaseRepo, { recursive: true, force: true });
+	mkdirSync(fixedBaseRepo, { recursive: true });
+	// A document symlink whose parent is absent makes the late setup write fail
+	// with ENOENT on every supported Unix filesystem while keeping the probe local.
+	symlinkSync("missing/AGENTS.md", join(fixedBaseRepo, "AGENTS.md"));
 	const installed = join(skillRoot, "archboard");
 	mkdirSync(installed, { recursive: true });
 	writeFileSync(join(installed, "old.txt"), "old");
@@ -133,7 +146,7 @@ const localEffects = (
 		if (
 			!existsSync(join(installed, "old.txt")) &&
 			existsSync(join(installed, "SKILL.md")) &&
-			!existsSync("/proc/AGENTS.md")
+			!existsSync(join(owner.outside, "fixed-base-repo", "AGENTS.md"))
 		) {
 			return ["existing-skill-replaced", "repository-doc-not-written"];
 		}
@@ -156,7 +169,13 @@ async function runContext(
 ) {
 	const http = stack.use(createCliHttpDouble(observed));
 	http.setCompatibilityRecord(record.name);
-	const runtime: Runtime = { outside: owner.outside, closedUrl: await closedServerUrl() };
+	const runtime: Runtime = {
+		outside: owner.outside,
+		closedUrl: await closedServerUrl(),
+		...(record.fixture === "existing-skill-proc-repo"
+			? { fixedBaseRepo: join(owner.outside, "fixed-base-repo") }
+			: {}),
+	};
 	let options: PackageRunOptions = { url: http.url };
 	if (record.fixture === "closed-server") {
 		options = { url: runtime.closedUrl };

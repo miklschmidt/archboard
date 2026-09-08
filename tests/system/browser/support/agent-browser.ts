@@ -1,8 +1,11 @@
-import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { isAbsolute, join, relative, resolve } from "node:path";
 
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS, TEST_BROWSER_POLL_MS } from "../../support/timing.ts";
+import { browserProfileForSession } from "./browser-executable.ts";
+import { processIdsWithEnvironmentMarkers } from "./process-environment-census.ts";
 
 interface BrowserTestRoots {
 	laneRoot: string;
@@ -16,22 +19,21 @@ type TestEnvironment = Readonly<Record<string, string | undefined>>;
 
 function runCanvasCli(base: string, vault: string, args: string[]): string {
 	const repoRoot = resolve(import.meta.dir, "../../../..");
-	const result = spawnSync(
-		"timeout",
-		["--signal=TERM", "--kill-after=5s", "20s", join(repoRoot, "bin/canvas"), ...args],
-		{
-			cwd: repoRoot,
-			encoding: "utf8",
-			env: {
-				...process.env,
-				ARCHBOARD_VAULT: vault,
-				EXPRESS_SERVER_URL: base,
-				EXCALIDRAW_NO_AUTOSTART: "1",
-			},
+	const result = spawnSync(join(repoRoot, "bin/canvas"), args, {
+		cwd: repoRoot,
+		encoding: "utf8",
+		timeout: TEST_BROWSER_COMMAND_TIMEOUT_MS,
+		killSignal: "SIGKILL",
+		env: {
+			...process.env,
+			ARCHBOARD_VAULT: vault,
+			EXPRESS_SERVER_URL: base,
+			EXCALIDRAW_NO_AUTOSTART: "1",
 		},
-	);
-	if (result.status !== 0) {
-		throw new Error(result.stderr);
+	});
+	if (result.error || result.status !== 0) {
+		const detail = result.error?.message ?? (result.stderr || `exit ${result.status ?? "unknown"}`);
+		throw new Error(detail);
 	}
 	return result.stdout;
 }
@@ -107,6 +109,9 @@ function browserTestEnvironment(): Record<string, string> {
 	if (process.env["AGENT_BROWSER_EXECUTABLE_PATH"]) {
 		env["AGENT_BROWSER_EXECUTABLE_PATH"] = process.env["AGENT_BROWSER_EXECUTABLE_PATH"];
 	}
+	if (process.env["AGENT_BROWSER_PROFILE"]) {
+		env["AGENT_BROWSER_PROFILE"] = process.env["AGENT_BROWSER_PROFILE"];
+	}
 	if (process.env["AGENT_BROWSER_DEFAULT_TIMEOUT"]) {
 		env["AGENT_BROWSER_DEFAULT_TIMEOUT"] = process.env["AGENT_BROWSER_DEFAULT_TIMEOUT"];
 	}
@@ -115,6 +120,11 @@ function browserTestEnvironment(): Record<string, string> {
 
 function canvasTestEnvironment(values: TestEnvironment = {}): Record<string, string | undefined> {
 	const env: Record<string, string | undefined> = browserTestEnvironment();
+	// The test page and its server renderer are separate browser launches.
+	// Preserve the renderer override instead of falling back to managed Chrome.
+	if (process.env["ARCHBOARD_RENDERER_CHROMIUM"]) {
+		env["ARCHBOARD_RENDERER_CHROMIUM"] = process.env["ARCHBOARD_RENDERER_CHROMIUM"];
+	}
 	env["LOG_FILE_PATH"] = join(browserTestRoots().ownerRoot, "canvas.log");
 	for (const name of CLEARED_CANVAS_ENV) {
 		env[name] = undefined;
@@ -180,22 +190,10 @@ function registerCanvasBase(base: string): void {
 }
 
 function ownedProcessIds(namespace: string, session: string): number[] {
-	const wanted = [`AGENT_BROWSER_NAMESPACE=${namespace}`, `AGENT_BROWSER_SESSION=${session}`];
-	const found: number[] = [];
-	for (const entry of readdirSync("/proc", { withFileTypes: true })) {
-		if (!entry.isDirectory() || !/^\d+$/.test(entry.name)) {
-			continue;
-		}
-		try {
-			const env = readFileSync(join("/proc", entry.name, "environ"), "utf8").split("\0");
-			if (wanted.some((item) => env.includes(item))) {
-				found.push(Number(entry.name));
-			}
-		} catch {
-			// A process may exit between listing /proc and reading its environment.
-		}
-	}
-	return found;
+	return processIdsWithEnvironmentMarkers([
+		`AGENT_BROWSER_NAMESPACE=${namespace}`,
+		`AGENT_BROWSER_SESSION=${session}`,
+	]);
 }
 
 function namespaceArtifacts(socketDir: string): string[] {
@@ -239,9 +237,15 @@ interface BrowserCommandOptions {
 async function createAgentBrowser(): Promise<AgentBrowserSession> {
 	const roots = browserTestRoots();
 	const env = browserTestEnvironment();
-	const session = requiredEnvironment("AGENT_BROWSER_SESSION");
+	const configuredSession = requiredEnvironment("AGENT_BROWSER_SESSION");
+	const identity = randomUUID().slice(0, 8);
+	const session =
+		process.platform === "darwin" ? `${configuredSession}-${identity}` : configuredSession;
 	const namespace = requiredEnvironment("AGENT_BROWSER_NAMESPACE");
 	const socketDir = requiredEnvironment("AGENT_BROWSER_SOCKET_DIR");
+	const browserProfile = browserProfileForSession(roots.ownerRoot, identity);
+	env["AGENT_BROWSER_SESSION"] = session;
+	if (browserProfile) env["AGENT_BROWSER_PROFILE"] = browserProfile;
 	const cleanupObservationMs = browserCleanupObservationMs(
 		requiredEnvironment("AGENT_BROWSER_IDLE_TIMEOUT_MS"),
 	);

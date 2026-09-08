@@ -11,6 +11,7 @@ import { createRequester, waitFor } from "../canvas-state/support/http.ts";
 import { processExists } from "../support/owned-canvas.ts";
 import {
 	extendFixture,
+	codexWorkbenchRoot,
 	type FixtureRecord,
 	pane,
 	records,
@@ -161,7 +162,7 @@ describe.serial("composed Codex process lifecycle", () => {
 			}, "managed-requirement workbench readiness");
 			const state = snapshot(await socket.request("snapshot"));
 			expect(state["readiness"]).toMatchObject({ state: "thread_capable" });
-			const root = join(fixture.root, "state/excalidraw-canvas/codex-workbench");
+			const root = codexWorkbenchRoot(fixture.root);
 			const codexHome = join(root, "codex-home");
 			const sqliteHome = join(root, "sqlite-home");
 			const configPath = join(codexHome, "config.toml");
@@ -234,9 +235,7 @@ describe.serial("composed Codex process lifecycle", () => {
 			);
 			expect(childPids.every((pid) => typeof pid === "number")).toBeTrue();
 			expect(new Set(childPids).size).toBe(2);
-			const homes = fixtures.map((fixture) =>
-				join(fixture.root, "state/excalidraw-canvas/codex-workbench/codex-home"),
-			);
+			const homes = fixtures.map((fixture) => join(codexWorkbenchRoot(fixture.root), "codex-home"));
 			expect(new Set(homes).size).toBe(2);
 			for (const [index, canvas] of canvases.entries()) {
 				const clientId = `two-home-${index}`;

@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { readProcessObservation } from "@/shared/process-observation";
 
 import {
 	GIT_PROCESS_GROUP_CLEANUP_MS,
@@ -208,6 +209,6 @@ test("a normal-looking leader exit reports and reaps its redirected descendant",
 	const descendant = Number(readFileSync(marker, "utf8").trim());
 	expect(rejected).toBeInstanceOf(Error);
 	expect(String(rejected)).toContain("survived normal completion");
-	expect(existsSync(`/proc/${descendant}`)).toBeFalse();
+	expect(readProcessObservation(descendant)).toBeUndefined();
 	rmSync(root, { recursive: true, force: true });
 });

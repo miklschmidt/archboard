@@ -74,6 +74,7 @@ test("the opener dialog keeps its rendered interaction and persistence contract"
 		Boolean,
 		"the named settings trigger",
 	);
+	await setTheme(browser, "light");
 	await browser.run(["console", "--clear"]);
 	await browser.run(["errors", "--clear"]);
 	await installFetchDouble(browser);

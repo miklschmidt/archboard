@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { TEST_DELAYED_CHECKOUT_RELEASE_POLL_MS } from "../../support/timing.ts";
+import { readProcessObservation } from "@/shared/process-observation";
 
 async function waitForRecordedPid(file: string): Promise<number> {
 	const [pid] = await waitForRecordedPids(file, 1);
@@ -48,12 +49,15 @@ async function expectPidAbsent(pid: number): Promise<void> {
 		throw new Error(`Cannot verify malformed delayed Git PID ${String(pid)}.`);
 	}
 	const deadline = Date.now() + 1_000;
-	while (existsSync(`/proc/${pid}`) && Date.now() < deadline) {
+	while (true) {
+		const observation = readProcessObservation(pid);
+		if (observation === undefined) break;
+		if (Date.now() >= deadline) break;
 		await Bun.sleep(5);
 	}
-	const remains = existsSync(`/proc/${pid}`);
-	const detail = remains ? readFileSync(`/proc/${pid}/stat`, "utf8") : "absent";
-	expect(remains, `Git pid ${pid} survived canvas teardown: ${detail}`).toBeFalse();
+	const observation = readProcessObservation(pid);
+	const detail = observation === undefined ? "absent" : JSON.stringify(observation);
+	expect(observation, `Git pid ${pid} survived canvas teardown: ${detail}`).toBeUndefined();
 }
 
 async function expectRecordedPidsAbsent(file: string): Promise<void> {

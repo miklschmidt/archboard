@@ -263,8 +263,11 @@ const GIT_COMMAND_TIMEOUT_MS = 5000;
  */
 const GIT_PROCESS_GROUP_CLEANUP_MS = CANVAS_MUTATION_DRAIN_TIMEOUT_MS;
 
-/** Observation cadence while proving a killed Git process group is absent. */
-const GIT_PROCESS_GROUP_POLL_MS = 10;
+/** Observation cadence while proving a killed process group is absent. */
+const PROCESS_GROUP_OBSERVATION_POLL_MS = 10;
+
+/** Git process cleanup uses the shared process-group observation cadence. */
+const GIT_PROCESS_GROUP_POLL_MS = PROCESS_GROUP_OBSERVATION_POLL_MS;
 
 /**
  * Outer grace before an interrupted CLI restores the signal's default action.
@@ -547,6 +550,7 @@ export {
 	GIT_COMMAND_TIMEOUT_MS,
 	GIT_PROCESS_GROUP_CLEANUP_MS,
 	GIT_PROCESS_GROUP_POLL_MS,
+	PROCESS_GROUP_OBSERVATION_POLL_MS,
 	CLI_INTERRUPT_CLEANUP_MS,
 	CODEX_PROCESS_RESTART_BASE_MS,
 	CODEX_PROCESS_RESTART_MAX_MS,

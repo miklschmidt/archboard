@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -40,7 +40,7 @@ export function realEpochFixture(
 	authority: IdentityAuthority = createIdentityAuthority(),
 	options: RealEpochOptions = {},
 ): RealEpochFixture {
-	const parent = mkdtempSync(join("/tmp", "archboard-thread-link-epoch-"));
+	const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-thread-link-epoch-")));
 	const root = join(parent, "epoch");
 	const codexHome = join(parent, "codex-home");
 	const sqliteHome = join(parent, "codex-sqlite");

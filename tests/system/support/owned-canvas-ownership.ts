@@ -24,8 +24,10 @@ function buildOwnedCanvasEnvironment(options: {
 	vault: string;
 	env?: OwnedCanvasEnvironment;
 }): OwnedCanvasEnvironment {
-	const toolEnvironment: OwnedCanvasEnvironment =
-		process.env["PATH"] === undefined ? {} : { PATH: process.env["PATH"] };
+	const toolEnvironment: OwnedCanvasEnvironment = {
+		PATH: process.env["PATH"],
+		ARCHBOARD_RENDERER_CHROMIUM: process.env["ARCHBOARD_RENDERER_CHROMIUM"],
+	};
 	return {
 		...toolEnvironment,
 		...options.env,
@@ -40,13 +42,18 @@ function buildOwnedCanvasEnvironment(options: {
 	};
 }
 
-const ownedCanvasNamespaceParent = os.tmpdir();
+// macOS exposes the temporary directory through a /var symlink. Keep the
+// owner namespace canonical so storage-root containment sees the same path
+// spelling as the filesystem.
+const ownedCanvasNamespaceParent = fs.realpathSync(os.tmpdir());
 const ownedCanvasNamespacePrefix = "archboard-owned-canvas-";
 const ownedCanvasNamespacePattern = /^archboard-owned-canvas-[A-Za-z0-9]{6}$/;
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 function createOwnedCanvasPaths(): OwnedCanvasPaths {
-	const root = fs.mkdtempSync(path.join(ownedCanvasNamespaceParent, ownedCanvasNamespacePrefix));
+	const root = fs.realpathSync(
+		fs.mkdtempSync(path.join(ownedCanvasNamespaceParent, ownedCanvasNamespacePrefix)),
+	);
 	const paths = {
 		root,
 		home: path.join(root, "home"),

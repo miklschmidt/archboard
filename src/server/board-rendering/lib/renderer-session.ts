@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { userInfo } from "node:os";
 import { join } from "node:path";
 
 import { processIdentity, type ProcessIdentity } from "@/runtime/engine/process-group";
@@ -16,7 +17,7 @@ import {
 	abortable,
 	captureGroup,
 	capturePipe,
-	ownedProcessIds,
+	ownedProcesses,
 	readablePipe,
 	rendererTempParent,
 	repositoryRoot,
@@ -32,6 +33,7 @@ import {
 	tearDownRendererSession,
 	type RendererSessionCleanup,
 } from "@/server/board-rendering/lib/renderer-teardown";
+import type { ProcessObservation } from "@/shared/process-observation";
 
 /** Deterministic fault and scheduling controls used only by the focused owner test. */
 interface BoardRenderingOwnerTestHooks extends RendererFixtureTestHooks {
@@ -45,7 +47,6 @@ interface BoardRenderingOwnerTestHooks extends RendererFixtureTestHooks {
 /** What the owner settled on, for the session it starts. */
 interface ResolvedOwnerOptions {
 	readonly chromiumPath: string;
-	readonly setsidPath: string;
 	readonly jobTimeoutMs: number;
 	readonly startupTimeoutMs: number;
 	readonly cleanupTimeoutMs: number;
@@ -54,6 +55,38 @@ interface ResolvedOwnerOptions {
 
 /** How long each poll waits before looking again. */
 const RENDERER_POLL_MS = 25;
+
+/**
+ * The native environment for Chromium. Darwin Chromium and CoreFoundation
+ * require the passwd-backed account home even when Archboard itself was
+ * launched with an isolated HOME. The writable browser profile and temporary
+ * files remain renderer-owned.
+ * @param tempRoot The renderer-owned temporary directory.
+ * @returns The environment for the Chromium process group.
+ */
+function rendererEnvironment(tempRoot: string): NodeJS.ProcessEnv {
+	return {
+		...process.env,
+		...(process.platform === "darwin" ? { HOME: userInfo().homedir } : {}),
+		TMPDIR: tempRoot,
+	};
+}
+
+/**
+ * Initialize the disposable profile with Chromium's automation preference for
+ * suppressing its default-browser prompt. This is an independent guard from
+ * --no-default-browser-check and cannot affect the person's browser profile.
+ * @param profile The renderer-owned user data directory.
+ */
+function prepareRendererProfile(profile: string): void {
+	const defaultProfile = join(profile, "Default");
+	mkdirSync(defaultProfile, { mode: 0o700 });
+	writeFileSync(
+		join(defaultProfile, "Preferences"),
+		`${JSON.stringify({ browser: { check_default_browser: false } })}\n`,
+		{ mode: 0o600 },
+	);
+}
 
 /** One headless Chromium, its renderer page, and the proof that it is gone. */
 class RendererSession {
@@ -67,7 +100,8 @@ class RendererSession {
 	#stderr: CapturedPipe | null = null;
 	#cdp: Cdp | null = null;
 	#closePromise: Promise<RendererSessionCleanup> | null = null;
-	readonly #observed = new Set<number>();
+	readonly #observed = new Map<string, ProcessObservation>();
+	readonly #observationErrors: string[] = [];
 
 	/**
 	 * A session is started through acquire, which is what owns the teardown of
@@ -233,7 +267,8 @@ class RendererSession {
 			group: this.#group,
 			stdout: this.#stdout,
 			stderr: this.#stderr,
-			observed: [...this.#observed],
+			observed: [...this.#observed.values()],
+			observationErrors: this.#observationErrors,
 			profile: this.#profile,
 			tempRoot: this.#tempRoot,
 			port: this.#port,
@@ -243,36 +278,38 @@ class RendererSession {
 	}
 
 	/**
-	 * Spawn Chromium under setsid, in a temporary root of its own, and start
+	 * Spawn Chromium in a detached process group, in a temporary root of its own, and start
 	 * watching its output and its process group.
 	 * @param options What the owner settled on.
 	 */
 	private async spawnChromium(options: ResolvedOwnerOptions): Promise<void> {
 		const chromiumPath = requiredExecutable("chromium", options.chromiumPath || undefined);
-		const setsidPath = requiredExecutable("setsid", options.setsidPath || undefined);
 		this.#tempRoot = mkdtempSync(join(rendererTempParent, "archboard-board-renderer-"));
 		options.testHooks.onTempRoot?.(this.#tempRoot);
 		this.#profile = join(this.#tempRoot, "profile");
 		mkdirSync(this.#profile, { mode: 0o700 });
+		prepareRendererProfile(this.#profile);
 		this.#port = await reserveLoopbackPort();
 		const child = Bun.spawn({
 			cmd: [
-				setsidPath,
 				chromiumPath,
 				"--headless=new",
 				"--disable-gpu",
 				"--no-first-run",
 				"--no-default-browser-check",
 				"--disable-crash-reporter",
+				// Keep the ephemeral profile out of the person's macOS keychain.
+				...(process.platform === "darwin" ? ["--use-mock-keychain", "--password-store=basic"] : []),
 				`--user-data-dir=${this.#profile}`,
 				`--remote-debugging-port=${this.#port}`,
 				"about:blank",
 			],
 			cwd: repositoryRoot,
-			env: { ...process.env, TMPDIR: this.#tempRoot },
+			env: rendererEnvironment(this.#tempRoot),
 			stdin: "ignore",
 			stdout: "pipe",
 			stderr: "pipe",
+			detached: true,
 		});
 		this.#child = child;
 		this.#stdout = capturePipe(readablePipe(child.stdout));
@@ -417,11 +454,19 @@ class RendererSession {
 
 	/** Note every process now under this session's leader, so teardown can prove they went. */
 	private observe(): void {
-		if (!this.#child) {
+		if (!this.#candidate) {
 			return;
 		}
-		for (const pid of ownedProcessIds(this.#child.pid)) {
-			this.#observed.add(pid);
+		try {
+			for (const observation of ownedProcesses(this.#candidate)) {
+				this.#observed.set(`${observation.pid}:${observation.startTime}`, observation);
+			}
+		} catch (error) {
+			this.#observationErrors.push(
+				`Renderer process tree could not be observed: ${
+					error instanceof Error ? error.message : String(error)
+				}`,
+			);
 		}
 	}
 }

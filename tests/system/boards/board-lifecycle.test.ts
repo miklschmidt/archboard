@@ -100,10 +100,11 @@ describe("board lifecycle", () => {
 		try {
 			const note =
 				'---\nboard: Payments\nvariant: current\n---\n\n# Excalidraw Data\n\n## Text Elements\n\n%%\n## Drawing\n```json\n{"type":"excalidraw","version":2,"elements":[],"appState":{}}\n```\n%%\n';
-			fs.writeFileSync(path.join(caseVault, "Payments.excalidraw.md"), note);
-			expect(vaultPathFor(parseBoardKey("payments"), caseVault)).toBe(
-				path.join(caseVault, "Payments.excalidraw.md"),
-			);
+			const preservedPath = path.join(caseVault, "Payments.excalidraw.md");
+			const lowerPath = path.join(caseVault, "payments.excalidraw.md");
+			fs.writeFileSync(preservedPath, note);
+			const caseSensitiveFilesystem = !fs.existsSync(lowerPath);
+			expect(vaultPathFor(parseBoardKey("payments"), caseVault)).toBe(preservedPath);
 			const readWithLowercaseAddress = readBoardFile(parseBoardKey("payments"), caseVault);
 			expect(readWithLowercaseAddress?.identity.displayName).toBe("Payments");
 			expect(readWithLowercaseAddress?.declaredKey).toBeUndefined();
@@ -118,24 +119,26 @@ describe("board lifecycle", () => {
 			expect(vaultPathFor(parseBoardKey("café"), caseVault)).toBe(
 				path.join(caseVault, `${decomposed}.excalidraw.md`),
 			);
-			fs.writeFileSync(
-				path.join(caseVault, "payments.excalidraw.md"),
-				note.replaceAll("Payments", "payments"),
-			);
-			const collided = listBoards(caseVault).filter((board) => board.key === "payments");
-			expect(collided).toHaveLength(2);
-			expect(collided.every((board) => board.collidesWith?.length === 1)).toBeTrue();
-			// A byte-equal note is its own answer; a spelling on disk under neither
-			// name still resolves the same way every time (ADR 0010, TASK-153).
-			expect(vaultPathFor(parseBoardKey("payments"), caseVault)).toBe(
-				path.join(caseVault, "payments.excalidraw.md"),
-			);
-			expect(vaultPathFor(parseBoardKey("Payments"), caseVault)).toBe(
-				path.join(caseVault, "Payments.excalidraw.md"),
-			);
-			expect(vaultPathFor(parseBoardKey("PAYMENTS"), caseVault)).toBe(
-				vaultPathFor(parseBoardKey("pAYMENTS"), caseVault),
-			);
+			if (caseSensitiveFilesystem) {
+				fs.writeFileSync(lowerPath, note.replaceAll("Payments", "payments"));
+				const collided = listBoards(caseVault).filter((board) => board.key === "payments");
+				expect(collided).toHaveLength(2);
+				expect(collided.every((board) => board.collidesWith?.length === 1)).toBeTrue();
+				// A byte-equal note is its own answer; a spelling on disk under neither
+				// name still resolves the same way every time (ADR 0010, TASK-153).
+				expect(vaultPathFor(parseBoardKey("payments"), caseVault)).toBe(lowerPath);
+				expect(vaultPathFor(parseBoardKey("Payments"), caseVault)).toBe(preservedPath);
+				expect(vaultPathFor(parseBoardKey("PAYMENTS"), caseVault)).toBe(
+					vaultPathFor(parseBoardKey("pAYMENTS"), caseVault),
+				);
+			} else {
+				expect(vaultPathFor(parseBoardKey("payments"), caseVault)).toBe(preservedPath);
+				expect(vaultPathFor(parseBoardKey("Payments"), caseVault)).toBe(preservedPath);
+				expect(
+					fs.readdirSync(caseVault).filter((file) => /^payments\.excalidraw\.md$/i.test(file)),
+				).toEqual(["Payments.excalidraw.md"]);
+				expect(fs.readFileSync(preservedPath, "utf8")).toBe(note);
+			}
 		} finally {
 			fs.rmSync(caseVault, { recursive: true, force: true });
 		}

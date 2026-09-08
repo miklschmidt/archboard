@@ -5,6 +5,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
+	realpathSync,
 	rmSync,
 	writeFileSync,
 } from "node:fs";
@@ -16,6 +17,7 @@ import {
 	GIT_COMMAND_TIMEOUT_MS,
 	GIT_PROCESS_GROUP_CLEANUP_MS,
 } from "../../../shared/timing/timing.ts";
+import { readProcessObservation } from "../../../shared/process-observation/index.ts";
 import { git } from "../git.js";
 
 /** Bound for the fake Git child to publish its startup marker. */
@@ -65,10 +67,10 @@ function recordedPid(file: string): number {
 
 async function expectPidAbsent(pid: number): Promise<void> {
 	const deadline = Date.now() + 1_000;
-	while (existsSync(`/proc/${pid}`) && Date.now() < deadline) {
+	while (readProcessObservation(pid) !== undefined && Date.now() < deadline) {
 		await Bun.sleep(5);
 	}
-	expect(existsSync(`/proc/${pid}`), `pid ${pid} must be reaped`).toBeFalse();
+	expect(readProcessObservation(pid), `pid ${pid} must be reaped`).toBeUndefined();
 }
 
 async function withFaultingFirstReader<T>(
@@ -190,11 +192,11 @@ test("Git process owner exits after one result and release", async () => {
 	}
 });
 
-test("real Git commands settle for success and nonzero exit", async () => {
+test("real detached Git commands settle for success and nonzero exit", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-git-real-"));
 	try {
 		expect(await git(root, ["init", "-q"])).toBeUndefined();
-		expect(await git(root, ["rev-parse", "--show-toplevel"])).toBe(root);
+		expect(await git(root, ["rev-parse", "--show-toplevel"])).toBe(realpathSync(root));
 		await expect(git(root, ["cat-file", "-e", "missing^{commit}"])).rejects.toMatchObject({
 			failure: "exit",
 		});
@@ -305,14 +307,22 @@ test("Git cleanup remains bounded when reader cancellation never settles", async
 	writeFileSync(executable, FAKE_GIT);
 	chmodSync(executable, 0o700);
 	const stalled = withStalledFirstReader(() =>
-		git(root, ["wait", marker], { executable, timeoutMs: 100 }),
+		git(root, ["wait", marker], { executable, timeoutMs: 1_000 }),
 	);
 	const stalledOutcome = stalled.result.then(
 		() => ({ kind: "resolved" as const }),
 		(error: unknown) => ({ kind: "rejected" as const, error }),
 	);
 	try {
-		await waitForFile(`${marker}.leader`);
+		const startup = await Promise.race([
+			waitForFile(`${marker}.leader`).then(() => ({ kind: "started" as const })),
+			stalledOutcome.then((outcome) => ({ kind: "settled" as const, outcome })),
+		]);
+		if (startup.kind === "settled") {
+			throw startup.outcome.kind === "rejected"
+				? startup.outcome.error
+				: new Error("The stalled-reader Git command settled before its child started.");
+		}
 		const outcome = await Promise.race([
 			stalledOutcome,
 			Bun.sleep(3 * GIT_PROCESS_GROUP_CLEANUP_MS).then(() => ({ kind: "deadline" as const })),

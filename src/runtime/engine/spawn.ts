@@ -1,5 +1,4 @@
 import { spawn, type ChildProcess } from "child_process";
-import { readFileSync } from "node:fs";
 import { Readable } from "node:stream";
 import { fileURLToPath } from "url";
 import { logger } from "@/runtime/engine/logger";
@@ -24,6 +23,7 @@ import {
 import { createCodexProcessGroupOperations } from "@/runtime/codex-process/process-group";
 import { CANVAS_STARTUP_READINESS_MS } from "@/shared/timing/timing";
 import { CANVAS_STARTUP_TERMINAL_FD_ENV } from "@/shared/canvas-startup-terminal";
+import { readProcessObservation } from "@/shared/process-observation";
 import {
 	completeFailedCanvasCleanup,
 	createCanvasStartupProtocolReader,
@@ -82,18 +82,13 @@ function waitForPromise<T>(pending: Promise<T>, timeoutMs: number): Promise<T | 
 }
 
 /**
- * Whether a process is frozen or already a zombie, read from `/proc`.
+ * Whether a process is gone, frozen, or already a zombie.
  * @param pid The process to inspect.
- * @returns True for a stopped, traced, zombie or dead state; false when unreadable.
+ * @returns True once the pid is absent or its kernel state cannot run.
  */
 function processIsStopped(pid: number): boolean {
-	try {
-		const stat = readFileSync(`/proc/${pid}/stat`, "utf8");
-		const state = stat.slice(stat.lastIndexOf(")") + 2).split(" ", 1)[0];
-		return state === "T" || state === "t" || state === "Z" || state === "X";
-	} catch {
-		return false;
-	}
+	const observation = readProcessObservation(pid);
+	return observation?.state !== "live";
 }
 
 interface EnsureResult {

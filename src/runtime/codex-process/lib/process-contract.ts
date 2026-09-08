@@ -41,6 +41,7 @@ type CodexProcessFailureCode =
 	| "binary_wrong_version"
 	| "storage_refused"
 	| "spawn_failed"
+	| "process_group_unavailable"
 	| "strict_config_rejected"
 	| "early_exit"
 	| "crash"

@@ -1,5 +1,9 @@
-import { readFileSync, readdirSync, type Dirent } from "node:fs";
 import { errorCode } from "@/runtime/engine/lib/thrown-error";
+import {
+	listProcessGroupObservations,
+	readProcessObservation,
+	type ProcessObservation,
+} from "@/shared/process-observation";
 
 interface ProcessIdentity {
 	readonly pid: number;
@@ -11,50 +15,17 @@ interface ProcessGroupIdentity {
 	readonly leader: ProcessIdentity;
 }
 
-interface ProcessRecord {
-	readonly identity: ProcessIdentity;
-	readonly group: number;
-}
-
-/**
- * Whether a failure means the process is simply gone, which every caller here
- * treats as an answer rather than an error.
- * @param cause What reading `/proc` or signalling threw.
- * @returns True for a missing `/proc` entry or a vanished pid.
- */
-function isMissingProcess(cause: unknown): boolean {
-	const code = errorCode(cause);
-	return code === "ENOENT" || code === "ESRCH";
-}
-
-/**
- * Read a process's group and start time from `/proc/<pid>/stat`. The start
- * time is what makes a pid an identity: a recycled pid has a different one.
- * @param pid The process to read.
- * @returns Its identity and process group.
- */
-function processRecord(pid: number): ProcessRecord {
-	const raw = readFileSync(`/proc/${pid}/stat`, "utf8");
-	const close = raw.lastIndexOf(")");
-	const fields = raw
-		.slice(close + 2)
-		.trim()
-		.split(/\s+/);
-	const group = Number(fields[2]);
-	const startTime = fields[19];
-	if (!Number.isSafeInteger(group) || !startTime) {
-		throw new Error(`Process ${pid} did not expose a valid group and start time.`);
-	}
-	return { identity: { pid, startTime }, group };
-}
-
 /**
  * The identity of a live process.
  * @param pid The process to identify.
  * @returns Its pid paired with its kernel start time.
  */
 function processIdentity(pid: number): ProcessIdentity {
-	return processRecord(pid).identity;
+	const observation = readProcessObservation(pid);
+	if (observation === undefined) {
+		throw new Error(`Process ${pid} vanished before its identity could be captured.`);
+	}
+	return { pid: observation.pid, startTime: observation.startTime };
 }
 
 /**
@@ -63,14 +34,8 @@ function processIdentity(pid: number): ProcessIdentity {
  * @returns False when the pid is gone or has been recycled.
  */
 function processIdentityExists(identity: ProcessIdentity): boolean {
-	try {
-		return processIdentity(identity.pid).startTime === identity.startTime;
-	} catch (cause) {
-		if (isMissingProcess(cause)) {
-			return false;
-		}
-		throw cause;
-	}
+	const observation = readProcessObservation(identity.pid);
+	return observation !== undefined && observation.startTime === identity.startTime;
 }
 
 /**
@@ -80,15 +45,12 @@ function processIdentityExists(identity: ProcessIdentity): boolean {
  * @returns False when the pid is gone, recycled, or has changed group.
  */
 function processIdentityOwnsGroup(identity: ProcessIdentity, group: number): boolean {
-	try {
-		const record = processRecord(identity.pid);
-		return record.identity.startTime === identity.startTime && record.group === group;
-	} catch (cause) {
-		if (isMissingProcess(cause)) {
-			return false;
-		}
-		throw cause;
-	}
+	const observation = readProcessObservation(identity.pid);
+	return (
+		observation !== undefined &&
+		observation.startTime === identity.startTime &&
+		observation.pgid === group
+	);
 }
 
 /**
@@ -98,30 +60,64 @@ function processIdentityOwnsGroup(identity: ProcessIdentity, group: number): boo
  * @returns The group and its leader's identity.
  */
 function captureDetachedProcessGroup(leaderPid: number): ProcessGroupIdentity {
-	const record = processRecord(leaderPid);
-	if (record.group <= 0 || record.group !== leaderPid) {
+	const observation = readProcessObservation(leaderPid);
+	if (observation === undefined) {
+		throw new Error(`Detached process ${leaderPid} vanished before its group could be captured.`);
+	}
+	if (observation.pgid <= 0 || observation.pgid !== leaderPid) {
 		throw new Error(
-			`Detached process ${leaderPid} joined group ${record.group} instead of owning its group.`,
+			`Detached process ${leaderPid} joined group ${observation.pgid} instead of owning its group.`,
 		);
 	}
-	return { group: record.group, leader: record.identity };
+	return {
+		group: observation.pgid,
+		leader: { pid: observation.pid, startTime: observation.startTime },
+	};
 }
 
 /**
- * Whether any process remains in a group, by the null signal.
+ * Whether any process that can still run remains in a group.
  * @param group The process group id.
- * @returns True while the kernel still knows the group.
+ * @returns True while the group contains a live or stopped process.
  */
 function processGroupExists(group: number): boolean {
-	try {
-		process.kill(-group, 0);
-		return true;
-	} catch (cause) {
-		if (errorCode(cause) === "ESRCH") {
-			return false;
-		}
-		throw cause;
+	return listProcessGroupObservations(group).some((process) => process.state !== "zombie");
+}
+
+/**
+ * Read the non-zombie members of a captured group while rejecting leader
+ * absence, an observed identity/group change, or leader-pid reuse.
+ * @param identity The group and original leader identity.
+ * @returns Every member that can still run or is stopped.
+ */
+function ownedProcessGroupMembers(identity: ProcessGroupIdentity): readonly ProcessObservation[] {
+	const members = listProcessGroupObservations(identity.group).filter(
+		(process) => process.state !== "zombie",
+	);
+	if (members.length === 0) {
+		return members;
 	}
+	const leader = readProcessObservation(identity.leader.pid);
+	if (leader === undefined) {
+		throw new Error(
+			`Process group ${identity.group} lost its recorded leader before ownership inspection.`,
+		);
+	}
+	if (leader.startTime !== identity.leader.startTime || leader.pgid !== identity.group) {
+		throw new Error(
+			`Process group ${identity.group} no longer belongs to its recorded leader identity.`,
+		);
+	}
+	const recycledLeader = members.find(
+		(process) =>
+			process.pid === identity.leader.pid && process.startTime !== identity.leader.startTime,
+	);
+	if (recycledLeader !== undefined) {
+		throw new Error(
+			`Process group ${identity.group} contains a process that reused its recorded leader pid.`,
+		);
+	}
+	return members;
 }
 
 /**
@@ -135,10 +131,9 @@ function signalOwnedProcessGroup(identity: ProcessGroupIdentity, signal: NodeJS.
 	if (!processGroupExists(identity.group)) {
 		return false;
 	}
-	if (!processIdentityOwnsGroup(identity.leader, identity.group)) {
-		throw new Error(
-			`Refusing to signal process group ${identity.group}: its recorded leader no longer owns that group.`,
-		);
+	const members = ownedProcessGroupMembers(identity);
+	if (members.length === 0) {
+		return false;
 	}
 	try {
 		process.kill(-identity.group, signal);
@@ -146,32 +141,6 @@ function signalOwnedProcessGroup(identity: ProcessGroupIdentity, signal: NodeJS.
 	} catch (cause) {
 		if (errorCode(cause) === "ESRCH") {
 			return false;
-		}
-		throw cause;
-	}
-}
-
-/**
- * Whether a `/proc` entry names a process.
- * @param entry A directory entry under `/proc`.
- * @returns True for a numeric directory.
- */
-function isProcessEntry(entry: Dirent): boolean {
-	return entry.isDirectory() && /^\d+$/.test(entry.name);
-}
-
-/**
- * The group a pid belongs to, or null when the process vanished between the
- * directory listing and the read.
- * @param pid The process to read.
- * @returns Its process group id, or null when it is gone.
- */
-function groupOfLiveProcess(pid: number): number | null {
-	try {
-		return processRecord(pid).group;
-	} catch (cause) {
-		if (isMissingProcess(cause)) {
-			return null;
 		}
 		throw cause;
 	}
@@ -188,12 +157,12 @@ function processGroupHasOtherMember(identity: ProcessGroupIdentity): boolean {
 			`Process group ${identity.group} lost its recorded leader before membership inspection.`,
 		);
 	}
-	for (const entry of readdirSync("/proc", { withFileTypes: true })) {
-		if (!isProcessEntry(entry)) {
-			continue;
-		}
-		const pid = Number(entry.name);
-		if (pid !== identity.leader.pid && groupOfLiveProcess(pid) === identity.group) {
+	for (const process of listProcessGroupObservations(identity.group)) {
+		if (
+			process.pid !== identity.leader.pid &&
+			process.pgid === identity.group &&
+			process.state !== "zombie"
+		) {
 			return true;
 		}
 	}
@@ -208,6 +177,7 @@ export {
 	processIdentityOwnsGroup,
 	captureDetachedProcessGroup,
 	processGroupExists,
+	ownedProcessGroupMembers,
 	signalOwnedProcessGroup,
 	processGroupHasOtherMember,
 };

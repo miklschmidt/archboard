@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+
 import {
 	BOARD_RENDER_CLEANUP_MS,
 	BOARD_RENDER_JOB_TIMEOUT_MS,
@@ -20,7 +22,6 @@ import {
 /** What a caller may settle about the renderer this owner runs. */
 interface BoardRenderingOwnerOptions {
 	readonly chromiumPath?: string;
-	readonly setsidPath?: string;
 	readonly jobTimeoutMs?: number;
 	readonly startupTimeoutMs?: number;
 	readonly cleanupTimeoutMs?: number;
@@ -48,7 +49,32 @@ interface BoardRendererCleanup extends RendererSessionCleanup {
 }
 
 /**
- * Where the executables the renderer spawns are: what the caller gave, else
+ * The first Chromium-family executable installed in a supported conventional
+ * location. macOS application bundles do not normally put their executable on
+ * PATH, so the renderer must recognize their native locations too.
+ * @returns The discovered executable, or an empty string when none exists.
+ */
+function discoveredChromiumPath(): string {
+	const candidates = [
+		Bun.which("chromium"),
+		Bun.which("chromium-browser"),
+		Bun.which("google-chrome"),
+		...(process.platform === "darwin"
+			? [
+					"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+					"/Applications/Chromium.app/Contents/MacOS/Chromium",
+				]
+			: []),
+	];
+	return (
+		candidates.find((candidate): candidate is string =>
+			Boolean(candidate && existsSync(candidate)),
+		) ?? ""
+	);
+}
+
+/**
+ * Where the executable the renderer spawns is: what the caller gave, else
  * what the environment names, else what this machine has. An empty path is
  * refused later, by name, when the renderer first starts.
  * @param options What the caller settled.
@@ -56,15 +82,12 @@ interface BoardRendererCleanup extends RendererSessionCleanup {
  */
 function resolvedExecutables(options: BoardRenderingOwnerOptions): {
 	chromiumPath: string;
-	setsidPath: string;
 } {
 	return {
 		chromiumPath:
 			options.chromiumPath ??
 			process.env["ARCHBOARD_RENDERER_CHROMIUM"] ??
-			Bun.which("chromium") ??
-			"",
-		setsidPath: options.setsidPath ?? Bun.which("setsid") ?? "",
+			discoveredChromiumPath(),
 	};
 }
 

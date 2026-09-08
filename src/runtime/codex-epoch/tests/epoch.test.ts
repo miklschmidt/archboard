@@ -2,6 +2,7 @@ import {
 	lstatSync,
 	mkdirSync,
 	mkdtempSync,
+	realpathSync,
 	readFileSync,
 	readdirSync,
 	rmSync,
@@ -336,7 +337,7 @@ interface TestState {
 }
 
 function withState<T>(callback: (state: TestState) => T): T {
-	const root = mkdtempSync(join("/tmp", "archboard-codex-epoch-"));
+	const root = realpathSync(mkdtempSync(join("/tmp", "archboard-codex-epoch-")));
 	const state: TestState = {
 		root: join(root, "epoch"),
 		codexHome: join(root, "codex-home"),

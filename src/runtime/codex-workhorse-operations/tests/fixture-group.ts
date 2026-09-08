@@ -1,4 +1,4 @@
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { afterAll, beforeAll } from "bun:test";
@@ -32,7 +32,7 @@ function useFixtureGroup(): FixtureGroup["create"] {
 function createFixtureGroup(): FixtureGroup {
 	const authorities = createIdentityAuthorities();
 	const identity = authorities.identity;
-	const parent = mkdtempSync(join("/tmp", "archboard-workhorse-operations-group-"));
+	const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-workhorse-operations-group-")));
 	const preparedRoot = join(parent, "prepared");
 	const preparedEpochRoot = join(preparedRoot, "epoch");
 	const preparedCodexHome = join(preparedRoot, "codex-home");

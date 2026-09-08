@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
 import { ArchboardContextSchema, createTextUserInput } from "../../codex-instructions/index.js";
@@ -114,7 +114,7 @@ function createStandaloneFixture(
 	authorities: IdentityAuthorities,
 ): { readonly fixture: Fixture } {
 	const identity = authorities.identity;
-	const parent = mkdtempSync(join("/tmp", "archboard-workhorse-operations-"));
+	const parent = realpathSync(mkdtempSync(join("/tmp", "archboard-workhorse-operations-")));
 	const epochRoot = join(parent, "epoch");
 	const codexHome = join(parent, "codex-home");
 	const sqliteHome = join(parent, "codex-sqlite");
