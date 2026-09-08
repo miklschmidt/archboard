@@ -131,13 +131,13 @@ function mermaidConfigOf(config: unknown): typeof DEFAULT_MERMAID_CONFIG {
  * the refusal. Runs under the request's mutation lease.
  * @param req The request.
  * @param res Its response.
- * @param next The next middleware, reached only with a prepared result.
+ * @param proceed Continue with the validated write.
  * @param signal The lease's abort signal.
  */
 async function prepareMermaid(
 	req: Request,
 	res: Response,
-	next: NextFunction,
+	proceed: () => void,
 	signal: AbortSignal,
 ): Promise<void> {
 	try {
@@ -157,7 +157,7 @@ async function prepareMermaid(
 		}
 		preparedMermaids.set(req, canonicalMermaidResult(converted));
 		signal.throwIfAborted();
-		next();
+		proceed();
 	} catch (error) {
 		if (callerGone(req, res)) {
 			return;
@@ -167,24 +167,24 @@ async function prepareMermaid(
 }
 
 /**
- * Mount the pre-write Mermaid renderer. Mermaid rendering can outlast a board
- * lease, so it renders and validates first and then lets the ordinary write
- * middleware take the board and map ids against its current under-lock note.
- * @param app The application to mount on.
+ * Prepare an accepted Mermaid write before taking the board's lease. Other
+ * writes proceed immediately; renderer work keeps its own tracked phase.
+ * @param req The validated request.
+ * @param res Its response.
+ * @param proceed Take the board and continue with the prepared write.
  */
-function mountMermaidPreparation(app: Express): void {
-	app.use((req: Request, res: Response, next: NextFunction) => {
-		if (req.method !== "POST" || req.path !== "/api/elements/from-mermaid") {
-			return next();
+function prepareMermaidWrite(req: Request, res: Response, proceed: () => void): void {
+	if (req.method !== "POST" || req.path !== "/api/elements/from-mermaid") {
+		proceed();
+		return;
+	}
+	void trackMutationWork(req, `${req.method} ${req.path} renderer`, (signal) =>
+		prepareMermaid(req, res, proceed, signal),
+	).catch((error) => {
+		if (callerGone(req, res)) {
+			return;
 		}
-		void trackMutationWork(req, `${req.method} ${req.path} renderer`, (signal) =>
-			prepareMermaid(req, res, next, signal),
-		).catch((error) => {
-			if (callerGone(req, res)) {
-				return;
-			}
-			setImmediate(next, error);
-		});
+		answerBoardError(res, error, "Error preparing Mermaid diagram:");
 	});
 }
 
@@ -281,7 +281,7 @@ function mermaidElementInput(
 
 /**
  * Mount the from-mermaid route. It receives one frozen renderer result from the
- * pre-write middleware; only id mapping and the one synchronous canonical write
+ * write boundary; only id mapping and the one synchronous canonical write
  * happen under lease.
  * @param app The application to mount on.
  */
@@ -346,4 +346,4 @@ function mountMermaidRoute(app: Express): void {
 	);
 }
 
-export { mountMermaidPreparation, mountMermaidRoute };
+export { prepareMermaidWrite, mountMermaidRoute };

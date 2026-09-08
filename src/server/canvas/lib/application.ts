@@ -22,7 +22,7 @@ import { mountElementRoutes } from "@/server/canvas/lib/element-routes";
 import { mountFileRoutes } from "@/server/canvas/lib/file-routes";
 import { createLibraryRouter } from "@/server/canvas/lib/library-routes";
 import { mountLockRoutes } from "@/server/canvas/lib/lock-routes";
-import { mountMermaidPreparation, mountMermaidRoute } from "@/server/canvas/lib/mermaid-conversion";
+import { mountMermaidRoute } from "@/server/canvas/lib/mermaid-conversion";
 import { moduleDir } from "@/server/canvas/lib/module-paths";
 import { mountMutationAdmission, trackMutationWork } from "@/server/canvas/lib/mutation-work";
 import { mountPaneRoutes, mountSelectionRoutes } from "@/server/canvas/lib/pane-routes";
@@ -78,7 +78,6 @@ app.use(
 	express.static(path.join(moduleDir, "../node_modules/@excalidraw/excalidraw/dist/prod/fonts")),
 );
 
-mountMermaidPreparation(app);
 mountWriteBoundary(app);
 
 app.use(

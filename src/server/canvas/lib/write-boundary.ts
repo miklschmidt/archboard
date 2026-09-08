@@ -26,6 +26,7 @@ import {
 	refusalDocument,
 } from "@/server/canvas/lib/board-response";
 import { callerGone, trackMutationWork } from "@/server/canvas/lib/mutation-work";
+import { prepareMermaidWrite } from "@/server/canvas/lib/mermaid-conversion";
 import {
 	boardOfRequest,
 	bodyOf,
@@ -417,7 +418,8 @@ function arrangeDoingAnnouncement(
 
 /**
  * The write boundary itself: identify the writer, refuse a revoked claim, a
- * malformed precondition or an undescribed agent write, then take the board.
+ * malformed precondition or an undescribed agent write, prepare the accepted
+ * request, then take the board.
  * @param req The request.
  * @param res Its response.
  * @param next The next middleware.
@@ -453,13 +455,15 @@ function guardBoardWrite(req: Request, res: Response, next: NextFunction): void 
 		return;
 	}
 	const guarded: GuardedWrite = { key, writer, expected: stated.expected };
-	void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>
-		takeBoardAndContinue(req, res, next, guarded, signal),
-	).catch((error) => {
-		if (error instanceof BoardLockCancelledError && callerGone(req, res)) {
-			return;
-		}
-		answerBoardError(res, error);
+	prepareMermaidWrite(req, res, () => {
+		void trackMutationWork(req, `${req.method} ${req.path} board-lock wait`, (signal) =>
+			takeBoardAndContinue(req, res, next, guarded, signal),
+		).catch((error) => {
+			if (error instanceof BoardLockCancelledError && callerGone(req, res)) {
+				return;
+			}
+			answerBoardError(res, error);
+		});
 	});
 }
 
