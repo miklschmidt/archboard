@@ -33,6 +33,15 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # Ubuntu's AppArmor policy permits the installed Chrome Stable sandbox.
+      # Isolated test servers discover their renderer through PATH.
+      - name: Use sandboxed Chrome for board rendering
+        run: |
+          /opt/google/chrome/chrome --version
+          mkdir -p "$RUNNER_TEMP/archboard-renderer-bin"
+          ln -s /opt/google/chrome/chrome "$RUNNER_TEMP/archboard-renderer-bin/chromium"
+          echo "$RUNNER_TEMP/archboard-renderer-bin" >> "$GITHUB_PATH"
+
       # Lint, formatting, both type checks, every native owner except opener
       # persistence, and no serial browser owners. All excluded owners remain in
       # local `check`; TASK-141 and TASK-142 own restoring hosted coverage.
