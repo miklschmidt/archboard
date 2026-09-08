@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { listBoards, parseBoardKey, renderBoardNote } from "../../../src/runtime/engine/board.ts";
 import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
+import { TEST_WALL_CLOCK_BUDGET_MS } from "../support/timing.ts";
 import { createJsonRequester } from "./support/http.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
@@ -85,226 +86,230 @@ afterAll(async () => {
 });
 
 describe.serial("vault-only production interfaces", () => {
-	test("completes the named-board production workflow with zero browser clients and no open step", async () => {
-		const healthBefore = await request<{ websocket_clients: number }>("/health");
-		expect(healthBefore.body.websocket_clients).toBe(0);
-		const initial = await request<{
-			boards: Array<{ key: string }>;
-		}>("/api/boards");
-		expect(initial.body.boards.map((entry) => entry.key)).toContain("payments");
-		expect(initial.body).not.toHaveProperty("open");
-		expect(initial.body).not.toHaveProperty("onScreen");
+	test(
+		"completes the named-board production workflow with zero browser clients and no open step",
+		async () => {
+			const healthBefore = await request<{ websocket_clients: number }>("/health");
+			expect(healthBefore.body.websocket_clients).toBe(0);
+			const initial = await request<{
+				boards: Array<{ key: string }>;
+			}>("/api/boards");
+			expect(initial.body.boards.map((entry) => entry.key)).toContain("payments");
+			expect(initial.body).not.toHaveProperty("open");
+			expect(initial.body).not.toHaveProperty("onScreen");
 
-		const reads = [
-			["elements", "/api/elements?board=payments"],
-			["query", "/api/elements/search?board=payments&type=rectangle"],
-			["identity", "/api/boards/info?board=payments"],
-			["preview", "/api/boards/preview?board=payments"],
-			["export files", "/api/files?board=payments"],
-		] as const;
-		for (const [name, url] of reads) {
-			const result = await request<{ success?: boolean }>(url);
-			expect(result.status, name).toBe(200);
-			expect(result.body.success, name).not.toBeFalse();
-		}
-		const afterReads = await request<{ boards: Array<{ key: string }> }>("/api/boards");
-		expect(afterReads.body.boards.map((entry) => entry.key)).toContain("payments");
-		expect(afterReads.body).not.toHaveProperty("open");
-		expect(afterReads.body).not.toHaveProperty("onScreen");
+			const reads = [
+				["elements", "/api/elements?board=payments"],
+				["query", "/api/elements/search?board=payments&type=rectangle"],
+				["identity", "/api/boards/info?board=payments"],
+				["preview", "/api/boards/preview?board=payments"],
+				["export files", "/api/files?board=payments"],
+			] as const;
+			for (const [name, url] of reads) {
+				const result = await request<{ success?: boolean }>(url);
+				expect(result.status, name).toBe(200);
+				expect(result.body.success, name).not.toBeFalse();
+			}
+			const afterReads = await request<{ boards: Array<{ key: string }> }>("/api/boards");
+			expect(afterReads.body.boards.map((entry) => entry.key)).toContain("payments");
+			expect(afterReads.body).not.toHaveProperty("open");
+			expect(afterReads.body).not.toHaveProperty("onScreen");
 
-		const changed = await request<{ fingerprint: { version: number } }>(
-			"/api/elements?board=payments",
-			{
-				method: "POST",
-				body: { id: "node", type: "rectangle", x: 0, y: 0, width: 120, height: 60 },
-			},
-		);
-		expect(changed.status).toBe(200);
-		const changedVersion = changed.body.fingerprint.version;
-
-		const snapshot = await request<{ elementCount: number }>("/api/snapshots?board=payments", {
-			method: "POST",
-			body: { name: "vault-only" },
-		});
-		expect(snapshot).toMatchObject({ status: 200, body: { elementCount: 1 } });
-
-		const imported = await request<{ fingerprint: { version: number } }>(
-			"/api/elements/batch?board=payments",
-			{
-				method: "POST",
-				body: {
-					elements: [{ id: "imported", type: "ellipse", x: 20, y: 20, width: 80, height: 50 }],
-					files: [],
-					mutation: "replace-scene",
+			const changed = await request<{ fingerprint: { version: number } }>(
+				"/api/elements?board=payments",
+				{
+					method: "POST",
+					body: { id: "node", type: "rectangle", x: 0, y: 0, width: 120, height: 60 },
 				},
-			},
-		);
-		expect(imported.status).toBe(200);
-		expect(imported.body.fingerprint.version).toBe(changedVersion + 1);
+			);
+			expect(changed.status).toBe(200);
+			const changedVersion = changed.body.fingerprint.version;
 
-		const branched = await request<{ board: string; version: number; file: string }>(
-			"/api/boards/save?board=payments",
-			{ method: "POST", body: { name: "payments@review" } },
-		);
-		expect(branched).toMatchObject({
-			status: 200,
-			body: { board: "payments@review", version: 1 },
-		});
-		expect(readFileSync(branched.body.file, "utf8")).toContain("board: payments");
+			const snapshot = await request<{ elementCount: number }>("/api/snapshots?board=payments", {
+				method: "POST",
+				body: { name: "vault-only" },
+			});
+			expect(snapshot).toMatchObject({ status: 200, body: { elementCount: 1 } });
 
-		const comparison = await request<{
-			success: boolean;
-			from: { board: string };
-			to: { board: string };
-		}>("/api/boards/compare?from=payments&to=payments@review");
-		expect(comparison).toMatchObject({
-			status: 200,
-			body: { success: true, from: { board: "payments" } },
-		});
-		for (const side of [comparison.body.from, comparison.body.to]) {
-			expect(side).not.toHaveProperty("source");
-			expect(side).not.toHaveProperty("onScreen");
-			expect(side).not.toHaveProperty("loadedAt");
-		}
+			const imported = await request<{ fingerprint: { version: number } }>(
+				"/api/elements/batch?board=payments",
+				{
+					method: "POST",
+					body: {
+						elements: [{ id: "imported", type: "ellipse", x: 20, y: 20, width: 80, height: 50 }],
+						files: [],
+						mutation: "replace-scene",
+					},
+				},
+			);
+			expect(imported.status).toBe(200);
+			expect(imported.body.fingerprint.version).toBe(changedVersion + 1);
 
-		const workflowBoard = "zero-client-workflow";
-		expect(
-			JSON.parse(runCli(["board", "new", workflowBoard, "--level", "service"]).stdout),
-		).toMatchObject({
-			board: workflowBoard,
-			created: true,
-		});
-		const crossingElements = [
-			{
-				id: "left",
-				type: "rectangle",
-				x: 1_000,
-				y: 100,
-				width: 100,
-				height: 80,
-				label: { text: "Left" },
-			},
-			{
-				id: "right",
-				type: "rectangle",
-				x: 1_250,
-				y: 100,
-				width: 100,
-				height: 80,
-				label: { text: "Right" },
-			},
-			{
-				id: "route",
-				type: "arrow",
-				x: 1_100,
-				y: 140,
-				points: [
-					[0, 0],
-					[150, 0],
-				],
-				start: { id: "left" },
-				end: { id: "right" },
-			},
-			{
-				id: "crossh",
-				type: "line",
-				x: 600,
-				y: 500,
-				points: [
-					[0, 0],
-					[200, 0],
-				],
-			},
-			{
-				id: "crossv",
-				type: "line",
-				x: 700,
-				y: 440,
-				points: [
-					[0, 0],
-					[0, 120],
-				],
-			},
-		];
-		const added = JSON.parse(
-			runCli(["add", "--board", workflowBoard, "--doing", "drawing the inspected path"], {
-				input: JSON.stringify(crossingElements),
-			}).stdout,
-		) as { elements: unknown[] };
-		expect(added.elements.length).toBeGreaterThanOrEqual(crossingElements.length);
+			const branched = await request<{ board: string; version: number; file: string }>(
+				"/api/boards/save?board=payments",
+				{ method: "POST", body: { name: "payments@review" } },
+			);
+			expect(branched).toMatchObject({
+				status: 200,
+				body: { board: "payments@review", version: 1 },
+			});
+			expect(readFileSync(branched.body.file, "utf8")).toContain("board: payments");
 
-		const converted = JSON.parse(
-			runCli(["mermaid", "--board", workflowBoard, "--doing", "adding the service flow"], {
-				input: "graph LR; Client --> API; API --> Store;",
-			}).stdout,
-		) as { board: string; count: number };
-		expect(converted).toMatchObject({ board: workflowBoard });
-		expect(converted.count).toBeGreaterThan(0);
+			const comparison = await request<{
+				success: boolean;
+				from: { board: string };
+				to: { board: string };
+			}>("/api/boards/compare?from=payments&to=payments@review");
+			expect(comparison).toMatchObject({
+				status: 200,
+				body: { success: true, from: { board: "payments" } },
+			});
+			for (const side of [comparison.body.from, comparison.body.to]) {
+				expect(side).not.toHaveProperty("source");
+				expect(side).not.toHaveProperty("onScreen");
+				expect(side).not.toHaveProperty("loadedAt");
+			}
 
-		const artifacts = join(root, "zero-client-artifacts");
-		mkdirSync(artifacts);
-		const png = join(artifacts, "board.png");
-		const svg = join(artifacts, "board.svg");
-		expect(
-			JSON.parse(runCli(["render", "--board", workflowBoard, "--out", png]).stdout),
-		).toMatchObject({ board: workflowBoard, format: "png", file: png });
-		expect(
-			JSON.parse(
-				runCli(["render", "--board", workflowBoard, "--out", svg, "--format", "svg"]).stdout,
-			),
-		).toMatchObject({ board: workflowBoard, format: "svg", file: svg });
-		expect(readFileSync(png).subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
-		expect(readFileSync(svg, "utf8")).toContain("<svg");
+			const workflowBoard = "zero-client-workflow";
+			expect(
+				JSON.parse(runCli(["board", "new", workflowBoard, "--level", "service"]).stdout),
+			).toMatchObject({
+				board: workflowBoard,
+				created: true,
+			});
+			const crossingElements = [
+				{
+					id: "left",
+					type: "rectangle",
+					x: 1_000,
+					y: 100,
+					width: 100,
+					height: 80,
+					label: { text: "Left" },
+				},
+				{
+					id: "right",
+					type: "rectangle",
+					x: 1_250,
+					y: 100,
+					width: 100,
+					height: 80,
+					label: { text: "Right" },
+				},
+				{
+					id: "route",
+					type: "arrow",
+					x: 1_100,
+					y: 140,
+					points: [
+						[0, 0],
+						[150, 0],
+					],
+					start: { id: "left" },
+					end: { id: "right" },
+				},
+				{
+					id: "crossh",
+					type: "line",
+					x: 600,
+					y: 500,
+					points: [
+						[0, 0],
+						[200, 0],
+					],
+				},
+				{
+					id: "crossv",
+					type: "line",
+					x: 700,
+					y: 440,
+					points: [
+						[0, 0],
+						[0, 120],
+					],
+				},
+			];
+			const added = JSON.parse(
+				runCli(["add", "--board", workflowBoard, "--doing", "drawing the inspected path"], {
+					input: JSON.stringify(crossingElements),
+				}).stdout,
+			) as { elements: unknown[] };
+			expect(added.elements.length).toBeGreaterThanOrEqual(crossingElements.length);
 
-		const inspection = JSON.parse(runCli(["check", "--board", workflowBoard]).stdout) as {
-			board: string;
-			findings: Array<{ focusBBox?: unknown }>;
-		};
-		expect(inspection.board).toBe(workflowBoard);
-		expect(inspection.findings.some((finding) => finding.focusBBox !== undefined)).toBeTrue();
-		const findingDirectory = join(artifacts, "findings");
-		mkdirSync(findingDirectory);
-		const findings = JSON.parse(
-			runCli(["render-findings", "--board", workflowBoard, "--out", findingDirectory]).stdout,
-		) as { board: string; entries: Array<{ status: string }> };
-		expect(findings.board).toBe(workflowBoard);
-		expect(
-			findings.entries.some((entry) => entry.status === "rendered"),
-			JSON.stringify(findings),
-		).toBeTrue();
+			const converted = JSON.parse(
+				runCli(["mermaid", "--board", workflowBoard, "--doing", "adding the service flow"], {
+					input: "graph LR; Client --> API; API --> Store;",
+				}).stdout,
+			) as { board: string; count: number };
+			expect(converted).toMatchObject({ board: workflowBoard });
+			expect(converted.count).toBeGreaterThan(0);
 
-		expect(
-			JSON.parse(runCli(["snapshot", "save", "before-review", "--board", workflowBoard]).stdout),
-		).toMatchObject({ name: "before-review" });
-		const branch = `${workflowBoard}@review`;
-		expect(
-			JSON.parse(
-				runCli([
-					"board",
-					"save",
-					"--board",
-					workflowBoard,
-					"--variant",
-					"review",
-					"--doing",
-					"branching the review",
-				]).stdout,
-			),
-		).toMatchObject({ board: branch, savedFrom: workflowBoard });
-		const exported = join(artifacts, "review.excalidraw");
-		expect(
-			JSON.parse(runCli(["export", "--board", branch, "--out", exported]).stdout),
-		).toMatchObject({ file: exported });
-		expect(JSON.parse(readFileSync(exported, "utf8"))).toMatchObject({ type: "excalidraw" });
-		const description = runCli(["describe", "--board", branch]).stdout;
-		expect(description).toContain("Client");
-		const finalNote = readFileSync(join(vault, `${branch}.excalidraw.md`), "utf8");
-		expect(finalNote).toContain(`variant: review`);
-		expect(finalNote).toContain("Client");
+			const artifacts = join(root, "zero-client-artifacts");
+			mkdirSync(artifacts);
+			const png = join(artifacts, "board.png");
+			const svg = join(artifacts, "board.svg");
+			expect(
+				JSON.parse(runCli(["render", "--board", workflowBoard, "--out", png]).stdout),
+			).toMatchObject({ board: workflowBoard, format: "png", file: png });
+			expect(
+				JSON.parse(
+					runCli(["render", "--board", workflowBoard, "--out", svg, "--format", "svg"]).stdout,
+				),
+			).toMatchObject({ board: workflowBoard, format: "svg", file: svg });
+			expect(readFileSync(png).subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
+			expect(readFileSync(svg, "utf8")).toContain("<svg");
 
-		const healthAfter = await request<{ websocket_clients: number }>("/health");
-		expect(healthAfter.body.websocket_clients).toBe(0);
-	});
+			const inspection = JSON.parse(runCli(["check", "--board", workflowBoard]).stdout) as {
+				board: string;
+				findings: Array<{ focusBBox?: unknown }>;
+			};
+			expect(inspection.board).toBe(workflowBoard);
+			expect(inspection.findings.some((finding) => finding.focusBBox !== undefined)).toBeTrue();
+			const findingDirectory = join(artifacts, "findings");
+			mkdirSync(findingDirectory);
+			const findings = JSON.parse(
+				runCli(["render-findings", "--board", workflowBoard, "--out", findingDirectory]).stdout,
+			) as { board: string; entries: Array<{ status: string }> };
+			expect(findings.board).toBe(workflowBoard);
+			expect(
+				findings.entries.some((entry) => entry.status === "rendered"),
+				JSON.stringify(findings),
+			).toBeTrue();
+
+			expect(
+				JSON.parse(runCli(["snapshot", "save", "before-review", "--board", workflowBoard]).stdout),
+			).toMatchObject({ name: "before-review" });
+			const branch = `${workflowBoard}@review`;
+			expect(
+				JSON.parse(
+					runCli([
+						"board",
+						"save",
+						"--board",
+						workflowBoard,
+						"--variant",
+						"review",
+						"--doing",
+						"branching the review",
+					]).stdout,
+				),
+			).toMatchObject({ board: branch, savedFrom: workflowBoard });
+			const exported = join(artifacts, "review.excalidraw");
+			expect(
+				JSON.parse(runCli(["export", "--board", branch, "--out", exported]).stdout),
+			).toMatchObject({ file: exported });
+			expect(JSON.parse(readFileSync(exported, "utf8"))).toMatchObject({ type: "excalidraw" });
+			const description = runCli(["describe", "--board", branch]).stdout;
+			expect(description).toContain("Client");
+			const finalNote = readFileSync(join(vault, `${branch}.excalidraw.md`), "utf8");
+			expect(finalNote).toContain(`variant: review`);
+			expect(finalNote).toContain("Client");
+
+			const healthAfter = await request<{ websocket_clients: number }>("/health");
+			expect(healthAfter.body.websocket_clients).toBe(0);
+		},
+		TEST_WALL_CLOCK_BUDGET_MS,
+	);
 
 	test("creates the canonical empty note without changing pane state", async () => {
 		const before = await request<{ panes: unknown[] }>("/api/panes");

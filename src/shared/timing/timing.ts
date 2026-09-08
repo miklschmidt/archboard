@@ -176,9 +176,11 @@ const BOARD_RENDER_JOB_TIMEOUT_MS = 10_000;
 /**
  * Bound for the private Chromium control port, target, and renderer page to
  * become ready. Startup is lazy, so this delay belongs to the first Board
- * render rather than to every canvas launch.
+ * render rather than to every canvas launch. A five-second page deadline
+ * expired under a half-CPU quota; ten seconds completed three cold starts
+ * with valid PNG/SVG output (TASK-162).
  */
-const BOARD_RENDER_STARTUP_TIMEOUT_MS = 5000;
+const BOARD_RENDER_STARTUP_TIMEOUT_MS = 10_000;
 
 /**
  * Shared deadline for renderer group termination, output-pipe settlement,
