@@ -15,9 +15,9 @@ import {
 afterEach(cleanupCommandContractTest);
 
 describe("command-contract runner", () => {
-	test("fixed-base held policies keep exact bytes and write order for every affected mode", async () => {
-		expect(heldCompatibility.fixedBase).toBe("6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a");
-		for (const record of heldCompatibility.cases) {
+	for (const record of heldCompatibility.cases) {
+		test(`fixed-base held policies keep exact bytes and write order for ${record.name}`, async () => {
+			expect(heldCompatibility.fixedBase).toBe("6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a");
 			const artifactPath = temporaryPath(`${record.name}.artifact`);
 			const expand = (value: unknown): unknown =>
 				JSON.parse(JSON.stringify(value).replaceAll("{{ARTIFACT}}", artifactPath));
@@ -48,8 +48,8 @@ describe("command-contract runner", () => {
 				.join("");
 			expect(merged.status, record.name).toBe(0);
 			expect(merged.merged, record.name).toBe(expectedMerged);
-		}
-	});
+		});
+	}
 
 	test("the concrete Commander parser owns aliases and optional token arity", async () => {
 		const contract = defineCommand({
