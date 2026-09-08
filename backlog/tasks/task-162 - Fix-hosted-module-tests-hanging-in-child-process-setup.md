@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-09-08 00:40'
-updated_date: '2026-09-08 02:09'
+updated_date: '2026-09-08 02:52'
 labels: []
 dependencies: []
 references:
@@ -55,4 +55,16 @@ A half-CPU systemd scope reproduces the renderer failure. Allowing the test to o
 The vault workflow passed with all 61 assertions in 6065 ms under a one-CPU quota, exceeding the native five-second deadline. At a half-CPU quota it exceeded the unchanged twenty-second wall-clock ceiling; no exception was added. The production startup bound is now ten seconds, and the rendering owner plus the single composite vault case use the existing normal twenty-second test budget. The vault test body is unchanged apart from formatter indentation. Full local verification is running.
 
 The complete bun run check passed after the timing fix: lint, formatting, both type checks, 2660 module tests, 306 system tests, repository checks, and every normal serial browser owner. The two previously timed-out workflows took 1004 ms and 2623 ms on the unrestricted local host. The temporary measurement worktree and all owned CPU-limited scopes have been removed; diagnostic logs remain outside the repository.
+
+Hosted run 34179112441 passes all 2660 module tests and the cold PNG/SVG renderer case at 1602 ms, but reveals a recurring synchronous child-process hang across 33 system cases. The first two activation cases pass; subsequent Git init fixture calls block until five-second case termination with empty stderr, and later CLI installs and artifact Git commands show the same pattern. The vault workflow now hangs inside a CLI call at twenty seconds. This is distinct from measured cold-render startup; investigate the first blocked child before changing any further bounds.
+
+The activation subset passed 400 repetitions on a one-CPU local scope, 400 in the Bun 1.4.0 Linux container, and 400 more in that container with --smol. The full local system lane with --smol also passed all 306 cases in 156 seconds. A separate codex/ci-process-diagnostics branch will run unchanged checks through a temporary Node observer that records owned child state and wait channels without argv or environment. This captures whether the hosted stuck child is running or already exited; diagnostic code will not be merged.
+
+Diagnostic run 34180382718 does not reproduce the broad synchronous-child hang: code-target owners pass, cold PNG/SVG completes in 7131 ms, and the vault workflow passes in 5042 ms. It fails only the artifact-generation aggregate at 5014 ms while its second real generator is active; the following generator owners each take about 2.5 seconds. The brief zombie snapshots also occur around passing cases, so they do not establish a lost-exit defect. Reproduce the concrete aggregate deadline before selecting a fix.
+
+The artifact aggregate passes in 4416 ms with one CPU, fails at 5174 ms with half a CPU, and completes all 43 assertions in 13286 ms under the same half-CPU quota when observed with the normal twenty-second ceiling. Apply that existing budget to this one composed case; keep every assertion and the other cases unchanged.
+
+The implemented artifact budget passes the unchanged four-case owner locally (56 assertions) and two half-CPU repetitions of the aggregate at 15.28 and 14.71 seconds (86 assertions), within the existing twenty-second ceiling. Diagnostic branch run 34181046413 includes this test fix and retains the temporary observer so any recurring broader process stall can still be captured. A full normal local gate is running before the main-branch commit.
+
+The complete normal bun run check passes with the artifact budget change, including all browser owners. Diagnostic run 34181046413 passes the artifact case in 3692 ms and the vault workflow in 4148 ms, but its first renderer fails to open the Chrome control port within startup, causing the two concurrent first renders to exceed their twenty-second case ceiling. This is a control-port startup failure, not the earlier measured renderer-page delay. Extend the temporary observer to inspect Chrome state and independently probe its loopback control port.
 <!-- SECTION:NOTES:END -->
