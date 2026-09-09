@@ -136,8 +136,12 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		 */
 		open: async (paneId: string, boardKey: string): Promise<OpenOutcome> => {
 			const { clientId } = recordFor(panes.records, paneId).status;
-			const outcome = await runOpenKey(api, boardKey, clientId);
-			return outcome.kind === "done" ? { kind: "opened" } : { kind: "unreachable" };
+			const opened: string[] = [];
+			const outcome = await runOpenKey(api, boardKey, clientId, (key) => opened.push(key));
+			const key = opened[0];
+			return outcome.kind === "done" && key !== undefined
+				? { kind: "opened", boardKey: key }
+				: { kind: "unreachable" };
 		},
 		addPane: panes.add,
 		closePane: panes.close,
