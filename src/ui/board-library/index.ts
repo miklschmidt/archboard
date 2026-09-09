@@ -16,4 +16,4 @@ export {
 	type LibraryController,
 	type LibraryOptions,
 	type PendingInstall,
-} from "@/ui/board-library/lib/use-library";
+} from "@/ui/board-library/hooks/use-library";

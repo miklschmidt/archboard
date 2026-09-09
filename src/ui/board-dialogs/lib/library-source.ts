@@ -1,7 +1,7 @@
 // The one check the library dialog makes before it offers to install: the
 // source must be an https URL. It is never fetched here.
 
-import type { LibrarySourceCheck } from "@/ui/board-dialogs/lib/contracts";
+import type { LibrarySourceCheck } from "@/ui/board-dialogs/types/contracts";
 
 /**
  * Check a library source as the `#addLibrary` request supplied it.

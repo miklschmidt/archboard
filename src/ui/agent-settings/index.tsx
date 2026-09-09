@@ -2,7 +2,7 @@
 // voice coordinator, presented over the shared browser-model records. Sign-in,
 // linking and unlinking are reported to the host; nothing here talks to Codex.
 
-export { AgentSettingsDialog } from "@/ui/agent-settings/lib/agent-settings-dialog";
+export { AgentSettingsDialog } from "@/ui/agent-settings/components/AgentSettingsDialog";
 export type {
 	AgentSettingsBusy,
 	AgentSettingsDialogProps,
@@ -10,7 +10,7 @@ export type {
 	LoginId,
 	LoginVariant,
 	PendingLogin,
-} from "@/ui/agent-settings/lib/contracts";
+} from "@/ui/agent-settings/types/contracts";
 export {
 	LOGIN_VARIANTS,
 	approvalPolicyText,

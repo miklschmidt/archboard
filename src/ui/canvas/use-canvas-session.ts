@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { createCanvasLinkHandler } from "@/ui/canvas/lib/link-handler";
 import { createPaneCore, type PaneCore, type PaneCoreHost } from "@/ui/canvas/lib/pane-core";
-import { usePaneContact, type PaneContact } from "@/ui/canvas/pane-contact";
+import { usePaneContact, type PaneContact } from "@/ui/canvas/use-pane-contact";
 import { SessionBox } from "@/ui/canvas/lib/session-box";
 import {
 	UNKNOWN_HOLDER,

@@ -21,12 +21,12 @@ import {
 import { recordFor } from "@/ui/application/pane-records";
 import { contextFor } from "@/ui/application/lib/shell-actions";
 import type { PaneSession } from "@/ui/application/lib/pane-handles";
-import type { AgentActivity } from "@/ui/application/lib/use-agent-activity";
-import type { BoardDialogs } from "@/ui/application/lib/use-board-dialogs";
-import type { Boards } from "@/ui/application/lib/use-boards";
-import type { NoticeStack } from "@/ui/application/lib/use-notices";
-import type { PaneEvents, Panes } from "@/ui/application/lib/use-panes";
-import type { useWorkbench } from "@/ui/application/lib/use-workbench";
+import type { AgentActivity } from "@/ui/application/hooks/use-agent-activity";
+import type { BoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
+import type { Boards } from "@/ui/application/hooks/use-boards";
+import type { NoticeStack } from "@/ui/application/hooks/use-notices";
+import type { PaneEvents, Panes } from "@/ui/application/hooks/use-panes";
+import type { useWorkbench } from "@/ui/application/hooks/use-workbench";
 import type { LibraryController } from "@/ui/board-library";
 import type { RecoveryKind, ThemeChoice } from "@/ui/shell";
 import type { AgentActivityEntry, EditWithdrawalReason, PaneStatus } from "@/ui/types";

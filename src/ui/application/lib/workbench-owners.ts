@@ -7,7 +7,10 @@ import { createSnapshotCache, type SnapshotStore } from "@/ui/application/lib/sn
 import type { BrowserWorkbenchMediaOwner } from "@/ui/codex-workbench-media";
 import type { VoiceControlsActions } from "@/ui/voice-controls/contracts";
 import { createVoiceSession, type VoiceSession } from "@/ui/voice-session";
-import type { WorkbenchQueueCommandView, WorkbenchThreadLinkActions } from "@/ui/workbench";
+import type {
+	WorkbenchQueueCommandView,
+	WorkbenchThreadLinkActions,
+} from "@/ui/workbench/contracts";
 import {
 	createWorkbenchApprovalsController,
 	type WorkbenchApprovalsController,

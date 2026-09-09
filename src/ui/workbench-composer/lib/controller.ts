@@ -24,7 +24,7 @@ import type {
 	WorkbenchComposerSubmissionResult,
 	WorkbenchComposerThreadId,
 	WorkbenchComposerTurnId,
-} from "@/ui/workbench-composer/lib/contract";
+} from "@/ui/workbench-composer/types/contract";
 import { composerDraftDisposition } from "@/ui/workbench-composer/lib/draft";
 import {
 	composerRefusal,

@@ -12,7 +12,7 @@ import {
 	type OpenBoardRequest,
 	type SaveRequest,
 } from "@/ui/canvas/api";
-import type { BoardDialogRequest, ConflictOutcome, DialogError } from "@/ui/board-dialogs";
+import type { BoardDialogRequest, ConflictOutcome } from "@/ui/board-dialogs";
 import type {
 	BoardHold,
 	BoardIdentity,
@@ -20,6 +20,7 @@ import type {
 	BoardSaveResult,
 	BoardWriteConflict,
 } from "@/ui/types";
+import { type DialogError } from "@/ui/dialog-parts";
 
 /** The server calls the commands make. */
 interface BoardCommandApi {

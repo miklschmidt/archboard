@@ -5,7 +5,7 @@ import type { DeliveryOutcome } from "@/shared/codex-browser-model";
 import type {
 	WorkbenchComposerAction,
 	WorkbenchComposerRefusalCode,
-} from "@/ui/workbench-composer/lib/contract";
+} from "@/ui/workbench-composer/types/contract";
 
 /** The largest prompt the closed `boundedText(16_384)` body accepts. */
 const MAX_PROMPT_BYTES = 16_384;

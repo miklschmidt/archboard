@@ -1,7 +1,7 @@
 // Canonical board connection and persistence state for a pane's workbench:
 // the claim adapter and the pure projection. No presentation lives here.
 
-export { claimFromLockHolder } from "@/ui/workbench-board-status/lib/contract";
+export { claimFromLockHolder } from "@/ui/workbench-board-status/types/contract";
 export type {
 	WorkbenchBoardActivity,
 	WorkbenchBoardClaim,
@@ -12,5 +12,5 @@ export type {
 	WorkbenchSemanticContextState,
 	WorkbenchTakeBackResult,
 	WorkbenchTakeBackState,
-} from "@/ui/workbench-board-status/lib/contract";
+} from "@/ui/workbench-board-status/types/contract";
 export { projectWorkbenchBoardStatus } from "@/ui/workbench-board-status/lib/projection";

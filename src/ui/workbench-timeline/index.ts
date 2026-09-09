@@ -34,4 +34,4 @@ export type {
 	WorkbenchTurnProjection,
 	WorkbenchTurnTextPart,
 	WorkbenchTurnToolPart,
-} from "@/ui/workbench-timeline/lib/contract";
+} from "@/ui/workbench-timeline/types/contract";

@@ -11,10 +11,10 @@ import {
 	ComposerIntentContext,
 	ComposerIntentFooter,
 	type ComposerIntentBarProps,
-} from "@/ui/workbench/lib/composer-intent";
-import { SessionState } from "@/ui/workbench/lib/session-states";
-import { SidePanel } from "@/ui/workbench/lib/side-panel";
-import { SessionColumn } from "@/ui/workbench/lib/status-strip";
+} from "@/ui/workbench/components/ComposerIntentBar";
+import { SessionState } from "@/ui/workbench/components/SessionState";
+import { SidePanel } from "@/ui/workbench/components/SidePanel";
+import { SessionColumn } from "@/ui/workbench/components/SessionColumn";
 import { activeTurnId } from "@/ui/workbench/session-projection";
 import { Thread, type ThreadComponents } from "@/ui/workbench-thread/thread";
 
@@ -69,18 +69,3 @@ function Workbench(props: WorkbenchProps): React.JSX.Element {
 }
 
 export { Workbench, type WorkbenchProps };
-export {
-	IDLE_QUEUE_COMMAND,
-	NO_APPROVAL_ERRORS,
-	type ApprovalChoice,
-	type ComposerIntent,
-	type DynamicApprovalVerdict,
-	type WorkbenchActions,
-	type WorkbenchComposerView,
-	type WorkbenchQueueActions,
-	type WorkbenchQueueCommandView,
-	type WorkbenchSessionView,
-	type WorkbenchThreadLinkActions,
-	type WorkbenchView,
-	type WorkbenchVoiceView,
-} from "@/ui/workbench/contracts";

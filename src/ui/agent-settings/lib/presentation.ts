@@ -10,8 +10,8 @@ import type {
 	BrowserThreadCandidate,
 	BrowserThreadLink,
 } from "@/shared/codex-browser-model";
-import type { LoginVariant, PendingLogin } from "@/ui/agent-settings/lib/contracts";
-import type { FactRow } from "@/ui/board-dialogs";
+import type { LoginVariant, PendingLogin } from "@/ui/agent-settings/types/contracts";
+import { type FactRow } from "@/ui/dialog-parts";
 
 /** The badge tone a state maps to. */
 type BadgeTone = "default" | "secondary" | "destructive" | "outline";

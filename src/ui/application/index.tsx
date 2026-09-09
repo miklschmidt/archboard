@@ -7,9 +7,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
-import { AgentSettingsHost } from "@/ui/application/lib/agent-settings-host";
-import { ApplicationPane } from "@/ui/application/lib/application-pane";
-import { BoardDialogsHost } from "@/ui/application/lib/dialogs";
+import { AgentSettingsHost } from "@/ui/application/components/AgentSettingsHost";
+import { ApplicationPane } from "@/ui/application/components/ApplicationPane";
+import { BoardDialogsHost } from "@/ui/application/components/BoardDialogsHost";
 import {
 	codeTargetShellNotice,
 	failureNotice,
@@ -17,31 +17,29 @@ import {
 	noteNotices,
 	presentationNotice,
 } from "@/ui/application/notices";
-import { OpenerSettingsHost } from "@/ui/application/lib/opener-settings-host";
+import { OpenerSettingsHost } from "@/ui/application/components/OpenerSettingsHost";
 import { openPendingRecovery, paneEvents } from "@/ui/application/lib/pane-events";
 import { heldBoardKeys, recordFor } from "@/ui/application/pane-records";
 import { createShellActions } from "@/ui/application/lib/shell-actions";
 import { assembleShellView } from "@/ui/application/shell-view";
 import { applyTheme, initialTheme } from "@/ui/application/lib/theme";
-import { useBoardDialogs } from "@/ui/application/lib/use-board-dialogs";
-import { useBoardPlaceholders } from "@/ui/application/lib/use-board-placeholders";
-import { useBoards, type Boards } from "@/ui/application/lib/use-boards";
+import { useBoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
+import { useBoardPlaceholders } from "@/ui/application/hooks/use-board-placeholders";
+import { useBoards, type Boards } from "@/ui/application/hooks/use-boards";
 import {
 	shellPresentationOf,
 	useFullscreen,
 	type Fullscreen,
-} from "@/ui/application/lib/use-fullscreen";
-import { useNotices, type NoticeStack } from "@/ui/application/lib/use-notices";
-import { usePanes, type Panes } from "@/ui/application/lib/use-panes";
-import { useAgentActivity, type AgentActivity } from "@/ui/application/lib/use-agent-activity";
-import { useReducedMotion } from "@/ui/application/lib/use-reduced-motion";
-import { useStageEvents, type EscapeOrigin } from "@/ui/application/lib/use-stage-events";
-import { useWorkbench } from "@/ui/application/lib/use-workbench";
-import {
-	PresentationVoiceControls,
-	WorkbenchDockBody,
-	WorkbenchDockHeader,
-} from "@/ui/application/lib/workbench-frame";
+} from "@/ui/application/hooks/use-fullscreen";
+import { useNotices, type NoticeStack } from "@/ui/application/hooks/use-notices";
+import { usePanes, type Panes } from "@/ui/application/hooks/use-panes";
+import { useAgentActivity, type AgentActivity } from "@/ui/application/hooks/use-agent-activity";
+import { useReducedMotion } from "@/ui/application/hooks/use-reduced-motion";
+import { useStageEvents, type EscapeOrigin } from "@/ui/application/hooks/use-stage-events";
+import { useWorkbench } from "@/ui/application/hooks/use-workbench";
+import { PresentationVoiceControls } from "@/ui/application/components/PresentationVoiceControls";
+import { WorkbenchDockBody } from "@/ui/application/components/WorkbenchDockBody";
+import { WorkbenchDockHeader } from "@/ui/application/components/WorkbenchDockHeader";
 import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import type { DoingEntry } from "@/ui/types";
 import { useLibrary, type LibraryController } from "@/ui/board-library";
@@ -50,7 +48,6 @@ import {
 	ActivityList,
 	SETTINGS_TRIGGER_ID,
 	Shell,
-	recentDoing,
 	type SettingsSurface,
 	type ShellActions,
 	type ShellView,
@@ -174,13 +171,13 @@ interface WorkbenchSlots {
 
 /**
  * The active pane's recent activity, rendered once for the workbench's
- * session column or, without a workbench, the dock's own column.
+ * session column or, without a workbench, the dock's own column. The list
+ * owns how much of the pane's `doing` it shows.
  * @param doing Every `doing` line the active pane holds.
  * @returns The list, or null when there is nothing to show.
  */
 function useActivity(doing: readonly DoingEntry[]): React.ReactNode {
-	const recent = useMemo(() => recentDoing(doing), [doing]);
-	return useMemo(() => (recent.length === 0 ? null : <ActivityList entries={recent} />), [recent]);
+	return useMemo(() => (doing.length === 0 ? null : <ActivityList entries={doing} />), [doing]);
 }
 
 /**

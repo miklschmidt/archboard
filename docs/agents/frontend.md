@@ -124,6 +124,14 @@ lint enforcement; routing and Query are separate delivery scopes.
 Existing generated/vendor conventions retain only their documented exceptions.
 Backend and CLI structure is outside this adoption.
 
+`archboard/ui-concern-placement` enforces the mechanically checkable half of
+these rules over authored `src/ui` source: the concern folder names above,
+PascalCase component files, `use-` prefixed kebab-case hook files, scoped
+kebab-case everywhere else, and React markup and hook exports only in
+`components/`, `hooks/` or an intentionally public module-root entrypoint. The
+documented generated/vendor files keep the exemption they already have in
+`.oxlintrc.jsonc`.
+
 Keep tests under the owners in [boundaries.md](boundaries.md), with names that
 truthfully identify the contract tested. Follow [test-suite.md](test-suite.md)
 for runtime validation and the repository test policy for choosing the cheapest

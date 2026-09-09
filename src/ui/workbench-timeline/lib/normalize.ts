@@ -10,7 +10,7 @@ import type {
 	TimelineTurn,
 	WorkbenchTimelineInput,
 	WorkbenchTimelineRuntime,
-} from "@/ui/workbench-timeline/lib/contract";
+} from "@/ui/workbench-timeline/types/contract";
 import { record, textField } from "@/ui/workbench-timeline/lib/details";
 import { stableBoundedKey } from "@/ui/workbench-timeline/lib/stable-key";
 

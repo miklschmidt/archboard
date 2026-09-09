@@ -13,7 +13,7 @@ import type {
 	CustomCommandDraft,
 	CustomCommandIssues,
 	OpenerChoice,
-} from "@/ui/opener-settings/lib/contracts";
+} from "@/ui/opener-settings/types/contracts";
 
 type PresetName = Extract<OpenerSelection, { kind: "preset" }>["preset"];
 

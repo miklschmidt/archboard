@@ -1,8 +1,8 @@
 // One realtime media run: the record for a single start attempt, its bounded
 // operations, and the cleanup that releases every browser resource it took.
 
-import { INITIAL_REALTIME_STATE } from "@/ui/codex-realtime/lib/contract";
-import type { RealtimeCorrelation, RealtimeState } from "@/ui/codex-realtime/lib/contract";
+import { INITIAL_REALTIME_STATE } from "@/ui/codex-realtime/types/contract";
+import type { RealtimeCorrelation, RealtimeState } from "@/ui/codex-realtime/types/contract";
 import type {
 	RealtimeDataChannel,
 	RealtimeEventSource,

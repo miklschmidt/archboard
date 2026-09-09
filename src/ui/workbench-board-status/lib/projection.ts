@@ -10,7 +10,7 @@ import type {
 	WorkbenchSemanticContextPresentation,
 	WorkbenchSemanticContextState,
 	WorkbenchTakeBackState,
-} from "@/ui/workbench-board-status/lib/contract";
+} from "@/ui/workbench-board-status/types/contract";
 
 const CONNECTION_LABELS: Readonly<Record<WorkbenchBoardConnectionState, string>> = {
 	disconnected: "Disconnected",

@@ -38,4 +38,4 @@ export type {
 	WorkbenchComposerTransport,
 	WorkbenchComposerTurn,
 	WorkbenchComposerTurnId,
-} from "@/ui/workbench-composer/lib/contract";
+} from "@/ui/workbench-composer/types/contract";

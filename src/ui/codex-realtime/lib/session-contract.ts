@@ -7,7 +7,7 @@ import type {
 	RealtimeState,
 	RealtimeUnsubscribe,
 	RealtimeCorrelation,
-} from "@/ui/codex-realtime/lib/contract";
+} from "@/ui/codex-realtime/types/contract";
 import type { RealtimeMediaEnvironment } from "@/ui/codex-realtime/lib/environment";
 import { isStopFailure } from "@/ui/codex-realtime/lib/run";
 import type { RealtimeMediaSnapshot, Run } from "@/ui/codex-realtime/lib/run";
