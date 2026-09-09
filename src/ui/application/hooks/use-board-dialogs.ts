@@ -64,12 +64,16 @@ interface BoardDialogEvents {
 	readonly onMoveAbandoned: () => void;
 	/** A command finished; the words are for a notice, when there are any. */
 	/**
-	 * A command finished. The boards it wrote are named so what the shell holds
-	 * about them can be read again; a command that wrote none names none.
-	 * @param message Words for the notice, when there are any.
+	 * A command finished, however it ended: these boards were written and what
+	 * the shell holds about them is behind. A command that wrote none names none.
 	 * @param boards The boards the command wrote.
 	 */
-	readonly onDone: (message: string | null, boards: readonly string[]) => void;
+	readonly onWrote: (boards: readonly string[]) => void;
+	/**
+	 * A command finished without a refusal.
+	 * @param message Words for the notice, when there are any.
+	 */
+	readonly onDone: (message: string | null) => void;
 	/** The person confirmed closing a pane that held work. */
 	readonly onClosePane: (paneId: string) => void;
 	/** No dialog is open any more, whatever closed it. */
@@ -157,13 +161,17 @@ function useBoardDialogs(
 			switch (outcome.kind) {
 				case "done":
 					setState(CLOSED);
-					events.onDone(outcome.message, outcome.boards);
+					events.onWrote(outcome.boards);
+					events.onDone(outcome.message);
 					events.onClosed();
 					return;
 				case "conflict":
 					show({ kind: "conflict", conflict: outcome.conflict, hold: outcome.hold, context });
 					return;
 				default:
+					// The dialog stays open with the refusal, and whatever the command
+					// wrote before it failed is still read again.
+					events.onWrote(outcome.boards);
 					setState((current) => ({
 						...current,
 						busy: false,

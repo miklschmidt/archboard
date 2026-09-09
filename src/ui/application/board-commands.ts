@@ -71,7 +71,12 @@ type BoardCommandOutcome =
 			readonly conflict: BoardWriteConflict;
 			readonly hold: BoardHold | null;
 	  }
-	| { readonly kind: "failed"; readonly error: DialogError };
+	| {
+			readonly kind: "failed";
+			readonly error: DialogError;
+			/** What it had already written when it failed; nothing is rolled back. */
+			readonly boards: readonly string[];
+	  };
 
 const SERVER_API: BoardCommandApi = {
 	open: openBoard,
@@ -119,40 +124,65 @@ function identityOf(request: BoardDialogRequest): BoardIdentity {
 }
 
 /**
- * A failed command as a dialog error.
- * @param title What was attempted.
+ * Plain words for what was thrown.
  * @param error What was thrown.
- * @returns The outcome.
+ * @returns The message.
  */
-function failed(title: string, error: unknown): BoardCommandOutcome {
-	const message = error instanceof Error ? error.message : String(error);
-	return { kind: "failed", error: { title, message } };
-}
-
-/** What a command wrote, and the words for it. */
-interface Written {
-	readonly message: string | null;
-	readonly boards: readonly string[];
+function messageOf(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
 }
 
 /**
+ * A failed command as a dialog error, with whatever it had already written.
+ * @param title What was attempted.
+ * @param error What was thrown.
+ * @param boards The boards it wrote before it failed.
+ * @returns The outcome.
+ */
+function failed(
+	title: string,
+	error: unknown,
+	boards: readonly string[] = [],
+): BoardCommandOutcome {
+	return { kind: "failed", error: { title, message: messageOf(error) }, boards };
+}
+
+/** Say that a board has been written. */
+type Wrote = (board: string) => void;
+
+/**
  * Run a command, turning a conflict and a failure into outcomes.
+ *
+ * A command is not one write: creating a board writes a note and then points a
+ * pane at it, and the pane can be gone by then. What the command wrote is
+ * collected as it goes rather than returned at the end, so a step that fails
+ * afterwards cannot take the earlier write with it: the board exists, and what
+ * the shell holds about it has to be read again either way. Nothing is rolled
+ * back and nothing is retried; the person is told what happened.
  * @param title What is attempted, for the error.
- * @param command The command.
+ * @param command The command, told what it has written as it writes.
  * @returns The outcome.
  */
 async function attempt(
 	title: string,
-	command: () => Promise<Written>,
+	command: (wrote: Wrote) => Promise<string | null>,
 ): Promise<BoardCommandOutcome> {
+	const boards: string[] = [];
+	/**
+	 * Remember a board this command has written.
+	 * @param board The board key.
+	 */
+	const wrote: Wrote = (board: string): void => {
+		boards.push(board);
+	};
 	try {
-		const written = await command();
-		return { kind: "done", message: written.message, boards: written.boards };
+		return { kind: "done", message: await command(wrote), boards };
 	} catch (error) {
 		if (error instanceof BoardConflictError) {
+			// A refused write is a write that did not happen.
 			return { kind: "conflict", conflict: error.conflict, hold: error.held ?? null };
 		}
-		return failed(title, error);
+		return failed(title, error, boards);
 	}
 }
 
@@ -188,7 +218,7 @@ function saveAs(
 	if (boardKey === null) {
 		return Promise.resolve(failed("Save as", new Error("This pane holds no board to save.")));
 	}
-	return attempt("Save as", async () => {
+	return attempt("Save as", async (wrote) => {
 		const save: SaveRequest = {
 			board: boardKey,
 			clientId: context.clientId,
@@ -204,8 +234,32 @@ function saveAs(
 		const result = await api.save(save);
 		// Both boards moved: the note that was written, and the one it was written
 		// from, whose own state a branch or a rename leaves behind.
-		return { message: savedMessage(result), boards: [result.board, boardKey] };
+		wrote(result.board);
+		wrote(boardKey);
+		return savedMessage(result);
 	});
+}
+
+/**
+ * Point the pane at a board that has just been created, saying plainly if it
+ * cannot be: the note exists either way, and a person told only that the
+ * command failed would try to create it again.
+ * @param api The server.
+ * @param created The board that was created.
+ * @param context The pane.
+ */
+async function openCreated(
+	api: BoardCommandApi,
+	created: BoardInfo,
+	context: BoardCommandContext,
+): Promise<void> {
+	try {
+		await api.open(openRequest(created.identity, context.pane));
+	} catch (error) {
+		throw new Error(`Created ${created.board}, but it could not be opened: ${messageOf(error)}`, {
+			cause: error,
+		});
+	}
 }
 
 /**
@@ -225,13 +279,15 @@ function runBoardDialogRequest(
 		case "open":
 			return attempt("Open board", async () => {
 				await api.open(openRequest(identity, context.pane));
-				return { message: null, boards: [] };
+				return null;
 			});
 		case "create":
-			return attempt("Create board", async () => {
+			return attempt("Create board", async (wrote) => {
 				const created = await api.create(identity);
-				await api.open(openRequest(created.identity, context.pane));
-				return { message: `Created ${created.board}.`, boards: [created.board] };
+				// The note exists from here on, whatever the pane does next.
+				wrote(created.board);
+				await openCreated(api, created, context);
+				return `Created ${created.board}.`;
 			});
 		default:
 			return saveAs(api, request, context);
@@ -254,7 +310,7 @@ function runOpen(
 		await api.open(openRequest(identity, context.pane));
 		// Opening writes nothing: it changes which board a pane shows, which the
 		// listing covers, and leaves every board as it was.
-		return { message: null, boards: [] };
+		return null;
 	});
 }
 
@@ -276,7 +332,7 @@ function runOpenKey(
 	return attempt("Open board", async () => {
 		await api.open({ board: boardKey, pane });
 		// A restore points a pane at a board; nothing about any board moved.
-		return { message: null, boards: [] };
+		return null;
 	});
 }
 
@@ -296,7 +352,7 @@ function runSave(
 	if (boardKey === null) {
 		return Promise.resolve(failed("Save", new Error("This pane holds no board to save.")));
 	}
-	return attempt("Save", async () => {
+	return attempt("Save", async (wrote) => {
 		const save: SaveRequest = {
 			board: boardKey,
 			clientId: context.clientId,
@@ -306,7 +362,9 @@ function runSave(
 			save.force = true;
 		}
 		const result = await api.save(save);
-		return { message: savedMessage(result), boards: [result.board, boardKey] };
+		wrote(result.board);
+		wrote(boardKey);
+		return savedMessage(result);
 	});
 }
 
@@ -324,12 +382,12 @@ function runReload(
 	if (board === null) {
 		return Promise.resolve(failed("Reload", new Error("This pane holds no board to reload.")));
 	}
-	return attempt("Reload", async () => {
+	return attempt("Reload", async (wrote) => {
 		await api.open(openRequest(board, context.pane, true));
-		return {
-			message: `Reloaded ${board.board} from its note.`,
-			boards: context.boardKey === null ? [] : [context.boardKey],
-		};
+		if (context.boardKey !== null) {
+			wrote(context.boardKey);
+		}
+		return `Reloaded ${board.board} from its note.`;
 	});
 }
 
@@ -347,9 +405,10 @@ function runClear(
 	if (boardKey === null) {
 		return Promise.resolve(failed("Clear", new Error("This pane holds no board to clear.")));
 	}
-	return attempt("Clear board", async () => {
+	return attempt("Clear board", async (wrote) => {
 		const { count } = await api.clear(boardKey, context.clientId, context.expectVersion);
-		return { message: `Removed ${count} element(s).`, boards: [boardKey] };
+		wrote(boardKey);
+		return `Removed ${count} element(s).`;
 	});
 }
 
