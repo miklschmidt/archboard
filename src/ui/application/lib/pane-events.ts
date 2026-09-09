@@ -6,6 +6,7 @@
 import type { LibraryItems } from "@excalidraw/excalidraw/types";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
+import { agentBoardChange } from "@/ui/application/agent-activity";
 import {
 	boardErrorNotice,
 	codeTargetShellNotice,
@@ -23,10 +24,11 @@ import { contextFor } from "@/ui/application/lib/shell-actions";
 import type { PaneSession } from "@/ui/application/lib/pane-handles";
 import type { AgentActivity } from "@/ui/application/hooks/use-agent-activity";
 import type { BoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
-import type { Boards } from "@/ui/application/hooks/use-boards";
+import type { MountedPreviews } from "@/ui/application/hooks/use-mounted-previews";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { PaneEvents, Panes } from "@/ui/application/hooks/use-panes";
 import type { useWorkbench } from "@/ui/application/hooks/use-workbench";
+import type { BoardCatalog } from "@/ui/board-catalog";
 import type { LibraryController } from "@/ui/board-library";
 import type { RecoveryKind, ThemeChoice } from "@/ui/shell";
 import type { AgentActivityEntry, EditWithdrawalReason, PaneStatus } from "@/ui/types";
@@ -41,7 +43,8 @@ interface RecoveryOwners {
 interface PaneEventOwners extends RecoveryOwners {
 	readonly notices: NoticeStack;
 	readonly library: LibraryController;
-	readonly boards: Boards;
+	readonly catalog: BoardCatalog;
+	readonly previews: MountedPreviews;
 	readonly workbench: ReturnType<typeof useWorkbench>;
 	readonly activity: AgentActivity;
 	readonly setTheme: (theme: ThemeChoice) => void;
@@ -141,14 +144,14 @@ function onNoteState(owners: RecoveryOwners, status: PaneStatus, change: NoteSta
  * @returns The events.
  */
 function paneEvents(owners: PaneEventOwners): PaneEvents {
-	const { notices, library, boards, workbench } = owners;
+	const { notices, library, catalog, workbench } = owners;
 	/**
 	 * A pane published its status: its transport and its scene may have changed.
 	 * @param paneId The pane.
 	 */
 	function onStatusPublished(paneId: string): void {
 		workbench.paneReported(paneId);
-		boards.previewMounted(paneId);
+		owners.previews.previewMounted(paneId);
 	}
 	/**
 	 * A pane reported its session, or went.
@@ -215,14 +218,27 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 	}
 	/** The server accepted a changed pane report: the listing may have moved. */
 	function onPaneStateAccepted(): void {
-		boards.refresh();
+		catalog.refresh();
+	}
+	/**
+	 * A pane's socket came back: everything this tab caches about the server
+	 * may have moved while it was down, and nothing said so.
+	 */
+	function onPaneReconnected(): void {
+		catalog.reconnected();
 	}
 	/**
 	 * Which boards an agent is working on.
 	 * @param snapshot The whole snapshot.
 	 */
 	function onAgentActivity(snapshot: readonly AgentActivityEntry[]): void {
+		const change = agentBoardChange(owners.activity.map, snapshot);
 		owners.activity.replace(snapshot);
+		if (change.settled.length > 0) {
+			catalog.boardsChanged(change.settled);
+		} else if (change.started.length > 0) {
+			catalog.refresh();
+		}
 	}
 	/**
 	 * A pane withdrew the person's unwritten edit (ADR 0022).
@@ -248,6 +264,7 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		onLibraryChanged,
 		onLibraryChange,
 		onPaneStateAccepted,
+		onPaneReconnected,
 		onStatusPublished,
 		/**
 		 * A pane's note state began or ended.

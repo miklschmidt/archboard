@@ -1,6 +1,10 @@
 import { expect, test } from "bun:test";
 
-import { NO_AGENT_ACTIVITY, replaceAgentActivity } from "@/ui/application/agent-activity";
+import {
+	NO_AGENT_ACTIVITY,
+	agentBoardChange,
+	replaceAgentActivity,
+} from "@/ui/application/agent-activity";
 import type { AgentActivityEntry, LockHolder } from "@/ui/types";
 
 const CLAIM: LockHolder = {
@@ -41,4 +45,21 @@ test("a snapshot replaces the whole map and an equal snapshot keeps its identity
 	expect(moved["Checkout"]?.doing?.doing).toBe("done");
 	expect(replaceAgentActivity(moved, [])).toEqual({});
 	expect(replaceAgentActivity(NO_AGENT_ACTIVITY, [])).toBe(NO_AGENT_ACTIVITY);
+});
+
+test("the boards an agent picked up and put down are named by comparing snapshots", () => {
+	const working = replaceAgentActivity(NO_AGENT_ACTIVITY, [WORKING]);
+	const startedBilling = agentBoardChange(working, [WORKING, { ...WORKING, board: "Billing" }]);
+	expect(startedBilling.started).toEqual(["Billing"]);
+	expect(startedBilling.settled).toEqual([]);
+
+	const finished = agentBoardChange(working, []);
+	expect(finished.started).toEqual([]);
+	expect(finished.settled).toEqual(["Checkout"]);
+
+	// A board an agent is still on says nothing, however much its line changed.
+	const stillWorking = agentBoardChange(working, [
+		{ ...WORKING, doing: { ...WORKING.doing!, doing: "still moving the queue" } },
+	]);
+	expect(stillWorking).toEqual({ started: [], settled: [] });
 });

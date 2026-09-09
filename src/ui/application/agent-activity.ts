@@ -43,4 +43,40 @@ function replaceAgentActivity(
 	return sameActivity(current, next) ? current : Object.freeze(next);
 }
 
-export { NO_AGENT_ACTIVITY, replaceAgentActivity, type AgentActivityMap };
+/** Which boards an agent picked up or put down between two snapshots. */
+interface AgentBoardChange {
+	/** Boards an agent has just started working on. */
+	readonly started: readonly string[];
+	/** Boards an agent has stopped working on: whatever it wrote is settled. */
+	readonly settled: readonly string[];
+}
+
+/**
+ * What changed hands between the map held now and the snapshot that arrived.
+ *
+ * A board an agent put down is the moment its content is worth reading again;
+ * a board an agent picked up may be one the vault has never listed. Neither is
+ * announced any other way, so this is how the shell knows to ask (TASK-167).
+ * @param current The map held now.
+ * @param snapshot Every board an agent is working on.
+ * @returns The boards started and settled.
+ */
+function agentBoardChange(
+	current: AgentActivityMap,
+	snapshot: readonly AgentActivityEntry[],
+): AgentBoardChange {
+	const now = new Set(snapshot.map((entry) => entry.board));
+	const before = Object.keys(current);
+	return {
+		started: [...now].filter((board) => !(board in current)),
+		settled: before.filter((board) => !now.has(board)),
+	};
+}
+
+export {
+	NO_AGENT_ACTIVITY,
+	agentBoardChange,
+	replaceAgentActivity,
+	type AgentActivityMap,
+	type AgentBoardChange,
+};

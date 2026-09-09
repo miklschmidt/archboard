@@ -12,11 +12,11 @@ import {
 import { NOTICE_ACTIONS, failureNotice, infoNotice } from "@/ui/application/notices";
 import type { PaneList } from "@/ui/application/pane-list";
 import { recordFor, type PaneRecord } from "@/ui/application/pane-records";
-import type { Boards } from "@/ui/application/hooks/use-boards";
 import { EMPTY_DRAFT, type BoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
 import type { Fullscreen } from "@/ui/application/hooks/use-fullscreen";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { Panes } from "@/ui/application/hooks/use-panes";
+import type { BoardCatalog } from "@/ui/board-catalog";
 import type {
 	RecoveryKind,
 	SettingsSurface,
@@ -30,7 +30,7 @@ import type { BoardIdentity, BoardListing } from "@/ui/types";
 interface ShellActionDeps {
 	readonly setTheme: (theme: ThemeChoice) => void;
 	readonly panes: Panes;
-	readonly boards: Boards;
+	readonly catalog: BoardCatalog;
 	readonly dialogs: BoardDialogs;
 	readonly notices: NoticeStack;
 	readonly fullscreen: Fullscreen;
@@ -104,7 +104,7 @@ function settle(
 			if (outcome.message !== null) {
 				deps.notices.raise(infoNotice("board-command", title, outcome.message));
 			}
-			deps.boards.refresh();
+			deps.catalog.refresh();
 			return;
 		case "conflict":
 			deps.dialogs.openConflict(outcome.conflict, outcome.hold, context);
@@ -140,7 +140,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 	 * @param key The board key.
 	 */
 	async function selectBoard(key: string): Promise<void> {
-		const identity = identityFor(deps.boards.listing, key);
+		const identity = identityFor(deps.catalog.listing, key);
 		const context = contextFor(panes.list, panes.active);
 		if (identity === null) {
 			deps.notices.raise(failureNotice("board-command", "Open board", `${key} is not listed.`));
@@ -175,7 +175,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 	}
 	/** Read the listing and every preview again. */
 	function refreshBoards(): void {
-		deps.boards.reload();
+		deps.catalog.reload();
 	}
 	return {
 		/**

@@ -7,12 +7,23 @@ import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import { reportPane, type PaneReply, type PaneReport } from "@/ui/canvas/api";
 import { buildPaneReport, paneReportKey } from "@/ui/canvas/lib/pane-report";
 import type { PaneSocketConnector } from "@/ui/canvas/lib/pane-socket";
+import type { CanvasSessionOptions } from "@/ui/canvas/lib/session-contracts";
 import {
 	createCanvasPaneReportSequencer,
 	type CanvasPaneReportCurrent,
 	type CanvasPaneReportDispatch,
 	type CanvasPaneReportEffects,
 } from "@/ui/canvas/workbench-socket";
+
+/**
+ * The two things the sender has to say beyond the pane's connection health,
+ * taken from the session options rather than forwarded one at a time: both are
+ * answers to a pane report, and this is the only place either is raised.
+ */
+type PaneReportListeners = Pick<
+	CanvasSessionOptions<never>,
+	"onPaneStateAccepted" | "onStaleFrontend"
+>;
 
 /** What the sender reads and tells. */
 interface PaneReportSenderParts {
@@ -25,8 +36,8 @@ interface PaneReportSenderParts {
 	readonly focused: () => boolean;
 	readonly connector: PaneSocketConnector;
 	readonly setConnected: (connected: boolean) => void;
-	readonly onPaneStateAccepted: () => void;
-	readonly onStaleFrontend: (message: string) => void;
+	/** The session's listeners, read at the moment there is something to say. */
+	readonly listeners: () => PaneReportListeners;
 }
 
 /** One pane's report sender. */
@@ -62,6 +73,14 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 	}
 
 	/**
+	 * Tell the session this tab is running old code.
+	 * @param message What the server said about it.
+	 */
+	function tellStaleBuild(message: string): void {
+		parts.listeners().onStaleFrontend?.(message);
+	}
+
+	/**
 	 * Say once per build that this tab is running old code (TASK-056).
 	 * @param result The pane-report answer.
 	 */
@@ -74,7 +93,7 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 			return;
 		}
 		staleBuild = stale.current ?? "";
-		parts.onStaleFrontend(stale.message);
+		tellStaleBuild(stale.message);
 	}
 
 	/**
@@ -86,7 +105,7 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 		const listingKey = JSON.stringify([report.clientId, report.board]);
 		if (listingKey !== acceptedListingKey) {
 			acceptedListingKey = listingKey;
-			parts.onPaneStateAccepted();
+			parts.listeners().onPaneStateAccepted?.();
 		}
 	}
 
@@ -201,4 +220,9 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 	return { send, forget };
 }
 
-export { createPaneReportSender, type PaneReportSender, type PaneReportSenderParts };
+export {
+	createPaneReportSender,
+	type PaneReportListeners,
+	type PaneReportSender,
+	type PaneReportSenderParts,
+};

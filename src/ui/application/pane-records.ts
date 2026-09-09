@@ -15,8 +15,6 @@ interface PaneRecord {
 	readonly selection: SelectionProjection;
 	readonly pathFocus: PathFocusSnapshot;
 	readonly overlay: PathFocusOverlay | null;
-	/** The board is scratch: a note without a chosen name (ADR 0009). */
-	readonly placeholder: boolean;
 }
 
 /** Every field a patch may carry; `patchRecord` compares them one by one. */
@@ -27,7 +25,6 @@ const RECORD_FIELDS = [
 	"selection",
 	"pathFocus",
 	"overlay",
-	"placeholder",
 ] as const satisfies readonly (keyof PaneRecord)[];
 
 /** The records by pane id. */
@@ -71,7 +68,6 @@ function initialPaneRecord(paneId: string): PaneRecord {
 		selection: EMPTY_SELECTION,
 		pathFocus: INACTIVE_FOCUS,
 		overlay: null,
-		placeholder: false,
 	});
 }
 

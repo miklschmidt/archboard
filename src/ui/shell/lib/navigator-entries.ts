@@ -4,7 +4,6 @@
 // agent is doing where, and the scratch boards. Pure: no React.
 
 import type { ScratchBoardEntry, ShellView } from "@/ui/shell/types/contracts";
-import type { PreviewSource } from "@/ui/board-preview";
 import type { AgentActivityEntry, BoardIdentity, BoardListing } from "@/ui/types";
 
 /** Pane letters in reading order; a third pane would be a number. */
@@ -23,7 +22,6 @@ function paneLetter(index: number): string {
 interface NavigatorEntry {
 	key: string;
 	identity: BoardIdentity;
-	preview: PreviewSource | null;
 	/** Open in the session but not persisted in the vault. */
 	draft: boolean;
 	/** The letter of the pane showing this board, or null when no pane holds it. */
@@ -78,7 +76,7 @@ interface EntrySource {
 }
 
 /**
- * Build one entry from its source and the view's previews and pane letters.
+ * Build one entry from its source and the view's pane letters.
  * @param source The board's key, identity and flags.
  * @param view The shell view.
  * @param letters Board key to pane letter.
@@ -92,7 +90,6 @@ function toEntry(
 	return {
 		key: source.key,
 		identity: source.identity,
-		preview: view.previews[source.key] ?? null,
 		draft: source.draft,
 		onScreen: letters.get(source.key) ?? null,
 		placeholder: source.placeholder,
@@ -139,7 +136,7 @@ function boardSources(view: ShellView, scratchKeys: ReadonlySet<string>): EntryS
  * Group the listing by board name, drafts included. The vault lists boards in
  * directory order, which changes between restarts; a person finds a board by
  * name, so groups and their variants are sorted by name.
- * @param view The shell view holding the listing and the previews.
+ * @param view The shell view holding the listing.
  * @returns Groups by board name, variants by key.
  */
 function groupBoards(view: ShellView): NavigatorGroup[] {
@@ -164,7 +161,7 @@ function groupBoards(view: ShellView): NavigatorGroup[] {
 
 /**
  * Scratch boards as navigator entries.
- * @param view The shell view holding the scratch list and the previews.
+ * @param view The shell view holding the scratch list.
  * @returns One entry per scratch board.
  */
 function scratchEntries(view: ShellView): NavigatorEntry[] {
