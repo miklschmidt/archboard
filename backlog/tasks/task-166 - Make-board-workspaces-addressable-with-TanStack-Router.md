@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 13:12'
+updated_date: '2026-09-09 13:50'
 labels: []
 dependencies:
   - TASK-164
@@ -101,6 +101,69 @@ Researched contract, awaiting TASK-165 cleanup base before implementation.
 
 10. Ownership constraints (parent, 2026-09-09): the navigation module owns no server resource and shares no cache owner with TASK-167's Query resources; application-root edits stay minimal (seed the pane list from the parsed search, compose the publish/consume hooks, mark deliberate opens) with the rest inside the navigation module. Implementation may start in the isolated worktree ahead of TASK-165 once the parent accepts the contract; TASK-165's rename map is applied at rebase.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented on claude/task-166-workspace-router, rebased onto main 10a4d3bc.
+
+New module `src/ui/board-routing` owns the address: `address.ts` (the workspace
+model and the plan from displayed to wanted), `search.ts` (the search-parameter
+encoding), `intent.ts` (which change a person asked for), `restore.ts` (the
+stepwise restore and its preflight), `contracts.ts` (the port the application
+implements), `BoardRoutingHost.tsx` (the one code-based route at `/`), and the
+two hooks. `@tanstack/react-router` is pinned at 1.170.33; no router plugin, no
+devtools, no generated route tree.
+
+The workspace lives in search parameters — `?paneA=<key>&paneB=<key>&pane=A|B` —
+carrying the board key exactly as `PaneStatus.boardKey` spells it. Path segments
+were rejected on evidence: `src/server/canvas/lib/service-routes.ts` serves the
+page at `/` alone, so a path would answer 404 on every direct load, and board
+keys may contain `/`.
+
+The address follows the note and leads only on the first load and on a history
+POP or GO. Restoring issues the shell's own open command through a new
+`runOpenKey`; the server parses `name@variant` itself, so the UI needs no key
+parser and no listing lookup, and routing therefore has no loader and shares no
+Query cache. Push versus replace is decided by the gesture — the picker, the
+board dialogs, pane add/close, and the canvas drill-down through one new
+`onBoardOpenRequested` option beside `onBoardLinkError`. An expectation is met
+by "the pane I asked to move has moved", is cleared on any settle, and is
+cleared explicitly when a command does not finish, so no stale push-intent
+marker can survive a failed gesture.
+
+`src/ui/application/navigation-guard.ts` is the one rule for every way a board
+leaves a pane. A hold or an edit the server has not taken refuses the move; the
+workspace and the address both stay, and the hold's own conflict dialog is
+offered. Closing a held pane keeps its existing confirmation. A restore
+preflights every pane it would move or close before each step, and a board it
+cannot reach is named while the address is replaced with the workspace actually
+on screen.
+
+Two supporting changes. The guard needed `CanvasSession.pendingEdits()` over the
+pane core's existing `pending()`; `pane-core.ts` was at the 600-line limit, so
+its two interfaces moved to `canvas/lib/pane-core-contracts.ts` unchanged.
+`clearLibraryHash` now preserves both `window.location.search` and
+`window.history.state`: `@tanstack/history` patches `pushState`/`replaceState`
+and keeps `__TSR_index`/`__TSR_key` in that state, so the old rewrite would have
+dropped the workspace and the router's place in the history.
+
+Coverage: 24 module tests in `src/ui/board-routing/tests` (address and plan,
+search round trip, intent staleness, restore stepping, readiness waiting,
+preflight refusal, unreachable naming, termination), six in
+`src/ui/application/tests/navigation-guard.test.ts`, and
+`tests/system/browser/workspace-address.test.ts` registered in
+BROWSER_TEST_PATHS and the package browser lane. `docs/agents/frontend.md`
+records the delivered contract.
+
+Focused checks green: both TypeScript projects, `bun run lint`, `oxfmt --check`,
+`bun test src/ui` (942), the repository-policy lane, and the frontend build.
+The browser lane and the integrated `bun run check` are the parent's slot.
+
+One blocker on main, not from this branch: `src/ui/shell/types/contracts.ts:104`
+still uses `React.ReactNode` and fails the new `archboard(named-react-imports)`
+rule from main's own 6d7700a9. Reported to the parent.
+<!-- SECTION:NOTES:END -->
 
 ## Comments
 
