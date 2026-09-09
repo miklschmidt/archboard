@@ -35,6 +35,27 @@ function initialPaneList(): PaneList {
 }
 
 /**
+ * The list a set of pane ids makes, in reading order, with one focused. Ids
+ * this shell does not have panes for are ignored, and naming none at all
+ * leaves the list the application starts with.
+ * @param paneIds The panes wanted, in any order.
+ * @param activePaneId The pane to focus, or null for the first.
+ * @returns The list.
+ */
+function paneListOf(paneIds: readonly string[], activePaneId: string | null): PaneList {
+	const panes = PANE_IDS.filter((paneId) => paneIds.includes(paneId)).map(paneEntry);
+	const first = panes[0];
+	if (first === undefined) {
+		return initialPaneList();
+	}
+	const active =
+		activePaneId !== null && panes.some((pane) => pane.paneId === activePaneId)
+			? activePaneId
+			: first.paneId;
+	return Object.freeze({ panes, activePaneId: active });
+}
+
+/**
  * Whether the list has a pane with this id.
  * @param list The list.
  * @param paneId The pane.
@@ -102,6 +123,7 @@ export {
 	closePane,
 	hasPane,
 	initialPaneList,
+	paneListOf,
 	primaryPaneId,
 	selectPane,
 	type PaneEntry,

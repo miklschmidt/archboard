@@ -43,6 +43,8 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 interface PaneEvents {
 	readonly onBoardError: (paneId: string, error: string) => void;
 	readonly onBoardLinkError: (error: string) => void;
+	/** A pane followed a board link: the person moved it (TASK-166). */
+	readonly onBoardOpenRequested: (paneId: string, boardKey: string) => void;
 	/** Which boards an agent is working on, across the server (ADR 0022). */
 	readonly onAgentActivity: (activity: readonly AgentActivityEntry[]) => void;
 	/** A pane withdrew the person's unwritten edit and shows the note's state (ADR 0022). */
@@ -88,6 +90,7 @@ type PaneHost = Required<
 		| "onPathFocusOverlay"
 		| "onCodeTargetNotice"
 		| "onBoardLinkError"
+		| "onBoardOpenRequested"
 		| "onAgentActivity"
 		| "onEditsWithdrawn"
 	>
@@ -251,6 +254,14 @@ function createPaneHost(setters: HostSetters): PaneHost {
 			events.read().onBoardLinkError(error);
 		},
 		/**
+		 * A pane followed a board link.
+		 * @param paneId The pane.
+		 * @param boardKey The board the person asked for.
+		 */
+		onBoardOpenRequested: (paneId: string, boardKey: string): void => {
+			events.read().onBoardOpenRequested(paneId, boardKey);
+		},
+		/**
 		 * This tab runs a bundle the canvas no longer serves.
 		 * @param message What the server said.
 		 */
@@ -314,10 +325,12 @@ function createPaneHost(setters: HostSetters): PaneHost {
 
 /**
  * The panes.
+ * @param initial The list to start with, which the address bar seeds from the
+ *   URL so a restored comparison mounts both panes in its first render.
  * @returns The panes, their records and the moves.
  */
-function usePanes(): Panes {
-	const [list, setList] = useState<PaneList>(initialPaneList);
+function usePanes(initial: () => PaneList = initialPaneList): Panes {
+	const [list, setList] = useState<PaneList>(initial);
 	const [records, setRecords] = useState<PaneRecords>({});
 	const [handles] = useState(() => new PaneHandles());
 	const [events] = useState(() => new LiveBinding<PaneEvents>());

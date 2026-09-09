@@ -166,6 +166,48 @@ function noteNotices(list: PaneList, records: PaneRecords): readonly ShellNotice
 }
 
 /**
+ * A navigation was refused because a pane would have lost work that is only on
+ * its canvas (TASK-166). The workspace and the address bar both stayed as they
+ * were; the pane's own recovery is the way on.
+ * @param paneId The pane that refused.
+ * @param reason Why: a board that has stopped saving, or an edit still in flight.
+ * @returns The notice.
+ */
+function navigationBlockedNotice(paneId: string, reason: "pending" | "hold"): ShellNotice {
+	return {
+		id: "navigation-blocked",
+		title: "Pane " + paneId + " kept its board",
+		description:
+			reason === "hold"
+				? `That board has stopped saving, so its changes exist only on pane ${paneId}. Choose what happens to them, then open the other board.`
+				: `Pane ${paneId} has a change the canvas has not taken yet. Try again in a moment.`,
+		tone: "destructive",
+		actions:
+			reason === "hold"
+				? [{ kind: "select", id: NOTICE_ACTIONS.resolveHold, label: "Choose" }]
+				: [],
+	};
+}
+
+/**
+ * The address named boards that could not be opened (TASK-166). What is on
+ * screen is what the panes could reach, and the address bar now says so.
+ * @param boardKeys The boards that could not be opened.
+ * @returns The notice.
+ */
+function unreachableBoardsNotice(boardKeys: readonly string[]): ShellNotice {
+	const named = boardKeys.join(", ");
+	return {
+		id: "unreachable-boards",
+		title:
+			boardKeys.length === 1 ? `${named} could not be opened` : "Some boards could not be opened",
+		description: `The address asked for ${named}. Check the key in Board navigation; the panes are showing what they could reach, and the address now says so.`,
+		tone: "destructive",
+		actions: [],
+	};
+}
+
+/**
  * The browser refused or lost a fullscreen presentation.
  * @param error The presentation's plain words.
  * @returns The notice.
@@ -221,9 +263,11 @@ export {
 	failureNotice,
 	holdNotice,
 	infoNotice,
+	navigationBlockedNotice,
 	noteNotices,
 	presentationNotice,
 	staleFrontendNotice,
+	unreachableBoardsNotice,
 	withNotice,
 	withdrawnNotice,
 	withoutNotice,

@@ -55,6 +55,13 @@ interface BoardDialogState {
 
 /** What the dialogs report to the application. */
 interface BoardDialogEvents {
+	/**
+	 * A submission is about to point a pane at another board. A save-as writes a
+	 * file and does not move a pane (ADR 0012), so it never says this.
+	 */
+	readonly onMovingPane: (context: BoardCommandContext) => void;
+	/** That submission did not move the pane after all. */
+	readonly onMoveAbandoned: () => void;
 	/** A command finished; the words are for a notice, when there are any. */
 	readonly onDone: (message: string | null) => void;
 	/** The person confirmed closing a pane that held work. */
@@ -136,6 +143,11 @@ function useBoardDialogs(
 	 */
 	const settle = useCallback(
 		(outcome: BoardCommandOutcome, context: BoardCommandContext): void => {
+			// Nothing moved unless the command finished, so a move announced
+			// before it is withdrawn here.
+			if (outcome.kind !== "done") {
+				events.onMoveAbandoned();
+			}
 			switch (outcome.kind) {
 				case "done":
 					setState(CLOSED);
@@ -164,11 +176,14 @@ function useBoardDialogs(
 				return;
 			}
 			setState((current) => ({ ...current, busy: true, error: null }));
+			if (request.mode !== "save-as") {
+				events.onMovingPane(open.context);
+			}
 			void runBoardDialogRequest(api, request, open.context).then((outcome) =>
 				settle(outcome, open.context),
 			);
 		},
-		[api, settle, state],
+		[api, events, settle, state],
 	);
 
 	const confirm = useCallback((): void => {

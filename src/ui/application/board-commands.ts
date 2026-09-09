@@ -36,6 +36,8 @@ interface BoardCommandApi {
 
 /** The pane a command acts for. */
 interface BoardCommandContext {
+	/** Which pane this is in the shell, as the address bar and the chrome name it. */
+	readonly paneId: string;
 	/** The pane's identity to the server: what makes the write a person's (TASK-095). */
 	readonly clientId: string;
 	/** The note version the pane last saw, which a person's write states (ADR 0022). */
@@ -232,6 +234,27 @@ function runOpen(
 }
 
 /**
+ * Point a pane at a board named by its key, the way a board link and the
+ * address bar name one: `payments` or `payments@proposed`. The server parses
+ * the key and resolves its note, so nothing here has to know how an address is
+ * spelled. The pane is always named, so a restore cannot land in the wrong one.
+ * @param api The server.
+ * @param boardKey The board key.
+ * @param pane The pane's identity to the server.
+ * @returns The outcome.
+ */
+function runOpenKey(
+	api: BoardCommandApi,
+	boardKey: string,
+	pane: string,
+): Promise<BoardCommandOutcome> {
+	return attempt("Open board", async () => {
+		await api.open({ board: boardKey, pane });
+		return null;
+	});
+}
+
+/**
  * Save the pane's board back to its own note.
  * @param api The server.
  * @param context The pane.
@@ -323,6 +346,7 @@ export {
 	runClear,
 	runConflictOutcome,
 	runOpen,
+	runOpenKey,
 	runReload,
 	runSave,
 	type BoardCommandApi,
