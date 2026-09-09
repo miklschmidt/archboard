@@ -7,6 +7,7 @@
 import {
 	createRule,
 	report,
+	type ImportSpecifierNode,
 	type RuleContext,
 	type RuleVisitors,
 	type VisitedNode,
@@ -302,6 +303,36 @@ function isImportBinding(node: VisitedNode<"Identifier">): boolean {
 	);
 }
 
+/**
+ * Whether a named import clause names the module's default export, in either
+ * spelling the grammar allows: `{ default as R }` and `{ "default" as R }`.
+ * @param specifier The import specifier.
+ * @returns Whether the clause binds the default export.
+ */
+function namesDefaultExport(specifier: ImportSpecifierNode): boolean {
+	if (specifier.type !== "ImportSpecifier") {
+		return false;
+	}
+	const { imported } = specifier;
+	return imported.type === "Identifier"
+		? imported.name === "default"
+		: imported.value === "default";
+}
+
+/**
+ * Whether one specifier binds the whole React namespace: a default import, a
+ * namespace import, or the default export reached through a named clause.
+ * @param specifier The import specifier.
+ * @returns Whether the specifier binds the namespace.
+ */
+function bindsReactNamespace(specifier: ImportSpecifierNode): boolean {
+	return (
+		specifier.type === "ImportDefaultSpecifier" ||
+		specifier.type === "ImportNamespaceSpecifier" ||
+		namesDefaultExport(specifier)
+	);
+}
+
 const namedReactImports = createRule(
 	{
 		noReactNamespace:
@@ -323,10 +354,7 @@ const namedReactImports = createRule(
 					return;
 				}
 				for (const specifier of node.specifiers) {
-					if (
-						specifier.type === "ImportDefaultSpecifier" ||
-						specifier.type === "ImportNamespaceSpecifier"
-					) {
+					if (bindsReactNamespace(specifier)) {
 						report(context, specifier, "noReactNamespaceImport");
 					}
 				}
