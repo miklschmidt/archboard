@@ -2,7 +2,7 @@
 // its three modes, the two confirmations, the two recovery dialogs of ADR
 // 0006, and the library installation dialog over the library's pending offer.
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 
 import type { BoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
 import {
@@ -42,7 +42,7 @@ interface LibraryInstallHostProps {
  * @param props The library.
  * @returns The dialog, or nothing while no library is offered.
  */
-function LibraryInstallHost(props: LibraryInstallHostProps): React.JSX.Element | null {
+function LibraryInstallHost(props: LibraryInstallHostProps): JSX.Element | null {
 	const { library } = props;
 	const { pending, error } = library;
 	const handleInstall = useCallback((): void => library.acceptInstall(), [library]);
@@ -101,7 +101,7 @@ interface ConfirmationsProps {
  * @param props The dialogs and the dismiss handler.
  * @returns The open confirmation, or nothing.
  */
-function Confirmations(props: ConfirmationsProps): React.JSX.Element | null {
+function Confirmations(props: ConfirmationsProps): JSX.Element | null {
 	const { dialogs, onOpenChange } = props;
 	const { open, busy, error } = dialogs.state;
 	if (open.kind === "confirm-clear") {
@@ -151,7 +151,7 @@ interface RecoveryDialogsProps {
  * @param props The dialogs, the active pane's notice and the dismiss handler.
  * @returns The open recovery dialog, or nothing.
  */
-function RecoveryDialogs(props: RecoveryDialogsProps): React.JSX.Element | null {
+function RecoveryDialogs(props: RecoveryDialogsProps): JSX.Element | null {
 	const { dialogs, onOpenChange } = props;
 	const { open, busyOutcome, error } = dialogs.state;
 	if (open.kind === "conflict") {
@@ -189,7 +189,7 @@ function RecoveryDialogs(props: RecoveryDialogsProps): React.JSX.Element | null 
  * @param props The dialogs' state, the listing, the levels and the library.
  * @returns Whichever dialog is open, and the library dialog.
  */
-function BoardDialogsHost(props: BoardDialogsHostProps): React.JSX.Element {
+function BoardDialogsHost(props: BoardDialogsHostProps): JSX.Element {
 	const { dialogs } = props;
 	const { open, busy, error } = dialogs.state;
 	const onOpenChange = useCloseOnDismiss(dialogs.close);

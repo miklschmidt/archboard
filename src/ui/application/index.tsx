@@ -3,7 +3,7 @@
 // the transport, the runtime and the controllers are the state; this file
 // only connects them.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
@@ -96,10 +96,10 @@ function useTheme(): [ThemeChoice, (theme: ThemeChoice) => void] {
  * @param theme The theme.
  * @returns The canvases by pane id.
  */
-function useCanvases(panes: Panes, theme: ThemeChoice): Readonly<Record<string, React.ReactNode>> {
+function useCanvases(panes: Panes, theme: ThemeChoice): Readonly<Record<string, ReactNode>> {
 	const { list, host, handles } = panes;
 	return useMemo(() => {
-		const canvases: Record<string, React.ReactNode> = {};
+		const canvases: Record<string, ReactNode> = {};
 		list.panes.forEach((entry, index) => {
 			canvases[entry.paneId] = (
 				<ApplicationPane
@@ -172,11 +172,11 @@ function usePresentationFocusReturn(presentedPaneId: string | null): void {
 
 /** The workbench's places in the shell. */
 interface WorkbenchSlots {
-	header: React.ReactNode;
-	body: React.ReactNode;
-	voice: React.ReactNode;
+	header: ReactNode;
+	body: ReactNode;
+	voice: ReactNode;
 	/** The active pane's recent `doing` lines, or null when nobody said anything. */
-	activity: React.ReactNode;
+	activity: ReactNode;
 }
 
 /**
@@ -186,7 +186,7 @@ interface WorkbenchSlots {
  * @param doing Every `doing` line the active pane holds.
  * @returns The list, or null when there is nothing to show.
  */
-function useActivity(doing: readonly DoingEntry[]): React.ReactNode {
+function useActivity(doing: readonly DoingEntry[]): ReactNode {
 	return useMemo(() => (doing.length === 0 ? null : <ActivityList entries={doing} />), [doing]);
 }
 
@@ -200,7 +200,7 @@ function useActivity(doing: readonly DoingEntry[]): React.ReactNode {
 function useWorkbenchSlots(
 	owners: WorkbenchOwners | null,
 	reducedMotion: boolean,
-	activity: React.ReactNode,
+	activity: ReactNode,
 ): WorkbenchSlots {
 	return useMemo(() => {
 		if (owners === null) {
@@ -289,7 +289,7 @@ interface SettingsHostsProps {
  * @param props The open surface, the owners, the notices and the close.
  * @returns The open dialog, or nothing.
  */
-function SettingsHosts(props: SettingsHostsProps): React.JSX.Element | null {
+function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
 	const { surface, owners, notices, onClose } = props;
 	const onSuccess = useCallback(
 		(message: string): void =>
@@ -336,7 +336,7 @@ function usePreviewRenderer(
 	const holding = useMemo(() => new Set(held), [held]);
 	const { byBoard } = previews;
 	return useCallback(
-		(boardKey: string, boardName: string): React.ReactNode => (
+		(boardKey: string, boardName: string): ReactNode => (
 			<BoardPreview
 				boardKey={boardKey}
 				boardName={boardName}
@@ -353,7 +353,7 @@ function usePreviewRenderer(
  * The root component's body, inside the providers it needs.
  * @returns The shell, the dialogs and the workbench.
  */
-function ApplicationBody(): React.JSX.Element {
+function ApplicationBody(): JSX.Element {
 	const [theme, setTheme] = useTheme();
 	const reducedMotion = useReducedMotion();
 	const notices = useNotices();
@@ -546,7 +546,7 @@ function ApplicationBody(): React.JSX.Element {
  * resource, and is made once for the life of the tab (TASK-167).
  * @returns The shell inside its providers, with the dialogs and the workbench.
  */
-function Application(): React.JSX.Element {
+function Application(): JSX.Element {
 	return (
 		<BoardCatalogProvider>
 			<ApplicationBody />

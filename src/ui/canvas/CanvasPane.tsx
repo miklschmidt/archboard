@@ -2,7 +2,7 @@
 // application mounts one of these per pane and hears the session back through
 // `onSession`, so hosting a second pane is mounting a second component.
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, type JSX } from "react";
 
 import { ExcalidrawStage } from "@/ui/canvas/components/ExcalidrawStage";
 import {
@@ -52,7 +52,7 @@ function listenForInteraction(element: HTMLElement | null, markInteracted: () =>
  */
 function CanvasPane<Transport extends WorkbenchTransportPort>(
 	props: CanvasPaneProps<Transport>,
-): React.JSX.Element {
+): JSX.Element {
 	const { onSession } = props;
 	const { paneId, theme } = props.options;
 	const session = useCanvasSession(props.options);

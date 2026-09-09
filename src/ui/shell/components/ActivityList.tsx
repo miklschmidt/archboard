@@ -3,6 +3,7 @@
 // this in its session column; the dock shows it when no workbench is attached.
 
 import { RiCheckLine } from "@remixicon/react";
+import type { JSX } from "react";
 
 import { StatusDot } from "@/ui/shell/components/StatusDot";
 import { clockTime } from "@/ui/shell/lib/time";
@@ -23,7 +24,7 @@ interface ActivityListProps {
  * @param props The entries.
  * @returns A list, or nothing when nobody has said anything.
  */
-function ActivityList(props: ActivityListProps): React.JSX.Element | null {
+function ActivityList(props: ActivityListProps): JSX.Element | null {
 	// The list trims to what it shows; nothing above it holds a second copy.
 	const entries = props.entries.slice(-DOING_LINES);
 	if (entries.length === 0) {

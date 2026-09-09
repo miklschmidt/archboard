@@ -8,7 +8,7 @@ import {
 	RiDeleteBinLine,
 	RiSendPlaneLine,
 } from "@remixicon/react";
-import { useCallback } from "react";
+import { useCallback, type JSX } from "react";
 
 import type { BrowserQueue } from "@/shared/codex-browser-model";
 import type { WorkbenchQueueActions, WorkbenchQueueCommandView } from "@/ui/workbench/contracts";
@@ -48,7 +48,7 @@ interface QueueRowProps {
  * @param props The entry, its position, its ownership, what it may do, and the callbacks.
  * @returns A list item.
  */
-function QueueRow(props: QueueRowProps): React.JSX.Element {
+function QueueRow(props: QueueRowProps): JSX.Element {
 	const { entry, actions, available } = props;
 	const id = entry.submissionId;
 	const moveUp = useCallback(() => actions.moveUp(id), [actions, id]);
@@ -97,7 +97,7 @@ interface CommandLineProps {
  * @param props The command state.
  * @returns The line, or nothing while idle with no settlement.
  */
-function CommandLine(props: CommandLineProps): React.JSX.Element | null {
+function CommandLine(props: CommandLineProps): JSX.Element | null {
 	const { pending, settlement } = props.command;
 	if (pending !== null) {
 		return (
@@ -128,7 +128,7 @@ interface QueueStateLineProps {
  * @param props The queue and whether a thread is linked.
  * @returns One line.
  */
-function QueueStateLine(props: QueueStateLineProps): React.JSX.Element {
+function QueueStateLine(props: QueueStateLineProps): JSX.Element {
 	const state = queueStateText(props.queue);
 	if (state.recovering && !props.linked && props.queue.entries.length === 0) {
 		return <PanelLine tone="muted">Link a workhorse thread to queue work</PanelLine>;
@@ -147,7 +147,7 @@ function QueueStateLine(props: QueueStateLineProps): React.JSX.Element {
  * @param props The queue, the link state, the command state and the callbacks.
  * @returns The scrolling body and the footer.
  */
-function QueuePanel(props: QueuePanelProps): React.JSX.Element {
+function QueuePanel(props: QueuePanelProps): JSX.Element {
 	const { queue, command } = props;
 	const settled = command.pending !== null || command.settlement !== null;
 	return (

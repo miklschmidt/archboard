@@ -9,7 +9,7 @@ import {
 	RiExternalLinkLine,
 	RiInformationLine,
 } from "@remixicon/react";
-import { useCallback } from "react";
+import { useCallback, type JSX } from "react";
 
 import { GitHubHttpsUrlSchema, type CodeTargetNoticeAction } from "@/shared/code-target";
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/ui/components/alert";
@@ -42,7 +42,7 @@ interface ReportedActionProps {
  * @param props The notice, the action id, its label and the shell actions.
  * @returns A small outline button.
  */
-function ReportedAction(props: ReportedActionProps): React.JSX.Element {
+function ReportedAction(props: ReportedActionProps): JSX.Element {
 	const { noticeId, actionId, actions } = props;
 	const handleClick = useCallback(
 		() => actions.selectNoticeAction(noticeId, actionId),
@@ -65,7 +65,7 @@ interface GitHubActionProps {
  * @param props The action with its URL.
  * @returns The link, or nothing when the URL fails validation.
  */
-function GitHubAction(props: GitHubActionProps): React.JSX.Element | null {
+function GitHubAction(props: GitHubActionProps): JSX.Element | null {
 	const parsed = GitHubHttpsUrlSchema.safeParse(props.action.href);
 	if (!parsed.success) {
 		return null;
@@ -90,7 +90,7 @@ interface NoticeActionProps {
  * @param props The notice, the action and the shell actions.
  * @returns The control for that action.
  */
-function NoticeAction(props: NoticeActionProps): React.JSX.Element | null {
+function NoticeAction(props: NoticeActionProps): JSX.Element | null {
 	const { noticeId, action, actions } = props;
 	if (action.kind === "github") {
 		return <GitHubAction action={action} />;
@@ -127,7 +127,7 @@ interface NoticeProps {
  * @param props The notice and the shell actions.
  * @returns The alert.
  */
-function Notice(props: NoticeProps): React.JSX.Element {
+function Notice(props: NoticeProps): JSX.Element {
 	const { notice, actions } = props;
 	const handleDismiss = useCallback(() => actions.dismissNotice(notice.id), [actions, notice.id]);
 	return (
@@ -173,7 +173,7 @@ interface NoticesProps {
  * @param props The notices and the shell actions.
  * @returns The stack, or nothing when there is no notice.
  */
-function Notices(props: NoticesProps): React.JSX.Element | null {
+function Notices(props: NoticesProps): JSX.Element | null {
 	if (props.notices.length === 0) {
 		return null;
 	}

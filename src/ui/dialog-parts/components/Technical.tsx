@@ -1,8 +1,10 @@
 // An identifier, path, version or time set in the mono face.
 
+import type { JSX, ReactNode } from "react";
+
 /** Inputs for a technical value. */
 interface TechnicalProps {
-	children: React.ReactNode;
+	children: ReactNode;
 }
 
 /**
@@ -11,7 +13,7 @@ interface TechnicalProps {
  * @param props The value.
  * @returns The value as code.
  */
-function Technical(props: TechnicalProps): React.JSX.Element {
+function Technical(props: TechnicalProps): JSX.Element {
 	const { children } = props;
 	return (
 		<code

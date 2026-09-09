@@ -1,6 +1,8 @@
 // The agent settings dialog: account, explicit thread link, coordinator and
 // the published session settings, each from its shared browser-model record.
 
+import type { JSX } from "react";
+
 import { AccountSection } from "@/ui/agent-settings/components/AccountSection";
 import type { AgentSettingsDialogProps } from "@/ui/agent-settings/types/contracts";
 import {
@@ -25,7 +27,7 @@ import { CANCEL_BUTTON_CLASS } from "@/ui/dialog-parts";
  * @param props The browser-model records, the state and the callbacks.
  * @returns The dialog.
  */
-function AgentSettingsDialog(props: AgentSettingsDialogProps): React.JSX.Element {
+function AgentSettingsDialog(props: AgentSettingsDialogProps): JSX.Element {
 	return (
 		<Dialog open={props.open} onOpenChange={props.onOpenChange}>
 			<DialogContent

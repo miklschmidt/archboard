@@ -3,7 +3,7 @@
 // which stays mounted where it is.
 
 import { RiFullscreenExitLine } from "@remixicon/react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type JSX, type ReactNode } from "react";
 
 import { Button } from "@/ui/components/button";
 import type { ShellActions, ShellPane } from "@/ui/shell/types/contracts";
@@ -14,7 +14,7 @@ interface PresentationBarProps {
 	/** A refused exit, shown in the bar so it is seen from inside the presentation. */
 	error: string | null;
 	/** Live voice controls, when the voice workbench supplies them. */
-	voiceControls: React.ReactNode;
+	voiceControls: ReactNode;
 	actions: ShellActions;
 }
 
@@ -23,7 +23,7 @@ interface PresentationBarProps {
  * @param props The pane, the voice slot and the actions.
  * @returns The bar.
  */
-function PresentationBar(props: PresentationBarProps): React.JSX.Element {
+function PresentationBar(props: PresentationBarProps): JSX.Element {
 	const { actions, pane } = props;
 	const { paneId } = pane.status;
 	return (
@@ -60,7 +60,7 @@ interface ExitControlProps {
  * @param props The actions.
  * @returns The exit button.
  */
-function ExitControl(props: ExitControlProps): React.JSX.Element {
+function ExitControl(props: ExitControlProps): JSX.Element {
 	const { actions } = props;
 	const exit = useRef<HTMLButtonElement | null>(null);
 	const handleExit = useCallback(() => actions.present(null), [actions]);
@@ -77,7 +77,7 @@ function ExitControl(props: ExitControlProps): React.JSX.Element {
 
 /** Inputs for the voice slot. */
 interface VoiceSlotProps {
-	children: React.ReactNode;
+	children: ReactNode;
 }
 
 /**
@@ -85,7 +85,7 @@ interface VoiceSlotProps {
  * @param props The controls, or nothing while no voice workbench is attached.
  * @returns The slot.
  */
-function VoiceSlot(props: VoiceSlotProps): React.JSX.Element {
+function VoiceSlot(props: VoiceSlotProps): JSX.Element {
 	return (
 		<fieldset aria-label="Voice controls" className="m-0 flex items-center gap-1 border-0 p-0">
 			{props.children ?? (

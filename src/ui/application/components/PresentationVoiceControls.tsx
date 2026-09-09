@@ -1,5 +1,7 @@
 // The presentation bar's voice controls over the focused pane's owners.
 
+import type { JSX } from "react";
+
 import { useVoiceView } from "@/ui/application/hooks/use-voice-view";
 import type { WorkbenchFrameProps } from "@/ui/application/types/workbench-frame";
 import { VoiceControlsCompact } from "@/ui/voice-controls";
@@ -9,7 +11,7 @@ import { VoiceControlsCompact } from "@/ui/voice-controls";
  * @param props The owners.
  * @returns The compact controls.
  */
-function PresentationVoiceControls(props: Pick<WorkbenchFrameProps, "owners">): React.JSX.Element {
+function PresentationVoiceControls(props: Pick<WorkbenchFrameProps, "owners">): JSX.Element {
 	const { owners } = props;
 	const voice = useVoiceView(owners);
 	return <VoiceControlsCompact view={voice.controls} actions={owners.host.voice} />;

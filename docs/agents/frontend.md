@@ -128,9 +128,11 @@ Backend and CLI structure is outside this adoption.
 these rules over authored `src/ui` source: the concern folder names above,
 PascalCase component files, `use-` prefixed kebab-case hook files, scoped
 kebab-case everywhere else, and React markup and hook exports only in
-`components/`, `hooks/` or an intentionally public module-root entrypoint. The
-documented generated/vendor files keep the exemption they already have in
-`.oxlintrc.jsonc`.
+`components/`, `hooks/` or an intentionally public module-root entrypoint.
+`archboard/named-react-imports` enforces the named-import rule above over the
+same source, tests included: nothing authored reaches React through its
+namespace, in a value or a type position. The documented generated/vendor files
+keep the exemption they already have in `.oxlintrc.jsonc`.
 
 Keep tests under the owners in [boundaries.md](boundaries.md), with names that
 truthfully identify the contract tested. Follow [test-suite.md](test-suite.md)

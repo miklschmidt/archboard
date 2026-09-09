@@ -1,7 +1,7 @@
 // The opener choice as a radio group: platform default, each preset, or a
 // custom command, with the saved selection's availability on its own option.
 
-import { useCallback, useId } from "react";
+import { useCallback, useId, type JSX } from "react";
 
 import type { OpenerCommand, OpenerSettingsReply } from "@/shared/code-target";
 import { Badge } from "@/ui/components/badge";
@@ -32,7 +32,7 @@ interface OpenerChoiceGroupProps {
  * @param props The settings, the current choice and the change handler.
  * @returns A radio group inside a field set.
  */
-function OpenerChoiceGroup(props: OpenerChoiceGroupProps): React.JSX.Element {
+function OpenerChoiceGroup(props: OpenerChoiceGroupProps): JSX.Element {
 	const { settings, onChoice } = props;
 	const handleChange = useCallback((value: OpenerChoice) => onChoice(value), [onChoice]);
 	return (
@@ -85,7 +85,7 @@ interface OpenerOptionProps {
  * @param props The option.
  * @returns A horizontal field.
  */
-function OpenerOption(props: OpenerOptionProps): React.JSX.Element {
+function OpenerOption(props: OpenerOptionProps): JSX.Element {
 	const id = useId();
 	return (
 		<Field orientation="horizontal">
@@ -118,7 +118,7 @@ interface AvailabilityBadgeProps {
  * @param props The availability.
  * @returns A badge.
  */
-function AvailabilityBadge(props: AvailabilityBadgeProps): React.JSX.Element {
+function AvailabilityBadge(props: AvailabilityBadgeProps): JSX.Element {
 	const { availability } = props;
 	if (availability.available) {
 		return <Badge variant="outline">Available</Badge>;

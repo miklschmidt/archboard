@@ -1,6 +1,7 @@
 // The small state dots the reference uses beside connection and claim text.
 
 import { cn } from "cn";
+import type { JSX } from "react";
 
 /** Inputs for one state dot. */
 interface StatusDotProps {
@@ -23,7 +24,7 @@ const TONE_CLASS: Record<StatusDotProps["tone"], string> = {
  * @param props Which tone to paint.
  * @returns A six-pixel circle.
  */
-function StatusDot(props: StatusDotProps): React.JSX.Element {
+function StatusDot(props: StatusDotProps): JSX.Element {
 	return (
 		<span
 			aria-hidden="true"

@@ -24,7 +24,7 @@ import {
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
 import type { Rule } from "./oxlint-plugin-archboard/rule-api.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
-import { uiConcernPlacement } from "./oxlint-plugin-archboard/ui-rules.ts";
+import { namedReactImports, uiConcernPlacement } from "./oxlint-plugin-archboard/ui-rules.ts";
 
 // Oxlint 1.80 exports no plugin type; this is the shape its loader registers.
 interface ArchboardPlugin {
@@ -52,6 +52,7 @@ const plugin: ArchboardPlugin = {
 		"root-implementation-modules": rootImplementationModules,
 		"state-files-pure": stateFilesPure,
 		"ui-concern-placement": uiConcernPlacement,
+		"named-react-imports": namedReactImports,
 	},
 };
 

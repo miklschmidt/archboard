@@ -4,6 +4,7 @@
 // delivery tokens in mono, then the recent activity the shell hands in.
 
 import { RiLinkM, RiLinkUnlinkM, RiRefreshLine, RiSettings3Line } from "@remixicon/react";
+import type { JSX, ReactNode } from "react";
 
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 import { Button } from "@/ui/components/button";
@@ -23,7 +24,7 @@ import {
 interface SessionColumnProps {
 	snapshot: BrowserSnapshot;
 	/** The recent `doing` lines, rendered by the shell, or null. */
-	activity: React.ReactNode;
+	activity: ReactNode;
 	actions: WorkbenchActions;
 }
 
@@ -39,7 +40,7 @@ interface ThreadLinkButtonsProps {
  * @param props Whether a thread is linked, and the callbacks.
  * @returns The buttons.
  */
-function ThreadLinkButtons(props: ThreadLinkButtonsProps): React.JSX.Element {
+function ThreadLinkButtons(props: ThreadLinkButtonsProps): JSX.Element {
 	return (
 		<>
 			{props.linked ? (
@@ -80,7 +81,7 @@ interface TokensProps {
  * @param props The snapshot.
  * @returns The tokens, or nothing when none is published.
  */
-function Tokens(props: TokensProps): React.JSX.Element | null {
+function Tokens(props: TokensProps): JSX.Element | null {
 	const tokens = [
 		leaseText(props.snapshot.lease),
 		operationText(props.snapshot.operation),
@@ -102,7 +103,7 @@ function Tokens(props: TokensProps): React.JSX.Element | null {
 
 /** Inputs for the activity section. */
 interface ActivitySectionProps {
-	activity: React.ReactNode;
+	activity: ReactNode;
 }
 
 /**
@@ -110,7 +111,7 @@ interface ActivitySectionProps {
  * @param props The rendered activity, or null.
  * @returns The section, or nothing.
  */
-function ActivitySection(props: ActivitySectionProps): React.JSX.Element | null {
+function ActivitySection(props: ActivitySectionProps): JSX.Element | null {
 	if (props.activity === null) {
 		return null;
 	}
@@ -127,7 +128,7 @@ function ActivitySection(props: ActivitySectionProps): React.JSX.Element | null 
  * @param props The snapshot, the activity and the actions.
  * @returns The kicker, the definition list, the tokens and the activity.
  */
-function SessionColumn(props: SessionColumnProps): React.JSX.Element {
+function SessionColumn(props: SessionColumnProps): JSX.Element {
 	const { snapshot, actions } = props;
 	return (
 		<section
