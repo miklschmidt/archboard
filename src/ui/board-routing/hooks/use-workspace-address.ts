@@ -8,19 +8,24 @@
 // load, and a history navigation — and there it issues the same open command
 // the shell does.
 //
-// A deliberate move pushes a history entry; everything else replaces one. Our
-// own writes always describe a workspace that is already on screen, so their
-// plan is empty and the guard below cannot block them.
+// One open at a time, whoever asked. A restore holds the channel for its own
+// steps; a person's gesture takes it before the shell sends theirs. That is
+// what makes the last thing somebody asked for the last thing the server does,
+// rather than a race between a restore already running and the click that
+// interrupted it.
 //
-// The reconciliation is external state, kept in one box and driven from two
-// places: the effect, whenever what is on screen or what the address says has
-// changed, and the answer to the one command a restore has outstanding. There
-// is no React state here to fall behind either of them.
+// A deliberate move pushes a history entry; everything else replaces one. Our
+// own writes always describe a workspace that is on screen and settled, so
+// their plan is empty and the guard below cannot block them.
+//
+// The reconciliation is external state, driven by the effect whenever the
+// workspace or the address has changed, and by the answers to what it asked.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useBlocker, useRouter, useRouterState } from "@tanstack/react-router";
 
 import {
+	boardIn,
 	panesAtRisk,
 	planFor,
 	planIsEmpty,
@@ -38,6 +43,7 @@ import {
 	advanceRestore,
 	createRestore,
 	openAnswered,
+	restoreOutstanding,
 	retargetRestore,
 	type PendingOpen,
 	type Restore,
@@ -50,11 +56,29 @@ import {
 } from "@/ui/board-routing/search";
 import type { WorkspacePort } from "@/ui/board-routing/contracts";
 
+/** What a person's own board open reports back when it is over. */
+interface NavigationClaim {
+	/** The command finished; what it did to the workspace is the person's move. */
+	readonly done: () => void;
+	/** The command did not finish, so nothing moved. */
+	readonly failed: () => void;
+}
+
 /** What the shell tells the address bar about the person's own gestures. */
 interface WorkspaceAddressing {
-	/** A person asked for this move; the change it produces pushes a history entry. */
+	/**
+	 * A person changed the workspace themselves, without asking the server: they
+	 * opened or closed a pane. The change pushes a history entry.
+	 */
 	readonly expect: (intent: NavigationIntent) => void;
-	/** That gesture failed; it is not a move any more. */
+	/**
+	 * A person is about to have the shell open a board. Ends any restore and
+	 * waits until the address bar has nothing outstanding, so theirs is the last
+	 * command the server is given.
+	 * @returns Where to report that command's outcome.
+	 */
+	readonly claim: (intent: NavigationIntent) => Promise<NavigationClaim>;
+	/** A gesture that never became a command. */
 	readonly clear: () => void;
 }
 
@@ -72,6 +96,19 @@ interface Reconciliation {
 	port: WorkspacePort;
 	router: BoardRouter;
 	readonly deliberate: DeliberateNavigation;
+	/** A person's open the shell is sending; nothing else is sent under it. */
+	person: NavigationIntent | null;
+	/** Who is waiting for the channel to be free. */
+	readonly waiting: (() => void)[];
+}
+
+/**
+ * Whether anything is on its way that will change the workspace again.
+ * @param state The reconciliation.
+ * @returns True while a command is outstanding.
+ */
+function outstanding(state: Reconciliation): boolean {
+	return state.person !== null || restoreOutstanding(state.restore);
 }
 
 /**
@@ -104,58 +141,87 @@ function publishAddress(state: Reconciliation): void {
 }
 
 /**
- * Bring the address and the panes back into agreement.
- *
- * A restore runs first, one step per settle: the plan is recomputed from what
- * is on screen each time, so a pane that arrives late, or a board an agent
- * moved underneath, is taken as it is rather than as it was when the address
- * was read. Once nothing is being restored, what is on screen is written down
- * — whether or not it is what was asked for, so the two never disagree.
+ * How a restore reaches the workspace.
  * @param state The reconciliation.
+ * @returns The commands, over whatever the last render knew.
  */
-function reconcile(state: Reconciliation): void {
-	const commands = {
+function commandsOver(state: Reconciliation) {
+	return {
 		/**
 		 * Close, add or focus a pane.
 		 * @param step The step.
+		 * @returns Whether the workspace changed.
 		 */
-		apply: (step: RestoreStep): void => {
+		apply: (step: RestoreStep): boolean => {
 			if (step.kind === "close") {
-				state.port.closePane(step.paneId);
-			} else if (step.kind === "add") {
-				state.port.addPane();
-			} else if (step.kind === "focus") {
-				state.port.selectPane(step.paneId);
+				return state.port.closePane(step.paneId);
 			}
+			if (step.kind === "add") {
+				return state.port.addPane();
+			}
+			return step.kind === "focus" ? state.port.selectPane(step.paneId) : false;
 		},
 		/**
 		 * Point a pane at a board, and reconcile again once it has answered.
 		 * @param pending The command, and the target that asked for it.
-		 * @param paneId The pane.
 		 */
-		open: (pending: PendingOpen, paneId: string): void => {
-			void state.port.open(paneId, pending.boardKey).then((outcome) => {
+		open: (pending: PendingOpen): void => {
+			void state.port.open(pending.paneId, pending.boardKey).then((outcome) => {
 				state.restore = openAnswered(state.restore, pending, outcome.kind === "opened");
 				reconcile(state);
 				return outcome;
 			});
 		},
 	};
-	// Each step is taken from the workspace as this render found it, so at most
-	// one step per step actually moves anything; the rest come back here on the
-	// render it caused. A step the shell refused changes nothing and would
-	// otherwise stall the restore, so the loop takes it off the plan and goes on.
-	while (!state.restore.done) {
-		const next = advanceRestore(state.restore, state.displayed, state.port, commands);
-		if (next === state.restore) {
-			return;
-		}
-		state.restore = next;
-		if (next.pending !== null) {
-			return;
-		}
+}
+
+/**
+ * Bring the address and the panes back into agreement, and let anybody waiting
+ * for the channel have it once nothing is on its way.
+ * @param state The reconciliation.
+ */
+function reconcile(state: Reconciliation): void {
+	if (state.person === null && !state.restore.done) {
+		state.restore = advanceRestore(state.restore, state.displayed, state.port, commandsOver(state));
 	}
-	publishAddress(state);
+	if (outstanding(state)) {
+		return;
+	}
+	for (const waiter of state.waiting.splice(0)) {
+		waiter();
+	}
+	if (state.restore.done) {
+		publishAddress(state);
+	}
+}
+
+/**
+ * A person's own board open, once the channel is theirs.
+ * @param state The reconciliation.
+ * @param intent What they asked for.
+ * @returns Where to report the command's outcome.
+ */
+function claimFor(state: Reconciliation, intent: NavigationIntent): NavigationClaim {
+	state.person = intent;
+	return {
+		/** The command finished. */
+		done: (): void => {
+			state.person = null;
+			// A command that succeeded and moved nothing is over: the pane was
+			// already showing what they asked for, so there is no history entry to
+			// make and nothing left to wait for.
+			if (intent.kind === "board" && boardIn(state.displayed, intent.paneId) === intent.from) {
+				state.deliberate.clear();
+			}
+			reconcile(state);
+		},
+		/** The command did not finish. */
+		failed: (): void => {
+			state.person = null;
+			state.deliberate.clear();
+			reconcile(state);
+		},
+	};
 }
 
 /**
@@ -186,6 +252,8 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 		port,
 		router,
 		deliberate,
+		person: null,
+		waiting: [],
 	});
 
 	useEffect(() => {
@@ -211,8 +279,9 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 					current.restore,
 					addressFromSearch(validateWorkspaceSearch(asked)),
 				);
+				reconcile(current);
 			}),
-		[router, state],
+		[router],
 	);
 
 	// The guard, before anything moves. A navigation that would take a pane's
@@ -228,7 +297,8 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 		 * @returns True to refuse it.
 		 */
 		shouldBlockFn: ({ next }) => {
-			const plan = planFor(displayed, addressFromSearch(validateWorkspaceSearch(next.search)));
+			const asked = addressFromSearch(validateWorkspaceSearch(next.search));
+			const plan = planFor(displayed, asked, port.paneIds);
 			if (planIsEmpty(plan)) {
 				return false;
 			}
@@ -244,15 +314,31 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 	return useMemo(
 		() => ({
 			/**
-			 * A person asked for a move. It ends any restore still running: the
-			 * person is now saying where they want to be.
+			 * A person changed the workspace themselves.
 			 * @param intent What they asked for.
 			 */
 			expect: (intent: NavigationIntent): void => {
-				state.current.restore = abandonRestore(state.current.restore);
+				const current = state.current;
+				current.restore = abandonRestore(current.restore);
 				deliberate.expect(intent);
 			},
-			/** The gesture failed. */
+			/**
+			 * A person is about to have the shell open a board.
+			 * @param intent What they asked for.
+			 * @returns Where to report the outcome, once the command may be sent.
+			 */
+			claim: (intent: NavigationIntent): Promise<NavigationClaim> => {
+				const current = state.current;
+				current.restore = abandonRestore(current.restore);
+				deliberate.expect(intent);
+				if (!outstanding(current)) {
+					return Promise.resolve(claimFor(current, intent));
+				}
+				return new Promise<NavigationClaim>((resolve) => {
+					current.waiting.push(() => resolve(claimFor(current, intent)));
+				});
+			},
+			/** The gesture never became a command. */
 			clear: (): void => {
 				deliberate.clear();
 			},
@@ -261,4 +347,4 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 	);
 }
 
-export { useWorkspaceAddress, type WorkspaceAddressing };
+export { useWorkspaceAddress, type NavigationClaim, type WorkspaceAddressing };

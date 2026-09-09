@@ -6,6 +6,7 @@ import {
 	advanceRestore,
 	createRestore,
 	openAnswered,
+	restoreOutstanding,
 	retargetRestore,
 	type PendingOpen,
 	type Restore,
@@ -13,15 +14,18 @@ import {
 } from "@/ui/board-routing/restore";
 import type { GuardVerdict, OpenOutcome, WorkspacePort } from "@/ui/board-routing/contracts";
 
-/** An open the fake workspace has been asked for and not yet answered. */
+/** An open the shell has been asked for and has not answered. */
 interface HeldOpen {
-	readonly paneId: string;
-	readonly boardKey: string;
+	readonly pending: PendingOpen;
 	readonly answer: (outcome: OpenOutcome) => void;
 }
 
-/** A workspace that answers a restore the way the shell would. */
-interface FakeWorkspace {
+/**
+ * A shell that behaves the way React and the server do: a pane change is only
+ * visible after a render, and an open is answered by the server before the
+ * pane is told about its new board. Nothing here happens by itself.
+ */
+interface FakeShell {
 	readonly port: WorkspacePort;
 	/** Every command the restore issued, in order. */
 	readonly applied: string[];
@@ -29,22 +33,25 @@ interface FakeWorkspace {
 	readonly unreachable: string[];
 	/** The opens asked for and not yet answered, oldest first. */
 	readonly held: HeldOpen[];
-	/** The restore as it stands. */
 	restore: Restore;
-	/** Reconcile the way the hook's effect does, until it can do no more. */
+	/** What the panes will show at the next render. */
+	readonly pending: { panes: { paneId: string; boardKey: string | null }[]; activePaneId: string };
+	/** Reconcile against what the last render showed, the way the hook does. */
 	readonly reconcile: () => void;
-	/** Answer the oldest outstanding open, and let the restore go on. */
+	/** Commit the queued pane changes and reconcile again, as a render does. */
+	readonly render: () => void;
+	/** Answer the oldest outstanding open. */
 	readonly answer: (reached: boolean) => Promise<void>;
+	/** Tell a pane's board over the socket, which is what adoption looks like. */
+	readonly adopt: (paneId: string, boardKey: string) => void;
 }
 
-/** What a fake workspace starts as. */
+/** What a fake shell starts as. */
 interface FakeOptions {
 	readonly panes: readonly (readonly [string, string | null])[];
 	readonly activePaneId?: string;
-	/** Panes that have not reached the server yet. */
 	readonly unready?: readonly string[];
 	readonly guard?: GuardVerdict;
-	/** The address to restore. */
 	readonly wanted: WorkspaceAddress;
 }
 
@@ -65,28 +72,37 @@ function address(
 }
 
 /**
- * A workspace whose opens are held until the test answers them, so both the
- * order a restore asks in and what it does between an ask and its answer are
- * observable.
+ * A shell whose workspace only changes when the test renders it, and whose
+ * opens only answer when the test answers them.
  * @param options What it starts as, what it refuses, and what to restore.
  * @returns The fake.
  */
-function fakeWorkspace(options: FakeOptions): FakeWorkspace {
-	const panes = options.panes.map(([paneId, boardKey]) => ({ paneId, boardKey }));
-	let activePaneId = options.activePaneId ?? panes[0]?.paneId ?? null;
+function fakeShell(options: FakeOptions): FakeShell {
+	const start = options.panes.map(([paneId, boardKey]) => ({ paneId, boardKey }));
+	const pending = {
+		panes: start.map((pane) => ({ ...pane })),
+		activePaneId: options.activePaneId ?? start[0]?.paneId ?? "A",
+	};
+	// What the last render showed, which is all the restore is allowed to see.
+	let shown: WorkspaceAddress = address(
+		start.map((pane) => [pane.paneId, pane.boardKey] as const),
+		pending.activePaneId,
+	);
 	const applied: string[] = [];
 	const blocked: string[] = [];
 	const unreachable: string[] = [];
 	const held: HeldOpen[] = [];
-	const free = ["A", "B"].find((paneId) => !panes.some((pane) => pane.paneId === paneId));
+	const free = ["A", "B"].find((paneId) => !pending.panes.some((pane) => pane.paneId === paneId));
+
 	const port: WorkspacePort = {
 		/**
-		 * What the panes are showing now.
+		 * What the last render showed.
 		 * @returns The displayed address.
 		 */
 		get displayed(): WorkspaceAddress {
-			return settledAddress({ panes: panes.map((pane) => ({ ...pane })), activePaneId });
+			return shown;
 		},
+		paneIds: ["A", "B"],
 		/**
 		 * Whether a pane has reached the server.
 		 * @param paneId The pane.
@@ -101,7 +117,8 @@ function fakeWorkspace(options: FakeOptions): FakeWorkspace {
 		guard: (paneIds: readonly string[]): GuardVerdict =>
 			paneIds.length === 0 ? { kind: "clear" } : (options.guard ?? { kind: "clear" }),
 		/**
-		 * Point a pane at a board. The answer waits for the test.
+		 * Point a pane at a board. The answer waits for the test, and the pane is
+		 * told separately, as the socket tells it.
 		 * @param paneId The pane.
 		 * @param boardKey The board.
 		 * @returns The outcome, once the test gives one.
@@ -109,36 +126,52 @@ function fakeWorkspace(options: FakeOptions): FakeWorkspace {
 		open: (paneId: string, boardKey: string): Promise<OpenOutcome> => {
 			applied.push(`open:${paneId}:${boardKey}`);
 			return new Promise<OpenOutcome>((resolve) => {
-				held.push({ paneId, boardKey, answer: resolve });
+				held.push({
+					pending: { target: 0, paneId, boardKey, from: null },
+					answer: resolve,
+				});
 			});
 		},
-		/** Open the second pane, which arrives on scratch and focused. */
-		addPane: (): void => {
+		/**
+		 * Open the second pane, which arrives on scratch and focused.
+		 * @returns Whether there was a pane to open.
+		 */
+		addPane: (): boolean => {
 			applied.push("add");
-			if (free !== undefined && !panes.some((pane) => pane.paneId === free)) {
-				panes.push({ paneId: free, boardKey: "scratch" });
-				activePaneId = free;
+			if (free === undefined || pending.panes.some((pane) => pane.paneId === free)) {
+				return false;
 			}
+			pending.panes.push({ paneId: free, boardKey: "scratch" });
+			pending.activePaneId = free;
+			return true;
 		},
 		/**
 		 * Close a pane. The last one cannot be closed, as in the shell.
 		 * @param paneId The pane.
+		 * @returns Whether it closed.
 		 */
-		closePane: (paneId: string): void => {
+		closePane: (paneId: string): boolean => {
 			applied.push(`close:${paneId}`);
-			const at = panes.findIndex((pane) => pane.paneId === paneId);
-			if (at >= 0 && panes.length > 1) {
-				panes.splice(at, 1);
-				activePaneId = panes[0]?.paneId ?? null;
+			const at = pending.panes.findIndex((pane) => pane.paneId === paneId);
+			if (at < 0 || pending.panes.length <= 1) {
+				return false;
 			}
+			pending.panes.splice(at, 1);
+			pending.activePaneId = pending.panes[0]?.paneId ?? paneId;
+			return true;
 		},
 		/**
 		 * Focus a pane.
 		 * @param paneId The pane.
+		 * @returns Whether the focus moved.
 		 */
-		selectPane: (paneId: string): void => {
+		selectPane: (paneId: string): boolean => {
 			applied.push(`focus:${paneId}`);
-			activePaneId = paneId;
+			if (pending.activePaneId === paneId) {
+				return false;
+			}
+			pending.activePaneId = paneId;
+			return true;
 		},
 		/**
 		 * A pane refused.
@@ -156,57 +189,60 @@ function fakeWorkspace(options: FakeOptions): FakeWorkspace {
 		},
 	};
 
-	const workspace: FakeWorkspace = {
+	const shell: FakeShell = {
 		port,
 		applied,
 		blocked,
 		unreachable,
 		held,
+		pending,
 		restore: createRestore(options.wanted),
-		/** Take the restore as far as it can go against the workspace as it is. */
+		/** Take the restore as far as this reading of the workspace allows. */
 		reconcile: (): void => {
 			const commands = {
 				/**
 				 * Close, add or focus a pane.
 				 * @param step The step.
+				 * @returns Whether the workspace changed.
 				 */
-				apply: (step: RestoreStep): void => {
+				apply: (step: RestoreStep): boolean => {
 					if (step.kind === "close") {
-						port.closePane(step.paneId);
-					} else if (step.kind === "add") {
-						port.addPane();
-					} else if (step.kind === "focus") {
-						port.selectPane(step.paneId);
+						return port.closePane(step.paneId);
 					}
+					if (step.kind === "add") {
+						return port.addPane();
+					}
+					return step.kind === "focus" ? port.selectPane(step.paneId) : false;
 				},
 				/**
 				 * Ask for an open and record its answer against the target that asked.
-				 * @param pending The command.
-				 * @param paneId The pane.
+				 * @param open The command.
 				 */
-				open: (pending: PendingOpen, paneId: string): void => {
-					void port.open(paneId, pending.boardKey).then((outcome) => {
-						const reached = outcome.kind === "opened";
-						const pane = panes.find((entry) => entry.paneId === paneId);
-						if (reached && pane) {
-							pane.boardKey = pending.boardKey;
+				open: (open: PendingOpen): void => {
+					void port.open(open.paneId, open.boardKey).then((outcome) => {
+						const last = held.at(-1);
+						if (last) {
+							held[held.length - 1] = { ...last, pending: open };
 						}
-						workspace.restore = openAnswered(workspace.restore, pending, reached);
-						workspace.reconcile();
+						shell.restore = openAnswered(shell.restore, open, outcome.kind === "opened");
+						shell.reconcile();
 						return outcome;
 					});
+					const last = held.at(-1);
+					if (last) {
+						held[held.length - 1] = { ...last, pending: open };
+					}
 				},
 			};
-			while (!workspace.restore.done) {
-				const next = advanceRestore(workspace.restore, port.displayed, port, commands);
-				if (next === workspace.restore) {
-					return;
-				}
-				workspace.restore = next;
-				if (next.pending !== null) {
-					return;
-				}
-			}
+			shell.restore = advanceRestore(shell.restore, port.displayed, port, commands);
+		},
+		/** Commit what the commands queued, as a render does. */
+		render: (): void => {
+			shown = address(
+				pending.panes.map((pane) => [pane.paneId, pane.boardKey] as const),
+				pending.activePaneId,
+			);
+			shell.reconcile();
 		},
 		/**
 		 * Answer the oldest outstanding open.
@@ -219,32 +255,85 @@ function fakeWorkspace(options: FakeOptions): FakeWorkspace {
 			await Promise.resolve();
 			await Promise.resolve();
 		},
+		/**
+		 * The socket told a pane its board.
+		 * @param paneId The pane.
+		 * @param boardKey The board it now shows.
+		 */
+		adopt: (paneId: string, boardKey: string): void => {
+			const pane = pending.panes.find((entry) => entry.paneId === paneId);
+			if (pane) {
+				pane.boardKey = boardKey;
+			}
+			shell.render();
+		},
 	};
-	return workspace;
+	return shell;
 }
 
-test("a restore adds the second pane, points each pane at its board and settles", async () => {
-	const workspace = fakeWorkspace({
-		panes: [["A", "scratch"]],
-		wanted: address(
-			[
-				["A", "payments"],
-				["B", "billing"],
-			],
-			"B",
-		),
+test("a restore applies one step that changes something and waits for the render it causes", () => {
+	const shell = fakeShell({
+		panes: [["A", "payments"]],
+		wanted: address([["B", "billing"]]),
 	});
-	workspace.reconcile();
-	expect(workspace.applied).toEqual(["add", "open:A:payments"]);
-	await workspace.answer(true);
-	await workspace.answer(true);
-	expect(workspace.applied).toEqual(["add", "open:A:payments", "open:B:billing"]);
-	expect(workspace.restore.done).toBe(true);
-	expect(workspace.unreachable).toEqual([]);
+	// The last pane cannot be closed, so the replacement is opened first — and
+	// the close does not happen against the workspace the add has not shown yet.
+	shell.reconcile();
+	expect(shell.applied).toEqual(["add"]);
+	shell.render();
+	expect(shell.applied).toEqual(["add", "close:A"]);
+	shell.render();
+	expect(shell.applied).toEqual(["add", "close:A", "open:B:billing"]);
+	expect(shell.port.displayed.panes.map((pane) => pane.paneId)).toEqual(["B"]);
+});
+
+test("a restore going back to one pane closes the other", () => {
+	const shell = fakeShell({
+		panes: [
+			["A", "payments"],
+			["B", "billing"],
+		],
+		activePaneId: "B",
+		wanted: address([["B", "billing"]]),
+	});
+	shell.reconcile();
+	expect(shell.applied).toEqual(["close:A"]);
+	shell.render();
+	expect(shell.applied).toEqual(["close:A"]);
+	expect(shell.restore.done).toBe(true);
+	expect(shell.port.displayed.panes).toEqual([{ paneId: "B", boardKey: "billing" }]);
+});
+
+test("a command the shell refuses is taken off the plan without waiting for a render", () => {
+	// Pane A alone, asked for an address it cannot have: the close is refused and
+	// the restore settles rather than stalling on a render that never comes.
+	const shell = fakeShell({ panes: [["A", "payments"]], wanted: address([["Z", "billing"]]) });
+	shell.reconcile();
+	expect(shell.applied).toEqual([]);
+	expect(shell.restore.done).toBe(true);
+});
+
+test("an open is not over when the server answers it, but when the pane is seen to move", async () => {
+	const shell = fakeShell({
+		panes: [["A", "payments"]],
+		wanted: address([["A", "billing"]]),
+	});
+	shell.reconcile();
+	expect(shell.applied).toEqual(["open:A:billing"]);
+	await shell.answer(true);
+	// The note was read, but this pane is still showing payments. The address is
+	// not written from a workspace that is about to change again.
+	expect(restoreOutstanding(shell.restore)).toBe(true);
+	expect(shell.restore.done).toBe(false);
+	shell.render();
+	expect(shell.restore.done).toBe(false);
+	shell.adopt("A", "billing");
+	expect(restoreOutstanding(shell.restore)).toBe(false);
+	expect(shell.restore.done).toBe(true);
 });
 
 test("only one open is outstanding at a time, so the server sees them in the order asked", () => {
-	const workspace = fakeWorkspace({
+	const shell = fakeShell({
 		panes: [
 			["A", "scratch"],
 			["B", "scratch"],
@@ -254,91 +343,46 @@ test("only one open is outstanding at a time, so the server sees them in the ord
 			["B", "billing"],
 		]),
 	});
-	workspace.reconcile();
-	expect(workspace.held.map((open) => open.boardKey)).toEqual(["payments"]);
+	shell.reconcile();
+	expect(shell.applied).toEqual(["open:A:payments"]);
+	shell.render();
+	expect(shell.applied).toEqual(["open:A:payments"]);
 });
 
 test("a re-render while an open is outstanding does not finish the restore or lose its answer", async () => {
-	const workspace = fakeWorkspace({
-		panes: [["A", "scratch"]],
-		wanted: address([["A", "gone"]]),
-	});
-	workspace.reconcile();
-	expect(workspace.applied).toEqual(["open:A:gone"]);
+	const shell = fakeShell({ panes: [["A", "scratch"]], wanted: address([["A", "gone"]]) });
+	shell.reconcile();
+	expect(shell.applied).toEqual(["open:A:gone"]);
 	// Anything else re-rendering the application reconciles again. The restore
 	// has nothing left to try, but it is not finished: its own answer is still
 	// coming, and it may be the one thing the person has to be told.
-	workspace.reconcile();
-	workspace.reconcile();
-	expect(workspace.restore.done).toBe(false);
-	expect(workspace.unreachable).toEqual([]);
-	await workspace.answer(false);
-	expect(workspace.restore.done).toBe(true);
-	expect(workspace.unreachable).toEqual(["gone"]);
+	shell.render();
+	shell.render();
+	expect(shell.restore.done).toBe(false);
+	expect(shell.unreachable).toEqual([]);
+	await shell.answer(false);
+	expect(shell.restore.done).toBe(true);
+	expect(shell.unreachable).toEqual(["gone"]);
 });
 
 test("an answer to a target the person has moved on from is released, never recorded", async () => {
-	const workspace = fakeWorkspace({
-		panes: [["A", "scratch"]],
-		wanted: address([["A", "gone"]]),
-	});
-	workspace.reconcile();
+	const shell = fakeShell({ panes: [["A", "scratch"]], wanted: address([["A", "gone"]]) });
+	shell.reconcile();
 	// Back is pressed while the first open is still outstanding.
-	workspace.restore = retargetRestore(workspace.restore, address([["A", "billing"]]));
-	await workspace.answer(false);
+	shell.restore = retargetRestore(shell.restore, address([["A", "billing"]]));
+	await shell.answer(false);
 	// The board the person has left is not named at them, and the newer target
 	// was not asked for until the older command had answered.
-	expect(workspace.unreachable).toEqual([]);
-	expect(workspace.applied).toEqual(["open:A:gone", "open:A:billing"]);
-	await workspace.answer(true);
-	expect(workspace.restore.done).toBe(true);
-	expect(workspace.unreachable).toEqual([]);
-});
-
-test("a restore going from one pane to the other opens the second before closing the first", async () => {
-	const workspace = fakeWorkspace({
-		panes: [["A", "payments"]],
-		wanted: address([["B", "billing"]]),
-	});
-	workspace.reconcile();
-	// The last pane cannot be closed, so the replacement comes first.
-	expect(workspace.applied).toEqual(["add", "close:A", "open:B:billing"]);
-	await workspace.answer(true);
-	expect(workspace.port.displayed.panes).toEqual([{ paneId: "B", boardKey: "billing" }]);
-	expect(workspace.restore.done).toBe(true);
-});
-
-test("a restore going back to one pane closes the other", () => {
-	const workspace = fakeWorkspace({
-		panes: [
-			["A", "payments"],
-			["B", "billing"],
-		],
-		activePaneId: "B",
-		wanted: address([["B", "billing"]]),
-	});
-	workspace.reconcile();
-	expect(workspace.applied).toEqual(["close:A"]);
-	expect(workspace.port.displayed.panes).toEqual([{ paneId: "B", boardKey: "billing" }]);
-	expect(workspace.restore.done).toBe(true);
-});
-
-test("a restore waits for a pane that has not reached the server rather than opening into it", () => {
-	const workspace = fakeWorkspace({
-		panes: [
-			["A", "scratch"],
-			["B", "scratch"],
-		],
-		unready: ["B"],
-		wanted: address([["B", "billing"]]),
-	});
-	workspace.reconcile();
-	expect(workspace.applied).toEqual(["close:A"]);
-	expect(workspace.restore.done).toBe(false);
+	expect(shell.unreachable).toEqual([]);
+	expect(shell.applied).toEqual(["open:A:gone", "open:A:billing"]);
+	await shell.answer(true);
+	shell.adopt("A", "billing");
+	expect(shell.restore.done).toBe(true);
+	expect(shell.unreachable).toEqual([]);
 });
 
 test("a pane that refuses stops the whole restore before anything is applied", () => {
-	const workspace = fakeWorkspace({
+	const shell = fakeShell({
 		panes: [
 			["A", "payments"],
 			["B", "billing"],
@@ -346,42 +390,42 @@ test("a pane that refuses stops the whole restore before anything is applied", (
 		guard: { kind: "hold", paneId: "B" },
 		wanted: address([["A", "ledger"]]),
 	});
-	workspace.reconcile();
-	expect(workspace.applied).toEqual([]);
-	expect(workspace.blocked).toEqual(["hold:B"]);
-	expect(workspace.restore.done).toBe(true);
+	shell.reconcile();
+	expect(shell.applied).toEqual([]);
+	expect(shell.blocked).toEqual(["hold:B"]);
+	expect(shell.restore.done).toBe(true);
 });
 
 test("an address naming no panes asks for nothing, so a bare page keeps its workspace", () => {
-	const workspace = fakeWorkspace({ panes: [["A", "payments"]], wanted: address([]) });
-	workspace.reconcile();
-	expect(workspace.applied).toEqual([]);
-	expect(workspace.blocked).toEqual([]);
-	expect(workspace.restore.done).toBe(true);
+	const shell = fakeShell({ panes: [["A", "payments"]], wanted: address([]) });
+	shell.reconcile();
+	expect(shell.applied).toEqual([]);
+	expect(shell.blocked).toEqual([]);
+	expect(shell.restore.done).toBe(true);
+});
+
+test("a restore waits for a pane that has not reached the server rather than opening into it", () => {
+	const shell = fakeShell({
+		panes: [
+			["A", "scratch"],
+			["B", "scratch"],
+		],
+		unready: ["B"],
+		wanted: address([
+			["A", "scratch"],
+			["B", "billing"],
+		]),
+	});
+	shell.reconcile();
+	expect(shell.applied).toEqual([]);
+	expect(shell.restore.done).toBe(false);
 });
 
 test("a restore the person overrides stops, and its late answer changes nothing", async () => {
-	const workspace = fakeWorkspace({
-		panes: [["A", "scratch"]],
-		wanted: address([["A", "gone"]]),
-	});
-	workspace.reconcile();
-	workspace.restore = abandonRestore(workspace.restore);
-	await workspace.answer(false);
-	expect(workspace.unreachable).toEqual([]);
-	expect(workspace.applied).toEqual(["open:A:gone"]);
-});
-
-test("an answer is taken once, however often the reconciliation runs again", async () => {
-	const workspace = fakeWorkspace({
-		panes: [["A", "scratch"]],
-		wanted: address([["A", "gone"]]),
-	});
-	workspace.reconcile();
-	const pending = workspace.restore.pending;
-	expect(pending).not.toBeNull();
-	await workspace.answer(false);
-	const settled = workspace.restore;
-	expect(pending === null ? settled : openAnswered(settled, pending, false)).toBe(settled);
-	expect(workspace.unreachable).toEqual(["gone"]);
+	const shell = fakeShell({ panes: [["A", "scratch"]], wanted: address([["A", "gone"]]) });
+	shell.reconcile();
+	shell.restore = abandonRestore(shell.restore);
+	await shell.answer(false);
+	expect(shell.unreachable).toEqual([]);
+	expect(shell.applied).toEqual(["open:A:gone"]);
 });
