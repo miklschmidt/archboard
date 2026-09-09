@@ -234,7 +234,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 		answer: async (reached: boolean): Promise<void> => {
 			const open = held.shift();
 			expect(open).toBeDefined();
-			open?.answer(reached ? { kind: "opened" } : { kind: "unreachable" });
+			open?.answer(reached ? { kind: "opened", boardKey: open.boardKey } : { kind: "unreachable" });
 			await Promise.resolve();
 			await Promise.resolve();
 		},

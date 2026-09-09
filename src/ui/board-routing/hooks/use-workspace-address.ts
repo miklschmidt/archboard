@@ -66,8 +66,11 @@ import type { NavigationBlock, WorkspacePort } from "@/ui/board-routing/contract
 
 /** What a person's own board open reports back when it is over. */
 interface NavigationClaim {
-	/** The command finished; what it does to the workspace is the person's move. */
-	readonly done: () => void;
+	/**
+	 * The command finished. The board it opened is the server's own answer, and
+	 * is what says whether the pane has anything to move to.
+	 */
+	readonly done: (openedKey: string) => void;
 	/** The command did not finish, so nothing moved. */
 	readonly failed: () => void;
 }
@@ -154,15 +157,17 @@ function publishAddress(state: Reconciliation): void {
  * @param state The reconciliation.
  * @param operation The operation being answered.
  * @param answer What the server said.
+ * @param openedKey The board it opened, as the server keys it, when it opened one.
  */
 function answerOperation(
 	state: Reconciliation,
 	operation: Operation,
 	answer: OperationAnswer,
+	openedKey: string | null = null,
 ): void {
 	// An answer is taken once, and only by the operation it belongs to.
 	if (state.operation === operation) {
-		state.operation = operationAnswered(operation, answer);
+		state.operation = operationAnswered(operation, answer, openedKey);
 	}
 	reconcile(state);
 }
@@ -177,14 +182,25 @@ function answerOperation(
 function finishOperation(state: Reconciliation, operation: Operation): void {
 	const { operator, intent, answer } = operation;
 	if (operator.kind === "restore") {
-		if (answer === "unreachable") {
-			state.restore = boardUnreachable(state.restore, operator.target, operation.boardKey);
-		}
+		state.restore = unreachableFrom(state.restore, operator.target, operation);
 		return;
 	}
 	if (intent !== null && answer === "opened" && operationMovedPane(operation, state.displayed)) {
 		state.deliberate.expect(intent);
 	}
+}
+
+/**
+ * The restore, with a board this target asked for and could not reach named.
+ * @param restore The restore.
+ * @param target The target that asked.
+ * @param operation The operation that ended.
+ * @returns The restore.
+ */
+function unreachableFrom(restore: Restore, target: number, operation: Operation): Restore {
+	return operation.answer === "unreachable" && operation.boardKey !== null
+		? boardUnreachable(restore, target, operation.boardKey)
+		: restore;
 }
 
 /**
@@ -209,19 +225,22 @@ function grantSlot(state: Reconciliation): void {
 	}
 	const operation =
 		intent.kind === "board"
-			? startOperation({ kind: "person" }, intent.paneId, intent.boardKey, state.displayed, intent)
+			? startOperation({ kind: "person" }, intent.paneId, null, state.displayed, intent)
 			: null;
 	state.operation = operation;
 	next.answer({
 		kind: "granted",
 		move: {
-			/** The command finished. */
-			done: (): void => {
+			/**
+			 * The command finished.
+			 * @param openedKey The board the server says it opened.
+			 */
+			done: (openedKey: string): void => {
 				if (operation === null) {
 					reconcile(state);
 					return;
 				}
-				answerOperation(state, operation, "opened");
+				answerOperation(state, operation, "opened", openedKey);
 			},
 			/** The command did not finish. */
 			failed: (): void => {
@@ -270,7 +289,11 @@ function commandsOver(state: Reconciliation) {
 			);
 			state.operation = operation;
 			void state.port.open(paneId, boardKey).then((outcome) => {
-				answerOperation(state, operation, outcome.kind === "opened" ? "opened" : "unreachable");
+				if (outcome.kind === "opened") {
+					answerOperation(state, operation, "opened", outcome.boardKey);
+				} else {
+					answerOperation(state, operation, "unreachable");
+				}
 				return outcome;
 			});
 		},

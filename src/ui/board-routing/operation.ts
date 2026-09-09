@@ -12,7 +12,7 @@
 // It is over when the pane has been seen to move — or when that pane is out of
 // contact, since nothing better is coming.
 
-import { boardIn, sameBoardKey, type WorkspaceAddress } from "@/ui/board-routing/address";
+import { boardIn, type WorkspaceAddress } from "@/ui/board-routing/address";
 import type { NavigationIntent } from "@/ui/board-routing/intent";
 
 /** Who asked for an operation. */
@@ -25,11 +25,18 @@ type OperationAnswer = "opened" | "unreachable";
 interface Operation {
 	readonly operator: Operator;
 	readonly paneId: string;
-	readonly boardKey: string;
+	/** The board a restore asked for, so one it cannot reach can be named. */
+	readonly boardKey: string | null;
 	/** What that pane was showing when it was asked, so its move is observable. */
 	readonly from: string | null;
 	/** The server's answer, or null while it has not given one. */
 	readonly answer: OperationAnswer | null;
+	/**
+	 * The board the server says it opened, as the server keys it. Its own answer
+	 * rather than the request: an address may be spelled several ways, and only
+	 * the vault knows which board a spelling resolves to (ADR 0004).
+	 */
+	readonly openedKey: string | null;
 	/**
 	 * What the person asked for, when this is theirs. The operation owns it, so
 	 * an expectation exists only between its pane moving and the address being
@@ -50,7 +57,7 @@ interface Operation {
 function startOperation(
 	operator: Operator,
 	paneId: string,
-	boardKey: string,
+	boardKey: string | null,
 	displayed: WorkspaceAddress,
 	intent: NavigationIntent | null = null,
 ): Operation {
@@ -60,6 +67,7 @@ function startOperation(
 		boardKey,
 		from: boardIn(displayed, paneId),
 		answer: null,
+		openedKey: null,
 		intent,
 	};
 }
@@ -68,10 +76,15 @@ function startOperation(
  * Take the server's answer.
  * @param operation The operation.
  * @param answer What the server said.
+ * @param openedKey The board it opened, as the server keys it, when it opened one.
  * @returns The operation, answered.
  */
-function operationAnswered(operation: Operation, answer: OperationAnswer): Operation {
-	return { ...operation, answer };
+function operationAnswered(
+	operation: Operation,
+	answer: OperationAnswer,
+	openedKey: string | null = null,
+): Operation {
+	return { ...operation, answer, openedKey };
 }
 
 /**
@@ -95,13 +108,12 @@ function operationSettled(
 		return true;
 	}
 	const shown = boardIn(displayed, operation.paneId);
-	// That the pane moved at all is what says the open arrived: which board it
-	// lands on is the server's answer, not the request's. A pane already showing
-	// the board that was asked for has nothing to wait for — that is a person
-	// opening the board their pane was on, which moves nothing and is still over.
-	return (
-		shown !== operation.from || sameBoardKey(shown, operation.boardKey) || !ready(operation.paneId)
-	);
+	// That the pane moved at all is what says the open arrived. A pane already
+	// showing the board the server opened has nothing to wait for: that is a
+	// person opening the board their pane was on, which moves nothing and is
+	// still over. Both keys come from the server, so the same board is the same
+	// string however the request spelled the address.
+	return shown !== operation.from || shown === operation.openedKey || !ready(operation.paneId);
 }
 
 /**

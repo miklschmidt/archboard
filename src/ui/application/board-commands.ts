@@ -50,6 +50,13 @@ interface BoardCommandContext {
 	readonly pane: string | undefined;
 }
 
+/**
+ * Told which board the server opened, as the server keys it. A request may
+ * spell an address several ways — `payments`, `payments@current` — and only
+ * the answer says which board that is (ADR 0004).
+ */
+type OnOpened = (boardKey: string) => void;
+
 /** How a command ended. */
 /** What a command did: words for the person, and the boards it wrote. */
 interface CommandDone {
@@ -267,18 +274,21 @@ async function openCreated(
  * @param api The server.
  * @param request The dialog's request.
  * @param context The pane the request is for.
+ * @param onOpened Told which board the pane was pointed at, when one was.
  * @returns The outcome.
  */
 function runBoardDialogRequest(
 	api: BoardCommandApi,
 	request: BoardDialogRequest,
 	context: BoardCommandContext,
+	onOpened?: OnOpened,
 ): Promise<BoardCommandOutcome> {
 	const identity = identityOf(request);
 	switch (request.mode) {
 		case "open":
 			return attempt("Open board", async () => {
-				await api.open(openRequest(identity, context.pane));
+				const opened = await api.open(openRequest(identity, context.pane));
+				onOpened?.(opened.board);
 				return null;
 			});
 		case "create":
@@ -287,6 +297,7 @@ function runBoardDialogRequest(
 				// The note exists from here on, whatever the pane does next.
 				wrote(created.board);
 				await openCreated(api, created, context);
+				onOpened?.(created.board);
 				return `Created ${created.board}.`;
 			});
 		default:
@@ -299,15 +310,18 @@ function runBoardDialogRequest(
  * @param api The server.
  * @param identity The board.
  * @param context The pane.
+ * @param onOpened Told which board the pane was pointed at, when one was.
  * @returns The outcome.
  */
 function runOpen(
 	api: BoardCommandApi,
 	identity: BoardIdentity,
 	context: BoardCommandContext,
+	onOpened?: OnOpened,
 ): Promise<BoardCommandOutcome> {
 	return attempt("Open board", async () => {
-		await api.open(openRequest(identity, context.pane));
+		const opened = await api.open(openRequest(identity, context.pane));
+		onOpened?.(opened.board);
 		// Opening writes nothing: it changes which board a pane shows, which the
 		// listing covers, and leaves every board as it was.
 		return null;
@@ -322,15 +336,18 @@ function runOpen(
  * @param api The server.
  * @param boardKey The board key.
  * @param pane The pane's identity to the server.
+ * @param onOpened Told which board the pane was pointed at, when one was.
  * @returns The outcome.
  */
 function runOpenKey(
 	api: BoardCommandApi,
 	boardKey: string,
 	pane: string,
+	onOpened?: OnOpened,
 ): Promise<BoardCommandOutcome> {
 	return attempt("Open board", async () => {
-		await api.open({ board: boardKey, pane });
+		const opened = await api.open({ board: boardKey, pane });
+		onOpened?.(opened.board);
 		// A restore points a pane at a board; nothing about any board moved.
 		return null;
 	});
@@ -441,4 +458,5 @@ export {
 	type BoardCommandApi,
 	type BoardCommandContext,
 	type BoardCommandOutcome,
+	type OnOpened,
 };

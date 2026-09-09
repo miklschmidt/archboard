@@ -65,10 +65,12 @@ interface BoardDialogEvents {
 	 * the words say why. Null means it may go ahead.
 	 * @returns The refusal to show in the dialog, or null.
 	 */
-	readonly onMovingPane: (
-		context: BoardCommandContext,
-		boardKey: string,
-	) => Promise<DialogError | null>;
+	readonly onMovingPane: (context: BoardCommandContext) => Promise<DialogError | null>;
+	/**
+	 * The pane was pointed at this board, as the server keys it. A request may
+	 * spell an address several ways; only the answer says which board it is.
+	 */
+	readonly onPaneMoved: (boardKey: string) => void;
 	/** That submission did not move the pane after all. */
 	readonly onMoveAbandoned: () => void;
 	/** A command finished; the words are for a notice, when there are any. */
@@ -199,13 +201,12 @@ function useBoardDialogs(
 		 * @param context The pane it acts for.
 		 */
 		async (request: BoardDialogRequest, context: BoardCommandContext): Promise<void> => {
-			const refusal =
-				request.mode === "save-as" ? null : await events.onMovingPane(context, request.board);
+			const refusal = request.mode === "save-as" ? null : await events.onMovingPane(context);
 			if (refusal !== null) {
 				setState((current) => ({ ...current, busy: false, error: refusal }));
 				return;
 			}
-			settle(await runBoardDialogRequest(api, request, context), context);
+			settle(await runBoardDialogRequest(api, request, context, events.onPaneMoved), context);
 		},
 		[api, events, settle],
 	);

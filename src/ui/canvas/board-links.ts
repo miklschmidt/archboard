@@ -20,8 +20,11 @@ type OpenBoard = (address: OpenBoardRequest) => Promise<BoardInfo>;
  * way to the server, so the person's move is the last one it is given.
  */
 interface BoardMove {
-	/** The open finished. */
-	readonly done: () => void;
+	/**
+	 * The open finished.
+	 * @param openedKey The board the server says it opened.
+	 */
+	readonly done: (openedKey: string) => void;
 	/** The open did not finish, so nothing moved. */
 	readonly failed: () => void;
 }
@@ -90,8 +93,7 @@ async function openInPane(
 	open: OpenBoard,
 ): Promise<void> {
 	try {
-		await open({ board, pane: options.clientId });
-		move.done();
+		move.done((await open({ board, pane: options.clientId })).board);
 	} catch (error: unknown) {
 		move.failed();
 		const message = error instanceof Error ? error.message : String(error);

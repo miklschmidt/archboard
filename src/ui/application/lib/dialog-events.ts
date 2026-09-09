@@ -45,13 +45,9 @@ function dialogEvents(owners: DialogEventOwners): BoardDialogEvents {
 		 * is still typing a name into the dialog. When it may go, this is the
 		 * person moving that pane, and the address bar records it as their move.
 		 * @param context The pane it acts for.
-		 * @param boardKey The board they asked for.
 		 * @returns The refusal to show, or null once the command may be sent.
 		 */
-		onMovingPane: async (
-			context: BoardCommandContext,
-			boardKey: string,
-		): Promise<DialogError | null> => {
+		onMovingPane: async (context: BoardCommandContext): Promise<DialogError | null> => {
 			const refusal = refuseMove({ panes, notices, dialogs: owners.dialogs.read() }, context);
 			if (refusal !== null) {
 				return refusal;
@@ -63,7 +59,6 @@ function dialogEvents(owners: DialogEventOwners): BoardDialogEvents {
 				kind: "board",
 				paneId: context.paneId,
 				from: context.boardKey,
-				boardKey,
 			});
 			if (permission.kind === "blocked") {
 				return {
@@ -73,6 +68,14 @@ function dialogEvents(owners: DialogEventOwners): BoardDialogEvents {
 			}
 			move = permission.move;
 			return null;
+		},
+		/**
+		 * The pane was pointed at this board.
+		 * @param boardKey The board, as the server keys it.
+		 */
+		onPaneMoved: (boardKey: string): void => {
+			move?.done(boardKey);
+			move = null;
 		},
 		/** That command did not move the pane. */
 		onMoveAbandoned: (): void => {
@@ -91,7 +94,9 @@ function dialogEvents(owners: DialogEventOwners): BoardDialogEvents {
 		 * @param message Words for the notice, when there are any.
 		 */
 		onDone: (message: string | null): void => {
-			move?.done();
+			// A command that finished without moving a pane — a save-as — never
+			// took the slot, and one that did has already reported.
+			move?.failed();
 			move = null;
 			if (message !== null) {
 				notices.raise(infoNotice("board-command", "Board", message));

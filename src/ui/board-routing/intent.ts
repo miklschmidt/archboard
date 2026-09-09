@@ -10,7 +10,7 @@
 // whether or not it was met, and a gesture that failed clears it at once. There
 // is no marker left over for a later change to be mistaken for.
 
-import { boardIn, sameBoardKey, type WorkspaceAddress } from "@/ui/board-routing/address";
+import { boardIn, type WorkspaceAddress } from "@/ui/board-routing/address";
 
 /** What a person's gesture asked the workspace to become. */
 type NavigationIntent =
@@ -19,8 +19,6 @@ type NavigationIntent =
 			readonly paneId: string;
 			/** The board that pane showed when the gesture was made. */
 			readonly from: string | null;
-			/** The board they asked for, so no other change can be taken for theirs. */
-			readonly boardKey: string;
 	  }
 	| {
 			readonly kind: "panes";
@@ -52,14 +50,10 @@ function met(intent: NavigationIntent, address: WorkspaceAddress): boolean {
 	if (intent.kind === "panes") {
 		return address.panes.length === intent.count;
 	}
-	// The pane the person asked to move is showing the board they asked for.
-	// Both halves matter: without the second, a change somebody else made to
-	// that pane would be taken for theirs.
-	//
-	// A spelling the vault would not recognise costs a history entry, never a
-	// wrong board.
-	const shown = boardIn(address, intent.paneId);
-	return shown !== intent.from && sameBoardKey(shown, intent.boardKey);
+	// The pane the person asked to move has moved. A board open is expected only
+	// once its own command has been seen through, so there is no window in which
+	// somebody else's change could be taken for theirs.
+	return boardIn(address, intent.paneId) !== intent.from;
 }
 
 /**

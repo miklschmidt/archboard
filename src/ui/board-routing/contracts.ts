@@ -19,8 +19,14 @@ interface NavigationBlock {
 /** Whether a navigation may proceed. */
 type GuardVerdict = { readonly kind: "clear" } | NavigationBlock;
 
-/** How pointing one pane at one board ended. */
-type OpenOutcome = { readonly kind: "opened" } | { readonly kind: "unreachable" };
+/**
+ * How pointing one pane at one board ended. A board that opened comes back
+ * with the key the server resolved it to, which is the only spelling that can
+ * be compared with what a pane reports.
+ */
+type OpenOutcome =
+	| { readonly kind: "opened"; readonly boardKey: string }
+	| { readonly kind: "unreachable" };
 
 /** The workspace the address bar reads, addresses and guards. */
 interface WorkspacePort {
