@@ -52,6 +52,7 @@ function optionsFor(
 		onLayoutRequest: host.onLayoutRequest,
 		onPaneStateAccepted: host.onPaneStateAccepted,
 		onPaneReconnected: host.onPaneReconnected,
+		onPaneRetired: host.onPaneRetired,
 		onBoardError,
 		onBoardLinkError: host.onBoardLinkError,
 		onBoardOpenRequested: host.onBoardOpenRequested,

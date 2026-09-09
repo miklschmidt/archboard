@@ -61,6 +61,8 @@ interface PaneEvents {
 	readonly onPaneStateAccepted: () => void;
 	/** A pane's socket came back after being lost; nothing it cached is trustworthy. */
 	readonly onPaneReconnected: (paneId: string) => void;
+	/** A pane has gone and the server has dropped it; the inventory has moved. */
+	readonly onPaneRetired: (paneId: string) => void;
 	/** A pane's status was published; the workbench re-reads its transport. */
 	readonly onStatusPublished: (paneId: string) => void;
 	/**
@@ -83,6 +85,7 @@ type PaneHost = Required<
 		| "onLayoutRequest"
 		| "onPaneStateAccepted"
 		| "onPaneReconnected"
+		| "onPaneRetired"
 		| "onStaleFrontend"
 		| "onThemeChange"
 		| "onSelection"
@@ -237,6 +240,13 @@ function createPaneHost(setters: HostSetters): PaneHost {
 		 */
 		onPaneReconnected: (paneId: string): void => {
 			events.read().onPaneReconnected(paneId);
+		},
+		/**
+		 * A pane has gone and the server has dropped it.
+		 * @param paneId The pane.
+		 */
+		onPaneRetired: (paneId: string): void => {
+			events.read().onPaneRetired(paneId);
 		},
 		/**
 		 * A board note could not be rendered.

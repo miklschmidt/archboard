@@ -26,10 +26,8 @@ import { addressingOver, openingPaneList } from "@/ui/application/lib/workspace-
 import { assembleShellView } from "@/ui/application/shell-view";
 import { applyTheme, initialTheme } from "@/ui/application/lib/theme";
 import { useBoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
-import {
-	useMountedPreviews,
-	type MountedPreviews,
-} from "@/ui/application/hooks/use-mounted-previews";
+import { useMountedPreviews } from "@/ui/application/hooks/use-mounted-previews";
+import { useReleasedBoards } from "@/ui/application/hooks/use-released-boards";
 import {
 	shellPresentationOf,
 	useFullscreen,
@@ -42,6 +40,7 @@ import { useReducedMotion } from "@/ui/application/hooks/use-reduced-motion";
 import { useStageEvents, type EscapeOrigin } from "@/ui/application/hooks/use-stage-events";
 import { useWorkbench } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
+import { previewRenderer } from "@/ui/application/components/BoardPreviewSlot";
 import { PresentationVoiceControls } from "@/ui/application/components/PresentationVoiceControls";
 import { WorkbenchDockBody } from "@/ui/application/components/WorkbenchDockBody";
 import { WorkbenchDockHeader } from "@/ui/application/components/WorkbenchDockHeader";
@@ -49,7 +48,6 @@ import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import type { DoingEntry } from "@/ui/types";
 import {
 	BoardCatalogProvider,
-	BoardPreview,
 	useBoardCatalog,
 	useScratchBoards,
 	type BoardCatalog,
@@ -325,39 +323,6 @@ function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
 }
 
 /**
- * How each navigator row draws its board, bound to what the panes are holding.
- *
- * A board a pane holds is drawn from that pane's own scene; every other board
- * from the server's snapshot, which the catalog caches (ADR 0015, TASK-167).
- * Which of the two applies is decided here, where both are known, and never by
- * the shell.
- * @param previews The scenes the panes are holding, by board key.
- * @param held The board keys the panes hold.
- * @param theme The theme to draw in.
- * @returns The row's preview renderer.
- */
-function usePreviewRenderer(
-	previews: MountedPreviews,
-	held: readonly string[],
-	theme: ThemeChoice,
-): RenderBoardPreview {
-	const holding = useMemo(() => new Set(held), [held]);
-	const { byBoard } = previews;
-	return useCallback(
-		(boardKey: string, boardName: string): ReactNode => (
-			<BoardPreview
-				boardKey={boardKey}
-				boardName={boardName}
-				mounted={byBoard[boardKey] ?? null}
-				held={holding.has(boardKey)}
-				theme={theme}
-			/>
-		),
-		[holding, byBoard, theme],
-	);
-}
-
-/**
  * The root component's body, inside the providers it needs.
  * @returns The shell, the dialogs and the workbench.
  */
@@ -392,7 +357,12 @@ function ApplicationBody(): JSX.Element {
 	const catalog = useBoardCatalog();
 	const scratch = useScratchBoards(heldKeys);
 	const mountedPreviews = useMountedPreviews(panes.handles);
-	const renderPreview = usePreviewRenderer(mountedPreviews, heldKeys, theme);
+	useReleasedBoards(heldKeys, catalog);
+	const holding = useMemo(() => new Set(heldKeys), [heldKeys]);
+	const renderPreview = useMemo(
+		() => previewRenderer(mountedPreviews, holding, theme),
+		[mountedPreviews, holding, theme],
+	);
 	const agentActivity = useAgentActivity();
 	const workbench = useWorkbench(panes.handles, panes.list.activePaneId, openAgentSettings);
 	// A refused exit stays with the presentation, where the person is; a

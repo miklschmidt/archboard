@@ -9,7 +9,6 @@ import { buildPaneReport, paneReportKey } from "@/ui/canvas/lib/pane-report";
 import type { PaneSocketConnector } from "@/ui/canvas/lib/pane-socket";
 import type { CanvasSessionOptions } from "@/ui/canvas/lib/session-contracts";
 import {
-	canvasPaneListingKey,
 	createCanvasPaneReportSequencer,
 	type CanvasPaneReportCurrent,
 	type CanvasPaneReportDispatch,
@@ -25,15 +24,6 @@ type PaneReportListeners = Pick<
 	CanvasSessionOptions<never>,
 	"onPaneStateAccepted" | "onStaleFrontend"
 >;
-
-/**
- * How many panes the server said it holds.
- * @param result The answer, when the request settled.
- * @returns The count, or null when nothing answered.
- */
-function paneCountOf(result: PaneReply | null): number | null {
-	return result === null ? null : result.paneCount;
-}
 
 /** What the sender reads and tells. */
 interface PaneReportSenderParts {
@@ -107,13 +97,14 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 	}
 
 	/**
-	 * Say what the listing depends on once per change, rather than per pan.
-	 * `canvasPaneListingKey` owns which facts those are.
+	 * The navigator only depends on which board this accepted pane contributes,
+	 * not on its camera; say so once per board rather than per pan. A pane going
+	 * away is not visible here at all: it is the retiring pane that says so, when
+	 * its socket has actually closed (TASK-167).
 	 * @param report The accepted report.
-	 * @param paneCount How many panes the server holds, or null when unanswered.
 	 */
-	function acceptListing(report: PaneReport, paneCount: number | null): void {
-		const listingKey = canvasPaneListingKey(report.clientId, report.board, paneCount);
+	function acceptListing(report: PaneReport): void {
+		const listingKey = JSON.stringify([report.clientId, report.board]);
 		if (listingKey !== acceptedListingKey) {
 			acceptedListingKey = listingKey;
 			parts.listeners().onPaneStateAccepted?.();
@@ -143,7 +134,7 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 			parts.setConnected(effects.connectionHealth);
 		}
 		if (effects.acceptPaneListing) {
-			acceptListing(report, paneCountOf(result));
+			acceptListing(report);
 		}
 		applyFreshness(effects, result);
 	}

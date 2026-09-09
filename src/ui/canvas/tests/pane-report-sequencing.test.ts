@@ -3,7 +3,6 @@ import { expect, test } from "bun:test";
 import type { PaneSocket, WorkbenchTransportState } from "@/ui/canvas/workbench-port";
 import {
 	attachCanvasWorkbenchAfterRegistration,
-	canvasPaneListingKey,
 	createCanvasPaneRegistration,
 	createCanvasPaneReportSequencer,
 	type CanvasPaneRegistration,
@@ -264,17 +263,4 @@ test("a report dispatched from a replaced socket on the same generation changes 
 		acceptPaneListing: false,
 		applyStaleBuild: false,
 	});
-});
-
-test("the listing key follows the pane's board and the panes the server holds", () => {
-	const two = canvasPaneListingKey("A-1", "Checkout", 2);
-	// A pan, a zoom or an element count is not in it: the same pane on the same
-	// board with the server holding the same panes says nothing new.
-	expect(canvasPaneListingKey("A-1", "Checkout", 2)).toBe(two);
-	// The other pane closing is a retirement nothing announces. The server's own
-	// count is how a survivor's next report says the inventory has moved.
-	expect(canvasPaneListingKey("A-1", "Checkout", 1)).not.toBe(two);
-	// A pane that switched board, and an answer that named no count at all.
-	expect(canvasPaneListingKey("A-1", "Billing", 2)).not.toBe(two);
-	expect(canvasPaneListingKey("A-1", "Checkout", null)).not.toBe(two);
 });

@@ -199,27 +199,6 @@ function permittedEffects(standing: ReportStanding): CanvasPaneReportEffects {
 }
 
 /**
- * What the board listing depends on in one accepted pane report: which pane
- * contributed which board, and how many panes the server holds. Anything else
- * a report carries — the camera, the element count — moves without the listing
- * moving, so it is deliberately left out and a pan costs no read.
- *
- * The pane count is what makes a pane going away observable. Nothing announces
- * a retirement: the server drops a pane when its socket closes and tells the
- * survivors nothing. But it answers the next report with how many panes it now
- * holds, and that answer is from after the retirement, so a survivor
- * re-reporting is what tells the shell its cached inventory is behind
- * (TASK-167).
- * @param clientId The pane the report was for.
- * @param board The board that pane holds.
- * @param paneCount How many panes the server holds, or null when unanswered.
- * @returns A key that changes exactly when the listing may have moved.
- */
-function canvasPaneListingKey(clientId: string, board: string, paneCount: number | null): string {
-	return JSON.stringify([clientId, board, paneCount]);
-}
-
-/**
  * The registration latch for one socket generation.
  * @param socket The socket.
  * @param generation Its generation.
@@ -542,7 +521,6 @@ export {
 	type CanvasWorkbenchSocketOwner,
 	type CanvasWorkbenchSocketOwnerOptions,
 	attachCanvasWorkbenchAfterRegistration,
-	canvasPaneListingKey,
 	createCanvasPaneRegistration,
 	createCanvasPaneReportSequencer,
 	createCanvasWorkbenchSocketOwner,

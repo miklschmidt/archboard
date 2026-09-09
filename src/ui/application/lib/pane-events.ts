@@ -245,6 +245,13 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		catalog.reconnected();
 	}
 	/**
+	 * A pane has gone and the server has dropped it: what the panes are holding
+	 * is not what this tab last read.
+	 */
+	function onPaneRetired(): void {
+		catalog.refresh();
+	}
+	/**
 	 * Which boards an agent is working on.
 	 * @param snapshot The whole snapshot.
 	 */
@@ -283,6 +290,7 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		onLibraryChange,
 		onPaneStateAccepted,
 		onPaneReconnected,
+		onPaneRetired,
 		onStatusPublished,
 		/**
 		 * A pane's note state began or ended.

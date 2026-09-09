@@ -105,11 +105,12 @@ interface ServerState {
 
 /**
  * What one endpoint answers with.
- * @param path The endpoint path.
+ * @param url The request address.
  * @param state The server's state.
  * @returns The body.
  */
-function bodyFor(path: string, state: ServerState): Record<string, unknown> {
+function bodyFor(url: URL, state: ServerState): Record<string, unknown> {
+	const path = url.pathname;
 	if (path === "/api/boards") {
 		return {
 			vault: "/vault",
@@ -131,7 +132,7 @@ function bodyFor(path: string, state: ServerState): Record<string, unknown> {
 	}
 	return {
 		success: true,
-		board: "Checkout",
+		board: url.searchParams.get("board") ?? "Checkout",
 		fingerprint: `server-${state.previewGeneration}`,
 		elements: [],
 		files: {},
@@ -140,16 +141,16 @@ function bodyFor(path: string, state: ServerState): Record<string, unknown> {
 
 /**
  * The answer to one request.
- * @param path The endpoint path.
+ * @param url The request address.
  * @param state The server's state.
  * @returns The response.
  */
-function answerFor(path: string, state: ServerState): Response {
-	const failure = state.failures.get(path);
+function answerFor(url: URL, state: ServerState): Response {
+	const failure = state.failures.get(url.pathname);
 	if (failure !== undefined) {
 		return new Response(JSON.stringify({ success: false, error: failure }), { status: 500 });
 	}
-	return new Response(JSON.stringify(bodyFor(path, state)), { status: 200 });
+	return new Response(JSON.stringify(bodyFor(url, state)), { status: 200 });
 }
 
 /**
@@ -159,24 +160,21 @@ function answerFor(path: string, state: ServerState): Response {
  * @returns Settles when the request may answer.
  */
 async function waitForRelease(path: string, state: ServerState): Promise<void> {
-	const held = state.held.get(path);
-	if (held === undefined) {
-		return;
-	}
-	state.held.delete(path);
-	await held.waited;
+	// A gate, not a queue: every request to a held endpoint waits, so two reads
+	// of the same endpoint can be in flight at once and answer together.
+	await state.held.get(path)?.waited;
 }
 
 /**
- * The path of a request, however it was addressed.
+ * The address of a request, however it was addressed.
  * @param input What was requested.
- * @returns The endpoint path.
+ * @returns The URL.
  */
-function pathOf(input: RequestInfo | URL): string {
+function urlOf(input: RequestInfo | URL): URL {
 	if (typeof input === "string") {
-		return new URL(input, "http://canvas.test").pathname;
+		return new URL(input, "http://canvas.test");
 	}
-	return new URL(input instanceof URL ? input.href : input.url, "http://canvas.test").pathname;
+	return new URL(input instanceof URL ? input.href : input.url, "http://canvas.test");
 }
 
 /**
@@ -200,12 +198,13 @@ function fakeServer(): FakeServer {
 	 * @returns The response.
 	 */
 	async function serve(input: RequestInfo | URL): Promise<Response> {
-		const path = pathOf(input);
+		const url = urlOf(input);
+		const path = url.pathname;
 		state.counts.set(path, (state.counts.get(path) ?? 0) + 1);
 		// Answered from the state the server had when it was asked, as a real one
 		// would. Only the delivery is held back, so a request that is still on the
 		// wire when something changes still carries the older answer.
-		const answer = answerFor(path, state);
+		const answer = answerFor(url, state);
 		await waitForRelease(path, state);
 		return answer;
 	}
@@ -240,7 +239,12 @@ function fakeServer(): FakeServer {
 		defer: (path: string): HeldAnswer => {
 			const held = latch();
 			state.held.set(path, held);
-			return { answer: held.release };
+			/** Let every request waiting on this endpoint answer. */
+			function answer(): void {
+				state.held.delete(path);
+				held.release();
+			}
+			return { answer };
 		},
 		/**
 		 * Add a board to the vault.

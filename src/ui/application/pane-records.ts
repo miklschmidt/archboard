@@ -133,6 +133,22 @@ function heldBoardKeys(records: PaneRecords, paneIds: readonly string[]): readon
 	return keys;
 }
 
+/**
+ * The boards that were held and are not held any more.
+ *
+ * Letting go of a board is the moment what the server holds for it matters
+ * again: while a pane had it, the navigator drew that pane's own scene, and
+ * the ordinary edits that went into it were written by change reports that no
+ * command outcome describes (TASK-167).
+ * @param before The keys held at the last check.
+ * @param now The keys held now.
+ * @returns The released keys, in the order they were held.
+ */
+function releasedBoardKeys(before: readonly string[], now: readonly string[]): readonly string[] {
+	const holding = new Set(now);
+	return before.filter((key) => !holding.has(key));
+}
+
 export {
 	dropRecord,
 	emptyPaneStatus,
@@ -140,6 +156,7 @@ export {
 	initialPaneRecord,
 	patchRecord,
 	recordFor,
+	releasedBoardKeys,
 	type PaneRecord,
 	type PaneRecords,
 };

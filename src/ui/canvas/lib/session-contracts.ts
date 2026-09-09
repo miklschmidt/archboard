@@ -102,6 +102,11 @@ interface CanvasSessionOptions<Transport extends WorkbenchTransportPort> {
 	/** The server accepted a changed authoritative pane report. */
 	onPaneStateAccepted?: () => void;
 	/**
+	 * This pane has gone and its socket has closed, so the server has dropped it
+	 * (TASK-167). Said once, after the close, by the pane that went.
+	 */
+	onPaneRetired?: (paneId: string) => void;
+	/**
 	 * This pane's socket came back after being lost. Said once per reconnection
 	 * and never for the first connection: what it means is that this tab was
 	 * out of earshot for a while, so anything it caches about the server may
