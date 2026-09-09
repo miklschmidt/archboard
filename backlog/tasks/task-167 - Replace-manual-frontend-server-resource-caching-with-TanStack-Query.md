@@ -4,7 +4,7 @@ title: Replace manual frontend server-resource caching with TanStack Query
 status: In Progress
 assignee: []
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 14:36'
+updated_date: '2026-09-09 14:42'
 labels: []
 dependencies:
   - TASK-164
@@ -131,4 +131,14 @@ Runtime evidence. Module owners: four race regressions (event during a first rea
 One thing I could not isolate: the owner passes with onPaneRetired removed, because the released-board invalidation already covers every close where the navigator's occupancy visibly changes. onPaneRetired remains as the race-free signal for closing a pane while another still holds the same board, where the cached inventory would otherwise be wrong with nothing visible to show it. Flagged rather than claimed as proven.
 
 Green: lint (policy and baseline), fmt:check, both tsc projects, test:modules (2718), test:repository, and the two navigator browser owners.
+
+Browser owner corrected in 2113a5d6, awaiting its run.
+
+Why the earlier drawing assertion had to be dropped, diagnosed from source rather than worked around: applyPageEdit only calls app.updateScene, and the reporting reducer suppresses a flush while state.userInteracted is false (reporting-reducer.ts:316, with the same gate in reporting-delivery.ts and baseline-merge.ts). A scene changed by script alone is deliberately not reported, which is why the existing write owners click the canvas first. Test setup, not a product regression. The click is back and the note write is waited for again.
+
+The preview half was also not a proof: payments was held from the opening address until the final switch, so its server preview query was disabled throughout and the read afterwards was simply its first, which would have happened with the release invalidation removed. The owner now opens the comparison on billing and ledger so payments is held by nobody and its pre-edit picture is primed, then the person opens payments, clicks the canvas, moves the box, waits for the note, and leaves inside the minute that picture counts as fresh. The assertion waits for a preview answer whose box carries the coordinate the person moved it to, not merely a request, so a read that repeated the cached picture cannot satisfy it. The probe records response bodies for that reason. The budget's reason and evidence now name what it waits on: two closes, one note write, one preview answer.
+
+Retirement rationale, from source and without any transport claim: the shell hears a pane has left the layout as soon as React removes it, while dispose closes the socket behind the workbench teardown (sockets.dispose().finally(connector.close) in pane-core), so a pane can be out of the layout with its socket still open and still registered, and a read taken then comes back saying it is on screen. Nothing announces the retirement afterwards, which is why the event is said from the close rather than from the layout. onPaneRetired is retained on that basis.
+
+Still to run, once the browser slot is released: board-occupancy positive, then the same owner with the released-board invalidation inverted, to show the corrected preview assertion is load-bearing. Nothing else is outstanding.
 <!-- SECTION:NOTES:END -->
