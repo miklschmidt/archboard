@@ -5,18 +5,21 @@
 // command, the server answers it, the pane reports its new board, and only
 // then is the address written. So a refused open changes no address, because
 // it changed no pane. The address leads in exactly two places — the first
-// load, and a history navigation — and there it issues the same open command
-// the shell does.
+// load, and a history navigation — and there it asks for the same command the
+// shell does.
 //
-// One open at a time, whoever asked. A restore holds the channel for its own
-// steps; a person's gesture takes it before the shell sends theirs. That is
-// what makes the last thing somebody asked for the last thing the server does,
-// rather than a race between a restore already running and the click that
-// interrupted it.
+// There is one command slot. Every board open takes it, whoever asked: a
+// restore's own step and a person's click are the same operation with a
+// different owner. The slot is held through the server's answer AND through
+// the pane being seen to move, and the next command is granted one at a time,
+// so the last thing somebody asked for is the last thing the server is given.
+// Pointing the restore elsewhere, or abandoning it for a person's gesture,
+// changes what is wanted from here on; the slot goes on being watched either
+// way, so nothing is ever left held by a restore nobody is running.
 //
-// A deliberate move pushes a history entry; everything else replaces one. Our
-// own writes always describe a workspace that is on screen and settled, so
-// their plan is empty and the guard below cannot block them.
+// Each operation owns what the person asked for, so an expectation exists only
+// between its pane moving and the address being written. A deliberate move
+// pushes a history entry; everything else replaces one.
 //
 // The reconciliation is external state, driven by the effect whenever the
 // workspace or the address has changed, and by the answers to what it asked.
@@ -25,7 +28,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useBlocker, useRouter, useRouterState } from "@tanstack/react-router";
 
 import {
-	boardIn,
 	panesAtRisk,
 	planFor,
 	planIsEmpty,
@@ -39,13 +41,19 @@ import {
 	type NavigationIntent,
 } from "@/ui/board-routing/intent";
 import {
+	operationAnswered,
+	operationMovedPane,
+	operationSettled,
+	startOperation,
+	type Operation,
+	type OperationAnswer,
+} from "@/ui/board-routing/operation";
+import {
 	abandonRestore,
 	advanceRestore,
+	boardUnreachable,
 	createRestore,
-	openAnswered,
-	restoreOutstanding,
 	retargetRestore,
-	type PendingOpen,
 	type Restore,
 	type RestoreStep,
 } from "@/ui/board-routing/restore";
@@ -54,15 +62,20 @@ import {
 	searchFromAddress,
 	validateWorkspaceSearch,
 } from "@/ui/board-routing/search";
-import type { WorkspacePort } from "@/ui/board-routing/contracts";
+import type { NavigationBlock, WorkspacePort } from "@/ui/board-routing/contracts";
 
 /** What a person's own board open reports back when it is over. */
 interface NavigationClaim {
-	/** The command finished; what it did to the workspace is the person's move. */
+	/** The command finished; what it does to the workspace is the person's move. */
 	readonly done: () => void;
 	/** The command did not finish, so nothing moved. */
 	readonly failed: () => void;
 }
+
+/** Whether a person's move may go ahead, once the slot is theirs. */
+type NavigationPermission =
+	| { readonly kind: "granted"; readonly move: NavigationClaim }
+	| { readonly kind: "blocked"; readonly block: NavigationBlock };
 
 /** What the shell tells the address bar about the person's own gestures. */
 interface WorkspaceAddressing {
@@ -72,18 +85,23 @@ interface WorkspaceAddressing {
 	 */
 	readonly expect: (intent: NavigationIntent) => void;
 	/**
-	 * A person is about to have the shell open a board. Ends any restore and
-	 * waits until the address bar has nothing outstanding, so theirs is the last
-	 * command the server is given.
-	 * @returns Where to report that command's outcome.
+	 * A person is about to have the shell open a board. Ends any restore, waits
+	 * for the command slot, and answers only when it is theirs — so the guard is
+	 * asked about the pane as it is at that moment, not as it was when they
+	 * started waiting, and theirs is the last command the server is given.
+	 * @returns Permission and where to report the outcome, or the refusal.
 	 */
-	readonly claim: (intent: NavigationIntent) => Promise<NavigationClaim>;
-	/** A gesture that never became a command. */
-	readonly clear: () => void;
+	readonly claim: (intent: NavigationIntent) => Promise<NavigationPermission>;
 }
 
 /** The router this hook writes through. */
 type BoardRouter = ReturnType<typeof useRouter>;
+
+/** Somebody waiting for the command slot. */
+interface Waiting {
+	readonly intent: NavigationIntent;
+	readonly answer: (permission: NavigationPermission) => void;
+}
 
 /**
  * Everything the reconciliation reads, kept current by the effect so that an
@@ -96,19 +114,10 @@ interface Reconciliation {
 	port: WorkspacePort;
 	router: BoardRouter;
 	readonly deliberate: DeliberateNavigation;
-	/** A person's open the shell is sending; nothing else is sent under it. */
-	person: NavigationIntent | null;
-	/** Who is waiting for the channel to be free. */
-	readonly waiting: (() => void)[];
-}
-
-/**
- * Whether anything is on its way that will change the workspace again.
- * @param state The reconciliation.
- * @returns True while a command is outstanding.
- */
-function outstanding(state: Reconciliation): boolean {
-	return state.person !== null || restoreOutstanding(state.restore);
+	/** The one command outstanding, or null when the slot is free. */
+	operation: Operation | null;
+	/** Who is waiting for the slot, in the order they asked. */
+	readonly queue: Waiting[];
 }
 
 /**
@@ -141,6 +150,92 @@ function publishAddress(state: Reconciliation): void {
 }
 
 /**
+ * Take the answer to whatever is in the slot and look again.
+ * @param state The reconciliation.
+ * @param operation The operation being answered.
+ * @param answer What the server said.
+ */
+function answerOperation(
+	state: Reconciliation,
+	operation: Operation,
+	answer: OperationAnswer,
+): void {
+	// An answer is taken once, and only by the operation it belongs to.
+	if (state.operation === operation) {
+		state.operation = operationAnswered(operation, answer);
+	}
+	reconcile(state);
+}
+
+/**
+ * An operation is over. A restore's names a board it could not reach; a
+ * person's becomes the move the address pushes, but only if its pane moved:
+ * opening the board a pane already showed is not a move to record.
+ * @param state The reconciliation.
+ * @param operation The operation that finished.
+ */
+function finishOperation(state: Reconciliation, operation: Operation): void {
+	const { operator, intent, answer } = operation;
+	if (operator.kind === "restore") {
+		if (answer === "unreachable") {
+			state.restore = boardUnreachable(state.restore, operator.target, operation.boardKey);
+		}
+		return;
+	}
+	if (intent !== null && answer === "opened" && operationMovedPane(operation, state.displayed)) {
+		state.deliberate.expect(intent);
+	}
+}
+
+/**
+ * Give the slot to whoever has been waiting longest, if the pane they asked
+ * about will still let them have it. The guard is asked here rather than when
+ * they joined the queue, because a board can stop saving while they wait.
+ * @param state The reconciliation.
+ */
+function grantSlot(state: Reconciliation): void {
+	const next = state.queue.shift();
+	if (next === undefined) {
+		return;
+	}
+	const { intent } = next;
+	const paneId = intent.kind === "board" ? intent.paneId : null;
+	const verdict = paneId === null ? { kind: "clear" as const } : state.port.guard([paneId]);
+	if (verdict.kind !== "clear") {
+		state.port.reportBlocked(verdict);
+		next.answer({ kind: "blocked", block: verdict });
+		reconcile(state);
+		return;
+	}
+	const operation =
+		intent.kind === "board"
+			? startOperation({ kind: "person" }, intent.paneId, intent.boardKey, state.displayed, intent)
+			: null;
+	state.operation = operation;
+	next.answer({
+		kind: "granted",
+		move: {
+			/** The command finished. */
+			done: (): void => {
+				if (operation === null) {
+					reconcile(state);
+					return;
+				}
+				answerOperation(state, operation, "opened");
+			},
+			/** The command did not finish. */
+			failed: (): void => {
+				if (operation === null) {
+					reconcile(state);
+					return;
+				}
+				answerOperation(state, operation, "unreachable");
+			},
+		},
+	});
+}
+
+/**
  * How a restore reaches the workspace.
  * @param state The reconciliation.
  * @returns The commands, over whatever the last render knew.
@@ -162,13 +257,20 @@ function commandsOver(state: Reconciliation) {
 			return step.kind === "focus" ? state.port.selectPane(step.paneId) : false;
 		},
 		/**
-		 * Point a pane at a board, and reconcile again once it has answered.
-		 * @param pending The command, and the target that asked for it.
+		 * Take the slot and point a pane at a board.
+		 * @param paneId The pane.
+		 * @param boardKey The board.
 		 */
-		open: (pending: PendingOpen): void => {
-			void state.port.open(pending.paneId, pending.boardKey).then((outcome) => {
-				state.restore = openAnswered(state.restore, pending, outcome.kind === "opened");
-				reconcile(state);
+		open: (paneId: string, boardKey: string): void => {
+			const operation = startOperation(
+				{ kind: "restore", target: state.restore.target },
+				paneId,
+				boardKey,
+				state.displayed,
+			);
+			state.operation = operation;
+			void state.port.open(paneId, boardKey).then((outcome) => {
+				answerOperation(state, operation, outcome.kind === "opened" ? "opened" : "unreachable");
 				return outcome;
 			});
 		},
@@ -176,52 +278,46 @@ function commandsOver(state: Reconciliation) {
 }
 
 /**
- * Bring the address and the panes back into agreement, and let anybody waiting
- * for the channel have it once nothing is on its way.
+ * Bring the address and the panes back into agreement.
+ *
+ * The slot first: whatever is in it is watched until the server has answered
+ * and its pane has been seen to move, whoever asked for it and whether or not
+ * the restore that asked is still wanted. Then whoever is waiting gets it, one
+ * at a time. Only when nothing is outstanding does a restore take another step
+ * or the address get written.
  * @param state The reconciliation.
  */
 function reconcile(state: Reconciliation): void {
-	if (state.person === null && !state.restore.done) {
-		state.restore = advanceRestore(state.restore, state.displayed, state.port, commandsOver(state));
+	const running = state.operation;
+	if (running !== null) {
+		if (!operationSettled(running, state.displayed, state.port.ready)) {
+			return;
+		}
+		state.operation = null;
+		finishOperation(state, running);
 	}
-	if (outstanding(state)) {
+	if (state.queue.length > 0) {
+		grantSlot(state);
 		return;
 	}
-	for (const waiter of state.waiting.splice(0)) {
-		waiter();
+	if (stillRestoring(state)) {
+		return;
 	}
-	if (state.restore.done) {
-		publishAddress(state);
-	}
+	publishAddress(state);
 }
 
 /**
- * A person's own board open, once the channel is theirs.
+ * Take the restore one step further, when there is one to take.
  * @param state The reconciliation.
- * @param intent What they asked for.
- * @returns Where to report the command's outcome.
+ * @returns True while it has more to do before the address may be written.
  */
-function claimFor(state: Reconciliation, intent: NavigationIntent): NavigationClaim {
-	state.person = intent;
-	return {
-		/** The command finished. */
-		done: (): void => {
-			state.person = null;
-			// A command that succeeded and moved nothing is over: the pane was
-			// already showing what they asked for, so there is no history entry to
-			// make and nothing left to wait for.
-			if (intent.kind === "board" && boardIn(state.displayed, intent.paneId) === intent.from) {
-				state.deliberate.clear();
-			}
-			reconcile(state);
-		},
-		/** The command did not finish. */
-		failed: (): void => {
-			state.person = null;
-			state.deliberate.clear();
-			reconcile(state);
-		},
-	};
+function stillRestoring(state: Reconciliation): boolean {
+	if (state.restore.done) {
+		return false;
+	}
+	const progress = advanceRestore(state.restore, state.displayed, state.port, commandsOver(state));
+	state.restore = progress.restore;
+	return progress.waiting || state.operation !== null;
 }
 
 /**
@@ -252,8 +348,8 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 		port,
 		router,
 		deliberate,
-		person: null,
-		waiting: [],
+		operation: null,
+		queue: [],
 	});
 
 	useEffect(() => {
@@ -325,26 +421,24 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 			/**
 			 * A person is about to have the shell open a board.
 			 * @param intent What they asked for.
-			 * @returns Where to report the outcome, once the command may be sent.
+			 * @returns Permission and where to report the outcome, or the refusal.
 			 */
-			claim: (intent: NavigationIntent): Promise<NavigationClaim> => {
+			claim: (intent: NavigationIntent): Promise<NavigationPermission> => {
 				const current = state.current;
 				current.restore = abandonRestore(current.restore);
-				deliberate.expect(intent);
-				if (!outstanding(current)) {
-					return Promise.resolve(claimFor(current, intent));
-				}
-				return new Promise<NavigationClaim>((resolve) => {
-					current.waiting.push(() => resolve(claimFor(current, intent)));
+				return new Promise<NavigationPermission>((resolve) => {
+					current.queue.push({ intent, answer: resolve });
+					reconcile(current);
 				});
-			},
-			/** The gesture never became a command. */
-			clear: (): void => {
-				deliberate.clear();
 			},
 		}),
 		[deliberate],
 	);
 }
 
-export { useWorkspaceAddress, type NavigationClaim, type WorkspaceAddressing };
+export {
+	useWorkspaceAddress,
+	type NavigationClaim,
+	type NavigationPermission,
+	type WorkspaceAddressing,
+};

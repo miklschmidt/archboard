@@ -50,6 +50,27 @@ const NOTHING_TO_DO: AddressPlan = Object.freeze({
 });
 
 /**
+ * A board key as the vault reads it (ADR 0010).
+ * @param key The key.
+ * @returns The key, trimmed, composed and lowercased.
+ */
+function normalisedKey(key: string): string {
+	return key.trim().normalize("NFC").toLowerCase();
+}
+
+/**
+ * Whether two board keys name the same board, as the vault reads names: an
+ * address is normalised on the way through, and a key typed into a link or a
+ * dialog is not the key that comes back.
+ * @param shown The key a pane is showing, or null.
+ * @param asked The key that was asked for.
+ * @returns True when they are the same name.
+ */
+function sameBoardKey(shown: string | null, asked: string): boolean {
+	return shown !== null && normalisedKey(shown) === normalisedKey(asked);
+}
+
+/**
  * The board one pane shows in an address.
  * @param address The address.
  * @param paneId The pane.
@@ -169,6 +190,7 @@ function panesAtRisk(plan: AddressPlan): readonly string[] {
 export {
 	EMPTY_ADDRESS,
 	boardIn,
+	sameBoardKey,
 	hasAddressedPane,
 	panesAtRisk,
 	planFor,

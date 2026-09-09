@@ -10,7 +10,7 @@
 // whether or not it was met, and a gesture that failed clears it at once. There
 // is no marker left over for a later change to be mistaken for.
 
-import { boardIn, type WorkspaceAddress } from "@/ui/board-routing/address";
+import { boardIn, sameBoardKey, type WorkspaceAddress } from "@/ui/board-routing/address";
 
 /** What a person's gesture asked the workspace to become. */
 type NavigationIntent =
@@ -43,26 +43,6 @@ interface DeliberateNavigation {
 }
 
 /**
- * A board key as the vault reads it (ADR 0010).
- * @param key The key.
- * @returns The key, trimmed, composed and lowercased.
- */
-function normalisedKey(key: string): string {
-	return key.trim().normalize("NFC").toLowerCase();
-}
-
-/**
- * Whether two board keys name the same board, as the vault reads names
- * (ADR 0010): trimmed, composed and case-insensitive.
- * @param shown The key a pane is showing, or null.
- * @param asked The key the person asked for.
- * @returns True when they are the same name.
- */
-function sameBoardKey(shown: string | null, asked: string): boolean {
-	return shown !== null && normalisedKey(shown) === normalisedKey(asked);
-}
-
-/**
  * Whether an address is what an intent asked for.
  * @param intent The expectation.
  * @param address The workspace as it settled.
@@ -76,10 +56,8 @@ function met(intent: NavigationIntent, address: WorkspaceAddress): boolean {
 	// Both halves matter: without the second, a change somebody else made to
 	// that pane would be taken for theirs.
 	//
-	// The key is compared the way the vault compares board names, because an
-	// address is normalised on the way through and a key typed into a link is
-	// not the key that comes back. A spelling this does not recognise costs a
-	// history entry, never a wrong board.
+	// A spelling the vault would not recognise costs a history entry, never a
+	// wrong board.
 	const shown = boardIn(address, intent.paneId);
 	return shown !== intent.from && sameBoardKey(shown, intent.boardKey);
 }

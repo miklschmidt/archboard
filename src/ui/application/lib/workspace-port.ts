@@ -61,10 +61,6 @@ function addressingOver(binding: LiveBinding<WorkspaceAddressing>): WorkspaceAdd
 		 * @returns Where to report the outcome, once the command may be sent.
 		 */
 		claim: (intent) => binding.read().claim(intent),
-		/** The move did not happen. */
-		clear: (): void => {
-			binding.read().clear();
-		},
 	};
 }
 
