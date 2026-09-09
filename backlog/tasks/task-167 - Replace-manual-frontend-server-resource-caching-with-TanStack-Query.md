@@ -1,10 +1,10 @@
 ---
 id: TASK-167
 title: Replace manual frontend server-resource caching with TanStack Query
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 13:37'
+updated_date: '2026-09-09 13:50'
 labels: []
 dependencies:
   - TASK-164
@@ -91,4 +91,10 @@ To make room under the 600-line cap, pane-core stopped forwarding onPaneStateAcc
 Focused checks green: bun run lint (policy and baseline), fmt:check, both tsc projects, and all 908 src/ui module tests. Browser and system lanes wait for the full gate slot.
 
 Rebased onto bc89c2fa (TASK-165 cleanup). Conflicts were all path moves plus the two hooks this task deletes: use-boards.ts and use-board-placeholders.ts were renamed into hooks/ by the cleanup and removed here, resolved as deletions. Imports adopted the cleanup's paths (application/hooks, shell/components/Navigator.tsx, shell/types/contracts.ts, board-preview/PreviewCard.tsx), and the new module now follows the same concern layout: board-catalog/{components,hooks,lib,tests} with listing.ts and preview-source.ts as pure root entrypoints. No behaviour was changed by the rebase. Focused checks green again after it: lint, fmt:check, both tsc projects, 908 src/ui tests, and build:frontend.
+
+Review follow-up (commit ea6e67cc): createBoardQueryClient moved out of the provider component into lib/query-client.ts and exposed from the module root; the new files take their React types by name (JSX, ReactNode); the preview query and the precedence rule moved behind useBoardPreviewSource so the race is reachable through an interface rather than through a card that needs a real canvas.
+
+Runtime cache coverage added at src/ui/board-catalog/tests/board-cache.test.tsx: the catalog's own hooks mounted under its own provider, with a fake canvas server behind global fetch. It asserts that each resource is read once and again only when something invalidates it, that a vault refusal is reported without a retry and recovers on the next read, that a pane-inventory refusal leaves the vault's boards listed, that a snapshot answering after a pane took the board does not replace that pane's scene, and that a board an agent settled on is read again while its neighbours are not. Both precedence and preview invalidation were confirmed load-bearing by inverting them and watching the owner fail. Nothing asserts a configuration value or a library internal.
+
+Focused browser slot, all green: board-navigator (2 tests), shell-layout, board-drill-down, pane-telemetry-recovery and claim-interaction, run through the strict adapter, exit 0. test:repository green. Module lanes: 913 src/ui tests. Lint (policy and baseline), fmt:check and both tsc projects green. The final combined bun run check is the parent's, after Router lands.
 <!-- SECTION:NOTES:END -->
