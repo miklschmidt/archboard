@@ -4,7 +4,7 @@ title: Replace manual frontend server-resource caching with TanStack Query
 status: To Do
 assignee: []
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 13:35'
+updated_date: '2026-09-09 13:37'
 labels: []
 dependencies:
   - TASK-164
@@ -89,4 +89,6 @@ Removed: use-boards.ts, use-board-placeholders.ts, PaneRecord.placeholder, Shell
 To make room under the 600-line cap, pane-core stopped forwarding onPaneStateAccepted and onStaleFrontend one at a time and hands the report sender the session listeners instead.
 
 Focused checks green: bun run lint (policy and baseline), fmt:check, both tsc projects, and all 908 src/ui module tests. Browser and system lanes wait for the full gate slot.
+
+Rebased onto bc89c2fa (TASK-165 cleanup). Conflicts were all path moves plus the two hooks this task deletes: use-boards.ts and use-board-placeholders.ts were renamed into hooks/ by the cleanup and removed here, resolved as deletions. Imports adopted the cleanup's paths (application/hooks, shell/components/Navigator.tsx, shell/types/contracts.ts, board-preview/PreviewCard.tsx), and the new module now follows the same concern layout: board-catalog/{components,hooks,lib,tests} with listing.ts and preview-source.ts as pure root entrypoints. No behaviour was changed by the rebase. Focused checks green again after it: lint, fmt:check, both tsc projects, 908 src/ui tests, and build:frontend.
 <!-- SECTION:NOTES:END -->
