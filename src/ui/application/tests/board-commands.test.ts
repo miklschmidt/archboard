@@ -47,6 +47,17 @@ function saved(request: SaveRequest): BoardSaveResult {
 class FakeApi implements BoardCommandApi {
 	readonly calls: unknown[] = [];
 	#saveFailure: Error | null = null;
+	#openFailure: Error | null = null;
+
+	/**
+	 * Make every open reject, as one does when the pane it names has gone.
+	 * @param failure What the open throws.
+	 * @returns This api.
+	 */
+	refusingOpens(failure: Error): this {
+		this.#openFailure = failure;
+		return this;
+	}
 
 	/**
 	 * Make every save reject.
@@ -65,7 +76,9 @@ class FakeApi implements BoardCommandApi {
 	 */
 	open(request: OpenBoardRequest): Promise<BoardInfo> {
 		this.calls.push(["open", request]);
-		return Promise.resolve(info(request.board));
+		return this.#openFailure === null
+			? Promise.resolve(info(request.board))
+			: Promise.reject(this.#openFailure);
 	}
 
 	/**
@@ -205,4 +218,32 @@ test("clear is one call that carries the pane's client id and reports the count"
 	expect(api.calls).toEqual([["clear", "Checkout", "A-1", 3]]);
 	const failed = await runClear(api, { ...ONE_PANE, boardKey: null });
 	expect(failed.kind).toBe("failed");
+});
+
+test("a board that was created before the command failed is still named as written", async () => {
+	const api = new FakeApi().refusingOpens(new Error("Pane A-1 is not open."));
+	const outcome = await runBoardDialogRequest(
+		api,
+		{ mode: "create", board: "Inventory" },
+		TWO_PANES,
+	);
+	// The note exists: the create succeeded and only pointing a pane at it did
+	// not. Nothing is rolled back and nothing is retried, so what the shell
+	// holds about that board has to be read again even though this failed.
+	expect(outcome).toEqual({
+		kind: "failed",
+		error: {
+			title: "Create board",
+			message: "Created Inventory, but it could not be opened: Pane A-1 is not open.",
+		},
+		boards: ["Inventory"],
+	});
+	expect(api.calls).toEqual([
+		["create", { board: "Inventory", variant: "current" }],
+		["open", { board: "Inventory", variant: "current", pane: "A-1" }],
+	]);
+
+	// An open that writes nothing and fails names no board.
+	const opened = await runOpen(api, { board: "Runtime", variant: "current" }, ONE_PANE);
+	expect(opened).toMatchObject({ kind: "failed", boards: [] });
 });
