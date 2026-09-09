@@ -4,7 +4,7 @@ title: Replace manual frontend server-resource caching with TanStack Query
 status: In Progress
 assignee: []
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 14:42'
+updated_date: '2026-09-09 14:57'
 labels: []
 dependencies:
   - TASK-164
@@ -141,4 +141,14 @@ The preview half was also not a proof: payments was held from the opening addres
 Retirement rationale, from source and without any transport claim: the shell hears a pane has left the layout as soon as React removes it, while dispose closes the socket behind the workbench teardown (sockets.dispose().finally(connector.close) in pane-core), so a pane can be out of the layout with its socket still open and still registered, and a read taken then comes back saying it is on screen. Nothing announces the retirement afterwards, which is why the event is said from the close rather than from the layout. onPaneRetired is retained on that basis.
 
 Still to run, once the browser slot is released: board-occupancy positive, then the same owner with the released-board invalidation inverted, to show the corrected preview assertion is load-bearing. Nothing else is outstanding.
+
+Browser proof complete on the corrected owner, both directions.
+
+Positive: tests/system/browser/board-occupancy.test.ts passes in about 3.6 seconds, 15 assertions, exit 0. It covers a pane closed by its own control and a pane closed by the address both releasing the navigator's occupancy well inside the inventory's freshness window; a person opening a board, clicking the canvas and moving a box; the note write landing; and then, on leaving, a preview answer for that board carrying the coordinate the box was moved to.
+
+Inversion: with useReleasedBoards removed from the application root, the owner fails at exactly the assertion it exists for, 'the board that was left to be depicted by what the person drew in it', and the recorded preview answers show why: [{billing,null},{ledger,null},{payments,40},{scratch,null}]. Payments is still the pre-edit coordinate, and no further preview answer arrives at all. Every earlier step still passes, so the failure is specific to the release invalidation and not to the closes or the write.
+
+The code was restored and the same owner re-run to confirm the restore was faithful: passes again, exit 0. Tree clean at 06f71bc7, lint and both tsc projects green, dist rebuilt from the restored source.
+
+Browser and system slot released.
 <!-- SECTION:NOTES:END -->
