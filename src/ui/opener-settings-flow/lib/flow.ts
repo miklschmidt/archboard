@@ -11,13 +11,13 @@ import type {
 	OpenerSettingsTestRequest,
 	OpenerTestReply,
 } from "@/shared/code-target";
-import type { DialogError } from "@/ui/board-dialogs";
 import {
 	fetchOpenerSettings,
 	resetOpenerSettings,
 	saveOpenerSettings,
 	testOpenerSettings,
 } from "@/ui/canvas/api";
+import { type DialogError } from "@/ui/dialog-parts";
 
 /** The server calls the flow makes. */
 interface OpenerSettingsApi {

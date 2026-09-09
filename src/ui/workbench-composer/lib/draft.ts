@@ -13,7 +13,7 @@
 //   may already be running; clearing it outright would lose the words.
 
 import type { DeliveryOutcome } from "@/shared/codex-browser-model";
-import type { WorkbenchComposerDraftDisposition } from "@/ui/workbench-composer/lib/contract";
+import type { WorkbenchComposerDraftDisposition } from "@/ui/workbench-composer/types/contract";
 
 const DISPOSITIONS: Readonly<Record<DeliveryOutcome, WorkbenchComposerDraftDisposition>> = {
 	delivered: "cleared",

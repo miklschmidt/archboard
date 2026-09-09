@@ -12,11 +12,11 @@ import {
 import { NOTICE_ACTIONS, failureNotice, infoNotice } from "@/ui/application/notices";
 import type { PaneList } from "@/ui/application/pane-list";
 import { recordFor, type PaneRecord } from "@/ui/application/pane-records";
-import type { Boards } from "@/ui/application/lib/use-boards";
-import { EMPTY_DRAFT, type BoardDialogs } from "@/ui/application/lib/use-board-dialogs";
-import type { Fullscreen } from "@/ui/application/lib/use-fullscreen";
-import type { NoticeStack } from "@/ui/application/lib/use-notices";
-import type { Panes } from "@/ui/application/lib/use-panes";
+import type { Boards } from "@/ui/application/hooks/use-boards";
+import { EMPTY_DRAFT, type BoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
+import type { Fullscreen } from "@/ui/application/hooks/use-fullscreen";
+import type { NoticeStack } from "@/ui/application/hooks/use-notices";
+import type { Panes } from "@/ui/application/hooks/use-panes";
 import type {
 	RecoveryKind,
 	SettingsSurface,

@@ -2,8 +2,8 @@ import { useMemo, type ComponentProps } from "react";
 import { type VariantProps, cva } from "class-variance-authority";
 import { cn } from "cn";
 
-import { useVoiceOutputWave } from "@/ui/voice-wave/lib/use-voice-output-wave";
-import type { VoiceWaveState } from "@/ui/voice-wave/lib/use-voice-output-wave";
+import { useVoiceOutputWave } from "@/ui/voice-wave/hooks/use-voice-output-wave";
+import type { VoiceWaveState } from "@/ui/voice-wave/hooks/use-voice-output-wave";
 import { ReactShaderToy } from "@/ui/voice-wave/react-shader-toy";
 
 const DEFAULT_COLOR = "#1FD5F9";

@@ -6,7 +6,7 @@ import type {
 	BrowserWorkbenchState,
 	WorkbenchComposerLink,
 	WorkbenchComposerTurn,
-} from "@/ui/workbench-composer/lib/contract";
+} from "@/ui/workbench-composer/types/contract";
 
 const INSPECT_ONLY = "This Codex history is inspect-only.";
 const UNBOUND = "This pane has no Codex workhorse yet.";

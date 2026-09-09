@@ -2,19 +2,19 @@
 // transport, its view and actions for the presentation, the read-only
 // provider for foreign histories, and the pure projections behind them.
 
-export {
-	WorkbenchRuntimeProvider,
-	useWorkbenchRuntime,
-	type WorkbenchRuntimeHandle,
-	type WorkbenchRuntimeOptions,
-	type WorkbenchRuntimeProviderProps,
-	type WorkbenchRuntimeRenderContext,
-	type WorkbenchRuntimeRenderer,
-} from "@/ui/workbench-runtime/runtime";
+export { WorkbenchRuntimeProvider } from "@/ui/workbench-runtime/components/WorkbenchRuntimeProvider";
+export { useWorkbenchRuntime } from "@/ui/workbench-runtime/hooks/use-workbench-runtime";
+export type {
+	WorkbenchRuntimeHandle,
+	WorkbenchRuntimeOptions,
+	WorkbenchRuntimeProviderProps,
+	WorkbenchRuntimeRenderContext,
+	WorkbenchRuntimeRenderer,
+} from "@/ui/workbench-runtime/types/runtime";
 export {
 	ReadonlyWorkbenchThreadProvider,
 	type ReadonlyWorkbenchThreadProviderProps,
-} from "@/ui/workbench-runtime/readonly-provider";
+} from "@/ui/workbench-runtime/components/ReadonlyWorkbenchThreadProvider";
 export type { WorkbenchRuntimeHost } from "@/ui/workbench-runtime/lib/actions";
 export { approvalResponse } from "@/ui/workbench-runtime/lib/approval-responses";
 export { sessionView } from "@/ui/workbench-runtime/lib/session-view";

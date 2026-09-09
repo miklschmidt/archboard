@@ -8,7 +8,7 @@ export {
 	REALTIME_PHASES,
 	REALTIME_TRANSITIONS,
 	transitionRealtimeState,
-} from "@/ui/codex-realtime/lib/contract";
+} from "@/ui/codex-realtime/types/contract";
 export {
 	createRealtimeMediaSession,
 	REALTIME_MEDIA_FEATURE,
@@ -51,7 +51,7 @@ export type {
 	RecoveryRequest,
 	RemoteMediaAttachment,
 	StopRequest,
-} from "@/ui/codex-realtime/lib/contract";
+} from "@/ui/codex-realtime/types/contract";
 export type {
 	RealtimeMediaListener,
 	RealtimeMediaSession,

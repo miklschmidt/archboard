@@ -1,7 +1,7 @@
 // The peer and negotiation stages: connection, listeners, local offer,
 // host answer, remote description.
 
-import type { AnswerSdp } from "@/ui/codex-realtime/lib/contract";
+import type { AnswerSdp } from "@/ui/codex-realtime/types/contract";
 import type {
 	RealtimeDataChannel,
 	RealtimeMediaDevices,

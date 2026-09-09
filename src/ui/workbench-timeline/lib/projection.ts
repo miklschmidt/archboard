@@ -10,7 +10,7 @@ import type {
 	WorkbenchTurnOutcome,
 	WorkbenchTurnPart,
 	WorkbenchTurnProjection,
-} from "@/ui/workbench-timeline/lib/contract";
+} from "@/ui/workbench-timeline/types/contract";
 import { isRecord } from "@/ui/workbench-timeline/lib/details";
 
 type BrowserTurn = BrowserTimeline["turns"][number];

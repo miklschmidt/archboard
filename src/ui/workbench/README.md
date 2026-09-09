@@ -9,7 +9,7 @@ composer's action row through the thread's `ComposerFooter` slot, and a 320px
 right column with the voice row (output wave, state words, icon controls) over
 flat underlined tabs for queue, approvals, captured context and transcript.
 Side panels present ordinary unavailability and empty states with
-`lib/panel-line.tsx`: muted words and a grey dot; only a real failure gets the
+`components/PanelLine.tsx`: muted words and a grey dot; only a real failure gets the
 destructive dot, and its words stay in the foreground colour.
 
 Type roles come from the theme's `text-kicker`, `text-technical`, `text-body`,
@@ -24,8 +24,8 @@ owns the wire and must wrap `Workbench` in the assistant-ui runtime provider.
 
 ## Roots
 
-- `index.tsx` — `Workbench`; re-exports the contract types.
-- `header-controls.tsx` — `WorkbenchHeaderControls`: compact voice controls,
+- `index.tsx` — `Workbench`.
+- `WorkbenchHeaderControls.tsx` — `WorkbenchHeaderControls`: compact voice controls,
   the small output wave and the waiting-approval count, for the collapsed dock
   header and the fullscreen slot.
 - `contracts.ts` — `WorkbenchView`, `WorkbenchActions`, `ApprovalChoice`,

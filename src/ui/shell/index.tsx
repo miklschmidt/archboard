@@ -3,8 +3,8 @@
 // also the fullscreen root, so presenting a pane never remounts a canvas.
 
 import { SidebarProvider } from "@/ui/components/sidebar";
-import { Inspector } from "@/ui/selection-inspector/inspector";
-import { ActivityList, recentDoing } from "@/ui/shell/lib/activity-list";
+import { Inspector } from "@/ui/selection-inspector/Inspector";
+import { ActivityList } from "@/ui/shell/components/ActivityList";
 import type {
 	LivePresentation,
 	RecoveryKind,
@@ -20,14 +20,14 @@ import type {
 	ShellView,
 	TakeBackState,
 	ThemeChoice,
-} from "@/ui/shell/lib/contracts";
-import { Header, SETTINGS_TRIGGER_ID } from "@/ui/shell/lib/header";
-import { Navigator } from "@/ui/shell/lib/navigator";
-import { Notices } from "@/ui/shell/lib/notices";
-import { PaneBar } from "@/ui/shell/lib/pane-bar";
-import { CanvasStages } from "@/ui/shell/lib/pane-stage";
+} from "@/ui/shell/types/contracts";
+import { Header, SETTINGS_TRIGGER_ID } from "@/ui/shell/components/Header";
+import { Navigator } from "@/ui/shell/components/Navigator";
+import { Notices } from "@/ui/shell/components/Notices";
+import { PaneBar } from "@/ui/shell/components/PaneBar";
+import { CanvasStages } from "@/ui/shell/components/CanvasStages";
 import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
-import { WorkbenchDock } from "@/ui/shell/lib/workbench-dock";
+import { WorkbenchDock } from "@/ui/shell/components/WorkbenchDock";
 
 /** The navigator shares --shell-navigator-width with the header wordmark section, so the rule between them runs straight. */
 const SIDEBAR_STYLE: React.CSSProperties = { "--sidebar-width": "var(--shell-navigator-width)" };
@@ -103,7 +103,6 @@ export {
 	Shell,
 	isPresentShortcut,
 	presentShortcutLabel,
-	recentDoing,
 	type ShellProps,
 	type ShellView,
 	type ShellActions,
