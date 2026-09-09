@@ -7,7 +7,7 @@
 
 import { SERVER_API, runOpenKey, type BoardCommandApi } from "@/ui/application/board-commands";
 import { unreachableBoardsNotice } from "@/ui/application/notices";
-import { paneListOf, type PaneList } from "@/ui/application/pane-list";
+import { PANE_IDS, paneListOf, type PaneList } from "@/ui/application/pane-list";
 import { recordFor } from "@/ui/application/pane-records";
 import type { LiveBinding } from "@/ui/application/lib/live-binding";
 import {
@@ -55,6 +55,12 @@ function addressingOver(binding: LiveBinding<WorkspaceAddressing>): WorkspaceAdd
 		expect: (intent): void => {
 			binding.read().expect(intent);
 		},
+		/**
+		 * A person is about to have the shell open a board.
+		 * @param intent What they asked for.
+		 * @returns Where to report the outcome, once the command may be sent.
+		 */
+		claim: (intent) => binding.read().claim(intent),
 		/** The move did not happen. */
 		clear: (): void => {
 			binding.read().clear();
@@ -109,6 +115,7 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 	const api = deps.api ?? SERVER_API;
 	return {
 		displayed: displayedAddress(panes),
+		paneIds: PANE_IDS,
 		/**
 		 * Whether a pane can be addressed: it has a client id and a live socket.
 		 * @param paneId The pane.

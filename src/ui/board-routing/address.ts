@@ -108,29 +108,39 @@ function settledAddress(address: WorkspaceAddress): WorkspaceAddress {
  * there. A displayed pane the wanted address does not have is closed.
  * @param displayed What is on screen.
  * @param wanted What the address asks for.
+ * @param paneIds The panes this shell can have.
  * @returns The plan.
  */
-function planFor(displayed: WorkspaceAddress, wanted: WorkspaceAddress): AddressPlan {
-	// An address that names no pane asks for no workspace — which is what a bare
-	// `/` is. It is not a request to close the panes that are open.
-	if (wanted.panes.length === 0) {
+function planFor(
+	displayed: WorkspaceAddress,
+	wanted: WorkspaceAddress,
+	paneIds: readonly string[],
+): AddressPlan {
+	// An address naming no pane this shell can have asks for no workspace —
+	// which is what a bare `/` is, and what `?paneZ=x` is too. Neither is a
+	// request to close the panes that are open.
+	const asked = {
+		panes: wanted.panes.filter((pane) => paneIds.includes(pane.paneId)),
+		activePaneId: wanted.activePaneId,
+	};
+	if (asked.panes.length === 0) {
 		return NOTHING_TO_DO;
 	}
 	const closes = displayed.panes
-		.filter((pane) => !hasAddressedPane(wanted, pane.paneId))
+		.filter((pane) => !hasAddressedPane(asked, pane.paneId))
 		.map((pane) => pane.paneId);
-	const wantedOpen = wanted.panes.filter((pane) => hasAddressedPane(displayed, pane.paneId));
+	const wantedOpen = asked.panes.filter((pane) => hasAddressedPane(displayed, pane.paneId));
 	const opens = wantedOpen.flatMap((pane) =>
 		pane.boardKey !== null && pane.boardKey !== boardIn(displayed, pane.paneId)
 			? [{ paneId: pane.paneId, boardKey: pane.boardKey }]
 			: [],
 	);
-	const adds = wanted.panes.length - wantedOpen.length;
+	const adds = asked.panes.length - wantedOpen.length;
 	const focus =
-		wanted.activePaneId !== null &&
-		wanted.activePaneId !== displayed.activePaneId &&
-		hasAddressedPane(displayed, wanted.activePaneId)
-			? wanted.activePaneId
+		asked.activePaneId !== null &&
+		asked.activePaneId !== displayed.activePaneId &&
+		hasAddressedPane(displayed, asked.activePaneId)
+			? asked.activePaneId
 			: null;
 	return Object.freeze({ adds, closes, opens, focus });
 }

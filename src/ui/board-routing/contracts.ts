@@ -35,9 +35,21 @@ interface WorkspacePort {
 	readonly guard: (paneIds: readonly string[]) => GuardVerdict;
 	/** Point one pane at one board, through the application's open command. */
 	readonly open: (paneId: string, boardKey: string) => Promise<OpenOutcome>;
-	readonly addPane: () => void;
-	readonly closePane: (paneId: string) => void;
-	readonly selectPane: (paneId: string) => void;
+	/**
+	 * The panes this shell can have, whether or not they are open. An address
+	 * naming anything else is asking for a workspace that cannot exist.
+	 */
+	readonly paneIds: readonly string[];
+	/**
+	 * Open, close or focus a pane. Each answers whether it changed anything:
+	 * a restore reads the workspace once per render, so a command that changed
+	 * nothing leaves that reading good and the next step may follow at once,
+	 * while one that changed something is waited on until the render arrives.
+	 * @returns True when the workspace changed.
+	 */
+	readonly addPane: () => boolean;
+	readonly closePane: (paneId: string) => boolean;
+	readonly selectPane: (paneId: string) => boolean;
 	/** A navigation was refused: show that pane's recovery. */
 	readonly reportBlocked: (block: NavigationBlock) => void;
 	/** A restore could not reach these boards; the workspace is what is shown. */

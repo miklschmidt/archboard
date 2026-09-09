@@ -104,11 +104,6 @@ function settle(
 	context: BoardCommandContext,
 	title: string,
 ): void {
-	// A command that did not finish moved no pane, so a move announced before it
-	// is not a move: the address bar must not push a history entry for it.
-	if (outcome.kind !== "done") {
-		deps.addressing.clear();
-	}
 	switch (outcome.kind) {
 		case "done":
 			if (outcome.message !== null) {
@@ -181,8 +176,21 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 		if (refuseGuarded(deps, context)) {
 			return;
 		}
-		deps.addressing.expect({ kind: "board", paneId: context.paneId, from: context.boardKey });
-		settle(deps, await runOpen(SERVER_API, identity, context), context, "Open board");
+		// The person's command waits for anything the address bar has outstanding,
+		// so what they just asked for is the last thing the server is given.
+		const move = await deps.addressing.claim({
+			kind: "board",
+			paneId: context.paneId,
+			from: context.boardKey,
+			boardKey: key,
+		});
+		const outcome = await runOpen(SERVER_API, identity, context);
+		if (outcome.kind === "done") {
+			move.done();
+		} else {
+			move.failed();
+		}
+		settle(deps, outcome, context, "Open board");
 	}
 	/** Save the active pane's board back to its note. */
 	async function saveBoard(): Promise<void> {

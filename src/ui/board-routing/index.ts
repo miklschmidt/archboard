@@ -6,6 +6,7 @@ export { createBoardRoutingHost } from "@/ui/board-routing/BoardRoutingHost";
 export { useOpeningAddress } from "@/ui/board-routing/hooks/use-opening-address";
 export {
 	useWorkspaceAddress,
+	type NavigationClaim,
 	type WorkspaceAddressing,
 } from "@/ui/board-routing/hooks/use-workspace-address";
 export type { NavigationIntent } from "@/ui/board-routing/intent";

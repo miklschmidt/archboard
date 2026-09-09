@@ -19,7 +19,7 @@ import {
 	type NoteStateChange,
 	type PendingRecovery,
 } from "@/ui/application/note-recovery";
-import { guardPane, guardedPanes, reportNavigationBlock } from "@/ui/application/navigation-guard";
+import { refuseMove } from "@/ui/application/navigation-guard";
 import { recordFor } from "@/ui/application/pane-records";
 import { contextFor } from "@/ui/application/lib/shell-actions";
 import type { PaneSession } from "@/ui/application/lib/pane-handles";
@@ -31,6 +31,7 @@ import type { PaneEvents, Panes } from "@/ui/application/hooks/use-panes";
 import type { useWorkbench } from "@/ui/application/hooks/use-workbench";
 import type { BoardCatalog } from "@/ui/board-catalog";
 import type { LibraryController } from "@/ui/board-library";
+import type { BoardMove } from "@/ui/canvas/board-links";
 import type { WorkspaceAddressing } from "@/ui/board-routing";
 import type { RecoveryKind, ThemeChoice } from "@/ui/shell";
 import type { AgentActivityEntry, EditWithdrawalReason, PaneStatus } from "@/ui/types";
@@ -195,20 +196,22 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 	 * person moving that pane, and the address bar records it as their move.
 	 * Which board it lands on is the server's answer, not this one's.
 	 * @param paneId The pane.
-	 * @param _boardKey The board key in the link.
-	 * @returns Whether the pane may move.
+	 * @param boardKey The board key in the link.
+	 * @returns Permission to move once nothing else is on its way, or null.
 	 */
-	function onBoardOpenRequested(paneId: string, _boardKey: string): boolean {
-		const { panes, dialogs } = owners;
+	function onBoardOpenRequested(paneId: string, boardKey: string): Promise<BoardMove | null> {
+		const { panes } = owners;
 		const record = recordFor(panes.records, paneId);
-		const verdict = guardPane(guardedPanes(panes.records, panes.handles), paneId);
-		if (verdict.kind !== "clear") {
-			const context = contextFor(panes.list, record);
-			reportNavigationBlock({ dialogs, notices }, verdict, context, record.status.hold);
-			return false;
+		const context = contextFor(panes.list, record);
+		if (refuseMove({ panes, notices, dialogs: owners.dialogs }, context) !== null) {
+			return Promise.resolve(null);
 		}
-		owners.addressing.expect({ kind: "board", paneId, from: record.status.boardKey });
-		return true;
+		return owners.addressing.claim({
+			kind: "board",
+			paneId,
+			from: record.status.boardKey,
+			boardKey,
+		});
 	}
 	/**
 	 * This tab runs a bundle the canvas no longer serves.

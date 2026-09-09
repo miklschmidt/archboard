@@ -14,6 +14,9 @@ import {
 	validateWorkspaceSearch,
 } from "@/ui/board-routing/search";
 
+/** The panes this shell can have. */
+const PANES = ["A", "B"] as const;
+
 /**
  * An address, written the way a test reads.
  * @param panes The panes, as pane id to board key.
@@ -93,6 +96,7 @@ test("a plan opens the boards that differ, adds and closes panes, and moves the 
 			],
 			"B",
 		),
+		PANES,
 	);
 	expect(plan.opens).toEqual([{ paneId: "A", boardKey: "billing" }]);
 	expect(plan.adds).toBe(1);
@@ -107,7 +111,7 @@ test("an address that matches what is displayed asks for nothing", () => {
 		["A", "payments"],
 		["B", "billing"],
 	]);
-	expect(planIsEmpty(planFor(displayed, displayed))).toBe(true);
+	expect(planIsEmpty(planFor(displayed, displayed, PANES))).toBe(true);
 	// A wanted pane naming no board is a pane that should be open, nothing more.
 	expect(
 		planIsEmpty(
@@ -117,6 +121,7 @@ test("an address that matches what is displayed asks for nothing", () => {
 					["A", null],
 					["B", null],
 				]),
+				PANES,
 			),
 		),
 	).toBe(true);
@@ -129,6 +134,7 @@ test("the panes at risk are the ones a plan closes or points at another board", 
 			["B", "billing"],
 		]),
 		address([["A", "ledger"]]),
+		PANES,
 	);
 	expect(plan.closes).toEqual(["B"]);
 	expect(panesAtRisk(plan)).toEqual(["B", "A"]);

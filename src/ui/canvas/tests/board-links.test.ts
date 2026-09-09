@@ -9,6 +9,8 @@ interface Followed {
 	readonly opens: OpenBoardRequest[];
 	readonly asked: string[];
 	readonly errors: string[];
+	/** What the move was told about its own outcome. */
+	readonly outcomes: string[];
 	readonly open: OpenBoard;
 }
 
@@ -20,10 +22,12 @@ function pane(): Followed {
 	const opens: OpenBoardRequest[] = [];
 	const asked: string[] = [];
 	const errors: string[] = [];
+	const outcomes: string[] = [];
 	return {
 		opens,
 		asked,
 		errors,
+		outcomes,
 		/**
 		 * Take the server's place.
 		 * @param address The board and the pane.
@@ -58,13 +62,26 @@ function options(followed: Followed, mayMove: boolean) {
 			followed.errors.push(error);
 		},
 		/**
-		 * Whether this pane may move.
+		 * Whether this pane may move, and where the outcome is reported.
 		 * @param boardKey The board the link named.
-		 * @returns What the test said.
+		 * @returns Permission, or null when the pane keeps its board.
 		 */
-		onBoardOpenRequested: (boardKey: string): boolean => {
+		onBoardOpenRequested: (boardKey: string) => {
 			followed.asked.push(boardKey);
-			return mayMove;
+			return Promise.resolve(
+				mayMove
+					? {
+							/** The open finished. */
+							done: (): void => {
+								followed.outcomes.push("done");
+							},
+							/** The open did not finish. */
+							failed: (): void => {
+								followed.outcomes.push("failed");
+							},
+						}
+					: null,
+			);
 		},
 	};
 }
@@ -74,25 +91,35 @@ test("a board link is the one an element carries as a wiki-link", () => {
 	expect(isBoardLink("src/server/index.ts:14")).toBe(false);
 });
 
-test("following a board link points the clicked pane at the board it names", () => {
+test("following a board link points the clicked pane at the board it names", async () => {
 	const followed = pane();
-	followBoardLink(options(followed, true), "[[payments@proposed]]", followed.open);
+	await followBoardLink(options(followed, true), "[[payments@proposed]]", followed.open);
 	expect(followed.opens).toEqual([{ board: "payments@proposed", pane: "A-1" }]);
 	expect(followed.errors).toEqual([]);
+	expect(followed.outcomes).toEqual(["done"]);
 });
 
-test("a pane that may not move asks the server for nothing at all", () => {
+test("a board link the server refuses reports the outcome and explains itself", async () => {
 	const followed = pane();
-	followBoardLink(options(followed, false), "[[payments]]", followed.open);
+	await followBoardLink(options(followed, true), "[[gone]]", () =>
+		Promise.reject(new Error('Board "gone" has no persisted note.')),
+	);
+	expect(followed.outcomes).toEqual(["failed"]);
+	expect(followed.errors[0]).toContain("has no persisted note");
+});
+
+test("a pane that may not move asks the server for nothing at all", async () => {
+	const followed = pane();
+	await followBoardLink(options(followed, false), "[[payments]]", followed.open);
 	expect(followed.asked).toEqual(["payments"]);
 	expect(followed.opens).toEqual([]);
 	// The refusal is explained by whoever made it, not repeated as a failed link.
 	expect(followed.errors).toEqual([]);
 });
 
-test("a link the board vocabulary does not accept is named rather than sent", () => {
+test("a link the board vocabulary does not accept is named rather than sent", async () => {
 	const followed = pane();
-	followBoardLink(options(followed, true), "[[payments|Payments]]", followed.open);
+	await followBoardLink(options(followed, true), "[[payments|Payments]]", followed.open);
 	expect(followed.opens).toEqual([]);
 	expect(followed.asked).toEqual([]);
 	expect(followed.errors[0]).toContain("without an alias");
