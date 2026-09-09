@@ -4,7 +4,7 @@ title: Replace manual frontend server-resource caching with TanStack Query
 status: In Progress
 assignee: []
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 14:06'
+updated_date: '2026-09-09 14:36'
 labels: []
 dependencies:
   - TASK-164
@@ -113,4 +113,22 @@ Runtime regressions added: an event during a first read forces an answer from af
 Not covered here: navigator occupancy end to end after a direct and a history close. That needs a browser owner and the Router agent holds the slot; the module owners cover the signal and the re-read, and I can run board-navigator or shell-layout for the visible half when the slot frees.
 
 Green after the fixes: lint (policy and baseline), fmt:check, both tsc projects, 917 src/ui module tests.
+
+Second review round, commits c6a6eb2f, 403f5967 and 60cf5fe4.
+
+Invalidation during a read that is still on the wire: the earlier double-invalidate was wrong twice over, and both were reproduced. A query nobody can read yet (a preview of a board a pane has taken) is skipped by refetchQueries entirely, so both awaits resolved before the stale answer landed; and the deferred bookkeeping was keyed by prefix, so an event dropped any query whose first read began after it. Both are fixed by one smaller mechanism: cancel the queries before invalidating them. A cancelled read reverts rather than fails, so data already on screen stays, no cancellation reaches a person, and the invalidation stands until whatever disabled the query lets it read again. The bookkeeping is deleted.
+
+Pane retirement: the pane-count key was withdrawn along with its export and unit test, on the reviewer's evidence that an unchanged report is never sent, another tab's close changes no local fact, and a resize can be answered before the closing socket is gone. The pane that goes now says so from its own socket close, which the server has necessarily processed first.
+
+Pane inventory freshness: refetchOnWindowFocus was stale-only against a 30s window, so closing a pane in another tab and coming straight back kept showing it. The inventory now reads again on every return; the vault keeps the stale-only default.
+
+Ordinary drawing: covered by the board being released. While a pane holds a board the navigator draws that pane's scene, so leaving is the one signal that covers drawing, typing, undo and paste alike, none of which any command outcome describes.
+
+Half-finished commands: create writes a note and then points a pane at it. A failure in the second step used to discard the first. Commands now say what they wrote as they write, and both the shell actions and the dialog read those boards again whichever way the command ended; a create that could not be opened says exactly that. Nothing is rolled back or retried.
+
+Runtime evidence. Module owners: four race regressions (event during a first read, burst convergence, a board taken mid-read, a query created after an earlier event), the focus policy, board-info fail/recover through the refresh, released-board keys, and the partial-write outcome. Every one was confirmed failing with its fix inverted. Browser: new owner tests/system/browser/board-occupancy.test.ts, registered in the lane inventory, proving a pane closed by its control and a pane closed by the address both release the navigator's occupancy, and that a board a person was editing is read again when they leave. It fails without the release invalidation.
+
+One thing I could not isolate: the owner passes with onPaneRetired removed, because the released-board invalidation already covers every close where the navigator's occupancy visibly changes. onPaneRetired remains as the race-free signal for closing a pane while another still holds the same board, where the cached inventory would otherwise be wrong with nothing visible to show it. Flagged rather than claimed as proven.
+
+Green: lint (policy and baseline), fmt:check, both tsc projects, test:modules (2718), test:repository, and the two navigator browser owners.
 <!-- SECTION:NOTES:END -->
