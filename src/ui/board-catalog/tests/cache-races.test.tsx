@@ -275,3 +275,28 @@ describe("what an event has to beat", () => {
 		}
 	});
 });
+
+describe("coming back to the tab", () => {
+	test("re-reads what the panes hold, and leaves the vault alone until it is stale", async () => {
+		const mounted = mount();
+		try {
+			await mounted.watch([watching("Checkout", false)]);
+			expect(server.reads("/api/panes")).toBe(1);
+			expect(server.reads("/api/boards")).toBe(1);
+
+			// Another tab can close a pane while this one is in the background and
+			// nothing says so, so returning is itself the reason to ask again, even
+			// though what was read a moment ago is still counted fresh.
+			await act(async () => {
+				window.dispatchEvent(new Event("visibilitychange"));
+			});
+			await settle();
+			expect(server.reads("/api/panes")).toBe(2);
+			// The vault is not volatile in the same way: nothing about it changes
+			// because somebody looked at this tab again.
+			expect(server.reads("/api/boards")).toBe(1);
+		} finally {
+			await mounted.close();
+		}
+	});
+});
