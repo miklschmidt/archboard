@@ -3,7 +3,6 @@
 // `ShellActions`. The shell keeps only presentation state of its own.
 
 import type { CodeTargetNoticeAction } from "@/shared/code-target";
-import type { PreviewSource } from "@/ui/board-preview";
 import type { PathFocusOverlay, PathFocusSnapshot } from "@/ui/path-focus";
 import type { SelectionProjection } from "@/ui/selection-inspector";
 import type {
@@ -92,6 +91,16 @@ type RecoveryKind = "hold" | "elsewhere";
 /** The settings surfaces the header's menu reaches. */
 type SettingsSurface = "opener" | "agent" | "library";
 
+/**
+ * One board's preview, rendered by its owner. The shell says which board a row
+ * is for; where the depiction comes from — the pane holding it or the server's
+ * snapshot — is not the shell's to decide or to cache.
+ * @param boardKey The board key.
+ * @param boardName The board's name, for the image's alternative text.
+ * @returns The preview element.
+ */
+type RenderBoardPreview = (boardKey: string, boardName: string) => React.ReactNode;
+
 /** Everything the shell renders. */
 interface ShellView {
 	theme: ThemeChoice;
@@ -100,9 +109,11 @@ interface ShellView {
 	boards: BoardListing;
 	/** Why the listing could not be refreshed, or null while it is current. */
 	boardsError: string | null;
+	/** The vault has not answered yet and nothing of it is in hand. */
+	boardsLoading: boolean;
 	scratch: readonly ScratchBoardEntry[];
-	/** Lazy previews keyed by board key; null until one has been rendered. */
-	previews: Readonly<Record<string, PreviewSource | null>>;
+	/** How a row draws its board's preview. */
+	renderPreview: RenderBoardPreview;
 	selectedBoardKey: string | null;
 	/** One or two panes, in reading order. */
 	panes: readonly ShellPane[];
@@ -164,6 +175,7 @@ export type {
 	ShellPresentation,
 	SettingsSurface,
 	RecoveryKind,
+	RenderBoardPreview,
 	ShellView,
 	ShellActions,
 };

@@ -8,9 +8,21 @@ import {
 	patchRecord,
 	type PaneRecords,
 } from "@/ui/application/pane-records";
-import { EMPTY_LISTING, NO_BOARD, assembleShellView } from "@/ui/application/shell-view";
+import { NO_BOARD, assembleShellView } from "@/ui/application/shell-view";
+import { EMPTY_LISTING } from "@/ui/board-catalog/listing";
 
 const CHECKOUT = { board: "Checkout", variant: "current" };
+
+/** The one scratch board these assemblies know about. */
+const SCRATCH_KEYS: ReadonlySet<string> = new Set(["scratch-7f3k"]);
+
+/**
+ * A view assembly under test draws no previews.
+ * @returns Nothing.
+ */
+function renderNothing(): null {
+	return null;
+}
 
 /**
  * Records for two panes: A holds Checkout, B holds nothing yet.
@@ -41,7 +53,9 @@ test("the shell view names the active pane's board and carries its projections",
 		canvases: { A: "canvas-a", B: "canvas-b" },
 		boards: EMPTY_LISTING,
 		boardsError: null,
-		previews: {},
+		boardsLoading: false,
+		scratchKeys: SCRATCH_KEYS,
+		renderPreview: renderNothing,
 		presentation: null,
 		notices: [],
 		agentActivity: {},
@@ -67,7 +81,9 @@ test("the focused pane's board key is the selected navigator entry and held keys
 		canvases: {},
 		boards: EMPTY_LISTING,
 		boardsError: "offline",
-		previews: {},
+		boardsLoading: false,
+		scratchKeys: SCRATCH_KEYS,
+		renderPreview: renderNothing,
 		presentation: { kind: "live", paneId: "A" },
 		notices: [],
 		agentActivity: {},
@@ -87,11 +103,9 @@ test("scratch boards are the placeholder boards the panes hold, once each", () =
 		board: { board: "scratch-7f3k", variant: "current" },
 		boardKey: "scratch-7f3k",
 	};
-	const records = patchRecord(
-		patchRecord({}, "A", { status: scratchStatus, placeholder: true }),
-		"B",
-		{ status: { ...scratchStatus, paneId: "B" }, placeholder: true },
-	);
+	const records = patchRecord(patchRecord({}, "A", { status: scratchStatus }), "B", {
+		status: { ...scratchStatus, paneId: "B" },
+	});
 	const view = assembleShellView({
 		theme: "light",
 		list,
@@ -99,7 +113,9 @@ test("scratch boards are the placeholder boards the panes hold, once each", () =
 		canvases: {},
 		boards: EMPTY_LISTING,
 		boardsError: null,
-		previews: {},
+		boardsLoading: false,
+		scratchKeys: SCRATCH_KEYS,
+		renderPreview: renderNothing,
 		presentation: null,
 		notices: [],
 		agentActivity: {},

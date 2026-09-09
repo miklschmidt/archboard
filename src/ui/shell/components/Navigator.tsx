@@ -6,8 +6,6 @@
 import { RiAddLine, RiArrowDownSLine, RiRefreshLine } from "@remixicon/react";
 import { useCallback, useMemo, useState } from "react";
 
-import { BoardPreviewCache, PreviewRequestGate } from "@/ui/board-preview";
-import { PreviewCard } from "@/ui/board-preview/PreviewCard";
 import { Button } from "@/ui/components/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/components/collapsible";
 import {
@@ -27,7 +25,7 @@ import {
 import { Skeleton } from "@/ui/components/skeleton";
 import { StatusDot } from "@/ui/shell/components/StatusDot";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
-import type { ShellActions, ShellView, ThemeChoice } from "@/ui/shell/types/contracts";
+import type { RenderBoardPreview, ShellActions, ShellView } from "@/ui/shell/types/contracts";
 import {
 	groupBoards,
 	scratchEntries,
@@ -42,9 +40,6 @@ import {
 } from "@/ui/shell/hooks/use-roving-list";
 import type { AgentActivityEntry } from "@/ui/types";
 
-/** One cache for every preview the navigator shows; it revokes what it drops. */
-const PREVIEW_CACHE = new BoardPreviewCache(16);
-
 /** A section label row: the group label already carries the kicker role. */
 const KICKER_CLASS = "text-muted-foreground h-8 rounded-none px-3";
 
@@ -55,8 +50,9 @@ const MARK_CLASS =
 /** Inputs shared by the pieces that select an entry. */
 interface SelectableProps {
 	selectedKey: string | null;
-	theme: ThemeChoice;
 	actions: ShellActions;
+	/** How a row draws its board's preview; the shell owns neither source nor cache. */
+	renderPreview: RenderBoardPreview;
 }
 
 /** Inputs for the small markers beside a name. */
@@ -198,13 +194,12 @@ function renderButton(props: React.ComponentPropsWithRef<"button">): React.JSX.E
 /**
  * One row: the name, its markers and its lazy preview. The selected row
  * carries a one-pixel cobalt ring; hover tints the row.
- * @param props The entry, its label, the selected key, the theme, the actions and its roving place.
+ * @param props The entry, its label, the selected key, the actions and its roving place.
  * @returns The sub-menu row.
  */
 function VariantRow(props: VariantRowProps): React.JSX.Element {
-	const { entry, actions, theme } = props;
+	const { entry, actions } = props;
 	const selected = entry.key === props.selectedKey;
-	const gate = useMemo(() => new PreviewRequestGate(), []);
 	const handleClick = useCallback(() => actions.selectBoard(entry.key), [actions, entry.key]);
 	return (
 		<SidebarMenuSubItem className="relative">
@@ -224,13 +219,7 @@ function VariantRow(props: VariantRowProps): React.JSX.Element {
 					<EntryMarkers entry={entry} />
 				</span>
 				<DoingLine entry={entry} />
-				<PreviewCard
-					board={entry.identity.board}
-					snapshot={entry.preview}
-					theme={theme}
-					cache={PREVIEW_CACHE}
-					gate={gate}
-				/>
+				{props.renderPreview(entry.key, entry.identity.board)}
 			</SidebarMenuSubButton>
 			{entry.placeholder && (
 				<NeedsName entryKey={entry.key} actions={actions} roving={props.chipRoving} />
@@ -258,7 +247,7 @@ interface BoardGroupProps extends SelectableProps {
  * A board group: the plain board name as a collapsible trigger with a
  * twelve-pixel chevron, then its variants indented beneath. ArrowRight opens
  * the group and ArrowLeft closes it, as in a tree.
- * @param props The group, the selected key, the theme, the actions and the list.
+ * @param props The group, the selected key, the actions and the list.
  * @returns The group as a menu item.
  */
 function BoardGroup(props: BoardGroupProps): React.JSX.Element {
@@ -292,8 +281,8 @@ function BoardGroup(props: BoardGroupProps): React.JSX.Element {
 								entry={entry}
 								label={entry.identity.variant}
 								selectedKey={props.selectedKey}
-								theme={props.theme}
 								actions={props.actions}
+								renderPreview={props.renderPreview}
 								roving={list.item(`row:${entry.key}`)}
 								chipRoving={list.item(`chip:${entry.key}`)}
 							/>
@@ -324,7 +313,7 @@ interface ScratchGroupProps extends SelectableProps {
 /**
  * The scratch group: boards with a note but no chosen name. Its own roving
  * list, so it is one tab stop of its own.
- * @param props The entries, the selected key, the theme and the actions.
+ * @param props The entries, the selected key and the actions.
  * @returns The group, or nothing when there is no scratch board.
  */
 function ScratchGroup(props: ScratchGroupProps): React.JSX.Element | null {
@@ -344,8 +333,8 @@ function ScratchGroup(props: ScratchGroupProps): React.JSX.Element | null {
 							entry={entry}
 							label={entry.identity.board}
 							selectedKey={props.selectedKey}
-							theme={props.theme}
 							actions={props.actions}
+							renderPreview={props.renderPreview}
 							roving={list.item(`row:${entry.key}`)}
 							chipRoving={list.item(`chip:${entry.key}`)}
 						/>
@@ -474,7 +463,7 @@ function renderGroupAction(props: React.ComponentPropsWithRef<"button">): React.
 
 /**
  * The persisted boards with the refresh action and, when the listing failed, why.
- * @param props The groups, the error, the selected key, the theme and the actions.
+ * @param props The groups, the error, the selected key and the actions.
  * @returns The group.
  */
 function BoardsGroup(props: BoardsGroupProps): React.JSX.Element {
@@ -501,8 +490,8 @@ function BoardsGroup(props: BoardsGroupProps): React.JSX.Element {
 						group={group}
 						list={list}
 						selectedKey={props.selectedKey}
-						theme={props.theme}
 						actions={actions}
+						renderPreview={props.renderPreview}
 					/>
 				))}
 			</SidebarMenu>
@@ -530,16 +519,16 @@ function Navigator(props: NavigatorProps): React.JSX.Element {
 				<BoardsGroup
 					groups={groupBoards(view)}
 					error={view.boardsError}
-					loading={view.boards.vault === ""}
+					loading={view.boardsLoading}
 					selectedKey={view.selectedBoardKey}
-					theme={view.theme}
 					actions={actions}
+					renderPreview={view.renderPreview}
 				/>
 				<ScratchGroup
 					entries={scratchEntries(view)}
 					selectedKey={view.selectedBoardKey}
-					theme={view.theme}
 					actions={actions}
+					renderPreview={view.renderPreview}
 				/>
 			</SidebarContent>
 			<SidebarFooter className="border-border border-t p-0">

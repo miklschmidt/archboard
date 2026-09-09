@@ -151,6 +151,21 @@ const PANE_SETTLE_CAP_MS = 1500;
  */
 const PANE_LAYOUT_TIMEOUT_MS = 10_000;
 
+// ── What the browser keeps of the server's answers (TASK-167) ─────────────
+//
+// Three durations, one cache. The listing is small and every event that can
+// change it invalidates it by name, so its window is only the floor under a
+// burst of them — and it is the one thing re-read when the tab comes back to
+// the foreground, since nothing announces that the vault gained a note. A
+// preview is a whole scene plus an export, so it is staler on purpose; a board
+// a pane holds is drawn from that pane and never read here at all. Collection
+// pulls against the tab's memory rather than the server: it is what lets a
+// board come back showing its last preview instead of an empty card.
+
+const BOARD_LISTING_STALE_MS = 30_000;
+const BOARD_PREVIEW_STALE_MS = 60_000;
+const BOARD_CACHE_GC_MS = 5 * 60_000;
+
 /** Outer cap for any browser-owned export request. The wait ends on correlation, not delay. */
 const BROWSER_EXPORT_TIMEOUT_MS = 30_000;
 
@@ -536,6 +551,9 @@ export {
 	PANE_DEBOUNCE_MS,
 	PANE_SETTLE_CAP_MS,
 	PANE_LAYOUT_TIMEOUT_MS,
+	BOARD_LISTING_STALE_MS,
+	BOARD_PREVIEW_STALE_MS,
+	BOARD_CACHE_GC_MS,
 	BROWSER_EXPORT_TIMEOUT_MS,
 	BROWSER_CAPTURE_DISPATCH_MS,
 	BROWSER_CAPTURE_COLLECTION_MS,

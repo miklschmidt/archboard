@@ -262,6 +262,19 @@ async function strictReply<T, F>(
 }
 
 /**
+ * Request options carrying a caller's cancellation, when it has one.
+ *
+ * A read whose caller can be superseded — a cache refetch, a pane that has
+ * moved on — passes its signal through here, so an answer that arrives after
+ * the caller stopped wanting it never reaches the network layer at all.
+ * @param signal Cancels the request, when the caller has a signal.
+ * @returns The fetch options for a GET.
+ */
+function cancellable(signal?: AbortSignal): RequestInit {
+	return signal === undefined ? {} : { signal };
+}
+
+/**
  * The `?board=` query for a board-scoped endpoint.
  * @param board The board key, or null for none.
  * @returns The query string, empty when no board is named.
@@ -274,6 +287,7 @@ export {
 	BoardConflictError,
 	BoardVersionConflictError,
 	boardQuery,
+	cancellable,
 	isRecord,
 	json,
 	mutation,

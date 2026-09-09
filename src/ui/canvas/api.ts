@@ -29,6 +29,7 @@ import {
 	BoardConflictError,
 	BoardVersionConflictError,
 	boardQuery,
+	cancellable,
 	json,
 	mutation,
 	post,
@@ -39,7 +40,6 @@ import type {
 	BoardHold,
 	BoardIdentity,
 	BoardInfo,
-	BoardListing,
 	BoardPreviewSnapshot,
 	BoardSaveResult,
 	BrowserPaneListing,
@@ -406,35 +406,35 @@ function putLibrary(
 /**
  * One board's identity and save state. Named, always (ADR 0009).
  * @param board The board key.
+ * @param signal Cancels the request.
  * @returns The board's info.
  */
-function fetchBoardInfo(board: string): Promise<BoardInfo & { success: true }> {
-	return json(`/api/boards/info?board=${encodeURIComponent(board)}`);
+function fetchBoardInfo(
+	board: string,
+	signal?: AbortSignal,
+): Promise<BoardInfo & { success: true }> {
+	return json(`/api/boards/info?board=${encodeURIComponent(board)}`, cancellable(signal));
 }
 
 /**
- * The persisted boards and the live pane inventory, as the navigator reads them.
- * @returns The combined listing.
+ * The boards the vault holds. Persisted inventory only: a board that exists
+ * only in a browser session is reported by `fetchPaneInventory` (ADR 0020).
+ * @param signal Cancels the request.
+ * @returns The vault and its boards.
  */
-async function fetchBoards(): Promise<BoardListing> {
-	const [persisted, browser] = await Promise.all([
-		json<PersistedBoardListing>("/api/boards"),
-		json<BrowserPaneListing>("/api/panes"),
-	]);
-	const open = new Map<string, BoardListing["open"][number]>();
-	for (const pane of browser.panes) {
-		open.set(pane.board, {
-			key: pane.board,
-			identity: pane.identity,
-			elementCount: pane.elementCount,
-		});
-	}
-	return {
-		vault: persisted.vault,
-		boards: persisted.boards,
-		open: [...open.values()],
-		onScreen: browser.panes.map(({ paneId, place, board }) => ({ paneId, place, board })),
-	};
+function fetchPersistedBoards(signal?: AbortSignal): Promise<PersistedBoardListing> {
+	return json("/api/boards", cancellable(signal));
+}
+
+/**
+ * What the live panes are holding, across every tab this server serves. The
+ * one authority for boards that are open without being persisted; which pane
+ * of this tab holds what is the browser's own to know.
+ * @param signal Cancels the request.
+ * @returns The pane inventory.
+ */
+function fetchPaneInventory(signal?: AbortSignal): Promise<BrowserPaneListing> {
+	return json("/api/panes", cancellable(signal));
 }
 
 /**
@@ -447,10 +447,7 @@ function fetchBoardPreview(
 	board: string,
 	signal?: AbortSignal,
 ): Promise<BoardPreviewSnapshot & { success: true }> {
-	return json(
-		`/api/boards/preview?board=${encodeURIComponent(board)}`,
-		signal === undefined ? {} : { signal },
-	);
+	return json(`/api/boards/preview?board=${encodeURIComponent(board)}`, cancellable(signal));
 }
 
 /** What `openBoard` asks for; `pane` is required once more than one is open. */
@@ -516,10 +513,11 @@ export {
 	clearBoard,
 	fetchBoardInfo,
 	fetchBoardPreview,
-	fetchBoards,
 	fetchElements,
 	fetchFiles,
 	fetchLibrary,
+	fetchPaneInventory,
+	fetchPersistedBoards,
 	fetchOpenerSettings,
 	holdBoard,
 	loadedBundle,

@@ -24,8 +24,10 @@ import { createShellActions } from "@/ui/application/lib/shell-actions";
 import { assembleShellView } from "@/ui/application/shell-view";
 import { applyTheme, initialTheme } from "@/ui/application/lib/theme";
 import { useBoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
-import { useBoardPlaceholders } from "@/ui/application/hooks/use-board-placeholders";
-import { useBoards, type Boards } from "@/ui/application/hooks/use-boards";
+import {
+	useMountedPreviews,
+	type MountedPreviews,
+} from "@/ui/application/hooks/use-mounted-previews";
 import {
 	shellPresentationOf,
 	useFullscreen,
@@ -42,6 +44,13 @@ import { WorkbenchDockBody } from "@/ui/application/components/WorkbenchDockBody
 import { WorkbenchDockHeader } from "@/ui/application/components/WorkbenchDockHeader";
 import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import type { DoingEntry } from "@/ui/types";
+import {
+	BoardCatalogProvider,
+	BoardPreview,
+	useBoardCatalog,
+	useScratchBoards,
+	type BoardCatalog,
+} from "@/ui/board-catalog";
 import { useLibrary, type LibraryController } from "@/ui/board-library";
 import { TooltipProvider } from "@/ui/components/tooltip";
 import {
@@ -49,6 +58,7 @@ import {
 	SETTINGS_TRIGGER_ID,
 	Shell,
 	type SettingsSurface,
+	type RenderBoardPreview,
 	type ShellActions,
 	type ShellView,
 	type ThemeChoice,
@@ -209,7 +219,10 @@ function useWorkbenchSlots(
 interface ShellViewSources {
 	readonly theme: ThemeChoice;
 	readonly panes: Panes;
-	readonly boards: Boards;
+	readonly catalog: BoardCatalog;
+	/** The board keys that turned out to be scratch. */
+	readonly scratchKeys: ReadonlySet<string>;
+	readonly renderPreview: RenderBoardPreview;
 	readonly fullscreen: Fullscreen;
 	readonly notices: NoticeStack;
 	readonly activity: AgentActivity;
@@ -221,7 +234,7 @@ interface ShellViewSources {
  * @returns The view.
  */
 function useShellView(sources: ShellViewSources): ShellView {
-	const { theme, panes, boards, fullscreen, notices, activity } = sources;
+	const { theme, panes, catalog, fullscreen, notices, activity } = sources;
 	const canvases = useCanvases(panes, theme);
 	// The note states are read off the records; only event notices are state.
 	const allNotices = useMemo(
@@ -238,9 +251,11 @@ function useShellView(sources: ShellViewSources): ShellView {
 				list: panes.list,
 				records: panes.records,
 				canvases,
-				boards: boards.listing,
-				boardsError: boards.error,
-				previews: boards.previews,
+				boards: catalog.listing,
+				boardsError: catalog.error,
+				boardsLoading: catalog.loading,
+				scratchKeys: sources.scratchKeys,
+				renderPreview: sources.renderPreview,
 				presentation: shellPresentationOf(fullscreen.snapshot, presentedConnected),
 				notices: allNotices,
 				agentActivity: activity.map,
@@ -249,7 +264,9 @@ function useShellView(sources: ShellViewSources): ShellView {
 			theme,
 			panes,
 			canvases,
-			boards,
+			catalog,
+			sources.scratchKeys,
+			sources.renderPreview,
 			fullscreen.snapshot,
 			presentedConnected,
 			allNotices,
@@ -300,10 +317,43 @@ function SettingsHosts(props: SettingsHostsProps): React.JSX.Element | null {
 }
 
 /**
- * The root component.
- * @returns The shell inside its providers, with the dialogs and the workbench.
+ * How each navigator row draws its board, bound to what the panes are holding.
+ *
+ * A board a pane holds is drawn from that pane's own scene; every other board
+ * from the server's snapshot, which the catalog caches (ADR 0015, TASK-167).
+ * Which of the two applies is decided here, where both are known, and never by
+ * the shell.
+ * @param previews The scenes the panes are holding, by board key.
+ * @param held The board keys the panes hold.
+ * @param theme The theme to draw in.
+ * @returns The row's preview renderer.
  */
-function Application(): React.JSX.Element {
+function usePreviewRenderer(
+	previews: MountedPreviews,
+	held: readonly string[],
+	theme: ThemeChoice,
+): RenderBoardPreview {
+	const holding = useMemo(() => new Set(held), [held]);
+	const { byBoard } = previews;
+	return useCallback(
+		(boardKey: string, boardName: string): React.ReactNode => (
+			<BoardPreview
+				boardKey={boardKey}
+				boardName={boardName}
+				mounted={byBoard[boardKey] ?? null}
+				held={holding.has(boardKey)}
+				theme={theme}
+			/>
+		),
+		[holding, byBoard, theme],
+	);
+}
+
+/**
+ * The root component's body, inside the providers it needs.
+ * @returns The shell, the dialogs and the workbench.
+ */
+function ApplicationBody(): React.JSX.Element {
 	const [theme, setTheme] = useTheme();
 	const reducedMotion = useReducedMotion();
 	const notices = useNotices();
@@ -326,7 +376,10 @@ function Application(): React.JSX.Element {
 			),
 		[panes.records, panes.list],
 	);
-	const boards = useBoards(panes.handles, heldKeys);
+	const catalog = useBoardCatalog();
+	const scratchKeys = useScratchBoards(heldKeys);
+	const mountedPreviews = useMountedPreviews(panes.handles);
+	const renderPreview = usePreviewRenderer(mountedPreviews, heldKeys, theme);
 	const agentActivity = useAgentActivity();
 	const workbench = useWorkbench(panes.handles, panes.list.activePaneId, openAgentSettings);
 	// A refused exit stays with the presentation, where the person is; a
@@ -352,7 +405,7 @@ function Application(): React.JSX.Element {
 				if (message !== null) {
 					raise(infoNotice("board-command", "Board", message));
 				}
-				boards.refresh();
+				catalog.refresh();
 			},
 			onClosePane: panes.close,
 			/** A dialog closed; a note state that waited for it gets its dialog now. */
@@ -360,19 +413,19 @@ function Application(): React.JSX.Element {
 				afterDialogClose.read()();
 			},
 		}),
-		[raise, boards, panes.close, afterDialogClose],
+		[raise, catalog, panes.close, afterDialogClose],
 	);
 	const dialogs = useBoardDialogs(dialogEvents);
 	usePresentationTransfer(panes, fullscreen);
 	usePresentationFocusReturn(fullscreen.snapshot.paneId);
-	useBoardPlaceholders(panes);
 	useLibrarySync(panes, library);
 	// Bound each render, after the owners the events reach exist.
 	panes.bindEvents(
 		paneEvents({
 			notices,
 			library,
-			boards,
+			catalog,
+			previews: mountedPreviews,
 			workbench,
 			activity: agentActivity,
 			setTheme,
@@ -404,10 +457,19 @@ function Application(): React.JSX.Element {
 	);
 	const actions = useMemo<ShellActions>(
 		() =>
-			createShellActions({ setTheme, panes, boards, dialogs, notices, fullscreen, openSettings }),
-		[setTheme, panes, boards, dialogs, notices, fullscreen, openSettings],
+			createShellActions({ setTheme, panes, catalog, dialogs, notices, fullscreen, openSettings }),
+		[setTheme, panes, catalog, dialogs, notices, fullscreen, openSettings],
 	);
-	const view = useShellView({ theme, panes, boards, fullscreen, notices, activity: agentActivity });
+	const view = useShellView({
+		theme,
+		panes,
+		catalog,
+		scratchKeys,
+		renderPreview,
+		fullscreen,
+		notices,
+		activity: agentActivity,
+	});
 	const pathFocused = view.pathFocus.kind === "connected";
 	const stageEvents = useMemo(
 		() => ({
@@ -446,8 +508,10 @@ function Application(): React.JSX.Element {
 	const slots = useWorkbenchSlots(workbench.owners, reducedMotion, activity);
 	const levels = useMemo(
 		() =>
-			[...new Set(boards.listing.boards.flatMap((board) => board.identity.level ?? []))].toSorted(),
-		[boards.listing],
+			[
+				...new Set(catalog.listing.boards.flatMap((board) => board.identity.level ?? [])),
+			].toSorted(),
+		[catalog.listing],
 	);
 	return (
 		<TooltipProvider>
@@ -462,7 +526,7 @@ function Application(): React.JSX.Element {
 			/>
 			<BoardDialogsHost
 				dialogs={dialogs}
-				boards={boards.listing.vault === "" ? null : boards.listing}
+				boards={catalog.loading ? null : catalog.listing}
 				levels={levels}
 				elsewhere={panes.active.status.writtenElsewhere}
 				library={library}
@@ -474,6 +538,19 @@ function Application(): React.JSX.Element {
 				onClose={closeSettings}
 			/>
 		</TooltipProvider>
+	);
+}
+
+/**
+ * The root component. The board cache is above everything that reads a board
+ * resource, and is made once for the life of the tab (TASK-167).
+ * @returns The shell inside its providers, with the dialogs and the workbench.
+ */
+function Application(): React.JSX.Element {
+	return (
+		<BoardCatalogProvider>
+			<ApplicationBody />
+		</BoardCatalogProvider>
 	);
 }
 
