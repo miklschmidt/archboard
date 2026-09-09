@@ -173,22 +173,29 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 			deps.notices.raise(failureNotice("board-command", "Open board", `${key} is not listed.`));
 			return;
 		}
+		// The pane is asked before the wait as well, so a person whose board has
+		// stopped saving is told at once rather than after queueing behind a
+		// restore; the answer that decides it is the one taken after the wait.
 		if (refuseGuarded(deps, context)) {
 			return;
 		}
-		// The person's command waits for anything the address bar has outstanding,
-		// so what they just asked for is the last thing the server is given.
-		const move = await deps.addressing.claim({
+		// The command waits for the address bar's one slot, so what the person
+		// just asked for is the last thing the server is given — and the pane is
+		// asked again, there, whether it may still go.
+		const permission = await deps.addressing.claim({
 			kind: "board",
 			paneId: context.paneId,
 			from: context.boardKey,
 			boardKey: key,
 		});
+		if (permission.kind === "blocked") {
+			return;
+		}
 		const outcome = await runOpen(SERVER_API, identity, context);
 		if (outcome.kind === "done") {
-			move.done();
+			permission.move.done();
 		} else {
-			move.failed();
+			permission.move.failed();
 		}
 		settle(deps, outcome, context, "Open board");
 	}

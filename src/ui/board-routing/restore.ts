@@ -22,7 +22,6 @@
 // not applied twice and a restore always terminates.
 
 import {
-	boardIn,
 	panesAtRisk,
 	planFor,
 	planIsEmpty,
@@ -38,16 +37,6 @@ type RestoreStep =
 	| { readonly kind: "open"; readonly paneId: string; readonly boardKey: string }
 	| { readonly kind: "focus"; readonly paneId: string };
 
-/** An open a restore has asked for and not yet seen through. */
-interface PendingOpen {
-	/** Which target asked. An answer to an older one is not this one's. */
-	readonly target: number;
-	readonly paneId: string;
-	readonly boardKey: string;
-	/** What that pane was showing when it was asked, so its move is observable. */
-	readonly from: string | null;
-}
-
 /** The restore, as it stands. */
 interface Restore {
 	/** The address being restored. */
@@ -58,10 +47,6 @@ interface Restore {
 	readonly attempted: Set<string>;
 	/** The boards this target asked for and could not reach. */
 	readonly unreachable: readonly string[];
-	/** The open the server has not answered, or null. */
-	readonly pending: PendingOpen | null;
-	/** The open the server answered, whose pane has not been seen to move. */
-	readonly adopting: PendingOpen | null;
 	/** Whether this target has settled. */
 	readonly done: boolean;
 }
@@ -79,15 +64,7 @@ type RestoreOutcome =
  * @returns The restore.
  */
 function createRestore(wanted: WorkspaceAddress): Restore {
-	return {
-		wanted,
-		target: 1,
-		attempted: new Set(),
-		unreachable: [],
-		pending: null,
-		adopting: null,
-		done: false,
-	};
+	return { wanted, target: 1, attempted: new Set(), unreachable: [], done: false };
 }
 
 /**
@@ -99,15 +76,7 @@ function createRestore(wanted: WorkspaceAddress): Restore {
  * @returns The retargeted restore.
  */
 function retargetRestore(restore: Restore, wanted: WorkspaceAddress): Restore {
-	return {
-		wanted,
-		target: restore.target + 1,
-		attempted: new Set(),
-		unreachable: [],
-		pending: restore.pending,
-		adopting: restore.adopting,
-		done: false,
-	};
+	return { wanted, target: restore.target + 1, attempted: new Set(), unreachable: [], done: false };
 }
 
 /**
@@ -121,63 +90,18 @@ function abandonRestore(restore: Restore): Restore {
 }
 
 /**
- * Whether anything this restore asked for is still in the air. The address is
- * not written while it is: the workspace is about to change again.
+ * Remember a board this target asked for and could not reach, so it can be
+ * named. An answer to a target that has been replaced says nothing about where
+ * the person is now, so it is not recorded.
  * @param restore The restore.
- * @returns True while an open is unanswered or its pane has not moved.
+ * @param target The target that asked.
+ * @param boardKey The board that could not be reached.
+ * @returns The restore, with that board named when it is still this target's.
  */
-function restoreOutstanding(restore: Restore): boolean {
-	return restore.pending !== null || restore.adopting !== null;
-}
-
-/**
- * Record the answer to an open. A board the target asked for and could not
- * reach is remembered so it can be named; one that was opened is waited on
- * until its pane is seen to show it. An answer to a target that has been
- * replaced is only released, never recorded.
- * @param restore The restore.
- * @param pending The open that was answered.
- * @param reached Whether the board was opened.
- * @returns The restore with that answer taken.
- */
-function openAnswered(restore: Restore, pending: PendingOpen, reached: boolean): Restore {
-	// An answer is taken once. Anything else is an answer already taken, or one
-	// to a command this restore is no longer waiting on.
-	if (restore.pending !== pending) {
-		return restore;
-	}
-	const stale = pending.target !== restore.target;
-	return {
-		...restore,
-		pending: null,
-		adopting: reached ? pending : null,
-		unreachable:
-			reached || stale ? restore.unreachable : [...restore.unreachable, pending.boardKey],
-	};
-}
-
-/**
- * Let go of an open whose pane has been seen to move, or whose pane is out of
- * contact and so cannot be waited on any longer.
- * @param restore The restore.
- * @param displayed What is on screen now.
- * @param port The workspace.
- * @returns The restore, with that open let go when it is over.
- */
-function adoptionObserved(
-	restore: Restore,
-	displayed: WorkspaceAddress,
-	port: WorkspacePort,
-): Restore {
-	const { adopting } = restore;
-	if (adopting === null) {
-		return restore;
-	}
-	// The board the pane lands on is the server's answer, not the request's: an
-	// address is normalised on the way through. That the pane moved at all is
-	// what says the open arrived.
-	const moved = boardIn(displayed, adopting.paneId) !== adopting.from;
-	return moved || !port.ready(adopting.paneId) ? { ...restore, adopting: null } : restore;
+function boardUnreachable(restore: Restore, target: number, boardKey: string): Restore {
+	return target === restore.target
+		? { ...restore, unreachable: [...restore.unreachable, boardKey] }
+		: restore;
 }
 
 /**
@@ -266,9 +190,6 @@ function restoreOutcome(
 	displayed: WorkspaceAddress,
 	port: WorkspacePort,
 ): RestoreOutcome {
-	if (restoreOutstanding(restore)) {
-		return { kind: "wait" };
-	}
 	const plan = planFor(displayed, restore.wanted, port.paneIds);
 	if (planIsEmpty(plan)) {
 		return { kind: "done" };
@@ -305,8 +226,15 @@ interface RestoreCommands {
 	 * @returns Whether the workspace changed.
 	 */
 	readonly apply: (step: RestoreStep) => boolean;
-	/** Point a pane at a board; the answer comes back to `openAnswered`. */
-	readonly open: (pending: PendingOpen) => void;
+	/** Take the command slot and point a pane at a board. */
+	readonly open: (paneId: string, boardKey: string) => void;
+}
+
+/** Where a restore got to, and whether anything more can be done right now. */
+interface RestoreProgress {
+	readonly restore: Restore;
+	/** True when the restore is not finished and cannot go further yet. */
+	readonly waiting: boolean;
 }
 
 /**
@@ -320,59 +248,48 @@ interface RestoreCommands {
  * @param displayed What is on screen now.
  * @param port The workspace.
  * @param commands How a step is applied.
- * @returns The restore as it now stands.
+ * @returns Where it got to, and whether it can go further right now.
  */
 function advanceRestore(
 	restore: Restore,
 	displayed: WorkspaceAddress,
 	port: WorkspacePort,
 	commands: RestoreCommands,
-): Restore {
-	let current = adoptionObserved(restore, displayed, port);
+): RestoreProgress {
+	let current = restore;
 	while (!current.done) {
 		const outcome = restoreOutcome(current, displayed, port);
 		if (outcome.kind === "wait") {
-			return current;
+			return { restore: current, waiting: true };
 		}
 		if (outcome.kind !== "step") {
 			reportRestoreEnd(port, current, outcome);
-			return { ...current, done: true };
+			return { restore: { ...current, done: true }, waiting: false };
 		}
-		const attempted = new Set(current.attempted).add(outcome.key);
+		current = { ...current, attempted: new Set(current.attempted).add(outcome.key) };
 		if (outcome.step.kind === "open") {
-			// Outstanding before it is asked, so a render between the request and
-			// its answer cannot find this restore finished.
-			const pending: PendingOpen = {
-				target: current.target,
-				paneId: outcome.step.paneId,
-				boardKey: outcome.step.boardKey,
-				from: boardIn(displayed, outcome.step.paneId),
-			};
-			commands.open(pending);
-			return { ...current, attempted, pending };
+			commands.open(outcome.step.paneId, outcome.step.boardKey);
+			return { restore: current, waiting: true };
 		}
-		current = { ...current, attempted };
 		if (commands.apply(outcome.step)) {
-			return current;
+			return { restore: current, waiting: true };
 		}
 	}
-	return current;
+	return { restore: current, waiting: false };
 }
 
 export {
 	abandonRestore,
-	adoptionObserved,
 	advanceRestore,
+	boardUnreachable,
 	createRestore,
 	nextRestoreStep,
-	openAnswered,
 	reportRestoreEnd,
 	restoreOutcome,
-	restoreOutstanding,
 	retargetRestore,
 	stepKey,
-	type PendingOpen,
 	type Restore,
+	type RestoreProgress,
 	type RestoreCommands,
 	type RestoreOutcome,
 	type RestoreStep,
