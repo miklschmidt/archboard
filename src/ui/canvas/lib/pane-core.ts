@@ -96,6 +96,8 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 ): PaneCore<Transport> {
 	const { paneId, clientId } = host;
 	let disposed = false;
+	// Whether a socket has ever opened here: what tells a reconnection apart.
+	let openedBefore = false;
 	/**
 	 * Whether this pane is still mounted.
 	 * @returns True until disposed.
@@ -400,12 +402,20 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 */
 	function socketOpened(generation: PaneSocketGeneration): void {
 		attachWorkbench(generation);
+		const returning = openedBefore;
+		openedBefore = true;
 		status.connected = true;
 		host.setConnected(true);
 		// The server retires a pane when its socket closes, so a reconnection
 		// re-announces this one even though nothing about it changed.
 		paneReports.forget();
 		publishAll();
+		// Only for a socket that came back: what changed while it was down was
+		// never announced, so whoever caches an answer from this server is told
+		// to ask again (TASK-167). The first connection has nothing stale yet.
+		if (returning) {
+			host.options().onPaneReconnected?.(paneId);
+		}
 	}
 
 	/**
@@ -455,19 +465,6 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		return host.options().focused;
 	}
 
-	/** The server accepted a changed authoritative pane report. */
-	function onPaneStateAccepted(): void {
-		host.options().onPaneStateAccepted?.();
-	}
-
-	/**
-	 * This tab runs a bundle the canvas no longer serves.
-	 * @param message What the server said about it.
-	 */
-	function onStaleFrontend(message: string): void {
-		host.options().onStaleFrontend?.(message);
-	}
-
 	const paneReports = createPaneReportSender({
 		paneId,
 		clientId,
@@ -478,8 +475,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		focused,
 		connector,
 		setConnected,
-		onPaneStateAccepted,
-		onStaleFrontend,
+		listeners: host.options,
 	});
 
 	/**

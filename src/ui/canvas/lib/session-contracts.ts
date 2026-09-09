@@ -101,6 +101,13 @@ interface CanvasSessionOptions<Transport extends WorkbenchTransportPort> {
 	onLayoutRequest?: (paneId: string, request: "open" | "close") => void;
 	/** The server accepted a changed authoritative pane report. */
 	onPaneStateAccepted?: () => void;
+	/**
+	 * This pane's socket came back after being lost. Said once per reconnection
+	 * and never for the first connection: what it means is that this tab was
+	 * out of earshot for a while, so anything it caches about the server may
+	 * have moved without it hearing.
+	 */
+	onPaneReconnected?: (paneId: string) => void;
 	/** A board note could not be rendered and none of it entered Excalidraw. */
 	onBoardError?: (error: string) => void;
 	/** An element's board link could not be followed. */

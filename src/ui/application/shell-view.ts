@@ -1,11 +1,14 @@
 // Assembling the shell's view from what the application holds: the pane
-// list, the pane records, the mounted canvases, the listing, the previews and
-// the notices. Pure, so the assembly can be checked without a browser.
+// list, the pane records, the mounted canvases, the listing, the scratch
+// boards and the notices. Pure, so the assembly can be checked without a
+// browser. The previews are not assembled here: a row draws its own through
+// `renderPreview`, which is the one thing in the view that is a slot rather
+// than a value.
 
-import type { PreviewSource } from "@/ui/board-preview";
 import type { PaneList } from "@/ui/application/pane-list";
 import { recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import type {
+	RenderBoardPreview,
 	ScratchBoardEntry,
 	ShellNotice,
 	ShellPane,
@@ -14,14 +17,6 @@ import type {
 	ThemeChoice,
 } from "@/ui/shell";
 import type { AgentActivityEntry, BoardIdentity, BoardListing } from "@/ui/types";
-
-/** The listing before the server has answered. */
-const EMPTY_LISTING: BoardListing = Object.freeze({
-	vault: "",
-	boards: [],
-	open: [],
-	onScreen: [],
-});
 
 /** What the header names while the active pane holds no board yet. */
 const NO_BOARD: BoardIdentity = Object.freeze({ board: "No board", variant: "current" });
@@ -35,7 +30,11 @@ interface ShellViewInputs {
 	readonly canvases: Readonly<Record<string, React.ReactNode>>;
 	readonly boards: BoardListing;
 	readonly boardsError: string | null;
-	readonly previews: Readonly<Record<string, PreviewSource | null>>;
+	/** The vault has not answered yet and nothing of it is in hand. */
+	readonly boardsLoading: boolean;
+	/** The board keys that turned out to be scratch: a note nobody named. */
+	readonly scratchKeys: ReadonlySet<string>;
+	readonly renderPreview: RenderBoardPreview;
 	readonly presentation: ShellPresentation | null;
 	readonly notices: readonly ShellNotice[];
 	/** Which boards an agent is working on, by board key (ADR 0022). */
@@ -67,8 +66,12 @@ function shellPanes(inputs: ShellViewInputs): ShellPane[] {
 function scratchBoards(inputs: ShellViewInputs): ScratchBoardEntry[] {
 	const entries = new Map<string, ScratchBoardEntry>();
 	for (const entry of inputs.list.panes) {
-		const { status, placeholder } = recordFor(inputs.records, entry.paneId);
-		if (placeholder && status.boardKey !== null && status.board !== null) {
+		const { status } = recordFor(inputs.records, entry.paneId);
+		if (
+			status.boardKey !== null &&
+			status.board !== null &&
+			inputs.scratchKeys.has(status.boardKey)
+		) {
 			entries.set(status.boardKey, {
 				key: status.boardKey,
 				identity: status.board,
@@ -91,8 +94,9 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 		current: active.status.board ?? NO_BOARD,
 		boards: inputs.boards,
 		boardsError: inputs.boardsError,
+		boardsLoading: inputs.boardsLoading,
 		scratch: scratchBoards(inputs),
-		previews: inputs.previews,
+		renderPreview: inputs.renderPreview,
 		selectedBoardKey: active.status.boardKey,
 		panes: shellPanes(inputs),
 		activePaneId: inputs.list.activePaneId,
@@ -105,4 +109,4 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 	};
 }
 
-export { EMPTY_LISTING, NO_BOARD, assembleShellView, type ShellViewInputs };
+export { NO_BOARD, assembleShellView, type ShellViewInputs };
