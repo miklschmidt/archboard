@@ -1,11 +1,11 @@
 ---
 id: TASK-165
 title: Clean up frontend concern placement and React ownership
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 13:25'
+updated_date: '2026-09-09 13:44'
 labels: []
 dependencies:
   - TASK-164
@@ -25,10 +25,10 @@ The agreed frontend rules preserve Archboard module boundaries but existing UI m
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Authored frontend modules follow docs/agents/frontend.md naming and concern placement, with intentional public entrypoints and existing test owners preserved.
-- [ ] #2 Application and shell compose domain owners; local state and subscriptions stay with consumers, with unnecessary mirrored state and relay-only controllers removed.
-- [ ] #3 Lint enforces agreed mechanically checkable conventions without relaxing existing lint/type rules or introducing file-content or tooling-policy tests.
-- [ ] #4 Existing desktop, split-pane, canvas edit, library, workbench and voice behavior is preserved; relevant runtime owners and bun run check pass.
+- [x] #1 Authored frontend modules follow docs/agents/frontend.md naming and concern placement, with intentional public entrypoints and existing test owners preserved.
+- [x] #2 Application and shell compose domain owners; local state and subscriptions stay with consumers, with unnecessary mirrored state and relay-only controllers removed.
+- [x] #3 Lint enforces agreed mechanically checkable conventions without relaxing existing lint/type rules or introducing file-content or tooling-policy tests.
+- [x] #4 Existing desktop, split-pane, canvas edit, library, workbench and voice behavior is preserved; relevant runtime owners and bun run check pass.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -71,4 +71,19 @@ Two further entrypoint cleanups after the first review pass:
 - Removed src/ui/voice-output-level/use-voice-output-level.ts: an unreferenced public hook superseded by voice-session's useVoiceLevel, which reads the adapter's own level subscription.
 
 Left as they are on purpose: the module-root contract.ts/contracts.ts entrypoints (voice-context, voice-session, voice-spoken-approval, voice-transcript, workbench-transport) have no caller outside their module today, but the same convention is public in workbench, workbench-queue, workbench-approvals, workbench-thread-link and voice-controls, so making some private would make the convention less predictable, not more. src/ui/types keeps its name: renaming it would touch about fifty files for no rule this cleanup enforces.
+
+Verification (2026-09-09):
+- Full `bun run check` on 6871f21b (cleanup 7c1ed1d5 plus the cherry-picked Linux process-observation fix) exited 0. Lanes: lint:baseline and lint:policy clean; fmt:check over 1794 files; both TypeScript projects clean; build:frontend ok; test:modules 2671 pass / 0 fail; test:system 306 pass / 0 fail; test:repository 8 pass / 0 fail; test:serial-browser all 21 normal owners pass / 0 fail, ending with codex-live-voice. The browser lane covers the desktop shell layout, board navigator and drill-down, fullscreen presentation, split-pane hold and claim behaviour, canvas edit and undo/redo, typed text, opener settings, the Codex text workbench and controlled live voice, which is the behaviour this cleanup had to preserve.
+- Before that run the same tree reproduced a pre-existing Linux failure that was not this task's: parseLinuxProcessStat in src/shared/process-observation/lib/linux-stat.ts refused every record whose pgrp is 0, so listLinuxProcesses threw on kernel thread pid 2 and 36 module owners failed. Reported with the exact reproduction; the maintainer fixed it as TASK-168 (9e0d53ac) and I cherry-picked it rather than touching backend code from this task.
+- The lint rule was proved to fire, not merely to be registered: temporary probe files earned every message once (unknown concern folder, kebab component file, kebab module-root component file, JSX in lib, hook exported from lib, use- prefixed file in lib), and the vendor files earned none. The probes were removed.
+
+Follow-up commit 44f92f77: docs/agents/frontend.md also asks for named React imports including types, and authored UI source still reached the React namespace for React.JSX.Element, React.ReactNode, React.ComponentProps and the event, ref and style types. All 71 authored files now import those types by name from "react"; the shadcn, assistant-ui and LiveKit vendor files keep their namespace imports. archboard/named-react-imports enforces it over authored src/ui source including tests, off only for the same approved vendor list. Verified with lint, fmt:check, both type-check projects, build:frontend, src/ui module owners (904 pass) and test:repository (8 pass); the browser and system lanes were left to their current owner.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Applied docs/agents/frontend.md to the existing authored src/ui tree. Every module now keeps React components in a private components/ folder named in PascalCase after the component, React hooks in a private hooks/ folder named use-kebab-case, type-only declarations in a private types/ folder, and non-React helpers in lib/; module-root files stay the public interface, with PascalCase component entrypoints and canvas/use-pane-contact.ts reading as the hook it is. Files holding several unrelated components were split so each names its own. A new peer module src/ui/dialog-parts owns the DialogError shape and the generic dialog presentation that board-dialogs was re-exporting to six other modules, src/ui/workbench/index.tsx no longer re-exports the separate contracts entrypoint, and two unreferenced public entrypoints were removed. Leaf state and subscriptions stayed with their consumers and no controller was introduced; one mirrored derivation was removed, where the application and ActivityList both trimmed the pane's doing lines. A second pass replaced every React namespace type use in authored UI source with named imports from react. Two Oxlint rules, archboard/ui-concern-placement and archboard/named-react-imports, keep both conventions, off only for the exact shadcn, assistant-ui and LiveKit files already listed in .oxlintrc.jsonc; no existing lint or type rule was relaxed and no file-content, lint-policy or tooling test was added.
+
+Verified by a full bun run check on the cleanup commit (exit 0): lint both lanes, fmt:check, both TypeScript projects, build:frontend, test:modules 2671/0, test:system 306/0, test:repository 8/0, and all 21 normal browser owners passing, which is where the desktop, split-pane, canvas edit, library, workbench and voice behaviour is exercised. The named-import follow-up was verified with lint, fmt:check, both type-check projects, build:frontend, the 904 src/ui module owners and test:repository, leaving the browser and system lanes to their current owner. Commits: 7c1ed1d5 (cleanup) and 44f92f77 (named React imports); 6871f21b is the cherry-picked TASK-168 fix for a pre-existing Linux failure found while verifying.
+<!-- SECTION:FINAL_SUMMARY:END -->
