@@ -10,6 +10,8 @@ Where things are written down:
 - Design, roadmap, the bound Codex app-server contract: `DESIGN.md`
 - Running and verifying it end to end: `TESTING.md`; installing it elsewhere: `INSTALL.md`
 - Domain language: `CONTEXT.md`; module layout and import rules: `docs/agents/boundaries.md`
+- Changing frontend code: read `docs/agents/frontend.md` for placement, React ownership,
+  and the routing/query migration contract.
 - Decisions: `docs/adr/` — read the ADR before touching what it decides
 - Measured investigations: `docs/design/`; the UI's visual authority is
   `docs/design/operator-canvas-shell.md` with its reference image
