@@ -101,7 +101,7 @@ type SettingsSurface = "opener" | "agent" | "library";
  * @param boardName The board's name, for the image's alternative text.
  * @returns The preview element.
  */
-type RenderBoardPreview = (boardKey: string, boardName: string) => React.ReactNode;
+type RenderBoardPreview = (boardKey: string, boardName: string) => ReactNode;
 
 /** Everything the shell renders. */
 interface ShellView {
