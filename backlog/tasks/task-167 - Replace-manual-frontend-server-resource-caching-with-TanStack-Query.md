@@ -1,10 +1,10 @@
 ---
 id: TASK-167
 title: Replace manual frontend server-resource caching with TanStack Query
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 14:57'
+updated_date: '2026-09-09 15:19'
 labels: []
 dependencies:
   - TASK-164
@@ -28,47 +28,23 @@ The board-listing hook hand-manages request generations, errors, preview caching
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Board listings and server previews have one TanStack Query cache owner per resource; replaced manual loading/cache state is removed and query options/API adapters remain domain-owned.
-- [ ] #2 Mounted previews continue to come from pane scenes, and stale or late server snapshots cannot overwrite them; socket/edit/workbench/voice ordering and lifecycle ownership is preserved.
-- [ ] #3 The persisted-board/live-pane listing boundary and event invalidation, reconnect, cancellation, freshness and retry policies are explicit; loading, empty, stale-data, failure and recovery states remain usable.
-- [ ] #4 Additional migrated request/response resources are named with the manual state removed; unmigrated workflow controllers remain authoritative. Route loading, when present, uses the same Query cache.
-- [ ] #5 Approved dependencies are pinned; no automatic board-write retries or second optimistic model is introduced. Relevant runtime tests and bun run check pass.
+- [x] #1 Board listings and server previews have one TanStack Query cache owner per resource; replaced manual loading/cache state is removed and query options/API adapters remain domain-owned.
+- [x] #2 Mounted previews continue to come from pane scenes, and stale or late server snapshots cannot overwrite them; socket/edit/workbench/voice ordering and lifecycle ownership is preserved.
+- [x] #3 The persisted-board/live-pane listing boundary and event invalidation, reconnect, cancellation, freshness and retry policies are explicit; loading, empty, stale-data, failure and recovery states remain usable.
+- [x] #4 Additional migrated request/response resources are named with the manual state removed; unmigrated workflow controllers remain authoritative. Route loading, when present, uses the same Query cache.
+- [x] #5 Approved dependencies are pinned; no automatic board-write retries or second optimistic model is introduced. Relevant runtime tests and bun run check pass.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Researched plan (contract proposed to the parent pane; items 1a-1c await its decision).
-
-Ownership
-1. New UI module src/ui/board-catalog owns the server-resource cache: createBoardQueryClient(), a QueryClientProvider wrapper, the queryOptions factories boardListingQuery()/boardPreviewQuery(key)/boardInfoQuery(key), and the hooks that subscribe to them. API adapters stay in src/ui/canvas/api.ts and are imported through that root entrypoint. Keeps the cache owner separate from the router (TASK-166) and off the application root.
-2. Pin @tanstack/react-query at 5.102.8 exactly (peer react ^18||^19; repo is on 19.2.8).
-
-The listing boundary
-3. The persisted vault inventory is the query resource: key ["boards","listing"], GET /api/boards with the query signal. The live pane inventory (open, onScreen) is derived from the local pane list and pane records instead of a second GET /api/panes, so each fact has one owner and pane letters stop being derived twice. fetchBoards loses its /api/panes half. (Decision 1a: parent may instead keep a separate ["panes"] query invalidated by onPaneStateAccepted.)
-4. The vault === "" sentinel that the navigator uses as its loading flag and BoardDialogsHost tests is replaced by the query pending state.
-
-Previews
-5. Mounted previews stay pane-owned in a small application hook keeping PANE_DEBOUNCE_MS and fingerprintMountedPreview. Server snapshots become one query per board, ["board-preview", key], enabled only for listed boards no pane holds, with the signal threaded through.
-6. One read rule in ui/board-preview: previewFor(key) = mounted[key] ?? server cache[key] ?? null, mounted honoured only while a pane holds that key. Two stores, so a late or stale server snapshot cannot overwrite a mounted scene, and a held board still falls back to its cached snapshot rather than blanking.
-7. Subscribe once with useQueries in the owner that assembles the shell view so ShellView.previews stays a plain record and ui/shell stays presentational.
-
-Freshness, invalidation, retries, cancellation
-8. Listing: 30s staleTime, refetch on window focus and mount, no polling; invalidated by every board command that can write the vault, by a hold resolving, and by an agent_activity snapshot naming an unlisted board key.
-9. Previews: 60s staleTime, no focus refetch, explicit gcTime; invalidated by the Refresh control, by a command that wrote that board, and by the end of an agent activity entry for that key.
-10. Reconnect: navigator.onLine does not move when the local server restarts, so the product signal is the pane socket returning. Proposed one narrow pane event onPaneReconnected(paneId) raised where connection health already flips to true. (Decision 1b: parent may instead accept window focus plus the manual Refresh, recorded as such.)
-11. retry false for every read in this cache: a localhost failure is a real failure and the navigator already offers Refresh. No board write goes through Query; writes keep their command owners, version checks and semantics, so no write retries and no second optimistic model.
-12. Add a signal pass-through to json() in ui/canvas/lib/http.ts so Query can cancel; this removes the generation counter in use-boards and the live flag in use-board-placeholders. Every new duration goes in src/shared/timing/timing.ts with what it pulls against.
-
-Third resource and exclusions
-13. Migrate GET /api/boards/info as ["board-info", key], replacing useBoardPlaceholders and its effect that copies the answer into pane records.
-14. Not migrated, deliberately: the library (a bidirectional workflow controller; migrating it would create the second optimistic model AC #5 forbids), opener settings (union replies that never throw, dialog scoped, per-action busy), elements/files (the mounted canvas), and all workbench, voice, claim and socket ordering.
-
-Router coordination
-15. TASK-166 receives the query client through router context and calls ensureQueryData with the same queryOptions objects; no route-owned adapter and no second cache.
-
-Validation
-16. tests/system/browser/board-navigator.test.ts stays the owner of the visible listing and preview states. A module owner under src/ui/board-catalog/tests covers invalidation and mounted-over-server precedence against a stubbed api with a retry-false client. shell-view.test.ts keeps testing the pure assembly. No file-content tests. bun run check is the gate.
+1. Pin TanStack Query and put one QueryClient plus domain-owned options and leaf subscriptions in board-catalog; application composes the provider and preview slot.
+2. Cache persisted boards and live pane inventory as separate resources, preserving cross-tab inventory. Remove useBoards, the vault loading sentinel and manual request generations. Local pane records remain the held/focus authority.
+3. Keep mounted scenes separate from server preview snapshots with mounted precedence. Cancel before invalidation, invalidate released boards after ordinary edits, and retain usable cached data while refreshing.
+4. Migrate board-info and remove useBoardPlaceholders and mirrored placeholder state. Report partial failures with Refresh recovery. Keep library, opener, canvas edits, workbench and voice with their workflow owners; routing has no data loader or cache coupling.
+5. Define listing/preview freshness and GC in shared timing; reads never retry and writes stay outside Query. Refresh inventory on every tab return, vault on stale focus, resources on reconnect/manual refresh, and written boards on command/agent outcomes including partial creation failure. Refresh pane inventory after socket retirement.
+6. Verify runtime cache deduplication, cancellation/invalidation races, mounted precedence, partial failures and focus. Verify direct/history closure and a primed preview refreshed after a reported human edit; invert release invalidation to prove that browser assertion fails.
+7. Resolve independent reviews and pass the integrated bun run check.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -151,4 +127,12 @@ Inversion: with useReleasedBoards removed from the application root, the owner f
 The code was restored and the same owner re-run to confirm the restore was faithful: passes again, exit 0. Tree clean at 06f71bc7, lint and both tsc projects green, dist rebuilt from the restored source.
 
 Browser and system slot released.
+
+Final integrated verification (2026-09-09): bun run check passed with exit 0 on main 969d766de4a5. Lint baseline/policy, formatting, both TypeScript projects and frontend build passed; test:modules 2740/0 (303 files, 23.81s), test:system 306/0 (79 files, 141.18s), test:repository 8/0, serial browser 32/0 across 23 owners. Checkout remained clean. Independent standards, spec and interface rechecks are clean. Full local log: /tmp/archboard-final-check.log. Finalization after this gate changes Backlog records only.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Replaced manual listing, server-preview and board-info caches with one domain-owned TanStack Query client. Mounted previews retain precedence; explicit cancellation, event/focus/reconnect invalidation and partial-write recovery keep snapshots usable without write retries. The corrected browser owner passed, failed at the stale-preview assertion with release invalidation removed, then passed after restoration. Independent rechecks and integrated bun run check passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
