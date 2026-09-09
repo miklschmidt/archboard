@@ -1,19 +1,8 @@
-// One board's preview, from whichever source is entitled to depict it.
-//
-// The precedence is the point of this file. A board a pane holds is depicted
-// from that pane's mounted scene, which is what the person is actually looking
-// at; every other board is depicted from the server's snapshot. They are two
-// stores, not one slot, so a snapshot that was asked for before a pane adopted
-// the board and answered after cannot overwrite the live scene: it lands in
-// the cache and loses the choice below. While a pane holds a board its query
-// is disabled, so nothing is fetched for it, and the snapshot already in hand
-// still shows until the pane's first frame arrives rather than blanking.
+// One board's preview card, over whichever source is entitled to depict it.
 
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, type JSX } from "react";
 
-import { boardPreviewQuery } from "@/ui/board-catalog/lib/queries";
-import { previewSourceFor } from "@/ui/board-catalog/preview-source";
+import { useBoardPreviewSource } from "@/ui/board-catalog/hooks/use-board-preview-source";
 import {
 	BoardPreviewCache,
 	PreviewRequestGate,
@@ -43,11 +32,10 @@ interface BoardPreviewProps {
  * @param props The board, its mounted scene when a pane holds it, and the theme.
  * @returns The card.
  */
-function BoardPreview(props: BoardPreviewProps): React.JSX.Element {
+function BoardPreview(props: BoardPreviewProps): JSX.Element {
 	const { boardKey, mounted, held } = props;
-	const snapshot = useQuery({ ...boardPreviewQuery(boardKey), enabled: !held });
+	const source = useBoardPreviewSource({ boardKey, mounted, held });
 	const gate = useMemo(() => new PreviewRequestGate(), []);
-	const source = previewSourceFor({ mounted, cached: snapshot.data, held });
 	return (
 		<PreviewCard
 			board={props.boardName}

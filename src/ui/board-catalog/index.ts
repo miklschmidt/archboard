@@ -12,9 +12,9 @@
 export { BoardPreview, type BoardPreviewProps } from "@/ui/board-catalog/components/BoardPreview";
 export {
 	BoardCatalogProvider,
-	createBoardQueryClient,
 	type BoardCatalogProviderProps,
 } from "@/ui/board-catalog/components/BoardCatalogProvider";
+export { createBoardQueryClient } from "@/ui/board-catalog/lib/query-client";
 export {
 	boardCatalogKeys,
 	boardInfoQuery,
@@ -23,4 +23,8 @@ export {
 	persistedBoardsQuery,
 } from "@/ui/board-catalog/lib/queries";
 export { useBoardCatalog, type BoardCatalog } from "@/ui/board-catalog/hooks/use-board-catalog";
+export {
+	useBoardPreviewSource,
+	type BoardPreviewInputs,
+} from "@/ui/board-catalog/hooks/use-board-preview-source";
 export { useScratchBoards } from "@/ui/board-catalog/hooks/use-scratch-boards";
