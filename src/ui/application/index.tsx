@@ -226,6 +226,8 @@ interface ShellViewSources {
 	readonly catalog: BoardCatalog;
 	/** The board keys that turned out to be scratch. */
 	readonly scratchKeys: ReadonlySet<string>;
+	/** How many open boards could not be asked whether they have a name. */
+	readonly scratchUnreadable: number;
 	readonly renderPreview: RenderBoardPreview;
 	readonly fullscreen: Fullscreen;
 	readonly notices: NoticeStack;
@@ -259,6 +261,7 @@ function useShellView(sources: ShellViewSources): ShellView {
 				boardsError: catalog.error,
 				boardsLoading: catalog.loading,
 				scratchKeys: sources.scratchKeys,
+				scratchUnreadable: sources.scratchUnreadable,
 				renderPreview: sources.renderPreview,
 				presentation: shellPresentationOf(fullscreen.snapshot, presentedConnected),
 				notices: allNotices,
@@ -270,6 +273,7 @@ function useShellView(sources: ShellViewSources): ShellView {
 			canvases,
 			catalog,
 			sources.scratchKeys,
+			sources.scratchUnreadable,
 			sources.renderPreview,
 			fullscreen.snapshot,
 			presentedConnected,
@@ -386,7 +390,7 @@ function ApplicationBody(): JSX.Element {
 		[panes.records, panes.list],
 	);
 	const catalog = useBoardCatalog();
-	const scratchKeys = useScratchBoards(heldKeys);
+	const scratch = useScratchBoards(heldKeys);
 	const mountedPreviews = useMountedPreviews(panes.handles);
 	const renderPreview = usePreviewRenderer(mountedPreviews, heldKeys, theme);
 	const agentActivity = useAgentActivity();
@@ -418,12 +422,13 @@ function ApplicationBody(): JSX.Element {
 			/**
 			 * A dialog's command finished.
 			 * @param message Words for the notice, when there are any.
+			 * @param boards The boards it wrote, whose cached state is now behind.
 			 */
-			onDone: (message: string | null): void => {
+			onDone: (message: string | null, boards: readonly string[]): void => {
 				if (message !== null) {
 					raise(infoNotice("board-command", "Board", message));
 				}
-				catalog.refresh();
+				catalog.boardsChanged(boards);
 			},
 			/**
 			 * The person confirmed closing a pane that held work: a comparison ends.
@@ -502,7 +507,8 @@ function ApplicationBody(): JSX.Element {
 		theme,
 		panes,
 		catalog,
-		scratchKeys,
+		scratchKeys: scratch.keys,
+		scratchUnreadable: scratch.unreadable,
 		renderPreview,
 		fullscreen,
 		notices,

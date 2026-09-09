@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "b
 import { act, createElement, type JSX } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
-import type { BoardCatalog } from "@/ui/board-catalog";
+import type { BoardCatalog, ScratchBoards } from "@/ui/board-catalog";
 import type { MountedPreviewSnapshot, PreviewSource } from "@/ui/board-preview";
 import { fakeServer, mountedScene, type FakeServer } from "@/ui/board-catalog/tests/fake-server";
 
@@ -21,7 +21,7 @@ await mock.module("@excalidraw/excalidraw", () => ({
 	},
 }));
 
-const { BoardCatalogProvider, useBoardCatalog, useBoardPreviewSource } =
+const { BoardCatalogProvider, useBoardCatalog, useBoardPreviewSource, useScratchBoards } =
 	await import("@/ui/board-catalog");
 
 /**
@@ -57,10 +57,12 @@ interface ProbeView {
 interface ProbeFrame {
 	catalog: BoardCatalog;
 	source: PreviewSource | null;
+	scratch: ScratchBoards;
 }
 
 /** Inputs for the probe. */
 interface ProbeProps extends ProbeView {
+	scratchBoards: readonly string[];
 	frames: ProbeFrame[];
 }
 
@@ -76,7 +78,8 @@ function CatalogProbe(props: ProbeProps): JSX.Element | null {
 		mounted: props.mounted,
 		held: props.held,
 	});
-	props.frames.push({ catalog, source });
+	const scratch = useScratchBoards(props.scratchBoards);
+	props.frames.push({ catalog, source, scratch });
 	return null;
 }
 
@@ -88,6 +91,9 @@ interface Mounted {
 }
 
 const FIRST_VIEW: ProbeView = { boardKey: "Checkout", mounted: null, held: false };
+
+/** The open boards whose name state the probe asks about. */
+const SCRATCH_BOARDS: readonly string[] = ["Draft"];
 
 /**
  * Mount the probe under a real provider, with this product's read defaults.
@@ -108,7 +114,12 @@ function mount(): Mounted {
 				createElement(
 					BoardCatalogProvider,
 					null,
-					createElement(CatalogProbe, { ...view, frames, key: "probe" }),
+					createElement(CatalogProbe, {
+						...view,
+						scratchBoards: SCRATCH_BOARDS,
+						frames,
+						key: "probe",
+					}),
 				),
 			);
 		});
@@ -247,6 +258,87 @@ describe("the board cache over a real server boundary", () => {
 			await mounted.show(FIRST_VIEW);
 			expect(latest(mounted).source?.fingerprint).toBe("server-1");
 			expect(server.reads("/api/boards/preview")).toBe(1);
+		} finally {
+			await mounted.close();
+		}
+	});
+
+	test("an event during a first read still forces an answer from after it", async () => {
+		const vault = server.defer("/api/boards");
+		const preview = server.defer("/api/boards/preview");
+		const mounted = mount();
+		try {
+			await mounted.show(FIRST_VIEW);
+			// Both reads are on the wire with nothing in the cache behind them.
+			expect(latest(mounted).catalog.loading).toBe(true);
+
+			// The vault gains a board and the previewed board is redrawn, and the
+			// events that say so arrive while those first reads are still out.
+			server.addBoard("Billing");
+			server.redrawBoard();
+			await invalidateWith(mounted, (catalog) => catalog.boardsChanged(["Checkout"]));
+			await act(async () => {
+				vault.answer();
+				preview.answer();
+			});
+			await settle();
+
+			// The answers those reads carried were decided before the events, so
+			// neither is allowed to settle as what the shell shows.
+			expect(latest(mounted).catalog.listing.boards.map((board) => board.key)).toEqual([
+				"Checkout",
+				"Billing",
+			]);
+			expect(latest(mounted).source?.fingerprint).toBe("server-2");
+			expect(server.reads("/api/boards")).toBe(2);
+			expect(server.reads("/api/boards/preview")).toBe(2);
+		} finally {
+			await mounted.close();
+		}
+	});
+
+	test("a burst of events during one first read converges on one more read", async () => {
+		const vault = server.defer("/api/boards");
+		const mounted = mount();
+		try {
+			await mounted.show(FIRST_VIEW);
+			server.addBoard("Billing");
+			await invalidateWith(mounted, (catalog) => {
+				catalog.refresh();
+				catalog.refresh();
+				catalog.refresh();
+			});
+			await act(async () => vault.answer());
+			await settle();
+			expect(latest(mounted).catalog.listing.boards).toHaveLength(2);
+			// Bounded: the reads settle rather than chasing each other.
+			expect(server.reads("/api/boards")).toBe(2);
+			expect(latest(mounted).catalog.error).toBeNull();
+		} finally {
+			await mounted.close();
+		}
+	});
+
+	test("a name state that could not be read is withheld, said, and recovered by a refresh", async () => {
+		server.fail("/api/boards/info", "the board could not be read");
+		const mounted = mount();
+		try {
+			await mounted.show(FIRST_VIEW);
+			// No affordance is offered for a board nobody could ask about, and the
+			// navigator is told how many there were rather than quietly omitting it.
+			expect([...latest(mounted).scratch.keys]).toEqual([]);
+			expect(latest(mounted).scratch.unreadable).toBe(1);
+			expect(server.reads("/api/boards/info")).toBe(1);
+			// The vault is untouched by it.
+			expect(latest(mounted).catalog.error).toBeNull();
+			expect(latest(mounted).catalog.listing.boards).toHaveLength(1);
+
+			// The navigator refresh is the recovery, and it reaches this read too.
+			server.recover("/api/boards/info");
+			await invalidateWith(mounted, (catalog) => catalog.reload());
+			expect(server.reads("/api/boards/info")).toBe(2);
+			expect([...latest(mounted).scratch.keys]).toEqual(["Draft"]);
+			expect(latest(mounted).scratch.unreadable).toBe(0);
 		} finally {
 			await mounted.close();
 		}

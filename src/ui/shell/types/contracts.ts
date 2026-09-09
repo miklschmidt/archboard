@@ -114,6 +114,12 @@ interface ShellView {
 	/** The vault has not answered yet and nothing of it is in hand. */
 	boardsLoading: boolean;
 	scratch: readonly ScratchBoardEntry[];
+	/**
+	 * How many open boards could not be asked whether they have a name. Their
+	 * naming affordance is withheld rather than wrongly offered, and the
+	 * navigator says so; the refresh is what recovers it.
+	 */
+	scratchUnreadable: number;
 	/** How a row draws its board's preview. */
 	renderPreview: RenderBoardPreview;
 	selectedBoardKey: string | null;

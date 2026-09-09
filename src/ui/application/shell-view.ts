@@ -36,6 +36,8 @@ interface ShellViewInputs {
 	readonly boardsLoading: boolean;
 	/** The board keys that turned out to be scratch: a note nobody named. */
 	readonly scratchKeys: ReadonlySet<string>;
+	/** How many open boards could not be asked whether they have a name. */
+	readonly scratchUnreadable: number;
 	readonly renderPreview: RenderBoardPreview;
 	readonly presentation: ShellPresentation | null;
 	readonly notices: readonly ShellNotice[];
@@ -98,6 +100,7 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 		boardsError: inputs.boardsError,
 		boardsLoading: inputs.boardsLoading,
 		scratch: scratchBoards(inputs),
+		scratchUnreadable: inputs.scratchUnreadable,
 		renderPreview: inputs.renderPreview,
 		selectedBoardKey: active.status.boardKey,
 		panes: shellPanes(inputs),

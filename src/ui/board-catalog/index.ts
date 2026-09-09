@@ -27,4 +27,4 @@ export {
 	useBoardPreviewSource,
 	type BoardPreviewInputs,
 } from "@/ui/board-catalog/hooks/use-board-preview-source";
-export { useScratchBoards } from "@/ui/board-catalog/hooks/use-scratch-boards";
+export { useScratchBoards, type ScratchBoards } from "@/ui/board-catalog/hooks/use-scratch-boards";
