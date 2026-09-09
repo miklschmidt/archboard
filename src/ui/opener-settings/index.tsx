@@ -10,7 +10,7 @@ export type {
 	OpenerSettingsBusy,
 	OpenerSettingsDialogProps,
 	OpenerTestResult,
-} from "@/ui/opener-settings/lib/contracts";
+} from "@/ui/opener-settings/types/contracts";
 export {
 	argvOfText,
 	checkCustomCommand,
@@ -21,4 +21,4 @@ export {
 	selectionOfChoice,
 	type PresetName,
 } from "@/ui/opener-settings/lib/custom-command";
-export { OpenerSettingsDialog } from "@/ui/opener-settings/lib/opener-settings-dialog";
+export { OpenerSettingsDialog } from "@/ui/opener-settings/components/OpenerSettingsDialog";

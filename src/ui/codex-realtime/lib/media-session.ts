@@ -4,14 +4,17 @@
 
 import { CODEX_REALTIME_STOP_MS } from "@/shared/timing/timing";
 import { browserRealtimeMediaEnvironment } from "@/ui/codex-realtime/lib/browser-environment";
-import { INITIAL_REALTIME_STATE, transitionRealtimeState } from "@/ui/codex-realtime/lib/contract";
+import {
+	INITIAL_REALTIME_STATE,
+	transitionRealtimeState,
+} from "@/ui/codex-realtime/types/contract";
 import type {
 	RealtimeCorrelation,
 	RealtimeHost,
 	RealtimeRecoverableErrorReason,
 	RealtimeState,
 	RealtimeTerminalErrorReason,
-} from "@/ui/codex-realtime/lib/contract";
+} from "@/ui/codex-realtime/types/contract";
 import { createPublisher } from "@/ui/codex-realtime/lib/publication";
 import {
 	bounded,

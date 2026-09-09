@@ -5,7 +5,7 @@ import type {
 	ConflictOutcome,
 	ConflictOutcomeChoice,
 	ElsewhereOutcome,
-} from "@/ui/board-dialogs/lib/contracts";
+} from "@/ui/board-dialogs/types/contracts";
 import type { BoardWriteConflict, NoteWrittenElsewhere } from "@/ui/types";
 
 /**

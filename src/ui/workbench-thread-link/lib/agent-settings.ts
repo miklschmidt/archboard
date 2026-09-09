@@ -5,7 +5,6 @@
 
 import type { LoginId } from "@/shared/codex-workbench-identity";
 import type { AgentSettingsBusy, AgentSettingsErrors, LoginVariant } from "@/ui/agent-settings";
-import type { DialogError } from "@/ui/board-dialogs";
 import type {
 	ThreadLinkAccountFieldValues,
 	ThreadLinkActionName,
@@ -14,6 +13,7 @@ import type {
 } from "@/ui/workbench-thread-link/contracts";
 import { buildThreadLinkLogin } from "@/ui/workbench-thread-link/lib/account-forms";
 import type { WorkbenchThreadLinkActions } from "@/ui/workbench/contracts";
+import { type DialogError } from "@/ui/dialog-parts";
 
 const ACCOUNT_ACTIONS: ReadonlySet<ThreadLinkActionName> = new Set([
 	"login",

@@ -10,7 +10,7 @@ import type {
 	WorkbenchComposerThreadId,
 	WorkbenchComposerTurn,
 	WorkbenchComposerTurnId,
-} from "@/ui/workbench-composer/lib/contract";
+} from "@/ui/workbench-composer/types/contract";
 import { readComposerLink } from "@/ui/workbench-composer/lib/link";
 import {
 	MAX_PROMPT_BYTES,

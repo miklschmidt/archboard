@@ -3,7 +3,7 @@
 // is working on that nothing else lists, which pane is showing what, what an
 // agent is doing where, and the scratch boards. Pure: no React.
 
-import type { ScratchBoardEntry, ShellView } from "@/ui/shell/lib/contracts";
+import type { ScratchBoardEntry, ShellView } from "@/ui/shell/types/contracts";
 import type { PreviewSource } from "@/ui/board-preview";
 import type { AgentActivityEntry, BoardIdentity, BoardListing } from "@/ui/types";
 

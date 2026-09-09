@@ -7,7 +7,7 @@ import type {
 	BoardDialogIssue,
 	BoardDialogMode,
 	BoardDialogRequest,
-} from "@/ui/board-dialogs/lib/contracts";
+} from "@/ui/board-dialogs/types/contracts";
 import type { PersistedBoardListing } from "@/ui/types";
 
 /** The words one mode uses. */

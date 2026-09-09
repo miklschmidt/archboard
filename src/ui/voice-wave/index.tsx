@@ -6,11 +6,8 @@ import { cn } from "cn";
 import { useState } from "react";
 
 import { AgentAudioVisualizerWave } from "@/ui/voice-wave/agent-audio-visualizer-wave";
-import {
-	statusAccentColor,
-	usePrefersReducedMotion,
-	webGlAvailable,
-} from "@/ui/voice-wave/lib/environment";
+import { usePrefersReducedMotion } from "@/ui/voice-wave/hooks/use-prefers-reduced-motion";
+import { statusAccentColor, webGlAvailable } from "@/ui/voice-wave/lib/environment";
 import { waveStateText } from "@/ui/voice-wave/wave-state";
 import type { VoiceWaveState } from "@/ui/voice-wave/wave-state";
 

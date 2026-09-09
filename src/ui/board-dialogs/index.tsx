@@ -3,7 +3,7 @@
 // an official Dialog or AlertDialog composition with typed inputs and
 // callbacks. Product validation, submission and recovery are wired by the host.
 
-export { BoardDialog } from "@/ui/board-dialogs/lib/board-dialog";
+export { BoardDialog } from "@/ui/board-dialogs/components/BoardDialog";
 export {
 	boardDialogCopy,
 	buildBoardDialogRequest,
@@ -12,8 +12,8 @@ export {
 	issuesFor,
 	type BoardDialogCopy,
 } from "@/ui/board-dialogs/lib/board-request";
-export { ConfirmDialog } from "@/ui/board-dialogs/lib/confirm-dialog";
-export { ConflictDialog } from "@/ui/board-dialogs/lib/conflict-dialog";
+export { ConfirmDialog } from "@/ui/board-dialogs/components/ConfirmDialog";
+export { ConflictDialog } from "@/ui/board-dialogs/components/ConflictDialog";
 export {
 	describeConflictOutcomes,
 	describeConflictReason,
@@ -34,23 +34,12 @@ export type {
 	ConflictDialogProps,
 	ConflictOutcome,
 	ConflictOutcomeChoice,
-	DialogError,
 	ElsewhereOutcome,
 	InstallLibraryDialogProps,
 	InstallLibraryRequest,
 	LibrarySourceCheck,
 	NoteWrittenElsewhereDialogProps,
-} from "@/ui/board-dialogs/lib/contracts";
-export {
-	BusyText,
-	DialogErrorAlert,
-	Facts,
-	FieldIssues,
-	CANCEL_BUTTON_CLASS,
-	PathValue,
-	Technical,
-	type FactRow,
-} from "@/ui/board-dialogs/lib/dialog-parts";
-export { NoteWrittenElsewhereDialog } from "@/ui/board-dialogs/lib/elsewhere-dialog";
-export { InstallLibraryDialog } from "@/ui/board-dialogs/lib/install-library-dialog";
+} from "@/ui/board-dialogs/types/contracts";
+export { NoteWrittenElsewhereDialog } from "@/ui/board-dialogs/components/NoteWrittenElsewhereDialog";
+export { InstallLibraryDialog } from "@/ui/board-dialogs/components/InstallLibraryDialog";
 export { checkLibrarySource } from "@/ui/board-dialogs/lib/library-source";

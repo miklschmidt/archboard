@@ -7,7 +7,7 @@ import type {
 	RealtimeRecoverableErrorReason,
 	RealtimeState,
 	RealtimeTerminalErrorReason,
-} from "@/ui/codex-realtime/lib/contract";
+} from "@/ui/codex-realtime/types/contract";
 import type {
 	RealtimeMediaEnvironment,
 	RealtimeMediaStream,

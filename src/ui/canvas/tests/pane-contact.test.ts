@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, expect, jest, test } from "
 import { act, renderHook } from "@testing-library/react";
 
 import { CONTACT_LOST_MS } from "@/shared/timing/timing";
-import { reducePaneContact, usePaneContact } from "@/ui/canvas/pane-contact";
+import { reducePaneContact, usePaneContact } from "@/ui/canvas/use-pane-contact";
 
 beforeAll(() => {
 	GlobalRegistrator.register();
