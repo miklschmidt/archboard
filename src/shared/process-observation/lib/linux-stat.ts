@@ -9,22 +9,15 @@ interface LinuxProcessObservation {
 }
 
 /**
- * Whether a number can name a kernel process.
- * @param pid The candidate process id.
- * @returns True for a positive safe integer.
- */
-function positivePid(pid: number): boolean {
-	return Number.isSafeInteger(pid) && pid > 0;
-}
-
-/**
  * Validate the related process identifiers in an observation.
  * @param parentPid The parent id, where zero names no parent.
- * @param pgid The process group id.
+ * @param pgid The process group id, where Linux kernel threads can report zero.
  * @returns True when both values can have come from the kernel.
  */
 function validParentAndGroup(parentPid: number, pgid: number): boolean {
-	return Number.isSafeInteger(parentPid) && parentPid >= 0 && positivePid(pgid);
+	return (
+		Number.isSafeInteger(parentPid) && parentPid >= 0 && Number.isSafeInteger(pgid) && pgid >= 0
+	);
 }
 
 /**
