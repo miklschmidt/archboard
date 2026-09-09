@@ -397,12 +397,18 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	/**
 	 * A socket closed, current or not; the workbench must release it either way.
 	 *
-	 * For a pane that has been disposed this is also the moment its retirement
-	 * became a fact on the server, and the only one. The server drops a pane
-	 * when it receives that socket's close, which is strictly before the close
-	 * this event answers, and it tells the surviving panes nothing. So anything
-	 * that caches what the panes are holding is told here, after the close and
-	 * never before it, rather than guessing from a later report (TASK-167).
+	 * For a pane that has been disposed this is also where its retirement is
+	 * said, because it is the first moment the socket is actually gone. The
+	 * shell learns a pane has left the layout earlier than this — as soon as
+	 * React removes it — and acts on that to re-read the boards it was holding.
+	 * That is not the same fact: `dispose` closes the socket behind the
+	 * workbench's own teardown (`sockets.dispose().finally(connector.close)`),
+	 * so the pane can be out of the layout while its socket is still open and
+	 * still registered on the server, and a read taken then would come back
+	 * saying the pane is on screen. Nothing announces the retirement afterwards
+	 * — the server tells the surviving panes nothing when it drops one — so
+	 * whoever caches what the panes are holding is told here instead, once the
+	 * socket has closed rather than once the layout changed (TASK-167).
 	 * @param socket The socket.
 	 */
 	function socketRetired(socket: WebSocket): void {
