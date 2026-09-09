@@ -3,7 +3,7 @@
 // the snapshot it is given and never opens, claims or writes the board.
 
 import { exportToSvg } from "@excalidraw/excalidraw";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type JSX } from "react";
 
 import {
 	type BoardPreviewCache,
@@ -66,7 +66,7 @@ interface EmptyBoxProps {
  * @param props The label and whether the board is empty.
  * @returns The card.
  */
-function EmptyBox(props: EmptyBoxProps): React.JSX.Element {
+function EmptyBox(props: EmptyBoxProps): JSX.Element {
 	return (
 		<span className={`${CARD_CLASS} ${props.empty ? "dot-grid" : ""}`}>
 			<span className="text-technical text-muted-foreground bg-card absolute bottom-1 left-1 rounded-[2px] px-0.5 font-mono">
@@ -150,7 +150,7 @@ function observeAndExport(element: HTMLElement | null, request: ExportRequest | 
  * @param props The board, its snapshot, the theme, the shared cache and the gate.
  * @returns An image once exported; a bordered box before that or when the board is empty.
  */
-function PreviewCard(props: PreviewCardProps): React.JSX.Element {
+function PreviewCard(props: PreviewCardProps): JSX.Element {
 	const { board, snapshot, theme, cache, gate } = props;
 	const [url, setUrl] = useState<string | null>(null);
 	const hostRef = useRef<HTMLSpanElement | null>(null);

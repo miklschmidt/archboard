@@ -1,7 +1,7 @@
 // The account section: signed in, signed out with a sign-in action, or a
 // login in progress with its page and a cancel.
 
-import { useCallback, useId, useState } from "react";
+import { useCallback, useId, useState, type JSX } from "react";
 
 import type { BrowserAccount, BrowserLogin } from "@/shared/codex-browser-model";
 import type {
@@ -46,7 +46,7 @@ interface SignInFormProps {
  * @param props The busy state and the callback.
  * @returns A select and a button.
  */
-function SignInForm(props: SignInFormProps): React.JSX.Element {
+function SignInForm(props: SignInFormProps): JSX.Element {
 	const id = useId();
 	const { onSignIn } = props;
 	const [variant, setVariant] = useState<LoginVariant>("chatgpt");
@@ -97,7 +97,7 @@ interface PendingLoginProps {
  * @param props The pending login, the busy state and the callback.
  * @returns The line and the button.
  */
-function PendingLoginView(props: PendingLoginProps): React.JSX.Element {
+function PendingLoginView(props: PendingLoginProps): JSX.Element {
 	const { login, onCancelLogin } = props;
 	const handleCancel = useCallback(
 		() => onCancelLogin(login.loginId),
@@ -141,7 +141,7 @@ interface AccountActionProps {
  * @param props The account, the pending login and the callbacks.
  * @returns The action, or nothing.
  */
-function AccountAction(props: AccountActionProps): React.JSX.Element | null {
+function AccountAction(props: AccountActionProps): JSX.Element | null {
 	if (props.pending) {
 		return (
 			<PendingLoginView
@@ -172,7 +172,7 @@ interface AccountSectionProps {
  * @param props The account and login records, the state and the callbacks.
  * @returns The section.
  */
-function AccountSection(props: AccountSectionProps): React.JSX.Element {
+function AccountSection(props: AccountSectionProps): JSX.Element {
 	const summary = describeAccount(props.account);
 	const outcome = describeLoginOutcome(props.login);
 	return (

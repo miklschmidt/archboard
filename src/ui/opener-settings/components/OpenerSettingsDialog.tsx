@@ -1,7 +1,7 @@
 // The opener settings dialog over the real `OpenerSettingsReply`. The form
 // mounts once the reply has arrived, so its draft starts from what is saved.
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type JSX, type RefObject } from "react";
 
 import type { OpenerSettingsReply } from "@/shared/code-target";
 import { Button } from "@/ui/components/button";
@@ -43,7 +43,7 @@ interface EffectiveOpenerProps {
  * @param props The settings reply.
  * @returns One line.
  */
-function EffectiveOpener(props: EffectiveOpenerProps): React.JSX.Element {
+function EffectiveOpener(props: EffectiveOpenerProps): JSX.Element {
 	const { effectiveCommand } = props.settings;
 	return (
 		<p className="text-muted-foreground text-body">
@@ -79,7 +79,7 @@ const FIRST_CONTROL = '[role="radio"][tabindex="0"], [role="radio"], button, inp
  * the person has already moved.
  * @returns The ref for the form's root.
  */
-function useFirstControlFocus(): React.RefObject<HTMLDivElement | null> {
+function useFirstControlFocus(): RefObject<HTMLDivElement | null> {
 	const root = useRef<HTMLDivElement | null>(null);
 	useEffect(() => {
 		// One frame later: the radio group marks its chosen item after mounting.
@@ -138,7 +138,7 @@ interface OpenerSettingsFormProps {
  * @param props The settings reply and the dialog's props.
  * @returns The form body and footer.
  */
-function OpenerSettingsForm(props: OpenerSettingsFormProps): React.JSX.Element {
+function OpenerSettingsForm(props: OpenerSettingsFormProps): JSX.Element {
 	const { settings, dialog } = props;
 	const { busy } = dialog;
 	const [choice, setChoice] = useState<OpenerChoice>(() => choiceOfSelection(settings.selection));
@@ -215,7 +215,7 @@ function OpenerSettingsForm(props: OpenerSettingsFormProps): React.JSX.Element {
  * @param props The reply, the state and the callbacks.
  * @returns The dialog.
  */
-function OpenerSettingsDialog(props: OpenerSettingsDialogProps): React.JSX.Element {
+function OpenerSettingsDialog(props: OpenerSettingsDialogProps): JSX.Element {
 	const { settings } = props;
 	return (
 		<Dialog open={props.open} onOpenChange={props.onOpenChange}>

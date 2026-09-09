@@ -4,7 +4,14 @@
 // between its rows (`roving-list.ts`), Enter and Space open a row.
 
 import { RiAddLine, RiArrowDownSLine, RiRefreshLine } from "@remixicon/react";
-import { useCallback, useMemo, useState } from "react";
+import {
+	useCallback,
+	useMemo,
+	useState,
+	type ComponentPropsWithRef,
+	type JSX,
+	type KeyboardEvent,
+} from "react";
 
 import { Button } from "@/ui/components/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/components/collapsible";
@@ -79,7 +86,7 @@ function activityLabel(activity: AgentActivityEntry): string {
  * @param props The entry.
  * @returns The marker, or nothing while no agent is on the board.
  */
-function ActivityMarker(props: EntryMarkersProps): React.JSX.Element | null {
+function ActivityMarker(props: EntryMarkersProps): JSX.Element | null {
 	const { activity } = props.entry;
 	if (activity === null) {
 		return null;
@@ -103,7 +110,7 @@ function ActivityMarker(props: EntryMarkersProps): React.JSX.Element | null {
  * @param props The entry.
  * @returns The line, or nothing while nothing was said.
  */
-function DoingLine(props: EntryMarkersProps): React.JSX.Element | null {
+function DoingLine(props: EntryMarkersProps): JSX.Element | null {
 	const doing = props.entry.activity?.doing ?? null;
 	if (doing === null) {
 		return null;
@@ -123,7 +130,7 @@ function DoingLine(props: EntryMarkersProps): React.JSX.Element | null {
  * @param props The entry.
  * @returns The markers, or nothing when the entry is plain.
  */
-function EntryMarkers(props: EntryMarkersProps): React.JSX.Element | null {
+function EntryMarkers(props: EntryMarkersProps): JSX.Element | null {
 	const { draft, onScreen, activity } = props.entry;
 	if (!draft && onScreen === null && activity === null) {
 		return null;
@@ -156,7 +163,7 @@ interface NeedsNameProps extends RovingItemProps {
  * @param props The entry key, the actions and its place in the roving list.
  * @returns A chip-sized button.
  */
-function NeedsName(props: NeedsNameProps): React.JSX.Element {
+function NeedsName(props: NeedsNameProps): JSX.Element {
 	const { entryKey, actions } = props;
 	const handleClick = useCallback(() => actions.nameBoard(entryKey), [actions, entryKey]);
 	return (
@@ -187,7 +194,7 @@ interface VariantRowProps extends SelectableProps, RovingItemProps {
  * @param props The merged props Base UI hands to the rendered element.
  * @returns A plain button.
  */
-function renderButton(props: React.ComponentPropsWithRef<"button">): React.JSX.Element {
+function renderButton(props: ComponentPropsWithRef<"button">): JSX.Element {
 	return <button type="button" {...props} />;
 }
 
@@ -197,7 +204,7 @@ function renderButton(props: React.ComponentPropsWithRef<"button">): React.JSX.E
  * @param props The entry, its label, the selected key, the actions and its roving place.
  * @returns The sub-menu row.
  */
-function VariantRow(props: VariantRowProps): React.JSX.Element {
+function VariantRow(props: VariantRowProps): JSX.Element {
 	const { entry, actions } = props;
 	const selected = entry.key === props.selectedKey;
 	const handleClick = useCallback(() => actions.selectBoard(entry.key), [actions, entry.key]);
@@ -233,7 +240,7 @@ function VariantRow(props: VariantRowProps): React.JSX.Element {
  * @param props The merged props Base UI hands to the rendered element.
  * @returns The trigger element.
  */
-function renderCollapsibleTrigger(props: React.ComponentPropsWithRef<"button">): React.JSX.Element {
+function renderCollapsibleTrigger(props: ComponentPropsWithRef<"button">): JSX.Element {
 	return <CollapsibleTrigger {...props} />;
 }
 
@@ -250,11 +257,11 @@ interface BoardGroupProps extends SelectableProps {
  * @param props The group, the selected key, the actions and the list.
  * @returns The group as a menu item.
  */
-function BoardGroup(props: BoardGroupProps): React.JSX.Element {
+function BoardGroup(props: BoardGroupProps): JSX.Element {
 	const { group, list } = props;
 	const [open, setOpen] = useState(true);
 	const groupId = `group:${group.board}`;
-	const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLButtonElement>) => {
+	const handleKeyDown = useCallback((event: KeyboardEvent<HTMLButtonElement>) => {
 		if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
 			event.preventDefault();
 			setOpen(event.key === "ArrowRight");
@@ -316,7 +323,7 @@ interface ScratchGroupProps extends SelectableProps {
  * @param props The entries, the selected key and the actions.
  * @returns The group, or nothing when there is no scratch board.
  */
-function ScratchGroup(props: ScratchGroupProps): React.JSX.Element | null {
+function ScratchGroup(props: ScratchGroupProps): JSX.Element | null {
 	const ids = useMemo(() => rowIds(props.entries), [props.entries]);
 	const list = useRovingList(ids);
 	if (props.entries.length === 0) {
@@ -366,7 +373,7 @@ interface ListingStateProps {
  * with the words for assistive technology.
  * @returns The skeleton.
  */
-function ListingSkeleton(): React.JSX.Element {
+function ListingSkeleton(): JSX.Element {
 	return (
 		<div aria-busy="true" className="flex flex-col gap-3 px-2 py-1">
 			<p aria-live="polite" className="sr-only">
@@ -389,7 +396,7 @@ function ListingSkeleton(): React.JSX.Element {
  * @param props The listing state and the actions.
  * @returns One line, or nothing while boards are listed.
  */
-function ListingState(props: ListingStateProps): React.JSX.Element | null {
+function ListingState(props: ListingStateProps): JSX.Element | null {
 	const { actions } = props;
 	const handleNew = useCallback(() => actions.createBoard(), [actions]);
 	if (props.error !== null) {
@@ -434,7 +441,7 @@ interface RefreshActionProps {
  * @param props The actions.
  * @returns The group action with its tooltip.
  */
-function RefreshAction(props: RefreshActionProps): React.JSX.Element {
+function RefreshAction(props: RefreshActionProps): JSX.Element {
 	const { actions } = props;
 	const handleRefresh = useCallback(() => actions.refreshBoards(), [actions]);
 	return (
@@ -457,7 +464,7 @@ function RefreshAction(props: RefreshActionProps): React.JSX.Element {
  * @param props The merged props Base UI hands to the rendered element.
  * @returns The group action.
  */
-function renderGroupAction(props: React.ComponentPropsWithRef<"button">): React.JSX.Element {
+function renderGroupAction(props: ComponentPropsWithRef<"button">): JSX.Element {
 	return <SidebarGroupAction {...props} />;
 }
 
@@ -466,7 +473,7 @@ function renderGroupAction(props: React.ComponentPropsWithRef<"button">): React.
  * @param props The groups, the error, the selected key and the actions.
  * @returns The group.
  */
-function BoardsGroup(props: BoardsGroupProps): React.JSX.Element {
+function BoardsGroup(props: BoardsGroupProps): JSX.Element {
 	const { actions, groups } = props;
 	const ids = useMemo(
 		() => groups.flatMap((group) => [`group:${group.board}`, ...rowIds(group.variants)]),
@@ -510,7 +517,7 @@ interface NavigatorProps {
  * @param props The shell view and actions.
  * @returns The sidebar.
  */
-function Navigator(props: NavigatorProps): React.JSX.Element {
+function Navigator(props: NavigatorProps): JSX.Element {
 	const { view, actions } = props;
 	const handleNew = useCallback(() => actions.createBoard(), [actions]);
 	return (

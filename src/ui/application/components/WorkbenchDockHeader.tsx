@@ -1,6 +1,6 @@
 // The dock header's compact controls over the focused pane's owners.
 
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type JSX } from "react";
 
 import { useVoiceView } from "@/ui/application/hooks/use-voice-view";
 import type { WorkbenchFrameProps } from "@/ui/application/types/workbench-frame";
@@ -12,7 +12,7 @@ import { sessionView } from "@/ui/workbench-runtime";
  * @param props The owners and the motion preference.
  * @returns The controls.
  */
-function WorkbenchDockHeader(props: WorkbenchFrameProps): React.JSX.Element {
+function WorkbenchDockHeader(props: WorkbenchFrameProps): JSX.Element {
 	const { owners } = props;
 	const { transport } = owners;
 	const state = useSyncExternalStore(transport.subscribe, transport.state, transport.state);

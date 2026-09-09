@@ -3,7 +3,7 @@
 // resolver-lost states shown plainly, and the spoken approval line on top.
 
 import { cn } from "cn";
-import { useCallback } from "react";
+import { useCallback, type JSX } from "react";
 
 import type {
 	BrowserApproval,
@@ -40,7 +40,7 @@ interface DecisionButtonProps {
  * @param props The option and the callback.
  * @returns The button.
  */
-function DecisionButton(props: DecisionButtonProps): React.JSX.Element {
+function DecisionButton(props: DecisionButtonProps): JSX.Element {
 	const { option, onChoose } = props;
 	const handleClick = useCallback(() => onChoose(option.choice), [onChoose, option.choice]);
 	return (
@@ -75,7 +75,7 @@ const PHASE_DOT: Record<ApprovalCard["phase"], string> = {
  * @param props The card and the decision callback.
  * @returns An article.
  */
-function Card(props: CardProps): React.JSX.Element {
+function Card(props: CardProps): JSX.Element {
 	const { card } = props;
 	const open = card.phase === "pending" || card.phase === "busy";
 	return (
@@ -151,7 +151,7 @@ interface ApprovalItemProps {
  * @param props The approval, its busy state, and the callback.
  * @returns The card.
  */
-function ApprovalItem(props: ApprovalItemProps): React.JSX.Element {
+function ApprovalItem(props: ApprovalItemProps): JSX.Element {
 	const { approval, respond } = props;
 	const handleChoose = useCallback(
 		(choice: ApprovalChoice) => respond(approval, choice),
@@ -179,7 +179,7 @@ interface DynamicApprovalItemProps {
  * @param props The approval, its busy state, and the callback.
  * @returns The card.
  */
-function DynamicApprovalItem(props: DynamicApprovalItemProps): React.JSX.Element {
+function DynamicApprovalItem(props: DynamicApprovalItemProps): JSX.Element {
 	const { approval, respond } = props;
 	const handleChoose = useCallback(
 		(choice: ApprovalChoice) =>
@@ -200,7 +200,7 @@ function DynamicApprovalItem(props: DynamicApprovalItemProps): React.JSX.Element
  * @param props The snapshot, the busy keys, and the actions.
  * @returns The spoken line and the cards, or an empty state.
  */
-function ApprovalsPanel(props: ApprovalsPanelProps): React.JSX.Element {
+function ApprovalsPanel(props: ApprovalsPanelProps): JSX.Element {
 	const { snapshot, actions } = props;
 	const busy = new Set(props.busyApprovals);
 	const spoken = spokenApprovalLine(snapshot.spokenApproval);

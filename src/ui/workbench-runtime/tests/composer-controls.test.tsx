@@ -6,7 +6,7 @@
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { act, createElement } from "react";
+import { act, createElement, type JSX } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 import {
@@ -59,7 +59,7 @@ async function mountThread(transport: MutableTransport): Promise<Mounted> {
 	 * @param context What the provider rendered with.
 	 * @returns The thread.
 	 */
-	const render = (context: WorkbenchRuntimeRenderContext): React.JSX.Element => {
+	const render = (context: WorkbenchRuntimeRenderContext): JSX.Element => {
 		contexts.push(context);
 		return createElement(Thread);
 	};

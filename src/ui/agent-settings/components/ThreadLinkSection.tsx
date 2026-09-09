@@ -1,7 +1,7 @@
 // The explicit thread link: what the pane is bound to, the candidates it
 // could bind instead, and the link and unlink actions.
 
-import { useCallback, useId, useState } from "react";
+import { useCallback, useId, useState, type JSX } from "react";
 
 import type {
 	BrowserThreadCandidate,
@@ -39,7 +39,7 @@ interface CandidateOptionProps {
  * @param props The candidate.
  * @returns A horizontal field.
  */
-function CandidateOption(props: CandidateOptionProps): React.JSX.Element {
+function CandidateOption(props: CandidateOptionProps): JSX.Element {
 	const id = useId();
 	const { candidate } = props;
 	return (
@@ -68,7 +68,7 @@ interface CandidateListProps {
  * @param props The candidates, the chosen one and the change handler.
  * @returns A radio group, or one line.
  */
-function CandidateList(props: CandidateListProps): React.JSX.Element {
+function CandidateList(props: CandidateListProps): JSX.Element {
 	const { candidates, onSelect } = props;
 	const handleChange = useCallback((value: string) => onSelect(value), [onSelect]);
 	if (candidates.state === "unavailable") {
@@ -113,7 +113,7 @@ interface ThreadLinkSectionProps {
  * @param props The link and candidate records, the state and the callbacks.
  * @returns The section.
  */
-function ThreadLinkSection(props: ThreadLinkSectionProps): React.JSX.Element {
+function ThreadLinkSection(props: ThreadLinkSectionProps): JSX.Element {
 	const { threadLink, onLinkThread } = props;
 	const [selectionId, setSelectionId] = useState<string | null>(null);
 	const anyBusy = props.busy.link || props.busy.unlink;

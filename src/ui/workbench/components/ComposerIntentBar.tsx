@@ -6,7 +6,7 @@
 // hands the values down through a context so the official thread file only
 // renders a slot.
 
-import { createContext, useCallback, useContext, useMemo } from "react";
+import { createContext, useCallback, useContext, useMemo, type JSX } from "react";
 
 import { Checkbox } from "@/ui/components/checkbox";
 import { Label } from "@/ui/components/label";
@@ -48,7 +48,7 @@ function intentFrom(value: unknown): ComposerIntent | null {
  * @param props The composer view, the active turn, and the actions.
  * @returns The row.
  */
-function ComposerIntentBar(props: ComposerIntentBarProps): React.JSX.Element {
+function ComposerIntentBar(props: ComposerIntentBarProps): JSX.Element {
 	const { composer, actions } = props;
 	const running = props.activeTurnId !== null;
 	const intent: ComposerIntent = running ? composer.intent : "send";
@@ -114,7 +114,7 @@ function ComposerIntentBar(props: ComposerIntentBarProps): React.JSX.Element {
  * the workbench provides.
  * @returns The row, or nothing outside the workbench.
  */
-function ComposerIntentFooter(): React.JSX.Element | null {
+function ComposerIntentFooter(): JSX.Element | null {
 	const value = useContext(ComposerIntentContext);
 	return value === null ? null : <ComposerIntentBar {...value} />;
 }

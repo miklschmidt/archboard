@@ -7,6 +7,7 @@
 
 import { RiMicLine, RiMicOffLine, RiPlayLine, RiRestartLine, RiStopLine } from "@remixicon/react";
 import { cn } from "cn";
+import type { JSX } from "react";
 
 import { buttonVariants } from "@/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
@@ -24,7 +25,7 @@ interface VoiceControlsProps {
 /** One control's label, icon, tone and callback. */
 interface ControlSpec {
 	label: string;
-	icon: React.JSX.Element;
+	icon: JSX.Element;
 	variant: "default" | "outline" | "ghost";
 	availability: ControlAvailability;
 	onClick: () => void;
@@ -90,7 +91,7 @@ interface IconControlProps {
  * @param props The control spec.
  * @returns The button, or nothing when the control is hidden.
  */
-function IconControl(props: IconControlProps): React.JSX.Element | null {
+function IconControl(props: IconControlProps): JSX.Element | null {
 	const { spec } = props;
 	if (!spec.availability.shown) {
 		return null;
@@ -152,7 +153,7 @@ function dotTone(live: boolean, failed: boolean): string {
  * @param props The view.
  * @returns The dot and the live-announced words.
  */
-function StateText(props: StateTextProps): React.JSX.Element {
+function StateText(props: StateTextProps): JSX.Element {
 	const { stateText, live } = voiceControlsAvailability(props.view);
 	const failed = props.view.failure !== null;
 	return (
@@ -178,7 +179,7 @@ function StateText(props: StateTextProps): React.JSX.Element {
  * @param props The view, the callbacks and an optional class.
  * @returns A toolbar of icon controls.
  */
-function VoiceControlsCompact(props: VoiceControlsProps): React.JSX.Element {
+function VoiceControlsCompact(props: VoiceControlsProps): JSX.Element {
 	const specs = controlSpecs(props.view, props.actions);
 	const { stateText } = voiceControlsAvailability(props.view);
 	return (
@@ -199,7 +200,7 @@ function VoiceControlsCompact(props: VoiceControlsProps): React.JSX.Element {
  * @param props The view, the callbacks and an optional class.
  * @returns The state line and a toolbar of controls.
  */
-function VoiceControls(props: VoiceControlsProps): React.JSX.Element {
+function VoiceControls(props: VoiceControlsProps): JSX.Element {
 	const specs = controlSpecs(props.view, props.actions);
 	return (
 		<div

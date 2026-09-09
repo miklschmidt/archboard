@@ -1,6 +1,7 @@
 // What the last opener test answered.
 
 import { RiCheckLine, RiErrorWarningLine } from "@remixicon/react";
+import type { JSX } from "react";
 
 import type { CodeTargetOpenFailure } from "@/shared/code-target";
 import { Alert, AlertDescription, AlertTitle } from "@/ui/components/alert";
@@ -18,7 +19,7 @@ interface TestResultAlertProps {
  * @param props The result, or null.
  * @returns An alert, or nothing.
  */
-function TestResultAlert(props: TestResultAlertProps): React.JSX.Element | null {
+function TestResultAlert(props: TestResultAlertProps): JSX.Element | null {
 	const { result } = props;
 	if (!result) {
 		return null;
@@ -59,7 +60,7 @@ interface FailureActionsProps {
  * @param props The failure's actions.
  * @returns The links, or nothing.
  */
-function FailureActions(props: FailureActionsProps): React.JSX.Element | null {
+function FailureActions(props: FailureActionsProps): JSX.Element | null {
 	const links = (props.actions ?? []).filter((action) => action.kind === "github");
 	if (links.length === 0) {
 		return null;

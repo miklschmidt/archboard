@@ -1,6 +1,6 @@
 // The validation messages under one dialog field.
 
-import { useMemo } from "react";
+import { useMemo, type JSX } from "react";
 
 import { FieldError } from "@/ui/components/field";
 
@@ -14,7 +14,7 @@ interface FieldIssuesProps {
  * @param props The messages.
  * @returns The field error, which renders nothing when there is none.
  */
-function FieldIssues(props: FieldIssuesProps): React.JSX.Element {
+function FieldIssues(props: FieldIssuesProps): JSX.Element {
 	const { messages } = props;
 	const errors = useMemo(() => messages.map((message) => ({ message })), [messages]);
 	return <FieldError errors={errors} />;

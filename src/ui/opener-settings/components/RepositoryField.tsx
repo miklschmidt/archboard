@@ -1,6 +1,6 @@
 // The registered checkout an opener test opens.
 
-import { useCallback, useId } from "react";
+import { useCallback, useId, type JSX } from "react";
 
 import type { OpenerSettingsReply } from "@/shared/code-target";
 import { Badge } from "@/ui/components/badge";
@@ -29,7 +29,7 @@ interface RepositoryFieldProps {
  * @param props The checkouts, the chosen one and the change handler.
  * @returns The field.
  */
-function RepositoryField(props: RepositoryFieldProps): React.JSX.Element {
+function RepositoryField(props: RepositoryFieldProps): JSX.Element {
 	const id = useId();
 	const { onChange } = props;
 	const handleChange = useCallback((value: string | null) => onChange(value), [onChange]);
@@ -68,7 +68,7 @@ interface RepositoryItemProps {
  * @param props The checkout.
  * @returns A select item.
  */
-function RepositoryItem(props: RepositoryItemProps): React.JSX.Element {
+function RepositoryItem(props: RepositoryItemProps): JSX.Element {
 	const { checkout } = props;
 	return (
 		<SelectItem value={checkout.repository}>

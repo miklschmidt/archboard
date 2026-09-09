@@ -1,5 +1,7 @@
 // A long path, shown by the name a person knows it by and then in full.
 
+import type { JSX } from "react";
+
 /** Inputs for a path value. */
 interface PathValueProps {
 	path: string;
@@ -11,7 +13,7 @@ interface PathValueProps {
  * @param props The path.
  * @returns The named path.
  */
-function PathValue(props: PathValueProps): React.JSX.Element {
+function PathValue(props: PathValueProps): JSX.Element {
 	const { path } = props;
 	return (
 		<span title={path} className="text-technical inline-flex min-w-0 flex-col font-mono">

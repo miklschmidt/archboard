@@ -1,5 +1,7 @@
 // What the person sees when the presented pane has lost its connection.
 
+import type { JSX } from "react";
+
 /** Inputs for the recovery message. */
 interface RecoveryMessageProps {
 	message: string;
@@ -10,7 +12,7 @@ interface RecoveryMessageProps {
  * @param props The plain message.
  * @returns The message, centred where the canvas was.
  */
-function RecoveryMessage(props: RecoveryMessageProps): React.JSX.Element {
+function RecoveryMessage(props: RecoveryMessageProps): JSX.Element {
 	return (
 		<section
 			aria-label="Presentation recovery"

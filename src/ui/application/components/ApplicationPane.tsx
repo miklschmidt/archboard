@@ -2,7 +2,7 @@
 // render is not a pane report, and the canvas bound to them. The workbench
 // rides the pane's socket through one socket owner per pane.
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 
 import type { PaneHandles } from "@/ui/application/lib/pane-handles";
 import type { PaneHost } from "@/ui/application/hooks/use-panes";
@@ -71,7 +71,7 @@ function optionsFor(
  * @param props The pane's identity, facets, theme, host and handles.
  * @returns The mounted canvas.
  */
-function ApplicationPane(props: ApplicationPaneProps): React.JSX.Element {
+function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	const { paneId, primary, focused, theme, host, handles } = props;
 	const onBoardError = useCallback(
 		(error: string): void => host.onBoardError(paneId, error),

@@ -4,7 +4,7 @@
 // the right. The shell mounts this into its dock; the runtime adapter wraps it
 // in the assistant-ui runtime provider and supplies the view.
 
-import { useMemo } from "react";
+import { useMemo, type JSX } from "react";
 
 import type { WorkbenchActions, WorkbenchView } from "@/ui/workbench/contracts";
 import {
@@ -32,7 +32,7 @@ const THREAD_COMPONENTS: ThreadComponents = { ComposerFooter: ComposerIntentFoot
  * @param props The view and the actions.
  * @returns The dock body.
  */
-function Workbench(props: WorkbenchProps): React.JSX.Element {
+function Workbench(props: WorkbenchProps): JSX.Element {
 	const { view, actions } = props;
 	const { session } = view;
 	const snapshot = session.kind === "ready" ? session.snapshot : null;

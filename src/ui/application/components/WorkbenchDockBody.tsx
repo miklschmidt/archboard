@@ -1,6 +1,8 @@
 // The dock body: the one runtime over the focused pane's transport, rendering
 // the workbench.
 
+import type { JSX } from "react";
+
 import { WorkbenchRenderer } from "@/ui/application/components/WorkbenchRenderer";
 import { useVoiceView } from "@/ui/application/hooks/use-voice-view";
 import {
@@ -15,7 +17,7 @@ import { WorkbenchRuntimeProvider } from "@/ui/workbench-runtime";
  * @param props The owners, the motion preference and the activity.
  * @returns The provider around the renderer.
  */
-function WorkbenchDockBody(props: WorkbenchDockBodyProps): React.JSX.Element {
+function WorkbenchDockBody(props: WorkbenchDockBodyProps): JSX.Element {
 	const { owners } = props;
 	const voice = useVoiceView(owners);
 	return (

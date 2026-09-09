@@ -4,6 +4,7 @@
 // action has one, sits in the tooltip as a key cap and in the name as words.
 
 import { cn } from "cn";
+import type { JSX, ReactNode } from "react";
 
 import { buttonVariants } from "@/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
@@ -28,7 +29,7 @@ interface IconButtonProps {
 	id?: string | undefined;
 	className?: string | undefined;
 	/** The icon. */
-	children: React.ReactNode;
+	children: ReactNode;
 }
 
 /**
@@ -45,7 +46,7 @@ function keyShortcuts(shortcut: string | undefined): string | undefined {
  * @param props The label, the optional shortcut, the state and the icon.
  * @returns The tooltip-wrapped button.
  */
-function IconButton(props: IconButtonProps): React.JSX.Element {
+function IconButton(props: IconButtonProps): JSX.Element {
 	const { label, shortcut } = props;
 	return (
 		<Tooltip>

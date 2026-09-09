@@ -3,7 +3,7 @@
 // one identity across renders. The recent activity travels the same way: the
 // shell renders it, the application hands it in, the workbench places it.
 
-import { createContext } from "react";
+import { createContext, type ReactNode } from "react";
 
 import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 
@@ -11,6 +11,6 @@ import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 const WorkbenchOwnersContext = createContext<WorkbenchOwners | null>(null);
 
 /** The recent `doing` lines of the pane the workbench rides, already rendered. */
-const WorkbenchActivityContext = createContext<React.ReactNode>(null);
+const WorkbenchActivityContext = createContext<ReactNode>(null);
 
 export { WorkbenchActivityContext, WorkbenchOwnersContext };

@@ -1,6 +1,8 @@
 // A destructive confirmation: clear the board, close a pane holding work.
 // An alert dialog, so Escape and the backdrop cannot dismiss it by accident.
 
+import type { JSX } from "react";
+
 import type { ConfirmDialogProps } from "@/ui/board-dialogs/types/contracts";
 import {
 	AlertDialog,
@@ -19,7 +21,7 @@ import { BusyText, DialogErrorAlert } from "@/ui/dialog-parts";
  * @param props The words, the state and the callbacks.
  * @returns The alert dialog.
  */
-function ConfirmDialog(props: ConfirmDialogProps): React.JSX.Element {
+function ConfirmDialog(props: ConfirmDialogProps): JSX.Element {
 	const cancelLabel = props.cancelLabel ?? "Cancel";
 	return (
 		<AlertDialog open={props.open} onOpenChange={props.onOpenChange}>
