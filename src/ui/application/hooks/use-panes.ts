@@ -15,6 +15,7 @@ import {
 } from "@/ui/application/note-recovery";
 import {
 	addPane,
+	canClosePane,
 	closePane,
 	initialPaneList,
 	selectPane,
@@ -43,8 +44,11 @@ import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 interface PaneEvents {
 	readonly onBoardError: (paneId: string, error: string) => void;
 	readonly onBoardLinkError: (error: string) => void;
-	/** A pane followed a board link: the person moved it (TASK-166). */
-	readonly onBoardOpenRequested: (paneId: string, boardKey: string) => void;
+	/**
+	 * A pane is following a board link; whether it may move is one rule for
+	 * every surface (TASK-166).
+	 */
+	readonly onBoardOpenRequested: (paneId: string, boardKey: string) => boolean;
 	/** Which boards an agent is working on, across the server (ADR 0022). */
 	readonly onAgentActivity: (activity: readonly AgentActivityEntry[]) => void;
 	/** A pane withdrew the person's unwritten edit and shows the note's state (ADR 0022). */
@@ -264,13 +268,13 @@ function createPaneHost(setters: HostSetters): PaneHost {
 			events.read().onBoardLinkError(error);
 		},
 		/**
-		 * A pane followed a board link.
+		 * A pane is following a board link.
 		 * @param paneId The pane.
 		 * @param boardKey The board the person asked for.
+		 * @returns Whether the pane may move.
 		 */
-		onBoardOpenRequested: (paneId: string, boardKey: string): void => {
-			events.read().onBoardOpenRequested(paneId, boardKey);
-		},
+		onBoardOpenRequested: (paneId: string, boardKey: string): boolean =>
+			events.read().onBoardOpenRequested(paneId, boardKey),
 		/**
 		 * This tab runs a bundle the canvas no longer serves.
 		 * @param message What the server said.
@@ -350,13 +354,19 @@ function usePanes(initial: () => PaneList = initialPaneList): Panes {
 		setRecords((current) => patchRecord(current, paneId, next));
 	}, []);
 	const add = useCallback((): void => setList(addPane), []);
+	// A close the list refuses — the last pane, or one that is not open — leaves
+	// the pane running, so its record and its unanswered note states have to stay
+	// with it. Only a close that happens forgets anything.
 	const close = useCallback(
 		(paneId: string): void => {
+			if (!canClosePane(list, paneId)) {
+				return;
+			}
 			setList((current) => closePane(current, paneId));
 			setRecords((current) => dropRecord(current, paneId));
 			recovery.forget(paneId);
 		},
-		[recovery],
+		[list, recovery],
 	);
 	const select = useCallback(
 		(paneId: string): void => {

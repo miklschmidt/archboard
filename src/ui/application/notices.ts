@@ -166,9 +166,22 @@ function noteNotices(list: PaneList, records: PaneRecords): readonly ShellNotice
 }
 
 /**
+ * Why a pane kept its board, said the same way wherever the person asked
+ * (TASK-166): the shell's notice, and the dialog they were typing into.
+ * @param paneId The pane that refused.
+ * @param reason Why: a board that has stopped saving, or an edit still in flight.
+ * @returns The words.
+ */
+function navigationBlockReason(paneId: string, reason: "pending" | "hold"): string {
+	return reason === "hold"
+		? `That board has stopped saving, so its changes exist only on pane ${paneId}. Choose what happens to them, then open the other board.`
+		: `Pane ${paneId} has a change the canvas has not taken yet. Try again in a moment.`;
+}
+
+/**
  * A navigation was refused because a pane would have lost work that is only on
  * its canvas (TASK-166). The workspace and the address bar both stayed as they
- * were; the pane's own recovery is the way on.
+ * were; the pane’s own recovery is the way on.
  * @param paneId The pane that refused.
  * @param reason Why: a board that has stopped saving, or an edit still in flight.
  * @returns The notice.
@@ -176,11 +189,8 @@ function noteNotices(list: PaneList, records: PaneRecords): readonly ShellNotice
 function navigationBlockedNotice(paneId: string, reason: "pending" | "hold"): ShellNotice {
 	return {
 		id: "navigation-blocked",
-		title: "Pane " + paneId + " kept its board",
-		description:
-			reason === "hold"
-				? `That board has stopped saving, so its changes exist only on pane ${paneId}. Choose what happens to them, then open the other board.`
-				: `Pane ${paneId} has a change the canvas has not taken yet. Try again in a moment.`,
+		title: `Pane ${paneId} kept its board`,
+		description: navigationBlockReason(paneId, reason),
 		tone: "destructive",
 		actions:
 			reason === "hold"
@@ -263,6 +273,7 @@ export {
 	failureNotice,
 	holdNotice,
 	infoNotice,
+	navigationBlockReason,
 	navigationBlockedNotice,
 	noteNotices,
 	presentationNotice,

@@ -18,6 +18,36 @@ import { move } from "./support/hold-page-scene.ts";
 import { serverPath, type PanesBody } from "./support/navigator-support.ts";
 import { clickNavigatorRow, shellNotices } from "./support/shell-dom.ts";
 
+/** The board dialog's name field, which is how a submission is reached. */
+const BOARD_NAME_INPUT = '[role="dialog"] input[placeholder="Board name"]';
+
+/**
+ * Everything an open dialog is saying.
+ * @param browser The page.
+ * @returns The words of each alert inside the dialog.
+ */
+const dialogAlerts = (browser: AgentBrowserSession): Promise<string[]> =>
+	browser.eval<string[]>(
+		`[...document.querySelectorAll('[role="dialog"] [data-slot="alert"]')].map((alert) => alert.textContent ?? "")`,
+	);
+
+/**
+ * Type a board name into the open board dialog and submit it.
+ * @param browser The page.
+ * @param boardKey The board to ask for.
+ */
+async function submitBoardDialog(browser: AgentBrowserSession, boardKey: string): Promise<void> {
+	await browser.run(["find", "role", "button", "click", "--name", "Open", "--exact"]);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('${BOARD_NAME_INPUT}') !== null`),
+		(open) => open,
+		"the board dialog to open",
+	);
+	await browser.eval(`document.querySelector('${BOARD_NAME_INPUT}')?.focus()`);
+	await browser.run(["keyboard", "type", boardKey]);
+	await browser.run(["press", "Enter"]);
+}
+
 /**
  * The search parameters the address bar is showing.
  * @param browser The page.
@@ -77,8 +107,8 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 	cli("board", "new", "payments");
 	cli("board", "new", "billing");
 	cli("board", "new", "ledger");
-	const paymentsBox = add("payments", "Payments");
-	add("billing", "Billing");
+	add("payments", "Payments");
+	const billingBox = add("billing", "Billing");
 	add("ledger", "Ledger");
 
 	const browser = resources.use(await createAgentBrowser());
@@ -137,23 +167,36 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 
 	// A board whose canvas holds work the note has not got keeps its board, and
 	// says so, rather than losing that work to a history navigation (ADR 0006).
-	appendFileSync(join(vault, "payments.excalidraw.md"), "\nedited elsewhere\n");
-	await move(browser, paymentsBox, 40, 24);
+	appendFileSync(join(vault, "billing.excalidraw.md"), "\nedited elsewhere\n");
+	await move(browser, billingBox, 40, 24);
 	await pollUntil(
 		() => shellNotices(browser),
 		(notices) => notices.some((notice) => notice.title.includes("has stopped saving")),
-		"pane A's board to stop saving",
+		"the active pane's board to stop saving",
 	);
 	const held = await addressSearch(browser);
 	await browser.eval("window.history.back()");
 	await pollUntil(
 		() => shellNotices(browser),
-		(notices) => notices.some((notice) => notice.title === "Pane A kept its board"),
+		(notices) => notices.some((notice) => notice.title === "Pane B kept its board"),
 		"a refused navigation to say which pane kept its board",
 	);
 	expect(await addressSearch(browser)).toBe(held);
 	const refused = await panes();
-	expect(refused.panes.find((pane) => pane.clientId === paneA.clientId)?.board).toBe("payments");
+	expect(refused.panes.find((pane) => pane.clientId === paneB.clientId)?.board).toBe("billing");
+
+	// The same rule answers the board dialog, asked of the pane as it is when
+	// the person submits rather than as it was when they opened the dialog.
+	await submitBoardDialog(browser, "ledger");
+	await pollUntil(
+		() => dialogAlerts(browser),
+		(alerts) => alerts.some((words) => words.includes("stopped saving")),
+		"the dialog to say why the pane kept its board",
+	);
+	const afterDialog = await panes();
+	expect(afterDialog.panes.find((pane) => pane.clientId === paneA.clientId)?.board).toBe(
+		"payments",
+	);
 	await canvas.assertRunning();
 }, 30_000);
 

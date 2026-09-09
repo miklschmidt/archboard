@@ -210,10 +210,10 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 				/**
 				 * The person followed a board link from this pane.
 				 * @param key The board they asked for.
+				 * @returns Whether this pane may move; a shell that says nothing allows it.
 				 */
-				onBoardOpenRequested: (key: string): void => {
-					box.options.onBoardOpenRequested?.(paneId, key);
-				},
+				onBoardOpenRequested: (key: string): boolean =>
+					box.options.onBoardOpenRequested?.(paneId, key) ?? true,
 			}),
 		[box, clientId, onFailure, paneId, state.boardKey],
 	);
