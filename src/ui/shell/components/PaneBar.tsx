@@ -3,7 +3,7 @@
 // two-pixel cobalt rule along its bottom edge; nothing else is drawn.
 
 import { RiAddLine, RiCloseLine, RiFullscreenLine } from "@remixicon/react";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 
 import { ToggleGroup, ToggleGroupItem } from "@/ui/components/toggle-group";
 import type { ShellActions, ShellPane } from "@/ui/shell/types/contracts";
@@ -35,7 +35,7 @@ interface PaneStatusLineProps {
  * @param props The pane.
  * @returns The status line.
  */
-function PaneStatusLine(props: PaneStatusLineProps): React.JSX.Element {
+function PaneStatusLine(props: PaneStatusLineProps): JSX.Element {
 	const { status } = props.pane;
 	return (
 		<span className="text-technical text-muted-foreground flex items-center gap-1.5 font-normal">
@@ -71,7 +71,7 @@ interface PaneControlsProps {
  * @param props The active pane, the pane count and the actions.
  * @returns Three icon controls.
  */
-function PaneControls(props: PaneControlsProps): React.JSX.Element {
+function PaneControls(props: PaneControlsProps): JSX.Element {
 	const { activePaneId, paneCount, actions } = props;
 	const handleAdd = useCallback(() => actions.addPane(), [actions]);
 	const handleClose = useCallback(() => actions.closePane(activePaneId), [actions, activePaneId]);
@@ -116,7 +116,7 @@ interface PaneBarProps {
  * @param props The panes, the active pane and the actions.
  * @returns The 36px pane bar with its one-pixel bottom rule.
  */
-function PaneBar(props: PaneBarProps): React.JSX.Element {
+function PaneBar(props: PaneBarProps): JSX.Element {
 	const { actions, activePaneId, panes } = props;
 	const value = useMemo(() => [activePaneId], [activePaneId]);
 	const handleChange = useCallback(

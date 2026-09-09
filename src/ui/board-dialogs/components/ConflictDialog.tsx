@@ -1,7 +1,7 @@
 // The write conflict as a choice (ADR 0006): what happened, what is held, and
 // the three outcomes. Archboard picks none of them.
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 
 import {
 	describeConflictOutcomes,
@@ -43,7 +43,7 @@ interface OutcomeItemProps<Outcome extends string> {
  * @param props The choice, which outcome is in flight, and the callback.
  * @returns A list item.
  */
-function OutcomeItem<Outcome extends string>(props: OutcomeItemProps<Outcome>): React.JSX.Element {
+function OutcomeItem<Outcome extends string>(props: OutcomeItemProps<Outcome>): JSX.Element {
 	const { choice, busy, onOutcome } = props;
 	const handleClick = useCallback(() => onOutcome(choice.outcome), [onOutcome, choice.outcome]);
 	return (
@@ -78,7 +78,7 @@ interface OutcomeListProps<Outcome extends string> {
  * @param props The choices, which one is in flight, and the callback.
  * @returns The list.
  */
-function OutcomeList<Outcome extends string>(props: OutcomeListProps<Outcome>): React.JSX.Element {
+function OutcomeList<Outcome extends string>(props: OutcomeListProps<Outcome>): JSX.Element {
 	const running = props.choices.find((choice) => choice.outcome === props.busy);
 	return (
 		<>
@@ -132,7 +132,7 @@ function conflictFacts(conflict: BoardWriteConflict, hold: BoardHold | null): re
  * @param props The conflict, the hold, the state and the callbacks.
  * @returns The alert dialog.
  */
-function ConflictDialog(props: ConflictDialogProps): React.JSX.Element {
+function ConflictDialog(props: ConflictDialogProps): JSX.Element {
 	const { conflict, hold } = props;
 	const rows = useMemo(() => conflictFacts(conflict, hold), [conflict, hold]);
 	const choices = useMemo(() => describeConflictOutcomes(conflict), [conflict]);

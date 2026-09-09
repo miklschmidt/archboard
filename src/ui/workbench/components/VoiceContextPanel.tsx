@@ -3,7 +3,7 @@
 // exact stored bytes to the caller.
 
 import { RiFileCopyLine } from "@remixicon/react";
-import { useCallback } from "react";
+import { useCallback, type JSX } from "react";
 
 import type { BrowserVoiceContext } from "@/shared/codex-browser-model";
 import { IconAction } from "@/ui/workbench/components/IconAction";
@@ -54,7 +54,7 @@ interface EntryRowProps {
  * @param props The entry and the clock.
  * @returns A list item.
  */
-function EntryRow(props: EntryRowProps): React.JSX.Element {
+function EntryRow(props: EntryRowProps): JSX.Element {
 	const { entry } = props;
 	return (
 		<li className="flex items-baseline gap-2 py-1.5">
@@ -78,7 +78,7 @@ interface ProvenanceProps {
  * @param props The context.
  * @returns A mono line.
  */
-function Provenance(props: ProvenanceProps): React.JSX.Element {
+function Provenance(props: ProvenanceProps): JSX.Element {
 	const context = props.voiceContext;
 	const omitted =
 		context.entriesTruncated === 0
@@ -98,7 +98,7 @@ function Provenance(props: ProvenanceProps): React.JSX.Element {
  * @param props The context, the clock, and the copy callback.
  * @returns The brief, provenance and entries, or an empty state.
  */
-function VoiceContextPanel(props: VoiceContextPanelProps): React.JSX.Element {
+function VoiceContextPanel(props: VoiceContextPanelProps): JSX.Element {
 	const { voiceContext, onCopy } = props;
 	const brief = voiceContext?.canonicalBrief ?? "";
 	const handleCopy = useCallback(() => onCopy(brief), [onCopy, brief]);

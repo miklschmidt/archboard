@@ -2,7 +2,15 @@
 // one under another address. It reports a typed request and shows whatever
 // the host answers with; it never guesses the outcome (ADR 0012).
 
-import { useCallback, useId, useMemo, useState } from "react";
+import {
+	useCallback,
+	useId,
+	useMemo,
+	useState,
+	type ChangeEvent,
+	type FormEvent,
+	type JSX,
+} from "react";
 
 import {
 	boardDialogCopy,
@@ -81,7 +89,7 @@ interface BoardItemProps {
  * @param props The key and its identity.
  * @returns The item's content.
  */
-function BoardItem(props: BoardItemProps): React.JSX.Element {
+function BoardItem(props: BoardItemProps): JSX.Element {
 	const { entryKey, identity } = props;
 	const suffixes = identity ? boardSuffixes(identity) : [];
 	return (
@@ -116,7 +124,7 @@ interface FormFooterProps {
  * @param props The submission state.
  * @returns The footer block.
  */
-function FormFooter(props: FormFooterProps): React.JSX.Element {
+function FormFooter(props: FormFooterProps): JSX.Element {
 	const formIssues = issuesFor(props.issues, "form");
 	return (
 		<>
@@ -141,7 +149,7 @@ function FormFooter(props: FormFooterProps): React.JSX.Element {
  * @param props The dialog's props.
  * @returns The form.
  */
-function OpenBoardForm(props: FormProps): React.JSX.Element {
+function OpenBoardForm(props: FormProps): JSX.Element {
 	const { dialog } = props;
 	const copy = boardDialogCopy("open");
 	const inputId = useId();
@@ -157,7 +165,7 @@ function OpenBoardForm(props: FormProps): React.JSX.Element {
 	const request = buildOpenRequest(dialog.boards, selectedKey);
 	const handleSelect = useCallback((value: string | null) => setSelectedKey(value), []);
 	const handleSubmit = useCallback(
-		(event: React.FormEvent<HTMLFormElement>) => {
+		(event: FormEvent<HTMLFormElement>) => {
 			event.preventDefault();
 			if (request && !dialog.busy) {
 				dialog.onSubmit(request);
@@ -225,7 +233,7 @@ interface LevelFieldProps {
  * @param props The levels, the chosen one and the change handler.
  * @returns The field, or nothing when there is no level to choose.
  */
-function LevelField(props: LevelFieldProps): React.JSX.Element | null {
+function LevelField(props: LevelFieldProps): JSX.Element | null {
 	const levelId = useId();
 	const messages = issuesFor(props.issues, "level");
 	if (props.levels.length === 0) {
@@ -267,11 +275,11 @@ interface TextFieldProps {
  * @param props The label, value, messages and change handler.
  * @returns The field.
  */
-function TextField(props: TextFieldProps): React.JSX.Element {
+function TextField(props: TextFieldProps): JSX.Element {
 	const id = useId();
 	const { onChange } = props;
 	const handleChange = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
+		(event: ChangeEvent<HTMLInputElement>) => onChange(event.target.value),
 		[onChange],
 	);
 	return (
@@ -298,7 +306,7 @@ function TextField(props: TextFieldProps): React.JSX.Element {
  * @param props The dialog's props.
  * @returns The form.
  */
-function NamedBoardForm(props: FormProps): React.JSX.Element {
+function NamedBoardForm(props: FormProps): JSX.Element {
 	const { dialog } = props;
 	const copy = boardDialogCopy(dialog.mode);
 	const [draft, setDraft] = useState<BoardDialogDraft>(dialog.initial);
@@ -313,7 +321,7 @@ function NamedBoardForm(props: FormProps): React.JSX.Element {
 	);
 	const canSubmit = draftHasBoardName(draft) && !dialog.busy;
 	const handleSubmit = useCallback(
-		(event: React.FormEvent<HTMLFormElement>) => {
+		(event: FormEvent<HTMLFormElement>) => {
 			event.preventDefault();
 			if (canSubmit) {
 				dialog.onSubmit(buildBoardDialogRequest(dialog.mode, draft));
@@ -364,7 +372,7 @@ function NamedBoardForm(props: FormProps): React.JSX.Element {
  * @param props The mode, listing, state and callbacks.
  * @returns The dialog.
  */
-function BoardDialog(props: BoardDialogProps): React.JSX.Element {
+function BoardDialog(props: BoardDialogProps): JSX.Element {
 	const copy = boardDialogCopy(props.mode);
 	return (
 		<Dialog open={props.open} onOpenChange={props.onOpenChange}>

@@ -5,7 +5,7 @@
 // saying so, so a person never loses the agent's narration.
 
 import { RiArrowDownSLine, RiArrowUpSLine } from "@remixicon/react";
-import { useCallback, useState } from "react";
+import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import { Collapsible, CollapsibleContent } from "@/ui/components/collapsible";
 import { agentClaim } from "@/ui/shell/components/ClaimBanner";
@@ -21,11 +21,11 @@ interface WorkbenchDockProps {
 	pane: ShellPane | null;
 	paneCount: number;
 	/** The workbench's compact controls, kept reachable while collapsed. */
-	headerControls: React.ReactNode;
+	headerControls: ReactNode;
 	/** The workbench itself, or null while no workbench rides this pane. */
-	body: React.ReactNode;
+	body: ReactNode;
 	/** The recent activity, shown here only while no workbench rides the pane. */
-	activity: React.ReactNode;
+	activity: ReactNode;
 }
 
 /** Inputs for the current activity line. */
@@ -38,7 +38,7 @@ interface DoingLineProps {
  * @param props The latest entry.
  * @returns The line, or a quiet placeholder.
  */
-function DoingLine(props: DoingLineProps): React.JSX.Element {
+function DoingLine(props: DoingLineProps): JSX.Element {
 	const { entry } = props;
 	if (!entry) {
 		return (
@@ -66,7 +66,7 @@ interface TakeBackLineProps {
  * @param props The state.
  * @returns A short line, or nothing while idle.
  */
-function TakeBackLine(props: TakeBackLineProps): React.JSX.Element | null {
+function TakeBackLine(props: TakeBackLineProps): JSX.Element | null {
 	const { state } = props;
 	if (state.kind === "idle") {
 		return null;
@@ -95,7 +95,7 @@ interface ActivityDotProps {
  * @param props Connection and activity.
  * @returns The dot.
  */
-function ActivityDot(props: ActivityDotProps): React.JSX.Element {
+function ActivityDot(props: ActivityDotProps): JSX.Element {
 	return (
 		<StatusDot
 			tone={props.connected ? "live" : "idle"}
@@ -115,7 +115,7 @@ interface DockStateProps {
  * @param props The pane and the pane count.
  * @returns The left part of the dock header.
  */
-function DockActivity(props: DockStateProps): React.JSX.Element {
+function DockActivity(props: DockStateProps): JSX.Element {
 	const { pane } = props;
 	const claim = pane ? agentClaim(pane.holder) : null;
 	return (
@@ -132,7 +132,7 @@ function DockActivity(props: DockStateProps): React.JSX.Element {
  * @param props The pane and the pane count.
  * @returns The right part of the dock header.
  */
-function DockCounts(props: DockStateProps): React.JSX.Element {
+function DockCounts(props: DockStateProps): JSX.Element {
 	const { pane, paneCount } = props;
 	return (
 		<>
@@ -146,7 +146,7 @@ function DockCounts(props: DockStateProps): React.JSX.Element {
 
 /** Inputs for the body shown while no workbench rides the pane. */
 interface DetachedBodyProps {
-	activity: React.ReactNode;
+	activity: ReactNode;
 }
 
 /**
@@ -155,7 +155,7 @@ interface DetachedBodyProps {
  * @param props The recent activity.
  * @returns The two-column fallback.
  */
-function DetachedBody(props: DetachedBodyProps): React.JSX.Element {
+function DetachedBody(props: DetachedBodyProps): JSX.Element {
 	return (
 		<div className="flex h-full min-h-0">
 			<section
@@ -181,7 +181,7 @@ function DetachedBody(props: DetachedBodyProps): React.JSX.Element {
  * @param props The pane the dock describes, the pane count and the slots.
  * @returns The collapsible dock.
  */
-function WorkbenchDock(props: WorkbenchDockProps): React.JSX.Element {
+function WorkbenchDock(props: WorkbenchDockProps): JSX.Element {
 	const { pane, paneCount } = props;
 	const [open, setOpen] = useState(true);
 	const handleToggle = useCallback(() => setOpen((value) => !value), []);

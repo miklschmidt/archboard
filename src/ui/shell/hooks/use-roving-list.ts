@@ -3,7 +3,7 @@
 // ends, and the item last focused keeps the stop so Tab returns to it. The
 // items activate themselves: they are buttons, so Enter and Space are theirs.
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type KeyboardEvent } from "react";
 
 /** The attributes one item spreads onto its control. */
 interface RovingItemAttributes {
@@ -26,7 +26,7 @@ interface RovingList {
 	 */
 	item: (id: string) => RovingItemAttributes;
 	/** The container's key handler: the arrows, Home and End. */
-	onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void;
+	onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 }
 
 /**
@@ -83,7 +83,7 @@ function useRovingList(ids: readonly string[]): RovingList {
 		}),
 		[current],
 	);
-	const onKeyDown = useCallback((event: React.KeyboardEvent<HTMLElement>): void => {
+	const onKeyDown = useCallback((event: KeyboardEvent<HTMLElement>): void => {
 		const items = visibleItems(event.currentTarget);
 		const index = items.findIndex((candidate) => candidate === document.activeElement);
 		const next = index === -1 ? null : targetIndex(event.key, index, items.length);

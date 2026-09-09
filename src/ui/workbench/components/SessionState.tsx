@@ -3,6 +3,8 @@
 // the shell hands in stays visible in every one of them: the board's
 // narration does not depend on Codex.
 
+import type { JSX, ReactNode } from "react";
+
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/ui/components/alert";
 import { Button } from "@/ui/components/button";
 import { Skeleton } from "@/ui/components/skeleton";
@@ -14,7 +16,7 @@ interface SessionStateProps {
 	session: Exclude<WorkbenchSessionView, { kind: "ready" }>;
 	actions: WorkbenchActions;
 	/** The recent `doing` lines, rendered by the shell, or null. */
-	activity: React.ReactNode;
+	activity: ReactNode;
 }
 
 /** A greyed line of the session column's shape. */
@@ -24,7 +26,7 @@ const LINE_CLASS = "h-3 rounded-[2px] motion-reduce:animate-none";
  * The loading placeholder: the three columns the ready dock has, greyed.
  * @returns The skeleton with a status for assistive technology.
  */
-function LoadingState(): React.JSX.Element {
+function LoadingState(): JSX.Element {
 	return (
 		<div aria-busy="true" className="flex h-full min-h-0">
 			<output className="sr-only">Loading the agent session</output>
@@ -46,8 +48,8 @@ function LoadingState(): React.JSX.Element {
 
 /** Inputs for the column the activity keeps while the session is not ready. */
 interface ActivityAsideProps {
-	activity: React.ReactNode;
-	children: React.ReactNode;
+	activity: ReactNode;
+	children: ReactNode;
 }
 
 /**
@@ -55,7 +57,7 @@ interface ActivityAsideProps {
  * @param props The activity and the state presentation beside it.
  * @returns The two columns.
  */
-function ActivityAside(props: ActivityAsideProps): React.JSX.Element {
+function ActivityAside(props: ActivityAsideProps): JSX.Element {
 	return (
 		<div className="flex h-full min-h-0">
 			{props.activity !== null && (
@@ -79,7 +81,7 @@ function ActivityAside(props: ActivityAsideProps): React.JSX.Element {
  * @param props The session view, the actions and the activity.
  * @returns The matching presentation.
  */
-function SessionState(props: SessionStateProps): React.JSX.Element {
+function SessionState(props: SessionStateProps): JSX.Element {
 	const { session, actions } = props;
 	if (session.kind === "loading") {
 		return <LoadingState />;

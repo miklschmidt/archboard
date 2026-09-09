@@ -3,6 +3,7 @@
 // this state as a second detail.
 
 import { cn } from "cn";
+import type { JSX, ReactNode } from "react";
 
 import type { StateLine } from "@/ui/workbench/session-projection";
 
@@ -10,7 +11,7 @@ import type { StateLine } from "@/ui/workbench/session-projection";
 interface SessionItemProps {
 	line: StateLine;
 	/** Rendered after the words: the actions that change this state. */
-	children?: React.ReactNode;
+	children?: ReactNode;
 }
 
 /**
@@ -28,7 +29,7 @@ const DOT_CLASS: Record<StateLine["tone"], string> = {
  * @param props The line and its actions.
  * @returns A term and its details.
  */
-function SessionItem(props: SessionItemProps): React.JSX.Element {
+function SessionItem(props: SessionItemProps): JSX.Element {
 	const { line } = props;
 	return (
 		<div className="flex flex-col gap-1">

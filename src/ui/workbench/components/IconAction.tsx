@@ -3,6 +3,7 @@
 // named by its tooltip, which is also its accessible name.
 
 import { cn } from "cn";
+import type { JSX, ReactNode } from "react";
 
 import { buttonVariants } from "@/ui/components/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
@@ -16,7 +17,7 @@ interface IconActionProps {
 	variant?: "ghost" | "outline" | undefined;
 	className?: string | undefined;
 	/** The icon. */
-	children: React.ReactNode;
+	children: ReactNode;
 }
 
 /**
@@ -24,7 +25,7 @@ interface IconActionProps {
  * @param props The label, the state and the icon.
  * @returns The tooltip-wrapped button.
  */
-function IconAction(props: IconActionProps): React.JSX.Element {
+function IconAction(props: IconActionProps): JSX.Element {
 	return (
 		<Tooltip>
 			<TooltipTrigger

@@ -2,7 +2,7 @@
 // shown and checked here; fetching and installing belong to the host.
 
 import { RiErrorWarningLine } from "@remixicon/react";
-import { useCallback } from "react";
+import { useCallback, type JSX } from "react";
 
 import type {
 	InstallLibraryDialogProps,
@@ -38,7 +38,7 @@ interface SourceCheckAlertProps {
  * @param props The check result.
  * @returns The alert, or nothing when the source is acceptable.
  */
-function SourceCheckAlert(props: SourceCheckAlertProps): React.JSX.Element | null {
+function SourceCheckAlert(props: SourceCheckAlertProps): JSX.Element | null {
 	const { check } = props;
 	if (check.ok) {
 		return null;
@@ -71,7 +71,7 @@ function libraryFacts(source: string, itemCount: number | null): readonly FactRo
  * @param props The request, the state and the callbacks.
  * @returns The dialog.
  */
-function InstallLibraryDialog(props: InstallLibraryDialogProps): React.JSX.Element {
+function InstallLibraryDialog(props: InstallLibraryDialogProps): JSX.Element {
 	const { source, onInstall } = props;
 	const check = checkLibrarySource(source);
 	const canInstall = check.ok && !props.busy;

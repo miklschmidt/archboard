@@ -4,7 +4,7 @@
 // callbacks. Only ChatGPT sign-in starts from the dialog: it carries no
 // credential fields (recorded limitation).
 
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useSyncExternalStore, type JSX } from "react";
 
 import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import { AgentSettingsDialog } from "@/ui/agent-settings";
@@ -27,7 +27,7 @@ interface AgentSettingsHostProps {
  * @param props The owners and how the dialog closes.
  * @returns The dialog, or nothing while the transport has no snapshot.
  */
-function AgentSettingsHost(props: AgentSettingsHostProps): React.JSX.Element | null {
+function AgentSettingsHost(props: AgentSettingsHostProps): JSX.Element | null {
 	const { owners, onClose } = props;
 	const { transport, threadLink } = owners;
 	const state = useSyncExternalStore(transport.subscribe, transport.state, transport.state);

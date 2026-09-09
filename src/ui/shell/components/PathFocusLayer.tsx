@@ -2,7 +2,7 @@
 // darkens everything except the rectangles of the connected elements. It is
 // presentation only and never touches the board.
 
-import { useId } from "react";
+import { useId, type JSX } from "react";
 
 import type { PathFocusOverlay, ViewportRectangle } from "@/ui/path-focus";
 
@@ -21,7 +21,7 @@ interface HoleProps {
  * @param props The rectangle in stage pixels.
  * @returns A black mask rectangle.
  */
-function Hole(props: HoleProps): React.JSX.Element {
+function Hole(props: HoleProps): JSX.Element {
 	const { x, y, width, height } = props.rectangle;
 	return <rect x={x} y={y} width={width} height={height} rx={2} fill="black" />;
 }
@@ -31,7 +31,7 @@ function Hole(props: HoleProps): React.JSX.Element {
  * @param props The rectangle in stage pixels.
  * @returns A stroked rectangle.
  */
-function Ring(props: HoleProps): React.JSX.Element {
+function Ring(props: HoleProps): JSX.Element {
 	const { x, y, width, height } = props.rectangle;
 	return (
 		<rect
@@ -61,7 +61,7 @@ function rectangleKey(rectangle: ViewportRectangle): string {
  * @param props The overlay: which rectangles stay clear.
  * @returns An SVG the pointer passes straight through.
  */
-function PathFocusLayer(props: PathFocusLayerProps): React.JSX.Element {
+function PathFocusLayer(props: PathFocusLayerProps): JSX.Element {
 	const maskId = useId();
 	const { rectangles } = props.overlay;
 	return (

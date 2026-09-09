@@ -4,6 +4,7 @@
 // so the panel never turns red for a state a person cannot act on.
 
 import { cn } from "cn";
+import type { JSX, ReactNode } from "react";
 
 /** The tone of a panel line. */
 type PanelLineTone = "muted" | "live" | "failure";
@@ -11,7 +12,7 @@ type PanelLineTone = "muted" | "live" | "failure";
 /** Inputs for one panel line. */
 interface PanelLineProps {
 	tone: PanelLineTone;
-	children: React.ReactNode;
+	children: ReactNode;
 	/** Announce changes to assistive technology. */
 	live?: boolean;
 	className?: string;
@@ -34,7 +35,7 @@ const TEXT_CLASS: Record<PanelLineTone, string> = {
  * @param props The tone and the words.
  * @returns A paragraph with its dot.
  */
-function PanelLine(props: PanelLineProps): React.JSX.Element {
+function PanelLine(props: PanelLineProps): JSX.Element {
 	return (
 		<p
 			aria-live={props.live === true ? "polite" : undefined}

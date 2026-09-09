@@ -4,7 +4,7 @@
 // presentation only: nothing here writes the board.
 
 import { RiCloseLine, RiExternalLinkLine, RiFocus3Line, RiFocusLine } from "@remixicon/react";
-import { useCallback } from "react";
+import { useCallback, type JSX } from "react";
 
 import type { CodeBinding } from "@/shared/code-target";
 import { Badge } from "@/ui/components/badge";
@@ -46,7 +46,7 @@ interface SectionLabelProps {
  * @param props The heading text.
  * @returns The heading.
  */
-function SectionLabel(props: SectionLabelProps): React.JSX.Element {
+function SectionLabel(props: SectionLabelProps): JSX.Element {
 	return <h3 className="text-kicker text-muted-foreground uppercase">{props.children}</h3>;
 }
 
@@ -65,7 +65,7 @@ interface RowProps {
  * @param props The row.
  * @returns A definition pair.
  */
-function Row(props: RowProps): React.JSX.Element {
+function Row(props: RowProps): JSX.Element {
 	return (
 		<>
 			<dt className="text-muted-foreground text-body truncate">{props.label}</dt>
@@ -94,7 +94,7 @@ interface ElementRowsProps {
  * @param props The element.
  * @returns The rows, or nothing when the element carries no metadata.
  */
-function ElementRows(props: ElementRowsProps): React.JSX.Element | null {
+function ElementRows(props: ElementRowsProps): JSX.Element | null {
 	const { element } = props;
 	const keys = SELECTION_METADATA_KEYS.filter(
 		(key) => key !== "name" && element.metadata[key] !== undefined,
@@ -127,7 +127,7 @@ interface BindingRowsProps {
  * @param props The binding.
  * @returns The bound repository rows.
  */
-function BindingRows(props: BindingRowsProps): React.JSX.Element {
+function BindingRows(props: BindingRowsProps): JSX.Element {
 	const { binding } = props;
 	return (
 		<dl className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2.5">
@@ -153,7 +153,7 @@ interface BindingSectionProps {
  * @param props The selection and the actions.
  * @returns The section.
  */
-function BindingSection(props: BindingSectionProps): React.JSX.Element {
+function BindingSection(props: BindingSectionProps): JSX.Element {
 	const { selection, actions } = props;
 	const elementId = selection.element.id;
 	const handleOpen = useCallback(() => actions.openCode(elementId), [actions, elementId]);
@@ -198,7 +198,7 @@ interface PathFocusSectionProps {
  * @param props The element, the focus state and the actions.
  * @returns The section.
  */
-function PathFocusSection(props: PathFocusSectionProps): React.JSX.Element {
+function PathFocusSection(props: PathFocusSectionProps): JSX.Element {
 	const { elementId, pathFocus, actions } = props;
 	const focused = pathFocus.kind === "connected";
 	const handleToggle = useCallback(() => {
@@ -260,7 +260,7 @@ interface TitleRowProps {
  * @param props The element.
  * @returns The title block.
  */
-function TitleRow(props: TitleRowProps): React.JSX.Element {
+function TitleRow(props: TitleRowProps): JSX.Element {
 	const { element } = props;
 	const title = selectedElementTitle(element);
 	return (
@@ -293,7 +293,7 @@ interface ElementInspectorProps {
  * @param props The element selection, the focus state and the actions.
  * @returns Title, rows, binding and focus sections.
  */
-function ElementInspector(props: ElementInspectorProps): React.JSX.Element {
+function ElementInspector(props: ElementInspectorProps): JSX.Element {
 	const { selection } = props;
 	return (
 		<>
@@ -321,7 +321,7 @@ function ElementInspector(props: ElementInspectorProps): React.JSX.Element {
  * @param props The selection, the focus state and the actions.
  * @returns The body, or null for an empty selection.
  */
-function InspectorBody(props: InspectorProps): React.JSX.Element | null {
+function InspectorBody(props: InspectorProps): JSX.Element | null {
 	const { selection } = props;
 	if (hasSelectedElement(selection)) {
 		return (
@@ -363,7 +363,7 @@ interface InspectorHeaderProps {
  * @param props The actions.
  * @returns The 40px header row.
  */
-function InspectorHeader(props: InspectorHeaderProps): React.JSX.Element {
+function InspectorHeader(props: InspectorHeaderProps): JSX.Element {
 	const { actions } = props;
 	const handleClose = useCallback(() => actions.dismissSelection(), [actions]);
 	return (
@@ -399,7 +399,7 @@ function InspectorHeader(props: InspectorHeaderProps): React.JSX.Element {
  * @param props The selection, the focus state and the actions.
  * @returns The 280px inspector column, or nothing.
  */
-function Inspector(props: InspectorProps): React.JSX.Element | null {
+function Inspector(props: InspectorProps): JSX.Element | null {
 	if (props.selection.kind === "empty") {
 		return null;
 	}

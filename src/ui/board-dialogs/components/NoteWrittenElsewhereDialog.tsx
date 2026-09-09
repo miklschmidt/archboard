@@ -1,7 +1,7 @@
 // A note written elsewhere (TASK-062): the state before a hold. Nothing has
 // been refused, so keeping what is on screen is a real choice here.
 
-import { useMemo } from "react";
+import { useMemo, type JSX } from "react";
 
 import {
 	describeElsewhereOutcomes,
@@ -51,7 +51,7 @@ function elsewhereFacts(notice: NoteWrittenElsewhere): readonly FactRow[] {
  * @param props The notice, the state and the callbacks.
  * @returns The alert dialog.
  */
-function NoteWrittenElsewhereDialog(props: NoteWrittenElsewhereDialogProps): React.JSX.Element {
+function NoteWrittenElsewhereDialog(props: NoteWrittenElsewhereDialogProps): JSX.Element {
 	const { notice } = props;
 	const rows = useMemo(() => elsewhereFacts(notice), [notice]);
 	const choices = describeElsewhereOutcomes();

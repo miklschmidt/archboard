@@ -5,6 +5,8 @@
 // `renderPreview`, which is the one thing in the view that is a slot rather
 // than a value.
 
+import type { ReactNode } from "react";
+
 import type { PaneList } from "@/ui/application/pane-list";
 import { recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import type {
@@ -27,7 +29,7 @@ interface ShellViewInputs {
 	readonly list: PaneList;
 	readonly records: PaneRecords;
 	/** The mounted canvas per pane id. */
-	readonly canvases: Readonly<Record<string, React.ReactNode>>;
+	readonly canvases: Readonly<Record<string, ReactNode>>;
 	readonly boards: BoardListing;
 	readonly boardsError: string | null;
 	/** The vault has not answered yet and nothing of it is in hand. */

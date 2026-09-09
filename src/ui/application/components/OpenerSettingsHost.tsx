@@ -1,7 +1,7 @@
 // The opener settings dialog over its flow. Mounted only while open, so the
 // settings are read when the dialog opens and the flow goes with it.
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 
 import type {
 	CodeTargetNotice,
@@ -25,7 +25,7 @@ interface OpenerSettingsHostProps {
  * @param props Where outcomes go and how the dialog closes.
  * @returns The dialog.
  */
-function OpenerSettingsHost(props: OpenerSettingsHostProps): React.JSX.Element {
+function OpenerSettingsHost(props: OpenerSettingsHostProps): JSX.Element {
 	const { onSuccess, onFailure, onClose } = props;
 	const listener = useMemo<OpenerSettingsFlowListener>(
 		() => ({ onSuccess, onFailure, onSaved: onClose }),

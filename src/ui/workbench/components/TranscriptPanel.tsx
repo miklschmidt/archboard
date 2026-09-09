@@ -1,6 +1,8 @@
 // The live voice transcript as an accessible live list, with empty, partial
 // and terminal states.
 
+import type { JSX } from "react";
+
 import type { BrowserVoice } from "@/shared/codex-browser-model";
 import { PanelLine } from "@/ui/workbench/components/PanelLine";
 
@@ -40,7 +42,7 @@ interface RecordRowProps {
  * @param props The record.
  * @returns A list item.
  */
-function RecordRow(props: RecordRowProps): React.JSX.Element {
+function RecordRow(props: RecordRowProps): JSX.Element {
 	const { record } = props;
 	return (
 		<li aria-busy={!record.final} className="flex gap-2 py-1.5">
@@ -62,7 +64,7 @@ function RecordRow(props: RecordRowProps): React.JSX.Element {
  * @param props The published voice state.
  * @returns The live list with its empty and terminal lines.
  */
-function TranscriptPanel(props: TranscriptPanelProps): React.JSX.Element {
+function TranscriptPanel(props: TranscriptPanelProps): JSX.Element {
 	const { voice } = props;
 	const terminal = terminalText(voice);
 	return (

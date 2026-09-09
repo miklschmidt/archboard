@@ -3,7 +3,7 @@
 // control that releases the claim (ADR 0022). The canvas beneath is read-only
 // meanwhile; the words say so.
 
-import { useCallback } from "react";
+import { useCallback, type JSX } from "react";
 
 import { Button } from "@/ui/components/button";
 import type { ShellActions, ShellPane, TakeBackState } from "@/ui/shell/types/contracts";
@@ -29,7 +29,7 @@ interface TakeBackControlProps {
  * @param props The pane, the operation's state and the actions.
  * @returns The button with its state text.
  */
-function TakeBackControl(props: TakeBackControlProps): React.JSX.Element {
+function TakeBackControl(props: TakeBackControlProps): JSX.Element {
 	const { paneId, state, actions } = props;
 	const handleClick = useCallback(() => actions.takeBackControl(paneId), [actions, paneId]);
 	const pending = state.kind === "pending";
@@ -57,7 +57,7 @@ function TakeBackControl(props: TakeBackControlProps): React.JSX.Element {
  * @param props The pane and the actions.
  * @returns The banner, or nothing while no agent claims the board.
  */
-function ClaimBanner(props: ClaimBannerProps): React.JSX.Element | null {
+function ClaimBanner(props: ClaimBannerProps): JSX.Element | null {
 	const { pane, actions } = props;
 	const claim = agentClaim(pane.holder);
 	if (!claim) {

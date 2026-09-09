@@ -2,6 +2,8 @@
 // workbench dock, composed from typed inputs and typed actions. The centre is
 // also the fullscreen root, so presenting a pane never remounts a canvas.
 
+import type { CSSProperties, JSX, ReactNode } from "react";
+
 import { SidebarProvider } from "@/ui/components/sidebar";
 import { Inspector } from "@/ui/selection-inspector/Inspector";
 import { ActivityList } from "@/ui/shell/components/ActivityList";
@@ -31,20 +33,20 @@ import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcut
 import { WorkbenchDock } from "@/ui/shell/components/WorkbenchDock";
 
 /** The navigator shares --shell-navigator-width with the header wordmark section, so the rule between them runs straight. */
-const SIDEBAR_STYLE: React.CSSProperties = { "--sidebar-width": "var(--shell-navigator-width)" };
+const SIDEBAR_STYLE: CSSProperties = { "--sidebar-width": "var(--shell-navigator-width)" };
 
 /** Inputs for the shell. */
 interface ShellProps {
 	view: ShellView;
 	actions: ShellActions;
 	/** Live voice controls for the presentation bar, when the voice workbench supplies them. */
-	voiceControls?: React.ReactNode;
+	voiceControls?: ReactNode;
 	/** The workbench's compact controls for the dock header. */
-	dockHeader?: React.ReactNode;
+	dockHeader?: ReactNode;
 	/** The workbench itself, for the dock body. */
-	dockBody?: React.ReactNode;
+	dockBody?: ReactNode;
 	/** The recent activity, shown in the dock while no workbench rides the pane. */
-	dockActivity?: React.ReactNode;
+	dockActivity?: ReactNode;
 	/** The fullscreen root: the centre stage element. */
 	attachStage?: (element: HTMLDivElement | null) => void;
 }
@@ -64,7 +66,7 @@ function paneById(view: ShellView, paneId: string): ShellPane | null {
  * @param props The view, the actions and the slots.
  * @returns The full frame.
  */
-function Shell(props: ShellProps): React.JSX.Element {
+function Shell(props: ShellProps): JSX.Element {
 	const { view, actions } = props;
 	const active = paneById(view, view.activePaneId);
 	return (

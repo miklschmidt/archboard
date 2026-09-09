@@ -4,7 +4,7 @@
 // narrower window never clips the row.
 
 import { RiLockLine, RiMoonLine, RiSettings3Line, RiSunLine } from "@remixicon/react";
-import { useCallback } from "react";
+import { useCallback, type ComponentPropsWithRef, type JSX, type ReactNode } from "react";
 
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
@@ -109,7 +109,7 @@ interface BreadcrumbProps {
  * @param props The identity to spell out.
  * @returns The breadcrumb.
  */
-function Breadcrumb(props: BreadcrumbProps): React.JSX.Element {
+function Breadcrumb(props: BreadcrumbProps): JSX.Element {
 	const { identity } = props;
 	return (
 		<nav aria-label="Current board" className="flex min-w-0 flex-1 items-center gap-2">
@@ -141,7 +141,7 @@ interface SummaryProps {
  * @param props The flattened pane.
  * @returns The connection line.
  */
-function ConnectionState(props: SummaryProps): React.JSX.Element {
+function ConnectionState(props: SummaryProps): JSX.Element {
 	const { connected } = props.summary;
 	return (
 		<span className="text-muted-foreground text-body flex shrink-0 items-center gap-1.5">
@@ -156,7 +156,7 @@ function ConnectionState(props: SummaryProps): React.JSX.Element {
  * @param props The flattened pane.
  * @returns The claim chip, or nothing while the board is free.
  */
-function ClaimState(props: SummaryProps): React.JSX.Element | null {
+function ClaimState(props: SummaryProps): JSX.Element | null {
 	const claim = describeClaim(props.summary.holder);
 	if (!claim) {
 		return null;
@@ -177,7 +177,7 @@ function ClaimState(props: SummaryProps): React.JSX.Element | null {
 interface WarningChipProps {
 	kind: RecoveryKind;
 	/** What the chip says, its first words the state's name. */
-	children: React.ReactNode;
+	children: ReactNode;
 	/** The accessible name: the state and the choice the chip opens. */
 	label: string;
 	actions: ShellActions;
@@ -188,7 +188,7 @@ interface WarningChipProps {
  * @param props The merged props Base UI hands to the rendered element.
  * @returns The chip button.
  */
-function renderWarningChip(props: React.ComponentPropsWithRef<"button">): React.JSX.Element {
+function renderWarningChip(props: ComponentPropsWithRef<"button">): JSX.Element {
 	return <Button variant="outline" size="xs" {...props} className={WARNING_CHIP_CLASS} />;
 }
 
@@ -198,7 +198,7 @@ function renderWarningChip(props: React.ComponentPropsWithRef<"button">): React.
  * @param props The recovery kind, the words and the actions.
  * @returns A chip-sized button with a tooltip naming what it opens.
  */
-function WarningChip(props: WarningChipProps): React.JSX.Element {
+function WarningChip(props: WarningChipProps): JSX.Element {
 	const { kind, actions } = props;
 	const handleClick = useCallback(() => actions.openRecovery(kind), [actions, kind]);
 	return (
@@ -218,7 +218,7 @@ function WarningChip(props: WarningChipProps): React.JSX.Element {
  * @param props The flattened pane and the actions.
  * @returns The chip, or nothing when the board is saving normally.
  */
-function NoteState(props: SummaryProps & ActionsProps): React.JSX.Element | null {
+function NoteState(props: SummaryProps & ActionsProps): JSX.Element | null {
 	const { hold, elsewhere } = props.summary;
 	if (hold) {
 		return (
@@ -255,7 +255,7 @@ interface ActionsProps {
  * @param props The board actions.
  * @returns Four text buttons.
  */
-function BoardActions(props: ActionsProps): React.JSX.Element {
+function BoardActions(props: ActionsProps): JSX.Element {
 	const { actions } = props;
 	const handleOpen = useCallback(() => actions.openBoard(), [actions]);
 	const handleNew = useCallback(() => actions.createBoard(), [actions]);
@@ -296,7 +296,7 @@ interface SettingsItemProps extends ActionsProps {
  * @param props The surface it opens and the action.
  * @returns The menu item.
  */
-function SettingsItem(props: SettingsItemProps): React.JSX.Element {
+function SettingsItem(props: SettingsItemProps): JSX.Element {
 	const { surface, actions } = props;
 	const handleClick = useCallback(() => actions.openSettings(surface), [actions, surface]);
 	return (
@@ -311,7 +311,7 @@ function SettingsItem(props: SettingsItemProps): React.JSX.Element {
  * @param props The merged props Base UI hands to the rendered element.
  * @returns The dropdown trigger.
  */
-function renderMenuTrigger(props: React.ComponentPropsWithRef<"button">): React.JSX.Element {
+function renderMenuTrigger(props: ComponentPropsWithRef<"button">): JSX.Element {
 	return <DropdownMenuTrigger {...props} />;
 }
 
@@ -320,7 +320,7 @@ function renderMenuTrigger(props: React.ComponentPropsWithRef<"button">): React.
  * @param props The action that opens a settings surface.
  * @returns A dropdown behind a gear icon.
  */
-function SettingsMenu(props: ActionsProps): React.JSX.Element {
+function SettingsMenu(props: ActionsProps): JSX.Element {
 	return (
 		<DropdownMenu>
 			<Tooltip>
@@ -363,7 +363,7 @@ interface ThemeToggleProps extends ActionsProps {
  * @param props The current theme and the action that changes it.
  * @returns A sun or moon button named for the theme it switches to.
  */
-function ThemeToggle(props: ThemeToggleProps): React.JSX.Element {
+function ThemeToggle(props: ThemeToggleProps): JSX.Element {
 	const { theme, actions } = props;
 	const next: ThemeChoice = theme === "dark" ? "light" : "dark";
 	const handleClick = useCallback(() => actions.setTheme(next), [actions, next]);
@@ -384,7 +384,7 @@ function ThemeToggle(props: ThemeToggleProps): React.JSX.Element {
  * @param props The current board, theme, active pane and actions.
  * @returns The 56px header row with its one-pixel bottom rule.
  */
-function Header(props: HeaderProps): React.JSX.Element {
+function Header(props: HeaderProps): JSX.Element {
 	const { actions } = props;
 	const summary = summarisePane(props.pane);
 	return (

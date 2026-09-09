@@ -222,4 +222,47 @@ const uiConcernPlacement = createRule(
 	},
 );
 
-export { uiConcernPlacement };
+/**
+ * Whether a file is authored UI source, tests included: the React import
+ * convention holds wherever UI source is written.
+ * @param relativePath The file's repository path.
+ * @returns Whether the named-import rule owns the file.
+ */
+function isAuthoredUiFile(relativePath: string): boolean {
+	const module = moduleAt(relativePath);
+	return module?.area === "ui" && TYPESCRIPT_SOURCE.test(relativePath);
+}
+
+const namedReactImports = createRule(
+	{
+		noReactNamespace:
+			'Use named React imports, including types: import { useState, type JSX } from "react" rather than the React namespace.',
+	},
+	(context) => {
+		if (!isAuthoredUiFile(getRepoRelativePath(context))) {
+			return {};
+		}
+		return {
+			/**
+			 * Report a value or type reached through the React namespace.
+			 * @param node The visited node.
+			 */
+			Identifier(node) {
+				if (node.name === "React") {
+					report(context, node, "noReactNamespace");
+				}
+			},
+			/**
+			 * Report React markup reached through the React namespace.
+			 * @param node The visited node.
+			 */
+			JSXIdentifier(node) {
+				if (node.name === "React") {
+					report(context, node, "noReactNamespace");
+				}
+			},
+		};
+	},
+);
+
+export { namedReactImports, uiConcernPlacement };

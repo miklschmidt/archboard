@@ -8,7 +8,7 @@
 //   - composer, stop, retry, intent, copy, voice: the runtime's own;
 //   - activity: the shell's rendered `doing` lines, handed in through context.
 
-import { useContext, useMemo, useSyncExternalStore } from "react";
+import { useContext, useMemo, useSyncExternalStore, type JSX } from "react";
 
 import {
 	WorkbenchActivityContext,
@@ -24,7 +24,7 @@ import type { WorkbenchRuntimeRenderContext } from "@/ui/workbench-runtime";
  * @param context The runtime's view, actions and status.
  * @returns The workbench.
  */
-function WorkbenchRenderer(context: WorkbenchRuntimeRenderContext): React.JSX.Element {
+function WorkbenchRenderer(context: WorkbenchRuntimeRenderContext): JSX.Element {
 	const owners = useContext(WorkbenchOwnersContext);
 	if (owners === null) {
 		throw new Error("The workbench renderer needs its owners in context.");
@@ -43,7 +43,7 @@ interface ComposedWorkbenchProps {
  * @param props The owners and the runtime's context.
  * @returns The workbench.
  */
-function ComposedWorkbench(props: ComposedWorkbenchProps): React.JSX.Element {
+function ComposedWorkbench(props: ComposedWorkbenchProps): JSX.Element {
 	const { owners, context } = props;
 	const queueCommand = useSyncExternalStore(
 		owners.queueCommand.subscribe,

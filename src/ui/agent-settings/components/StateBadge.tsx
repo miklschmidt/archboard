@@ -1,5 +1,7 @@
 // One agent settings section's state, as a badge with its detail beside it.
 
+import type { JSX } from "react";
+
 import type { StateSummary } from "@/ui/agent-settings/lib/presentation";
 import { Badge } from "@/ui/components/badge";
 
@@ -13,7 +15,7 @@ interface StateBadgeProps {
  * @param props The summary.
  * @returns The badge and detail.
  */
-function StateBadge(props: StateBadgeProps): React.JSX.Element {
+function StateBadge(props: StateBadgeProps): JSX.Element {
 	const { summary } = props;
 	return (
 		<>

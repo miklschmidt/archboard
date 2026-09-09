@@ -1,5 +1,7 @@
 // A compact two-column facts table and the one row it repeats.
 
+import type { JSX } from "react";
+
 import { Technical } from "@/ui/dialog-parts/components/Technical";
 
 /** One row of a facts table. */
@@ -20,7 +22,7 @@ interface FactsProps {
  * @param props The rows.
  * @returns The definition list.
  */
-function Facts(props: FactsProps): React.JSX.Element {
+function Facts(props: FactsProps): JSX.Element {
 	return (
 		<dl className="text-body grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-1.5">
 			{props.rows.map((row) => (
@@ -40,7 +42,7 @@ interface FactProps {
  * @param props The row.
  * @returns A definition pair.
  */
-function Fact(props: FactProps): React.JSX.Element {
+function Fact(props: FactProps): JSX.Element {
 	const { row } = props;
 	return (
 		<div className="contents">

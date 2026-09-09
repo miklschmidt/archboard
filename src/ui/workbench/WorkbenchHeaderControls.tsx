@@ -3,6 +3,8 @@
 // compact voice controls. The shell places this in its dock header; the host
 // hands it the session view, the voice view and the voice actions alone.
 
+import type { JSX } from "react";
+
 import { Badge } from "@/ui/components/badge";
 import { VoiceControlsCompact } from "@/ui/voice-controls";
 import type { VoiceControlsActions } from "@/ui/voice-controls/contracts";
@@ -40,7 +42,7 @@ function waitingApprovals(session: WorkbenchSessionView): number {
  * @param props The session view, the voice view and the voice actions.
  * @returns A compact row.
  */
-function WorkbenchHeaderControls(props: WorkbenchHeaderControlsProps): React.JSX.Element {
+function WorkbenchHeaderControls(props: WorkbenchHeaderControlsProps): JSX.Element {
 	const { voice, actions } = props;
 	const waiting = waitingApprovals(props.session);
 	const live =

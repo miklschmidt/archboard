@@ -80,6 +80,7 @@
 		"archboard/root-implementation-modules": "error",
 		"archboard/state-files-pure": "error",
 		"archboard/ui-concern-placement": "error",
+		"archboard/named-react-imports": "error",
 		"archboard/no-archive-references": "error",
 		"archboard/absolute-imports": "error",
 		"complexity": [
@@ -237,6 +238,7 @@
 				"archboard/no-anonymous-jsx-handlers": "off",
 				// These files keep the registries' own filenames and module shape.
 				"archboard/ui-concern-placement": "off",
+				"archboard/named-react-imports": "off",
 				"react-perf/jsx-no-jsx-as-prop": "off",
 				"react-perf/jsx-no-new-object-as-prop": "off",
 				"react-perf/jsx-no-new-function-as-prop": "off",

@@ -7,7 +7,7 @@ import type {
 	ExcalidrawInitialDataState,
 	ExcalidrawProps,
 } from "@excalidraw/excalidraw/types";
-import { useMemo } from "react";
+import { useMemo, type JSX } from "react";
 
 import { DEFAULT_FILL_STYLE, DEFAULT_SHAPE_BACKGROUND } from "@/shared/appearance/appearance";
 
@@ -71,7 +71,7 @@ function boundProps(
  * @param props The theme, mode, callbacks and stage ref for this canvas.
  * @returns The stage element holding one Excalidraw instance.
  */
-function ExcalidrawStage(props: ExcalidrawStageProps): React.JSX.Element {
+function ExcalidrawStage(props: ExcalidrawStageProps): JSX.Element {
 	const { onApi, onChange, onLibraryChange, onLinkOpen, attachStage, theme, viewModeEnabled } =
 		props;
 	const bound = useMemo(

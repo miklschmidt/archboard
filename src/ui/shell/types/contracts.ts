@@ -2,6 +2,8 @@
 // through `ShellView`; everything a person does goes out through
 // `ShellActions`. The shell keeps only presentation state of its own.
 
+import type { ReactNode } from "react";
+
 import type { CodeTargetNoticeAction } from "@/shared/code-target";
 import type { PathFocusOverlay, PathFocusSnapshot } from "@/ui/path-focus";
 import type { SelectionProjection } from "@/ui/selection-inspector";
@@ -30,7 +32,7 @@ type TakeBackState =
 interface ShellPane {
 	status: PaneStatus;
 	/** The pane's mounted canvas, owned by the application so it never remounts. */
-	canvas: React.ReactNode;
+	canvas: ReactNode;
 	/** The board's current lock holder, or null when nobody is writing it. */
 	holder: LockHolder | null;
 	takeBack: TakeBackState;

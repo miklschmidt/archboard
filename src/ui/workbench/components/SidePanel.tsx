@@ -2,6 +2,8 @@
 // over the dense panels for queue, approvals, context and transcript as flat
 // underlined tabs.
 
+import type { JSX } from "react";
+
 import type { BrowserSnapshot } from "@/shared/codex-browser-model";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/components/tabs";
 import { VoiceControls } from "@/ui/voice-controls";
@@ -51,7 +53,7 @@ function pendingApprovalCount(snapshot: BrowserSnapshot): number {
  * @param props The words and the count.
  * @returns The label.
  */
-function TabLabel(props: TabLabelProps): React.JSX.Element {
+function TabLabel(props: TabLabelProps): JSX.Element {
 	return (
 		<span className="text-kicker flex items-center gap-1.5 uppercase">
 			{props.label}
@@ -67,7 +69,7 @@ function TabLabel(props: TabLabelProps): React.JSX.Element {
  * @param props The snapshot, the view, and the actions.
  * @returns The voice row and the tabs.
  */
-function SidePanel(props: SidePanelProps): React.JSX.Element {
+function SidePanel(props: SidePanelProps): JSX.Element {
 	const { snapshot, view, actions } = props;
 	const voiceLive =
 		view.voice.controls.sessionState === "active" ||

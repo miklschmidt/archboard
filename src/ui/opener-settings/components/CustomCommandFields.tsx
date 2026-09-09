@@ -1,6 +1,6 @@
 // The custom opener command's two fields: the executable and its arguments.
 
-import { useCallback, useId } from "react";
+import { useCallback, useId, type ChangeEvent, type JSX } from "react";
 
 import { PATH_TOKEN } from "@/shared/code-target";
 import { Field, FieldDescription, FieldLabel } from "@/ui/components/field";
@@ -30,17 +30,16 @@ const NO_ISSUES: readonly string[] = [];
  * @param props The draft, its issues and the change handler.
  * @returns Two fields.
  */
-function CustomCommandFields(props: CustomCommandFieldsProps): React.JSX.Element {
+function CustomCommandFields(props: CustomCommandFieldsProps): JSX.Element {
 	const { draft, onDraft } = props;
 	const executableId = useId();
 	const argvId = useId();
 	const handleExecutable = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>) =>
-			onDraft({ ...draft, executable: event.target.value }),
+		(event: ChangeEvent<HTMLInputElement>) => onDraft({ ...draft, executable: event.target.value }),
 		[draft, onDraft],
 	);
 	const handleArgv = useCallback(
-		(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+		(event: ChangeEvent<HTMLTextAreaElement>) =>
 			onDraft({ ...draft, argvText: event.target.value }),
 		[draft, onDraft],
 	);

@@ -3,6 +3,8 @@
 // the fullscreen root: presenting a pane hides the others rather than
 // remounting anything, so a canvas session never restarts.
 
+import type { JSX, ReactNode } from "react";
+
 import { Separator } from "@/ui/components/separator";
 import type { PathFocusOverlay } from "@/ui/path-focus";
 import { ClaimBanner } from "@/ui/shell/components/ClaimBanner";
@@ -20,7 +22,7 @@ interface CanvasStagesProps {
 	/** The pane presented fullscreen, or null in the workspace. */
 	presentation: ShellPresentation | null;
 	/** Live voice controls for the presentation bar. */
-	voiceControls: React.ReactNode;
+	voiceControls: ReactNode;
 	/** The fullscreen root: the application presents this element. */
 	attachStage: ((element: HTMLDivElement | null) => void) | undefined;
 	actions: ShellActions;
@@ -63,7 +65,7 @@ function paneById(panes: readonly ShellPane[], paneId: string): ShellPane | null
 interface PresentationChromeProps {
 	presentation: ShellPresentation | null;
 	presented: ShellPane | null;
-	voiceControls: React.ReactNode;
+	voiceControls: ReactNode;
 	actions: ShellActions;
 }
 
@@ -73,7 +75,7 @@ interface PresentationChromeProps {
  * @param props The presentation, the pane it names and the actions.
  * @returns The chrome, or nothing in the workspace.
  */
-function PresentationChrome(props: PresentationChromeProps): React.JSX.Element | null {
+function PresentationChrome(props: PresentationChromeProps): JSX.Element | null {
 	const { presentation, presented } = props;
 	if (presentation === null || presented === null) {
 		return null;
@@ -97,7 +99,7 @@ function PresentationChrome(props: PresentationChromeProps): React.JSX.Element |
  * @param props The panes to mount, the presentation and the actions.
  * @returns The stage root.
  */
-function CanvasStages(props: CanvasStagesProps): React.JSX.Element {
+function CanvasStages(props: CanvasStagesProps): JSX.Element {
 	const { presentation, panes, actions, attachStage, voiceControls, overlay, activePaneId } = props;
 	const presented = presentation ? paneById(panes, presentation.paneId) : null;
 	return (
@@ -163,7 +165,7 @@ interface PaneStageProps {
  * @param props The pane, whether it is first, framed, hidden, its overlay and the actions.
  * @returns The mounted canvas.
  */
-function PaneStage(props: PaneStageProps): React.JSX.Element {
+function PaneStage(props: PaneStageProps): JSX.Element {
 	const { actions, pane, overlay } = props;
 	const { paneId } = pane.status;
 	return (

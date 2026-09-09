@@ -4,6 +4,8 @@
 // (`src/ui/workbench-runtime`, TASK-150.07) owns both sides of the wire; this
 // module keeps only disclosure state of its own.
 
+import type { ReactNode } from "react";
+
 import type {
 	BrowserApproval,
 	BrowserDynamicApproval,
@@ -103,7 +105,7 @@ interface WorkbenchView {
 	 * The recent `doing` lines of the pane this workbench rides, rendered by
 	 * the shell and placed in the session column; null when nobody said anything.
 	 */
-	activity: React.ReactNode;
+	activity: ReactNode;
 }
 
 /**

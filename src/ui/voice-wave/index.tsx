@@ -3,7 +3,7 @@
 // accessible state text and static fallbacks for reduced motion and no WebGL.
 
 import { cn } from "cn";
-import { useState } from "react";
+import { useState, type JSX } from "react";
 
 import { AgentAudioVisualizerWave } from "@/ui/voice-wave/agent-audio-visualizer-wave";
 import { usePrefersReducedMotion } from "@/ui/voice-wave/hooks/use-prefers-reduced-motion";
@@ -72,7 +72,7 @@ function isLive(state: VoiceWaveState, active: boolean): boolean {
  * @param props The state and whether the session is live.
  * @returns A rule and the state text.
  */
-function StaticWave(props: StaticWaveProps): React.JSX.Element {
+function StaticWave(props: StaticWaveProps): JSX.Element {
 	const live = isLive(props.state, props.active);
 	return (
 		<div
@@ -121,7 +121,7 @@ function usesStaticWave(
  * @param props The typed voice output state.
  * @returns The animated wave, or a static fallback.
  */
-function VoiceOutputWave(props: VoiceOutputWaveProps): React.JSX.Element {
+function VoiceOutputWave(props: VoiceOutputWaveProps): JSX.Element {
 	const prefersReducedMotion = usePrefersReducedMotion();
 	const [webGl] = useState(webGlAvailable);
 	const [color] = useState(statusAccentColor);
