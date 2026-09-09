@@ -9,7 +9,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { createCanvasLinkHandler } from "@/ui/canvas/lib/link-handler";
-import { createPaneCore, type PaneCore, type PaneCoreHost } from "@/ui/canvas/lib/pane-core";
+import { createPaneCore } from "@/ui/canvas/lib/pane-core";
+import type { PaneCore, PaneCoreHost } from "@/ui/canvas/lib/pane-core-contracts";
 import { usePaneContact, type PaneContact } from "@/ui/canvas/use-pane-contact";
 import { SessionBox } from "@/ui/canvas/lib/session-box";
 import {
@@ -176,6 +177,7 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 	);
 	const applyLibrary = useCallback((items: LibraryItems): void => core.applyLibrary(items), [core]);
 	const markInteracted = useCallback((): void => core.markInteracted(), [core]);
+	const pendingEdits = useCallback((): boolean => core.pendingEdits(), [core]);
 	const takeBack = useCallback((): Promise<TakeBackResult> => core.takeBack(), [core]);
 	const focusPath = useCallback((): void => core.projection.focusPath(), [core]);
 	const exitPathFocus = useCallback((): void => core.projection.exitPathFocus(), [core]);
@@ -205,8 +207,15 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 				onBoardLinkError: (error: string): void => {
 					box.options.onBoardLinkError?.(error);
 				},
+				/**
+				 * The person followed a board link from this pane.
+				 * @param key The board they asked for.
+				 */
+				onBoardOpenRequested: (key: string): void => {
+					box.options.onBoardOpenRequested?.(paneId, key);
+				},
 			}),
-		[box, clientId, onFailure, state.boardKey],
+		[box, clientId, onFailure, paneId, state.boardKey],
 	);
 
 	return {
@@ -228,6 +237,7 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 		handleLibraryChange,
 		applyLibrary,
 		markInteracted,
+		pendingEdits,
 		takeBack,
 		focusPath,
 		exitPathFocus,

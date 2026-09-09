@@ -14,6 +14,11 @@ function pendingLibraryUrl(): string | null {
 /**
  * Take the request out of the address bar. Called whether the install
  * succeeded, failed or was declined: the URL is not a record of what happened.
+ *
+ * Only the hash is dropped. The path and the query string stay, because the
+ * query string is the workspace (TASK-166), and the history entry's own state
+ * stays with it, because the router keeps its place in the history there: a
+ * rewrite that replaced either would lose the workspace, or lose Back.
  */
 function clearLibraryHash(): void {
 	const params = new URLSearchParams(window.location.hash.slice(1));
@@ -23,7 +28,8 @@ function clearLibraryHash(): void {
 	params.delete("addLibrary");
 	params.delete("token");
 	const rest = params.toString();
-	window.history.replaceState({}, "", rest === "" ? window.location.pathname : `#${rest}`);
+	const here = `${window.location.pathname}${window.location.search}`;
+	window.history.replaceState(window.history.state, "", rest === "" ? here : `${here}#${rest}`);
 }
 
 /**

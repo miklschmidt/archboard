@@ -54,6 +54,7 @@ function optionsFor(
 		onPaneReconnected: host.onPaneReconnected,
 		onBoardError,
 		onBoardLinkError: host.onBoardLinkError,
+		onBoardOpenRequested: host.onBoardOpenRequested,
 		onStaleFrontend: host.onStaleFrontend,
 		onThemeChange: host.onThemeChange,
 		onSelection: host.onSelection,

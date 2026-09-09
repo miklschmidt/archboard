@@ -30,6 +30,7 @@ import type { PaneEvents, Panes } from "@/ui/application/hooks/use-panes";
 import type { useWorkbench } from "@/ui/application/hooks/use-workbench";
 import type { BoardCatalog } from "@/ui/board-catalog";
 import type { LibraryController } from "@/ui/board-library";
+import type { WorkspaceAddressing } from "@/ui/board-routing";
 import type { RecoveryKind, ThemeChoice } from "@/ui/shell";
 import type { AgentActivityEntry, EditWithdrawalReason, PaneStatus } from "@/ui/types";
 
@@ -41,6 +42,8 @@ interface RecoveryOwners {
 
 /** The owners the pane events reach. */
 interface PaneEventOwners extends RecoveryOwners {
+	/** Where a person's own move is announced, so the address bar records it. */
+	readonly addressing: WorkspaceAddressing;
 	readonly notices: NoticeStack;
 	readonly library: LibraryController;
 	readonly catalog: BoardCatalog;
@@ -175,11 +178,25 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		notices.raise(boardErrorNotice(paneId, error));
 	}
 	/**
-	 * A board link could not be followed.
+	 * A board link could not be followed; the pane did not move after all.
 	 * @param error The refusal and recovery guidance.
 	 */
 	function onBoardLinkError(error: string): void {
+		owners.addressing.clear();
 		notices.raise(failureNotice("board-link", "Open linked board", error));
+	}
+	/**
+	 * A pane followed a board link. Which board it lands on is the server's
+	 * answer; what this records is that the person asked this pane to move.
+	 * @param paneId The pane.
+	 * @param _boardKey The board key in the link.
+	 */
+	function onBoardOpenRequested(paneId: string, _boardKey: string): void {
+		owners.addressing.expect({
+			kind: "board",
+			paneId,
+			from: recordFor(owners.panes.records, paneId).status.boardKey,
+		});
 	}
 	/**
 	 * This tab runs a bundle the canvas no longer serves.
@@ -256,6 +273,7 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 	return {
 		onBoardError,
 		onBoardLinkError,
+		onBoardOpenRequested,
 		onAgentActivity,
 		onEditsWithdrawn,
 		onStaleFrontend,

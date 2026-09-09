@@ -113,6 +113,12 @@ interface CanvasSessionOptions<Transport extends WorkbenchTransportPort> {
 	/** An element's board link could not be followed. */
 	onBoardLinkError?: (error: string) => void;
 	/**
+	 * This pane asked the server to point it at another board, by following an
+	 * element's board link. The person did that, so the address bar records it
+	 * as a move of theirs rather than as one that simply happened (TASK-166).
+	 */
+	onBoardOpenRequested?: (paneId: string, boardKey: string) => void;
+	/**
 	 * This tab runs a bundle the canvas no longer serves (TASK-056). Said once
 	 * per build, at the pane's own pulse, rather than discovered by a command
 	 * timing out on a tab that cannot answer it.
@@ -188,6 +194,12 @@ interface CanvasSession<Transport extends WorkbenchTransportPort> {
 	/** Push the shell's palette into this pane's Excalidraw, once per content hash. */
 	applyLibrary: (items: LibraryItems) => void;
 	markInteracted: () => void;
+	/**
+	 * Whether this canvas holds an edit the server has not taken yet: pending,
+	 * scheduled or in flight. Pointing the pane somewhere else while this is
+	 * true would throw that edit away, so navigation asks first (ADR 0022).
+	 */
+	pendingEdits: () => boolean;
 	/** Release an agent's claim on this pane's board; nothing is undone (ADR 0016, ADR 0022). */
 	takeBack: () => Promise<TakeBackResult>;
 	/** Dim everything not connected to the selected element. */

@@ -104,6 +104,7 @@ class FakeApi implements BoardCommandApi {
 }
 
 const TWO_PANES: BoardCommandContext = {
+	paneId: "A",
 	clientId: "A-1",
 	expectVersion: 3,
 	boardKey: "Checkout",

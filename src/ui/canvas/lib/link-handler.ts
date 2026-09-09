@@ -10,6 +10,8 @@ import { createCodeTargetLinkHandler, type CodeTargetLinkHandlerOptions } from "
 type CanvasLinkOptions = CodeTargetLinkHandlerOptions & {
 	clientId: string;
 	onBoardLinkError: (error: string) => void;
+	/** The person is following a board link, so this move is one of theirs. */
+	onBoardOpenRequested: (boardKey: string) => void;
 };
 
 /**
@@ -35,6 +37,7 @@ function createCanvasLinkHandler(
 			);
 			return;
 		}
+		options.onBoardOpenRequested(board);
 		void openBoard({ board, pane: options.clientId }).catch((error: unknown) => {
 			const message = error instanceof Error ? error.message : String(error);
 			options.onBoardLinkError(

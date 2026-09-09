@@ -5,7 +5,7 @@
 // learns the result over the socket like any other client.
 
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import type { AppState, ExcalidrawImperativeAPI, LibraryItems } from "@excalidraw/excalidraw/types";
+import type { AppState, LibraryItems } from "@excalidraw/excalidraw/types";
 
 import {
 	holdBoard,
@@ -24,23 +24,18 @@ import { createPaneSocketConnector, type PaneSocketGeneration } from "@/ui/canva
 import { attachWorkbenchOwner } from "@/ui/canvas/lib/pane-workbench-attach";
 import { createReporting } from "@/ui/canvas/lib/reporting";
 import { sceneFromExcalidraw } from "@/ui/canvas/lib/scene-boundary";
-import {
-	createSceneProjection,
-	selectedIds,
-	type SceneProjection,
-} from "@/ui/canvas/lib/scene-projection";
+import { createSceneProjection, selectedIds } from "@/ui/canvas/lib/scene-projection";
 import { createSelectionPublisher } from "@/ui/canvas/lib/selection-publisher";
 import {
 	UNKNOWN_HOLDER,
-	type CanvasSessionOptions,
 	type CanvasTheme,
 	type PanePathFocusSnapshot,
 	type PaneSelectionSnapshot,
 	type TakeBackResult,
 } from "@/ui/canvas/lib/session-contracts";
+import type { PaneCore, PaneCoreHost } from "@/ui/canvas/lib/pane-core-contracts";
 import { handleSocketMessage } from "@/ui/canvas/lib/socket-messages";
 import type { WorkbenchTransportPort } from "@/ui/canvas/workbench-port";
-import type { CanvasWorkbenchSocketOwner } from "@/ui/canvas/workbench-socket";
 import type { PathFocusOverlay } from "@/ui/path-focus";
 import type {
 	BoardHold,
@@ -51,40 +46,6 @@ import type {
 	NoteWrittenElsewhere,
 	PaneStatus,
 } from "@/ui/types";
-
-/** What the core reads from React and writes back to it. */
-interface PaneCoreHost<Transport extends WorkbenchTransportPort> {
-	readonly paneId: string;
-	readonly clientId: string;
-	/** The latest options, so a changed callback is heard without re-wiring. */
-	readonly options: () => CanvasSessionOptions<Transport>;
-	readonly api: () => ExcalidrawImperativeAPI | null;
-	readonly paneElement: () => HTMLElement | null;
-	readonly workbenchSockets: CanvasWorkbenchSocketOwner<Transport> | null;
-	readonly setConnected: (connected: boolean) => void;
-	readonly setBoard: (board: BoardIdentity | null) => void;
-	readonly setBoardKey: (key: string | null) => void;
-	readonly setHeldBy: (holder: LockHolder | null) => void;
-	readonly setDoing: (entries: DoingEntry[]) => void;
-}
-
-/** The core's surface for the hook. */
-interface PaneCore<Transport extends WorkbenchTransportPort> {
-	readonly projection: SceneProjection;
-	readonly connect: () => void;
-	readonly publishStatus: () => void;
-	/** The pane's facets the server hears about changed: report again. */
-	readonly facetsChanged: () => void;
-	readonly paneElementChanged: () => void;
-	readonly takeBack: () => Promise<TakeBackResult>;
-	readonly handleChange: (elements: readonly ExcalidrawElement[], appState: AppState) => void;
-	readonly handleLibraryChange: (items: LibraryItems) => void;
-	readonly applyLibrary: (items: LibraryItems) => void;
-	readonly markInteracted: () => void;
-	readonly flushWithBeacon: () => void;
-	readonly workbenchTransport: () => Transport | null;
-	readonly dispose: () => void;
-}
 
 /**
  * Wire one pane.
@@ -587,9 +548,10 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		applyLibrary,
 		markInteracted,
 		flushWithBeacon: reporting.flushWithBeacon,
+		pendingEdits: pending,
 		workbenchTransport,
 		dispose,
 	};
 }
 
-export { createPaneCore, type PaneCore, type PaneCoreHost };
+export { createPaneCore };
