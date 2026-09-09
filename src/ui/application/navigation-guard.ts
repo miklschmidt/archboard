@@ -10,11 +10,13 @@
 // server — and then asks again.
 
 import type { BoardCommandContext } from "@/ui/application/board-commands";
-import { navigationBlockedNotice } from "@/ui/application/notices";
+import { navigationBlockReason, navigationBlockedNotice } from "@/ui/application/notices";
 import { recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import type { PaneHandles } from "@/ui/application/lib/pane-handles";
 import type { BoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
+import type { Panes } from "@/ui/application/hooks/use-panes";
+import type { DialogError } from "@/ui/dialog-parts";
 import type { GuardVerdict, NavigationBlock } from "@/ui/board-routing/contracts";
 import type { BoardHold } from "@/ui/types";
 
@@ -30,6 +32,11 @@ interface GuardedPanes {
 interface BlockReportOwners {
 	readonly dialogs: BoardDialogs;
 	readonly notices: NoticeStack;
+}
+
+/** What a surface asking to move a pane acts on. */
+interface MoveOwners extends BlockReportOwners {
+	readonly panes: Panes;
 }
 
 /**
@@ -106,11 +113,35 @@ function reportNavigationBlock(
 	}
 }
 
+/**
+ * Whether one pane may be moved by a surface that is already open in front of
+ * the person — a board dialog, or a board link — asked of the pane as it is
+ * now rather than as it was when they started.
+ *
+ * The refusal is both said in the shell and handed back, so it reaches the
+ * person where they are looking rather than only behind what they are using.
+ * @param owners The panes, the dialogs and the notices.
+ * @param context The pane the move is for.
+ * @returns The refusal to show, or null when the move may go ahead.
+ */
+function refuseMove(owners: MoveOwners, context: BoardCommandContext): DialogError | null {
+	const { panes } = owners;
+	const record = recordFor(panes.records, context.paneId);
+	const verdict = guardPane(guardedPanes(panes.records, panes.handles), context.paneId);
+	if (verdict.kind === "clear") {
+		return null;
+	}
+	reportNavigationBlock(owners, verdict, context, record.status.hold);
+	return { title: "Open board", message: navigationBlockReason(context.paneId, verdict.kind) };
+}
+
 export {
 	guardNavigation,
 	guardPane,
 	guardedPanes,
+	refuseMove,
 	reportNavigationBlock,
 	type BlockReportOwners,
 	type GuardedPanes,
+	type MoveOwners,
 };

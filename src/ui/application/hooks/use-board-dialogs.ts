@@ -57,9 +57,14 @@ interface BoardDialogState {
 interface BoardDialogEvents {
 	/**
 	 * A submission is about to point a pane at another board. A save-as writes a
-	 * file and does not move a pane (ADR 0012), so it never says this.
+	 * file and does not move a pane (ADR 0012), so it never asks.
+	 *
+	 * The answer decides whether it may: a board leaves a pane by one rule
+	 * whichever surface asks, so a pane whose canvas holds work the note has not
+	 * got keeps it, and the words say why. Null means it may go ahead.
+	 * @returns The refusal to show in the dialog, or null.
 	 */
-	readonly onMovingPane: (context: BoardCommandContext) => void;
+	readonly onMovingPane: (context: BoardCommandContext) => DialogError | null;
 	/** That submission did not move the pane after all. */
 	readonly onMoveAbandoned: () => void;
 	/** A command finished; the words are for a notice, when there are any. */
@@ -189,10 +194,14 @@ function useBoardDialogs(
 			if (open.kind !== "board" || state.busy) {
 				return;
 			}
-			setState((current) => ({ ...current, busy: true, error: null }));
-			if (request.mode !== "save-as") {
-				events.onMovingPane(open.context);
+			// Asked of the pane as it is now, not as it was when the dialog opened:
+			// a board can stop saving while somebody is typing a name into it.
+			const refusal = request.mode === "save-as" ? null : events.onMovingPane(open.context);
+			if (refusal !== null) {
+				setState((current) => ({ ...current, busy: false, error: refusal }));
+				return;
 			}
+			setState((current) => ({ ...current, busy: true, error: null }));
 			void runBoardDialogRequest(api, request, open.context).then((outcome) =>
 				settle(outcome, open.context),
 			);

@@ -19,6 +19,42 @@ import {
 /** The search parameters this application owns, as they appear in the URL. */
 type WorkspaceSearch = Readonly<Record<string, string>>;
 
+/**
+ * Read the query string with every value left as the string it was written as.
+ *
+ * The router's own reader converts what looks like a number or a boolean, so
+ * `?paneA=2026` would name the number 2026 and `?paneA=true` a boolean — and
+ * every one of `2026`, `true` and `1.5` is a name a board is allowed to have.
+ * @param searchStr The query string, with or without its leading question mark.
+ * @returns The parameters, all of them strings.
+ */
+function parseWorkspaceSearchString(searchStr: string): Record<string, string> {
+	const search: Record<string, string> = {};
+	for (const [key, value] of new URLSearchParams(searchStr)) {
+		search[key] = value;
+	}
+	return search;
+}
+
+/**
+ * Write the query string back. `/` and `@` are left as they are: both are legal
+ * in a query string, and a board key is meant to be read in the address bar.
+ * @param search The parameters.
+ * @returns The query string, with its leading question mark, or empty.
+ */
+function stringifyWorkspaceSearch(search: Record<string, unknown>): string {
+	const params = new URLSearchParams();
+	for (const [key, value] of Object.entries(search)) {
+		// The workspace search is board keys and a pane id; anything else in it
+		// is not this application's and is not written back.
+		if (typeof value === "string") {
+			params.set(key, value);
+		}
+	}
+	const query = params.toString().replaceAll("%2F", "/").replaceAll("%40", "@");
+	return query === "" ? "" : `?${query}`;
+}
+
 /** Names the active pane; absent means the first open pane. */
 const ACTIVE_PANE_PARAM = "pane";
 
@@ -66,7 +102,7 @@ function validateWorkspaceSearch(input: Record<string, unknown>): WorkspaceSearc
 			search[key] = value;
 		}
 	}
-	return Object.freeze(search);
+	return search;
 }
 
 /**
@@ -128,14 +164,16 @@ function searchFromAddress(address: WorkspaceAddress): WorkspaceSearch {
 	if (active !== null) {
 		search[ACTIVE_PANE_PARAM] = active;
 	}
-	return Object.freeze(search);
+	return search;
 }
 
 export {
 	ACTIVE_PANE_PARAM,
 	addressFromSearch,
 	paneParam,
+	parseWorkspaceSearchString,
 	searchFromAddress,
+	stringifyWorkspaceSearch,
 	validateWorkspaceSearch,
 	type WorkspaceSearch,
 };
