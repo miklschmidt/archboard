@@ -6,6 +6,7 @@ import {
 	heldBoardKeys,
 	initialPaneRecord,
 	patchRecord,
+	releasedBoardKeys,
 	type PaneRecords,
 } from "@/ui/application/pane-records";
 import { NO_BOARD, assembleShellView } from "@/ui/application/shell-view";
@@ -130,4 +131,14 @@ test("scratch boards are the placeholder boards the panes hold, once each", () =
 			placeholder: true,
 		},
 	]);
+});
+
+test("a board stops being held when the last pane holding it lets it go", () => {
+	// Two panes on one board: one of them going is not the board being released.
+	expect(releasedBoardKeys(["Checkout"], ["Checkout"])).toEqual([]);
+	expect(releasedBoardKeys(["Checkout", "Billing"], ["Checkout"])).toEqual(["Billing"]);
+	// A pane switching board releases the one it was showing and holds another.
+	expect(releasedBoardKeys(["Checkout"], ["Billing"])).toEqual(["Checkout"]);
+	expect(releasedBoardKeys([], ["Checkout"])).toEqual([]);
+	expect(releasedBoardKeys(["Checkout"], [])).toEqual(["Checkout"]);
 });

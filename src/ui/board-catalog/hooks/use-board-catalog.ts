@@ -42,80 +42,46 @@ interface BoardCatalog {
 	readonly reconnected: () => void;
 }
 
-/** Reads one set of queries again, by exact key or by prefix. */
-type ReadAgain = (queryKey: QueryKey) => void;
-
 /**
- * Whether any of these queries is answering its very first read.
- * @param client The cache.
- * @param queryKey The queries, by exact key or by prefix.
- * @returns True while one is on the wire with nothing cached behind it.
- */
-function firstReadPending(client: QueryClient, queryKey: QueryKey): boolean {
-	return client
-		.getQueryCache()
-		.findAll({ queryKey })
-		.some((query) => query.state.fetchStatus === "fetching" && query.state.data === undefined);
-}
-
-/**
- * The way this module makes an event produce an answer from after it, rather
- * than one that was already on the wire before it.
+ * Read these queries again, so that an event is answered from after it and
+ * never by a request that was already on the wire before it.
  *
- * A cache that holds nothing for a key cannot restart the read that is filling
- * it: it hands back the request already in flight, and that answer — which the
- * server decided before the event happened — lands as fresh with the
- * invalidation cleared. So a read that had not answered yet when an event
- * arrived is invalidated once more as soon as it does. A query with an answer
- * in hand restarts on the first pass and is not touched again. A burst of
- * events against one unanswered read shares the single re-read they all want,
- * because every one of them is satisfied by an answer asked for after the last
- * of them. Nothing is cancelled, so no cancellation reaches a person's screen.
+ * Cancelling first is what makes that true, and it is the whole mechanism.
+ * A read already in flight carries an answer the server decided before the
+ * event: a cache with nothing behind that key cannot restart it — asked to
+ * refetch, it hands the same request back — and a query no one is reading
+ * right now is skipped by a refetch altogether, so in both cases the stale
+ * answer would land, clear the invalidation and count as fresh. A cancelled
+ * read is reverted rather than failed: data already in hand stays on screen,
+ * no error reaches a person, and the invalidation stands. What answers next
+ * was asked for after the event, whether that is now or when whatever
+ * disabled the query lets it read again.
  * @param client The cache.
- * @returns The re-read, bound to that cache.
+ * @param queryKey The queries to read again, by exact key or by prefix.
+ * @returns Settles once the fresh read has been asked for.
  */
-function createReadAgain(client: QueryClient): ReadAgain {
-	const promised = new Set<string>();
-	/**
-	 * Read one set of queries again.
-	 * @param queryKey The queries, by exact key or by prefix.
-	 */
-	async function readAgain(queryKey: QueryKey): Promise<void> {
-		if (!firstReadPending(client, queryKey)) {
-			await client.invalidateQueries({ queryKey });
-			return;
-		}
-		const pending = JSON.stringify(queryKey);
-		if (promised.has(pending)) {
-			return;
-		}
-		promised.add(pending);
-		await client.invalidateQueries({ queryKey });
-		promised.delete(pending);
-		await client.invalidateQueries({ queryKey });
-	}
-	return (queryKey: QueryKey): void => {
-		void readAgain(queryKey);
-	};
+async function readAgain(client: QueryClient, queryKey: QueryKey): Promise<void> {
+	await client.cancelQueries({ queryKey });
+	await client.invalidateQueries({ queryKey });
 }
 
 /**
  * Read both halves of the listing again.
- * @param readAgain The cache's re-read.
+ * @param client The cache.
  */
-function invalidateListing(readAgain: ReadAgain): void {
-	readAgain(boardCatalogKeys.persisted);
-	readAgain(boardCatalogKeys.panes);
+function invalidateListing(client: QueryClient): void {
+	void readAgain(client, boardCatalogKeys.persisted);
+	void readAgain(client, boardCatalogKeys.panes);
 }
 
 /**
  * Read everything one board's key owns again: its preview and its info.
- * @param readAgain The cache's re-read.
+ * @param client The cache.
  * @param board The board key.
  */
-function invalidateBoard(readAgain: ReadAgain, board: string): void {
-	readAgain(boardCatalogKeys.preview(board));
-	readAgain(boardCatalogKeys.info(board));
+function invalidateBoard(client: QueryClient, board: string): void {
+	void readAgain(client, boardCatalogKeys.preview(board));
+	void readAgain(client, boardCatalogKeys.info(board));
 }
 
 /**
@@ -126,10 +92,9 @@ function invalidateBoard(readAgain: ReadAgain, board: string): void {
 function catalogCommands(
 	client: QueryClient,
 ): Pick<BoardCatalog, "refresh" | "reload" | "boardsChanged" | "reconnected"> {
-	const readAgain = createReadAgain(client);
 	/** Read the listing again. */
 	function refresh(): void {
-		invalidateListing(readAgain);
+		invalidateListing(client);
 	}
 	/**
 	 * Read the listing and everything the navigator draws from it again: the
@@ -138,9 +103,9 @@ function catalogCommands(
 	 * reach every resource, not only the ones that failed loudly.
 	 */
 	function reload(): void {
-		invalidateListing(readAgain);
-		readAgain(boardCatalogKeys.previews);
-		readAgain(boardCatalogKeys.infos);
+		invalidateListing(client);
+		void readAgain(client, boardCatalogKeys.previews);
+		void readAgain(client, boardCatalogKeys.infos);
 	}
 	/**
 	 * These boards have been written, or stopped being worked on. The listing
@@ -149,9 +114,9 @@ function catalogCommands(
 	 * @param boards The board keys, which may be none.
 	 */
 	function boardsChanged(boards: readonly string[]): void {
-		invalidateListing(readAgain);
+		invalidateListing(client);
 		for (const board of boards) {
-			invalidateBoard(readAgain, board);
+			invalidateBoard(client, board);
 		}
 	}
 	/** A pane's socket came back. */

@@ -331,7 +331,7 @@ interface UnnamedUnknownProps {
  * @param props How many boards could not be read.
  * @returns The line, or nothing when every open board answered.
  */
-function UnnamedUnknown(props: UnnamedUnknownProps): React.JSX.Element | null {
+function UnnamedUnknown(props: UnnamedUnknownProps): JSX.Element | null {
 	if (props.unreadable === 0) {
 		return null;
 	}
