@@ -17,7 +17,11 @@ import {
 	createBrowserHistory,
 } from "@tanstack/react-router";
 
-import { validateWorkspaceSearch } from "@/ui/board-routing/search";
+import {
+	parseWorkspaceSearchString,
+	stringifyWorkspaceSearch,
+	validateWorkspaceSearch,
+} from "@/ui/board-routing/search";
 
 const rootRoute = createRootRoute({ validateSearch: validateWorkspaceSearch });
 
@@ -39,6 +43,9 @@ function createBoardRouter(component: () => JSX.Element) {
 	return createRouter({
 		routeTree: rootRoute.addChildren([indexRoute]),
 		history: createBrowserHistory(),
+		// A board key is a string, whatever it is spelled like.
+		parseSearch: parseWorkspaceSearchString,
+		stringifySearch: stringifyWorkspaceSearch,
 	});
 }
 

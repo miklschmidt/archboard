@@ -6,7 +6,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
-import type { BoardCommandContext } from "@/ui/application/board-commands";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { AgentSettingsHost } from "@/ui/application/components/AgentSettingsHost";
 import { ApplicationPane } from "@/ui/application/components/ApplicationPane";
@@ -19,13 +18,14 @@ import {
 	presentationNotice,
 } from "@/ui/application/notices";
 import { OpenerSettingsHost } from "@/ui/application/components/OpenerSettingsHost";
+import { dialogEvents } from "@/ui/application/lib/dialog-events";
 import { openPendingRecovery, paneEvents } from "@/ui/application/lib/pane-events";
 import { heldBoardKeys, recordFor } from "@/ui/application/pane-records";
 import { createShellActions } from "@/ui/application/lib/shell-actions";
 import { addressingOver, openingPaneList } from "@/ui/application/lib/workspace-port";
 import { assembleShellView } from "@/ui/application/shell-view";
 import { applyTheme, initialTheme } from "@/ui/application/lib/theme";
-import { useBoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
+import { useBoardDialogs, type BoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
 import { useMountedPreviews } from "@/ui/application/hooks/use-mounted-previews";
 import { useReleasedBoards } from "@/ui/application/hooks/use-released-boards";
 import {
@@ -378,49 +378,21 @@ function ApplicationBody(): JSX.Element {
 	const fullscreen = useFullscreen({ onRefused });
 	// What a closing dialog wakes exists only once the dialogs do; bound below.
 	const [afterDialogClose] = useState(() => new LiveBinding<() => void>());
-	const dialogEvents = useMemo(
-		() => ({
-			/**
-			 * A dialog is about to point a pane at another board: the person's move.
-			 * @param context The pane it acts for.
-			 */
-			onMovingPane: (context: BoardCommandContext): void => {
-				addressing.expect({ kind: "board", paneId: context.paneId, from: context.boardKey });
-			},
-			/** That command did not move the pane. */
-			onMoveAbandoned: addressing.clear,
-			/**
-			 * A dialog's command wrote these boards, whatever it went on to do.
-			 * @param boards The boards it wrote.
-			 */
-			onWrote: (boards: readonly string[]): void => {
-				catalog.boardsChanged(boards);
-			},
-			/**
-			 * A dialog's command finished without a refusal.
-			 * @param message Words for the notice, when there are any.
-			 */
-			onDone: (message: string | null): void => {
-				if (message !== null) {
-					raise(infoNotice("board-command", "Board", message));
-				}
-			},
-			/**
-			 * The person confirmed closing a pane that held work: a comparison ends.
-			 * @param paneId The pane.
-			 */
-			onClosePane: (paneId: string): void => {
-				addressing.expect({ kind: "panes", count: panes.list.panes.length - 1 });
-				panes.close(paneId);
-			},
-			/** A dialog closed; a note state that waited for it gets its dialog now. */
-			onClosed: (): void => {
-				afterDialogClose.read()();
-			},
-		}),
-		[raise, catalog, panes, addressing, afterDialogClose],
+	// The dialogs, reachable from the events they themselves are built from.
+	const [dialogsBinding] = useState(() => new LiveBinding<BoardDialogs>());
+	const events = useMemo(
+		() =>
+			dialogEvents({
+				panes,
+				notices,
+				catalog,
+				addressing,
+				dialogs: dialogsBinding,
+				afterClose: afterDialogClose,
+			}),
+		[panes, notices, catalog, addressing, dialogsBinding, afterDialogClose],
 	);
-	const dialogs = useBoardDialogs(dialogEvents);
+	const dialogs = useBoardDialogs(events);
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
 	useWorkspaceAddressing({ panes, dialogs, notices }, addressBinding);
@@ -442,6 +414,7 @@ function ApplicationBody(): JSX.Element {
 			dialogs,
 		}),
 	);
+	dialogsBinding.bind(dialogs);
 	afterDialogClose.bind(() => openPendingRecovery({ panes, dialogs }));
 
 	const openSettings = useCallback(

@@ -79,6 +79,18 @@ function addPane(list: PaneList): PaneList {
 }
 
 /**
+ * Whether closing a pane would do anything. The last pane cannot be closed, and
+ * neither can one this list has not got; a caller that acts on a close has to
+ * know, because a refused close must not take the pane's state with it.
+ * @param list The list.
+ * @param paneId The pane to close.
+ * @returns True when the close would happen.
+ */
+function canClosePane(list: PaneList, paneId: string): boolean {
+	return list.panes.length > 1 && hasPane(list, paneId);
+}
+
+/**
  * Close a pane. The last pane cannot be closed; focus moves to the pane that
  * remains when the closed one was focused.
  * @param list The list.
@@ -86,7 +98,7 @@ function addPane(list: PaneList): PaneList {
  * @returns The list without the pane, or the same list.
  */
 function closePane(list: PaneList, paneId: string): PaneList {
-	if (list.panes.length <= 1 || !hasPane(list, paneId)) {
+	if (!canClosePane(list, paneId)) {
 		return list;
 	}
 	const panes = list.panes.filter((pane) => pane.paneId !== paneId);
@@ -120,6 +132,7 @@ function primaryPaneId(list: PaneList): string {
 
 export {
 	addPane,
+	canClosePane,
 	closePane,
 	hasPane,
 	initialPaneList,

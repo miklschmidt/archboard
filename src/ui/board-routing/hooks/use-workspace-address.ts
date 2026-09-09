@@ -11,8 +11,13 @@
 // A deliberate move pushes a history entry; everything else replaces one. Our
 // own writes always describe a workspace that is already on screen, so their
 // plan is empty and the guard below cannot block them.
+//
+// The reconciliation is external state, kept in one box and driven from two
+// places: the effect, whenever what is on screen or what the address says has
+// changed, and the answer to the one command a restore has outstanding. There
+// is no React state here to fall behind either of them.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useBlocker, useRouter, useRouterState } from "@tanstack/react-router";
 
 import {
@@ -29,9 +34,13 @@ import {
 	type NavigationIntent,
 } from "@/ui/board-routing/intent";
 import {
+	abandonRestore,
 	advanceRestore,
-	restoreOf,
-	type RestoreJob,
+	createRestore,
+	openAnswered,
+	retargetRestore,
+	type PendingOpen,
+	type Restore,
 	type RestoreStep,
 } from "@/ui/board-routing/restore";
 import {
@@ -49,6 +58,22 @@ interface WorkspaceAddressing {
 	readonly clear: () => void;
 }
 
+/** The router this hook writes through. */
+type BoardRouter = ReturnType<typeof useRouter>;
+
+/**
+ * Everything the reconciliation reads, kept current by the effect so that an
+ * answer arriving between renders works from what the last render knew.
+ */
+interface Reconciliation {
+	restore: Restore;
+	displayed: WorkspaceAddress;
+	wanted: WorkspaceAddress;
+	port: WorkspacePort;
+	router: BoardRouter;
+	readonly deliberate: DeliberateNavigation;
+}
+
 /**
  * Whether every open pane has said what board it holds. Half a workspace is
  * never written down: a pane that has not reached the server yet would be
@@ -60,32 +85,77 @@ function isSettled(address: WorkspaceAddress): boolean {
 	return address.panes.length > 0 && address.panes.every((pane) => pane.boardKey !== null);
 }
 
-/** The router this hook writes through. */
-type BoardRouter = ReturnType<typeof useRouter>;
-
 /**
  * Write the workspace down when the address no longer says what is on screen.
  * A move the person asked for pushes a history entry; anything else replaces
  * the one they are on.
- * @param router The router.
- * @param deliberate The move the person asked for, if any.
- * @param displayed What is on screen.
- * @param wanted What the address says.
+ * @param state The reconciliation.
  */
-function publishAddress(
-	router: BoardRouter,
-	deliberate: DeliberateNavigation,
-	displayed: WorkspaceAddress,
-	wanted: WorkspaceAddress,
-): void {
+function publishAddress(state: Reconciliation): void {
+	const { displayed, wanted } = state;
 	if (!isSettled(displayed) || sameAddress(displayed, wanted)) {
 		return;
 	}
-	void router.navigate({
+	void state.router.navigate({
 		to: "/",
 		search: searchFromAddress(displayed),
-		replace: !deliberate.settle(displayed),
+		replace: !state.deliberate.settle(displayed),
 	});
+}
+
+/**
+ * Bring the address and the panes back into agreement.
+ *
+ * A restore runs first, one step per settle: the plan is recomputed from what
+ * is on screen each time, so a pane that arrives late, or a board an agent
+ * moved underneath, is taken as it is rather than as it was when the address
+ * was read. Once nothing is being restored, what is on screen is written down
+ * — whether or not it is what was asked for, so the two never disagree.
+ * @param state The reconciliation.
+ */
+function reconcile(state: Reconciliation): void {
+	const commands = {
+		/**
+		 * Close, add or focus a pane.
+		 * @param step The step.
+		 */
+		apply: (step: RestoreStep): void => {
+			if (step.kind === "close") {
+				state.port.closePane(step.paneId);
+			} else if (step.kind === "add") {
+				state.port.addPane();
+			} else if (step.kind === "focus") {
+				state.port.selectPane(step.paneId);
+			}
+		},
+		/**
+		 * Point a pane at a board, and reconcile again once it has answered.
+		 * @param pending The command, and the target that asked for it.
+		 * @param paneId The pane.
+		 */
+		open: (pending: PendingOpen, paneId: string): void => {
+			void state.port.open(paneId, pending.boardKey).then((outcome) => {
+				state.restore = openAnswered(state.restore, pending, outcome.kind === "opened");
+				reconcile(state);
+				return outcome;
+			});
+		},
+	};
+	// Each step is taken from the workspace as this render found it, so at most
+	// one step per step actually moves anything; the rest come back here on the
+	// render it caused. A step the shell refused changes nothing and would
+	// otherwise stall the restore, so the loop takes it off the plan and goes on.
+	while (!state.restore.done) {
+		const next = advanceRestore(state.restore, state.displayed, state.port, commands);
+		if (next === state.restore) {
+			return;
+		}
+		state.restore = next;
+		if (next.pending !== null) {
+			return;
+		}
+	}
+	publishAddress(state);
 }
 
 /**
@@ -104,72 +174,28 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 		 */
 		select: (state) => state.location.search,
 	});
-	const [deliberate] = useState(createDeliberateNavigation);
 	const displayed = useMemo(() => settledAddress(port.displayed), [port.displayed]);
 	const wanted = useMemo(() => addressFromSearch(validateWorkspaceSearch(search)), [search]);
-	// The address the tab was opened on is what it restores, taken before
-	// anything has been published over it.
-	const [job, setJob] = useState<RestoreJob | null>(() => restoreOf(wanted));
+	const [deliberate] = useState(createDeliberateNavigation);
+	// The reconciliation is made from the first render, which is before anything
+	// has been published, so the address it restores is the one the tab opened on.
+	const state = useRef<Reconciliation>({
+		restore: createRestore(wanted),
+		displayed,
+		wanted,
+		port,
+		router,
+		deliberate,
+	});
 
-	const openBoard = useCallback(
-		/**
-		 * Point one pane at one board, and look at the plan again once the server
-		 * has answered: a board that could not be reached is named at the end.
-		 * @param paneId The pane.
-		 * @param boardKey The board.
-		 */
-		async (paneId: string, boardKey: string): Promise<void> => {
-			const outcome = await port.open(paneId, boardKey);
-			setJob((current) => {
-				if (current === null) {
-					return null;
-				}
-				if (outcome.kind === "unreachable") {
-					current.unreachable.push(boardKey);
-				}
-				return { ...current };
-			});
-		},
-		[port],
-	);
-
-	const apply = useCallback(
-		/**
-		 * Apply one step of a restore through the shell's own commands.
-		 * @param step The step.
-		 */
-		(step: RestoreStep): void => {
-			switch (step.kind) {
-				case "close":
-					port.closePane(step.paneId);
-					return;
-				case "add":
-					port.addPane();
-					return;
-				case "focus":
-					port.selectPane(step.paneId);
-					return;
-				default:
-					void openBoard(step.paneId, step.boardKey);
-			}
-		},
-		[openBoard, port],
-	);
-
-	// The one place the address and the panes are reconciled.
-	//
-	// A restore runs first, one step per settle: the plan is recomputed from
-	// what is on screen each time, so a pane that arrives late, or a board an
-	// agent moved underneath, is taken as it is rather than as it was when the
-	// URL was read. Once nothing is being restored, what is on screen is
-	// written down — whether or not it is what was asked for, so that the
-	// address and the panes never disagree.
 	useEffect(() => {
-		if (job !== null && !job.done && advanceRestore(job, displayed, port, apply)) {
-			return;
-		}
-		publishAddress(router, deliberate, displayed, wanted);
-	}, [apply, deliberate, displayed, job, port, router, wanted]);
+		const current = state.current;
+		current.displayed = displayed;
+		current.wanted = wanted;
+		current.port = port;
+		current.router = router;
+		reconcile(current);
+	}, [displayed, port, router, wanted]);
 
 	// A history navigation is the other place the address leads. Our own writes
 	// arrive as PUSH and REPLACE and are never restored over.
@@ -179,10 +205,14 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 				if (action.type === "PUSH" || action.type === "REPLACE") {
 					return;
 				}
+				const current = state.current;
 				const asked = router.options.parseSearch(location.search);
-				setJob(restoreOf(addressFromSearch(validateWorkspaceSearch(asked))));
+				current.restore = retargetRestore(
+					current.restore,
+					addressFromSearch(validateWorkspaceSearch(asked)),
+				);
 			}),
-		[router],
+		[router, state],
 	);
 
 	// The guard, before anything moves. A navigation that would take a pane's
@@ -219,10 +249,13 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 			 * @param intent What they asked for.
 			 */
 			expect: (intent: NavigationIntent): void => {
-				setJob(null);
+				state.current.restore = abandonRestore(state.current.restore);
 				deliberate.expect(intent);
 			},
-			clear: deliberate.clear,
+			/** The gesture failed. */
+			clear: (): void => {
+				deliberate.clear();
+			},
 		}),
 		[deliberate],
 	);

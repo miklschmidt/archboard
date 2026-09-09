@@ -19,6 +19,7 @@ import {
 	type NoteStateChange,
 	type PendingRecovery,
 } from "@/ui/application/note-recovery";
+import { guardPane, guardedPanes, reportNavigationBlock } from "@/ui/application/navigation-guard";
 import { recordFor } from "@/ui/application/pane-records";
 import { contextFor } from "@/ui/application/lib/shell-actions";
 import type { PaneSession } from "@/ui/application/lib/pane-handles";
@@ -186,17 +187,28 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		notices.raise(failureNotice("board-link", "Open linked board", error));
 	}
 	/**
-	 * A pane followed a board link. Which board it lands on is the server's
-	 * answer; what this records is that the person asked this pane to move.
+	 * A pane is following a board link.
+	 *
+	 * The same rule as the board picker and the address bar decides whether it
+	 * may: a pane whose canvas holds work the note has not got keeps what it is
+	 * showing, and its own recovery is offered instead. Otherwise this is the
+	 * person moving that pane, and the address bar records it as their move.
+	 * Which board it lands on is the server's answer, not this one's.
 	 * @param paneId The pane.
 	 * @param _boardKey The board key in the link.
+	 * @returns Whether the pane may move.
 	 */
-	function onBoardOpenRequested(paneId: string, _boardKey: string): void {
-		owners.addressing.expect({
-			kind: "board",
-			paneId,
-			from: recordFor(owners.panes.records, paneId).status.boardKey,
-		});
+	function onBoardOpenRequested(paneId: string, _boardKey: string): boolean {
+		const { panes, dialogs } = owners;
+		const record = recordFor(panes.records, paneId);
+		const verdict = guardPane(guardedPanes(panes.records, panes.handles), paneId);
+		if (verdict.kind !== "clear") {
+			const context = contextFor(panes.list, record);
+			reportNavigationBlock({ dialogs, notices }, verdict, context, record.status.hold);
+			return false;
+		}
+		owners.addressing.expect({ kind: "board", paneId, from: record.status.boardKey });
+		return true;
 	}
 	/**
 	 * This tab runs a bundle the canvas no longer serves.

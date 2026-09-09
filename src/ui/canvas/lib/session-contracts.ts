@@ -118,11 +118,16 @@ interface CanvasSessionOptions<Transport extends WorkbenchTransportPort> {
 	/** An element's board link could not be followed. */
 	onBoardLinkError?: (error: string) => void;
 	/**
-	 * This pane asked the server to point it at another board, by following an
-	 * element's board link. The person did that, so the address bar records it
-	 * as a move of theirs rather than as one that simply happened (TASK-166).
+	 * This pane is about to ask the server to point it at another board, because
+	 * the person followed an element's board link.
+	 *
+	 * The answer decides whether it may. A board leaves a pane by one rule
+	 * whichever surface asks, and a pane holding work the note has not got keeps
+	 * what it is showing (TASK-166). A refusal is explained where it is made, so
+	 * the pane simply does not ask. Absent, the pane may move.
+	 * @returns True when the move may go ahead.
 	 */
-	onBoardOpenRequested?: (paneId: string, boardKey: string) => void;
+	onBoardOpenRequested?: (paneId: string, boardKey: string) => boolean;
 	/**
 	 * This tab runs a bundle the canvas no longer serves (TASK-056). Said once
 	 * per build, at the pane's own pulse, rather than discovered by a command

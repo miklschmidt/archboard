@@ -41,6 +41,14 @@ const EMPTY_ADDRESS: WorkspaceAddress = Object.freeze({
 	activePaneId: null,
 });
 
+/** The plan for an address that asks for nothing. */
+const NOTHING_TO_DO: AddressPlan = Object.freeze({
+	adds: 0,
+	closes: Object.freeze([]),
+	opens: Object.freeze([]),
+	focus: null,
+});
+
 /**
  * The board one pane shows in an address.
  * @param address The address.
@@ -103,6 +111,11 @@ function settledAddress(address: WorkspaceAddress): WorkspaceAddress {
  * @returns The plan.
  */
 function planFor(displayed: WorkspaceAddress, wanted: WorkspaceAddress): AddressPlan {
+	// An address that names no pane asks for no workspace — which is what a bare
+	// `/` is. It is not a request to close the panes that are open.
+	if (wanted.panes.length === 0) {
+		return NOTHING_TO_DO;
+	}
 	const closes = displayed.panes
 		.filter((pane) => !hasAddressedPane(wanted, pane.paneId))
 		.map((pane) => pane.paneId);

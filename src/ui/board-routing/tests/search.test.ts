@@ -1,10 +1,25 @@
 import { expect, test } from "bun:test";
 
+import { settledAddress, type WorkspaceAddress } from "@/ui/board-routing/address";
 import {
 	addressFromSearch,
+	parseWorkspaceSearchString,
 	searchFromAddress,
+	stringifyWorkspaceSearch,
 	validateWorkspaceSearch,
 } from "@/ui/board-routing/search";
+
+/**
+ * An address, written the way a test reads.
+ * @param panes The panes, as pane id to board key.
+ * @returns The address.
+ */
+function addressOf(panes: readonly (readonly [string, string])[]): WorkspaceAddress {
+	return settledAddress({
+		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey })),
+		activePaneId: null,
+	});
+}
 
 test("the search keeps only the parameters the workspace owns, as trimmed strings", () => {
 	expect(
@@ -70,4 +85,24 @@ test("a search naming no pane is an address with no panes, which asks for nothin
 	const address = addressFromSearch(validateWorkspaceSearch({}));
 	expect(address.panes).toEqual([]);
 	expect(address.activePaneId).toBeNull();
+});
+
+test("a board key that reads as JSON is still a board key through the installed parser", () => {
+	// The router's default parser would take these for a number, a boolean and
+	// nothing at all; each of them is a name a board is allowed to have.
+	const parsed = parseWorkspaceSearchString("?paneA=2026&paneB=true&pane=A");
+	expect(parsed).toEqual({ paneA: "2026", paneB: "true", pane: "A" });
+	const address = addressFromSearch(validateWorkspaceSearch(parsed));
+	expect(address.panes).toEqual([
+		{ paneId: "A", boardKey: "2026" },
+		{ paneId: "B", boardKey: "true" },
+	]);
+});
+
+test("a board key survives being written and read back by the router's own pair", () => {
+	for (const boardKey of ["2026", "true", "null", "1.5", "-ledger", "billing/ledger@option-a"]) {
+		const written = stringifyWorkspaceSearch(searchFromAddress(addressOf([["A", boardKey]])));
+		const read = addressFromSearch(validateWorkspaceSearch(parseWorkspaceSearchString(written)));
+		expect(read.panes[0]?.boardKey).toBe(boardKey);
+	}
 });
