@@ -4,7 +4,7 @@ title: Replace manual frontend server-resource caching with TanStack Query
 status: In Progress
 assignee: []
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 13:50'
+updated_date: '2026-09-09 14:06'
 labels: []
 dependencies:
   - TASK-164
@@ -97,4 +97,20 @@ Review follow-up (commit ea6e67cc): createBoardQueryClient moved out of the prov
 Runtime cache coverage added at src/ui/board-catalog/tests/board-cache.test.tsx: the catalog's own hooks mounted under its own provider, with a fake canvas server behind global fetch. It asserts that each resource is read once and again only when something invalidates it, that a vault refusal is reported without a retry and recovers on the next read, that a pane-inventory refusal leaves the vault's boards listed, that a snapshot answering after a pane took the board does not replace that pane's scene, and that a board an agent settled on is read again while its neighbours are not. Both precedence and preview invalidation were confirmed load-bearing by inverting them and watching the owner fail. Nothing asserts a configuration value or a library internal.
 
 Focused browser slot, all green: board-navigator (2 tests), shell-layout, board-drill-down, pane-telemetry-recovery and claim-interaction, run through the strict adapter, exit 0. test:repository green. Module lanes: 913 src/ui tests. Lint (policy and baseline), fmt:check and both tsc projects green. The final combined bun run check is the parent's, after Router lands.
+
+Review findings from /tmp/archboard-task-167-review.md, fixed in commit e78e3ba2. Each fix was confirmed load-bearing by inverting it and watching its owner fail.
+
+1. Lost invalidation during a first read. Confirmed against the installed query-core: Query.fetch only silently cancels and restarts an in-flight read when state.data is defined, so a read with nothing cached behind it is reused, and successState clears isInvalidated and stamps the answer fresh. createReadAgain now invalidates a second time once such a read lands, and a burst against one unanswered read shares the single re-read, so N events cost one extra read rather than N. Nothing is cancelled, so no CancelledError or AbortError can reach the UI.
+
+2. board-info recovery. reload(), which is the navigator's Refresh and now also the reconnect path, invalidates the info reads as well as the listing and previews. useScratchBoards reports how many open boards could not be asked about, and the Scratch group says so rather than silently withholding the naming affordance; the vault listing is untouched by an info failure.
+
+3. Human write invalidation. A done outcome now names the boards the command wrote, filled in per command: a save names the note written and the board it was written from, create names the created board, clear and reload name the pane's board, and an open names none because it writes nothing. Both settle() in shell-actions and the dialogs' onDone pass that straight to catalog.boardsChanged, which invalidates the listing plus exactly those boards' preview and info. No retries and nothing is written into the cache.
+
+4. Pane retirement. canvasPaneListingKey in @/ui/canvas/workbench-socket now includes the pane count the server answered a report with, so a survivor's next report raises onPaneStateAccepted and the inventory is read again. The evidence comes from the server's own answer, which is necessarily from after the retirement, so it does not race the socket disconnect, needs no new lifecycle event, and covers a pane closed by any route including another tab's.
+
+Runtime regressions added: an event during a first read forces an answer from after it (listing and preview together); a burst during one first read converges on exactly one more read; a name state that could not be read is withheld, said, and recovered by the refresh; and the listing key follows the board and the server's pane count but not the camera. All at module owners.
+
+Not covered here: navigator occupancy end to end after a direct and a history close. That needs a browser owner and the Router agent holds the slot; the module owners cover the signal and the re-read, and I can run board-navigator or shell-layout for the visible half when the slot frees.
+
+Green after the fixes: lint (policy and baseline), fmt:check, both tsc projects, 917 src/ui module tests.
 <!-- SECTION:NOTES:END -->
