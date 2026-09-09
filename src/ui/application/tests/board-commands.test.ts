@@ -121,7 +121,8 @@ test("open names the board, its variant and level, and the pane only when two ar
 		{ mode: "open", board: "Runtime", variant: "proposal", level: "L2" },
 		TWO_PANES,
 	);
-	expect(outcome).toEqual({ kind: "done", message: null });
+	// Opening writes nothing: the pane shows another board, and no board moved.
+	expect(outcome).toEqual({ kind: "done", message: null, boards: [] });
 	expect(api.calls).toEqual([
 		["open", { board: "Runtime", variant: "proposal", level: "L2", pane: "A-1" }],
 	]);
@@ -137,7 +138,7 @@ test("create writes the board first and then points the pane at it", async () =>
 		{ mode: "create", board: "Inventory" },
 		TWO_PANES,
 	);
-	expect(outcome).toEqual({ kind: "done", message: "Created Inventory." });
+	expect(outcome).toEqual({ kind: "done", message: "Created Inventory.", boards: ["Inventory"] });
 	expect(api.calls).toEqual([
 		["create", { board: "Inventory", variant: "current" }],
 		["open", { board: "Inventory", variant: "current", pane: "A-1" }],
@@ -151,7 +152,12 @@ test("save-as writes the pane's board under the new name with the person's clien
 		{ mode: "save-as", board: "Checkout", variant: "async-payments" },
 		TWO_PANES,
 	);
-	expect(outcome).toEqual({ kind: "done", message: "Saved as Checkout." });
+	// The note written and the board it was written from are both behind now.
+	expect(outcome).toEqual({
+		kind: "done",
+		message: "Saved as Checkout.",
+		boards: ["Checkout", "Checkout"],
+	});
 	expect(api.calls).toEqual([
 		[
 			"save",
@@ -191,7 +197,11 @@ test("a refused save is a conflict outcome, and the two wire outcomes are one ca
 test("clear is one call that carries the pane's client id and reports the count", async () => {
 	const api = new FakeApi();
 	const outcome = await runClear(api, ONE_PANE);
-	expect(outcome).toEqual({ kind: "done", message: "Removed 4 element(s)." });
+	expect(outcome).toEqual({
+		kind: "done",
+		message: "Removed 4 element(s).",
+		boards: ["Checkout"],
+	});
 	expect(api.calls).toEqual([["clear", "Checkout", "A-1", 3]]);
 	const failed = await runClear(api, { ...ONE_PANE, boardKey: null });
 	expect(failed.kind).toBe("failed");

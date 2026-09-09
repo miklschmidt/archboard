@@ -315,6 +315,33 @@ function rowIds(entries: readonly NavigatorEntry[]): string[] {
 /** Inputs for the scratch group. */
 interface ScratchGroupProps extends SelectableProps {
 	entries: NavigatorEntry[];
+	/** How many open boards could not be asked whether they have a name. */
+	unreadable: number;
+}
+
+/** Inputs for the line about boards that could not be asked about. */
+interface UnnamedUnknownProps {
+	unreadable: number;
+}
+
+/**
+ * What the scratch group says when a board's name state could not be read: a
+ * board that could not be asked about is not offered a name it may already
+ * have, and the refresh above is what tries again.
+ * @param props How many boards could not be read.
+ * @returns The line, or nothing when every open board answered.
+ */
+function UnnamedUnknown(props: UnnamedUnknownProps): React.JSX.Element | null {
+	if (props.unreadable === 0) {
+		return null;
+	}
+	const boards = props.unreadable === 1 ? "One open board" : `${props.unreadable} open boards`;
+	return (
+		<p className="text-body flex items-start gap-2 px-2 py-1" aria-live="polite">
+			<StatusDot tone="warning" className="mt-[5px]" />
+			<span className="min-w-0">{boards} could not be checked for a name. Refresh to retry.</span>
+		</p>
+	);
 }
 
 /**
@@ -326,12 +353,13 @@ interface ScratchGroupProps extends SelectableProps {
 function ScratchGroup(props: ScratchGroupProps): JSX.Element | null {
 	const ids = useMemo(() => rowIds(props.entries), [props.entries]);
 	const list = useRovingList(ids);
-	if (props.entries.length === 0) {
+	if (props.entries.length === 0 && props.unreadable === 0) {
 		return null;
 	}
 	return (
 		<SidebarGroup className="border-border border-t p-2 pt-1">
 			<SidebarGroupLabel className={KICKER_CLASS}>Scratch</SidebarGroupLabel>
+			<UnnamedUnknown unreadable={props.unreadable} />
 			<SidebarMenu onKeyDown={list.onKeyDown}>
 				<SidebarMenuSub className="mx-0 translate-x-0 gap-1 border-l-0 p-0">
 					{props.entries.map((entry) => (
@@ -533,6 +561,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 				/>
 				<ScratchGroup
 					entries={scratchEntries(view)}
+					unreadable={view.scratchUnreadable}
 					selectedKey={view.selectedBoardKey}
 					actions={actions}
 					renderPreview={view.renderPreview}

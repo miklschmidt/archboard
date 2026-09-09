@@ -63,7 +63,13 @@ interface BoardDialogEvents {
 	/** That submission did not move the pane after all. */
 	readonly onMoveAbandoned: () => void;
 	/** A command finished; the words are for a notice, when there are any. */
-	readonly onDone: (message: string | null) => void;
+	/**
+	 * A command finished. The boards it wrote are named so what the shell holds
+	 * about them can be read again; a command that wrote none names none.
+	 * @param message Words for the notice, when there are any.
+	 * @param boards The boards the command wrote.
+	 */
+	readonly onDone: (message: string | null, boards: readonly string[]) => void;
 	/** The person confirmed closing a pane that held work. */
 	readonly onClosePane: (paneId: string) => void;
 	/** No dialog is open any more, whatever closed it. */
@@ -151,7 +157,7 @@ function useBoardDialogs(
 			switch (outcome.kind) {
 				case "done":
 					setState(CLOSED);
-					events.onDone(outcome.message);
+					events.onDone(outcome.message, outcome.boards);
 					events.onClosed();
 					return;
 				case "conflict":
