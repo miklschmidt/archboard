@@ -10,7 +10,7 @@ import type { BoardDialogEvents, BoardDialogs } from "@/ui/application/hooks/use
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
 import type { Panes } from "@/ui/application/hooks/use-panes";
 import type { BoardCatalog } from "@/ui/board-catalog";
-import type { WorkspaceAddressing } from "@/ui/board-routing";
+import type { NavigationClaim, WorkspaceAddressing } from "@/ui/board-routing";
 import type { DialogError } from "@/ui/dialog-parts";
 
 /** The owners the dialog events reach. */
@@ -33,6 +33,9 @@ interface DialogEventOwners {
  */
 function dialogEvents(owners: DialogEventOwners): BoardDialogEvents {
 	const { panes, notices, catalog, addressing } = owners;
+	// The permission the submission is running under, from the moment it is
+	// granted until the command it covers has finished one way or the other.
+	let move: NavigationClaim | null = null;
 	return {
 		/**
 		 * A dialog is about to point a pane at another board.
@@ -41,17 +44,32 @@ function dialogEvents(owners: DialogEventOwners): BoardDialogEvents {
 		 * is still typing a name into the dialog. When it may go, this is the
 		 * person moving that pane, and the address bar records it as their move.
 		 * @param context The pane it acts for.
-		 * @returns The refusal to show, or null when the move may go ahead.
+		 * @param boardKey The board they asked for.
+		 * @returns The refusal to show, or null once the command may be sent.
 		 */
-		onMovingPane: (context: BoardCommandContext): DialogError | null => {
+		onMovingPane: async (
+			context: BoardCommandContext,
+			boardKey: string,
+		): Promise<DialogError | null> => {
 			const refusal = refuseMove({ panes, notices, dialogs: owners.dialogs.read() }, context);
-			if (refusal === null) {
-				addressing.expect({ kind: "board", paneId: context.paneId, from: context.boardKey });
+			if (refusal !== null) {
+				return refusal;
 			}
-			return refusal;
+			// The command waits for anything the address bar has outstanding, so
+			// what the person just asked for is the last thing the server is given.
+			move = await addressing.claim({
+				kind: "board",
+				paneId: context.paneId,
+				from: context.boardKey,
+				boardKey,
+			});
+			return null;
 		},
 		/** That command did not move the pane. */
-		onMoveAbandoned: addressing.clear,
+		onMoveAbandoned: (): void => {
+			move?.failed();
+			move = null;
+		},
 		/**
 		 * A dialog's command wrote these boards, whatever it went on to do.
 		 * @param boards The boards it wrote, whose cached state is now behind.
@@ -64,6 +82,8 @@ function dialogEvents(owners: DialogEventOwners): BoardDialogEvents {
 		 * @param message Words for the notice, when there are any.
 		 */
 		onDone: (message: string | null): void => {
+			move?.done();
+			move = null;
 			if (message !== null) {
 				notices.raise(infoNotice("board-command", "Board", message));
 			}

@@ -10,6 +10,7 @@ import type {
 } from "@excalidraw/excalidraw/types";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
+import type { BoardMove } from "@/ui/canvas/board-links";
 import type { CanvasWorkbenchSocketOwner } from "@/ui/canvas/workbench-socket";
 import type { WorkbenchTransportPort } from "@/ui/canvas/workbench-port";
 import type { MountedBoardPreviewController } from "@/ui/board-preview";
@@ -121,13 +122,15 @@ interface CanvasSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * This pane is about to ask the server to point it at another board, because
 	 * the person followed an element's board link.
 	 *
-	 * The answer decides whether it may. A board leaves a pane by one rule
-	 * whichever surface asks, and a pane holding work the note has not got keeps
-	 * what it is showing (TASK-166). A refusal is explained where it is made, so
-	 * the pane simply does not ask. Absent, the pane may move.
-	 * @returns True when the move may go ahead.
+	 * The answer decides whether it may, and comes back once nothing else is on
+	 * its way to the server, so the person's move is the last one it is given.
+	 * A board leaves a pane by one rule whichever surface asks, and a pane
+	 * holding work the note has not got keeps what it is showing (TASK-166); a
+	 * refusal is explained where it is made, so the pane simply does not ask.
+	 * Absent, the pane may move.
+	 * @returns Permission and where to report the outcome, or null.
 	 */
-	onBoardOpenRequested?: (paneId: string, boardKey: string) => boolean;
+	onBoardOpenRequested?: (paneId: string, boardKey: string) => Promise<BoardMove | null>;
 	/**
 	 * This tab runs a bundle the canvas no longer serves (TASK-056). Said once
 	 * per build, at the pane's own pulse, rather than discovered by a command

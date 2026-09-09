@@ -1,20 +1,28 @@
 // Restoring a workspace: the address asks for panes and boards, and each step
-// is applied through the commands the shell already uses. What to do next is
-// decided here, given what is on screen; the hook applies it.
+// is applied through the commands the shell already uses.
 //
-// There is one restore for the tab's life, retargeted whenever the address
-// asks for somewhere else, and it holds at most one outstanding command. That
-// is what keeps a late answer honest: an open cannot be dispatched while
-// another is unanswered, so the server sees them in the order they were asked
-// for, and an answer is only recorded against the target that asked for it.
-// A restore is never finished while its own command is still outstanding —
-// the board may turn out to be unreachable, and that has to be said before the
-// address settles on what is shown.
+// Three rules keep a restore honest about a workspace it cannot change itself.
+//
+// It reads what is on screen once per render, so it applies one step that
+// changes something and then waits for the render that change causes. A
+// command the shell refuses changes nothing, which leaves that reading good,
+// so the next step may follow at once; that is why each command says whether
+// it changed anything.
+//
+// It holds at most one open at a time, and an open is not over when the server
+// answers it: it is over when the pane is seen to have moved. The answer says
+// the note was read; the pane showing it is a separate message. Until then the
+// address is not written, or it would be written from a workspace that is
+// about to change again.
+//
+// An answer is recorded only against the target that asked for it. A person
+// moving on does not make an older answer theirs.
 //
 // A step is remembered once applied, so a step whose effect changed nothing is
 // not applied twice and a restore always terminates.
 
 import {
+	boardIn,
 	panesAtRisk,
 	planFor,
 	planIsEmpty,
@@ -30,24 +38,30 @@ type RestoreStep =
 	| { readonly kind: "open"; readonly paneId: string; readonly boardKey: string }
 	| { readonly kind: "focus"; readonly paneId: string };
 
-/** The open a restore is waiting on, and which target asked for it. */
+/** An open a restore has asked for and not yet seen through. */
 interface PendingOpen {
+	/** Which target asked. An answer to an older one is not this one's. */
 	readonly target: number;
+	readonly paneId: string;
 	readonly boardKey: string;
+	/** What that pane was showing when it was asked, so its move is observable. */
+	readonly from: string | null;
 }
 
 /** The restore, as it stands. */
 interface Restore {
 	/** The address being restored. */
 	readonly wanted: WorkspaceAddress;
-	/** Which target this is. An answer from an older one is not this one's. */
+	/** Which target this is. */
 	readonly target: number;
 	/** The steps applied for this target. */
 	readonly attempted: Set<string>;
 	/** The boards this target asked for and could not reach. */
 	readonly unreachable: readonly string[];
-	/** The one command outstanding, or null. */
+	/** The open the server has not answered, or null. */
 	readonly pending: PendingOpen | null;
+	/** The open the server answered, whose pane has not been seen to move. */
+	readonly adopting: PendingOpen | null;
 	/** Whether this target has settled. */
 	readonly done: boolean;
 }
@@ -65,13 +79,21 @@ type RestoreOutcome =
  * @returns The restore.
  */
 function createRestore(wanted: WorkspaceAddress): Restore {
-	return { wanted, target: 1, attempted: new Set(), unreachable: [], pending: null, done: false };
+	return {
+		wanted,
+		target: 1,
+		attempted: new Set(),
+		unreachable: [],
+		pending: null,
+		adopting: null,
+		done: false,
+	};
 }
 
 /**
  * Point the restore somewhere else: a history navigation asked for another
  * workspace. What was tried for the last target says nothing about this one;
- * an outstanding command is carried over, because it is still outstanding.
+ * an open still in the air is carried over, because it is still in the air.
  * @param restore The restore.
  * @param wanted The address to restore now.
  * @returns The retargeted restore.
@@ -83,13 +105,14 @@ function retargetRestore(restore: Restore, wanted: WorkspaceAddress): Restore {
 		attempted: new Set(),
 		unreachable: [],
 		pending: restore.pending,
+		adopting: restore.adopting,
 		done: false,
 	};
 }
 
 /**
  * Stop restoring: the person said where they want to be, so the address bar
- * follows them instead. An outstanding command is still outstanding.
+ * follows them instead. An open still in the air is still in the air.
  * @param restore The restore.
  * @returns The settled restore.
  */
@@ -98,14 +121,24 @@ function abandonRestore(restore: Restore): Restore {
 }
 
 /**
+ * Whether anything this restore asked for is still in the air. The address is
+ * not written while it is: the workspace is about to change again.
+ * @param restore The restore.
+ * @returns True while an open is unanswered or its pane has not moved.
+ */
+function restoreOutstanding(restore: Restore): boolean {
+	return restore.pending !== null || restore.adopting !== null;
+}
+
+/**
  * Record the answer to an open. A board the target asked for and could not
- * reach is remembered so it can be named; an answer to a target that has been
- * replaced is only released, never recorded, because it says nothing about
- * where the person is now.
+ * reach is remembered so it can be named; one that was opened is waited on
+ * until its pane is seen to show it. An answer to a target that has been
+ * replaced is only released, never recorded.
  * @param restore The restore.
  * @param pending The open that was answered.
  * @param reached Whether the board was opened.
- * @returns The restore with that command released.
+ * @returns The restore with that answer taken.
  */
 function openAnswered(restore: Restore, pending: PendingOpen, reached: boolean): Restore {
 	// An answer is taken once. Anything else is an answer already taken, or one
@@ -117,9 +150,34 @@ function openAnswered(restore: Restore, pending: PendingOpen, reached: boolean):
 	return {
 		...restore,
 		pending: null,
+		adopting: reached ? pending : null,
 		unreachable:
 			reached || stale ? restore.unreachable : [...restore.unreachable, pending.boardKey],
 	};
+}
+
+/**
+ * Let go of an open whose pane has been seen to move, or whose pane is out of
+ * contact and so cannot be waited on any longer.
+ * @param restore The restore.
+ * @param displayed What is on screen now.
+ * @param port The workspace.
+ * @returns The restore, with that open let go when it is over.
+ */
+function adoptionObserved(
+	restore: Restore,
+	displayed: WorkspaceAddress,
+	port: WorkspacePort,
+): Restore {
+	const { adopting } = restore;
+	if (adopting === null) {
+		return restore;
+	}
+	// The board the pane lands on is the server's answer, not the request's: an
+	// address is normalised on the way through. That the pane moved at all is
+	// what says the open arrived.
+	const moved = boardIn(displayed, adopting.paneId) !== adopting.from;
+	return moved || !port.ready(adopting.paneId) ? { ...restore, adopting: null } : restore;
 }
 
 /**
@@ -197,7 +255,7 @@ function nextRestoreStep(
  *
  * Every pane the remaining plan would close or move is preflighted before each
  * step, so a restore never half-applies over a canvas holding work the note
- * has not got. Nothing happens while a command is outstanding.
+ * has not got.
  * @param restore The restore.
  * @param displayed What is on screen now.
  * @param port The workspace.
@@ -208,10 +266,10 @@ function restoreOutcome(
 	displayed: WorkspaceAddress,
 	port: WorkspacePort,
 ): RestoreOutcome {
-	if (restore.pending !== null) {
+	if (restoreOutstanding(restore)) {
 		return { kind: "wait" };
 	}
-	const plan = planFor(displayed, restore.wanted);
+	const plan = planFor(displayed, restore.wanted, port.paneIds);
 	if (planIsEmpty(plan)) {
 		return { kind: "done" };
 	}
@@ -242,17 +300,22 @@ function reportRestoreEnd(port: WorkspacePort, restore: Restore, outcome: Restor
 
 /** How a restore applies the one step it decided on. */
 interface RestoreCommands {
-	/** Close, add or focus a pane: the shell answers at once. */
-	readonly apply: (step: RestoreStep) => void;
+	/**
+	 * Close, add or focus a pane.
+	 * @returns Whether the workspace changed.
+	 */
+	readonly apply: (step: RestoreStep) => boolean;
 	/** Point a pane at a board; the answer comes back to `openAnswered`. */
-	readonly open: (pending: PendingOpen, paneId: string) => void;
+	readonly open: (pending: PendingOpen) => void;
 }
 
 /**
- * Take the restore one step further.
+ * Take the restore as far as this reading of the workspace allows.
  *
- * The restore is returned rather than changed in place, so the outstanding
- * command and the steps tried are part of what the caller renders from.
+ * One step that changes something, and then it waits: the workspace it was
+ * read from is now out of date, and the render that change causes brings it
+ * back. Steps the shell refuses change nothing, so they are taken off the plan
+ * and the next one is tried against the same, still accurate, reading.
  * @param restore The restore.
  * @param displayed What is on screen now.
  * @param port The workspace.
@@ -265,34 +328,47 @@ function advanceRestore(
 	port: WorkspacePort,
 	commands: RestoreCommands,
 ): Restore {
-	const outcome = restoreOutcome(restore, displayed, port);
-	if (outcome.kind === "wait") {
-		return restore;
+	let current = adoptionObserved(restore, displayed, port);
+	while (!current.done) {
+		const outcome = restoreOutcome(current, displayed, port);
+		if (outcome.kind === "wait") {
+			return current;
+		}
+		if (outcome.kind !== "step") {
+			reportRestoreEnd(port, current, outcome);
+			return { ...current, done: true };
+		}
+		const attempted = new Set(current.attempted).add(outcome.key);
+		if (outcome.step.kind === "open") {
+			// Outstanding before it is asked, so a render between the request and
+			// its answer cannot find this restore finished.
+			const pending: PendingOpen = {
+				target: current.target,
+				paneId: outcome.step.paneId,
+				boardKey: outcome.step.boardKey,
+				from: boardIn(displayed, outcome.step.paneId),
+			};
+			commands.open(pending);
+			return { ...current, attempted, pending };
+		}
+		current = { ...current, attempted };
+		if (commands.apply(outcome.step)) {
+			return current;
+		}
 	}
-	if (outcome.kind !== "step") {
-		reportRestoreEnd(port, restore, outcome);
-		return { ...restore, done: true };
-	}
-	const attempted = new Set(restore.attempted).add(outcome.key);
-	if (outcome.step.kind !== "open") {
-		commands.apply(outcome.step);
-		return { ...restore, attempted };
-	}
-	// Outstanding before it is asked, so a render between the request and its
-	// answer cannot find this restore finished.
-	const pending: PendingOpen = { target: restore.target, boardKey: outcome.step.boardKey };
-	commands.open(pending, outcome.step.paneId);
-	return { ...restore, attempted, pending };
+	return current;
 }
 
 export {
 	abandonRestore,
+	adoptionObserved,
 	advanceRestore,
 	createRestore,
 	nextRestoreStep,
 	openAnswered,
 	reportRestoreEnd,
 	restoreOutcome,
+	restoreOutstanding,
 	retargetRestore,
 	stepKey,
 	type PendingOpen,

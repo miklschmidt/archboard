@@ -26,7 +26,7 @@ function createCanvasLinkHandler(
 			return;
 		}
 		event.preventDefault();
-		followBoardLink(options, link);
+		void followBoardLink(options, link);
 	};
 }
 

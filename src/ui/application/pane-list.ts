@@ -131,6 +131,7 @@ function primaryPaneId(list: PaneList): string {
 }
 
 export {
+	PANE_IDS,
 	addPane,
 	canClosePane,
 	closePane,

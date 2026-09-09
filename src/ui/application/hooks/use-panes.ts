@@ -13,14 +13,8 @@ import {
 	type NoteStateChange,
 	type PendingRecovery,
 } from "@/ui/application/note-recovery";
-import {
-	addPane,
-	canClosePane,
-	closePane,
-	initialPaneList,
-	selectPane,
-	type PaneList,
-} from "@/ui/application/pane-list";
+import { initialPaneList, type PaneList } from "@/ui/application/pane-list";
+import { createPaneMoves } from "@/ui/application/pane-moves";
 import { PaneHandles, type PaneSession } from "@/ui/application/lib/pane-handles";
 import {
 	dropRecord,
@@ -35,6 +29,7 @@ import type {
 	PanePathFocusSnapshot,
 	PaneSelectionSnapshot,
 } from "@/ui/canvas/use-canvas-session";
+import type { BoardMove } from "@/ui/canvas/board-links";
 import type { PathFocusOverlay } from "@/ui/path-focus";
 import type { RecoveryKind } from "@/ui/shell";
 import type { AgentActivityEntry, EditWithdrawalReason, LockHolder, PaneStatus } from "@/ui/types";
@@ -46,9 +41,9 @@ interface PaneEvents {
 	readonly onBoardLinkError: (error: string) => void;
 	/**
 	 * A pane is following a board link; whether it may move is one rule for
-	 * every surface (TASK-166).
+	 * every surface, and when it may, its command waits its turn (TASK-166).
 	 */
-	readonly onBoardOpenRequested: (paneId: string, boardKey: string) => boolean;
+	readonly onBoardOpenRequested: (paneId: string, boardKey: string) => Promise<BoardMove | null>;
 	/** Which boards an agent is working on, across the server (ADR 0022). */
 	readonly onAgentActivity: (activity: readonly AgentActivityEntry[]) => void;
 	/** A pane withdrew the person's unwritten edit and shows the note's state (ADR 0022). */
@@ -117,9 +112,12 @@ interface Panes {
 	readonly records: PaneRecords;
 	readonly handles: PaneHandles;
 	readonly host: PaneHost;
-	readonly add: () => void;
-	readonly close: (paneId: string) => void;
-	readonly select: (paneId: string) => void;
+	/** Open the second pane; false when there is no pane to open. */
+	readonly add: () => boolean;
+	/** Close a pane; false when the list refuses, and nothing is forgotten. */
+	readonly close: (paneId: string) => boolean;
+	/** Focus a pane; false when it is already the focused one. */
+	readonly select: (paneId: string) => boolean;
 	readonly patch: (paneId: string, patch: Partial<PaneRecord>) => void;
 	/** The active pane's record. */
 	readonly active: PaneRecord;
@@ -136,8 +134,8 @@ interface HostSetters {
 	readonly events: LiveBinding<PaneEvents>;
 	readonly handles: PaneHandles;
 	readonly recovery: NoteRecoveryMemory;
-	readonly add: () => void;
-	readonly close: (paneId: string) => void;
+	readonly add: () => boolean;
+	readonly close: (paneId: string) => boolean;
 }
 
 /**
@@ -271,9 +269,9 @@ function createPaneHost(setters: HostSetters): PaneHost {
 		 * A pane is following a board link.
 		 * @param paneId The pane.
 		 * @param boardKey The board the person asked for.
-		 * @returns Whether the pane may move.
+		 * @returns Permission to move, or null.
 		 */
-		onBoardOpenRequested: (paneId: string, boardKey: string): boolean =>
+		onBoardOpenRequested: (paneId: string, boardKey: string): Promise<BoardMove | null> =>
 			events.read().onBoardOpenRequested(paneId, boardKey),
 		/**
 		 * This tab runs a bundle the canvas no longer serves.
@@ -345,6 +343,10 @@ function createPaneHost(setters: HostSetters): PaneHost {
  */
 function usePanes(initial: () => PaneList = initialPaneList): Panes {
 	const [list, setList] = useState<PaneList>(initial);
+	// The moves read the list as it is when somebody acts, rather than as it was
+	// when their callback was made: the pane host keeps these for the
+	// application's life, and the server asks it to close panes opened since.
+	const [moves] = useState(() => createPaneMoves(list, setList));
 	const [records, setRecords] = useState<PaneRecords>({});
 	const [handles] = useState(() => new PaneHandles());
 	const [events] = useState(() => new LiveBinding<PaneEvents>());
@@ -353,27 +355,28 @@ function usePanes(initial: () => PaneList = initialPaneList): Panes {
 	const patch = useCallback((paneId: string, next: Partial<PaneRecord>): void => {
 		setRecords((current) => patchRecord(current, paneId, next));
 	}, []);
-	const add = useCallback((): void => setList(addPane), []);
+	const add = useCallback((): boolean => moves.add(), [moves]);
 	// A close the list refuses — the last pane, or one that is not open — leaves
-	// the pane running, so its record and its unanswered note states have to stay
-	// with it. Only a close that happens forgets anything.
+	// the pane running, so its record and its unanswered note states stay with
+	// it. Only a close that happens forgets anything.
 	const close = useCallback(
-		(paneId: string): void => {
-			if (!canClosePane(list, paneId)) {
-				return;
+		(paneId: string): boolean => {
+			if (!moves.close(paneId)) {
+				return false;
 			}
-			setList((current) => closePane(current, paneId));
 			setRecords((current) => dropRecord(current, paneId));
 			recovery.forget(paneId);
+			return true;
 		},
-		[list, recovery],
+		[moves, recovery],
 	);
 	const select = useCallback(
-		(paneId: string): void => {
-			setList((current) => selectPane(current, paneId));
+		(paneId: string): boolean => {
+			const moved = moves.select(paneId);
 			handles.session(paneId)?.markInteracted();
+			return moved;
 		},
-		[handles],
+		[handles, moves],
 	);
 	const [host] = useState(() => createPaneHost({ patch, events, handles, recovery, add, close }));
 	const bindEvents = useCallback((next: PaneEvents): void => events.bind(next), [events]);

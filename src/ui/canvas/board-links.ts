@@ -14,6 +14,18 @@ import type { BoardInfo } from "@/ui/types";
 /** The one server call following a board link makes; injectable for checks. */
 type OpenBoard = (address: OpenBoardRequest) => Promise<BoardInfo>;
 
+/**
+ * Permission for this pane to move, and where the command's outcome goes. The
+ * address bar hands one out when the pane may go and nothing else is on its
+ * way to the server, so the person's move is the last one it is given.
+ */
+interface BoardMove {
+	/** The open finished. */
+	readonly done: () => void;
+	/** The open did not finish, so nothing moved. */
+	readonly failed: () => void;
+}
+
 /** What following a board link needs, and where its outcomes go. */
 interface BoardLinkOptions {
 	/** The clicked pane's identity to the server. */
@@ -21,10 +33,11 @@ interface BoardLinkOptions {
 	/** The link could not be followed, with what to do about it. */
 	readonly onBoardLinkError: (error: string) => void;
 	/**
-	 * The person is following a board link. Answers whether this pane may move;
-	 * a refusal is explained by whoever refused it.
+	 * The person is following a board link. Answers with permission to move once
+	 * the pane may, or null when it may not; a refusal is explained by whoever
+	 * refused it.
 	 */
-	readonly onBoardOpenRequested: (boardKey: string) => boolean;
+	readonly onBoardOpenRequested: (boardKey: string) => Promise<BoardMove | null>;
 }
 
 /** A board wiki-link, without an alias or a heading or block anchor. */
@@ -45,11 +58,11 @@ function isBoardLink(link: string): boolean {
  * @param link The element's link.
  * @param open The server call, injectable for checks.
  */
-function followBoardLink(
+async function followBoardLink(
 	options: BoardLinkOptions,
 	link: string,
 	open: OpenBoard = openBoard,
-): void {
+): Promise<void> {
 	const board = BOARD_LINK.exec(link)?.[1]?.trim();
 	if (!board) {
 		options.onBoardLinkError(
@@ -57,15 +70,35 @@ function followBoardLink(
 		);
 		return;
 	}
-	if (!options.onBoardOpenRequested(board)) {
-		return;
+	const move = await options.onBoardOpenRequested(board);
+	if (move !== null) {
+		await openInPane(options, board, move, open);
 	}
-	void open({ board, pane: options.clientId }).catch((error: unknown) => {
+}
+
+/**
+ * Ask the server for the board, and say so when it could not be reached.
+ * @param options The pane and outcome callbacks.
+ * @param board The board key the link named.
+ * @param move The permission, which hears how the command ended.
+ * @param open The server call.
+ */
+async function openInPane(
+	options: BoardLinkOptions,
+	board: string,
+	move: BoardMove,
+	open: OpenBoard,
+): Promise<void> {
+	try {
+		await open({ board, pane: options.clientId });
+		move.done();
+	} catch (error: unknown) {
+		move.failed();
 		const message = error instanceof Error ? error.message : String(error);
 		options.onBoardLinkError(
 			`Could not open board "${board}". ${message} Check the target in Board navigation and try the link again.`,
 		);
-	});
+	}
 }
 
-export { followBoardLink, isBoardLink, type BoardLinkOptions, type OpenBoard };
+export { followBoardLink, isBoardLink, type BoardLinkOptions, type BoardMove, type OpenBoard };

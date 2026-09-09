@@ -8,6 +8,7 @@ import type { AppState, ExcalidrawImperativeAPI, LibraryItems } from "@excalidra
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
+import type { BoardMove } from "@/ui/canvas/board-links";
 import { createCanvasLinkHandler } from "@/ui/canvas/lib/link-handler";
 import { createPaneCore } from "@/ui/canvas/lib/pane-core";
 import type { PaneCore, PaneCoreHost } from "@/ui/canvas/lib/pane-core-contracts";
@@ -210,10 +211,10 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 				/**
 				 * The person followed a board link from this pane.
 				 * @param key The board they asked for.
-				 * @returns Whether this pane may move; a shell that says nothing allows it.
+				 * @returns Permission to move; a shell that says nothing allows it.
 				 */
-				onBoardOpenRequested: (key: string): boolean =>
-					box.options.onBoardOpenRequested?.(paneId, key) ?? true,
+				onBoardOpenRequested: (key: string): Promise<BoardMove | null> =>
+					box.options.onBoardOpenRequested?.(paneId, key) ?? Promise.resolve(FREE_MOVE),
 			}),
 		[box, clientId, onFailure, paneId, state.boardKey],
 	);
@@ -248,6 +249,9 @@ function useCanvasSession<Transport extends WorkbenchTransportPort>(
 		workbenchTransport,
 	};
 }
+
+/** What a pane with no shell to ask gets: permission, and nobody to report to. */
+const FREE_MOVE: BoardMove = Object.freeze({ done: noop, failed: noop });
 
 /** A success nobody needs to hear about: the opener has already opened. */
 function noop(): void {
