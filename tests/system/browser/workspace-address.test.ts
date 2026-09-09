@@ -4,6 +4,7 @@ import { join } from "node:path";
 
 import { AddResultSchema } from "../../../src/cli/commands/elements.ts";
 import { createJsonRequester } from "../boards/support/http.ts";
+import { humanWriteQuery } from "../support/note-version.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
 	browserTestRoots,
@@ -14,39 +15,8 @@ import {
 	runCanvasCli,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { move } from "./support/hold-page-scene.ts";
 import { serverPath, type PanesBody } from "./support/navigator-support.ts";
 import { clickNavigatorRow, shellNotices } from "./support/shell-dom.ts";
-
-/** The board dialog's name field, which is how a submission is reached. */
-const BOARD_NAME_INPUT = '[role="dialog"] input[placeholder="Board name"]';
-
-/**
- * Everything an open dialog is saying.
- * @param browser The page.
- * @returns The words of each alert inside the dialog.
- */
-const dialogAlerts = (browser: AgentBrowserSession): Promise<string[]> =>
-	browser.eval<string[]>(
-		`[...document.querySelectorAll('[role="dialog"] [data-slot="alert"]')].map((alert) => alert.textContent ?? "")`,
-	);
-
-/**
- * Type a board name into the open board dialog and submit it.
- * @param browser The page.
- * @param boardKey The board to ask for.
- */
-async function submitBoardDialog(browser: AgentBrowserSession, boardKey: string): Promise<void> {
-	await browser.run(["find", "role", "button", "click", "--name", "Open", "--exact"]);
-	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('${BOARD_NAME_INPUT}') !== null`),
-		(open) => open,
-		"the board dialog to open",
-	);
-	await browser.eval(`document.querySelector('${BOARD_NAME_INPUT}')?.focus()`);
-	await browser.run(["keyboard", "type", boardKey]);
-	await browser.run(["press", "Enter"]);
-}
 
 /**
  * The search parameters the address bar is showing.
@@ -108,7 +78,7 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 	cli("board", "new", "billing");
 	cli("board", "new", "ledger");
 	add("payments", "Payments");
-	const billingBox = add("billing", "Billing");
+	add("billing", "Billing");
 	add("ledger", "Ledger");
 
 	const browser = resources.use(await createAgentBrowser());
@@ -165,38 +135,69 @@ test("a workspace opens from its address, and Back retraces the boards a person 
 		[paneA.clientId, paneB.clientId].toSorted(),
 	);
 
-	// A board whose canvas holds work the note has not got keeps its board, and
-	// says so, rather than losing that work to a history navigation (ADR 0006).
-	appendFileSync(join(vault, "billing.excalidraw.md"), "\nedited elsewhere\n");
-	await move(browser, billingBox, 40, 24);
+	await canvas.assertRunning();
+}, 30_000);
+
+test("a pane holding work the note has not got keeps its board, whoever asks it to move", async () => {
+	await using resources = new AsyncDisposableStack();
+	const { ownerRoot } = browserTestRoots();
+	const vault = join(ownerRoot, "guarded-vault");
+	mkdirSync(vault, { recursive: true });
+	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
+	resources.defer(() => canvas.dispose());
+	registerCanvasBase(canvas.base);
+	const request = createJsonRequester(canvas);
+	const cli = (...args: string[]): string => runCanvasCli(canvas.base, vault, args);
+	cli("board", "new", "payments");
+	cli("board", "new", "billing");
+	const file = join(ownerRoot, "guarded.json");
+	writeFileSync(
+		file,
+		JSON.stringify([
+			{ type: "rectangle", x: 80, y: 80, width: 240, height: 100, label: { text: "Payments" } },
+		]),
+	);
+	const drawn = AddResultSchema.parse(
+		JSON.parse(cli("add", "--board", "payments", "--doing", "drawing the service", file)),
+	);
+	const boxId = drawn.elements.find((element) => element.type === "rectangle")?.id;
+	expect(boxId).toBeDefined();
+
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${canvas.base}/?paneA=payments`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	const panes = (): Promise<PanesBody> =>
+		request<PanesBody>("/api/panes").then((reply) => reply.body);
+	const pane = (
+		await pollUntil(panes, (state) => state.panes[0]?.board === "payments", "the pane to restore")
+	).panes[0]!;
+
+	// The note changes under the pane and the pane's own write is refused, which
+	// is what makes a board stop saving (ADR 0006).
+	appendFileSync(join(vault, "payments.excalidraw.md"), "\nedited elsewhere\n");
+	const refused = await request(
+		`/api/elements/changes${await humanWriteQuery(request, "payments")}`,
+		{
+			method: "POST",
+			body: { clientId: pane.clientId, upserts: [{ id: boxId, x: 140 }] },
+		},
+	);
+	expect(refused.status).toBe(409);
 	await pollUntil(
 		() => shellNotices(browser),
 		(notices) => notices.some((notice) => notice.title.includes("has stopped saving")),
-		"the active pane's board to stop saving",
+		"the pane's board to stop saving",
 	);
-	const held = await addressSearch(browser);
-	await browser.eval("window.history.back()");
+
+	// The board picker asks the same rule the address bar does.
+	await clickNavigatorRow(browser, "billing");
 	await pollUntil(
 		() => shellNotices(browser),
-		(notices) => notices.some((notice) => notice.title === "Pane B kept its board"),
-		"a refused navigation to say which pane kept its board",
+		(notices) => notices.some((notice) => notice.title === "Pane A kept its board"),
+		"the picker to say which pane kept its board",
 	);
-	expect(await addressSearch(browser)).toBe(held);
-	const refused = await panes();
-	expect(refused.panes.find((pane) => pane.clientId === paneB.clientId)?.board).toBe("billing");
-
-	// The same rule answers the board dialog, asked of the pane as it is when
-	// the person submits rather than as it was when they opened the dialog.
-	await submitBoardDialog(browser, "ledger");
-	await pollUntil(
-		() => dialogAlerts(browser),
-		(alerts) => alerts.some((words) => words.includes("stopped saving")),
-		"the dialog to say why the pane kept its board",
-	);
-	const afterDialog = await panes();
-	expect(afterDialog.panes.find((pane) => pane.clientId === paneA.clientId)?.board).toBe(
-		"payments",
-	);
+	expect(await addressSearch(browser)).toBe("paneA=payments");
+	expect((await panes()).panes[0]?.board).toBe("payments");
 	await canvas.assertRunning();
 }, 30_000);
 
