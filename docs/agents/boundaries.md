@@ -48,6 +48,7 @@ and `src/server.ts`. Do not add implementation to these files.
 
 Browser code belongs under `src/ui/<module>`, not under a separate legacy frontend tree. Build host
 files can stay outside `src/`, but UI implementation follows the same module rules as server code.
+For frontend concern placement, naming, and React ownership, read [frontend.md](frontend.md).
 
 ## Import rules
 
