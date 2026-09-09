@@ -275,7 +275,8 @@ function runOpenKey(
 ): Promise<BoardCommandOutcome> {
 	return attempt("Open board", async () => {
 		await api.open({ board: boardKey, pane });
-		return null;
+		// A restore points a pane at a board; nothing about any board moved.
+		return { message: null, boards: [] };
 	});
 }
 
