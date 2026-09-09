@@ -1,11 +1,11 @@
 ---
 id: TASK-166
 title: Make board workspaces addressable with TanStack Router
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 15:10'
+updated_date: '2026-09-09 15:19'
 labels: []
 dependencies:
   - TASK-164
@@ -29,77 +29,22 @@ Board and comparison navigation is currently ephemeral React state, so a person 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A URL restores the requested board or comparison and active pane on direct load and reload; Back/Forward follows deliberate board navigation.
-- [ ] #2 Invalid or missing targets and refused or pending board switches have agreed, visible recovery, with URL and displayed workspace consistent.
-- [ ] #3 Navigation preserves pending-edit/version/hold contracts and unaffected mounted pane, workbench and voice lifecycles; library-install hash handling still works.
-- [ ] #4 Code-based TanStack Router consumes existing module interfaces; approved dependencies are pinned and no competing navigation state or generated route tree is introduced.
-- [ ] #5 Focused runtime/browser coverage verifies URL restoration, history and recovery; bun run check passes.
+- [x] #1 A URL restores the requested board or comparison and active pane on direct load and reload; Back/Forward follows deliberate board navigation.
+- [x] #2 Invalid or missing targets and refused or pending board switches have agreed, visible recovery, with URL and displayed workspace consistent.
+- [x] #3 Navigation preserves pending-edit/version/hold contracts and unaffected mounted pane, workbench and voice lifecycles; library-install hash handling still works.
+- [x] #4 Code-based TanStack Router consumes existing module interfaces; approved dependencies are pinned and no competing navigation state or generated route tree is introduced.
+- [x] #5 Focused runtime/browser coverage verifies URL restoration, history and recovery; bun run check passes.
 <!-- AC:END -->
 
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Researched contract, awaiting TASK-165 cleanup base before implementation.
-
-1. Route vocabulary. One code-based route at `/` carrying the workspace in typed
-   search params; no path segments, no generated route tree, no route plugin.
-   `?paneA=<boardKey>&paneB=<boardKey>&pane=A|B`. A `paneX` param present means
-   that pane is open; its value is the board key exactly as `PaneStatus.boardKey`
-   spells it (`name` or `name@variant`, the string a human types and `[[links]]`
-   use). `pane` names the active pane; it defaults to the first open pane.
-   Level never enters the URL: level is board metadata, not an address
-   (src/runtime/engine/lib/board-address.ts). Path routing is rejected because
-   the canvas server serves index.html at `/` only
-   (src/server/canvas/lib/service-routes.ts) — a path scheme would need an SPA
-   fallback in server code and would 404 on every production deep link.
-2. URL follows the note, and leads only on cold load and Back/Forward.
-   A person's board open runs the existing command; the server answers with
-   `board_switched`; the pane's status changes; the router then writes the URL.
-   The URL is consumed on exactly two triggers — first mount and popstate —
-   where it issues the same open command per pane that differs, plus pane
-   add/close and select. No route loader and no router-owned data: routing
-   needs no board listing, so it shares nothing with TASK-167 and does not wait
-   on it. Router state is browser display intent only; the note stays authority
-   (ADR 0015, ADR 0020: which board a pane displays is a browser operation).
-3. Push versus replace (confirmed). A deliberate board open or comparison change
-   (pane added or closed) pushes. Pane focus, agent- or CLI-driven board changes,
-   restore reconciliation and recovery rewrites replace. Deliberateness is known
-   only at the gesture, so the initiating paths mark it: shell board actions,
-   the board dialogs, pane add/close, and the canvas board link (drill-down)
-   through one added `CanvasSessionOptions` callback beside `onBoardLinkError`.
-4. Cold load. The pane list is seeded from the parsed search so both panes mount
-   once, in place, with no remount. Each pane restores after it reports a
-   clientId: `openBoard({ board: <key>, pane: <clientId> })` with the pane always
-   named explicitly. The server parses `name@variant` itself
-   (identityFromParams -> parseBoardKey), so the UI needs no key parser and no
-   listing lookup.
-5. Recovery (confirmed). Pending edits or a refused write (a board that stopped
-   saving) block navigation: the workspace and the URL are retained, the existing
-   hold/elsewhere recovery is shown, and the person retries after recovering.
-   The guard lives in the one shared navigation command so the board picker and
-   the URL behave identically. A missing or invalid board raises the existing
-   actionable failure notice naming the board asked for and never silently
-   substitutes another; on cold load, where there is no previous workspace to
-   retain, the URL is then replaced with the workspace actually on screen so URL
-   and display agree, with the failure named in the notice.
-6. Library hash. `clearLibraryHash` rewrites to `window.location.pathname` and
-   drops the query string; it must preserve `window.location.search` so the
-   one-shot `#addLibrary` install cannot wipe the workspace.
-7. Dependency. `@tanstack/react-router` pinned exactly (1.170.33 current), no
-   router plugin, devtools or codegen. `useBlocker` with `enableBeforeUnload:
-   false` is the candidate for Back/Forward blocking; no `beforeunload` dialog
-   may be introduced over the existing pagehide beacon flush.
-8. Placement. A new `src/ui/<workspace-route>` module owns the search-param
-   schema, the workspace projection (pane list + board keys + active pane), the
-   diff, and the publish/consume hooks. Application composes it; shell, canvas
-   and workbench are untouched apart from the one drill-down callback.
-9. Coverage. Module-owned unit tests for the pure projection and diff; one
-   browser owner for deep-link restore, reload, Back/Forward, blocked
-   navigation, missing board, and mounted-pane identity across a URL change,
-   registered in BROWSER_TEST_PATHS and the package browser lane. No
-   file-content or configuration tests. `bun run check` is the gate.
-
-10. Ownership constraints (parent, 2026-09-09): the navigation module owns no server resource and shares no cache owner with TASK-167's Query resources; application-root edits stay minimal (seed the pane list from the parsed search, compose the publish/consume hooks, mark deliberate opens) with the rest inside the navigation module. Implementation may start in the isolated worktree ahead of TASK-165 once the parent accepts the contract; TASK-165's rename map is applied at rebase.
+1. Use pinned code-based TanStack Router on / with paneA, paneB and pane search parameters. Preserve raw board keys, library-install search/history state, and stable mounted pane identities.
+2. Treat the URL as display intent on initial load and history navigation, publishing only the workspace the panes report. Deliberate board/comparison changes push; focus and agent changes replace. No loader, generated route tree or Query coupling.
+3. Reconcile one pane mutation per rendered workspace. Serialize all opens in one operation slot until the HTTP answer and pane adoption; use the server-resolved BoardInfo.board key, including variants and current aliases.
+4. Apply the current pending/hold guard to picker, dialog, links, close and history. Recheck after waiting for the slot; retain workspace and address on refusal, with actionable recovery and explicit missing-target reconciliation.
+5. Verify pure planning and the mounted router hook, plus real-browser restoration, history, blocked Back and recovery, variant/no-op dialog submission and mounted identity.
+6. Resolve independent spec/interface findings and pass the integrated bun run check.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -232,6 +177,8 @@ Both TypeScript projects, `bun run lint`, `oxfmt --check`, `bun test src/ui`
 address-bar owner over a real router and an async port), the
 repository-policy lane, and `vite build`. The combined `bun run check` is the
 parent's.
+
+Final integrated verification (2026-09-09): bun run check passed with exit 0 on main 969d766de4a5. Lint baseline/policy, formatting, both TypeScript projects and frontend build passed; test:modules 2740/0 (303 files, 23.81s), test:system 306/0 (79 files, 141.18s), test:repository 8/0, serial browser 32/0 across 23 owners. Checkout remained clean. Independent standards, spec and interface rechecks are clean. Full local log: /tmp/archboard-final-check.log. Finalization after this gate changes Backlog records only.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
@@ -247,3 +194,9 @@ Navigation decisions confirmed by the user (2026-09-09):
 Implementation waits for the TASK-165 cleanup base.
 ---
 <!-- COMMENTS:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Delivered addressable board/comparison workspaces with pinned code-based TanStack Router. One operation slot waits for server-resolved board adoption; all navigation surfaces preserve pending/held work, and Back/Forward keeps deliberate history. Five browser cases prove restoration, history and recovery, canonical variant/no-op dialog behavior, and stable pane identity. Final spec/interface rechecks and integrated bun run check passed.
+<!-- SECTION:FINAL_SUMMARY:END -->
