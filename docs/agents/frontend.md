@@ -93,6 +93,21 @@ add imports or a second state path ahead of that work.
   The URL represents browser display intent; the note remains board authority.
   Selection, pending edits, and live voice remain session state. Preserve the
   one-shot Excalidraw library-install hash flow.
+- `src/ui/board-routing` delivers that contract (TASK-166) and owns it. The
+  workspace lives in search parameters on the one route at `/` — `paneA`,
+  `paneB` and `pane` — because the canvas server serves the page at `/` alone,
+  so a path scheme would answer 404 on every direct load. Each parameter
+  carries the board key exactly as the pane reports it. The address follows the
+  note: a person's open runs the shell's command, the pane reports its new
+  board, and only then is the address written, so a refused open changes no
+  address. The address leads on the first load and on a history navigation
+  only, and there it issues that same open command. A move the person asked for
+  pushes a history entry and everything else replaces one, decided by the
+  gesture rather than by the socket. `navigation-guard.ts` is the one rule for
+  every way a board leaves a pane — the picker, a board link, closing a pane
+  and the address bar — and a restore preflights every pane it would move or
+  close before applying anything. There is no route loader: restoring addresses
+  the server by board key and reads nothing, so routing shares no cache.
 - Use TanStack Query for request/response resources where it replaces manual
   loading, error, cache, and refresh state. Start with board listings and server
   previews. Each resource has one cache owner, with query keys/options and API
