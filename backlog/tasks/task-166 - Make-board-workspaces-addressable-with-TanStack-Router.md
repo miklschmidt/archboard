@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 13:50'
+updated_date: '2026-09-09 15:10'
 labels: []
 dependencies:
   - TASK-164
@@ -163,6 +163,75 @@ The browser lane and the integrated `bun run check` are the parent's slot.
 One blocker on main, not from this branch: `src/ui/shell/types/contracts.ts:104`
 still uses `React.ReactNode` and fails the new `archboard(named-react-imports)`
 rule from main's own 6d7700a9. Reported to the parent.
+
+## Final evidence
+
+Integrated on main as 969d766d, six commits: the implementation, then four
+corrections found by independent review, then the browser owner.
+
+### Browser owner
+
+`tests/system/browser/workspace-address.test.ts`, registered in
+BROWSER_TEST_PATHS and the package browser lane. Five cases, 5 pass / 0 fail
+in 13.6s through the strict adapter:
+
+1. A workspace opens from its address: both panes restore the boards the
+   address names. A person's open pushes a history entry; an agent's
+   `browser show` on the same pane does not. Back retraces only the person's
+   moves, and both panes keep the client ids they registered with, so nothing
+   was remounted under the navigation.
+2. A pane holding work the note has not got keeps its board when the board
+   picker asks it to move, and the shell says which pane kept it.
+3. Back is refused while a pane holds work: the address, the board and the
+   history position all stay as they were. The board is then made to save
+   again and the same Back goes where it always would have, which is what
+   says the blocker's rollback left the history usable rather than desynced.
+   This is the `useBlocker` popstate proof the contract asks for.
+4. The board dialog opens `payments@proposed` and the address records the
+   whole key with a history entry; asking again for the board the pane
+   already shows moves nothing and adds no entry; and with the pane stopped
+   saving while the dialog is open, the submission is refused with its reason
+   shown in the dialog and the pane keeps its board.
+5. An address naming a board the vault has not got is announced, and the
+   address settles on the workspace that is actually on screen.
+
+`board-drill-down` (1 pass), `board-navigator` (2 pass) and `shell-layout`
+(1 pass) were re-run because this work changed the paths they exercise.
+
+### Reviews resolved
+
+Round one, six findings: board links and the board dialogs went through the
+guard's marker without asking it; the restore settled before its own async
+open answered; a singleton A→B restore closed the last pane first; a refused
+close dropped the live pane's record; the router's own search reader turned
+board keys such as `2026` and `true` into numbers and booleans; and a late
+answer could be recorded against a newer target.
+
+Round two: the reconciliation applied several steps to one React snapshot,
+so a close ran against a workspace an add had not yet produced; and the
+stale-close closure in the pane host.
+
+Round three: abandoning a restore left its open held by a restore nobody was
+advancing, so a click during a restore was never granted; two waiting
+gestures were granted in one pass; and a person's open was judged at the
+HTTP answer rather than at adoption, losing its history entry.
+
+Round four: a request may spell an address several ways, and the dialog was
+reporting the name it had typed rather than the key the pane was pointed at —
+losing a variant's history entry, and stranding the command slot when the
+same board was reopened.
+
+The last of these is why every open now reports the key the server resolved
+it to and the slot waits for that. No board key is parsed or normalised in
+the browser: both sides of the comparison come from the server.
+
+### Focused checks
+
+Both TypeScript projects, `bun run lint`, `oxfmt --check`, `bun test src/ui`
+(973 across 97 files, including 35 board-routing owners and the mounted
+address-bar owner over a real router and an async port), the
+repository-policy lane, and `vite build`. The combined `bun run check` is the
+parent's.
 <!-- SECTION:NOTES:END -->
 
 ## Comments
