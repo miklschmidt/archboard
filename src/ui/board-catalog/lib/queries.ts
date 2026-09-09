@@ -71,6 +71,13 @@ function persistedBoardsQuery() {
  * What the live panes hold, across every tab this server serves. Separate from
  * the vault on purpose: a pane inventory that cannot be read must not take the
  * listed boards down with it.
+ *
+ * Read again every time the tab comes back, stale or not. A pane belonging to
+ * another tab can be closed while this one is in the background, and nothing
+ * says so: this tab's own panes announce their retirement, another tab's
+ * cannot. Coming back is the only moment that reliably precedes looking, and
+ * settling for the stale-only default would leave a pane that has gone marked
+ * as on screen for as long as somebody kept returning inside the window.
  * @returns The query options.
  */
 function paneInventoryQuery() {
@@ -83,7 +90,7 @@ function paneInventoryQuery() {
 		 */
 		queryFn: (context) => fetchPaneInventory(context.signal),
 		staleTime: BOARD_LISTING_STALE_MS,
-		refetchOnWindowFocus: true,
+		refetchOnWindowFocus: "always",
 	});
 }
 
