@@ -195,10 +195,13 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 	 * person moving that pane, and the address bar records it as their move.
 	 * Which board it lands on is the server's answer, not this one's.
 	 * @param paneId The pane.
-	 * @param boardKey The board key in the link.
+	 * @param _boardKey The board key in the link; where it lands is the server's answer.
 	 * @returns Permission to move once nothing else is on its way, or null.
 	 */
-	async function onBoardOpenRequested(paneId: string, boardKey: string): Promise<BoardMove | null> {
+	async function onBoardOpenRequested(
+		paneId: string,
+		_boardKey: string,
+	): Promise<BoardMove | null> {
 		const { panes } = owners;
 		const record = recordFor(panes.records, paneId);
 		// Asked before the wait so a pane holding work says so at once, and again
@@ -213,7 +216,6 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 			kind: "board",
 			paneId,
 			from: record.status.boardKey,
-			boardKey,
 		});
 		return permission.kind === "granted" ? permission.move : null;
 	}

@@ -186,15 +186,14 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 			kind: "board",
 			paneId: context.paneId,
 			from: context.boardKey,
-			boardKey: key,
 		});
 		if (permission.kind === "blocked") {
 			return;
 		}
-		const outcome = await runOpen(SERVER_API, identity, context);
-		if (outcome.kind === "done") {
-			permission.move.done();
-		} else {
+		// The command tells the address bar which board it opened, so the slot is
+		// released against the server's own answer rather than the request.
+		const outcome = await runOpen(SERVER_API, identity, context, permission.move.done);
+		if (outcome.kind !== "done") {
 			permission.move.failed();
 		}
 		settle(deps, outcome, context, "Open board");

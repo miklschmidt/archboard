@@ -35,6 +35,16 @@ interface HeldOpen {
 	readonly answer: (outcome: OpenOutcome) => void;
 }
 
+/**
+ * The board the server says it opened. A test that wants an address spelled
+ * one way and resolved another says so; otherwise it answers with what it was
+ * asked for.
+ */
+interface FakeOpenAnswer {
+	readonly reached: boolean;
+	readonly openedKey?: string;
+}
+
 /** A shell whose workspace changes only when the test says so. */
 interface FakeShell {
 	/**
@@ -53,7 +63,7 @@ interface FakeShell {
 	/** Re-render the application with what the panes show now. */
 	readonly render: () => Promise<void>;
 	/** Answer the oldest open the server was given. */
-	readonly answer: (reached: boolean) => Promise<void>;
+	readonly answer: (answer: boolean | FakeOpenAnswer) => Promise<void>;
 	/** The socket told a pane its board, and the shell rendered. */
 	readonly adopt: (paneId: string, boardKey: string) => Promise<void>;
 	readonly port: () => WorkspacePort;
@@ -100,13 +110,18 @@ function fakeShell(
 		},
 		/**
 		 * Answer the oldest open.
-		 * @param reached Whether the board was there.
+		 * @param answer Whether the board was there, and which board it resolved to.
 		 */
-		answer: async (reached: boolean): Promise<void> => {
+		answer: async (answer: boolean | FakeOpenAnswer): Promise<void> => {
 			const open = shell.opens.shift();
 			expect(open).toBeDefined();
+			const given: FakeOpenAnswer = typeof answer === "boolean" ? { reached: answer } : answer;
 			await act(async () => {
-				open?.answer(reached ? { kind: "opened" } : { kind: "unreachable" });
+				open?.answer(
+					given.reached
+						? { kind: "opened", boardKey: given.openedKey ?? open.boardKey }
+						: { kind: "unreachable" },
+				);
 			});
 		},
 		/**
@@ -296,7 +311,7 @@ test("a person's gesture during a restore waits for the slot and is never strand
 	// the restore must not stop the address bar watching what it left running.
 	let granted: Permission | null = null;
 	const claimed = shell.addressing
-		?.claim({ kind: "board", paneId: "A", from: "payments", boardKey: "ledger" })
+		?.claim({ kind: "board", paneId: "A", from: "payments" })
 		.then((permission) => {
 			granted = permission;
 			return permission;
@@ -314,13 +329,13 @@ test("the slot is given to one waiting gesture at a time", async () => {
 	mounted = await mount(shell, "?paneA=billing");
 	const order: string[] = [];
 	const first = shell.addressing
-		?.claim({ kind: "board", paneId: "A", from: "payments", boardKey: "ledger" })
+		?.claim({ kind: "board", paneId: "A", from: "payments" })
 		.then((permission) => {
 			order.push("first");
 			return permission;
 		});
 	const second = shell.addressing
-		?.claim({ kind: "board", paneId: "A", from: "payments", boardKey: "vendors" })
+		?.claim({ kind: "board", paneId: "A", from: "payments" })
 		.then((permission) => {
 			order.push("second");
 			return permission;
@@ -332,7 +347,7 @@ test("the slot is given to one waiting gesture at a time", async () => {
 	// The second is still waiting: the first has the slot until its own command
 	// is over, so the server is never given two at once.
 	if (firstPermission?.kind === "granted") {
-		firstPermission.move.done();
+		firstPermission.move.done("ledger");
 	}
 	await shell.adopt("A", "ledger");
 	await second;
@@ -346,7 +361,6 @@ test("a pane that stops saving while a gesture waits is refused when its turn co
 		kind: "board",
 		paneId: "A",
 		from: "payments",
-		boardKey: "ledger",
 	});
 	// The board stops saving while they wait, which the guard could not have
 	// known when they asked.
@@ -368,10 +382,9 @@ test("a person's open pushes a history entry only when it moved the pane", async
 		kind: "board",
 		paneId: "A",
 		from: "payments",
-		boardKey: "payments",
 	});
 	if (noMove?.kind === "granted") {
-		noMove.move.done();
+		noMove.move.done("payments");
 	}
 	await settle();
 	expect(window.history.length).toBe(before);
@@ -401,16 +414,40 @@ test("an open that had nothing to move gives the slot back rather than holding i
 		kind: "board",
 		paneId: "A",
 		from: "payments",
-		boardKey: "payments",
 	});
 	if (first?.kind === "granted") {
-		first.move.done();
+		first.move.done("payments");
 	}
 	const second = await shell.addressing?.claim({
 		kind: "board",
 		paneId: "A",
 		from: "payments",
-		boardKey: "ledger",
 	});
 	expect(second?.kind).toBe("granted");
+});
+
+test("an address spelled one way and resolved another still gives the slot back", async () => {
+	const shell = fakeShell([["A", "payments"]]);
+	mounted = await mount(shell, "?paneA=payments");
+	await settle();
+	// `payments@current` and `payments` are one board; only the server knows
+	// that, so it is the board it says it opened that decides whether the pane
+	// has anything to move to.
+	const first = await shell.addressing?.claim({ kind: "board", paneId: "A", from: "payments" });
+	if (first?.kind === "granted") {
+		first.move.done("payments");
+	}
+	const second = await shell.addressing?.claim({ kind: "board", paneId: "A", from: "payments" });
+	expect(second?.kind).toBe("granted");
+});
+
+test("a restore whose board resolves to another spelling settles on what the pane shows", async () => {
+	const shell = fakeShell([["A", "payments"]]);
+	mounted = await mount(shell, "?paneA=payments@current");
+	expect(shell.opens.map((open) => open.boardKey)).toEqual(["payments@current"]);
+	// The server resolves the alias to the board the pane is already on, so
+	// there is nothing to adopt and the address settles on what is shown.
+	await shell.answer({ reached: true, openedKey: "payments" });
+	await settle();
+	expect(shownSearch()).toBe("paneA=payments");
 });
