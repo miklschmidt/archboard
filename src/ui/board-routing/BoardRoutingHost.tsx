@@ -30,7 +30,7 @@ const rootRoute = createRootRoute({ validateSearch: validateWorkspaceSearch });
  * @param component The application, mounted at `/`.
  * @returns The router.
  */
-function createBoardRouter(component: () => JSX.Element) {
+function createBoardRouter(component: () => JSX.Element | null) {
 	const indexRoute = createRoute({
 		/**
 		 * The route this one hangs off, which is what types its search.
@@ -63,7 +63,7 @@ declare module "@tanstack/react-router" {
  * @param component The application.
  * @returns The component to render, which owns the router for the tab's life.
  */
-function createBoardRoutingHost(component: () => JSX.Element): () => JSX.Element {
+function createBoardRoutingHost(component: () => JSX.Element | null): () => JSX.Element {
 	const router = createBoardRouter(component);
 	/**
 	 * The mounted router.

@@ -184,7 +184,6 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 	 * @param error The refusal and recovery guidance.
 	 */
 	function onBoardLinkError(error: string): void {
-		owners.addressing.clear();
 		notices.raise(failureNotice("board-link", "Open linked board", error));
 	}
 	/**
@@ -199,19 +198,24 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 	 * @param boardKey The board key in the link.
 	 * @returns Permission to move once nothing else is on its way, or null.
 	 */
-	function onBoardOpenRequested(paneId: string, boardKey: string): Promise<BoardMove | null> {
+	async function onBoardOpenRequested(paneId: string, boardKey: string): Promise<BoardMove | null> {
 		const { panes } = owners;
 		const record = recordFor(panes.records, paneId);
-		const context = contextFor(panes.list, record);
-		if (refuseMove({ panes, notices, dialogs: owners.dialogs }, context) !== null) {
-			return Promise.resolve(null);
+		// Asked before the wait so a pane holding work says so at once, and again
+		// when the slot is theirs, because a board can stop saving while they wait.
+		if (
+			refuseMove({ panes, notices, dialogs: owners.dialogs }, contextFor(panes.list, record)) !==
+			null
+		) {
+			return null;
 		}
-		return owners.addressing.claim({
+		const permission = await owners.addressing.claim({
 			kind: "board",
 			paneId,
 			from: record.status.boardKey,
 			boardKey,
 		});
+		return permission.kind === "granted" ? permission.move : null;
 	}
 	/**
 	 * This tab runs a bundle the canvas no longer serves.

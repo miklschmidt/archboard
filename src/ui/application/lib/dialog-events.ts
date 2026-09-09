@@ -3,6 +3,7 @@
 // and what a finished command leaves behind. Pure composition over the owners.
 
 import { infoNotice } from "@/ui/application/notices";
+import { navigationBlockReason } from "@/ui/application/notices";
 import { refuseMove } from "@/ui/application/navigation-guard";
 import type { BoardCommandContext } from "@/ui/application/board-commands";
 import type { LiveBinding } from "@/ui/application/lib/live-binding";
@@ -55,14 +56,22 @@ function dialogEvents(owners: DialogEventOwners): BoardDialogEvents {
 			if (refusal !== null) {
 				return refusal;
 			}
-			// The command waits for anything the address bar has outstanding, so
-			// what the person just asked for is the last thing the server is given.
-			move = await addressing.claim({
+			// The command waits for the address bar's one slot, so what the person
+			// just asked for is the last thing the server is given — and the pane is
+			// asked again, there, whether it may still go.
+			const permission = await addressing.claim({
 				kind: "board",
 				paneId: context.paneId,
 				from: context.boardKey,
 				boardKey,
 			});
+			if (permission.kind === "blocked") {
+				return {
+					title: "Open board",
+					message: navigationBlockReason(permission.block.paneId, permission.block.kind),
+				};
+			}
+			move = permission.move;
 			return null;
 		},
 		/** That command did not move the pane. */

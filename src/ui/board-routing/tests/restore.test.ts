@@ -2,13 +2,8 @@ import { expect, test } from "bun:test";
 
 import { settledAddress, type WorkspaceAddress } from "@/ui/board-routing/address";
 import {
-	abandonRestore,
 	advanceRestore,
 	createRestore,
-	openAnswered,
-	restoreOutstanding,
-	retargetRestore,
-	type PendingOpen,
 	type Restore,
 	type RestoreStep,
 } from "@/ui/board-routing/restore";
@@ -16,7 +11,8 @@ import type { GuardVerdict, OpenOutcome, WorkspacePort } from "@/ui/board-routin
 
 /** An open the shell has been asked for and has not answered. */
 interface HeldOpen {
-	readonly pending: PendingOpen;
+	readonly paneId: string;
+	readonly boardKey: string;
 	readonly answer: (outcome: OpenOutcome) => void;
 }
 
@@ -126,10 +122,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 		open: (paneId: string, boardKey: string): Promise<OpenOutcome> => {
 			applied.push(`open:${paneId}:${boardKey}`);
 			return new Promise<OpenOutcome>((resolve) => {
-				held.push({
-					pending: { target: 0, paneId, boardKey, from: null },
-					answer: resolve,
-				});
+				held.push({ paneId, boardKey, answer: resolve });
 			});
 		},
 		/**
@@ -215,26 +208,16 @@ function fakeShell(options: FakeOptions): FakeShell {
 					return step.kind === "focus" ? port.selectPane(step.paneId) : false;
 				},
 				/**
-				 * Ask for an open and record its answer against the target that asked.
-				 * @param open The command.
+				 * Ask for an open. The hook owns the answer; this owner is about what
+				 * a restore asks for, and in which order.
+				 * @param paneId The pane.
+				 * @param boardKey The board.
 				 */
-				open: (open: PendingOpen): void => {
-					void port.open(open.paneId, open.boardKey).then((outcome) => {
-						const last = held.at(-1);
-						if (last) {
-							held[held.length - 1] = { ...last, pending: open };
-						}
-						shell.restore = openAnswered(shell.restore, open, outcome.kind === "opened");
-						shell.reconcile();
-						return outcome;
-					});
-					const last = held.at(-1);
-					if (last) {
-						held[held.length - 1] = { ...last, pending: open };
-					}
+				open: (paneId: string, boardKey: string): void => {
+					void port.open(paneId, boardKey);
 				},
 			};
-			shell.restore = advanceRestore(shell.restore, port.displayed, port, commands);
+			shell.restore = advanceRestore(shell.restore, port.displayed, port, commands).restore;
 		},
 		/** Commit what the commands queued, as a render does. */
 		render: (): void => {
@@ -313,74 +296,6 @@ test("a command the shell refuses is taken off the plan without waiting for a re
 	expect(shell.restore.done).toBe(true);
 });
 
-test("an open is not over when the server answers it, but when the pane is seen to move", async () => {
-	const shell = fakeShell({
-		panes: [["A", "payments"]],
-		wanted: address([["A", "billing"]]),
-	});
-	shell.reconcile();
-	expect(shell.applied).toEqual(["open:A:billing"]);
-	await shell.answer(true);
-	// The note was read, but this pane is still showing payments. The address is
-	// not written from a workspace that is about to change again.
-	expect(restoreOutstanding(shell.restore)).toBe(true);
-	expect(shell.restore.done).toBe(false);
-	shell.render();
-	expect(shell.restore.done).toBe(false);
-	shell.adopt("A", "billing");
-	expect(restoreOutstanding(shell.restore)).toBe(false);
-	expect(shell.restore.done).toBe(true);
-});
-
-test("only one open is outstanding at a time, so the server sees them in the order asked", () => {
-	const shell = fakeShell({
-		panes: [
-			["A", "scratch"],
-			["B", "scratch"],
-		],
-		wanted: address([
-			["A", "payments"],
-			["B", "billing"],
-		]),
-	});
-	shell.reconcile();
-	expect(shell.applied).toEqual(["open:A:payments"]);
-	shell.render();
-	expect(shell.applied).toEqual(["open:A:payments"]);
-});
-
-test("a re-render while an open is outstanding does not finish the restore or lose its answer", async () => {
-	const shell = fakeShell({ panes: [["A", "scratch"]], wanted: address([["A", "gone"]]) });
-	shell.reconcile();
-	expect(shell.applied).toEqual(["open:A:gone"]);
-	// Anything else re-rendering the application reconciles again. The restore
-	// has nothing left to try, but it is not finished: its own answer is still
-	// coming, and it may be the one thing the person has to be told.
-	shell.render();
-	shell.render();
-	expect(shell.restore.done).toBe(false);
-	expect(shell.unreachable).toEqual([]);
-	await shell.answer(false);
-	expect(shell.restore.done).toBe(true);
-	expect(shell.unreachable).toEqual(["gone"]);
-});
-
-test("an answer to a target the person has moved on from is released, never recorded", async () => {
-	const shell = fakeShell({ panes: [["A", "scratch"]], wanted: address([["A", "gone"]]) });
-	shell.reconcile();
-	// Back is pressed while the first open is still outstanding.
-	shell.restore = retargetRestore(shell.restore, address([["A", "billing"]]));
-	await shell.answer(false);
-	// The board the person has left is not named at them, and the newer target
-	// was not asked for until the older command had answered.
-	expect(shell.unreachable).toEqual([]);
-	expect(shell.applied).toEqual(["open:A:gone", "open:A:billing"]);
-	await shell.answer(true);
-	shell.adopt("A", "billing");
-	expect(shell.restore.done).toBe(true);
-	expect(shell.unreachable).toEqual([]);
-});
-
 test("a pane that refuses stops the whole restore before anything is applied", () => {
 	const shell = fakeShell({
 		panes: [
@@ -419,13 +334,4 @@ test("a restore waits for a pane that has not reached the server rather than ope
 	shell.reconcile();
 	expect(shell.applied).toEqual([]);
 	expect(shell.restore.done).toBe(false);
-});
-
-test("a restore the person overrides stops, and its late answer changes nothing", async () => {
-	const shell = fakeShell({ panes: [["A", "scratch"]], wanted: address([["A", "gone"]]) });
-	shell.reconcile();
-	shell.restore = abandonRestore(shell.restore);
-	await shell.answer(false);
-	expect(shell.unreachable).toEqual([]);
-	expect(shell.applied).toEqual(["open:A:gone"]);
 });
