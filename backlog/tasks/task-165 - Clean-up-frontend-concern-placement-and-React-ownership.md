@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 13:59'
+updated_date: '2026-09-09 14:02'
 labels: []
 dependencies:
   - TASK-164
@@ -93,6 +93,12 @@ Proof after the fix, one probe per case, all removed afterwards:
 - Every file of src/ui/components, src/ui/workbench-thread and src/ui/voice-wave -> silent, so the exact vendor exceptions are retained.
 
 Revalidated: bun run lint both lanes, bun run fmt:check 1794 files, bun run type-check both projects, bun run build:frontend, bun test --isolate src/ui 904 pass / 0 fail, bun run test:repository 8 pass / 0 fail. No lint or type rule was relaxed and no repository-policy, lint or tooling test was added.
+
+Third enforcement gap in the same finding (2026-09-09, reviewer recheck): archboard/named-react-imports handled ImportDefaultSpecifier and ImportNamespaceSpecifier but not the default export reached through a named clause, so `import { default as R } from "react"; export type Node = R.ReactNode` passed. The rule now treats a specifier as binding the namespace when it is a default import, a namespace import, or a named clause whose imported name is `default` — in both spellings the grammar allows, the identifier and the string literal.
+
+Probes, removed afterwards: `import { default as R }`, `import { "default" as R }` and `import type { default as R }` are each reported at the specifier; `import { useState, type ReactNode } from "react"` stays silent, so ordinary named imports are untouched; every file of src/ui/components, src/ui/workbench-thread and src/ui/voice-wave stays silent, so the exact vendor exceptions are retained.
+
+Targeted revalidation for this syntax-only rule change: bun run lint both lanes, bun run type-check both projects, bun run fmt:check 1794 files — all exit 0. The UI suite was not repeated; the rule change touches no product source.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
