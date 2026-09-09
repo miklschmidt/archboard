@@ -390,15 +390,20 @@ function ApplicationBody(): JSX.Element {
 			/** That command did not move the pane. */
 			onMoveAbandoned: addressing.clear,
 			/**
-			 * A dialog's command finished.
-			 * @param message Words for the notice, when there are any.
-			 * @param boards The boards it wrote, whose cached state is now behind.
+			 * A dialog's command wrote these boards, whatever it went on to do.
+			 * @param boards The boards it wrote.
 			 */
-			onDone: (message: string | null, boards: readonly string[]): void => {
+			onWrote: (boards: readonly string[]): void => {
+				catalog.boardsChanged(boards);
+			},
+			/**
+			 * A dialog's command finished without a refusal.
+			 * @param message Words for the notice, when there are any.
+			 */
+			onDone: (message: string | null): void => {
 				if (message !== null) {
 					raise(infoNotice("board-command", "Board", message));
 				}
-				catalog.boardsChanged(boards);
 			},
 			/**
 			 * The person confirmed closing a pane that held work: a comparison ends.

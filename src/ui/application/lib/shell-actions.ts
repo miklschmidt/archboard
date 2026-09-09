@@ -122,6 +122,9 @@ function settle(
 			deps.dialogs.openConflict(outcome.conflict, outcome.hold, context);
 			return;
 		default:
+			// A command that failed part-way still wrote what it wrote: the note
+			// exists, so what the shell holds about it is behind either way.
+			deps.catalog.boardsChanged(outcome.boards);
 			deps.notices.raise(
 				failureNotice("board-command", outcome.error.title, outcome.error.message),
 			);
