@@ -10,8 +10,10 @@ import {
 	type BoardCommandOutcome,
 } from "@/ui/application/board-commands";
 import { NOTICE_ACTIONS, failureNotice, infoNotice } from "@/ui/application/notices";
+import type { WorkspaceAddressing } from "@/ui/board-routing";
 import type { PaneList } from "@/ui/application/pane-list";
 import { recordFor, type PaneRecord } from "@/ui/application/pane-records";
+import { guardPane, guardedPanes, reportNavigationBlock } from "@/ui/application/navigation-guard";
 import { EMPTY_DRAFT, type BoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
 import type { Fullscreen } from "@/ui/application/hooks/use-fullscreen";
 import type { NoticeStack } from "@/ui/application/hooks/use-notices";
@@ -29,6 +31,8 @@ import type { BoardIdentity, BoardListing } from "@/ui/types";
 /** What the actions act on. */
 interface ShellActionDeps {
 	readonly setTheme: (theme: ThemeChoice) => void;
+	/** Where a person's own move is announced, so the address bar records it. */
+	readonly addressing: WorkspaceAddressing;
 	readonly panes: Panes;
 	readonly catalog: BoardCatalog;
 	readonly dialogs: BoardDialogs;
@@ -46,6 +50,7 @@ interface ShellActionDeps {
 function contextFor(list: PaneList, record: PaneRecord): BoardCommandContext {
 	const { status } = record;
 	return {
+		paneId: status.paneId,
 		clientId: status.clientId,
 		expectVersion: status.noteVersion,
 		boardKey: status.boardKey,
@@ -99,6 +104,11 @@ function settle(
 	context: BoardCommandContext,
 	title: string,
 ): void {
+	// A command that did not finish moved no pane, so a move announced before it
+	// is not a move: the address bar must not push a history entry for it.
+	if (outcome.kind !== "done") {
+		deps.addressing.clear();
+	}
 	switch (outcome.kind) {
 		case "done":
 			if (outcome.message !== null) {
@@ -114,6 +124,23 @@ function settle(
 				failureNotice("board-command", outcome.error.title, outcome.error.message),
 			);
 	}
+}
+
+/**
+ * Refuse a move this pane cannot make, and show the recovery it waits on.
+ * @param deps The owners.
+ * @param context The pane the move is for.
+ * @returns True when the move was refused and nothing should be attempted.
+ */
+function refuseGuarded(deps: ShellActionDeps, context: BoardCommandContext): boolean {
+	const { panes } = deps;
+	const verdict = guardPane(guardedPanes(panes.records, panes.handles), context.paneId);
+	if (verdict.kind === "clear") {
+		return false;
+	}
+	const { hold } = recordFor(panes.records, context.paneId).status;
+	reportNavigationBlock(deps, verdict, context, hold);
+	return true;
 }
 
 /** The board actions. */
@@ -146,6 +173,10 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 			deps.notices.raise(failureNotice("board-command", "Open board", `${key} is not listed.`));
 			return;
 		}
+		if (refuseGuarded(deps, context)) {
+			return;
+		}
+		deps.addressing.expect({ kind: "board", paneId: context.paneId, from: context.boardKey });
 		settle(deps, await runOpen(SERVER_API, identity, context), context, "Open board");
 	}
 	/** Save the active pane's board back to its note. */
@@ -215,11 +246,18 @@ function paneActions(deps: ShellActionDeps): PaneActions {
 	 * @param paneId The pane.
 	 */
 	function closePane(paneId: string): void {
-		const { hold } = recordFor(panes.records, paneId).status;
+		const record = recordFor(panes.records, paneId);
+		const { hold } = record.status;
+		// A held board's confirmation is its own recovery: the person is told
+		// what the close costs and answers for it.
 		if (hold !== null) {
 			deps.dialogs.openConfirmClose(paneId, hold.writes);
 			return;
 		}
+		if (refuseGuarded(deps, contextFor(panes.list, record))) {
+			return;
+		}
+		deps.addressing.expect({ kind: "panes", count: panes.list.panes.length - 1 });
 		panes.close(paneId);
 	}
 	/**
@@ -258,8 +296,9 @@ function paneActions(deps: ShellActionDeps): PaneActions {
 	function selectPane(paneId: string): void {
 		panes.select(paneId);
 	}
-	/** Add the second pane. */
+	/** Add the second pane: the person asked for a comparison. */
 	function addPane(): void {
+		deps.addressing.expect({ kind: "panes", count: panes.list.panes.length + 1 });
 		panes.add();
 	}
 	return {

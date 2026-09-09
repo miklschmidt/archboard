@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
+import type { BoardCommandContext } from "@/ui/application/board-commands";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { AgentSettingsHost } from "@/ui/application/components/AgentSettingsHost";
 import { ApplicationPane } from "@/ui/application/components/ApplicationPane";
@@ -21,6 +22,7 @@ import { OpenerSettingsHost } from "@/ui/application/components/OpenerSettingsHo
 import { openPendingRecovery, paneEvents } from "@/ui/application/lib/pane-events";
 import { heldBoardKeys, recordFor } from "@/ui/application/pane-records";
 import { createShellActions } from "@/ui/application/lib/shell-actions";
+import { addressingOver, openingPaneList } from "@/ui/application/lib/workspace-port";
 import { assembleShellView } from "@/ui/application/shell-view";
 import { applyTheme, initialTheme } from "@/ui/application/lib/theme";
 import { useBoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
@@ -39,6 +41,7 @@ import { useAgentActivity, type AgentActivity } from "@/ui/application/hooks/use
 import { useReducedMotion } from "@/ui/application/hooks/use-reduced-motion";
 import { useStageEvents, type EscapeOrigin } from "@/ui/application/hooks/use-stage-events";
 import { useWorkbench } from "@/ui/application/hooks/use-workbench";
+import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
 import { PresentationVoiceControls } from "@/ui/application/components/PresentationVoiceControls";
 import { WorkbenchDockBody } from "@/ui/application/components/WorkbenchDockBody";
 import { WorkbenchDockHeader } from "@/ui/application/components/WorkbenchDockHeader";
@@ -52,6 +55,7 @@ import {
 	type BoardCatalog,
 } from "@/ui/board-catalog";
 import { useLibrary, type LibraryController } from "@/ui/board-library";
+import { useOpeningAddress, type WorkspaceAddressing } from "@/ui/board-routing";
 import { TooltipProvider } from "@/ui/components/tooltip";
 import {
 	ActivityList,
@@ -367,7 +371,12 @@ function ApplicationBody(): JSX.Element {
 	const closeSettings = useCallback((): void => setSettings(null), []);
 	const openAgentSettings = useCallback((): void => setSettings("agent"), []);
 
-	const panes = usePanes();
+	// The address the tab was opened on mounts the panes, so a restored
+	// comparison has both canvases in its first render rather than growing one.
+	const opening = useOpeningAddress();
+	const panes = usePanes(useCallback(() => openingPaneList(opening), [opening]));
+	const [addressBinding] = useState(() => new LiveBinding<WorkspaceAddressing>());
+	const addressing = useMemo(() => addressingOver(addressBinding), [addressBinding]);
 	const heldKeys = useMemo(
 		() =>
 			heldBoardKeys(
@@ -398,6 +407,15 @@ function ApplicationBody(): JSX.Element {
 	const dialogEvents = useMemo(
 		() => ({
 			/**
+			 * A dialog is about to point a pane at another board: the person's move.
+			 * @param context The pane it acts for.
+			 */
+			onMovingPane: (context: BoardCommandContext): void => {
+				addressing.expect({ kind: "board", paneId: context.paneId, from: context.boardKey });
+			},
+			/** That command did not move the pane. */
+			onMoveAbandoned: addressing.clear,
+			/**
 			 * A dialog's command finished.
 			 * @param message Words for the notice, when there are any.
 			 */
@@ -407,21 +425,32 @@ function ApplicationBody(): JSX.Element {
 				}
 				catalog.refresh();
 			},
-			onClosePane: panes.close,
+			/**
+			 * The person confirmed closing a pane that held work: a comparison ends.
+			 * @param paneId The pane.
+			 */
+			onClosePane: (paneId: string): void => {
+				addressing.expect({ kind: "panes", count: panes.list.panes.length - 1 });
+				panes.close(paneId);
+			},
 			/** A dialog closed; a note state that waited for it gets its dialog now. */
 			onClosed: (): void => {
 				afterDialogClose.read()();
 			},
 		}),
-		[raise, catalog, panes.close, afterDialogClose],
+		[raise, catalog, panes, addressing, afterDialogClose],
 	);
 	const dialogs = useBoardDialogs(dialogEvents);
+	// The address bar over the panes the shell already owns: it writes down what
+	// they show, and restores what a direct load or a Back/Forward asks for.
+	useWorkspaceAddressing({ panes, dialogs, notices }, addressBinding);
 	usePresentationTransfer(panes, fullscreen);
 	usePresentationFocusReturn(fullscreen.snapshot.paneId);
 	useLibrarySync(panes, library);
 	// Bound each render, after the owners the events reach exist.
 	panes.bindEvents(
 		paneEvents({
+			addressing,
 			notices,
 			library,
 			catalog,
@@ -457,8 +486,17 @@ function ApplicationBody(): JSX.Element {
 	);
 	const actions = useMemo<ShellActions>(
 		() =>
-			createShellActions({ setTheme, panes, catalog, dialogs, notices, fullscreen, openSettings }),
-		[setTheme, panes, catalog, dialogs, notices, fullscreen, openSettings],
+			createShellActions({
+				setTheme,
+				addressing,
+				panes,
+				catalog,
+				dialogs,
+				notices,
+				fullscreen,
+				openSettings,
+			}),
+		[setTheme, addressing, panes, catalog, dialogs, notices, fullscreen, openSettings],
 	);
 	const view = useShellView({
 		theme,
