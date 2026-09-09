@@ -51,8 +51,21 @@ interface BoardCommandContext {
 }
 
 /** How a command ended. */
+/** What a command did: words for the person, and the boards it wrote. */
+interface CommandDone {
+	readonly kind: "done";
+	readonly message: string | null;
+	/**
+	 * The boards this command wrote, so what the shell caches about them can be
+	 * read again. A command that only changed which board a pane shows names
+	 * none: nothing about those boards moved.
+	 */
+	readonly boards: readonly string[];
+}
+
+/** How a command ended. */
 type BoardCommandOutcome =
-	| { readonly kind: "done"; readonly message: string | null }
+	| CommandDone
 	| {
 			readonly kind: "conflict";
 			readonly conflict: BoardWriteConflict;
@@ -116,6 +129,12 @@ function failed(title: string, error: unknown): BoardCommandOutcome {
 	return { kind: "failed", error: { title, message } };
 }
 
+/** What a command wrote, and the words for it. */
+interface Written {
+	readonly message: string | null;
+	readonly boards: readonly string[];
+}
+
 /**
  * Run a command, turning a conflict and a failure into outcomes.
  * @param title What is attempted, for the error.
@@ -124,10 +143,11 @@ function failed(title: string, error: unknown): BoardCommandOutcome {
  */
 async function attempt(
 	title: string,
-	command: () => Promise<string | null>,
+	command: () => Promise<Written>,
 ): Promise<BoardCommandOutcome> {
 	try {
-		return { kind: "done", message: await command() };
+		const written = await command();
+		return { kind: "done", message: written.message, boards: written.boards };
 	} catch (error) {
 		if (error instanceof BoardConflictError) {
 			return { kind: "conflict", conflict: error.conflict, hold: error.held ?? null };
@@ -181,7 +201,10 @@ function saveAs(
 		if (request.level !== undefined) {
 			save.level = request.level;
 		}
-		return savedMessage(await api.save(save));
+		const result = await api.save(save);
+		// Both boards moved: the note that was written, and the one it was written
+		// from, whose own state a branch or a rename leaves behind.
+		return { message: savedMessage(result), boards: [result.board, boardKey] };
 	});
 }
 
@@ -202,13 +225,13 @@ function runBoardDialogRequest(
 		case "open":
 			return attempt("Open board", async () => {
 				await api.open(openRequest(identity, context.pane));
-				return null;
+				return { message: null, boards: [] };
 			});
 		case "create":
 			return attempt("Create board", async () => {
 				const created = await api.create(identity);
 				await api.open(openRequest(created.identity, context.pane));
-				return `Created ${created.board}.`;
+				return { message: `Created ${created.board}.`, boards: [created.board] };
 			});
 		default:
 			return saveAs(api, request, context);
@@ -229,7 +252,9 @@ function runOpen(
 ): Promise<BoardCommandOutcome> {
 	return attempt("Open board", async () => {
 		await api.open(openRequest(identity, context.pane));
-		return null;
+		// Opening writes nothing: it changes which board a pane shows, which the
+		// listing covers, and leaves every board as it was.
+		return { message: null, boards: [] };
 	});
 }
 
@@ -279,7 +304,8 @@ function runSave(
 		if (force) {
 			save.force = true;
 		}
-		return savedMessage(await api.save(save));
+		const result = await api.save(save);
+		return { message: savedMessage(result), boards: [result.board, boardKey] };
 	});
 }
 
@@ -299,7 +325,10 @@ function runReload(
 	}
 	return attempt("Reload", async () => {
 		await api.open(openRequest(board, context.pane, true));
-		return `Reloaded ${board.board} from its note.`;
+		return {
+			message: `Reloaded ${board.board} from its note.`,
+			boards: context.boardKey === null ? [] : [context.boardKey],
+		};
 	});
 }
 
@@ -319,7 +348,7 @@ function runClear(
 	}
 	return attempt("Clear board", async () => {
 		const { count } = await api.clear(boardKey, context.clientId, context.expectVersion);
-		return `Removed ${count} element(s).`;
+		return { message: `Removed ${count} element(s).`, boards: [boardKey] };
 	});
 }
 

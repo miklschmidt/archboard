@@ -11,33 +11,47 @@ import type { BoardInfo } from "@/ui/types";
 /** What one board-info read answers. */
 type BoardInfoResult = UseQueryResult<BoardInfo & { success: true }>;
 
+/** Which open boards are scratch, and which could not be asked about. */
+interface ScratchBoards {
+	/** The board keys that have no chosen name. */
+	readonly keys: ReadonlySet<string>;
+	/**
+	 * How many open boards could not be asked about. A board that could not be
+	 * read is not a board without a name: the affordance is withheld rather than
+	 * offered, and the navigator says so rather than silently omitting it.
+	 */
+	readonly unreadable: number;
+}
+
 /**
- * The keys of the boards that turned out to be scratch. A board whose info
- * could not be read is not scratch: the navigator offers a name for a board it
- * knows has none, never for one it failed to ask about.
+ * What the reads answered: the scratch boards, and how many could not be read.
  * @param results One result per board asked about.
- * @returns The scratch board keys.
+ * @returns The scratch keys and the count of unreadable boards.
  */
-function scratchKeys(results: readonly BoardInfoResult[]): ReadonlySet<string> {
+function scratchBoards(results: readonly BoardInfoResult[]): ScratchBoards {
 	const keys = new Set<string>();
+	let unreadable = 0;
 	for (const result of results) {
 		if (result.data?.placeholder === true) {
 			keys.add(result.data.board);
 		}
+		if (result.error !== null) {
+			unreadable += 1;
+		}
 	}
-	return keys;
+	return { keys, unreadable };
 }
 
 /**
  * The scratch boards among the ones the panes hold.
  * @param boards The board keys the panes hold.
- * @returns The subset that has no chosen name.
+ * @returns Which have no chosen name, and how many could not be asked about.
  */
-function useScratchBoards(boards: readonly string[]): ReadonlySet<string> {
+function useScratchBoards(boards: readonly string[]): ScratchBoards {
 	return useQueries({
 		queries: boards.map((board) => boardInfoQuery(board)),
-		combine: scratchKeys,
+		combine: scratchBoards,
 	});
 }
 
-export { scratchKeys, useScratchBoards };
+export { scratchBoards, useScratchBoards, type ScratchBoards };

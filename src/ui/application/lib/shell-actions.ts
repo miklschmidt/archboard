@@ -114,7 +114,9 @@ function settle(
 			if (outcome.message !== null) {
 				deps.notices.raise(infoNotice("board-command", title, outcome.message));
 			}
-			deps.catalog.refresh();
+			// The listing may have moved, and whatever this wrote is no longer what
+			// the shell holds about it.
+			deps.catalog.boardsChanged(outcome.boards);
 			return;
 		case "conflict":
 			deps.dialogs.openConflict(outcome.conflict, outcome.hold, context);

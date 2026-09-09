@@ -96,6 +96,8 @@ function latch(): Latch {
 interface ServerState {
 	boards: string[];
 	previewGeneration: number;
+	/** Whether the open board is scratch: a note nobody has named. */
+	unnamed: boolean;
 	readonly counts: Map<string, number>;
 	readonly failures: Map<string, string>;
 	readonly held: Map<string, Latch>;
@@ -117,6 +119,15 @@ function bodyFor(path: string, state: ServerState): Record<string, unknown> {
 	if (path === "/api/panes") {
 		const pane = { paneId: "A", place: "left", board: "Draft", elementCount: 1 };
 		return { panes: [{ ...pane, identity: identityOf("Draft") }] };
+	}
+	if (path === "/api/boards/info") {
+		return {
+			success: true,
+			board: "Draft",
+			identity: identityOf("Draft"),
+			elementCount: 1,
+			placeholder: state.unnamed,
+		};
 	}
 	return {
 		success: true,
@@ -178,6 +189,7 @@ function fakeServer(): FakeServer {
 	const state: ServerState = {
 		boards: ["Checkout"],
 		previewGeneration: 1,
+		unnamed: true,
 		counts: new Map(),
 		failures: new Map(),
 		held: new Map(),
@@ -190,8 +202,12 @@ function fakeServer(): FakeServer {
 	async function serve(input: RequestInfo | URL): Promise<Response> {
 		const path = pathOf(input);
 		state.counts.set(path, (state.counts.get(path) ?? 0) + 1);
+		// Answered from the state the server had when it was asked, as a real one
+		// would. Only the delivery is held back, so a request that is still on the
+		// wire when something changes still carries the older answer.
+		const answer = answerFor(path, state);
 		await waitForRelease(path, state);
-		return answerFor(path, state);
+		return answer;
 	}
 	Object.defineProperty(globalThis, "fetch", { value: serve, writable: true, configurable: true });
 	return {
