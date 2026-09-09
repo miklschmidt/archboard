@@ -4,8 +4,14 @@
 // kebab-case, and everything else is scoped kebab-case. React lives in
 // components and hooks; a module's root files are its public interface and may
 // hold an intentionally public component, hook or API.
-// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
-import { createRule, report, type RuleContext, type RuleVisitors } from "./rule-api.ts";
+import {
+	createRule,
+	report,
+	type RuleContext,
+	type RuleVisitors,
+	type VisitedNode,
+	// oxlint-disable-next-line archboard/absolute-imports -- tools/ has no alias root; @/ resolves only into src/
+} from "./rule-api.ts";
 import {
 	getRepoRelativePath,
 	moduleAt,
@@ -189,7 +195,7 @@ function concernVisitors(context: RuleContext, placement: UiFilePlacement): Rule
 			}
 		},
 		/**
-		 * Report a hook exported from a file that does not own hooks.
+		 * Report a hook re-exported by name from a file that does not own hooks.
 		 * @param node The visited node.
 		 */
 		ExportSpecifier(node) {
@@ -199,7 +205,55 @@ function concernVisitors(context: RuleContext, placement: UiFilePlacement): Rule
 				report(context, node, "hookOutsideHooks");
 			}
 		},
+		/**
+		 * Report a hook declared and exported in place by a file that does not
+		 * own hooks, which no export specifier would name.
+		 * @param node The visited node.
+		 */
+		ExportNamedDeclaration(node) {
+			if (hooksAllowed) {
+				return;
+			}
+			for (const name of exportedValueNames(node.declaration ?? null)) {
+				if (HOOK_NAME.test(name)) {
+					report(context, node, "hookOutsideHooks");
+				}
+			}
+		},
 	};
+}
+
+/** What an `export ...` declaration can bind, as the visitor receives it. */
+type ExportedDeclaration = NonNullable<VisitedNode<"ExportNamedDeclaration">["declaration"]>;
+
+/**
+ * The value names one exported declaration binds: `export function useX`,
+ * `export const useX =`, and every declarator of a multiple declaration.
+ * @param declaration The exported declaration, when the export has one.
+ * @returns The bound names, in source order.
+ */
+function exportedValueNames(declaration: ExportedDeclaration | null): string[] {
+	if (declaration === null) {
+		return [];
+	}
+	if (declaration.type === "VariableDeclaration") {
+		return declaration.declarations
+			.map((declarator) => (declarator.id.type === "Identifier" ? declarator.id.name : null))
+			.filter((name): name is string => name !== null);
+	}
+	return declaredFunctionName(declaration);
+}
+
+/**
+ * The name a function or class declaration binds, if it names one.
+ * @param declaration The exported declaration.
+ * @returns A one-name list, or none for any other declaration.
+ */
+function declaredFunctionName(declaration: ExportedDeclaration): string[] {
+	if (declaration.type !== "FunctionDeclaration" && declaration.type !== "ClassDeclaration") {
+		return [];
+	}
+	return declaration.id ? [declaration.id.name] : [];
 }
 
 const uiConcernPlacement = createRule(
@@ -233,10 +287,27 @@ function isAuthoredUiFile(relativePath: string): boolean {
 	return module?.area === "ui" && TYPESCRIPT_SOURCE.test(relativePath);
 }
 
+/**
+ * Whether an identifier is the local name a React import binds, which the
+ * import visitor already reports; the same node must not be reported twice.
+ * @param node The identifier.
+ * @returns Whether an import specifier binds it.
+ */
+function isImportBinding(node: VisitedNode<"Identifier">): boolean {
+	const parent = node.parent.type;
+	return (
+		parent === "ImportDefaultSpecifier" ||
+		parent === "ImportNamespaceSpecifier" ||
+		parent === "ImportSpecifier"
+	);
+}
+
 const namedReactImports = createRule(
 	{
 		noReactNamespace:
 			'Use named React imports, including types: import { useState, type JSX } from "react" rather than the React namespace.',
+		noReactNamespaceImport:
+			'Import from "react" by name. A default or namespace import binds the whole React namespace whatever it is called, which is what the named-import rule exists to prevent.',
 	},
 	(context) => {
 		if (!isAuthoredUiFile(getRepoRelativePath(context))) {
@@ -244,16 +315,34 @@ const namedReactImports = createRule(
 		}
 		return {
 			/**
-			 * Report a value or type reached through the React namespace.
+			 * Report a default or namespace import of React, under any local name.
+			 * @param node The visited node.
+			 */
+			ImportDeclaration(node) {
+				if (node.source.value !== "react") {
+					return;
+				}
+				for (const specifier of node.specifiers) {
+					if (
+						specifier.type === "ImportDefaultSpecifier" ||
+						specifier.type === "ImportNamespaceSpecifier"
+					) {
+						report(context, specifier, "noReactNamespaceImport");
+					}
+				}
+			},
+			/**
+			 * Report a value or type reached through the ambient React namespace,
+			 * which needs no import at all.
 			 * @param node The visited node.
 			 */
 			Identifier(node) {
-				if (node.name === "React") {
+				if (node.name === "React" && !isImportBinding(node)) {
 					report(context, node, "noReactNamespace");
 				}
 			},
 			/**
-			 * Report React markup reached through the React namespace.
+			 * Report React markup reached through the ambient React namespace.
 			 * @param node The visited node.
 			 */
 			JSXIdentifier(node) {

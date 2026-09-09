@@ -1,11 +1,11 @@
 ---
 id: TASK-165
 title: Clean up frontend concern placement and React ownership
-status: Done
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-09 12:50'
-updated_date: '2026-09-09 13:44'
+updated_date: '2026-09-09 13:59'
 labels: []
 dependencies:
   - TASK-164
@@ -27,7 +27,7 @@ The agreed frontend rules preserve Archboard module boundaries but existing UI m
 <!-- AC:BEGIN -->
 - [x] #1 Authored frontend modules follow docs/agents/frontend.md naming and concern placement, with intentional public entrypoints and existing test owners preserved.
 - [x] #2 Application and shell compose domain owners; local state and subscriptions stay with consumers, with unnecessary mirrored state and relay-only controllers removed.
-- [x] #3 Lint enforces agreed mechanically checkable conventions without relaxing existing lint/type rules or introducing file-content or tooling-policy tests.
+- [ ] #3 Lint enforces agreed mechanically checkable conventions without relaxing existing lint/type rules or introducing file-content or tooling-policy tests.
 - [x] #4 Existing desktop, split-pane, canvas edit, library, workbench and voice behavior is preserved; relevant runtime owners and bun run check pass.
 <!-- AC:END -->
 
@@ -78,6 +78,21 @@ Verification (2026-09-09):
 - The lint rule was proved to fire, not merely to be registered: temporary probe files earned every message once (unknown concern folder, kebab component file, kebab module-root component file, JSX in lib, hook exported from lib, use- prefixed file in lib), and the vendor files earned none. The probes were removed.
 
 Follow-up commit 44f92f77: docs/agents/frontend.md also asks for named React imports including types, and authored UI source still reached the React namespace for React.JSX.Element, React.ReactNode, React.ComponentProps and the event, ref and style types. All 71 authored files now import those types by name from "react"; the shadcn, assistant-ui and LiveKit vendor files keep their namespace imports. archboard/named-react-imports enforces it over authored src/ui source including tests, off only for the same approved vendor list. Verified with lint, fmt:check, both type-check projects, build:frontend, src/ui module owners (904 pass) and test:repository (8 pass); the browser and system lanes were left to their current owner.
+
+Rule enforcement gaps (2026-09-09, found by independent standards review, fixed before closure):
+
+Reproduced first, with disposable probes under src/ui/path-focus that were removed afterwards. Both escaped silently while the lint run itself was working, which the probe run confirmed by reporting an unrelated jsdoc(require-returns) on the same file:
+1. archboard/named-react-imports matched the literal identifier React, so `import * as Reakt from "react"` and `import Reakt from "react"` bound the whole namespace under another name and evaded it.
+2. archboard/ui-concern-placement inspected ExportSpecifier only, so `export function useValue()` and `export const useOther = () => ...` declared and exported in place inside lib/ escaped, while the same hook re-exported through an export clause was caught.
+
+Fixes: named-react-imports now prohibits the import binding itself, reporting every ImportDefaultSpecifier and ImportNamespaceSpecifier on a react import whatever its local name, with a second message naming that cause; the ambient-namespace check stays for source that uses React.* with no import at all, and no longer double-reports an import's own local name. ui-concern-placement now also visits ExportNamedDeclaration and reads the names an exported function, class or variable declaration binds, so an inline hook export is caught wherever it is written.
+
+Proof after the fix, one probe per case, all removed afterwards:
+- `import * as Reakt from "react"` -> reported; `import Reakt from "react"` -> reported; ambient `React.JSX.Element` with no import -> still reported; `import { useState, type JSX } from "react"` -> silent.
+- `export function useInline` and `export const useVariable` in lib/ -> both reported; the same hook in hooks/ -> silent; `export function usable` and `export type useLike` in lib/ -> silent.
+- Every file of src/ui/components, src/ui/workbench-thread and src/ui/voice-wave -> silent, so the exact vendor exceptions are retained.
+
+Revalidated: bun run lint both lanes, bun run fmt:check 1794 files, bun run type-check both projects, bun run build:frontend, bun test --isolate src/ui 904 pass / 0 fail, bun run test:repository 8 pass / 0 fail. No lint or type rule was relaxed and no repository-policy, lint or tooling test was added.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
