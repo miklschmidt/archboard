@@ -73,7 +73,17 @@ const MESSAGE_LABEL_GAP = 5;
 /** How far a self-message's label stands off the loop it names. */
 const SELF_LABEL_GAP = 8;
 
+/**
+ * The most dots one message may send per turn of the exchange's clock.
+ *
+ * A repeated step says so with more dots, up to this many. Past three they stop
+ * being countable and become a dotted line, and a step marked `×40` would hold
+ * the whole cycle while the rest of the exchange stood still.
+ */
+const MAX_PULSES_PER_STEP = 3;
+
 export {
+	MAX_PULSES_PER_STEP,
 	COLUMN_MIN_WIDTH,
 	COLUMN_MAX_WIDTH,
 	COLUMN_GAP,

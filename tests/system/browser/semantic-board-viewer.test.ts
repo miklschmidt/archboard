@@ -13,6 +13,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { serverPath } from "./support/navigator-support.ts";
+import { emulateMedia } from "./support/shell-render-matrix.ts";
 
 /**
  * How long any one thing here is waited for. Short on purpose: this test does a
@@ -198,3 +199,90 @@ test("a semantic board opens in a real pane, and the vault gets no note for it",
 
 	await canvas.assertRunning();
 }, 30_000);
+
+/** How many travelling dots the drawn picture carries. */
+const dotsDrawn = (browser: AgentBrowserSession): Promise<number> =>
+	browser.eval<number>(`document.querySelectorAll("${SURFACE} circle.ab-pulse").length`);
+
+/** How many of them the browser actually shows. */
+const dotsShown = (browser: AgentBrowserSession): Promise<number> =>
+	browser.eval<number>(
+		`[...document.querySelectorAll("${SURFACE} circle.ab-pulse")]` +
+			`.filter((dot) => getComputedStyle(dot).display !== "none").length`,
+	);
+
+test("a relationship that carries traffic moves, unless the reader asked it not to", async () => {
+	await using resources = new AsyncDisposableStack();
+	const { ownerRoot } = browserTestRoots();
+	const vault = join(ownerRoot, "semantic-motion-vault");
+	mkdirSync(vault, { recursive: true });
+	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
+	resources.defer(() => canvas.dispose());
+	registerCanvasBase(canvas.base);
+	const request = createJsonRequester(canvas);
+
+	// One relationship something travels along, and one that is a fact about how
+	// the two parts are built.
+	expect(
+		(
+			await request<{ success: boolean }>("/api/semantic-boards/create", {
+				method: "POST",
+				doing: "drawing something that moves",
+				body: {
+					board: "moving",
+					origin: "agent",
+					create: {
+						nodes: [
+							{ name: "API", kind: "service", responsibility: "Takes requests" },
+							{ name: "Store", kind: "datastore" },
+						],
+						edges: [
+							{ from: "API", to: "Store", kind: "call", label: "reads", emphasis: "hero" },
+							{ from: "API", to: "Store", kind: "dependency" },
+						],
+					},
+				},
+			})
+		).status,
+	).toBe(200);
+
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${canvas.base}/?paneA=moving`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() => stageState(browser),
+		(state) => state === "drawn",
+		"the board to be drawn in its pane",
+		WAIT,
+	);
+
+	// Three dots on the hero line and none on the dependency: the picture says
+	// which of the two carries traffic, which is the whole point of the marks.
+	expect(await dotsDrawn(browser)).toBe(3);
+
+	// The same picture, for somebody whose system says they want less motion:
+	// none of the dots is shown. The picture itself answers that — its own
+	// stylesheet does, in the same document — so no second render is fetched and
+	// the pane does not flicker back through its loading state to comply.
+	const restore = await emulateMedia(browser, "light", "reduced-motion");
+	try {
+		await pollUntil(
+			() => dotsShown(browser),
+			(shown) => shown === 0,
+			"the drawn dots to be hidden from a reader who asked for less motion",
+			WAIT,
+		);
+		expect(await stageState(browser)).toBe("drawn");
+	} finally {
+		await restore();
+	}
+	// And back, without a round trip: the preference is read by the document.
+	await pollUntil(
+		() => dotsShown(browser),
+		(shown) => shown === 3,
+		"the dots to come back for a reader who has asked for nothing",
+		WAIT,
+	);
+
+	await canvas.assertRunning();
+}, 60_000);

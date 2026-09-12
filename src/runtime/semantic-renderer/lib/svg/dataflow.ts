@@ -1,12 +1,15 @@
 // Painting a message sequence: the frame, then the columns of time, then the
 // cards at their heads, then the messages crossing between them.
 //
-// Forked from PR Lens's `svg/dataflow.ts`. The animation went — the pulses, the
-// shared cycle and the slot schedule are all motion, and motion in a walkthrough
-// belongs to the viewer (ADR 0023) — and with it the manifest and the delta
-// tones. What arrived in their place is the same identity and selection
-// machinery the architecture grammar carries, so a pane can hit-test one
-// picture the way it hit-tests the other.
+// Forked from PR Lens's `svg/dataflow.ts`, the pulses and their shared cycle
+// included: an exchange that does not move reads as a ladder rather than as
+// something happening, which is the whole of what a sequence is for. What did
+// not come with them is the manifest and the delta tones. What arrived on top is
+// the same identity and selection machinery the architecture grammar carries, so
+// a pane can hit-test one picture the way it hit-tests the other.
+//
+// The dots do not compete with the walkthrough: a beat moves the camera and
+// marks its subjects, and neither is a thing a dot does.
 //
 // The layer order is upstream's and is load-bearing. A lifeline passes behind a
 // card; a message passes over a lifeline; and a label plate, opaque precisely so
@@ -35,6 +38,8 @@ import {
 import { atlasBoxes } from "@/runtime/semantic-renderer/lib/atlas";
 import { canvasFor, coord, union, type Box } from "@/runtime/semantic-renderer/lib/geometry";
 import type { Palette } from "@/runtime/semantic-renderer/lib/theme";
+import { timedPulse, PULSE_RADIUS, TRAIN_RADIUS } from "@/runtime/semantic-renderer/lib/svg/pulse";
+import { FLOW_CYCLE_CAP_MS, FLOW_PULSE_RAMP, FLOW_STEP_TRAVEL_MS } from "@/shared/timing/timing";
 import {
 	activationLookup,
 	layoutDataFlow,
@@ -237,6 +242,7 @@ function stepPath(placed: PlacedStep, activeAt: ActiveAt): string {
  * @param activeAt Whether a column is busy at a given height.
  * @param palette The theme's colours.
  * @param standing How this step stands against the variant it came from, when the caller said.
+ * @param crossing The drawing's shared clock.
  * @returns The message's whole group.
  */
 function paintStep(
@@ -244,6 +250,7 @@ function paintStep(
 	activeAt: ActiveAt,
 	palette: Palette,
 	standing: SubjectStanding | undefined,
+	crossing: Crossing,
 ): string {
 	const styles = stylesFor(palette);
 	const path = stepPath(placed, activeAt);
@@ -271,7 +278,56 @@ function paintStep(
 				styles,
 				standingOutline(standing, palette),
 			),
+			// The dots last, so they ride over the line. A message the proposal no
+			// longer sends is drawn for context and must not read as live traffic.
+			standing === "removed" ? "" : timedCrossings(placed, path, palette, crossing),
 		]),
+	);
+}
+
+/**
+ * The drawing's clock, which every message on the page shares.
+ *
+ * One clock, not one per flow: a page of exchanges is read in the order the
+ * flows are stated, and a clock each would have them all crossing at once.
+ */
+interface Crossing {
+	/** How long one turn of the whole clock takes, in seconds. */
+	readonly cycle: number;
+	/** How many turns it is divided into, across every flow drawn. */
+	readonly turns: number;
+}
+
+/**
+ * The dots one message sends, each waiting its own turn on the shared clock.
+ * @param placed The message and the turn it was given.
+ * @param path The line its dots ride.
+ * @param palette The theme's colours.
+ * @param crossing The drawing's clock.
+ * @returns The markup, or nothing when this message sends no dot.
+ */
+function timedCrossings(
+	placed: PlacedStep,
+	path: string,
+	palette: Palette,
+	crossing: Crossing,
+): string {
+	const { cycle, turns } = crossing;
+	if (turns === 0 || placed.slot.count === 0) {
+		return "";
+	}
+	const width = 1 / turns;
+	const colour = weightColour(palette, STEP_WEIGHT);
+	const radius = placed.slot.count > 1 ? TRAIN_RADIUS : PULSE_RADIUS;
+	return lines(
+		Array.from({ length: placed.slot.count }, (_, index) => {
+			const start = (placed.slot.start + index) * width;
+			return timedPulse({ path, colour, radius }, cycle, {
+				start,
+				finish: start + width,
+				ramp: width * FLOW_PULSE_RAMP,
+			});
+		}),
 	);
 }
 
@@ -388,9 +444,15 @@ function paintFrame(
  * @param layout The flow.
  * @param palette The theme's colours.
  * @param standingOf How each subject stands against the variant this one came from.
+ * @param crossing The drawing's shared clock, which this flow takes its turns on.
  * @returns Its markup.
  */
-function paintFlow(layout: FlowLayout, palette: Palette, standingOf: StandingOf): string {
+function paintFlow(
+	layout: FlowLayout,
+	palette: Palette,
+	standingOf: StandingOf,
+	crossing: Crossing,
+): string {
 	const activeAt = activationLookup(layout.columns);
 	return lines([
 		paintFrame(layout, palette, standingOf(layout.flow.id)),
@@ -417,7 +479,7 @@ function paintFlow(layout: FlowLayout, palette: Palette, standingOf: StandingOf)
 			{},
 			lines(
 				layout.steps.map((placed) =>
-					paintStep(placed, activeAt, palette, standingOf(placed.step.id)),
+					paintStep(placed, activeAt, palette, standingOf(placed.step.id), crossing),
 				),
 			),
 		),
@@ -490,6 +552,13 @@ function paintDataFlow(
 	standingOf: StandingOf,
 ): DataFlowPainting {
 	const layout = layoutDataFlow(flows, nodes);
+	// One clock for everything drawn, so the whole page is told in order. It
+	// grows with the number of turns and then stops growing: past the cap a
+	// reader who looked away would not see the beginning come round again.
+	const crossing: Crossing = {
+		turns: layout.turns,
+		cycle: Math.min(layout.turns * FLOW_STEP_TRAVEL_MS, FLOW_CYCLE_CAP_MS) / 1000,
+	};
 	const columns = layout.flows.flatMap(columnSubjects);
 	const steps = layout.flows.flatMap(stepSubjects);
 	const frames = layout.flows.map((laid) => ({ id: laid.flow.id, box: laid.frame }));
@@ -505,7 +574,10 @@ function paintDataFlow(
 	return {
 		width: canvas.width,
 		height: canvas.height,
-		body: shifted(canvas, lines(layout.flows.map((laid) => paintFlow(laid, palette, standingOf)))),
+		body: shifted(
+			canvas,
+			lines(layout.flows.map((laid) => paintFlow(laid, palette, standingOf, crossing))),
+		),
 		atlas: {
 			nodes: atlasBoxes(columns, canvas),
 			// A step is a relationship between two subjects, exactly as an
