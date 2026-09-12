@@ -157,4 +157,109 @@ function distanceToFrame(point: DrawnPoint, box: DiagramBox): number {
 	return Math.min(...sides);
 }
 
-export { type DrawnPoint, bodyShift, distanceToFrame, routeCrosses, routeEnds, routePoints };
+/**
+ * Where each drawn label pill ended up, on the page. A relationship is drawn as
+ * two groups under one id, so the pill comes from the one holding a rect.
+ * @param svg The rendered document.
+ * @returns Each labelled subject's pill box, by the id of the subject that drew it.
+ */
+function routeLabels(svg: string): Map<string, DiagramBox> {
+	const shift = bodyShift(svg);
+	const pills = new Map<string, DiagramBox>();
+	for (const group of svg.matchAll(
+		/<g data-semantic-kind="(?:edge|step)" data-semantic-id="([^"]+)"[^>]*>([\s\S]*?)<\/g>/g,
+	)) {
+		const rect = /<rect x="(-?[\d.]+)" y="(-?[\d.]+)" width="([\d.]+)" height="([\d.]+)"/.exec(
+			group[2] ?? "",
+		);
+		if (rect === null) {
+			continue;
+		}
+		pills.set(group[1] ?? "", {
+			x: Number(rect[1]) + shift.x,
+			y: Number(rect[2]) + shift.y,
+			width: Number(rect[3]),
+			height: Number(rect[4]),
+		});
+	}
+	return pills;
+}
+
+/**
+ * How far a box is from a drawn route: zero when the route passes through it.
+ * Measured to the polyline through the route's points, control points included,
+ * as `routeCrosses` does.
+ * @param box The box.
+ * @param points The route's points, in order.
+ * @returns The distance, or Infinity for a route with no segment at all.
+ */
+function distanceToRoute(box: DiagramBox, points: readonly DrawnPoint[]): number {
+	const corners: DrawnPoint[] = [
+		{ x: box.x, y: box.y },
+		{ x: box.x + box.width, y: box.y },
+		{ x: box.x + box.width, y: box.y + box.height },
+		{ x: box.x, y: box.y + box.height },
+		{ x: box.x + box.width / 2, y: box.y },
+		{ x: box.x + box.width / 2, y: box.y + box.height },
+		{ x: box.x, y: box.y + box.height / 2 },
+		{ x: box.x + box.width, y: box.y + box.height / 2 },
+	];
+	let nearest = Number.POSITIVE_INFINITY;
+	points.forEach((point, index) => {
+		const next = points[index + 1];
+		if (next === undefined) {
+			return;
+		}
+		if (segmentMeets(point, next, box)) {
+			nearest = 0;
+		}
+		for (const corner of corners) {
+			nearest = Math.min(nearest, distanceToSegment(corner, point, next));
+		}
+	});
+	return nearest;
+}
+
+/**
+ * How far a point is from a line segment.
+ * @param point The point.
+ * @param one One end of the segment.
+ * @param other The other end.
+ * @returns The distance.
+ */
+function distanceToSegment(point: DrawnPoint, one: DrawnPoint, other: DrawnPoint): number {
+	const run = { x: other.x - one.x, y: other.y - one.y };
+	const length = run.x * run.x + run.y * run.y;
+	const along =
+		length === 0
+			? 0
+			: Math.min(Math.max(((point.x - one.x) * run.x + (point.y - one.y) * run.y) / length, 0), 1);
+	return Math.hypot(point.x - (one.x + run.x * along), point.y - (one.y + run.y * along));
+}
+
+/**
+ * Whether two boxes overlap.
+ * @param one One box.
+ * @param other The other.
+ * @returns True when they share any area.
+ */
+function boxesOverlap(one: DiagramBox, other: DiagramBox): boolean {
+	return (
+		one.x < other.x + other.width &&
+		other.x < one.x + one.width &&
+		one.y < other.y + other.height &&
+		other.y < one.y + one.height
+	);
+}
+
+export {
+	type DrawnPoint,
+	bodyShift,
+	boxesOverlap,
+	distanceToFrame,
+	distanceToRoute,
+	routeCrosses,
+	routeEnds,
+	routeLabels,
+	routePoints,
+};

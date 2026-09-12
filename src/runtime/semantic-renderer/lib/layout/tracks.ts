@@ -11,8 +11,10 @@ import {
 	TRACK_CLEARANCE,
 	TRACK_PITCH_MAX,
 } from "@/runtime/semantic-renderer/lib/design";
+import { pillReach } from "@/runtime/semantic-renderer/lib/layout/pill";
 import {
 	boxCentre,
+	sideAxis,
 	type Box,
 	type Point,
 	type Side,
@@ -23,21 +25,6 @@ import {
 	type PlacedNode,
 } from "@/runtime/semantic-renderer/lib/layout/architecture";
 import type { Channel, Route } from "@/runtime/semantic-renderer/lib/layout/plan";
-
-/** Which axis a route slides along while it hugs a face. */
-const AXIS_OF: Readonly<Record<Side, "x" | "y">> = {
-	top: "x",
-	bottom: "x",
-	left: "y",
-	right: "y",
-};
-
-const OPPOSITE: Readonly<Record<Side, Side>> = {
-	top: "bottom",
-	bottom: "top",
-	left: "right",
-	right: "left",
-};
 
 /** Where one route attaches to one face. */
 interface Port {
@@ -61,24 +48,6 @@ interface Run {
 	readonly at: number;
 	/** How far it travels, signed so that nested runs sort outward. */
 	readonly nest: number;
-}
-
-/**
- * Which axis a face's ports spread along.
- * @param side The face.
- * @returns The axis.
- */
-function sideAxis(side: Side): "x" | "y" {
-	return AXIS_OF[side];
-}
-
-/**
- * The face directly across from one.
- * @param side The face.
- * @returns Its opposite.
- */
-function opposedSide(side: Side): Side {
-	return OPPOSITE[side];
 }
 
 /**
@@ -264,6 +233,8 @@ function attachSpan(placed: PlacedNode, side: Side): { from: number; to: number 
 interface Demand {
 	/** The slot key. */
 	readonly slot: string;
+	/** How far this claim's neighbours must stand, so no pill covers their line. */
+	reach: number;
 	/** The stretch of the face ports may use. */
 	readonly span: { readonly from: number; readonly to: number };
 	/** Which face. */
@@ -283,6 +254,7 @@ interface Demand {
  * @param side Which face.
  * @param toward Where along the face the route wants to be.
  * @param order Document order.
+ * @param reach How far this claim's neighbours must stand from it.
  */
 function registerDemand(
 	byFace: Map<string, Map<string, Demand>>,
@@ -291,15 +263,17 @@ function registerDemand(
 	side: Side,
 	toward: number,
 	order: number,
+	reach: number,
 ): void {
 	const face = `${placed.node.id} ${side}`;
 	const demands = byFace.get(face) ?? new Map<string, Demand>();
 	const known = demands.get(slot);
 	if (known === undefined) {
-		demands.set(slot, { slot, span: attachSpan(placed, side), side, toward, order });
+		demands.set(slot, { slot, span: attachSpan(placed, side), side, toward, order, reach });
 	} else {
 		known.toward = (known.toward + toward) / 2;
 		known.order = Math.min(known.order, order);
+		known.reach = Math.max(known.reach, reach);
 	}
 	byFace.set(face, demands);
 }
@@ -322,7 +296,7 @@ function assignFace(demands: readonly Demand[], ports: Map<string, Port>): void 
 		middle,
 		span.to - span.from - PORT_INSET * 2,
 		ordered.length,
-		PORT_PITCH,
+		Math.max(PORT_PITCH, ...ordered.map((demand) => demand.reach)),
 	);
 	ordered.forEach((demand, index) => {
 		ports.set(demand.slot, { along: positions[index] ?? middle });
@@ -330,9 +304,9 @@ function assignFace(demands: readonly Demand[], ports: Map<string, Port>): void 
 }
 
 /**
- * Where the arrows meet the cards: every face spreads its ports on a fixed
- * pitch in a fixed order, and a trunk group takes a single slot for all of its
- * members.
+ * Where the arrows meet the cards: every face spreads its ports on a pitch wide
+ * enough for the words its routes carry, in a fixed order, and a trunk group
+ * takes a single slot for all of its members.
  * @param routes Every planned route.
  * @param grid The gaps of the layout.
  * @returns Each slot's port.
@@ -341,6 +315,7 @@ function allocatePorts(routes: readonly Route[], grid: LayoutGrid): Map<string, 
 	const byFace = new Map<string, Map<string, Demand>>();
 	for (const route of routes) {
 		const { fromSide, toSide, order } = route;
+		const reach = pillReach(route);
 		registerDemand(
 			byFace,
 			fromSlot(route),
@@ -348,8 +323,17 @@ function allocatePorts(routes: readonly Route[], grid: LayoutGrid): Map<string, 
 			fromSide,
 			departureToward(route, grid),
 			order,
+			reach,
 		);
-		registerDemand(byFace, toSlot(route), route.to, toSide, approachToward(route, grid), order);
+		registerDemand(
+			byFace,
+			toSlot(route),
+			route.to,
+			toSide,
+			approachToward(route, grid),
+			order,
+			reach,
+		);
 	}
 
 	const ports = new Map<string, Port>();
@@ -357,60 +341,6 @@ function allocatePorts(routes: readonly Route[], grid: LayoutGrid): Map<string, 
 		assignFace([...demands.values()], ports);
 	}
 	return ports;
-}
-
-/**
- * Whether a route is a candidate for being pulled dead straight: one hop, faces
- * directly opposed, and not sharing a stem with anything.
- * @param route The route.
- * @returns True when it may be snapped.
- */
-function snappable(route: Route): boolean {
-	if (route.trunk !== undefined) {
-		return false;
-	}
-	if (opposedSide(route.fromSide) !== route.toSide) {
-		return false;
-	}
-	return route.channels.length <= 1;
-}
-
-/**
- * Pull one route's two ports into line, when the overlap of the two faces has
- * room for it.
- * @param route The route.
- * @param ports Every allocated port, updated in place.
- */
-function snapRoute(route: Route, ports: Map<string, Port>): void {
-	const fromSpan = attachSpan(route.from, route.fromSide);
-	const toSpan = attachSpan(route.to, route.toSide);
-	const low = Math.max(fromSpan.from, toSpan.from) + PORT_INSET;
-	const high = Math.min(fromSpan.to, toSpan.to) - PORT_INSET;
-	const fromPort = ports.get(fromSlot(route));
-	const toPort = ports.get(toSlot(route));
-	if (low > high || fromPort === undefined || toPort === undefined) {
-		return;
-	}
-	const snapped = Math.min(Math.max((fromPort.along + toPort.along) / 2, low), high);
-	ports.set(fromSlot(route), { along: snapped });
-	ports.set(toSlot(route), { along: snapped });
-}
-
-/**
- * Ports fan out on a fixed pitch, so two neighbouring cards almost never
- * produce ports that happen to line up — a straightness test on endpoints would
- * simply never fire. Aligned neighbours get pulled into line instead: both ends
- * move to the mean of their allocated positions, clamped into the overlap of
- * the two faces.
- * @param routes Every planned route.
- * @param ports Every allocated port, updated in place.
- */
-function snapNeighbours(routes: readonly Route[], ports: Map<string, Port>): void {
-	for (const route of routes) {
-		if (snappable(route)) {
-			snapRoute(route, ports);
-		}
-	}
 }
 
 /**
@@ -562,12 +492,11 @@ function allocateTracks(
 
 export {
 	type Port,
-	sideAxis,
+	attachSpan,
 	fromSlot,
 	toSlot,
 	resolvedPort,
 	allocatePorts,
-	snapNeighbours,
 	allocateTracks,
 	waypoints,
 };

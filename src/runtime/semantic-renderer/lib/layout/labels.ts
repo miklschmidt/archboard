@@ -10,15 +10,9 @@
 //
 // The only change is that widths are measured rather than looked up.
 
-import {
-	PILL_CLEARANCE,
-	PILL_HEIGHT,
-	PILL_PADDING_X,
-	PILL_TEXT_SIZE,
-} from "@/runtime/semantic-renderer/lib/design";
+import { HEAD_REACH, PILL_CLEARANCE, PILL_HEIGHT } from "@/runtime/semantic-renderer/lib/design";
 import type { Box, Point } from "@/runtime/semantic-renderer/lib/geometry";
-import { measure } from "@/runtime/semantic-renderer/lib/text";
-import { PILL_FONT } from "@/runtime/semantic-renderer/lib/fonts";
+import { pillSize } from "@/runtime/semantic-renderer/lib/layout/pill";
 import { EPSILON, type Curve } from "@/runtime/semantic-renderer/lib/layout/curves";
 import type { RoutedEdge } from "@/runtime/semantic-renderer/lib/layout/edges";
 
@@ -187,6 +181,28 @@ function crossHalf(size: Size, axis: "x" | "y"): number {
 }
 
 /**
+ * The stretches of a run its own ends forbid, where the route's arrowhead and
+ * its tail dot are drawn. A pill there hides which way the line points.
+ * @param run The run.
+ * @param size The pill.
+ * @param ends Which of the run's ends are the route's own.
+ * @param ends.lo Whether the run's lower end is an end of the route.
+ * @param ends.hi Whether its upper end is.
+ * @returns The forbidden intervals.
+ */
+function blockedByHeads(
+	run: Run,
+	size: Size,
+	ends: { readonly lo: boolean; readonly hi: boolean },
+): Blocked[] {
+	const clear = alongHalf(size, run.axis) + HEAD_REACH + PILL_CLEARANCE;
+	return [
+		...(ends.lo ? [{ from: run.lo - clear, to: run.lo + clear }] : []),
+		...(ends.hi ? [{ from: run.hi - clear, to: run.hi + clear }] : []),
+	];
+}
+
+/**
  * The stretch of one run a settled box forbids a pill's centre, when the two
  * are near enough in the cross axis to matter at all.
  * @param run The run.
@@ -235,6 +251,7 @@ function beats(candidate: number, best: number | undefined, preferred: number): 
  * @param size The pill.
  * @param settled Every pill already placed.
  * @param reach How far past the run's ends the pill may be pushed.
+ * @param heads Stretches the route's own arrowheads forbid.
  * @returns Where along the run the pill's centre goes, or undefined.
  */
 function slideAlong(
@@ -242,12 +259,13 @@ function slideAlong(
 	size: Size,
 	settled: readonly Box[],
 	reach: number,
+	heads: readonly Blocked[],
 ): number | undefined {
 	const half = alongHalf(size, run.axis);
 	const preferred = (run.lo + run.hi) / 2;
 	const lo = Math.min(run.lo + half - reach, preferred);
 	const hi = Math.max(run.hi - half + reach, preferred);
-	const blocked = settled.flatMap((box) => blockedBy(run, size, box));
+	const blocked = [...settled.flatMap((box) => blockedBy(run, size, box)), ...heads];
 
 	let best: number | undefined;
 	/**
@@ -305,17 +323,47 @@ function stepAside(anchor: Point, axis: "x" | "y", size: Size, settled: readonly
 }
 
 /**
+ * Which of a run's ends are ends of the route itself, and so carry a head.
+ *
+ * Both coordinates: a route's far end can share this run's along coordinate
+ * while lying somewhere else entirely, and reserving head room in the middle of
+ * a run for a head that is not there costs the label its place.
+ * @param curve The route.
+ * @param run The run.
+ * @returns Whether the run's lower and upper ends terminate the route.
+ */
+function runEnds(curve: Curve, run: Run): { lo: boolean; hi: boolean } {
+	const last = curve.segments[curve.segments.length - 1]?.to ?? curve.from;
+	const onRunLine = [curve.from, last].filter(
+		(point) => Math.abs((run.axis === "x" ? point.y : point.x) - run.cross) < EPSILON,
+	);
+	const ends = onRunLine.map((point) => (run.axis === "x" ? point.x : point.y));
+	return {
+		lo: ends.some((end) => Math.abs(end - run.lo) < EPSILON),
+		hi: ends.some((end) => Math.abs(end - run.hi) < EPSILON),
+	};
+}
+
+/**
  * Where one pill ends up.
  * @param curve The route it labels.
  * @param anchor Where the router put its label.
  * @param size The pill.
  * @param settled Every pill already placed.
+ * @param wires The other routes' lines, as boxes.
  * @returns The pill's box.
  */
-function settle(curve: Curve, anchor: Point, size: Size, settled: readonly Box[]): Box {
+function settle(
+	curve: Curve,
+	anchor: Point,
+	size: Size,
+	settled: readonly Box[],
+	wires: readonly Box[],
+): Box {
 	const run = longestRun(curve);
 	if (run !== undefined) {
-		const onLine = onRun(run, size, settled);
+		const heads = blockedByHeads(run, size, runEnds(curve, run));
+		const onLine = onRun(run, size, settled, wires, heads);
 		if (onLine !== undefined) {
 			return onLine;
 		}
@@ -333,19 +381,58 @@ function settle(curve: Curve, anchor: Point, size: Size, settled: readonly Box[]
 /**
  * Where on its own line a pill can sit: square on it if there is room, and
  * failing that a little past one of its ends.
+ *
+ * Tried twice. The first attempt also keeps off every other route's line, so
+ * the words are not drawn across a wire they do not name; the second gives that
+ * up, because a pill on its own line over somebody else's is still better than
+ * a pill nowhere near its own.
  * @param run The route's longest straight run.
  * @param size The pill.
  * @param settled Everything already placed.
+ * @param wires The other routes' lines, as boxes.
+ * @param heads Stretches the route's own arrowheads forbid.
  * @returns The pill's box, or undefined when the line cannot host it.
  */
-function onRun(run: Run, size: Size, settled: readonly Box[]): Box | undefined {
-	for (const reach of [0, PILL_HEIGHT]) {
-		const along = slideAlong(run, size, settled, reach);
-		if (along !== undefined) {
-			return centred(centreOn(run, along), size);
+function onRun(
+	run: Run,
+	size: Size,
+	settled: readonly Box[],
+	wires: readonly Box[],
+	heads: readonly Blocked[],
+): Box | undefined {
+	for (const blockers of [[...settled, ...wires], settled]) {
+		for (const reach of [0, PILL_HEIGHT]) {
+			const along = slideAlong(run, size, blockers, reach, heads);
+			if (along !== undefined) {
+				return centred(centreOn(run, along), size);
+			}
 		}
 	}
 	return undefined;
+}
+
+/**
+ * Every segment of one route as a thin box, so the label pass can treat a wire
+ * as something to keep off.
+ * @param curve The route.
+ * @returns One box per segment, covering the hull of its control points.
+ */
+function wireBoxes(curve: Curve): Box[] {
+	const boxes: Box[] = [];
+	let from = curve.from;
+	for (const segment of curve.segments) {
+		const points =
+			segment.kind === "line"
+				? [from, segment.to]
+				: [from, segment.first, segment.second, segment.to];
+		const xs = points.map((point) => point.x);
+		const ys = points.map((point) => point.y);
+		const left = Math.min(...xs);
+		const top = Math.min(...ys);
+		boxes.push({ x: left, y: top, width: Math.max(...xs) - left, height: Math.max(...ys) - top });
+		from = segment.to;
+	}
+	return boxes;
 }
 
 /**
@@ -367,19 +454,14 @@ function placeLabelPills(
 	occupied: readonly Box[],
 ): Map<string, Box> {
 	const placed: Box[] = [...occupied];
+	const wires = new Map(routed.map(({ edge, curve }) => [edge.id, wireBoxes(curve)]));
 	const boxes = new Map<string, Box>();
 	for (const { edge, curve, labelAnchor } of routed) {
 		if (edge.label === undefined || labelAnchor === undefined) {
 			continue;
 		}
-		// The mono face, because that is the face the pill is drawn in: a pill
-		// sized against one family and set in another is a pill its own text
-		// overflows.
-		const size = {
-			width: measure(edge.label, PILL_FONT, PILL_TEXT_SIZE) + PILL_PADDING_X * 2,
-			height: PILL_HEIGHT,
-		};
-		const box = settle(curve, labelAnchor, size, placed);
+		const others = [...wires].flatMap(([id, wire]) => (id === edge.id ? [] : wire));
+		const box = settle(curve, labelAnchor, pillSize(edge.label), placed, others);
 		placed.push(box);
 		boxes.set(edge.id, box);
 	}

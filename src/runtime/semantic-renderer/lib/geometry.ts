@@ -145,7 +145,43 @@ function canvasFor(laid: Size, drawn: Box | undefined, margin: number): Canvas {
 	};
 }
 
+/** Which axis a face's ports spread along. */
+const AXIS_OF: Readonly<Record<Side, "x" | "y">> = {
+	top: "x",
+	bottom: "x",
+	left: "y",
+	right: "y",
+};
+
+/** The face directly across from each. */
+const OPPOSITE: Readonly<Record<Side, Side>> = {
+	top: "bottom",
+	bottom: "top",
+	left: "right",
+	right: "left",
+};
+
+/**
+ * Which axis a face's ports spread along.
+ * @param side The face.
+ * @returns The axis.
+ */
+function sideAxis(side: Side): "x" | "y" {
+	return AXIS_OF[side];
+}
+
+/**
+ * The face directly across from one.
+ * @param side The face.
+ * @returns Its opposite.
+ */
+function opposedSide(side: Side): Side {
+	return OPPOSITE[side];
+}
+
 export {
+	opposedSide,
+	sideAxis,
 	type Point,
 	type Box,
 	type Size,
