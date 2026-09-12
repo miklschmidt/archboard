@@ -21,6 +21,27 @@ const EXCALIDRAW_NO_AUTOSTART = process.env["EXCALIDRAW_NO_AUTOSTART"] === "1";
 // anywhere is the worst of the three ways out.
 const ARCHBOARD_VAULT = process.env["ARCHBOARD_VAULT"] || undefined;
 
+// The pane this invocation is writing for, when it is running for one.
+//
+// A workhorse bound to a pane writes on that pane's behalf, and whoever is
+// listening to that pane's thread has to be able to tell somebody else's change
+// from its own echo — after ADR 0023 every semantic write is an agent's, so the
+// kind of writer says nothing and the identity the board was held under says
+// custody rather than authorship.
+//
+// From the environment rather than a flag on the command line, for the same
+// reason the vault is: a person has no pane id to type, and it is the agent's
+// own identity rather than something a caller chooses per board.
+//
+// Per invocation, and never on a long-lived process. One private app-server
+// child serves every thread, and both panes can be bound at once (DESIGN.md
+// §2), so a value set once on that child would stamp every thread's writes with
+// one pane — one thread deaf to the other's changes and one told about its own.
+// A wrong pane is worse than no pane, because no pane is honest: unset means
+// unattributable, and unattributable means the change is delivered to everybody
+// rather than quietly to nobody.
+const ARCHBOARD_PANE = process.env["ARCHBOARD_PANE"]?.trim() || undefined;
+
 /**
  * What a canvas with no vault says, in one place because three surfaces say it:
  * the server before it binds, the CLI before it spawns a server, and
@@ -55,5 +76,6 @@ export {
 	ENABLE_CANVAS_SYNC,
 	EXCALIDRAW_NO_AUTOSTART,
 	ARCHBOARD_VAULT,
+	ARCHBOARD_PANE,
 	noVaultMessage,
 };
