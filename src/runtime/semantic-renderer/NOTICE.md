@@ -49,6 +49,25 @@ What was changed, and what that change is:
   top of it; a message is a straight horizontal run whose whole meaning is which way it
   points, and a plate through the middle of one cuts the line in two.
 
+**Taken back after it was dropped.**
+
+- SMIL animation: the travelling dot, the per-message slots and the shared cycle — one
+  clock for the whole drawing, as upstream had it, so a page of exchanges is told in the
+  order its flows are stated rather than all at once. They
+  were dropped on the reasoning that motion in a walkthrough belongs to the viewer, and
+  that was half right — the viewer does own the camera and the beats, and the dots do not
+  touch either. What the reasoning missed is that a line which carries traffic and a line
+  which merely exists look identical without them, and an exchange drawn still reads as a
+  ladder rather than as something happening.
+
+  What did not come back is the `animated` flag. Motion is presentation and presentation
+  is the renderer's (ADR 0023), so which lines move is derived from what the board already
+  says: the kind of relationship (a call carries something, a dependency is a fact), the
+  emphasis it was given, and the repeat on a step. Nor is there any way to ask for a
+  still picture: a reader who has asked their system for less motion is honoured by the
+  drawing itself, through a `prefers-reduced-motion` rule in its own stylesheet, which
+  works in a pane and in a file that outlives the call that made it alike.
+
 **Dropped for good — Archboard is not a pull-request tool.**
 
 - Pull-request provenance: repository owner, base and head SHAs, the pull-request
@@ -57,11 +76,6 @@ What was changed, and what that change is:
 - The render manifest, content-addressed asset naming and the corrections overlay.
   Those exist to post pictures into a pull-request comment; Archboard serves a live
   pane and re-renders on demand.
-- SMIL animation and the `animated` flag, along with the whole pulse schedule the
-  sequence grammar was built around — its shared cycle, its per-message slots and its
-  travelling dots. Motion in a walkthrough belongs to the viewer, which owns scrolling
-  and transitions (ADR 0023); a self-contained SVG that animates itself would be a
-  second, competing source of motion.
 
 - **Comparison arrives as an argument, not as content, and is drawn in three
   channels rather than in colour.** PR Lens carried a `delta` on the diagram
