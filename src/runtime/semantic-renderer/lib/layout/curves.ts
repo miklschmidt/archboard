@@ -5,7 +5,7 @@
 // here along its real seams: this is the geometry of a drawn route, with no
 // opinion about which gaps the route travelled through.
 
-import { BEND_RADIUS_MAX } from "@/runtime/semantic-renderer/lib/design";
+import { APPROACH_STRAIGHT, BEND_RADIUS_MAX } from "@/runtime/semantic-renderer/lib/design";
 import { coord, type Box, type Point } from "@/runtime/semantic-renderer/lib/geometry";
 
 /** One piece of a route. */
@@ -131,7 +131,6 @@ function curveBounds(curve: Curve): Box {
 }
 
 const SELF_LOOP_REACH = 26;
-const SELF_LOOP_SPREAD = 10;
 
 /**
  * A node that calls itself gets a loop off one of its side faces. There is no
@@ -151,17 +150,17 @@ function selfLoop(box: Box, toTheLeft: boolean): Curve {
 	const reach = toTheLeft ? -SELF_LOOP_REACH : SELF_LOOP_REACH;
 	const top = { x, y: box.y + box.height / 3 };
 	const bottom = { x, y: box.y + (box.height * 2) / 3 };
-	return {
-		from: top,
-		segments: [
-			{
-				kind: "cubic",
-				first: { x: top.x + reach, y: top.y - SELF_LOOP_SPREAD },
-				second: { x: bottom.x + reach, y: bottom.y + SELF_LOOP_SPREAD },
-				to: bottom,
-			},
-		],
-	};
+	// Out square, down, and square back in — the same rounding every other route
+	// gets, which is what keeps the head on straight line. One cubic from the
+	// face to the face was the old shape, and its tangents left and arrived some
+	// twenty degrees off the side: a head drawn on a curve, pointing next to the
+	// card rather than at it.
+	return curveThrough([
+		top,
+		{ x: top.x + reach, y: top.y },
+		{ x: bottom.x + reach, y: bottom.y },
+		bottom,
+	]);
 }
 
 /**
@@ -259,15 +258,37 @@ function endOf(segments: readonly Segment[], first: Point): Point {
  * two legs. Deriving the radius from the longer leg is the known failure — it
  * balloons a route with one short leg clear out of the corridor the planner put
  * it in.
+ *
+ * A turn next to one of the route's own ends is held back further, because that
+ * leg is carrying an arrowhead or leaving a card and has to stay straight where
+ * it touches: `APPROACH_STRAIGHT` of the leg is reserved, and the turn rounds
+ * with whatever is left. It is the same arc either way — a corner takes its
+ * radius off both legs — so the only way to keep an approach straight is to
+ * turn later, which is what this does.
  * @param corner The turn.
  * @param start Where the route currently stands.
+ * @param reserved How much of the incoming and outgoing legs the route's ends need left straight.
+ * @param reserved.entering How much of the incoming leg to leave alone.
+ * @param reserved.leaving How much of the outgoing leg to leave alone.
  * @returns The segments to append.
  */
-function bendThrough(corner: Corner, start: Point): Segment[] {
+function bendThrough(
+	corner: Corner,
+	start: Point,
+	reserved: { readonly entering: number; readonly leaving: number },
+): Segment[] {
 	const { previous, vertex, next } = corner;
 	const inLength = Math.hypot(vertex.x - previous.x, vertex.y - previous.y);
 	const outLength = Math.hypot(next.x - vertex.x, next.y - vertex.y);
-	const radius = Math.min(BEND_RADIUS_MAX, Math.min(inLength, outLength) / 2);
+	const radius = Math.max(
+		0,
+		Math.min(
+			BEND_RADIUS_MAX,
+			Math.min(inLength, outLength) / 2,
+			inLength - reserved.entering,
+			outLength - reserved.leaving,
+		),
+	);
 	const inDir = { x: (vertex.x - previous.x) / inLength, y: (vertex.y - previous.y) / inLength };
 	const outDir = { x: (next.x - vertex.x) / outLength, y: (next.y - vertex.y) / outLength };
 	const arrive = { x: vertex.x - inDir.x * radius, y: vertex.y - inDir.y * radius };
@@ -311,10 +332,19 @@ function closeOn(segments: Segment[], first: Point, last: Point | undefined): vo
 function curveThrough(points: readonly Point[]): Curve {
 	const first = points[0] ?? ORIGIN;
 	const segments: Segment[] = [];
-	for (let index = 1; index < points.length - 1; index += 1) {
+	const last = points.length - 1;
+	for (let index = 1; index < last; index += 1) {
 		const corner = cornerAt(points, index);
 		if (corner !== undefined) {
-			segments.push(...bendThrough(corner, endOf(segments, first)));
+			// The first turn's incoming leg leaves the route's source, and the last
+			// turn's outgoing leg arrives at its target. Both have to stay straight
+			// where they touch; every leg in between is the planner's business.
+			segments.push(
+				...bendThrough(corner, endOf(segments, first), {
+					entering: index === 1 ? APPROACH_STRAIGHT : 0,
+					leaving: index === last - 1 ? APPROACH_STRAIGHT : 0,
+				}),
+			);
 		}
 	}
 	closeOn(segments, first, points[points.length - 1]);

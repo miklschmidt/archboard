@@ -123,7 +123,7 @@ const PILL_CLEARANCE = 2;
  * horizontal bands between rows. A track keeps this much clearance from the
  * cards on either side.
  */
-const TRACK_CLEARANCE = 6;
+const TRACK_CLEARANCE = 12;
 /**
  * Neighbouring tracks in one gap sit this far apart at most; when a gap
  * carries more traffic than the room allows, the pitch shrinks to fit. An
@@ -153,6 +153,23 @@ const PORT_INSET = 12;
  * generous sweep reads as a different product.
  */
 const BEND_RADIUS_MAX = 14;
+
+/**
+ * How much dead-straight line an endpoint keeps before the route turns.
+ *
+ * A rounded corner takes its radius off BOTH of its legs — that is what makes
+ * it tangent to each — so a route whose last leg was fourteen units long used
+ * to arrive on seven units of straight line and seven of arc, with the
+ * arrowhead sitting across the join. A head that meets a card at an angle
+ * reads as pointing somewhere other than where it points, and the marker's own
+ * rounding makes it worse: the widest head this renderer draws is 7.5 units, so
+ * anything under that is a head drawn on a curve.
+ *
+ * Twelve is that head plus a little air. It is a floor on the straight run, not
+ * a fixed stub: a leg with room to spare still rounds at `BEND_RADIUS_MAX`, and
+ * a leg too short to give twelve gives everything it has and rounds not at all.
+ */
+const APPROACH_STRAIGHT = 12;
 
 /**
  * How many dots ride a hero relationship at once.
@@ -208,5 +225,6 @@ export {
 	TRACK_PITCH_MIN,
 	PORT_PITCH,
 	PORT_INSET,
+	APPROACH_STRAIGHT,
 	BEND_RADIUS_MAX,
 };
