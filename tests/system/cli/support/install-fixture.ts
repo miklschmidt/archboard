@@ -63,8 +63,6 @@ function installFailure(result: InstallSpawn): string {
 const trackedSkillFiles = [
 	"SKILL.md",
 	"references/architecture-workflow.md",
-	"references/cheatsheet.md",
-	"references/cli-workflows.md",
 	"evals/evals.json",
 ] as const;
 
