@@ -21,6 +21,8 @@ import {
 	simplify,
 	type Curve,
 } from "@/runtime/semantic-renderer/lib/layout/curves";
+import { crossedGap } from "@/runtime/semantic-renderer/lib/layout/pill";
+import { snapNeighbours } from "@/runtime/semantic-renderer/lib/layout/snap";
 import {
 	blockedFaces,
 	planRoute,
@@ -34,7 +36,6 @@ import {
 	allocateTracks,
 	fromSlot,
 	resolvedPort,
-	snapNeighbours,
 	toSlot,
 	waypoints,
 	type Port,
@@ -52,12 +53,16 @@ interface RoutedEdge {
 	readonly labelAnchor: Point | undefined;
 }
 
-/** How many runs each gap of one layout would carry. */
+/** How many runs each gap of one layout would carry, and how many pills. */
 interface ChannelTraffic {
 	/** Runs per corridor, by index. */
 	readonly corridors: ReadonlyMap<number, number>;
 	/** Runs per band, by index. */
 	readonly bands: ReadonlyMap<number, number>;
+	/** Pills stacking in each corridor's width, by index. */
+	readonly corridorPills: ReadonlyMap<number, number>;
+	/** Pills stacking in each band's height, by index. */
+	readonly bandPills: ReadonlyMap<number, number>;
 }
 
 /** An edge whose two ends were both placed. */
@@ -267,13 +272,27 @@ function channelTraffic(
 ): ChannelTraffic {
 	const corridors = new Map<number, number>();
 	const bands = new Map<number, number>();
+	const corridorPills = new Map<number, number>();
+	const bandPills = new Map<number, number>();
 	for (const route of finalPass(edges, layout).plans) {
 		for (const channel of route.channels) {
-			const counts = channel.kind === "corridor" ? corridors : bands;
-			counts.set(channel.index, (counts.get(channel.index) ?? 0) + 1);
+			count(channel.kind === "corridor" ? corridors : bands, channel.index);
+		}
+		const crossed = crossedGap(route);
+		if (crossed !== undefined) {
+			count(crossed.kind === "corridor" ? corridorPills : bandPills, crossed.index);
 		}
 	}
-	return { corridors, bands };
+	return { corridors, bands, corridorPills, bandPills };
+}
+
+/**
+ * One more for one gap.
+ * @param counts The tally, updated in place.
+ * @param index Which gap.
+ */
+function count(counts: Map<number, number>, index: number): void {
+	counts.set(index, (counts.get(index) ?? 0) + 1);
 }
 
 export { type RoutedEdge, type ChannelTraffic, routeEdges, channelTraffic };

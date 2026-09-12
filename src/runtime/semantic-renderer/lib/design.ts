@@ -119,11 +119,56 @@ const PILL_RADIUS = 4;
 const PILL_CLEARANCE = 2;
 
 /**
+ * A turn's bend radius comes from the shorter of its two legs, capped here.
+ * Deriving it from the longer leg balloons a route with one short leg and one
+ * long one — the shape every corridor run has — clear out of its corridor.
+ * Smaller than PR Lens's 34: the shell's chrome turns tight corners, and a
+ * generous sweep reads as a different product.
+ */
+const BEND_RADIUS_MAX = 14;
+
+/**
+ * How much of the line an arrowhead covers, measured back from the tip: the
+ * largest of `HEAD_SIZE` in `svg/document.ts`, drawn for a hero. A label that
+ * comes nearer than this sits on the head and hides where the line points.
+ */
+const HEAD_REACH = 7.5;
+
+/**
+ * The smallest turn that still reads as one: under this an arc is barely longer
+ * than the line is wide. Not a floor the rounding enforces — a leg too short to
+ * turn on still comes out square — but the room the router leaves beside a
+ * card, so a turn taken there has something to round with.
+ */
+const BEND_RADIUS_MIN = 8;
+
+/**
+ * How much dead-straight line an endpoint keeps before the route turns.
+ *
+ * A rounded corner takes its radius off BOTH of its legs — that is what makes
+ * it tangent to each — so a route whose last leg was fourteen units long used
+ * to arrive on seven units of straight line and seven of arc, with the
+ * arrowhead sitting across the join. A head that meets a card at an angle
+ * reads as pointing somewhere other than where it points, and the marker's own
+ * rounding makes it worse: the widest head this renderer draws is 7.5 units, so
+ * anything under that is a head drawn on a curve.
+ *
+ * Twelve is that head plus a little air. It is a floor on the straight run, not
+ * a fixed stub: a leg with room to spare still rounds at `BEND_RADIUS_MAX`, and
+ * a leg too short to give twelve gives everything it has and rounds not at all.
+ */
+const APPROACH_STRAIGHT = 12;
+
+/**
  * Routes travel in the gaps of the grid: vertical corridors beside regions and
  * horizontal bands between rows. A track keeps this much clearance from the
  * cards on either side.
+ *
+ * Both of an endpoint's needs: the straight line the arrowhead sits on, and the
+ * radius of the turn after it. That is one leg and it carries both, so a
+ * clearance of twelve — the approach alone — drew every such turn square.
  */
-const TRACK_CLEARANCE = 12;
+const TRACK_CLEARANCE = APPROACH_STRAIGHT + BEND_RADIUS_MIN;
 /**
  * Neighbouring tracks in one gap sit this far apart at most; when a gap
  * carries more traffic than the room allows, the pitch shrinks to fit. An
@@ -144,32 +189,6 @@ const TRACK_PITCH_MIN = 10;
 const PORT_PITCH = 15;
 /** Ports keep clear of the card's rounded corners. */
 const PORT_INSET = 12;
-
-/**
- * A turn's bend radius comes from the shorter of its two legs, capped here.
- * Deriving it from the longer leg balloons a route with one short leg and one
- * long one — the shape every corridor run has — clear out of its corridor.
- * Smaller than PR Lens's 34: the shell's chrome turns tight corners, and a
- * generous sweep reads as a different product.
- */
-const BEND_RADIUS_MAX = 14;
-
-/**
- * How much dead-straight line an endpoint keeps before the route turns.
- *
- * A rounded corner takes its radius off BOTH of its legs — that is what makes
- * it tangent to each — so a route whose last leg was fourteen units long used
- * to arrive on seven units of straight line and seven of arc, with the
- * arrowhead sitting across the join. A head that meets a card at an angle
- * reads as pointing somewhere other than where it points, and the marker's own
- * rounding makes it worse: the widest head this renderer draws is 7.5 units, so
- * anything under that is a head drawn on a curve.
- *
- * Twelve is that head plus a little air. It is a floor on the straight run, not
- * a fixed stub: a leg with room to spare still rounds at `BEND_RADIUS_MAX`, and
- * a leg too short to give twelve gives everything it has and rounds not at all.
- */
-const APPROACH_STRAIGHT = 12;
 
 /**
  * How many dots ride a hero relationship at once.
@@ -227,4 +246,6 @@ export {
 	PORT_INSET,
 	APPROACH_STRAIGHT,
 	BEND_RADIUS_MAX,
+	BEND_RADIUS_MIN,
+	HEAD_REACH,
 };

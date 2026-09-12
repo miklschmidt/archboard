@@ -24,6 +24,13 @@ import { renderArchitecture, type RenderedDiagram } from "@/runtime/semantic-ren
  */
 const APPROACH = 12;
 
+/**
+ * The smallest radius a turn may round at and still read as a turn, which is
+ * `BEND_RADIUS_MIN` in `lib/design.ts`. Under it, an arc is shorter than the
+ * line is wide and a reader sees a right angle.
+ */
+const ROUNDING = 8;
+
 /** A point on the page. */
 interface At {
 	readonly x: number;
@@ -185,6 +192,148 @@ function approaches(drawn: RenderedDiagram): Approach[] {
 	}
 	return measured;
 }
+
+/** One turn of a drawn route. */
+interface Turn {
+	/** Which relationship it belongs to. */
+	readonly id: string;
+	/** Where in the path it is, for naming it in a failure. */
+	readonly at: number;
+	/** The radius it rounds at. */
+	readonly radius: number;
+}
+
+/** The leg one endpoint of a route stands on. */
+interface Leg {
+	/** Which relationship it belongs to. */
+	readonly id: string;
+	/** Which end of the route it is. */
+	readonly what: "leaves" | "arrives";
+	/** How long the whole leg is: the straight the reader sees, plus the arc that ends it. */
+	readonly length: number;
+}
+
+/**
+ * The route's own path, as steps, for every relationship that drew one.
+ * @param drawn The rendered picture.
+ * @returns The steps of each route, by relationship id.
+ */
+function drawnRoutes(drawn: RenderedDiagram): Map<string, Step[]> {
+	const routes = new Map<string, Step[]>();
+	for (const group of drawn.svg.matchAll(
+		/<g data-semantic-kind="(?:edge|step)" data-semantic-id="([^"]+)"[^>]*>([\s\S]*?)<\/g>/gu,
+	)) {
+		const paths = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"/gu)];
+		if (paths.length > 0) {
+			routes.set(group[1] ?? "", stepsOf(paths[paths.length - 1]?.[1] ?? ""));
+		}
+	}
+	return routes;
+}
+
+/** How long one step is. */
+const stepLength = (step: Step): number =>
+	Math.hypot(step.to.x - step.from.x, step.to.y - step.from.y);
+
+/**
+ * The radius a drawn turn rounds at: a quarter-turn of radius r is a cubic whose
+ * ends are r*sqrt(2) apart, and a turn with no room is a chord of nothing.
+ * @param step The cubic.
+ * @returns Its radius.
+ */
+const radiusOf = (step: Step): number => stepLength(step) / Math.SQRT2;
+
+/**
+ * Every turn of every drawn route.
+ * @param drawn The rendered picture.
+ * @returns One entry per turn.
+ */
+function turns(drawn: RenderedDiagram): Turn[] {
+	return [...drawnRoutes(drawn)].flatMap(([id, steps]) =>
+		steps.flatMap((step, at) => (step.kind === "C" ? [{ id, at, radius: radiusOf(step) }] : [])),
+	);
+}
+
+/**
+ * The two legs a route's ends stand on: the straight a reader sees plus the arc
+ * that ends it, which together are the room the router left between the card's
+ * face and the turn. A route drawn as one straight line is left out.
+ * @param drawn The rendered picture.
+ * @returns One entry per end.
+ */
+function endLegs(drawn: RenderedDiagram): Leg[] {
+	return [...drawnRoutes(drawn)].flatMap(([id, steps]) => {
+		const first = steps[1];
+		const last = steps[steps.length - 1];
+		if (first === undefined || last === undefined || steps.length < 4) {
+			return [];
+		}
+		const opening = steps[2];
+		const closing = steps[steps.length - 2];
+		return [
+			{
+				id,
+				what: "leaves" as const,
+				length:
+					stepLength(first) +
+					(opening !== undefined && opening.kind === "C" ? radiusOf(opening) : 0),
+			},
+			{
+				id,
+				what: "arrives" as const,
+				length:
+					stepLength(last) +
+					(closing !== undefined && closing.kind === "C" ? radiusOf(closing) : 0),
+			},
+		];
+	});
+}
+
+/** Three labelled crossings of one gap, which leaves short jogs between ports. */
+const CROSSED: VariantContent = VariantContentSchema.parse({
+	nodes: [
+		{ id: "boundary", name: "Write boundary", kind: "service" },
+		{ id: "write", name: "Board write", kind: "module" },
+	],
+	edges: [
+		{ id: "lease", from: "boundary", to: "write", kind: "call", label: "under lease" },
+		{ id: "settled", from: "write", to: "boundary", kind: "event", label: "settled" },
+		{ id: "delta", from: "boundary", to: "write", kind: "data", label: "the delta" },
+	],
+});
+
+describe("a turn has room to round", () => {
+	test("the leg an endpoint stands on carries its approach and its turn", () => {
+		// The allocation the router owns: the approach AND the turn after it.
+		for (const content of [CROWDED, CROSSED]) {
+			const measured = endLegs(renderArchitecture({ content, theme: "light" }));
+			expect(measured.length).toBeGreaterThan(1);
+			expect(
+				measured
+					.filter((leg) => leg.length < APPROACH + ROUNDING - 0.01)
+					.map((leg) => `${leg.id} ${leg.what} on a leg of ${leg.length.toFixed(1)}`),
+			).toEqual([]);
+		}
+	});
+
+	test("and no turn anywhere is drawn square", () => {
+		for (const content of [CROWDED, CROSSED]) {
+			const measured = turns(renderArchitecture({ content, theme: "dark" }));
+			expect(measured.length).toBeGreaterThan(3);
+			expect(
+				measured
+					.filter((turn) => turn.radius <= 0)
+					.map((turn) => `${turn.id} at ${turn.at} rounds at ${turn.radius.toFixed(2)}`),
+			).toEqual([]);
+		}
+	});
+
+	test("beside a card it is the whole minimum, not a leftover", () => {
+		// A crowded page turns only on legs the router allocated, never on a jog.
+		const measured = turns(renderArchitecture({ content: CROWDED, theme: "light" }));
+		expect(measured.every((turn) => turn.radius >= ROUNDING)).toBe(true);
+	});
+});
 
 describe("a route meets what it points at", () => {
 	test("every endpoint of a crowded page leaves and arrives square to its side", () => {
