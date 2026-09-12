@@ -2,6 +2,12 @@
 
 Date: 2026-09-04
 
+Design update, 2026-09-11: the findings below describe the inspected revisions.
+Recommendations that preserve human-authored Excalidraw geometry have been superseded
+by [ADR 0023](../adr/0023-semantic-boards-own-meaning-renderers-own-presentation.md).
+The semantic renderer direction should reuse this evidence under those new product
+boundaries.
+
 Scope: identify the Archify agent skill, explain what actually produces its graph quality, and
 rank mechanisms that fit Archboard. This investigation changed no product source, skill, test, or
 Backlog record.
