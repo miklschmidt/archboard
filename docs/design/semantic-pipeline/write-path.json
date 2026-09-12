@@ -1,0 +1,143 @@
+{
+	"name": "archboard/write-path",
+	"variant": "One write, as it is",
+	"summary": "The level below the pipeline: what actually happens between an agent's command and every pane seeing it",
+	"nodes": [
+		{
+			"as": "command",
+			"name": "Command",
+			"kind": "module",
+			"responsibility": "States one described change and the version it was written against"
+		},
+		{
+			"as": "lease",
+			"name": "Lease",
+			"kind": "module",
+			"responsibility": "One writer at a time per board (ADR 0016)"
+		},
+		{
+			"as": "version",
+			"name": "Version check",
+			"kind": "module",
+			"responsibility": "Refuses a write built on a board that has moved"
+		},
+		{
+			"as": "candidate",
+			"name": "Candidate",
+			"kind": "module",
+			"responsibility": "The board as it would be, before anything is written"
+		},
+		{
+			"as": "validation",
+			"name": "Validation",
+			"kind": "module",
+			"responsibility": "Shape, then the rules a shape cannot state"
+		},
+		{
+			"as": "commit",
+			"name": "Atomic commit",
+			"kind": "module",
+			"responsibility": "One file, written and fsynced, or nothing at all"
+		},
+		{
+			"as": "announce",
+			"name": "Announcement",
+			"kind": "module",
+			"responsibility": "Every pane holding the board, after the commit and never before"
+		}
+	],
+	"edges": [
+		{ "from": "Command", "to": "Lease", "kind": "call", "label": "asks for the board" },
+		{ "from": "Lease", "to": "Version check", "kind": "call" },
+		{ "from": "Version check", "to": "Candidate", "kind": "call", "label": "applies" },
+		{ "from": "Candidate", "to": "Validation", "kind": "call" },
+		{ "from": "Validation", "to": "Atomic commit", "kind": "call", "label": "only if coherent" },
+		{
+			"from": "Atomic commit",
+			"to": "Announcement",
+			"kind": "event",
+			"label": "after the bytes land"
+		}
+	],
+	"flows": [
+		{
+			"name": "One agent write",
+			"summary": "The same seven parts, told in the order they happen",
+			"participants": [
+				"Command",
+				"Lease",
+				"Version check",
+				"Candidate",
+				"Validation",
+				"Atomic commit",
+				"Announcement"
+			],
+			"steps": [
+				{ "from": "Command", "to": "Lease", "label": "one described change", "kind": "sync" },
+				{ "from": "Lease", "to": "Lease", "label": "wait for whoever holds it", "kind": "self" },
+				{ "from": "Lease", "to": "Version check", "label": "the board as it is", "kind": "sync" },
+				{
+					"from": "Version check",
+					"to": "Command",
+					"label": "refused: somebody changed it",
+					"kind": "return"
+				},
+				{ "from": "Version check", "to": "Candidate", "label": "apply the change", "kind": "sync" },
+				{
+					"from": "Candidate",
+					"to": "Validation",
+					"label": "the whole board as it would be",
+					"kind": "sync"
+				},
+				{
+					"from": "Validation",
+					"to": "Command",
+					"label": "refused: it would not be coherent",
+					"kind": "return"
+				},
+				{ "from": "Validation", "to": "Atomic commit", "label": "write it", "kind": "sync" },
+				{ "from": "Atomic commit", "to": "Announcement", "label": "it landed", "kind": "async" },
+				{ "from": "Atomic commit", "to": "Command", "label": "the new version", "kind": "return" }
+			]
+		}
+	],
+	"views": [
+		{ "name": "The parts", "grammar": "architecture", "summary": "What a write is made of" },
+		{
+			"name": "In order",
+			"grammar": "data-flow",
+			"summary": "The same parts, as the exchange they take part in",
+			"scope": { "kind": "selection", "flows": ["One agent write"] }
+		}
+	],
+	"walkthroughs": [
+		{
+			"name": "Why a write is shaped like this",
+			"summary": "Four beats: what it protects, and what it refuses",
+			"beats": [
+				{
+					"heading": "Seven parts",
+					"body": "A command, a lease, a version check, a candidate, validation, the commit, and the announcement. Nothing else touches a board.",
+					"subjects": []
+				},
+				{
+					"heading": "One writer",
+					"body": "The lease is taken before anything is read. Two agents cannot both be mid-write on one board, and the second waits rather than racing.",
+					"subjects": ["Lease"]
+				},
+				{
+					"heading": "Two refusals, before anything is written",
+					"body": "A write built on a board that has moved is refused, and so is one that would leave the board incoherent. Neither reaches the file.",
+					"subjects": ["Version check", "Validation"],
+					"view": "In order"
+				},
+				{
+					"heading": "Commit, then say so",
+					"body": "The bytes land first. Only then does anybody hear about it — so nothing is ever announced that did not happen.",
+					"subjects": ["Atomic commit", "Announcement"],
+					"view": "In order"
+				}
+			]
+		}
+	]
+}

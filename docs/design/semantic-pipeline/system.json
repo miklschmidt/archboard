@@ -1,0 +1,160 @@
+{
+	"name": "archboard/pipeline",
+	"variant": "Drawing is the board",
+	"summary": "What archboard was before semantic boards: a canvas of persisted geometry, with agents authoring the picture",
+	"nodes": [
+		{
+			"as": "surface",
+			"name": "Agent surface",
+			"kind": "package",
+			"responsibility": "Where an agent states what it wants"
+		},
+		{
+			"as": "cli",
+			"name": "CLI commands",
+			"kind": "module",
+			"parent": "Agent surface",
+			"responsibility": "One described change, against the version the agent read",
+			"binding": { "repo": "archboard", "path": "src/cli/commands/run.ts" }
+		},
+		{
+			"as": "routes",
+			"name": "Element routes",
+			"kind": "route",
+			"parent": "Agent surface",
+			"responsibility": "One intent per board write request",
+			"binding": { "repo": "archboard", "path": "src/server/canvas/lib/element-routes.ts" }
+		},
+
+		{
+			"as": "runtime",
+			"name": "Board runtime",
+			"kind": "service",
+			"responsibility": "Owns every board on disk"
+		},
+		{
+			"as": "boundary",
+			"name": "Write boundary",
+			"kind": "module",
+			"parent": "Board runtime",
+			"responsibility": "Takes the lease, checks the version, refuses a stale write",
+			"binding": { "repo": "archboard", "path": "src/server/canvas/lib/write-boundary.ts" },
+			"drillDown": {
+				"board": "archboard/write-path",
+				"variant": { "kind": "named", "name": "One write, as it is" }
+			}
+		},
+		{
+			"as": "write",
+			"name": "Board write",
+			"kind": "module",
+			"parent": "Board runtime",
+			"responsibility": "Copies the state, settles it, persists it, then tells everybody",
+			"binding": { "repo": "archboard", "path": "src/runtime/engine/board-write.ts" }
+		},
+		{
+			"as": "converter",
+			"name": "Input converter",
+			"kind": "module",
+			"parent": "Board runtime",
+			"responsibility": "Spends the shorthand: labels, arrows, ids, geometry",
+			"binding": { "repo": "archboard", "path": "src/runtime/engine/apply-element-input.ts" }
+		},
+		{
+			"as": "io",
+			"name": "Board I/O",
+			"kind": "module",
+			"parent": "Board runtime",
+			"responsibility": "The one synchronous read and write of a note",
+			"binding": { "repo": "archboard", "path": "src/runtime/engine/board-io.ts" }
+		},
+		{
+			"as": "atomic",
+			"name": "Atomic writer",
+			"kind": "module",
+			"parent": "Board runtime",
+			"responsibility": "Temp file, fsync, rename",
+			"binding": { "repo": "archboard", "path": "src/runtime/engine/atomic-write.ts" }
+		},
+		{
+			"as": "presentation",
+			"name": "Presentation",
+			"kind": "module",
+			"parent": "Board runtime",
+			"responsibility": "Code bindings become links on copies, never on the note",
+			"binding": { "repo": "archboard", "path": "src/runtime/engine/presentation.ts" }
+		},
+		{
+			"as": "sync",
+			"name": "Pane sync",
+			"kind": "module",
+			"parent": "Board runtime",
+			"responsibility": "The whole delta, after the commit",
+			"binding": {
+				"repo": "archboard",
+				"path": "src/runtime/engine/lib/board-write-notifications.ts"
+			}
+		},
+
+		{
+			"as": "vault",
+			"name": "Vault",
+			"kind": "datastore",
+			"responsibility": "Excalidraw notes: the canonical geometry"
+		},
+		{
+			"as": "browser",
+			"name": "Browser",
+			"kind": "ui",
+			"responsibility": "What a person works in"
+		},
+		{
+			"as": "stage",
+			"name": "Excalidraw stage",
+			"kind": "ui",
+			"parent": "Browser",
+			"responsibility": "An editable canvas",
+			"binding": { "repo": "archboard", "path": "src/ui/canvas/components/ExcalidrawStage.tsx" }
+		},
+		{
+			"as": "shots",
+			"name": "Headless renderer",
+			"kind": "job",
+			"parent": "Browser",
+			"responsibility": "A persisted scene through Chromium",
+			"binding": { "repo": "archboard", "path": "src/server/board-rendering/lib/owner.ts" }
+		}
+	],
+	"edges": [
+		{ "from": "CLI commands", "to": "Element routes", "kind": "call", "label": "one intent" },
+		{ "from": "Element routes", "to": "Write boundary", "kind": "call" },
+		{ "from": "Write boundary", "to": "Board write", "kind": "call", "label": "under lease" },
+		{ "from": "Board write", "to": "Input converter", "kind": "call", "label": "spend" },
+		{ "from": "Board write", "to": "Board I/O", "kind": "call" },
+		{ "from": "Board I/O", "to": "Atomic writer", "kind": "call", "label": "fsync" },
+		{ "from": "Atomic writer", "to": "Vault", "kind": "data", "label": "rename" },
+		{ "from": "Board write", "to": "Presentation", "kind": "call" },
+		{ "from": "Board write", "to": "Pane sync", "kind": "event", "label": "after commit" },
+		{ "from": "Pane sync", "to": "Excalidraw stage", "kind": "http", "label": "delta" },
+		{ "from": "Headless renderer", "to": "Vault", "kind": "data", "label": "read scene" }
+	],
+	"views": [
+		{ "name": "The parts", "grammar": "architecture", "summary": "Everything, as it stands" },
+		{
+			"name": "The write path",
+			"grammar": "architecture",
+			"summary": "Only what a write touches",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"CLI commands",
+					"Write boundary",
+					"Board write",
+					"Board I/O",
+					"Atomic writer",
+					"Vault"
+				]
+			}
+		}
+	]
+}

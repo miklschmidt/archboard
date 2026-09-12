@@ -1,0 +1,88 @@
+{
+	"board": "archboard/pipeline",
+	"from": "Drawing is the board",
+	"name": "Meaning is the board",
+	"summary": "Agents state what the architecture means; the renderer owns every coordinate",
+	"edit": {
+		"nodes": [
+			{
+				"name": "Semantic renderer",
+				"kind": "module",
+				"parent": "Board runtime",
+				"responsibility": "Turns meaning into one picture, server side, out of real font files"
+			},
+			{
+				"name": "Diagram fonts",
+				"kind": "package",
+				"parent": "Board runtime",
+				"responsibility": "The four faces the renderer measures text in"
+			},
+			{
+				"name": "Semantic pane",
+				"kind": "ui",
+				"parent": "Browser",
+				"responsibility": "Read-only: shows a picture, owns the camera and the selection"
+			},
+			{
+				"name": "Board write",
+				"kind": "module",
+				"parent": "Board runtime",
+				"responsibility": "Applies a semantic transition and reconciles every draft under it"
+			}
+		],
+		"edges": [
+			{
+				"from": "Board write",
+				"to": "Semantic renderer",
+				"kind": "call",
+				"label": "nothing to draw"
+			},
+			{
+				"from": "Semantic renderer",
+				"to": "Diagram fonts",
+				"kind": "data",
+				"label": "measures in"
+			},
+			{ "from": "Pane sync", "to": "Semantic pane", "kind": "http", "label": "the board moved" }
+		],
+		"removeNodes": ["Input converter", "Presentation", "Excalidraw stage"],
+		"walkthroughs": [
+			{
+				"name": "Why this change",
+				"summary": "Six beats, for somebody deciding whether to pay for it",
+				"beats": [
+					{
+						"heading": "Agents author the drawing",
+						"body": "Placement, sizing, routes and labels are persisted geometry. People repair the picture so that it explains the architecture, and the repair is the work.",
+						"subjects": []
+					},
+					{
+						"heading": "The board commits before anything is announced",
+						"body": "Claims and versions protect the authoritative file; panes and agents hear about a change only after the bytes have landed. That part is not changing.",
+						"subjects": ["Write boundary", "Atomic writer"]
+					},
+					{
+						"heading": "Meaning becomes canonical",
+						"body": "An agent states responsibilities, containment and relationships. Nothing states a coordinate, because there is nowhere to put one, and the renderer supplies hierarchy consistently.",
+						"subjects": ["Semantic renderer", "Diagram fonts"]
+					},
+					{
+						"heading": "One edit updates the whole family",
+						"body": "A change to the state a proposal came from reaches every draft under it in the same write. Safe changes arrive; real disagreements stay visible, with the draft's own content still coherent.",
+						"subjects": ["Board write"]
+					},
+					{
+						"heading": "One architecture, two explanations",
+						"body": "The parts and the order they act in are the same identities read two ways, and a walkthrough moves attention through the story.",
+						"subjects": ["Semantic pane"]
+					},
+					{
+						"heading": "Adoption moves current and keeps history",
+						"body": "A competing proposal can become the architecture of record. What it replaced freezes under its own name, and ancestry is untouched: adoption is a designation, not a lineage.",
+						"subjects": []
+					}
+				]
+			}
+		]
+	}
+}

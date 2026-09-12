@@ -15,6 +15,13 @@ docs/design/generated/cli-command-audit.md
 docs/design/generated/command-contract-proof.json
 docs/design/generated/command-contract-proof.md
 
+# Rendered semantic diagrams. The authored source is the board JSON under
+# docs/design/ and the builder that draws it; the pictures render on demand, at
+# any depth — the pipeline example draws one file per view per variant into its
+# own directory.
+docs/design/generated/**/*.svg
+docs/design/generated/*.svg
+
 # Exact-version Codex app-server bindings are reproducible derived output.
 src/shared/codex-app-server-contract/generated/
 
