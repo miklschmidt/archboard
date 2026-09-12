@@ -4,6 +4,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/shell-layout.test.ts",
 	"tests/system/browser/workspace-address.test.ts",
 	"tests/system/browser/semantic-board-viewer.test.ts",
+	"tests/system/browser/semantic-status-legibility.test.ts",
 	"tests/system/browser/semantic-board-inspection.test.ts",
 	"tests/system/browser/semantic-drill-boundary.test.ts",
 	"tests/system/browser/semantic-drill-address.test.ts",

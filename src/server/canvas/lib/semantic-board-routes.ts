@@ -374,6 +374,11 @@ function answerDrawn(
 	// name, and says so about removals too: the two readings differ in what they
 	// are called, not in what they show.
 	const proposal = drawingOf(board, variant, reading.content, showsAll(how.view));
+	// The same reconciliation the sentences below the picture are written from.
+	// A subject nobody has decided yet is drawn with a warning on it, so a reader
+	// who is looking at the picture rather than reading the panel still knows
+	// which part of it not to trust yet.
+	const waiting = toldStanding(variant);
 	const identity = {
 		success: true,
 		board: board.name,
@@ -389,7 +394,7 @@ function answerDrawn(
 		changes: proposal.changes,
 		// Coherent, and out of date with the variant it came from: the viewer says
 		// so rather than showing a picture that looks settled.
-		waiting: toldStanding(variant),
+		waiting,
 	};
 	try {
 		res.json({
@@ -402,6 +407,7 @@ function answerDrawn(
 				grammar: reading.grammar,
 				theme: how.theme,
 				fonts: how.fonts,
+				...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
 				...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
 			}),
 		});

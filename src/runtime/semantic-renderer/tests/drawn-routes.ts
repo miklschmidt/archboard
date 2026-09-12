@@ -90,6 +90,12 @@ function routePoints(svg: string): Map<string, DrawnPoint[]> {
 		/<g data-semantic-kind="edge" data-semantic-id="([^"]+)"[^>]*>([\s\S]*?)<\/g>/g,
 	)) {
 		const drawn = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"/g)];
+		// A relationship is drawn as more than one group — its route, and the words
+		// it says on the layer above every route — so a group with no path in it is
+		// not the one being asked about and must not replace the one that was.
+		if (drawn.length === 0) {
+			continue;
+		}
 		paths.set(
 			group[1] ?? "",
 			pointsOf(drawn[drawn.length - 1]?.[1] ?? "").map((point) => ({

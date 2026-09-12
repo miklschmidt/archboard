@@ -29,6 +29,15 @@ import type { DiagramTheme } from "@/shared/semantic-board/index";
 
 /** One theme's resolved colours. */
 interface Palette {
+	/**
+	 * Which ground this palette is for.
+	 *
+	 * Here so that a colour derived from something the board says — a group
+	 * label's — can be resolved from the palette alone, rather than by threading
+	 * the theme past every painter that does not care about it. A palette IS a
+	 * theme resolved, so it is the honest place to ask.
+	 */
+	readonly ground: DiagramTheme;
 	/** The page behind everything. */
 	readonly background: string;
 	/** A region band's fill. */
@@ -63,6 +72,24 @@ interface Palette {
 	readonly pillText: string;
 	/** The ring around whatever the person has selected. */
 	readonly selection: string;
+	/**
+	 * The mark on a subject whose reconciliation nobody has decided yet.
+	 *
+	 * The shell's own warning pair, each ground taking the token that is meant to
+	 * be read ON that ground: `--warning` carries a dark panel, and
+	 * `--warning-foreground` is the one the shell uses for warning text on paper.
+	 * The badge needs the second on the light ground — at eleven units with the
+	 * page knocked out of it, the panel token reached only 2.5:1 against a white
+	 * card and 2.3:1 against its own mark, which is a badge a reader has to hunt
+	 * for. This one clears 3:1 against every surface it can land on and 4.5:1
+	 * against the mark inside it.
+	 *
+	 * It is not one of the three standings and must not be read as one. What
+	 * tells them apart is the badge's silhouette and the corner it sits in; the
+	 * hue is the third thing rather than the first, which is why darkening it
+	 * costs nothing that mattered.
+	 */
+	readonly warning: string;
 	/** A subject this proposal has that the variant it came from did not. */
 	readonly standingAdded: string;
 	/** The same subject, saying something different. */
@@ -82,6 +109,7 @@ interface Palette {
  * shell does not use.
  */
 const LIGHT: Palette = {
+	ground: "light",
 	background: "#f6f5f2",
 	band: "#edece7",
 	bandBorder: "#dedcd5",
@@ -99,6 +127,7 @@ const LIGHT: Palette = {
 	pillBorder: "#d6d4ce",
 	pillText: "#43433f",
 	selection: "#155eef",
+	warning: "#6e4a00",
 	standingAdded: "#1e7a4a",
 	standingChanged: "#9a5a06",
 	standingRemoved: "#a8322a",
@@ -106,6 +135,7 @@ const LIGHT: Palette = {
 
 /** Deep charcoal cards on black panels, bone-white ink, the same cobalt. */
 const DARK: Palette = {
+	ground: "dark",
 	background: "#141517",
 	band: "#0b0c0e",
 	bandBorder: "#2a2b2e",
@@ -123,6 +153,7 @@ const DARK: Palette = {
 	pillBorder: "#3a3c40",
 	pillText: "#bcbbb8",
 	selection: "#4d86ff",
+	warning: "#d29a1e",
 	standingAdded: "#4ec98c",
 	standingChanged: "#dda24a",
 	standingRemoved: "#e8756a",

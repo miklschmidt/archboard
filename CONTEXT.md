@@ -134,6 +134,15 @@ One node being structurally part of another, with at most one structural parent.
 Containment expresses membership independently of how nodes are drawn.
 _Avoid_: lane, frame, rectangle
 
+**Group**:
+What a node belongs to, as one optional short label: an effort, a team, a
+migration, a family of parts. It is independent of containment and of kind, is
+never inherited from a parent, and a node is in at most one. A renderer owns
+what a group looks like — it derives a colour from the label and stores none —
+so moving a part between groups changes the architecture and retuning the
+colours changes nothing.
+_Avoid_: tag, category, layer, swimlane, colour
+
 **Presentation intent**:
 What a board's depiction should explain: its focal subject, main flow, and
 diagram grammar. It expresses the intended reading without specifying geometry
