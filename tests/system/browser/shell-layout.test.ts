@@ -5,9 +5,8 @@ import { fileURLToPath } from "node:url";
 
 import { PANE_SETTLE_CAP_MS } from "../../../src/shared/timing/timing.ts";
 import { TEST_BROWSER_COMMAND_TIMEOUT_MS } from "../support/timing.ts";
-import { createJsonRequester } from "../boards/support/http.ts";
+import { createJsonRequester } from "../support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
-import { activityLines, fixedPointElements } from "./fixtures/fixed-point-scene.ts";
 import {
 	browserTestRoots,
 	canvasTestEnvironment,
@@ -15,19 +14,24 @@ import {
 	pollUntil,
 	registerCanvasBase,
 } from "./support/agent-browser.ts";
-import {
-	PERSISTENT_NOTICE_TEXT,
-	publishActionableNotice,
-} from "./support/fullscreen-presentation.ts";
+import { PERSISTENT_NOTICE_TEXT, publishActionableNotice } from "./support/shell-notices.ts";
 import type { DesktopShell, NoticeLayout, PaneBarLayout } from "./support/shell-contract-types.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { captureShellRenderMatrix } from "./support/shell-render-matrix.ts";
-import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
-import { BOARD_NAME_EXPRESSION, INSPECTOR, PANE_TABS, STAGE_ROOT } from "./support/shell-dom.ts";
+import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
+import { BOARD_NAME_EXPRESSION, PANE_TABS, STAGE_ROOT } from "./support/shell-dom.ts";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const serverPath = join(repoRoot, "src/server.ts");
 type PanesBody = { paneCount?: number };
+/** The lines an agent says it is doing, which the dock shows as it works. */
+const activityLines = [
+	"marking the unverified regional database boundary",
+	"naming what the warehouse is responsible for",
+	"wiring the queue between them",
+	"adding the reporting view",
+	"renaming the ingest service",
+] as const;
 /** WCAG 2.5.8 target size: the floor every control keeps at the desktop viewport. */
 const MIN_TARGET = 24;
 
@@ -47,17 +51,23 @@ test(
 		registerCanvasBase(canvas.base);
 		const browser = resources.use(await createAgentBrowser());
 		const api = createJsonRequester(canvas);
-		await api("/api/boards/new", {
-			method: "POST",
-			body: { board: "fixedpoint", level: "service" },
-		});
-		await api("/api/elements/batch?board=fixedpoint", {
-			method: "POST",
-			body: { elements: fixedPointElements },
-		});
-		await api("/api/boards/save", { method: "POST", body: { board: "fixedpoint" } });
+		await seedSemanticBoard(api, "fixedpoint");
+		// Shown on a proposal rather than on what is current, so the header has a
+		// variant to name: the breadcrumb's kicker is which variant is being read,
+		// and a board read through `current` has nothing there to check.
+		const branched = await api<{ board: { variants: Array<{ id: string; name: string }> } }>(
+			"/api/semantic-boards/branch?expectVersion=1",
+			{
+				method: "POST",
+				doing: "proposing the queued ingest",
+				body: { board: "fixedpoint", branch: { from: "current", name: "Queued ingest" } },
+			},
+		);
+		expect(branched.status).toBe(200);
+		const proposal = branched.body.board.variants.find((one) => one.name === "Queued ingest")!;
+		expect(proposal).toBeDefined();
 
-		await browser.run(["open", canvas.base]);
+		await browser.run(["open", addressShowing(canvas.base, `fixedpoint@${proposal.id}`)]);
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		await pollUntil(
@@ -66,14 +76,28 @@ test(
 			"the shell pane to register",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
-		await api("/api/boards/open", {
-			method: "POST",
-			body: { board: "fixedpoint", reload: true },
-		});
 		await pollUntil(
 			() => browser.eval<string | null>(BOARD_NAME_EXPRESSION),
 			(board) => board === "fixedpoint",
 			"fixedpoint to become the visible board",
+			{ timeoutMs: PANE_SETTLE_CAP_MS },
+		);
+		// And on the proposal, not merely on the board: the header names the
+		// variant beside it, and a poll that stopped at the board name would run
+		// the matrix against a header the show had not reached yet.
+		await pollUntil(
+			() =>
+				browser.eval<string | null>(
+					`document.querySelector('nav[aria-label="Current board"] span.font-mono')?.textContent?.trim() ?? null`,
+				),
+			(variant) => variant === proposal.id,
+			"the header to name the proposal being read",
+			{ timeoutMs: PANE_SETTLE_CAP_MS },
+		);
+		await pollUntil(
+			() => stageState(browser.eval.bind(browser)),
+			(state) => state === "drawn",
+			"the board to be drawn in its pane",
 			{ timeoutMs: PANE_SETTLE_CAP_MS },
 		);
 		await browser.eval<boolean>("document.fonts.ready.then(() => true)");
@@ -137,7 +161,7 @@ test(
 			expect(snapshot.shadowlessSurfaces).toBe(true);
 			expect(snapshot.visibleFocus).toBe(true);
 			expect(snapshot.boardIdentity).toBe("fixedpoint");
-			expect(snapshot.level.toLowerCase()).toBe("service");
+			expect(snapshot.variant).toBe(proposal.id);
 			expect(snapshot.connectionState).toBe("Connected");
 			// A board that is saving normally carries no persistence warning.
 			expect(snapshot.persistenceState).toBe("");
@@ -149,6 +173,13 @@ test(
 				snapshot.fontResources.every((url) => new URL(url).origin === new URL(canvas.base).origin),
 			).toBe(true);
 			expect(snapshot.fontResources.join(" ")).toMatch(/Onest-wght.*DMMono-(?:Regular|Medium)/);
+			// The drawn board's own faces, served from this canvas rather than a CDN.
+			expect(snapshot.diagramFontResources.length).toBeGreaterThan(0);
+			expect(
+				snapshot.diagramFontResources.every(
+					(url) => new URL(url).origin === new URL(canvas.base).origin,
+				),
+			).toBe(true);
 			expect(snapshot.humanLabels).toHaveLength(2);
 			expect(
 				snapshot.humanLabels.every(
@@ -288,19 +319,24 @@ test(
 		const collapsedPaneHeight = await paneHeight();
 		await roleAction(browser, "button", "Expand workbench");
 		await pollUntil(dockExpanded, Boolean, "the workbench dock to expand");
+		// The board is at 2 already: it was branched so the header would have a
+		// variant to name.
+		let version = 2;
 		for (const [index, doing] of activityLines.entries()) {
-			const wrote = await api(`/api/elements?board=fixedpoint&doing=${encodeURIComponent(doing)}`, {
-				method: "POST",
-				body: {
-					id: `activity-${index}`,
-					type: "rectangle",
-					x: 900 + index * 20,
-					y: 500,
-					width: 10,
-					height: 10,
+			const wrote = await api<{ success: boolean; version: number }>(
+				`/api/semantic-boards/edit?expectVersion=${version}`,
+				{
+					method: "POST",
+					doing,
+					body: {
+						board: "fixedpoint",
+						origin: "agent",
+						edit: { nodes: [{ name: `Step ${index + 1}`, kind: "service" }] },
+					},
 				},
-			});
-			expect([200, 201]).toContain(wrote.status);
+			);
+			expect(wrote.status).toBe(200);
+			version = wrote.body.version;
 		}
 		const activity = await pollUntil(
 			() =>
@@ -323,17 +359,6 @@ test(
 		expect(expandedPaneHeight).toBeLessThanOrEqual(collapsedPaneHeight - MIN_TARGET);
 		await roleAction(browser, "button", "Collapse workbench");
 
-		await browser.eval<void>(`{
-			const app = ${EXCALIDRAW_APP_EXPRESSION};
-			if (!app) throw new Error('The canvas is unavailable for inspector layout verification');
-			app.updateScene({ appState: { selectedElementIds: { rect1: true } } });
-		}`);
-		await pollUntil(
-			() => browser.eval<boolean>(`document.querySelector('${INSPECTOR}') !== null`),
-			Boolean,
-			"the inspector to open for the selected element",
-			{ timeoutMs: PANE_SETTLE_CAP_MS },
-		);
 		expect(await publishActionableNotice(browser)).toBe(true);
 		const notice = await pollUntil(
 			() =>
@@ -342,22 +367,18 @@ test(
 						node.querySelector('[data-slot="alert-description"]')?.textContent?.trim() === ${JSON.stringify(PERSISTENT_NOTICE_TEXT)});
 					const nav = document.querySelector('[data-slot="sidebar"]');
 					const centre = nav?.nextElementSibling;
-					const inspector = document.querySelector('${INSPECTOR}');
 					const text = notice?.querySelector('[data-slot="alert-description"]');
 					const action = [...(notice?.querySelectorAll('[data-slot="alert-action"] button') ?? [])]
 						.find(node => node.textContent.trim() === 'Opener settings');
 					const dismiss = notice?.querySelector('button[aria-label^="Dismiss notice"]');
-					if (!notice || !centre || !inspector || !text || !action || !dismiss) return null;
+					if (!notice || !centre || !text || !action || !dismiss) return null;
 					const metrics = node => { const value = getComputedStyle(node); return { family: value.fontFamily.toLowerCase(),
 						size: parseFloat(value.fontSize), lineHeight: parseFloat(value.lineHeight), weight: parseFloat(value.fontWeight) }; };
 					const noticeRect = notice.getBoundingClientRect();
 					const centreRect = centre.getBoundingClientRect();
-					const inspectorRect = inspector.getBoundingClientRect();
 					return { parentIsPanes: centre.contains(notice),
 						insidePanes: noticeRect.left >= centreRect.left - 0.5 && noticeRect.right <= centreRect.right + 0.5 &&
 							noticeRect.top >= centreRect.top - 0.5 && noticeRect.bottom <= centreRect.bottom + 0.5,
-						overlapsInspector: noticeRect.left < inspectorRect.right && noticeRect.right > inspectorRect.left &&
-							noticeRect.top < inspectorRect.bottom && noticeRect.bottom > inspectorRect.top,
 						width: noticeRect.width, copyType: metrics(text), actionHeight: action.getBoundingClientRect().height,
 						dismissHeight: dismiss.getBoundingClientRect().height,
 						flat: getComputedStyle(notice).boxShadow === 'none' && getComputedStyle(notice).backgroundImage === 'none',
@@ -373,7 +394,6 @@ test(
 		}
 		expect(notice.parentIsPanes).toBe(true);
 		expect(notice.insidePanes).toBe(true);
-		expect(notice.overlapsInspector).toBe(false);
 		expect(notice.width).toBeGreaterThan(300);
 		expect(notice.copyType.family).toContain("archboard onest");
 		expect(notice.copyType.size).toBeGreaterThanOrEqual(12);
@@ -387,10 +407,10 @@ test(
 				browser.eval<string[]>(
 					'[...document.querySelectorAll(\'[role="menu"] [role="menuitem"]\')].map(node => node.textContent.trim())',
 				),
-			(items) => items.length === 3,
+			(items) => items.length === 2,
 			"the settings menu to open",
 		);
-		expect(menu).toEqual(["Opener settings", "Agent settings", "Install library"]);
+		expect(menu).toEqual(["Opener settings", "Agent settings"]);
 		// The menu is a portal over the shell: Escape closes it and focus returns to its trigger.
 		await browser.run(["press", "Escape"]);
 		await pollUntil(

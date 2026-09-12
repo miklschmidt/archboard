@@ -1,24 +1,42 @@
-import { selectionState } from "@/runtime/engine/types";
-import { boards } from "@/runtime/engine/board-store";
-import type { BoardState } from "@/runtime/engine/board-store";
-import { readBoardContent } from "@/runtime/engine/board-io";
 import { boardLockState } from "@/runtime/engine/board-lock";
 import { recentDoing } from "@/runtime/engine/board-doing";
-import { vaultPathFor } from "@/runtime/engine/board";
-import { describeScene } from "@/runtime/engine/describe";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import { ArchboardContextSchema, type ArchboardContext } from "@/runtime/codex-instructions";
 import type {
+	SemanticArchitectureInput,
 	SemanticContextInput,
 	SettledSemanticChangeEvent,
 } from "@/runtime/codex-semantic-context";
+import { readSemanticBoard } from "@/runtime/semantic-board-store";
 import { canonicalSemanticCursorToken } from "@/runtime/codex-thread-context";
+import type { SemanticBoard } from "@/shared/semantic-board/index";
+import type { SemanticPaneContext } from "@/shared/semantic-pane-context/index";
 import type { CodexWorkbenchComponents } from "@/server/canvas/codex-workbench-generation";
 import { checkoutRoot } from "@/server/canvas/lib/module-paths";
 import { boardForPane, panes } from "@/server/canvas/lib/pane-registry";
-import { messageOf } from "@/server/canvas/lib/request-board";
+import {
+	aggregateKey,
+	NOTHING_READ,
+	semanticBoardContext,
+} from "@/server/canvas/lib/semantic-board-context";
+import { semanticPaneContextFor } from "@/server/canvas/lib/semantic-pane-context";
 
 type FreshBrief = ReturnType<CodexWorkbenchComponents["semanticPublisher"]["freshBrief"]>;
+
+/**
+ * The variant a context names: the brief's, without the predecessor it is
+ * measured against, which is a fact about the comparison rather than about
+ * which state the pane is reading.
+ * @param variant The brief's variant, or null before anything is drawn.
+ * @returns The context's variant.
+ */
+function contextVariant(
+	variant: FreshBrief["architecture"]["variant"],
+): ArchboardContext["variant"] {
+	return variant === null
+		? null
+		: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle };
+}
 
 /**
  * The canonical Codex context a semantic brief becomes, for one pane and one
@@ -40,7 +58,8 @@ function canonicalContextFromBrief(
 		schema: 1,
 		paneId,
 		board: {
-			note: brief.board.note,
+			name: brief.board.name,
+			key: brief.board.key,
 			version: brief.version ?? 0,
 			cursor: brief.cursor === null ? null : canonicalSemanticCursorToken(brief.cursor),
 		},
@@ -58,44 +77,157 @@ function canonicalContextFromBrief(
 			paneId: brief.pane.focused ? brief.pane.paneId : null,
 			capturedAtMs: brief.freshness.capturedAtMs,
 		},
-		selection: { elementIds: brief.selection, capturedAtMs: brief.freshness.capturedAtMs },
+		variant: contextVariant(brief.architecture.variant),
+		view: brief.architecture.view,
+		selection: {
+			count: brief.architecture.selection.count,
+			subjects: brief.architecture.selection.subjects,
+			capturedAtMs: brief.freshness.capturedAtMs,
+		},
+		// The summary, not the fitted list: a brief that had to drop its issues
+		// still says there are some, and an agent told `required` reads the board.
+		reconciliation: {
+			required: brief.architecture.reconciliation.required,
+			count: brief.architecture.reconciliation.count,
+			blockedBy: brief.architecture.reconciliation.blockedBy,
+			issues: brief.architecture.reconciliation.issues,
+		},
 		claim: brief.claim,
 		ambiguity: brief.ambiguity,
 		operation,
 	});
 }
 
-/** What a board's note says, for the semantic brief, or why it could not be read. */
-interface BoardDescription {
+/** What a board says, for the semantic brief, or why it could not be read. */
+interface BoardReading {
+	architecture: SemanticArchitectureInput;
 	description: string;
+	file: string;
+	name: string;
 	version: number | null;
+	ambiguity: readonly string[];
 	stale: boolean;
 	staleReasons: readonly string[];
 }
 
 /**
- * Describe a board from its note, marking the description stale when the
- * note cannot be read.
- * @param board The open board.
- * @returns The description.
+ * Read a board and work out what it means to the pane reading it, marking the
+ * reading stale when the document cannot be read at all.
+ *
+ * The read is of the document on disk every time, never a copy: an agent told
+ * what version a board is at must be told the version the next write will be
+ * checked against, and a cached one would differ exactly when it matters.
+ * @param asked The board name.
+ * @param pane What the pane said it was reading, or null when it has not said.
+ * @returns The reading.
  */
-function describeBoard(board: BoardState): BoardDescription {
-	try {
-		const content = readBoardContent(board);
+function readBoardForContext(asked: string, pane: SemanticPaneContext | null): BoardReading {
+	const read = readSemanticBoard(asked);
+	if (!read.ok) {
 		return {
-			description: describeScene(Array.from(content.elements.values())),
-			version: content.version ?? null,
-			stale: false,
-			staleReasons: [],
-		};
-	} catch (error) {
-		return {
-			description: `The board note could not be read: ${messageOf(error)}`,
+			architecture: NOTHING_READ,
+			description: `The board could not be read: ${read.problem}`,
+			file: read.location.file,
+			name: read.location.name,
 			version: null,
+			ambiguity: [],
 			stale: true,
-			staleReasons: ["board_note_unreadable"],
+			staleReasons: [read.code === "BOARD_MISSING" ? "board_missing" : "board_unreadable"],
 		};
 	}
+	const confirmed = reportFor(read.board, pane);
+	const context = semanticBoardContext(read.board, confirmed.report);
+	return {
+		architecture: context.architecture,
+		description: context.description,
+		file: read.location.file,
+		name: read.board.name,
+		version: read.board.version,
+		ambiguity: [...context.ambiguity, ...confirmed.ambiguity],
+		stale: confirmed.staleReasons.length > 0,
+		staleReasons: confirmed.staleReasons,
+	};
+}
+
+/** A pane report that may be used, and anything wrong with the one there was. */
+interface ConfirmedReport {
+	readonly report: SemanticPaneContext | null;
+	readonly ambiguity: readonly string[];
+	readonly staleReasons: readonly string[];
+}
+
+/**
+ * Whether the pane's last report is about the board being read, and recent
+ * enough to believe.
+ *
+ * A pane moving from one board to another registers on the new board before its
+ * first report about it arrives, so for a moment the registry says B and the
+ * pane's last report still says A. Resolving A's variant, view and selection
+ * against B's document would hand an agent ids from one architecture as though
+ * they named subjects of another — and the ids might even resolve, meaning
+ * something else entirely. So a report about another board is not used at all
+ * and the pane is reported as not having said yet, which is the truth.
+ *
+ * A report about the right board at an older version is still used: which
+ * subject somebody picked out does not stop being true because the board was
+ * written since. It is marked stale so the agent reads the board rather than
+ * trusting the version the pane drew.
+ * @param board The board being read.
+ * @param pane The pane's last report, or null when it has never reported.
+ * @returns The report to use, and what was wrong with the one there was.
+ */
+function reportFor(board: SemanticBoard, pane: SemanticPaneContext | null): ConfirmedReport {
+	if (pane === null) {
+		return { report: null, ambiguity: [], staleReasons: ["pane_has_not_reported"] };
+	}
+	const key = pane.board?.key ?? null;
+	// Aggregates, not spellings, and by the same function the rest of this file
+	// uses: a pane on `payments@<variant>` is reporting about `payments`, and an
+	// exact comparison would call that another board and drop the variant, the
+	// view and the selection it just told us about.
+	if (key === null || aggregateKey(key) !== aggregateKey(board.name)) {
+		return {
+			report: null,
+			ambiguity: [mixedBoards(key, board.name)],
+			staleReasons: ["pane_report_names_another_board"],
+		};
+	}
+	return { report: pane, ambiguity: [], staleReasons: versionReasons(pane.version, board.version) };
+}
+
+/**
+ * What the version the pane drew says about the reading.
+ *
+ * Behind is ordinary and self-healing: the board was written since the picture
+ * was made, the pane will draw again, and what somebody picked out is still
+ * true meanwhile. Ahead is stranger — the pane has seen a version this process
+ * cannot read yet — and it is called pending rather than stale so that an agent
+ * waits for the board to catch up instead of writing against a version that is
+ * not the newest one. Neither is a refusal: both are said out loud and the
+ * reading is still handed over.
+ * @param drew The version the pane reported drawing, or null when it drew none.
+ * @param read The version the board is actually at.
+ * @returns The stale reasons, empty when the two agree.
+ */
+function versionReasons(drew: number | null, read: number): readonly string[] {
+	if (drew === null || drew === read) {
+		return [];
+	}
+	return drew > read ? ["pane_drew_a_newer_version"] : ["pane_drew_an_older_version"];
+}
+
+/**
+ * What to tell an agent when the pane is still reporting the board it left.
+ * @param key The board the pane last reported, or null when it reported none.
+ * @param name The board being read.
+ * @returns The sentence.
+ */
+function mixedBoards(key: string | null, name: string): string {
+	const said = key === null ? "no board" : `board "${key}"`;
+	return (
+		`the pane last reported ${said} and is being read as "${name}", so nothing it selected ` +
+		"has been resolved: those ids belong to a different architecture"
+	);
 }
 
 /**
@@ -105,9 +237,23 @@ function describeBoard(board: BoardState): BoardDescription {
  * @returns The pane.
  */
 function contextPane(contextBoard: string, exactPaneId: string): PaneRegistration {
-	const pane = Array.from(panes.values()).find(
-		(candidate) => candidate.paneId === exactPaneId && boardForPane(candidate) === contextBoard,
-	);
+	// Aggregates, not spellings: a pane showing a proposal carries the variant in
+	// its board key, and comparing the whole string would say that pane is on a
+	// different board and leave an agent with no context at all.
+	const wanted = aggregateKey(contextBoard);
+	const pane = Array.from(panes.values()).find((candidate) => {
+		// A pane may be holding no board at all: a fresh vault has none, and a pane
+		// that could not register until one existed could never be shown the first
+		// board somebody makes.
+		//
+		// The guard is not tidiness. There is no aggregate of nothing — the address
+		// grammar refuses an empty board name — so without it the predicate THROWS
+		// rather than failing to match, which aborts the whole scan. One pane
+		// between boards would take context away from every other pane on the
+		// canvas for as long as it sat there.
+		const showing = boardForPane(candidate);
+		return candidate.paneId === exactPaneId && showing !== null && aggregateKey(showing) === wanted;
+	});
 	if (pane === undefined) {
 		throw new Error(`The Codex context board has no authoritative browser pane: ${contextBoard}.`);
 	}
@@ -267,28 +413,29 @@ function semanticInputFor(
 	exactPaneId: string,
 ): SemanticContextInput {
 	const pane = contextPane(contextBoard, exactPaneId);
-	const board = boards.get(contextBoard);
-	if (board === undefined) {
-		throw new Error(`The Codex context board is not open: ${contextBoard}.`);
-	}
-	const described = describeBoard(board);
-	const selection = selectionState.byClient.get(pane.clientId);
+	// One parse, here. A pane showing a proposal reports `payments@<variant>`,
+	// and that address is what the context is filed under — but a board is one
+	// document holding every variant, so what is READ is the aggregate, and
+	// `readSemanticBoard` refuses an address carrying a variant outright.
+	const aggregate = aggregateKey(contextBoard);
+	const read = readBoardForContext(aggregate, semanticPaneContextFor(pane.clientId));
 	return {
 		repository: checkoutRoot,
 		...linkedIdentities(active, pane.paneId),
 		board: {
 			key: contextBoard,
-			note: board.file ?? vaultPathFor(board.identity),
-			version: described.version,
+			name: read.name,
+			file: read.file,
+			version: read.version,
 		},
 		pane: { paneId: pane.paneId, focused: pane.focused },
-		selection: selection === undefined ? [] : selection.elementIds,
+		architecture: read.architecture,
 		...claimOf(contextBoard),
 		cursor,
-		description: described.description,
-		ambiguity: [],
-		stale: described.stale,
-		staleReasons: described.staleReasons,
+		description: read.description,
+		ambiguity: read.ambiguity,
+		stale: read.stale,
+		staleReasons: read.staleReasons,
 	};
 }
 

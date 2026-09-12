@@ -9,12 +9,8 @@
    class names. Every class lives under `src/ui`, one level up from here. */
 @source "../";
 
-/* Excalidraw keeps its vendor CSS. It stays unlayered, so it wins over
-   Tailwind's layered preflight and utilities inside the mounted canvas. */
-@import "@excalidraw/excalidraw/index.css";
-
 /* The theme is an explicit attribute the person chooses; the shell stores it
-   on the root element, and Excalidraw receives the same value. */
+   on the root element, and the server draws a board in the same palette. */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @font-face {
@@ -46,7 +42,7 @@
 	--font-mono: "Archboard DM Mono", ui-monospace, monospace;
 	--font-heading: var(--font-sans);
 	--tracking-wordmark: -0.02027027027em;
-	/* Type roles (TASK-150.08). Chrome uses only these six sizes; Excalidraw
+	/* Type roles (TASK-150.08). Chrome uses only these six sizes; a drawn board
 	   keeps its own. kicker: section labels. technical: identifiers, paths,
 	   versions, counts and times, always in the mono face. body: prose and row
 	   labels. control: buttons, tabs, fields. title: region and dialog titles.
@@ -264,58 +260,6 @@
 	body {
 		@apply bg-background text-foreground;
 	}
-}
-
-/* Excalidraw's islands (toolbar, zoom, menu, library) take the shell's flat
-   look through Excalidraw's own public custom properties, set on its root
-   and re-set for its dark theme: the panel surface and rule, the cobalt
-   selection, the small radius, no island shadow, and the neutral hover.
-   The tints mix in oklab: a hue-based space would swing a mix with a
-   neutral towards the neutral's literal hue.
-   The dark selector is the root class Excalidraw sets from its `theme`
-   prop; the doubled root class outranks the vendor sheet, which the
-   bundle injects after this one. Nothing here reaches a vendor class
-   below the root. */
-.excalidraw.excalidraw,
-.excalidraw.excalidraw.theme--dark {
-	--island-bg-color: var(--card);
-	--popup-bg-color: var(--popover);
-	--sidebar-bg-color: var(--card);
-	--sidebar-border-color: var(--border);
-	--dialog-border-color: var(--border);
-	--shadow-island: 0 0 0 1px var(--border);
-	--border-radius-md: 3px;
-	--border-radius-lg: 4px;
-	--color-primary: var(--primary);
-	--color-primary-darker: color-mix(in oklab, var(--primary) 88%, black);
-	--color-primary-darkest: color-mix(in oklab, var(--primary) 76%, black);
-	--color-primary-light: color-mix(in oklab, var(--primary) 14%, var(--card));
-	--color-primary-hover: color-mix(in oklab, var(--primary) 92%, black);
-	--color-brand-hover: color-mix(in oklab, var(--primary) 92%, black);
-	--color-brand-active: color-mix(in oklab, var(--primary) 80%, black);
-	--color-surface-primary-container: color-mix(in oklab, var(--primary) 14%, var(--card));
-	--color-on-primary-container: var(--foreground);
-	--color-surface-lowest: var(--card);
-	--color-surface-low: var(--muted);
-	--color-surface-mid: var(--muted);
-	--color-surface-high: var(--accent);
-	--color-on-surface: var(--foreground);
-	--color-border-outline: var(--muted-foreground);
-	--color-border-outline-variant: var(--border);
-	--focus-highlight-color: var(--ring);
-	--select-highlight-color: var(--ring);
-	--button-hover-bg: var(--muted);
-	--button-active-bg: color-mix(in oklab, var(--primary) 14%, var(--card));
-	--button-active-border: var(--primary);
-}
-
-/* The one vendor-selector adapter: a presented pane shows its canvas alone.
-   Excalidraw's own chrome (toolbar, menu, footer) stays mounted and returns
-   with the workspace; only the presentation hides it. */
-[data-slot="canvas-stages"][data-presenting]
-	.excalidraw
-	:is(.layer-ui__wrapper, .App-menu, .App-toolbar-container) {
-	display: none;
 }
 
 /* A theme switch is one frame: the shell sets this attribute while it swaps

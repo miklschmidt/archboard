@@ -2,9 +2,9 @@
 	"schemaVersion": 1,
 	"reviewedBase": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
 	"surface": {
-		"commands": 32,
-		"subcommands": 27,
-		"paths": 59
+		"commands": 33,
+		"subcommands": 34,
+		"paths": 67
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
@@ -1267,6 +1267,294 @@
 				{
 					"code": "DOING_REQUIRED",
 					"exit": 1
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic",
+			"introducedBy": "TASK-171",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic.ts",
+			"stdout": "json object",
+			"result": "every semantic board in the vault",
+			"diagnostics": "usage/refusal on stderr",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server"],
+			"relationships": ["GET /api/semantic-boards"],
+			"semantics": "lists semantic aggregates only; Excalidraw notes are a different kind of file and are listed by board list",
+			"ordering": "server contact before the vault is read",
+			"nextFields": ["boards"],
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic new",
+			"introducedBy": "TASK-171",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic.ts",
+			"stdout": "json object",
+			"result": "the created board aggregate at version 1",
+			"diagnostics": "node count and version on stderr",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "doing"],
+			"relationships": ["POST /api/semantic-boards/create"],
+			"semantics": "creates one semantic aggregate, empty or populated, without touching any Excalidraw note",
+			"ordering": "stated architecture validated before the board lease is taken",
+			"nextFields": ["board.id", "board.version", "board.current"],
+			"workflow": "necessary composition",
+			"effects": ["local-read", "server-state-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic edit",
+			"introducedBy": "TASK-171",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic.ts",
+			"stdout": "json object",
+			"result": "the board aggregate after the change",
+			"diagnostics": "resulting version on stderr",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "doing"],
+			"relationships": ["POST /api/semantic-boards/edit"],
+			"semantics": "one stated batch lands whole or not at all; the write states the version it was based on and is refused when the board has moved since",
+			"ordering": "lease, expected-version check, transition, validation, then one atomic write",
+			"nextFields": ["board.version"],
+			"workflow": "necessary composition",
+			"effects": ["local-read", "server-state-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "EXPECT_VERSION_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic branch",
+			"introducedBy": "TASK-174",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic.ts",
+			"stdout": "json object",
+			"result": "the board aggregate with the proposal on it",
+			"diagnostics": "resulting version and predecessor on stderr",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "doing"],
+			"relationships": ["POST /api/semantic-boards/branch"],
+			"semantics": "the predecessor's architecture is inherited whole with every identity intact; the proposal starts as a draft and moves no designation",
+			"ordering": "lease, expected-version check, transition, validation, then one atomic write",
+			"nextFields": ["board.version"],
+			"workflow": "necessary composition",
+			"effects": ["local-read", "server-state-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "EXPECT_VERSION_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic resolve",
+			"introducedBy": "TASK-176",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic-lifecycle.ts",
+			"stdout": "json object",
+			"result": "the board aggregate once the answered disagreements are answered",
+			"diagnostics": "resulting version, then every draft the change reached with what it is holding",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "doing"],
+			"relationships": ["POST /api/semantic-boards/resolve"],
+			"semantics": "each choice names one disagreement by subject and field and takes one side; unanswered ones stay open; settling catches the proposal up with what its predecessor decided while it waited and lets the drafts under it move",
+			"ordering": "lease, expected-version check, transition, validation, then one atomic write",
+			"nextFields": ["board.version", "reconciliation.drafts"],
+			"workflow": "necessary composition",
+			"effects": ["local-read", "server-state-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "EXPECT_VERSION_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic adopt",
+			"introducedBy": "TASK-177",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic-lifecycle.ts",
+			"stdout": "json object",
+			"result": "the board aggregate with the designation moved",
+			"diagnostics": "which variant the board now says is implemented, and at what version",
+			"exits": [0, 1, 2, 3, 5],
+			"prerequisites": ["server", "doing"],
+			"relationships": ["POST /api/semantic-boards/adopt"],
+			"semantics": "moves the current designation without renaming or reparenting; the former current becomes historical and stops being editable; a variant that is unsettled, derived from one that is, or already historical is refused",
+			"ordering": "lease, expected-version check, transition, validation, then one atomic write",
+			"nextFields": ["board.current", "board.adoptions"],
+			"workflow": "necessary composition",
+			"effects": ["local-read", "server-state-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "DOING_REQUIRED",
+					"exit": 1
+				},
+				{
+					"code": "EXPECT_VERSION_REQUIRED",
+					"exit": 2
+				},
+				{
+					"code": "BOARD_HELD",
+					"exit": 5
+				},
+				{
+					"code": "BOARD_VERSION_CONFLICT",
+					"exit": 5
+				},
+				{
+					"code": "CLAIM_REVOKED",
+					"exit": 5
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic show",
+			"introducedBy": "TASK-171",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic.ts",
+			"stdout": "json object",
+			"result": "one board's whole variant family and content",
+			"diagnostics": "usage/refusal on stderr",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server"],
+			"relationships": ["GET /api/semantic-boards/board"],
+			"semantics": "reads the aggregate as it is on disk; a document that is not coherent is refused",
+			"ordering": "read and validate before anything is printed",
+			"nextFields": ["board.version", "board.current"],
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic render",
+			"introducedBy": "TASK-171",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic.ts",
+			"stdout": "file receipt",
+			"result": "the SVG that was written, with its size",
+			"diagnostics": "file receipt note on stderr",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server"],
+			"relationships": ["GET /api/semantic-boards/render"],
+			"semantics": "the renderer owns every coordinate; the board states no geometry and the picture is derived",
+			"ordering": "render on the server, then stage the file as an artifact",
+			"nextFields": ["file", "width", "height", "version"],
+			"workflow": "necessary composition",
+			"effects": ["read", "local-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
 				}
 			],
 			"classification": "board"

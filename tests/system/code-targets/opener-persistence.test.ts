@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 
@@ -45,10 +45,12 @@ async function save(fixture: OpenerFixture, selection: OpenerSelection): Promise
 	expect(result.status).toBe(200);
 }
 
+let boundNode = "";
+
 async function activate(caller: ReturnType<OpenerFixture["caller"]>): Promise<void> {
 	const result = await caller("/api/code-targets/open", {
 		method: "POST",
-		body: JSON.stringify({ board: "system/payments", element: "node" }),
+		body: JSON.stringify({ board: "payments", element: boundNode }),
 	});
 	expect(result.status).toBe(200);
 }
@@ -70,12 +72,19 @@ describe("machine-wide opener persistence", () => {
 						process.env["ARCHBOARD_VAULT"] = previousVault;
 					}
 				});
-				const { makeIdentity, renderBoardNote } =
-					await import("../../../src/runtime/engine/board.ts");
-				const { completeElement } = await import("./support/elements.ts");
+				const {
+					createBoardTransition,
+					locateSemanticBoard,
+					readSemanticBoard,
+					writeSemanticBoard,
+				} = await import("../../../src/runtime/semantic-board-store/index.ts");
 				const { createOpenerFixture } = await import("./support/opener-fixture.ts");
 				const timeline: ActivationTimelineEntry[] = [];
 				const fixture = await createOpenerFixture({
+					// The real binding lookup, against the real store: what is being
+					// checked is that a node's binding survives a restart, and a stub
+					// standing in for the board would check the stub instead.
+					defaultDependencies: true,
 					routeDependencies: {
 						launch: async (command) => {
 							timeline.push(["launch", structuredClone(command)]);
@@ -85,36 +94,36 @@ describe("machine-wide opener persistence", () => {
 				});
 				resources.defer(() => fixture.dispose());
 				expect(process.env["ARCHBOARD_VAULT"]).toBe(vault);
-				const note = join(vault, "payments.excalidraw.md");
-				const identity = makeIdentity({ board: "payments" });
-				writeFileSync(
-					note,
-					renderBoardNote(
-						{
-							type: "excalidraw",
-							version: 2,
-							elements: [
-								completeElement({
-									id: "node",
-									type: "rectangle",
-									x: 0,
-									y: 0,
-									width: 100,
-									height: 60,
-									customData: {
-										archboard: {
-											binding: { repo: fixture.repository, path: "src/index.ts" },
-										},
-									},
-								}),
-							],
-							appState: {},
-							files: {},
-						},
-						null,
-						identity,
-					),
-				);
+				// One board with one bound node, written through the store every other
+				// writer goes through, so the opener resolves a real binding.
+				const written = await writeSemanticBoard({
+					board: "payments",
+					writer: { kind: "agent" },
+					transition: createBoardTransition({
+						name: "payments",
+						nodes: [
+							{
+								name: "Payments",
+								kind: "service",
+								binding: { repo: fixture.repository, path: "src/index.ts" },
+							},
+						],
+						edges: [],
+						flows: [],
+						views: [],
+						walkthroughs: [],
+					}),
+				});
+				expect(written.outcome).toBe("applied");
+				const read = readSemanticBoard("payments");
+				if (!read.ok) {
+					throw new Error(`The bound board could not be read: ${read.problem}`);
+				}
+				boundNode =
+					read.board.variants.find((one) => one.id === read.board.current)?.content.nodes[0]?.id ??
+					"";
+				expect(boundNode).not.toBe("");
+				const note = locateSemanticBoard("payments").file;
 				const noteBytes = readFileSync(note);
 				const noteMtime = statSync(note, { bigint: true }).mtimeNs;
 

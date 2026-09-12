@@ -1,12 +1,7 @@
 // One request to the canvas server, and the identity gate in front of it.
 
 import { EXPRESS_SERVER_URL } from "@/runtime/engine/config";
-import {
-	noteHold,
-	rememberVersion,
-	withBoard,
-	withWriteClaims,
-} from "@/runtime/engine/lib/canvas-client-session";
+import { withBoard, withWriteClaims } from "@/runtime/engine/lib/canvas-client-session";
 import { isBoardRefusal } from "@/runtime/engine/lib/canvas-client-refusal";
 import { isRecord, stringAt } from "@/runtime/engine/lib/unknown-record";
 
@@ -202,8 +197,6 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 		init,
 	);
 	const data: unknown = await response.json().catch(() => null);
-	noteHold(data);
-	rememberVersion(data);
 	if (!response.ok) {
 		throw responseError(data, response);
 	}

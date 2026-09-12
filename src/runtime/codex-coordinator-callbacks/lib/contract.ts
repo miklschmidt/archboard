@@ -8,6 +8,7 @@ import type {
 	SemanticContextPublisher,
 	SettledSemanticChangeEvent,
 } from "@/runtime/codex-semantic-context";
+import type { SemanticSubjectKind } from "@/shared/semantic-pane-context/index";
 import type {
 	CodexThreadLinkClassifier,
 	ThreadLinkBindingSnapshot,
@@ -92,6 +93,18 @@ type CoordinatorOperationCallback =
 			readonly outcome: "outcome_unknown";
 	  });
 
+/**
+ * One subject a person picked out, as the callback names it.
+ *
+ * Identities only. What it is called is in the brief, which the same callback
+ * carries whole; repeating a label here would be a second answer to "what is
+ * this called" that could disagree with the first.
+ */
+interface CoordinatorSemanticSubject {
+	readonly kind: SemanticSubjectKind;
+	readonly id: string;
+}
+
 interface CoordinatorSemanticCallbackData {
 	readonly feedId: string;
 	readonly sequence: number | null;
@@ -102,7 +115,8 @@ interface CoordinatorSemanticCallbackData {
 	readonly freshUntilMs: number;
 	readonly paneId: string;
 	readonly focused: boolean;
-	readonly selection: readonly string[];
+	/** The selected subjects of the board, never anything that was drawn. */
+	readonly selection: readonly CoordinatorSemanticSubject[];
 	readonly detail: string | null;
 }
 
@@ -266,6 +280,7 @@ export {
 	type CoordinatorCallbackCorrelation,
 	type CoordinatorOperationCallback,
 	type CoordinatorSemanticCallbackData,
+	type CoordinatorSemanticSubject,
 	type CoordinatorSemanticCallback,
 	type CoordinatorCallback,
 	type CoordinatorCallbackRealtimeGeneration,

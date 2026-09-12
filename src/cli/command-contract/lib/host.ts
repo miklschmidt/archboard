@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
-import { boardHoldSeen } from "@/runtime/engine/canvas-client";
 import { writeFileAtomicExclusive } from "@/runtime/engine/atomic-write";
 import type { PendingArtifact } from "@/cli/command-contract/contract";
 
@@ -130,10 +129,11 @@ export const processCommandHost = {
 		process.exitCode = value;
 	},
 	/**
-	 * The hold this process observed while the command ran.
-	 * @returns The hold report, or null when no board was held.
+	 * Nothing is ever held back from disk: an accepted write is committed
+	 * before it is answered (ADR 0023), so there is no such state to report.
+	 * @returns Null, always.
 	 */
-	held(): ReturnType<typeof boardHoldSeen> {
-		return boardHoldSeen();
+	held(): null {
+		return null;
 	},
 };

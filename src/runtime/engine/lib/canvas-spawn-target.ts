@@ -78,34 +78,14 @@ function startupRefusal(message: string): Error {
 
 /**
  * Probe `/health`, treating any failure as no answer.
- * @param timeoutMs How long to wait for the probe.
  * @returns The health payload, or null when nothing usable answered.
  */
-async function healthOrNull(timeoutMs = 500): Promise<HealthStatus | null> {
+async function healthOrNull(): Promise<HealthStatus | null> {
 	try {
-		return await getHealth(timeoutMs);
+		return await getHealth();
 	} catch {
 		return null;
 	}
-}
-
-/**
- * The refusal a stop earns when the canvas holds work that exists only in memory.
- * @param health The canvas's health payload.
- * @returns An error carrying the `CANVAS_HELD` code, or null when nothing is held.
- */
-function heldCanvasError(health: HealthStatus | null): Error | null {
-	if (!health?.held_boards || health.held_boards.length === 0) {
-		return null;
-	}
-	const boards = health.held_boards.map((hold) => `"${hold.board}"`).join(", ");
-	return codedError(
-		[
-			`Canvas shutdown refused because held work exists only in process memory on ${boards}.`,
-			...health.held_boards.map((hold) => hold.message),
-		].join("\n\n"),
-		"CANVAS_HELD",
-	);
 }
 
 /**
@@ -125,6 +105,5 @@ export {
 	unreachableError,
 	startupRefusal,
 	healthOrNull,
-	heldCanvasError,
 	isCanvasHealth,
 };

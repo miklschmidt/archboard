@@ -17,7 +17,7 @@ interface ObservedPane<Event extends ObservedPaneEvent> {
 	readonly socket: WebSocket;
 	readonly events: Event[];
 	board(): string | undefined;
-	register(board: string): Promise<void>;
+	register(board: string | null): Promise<void>;
 	waitFor(
 		match: (event: Event) => boolean,
 		start?: number,
@@ -100,7 +100,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	base: string;
 	clientId: string;
 	preferredBoard?: string;
-	register: (board: string, signal: AbortSignal) => Promise<Response>;
+	register: (board: string | null, signal: AbortSignal) => Promise<Response>;
 	readPanes: (signal: AbortSignal) => Promise<Response>;
 }): Promise<ObservedPane<Event>> {
 	const endpoint = new URL(options.base);
@@ -118,7 +118,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	const initialTimer = setTimeout(
 		() =>
 			rejectInitial(
-				timeoutError(options.clientId, "to receive initial_elements", TEST_PANE_MESSAGE_TIMEOUT_MS),
+				timeoutError(options.clientId, "to be given a board", TEST_PANE_MESSAGE_TIMEOUT_MS),
 			),
 		TEST_PANE_MESSAGE_TIMEOUT_MS,
 	);
@@ -131,7 +131,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 		try {
 			const event = JSON.parse(data.toString()) as Event;
 			events.push(event);
-			if (event.type === "initial_elements") {
+			if (event.type === "pane_board") {
 				initialArrived = true;
 				resolveInitial(event);
 			}
@@ -140,7 +140,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 		}
 	};
 	const onCloseBeforeInitial = (): void =>
-		failInitial(new Error(`Pane ${options.clientId} closed before its initial scene arrived.`));
+		failInitial(new Error(`Pane ${options.clientId} closed before it was given a board.`));
 	const releaseSocketListeners = (): void => {
 		socket.off("message", onMessage);
 		socket.off("error", failInitial);
@@ -150,7 +150,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	socket.on("error", failInitial);
 	socket.on("close", onCloseBeforeInitial);
 
-	const register = async (board: string): Promise<void> => {
+	const register = async (board: string | null): Promise<void> => {
 		const response = await bounded(
 			options.clientId,
 			"to register",
@@ -171,7 +171,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	};
 	try {
 		const initialEvent = await initial.finally(() => clearTimeout(initialTimer));
-		await register(options.preferredBoard ?? initialEvent.board ?? "scratch");
+		await register(options.preferredBoard ?? initialEvent.board ?? null);
 	} catch (error) {
 		try {
 			await closeSocket(socket, options.clientId, TEST_PANE_MESSAGE_TIMEOUT_MS);
@@ -187,11 +187,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	return {
 		socket,
 		events,
-		board: () =>
-			[...events]
-				.toReversed()
-				.find((event) => event.type === "initial_elements" || event.type === "board_switched")
-				?.board,
+		board: () => [...events].toReversed().find((event) => event.type === "pane_board")?.board,
 		register,
 		async waitFor(match, start = 0, timeoutMs = TEST_PANE_MESSAGE_TIMEOUT_MS) {
 			const deadline = Date.now() + timeoutMs;

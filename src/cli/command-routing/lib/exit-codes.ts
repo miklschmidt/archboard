@@ -1,11 +1,7 @@
 // Turns a command failure into the process exit code and the stderr explanation the CLI
 // contract promises, without trusting the thrown value's shape.
 import { CliUsageError } from "@/cli/command-contract/contract";
-import {
-	BOARD_REFUSAL_CODES,
-	boardHoldSeen,
-	formatBoardRefusal,
-} from "@/runtime/engine/canvas-client";
+import { BOARD_REFUSAL_CODES, formatBoardRefusal } from "@/runtime/engine/canvas-client";
 import { type RouteOwner } from "@/cli/command-routing/lib/route";
 
 /**
@@ -106,17 +102,6 @@ function exitCodeFor(error: unknown, command?: RouteOwner): number {
 function reportFailure(error: unknown, usage: string): void {
 	if (!isQuietError(error)) {
 		process.stderr.write(`Error: ${formatBoardRefusal(error) ?? errorMessage(error)}\n`);
-	}
-	// A refused write does not stop the board being drawn on, it stops the
-	// board being saved (ADR 0006, TASK-079). The refusal above has already
-	// listed the three outcomes, so this says only the part it does not: what
-	// happens to everything drawn between now and the choice.
-	const held = boardHoldSeen();
-	if (held && isBoardRefusalCode(errorCodeOf(error))) {
-		process.stderr.write(
-			`"${held.board}" has stopped saving. Changes from here are held on the canvas ` +
-				"and reach no note until one of those three is run.\n",
-		);
 	}
 	if (error instanceof CliUsageError) {
 		process.stderr.write(`Usage: archboard ${usage}\n`);

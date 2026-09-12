@@ -1,5 +1,5 @@
 import { expect } from "bun:test";
-import type { createJsonRequester } from "../../boards/support/http.ts";
+import type { createJsonRequester } from "../../support/http.ts";
 
 type Requester = ReturnType<typeof createJsonRequester>;
 async function createBoard(

@@ -9,7 +9,6 @@
 		"frontend/**/*.tsx",
 		"frontend/**/*.mts",
 		"frontend/**/*.cts",
-		"src/server/board-rendering/browser.ts",
 		"src/ui/**/*.ts",
 		"src/ui/**/*.tsx",
 		"src/ui/**/*.mts",

@@ -39,7 +39,7 @@ type CodexThreadContextEventId = Readonly<{
 /** Stable reasons retained when a semantic event is refused or its response is lost. */
 type CodexThreadContextDeliveryReason =
 	| ThreadLinkReasonCode
-	| "agent_only"
+	| "own_change"
 	| "child_exit"
 	| "cosmetic"
 	| "disposed"

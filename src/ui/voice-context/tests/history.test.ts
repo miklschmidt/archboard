@@ -59,10 +59,12 @@ describe("voice context history", () => {
 		const captured = defined(history.snapshot().sessions[0]);
 		expect(captured.captured.canonicalBrief).toBe(exact);
 		expect(captured.captured.brief.pane.paneId).toBe("primary");
-		expect(captured.captured.brief.selection).toEqual(["api", "worker"]);
+		expect(
+			captured.captured.brief.architecture.selection.subjects.map((subject) => subject.id),
+		).toEqual(["api", "worker"]);
 		expect(captured.captured.brief.ambiguity).toEqual(["Two paths meet here"]);
 		expect(captured.captured.session.binding?.paneId).toBe("primary");
-		expect(Object.isFrozen(captured.captured.brief.selection)).toBe(true);
+		expect(Object.isFrozen(captured.captured.brief.architecture.selection.subjects)).toBe(true);
 		expect(Object.isFrozen(captured.captured.session.controls)).toBe(true);
 		expect(Object.isFrozen(history.snapshot().sessions)).toBe(true);
 	});

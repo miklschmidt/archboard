@@ -4,14 +4,14 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { TEST_CROSS_PROCESS_LOCK_WATCH_TIMEOUT_MS } from "../support/timing.ts";
-import { createJsonRequester } from "../boards/support/http.ts";
+import { createJsonRequester } from "../support/http.ts";
 import {
 	openTestPane,
 	type PaneMessage,
 	type TestPane,
 	waitForPaneMessage,
 	waitForPaneMessageWhere,
-} from "../boards/support/pane-websocket.ts";
+} from "../support/pane-websocket.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { RawLockReadySchema } from "./fixtures/process-resource-owner.ts";
 import { startOwnedPeer } from "./support/owned-peer-process.ts";

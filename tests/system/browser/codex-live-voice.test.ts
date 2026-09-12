@@ -6,7 +6,7 @@ import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 } from "../support/timing.ts";
-import { createJsonRequester } from "../boards/support/http.ts";
+import { createJsonRequester } from "../support/http.ts";
 import { prepareProductionFixture } from "../canvas-state/support/codex-production.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
@@ -27,8 +27,7 @@ import {
 	productionFixtureRecords,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
-import { seedBoard } from "./support/fullscreen-presentation.ts";
-import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
+import { SEMANTIC_STAGE, seedSemanticBoard } from "./support/semantic-page.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import {
 	BOARD_NAME_EXPRESSION,
@@ -85,7 +84,7 @@ interface PresentationSnapshot {
 	readonly controls: string[];
 	readonly stopEnabled: boolean;
 	readonly insideStage: boolean;
-	readonly excalidrawChromeHidden: boolean;
+	readonly paneChromeHidden: boolean;
 }
 
 /** WCAG 2.5.8 target size floor. */
@@ -117,7 +116,7 @@ function layoutSnapshot(browser: AgentBrowserSession): Promise<LayoutSnapshot> {
 			left.top < right.bottom && left.bottom > right.top;
 		const voice = document.querySelector('${EXPANDED_CONTROLS}');
 		const frame = document.querySelector('section[aria-label="Agent workbench"]');
-		const canvas = document.querySelector('${PANE_SECTIONS} .excalidraw');
+		const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
 		const voiceRect = rect(voice);
 		const frameRect = rect(frame);
 		return {
@@ -139,14 +138,14 @@ function presentationSnapshot(browser: AgentBrowserSession): Promise<Presentatio
 		const controls = document.querySelector('${PRESENTATION_CONTROLS}');
 		const stop = [...(controls?.querySelectorAll('button') ?? [])].find(node => node.getAttribute('aria-label') === 'Stop voice');
 		const presented = [...document.querySelectorAll('${PANE_SECTIONS}')].find(node => !node.hidden);
-		const chrome = [...(presented?.querySelectorAll('.layer-ui__wrapper, .App-menu, .App-toolbar-container') ?? [])];
+		const chrome = [...(presented?.querySelectorAll('[data-slot="semantic-view-bar"], [data-slot="semantic-variant-bar"]') ?? [])];
 		return {
 			fullscreen: document.fullscreenElement === stage,
 			stateText: controls?.querySelector('output')?.textContent?.trim() ?? '',
 			controls: [...(controls?.querySelectorAll('button') ?? [])].map(node => node.getAttribute('aria-label') ?? ''),
 			stopEnabled: stop instanceof HTMLButtonElement && !stop.disabled,
 			insideStage: !!controls && !!stage && stage.contains(controls),
-			excalidrawChromeHidden: chrome.length > 0 && chrome.every(node => !node.checkVisibility()),
+			paneChromeHidden: chrome.every(node => !node.checkVisibility()),
 		};
 	})()`);
 }
@@ -180,7 +179,7 @@ test(
 		const browser = resources.use(await createAgentBrowser());
 		const api = createJsonRequester(canvas);
 
-		await seedBoard(api, "workbench", "voice-board-element");
+		await seedSemanticBoard(api, "workbench");
 		await openWithControlledVoiceMedia(
 			browser,
 			canvas.base,
@@ -196,7 +195,7 @@ test(
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(
-					`document.querySelector('${PANE_SECTIONS} .excalidraw') !== null && document.querySelectorAll('${PANE_TABS}').length === 1`,
+					`document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}') !== null && document.querySelectorAll('${PANE_TABS}').length === 1`,
 				),
 			Boolean,
 			"the production shell and canvas pane to mount",
@@ -205,8 +204,8 @@ test(
 		await pollUntil(
 			() =>
 				browser.eval<boolean>(`(() => {
-					const canvas = document.querySelector('${PANE_SECTIONS} .excalidraw');
-					if (!canvas || (${EXCALIDRAW_APP_EXPRESSION})?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted).length !== 1) return false;
+					const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
+					if (!canvas || canvas.getAttribute('data-state') !== 'drawn') return false;
 					globalThis.__codexLiveVoiceCanvas = canvas;
 					return (${BOARD_NAME_EXPRESSION}) === 'workbench';
 				})()`),
@@ -363,7 +362,7 @@ test(
 		expect(desktopDock.controls).toEqual(["Unmute", "Stop voice", "Restart voice"]);
 		expect(desktopDock.stateText).toBe("Voice live");
 		expect(desktopDock.insideStage).toBe(true);
-		expect(desktopDock.excalidrawChromeHidden).toBe(true);
+		expect(desktopDock.paneChromeHidden).toBe(true);
 		expect(
 			await workbenchControlOperability(
 				browser,
@@ -434,9 +433,10 @@ test(
 		expect(stopped.voice.waveText).toBe("Voice inactive");
 		expect(stopped.voice.stateText).toBe("Voice ready");
 		expect(
-			await browser.eval<boolean>(`document.querySelector('${PANE_SECTIONS} .excalidraw') ===
-				globalThis.__codexLiveVoiceCanvas &&
-				(${EXCALIDRAW_APP_EXPRESSION})?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted).length === 1`),
+			await browser.eval<boolean>(`(() => {
+				const stage = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
+				return stage === globalThis.__codexLiveVoiceCanvas && stage?.getAttribute('data-state') === 'drawn';
+			})()`),
 		).toBe(true);
 
 		const records = productionFixtureRecords<FixtureRecord>(fixture);

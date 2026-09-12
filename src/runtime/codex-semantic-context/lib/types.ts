@@ -5,6 +5,13 @@ import type {
 	ThreadId,
 	TurnId,
 } from "@/shared/codex-workbench-identity";
+import type {
+	ChangeKind,
+	DiagramGrammar,
+	ReconciliationKind,
+	VariantLifecycle,
+} from "@/shared/semantic-board/index";
+import type { SemanticSubjectKind } from "@/shared/semantic-pane-context/index";
 
 type SemanticChangeOrigin = "human" | "agent" | "mixed";
 type SemanticChangeSignificance = "layout" | "structural" | "cosmetic";
@@ -30,6 +37,28 @@ interface SettledChangeSourceEvent {
 	readonly origin: SemanticChangeOrigin;
 	readonly significance: SemanticChangeSignificance;
 	readonly text: string;
+	/**
+	 * The pane a write said it was made on behalf of.
+	 *
+	 * Authorship, not custody. It is the write envelope's own `paneId` — what the
+	 * writer said it was working for — and deliberately NOT the identity the
+	 * board was held under. Those two answer different questions: the lease
+	 * identity says which writer held the board, and under a claim it is one
+	 * value shared by every write in the campaign, so a second pane on the same
+	 * claimed board would match it and suppress a change that was not its own.
+	 * A claim records no pane, so it cannot be made to answer this.
+	 *
+	 * Null when the write named no pane, which is every write nobody bound to a
+	 * pane made. Unattributable is delivered rather than dropped: telling a
+	 * thread about its own change is noise it is told how to handle, and not
+	 * telling it about somebody else's is the failure this field exists to
+	 * prevent. Nothing is required to state a pane.
+	 *
+	 * Optional, so a feed that cannot attribute a write is a feed that delivers
+	 * everything rather than one that does not compile. Absent and null mean the
+	 * same thing to every reader.
+	 */
+	readonly by?: string | null;
 }
 
 /** The one settled-change callback the existing change feed provides. */
@@ -50,7 +79,10 @@ interface FreshBriefSource {
 
 interface SemanticBoardInput {
 	readonly key: string;
-	readonly note: string;
+	/** The name every command spells the board with. */
+	readonly name: string;
+	/** The document that holds it, which is a path and never content. */
+	readonly file: string;
 	readonly version: number | null;
 }
 
@@ -85,11 +117,124 @@ interface SemanticClaimInput {
 }
 
 /**
+ * One subject of a variant, named the way every command names it.
+ *
+ * The id is what an edit, a resolution or a walkthrough beat takes; the name is
+ * what a person said out loud. Nothing here is a coordinate, a lane or an
+ * element: an agent that is handed one of these can act on it without asking
+ * the picture anything (ADR 0023).
+ */
+interface SemanticSubjectInput {
+	readonly kind: SemanticSubjectKind;
+	readonly id: string;
+	readonly name: string | null;
+}
+
+/**
+ * What the person has picked out: how many, then as many as the brief can hold.
+ *
+ * The count is never trimmed, for the same reason the reconciliation's is. A
+ * selection the brief had to drop would otherwise read as nobody having selected
+ * anything, and "nothing is selected" is an answer an agent gives confidently
+ * and wrongly. A count without its subjects still says to go and look.
+ */
+interface SemanticSelectionInput {
+	readonly count: number;
+	readonly subjects: readonly SemanticSubjectInput[];
+}
+
+/** Which architectural state the pane is reading, and where it stands. */
+interface SemanticVariantInput {
+	readonly id: string;
+	readonly name: string;
+	readonly lifecycle: VariantLifecycle;
+	/** The variant this one was derived from, which its changes are measured against. */
+	readonly against: string | null;
+}
+
+/** Which of the variant's views it is being read through. */
+interface SemanticViewInput {
+	readonly id: string;
+	readonly name: string;
+	readonly grammar: DiagramGrammar;
+}
+
+/** One subject that differs from the predecessor, and how. */
+interface SemanticDifferenceInput {
+	readonly change: ChangeKind;
+	readonly kind: SemanticSubjectKind;
+	readonly id: string;
+	readonly name: string | null;
+}
+
+/** What this variant differs from its predecessor by, counted and then named. */
+interface SemanticDifferencesInput {
+	readonly added: number;
+	readonly removed: number;
+	readonly changed: number;
+	/** The differing subjects themselves, as many as the brief has room for. */
+	readonly subjects: readonly SemanticDifferenceInput[];
+}
+
+/**
+ * One thing somebody has to settle before this proposal is coherent again.
+ *
+ * `repair` is written where the disagreement is found — the reconciliation in
+ * `@/shared/semantic-board` — and carried verbatim rather than reworded. The
+ * same sentence reaches the write answer and the pane, so a person and an agent
+ * read one wording of one disagreement; an agent that invents its own there is
+ * guessing at a decision it did not make, in words nobody else is using.
+ */
+interface SemanticIssueInput {
+	readonly subject: string;
+	readonly what: string;
+	readonly kind: ReconciliationKind;
+	readonly field: string | null;
+	readonly repair: string;
+}
+
+/**
+ * What a variant is waiting on: the fact first, then as much of the detail as
+ * the brief has room for.
+ *
+ * `required` and `count` are the answer to "is there work here", and they are
+ * never trimmed. The issues themselves are, because a brief is display text
+ * under a byte ceiling — and a brief that dropped its issues and therefore read
+ * as "nothing to settle" would invert the one thing this block exists to say.
+ * A count without its issues still sends the agent to read the board; an empty
+ * list without a count sends it away.
+ */
+interface SemanticReconciliationInput {
+	readonly required: boolean;
+	/** How many disagreements the variant holds, whatever fitted into the brief. */
+	readonly count: number;
+	/** The ancestor this draft is waiting on before it can move, when there is one. */
+	readonly blockedBy: string | null;
+	readonly issues: readonly SemanticIssueInput[];
+}
+
+/**
+ * What the pane is reading, in the board's own identities.
+ *
+ * All of it is optional in the sense that every part can be absent: a pane on a
+ * board that has not drawn yet has no variant, a variant read whole has no
+ * view, and a root variant has nothing to differ from. Absence is stated, never
+ * implied, so an agent can tell "nothing is selected" from "nobody asked".
+ */
+interface SemanticArchitectureInput {
+	readonly variant: SemanticVariantInput | null;
+	readonly view: SemanticViewInput | null;
+	readonly selection: SemanticSelectionInput;
+	readonly differences: SemanticDifferencesInput | null;
+	readonly reconciliation: SemanticReconciliationInput;
+}
+
+/**
  * Scalar context supplied by a composition adapter.
  *
  * `description` is already the compact result of the public board-description
- * port. The publisher never receives board elements and never stores a board
- * document.
+ * port. The publisher never receives a board document and never stores one:
+ * everything here is a name, an identity or a count that somebody else read.
  */
 interface SemanticContextInput {
 	readonly repository: string;
@@ -99,7 +244,7 @@ interface SemanticContextInput {
 	readonly coordinator?: SemanticCoordinatorInput;
 	readonly board: SemanticBoardInput;
 	readonly pane: SemanticPaneInput;
-	readonly selection: readonly string[];
+	readonly architecture: SemanticArchitectureInput;
 	readonly claim?: SemanticClaimInput;
 	readonly doing: string | null;
 	readonly cursor: SemanticCursorInput | null;
@@ -111,7 +256,8 @@ interface SemanticContextInput {
 
 interface SemanticBoard {
 	readonly key: string;
-	readonly note: string;
+	readonly name: string;
+	readonly file: string;
 }
 
 interface SemanticPane {
@@ -144,6 +290,28 @@ interface SemanticClaim {
 	readonly doing: string | null;
 }
 
+type SemanticSubject = SemanticSubjectInput;
+type SemanticVariantIdentity = SemanticVariantInput;
+type SemanticViewIdentity = SemanticViewInput;
+type SemanticDifference = SemanticDifferenceInput;
+type SemanticIssue = SemanticIssueInput;
+type SemanticReconciliation = SemanticReconciliationInput;
+type SemanticSelection = SemanticSelectionInput;
+
+/** The architecture block as a brief carries it, after bounding and fitting. */
+interface SemanticArchitecture {
+	readonly variant: SemanticVariantIdentity | null;
+	readonly view: SemanticViewIdentity | null;
+	readonly selection: SemanticSelection;
+	readonly differences: {
+		readonly added: number;
+		readonly removed: number;
+		readonly changed: number;
+		readonly subjects: readonly SemanticDifference[];
+	} | null;
+	readonly reconciliation: SemanticReconciliation;
+}
+
 interface SemanticFreshness {
 	readonly capturedAtMs: number;
 	readonly freshUntilMs: number;
@@ -167,7 +335,7 @@ interface SemanticBriefFields {
 	readonly board: SemanticBoard;
 	readonly pane: SemanticPane;
 	readonly version: number | null;
-	readonly selection: readonly string[];
+	readonly architecture: SemanticArchitecture;
 	readonly claim: SemanticClaim;
 	readonly doing: string | null;
 	readonly cursor: SemanticCursor | null;
@@ -191,6 +359,8 @@ interface SettledSemanticChangeEvent extends SemanticBriefFields {
 		readonly origin: SemanticChangeOrigin;
 		readonly significance: SemanticChangeSignificance;
 		readonly text: string;
+		/** The pane the write said it was for, or null when it named none. */
+		readonly by: string | null;
 	};
 }
 
@@ -247,7 +417,7 @@ interface SemanticContextPublisherOptions {
 	/** Feed identity makes a cursor from one process distinct after restart. */
 	readonly feedId: string;
 	readonly fresh: FreshBriefSource;
-	/** Must provide scalar state only; it must not read or retain board elements. */
+	/** Must provide scalar state only; it must not read or retain a board document. */
 	readonly contextForChange: (event: SettledChangeSourceEvent) => SemanticContextInput;
 	readonly pane?: PaneSignalSource;
 	readonly now?: () => number;
@@ -292,6 +462,15 @@ export {
 	type SemanticCoordinatorInput,
 	type SemanticChildInput,
 	type SemanticClaimInput,
+	type SemanticSubjectInput,
+	type SemanticSelectionInput,
+	type SemanticVariantInput,
+	type SemanticViewInput,
+	type SemanticDifferenceInput,
+	type SemanticDifferencesInput,
+	type SemanticIssueInput,
+	type SemanticReconciliationInput,
+	type SemanticArchitectureInput,
 	type SemanticContextInput,
 	type SemanticBoard,
 	type SemanticPane,
@@ -300,6 +479,14 @@ export {
 	type SemanticCoordinator,
 	type SemanticChild,
 	type SemanticClaim,
+	type SemanticSubject,
+	type SemanticSelection,
+	type SemanticVariantIdentity,
+	type SemanticViewIdentity,
+	type SemanticDifference,
+	type SemanticIssue,
+	type SemanticReconciliation,
+	type SemanticArchitecture,
 	type SemanticFreshness,
 	type SemanticStaleness,
 	type SemanticBriefFields,

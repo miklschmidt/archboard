@@ -19,8 +19,9 @@ import {
 	parseStaleness,
 	parseThreadLink,
 	parseWorkhorse,
-	type JsonRecord,
 } from "@/ui/voice-context/lib/brief-sections";
+import { parseArchitecture } from "@/ui/voice-context/lib/brief-architecture";
+import type { JsonRecord } from "@/ui/voice-context/lib/brief-sections";
 
 const TOP_LEVEL_KEYS = Object.freeze([
 	"source",
@@ -31,7 +32,7 @@ const TOP_LEVEL_KEYS = Object.freeze([
 	"board",
 	"pane",
 	"version",
-	"selection",
+	"architecture",
 	"claim",
 	"doing",
 	"cursor",
@@ -56,6 +57,7 @@ interface Sections {
 	readonly staleness: VoiceContextCanonicalBrief["staleness"] | null;
 	readonly child: VoiceContextCanonicalBrief["child"] | null;
 	readonly threadLink: VoiceContextCanonicalBrief["threadLink"] | null;
+	readonly architecture: VoiceContextCanonicalBrief["architecture"] | null;
 }
 
 /** The nested sections, all parsed. */
@@ -70,6 +72,7 @@ interface ParsedSections {
 	readonly staleness: VoiceContextCanonicalBrief["staleness"];
 	readonly child: VoiceContextCanonicalBrief["child"];
 	readonly threadLink: VoiceContextCanonicalBrief["threadLink"];
+	readonly architecture: VoiceContextCanonicalBrief["architecture"];
 }
 
 /** The top-level scalar fields, typed. */
@@ -77,7 +80,6 @@ interface Scalars {
 	readonly feedId: string;
 	readonly repository: string;
 	readonly version: number | null;
-	readonly selection: readonly string[];
 	readonly doing: string | null;
 	readonly description: string;
 	readonly truncated: boolean;
@@ -101,6 +103,7 @@ function parseSections(value: JsonRecord): Sections {
 		staleness: parseStaleness(value["staleness"]),
 		child: parseChild(value["child"]),
 		threadLink: parseThreadLink(value["threadLink"]),
+		architecture: parseArchitecture(value["architecture"]),
 	};
 }
 
@@ -120,19 +123,19 @@ function complete(sections: Sections): sections is ParsedSections {
 /**
  * The identity scalars, typed, or null when malformed.
  * @param value The top-level record.
- * @returns The feed, repository, version and selection.
+ * @returns The feed, repository and version.
  */
 function identityScalars(
 	value: JsonRecord,
-): Pick<Scalars, "feedId" | "repository" | "version" | "selection"> | null {
+): Pick<Scalars, "feedId" | "repository" | "version"> | null {
 	const feedId = value["feedId"];
 	const repository = value["repository"];
 	const version = value["version"];
-	const selection = value["selection"];
-	if (!isString(feedId) || !isString(repository) || !isVersion(version) || !isStrings(selection)) {
+
+	if (!isString(feedId) || !isString(repository) || !isVersion(version)) {
 		return null;
 	}
-	return { feedId, repository, version, selection };
+	return { feedId, repository, version };
 }
 
 /**
@@ -191,7 +194,7 @@ function assemble(fields: Scalars, sections: ParsedSections): VoiceContextCanoni
 		board: sections.board,
 		pane: sections.pane,
 		version: fields.version,
-		selection: Object.freeze([...fields.selection]),
+		architecture: sections.architecture,
 		claim: sections.claim,
 		doing: fields.doing,
 		cursor: sections.cursor,

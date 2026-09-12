@@ -394,7 +394,6 @@ const installSkillContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				held: "none",
 				description: "Installed source or destination details",
 			},
 		],

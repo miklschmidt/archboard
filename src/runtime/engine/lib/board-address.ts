@@ -19,7 +19,6 @@
 import fs from "fs";
 import path from "path";
 import { ARCHBOARD_VAULT, noVaultMessage } from "@/runtime/engine/config";
-import { readFrontmatterValue } from "@/runtime/engine/obsidian-md";
 
 interface BoardIdentity {
 	// The name as a key: normalised, so it is the same string whoever typed it
@@ -65,9 +64,6 @@ const VAULT_STATE_DIR = ".archboard";
 // round-tripped as raw lines to preserve everything else in it verbatim, and a
 // top-level scalar is the only shape that can be updated in place without
 // reformatting its neighbours.
-const FRONTMATTER_BOARD = "board";
-const FRONTMATTER_VARIANT = "variant";
-const FRONTMATTER_LEVEL = "level";
 
 const BOARD_FILE_SUFFIX = ".excalidraw.md";
 
@@ -195,21 +191,47 @@ function validateBoardName(name: string): string {
 }
 
 /**
- * Check a variant is a slug. A variant is a word from a small vocabulary —
- * `current`, `option-a` — not a title anybody reads, so unlike a board name it
- * is lowercased outright and there is no casing to preserve.
+ * Check a variant is nameable, keeping what was typed.
+ *
+ * A variant selector is whatever the board answers to: `current`, a minted id,
+ * or the lasting name a proposal was given — a title somebody wrote ("Proposed:
+ * queued ingest"), not a slug. Casing, spaces and punctuation all survive: the
+ * board matches them exactly (ADR 0023), and a name `branch` accepts has to be
+ * addressable or it is a proposal nobody can open. So only `@` is refused, which
+ * separates the variant from the board, with the control characters no address
+ * may hold. What a FILENAME takes is asked in `variantInFileName` instead.
  * @param variant The variant as typed.
- * @returns The normalised slug.
+ * @returns The trimmed variant.
  */
 function validateVariant(variant: string): string {
-	const trimmed = normalizeBoardKey(variant);
+	const trimmed = variant.trim().normalize("NFC");
 	if (trimmed === "") throw new Error("Variant is required");
-	if (!SLUG_RE.test(trimmed)) {
-		throw new Error(
-			`Invalid variant "${variant}": use letters, digits, "-", "_" or "." (e.g. current, proposed, option-a)`,
-		);
+	if (hasControlCharacter(trimmed)) {
+		throw new Error(`Invalid variant "${variant}": control characters are not allowed`);
 	}
 	return trimmed;
+}
+
+/**
+ * The variant as a legacy note's filename spells it.
+ *
+ * A `.excalidraw.md` note carries its variant after an `@` in its own name, so
+ * for that one format it has to be something a path can hold. A semantic board
+ * asks none of it, so the check lives at the one place a variant becomes part of
+ * a filename rather than in the grammar every address goes through.
+ * @param variant The variant as the identity holds it.
+ * @returns The same variant, once it is safe to put in a name.
+ * @throws {Error} When it cannot be part of a note's filename.
+ */
+function variantInFileName(variant: string): string {
+	if (NAME_SEGMENT_BAD_RE.test(variant) || variant.includes("/")) {
+		throw new Error(
+			`A board note spells its variant into its filename, so "${variant}" cannot be one: ` +
+				'"@ / \\ : * ? " < > | [ ] # ^" are reserved. A semantic board takes the name as it ' +
+				"is; this is a limit of the note format.",
+		);
+	}
+	return variant;
 }
 
 /**
@@ -266,12 +288,57 @@ function boardDisplayName(identity: Pick<BoardIdentity, "board" | "displayName">
 }
 
 /**
+ * Whether a variant is the `current` designation, however it was spelled.
+ *
+ * The designation is a word somebody says, and a word has no casing. Checked
+ * rather than compared because the variant keeps what was typed: `@Current` and
+ * `@current` are one address, and saying otherwise makes two boards of one.
+ * @param variant The variant as the identity holds it.
+ * @returns True when it names the current designation.
+ */
+function isCurrentVariant(variant: string): boolean {
+	return normalizeBoardKey(variant) === CURRENT_VARIANT;
+}
+
+/**
+ * The key form of a variant: what two spellings of one address agree on.
+ *
+ * The identity keeps the typed casing, because that is what a minted id and a
+ * lasting name are matched by. A key is the other job — what a lock, a lease and
+ * a catalogue entry are filed under — and there one address typed two ways has
+ * to be one thing (ADR 0010).
+ * @param variant The variant as the identity holds it.
+ * @returns The variant as a key spells it.
+ */
+function variantKey(variant: string): string {
+	return normalizeBoardKey(variant);
+}
+
+/**
  * The address of a board: what a human says and what the store is keyed by.
  * @param identity The board's identity.
  * @returns The bare name for the `current` variant, otherwise `name@variant`.
  */
 function boardKey(identity: Pick<BoardIdentity, "board" | "variant">): string {
-	return identity.variant === CURRENT_VARIANT
+	return isCurrentVariant(identity.variant)
+		? identity.board
+		: `${identity.board}@${variantKey(identity.variant)}`;
+}
+
+/**
+ * The address a pane shows a board under: the board, and the variant exactly as
+ * the board answers to it.
+ *
+ * Not `boardKey`, which lowercases the variant because a lock, a lease and a
+ * catalogue entry are filed under one spelling of an address (ADR 0010). A pane
+ * address is the other job: it is resolved against the board's own variants, and
+ * a minted id is matched by the mixed-case alphabet it was minted from
+ * (ADR 0023), so lowercasing one stops it naming the variant it names.
+ * @param identity The board's identity.
+ * @returns The bare name for the `current` variant, otherwise `name@variant`.
+ */
+function paneBoardAddress(identity: Pick<BoardIdentity, "board" | "variant">): string {
+	return isCurrentVariant(identity.variant)
 		? identity.board
 		: `${identity.board}@${identity.variant}`;
 }
@@ -279,11 +346,17 @@ function boardKey(identity: Pick<BoardIdentity, "board" | "variant">): string {
 /**
  * Parse an address back into an identity. Accepts a bare name (the `current`
  * variant) or `name@variant`.
+ *
+ * Split at the FIRST `@`, and that is what makes every name a branch accepts
+ * addressable. A board's own name can never hold one — `@` is reserved in a
+ * name segment — so everything after the first is the variant, whatever it
+ * contains: a proposal called "Queue @ edge" is a title somebody wrote, and a
+ * name that could be given and then not opened would be a trap.
  * @param key The address as typed.
  * @returns The validated identity.
  */
 function parseBoardKey(key: string): BoardIdentity {
-	const at = key.lastIndexOf("@");
+	const at = key.indexOf("@");
 	if (at === -1) return makeIdentity({ board: key });
 	return makeIdentity({ board: key.slice(0, at), variant: key.slice(at + 1) });
 }
@@ -342,7 +415,7 @@ function entryMatching(dir: string, wanted: string): string | null {
 function noteBaseName(identity: Pick<BoardIdentity, "board" | "variant" | "displayName">): string {
 	const name = validateBoardName(boardDisplayName(identity));
 	const variant = validateVariant(identity.variant);
-	return variant === CURRENT_VARIANT ? name : `${name}@${variant}`;
+	return isCurrentVariant(variant) ? name : `${name}@${variantInFileName(variant)}`;
 }
 
 /**
@@ -392,6 +465,26 @@ function byteEqualPathExists(vault: string, candidate: string, relative: string)
 }
 
 /**
+ * Scratch is archboard's own note, not one somebody made, so it goes with the
+ * rest of archboard's state and keeps the name this file gives it — no display
+ * casing to preserve, and nothing on disk to match against.
+ * @param identity The board being located.
+ * @param root The vault root.
+ * @param suffix The file suffix the board kind is stored under.
+ * @returns The path, or null when the board is not archboard's own.
+ */
+function archboardOwnPath(
+	identity: Pick<BoardIdentity, "board" | "variant">,
+	root: string,
+	suffix: string,
+): string | null {
+	if (identity.board !== SCRATCH_BOARD || !isCurrentVariant(identity.variant)) {
+		return null;
+	}
+	return path.join(path.resolve(root), VAULT_STATE_DIR, `${SCRATCH_BOARD}${suffix}`);
+}
+
+/**
  * Where a board lives. The identity is validated on the way in, so this cannot
  * escape the vault; the containment check is kept anyway because a silent
  * escape here writes a file into someone's home directory.
@@ -400,23 +493,27 @@ function byteEqualPathExists(vault: string, candidate: string, relative: string)
  * address is case-insensitive, so `payments` has to find `Payments.excalidraw.md`.
  * A note that does not exist yet is named with the casing the human typed,
  * which is what makes the vault case-preserving as well as case-insensitive.
+ * The suffix is a parameter because a vault holds more than one kind of board
+ * file: an Excalidraw note and, under ADR 0023, a semantic board's JSON
+ * aggregate. Both are addressed the same way and both must be contained by the
+ * vault, so finding where one lives is one piece of behaviour rather than two.
  * @param identity The board to locate.
  * @param root The vault root.
+ * @param suffix The file suffix the board kind is stored under.
  * @returns The absolute note path.
  */
 function vaultPathFor(
 	identity: Pick<BoardIdentity, "board" | "variant" | "displayName">,
 	root = requireVaultRoot(),
+	suffix: string = BOARD_FILE_SUFFIX,
 ): string {
-	// Scratch is archboard's own note, not one somebody made, so it goes with
-	// the rest of archboard's state and keeps the name this file gives it —
-	// no display casing to preserve, and nothing on disk to match against.
-	if (identity.board === SCRATCH_BOARD && identity.variant === CURRENT_VARIANT) {
-		return path.join(path.resolve(root), VAULT_STATE_DIR, `${SCRATCH_BOARD}${BOARD_FILE_SUFFIX}`);
+	const own = archboardOwnPath(identity, root, suffix);
+	if (own !== null) {
+		return own;
 	}
 	const base = noteBaseName(identity);
 	const vault = path.resolve(root);
-	const relative = `${base}${BOARD_FILE_SUFFIX}`;
+	const relative = `${base}${suffix}`;
 	const resolved = path.resolve(vault, relative);
 	if (!resolved.startsWith(vault + path.sep)) {
 		throw new Error(
@@ -449,55 +546,13 @@ function identityFromVaultPath(filePath: string, root = requireVaultRoot()): Boa
 	}
 }
 
-/**
- * Frontmatter entries for an identity, in the order they are written.
- *
- * The name goes in with the casing a human chose, not the key. The frontmatter
- * is a property a human reads and a Dataview query groups by, and the address
- * is case-insensitive either way (ADR 0010), so there is nothing to gain by
- * showing them the lowercased form of the name they typed.
- * @param identity The board's identity.
- * @returns Key and value pairs, level last and only when set.
- */
-function identityFrontmatter(identity: BoardIdentity): Array<[string, string]> {
-	const entries: Array<[string, string]> = [
-		[FRONTMATTER_BOARD, boardDisplayName(identity)],
-		[FRONTMATTER_VARIANT, identity.variant],
-	];
-	if (identity.level) entries.push([FRONTMATTER_LEVEL, identity.level]);
-	return entries;
-}
-
-/**
- * The identity a note declares, or null when it declares none. Frontmatter is
- * where identity lives, so this is what a loaded board reports; the path is
- * only how the file was found.
- * @param content The note's text, or at least its head.
- * @returns The declared identity, or null when absent or invalid.
- */
-function identityFromFrontmatter(content: string): BoardIdentity | null {
-	const board = readFrontmatterValue(content, FRONTMATTER_BOARD);
-	if (!board) return null;
-	try {
-		const level = readFrontmatterValue(content, FRONTMATTER_LEVEL);
-		return makeIdentity({
-			board,
-			variant: readFrontmatterValue(content, FRONTMATTER_VARIANT) ?? CURRENT_VARIANT,
-			...(level === undefined ? {} : { level }),
-		});
-	} catch {
-		return null;
-	}
-}
-
 export {
 	type BoardIdentity,
 	CURRENT_VARIANT,
+	isCurrentVariant,
+	variantKey,
 	SCRATCH_BOARD,
 	VAULT_STATE_DIR,
-	FRONTMATTER_BOARD,
-	FRONTMATTER_VARIANT,
-	FRONTMATTER_LEVEL,
 	BOARD_FILE_SUFFIX,
 	LEVELS,
 	normalizeBoardKey,
@@ -508,11 +563,10 @@ export {
 	makeIdentity,
 	boardDisplayName,
 	boardKey,
+	paneBoardAddress,
 	parseBoardKey,
 	isScratchKey,
 	requireVaultRoot,
 	vaultPathFor,
 	identityFromVaultPath,
-	identityFrontmatter,
-	identityFromFrontmatter,
 };

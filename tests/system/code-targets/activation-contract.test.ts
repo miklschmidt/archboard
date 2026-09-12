@@ -2,8 +2,8 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import {
 	chmodSync,
 	existsSync,
-	mkdtempSync,
 	mkdirSync,
+	mkdtempSync,
 	readFileSync,
 	readdirSync,
 	rmSync,
@@ -12,35 +12,79 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 
-import type * as BoardModule from "../../../src/runtime/engine/board.ts";
 import { CodeTargetOpenReplySchema } from "../../../src/shared/code-target/index.ts";
-import type * as ElementSupport from "./support/elements.ts";
+import type * as StoreModule from "../../../src/runtime/semantic-board-store/index.ts";
 import type * as OpenerSupport from "./support/opener-fixture.ts";
 import type { Invocation, OpenerFixture } from "./support/opener-fixture.ts";
 
 const callerVault = process.env["ARCHBOARD_VAULT"];
 const ownerVault = mkdtempSync(join(tmpdir(), "archboard-code-target-owner-"));
-// The default route dependency reads canonical board notes in this process.
-// Set its vault before importing either the route fixture or the board graph.
+// The default route dependency reads boards out of this process's vault. Set
+// it before importing either the route fixture or the board store.
 process.env["ARCHBOARD_VAULT"] = ownerVault;
 
 let configuredVault: string | undefined;
-let makeIdentity: typeof BoardModule.makeIdentity;
-let renderBoardNote: typeof BoardModule.renderBoardNote;
-let vaultPathFor: typeof BoardModule.vaultPathFor;
-let completeElement: typeof ElementSupport.completeElement;
+let createBoardTransition: typeof StoreModule.createBoardTransition;
+let locateSemanticBoard: typeof StoreModule.locateSemanticBoard;
+let readSemanticBoard: typeof StoreModule.readSemanticBoard;
+let writeSemanticBoard: typeof StoreModule.writeSemanticBoard;
 let createOpenerFixture: typeof OpenerSupport.createOpenerFixture;
 let jsonBody: typeof OpenerSupport.jsonBody;
 
 beforeAll(async () => {
 	({ createOpenerFixture, jsonBody } = await import("./support/opener-fixture.ts"));
-	({ makeIdentity, renderBoardNote, vaultPathFor } =
-		await import("../../../src/runtime/engine/board.ts"));
-	({ completeElement } = await import("./support/elements.ts"));
+	({ createBoardTransition, locateSemanticBoard, readSemanticBoard, writeSemanticBoard } =
+		await import("../../../src/runtime/semantic-board-store/index.ts"));
 	configuredVault = (await import("../../../src/runtime/engine/config.ts")).ARCHBOARD_VAULT;
 });
+
+/** A board written to the owner vault, and the node whose binding is bound. */
+interface BoundBoard {
+	/** The board key an activation names. */
+	readonly key: string;
+	/** The node id an activation names. */
+	readonly node: string;
+	/** The file the board lives in, so a test can prove it was not touched. */
+	readonly file: string;
+}
+
+/**
+ * Write one board whose single node is bound to a file in the fixture's
+ * repository, through the store that every other writer goes through.
+ * @param repository The repository identity the binding names.
+ * @param path The path inside it.
+ * @returns The board key, the node's id and the board's file.
+ */
+async function boundBoard(repository: string, path: string): Promise<BoundBoard> {
+	const name = `payments-${Math.random().toString(36).slice(2, 8)}`;
+	const written = await writeSemanticBoard({
+		board: name,
+		writer: { kind: "agent" },
+		transition: createBoardTransition({
+			name,
+			nodes: [{ name: "Payments", kind: "service", binding: { repo: repository, path } }],
+			edges: [],
+			flows: [],
+			views: [],
+			walkthroughs: [],
+		}),
+	});
+	if (written.outcome !== "applied") {
+		throw new Error(`Could not write the bound board: ${written.problem}`);
+	}
+	const read = readSemanticBoard(name);
+	if (!read.ok) {
+		throw new Error(`Could not read the bound board: ${read.problem}`);
+	}
+	const variant = read.board.variants.find((one) => one.id === read.board.current);
+	const node = variant?.content.nodes[0];
+	if (node === undefined) {
+		throw new Error("The written board has no node.");
+	}
+	return { key: name, node: node.id, file: locateSemanticBoard(name).file };
+}
 
 afterAll(() => {
 	try {
@@ -192,43 +236,13 @@ describe("public code-target activation contract", () => {
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
-		const identity = makeIdentity({ board: "system/payments" });
-		const key = identity.board;
-		const note = vaultPathFor(identity, ownerVault);
-		mkdirSync(dirname(note), { recursive: true });
-		writeFileSync(
-			note,
-			renderBoardNote(
-				{
-					type: "excalidraw",
-					version: 2,
-					elements: [
-						completeElement({
-							id: "node",
-							type: "rectangle",
-							x: 0,
-							y: 0,
-							width: 100,
-							height: 60,
-							customData: {
-								archboard: {
-									binding: { repo: fixture.repository, path: "src/index.ts" },
-								},
-							},
-						}),
-					],
-					appState: {},
-					files: {},
-				},
-				null,
-				identity,
-			),
-		);
+		const board = await boundBoard(fixture.repository, "src/index.ts");
+		const { key, file: note } = board;
 		const beforeBytes = readFileSync(note);
 		const beforeMtime = statSync(note, { bigint: true }).mtimeNs;
 		await saveSelection(fixture, invocation);
 
-		const result = await activate(fixture, { board: key, element: "node" });
+		const result = await activate(fixture, { board: key, element: board.node });
 		expect(result.status).toBe(200);
 		expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({
 			success: true,
@@ -366,38 +380,8 @@ describe("public code-target activation contract", () => {
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
-		const identity = makeIdentity({ board: "system/payments" });
-		const key = identity.board;
-		const note = vaultPathFor(identity, ownerVault);
-		mkdirSync(dirname(note), { recursive: true });
-		writeFileSync(
-			note,
-			renderBoardNote(
-				{
-					type: "excalidraw",
-					version: 2,
-					elements: [
-						completeElement({
-							id: "node",
-							type: "rectangle",
-							x: 0,
-							y: 0,
-							width: 100,
-							height: 60,
-							customData: {
-								archboard: {
-									binding: { repo: fixture.repository, path: "src/index.ts" },
-								},
-							},
-						}),
-					],
-					appState: {},
-					files: {},
-				},
-				null,
-				identity,
-			),
-		);
+		const board = await boundBoard(fixture.repository, "src/index.ts");
+		const { key, file: note } = board;
 		const brokenExecutable = join(fixture.root, "broken-opener");
 		writeFileSync(brokenExecutable, `#!${join(fixture.root, "missing-interpreter")}\n`);
 		chmodSync(brokenExecutable, 0o755);
@@ -419,7 +403,7 @@ describe("public code-target activation contract", () => {
 		const stateBytes = readFileSync(fixture.configFile);
 		const stateMtime = statSync(fixture.configFile, { bigint: true }).mtimeNs;
 
-		const result = await activate(fixture, { board: key, element: "node" });
+		const result = await activate(fixture, { board: key, element: board.node });
 		expect(result.status).toBe(500);
 		const reply = CodeTargetOpenReplySchema.parse(result.body);
 		expect(reply).toMatchObject({

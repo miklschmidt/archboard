@@ -3,8 +3,6 @@ import type { RequestListener } from "node:http";
 
 const port = Number(process.env["PORT"]);
 const reportedPid = Number(process.env["REPORTED_PID"] ?? process.pid);
-const lateHeldBoard = process.env["ARCHBOARD_TEST_LATE_HELD_BOARD"];
-let stopWasRefused = false;
 const respondToHealth: RequestListener = (request, response) => {
 	if (request.url === "/health") {
 		response.writeHead(200, { "Content-Type": "application/json" });
@@ -12,20 +10,6 @@ const respondToHealth: RequestListener = (request, response) => {
 			JSON.stringify({
 				pid: reportedPid,
 				service: "mcp-excalidraw-canvas",
-				...(lateHeldBoard !== undefined && lateHeldBoard.length > 0 && stopWasRefused
-					? {
-							held_boards: [
-								{
-									board: lateHeldBoard,
-									message:
-										`"${lateHeldBoard}" stopped saving. Pick one:\n` +
-										`  reload     -> archboard browser show ${lateHeldBoard} --pane <spec> --reload\n` +
-										`  overwrite  -> archboard board save --board ${lateHeldBoard} --force\n` +
-										`  elsewhere  -> archboard board save --board ${lateHeldBoard} --name <new-name>`,
-								},
-							],
-						}
-					: {}),
 			}),
 		);
 		return;
@@ -40,10 +24,6 @@ const stop = (): void => {
 	server.close(() => process.exit(0));
 };
 process.on("SIGTERM", () => {
-	if (lateHeldBoard !== undefined && lateHeldBoard.length > 0 && !stopWasRefused) {
-		stopWasRefused = true;
-		return;
-	}
 	stop();
 });
 process.on("SIGINT", () => {

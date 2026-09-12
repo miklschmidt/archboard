@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { appendFileSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { request as httpRequest } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -43,17 +43,12 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 						: undefined,
 				"held normal-close RPC",
 			);
-			const seeded = await request("/api/elements?board=scratch", {
+			const seeded = await request("/api/semantic-boards/create", {
 				method: "POST",
-				body: { id: "before-close", type: "rectangle", x: 0, y: 0, width: 10, height: 10 },
+				doing: "starting the board this close is about",
+				body: { board: "scratch", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
 			});
 			expect(seeded.status).toBe(200);
-			const info = await request("/api/boards/info?board=scratch");
-			const note = (info.body as { file?: unknown }).file;
-			if (typeof note !== "string") {
-				throw new Error("Scratch did not report its note path.");
-			}
-			appendFileSync(note, "\nforeign edit before shutdown\n");
 
 			const blockerBody = JSON.stringify({ version: 1, kind: "platform" });
 			const blocker = httpRequest(`${canvas.base}/api/settings/opener`, {
@@ -100,22 +95,21 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 					return undefined;
 				}
 			}, "shutdown write quiesce");
-			const raced = await fetch(`${canvas.base}/api/elements/changes?board=scratch`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					clientId: "process-normal-close",
-					upserts: [{ id: "late", type: "rectangle", x: 1, y: 1, width: 10, height: 10 }],
-					deletes: [],
-					fullReport: true,
-				}),
-			});
+			// A write arriving after admission closed is refused rather than queued,
+			// and it is told why: the canvas is on its way down.
+			const raced = await fetch(
+				`${canvas.base}/api/semantic-boards/edit?expectVersion=1&doing=${encodeURIComponent("a write that arrives too late")}`,
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						board: "scratch",
+						edit: { nodes: [{ name: "Late", kind: "service" }] },
+					}),
+				},
+			);
 			expect(raced.status).toBe(503);
 			expect(await raced.json()).toMatchObject({ code: "CANVAS_STOPPING" });
-			const afterRace = (await (await fetch(`${canvas.base}/health`)).json()) as {
-				held_boards?: unknown[];
-			};
-			expect(afterRace.held_boards).toEqual([]);
 			await waitFor(async () => {
 				const response = await fetch(`${canvas.base}/health`);
 				if (!response.ok) {
@@ -139,77 +133,10 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			blocker.end(blockerBody.slice(-1));
 			expect(await blockerResponse).toBe(200);
 
-			expect(
-				(
-					await request("/api/boards/hold?board=scratch", {
-						method: "POST",
-						doing: false,
-						body: { clientId: "disconnect-holder" },
-					})
-				).status,
-			).toBe(200);
-			const lateBody = JSON.stringify({
-				id: "must-not-land",
-				type: "rectangle",
-				x: 12,
-				y: 12,
-				width: 10,
-				height: 10,
-			});
-			const waiting = httpRequest(
-				`${canvas.base}/api/elements?board=scratch&doing=disconnected%20write`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						"Content-Length": Buffer.byteLength(lateBody),
-					},
-				},
-			);
-			resources.defer(() => {
-				waiting.destroy();
-			});
-			const waitingSettled = new Promise<void>((resolve) => {
-				waiting.once("error", () => resolve());
-				waiting.once("response", (response) => {
-					response.resume();
-					response.once("end", resolve);
-				});
-			});
-			waiting.end(lateBody);
-			await waitFor(async () => {
-				const health = (await (await fetch(`${canvas.base}/health`)).json()) as {
-					application?: { activeMutations?: Array<{ kind?: unknown; name?: unknown }> };
-				};
-				return health.application?.activeMutations?.some(
-					(entry) => entry.kind === "work" && String(entry.name).includes("board-lock wait"),
-				)
-					? true
-					: undefined;
-			}, "mutation waiting for the board lock");
-			waiting.destroy();
-			await waitingSettled;
-			await waitFor(async () => {
-				const health = (await (await fetch(`${canvas.base}/health`)).json()) as {
-					application?: { activeWrites?: unknown };
-				};
-				return health.application?.activeWrites === 0 ? true : undefined;
-			}, "disconnected board-lock work cancellation");
-			expect(
-				(
-					await request("/api/boards/hold/release?board=scratch", {
-						method: "POST",
-						doing: false,
-						body: { clientId: "disconnect-holder" },
-					})
-				).status,
-			).toBe(200);
-			const afterDisconnect = await request("/api/elements?board=scratch");
-			expect(
-				(afterDisconnect.body as { elements?: Array<{ id?: unknown }> }).elements?.some(
-					(element) => element.id === "must-not-land",
-				),
-			).toBeFalse();
+			// The board came through the whole close untouched: the writes that
+			// landed stand, and the one that arrived too late changed nothing.
+			const afterRace = await request("/api/semantic-boards/board?board=scratch");
+			expect((afterRace.body as { board?: { version?: unknown } }).board?.version).toBe(1);
 
 			const retryClose = canvas.normalClose();
 			await Promise.all([closing, retryClose]);

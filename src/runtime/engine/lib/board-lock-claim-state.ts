@@ -1,4 +1,3 @@
-import { forgetRememberedVersion } from "@/runtime/engine/board-version";
 import { CLAIM_LEASE_MS, LOCK_RENEW_MS } from "@/shared/timing/timing";
 import type {
 	Claim,
@@ -49,7 +48,6 @@ function stopRenewing(entry: ClaimEntry): void {
  */
 function dropClaim(board: string, entry: ClaimEntry): void {
 	stopRenewing(entry);
-	forgetRememberedVersion(entry.holder.id);
 	processClaims.delete(board);
 }
 

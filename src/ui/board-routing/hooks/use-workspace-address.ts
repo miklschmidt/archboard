@@ -25,16 +25,9 @@
 // workspace or the address has changed, and by the answers to what it asked.
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useBlocker, useRouter, useRouterState } from "@tanstack/react-router";
+import { useRouter, useRouterState } from "@tanstack/react-router";
 
-import {
-	panesAtRisk,
-	planFor,
-	planIsEmpty,
-	sameAddress,
-	settledAddress,
-	type WorkspaceAddress,
-} from "@/ui/board-routing/address";
+import { sameAddress, settledAddress, type WorkspaceAddress } from "@/ui/board-routing/address";
 import {
 	createDeliberateNavigation,
 	type DeliberateNavigation,
@@ -62,7 +55,7 @@ import {
 	searchFromAddress,
 	validateWorkspaceSearch,
 } from "@/ui/board-routing/search";
-import type { NavigationBlock, WorkspacePort } from "@/ui/board-routing/contracts";
+import type { WorkspacePort } from "@/ui/board-routing/contracts";
 
 /** What a person's own board open reports back when it is over. */
 interface NavigationClaim {
@@ -75,10 +68,8 @@ interface NavigationClaim {
 	readonly failed: () => void;
 }
 
-/** Whether a person's move may go ahead, once the slot is theirs. */
-type NavigationPermission =
-	| { readonly kind: "granted"; readonly move: NavigationClaim }
-	| { readonly kind: "blocked"; readonly block: NavigationBlock };
+/** A person's move, once the slot is theirs. */
+type NavigationPermission = { readonly kind: "granted"; readonly move: NavigationClaim };
 
 /** What the shell tells the address bar about the person's own gestures. */
 interface WorkspaceAddressing {
@@ -89,10 +80,9 @@ interface WorkspaceAddressing {
 	readonly expect: (intent: NavigationIntent) => void;
 	/**
 	 * A person is about to have the shell open a board. Ends any restore, waits
-	 * for the command slot, and answers only when it is theirs — so the guard is
-	 * asked about the pane as it is at that moment, not as it was when they
-	 * started waiting, and theirs is the last command the server is given.
-	 * @returns Permission and where to report the outcome, or the refusal.
+	 * for the command slot, and answers only when it is theirs, so that theirs
+	 * is the last command the server is given.
+	 * @returns Where to report the outcome, once the command may be sent.
 	 */
 	readonly claim: (intent: NavigationIntent) => Promise<NavigationPermission>;
 }
@@ -204,9 +194,7 @@ function unreachableFrom(restore: Restore, target: number, operation: Operation)
 }
 
 /**
- * Give the slot to whoever has been waiting longest, if the pane they asked
- * about will still let them have it. The guard is asked here rather than when
- * they joined the queue, because a board can stop saving while they wait.
+ * Give the slot to whoever has been waiting longest.
  * @param state The reconciliation.
  */
 function grantSlot(state: Reconciliation): void {
@@ -215,14 +203,6 @@ function grantSlot(state: Reconciliation): void {
 		return;
 	}
 	const { intent } = next;
-	const paneId = intent.kind === "board" ? intent.paneId : null;
-	const verdict = paneId === null ? { kind: "clear" as const } : state.port.guard([paneId]);
-	if (verdict.kind !== "clear") {
-		state.port.reportBlocked(verdict);
-		next.answer({ kind: "blocked", block: verdict });
-		reconcile(state);
-		return;
-	}
 	const operation =
 		intent.kind === "board"
 			? startOperation({ kind: "person" }, intent.paneId, null, state.displayed, intent)
@@ -272,6 +252,9 @@ function commandsOver(state: Reconciliation) {
 			}
 			if (step.kind === "add") {
 				return state.port.addPane();
+			}
+			if (step.kind === "read") {
+				return state.port.read(step.paneId, step.view);
 			}
 			return step.kind === "focus" ? state.port.selectPane(step.paneId) : false;
 		},
@@ -402,33 +385,6 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 			}),
 		[router],
 	);
-
-	// The guard, before anything moves. A navigation that would take a pane's
-	// board away while that canvas holds work the note has not got is refused:
-	// the workspace and the address both stay as they are, and the pane's own
-	// recovery is what the person answers next.
-	useBlocker({
-		enableBeforeUnload: false,
-		/**
-		 * Whether this navigation must be refused.
-		 * @param args The navigation.
-		 * @param args.next The location asked for.
-		 * @returns True to refuse it.
-		 */
-		shouldBlockFn: ({ next }) => {
-			const asked = addressFromSearch(validateWorkspaceSearch(next.search));
-			const plan = planFor(displayed, asked, port.paneIds);
-			if (planIsEmpty(plan)) {
-				return false;
-			}
-			const verdict = port.guard(panesAtRisk(plan));
-			if (verdict.kind === "clear") {
-				return false;
-			}
-			port.reportBlocked(verdict);
-			return true;
-		},
-	});
 
 	return useMemo(
 		() => ({

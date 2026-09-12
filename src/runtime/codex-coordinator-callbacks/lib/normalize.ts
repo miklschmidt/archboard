@@ -280,7 +280,11 @@ function semanticBase(
 			freshUntilMs: event.freshness.freshUntilMs,
 			paneId: event.pane.paneId,
 			focused: event.pane.focused,
-			selection: freezeArray(event.selection),
+			selection: freezeArray(
+				event.architecture.selection.subjects.map((subject) =>
+					freeze({ kind: subject.kind, id: subject.id }),
+				),
+			),
 			detail: event.kind === "settled_change" ? event.change.text : null,
 		}),
 	};

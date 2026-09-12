@@ -145,16 +145,22 @@ function parseCoordinator(value: unknown): VoiceContextCanonicalBrief["coordinat
  * @returns The section, or null.
  */
 function parseBoard(value: unknown): VoiceContextCanonicalBrief["board"] | null {
-	const parsed = shaped(value, ["key", "note", "version"]);
+	const parsed = shaped(value, ["key", "name", "file", "version"]);
 	if (
 		parsed === null ||
 		!isString(parsed["key"]) ||
-		!isString(parsed["note"]) ||
+		!isString(parsed["name"]) ||
+		!isString(parsed["file"]) ||
 		!isVersion(parsed["version"])
 	) {
 		return null;
 	}
-	return Object.freeze({ key: parsed["key"], note: parsed["note"], version: parsed["version"] });
+	return Object.freeze({
+		key: parsed["key"],
+		name: parsed["name"],
+		file: parsed["file"],
+		version: parsed["version"],
+	});
 }
 
 /**
@@ -275,6 +281,8 @@ function parseThreadLink(value: unknown): VoiceContextCanonicalBrief["threadLink
 
 export {
 	exactKeys,
+	isIndex,
+	isOneOf,
 	isNullableString,
 	isRecord,
 	isString,
@@ -290,5 +298,6 @@ export {
 	parseStaleness,
 	parseThreadLink,
 	parseWorkhorse,
+	shaped,
 	type JsonRecord,
 };

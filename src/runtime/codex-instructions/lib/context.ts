@@ -4,6 +4,12 @@ import {
 	ADDITIONAL_CONTEXT_POLICY,
 	type OperationOutcome,
 } from "@/runtime/codex-instructions/lib/context-policy";
+import {
+	DiagramGrammarSchema,
+	ReconciliationKindSchema,
+	VariantLifecycleSchema,
+} from "@/shared/semantic-board/index";
+import { SemanticSubjectKindSchema } from "@/shared/semantic-pane-context/index";
 
 /**
  * UTF-8 byte length of a string, the unit every context size limit is written in.
@@ -42,9 +48,44 @@ function nonEmptyBoundedUtf8Text(maxBytes: number, label: string) {
 
 const NonEmptyStringSchema = z.string().min(1, "value must not be empty");
 const CursorSchema = nonEmptyBoundedUtf8Text(1_024, "cursor");
-const SelectionIdSchema = nonEmptyBoundedUtf8Text(64, "selection element id");
+const SubjectIdSchema = nonEmptyBoundedUtf8Text(64, "semantic subject id");
+const SubjectNameSchema = boundedUtf8Text(160, "semantic subject name");
 const AmbiguitySchema = boundedUtf8Text(256, "ambiguity entry");
 const DoingSchema = boundedUtf8Text(512, "doing");
+
+/**
+ * What kind of thing a selected identity names.
+ *
+ * The board contract's own vocabulary, reused rather than restated: an agent
+ * handed one of these can put it straight into an edit or a resolution, which is
+ * only true while this list and the one commands take are the same list. There
+ * is no spelling here for anything that was merely drawn, because there is
+ * nothing an agent could be asked to do about a lane or a label (ADR 0023).
+ */
+const SubjectKindSchema = SemanticSubjectKindSchema;
+
+const SelectedSubjectSchema = z.strictObject({
+	kind: SubjectKindSchema,
+	id: SubjectIdSchema,
+	name: SubjectNameSchema.nullable(),
+});
+
+/**
+ * One disagreement the proposal in front of the agent is holding.
+ *
+ * Carried at the top of the context rather than left inside the brief, because
+ * it is the one thing in a context that names work: a parent edit that landed
+ * and left drafts needing somebody says so here, with the reconciliation's own
+ * repair sentence, so the agent settles the issue instead of replaying an edit
+ * that has already been applied.
+ */
+const ReconciliationIssueSchema = z.strictObject({
+	subject: SubjectIdSchema,
+	what: SubjectNameSchema,
+	kind: ReconciliationKindSchema,
+	field: SubjectNameSchema.nullable(),
+	repair: boundedUtf8Text(512, "repair"),
+});
 
 const threadLinkStateValues = [
 	...ADDITIONAL_CONTEXT_POLICY.threadLink.reasonNullStates,
@@ -83,7 +124,10 @@ const ArchboardContextRawSchema = z.strictObject({
 	schema: z.literal(1),
 	paneId: NonEmptyStringSchema,
 	board: z.strictObject({
-		note: NonEmptyStringSchema,
+		/** The name every command spells this board with. */
+		name: NonEmptyStringSchema,
+		/** Its comparison form, which is what a claim and a broadcast agree on. */
+		key: NonEmptyStringSchema,
 		version: z.number().finite().int().nonnegative(),
 		cursor: CursorSchema.nullable(),
 	}),
@@ -135,9 +179,47 @@ const ArchboardContextRawSchema = z.strictObject({
 		paneId: NonEmptyStringSchema.nullable(),
 		capturedAtMs: z.number().finite().int().nonnegative(),
 	}),
+	/** Which architectural state the pane is reading, or null before one is drawn. */
+	variant: z
+		.strictObject({
+			id: SubjectIdSchema,
+			name: SubjectNameSchema,
+			lifecycle: VariantLifecycleSchema,
+		})
+		.nullable(),
+	/** Which of its views, or null when the variant is read whole. */
+	view: z
+		.strictObject({
+			id: SubjectIdSchema,
+			name: SubjectNameSchema,
+			grammar: DiagramGrammarSchema,
+		})
+		.nullable(),
+	/**
+	 * What was picked out. `count` is how many there were and `subjects` is as
+	 * many as the brief had room for; a selection too long to carry still says
+	 * that something was selected, because "nothing is selected" is an answer an
+	 * agent gives confidently and wrongly.
+	 */
 	selection: z.strictObject({
-		elementIds: z.array(SelectionIdSchema).max(128),
+		count: z.number().finite().int().nonnegative(),
+		subjects: z.array(SelectedSubjectSchema).max(128),
 		capturedAtMs: z.number().finite().int().nonnegative(),
+	}),
+	/**
+	 * What this proposal is waiting on, and what the reconciliation said to do.
+	 *
+	 * `required` and `count` are the fact; `issues` is as much of the detail as
+	 * the brief had room for. They can disagree — a brief under byte pressure
+	 * drops issues before it drops anything else — and when they do, `required`
+	 * is the one to believe. An agent told `required` with no issues listed reads
+	 * the board; an agent told neither does not know there is work.
+	 */
+	reconciliation: z.strictObject({
+		required: z.boolean(),
+		count: z.number().finite().int().nonnegative(),
+		blockedBy: SubjectIdSchema.nullable(),
+		issues: z.array(ReconciliationIssueSchema).max(32),
 	}),
 	claim: z.strictObject({
 		holder: z.enum(["human", "agent", "none"]),
@@ -233,7 +315,8 @@ function orderedContext(value: ArchboardContext): ArchboardContext {
 		schema: value.schema,
 		paneId: value.paneId,
 		board: {
-			note: value.board.note,
+			name: value.board.name,
+			key: value.board.key,
 			version: value.board.version,
 			cursor: value.board.cursor,
 		},
@@ -263,9 +346,38 @@ function orderedContext(value: ArchboardContext): ArchboardContext {
 			paneId: value.focus.paneId,
 			capturedAtMs: value.focus.capturedAtMs,
 		},
+		variant:
+			value.variant === null
+				? null
+				: {
+						id: value.variant.id,
+						name: value.variant.name,
+						lifecycle: value.variant.lifecycle,
+					},
+		view:
+			value.view === null
+				? null
+				: { id: value.view.id, name: value.view.name, grammar: value.view.grammar },
 		selection: {
-			elementIds: [...value.selection.elementIds],
+			count: value.selection.count,
+			subjects: value.selection.subjects.map((subject) => ({
+				kind: subject.kind,
+				id: subject.id,
+				name: subject.name,
+			})),
 			capturedAtMs: value.selection.capturedAtMs,
+		},
+		reconciliation: {
+			required: value.reconciliation.required,
+			count: value.reconciliation.count,
+			blockedBy: value.reconciliation.blockedBy,
+			issues: value.reconciliation.issues.map((issue) => ({
+				subject: issue.subject,
+				what: issue.what,
+				kind: issue.kind,
+				field: issue.field,
+				repair: issue.repair,
+			})),
 		},
 		claim: {
 			holder: value.claim.holder,

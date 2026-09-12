@@ -23,7 +23,6 @@ import type {
 import { captureForcedCanvasCleanup } from "./owned-canvas-forced-cleanup.ts";
 import { registerOwnedCanvas, unregisterOwnedCanvas } from "./owned-canvas-registry.ts";
 import type { OwnedCanvasRegistration } from "./owned-canvas-registry.ts";
-import { discardHeldBoards } from "./owned-canvas-recovery.ts";
 import type {
 	AttemptRecord,
 	DeathGeneration,
@@ -428,24 +427,10 @@ async function startOwnedCanvas({
 				let failure: unknown;
 				try {
 					if (currentGeneration) {
-						const generation = currentGeneration;
 						try {
-							await discardHeldBoards(generation);
+							await stopGeneration(currentGeneration);
 						} catch (error) {
-							if (generation.exit === null) {
-								failure = error;
-							}
-						}
-						try {
-							await stopGeneration(generation);
-						} catch (error) {
-							failure =
-								failure === undefined
-									? error
-									: new AggregateError(
-											[failure, error],
-											"Held-board recovery and canvas process cleanup both failed.",
-										);
+							failure = error;
 						}
 					}
 				} finally {

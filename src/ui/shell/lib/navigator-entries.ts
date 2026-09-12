@@ -1,9 +1,10 @@
-// What the navigator lists, derived from the real listing: persisted boards
-// grouped by name, open boards that are not in the vault yet, boards an agent
-// is working on that nothing else lists, which pane is showing what, what an
-// agent is doing where, and the scratch boards. Pure: no React.
+// What the navigator lists, derived from the real listing: the vault's boards
+// grouped by name, boards an agent is working on that the listing does not
+// hold yet, which pane is showing what, and what an agent is doing where.
+// Pure: no React.
 
-import type { ScratchBoardEntry, ShellView } from "@/ui/shell/types/contracts";
+import { boardAddressOf } from "@/ui/semantic-board-canvas";
+import type { ShellView } from "@/ui/shell/types/contracts";
 import type { AgentActivityEntry, BoardIdentity, BoardListing } from "@/ui/types";
 
 /** Pane letters in reading order; a third pane would be a number. */
@@ -22,28 +23,30 @@ function paneLetter(index: number): string {
 interface NavigatorEntry {
 	key: string;
 	identity: BoardIdentity;
-	/** Open in the session but not persisted in the vault. */
+	/** Being worked on but not listed by the vault yet. */
 	draft: boolean;
 	/** The letter of the pane showing this board, or null when no pane holds it. */
 	onScreen: string | null;
-	/** A scratch board with a note but no chosen name. */
-	placeholder: boolean;
 	/** What an agent is doing to this board right now, or null (ADR 0022). */
 	activity: AgentActivityEntry | null;
 }
 
 /**
  * The identity a board key spells: a bare name is the current variant, and
- * `name@variant` names another. Mirrors `parseBoardKey` in the engine, which
- * the browser cannot import.
+ * `name@variant` names another.
+ *
+ * The split is the canvas module's, not a second reading of the same spelling.
+ * A board's name can never hold an `@` and a variant's name can — "Queue @ edge"
+ * is a title somebody wrote — so where the mark falls is a rule, and a listing
+ * that guessed it differently from the pane would name a board nothing opens.
  * @param key The board key.
  * @returns Its identity.
  */
 function identityOfKey(key: string): BoardIdentity {
-	const at = key.lastIndexOf("@");
-	return at === -1
+	const target = boardAddressOf(key);
+	return target === null
 		? { board: key, variant: "current" }
-		: { board: key.slice(0, at), variant: key.slice(at + 1) };
+		: { board: target.board, variant: target.variant ?? "current" };
 }
 
 /** A named board and its variants, in listing order. */
@@ -72,7 +75,6 @@ interface EntrySource {
 	key: string;
 	identity: BoardIdentity;
 	draft: boolean;
-	placeholder: boolean;
 }
 
 /**
@@ -92,44 +94,28 @@ function toEntry(
 		identity: source.identity,
 		draft: source.draft,
 		onScreen: letters.get(source.key) ?? null,
-		placeholder: source.placeholder,
 		activity: view.agentActivity[source.key] ?? null,
 	};
 }
 
 /**
- * Persisted boards first, then open boards the vault does not hold yet, then
- * boards an agent is working on that neither lists: a board an agent has just
- * created shows the moment it is written to (ADR 0022). A scratch board is
- * open too, but it belongs to the scratch group, not here.
+ * The vault's boards first, then boards an agent is working on that the
+ * listing does not hold: a board an agent has just created shows the moment it
+ * is written to (ADR 0022).
  * @param view The shell view holding the listing and the agent activity.
- * @param scratchKeys The keys the scratch group already lists.
- * @returns Sources in listing order, drafts last.
+ * @returns Sources in listing order, the unlisted ones last.
  */
-function boardSources(view: ShellView, scratchKeys: ReadonlySet<string>): EntrySource[] {
-	const listing = view.boards;
-	const persisted = listing.boards.map((board) => ({
+function boardSources(view: ShellView): EntrySource[] {
+	const listed = view.boards.boards.map((board) => ({
 		key: board.key,
 		identity: board.identity,
 		draft: false,
-		placeholder: false,
 	}));
-	const listed = new Set(persisted.map((source) => source.key));
-	const drafts = listing.open
-		.filter((board) => !listed.has(board.key) && !scratchKeys.has(board.key))
-		.map((board) => ({
-			key: board.key,
-			identity: board.identity,
-			draft: true,
-			placeholder: false,
-		}));
-	for (const draft of drafts) {
-		listed.add(draft.key);
-	}
+	const known = new Set(listed.map((source) => source.key));
 	const working = Object.keys(view.agentActivity)
-		.filter((key) => !listed.has(key) && !scratchKeys.has(key))
-		.map((key) => ({ key, identity: identityOfKey(key), draft: true, placeholder: false }));
-	return [...persisted, ...drafts, ...working];
+		.filter((key) => !known.has(key))
+		.map((key) => ({ key, identity: identityOfKey(key), draft: true }));
+	return [...listed, ...working];
 }
 
 /**
@@ -142,8 +128,7 @@ function boardSources(view: ShellView, scratchKeys: ReadonlySet<string>): EntryS
 function groupBoards(view: ShellView): NavigatorGroup[] {
 	const letters = onScreenLetters(view.boards);
 	const groups = new Map<string, NavigatorGroup>();
-	const scratchKeys = new Set(view.scratch.map((entry) => entry.key));
-	for (const source of boardSources(view, scratchKeys)) {
+	for (const source of boardSources(view)) {
 		const group = groups.get(source.identity.board) ?? {
 			board: source.identity.board,
 			variants: [],
@@ -159,27 +144,4 @@ function groupBoards(view: ShellView): NavigatorGroup[] {
 		.toSorted((a, b) => a.board.localeCompare(b.board, "en"));
 }
 
-/**
- * Scratch boards as navigator entries.
- * @param view The shell view holding the scratch list.
- * @returns One entry per scratch board.
- */
-function scratchEntries(view: ShellView): NavigatorEntry[] {
-	const letters = onScreenLetters(view.boards);
-	return view.scratch.map((entry: ScratchBoardEntry) =>
-		toEntry(
-			{ key: entry.key, identity: entry.identity, draft: false, placeholder: entry.placeholder },
-			view,
-			letters,
-		),
-	);
-}
-
-export {
-	identityOfKey,
-	paneLetter,
-	groupBoards,
-	scratchEntries,
-	type NavigatorEntry,
-	type NavigatorGroup,
-};
+export { identityOfKey, paneLetter, groupBoards, type NavigatorEntry, type NavigatorGroup };

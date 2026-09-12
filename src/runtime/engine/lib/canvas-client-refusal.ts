@@ -5,13 +5,12 @@
 // CLI can answer without reading the board again.
 
 import { isRecord } from "@/runtime/engine/lib/unknown-record";
-import type { ServerElement } from "@/runtime/engine/types";
 
 interface BoardRefusal {
 	success: false;
 	code: string;
 	error: string;
-	document: ServerElement[];
+	/** The version the board is actually at, so the next write can state it. */
 	version: number | null;
 	[key: string]: unknown;
 }
