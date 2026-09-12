@@ -39,12 +39,12 @@ type CodexThreadContextEventId = Readonly<{
 /** Stable reasons retained when a semantic event is refused or its response is lost. */
 type CodexThreadContextDeliveryReason =
 	| ThreadLinkReasonCode
-	| "own_change"
 	| "child_exit"
 	| "cosmetic"
 	| "disposed"
 	| "invalid_context"
 	| "invalid_event"
+	| "own_change"
 	| "link_changed"
 	| "response_lost"
 	| "session_rejected"
@@ -88,6 +88,26 @@ type CodexThreadContextDeliveryOutcome =
 
 interface CodexThreadContextDeliveryOptions {
 	readonly paneId: string;
+	/**
+	 * The threads whose writes are this session's own: the workhorse this port
+	 * serves, and the coordinator paired with it.
+	 *
+	 * Used for one thing — skipping the news this session wrote itself — and it
+	 * is a thread rather than a surface or a turn. A thread that goes on being
+	 * the same thread is the same session, so a write that lands after the turn
+	 * that made it is still its own; a relink or a new session is a new thread
+	 * and a new author, which is the renewal the rule asks for.
+	 *
+	 * Both threads, because the pair is one session as far as a person talking
+	 * to it is concerned: neither is told about the other's writes. Empty for a
+	 * port with nothing to compare, which then hears everything.
+	 *
+	 * Asked at the moment of delivery rather than when the port was built. A
+	 * coordinator is created, restarted and retired inside one workhorse's life,
+	 * so a value sampled once would miss the pair it was meant to recognise —
+	 * and a relink makes a new workhorse thread under the same port.
+	 */
+	readonly sessionAuthors?: () => readonly string[];
 	/** The feed identity is fixed for this delivery port; old feeds are stale. */
 	readonly feedId: string;
 	/** The clock used by the final synchronous freshness gate before injection. */
@@ -172,6 +192,16 @@ interface CodexThreadContextControllerOptions extends Omit<
 > {
 	readonly publisher: Pick<SemanticContextPublisher, "subscribeSettledChange">;
 	readonly hooks: CodexThreadContextControllerHooks;
+	/**
+	 * The thread paired with the workhorse this controller serves, when the host
+	 * has one: the coordinator of the same session.
+	 *
+	 * Asked for rather than remembered, because a coordinator comes and goes
+	 * within one workhorse's life. Its only use is that the pair does not hear
+	 * each other's board writes — they are one session to the person talking to
+	 * them. A host with no coordinator returns null and nothing changes.
+	 */
+	readonly pairedThreadId?: () => string | null;
 	/** Retire the exact child epoch after execution has been made unavailable. */
 	readonly retireEpoch: (child: ChildId, epoch: ChildEpoch) => Promise<void> | void;
 }

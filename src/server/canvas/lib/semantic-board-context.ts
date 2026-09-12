@@ -224,7 +224,17 @@ function readingVariant(
 	board: SemanticBoard,
 	pane: SemanticPaneContext | null,
 ): SemanticVariant | undefined {
-	const asked = pane?.variant?.id ?? null;
+	// Nothing on screen is reading it, so the board's own current architecture is
+	// what is true of it. That is not a pane's reading and is never described as
+	// one: it is the answer to "what does this board say now", which is the
+	// question a change on a board nobody is looking at asks. A pane that HAS
+	// reported without naming a variant is a different case and stays unresolved
+	// — it is about to draw something, and guessing which variant would put words
+	// in its mouth.
+	if (pane === null) {
+		return currentVariant(board);
+	}
+	const asked = pane.variant?.id ?? null;
 	return asked === null ? undefined : findVariant(board, asked);
 }
 
@@ -542,6 +552,9 @@ function semanticBoardContext(
 	}
 	const view = readingView(about.report, variant.content);
 	const subjects = namedSubjects(variant.content);
+	// No report, no selection: what a person pointed at in one architecture is
+	// not a fact about another, and a context that borrowed one would have an
+	// agent talking about something nobody had picked out.
 	const picked = resolvedSelection(about.report, subjects);
 	const predecessor = predecessorOf(board, variant);
 	const shown = scopedFor(variant.content, view);
@@ -553,7 +566,10 @@ function semanticBoardContext(
 			differences: differencesAgainst(variant, predecessor, subjects),
 			reconciliation: waitingOn(variant),
 		},
-		description: describeVariant(variant, shown, view !== null),
+		description:
+			about.report === null
+				? `Nothing on screen is reading "${board.name}". ${describeVariant(variant, shown, view !== null)}`
+				: describeVariant(variant, shown, view !== null),
 		ambiguity: about.mismatch === null ? picked.ambiguity : [...picked.ambiguity, about.mismatch],
 	};
 }

@@ -186,8 +186,28 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 	let installedIdentity: CodexWorkbenchComponents["identity"] | null = null;
 
 	/**
+	 * The pane the semantic delivery is bound to, by id alone.
+	 *
+	 * Identity rather than presentation: the binding names it, and whether that
+	 * pane is still on screen is a different question from whose session this
+	 * delivery belongs to.
+	 * @returns The pane id.
+	 * @throws {Error} When no delivery is bound, which is not a pane's fault.
+	 */
+	const boundPaneId = (): string => {
+		const bound = active?.semanticDelivery.snapshot().binding?.paneId ?? null;
+		if (bound === null) {
+			throw new Error("The Codex semantic publisher has no current thread-context binding.");
+		}
+		return bound;
+	};
+
+	/**
 	 * The pane the semantic delivery is bound to, exactly.
-	 * @param contextBoard The board it must be showing, when known.
+	 *
+	 * For the reads that need a pane to speak for what is on screen. A settled
+	 * change does not need one — `boundPaneId` answers that.
+	 * @param contextBoard The board a context is about, when known.
 	 * @returns The pane.
 	 */
 	const currentSemanticPane = (contextBoard?: string): PaneRegistration => {
@@ -231,12 +251,17 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			 * @returns The input, at the change's cursor.
 			 */
 			contextForChange: (event: SettledChangeSourceEvent) => {
-				const pane = currentSemanticPane(event.board);
+				// The pane the delivery is bound to, whether or not it is open and
+				// whatever it is showing. A session hears every board update except
+				// its own writes, so a closed pane or a pane looking at another board
+				// cannot be the thing that stops the news — it only means there is no
+				// presentation to report, which the context says by carrying none.
+				const paneId = boundPaneId();
 				return semanticInputFor(
 					active,
 					event.board,
 					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
-					pane.paneId,
+					paneId,
 				);
 			},
 		},

@@ -38,6 +38,11 @@ export type {
 export { createCanvasCanonicalTextActions } from "@/server/canvas/lib/codex-workbench-text-actions";
 export { createCanvasRealtimeActions } from "@/server/canvas/lib/codex-workbench-realtime-actions";
 export { requireExactSemanticPane } from "@/server/canvas/lib/codex-workbench-semantic-pane";
+// What one coordinator callback correlates the workhorse against. Exported for
+// the owner that holds it to the bound thread rather than to whichever thread
+// started this child: the two part company on a relink, and the coordinator
+// then rejects its own session's writes and everybody else's alike.
+export { workhorseLink } from "@/server/canvas/lib/codex-workbench-binding-readers";
 export {
 	bindThreadContextToReadyWorkhorse,
 	clearCanvasThreadContextForLease,

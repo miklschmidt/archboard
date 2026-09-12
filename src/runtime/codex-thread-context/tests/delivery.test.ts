@@ -59,19 +59,13 @@ describe("codex thread context delivery", () => {
 		expect(Object.isFrozen(result.event)).toBe(true);
 	});
 
-	test("does not send this pane's own change, or a cosmetic one", async () => {
+	test("does not send a cosmetic change", async () => {
 		const harness = createHarness();
 
-		const mine = await harness.delivery.deliver(harness.events({ origin: "agent", by: PANE_ID }));
 		const cosmetic = await harness.delivery.deliver(
 			harness.events({ sequence: 2, significance: "cosmetic" }),
 		);
 
-		expect(mine).toMatchObject({
-			outcome: "not_delivered",
-			reason: "own_change",
-			attempted: false,
-		});
 		expect(cosmetic).toMatchObject({
 			outcome: "not_delivered",
 			reason: "cosmetic",
@@ -80,31 +74,25 @@ describe("codex thread context delivery", () => {
 		expect(harness.received).toHaveLength(0);
 	});
 
-	test("sends an agent's change made by somebody other than this pane", async () => {
+	test("sends every settled change, including one this thread's own work made", async () => {
 		const harness = createHarness();
 
-		// The news a thread most needs: what it was told has stopped being true.
-		// Under the old rule every agent change was dropped, so after ADR 0023 —
-		// where a person never writes a board — nothing was ever delivered at all.
-		const result = await harness.delivery.deliver(
-			harness.events({ origin: "agent", by: "pane-somebody-else" }),
-		);
+		// The news a thread most needs is that what it was told has stopped being
+		// true, and nothing about the change says whose work made it. It used to:
+		// a write stated the pane it was running for, and a change whose stated
+		// pane matched this port's was dropped as an echo. That made a surface a
+		// person opens and closes decide who hears about an architecture, and it
+		// went quiet in the one case that mattered — two threads on one claimed
+		// board, where the second suppressed the first's change.
+		//
+		// Redundancy replaces it: a thread may be told about its own write, and
+		// that is a thing it is told how to read.
+		const first = await harness.delivery.deliver(harness.events({ origin: "agent" }));
+		const second = await harness.delivery.deliver(harness.events({ sequence: 2, origin: "agent" }));
 
-		expect(result).toMatchObject({ outcome: "delivered", attempted: true });
-		expect(harness.received).toHaveLength(1);
-	});
-
-	test("sends a change nobody can be attributed rather than guessing it is mine", async () => {
-		const harness = createHarness();
-
-		// An agent working without a claim gets a fresh identity per write on
-		// purpose (ADR 0016), so its writes cannot be recognised later. Delivering
-		// one is redundancy the thread is told how to handle; dropping it would be
-		// the silence this check exists to prevent.
-		const result = await harness.delivery.deliver(harness.events({ origin: "agent", by: null }));
-
-		expect(result).toMatchObject({ outcome: "delivered", attempted: true });
-		expect(harness.received).toHaveLength(1);
+		expect(first).toMatchObject({ outcome: "delivered", attempted: true });
+		expect(second).toMatchObject({ outcome: "delivered", attempted: true });
+		expect(harness.received).toHaveLength(2);
 	});
 
 	test("refuses an unbound link and every inspect-only safety condition", async () => {

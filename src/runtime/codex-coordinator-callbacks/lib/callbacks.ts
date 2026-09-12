@@ -104,6 +104,47 @@ function subscribeSources(
 }
 
 /**
+ * Whether one settled change is this session's own work.
+ *
+ * The session is the pair: the workhorse this coordinator drives and the
+ * coordinator itself. Both identities are read at the moment the change
+ * arrives, because a coordinator is created, restarted and retired inside one
+ * workhorse's life and a relink replaces the workhorse under it — a value
+ * sampled once would stop recognising the pair it was meant to.
+ *
+ * A change nobody attributed is not anybody's own: it is delivered, which is
+ * redundancy rather than silence.
+ * @param event - The settled change.
+ * @param options - The callback options, for the live identities.
+ * @returns True when this session wrote it.
+ */
+function ownSessionWrite(
+	event: CoordinatorCallbackSource,
+	options: CoordinatorCallbackOptions,
+): boolean {
+	const by = "change" in event ? event.change.by : null;
+	return by === null ? false : sessionThreads(options).includes(by);
+}
+
+/**
+ * The threads this session is, right now.
+ * @param options - The callback options, for the live identities.
+ * @returns The workhorse and the coordinator, whichever are there.
+ */
+function sessionThreads(options: CoordinatorCallbackOptions): readonly string[] {
+	const threads: string[] = [];
+	const workhorse = options.currentWorkhorseLink()?.target.threadId;
+	if (workhorse !== undefined) {
+		threads.push(String(workhorse));
+	}
+	const coordinator = options.currentCoordinator()?.threadId;
+	if (coordinator !== undefined) {
+		threads.push(String(coordinator));
+	}
+	return threads;
+}
+
+/**
  * The freshness a semantic callback carries; a callback of any other kind has none, and is fresh
  * from the moment it arrives instead.
  * @param callback - The normalized callback, or null when normalization failed.
@@ -303,6 +344,22 @@ export function createCodexCoordinatorCallbacks(
 			return Promise.resolve(invalidDelivery(captureEvidence(null)));
 		}
 		const evidence = captureEvidence(callback);
+		// A session hears every board update except the ones it makes itself, and
+		// the coordinator is the other half of one session. Asked here rather than
+		// on the subscription because this is the one gate both paths pass through,
+		// and asked before delivery rather than after normalization — a normalized
+		// callback keeps what a voice says out loud and drops who wrote it, so there
+		// is nowhere downstream left to ask.
+		if (ownSessionWrite(event, options)) {
+			return Promise.resolve(
+				makeDelivery(callback, evidence, {
+					attemptedAtMs: null,
+					path: "none",
+					outcome: "not_delivered",
+					reason: "own_change",
+				}),
+			);
+		}
 		if (disposed) {
 			return Promise.resolve(
 				makeDelivery(callback, evidence, {

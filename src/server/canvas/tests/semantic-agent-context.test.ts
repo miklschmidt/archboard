@@ -349,13 +349,34 @@ test("a report about the board the pane just left grounds nothing", async () => 
 	const context = canvas.semanticBoardContext(board(), elsewhere);
 
 	// The ids might well resolve against this board and mean something else, so
-	// none of them is used and the pane is treated as not having said yet.
+	// none of them is used: what a person pointed at in one architecture is not
+	// a fact about another.
 	expect(context.architecture.selection.subjects).toEqual([]);
-	// Nothing is attributed to a pane that was looking elsewhere, and the board's
-	// own current architecture is offered in the description rather than asserted
-	// as what this pane is showing.
-	expect(context.architecture.variant).toBeNull();
-	expect(context.description).toContain("has not drawn yet");
+	// What is left is the board's own truth. A session is told about every board
+	// it has been told about, whatever anybody is looking at, so a pane reading
+	// something else cannot leave the news contentless — it means there is no
+	// presentation to report, which is what the words say.
+	expect(context.architecture.variant?.name).toBe(showing());
+	expect(context.description).toContain("Nothing on screen is reading");
 	expect(context.ambiguity.join(" ")).toContain("different architecture");
 	await Promise.resolve();
+});
+
+test("a board nobody is looking at is described without a selection being invented", () => {
+	// The case the delivery rule turns on. A session hears every board update
+	// except its own writes, so a change arrives whether or not a pane is
+	// showing that board — and when none is, there is no presentation to report.
+	// What must not happen is the context borrowing one: a selection is a person
+	// pointing at something in one architecture, and it is not a fact about
+	// another.
+	const context = canvas.semanticBoardContext(board(), null);
+
+	expect(context.architecture.selection).toEqual({ count: 0, subjects: [] });
+	expect(context.architecture.variant?.lifecycle).toBe("current");
+	expect(context.ambiguity).toEqual([]);
+	// And the board itself is still described, because that is what the change
+	// was about: the agent is told what it says now, with nothing attributed to
+	// a pane that was looking elsewhere or had been closed.
+	expect(context.description).toContain("Nothing on screen is reading");
+	expect(context.architecture.variant?.name).toBe(showing());
 });

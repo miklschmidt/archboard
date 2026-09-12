@@ -2,14 +2,14 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 =
-	"1415abc622da520ab5b730cd2085af0d603dcd49b39c6519ebecc59aa195c48e" as const;
+	"5f9b6a2544f4bbd3f6d347384288494e3293d44acb0354f910de1b57a5ad3f21" as const;
 const COORDINATOR_ROLE_EXTENSION_SHA256 =
-	"e87de107a938c9b933f4af2f93273dd5b4bbe797464c6a78bdf580511f550e7e" as const;
+	"4c600b12af2c0085cb1a7ccb8df2b21bf4b6e9164f188715e60f364262583fda" as const;
 const COORDINATOR_SEPARATOR = "\n--- ARCHBOARD COORDINATOR ROLE ---\n" as const;
 const COORDINATOR_SEPARATOR_SHA256 =
 	"e64743b591f47a59eea6118686fc5b9f0bcca3e2d4e6af2dd8acfe55fe97653a" as const;
 const COMPOSED_COORDINATOR_INSTRUCTIONS_SHA256 =
-	"bd78fa3da5e29a6008bae9ebd7afd48d92f0f984acfe2d8632c9681e81fbc482" as const;
+	"737ce8494fcd293b45c16762919db55db194d221b294df3ea9ced5c408d4accc" as const;
 const COMPOSED_MARKER = "\n\n--- ARCHBOARD COORDINATOR ROLE ---\n";
 const COMPOSED_MARKER_PATTERN = /\n\n--- ARCHBOARD COORDINATOR ROLE ---\n/g;
 

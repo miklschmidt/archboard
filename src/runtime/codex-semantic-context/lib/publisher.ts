@@ -511,6 +511,9 @@ export function createSemanticContextPublisher(
 				origin: event.origin,
 				significance: event.significance,
 				text: changeText.value,
+				// Carried through rather than judged here: one publisher serves every
+				// thread, so whose own work a change was is a question only a
+				// per-session delivery port can answer.
 				by: event.by ?? null,
 			},
 		});
