@@ -17,6 +17,7 @@
 // let a painter and a measurement disagree about what they were talking about.
 
 import type { EdgeEmphasis, EdgeKind, SemanticEdge } from "@/shared/semantic-board/index";
+import { HERO_PULSE_COUNT } from "@/runtime/semantic-renderer/lib/design";
 import {
 	HEADER_NAME_SIZE,
 	HEADER_NAME_TRACKING,
@@ -109,6 +110,46 @@ function weightColour(palette: Palette, weight: Weight): string {
  */
 function weightOf(edge: SemanticEdge): Weight {
 	return WEIGHT_OF[edge.emphasis];
+}
+
+/**
+ * Relationships along which something actually travels.
+ *
+ * Motion is the renderer's, derived from what the relationship IS rather than
+ * from a flag an agent set: a call, a request, a message, a queued item, a read
+ * and a render all carry something from one part to another, and a dependency
+ * does not — it is a fact about how the two are built, true whether or not
+ * anything is happening. `other` is the kind somebody reached for when none of
+ * these fitted, so it says nothing about traffic and gets no dot.
+ */
+const CARRIES_TRAFFIC: Readonly<Record<EdgeKind, boolean>> = Object.freeze({
+	call: true,
+	http: true,
+	rpc: true,
+	event: true,
+	queue: true,
+	data: true,
+	render: true,
+	dependency: false,
+	other: false,
+});
+
+/**
+ * How many dots ride one relationship at once.
+ *
+ * A hero line carries a train, which is how it says it is busier than its
+ * neighbours — three dots on the wire rather than a faster single one, because
+ * speed reads as urgency and a count reads as volume. A muted line carries
+ * none: it has been pushed into the background on purpose, and a moving dot is
+ * the least background thing a picture can do.
+ * @param edge The relationship.
+ * @returns How many dots, or zero when it does not carry traffic at all.
+ */
+function pulseCountOf(edge: SemanticEdge): number {
+	if (!CARRIES_TRAFFIC[edge.kind] || edge.emphasis === "muted") {
+		return 0;
+	}
+	return edge.emphasis === "hero" ? HERO_PULSE_COUNT : 1;
 }
 
 /**
@@ -213,6 +254,7 @@ export {
 	markerFor,
 	strokeWidthOf,
 	edgeAttributes,
+	pulseCountOf,
 	stylesFor,
 	STROKE_WIDTH,
 	STROKE_OPACITY,

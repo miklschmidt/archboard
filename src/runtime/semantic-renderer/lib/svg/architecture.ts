@@ -31,6 +31,8 @@ import {
 } from "@/runtime/semantic-renderer/lib/svg/cards";
 import { shifted } from "@/runtime/semantic-renderer/lib/svg/document";
 import { lines, tag, textNode, wrap } from "@/runtime/semantic-renderer/lib/svg/primitives";
+import { travellingPulses } from "@/runtime/semantic-renderer/lib/svg/pulse";
+import { HERO_PULSE_TRAVEL_MS, PULSE_TRAVEL_MS } from "@/shared/timing/timing";
 import {
 	standingOutline,
 	standingSwipe,
@@ -40,6 +42,8 @@ import {
 } from "@/runtime/semantic-renderer/lib/svg/standing";
 import {
 	edgeAttributes,
+	pulseCountOf,
+	weightColour,
 	headOf,
 	markerFor,
 	strokeWidthOf,
@@ -139,6 +143,18 @@ function paintEdge(
 			label === undefined || edge.label === undefined
 				? ""
 				: paintLabelPill(edge.label, label, palette, standing),
+			// Last, so the dots ride over the line rather than under it, and only
+			// where something actually travels. A relationship the proposal no
+			// longer has is drawn for context and must not read as live traffic.
+			standing === "removed"
+				? ""
+				: travellingPulses({
+						path,
+						colour: weightColour(palette, weightOf(edge)),
+						count: pulseCountOf(edge),
+						duration: (edge.emphasis === "hero" ? HERO_PULSE_TRAVEL_MS : PULSE_TRAVEL_MS) / 1000,
+						lag: 0,
+					}),
 		]),
 	);
 }

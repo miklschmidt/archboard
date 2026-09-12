@@ -8,12 +8,16 @@
 // Order is array position — a flow carries no step number, so there is no
 // second opinion about the order to reconcile against this one.
 //
-// Two things upstream had are gone. There is no cap on participants or steps:
+// One thing upstream had is gone: there is no cap on participants or steps.
 // ADR 0023 refuses size-driven limits, so nothing here may assume a small
 // number of either, and every fold over them is written as a loop rather than
-// as a spread into `Math.max`. And there is no animation schedule — the beats,
-// slots and pulse counts that made a PR Lens sequence move belong to the
-// viewer, which owns motion.
+// as a spread into `Math.max`.
+//
+// The animation schedule is upstream's and is here: every message of every flow
+// takes a turn on ONE clock for the whole drawing, counted straight through the
+// stack in the order the flows are stated. A clock per flow would have every
+// exchange on the page crossing at once, which is the ladder the motion is
+// there to break.
 //
 // What is new is the frame. Upstream drew one band per column, in its lane
 // language; here a flow is a single named box around the whole exchange, which
@@ -44,6 +48,7 @@ import {
 	TITLE_SIZE_STEP,
 } from "@/runtime/semantic-renderer/lib/design";
 import {
+	MAX_PULSES_PER_STEP,
 	COLUMN_GAP,
 	COLUMN_MAX_WIDTH,
 	COLUMN_MIN_WIDTH,
@@ -94,6 +99,20 @@ interface PlacedStep {
 	readonly fromX: number;
 	/** The lifeline it arrives at. */
 	readonly toX: number;
+	/**
+	 * This message's turn on the drawing's shared clock: where its first dot
+	 * starts, and how many dots it sends.
+	 *
+	 * The clock is the whole drawing's, so turns keep counting across the stack
+	 * of flows rather than restarting at each one. Every message takes a turn and
+	 * the turns do not overlap, so a reader sees the exchange told in order
+	 * rather than a dozen dots crossing at once — and reads one page of flows in
+	 * the order they are stated rather than as several running at once. A
+	 * repeated step sends its repeat — capped, because a step somebody wrote
+	 * `×40` on would otherwise take the whole cycle and everything after it
+	 * would stand still waiting.
+	 */
+	readonly slot: { readonly start: number; readonly count: number };
 }
 
 /** One flow, placed. */
@@ -124,6 +143,13 @@ interface DataFlowLayout {
 	readonly columnWidth: number;
 	/** The flows, in document order, stacked down the page. */
 	readonly flows: readonly FlowLayout[];
+	/**
+	 * How many turns the drawing's clock is divided into: every dot every
+	 * message of every flow sends, counted once.
+	 *
+	 * Zero when nothing crosses, which is a drawing with no clock at all.
+	 */
+	readonly turns: number;
 }
 
 /**
@@ -389,23 +415,29 @@ function placeColumnCard(
  * @param flow The flow.
  * @param centreOf Where each participant's lifeline runs.
  * @param firstY The height the first message runs at.
+ * @param firstTurn The turn of the drawing's clock this flow's first dot takes.
  * @returns The placed messages.
  */
 function placeSteps(
 	flow: SemanticFlow,
 	centreOf: ReadonlyMap<string, number>,
 	firstY: number,
+	firstTurn: number,
 ): PlacedStep[] {
 	const placed: PlacedStep[] = [];
 	let y = firstY;
+	let turn = firstTurn;
 	for (const step of flow.steps) {
+		const count = Math.min(step.repeat ?? 1, MAX_PULSES_PER_STEP);
 		placed.push({
 			step,
 			label: labelFor(step),
 			y,
 			fromX: centreOf.get(step.from) ?? 0,
 			toX: centreOf.get(step.to) ?? 0,
+			slot: { start: turn, count },
 		});
+		turn += count;
 		y += pitchOf(step.kind);
 	}
 	return placed;
@@ -429,15 +461,18 @@ function lowestDrawn(steps: readonly PlacedStep[], floor: number): number {
  * @param flow The flow.
  * @param byId The variant's nodes.
  * @param columnWidth The width every column is drawn at.
- * @param top Where this flow's frame begins.
+ * @param start Where this flow begins: the height of its frame, and its first turn of the drawing's clock.
+ * @param start.top Where its frame begins.
+ * @param start.turn Its first turn.
  * @returns Its geometry.
  */
 function layoutFlow(
 	flow: SemanticFlow,
 	byId: ReadonlyMap<string, SemanticNode>,
 	columnWidth: number,
-	top: number,
+	start: { readonly top: number; readonly turn: number },
 ): FlowLayout {
+	const top = start.top;
 	const nodes = flow.participants.map((participant) => participantNode(participant, byId));
 	const contentLeft = DIAGRAM_MARGIN + NEST_INSET;
 	const centres = nodes.map(
@@ -458,6 +493,7 @@ function layoutFlow(
 		flow,
 		new Map(flow.participants.map((participant, index) => [participant, centres[index] ?? 0])),
 		lifelineTop + FIRST_MESSAGE_DROP,
+		start.turn,
 	);
 	const lifelineBottom = lowestDrawn(steps, lifelineTop + FIRST_MESSAGE_DROP) + FLOW_BOTTOM_PADDING;
 
@@ -501,10 +537,14 @@ function layoutDataFlow(
 
 	const placed: FlowLayout[] = [];
 	let cursor = DIAGRAM_MARGIN;
+	// The clock's cursor runs straight through the stack, which is what makes the
+	// flows on one page take their turns in the order they are stated.
+	let turn = 0;
 	for (const flow of flows) {
-		const laid = layoutFlow(flow, byId, columnWidth, cursor);
+		const laid = layoutFlow(flow, byId, columnWidth, { top: cursor, turn });
 		placed.push(laid);
 		cursor = laid.frame.y + laid.frame.height + FLOW_GAP;
+		turn = laid.steps.reduce((total, step) => total + step.slot.count, turn);
 	}
 
 	return {
@@ -520,6 +560,7 @@ function layoutDataFlow(
 		height: Math.ceil(cursor - FLOW_GAP + DIAGRAM_MARGIN),
 		columnWidth,
 		flows: placed,
+		turns: turn,
 	};
 }
 

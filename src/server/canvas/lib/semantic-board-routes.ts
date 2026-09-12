@@ -361,7 +361,11 @@ function answerDrawn(
 	res: Response,
 	board: SemanticBoard,
 	variant: SemanticVariant,
-	how: { theme: "light" | "dark"; fonts: "linked" | "embedded"; view?: SemanticView },
+	how: {
+		theme: "light" | "dark";
+		fonts: "linked" | "embedded";
+		view?: SemanticView;
+	},
 ): void {
 	const reading = readingOf(variant, how.view);
 	// What a change took away is half of what a reader came to see, and it lives

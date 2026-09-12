@@ -17,6 +17,7 @@ import type { FontSource } from "@/shared/semantic-board/index";
 import { faceRules, SANS_STACK } from "@/runtime/semantic-renderer/lib/fonts";
 import type { Palette } from "@/runtime/semantic-renderer/lib/theme";
 import { escapeXml, lines, tag, wrap } from "@/runtime/semantic-renderer/lib/svg/primitives";
+import { PULSE_CLASS } from "@/runtime/semantic-renderer/lib/svg/pulse";
 import {
 	WEIGHTS,
 	weightColour,
@@ -79,12 +80,14 @@ function markers(palette: Palette): string {
 /**
  * The document's stylesheet.
  *
- * Two jobs, and nothing else. It registers the faces the picture was measured
+ * Three jobs, and nothing else. It registers the faces the picture was measured
  * in, so that the file the browser draws from is the file the server measured —
  * a document that names a family it does not register draws in whatever the
  * host has, and then its boxes do not fit their words. And it carries the part
  * of a viewer's behaviour an attribute cannot say: the pointer cursor and the
- * selection ring a viewer toggles by putting `is-selected` on a group.
+ * selection ring a viewer toggles by putting `is-selected` on a group. And it
+ * honours a reader's request for less motion in a file that may outlive the
+ * caller who could have asked on their behalf.
  *
  * `font-synthesis: none` is the backstop under the weight rule. Only 400 and
  * 500 exist as files; asking for 600 would otherwise have a browser invent one,
@@ -105,6 +108,11 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 			"[data-semantic-kind]{cursor:pointer}",
 			".ab-halo{opacity:0}",
 			`.is-selected .ab-halo{opacity:1;stroke:${palette.selection}}`,
+			// A reader who has asked their system for less motion gets a still
+			// picture even when nobody asked this renderer for one. CSS cannot stop
+			// a SMIL animation, so the layer it moves is hidden instead: the dots go
+			// and the lines they rode stay exactly as they were.
+			`@media(prefers-reduced-motion:reduce){.${PULSE_CLASS}{display:none}}`,
 		].join(""),
 	);
 }

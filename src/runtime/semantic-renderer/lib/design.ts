@@ -154,7 +154,17 @@ const PORT_INSET = 12;
  */
 const BEND_RADIUS_MAX = 14;
 
+/**
+ * How many dots ride a hero relationship at once.
+ *
+ * Three, from the renderer this was forked from: two read as a coincidence and
+ * four as a dotted line. What says "busier" is the count, not the speed — the
+ * pace lives in `shared/timing` with every other duration.
+ */
+const HERO_PULSE_COUNT = 3;
+
 export {
+	HERO_PULSE_COUNT,
 	DIAGRAM_MARGIN,
 	BAND_PADDING_X,
 	BAND_GAP,
