@@ -188,10 +188,17 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const wordmark = header?.querySelector('h1');
 		const named = (root, name) => [...(root?.querySelectorAll('button') ?? [])]
 			.find(node => (node.getAttribute('aria-label') ?? node.textContent ?? '').trim() === name) ?? null;
-		const open = named(header, 'Open');
+		// The header's one control. Nothing on the header opens a board any more:
+		// a person reads what an agent has authored, and moving a pane is the
+		// navigator's job (ADR 0023).
+		const control = named(header, 'Settings');
 		const breadcrumb = document.querySelector('${BOARD_BREADCRUMB}');
 		const board = breadcrumb?.querySelector('span');
-		const level = breadcrumb?.querySelector('span.font-mono') ?? breadcrumb?.lastElementChild;
+		// The variant beside the board's name, which is what the header says a
+		// person is reading. There is no level here any more: a board's altitude
+		// is metadata, and which of its variants is on screen is the fact that
+		// changes while somebody watches (ADR 0023).
+		const variant = breadcrumb?.querySelector('span.font-mono');
 		const ownText = node => [...node.childNodes].filter(child => child.nodeType === 3).map(child => child.textContent).join('').trim();
 		const connection = [...(header?.querySelectorAll('span') ?? [])]
 			.find(node => /^(Connected|Disconnected)$/.test(ownText(node)));
@@ -203,16 +210,16 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const stages = document.querySelector('${STAGE_ROOT}');
 		const dock = [...document.querySelectorAll('[data-slot="collapsible"]')]
 			.find(node => node.querySelector('button[aria-label$="workbench"]'));
-		const newBoard = named(nav, 'New board');
+		const navControl = named(nav, 'Refresh boards');
 		const groupLabel = nav?.querySelector('[data-sidebar="group-label"]');
 		const dockTitle = [...(dock?.querySelectorAll('span') ?? [])]
 			.find(node => node.textContent.trim() === 'Agent workbench');
-		if (!shell || !header || !wordmark || !open || !board || !level || !connection || !pane ||
-			!present || !nav || !stages || !dock || !newBoard || !groupLabel || !dockTitle) {
+		if (!shell || !header || !wordmark || !control || !board || !variant || !connection || !pane ||
+			!present || !nav || !stages || !dock || !navControl || !groupLabel || !dockTitle) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
-				shell: !!shell, header: !!header, wordmark: !!wordmark, open: !!open, board: !!board,
-				level: !!level, connection: !!connection, pane: !!pane, present: !!present, nav: !!nav,
-				stages: !!stages, dock: !!dock, newBoard: !!newBoard, groupLabel: !!groupLabel,
+				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control, board: !!board,
+				variant: !!variant, connection: !!connection, pane: !!pane, present: !!present, nav: !!nav,
+				stages: !!stages, dock: !!dock, navControl: !!navControl, groupLabel: !!groupLabel,
 				dockTitle: !!dockTitle }));
 		}
 		const round = value => Math.round(value * 1000) / 1000;
@@ -237,14 +244,19 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			});
 			return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 		};
-		const flat = [shell, header, nav, stages, dock, newBoard, pane];
+		const flat = [shell, header, nav, stages, dock, navControl, pane];
 		// Human labels: the board group's name and the header's board name. The
 		// section label beside them is a kicker, checked on its own terms.
-		const groupName = nav.querySelector('[data-sidebar="menu-item"] > button > span:last-child') ?? groupLabel;
+		const groupName = nav.querySelector('[data-sidebar="menu-item"] button span:last-child')
+			?? nav.querySelector('[data-sidebar="menu-item"]') ?? groupLabel;
+		const paneSection = document.querySelector('section[aria-label^="Pane "]');
+		if (!paneSection) {
+			throw new Error('shell matrix probe found no pane section on screen');
+		}
 		const humanLabels = [groupName, board];
-		open.focus();
-		const focusStyle = getComputedStyle(open);
-		const focusRect = open.getBoundingClientRect();
+		control.focus();
+		const focusStyle = getComputedStyle(control);
+		const focusRect = control.getBoundingClientRect();
 		const ringVisible = focusStyle.boxShadow !== 'none' || (focusStyle.outlineStyle !== 'none' && parseFloat(focusStyle.outlineWidth) >= 1);
 		const focusExtent = Math.max(parseFloat(focusStyle.outlineWidth) + parseFloat(focusStyle.outlineOffset), 3);
 		const animationProbe = document.createElement('span');
@@ -252,7 +264,14 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		document.body.append(animationProbe);
 		const animationStyle = getComputedStyle(animationProbe);
 		const rootStyle = getComputedStyle(document.documentElement);
-		const actionTargets = ['Open', 'New', 'Save', 'Clear'].map(name => rect(named(header, name)));
+		// Every control the header actually offers. The drawing controls it used to
+		// name are gone: a person reads a board and does not author one (ADR 0023),
+		// so the list is read off the header rather than written down here, and an
+		// empty header is a failure rather than a vacuous pass.
+		const actionTargets = [...header.querySelectorAll('button')].map(node => rect(node));
+		if (actionTargets.length === 0) {
+			throw new Error('shell matrix probe found no header controls');
+		}
 		const touchTargets = [...shell.querySelectorAll('button')]
 			.filter(node => !node.closest('.excalidraw') && rect(node).width > 0 && rect(node).height > 0)
 			.map(node => ({ label: node.getAttribute('aria-label') || node.textContent.trim().slice(0, 48),
@@ -273,7 +292,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			motion,
 			focus: { forcedColorAdjust: focusStyle.forcedColorAdjust,
 				outlineStyle: focusStyle.outlineStyle, outlineWidth: parseFloat(focusStyle.outlineWidth),
-				focusVisible: open.matches(':focus-visible'), outline: focusStyle.outline, active: document.activeElement === open,
+				focusVisible: control.matches(':focus-visible'), outline: focusStyle.outline, active: document.activeElement === control,
 				ringVisible,
 				unclipped: focusRect.left - focusExtent >= 0 && focusRect.top - focusExtent >= 0 &&
 					focusRect.right + focusExtent <= innerWidth && focusRect.bottom + focusExtent <= innerHeight },
@@ -281,13 +300,13 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				document.documentElement.scrollHeight > document.documentElement.clientHeight ||
 				document.body.scrollWidth > innerWidth || document.body.scrollHeight > innerHeight,
 			touchTargets,
-			state: { board: board.textContent.trim(), level: level.textContent.trim(),
+			state: { board: board.textContent.trim(), variant: variant.textContent.trim(),
 				connection: connection.textContent.trim(), persistence: notSaving?.textContent.trim() ?? '',
 				pane: pane.textContent.trim(), paneCount: document.querySelectorAll('${PANE_TABS}').length,
 				rootChildCount: document.getElementById('root')?.childElementCount ?? 0 },
 			geometry: { shell: rect(shell), header: rect(header), nav: rect(nav), stages: rect(stages),
-				dock: rect(dock), pane: rect(document.querySelector('section[aria-label^="Pane "]')),
-				board: rect(board), open: rect(open) },
+				dock: rect(dock), pane: rect(paneSection),
+				board: rect(board), control: rect(control) },
 			themeSnapshot: {
 				theme: document.documentElement.dataset.theme, wordmark: wordmark.textContent.trim(),
 				wordmarkMask: getComputedStyle(wordmark).maskImage || getComputedStyle(wordmark).webkitMaskImage,
@@ -299,7 +318,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
 				shadowlessSurfaces: flat.every(node => hairline(getComputedStyle(node).boxShadow)),
 				visibleFocus: ringVisible,
-				boardIdentity: board.textContent.trim(), level: level.textContent.trim(), connectionState: connection.textContent.trim(),
+				boardIdentity: board.textContent.trim(), variant: variant.textContent.trim(), connectionState: connection.textContent.trim(),
 				persistenceState: notSaving?.textContent.trim() ?? '', paneIdentity: pane.textContent.trim(),
 				legacyVaultLineCount: 0,
 				headerSectionsAligned: boardRect.right < metaRect.left && Math.abs((boardRect.top + boardRect.height / 2) - (metaRect.top + metaRect.height / 2)) < 0.5,
@@ -309,11 +328,18 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 					document.fonts.check('600 14px "Archboard Onest"'), document.fonts.check('700 14px "Archboard Onest"'),
 					document.fonts.check('400 10px "Archboard DM Mono"'), document.fonts.check('500 10px "Archboard DM Mono"')],
 				fontResources: performance.getEntriesByType('resource').map(entry => entry.name)
-					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name)),
+					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name))
+					.filter(name => !name.includes('/assets/diagram-fonts/')),
+				// The faces the drawn board registers, which are the same files the
+				// server measured its text against. Served from here, never from a
+				// font CDN: a picture whose text was measured in one face and drawn
+				// in another has boxes that do not fit their words.
+				diagramFontResources: performance.getEntriesByType('resource').map(entry => entry.name)
+					.filter(name => name.includes('/assets/diagram-fonts/')),
 				humanLabels: humanLabels.map(node => { const value = getComputedStyle(node); return {
 					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
 				sectionKicker: { ...metrics(groupLabel), transform: getComputedStyle(groupLabel).textTransform },
-				titleType: metrics(board), bodyType: metrics(connection), kickerType: metrics(level), controlType: metrics(open), paneType: metrics(pane),
+				titleType: metrics(board), bodyType: metrics(connection), kickerType: metrics(variant), controlType: metrics(control), paneType: metrics(pane),
 				actionTargets: actionTargets.map(({ width, height }) => ({ width, height })),
 				paneTarget: (() => { const value = rect(pane); return { width: value.width, height: value.height }; })(),
 				presentTarget: (() => { const value = rect(present); return { width: value.width, height: value.height }; })(),

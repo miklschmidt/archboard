@@ -1,11 +1,9 @@
 import path from "path";
 import type { Express, NextFunction, Request, Response } from "express";
 import { logger } from "@/runtime/engine/logger";
-import { boards, boardSummaries } from "@/runtime/engine/board-store";
-import { heldBoardKeys, holdOn, reportHold } from "@/runtime/engine/board-hold";
+import { listSemanticBoards } from "@/runtime/semantic-board-store/index";
 import { frontendState, sourceState } from "@/runtime/engine/staleness";
-import { boardElementCount } from "@/server/canvas/lib/board-announcements";
-import { boardRenderer, mutationAdmission } from "@/server/canvas/lib/canvas-owners";
+import { mutationAdmission } from "@/server/canvas/lib/canvas-owners";
 import { canvasPhase } from "@/server/canvas/lib/canvas-startup";
 import { moduleDir } from "@/server/canvas/lib/module-paths";
 import { clients } from "@/server/canvas/lib/pane-registry";
@@ -26,17 +24,6 @@ function frontendRoute(_req: Request, res: Response): void {
 }
 
 /**
- * The hold report of every held board.
- * @returns The reports.
- */
-function heldBoardReports(): unknown[] {
-	return heldBoardKeys().flatMap((board) => {
-		const hold = holdOn(board);
-		return hold ? [reportHold(board, hold)] : [];
-	});
-}
-
-/**
  * The health check: identity for `stop`, what the process holds, and whether
  * it is running the source on disk.
  * @param _req The request.
@@ -46,11 +33,7 @@ function healthRoute(_req: Request, res: Response): void {
 	res.json({
 		status: "healthy",
 		timestamp: new Date().toISOString(),
-		boards_open: boards.size,
-		elements_count: Array.from(boards.values()).reduce(
-			(total, b) => total + boardElementCount(b),
-			0,
-		),
+		boards: listSemanticBoards().length,
 		websocket_clients: clients.size,
 		// Identity for `stop`: it must only ever signal a process that both
 		// identifies as this service AND self-reports its pid — never a pid
@@ -67,8 +50,6 @@ function healthRoute(_req: Request, res: Response): void {
 				activeMs: Math.max(0, Date.now() - entry.startedAt),
 			})),
 		},
-		renderer: boardRenderer.status(),
-		held_boards: heldBoardReports(),
 		// Whether this process is running the source that is on disk now, and
 		// which build the frontend has been rebuilt to. A long-lived process has no
 		// symptom of its own for either, so it has to be asked (TASK-056).
@@ -85,10 +66,7 @@ function healthRoute(_req: Request, res: Response): void {
 function syncStatusRoute(_req: Request, res: Response): void {
 	res.json({
 		success: true,
-		boards: boardSummaries(boardElementCount).map((b) => ({
-			board: b.key,
-			elementCount: b.elementCount,
-		})),
+		boards: listSemanticBoards().map((board) => ({ board: board.key, name: board.name })),
 		timestamp: new Date().toISOString(),
 		memoryUsage: {
 			heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), // MB

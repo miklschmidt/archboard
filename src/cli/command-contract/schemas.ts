@@ -140,7 +140,6 @@ const WriteReceiptSchema = z.looseObject({
 	elements: AffectedElementsSchema,
 	fingerprint: BoardFingerprintSchema,
 	document: BoardDocumentSchema.optional(),
-	held: HoldReportSchema.optional(),
 });
 type WriteReceipt = z.infer<typeof WriteReceiptSchema>;
 

@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { claimBoard, releaseBoardClaim } from "@/runtime/engine/canvas-client";
 import { defineCommand } from "@/cli/command-contract/contract";
-import { HoldReportSchema } from "@/cli/command-contract/schemas";
 import { claimRefusals, commonRefusals } from "@/cli/command-contract/common";
 
 const ClaimReasonInputSchema = z
@@ -59,7 +58,6 @@ const ClaimResultSchema = z.looseObject({
 	board: z.string(),
 	created: z.boolean(),
 	claim: BoardClaimSchema,
-	held: HoldReportSchema.optional(),
 });
 type ClaimResult = z.infer<typeof ClaimResultSchema>;
 const claimContract = defineCommand({
@@ -100,9 +98,8 @@ const claimContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				held: "object-field-and-stderr-note",
 				description: "Claim state",
-				presentation: ["diagnostics", "result", "held-note"],
+				presentation: ["diagnostics", "result"],
 			},
 		],
 		/**
@@ -152,7 +149,6 @@ const ReleaseResultSchema = z.looseObject({
 	board: z.string(),
 	released: z.boolean(),
 	claim: BoardClaimSchema.nullable(),
-	held: HoldReportSchema.optional(),
 });
 type ReleaseResult = z.infer<typeof ReleaseResultSchema>;
 const releaseContract = defineCommand({
@@ -179,9 +175,8 @@ const releaseContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				held: "object-field-and-stderr-note",
 				description: "Release state",
-				presentation: ["diagnostics", "result", "held-note"],
+				presentation: ["diagnostics", "result"],
 			},
 		],
 		/**

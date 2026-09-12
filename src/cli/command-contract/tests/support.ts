@@ -17,23 +17,6 @@ import type { AnyCommandContract, PendingArtifact } from "../contract.js";
 import { runCommand } from "../runner.js";
 import { PendingArtifactSchema } from "../schemas.js";
 
-const heldCompatibility = JSON.parse(
-	readFileSync(join(import.meta.dir, "held-output-compatibility.json"), "utf8"),
-) as {
-	fixedBase: string;
-	held: { board: string; message: string; writes: number };
-	cases: {
-		name: string;
-		path: string;
-		outputCase: string;
-		result: unknown;
-		artifact?: unknown;
-		stdout: string;
-		stderr: string;
-		events: string[];
-	}[];
-};
-
 const temporaryDirectories: string[] = [];
 
 function cleanupCommandContractTest() {
@@ -74,7 +57,6 @@ function proofContract(options: {
 							id: "file",
 							when: {},
 							mode: "file-receipt",
-							held: "none",
 							description: "file",
 							artifact: options.artifactSchema ?? PendingArtifactSchema,
 						}
@@ -82,7 +64,6 @@ function proofContract(options: {
 							id: "json",
 							when: {},
 							mode: "json",
-							held: "none",
 							description: "json",
 						},
 			],
@@ -190,7 +171,6 @@ function runPublicFixture(
 }
 
 export {
-	heldCompatibility,
 	cleanupCommandContractTest,
 	proofContract,
 	executePublic,

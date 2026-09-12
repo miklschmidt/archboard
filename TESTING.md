@@ -14,15 +14,20 @@ bun scripts/sync-skills.ts      # ours, from skills/ (derived copies are untrack
 ```
 
 bun runs the server and the CLI from `src/` (ADR 0014). Edit only `skills/`;
-do not commit the derived skill copies or any PNG, SVG, manifest or exported
-scene made as proof.
+do not commit the derived skill copies or any PNG, SVG or rendered diagram made
+as proof.
 
 ## 2. Pick a vault
 
-Boards are `.excalidraw.md` notes in an Obsidian vault. There is no default
-vault: set `ARCHBOARD_VAULT` before `./bin/canvas start`, because the server
-does the vault I/O and refuses to start without one (ADR 0015). The browser at
-<http://127.0.0.1:3000> is optional and only for a live human session.
+A board is one `.semantic.json` document in a vault, holding every variant of
+that architecture. There is no default vault: set `ARCHBOARD_VAULT` before
+`./bin/canvas start`, because the server does the vault I/O and refuses to start
+without one (ADR 0015). The browser at <http://127.0.0.1:3000> is where a person
+reads a board; authoring needs no browser at all.
+
+A vault may hold `.excalidraw.md` notes from before ADR 0023. Nothing here reads
+them, writes them or migrates them, and that is deliberate: they are left exactly
+as they are.
 
 ## 3. Make the CLI available to Codex
 
@@ -46,31 +51,41 @@ workhorse itself.
 
 ## 5. A first session
 
-Every board command names its board and every write says what it is doing;
-the whole named-board workflow needs no browser:
+You state what the architecture IS; the renderer owns every coordinate, colour
+and connector route. Every write says what it is doing, and every edit says
+which version it was written against:
 
 ```bash
-./bin/canvas board new payments --level service
-./bin/canvas add --board payments --doing "drawing the payment path" elements.json
-./bin/canvas describe --board payments
-./bin/canvas board save --board payments --variant option-a --doing "branching the proposal"
+echo '{"nodes":[{"name":"API Gateway","kind":"service"},
+               {"name":"Orders","kind":"service"}],
+      "edges":[{"from":"API Gateway","to":"Orders","kind":"http"}]}' |
+  ./bin/canvas semantic new payments --doing "drawing the payment path"
+
+./bin/canvas semantic show payments
+echo '{"nodes":[{"name":"Orders Queue","kind":"queue"}]}' |
+  ./bin/canvas semantic edit payments --expect-version 1 --doing "adding the queue"
+
+./bin/canvas semantic branch payments --as "Queued ingest" --expect-version 2 \
+  --doing "proposing a queue"
+./bin/canvas semantic render payments --out payments.svg
 ```
 
-Mermaid conversion, rendering, `check`, snapshots, branches and exports work
-the same way. The final note is at `$ARCHBOARD_VAULT/payments.excalidraw.md`;
-prose you write above its `# Excalidraw Data` heading survives every save.
+The board is at `$ARCHBOARD_VAULT/payments.semantic.json`: one document holding
+the current architecture and every proposal derived from it. A proposal is a
+variant of the same board, so what it changed is derived on the way out rather
+than written down twice.
 
-Only `browser` commands touch a live session (panes, selection, open, show,
-viewport, capture); each names its pane and none writes the note. Pass selected
-ids explicitly to a later named-board write.
+Only `browser` commands touch a live session (`panes`, `open`, `close`,
+`show`); each names its pane and none writes a board. `browser show
+payments@<variant>` puts a proposal beside what it proposes to change.
 
 ## 6. Verify Codex semantic delivery
 
 The module owners cover the
 [bound app-server contract](DESIGN.md#2-mid-conversation-context--the-bound-app-server-session);
 the composition owner starts the application with its owned child, links a
-workhorse and proves one human change is delivered while an agent-only change
-stays silent:
+workhorse and proves the real `src/server.ts` wires the change feed, the pane
+context and the workbench together:
 
 ```bash
 bun test src/runtime/codex-semantic-context/tests src/runtime/codex-thread-context/tests

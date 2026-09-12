@@ -1,18 +1,14 @@
-// The desktop frame: header, navigator, canvas centre, inspector and the
-// workbench dock, composed from typed inputs and typed actions. The centre is
-// also the fullscreen root, so presenting a pane never remounts a canvas.
+// The desktop frame: header, navigator, the pane centre and the workbench
+// dock, composed from typed inputs and typed actions. The centre is also the
+// fullscreen root, so presenting a pane never remounts it.
 
 import type { CSSProperties, JSX, ReactNode } from "react";
 
 import { SidebarProvider } from "@/ui/components/sidebar";
-import { Inspector } from "@/ui/selection-inspector/Inspector";
 import { ActivityList } from "@/ui/shell/components/ActivityList";
 import type {
 	LivePresentation,
-	RecoveryKind,
 	RecoveryPresentation,
-	RenderBoardPreview,
-	ScratchBoardEntry,
 	SelectableNoticeAction,
 	SettingsSurface,
 	ShellActions,
@@ -28,7 +24,7 @@ import { Header, SETTINGS_TRIGGER_ID } from "@/ui/shell/components/Header";
 import { Navigator } from "@/ui/shell/components/Navigator";
 import { Notices } from "@/ui/shell/components/Notices";
 import { PaneBar } from "@/ui/shell/components/PaneBar";
-import { CanvasStages } from "@/ui/shell/components/CanvasStages";
+import { PaneStages } from "@/ui/shell/components/PaneStages";
 import { isPresentShortcut, presentShortcutLabel } from "@/ui/shell/lib/shortcuts";
 import { WorkbenchDock } from "@/ui/shell/components/WorkbenchDock";
 
@@ -62,7 +58,7 @@ function paneById(view: ShellView, paneId: string): ShellPane | null {
 }
 
 /**
- * The application shell: navigator, centre column and inspector under the header.
+ * The application shell: navigator and centre column under the header.
  * @param props The view, the actions and the slots.
  * @returns The full frame.
  */
@@ -77,10 +73,9 @@ function Shell(props: ShellProps): JSX.Element {
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col">
 					<Notices notices={view.notices} actions={actions} />
 					<PaneBar panes={view.panes} activePaneId={view.activePaneId} actions={actions} />
-					<CanvasStages
+					<PaneStages
 						panes={view.panes}
 						activePaneId={view.activePaneId}
-						overlay={view.pathFocusOverlay}
 						presentation={view.presentation}
 						voiceControls={props.voiceControls ?? null}
 						attachStage={props.attachStage}
@@ -94,7 +89,6 @@ function Shell(props: ShellProps): JSX.Element {
 						activity={props.dockActivity ?? null}
 					/>
 				</div>
-				<Inspector selection={view.selection} pathFocus={view.pathFocus} actions={actions} />
 			</SidebarProvider>
 		</div>
 	);
@@ -116,10 +110,7 @@ export {
 	type SelectableNoticeAction,
 	type ShellPresentation,
 	type LivePresentation,
-	type RecoveryKind,
 	type RecoveryPresentation,
-	type RenderBoardPreview,
-	type ScratchBoardEntry,
 	type SettingsSurface,
 	type ThemeChoice,
 };

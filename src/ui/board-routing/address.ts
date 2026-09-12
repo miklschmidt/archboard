@@ -3,11 +3,19 @@
 // display intent and never board authority (ADR 0015, ADR 0020): it records
 // what is on screen and asks for what should be, and the note still decides.
 
-/** One pane in an address: which pane, and the board it shows. */
+/** One pane in an address: which pane, the board it shows, and how it reads it. */
 interface AddressedPane {
 	readonly paneId: string;
 	/** The board key, or null while the pane has not said what it holds. */
 	readonly boardKey: string | null;
+	/**
+	 * The view a semantic board is being read through, or null for the whole
+	 * variant. Which explanation is on screen is part of what the pane is
+	 * showing, not a preference about how to show it: a person who lands on a
+	 * sequence and reloads has to get the sequence back, and a link that meant
+	 * "the ordering, on this board" has to still mean that tomorrow.
+	 */
+	readonly view: string | null;
 }
 
 /** Which panes are open, what each shows, and which one the person is on. */
@@ -23,6 +31,13 @@ interface AddressOpen {
 	readonly boardKey: string;
 }
 
+/** One pane already on the right board, being read the wrong way. */
+interface AddressRead {
+	readonly paneId: string;
+	/** The view to read it through, or null for the whole variant. */
+	readonly view: string | null;
+}
+
 /**
  * What has to happen for the displayed workspace to become the wanted one.
  * Ordered as it is applied: panes first, then boards, then focus.
@@ -32,6 +47,12 @@ interface AddressPlan {
 	readonly adds: number;
 	readonly closes: readonly string[];
 	readonly opens: readonly AddressOpen[];
+	/**
+	 * Panes showing the right board through the wrong view. Separate from the
+	 * opens because changing which explanation is on screen takes nothing away:
+	 * no canvas is replaced, so none of these panes is preflighted.
+	 */
+	readonly reads: readonly AddressRead[];
 	/** The pane to focus, or null when the displayed one is already right. */
 	readonly focus: string | null;
 }
@@ -46,6 +67,7 @@ const NOTHING_TO_DO: AddressPlan = Object.freeze({
 	adds: 0,
 	closes: Object.freeze([]),
 	opens: Object.freeze([]),
+	reads: Object.freeze([]),
 	focus: null,
 });
 
@@ -81,6 +103,16 @@ function boardIn(address: WorkspaceAddress, paneId: string): string | null {
 }
 
 /**
+ * The view one pane is reading its board through in an address.
+ * @param address The address.
+ * @param paneId The pane.
+ * @returns The view, or null for the whole variant or a pane that is not open.
+ */
+function viewIn(address: WorkspaceAddress, paneId: string): string | null {
+	return address.panes.find((pane) => pane.paneId === paneId)?.view ?? null;
+}
+
+/**
  * Whether an address has a pane.
  * @param address The address.
  * @param paneId The pane.
@@ -102,7 +134,11 @@ function sameAddress(one: WorkspaceAddress, other: WorkspaceAddress): boolean {
 		one.panes.length === other.panes.length &&
 		one.panes.every((pane, index) => {
 			const against = other.panes[index];
-			return against?.paneId === pane.paneId && against.boardKey === pane.boardKey;
+			return (
+				against?.paneId === pane.paneId &&
+				against.boardKey === pane.boardKey &&
+				against.view === pane.view
+			);
 		})
 	);
 }
@@ -156,6 +192,15 @@ function planFor(
 			? [{ paneId: pane.paneId, boardKey: pane.boardKey }]
 			: [],
 	);
+	// A pane the address is about to point at another board is not read here as
+	// well: the view it should end up on is a view of the board it is going to,
+	// and the reading is settled once that board is there.
+	const moving = new Set(opens.map((open) => open.paneId));
+	const reads = wantedOpen.flatMap((pane) =>
+		!moving.has(pane.paneId) && pane.view !== viewIn(displayed, pane.paneId)
+			? [{ paneId: pane.paneId, view: pane.view }]
+			: [],
+	);
 	const adds = asked.panes.length - wantedOpen.length;
 	const focus =
 		asked.activePaneId !== null &&
@@ -163,7 +208,7 @@ function planFor(
 		hasAddressedPane(displayed, asked.activePaneId)
 			? asked.activePaneId
 			: null;
-	return Object.freeze({ adds, closes, opens, focus });
+	return Object.freeze({ adds, closes, opens, reads, focus });
 }
 
 /**
@@ -172,32 +217,27 @@ function planFor(
  * @returns True when the displayed workspace already matches.
  */
 function planIsEmpty(plan: AddressPlan): boolean {
-	return plan.adds === 0 && plan.closes.length === 0 && plan.opens.length === 0 && !plan.focus;
-}
-
-/**
- * The panes a plan takes a board away from: the ones it closes and the ones it
- * points at another board. These are the panes the navigation guard preflights,
- * because each of them loses what is on its canvas (ADR 0022).
- * @param plan The plan.
- * @returns The pane ids, closes first, without repeats.
- */
-function panesAtRisk(plan: AddressPlan): readonly string[] {
-	const opened = plan.opens.map((open) => open.paneId).filter((id) => !plan.closes.includes(id));
-	return [...plan.closes, ...opened];
+	return (
+		plan.adds === 0 &&
+		plan.closes.length === 0 &&
+		plan.opens.length === 0 &&
+		plan.reads.length === 0 &&
+		!plan.focus
+	);
 }
 
 export {
 	EMPTY_ADDRESS,
 	boardIn,
+	viewIn,
 	sameBoardKey,
 	hasAddressedPane,
-	panesAtRisk,
 	planFor,
 	planIsEmpty,
 	sameAddress,
 	settledAddress,
 	type AddressOpen,
+	type AddressRead,
 	type AddressPlan,
 	type AddressedPane,
 	type WorkspaceAddress,

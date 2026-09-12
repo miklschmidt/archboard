@@ -1,9 +1,10 @@
-# archboard — agent-driven architecture canvas
+# archboard — agent-authored architecture boards
 
-A private internal tool, never published: a live Excalidraw canvas for building
-and refactoring code and infrastructure architecture with an agent. `main`
-forked from `yctimlin/mcp_excalidraw` v2.0.0 and is deliberately not kept
-mergeable with it.
+A private internal tool, never published: agents author the architecture of code
+and infrastructure as meaning, and the renderer draws it. There is no way to move
+a box and deliberately none — a diagram whose layout somebody repaired by hand
+cannot be improved for every board at once (ADR 0023). `main` forked from
+`yctimlin/mcp_excalidraw` v2.0.0 and is deliberately not kept mergeable with it.
 
 Where things are written down:
 
@@ -25,7 +26,7 @@ Where things are written down:
   `npm run`. `bun install` intermittently fails extracting a tarball; run it again.
 - A running server read its source at start. Editing source changes the next
   CLI command, not the running server: `./bin/canvas stop && ./bin/canvas start`.
-  Stop refuses while a held board has work that exists only in memory.
+  Stop never refuses: every accepted write is on disk before it is answered.
 - `bun run check` is the complete gate. `skills/` is the tracked source of the
   skills; `.agents/skills/` and `.claude/skills/` are derived and untracked
   (`bun scripts/sync-skills.ts`, `skills experimental_install`).
@@ -36,33 +37,42 @@ The loud rules teach themselves (a call naming no board, an agent write without
 `--doing`, a stale version, a note changed under another editor are all refused
 with the reason). These are the rules that will not stop you:
 
-- **The note is the board; the canvas holds no copy** (ADR 0015).
-  `src/runtime/engine/board-io.ts` is the one place a note is read or written,
-  synchronously on purpose, and every write goes through `atomic-write.ts`
-  including its fsync.
+- **The file is the board; nothing holds a copy of it** (ADR 0015, ADR 0023).
+  One `.semantic.json` document per board holds every variant of it, and
+  `src/runtime/semantic-board-store` is the one place one is read or written.
+  Every write goes through `atomic-write.ts`, fsync included, and is committed
+  before it is answered.
+- **Agents author, people read.** The browser is a viewer: it holds no board
+  content, writes nothing, and owns only presentation — the camera, the active
+  view, the walkthrough position and what somebody picked out. A person's one
+  control over a board is taking back somebody else's claim.
 - **One writer at a time per board** (ADR 0016), a lease file taken by one
   write-boundary middleware, deny by default. Claim before substantial work.
-- **A person's edit is optimistic, and the note still decides** (ADR 0022).
-  The canvas shows a person's edit immediately, but a pane never drifts from
-  the note on disk: its write is version-checked like any other, refused when
-  stale, and the pane then reconciles to the note. While an agent claims a
-  board, panes showing it take no content edits (pan and zoom still work),
-  and every pane shows in real time which board an agent is editing. An agent
-  may edit any board whether or not somebody is looking at it.
-- **One converter, on the way in, nothing on the way out** (ADR 0015).
-  `label: {text}` and arrow `start`/`end` are input spellings spent at the write
-  boundary; the board holds the result. Binding-derived code links are a
-  presentation overlay on copies, stripped at the write boundary, never persisted.
-- **One thing somebody asked for is one write** (TASK-068).
-- **Never rename an element id.** Every id comes from `src/shared/ids/ids.ts`
-  (Obsidian block-id alphabet, one to eight characters); no second minting
-  site. Why: `docs/design/server-is-the-truth.md` §4.
-- **Text width is measured, not estimated** (`src/runtime/engine/measure-text.ts`).
-- **Every write path replaces an element; nothing edits one in place.**
+- **A claim is visible, and the one control is taking it back** (ADR 0022).
+  While an agent claims a board, every pane showing it says who has it, why, and
+  since when, and offers the control that ends it — and keeps drawing, because
+  reading is never what a claim stops. An agent may write any board whether or
+  not somebody is looking at it, and is told once, on its next write, that it
+  lost one.
+- **One thing somebody asked for is one write** (TASK-068). A board's whole
+  family lands together or not at all: a parent edit and every descendant's
+  answer to it are one version.
+- **A board is addressed by name; a variant is a reading of it.**
+  `payments` and `payments@<variant>` name the same document, split at the FIRST
+  `@` — a board name can never hold one and a variant's name can. The file, the lease, the claim and what an agent said it was doing are
+  all facts about the board; only what is drawn depends on the variant.
+- **Never rename a subject id.** Every id comes from `src/shared/ids/ids.ts`
+  (one to eight characters); no second minting site. An id is what a proposal is
+  compared by, so renaming one makes a change look like a deletion and an
+  addition. Why: `docs/design/server-is-the-truth.md` §4.
+- **Text width is measured, not estimated** (`src/runtime/engine/measure-text.ts`),
+  and `tests/system/browser/measured-text.test.ts` holds the engine to what a
+  real browser draws.
 - **Every duration lives in `src/shared/timing/timing.ts`** with what it pulls
   against written beside it.
-- **`customData.archboard` is archboard's metadata channel** (ADR 0003), never
-  flat keys. A code binding persists only under `customData.archboard.binding`.
+- **A node's code binding is part of its meaning**, not a presentation overlay:
+  it persists on the node as `binding: { repo, path }` and is what "open the
+  code" resolves.
 - **Codex runs as one private package-local app-server session over stdio**
   with its own `CODEX_HOME`; a pane's thread link names one workhorse and
   voice belongs to its separate coordinator. The

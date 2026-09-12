@@ -286,6 +286,60 @@ function readWoff2(path: string): Record<string, FontTable> {
 	return tables;
 }
 
+/**
+ * The tables of one plain sfnt file (`.ttf`, `.otf`), cut apart.
+ *
+ * A woff2 file is an sfnt that has been rearranged and compressed; an sfnt is
+ * the same tables sitting in the file with a directory in front of them. So
+ * this is the short half of the reader above: a header, a table record each,
+ * and a subarray per record. Nothing is transformed, which is why every entry
+ * reports transform version zero.
+ *
+ * Archboard needs both because the two kinds of font file it measures arrive
+ * differently: Excalidraw ships woff2 subsets inside its package, and the
+ * operator shell's own faces are ttf files in this repository.
+ * @param path The font file.
+ * @returns The tables by tag.
+ * @throws {Error} When the file is not a plain sfnt.
+ */
+function readSfnt(path: string): Record<string, FontTable> {
+	const buf = readFileSync(path);
+	if (buf.length < 12) {
+		throw new Error(`${path} is too short to be a font file`);
+	}
+	const version = buf.readUInt32BE(0);
+	// 0x00010000 is TrueType outlines and "OTTO" is CFF; both carry the tables
+	// this reader wants. "ttcf" is a collection, which would need an index
+	// before a font, and none is shipped here.
+	if (version !== 0x0001_0000 && buf.toString("ascii", 0, 4) !== "OTTO") {
+		throw new Error(`${path} is not a plain sfnt font file`);
+	}
+	const numTables = buf.readUInt16BE(4);
+	const tables: Record<string, FontTable> = {};
+	for (let i = 0; i < numTables; i++) {
+		const at = 12 + i * 16;
+		if (at + 16 > buf.length) {
+			throw new Error(`${path} has a table directory that runs past the end of the file`);
+		}
+		const tag = buf.toString("ascii", at, at + 4);
+		const offset = buf.readUInt32BE(at + 8);
+		const length = buf.readUInt32BE(at + 12);
+		tables[tag] = { buf: buf.subarray(offset, offset + length), transformVersion: 0 };
+	}
+	return tables;
+}
+
+/**
+ * The tables of one font file, whichever container it arrived in.
+ * @param path The font file.
+ * @returns The tables by tag.
+ * @throws {Error} When the file is neither woff2 nor a plain sfnt.
+ */
+function readFontTables(path: string): Record<string, FontTable> {
+	const head = readFileSync(path).subarray(0, 4).toString("ascii");
+	return head === "wOF2" ? readWoff2(path) : readSfnt(path);
+}
+
 interface ParsedFont {
 	unitsPerEm: number;
 	numGlyphs: number;
@@ -351,7 +405,7 @@ function readAdvances(hmtx: FontTable, numberOfHMetrics: number, numGlyphs: numb
  * @throws {Error} When a required table is missing.
  */
 function parseFont(path: string): ParsedFont {
-	const tables = readWoff2(path);
+	const tables = readFontTables(path);
 	const head = new Reader(requireTable(tables, "head", path).buf, 18);
 	const unitsPerEm = head.u16();
 	const maxp = new Reader(requireTable(tables, "maxp", path).buf, 4);
@@ -527,4 +581,4 @@ function parseCmap(buf: Buffer): Map<number, number> {
 	throw new Error(`cmap format ${format} is not one this reader knows`);
 }
 
-export { Reader, type FontTable, readWoff2, type ParsedFont, parseFont };
+export { Reader, type FontTable, readWoff2, readSfnt, readFontTables, type ParsedFont, parseFont };

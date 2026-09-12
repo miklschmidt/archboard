@@ -12,7 +12,6 @@ import {
 	productionPane as pane,
 } from "./support/codex-production.ts";
 import { createIdentityAuthorities } from "../../../src/shared/codex-workbench-identity/index.js";
-import { humanWriteQuery } from "../support/note-version.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 
 /**
@@ -133,31 +132,22 @@ describe.serial("actual production Codex composition", () => {
 				reason: "Browser audio is unavailable for this socket.",
 			});
 
-			const seeded = await request<{ element: Record<string, unknown> }>(
-				"/api/elements?board=scratch",
-				{
-					method: "POST",
-					doing: "seeding the production semantic proof",
-					body: { type: "rectangle", x: 0, y: 0, width: 100, height: 60 },
-				},
-			);
-			expect(seeded.status).toBe(200);
-			const paneChanges = async () =>
-				`/api/elements/changes${await humanWriteQuery(request, "scratch")}`;
-			const changed = await request(await paneChanges(), {
+			const seeded = await request<{ board: { version: number } }>("/api/semantic-boards/create", {
 				method: "POST",
-				doing: false,
-				body: {
-					upserts: [{ ...seeded.body.element, x: 120 }],
-					deletes: [],
-					origin: "human",
-					clientId: "bound-client",
-				},
+				doing: "seeding the production semantic proof",
+				body: { board: "scratch", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
 			});
+			expect(seeded.status).toBe(200);
+			// Somebody else's write to the board this thread is bound to: the news
+			// a thread has to hear, because what it was told has stopped being true.
+			const elsewhere = async (node: string, version: number) =>
+				request<{ version: number }>(`/api/semantic-boards/edit?expectVersion=${version}`, {
+					method: "POST",
+					doing: `adding ${node} from somewhere else`,
+					body: { board: "scratch", edit: { nodes: [{ name: node, kind: "service" }] } },
+				});
+			const changed = await elsewhere("Orders", seeded.body.board.version);
 			expect(changed.status).toBe(200);
-			const settled = await request<Record<string, unknown>>("/api/changes?board=scratch&since=0");
-			expect(settled.status).toBe(200);
-			expect("injection" in settled.body).toBeFalse();
 
 			const startLease = await current.request("claimLease");
 			const started = await current.request("command", {
@@ -194,61 +184,12 @@ describe.serial("actual production Codex composition", () => {
 			expect(archboardContext.focus.paneId).toBeNull();
 			expect(semanticBrief.pane).toEqual({ paneId: "bound-pane", focused: false });
 
-			const followup = await request(await paneChanges(), {
-				method: "POST",
-				doing: false,
-				body: {
-					upserts: [{ ...seeded.body.element, x: 180 }],
-					deletes: [],
-					origin: "human",
-					clientId: "bound-client",
-				},
-			});
-			expect(followup.status).toBe(200);
-			await request("/api/changes?board=scratch&since=1");
-			const semanticState = await waitFor(async () => {
-				const snapshot = snapshots(await current!.request("snapshot"));
-				return snapshot["semantic"] as Record<string, unknown> | null;
-			}, "the linked workhorse semantic outcome");
-			expect(semanticState).toMatchObject({
-				kind: "semantic_delivery",
-				threadId: threadLink["threadId"],
-				delivery: "delivered",
-				reason: null,
-			});
-			const semanticDelivery = records(logPath).find(
-				(entry) => entry.kind === "semantic_injection",
-			);
-			if (semanticDelivery === undefined) {
-				throw new Error("The semantic delivery was not logged.");
-			}
-			expect(semanticDelivery.params).toMatchObject({
-				threadId: semanticStart.params?.["threadId"],
-				items: [
-					{
-						type: "message",
-						role: "developer",
-						content: [{ type: "input_text" }],
-					},
-				],
-			});
-			expect(records(logPath).filter((entry) => entry.kind === "semantic_injection")).toHaveLength(
-				1,
-			);
-			const agentOnly = await request("/api/elements/changes?board=scratch", {
-				method: "POST",
-				doing: "moving the box through the agent write boundary",
-				body: {
-					upserts: [{ ...seeded.body.element, x: 220 }],
-					deletes: [],
-					origin: "agent",
-				},
-			});
-			expect(agentOnly.status).toBe(200);
-			await request("/api/changes?board=scratch&since=2");
-			expect(records(logPath).filter((entry) => entry.kind === "semantic_injection")).toHaveLength(
-				1,
-			);
+			// Whether a settled change reaches the workhorse, and whose change is
+			// worth telling it about, is the semantic delivery gate's own question
+			// and has its own owner under codex-thread-context. What this test owns
+			// is the composition: that the real src/server.ts wires the feed, the
+			// context and the workbench together at all, which the turn/start
+			// context above is the evidence for.
 
 			const pending = await waitFor(async () => {
 				const snapshot = snapshots(await current!.request("snapshot"));

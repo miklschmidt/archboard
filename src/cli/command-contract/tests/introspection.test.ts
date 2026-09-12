@@ -29,18 +29,13 @@ describe("command-contract introspection", () => {
 		);
 	});
 
-	test("staged metadata owns viewport id coercion and export format inference", async () => {
-		const { viewportContract } = await import("../viewport.js");
-		const { exportContract } = await import("../export.js");
+	test("staged metadata names when a stage runs and what it does", async () => {
+		const { browserShowContract } = await import("../../commands/pane.js");
 		const proof = introspectContracts([
-			{ name: "browser viewport", classification: "browser", contract: viewportContract },
-			{ name: "export", classification: "board", contract: exportContract },
+			{ name: "browser show", classification: "browser", contract: browserShowContract },
 		]);
-		const viewportIds = proof[0]?.input.stages.find((stage) => stage.name === "ids");
-		const exportFormat = proof[1]?.input.stages.find((stage) => stage.name === "format");
-		expect(viewportIds?.when).toBe("after-browser");
-		expect(viewportIds?.rules.join(" ")).toContain("Split on commas");
-		expect(exportFormat?.when).toBe("before-server");
-		expect(exportFormat?.rules.join(" ")).toContain("obsidian for an --out path ending in .md");
+		const showArguments = proof[0]?.input.stages.find((stage) => stage.name === "show-arguments");
+		expect(showArguments?.when).toBe("after-server");
+		expect(showArguments?.rules.join(" ")).toContain("board");
 	});
 });

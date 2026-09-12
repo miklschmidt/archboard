@@ -152,8 +152,9 @@ function identityFields(brief: VoiceContextCanonicalBrief): readonly VoiceContex
 function boardFields(brief: VoiceContextCanonicalBrief): readonly VoiceContextFieldView[] {
 	const { cursor } = brief;
 	return [
-		{ label: "Board", value: brief.board.key, technical: true },
-		{ label: "Board note", value: brief.board.note, technical: true },
+		{ label: "Board", value: brief.board.name, technical: false },
+		{ label: "Board key", value: brief.board.key, technical: true },
+		{ label: "Board document", value: brief.board.file, technical: true },
 		{ label: "Pane", value: brief.pane.paneId, technical: true },
 		{
 			label: "Focused at capture",
@@ -165,7 +166,6 @@ function boardFields(brief: VoiceContextCanonicalBrief): readonly VoiceContextFi
 			value: brief.version === null ? "None" : String(brief.version),
 			technical: true,
 		},
-		{ label: "Selection", value: listText(brief.selection, ", "), technical: true },
 		{ label: "Claim", value: words(brief.claim.holder), technical: false },
 		{ label: "Claim doing", value: nonEmptyText(brief.claim.doing), technical: false },
 		{ label: "Doing", value: nonEmptyText(brief.doing), technical: false },
@@ -175,6 +175,118 @@ function boardFields(brief: VoiceContextCanonicalBrief): readonly VoiceContextFi
 			technical: true,
 		},
 	];
+}
+
+/** One selected subject, as the brief carries it. */
+type BriefSubject = VoiceContextCanonicalBrief["architecture"]["selection"]["subjects"][number];
+
+/**
+ * One subject as a person reads it: what it is called, or its identity when it
+ * has no name of its own.
+ * @param subject The subject.
+ * @returns The text.
+ */
+function subjectText(subject: BriefSubject): string {
+	return `${words(subject.kind)} ${subject.name ?? subject.id}`;
+}
+
+/** What the brief says was picked out. */
+type BriefSelection = VoiceContextCanonicalBrief["architecture"]["selection"];
+
+/**
+ * What was picked out, as a person reads it.
+ *
+ * The count decides, never the length of the list. A brief under byte pressure
+ * drops subjects, and a panel reading "None" off an emptied list would say
+ * nobody had selected anything at the moment somebody had selected too much to
+ * carry.
+ * @param selection What the brief says was picked out.
+ * @returns The text.
+ */
+function pickedText(selection: BriefSelection): string {
+	const { count, subjects } = selection;
+	if (count === 0) {
+		return "None";
+	}
+	if (subjects.length === 0) {
+		return `${count} selected, not listed here`;
+	}
+	const listed = subjects.map(subjectText).join(", ");
+	return count > subjects.length ? `${listed}, and ${count - subjects.length} more` : listed;
+}
+
+/**
+ * What the pane was reading when the brief was captured: which architectural
+ * state, through which view, with what picked out, what it differs from and
+ * what it is waiting on.
+ *
+ * This is the half of a brief that says what an agent was actually talking
+ * about, so none of it is marked technical except the identities: a person
+ * reading their own voice history wants "Queued ingest, draft" and not an id.
+ * @param brief The brief.
+ * @returns The fields.
+ */
+function architectureFields(brief: VoiceContextCanonicalBrief): readonly VoiceContextFieldView[] {
+	const { variant, view, differences, reconciliation, selection } = brief.architecture;
+	return [
+		{
+			label: "Variant",
+			value: variant === null ? "None" : `${variant.name} (${words(variant.lifecycle)})`,
+			technical: false,
+		},
+		{ label: "Variant id", value: variant === null ? "None" : variant.id, technical: true },
+		{
+			label: "View",
+			value: view === null ? "Whole variant" : `${view.name} (${words(view.grammar)})`,
+			technical: false,
+		},
+		{ label: "Selection", value: pickedText(selection), technical: false },
+		{
+			label: "Selected ids",
+			value: listText(
+				selection.subjects.map((subject) => subject.id),
+				", ",
+			),
+			technical: true,
+		},
+		{
+			label: "Differences",
+			value:
+				differences === null
+					? "No predecessor"
+					: `${differences.added} added, ${differences.removed} removed, ${differences.changed} changed`,
+			technical: false,
+		},
+		{ label: "Reconciliation", value: settlingText(reconciliation), technical: false },
+	];
+}
+
+/** What the brief says a variant is waiting on. */
+type BriefReconciliation = VoiceContextCanonicalBrief["architecture"]["reconciliation"];
+
+/**
+ * What a variant is waiting on, as a person reads it.
+ *
+ * The count decides what this says, never the length of the list: a brief under
+ * byte pressure drops its issues first, and a panel that read "Nothing to
+ * settle" off an emptied list would be telling somebody the opposite of the
+ * truth at exactly the moment the truth was too long to fit. So a dropped list
+ * says how many there were and that they did not fit.
+ * @param reconciliation What the brief says the variant is waiting on.
+ * @returns The text.
+ */
+function settlingText(reconciliation: BriefReconciliation): string {
+	const { required, count, blockedBy, issues } = reconciliation;
+	const waiting = blockedBy === null ? "" : `; waiting on ${blockedBy}`;
+	if (!required && count === 0) {
+		return "Nothing to settle";
+	}
+	if (issues.length === 0) {
+		return `${count} to settle, not listed here${waiting}`;
+	}
+	const listed = issues.map((issue) => `${issue.what}: ${words(issue.kind)}`).join("; ");
+	const more = count > issues.length ? `, and ${count - issues.length} more not listed` : "";
+	return `${listed}${more}${waiting}`;
 }
 
 /**
@@ -212,6 +324,7 @@ function baselineFields(brief: VoiceContextCanonicalBrief): readonly VoiceContex
 	return Object.freeze([
 		...identityFields(brief),
 		...boardFields(brief),
+		...architectureFields(brief),
 		...freshnessFields(brief),
 	]);
 }

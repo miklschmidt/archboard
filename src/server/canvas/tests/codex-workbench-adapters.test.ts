@@ -19,12 +19,49 @@ test("semantic capture follows the controller pane across same-board focus and r
 			bindingPaneId,
 			contextBoard,
 			panes,
+			/**
+			 * The board a pane is showing.
+			 * @param pane The pane.
+			 * @returns Its board key, variant and all.
+			 */
 			boardForPane: (pane) => pane.board,
+			/**
+			 * The board a key names, split at the last `@`.
+			 * @param key The key, or null.
+			 * @returns The board, or null.
+			 */
+			aggregateOf: (key) => (key === null ? null : (key.split("@")[0] ?? null)),
 		});
 	expect(select("pane-bound")).toBe(panes[1]!);
 	expect(select("pane-focused")).toBe(panes[0]!);
 	expect(() => select(null)).toThrow("no current thread-context binding");
 	expect(() => select("pane-bound", "stale-board")).toThrow("does not own board stale-board");
+
+	// A pane reading a proposal of the board is a pane on that board: every
+	// variant is in the one document, and a context about the board belongs to
+	// whoever is reading any of it.
+	const proposals = [
+		{ paneId: "pane-bound", clientId: "bound", board: "shared@Queued ingest", focused: false },
+	];
+	expect(
+		requireExactSemanticPane({
+			bindingPaneId: "pane-bound",
+			contextBoard: "shared",
+			panes: proposals,
+			/**
+			 * The board a pane is showing.
+			 * @param pane The pane.
+			 * @returns Its board key, variant and all.
+			 */
+			boardForPane: (pane) => pane.board,
+			/**
+			 * The board a key names, split at the last `@`.
+			 * @param key The key, or null.
+			 * @returns The board, or null.
+			 */
+			aggregateOf: (key) => (key === null ? null : (key.split("@")[0] ?? null)),
+		}),
+	).toBe(proposals[0]!);
 });
 
 test("the production dynamic authority token issuer retires exact opaque capabilities", () => {

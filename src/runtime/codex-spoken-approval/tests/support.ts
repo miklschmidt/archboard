@@ -195,7 +195,7 @@ function classifierContext(
 	return {
 		schema: 1,
 		paneId: "pane-1",
-		board: { note: "vault/board.md", version: 1, cursor: null },
+		board: { name: "Fixture board", key: "fixture board", version: 1, cursor: null },
 		threadLink: { state: "executable", reason: null },
 		child: { id: identity.validator.childId, epoch: identity.validator.epoch },
 		workhorse: { threadId: null, turnId: null },
@@ -207,7 +207,10 @@ function classifierContext(
 			truncated: false,
 		},
 		focus: { paneId: "pane-1", capturedAtMs: 1 },
-		selection: { elementIds: [], capturedAtMs: 1 },
+		variant: null,
+		view: null,
+		selection: { count: 0, subjects: [], capturedAtMs: 1 },
+		reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
 		claim: { holder: "human", doing: "Reviewing the command" },
 		ambiguity: [],
 		operation: {

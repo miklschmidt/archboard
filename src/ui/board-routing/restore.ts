@@ -22,19 +22,19 @@
 // not applied twice and a restore always terminates.
 
 import {
-	panesAtRisk,
 	planFor,
 	planIsEmpty,
 	type AddressPlan,
 	type WorkspaceAddress,
 } from "@/ui/board-routing/address";
-import type { NavigationBlock, WorkspacePort } from "@/ui/board-routing/contracts";
+import type { WorkspacePort } from "@/ui/board-routing/contracts";
 
 /** One thing a restore does next. */
 type RestoreStep =
 	| { readonly kind: "close"; readonly paneId: string }
 	| { readonly kind: "add" }
 	| { readonly kind: "open"; readonly paneId: string; readonly boardKey: string }
+	| { readonly kind: "read"; readonly paneId: string; readonly view: string | null }
 	| { readonly kind: "focus"; readonly paneId: string };
 
 /** The restore, as it stands. */
@@ -55,7 +55,6 @@ interface Restore {
 type RestoreOutcome =
 	| { readonly kind: "step"; readonly step: RestoreStep; readonly key: string }
 	| { readonly kind: "wait" }
-	| { readonly kind: "blocked"; readonly block: NavigationBlock }
 	| { readonly kind: "done" };
 
 /**
@@ -121,6 +120,8 @@ function stepKey(step: RestoreStep, displayed: WorkspaceAddress): string {
 			return `add:${displayed.panes.length}`;
 		case "open":
 			return `open:${step.paneId}:${step.boardKey}`;
+		case "read":
+			return `read:${step.paneId}:${step.view ?? ""}`;
 		default:
 			return `focus:${step.paneId}`;
 	}
@@ -139,8 +140,11 @@ function stepsOf(plan: AddressPlan): readonly RestoreStep[] {
 	const adds = plan.adds > 0 ? [{ kind: "add" } as const] : [];
 	const closes = plan.closes.map((paneId) => ({ kind: "close", paneId }) as const);
 	const opens = plan.opens.map((open) => ({ kind: "open", ...open }) as const);
+	// After the boards: a pane about to be pointed somewhere else is not read
+	// here at all, and one that stays put is read once its board is settled.
+	const reads = plan.reads.map((read) => ({ kind: "read", ...read }) as const);
 	const focus = plan.focus === null ? [] : [{ kind: "focus", paneId: plan.focus } as const];
-	return [...adds, ...closes, ...opens, ...focus];
+	return [...adds, ...closes, ...opens, ...reads, ...focus];
 }
 
 /**
@@ -176,10 +180,6 @@ function nextRestoreStep(
 
 /**
  * What the restore does now.
- *
- * Every pane the remaining plan would close or move is preflighted before each
- * step, so a restore never half-applies over a canvas holding work the note
- * has not got.
  * @param restore The restore.
  * @param displayed What is on screen now.
  * @param port The workspace.
@@ -194,26 +194,17 @@ function restoreOutcome(
 	if (planIsEmpty(plan)) {
 		return { kind: "done" };
 	}
-	const verdict = port.guard(panesAtRisk(plan));
-	if (verdict.kind !== "clear") {
-		return { kind: "blocked", block: verdict };
-	}
 	return nextRestoreStep(plan, displayed, restore.attempted, port.ready);
 }
 
 /**
- * Say how a restore ended, when there is anything to say. A blocked one names
- * the pane that refused; a finished one names the boards it could not reach,
- * which the address is about to be corrected to leave out.
+ * Say how a restore ended, when there is anything to say: a finished one names
+ * the boards it could not reach, which the address is about to be corrected to
+ * leave out.
  * @param port The workspace.
  * @param restore The restore that ended.
- * @param outcome How it ended.
  */
-function reportRestoreEnd(port: WorkspacePort, restore: Restore, outcome: RestoreOutcome): void {
-	if (outcome.kind === "blocked") {
-		port.reportBlocked(outcome.block);
-		return;
-	}
+function reportRestoreEnd(port: WorkspacePort, restore: Restore): void {
 	if (restore.unreachable.length > 0) {
 		port.reportUnreachable(restore.unreachable);
 	}
@@ -263,7 +254,7 @@ function advanceRestore(
 			return { restore: current, waiting: true };
 		}
 		if (outcome.kind !== "step") {
-			reportRestoreEnd(port, current, outcome);
+			reportRestoreEnd(port, current);
 			return { restore: { ...current, done: true }, waiting: false };
 		}
 		current = { ...current, attempted: new Set(current.attempted).add(outcome.key) };

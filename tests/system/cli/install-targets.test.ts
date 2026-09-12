@@ -146,7 +146,7 @@ describe("install targets", () => {
 		).toBe(true);
 		expect(
 			setupBytes.includes(
-				Buffer.from(`ARCHBOARD_VAULT=${first.setup.vault} ${first.setup.command} board list`),
+				Buffer.from(`ARCHBOARD_VAULT=${first.setup.vault} ${first.setup.command} semantic`),
 			),
 			firstDiagnostic,
 		).toBe(true);

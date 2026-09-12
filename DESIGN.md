@@ -1,7 +1,6 @@
 # Design and Codex integration
 
-What archboard builds on its Excalidraw base and how it plugs into Codex and
-GPT-Live voice. Everything marked verified was established by reading the Codex
+How archboard's semantic boards plug into Codex and GPT-Live voice. Everything marked verified was established by reading the Codex
 source at commit `f5a3dc5540` or by testing this build. The visual direction
 for the chrome is the [operator canvas shell reference](docs/design/operator-canvas-shell.md).
 
@@ -14,11 +13,13 @@ budget. The realtime session is one long-lived thread on the Codex `Session`,
 feature-gated off by default, and delegation crosses as one opaque text
 envelope capped at 4 KiB; a second delegation mid-turn steers the running turn.
 
-So no amount of `describe` quality reaches the voice model directly. The Codex
-thread reads the canvas and re-narrates it in prose. Every read path therefore
-targets what an agent can compress into a spoken sentence, not a complete scene
-dump: "Postgres is talking to three services directly, two of which also go
-through the queue", never 47 elements with ids and coordinates.
+So no amount of read quality reaches the voice model directly. The Codex thread
+reads the board and re-narrates it in prose. Every read path therefore targets
+what an agent can compress into a spoken sentence, not a complete dump:
+"Postgres is talking to three services directly, two of which also go through
+the queue", never 47 subjects with ids. A semantic board is what makes that
+cheap — the board already says what the parts are and how they are wired, so
+there is nothing to infer from a picture.
 
 ## Three channels, three jobs
 

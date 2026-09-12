@@ -391,9 +391,7 @@ async function createAgentBrowser(): Promise<AgentBrowserSession> {
 export {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
-	OPT_IN_BROWSER_TEST_PATHS,
 	type BrowserTestPath,
-	HUMAN_PERFORMANCE_BROWSER_OWNER,
 	CI_EXCLUDED_BROWSER_OWNERS_ENV,
 	type BrowserSelection,
 	validateBrowserSelection,

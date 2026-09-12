@@ -64,7 +64,6 @@ interface RestRelationship {
 	description: string;
 }
 
-type HeldPolicy = "none" | "stderr-note" | "object-field-and-stderr-note";
 type OutputMode = "json" | "text" | "raw" | "file-receipt";
 
 interface OutputCondition {
@@ -76,7 +75,6 @@ interface OutputCase {
 	id: string;
 	when: OutputCondition;
 	mode: OutputMode;
-	held: HeldPolicy;
 	description: string;
 	presentation?: readonly [OutcomePresentationStep, ...OutcomePresentationStep[]];
 	artifact?: z.ZodType<PendingArtifact>;
@@ -88,7 +86,7 @@ interface OutputPolicy<Input> {
 }
 
 type OutcomeStreamPolicy = "stdout-only" | "stderr-only" | "stdout-and-stderr";
-type OutcomePresentationStep = "diagnostics" | "result" | "held-note" | "continuation";
+type OutcomePresentationStep = "diagnostics" | "result";
 
 /** A public, declared nonzero command result. Ordinary success is always exit 0. */
 interface CommandOutcomeDeclaration {
@@ -96,7 +94,6 @@ interface CommandOutcomeDeclaration {
 	exit: number;
 	description: string;
 	stream: OutcomeStreamPolicy;
-	held: HeldPolicy;
 	presentation: readonly [OutcomePresentationStep, ...OutcomePresentationStep[]];
 }
 
@@ -304,7 +301,6 @@ export {
 	type CommandEffect,
 	type RefusalContract,
 	type RestRelationship,
-	type HeldPolicy,
 	type OutputMode,
 	type OutputCondition,
 	type OutputCase,

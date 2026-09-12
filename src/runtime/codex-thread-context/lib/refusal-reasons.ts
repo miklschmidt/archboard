@@ -178,8 +178,13 @@ function eventLinkReason(event: SettledSemanticChangeEvent): Reason | null {
 }
 
 /**
- * Applies the origin and significance policy: only human or mixed layout and
- * structural changes are ever delivered.
+ * Applies the significance policy: a cosmetic change carries no design intent
+ * and is nobody's news.
+ *
+ * Who wrote it is deliberately not judged here. Every origin is deliverable —
+ * after ADR 0023 a person does not write a board at all, so refusing `agent`
+ * would refuse everything — and whether a change is this thread's own is
+ * decided by the writer identity it carries, not by the vocabulary.
  * @param event - The settled semantic change.
  * @returns The refusal reason, or null when the change qualifies.
  */
@@ -187,16 +192,57 @@ function eventShapeReason(event: SettledSemanticChangeEvent): Reason | null {
 	if (event.source !== "settled_change") {
 		return "invalid_event";
 	}
-	if (event.origin === "agent") {
-		return "agent_only";
-	}
-	if (event.origin !== "human" && event.origin !== "mixed") {
+	if (event.origin !== "human" && event.origin !== "mixed" && event.origin !== "agent") {
 		return "invalid_event";
 	}
 	if (event.change.significance === "cosmetic") {
 		return "cosmetic";
 	}
 	return null;
+}
+
+/**
+ * Whether this change is one this pane's own work made.
+ *
+ * The thing worth dropping is not that an agent wrote it — after ADR 0023 an
+ * agent wrote all of it — but that THIS thread wrote it, which is the change
+ * that tells it what it already knows. A different writer changing the board
+ * underneath a thread is exactly the news that thread needs: what it was told
+ * has stopped being true.
+ *
+ * A change nobody can be attributed is delivered. An agent working without a
+ * claim gets a fresh identity per write on purpose (ADR 0016), so its writes
+ * are unattributable by construction; delivering one is redundancy the thread
+ * is told how to handle, while dropping it would be the silence this check
+ * exists to prevent.
+ *
+ * What is compared is the pane the write said it was FOR, never the identity the
+ * board was held under. The two are different questions. A write made under a
+ * claim carries the claim's holder id, one value shared by every write in the
+ * campaign, and a claim records no pane — so `claimWriterId(board)` answers
+ * "this board is claimed by X", not "I am X". Two panes on one claimed board
+ * would both match it, and the second would suppress the first's change: the
+ * precise failure this check exists to remove, reintroduced by a wider one.
+ *
+ * So attribution rides on the write envelope's own pane, which a writer bound to
+ * a pane can state and nothing is obliged to. A write that names no pane is
+ * unattributable and delivered.
+ *
+ * That value is supplied by the writer, and nothing here can check it: a caller
+ * may state a pane that is not its own, the same trust boundary `--doing` sits
+ * on. Nothing on a board depends on it — it never reaches content, a claim or a
+ * version — and all it is for is letting a thread recognise its own change. Worth knowing which way the harm runs — a false pane makes THAT pane's
+ * thread miss a change it should have heard about, so a lie buys silence for
+ * somebody else rather than noise for the liar. It is not a reason to drop the
+ * check, because the alternative is every thread hearing its own echo; it is a
+ * reason not to build anything on top of this that assumes authorship is proven.
+ * @param event - The settled semantic change.
+ * @param paneId - The pane this delivery port serves.
+ * @returns The refusal reason, or null when the change is somebody else's.
+ */
+function ownChangeReason(event: SettledSemanticChangeEvent, paneId: string): Reason | null {
+	const by = event.change.by;
+	return by !== null && by === paneId ? "own_change" : null;
 }
 
 /**
@@ -349,6 +395,10 @@ function eventReason(
 	const form = eventFormReason(event, options.feedId);
 	if (form !== null) {
 		return form;
+	}
+	const own = ownChangeReason(event, options.paneId);
+	if (own !== null) {
+		return own;
 	}
 	const context = eventContextReason(event, options.paneId);
 	if (context !== null) {

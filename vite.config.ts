@@ -2,10 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
-import { resolve } from "node:path";
 
 const sourceRoot = fileURLToPath(new URL("./src", import.meta.url));
-const frontendRoot = fileURLToPath(new URL("./frontend", import.meta.url));
 
 export default defineConfig({
 	root: "frontend",
@@ -18,26 +16,6 @@ export default defineConfig({
 	build: {
 		outDir: "../dist/frontend",
 		emptyOutDir: true,
-		rollupOptions: {
-			input: {
-				main: resolve(frontendRoot, "index.html"),
-				renderer: resolve(frontendRoot, "renderer.html"),
-			},
-			output: {
-				/**
-				 * Excalidraw's font subsetting worker looks for these files by their
-				 * original (unhashed) names. Preserve them so the 404 doesn't break export.
-				 * @param chunkInfo The chunk Rollup is about to name.
-				 * @returns The output file name pattern.
-				 */
-				chunkFileNames: (chunkInfo) => {
-					if (chunkInfo.name.startsWith("subset-")) {
-						return "assets/[name].js";
-					}
-					return "assets/[name]-[hash].js";
-				},
-			},
-		},
 	},
 	server: {
 		fs: {

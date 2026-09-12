@@ -1,123 +1,28 @@
-// Shapes shared between the shell and the canvases it hosts.
+// Shapes shared between the shell and the panes it hosts.
+//
+// Everything here describes a *session*: which board a pane is showing, who is
+// writing it, and what they said they were doing. None of it is board content.
+// A semantic board's content reaches a pane as a drawn picture and never as a
+// copy the browser could edit (ADR 0023), so there is nothing in this file that
+// a pane could write back.
 
-import type { BinaryFileData } from "@excalidraw/excalidraw/types";
-export type { RuntimeBoardElement as ServerElement } from "@/shared/board-elements";
-import type { RuntimeBoardElement as ServerElement } from "@/shared/board-elements";
-
-/** A board's address: what it is called, which variant, and at what level. */
+/** A board's address: what it is called, and which of its variants is shown. */
 export interface BoardIdentity {
 	board: string;
+	/** The variant's name, or `current` when the pane follows the designation. */
 	variant: string;
-	level?: string;
 }
 
-/** What `/api/boards/current` and the board mutations answer with. */
-export interface BoardInfo {
-	board: string;
+/** One board as the vault lists it. */
+export interface BoardEntry {
+	/** The board key a pane is addressed with: `pipeline`, or `pipeline@variant`. */
+	key: string;
 	identity: BoardIdentity;
-	elementCount: number;
-	/** Scratch: a board with a note, but not a name anybody chose. */
-	placeholder: boolean;
-	file?: string;
-	savedAt?: string;
-	loadedAt?: string;
 }
 
-/**
- * What a save did, as the server classified it (ADR 0012). A save writes a
- * file and does not choose what is on screen. Reading `saveKind` tells the
- * shell whether it wrote the board back to its note, named scratch, or made a
- * branch.
- */
-export interface BoardSaveResult extends BoardInfo {
-	file: string;
-	overwrote: boolean;
-	forced?: boolean;
-	saveKind: "same-board" | "named" | "branch";
-	/** The board the save read from, which is only interesting when it differs. */
-	savedFrom?: string;
-	/**
-	 * Set when this save was one of the two outcomes that end a hold: the board
-	 * had stopped saving, and it is saving again now (ADR 0006, TASK-079).
-	 */
-	resolvedHold?: {
-		board: string;
-		outcome: "overwrite" | "elsewhere";
-		/** How many changes were riding on the choice that was just made. */
-		writes: number;
-		since: string;
-	};
-}
-
-/**
- * A save the server refused because the note at the destination is not the one
- * archboard read (ADR 0006). Carries the three outcomes rather than leaving the
- * UI to invent them, so every surface offers the same choice.
- */
-export interface BoardWriteConflict {
-	board: string;
-	file: string;
-	reason: "changed" | "unseen";
-	lastReadAt?: string;
-	fileModifiedAt?: string;
-	outcomes: { reload: string; overwrite: string; saveAs: string };
-	message: string;
-}
-
-/**
- * A board that has stopped saving (ADR 0006, TASK-079).
- *
- * Its note changed underneath, so archboard refused to write it and has not
- * written it since. What is drawn on it after that is held on the canvas and is
- * in nothing else, which is why the mark stays up: it is not a message about
- * something that happened, it is the state of the board until somebody picks
- * one of the conflict's three outcomes.
- */
-export interface BoardHold {
-	board: string;
-	since: string;
-	/** Changes that have gone into the held copy rather than into the note. */
-	writes: number;
-	/** Whether a pane has said what is on its screen since it stopped saving. */
-	fromScreen: boolean;
-	conflict: BoardWriteConflict;
-	message: string;
-}
-
-/**
- * The note this pane's board came from has been written by something that is
- * not archboard — Obsidian, a sync client, an editor (TASK-062).
- *
- * The state before a hold and not a smaller version of one. Nothing has been
- * refused, because nobody has written since; what is on screen is simply no
- * longer what the vault holds, and the person drawing on it has not been told.
- * Mirrors `NoteWrittenElsewhere` in `src/runtime/engine/note-watch.ts`.
- */
-export interface NoteWrittenElsewhere {
-	board: string;
-	file: string;
-	reason: "changed" | "unseen";
-	/** When the note was last written, from the filesystem. */
-	writtenAt: string;
-	/** When archboard last read it. Absent when it never has. */
-	lastReadAt?: string;
-	/**
-	 * Which side is newer (TASK-091). `ahead` is another archboard, and the two
-	 * versions say by how many writes; `unchanged` is an editor that keeps no
-	 * version, so the note is newer by an unknown amount; `behind` is the note
-	 * having been rolled back under a pane holding the later work.
-	 */
-	versionMove: "unchanged" | "behind" | "ahead" | "unknown";
-	/** What the note carries now, and what archboard last wrote there. */
-	version: number | null;
-	ourVersion: number | null;
-	message: string;
-}
-
-/** Persisted board inventory returned by `/api/boards`. */
+/** Persisted board inventory returned by `/api/semantic-boards`. */
 export interface PersistedBoardListing {
-	vault: string;
-	boards: Array<{ key: string; identity: BoardIdentity; file?: string }>;
+	boards: BoardEntry[];
 }
 
 /** Browser-session inventory returned by `/api/panes`. */
@@ -127,82 +32,37 @@ export interface BrowserPaneListing {
 		place: string;
 		board: string;
 		identity: BoardIdentity;
-		elementCount: number;
 	}>;
 }
 
 /** UI-local projection of persisted boards and the live pane inventory. */
 export interface BoardListing extends PersistedBoardListing {
-	open: Array<{ key: string; identity: BoardIdentity; elementCount?: number }>;
 	/** What each pane is holding right now, in reading order. */
 	onScreen: Array<{ paneId: string; place: string; board: string }>;
 }
 
-/** The canonical presentation scene used only for a browser-rendered board preview. */
-export interface BoardPreviewSnapshot {
-	board: string;
-	fingerprint: string;
-	elements: ServerElement[];
-	files: Record<string, BinaryFileData>;
-}
-
+/** What the server sends a pane over its socket. */
 export interface WebSocketMessage {
 	type: string;
 	/** On `board_error`: the actionable refusal the shell must keep visible. */
 	error?: string;
+	/** The board a message is about, as a pane board key. */
 	board?: string;
 	identity?: BoardIdentity;
-	element?: ServerElement;
-	elements?: ServerElement[];
-	created?: ServerElement[];
-	updated?: ServerElement[];
-	deleted?: string[];
-	origin?: string | null;
-	elementId?: string;
-	count?: number;
-	timestamp?: string;
-	source?: string;
-	mermaidDiagram?: string;
-	config?: Record<string, unknown>;
-	requestId?: string;
-	format?: string;
-	background?: boolean;
-	sourceBoard?: string;
-	findings?: Array<{
-		findingIndex: number;
-		focusBBox: { x: number; y: number; width: number; height: number };
-	}>;
-	scrollToContent?: boolean;
-	scrollToElementId?: string;
-	scrollToElementIds?: string[];
-	viewportZoomFactor?: number;
-	zoom?: number;
-	offsetX?: number;
-	offsetY?: number;
-	files?: Record<string, BinaryFileData>;
-	/** Library items, on `library_changed`. Never elements. */
-	items?: unknown[];
-	/** On `board_hold` and `board_released`: the board that stopped saving. */
-	hold?: BoardHold;
-	/** On `board_released`: which of the three outcomes ended it. */
-	outcome?: "reload" | "overwrite" | "elsewhere";
+	/**
+	 * On `board_note`: a semantic board changed. The panes showing that board
+	 * ask the server for a new picture; nothing about a pane's own state follows
+	 * from it, because the pane holds no copy of the content (ADR 0023).
+	 */
+	semantic?: boolean;
+	/** On `board_note`: the version the board is at now. */
+	version?: number | null;
 	/** On `board_lock`: is anybody writing this board (ADR 0016). */
 	held?: boolean;
 	/** On `board_lock`: who, or null. `id` is their client id, so a pane can recognise itself. */
 	holder?: LockHolder | null;
-	/** On `board_note`: who wrote the note last, if it was not archboard, or null. */
-	writtenElsewhere?: NoteWrittenElsewhere | null;
-	/** On `board_doing`: the line that has just arrived, when this is a new one. */
-	doing?: DoingEntry;
 	/** On `board_doing`: the last few, oldest first, so a pane that has just arrived is not blank. */
 	recent?: DoingEntry[];
-	/**
-	 * On `initial_elements`, `board_switched`, `elements_changed` and a
-	 * `board_released` that carries elements: the note version the elements
-	 * came from, or null when the note carries none (ADR 0022). A pane states
-	 * it on its next write, so a write against a note that has moved is refused.
-	 */
-	version?: number | null;
 	/**
 	 * On `agent_activity`: every board this server serves that an agent holds
 	 * or has just written, as one snapshot. Boardless: every client hears it.
@@ -225,32 +85,11 @@ export interface AgentActivityEntry {
 }
 
 /**
- * Why a pane withdrew a person's unwritten edit (ADR 0022): the note moved
- * past the version the pane was editing, or an agent's claim stands on the board.
- */
-export type EditWithdrawalReason = "moved" | "claimed";
-
-/**
- * A write refused because the note moved past the version the writer stated
- * (ADR 0022). Mirrors `BoardVersionConflict` in `src/runtime/engine/board-version.ts`.
- */
-export interface BoardVersionConflict {
-	board: string;
-	file?: string;
-	/** What the writer was working from. Null means it last saw no note version. */
-	expected: number | null;
-	actual: number | null;
-	/** How many writes the board moved. Negative means the note went backwards. */
-	movedBy: number;
-	message: string;
-}
-
-/**
  * One thing an agent said it was doing to this board (TASK-095).
  *
- * Mirrors `DoingEntry` in `src/runtime/engine/board-doing.ts`. It is never board content
- * and it is nowhere in the note: it is what somebody said while changing
- * something, and it dies with the canvas.
+ * Mirrors `DoingEntry` in `src/runtime/engine/board-doing.ts`. It is never board
+ * content and it is nowhere in the board file: it is what somebody said while
+ * changing something, and it dies with the canvas.
  */
 export interface DoingEntry {
 	doing: string;
@@ -278,9 +117,8 @@ export interface LockHolder {
 	 * A claim rather than one write: an agent has this board across everything it
 	 * is doing, not for the twenty milliseconds of a single write.
 	 *
-	 * The difference the pane cares about: a claim makes the board read-only to
-	 * people while it stands (ADR 0022). A claim is what gets a banner naming
-	 * the holder and their reason, and the one control that releases it.
+	 * What a claim buys the person watching is disclosure: the banner naming the
+	 * holder and their reason, and the one control that releases it (ADR 0022).
 	 */
 	claimed?: boolean;
 }
@@ -300,35 +138,54 @@ export interface PaneStatus {
 	/** The pane's identity to the server — how a board is addressed to it. */
 	clientId: string;
 	connected: boolean;
+	/**
+	 * Whether the server has this pane: it accepted the pane's own report.
+	 *
+	 * Not the same as connected, and the difference is a real moment rather than
+	 * a formality. A socket opens before the pane it carries has been registered,
+	 * and in that window the canvas has nothing to address — so anything told to
+	 * point this pane at a board is told there is no such pane.
+	 */
+	registered: boolean;
 	board: BoardIdentity | null;
+	/**
+	 * The board this pane is showing, or null before it is on one.
+	 *
+	 * What is on screen, which after a drill-down is the board somebody followed
+	 * into rather than the one the pane was pointed at. Everything about this
+	 * pane is about this board: its lock, what an agent is told it is looking
+	 * at, the code a subject opens, the address, and what `browser panes` says.
+	 */
 	boardKey: string | null;
-	elementCount: number;
-	/** When this pane last saw the board change, from either direction. */
+	/**
+	 * The board the server pointed this pane at, or null before it pointed it
+	 * anywhere.
+	 *
+	 * Not a second answer to "which board is this": it is where a drill starts
+	 * from, which the viewer needs to keep its trail back out. Nothing else
+	 * reads it.
+	 */
+	opened: string | null;
+	/**
+	 * The named view the board on screen is being read through, or null for the
+	 * whole variant.
+	 *
+	 * What is DRAWN, like `boardKey` beside it, and for the same reason: a view
+	 * id is a subject of one variant's content, so the view somebody chose on the
+	 * board a pane was opened on names nothing on the board they followed a link
+	 * into. An address written from the shell's remembered preference instead
+	 * would carry the level above's view id down with the level below's board,
+	 * and reopening it would ask for a view that board has not got.
+	 */
+	view: string | null;
+	/** When this pane last heard its board change. */
 	lastChangeAt: string | null;
-	/**
-	 * Set while the board this pane is holding has stopped saving. The chrome
-	 * shows it continuously rather than announcing it once, because it is a state
-	 * and not an event: everything drawn from here is on this canvas and nowhere
-	 * else until somebody chooses (ADR 0006).
-	 */
-	hold: BoardHold | null;
-	/**
-	 * Set while the note behind this pane's board has been written by somebody
-	 * else and this pane is still showing the older one (TASK-062). Distinct from
-	 * `hold`, which is what this becomes once archboard has tried to write and
-	 * been refused, and from a lock, which is another archboard writer.
-	 */
-	writtenElsewhere: NoteWrittenElsewhere | null;
 	/**
 	 * The last few things an agent said it was doing to this pane's board, oldest
 	 * first (TASK-095). Short on purpose: a list of one-liners is glanceable from
 	 * two metres away, and a transcript is a log nobody reads.
 	 */
 	doing: DoingEntry[];
-	/**
-	 * The note version this pane last saw, which its writes state (ADR 0022):
-	 * null before it has been told and when the note carries none. The shell's
-	 * Save and Clear state it too, since they are a person's writes.
-	 */
-	noteVersion: number | null;
+	/** The board version this pane last heard about, or null before any news. */
+	version: number | null;
 }

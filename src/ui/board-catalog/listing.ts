@@ -3,64 +3,42 @@
 // them failing leaves the other on screen, and this is the only place they
 // meet. Pure: no React, no fetching.
 
-import type { BoardListing, BrowserPaneListing, PersistedBoardListing } from "@/ui/types";
+import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
+import type { BoardListing, BrowserPaneListing } from "@/ui/types";
 
 /** The listing before either half has been read. */
-const EMPTY_LISTING: BoardListing = Object.freeze({
-	vault: "",
-	boards: [],
-	open: [],
-	onScreen: [],
-});
-
-/**
- * The boards the live panes hold, once each. Two panes on one board is one
- * open board, and the first pane's report is the one that names it.
- * @param live The panes the server has registered.
- * @returns The open boards.
- */
-function openBoards(live: BrowserPaneListing["panes"]): BoardListing["open"] {
-	const open = new Map<string, BoardListing["open"][number]>();
-	for (const pane of live) {
-		if (!open.has(pane.board)) {
-			open.set(pane.board, {
-				key: pane.board,
-				identity: pane.identity,
-				elementCount: pane.elementCount,
-			});
-		}
-	}
-	return [...open.values()];
-}
+const EMPTY_LISTING: BoardListing = Object.freeze({ boards: [], onScreen: [] });
 
 /**
  * The vault half, empty until it has been read. An unread vault is not an
  * empty one, which is why the navigator asks the query whether it is pending
  * rather than reading anything into a vault with no boards in it.
- * @param persisted The vault's boards, or undefined while unread.
- * @returns The vault and its boards.
+ * @param boards The vault's boards, or undefined while unread.
+ * @returns The listed boards.
  */
-function vaultHalf(persisted: PersistedBoardListing | undefined): PersistedBoardListing {
-	return persisted ?? { vault: "", boards: [] };
+function vaultHalf(boards: readonly SemanticBoardEntry[] | undefined): BoardListing["boards"] {
+	return (boards ?? []).map((board) => ({
+		key: board.key,
+		identity: { board: board.name, variant: "current" },
+	}));
 }
 
 /**
  * The listing the shell reads, from whichever halves have been read.
- * @param persisted The vault's boards, or undefined while unread.
+ * @param boards The vault's boards, or undefined while unread.
  * @param panes The live panes, or undefined while unread.
  * @returns The listing.
  */
 function composeListing(
-	persisted: PersistedBoardListing | undefined,
+	boards: readonly SemanticBoardEntry[] | undefined,
 	panes: BrowserPaneListing | undefined,
 ): BoardListing {
-	if (persisted === undefined && panes === undefined) {
+	if (boards === undefined && panes === undefined) {
 		return EMPTY_LISTING;
 	}
 	const live = panes?.panes ?? [];
 	return {
-		...vaultHalf(persisted),
-		open: openBoards(live),
+		boards: vaultHalf(boards),
 		onScreen: live.map(({ paneId, place, board }) => ({ paneId, place, board })),
 	};
 }
@@ -81,14 +59,14 @@ function failureMessage(failure: unknown): string {
  * words. A pane inventory that failed on its own is reported separately and
  * only while nothing of it is left to show: the vault's boards are still
  * listed, and what is missing is which of them a pane has open.
- * @param persisted What the vault read threw, or null.
+ * @param vault What the vault read threw, or null.
  * @param panes What the pane read threw, or null.
  * @param panesRead Whether any pane inventory is still in hand.
  * @returns The message, or null.
  */
-function listingError(persisted: unknown, panes: unknown, panesRead: boolean): string | null {
-	if (persisted !== null && persisted !== undefined) {
-		return `The board listing could not be read: ${failureMessage(persisted)}`;
+function listingError(vault: unknown, panes: unknown, panesRead: boolean): string | null {
+	if (vault !== null && vault !== undefined) {
+		return `The board listing could not be read: ${failureMessage(vault)}`;
 	}
 	if (panes !== null && panes !== undefined && !panesRead) {
 		return `The open boards could not be read: ${failureMessage(panes)}`;
@@ -96,4 +74,4 @@ function listingError(persisted: unknown, panes: unknown, panesRead: boolean): s
 	return null;
 }
 
-export { EMPTY_LISTING, composeListing, listingError, openBoards };
+export { EMPTY_LISTING, composeListing, listingError };

@@ -185,17 +185,23 @@ describe.serial("production Codex setup cleanup", () => {
 				},
 			});
 			expect(action.value).not.toMatchObject({ outcome: "delivered" });
-			await request("/api/elements?board=scratch", {
-				method: "POST",
-				doing: "persisting the reload census proof",
-				body: { type: "rectangle", x: 0, y: 0, width: 20, height: 20 },
-			});
+			// A board write and a pane move, so the census below is taken after the
+			// canvas has actually done work rather than only after it started.
 			expect(
 				(
-					await request("/api/boards/open", {
+					await request("/api/semantic-boards/create", {
+						method: "POST",
+						doing: "persisting the census proof",
+						body: { board: "scratch", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
+					})
+				).status,
+			).toBe(200);
+			expect(
+				(
+					await request("/api/panes/show", {
 						method: "POST",
 						doing: false,
-						body: { board: "scratch", pane: "signed-out-client", reload: true },
+						body: { board: "scratch", pane: "signed-out-client" },
 					})
 				).status,
 			).toBe(200);

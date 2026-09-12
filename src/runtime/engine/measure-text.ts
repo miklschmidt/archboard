@@ -1,18 +1,16 @@
 // How wide a piece of text is, with no browser open.
 //
-// ADR 0015 says the agent-friendly shape is converted once, on write. A label
-// is converted into a text element, and a text element has a width — and
-// Excalidraw's width for one is exactly what the browser's `measureText`
-// returns. There is no estimation anywhere in that path, so whatever measures,
-// decides. Our old estimate of 0.6 x fontSize per character was not a bad
-// number needing tuning; it made `AuthService` 76.7 px too wide.
+// A box has to fit its words, and the renderer decides how big a box is before
+// any browser sees the picture. There is no estimation anywhere in that path,
+// so whatever measures, decides. An estimate of 0.6 x fontSize per character
+// was not a bad number needing tuning; it made `AuthService` 76.7 px too wide.
 //
 // So this reproduces the browser. Four things beyond summing advance widths,
 // each found by measuring against Chrome rather than reasoned about
 // (docs/design/measuring-text-outside-a-browser.md):
 //
 //   the face comes from the `@font-face` unicode-range, not from which file
-//     happens to carry the glyph (fonts.ts)
+//     happens to carry the glyph (font-faces.ts)
 //   GPOS pair kerning and GSUB ligatures apply (font-layout.ts)
 //   no shaping crosses a space, because Blink shapes word by word: a font
 //     that kerns ` A` does not get to, and eight such pairs disagreed until
@@ -22,20 +20,11 @@
 // With those it agreed with Chrome across 130,000 measurements to within
 // 0.0012 px, and `src/runtime/engine/tests/text-metrics.test.ts` pins the numbers.
 //
-// HEIGHT IS NOT MEASURED, by anybody. Excalidraw's `getTextHeight` is
-// `fontSize * lineHeight * lineCount`, with `lineHeight` a per-family constant
-// it reads from its own registry. No canvas and no glyphs are involved, so
+// HEIGHT IS NOT MEASURED. A line's height is `fontSize * lineHeight`, and the
+// renderer owns both numbers; no canvas and no glyphs are involved, so
 // measuring one here would be inventing a second answer to a settled question.
 
-import {
-	faceStack,
-	lineHeightOf,
-	loadFace,
-	type FaceDescriptor,
-	type LoadedFace,
-} from "@/runtime/engine/fonts";
-
-export { canMeasure } from "@/runtime/engine/fonts";
+import { loadFace, type FaceDescriptor, type LoadedFace } from "@/runtime/engine/font-faces";
 
 // Characters a browser lays out as zero width: soft hyphen, zero-width space,
 // the joiners, and the byte-order mark.
@@ -109,22 +98,6 @@ function faceFor(codepoint: number, stack: readonly FaceDescriptor[][]): Face | 
 		}
 	}
 	return undefined;
-}
-
-/**
- * The file a character would be drawn from — the face-selection rule, said
- * where something can check it.
- *
- * Nunito's subsets overlap: five of them carry `A`, and the browser picks by
- * the declared `unicode-range` rather than by which file has the glyph. On the
- * version shipped today those five agree on `A`'s advance, so no width can
- * tell the two rules apart and this can.
- * @param codepoint The character.
- * @param fontFamily The family number.
- * @returns The woff2 path, or undefined when nothing shipped covers the character.
- */
-export function faceFileFor(codepoint: number, fontFamily: number): string | undefined {
-	return faceFor(codepoint, faceStack(fontFamily))?.descriptor.file;
 }
 
 export interface LineMeasurement {
@@ -285,21 +258,22 @@ function unitsPerEm(words: readonly Word[], missing: string[]): Map<number, numb
 }
 
 /**
- * One line of text, in pixels at `fontSize`.
+ * One line of text, in pixels, in a face stack the caller names.
  *
- * A kern across a subset boundary is left at zero. Chrome applies one for
- * Nunito, and neither of the two files says what it is: they number their
- * kerning classes differently, so no combination of the two tables produces
- * Chrome's answer. It costs at most 2.34 px at fontSize 20, on 511 of 58,564
- * Latin pairs, in the one family that shows it. Excalifont — the family
- * archboard writes — has no disagreement of this kind anywhere.
+ * The one way text is measured. The caller names the faces — the renderer
+ * knows which file each family and weight is — and the word splitting, face
+ * selection, kerning and ligature handling stay here, so there is never a
+ * second answer to "how wide is this string".
  * @param text The line.
  * @param fontSize The font size in pixels.
- * @param fontFamily The family number.
+ * @param stack The families to try, in CSS order, each as its faces.
  * @returns The width and the characters nothing covered.
  */
-export function measureLine(text: string, fontSize: number, fontFamily: number): LineMeasurement {
-	const stack = faceStack(fontFamily);
+export function measureLineIn(
+	text: string,
+	fontSize: number,
+	stack: readonly FaceDescriptor[][],
+): LineMeasurement {
 	if (stack.length === 0) {
 		return { width: 0, missing: Array.from(text) };
 	}
@@ -309,53 +283,4 @@ export function measureLine(text: string, fontSize: number, fontFamily: number):
 		width += (units * fontSize) / em;
 	}
 	return { width, missing };
-}
-
-/**
- * One line of text, in pixels at `fontSize`.
- * @param text The line.
- * @param fontSize The font size in pixels.
- * @param fontFamily The family number.
- * @returns The width.
- */
-export function measureLineWidth(text: string, fontSize: number, fontFamily: number): number {
-	return measureLine(text, fontSize, fontFamily).width;
-}
-
-export interface TextSize {
-	width: number;
-	height: number;
-	/** Characters no shipped file covers. A caller may report them; nothing here does. */
-	missing: string[];
-}
-
-/**
- * The size Excalidraw gives a piece of text: the widest line, and the height
- * that follows from the line count.
- *
- * `lineHeight` is taken from the element when it carries one, because a board
- * that has been through an older Excalidraw may hold a different value and the
- * element's own record is what that Excalidraw will render from.
- * @param text The text, possibly several lines.
- * @param fontSize The font size in pixels.
- * @param fontFamily The family number.
- * @param lineHeight The element's own line height, when it carries one.
- * @returns The size and the characters nothing covered.
- */
-export function measureText(
-	text: string,
-	fontSize: number,
-	fontFamily: number,
-	lineHeight?: number,
-): TextSize {
-	const lines = text.split("\n");
-	let width = 0;
-	const missing: string[] = [];
-	for (const line of lines) {
-		const measured = measureLine(line, fontSize, fontFamily);
-		width = Math.max(width, measured.width);
-		missing.push(...measured.missing);
-	}
-	const perLine = lineHeight ?? lineHeightOf(fontFamily);
-	return { width, height: fontSize * perLine * lines.length, missing };
 }

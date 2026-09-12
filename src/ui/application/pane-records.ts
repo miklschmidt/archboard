@@ -1,9 +1,7 @@
 // What the application has collected from each pane's session: its status,
-// who holds its board, the take-back state, and the projections the inspector
-// reads. Pure: keyed by pane id, replaced rather than mutated.
+// who holds its board, and where a take-back stands. Pure: keyed by pane id,
+// replaced rather than mutated.
 
-import type { PathFocusOverlay, PathFocusSnapshot } from "@/ui/path-focus";
-import type { SelectionProjection } from "@/ui/selection-inspector";
 import type { TakeBackState } from "@/ui/shell";
 import type { LockHolder, PaneStatus } from "@/ui/types";
 
@@ -12,9 +10,6 @@ interface PaneRecord {
 	readonly status: PaneStatus;
 	readonly holder: LockHolder | null;
 	readonly takeBack: TakeBackState;
-	readonly selection: SelectionProjection;
-	readonly pathFocus: PathFocusSnapshot;
-	readonly overlay: PathFocusOverlay | null;
 }
 
 /** Every field a patch may carry; `patchRecord` compares them one by one. */
@@ -22,17 +17,12 @@ const RECORD_FIELDS = [
 	"status",
 	"holder",
 	"takeBack",
-	"selection",
-	"pathFocus",
-	"overlay",
 ] as const satisfies readonly (keyof PaneRecord)[];
 
 /** The records by pane id. */
 type PaneRecords = Readonly<Record<string, PaneRecord>>;
 
 const IDLE_TAKE_BACK: TakeBackState = Object.freeze({ kind: "idle" });
-const EMPTY_SELECTION: SelectionProjection = Object.freeze({ kind: "empty" });
-const INACTIVE_FOCUS: PathFocusSnapshot = Object.freeze({ kind: "inactive" });
 
 /**
  * The status of a pane nothing has been heard from.
@@ -44,14 +34,14 @@ function emptyPaneStatus(paneId: string): PaneStatus {
 		paneId,
 		clientId: "",
 		connected: false,
+		registered: false,
 		board: null,
 		boardKey: null,
-		elementCount: 0,
+		opened: null,
+		view: null,
 		lastChangeAt: null,
-		hold: null,
-		writtenElsewhere: null,
 		doing: [],
-		noteVersion: null,
+		version: null,
 	};
 }
 
@@ -65,9 +55,6 @@ function initialPaneRecord(paneId: string): PaneRecord {
 		status: emptyPaneStatus(paneId),
 		holder: null,
 		takeBack: IDLE_TAKE_BACK,
-		selection: EMPTY_SELECTION,
-		pathFocus: INACTIVE_FOCUS,
-		overlay: null,
 	});
 }
 
@@ -137,9 +124,8 @@ function heldBoardKeys(records: PaneRecords, paneIds: readonly string[]): readon
  * The boards that were held and are not held any more.
  *
  * Letting go of a board is the moment what the server holds for it matters
- * again: while a pane had it, the navigator drew that pane's own scene, and
- * the ordinary edits that went into it were written by change reports that no
- * command outcome describes (TASK-167).
+ * again: a board no pane is showing may have been written since anybody
+ * looked, and nothing announces a change to a board this tab is not on.
  * @param before The keys held at the last check.
  * @param now The keys held now.
  * @returns The released keys, in the order they were held.

@@ -1,21 +1,28 @@
 # Archboard
 
 A shared architecture surface. An agent and a human build, explore, and refactor
-a codebase's structure together by drawing it, rearranging it, and reading the
-rearrangement back.
+a codebase's structure through boards that express architectural meaning.
 
 ## Language
 
 ### The surface
 
 **Board**:
-A named, persisted architecture diagram covering one subject at one abstraction
-level. The unit of saving, linking, and comparison.
+A named, persisted description of architecture covering one subject at one
+abstraction level. Each board owns its content independently and is the unit of
+saving, linking, comparison, and write ownership for its variants.
 _Avoid_: document, drawing, diagram, whiteboard, sketch
 
 **Canvas**:
-The live editable surface on which exactly one board is open at a time.
+The live, pannable and zoomable surface on which exactly one board is open at a
+time for exploration and inspection.
 _Avoid_: scene, workspace, session, drawing area
+
+**View**:
+A named depiction of selected content from one board variant using a particular
+diagram grammar. Views share that variant's nodes rather than owning separate
+copies of them.
+_Avoid_: board, pane, variant
 
 **Pane**:
 One of several side-by-side slots, each holding its own canvas, so that two
@@ -28,7 +35,9 @@ architectural meaning by itself.
 _Avoid_: shape, object, item, primitive
 
 **Node**:
-An element that stands for an architectural unit.
+An architectural unit described on a board, with an identity and kind independent
+of how it is drawn. It has a name and may carry a short responsibility and a detailed
+description.
 _Avoid_: box, component, entity, vertex, block
 
 **Edge**:
@@ -80,7 +89,8 @@ gateway, or external system.
 _Avoid_: type, category, role, class
 
 **Binding**:
-The association between a node and the code it stands for.
+The optional association between a node and its primary code location. Each node
+has at most one binding, and nodes on the same board may name different repositories.
 _Avoid_: link, mapping, reference, pointer, association
 
 **Code target**:
@@ -119,34 +129,79 @@ _Avoid_: mapping, tagging, assignment, conversion
 
 ### Structure
 
+**Containment**:
+One node being structurally part of another, with at most one structural parent.
+Containment expresses membership independently of how nodes are drawn.
+_Avoid_: lane, frame, rectangle
+
+**Presentation intent**:
+What a board's depiction should explain: its focal subject, main flow, and
+diagram grammar. It expresses the intended reading without specifying geometry
+or styling.
+_Avoid_: coordinates, theme, layout settings
+
 **Level**:
 The abstraction tier a board sits at, drawn from a controlled vocabulary that
 grows as new tiers are genuinely needed — initially system, service, module. A
+system board shows interactions between services; a service board shows interactions
+between its modules, with navigation connecting these separate boards. A
 node carries one only to say it differs from its board; a node that says
 nothing is at its board's level.
 _Avoid_: layer, depth, zoom, tier, granularity
 
 **Drill-down**:
-Moving from a node on one board to the board describing that node's internals.
+Moving from a node on one board to an explicitly linked board and variant
+describing that node's internals.
 _Avoid_: zoom in, expand, descend, navigate, open
 
 **Variant**:
-One of an open set of alternative states of the same board. `current` is
-privileged as the architecture that exists; every other variant is a proposal.
-_Avoid_: version (that is which edit a note is, and each variant has its own),
+One of an open set of named architectural states of the same board. A proposed
+variant has one predecessor and its views show changes relative to that predecessor's
+evolving architecture; a predecessor may have several competing successors.
+_Avoid_: version (that is which edit the board's note is),
 revision, branch, mode, state
 
+**Current**:
+The designation of the variant that describes the architecture that exists.
+Moving this designation preserves the names and identities of both states.
+_Avoid_: latest, default proposal
+
+**Adoption**:
+Explicitly designating a variant as the implemented architecture, retaining the
+formerly current state as named history and recording when the designation changed.
+_Avoid_: promotion (the legacy element-to-node operation), rename, merge
+
+**Historical variant**:
+A formerly current architectural state retained under its name after a successor
+is adopted. It is frozen against ordinary edits so it preserves what existed.
+_Avoid_: abandoned proposal, snapshot
+
+**Reconciliation**:
+Bringing a draft variant up to date with its predecessor while retaining its own
+proposed changes. Nonconflicting changes carry through automatically; conflicting
+edits or broken references require resolution. Adopted states do not inherit automatically.
+_Avoid_: comparison, adoption
+
+**Walkthrough**:
+An optional agent-authored narrative belonging to a variant, explaining it through ordered text,
+target views, and focused diagram subjects. It supports presenting architecture
+while highlighting the parts being discussed.
+_Avoid_: variant, flow
+
+**Comparison**:
+The differences between two board variants, identified by the stable identities
+of their architectural content. A proposal's views show its comparison with its baseline
+as derived change labels, rather than authored content.
+_Avoid_: variant, change report
+
 **Note**:
-The file in the vault holding one board. Obsidian's word for a document, kept
-because the file is meant to be opened and edited there as well. The note is
-the board: the canvas reads it and writes it and keeps no copy of one.
+The file in the vault holding one board and its variants. The note is the
+authoritative persisted content of the board.
 _Avoid_: file, document, markdown, page, record
 
 **Version**:
-Which edit of a note it is: a count archboard moves whenever it writes a note
-that differs from the one that was there. It orders two copies of one note,
-which a hash cannot, and a writer may say which version it was editing and have
-the write refused if the board has moved past it.
+Which persisted edit of a board it is, shared by all its variants. A writer
+names the version it edited so a change based on an older board can be refused.
 _Avoid_: revision, generation, sequence, edition, variant (that is a different
 take on the board, not a later state of one)
 
@@ -195,8 +250,8 @@ _Avoid_: voice model (that is only one part of the realtime path), voice agent,
 router, facilitator, copilot
 
 **Read-back**:
-The agent re-reading a board after a human has changed it, so that the change
-can be interpreted as a statement about the design.
+The agent re-reading a board to understand its current architecture and any
+changes to the design.
 _Avoid_: sync, refresh, reload, poll, re-scan
 
 **Pending edits**:

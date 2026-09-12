@@ -36,7 +36,7 @@ const repoContract = defineCommand({
 	input: { ingress: RepoNamespaceInputSchema },
 	result: RepoNamespaceResultSchema,
 	output: {
-		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Namespace refusal" }],
+		cases: [{ id: "json", when: {}, mode: "json", description: "Namespace refusal" }],
 		/**
 		 * Selects the only output case.
 		 * @returns The json case id.
@@ -105,14 +105,12 @@ const repoListContract = defineCommand({
 				id: "json",
 				when: { key: "text", present: false },
 				mode: "json",
-				held: "none",
 				description: "Repository registry",
 			},
 			{
 				id: "text",
 				when: { key: "text", present: true },
 				mode: "text",
-				held: "none",
 				description: "Human-readable registry",
 			},
 		],
@@ -190,7 +188,6 @@ const repoAddContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				held: "none",
 				description: "Registered checkout",
 				presentation: ["diagnostics", "result"],
 			},
@@ -227,7 +224,7 @@ const repoAddContract = defineCommand({
 		return {
 			result: { success: true as const, ...entry, registry: registryPath() },
 			diagnostics: [
-				`"${entry.repo}" is now resolvable from anywhere on this machine: promote --repo ${entry.repo} --path <path inside it>.`,
+				`"${entry.repo}" is now resolvable from anywhere on this machine: a node bound to ${entry.repo} opens the file it names.`,
 			],
 		};
 	},
@@ -272,7 +269,6 @@ const repoForgetContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				held: "none",
 				description: "Forget receipt",
 				presentation: ["diagnostics", "result"],
 			},

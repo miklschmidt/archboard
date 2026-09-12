@@ -5,21 +5,6 @@
 import type { WorkspaceAddress } from "@/ui/board-routing/address";
 
 /**
- * Why a navigation was refused before anything moved.
- *
- * `pending` is an edit the server has not taken yet, `hold` a board that has
- * stopped saving (ADR 0006): in both, the pane's canvas holds work that exists
- * nowhere else, and pointing it at another board would throw that work away.
- */
-interface NavigationBlock {
-	readonly kind: "pending" | "hold";
-	readonly paneId: string;
-}
-
-/** Whether a navigation may proceed. */
-type GuardVerdict = { readonly kind: "clear" } | NavigationBlock;
-
-/**
  * How pointing one pane at one board ended. A board that opened comes back
  * with the key the server resolved it to, which is the only spelling that can
  * be compared with what a pane reports.
@@ -28,19 +13,21 @@ type OpenOutcome =
 	| { readonly kind: "opened"; readonly boardKey: string }
 	| { readonly kind: "unreachable" };
 
-/** The workspace the address bar reads, addresses and guards. */
+/** The workspace the address bar reads and addresses. */
 interface WorkspacePort {
 	/** What is on screen now, from the panes themselves. */
 	readonly displayed: WorkspaceAddress;
 	/** Whether a pane can be addressed yet: it has reached the server. */
 	readonly ready: (paneId: string) => boolean;
-	/**
-	 * Whether these panes may lose what they show. Called before anything
-	 * changes, for every pane a navigation would close or move.
-	 */
-	readonly guard: (paneIds: readonly string[]) => GuardVerdict;
 	/** Point one pane at one board, through the application's open command. */
 	readonly open: (paneId: string, boardKey: string) => Promise<OpenOutcome>;
+	/**
+	 * Read the board one pane is already showing through one of its views, or
+	 * through none for the whole variant. Nothing is opened and nothing is taken
+	 * away, so this is not an operation the command slot carries.
+	 * @returns True when the pane was reading it some other way.
+	 */
+	readonly read: (paneId: string, view: string | null) => boolean;
 	/**
 	 * The panes this shell can have, whether or not they are open. An address
 	 * naming anything else is asking for a workspace that cannot exist.
@@ -56,10 +43,8 @@ interface WorkspacePort {
 	readonly addPane: () => boolean;
 	readonly closePane: (paneId: string) => boolean;
 	readonly selectPane: (paneId: string) => boolean;
-	/** A navigation was refused: show that pane's recovery. */
-	readonly reportBlocked: (block: NavigationBlock) => void;
 	/** A restore could not reach these boards; the workspace is what is shown. */
 	readonly reportUnreachable: (boardKeys: readonly string[]) => void;
 }
 
-export type { GuardVerdict, NavigationBlock, OpenOutcome, WorkspacePort };
+export type { OpenOutcome, WorkspacePort };
