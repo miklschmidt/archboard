@@ -1,36 +1,26 @@
 import { WebSocket } from "ws";
 import { logger } from "@/runtime/engine/logger";
-import { selectionState } from "@/runtime/engine/types";
 import type { WebSocketMessage } from "@/runtime/engine/types";
 import { panesInOrder, resolvePaneSpec, soloPane } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
-import { boards, SCRATCH_KEY } from "@/runtime/engine/board-store";
+import { listSemanticBoards, readSemanticBoard } from "@/runtime/semantic-board-store/index";
+import { parseBoardKey } from "@/runtime/engine/board";
+import type { BoardIdentity } from "@/runtime/engine/board";
+import { resolveVariant } from "@/shared/semantic-board/index";
 import { sleep, watchBoardLocks } from "@/runtime/engine/board-lock";
 import { PANE_SETTLE_CAP_MS } from "@/shared/timing/timing";
 import type { BrowserConnectionInstance } from "@/server/canvas/codex-workbench-browser";
 import { createBrowserLeaseLedger, type BrowserLeaseLedger } from "@/server/codex-workbench";
 
-// WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because ADR 0015 says
-// the note is the board and the canvas holds no copy of one. Three kinds of
-// thing survive that, and the test is which question each answers.
+// WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the board file
+// is the board and the canvas holds no copy of one (ADR 0015, ADR 0023).
 //
 // Session and display state answers "what is on this screen, now": the sockets
-// below, `clientIds`, `panes`, `paneBoards`, `selectionState`, the `pending*`
-// sets and the Codex wiring. None of it can live in a note, all of it dies
-// with the tab, and a reading of ADR 0015 that forbade it would be
-// unimplementable — which is why the ADR names it.
+// below, `clientIds`, `panes`, `paneBoards`, the `pending*` sets and the Codex
+// wiring. None of it can live in a board file, all of it dies with the tab, and
+// a reading of ADR 0015 that forbade it would be unimplementable.
 //
-// A record of what a board used to be answers "how did it stand then": the
-// change feed's baseline and checkpoints (`src/runtime/engine/change-feed.ts`) and
-// `snapshots` (`src/runtime/engine/types.ts`). Each carries its own reasoning; the
-// short form is that the vault has never held a board's past and so
-// statelessness does not move them anywhere.
-//
-// Where each board's note is answers "which boards does this canvas have open"
-// (`src/runtime/engine/board-store.ts`). That is a fact about this process, like which
-// pane has focus, and the note has nowhere to put it.
-//
-// Nothing else. Anything that answers "what is on this board" is the note.
+// Nothing else. Anything that answers "what is on this board" is the file.
 
 /** Sockets admitted to broadcasts: the ones that have received their initial scene. */
 const clients = new Set<WebSocket>();
@@ -75,17 +65,27 @@ const paneBoards = new Map<string, string>();
  * The board a pane is authoritatively showing: the server's decision where it
  * has made one, the pane's own report otherwise.
  * @param pane The pane registration being asked about.
- * @returns The board key that pane holds.
+ * @returns The board key that pane holds, or null when it holds none.
  */
-function boardForPane(pane: PaneRegistration): string {
+function boardForPane(pane: PaneRegistration): string | null {
 	return paneBoards.get(pane.clientId) ?? pane.board;
+}
+
+/**
+ * The board one pane is on, by client id, for a reader that has no
+ * registration in hand.
+ * @param clientId The pane's client id.
+ * @returns The board key, or null when that pane is on none.
+ */
+function paneBoardOf(clientId: string): string | null {
+	return paneBoards.get(clientId) ?? null;
 }
 
 /**
  * What each pane holds, in reading order.
  * @returns One entry per pane with its place on screen and its board.
  */
-function boardsOnScreen(): Array<{ paneId: string; place: string; board: string }> {
+function boardsOnScreen(): Array<{ paneId: string; place: string; board: string | null }> {
 	return panesInOrder(Array.from(panes.values())).map((entry) => ({
 		paneId: entry.pane.paneId,
 		place: entry.place,
@@ -138,15 +138,18 @@ function sendToAllClients(data: string): void {
  */
 function broadcast(message: WebSocketMessage, board: string): void {
 	sendToAllClients(JSON.stringify({ ...message, board }));
+	for (const observer of broadcastObservers) {
+		observer(message, board);
+	}
 }
 
 /**
  * Broadcast something that is not about a board.
  *
- * Only the library and the navigator's agent activity qualify: each is one
- * thing behind every board, so a client applies it without asking which board
- * the message came from. Kept separate from `broadcast` so that omitting the
- * board key stays a deliberate act rather than a missing argument.
+ * Only the navigator's agent activity qualifies: it is one thing behind every
+ * board, so a client applies it without asking which board the message came
+ * from. Kept separate from `broadcast` so that omitting the board key stays a
+ * deliberate act rather than a missing argument.
  * @param message The boardless message to send.
  */
 function broadcastBoardless(message: WebSocketMessage): void {
@@ -218,47 +221,11 @@ function sendLayoutToPane(clientId: string, message: WebSocketMessage): boolean 
  * looking at and by no other.
  */
 function syncLockWatch(): void {
-	watchBoardLocks(clients.size > 0 ? () => [...paneBoards.values()] : null);
-}
-
-/**
- * Tell every client which selection currently stands.
- *
- * Boardless: a selection names the client that made it, and a pane that reads
- * this decides what to do with it by whose it is, not by which board it is on.
- * Tagging it with a board would only give panes on other boards a reason to
- * drop a message that was never about their board in the first place.
- */
-function broadcastSelection(): void {
-	const current = selectionState.current ?? {
-		elementIds: [],
-		clientId: null,
-		at: new Date().toISOString(),
-	};
-	broadcastBoardless({
-		type: "selection_changed",
-		elementIds: current.elementIds,
-		clientId: current.clientId,
-		at: current.at,
-	});
-}
-
-/**
- * Drop every pick made on one board, because nothing on it can be selected
- * any more. A pane on another board keeps its pick.
- * @param boardKeyToClear The board whose selections are void.
- */
-function clearSelectionForBoard(boardKeyToClear: string): void {
-	for (const [clientId] of selectionState.byClient) {
-		if (paneBoards.get(clientId) === boardKeyToClear) {
-			selectionState.byClient.delete(clientId);
-		}
-	}
-	const owner = selectionState.current?.clientId;
-	if (owner && paneBoards.get(owner) === boardKeyToClear) {
-		selectionState.current = null;
-		broadcastSelection();
-	}
+	watchBoardLocks(
+		clients.size > 0
+			? () => [...new Set([...paneBoards.values()].flatMap((key) => aggregateOf(key) ?? []))]
+			: null,
+	);
 }
 
 /**
@@ -280,19 +247,99 @@ function referencePane(): PaneRegistration | null {
  *
  * A split is "another look at what I am working on", so a new pane starts on
  * whatever is already in front of the human and is then pointed somewhere else
- * deliberately. With nothing on screen there is nothing to copy, and the
- * server's active board — the last one opened — is the only answer available.
+ * deliberately.
  * @param clientId The client id of the arriving pane.
- * @returns The board key that pane starts on.
+ * @returns The board key that pane starts on, or null when the vault is empty.
  */
-function boardForNewPane(clientId: string): string {
-	const remembered = paneBoards.get(clientId);
-	if (remembered && boards.has(remembered)) {
-		return remembered;
+function boardForNewPane(clientId: string): string | null {
+	for (const candidate of copyableBoards(clientId)) {
+		if (stillThere(candidate)) {
+			return candidate;
+		}
 	}
+	// Nothing to copy: the vault's first board, so a tab opened on an empty
+	// address shows an architecture rather than an empty frame. A vault with no
+	// board at all leaves the pane on none, and the navigator says so.
+	const first = listSemanticBoards()[0];
+	return first === undefined ? null : first.key;
+}
+
+/**
+ * Whether a pane key still names something: the board, and the variant of it
+ * the key names.
+ *
+ * A pane key carries the variant after the last `@` (ADR 0009) and a board is
+ * addressed by name alone — the whole family is in the one document — so the
+ * key has to be taken apart before either half is looked up. Reading the key
+ * whole refuses every proposal a pane was showing, and the pane comes back on
+ * the current variant of the first board in the vault: not what it was looking
+ * at, and quietly so.
+ * @param key The pane's board key.
+ * @returns True when that board still has that variant.
+ */
+function stillThere(key: string): boolean {
+	const identity = paneAddress(key);
+	if (identity === null) {
+		return false;
+	}
+	const read = readSemanticBoard(identity.board);
+	return read.ok && resolveVariant(read.board, identity.variant) !== undefined;
+}
+
+/**
+ * What a pane's key names, or nothing when it does not name a board at all.
+ *
+ * Parsing rather than reading the key whole, and never throwing: a key reaches
+ * here from a pane that has been reconnecting for a while, and a bad one must
+ * cost that pane its board rather than cost the socket its acceptance.
+ * @param key The pane's board key.
+ * @returns The identity, or null when the key is not one.
+ */
+function paneAddress(key: string): BoardIdentity | null {
+	try {
+		return parseBoardKey(key);
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * The aggregate a pane key is about, which is what a lease, a claim and a
+ * settled change are all keyed by.
+ *
+ * Every variant of a board lives in the one document (ADR 0023), so there is
+ * one lock for the family and not one per proposal. A pane showing a proposal
+ * is looking at the same file as a pane showing what is current, and has to be
+ * told the same things about it.
+ * @param key The pane's board key, or null when it is showing none.
+ * @returns The board's name, or null.
+ */
+function aggregateOf(key: string | null): string | null {
+	if (key === null) {
+		return null;
+	}
+	return paneAddress(key)?.board ?? null;
+}
+
+/**
+ * The boards a new pane would take over from, in order of preference: the one
+ * it was showing before its socket dropped, then whatever is already in front
+ * of the human.
+ * @param clientId The client id of the arriving pane.
+ * @returns The candidates, best first.
+ */
+function copyableBoards(clientId: string): string[] {
+	const remembered = paneBoards.get(clientId);
 	const reference = referencePane();
-	const key = reference ? boardForPane(reference) : null;
-	return key && boards.has(key) ? key : SCRATCH_KEY;
+	const boards: string[] = [];
+	if (remembered !== undefined) {
+		boards.push(remembered);
+	}
+	const shown = reference === null ? null : boardForPane(reference);
+	if (shown !== null) {
+		boards.push(shown);
+	}
+	return boards;
 }
 
 /**
@@ -467,8 +514,8 @@ async function settleAfterLayout(askedAt: string, moved: Iterable<string>): Prom
 }
 
 /**
- * Forget every socket, pane and selection this process was holding, because
- * the canvas is stopping and there is no screen any more.
+ * Forget every socket and pane this process was holding, because the canvas is
+ * stopping and there is no screen any more.
  */
 function forgetDisplay(): void {
 	acceptedSockets.clear();
@@ -481,20 +528,17 @@ function forgetDisplay(): void {
 	paneBoards.clear();
 	browserLeaseLedger.active = null;
 	browserLeaseLedger.retired.clear();
-	selectionState.current = null;
-	selectionState.byClient.clear();
 }
 
 export {
 	acceptedSockets,
+	aggregateOf,
 	boardForNewPane,
 	boardForPane,
 	boardsOnScreen,
 	broadcast,
 	broadcastBoardless,
-	broadcastSelection,
 	browserLeaseLedger,
-	clearSelectionForBoard,
 	clientIds,
 	clients,
 	codexSocketInstances,
@@ -503,6 +547,7 @@ export {
 	latestSocketAcceptanceByClient,
 	notePaneClosed,
 	notePaneOpened,
+	paneBoardOf,
 	paneBoards,
 	paneFromRequest,
 	paneRef,
@@ -519,3 +564,26 @@ export {
 	syncLockWatch,
 };
 export type { PendingPaneClose, PendingPaneOpen };
+
+/** Whoever is watching what the panes are told about boards. */
+const broadcastObservers = new Set<(message: WebSocketMessage, board: string) => void>();
+
+/**
+ * Watch every board announcement this canvas makes.
+ *
+ * For a reader that needs to know what the panes were told without being a
+ * pane: the agent's context, which must never be able to disagree with what is
+ * on screen because both come off the same announcement.
+ * @param observer What to tell.
+ * @returns Stops watching.
+ */
+function onBoardBroadcast(
+	observer: (message: WebSocketMessage, board: string) => void,
+): () => void {
+	broadcastObservers.add(observer);
+	return (): void => {
+		broadcastObservers.delete(observer);
+	};
+}
+
+export { onBoardBroadcast };

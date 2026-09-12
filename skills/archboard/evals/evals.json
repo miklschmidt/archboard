@@ -1,90 +1,68 @@
 {
 	"skill_name": "archboard",
-	"grading": "Each eval says how it is graded. \"human\" means somebody reads the transcript and judges it; these are about drawing quality and layout, which no automated test can score. A path names a native test or check script that runs in `bun run test` and asserts the objective part of the eval outright, leaving the transcript to answer only whether the agent chose the right path.",
+	"grading": "Each eval says how it is graded. \"human\" means somebody reads the transcript and judges it; these are about what the agent chose to say about the architecture, which no automated test can score. A path names a test that runs in `bun run test` and asserts the objective part outright, leaving the transcript to answer only whether the agent chose the right path.",
 	"evals": [
 		{
 			"id": 0,
-			"graded_by": "human",
-			"prompt": "Draw a CI/CD pipeline on a named Archboard board with these components: GitHub (source), GitHub Actions (CI), Docker Registry (artifact store), and Kubernetes Cluster (deployment target). Use arrows to show the flow from left to right. Make sure labels fit inside each box and nothing overlaps.",
-			"expected_output": "A clean diagram with 4 labeled boxes, left-to-right flow arrows connecting them, no overlapping elements, and all text fully visible inside shapes.",
-			"files": []
+			"graded_by": "tests/system/semantic-boards/workflow.test.ts",
+			"prompt": "With ARCHBOARD_VAULT configured and no browser open, state our CI/CD pipeline as a board named `pipeline`: GitHub holds the source, GitHub Actions builds it, a Docker registry keeps the artefacts, and a Kubernetes cluster runs them. Read it back and render it.",
+			"expected_output": "One `semantic new` with the four parts and the relationships between them, each part given the kind it actually is (`external` for GitHub, `job` or `service` for Actions, `datastore` for the registry, `service` for the cluster), then `semantic show` and `semantic render`. The board is one `.semantic.json` document in the vault. FAILS if the agent states any coordinate, size or colour, asks how to lay it out, or reports that it cannot draw without a browser: there is no way to state a position and the renderer owns every one of them.",
+			"files": ["tests/system/semantic-boards/workflow.test.ts"]
 		},
 		{
 			"id": 1,
 			"graded_by": "human",
-			"prompt": "Convert this Mermaid flowchart into a named persisted Archboard board:\n```\ngraph TD\n  A[User] -->|HTTP Request| B[Load Balancer]\n  B --> C[Web Server 1]\n  B --> D[Web Server 2]\n  C --> E[(Database)]\n  D --> E\n```\nRender the named board to PNG and verify the persisted structure and layout. Do not open a browser.",
-			"expected_output": "The server converts and persists all 5 nodes and their arrows, then renders a PNG from the named board with zero browser clients.",
+			"prompt": "Add a Redis cache between our Auth Service and User DB on the `auth` board, which already has those two and the query between them.",
+			"expected_output": "`semantic show auth` first, then one `semantic edit` stating the cache and its relationships, carrying `--expect-version` from what the read reported and a `--doing` line naming the step. FAILS if the edit omits `--expect-version` — an edit that does not say which board it read is applied to whatever the board says now, which is how one agent's change disappears under another's — or if the agent reads the board again immediately before writing, which makes the check pass by construction and hides the change it was meant to notice.",
 			"files": []
 		},
 		{
 			"id": 2,
-			"graded_by": "human",
-			"prompt": "Create a named board with two rectangles, 'Auth Service' and 'User DB', connected by an arrow labeled 'queries'. Refine it by adding 'Redis Cache' between them and connecting Auth Service to Redis Cache with a 'cache hit' arrow. Run strict inspection and render the persisted board to verify labels and routing without opening a browser.",
-			"expected_output": "The named board contains the 3 boxes and requested arrows, strict inspection is complete and clean, and a server-rendered image records the final persisted state.",
-			"files": []
+			"graded_by": "tests/system/canvas-state/side-by-side.test.ts",
+			"prompt": "The `payments` board shows API Gateway calling Orders Service, which reads and writes Orders Postgres. I want to look at a proposal that puts a read cache, Orders Cache, beside Orders Service. Leave `payments` as it is. When the proposal is drawn, show me what it changes and nothing else.",
+			"expected_output": "`semantic branch payments --as \"...\"` from the current variant, then one `semantic edit` naming that variant and adding only the cache and its one relationship. `semantic show payments` then reports both variants and what the draft changed, derived rather than restated. FAILS if the agent states the proposal as a new board: subject identity is what a comparison joins on, and an independently restated architecture shares none, so the difference comes back as everything removed and everything added.",
+			"files": ["tests/system/canvas-state/side-by-side.test.ts"]
 		},
 		{
 			"id": 3,
-			"workflow": "zero-browser",
-			"graded_by": "tests/system/boards/vault-only-production-interfaces.test.ts",
-			"prompt": "With ARCHBOARD_VAULT configured and zero browser clients, use only the Archboard CLI to create a board named `three-tier`, add 'Frontend', 'API', and 'Postgres', convert a Mermaid edge flow into that same board, render PNG and SVG evidence, run strict inspection, render finding close-ups if the report contains a real focus-box finding, save snapshot `v1`, branch `three-tier@review`, export it to /tmp/three-tier.excalidraw, describe the final board, and read its persisted note. Do not use `browser`, open, load, show, pane, selection, camera, or capture as a prerequisite.",
-			"expected_output": "Every operation resolves the explicit named vault note with websocket_clients equal to 0. The PNG, SVG, optional current-finding close-ups, snapshot, branch, export, description, and final note read succeed without a browser prerequisite.",
-			"files": ["tests/system/boards/vault-only-production-interfaces.test.ts"]
+			"graded_by": "tests/system/canvas-state/doing-boundary.test.ts",
+			"prompt": "Rework the whole payment path on `payments`: it is about fifteen edits and I do not want to see it half-done.",
+			"expected_output": "One `claim --board payments --reason \"...\"` before the campaign, every write carrying its own `--doing` step line, and `release` as soon as the writes end. The claim's reason is the campaign; the `--doing` line is the current step, and neither stands in for the other. FAILS if the agent claims for a single write, treats the claim's reason as the per-write line, or carries on silently after being told the claim was taken back — it is told once, on its next write, and nothing it wrote was undone, so the right answer is to say what is complete and what is not.",
+			"files": ["tests/system/canvas-state/doing-boundary.test.ts"]
 		},
 		{
 			"id": 4,
 			"graded_by": "human",
-			"prompt": "Using only the CLI, draw two labeled boxes ('Client', 'Server') connected by an arrow, then save the diagram into an Obsidian vault at /tmp/vault/diagrams/flow.excalidraw.md (assume /tmp/vault/.obsidian exists; create the diagrams folder if needed). Clear the canvas and re-import the saved file. Confirm the saved file is in the Obsidian Excalidraw plugin's markdown format (frontmatter + '# Excalidraw Data' + a '## Drawing' code block) rather than raw JSON, and that both boxes are back on the canvas after the re-import.",
-			"expected_output": "flow.excalidraw.md written in the Obsidian new format (not raw .excalidraw JSON), format markers verified by reading the file, and the canvas restored with both labeled boxes and their arrow after `import --replace`.",
+			"prompt": "Bind the parts of the `payments` board to the code that implements them. The API lives in /home/me/src/payments-api.",
+			"expected_output": "`archboard repo add /home/me/src/payments-api` once, then bindings stated on the nodes as `{ repo, path }` with a repo-relative path. Each binding names the node that IS the thing. FAILS if an absolute path or a `file://` URL reaches the board — the same board has to open the right file on anybody's machine — or if a container is bound to one of its children's files, which sends every reader to the wrong place confidently.",
 			"files": []
 		},
 		{
 			"id": 5,
-			"graded_by": "tests/system/canvas-state/branch-compare.test.ts",
-			"prompt": "Using only the CLI, with ARCHBOARD_VAULT pointing at /tmp/eval-vault (assume /tmp/eval-vault/.obsidian exists): draw the payments architecture as it stands today on a board named `payments` at service level. It is three things in a row: 'API Gateway' calls 'Orders Service', which reads and writes 'Orders Postgres'. Promote each one (gateway, service, datastore) and save the board. Now I want to look at a proposal called option-a that puts a read cache, 'Orders Cache', beside Orders Service, written to by Orders Service. Leave `payments` itself exactly as it is. When the proposal is drawn, show me what it changes and nothing else.",
-			"expected_output": "The variant was branched from the source with `board save --board payments --variant option-a`, and the only edits made on `payments@option-a` were the added 'Orders Cache' node and the one arrow into it. `compare payments payments@option-a` then reports `summary.comparable` true, `sharedNodes` 3, `nodesAdded` 1, `nodesRemoved` 0, `edgesAdded` 1, `edgesRemoved` 0, `edgesUnchanged` 2, with `nodes.added` naming only 'Orders Cache' and `edges.unchanged` holding 'API Gateway' to 'Orders Service' and 'Orders Service' to 'Orders Postgres'. The narration is the one added cache and its one edge. FAILS if `payments@option-a` was drawn on a fresh board instead of branched: that gives `sharedNodes` below 3 and `nodesRemoved` above 0, up to `comparable` false with everything removed and everything added, because `compare` joins on node identity and independently drawn boards share none. Reporting the `variantAnomaly` field on the copied nodes as an architectural difference is also wrong; it is the branch's bookkeeping, not a change to the design. The numbers are asserted outright by tests/system/canvas-state/branch-compare.test.ts on the same fixture, so what this eval grades is the choice: did the agent branch the board it was given, or draw the proposal again from scratch.",
-			"files": []
+			"graded_by": "tests/system/browser/semantic-claim.test.ts",
+			"prompt": "I am reading `payments` in the browser. Put the queued-ingest proposal up beside it so I can compare them, then talk me through what it changes.",
+			"expected_output": "`browser panes --text` to see what is on screen, `browser open` for the second pane, and `browser show payments@<variant> --pane right` naming the pane explicitly. The pane the person is reading is not moved. FAILS if the agent moves the person's pane, lets focus choose the target, or expects a write to move a pane: showing a board and writing one are different things, and `show` writes nothing.",
+			"files": ["tests/system/browser/semantic-claim.test.ts"]
 		},
 		{
 			"id": 6,
 			"graded_by": "human",
-			"prompt": "Using only the CLI, draw the public edge of our system on a board named `edge` at system level: users hit a CDN, the CDN goes to a load balancer, the load balancer goes to a 'Web' service, and Web publishes onto a message queue. Before you draw anything, tell me what ready-made shapes are already there, and use one wherever it fits rather than drawing another box.",
-			"expected_output": "`library list --text` ran before any element was created, and the answer names what is in the palette (111 stencils across seven source libraries). The recognisable furniture came from the library via `library insert`, not from hand-drawn rectangles: a users stencil, 'CDN', 'Load balancer' and 'Message queue' all exist. 'Load balancer' and 'Users' are each a name two libraries use, so an insert without `--source` is refused with both candidates named and the retry passes `--source` or `--id`; that refusal is the expected path, not an error to work around. Placed elements carry `customData.library` recording the stencil they came from. The 'Web' service stayed a labelled rectangle, which is the right shape for a service box. FAILS if the whole diagram is plain rectangles, or if the library was only listed after the drawing was already done.",
+			"prompt": "[with two nodes selected in the pane] What does this do, and can we take it out?",
+			"expected_output": "The answer is about the two subjects the person picked out, named as they appear on the board, and about the variant that pane is reading. The removal is proposed against that variant. FAILS if the agent describes the whole board, asks which parts are meant when it has been told, or proposes the change against `current` when the person is reading a proposal.",
 			"files": []
 		},
 		{
 			"id": 7,
-			"workflow": "browser-collaboration",
 			"graded_by": "human",
-			"prompt": "Using only the CLI, with ARCHBOARD_VAULT pointing at /tmp/eval-vault (assume /tmp/eval-vault/.obsidian exists) and one pane open in the browser: draw the payments architecture as it stands on a board named `payments` at service level, three things in a row: 'API Gateway' calls 'Orders Service', which reads and writes 'Orders Postgres'. Promote each one and save. Then branch it into a proposal called option-a that adds a read cache, 'Orders Cache', written to by Orders Service. Deliberately enter the live-session branch: run `browser open`, use `browser show payments@option-a --pane right` to put the proposal beside the current architecture, and finish with `browser capture --pane right`. Draw the cache on the proposal, promote and save it, show me the captured picture, and tell me what changed. I am reading `payments` while you work, so leave it where it is.",
-			"expected_output": "Both boards end up on screen at once, and `payments` is still in the pane it started in. The proposal reached the screen through `browser open`, followed by `browser show payments@option-a --pane right`. Every write after that named the board it meant (`--board payments@option-a`), and the picture named the pane it meant (`browser capture --pane right`). `compare payments payments@option-a` reports one node added and nothing removed. Browser selection and capture read only their explicit live targets and leave both note files unchanged. An ordinary board write reaches the pane already showing that board without a browser acknowledgement deciding success. FAILS if the agent tries `board open payments@option-a`, expects `board save` to move a pane, or uses live focus as an implicit target.",
-			"files": [
-				"tests/system/browser/selection-inspector.test.ts",
-				"tests/system/browser/server-update-ordering.test.ts"
-			]
-		},
-		{
-			"id": 8,
-			"graded_by": "src/runtime/board-inspection/tests/completion-contract.test.ts",
-			"prompt": "Using only the CLI, finish the explicitly named dense architecture board in /tmp/eval-vault. It already contains promoted multipart nodes, a human group spanning two services, a grouped library stencil, unrelated decoration, and dense connector routing. Repair every avoidable whole-board finding without tidying or rebuilding unrelated content. One supported proper connector crossing is declared unavoidable; ask the human which connector should pass over, which should pass under, and what opaque board background to use, then mark exactly that crossing with the released bridge command. If this is variant work, report the semantic comparison as well. Finish only when strict whole-board inspection is complete and clean, release any campaign claim, and render the named persisted board as the final visual record.",
-			"expected_output": "The final production consequences are a complete clean strict inspection report, suppression of exactly the declared bridged crossing, and no suppression of any other crossing. A route-only change remains semantically identical under compare, and compare is not offered as routing or rendering proof. Every operation identifies the intended board. The human group, library stencil attribution, unrelated decoration, node identity, and layout outside the repaired route remain unchanged. Focused rendering is used only if a current finding needs a close-up; a clean final report does not require a post-clean render manifest. The named-board render is server-owned and needs no pane. The objective halves are the existing inspection dense-reroute and bridge fixtures and branch compare fixture named in files. The transcript is graded only on the agent choosing this completion composition rather than hand-drawing a mask, treating an indeterminate report as clean, or replacing unrelated human state.",
-			"files": [
-				"src/runtime/board-inspection/tests/completion-contract.test.ts",
-				"tests/system/canvas-state/branch-compare.test.ts"
-			]
-		},
-		{
-			"id": 9,
-			"graded_by": "human",
-			"prompt": "Using only the CLI, finish an agent-authored board named `checkout` at service level. It shows Browser calling Checkout API; Checkout API calling Pricing and Orders; Pricing and Orders both calling Promotions; and Orders writing Checkout Postgres. Nobody has rearranged your draft. Pricing currently sits between Checkout API and Orders, so the Checkout API to Orders edge passes through Pricing. Strict `board check` reports that unrelated-node penetration, and a six-segment route around the outside would make the report clean. Finish the board, explain what the finding tells you, and provide the normal completion evidence. Before changing it, also tell me what would differ if I had arranged these node positions.",
-			"expected_output": "The agent treats the finding as evidence to revisit its composition rather than as a routing puzzle or proof of bad code. It confirms that the board has one concern at one level and that the stated couplings matter, then repositions its own nodes so the branch through Pricing and Orders and the convergence on Promotions remain visible with simple supported routes. It preserves every real edge and rejects the six-segment cosmetic detour. The final strict whole-board report is complete and clean, and the agent renders the named board as a visual record. Before moving anything, it says that a human-arranged layout or a routing-only repair would require showing the finding, proposing the broader placement or scope change, and waiting for approval. FAILS if the agent clears inspection with the needlessly circuitous route, hides a coupling, calls the codebase bad from the crossing alone, moves a human-authored layout without approval, or substitutes an image for strict inspection.",
+			"prompt": "Adopt the queued-ingest proposal on `payments`.",
+			"expected_output": "The agent reads the board first and checks the proposal is settled — a draft with a standing reconciliation is waiting for a person to decide something, and adopting it decides it by forgetting. Adoption makes the proposal current and leaves what was current as a historical variant under its own name, which the agent says out loud, because that record is most of the point. FAILS if the agent adopts a draft holding an unsettled reconciliation without saying so, or describes the historical variant as deleted.",
 			"files": []
 		},
 		{
-			"id": 10,
+			"id": 8,
 			"graded_by": "human",
-			"prompt": "Using only the CLI, draw the order-placement path on a board named `order-placement` at service level for a shared canvas. A shopper enters through a CDN and API Gateway. Checkout calls Pricing, an external Fraud Provider, and Inventory; writes Orders Postgres; and publishes OrderPlaced to a message queue consumed by Fulfillment. Show that inventory reservation is synchronous, queue delivery is at least once, and the Fraud Provider is external. I will navigate the board by panning. Finish it, briefly explain its visual notation, and give me evidence that both the whole structure and its important paths are readable.",
-			"expected_output": "The board uses enough space for readable nodes, labels, and gaps instead of compressing everything to fit one image. It keeps one service-level concern and terse node and edge labels. Visual form follows meaning without a quota: recognizable infrastructure comes from the library where available; ownership or externality uses a zone or another consistent treatment; architecture dependencies remain arrows; the three supplied facts appear as short nearby annotations or bullets rather than extra boxed nodes; and ordinary lines, if used, divide or call out rather than masquerade as dependencies. A labelled rectangle remains acceptable for a service with no better familiar form, but the board is not a wall of identical boxes. Repeated roles use repeated treatments, and a tiny legend appears only if a local convention is not obvious. Completion includes a complete clean strict inspection plus server-rendered named-board evidence for the whole structure and its important paths. FAILS if every fact is boxed, spare canvas is filled with verbose prose, visual variety is decorative or inconsistent, a real coupling disappears into annotation text, or an image is offered as a substitute for inspection.",
+			"prompt": "Draw the order-placement path on a board named `order-placement` at service level. A shopper enters through a CDN and API Gateway. Checkout calls Pricing, an external fraud provider and Inventory; writes Orders Postgres; and publishes OrderPlaced to a queue that Fulfillment consumes. Show that inventory reservation is synchronous, that queue delivery is at least once, and that the fraud provider is external.",
+			"expected_output": "The three facts are stated as what things ARE rather than as extra boxes: the fraud provider is `kind: external`, the queue is `kind: queue` with the delivery guarantee in a short edge label or the node's responsibility, and the synchronous reservation is a flow with a `sync` message. Kinds are honest — `external` for the provider, `datastore` for Postgres, `queue` for the queue. FAILS if a fact becomes a node of its own, if everything is `service` or `other`, or if the agent asks about layout, spacing or colour: it has no way to state any of them and does not need one.",
 			"files": []
 		}
 	]

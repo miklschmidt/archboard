@@ -4,7 +4,7 @@ import { act, createElement, useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 import { settledAddress } from "@/ui/board-routing/address";
-import type { GuardVerdict, OpenOutcome, WorkspacePort } from "@/ui/board-routing/contracts";
+import type { OpenOutcome, WorkspacePort } from "@/ui/board-routing/contracts";
 
 // The address bar owns the tab's history, so the document exists — on a real
 // address, since a router reads one — before the router is taken, rather than
@@ -26,6 +26,8 @@ function noop(): void {
 interface FakePane {
 	paneId: string;
 	boardKey: string | null;
+	/** The view a semantic board is being read through, or null. */
+	view: string | null;
 }
 
 /** An open the fake server has been asked for and has not answered. */
@@ -54,12 +56,9 @@ interface FakeShell {
 	listen: (listener: () => void) => () => void;
 	readonly panes: FakePane[];
 	readonly opens: HeldOpen[];
-	readonly blocked: string[];
 	readonly unreachable: string[];
 	/** What the address bar handed back, once it has mounted. */
 	addressing: Addressing | null;
-	/** What the guard says about any pane. */
-	guard: GuardVerdict;
 	/** Re-render the application with what the panes show now. */
 	readonly render: () => Promise<void>;
 	/** Answer the oldest open the server was given. */
@@ -95,12 +94,10 @@ function fakeShell(
 				notify = noop;
 			};
 		},
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey })),
+		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, view: null })),
 		opens: [] as HeldOpen[],
-		blocked: [] as string[],
 		unreachable: [] as string[],
 		addressing: null,
-		guard: { kind: "clear" },
 		/** Re-render the application. */
 		render: async (): Promise<void> => {
 			await act(async () => {
@@ -152,13 +149,6 @@ function fakeShell(
 			 */
 			ready: (): boolean => true,
 			/**
-			 * What the panes say about losing their boards.
-			 * @param paneIds The panes at risk.
-			 * @returns The verdict.
-			 */
-			guard: (paneIds: readonly string[]): GuardVerdict =>
-				paneIds.length === 0 ? { kind: "clear" } : shell.guard,
-			/**
 			 * Point a pane at a board; the answer waits for the test.
 			 * @param paneId The pane.
 			 * @param boardKey The board.
@@ -169,6 +159,20 @@ function fakeShell(
 					shell.opens.push({ paneId, boardKey, answer: resolve });
 				}),
 			/**
+			 * Read a pane's board another way.
+			 * @param paneId The pane.
+			 * @param view The view, or null for the whole variant.
+			 * @returns Whether the reading changed.
+			 */
+			read: (paneId: string, view: string | null): boolean => {
+				const pane = shell.panes.find((entry) => entry.paneId === paneId);
+				if (pane === undefined || pane.view === view) {
+					return false;
+				}
+				pane.view = view;
+				return true;
+			},
+			/**
 			 * Open the second pane.
 			 * @returns Whether it opened.
 			 */
@@ -176,7 +180,7 @@ function fakeShell(
 				if (shell.panes.length > 1) {
 					return false;
 				}
-				shell.panes.push({ paneId: "B", boardKey: "scratch" });
+				shell.panes.push({ paneId: "B", boardKey: "scratch", view: null });
 				active = "B";
 				return true;
 			},
@@ -205,13 +209,6 @@ function fakeShell(
 				}
 				active = paneId;
 				return true;
-			},
-			/**
-			 * A pane refused.
-			 * @param block The refusal.
-			 */
-			reportBlocked: (block): void => {
-				shell.blocked.push(`${block.kind}:${block.paneId}`);
 			},
 			/**
 			 * Boards nothing could reach.
@@ -352,24 +349,6 @@ test("the slot is given to one waiting gesture at a time", async () => {
 	await shell.adopt("A", "ledger");
 	await second;
 	expect(order).toEqual(["first", "second"]);
-});
-
-test("a pane that stops saving while a gesture waits is refused when its turn comes", async () => {
-	const shell = fakeShell([["A", "payments"]]);
-	mounted = await mount(shell, "?paneA=billing");
-	const claimed = shell.addressing?.claim({
-		kind: "board",
-		paneId: "A",
-		from: "payments",
-	});
-	// The board stops saving while they wait, which the guard could not have
-	// known when they asked.
-	shell.guard = { kind: "hold", paneId: "A" };
-	await shell.answer(true);
-	await shell.adopt("A", "billing");
-	const permission = await claimed;
-	expect(permission?.kind).toBe("blocked");
-	expect(shell.blocked).toEqual(["hold:A"]);
 });
 
 test("a person's open pushes a history entry only when it moved the pane", async () => {

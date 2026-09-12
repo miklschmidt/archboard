@@ -55,9 +55,20 @@ export class SemanticContextLifecycleError extends Error {
 }
 
 /**
- * Whether a settled change is one Archboard delivers at all. An agent's own change would tell the
- * coordinator what it already knows, and a cosmetic one carries no design intent; both are dropped
- * rather than delivered as noise. An unreviewed origin or significance is refused outright.
+ * Whether a settled change is one Archboard publishes at all.
+ *
+ * Only the judgement this publisher is in a position to make. A cosmetic change
+ * carries no design intent and is nobody's news, whoever made it, so it is
+ * dropped here.
+ *
+ * Whether a change is the reader's OWN is deliberately not decided here. One
+ * publisher serves every thread, so "mine" is not a fact it holds; the per-thread
+ * delivery decides it, using the writer identity carried on the change. This
+ * function used to approximate it as `origin !== "agent"`, which was the only
+ * thread-independent proxy available and was wrong in both directions: it
+ * silenced a second agent changing the board underneath a thread, which is
+ * exactly the news that thread needs, and once people stopped writing boards
+ * (ADR 0023) it silenced everything.
  * @param event - The settled change the feed reported.
  * @returns True when the change should be published.
  * @throws {Error} When the change names an origin or significance that is not reviewed.
@@ -69,7 +80,7 @@ function isDeliverableChange(event: SettledChangeSourceEvent): boolean {
 	if (!validSignificance(event.significance)) {
 		fail("change.significance", "is invalid");
 	}
-	return event.origin !== "agent" && event.significance !== "cosmetic";
+	return event.significance !== "cosmetic";
 }
 
 /**
@@ -500,6 +511,7 @@ export function createSemanticContextPublisher(
 				origin: event.origin,
 				significance: event.significance,
 				text: changeText.value,
+				by: event.by ?? null,
 			},
 		});
 		emit(settledListeners, published, "settled_change", "settled_change");

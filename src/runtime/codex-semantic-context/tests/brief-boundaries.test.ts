@@ -80,9 +80,65 @@ function createPublisher(feedId: string, context: SemanticContextInput) {
 	});
 }
 
+/** Nothing read: the architecture of a pane that has drawn nothing yet. */
+const EMPTY_ARCHITECTURE: SemanticContextInput["architecture"] = {
+	variant: null,
+	view: null,
+	selection: { count: 0, subjects: [] },
+	differences: null,
+	reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
+};
+
+/**
+ * Every architecture list at its admitted maximum, with distinct identities so
+ * fitting cannot look right by dropping duplicates.
+ * @param id A maximum-length identity.
+ * @param name A maximum-length label.
+ * @returns The architecture.
+ */
+function hostileArchitecture(id: string, name: string): SemanticContextInput["architecture"] {
+	const distinct = (index: number): string => String(index).padStart(3, "0") + id.slice(0, 29);
+	return {
+		variant: { id, name, lifecycle: "draft", against: id },
+		view: { id, name, grammar: "data-flow" },
+		selection: {
+			count: SEMANTIC_CONTEXT_LIMITS.selectionEntries,
+			subjects: Array.from({ length: SEMANTIC_CONTEXT_LIMITS.selectionEntries }, (_, index) => ({
+				kind: "node" as const,
+				id: distinct(index),
+				name,
+			})),
+		},
+		differences: {
+			added: Number.MAX_SAFE_INTEGER,
+			removed: Number.MAX_SAFE_INTEGER,
+			changed: Number.MAX_SAFE_INTEGER,
+			subjects: Array.from({ length: SEMANTIC_CONTEXT_LIMITS.differenceEntries }, (_, index) => ({
+				change: "changed" as const,
+				kind: "edge" as const,
+				id: distinct(index),
+				name,
+			})),
+		},
+		reconciliation: {
+			required: true,
+			count: Number.MAX_SAFE_INTEGER,
+			blockedBy: id,
+			issues: Array.from({ length: SEMANTIC_CONTEXT_LIMITS.issueEntries }, () => ({
+				subject: id,
+				what: name,
+				kind: "competing-field" as const,
+				field: name,
+				repair: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.repairBytes),
+			})),
+		},
+	};
+}
+
 function maximumContext(cursorFeedId: string, includeStaleReasons = true): SemanticContextInput {
 	const identity = "i".repeat(SEMANTIC_CONTEXT_LIMITS.identityBytes) as never;
-	const selectionId = rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.selectionIdBytes);
+	const selectionId = rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.subjectIdBytes);
+	const subjectName = rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.subjectNameBytes);
 	const ambiguityReason = rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.ambiguityBytes);
 	const staleReason = rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.ambiguityBytes);
 	return {
@@ -96,14 +152,15 @@ function maximumContext(cursorFeedId: string, includeStaleReasons = true): Seman
 		coordinator: { threadId: identity, realtimeSessionId: identity },
 		board: {
 			key: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.boardKeyBytes),
-			note: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.noteBytes),
+			name: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.subjectNameBytes),
+			file: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.fileBytes),
 			version: Number.MAX_SAFE_INTEGER,
 		},
 		pane: {
 			paneId: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.paneIdBytes),
 			focused: true,
 		},
-		selection: Array.from({ length: SEMANTIC_CONTEXT_LIMITS.selectionEntries }, () => selectionId),
+		architecture: hostileArchitecture(selectionId, subjectName),
 		claim: {
 			holder: "agent",
 			doing: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.doingBytes),
@@ -127,9 +184,9 @@ describe("semantic context JSON byte boundaries", () => {
 		for (const value of publicBoundaryValues) {
 			const context: SemanticContextInput = {
 				repository: "repo",
-				board: { key: "board", note: "board.md", version: 1 },
+				board: { key: "board", name: "Board", file: "board.semantic.json", version: 1 },
 				pane: { paneId: "pane", focused: true },
-				selection: [],
+				architecture: EMPTY_ARCHITECTURE,
 				doing: null,
 				cursor: { feedId: "feed", sequence: 0 },
 				description: value.repeat(8_192),
@@ -151,9 +208,9 @@ describe("semantic context JSON byte boundaries", () => {
 	test("retains the NUL-free authored string contract", () => {
 		const context: SemanticContextInput = {
 			repository: "repo",
-			board: { key: "board", note: "board.md", version: 1 },
+			board: { key: "board", name: "Board", file: "board.semantic.json", version: 1 },
 			pane: { paneId: "pane", focused: true },
-			selection: [],
+			architecture: EMPTY_ARCHITECTURE,
 			doing: null,
 			cursor: { feedId: "feed", sequence: 0 },
 			description: "before\0after",

@@ -34,7 +34,6 @@ import { codedError, errorCode, errorMessage } from "@/runtime/engine/lib/thrown
 import {
 	canvasPort,
 	healthOrNull,
-	heldCanvasError,
 	isCanvasHealth,
 	isLoopbackUrl,
 	spawnBindHost,
@@ -369,7 +368,7 @@ async function awaitCanvasReadiness(
 	const deferred: DeferredFailure = { failure: null };
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- readiness is one probe after another until the deadline
-		if (isCanvasHealth(await healthOrNull(400))) {
+		if (isCanvasHealth(await healthOrNull())) {
 			markCanvasIdentityVerified();
 			spawned.protocol.destroy();
 			spawned.child.unref();
@@ -476,14 +475,10 @@ async function awaitCanvasStop(port: number, pid: number): Promise<StopResult> {
 	const deadline = Date.now() + 5000;
 	while (Date.now() < deadline) {
 		// oxlint-disable-next-line no-await-in-loop -- one probe after another until the server is gone
-		const postSignalHealth = await healthOrNull(300);
+		const postSignalHealth = await healthOrNull();
 		if (!postSignalHealth) {
 			removePidFile(port);
 			return { stopped: true, pid, message: `Canvas server (pid ${pid}) stopped.` };
-		}
-		const postSignalHold = heldCanvasError(postSignalHealth);
-		if (postSignalHold) {
-			throw postSignalHold;
 		}
 		// oxlint-disable-next-line no-await-in-loop -- the poll interval between probes
 		await new Promise((resolve) => setTimeout(resolve, 200));
@@ -501,7 +496,7 @@ async function awaitCanvasStop(port: number, pid: number): Promise<StopResult> {
 async function stopCanvas(): Promise<StopResult> {
 	const port = canvasPort();
 	const filePid = readPidFile(port);
-	const health = await healthOrNull(2000);
+	const health = await healthOrNull();
 
 	if (!health) {
 		return absentCanvasResult(port, filePid);
@@ -511,11 +506,6 @@ async function stopCanvas(): Promise<StopResult> {
 	if (pid === null) {
 		throw foreignServiceError();
 	}
-	const preflightHold = heldCanvasError(health);
-	if (preflightHold) {
-		throw preflightHold;
-	}
-
 	try {
 		process.kill(pid, "SIGTERM");
 	} catch (error) {

@@ -85,10 +85,8 @@ export const pane = (clientId: string) => ({
 	paneId: "lifecycle-pane",
 	primary: true,
 	focused: true,
-	elementCount: 0,
 	board: "scratch",
 	rect: { x: 0, y: 0, width: 1280, height: 800 },
-	viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
 });
 async function freePort(): Promise<number> {
 	const server = createServer();

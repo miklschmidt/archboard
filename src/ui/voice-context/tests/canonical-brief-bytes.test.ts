@@ -173,6 +173,11 @@ describe("voice context producer contract", () => {
 		});
 		expect(view.fields).toContainEqual({
 			label: "Selection",
+			value: "node api, node queue, node worker",
+			technical: false,
+		});
+		expect(view.fields).toContainEqual({
+			label: "Selected ids",
 			value: "api, queue, worker",
 			technical: true,
 		});

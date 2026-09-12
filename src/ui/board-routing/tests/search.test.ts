@@ -16,7 +16,7 @@ import {
  */
 function addressOf(panes: readonly (readonly [string, string])[]): WorkspaceAddress {
 	return settledAddress({
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey })),
+		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, view: null })),
 		activePaneId: null,
 	});
 }
@@ -39,8 +39,8 @@ test("an address reads the panes in reading order whichever order the search was
 		validateWorkspaceSearch({ paneB: "billing", paneA: "payments" }),
 	);
 	expect(address.panes).toEqual([
-		{ paneId: "A", boardKey: "payments" },
-		{ paneId: "B", boardKey: "billing" },
+		{ paneId: "A", boardKey: "payments", view: null },
+		{ paneId: "B", boardKey: "billing", view: null },
 	]);
 	expect(address.activePaneId).toBe("A");
 });
@@ -54,15 +54,18 @@ test("board keys keep their variant and their path, because the server parses th
 
 test("one pane on one board writes one parameter; the active pane is written only when it is not the first", () => {
 	expect(
-		searchFromAddress({ panes: [{ paneId: "A", boardKey: "payments" }], activePaneId: "A" }),
+		searchFromAddress({
+			panes: [{ paneId: "A", boardKey: "payments", view: null }],
+			activePaneId: "A",
+		}),
 	).toEqual({
 		paneA: "payments",
 	});
 	expect(
 		searchFromAddress({
 			panes: [
-				{ paneId: "A", boardKey: "payments" },
-				{ paneId: "B", boardKey: "billing" },
+				{ paneId: "A", boardKey: "payments", view: null },
+				{ paneId: "B", boardKey: "billing", view: null },
 			],
 			activePaneId: "B",
 		}),
@@ -73,8 +76,8 @@ test("a pane that has not said what it holds is left out of the search", () => {
 	expect(
 		searchFromAddress({
 			panes: [
-				{ paneId: "A", boardKey: "payments" },
-				{ paneId: "B", boardKey: null },
+				{ paneId: "A", boardKey: "payments", view: null },
+				{ paneId: "B", boardKey: null, view: null },
 			],
 			activePaneId: "A",
 		}),
@@ -94,8 +97,8 @@ test("a board key that reads as JSON is still a board key through the installed 
 	expect(parsed).toEqual({ paneA: "2026", paneB: "true", pane: "A" });
 	const address = addressFromSearch(validateWorkspaceSearch(parsed));
 	expect(address.panes).toEqual([
-		{ paneId: "A", boardKey: "2026" },
-		{ paneId: "B", boardKey: "true" },
+		{ paneId: "A", boardKey: "2026", view: null },
+		{ paneId: "B", boardKey: "true", view: null },
 	]);
 });
 
@@ -105,4 +108,33 @@ test("a board key survives being written and read back by the router's own pair"
 		const read = addressFromSearch(validateWorkspaceSearch(parseWorkspaceSearchString(written)));
 		expect(read.panes[0]?.boardKey).toBe(boardKey);
 	}
+});
+
+test("the view a pane reads a semantic board through survives the address bar", () => {
+	const search = searchFromAddress({
+		panes: [{ paneId: "A", boardKey: "semantic:pipeline", view: "k3f9" }],
+		activePaneId: "A",
+	});
+	expect(search).toEqual({ paneA: "semantic:pipeline", viewA: "k3f9" });
+	// And a reload reads it back as the same reading of the same board.
+	const back = addressFromSearch(validateWorkspaceSearch(search));
+	expect(back.panes).toEqual([{ paneId: "A", boardKey: "semantic:pipeline", view: "k3f9" }]);
+});
+
+test("the whole variant is the absence of a view, not a view called nothing", () => {
+	expect(
+		searchFromAddress({
+			panes: [{ paneId: "A", boardKey: "semantic:pipeline", view: null }],
+			activePaneId: "A",
+		}),
+	).toEqual({ paneA: "semantic:pipeline" });
+	expect(
+		addressFromSearch(validateWorkspaceSearch({ paneA: "semantic:pipeline", viewA: "" })).panes[0]
+			?.view,
+	).toBeNull();
+});
+
+test("a view named for a pane that is not open names nothing", () => {
+	const address = addressFromSearch(validateWorkspaceSearch({ paneA: "payments", viewB: "k3f9" }));
+	expect(address.panes).toEqual([{ paneId: "A", boardKey: "payments", view: null }]);
 });

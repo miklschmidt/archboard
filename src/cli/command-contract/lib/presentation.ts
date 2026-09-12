@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type {
 	CommandOutcomeDeclaration,
-	HeldPolicy,
 	OutcomePresentationStep,
 	OutputCase,
 	PendingArtifact,
@@ -12,42 +11,8 @@ import { processCommandHost } from "@/cli/command-contract/lib/host";
 interface Presentation {
 	outputCase: OutputCase;
 	result: unknown;
-	held: unknown;
 	diagnostics: readonly string[];
 	outcome?: CommandOutcomeDeclaration;
-}
-
-const heldNoteSchema = z.object({ message: z.string() });
-const heldBoardSchema = z.object({ board: z.string() });
-const resultObjectSchema = z.record(z.string(), z.unknown());
-
-/**
- * Reads the note a hold carries, if it carries one.
- * @param held - The observed hold, of whatever shape.
- * @returns The note, or null when the hold has none.
- */
-function heldMessage(held: unknown): string | null {
-	const note = heldNoteSchema.safeParse(held);
-	return note.success ? note.data.message : null;
-}
-
-/**
- * Adds the hold to an object result when the output policy publishes it there.
- * A non-object result is never reshaped: the policy's field has nowhere to go.
- * @param result - The handler's result.
- * @param held - The observed hold.
- * @param policy - How this output case or outcome treats a hold.
- * @returns The result the contract's result schema will validate.
- */
-function applyHeld(result: unknown, held: unknown, policy: HeldPolicy): unknown {
-	if (policy !== "object-field-and-stderr-note" || !held) {
-		return result;
-	}
-	const object = resultObjectSchema.safeParse(result);
-	if (!object.success || Array.isArray(result)) {
-		return result;
-	}
-	return { ...object.data, held };
 }
 
 /**
@@ -70,22 +35,6 @@ function emitPublicResult(outputCase: OutputCase, result: unknown): void {
  */
 function emitDiagnostic(message: string): void {
 	processCommandHost.writeStderr(`${message}\n`);
-}
-
-/**
- * Tells the person what a held board means for what happens next: the canvas
- * keeps their changes and the note gets none of them until the hold is resolved.
- * @param held - The observed hold.
- */
-function emitContinuation(held: unknown): void {
-	const holding = heldBoardSchema.safeParse(held);
-	if (!holding.success) {
-		return;
-	}
-	emitDiagnostic(
-		`"${holding.data.board}" has stopped saving. Changes from here are held on the canvas ` +
-			"and reach no note until one of those three is run.",
-	);
 }
 
 /**
@@ -122,39 +71,19 @@ const STEP_EMITTERS: Readonly<Record<OutcomePresentationStep, (input: Presentati
 	result: (input) => {
 		emitPublicResult(input.outputCase, input.result);
 	},
-	/**
-	 * Writes the hold's own note, when it has one.
-	 * @param input - The presentation.
-	 */
-	"held-note": (input) => {
-		const message = heldMessage(input.held);
-		if (message) {
-			emitDiagnostic(message);
-		}
-	},
-	/**
-	 * Writes what a hold means for what happens next.
-	 * @param input - The presentation.
-	 */
-	continuation: (input) => {
-		emitContinuation(input.held);
-	},
 };
 
 /**
  * Writes everything one command run publishes, in the order the outcome or
- * output case declares. A case that declares no order writes its result and,
- * unless it ignores holds, the hold note after it.
- * @param input - The validated result with its hold, diagnostics and selected case.
+ * output case declares. A case that declares no order writes its result.
+ * @param input - The validated result with its diagnostics and selected case.
  */
 function presentResult(input: Presentation): void {
-	const steps: readonly OutcomePresentationStep[] =
-		input.outcome?.presentation ??
-		input.outputCase.presentation ??
-		(input.outputCase.held === "none" ? ["result"] : ["result", "held-note"]);
+	const steps: readonly OutcomePresentationStep[] = input.outcome?.presentation ??
+		input.outputCase.presentation ?? ["result"];
 	for (const step of steps) {
 		STEP_EMITTERS[step](input);
 	}
 }
 
-export { applyHeld, commitArtifact, presentResult };
+export { commitArtifact, presentResult };

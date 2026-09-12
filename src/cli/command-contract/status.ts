@@ -32,8 +32,8 @@ const StatusRunningResultSchema = z.looseObject({
 	running: z.literal(true),
 	url: z.string(),
 	pid: z.number().int().optional(),
-	elements: z.number().int().nonnegative(),
-	browserClients: z.number().int().nonnegative(),
+	boards: z.number().int().nonnegative().optional(),
+	browserClients: z.number().int().nonnegative().optional(),
 	stale: StaleSourceSchema.optional(),
 });
 type StatusRunningResult = z.infer<typeof StatusRunningResultSchema>;
@@ -65,9 +65,7 @@ function staleSource(health: Awaited<ReturnType<typeof getHealth>>) {
 	if (!source?.stale || !source.newestFile || !source.newestAt) {
 		return null;
 	}
-	const remedy =
-		"Restart it to pick that up: `archboard stop && archboard start`. " +
-		"Stop refuses while a board has held work that exists only in this process; resolve every reported hold first.";
+	const remedy = "Restart it to pick that up: `archboard stop && archboard start`.";
 	return {
 		startedAt: source.evaluatedAt,
 		changedFile: source.newestFile,
@@ -108,13 +106,16 @@ function runningStatus(
 	const stale = staleSource(health);
 	return {
 		result: {
+			// Synchronization first, so health stays the authority for what it and
+			// the sync route both answer: the sync route lists the boards it can
+			// see, and `boards` here is how many there are.
+			...sync,
 			running: true as const,
 			url: EXPRESS_SERVER_URL,
 			pid: health.pid ?? readPidFile(canvasPort()) ?? undefined,
-			elements: health.elements_count,
+			boards: health.boards,
 			browserClients: health.websocket_clients,
 			...(stale ? { stale } : {}),
-			...sync,
 		},
 		...(stale ? { diagnostics: [stale.says] } : {}),
 	};
@@ -145,7 +146,6 @@ const statusContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				held: "none",
 				description: "Canvas status",
 				presentation: ["result", "diagnostics"],
 			},
@@ -162,7 +162,6 @@ const statusContract = defineCommand({
 			exit: 3,
 			description: "No canvas is answering at the configured URL.",
 			stream: "stdout-only",
-			held: "none",
 			presentation: ["result"],
 		},
 		{
@@ -170,7 +169,6 @@ const statusContract = defineCommand({
 			exit: 3,
 			description: "Another service or an incompatible canvas is answering.",
 			stream: "stdout-only",
-			held: "none",
 			presentation: ["result"],
 		},
 	],

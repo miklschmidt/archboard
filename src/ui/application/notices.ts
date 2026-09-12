@@ -2,22 +2,17 @@
 // repeat replaces its predecessor rather than stacking. Pure.
 
 import type { CodeTargetNotice } from "@/shared/code-target";
-import type { PaneList } from "@/ui/application/pane-list";
-import { recordFor, type PaneRecords } from "@/ui/application/pane-records";
 import type { ShellNotice } from "@/ui/shell";
-import type { EditWithdrawalReason } from "@/ui/types";
 
 /** The ids of the notices that carry a shell action, reported back by id. */
 const NOTICE_ACTIONS = Object.freeze({
 	settings: "settings",
 	reloadFrontend: "reload-frontend",
-	resolveHold: "resolve-hold",
-	resolveElsewhere: "resolve-elsewhere",
 	dismissPresentation: "dismiss-presentation",
 });
 
 /**
- * A board note could not be rendered in one pane.
+ * A board could not be shown in one pane.
  * @param paneId The pane.
  * @param error The server's refusal.
  * @returns The notice.
@@ -25,7 +20,7 @@ const NOTICE_ACTIONS = Object.freeze({
 function boardErrorNotice(paneId: string, error: string): ShellNotice {
 	return {
 		id: `board-error:${paneId}`,
-		title: `Pane ${paneId} could not render its board`,
+		title: `Pane ${paneId} could not show its board`,
 		description: error,
 		tone: "destructive",
 		actions: [],
@@ -82,121 +77,6 @@ function infoNotice(id: string, title: string, description: string): ShellNotice
  */
 function failureNotice(id: string, title: string, description: string): ShellNotice {
 	return { id, title, description, tone: "destructive", actions: [] };
-}
-
-/**
- * A board has stopped saving (ADR 0006); the dialog can be reopened from here.
- * @param paneId The pane holding it.
- * @param board The board key.
- * @param writes How many changes are held.
- * @returns The notice.
- */
-function holdNotice(paneId: string, board: string, writes: number): ShellNotice {
-	return {
-		id: `hold:${paneId}`,
-		title: `${board} has stopped saving`,
-		description: `${writes} change(s) exist only on pane ${paneId}'s canvas until you choose: reload the note, overwrite it, or save elsewhere.`,
-		tone: "destructive",
-		actions: [{ kind: "select", id: NOTICE_ACTIONS.resolveHold, label: "Choose" }],
-	};
-}
-
-/**
- * A note was written elsewhere (TASK-062); the dialog can be reopened from here.
- * @param paneId The pane holding it.
- * @param board The board key.
- * @returns The notice.
- */
-function elsewhereNotice(paneId: string, board: string): ShellNotice {
-	return {
-		id: `elsewhere:${paneId}`,
-		title: `${board} was written elsewhere`,
-		description: `The note behind pane ${paneId} changed outside archboard. Reload it, keep editing, or save elsewhere.`,
-		tone: "default",
-		actions: [{ kind: "select", id: NOTICE_ACTIONS.resolveElsewhere, label: "Choose" }],
-	};
-}
-
-/**
- * A pane withdrew the person's unwritten edit and shows the note's state
- * (ADR 0022). Said once per pane; a repeat replaces the words in place.
- * @param paneId The pane.
- * @param board The board key, or null when the pane names none.
- * @param reason Why: the note moved, or an agent's claim stands.
- * @returns The notice.
- */
-function withdrawnNotice(
-	paneId: string,
-	board: string | null,
-	reason: EditWithdrawalReason,
-): ShellNotice {
-	const where = board === null ? `pane ${paneId}` : `${board} on pane ${paneId}`;
-	return {
-		id: `withdrawn:${paneId}`,
-		title: "Your change was withdrawn",
-		description:
-			reason === "moved"
-				? `The board moved before your change was written. ${where} now shows the note as it is.`
-				: `An agent claims this board, so it is read-only while the claim stands. ${where} now shows the board as the agent left it.`,
-		tone: "default",
-		actions: [],
-	};
-}
-
-/**
- * The note notices every pane's state asks for right now: a hold and a write
- * elsewhere each stay visible while they last (ADR 0006, TASK-062). Derived
- * from the records on every render rather than kept as state of their own.
- * @param list The panes, in order.
- * @param records What each pane reported.
- * @returns The notices in pane order, a pane's hold before its write elsewhere.
- */
-function noteNotices(list: PaneList, records: PaneRecords): readonly ShellNotice[] {
-	return list.panes.flatMap((entry) => {
-		const { hold, writtenElsewhere, boardKey } = recordFor(records, entry.paneId).status;
-		const notices: ShellNotice[] = [];
-		if (hold !== null) {
-			notices.push(holdNotice(entry.paneId, boardKey ?? hold.board, hold.writes));
-		}
-		if (writtenElsewhere !== null) {
-			notices.push(elsewhereNotice(entry.paneId, boardKey ?? writtenElsewhere.board));
-		}
-		return notices;
-	});
-}
-
-/**
- * Why a pane kept its board, said the same way wherever the person asked
- * (TASK-166): the shell's notice, and the dialog they were typing into.
- * @param paneId The pane that refused.
- * @param reason Why: a board that has stopped saving, or an edit still in flight.
- * @returns The words.
- */
-function navigationBlockReason(paneId: string, reason: "pending" | "hold"): string {
-	return reason === "hold"
-		? `That board has stopped saving, so its changes exist only on pane ${paneId}. Choose what happens to them, then open the other board.`
-		: `Pane ${paneId} has a change the canvas has not taken yet. Try again in a moment.`;
-}
-
-/**
- * A navigation was refused because a pane would have lost work that is only on
- * its canvas (TASK-166). The workspace and the address bar both stayed as they
- * were; the pane’s own recovery is the way on.
- * @param paneId The pane that refused.
- * @param reason Why: a board that has stopped saving, or an edit still in flight.
- * @returns The notice.
- */
-function navigationBlockedNotice(paneId: string, reason: "pending" | "hold"): ShellNotice {
-	return {
-		id: "navigation-blocked",
-		title: `Pane ${paneId} kept its board`,
-		description: navigationBlockReason(paneId, reason),
-		tone: "destructive",
-		actions:
-			reason === "hold"
-				? [{ kind: "select", id: NOTICE_ACTIONS.resolveHold, label: "Choose" }]
-				: [],
-	};
 }
 
 /**
@@ -269,17 +149,11 @@ export {
 	NOTICE_ACTIONS,
 	boardErrorNotice,
 	codeTargetShellNotice,
-	elsewhereNotice,
 	failureNotice,
-	holdNotice,
 	infoNotice,
-	navigationBlockReason,
-	navigationBlockedNotice,
-	noteNotices,
 	presentationNotice,
 	staleFrontendNotice,
 	unreachableBoardsNotice,
 	withNotice,
-	withdrawnNotice,
 	withoutNotice,
 };

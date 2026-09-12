@@ -106,10 +106,8 @@ const pane = (clientId: string, primary: boolean, focused: boolean) => ({
 	paneId: `${clientId}-pane`,
 	primary,
 	focused,
-	elementCount: 0,
 	board: "scratch",
 	rect: { x: 0, y: 0, width: 1280, height: 800 },
-	viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
 });
 
 export {

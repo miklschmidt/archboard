@@ -32,7 +32,7 @@ describe("coordinator callback bytes", () => {
 			normalizeCoordinatorCallback(semantic.selection, captured, null),
 		);
 		expect(focusText).toContain('"focused":true');
-		expect(selectionText).toContain('"selection":["element-c"]');
+		expect(selectionText).toContain('"selection":[{"id":"element-c","kind":"node"}]');
 		semantic.dispose();
 	});
 
@@ -141,5 +141,24 @@ describe("coordinator callback bytes", () => {
 		expect(() => encodeCoordinatorCallback(hostileNonQueue)).toThrow(
 			"Non-queue callback has a queue operation",
 		);
+	});
+	test("refuses a selection naming a kind no variant holds", () => {
+		const ids = identities();
+		const semantic = semanticSources(ids, false);
+		const callback = normalizeCoordinatorCallback(semantic.selection, link(ids), null);
+		if (callback.kind !== "semantic") {
+			throw new TypeError("Expected a semantic callback.");
+		}
+		const forged = {
+			...callback,
+			semantic: {
+				...callback.semantic,
+				// A kind the renderer might draw but no command could act on.
+				selection: [{ kind: "pixel" as never, id: "n1" }],
+			},
+		};
+
+		expect(() => encodeCoordinatorCallback(forged)).toThrow("kind no variant holds");
+		semantic.dispose();
 	});
 });

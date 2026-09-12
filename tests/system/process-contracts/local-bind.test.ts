@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -12,7 +12,6 @@ import {
 	availablePort,
 	HealthSchema,
 	ReadySchema,
-	runCli,
 	sanitizedEnvironment,
 } from "./support/process-http.ts";
 import { plantStaticProbes } from "./support/static-probes.ts";
@@ -56,13 +55,6 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 			(error: unknown) => error,
 		);
 		expect(ipv6).toBeInstanceOf(Error);
-
-		const css = await fetch(`${canvas.base}/assets/excalidraw.css`);
-		expect(css.status).toBe(200);
-		expect(css.headers.get("content-type")).toMatch(/^text\/css(?:;|$)/i);
-		expect(Buffer.from(await css.arrayBuffer())).toEqual(
-			readFileSync(join(repoRoot, "node_modules/@excalidraw/excalidraw/dist/prod/index.css")),
-		);
 
 		const probes = plantStaticProbes(repoRoot);
 		resources.defer(() => probes.restore());
@@ -137,55 +129,17 @@ test("rejects foreign health, recovers the port, and refuses no-vault startup", 
 		delete cliEnv["ARCHBOARD_VAULT"];
 		delete cliEnv["EXCALIDRAW_NO_AUTOSTART"];
 		cliEnv["EXPRESS_SERVER_URL"] = `http://127.0.0.1:${await availablePort()}`;
-		const cli = spawnSync(process.execPath, [join(repoRoot, "src/bin.ts"), "board", "list"], {
-			cwd: repoRoot,
-			env: cliEnv,
-			encoding: "utf8",
-		});
+		const cli = spawnSync(
+			process.execPath,
+			[join(repoRoot, "src/bin.ts"), "semantic", "show", "any"],
+			{
+				cwd: repoRoot,
+				env: cliEnv,
+				encoding: "utf8",
+			},
+		);
 		expect(cli.status).toBe(3);
 		expect(cli.stderr).toContain("install-skill");
-	} finally {
-		await resources.disposeAsync();
-	}
-}, 20_000);
-
-test("stop reports a hold that appears after the signal and leaves the canvas running", async () => {
-	await using resources = new AsyncDisposableStack();
-	const root = mkdtempSync(join(tmpdir(), "archboard-local-bind-late-hold-"));
-	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const vault = join(root, "vault");
-	const port = await availablePort();
-	const canvas = await startOwnedPeer({
-		argv: [process.execPath, healthFixture],
-		env: {
-			...sanitizedEnvironment(root, vault),
-			PORT: String(port),
-			ARCHBOARD_TEST_LATE_HELD_BOARD: "late-hold",
-		},
-		readySchema: HealthResponderReadySchema,
-	});
-	resources.defer(() => canvas.dispose());
-	const base = `http://127.0.0.1:${port}`;
-	const result = runCli({ repoRoot, root, vault, base, args: ["stop"] });
-	const diagnostic = JSON.stringify(result, null, 2);
-	try {
-		expect(result.status, diagnostic).toBe(1);
-		expect(result.signal, diagnostic).toBeNull();
-		expect(result.stdout, diagnostic).toBe("");
-		expect(result.stderr, diagnostic).toContain(
-			'Canvas shutdown refused because held work exists only in process memory on "late-hold".',
-		);
-		expect(result.stderr, diagnostic).toContain(
-			"archboard browser show late-hold --pane <spec> --reload",
-		);
-		expect(result.stderr, diagnostic).toContain("archboard board save --board late-hold --force");
-		expect(result.stderr, diagnostic).toContain(
-			"archboard board save --board late-hold --name <new-name>",
-		);
-		const health = HealthSchema.parse(
-			await fetch(`${base}/health`).then((response) => response.json()),
-		);
-		expect(health.pid).toBe(canvas.ready.pid);
 	} finally {
 		await resources.disposeAsync();
 	}

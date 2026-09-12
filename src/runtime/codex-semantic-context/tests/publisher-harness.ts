@@ -31,15 +31,51 @@ function context(
 			threadId: ids.thread("coordinator"),
 			realtimeSessionId: ids.realtimeSession,
 		},
-		board: { key: "payments", note: "boards/payments.excalidraw.md", version: 7 },
+		board: {
+			key: "payments",
+			name: "Payments",
+			file: "boards/payments.semantic.json",
+			version: 7,
+		},
 		pane: { paneId: "pane-a", focused: true },
-		selection: ["element-b", "element-a"],
+		architecture: {
+			variant: { id: "v1", name: "Current", lifecycle: "current", against: null },
+			view: { id: "w1", name: "Overview", grammar: "architecture" },
+			selection: {
+				count: 2,
+				subjects: [
+					{ kind: "node" as const, id: "element-b", name: "Ledger" },
+					{ kind: "node" as const, id: "element-a", name: "Checkout" },
+				],
+			},
+			differences: null,
+			reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
+		},
 		claim: { holder: "agent", doing: "mapping the board" },
 		doing: "mapping the board",
 		cursor: { feedId: "feed-1", sequence: 3 },
 		description: "Payments board: checkout, ledger, and settlement boundaries.",
 		ambiguity: [],
 		...overrides,
+	};
+}
+
+/**
+ * An architecture block with just these subjects picked out, for a test that
+ * cares only about the selection.
+ * @param ids The selected identities.
+ * @returns The architecture override.
+ */
+function picked(ids: readonly string[]): SemanticContextInput["architecture"] {
+	return {
+		variant: { id: "v1", name: "Current", lifecycle: "current", against: null },
+		view: null,
+		selection: {
+			count: ids.length,
+			subjects: ids.map((id) => ({ kind: "node" as const, id, name: null })),
+		},
+		differences: null,
+		reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
 	};
 }
 
@@ -54,6 +90,7 @@ function change(
 		origin: "human",
 		significance: "structural",
 		text: "A human settled a structural board change.",
+		by: null,
 		...overrides,
 	};
 }
@@ -203,6 +240,7 @@ export {
 	identities,
 	type Identities,
 	context,
+	picked,
 	change,
 	type RegistrationFailure,
 	type HarnessOptions,

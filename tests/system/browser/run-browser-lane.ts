@@ -13,15 +13,10 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	TEST_BROWSER_COMMAND_TIMEOUT_MS,
-	TEST_BROWSER_POLL_MS,
-	TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS,
-} from "../support/timing.ts";
+import { TEST_BROWSER_COMMAND_TIMEOUT_MS, TEST_BROWSER_POLL_MS } from "../support/timing.ts";
 import {
 	BROWSER_ADAPTER_PATH,
 	CI_EXCLUDED_BROWSER_OWNERS_ENV,
-	HUMAN_PERFORMANCE_BROWSER_OWNER,
 	applyCiBrowserOwnerExclusion,
 	browserCleanupObservationMs,
 	browserOwnerCommandArguments,
@@ -41,9 +36,7 @@ import { processIdsWithEnvironmentMarkers } from "./support/process-environment-
 export {
 	BROWSER_ADAPTER_PATH,
 	BROWSER_TEST_PATHS,
-	OPT_IN_BROWSER_TEST_PATHS,
 	CI_EXCLUDED_BROWSER_OWNERS_ENV,
-	HUMAN_PERFORMANCE_BROWSER_OWNER,
 	applyCiBrowserOwnerExclusion,
 	validateBrowserSelection,
 } from "./support/agent-browser.ts";
@@ -115,16 +108,13 @@ function probe(command: string, argv: readonly string[], label: string): void {
 	}
 }
 
-function verifyPrerequisites(selection: BrowserSelection): string | undefined {
+function verifyPrerequisites(): string | undefined {
 	const browserExecutable = resolveBrowserExecutable();
 	probe("agent-browser", ["--version"], "agent-browser");
-	if (selection.files.includes(HUMAN_PERFORMANCE_BROWSER_OWNER))
-		probe("strace", ["--version"], "strace");
 	return browserExecutable;
 }
 
 function ownerEnvironment(
-	file: BrowserTestPath,
 	laneRoot: string,
 	ownerRoot: string,
 	browserExecutable: string | undefined,
@@ -151,9 +141,6 @@ function ownerEnvironment(
 	if (browserExecutable) env["AGENT_BROWSER_EXECUTABLE_PATH"] = browserExecutable;
 	const rendererExecutable = process.env["ARCHBOARD_RENDERER_CHROMIUM"];
 	if (rendererExecutable) env["ARCHBOARD_RENDERER_CHROMIUM"] = rendererExecutable;
-	if (file === HUMAN_PERFORMANCE_BROWSER_OWNER) {
-		env["AGENT_BROWSER_DEFAULT_TIMEOUT"] = String(TEST_HUMAN_PERFORMANCE_OPEN_TIMEOUT_MS);
-	}
 	return env;
 }
 
@@ -408,7 +395,7 @@ async function runSelection(
 			const name = String(index + 1).padStart(2, "0");
 			const ownerRoot = join(laneRoot, name);
 			mkdirSync(join(ownerRoot, "tmp"), { recursive: true });
-			const env = ownerEnvironment(file, laneRoot, ownerRoot, laneBrowserExecutable);
+			const env = ownerEnvironment(laneRoot, ownerRoot, laneBrowserExecutable);
 			current = spawnOwner(file, env, selection.testName);
 			const processGroup = current.pid;
 			try {
@@ -454,7 +441,7 @@ async function main(): Promise<number> {
 	}
 	if (selection.files.length === 0) return 0;
 	try {
-		const browserExecutable = verifyPrerequisites(selection);
+		const browserExecutable = verifyPrerequisites();
 		return await runSelection(selection, browserExecutable);
 	} catch (error) {
 		process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);

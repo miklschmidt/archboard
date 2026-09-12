@@ -1,5 +1,4 @@
 import { closeLogger, forceCloseLogger, logger } from "@/runtime/engine/logger";
-import { heldBoardKeys } from "@/runtime/engine/board-hold";
 import { ARCHBOARD_VAULT, noVaultMessage } from "@/runtime/engine/config";
 import { removePidFile } from "@/runtime/engine/pidfile";
 import { CANVAS_HTTP_STOP_GRACE_MS } from "@/shared/timing/timing";
@@ -9,14 +8,12 @@ import {
 } from "@/shared/canvas-startup-terminal";
 import {
 	CanvasApplicationBusyError,
-	CanvasApplicationHeldError,
 	createCanvasApplicationLifetime,
 } from "@/server/canvas/lib/application-lifetime";
 import { server } from "@/server/canvas/lib/canvas-app";
 import { prepareCodexWorkbench, stopCodexWorkbench } from "@/server/canvas/lib/canvas-codex-host";
-import { boardRenderer, checkoutWork, mutationAdmission } from "@/server/canvas/lib/canvas-owners";
+import { checkoutWork, mutationAdmission } from "@/server/canvas/lib/canvas-owners";
 import {
-	adoptScratchBoard,
 	closeBrowserOwners,
 	closeHttpServer,
 	forgetEngineState,
@@ -54,10 +51,10 @@ function canvasPhase(): ReturnType<CanvasLifetime["phase"]> | "idle" {
 /**
  * Whether a stop failure is one the canvas recovers from by staying up.
  * @param error The failure.
- * @returns True for a held or busy refusal.
+ * @returns True for a busy refusal.
  */
 function isRecoverableCanvasStopError(error: unknown): boolean {
-	return error instanceof CanvasApplicationHeldError || error instanceof CanvasApplicationBusyError;
+	return error instanceof CanvasApplicationBusyError;
 }
 
 /**
@@ -246,13 +243,12 @@ function processHandlers(
  */
 function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): CanvasLifetime {
 	return createCanvasApplicationLifetime({
-		heldBoards: heldBoardKeys,
 		/** Stop admitting work and drain what is running. */
 		quiesce: async () => {
 			checkoutWork.quiesce();
 			await mutationAdmission.quiesce();
 		},
-		/** Admit work again after a refused stop. */
+		/** Admit work again when a stop failed before teardown began. */
 		resume: () => {
 			checkoutWork.resume();
 			mutationAdmission.resume();
@@ -304,9 +300,9 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): CanvasLi
 			},
 			{
 				name: "engine-state",
-				/** Pick the scratch board up. */
+				/** Nothing to bring up: a board is read when somebody asks for one. */
 				start: () => {
-					adoptScratchBoard();
+					// The vault is read on demand; this process holds nothing of it.
 				},
 				/** Forget every engine-level record. */
 				stop: () => {
@@ -318,22 +314,6 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): CanvasLi
 				start: prepareCodexWorkbench,
 				stop: stopCodexWorkbench,
 				forceStop: stopCodexWorkbench,
-			},
-			{
-				name: "board-renderer",
-				/**
-				 * Start the renderer.
-				 * @returns Resolves once the renderer is running.
-				 */
-				start: () => boardRenderer.start(),
-				/** Stop the renderer. */
-				stop: async () => {
-					await boardRenderer.stop();
-				},
-				/** Stop the renderer without waiting. */
-				forceStop: async () => {
-					await boardRenderer.forceStop();
-				},
 			},
 			{
 				name: "http-server",

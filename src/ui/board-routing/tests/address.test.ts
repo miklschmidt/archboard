@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test";
 
 import {
-	panesAtRisk,
 	planFor,
 	planIsEmpty,
 	sameAddress,
@@ -28,7 +27,7 @@ function address(
 	activePaneId: string | null = null,
 ): WorkspaceAddress {
 	return settledAddress({
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey })),
+		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, view: null })),
 		activePaneId,
 	});
 }
@@ -137,7 +136,6 @@ test("the panes at risk are the ones a plan closes or points at another board", 
 		PANES,
 	);
 	expect(plan.closes).toEqual(["B"]);
-	expect(panesAtRisk(plan)).toEqual(["B", "A"]);
 });
 
 test("a workspace survives a round trip through the address bar's search parameters", () => {

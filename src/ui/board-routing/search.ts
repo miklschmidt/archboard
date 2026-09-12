@@ -1,11 +1,20 @@
 // The workspace as search parameters, and back. One parameter per open pane,
 // named for the pane and carrying the board key exactly as the pane reports it
 // (`payments`, `payments@proposed`), plus `pane` for the active one when it is
-// not the first. Nothing else of the workspace is addressable: selection, the
+// not the first, plus `viewA` for a semantic board being read through one of its
+// named views. Nothing else of the workspace is addressable: selection, the
 // camera, pending edits and live voice are session state and stay out of here.
+//
+// The view is in the address rather than in the board key because it is not
+// part of the board's identity: `semantic:pipeline` is one board however it is
+// being explained, and a key that carried the reading would make two of them.
+// It is here at all — rather than left as pane state — because reload, Back and
+// Forward have to come back to the explanation the person was looking at, and a
+// link somebody sends has to open on the one they meant.
 //
 //     /?paneA=payments
 //     /?paneA=payments&paneB=payments@proposed&pane=B
+//     /?paneA=semantic:pipeline&viewA=k3f9
 //
 // Search parameters rather than path segments because the canvas server serves
 // the page at `/` alone, so a path would answer 404 on every direct load.
@@ -37,8 +46,10 @@ function parseWorkspaceSearchString(searchStr: string): Record<string, string> {
 }
 
 /**
- * Write the query string back. `/` and `@` are left as they are: both are legal
- * in a query string, and a board key is meant to be read in the address bar.
+ * Write the query string back. `/`, `@` and `:` are left as they are: all three
+ * are legal in a query string, and a board key is meant to be read in the
+ * address bar — `payments@proposed` and `semantic:pipeline` say what they are,
+ * and `payments%40proposed` says nothing to anybody.
  * @param search The parameters.
  * @returns The query string, with its leading question mark, or empty.
  */
@@ -51,7 +62,11 @@ function stringifyWorkspaceSearch(search: Record<string, unknown>): string {
 			params.set(key, value);
 		}
 	}
-	const query = params.toString().replaceAll("%2F", "/").replaceAll("%40", "@");
+	const query = params
+		.toString()
+		.replaceAll("%2F", "/")
+		.replaceAll("%40", "@")
+		.replaceAll("%3A", ":");
 	return query === "" ? "" : `?${query}`;
 }
 
@@ -61,6 +76,9 @@ const ACTIVE_PANE_PARAM = "pane";
 /** `paneA`, `paneB`: one per open pane, carrying its board key. */
 const PANE_PARAM = /^pane([A-Za-z0-9]+)$/;
 
+/** `viewA`: the view one pane reads its semantic board through. */
+const VIEW_PARAM = /^view([A-Za-z0-9]+)$/;
+
 /**
  * The parameter name for one pane.
  * @param paneId The pane.
@@ -68,6 +86,15 @@ const PANE_PARAM = /^pane([A-Za-z0-9]+)$/;
  */
 function paneParam(paneId: string): string {
 	return `${ACTIVE_PANE_PARAM}${paneId}`;
+}
+
+/**
+ * The parameter name for one pane's view.
+ * @param paneId The pane.
+ * @returns The name, `viewA` for pane A.
+ */
+function viewParam(paneId: string): string {
+	return `view${paneId}`;
 }
 
 /**
@@ -98,7 +125,7 @@ function validateWorkspaceSearch(input: Record<string, unknown>): WorkspaceSearc
 		if (value === null) {
 			continue;
 		}
-		if (key === ACTIVE_PANE_PARAM || PANE_PARAM.test(key)) {
+		if (key === ACTIVE_PANE_PARAM || PANE_PARAM.test(key) || VIEW_PARAM.test(key)) {
 			search[key] = value;
 		}
 	}
@@ -115,7 +142,11 @@ function panesFromSearch(search: WorkspaceSearch): readonly AddressedPane[] {
 	for (const [key, value] of Object.entries(search)) {
 		const paneId = PANE_PARAM.exec(key)?.[1];
 		if (paneId !== undefined && !panes.some((pane) => pane.paneId === paneId)) {
-			panes.push(Object.freeze({ paneId, boardKey: value }));
+			// A view named for a pane that is not open names nothing; a pane on an
+			// ordinary board has no views, and its stated one is ignored the same way.
+			panes.push(
+				Object.freeze({ paneId, boardKey: value, view: search[viewParam(paneId)] ?? null }),
+			);
 		}
 	}
 	return panes.toSorted((one, other) => one.paneId.localeCompare(other.paneId));
@@ -159,6 +190,9 @@ function searchFromAddress(address: WorkspaceAddress): WorkspaceSearch {
 		if (pane.boardKey !== null) {
 			search[paneParam(pane.paneId)] = pane.boardKey;
 		}
+		if (pane.boardKey !== null && pane.view !== null) {
+			search[viewParam(pane.paneId)] = pane.view;
+		}
 	}
 	const active = writtenActivePane(address);
 	if (active !== null) {
@@ -174,6 +208,7 @@ export {
 	parseWorkspaceSearchString,
 	searchFromAddress,
 	stringifyWorkspaceSearch,
+	viewParam,
 	validateWorkspaceSearch,
 	type WorkspaceSearch,
 };

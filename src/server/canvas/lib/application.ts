@@ -8,34 +8,22 @@ import {
 	createCodeOpenerRouter,
 	isCodeOpenerBodyRoute,
 } from "@/server/code-opener";
-import { mountBoardRoutes } from "@/server/canvas/lib/board-routes";
-import { mountBridgeRoutes } from "@/server/canvas/lib/bridge-routes";
-import { mountBrowserPresentation } from "@/server/canvas/lib/browser-presentation-mount";
 import { app } from "@/server/canvas/lib/canvas-app";
 import { checkoutWork } from "@/server/canvas/lib/canvas-owners";
 import { startServer } from "@/server/canvas/lib/canvas-startup";
-import { mountChangeFeedRoute } from "@/server/canvas/lib/change-feed-route";
-import { mountChangeReportRoute } from "@/server/canvas/lib/change-report-route";
-import { mountCheckoutSnapshot } from "@/server/canvas/lib/checkout-middleware";
-import { mountCompareRoute } from "@/server/canvas/lib/compare-route";
-import { mountElementRoutes } from "@/server/canvas/lib/element-routes";
-import { mountFileRoutes } from "@/server/canvas/lib/file-routes";
-import { createLibraryRouter } from "@/server/canvas/lib/library-routes";
-import { mountLockRoutes } from "@/server/canvas/lib/lock-routes";
-import { mountMermaidRoute } from "@/server/canvas/lib/mermaid-conversion";
 import { moduleDir } from "@/server/canvas/lib/module-paths";
 import { mountMutationAdmission, trackMutationWork } from "@/server/canvas/lib/mutation-work";
-import { mountPaneRoutes, mountSelectionRoutes } from "@/server/canvas/lib/pane-routes";
-import { broadcastBoardless } from "@/server/canvas/lib/pane-registry";
-import { mountRenderRoutes } from "@/server/canvas/lib/render-routes";
+import { mountPaneRoutes } from "@/server/canvas/lib/pane-routes";
+import { mountSemanticLockRoutes } from "@/server/canvas/lib/semantic-lock-routes";
+import { mountSemanticBoardRoutes } from "@/server/canvas/lib/semantic-board-routes";
+import { mountSemanticPaneContextRoutes } from "@/server/canvas/lib/semantic-pane-context";
+import { watchSemanticBoardFiles } from "@/server/canvas/lib/semantic-disk-watch";
 import { mountServiceRoutes } from "@/server/canvas/lib/service-routes";
-import { mountSnapshotRoutes } from "@/server/canvas/lib/snapshot-routes";
-import { mountHeldBoardReport, mountWriteBoundary } from "@/server/canvas/lib/write-boundary";
 
 // The canvas application, assembled in the order Express will run it. Each
 // mount owns one concern; this file decides only their order, which is the
-// contract: admission before parsing, the checkout snapshot before any board
-// lock, the write boundary (ADR 0016) before every board write.
+// contract: admission before parsing, and the checkout snapshot before any
+// route that can open a file in somebody's editor.
 
 dotenv.config({ quiet: true });
 
@@ -53,32 +41,26 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	globalJson(req, res, next);
 });
 
-mountCheckoutSnapshot(app);
-mountHeldBoardReport(app);
-
 // Serve the frontend bundle, and only that.
 //
-// This used to mount `../dist` as well, which meant whatever a build tool had
-// left in that directory was reachable over http by path. Under ADR 0014 vite
-// writes nothing but `dist/frontend`, so today that mount adds nothing. But a
-// checkout from before ADR 0014 still has a compiled server, CLI and every core
-// module sitting in `dist/`, and the broad mount served all of it. What is
-// reachable is now this line's decision rather than a build tool's.
-// `tests/system/process-contracts/local-bind.test.ts` plants a file in `dist/`
-// and checks it 404s.
+// What is reachable over http is this line's decision rather than a build
+// tool's: under ADR 0014 vite writes nothing but `dist/frontend`, and a
+// checkout from before it still has a compiled server and CLI sitting in
+// `dist/`. `tests/system/process-contracts/local-bind.test.ts` plants a file in
+// `dist/` and checks it 404s.
 app.use(express.static(path.join(moduleDir, "../dist/frontend")));
-app.get("/assets/excalidraw.css", (_req, res) => {
-	res.sendFile("index.css", {
-		root: path.join(moduleDir, "../node_modules/@excalidraw/excalidraw/dist/prod"),
-	});
-});
-// Serve Excalidraw fonts so the font subsetting worker can fetch them for export
-app.use(
-	"/assets/fonts",
-	express.static(path.join(moduleDir, "../node_modules/@excalidraw/excalidraw/dist/prod/fonts")),
-);
 
-mountWriteBoundary(app);
+// The faces the renderer measures and draws in. A rendered diagram registers
+// them itself, by these URLs, so the glyphs a browser draws come from the same
+// files the server measured — a picture whose text was measured in one face and
+// drawn in another has boxes that do not fit their words.
+app.use(
+	"/assets/diagram-fonts",
+	express.static(path.join(moduleDir, "ui/shell/assets/fonts"), {
+		immutable: true,
+		maxAge: "1y",
+	}),
+);
 
 app.use(
 	createCodeOpenerRouter({
@@ -102,40 +84,15 @@ app.use(
 	}),
 );
 
-mountLockRoutes(app);
-mountElementRoutes(app);
-mountBridgeRoutes(app);
-mountMermaidRoute(app);
-mountChangeReportRoute(app);
-mountChangeFeedRoute(app);
-mountSelectionRoutes(app);
+mountSemanticLockRoutes(app);
 mountPaneRoutes(app);
-mountFileRoutes(app);
-mountRenderRoutes(app);
-mountBrowserPresentation(app);
-mountSnapshotRoutes(app);
-mountBoardRoutes(app);
-mountCompareRoute(app);
+mountSemanticBoardRoutes(app);
+mountSemanticPaneContextRoutes(app);
 
-// The stencil palette, which is not a board and never becomes one. The browser
-// reads the library when it mounts and writes back whatever Excalidraw says
-// the library now is; the result is broadcast so the other tabs stop being the
-// stale one, including the tab that sent it, which recognises its own write by
-// content rather than by a client id.
-app.use(
-	createLibraryRouter({
-		/**
-		 * Tell every tab the library changed.
-		 * @param notification The new library.
-		 */
-		notifyLibraryChanged(notification) {
-			broadcastBoardless({
-				...notification,
-				items: notification.items.map((item) => ({ ...item, elements: [...item.elements] })),
-			});
-		},
-	}),
-);
+// A vault can be open in more than one canvas, and the lease says who may write
+// rather than who has been told. Watching the boards on screen is what keeps a
+// pane from reading a board another writer replaced under it.
+watchSemanticBoardFiles();
 
 mountServiceRoutes(app);
 

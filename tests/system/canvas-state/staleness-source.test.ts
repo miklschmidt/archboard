@@ -69,7 +69,7 @@ describe.serial("source staleness", () => {
 		expect(quiet.json.stale).toBeUndefined();
 		expect(quiet.stderr).not.toMatch(/older code/);
 
-		const touched = join(repoRoot, "src/runtime/engine/compare.ts");
+		const touched = join(repoRoot, "src/runtime/engine/board-doing.ts");
 		const edit = reversibleCheckoutEdit(repoRoot, [touched]);
 		resources.defer(() => edit.restore());
 		edit.edit(touched, (source) => source);
@@ -80,13 +80,12 @@ describe.serial("source staleness", () => {
 		if (!stale) {
 			throw new Error("The canvas never returned its stale source state.");
 		}
-		expect(stale.source.newestFile).toBe("src/runtime/engine/compare.ts");
+		expect(stale.source.newestFile).toBe("src/runtime/engine/board-doing.ts");
 		expect(stale.pid).toBe(first.pid);
 		const loud = cli();
 		expect(loud.status).toBe(0);
-		expect(loud.json.stale?.changedFile).toBe("src/runtime/engine/compare.ts");
+		expect(loud.json.stale?.changedFile).toBe("src/runtime/engine/board-doing.ts");
 		expect(loud.stderr).toMatch(/answering from the older code/);
 		expect(loud.stderr).toMatch(/archboard stop && archboard start/);
-		expect(loud.stderr).toMatch(/Stop refuses while a board has held work/);
 	}, 30_000);
 });

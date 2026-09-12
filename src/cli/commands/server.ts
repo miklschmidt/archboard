@@ -2,7 +2,6 @@ import { z } from "zod";
 import { canvasPort, ensureCanvasRunning, stopCanvas } from "@/runtime/engine/spawn";
 import { readPidFile } from "@/runtime/engine/pidfile";
 import { defineCommand } from "@/cli/command-contract/contract";
-import { HoldReportSchema } from "@/cli/command-contract/schemas";
 
 const IgnoredTailSchema = z.array(z.string()).default([]);
 
@@ -14,7 +13,6 @@ const StartResultSchema = z.object({
 	url: z.string(),
 	spawned: z.boolean(),
 	pid: z.number().int().positive().optional(),
-	held: HoldReportSchema.optional(),
 });
 type StartResult = z.infer<typeof StartResultSchema>;
 
@@ -42,9 +40,8 @@ const startContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				held: "object-field-and-stderr-note",
 				description: "Server startup state",
-				presentation: ["diagnostics", "result", "held-note"],
+				presentation: ["diagnostics", "result"],
 			},
 		],
 		/**
@@ -99,7 +96,6 @@ const StopResultSchema = z.object({
 	stopped: z.boolean(),
 	pid: z.number().int().positive().optional(),
 	message: z.string(),
-	held: HoldReportSchema.optional(),
 });
 type StopResult = z.infer<typeof StopResultSchema>;
 
@@ -127,9 +123,8 @@ const stopContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				held: "object-field-and-stderr-note",
 				description: "Identity-safe stop result",
-				presentation: ["result", "held-note"],
+				presentation: ["result"],
 			},
 		],
 		/**
@@ -140,15 +135,7 @@ const stopContract = defineCommand({
 	},
 	prerequisites: [],
 	effects: ["local-write"],
-	refusals: [
-		{
-			code: "CANVAS_HELD",
-			exit: 1,
-			stream: "stderr",
-			description:
-				"A board has conflict-held work that exists only in this process; resolve every reported hold before stopping.",
-		},
-	],
+	refusals: [],
 	relationships: [
 		{
 			method: "GET",
@@ -158,7 +145,7 @@ const stopContract = defineCommand({
 		},
 	],
 	/**
-	 * Stops the local canvas after it identifies itself as this service; a held board refuses.
+	 * Stops the local canvas after it identifies itself as this service.
 	 * @returns The stop result from the spawn owner.
 	 */
 	async handler() {

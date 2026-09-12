@@ -10,7 +10,7 @@
 // whether or not it was met, and a gesture that failed clears it at once. There
 // is no marker left over for a later change to be mistaken for.
 
-import { boardIn, type WorkspaceAddress } from "@/ui/board-routing/address";
+import { boardIn, viewIn, type WorkspaceAddress } from "@/ui/board-routing/address";
 
 /** What a person's gesture asked the workspace to become. */
 type NavigationIntent =
@@ -24,6 +24,12 @@ type NavigationIntent =
 			readonly kind: "panes";
 			/** How many panes the person asked to be looking at. */
 			readonly count: number;
+	  }
+	| {
+			readonly kind: "view";
+			readonly paneId: string;
+			/** The view that pane was reading through when the gesture was made. */
+			readonly from: string | null;
 	  };
 
 /** The one expectation outstanding, if any. */
@@ -49,6 +55,12 @@ interface DeliberateNavigation {
 function met(intent: NavigationIntent, address: WorkspaceAddress): boolean {
 	if (intent.kind === "panes") {
 		return address.panes.length === intent.count;
+	}
+	// Choosing another explanation of the same board is a move a person made and
+	// expects Back to undo, so it earns a history entry of its own — the same way
+	// opening a board does, and unlike the board changing under them.
+	if (intent.kind === "view") {
+		return viewIn(address, intent.paneId) !== intent.from;
 	}
 	// The pane the person asked to move has moved. A board open is expected only
 	// once its own command has been seen through, so there is no window in which

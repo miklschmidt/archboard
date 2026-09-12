@@ -55,7 +55,7 @@ describe("codex workhorse start transaction", () => {
 				approvalsReviewer: "user",
 				sandbox: { type: "dangerFullAccess" },
 				activePermissionProfile: { id: "archboard-default", extends: null },
-				instructionHash: "257b4ab944737418ee0713b4a748405446f8bc009d0dfc4557b099cd2c1038e6",
+				instructionHash: "1415abc622da520ab5b730cd2085af0d603dcd49b39c6519ebecc59aa195c48e",
 				manifestHash: "df0fc2b1b33d985a7b84e54431162d6c00a3da0f8cecd98a18730e55bc7b272e",
 			});
 			expect(fixture.session.startParams).toHaveLength(1);

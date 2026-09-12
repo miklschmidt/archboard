@@ -1,4 +1,3 @@
-import { EXCALIDRAW_APP_EXPRESSION } from "./support/page-scene.ts";
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -7,7 +6,7 @@ import {
 	TEST_BROWSER_COMMAND_TIMEOUT_MS,
 	TEST_PANE_MESSAGE_TIMEOUT_MS,
 } from "../support/timing.ts";
-import { createJsonRequester } from "../boards/support/http.ts";
+import { createJsonRequester } from "../support/http.ts";
 import { prepareProductionFixture } from "../canvas-state/support/codex-production.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import {
@@ -28,7 +27,7 @@ import {
 	assertSignedOutAccount,
 	openAgentSettings,
 } from "./support/coordinator-settings-layout.ts";
-import { seedBoard } from "./support/fullscreen-presentation.ts";
+import { SEMANTIC_STAGE, seedSemanticBoard } from "./support/semantic-page.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { BOARD_NAME_EXPRESSION, PANE_SECTIONS, PANE_TABS, clickTab } from "./support/shell-dom.ts";
 
@@ -53,7 +52,7 @@ interface InitialRenderSnapshot {
 	readonly hasCanvas: boolean;
 	readonly paneCount: number;
 	readonly board: string | null;
-	readonly elementCount: number;
+	readonly drawn: boolean;
 }
 
 /** The workbench's approval cards, from the Approvals tab. */
@@ -69,13 +68,13 @@ async function initialRender(
 	browser: Awaited<ReturnType<typeof createAgentBrowser>>,
 ): Promise<InitialRenderSnapshot> {
 	return browser.eval<InitialRenderSnapshot>(`(() => {
-			const canvas = document.querySelector('${PANE_SECTIONS} .excalidraw');
+			const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
 			if (canvas) window.__codexTextWorkbenchCanvas = canvas;
 			return {
 				hasCanvas: !!canvas,
 				paneCount: document.querySelectorAll('${PANE_TABS}').length,
 				board: ${BOARD_NAME_EXPRESSION},
-				elementCount: (${EXCALIDRAW_APP_EXPRESSION})?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted).length ?? 0,
+				drawn: canvas?.getAttribute('data-state') === 'drawn',
 			};
 		})()`);
 }
@@ -127,7 +126,7 @@ test(
 		const browser = resources.use(await createAgentBrowser());
 		const api = createJsonRequester(canvas);
 
-		await seedBoard(api, "workbench", "wb1");
+		await seedSemanticBoard(api, "workbench");
 		await browser.run(["open", canvas.base]);
 		await browser.run(["set", "viewport", "1920", "1080", "1"]);
 		expect(await browser.eval<string>("navigator.userAgent")).toMatch(/headless/i);
@@ -141,11 +140,8 @@ test(
 		await pollUntil(
 			() => initialRender(browser),
 			(value) =>
-				value.hasCanvas &&
-				value.paneCount === 1 &&
-				value.board === "workbench" &&
-				value.elementCount === 1,
-			"the seeded canvas and one-pane workbench to render",
+				value.hasCanvas && value.paneCount === 1 && value.board === "workbench" && value.drawn,
+			"the seeded board and one-pane workbench to render",
 		);
 
 		await browser.run(["console", "--clear"]);
@@ -311,9 +307,9 @@ test(
 		expect(settled.cards[0]).toMatchObject({ family: "Coordination", busy: false });
 		expect(
 			await browser.eval<boolean>(`(() => {
-			const canvas = document.querySelector('${PANE_SECTIONS} .excalidraw');
+			const canvas = document.querySelector('${PANE_SECTIONS} ${SEMANTIC_STAGE}');
 			return canvas === window.__codexTextWorkbenchCanvas &&
-				(${EXCALIDRAW_APP_EXPRESSION})?.scene.getElementsIncludingDeleted().filter(element => !element.isDeleted).length === 1;
+				canvas?.getAttribute('data-state') === 'drawn';
 		})()`),
 		).toBe(true);
 

@@ -1,57 +1,46 @@
 import { expect, test } from "bun:test";
 
 import { EMPTY_LISTING, composeListing, listingError } from "@/ui/board-catalog/listing";
-import { previewSourceFor } from "@/ui/board-catalog/preview-source";
-import type { MountedPreviewSnapshot, PreviewSource } from "@/ui/board-preview";
-import type { BrowserPaneListing, PersistedBoardListing } from "@/ui/types";
+import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
+import type { BrowserPaneListing } from "@/ui/types";
 
-const CHECKOUT = { board: "Checkout", variant: "current" };
-const SCRATCH = { board: "scratch-7f3k", variant: "current" };
-
-const VAULT: PersistedBoardListing = {
-	vault: "/vault",
-	boards: [{ key: "Checkout", identity: CHECKOUT }],
-};
+const VAULT: readonly SemanticBoardEntry[] = [
+	{ name: "Checkout", key: "checkout" },
+	{ name: "Payments", key: "payments" },
+];
 
 const PANES: BrowserPaneListing = {
 	panes: [
-		{ paneId: "A", place: "left", board: "scratch-7f3k", identity: SCRATCH, elementCount: 2 },
-		{ paneId: "B", place: "right", board: "scratch-7f3k", identity: SCRATCH, elementCount: 2 },
+		{
+			paneId: "A",
+			place: "left",
+			board: "checkout",
+			identity: { board: "Checkout", variant: "current" },
+		},
+		{
+			paneId: "B",
+			place: "right",
+			board: "checkout",
+			identity: { board: "Checkout", variant: "current" },
+		},
 	],
 };
 
-/**
- * A mounted scene for one board.
- * @param board The board key.
- * @returns The snapshot.
- */
-function mountedScene(board: string): MountedPreviewSnapshot {
-	return { kind: "mounted", board, fingerprint: "mounted", elements: [], files: {} };
-}
-
-/**
- * A server snapshot for one board.
- * @param board The board key.
- * @returns The snapshot.
- */
-function serverScene(board: string): PreviewSource {
-	return { board, fingerprint: "server", elements: [], files: {} };
-}
-
 test("the vault and the live panes are listed independently of each other", () => {
 	const both = composeListing(VAULT, PANES);
-	expect(both.boards.map((board) => board.key)).toEqual(["Checkout"]);
-	// Two panes on one board is one open board, and every pane still on screen.
-	expect(both.open.map((board) => board.key)).toEqual(["scratch-7f3k"]);
+	expect(both.boards.map((board) => board.key)).toEqual(["checkout", "payments"]);
+	// Every pane still on screen, whether or not two of them share a board.
 	expect(both.onScreen.map((pane) => pane.paneId)).toEqual(["A", "B"]);
 
 	const vaultOnly = composeListing(VAULT, undefined);
-	expect(vaultOnly.boards).toHaveLength(1);
-	expect(vaultOnly.open).toEqual([]);
+	expect(vaultOnly.boards).toHaveLength(2);
+	expect(vaultOnly.onScreen).toEqual([]);
 
 	const panesOnly = composeListing(undefined, PANES);
 	expect(panesOnly.boards).toEqual([]);
-	expect(panesOnly.open.map((board) => board.key)).toEqual(["scratch-7f3k"]);
+	expect(panesOnly.onScreen.map((pane) => pane.board)).toEqual(["checkout", "checkout"]);
+
+	// An unread vault is not an empty one: nothing has been asked for yet.
 	expect(composeListing(undefined, undefined)).toBe(EMPTY_LISTING);
 });
 
@@ -71,15 +60,55 @@ test("a failed pane read does not report the listing as unreadable", () => {
 	expect(listingError(null, null, true)).toBeNull();
 });
 
-test("a pane's own scene outranks the server snapshot of the board it holds", () => {
-	const mounted = mountedScene("Checkout");
-	const cached = serverScene("Checkout");
-	expect(previewSourceFor({ mounted, cached, held: true })).toBe(mounted);
-	// A snapshot that arrives after a pane took the board cannot displace it.
-	expect(previewSourceFor({ mounted, cached: serverScene("Checkout"), held: true })).toBe(mounted);
-	// Before the pane's first frame the snapshot already in hand still shows.
-	expect(previewSourceFor({ mounted: null, cached, held: true })).toBe(cached);
-	// A board no pane holds is the server's to depict, even with a stale scene.
-	expect(previewSourceFor({ mounted, cached, held: false })).toBe(cached);
-	expect(previewSourceFor({ mounted, cached: undefined, held: false })).toBeNull();
+test("reloading reads every cached board resource again, documents included", async () => {
+	const { QueryClient } = await import("@tanstack/react-query");
+	const { semanticBoardKeys } = await import("@/ui/semantic-board-canvas");
+	const { boardCatalogKeys } = await import("@/ui/board-catalog");
+	const { catalogCommandsFor } = await import("@/ui/board-catalog");
+	const client = new QueryClient();
+	/**
+	 * Put one answered query in the cache.
+	 * @param key The cache key.
+	 */
+	const seed = async (key: readonly unknown[]): Promise<void> => {
+		await client.fetchQuery({
+			queryKey: key,
+			/**
+			 * Answer the seeded query with something.
+			 * @returns The key, as its own answer.
+			 */
+			queryFn: () => Promise.resolve(JSON.stringify(key)),
+		});
+	};
+	/**
+	 * Whether the cache will read a resource again before showing it.
+	 * @param key The cache key.
+	 * @returns True when it has been marked for a fresh read.
+	 */
+	const willReadAgain = (key: readonly unknown[]): boolean =>
+		client.getQueryState(key)?.isInvalidated === true;
+	const render = semanticBoardKeys.render({ board: "payments", theme: "light" });
+	const document = semanticBoardKeys.document("payments");
+	await seed(render);
+	await seed(document);
+	await seed(semanticBoardKeys.boards);
+	await seed(boardCatalogKeys.panes);
+
+	// Reload is the one control a person has when what the shell is showing has
+	// gone wrong, and a board's document is the half that is easy to forget: it
+	// is what the inspector and the variant controls are built from, and it is
+	// cached for as long as the tab is open. A board written while this tab was
+	// not being told would otherwise come back with a fresh picture beside an
+	// inspector describing the board as it used to be.
+	catalogCommandsFor(client).reload();
+	// Each sweep cancels whatever is in flight before it marks the resource, so
+	// the marking lands a turn later.
+	await new Promise((settle) => setTimeout(settle, 0));
+	expect({
+		document: willReadAgain(document),
+		render: willReadAgain(render),
+		boards: willReadAgain(semanticBoardKeys.boards),
+		panes: willReadAgain(boardCatalogKeys.panes),
+	}).toEqual({ document: true, render: true, boards: true, panes: true });
+	client.clear();
 });

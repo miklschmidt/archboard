@@ -3,7 +3,9 @@ import type { ThreadLinkEpochProof } from "@/runtime/codex-thread-link";
 import type {
 	CoordinatorCallback,
 	CoordinatorCallbackCorrelation,
+	CoordinatorSemanticSubject,
 } from "@/runtime/codex-coordinator-callbacks/lib/contract";
+import { SemanticSubjectKindSchema } from "@/shared/semantic-pane-context/index";
 
 const CALLBACK_MAX_UTF8_BYTES = 32_768;
 const CALLBACK_MAX_STRING_UTF8_BYTES = 8_192;
@@ -94,6 +96,47 @@ function requireArray(values: readonly string[], entryBytes: number): readonly s
 		}
 		return checked;
 	});
+}
+
+/**
+ * Refuse a selection whose entries are not identities a board would answer to.
+ *
+ * The same limits as any other identity list: an id that cannot be believed is
+ * one the coordinator would quote at a person as though it named something.
+ * @param subjects - The selected subjects.
+ * @returns The checked subjects.
+ * @throws {TypeError} When the list or one of its identities exceeds its limit.
+ */
+function requireSubjects(
+	subjects: readonly CoordinatorSemanticSubject[],
+): readonly CoordinatorSemanticSubject[] {
+	const ids = requireArray(
+		subjects.map((subject) => subject.id),
+		CALLBACK_MAX_SELECTION_ID_UTF8_BYTES,
+	);
+	return subjects.map((subject, index) => ({
+		kind: requireSubjectKind(subject.kind),
+		id: ids[index] ?? subject.id,
+	}));
+}
+
+/**
+ * Refuse a kind that is not one a variant actually holds.
+ *
+ * Checked against the board contract's own vocabulary rather than a list
+ * written out again here: a second copy is a copy that will still say `node`
+ * the day the contract stops. A kind that is not on it would reach the
+ * coordinator as a word describing something no command could act on.
+ * @param kind - The kind the callback carries.
+ * @returns The same kind.
+ * @throws {TypeError} When it is not a kind a variant holds.
+ */
+function requireSubjectKind(kind: CoordinatorSemanticSubject["kind"]) {
+	const parsed = SemanticSubjectKindSchema.safeParse(kind);
+	if (!parsed.success) {
+		throw new TypeError("Callback selection names a kind no variant holds.");
+	}
+	return parsed.data;
 }
 
 /**
@@ -448,7 +491,7 @@ function callbackDocument(callback: CoordinatorCallback) {
 			capturedAtMs: callback.semantic.capturedAtMs,
 			paneId: requireString(callback.semantic.paneId),
 			focused: callback.semantic.focused,
-			selection: requireArray(callback.semantic.selection, CALLBACK_MAX_SELECTION_ID_UTF8_BYTES),
+			selection: requireSubjects(callback.semantic.selection),
 			detail: requireString(callback.semantic.detail),
 		},
 	};

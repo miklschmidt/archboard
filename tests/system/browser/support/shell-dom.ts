@@ -9,7 +9,7 @@ import type { AgentBrowserSession } from "./agent-browser.ts";
 type PageEvaluator = Pick<AgentBrowserSession, "eval">;
 
 /** The element the browser presents fullscreen: the centre stage. */
-const STAGE_ROOT = '[data-slot="canvas-stages"]';
+const STAGE_ROOT = '[data-slot="pane-stages"]';
 /** The header's board breadcrumb; its first span is the board name. */
 const BOARD_BREADCRUMB = 'nav[aria-label="Current board"]';
 /** One pane's section, by its accessible name. */
@@ -20,8 +20,6 @@ const PANE_SECTIONS = 'section[aria-label^="Pane "]';
 const PANE_TABS = '[data-slot="toggle-group"][aria-label="Pane"] [data-slot="toggle-group-item"]';
 /** The navigator sidebar. */
 const NAVIGATOR = '[data-slot="sidebar"]';
-/** The inspector column. */
-const INSPECTOR = 'aside[aria-label="Inspector"]';
 /** The workbench dock: the collapsible that carries the agent workbench. */
 const DOCK_TOGGLE =
 	'button[aria-label="Collapse workbench"], button[aria-label="Expand workbench"]';
@@ -187,7 +185,6 @@ export {
 	BOARD_NAME_EXPRESSION,
 	CLAIM_BANNER,
 	DOCK_TOGGLE,
-	INSPECTOR,
 	NAVIGATOR,
 	PANE_SECTIONS,
 	PANE_TABS,

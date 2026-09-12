@@ -1,48 +1,14 @@
-import type {
-	ArrowElement,
-	BoardElementType,
-	BoundElement,
-	DiamondElement,
-	ElementBinding,
-	EllipseElement,
-	FreeDrawElement,
-	LineElement,
-	PersistedBoardElement,
-	RectangleElement,
-	RuntimeBoardElement,
-	TextElement,
-} from "@/shared/board-elements";
+// What the canvas sends a pane over its socket, and what a caller gets back
+// from an HTTP route.
+//
+// Every board message carries the board it is about. A tab can have two panes
+// on two boards, so a pane showing board A has to be able to tell that news
+// about board B is not its business.
+
 import type { DoingEntry } from "@/runtime/engine/board-doing";
 import type { LockHolder } from "@/runtime/engine/lib/board-lock-contracts";
 
-type ExcalidrawElement = PersistedBoardElement;
-type ExcalidrawTextElement = TextElement;
-type ExcalidrawRectangleElement = RectangleElement;
-type ExcalidrawEllipseElement = EllipseElement;
-type ExcalidrawDiamondElement = DiamondElement;
-type ExcalidrawArrowElement = ArrowElement;
-type ExcalidrawLineElement = LineElement;
-type ExcalidrawFreedrawElement = FreeDrawElement;
-type ExcalidrawBoundElement = BoundElement;
-type ExcalidrawBinding = ElementBinding;
-type ExcalidrawElementType = BoardElementType;
-type ServerElement = RuntimeBoardElement;
-
-// Excalidraw element types
-const EXCALIDRAW_ELEMENT_TYPES: Record<string, ExcalidrawElementType> = {
-	RECTANGLE: "rectangle",
-	ELLIPSE: "ellipse",
-	DIAMOND: "diamond",
-	ARROW: "arrow",
-	TEXT: "text",
-	FREEDRAW: "freedraw",
-	LINE: "line",
-	IMAGE: "image",
-} as const;
-
-const ELEMENT_TYPE_NAMES = new Set<unknown>(Object.values(EXCALIDRAW_ELEMENT_TYPES));
-
-// API Response types
+/** The shape every JSON route answers with. */
 interface ApiResponse<T = unknown> {
 	success: boolean;
 	data?: T;
@@ -50,393 +16,64 @@ interface ApiResponse<T = unknown> {
 	message?: string;
 }
 
-interface ElementsResponse extends ApiResponse {
-	elements: ServerElement[];
-	count: number;
-}
-
-interface ElementResponse extends ApiResponse {
-	element: ServerElement;
-}
-
-interface SyncResponse extends ApiResponse {
-	count: number;
-	syncedAt: string;
-	beforeCount: number;
-	afterCount: number;
-}
-
-// WebSocket message types
-//
-// Every message carries the board it is about. The canvas holds one board at a
-// time, so a client that is showing board A must be able to tell that an
-// element_created for board B is not its business — otherwise a board switch
-// races with in-flight broadcasts and the wrong elements land on screen.
+/** What the canvas says to a pane. */
 interface WebSocketMessage {
 	type: WebSocketMessageType;
-	board?: string;
+	/** The board it is about; null when the news is that there is no board. */
+	board?: string | null;
 	[key: string]: unknown;
 }
 
 type WebSocketMessageType =
-	| "initial_elements"
-	| "element_created"
-	| "element_updated"
-	| "element_deleted"
-	| "elements_batch_created"
-	| "elements_changed"
-	| "canvas_cleared"
-	| "browser_capture_request"
-	| "set_viewport"
-	| "files_added"
-	| "files_replaced"
-	| "file_deleted"
-	| "selection_changed"
-	| "board_switched"
-	// This board has stopped saving, or is saving again (ADR 0006, TASK-079).
-	// Board news rather than pane news: every pane holding it is affected, and a
-	// pane holding something else is not.
-	| "board_hold"
-	| "board_released"
+	// Which board this pane is showing: on connect, and whenever a show moves
+	// it. It carries no picture — the board is a file the server draws, and the
+	// pane asks for the drawing itself (ADR 0023).
+	| "pane_board"
 	// Who is writing this board, if anybody (ADR 0016). Board-scoped like every
-	// other content message, because a pane holding the other board is not
+	// other board message, because a pane holding the other board is not
 	// affected by this one changing hands. Carries the holder rather than a bare
-	// flag: the pane that holds the lock has to know the news is about itself and
-	// keep drawing, and a pane that does not needs to be able to say who does.
+	// flag: the pane that holds the lock has to know the news is about itself,
+	// and a pane that does not needs to be able to say who does.
 	| "board_lock"
-	// Somebody outside archboard wrote this board's note, so the panes holding it
-	// are showing a copy the vault does not have (TASK-062). Deliberately not
-	// `board_lock`: a lock stops a pane accepting a touch, and this stops
-	// nothing. Deliberately not `board_hold`: nothing has been refused yet.
+	// This board has a new version. The panes showing it ask for a new picture;
+	// nothing about a pane's own state follows from it, because the pane holds
+	// no copy of the content to patch.
 	| "board_note"
 	// An agent changed this board and said what it was doing (TASK-095). Beside
 	// the lock and not part of it: the lock says who has the board, the claim's
-	// reason says what the claim is for, and this is the step. Carries the
-	// last few lines as well as the new one, so a pane that has just arrived on
-	// the board is not blank until the next write.
+	// reason says what the claim is for, and this is the step. Carries the last
+	// few lines as well as the new one, so a pane that has just arrived on the
+	// board is not blank until the next write.
 	| "board_doing"
-	// A board note could not be rendered. The pane receives no part of its
-	// malformed scene and shows this through the shell's board-error notice.
+	// A board could not be read or drawn. The pane shows this through the
+	// shell's board-error notice.
 	| "board_error"
-	// The stencil palette changed. Boardless on purpose: the library is not a
-	// board's content, so every client applies it whatever it is showing.
-	| "library_changed"
-	// Layout, asked of the shell that owns it. Boardless for the same reason the
-	// library is: a pane appearing or going away says nothing about any board,
-	// and the pane that receives one keeps whatever it was holding.
+	// Which boards an agent is working on, across this whole canvas (ADR 0022).
+	// Boardless on purpose: it is one thing behind every board, and the
+	// navigator marks each one it names.
+	| "agent_activity"
+	// Layout, addressed to one pane rather than to a board: the shell is asked
+	// for another pane, or for this one to go.
 	| "pane_open"
-	| "pane_close"
-	// Which boards an agent is editing right now, across every board this
-	// canvas serves (ADR 0022). Boardless on purpose: it is one list for the
-	// navigator, and it names boards no pane has open. Always the whole
-	// snapshot, so a client replaces rather than merges.
-	| "agent_activity";
+	| "pane_close";
 
-/**
- * The note's version after the write or as loaded, on every message that
- * carries a board's elements (ADR 0022). A pane states this on its next write,
- * and is refused when the note has moved since. Null when the note carries no
- * version archboard can read, or there is no note.
- */
-type CarriedVersion = number | null;
-
-interface InitialElementsMessage extends WebSocketMessage {
-	type: "initial_elements";
-	elements: ServerElement[];
-	board: string;
-	version: CarriedVersion;
-}
-
-/** One board an agent has, or has just written (ADR 0022). */
+/** What an agent is doing to one board, as every pane is shown it (ADR 0022). */
 interface AgentActivity {
-	/** The board key as panes know it. */
 	board: string;
-	/** The standing claim, or null after an unclaimed write while its entry lingers. */
 	claim: LockHolder | null;
-	/** The last thing the agent said it was doing here, or null under a claim that has not written yet. */
 	doing: DoingEntry | null;
 }
 
+/** The whole activity snapshot, sent to every client. */
 interface AgentActivityMessage extends WebSocketMessage {
 	type: "agent_activity";
 	activity: AgentActivity[];
 }
 
-// The canvas is now showing a different board. Carries the whole scene rather
-// than a delta: nothing about board A's elements helps render board B, so the
-// client replaces what it has instead of merging.
-interface BoardSwitchedMessage extends WebSocketMessage {
-	type: "board_switched";
-	board: string;
-	identity: { board: string; variant: string; level?: string };
-	elements: ServerElement[];
-	version: CarriedVersion;
-	timestamp: string;
-}
-
-interface ElementCreatedMessage extends WebSocketMessage {
-	type: "element_created";
-	element: ServerElement;
-}
-
-interface ElementUpdatedMessage extends WebSocketMessage {
-	type: "element_updated";
-	element: ServerElement;
-}
-
-interface ElementDeletedMessage extends WebSocketMessage {
-	type: "element_deleted";
-	elementId: string;
-}
-
-interface BatchCreatedMessage extends WebSocketMessage {
-	type: "elements_batch_created";
-	elements: ServerElement[];
-}
-
-// The result of a browser's change report, after the server applied it. Named
-// per-effect rather than as one scene so a client can tell "this element is
-// new" from "this element moved" from "this element is gone" without diffing.
-//
-// `origin` is the client that reported the change. That client already has the
-// result on screen and skips its own echo; every other client applies it.
-interface ElementsChangedMessage extends WebSocketMessage {
-	type: "elements_changed";
-	created: ServerElement[];
-	updated: ServerElement[];
-	deleted: string[];
-	origin: string | null;
-	/** The note after this write, or its version as loaded while the board is held. */
-	version: CarriedVersion;
-	timestamp: string;
-}
-
-// Pushed whenever the reported selection changes, so a later change-event feed
-// or a second pane can follow it without polling.
-interface SelectionChangedMessage extends WebSocketMessage {
-	type: "selection_changed";
-	elementIds: string[];
-	clientId: string | null;
-	at: string;
-}
-
-// Canvas cleared message
-interface CanvasClearedMessage extends WebSocketMessage {
-	type: "canvas_cleared";
-	timestamp: string;
-}
-
-// Image export types
-interface BrowserCaptureRequestMessage extends WebSocketMessage {
-	type: "browser_capture_request";
-	requestId: string;
-	format: "png" | "svg";
-	background?: boolean;
-}
-
-// Viewport control types
-interface SetViewportMessage extends WebSocketMessage {
-	type: "set_viewport";
-	requestId: string;
-	scrollToContent?: boolean;
-	scrollToElementId?: string;
-	scrollToElementIds?: string[];
-	viewportZoomFactor?: number;
-	zoom?: number;
-	offsetX?: number;
-	offsetY?: number;
-}
-
-// Selection types
-//
-// Selection is what a human has picked on the board — the thing they mean when
-// they say "map this to the payments service". One canvas, one selection:
-// whichever browser client reported last owns it (see /api/selection).
-interface CanvasSelection {
-	elementIds: string[];
-	clientId: string;
-	at: string;
-}
-
-// Snapshot types
-interface Snapshot {
-	name: string;
-	// Which board the snapshot was taken from — a snapshot of one board says
-	// nothing about another, and restoring across boards would be a data loss.
-	board: string;
-	/**
-	 * A deep copy of the board as it stood, sharing no object with it.
-	 *
-	 * The whole value of a snapshot is that editing the board cannot reach it,
-	 * so this is built with `copyElements` rather than from the live map
-	 * (TASK-048). Restoring goes back out through batch-create, which builds
-	 * fresh objects again, so a snapshot can be restored more than once.
-	 */
-	elements: ServerElement[];
-	createdAt: string;
-}
-
-// The element store lives in core/board-store.ts: it is keyed by board now,
-// not one global map (see that file for why).
-
-// Snapshots, and one of the two copies of a board the process is still allowed
-// to hold (ADR 0015, under "Nor is a record of what a board used to be"; the
-// other is the change feed's baseline).
-//
-// The test the ADR sets is which question a copy answers. "What is on this
-// board" must be the note, and nothing here answers that. A snapshot answers
-// "what was on it when I asked to be able to come back", which the vault has
-// never been asked and has no file for, so keeping it in the process removes no
-// second truth and writing it to disk would invent a second one. Losing it
-// costs the ability to go back and costs no work.
-//
-// Snapshots last for one canvas application lifetime.
-const snapshots = new Map<string, Snapshot>();
-
-// The current selection, or null when nothing is selected. A mutable holder so
-// the server can swap the value while importers keep a single reference.
-//
-// `current` answers "what does the human mean by *this*" — one canvas, one
-// selection, last writer wins. `byClient` answers a different question: what is
-// picked in *each* pane, which is not the same thing once two panes are on
-// screen, because a pane the human clicked away from still shows its selection.
-// `panes` reads the map; `selection` reads `current`; both stay true.
-const selectionState: {
-	current: CanvasSelection | null;
-	byClient: Map<string, CanvasSelection>;
-} = { current: null, byClient: new Map() };
-
-// One image an element draws (Excalidraw BinaryFiles), keyed by the `fileId`
-// the element carries.
-//
-// There is deliberately no map of these here. There used to be — one per
-// process, keyed by file id and shared by every open board — and a file id
-// says nothing about which board it belongs to, so saving board A wrote board
-// B's images into A's note (TASK-060). The map lives on `BoardState` now,
-// because a board's images are the ones its own elements reference.
-interface ExcalidrawFile {
-	id: string;
-	dataURL: string;
-	mimeType: string;
-	created: number;
-}
-
-/**
- * Whether an element carries enough to be one at all: a type Excalidraw
- * draws, and a place to draw it.
- * @param element The element.
- * @returns True; anything else throws, naming what was wrong.
- * @throws {Error} When a required field or the type is missing or unknown.
- */
-function validateElement(element: Partial<ServerElement>): element is ServerElement {
-	const requiredFields: (keyof ServerElement)[] = ["type", "x", "y"];
-	const hasRequiredFields = requiredFields.every((field) => field in element);
-
-	if (!hasRequiredFields) {
-		throw new Error(`Missing required fields: ${requiredFields.join(", ")}`);
-	}
-
-	if (!isElementType(element.type)) {
-		throw new Error(`Invalid element type: ${element.type}`);
-	}
-
-	return true;
-}
-
-/**
- * Whether a value names one of the element types Excalidraw draws.
- * @param value The value.
- * @returns True when it is one.
- */
-function isElementType(value: unknown): value is ExcalidrawElementType {
-	return ELEMENT_TYPE_NAMES.has(value);
-}
-
-// Ids are minted in src/shared/ids/ids.ts and nowhere else. See the header there for
-// why the shape they come out in is not negotiable.
-
-/**
- * The `fontFamily` number Excalidraw expects, from the name a caller wrote.
- *
- * Excalidraw numbers its families: 1 = Virgil (handwritten), 2 = Helvetica
- * (sans-serif), 3 = Cascadia (monospace), 5 = Excalifont, 6 = Nunito,
- * 7 = Lilita One, 8 = Comic Shanns.
- * @param fontFamily The family as a name or as its number.
- * @returns The number, or undefined when the caller named none.
- */
-function normalizeFontFamily(fontFamily: string | number | undefined): number | undefined {
-	if (fontFamily === undefined) {
-		return undefined;
-	}
-	if (typeof fontFamily === "number") {
-		return fontFamily;
-	}
-	const map: Record<string, number> = {
-		virgil: 1,
-		hand: 1,
-		handwritten: 1,
-		helvetica: 2,
-		sans: 2,
-		"sans-serif": 2,
-		cascadia: 3,
-		mono: 3,
-		monospace: 3,
-		excalifont: 5,
-		nunito: 6,
-		lilita: 7,
-		"lilita one": 7,
-		"comic shanns": 8,
-		comic: 8,
-		"1": 1,
-		"2": 2,
-		"3": 3,
-		"5": 5,
-		"6": 6,
-		"7": 7,
-		"8": 8,
-	};
-	return map[fontFamily.toLowerCase()];
-}
-
 export {
-	type ExcalidrawElement,
-	type ExcalidrawTextElement,
-	type ExcalidrawRectangleElement,
-	type ExcalidrawEllipseElement,
-	type ExcalidrawDiamondElement,
-	type ExcalidrawArrowElement,
-	type ExcalidrawLineElement,
-	type ExcalidrawFreedrawElement,
-	type ExcalidrawBoundElement,
-	type ExcalidrawBinding,
-	type ExcalidrawElementType,
-	type ServerElement,
-	EXCALIDRAW_ELEMENT_TYPES,
-	type ApiResponse,
-	type ElementsResponse,
-	type ElementResponse,
-	type SyncResponse,
-	type WebSocketMessage,
-	type WebSocketMessageType,
-	type InitialElementsMessage,
-	type CarriedVersion,
 	type AgentActivity,
 	type AgentActivityMessage,
-	type BoardSwitchedMessage,
-	type ElementCreatedMessage,
-	type ElementUpdatedMessage,
-	type ElementDeletedMessage,
-	type BatchCreatedMessage,
-	type ElementsChangedMessage,
-	type SelectionChangedMessage,
-	type CanvasClearedMessage,
-	type BrowserCaptureRequestMessage,
-	type SetViewportMessage,
-	type CanvasSelection,
-	type Snapshot,
-	snapshots,
-	selectionState,
-	type ExcalidrawFile,
-	validateElement,
-	normalizeFontFamily,
+	type ApiResponse,
+	type WebSocketMessage,
+	type WebSocketMessageType,
 };

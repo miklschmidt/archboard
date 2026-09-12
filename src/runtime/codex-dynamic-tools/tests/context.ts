@@ -4,7 +4,8 @@ export const contextFixture: ArchboardContext = {
 	schema: 1,
 	paneId: "pane-1",
 	board: {
-		note: "vault/architecture.excalidraw.md",
+		name: "Ingest pipeline",
+		key: "ingest pipeline",
 		version: 42,
 		cursor: "cursor-1",
 	},
@@ -34,10 +35,14 @@ export const contextFixture: ArchboardContext = {
 		paneId: "pane-1",
 		capturedAtMs: 101,
 	},
+	variant: null,
+	view: null,
 	selection: {
-		elementIds: ["element-1", "element-2"],
+		count: 1,
+		subjects: [{ kind: "node", id: "n1", name: "Gateway" }],
 		capturedAtMs: 102,
 	},
+	reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
 	claim: {
 		holder: "human",
 		doing: "Reviewing the adapter boundary",

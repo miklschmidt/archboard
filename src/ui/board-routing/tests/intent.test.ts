@@ -10,7 +10,7 @@ import { createDeliberateNavigation } from "@/ui/board-routing/intent";
  */
 function address(panes: readonly (readonly [string, string])[]): WorkspaceAddress {
 	return settledAddress({
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey })),
+		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, view: null })),
 		activePaneId: null,
 	});
 }
@@ -58,4 +58,40 @@ test("an expectation lives no longer than the next change, met or not", () => {
 	expect(navigation.settle(address([["A", "payments"]]))).toBe(false);
 	// An agent moving the same pane afterwards is not the person's move.
 	expect(navigation.settle(address([["A", "billing"]]))).toBe(false);
+});
+
+/**
+ * A pane reading one semantic board through one view.
+ * @param view The view, or null for the whole variant.
+ * @returns The address.
+ */
+function reading(view: string | null): WorkspaceAddress {
+	return settledAddress({
+		panes: [{ paneId: "A", boardKey: "semantic:pipeline", view }],
+		activePaneId: "A",
+	});
+}
+
+test("choosing another way of reading a board is a move the person made", () => {
+	const navigation = createDeliberateNavigation();
+	navigation.expect({ kind: "view", paneId: "A", from: null });
+	expect(navigation.settle(reading("k3f9"))).toBe(true);
+	// And the expectation is spent: the next change is not theirs as well.
+	expect(navigation.settle(reading("q1x2"))).toBe(false);
+});
+
+test("a view that changed in another pane is not the move this person asked for", () => {
+	const navigation = createDeliberateNavigation();
+	navigation.expect({ kind: "view", paneId: "B", from: null });
+	expect(
+		navigation.settle(
+			settledAddress({
+				panes: [
+					{ paneId: "A", boardKey: "semantic:pipeline", view: "k3f9" },
+					{ paneId: "B", boardKey: "semantic:pipeline", view: null },
+				],
+				activePaneId: "A",
+			}),
+		),
+	).toBe(false);
 });

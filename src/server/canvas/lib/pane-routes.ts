@@ -2,26 +2,20 @@ import { publishPaneContext } from "@/server/canvas/lib/canvas-codex-host";
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
 import { logger } from "@/runtime/engine/logger";
-import { selectionState } from "@/runtime/engine/types";
-import { boards } from "@/runtime/engine/board-store";
-import { buildSelectionReport } from "@/runtime/engine/describe";
+import { parseBoardKey } from "@/runtime/engine/board";
 import { buildPanesReport, MAX_PANES, panesInOrder, resolvePaneSpec } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
-import { presentElements } from "@/runtime/engine/presentation";
 import { frontendState } from "@/runtime/engine/staleness";
 import { PANE_LAYOUT_TIMEOUT_MS } from "@/shared/timing/timing";
-import { boardElements } from "@/server/canvas/lib/board-announcements";
-import { checkoutSnapshotFor } from "@/server/canvas/lib/board-response";
 import { canvasUrl } from "@/server/canvas/lib/listener-address";
 import { asyncEndpoint } from "@/server/canvas/lib/mutation-work";
 import {
+	aggregateOf,
 	boardForPane,
 	boardsOnScreen,
-	broadcastSelection,
-	clientIds,
-	clients,
+	currentSocketsByClient,
 	notePaneOpened,
-	paneFromRequest,
+	paneBoards,
 	paneResponse,
 	panes,
 	pendingPaneCloses,
@@ -32,23 +26,12 @@ import {
 	type PendingPaneClose,
 	type PendingPaneOpen,
 } from "@/server/canvas/lib/pane-registry";
+import { tellPaneAboutLock } from "@/server/canvas/lib/board-announcements";
+import { noteBoardShown } from "@/server/canvas/lib/semantic-disk-watch";
+import { showPaneRoute } from "@/server/canvas/lib/pane-show-route";
+import { semanticPaneContextFor } from "@/server/canvas/lib/semantic-pane-context";
+import type { SemanticPaneContext } from "@/shared/semantic-pane-context";
 import { bodyOf, messageOf } from "@/server/canvas/lib/request-board";
-
-// ─── Selection ────────────────────────────────────────────────
-//
-// Selection is what a human has picked on the board, and it changes on every
-// click — far more often than the scene itself. So it gets its own channel
-// rather than riding the debounced element sync: the browser posts ids only
-// (tens of bytes), and reading it back never re-transmits the scene.
-//
-// One selection per pane, keyed by client id, plus a last-writer-wins `current`
-// for the callers that ask for "the selection" without naming a pane. When a
-// client disconnects its selection is dropped with it.
-
-const SelectionSchema = z.object({
-	elementIds: z.array(z.string()),
-	clientId: z.string().min(1),
-});
 
 /**
  * No pane means no browser, which is a different thing from a bad request.
@@ -65,66 +48,6 @@ function noBrowserBody(what: string): Record<string, unknown> {
 	};
 }
 
-/**
- * Record what one pane has picked.
- * @param req The request.
- * @param res Its response.
- */
-function postSelectionRoute(req: Request, res: Response): void {
-	const parsed = SelectionSchema.safeParse(req.body);
-	if (!parsed.success) {
-		res
-			.status(400)
-			.json({ success: false, error: parsed.error.issues[0]?.message ?? "Invalid selection" });
-		return;
-	}
-	const { elementIds, clientId } = parsed.data;
-	const at = new Date().toISOString();
-	selectionState.current = elementIds.length === 0 ? null : { elementIds, clientId, at };
-	// Per pane, an empty selection is a fact about that pane rather than the
-	// absence of one: the human deselected *there* while another pane may still
-	// hold something.
-	if (elementIds.length === 0) {
-		selectionState.byClient.delete(clientId);
-	} else {
-		selectionState.byClient.set(clientId, { elementIds, clientId, at });
-	}
-	logger.info(`Selection from ${clientId}: ${elementIds.length} element(s)`);
-	broadcastSelection();
-	publishPaneContext(clientId, "selection");
-	res.json({ success: true, count: elementIds.length, elementIds });
-}
-
-/**
- * Report what one pane has picked, described against its board.
- * @param req The request.
- * @param res Its response.
- */
-function getSelectionRoute(req: Request, res: Response): void {
-	try {
-		const pane = paneFromRequest(req.query["pane"]);
-		if (!pane) {
-			res.status(503).json(noBrowserBody("Reading a live selection"));
-			return;
-		}
-		const key = boardForPane(pane);
-		const board = boards.get(key);
-		const report = buildSelectionReport(
-			selectionState.byClient.get(pane.clientId) ?? null,
-			board
-				? presentElements(boardElements(board), {
-						boardKey: key,
-						checkoutSnapshot: checkoutSnapshotFor(res),
-					})
-				: [],
-			clients.size,
-		);
-		res.json({ success: true, board: key, ...report });
-	} catch (error) {
-		res.status(400).json({ success: false, error: messageOf(error) });
-	}
-}
-
 // ─── Panes ────────────────────────────────────────────────────
 //
 // What the human is currently looking at: which pane holds which board, where
@@ -132,7 +55,7 @@ function getSelectionRoute(req: Request, res: Response): void {
 // in it. View state, never contents — see panes.ts for why that line is
 // worth holding.
 //
-// Like selection, this is pushed by the browser and read back off the server,
+// This is pushed by the browser and read back off the server,
 // so reading it costs a map lookup and never a browser round-trip.
 
 const RectSchema = z.object({
@@ -145,15 +68,13 @@ const RectSchema = z.object({
 const PaneSchema = z.object({
 	clientId: z.string().min(1),
 	paneId: z.string().min(1),
-	// The board this pane adopted — what it is actually rendering, which is what
+	// The board this pane adopted — what it is actually showing, which is what
 	// makes the report a description of the displayed scene rather than an echo
 	// of what the server thinks it sent.
-	board: z.string().min(1),
+	board: z.string().min(1).nullable(),
 	primary: z.boolean(),
 	focused: z.boolean(),
-	elementCount: z.number().int().nonnegative(),
 	rect: RectSchema,
-	viewport: RectSchema.extend({ zoom: z.number().positive() }),
 	// Which bundle this tab is running. Optional: a tab from before this existed,
 	// and anything that is not a browser, simply says nothing and hears nothing.
 	build: z.string().optional(),
@@ -196,17 +117,47 @@ function postPaneRoute(req: Request, res: Response): void {
 		...(build === undefined ? {} : { build }),
 		at: new Date().toISOString(),
 	};
-	// A pane exists exactly as long as its socket. A report arriving without one
-	// is a pane on its way out — React tears the canvas down in its own order, so
-	// a last change can be reported after the close — and registering it would
-	// resurrect the ghost the close just retired.
-	const live = Array.from(clientIds.values()).includes(registration.clientId);
+	// A pane exists exactly as long as the socket that owns it. A report arriving
+	// without one is either a pane on its way out — React tears the canvas down
+	// in its own order, so a last change can be reported after the close — or one
+	// whose socket has said which pane it is for but has not yet taken that
+	// pane's authority. Registering either would answer `registered: true` to a
+	// pane nothing can be sent to: the socket's listeners are attached with its
+	// authority, so a workbench request answered in that window is dropped on the
+	// floor. The tab reports again, and the next one lands.
+	const live = currentSocketsByClient.has(registration.clientId);
 	if (!live) {
 		res.json({ success: true, registered: false, paneCount: panes.size, staleFrontend });
 		return;
 	}
 	registerLivePane(registration);
 	res.json({ success: true, registered: true, paneCount: panes.size, staleFrontend });
+}
+
+/**
+ * What one pane last said it was reading, when that is still about the board
+ * it is now showing.
+ *
+ * A move and a report cross: the server points a pane at B and the pane's last
+ * report still names A, which arrived while it was there and was true then.
+ * Reported under B it would say that somebody has picked out subjects of B — by
+ * ids that belong to A, and which may name something else entirely on B. The
+ * board's own answer stands; what the person picked out does not, until the
+ * pane says what it is reading now, which it does on its next render.
+ * @param clientId The pane's client id.
+ * @returns The reading, or null when it is about another board.
+ */
+function readingAboutBoard(clientId: string): SemanticPaneContext | null {
+	const context = semanticPaneContextFor(clientId);
+	if (context === null) {
+		return null;
+	}
+	const pane = panes.get(clientId);
+	const showing = pane === undefined ? null : boardForPane(pane);
+	if (showing === null) {
+		return null;
+	}
+	return context.board?.key === showing ? context : null;
 }
 
 /**
@@ -217,31 +168,34 @@ function postPaneRoute(req: Request, res: Response): void {
 function getPanesRoute(_req: Request, res: Response): void {
 	const report = buildPanesReport(Array.from(panes.values()), {
 		/**
-		 * The identity of an open board.
+		 * The identity a board key spells.
 		 * @param key The board key.
-		 * @returns The identity, or null when the board is not open.
+		 * @returns The identity.
 		 */
-		identity: (key) => boards.get(key)?.identity ?? null,
+		identity: (key) => parseBoardKey(key),
 		/**
-		 * The presented elements of an open board.
-		 * @param key The board key.
-		 * @returns The elements, or none when the board is not open.
-		 */
-		elements: (key) => {
-			const board = boards.get(key);
-			return board
-				? presentElements(boardElements(board), {
-						boardKey: key,
-						checkoutSnapshot: checkoutSnapshotFor(res),
-					})
-				: [];
-		},
-		/**
-		 * What one pane has picked.
+		 * What one pane last reported reading: its variant, its view and what the
+		 * person picked out (ADR 0023).
 		 * @param clientId The pane's client id.
-		 * @returns Its selection, or null.
+		 * @returns The reading, or null when the pane has said nothing.
 		 */
-		selection: (clientId) => selectionState.byClient.get(clientId) ?? null,
+		reading: (clientId) => {
+			const context = readingAboutBoard(clientId);
+			if (context === null) {
+				return null;
+			}
+			return {
+				variant: context.variant,
+				view: context.view,
+				selection: context.selection.map((subject) => ({
+					id: subject.id,
+					...(subject.kind === undefined ? {} : { kind: subject.kind }),
+					...(subject.name === undefined ? {} : { name: subject.name }),
+				})),
+				version: context.version,
+				at: context.at,
+			};
+		},
 		canvasUrl: canvasUrl(),
 	});
 	res.json({ success: true, ...report });
@@ -483,26 +437,18 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * Mount the selection routes.
- * @param app The application to mount on.
- */
-function mountSelectionRoutes(app: Express): void {
-	app.post("/api/selection", postSelectionRoute);
-	app.get("/api/selection", getSelectionRoute);
-}
-
-/**
- * Mount the pane telemetry and layout routes.
+ * Mount the pane telemetry, layout and board-showing routes.
  * @param app The application to mount on.
  */
 function mountPaneRoutes(app: Express): void {
 	app.post("/api/panes", postPaneRoute);
 	app.get("/api/panes", getPanesRoute);
+	app.post("/api/panes/show", showPaneRoute);
 	app.post("/api/panes/open", asyncEndpoint(openPaneRoute));
 	app.post("/api/panes/close", asyncEndpoint(closePaneRoute));
 }
 
-export { mountPaneRoutes, mountSelectionRoutes, noBrowserBody };
+export { arrivedOnBoard, mountPaneRoutes, noBrowserBody };
 
 /**
  * Register a live pane, acknowledge its arrival and publish changed focus.
@@ -510,14 +456,49 @@ export { mountPaneRoutes, mountSelectionRoutes, noBrowserBody };
  */
 function registerLivePane(registration: PaneRegistration): void {
 	const previous = panes.get(registration.clientId);
-	const isNew = previous === undefined;
 	panes.set(registration.clientId, registration);
 	// A pane that was asked for has arrived. Registration is the acknowledgement
 	// — see the pane layout section for why it is that and not a reply.
-	if (isNew) {
+	if (previous === undefined) {
 		notePaneOpened(registration);
 	}
-	if (previous?.focused !== registration.focused || previous.board !== registration.board) {
+	noteWhatChanged(previous, registration);
+}
+
+/**
+ * Act on what this registration says that the last one did not.
+ * @param previous What this pane said last time, or nothing when it is new.
+ * @param registration What it says now.
+ */
+function noteWhatChanged(
+	previous: PaneRegistration | undefined,
+	registration: PaneRegistration,
+): void {
+	const board = registration.board;
+	const moved = previous?.board !== board;
+	if (moved && board !== null) {
+		arrivedOnBoard(registration.clientId, board);
+	}
+	if (moved || previous.focused !== registration.focused) {
 		publishPaneContext(registration.clientId, "focus");
 	}
+}
+
+/**
+ * A pane is on a board, so record it and tell it where that board stands.
+ *
+ * Registration is the pane saying what it is showing, and a pane that has just
+ * arrived on a board may be arriving into one an agent already holds and is
+ * part way through. Being told outright is what ADR 0016 requires of every
+ * arrival; a broadcast only reaches whoever was already there.
+ * @param clientId The pane's client id.
+ * @param board The board it is now showing.
+ */
+function arrivedOnBoard(clientId: string, board: string): void {
+	paneBoards.set(clientId, board);
+	// What the board's file is right now, which is what this pane is about to
+	// read. Anything that replaces it after this is a change the pane has to
+	// hear about, and taking the baseline any later would let one slip past.
+	noteBoardShown(aggregateOf(board) ?? board);
+	tellPaneAboutLock(clientId, board);
 }

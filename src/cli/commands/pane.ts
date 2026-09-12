@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { closePane, openPane } from "@/runtime/engine/canvas-client";
+import { closePane, getPanes, openPane, showBoardInPane } from "@/runtime/engine/canvas-client";
 import { paneWords } from "@/runtime/engine/panes";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
-import { HoldReportSchema, PaneRefSchema } from "@/cli/command-contract/schemas";
+import { PaneRefSchema } from "@/cli/command-contract/schemas";
 import { serverBrowserRefusals } from "@/cli/command-contract/common";
+import { parseStage } from "@/cli/commands/lib/staged-tokens";
 
-const usage =
-	"browser needs a subcommand: panes, open, close, show, selection, viewport, or capture.";
+const usage = "browser needs a subcommand: panes, open, close, or show.";
 const tokens = z.array(z.string()).default([]);
 const stagedNoFlags = z.array(z.string()).transform((values, context) => {
 	for (const token of values) {
@@ -20,7 +20,8 @@ const stagedNoFlags = z.array(z.string()).transform((values, context) => {
 const OnScreenPaneSchema = z.looseObject({
 	paneId: z.string(),
 	place: z.string(),
-	board: z.string(),
+	/** The board it is showing, or null on a vault that holds none yet. */
+	board: z.string().nullable(),
 });
 
 const PaneNamespaceInputSchema = z.object({ tokens });
@@ -30,8 +31,8 @@ type PaneNamespaceResult = z.infer<typeof PaneNamespaceResultSchema>;
 const browserContract = defineCommand({
 	path: ["browser"],
 	summary: "Inspect or control the connected browser session",
-	usage: "browser panes|open|close|show|selection|viewport|capture ...",
-	description: "Routes live browser inspection and control commands; none writes a board note.",
+	usage: "browser panes|open|close|show ...",
+	description: "Routes live browser inspection and control commands; none writes a board.",
 	examples: ["archboard browser panes"],
 	parameters: [
 		{
@@ -46,7 +47,7 @@ const browserContract = defineCommand({
 	input: { ingress: PaneNamespaceInputSchema },
 	result: PaneNamespaceResultSchema,
 	output: {
-		cases: [{ id: "json", when: {}, mode: "json", held: "none", description: "Namespace refusal" }],
+		cases: [{ id: "json", when: {}, mode: "json", description: "Namespace refusal" }],
 		/**
 		 * Selects the only output case.
 		 * @returns The json case id.
@@ -75,7 +76,6 @@ const PaneOpenResultSchema = z.looseObject({
 	pane: PaneRefSchema.nullable(),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(OnScreenPaneSchema),
-	held: HoldReportSchema.optional(),
 });
 type PaneOpenResult = z.infer<typeof PaneOpenResultSchema>;
 const paneOpenContract = defineCommand({
@@ -112,9 +112,8 @@ const paneOpenContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				held: "object-field-and-stderr-note",
 				description: "Opened pane",
-				presentation: ["diagnostics", "result", "held-note"],
+				presentation: ["diagnostics", "result"],
 			},
 		],
 		/**
@@ -164,10 +163,9 @@ const PaneCloseStageSchema = stagedNoFlags.transform((values, context) => {
 type PaneCloseStage = z.infer<typeof PaneCloseStageSchema>;
 const PaneCloseResultSchema = z.looseObject({
 	success: z.literal(true),
-	closed: PaneRefSchema.extend({ board: z.string() }),
+	closed: PaneRefSchema.extend({ board: z.string().nullable() }),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(OnScreenPaneSchema),
-	held: HoldReportSchema.optional(),
 });
 type PaneCloseResult = z.infer<typeof PaneCloseResultSchema>;
 const paneCloseContract = defineCommand({
@@ -204,9 +202,8 @@ const paneCloseContract = defineCommand({
 				id: "json",
 				when: {},
 				mode: "json",
-				held: "object-field-and-stderr-note",
 				description: "Closed pane",
-				presentation: ["diagnostics", "result", "held-note"],
+				presentation: ["diagnostics", "result"],
 			},
 		],
 		/**
@@ -247,6 +244,212 @@ const paneCloseContract = defineCommand({
 	},
 });
 
+const PanesInputSchema = z.object({ tokens, text: z.boolean().default(false) });
+type PanesInput = z.infer<typeof PanesInputSchema>;
+const PanesResultSchema = z.looseObject({
+	success: z.literal(true),
+	paneCount: z.number().int().nonnegative(),
+	panes: z.array(
+		z.looseObject({ paneId: z.string(), place: z.string(), board: z.string().nullable() }),
+	),
+	summary: z.string(),
+	text: z.string(),
+});
+type PanesResult = z.infer<typeof PanesResultSchema>;
+const panesContract = defineCommand({
+	path: ["browser", "panes"],
+	summary: "What every pane is showing and reading",
+	usage: "browser panes [--text]",
+	description:
+		"Reports where each pane sits, which board and variant it shows, which view it is read " +
+		"through, and what the person has picked out. View state only: never board content.",
+	examples: ["archboard browser panes", "archboard browser panes --text"],
+	parameters: [
+		{
+			kind: "option",
+			key: "text",
+			spellings: ["--text"],
+			value: "none",
+			description: "Print the human-readable read-out",
+		},
+		{
+			kind: "positional",
+			key: "tokens",
+			name: "panes-token",
+			repeatable: true,
+			route: "staged-tokens",
+			description: "Validated after server contact",
+		},
+	],
+	input: {
+		ingress: PanesInputSchema,
+		stages: [
+			{
+				name: "panes-arguments",
+				when: "after-server",
+				description: "No positional arguments",
+				schema: stagedNoFlags,
+			},
+		],
+	},
+	result: z.union([PanesResultSchema, z.string()]),
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: { key: "text", present: false },
+				mode: "json",
+				description: "The panes report",
+				presentation: ["result"],
+			},
+			{
+				id: "text",
+				when: { key: "text", present: true },
+				mode: "text",
+				description: "The read-out, as a person reads it",
+				presentation: ["result"],
+			},
+		],
+		/**
+		 * Text when `--text` was given, the report otherwise.
+		 * @param input The parsed input.
+		 * @param input.text Whether `--text` was given.
+		 * @returns The output case's id.
+		 */
+		select: (input: { text: boolean }) => (input.text ? "text" : "json"),
+	},
+	prerequisites: ["server"],
+	effects: [],
+	refusals: serverBrowserRefusals,
+	relationships: [
+		{ method: "GET", path: "/api/panes", cardinality: "one", description: "Read the panes" },
+	],
+	/**
+	 * Report what every pane is showing.
+	 * @param input - The ingress input holding the staged tokens.
+	 * @param context - The command context.
+	 * @returns The panes report.
+	 */
+	async handler(input, context) {
+		await context.require("server", "Reading the panes");
+		context.parse(stagedNoFlags, input.tokens);
+		const report = PanesResultSchema.parse(await getPanes());
+		return { result: input.text ? report.text : report };
+	},
+});
+
+const ShowInputSchema = z.object({ tokens });
+type ShowInput = z.infer<typeof ShowInputSchema>;
+// The tokens carry `--pane` rather than the parser taking it, because a staged
+// command passes everything after its first word through: what a show is
+// allowed to say is decided here, after the canvas has answered, so the
+// refusal can name what is actually on screen.
+const ShowStageSchema = z
+	.array(z.string())
+	.transform((values, context) => parseStage(values, { pane: "value" }, context))
+	.transform((stage, context) => {
+		const board = stage.positionals[0];
+		if (board === undefined || board === "") {
+			context.addIssue({
+				code: "custom",
+				message:
+					"browser show needs a board: `browser show pipeline --pane right`. Run `archboard browser panes` to see what is on screen.",
+			});
+			return z.NEVER;
+		}
+		const pane = stage.flags["pane"];
+		return { board, pane: typeof pane === "string" ? pane : undefined };
+	});
+type ShowStage = z.infer<typeof ShowStageSchema>;
+const ShowResultSchema = z.looseObject({
+	success: z.literal(true),
+	board: z.string(),
+	identity: z.looseObject({ board: z.string(), variant: z.string() }),
+	paneId: z.string(),
+});
+type ShowResult = z.infer<typeof ShowResultSchema>;
+const browserShowContract = defineCommand({
+	path: ["browser", "show"],
+	summary: "Show a board in one pane",
+	usage: "browser show <board>[@<variant>] --pane <spec>",
+	description:
+		"Points one pane at one board. Nothing is written: a board is shown, not created, and a " +
+		"name the vault does not hold is refused rather than made.",
+	examples: [
+		"archboard browser show pipeline --pane left",
+		"archboard browser show pipeline@proposed --pane right",
+	],
+	parameters: [
+		{
+			kind: "positional",
+			key: "tokens",
+			name: "show-token",
+			repeatable: true,
+			route: "staged-tokens",
+			description: "Validated after server contact",
+		},
+	],
+	input: {
+		ingress: ShowInputSchema,
+		stages: [
+			{
+				name: "show-arguments",
+				when: "after-server",
+				description: "The board to show",
+				rules: [
+					"Name one board, optionally with @<variant>",
+					"Refuse a board the vault does not hold rather than creating it",
+				],
+				schema: ShowStageSchema,
+			},
+		],
+	},
+	result: ShowResultSchema,
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				description: "What the pane is showing now",
+				presentation: ["diagnostics", "result"],
+			},
+		],
+		/**
+		 * Selects the only output case.
+		 * @returns The json case id.
+		 */
+		select: () => "json",
+	},
+	prerequisites: ["server", "browser"],
+	effects: ["browser"],
+	refusals: serverBrowserRefusals,
+	relationships: [
+		{
+			method: "POST",
+			path: "/api/panes/show",
+			cardinality: "one",
+			description: "Point the pane at the board",
+		},
+	],
+	/**
+	 * Point one pane at one board.
+	 * @param input - The ingress input holding the staged tokens and the pane.
+	 * @param context - The command context.
+	 * @returns What the pane is showing, with a diagnostic naming it.
+	 */
+	async handler(input, context) {
+		await context.require("server", "Showing a board");
+		const request = context.parse(ShowStageSchema, input.tokens);
+		await context.require("browser", "Showing a board");
+		const result = await showBoardInPane(request.board, request.pane);
+		return {
+			result: ShowResultSchema.parse(result),
+			diagnostics: [`Pane ${result.paneId} is showing "${result.board}".`],
+		};
+	},
+});
+
 export {
 	PaneNamespaceInputSchema,
 	type PaneNamespaceInput,
@@ -267,4 +470,16 @@ export {
 	PaneCloseResultSchema,
 	type PaneCloseResult,
 	paneCloseContract,
+	PanesInputSchema,
+	type PanesInput,
+	PanesResultSchema,
+	type PanesResult,
+	panesContract,
+	ShowInputSchema,
+	type ShowInput,
+	ShowStageSchema,
+	type ShowStage,
+	ShowResultSchema,
+	type ShowResult,
+	browserShowContract,
 };

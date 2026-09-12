@@ -1,15 +1,15 @@
 // The imperative handles the application keeps outside React state: each
-// pane's session, reported by its `CanvasPane`, and the browser media owner
-// that follows the pane's workbench transport generations. Nothing renders
-// from these; actions read them when a person acts.
+// pane's session, reported by its `ApplicationPane`, and the browser media
+// owner that follows the pane's workbench transport generations. Nothing
+// renders from these; actions read them when a person acts.
 
 import { createBrowserWorkbenchMediaOwner } from "@/ui/codex-workbench-media";
 import type { BrowserWorkbenchMediaOwner } from "@/ui/codex-workbench-media";
-import type { CanvasSession } from "@/ui/canvas/use-canvas-session";
+import type { PaneSession as SessionOf } from "@/ui/pane-session";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 /** The session of one pane, over the production transport. */
-type PaneSession = CanvasSession<BrowserWorkbenchTransport>;
+type PaneSession = SessionOf<BrowserWorkbenchTransport>;
 
 /** The handles by pane id. */
 class PaneHandles {

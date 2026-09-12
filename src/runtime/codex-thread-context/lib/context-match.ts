@@ -21,7 +21,8 @@ function boardMatches(
 ): boolean {
 	return (
 		context.paneId === paneId &&
-		context.board.note === event.board.note &&
+		context.board.name === event.board.name &&
+		context.board.key === event.board.key &&
 		context.board.version === event.version &&
 		context.board.cursor === cursor
 	);
@@ -88,7 +89,10 @@ function semanticMatches(context: ArchboardContext, event: SettledSemanticChange
 }
 
 /**
- * Whether focus and selection were captured from the event itself.
+ * Whether focus and the capture times were taken from the event itself.
+ *
+ * What was selected is compared with the rest of the architecture, subject by
+ * subject and field by field; this is only about when it was captured.
  * @param context - The canonical context the adapter built.
  * @param event - The settled semantic change.
  * @returns True when focus and selection agree with the event.
@@ -97,9 +101,68 @@ function paneStateMatches(context: ArchboardContext, event: SettledSemanticChang
 	return (
 		context.focus.paneId === (event.pane.focused ? event.pane.paneId : null) &&
 		context.focus.capturedAtMs === event.freshness.capturedAtMs &&
-		sameStringValues(context.selection.elementIds, event.selection) &&
 		context.selection.capturedAtMs === event.freshness.capturedAtMs
 	);
+}
+
+/**
+ * Whether the context names the architecture the event was about, in full.
+ *
+ * Field by field rather than by identity, because everything here is something
+ * an agent acts on or repeats to a person: a variant's lifecycle decides whether
+ * it may be edited at all, a subject's name is what gets said out loud, and a
+ * repair sentence is an instruction. An adapter that passed the right ids with
+ * the wrong words around them would be putting its own words in front of a
+ * person as though the board had said them.
+ *
+ * The comparison is against a re-projection of the event rather than a list of
+ * field checks, so a field added to the context cannot be forgotten here: a new
+ * field that the re-projection does not produce fails the comparison. That
+ * failure direction is the safe one — a valid context is refused and nothing is
+ * delivered, rather than an unaccounted-for field riding along unchecked.
+ * @param context - The canonical context the adapter built.
+ * @param event - The settled semantic change.
+ * @returns True when every architectural field is the event's own.
+ */
+function architectureMatches(
+	context: ArchboardContext,
+	event: SettledSemanticChangeEvent,
+): boolean {
+	const architecture = event.architecture;
+	const variant = architecture.variant;
+	return (
+		same(
+			context.variant,
+			variant === null
+				? null
+				: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
+		) &&
+		same(context.view, architecture.view) &&
+		same(
+			{ count: context.selection.count, subjects: context.selection.subjects },
+			{ count: architecture.selection.count, subjects: architecture.selection.subjects },
+		) &&
+		same(context.reconciliation, {
+			required: architecture.reconciliation.required,
+			count: architecture.reconciliation.count,
+			blockedBy: architecture.reconciliation.blockedBy,
+			issues: architecture.reconciliation.issues,
+		})
+	);
+}
+
+/**
+ * Whether two projections of the same fields say the same thing.
+ *
+ * Both sides are built in one reviewed field order — the context by its own
+ * canonical ordering, this side by the re-projection above — so comparing the
+ * encodings compares the values.
+ * @param one - What the context carries.
+ * @param other - What the event says it should carry.
+ * @returns True when they are the same projection.
+ */
+function same(one: unknown, other: unknown): boolean {
+	return JSON.stringify(one) === JSON.stringify(other);
 }
 
 /**
@@ -156,6 +219,7 @@ function capturedStateMatches(
 ): boolean {
 	return (
 		semanticMatches(context, event) &&
+		architectureMatches(context, event) &&
 		paneStateMatches(context, event) &&
 		claimMatches(context, event)
 	);

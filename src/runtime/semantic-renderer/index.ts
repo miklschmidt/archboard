@@ -1,0 +1,275 @@
+// A semantic board in, one self-contained SVG plus its geometry out.
+//
+// This module is an in-repository fork of both grammars of the PR
+// Lens SVG renderer (MIT, Coldtea AI), pinned to revision
+// 0993b4dec8ae73f5e000370e6a758cdd8aa2bfd0. `NOTICE.md` beside this file holds
+// the licence and says exactly what was taken and what was changed.
+//
+// ADR 0023 draws the line this module sits on: an agent authors meaning, and
+// everything about the picture — where a box goes, what colour it is, which
+// face an arrow leaves by, whether a name will fit — is decided here, once, for
+// every board. There is no coordinate, no colour and no rank hint in the input,
+// and adding one would move that line.
+//
+// A proposal's standing against the variant it came from is on the same side of
+// that line. The caller states, per render, how each subject stands — derived
+// that instant from the two variants' shared identities, never authored and
+// never stored — and how added, removed and changed are then *drawn* is decided
+// here, in `lib/svg/standing.ts`, which sets out the whole vocabulary.
+//
+// Nothing here reads a clock, a random number or a mutable file. Font files are
+// read — to measure text, and to embed when a caller asks for a self-contained
+// document — and both are deterministic and cached, so the same content, theme
+// and font source produce the same bytes on any machine, in any order.
+
+import type {
+	DiagramAtlas,
+	DiagramGrammar,
+	DiagramTheme,
+	FontSource,
+	VariantContent,
+} from "@/shared/semantic-board/index";
+import { paletteFor } from "@/runtime/semantic-renderer/lib/theme";
+import { containersIn, regionsOf } from "@/runtime/semantic-renderer/lib/regions";
+import { paintArchitecture } from "@/runtime/semantic-renderer/lib/svg/architecture";
+import { paintDataFlow } from "@/runtime/semantic-renderer/lib/svg/dataflow";
+import { svgDocument } from "@/runtime/semantic-renderer/lib/svg/document";
+import {
+	standingsFrom,
+	type StatedStandings,
+	type SubjectStanding,
+} from "@/runtime/semantic-renderer/lib/svg/standing";
+
+/** Why some content could not be drawn. */
+type RenderErrorCode = "NOTHING_TO_RENDER";
+
+/**
+ * Thrown when content cannot be drawn.
+ *
+ * The code is the stable half of the failure and the message is for a person.
+ * Every one of these describes content the renderer will not draw, never an
+ * internal fault: a caller that catches one shows an empty state rather than a
+ * degenerate picture.
+ */
+class SemanticRenderError extends Error {
+	/** Which refusal this is. */
+	readonly code: RenderErrorCode;
+
+	/**
+	 * Refuse to draw, with a reason.
+	 * @param code Which refusal this is.
+	 * @param message What a person should read.
+	 */
+	constructor(code: RenderErrorCode, message: string) {
+		super(message);
+		this.name = "SemanticRenderError";
+		this.code = code;
+	}
+}
+
+/** What to draw, and on which ground. */
+interface DiagramRenderRequest {
+	/** The content, already cut down to what the caller wants drawn. */
+	readonly content: VariantContent;
+	/** Which of the two grounds to draw it on. */
+	readonly theme: DiagramTheme;
+	/**
+	 * Where the drawn faces come from. Defaults to `"linked"`, which points at
+	 * the files the canvas serves — a few kilobytes, and what a pane wants.
+	 * `"embedded"` carries the faces in the document, which is what a file
+	 * somebody keeps needs and costs about half a megabyte.
+	 */
+	readonly fonts?: FontSource;
+	/**
+	 * How each subject of this picture stands against the variant it came from.
+	 *
+	 * The caller derives it — by reading this variant against its predecessor,
+	 * on every render — and this module draws it. Absent means this is not a
+	 * proposal and the picture is drawn plainly; present means every drawn
+	 * subject says how it stands, and an id the map does not mention stands
+	 * unchanged. Nothing about it is persisted anywhere (ADR 0023).
+	 */
+	readonly standing?: StatedStandings | undefined;
+}
+
+/** The same, plus which of the two pictures to draw. */
+interface SemanticViewRenderRequest extends DiagramRenderRequest {
+	/** Which grammar the view asked for. */
+	readonly grammar: DiagramGrammar;
+}
+
+/** One drawn diagram, in either grammar. */
+interface RenderedDiagram {
+	/** The whole SVG document. */
+	readonly svg: string;
+	/** The page width, in the document's own units. */
+	readonly width: number;
+	/** The page height, in the document's own units. */
+	readonly height: number;
+	/** Where every subject the renderer drew ended up. */
+	readonly atlas: DiagramAtlas;
+}
+
+/**
+ * How many of a thing there are, in words a screen reader can say.
+ * @param count How many.
+ * @param one What one of them is called.
+ * @param many What several of them are called.
+ * @returns The phrase.
+ */
+function countOf(count: number, one: string, many: string): string {
+	return `${count} ${count === 1 ? one : many}`;
+}
+
+/**
+ * The accessible name for a picture nobody gave a title to.
+ *
+ * A variant has a name, but it is the board's to own and not the content's, so
+ * the renderer says what it drew rather than inventing what it is called.
+ * @param content The architecture.
+ * @returns The `aria-label`.
+ */
+function titleFor(content: VariantContent): string {
+	return `Architecture diagram: ${countOf(content.nodes.length, "node", "nodes")}, ${countOf(
+		content.edges.length,
+		"connection",
+		"connections",
+	)}`;
+}
+
+/**
+ * The longer description: which containers the picture is divided into.
+ * @param names The container names, in the order they are drawn.
+ * @returns The description, or undefined when nothing contains anything.
+ */
+function descriptionFor(names: readonly string[]): string | undefined {
+	return names.length === 0 ? undefined : `Grouped by ${names.join(", ")}.`;
+}
+
+/**
+ * A semantic architecture in, one self-contained SVG plus its geometry out.
+ * @param request What to draw, and on which ground.
+ * @returns The document, its size and its atlas.
+ * @throws {SemanticRenderError} When there is nothing to draw.
+ */
+function renderArchitecture(request: DiagramRenderRequest): RenderedDiagram {
+	const { content, theme } = request;
+	if (content.nodes.length === 0) {
+		throw new SemanticRenderError(
+			"NOTHING_TO_RENDER",
+			"this architecture has no nodes, so there is no diagram to draw",
+		);
+	}
+
+	const regions = regionsOf(content);
+	const palette = paletteFor(theme);
+	const painting = paintArchitecture(regions, content, palette, standingsFrom(request.standing));
+
+	const svg = svgDocument({
+		width: painting.width,
+		height: painting.height,
+		palette,
+		title: titleFor(content),
+		description: descriptionFor(
+			regions.flatMap((region) => [
+				...(region.container === undefined ? [] : [region.container.name]),
+				...containersIn(region.blocks).map((held) => held.name),
+			]),
+		),
+		fonts: request.fonts ?? "linked",
+		body: painting.body,
+	});
+
+	return { svg, width: painting.width, height: painting.height, atlas: painting.atlas };
+}
+
+/**
+ * The accessible name for a sequence nobody gave a title to.
+ * @param content The content being drawn.
+ * @returns The `aria-label`.
+ */
+function sequenceTitleFor(content: VariantContent): string {
+	const steps = content.flows.reduce((total, flow) => total + flow.steps.length, 0);
+	return `Message-sequence diagram: ${countOf(content.flows.length, "flow", "flows")}, ${countOf(
+		steps,
+		"step",
+		"steps",
+	)}`;
+}
+
+/**
+ * The longer description of a sequence: which exchanges it shows.
+ * @param content The content being drawn.
+ * @returns The description.
+ */
+function sequenceDescriptionFor(content: VariantContent): string {
+	return `Showing ${content.flows.map((flow) => flow.name).join(", ")}.`;
+}
+
+/**
+ * One variant's flows, drawn as a stack of message sequences.
+ *
+ * Every flow the content holds is drawn, because the caller has already said
+ * what it wants seen: a view scoped to one exchange arrives here holding that
+ * one, and an unscoped one arrives holding them all.
+ * @param request What to draw, and on which ground.
+ * @returns The document, its size and its atlas.
+ * @throws {SemanticRenderError} When the content holds no flow.
+ */
+function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
+	const { content, theme } = request;
+	if (content.flows.length === 0) {
+		throw new SemanticRenderError(
+			"NOTHING_TO_RENDER",
+			"this content has no flow, so there is no sequence to draw",
+		);
+	}
+
+	const palette = paletteFor(theme);
+	const painting = paintDataFlow(
+		content.flows,
+		content.nodes,
+		palette,
+		standingsFrom(request.standing),
+	);
+
+	const svg = svgDocument({
+		width: painting.width,
+		height: painting.height,
+		palette,
+		title: sequenceTitleFor(content),
+		description: sequenceDescriptionFor(content),
+		fonts: request.fonts ?? "linked",
+		body: painting.body,
+	});
+
+	return { svg, width: painting.width, height: painting.height, atlas: painting.atlas };
+}
+
+/**
+ * One reading of a variant, drawn in the grammar its view asked for.
+ *
+ * Two pictures of the same identities: a participant column and an architecture
+ * card carry the same node id, and a pane that has selected one has selected the
+ * other. Which grammar is chosen is presentation intent the board states; it is
+ * never derived from what the content happens to hold.
+ * @param request What to draw, in which grammar, and on which ground.
+ * @returns The document, its size and its atlas.
+ * @throws {SemanticRenderError} When that grammar has nothing to draw.
+ */
+function renderSemanticView(request: SemanticViewRenderRequest): RenderedDiagram {
+	return request.grammar === "data-flow" ? renderDataFlow(request) : renderArchitecture(request);
+}
+
+export {
+	type SubjectStanding,
+	type StatedStandings,
+	type DiagramRenderRequest,
+	type SemanticViewRenderRequest,
+	type RenderedDiagram,
+	type RenderErrorCode,
+	SemanticRenderError,
+	renderArchitecture,
+	renderDataFlow,
+	renderSemanticView,
+};

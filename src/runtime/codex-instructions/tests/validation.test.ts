@@ -33,19 +33,25 @@ const CONTEXT_KEY_ORACLE = {
 		"coordinator",
 		"semantic",
 		"focus",
+		"variant",
+		"view",
 		"selection",
+		"reconciliation",
 		"claim",
 		"ambiguity",
 		"operation",
 	],
-	board: ["note", "version", "cursor"],
+	board: ["name", "key", "version", "cursor"],
 	threadLink: ["state", "reason"],
 	child: ["id", "epoch"],
 	workhorse: ["threadId", "turnId"],
 	coordinator: ["threadId", "realtimeSessionId"],
 	semantic: ["brief", "capturedAtMs", "freshUntilMs", "truncated"],
 	focus: ["paneId", "capturedAtMs"],
-	selection: ["elementIds", "capturedAtMs"],
+	variant: ["id", "name", "lifecycle"],
+	view: ["id", "name", "grammar"],
+	selection: ["count", "subjects", "capturedAtMs"],
+	reconciliation: ["required", "count", "blockedBy", "issues"],
 	claim: ["holder", "doing"],
 	operation: ["id", "kind", "rpc", "outcome"],
 } as const;
@@ -329,9 +335,9 @@ describe("lower bounds", () => {
 			},
 		],
 		[
-			"board.note",
+			"board.name",
 			(candidate: ArchboardContext): void => {
-				candidate.board.note = "";
+				candidate.board.name = "";
 			},
 		],
 		[
@@ -383,9 +389,12 @@ describe("lower bounds", () => {
 			},
 		],
 		[
-			"selection.elementIds[0]",
+			"selection.subjects[0].id",
 			(candidate: ArchboardContext): void => {
-				candidate.selection.elementIds[0] = "";
+				const subject = candidate.selection.subjects[0];
+				if (subject !== undefined) {
+					candidate.selection.subjects[0] = { ...subject, id: "" };
+				}
 			},
 		],
 		[

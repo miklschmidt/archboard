@@ -1,5 +1,6 @@
 import { logger } from "@/runtime/engine/logger";
-import { changeFeed } from "@/runtime/engine/change-feed";
+import { semanticChangeFeed } from "@/server/canvas/lib/semantic-change-feed";
+
 import { panesInOrder } from "@/runtime/engine/panes";
 import type { PaneRegistration } from "@/runtime/engine/panes";
 import type { SettledChangeSourceEvent } from "@/runtime/codex-semantic-context";
@@ -22,6 +23,7 @@ import {
 import { waitForTargetsWith } from "@/server/canvas/lib/codex-target-wait";
 import { checkoutRoot } from "@/server/canvas/lib/module-paths";
 import {
+	aggregateOf,
 	boardForPane,
 	browserLeaseLedger,
 	codexSocketInstances,
@@ -60,6 +62,25 @@ const codexWiring: CodexWiring = {
 };
 
 /** Forget the installed gateway's hooks. */
+/**
+ * The board a pane is showing, for a context that has to name one.
+ *
+ * A pane exists whether or not it is showing a board, but a thread is bound to
+ * a pane *and its board*: a context built for a pane showing nothing would be a
+ * brief about no architecture at all.
+ * @param pane The pane.
+ * @returns The board key.
+ * @throws {Error} When the pane is showing no board.
+ */
+function shownBoard(pane: PaneRegistration): string {
+	const board = boardForPane(pane);
+	if (board === null) {
+		throw new Error(`Pane ${pane.paneId} is showing no board, so there is no context to read.`);
+	}
+	return board;
+}
+
+/** Forget every browser callback the workbench installed. */
 function resetCodexWorkbenchWiring(): void {
 	codexWiring.codex.publishPaneContext = null;
 	codexWiring.codex.acceptBrowser = null;
@@ -176,6 +197,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			...(contextBoard === undefined ? {} : { contextBoard }),
 			panes: panes.values(),
 			boardForPane,
+			aggregateOf,
 		});
 	};
 
@@ -191,8 +213,8 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			);
 		},
 		semanticPublisher: {
-			feed: changeFeed,
-			feedId: changeFeed.status().feedId,
+			feed: semanticChangeFeed,
+			feedId: semanticChangeFeed.feedId,
 			fresh: {
 				/**
 				 * A fresh semantic input for the bound pane's board.
@@ -200,7 +222,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				 */
 				read: () => {
 					const pane = currentSemanticPane();
-					return semanticInputFor(active, boardForPane(pane), null, pane.paneId);
+					return semanticInputFor(active, shownBoard(pane), null, pane.paneId);
 				},
 			},
 			/**
@@ -213,7 +235,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				return semanticInputFor(
 					active,
 					event.board,
-					{ feedId: changeFeed.status().feedId, sequence: event.cursor },
+					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
 					pane.paneId,
 				);
 			},
@@ -253,7 +275,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 			if (!bindingMatchesAuthority(active.threadLink.read(authority.paneId), authority)) {
 				throw new Error("The lease-bound Codex pane context changed before capture.");
 			}
-			const exactInput = semanticInputFor(active, boardForPane(pane), null, authority.paneId);
+			const exactInput = semanticInputFor(active, shownBoard(pane), null, authority.paneId);
 			return canonicalContextFromBrief(
 				active.semanticPublisher.freshBriefFor(exactInput),
 				authority.paneId,
@@ -303,7 +325,7 @@ function createCodexWorkbenchHost(): CanvasCodexWorkbenchHost {
 				)
 					return;
 				try {
-					const input = semanticInputFor(components, boardForPane(pane), null, pane.paneId);
+					const input = semanticInputFor(components, shownBoard(pane), null, pane.paneId);
 					if (kind === "selection") components.semanticPublisher.publishPaneSelection(input);
 					else components.semanticPublisher.publishPaneFocus(input);
 				} catch (error) {

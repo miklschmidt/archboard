@@ -1,7 +1,7 @@
 # CLI workflow chains
 
 Use `archboard help <command>` first for released syntax and options. For result
-shapes, streams, exits, and refinements, follow the registry in
+shapes, streams, exits and refinements, follow the registry in
 `src/cli/commands/run.ts` to that command's `ResultSchema` and inferred type.
 Those source Zod contracts are authoritative.
 
@@ -10,197 +10,138 @@ For a searchable view, generate
 `bun run generate:cli-contract`. The file is ignored and derived; when it and
 the source disagree, the source Zod schema and refinements win.
 
-The examples below extract only values that naturally feed a later released
-command. They are tested against results accepted by the producing contract.
+The examples below extract only values that naturally feed a later command.
 
-## Persisted-board workflow
+## Authoring a board
 
-Name the board first. This workflow needs a configured vault and server, not a
-browser connection:
+A configured vault and the server are enough. No browser is involved.
 
 ```bash
 board=payments
-archboard board new "$board" --level service
-archboard add --board "$board" --doing "drawing the payment path" elements.json
-archboard mermaid flow.mmd --board "$board" --doing "adding the service flow"
-archboard render --board "$board" --out payments.png
-archboard render --board "$board" --out payments.svg --format svg
-archboard check --board "$board" --strict
-archboard describe --board "$board"
-archboard snapshot save before-refactor --board "$board"
-archboard board save --board "$board" --variant option-a --doing "branching the proposal"
-archboard export --board payments@option-a --out payments-option-a.excalidraw
+archboard semantic                      # every board in the vault
+archboard semantic new "$board" --doing "drawing the payment path" < architecture.json
+archboard semantic show "$board"
+archboard semantic render "$board" --out payments.svg
 ```
 
-Run `render-findings --board "$board" --out <empty-directory>` only when the
-current inspection has a real focus-box finding that needs a close-up. It
-repeats inspection and renders from one immutable persisted snapshot.
+`--input <file>` is the same as standard input, for when a pipe is inconvenient.
 
-## Live-browser workflow
+## The version a write reports is the next write's precondition
 
-Enter this separate workflow only to inspect or control what a person currently
-sees. Each command names its pane; none writes the board note.
+Every write answers with the version the board is now at. That number is what
+the next edit states, and stating it is not optional: an edit that does not say
+which board it read is an edit applied to whatever the board says now.
+
+<!-- version-from-a-write -->
+
+```jq
+.version
+```
+
+```bash
+version="$(archboard semantic new "$board" --doing "drawing it" < architecture.json | jq -r .version)"
+archboard semantic edit "$board" --expect-version "$version" --doing "adding the queue" < change.json
+```
+
+Reading the board again immediately before writing would make the check pass by
+construction and hide the change you were meant to notice. Read, decide, write.
+
+## A proposal, and what it is proposing to change
+
+Branching answers with the whole board, so the new variant's id is in the reply.
+
+<!-- the-branched-variant -->
+
+```jq
+.board.variants[] | select(.name == "Queued ingest") | .id
+```
+
+```bash
+variant="$(archboard semantic branch "$board" --as "Queued ingest" \
+  --expect-version "$version" --doing "proposing a queue" |
+  jq -r '.board.variants[] | select(.name == "Queued ingest") | .id')"
+
+archboard semantic show "$board"        # both variants, and what the draft holds
+archboard semantic render "$board" --variant "$variant" --out proposal.svg
+```
+
+A variant is addressed as `board@variant`, by its id or by the lasting name it
+was given: `payments@"Queued ingest"` and `payments@$variant` name the same
+thing. The only character an address refuses in a variant is `@`, which is what
+separates the variant from the board — so a proposal called `Proposed: queued
+ingest` is addressable by that name. Its id never changes when somebody renames
+it, which is the reason to keep the one the branch reply hands you. A write always names the board alone and says which variant it changes
+inside the command, because the whole family is one document.
+
+## The subjects on a board
+
+Every node and edge has an id that survives editing, branching and adoption. It
+is what a comparison joins on, what a selection names, and what "open the code"
+resolves.
+
+<!-- node-ids-of-the-current-variant -->
+
+```jq
+[.board.variants[] | select(.lifecycle == "current") | .content.nodes[].id]
+```
+
+<!-- what-a-draft-is-holding -->
+
+```jq
+[.board.variants[] | select(.reconciliation != null)
+ | { variant: .name, against: .reconciliation.against, issues: [.reconciliation.issues[].subject] }]
+```
+
+A draft with a standing reconciliation is waiting for somebody to settle it.
+Nothing below it is merged until that happens, which is why the empty answer
+here is the one to check for before assuming a branch is ready to adopt.
+
+## Putting a proposal beside its source
+
+Only these touch a live session, and none writes a board.
 
 ```bash
 archboard browser panes --text
-archboard browser selection --pane left --text
-archboard browser viewport --pane right --fit
-archboard browser capture --pane right --out live-right.png
+archboard browser open
+archboard browser show "$board@$variant" --pane right
 ```
 
-Use the selected ids in a later named-board command. A pane observing a board
-receives committed board writes, but delivery does not decide whether the write
-succeeds.
-
-## Created and queried elements
-
-Take element IDs from `add` or `query`, then choose the IDs needed by
-`promote` or an `arrange` operation.
-
-<!-- tested-jq: add-element-ids -->
+<!-- the-pane-a-board-is-showing -->
 
 ```jq
-[.elements[].id]
+[.panes[] | { pane: .paneId, place: .place, board: .board }]
 ```
 
-<!-- tested-jq: query-element-ids -->
+A pane's board may be `null`: a vault with no boards in it yet still has a pane
+on screen, and that is the pane a `show` would point at.
 
-```jq
-[.[].id]
-```
-
-To pass every ID from one `add` result to a later command, run this marked
-extraction and capture its stdout as `comma_separated_ids`:
-
-<!-- tested-jq: comma-separated-add-element-ids -->
-
-```jq
-[.elements[].id] | join(",")
-```
+## A claim, for a campaign rather than a write
 
 ```bash
-ids="$comma_separated_ids"
-archboard promote --board "$board" --doing "promoting selected elements" --ids "$ids" --kind service
-archboard arrange align --board "$board" --doing "aligning selected elements" --ids "$ids" --to left
+archboard claim --board "$board" --reason "redrawing the payment path" --for 10m
+# ... several writes, each with its own --doing ...
+archboard release --board "$board"
 ```
 
-## Stencils, nodes, and groups
+The claim answers with the version it is holding, so the first write under it
+has a precondition without a second read. If a person takes the board back, the
+next write is refused once with `CLAIM_REVOKED`, and nothing written is undone.
 
-`library insert` returns the inserted element IDs. It does not promise a
-library handle or bounds for later use.
+## Binding a part of the architecture to its code
 
-<!-- tested-jq: library-element-ids -->
-
-```jq
-[.elements[].id]
-```
-
-After `promote`, reuse a returned node identity with `promote --node` only when
-the next promotion is meant to join that same architecture node.
-
-<!-- tested-jq: promoted-node-ids -->
-
-```jq
-[.nodes[] | select(.node != null) | .node]
-```
-
-The identity returned by `arrange group` is the input to `arrange ungroup`.
-
-<!-- tested-jq: group-id -->
-
-```jq
-.groupId
-```
+Register each checkout once; the binding itself is stated on the node.
 
 ```bash
-archboard arrange ungroup --board "$board" --doing "ungrouping selected elements" --group "$group_id"
+archboard repo add /path/to/payments-api
 ```
 
-## Independent writes and board versions
-
-A write receipt's board version belongs on the next independent write as
-`--expect-version`. Under a claim, the canvas already remembers the version it
-last showed that writer.
-
-<!-- tested-jq: fingerprint-version -->
-
-```jq
-.fingerprint.version
+```json
+{
+	"name": "Orders",
+	"kind": "service",
+	"binding": { "repo": "github.com/acme/payments-api", "path": "src/orders.ts" }
+}
 ```
 
-```bash
-archboard update "$element_id" --board "$board" --doing "updating the element" --expect-version "$version" --set "$patch"
-```
-
-## Inspection and connector bridges
-
-`check` can identify unmarked connector crossings. The two connector IDs are
-evidence for a human decision, not an automatic bridge instruction: choose
-which connector goes over and which goes under before calling `bridge`.
-
-<!-- tested-jq: crossing-connector-ids -->
-
-```jq
-[
-  .findings[]
-  | select(.code == "CONNECTOR_INTERSECTION_UNMARKED")
-  | [.details.firstConnectorId, .details.secondConnectorId]
-]
-```
-
-```bash
-archboard bridge --board "$board" --doing "marking the chosen crossing" \
-  --over "$over_id" --under "$under_id" --background '#ffffff'
-```
-
-The created bridge identity is the input to `bridge remove`.
-
-<!-- tested-jq: bridge-id -->
-
-```jq
-.bridgeId
-```
-
-```bash
-archboard bridge remove "$bridge_id" --board "$board" --doing "removing the crossing marker"
-```
-
-Do not pipe a `check` report into `render-findings`. Rendering repeats
-inspection against one named persisted snapshot and accepts the same policy
-options explicitly.
-
-## Focused finding files
-
-Each rendered entry's file is relative to the output directory supplied to
-`render-findings`.
-
-<!-- tested-jq: rendered-relative-files -->
-
-```jq
-[.entries[] | select(.status == "rendered") | .file]
-```
-
-```bash
-artifact="$output_dir/$relative_file"
-```
-
-## Strict inspection capture
-
-Strict `check` deliberately returns its report on stdout for exits 6, 7, and 8. Capture the stream separately from the status so `set -e` does not discard
-the report.
-
-<!-- tested-shell: strict-check-capture -->
-
-```bash
-check_output="$(mktemp)"
-trap 'rm -f "$check_output"' EXIT
-if archboard check --board "$board" --strict >"$check_output"; then
-  check_status=0
-else
-  check_status=$?
-fi
-case "$check_status" in
-  0|6|7|8) cat "$check_output" ;;
-  *) exit "$check_status" ;;
-esac
-```
+The board keeps the repository identity and a repo-relative path, so the same
+board opens the right file on anybody's machine.

@@ -6,6 +6,7 @@ import { WebSocket } from "ws";
 
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester, waitFor } from "./support/http.ts";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@/shared/semantic-pane-context";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 
@@ -47,7 +48,7 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 			requestId?: unknown;
 			type?: unknown;
 		};
-		if (message.type === "initial_elements") {
+		if (message.type === "pane_board") {
 			initial.resolve();
 		}
 		if (typeof message.requestId !== "string") {
@@ -95,6 +96,15 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 		let first: ApplicationSocket | null = null;
 		let replacement: ApplicationSocket | null = null;
 		try {
+			expect(
+				(
+					await request("/api/semantic-boards/create", {
+						method: "POST",
+						doing: "starting the board this pane shows",
+						body: { board: "scratch", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
+					})
+				).status,
+			).toBe(200);
 			first = await openApplicationSocket(canvas.base, clientId);
 			await request("/api/panes", {
 				method: "POST",
@@ -104,23 +114,31 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 					paneId: clientId,
 					primary: true,
 					focused: true,
-					elementCount: 0,
 					board: "scratch",
 					rect: { x: 0, y: 0, width: 1280, height: 800 },
-					viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
 				},
 			});
-			await request("/api/selection", {
-				method: "POST",
-				doing: false,
-				body: { clientId, elementIds: ["selected-by-replacement"] },
-			});
-			const held = await request<{ created: boolean }>("/api/boards/hold?board=scratch", {
-				method: "POST",
-				doing: false,
-				body: { clientId, reason: "editing on the canvas" },
-			});
-			expect(held.body.created).toBeTrue();
+			// What this pane is reading, which is keyed by the same client id the
+			// socket is, so retiring one has to retire the other.
+			expect(
+				(
+					await request(SEMANTIC_PANE_CONTEXT_ROUTE, {
+						method: "POST",
+						doing: false,
+						body: {
+							paneId: clientId,
+							clientId,
+							board: { name: "scratch", key: "scratch" },
+							variant: null,
+							view: null,
+							selection: [{ id: "picked-by-replacement" }],
+							version: null,
+							at: new Date().toISOString(),
+							sequence: 0,
+						},
+					})
+				).status,
+			).toBe(200);
 			expect(await first.request("connect")).toMatchObject({ ok: true });
 			expect(await first.request("claimLease")).toMatchObject({ ok: true });
 
@@ -140,22 +158,15 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 				value: { commandId: replacementLease.value?.["commandId"] },
 			});
 			expect((await request<{ paneCount: number }>("/api/panes")).body.paneCount).toBe(1);
-			expect(
-				await request<{ clientId: string; elementIds: string[] }>(
-					`/api/selection?pane=${clientId}`,
-				),
-			).toMatchObject({
-				body: { clientId, elementIds: ["selected-by-replacement"] },
+			// The pane is the same pane: replacing its transport did not erase what
+			// it had already said it was reading, which is what "without erasing
+			// current authority" means from the agent's side.
+			const carried = await request<{ panes: Array<{ clientId: string; selection: unknown[] }> }>(
+				SEMANTIC_PANE_CONTEXT_ROUTE,
+			);
+			expect(carried.body.panes.find((report) => report.clientId === clientId)).toMatchObject({
+				selection: [{ id: "picked-by-replacement" }],
 			});
-			expect(
-				(
-					await request<{ created: boolean }>("/api/boards/hold?board=scratch", {
-						method: "POST",
-						doing: false,
-						body: { clientId },
-					})
-				).body.created,
-			).toBeFalse();
 
 			expect(await replacement.request("releaseLease")).toMatchObject({ ok: true });
 			expect(await replacement.request("claimLease")).toMatchObject({ ok: true });
@@ -165,19 +176,20 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 				async () => (await request<{ paneCount: number }>("/api/panes")).body.paneCount === 0,
 				"the exact replacement socket to retire its pane",
 			);
-			const retiredSelection = await request<{ error: string }>(`/api/selection?pane=${clientId}`);
-			expect(retiredSelection.status).toBe(400);
-			expect(retiredSelection.body.error).toContain("No pane is open");
-			expect(retiredSelection.body.error).toContain(`"${clientId}" names nothing`);
-			expect(
-				(
-					await request<{ created: boolean }>("/api/boards/hold?board=scratch", {
-						method: "POST",
-						doing: false,
-						body: { clientId: "hold-probe" },
-					})
-				).body.created,
-			).toBeTrue();
+			// The report went with the pane: a closed tab must not leave a
+			// true-looking answer standing about what somebody is looking at.
+			const reports = await request<{ panes: Array<{ clientId: string }> }>(
+				SEMANTIC_PANE_CONTEXT_ROUTE,
+			);
+			expect(reports.status).toBe(200);
+			expect(reports.body.panes.some((report) => report.clientId === clientId)).toBeFalse();
+			// And the board is free: nothing the retired transport did holds it.
+			const claimed = await request<{ claim?: { holder?: { claimed?: boolean } } }>(
+				"/api/semantic-boards/claim?board=scratch",
+				{ method: "POST", doing: false, body: { reason: "checking the board is free" } },
+			);
+			expect(claimed.status).toBe(200);
+			expect(claimed.body.claim?.holder?.claimed).toBeTrue();
 		} finally {
 			await first?.close();
 			await replacement?.close();
@@ -211,10 +223,8 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 					paneId: clientId,
 					primary: true,
 					focused: true,
-					elementCount: 0,
 					board: "scratch",
 					rect: { x: 0, y: 0, width: 1280, height: 800 },
-					viewport: { x: 0, y: 0, width: 1280, height: 800, zoom: 1 },
 				},
 			});
 			expect(await original.request("connect")).toMatchObject({ ok: true });

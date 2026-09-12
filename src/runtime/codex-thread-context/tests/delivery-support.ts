@@ -24,8 +24,8 @@ import {
 	type IdentityAuthority,
 	type ThreadId,
 } from "../../../shared/codex-workbench-identity/index.ts";
+import { baseContext } from "./delivery-context.ts";
 import {
-	canonicalSemanticCursorToken,
 	createCodexThreadContextDelivery,
 	createCodexThreadContextController,
 	type CodexThreadContextBinding,
@@ -59,6 +59,8 @@ interface EventOptions {
 	readonly cursorFeedId?: string;
 	readonly changeFeedId?: string;
 	readonly origin?: "human" | "agent" | "mixed";
+	/** Who wrote the change, as the identity it held the board under. */
+	readonly by?: string | null;
 	readonly significance?: "layout" | "structural" | "cosmetic";
 	readonly focused?: boolean;
 	readonly claimDoing?: string | null;
@@ -72,6 +74,8 @@ interface HarnessOptions {
 	readonly initialLink?: ThreadLinkSnapshot;
 	readonly classificationLink?: ThreadLinkSnapshot;
 	readonly contextValid?: boolean;
+	/** Alters one architectural field of the built context, to prove it is checked. */
+	readonly forgeContext?: (context: ArchboardContext) => ArchboardContext;
 	readonly contextCursorSequence?: number;
 	readonly contextFocusPaneId?: string | null;
 	readonly now?: number;
@@ -194,52 +198,6 @@ function unboundLink(): ThreadLinkSnapshot {
 	});
 }
 
-function baseContext(
-	childId: ChildId,
-	epoch: ChildEpoch,
-	threadId: ThreadId,
-	event: SettledSemanticChangeEvent,
-	contextCursorSequence: number | undefined,
-	contextFocusPaneId: string | null | undefined,
-): ArchboardContext {
-	const cursor =
-		event.cursor === null
-			? null
-			: canonicalSemanticCursorToken({
-					feedId: event.cursor.feedId,
-					sequence: contextCursorSequence ?? event.cursor.sequence,
-				});
-	const focusPaneId =
-		contextFocusPaneId === undefined
-			? event.pane.focused
-				? event.pane.paneId
-				: null
-			: contextFocusPaneId;
-	return {
-		schema: 1,
-		paneId: PANE_ID,
-		board: { note: event.board.note, version: event.version ?? 7, cursor },
-		threadLink: { state: "executable", reason: null },
-		child: { id: childId, epoch },
-		workhorse: { threadId, turnId: event.workhorse.turnId },
-		coordinator: { ...event.coordinator },
-		semantic: {
-			brief: event.brief,
-			capturedAtMs: event.freshness.capturedAtMs,
-			freshUntilMs: event.freshness.freshUntilMs,
-			truncated: event.truncated,
-		},
-		focus: { paneId: focusPaneId, capturedAtMs: event.freshness.capturedAtMs },
-		selection: {
-			elementIds: [...event.selection],
-			capturedAtMs: event.freshness.capturedAtMs,
-		},
-		claim: { ...event.claim },
-		ambiguity: [...event.ambiguity],
-		operation: { id: null, kind: null, rpc: null, outcome: null },
-	};
-}
-
 function createHarness(options: HarnessOptions = {}): Harness {
 	const authority = createIdentityAuthority();
 	const childId = authority.validator.childId;
@@ -325,17 +283,20 @@ function createHarness(options: HarnessOptions = {}): Harness {
 	};
 	const contextForEvent = (event: SettledSemanticChangeEvent): ArchboardContext => {
 		const context = baseContext(
-			childId,
-			epoch,
-			threadId,
+			{
+				paneId: PANE_ID,
+				childId,
+				epoch,
+				threadId,
+				cursorSequence: options.contextCursorSequence,
+				focusPaneId: options.contextFocusPaneId,
+			},
 			event,
-			options.contextCursorSequence,
-			options.contextFocusPaneId,
 		);
 		if (options.contextValid === false) {
 			return { ...context, semantic: { ...context.semantic, brief: "wrong-brief" } };
 		}
-		return context;
+		return options.forgeContext === undefined ? context : options.forgeContext(context);
 	};
 	const publisher = {
 		subscribeSettledChange(next: (event: SettledSemanticChangeEvent) => void) {
@@ -393,10 +354,25 @@ function createHarness(options: HarnessOptions = {}): Harness {
 			threadLink: { state: "executable" as const, reason: null },
 			workhorse: { threadId, turnId: null },
 			coordinator: { threadId: null, realtimeSessionId: null },
-			board: { key: "payments", note: "boards/payments.excalidraw.md" },
+			board: {
+				key: "payments",
+				name: "Payments",
+				file: "boards/payments.semantic.json",
+			},
 			pane: { paneId: PANE_ID, focused },
 			version: 7,
-			selection: [],
+			architecture: {
+				variant: {
+					id: "v1",
+					name: "Current",
+					lifecycle: "current" as const,
+					against: null,
+				},
+				view: null,
+				selection: { count: 0, subjects: [] },
+				differences: null,
+				reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
+			},
 			claim: { holder: "none" as const, doing: claimDoing },
 			doing,
 			cursor,
@@ -422,6 +398,7 @@ function createHarness(options: HarnessOptions = {}): Harness {
 				origin,
 				significance,
 				text: "A settled human architecture change.",
+				by: eventOptions.by ?? null,
 			},
 		});
 	};

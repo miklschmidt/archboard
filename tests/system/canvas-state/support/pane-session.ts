@@ -21,7 +21,7 @@ export interface PaneSession {
 	readonly registration: Record<string, unknown>;
 	mark(): number;
 	board(): string | undefined;
-	register(board?: string): Promise<void>;
+	register(board?: string | null): Promise<void>;
 	sync(): Promise<void>;
 	waitFor(type: string, start?: number, timeoutMs?: number): Promise<PaneEvent | undefined>;
 	close(): Promise<void>;
@@ -44,9 +44,7 @@ export async function openPaneSession(
 		paneId: options.clientId,
 		primary: options.primary ?? x === 0,
 		focused: options.focused ?? false,
-		elementCount: 0,
 		rect: { x, y: 0, width: 640, height: 800 },
-		viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 },
 	};
 	const pane = await openObservedPane<PaneEvent>({
 		base,
@@ -68,7 +66,7 @@ export async function openPaneSession(
 		registration,
 		mark: () => pane.events.length,
 		board: pane.board,
-		register: async (board = options.board ?? pane.board() ?? "scratch") => pane.register(board),
+		register: async (board = options.board ?? pane.board() ?? null) => pane.register(board),
 		sync: pane.sync,
 		waitFor: (type, start, timeoutMs) =>
 			pane.waitFor((event) => event.type === type, start, timeoutMs),

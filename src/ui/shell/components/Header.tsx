@@ -1,13 +1,13 @@
-// The 56px header: five sections under full-height one-pixel rules. The wordmark, the
-// board breadcrumb, the live state chips, and the actions on the board. Pane
-// controls live in the pane bar. The text pieces shrink and truncate so a
-// narrower window never clips the row.
+// The 56px header: four sections under full-height one-pixel rules. The
+// wordmark, the board breadcrumb, the live state chips, and the settings. Pane
+// controls live in the pane bar, and nothing here changes a board: a person
+// reads an architecture an agent wrote (ADR 0023). The text pieces shrink and
+// truncate so a narrower window never clips the row.
 
 import { RiLockLine, RiMoonLine, RiSettings3Line, RiSunLine } from "@remixicon/react";
-import { useCallback, type ComponentPropsWithRef, type JSX, type ReactNode } from "react";
+import { useCallback, type ComponentPropsWithRef, type JSX } from "react";
 
 import { Badge } from "@/ui/components/badge";
-import { Button } from "@/ui/components/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -17,7 +17,6 @@ import {
 import { Separator } from "@/ui/components/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
 import type {
-	RecoveryKind,
 	SettingsSurface,
 	ShellActions,
 	ShellPane,
@@ -25,14 +24,10 @@ import type {
 } from "@/ui/shell/types/contracts";
 import { ICON_BUTTON_CLASS, IconButton } from "@/ui/shell/components/IconButton";
 import { StatusDot } from "@/ui/shell/components/StatusDot";
-import type { BoardHold, BoardIdentity, LockHolder, NoteWrittenElsewhere } from "@/ui/types";
+import type { BoardIdentity, LockHolder } from "@/ui/types";
 
 /** The settings menu trigger's id: the dialogs it opens return focus to it. */
 const SETTINGS_TRIGGER_ID = "shell-settings";
-
-/** A warning chip that is also the way into its recovery dialog. */
-const WARNING_CHIP_CLASS =
-	"border-warning/60 bg-warning-subtle text-warning-foreground hover:bg-warning-subtle hover:text-warning-foreground text-body h-6 shrink-0 gap-1.5 rounded-[2px] px-2 font-normal";
 
 /** Inputs for the header. */
 interface HeaderProps {
@@ -47,15 +42,11 @@ interface HeaderProps {
 interface PaneSummary {
 	connected: boolean;
 	holder: LockHolder | null;
-	hold: BoardHold | null;
-	elsewhere: NoteWrittenElsewhere | null;
 }
 
 const NO_PANE: PaneSummary = {
 	connected: false,
 	holder: null,
-	hold: null,
-	elsewhere: null,
 };
 
 /**
@@ -67,12 +58,7 @@ function summarisePane(pane: ShellPane | null): PaneSummary {
 	if (!pane) {
 		return NO_PANE;
 	}
-	return {
-		connected: pane.status.connected,
-		holder: pane.holder,
-		hold: pane.status.hold,
-		elsewhere: pane.status.writtenElsewhere,
-	};
+	return { connected: pane.status.connected, holder: pane.holder };
 }
 
 /** How a lock holder reads in the header. */
@@ -119,13 +105,13 @@ function Breadcrumb(props: BreadcrumbProps): JSX.Element {
 					<span aria-hidden="true" className="text-border text-board font-normal">
 						/
 					</span>
-					<span className="text-muted-foreground text-body truncate">{identity.variant}</span>
+					{/* The variant is the kicker beside the board's name: set in the
+					    technical face, like every other identifier a person reads
+					    rather than says out loud. */}
+					<span className="text-muted-foreground text-technical truncate font-mono font-medium">
+						{identity.variant}
+					</span>
 				</>
-			)}
-			{identity.level !== undefined && (
-				<Badge variant="outline" size="technical" className="text-muted-foreground">
-					{identity.level}
-				</Badge>
 			)}
 		</nav>
 	);
@@ -173,116 +159,14 @@ function ClaimState(props: SummaryProps): JSX.Element | null {
 	);
 }
 
-/** Inputs for one warning chip. */
-interface WarningChipProps {
-	kind: RecoveryKind;
-	/** What the chip says, its first words the state's name. */
-	children: ReactNode;
-	/** The accessible name: the state and the choice the chip opens. */
-	label: string;
-	actions: ShellActions;
-}
-
-/**
- * The warning chip as the tooltip's element: a 24px outline button.
- * @param props The merged props Base UI hands to the rendered element.
- * @returns The chip button.
- */
-function renderWarningChip(props: ComponentPropsWithRef<"button">): JSX.Element {
-	return <Button variant="outline" size="xs" {...props} className={WARNING_CHIP_CLASS} />;
-}
-
-/**
- * A warning chip that opens the recovery dialog when chosen. A warning, not
- * a refusal: the person decides what happens next.
- * @param props The recovery kind, the words and the actions.
- * @returns A chip-sized button with a tooltip naming what it opens.
- */
-function WarningChip(props: WarningChipProps): JSX.Element {
-	const { kind, actions } = props;
-	const handleClick = useCallback(() => actions.openRecovery(kind), [actions, kind]);
-	return (
-		<Tooltip>
-			<TooltipTrigger render={renderWarningChip} aria-label={props.label} onClick={handleClick}>
-				<StatusDot tone="warning" />
-				<span>{props.children}</span>
-			</TooltipTrigger>
-			<TooltipContent>Choose what happens to the note</TooltipContent>
-		</Tooltip>
-	);
-}
-
-/**
- * A board that has stopped saving, or whose note was written elsewhere. The
- * chip is the way back into the choice the notice offered.
- * @param props The flattened pane and the actions.
- * @returns The chip, or nothing when the board is saving normally.
- */
-function NoteState(props: SummaryProps & ActionsProps): JSX.Element | null {
-	const { hold, elsewhere } = props.summary;
-	if (hold) {
-		return (
-			<WarningChip
-				kind="hold"
-				label={`Not saving, ${hold.writes} changes held: choose what happens to the note`}
-				actions={props.actions}
-			>
-				Not saving · <span className="font-mono">{hold.writes}</span> held
-			</WarningChip>
-		);
-	}
-	if (elsewhere) {
-		return (
-			<WarningChip
-				kind="elsewhere"
-				label="Note written elsewhere: choose what happens to the note"
-				actions={props.actions}
-			>
-				Note written elsewhere
-			</WarningChip>
-		);
-	}
-	return null;
-}
-
 /** Inputs for the pieces that only need the actions. */
 interface ActionsProps {
 	actions: ShellActions;
 }
 
-/**
- * Open, New, Save and Clear.
- * @param props The board actions.
- * @returns Four text buttons.
- */
-function BoardActions(props: ActionsProps): JSX.Element {
-	const { actions } = props;
-	const handleOpen = useCallback(() => actions.openBoard(), [actions]);
-	const handleNew = useCallback(() => actions.createBoard(), [actions]);
-	const handleSave = useCallback(() => actions.saveBoard(), [actions]);
-	const handleClear = useCallback(() => actions.clearBoard(), [actions]);
-	return (
-		<span className="flex shrink-0 items-center gap-0.5">
-			<Button variant="ghost" size="sm" onClick={handleOpen}>
-				Open
-			</Button>
-			<Button variant="ghost" size="sm" onClick={handleNew}>
-				New
-			</Button>
-			<Button variant="ghost" size="sm" onClick={handleSave}>
-				Save
-			</Button>
-			<Button variant="ghost" size="sm" onClick={handleClear}>
-				Clear
-			</Button>
-		</span>
-	);
-}
-
 const SETTINGS_ITEMS: ReadonlyArray<{ surface: SettingsSurface; label: string }> = [
 	{ surface: "opener", label: "Opener settings" },
 	{ surface: "agent", label: "Agent settings" },
-	{ surface: "library", label: "Install library" },
 ];
 
 /** Inputs for one settings entry. */
@@ -403,11 +287,6 @@ function Header(props: HeaderProps): JSX.Element {
 			<div className="flex min-w-0 shrink items-center gap-3 px-4">
 				<ConnectionState summary={summary} />
 				<ClaimState summary={summary} />
-				<NoteState summary={summary} actions={actions} />
-			</div>
-			<Separator orientation="vertical" />
-			<div className="flex shrink-0 items-center gap-1 px-4">
-				<BoardActions actions={actions} />
 			</div>
 			<Separator orientation="vertical" />
 			<div className="flex shrink-0 items-center gap-1 px-3">

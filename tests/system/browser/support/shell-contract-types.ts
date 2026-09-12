@@ -31,7 +31,7 @@ type ThemeSnapshot = {
 	shadowlessSurfaces: boolean;
 	visibleFocus: boolean;
 	boardIdentity: string;
-	level: string;
+	variant: string;
 	connectionState: string;
 	persistenceState: string;
 	paneIdentity: string;
@@ -42,6 +42,7 @@ type ThemeSnapshot = {
 	wordmarkTracking: string;
 	fontChecks: boolean[];
 	fontResources: string[];
+	diagramFontResources: string[];
 	humanLabels: Array<{ family: string; transform: string; weight: number }>;
 	/** The navigator's section label: the kicker role, uppercase and tracked. */
 	sectionKicker: { family: string; transform: string; weight: number; size: number };
@@ -76,7 +77,6 @@ type ActivityLayout = {
 type NoticeLayout = {
 	parentIsPanes: boolean;
 	insidePanes: boolean;
-	overlapsInspector: boolean;
 	width: number;
 	copyType: ShellMetrics;
 	actionHeight: number;

@@ -3,15 +3,13 @@ import type {
 	AnyCommandContract,
 	CommandOutcomeDeclaration,
 	CommandContext,
-	HeldPolicy,
 	OutputCase,
 	PendingArtifact,
 } from "@/cli/command-contract/contract";
 import { CliUsageError } from "@/cli/command-contract/contract";
-import { HoldReportSchema } from "@/cli/command-contract/schemas";
 import { CommanderArgvParser } from "@/cli/command-contract/lib/commander-adapter";
 import { processCommandHost } from "@/cli/command-contract/lib/host";
-import { applyHeld, commitArtifact, presentResult } from "@/cli/command-contract/lib/presentation";
+import { commitArtifact, presentResult } from "@/cli/command-contract/lib/presentation";
 import { requirePrerequisite } from "@/cli/command-contract/lib/prerequisites";
 
 const commanderParser = new CommanderArgvParser();
@@ -147,20 +145,6 @@ function createCommandContext(signal: AbortSignal): CommandContext {
 }
 
 /**
- * Reads the hold the run observed, validating it only when the output policy
- * will publish it; a policy of "none" carries the observation through untouched.
- * @param heldPolicy - How this output case or outcome treats a hold.
- * @returns The hold report, or null when the board is not held.
- */
-function observedHold(heldPolicy: HeldPolicy): unknown {
-	const observedHeld = processCommandHost.held();
-	if (heldPolicy === "none" || observedHeld === null) {
-		return observedHeld;
-	}
-	return HoldReportSchema.parse(observedHeld);
-}
-
-/**
  * Validates whatever the handler staged against the case's artifact schema,
  * insisting on nothing staged when the case declares no artifact.
  * @param outputCase - The selected output case.
@@ -186,11 +170,9 @@ function publishExecution(
 ): void {
 	const outcome = selectedOutcome(contract, execution.outcome);
 	const outputCase = selectedCase(contract, input);
-	const heldPolicy = outcome?.held ?? outputCase.held;
-	const held = observedHold(heldPolicy);
-	const result = contract.result.parse(applyHeld(execution.result, held, heldPolicy));
+	const result = contract.result.parse(execution.result);
 	commitArtifact(outputCase, validatedArtifact(outputCase, execution.pendingArtifact));
-	const presentation = { outputCase, result, held, diagnostics: execution.diagnostics ?? [] };
+	const presentation = { outputCase, result, diagnostics: execution.diagnostics ?? [] };
 	if (outcome) {
 		presentResult({ ...presentation, outcome });
 		processCommandHost.setExitCode(outcome.exit);

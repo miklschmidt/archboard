@@ -7,7 +7,7 @@ import {
 	type Restore,
 	type RestoreStep,
 } from "@/ui/board-routing/restore";
-import type { GuardVerdict, OpenOutcome, WorkspacePort } from "@/ui/board-routing/contracts";
+import type { OpenOutcome, WorkspacePort } from "@/ui/board-routing/contracts";
 
 /** An open the shell has been asked for and has not answered. */
 interface HeldOpen {
@@ -25,7 +25,6 @@ interface FakeShell {
 	readonly port: WorkspacePort;
 	/** Every command the restore issued, in order. */
 	readonly applied: string[];
-	readonly blocked: string[];
 	readonly unreachable: string[];
 	/** The opens asked for and not yet answered, oldest first. */
 	readonly held: HeldOpen[];
@@ -47,7 +46,6 @@ interface FakeOptions {
 	readonly panes: readonly (readonly [string, string | null])[];
 	readonly activePaneId?: string;
 	readonly unready?: readonly string[];
-	readonly guard?: GuardVerdict;
 	readonly wanted: WorkspaceAddress;
 }
 
@@ -62,7 +60,7 @@ function address(
 	activePaneId: string | null = null,
 ): WorkspaceAddress {
 	return settledAddress({
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey })),
+		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, view: null })),
 		activePaneId,
 	});
 }
@@ -74,18 +72,21 @@ function address(
  * @returns The fake.
  */
 function fakeShell(options: FakeOptions): FakeShell {
-	const start = options.panes.map(([paneId, boardKey]) => ({ paneId, boardKey }));
+	const start = options.panes.map(([paneId, boardKey]) => ({
+		paneId,
+		boardKey,
+		view: null as string | null,
+	}));
 	const pending = {
 		panes: start.map((pane) => ({ ...pane })),
 		activePaneId: options.activePaneId ?? start[0]?.paneId ?? "A",
 	};
 	// What the last render showed, which is all the restore is allowed to see.
-	let shown: WorkspaceAddress = address(
-		start.map((pane) => [pane.paneId, pane.boardKey] as const),
-		pending.activePaneId,
-	);
+	let shown: WorkspaceAddress = settledAddress({
+		panes: start.map((pane) => ({ ...pane })),
+		activePaneId: pending.activePaneId,
+	});
 	const applied: string[] = [];
-	const blocked: string[] = [];
 	const unreachable: string[] = [];
 	const held: HeldOpen[] = [];
 	const free = ["A", "B"].find((paneId) => !pending.panes.some((pane) => pane.paneId === paneId));
@@ -106,13 +107,6 @@ function fakeShell(options: FakeOptions): FakeShell {
 		 */
 		ready: (paneId: string): boolean => !(options.unready ?? []).includes(paneId),
 		/**
-		 * What the panes say about losing their boards.
-		 * @param paneIds The panes at risk.
-		 * @returns The verdict.
-		 */
-		guard: (paneIds: readonly string[]): GuardVerdict =>
-			paneIds.length === 0 ? { kind: "clear" } : (options.guard ?? { kind: "clear" }),
-		/**
 		 * Point a pane at a board. The answer waits for the test, and the pane is
 		 * told separately, as the socket tells it.
 		 * @param paneId The pane.
@@ -126,6 +120,22 @@ function fakeShell(options: FakeOptions): FakeShell {
 			});
 		},
 		/**
+		 * Read a pane's board another way. Only a pane holding a board with views
+		 * can, and the shell's own port answers the same way for a canvas.
+		 * @param paneId The pane.
+		 * @param view The view, or null for the whole variant.
+		 * @returns Whether the reading changed.
+		 */
+		read: (paneId: string, view: string | null): boolean => {
+			applied.push(`read:${paneId}:${view ?? ""}`);
+			const pane = pending.panes.find((one) => one.paneId === paneId);
+			if (pane === undefined || pane.view === view) {
+				return false;
+			}
+			pane.view = view;
+			return true;
+		},
+		/**
 		 * Open the second pane, which arrives on scratch and focused.
 		 * @returns Whether there was a pane to open.
 		 */
@@ -134,7 +144,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 			if (free === undefined || pending.panes.some((pane) => pane.paneId === free)) {
 				return false;
 			}
-			pending.panes.push({ paneId: free, boardKey: "scratch" });
+			pending.panes.push({ paneId: free, boardKey: "scratch", view: null });
 			pending.activePaneId = free;
 			return true;
 		},
@@ -167,13 +177,6 @@ function fakeShell(options: FakeOptions): FakeShell {
 			return true;
 		},
 		/**
-		 * A pane refused.
-		 * @param block The refusal.
-		 */
-		reportBlocked: (block): void => {
-			blocked.push(`${block.kind}:${block.paneId}`);
-		},
-		/**
 		 * Boards nothing could reach.
 		 * @param boardKeys The boards.
 		 */
@@ -185,7 +188,6 @@ function fakeShell(options: FakeOptions): FakeShell {
 	const shell: FakeShell = {
 		port,
 		applied,
-		blocked,
 		unreachable,
 		held,
 		pending,
@@ -205,6 +207,9 @@ function fakeShell(options: FakeOptions): FakeShell {
 					if (step.kind === "add") {
 						return port.addPane();
 					}
+					if (step.kind === "read") {
+						return port.read(step.paneId, step.view);
+					}
 					return step.kind === "focus" ? port.selectPane(step.paneId) : false;
 				},
 				/**
@@ -221,10 +226,10 @@ function fakeShell(options: FakeOptions): FakeShell {
 		},
 		/** Commit what the commands queued, as a render does. */
 		render: (): void => {
-			shown = address(
-				pending.panes.map((pane) => [pane.paneId, pane.boardKey] as const),
-				pending.activePaneId,
-			);
+			shown = settledAddress({
+				panes: pending.panes.map((pane) => ({ ...pane })),
+				activePaneId: pending.activePaneId,
+			});
 			shell.reconcile();
 		},
 		/**
@@ -284,7 +289,7 @@ test("a restore going back to one pane closes the other", () => {
 	shell.render();
 	expect(shell.applied).toEqual(["close:A"]);
 	expect(shell.restore.done).toBe(true);
-	expect(shell.port.displayed.panes).toEqual([{ paneId: "B", boardKey: "billing" }]);
+	expect(shell.port.displayed.panes).toEqual([{ paneId: "B", boardKey: "billing", view: null }]);
 });
 
 test("a command the shell refuses is taken off the plan without waiting for a render", () => {
@@ -296,26 +301,10 @@ test("a command the shell refuses is taken off the plan without waiting for a re
 	expect(shell.restore.done).toBe(true);
 });
 
-test("a pane that refuses stops the whole restore before anything is applied", () => {
-	const shell = fakeShell({
-		panes: [
-			["A", "payments"],
-			["B", "billing"],
-		],
-		guard: { kind: "hold", paneId: "B" },
-		wanted: address([["A", "ledger"]]),
-	});
-	shell.reconcile();
-	expect(shell.applied).toEqual([]);
-	expect(shell.blocked).toEqual(["hold:B"]);
-	expect(shell.restore.done).toBe(true);
-});
-
 test("an address naming no panes asks for nothing, so a bare page keeps its workspace", () => {
 	const shell = fakeShell({ panes: [["A", "payments"]], wanted: address([]) });
 	shell.reconcile();
 	expect(shell.applied).toEqual([]);
-	expect(shell.blocked).toEqual([]);
 	expect(shell.restore.done).toBe(true);
 });
 
@@ -334,4 +323,35 @@ test("a restore waits for a pane that has not reached the server rather than ope
 	shell.reconcile();
 	expect(shell.applied).toEqual([]);
 	expect(shell.restore.done).toBe(false);
+});
+
+test("an address that asks for another view reads the board again without reopening it", () => {
+	// The pane is already on the board; only the explanation on screen is wrong.
+	const shell = fakeShell({
+		panes: [["A", "pipeline"]],
+		wanted: settledAddress({
+			panes: [{ paneId: "A", boardKey: "pipeline", view: "k3f9" }],
+			activePaneId: "A",
+		}),
+	});
+	shell.reconcile();
+	expect(shell.applied).toEqual(["read:A:k3f9"]);
+	// Nothing was opened, so nothing is in the air.
+	expect(shell.held).toEqual([]);
+	shell.render();
+	expect(shell.restore.done).toBe(true);
+	expect(shell.port.displayed.panes[0]?.view).toBe("k3f9");
+});
+
+test("a pane being pointed at another board is not read on the way there", () => {
+	// The view belongs to the board it is going to, and is settled once it lands.
+	const shell = fakeShell({
+		panes: [["A", "payments"]],
+		wanted: settledAddress({
+			panes: [{ paneId: "A", boardKey: "semantic:pipeline", view: "k3f9" }],
+			activePaneId: "A",
+		}),
+	});
+	shell.reconcile();
+	expect(shell.applied).toEqual(["open:A:semantic:pipeline"]);
 });

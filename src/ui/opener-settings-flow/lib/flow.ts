@@ -16,7 +16,7 @@ import {
 	resetOpenerSettings,
 	saveOpenerSettings,
 	testOpenerSettings,
-} from "@/ui/canvas/api";
+} from "@/ui/code-target";
 import { type DialogError } from "@/ui/dialog-parts";
 
 /** The server calls the flow makes. */

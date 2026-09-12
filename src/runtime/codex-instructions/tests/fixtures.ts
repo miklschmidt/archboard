@@ -4,7 +4,8 @@ const contextFixture: ArchboardContext = {
 	schema: 1,
 	paneId: "pane-1",
 	board: {
-		note: "vault/architecture.excalidraw.md",
+		name: "Ingest pipeline",
+		key: "ingest pipeline",
 		version: 42,
 		cursor: "cursor-1",
 	},
@@ -34,9 +35,37 @@ const contextFixture: ArchboardContext = {
 		paneId: "pane-1",
 		capturedAtMs: 101,
 	},
+	variant: {
+		id: "7c40IV7N",
+		name: "Queued ingest",
+		lifecycle: "draft",
+	},
+	view: {
+		id: "aB3dEf",
+		name: "Service overview",
+		grammar: "architecture",
+	},
 	selection: {
-		elementIds: ["element-1", "element-2"],
+		count: 2,
+		subjects: [
+			{ kind: "node", id: "n1", name: "Gateway" },
+			{ kind: "edge", id: "e1", name: null },
+		],
 		capturedAtMs: 102,
+	},
+	reconciliation: {
+		required: true,
+		count: 1,
+		blockedBy: null,
+		issues: [
+			{
+				subject: "n1",
+				what: "node",
+				kind: "competing-field",
+				field: "name",
+				repair: "Say which name this proposal means, or write a third answer.",
+			},
+		],
 	},
 	claim: {
 		holder: "human",
@@ -52,7 +81,7 @@ const contextFixture: ArchboardContext = {
 };
 
 const instructionByteMutations = {
-	bom: (value: string) => `\uFEFF${value}`,
+	bom: (value: string) => `﻿${value}`,
 	crlf: (value: string) => value.replaceAll("\n", "\r\n"),
 	missingTerminalLf: (value: string) => value.slice(0, -1),
 	extraTerminalLf: (value: string) => `${value}\n`,

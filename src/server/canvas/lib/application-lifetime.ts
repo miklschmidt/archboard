@@ -45,31 +45,11 @@ interface CanvasApplicationEvent {
 
 interface CanvasApplicationLifetimeOptions {
 	readonly resources: readonly CanvasApplicationResource[];
-	readonly heldBoards?: () => readonly string[];
 	/** Stop admitting writes and settle every admitted write. */
 	readonly quiesce?: () => Promise<void> | void;
-	/** Restore write admission when the authoritative hold check refuses stop. */
+	/** Restore write admission when quiescing fails and the canvas stays up. */
 	readonly resume?: () => Promise<void> | void;
 	readonly observe?: (event: CanvasApplicationEvent) => void;
-}
-
-class CanvasApplicationHeldError extends Error {
-	readonly code = "CANVAS_HELD";
-
-	/**
-	 * Refuse a stop that would lose work held only in this process, naming the
-	 * boards and the three outcomes that resolve a hold (ADR 0006).
-	 * @param boards The held boards.
-	 */
-	constructor(readonly boards: readonly string[]) {
-		super(
-			[
-				`Canvas shutdown refused because ${boards.length === 1 ? "this board is" : "these boards are"} held in process memory: ${boards.map((board) => `"${board}"`).join(", ")}.`,
-				"Resolve every hold first: reload takes the note and discards the canvas copy; overwrite keeps the canvas copy and replaces the note; elsewhere saves both under separate names.",
-			].join(" "),
-		);
-		this.name = "CanvasApplicationHeldError";
-	}
 }
 
 class CanvasApplicationStartupCancelledError extends Error {
@@ -244,12 +224,6 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 		emit("phase");
 	};
 	/**
-	 * Which boards are held in this process's memory, in a stable order.
-	 * @returns The held board keys.
-	 */
-	const holds = (): string[] => [...(options.heldBoards?.() ?? [])].toSorted();
-
-	/**
 	 * Stop one resource, forcing it if it has a grace and does not settle within
 	 * it. forceStop terminalizes the resource; the graceful stop still has to
 	 * settle so no cleanup work is left running past this boundary.
@@ -417,9 +391,9 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 			return startPromise;
 		},
 		/**
-		 * Stop the canvas: refuse while a board is held only in memory, quiesce
-		 * writes, then unwind every resource. A refused stop leaves the canvas
-		 * running and admitting writes again.
+		 * Stop the canvas: quiesce writes, then unwind every resource. A stop that
+		 * fails before teardown leaves the canvas running and admitting writes
+		 * again.
 		 * @param reason Why the canvas is stopping.
 		 * @returns Resolves once it has stopped.
 		 */
@@ -437,20 +411,11 @@ function createCanvasApplicationLifetime(options: CanvasApplicationLifetimeOptio
 				return Promise.reject(new Error(`Canvas application cannot stop from ${phase}.`));
 			}
 
-			const preflight = holds();
-			if (preflight.length > 0) {
-				return Promise.reject(new CanvasApplicationHeldError(preflight));
-			}
-
 			let teardownStarted = false;
 			setPhase("quiescing");
 			const attempt = (async () => {
 				try {
 					await options.quiesce?.();
-					const authoritative = holds();
-					if (authoritative.length > 0) {
-						throw new CanvasApplicationHeldError(authoritative);
-					}
 					teardownStarted = true;
 					startup.abort(reason);
 					setPhase("stopping");
@@ -487,7 +452,6 @@ export {
 	type CanvasApplicationResource,
 	type CanvasApplicationEvent,
 	type CanvasApplicationLifetimeOptions,
-	CanvasApplicationHeldError,
 	CanvasApplicationStartupCancelledError,
 	createCanvasApplicationLifetime,
 };

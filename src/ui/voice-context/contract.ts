@@ -23,6 +23,9 @@ type VoiceContextDeliveryOutcome = (typeof VOICE_CONTEXT_DELIVERY_OUTCOMES)[numb
 type VoiceContextProvenance = "live" | "recovered";
 type VoiceContextConnection = "connected" | "disconnected";
 
+/** What kind of thing a selected identity names, in the board's own vocabulary. */
+type VoiceContextSubjectKind = "node" | "edge" | "flow" | "step" | "view" | "walkthrough" | "beat";
+
 /** The complete JSON value encoded by the canonical semantic brief. */
 interface VoiceContextCanonicalBrief {
 	readonly source: "semantic_context";
@@ -33,10 +36,69 @@ interface VoiceContextCanonicalBrief {
 		readonly threadId: string | null;
 		readonly realtimeSessionId: string | null;
 	};
-	readonly board: { readonly key: string; readonly note: string; readonly version: number | null };
+	readonly board: {
+		readonly key: string;
+		readonly name: string;
+		readonly file: string;
+		readonly version: number | null;
+	};
 	readonly pane: { readonly paneId: string; readonly focused: boolean };
 	readonly version: number | null;
-	readonly selection: readonly string[];
+	/** What the pane is reading, in the board's own identities (ADR 0023). */
+	readonly architecture: {
+		readonly variant: {
+			readonly id: string;
+			readonly name: string;
+			readonly lifecycle: "current" | "draft" | "historical";
+			readonly against: string | null;
+		} | null;
+		readonly view: {
+			readonly id: string;
+			readonly name: string;
+			readonly grammar: "architecture" | "data-flow";
+		} | null;
+		/** How many were picked out, then as many as the brief had room for. */
+		readonly selection: {
+			readonly count: number;
+			readonly subjects: readonly {
+				readonly kind: VoiceContextSubjectKind;
+				readonly id: string;
+				readonly name: string | null;
+			}[];
+		};
+		readonly differences: {
+			readonly added: number;
+			readonly removed: number;
+			readonly changed: number;
+			readonly subjects: readonly {
+				readonly change: "added" | "removed" | "changed" | "unchanged";
+				readonly kind: VoiceContextSubjectKind;
+				readonly id: string;
+				readonly name: string | null;
+			}[];
+		} | null;
+		/**
+		 * What the variant is waiting on. `required` and `count` are the fact and
+		 * survive truncation; `issues` is what fitted, and may be shorter or empty.
+		 */
+		readonly reconciliation: {
+			readonly required: boolean;
+			readonly count: number;
+			readonly blockedBy: string | null;
+			readonly issues: readonly {
+				readonly subject: string;
+				readonly what: string;
+				readonly kind:
+					| "competing-field"
+					| "competing-order"
+					| "deleted-and-changed"
+					| "reference-lost"
+					| "left-empty";
+				readonly field: string | null;
+				readonly repair: string;
+			}[];
+		};
+	};
 	readonly claim: {
 		readonly holder: "human" | "agent" | "none";
 		readonly doing: string | null;

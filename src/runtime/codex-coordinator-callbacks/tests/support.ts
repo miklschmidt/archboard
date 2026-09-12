@@ -212,9 +212,26 @@ function semanticInput(ids: Identities, active: boolean): SemanticContextInput {
 			threadId: ids.coordinator,
 			realtimeSessionId: active ? ids.wireSessionId : null,
 		},
-		board: { key: "architecture", note: "boards/architecture.md", version: 7 },
+		board: {
+			key: "architecture",
+			name: "Architecture",
+			file: "boards/architecture.semantic.json",
+			version: 7,
+		},
 		pane: { paneId: "pane-a", focused: true },
-		selection: ["element-a", "element-b"],
+		architecture: {
+			variant: { id: "v1", name: "Current", lifecycle: "current", against: null },
+			view: null,
+			selection: {
+				count: 2,
+				subjects: [
+					{ kind: "node" as const, id: "element-a", name: "Gateway" },
+					{ kind: "edge" as const, id: "element-b", name: null },
+				],
+			},
+			differences: null,
+			reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
+		},
 		doing: "mapping",
 		cursor: { feedId: "feed-1", sequence: 7 },
 		description: "Architecture board",
@@ -249,7 +266,16 @@ function semanticSources(ids: Identities, active: boolean): SemanticSources {
 		change = event;
 	});
 	const focus = publisher.publishPaneFocus(input);
-	const selection = publisher.publishPaneSelection({ ...input, selection: ["element-c"] });
+	const selection = publisher.publishPaneSelection({
+		...input,
+		architecture: {
+			...input.architecture,
+			selection: {
+				count: 1,
+				subjects: [{ kind: "node" as const, id: "element-c", name: "Ledger" }],
+			},
+		},
+	});
 	for (const listener of listeners) {
 		listener({
 			cursor: 7,
@@ -258,6 +284,7 @@ function semanticSources(ids: Identities, active: boolean): SemanticSources {
 			origin: "human",
 			significance: "structural",
 			text: "A structural change.",
+			by: null,
 		});
 	}
 	if (change === null) {

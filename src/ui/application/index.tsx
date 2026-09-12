@@ -1,32 +1,32 @@
-// The application root: the sessions, the listing, the dialogs, the notices,
-// the workbench and the presentation composed over the shell. The sessions,
-// the transport, the runtime and the controllers are the state; this file
-// only connects them.
+// The application root: the pane sessions, the listing, the notices, the
+// workbench and the presentation composed over the shell. The sessions, the
+// transport, the runtime and the controllers are the state; this file only
+// connects them.
 
-import { useCallback, useEffect, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
 import { LiveBinding } from "@/ui/application/lib/live-binding";
 import { AgentSettingsHost } from "@/ui/application/components/AgentSettingsHost";
-import { ApplicationPane } from "@/ui/application/components/ApplicationPane";
-import { BoardDialogsHost } from "@/ui/application/components/BoardDialogsHost";
 import {
 	codeTargetShellNotice,
 	failureNotice,
 	infoNotice,
-	noteNotices,
 	presentationNotice,
 } from "@/ui/application/notices";
 import { OpenerSettingsHost } from "@/ui/application/components/OpenerSettingsHost";
-import { dialogEvents } from "@/ui/application/lib/dialog-events";
-import { openPendingRecovery, paneEvents } from "@/ui/application/lib/pane-events";
+import { paneEvents } from "@/ui/application/lib/pane-events";
 import { heldBoardKeys, recordFor } from "@/ui/application/pane-records";
 import { createShellActions } from "@/ui/application/lib/shell-actions";
-import { addressingOver, openingPaneList } from "@/ui/application/lib/workspace-port";
+import {
+	addressingOver,
+	announcingViews,
+	openingPaneList,
+} from "@/ui/application/lib/workspace-port";
 import { assembleShellView } from "@/ui/application/shell-view";
 import { applyTheme, initialTheme } from "@/ui/application/lib/theme";
-import { useBoardDialogs, type BoardDialogs } from "@/ui/application/hooks/use-board-dialogs";
-import { useMountedPreviews } from "@/ui/application/hooks/use-mounted-previews";
+import { usePaneReadings } from "@/ui/application/hooks/use-pane-reading";
+import { usePaneViews } from "@/ui/application/hooks/use-pane-views";
 import { useReleasedBoards } from "@/ui/application/hooks/use-released-boards";
 import {
 	shellPresentationOf,
@@ -37,30 +37,23 @@ import { useNotices, type NoticeStack } from "@/ui/application/hooks/use-notices
 import { usePanes, type Panes } from "@/ui/application/hooks/use-panes";
 import { useAgentActivity, type AgentActivity } from "@/ui/application/hooks/use-agent-activity";
 import { useReducedMotion } from "@/ui/application/hooks/use-reduced-motion";
-import { useStageEvents, type EscapeOrigin } from "@/ui/application/hooks/use-stage-events";
+import { useStageEvents } from "@/ui/application/hooks/use-stage-events";
 import { useWorkbench } from "@/ui/application/hooks/use-workbench";
 import { useWorkspaceAddressing } from "@/ui/application/hooks/use-workspace-addressing";
-import { previewRenderer } from "@/ui/application/components/BoardPreviewSlot";
 import { PresentationVoiceControls } from "@/ui/application/components/PresentationVoiceControls";
 import { WorkbenchDockBody } from "@/ui/application/components/WorkbenchDockBody";
 import { WorkbenchDockHeader } from "@/ui/application/components/WorkbenchDockHeader";
 import type { WorkbenchOwners } from "@/ui/application/lib/workbench-owners";
 import type { DoingEntry } from "@/ui/types";
-import {
-	BoardCatalogProvider,
-	useBoardCatalog,
-	useScratchBoards,
-	type BoardCatalog,
-} from "@/ui/board-catalog";
-import { useLibrary, type LibraryController } from "@/ui/board-library";
+import { BoardCatalogProvider, useBoardCatalog, type BoardCatalog } from "@/ui/board-catalog";
 import { useOpeningAddress, type WorkspaceAddressing } from "@/ui/board-routing";
 import { TooltipProvider } from "@/ui/components/tooltip";
+import { boardAddressOf, boardKeyFor } from "@/ui/semantic-board-canvas";
 import {
 	ActivityList,
 	SETTINGS_TRIGGER_ID,
 	Shell,
 	type SettingsSurface,
-	type RenderBoardPreview,
 	type ShellActions,
 	type ShellView,
 	type ThemeChoice,
@@ -75,10 +68,6 @@ function settingsTrigger(): HTMLElement | null {
 	return document.getElementById(SETTINGS_TRIGGER_ID);
 }
 
-/** The one notice the library menu item raises when nothing is offered. */
-const LIBRARY_HINT =
-	"Open a library on libraries.excalidraw.com and choose “Add to Excalidraw”; it returns to this tab and asks before installing.";
-
 /**
  * The theme as state, applied to the document.
  * @returns The theme and its setter.
@@ -89,49 +78,6 @@ function useTheme(): [ThemeChoice, (theme: ThemeChoice) => void] {
 		applyTheme(theme);
 	}, [theme]);
 	return [theme, setTheme];
-}
-
-/**
- * The mounted canvases, one per pane; each is the pane's own element and is
- * never remounted by a layout change.
- * @param panes The panes.
- * @param theme The theme.
- * @returns The canvases by pane id.
- */
-function useCanvases(panes: Panes, theme: ThemeChoice): Readonly<Record<string, ReactNode>> {
-	const { list, host, handles } = panes;
-	return useMemo(() => {
-		const canvases: Record<string, ReactNode> = {};
-		list.panes.forEach((entry, index) => {
-			canvases[entry.paneId] = (
-				<ApplicationPane
-					key={entry.paneId}
-					paneId={entry.paneId}
-					primary={index === 0}
-					focused={entry.paneId === list.activePaneId}
-					theme={theme}
-					host={host}
-					handles={handles}
-				/>
-			);
-		});
-		return canvases;
-	}, [list, theme, host, handles]);
-}
-
-/**
- * Push the shell's palette into every pane whenever it changes or a pane mounts.
- * @param panes The panes.
- * @param library The library.
- */
-function useLibrarySync(panes: Panes, library: LibraryController): void {
-	const { handles } = panes;
-	const { items } = library;
-	useEffect(() => {
-		for (const session of handles.sessions()) {
-			session.applyLibrary(items);
-		}
-	}, [handles, items]);
 }
 
 /**
@@ -152,26 +98,6 @@ function usePresentationTransfer(panes: Panes, fullscreen: Fullscreen): void {
 	}, [list, target, paneRemoved]);
 }
 
-/**
- * Return keyboard focus to the pane that was presented when a presentation
- * ends, however it ended: the exit control, the shortcut, or the browser's
- * own Escape. The exit control goes with the presentation, so without this
- * the keyboard would be stranded on the body. The pane, not the present
- * control, takes it: the person was looking at that canvas, and a control
- * focused by script would pop its tooltip over its neighbours.
- * @param presentedPaneId The presented pane, or null in the workspace.
- */
-function usePresentationFocusReturn(presentedPaneId: string | null): void {
-	const previous = useRef<string | null>(null);
-	useEffect(() => {
-		const ended = previous.current;
-		if (ended !== null && presentedPaneId === null) {
-			document.querySelector<HTMLElement>(`section[aria-label="Pane ${ended}"]`)?.focus();
-		}
-		previous.current = presentedPaneId;
-	}, [presentedPaneId]);
-}
-
 /** The workbench's places in the shell. */
 interface WorkbenchSlots {
 	header: ReactNode;
@@ -183,8 +109,7 @@ interface WorkbenchSlots {
 
 /**
  * The active pane's recent activity, rendered once for the workbench's
- * session column or, without a workbench, the dock's own column. The list
- * owns how much of the pane's `doing` it shows.
+ * session column or, without a workbench, the dock's own column.
  * @param doing Every `doing` line the active pane holds.
  * @returns The list, or null when there is nothing to show.
  */
@@ -222,11 +147,8 @@ interface ShellViewSources {
 	readonly theme: ThemeChoice;
 	readonly panes: Panes;
 	readonly catalog: BoardCatalog;
-	/** The board keys that turned out to be scratch. */
-	readonly scratchKeys: ReadonlySet<string>;
-	/** How many open boards could not be asked whether they have a name. */
-	readonly scratchUnreadable: number;
-	readonly renderPreview: RenderBoardPreview;
+	/** The mounted pane per pane id. */
+	readonly mounted: Readonly<Record<string, ReactNode>>;
 	readonly fullscreen: Fullscreen;
 	readonly notices: NoticeStack;
 	readonly activity: AgentActivity;
@@ -238,13 +160,7 @@ interface ShellViewSources {
  * @returns The view.
  */
 function useShellView(sources: ShellViewSources): ShellView {
-	const { theme, panes, catalog, fullscreen, notices, activity } = sources;
-	const canvases = useCanvases(panes, theme);
-	// The note states are read off the records; only event notices are state.
-	const allNotices = useMemo(
-		() => [...noteNotices(panes.list, panes.records), ...notices.notices],
-		[panes.list, panes.records, notices.notices],
-	);
+	const { theme, panes, catalog, fullscreen, notices, activity, mounted } = sources;
 	const presentedPaneId = fullscreen.snapshot.paneId;
 	const presentedConnected =
 		presentedPaneId !== null && recordFor(panes.records, presentedPaneId).status.connected;
@@ -254,28 +170,22 @@ function useShellView(sources: ShellViewSources): ShellView {
 				theme,
 				list: panes.list,
 				records: panes.records,
-				canvases,
+				panes: mounted,
 				boards: catalog.listing,
 				boardsError: catalog.error,
 				boardsLoading: catalog.loading,
-				scratchKeys: sources.scratchKeys,
-				scratchUnreadable: sources.scratchUnreadable,
-				renderPreview: sources.renderPreview,
 				presentation: shellPresentationOf(fullscreen.snapshot, presentedConnected),
-				notices: allNotices,
+				notices: notices.notices,
 				agentActivity: activity.map,
 			}),
 		[
 			theme,
 			panes,
-			canvases,
+			mounted,
 			catalog,
-			sources.scratchKeys,
-			sources.scratchUnreadable,
-			sources.renderPreview,
 			fullscreen.snapshot,
 			presentedConnected,
-			allNotices,
+			notices.notices,
 			activity.map,
 		],
 	);
@@ -324,28 +234,29 @@ function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
 
 /**
  * The root component's body, inside the providers it needs.
- * @returns The shell, the dialogs and the workbench.
+ * @returns The shell, the settings dialogs and the workbench.
  */
 function ApplicationBody(): JSX.Element {
 	const [theme, setTheme] = useTheme();
 	const reducedMotion = useReducedMotion();
 	const notices = useNotices();
-	const { raise } = notices;
-	const onLibraryError = useCallback(
-		(message: string): void => raise(failureNotice("library", "Library", message)),
-		[raise],
-	);
-	const library = useLibrary({ onError: onLibraryError });
 	const [settings, setSettings] = useState<SettingsSurface | null>(null);
 	const closeSettings = useCallback((): void => setSettings(null), []);
 	const openAgentSettings = useCallback((): void => setSettings("agent"), []);
 
 	// The address the tab was opened on mounts the panes, so a restored
-	// comparison has both canvases in its first render rather than growing one.
+	// comparison has both panes in its first render rather than growing one.
 	const opening = useOpeningAddress();
 	const panes = usePanes(useCallback(() => openingPaneList(opening), [opening]));
+	const paneReadings = usePaneReadings();
 	const [addressBinding] = useState(() => new LiveBinding<WorkspaceAddressing>());
 	const addressing = useMemo(() => addressingOver(addressBinding), [addressBinding]);
+	// Choosing a way of reading a board is the person's own move, so it is
+	// announced and the address bar keeps it.
+	const readings = useMemo(
+		() => announcingViews(paneReadings, addressing),
+		[paneReadings, addressing],
+	);
 	const heldKeys = useMemo(
 		() =>
 			heldBoardKeys(
@@ -355,16 +266,10 @@ function ApplicationBody(): JSX.Element {
 		[panes.records, panes.list],
 	);
 	const catalog = useBoardCatalog();
-	const scratch = useScratchBoards(heldKeys);
-	const mountedPreviews = useMountedPreviews(panes.handles);
 	useReleasedBoards(heldKeys, catalog);
-	const holding = useMemo(() => new Set(heldKeys), [heldKeys]);
-	const renderPreview = useMemo(
-		() => previewRenderer(mountedPreviews, holding, theme),
-		[mountedPreviews, holding, theme],
-	);
 	const agentActivity = useAgentActivity();
 	const workbench = useWorkbench(panes.handles, panes.list.activePaneId, openAgentSettings);
+	const { raise } = notices;
 	// A refused exit stays with the presentation, where the person is; a
 	// refused entry becomes a notice in the workspace they are still in.
 	const onRefused = useCallback(
@@ -376,53 +281,15 @@ function ApplicationBody(): JSX.Element {
 		[raise],
 	);
 	const fullscreen = useFullscreen({ onRefused });
-	// What a closing dialog wakes exists only once the dialogs do; bound below.
-	const [afterDialogClose] = useState(() => new LiveBinding<() => void>());
-	// The dialogs, reachable from the events they themselves are built from.
-	const [dialogsBinding] = useState(() => new LiveBinding<BoardDialogs>());
-	const events = useMemo(
-		() =>
-			dialogEvents({
-				panes,
-				notices,
-				catalog,
-				addressing,
-				dialogs: dialogsBinding,
-				afterClose: afterDialogClose,
-			}),
-		[panes, notices, catalog, addressing, dialogsBinding, afterDialogClose],
-	);
-	const dialogs = useBoardDialogs(events);
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
-	useWorkspaceAddressing({ panes, dialogs, notices }, addressBinding);
+	useWorkspaceAddressing({ panes, notices, readings }, addressBinding);
 	usePresentationTransfer(panes, fullscreen);
-	usePresentationFocusReturn(fullscreen.snapshot.paneId);
-	useLibrarySync(panes, library);
 	// Bound each render, after the owners the events reach exist.
-	panes.bindEvents(
-		paneEvents({
-			addressing,
-			notices,
-			library,
-			catalog,
-			previews: mountedPreviews,
-			workbench,
-			activity: agentActivity,
-			setTheme,
-			panes,
-			dialogs,
-		}),
-	);
-	dialogsBinding.bind(dialogs);
-	afterDialogClose.bind(() => openPendingRecovery({ panes, dialogs }));
+	panes.bindEvents(paneEvents({ notices, catalog, readings, workbench, activity: agentActivity }));
 
 	const openSettings = useCallback(
 		(surface: SettingsSurface): void => {
-			if (surface === "library" && library.pending === null) {
-				notices.raise(infoNotice("library", "Install library", LIBRARY_HINT));
-				return;
-			}
 			if (surface === "agent" && workbench.owners === null) {
 				notices.raise(
 					failureNotice(
@@ -435,7 +302,7 @@ function ApplicationBody(): JSX.Element {
 			}
 			setSettings(surface);
 		},
-		[library.pending, notices, workbench.owners],
+		[notices, workbench.owners],
 	);
 	const actions = useMemo<ShellActions>(
 		() =>
@@ -444,39 +311,38 @@ function ApplicationBody(): JSX.Element {
 				addressing,
 				panes,
 				catalog,
-				dialogs,
 				notices,
 				fullscreen,
 				openSettings,
 			}),
-		[setTheme, addressing, panes, catalog, dialogs, notices, fullscreen, openSettings],
+		[setTheme, addressing, panes, catalog, notices, fullscreen, openSettings],
 	);
+	// Which variant of its board a pane shows is part of the board key, so
+	// asking for another one is asking the shell to show a different board.
+	const onVariantChange = useCallback(
+		(paneId: string, variant: string | null): void => {
+			const shown = recordFor(panes.records, paneId).status.boardKey;
+			const address = boardAddressOf(shown);
+			if (address !== null) {
+				// This pane, not whichever has focus: the person chose a variant of
+				// the board in front of them, and focus follows the pointer.
+				actions.selectBoard(boardKeyFor(address.board, variant), paneId);
+			}
+		},
+		[actions, panes.records],
+	);
+	const mounted = usePaneViews({ panes, theme, readings, reducedMotion, onVariantChange });
 	const view = useShellView({
 		theme,
 		panes,
 		catalog,
-		scratchKeys: scratch.keys,
-		scratchUnreadable: scratch.unreadable,
-		renderPreview,
+		mounted,
 		fullscreen,
 		notices,
 		activity: agentActivity,
 	});
-	const pathFocused = view.pathFocus.kind === "connected";
 	const stageEvents = useMemo(
 		() => ({
-			/**
-			 * Escape leaves path focus; inside the inspector, with no focus to
-			 * leave, it clears the selection and so closes the inspector.
-			 * @param origin Where the key was pressed.
-			 */
-			onEscape: (origin: EscapeOrigin): void => {
-				if (pathFocused) {
-					actions.exitPathFocus();
-				} else if (origin === "inspector") {
-					actions.dismissSelection();
-				}
-			},
 			/** The present shortcut toggles the presentation of the active pane. */
 			onPresentShortcut: (): void => {
 				if (fullscreen.snapshot.paneId === null) {
@@ -493,18 +359,11 @@ function ApplicationBody(): JSX.Element {
 				panes.select(paneId);
 			},
 		}),
-		[actions, panes, fullscreen.snapshot.paneId, pathFocused],
+		[actions, panes, fullscreen.snapshot.paneId],
 	);
 	useStageEvents(fullscreen.stage, stageEvents);
 	const activity = useActivity(panes.active.status.doing);
 	const slots = useWorkbenchSlots(workbench.owners, reducedMotion, activity);
-	const levels = useMemo(
-		() =>
-			[
-				...new Set(catalog.listing.boards.flatMap((board) => board.identity.level ?? [])),
-			].toSorted(),
-		[catalog.listing],
-	);
 	return (
 		<TooltipProvider>
 			<Shell
@@ -515,13 +374,6 @@ function ApplicationBody(): JSX.Element {
 				dockBody={slots.body}
 				dockActivity={slots.activity}
 				attachStage={fullscreen.attachStage}
-			/>
-			<BoardDialogsHost
-				dialogs={dialogs}
-				boards={catalog.loading ? null : catalog.listing}
-				levels={levels}
-				elsewhere={panes.active.status.writtenElsewhere}
-				library={library}
 			/>
 			<SettingsHosts
 				surface={settings}
@@ -536,7 +388,7 @@ function ApplicationBody(): JSX.Element {
 /**
  * The root component. The board cache is above everything that reads a board
  * resource, and is made once for the life of the tab (TASK-167).
- * @returns The shell inside its providers, with the dialogs and the workbench.
+ * @returns The shell inside its providers, with the workbench.
  */
 function Application(): JSX.Element {
 	return (

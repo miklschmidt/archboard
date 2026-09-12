@@ -59,17 +59,17 @@ describe("codex thread context delivery", () => {
 		expect(Object.isFrozen(result.event)).toBe(true);
 	});
 
-	test("does not send agent-only or cosmetic events", async () => {
+	test("does not send this pane's own change, or a cosmetic one", async () => {
 		const harness = createHarness();
 
-		const agent = await harness.delivery.deliver(harness.events({ origin: "agent" }));
+		const mine = await harness.delivery.deliver(harness.events({ origin: "agent", by: PANE_ID }));
 		const cosmetic = await harness.delivery.deliver(
 			harness.events({ sequence: 2, significance: "cosmetic" }),
 		);
 
-		expect(agent).toMatchObject({
+		expect(mine).toMatchObject({
 			outcome: "not_delivered",
-			reason: "agent_only",
+			reason: "own_change",
 			attempted: false,
 		});
 		expect(cosmetic).toMatchObject({
@@ -78,6 +78,33 @@ describe("codex thread context delivery", () => {
 			attempted: false,
 		});
 		expect(harness.received).toHaveLength(0);
+	});
+
+	test("sends an agent's change made by somebody other than this pane", async () => {
+		const harness = createHarness();
+
+		// The news a thread most needs: what it was told has stopped being true.
+		// Under the old rule every agent change was dropped, so after ADR 0023 —
+		// where a person never writes a board — nothing was ever delivered at all.
+		const result = await harness.delivery.deliver(
+			harness.events({ origin: "agent", by: "pane-somebody-else" }),
+		);
+
+		expect(result).toMatchObject({ outcome: "delivered", attempted: true });
+		expect(harness.received).toHaveLength(1);
+	});
+
+	test("sends a change nobody can be attributed rather than guessing it is mine", async () => {
+		const harness = createHarness();
+
+		// An agent working without a claim gets a fresh identity per write on
+		// purpose (ADR 0016), so its writes cannot be recognised later. Delivering
+		// one is redundancy the thread is told how to handle; dropping it would be
+		// the silence this check exists to prevent.
+		const result = await harness.delivery.deliver(harness.events({ origin: "agent", by: null }));
+
+		expect(result).toMatchObject({ outcome: "delivered", attempted: true });
+		expect(harness.received).toHaveLength(1);
 	});
 
 	test("refuses an unbound link and every inspect-only safety condition", async () => {

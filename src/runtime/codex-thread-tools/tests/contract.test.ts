@@ -29,7 +29,7 @@ import {
 
 const EXPECTED_MANIFEST_SHA256 = "df0fc2b1b33d985a7b84e54431162d6c00a3da0f8cecd98a18730e55bc7b272e";
 const EXPECTED_WORKHORSE_SHA256 =
-	"257b4ab944737418ee0713b4a748405446f8bc009d0dfc4557b099cd2c1038e6";
+	"1415abc622da520ab5b730cd2085af0d603dcd49b39c6519ebecc59aa195c48e";
 
 function expectDeepFrozen(value: unknown): void {
 	if (typeof value !== "object" || value === null) {

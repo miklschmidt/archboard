@@ -282,8 +282,6 @@ export const productionPane = (
 	paneId,
 	primary,
 	focused,
-	elementCount: 0,
 	board: "scratch",
 	rect: { x: focused ? 640 : 0, y: 0, width: 640, height: 800 },
-	viewport: { x: 0, y: 0, width: 640, height: 800, zoom: 1 },
 });

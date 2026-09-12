@@ -6,11 +6,8 @@ import { useQuery, useQueryClient, type QueryClient, type QueryKey } from "@tans
 import { useMemo } from "react";
 
 import { composeListing, listingError } from "@/ui/board-catalog/listing";
-import {
-	boardCatalogKeys,
-	paneInventoryQuery,
-	persistedBoardsQuery,
-} from "@/ui/board-catalog/lib/queries";
+import { boardCatalogKeys, paneInventoryQuery } from "@/ui/board-catalog/lib/queries";
+import { semanticBoardKeys, semanticBoardListQuery } from "@/ui/semantic-board-canvas";
 import type { BoardListing } from "@/ui/types";
 
 /** The listing, why it may be missing, and the ways it is made stale. */
@@ -23,15 +20,15 @@ interface BoardCatalog {
 	/** Read the listing again: what a board command or a pane report asks for. */
 	readonly refresh: () => void;
 	/**
-	 * Read the listing, every server preview and every board's name state
-	 * again: the navigator's refresh, and the one control a person has when
-	 * something the shell reads has gone wrong.
+	 * Read the listing and every drawing of every board again: the navigator's
+	 * refresh, and the one control a person has when something the shell reads
+	 * has gone wrong.
 	 */
 	readonly reload: () => void;
 	/**
-	 * These boards have been written, or stopped being worked on: their content,
-	 * and anything the vault says about them, is worth reading again. The listing
-	 * is read again either way, so naming no board means just the listing.
+	 * These boards have been written, or stopped being worked on: their pictures,
+	 * and anything the vault says about them, are worth reading again. The
+	 * listing is read again either way, so naming no board means just the listing.
 	 * @param boards The board keys, which may be none.
 	 */
 	readonly boardsChanged: (boards: readonly string[]) => void;
@@ -53,9 +50,7 @@ interface BoardCatalog {
  * right now is skipped by a refetch altogether, so in both cases the stale
  * answer would land, clear the invalidation and count as fresh. A cancelled
  * read is reverted rather than failed: data already in hand stays on screen,
- * no error reaches a person, and the invalidation stands. What answers next
- * was asked for after the event, whether that is now or when whatever
- * disabled the query lets it read again.
+ * no error reaches a person, and the invalidation stands.
  * @param client The cache.
  * @param queryKey The queries to read again, by exact key or by prefix.
  * @returns Settles once the fresh read has been asked for.
@@ -70,18 +65,8 @@ async function readAgain(client: QueryClient, queryKey: QueryKey): Promise<void>
  * @param client The cache.
  */
 function invalidateListing(client: QueryClient): void {
-	void readAgain(client, boardCatalogKeys.persisted);
+	void readAgain(client, semanticBoardKeys.boards);
 	void readAgain(client, boardCatalogKeys.panes);
-}
-
-/**
- * Read everything one board's key owns again: its preview and its info.
- * @param client The cache.
- * @param board The board key.
- */
-function invalidateBoard(client: QueryClient, board: string): void {
-	void readAgain(client, boardCatalogKeys.preview(board));
-	void readAgain(client, boardCatalogKeys.info(board));
 }
 
 /**
@@ -97,15 +82,22 @@ function catalogCommands(
 		invalidateListing(client);
 	}
 	/**
-	 * Read the listing and everything the navigator draws from it again: the
-	 * previews, and whether each open board has a name. This is the one control
-	 * a person has when something the shell reads has gone wrong, so it must
-	 * reach every resource, not only the ones that failed loudly.
+	 * Read the listing, every drawing, and every board document again. This is
+	 * the one control a person has when something the shell reads has gone
+	 * wrong, so it must reach every resource, not only the ones that failed
+	 * loudly.
+	 *
+	 * The documents matter as much as the pictures and are easier to forget: a
+	 * board's own document is what the inspector reads and what the variant and
+	 * walkthrough controls are built from, and it is cached for as long as the
+	 * tab is open. A board written while this tab was not being told — another
+	 * canvas on the same vault, or a socket that was down — would come back with
+	 * a fresh picture beside an inspector describing the board as it used to be.
 	 */
 	function reload(): void {
 		invalidateListing(client);
-		void readAgain(client, boardCatalogKeys.previews);
-		void readAgain(client, boardCatalogKeys.infos);
+		void readAgain(client, semanticBoardKeys.renders);
+		void readAgain(client, semanticBoardKeys.documents);
 	}
 	/**
 	 * These boards have been written, or stopped being worked on. The listing
@@ -116,7 +108,8 @@ function catalogCommands(
 	function boardsChanged(boards: readonly string[]): void {
 		invalidateListing(client);
 		for (const board of boards) {
-			invalidateBoard(client, board);
+			void readAgain(client, semanticBoardKeys.boardRenders(board));
+			void readAgain(client, semanticBoardKeys.document(board));
 		}
 	}
 	/** A pane's socket came back. */
@@ -132,18 +125,15 @@ function catalogCommands(
  */
 function useBoardCatalog(): BoardCatalog {
 	const client = useQueryClient();
-	const persisted = useQuery(persistedBoardsQuery());
+	const vault = useQuery(semanticBoardListQuery());
 	const panes = useQuery(paneInventoryQuery());
 	const commands = useMemo(() => catalogCommands(client), [client]);
-	const listing = useMemo(
-		() => composeListing(persisted.data, panes.data),
-		[persisted.data, panes.data],
-	);
-	const error = listingError(persisted.error, panes.error, panes.data !== undefined);
+	const listing = useMemo(() => composeListing(vault.data, panes.data), [vault.data, panes.data]);
+	const error = listingError(vault.error, panes.error, panes.data !== undefined);
 	return useMemo(
-		() => ({ listing, error, loading: persisted.isPending, ...commands }),
-		[listing, error, persisted.isPending, commands],
+		() => ({ listing, error, loading: vault.isPending, ...commands }),
+		[listing, error, vault.isPending, commands],
 	);
 }
 
-export { useBoardCatalog, type BoardCatalog };
+export { catalogCommands as catalogCommandsFor, useBoardCatalog, type BoardCatalog };

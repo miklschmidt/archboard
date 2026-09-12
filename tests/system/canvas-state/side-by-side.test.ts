@@ -1,12 +1,21 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
 
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
-import { createRequester, sleep, waitFor } from "./support/http.ts";
+import { createRequester, waitFor } from "./support/http.ts";
 import { openPaneSession, type PaneEvent, type PaneSession } from "./support/pane-session.ts";
+
+// A proposal read beside what it proposes to change, driven the way an agent
+// drives it: every step a cold CLI invocation against a running canvas, with
+// two panes on screen.
+//
+// What this owns is the pane a person is using. An agent branching a board,
+// editing the branch, opening a second pane and pointing it somewhere must
+// never move the pane the person is reading — the move is the one thing they
+// would notice and the one thing nobody asked for (ADR 0009, ADR 0023).
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 const executable = join(repoRoot, "bin/canvas");
@@ -17,17 +26,14 @@ interface CliResult<T = unknown> {
 	stderr: string;
 	json: T;
 }
-interface ElementsBody {
-	count: number;
-	elements: Array<{
-		id: string;
-		customData?: { archboard?: { node?: string; variant?: string } };
-	}>;
-}
 interface PanesBody {
 	paneCount: number;
 	sameBoard?: boolean;
-	panes: Array<{ board: string; paneId: string; place: string }>;
+	summary?: string;
+	panes: Array<{ board: string | null; paneId: string; place: string }>;
+}
+interface BoardReply {
+	board: { version: number; current: string; variants: Array<{ id: string; name: string }> };
 }
 
 describe.serial("side-by-side proposal workflow", () => {
@@ -36,8 +42,6 @@ describe.serial("side-by-side proposal workflow", () => {
 		const root = mkdtempSync(join(tmpdir(), "archboard-side-by-side-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = join(root, "vault");
-		const shots = join(root, "shots");
-		mkdirSync(shots);
 		const canvas = await startOwnedCanvas({
 			serverPath: join(repoRoot, "src/server.ts"),
 			vault,
@@ -67,15 +71,16 @@ describe.serial("side-by-side proposal workflow", () => {
 							ARCHBOARD_VAULT: vault,
 							LOG_LEVEL: "error",
 						},
-						stdio: ["pipe", "pipe", "pipe"],
 					},
 				);
 				let stdout = "";
 				let stderr = "";
-				child.stdout.on("data", (chunk: Buffer) => (stdout += chunk.toString()));
-				child.stderr.on("data", (chunk: Buffer) => (stderr += chunk.toString()));
-				child.once("error", rejectCli);
-				child.once("exit", (code) => {
+				child.stdout.setEncoding("utf8");
+				child.stderr.setEncoding("utf8");
+				child.stdout.on("data", (chunk: string) => void (stdout += chunk));
+				child.stderr.on("data", (chunk: string) => void (stderr += chunk));
+				child.on("error", rejectCli);
+				child.on("close", (code) => {
 					let json = undefined as T;
 					try {
 						json = JSON.parse(stdout) as T;
@@ -90,13 +95,14 @@ describe.serial("side-by-side proposal workflow", () => {
 		const openShellPane = async (
 			clientId = `proposal-shell-${++serial}`,
 			x = panes.length * 640,
-			options: { primary?: boolean; focused?: boolean } = {},
+			options: { primary?: boolean; focused?: boolean; board?: string } = {},
 		): Promise<PaneSession> => {
 			const pane = await openPaneSession(canvas.base, request, {
 				clientId,
 				x,
 				...(options.primary === undefined ? {} : { primary: options.primary }),
 				...(options.focused === undefined ? {} : { focused: options.focused }),
+				...(options.board === undefined ? {} : { board: options.board }),
 			});
 			panes.push(pane);
 			pane.socket.on("message", (data) => {
@@ -107,273 +113,126 @@ describe.serial("side-by-side proposal workflow", () => {
 					if (index >= 0) panes.splice(index, 1);
 					void pane.close();
 				}
-				if (message.type === "board_switched" && message.board) void pane.register(message.board);
-				if (message.type === "set_viewport") {
-					void request("/api/viewport/result", {
-						method: "POST",
-						doing: false,
-						body: { requestId: message.requestId, success: true },
-					});
-				}
-				if (message.type === "browser_capture_request") {
-					void request("/api/browser/capture/result", {
-						method: "POST",
-						doing: false,
-						body: { requestId: message.requestId, format: "png", data: "aGk=" },
-					});
+				// A shell follows the board the server names it, the way the real one
+				// does: the registration is what makes the move true to the server.
+				if (message.type === "pane_board" && typeof message.board === "string") {
+					void pane.register(message.board);
 				}
 			});
 			return pane;
 		};
-		const drawRow = async (board: string, variant: string, boxes: Array<[string, string]>) => {
-			const added = await cli<{ elements: Array<{ id: string }> }>(
-				["add", "--board", board],
-				JSON.stringify(
-					boxes.map(([label], index) => ({
-						type: "rectangle",
-						x: index * 300,
-						y: 100,
-						width: 200,
-						height: 100,
-						label: { text: label },
-					})),
-				),
-			);
-			expect(added.code, added.stderr).toBe(0);
-			const ids = added.json.elements.map(({ id }) => id);
-			const arrows = await cli(
-				["add", "--board", board],
-				JSON.stringify(
-					ids.slice(1).map((id, index) => ({
-						type: "arrow",
-						x: 0,
-						y: 0,
-						width: 100,
-						height: 0,
-						start: { id: ids[index] },
-						end: { id },
-					})),
-				),
-			);
-			expect(arrows.code, arrows.stderr).toBe(0);
-			for (const [index, [label, kind]] of boxes.entries()) {
-				const promoted = await cli([
-					"promote",
-					"--board",
-					board,
-					"--ids",
-					ids[index]!,
-					"--kind",
-					kind,
-					"--name",
-					label,
-					"--variant",
-					variant,
-				]);
-				expect(promoted.code, promoted.stderr).toBe(0);
-			}
-			return ids;
-		};
 
-		const source = await openShellPane("proposal-source", 0, { primary: true, focused: true });
-		expect(source.board()).toBe("scratch");
-		const made = await cli(["board", "new", "payments", "--level", "service"]);
+		// The architecture as it stands, made by an agent from the command line.
+		const made = await cli(
+			["semantic", "new", "payments", "--doing", "drawing the payment path"],
+			JSON.stringify({
+				nodes: [
+					{ name: "API Gateway", kind: "service" },
+					{ name: "Orders Service", kind: "service" },
+					{ name: "Orders Postgres", kind: "datastore" },
+				],
+				edges: [
+					{ from: "API Gateway", to: "Orders Service", kind: "http" },
+					{ from: "Orders Service", to: "Orders Postgres", kind: "data" },
+				],
+			}),
+		);
 		expect(made.code, made.stderr).toBe(0);
-		expect(source.board()).toBe("scratch");
-		const opened = await cli<{ pane: { place: string } }>([
-			"browser",
-			"show",
-			"payments",
-			"--pane",
-			"primary",
-		]);
-		expect(opened.code, opened.stderr).toBe(0);
-		await waitFor(() => source.board() === "payments", "source pane to adopt payments");
-		expect(opened.json.pane.place).toBe("the only pane");
+
+		const source = await openShellPane("proposal-source", 0, {
+			primary: true,
+			focused: true,
+			board: "payments",
+		});
+		await waitFor(() => source.board() === "payments", "source pane to show payments");
 		const noProposalSwitchesFrom = source.mark();
 
-		const palette = await cli(["library", "list", "--text"]);
-		expect(palette.code, palette.stderr).toBe(0);
-		expect(palette.stdout).toMatch(/stencil/i);
-		await drawRow("payments", "current", [
-			["API Gateway", "gateway"],
-			["Orders Service", "service"],
-			["Orders Postgres", "datastore"],
-		]);
-		const sourceSave = await cli<{ file: string }>(["board", "save", "--board", "payments"]);
-		expect(sourceSave.code, sourceSave.stderr).toBe(0);
-		expect(existsSync(sourceSave.json.file)).toBeTrue();
-		const sourceState = await request<ElementsBody>("/api/elements?board=payments");
-		expect(
-			new Set(
-				sourceState.body.elements.flatMap(({ customData }) => customData?.archboard?.node ?? []),
-			).size,
-		).toBe(3);
-
-		const branchStart = source.mark();
-		const branched = await cli<{ board: string; saveKind: string }>([
-			"board",
-			"save",
-			"--board",
+		// A proposal is a variant of the same board, derived from what is current.
+		const branched = await cli<BoardReply>([
+			"semantic",
+			"branch",
 			"payments",
-			"--variant",
-			"option-a",
+			"--as",
+			"Queued ingest",
+			"--expect-version",
+			"1",
+			"--doing",
+			"proposing a queue",
 		]);
 		expect(branched.code, branched.stderr).toBe(0);
-		expect(branched.json).toMatchObject({
-			board: "payments@option-a",
-			saveKind: "branch",
-		});
-		expect(branched.json).not.toHaveProperty("panes");
+		const proposal = branched.json.board.variants.find((one) => one.name === "Queued ingest")!;
+		expect(proposal).toBeDefined();
+		const proposalKey = `payments@${proposal.id}`;
+		// Branching moved nothing on screen: the person is still reading what is
+		// current, which is the point of proposing beside it rather than in place.
 		expect(source.board()).toBe("payments");
-		expect(
-			source.events.slice(branchStart).some(({ type }) => type === "board_switched"),
-		).toBeFalse();
 
-		const splitStart = source.mark();
-		const beside = await cli<{
-			paneCount: number;
-			pane: { clientId: string; place: string };
-		}>(["browser", "open"]);
+		const beside = await cli<{ paneCount: number; pane: { clientId: string; place: string } }>([
+			"browser",
+			"open",
+		]);
 		expect(beside.code, beside.stderr).toBe(0);
-		expect(beside.json).toMatchObject({
-			paneCount: 2,
-			pane: { place: "right" },
-		});
-		expect(
-			source.events.slice(splitStart).some(({ type }) => type === "board_switched"),
-		).toBeFalse();
+		expect(beside.json).toMatchObject({ paneCount: 2, pane: { place: "right" } });
 		const branchPane = await waitFor(
 			() => panes.find(({ clientId }) => clientId === beside.json.pane.clientId),
 			"new proposal pane registration",
 		);
 		if (!branchPane) throw new Error("The proposal pane registration disappeared.");
-		const shown = await cli(["browser", "show", "payments@option-a", "--pane", "right"]);
+		const shown = await cli(["browser", "show", proposalKey, "--pane", "right"]);
 		expect(shown.code, shown.stderr).toBe(0);
-		await waitFor(
-			() => branchPane.board() === "payments@option-a",
-			"proposal pane to adopt branch",
-		);
-		const sideBySide = await request<PanesBody>("/api/panes");
-		expect(sideBySide.body.sameBoard).toBeFalse();
-		expect(sideBySide.body.panes.map(({ board }) => board)).toEqual([
-			"payments",
-			"payments@option-a",
-		]);
+		await waitFor(() => branchPane.board() === proposalKey, "proposal pane to adopt the branch");
 
+		const sideBySide = await request<PanesBody>("/api/panes");
+		// One board, read two ways. They are looking at the same document, so a
+		// command that names no board is not ambiguous between them — but the
+		// read-out still names each variant, because which one each pane is on is
+		// the whole of what the comparison is.
+		expect(sideBySide.body.sameBoard).toBeTrue();
+		expect(sideBySide.body.panes.map(({ board }) => board)).toEqual(["payments", proposalKey]);
+		// These panes are raw sockets rather than the shell, so neither has said
+		// what it is reading; the read-out falls back to the address it was given.
+		expect(sideBySide.body.summary).toContain(proposalKey);
+
+		// A third pane is refused: the shell is two panes wide by design.
 		const third = await cli(["browser", "open"]);
 		expect(third.code).not.toBe(0);
-		expect([source.board(), branchPane.board()]).toEqual(["payments", "payments@option-a"]);
+		expect([source.board(), branchPane.board()]).toEqual(["payments", proposalKey]);
 
-		const sourceBeforeDrawing = source.mark();
-		const cacheAdd = await cli<{ elements: Array<{ id: string }> }>(
-			["add", "--board", "payments@option-a"],
-			JSON.stringify([
-				{
-					type: "rectangle",
-					x: 300,
-					y: 320,
-					width: 200,
-					height: 100,
-					label: { text: "Orders Cache" },
-				},
-			]),
+		// What the proposal proposes, written to the proposal and nowhere else.
+		const sourceBeforeEditing = source.mark();
+		// The edit names the board and, inside the command, which variant of it:
+		// the whole family is one document, so a write addresses the document and
+		// says what it is changing in it.
+		const edited = await cli(
+			["semantic", "edit", "payments", "--expect-version", "2", "--doing", "adding the queue"],
+			JSON.stringify({
+				variant: proposal.id,
+				nodes: [{ name: "Orders Queue", kind: "queue" }],
+				edges: [{ from: "API Gateway", to: "Orders Queue", kind: "event" }],
+			}),
 		);
-		const cacheId = cacheAdd.json.elements[0]!.id;
-		const branchElements = await request<ElementsBody>("/api/elements?board=payments@option-a");
-		const serviceId = branchElements.body.elements.find(
-			({ customData }) => customData?.archboard?.node === "orders-service",
-		)!.id;
+		expect(edited.code, edited.stderr).toBe(0);
+
+		// The current variant is untouched, and the pane reading it never moved.
+		const current = await cli<BoardReply>(["semantic", "show", "payments"]);
+		expect(current.code, current.stderr).toBe(0);
+		expect(source.board()).toBe("payments");
 		expect(
-			(
-				await cli([
-					"promote",
-					"--board",
-					"payments@option-a",
-					"--ids",
-					cacheId,
-					"--kind",
-					"datastore",
-					"--name",
-					"Orders Cache",
-					"--variant",
-					"option-a",
-				])
-			).code,
-		).toBe(0);
-		await request("/api/elements?board=payments@option-a", {
-			method: "POST",
-			body: {
-				type: "arrow",
-				x: 0,
-				y: 0,
-				width: 100,
-				height: 0,
-				start: { id: serviceId },
-				end: { id: cacheId },
-			},
-		});
-		const branchSave = await cli<{ file: string }>([
-			"board",
-			"save",
-			"--board",
-			"payments@option-a",
-		]);
-		expect(branchSave.code, branchSave.stderr).toBe(0);
-		expect(branchSave.json.file).not.toBe(sourceSave.json.file);
-		expect((await request<ElementsBody>("/api/elements?board=payments")).body.count).toBe(
-			sourceState.body.count,
-		);
-		expect(
-			source.events.slice(sourceBeforeDrawing).some(({ type }) => type === "board_switched"),
+			source.events.slice(sourceBeforeEditing).some(({ type }) => type === "pane_board"),
 		).toBeFalse();
 
-		const leftPictureStart = source.mark();
-		const rightPictureStart = branchPane.mark();
-		const shot = join(shots, "proposal.png");
-		const picture = await cli(["browser", "capture", "--pane", "right", "--out", shot]);
-		expect(picture.code, picture.stderr).toBe(0);
-		expect(existsSync(shot)).toBeTrue();
-		expect(
-			branchPane.events
-				.slice(rightPictureStart)
-				.some(({ type }) => type === "browser_capture_request"),
-		).toBeTrue();
-		expect(
-			source.events.slice(leftPictureStart).some(({ type }) => type === "browser_capture_request"),
-		).toBeFalse();
-		const compared = await cli<{
-			summary: {
-				comparable: boolean;
-				sharedNodes: number;
-				nodesAdded: number;
-				nodesRemoved: number;
-			};
-			nodes: { added: Array<{ node: string }> };
-		}>(["compare", "payments", "payments@option-a"]);
-		expect(compared.code, compared.stderr).toBe(0);
-		expect(compared.json.summary).toMatchObject({
-			comparable: true,
-			sharedNodes: 3,
-			nodesAdded: 1,
-			nodesRemoved: 0,
-		});
-		expect(compared.json.nodes.added.map(({ node }) => node)).toEqual(["orders-cache"]);
-
+		// Across the whole trace, the source pane was never moved by anything an
+		// agent did beside it.
 		const showing = await request<PanesBody>("/api/panes");
 		expect(showing.body.panes.find(({ board }) => board === "payments")).toMatchObject({
 			paneId: "proposal-source",
 			place: "left",
 		});
 		expect(
-			source.events.slice(noProposalSwitchesFrom).some(({ type }) => type === "board_switched"),
+			source.events.slice(noProposalSwitchesFrom).some(({ type }) => type === "pane_board"),
 		).toBeFalse();
-		expect(
-			(await request<ElementsBody>("/api/elements?board=payments")).body.elements.every(
-				({ customData }) => (customData?.archboard?.variant ?? "current") === "current",
-			),
-		).toBeTrue();
 
+		// And when the person's own pane is the one asked, it does move.
 		await branchPane.close();
 		panes.splice(panes.indexOf(branchPane), 1);
 		await waitFor(
@@ -383,19 +242,14 @@ describe.serial("side-by-side proposal workflow", () => {
 		const overwritten = await cli<{ pane: { place: string } }>([
 			"browser",
 			"show",
-			"payments@option-a",
+			proposalKey,
 			"--pane",
 			"primary",
 		]);
 		expect(overwritten.code, overwritten.stderr).toBe(0);
 		expect(overwritten.json.pane.place).toBe("the only pane");
-		await waitFor(() => source.board() === "payments@option-a", "source pane to be repointed");
-		expect(
-			(await request<PanesBody>("/api/panes")).body.panes.some(({ board }) => board === "payments"),
-		).toBeFalse();
-		expect(
-			(await request<ElementsBody>("/api/elements?board=payments")).body.count,
-		).toBeGreaterThan(0);
-		await sleep(20);
+		await waitFor(() => source.board() === proposalKey, "source pane to be repointed");
+		// The board it left is still there: a pane moving is not a board closing.
+		expect((await cli<BoardReply>(["semantic", "show", "payments"])).code).toBe(0);
 	}, 60_000);
 });

@@ -9,7 +9,7 @@ import { createWorkbenchOwners, type WorkbenchOwners } from "@/ui/application/li
 import {
 	createWorkbenchTransportPublication,
 	type WorkbenchTransportPublication,
-} from "@/ui/canvas/workbench-publication";
+} from "@/ui/pane-session/workbench-publication";
 import type { BrowserWorkbenchTransport } from "@/ui/workbench-transport";
 
 /** The transports by pane id; null while a pane has none. */

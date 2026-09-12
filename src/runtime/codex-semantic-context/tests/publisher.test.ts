@@ -5,10 +5,9 @@ import {
 	SemanticContextLifecycleError,
 	SEMANTIC_CONTEXT_LIMITS,
 	type SemanticContextInput,
-	type SemanticCursor,
 	type SettledSemanticChangeEvent,
 } from "../index.ts";
-import { context, change, sourceHarness, harness, utf8 } from "./publisher-harness.ts";
+import { context, change, picked, sourceHarness, harness, utf8 } from "./publisher-harness.ts";
 describe("semantic context publisher", () => {
 	test("publishes focus and selection immediately without a settle path", () => {
 		const h = harness();
@@ -16,11 +15,13 @@ describe("semantic context publisher", () => {
 		const selection: string[][] = [];
 		const settled: unknown[] = [];
 		h.publisher.subscribePaneFocus((event) => focus.push(event.pane.paneId));
-		h.publisher.subscribePaneSelection((event) => selection.push([...event.selection]));
+		h.publisher.subscribePaneSelection((event) =>
+			selection.push(event.architecture.selection.subjects.map((subject) => subject.id)),
+		);
 		h.publisher.subscribeSettledChange((event) => settled.push(event));
 
 		h.emitFocus(context(h.ids, { pane: { paneId: "pane-b", focused: false } }));
-		h.emitSelection(context(h.ids, { selection: ["selected-now"] }));
+		h.emitSelection(context(h.ids, { architecture: picked(["selected-now"]) }));
 		h.emitFocus(context(h.ids, { pane: { paneId: "pane-c", focused: true } }));
 
 		expect(focus).toEqual(["pane-b", "pane-c"]);
@@ -29,23 +30,29 @@ describe("semantic context publisher", () => {
 		expect(h.state.feedSubscriptions).toBe(1);
 	});
 
-	test("filters agent-only and cosmetic feed events while accepting human and mixed changes", () => {
+	test("publishes every origin and drops only the cosmetic", () => {
 		const h = harness();
-		const settled: Array<{ origin: string; cursor: SemanticCursor | null }> = [];
+		const settled: Array<{ origin: string; by: string | null }> = [];
 		h.publisher.subscribeSettledChange((event) =>
-			settled.push({ origin: event.origin ?? "none", cursor: event.cursor }),
+			settled.push({ origin: event.origin ?? "none", by: event.change.by }),
 		);
 
 		h.emitFeed(change(h.state.now));
 		h.emitFeed(change(h.state.now, { origin: "mixed" }));
-		h.emitFeed(change(h.state.now, { origin: "agent" }));
+		h.emitFeed(change(h.state.now, { origin: "agent", by: "pane-b" }));
 		h.emitFeed(change(h.state.now, { significance: "cosmetic" }));
 
+		// An agent change is published like any other. One publisher serves every
+		// thread, so whose change it is cannot be decided here; the writer identity
+		// is carried through for the per-thread delivery to decide with. Dropping it
+		// here would silence every change at all, because after ADR 0023 a person
+		// does not write a board.
 		expect(settled).toEqual([
-			{ origin: "human", cursor: { feedId: "feed-1", sequence: 3 } },
-			{ origin: "mixed", cursor: { feedId: "feed-1", sequence: 3 } },
+			{ origin: "human", by: null },
+			{ origin: "mixed", by: null },
+			{ origin: "agent", by: "pane-b" },
 		]);
-		expect(h.state.changeReads).toBe(2);
+		expect(h.state.changeReads).toBe(3);
 	});
 
 	test("includes identity fields and freezes the exact current-feed cursor", () => {
@@ -68,7 +75,7 @@ describe("semantic context publisher", () => {
 			source: "pane_focus",
 			feedId: "feed-1",
 			repository: "archboard",
-			board: { key: "payments", note: "boards/payments.excalidraw.md" },
+			board: { key: "payments", name: "Payments", file: "boards/payments.semantic.json" },
 			version: 7,
 			pane: { paneId: "pane-a", focused: true },
 			cursor: { feedId: "feed-1", sequence: 3 },
@@ -79,8 +86,10 @@ describe("semantic context publisher", () => {
 		});
 		expect(Object.isFrozen(event)).toBe(true);
 		expect(Object.isFrozen(event.cursor)).toBe(true);
-		expect(Object.isFrozen(event.selection)).toBe(true);
-		expect(() => (event.selection as string[]).push("not-published")).toThrow();
+		expect(Object.isFrozen(event.architecture.selection.subjects)).toBe(true);
+		expect(() => {
+			(event.architecture.selection.subjects as unknown as unknown[]).push({ id: "not-published" });
+		}).toThrow();
 		expect(event.brief).toContain('"description":"Payments board');
 	});
 
@@ -125,16 +134,20 @@ describe("semantic context publisher", () => {
 	test("builds an operation brief from the exact supplied pane instead of focused state", () => {
 		const h = harness();
 		const exact = context(h.ids, {
-			board: { key: "ledger", note: "boards/ledger.excalidraw.md", version: 11 },
+			board: {
+				key: "ledger",
+				name: "Ledger",
+				file: "boards/ledger.semantic.json",
+				version: 11,
+			},
 			pane: { paneId: "pane-b", focused: false },
-			selection: ["ledger-node"],
+			architecture: picked(["ledger-node"]),
 		});
 		const operationBrief = h.publisher.freshBriefFor(exact);
 		const focusedBrief = h.publisher.freshBrief();
 		expect(operationBrief).toMatchObject({
-			board: { key: "ledger", note: "boards/ledger.excalidraw.md" },
+			board: { key: "ledger", name: "Ledger", file: "boards/ledger.semantic.json" },
 			pane: { paneId: "pane-b", focused: false },
-			selection: ["ledger-node"],
 		});
 		expect(focusedBrief).toMatchObject({
 			board: { key: "payments" },
@@ -159,11 +172,12 @@ describe("semantic context publisher", () => {
 			threadLink: { state: "inspect_only", reason: "界".repeat(170) },
 			board: {
 				key: "b".repeat(SEMANTIC_CONTEXT_LIMITS.boardKeyBytes),
-				note: "界".repeat(1_365),
+				name: "界".repeat(50),
+				file: "界".repeat(1_365),
 				version: 7,
 			},
 			pane: { paneId: "p".repeat(SEMANTIC_CONTEXT_LIMITS.paneIdBytes), focused: true },
-			selection,
+			architecture: picked(selection),
 			claim: { holder: "agent", doing: "界".repeat(170) },
 			doing: "界".repeat(170),
 			description: "界".repeat(2_730),
@@ -182,10 +196,12 @@ describe("semantic context publisher", () => {
 		expect(first.brief).toContain("…");
 		expect(first.repository).not.toBe("");
 		expect(first.board.key).not.toBe("");
-		expect(first.board.note).not.toBe("");
+		expect(first.board.file).not.toBe("");
 		expect(first.pane.paneId).not.toBe("");
 		expect(
-			first.selection.every((id) => utf8(id) <= SEMANTIC_CONTEXT_LIMITS.selectionIdBytes),
+			first.architecture.selection.subjects.every(
+				(subject) => utf8(subject.id) <= SEMANTIC_CONTEXT_LIMITS.subjectIdBytes,
+			),
 		).toBe(true);
 		expect(
 			first.ambiguity.every((reason) => utf8(reason) <= SEMANTIC_CONTEXT_LIMITS.ambiguityBytes),

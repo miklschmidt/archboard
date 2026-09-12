@@ -6,7 +6,6 @@ import { z } from "zod";
 const recordSchema = z.object({
 	path: z.string(),
 	outputCase: z.string(),
-	held: z.unknown(),
 	result: z.unknown(),
 	artifact: z.unknown().optional(),
 });
@@ -29,8 +28,8 @@ const server = Bun.serve({
 				websocket_clients: 1,
 			});
 		}
-		if (url.pathname === "/api/boards/info") {
-			return Response.json({ success: true, held: record.held });
+		if (url.pathname === "/api/sync/status") {
+			return Response.json({ success: true });
 		}
 		return Response.json({ success: false, error: `unexpected ${url.pathname}` }, { status: 404 });
 	},
@@ -39,14 +38,14 @@ const server = Bun.serve({
 try {
 	process.env["EXPRESS_SERVER_URL"] = `http://127.0.0.1:${server.port}`;
 	process.env["EXCALIDRAW_NO_AUTOSTART"] = "1";
-	const [{ getBoardInfo }, { cliContractRegistry }, { defineCommand }, { runCommand }] =
+	const [{ getSyncStatus }, { cliContractRegistry }, { defineCommand }, { runCommand }] =
 		await Promise.all([
 			import("../../../runtime/engine/canvas-client.js"),
 			import("../../commands/run.js"),
 			import("../contract.js"),
 			import("../runner.js"),
 		]);
-	await getBoardInfo();
+	await getSyncStatus();
 	const source = cliContractRegistry().find((entry) => entry.name === record.path)?.contract;
 	if (!source) {
 		throw new Error(`missing contract ${record.path}`);

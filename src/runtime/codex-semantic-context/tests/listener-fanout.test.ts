@@ -11,9 +11,18 @@ import {
 function input(selection: readonly string[] = []): SemanticContextInput {
 	return {
 		repository: "repo",
-		board: { key: "board", note: "board.md", version: 1 },
+		board: { key: "board", name: "Board", file: "board.semantic.json", version: 1 },
 		pane: { paneId: "pane", focused: true },
-		selection,
+		architecture: {
+			variant: null,
+			view: null,
+			selection: {
+				count: selection.length,
+				subjects: selection.map((id) => ({ kind: "node" as const, id, name: null })),
+			},
+			differences: null,
+			reconciliation: { required: false, count: 0, blockedBy: null, issues: [] },
+		},
 		doing: null,
 		cursor: { feedId: "feed", sequence: 0 },
 		description: "compact board",
@@ -28,6 +37,7 @@ function change(sequence: number): SettledChangeSourceEvent {
 		origin: "human",
 		significance: "structural",
 		text: "changed",
+		by: null,
 	};
 }
 

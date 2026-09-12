@@ -1,7 +1,14 @@
 const SEMANTIC_CONTEXT_LIMITS = Object.freeze({
 	descriptionBytes: 8192,
 	selectionEntries: 128,
-	selectionIdBytes: 64,
+	subjectIdBytes: 64,
+	subjectNameBytes: 160,
+	/** How many differences against the predecessor a brief names one by one. */
+	differenceEntries: 64,
+	/** How many unsettled disagreements a brief carries. */
+	issueEntries: 32,
+	/** The sentence saying what to do about one disagreement. */
+	repairBytes: 512,
 	ambiguityEntries: 16,
 	ambiguityBytes: 256,
 	doingBytes: 512,
@@ -11,7 +18,8 @@ const SEMANTIC_CONTEXT_LIMITS = Object.freeze({
 	reasonBytes: 512,
 	repositoryBytes: 2048,
 	boardKeyBytes: 2048,
-	noteBytes: 4096,
+	/** The path of the board document, which is a vault path and not a note. */
+	fileBytes: 4096,
 	identityBytes: 256,
 	briefBytes: 8192,
 });

@@ -121,10 +121,12 @@ that repo's `CLAUDE.md` is authored rather than generated.
 
 ## 4. Where the vault goes
 
-Boards are `.excalidraw.md` notes in an Obsidian vault. The offered answer is a
-vault inside the repo, at `<repo>/.archboard/vault`: boards next to the code
-they describe, and reviewable in the same diff as the change they justify. It
-is not gitignored for you. Commit it or ignore it, deliberately.
+A board is one `.semantic.json` document in a vault, holding every variant of
+that architecture. The offered answer is a vault inside the repo, at
+`<repo>/.archboard/vault`: boards next to the code they describe, and reviewable
+in the same diff as the change they justify — a board is JSON a person can read
+and a reviewer can diff, which is most of why it is a file rather than a
+database. It is not gitignored for you. Commit it or ignore it, deliberately.
 
 Take a shared vault instead when the diagrams span repositories, which is what
 an architecture diagram does as soon as there is more than one service in it.
@@ -141,41 +143,55 @@ Either way, **the server does the vault I/O, so the variable has to be set
 before the canvas server starts.** With no vault the canvas will not start at
 all, and says so, pointing back at this command. Exporting it afterwards
 changes nothing, because a server that is already running keeps the vault it
-started with. `archboard board list` prints the vault in use, and
+started with. `archboard status` prints the vault in use, and
 `archboard stop` is how you switch. That is the one that bites when you move
 between two repos that each keep their own boards.
 
 ## Working in a repo
 
-Start the canvas from anywhere and create or address a board:
+Start the canvas from anywhere and state what the architecture is:
 
 ```bash
-archboard board new payments --level service
-archboard add --board payments --doing "drawing the payment path" elements.json
-archboard render --board payments --out payments.png
+archboard semantic new payments --doing "drawing the payment path" < payments.json
+archboard semantic show payments
+archboard semantic render payments --out payments.svg
 ```
 
-Those commands use the named vault note through the server and need no browser
-connection. Mermaid conversion, finding close-ups, inspection, snapshots,
-branches, and export have the same boundary. Open the canvas URL and use
-`archboard browser ...` only when a person wants to observe or control a live
-pane, or when a real-browser fidelity check is the work.
+You state the parts, what contains what, how they are wired and the flows
+between them; the renderer owns every coordinate, colour, font size and
+connector route (ADR 0023). There is no way to move a box and deliberately
+none — a layout somebody repaired by hand cannot be improved for every board at
+once.
+
+Those commands go through the server and need no browser. Open the canvas URL
+and use `archboard browser ...` only when a person wants to read a board, or to
+put a proposal beside what it proposes to change:
+
+```bash
+archboard browser show payments@<variant> --pane right
+```
 
 **Name the repository and use a repo-relative path.** Register each checkout
 once, then the same portable address works wherever the command is run:
 
 ```bash
 archboard repo add /path/to/payments-api
-archboard promote --board payments --kind service \
-  --repo github.com/acme/payments-api --path src/index.ts
 ```
 
-An absolute `--path` also works as an input when that is more convenient:
-archboard walks up from it to identify the repository, then normalizes it to
-portable `customData.archboard.binding` metadata. The board note stores the
-repository identity, repo-relative path, and branch/commit details when
-available — never the absolute path or a `file://` URL. Tappable targets are
-derived later from the binding and this machine's checkout registry.
+A node states its binding as part of what it is:
+
+```json
+{
+	"name": "Orders",
+	"kind": "service",
+	"binding": { "repo": "github.com/acme/payments-api", "path": "src/index.ts" }
+}
+```
+
+The board stores the repository identity and a repo-relative path — never an
+absolute path or a `file://` URL — so the same board opens the right file on
+anybody's machine. What a person clicks is resolved later, from the binding and
+this machine's checkout registry.
 
 A bare relative path is resolved against the CLI's explicit working-directory
 origin, and the result says which repository that produced. Protocol-neutral
@@ -186,11 +202,14 @@ identity plus a repo-relative path instead.
 something git cannot tell you.
 
 With a shared vault the boards do not belong to the repo and are not committed
-to it. If you want a diagram in the repo as well, export one:
+to it. If you want a picture in the repo as well, render one:
 
 ```bash
-archboard export --board payments --out docs/architecture.excalidraw
+archboard semantic render payments --out docs/architecture.svg
 ```
+
+The picture is derived, so commit it only where somebody reads the repo without
+archboard; the board is the thing that is kept.
 
 ## On macOS
 
@@ -220,7 +239,7 @@ not. If the symlink route above gives you `realpath: command not found`, either
 Board addresses are case-insensitive and Unicode-normalized on both platforms,
 while note filenames preserve their original casing (ADR 0010). A legacy vault
 containing names that differ only in case must have those collisions resolved;
-`archboard board list` reports them.
+`archboard semantic` on its own reports them.
 
 ## Telling an agent which board covers this repo
 

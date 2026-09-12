@@ -25,8 +25,8 @@ import {
 	type LocalCodeTargetResult,
 } from "@/runtime/code-target";
 import { githubUrlForBinding } from "@/runtime/code-target/presentation";
-import { resolveBoard } from "@/runtime/engine/board-io";
-import { readElementMetadata } from "@/runtime/engine/metadata";
+import { resolveVariant } from "@/shared/semantic-board/index";
+import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { checkBrowserCsrf, type BrowserCsrfKind } from "@/server/code-opener/lib/browser-csrf";
 import {
 	readOpenerSelection,
@@ -114,39 +114,59 @@ export interface CodeOpenerRouteDependencies {
 }
 
 /**
- * Renders a thrown value as the message a route answers with.
- * @param error The thrown value.
- * @returns The error's message, or the value's string form when it is not an Error.
+ * Reads the code binding a node on a board carries.
+ *
+ * The variant the pane is showing is part of the board key it sends, so a
+ * proposal's binding is read off the proposal rather than off whatever is
+ * current: a person following code from a draft lands in the code that draft
+ * names (ADR 0023).
+ * @param boardKey The board the node is on, variant and all.
+ * @param subjectId The node whose binding is wanted.
+ * @returns The binding, or which of board, node or binding was missing.
  */
-function failureMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
-}
-
-/**
- * Reads the code binding an element on a held board carries.
- * @param boardKey The board the element lives on.
- * @param elementId The element whose binding is wanted.
- * @returns The binding, or which of board, element or binding was missing.
- */
-function canonicalBinding(boardKey: string, elementId: string): BindingLookup {
-	let content;
-	try {
-		content = resolveBoard(boardKey, "A code-target activation").content;
-	} catch (error) {
-		return { ok: false, code: "BOARD_NOT_FOUND", error: failureMessage(error) };
+function canonicalBinding(boardKey: string, subjectId: string): BindingLookup {
+	const address = boardAddressOf(boardKey);
+	const read = readSemanticBoard(address.board);
+	if (!read.ok) {
+		return { ok: false, code: "BOARD_NOT_FOUND", error: read.problem };
 	}
-	const element = content.elements.get(elementId);
-	if (!element) {
+	const variant = resolveVariant(read.board, address.variant);
+	if (variant === undefined) {
+		return {
+			ok: false,
+			code: "BOARD_NOT_FOUND",
+			error: `This board has no variant called "${address.variant ?? ""}".`,
+		};
+	}
+	const node = variant.content.nodes.find((one) => one.id === subjectId);
+	if (node === undefined) {
 		return {
 			ok: false,
 			code: "ELEMENT_NOT_FOUND",
-			error: `Element ${elementId} is not on the board.`,
+			error: `${subjectId} is not a node on this board.`,
 		};
 	}
-	const parsed = CodeBindingSchema.safeParse(readElementMetadata(element).archboard?.binding);
+	const parsed = CodeBindingSchema.safeParse(node.binding);
 	return parsed.success
 		? { ok: true, binding: parsed.data }
-		: { ok: false, code: "BINDING_UNAVAILABLE", error: "The element has no resolvable binding." };
+		: { ok: false, code: "BINDING_UNAVAILABLE", error: "This node is not bound to code." };
+}
+
+/**
+ * What a pane board key names: the board, and which of its variants.
+ *
+ * Split at the first `@`, which is the one spelling a pane and an address use
+ * (`@/ui/semantic-board-canvas` holds the browser's half of it).
+ * @param key The board key.
+ * @returns The board name and the variant, when it names one.
+ */
+function boardAddressOf(key: string): { board: string; variant: string | undefined } {
+	const mark = key.indexOf("@");
+	if (mark <= 0) {
+		return { board: key, variant: undefined };
+	}
+	const variant = key.slice(mark + 1);
+	return { board: key.slice(0, mark), variant: variant === "" ? undefined : variant };
 }
 
 const DEFAULT_DEPENDENCIES: CodeOpenerRouteDependencies = {

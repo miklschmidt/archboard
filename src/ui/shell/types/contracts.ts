@@ -5,8 +5,6 @@
 import type { ReactNode } from "react";
 
 import type { CodeTargetNoticeAction } from "@/shared/code-target";
-import type { PathFocusOverlay, PathFocusSnapshot } from "@/ui/path-focus";
-import type { SelectionProjection } from "@/ui/selection-inspector";
 import type {
 	AgentActivityEntry,
 	BoardIdentity,
@@ -28,22 +26,14 @@ type TakeBackState =
 			message: string;
 	  };
 
-/** One canvas pane: what it reports about itself, who holds its board, and its mounted canvas. */
+/** One pane: what it reports about itself, who holds its board, and its mounted stage. */
 interface ShellPane {
 	status: PaneStatus;
-	/** The pane's mounted canvas, owned by the application so it never remounts. */
-	canvas: ReactNode;
+	/** The pane's mounted stage, owned by the application so it never remounts. */
+	stage: ReactNode;
 	/** The board's current lock holder, or null when nobody is writing it. */
 	holder: LockHolder | null;
 	takeBack: TakeBackState;
-}
-
-/** A navigator entry that is not a persisted board: a scratch note. */
-interface ScratchBoardEntry {
-	key: string;
-	identity: BoardIdentity;
-	/** A board with a note but no chosen name, which the navigator asks for. */
-	placeholder: boolean;
 }
 
 /** A recovery action a notice offers, reported back by id when chosen. */
@@ -87,52 +77,24 @@ interface RecoveryPresentation {
 /** A fullscreen presentation of one pane. */
 type ShellPresentation = LivePresentation | RecoveryPresentation;
 
-/** The two note states a person resolves through a dialog (ADR 0006, TASK-062). */
-type RecoveryKind = "hold" | "elsewhere";
-
 /** The settings surfaces the header's menu reaches. */
-type SettingsSurface = "opener" | "agent" | "library";
-
-/**
- * One board's preview, rendered by its owner. The shell says which board a row
- * is for; where the depiction comes from — the pane holding it or the server's
- * snapshot — is not the shell's to decide or to cache.
- * @param boardKey The board key.
- * @param boardName The board's name, for the image's alternative text.
- * @returns The preview element.
- */
-type RenderBoardPreview = (boardKey: string, boardName: string) => ReactNode;
+type SettingsSurface = "opener" | "agent";
 
 /** Everything the shell renders. */
 interface ShellView {
 	theme: ThemeChoice;
-	/** The board named in the header: what the active pane is holding. */
+	/** The board named in the header: what the active pane is showing. */
 	current: BoardIdentity;
 	boards: BoardListing;
 	/** Why the listing could not be refreshed, or null while it is current. */
 	boardsError: string | null;
 	/** The vault has not answered yet and nothing of it is in hand. */
 	boardsLoading: boolean;
-	scratch: readonly ScratchBoardEntry[];
-	/**
-	 * How many open boards could not be asked whether they have a name. Their
-	 * naming affordance is withheld rather than wrongly offered, and the
-	 * navigator says so; the refresh is what recovers it.
-	 */
-	scratchUnreadable: number;
-	/** How a row draws its board's preview. */
-	renderPreview: RenderBoardPreview;
 	selectedBoardKey: string | null;
 	/** One or two panes, in reading order. */
 	panes: readonly ShellPane[];
 	activePaneId: string;
 	presentation: ShellPresentation | null;
-	/** The active pane's selection. */
-	selection: SelectionProjection;
-	/** The active pane's path focus. */
-	pathFocus: PathFocusSnapshot;
-	/** Where the focused elements are on their stage, or null while focus is off. */
-	pathFocusOverlay: PathFocusOverlay | null;
 	notices: readonly ShellNotice[];
 	/**
 	 * Which boards an agent is working on right now, by board key, including
@@ -144,14 +106,18 @@ interface ShellView {
 /** Everything a person can do from the shell. */
 interface ShellActions {
 	setTheme(theme: ThemeChoice): void;
-	selectBoard(key: string): void;
+	/**
+	 * Show a board in one pane.
+	 *
+	 * The pane is named, never inferred from focus. A person choosing a variant
+	 * in the right-hand pane while the left one is focused means the right-hand
+	 * pane, and a control that read the focus instead would move the board they
+	 * were reading and leave the one they clicked alone.
+	 * @param key The board key.
+	 * @param paneId Which pane shows it; the active one when none is named.
+	 */
+	selectBoard(key: string, paneId?: string): void;
 	refreshBoards(): void;
-	createBoard(): void;
-	/** Give a placeholder scratch board the name it is missing. */
-	nameBoard(key: string): void;
-	openBoard(): void;
-	saveBoard(): void;
-	clearBoard(): void;
 	selectPane(paneId: string): void;
 	addPane(): void;
 	closePane(paneId: string): void;
@@ -161,20 +127,12 @@ interface ShellActions {
 	openSettings(surface: SettingsSurface): void;
 	selectNoticeAction(noticeId: string, actionId: string): void;
 	dismissNotice(noticeId: string): void;
-	openCode(elementId: string): void;
-	focusPath(elementId: string): void;
-	exitPathFocus(): void;
-	/** Close the inspector by clearing the active pane's selection; presentation only. */
-	dismissSelection(): void;
-	/** Reopen the recovery dialog for a board that stopped saving or was written elsewhere. */
-	openRecovery(kind: RecoveryKind): void;
 }
 
 export type {
 	ThemeChoice,
 	TakeBackState,
 	ShellPane,
-	ScratchBoardEntry,
 	SelectableNoticeAction,
 	ShellNoticeAction,
 	ShellNotice,
@@ -182,8 +140,6 @@ export type {
 	RecoveryPresentation,
 	ShellPresentation,
 	SettingsSurface,
-	RecoveryKind,
-	RenderBoardPreview,
 	ShellView,
 	ShellActions,
 };

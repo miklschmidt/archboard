@@ -5,10 +5,9 @@
 // ghosts. No pane at all is the normal state of a headless canvas, not an
 // error.
 
-import { type ServerElement } from "@/runtime/engine/types";
 import { type BoardIdentity } from "@/runtime/engine/board";
 
-/** A rectangle. Page coordinates for `rect`, scene coordinates for `viewport`. */
+/** A rectangle in page coordinates. */
 interface Rect {
 	x: number;
 	y: number;
@@ -29,17 +28,19 @@ interface PaneRegistration {
 	clientId: string;
 	/** Stable within the tab, and what the human sees on the pane tab. */
 	paneId: string;
-	/** Board key, e.g. `payments` or `payments@option-a`. */
-	board: string;
-	/** Is this the default pane for browser capture and viewport requests? */
+	/**
+	 * Board key, e.g. `payments` or `payments@option-a`; null when the pane is
+	 * showing no board. A pane exists as long as its socket does, whether or not
+	 * there is anything on it — a fresh vault holds no board, and a pane that
+	 * could not register until one existed could never be shown the first one.
+	 */
+	board: string | null;
+	/** Is this the first pane in reading order, the one that speaks for the tab? */
 	primary: boolean;
 	/** Is this the pane the user last interacted with? */
 	focused: boolean;
-	elementCount: number;
 	/** Where the pane sits in the page, in CSS pixels. */
 	rect: Rect;
-	/** Which part of the board is on screen, in scene coordinates. */
-	viewport: Rect & { zoom: number };
 	/**
 	 * The entry script this tab loaded, e.g. `/assets/index-B1qk9.js`. Absent
 	 * from a tab served by the vite dev server, and from any client that is not
@@ -49,15 +50,25 @@ interface PaneRegistration {
 	at: string;
 }
 
-interface PaneSelection {
-	count: number;
-	/** Capped: a select-all must not make this report expensive. */
-	elementIds: string[];
-	moreIds: number;
-	nodeCount: number;
-	names: string[];
+/**
+ * What one pane is reading, as the pane itself last reported it.
+ *
+ * Semantic identities and nothing drawn: an agent asked to change what the
+ * person is looking at is handed the same ids the edit command takes
+ * (ADR 0023).
+ */
+interface PaneReading {
+	/** The variant on screen, or null before the pane has drawn one. */
+	variant: { id: string; name: string; lifecycle: string } | null;
+	/** The named view it is read through, or null for the whole variant. */
+	view: { id: string; name: string; grammar: string } | null;
+	/** The subjects the person picked out, capped so a report stays cheap. */
+	selection: Array<{ id: string; kind?: string; name?: string }>;
+	moreSelected: number;
 	/** One phrase, e.g. `2 nodes — "Gateway", "Payments"`. */
 	summary: string;
+	/** The board version the pane drew, or null. */
+	version: number | null;
 	at: string | null;
 }
 
@@ -70,12 +81,12 @@ interface PaneReport {
 	place: string;
 	focused: boolean;
 	primary: boolean;
-	board: string;
-	identity: BoardIdentity;
-	elementCount: number;
-	viewport: Rect & { zoom: number };
+	/** The board it is showing, or null when it is showing none. */
+	board: string | null;
+	/** What that board is, or null when there is no board. */
+	identity: BoardIdentity | null;
 	rect: Rect;
-	selection: PaneSelection;
+	reading: PaneReading;
 	/** When this pane last told the server about itself. */
 	at: string;
 }
@@ -107,12 +118,10 @@ interface PanesReport {
 
 /** What the report needs from the server, without importing the server. */
 interface PaneContext {
-	/** The identity the board registry holds for a key, if it holds one. */
+	/** The identity a board key spells. */
 	identity(board: string): BoardIdentity | null;
-	/** The board's elements — used only to name what is selected, never listed. */
-	elements(board: string): ServerElement[];
-	/** What this client last reported picking. */
-	selection(clientId: string): { elementIds: string[]; at: string } | null;
+	/** What this pane last reported reading, or null when it has said nothing. */
+	reading(clientId: string): Omit<PaneReading, "moreSelected" | "summary"> | null;
 	/** Where to open the canvas, for the no-pane case. */
 	canvasUrl?: string;
 }
@@ -123,7 +132,7 @@ type PlacedPane = { pane: PaneRegistration; position: number; place: string };
 /** Panes within this many pixels of each other are in the same row or column. */
 const BAND = 24;
 
-/** Beyond this many selected ids, the report says how many rather than which. */
+/** Beyond this many picked subjects, the report says how many rather than which. */
 const MAX_IDS = 20;
 
 /**
@@ -285,8 +294,8 @@ export {
 	type Arrangement,
 	type PaneContext,
 	type PaneRegistration,
+	type PaneReading,
 	type PaneReport,
-	type PaneSelection,
 	type PanesReport,
 	type PlacedPane,
 	type Rect,

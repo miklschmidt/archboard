@@ -1,56 +1,18 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { z } from "zod";
 import { defineCommand } from "../contract.js";
 import { runCommand } from "../runner.js";
 import {
 	cleanupCommandContractTest,
 	executePublic,
-	heldCompatibility,
 	proofContract,
-	runPublicFixture,
 	temporaryPath,
 } from "./support.js";
 
 afterEach(cleanupCommandContractTest);
 
 describe("command-contract runner", () => {
-	for (const record of heldCompatibility.cases) {
-		test(`fixed-base held policies keep exact bytes and write order for ${record.name}`, async () => {
-			expect(heldCompatibility.fixedBase).toBe("6c42fca6c0d5b9ecaa5ad40fde14ede684722d5a");
-			const artifactPath = temporaryPath(`${record.name}.artifact`);
-			const expand = (value: unknown): unknown =>
-				JSON.parse(JSON.stringify(value).replaceAll("{{ARTIFACT}}", artifactPath));
-			const expectedStdout = record.stdout.replaceAll("{{ARTIFACT}}", artifactPath);
-			const fixture = {
-				...record,
-				result: expand(record.result),
-				...(record.artifact === undefined ? {} : { artifact: expand(record.artifact) }),
-				held: heldCompatibility.held,
-			};
-			const normal = await runPublicFixture(fixture, artifactPath);
-			expect(normal.status, record.name).toBe(0);
-			expect(normal.stdout, record.name).toBe(expectedStdout);
-			expect(normal.stderr, record.name).toBe(record.stderr);
-			if (record.artifact !== undefined) {
-				expect(readFileSync(artifactPath, "utf8"), record.name).toBe("<svg/>");
-				expect(normal.artifactExistedAtFirstOutput, record.name).toBeTrue();
-			}
-			const merged = await runPublicFixture(fixture, artifactPath, true);
-			const expectedMerged = record.events
-				.filter((event) => !event.startsWith("artifact:"))
-				.map((event) =>
-					event
-						.replace(/^stdout:|^stderr:/u, "")
-						.replaceAll("{{ARTIFACT}}", artifactPath)
-						.replaceAll("{{STDOUT}}", expectedStdout),
-				)
-				.join("");
-			expect(merged.status, record.name).toBe(0);
-			expect(merged.merged, record.name).toBe(expectedMerged);
-		});
-	}
-
 	test("the concrete Commander parser owns aliases and optional token arity", async () => {
 		const contract = defineCommand({
 			...proofContract({ result: null, resultSchema: z.object({ name: z.unknown().optional() }) }),
@@ -97,7 +59,6 @@ describe("command-contract runner", () => {
 						id: "json",
 						when: {},
 						mode: "json",
-						held: "none",
 						description: "json",
 					},
 				],
@@ -210,7 +171,6 @@ describe("command-contract runner", () => {
 					exit: 5,
 					description: "refused proof",
 					stream: "stdout-and-stderr",
-					held: "none",
 					presentation: ["diagnostics", "result"],
 				},
 			],
@@ -247,7 +207,6 @@ describe("command-contract runner", () => {
 					exit: 3,
 					description: "unavailable proof",
 					stream: "stdout-and-stderr",
-					held: "none",
 					presentation: ["diagnostics", "result"],
 				},
 			],

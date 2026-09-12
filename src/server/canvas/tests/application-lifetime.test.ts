@@ -6,7 +6,6 @@ import winston from "winston";
 
 import {
 	CanvasApplicationBusyError,
-	CanvasApplicationHeldError,
 	createCanvasApplicationLifetime,
 	createCanvasMutationAdmission,
 } from "../index.js";
@@ -79,32 +78,6 @@ describe("canvas application lifetime", () => {
 		await replacement.start();
 		expect(replacement.phase()).toBe("running");
 		await replacement.stop("test");
-	});
-
-	test("refuses shutdown while every held board and recovery is named", async () => {
-		const actions: string[] = [];
-		const lifetime = createCanvasApplicationLifetime({
-			resources: [
-				{
-					name: "engine",
-					stop: () => {
-						actions.push("stop");
-					},
-				},
-			],
-			heldBoards: () => ["zeta", "alpha"],
-		});
-		await lifetime.start();
-
-		const refusal = await lifetime.stop("test").catch((error: unknown) => error);
-		expect(refusal).toBeInstanceOf(CanvasApplicationHeldError);
-		expect((refusal as CanvasApplicationHeldError).code).toBe("CANVAS_HELD");
-		expect((refusal as Error).message).toContain('"alpha", "zeta"');
-		expect((refusal as Error).message).toContain("reload");
-		expect((refusal as Error).message).toContain("overwrite");
-		expect((refusal as Error).message).toContain("elsewhere");
-		expect(lifetime.phase()).toBe("running");
-		expect(actions).toEqual([]);
 	});
 
 	test("continues reverse teardown after failures and reports them", async () => {
@@ -232,17 +205,23 @@ describe("canvas application lifetime", () => {
 		expect(lifetime.phase()).toBe("stopped");
 	});
 
-	test("drains admitted writes, rechecks holds, and resumes after refusal", async () => {
-		let held: string[] = [];
+	test("a stop that cannot drain leaves the canvas running and admitting writes", async () => {
+		const actions: string[] = [];
 		let quiesces = 0;
 		let resumes = 0;
 		const lifetime = createCanvasApplicationLifetime({
-			resources: [{ name: "engine", stop: () => undefined }],
-			heldBoards: () => held,
+			resources: [
+				{
+					name: "engine",
+					stop: () => {
+						actions.push("stop");
+					},
+				},
+			],
 			quiesce: () => {
 				quiesces++;
 				if (quiesces === 1) {
-					held = ["late-hold"];
+					throw new Error("a write would not settle");
 				}
 			},
 			resume: () => {
@@ -251,12 +230,16 @@ describe("canvas application lifetime", () => {
 		});
 		await lifetime.start();
 
-		await expect(lifetime.stop("test")).rejects.toThrow('"late-hold"');
+		// Nothing was torn down, so the canvas goes back to serving rather than
+		// sitting in a half-stopped state nobody asked for.
+		await expect(lifetime.stop("test")).rejects.toThrow("a write would not settle");
 		expect(lifetime.phase()).toBe("running");
 		expect(resumes).toBe(1);
-		held = [];
+		expect(actions).toEqual([]);
+
 		await lifetime.stop("test");
 		expect(quiesces).toBe(2);
+		expect(actions).toEqual(["stop"]);
 		expect(lifetime.phase()).toBe("stopped");
 	});
 
@@ -310,13 +293,13 @@ describe("canvas application lifetime", () => {
 
 	test("disconnect aborts waitable work and releases request admission", async () => {
 		const admission = createCanvasMutationAdmission({ drainTimeoutMs: 100 });
-		const lease = admission.admit("POST /api/elements/changes");
+		const lease = admission.admit("POST /api/semantic-boards/edit");
 		if (lease === null) {
 			throw new Error("The first mutation was not admitted.");
 		}
 		let observed: AbortSignal | null = null;
 		const work = lease
-			.track("POST /api/elements/changes board-lock wait", async (signal) => {
+			.track("POST /api/semantic-boards/edit board-lock wait", async (signal) => {
 				observed = signal;
 				await new Promise<void>((_resolve, reject) =>
 					signal.addEventListener("abort", () => reject(signal.reason), { once: true }),

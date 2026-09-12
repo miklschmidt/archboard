@@ -1,9 +1,11 @@
-// The left navigator: one collapsible group per board with its variants, a
-// separate group for scratch boards, the listing's refresh and error line,
-// and the "New board" action. Each list is one tab stop: the arrow keys move
-// between its rows (`roving-list.ts`), Enter and Space open a row.
+// The left navigator: one collapsible group per board with its variants, and
+// the listing's refresh and error line. Each list is one tab stop: the arrow
+// keys move between its rows (`use-roving-list.ts`), Enter and Space open a row.
+//
+// Nothing here makes a board. A person reads an architecture an agent wrote
+// (ADR 0023), so the navigator is a way of choosing which one to look at.
 
-import { RiAddLine, RiArrowDownSLine, RiRefreshLine } from "@remixicon/react";
+import { RiArrowDownSLine, RiRefreshLine } from "@remixicon/react";
 import {
 	useCallback,
 	useMemo,
@@ -13,12 +15,10 @@ import {
 	type KeyboardEvent,
 } from "react";
 
-import { Button } from "@/ui/components/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/components/collapsible";
 import {
 	Sidebar,
 	SidebarContent,
-	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupAction,
 	SidebarGroupLabel,
@@ -32,16 +32,14 @@ import {
 import { Skeleton } from "@/ui/components/skeleton";
 import { StatusDot } from "@/ui/shell/components/StatusDot";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
-import type { RenderBoardPreview, ShellActions, ShellView } from "@/ui/shell/types/contracts";
+import type { ShellActions, ShellView } from "@/ui/shell/types/contracts";
 import {
 	groupBoards,
-	scratchEntries,
 	type NavigatorEntry,
 	type NavigatorGroup,
 } from "@/ui/shell/lib/navigator-entries";
 import {
 	useRovingList,
-	type RovingItemAttributes,
 	type RovingItemProps,
 	type RovingList,
 } from "@/ui/shell/hooks/use-roving-list";
@@ -58,8 +56,6 @@ const MARK_CLASS =
 interface SelectableProps {
 	selectedKey: string | null;
 	actions: ShellActions;
-	/** How a row draws its board's preview; the shell owns neither source nor cache. */
-	renderPreview: RenderBoardPreview;
 }
 
 /** Inputs for the small markers beside a name. */
@@ -151,40 +147,10 @@ function EntryMarkers(props: EntryMarkersProps): JSX.Element | null {
 	);
 }
 
-/** Inputs for the placeholder affordance. */
-interface NeedsNameProps extends RovingItemProps {
-	entryKey: string;
-	actions: ShellActions;
-}
-
-/**
- * The affordance for a scratch board that has no name yet: a small
- * primary-outline chip on the name line, not a floating button.
- * @param props The entry key, the actions and its place in the roving list.
- * @returns A chip-sized button.
- */
-function NeedsName(props: NeedsNameProps): JSX.Element {
-	const { entryKey, actions } = props;
-	const handleClick = useCallback(() => actions.nameBoard(entryKey), [actions, entryKey]);
-	return (
-		<Button
-			variant="outline"
-			size="xs"
-			className="border-primary text-primary hover:bg-primary/10 hover:text-primary absolute top-0.5 right-1 rounded-[2px] px-1.5 font-medium"
-			onClick={handleClick}
-			{...props.roving}
-		>
-			Needs a name
-		</Button>
-	);
-}
-
 /** Inputs for one variant row. */
 interface VariantRowProps extends SelectableProps, RovingItemProps {
 	entry: NavigatorEntry;
-	/** The "Needs a name" chip's place in the list, used only by a placeholder. */
-	chipRoving: RovingItemAttributes;
-	/** The row's name: the variant under a board group, the board name for scratch. */
+	/** The row's name: the variant under its board group. */
 	label: string;
 }
 
@@ -199,8 +165,8 @@ function renderButton(props: ComponentPropsWithRef<"button">): JSX.Element {
 }
 
 /**
- * One row: the name, its markers and its lazy preview. The selected row
- * carries a one-pixel cobalt ring; hover tints the row.
+ * One row: the name and its markers. The selected row carries a one-pixel
+ * cobalt ring; hover tints the row.
  * @param props The entry, its label, the selected key, the actions and its roving place.
  * @returns The sub-menu row.
  */
@@ -219,18 +185,12 @@ function VariantRow(props: VariantRowProps): JSX.Element {
 				className="data-active:ring-primary data-active:bg-accent hover:bg-sidebar-accent h-auto w-full translate-x-0 flex-col items-stretch gap-1.5 rounded-[2px] px-2 py-1.5 data-active:ring-1 data-active:ring-inset"
 				{...props.roving}
 			>
-				<span
-					className={`flex items-start justify-between gap-2 ${entry.placeholder ? "pr-24" : ""}`}
-				>
+				<span className="flex items-start justify-between gap-2">
 					<span className="line-clamp-2 min-w-0 whitespace-normal!">{props.label}</span>
 					<EntryMarkers entry={entry} />
 				</span>
 				<DoingLine entry={entry} />
-				{props.renderPreview(entry.key, entry.identity.board)}
 			</SidebarMenuSubButton>
-			{entry.placeholder && (
-				<NeedsName entryKey={entry.key} actions={actions} roving={props.chipRoving} />
-			)}
 		</SidebarMenuSubItem>
 	);
 }
@@ -289,94 +249,13 @@ function BoardGroup(props: BoardGroupProps): JSX.Element {
 								label={entry.identity.variant}
 								selectedKey={props.selectedKey}
 								actions={props.actions}
-								renderPreview={props.renderPreview}
 								roving={list.item(`row:${entry.key}`)}
-								chipRoving={list.item(`chip:${entry.key}`)}
 							/>
 						))}
 					</SidebarMenuSub>
 				</CollapsibleContent>
 			</SidebarMenuItem>
 		</Collapsible>
-	);
-}
-
-/**
- * The roving ids of a list of rows: each row and, for a placeholder, its chip.
- * @param entries The rows.
- * @returns The ids in document order.
- */
-function rowIds(entries: readonly NavigatorEntry[]): string[] {
-	return entries.flatMap((entry) =>
-		entry.placeholder ? [`row:${entry.key}`, `chip:${entry.key}`] : [`row:${entry.key}`],
-	);
-}
-
-/** Inputs for the scratch group. */
-interface ScratchGroupProps extends SelectableProps {
-	entries: NavigatorEntry[];
-	/** How many open boards could not be asked whether they have a name. */
-	unreadable: number;
-}
-
-/** Inputs for the line about boards that could not be asked about. */
-interface UnnamedUnknownProps {
-	unreadable: number;
-}
-
-/**
- * What the scratch group says when a board's name state could not be read: a
- * board that could not be asked about is not offered a name it may already
- * have, and the refresh above is what tries again.
- * @param props How many boards could not be read.
- * @returns The line, or nothing when every open board answered.
- */
-function UnnamedUnknown(props: UnnamedUnknownProps): JSX.Element | null {
-	if (props.unreadable === 0) {
-		return null;
-	}
-	const boards = props.unreadable === 1 ? "One open board" : `${props.unreadable} open boards`;
-	return (
-		<p className="text-body flex items-start gap-2 px-2 py-1" aria-live="polite">
-			<StatusDot tone="warning" className="mt-[5px]" />
-			<span className="min-w-0">{boards} could not be checked for a name. Refresh to retry.</span>
-		</p>
-	);
-}
-
-/**
- * The scratch group: boards with a note but no chosen name. Its own roving
- * list, so it is one tab stop of its own.
- * @param props The entries, the selected key and the actions.
- * @returns The group, or nothing when there is no scratch board.
- */
-function ScratchGroup(props: ScratchGroupProps): JSX.Element | null {
-	const ids = useMemo(() => rowIds(props.entries), [props.entries]);
-	const list = useRovingList(ids);
-	if (props.entries.length === 0 && props.unreadable === 0) {
-		return null;
-	}
-	return (
-		<SidebarGroup className="border-border border-t p-2 pt-1">
-			<SidebarGroupLabel className={KICKER_CLASS}>Scratch</SidebarGroupLabel>
-			<UnnamedUnknown unreadable={props.unreadable} />
-			<SidebarMenu onKeyDown={list.onKeyDown}>
-				<SidebarMenuSub className="mx-0 translate-x-0 gap-1 border-l-0 p-0">
-					{props.entries.map((entry) => (
-						<VariantRow
-							key={entry.key}
-							entry={entry}
-							label={entry.identity.board}
-							selectedKey={props.selectedKey}
-							actions={props.actions}
-							renderPreview={props.renderPreview}
-							roving={list.item(`row:${entry.key}`)}
-							chipRoving={list.item(`chip:${entry.key}`)}
-						/>
-					))}
-				</SidebarMenuSub>
-			</SidebarMenu>
-		</SidebarGroup>
 	);
 }
 
@@ -393,7 +272,6 @@ interface ListingStateProps {
 	loading: boolean;
 	error: string | null;
 	empty: boolean;
-	actions: ShellActions;
 }
 
 /**
@@ -410,7 +288,7 @@ function ListingSkeleton(): JSX.Element {
 			{[0, 1].map((row) => (
 				<div key={row} className="flex flex-col gap-1.5">
 					<Skeleton className="h-3 w-2/5 rounded-[2px] motion-reduce:animate-none" />
-					<Skeleton className="aspect-video w-full rounded-[2px] motion-reduce:animate-none" />
+					<Skeleton className="h-3 w-3/5 rounded-[2px] motion-reduce:animate-none" />
 				</div>
 			))}
 		</div>
@@ -418,15 +296,12 @@ function ListingSkeleton(): JSX.Element {
 }
 
 /**
- * What the group says while it has no board to list: that the vault is
- * being read, why the listing failed, or that no named board exists yet
- * with the way to make one.
- * @param props The listing state and the actions.
+ * What the group says while it has no board to list: that the vault is being
+ * read, why the listing failed, or that it holds no board yet.
+ * @param props The listing state.
  * @returns One line, or nothing while boards are listed.
  */
 function ListingState(props: ListingStateProps): JSX.Element | null {
-	const { actions } = props;
-	const handleNew = useCallback(() => actions.createBoard(), [actions]);
 	if (props.error !== null) {
 		return (
 			<p className="text-body flex items-start gap-2 px-2 py-1" aria-live="polite">
@@ -442,26 +317,24 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 		return <ListingSkeleton />;
 	}
 	return (
-		<div className="flex flex-col items-start gap-1.5 px-2 py-1">
-			<p className="text-muted-foreground text-body" aria-live="polite">
-				No named boards yet.
-			</p>
-			<Button
-				variant="outline"
-				size="xs"
-				className="border-primary text-primary hover:bg-primary/10 hover:text-primary rounded-[2px] font-medium"
-				onClick={handleNew}
-			>
-				<RiAddLine data-icon="inline-start" />
-				Create a board
-			</Button>
-		</div>
+		<p className="text-muted-foreground text-body px-2 py-1" aria-live="polite">
+			No boards yet. Ask an agent for one: <code>archboard semantic new &lt;name&gt;</code>.
+		</p>
 	);
 }
 
 /** Inputs for the refresh control. */
 interface RefreshActionProps {
 	actions: ShellActions;
+}
+
+/**
+ * The sidebar group action as the tooltip's element.
+ * @param props The merged props Base UI hands to the rendered element.
+ * @returns The group action.
+ */
+function renderGroupAction(props: ComponentPropsWithRef<"button">): JSX.Element {
+	return <SidebarGroupAction {...props} />;
 }
 
 /**
@@ -488,23 +361,18 @@ function RefreshAction(props: RefreshActionProps): JSX.Element {
 }
 
 /**
- * The sidebar group action as the tooltip's element.
- * @param props The merged props Base UI hands to the rendered element.
- * @returns The group action.
- */
-function renderGroupAction(props: ComponentPropsWithRef<"button">): JSX.Element {
-	return <SidebarGroupAction {...props} />;
-}
-
-/**
- * The persisted boards with the refresh action and, when the listing failed, why.
+ * The vault's boards with the refresh action and, when the listing failed, why.
  * @param props The groups, the error, the selected key and the actions.
  * @returns The group.
  */
 function BoardsGroup(props: BoardsGroupProps): JSX.Element {
 	const { actions, groups } = props;
 	const ids = useMemo(
-		() => groups.flatMap((group) => [`group:${group.board}`, ...rowIds(group.variants)]),
+		() =>
+			groups.flatMap((group) => [
+				`group:${group.board}`,
+				...group.variants.map((entry) => `row:${entry.key}`),
+			]),
 		[groups],
 	);
 	const list = useRovingList(ids);
@@ -512,12 +380,7 @@ function BoardsGroup(props: BoardsGroupProps): JSX.Element {
 		<SidebarGroup className="p-2 pt-1">
 			<SidebarGroupLabel className={KICKER_CLASS}>Boards</SidebarGroupLabel>
 			<RefreshAction actions={actions} />
-			<ListingState
-				loading={props.loading}
-				error={props.error}
-				empty={groups.length === 0}
-				actions={actions}
-			/>
+			<ListingState loading={props.loading} error={props.error} empty={groups.length === 0} />
 			<SidebarMenu className="gap-1" onKeyDown={list.onKeyDown}>
 				{groups.map((group) => (
 					<BoardGroup
@@ -526,7 +389,6 @@ function BoardsGroup(props: BoardsGroupProps): JSX.Element {
 						list={list}
 						selectedKey={props.selectedKey}
 						actions={actions}
-						renderPreview={props.renderPreview}
 					/>
 				))}
 			</SidebarMenu>
@@ -547,7 +409,6 @@ interface NavigatorProps {
  */
 function Navigator(props: NavigatorProps): JSX.Element {
 	const { view, actions } = props;
-	const handleNew = useCallback(() => actions.createBoard(), [actions]);
 	return (
 		<Sidebar collapsible="none" className="border-border shrink-0 border-r">
 			<SidebarContent>
@@ -557,26 +418,8 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					loading={view.boardsLoading}
 					selectedKey={view.selectedBoardKey}
 					actions={actions}
-					renderPreview={view.renderPreview}
-				/>
-				<ScratchGroup
-					entries={scratchEntries(view)}
-					unreadable={view.scratchUnreadable}
-					selectedKey={view.selectedBoardKey}
-					actions={actions}
-					renderPreview={view.renderPreview}
 				/>
 			</SidebarContent>
-			<SidebarFooter className="border-border border-t p-0">
-				<Button
-					variant="ghost"
-					className="h-9 w-full justify-start rounded-none px-3 has-data-[icon=inline-start]:pl-3"
-					onClick={handleNew}
-				>
-					<RiAddLine data-icon="inline-start" />
-					New board
-				</Button>
-			</SidebarFooter>
 		</Sidebar>
 	);
 }

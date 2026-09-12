@@ -30,8 +30,8 @@ interface PaneStatusLineProps {
 }
 
 /**
- * What a pane reports: connection, element count, last change, and whether
- * its board has stopped saving or was written elsewhere.
+ * What a pane reports: its connection, the board version it is showing, and
+ * when it last heard that board change.
  * @param props The pane.
  * @returns The status line.
  */
@@ -41,8 +41,14 @@ function PaneStatusLine(props: PaneStatusLineProps): JSX.Element {
 		<span className="text-technical text-muted-foreground flex items-center gap-1.5 font-normal">
 			<StatusDot tone={status.connected ? "live" : "idle"} />
 			{status.connected ? "Connected" : "Offline"}
-			<span aria-hidden="true">·</span>
-			<span className="font-mono">{status.elementCount}</span> elements
+			{status.version !== null && (
+				<>
+					<span aria-hidden="true">·</span>
+					<span>
+						v<span className="font-mono">{status.version}</span>
+					</span>
+				</>
+			)}
 			{status.lastChangeAt !== null && (
 				<>
 					<span aria-hidden="true">·</span>
@@ -50,10 +56,6 @@ function PaneStatusLine(props: PaneStatusLineProps): JSX.Element {
 						{clockTime(status.lastChangeAt)}
 					</time>
 				</>
-			)}
-			{status.hold && <span className="text-warning-foreground">· not saving</span>}
-			{status.writtenElsewhere && (
-				<span className="text-warning-foreground">· written elsewhere</span>
 			)}
 		</span>
 	);
