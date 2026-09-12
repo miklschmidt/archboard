@@ -72,6 +72,28 @@ const NODES: readonly Node[] = [
 ];
 
 /**
+ * One endpoint a predecessor took away, as the board holds the disagreement.
+ *
+ * Two of these on one relationship is the case that matters: the same kind, no
+ * field on either, and nothing to tell them apart but what they say.
+ * @param end Which endpoint went.
+ * @returns The disagreement.
+ */
+function lostEnd(end: string): Record<string, unknown> {
+	return {
+		subject: "e1",
+		what: "subject",
+		kind: "reference-lost",
+		mine: "kept what it said",
+		theirs: "changed under it",
+		repair:
+			"Merging the change from the variant this proposal came from would leave it saying " +
+			`something no board may hold — "${end}" is not a node on this board. This proposal keeps ` +
+			"what it said; say what it should say instead.",
+	};
+}
+
+/**
  * Put a board of nodes and a drawing of it in front of a pane.
  * @param nodes The board's nodes.
  */
@@ -343,6 +365,62 @@ test("a drill-down asking for the current variant follows it when it moves", asy
 	expect(
 		server.calls.some((url) => url.includes("board=engine") && url.includes("variant=v2")),
 	).toBe(true);
+});
+
+test("a subject held up by two disagreements of one kind says both", async () => {
+	// A relationship on a draft whose predecessor took both of its endpoints
+	// away: two disagreements, the same kind, neither about a field. Nothing
+	// distinguishes them but what they say, so a panel keyed on the kind and the
+	// field alone shows one of them — or, after an update, the wrong one.
+	const wired = { nodes: NODES, edges: [{ id: "e1", from: "n1", to: "n2", kind: "call" }] };
+	server.reply = {
+		status: 200,
+		body: { ...drawing(1), variant: { id: "v2", name: "proposed", lifecycle: "draft" } },
+	};
+	server.documents["pipeline"] = {
+		...boardOf("pipeline", NODES),
+		variants: [
+			{ id: "v1", name: "as it is", lifecycle: "current", content: wired },
+			{
+				id: "v2",
+				name: "proposed",
+				lifecycle: "draft",
+				parent: "v1",
+				content: wired,
+				reconciliation: {
+					against: "v1",
+					atVersion: 1,
+					base: wired,
+					issues: [lostEnd("gone-from"), lostEnd("gone-to")],
+				},
+			},
+		],
+	};
+	// React is the thing that notices two children sharing an identity, and it
+	// says so on the console rather than by rendering anything different — so
+	// that is what is watched. A list keyed on the kind and the field alone
+	// renders both of these once and then cannot tell them apart on an update.
+	const complaints: string[] = [];
+	const spoke = console.error;
+	/**
+	 * Keep what React complains about instead of printing it.
+	 * @param said The parts of one complaint.
+	 */
+	console.error = (...said: unknown[]): void => {
+		complaints.push(said.map((part) => String(part)).join(" "));
+	};
+	try {
+		mountStage("e1");
+		await settled();
+	} finally {
+		console.error = spoke;
+	}
+
+	const waiting = slot("semantic-inspector-waiting");
+	expect(waiting?.textContent ?? "").toContain("gone-from");
+	expect(waiting?.textContent ?? "").toContain("gone-to");
+	expect(waiting?.children).toHaveLength(2);
+	expect(complaints.filter((said) => said.includes("same key"))).toEqual([]);
 });
 
 test("a board the inspector cannot read says so rather than reading forever", async () => {

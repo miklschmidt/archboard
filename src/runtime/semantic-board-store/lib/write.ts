@@ -29,7 +29,12 @@ import {
 	type LockRequest,
 } from "@/runtime/engine/board-lock";
 import { mintId } from "@/shared/ids/ids";
-import { nextVersion, parseSemanticBoard, type SemanticBoard } from "@/shared/semantic-board/index";
+import {
+	nextVersion,
+	parseSemanticBoard,
+	SEMANTIC_BOARD_SCHEMA_VERSION,
+	type SemanticBoard,
+} from "@/shared/semantic-board/index";
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -357,6 +362,12 @@ function applyUnderLease(
 	}
 	const checked = acceptable(location, command, {
 		...candidate.board,
+		// Every accepted write stamps the contract it was written under. A board
+		// created before a field existed and then written to now holds what this
+		// build can say, and saying so is the whole purpose of the field: a reader
+		// that finds an older version knows what it may not expect to find.
+		// Nothing migrates a file nobody wrote to — reading is unchanged.
+		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 		version: nextVersion(before.board),
 		updatedAt: at,
 	});

@@ -541,18 +541,30 @@ test("the subjects a disagreement is about are marked in the picture", async () 
 			},
 		},
 	};
-	mountStage();
+	// Picked out, and the subject picked out is the very one the argument is
+	// about: the case a single mark per subject used to lose.
+	mountStage("n1");
 	await settle();
 	// A dispute is a fact about the board rather than something the reader is
-	// doing, so it shows with nothing selected and no walkthrough open — and it
-	// shows on the card itself, not only in the list beside the picture.
-	expect(surface().querySelector("#card-halo")?.getAttribute("style")).toContain(
-		"stroke-dasharray",
+	// doing, so it is said whatever the reader is looking at — and it is said in
+	// words somebody can act on, not only as a mark.
+	expect(document.querySelector("[data-slot='semantic-standing']")?.textContent).toContain(
+		"say which name stands",
 	);
-	expect(surface().querySelector("#wire-halo")?.getAttribute("style")).toBeNull();
-	// And it is told apart from what the reader has picked out: the selection
-	// keeps the solid ring the renderer draws for it.
-	expect(surface().querySelector("[data-semantic-id='n1']")?.classList).not.toContain(
+	// The viewer draws none of it. What the board has not decided is drawn into
+	// the picture by the renderer, from the same reconciliation these words come
+	// from, so the pane writes nothing onto the markup it was handed — a ring lit
+	// dashed by an inline style was a third ring on a page that already had two.
+	const written = [...surface().querySelectorAll(".ab-halo")].map((halo) =>
+		halo.getAttribute("style"),
+	);
+	expect(written).toEqual([null, null]);
+	// And attention is independent of it: the ring the reader's own pick turns on
+	// is on, and the subject it is on is the one still being argued about.
+	expect([...(surface().querySelector("[data-semantic-id='n1']")?.classList ?? [])]).toContain(
+		"is-selected",
+	);
+	expect([...(surface().querySelector("[data-semantic-id='e1']")?.classList ?? [])]).not.toContain(
 		"is-selected",
 	);
 });

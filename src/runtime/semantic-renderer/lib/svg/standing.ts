@@ -46,6 +46,23 @@
 // invisible until a viewer puts `is-selected` on the group; the standing sits on
 // the subject's own outline and inside its own corner. A selected added node
 // shows both, concentric, and neither is the other.
+//
+// ## The warning, which is not a standing
+//
+// A reconciliation nobody has decided yet is a different kind of fact: not what
+// this proposal did to its source, but that the two disagree and that the
+// disagreement is open. It is drawn from here because it is the same sort of
+// derived-and-never-stored overlay, and it is drawn deliberately unlike the
+// three: a triangle rather than a disc, the top-right corner rather than the
+// top-left, the shell's warning ink rather than one of the three standing hues.
+// A subject can be added and unsettled at once and both marks stay legible,
+// because they never share a corner.
+//
+// It was a ring before this. The viewer lit a subject's own selection halo
+// dashed, which meant a page could show a solid ring, a dashed ring and a
+// dashed outline at once with nothing to say which of the three a reader was
+// looking at — and a subject that was both attended and unsettled lost the
+// dispute altogether, because one map held one mark per subject.
 
 import type { ChangeKind } from "@/shared/semantic-board/index";
 import { coord, type Box } from "@/runtime/semantic-renderer/lib/geometry";
@@ -147,7 +164,12 @@ const SWIPE_OPACITY: Readonly<Record<SubjectStanding, number>> = {
 };
 
 /**
- * The ink one standing is drawn in.
+ * The ink one standing is drawn in, and the one question every channel asks.
+ *
+ * The line, the arrowhead it ends in and the dots that ride it all ask this, so
+ * a relationship drawn as changed is amber all the way through instead of an
+ * amber band behind a grey line — which reads as a glow behind something
+ * unrelated to it rather than as the line's own standing.
  * @param standing How the subject stands.
  * @param palette The theme's colours.
  * @returns The colour, or undefined for a subject that stands unchanged.
@@ -305,14 +327,126 @@ function standingSwipe(
 	});
 }
 
+/**
+ * Which subjects the board says nobody has decided yet.
+ *
+ * The same shape as a standing lookup and for the same reason: the caller
+ * derives it at the moment of the render — the render route already computes it
+ * for the words beside the picture — and nothing about it is stored on a board.
+ */
+type UnsettledOf = (id: string) => boolean;
+
+/** How big the warning triangle is, corner to corner. */
+const BADGE_SIZE = 11;
+
+/**
+ * The triangle, drawn about its own centre, and the bar and dot inside it.
+ *
+ * A silhouette no standing wears: the three pins are discs, and this is the
+ * shape that means "look at this before you trust it" everywhere else a person
+ * has seen one.
+ */
+const BADGE_GLYPH = "M0,-5.2 L5.4,4.4 H-5.4 Z";
+const BADGE_BANG = "M0,-2.4 V0.9";
+const BADGE_DOT = "M0,2.6 V2.9";
+
+/**
+ * The warning mark, centred whereever it was put.
+ *
+ * Drawn as a filled triangle with the ground knocked out of it, exactly as a
+ * standing pin is, so the two read as one family of marks at one size while
+ * saying different things.
+ * @param x Where its centre goes.
+ * @param y The same.
+ * @param palette The theme's colours.
+ * @returns The badge.
+ */
+function warningMark(x: number, y: number, palette: Palette): string {
+	return wrap(
+		"g",
+		{ transform: `translate(${coord(x)},${coord(y)})`, "pointer-events": "none" },
+		tag("path", { d: BADGE_GLYPH, fill: palette.warning }) +
+			tag("path", {
+				d: `${BADGE_BANG} ${BADGE_DOT}`,
+				fill: "none",
+				stroke: palette.background,
+				"stroke-width": PIN_STROKE,
+				"stroke-linecap": "round",
+			}),
+	);
+}
+
+/**
+ * The warning on a box's top-right corner.
+ *
+ * The mirror of the standing pin's corner, so a subject that is both marked
+ * says both without either mark moving. It sits inside the box for the same two
+ * reasons the pin does — the atlas covers what is inside a subject, and the
+ * selection ring passes just outside it — and inside the right-hand padding
+ * every box already leaves, so no word is ever nearer to it than the padding
+ * allows and nothing had to be re-measured to make room.
+ * @param box The subject's box.
+ * @param unsettled Whether the board says this subject is undecided.
+ * @param palette The theme's colours.
+ * @returns The badge, or nothing to draw.
+ */
+function warningBadge(box: Box, unsettled: boolean, palette: Palette): string {
+	if (!unsettled) {
+		return "";
+	}
+	return warningMark(box.x + box.width - PIN_INSET, box.y + PIN_INSET, palette);
+}
+
+/**
+ * The warning on a line, which has no corner to put one in.
+ *
+ * On the leading edge of the words it carries, when it carries any: a pill is
+ * opaque and padded, so a mark straddling its left edge is clear of its text
+ * and is where a reader is already looking. A line with no words takes it at
+ * the point the label pass would have put them.
+ * @param at Where to centre it.
+ * @param unsettled Whether the board says this relationship is undecided.
+ * @param palette The theme's colours.
+ * @returns The badge, or nothing to draw.
+ */
+function warningOnLine(
+	at: { readonly x: number; readonly y: number } | undefined,
+	unsettled: boolean,
+	palette: Palette,
+): string {
+	if (!unsettled || at === undefined) {
+		return "";
+	}
+	return warningMark(at.x, at.y, palette);
+}
+
+/**
+ * What the caller said is unsettled, read as a lookup.
+ * @param stated The subject ids, or undefined when the caller said nothing.
+ * @returns The lookup, which answers false for everything when nothing was said.
+ */
+function unsettledFrom(stated: readonly string[] | undefined): UnsettledOf {
+	if (stated === undefined || stated.length === 0) {
+		return () => false;
+	}
+	const held = new Set(stated);
+	return (id: string) => held.has(id);
+}
+
 export {
 	type SubjectStanding,
 	type StatedStandings,
 	type StandingOf,
 	type SubjectKind,
+	type UnsettledOf,
+	BADGE_SIZE,
+	standingInk,
 	standingsFrom,
 	subjectGroup,
 	standingOutline,
 	standingPin,
 	standingSwipe,
+	unsettledFrom,
+	warningBadge,
+	warningOnLine,
 };

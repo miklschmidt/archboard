@@ -35,6 +35,7 @@ import {
 } from "@/runtime/semantic-renderer/lib/fonts";
 import type { Palette } from "@/runtime/semantic-renderer/lib/theme";
 import type { Attributes } from "@/runtime/semantic-renderer/lib/svg/primitives";
+import { standingInk, type SubjectStanding } from "@/runtime/semantic-renderer/lib/svg/standing";
 
 /** How loudly a line speaks. */
 type Weight = "hero" | "normal" | "muted";
@@ -104,6 +105,34 @@ function weightColour(palette: Palette, weight: Weight): string {
 }
 
 /**
+ * The ink a line, its arrowhead and its dots are all drawn in.
+ *
+ * A relationship that stands for something takes the standing's ink; everything
+ * else is drawn in the ink of its weight. One function, asked by all three, so
+ * a changed relationship cannot end up amber in one of them and grey in the
+ * other two — which is exactly what it did, and it read as a coloured glow
+ * behind a line that had nothing to do with it.
+ *
+ * What the standing does NOT take over is the line's dash or its weight. Those
+ * are the two things the line already says — what sort of relationship it is,
+ * and how much attention its author asked for — and a standing that spent
+ * either would be answering a question nobody asked at the cost of one somebody
+ * did.
+ * @param palette The theme's colours.
+ * @param weight How loudly the line speaks.
+ * @param standing How it stands, when this is a proposal and it moved.
+ * @returns The stroke colour.
+ */
+function lineColour(
+	palette: Palette,
+	weight: Weight,
+	standing: SubjectStanding | undefined,
+): string {
+	const marked = standing === undefined ? undefined : standingInk(standing, palette);
+	return marked ?? weightColour(palette, weight);
+}
+
+/**
  * How loudly one edge speaks.
  * @param edge The relationship.
  * @returns Its weight.
@@ -163,12 +192,19 @@ function headOf(edge: SemanticEdge): Head {
 
 /**
  * The marker reference for one arrowhead.
+ *
+ * The head is part of the line, so it is drawn in the line's ink: one marker
+ * per form, per weight, and per standing that has an ink of its own. An
+ * unmarked line keeps the id it always had, which is what keeps a board that is
+ * not a proposal drawing the same bytes.
  * @param weight How loudly the line speaks.
  * @param head Which form.
+ * @param standing How the line stands, when this is a proposal and it moved.
  * @returns The `marker-end` value.
  */
-function markerFor(weight: Weight, head: Head): string {
-	return `url(#ah-${head}-${weight})`;
+function markerFor(weight: Weight, head: Head, standing?: SubjectStanding): string {
+	const marked = standing === undefined || standing === "unchanged" ? "" : `-${standing}`;
+	return `url(#ah-${head}-${weight}${marked})`;
 }
 
 /**
@@ -184,13 +220,18 @@ function strokeWidthOf(edge: SemanticEdge): number {
  * How one edge's line is stroked.
  * @param edge The relationship.
  * @param palette The theme's colours.
+ * @param standing How it stands, when this is a proposal and it moved.
  * @returns The path's attributes.
  */
-function edgeAttributes(edge: SemanticEdge, palette: Palette): Attributes {
+function edgeAttributes(
+	edge: SemanticEdge,
+	palette: Palette,
+	standing?: SubjectStanding,
+): Attributes {
 	const weight = weightOf(edge);
 	return {
 		fill: "none",
-		stroke: weightColour(palette, weight),
+		stroke: lineColour(palette, weight, standing),
 		"stroke-width": STROKE_WIDTH[weight],
 		"stroke-opacity": STROKE_OPACITY[weight],
 		"stroke-linecap": "round",
@@ -248,6 +289,7 @@ export {
 	type Head,
 	type SvgStyles,
 	WEIGHTS,
+	lineColour,
 	weightColour,
 	weightOf,
 	headOf,

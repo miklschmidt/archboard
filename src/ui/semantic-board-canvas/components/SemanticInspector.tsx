@@ -20,6 +20,7 @@ import {
 	resolveVariant,
 	type ChangeKind,
 	type FieldChange,
+	type ReconciliationIssue,
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
@@ -102,6 +103,49 @@ function StandingBlock(props: StandingProps): JSX.Element | null {
 					))}
 				</dl>
 			)}
+		</Section>
+	);
+}
+
+/** Inputs for the undecided block. */
+interface WaitingProps {
+	/** The disagreements this subject is held up by; never empty when shown. */
+	open: readonly ReconciliationIssue[];
+}
+
+/**
+ * What nobody has decided about the selected subject.
+ *
+ * The picture says there is something open — a warning badge in the subject's
+ * corner — and this is where that badge is cashed in. A badge a reader cannot
+ * turn into a sentence is a badge that only tells them to worry, so the words
+ * are the reconciliation's own: which field, what each side says, and the
+ * repair it suggested. Quoted rather than rewritten, because the thing that
+ * found the disagreement is the thing that knows what it is.
+ * @param props The open disagreements.
+ * @returns The block.
+ */
+function WaitingBlock(props: WaitingProps): JSX.Element | null {
+	if (props.open.length === 0) {
+		return null;
+	}
+	return (
+		<Section title="Nobody has decided this yet">
+			<ul className="flex flex-col gap-2.5" data-slot="semantic-inspector-waiting">
+				{props.open.map((issue) => (
+					// The repair is part of the identity, not decoration. One subject can
+					// hold two disagreements of the same kind about no field at all — a
+					// relationship whose predecessor took both of its endpoints away
+					// reports one for each end — and a key built from the kind and the
+					// field alone is the same key twice.
+					<li key={`${issue.kind}|${issue.field ?? ""}|${issue.repair}`}>
+						<p className="text-body">
+							{issue.field === undefined ? issue.what : `${issue.what} — ${issue.field}`}
+						</p>
+						<p className="text-muted-foreground text-body">{issue.repair}</p>
+					</li>
+				))}
+			</ul>
 		</Section>
 	);
 }
@@ -202,6 +246,7 @@ function NodeBody(props: NodeBodyProps): JSX.Element {
 				kind={node.kind}
 				id={node.id}
 				responsibility={node.responsibility}
+				group={node.group}
 			/>
 			<Section title="Containment">
 				<p className="text-body" data-slot="semantic-inspector-ancestry">
@@ -298,6 +343,8 @@ interface BodyProps {
 	notice: string;
 	/** How the subject stands, and what moved, when this variant came from one. */
 	against: StandingProps | null;
+	/** What about this subject nobody has decided yet. */
+	open: readonly ReconciliationIssue[];
 	/**
 	 * Open the board one level down.
 	 * @param board The target board.
@@ -323,6 +370,7 @@ function InspectorBody(props: BodyProps): JSX.Element {
 	return (
 		<>
 			{bodyFor(subject, props.onOpen, props.onOpenCode)}
+			<WaitingBlock open={props.open} />
 			{against !== null && (
 				<StandingBlock
 					standing={against.standing}
@@ -342,6 +390,8 @@ interface Explanation {
 	readonly notice: string;
 	/** How it stands against the variant this one came from, when it came from one. */
 	readonly against: StandingProps | null;
+	/** What about this subject nobody has decided yet; empty when nothing is open. */
+	readonly open: readonly ReconciliationIssue[];
 }
 
 /**
@@ -410,7 +460,7 @@ function explain(
 	selection: string,
 ): Explanation {
 	const { data: document } = read;
-	const nothing = { subject: undefined, against: null } as const;
+	const nothing = { subject: undefined, against: null, open: [] } as const;
 	if (read.error !== null) {
 		return { ...nothing, notice: `This board could not be read. ${read.error.message}` };
 	}
@@ -427,8 +477,24 @@ function explain(
 	}
 	return {
 		...comparedSubject(reading.board, shown, selection),
+		open: openOn(shown, selection),
 		notice: "This is not on the board any more. It may have gone since the picture was drawn.",
 	};
+}
+
+/**
+ * What nobody has decided about one subject.
+ *
+ * The variant's own reconciliation, which is where the picture's warning badges
+ * come from as well, narrowed to the subject somebody picked out — so the badge
+ * in the corner and the words in this panel are two readings of one fact.
+ * @param shown The variant the picture is of.
+ * @param selection The picked semantic id.
+ * @returns Its open disagreements, which is usually none.
+ */
+function openOn(shown: SemanticVariant, selection: string): readonly ReconciliationIssue[] {
+	const issues = shown.reconciliation?.issues ?? [];
+	return issues.filter((issue) => issue.subject === selection);
 }
 
 /** Inputs for the inspector. */
@@ -501,6 +567,7 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 			<InspectorBody
 				subject={subject}
 				against={explained.against}
+				open={explained.open}
 				notice={explained.notice}
 				onOpen={props.onOpen}
 				{...(props.onOpenCode === undefined ? {} : { onOpenCode: props.onOpenCode })}

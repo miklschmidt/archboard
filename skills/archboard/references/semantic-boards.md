@@ -10,8 +10,9 @@ asked to say what a node is for is being asked the right one.
 ## What a variant holds
 
 - **Nodes** — identity, kind, name, optional short responsibility, optional
-  longer description, optional structural parent (containment), optional primary
-  code binding, optional drill-down target naming another board and variant.
+  longer description, optional structural parent (containment), optional group
+  (what it is part of), optional primary code binding, optional drill-down
+  target naming another board and variant.
 - **Edges** — identity, endpoints, relationship kind, optional label and
   description, optional emphasis. Emphasis is presentation _intent_; marking
   everything a hero marks nothing.
@@ -20,6 +21,15 @@ asked to say what a node is for is being asked the right one.
   they select. Several views share one variant's nodes.
 - **Walkthroughs** — ordered beats with headings, explanations, a target view
   and the subjects each beat is about.
+
+A group is what a node is _part of_, and is none of the other three things a
+node says about itself. Not its parent: containment is one thing inside another,
+while a group crosses it — two modules in different services can be part of one
+effort. Not its kind: what a thing is and what it belongs to are different
+questions. And not presentation: the renderer picks the colour from the label, so
+moving a part between groups is a change to the architecture and retuning the
+colours is not a change to anything. One group per node, never inherited from a
+parent, and cleared the way any field is — by restating the node without it.
 
 Containment is architecture, not a drawing shape: one structural parent per
 node, acyclic. Abstraction levels are separate linked boards — a system board

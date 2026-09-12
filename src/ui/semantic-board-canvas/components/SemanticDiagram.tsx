@@ -254,18 +254,13 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 
 	// The surface is remounted for each new picture, so this runs over the
 	// element the current markup is in and never over the one before it.
-	// What the board says is unsettled, marked whether or not anybody is reading
-	// or has picked anything out: a dispute is a fact about the board, and a
-	// reader looking at the diagram has to be able to see which card the argument
-	// is about rather than only read a list beside it (ADR 0023).
-	const disputed = useMemo(
-		() => (drawing.waiting?.issues ?? []).map((issue) => issue.subject),
-		[drawing.waiting],
-	);
-	const marked = useMemo(
-		() => subjectMarks(selection, focus, disputed),
-		[selection, focus, disputed],
-	);
+	//
+	// Attention only. What the board says nobody has decided is drawn into the
+	// picture by the renderer, from the same reconciliation the sentences above
+	// it are written from, so it is legible on a pane with nothing selected and
+	// no walkthrough open — and a subject that is both attended and unsettled
+	// says both, which it could not while one map held one mark per subject.
+	const marked = useMemo(() => subjectMarks(selection, focus), [selection, focus]);
 	useEffect(() => {
 		if (surface !== null) {
 			markSubjects(surface, marked);

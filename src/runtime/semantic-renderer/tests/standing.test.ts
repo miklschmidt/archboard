@@ -292,13 +292,24 @@ describe("a stated standing on an architecture", () => {
 
 	test("marks a relationship's label along with its line", () => {
 		const rendered = drawn(STANDING);
-		// The words are inside the relationship's own group, so they carry its
-		// standing and a click on them selects it.
-		expect(subject(rendered, "edge", "e4").markup).toContain("writes");
-		expect(subject(rendered, "edge", "e4").standing).toBe("removed");
-		expect(withoutColour(subject(rendered, "edge", "e4"))).not.toBe(
-			withoutColour(subject(drawn({ e4: "unchanged" }), "edge", "e4")),
+		// A relationship is drawn as two groups — its route, and the words it says
+		// on the layer above every route — and both of them say they are that
+		// relationship and how it stands. So the words carry the standing and a
+		// click on them selects it, exactly as a click on the line does.
+		const drawnGroups = subjectGroups(rendered.svg).filter(
+			(group) => group.kind === "edge" && group.id === "e4",
 		);
+		expect(drawnGroups).toHaveLength(2);
+		expect(drawnGroups.filter((group) => group.markup.includes("writes"))).toHaveLength(1);
+		for (const group of drawnGroups) {
+			expect(group.standing).toBe("removed");
+			expect(group.opacity).toBe(0.5);
+		}
+		const words = drawnGroups.find((group) => group.markup.includes("writes"))!;
+		const unmarked = subjectGroups(drawn({ e4: "unchanged" }).svg).find(
+			(group) => group.kind === "edge" && group.id === "e4" && group.markup.includes("writes"),
+		)!;
+		expect(withoutColour(words)).not.toBe(withoutColour(unmarked));
 	});
 
 	test("draws the same standings on both grounds without moving anything", () => {

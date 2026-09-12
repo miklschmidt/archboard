@@ -14,45 +14,22 @@ const SUBJECT_ATTRIBUTE = "data-semantic-id";
 /** The class the embedded stylesheet draws a selected subject with. */
 const SELECTED_CLASS = "is-selected";
 
-/** The ring the renderer draws outside every subject for a viewer to light. */
-const HALO_SELECTOR = ".ab-halo";
-
-/**
- * How a subject is marked, when it is.
- *
- * Three things can be true of a subject on screen and a reader has to be able
- * to tell them apart:
- *
- *   selected     the person picked this out, and the panel is about it;
- *   attended     the beat they are reading is about this;
- *   disputed     the board says this subject is waiting on a disagreement.
- *
- * The first two share a mark on purpose. Both mean "this is the part under
- * discussion" — one because the reader said so and one because the narrative
- * did — and the renderer draws that one way, as a ring outside the subject.
- * Splitting them would ask a reader to learn a difference that does not change
- * what they should do.
- *
- * The third cannot share it. A dispute is not something the reader is doing:
- * it is a fact about the board that is true whether or not anybody is looking,
- * and it must be legible on a pane with no selection and no walkthrough open.
- * So it lights the same ring dashed rather than solid — dashes being what this
- * renderer already uses to say that the board has something to say about a
- * subject, in the outlines it draws for added, removed and changed — and a
- * subject that is both keeps the solid ring, because the reader's own
- * attention is the more immediate of the two and the standing beside the
- * picture still lists the dispute.
- */
-type SubjectMark = "attended" | "disputed";
-
-/**
- * The dashes that tell an unsettled subject from one under discussion. In the
- * drawn document's own units, so it scales with the picture as the ring does.
- */
-const DISPUTED_DASH = "6 4";
-
-/** What the viewer writes on a halo to light it dashed, and nothing else. */
-const DISPUTED_STYLE = `opacity:1;stroke-dasharray:${DISPUTED_DASH}`;
+// What the viewer marks is attention, and nothing else. Two things can be true
+// of a subject on screen and they share one mark on purpose: the person picked
+// it out, or the beat they are reading is about it. Both mean "this is the part
+// under discussion" — one because the reader said so, one because the narrative
+// did — and splitting them would ask a reader to learn a difference that does
+// not change what they should do.
+//
+// A dispute used to be a second mark here, drawn by lighting the same ring
+// dashed. It is not any more, for two reasons. A page could then carry a solid
+// ring, a dashed ring and a dashed outline at once with nothing to say which of
+// the three a reader was looking at. And one map holding one mark per subject
+// meant a subject that was both attended and unsettled lost the dispute
+// entirely — the louder mark simply overwrote it. What the board has not decided
+// is drawn by the thing that draws the picture now, as a badge in the subject's
+// own corner, so the two are independent by construction and neither can hide
+// the other.
 
 /**
  * The box one subject occupies, wherever in the atlas it is.
@@ -90,54 +67,21 @@ function subjectAt(target: EventTarget | null, atlas: SemanticAtlas): string | n
 }
 
 /**
- * Light one subject's ring dashed, or put it out.
- *
- * Written as the halo's own `style` attribute, which is the one attribute the
- * viewer ever writes on the picture. It has to be inline: the document's
- * stylesheet puts every halo out with `.ab-halo{opacity:0}`, and a presentation
- * attribute loses to a stylesheet while an inline style beats one. Only the
- * group's own ring is taken, never a contained subject's, so lighting a
- * container does not light everything inside it.
- * @param group The subject's group.
- * @param disputed Whether the board says this subject is unsettled.
- */
-function markDispute(group: Element, disputed: boolean): void {
-	const halo = group.querySelector(HALO_SELECTOR);
-	if (halo === null) {
-		return;
-	}
-	if (disputed) {
-		halo.setAttribute("style", DISPUTED_STYLE);
-	} else {
-		halo.removeAttribute("style");
-	}
-}
-
-/**
  * Draw the marks on the picture.
  *
- * The class is toggled on the group rather than re-rendered into the markup:
- * the picture is one string from the server and re-templating it to move a
- * highlight would throw away the browser's parse of it on every click.
+ * One class, toggled on the group rather than re-rendered into the markup: the
+ * picture is one string from the server, and re-templating it to move a
+ * highlight would throw away the browser's parse of it on every click. The
+ * viewer writes nothing else on the picture — no attribute, no inline style —
+ * which is what keeps the drawing the server's and the highlight the pane's.
  * @param surface The element the picture was put into.
- * @param marks How each marked subject is marked; empty for none.
+ * @param attended Which subjects are being attended to; empty for none.
  */
-function markSubjects(surface: Element, marks: ReadonlyMap<string, SubjectMark>): void {
+function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
 	for (const group of surface.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)) {
 		const id = group.getAttribute(SUBJECT_ATTRIBUTE);
-		const mark = id === null ? undefined : marks.get(id);
-		group.classList.toggle(SELECTED_CLASS, mark === "attended");
-		markDispute(group, mark === "disputed");
+		group.classList.toggle(SELECTED_CLASS, id !== null && attended.has(id));
 	}
 }
 
-export {
-	DISPUTED_STYLE,
-	SELECTED_CLASS,
-	SUBJECT_ATTRIBUTE,
-	isSubject,
-	markSubjects,
-	subjectAt,
-	subjectBox,
-	type SubjectMark,
-};
+export { SELECTED_CLASS, SUBJECT_ATTRIBUTE, isSubject, markSubjects, subjectAt, subjectBox };

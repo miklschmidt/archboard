@@ -130,6 +130,12 @@ interface VariantComparison {
  * The fields of each kind that say what a thing *is*, as opposed to how much
  * attention it is asking for or how it is being read.
  *
+ * `group` is in the node list, and belongs there: moving a part from one
+ * effort to another is a statement about the architecture, not about how it is
+ * drawn. The colour the group ends up wearing is not compared, because the
+ * colour is not on the board — it is derived from the label, so retuning the
+ * palette can never make a variant read as changed.
+ *
  * `emphasis` is deliberately absent from the relationship list. It is authored
  * presentation intent — how loudly to draw a connection — and a proposal whose
  * only difference is that one arrow got louder has changed nothing about the
@@ -143,7 +149,16 @@ interface VariantComparison {
  * whole explanation having changed.
  */
 const COMPARED = {
-	node: ["name", "kind", "responsibility", "description", "parent", "binding", "drillDown"],
+	node: [
+		"name",
+		"kind",
+		"responsibility",
+		"description",
+		"parent",
+		"group",
+		"binding",
+		"drillDown",
+	],
 	edge: ["from", "to", "kind", "label", "description"],
 	flow: ["name", "summary", "participants"],
 	step: ["from", "to", "label", "kind", "note", "repeat", "flow", "position"],

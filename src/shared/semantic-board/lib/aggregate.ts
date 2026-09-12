@@ -30,8 +30,14 @@ import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
 /**
  * The contract version of the document itself. A reader that does not
  * implement a version says so instead of guessing at the fields it knows.
+ *
+ * `1.1.0` added one optional field: a node's `group`. Additive, so every
+ * `1.0.0` board on disk is still read exactly as it was and nothing migrates
+ * a file that nobody is writing to; a board that is written stamps this
+ * version, so a document carrying a group says which contract it was written
+ * under rather than claiming one that had no word for it.
  */
-const SEMANTIC_BOARD_SCHEMA_VERSION = "1.0.0";
+const SEMANTIC_BOARD_SCHEMA_VERSION = "1.1.0";
 
 /**
  * The major version this build implements. A document whose major differs is

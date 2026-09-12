@@ -49,12 +49,14 @@ import {
 	type PlacedContainer,
 	type PlacedNode,
 } from "@/runtime/semantic-renderer/lib/layout/architecture";
+import { iconColour } from "@/runtime/semantic-renderer/lib/group-colour";
 import { glyphGroup } from "@/runtime/semantic-renderer/lib/svg/icons";
 import { lines, tag, textNode, wrap } from "@/runtime/semantic-renderer/lib/svg/primitives";
 import {
 	standingOutline,
 	standingPin,
 	subjectGroup,
+	warningBadge,
 	type SubjectStanding,
 } from "@/runtime/semantic-renderer/lib/svg/standing";
 import { stylesFor, type SvgStyles } from "@/runtime/semantic-renderer/lib/svg/styles";
@@ -92,12 +94,29 @@ function halo(box: Box, radius: number, styles: SvgStyles): string {
 }
 
 /**
+ * How much of the group's colour the chip's own ground is worth.
+ *
+ * A wash rather than a fill: the colour has to read at a glance from across a
+ * page of cards, and a saturated tile behind a glyph makes the glyph the
+ * quietest thing in it. The rule around it is one pixel, like every other rule
+ * in the picture.
+ */
+const CHIP_WASH = 0.14;
+
+/**
  * The kind chip and its glyph, at the left of a card.
+ *
+ * Three things carry the colour and nothing else does: the glyph, the hairline
+ * around the tile it sits on, and that tile's wash. Not the card, not the card's
+ * border, and not a line — a group is a family of parts, and a coloured card
+ * border would compete with the one thing a border already says, which is how
+ * the node stands against the variant it came from.
  * @param placed The card.
  * @param styles The palette's attribute bundles.
+ * @param ink The colour this node's group is drawn in.
  * @returns The chip and glyph.
  */
-function chipOf(placed: PlacedNode, styles: SvgStyles): string {
+function chipOf(placed: PlacedNode, styles: SvgStyles, ink: string): string {
 	const { box, node } = placed;
 	return (
 		tag("rect", {
@@ -106,13 +125,18 @@ function chipOf(placed: PlacedNode, styles: SvgStyles): string {
 			width: ICON_CHIP_SIZE,
 			height: ICON_CHIP_SIZE,
 			rx: ICON_CHIP_RADIUS,
-			...styles.chip,
+			fill: ink,
+			"fill-opacity": CHIP_WASH,
+			stroke: ink,
+			"stroke-width": 1,
+			"stroke-opacity": 0.45,
 		}) +
 		glyphGroup(
 			node.kind,
 			box.x + CARD_PADDING_X + ICON_CHIP_SIZE / 2,
 			box.y + box.height / 2,
 			styles,
+			ink,
 		)
 	);
 }
@@ -123,9 +147,15 @@ function chipOf(placed: PlacedNode, styles: SvgStyles): string {
  * @param placed The card.
  * @param palette The theme's colours.
  * @param standing How this node stands against the variant it came from, when the caller said.
+ * @param unsettled Whether the board says nobody has decided this node yet.
  * @returns The card's group.
  */
-function paintCard(placed: PlacedNode, palette: Palette, standing?: SubjectStanding): string {
+function paintCard(
+	placed: PlacedNode,
+	palette: Palette,
+	standing?: SubjectStanding,
+	unsettled = false,
+): string {
 	const styles = stylesFor(palette);
 	const { node, box, titleSize } = placed;
 	const textX = box.x + CARD_PADDING_X + ICON_CHIP_SIZE + ICON_CHIP_GAP;
@@ -168,10 +198,14 @@ function paintCard(placed: PlacedNode, palette: Palette, standing?: SubjectStand
 				...styles.card,
 				...standingOutline(standing, palette),
 			}),
-			chipOf(placed, styles),
+			chipOf(placed, styles, iconColour(placed.node, palette.ground)),
 			title,
 			note,
 			standingPin(box, standing, palette),
+			// The opposite corner from the pin, inside the padding the words already
+			// stop short of, so a card can say both at once and neither mark lands on
+			// a letter.
+			warningBadge(box, unsettled, palette),
 		]),
 	);
 }
@@ -280,17 +314,24 @@ function paintContainerBox(
  * @param placed The container.
  * @param palette The theme's colours.
  * @param standing How this container stands against the variant it came from, when the caller said.
+ * @param unsettled Whether the board says nobody has decided this container yet.
  * @returns The title's group.
  */
 function paintContainerTitle(
 	placed: PlacedContainer,
 	palette: Palette,
 	standing?: SubjectStanding,
+	unsettled = false,
 ): string {
 	return wrap(
 		"g",
 		subjectGroup("region", placed.node.id, standing),
-		paintHeader(placed.header, placed.node.name, placed.node.responsibility, stylesFor(palette)),
+		paintHeader(placed.header, placed.node.name, placed.node.responsibility, stylesFor(palette)) +
+			// On this layer rather than with the box, for the same reason the title
+			// is: a route into the first card inside the frame crosses the top of it,
+			// and a warning with a line through it is a warning a reader has to
+			// decide whether to trust.
+			warningBadge(placed.box, unsettled, palette),
 	);
 }
 

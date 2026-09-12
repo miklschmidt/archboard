@@ -8,6 +8,7 @@ import { z } from "zod";
 import { isBlockId } from "@/shared/ids/ids";
 
 const MAX_NAME = 120;
+const MAX_GROUP = 60;
 const MAX_RESPONSIBILITY = 200;
 const MAX_DESCRIPTION = 2000;
 
@@ -36,7 +37,33 @@ const ResponsibilitySchema = z
 	.max(MAX_RESPONSIBILITY)
 	.refine((value) => !value.includes("\n"), "must be a single line");
 
+/**
+ * What a node belongs to, which is not what contains it.
+ *
+ * A short label an agent chooses: "payments", "the write path", "third party".
+ * One per node and no more, because a thing that belongs to two groups belongs
+ * to neither as far as a reader glancing at a picture is concerned — and a node
+ * inherits nothing from its parent, because being inside something is already
+ * said by `parent` and saying it twice would leave the two to disagree.
+ *
+ * Shorter than a name on purpose. A group is read as a family of things rather
+ * than as a sentence, and a label nobody can hold in their head is a label that
+ * groups nothing.
+ */
+const GroupLabelSchema = z
+	.string()
+	.trim()
+	.min(1)
+	.max(MAX_GROUP)
+	.refine((value) => !value.includes("\n"), "must be a single line");
+
 /** The longer explanation, reached by inspecting a node rather than drawn on it. */
 const DescriptionSchema = z.string().trim().min(1).max(MAX_DESCRIPTION);
 
-export { SemanticIdSchema, DisplayNameSchema, ResponsibilitySchema, DescriptionSchema };
+export {
+	SemanticIdSchema,
+	DisplayNameSchema,
+	GroupLabelSchema,
+	ResponsibilitySchema,
+	DescriptionSchema,
+};

@@ -23,6 +23,9 @@ A node may state:
 
 - `parent` — the node that contains it, by name. Containment is ownership.
 - `responsibility` — one short line saying what it is for.
+- `group` — a short label for what it is part of, independent of containment
+  and kind: "payments", "the write path". One per node, not inherited. The
+  renderer colours its icon from the label; a board never stores a colour.
 - `binding` — `{ repo, path }`, the code that implements it. Portable: the
   repository identity and a repo-relative path, never an absolute one.
 

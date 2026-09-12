@@ -36,6 +36,7 @@ import { paintDataFlow } from "@/runtime/semantic-renderer/lib/svg/dataflow";
 import { svgDocument } from "@/runtime/semantic-renderer/lib/svg/document";
 import {
 	standingsFrom,
+	unsettledFrom,
 	type StatedStandings,
 	type SubjectStanding,
 } from "@/runtime/semantic-renderer/lib/svg/standing";
@@ -90,6 +91,17 @@ interface DiagramRenderRequest {
 	 * unchanged. Nothing about it is persisted anywhere (ADR 0023).
 	 */
 	readonly standing?: StatedStandings | undefined;
+	/**
+	 * Which of this variant's subjects the board says nobody has decided yet.
+	 *
+	 * Derived on every render exactly as the standings are, from the same
+	 * reconciliation the words beside the picture are written from, and stored
+	 * nowhere. Absent or empty means there is nothing open, which is the ordinary
+	 * case; an id in it is drawn with a warning badge, whatever else is true of
+	 * it. An id that is not drawn — a view or a walkthrough — is simply not
+	 * reached, because nothing in the picture asks about it.
+	 */
+	readonly unsettled?: readonly string[] | undefined;
 }
 
 /** The same, plus which of the two pictures to draw. */
@@ -163,7 +175,13 @@ function renderArchitecture(request: DiagramRenderRequest): RenderedDiagram {
 
 	const regions = regionsOf(content);
 	const palette = paletteFor(theme);
-	const painting = paintArchitecture(regions, content, palette, standingsFrom(request.standing));
+	const painting = paintArchitecture(
+		regions,
+		content,
+		palette,
+		standingsFrom(request.standing),
+		unsettledFrom(request.unsettled),
+	);
 
 	const svg = svgDocument({
 		width: painting.width,
@@ -231,6 +249,7 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		content.nodes,
 		palette,
 		standingsFrom(request.standing),
+		unsettledFrom(request.unsettled),
 	);
 
 	const svg = svgDocument({
