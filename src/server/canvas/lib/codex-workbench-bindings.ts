@@ -1,8 +1,5 @@
 import { readBoardCatalogue, watchBoardCatalogue } from "@/runtime/engine/board-catalogue";
-import {
-	type CoordinatorCallbackLinkCorrelation,
-	createCoordinatorCallbackRealtimePort,
-} from "@/runtime/codex-coordinator-callbacks";
+import { createCoordinatorCallbackRealtimePort } from "@/runtime/codex-coordinator-callbacks";
 import type { createCodexWaitGraph } from "@/runtime/codex-wait-graph";
 import type {
 	CodexWorkbenchComponents,
@@ -22,6 +19,11 @@ import {
 	type DynamicOwnerContext,
 } from "@/server/canvas/lib/codex-workbench-dynamic-owners";
 import { createGatewayBinding } from "@/server/canvas/lib/codex-workbench-gateway-binding";
+import {
+	readyCoordinatorThread,
+	readyThreadPair,
+	workhorseLink,
+} from "@/server/canvas/lib/codex-workbench-binding-readers";
 import type {
 	CanvasCodexWorkbenchHost,
 	CodexWorkbenchStorage,
@@ -44,52 +46,6 @@ interface BindingContext {
 function publishProjection(owners: GenerationOwners): void {
 	if (!owners.approvalProjectionInstalled) return;
 	for (const listener of owners.projectionListeners) listener();
-}
-
-/**
- * The thread the coordinator is ready on.
- * @param created What the graph has built so far.
- * @returns The thread, or null while it is not ready.
- */
-function readyCoordinatorThread(
-	created: Readonly<Partial<CodexWorkbenchComponents>>,
-): NonNullable<ReturnType<CodexWorkbenchComponents["coordinator"]["snapshot"]>["threadId"]> | null {
-	const coordinator = created.coordinator?.snapshot();
-	return coordinator?.state === "ready" ? coordinator.threadId : null;
-}
-
-/**
- * The child epoch and the two threads a voice or queue binding is stated
- * against, which exists only while both threads are ready.
- * @param created What the graph has built so far.
- * @returns The threads, or null.
- */
-function readyThreadPair(created: Readonly<Partial<CodexWorkbenchComponents>>): {
-	childId: NonNullable<ReturnType<CodexWorkbenchComponents["workhorse"]["snapshot"]>["childId"]>;
-	epoch: NonNullable<ReturnType<CodexWorkbenchComponents["workhorse"]["snapshot"]>["epoch"]>;
-	workhorseThreadId: NonNullable<
-		ReturnType<CodexWorkbenchComponents["workhorse"]["snapshot"]>["threadId"]
-	>;
-	coordinatorThreadId: NonNullable<
-		ReturnType<CodexWorkbenchComponents["coordinator"]["snapshot"]>["threadId"]
-	>;
-} | null {
-	const workhorse = created.workhorse?.snapshot();
-	const coordinatorThreadId = readyCoordinatorThread(created);
-	if (workhorse?.state !== "ready" || coordinatorThreadId === null) {
-		return null;
-	}
-	const { childId, epoch, threadId } = workhorse;
-	const named = { childId, epoch, threadId };
-	if (!allNamed(named)) {
-		return null;
-	}
-	return {
-		childId: named.childId,
-		epoch: named.epoch,
-		workhorseThreadId: named.threadId,
-		coordinatorThreadId,
-	};
 }
 
 /**
@@ -385,31 +341,6 @@ function currentBindingReaders(
 }
 
 /**
- * The link a callback reports the workhorse against: its binding, and the
- * thread, child epoch and operation it is running.
- * @param created What the graph has built so far.
- * @returns The link, or null while the workhorse is not ready and bound.
- */
-function workhorseLink(
-	created: Readonly<Partial<CodexWorkbenchComponents>>,
-): CoordinatorCallbackLinkCorrelation | null {
-	const workhorse = created.workhorse?.snapshot();
-	if (workhorse?.state !== "ready" || workhorse.binding === null) {
-		return null;
-	}
-	const { threadId, childId, epoch, operationId } = workhorse;
-	const target = { threadId, childId, epoch, operationId };
-	if (!allNamed(target)) return null;
-	return {
-		binding: workhorse.binding,
-		target: {
-			...target,
-			provenance: requireCreated(created, "epoch").assertCurrent(target).record,
-		},
-	};
-}
-
-/**
  * The bindings the approval, delivery and callback owners are built from.
  * @param context What the generation provides.
  * @returns Those bindings.
@@ -459,6 +390,11 @@ function deliveryBindings(
 		 */
 		semanticDelivery: (created) => ({
 			feedId: host.semanticPublisher.feedId,
+			/**
+			 * The coordinator paired with this delivery's workhorse.
+			 * @returns Its thread, or null when none is ready.
+			 */
+			pairedThreadId: () => readyCoordinatorThread(created),
 			/**
 			 * The clock delivery freshness is measured against.
 			 * @returns Now, in milliseconds.
@@ -530,7 +466,8 @@ function deliveryBindings(
 			 * ready and bound.
 			 * @returns The link, or null.
 			 */
-			currentWorkhorseLink: () => workhorseLink(created),
+			currentWorkhorseLink: () =>
+				workhorseLink(created, requireCreated(created, "epoch").assertCurrent),
 			/**
 			 * The voice generation a callback is correlated against.
 			 * @returns The generation, or null.

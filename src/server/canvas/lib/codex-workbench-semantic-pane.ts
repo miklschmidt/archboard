@@ -9,15 +9,14 @@ export interface SemanticPaneRegistration {
  * Resolve only the controller's current pane; focus and registration order are
  * irrelevant.
  *
- * The board is compared as a board, never as a pane's whole address. Every
- * variant of a board is in the one document, so a pane reading a proposal of
- * `payments` is a pane on `payments`; comparing `payments@proposal` against
- * `payments` would make that pane reject a context about the very board it is
- * showing. Which variant it is reading is a fact about the reading, and the
- * report carries it.
+ * What it resolves is identity, not display. The pane it looks for is the one
+ * the delivery is bound to, and what that pane happens to be showing is none of
+ * this function's business: requiring it to show the board that changed made a
+ * person's screen decide who was told about an architecture, so a pane looking
+ * elsewhere silenced the session bound to it.
  * @param input The binding, the panes on screen and how to read each pane's board.
  * @param input.bindingPaneId The pane the semantic delivery is bound to.
- * @param input.contextBoard The board that pane must be showing, when the caller knows it.
+ * @param input.contextBoard Unused; the board a context is about, kept so callers read the same shape.
  * @param input.panes Every pane on screen.
  * @param input.boardForPane The board a pane is authoritatively showing.
  * @param input.aggregateOf The board a key names, without its variant.
@@ -34,24 +33,22 @@ export function requireExactSemanticPane<Pane extends SemanticPaneRegistration>(
 	if (bindingPaneId === null) {
 		throw new Error("The Codex semantic publisher has no current thread-context binding.");
 	}
-	const contextBoard = input.contextBoard;
-	const wanted = contextBoard === undefined ? null : input.aggregateOf(contextBoard);
 	/**
-	 * Whether this is the bound pane, showing the board the caller named.
+	 * Whether this is the bound pane.
+	 *
+	 * Its id and nothing else. What board it happens to be showing used to be
+	 * part of this, which made a delivery depend on what a person had on screen:
+	 * a pane looking at something else, or closed, dropped news a session needed.
+	 * A session hears every board update except its own writes, and what is
+	 * displayed is presentation.
 	 * @param pane The candidate.
 	 * @returns True for the pane the context belongs to.
 	 */
-	const isBoundPane = (pane: Pane): boolean =>
-		pane.paneId === bindingPaneId &&
-		(wanted === null || input.aggregateOf(input.boardForPane(pane)) === wanted);
+	const isBoundPane = (pane: Pane): boolean => pane.paneId === bindingPaneId;
 	for (const pane of input.panes) {
 		if (isBoundPane(pane)) {
 			return pane;
 		}
 	}
-	throw new Error(
-		contextBoard === undefined
-			? `The bound Codex context pane is not open: ${bindingPaneId}.`
-			: `The bound Codex context pane ${bindingPaneId} does not own board ${contextBoard}.`,
-	);
+	throw new Error(`The bound Codex context pane is not open: ${bindingPaneId}.`);
 }

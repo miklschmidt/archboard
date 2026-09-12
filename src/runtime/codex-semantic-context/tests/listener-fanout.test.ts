@@ -37,7 +37,6 @@ function change(sequence: number): SettledChangeSourceEvent {
 		origin: "human",
 		significance: "structural",
 		text: "changed",
-		by: null,
 	};
 }
 

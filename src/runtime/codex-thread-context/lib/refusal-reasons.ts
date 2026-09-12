@@ -6,6 +6,7 @@ import type { ThreadLinkSnapshot } from "@/runtime/codex-thread-link";
 import type { ChildEpoch, ChildId, ThreadId } from "@/shared/codex-workbench-identity";
 import type {
 	CodexThreadContextDeliveryOptions,
+	CodexThreadContextTarget,
 	CodexThreadContextDeliveryReason,
 	CodexThreadContextExecution,
 } from "@/runtime/codex-thread-context/lib/contract";
@@ -202,47 +203,39 @@ function eventShapeReason(event: SettledSemanticChangeEvent): Reason | null {
 }
 
 /**
- * Whether this change is one this pane's own work made.
+ * Whether this change is one this session's own work made.
  *
- * The thing worth dropping is not that an agent wrote it — after ADR 0023 an
- * agent wrote all of it — but that THIS thread wrote it, which is the change
- * that tells it what it already knows. A different writer changing the board
- * underneath a thread is exactly the news that thread needs: what it was told
- * has stopped being true.
+ * The rule a reader asked for: a session hears every board update except the
+ * ones it makes itself. What is compared is the writing thread against the
+ * threads this session IS — the workhorse and the coordinator paired with it —
+ * and never a surface. A pane rode here once, and a pane is what a person has
+ * open: it was read to decide who should not be told, so closing one or looking
+ * at another board went quiet, and two threads on one claimed board suppressed
+ * each other.
  *
- * A change nobody can be attributed is delivered. An agent working without a
- * claim gets a fresh identity per write on purpose (ADR 0016), so its writes
- * are unattributable by construction; delivering one is redundancy the thread
- * is told how to handle, while dropping it would be the silence this check
- * exists to prevent.
+ * A thread that goes on being the same thread is the same session, so a write
+ * landing after the turn that made it is still its own; a relink or a new
+ * session is a new thread and so a new author. Neither the identity the board
+ * was held under nor the board itself is compared: a claim is one value shared
+ * by a whole campaign, and what a pane displays has nothing to do with what a
+ * session needs to know.
  *
- * What is compared is the pane the write said it was FOR, never the identity the
- * board was held under. The two are different questions. A write made under a
- * claim carries the claim's holder id, one value shared by every write in the
- * campaign, and a claim records no pane — so `claimWriterId(board)` answers
- * "this board is claimed by X", not "I am X". Two panes on one claimed board
- * would both match it, and the second would suppress the first's change: the
- * precise failure this check exists to remove, reintroduced by a wider one.
- *
- * So attribution rides on the write envelope's own pane, which a writer bound to
- * a pane can state and nothing is obliged to. A write that names no pane is
- * unattributable and delivered.
- *
- * That value is supplied by the writer, and nothing here can check it: a caller
- * may state a pane that is not its own, the same trust boundary `--doing` sits
- * on. Nothing on a board depends on it — it never reaches content, a claim or a
- * version — and all it is for is letting a thread recognise its own change. Worth knowing which way the harm runs — a false pane makes THAT pane's
- * thread miss a change it should have heard about, so a lie buys silence for
- * somebody else rather than noise for the liar. It is not a reason to drop the
- * check, because the alternative is every thread hearing its own echo; it is a
- * reason not to build anything on top of this that assumes authorship is proven.
+ * A change nobody attributed is delivered. An external command line states no
+ * session, and delivering its change is redundancy the session is told how to
+ * read, where dropping it would be the silence this exists to prevent. The
+ * value is stated by the writer and nothing here can check it — the same trust
+ * boundary `--doing` sits on — and the harm runs one way: a session that lies
+ * about its identity buys silence for itself, never noise for anybody else.
  * @param event - The settled semantic change.
- * @param paneId - The pane this delivery port serves.
+ * @param sessionAuthors - The threads this session is; empty when it has none to compare.
  * @returns The refusal reason, or null when the change is somebody else's.
  */
-function ownChangeReason(event: SettledSemanticChangeEvent, paneId: string): Reason | null {
+function ownSessionReason(
+	event: SettledSemanticChangeEvent,
+	sessionAuthors: readonly string[],
+): Reason | null {
 	const by = event.change.by;
-	return by !== null && by === paneId ? "own_change" : null;
+	return by !== null && sessionAuthors.includes(by) ? "own_change" : null;
 }
 
 /**
@@ -392,23 +385,27 @@ function eventReason(
 	options: CodexThreadContextDeliveryOptions,
 	lastSequence: number,
 ): Reason | null {
-	const form = eventFormReason(event, options.feedId);
-	if (form !== null) {
-		return form;
-	}
-	const own = ownChangeReason(event, options.paneId);
-	if (own !== null) {
-		return own;
-	}
-	const context = eventContextReason(event, options.paneId);
-	if (context !== null) {
-		return context;
-	}
+	const admissible =
+		eventFormReason(event, options.feedId) ??
+		ownSessionReason(event, options.sessionAuthors?.() ?? []) ??
+		eventContextReason(event, options.paneId);
+	return admissible ?? targetReason(event, options.target, lastSequence);
+}
+
+/**
+ * What the event proves about its target, or why it proves nothing.
+ * @param event - The settled semantic change.
+ * @param target - The exact delivery target.
+ * @param lastSequence - The highest sequence reserved before this event.
+ * @returns The refusal reason, or null when the target is proven.
+ */
+function targetReason(
+	event: SettledSemanticChangeEvent,
+	target: CodexThreadContextTarget,
+	lastSequence: number,
+): Reason | null {
 	const proven = provenEvent(event);
-	if (proven === null) {
-		return "unknown_provenance";
-	}
-	return eventTargetReason(proven, options.target, lastSequence);
+	return proven === null ? "unknown_provenance" : eventTargetReason(proven, target, lastSequence);
 }
 
 export {

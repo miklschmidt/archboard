@@ -59,7 +59,7 @@ interface EventOptions {
 	readonly cursorFeedId?: string;
 	readonly changeFeedId?: string;
 	readonly origin?: "human" | "agent" | "mixed";
-	/** Who wrote the change, as the identity it held the board under. */
+	/** The agent session that made the change, or null for one nobody attributed. */
 	readonly by?: string | null;
 	readonly significance?: "layout" | "structural" | "cosmetic";
 	readonly focused?: boolean;
@@ -71,6 +71,8 @@ interface EventOptions {
 
 interface HarnessOptions {
 	readonly controller?: boolean;
+	/** The threads whose writes this port should treat as its own session's. */
+	readonly sessionAuthors?: readonly string[];
 	readonly initialLink?: ThreadLinkSnapshot;
 	readonly classificationLink?: ThreadLinkSnapshot;
 	readonly contextValid?: boolean;
@@ -82,6 +84,8 @@ interface HarnessOptions {
 }
 
 interface Harness {
+	/** Replace the threads this port's session writes as, as a restart or relink does. */
+	readonly becomeSession: (threads: readonly string[]) => void;
 	readonly authority: IdentityAuthority;
 	readonly target: CodexThreadContextTarget;
 	readonly delivery: CodexThreadContextDelivery;
@@ -317,6 +321,10 @@ function createHarness(options: HarnessOptions = {}): Harness {
 		epoch: epochPort,
 		currentExecution: () => execution,
 	};
+	// The threads this port's session writes as, mutable because the live
+	// article is: a coordinator is created and restarted inside one workhorse's
+	// life, and a relink gives the port a different thread to be.
+	let sessionAuthors: readonly string[] = options.sessionAuthors ?? [threadId];
 	const controller = options.controller
 		? createCodexThreadContextController({
 				...common,
@@ -331,6 +339,9 @@ function createHarness(options: HarnessOptions = {}): Harness {
 			paneId: PANE_ID,
 			target,
 			contextForEvent,
+			// The threads this port's own session writes as: its workhorse, and the
+			// coordinator paired with it when a harness names one.
+			sessionAuthors: () => sessionAuthors,
 		});
 
 	const events = (eventOptions: EventOptions = {}): SettledSemanticChangeEvent => {
@@ -403,6 +414,14 @@ function createHarness(options: HarnessOptions = {}): Harness {
 		});
 	};
 	return {
+		/**
+		 * Replace the threads this port's session writes as, as a restart or a
+		 * relink does.
+		 * @param threads The session's threads now.
+		 */
+		becomeSession: (threads: readonly string[]): void => {
+			sessionAuthors = threads;
+		},
 		authority,
 		target,
 		delivery,

@@ -11,9 +11,8 @@ interface CanvasCliInput {
 	/**
 	 * Anything else this one invocation's environment has to carry.
 	 *
-	 * Per invocation rather than per suite, because what a command is attributed
-	 * to is a fact about that command: `ARCHBOARD_PANE` says which pane an agent
-	 * is acting for, and two invocations in one test may be acting for different
+	 * Per invocation rather than per suite, because a command's environment is a
+	 * fact about that command and two invocations in one test may need different
 	 * ones.
 	 */
 	readonly env?: Readonly<Record<string, string>> | undefined;

@@ -382,21 +382,25 @@ describe("settling a proposal and adopting an architecture", () => {
 			return note;
 		};
 
-		// A write that says which pane it is for is attributable: a thread reading
-		// this can tell somebody else's news from its own echo.
-		const mine = await wrote({ paneId: "listening-pane", reason: "a pane's own write" });
-		expect(mine["by"]).toBe("listening-pane");
-		expect(typeof mine["heldAs"]).toBe("string");
+		// A write that names its session is announced with it, and that is the one
+		// thing the news says about authorship: it is how that session is not told
+		// about its own writes. It is a session — a thread that goes on being the
+		// same thread — and never a pane, which is what a person has open.
+		const stated = await wrote({ session: "thread-mine", reason: "a write naming its session" });
+		expect(stated["by"]).toBe("thread-mine");
+		expect(typeof stated["heldAs"]).toBe("string");
 
-		// A write that names no pane is unattributable, and says so rather than
-		// borrowing the identity the board happened to be held under.
-		const anonymous = await wrote({ reason: "an agent with no pane" });
-		expect(anonymous["by"]).toBeNull();
-		expect(anonymous["heldAs"]).not.toBe(mine["heldAs"]);
+		// A write naming no session is unattributable, and says so rather than
+		// borrowing the identity the board was held under. Unattributable is
+		// delivered to everybody, its own author included.
+		const plain = await wrote({ reason: "a write naming none" });
+		expect(plain["by"]).toBeNull();
+		// Two unclaimed writes are two writers, which is what custody is for.
+		expect(plain["heldAs"]).not.toBe(stated["heldAs"]);
 
-		// And the command line says it too, when it is running for a pane. A
-		// workhorse bound to one states it from its session's environment rather
-		// than being asked to type it on every write.
+		// And from the command line, where the session rides on the invocation
+		// rather than in the environment: one app-server serves every thread, so
+		// an exported value would stamp one session's identity on another's writes.
 		const before = heard.length;
 		const bound = runCanvasCli({
 			repoRoot,
@@ -409,22 +413,21 @@ describe("settling a proposal and adopting an architecture", () => {
 				"--expect-version",
 				String(JSON.parse(cli(["semantic", "show", "attributed"]).stdout).board.version),
 				"--doing",
-				"writing as the pane's workhorse",
+				"writing as a session",
+				"--as-session",
+				"thread-from-the-cli",
 			],
 			input: JSON.stringify({ nodes: [{ name: "Bound", kind: "service" }] }),
-			env: { ARCHBOARD_PANE: "listening-pane" },
 		});
 		expect(bound.status, bound.stderr).toBe(0);
 		for (let waited = 0; waited < 50 && heard.length === before; waited += 1) {
 			await Bun.sleep(20);
 		}
-		expect(
-			heard
-				.slice(before)
-				.find((message) => message["type"] === "board_note" && message["semantic"] === true)?.[
-				"by"
-			],
-		).toBe("listening-pane");
+		const announced = heard
+			.slice(before)
+			.find((message) => message["type"] === "board_note" && message["semantic"] === true);
+		expect(announced?.["by"]).toBe("thread-from-the-cli");
+		expect(typeof announced?.["heldAs"]).toBe("string");
 		socket.close();
 	}, 60_000);
 });

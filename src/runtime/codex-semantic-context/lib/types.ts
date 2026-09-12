@@ -38,25 +38,13 @@ interface SettledChangeSourceEvent {
 	readonly significance: SemanticChangeSignificance;
 	readonly text: string;
 	/**
-	 * The pane a write said it was made on behalf of.
+	 * The agent session that made the write, when the feed could attribute it.
 	 *
-	 * Authorship, not custody. It is the write envelope's own `paneId` — what the
-	 * writer said it was working for — and deliberately NOT the identity the
-	 * board was held under. Those two answer different questions: the lease
-	 * identity says which writer held the board, and under a claim it is one
-	 * value shared by every write in the campaign, so a second pane on the same
-	 * claimed board would match it and suppress a change that was not its own.
-	 * A claim records no pane, so it cannot be made to answer this.
-	 *
-	 * Null when the write named no pane, which is every write nobody bound to a
-	 * pane made. Unattributable is delivered rather than dropped: telling a
-	 * thread about its own change is noise it is told how to handle, and not
-	 * telling it about somebody else's is the failure this field exists to
-	 * prevent. Nothing is required to state a pane.
-	 *
-	 * Optional, so a feed that cannot attribute a write is a feed that delivers
-	 * everything rather than one that does not compile. Absent and null mean the
-	 * same thing to every reader.
+	 * A session rather than a surface, and it outlives a turn: a write that
+	 * lands after the turn that made it is still that session's own. Optional,
+	 * so a feed that cannot attribute a write is one that delivers everything
+	 * rather than one that does not compile; absent and null both mean "tell
+	 * everybody".
 	 */
 	readonly by?: string | null;
 }
@@ -359,7 +347,7 @@ interface SettledSemanticChangeEvent extends SemanticBriefFields {
 		readonly origin: SemanticChangeOrigin;
 		readonly significance: SemanticChangeSignificance;
 		readonly text: string;
-		/** The pane the write said it was for, or null when it named none. */
+		/** The agent session that made it, or null when nobody said. */
 		readonly by: string | null;
 	};
 }

@@ -1,5 +1,5 @@
-// The global flags every command shares (--board, --doing, --expect-version), pulled out of
-// argv before a command's own parser sees them.
+// The global flags every command shares (--board, --doing, --expect-version,
+// --as-session), pulled out of argv before a command's own parser sees them.
 import { CliUsageError } from "@/cli/command-contract/contract";
 
 /**
@@ -62,6 +62,25 @@ function takeDoingFlag(argv: string[]): string | null {
 }
 
 /**
+ * And `--as-session <thread>`, which says which agent session is writing.
+ *
+ * Global for the same reason `--doing` is: one command may make several
+ * requests and they are all the same session's. A flag rather than an
+ * environment variable on purpose — one private app-server child serves every
+ * thread of a workbench, so anything read from that process's environment would
+ * stamp one session's identity onto another's writes.
+ *
+ * Never required and never refused. What it is for is letting a session skip the
+ * board news it wrote itself; a write that states nothing is delivered to
+ * everybody, its own author included, which is redundancy rather than silence.
+ * @param argv - The arguments after the command name; the flag is spliced out.
+ * @returns The session writing, or null when none was passed.
+ */
+function takeSessionFlag(argv: string[]): string | null {
+	return takeGlobalFlag(argv, "as-session");
+}
+
+/**
  * And `--expect-version <n>`, which says what the writer was editing (TASK-091).
  *
  * Global for the same reason: a command that makes several requests is making
@@ -87,4 +106,4 @@ function takeExpectVersionFlag(argv: string[]): number | null {
 	return Number(raw.trim());
 }
 
-export { takeBoardFlag, takeDoingFlag, takeExpectVersionFlag };
+export { takeBoardFlag, takeDoingFlag, takeExpectVersionFlag, takeSessionFlag };

@@ -32,26 +32,20 @@ describe("semantic context publisher", () => {
 
 	test("publishes every origin and drops only the cosmetic", () => {
 		const h = harness();
-		const settled: Array<{ origin: string; by: string | null }> = [];
-		h.publisher.subscribeSettledChange((event) =>
-			settled.push({ origin: event.origin ?? "none", by: event.change.by }),
-		);
+		const settled: string[] = [];
+		h.publisher.subscribeSettledChange((event) => settled.push(event.origin ?? "none"));
 
 		h.emitFeed(change(h.state.now));
 		h.emitFeed(change(h.state.now, { origin: "mixed" }));
-		h.emitFeed(change(h.state.now, { origin: "agent", by: "pane-b" }));
+		h.emitFeed(change(h.state.now, { origin: "agent" }));
 		h.emitFeed(change(h.state.now, { significance: "cosmetic" }));
 
-		// An agent change is published like any other. One publisher serves every
-		// thread, so whose change it is cannot be decided here; the writer identity
-		// is carried through for the per-thread delivery to decide with. Dropping it
-		// here would silence every change at all, because after ADR 0023 a person
-		// does not write a board.
-		expect(settled).toEqual([
-			{ origin: "human", by: null },
-			{ origin: "mixed", by: null },
-			{ origin: "agent", by: "pane-b" },
-		]);
+		// An agent change is published like any other, and nothing about who wrote
+		// it is carried: one publisher serves every thread, and a change used to
+		// carry the pane a write was running for so that a per-thread delivery
+		// could drop it as an echo. Dropping anything on that basis made a
+		// presentation surface decide who hears about an architecture.
+		expect(settled).toEqual(["human", "mixed", "agent"]);
 		expect(h.state.changeReads).toBe(3);
 	});
 

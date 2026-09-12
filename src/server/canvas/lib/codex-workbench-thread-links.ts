@@ -529,16 +529,27 @@ function createCanvasThreadLinkActions(
 		 */
 		relink: (command, context) => adoptCandidate(command, context),
 		/**
-		 * Release the thread context this browser held, so a pane that is gone
-		 * leaves nothing published on its behalf.
+		 * Forget which binding this browser connection took, and leave the binding
+		 * itself alone.
+		 *
+		 * A browser going away is a person closing a window. The agent session on
+		 * the other side of it is still running, still writing boards, and still
+		 * needs to hear when somebody changes one underneath it — so the recipient
+		 * cannot be a thing a disconnect destroys. This used to clear the
+		 * thread-context binding, which meant closing a tab silenced the session
+		 * bound to it until somebody opened another one and relinked.
+		 *
+		 * What still ends a binding is the session itself ending — the child exits,
+		 * the epoch is retired, the workbench shuts down — or a relink replacing it
+		 * with another. Both of those are facts about the agent rather than about
+		 * the screen.
+		 *
+		 * The connection's token is forgotten either way, so a later lease on the
+		 * same connection cannot clear a binding it never took.
 		 * @param context The pane and its connection.
 		 */
 		onBrowserDisconnect: (context) => {
-			const token = controllerTokens.get(context.connection);
 			controllerTokens.delete(context.connection);
-			if (token !== undefined) {
-				clearCanvasThreadContextForLease(options.semanticDelivery, token);
-			}
 		},
 	} satisfies BrowserThreadLinkActions);
 }

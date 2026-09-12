@@ -12,7 +12,7 @@
 import { describe, expect, test } from "bun:test";
 
 import type { ArchboardContext } from "../../codex-instructions/index.ts";
-import { createHarness, PANE_ID } from "./delivery-support.ts";
+import { createHarness } from "./delivery-support.ts";
 
 describe("a forged semantic context", () => {
 	test.each([
@@ -90,46 +90,24 @@ describe("a forged semantic context", () => {
 });
 
 describe("who a change is attributed to", () => {
-	test("the bound pane's own write is not echoed back to it", async () => {
+	test("nothing is, because a change carries no author to read", async () => {
 		const harness = createHarness();
 
-		// The write said it was for this pane, so this thread already knows.
-		const result = await harness.delivery.deliver(harness.events({ origin: "agent", by: PANE_ID }));
+		// Two settled changes on the board this thread was told about, and nothing
+		// on either says whose work made it. Both are delivered.
+		//
+		// A change used to carry the pane a write said it was running for, and a
+		// delivery port dropped one whose pane matched its own. That made a surface
+		// a person opens and closes decide who hears about an architecture, and it
+		// failed in the case that mattered most: two threads on one claimed board,
+		// where the second suppressed the first's change. What replaces it is
+		// redundancy — a thread may hear about its own write, and that is a thing
+		// it is told how to read.
+		const first = await harness.delivery.deliver(harness.events({ origin: "agent" }));
+		const second = await harness.delivery.deliver(harness.events({ sequence: 2, origin: "agent" }));
 
-		expect(result).toMatchObject({
-			outcome: "not_delivered",
-			reason: "own_change",
-			attempted: false,
-		});
-		expect(harness.received).toHaveLength(0);
-	});
-
-	test("another pane's write on the same board is delivered", async () => {
-		const harness = createHarness();
-
-		// The case the whole gate exists for: a second workhorse changing the board
-		// underneath this thread. What it was told has stopped being true, and that
-		// is the one thing it most needs to hear.
-		const result = await harness.delivery.deliver(
-			harness.events({ origin: "agent", by: "pane-somebody-else" }),
-		);
-
-		expect(result).toMatchObject({ outcome: "delivered", attempted: true });
-		expect(harness.received).toHaveLength(1);
-	});
-
-	test("a claim identity is not read as authorship", async () => {
-		const harness = createHarness();
-
-		// What a claimed write holds the board under: one value shared by every
-		// write in the campaign, naming the claim rather than whoever holds it. Read
-		// as authorship it would make two panes on one claimed board deaf to each
-		// other, so it is not read as authorship at all.
-		const result = await harness.delivery.deliver(
-			harness.events({ origin: "agent", by: "claim-7c40IV7N" }),
-		);
-
-		expect(result).toMatchObject({ outcome: "delivered", attempted: true });
-		expect(harness.received).toHaveLength(1);
+		expect(first).toMatchObject({ outcome: "delivered", attempted: true });
+		expect(second).toMatchObject({ outcome: "delivered", attempted: true });
+		expect(harness.received).toHaveLength(2);
 	});
 });

@@ -90,7 +90,6 @@ function change(
 		origin: "human",
 		significance: "structural",
 		text: "A human settled a structural board change.",
-		by: null,
 		...overrides,
 	};
 }

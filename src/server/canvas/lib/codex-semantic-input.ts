@@ -172,13 +172,28 @@ interface ConfirmedReport {
  * subject somebody picked out does not stop being true because the board was
  * written since. It is marked stale so the agent reads the board rather than
  * trusting the version the pane drew.
+ *
+ * What is NOT stale is having no report at all. Staleness here means "what you
+ * are being told may be behind the board", and the board was just read at the
+ * version the change landed at; the only thing missing is what is on somebody's
+ * screen, which is not a fact about the architecture. It is reported as
+ * ambiguity — the things that could not be resolved — because a session is told
+ * about every board update whatever anybody is looking at, and a missing
+ * presentation that read as stale board truth stopped the news outright.
  * @param board The board being read.
  * @param pane The pane's last report, or null when it has never reported.
  * @returns The report to use, and what was wrong with the one there was.
  */
 function reportFor(board: SemanticBoard, pane: SemanticPaneContext | null): ConfirmedReport {
 	if (pane === null) {
-		return { report: null, ambiguity: [], staleReasons: ["pane_has_not_reported"] };
+		return {
+			report: null,
+			ambiguity: [
+				"nothing on screen is reading this board, so no view or selection has been resolved " +
+					"against it; the board itself is read at the version this change landed at",
+			],
+			staleReasons: [],
+		};
 	}
 	const key = pane.board?.key ?? null;
 	// Aggregates, not spellings, and by the same function the rest of this file
@@ -186,34 +201,48 @@ function reportFor(board: SemanticBoard, pane: SemanticPaneContext | null): Conf
 	// exact comparison would call that another board and drop the variant, the
 	// view and the selection it just told us about.
 	if (key === null || aggregateKey(key) !== aggregateKey(board.name)) {
-		return {
-			report: null,
-			ambiguity: [mixedBoards(key, board.name)],
-			staleReasons: ["pane_report_names_another_board"],
-		};
+		// The same again: a pane reading something else tells us nothing about this
+		// board, and nothing is not stale.
+		return { report: null, ambiguity: [mixedBoards(key, board.name)], staleReasons: [] };
 	}
-	return { report: pane, ambiguity: [], staleReasons: versionReasons(pane.version, board.version) };
+	// The version difference is presentation lag, not board staleness: this
+	// reading is at the version the board is actually at.
+	return { report: pane, ambiguity: versionReasons(pane.version, board.version), staleReasons: [] };
 }
 
 /**
  * What the version the pane drew says about the reading.
  *
- * Behind is ordinary and self-healing: the board was written since the picture
- * was made, the pane will draw again, and what somebody picked out is still
- * true meanwhile. Ahead is stranger — the pane has seen a version this process
- * cannot read yet — and it is called pending rather than stale so that an agent
- * waits for the board to catch up instead of writing against a version that is
- * not the newest one. Neither is a refusal: both are said out loud and the
- * reading is still handed over.
+ * Behind is not only ordinary, it is the ordinary case at the moment that
+ * matters most: a write commits, announces, and is read here at its new
+ * version, all before the browser has drawn again and said so. So the pane
+ * lagging cannot be a reason to hold the news back — it is a fact about the
+ * screen, said out loud as ambiguity, while the board's own version is what the
+ * reading is at. Marking it stale meant every visible external change was
+ * refused as a stale event, which is the ordinary case refusing itself.
+ *
+ * Ahead is stranger — the pane has seen a version this process cannot read yet
+ * — and it is worth saying for the same reason: an agent should wait for the
+ * board to catch up rather than write against a version that is not the newest.
+ * Neither is a refusal, and neither is staleness: what somebody picked out of
+ * this board is still what they picked out.
  * @param drew The version the pane reported drawing, or null when it drew none.
  * @param read The version the board is actually at.
- * @returns The stale reasons, empty when the two agree.
+ * @returns What to say about the difference, empty when the two agree.
  */
 function versionReasons(drew: number | null, read: number): readonly string[] {
 	if (drew === null || drew === read) {
 		return [];
 	}
-	return drew > read ? ["pane_drew_a_newer_version"] : ["pane_drew_an_older_version"];
+	return drew > read
+		? [
+				`the pane has drawn version ${drew} and this process reads ${read}; wait for the board ` +
+					"to catch up rather than writing against a version that is not the newest",
+			]
+		: [
+				`the pane drew version ${drew} and the board is at ${read}, so the picture on screen is ` +
+					"behind; what it says was selected is still selected",
+			];
 }
 
 /**
@@ -231,12 +260,20 @@ function mixedBoards(key: string | null, name: string): string {
 }
 
 /**
- * The exact pane a context is captured for: the one with that id showing that board.
+ * The pane a context can report presentation from: the bound one, when it is
+ * showing the board that changed.
+ *
+ * Null is a real answer and the important one. A session hears about every
+ * board it has been told about, whatever anybody is looking at — so when the
+ * bound pane is closed, or is showing a different board, there is no
+ * presentation to report and the context says so rather than being refused or
+ * borrowing somebody else's. What a person selected in one architecture is not
+ * a fact about another.
  * @param contextBoard The board key.
  * @param exactPaneId The pane id.
- * @returns The pane.
+ * @returns The pane, or null when none is showing this board.
  */
-function contextPane(contextBoard: string, exactPaneId: string): PaneRegistration {
+function contextPane(contextBoard: string, exactPaneId: string): PaneRegistration | null {
 	// Aggregates, not spellings: a pane showing a proposal carries the variant in
 	// its board key, and comparing the whole string would say that pane is on a
 	// different board and leave an agent with no context at all.
@@ -254,10 +291,7 @@ function contextPane(contextBoard: string, exactPaneId: string): PaneRegistratio
 		const showing = boardForPane(candidate);
 		return candidate.paneId === exactPaneId && showing !== null && aggregateKey(showing) === wanted;
 	});
-	if (pane === undefined) {
-		throw new Error(`The Codex context board has no authoritative browser pane: ${contextBoard}.`);
-	}
-	return pane;
+	return pane ?? null;
 }
 
 type ThreadLinkOf = ReturnType<CodexWorkbenchComponents["threadLink"]["read"]>["link"];
@@ -328,26 +362,33 @@ function childIdentity(view: GraphView): LinkedIdentities["child"] {
 }
 
 /**
- * The workhorse the pane's executable link created, when the graph's
- * workhorse is that thread.
+ * The thread this pane's context is about: the one its executable link names.
+ *
+ * The link is the source of truth for what a pane is bound to, and a relink
+ * moves it. The graph's workhorse snapshot answers a different question — which
+ * thread started the child this generation runs — and the two part company the
+ * moment a pane is relinked to a thread that already existed: the child's owner
+ * stays as it was, the link moves, and a context that reported the owner named a
+ * thread this delivery is not for. Every event then failed to prove its target
+ * and was refused as unattributable, for as long as the relink stood.
+ *
+ * The child and the epoch are reported separately, from the graph, and the
+ * delivery's own capability check is what proves them. This is identity, not
+ * capability.
  * @param view The graph view.
- * @returns The linked workhorse, or null.
+ * @returns The thread, or null when the pane has no executable link.
  */
-function linkedWorkhorse(view: GraphView): WorkhorseSnapshot | null {
-	if (view.executable === null || view.workhorse === null) {
-		return null;
-	}
-	return view.workhorse.threadId === view.executable.threadId ? view.workhorse : null;
+function boundWorkhorseThread(view: GraphView): WorkhorseSnapshot["threadId"] | null {
+	return view.executable === null ? null : view.executable.threadId;
 }
 
 /**
- * The coordinator identity, named only when the pane's link created the
- * graph's workhorse.
+ * The coordinator identity, named only when the pane has a thread to be about.
  * @param view The graph view.
  * @returns The coordinator identity.
  */
 function coordinatorIdentity(view: GraphView): LinkedIdentities["coordinator"] {
-	if (linkedWorkhorse(view) === null || view.active === null) {
+	if (boundWorkhorseThread(view) === null || view.active === null) {
 		return { threadId: null, realtimeSessionId: null };
 	}
 	const realtime = view.active.realtime.generation();
@@ -369,14 +410,14 @@ function linkedIdentities(
 	paneId: string,
 ): LinkedIdentities {
 	const view = graphView(active, paneId);
-	const linked = linkedWorkhorse(view);
+	const linked = boundWorkhorseThread(view);
 	return {
 		child: childIdentity(view),
 		threadLink: {
 			state: view.link === null ? "unbound" : view.link.state,
 			reason: view.link === null ? null : view.link.reason,
 		},
-		workhorse: { threadId: linked === null ? null : linked.threadId, turnId: null },
+		workhorse: { threadId: linked, turnId: null },
 		coordinator: coordinatorIdentity(view),
 	};
 }
@@ -412,23 +453,30 @@ function semanticInputFor(
 	cursor: SemanticContextInput["cursor"],
 	exactPaneId: string,
 ): SemanticContextInput {
+	// The pane that can speak for what is on screen, or nothing when none can.
 	const pane = contextPane(contextBoard, exactPaneId);
 	// One parse, here. A pane showing a proposal reports `payments@<variant>`,
 	// and that address is what the context is filed under — but a board is one
 	// document holding every variant, so what is READ is the aggregate, and
 	// `readSemanticBoard` refuses an address carrying a variant outright.
 	const aggregate = aggregateKey(contextBoard);
-	const read = readBoardForContext(aggregate, semanticPaneContextFor(pane.clientId));
+	const read = readBoardForContext(
+		aggregate,
+		pane === null ? null : semanticPaneContextFor(pane.clientId),
+	);
 	return {
 		repository: checkoutRoot,
-		...linkedIdentities(active, pane.paneId),
+		...linkedIdentities(active, exactPaneId),
 		board: {
 			key: contextBoard,
 			name: read.name,
 			file: read.file,
 			version: read.version,
 		},
-		pane: { paneId: pane.paneId, focused: pane.focused },
+		// The bound pane either way: which pane this context belongs to is the
+		// port's own identity. Whether it is focused is a fact about the screen,
+		// and a pane that is not showing this board is not focused on it.
+		pane: { paneId: exactPaneId, focused: pane?.focused ?? false },
 		architecture: read.architecture,
 		...claimOf(contextBoard),
 		cursor,
