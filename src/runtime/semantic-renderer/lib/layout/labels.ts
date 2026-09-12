@@ -10,7 +10,12 @@
 //
 // The only change is that widths are measured rather than looked up.
 
-import { HEAD_REACH, PILL_CLEARANCE, PILL_HEIGHT } from "@/runtime/semantic-renderer/lib/design";
+import {
+	HEAD_REACH,
+	PILL_AIR,
+	PILL_CLEARANCE,
+	PILL_HEIGHT,
+} from "@/runtime/semantic-renderer/lib/design";
 import type { Box, Point } from "@/runtime/semantic-renderer/lib/geometry";
 import { pillSize } from "@/runtime/semantic-renderer/lib/layout/pill";
 import { EPSILON, type Curve } from "@/runtime/semantic-renderer/lib/layout/curves";
@@ -34,6 +39,14 @@ interface Run {
 	readonly lo: number;
 	/** The upper end. */
 	readonly hi: number;
+}
+
+/** A box a pill must keep off, and how much air it asks for. */
+interface Blocker {
+	/** The box. */
+	readonly box: Box;
+	/** How much space to leave around it. */
+	readonly air: number;
 }
 
 /** One interval of a run a pill may not centre itself in. */
@@ -208,19 +221,20 @@ function blockedByHeads(
  * @param run The run.
  * @param size The pill.
  * @param box The settled box.
+ * @param air How much space to leave around that box.
  * @returns The forbidden interval, or nothing.
  */
-function blockedBy(run: Run, size: Size, box: Box): Blocked[] {
+function blockedBy(run: Run, size: Size, box: Box, air: number): Blocked[] {
 	const at = project(box, run.axis);
 	const cross = crossHalf(size, run.axis);
-	if (run.cross - cross >= at.crossHi + PILL_CLEARANCE) {
+	if (run.cross - cross >= at.crossHi + air) {
 		return [];
 	}
-	if (run.cross + cross <= at.crossLo - PILL_CLEARANCE) {
+	if (run.cross + cross <= at.crossLo - air) {
 		return [];
 	}
 	const along = alongHalf(size, run.axis);
-	return [{ from: at.alongLo - PILL_CLEARANCE - along, to: at.alongHi + PILL_CLEARANCE + along }];
+	return [{ from: at.alongLo - air - along, to: at.alongHi + air + along }];
 }
 
 /**
@@ -249,7 +263,7 @@ function beats(candidate: number, best: number | undefined, preferred: number): 
  * run's ends — still square on its own line, at the line's foot.
  * @param run The run.
  * @param size The pill.
- * @param settled Every pill already placed.
+ * @param settled The boxes to keep off, each with the air it asks for.
  * @param reach How far past the run's ends the pill may be pushed.
  * @param heads Stretches the route's own arrowheads forbid.
  * @returns Where along the run the pill's centre goes, or undefined.
@@ -257,7 +271,7 @@ function beats(candidate: number, best: number | undefined, preferred: number): 
 function slideAlong(
 	run: Run,
 	size: Size,
-	settled: readonly Box[],
+	settled: readonly Blocker[],
 	reach: number,
 	heads: readonly Blocked[],
 ): number | undefined {
@@ -265,7 +279,7 @@ function slideAlong(
 	const preferred = (run.lo + run.hi) / 2;
 	const lo = Math.min(run.lo + half - reach, preferred);
 	const hi = Math.max(run.hi - half + reach, preferred);
-	const blocked = [...settled.flatMap((box) => blockedBy(run, size, box)), ...heads];
+	const blocked = [...settled.flatMap(({ box, air }) => blockedBy(run, size, box, air)), ...heads];
 
 	let best: number | undefined;
 	/**
@@ -349,7 +363,7 @@ function runEnds(curve: Curve, run: Run): { lo: boolean; hi: boolean } {
  * @param curve The route it labels.
  * @param anchor Where the router put its label.
  * @param size The pill.
- * @param settled Every pill already placed.
+ * @param settled Everything already placed, with the air each asks for.
  * @param wires The other routes' lines, as boxes.
  * @returns The pill's box.
  */
@@ -357,7 +371,7 @@ function settle(
 	curve: Curve,
 	anchor: Point,
 	size: Size,
-	settled: readonly Box[],
+	settled: readonly Blocker[],
 	wires: readonly Box[],
 ): Box {
 	const run = longestRun(curve);
@@ -372,10 +386,11 @@ function settle(
 	// A route that only bends — a self-loop — has no run to slide along; its
 	// anchor still stands wherever it is clear.
 	const atAnchor = centred(anchor, size);
-	if (!settled.some((other) => collides(atAnchor, other))) {
+	const boxes = settled.map(({ box }) => box);
+	if (!boxes.some((other) => collides(atAnchor, other))) {
 		return atAnchor;
 	}
-	return stepAside(anchor, run === undefined ? "x" : run.axis, size, settled);
+	return stepAside(anchor, run === undefined ? "x" : run.axis, size, boxes);
 }
 
 /**
@@ -388,7 +403,7 @@ function settle(
  * a pill nowhere near its own.
  * @param run The route's longest straight run.
  * @param size The pill.
- * @param settled Everything already placed.
+ * @param settled Everything already placed, with the air each asks for.
  * @param wires The other routes' lines, as boxes.
  * @param heads Stretches the route's own arrowheads forbid.
  * @returns The pill's box, or undefined when the line cannot host it.
@@ -396,11 +411,16 @@ function settle(
 function onRun(
 	run: Run,
 	size: Size,
-	settled: readonly Box[],
+	settled: readonly Blocker[],
 	wires: readonly Box[],
 	heads: readonly Blocked[],
 ): Box | undefined {
-	for (const blockers of [[...settled, ...wires], settled]) {
+	const onWires = wires.map((box) => ({ box, air: PILL_CLEARANCE }));
+	// Pills apart by their full air where the line has room for it, and by the
+	// bare clearance where it does not: a crowded board gives up the air before
+	// it gives up the tie between a label and its line.
+	const tight = settled.map(({ box, air }) => ({ box, air: Math.min(air, PILL_CLEARANCE) }));
+	for (const blockers of [[...settled, ...onWires], settled, [...tight, ...onWires], tight]) {
 		for (const reach of [0, PILL_HEIGHT]) {
 			const along = slideAlong(run, size, blockers, reach, heads);
 			if (along !== undefined) {
@@ -453,7 +473,7 @@ function placeLabelPills(
 	routed: readonly RoutedEdge[],
 	occupied: readonly Box[],
 ): Map<string, Box> {
-	const placed: Box[] = [...occupied];
+	const placed: Blocker[] = occupied.map((box) => ({ box, air: PILL_CLEARANCE }));
 	const wires = new Map(routed.map(({ edge, curve }) => [edge.id, wireBoxes(curve)]));
 	const boxes = new Map<string, Box>();
 	for (const { edge, curve, labelAnchor } of routed) {
@@ -462,7 +482,7 @@ function placeLabelPills(
 		}
 		const others = [...wires].flatMap(([id, wire]) => (id === edge.id ? [] : wire));
 		const box = settle(curve, labelAnchor, pillSize(edge.label), placed, others);
-		placed.push(box);
+		placed.push({ box, air: PILL_AIR });
 		boxes.set(edge.id, box);
 	}
 	return boxes;

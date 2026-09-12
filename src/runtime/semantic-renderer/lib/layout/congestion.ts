@@ -10,6 +10,7 @@ import {
 	BAND_GAP,
 	BAND_PADDING_X,
 	HEAD_REACH,
+	PILL_AIR,
 	PILL_CLEARANCE,
 	PILL_HEIGHT,
 	ROW_GAP,
@@ -61,7 +62,7 @@ function pillsNeeded(pills: number): number {
 	if (pills === 0) {
 		return 0;
 	}
-	const step = PILL_HEIGHT + PILL_CLEARANCE;
+	const step = PILL_HEIGHT + PILL_AIR;
 	return 2 * ((pills - 1) * step + PILL_HEIGHT / 2 + PILL_CLEARANCE + HEAD_REACH);
 }
 
