@@ -115,8 +115,14 @@ const PILL_HEIGHT = 15;
 const PILL_PADDING_X = 8;
 const PILL_TEXT_SIZE = 9;
 const PILL_RADIUS = 4;
-/** Two label pills never sit closer than this, in either direction. */
+/** How little air a pill needs against a card, an arrowhead or a port. */
 const PILL_CLEARANCE = 2;
+/**
+ * And how much two pills keep from each other. More than the clearance above,
+ * because two labels a hair apart read as one block of text; against a card
+ * there is nothing to tell apart, so that stays tight.
+ */
+const PILL_AIR = 6;
 
 /**
  * A turn's bend radius comes from the shorter of its two legs, capped here.
@@ -238,6 +244,7 @@ export {
 	PILL_PADDING_X,
 	PILL_TEXT_SIZE,
 	PILL_RADIUS,
+	PILL_AIR,
 	PILL_CLEARANCE,
 	TRACK_CLEARANCE,
 	TRACK_PITCH_MAX,
