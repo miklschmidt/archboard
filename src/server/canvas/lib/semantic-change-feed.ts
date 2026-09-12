@@ -25,17 +25,12 @@ interface SettledBoardChange {
 	readonly significance: "structural";
 	readonly text: string;
 	/**
-	 * The pane the write said it was for, or null when it named none.
+	 * The agent session that made the change, or null when nobody said.
 	 *
-	 * What a reader uses to tell its own work from somebody else's. Every board
-	 * write is an agent's now (ADR 0023), so the role stopped separating them
-	 * and only the pane does. Authorship, not custody: the identity a write
-	 * holds the board under is one value shared by every write in a claimed
-	 * campaign and names no pane, so it answers a different question.
-	 *
-	 * Null is the ordinary case for a command line, and it means unattributable
-	 * — which is delivered to everybody, its own author included. Redundancy
-	 * rather than silence.
+	 * What a reader uses to skip its own writes and nothing else. A surface used
+	 * to be here instead — the pane a write said it was for — and it was read to
+	 * decide who should NOT be told, which made what a person had open decide
+	 * who heard about an architecture.
 	 */
 	readonly by: string | null;
 }
@@ -67,7 +62,19 @@ function isBoardChange(message: WebSocketMessage): boolean {
 interface SettledAnnouncement {
 	/** The version the board landed at. */
 	readonly version: number;
-	/** The pane the write said it was for, or null when it named none. */
+	/**
+	 * The agent session that made the write, or null when nobody said.
+	 *
+	 * A session, not a surface. It is the workhorse and the coordinator paired
+	 * with it — one identity that outlives a turn, because a write that lands
+	 * after the turn that made it is still that session's own — and it is
+	 * renewed when the session itself is: a new thread, a new child epoch, a
+	 * relink. What it is for is one thing only: a session skipping the news it
+	 * wrote itself. Everything else about who wrote what is custody's business.
+	 *
+	 * Null is the ordinary case for a person's terminal and for anything outside
+	 * this canvas, and it means delivered to everybody.
+	 */
 	readonly by: string | null;
 	/** The identity the board was held under: custody, not authorship. */
 	readonly heldAs: string;
@@ -98,9 +105,9 @@ function settledChangeFields(announcement: SettledAnnouncement): {
 }
 
 /**
- * The pane a broadcast change says it was written for.
+ * The session a broadcast change says made it.
  * @param message The announcement, as it arrived.
- * @returns The pane id, or null when the write named none.
+ * @returns The session id, or null when the write named none.
  */
 function authorOf(message: WebSocketMessage): string | null {
 	return typeof message["by"] === "string" ? message["by"] : null;
@@ -112,9 +119,6 @@ onBoardBroadcast((message, board) => {
 	}
 	cursor += 1;
 	const version = typeof message["version"] === "number" ? message["version"] : null;
-	// Absent is a real answer: a change nobody can attribute is delivered to
-	// everybody, its own author included, which is redundancy rather than silence.
-	const by = authorOf(message);
 	const event: SettledBoardChange = {
 		cursor,
 		board,
@@ -123,7 +127,9 @@ onBoardBroadcast((message, board) => {
 		origin: "agent",
 		significance: "structural",
 		text: version === null ? `${board} changed` : `${board} is at version ${version}`,
-		by,
+		// Absent is a real answer: a change nobody can attribute is delivered to
+		// everybody, its own author included, which is redundancy not silence.
+		by: authorOf(message),
 	};
 	for (const listener of listeners) {
 		listener(event);

@@ -256,6 +256,28 @@ function assertCurrentAuthority(
 }
 
 /**
+ * The threads one session writes as.
+ *
+ * The workhorse the binding names, and the coordinator paired with it when the
+ * host knows of one: a person talking to the pair is talking to one session, so
+ * neither is told about the other's writes. Deduplicated, because a host that
+ * reports the same thread twice must not turn one identity into two.
+ * @param binding - The active binding.
+ * @param paired - The coordinator thread, when there is one.
+ * @returns The thread identities, in no particular order.
+ */
+function sessionThreadsOf(
+	binding: CodexThreadContextBinding,
+	paired: string | null,
+): readonly string[] {
+	const threads = new Set<string>([binding.target.threadId]);
+	if (paired !== null) {
+		threads.add(paired);
+	}
+	return [...threads];
+}
+
+/**
  * One process-lifetime subscription and event ledger over replaceable exact
  * bindings: events always settle here, through the active binding's own
  * unsubscribed delivery port when one exists.
@@ -367,6 +389,17 @@ export function createCodexThreadContextController(
 			...options,
 			paneId: binding.paneId,
 			target: binding.target,
+			// The threads whose board writes are this session's own: the workhorse
+			// this binding names, and the coordinator paired with it when there is
+			// one. A thread is the session — it goes on being the same thread across
+			// turns, and a relink makes a new one — so this is the identity a write
+			// states and the only thing a change is skipped for. Asked per event,
+			// because a coordinator comes and goes inside one workhorse's life.
+			/**
+			 * The threads this session writes as, right now.
+			 * @returns The workhorse and its coordinator, whichever are there.
+			 */
+			sessionAuthors: () => sessionThreadsOf(binding, options.pairedThreadId?.() ?? null),
 			/**
 			 * The child capability, or null once execution was withdrawn or the
 			 * binding was replaced.

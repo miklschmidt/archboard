@@ -185,6 +185,7 @@ type CoordinatorCallbackDeliveryReason =
 	| "disposed"
 	| "invalid_callback"
 	| "not_ready"
+	| "own_change"
 	| "prior_epoch"
 	| "stale_child"
 	| "stale_coordinator"

@@ -14,6 +14,7 @@ let requestedBoard: string | null = null;
 
 /** What this invocation says it is doing, or null when it says nothing. */
 let writeDoing: string | null = null;
+let writeSession: string | null = null;
 
 /**
  * The version this invocation states it is writing against: a number, null for
@@ -64,6 +65,31 @@ function withBoard(path: string): string {
  */
 function setWriteDoing(doing: string | null): void {
 	writeDoing = doing;
+}
+
+/**
+ * Say which agent session this invocation is writing as.
+ *
+ * Per invocation, never from the environment: one private app-server child
+ * serves every thread of a workbench, so a value read out of that process's
+ * environment would stamp one session's identity on another's writes — the
+ * exact failure that made the old pane attribution worse than nothing.
+ *
+ * What it is for is one thing: letting that session skip the board news it
+ * wrote itself. Nothing on a board rests on it, nothing validates it, and a
+ * write that says nothing is delivered to everybody, its own author included.
+ * @param session The session's own thread identity, or null when there is none to state.
+ */
+function setWriteSession(session: string | null): void {
+	writeSession = session;
+}
+
+/**
+ * Which session this invocation is writing as.
+ * @returns The identity, or null.
+ */
+function currentWriteSession(): string | null {
+	return writeSession;
 }
 
 /**
@@ -151,6 +177,8 @@ function withWriteClaims(path: string, method?: string): string {
 }
 
 export {
+	setWriteSession,
+	currentWriteSession,
 	addQuery,
 	withWriteClaims,
 	answeredBoard,

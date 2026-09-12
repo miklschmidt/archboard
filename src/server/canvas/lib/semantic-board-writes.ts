@@ -44,8 +44,9 @@ import { announceDoing, refuseUndescribedWrite } from "@/server/canvas/lib/board
 
 /**
  * Tell every pane holding this board that it has changed, so the pane asks for
- * a new picture. The board is the news; what changed is not, because the pane
- * holds no copy of the content to patch.
+ * a new picture, and put the change on the feed a thread's context reads. The
+ * board is the news; what changed is not, because the pane holds no copy of the
+ * content to patch.
  * @param result What the write did.
  * @param envelope What the write stated about itself.
  */
@@ -60,16 +61,15 @@ function announce(
 		{
 			type: "board_note",
 			board: result.location.key,
-			// Two different facts, and they have to stay two fields. `heldAs` is
-			// custody: the identity the board was held under, which a standing claim
-			// shares across a campaign. `by` is authorship: the pane this write said
-			// it was for. A reader deciding whether a change is somebody else's news
-			// or its own echo is asking about authorship, and a claim cannot answer
-			// it — a claim records no pane. The shape is the change feed's, because
-			// it is the thing that reads it back.
+			// Two facts about the writer, and they stay two fields. `heldAs` is
+			// custody: the identity the board was held under, shared by every write
+			// of a claimed campaign. `by` is the agent session that made this
+			// write, which is what lets that session skip its own news. Neither is
+			// a surface: the pane a write said it was for used to ride here, and it
+			// was read back to decide who should not be told.
 			...settledChangeFields({
 				version: result.board.version,
-				by: envelope.paneId ?? null,
+				by: envelope.session ?? null,
 				heldAs: result.heldAs,
 			}),
 		},
@@ -122,7 +122,9 @@ function announceWork(
 	const entry = {
 		doing,
 		at: new Date().toISOString(),
-		by: envelope.paneId ?? "agent",
+		// Every semantic write is an agent's (ADR 0023), and which pane one was
+		// running for is not a fact this line needs.
+		by: "agent",
 		kind: envelope.origin,
 	};
 	recordDoing(result.location.key, entry);
@@ -450,9 +452,12 @@ function writerOf(envelope: z.infer<typeof WriteEnvelopeSchema>): {
 	id?: string;
 	reason?: string;
 } {
+	// No stated identity: an agent's write is held under its claim or under an
+	// identity minted for that write alone, and a person's under one minted for
+	// theirs. The pane a caller was running for used to be offered here, which
+	// made a presentation surface an identity as well as a mailbox.
 	return {
 		kind: envelope.origin,
-		...(envelope.paneId === undefined ? {} : { id: envelope.paneId }),
 		...(envelope.reason === undefined ? {} : { reason: envelope.reason }),
 	};
 }

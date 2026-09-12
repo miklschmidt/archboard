@@ -7,6 +7,7 @@ import {
 	setExpectedVersion,
 	setRequestedBoard,
 	setWriteDoing,
+	setWriteSession,
 } from "@/runtime/engine/canvas-client";
 import { packageVersion } from "@/runtime/engine/package-version";
 import { CLI_INTERRUPT_CLEANUP_MS } from "@/shared/timing/timing";
@@ -22,6 +23,7 @@ import { exitCodeFor, reportFailure } from "@/cli/command-routing/lib/exit-codes
 import {
 	takeBoardFlag,
 	takeDoingFlag,
+	takeSessionFlag,
 	takeExpectVersionFlag,
 } from "@/cli/command-routing/lib/global-flags";
 
@@ -243,6 +245,7 @@ async function runCliWith(routes: CommandRoutes, argv: string[]): Promise<void> 
 		refuseRetiredBoardForms(name, rest);
 		setRequestedBoard(takeBoardFlag(rest));
 		setWriteDoing(takeDoingFlag(rest));
+		setWriteSession(takeSessionFlag(rest));
 		setExpectedVersion(takeExpectVersionFlag(rest));
 		const dispatched = dispatchedCommand(command, rest);
 		selected = dispatched.selected;

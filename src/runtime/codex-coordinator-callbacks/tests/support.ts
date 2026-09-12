@@ -284,7 +284,6 @@ function semanticSources(ids: Identities, active: boolean): SemanticSources {
 			origin: "human",
 			significance: "structural",
 			text: "A structural change.",
-			by: null,
 		});
 	}
 	if (change === null) {

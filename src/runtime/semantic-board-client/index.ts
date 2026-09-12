@@ -9,10 +9,10 @@
 // canvas, and it has not changed.
 
 import { z } from "zod";
-import { ARCHBOARD_PANE } from "@/runtime/engine/config";
 import {
 	currentExpectedVersion,
 	currentWriteDoing,
+	currentWriteSession,
 	requestJson,
 } from "@/runtime/engine/canvas-client";
 import {
@@ -102,16 +102,12 @@ function withWriterClaims(path: string): string {
 }
 
 /**
- * The pane this invocation is writing for, when it is running for one.
- *
- * Stated, not proven: a caller could name a pane that is not its own, the same
- * way it could write a `--doing` line that says anything. What it is for is
- * letting a thread recognise its own change, and nothing about a board's
- * contents rests on it.
- * @returns The pane to state, or nothing when this invocation has none.
+ * The session this invocation is writing as, when it was told one.
+ * @returns The field to state, or nothing when no session was named.
  */
-function statedPane(): { paneId?: string } {
-	return ARCHBOARD_PANE === undefined ? {} : { paneId: ARCHBOARD_PANE };
+function statedSession(): { session?: string } {
+	const session = currentWriteSession();
+	return session === null ? {} : { session };
 }
 
 /**
@@ -130,7 +126,10 @@ async function postSemantic(
 		// The pane goes on every write or on none of them. A rule threaded through
 		// five call sites is a rule one of them gets away with not meeting, and the
 		// one that forgot would be a write nobody could attribute.
-		body: JSON.stringify({ ...body, ...statedPane() }),
+		// The session, when this invocation named one: it rides in the body with
+		// the rest of what the write says about itself rather than in the query,
+		// because it is a fact about the writer and not a precondition on the write.
+		body: JSON.stringify({ ...body, ...statedSession() }),
 	});
 	const answered = WriteReplySchema.parse(reply);
 	return { board: answered.board, reconciliation: answered.reconciliation };

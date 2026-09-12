@@ -58,7 +58,12 @@ function asCommand<Shape>(
 const WriteEnvelopeSchema = z.object({
 	board: z.string().min(1),
 	origin: z.enum(["agent", "human"]).default("agent"),
-	paneId: z.string().min(1).optional(),
+	// Which agent session made this write, when one said so. Stated rather than
+	// proven, like `--doing`: nothing on a board rests on it, and all it is for
+	// is letting a session recognise its own writes among the news it is told.
+	// A write that states nothing is unattributable and is delivered to
+	// everybody, its own author included — redundancy rather than silence.
+	session: z.string().min(1).max(128).optional(),
 	reason: z.string().min(1).optional(),
 });
 
