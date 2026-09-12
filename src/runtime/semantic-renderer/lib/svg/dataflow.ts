@@ -27,9 +27,7 @@ import type {
 } from "@/shared/semantic-board/index";
 import { BAND_RADIUS, DIAGRAM_MARGIN, PILL_RADIUS } from "@/runtime/semantic-renderer/lib/design";
 import {
-	ACTIVATION_HALF_WIDTH,
-	ACTIVATION_RADIUS,
-	LIFELINE_DASH,
+	STEP_WEIGHT,
 	MARKER_INSET,
 	SELF_LOOP_CORNER,
 	SELF_LOOP_DROP,
@@ -38,14 +36,13 @@ import {
 import { atlasBoxes } from "@/runtime/semantic-renderer/lib/atlas";
 import { canvasFor, coord, union, type Box } from "@/runtime/semantic-renderer/lib/geometry";
 import type { Palette } from "@/runtime/semantic-renderer/lib/theme";
-import { timedPulse, PULSE_RADIUS, TRAIN_RADIUS } from "@/runtime/semantic-renderer/lib/svg/pulse";
-import { FLOW_CYCLE_CAP_MS, FLOW_PULSE_RAMP, FLOW_STEP_TRAVEL_MS } from "@/shared/timing/timing";
+import { FLOW_CYCLE_CAP_MS, FLOW_STEP_TRAVEL_MS } from "@/shared/timing/timing";
+import { timedCrossings, type Crossing } from "@/runtime/semantic-renderer/lib/svg/flow-clock";
 import {
 	activationLookup,
 	layoutDataFlow,
 	type ActiveAt,
 	type FlowLayout,
-	type PlacedColumn,
 	type PlacedStep,
 } from "@/runtime/semantic-renderer/lib/layout/dataflow";
 import {
@@ -56,6 +53,7 @@ import {
 	travelOf,
 } from "@/runtime/semantic-renderer/lib/layout/messages";
 import { halo, paintCard, paintHeader } from "@/runtime/semantic-renderer/lib/svg/cards";
+import { paintColumn } from "@/runtime/semantic-renderer/lib/svg/flow-columns";
 import { shifted } from "@/runtime/semantic-renderer/lib/svg/document";
 import {
 	lines,
@@ -69,27 +67,26 @@ import {
 	standingPin,
 	standingSwipe,
 	subjectGroup,
+	warningBadge,
+	warningOnLine,
 	type StandingOf,
 	type SubjectStanding,
+	type UnsettledOf,
 } from "@/runtime/semantic-renderer/lib/svg/standing";
 import {
 	markerFor,
 	stylesFor,
-	weightColour,
+	lineColour,
 	STROKE_OPACITY,
 	STROKE_WIDTH,
 	type Head,
 	type SvgStyles,
-	type Weight,
 } from "@/runtime/semantic-renderer/lib/svg/styles";
 
 /** How much wider than its line a message's selection halo is. */
 const STEP_HALO_EXTRA = 5;
 /** Where a plate's text baseline sits inside it. */
 const PILL_BASELINE = 0.68;
-
-/** Every message is drawn at one weight: a flow states no emphasis to vary it by. */
-const STEP_WEIGHT: Weight = "normal";
 
 /**
  * What sort of message each kind is, said in dashes.
@@ -126,40 +123,22 @@ const STEP_HEAD: Readonly<Record<MessageKind, Head>> = {
  * How one message's line is stroked.
  * @param kind What the message does.
  * @param palette The theme's colours.
+ * @param standing How the message stands, when this is a proposal and it moved.
  * @returns The path's attributes.
  */
-function stepAttributes(kind: MessageKind, palette: Palette): Attributes {
+function stepAttributes(
+	kind: MessageKind,
+	palette: Palette,
+	standing: SubjectStanding | undefined,
+): Attributes {
 	return {
 		fill: "none",
-		stroke: weightColour(palette, STEP_WEIGHT),
+		stroke: lineColour(palette, STEP_WEIGHT, standing),
 		"stroke-width": STROKE_WIDTH[STEP_WEIGHT],
 		"stroke-opacity": STROKE_OPACITY[STEP_WEIGHT],
 		"stroke-linecap": "round",
 		"stroke-linejoin": "round",
 		"stroke-dasharray": STEP_DASH[kind],
-	};
-}
-
-/**
- * A lifeline is the passage of time under a participant, not a connection it
- * has. Dashed and in the faintest ink the ground allows, so that a page of them
- * stays a backdrop rather than competing with the messages crossing it. An
- * activation bar is drawn on the card's own ground, so that it reads as the
- * participant itself standing in its column.
- * @param palette The theme's colours.
- * @returns The two bundles this grammar adds to the shared ones.
- */
-function sequenceStyles(palette: Palette): {
-	readonly lifeline: Attributes;
-	readonly activation: Attributes;
-} {
-	return {
-		lifeline: {
-			stroke: palette.edgeMuted,
-			"stroke-width": 1,
-			"stroke-dasharray": LIFELINE_DASH,
-		},
-		activation: { fill: palette.card, stroke: palette.cardBorder, "stroke-width": 1 },
 	};
 }
 
@@ -243,7 +222,7 @@ function stepPath(placed: PlacedStep, activeAt: ActiveAt): string {
  * @param palette The theme's colours.
  * @param standing How this step stands against the variant it came from, when the caller said.
  * @param crossing The drawing's shared clock.
- * @returns The message's whole group.
+ * @returns The group holding its run.
  */
 function paintStep(
 	placed: PlacedStep,
@@ -269,134 +248,53 @@ function paintStep(
 			}),
 			tag("path", {
 				d: path,
-				"marker-end": markerFor(STEP_WEIGHT, STEP_HEAD[placed.step.kind]),
-				...stepAttributes(placed.step.kind, palette),
+				"marker-end": markerFor(STEP_WEIGHT, STEP_HEAD[placed.step.kind], standing),
+				...stepAttributes(placed.step.kind, palette, standing),
 			}),
-			paintLabel(
-				placed.label,
-				labelBox(placed, activeAt),
-				styles,
-				standingOutline(standing, palette),
-			),
-			// The dots last, so they ride over the line. A message the proposal no
-			// longer sends is drawn for context and must not read as live traffic.
-			standing === "removed" ? "" : timedCrossings(placed, path, palette, crossing),
+			// The dots over the line and under the words, which is the order a
+			// reader needs: a dot crossing an opaque plate put a hole in the middle
+			// of what the message says. A message the proposal no longer sends is
+			// drawn for context and must not read as live traffic.
+			standing === "removed"
+				? ""
+				: timedCrossings(placed, path, palette, { ...crossing, standing }),
 		]),
 	);
 }
 
 /**
- * The drawing's clock, which every message on the page shares.
+ * What one message says, on the layer above every run.
  *
- * One clock, not one per flow: a page of exchanges is read in the order the
- * flows are stated, and a clock each would have them all crossing at once.
- */
-interface Crossing {
-	/** How long one turn of the whole clock takes, in seconds. */
-	readonly cycle: number;
-	/** How many turns it is divided into, across every flow drawn. */
-	readonly turns: number;
-}
-
-/**
- * The dots one message sends, each waiting its own turn on the shared clock.
- * @param placed The message and the turn it was given.
- * @param path The line its dots ride.
+ * The plate and the warning badge, in a group that says it is the message, for
+ * the same reason the architecture grammar splits a relationship in two: the
+ * words of one message have to sit above the dots of ALL of them. Upstream, and
+ * this fork until now, argued that a stack of horizontal runs at a fixed pitch
+ * could never reach each other's plates — and mostly it cannot, but "mostly"
+ * is a thing that has to be re-derived every time somebody adds a self-message
+ * loop or a taller plate, and the rule it was standing in for is the simple one:
+ * the words are on top.
+ * @param placed The message.
+ * @param activeAt Whether a column is busy at a given height.
  * @param palette The theme's colours.
- * @param crossing The drawing's clock.
- * @returns The markup, or nothing when this message sends no dot.
+ * @param standing How this step stands against the variant it came from, when the caller said.
+ * @param unsettled Whether the board says nobody has decided this message yet.
+ * @returns The message's words, or nothing when it has none to say.
  */
-function timedCrossings(
+function paintStepWords(
 	placed: PlacedStep,
-	path: string,
-	palette: Palette,
-	crossing: Crossing,
-): string {
-	const { cycle, turns } = crossing;
-	if (turns === 0 || placed.slot.count === 0) {
-		return "";
-	}
-	const width = 1 / turns;
-	const colour = weightColour(palette, STEP_WEIGHT);
-	const radius = placed.slot.count > 1 ? TRAIN_RADIUS : PULSE_RADIUS;
-	return lines(
-		Array.from({ length: placed.slot.count }, (_, index) => {
-			const start = (placed.slot.start + index) * width;
-			return timedPulse({ path, colour, radius }, cycle, {
-				start,
-				finish: start + width,
-				ramp: width * FLOW_PULSE_RAMP,
-			});
-		}),
-	);
-}
-
-/**
- * The strip of page one participant's column of time occupies: its lifeline and
- * every bar on it.
- * @param column The column.
- * @param layout The flow it belongs to.
- * @returns The strip.
- */
-function columnStrip(column: PlacedColumn, layout: FlowLayout): Box {
-	return {
-		x: column.centreX - ACTIVATION_HALF_WIDTH,
-		y: layout.lifelineTop,
-		width: ACTIVATION_HALF_WIDTH * 2,
-		height: layout.lifelineBottom - layout.lifelineTop,
-	};
-}
-
-/**
- * One participant's column of time: the lifeline under its card, and the bars
- * marking where it is busy.
- *
- * It carries the participant's identity as its card does, so that selecting a
- * participant lights the whole height of the page it is involved in rather than
- * only the card at the top of it. The two groups are siblings rather than nested,
- * because a subject inside another subject is a click a viewer cannot resolve.
- * @param column The column.
- * @param layout The flow it belongs to.
- * @param palette The theme's colours.
- * @param standing How this participant stands against the variant it came from, when the caller said.
- * @returns The column's group.
- */
-function paintColumn(
-	column: PlacedColumn,
-	layout: FlowLayout,
+	activeAt: ActiveAt,
 	palette: Palette,
 	standing: SubjectStanding | undefined,
+	unsettled: boolean,
 ): string {
-	const styles = stylesFor(palette);
-	const own = sequenceStyles(palette);
-	// The lifeline takes the standing's ink but keeps its own dash, which is this
-	// grammar's signature for the passage of time rather than a kind of anything.
-	// It is what makes a participant's standing read all the way down the page
-	// instead of only at the card on top of it.
-	const ink = standingOutline(standing, palette)["stroke"];
+	const plate = labelBox(placed, activeAt);
 	return wrap(
 		"g",
-		subjectGroup("node", column.card.node.id, standing),
+		subjectGroup("step", placed.step.id, standing),
 		lines([
-			halo(columnStrip(column, layout), ACTIVATION_RADIUS, styles),
-			tag("line", {
-				x1: coord(column.centreX),
-				y1: coord(layout.lifelineTop),
-				x2: coord(column.centreX),
-				y2: coord(layout.lifelineBottom),
-				...own.lifeline,
-				stroke: ink ?? own.lifeline["stroke"],
-			}),
-			...column.activations.map((bar) =>
-				tag("rect", {
-					x: coord(column.centreX - ACTIVATION_HALF_WIDTH),
-					y: coord(bar.top),
-					width: ACTIVATION_HALF_WIDTH * 2,
-					height: coord(bar.bottom - bar.top),
-					rx: ACTIVATION_RADIUS,
-					...own.activation,
-				}),
-			),
+			paintLabel(placed.label, plate, stylesFor(palette), standingOutline(standing, palette)),
+			// On the leading edge of the plate, clear of its words.
+			warningOnLine({ x: plate.x, y: plate.y + plate.height / 2 }, unsettled, palette),
 		]),
 	);
 }
@@ -411,12 +309,14 @@ function paintColumn(
  * @param layout The flow.
  * @param palette The theme's colours.
  * @param standing How this flow stands against the variant it came from, when the caller said.
+ * @param unsettled Whether the board says nobody has decided this exchange yet.
  * @returns The frame's group.
  */
 function paintFrame(
 	layout: FlowLayout,
 	palette: Palette,
 	standing: SubjectStanding | undefined,
+	unsettled: boolean,
 ): string {
 	const styles = stylesFor(palette);
 	return wrap(
@@ -435,6 +335,7 @@ function paintFrame(
 			}),
 			paintHeader(layout.header, layout.flow.name, layout.flow.summary, styles),
 			standingPin(layout.frame, standing, palette),
+			warningBadge(layout.frame, unsettled, palette),
 		]),
 	);
 }
@@ -445,17 +346,19 @@ function paintFrame(
  * @param palette The theme's colours.
  * @param standingOf How each subject stands against the variant this one came from.
  * @param crossing The drawing's shared clock, which this flow takes its turns on.
- * @returns Its markup.
+ * @param unsettledOf Whether the board says a subject is still undecided.
+ * @returns Everything it draws, and the words that go above every flow's runs.
  */
 function paintFlow(
 	layout: FlowLayout,
 	palette: Palette,
 	standingOf: StandingOf,
 	crossing: Crossing,
-): string {
+	unsettledOf: UnsettledOf,
+): { readonly body: string; readonly words: string } {
 	const activeAt = activationLookup(layout.columns);
-	return lines([
-		paintFrame(layout, palette, standingOf(layout.flow.id)),
+	const body = lines([
+		paintFrame(layout, palette, standingOf(layout.flow.id), unsettledOf(layout.flow.id)),
 		wrap(
 			"g",
 			{},
@@ -470,7 +373,12 @@ function paintFlow(
 			{},
 			lines(
 				layout.columns.map((column) =>
-					paintCard(column.card, palette, standingOf(column.card.node.id)),
+					paintCard(
+						column.card,
+						palette,
+						standingOf(column.card.node.id),
+						unsettledOf(column.card.node.id),
+					),
 				),
 			),
 		),
@@ -484,6 +392,18 @@ function paintFlow(
 			),
 		),
 	]);
+	const words = lines(
+		layout.steps.map((placed) =>
+			paintStepWords(
+				placed,
+				activeAt,
+				palette,
+				standingOf(placed.step.id),
+				unsettledOf(placed.step.id),
+			),
+		),
+	);
+	return { body, words };
 }
 
 /** Everything a painted sequence is. */
@@ -543,6 +463,7 @@ function stepSubjects(layout: FlowLayout): DrawnSubject[] {
  * @param nodes The variant's nodes, for the participants.
  * @param palette The theme's colours.
  * @param standingOf How each subject stands against the variant this one came from.
+ * @param unsettledOf Whether the board says a subject is still undecided.
  * @returns The page, its body and its atlas.
  */
 function paintDataFlow(
@@ -550,6 +471,7 @@ function paintDataFlow(
 	nodes: readonly SemanticNode[],
 	palette: Palette,
 	standingOf: StandingOf,
+	unsettledOf: UnsettledOf,
 ): DataFlowPainting {
 	const layout = layoutDataFlow(flows, nodes);
 	// One clock for everything drawn, so the whole page is told in order. It
@@ -559,6 +481,9 @@ function paintDataFlow(
 		turns: layout.turns,
 		cycle: Math.min(layout.turns * FLOW_STEP_TRAVEL_MS, FLOW_CYCLE_CAP_MS) / 1000,
 	};
+	const painted = layout.flows.map((laid) =>
+		paintFlow(laid, palette, standingOf, crossing, unsettledOf),
+	);
 	const columns = layout.flows.flatMap(columnSubjects);
 	const steps = layout.flows.flatMap(stepSubjects);
 	const frames = layout.flows.map((laid) => ({ id: laid.flow.id, box: laid.frame }));
@@ -576,7 +501,11 @@ function paintDataFlow(
 		height: canvas.height,
 		body: shifted(
 			canvas,
-			lines(layout.flows.map((laid) => paintFlow(laid, palette, standingOf, crossing))),
+			lines([
+				...painted.map((flow) => flow.body),
+				// Every message's words, over every message's run.
+				...painted.map((flow) => flow.words),
+			]),
 		),
 		atlas: {
 			nodes: atlasBoxes(columns, canvas),

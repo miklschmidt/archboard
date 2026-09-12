@@ -18,6 +18,7 @@ import { DrillDownSchema, EdgeLabelSchema } from "@/shared/semantic-board/lib/co
 import {
 	DescriptionSchema,
 	DisplayNameSchema,
+	GroupLabelSchema,
 	ResponsibilitySchema,
 	SemanticIdSchema,
 } from "@/shared/semantic-board/lib/primitives";
@@ -75,6 +76,9 @@ const SemanticNodeInputSchema = z
 		responsibility: ResponsibilitySchema.optional(),
 		description: DescriptionSchema.optional(),
 		parent: NodeReferenceSchema.optional(),
+		// A label, not a reference: a group is not a thing on the board that could
+		// be named or identified, which is exactly why it needs no registry.
+		group: GroupLabelSchema.optional(),
 		binding: CodeBindingSchema.optional(),
 		// Stated in full or not at all. A shorter spelling — the target board's
 		// name on its own — would have to mean "whatever is current there", and

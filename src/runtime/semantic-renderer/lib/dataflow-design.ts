@@ -1,3 +1,5 @@
+import type { Weight } from "@/runtime/semantic-renderer/lib/svg/styles";
+
 // The measurements of a message sequence.
 //
 // These belong with `lib/design.ts` in spirit — they are the same sort of thing,
@@ -82,7 +84,17 @@ const SELF_LABEL_GAP = 8;
  */
 const MAX_PULSES_PER_STEP = 3;
 
+/**
+ * Every message is drawn at one weight: a flow states no emphasis to vary it by.
+ *
+ * Here rather than with the painter because both the painter and the clock that
+ * sends its dots ask for it, and a second opinion about how heavy a message is
+ * would show up as a dot that did not match the line under it.
+ */
+const STEP_WEIGHT: Weight = "normal";
+
 export {
+	STEP_WEIGHT,
 	MAX_PULSES_PER_STEP,
 	COLUMN_MIN_WIDTH,
 	COLUMN_MAX_WIDTH,

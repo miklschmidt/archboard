@@ -221,15 +221,34 @@ function drawShape(shape: Shape, origin: Origin): string {
 }
 
 /**
- * The glyph for a node's kind, centred on a point.
+ * The glyph for a node's kind, centred on a point and drawn in one ink.
+ *
+ * The shape is the kind's and the ink is the caller's: what a thing IS decides
+ * the silhouette, what it is PART OF decides the colour, and keeping the two
+ * apart is what lets a reader see both at once.
  * @param kind What sort of thing the node is.
  * @param cx The chip's centre, across.
  * @param cy The chip's centre, down.
  * @param styles The palette's attribute bundles.
+ * @param ink What colour to draw it in.
  * @returns The markup.
  */
-function glyphGroup(kind: NodeKind, cx: number, cy: number, styles: SvgStyles): string {
-	const origin: Origin = { cx, cy, styles };
+function glyphGroup(
+	kind: NodeKind,
+	cx: number,
+	cy: number,
+	styles: SvgStyles,
+	ink: string,
+): string {
+	const origin: Origin = {
+		cx,
+		cy,
+		styles: {
+			...styles,
+			glyph: { ...styles.glyph, fill: ink },
+			glyphStroke: { ...styles.glyphStroke, stroke: ink },
+		},
+	};
 	return wrap("g", {}, lines(GLYPHS[kind].map((shape) => drawShape(shape, origin))));
 }
 

@@ -15,7 +15,7 @@
 import type { WalkthroughBeat } from "@/shared/semantic-board/index";
 import type { SemanticAtlas } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { unionRect, type FitTarget, type Rect } from "@/ui/semantic-board-canvas/lib/camera";
-import { subjectBox, type SubjectMark } from "@/ui/semantic-board-canvas/lib/subjects";
+import { subjectBox } from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** What a beat's subjects can be found in: the picture on screen. */
 interface FocusSource {
@@ -194,34 +194,23 @@ function beatForKey(key: string, current: number, count: number): number | null 
 }
 
 /**
- * How the picture should mark each subject it draws.
+ * Which subjects the picture should mark as attended.
  *
- * The disputes go on first and attention over the top, so a subject that is
- * both reads as the one the person is looking at. Which of the two is louder
- * matters: a dispute is a standing fact and the block beside the picture lists
- * it either way, while attention is about this moment and has nowhere else to
- * be said.
+ * What the reader picked out and what the beat they are reading is about, which
+ * are one mark. What the board has not decided is deliberately not here: it is
+ * drawn by the renderer, in the subject's own corner, so a subject that is both
+ * attended and unsettled says both instead of one state quietly replacing the
+ * other — which is what happened while a single map held one mark per subject.
  * @param selection The selected id, or null for none.
  * @param focus What the current beat asks for.
- * @param disputed The subjects the board says are waiting on a disagreement.
- * @returns How each marked subject is marked.
+ * @returns The subjects to ring.
  */
-function subjectMarks(
-	selection: string | null,
-	focus: BeatFocus,
-	disputed: readonly string[],
-): ReadonlyMap<string, SubjectMark> {
-	const marks = new Map<string, SubjectMark>();
-	for (const id of disputed) {
-		marks.set(id, "disputed");
-	}
-	for (const id of focus.drawn) {
-		marks.set(id, "attended");
-	}
+function subjectMarks(selection: string | null, focus: BeatFocus): ReadonlySet<string> {
+	const attended = new Set<string>(focus.drawn);
 	if (selection !== null) {
-		marks.set(selection, "attended");
+		attended.add(selection);
 	}
-	return marks;
+	return attended;
 }
 
 export {

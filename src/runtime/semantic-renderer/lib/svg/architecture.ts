@@ -37,13 +37,15 @@ import {
 	standingOutline,
 	standingSwipe,
 	subjectGroup,
+	warningOnLine,
 	type StandingOf,
 	type SubjectStanding,
+	type UnsettledOf,
 } from "@/runtime/semantic-renderer/lib/svg/standing";
 import {
 	edgeAttributes,
 	pulseCountOf,
-	weightColour,
+	lineColour,
 	headOf,
 	markerFor,
 	strokeWidthOf,
@@ -105,22 +107,34 @@ function paintLabelPill(
  * Lens kept pills on their own layer above the cards; here they do not need to
  * be, because the label pass already treats every card as an obstacle, so a
  * pill never lands on one in the first place.
+ *
+ * A relationship is drawn as two groups on two layers, and both of them are the
+ * relationship: this one carries its route, and `paintEdgeWords` carries the
+ * words it says. They have to be separate layers because the words of one
+ * relationship have to sit above the routes of ALL of them — a group that held
+ * both would put every later edge's line and dots over every earlier edge's
+ * pill wherever two routes cross, which is a hole in the middle of the one
+ * thing on a relationship that is spelled out. Carrying the identity on both
+ * groups is what keeps that free: a click on the words picks the relationship
+ * out exactly as a click on its line does, and a viewer lighting a subject
+ * lights every group that says it is that subject. The container grammar has
+ * worked this way from the start, for the same reason — a frame and its title
+ * are two groups and one subject.
  * @param routed The drawn route.
  * @param palette The theme's colours.
- * @param label Where its pill settled, when it has one.
  * @param standing How this relationship stands against the variant it came from, when the caller said.
- * @returns The edge's whole group.
+ * @returns The group holding its route.
  */
-function paintEdge(
+function paintEdgeLine(
 	routed: RoutedEdge,
 	palette: Palette,
-	label: Box | undefined,
 	standing: SubjectStanding | undefined,
 ): string {
 	const { edge, path } = routed;
 	const styles = stylesFor(palette);
-	const attributes = edgeAttributes(edge, palette);
 	const width = strokeWidthOf(edge);
+	// One ink for the line, the head it ends in and the dots that ride it.
+	const ink = lineColour(palette, weightOf(edge), standing);
 
 	return wrap(
 		"g",
@@ -137,26 +151,79 @@ function paintEdge(
 			}),
 			tag("path", {
 				d: path,
-				"marker-end": markerFor(weightOf(edge), headOf(edge)),
-				...attributes,
+				"marker-end": markerFor(weightOf(edge), headOf(edge), standing),
+				...edgeAttributes(edge, palette, standing),
 			}),
-			label === undefined || edge.label === undefined
-				? ""
-				: paintLabelPill(edge.label, label, palette, standing),
-			// Last, so the dots ride over the line rather than under it, and only
-			// where something actually travels. A relationship the proposal no
-			// longer has is drawn for context and must not read as live traffic.
+			// The dots over its own line, and under every relationship's words.
+			// A relationship the proposal no longer has is drawn for context and
+			// must not read as live traffic.
 			standing === "removed"
 				? ""
 				: travellingPulses({
 						path,
-						colour: weightColour(palette, weightOf(edge)),
+						colour: ink,
 						count: pulseCountOf(edge),
 						duration: (edge.emphasis === "hero" ? HERO_PULSE_TRAVEL_MS : PULSE_TRAVEL_MS) / 1000,
 						lag: 0,
 					}),
 		]),
 	);
+}
+
+/**
+ * What one relationship says, on the layer above every route.
+ *
+ * The pill and the warning badge both belong here: they are the two things on a
+ * relationship that have to stay readable whatever else the picture is doing,
+ * and both were being crossed by lines and dots that had nothing to do with
+ * them. Nothing at all when a relationship carries neither, so a board of
+ * unlabelled arrows draws no empty groups.
+ * @param routed The drawn route.
+ * @param palette The theme's colours.
+ * @param label Where its pill settled, when it has one.
+ * @param standing How this relationship stands against the variant it came from, when the caller said.
+ * @param unsettled Whether the board says nobody has decided this relationship yet.
+ * @returns The group holding its words, or nothing to draw.
+ */
+function paintEdgeWords(
+	routed: RoutedEdge,
+	palette: Palette,
+	label: Box | undefined,
+	standing: SubjectStanding | undefined,
+	unsettled: boolean,
+): string {
+	const { edge } = routed;
+	const pill =
+		label === undefined || edge.label === undefined
+			? ""
+			: paintLabelPill(edge.label, label, palette, standing);
+	const badge = warningOnLine(warningAt(label, routed), unsettled, palette);
+	if (pill === "" && badge === "") {
+		return "";
+	}
+	return wrap("g", subjectGroup("edge", edge.id, standing), lines([pill, badge]));
+}
+
+/**
+ * Where a relationship's warning goes.
+ *
+ * The left edge of its pill, straddling the border so it reads as a badge on
+ * the words rather than a mark floating beside them; the point the label pass
+ * chose when the relationship carries no words; and the middle of its route
+ * when even that is missing, which is a route too short to have a straight run.
+ * @param label Where its pill settled, when it has one.
+ * @param routed The drawn route.
+ * @returns The centre for the badge.
+ */
+function warningAt(label: Box | undefined, routed: RoutedEdge): { x: number; y: number } {
+	if (label !== undefined) {
+		return { x: label.x, y: label.y + label.height / 2 };
+	}
+	if (routed.labelAnchor !== undefined) {
+		return routed.labelAnchor;
+	}
+	const bounds = curveBounds(routed.curve);
+	return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
 }
 
 /** Everything a painted architecture is. */
@@ -171,10 +238,12 @@ interface ArchitecturePainting {
 	readonly atlas: DiagramAtlas;
 }
 
-/** Every edge, drawn, with the boxes its labels took. */
+/** Every edge, drawn as two layers, with the boxes its labels took. */
 interface EdgeLayer {
-	/** Each edge's group, line and label together. */
+	/** Each edge's route: its band, its halo, its line and its dots. */
 	readonly markup: readonly string[];
+	/** Each edge's words: its pill and its warning, for the layer above every route. */
+	readonly words: readonly string[];
 	/** Each labelled edge's pill box, by edge id. */
 	readonly labels: ReadonlyMap<string, Box>;
 }
@@ -185,19 +254,28 @@ interface EdgeLayer {
  * @param palette The theme's colours.
  * @param occupied Boxes a label pill must stay off.
  * @param standingOf How each subject stands against the variant this one came from.
- * @returns The groups and the pill boxes.
+ * @param unsettledOf Whether the board says a subject is still undecided.
+ * @returns The two layers and the pill boxes.
  */
 function paintEdges(
 	routed: readonly RoutedEdge[],
 	palette: Palette,
 	occupied: readonly Box[],
 	standingOf: StandingOf,
+	unsettledOf: UnsettledOf,
 ): EdgeLayer {
 	const labels = placeLabelPills(routed, occupied);
-	const markup = routed.map((edge) =>
-		paintEdge(edge, palette, labels.get(edge.edge.id), standingOf(edge.edge.id)),
+	const markup = routed.map((edge) => paintEdgeLine(edge, palette, standingOf(edge.edge.id)));
+	const words = routed.map((edge) =>
+		paintEdgeWords(
+			edge,
+			palette,
+			labels.get(edge.edge.id),
+			standingOf(edge.edge.id),
+			unsettledOf(edge.edge.id),
+		),
 	);
-	return { markup, labels };
+	return { markup, words, labels };
 }
 
 /**
@@ -206,6 +284,7 @@ function paintEdges(
  * @param content The architecture.
  * @param palette The theme's colours.
  * @param standingOf How each subject stands against the variant this one came from.
+ * @param unsettledOf Whether the board says a subject is still undecided.
  * @returns The page, its body and its atlas.
  */
 function paintArchitecture(
@@ -213,6 +292,7 @@ function paintArchitecture(
 	content: VariantContent,
 	palette: Palette,
 	standingOf: StandingOf,
+	unsettledOf: UnsettledOf,
 ): ArchitecturePainting {
 	const { layout, routed } = relieveCongestion(regions, content);
 	const cards = layout.nodes.filter((placed) => placed.chrome === "card");
@@ -228,6 +308,7 @@ function paintArchitecture(
 		palette,
 		[...cards.map(({ box }) => box), ...layout.containers.map(headerTextBox)],
 		standingOf,
+		unsettledOf,
 	);
 
 	// An edge is its line *and* its label: a pane told to focus a relationship
@@ -261,12 +342,26 @@ function paintArchitecture(
 		wrap(
 			"g",
 			{},
-			lines(cards.map((placed) => paintCard(placed, palette, standingOf(placed.node.id)))),
+			lines(
+				cards.map((placed) =>
+					paintCard(placed, palette, standingOf(placed.node.id), unsettledOf(placed.node.id)),
+				),
+			),
 		),
+		// Every relationship's words, over every relationship's route. Not inside
+		// the edge groups, because two routes that cross would then decide by
+		// document order whose words a reader gets to read; and after the cards,
+		// which costs nothing because the label pass already treats every card as
+		// an obstacle, so no pill was ever going to land on one.
+		wrap("g", {}, lines([...edges.words])),
 		wrap(
 			"g",
 			{},
-			lines(boxes.map((held) => paintContainerTitle(held, palette, standingOf(held.node.id)))),
+			lines(
+				boxes.map((held) =>
+					paintContainerTitle(held, palette, standingOf(held.node.id), unsettledOf(held.node.id)),
+				),
+			),
 		),
 	]);
 

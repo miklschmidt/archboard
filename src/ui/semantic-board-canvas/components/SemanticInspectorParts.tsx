@@ -188,12 +188,19 @@ interface TitleProps {
 	id: string;
 	/** The one line it is responsible for, when it has one. */
 	responsibility?: string | undefined;
+	/** What it belongs to, when the board says. */
+	group?: string | undefined;
 }
 
 /**
- * The title block: the name, the kind beside it, the id under it, and the one
- * line the subject is responsible for.
- * @param props The name, kind, id and responsibility.
+ * The title block: the name, the kind beside it, the id under it, what it
+ * belongs to when it belongs to anything, and the one line it is responsible
+ * for.
+ *
+ * The group is words here because the picture says it in colour, and a colour
+ * is not a name: a reader who can see that two cards are the same family still
+ * cannot tell what the family is called, and two families can land on one hue.
+ * @param props The name, kind, id, group and responsibility.
  * @returns The title block.
  */
 function TitleBlock(props: TitleProps): JSX.Element {
@@ -210,6 +217,11 @@ function TitleBlock(props: TitleProps): JSX.Element {
 			<p className="text-technical text-muted-foreground truncate font-mono" title={props.id}>
 				{props.id}
 			</p>
+			{props.group !== undefined && (
+				<p className="text-body text-muted-foreground pt-1" data-slot="semantic-inspector-group">
+					Part of {props.group}
+				</p>
+			)}
 			{props.responsibility !== undefined && (
 				<p className="text-body pt-1">{props.responsibility}</p>
 			)}

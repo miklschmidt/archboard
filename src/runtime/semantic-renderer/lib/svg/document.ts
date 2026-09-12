@@ -20,13 +20,23 @@ import { escapeXml, lines, tag, wrap } from "@/runtime/semantic-renderer/lib/svg
 import { PULSE_CLASS } from "@/runtime/semantic-renderer/lib/svg/pulse";
 import {
 	WEIGHTS,
-	weightColour,
+	lineColour,
 	type Head,
 	type Weight,
 } from "@/runtime/semantic-renderer/lib/svg/styles";
+import type { SubjectStanding } from "@/runtime/semantic-renderer/lib/svg/standing";
 
 /** How big an arrowhead of each weight is. A hero's head is part of its weight. */
 const HEAD_SIZE: Readonly<Record<Weight, number>> = { hero: 7.5, normal: 6, muted: 5.5 };
+
+/**
+ * The standings an arrowhead is drawn for, beyond the plain one.
+ *
+ * A marker cannot inherit the colour of the line that references it — SVG
+ * markers are painted in their own right — so every ink a line can be drawn in
+ * needs its own. Four small elements in the defs, referenced or not.
+ */
+const MARKED: readonly SubjectStanding[] = ["added", "changed", "removed"];
 
 /**
  * One arrowhead marker.
@@ -36,11 +46,12 @@ const HEAD_SIZE: Readonly<Record<Weight, number>> = { hero: 7.5, normal: 6, mute
  * @param head Which form.
  * @param weight How loudly the line it ends speaks.
  * @param palette The theme's colours.
+ * @param standing The standing whose ink to draw it in, when it is for a marked line.
  * @returns The marker element.
  */
-function marker(head: Head, weight: Weight, palette: Palette): string {
+function marker(head: Head, weight: Weight, palette: Palette, standing?: SubjectStanding): string {
 	const size = HEAD_SIZE[weight];
-	const colour = weightColour(palette, weight);
+	const colour = lineColour(palette, weight, standing);
 	const shape =
 		head === "filled"
 			? tag("path", { d: "M0,0 L10,5 L0,10 z", fill: colour })
@@ -55,7 +66,7 @@ function marker(head: Head, weight: Weight, palette: Palette): string {
 	return wrap(
 		"marker",
 		{
-			id: `ah-${head}-${weight}`,
+			id: `ah-${head}-${weight}${standing === undefined ? "" : `-${standing}`}`,
 			viewBox: "0 0 10 10",
 			refX: head === "filled" ? 8 : 10,
 			refY: 5,
@@ -68,13 +79,21 @@ function marker(head: Head, weight: Weight, palette: Palette): string {
 }
 
 /**
- * Every arrowhead the document can reach for.
+ * Every arrowhead the document can reach for: one per form and weight in the
+ * ink of the line's own weight, and one more per standing that has an ink.
  * @param palette The theme's colours.
  * @returns The marker elements.
  */
 function markers(palette: Palette): string {
 	const heads: readonly Head[] = ["filled", "open"];
-	return heads.flatMap((head) => WEIGHTS.map((weight) => marker(head, weight, palette))).join("");
+	return heads
+		.flatMap((head) =>
+			WEIGHTS.flatMap((weight) => [
+				marker(head, weight, palette),
+				...MARKED.map((standing) => marker(head, weight, palette, standing)),
+			]),
+		)
+		.join("");
 }
 
 /**
