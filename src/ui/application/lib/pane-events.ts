@@ -63,12 +63,13 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 			notices.raise(boardErrorNotice(paneId, error));
 		},
 		/**
-		 * The server moved a pane onto another board. What was picked out on the
-		 * board it left, and the view it was read through, name nothing here.
+		 * The server moved a pane onto another board or variant.
 		 * @param paneId The pane.
+		 * @param boardKey The board key it adopted.
+		 * @param previousKey The board key it left, or null on first adoption.
 		 */
-		onBoardAdopted: (paneId: string): void => {
-			owners.readings.boardChanged(paneId);
+		onBoardAdopted: (paneId: string, boardKey: string, previousKey: string | null): void => {
+			owners.readings.boardChanged(paneId, boardKey, previousKey);
 		},
 		/**
 		 * This tab runs a bundle the canvas no longer serves.

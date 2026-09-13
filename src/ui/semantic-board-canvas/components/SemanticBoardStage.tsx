@@ -80,7 +80,7 @@ interface SemanticBoardStageProps {
 	/** A variant id or name; the board's current variant when absent. */
 	variant?: string | undefined;
 	/**
-	 * Which of the variant's named views to read it through, or nothing for the
+	 * Which of the board's named views to read it through, or nothing for the
 	 * whole variant. Reading is not writing: this changes what the pane asks the
 	 * server to draw and touches no board.
 	 */
@@ -163,6 +163,8 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly missing: readonly string[];
 	/** Stop reading the open explanation. */
 	readonly onCloseNarrative: () => void;
+	/** Leave the guided reading and choose a view of this level. */
+	readonly onChooseView: (view: string | null) => void;
 }
 
 /**
@@ -213,12 +215,7 @@ function refreshDisclosure(view: RenderView): ReactNode {
 }
 
 /**
- * The bar that offers the variant's other ways of being read.
- *
- * A view is a way of reading one board, and its id belongs to that board. So
- * the bar is the pane's own board's, and it goes while somebody is down a
- * level: offering a choice there would either ask the server for a view id from
- * a different board or quietly change what the pane goes back to.
+ * Offer the board's shared views at the level currently being read.
  * @param view What the stage is assembled from.
  * @param answer The render the server gave, or undefined before one has.
  * @returns The bar, or null when there is no choice to offer here.
@@ -228,7 +225,9 @@ function viewBar(view: RenderView, answer: SemanticRender | undefined): ReactNod
 	if (answer === undefined || choose === undefined) {
 		return null;
 	}
-	return <SemanticViewBar views={answer.views} showing={answer.view} onChoose={choose} />;
+	return (
+		<SemanticViewBar views={answer.views} showing={answer.view} onChoose={view.onChooseView} />
+	);
 }
 
 /**
@@ -310,7 +309,7 @@ function divider(between: boolean): ReactNode {
  * One strip rather than two, because both are the same question — how is this
  * board being read — and a second rule across the pane for the second half of
  * it would be a line drawn where there is no difference. It is absent when the
- * variant offers neither, which is most variants.
+ * board offers no alternate reading.
  *
  * The explanations are offered in every state, including while the server is
  * drawing. A beat may be told through a view, so moving to one asks for a
@@ -384,7 +383,14 @@ function stageBody(view: RenderView): JSX.Element {
 	const notice = refreshDisclosure(view);
 	const answer = render.data;
 	if (answer.kind === "empty") {
-		return <SemanticStageEmpty board={answer.board} notice={notice} />;
+		return (
+			<SemanticStageEmpty
+				board={answer.board}
+				view={answer.view}
+				variant={answer.variant.name}
+				notice={notice}
+			/>
+		);
 	}
 	return (
 		<SemanticDiagram
@@ -513,6 +519,14 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 	const onCloseNarrative = useCallback((): void => {
 		choose(null);
 	}, [choose]);
+	const chooseView = level.onView;
+	const onChooseView = useCallback(
+		(view: string | null): void => {
+			choose(null);
+			chooseView?.(view);
+		},
+		[choose, chooseView],
+	);
 
 	// What was picked out is reported as what it is, not only as an id. The pane
 	// is the one place that knows: it has the board open and has just drawn the
@@ -527,20 +541,21 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		[held, onSelect],
 	);
 
-	// What the picture itself says it is of, carried whole: a reader that has
-	// not got the board open is told the variant's lasting name and where it
-	// stands, rather than an id it would have to go and look up.
+	// Empty views retain their resolved identity for the pane and its address.
+	const answer = render.data;
 	const identity = useMemo(
 		() =>
-			drawn == null ? null : { variant: drawn.variant, view: drawn.view, version: drawn.version },
-		[drawn],
+			answer === undefined
+				? null
+				: { variant: answer.variant, view: answer.view, version: answer.version },
+		[answer],
 	);
 	useReported(props.onReading, {
 		board: drill.board,
 		// The variant the server resolved, not the one that was asked for: the
 		// pane asks for "whichever is current" constantly, and "current" is not
 		// something a shell can hand to anybody as what is being looked at.
-		variant: drawn?.variant.id ?? null,
+		variant: answer?.variant.id ?? null,
 		view: viewToRead(narrative.beat, level.view) ?? null,
 		selection: props.selection,
 		drawn: identity,
@@ -578,6 +593,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 		focus,
 		missing,
 		onCloseNarrative,
+		onChooseView,
 	});
 }
 

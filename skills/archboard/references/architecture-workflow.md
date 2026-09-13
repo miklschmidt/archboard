@@ -26,7 +26,7 @@ Here the service contains a module. Both explicitly belong to Fulfillment.
 
 Give a service's internals their own board, then link the service node to it.
 Reuse an existing detail board when it already covers the subject. For example,
-an Orders node on `payments` can link to a service board named `orders-internals`:
+an Orders node on `payments` can link to a service board named `Order processing`:
 
 ```json
 {
@@ -37,7 +37,7 @@ an Orders node on `payments` can link to a service board named `orders-internals
 			"responsibility": "Accepts and tracks orders",
 			"group": "Fulfillment",
 			"drillDown": {
-				"board": "orders-internals",
+				"board": "Order processing",
 				"variant": { "kind": "current" }
 			}
 		}
@@ -53,6 +53,8 @@ to a particular proposal or historical state, use
 
 This fragment extends the payments example. `as` gives a new subject a temporary
 handle for references within the same write, useful for edges and flow steps.
+The flow belongs to the selected variant; the view belongs to the board. Evolve
+the same flow ID in a successor to compare that exchange through the same view.
 
 ```json
 {

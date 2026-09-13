@@ -24,8 +24,9 @@ const ARCHITECTURE = {
 			steps: [{ id: "s1", from: "cli", to: "cnv", label: "state the change" }],
 		},
 	],
-	views: [{ id: "vw", name: "The parts", grammar: "architecture" }],
 };
+
+const VIEWS = [{ id: "vw", name: "The parts", grammar: "architecture" }];
 
 /**
  * A board that is coherent, so each case can break exactly one thing.
@@ -33,13 +34,14 @@ const ARCHITECTURE = {
  * @returns The board document.
  */
 const board = (content: Record<string, unknown>) => ({
-	schemaVersion: "1.0.0",
+	schemaVersion: "2.0.0",
 	kind: "semantic-board",
 	id: "bd1",
 	name: "Pipeline",
 	version: 1,
 	createdAt: "2026-09-11T00:00:00.000Z",
 	updatedAt: "2026-09-11T00:00:00.000Z",
+	views: VIEWS,
 	current: "v1",
 	variants: [{ id: "v1", name: "Initial", lifecycle: "current", content }],
 });
@@ -139,7 +141,7 @@ describe("what an explanation has to be before it is presented", () => {
 		expect(refusal(explained([about]))).toContain("not something on this variant");
 	});
 
-	test("a beat read through a view this variant has is accepted, and any other is refused", () => {
+	test("a beat read through a view this board has is accepted, and any other is refused", () => {
 		const seen = walkthrough({
 			beats: [{ id: "b1", heading: "The shape", body: "Two parts.", view: "vw" }],
 		});
@@ -147,7 +149,7 @@ describe("what an explanation has to be before it is presented", () => {
 		const blind = walkthrough({
 			beats: [{ id: "b1", heading: "The shape", body: "Two parts.", view: "cli" }],
 		});
-		expect(refusal(explained([blind]))).toContain("not a view of this variant");
+		expect(refusal(explained([blind]))).toContain("not a view of this board");
 	});
 
 	test("a walkthrough with no beats is refused, and says which one", () => {
@@ -256,7 +258,7 @@ describe("what a proposal changed about an explanation", () => {
 
 	test("a removed explanation is not put back into the picture", () => {
 		const after = content(explained([]));
-		const drawn = withRemoved(after, compareVariants(before, after));
+		const drawn = withRemoved(before, after, compareVariants(before, after));
 		// A removed node comes back so the diagram can show what the proposal takes
 		// away. A removed paragraph does not: archboard does not author prose.
 		expect(drawn.walkthroughs).toEqual([]);

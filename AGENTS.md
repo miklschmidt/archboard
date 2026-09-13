@@ -18,6 +18,8 @@ Where things are written down:
   `docs/design/operator-canvas-shell.md` with its reference image
 - Changing tests or CI: `docs/agents/test-suite.md`
 - Working on this repo: the `archboard-dev` skill; using the canvas: the `archboard` skill
+- Reading or updating this repo's architecture: `.archboard/README.md`; start at
+  `Archboard` using `./bin/dogfood` and the tracked `.archboard/vault`.
 - Work tracking: Backlog.md through the `backlog` CLI, never by editing `backlog/`
 
 ## Environment facts you cannot derive

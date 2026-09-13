@@ -120,7 +120,9 @@ test("an explanation lands in one batch and reads back resolved", () => {
 	const ledger = content.nodes.find((node) => node.name === "Ledger")!;
 	const cli = content.nodes.find((node) => node.name === "CLI")!;
 	expect(walkthrough.beats[1]!.subjects).toEqual([ledger.id, cli.id]);
-	expect(walkthrough.beats[1]!.view).toBe(content.views[0]!.id);
+	const read = store.readSemanticBoard(board);
+	if (!read.ok) throw new Error(read.problem);
+	expect(walkthrough.beats[1]!.view).toBe(read.board.views[0]!.id);
 	// A beat about nothing keeps an empty list rather than gaining one.
 	expect(walkthrough.beats[0]!.subjects).toEqual([]);
 
@@ -305,7 +307,8 @@ test("an explanation is removed by the name it is addressed under", async () => 
 	expect(held().walkthroughs).toEqual([]);
 	// The architecture it explained is untouched: a narrative is not content.
 	expect(held().nodes).not.toHaveLength(0);
-	expect(held().views).toHaveLength(1);
+	const read = store.readSemanticBoard(board);
+	expect(read.ok && read.board.views).toHaveLength(1);
 }, 20_000);
 
 test("two explanations of one board are held, and one name is refused", async () => {

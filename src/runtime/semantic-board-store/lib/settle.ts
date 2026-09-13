@@ -381,7 +381,6 @@ function taking(
 		nodes: content.nodes.map(settle),
 		edges: content.edges.map(settle),
 		flows: content.flows.map((flow) => ({ ...settle(flow), steps: flow.steps.map(settle) })),
-		views: content.views.map(settle),
 		walkthroughs: content.walkthroughs.map((walkthrough) => ({
 			...settle(walkthrough),
 			beats: walkthrough.beats.map(settle),

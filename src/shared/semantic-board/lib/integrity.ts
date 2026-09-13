@@ -20,7 +20,7 @@ import {
 	type SubjectKind,
 	type VariantContent,
 } from "@/shared/semantic-board/lib/content";
-import type { SemanticFlow, SemanticView } from "@/shared/semantic-board/lib/views";
+import type { SemanticFlow } from "@/shared/semantic-board/lib/views";
 import type { WalkthroughBeat } from "@/shared/semantic-board/lib/walkthrough";
 
 /**
@@ -188,27 +188,6 @@ function flowNodeIssues(
 }
 
 /**
- * Check the views of one variant: names that name one view, selections that
- * name things this variant has, and a message-sequence view with a sequence
- * to show.
- * @param content The variant's content.
- * @param at The path the variant is reported under.
- * @returns The issues found.
- */
-function viewIssues(content: VariantContent, at: string): IntegrityIssue[] {
-	const issues: IntegrityIssue[] = nameIssues(content.views, `${at}.views`, "view");
-	const have = {
-		nodes: new Set(content.nodes.map((node) => node.id)),
-		edges: new Set(content.edges.map((edge) => edge.id)),
-		flows: new Set(content.flows.map((flow) => flow.id)),
-	};
-	for (const view of content.views) {
-		issues.push(...viewScopeIssues(view, have, `${at}.views.${view.id}`));
-	}
-	return issues;
-}
-
-/**
  * Check that no two of one kind of explanation answer to one name.
  *
  * A flow and a view are each addressed by name — in a view's scope, in the
@@ -231,67 +210,6 @@ function nameIssues(
 		at,
 		problem: `two ${what}s are called "${name}"; a ${what} is addressed by name`,
 	}));
-}
-
-/**
- * Check one view's scope against what the variant holds.
- * @param view The view.
- * @param have The ids of each kind the variant holds.
- * @param at The path the view is reported under.
- * @returns The issues found.
- */
-function viewScopeIssues(
-	view: SemanticView,
-	have: Readonly<Record<"nodes" | "edges" | "flows", ReadonlySet<string>>>,
-	at: string,
-): IntegrityIssue[] {
-	const issues: IntegrityIssue[] = selectionIssues(view, have, at);
-	if (view.grammar === "data-flow" && drawsNoFlow(view, have.flows)) {
-		issues.push({
-			at,
-			problem: `"${view.name}" is a message-sequence view and this variant has no flow for it to show`,
-		});
-	}
-	return issues;
-}
-
-/**
- * Check that everything a selection names is on the board.
- * @param view The view.
- * @param have The ids of each kind the variant holds.
- * @param at The path the view is reported under.
- * @returns The issues found.
- */
-function selectionIssues(
-	view: SemanticView,
-	have: Readonly<Record<"nodes" | "edges" | "flows", ReadonlySet<string>>>,
-	at: string,
-): IntegrityIssue[] {
-	if (view.scope.kind !== "selection") {
-		return [];
-	}
-	const scope = view.scope;
-	const issues: IntegrityIssue[] = [];
-	for (const kind of ["nodes", "edges", "flows"] as const) {
-		for (const id of scope[kind].filter((one) => !have[kind].has(one))) {
-			issues.push({ at: `${at}.scope.${kind}`, problem: `"${id}" is not on this board` });
-		}
-	}
-	return issues;
-}
-
-/**
- * Whether a message-sequence view has nothing to draw: the variant has no
- * flows at all, or the view selects none of the ones it has.
- * @param view The view.
- * @param flows The flows the variant holds.
- * @returns True when there is no sequence to show.
- */
-function drawsNoFlow(view: SemanticView, flows: ReadonlySet<string>): boolean {
-	if (view.scope.kind === "all") {
-		return flows.size === 0;
-	}
-	return view.scope.flows.length === 0;
 }
 
 /**
@@ -347,12 +265,6 @@ function beatIssues(
 			});
 		}
 	}
-	if (beat.view !== undefined && holds.get(beat.view) !== "view") {
-		issues.push({
-			at: `${at}.view`,
-			problem: `"${beat.view}" is not a view of this variant to read a beat through`,
-		});
-	}
 	return issues;
 }
 
@@ -373,7 +285,6 @@ function checkVariantContent(content: VariantContent, at: string): IntegrityIssu
 		...nodeIssues(content, at),
 		...edgeIssues(content, at),
 		...flowIssues(content, at),
-		...viewIssues(content, at),
 		...walkthroughIssues(content, at),
 	];
 }
@@ -384,9 +295,19 @@ function checkVariantContent(content: VariantContent, at: string): IntegrityIssu
  * @returns The issues found; empty when the board is coherent.
  */
 function checkSemanticBoard(board: SemanticBoard): IntegrityIssue[] {
-	const issues = [...versionIssues(board), ...familyIssues(board), ...frameIssues(board)];
+	const issues = [
+		...versionIssues(board),
+		...familyIssues(board),
+		...frameIssues(board),
+		...nameIssues(board.views, "views", "view"),
+	];
+	const views = new Set(board.views.map((view) => view.id));
+	for (const id of repeated(board.views.map((view) => view.id))) {
+		issues.push({ at: "views", problem: `two views share the id "${id}"` });
+	}
 	for (const variant of board.variants) {
 		issues.push(...checkVariantContent(variant.content, `variants.${variant.id}.content`));
+		issues.push(...walkthroughViewIssues(variant.content, views, `variants.${variant.id}.content`));
 	}
 	return issues;
 }
@@ -401,3 +322,25 @@ function describeIntegrityIssues(issues: readonly IntegrityIssue[]): string {
 }
 
 export { type IntegrityIssue, checkSemanticBoard, checkVariantContent, describeIntegrityIssues };
+
+/**
+ * Validate walkthrough targets against the board-owned views.
+ * @param content The variant content.
+ * @param views The board view identities.
+ * @param at The variant path.
+ * @returns Missing view references.
+ */
+function walkthroughViewIssues(
+	content: VariantContent,
+	views: ReadonlySet<string>,
+	at: string,
+): IntegrityIssue[] {
+	return content.walkthroughs.flatMap((walkthrough) =>
+		walkthrough.beats
+			.filter((beat) => beat.view !== undefined && !views.has(beat.view))
+			.map((beat) => ({
+				at: `${at}.walkthroughs.${walkthrough.id}.beats.${beat.id}.view`,
+				problem: `"${beat.view}" is not a view of this board to read a beat through`,
+			})),
+	);
+}

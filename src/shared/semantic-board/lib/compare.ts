@@ -19,20 +19,12 @@
 //   its neighbours would make every proposal look like a rewrite.
 //
 //   Presentation intent is not architecture. A relationship asking for more
-//   attention, or a board gaining a new way of being read, is not a redesign,
-//   and labelling it as one would mean tidying up a diagram reads as changing
-//   the system.
+//   attention is not a redesign, and labelling it as one would mean tidying up
+//   a diagram reads as changing the system.
 //
-// Walkthroughs and their beats *are* compared, and views still are not. The two
-// are not the same kind of thing, and it is worth saying why, because "narrative
-// changes are not architectural changes" could be read as excluding both.
-//
-// A view is a lens. It says which part of the variant to read and through which
-// grammar; it makes no claim about the system, so two variants differing only in
-// their views differ in nothing that a comparison exists to find.
-//
-// A beat does make a claim. Its prose says something about the architecture, and
-// its subjects say what that something is about — and where it comes in the
+// Walkthroughs and their beats *are* compared. A beat makes a claim: its prose
+// says something about the architecture, its subjects say what that something
+// is about, and where it comes in the
 // walkthrough is a claim too, in exactly the way a step's place in a flow is:
 // explaining the queue before the worker and after it are two different
 // explanations. So a beat carries its walkthrough and its position the way a
@@ -402,6 +394,7 @@ function compareVariants(before: VariantContent, after: VariantContent): Variant
  * the architecture would be, and the picture keeps showing what the change
  * takes away. A removed node's container comes back with it when it too was
  * removed, so nothing is drawn floating outside the thing it was inside.
+ * @param before The predecessor's content, including its original step order.
  * @param after This variant's content.
  *
  * Nothing narrative comes back. A removed beat is not drawn anywhere, so
@@ -411,12 +404,15 @@ function compareVariants(before: VariantContent, after: VariantContent): Variant
  * @param comparison What it changed.
  * @returns The content to draw, with removed subjects restored from the baseline.
  */
-function withRemoved(after: VariantContent, comparison: VariantComparison): VariantContent {
+function withRemoved(
+	before: VariantContent,
+	after: VariantContent,
+	comparison: VariantComparison,
+): VariantContent {
 	return {
 		nodes: [...after.nodes, ...removedFrom(comparison.nodes)],
 		edges: [...after.edges, ...removedFrom(comparison.edges)],
-		flows: flowsWithRemoved(after.flows, comparison),
-		views: after.views,
+		flows: flowsWithRemoved(before.flows, after.flows, comparison),
 		walkthroughs: after.walkthroughs,
 	};
 }
@@ -428,37 +424,58 @@ function withRemoved(after: VariantContent, comparison: VariantComparison): Vari
  * exchange as it was and where the proposal cut into it; a flow taken out
  * entirely comes back whole, steps and all. A removed step of a removed flow is
  * restored once, with its flow, rather than twice.
+ * @param before The predecessor's flows in their original order.
  * @param flows The proposal's flows.
  * @param comparison What the proposal changed.
  * @returns The flows to draw.
  */
 function flowsWithRemoved(
+	before: readonly SemanticFlow[],
 	flows: readonly SemanticFlow[],
 	comparison: VariantComparison,
 ): SemanticFlow[] {
-	const gone = removedFrom(comparison.steps);
-	const kept = flows.map((flow) => ({
-		...flow,
-		steps: replaced(
-			flow.steps,
-			gone.filter((step) => step.flow === flow.id),
-		),
-	}));
+	const gone = new Set(removedFrom(comparison.steps).map((step) => step.id));
+	const baseline = new Map(before.map((flow) => [flow.id, flow.steps]));
+	const kept = flows.map((flow) => {
+		const steps = replaced(baseline.get(flow.id) ?? [], flow.steps, gone);
+		return {
+			...flow,
+			steps,
+			// Restored steps need columns even when their nodes still exist but
+			// no longer participate in the proposed exchange.
+			participants: [
+				...new Set([...flow.participants, ...steps.flatMap((step) => [step.from, step.to])]),
+			],
+		};
+	});
 	return [...kept, ...removedFrom(comparison.flows)];
 }
 
 /**
- * One flow's steps with the removed ones put back where they came from.
+ * Restore deleted runs before their next surviving baseline step, preserving
+ * the proposal's order. A run with no surviving successor comes at the end.
+ * @param before The predecessor's steps in their original order.
  * @param steps The steps the proposal states.
- * @param gone The steps the predecessor had here and this one has not.
- * @returns The steps to draw, in the order they were told in.
+ * @param gone The step ids removed from the architecture.
+ * @returns The proposed exchange with its deleted runs anchored to continuations.
  */
-function replaced(steps: readonly FlowStep[], gone: readonly PlacedStep[]): FlowStep[] {
-	const drawn = [...steps];
-	for (const step of gone.toSorted((one, other) => one.position - other.position)) {
-		drawn.splice(Math.min(step.position - 1, drawn.length), 0, step);
+function replaced(
+	before: readonly FlowStep[],
+	steps: readonly FlowStep[],
+	gone: ReadonlySet<string>,
+): FlowStep[] {
+	const surviving = new Set(steps.map((step) => step.id));
+	const preceding = new Map<string, FlowStep[]>();
+	let pending: FlowStep[] = [];
+	for (const step of before) {
+		if (gone.has(step.id)) {
+			pending.push(step);
+		} else if (surviving.has(step.id)) {
+			preceding.set(step.id, pending);
+			pending = [];
+		}
 	}
-	return drawn;
+	return [...steps.flatMap((step) => [...(preceding.get(step.id) ?? []), step]), ...pending];
 }
 
 /**

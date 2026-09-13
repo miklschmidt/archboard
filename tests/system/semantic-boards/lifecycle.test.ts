@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import type { SemanticBoard } from "@/shared/semantic-board/index";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { runCanvasCli } from "../support/run-cli.ts";
 
@@ -23,6 +24,16 @@ let canvas: OwnedCanvas;
  */
 const cli = (args: readonly string[], input?: string) =>
 	runCanvasCli({ repoRoot, vault, base: canvas.base, args, input });
+
+/** The variant ancestry fields exposed by the board listing. */
+function listedVariants(board: Pick<SemanticBoard, "variants">) {
+	return board.variants.map(({ id, name, lifecycle, parent }) => ({
+		id,
+		name,
+		lifecycle,
+		parentId: parent ?? null,
+	}));
+}
 
 beforeAll(async () => {
 	canvas = await startOwnedCanvas({ serverPath: path.join(repoRoot, "src/server.ts"), vault });
@@ -145,8 +156,12 @@ describe("settling a proposal and adopting an architecture", () => {
 		).toBe(true);
 	}, 60_000);
 
-	test("adopting moves the designation and records why, through the command line", () => {
+	test("adopting moves the designation and records why, through the command line", async () => {
 		const held = JSON.parse(cli(["semantic", "show", "settling"]).stdout).board;
+		const beforeListing = await (await fetch(`${canvas.base}/api/semantic-boards`)).json();
+		expect(
+			beforeListing.boards.find((entry: { key: string }) => entry.key === "settling").variants,
+		).toEqual(listedVariants(held));
 		const was = held.current;
 		const adopted = cli([
 			"semantic",
@@ -173,6 +188,10 @@ describe("settling a proposal and adopting an architecture", () => {
 		);
 		expect(after.adoptions).toHaveLength(1);
 		expect(after.adoptions[0].reason).toBe("the gateway shipped");
+		const afterListing = await (await fetch(`${canvas.base}/api/semantic-boards`)).json();
+		expect(
+			afterListing.boards.find((entry: { key: string }) => entry.key === "settling").variants,
+		).toEqual(listedVariants(after));
 
 		// What was implemented then is a record: it refuses an ordinary edit.
 		const refused = cli(

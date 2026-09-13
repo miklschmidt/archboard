@@ -6,6 +6,8 @@
 // copy the browser could edit (ADR 0023), so there is nothing in this file that
 // a pane could write back.
 
+import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
+
 /** A board's address: what it is called, and which of its variants is shown. */
 export interface BoardIdentity {
 	board: string;
@@ -18,6 +20,9 @@ export interface BoardEntry {
 	/** The board key a pane is addressed with: `pipeline`, or `pipeline@variant`. */
 	key: string;
 	identity: BoardIdentity;
+	/** The persisted variant, absent for an unreadable board. */
+	variant?: SemanticBoardEntry["variants"][number];
+	error?: string;
 }
 
 /** Persisted board inventory returned by `/api/semantic-boards`. */

@@ -11,7 +11,7 @@ import {
 	TRACK_CLEARANCE,
 	TRACK_PITCH_MAX,
 } from "@/runtime/semantic-renderer/lib/design";
-import { pillReach } from "@/runtime/semantic-renderer/lib/layout/pill";
+import { pillReach, trackPillReach } from "@/runtime/semantic-renderer/lib/layout/pill";
 import {
 	boxCentre,
 	sideAxis,
@@ -231,6 +231,8 @@ function attachSpan(placed: PlacedNode, side: Side): { from: number; to: number 
 
 /** One route's claim on one face. */
 interface Demand {
+	/** Same destination face and approach direction, when these arrivals nest. */
+	readonly arrival: string | undefined;
 	/** The slot key. */
 	readonly slot: string;
 	/** How far this claim's neighbours must stand, so no pill covers their line. */
@@ -255,6 +257,7 @@ interface Demand {
  * @param toward Where along the face the route wants to be.
  * @param order Document order.
  * @param reach How far this claim's neighbours must stand from it.
+ * @param arrival The group sharing this destination face and approach direction.
  */
 function registerDemand(
 	byFace: Map<string, Map<string, Demand>>,
@@ -264,12 +267,21 @@ function registerDemand(
 	toward: number,
 	order: number,
 	reach: number,
+	arrival?: string,
 ): void {
 	const face = `${placed.node.id} ${side}`;
 	const demands = byFace.get(face) ?? new Map<string, Demand>();
 	const known = demands.get(slot);
 	if (known === undefined) {
-		demands.set(slot, { slot, span: attachSpan(placed, side), side, toward, order, reach });
+		demands.set(slot, {
+			slot,
+			span: attachSpan(placed, side),
+			side,
+			toward,
+			order,
+			reach,
+			arrival,
+		});
 	} else {
 		known.toward = (known.toward + toward) / 2;
 		known.order = Math.min(known.order, order);
@@ -285,7 +297,10 @@ function registerDemand(
  * @param ports Where the allocations are recorded.
  */
 function assignFace(demands: readonly Demand[], ports: Map<string, Port>): void {
-	const ordered = demands.toSorted((a, b) => a.toward - b.toward || a.order - b.order);
+	const ordered = nestArrivals(
+		demands.toSorted((a, b) => a.toward - b.toward || a.order - b.order),
+		(a, b) => b.toward - a.toward || b.order - a.order,
+	);
 	const head = ordered[0];
 	if (head === undefined) {
 		return;
@@ -333,6 +348,7 @@ function allocatePorts(routes: readonly Route[], grid: LayoutGrid): Map<string, 
 			approachToward(route, grid),
 			order,
 			reach,
+			arrivalGroup(route),
 		);
 	}
 
@@ -425,6 +441,10 @@ function approximateRuns(route: Route, from: Point, to: Point, grid: LayoutGrid)
 
 /** One route's claim on one gap. */
 interface TrackDemand extends Run {
+	/** Same destination face and approach direction, when these arrivals nest. */
+	readonly arrival: string | undefined;
+	/** How far the pill needs the next track to stand. */
+	readonly reach: number;
 	/** The key the allocated track is recorded under. */
 	readonly key: string;
 	/** Document order, the last tiebreak. */
@@ -455,7 +475,13 @@ function trackDemands(
 			}
 			const key = `${channel.kind} ${channel.index}`;
 			const entry = byChannel.get(key) ?? { span: channelSpan(grid, channel), demands: [] };
-			entry.demands.push({ ...run, key: `${route.edge.id}#${index}`, order: route.order });
+			entry.demands.push({
+				...run,
+				key: `${route.edge.id}#${index}`,
+				order: route.order,
+				reach: trackPillReach(route, channel),
+				arrival: arrivalGroup(route),
+			});
 			byChannel.set(key, entry);
 		});
 	}
@@ -479,15 +505,73 @@ function allocateTracks(
 ): Map<string, number> {
 	const tracks = new Map<string, number>();
 	for (const { span, demands } of trackDemands(routes, ports, grid).values()) {
-		const ordered = demands.toSorted(
-			(a, b) => b.heading - a.heading || a.at - b.at || a.nest - b.nest || a.order - b.order,
+		const ordered = nestArrivals(
+			demands.toSorted(
+				(a, b) => b.heading - a.heading || a.at - b.at || a.nest - b.nest || a.order - b.order,
+			),
+			(a, b) => a.nest - b.nest || a.order - b.order,
 		);
-		const positions = spread(span.centre, span.room, ordered.length, TRACK_PITCH_MAX);
+		const positions = spread(
+			span.centre,
+			span.room,
+			ordered.length,
+			Math.max(TRACK_PITCH_MAX, ...ordered.map((demand) => demand.reach)),
+		);
 		ordered.forEach((demand, index) => {
 			tracks.set(demand.key, positions[index] ?? span.centre);
 		});
 	}
 	return tracks;
+}
+
+/**
+ * One-channel U-shaped routes approaching a destination face from the same
+ * direction share a nesting order in their lane and arrival ports. A longer
+ * journey can enter its last lane from somewhere unrelated to its source.
+ * @param route The planned route.
+ * @returns The nesting group, or none for a direct crossing.
+ */
+function arrivalGroup(route: Route): string | undefined {
+	if (route.channels.length !== 1 || route.fromSide !== route.toSide) {
+		return undefined;
+	}
+	const channel = route.channels[0];
+	if (channel === undefined || matchesAxis(channel, sideAxis(route.toSide))) {
+		return undefined;
+	}
+	const axis = sideAxis(route.toSide);
+	const heading = Math.sign(boxCentre(route.to.box)[axis] - boxCentre(route.from.box)[axis]);
+	return heading === 0 ? undefined : `${route.to.node.id} ${route.toSide} ${heading}`;
+}
+
+/**
+ * Reorder each arrival group within its existing slots, leaving unrelated
+ * traffic where it was. Using groups avoids a non-transitive pairwise sort.
+ * @param ordered The ordinary geometric order.
+ * @param compare How members of one arrival group nest.
+ * @returns The coordinated order.
+ */
+function nestArrivals<T extends { readonly arrival: string | undefined }>(
+	ordered: readonly T[],
+	compare: (a: T, b: T) => number,
+): T[] {
+	const groups = new Map<string, { indices: number[]; members: T[] }>();
+	ordered.forEach((member, index) => {
+		if (member.arrival === undefined) {
+			return;
+		}
+		const group = groups.get(member.arrival) ?? { indices: [], members: [] };
+		group.indices.push(index);
+		group.members.push(member);
+		groups.set(member.arrival, group);
+	});
+	const result = [...ordered];
+	for (const { indices, members } of groups.values()) {
+		members.toSorted(compare).forEach((member, index) => {
+			result[indices[index]!] = member;
+		});
+	}
+	return result;
 }
 
 export {

@@ -36,7 +36,9 @@ interface PaneEvents {
 	/** A pane's status was published; the workbench re-reads its transport. */
 	readonly onStatusPublished: (paneId: string) => void;
 	/** The server moved a pane onto a board, which the address bar records. */
-	readonly onBoardAdopted: (paneId: string, boardKey: string) => void;
+	readonly onBoardAdopted: NonNullable<
+		PaneSessionOptions<BrowserWorkbenchTransport>["onBoardAdopted"]
+	>;
 	/** A pane reported its session, or went. */
 	readonly onSession: (paneId: string, session: PaneSession | null) => void;
 }
@@ -201,9 +203,10 @@ function createPaneHost(setters: HostSetters): PaneHost {
 		 * The server moved a pane onto a board.
 		 * @param paneId The pane.
 		 * @param boardKey The board it is showing now.
+		 * @param previousKey The board key it left, or null on first adoption.
 		 */
-		onBoardAdopted: (paneId: string, boardKey: string): void => {
-			events.read().onBoardAdopted(paneId, boardKey);
+		onBoardAdopted: (paneId: string, boardKey: string, previousKey: string | null): void => {
+			events.read().onBoardAdopted(paneId, boardKey, previousKey);
 		},
 		onSession,
 	};

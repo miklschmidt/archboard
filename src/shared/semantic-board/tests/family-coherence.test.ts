@@ -7,13 +7,14 @@ import { parseSemanticBoard } from "@/shared/semantic-board/index";
  * @returns The board document.
  */
 const board = (over: Record<string, unknown> = {}) => ({
-	schemaVersion: "1.0.0",
+	schemaVersion: "2.0.0",
 	kind: "semantic-board",
 	id: "bd1",
 	name: "Pipeline",
 	version: 1,
 	createdAt: "2026-09-11T00:00:00.000Z",
 	updatedAt: "2026-09-11T00:00:00.000Z",
+	views: [],
 	current: "v1",
 	variants: [
 		{ id: "v1", name: "Initial", lifecycle: "current", content: { nodes: [], edges: [] } },

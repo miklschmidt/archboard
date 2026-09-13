@@ -1,0 +1,200 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "vKEsyHFk",
+	"name": "Archboard",
+	"version": 2,
+	"createdAt": "2026-09-12T22:27:06.204Z",
+	"updatedAt": "2026-09-13T00:47:03.475Z",
+	"views": [],
+	"variants": [
+		{
+			"id": "J5Sigjhi",
+			"name": "Current architecture",
+			"lifecycle": "current",
+			"summary": "System level: the running applications and storage behind archboard. Current source as inspected 2026-09-13; drill into each application for its internal modules.",
+			"content": {
+				"nodes": [
+					{
+						"id": "TBnOCNx2",
+						"name": "Agent CLI",
+						"kind": "app",
+						"responsibility": "Authors named boards",
+						"description": "A short-lived Bun process. Validated semantic commands reach the canvas over HTTP; it does not write vault files itself.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/bin.ts"
+						},
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "cPOdAA3f",
+						"name": "Canvas server",
+						"kind": "service",
+						"responsibility": "Owns boards and serves views",
+						"description": "One Bun/Express process owns board persistence, rendering, HTTP and WebSocket delivery. Its embedded Codex workbench is explained separately on the workbench service board.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/index.ts"
+						},
+						"drillDown": {
+							"board": "Canvas server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "6nZjwK9W",
+						"name": "Browser",
+						"kind": "app",
+						"responsibility": "Explores rendered architecture",
+						"description": "The desktop browser owns presentation: panes, camera, selection and walkthrough position. Board content is fetched from the server.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "8XKRkSHl",
+						"name": "Board vault",
+						"kind": "datastore",
+						"responsibility": "Stores semantic board families",
+						"description": "Permanent repo-local .archboard/vault. One .semantic.json per board holds current, draft and historical variants; accepted writes land atomically.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/index.ts"
+						}
+					},
+					{
+						"id": "xr1MHYE7",
+						"name": "Codex app-server",
+						"kind": "external",
+						"responsibility": "Runs linked agent threads",
+						"description": "A separate private child process owned by the canvas. The linked workhorse and voice coordinator are separate threads. Follow the link to the archboard integration, not Codex internals.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-process/index.ts"
+						},
+						"drillDown": {
+							"board": "Agent workbench",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "19855Ply",
+						"name": "Repository checkout",
+						"kind": "datastore",
+						"responsibility": "Supplies bound source files",
+						"description": "Code bindings use portable repository identities plus relative paths. A machine-local registry resolves them to this checkout.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/repo-registry.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "9m47dJzG",
+						"from": "TBnOCNx2",
+						"to": "cPOdAA3f",
+						"kind": "http",
+						"label": "semantic commands",
+						"emphasis": "normal"
+					},
+					{
+						"id": "iF6W48DS",
+						"from": "6nZjwK9W",
+						"to": "cPOdAA3f",
+						"kind": "http",
+						"label": "views and controls",
+						"emphasis": "normal"
+					},
+					{
+						"id": "mjjIPV4U",
+						"from": "cPOdAA3f",
+						"to": "8XKRkSHl",
+						"kind": "data",
+						"label": "read / commit",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4p2LMrOt",
+						"from": "cPOdAA3f",
+						"to": "6nZjwK9W",
+						"kind": "event",
+						"label": "board and agent updates",
+						"emphasis": "normal"
+					},
+					{
+						"id": "2OeapIzk",
+						"from": "cPOdAA3f",
+						"to": "xr1MHYE7",
+						"kind": "rpc",
+						"label": "private stdio session",
+						"emphasis": "normal"
+					},
+					{
+						"id": "oK9fPKdv",
+						"from": "cPOdAA3f",
+						"to": "19855Ply",
+						"kind": "data",
+						"label": "resolve code targets",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "SssnycS0",
+						"name": "Read this board",
+						"beats": [
+							{
+								"id": "JnVoCQnm",
+								"heading": "One owner of board content",
+								"body": "Agents submit meaning through the CLI. The canvas checks writes and commits the whole board family before announcing it.",
+								"subjects": [
+									"TBnOCNx2",
+									"cPOdAA3f",
+									"8XKRkSHl"
+								]
+							},
+							{
+								"id": "coggGU2D",
+								"heading": "People explore server-rendered views",
+								"body": "The browser requests a rendered view and owns the camera and selection. It re-reads after board announcements.",
+								"subjects": [
+									"6nZjwK9W",
+									"cPOdAA3f"
+								]
+							},
+							{
+								"id": "FlAhpGUe",
+								"heading": "Agent execution has a separate lifetime",
+								"body": "The canvas owns a private Codex child. The integration handles thread links, context and approvals; code bindings resolve against registered checkouts.",
+								"subjects": [
+									"xr1MHYE7",
+									"19855Ply"
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "J5Sigjhi"
+}

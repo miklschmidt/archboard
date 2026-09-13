@@ -1,4 +1,4 @@
-// The explanations this variant gives of itself, offered the way its views are.
+// The explanations this variant gives of itself, offered beside the board’s shared views.
 //
 // A walkthrough is a reading, like a view: choosing one opens a rail beside the
 // diagram and changes nothing else. No board is written, no version moves, and

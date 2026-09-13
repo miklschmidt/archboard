@@ -14,6 +14,7 @@
 import { z } from "zod";
 import {
 	SemanticRenderReplySchema,
+	RenderedVariantSchema,
 	type DiagramAtlas,
 	type DiagramBox,
 	type DiagramTheme,
@@ -45,11 +46,16 @@ type SemanticVariantRef = RenderedVariant;
 /** What a drawn state is waiting on, when it is waiting on anything. */
 type SemanticWaiting = NonNullable<DrawnBoard["waiting"]>;
 
-/** One view the variant offers, as a switcher needs to know it. */
+/** One view the board offers, as a switcher needs to know it. */
 type SemanticOfferedView = OfferedView;
 
 /** One board the vault holds. */
-const BoardEntrySchema = z.object({ name: z.string(), key: z.string() });
+const BoardEntrySchema = z.object({
+	name: z.string(),
+	key: z.string(),
+	variants: z.array(RenderedVariantSchema.extend({ parentId: z.string().nullable() })),
+	error: z.string().optional(),
+});
 type SemanticBoardEntry = z.infer<typeof BoardEntrySchema>;
 
 /** The listing route's answer. */

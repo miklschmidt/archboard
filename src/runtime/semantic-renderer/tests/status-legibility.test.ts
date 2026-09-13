@@ -67,13 +67,13 @@ const CONTENT: VariantContent = VariantContentSchema.parse({
 });
 
 /**
- * Five parts, every part wired to every later one, and a label on each.
+ * Six parts, every part wired to every later one, and a label on each.
  *
  * The reviewer's reproduction. It is here rather than in prose because the
  * crossing it produces is a property of the router and the label pass, so the
  * only honest way to hold the layering is to lay out a page that really has one.
  */
-const PARTS = [0, 1, 2, 3, 4];
+const PARTS = [0, 1, 2, 3, 4, 5];
 const CROSSING: VariantContent = VariantContentSchema.parse({
 	nodes: PARTS.map((index) => ({ id: `n${index}`, name: `Part${index}`, kind: "module" })),
 	edges: PARTS.flatMap((from) =>
@@ -378,9 +378,8 @@ describe("the words a relationship carries are on top of every dot", () => {
 	});
 
 	test("a route that crosses another relationship's pill passes under its words", () => {
-		// The reviewer's own case: five parts, a relationship from every part to
-		// every later one, and a label on each. `n0n2`'s pill sits across the route
-		// `n0n3` takes.
+		// Six parts retain a real crossing after measured track spacing cleared
+		// every pill in the reviewer's original five-part case.
 		const drawn = renderArchitecture({ content: CROSSING, theme: "light" });
 		const plates = labelPlates(drawn.svg);
 		const routes = routePoints(drawn.svg);

@@ -1,0 +1,694 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "OjRLKb74",
+	"name": "Renderer layout",
+	"version": 11,
+	"createdAt": "2026-09-13T00:02:13.555Z",
+	"updatedAt": "2026-09-13T10:54:00.446Z",
+	"views": [
+		{
+			"id": "gKxiRSCO",
+			"name": "Render sequence",
+			"grammar": "data-flow",
+			"summary": "Follow a render request through the selected architecture state.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [],
+				"edges": [],
+				"flows": [
+					"EnnH7t3r"
+				]
+			}
+		},
+		{
+			"id": "lHmaM9Zg",
+			"name": "Responsibilities",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "all"
+			}
+		},
+		{
+			"id": "JyXLZqHA",
+			"name": "Pretext sizing",
+			"grammar": "data-flow",
+			"summary": "Prepare text once, wrap at readable width, return measured card geometry. Server font host remains to be validated.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [],
+				"edges": [],
+				"flows": [
+					"8bDSfxwQ"
+				]
+			}
+		},
+		{
+			"id": "wTcA4BmE",
+			"name": "Layout sequence",
+			"grammar": "data-flow",
+			"summary": "Responsibilities of the proposed single layout owner; engine selection is still open.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [],
+				"edges": [],
+				"flows": [
+					"zSKT3nqZ"
+				]
+			}
+		}
+	],
+	"variants": [
+		{
+			"id": "2fmxYVJ6",
+			"name": "Initial",
+			"lifecycle": "current",
+			"content": {
+				"nodes": [
+					{
+						"id": "nmyK8UOO",
+						"name": "Render driver",
+						"kind": "function",
+						"responsibility": "Coordinates the current passes",
+						"description": "Current paintArchitecture orchestrates relieveCongestion, route painting, label settlement, card painting and atlas creation. This sequence groups those helper calls by responsibility; it is not a new runtime module.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/svg/architecture.ts"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "weNj8ziG",
+						"name": "Card text",
+						"kind": "function",
+						"responsibility": "Fits words into allocated space",
+						"description": "Current fittedSize measures title widths and reduces type size to its floor. SVG card painting then applies measured ellipsis to titles and single-line responsibilities. The existing font measurement engine remains authoritative.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/text.ts"
+						}
+					},
+					{
+						"id": "kfgDUWyE",
+						"name": "Grid placement",
+						"kind": "function",
+						"responsibility": "Assigns fixed seats and rows",
+						"description": "Current layoutArchitecture uses region bands, global rows and paired seats. cardHeight is46 or58 units depending on responsibility presence. Card text does not grow the card; title size fits the available width.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/layout/architecture.ts"
+						}
+					},
+					{
+						"id": "tBUl0ybN",
+						"name": "Route planning",
+						"kind": "function",
+						"responsibility": "Plans indexed corridors and ports",
+						"description": "Current relieveCongestion counts planned channel traffic and expands gaps before final routeEdges. Routes use grid bands/corridors. Label settlement happens later in paintEdges, before marks are emitted.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/layout/edges.ts"
+						}
+					},
+					{
+						"id": "H0xU45vp",
+						"name": "SVG marks",
+						"kind": "function",
+						"responsibility": "Fits and paints the final marks",
+						"description": "Current paintCard truncates title and responsibility using real font metrics. The architecture painter also settles edge-label boxes, emits marks and derives atlas bounds from actual geometry.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/svg/cards.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "bvxJfQzm",
+						"from": "nmyK8UOO",
+						"to": "kfgDUWyE",
+						"kind": "call",
+						"label": "place grid",
+						"emphasis": "normal"
+					},
+					{
+						"id": "VIDMaMpV",
+						"from": "kfgDUWyE",
+						"to": "weNj8ziG",
+						"kind": "call",
+						"label": "fit title size",
+						"emphasis": "normal"
+					},
+					{
+						"id": "tj0diTvb",
+						"from": "nmyK8UOO",
+						"to": "tBUl0ybN",
+						"kind": "call",
+						"label": "traffic and routes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "my9Bj1QK",
+						"from": "nmyK8UOO",
+						"to": "H0xU45vp",
+						"kind": "render",
+						"label": "paint placed cards",
+						"emphasis": "normal"
+					},
+					{
+						"id": "jpAcngCZ",
+						"from": "H0xU45vp",
+						"to": "weNj8ziG",
+						"kind": "call",
+						"label": "truncate to fit",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [
+					{
+						"id": "EnnH7t3r",
+						"name": "Today: fit text after choosing seats",
+						"participants": [
+							"nmyK8UOO",
+							"kfgDUWyE",
+							"tBUl0ybN",
+							"weNj8ziG",
+							"H0xU45vp"
+						],
+						"steps": [
+							{
+								"id": "WGJHkAQl",
+								"from": "nmyK8UOO",
+								"to": "kfgDUWyE",
+								"label": "Place regions in fixed seats",
+								"kind": "sync"
+							},
+							{
+								"id": "wQkT9L0G",
+								"from": "kfgDUWyE",
+								"to": "weNj8ziG",
+								"label": "Fit title to available width",
+								"kind": "sync"
+							},
+							{
+								"id": "yNL678PM",
+								"from": "weNj8ziG",
+								"to": "kfgDUWyE",
+								"label": "Measured fitted title size",
+								"kind": "return"
+							},
+							{
+								"id": "L9F90cm5",
+								"from": "kfgDUWyE",
+								"to": "nmyK8UOO",
+								"label": "Grid, card boxes and containers",
+								"kind": "return"
+							},
+							{
+								"id": "8M6WT0aE",
+								"from": "nmyK8UOO",
+								"to": "tBUl0ybN",
+								"label": "Count traffic in indexed gaps",
+								"kind": "sync"
+							},
+							{
+								"id": "zwhuuBWn",
+								"from": "tBUl0ybN",
+								"to": "nmyK8UOO",
+								"label": "Channel traffic and label demand",
+								"kind": "return"
+							},
+							{
+								"id": "VRuTF4wt",
+								"from": "nmyK8UOO",
+								"to": "kfgDUWyE",
+								"label": "Repeat placement if gaps need air",
+								"kind": "sync"
+							},
+							{
+								"id": "SSJu7sqW",
+								"from": "nmyK8UOO",
+								"to": "tBUl0ybN",
+								"label": "Allocate ports and route edges",
+								"kind": "sync"
+							},
+							{
+								"id": "jx5Hncf9",
+								"from": "tBUl0ybN",
+								"to": "nmyK8UOO",
+								"label": "Curved paths and label anchors",
+								"kind": "return"
+							},
+							{
+								"id": "kOG12Oz8",
+								"from": "nmyK8UOO",
+								"to": "nmyK8UOO",
+								"label": "Settle labels on routed paths",
+								"kind": "self"
+							},
+							{
+								"id": "WLZ1TpXI",
+								"from": "nmyK8UOO",
+								"to": "H0xU45vp",
+								"label": "Paint cards and relationships",
+								"kind": "sync"
+							},
+							{
+								"id": "qwFzQ6L0",
+								"from": "H0xU45vp",
+								"to": "weNj8ziG",
+								"label": "Ellipsize title and responsibility",
+								"kind": "sync"
+							},
+							{
+								"id": "UMqwdfOH",
+								"from": "H0xU45vp",
+								"to": "nmyK8UOO",
+								"label": "Painted SVG marks",
+								"kind": "return"
+							},
+							{
+								"id": "0MkUq3tK",
+								"from": "nmyK8UOO",
+								"to": "nmyK8UOO",
+								"label": "Derive atlas from final drawn bounds",
+								"kind": "self"
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "EgCphE2T",
+						"name": "Where geometry is decided today",
+						"beats": [
+							{
+								"id": "DLkeWOGM",
+								"heading": "Fixed space comes first",
+								"body": "The grid chooses card space. Text fitting reduces the title size, and painting may still ellipsize it. Responsibilities remain one line. This is the behavior the proposal replaces.",
+								"subjects": [
+									"kfgDUWyE",
+									"weNj8ziG",
+									"H0xU45vp"
+								],
+								"view": "gKxiRSCO"
+							},
+							{
+								"id": "dmTKAaJb",
+								"heading": "Routing and labels follow placement",
+								"body": "Congestion relief can expand grid gaps and repeat placement. Final routes are produced after that; label boxes are settled in the architecture paint orchestration. The existing renderer already returns SVG and matching atlas bounds.",
+								"subjects": [
+									"nmyK8UOO",
+									"tBUl0ybN"
+								],
+								"view": "gKxiRSCO"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "8JVuwOvJ",
+			"name": "Readable layout",
+			"lifecycle": "draft",
+			"parent": "2fmxYVJ6",
+			"content": {
+				"nodes": [
+					{
+						"id": "nmyK8UOO",
+						"name": "Render driver",
+						"kind": "function",
+						"responsibility": "Runs explicit geometry stages",
+						"description": "PROPOSED architecture orchestration: derive semantic graph, request measured card/text/label sizes, call one compound placement-and-routing owner, then paint its complete drawing. External renderer response stays SVG, dimensions and atlas. Parent proposal: Semantic renderer / Readable layout.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/svg/architecture.ts"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "named",
+								"name": "Readable layout"
+							}
+						}
+					},
+					{
+						"id": "kHpIix5b",
+						"name": "Card measurement",
+						"kind": "function",
+						"responsibility": "Wraps text before placement",
+						"description": "PROPOSED replacement for fitting text into preselected card seats. Pretext is the preferred candidate for paragraph preparation and wrapping; use prepareWithSegments once per text/font/config, layoutWithLines for chosen content width and explicit line height. Our policy owns min/max width, padding, icon space, title/body styles and minimum height. Output exact lines with widths/baselines and outer card size, plus measured edge-label sizes. Long descriptions stay in inspector. Server Canvas/font host compatibility must be proved before adoption."
+					},
+					{
+						"id": "BKjOFlgb",
+						"name": "Compound layout",
+						"kind": "function",
+						"responsibility": "Owns boxes, ports and routes",
+						"description": "PROPOSED replacement of grid placement plus separate indexed-corridor routing. Accept semantic parent/child graph, relationships and measured node/label dimensions. One established compound layout engine, still to be selected, solves local sibling placement and cross-container routes with real obstacle and whitespace constraints. Its adapter returns final node/container boxes, ports, paths and label boxes together. Steps in the sequence show responsibilities, not a promised engine algorithm or one-pass implementation."
+					},
+					{
+						"id": "H0xU45vp",
+						"name": "SVG marks",
+						"kind": "function",
+						"responsibility": "Paints supplied lines and geometry",
+						"description": "PROPOSED painter takes a complete placed drawing, theme and standing. Paint exact wrapped lines at supplied baselines and use the supplied node/edge/label boxes. No second title fitting, ellipsis, route planning or label relocation in the architecture painter. Derive interaction atlas and document bounds from the same drawing. Data-flow rendering stays on its existing path.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/svg/cards.ts"
+						}
+					},
+					{
+						"id": "RvOyWmEb",
+						"name": "Pretext",
+						"kind": "package",
+						"responsibility": "Prepares and wraps text",
+						"description": "Preferred candidate: @chenglou/pretext, https://github.com/chenglou/pretext. prepareWithSegments(text,font,options) measures and segments; layoutWithLines(prepared,maxWidth,lineHeight) returns lines, widths and height. Reuse prepared handles for width trials. Pretext does not choose card width, padding or lineHeight. Current upstream requires Canvas2D measurement and Intl.Segmenter; server support is not a proven drop-in. Verified upstream measurement.ts has no public injection API. Prefer preserving our existing font-file measurer behind a supported adapter; upstream change or an evaluated adaptation is needed. No package is installed by this proposal."
+					},
+					{
+						"id": "dYxhsEhY",
+						"name": "Server font host",
+						"kind": "external",
+						"responsibility": "Measurement integration to validate",
+						"description": "OPEN integration requirement, not implemented. Prefer a supported Pretext measurement adapter calling Archboard measureLineIn with the exact bundled fonts. Current upstream has no injection API: this needs upstream support or an explicitly evaluated maintained adaptation. Alternative: server Canvas2D with registered bundled fonts, validated against browser text. Bun currently provides neither OffscreenCanvas nor document. Avoid fake global canvas shims. Source pinned for this review: https://github.com/chenglou/pretext/blob/5ac3fd17ff8079274f45103bf09e294ac345c187/src/measurement.ts"
+					}
+				],
+				"edges": [
+					{
+						"id": "TPRWw9F4",
+						"from": "nmyK8UOO",
+						"to": "kHpIix5b",
+						"kind": "call",
+						"label": "measure graph subjects",
+						"emphasis": "normal"
+					},
+					{
+						"id": "19pjtjrv",
+						"from": "kHpIix5b",
+						"to": "RvOyWmEb",
+						"kind": "dependency",
+						"label": "prepare and wrap",
+						"emphasis": "normal"
+					},
+					{
+						"id": "aESGqkun",
+						"from": "RvOyWmEb",
+						"to": "dYxhsEhY",
+						"kind": "dependency",
+						"label": "Canvas font metrics",
+						"emphasis": "normal"
+					},
+					{
+						"id": "my9Bj1QK",
+						"from": "nmyK8UOO",
+						"to": "H0xU45vp",
+						"kind": "render",
+						"label": "paint supplied drawing",
+						"emphasis": "normal"
+					},
+					{
+						"id": "notKnIIz",
+						"from": "nmyK8UOO",
+						"to": "BKjOFlgb",
+						"kind": "call",
+						"label": "graph and measured sizes",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [
+					{
+						"id": "EnnH7t3r",
+						"name": "Proposed: measure, solve, paint",
+						"participants": [
+							"nmyK8UOO",
+							"kHpIix5b",
+							"BKjOFlgb",
+							"H0xU45vp"
+						],
+						"steps": [
+							{
+								"id": "XFEvswz4",
+								"from": "nmyK8UOO",
+								"to": "nmyK8UOO",
+								"label": "Derive graph; retain IDs and parents",
+								"kind": "self"
+							},
+							{
+								"id": "86rBqUC3",
+								"from": "nmyK8UOO",
+								"to": "kHpIix5b",
+								"label": "Names, responsibilities and edge labels",
+								"kind": "sync"
+							},
+							{
+								"id": "VvuVMt2N",
+								"from": "kHpIix5b",
+								"to": "nmyK8UOO",
+								"label": "Card sizes, wrapped lines, label sizes",
+								"kind": "return"
+							},
+							{
+								"id": "WGJHkAQl",
+								"from": "nmyK8UOO",
+								"to": "BKjOFlgb",
+								"label": "Graph + measured sizes + clearance",
+								"kind": "sync"
+							},
+							{
+								"id": "L9F90cm5",
+								"from": "BKjOFlgb",
+								"to": "nmyK8UOO",
+								"label": "Boxes, ports, paths and label boxes",
+								"kind": "return"
+							},
+							{
+								"id": "WLZ1TpXI",
+								"from": "nmyK8UOO",
+								"to": "H0xU45vp",
+								"label": "Placed drawing + text runs + theme",
+								"kind": "sync"
+							},
+							{
+								"id": "fGx4kjfR",
+								"from": "H0xU45vp",
+								"to": "H0xU45vp",
+								"label": "Paint supplied lines and geometry",
+								"kind": "self"
+							},
+							{
+								"id": "UMqwdfOH",
+								"from": "H0xU45vp",
+								"to": "nmyK8UOO",
+								"label": "SVG + dimensions + matching atlas",
+								"kind": "return"
+							}
+						]
+					},
+					{
+						"id": "8bDSfxwQ",
+						"name": "Sizing a card with Pretext",
+						"participants": [
+							"nmyK8UOO",
+							"kHpIix5b",
+							"RvOyWmEb",
+							"dYxhsEhY"
+						],
+						"steps": [
+							{
+								"id": "K9SFgjvi",
+								"from": "nmyK8UOO",
+								"to": "kHpIix5b",
+								"label": "Measure title, responsibility and labels",
+								"kind": "sync"
+							},
+							{
+								"id": "LNqaqV2F",
+								"from": "kHpIix5b",
+								"to": "kHpIix5b",
+								"label": "Choose readable fonts and width bounds",
+								"kind": "self"
+							},
+							{
+								"id": "25HE191y",
+								"from": "kHpIix5b",
+								"to": "RvOyWmEb",
+								"label": "prepareWithSegments(text, font)",
+								"kind": "sync"
+							},
+							{
+								"id": "PmcyOckC",
+								"from": "RvOyWmEb",
+								"to": "dYxhsEhY",
+								"label": "Measure segments (host integration needed)",
+								"kind": "sync"
+							},
+							{
+								"id": "BXG2HWcT",
+								"from": "dYxhsEhY",
+								"to": "RvOyWmEb",
+								"label": "Widths in the exact bundled font",
+								"kind": "return"
+							},
+							{
+								"id": "4VDj3O5C",
+								"from": "RvOyWmEb",
+								"to": "kHpIix5b",
+								"label": "Reusable prepared text handle",
+								"kind": "return"
+							},
+							{
+								"id": "pg7iuzfp",
+								"from": "kHpIix5b",
+								"to": "RvOyWmEb",
+								"label": "layoutWithLines(handle, width, lineHeight)",
+								"kind": "sync"
+							},
+							{
+								"id": "Q7y55Dyj",
+								"from": "RvOyWmEb",
+								"to": "kHpIix5b",
+								"label": "Lines, widths, line count and height",
+								"kind": "return"
+							},
+							{
+								"id": "dcc2Zdl3",
+								"from": "kHpIix5b",
+								"to": "kHpIix5b",
+								"label": "Add padding, icon space and baselines",
+								"kind": "self"
+							},
+							{
+								"id": "k46CuhtA",
+								"from": "kHpIix5b",
+								"to": "nmyK8UOO",
+								"label": "Outer card size + exact text runs",
+								"kind": "return"
+							}
+						]
+					},
+					{
+						"id": "zSKT3nqZ",
+						"name": "Inside the compound layout owner",
+						"participants": [
+							"nmyK8UOO",
+							"BKjOFlgb"
+						],
+						"steps": [
+							{
+								"id": "1yozI9dG",
+								"from": "nmyK8UOO",
+								"to": "BKjOFlgb",
+								"label": "IDs, parents, edges and measured boxes",
+								"kind": "sync"
+							},
+							{
+								"id": "xkkWK4nl",
+								"from": "BKjOFlgb",
+								"to": "BKjOFlgb",
+								"label": "Arrange connected siblings within parents",
+								"kind": "self"
+							},
+							{
+								"id": "Jg0ZstWt",
+								"from": "BKjOFlgb",
+								"to": "BKjOFlgb",
+								"label": "Size containers around content and air",
+								"kind": "self"
+							},
+							{
+								"id": "wx3eSeIZ",
+								"from": "BKjOFlgb",
+								"to": "BKjOFlgb",
+								"label": "Solve cross-container ports and routes",
+								"kind": "self"
+							},
+							{
+								"id": "v4G3l8cW",
+								"from": "BKjOFlgb",
+								"to": "BKjOFlgb",
+								"label": "Reserve label boxes and card clearance",
+								"kind": "self"
+							},
+							{
+								"id": "5rR69oPZ",
+								"from": "BKjOFlgb",
+								"to": "BKjOFlgb",
+								"label": "Iterate geometry inside this owner",
+								"kind": "self"
+							},
+							{
+								"id": "U515KUcY",
+								"from": "BKjOFlgb",
+								"to": "nmyK8UOO",
+								"label": "One drawing: boxes, text, paths, labels",
+								"kind": "return"
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "5fTFmh80",
+						"name": "What changes inside the boxes",
+						"beats": [
+							{
+								"id": "4gGw0YbA",
+								"heading": "Compare the same render request",
+								"body": "Compare the same render request across variants. Card measurement replaces Card text; Compound layout replaces Grid placement and Route planning. Render driver and SVG marks retain their identities and change responsibilities. Added actions are green, obsolete fitting/routing calls remain marked as removed, and continuing layout/painting calls retain their identities. Text preparation now precedes geometry.",
+								"subjects": [
+									"kHpIix5b"
+								],
+								"view": "gKxiRSCO"
+							},
+							{
+								"id": "rNW1w4av",
+								"heading": "Pretext supplies line layout; we own card policy",
+								"body": "prepareWithSegments does reusable measurement. layoutWithLines computes wrapping for a chosen width and lineHeight. Archboard decides readable font styles, width bounds, padding and icon clearance. A changed width reuses preparation; changed text, fonts or configuration needs preparation again.",
+								"subjects": [
+									"kHpIix5b",
+									"RvOyWmEb"
+								],
+								"view": "JyXLZqHA"
+							},
+							{
+								"id": "AOPSXwkc",
+								"heading": "Prove the server font host",
+								"body": "Pretext currently hard-codes Canvas2D and has no public measurement injection. Bun here has no OffscreenCanvas or document. Prefer a supported adapter to our existing bundled-font measurer; that needs upstream support or an evaluated adaptation. A native server Canvas is the alternative, subject to browser-metric checks. No fake browser global and no browser-owned canonical layout. Source: https://github.com/chenglou/pretext/blob/5ac3fd17ff8079274f45103bf09e294ac345c187/src/measurement.ts",
+								"subjects": [
+									"dYxhsEhY",
+									"RvOyWmEb"
+								],
+								"view": "JyXLZqHA"
+							},
+							{
+								"id": "FWMgjXxD",
+								"heading": "Placement and routing become one contract",
+								"body": "The separate grid/corridor handoff disappears. The compound owner can iterate sibling positions, container bounds, ports, paths and label clearances internally, returning one final drawing. Its engine remains to be selected and benchmarked; these steps state required behavior rather than invented library calls.",
+								"subjects": [
+									"BKjOFlgb"
+								],
+								"view": "wTcA4BmE"
+							},
+							{
+								"id": "xfpajsvv",
+								"heading": "The painter stops making geometry decisions",
+								"body": "Paint supplied wrapped lines and final paths. Build atlas boxes from that same drawing. No new wrapping, truncation or label settlement occurs after layout. The server/browser response fields remain unchanged.",
+								"subjects": [
+									"H0xU45vp",
+									"nmyK8UOO"
+								],
+								"view": "gKxiRSCO"
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "2fmxYVJ6"
+}

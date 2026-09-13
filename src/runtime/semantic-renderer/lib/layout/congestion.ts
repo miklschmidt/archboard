@@ -11,6 +11,7 @@ import {
 	BAND_PADDING_X,
 	HEAD_REACH,
 	PILL_AIR,
+	PILL_CARD_AIR,
 	PILL_CLEARANCE,
 	PILL_HEIGHT,
 	ROW_GAP,
@@ -40,13 +41,25 @@ const ROUNDS = 3;
 /**
  * Room for this many tracks at the floor pitch plus clearance to the cards, and
  * never less than the pills crossing the gap need.
- * @param traffic How many runs the gap carries.
- * @param pills How many label pills stack in the gap's depth.
+ * @param traffic How many runs each gap carries.
+ * @param pills How many label pills stack in each gap's depth.
+ * @param reaches The widest half-pill per gap, including clearance.
+ * @param index Which gap is being measured.
  * @returns The width the gap needs.
  */
-function widthNeeded(traffic: number, pills: number): number {
-	const lines = (traffic - 1) * TRACK_PITCH_MIN + TRACK_CLEARANCE * 2;
-	return Math.max(lines, pillsNeeded(pills));
+function widthNeeded(
+	traffic: ReadonlyMap<number, number>,
+	pills: ReadonlyMap<number, number>,
+	reaches: ReadonlyMap<number, number>,
+	index: number,
+): number {
+	const runs = traffic.get(index) ?? 0;
+	const reach = reaches.get(index) ?? 0;
+	// Track reach includes wire clearance; replace that with the card margin at
+	// the two outer edges, without spreading every pair of tracks further apart.
+	const cardClearance = Math.max(TRACK_CLEARANCE, reach + PILL_CARD_AIR - PILL_CLEARANCE);
+	const lines = (runs - 1) * Math.max(TRACK_PITCH_MIN, reach) + cardClearance * 2;
+	return Math.max(lines, pillsNeeded(pills.get(index) ?? 0));
 }
 
 /**
@@ -63,7 +76,10 @@ function pillsNeeded(pills: number): number {
 		return 0;
 	}
 	const step = PILL_HEIGHT + PILL_AIR;
-	return 2 * ((pills - 1) * step + PILL_HEIGHT / 2 + PILL_CLEARANCE + HEAD_REACH);
+	return (
+		2 *
+		((pills - 1) * step + PILL_HEIGHT / 2 + Math.max(PILL_CARD_AIR, PILL_CLEARANCE + HEAD_REACH))
+	);
 }
 
 /**
@@ -75,7 +91,7 @@ function corridorExpansions(traffic: ChannelTraffic): Map<number, number> {
 	const corridors = new Map<number, number>();
 	for (const index of gapsIn(traffic.corridors, traffic.corridorPills)) {
 		const extra =
-			widthNeeded(traffic.corridors.get(index) ?? 0, traffic.corridorPills.get(index) ?? 0) -
+			widthNeeded(traffic.corridors, traffic.corridorPills, traffic.corridorReach, index) -
 			CORRIDOR_WIDTH;
 		if (extra > 0) {
 			corridors.set(index, extra);
@@ -98,8 +114,7 @@ function bandExpansions(traffic: ChannelTraffic, grid: LayoutGrid): Map<number, 
 		// carved out of the gap rather than added to it, so the room a route has
 		// is this constant however deeply the boxes nest there.
 		const height = index === grid.rows.length ? BAND_BOTTOM_PADDING : ROW_GAP;
-		const extra =
-			widthNeeded(traffic.bands.get(index) ?? 0, traffic.bandPills.get(index) ?? 0) - height;
+		const extra = widthNeeded(traffic.bands, traffic.bandPills, traffic.bandReach, index) - height;
 		if (extra > 0) {
 			bands.set(index, extra);
 		}

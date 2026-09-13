@@ -1,4 +1,4 @@
-// What each pane is reading, as the shell owns it: which of the variant's
+// What each pane is reading, as the shell owns it: which of the board's
 // named views, and which subject the person picked out.
 //
 // Which board a pane shows is not here. That is the server's: a pane is
@@ -15,6 +15,7 @@
 import { useCallback, useMemo, useState } from "react";
 
 import type { SemanticSubjectRef } from "@/shared/semantic-pane-context";
+import { boardAddressOf, sameBoardName } from "@/ui/semantic-board-canvas";
 
 /** One picked subject, as the viewer described it. */
 type PickedSubject = SemanticSubjectRef;
@@ -25,7 +26,7 @@ type ByPane<Value> = Readonly<Record<string, Value>>;
 /** What each pane is reading, and how that changes. */
 interface PaneReadings {
 	/**
-	 * Which of the variant's views one pane is reading it through.
+	 * Which of the board's views one pane is reading it through.
 	 * @param paneId The pane.
 	 * @returns The view's id, or null for the whole variant.
 	 */
@@ -49,11 +50,12 @@ interface PaneReadings {
 	 */
 	readonly pick: (paneId: string, subject: PickedSubject | null) => void;
 	/**
-	 * A pane moved to another board or variant: what was picked out there, and
-	 * the view it was read through, name nothing here.
+	 * A pane moved: clear its selection, retaining the view within one board.
 	 * @param paneId The pane.
+	 * @param boardKey The board key it adopted.
+	 * @param previousKey The board key it left, or null on first adoption.
 	 */
-	readonly boardChanged: (paneId: string) => void;
+	readonly boardChanged: (paneId: string, boardKey: string, previousKey: string | null) => void;
 }
 
 /** Nothing is being read yet. */
@@ -99,14 +101,17 @@ function usePaneReadings(): PaneReadings {
 			subject === null ? cleared(current, paneId) : held(current, paneId, subject),
 		);
 	}, []);
-	const boardChanged = useCallback((paneId: string): void => {
-		// A view is a subject of the variant's own content, so an id chosen in one
-		// variant may name nothing in another; carrying it over would ask the
-		// server for a view that is not there and answer a refusal instead of a
-		// picture. The same is true of a selection.
-		setViews((current) => cleared(current, paneId));
-		setPicked((current) => cleared(current, paneId));
-	}, []);
+	const boardChanged = useCallback(
+		(paneId: string, boardKey: string, previousKey: string | null): void => {
+			const board = boardAddressOf(boardKey);
+			const previous = boardAddressOf(previousKey);
+			if (board === null || previous === null || !sameBoardName(board.board, previous.board)) {
+				setViews((current) => cleared(current, paneId));
+			}
+			setPicked((current) => cleared(current, paneId));
+		},
+		[],
+	);
 	const viewOf = useCallback((paneId: string): string | null => views[paneId] ?? null, [views]);
 	const pickedIn = useCallback(
 		(paneId: string): PickedSubject | null => picked[paneId] ?? null,

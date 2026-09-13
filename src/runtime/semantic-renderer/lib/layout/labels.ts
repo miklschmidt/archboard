@@ -13,6 +13,7 @@
 import {
 	HEAD_REACH,
 	PILL_AIR,
+	PILL_CARD_AIR,
 	PILL_CLEARANCE,
 	PILL_HEIGHT,
 } from "@/runtime/semantic-renderer/lib/design";
@@ -77,25 +78,31 @@ function runOf(start: Point, end: Point): Run {
 }
 
 /**
- * The longest straight run of a route — the run the router pins the label to,
- * and the only one collision handling may slide it along. Earlier segments win
- * a tie, matching how the anchor itself is chosen.
+ * A route's straight runs, longest first. Earlier segments win a tie, matching
+ * the router's preferred anchor; another run can host a pill that cannot fit there.
  * @param curve The route.
- * @returns The run, or undefined when the route only bends.
+ * @returns The runs, empty when the route only bends.
  */
-function longestRun(curve: Curve): Run | undefined {
-	let best: Run | undefined;
+function straightRuns(curve: Curve): Run[] {
+	const runs: Run[] = [];
 	let start = curve.from;
 	for (const segment of curve.segments) {
 		if (segment.kind === "line") {
-			const run = runOf(start, segment.to);
-			if (best === undefined || run.hi - run.lo > best.hi - best.lo) {
-				best = run;
-			}
+			runs.push(runOf(start, segment.to));
 		}
 		start = segment.to;
 	}
-	return best;
+	return runs.toSorted((a, b) => b.hi - b.lo - (a.hi - a.lo));
+}
+
+/**
+ * The room a route offers its label; short routes get their scarce space first.
+ * @param curve The drawn route.
+ * @returns The length of its longest straight run.
+ */
+function labelRoom(curve: Curve): number {
+	const run = straightRuns(curve)[0];
+	return run === undefined ? 0 : run.hi - run.lo;
 }
 
 /**
@@ -124,17 +131,18 @@ function centreOn(run: Run, along: number): Point {
 }
 
 /**
- * Exactly PILL_CLEARANCE of air is enough, so the comparisons are strict.
+ * Exactly the requested air is enough, so the comparisons are strict.
  * @param a One box.
  * @param b The other.
+ * @param air The space this obstacle must retain.
  * @returns True when they are closer than the clearance.
  */
-function collides(a: Box, b: Box): boolean {
+function collides(a: Box, b: Box, air: number): boolean {
 	return (
-		a.x < b.x + b.width + PILL_CLEARANCE &&
-		b.x < a.x + a.width + PILL_CLEARANCE &&
-		a.y < b.y + b.height + PILL_CLEARANCE &&
-		b.y < a.y + a.height + PILL_CLEARANCE
+		a.x < b.x + b.width + air &&
+		b.x < a.x + a.width + air &&
+		a.y < b.y + b.height + air &&
+		b.y < a.y + a.height + air
 	);
 }
 
@@ -315,7 +323,7 @@ function slideAlong(
  * @param settled Every pill already placed.
  * @returns Where the pill goes.
  */
-function stepAside(anchor: Point, axis: "x" | "y", size: Size, settled: readonly Box[]): Box {
+function stepAside(anchor: Point, axis: "x" | "y", size: Size, settled: readonly Blocker[]): Box {
 	const step = crossHalf(size, axis) * 2 + PILL_CLEARANCE;
 	// Below (or right of) the line first. Either side is the same distance, so
 	// the order is arbitrary geometry and deliberate typography: a label pushed
@@ -329,7 +337,7 @@ function stepAside(anchor: Point, axis: "x" | "y", size: Size, settled: readonly
 					? { x: anchor.x, y: anchor.y + offset }
 					: { x: anchor.x + offset, y: anchor.y };
 			const box = centred(centre, size);
-			if (!settled.some((other) => collides(box, other))) {
+			if (!settled.some(({ box: other, air }) => collides(box, other, air))) {
 				return box;
 			}
 		}
@@ -374,8 +382,8 @@ function settle(
 	settled: readonly Blocker[],
 	wires: readonly Box[],
 ): Box {
-	const run = longestRun(curve);
-	if (run !== undefined) {
+	const runs = straightRuns(curve);
+	for (const run of runs) {
 		const heads = blockedByHeads(run, size, runEnds(curve, run));
 		const onLine = onRun(run, size, settled, wires, heads);
 		if (onLine !== undefined) {
@@ -386,11 +394,10 @@ function settle(
 	// A route that only bends — a self-loop — has no run to slide along; its
 	// anchor still stands wherever it is clear.
 	const atAnchor = centred(anchor, size);
-	const boxes = settled.map(({ box }) => box);
-	if (!boxes.some((other) => collides(atAnchor, other))) {
+	if (!settled.some(({ box, air }) => collides(atAnchor, box, air))) {
 		return atAnchor;
 	}
-	return stepAside(anchor, run === undefined ? "x" : run.axis, size, boxes);
+	return stepAside(anchor, runs[0]?.axis ?? "x", size, settled);
 }
 
 /**
@@ -416,11 +423,8 @@ function onRun(
 	heads: readonly Blocked[],
 ): Box | undefined {
 	const onWires = wires.map((box) => ({ box, air: PILL_CLEARANCE }));
-	// Pills apart by their full air where the line has room for it, and by the
-	// bare clearance where it does not: a crowded board gives up the air before
-	// it gives up the tie between a label and its line.
-	const tight = settled.map(({ box, air }) => ({ box, air: Math.min(air, PILL_CLEARANCE) }));
-	for (const blockers of [[...settled, ...onWires], settled, [...tight, ...onWires], tight]) {
+	// Card and badge whitespace is a minimum, including the crowded fallback.
+	for (const blockers of [[...settled, ...onWires], settled]) {
 		for (const reach of [0, PILL_HEIGHT]) {
 			const along = slideAlong(run, size, blockers, reach, heads);
 			if (along !== undefined) {
@@ -459,8 +463,9 @@ function wireBoxes(curve: Curve): Box[] {
  * A pill box for every labelled route, none intersecting any other and none
  * landing on the words of a card or a band header.
  *
- * Routes settle in document order, and a pill whose anchor is already clear
- * stays exactly where the router put it, so an uncrowded diagram is untouched.
+ * Short routes settle first, with document order breaking ties: a long route
+ * can host its words elsewhere when a short crossing has only one gap to use.
+ * A pill whose anchor is already clear stays where the router put it.
  * PR Lens settled pills against other pills alone, which was enough when a
  * label only ever rode a line through a gap; a route that attaches to a band
  * header has a short run right beside the header's own text, and a pill landing
@@ -473,10 +478,12 @@ function placeLabelPills(
 	routed: readonly RoutedEdge[],
 	occupied: readonly Box[],
 ): Map<string, Box> {
-	const placed: Blocker[] = occupied.map((box) => ({ box, air: PILL_CLEARANCE }));
+	const placed: Blocker[] = occupied.map((box) => ({ box, air: PILL_CARD_AIR }));
 	const wires = new Map(routed.map(({ edge, curve }) => [edge.id, wireBoxes(curve)]));
 	const boxes = new Map<string, Box>();
-	for (const { edge, curve, labelAnchor } of routed) {
+	for (const { edge, curve, labelAnchor } of routed.toSorted(
+		(a, b) => labelRoom(a.curve) - labelRoom(b.curve),
+	)) {
 		if (edge.label === undefined || labelAnchor === undefined) {
 			continue;
 		}

@@ -51,16 +51,18 @@ const WALKTHROUGH = {
 	],
 };
 
-/** The variant's content: two nodes, one relationship, one view, one explanation. */
+/** The variant's content: two nodes, one relationship and one explanation. */
 const CONTENT = {
 	nodes: [
 		{ id: "n1", name: "board-io", kind: "module" },
 		{ id: "n2", name: "Write Lease", kind: "module" },
 	],
 	edges: [{ id: "e1", from: "n1", to: "n2", kind: "call" }],
-	views: [{ ...VIEW, scope: { kind: "selection", nodes: ["n1"], edges: [], flows: [] } }],
 	walkthroughs: [WALKTHROUGH],
 };
+
+/** The board-owned view one walkthrough beat reads through. */
+const VIEWS = [{ ...VIEW, scope: { kind: "selection", nodes: ["n1"], edges: [], flows: [] } }];
 
 /**
  * One board document, as its route answers with it.
@@ -81,13 +83,14 @@ const CURRENT_VARIANT = { id: "v1", name: "as it is", lifecycle: "current", cont
  */
 function withVariants(variants: readonly Record<string, unknown>[]): Record<string, unknown> {
 	return {
-		schemaVersion: "1.0.0",
+		schemaVersion: "2.0.0",
 		kind: "semantic-board",
 		id: "bd",
 		name: "pipeline",
 		version: 1,
 		createdAt: "2026-09-11T00:00:00.000Z",
 		updatedAt: "2026-09-11T00:00:00.000Z",
+		views: VIEWS,
 		current: "v1",
 		variants,
 	};

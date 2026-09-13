@@ -101,8 +101,9 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * that `browser show` moved it.
 	 * @param paneId The pane.
 	 * @param boardKey The board key.
+	 * @param previousKey The previously opened board key, or null on first adoption.
 	 */
-	onBoardAdopted?: (paneId: string, boardKey: string) => void;
+	onBoardAdopted?: (paneId: string, boardKey: string, previousKey: string | null) => void;
 	/** The workbench sockets this pane carries, when the shell gives it one. */
 	createWorkbenchSockets?: () => PaneWorkbenchSocketOwner<Transport>;
 }

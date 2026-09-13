@@ -47,7 +47,7 @@ import {
 	type ToldStanding,
 	type VariantStanding,
 } from "@/shared/semantic-board/lib/reconcile-standing";
-import type { SemanticFlow, SemanticView } from "@/shared/semantic-board/lib/views";
+import type { SemanticFlow } from "@/shared/semantic-board/lib/views";
 import type { SemanticWalkthrough } from "@/shared/semantic-board/lib/walkthrough";
 import { reconcileTold, type OrderedIssue } from "@/shared/semantic-board/lib/reconcile-told";
 
@@ -85,7 +85,6 @@ const MERGED = {
 	],
 	edge: ["from", "to", "kind", "label", "description", "emphasis"],
 	flow: ["name", "summary", "participants"],
-	view: ["name", "grammar", "summary", "scope"],
 	walkthrough: ["name", "summary"],
 } as const;
 
@@ -94,7 +93,6 @@ const SUBJECT_WORDS = {
 	node: "node",
 	edge: "relationship",
 	flow: "flow",
-	view: "view",
 	walkthrough: "walkthrough",
 } as const;
 
@@ -434,11 +432,6 @@ function reconcileVariant(states: ThreeStates): Reconciliation {
 		MERGED.flow,
 		SUBJECT_WORDS.flow,
 	);
-	const views = mergeByIdentity(
-		sidesOf<SemanticView>(states, (content) => content.views),
-		MERGED.view,
-		SUBJECT_WORDS.view,
-	);
 	const walkthroughs = mergeByIdentity(
 		sidesOf<SemanticWalkthrough>(states, (content) => content.walkthroughs),
 		MERGED.walkthrough,
@@ -452,10 +445,9 @@ function reconcileVariant(states: ThreeStates): Reconciliation {
 		nodes: nodes.entities,
 		edges: edges.entities,
 		flows: told.flows,
-		views: views.entities,
 		walkthroughs: told.walkthroughs,
 	};
-	const parts = [nodes, edges, flows, views, walkthroughs];
+	const parts = [nodes, edges, flows, walkthroughs];
 	const issues = [...parts.flatMap((part) => part.issues), ...asIssues(told.issues)];
 	const dangling = incoherenceOf(assembled);
 	if (dangling.length > 0) {

@@ -203,11 +203,13 @@ const VariantEditInputSchema = z
 		nodes: z.array(SemanticNodeInputSchema).default([]),
 		edges: z.array(SemanticEdgeInputSchema).default([]),
 		flows: z.array(SemanticFlowInputSchema).default([]),
+		/** Board-owned views, independent of the selected variant. */
 		views: z.array(SemanticViewInputSchema).default([]),
 		walkthroughs: z.array(SemanticWalkthroughInputSchema).default([]),
 		removeNodes: z.array(NodeReferenceSchema).default([]),
 		removeEdges: z.array(NodeReferenceSchema).default([]),
 		removeFlows: z.array(NodeReferenceSchema).default([]),
+		/** Removing a shared view must leave every variant walkthrough coherent. */
 		removeViews: z.array(NodeReferenceSchema).default([]),
 		removeWalkthroughs: z.array(NodeReferenceSchema).default([]),
 	})

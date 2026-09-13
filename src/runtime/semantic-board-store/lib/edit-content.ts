@@ -27,6 +27,7 @@
 
 import type {
 	SemanticBoard,
+	SemanticView,
 	SemanticEdge,
 	SemanticEdgeInput,
 	SemanticNode,
@@ -49,7 +50,9 @@ import { editViews } from "@/runtime/semantic-board-store/lib/edit-views";
 import { editWalkthroughs } from "@/runtime/semantic-board-store/lib/edit-walkthroughs";
 
 /** A content value, or why the edit could not produce one. */
-type ContentEdit = { readonly ok: true; readonly content: VariantContent } | SemanticRefusal;
+type ContentEdit =
+	| { readonly ok: true; readonly content: VariantContent; readonly views: SemanticView[] }
+	| SemanticRefusal;
 
 /** What one batch takes off the board, resolved against the board as it stood. */
 interface Removals {
@@ -361,7 +364,7 @@ function editContent(
 	edit: VariantEditInput,
 	board: SemanticBoard | null,
 ): ContentEdit {
-	const batch = openBatch(idsInUse(board), namesInPlay(before, edit));
+	const batch = editBatch(board, before, edit);
 	const planned = planRemovals(before, edit, batch);
 	if (!planned.ok) {
 		return planned;
@@ -383,7 +386,7 @@ function editContent(
 		return orphan;
 	}
 	const edges = placeStatedEdges(kept.edges, contained.nodes, edit.edges, batch);
-	return edges.ok ? withViews(before, edit, contained.nodes, edges.edges, batch) : edges;
+	return edges.ok ? withViews(before, board, edit, contained.nodes, edges.edges, batch) : edges;
 }
 
 /**
@@ -394,6 +397,7 @@ function editContent(
  * readings of it, so it can only be resolved against what the whole rest of the
  * batch leaves behind.
  * @param before The content as it stood.
+ * @param board The board owning these views.
  * @param edit What the agent stated.
  * @param nodes The nodes the batch leaves behind.
  * @param edges The relationships the batch leaves behind.
@@ -402,12 +406,14 @@ function editContent(
  */
 function withViews(
 	before: VariantContent,
+	board: SemanticBoard | null,
 	edit: VariantEditInput,
 	nodes: readonly SemanticNode[],
 	edges: readonly SemanticEdge[],
 	batch: Batch,
 ): ContentEdit {
-	const rest = editViews(before, edit, nodes, edges, batch);
+	const relatives = relativeContent(board, before);
+	const rest = editViews(before, board?.views ?? [], edit, nodes, edges, batch, relatives);
 	if (!rest.ok) {
 		return rest;
 	}
@@ -418,14 +424,43 @@ function withViews(
 	}
 	return {
 		ok: true,
+		views: rest.views,
 		content: {
 			nodes: [...nodes],
 			edges: [...edges],
 			flows: rest.flows,
-			views: rest.views,
 			walkthroughs: explained.walkthroughs,
 		},
 	};
 }
 
 export { type ContentEdit, editContent };
+
+/**
+ * Open one identity namespace for the board and this content edit.
+ * @param board The board, or null at creation.
+ * @param before The variant before editing.
+ * @param edit The stated edit.
+ * @returns The batch identity owner.
+ */
+function editBatch(
+	board: SemanticBoard | null,
+	before: VariantContent,
+	edit: VariantEditInput,
+): Batch {
+	return openBatch(idsInUse(board), namesInPlay(before, edit, board));
+}
+
+/**
+ * The other variant contents available to a shared view selection.
+ * @param board The board, or null at creation.
+ * @param before The content being replaced.
+ * @returns Unedited relatives, excluding stale content being replaced.
+ */
+function relativeContent(board: SemanticBoard | null, before: VariantContent): VariantContent[] {
+	return (
+		board?.variants
+			.filter((variant) => variant.content !== before)
+			.map((variant) => variant.content) ?? []
+	);
+}

@@ -6,10 +6,12 @@
 
 import { act, cleanup, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
+import type { SemanticPaneReading } from "@/ui/semantic-board-canvas";
 
 import {
 	drawing,
 	mountStage,
+	NOTHING_DRAWN,
 	renderCalls,
 	server,
 	part,
@@ -17,7 +19,7 @@ import {
 	surface,
 } from "@/ui/semantic-board-canvas/tests/stage-harness";
 
-/** The two views this variant offers. */
+/** The two views this board offers. */
 const VIEWS = [
 	{ id: "v1", name: "The parts", grammar: "architecture" },
 	{ id: "v2", name: "One edit, in order", grammar: "data-flow" },
@@ -125,6 +127,40 @@ test("a variant with one view still offers the board as a whole beside it", asyn
 	expect(choices()[0]?.getAttribute("aria-pressed")).toBe("false");
 });
 
+test("a selected view with no subjects keeps its resolved identity and remains visibly empty", async () => {
+	const readings: SemanticPaneReading[] = [];
+	const variant = { id: "draft", name: "Proposal", lifecycle: "draft" } as const;
+	server.reply = {
+		status: 200,
+		body: { ...NOTHING_DRAWN.body, variant, view: VIEWS[0], views: [VIEWS[0]] },
+	};
+	mountStage(null, {
+		view: "v1",
+		onViewChange: ignoreChoice,
+		/**
+		 * Record the resolved empty reading used by the address bar.
+		 * @param reading The board reading reported by the stage.
+		 */
+		onReading: (reading) => {
+			readings.push(reading);
+		},
+	});
+	await settle();
+
+	expect(choices().map((one) => one.textContent)).toEqual(["Everything", "The parts"]);
+	expect(choices()[1]?.getAttribute("aria-pressed")).toBe("true");
+	const stage = part("semantic-board-stage");
+	expect(stage.getAttribute("data-state")).toBe("empty");
+	expect(stage.textContent).toContain("The parts is empty on Proposal");
+	expect(readings.at(-1)?.drawn).toEqual({
+		variant,
+		view: VIEWS[0],
+		version: NOTHING_DRAWN.body.version,
+	});
+	expect(readings.at(-1)?.variant).toBe("draft");
+	expect(stage.textContent).toContain("This variant has no subjects in this view");
+});
+
 test("a state that is out of step with what it came from says so, in the board's words", async () => {
 	server.reply = {
 		status: 200,
@@ -178,13 +214,14 @@ test("a state that has not been brought forward at all names what it is waiting 
 		},
 	};
 	server.documents["pipeline"] = {
-		schemaVersion: "1.0.0",
+		schemaVersion: "2.0.0",
 		kind: "semantic-board",
 		id: "bd1",
 		name: "pipeline",
 		version: 4,
 		createdAt: "2026-09-11T00:00:00.000Z",
 		updatedAt: "2026-09-11T00:00:00.000Z",
+		views: [],
 		current: "v1",
 		variants: [
 			{
@@ -207,4 +244,83 @@ test("a state that has not been brought forward at all names what it is waiting 
 	expect(said.textContent).toContain("Drawing is the board");
 	expect(said.textContent).not.toContain('"v1" is itself unsettled');
 	expect(said.getAttribute("data-blocked-by")).toBe("v1");
+});
+
+test.each([null, "v2"])("choosing view %s leaves a walkthrough's scoped beat", async (chosen) => {
+	server.documents["pipeline"] = {
+		schemaVersion: "2.0.0",
+		kind: "semantic-board",
+		id: "bd1",
+		name: "pipeline",
+		version: 1,
+		createdAt: "2026-09-11T00:00:00.000Z",
+		updatedAt: "2026-09-11T00:00:00.000Z",
+		views: VIEWS.map((view) => ({
+			...view,
+			grammar: "architecture",
+			scope: { kind: "all" },
+		})),
+		current: "current1",
+		variants: [
+			{
+				id: "current1",
+				name: "Architecture",
+				lifecycle: "current",
+				content: {
+					nodes: [{ id: "n1", name: "Writer", kind: "module" }],
+					edges: [],
+					walkthroughs: [
+						{
+							id: "w1",
+							name: "Tour",
+							beats: [
+								{
+									id: "b1",
+									heading: "The writer",
+									body: "Follow the write.",
+									subjects: ["n1"],
+									view: "v1",
+								},
+							],
+						},
+					],
+				},
+			},
+		],
+	};
+	server.reply = { status: 200, body: drawnAs(1, VIEWS[0]) };
+	const picked: (string | null)[] = [];
+	const readings: (string | null)[] = [];
+	mountStage(null, {
+		view: chosen ?? undefined,
+		/**
+		 * Record the explicit choice.
+		 * @param view The chosen view.
+		 */
+		onViewChange: (view) => {
+			picked.push(view);
+		},
+		/**
+		 * Record what is actually on screen.
+		 * @param pane The pane's reading.
+		 */
+		onReading: (pane) => {
+			readings.push(pane.view);
+		},
+	});
+	await settle();
+	act(() => {
+		fireEvent.click(part("semantic-walkthrough-choice"));
+	});
+	await settle();
+	expect(readings.at(-1)).toBe("v1");
+	act(() => {
+		fireEvent.click(
+			choices().find((choice) => choice.getAttribute("data-semantic-view") === (chosen ?? ""))!,
+		);
+	});
+	await settle();
+	expect(picked).toEqual([chosen]);
+	expect(document.querySelector("[data-slot='semantic-narrative']")).toBeNull();
+	expect(readings.at(-1)).toBe(chosen);
 });

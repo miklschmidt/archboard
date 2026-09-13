@@ -3,9 +3,10 @@
 // hold yet, which pane is showing what, and what an agent is doing where.
 // Pure: no React.
 
+import { listedBoardKey } from "@/ui/board-catalog";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import type { ShellView } from "@/ui/shell/types/contracts";
-import type { AgentActivityEntry, BoardIdentity, BoardListing } from "@/ui/types";
+import type { AgentActivityEntry, BoardEntry, BoardIdentity, BoardListing } from "@/ui/types";
 
 /** Pane letters in reading order; a third pane would be a number. */
 const PANE_LETTERS = ["A", "B"] as const;
@@ -20,9 +21,7 @@ function paneLetter(index: number): string {
 }
 
 /** One selectable navigator entry. */
-interface NavigatorEntry {
-	key: string;
-	identity: BoardIdentity;
+interface NavigatorEntry extends BoardEntry {
 	/** Being worked on but not listed by the vault yet. */
 	draft: boolean;
 	/** The letter of the pane showing this board, or null when no pane holds it. */
@@ -49,10 +48,17 @@ function identityOfKey(key: string): BoardIdentity {
 		: { board: target.board, variant: target.variant ?? "current" };
 }
 
-/** A named board and its variants, in listing order. */
+/** A variant and its descendants. */
+interface NavigatorBranch {
+	entry: NavigatorEntry;
+	children: NavigatorBranch[];
+}
+
+/** A named board and its variant ancestry. */
 interface NavigatorGroup {
 	board: string;
 	variants: NavigatorEntry[];
+	roots: NavigatorBranch[];
 }
 
 /**
@@ -63,17 +69,16 @@ interface NavigatorGroup {
 function onScreenLetters(listing: BoardListing): ReadonlyMap<string, string> {
 	const letters = new Map<string, string>();
 	listing.onScreen.forEach((pane, index) => {
-		if (!letters.has(pane.board)) {
-			letters.set(pane.board, paneLetter(index));
+		const key = listedBoardKey(listing, pane.board) ?? pane.board;
+		if (!letters.has(key)) {
+			letters.set(key, paneLetter(index));
 		}
 	});
 	return letters;
 }
 
 /** What every entry is built from. */
-interface EntrySource {
-	key: string;
-	identity: BoardIdentity;
+interface EntrySource extends BoardEntry {
 	draft: boolean;
 }
 
@@ -90,11 +95,9 @@ function toEntry(
 	letters: ReadonlyMap<string, string>,
 ): NavigatorEntry {
 	return {
-		key: source.key,
-		identity: source.identity,
-		draft: source.draft,
+		...source,
 		onScreen: letters.get(source.key) ?? null,
-		activity: view.agentActivity[source.key] ?? null,
+		activity: view.agentActivity[boardAddressOf(source.key)?.board ?? source.key] ?? null,
 	};
 }
 
@@ -107,11 +110,10 @@ function toEntry(
  */
 function boardSources(view: ShellView): EntrySource[] {
 	const listed = view.boards.boards.map((board) => ({
-		key: board.key,
-		identity: board.identity,
+		...board,
 		draft: false,
 	}));
-	const known = new Set(listed.map((source) => source.key));
+	const known = new Set(listed.map((source) => boardAddressOf(source.key)?.board ?? source.key));
 	const working = Object.keys(view.agentActivity)
 		.filter((key) => !known.has(key))
 		.map((key) => ({ key, identity: identityOfKey(key), draft: true }));
@@ -123,7 +125,7 @@ function boardSources(view: ShellView): EntrySource[] {
  * directory order, which changes between restarts; a person finds a board by
  * name, so groups and their variants are sorted by name.
  * @param view The shell view holding the listing.
- * @returns Groups by board name, variants by key.
+ * @returns Groups by board name with siblings ordered by variant name.
  */
 function groupBoards(view: ShellView): NavigatorGroup[] {
 	const letters = onScreenLetters(view.boards);
@@ -132,16 +134,46 @@ function groupBoards(view: ShellView): NavigatorGroup[] {
 		const group = groups.get(source.identity.board) ?? {
 			board: source.identity.board,
 			variants: [],
+			roots: [],
 		};
 		group.variants.push(toEntry(source, view, letters));
 		groups.set(source.identity.board, group);
 	}
 	return [...groups.values()]
-		.map((group) => ({
-			...group,
-			variants: group.variants.toSorted((a, b) => a.key.localeCompare(b.key, "en")),
-		}))
+		.map((group) => ({ ...group, roots: variantTree(group.variants) }))
 		.toSorted((a, b) => a.board.localeCompare(b.board, "en"));
 }
 
-export { identityOfKey, paneLetter, groupBoards, type NavigatorEntry, type NavigatorGroup };
+/**
+ * Read ancestry independently of lifecycle: adoption never moves a descendant
+ * out from under the state it came from. Names sort siblings deterministically.
+ * @param entries The board's persisted variants.
+ * @returns Every root and its descendants.
+ */
+function variantTree(entries: readonly NavigatorEntry[]): NavigatorBranch[] {
+	const ordered = entries.toSorted(
+		(a, b) =>
+			a.identity.variant.localeCompare(b.identity.variant, "en") ||
+			a.key.localeCompare(b.key, "en"),
+	);
+	const branches = new Map<string, NavigatorBranch>(
+		ordered.map((entry) => [entry.variant?.id ?? entry.key, { entry, children: [] }]),
+	);
+	const roots: NavigatorBranch[] = [];
+	for (const branch of branches.values()) {
+		const parentId = branch.entry.variant?.parentId;
+		const parent = parentId == null ? undefined : branches.get(parentId);
+		if (parent === undefined) roots.push(branch);
+		else parent.children.push(branch);
+	}
+	return roots;
+}
+
+export {
+	identityOfKey,
+	paneLetter,
+	groupBoards,
+	type NavigatorEntry,
+	type NavigatorGroup,
+	type NavigatorBranch,
+};

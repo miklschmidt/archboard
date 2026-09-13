@@ -173,7 +173,8 @@ function corridorBeside(regionIndex: number, side: Flank): Channel {
 }
 
 /**
- * Which flank both ends of a same-band route lean toward.
+ * The flank for forward or returning same-band traffic. Same-row detours use
+ * the nearer side; blocked faces can override the preferred flank.
  * @param from Where the route starts.
  * @param to Where it ends.
  * @param regions The bands.
@@ -184,6 +185,9 @@ function preferredFlanks(
 	to: PlacedNode,
 	regions: readonly PlacedRegion[],
 ): readonly Flank[] {
+	if (to.row !== from.row) {
+		return to.row > from.row ? LEFT_FIRST : RIGHT_FIRST;
+	}
 	const bandBox = regions[from.regionIndex]?.box;
 	const bandCentre = bandBox === undefined ? 0 : boxCentre(bandBox).x;
 	return (boxCentre(from.box).x + boxCentre(to.box).x) / 2 > bandCentre ? RIGHT_FIRST : LEFT_FIRST;
@@ -209,8 +213,8 @@ function sharedFlank(
 /**
  * Down (or up) the corridor beside the route's own band, past the rows in
  * between: cards fill their band's width, so a straight drop would vanish
- * behind every one of them. The corridor is picked on the side the endpoints
- * lean toward; a face a pair partner blocks pushes the route to the other side,
+ * behind every one of them. Forward skips prefer left, returns prefer right;
+ * a face a pair partner blocks pushes the route to the other side,
  * and a target reachable on neither side is entered from above or below instead.
  * @param from Where the route starts.
  * @param to Where it ends.
@@ -466,30 +470,33 @@ function planRoute(
 	if (to.row === from.row && !overlapsAcross(from, to)) {
 		return planSideBySide(from, to);
 	}
-	if (Math.abs(to.row - from.row) === 1 && !cappedVertically(from, to)) {
+	if (to.row - from.row === 1 && !cappedVertically(from, to)) {
 		return planAdjacentRows(from, to, grid);
 	}
 	return planRegionSkip(from, to, regions, grid, blocked);
 }
 
 /**
- * Siblings that leave one card in the same direction share a single departure
- * port. Sharing the port is the whole trick: give each member its own and the
- * group converges before it diverges — a bowtie at the face, which is exactly
+ * Unlabelled siblings that leave one card in the same direction share a single
+ * departure port. Giving each member its own port would make the group converge
+ * before it diverges — a bowtie at the face, which is exactly
  * the junction pinch this design retired. A stem only gathers siblings headed
- * down (or up) the card's own band: a connection to another band leaves through
- * a side face and is travelling somewhere else, not fanning out here.
+ * down the card's own band: returns take a right-side route, while a connection
+ * to another band leaves through
+ * a side face and is travelling somewhere else, not fanning out here. Labelled
+ * connections take individual routes: a shared run cannot host a pill that
+ * names only one branch, and can leave that branch nowhere to put its words.
  * @param edge The relationship.
  * @param from Where the route starts.
  * @param to Where it ends.
  * @returns The trunk key, or undefined when this route cannot share a stem.
  */
 function trunkKey(edge: SemanticEdge, from: PlacedNode, to: PlacedNode): string | undefined {
-	if (from.regionIndex !== to.regionIndex) {
+	if (edge.label !== undefined || from.regionIndex !== to.regionIndex) {
 		return undefined;
 	}
 	const direction = Math.sign(to.row - from.row);
-	return direction === 0 ? undefined : `${edge.from} ${direction}`;
+	return direction <= 0 ? undefined : `${edge.from} ${direction}`;
 }
 
 /**

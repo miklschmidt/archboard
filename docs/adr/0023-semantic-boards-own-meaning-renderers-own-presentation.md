@@ -27,9 +27,18 @@ design.
 - A board can have several named views sharing its nodes. Each view selects a
   grammar and the content it explains; the frontend may switch between views or
   display them together. Views are distinct from the linked boards at other levels.
-  Views and walkthroughs belong to each variant's semantic content, inherit with
-  that content, and may differ between proposals. Narrative or view changes alone
-  do not badge architectural nodes as changed.
+  Views belong to the board: every variant exposes the same named readings,
+  grammar and scope. A variant supplies the content for a reading; selecting a
+  different variant preserves the selected view. Absent subjects yield an empty
+  or partial reading, rather than a different menu. Walkthroughs belong to each
+  variant's semantic content and may differ between proposals. Narrative or view
+  changes alone do not badge architectural nodes as changed.
+  This ownership was revised on 2026-09-13 after dogfooding showed that variant-owned
+  views changed the question during comparison. The unpublished branch deliberately
+  breaks the old board format; authored boards are repaired without a compatibility layer.
+- A board describes one diagram or architectural question. Its semantic name
+  describes that subject; repository paths belong in code bindings. Variants
+  record the diagram's evolution and appear as an ancestry tree in navigation.
 - Compare variants deterministically using stable architectural identities. Rendered
   views show added, removed, and changed content using derived labels and visual
   treatment; agents do not author those change flags. A proposal's change labels

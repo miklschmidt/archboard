@@ -1,0 +1,222 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "XppR9owz",
+	"name": "Command interface",
+	"version": 2,
+	"createdAt": "2026-09-12T22:28:19.474Z",
+	"updatedAt": "2026-09-13T00:47:03.482Z",
+	"views": [],
+	"variants": [
+		{
+			"id": "BtJAsm3o",
+			"name": "Current architecture",
+			"lifecycle": "current",
+			"summary": "Service level: modules in the short-lived CLI application, not separate deployed services.",
+			"content": {
+				"nodes": [
+					{
+						"id": "g9qcekGB",
+						"name": "System overview",
+						"kind": "external",
+						"responsibility": "Back to applications",
+						"drillDown": {
+							"board": "Archboard",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "vAQwlVuz",
+						"name": "Bootstrap",
+						"kind": "module",
+						"responsibility": "Sets configuration before imports",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-contract/bootstrap.ts"
+						}
+					},
+					{
+						"id": "iIVu1bGE",
+						"name": "Command catalogue",
+						"kind": "module",
+						"responsibility": "Declares available commands",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/run.ts"
+						}
+					},
+					{
+						"id": "PQcK5dF2",
+						"name": "Command routing",
+						"kind": "module",
+						"responsibility": "Selects and runs a command",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/index.ts"
+						},
+						"drillDown": {
+							"board": "Command dispatch",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "E2MAq7W7",
+						"name": "Contract runner",
+						"kind": "module",
+						"responsibility": "Validates input and output",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-contract/runner.ts"
+						}
+					},
+					{
+						"id": "cWbvcIYa",
+						"name": "Semantic commands",
+						"kind": "module",
+						"responsibility": "States board operations",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/semantic.ts"
+						}
+					},
+					{
+						"id": "OfRn3av3",
+						"name": "Canvas client",
+						"kind": "module",
+						"responsibility": "Sends named board requests",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-client/index.ts"
+						}
+					},
+					{
+						"id": "fOJvfmZv",
+						"name": "Runtime control",
+						"kind": "module",
+						"responsibility": "Starts and stops the server",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/commands/server.ts"
+						}
+					},
+					{
+						"id": "MUs4pwRq",
+						"name": "Canvas server",
+						"kind": "external",
+						"responsibility": "Owns reads and accepted writes",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/index.ts"
+						},
+						"drillDown": {
+							"board": "Canvas server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "SWg7BPZu",
+						"from": "vAQwlVuz",
+						"to": "iIVu1bGE",
+						"kind": "call",
+						"label": "load",
+						"emphasis": "normal"
+					},
+					{
+						"id": "WUygSWX0",
+						"from": "iIVu1bGE",
+						"to": "PQcK5dF2",
+						"kind": "call",
+						"label": "argv",
+						"emphasis": "normal"
+					},
+					{
+						"id": "jKqNz2j3",
+						"from": "PQcK5dF2",
+						"to": "E2MAq7W7",
+						"kind": "call",
+						"label": "selected contract",
+						"emphasis": "normal"
+					},
+					{
+						"id": "kcqc65Ye",
+						"from": "E2MAq7W7",
+						"to": "cWbvcIYa",
+						"kind": "call",
+						"label": "validated input",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ytXRvhS3",
+						"from": "cWbvcIYa",
+						"to": "OfRn3av3",
+						"kind": "call",
+						"label": "board operation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "pB6BrbXY",
+						"from": "OfRn3av3",
+						"to": "MUs4pwRq",
+						"kind": "http",
+						"label": "JSON",
+						"emphasis": "normal"
+					},
+					{
+						"id": "34TPgaMW",
+						"from": "E2MAq7W7",
+						"to": "fOJvfmZv",
+						"kind": "call",
+						"label": "lifecycle command",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "a4Lboza5",
+						"name": "Read this board",
+						"beats": [
+							{
+								"id": "BT60n3Ki",
+								"heading": "One catalogue defines the surface",
+								"body": "The catalogue binds command contracts to routes. Bootstrap applies configuration before importing runtime consumers.",
+								"subjects": [
+									"vAQwlVuz",
+									"iIVu1bGE"
+								]
+							},
+							{
+								"id": "iVdPEdem",
+								"heading": "Contracts bound every invocation",
+								"body": "Routing selects the operation; the runner validates its inputs, prerequisites and result.",
+								"subjects": [
+									"PQcK5dF2",
+									"E2MAq7W7"
+								]
+							},
+							{
+								"id": "Mr26GVEr",
+								"heading": "Persistence stays in the server",
+								"body": "Semantic commands send explicit board operations over HTTP. Runtime-control commands manage the server process.",
+								"subjects": [
+									"cWbvcIYa",
+									"OfRn3av3",
+									"MUs4pwRq"
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "BtJAsm3o"
+}

@@ -239,6 +239,19 @@ function versionIssues(board: SemanticBoard): IntegrityIssue[] {
 function frameIssues(board: SemanticBoard): IntegrityIssue[] {
 	const onVariants = new Set(board.variants.flatMap((variant) => subjectIds(variant.content)));
 	const issues: IntegrityIssue[] = [];
+	const reserved = new Set([
+		...onVariants,
+		board.id,
+		...board.variants.map((variant) => variant.id),
+	]);
+	for (const view of board.views) {
+		if (reserved.has(view.id)) {
+			issues.push({
+				at: `views.${view.id}.id`,
+				problem: `the view answers to "${view.id}", and so does another subject on this board`,
+			});
+		}
+	}
 	if (onVariants.has(board.id)) {
 		issues.push({
 			at: "id",

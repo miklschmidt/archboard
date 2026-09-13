@@ -20,14 +20,13 @@ import { errorMessage } from "@/shared/thrown-error/index";
 import {
 	findView,
 	resolveVariant,
-	scopedContent,
 	type DiagramGrammar,
 	type OfferedView,
 	type SemanticBoard,
 	type SemanticVariant,
 	type ToldStanding,
 	type SemanticView,
-	type VariantContent,
+	type ViewScope,
 } from "@/shared/semantic-board/index";
 import { listSemanticBoards, readSemanticBoard } from "@/runtime/semantic-board-store/index";
 import { renderSemanticView, SemanticRenderError } from "@/runtime/semantic-renderer/index";
@@ -84,7 +83,22 @@ function listRoute(_req: Request, res: Response): void {
 	try {
 		res.json({
 			success: true,
-			boards: listSemanticBoards().map((board) => ({ name: board.name, key: board.key })),
+			boards: listSemanticBoards().map((location) => {
+				const { name, key } = location;
+				const read = readSemanticBoard(name);
+				return read.ok
+					? {
+							name,
+							key,
+							variants: read.board.variants.map(({ id, name: variantName, lifecycle, parent }) => ({
+								id,
+								name: variantName,
+								lifecycle,
+								parentId: parent ?? null,
+							})),
+						}
+					: { name, key, variants: [], error: read.problem };
+			}),
 		});
 	} catch (error) {
 		res.status(500).json({ success: false, error: errorMessage(error) });
@@ -264,7 +278,7 @@ function answerRender(req: Request, res: Response, asked: string): void {
 		refuseUnknownVariant(res, stated.how.variant);
 		return;
 	}
-	const view = askedView(stated.how.view, res, variant);
+	const view = askedView(stated.how.view, res, board);
 	if (view === null) {
 		return;
 	}
@@ -311,25 +325,25 @@ function refuseUnknownVariant(res: Response, wanted: unknown): void {
  * The view a render request named, or nothing when it named none.
  * @param asked The view the request stated, or nothing when it stated none.
  * @param res Its response.
- * @param variant The variant being drawn.
+ * @param board The board whose shared views may be drawn.
  * @returns The view, undefined for the whole variant, or null once refused.
  */
 function askedView(
 	asked: string | undefined,
 	res: Response,
-	variant: SemanticVariant,
+	board: SemanticBoard,
 ): SemanticView | undefined | null {
 	if (asked === undefined) {
 		return undefined;
 	}
-	const view = findView(variant.content, asked);
+	const view = findView(board, asked);
 	if (view !== undefined) {
 		return view;
 	}
 	res.status(404).json({
 		success: false,
 		code: "UNKNOWN_VIEW",
-		error: `variant "${variant.name}" has no view called "${asked}"`,
+		error: `board "${board.name}" has no view called "${asked}"`,
 	});
 	return null;
 }
@@ -367,13 +381,13 @@ function answerDrawn(
 		view?: SemanticView;
 	},
 ): void {
-	const reading = readingOf(variant, how.view);
+	const reading = readingOf(how.view);
 	// What a change took away is half of what a reader came to see, and it lives
 	// only in the predecessor, so the picture — never the board — puts it back.
 	// A named view that selects everything is the whole variant under another
 	// name, and says so about removals too: the two readings differ in what they
 	// are called, not in what they show.
-	const proposal = drawingOf(board, variant, reading.content, showsAll(how.view));
+	const proposal = drawingOf(board, variant, reading.scope);
 	// The same reconciliation the sentences below the picture are written from.
 	// A subject nobody has decided yet is drawn with a warning on it, so a reader
 	// who is looking at the picture rather than reading the panel still knows
@@ -386,7 +400,7 @@ function answerDrawn(
 		variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 		theme: how.theme,
 		view: how.view === undefined ? null : offered(how.view),
-		views: variant.content.views.map(offered),
+		views: board.views.map(offered),
 		// Derived here, on the way out, against this variant's actual predecessor.
 		// A variant with none carries null, which is not the same as carrying an
 		// empty set of changes: one has nothing to have changed, the other changed
@@ -421,36 +435,12 @@ function answerDrawn(
 }
 
 /**
- * Whether this picture is of the whole variant: no view at all, or a view whose
- * scope is everything.
- * @param view The view being read through, or nothing for the whole variant.
- * @returns True when nothing is being left out.
+ * The shared selection and grammar used to read either side of a change.
+ * @param view The named view, or nothing for the whole architecture.
+ * @returns What the renderer is asked to explain.
  */
-function showsAll(view: SemanticView | undefined): boolean {
-	return view === undefined || view.scope.kind === "all";
-}
-
-/**
- * What is drawn, and which grammar explains it.
- *
- * The view is cut out here, before anything is drawn: a view that hides a node
- * is a narrower reading of the variant, never a variant that lost one. The
- * grammar is the view's own statement rather than a guess from what the content
- * happens to hold — a variant with one flow on it is still an architecture
- * until a view says otherwise — and a request for the whole variant is asking
- * what the parts are and how they are wired.
- * @param variant The variant.
- * @param view The view to read it through, or nothing for the whole of it.
- * @returns The content to draw and the grammar to draw it in.
- */
-function readingOf(
-	variant: SemanticVariant,
-	view: SemanticView | undefined,
-): { content: VariantContent; grammar: DiagramGrammar } {
-	if (view === undefined) {
-		return { content: variant.content, grammar: "architecture" };
-	}
-	return { content: scopedContent(variant.content, view.scope), grammar: view.grammar };
+function readingOf(view: SemanticView | undefined): { scope: ViewScope; grammar: DiagramGrammar } {
+	return view ?? { scope: { kind: "all" }, grammar: "architecture" };
 }
 
 /**

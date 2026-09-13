@@ -1,0 +1,267 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "wAHh0HTa",
+	"name": "Codex session",
+	"version": 2,
+	"createdAt": "2026-09-12T22:28:20.428Z",
+	"updatedAt": "2026-09-13T00:47:03.485Z",
+	"views": [],
+	"variants": [
+		{
+			"id": "EMoSzDA4",
+			"name": "Current architecture",
+			"lifecycle": "current",
+			"summary": "Module level: codex-session as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"content": {
+				"nodes": [
+					{
+						"id": "CeUbksta",
+						"name": "Workbench subsystem",
+						"kind": "external",
+						"responsibility": "Hosts the private Codex session",
+						"description": "The parent server subsystem supplies transport, identity authority, prepared storage, lifecycle callbacks, and checkout root.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/codex-workbench-application.ts"
+						},
+						"drillDown": {
+							"board": "Agent workbench",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "TdZj3lla",
+						"name": "Codex session",
+						"kind": "module",
+						"responsibility": "Guards the reviewed RPC contract",
+						"description": "The typed boundary around one app-server child epoch, from initialization through account, thread, queue, realtime, and reverse-request operations.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/index.ts"
+						}
+					},
+					{
+						"id": "tFTiAUKg",
+						"name": "Initialize session",
+						"kind": "function",
+						"responsibility": "Negotiate capabilities and gates",
+						"description": "Sends the authored initialize request, writes initialized, reads configuration and account state, and advances the explicit session phase.",
+						"parent": "TdZj3lla",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session.ts"
+						}
+					},
+					{
+						"id": "Ly6hUU5o",
+						"name": "Prove isolated storage",
+						"kind": "function",
+						"responsibility": "Verify prepared child paths",
+						"description": "Compares handshake storage facts with canonical, non-symlinked CODEX_HOME, SQLite, and config paths before the session becomes usable.",
+						"parent": "TdZj3lla",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/storage-proof.ts"
+						}
+					},
+					{
+						"id": "JBu1uGdl",
+						"name": "Gate protocol operations",
+						"kind": "function",
+						"responsibility": "Expose allowed reads and mutations",
+						"description": "Implements the reviewed login, thread, turn, queue, timeline, and realtime methods with login-capable and thread-capable gates.",
+						"parent": "TdZj3lla",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session-operations.ts"
+						}
+					},
+					{
+						"id": "X6j6fViI",
+						"name": "Serialize request identities",
+						"kind": "function",
+						"responsibility": "Prove IDs before wire encoding",
+						"description": "Validates every identity-bearing request field against the current child authority and serializes only issued identities for the wire.",
+						"parent": "TdZj3lla",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/request-identities.ts"
+						}
+					},
+					{
+						"id": "aRDbMlep",
+						"name": "Decode response contracts",
+						"kind": "function",
+						"responsibility": "Derive typed protocol results",
+						"description": "Defines response shapes from protocol schemas and records which identity kinds each method's result contains.",
+						"parent": "TdZj3lla",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/response-contract.ts"
+						}
+					},
+					{
+						"id": "M3mPynLe",
+						"name": "Adopt response identities",
+						"kind": "function",
+						"responsibility": "Brand returned IDs atomically",
+						"description": "Collects all raw identities in a decoded response, adopts them in one authority transaction, and overlays their trusted brands.",
+						"parent": "TdZj3lla",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/results.ts"
+						}
+					},
+					{
+						"id": "3FR6mev4",
+						"name": "Answer reverse requests",
+						"kind": "function",
+						"responsibility": "Handle child-originated calls",
+						"description": "Routes current-time requests for owned threads and explicitly refuses unsupported token refresh and attestation requests.",
+						"parent": "TdZj3lla",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/reverse-requests.ts"
+						}
+					},
+					{
+						"id": "8QpDaiD6",
+						"name": "Classify request failures",
+						"kind": "function",
+						"responsibility": "State mutation delivery outcome",
+						"description": "Distinguishes invalid inputs and failures that were not delivered from mutations whose remote outcome is unknown and requires inspection.",
+						"parent": "TdZj3lla",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session/lib/session-failures.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "wvKIZwSh",
+						"from": "CeUbksta",
+						"to": "TdZj3lla",
+						"kind": "call",
+						"label": "create for child epoch",
+						"emphasis": "normal"
+					},
+					{
+						"id": "qQrqNYdt",
+						"from": "TdZj3lla",
+						"to": "tFTiAUKg",
+						"kind": "call",
+						"label": "establish phase",
+						"emphasis": "hero"
+					},
+					{
+						"id": "3RLBrjAF",
+						"from": "tFTiAUKg",
+						"to": "Ly6hUU5o",
+						"kind": "call",
+						"label": "verify handshake paths",
+						"emphasis": "normal"
+					},
+					{
+						"id": "pDFicWqC",
+						"from": "TdZj3lla",
+						"to": "JBu1uGdl",
+						"kind": "call",
+						"label": "publish reviewed methods",
+						"emphasis": "normal"
+					},
+					{
+						"id": "SI5PTs6X",
+						"from": "JBu1uGdl",
+						"to": "X6j6fViI",
+						"kind": "call",
+						"label": "prepare parameters",
+						"emphasis": "normal"
+					},
+					{
+						"id": "VbFXAJfh",
+						"from": "X6j6fViI",
+						"to": "aRDbMlep",
+						"kind": "rpc",
+						"label": "request and decoded reply",
+						"emphasis": "hero"
+					},
+					{
+						"id": "HlhfxXJm",
+						"from": "aRDbMlep",
+						"to": "M3mPynLe",
+						"kind": "data",
+						"label": "validated payload",
+						"emphasis": "normal"
+					},
+					{
+						"id": "mpJAeANo",
+						"from": "JBu1uGdl",
+						"to": "8QpDaiD6",
+						"kind": "call",
+						"label": "settle mutation failure",
+						"emphasis": "normal"
+					},
+					{
+						"id": "2sOEOJyN",
+						"from": "TdZj3lla",
+						"to": "3FR6mev4",
+						"kind": "event",
+						"label": "route server request",
+						"emphasis": "normal"
+					},
+					{
+						"id": "6HSfPOXk",
+						"from": "3FR6mev4",
+						"to": "X6j6fViI",
+						"kind": "dependency",
+						"label": "verify current epoch",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "nHXidPNe",
+						"name": "Guard one app-server exchange",
+						"beats": [
+							{
+								"id": "6uIC2378",
+								"heading": "Establish trusted readiness",
+								"body": "Initialization negotiates the fixed capability set and storage proof confirms the child is using exactly the private paths prepared for it.",
+								"subjects": [
+									"tFTiAUKg",
+									"Ly6hUU5o"
+								]
+							},
+							{
+								"id": "EzmGJ9EP",
+								"heading": "Send only owned requests",
+								"body": "Operation gates enforce session readiness, and identity serialization refuses values that were not issued for this child epoch before encoding.",
+								"subjects": [
+									"JBu1uGdl",
+									"X6j6fViI"
+								]
+							},
+							{
+								"id": "GgnkvAie",
+								"heading": "Settle every answer",
+								"body": "Responses are schema-decoded and their identities adopted atomically; reverse calls and mutation failures retain explicit ownership and delivery outcomes.",
+								"subjects": [
+									"aRDbMlep",
+									"M3mPynLe",
+									"3FR6mev4",
+									"8QpDaiD6"
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "EMoSzDA4"
+}

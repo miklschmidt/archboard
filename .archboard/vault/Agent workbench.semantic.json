@@ -1,0 +1,308 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "9ncuT5DP",
+	"name": "Agent workbench",
+	"version": 3,
+	"createdAt": "2026-09-12T22:28:20.199Z",
+	"updatedAt": "2026-09-13T00:47:03.481Z",
+	"views": [],
+	"variants": [
+		{
+			"id": "d74jhTtj",
+			"name": "Current architecture",
+			"lifecycle": "current",
+			"summary": "Service level: workbench as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"content": {
+				"nodes": [
+					{
+						"id": "LhKhARob",
+						"name": "Archboard system",
+						"kind": "external",
+						"responsibility": "Provides the complete product",
+						"description": "Context above this service: the workbench is one logical subsystem of the Archboard canvas server.",
+						"drillDown": {
+							"board": "Archboard",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "7TAwfrZF",
+						"name": "Workbench subsystem",
+						"kind": "service",
+						"responsibility": "Owns one bound Codex workbench",
+						"description": "A logical subsystem inside the canvas server. It composes one private package-local Codex app-server session and publishes its state to browser panes.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/codex-workbench-application.ts"
+						}
+					},
+					{
+						"id": "skyIeErO",
+						"name": "Canvas composition",
+						"kind": "module",
+						"responsibility": "Installs and replaces generations",
+						"description": "Builds the production workbench module inside the canvas server and owns startup, replacement, shutdown, and shared adapters.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/codex-workbench-owner.ts"
+						}
+					},
+					{
+						"id": "u2LFaG7R",
+						"name": "Browser gateway",
+						"kind": "module",
+						"responsibility": "Publishes bounded browser state",
+						"description": "Leases browser connections, projects authoritative workbench state into bounded snapshots and deltas, and dispatches accepted browser commands.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/codex-workbench"
+						}
+					},
+					{
+						"id": "9diqPrFw",
+						"name": "Codex process",
+						"kind": "module",
+						"responsibility": "Owns child process and storage",
+						"description": "Prepares the isolated CODEX_HOME and SQLite paths, starts and stops the child process group, and reports lifecycle evidence.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-process"
+						}
+					},
+					{
+						"id": "FxzIjbIO",
+						"name": "Codex transport",
+						"kind": "module",
+						"responsibility": "Carries correlated JSON-RPC",
+						"description": "Frames stdio requests, responses, notifications, and reverse requests with child-epoch correlation and bounded pending work.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-transport"
+						}
+					},
+					{
+						"id": "jylkTBp7",
+						"name": "Codex session",
+						"kind": "module",
+						"responsibility": "Exposes the reviewed RPC surface",
+						"description": "Initializes app-server, proves storage, gates account and thread operations, validates identities, and classifies mutation delivery outcomes.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-session"
+						},
+						"drillDown": {
+							"board": "Codex session",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "byMaoUe0",
+						"name": "Thread link",
+						"kind": "module",
+						"responsibility": "Binds one pane to one workhorse",
+						"description": "Discovers, creates, refreshes, and recovers the single workhorse thread linked to a semantic pane under current child ownership.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-thread-link"
+						}
+					},
+					{
+						"id": "2ffhMTdn",
+						"name": "Workhorse queue",
+						"kind": "module",
+						"responsibility": "Orders pending user submissions",
+						"description": "Owns queued work, reorder and start behavior, and the authoritative queue projection for the bound workhorse.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-workhorse-queue"
+						}
+					},
+					{
+						"id": "Fg9dkGj3",
+						"name": "Coordinator",
+						"kind": "module",
+						"responsibility": "Runs voice coordination separately",
+						"description": "Owns the separate coordinator thread, its dynamic tools, callbacks, approvals, and semantic context without replacing the workhorse.",
+						"parent": "7TAwfrZF",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-coordinator"
+						}
+					},
+					{
+						"id": "giL6EI28",
+						"name": "Codex app-server",
+						"kind": "external",
+						"responsibility": "Executes Codex protocol operations",
+						"description": "External child process launched as `codex app-server`; it communicates only through the owned stdio transport and private storage.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/codex-process/process.ts"
+						}
+					},
+					{
+						"id": "tzyaOHwF",
+						"name": "Browser pane",
+						"kind": "external",
+						"responsibility": "Shows and controls the workbench",
+						"description": "The active semantic pane supplies one leased socket connection and consumes the projected session state.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/pane-session/workbench-socket.ts"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "4g4MoFAF",
+						"from": "LhKhARob",
+						"to": "7TAwfrZF",
+						"kind": "dependency",
+						"label": "contains",
+						"emphasis": "normal"
+					},
+					{
+						"id": "hwJPR59O",
+						"from": "skyIeErO",
+						"to": "9diqPrFw",
+						"kind": "call",
+						"label": "start generation",
+						"emphasis": "hero"
+					},
+					{
+						"id": "9GaG5ItC",
+						"from": "9diqPrFw",
+						"to": "giL6EI28",
+						"kind": "call",
+						"label": "spawn child",
+						"emphasis": "hero"
+					},
+					{
+						"id": "FZnS78FX",
+						"from": "jylkTBp7",
+						"to": "FxzIjbIO",
+						"kind": "dependency",
+						"label": "send reviewed methods",
+						"emphasis": "normal"
+					},
+					{
+						"id": "3vlSu8a3",
+						"from": "FxzIjbIO",
+						"to": "giL6EI28",
+						"kind": "rpc",
+						"label": "JSON-RPC over stdio",
+						"emphasis": "hero"
+					},
+					{
+						"id": "SRifquBt",
+						"from": "byMaoUe0",
+						"to": "jylkTBp7",
+						"kind": "call",
+						"label": "discover and bind thread",
+						"emphasis": "normal"
+					},
+					{
+						"id": "b9HU99hH",
+						"from": "2ffhMTdn",
+						"to": "jylkTBp7",
+						"kind": "call",
+						"label": "queue and start turns",
+						"emphasis": "normal"
+					},
+					{
+						"id": "XAd3chIR",
+						"from": "Fg9dkGj3",
+						"to": "jylkTBp7",
+						"kind": "call",
+						"label": "run coordinator thread",
+						"emphasis": "normal"
+					},
+					{
+						"id": "3C7aLx0q",
+						"from": "u2LFaG7R",
+						"to": "byMaoUe0",
+						"kind": "call",
+						"label": "project binding",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Qh7VZ9MQ",
+						"from": "u2LFaG7R",
+						"to": "2ffhMTdn",
+						"kind": "call",
+						"label": "dispatch queue actions",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Lo6Q7GDB",
+						"from": "tzyaOHwF",
+						"to": "u2LFaG7R",
+						"kind": "event",
+						"label": "lease, commands, snapshots",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "D8zxt3Va",
+						"name": "One bound workbench generation",
+						"beats": [
+							{
+								"id": "aDZPR2CP",
+								"heading": "Install a private generation",
+								"body": "Canvas composition prepares isolated storage and starts one external app-server child through the Codex process owner.",
+								"subjects": [
+									"skyIeErO",
+									"9diqPrFw",
+									"giL6EI28"
+								]
+							},
+							{
+								"id": "GMR5L8XU",
+								"heading": "Establish the reviewed session",
+								"body": "Transport correlates stdio messages while Codex session initializes capabilities, proves storage, and opens account and thread gates.",
+								"subjects": [
+									"FxzIjbIO",
+									"jylkTBp7",
+									"giL6EI28"
+								]
+							},
+							{
+								"id": "Li1gMmz5",
+								"heading": "Bind work and publish it",
+								"body": "Thread link, queue, and coordinator own their distinct workflows; the browser gateway turns their state into bounded messages for the leased pane.",
+								"subjects": [
+									"byMaoUe0",
+									"2ffhMTdn",
+									"Fg9dkGj3",
+									"u2LFaG7R",
+									"tzyaOHwF"
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "d74jhTtj"
+}

@@ -89,6 +89,9 @@ function idsInUse(board: SemanticBoard | null): Set<string> {
 		return taken;
 	}
 	taken.add(board.id);
+	for (const view of board.views) {
+		taken.add(view.id);
+	}
 	for (const variant of board.variants) {
 		taken.add(variant.id);
 		for (const id of subjectIds(variant.content)) {
@@ -104,13 +107,22 @@ function idsInUse(board: SemanticBoard | null): Set<string> {
  * stands, and everything this batch itself gives a name to.
  * @param before The content as it stood.
  * @param edit The batch as stated.
+ * @param board The board whose subjects a shared view can reference.
  * @returns The names.
  */
-function namesInPlay(before: VariantContent, edit: VariantEditInput): Set<string> {
+function namesInPlay(
+	before: VariantContent,
+	edit: VariantEditInput,
+	board: SemanticBoard | null,
+): Set<string> {
 	return new Set([
+		...namesOf(board?.views ?? []),
+		...namesOf(
+			board?.variants.flatMap((variant) => [...variant.content.nodes, ...variant.content.flows]) ??
+				[],
+		),
 		...namesOf(before.nodes),
 		...namesOf(before.flows),
-		...namesOf(before.views),
 		...namesOf(before.walkthroughs),
 		...namesOf(edit.nodes),
 		...namesOf(edit.flows),

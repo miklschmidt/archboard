@@ -71,4 +71,19 @@ function pillReach(route: Route): number {
 	return across / 2 + PILL_CLEARANCE;
 }
 
-export { type PillSize, crossedGap, pillReach, pillSize };
+/**
+ * Room beside a labelled run travelling along a gap, so its pill clears the
+ * next track and the cards beside that gap. Straight crossings use ports instead.
+ * @param route The planned route.
+ * @param channel The gap the run travels along.
+ * @returns Half the pill's extent across the gap, with clearance.
+ */
+function trackPillReach(route: Route, channel: Channel): number {
+	if (route.edge.label === undefined || crossedGap(route) !== undefined) {
+		return 0;
+	}
+	const size = pillSize(route.edge.label);
+	return (channel.kind === "corridor" ? size.width : size.height) / 2 + PILL_CLEARANCE;
+}
+
+export { type PillSize, crossedGap, pillReach, pillSize, trackPillReach };

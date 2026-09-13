@@ -8,9 +8,9 @@ a codebase's structure through boards that express architectural meaning.
 ### The surface
 
 **Board**:
-A named, persisted description of architecture covering one subject at one
-abstraction level. Each board owns its content independently and is the unit of
-saving, linking, comparison, and write ownership for its variants.
+A semantically named description of one architectural subject or question at one
+abstraction level. A board owns its shared views and the tree of variants recording
+how that diagram evolves.
 _Avoid_: document, drawing, diagram, whiteboard, sketch
 
 **Canvas**:
@@ -19,9 +19,9 @@ time for exploration and inspection.
 _Avoid_: scene, workspace, session, drawing area
 
 **View**:
-A named depiction of selected content from one board variant using a particular
-diagram grammar. Views share that variant's nodes rather than owning separate
-copies of them.
+A named way of reading a board, with a shared diagram grammar and scope across
+every variant. The view stays the same while the selected variant supplies the
+architectural content.
 _Avoid_: board, pane, variant
 
 **Pane**:
@@ -164,9 +164,9 @@ describing that node's internals.
 _Avoid_: zoom in, expand, descend, navigate, open
 
 **Variant**:
-One of an open set of named architectural states of the same board. A proposed
-variant has one predecessor and its views show changes relative to that predecessor's
-evolving architecture; a predecessor may have several competing successors.
+One named state in a board's evolution. Each successor has one predecessor and
+shows changes relative to it through the board's shared views; a predecessor may
+have several competing successors.
 _Avoid_: version (that is which edit the board's note is),
 revision, branch, mode, state
 
@@ -212,7 +212,7 @@ _Avoid_: file, document, markdown, page, record
 Which persisted edit of a board it is, shared by all its variants. A writer
 names the version it edited so a change based on an older board can be refused.
 _Avoid_: revision, generation, sequence, edition, variant (that is a different
-take on the board, not a later state of one)
+architectural state, rather than the board's edit counter)
 
 **Hold**:
 The state of a board the canvas has stopped saving, because its note changed

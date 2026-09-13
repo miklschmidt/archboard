@@ -95,9 +95,6 @@ function labelsById(content: VariantContent): Map<string, string> {
 			labels.set(edge.id, edge.label);
 		}
 	}
-	for (const view of content.views) {
-		labels.set(view.id, view.name);
-	}
 	toldLabels(content, labels);
 	return labels;
 }
@@ -300,18 +297,18 @@ function resolvedSelection(
 /**
  * The view the pane is reading the variant through.
  * @param pane What the pane said it was reading, or null.
- * @param content The variant's content.
+ * @param board The board that owns the shared views.
  * @returns The view, or null when the variant is read whole or the view has gone.
  */
 function readingView(
 	pane: SemanticPaneContext | null,
-	content: VariantContent,
+	board: SemanticBoard,
 ): SemanticArchitectureInput["view"] {
 	const asked = pane?.view?.id ?? null;
 	if (asked === null) {
 		return null;
 	}
-	const view = content.views.find((candidate) => candidate.id === asked);
+	const view = findView(board, asked);
 	return view === undefined ? null : { id: view.id, name: view.name, grammar: view.grammar };
 }
 
@@ -428,15 +425,17 @@ const NOTHING_READ: SemanticArchitectureInput = Object.freeze({
 
 /**
  * What a view narrows the variant to, or the whole of it.
+ * @param board The board that owns the shared views.
  * @param content The variant's content.
  * @param view The view being read, or null for the whole variant.
  * @returns What is on screen.
  */
 function scopedFor(
+	board: SemanticBoard,
 	content: VariantContent,
 	view: SemanticArchitectureInput["view"],
 ): VariantContent {
-	const found = view === null ? undefined : findView(content, view.id);
+	const found = view === null ? undefined : findView(board, view.id);
 	return found === undefined ? content : scopedContent(content, found.scope);
 }
 
@@ -550,14 +549,14 @@ function semanticBoardContext(
 	if (variant === undefined) {
 		return unresolved(board, about);
 	}
-	const view = readingView(about.report, variant.content);
+	const view = readingView(about.report, board);
 	const subjects = namedSubjects(variant.content);
 	// No report, no selection: what a person pointed at in one architecture is
 	// not a fact about another, and a context that borrowed one would have an
 	// agent talking about something nobody had picked out.
 	const picked = resolvedSelection(about.report, subjects);
 	const predecessor = predecessorOf(board, variant);
-	const shown = scopedFor(variant.content, view);
+	const shown = scopedFor(board, variant.content, view);
 	return {
 		architecture: {
 			variant: identityOf(variant, predecessor),

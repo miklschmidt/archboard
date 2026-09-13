@@ -22,8 +22,8 @@ architecture without erasing the former current state.
 
 ## Canonical data and identity
 
-One versioned JSON file owns a board's metadata, variant tree, current designation,
-and adoption records. The persisted version and writer claim cover the entire board.
+One versioned JSON file owns a board's metadata, shared views, variant tree, current
+designation, and adoption records. The persisted version and writer claim cover the entire board.
 There is no cross-board architecture database or transaction spanning levels.
 
 Compose the contract in Zod, infer its TypeScript types, and reuse compatible PR Lens
@@ -44,8 +44,13 @@ A variant owns its architectural content:
   structural parent, optional primary code binding, and optional drill-down target.
 - Edges: stable identity, endpoints, relationship meaning, and explanatory content.
 - Flows: participants and explicitly ordered steps referring to those nodes.
-- Views: identity, name, grammar, selected content, and presentation intent.
 - An optional walkthrough: ordered explanations, target views, and focused subjects.
+
+The board owns views: identity, name, grammar, selected content, and presentation
+intent. Every variant supplies content to the same views; absent subjects produce
+an empty or partial reading. Views are outside variant inheritance and comparison.
+This replaces the initial variant-owned view contract (2026-09-13); the unpublished
+board format breaks deliberately, with authored boards repaired in place.
 
 Containment is acyclic and has at most one parent per node. It is distinct from a
 board's abstraction level: system and service internals remain separate linked boards.

@@ -28,7 +28,7 @@ import {
 	ResponsibilitySchema,
 	SemanticIdSchema,
 } from "@/shared/semantic-board/lib/primitives";
-import { SemanticFlowSchema, SemanticViewSchema } from "@/shared/semantic-board/lib/views";
+import { SemanticFlowSchema } from "@/shared/semantic-board/lib/views";
 import { SemanticWalkthroughSchema } from "@/shared/semantic-board/lib/walkthrough";
 import {
 	EdgeEmphasisSchema,
@@ -128,7 +128,6 @@ const VariantContentSchema = z
 		nodes: z.array(SemanticNodeSchema).default([]),
 		edges: z.array(SemanticEdgeSchema).default([]),
 		flows: z.array(SemanticFlowSchema).default([]),
-		views: z.array(SemanticViewSchema).default([]),
 		walkthroughs: z.array(SemanticWalkthroughSchema).default([]),
 	})
 	.strict();
@@ -139,7 +138,7 @@ type VariantContent = z.infer<typeof VariantContentSchema>;
  * @returns A fresh empty content value.
  */
 function emptyContent(): VariantContent {
-	return { nodes: [], edges: [], flows: [], views: [], walkthroughs: [] };
+	return { nodes: [], edges: [], flows: [], walkthroughs: [] };
 }
 
 /**
@@ -191,9 +190,6 @@ function* subjectsOf(content: VariantContent): Generator<VariantSubject> {
 		yield { id: edge.id, kind: "edge" };
 	}
 	yield* flowSubjects(content.flows);
-	for (const view of content.views) {
-		yield { id: view.id, kind: "view" };
-	}
 	yield* walkthroughSubjects(content.walkthroughs);
 }
 

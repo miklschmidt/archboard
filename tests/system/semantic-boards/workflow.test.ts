@@ -254,7 +254,7 @@ describe("authoring and opening a semantic board", () => {
 
 		const stored = JSON.parse(cli(["semantic", "show", "pipeline"]).stdout).board;
 		const flow = stored.variants[0].content.flows[0];
-		const view = stored.variants[0].content.views[0];
+		const view = stored.views[0];
 
 		const whole = await (
 			await fetch(`${canvas.base}/api/semantic-boards/render?board=pipeline`)
@@ -404,9 +404,7 @@ describe("authoring and opening a semantic board", () => {
 	}, 20_000);
 
 	test("a view of everything says what the whole variant says, removals and all", async () => {
-		// Its own board, because the difference only shows for a removal that hangs
-		// off nothing: a narrower reading has nowhere to say a deleted root was,
-		// and a view that leaves nothing out is not a narrower reading.
+		// Whole and selected views both retain the deleted subjects they select.
 		const made = cli(
 			["semantic", "new", "two-roots", "--doing", "starting a board with two roots"],
 			JSON.stringify({
@@ -414,11 +412,19 @@ describe("authoring and opening a semantic board", () => {
 					{ name: "Intake", kind: "service" },
 					{ name: "Reporting", kind: "service" },
 				],
+				views: [
+					{ name: "All of it", grammar: "architecture", scope: { kind: "all" } },
+					{
+						name: "Reporting only",
+						grammar: "architecture",
+						scope: { kind: "selection", nodes: ["Reporting"] },
+					},
+				],
 			}),
 		);
 		expect(made.status, made.stderr).toBe(0);
 
-		const start = JSON.parse(cli(["semantic", "show", "two-roots"]).stdout).board;
+		const start = JSON.parse(made.stdout).board;
 		const branched = cli([
 			"semantic",
 			"branch",
@@ -432,7 +438,7 @@ describe("authoring and opening a semantic board", () => {
 		]);
 		expect(branched.status, branched.stderr).toBe(0);
 
-		const branchedBoard = JSON.parse(cli(["semantic", "show", "two-roots"]).stdout).board;
+		const branchedBoard = JSON.parse(branched.stdout).board;
 		const proposal = branchedBoard.variants.find(
 			(one: { name: string }) => one.name === "Without reporting",
 		);
@@ -447,34 +453,24 @@ describe("authoring and opening a semantic board", () => {
 				"--expect-version",
 				String(branchedBoard.version),
 				"--doing",
-				"taking reporting out and naming a view of everything",
+				"taking reporting out",
 			],
 			JSON.stringify({
 				variant: "Without reporting",
 				removeNodes: [doomed.id],
-				views: [{ name: "All of it", grammar: "architecture", scope: { kind: "all" } }],
 			}),
 		);
 		expect(edited.status, edited.stderr).toBe(0);
 
-		const stored = JSON.parse(cli(["semantic", "show", "two-roots"]).stdout).board;
-		const proposed = stored.variants.find(
-			(one: { name: string }) => one.name === "Without reporting",
-		);
-		const everything = proposed.content.views.find(
-			(view: { name: string }) => view.name === "All of it",
-		);
+		const stored = JSON.parse(edited.stdout).board;
+		const everything = stored.views.find((view: { name: string }) => view.name === "All of it");
+		const reporting = stored.views.find((view: { name: string }) => view.name === "Reporting only");
 
-		const whole = await (
-			await fetch(
-				`${canvas.base}/api/semantic-boards/render?board=two-roots&variant=${proposed.id}`,
-			)
-		).json();
-		const named = await (
-			await fetch(
-				`${canvas.base}/api/semantic-boards/render?board=two-roots&variant=${proposed.id}&view=${everything.id}`,
-			)
-		).json();
+		const endpoint = `${canvas.base}/api/semantic-boards/render?board=two-roots&variant=${proposal.id}`;
+		const draw = async (view = "") => (await fetch(`${endpoint}${view}`)).json();
+		const whole = await draw();
+		const named = await draw(`&view=${everything.id}`);
+		const selected = await draw(`&view=${reporting.id}`);
 
 		expect(whole.changes.standing[doomed.id]).toBe("removed");
 		// The same reading under another name: same subjects, same standing.
@@ -485,6 +481,15 @@ describe("authoring and opening a semantic board", () => {
 		// the proposal.
 		expect(named.atlas.nodes[doomed.id]).toBeDefined();
 		expect(named.svg).toContain('data-semantic-standing="removed"');
+		// A selected deletion stays visible even when the proposal has none of it.
+		expect(selected.changes.standing).toEqual({ [doomed.id]: "removed" });
+		expect(selected.atlas.nodes[doomed.id]).toBeDefined();
+		expect(selected.view).toEqual({
+			id: reporting.id,
+			name: "Reporting only",
+			grammar: "architecture",
+		});
+		expect(selected.views).toEqual(named.views);
 	}, 30_000);
 
 	test("no Excalidraw note was created for a semantic board", () => {

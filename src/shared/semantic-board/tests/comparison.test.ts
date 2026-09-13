@@ -88,17 +88,6 @@ describe("what is not a change to the architecture", () => {
 		const comparison = compareVariants(BASELINE, after);
 		expect(comparison.edges.get("w1")?.kind).toBe("unchanged");
 	});
-
-	test("a new way of reading the board changes nothing on it", () => {
-		const after = content({
-			nodes: [GATEWAY, ORDERS],
-			edges: [WIRE],
-			views: [{ id: "v1", name: "The parts", grammar: "architecture" }],
-		});
-		const comparison = compareVariants(BASELINE, after);
-		expect([...comparison.nodes.values()].every((one) => one.kind === "unchanged")).toBe(true);
-		expect(comparison.edges.get("w1")?.kind).toBe("unchanged");
-	});
 });
 
 describe("flows and their steps", () => {
@@ -153,7 +142,7 @@ describe("what a proposal takes away", () => {
 		expect(after.nodes.map((node) => node.id)).toEqual(["gw"]);
 
 		// The depiction puts the removed subjects back, from the baseline alone.
-		const drawn = withRemoved(after, comparison);
+		const drawn = withRemoved(BASELINE, after, comparison);
 		expect(drawn.nodes.map((node) => node.id).toSorted()).toEqual(["gw", "or"]);
 		expect(drawn.edges.map((edge) => edge.id)).toEqual(["w1"]);
 		expect(standingOf(comparison, "or")).toBe("removed");
@@ -251,17 +240,49 @@ describe("an ordered exchange", () => {
 		});
 		const comparison = compareVariants(TOLD, after);
 		expect(comparison.steps.get("s1")?.kind).toBe("removed");
-		const drawn = withRemoved(after, comparison);
+		const drawn = withRemoved(TOLD, after, comparison);
 		expect(drawn.flows[0]?.steps.map((step) => step.id)).toEqual(["s1", "s2"]);
 		// And the proposal itself still says only what it proposes.
 		expect(after.flows[0]?.steps.map((step) => step.id)).toEqual(["s2"]);
+	});
+
+	test("deleted runs stay before their next surviving baseline step through additions and reordering", () => {
+		const told = (ids: string[]) =>
+			content({
+				nodes: [GATEWAY, ORDERS],
+				edges: [],
+				flows: [{ ...FLOW, steps: ids.map((id) => ({ id, from: "gw", to: "or", label: id })) }],
+			});
+		const before = told(["call", "fitcall", "fitreply", "reply", "route", "paint", "atlas"]);
+		const after = told(["derive", "paint", "call", "measure", "reply", "newtail"]);
+		const drawn = withRemoved(before, after, compareVariants(before, after));
+		expect(drawn.flows[0]?.steps.map((step) => step.id)).toEqual([
+			"derive",
+			"route",
+			"paint",
+			"call",
+			"measure",
+			"fitcall",
+			"fitreply",
+			"reply",
+			"newtail",
+			"atlas",
+		]);
+		expect(after.flows[0]?.steps.map((step) => step.id)).toEqual([
+			"derive",
+			"paint",
+			"call",
+			"measure",
+			"reply",
+			"newtail",
+		]);
 	});
 
 	test("a whole conversation a proposal dropped is drawn back, steps and all", () => {
 		const after = content({ nodes: [GATEWAY, ORDERS], edges: [WIRE] });
 		const comparison = compareVariants(TOLD, after);
 		expect(comparison.flows.get("f1")?.kind).toBe("removed");
-		const drawn = withRemoved(after, comparison);
+		const drawn = withRemoved(TOLD, after, comparison);
 		expect(drawn.flows.map((flow) => flow.id)).toEqual(["f1"]);
 		// Restored once, with its flow, rather than a second time on its own.
 		expect(drawn.flows[0]?.steps.map((step) => step.id)).toEqual(["s1", "s2"]);

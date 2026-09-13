@@ -1,0 +1,301 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "yejBBUFY",
+	"name": "Browser application",
+	"version": 3,
+	"createdAt": "2026-09-12T22:28:20.067Z",
+	"updatedAt": "2026-09-13T00:47:03.481Z",
+	"views": [],
+	"variants": [
+		{
+			"id": "IVTpHq7O",
+			"name": "Current architecture",
+			"lifecycle": "current",
+			"summary": "Service level: browser as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"content": {
+				"nodes": [
+					{
+						"id": "mK7WVIy5",
+						"name": "Archboard system",
+						"kind": "external",
+						"responsibility": "Provides the complete product",
+						"description": "Context above this service: the canvas server, CLI, board files, browser, and Codex workbench together form Archboard.",
+						"drillDown": {
+							"board": "Archboard",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "yAFyqal3",
+						"name": "Browser client",
+						"kind": "service",
+						"responsibility": "Presents boards without writing them",
+						"description": "The desktop-only read client. It owns presentation state and sends commands, while board meaning and drawing remain server-owned.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/index.tsx"
+						}
+					},
+					{
+						"id": "HggZR41l",
+						"name": "Application composition",
+						"kind": "module",
+						"responsibility": "Connects pane and feature owners",
+						"description": "Composes shell, pane sessions, semantic viewer, workbench, routing, notices, settings, and voice around shared browser state.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application"
+						}
+					},
+					{
+						"id": "dtYjWvlf",
+						"name": "Semantic viewer",
+						"kind": "module",
+						"responsibility": "Reads and explores rendered boards",
+						"description": "Fetches server-rendered semantic boards and owns only camera, selection, view, variant, walkthrough, and drill-down presentation.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas"
+						},
+						"drillDown": {
+							"board": "Board viewer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "xsn0RvSi",
+						"name": "Pane session",
+						"kind": "module",
+						"responsibility": "Keeps each pane in server contact",
+						"description": "Owns pane registration, socket generations, current semantic reading reports, and the workbench transport carried by the pane socket.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/pane-session"
+						}
+					},
+					{
+						"id": "HCghQa6I",
+						"name": "Workspace routing",
+						"kind": "module",
+						"responsibility": "Restores pane display intent",
+						"description": "Maps pane board keys and active pane to URL state, preflights navigation, and applies browser history without becoming board authority.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-routing"
+						}
+					},
+					{
+						"id": "zWQG6LJZ",
+						"name": "Board catalog",
+						"kind": "module",
+						"responsibility": "Lists boards available to open",
+						"description": "Owns the cached server listing and provider used by navigation surfaces to find persisted semantic boards.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/board-catalog"
+						}
+					},
+					{
+						"id": "0x47EMoO",
+						"name": "Workbench client",
+						"kind": "module",
+						"responsibility": "Projects the bound agent session",
+						"description": "Renders the focused pane's Codex session from server snapshots and deltas and sends user actions through the pane transport.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/workbench"
+						},
+						"drillDown": {
+							"board": "Agent workbench",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "0SRnYXnC",
+						"name": "Voice session",
+						"kind": "module",
+						"responsibility": "Runs spoken presentation control",
+						"description": "Coordinates realtime voice, narration, approval speech, media level, and semantic context supplied by the active pane.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/voice-session"
+						}
+					},
+					{
+						"id": "4LDuKQvq",
+						"name": "Code target",
+						"kind": "module",
+						"responsibility": "Activates bound source locations",
+						"description": "Turns a selected semantic node's persisted repo and path binding into an opener request through the host shell.",
+						"parent": "yAFyqal3",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/code-target"
+						}
+					},
+					{
+						"id": "G4NHQC25",
+						"name": "Canvas server",
+						"kind": "external",
+						"responsibility": "Serves pictures and live session state",
+						"description": "Authoritative server peer reached through HTTP reads, pane WebSockets, workbench messages, and code-opening requests.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server.ts"
+						},
+						"drillDown": {
+							"board": "Canvas server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "am5lUy4O",
+						"from": "mK7WVIy5",
+						"to": "yAFyqal3",
+						"kind": "dependency",
+						"label": "contains",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4dl0EE8i",
+						"from": "HggZR41l",
+						"to": "dtYjWvlf",
+						"kind": "render",
+						"label": "mounts panes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "x9gy2EYu",
+						"from": "HggZR41l",
+						"to": "xsn0RvSi",
+						"kind": "call",
+						"label": "owns pane lifecycle",
+						"emphasis": "normal"
+					},
+					{
+						"id": "zfz9dQDf",
+						"from": "HCghQa6I",
+						"to": "xsn0RvSi",
+						"kind": "call",
+						"label": "opens board keys",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4iVsoxG0",
+						"from": "zWQG6LJZ",
+						"to": "G4NHQC25",
+						"kind": "http",
+						"label": "fetch board list",
+						"emphasis": "normal"
+					},
+					{
+						"id": "pqG9kqlF",
+						"from": "dtYjWvlf",
+						"to": "G4NHQC25",
+						"kind": "http",
+						"label": "fetch board and SVG",
+						"emphasis": "hero"
+					},
+					{
+						"id": "PuILGsjg",
+						"from": "xsn0RvSi",
+						"to": "G4NHQC25",
+						"kind": "event",
+						"label": "report reading and receive news",
+						"emphasis": "hero"
+					},
+					{
+						"id": "Z6caFkg7",
+						"from": "0x47EMoO",
+						"to": "xsn0RvSi",
+						"kind": "dependency",
+						"label": "rides current socket",
+						"emphasis": "normal"
+					},
+					{
+						"id": "YZqZjfIj",
+						"from": "0SRnYXnC",
+						"to": "0x47EMoO",
+						"kind": "call",
+						"label": "steer session",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Cw08FQeQ",
+						"from": "dtYjWvlf",
+						"to": "4LDuKQvq",
+						"kind": "call",
+						"label": "open binding",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ygbcyDVT",
+						"from": "4LDuKQvq",
+						"to": "G4NHQC25",
+						"kind": "http",
+						"label": "request activation",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "WJBL4I5O",
+						"name": "Reading a board in the browser",
+						"beats": [
+							{
+								"id": "Xd4nFMUy",
+								"heading": "Restore the workspace",
+								"body": "Routing supplies opaque board keys; application composition asks pane sessions to open them and keeps the active pane visible.",
+								"subjects": [
+									"HCghQa6I",
+									"HggZR41l",
+									"xsn0RvSi"
+								]
+							},
+							{
+								"id": "tHpt14lf",
+								"heading": "Read the server's drawing",
+								"body": "The semantic viewer fetches the board document and rendered SVG, then owns camera, selection, views, variants, walkthroughs, and local drill-down only.",
+								"subjects": [
+									"dtYjWvlf",
+									"G4NHQC25"
+								]
+							},
+							{
+								"id": "y2YVfOOs",
+								"heading": "Carry the active context",
+								"body": "The pane socket reports what is actually on screen and carries the bound workbench; voice and code opening act through their narrow browser owners.",
+								"subjects": [
+									"xsn0RvSi",
+									"0x47EMoO",
+									"0SRnYXnC",
+									"4LDuKQvq"
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "IVTpHq7O"
+}
