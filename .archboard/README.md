@@ -69,9 +69,10 @@ The renderer's `Readable layout` proposal links to `Renderer layout` for call
 sequences. Keep **Render sequence** selected while switching between `Initial`
 and `Readable layout` to compare the implemented and proposed paths. **Pretext
 sizing** and **Layout sequence** show proposed details and are empty in `Initial`.
-Pretext is a proposed dependency:
-server font measurement integration and the compound layout engine remain to
-be validated, rather than being described as implemented.
+The renderer implements this proposal with Pretext and ELK;
+see [the implementation contract](../docs/design/measured-compound-renderer.md).
+The board retains `Initial` and the proposal as two readings of the change;
+running the new engine does not automatically adopt a proposal.
 
 ## Maintain the architecture
 

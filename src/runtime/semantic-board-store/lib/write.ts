@@ -49,6 +49,7 @@ import {
 import { refuse, type SemanticRefusalCode } from "@/runtime/semantic-board-store/lib/outcome";
 import type { SemanticTransition } from "@/runtime/semantic-board-store/lib/transitions";
 import type { DescendantOutcome } from "@/runtime/semantic-board-store/lib/propagate";
+import { edgeIdentityRefusal } from "@/runtime/semantic-board-store/lib/edge-identity";
 
 /**
  * Who is writing.
@@ -400,7 +401,11 @@ function acceptable(
 		};
 	}
 	const wrongAddress = misaddressedRefusal(location, parsed.board);
-	return wrongAddress === null ? { board: parsed.board } : wrongAddress;
+	if (wrongAddress !== null) return wrongAddress;
+	const identity = edgeIdentityRefusal(parsed.board);
+	return identity === null
+		? { board: parsed.board }
+		: { outcome: "rejected", code: identity.code, problem: identity.problem, location };
 }
 
 /**

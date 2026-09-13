@@ -3,9 +3,9 @@
 	"kind": "semantic-board",
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
-	"version": 5,
+	"version": 6,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-09-13T00:47:03.483Z",
+	"updatedAt": "2026-09-13T11:07:15.433Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",
@@ -65,7 +65,8 @@
 					"BJAmGg5k",
 					"8c58qiNK",
 					"SIdU2g2Q",
-					"qDiEFiIT"
+					"qDiEFiIT",
+					"6zcjVgzh"
 				],
 				"flows": []
 			}
@@ -587,14 +588,6 @@
 						"emphasis": "normal"
 					},
 					{
-						"id": "SIdU2g2Q",
-						"from": "Y0smyqtZ",
-						"to": "J7mPrUeP",
-						"kind": "data",
-						"label": "complete placed drawing",
-						"emphasis": "hero"
-					},
-					{
 						"id": "eKqUHYSH",
 						"from": "wLF1X11D",
 						"to": "J7mPrUeP",
@@ -649,6 +642,14 @@
 						"kind": "call",
 						"label": "prepare and wrap text",
 						"emphasis": "normal"
+					},
+					{
+						"id": "6zcjVgzh",
+						"from": "Y0smyqtZ",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "complete placed drawing",
+						"emphasis": "hero"
 					}
 				],
 				"flows": [

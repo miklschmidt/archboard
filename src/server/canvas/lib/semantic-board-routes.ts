@@ -29,9 +29,13 @@ import {
 	type ViewScope,
 } from "@/shared/semantic-board/index";
 import { listSemanticBoards, readSemanticBoard } from "@/runtime/semantic-board-store/index";
-import { renderSemanticView, SemanticRenderError } from "@/runtime/semantic-renderer/index";
+import {
+	renderSemanticView,
+	SemanticRenderError,
+	type DiagramRenderRequest,
+} from "@/runtime/semantic-renderer/index";
 import { asyncEndpoint } from "@/server/canvas/lib/mutation-work";
-import { drawingOf } from "@/server/canvas/lib/semantic-board-changes";
+import { drawingOf, predecessorDrawingsOf } from "@/server/canvas/lib/semantic-board-changes";
 import {
 	adoptRoute,
 	branchRoute,
@@ -143,11 +147,9 @@ function renderRoute(req: Request, res: Response): void {
 		refuseUnnamedBoard(res);
 		return;
 	}
-	try {
-		answerRender(req, res, asked);
-	} catch (error) {
+	void answerRender(req, res, asked).catch((error: unknown) => {
 		res.status(400).json({ success: false, error: errorMessage(error) });
-	}
+	});
 }
 
 /**
@@ -263,7 +265,7 @@ function chosen(
  * @param res Its response.
  * @param asked The board name.
  */
-function answerRender(req: Request, res: Response, asked: string): void {
+async function answerRender(req: Request, res: Response, asked: string): Promise<void> {
 	const stated = statedRender(req);
 	if (!stated.ok) {
 		res.status(400).json({ success: false, code: "BAD_REQUEST", error: stated.why });
@@ -282,7 +284,7 @@ function answerRender(req: Request, res: Response, asked: string): void {
 	if (view === null) {
 		return;
 	}
-	answerDrawn(res, board, variant, {
+	await answerDrawn(res, board, variant, {
 		theme: stated.how.theme,
 		fonts: stated.how.fonts,
 		...(view === undefined ? {} : { view }),
@@ -371,7 +373,7 @@ function offered(view: SemanticView): OfferedView {
  * @param how.fonts Where the drawn faces come from.
  * @param how.view The view to draw, or nothing for the whole variant.
  */
-function answerDrawn(
+async function answerDrawn(
 	res: Response,
 	board: SemanticBoard,
 	variant: SemanticVariant,
@@ -380,7 +382,7 @@ function answerDrawn(
 		fonts: "linked" | "embedded";
 		view?: SemanticView;
 	},
-): void {
+): Promise<void> {
 	const reading = readingOf(how.view);
 	// What a change took away is half of what a reader came to see, and it lives
 	// only in the predecessor, so the picture — never the board — puts it back.
@@ -411,19 +413,21 @@ function answerDrawn(
 		waiting,
 	};
 	try {
+		const picture = await renderSemanticView({
+			content: proposal.content,
+			grammar: reading.grammar,
+			theme: how.theme,
+			fonts: how.fonts,
+			...predecessorsFor(board, variant, reading),
+			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
+			...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
+		});
 		res.json({
 			...identity,
 			// The picture is drawn from the proposal's content with what the change
 			// took away put back, and the renderer is told how each subject stands
 			// so a restored one reads as absent rather than as part of the proposal.
-			...renderSemanticView({
-				content: proposal.content,
-				grammar: reading.grammar,
-				theme: how.theme,
-				fonts: how.fonts,
-				...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
-				...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
-			}),
+			...picture,
 		});
 	} catch (error) {
 		if (error instanceof SemanticRenderError) {
@@ -432,6 +436,26 @@ function answerDrawn(
 		}
 		throw error;
 	}
+}
+
+/**
+ * Same-view history for architecture placement, omitted when the renderer will
+ * draw a sequence and has no use for architecture coordinates.
+ * @param board The board holding the variant family.
+ * @param variant The variant being drawn.
+ * @param reading The requested grammar and shared scope.
+ * @param reading.scope The selection applied to every ancestor.
+ * @param reading.grammar The grammar deciding whether lineage is relevant.
+ * @returns The architecture lineage field, or no field for data flow.
+ */
+function predecessorsFor(
+	board: SemanticBoard,
+	variant: SemanticVariant,
+	reading: { scope: ViewScope; grammar: DiagramGrammar },
+): Pick<DiagramRenderRequest, "predecessors"> {
+	return reading.grammar === "architecture"
+		? { predecessors: predecessorDrawingsOf(board, variant, reading.scope) }
+		: {};
 }
 
 /**

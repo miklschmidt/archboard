@@ -89,8 +89,10 @@ Before editing, map the intended changes to the subjects you read:
 - **Untouched:** leave its definition alone. Rewording every responsibility makes
   every card appear changed and hides the actual architectural delta.
 
-For connections, count changed authored properties against the predecessor,
-excluding the ID:
+For connections, count changed authored properties against the direct predecessor:
+`from`, `to`, `kind`, `label`, `description` and `emphasis`. The CLI enforces this
+after resolving node references and defaults, including changes spread across
+separate edits:
 
 - **One change:** the connection can retain its ID. A label clarification between
   the same nodes, or the same labelled connection targeting a new node, can be a

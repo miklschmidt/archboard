@@ -347,6 +347,7 @@ interface HeldProps extends MountOptions {
 function Held(props: HeldProps): JSX.Element {
 	const [picked, setPicked] = useState<string | null>(props.selection);
 	const [variant, setVariant] = useState<string | undefined>(props.variant);
+	const [view, setView] = useState<string | undefined>(props.view);
 	/**
 	 * Take the pane's pick and feed it back to the pane.
 	 * @param id The semantic id, or null.
@@ -362,12 +363,21 @@ function Held(props: HeldProps): JSX.Element {
 	function onVariantChange(chosen: string | null): void {
 		setVariant(chosen ?? undefined);
 	}
+	/**
+	 * Read the chosen view, as the shell does.
+	 * @param chosen The view, or null for Everything.
+	 */
+	function onViewChange(chosen: string | null): void {
+		setView(chosen ?? undefined);
+	}
 	return createElement(SemanticBoardStage, {
 		board: "pipeline",
 		theme: "light",
 		...paneReading(props),
 		variant,
 		onVariantChange,
+		view,
+		onViewChange,
 		selection: picked,
 		onSelect,
 	});

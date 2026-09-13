@@ -87,8 +87,8 @@ const TWO_FLOWS = variant({
  * @param grammar Which grammar to draw it in.
  * @returns The markup.
  */
-function drawn(grammar: "architecture" | "data-flow"): string {
-	return renderSemanticView({ content: SAMPLE, grammar, theme: "light" }).svg;
+async function drawn(grammar: "architecture" | "data-flow"): Promise<string> {
+	return (await renderSemanticView({ content: SAMPLE, grammar, theme: "light" })).svg;
 }
 
 /**
@@ -141,8 +141,8 @@ function pulsesOn(svg: string, id: string): number {
 }
 
 describe("an architecture says which relationships carry traffic", () => {
-	test("a relationship something travels along moves, and one that is a fact does not", () => {
-		const svg = drawn("architecture");
+	test("a relationship something travels along moves, and one that is a fact does not", async () => {
+		const svg = await drawn("architecture");
 		expect(MOTION.test(svg)).toBe(true);
 		// A call carries something from one part to another; a dependency is true
 		// whether or not anything is happening, so nothing travels along it.
@@ -153,26 +153,26 @@ describe("an architecture says which relationships carry traffic", () => {
 		expect(pulsesOn(svg, "quiet")).toBe(0);
 	});
 
-	test("a hero relationship carries a train, which is how it reads as busier", () => {
-		const svg = drawn("architecture");
+	test("a hero relationship carries a train, which is how it reads as busier", async () => {
+		const svg = await drawn("architecture");
 		// Three dots rather than one faster one: a count reads as volume where
 		// speed would read as urgency.
 		expect(pulsesOn(svg, "hero")).toBe(3);
 		expect(pulsesOn(svg, "hero")).toBeGreaterThan(pulsesOn(svg, "plain"));
 	});
 
-	test("nothing about the motion is authored on the board", () => {
+	test("nothing about the motion is authored on the board", async () => {
 		// The same content parsed by its own contract, with no motion field of any
 		// kind on a relationship — if one were needed, this would not compile and
 		// an agent would be deciding how its architecture looks.
 		expect(Object.keys(SAMPLE.edges[0] ?? {})).not.toContain("animated");
-		expect(MOTION.test(drawn("architecture"))).toBe(true);
+		expect(MOTION.test(await drawn("architecture"))).toBe(true);
 	});
 });
 
 describe("an exchange is told on one clock", () => {
-	test("every message takes a turn, and a repeated one takes its repeat", () => {
-		const svg = drawn("data-flow");
+	test("every message takes a turn, and a repeated one takes its repeat", async () => {
+		const svg = await drawn("data-flow");
 		expect(MOTION.test(svg)).toBe(true);
 		expect(pulsesOn(svg, "asks")).toBe(1);
 		expect(pulsesOn(svg, "answers")).toBe(1);
@@ -181,8 +181,8 @@ describe("an exchange is told on one clock", () => {
 		expect(pulsesOn(svg, "again")).toBe(2);
 	});
 
-	test("the turns share one cycle and do not overlap", () => {
-		const svg = drawn("data-flow");
+	test("the turns share one cycle and do not overlap", async () => {
+		const svg = await drawn("data-flow");
 		// Four turns across three messages, so every dot's clock is the same
 		// length and each takes a quarter of it.
 		const cycles = cyclesIn(svg);
@@ -196,15 +196,17 @@ describe("an exchange is told on one clock", () => {
 		]);
 	});
 
-	test("a page of exchanges shares one clock, and they take their turns in order", () => {
+	test("a page of exchanges shares one clock, and they take their turns in order", async () => {
 		// Two flows on one page. A clock each would have both crossing at once and
 		// both starting over at 0, which is the drawing saying two unrelated things
 		// are the same thing happening twice.
-		const svg = renderSemanticView({
-			content: TWO_FLOWS,
-			grammar: "data-flow",
-			theme: "light",
-		}).svg;
+		const svg = (
+			await renderSemanticView({
+				content: TWO_FLOWS,
+				grammar: "data-flow",
+				theme: "light",
+			})
+		).svg;
 		const cycles = cyclesIn(svg);
 		expect(cycles.length).toBe(5);
 		expect(new Set(cycles).size).toBe(1);
@@ -221,10 +223,10 @@ describe("an exchange is told on one clock", () => {
 });
 
 describe("a reader who asked for less motion gets none", () => {
-	test("a file opened with no viewer around honours the preference itself", () => {
+	test("a file opened with no viewer around honours the preference itself", async () => {
 		// CSS cannot stop a SMIL animation, so the rule hides what it moves.
 		for (const grammar of ["architecture", "data-flow"] as const) {
-			expect(drawn(grammar)).toContain(
+			expect(await drawn(grammar)).toContain(
 				"@media(prefers-reduced-motion:reduce){.ab-pulse{display:none}}",
 			);
 		}
@@ -232,9 +234,9 @@ describe("a reader who asked for less motion gets none", () => {
 });
 
 describe("motion costs the picture nothing else", () => {
-	test("the dots are not in the way of a click, and are not subjects", () => {
+	test("the dots are not in the way of a click, and are not subjects", async () => {
 		for (const grammar of ["architecture", "data-flow"] as const) {
-			const svg = drawn(grammar);
+			const svg = await drawn(grammar);
 			const dots = dotsIn(svg);
 			expect(dots).toBeGreaterThan(0);
 			// One `pointer-events="none"` per dot: a pane hit-tests subjects, and a
@@ -246,9 +248,9 @@ describe("motion costs the picture nothing else", () => {
 		}
 	});
 
-	test("the same content draws the same bytes twice", () => {
+	test("the same content draws the same bytes twice", async () => {
 		for (const grammar of ["architecture", "data-flow"] as const) {
-			expect(drawn(grammar)).toBe(drawn(grammar));
+			expect(await drawn(grammar)).toBe(await drawn(grammar));
 		}
 	});
 });

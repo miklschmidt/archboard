@@ -25,17 +25,8 @@ import {
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { SemanticInspector } from "@/ui/semantic-board-canvas/components/SemanticInspector";
 import { STAGE_CLASS } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
-import { useAutoFit } from "@/ui/semantic-board-canvas/hooks/use-auto-fit";
-import {
-	useBoardCamera,
-	type BoardCamera,
-} from "@/ui/semantic-board-canvas/hooks/use-board-camera";
-import {
-	PAN_STEP,
-	cameraTransform,
-	type FitTarget,
-	type Size,
-} from "@/ui/semantic-board-canvas/lib/camera";
+import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
+import { PAN_STEP, cameraTransform, type Size } from "@/ui/semantic-board-canvas/lib/camera";
 import { NO_FOCUS, subjectMarks, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import { markSubjects, subjectAt } from "@/ui/semantic-board-canvas/lib/subjects";
 
@@ -174,6 +165,8 @@ function surfaceClass(panning: boolean, reducedMotion: boolean): string {
 
 /** Inputs for a drawn board. */
 interface SemanticDiagramProps {
+	/** The stage owns the camera across picture requests. */
+	readonly camera: BoardCamera;
 	/** The picture and the atlas, as the server drew them. */
 	drawing: SemanticDrawing;
 	/** The selected semantic id, or null for none. */
@@ -221,12 +214,11 @@ interface SemanticDiagramProps {
  * @returns The stage.
  */
 function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
-	const { drawing, selection, onSelect, reducedMotion } = props;
+	const { drawing, selection, onSelect, reducedMotion, camera } = props;
 	const content = useMemo(
 		() => ({ width: drawing.width, height: drawing.height }),
 		[drawing.width, drawing.height],
 	);
-	const camera = useBoardCamera();
 	const { attachViewport } = camera;
 	const view = camera.camera;
 	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
@@ -240,17 +232,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// synthesised click is told from a real one.
 	const pressed = useRef<{ readonly subject: string | null } | null>(null);
 	const focus = props.focus ?? NO_FOCUS;
-	// What the pane is meant to be showing: the whole picture, or the region the
-	// beat being read is about. A beat that asks for nothing in particular, and
-	// a pane nobody is reading a walkthrough in, are the same thing here.
-	const target = useMemo<FitTarget>(
-		() => focus.target ?? { kind: "whole", content },
-		[focus.target, content],
-	);
-	// A new version of the same variant is the same subject, so a board changing
-	// under somebody leaves them looking exactly where they were. A new beat is
-	// not: the reader moved, so the camera is taken back and given to the beat.
-	useAutoFit(camera, target, `${drawing.board}/${drawing.variant.id}/${focus.key}`);
 
 	// The surface is remounted for each new picture, so this runs over the
 	// element the current markup is in and never over the one before it.

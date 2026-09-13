@@ -10,7 +10,9 @@ import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
 
 import {
+	cameraNow,
 	drawing,
+	viewport,
 	mountStage,
 	renderCalls,
 	server,
@@ -137,3 +139,65 @@ test("a board with one state says which one it is without offering a choice", as
 	expect(said?.textContent).toBe("as it iscurrent");
 	expect(said?.getAttribute("data-semantic-lifecycle")).toBe("current");
 });
+
+test.each([false, true])(
+	"switching variants preserves the camera, including after a gesture: %s",
+	async (handled) => {
+		const view = { id: "scope1", name: "Integration", grammar: "architecture" };
+		const other = { id: "scope2", name: "Whole system", grammar: "architecture" };
+		serving([AS_IT_IS, PROPOSED]);
+		server.reply = { status: 200, body: { ...drawing(1), view, views: [view, other] } };
+		mountStage(null, { live: true, view: view.id });
+		await settle();
+		if (handled) {
+			act(() => {
+				fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
+			});
+		}
+		const before = cameraNow();
+		server.reply = {
+			status: 200,
+			body: {
+				...drawing(1),
+				width: 900,
+				height: 600,
+				variant: { id: PROPOSED.id, name: PROPOSED.name, lifecycle: PROPOSED.lifecycle },
+				view,
+				views: [view, other],
+			},
+		};
+		act(() => {
+			fireEvent.click(choices()[1]!);
+		});
+		// The uncached picture is absent during the request; the camera must outlive it.
+		expect(document.querySelector("[data-slot='semantic-board-surface']")).toBeNull();
+		await settle();
+		expect(renderCalls().at(-1)).toContain("variant=v2");
+		expect(cameraNow()).toEqual(before);
+		act(() => {
+			fireEvent.keyDown(viewport(), { key: "0" });
+		});
+		expect(cameraNow().scale).toBeCloseTo(Math.min((800 - 48) / 900, (600 - 48) / 600), 6);
+		const fitted = cameraNow();
+		act(() => {
+			fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
+		});
+		server.reply = {
+			status: 200,
+			body: {
+				...drawing(1),
+				width: 900,
+				height: 600,
+				variant: { id: PROPOSED.id, name: PROPOSED.name, lifecycle: PROPOSED.lifecycle },
+				view: other,
+				views: [view, other],
+			},
+		};
+		act(() => {
+			fireEvent.click(document.querySelector<HTMLElement>("[data-semantic-view='scope2']")!);
+		});
+		await settle();
+		expect(renderCalls().at(-1)).toContain("view=scope2");
+		expect(cameraNow()).toEqual(fitted);
+	},
+);

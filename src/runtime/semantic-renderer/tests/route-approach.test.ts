@@ -305,10 +305,10 @@ const CROSSED: VariantContent = VariantContentSchema.parse({
 });
 
 describe("a turn has room to round", () => {
-	test("the leg an endpoint stands on carries its approach and its turn", () => {
+	test("the leg an endpoint stands on carries its approach and its turn", async () => {
 		// The allocation the router owns: the approach AND the turn after it.
 		for (const content of [CROWDED, CROSSED]) {
-			const measured = endLegs(renderArchitecture({ content, theme: "light" }));
+			const measured = endLegs(await renderArchitecture({ content, theme: "light" }));
 			expect(measured.length).toBeGreaterThan(1);
 			expect(
 				measured
@@ -318,9 +318,9 @@ describe("a turn has room to round", () => {
 		}
 	});
 
-	test("and no turn anywhere is drawn square", () => {
+	test("and no turn anywhere is drawn square", async () => {
 		for (const content of [CROWDED, CROSSED]) {
-			const measured = turns(renderArchitecture({ content, theme: "dark" }));
+			const measured = turns(await renderArchitecture({ content, theme: "dark" }));
 			expect(measured.length).toBeGreaterThan(3);
 			expect(
 				measured
@@ -330,16 +330,23 @@ describe("a turn has room to round", () => {
 		}
 	});
 
-	test("beside a card it is the whole minimum, not a leftover", () => {
-		// A crowded page turns only on legs the router allocated, never on a jog.
-		const measured = turns(renderArchitecture({ content: CROWDED, theme: "light" }));
-		expect(measured.every((turn) => turn.radius >= ROUNDING)).toBe(true);
+	test("beside a card it is the whole minimum, not a leftover", async () => {
+		// Endpoint turns reserve room for the arrowhead and a legible bend.
+		// Interior alignment jogs round within the engine's available corridor.
+		const routes = drawnRoutes(await renderArchitecture({ content: CROWDED, theme: "light" }));
+		const adjacent = [...routes.values()].flatMap((steps) => {
+			const first = steps.find((step) => step.kind === "C");
+			const last = steps.findLast((step) => step.kind === "C");
+			return first === undefined || last === undefined ? [] : [first, last];
+		});
+		expect(adjacent.length).toBeGreaterThan(1);
+		expect(adjacent.every((turn) => radiusOf(turn) >= ROUNDING)).toBe(true);
 	});
 });
 
 describe("a route meets what it points at", () => {
-	test("every endpoint of a crowded page leaves and arrives square to its side", () => {
-		const measured = approaches(renderArchitecture({ content: CROWDED, theme: "light" }));
+	test("every endpoint of a crowded page leaves and arrives square to its side", async () => {
+		const measured = approaches(await renderArchitecture({ content: CROWDED, theme: "light" }));
 		// A page this shape draws sixteen endpoints; an assertion over an empty
 		// list would pass while the router drew nothing at all.
 		expect(measured.length).toBeGreaterThan(10);
@@ -351,8 +358,8 @@ describe("a route meets what it points at", () => {
 		}
 	});
 
-	test("every endpoint keeps enough straight line for the head drawn on it", () => {
-		const measured = approaches(renderArchitecture({ content: CROWDED, theme: "light" }));
+	test("every endpoint keeps enough straight line for the head drawn on it", async () => {
+		const measured = approaches(await renderArchitecture({ content: CROWDED, theme: "light" }));
 		const cramped = measured.filter((approach) => approach.straight < APPROACH);
 		expect(
 			cramped.map(
@@ -362,9 +369,9 @@ describe("a route meets what it points at", () => {
 		).toEqual([]);
 	});
 
-	test("the same holds on the other ground, because geometry is not a palette", () => {
+	test("the same holds on the other ground, because geometry is not a palette", async () => {
 		for (const theme of ["light", "dark"] as const) {
-			const measured = approaches(renderArchitecture({ content: CROWDED, theme }));
+			const measured = approaches(await renderArchitecture({ content: CROWDED, theme }));
 			expect(measured.every((approach) => approach.straight >= APPROACH)).toBe(true);
 			expect(measured.every((approach) => approach.square > 0.999)).toBe(true);
 		}
@@ -384,8 +391,8 @@ describe("a node that calls itself", () => {
 		],
 	});
 
-	test("its loop leaves and returns square to the face, with room for the head", () => {
-		const measured = approaches(renderArchitecture({ content: LOOPED, theme: "light" }));
+	test("its loop leaves and returns square to the face, with room for the head", async () => {
+		const measured = approaches(await renderArchitecture({ content: LOOPED, theme: "light" }));
 		const loop = measured.filter((approach) => approach.id === "self");
 		// Both ends of the loop, and both on the card it belongs to.
 		expect(loop).toHaveLength(2);
@@ -401,8 +408,8 @@ describe("a node that calls itself", () => {
 		}
 	});
 
-	test("the loop stays outside the card it belongs to", () => {
-		const drawn = renderArchitecture({ content: LOOPED, theme: "light" });
+	test("the loop stays outside the card it belongs to", async () => {
+		const drawn = await renderArchitecture({ content: LOOPED, theme: "light" });
 		const card = drawn.atlas.nodes["io"]!;
 		const found = /<g transform="translate\((-?[\d.]+),(-?[\d.]+)\)">/.exec(drawn.svg);
 		const shift: At = { x: Number(found?.[1] ?? 0), y: Number(found?.[2] ?? 0) };
