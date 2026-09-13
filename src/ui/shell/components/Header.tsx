@@ -5,7 +5,7 @@
 // truncate so a narrower window never clips the row.
 
 import { RiLockLine, RiMoonLine, RiSettings3Line, RiSunLine } from "@remixicon/react";
-import { useCallback, type ComponentPropsWithRef, type JSX } from "react";
+import { useCallback, type ComponentPropsWithRef, type JSX, type ReactNode } from "react";
 
 import { Badge } from "@/ui/components/badge";
 import {
@@ -31,6 +31,7 @@ const SETTINGS_TRIGGER_ID = "shell-settings";
 
 /** Inputs for the header. */
 interface HeaderProps {
+	diagnostics?: ReactNode;
 	current: BoardIdentity;
 	theme: ThemeChoice;
 	/** The pane the header describes, or null when no pane is open. */
@@ -290,6 +291,7 @@ function Header(props: HeaderProps): JSX.Element {
 			</div>
 			<Separator orientation="vertical" />
 			<div className="flex shrink-0 items-center gap-1 px-3">
+				{props.diagnostics}
 				<SettingsMenu actions={actions} />
 				<ThemeToggle theme={props.theme} actions={actions} />
 			</div>

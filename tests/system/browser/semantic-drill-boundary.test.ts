@@ -147,6 +147,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 			board: "engine",
 			origin: "agent",
 			create: {
+				level: "module",
 				variant: "as built",
 				nodes: [
 					{
@@ -181,6 +182,7 @@ test("a board followed down becomes the board the pane holds, everywhere", async
 			board: "pipeline",
 			origin: "agent",
 			create: {
+				level: "system",
 				nodes: [
 					{
 						name: "board-io",

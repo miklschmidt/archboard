@@ -21,6 +21,7 @@ let boards = 0;
 
 /** The architecture and the explanation every test in this file starts from. */
 const SEED = {
+	level: "system",
 	nodes: [
 		{ name: "CLI", kind: "app" },
 		{ name: "Canvas", kind: "service" },

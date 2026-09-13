@@ -1,6 +1,7 @@
 // What the workbench runtime hook takes, what it returns, and what the
 // provider hands its renderer.
 
+import type { WorkbenchComposerController } from "@/ui/workbench-composer";
 import type { AssistantRuntime } from "@assistant-ui/react";
 import type { ComponentType } from "react";
 
@@ -23,6 +24,8 @@ type WorkbenchRuntimeRenderer = ComponentType<WorkbenchRuntimeRenderContext>;
 /** What the hook needs beyond the transport. */
 interface WorkbenchRuntimeOptions {
 	readonly host: WorkbenchRuntimeHost;
+	/** Shared with other submission surfaces when supplied by the application. */
+	readonly composer?: WorkbenchComposerController;
 	/** The live voice view; unavailable when the host has no voice. */
 	readonly voice?: WorkbenchVoiceView;
 	readonly reducedMotion?: boolean;

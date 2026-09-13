@@ -1,3 +1,8 @@
+import {
+	nodeAppearances,
+	relationshipAppearance,
+} from "@/runtime/semantic-renderer/lib/semantic-appearance";
+import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // Paint a complete drawing. Placement, wrapping and routing are already settled.
 import type { DiagramAtlas } from "@/shared/semantic-board/index";
 import type { ArchitectureDrawing, DrawingEdge } from "@/runtime/semantic-renderer/lib/drawing";
@@ -15,7 +20,6 @@ import {
 import { shifted } from "@/runtime/semantic-renderer/lib/svg/document";
 import { lines, tag, wrap } from "@/runtime/semantic-renderer/lib/svg/primitives";
 import { travellingPulses } from "@/runtime/semantic-renderer/lib/svg/pulse";
-import { HERO_PULSE_TRAVEL_MS, PULSE_TRAVEL_MS } from "@/shared/timing/timing";
 import {
 	standingOutline,
 	standingSwipe,
@@ -27,40 +31,88 @@ import {
 } from "@/runtime/semantic-renderer/lib/svg/standing";
 import {
 	edgeAttributes,
-	pulseCountOf,
-	lineColour,
-	headOf,
-	markerFor,
 	strokeWidthOf,
 	stylesFor,
-	weightOf,
 } from "@/runtime/semantic-renderer/lib/svg/styles";
 
 /** Width added to a connection's invisible selection halo. */
 const EDGE_HALO_EXTRA = 5;
 
 /**
+ * A head uses the line's ink and SVG's proportional stroke-width units.
+ * @param id Marker identity scoped to this edge.
+ * @param head Configured arrowhead form.
+ * @param ink Resolved line ink.
+ * @returns Marker definition or nothing for an absent head.
+ */
+function edgeMarker(id: string, head: "filled" | "open" | "none", ink: string): string {
+	if (head === "none") return "";
+	return wrap(
+		"defs",
+		{},
+		wrap(
+			"marker",
+			{
+				id,
+				viewBox: "0 0 10 10",
+				refX: head === "filled" ? 8 : 10,
+				refY: 5,
+				markerWidth: 5,
+				markerHeight: 5,
+				orient: "auto-start-reverse",
+			},
+			head === "filled"
+				? tag("path", { d: "M0,0 L10,5 L0,10 z", fill: ink })
+				: tag("path", {
+						d: "M2,1 L10,5 L2,9",
+						fill: "none",
+						stroke: ink,
+						"stroke-width": 1.7,
+						"stroke-linecap": "round",
+						"stroke-linejoin": "round",
+					}),
+		),
+	);
+}
+
+/**
  * Paint one final route and its traffic marks.
  * @param routed The supplied route.
  * @param palette The selected theme.
  * @param standing Its architectural change.
+ * @param policy Current vault policy.
  * @returns The connection group.
  */
 function paintEdgeLine(
 	routed: DrawingEdge,
 	palette: Palette,
 	standing: SubjectStanding | undefined,
+	policy: SemanticPolicy,
 ): string {
 	const { edge, path } = routed;
 	const styles = stylesFor(palette);
 	const width = strokeWidthOf(edge);
 	// One ink for the line, the head it ends in and the dots that ride it.
-	const ink = lineColour(palette, weightOf(edge), standing);
+	const appearance = relationshipAppearance(edge.kind, policy);
+	const attributes = edgeAttributes(edge, palette, standing, policy);
+	const ink = String(attributes["stroke"]);
+	// Inline panes share the document ID namespace. Equal IDs must always
+	// define equal heads, even when the same subject has a different standing.
+	const markerId = `edge-head-${appearance.arrowhead}-${ink.slice(1)}`;
 
 	return wrap(
 		"g",
-		subjectGroup("edge", edge.id, standing),
+		{
+			...subjectGroup("edge", edge.id, standing),
+			"data-type-name": appearance.name,
+			"data-type-kind": edge.kind,
+			"data-line-color": appearance.color ?? "neutral",
+			"data-line-dash": appearance.dash,
+			"data-arrowhead": appearance.arrowhead,
+			"data-emphasis": edge.emphasis,
+		},
 		lines([
+			edgeMarker(markerId, appearance.arrowhead, ink),
 			standingSwipe(path, width, standing, palette),
 			tag("path", {
 				class: "ab-halo",
@@ -72,20 +124,18 @@ function paintEdgeLine(
 			}),
 			tag("path", {
 				d: path,
-				"marker-end": markerFor(weightOf(edge), headOf(edge), standing),
-				...edgeAttributes(edge, palette, standing),
+				"marker-end": appearance.arrowhead === "none" ? undefined : `url(#${markerId})`,
+				...attributes,
 			}),
 			// The dots over its own line, and under every relationship's words.
 			// A relationship the proposal no longer has is drawn for context and
 			// must not read as live traffic.
-			standing === "removed"
+			standing === "removed" || edge.traffic === undefined
 				? ""
 				: travellingPulses({
 						path,
 						colour: ink,
-						count: pulseCountOf(edge),
-						duration: (edge.emphasis === "hero" ? HERO_PULSE_TRAVEL_MS : PULSE_TRAVEL_MS) / 1000,
-						lag: 0,
+						traffic: edge.traffic,
 					}),
 		]),
 	);
@@ -146,6 +196,7 @@ interface ArchitecturePainting {
  * @param palette The selected theme.
  * @param standingOf How each subject changed against its predecessor.
  * @param unsettledOf Whether a subject needs reconciliation.
+ * @param policy Current vault policy.
  * @returns The document body, bounds and matching atlas.
  */
 function paintArchitecture(
@@ -153,8 +204,13 @@ function paintArchitecture(
 	palette: Palette,
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
+	policy: SemanticPolicy,
 ): ArchitecturePainting {
 	const { cards, containers, edges } = drawing;
+	const appearances = nodeAppearances(
+		[...cards, ...containers].map(({ measured }) => measured.node),
+		policy,
+	);
 	const inked = edges.map(({ edge, curve }) => ({
 		id: edge.id,
 		box: inflate(curveBounds(curve), strokeWidthOf(edge) / 2),
@@ -171,14 +227,22 @@ function paintArchitecture(
 	);
 	const boxes = containers.toSorted((a, b) => a.depth - b.depth);
 	const painted = lines([
-		...boxes.map((held) => paintMeasuredFrame(held, palette, standingOf(held.measured.node.id))),
-		...edges.map((edge) => paintEdgeLine(edge, palette, standingOf(edge.edge.id))),
+		...boxes.map((held) =>
+			paintMeasuredFrame(
+				held,
+				palette,
+				standingOf(held.measured.node.id),
+				appearances.get(held.measured.node.id)!,
+			),
+		),
+		...edges.map((edge) => paintEdgeLine(edge, palette, standingOf(edge.edge.id), policy)),
 		...cards.map((card) =>
 			paintMeasuredCard(
 				card,
 				palette,
 				standingOf(card.measured.node.id),
 				unsettledOf(card.measured.node.id),
+				appearances.get(card.measured.node.id)!,
 			),
 		),
 		...edges.map((edge) =>
@@ -190,6 +254,7 @@ function paintArchitecture(
 				palette,
 				standingOf(held.measured.node.id),
 				unsettledOf(held.measured.node.id),
+				appearances.get(held.measured.node.id)!,
 			),
 		),
 	]);

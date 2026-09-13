@@ -21,7 +21,6 @@ export {
 	type SemanticBoardConfigurationRead,
 	semanticBoardConfigurationPath,
 	readSemanticBoardConfiguration,
-	configuredSemanticBoardLevelProblem,
 	initializeSemanticBoardConfiguration,
 } from "@/runtime/semantic-board-store/lib/configuration";
 export {
@@ -54,3 +53,5 @@ export {
 	type DescendantOutcome,
 	type Propagation,
 } from "@/runtime/semantic-board-store/lib/propagate";
+
+export { checkSemanticVault } from "@/runtime/semantic-board-store/lib/diagnostics";

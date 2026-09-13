@@ -1,0 +1,34 @@
+# Vault-wide vocabulary and presentation. Commit alongside the boards.
+{
+  levels: [system, service, module],
+  nodeKinds:
+    {
+      service: { name: Service, icon: RiServerLine, color: blue },
+      app: { name: Application, icon: RiWindowLine, color: sky },
+      module: { name: Module, icon: RiBox3Line, color: violet },
+      function: { name: Function, icon: RiCodeLine, color: cyan },
+      route: { name: Route, icon: RiRouteLine, color: teal },
+      job: { name: Job, icon: RiTimerLine, color: amber },
+      queue: { name: Queue, icon: RiStackLine, color: orange },
+      datastore: { name: Data store, icon: RiDatabase2Line, color: emerald },
+      cache: { name: Cache, icon: RiFlashlightLine, color: lime },
+      external: { name: External, icon: RiExternalLinkLine, color: pink },
+      ui: { name: User interface, icon: RiLayoutLine, color: indigo },
+      config: { name: Configuration, icon: RiSettings3Line, color: rose },
+      test: { name: Test, icon: RiFlaskLine, color: green },
+      package: { name: Package, icon: RiArchiveLine, color: purple },
+      other: { name: Other, icon: RiPuzzleLine },
+    },
+  relationshipKinds:
+    {
+      call: { name: Call, dash: solid, arrowhead: filled },
+      http: { name: HTTP, dash: solid, arrowhead: filled },
+      rpc: { name: RPC, dash: solid, arrowhead: filled },
+      event: { name: Event, dash: dashed, arrowhead: open },
+      queue: { name: Queue, dash: dashed, arrowhead: open },
+      data: { name: Data, dash: solid, arrowhead: filled },
+      dependency: { name: Dependency, dash: dotted, arrowhead: open },
+      render: { name: Render, dash: solid, arrowhead: filled },
+      other: { name: Other, dash: solid, arrowhead: filled },
+    },
+}

@@ -25,6 +25,7 @@ test("a proposal replaces an edge once two authored fields differ from its prede
 	const created = cli(
 		["semantic", "new", "edge-identity", "--doing", "stating the current request path"],
 		JSON.stringify({
+			level: "system",
 			nodes: [
 				{ name: "Client", kind: "ui" },
 				{ name: "API", kind: "service" },

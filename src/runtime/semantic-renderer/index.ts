@@ -1,3 +1,4 @@
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
 // A semantic board in, one self-contained SVG plus its geometry out.
 //
 // This module is an in-repository fork of both grammars of the PR
@@ -74,6 +75,8 @@ class SemanticRenderError extends Error {
 interface DiagramRenderRequest {
 	/** The content, already cut down to what the caller wants drawn. */
 	readonly content: VariantContent;
+	/** Current vault presentation, shared by every variant. */
+	readonly policy?: SemanticPolicy;
 	/** Same-view ancestor drawings, oldest first and ending at the direct predecessor. */
 	readonly predecessors?: readonly VariantContent[];
 	/** Which of the two grounds to draw it on. */
@@ -202,6 +205,7 @@ async function renderArchitecture(request: DiagramRenderRequest): Promise<Render
 		palette,
 		standingsFrom(request.standing),
 		unsettledFrom(request.unsettled),
+		request.policy ?? DEFAULT_SEMANTIC_POLICY,
 	);
 
 	const svg = svgDocument({
@@ -266,6 +270,7 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
 		palette,
 		standingsFrom(request.standing),
 		unsettledFrom(request.unsettled),
+		request.policy ?? DEFAULT_SEMANTIC_POLICY,
 	);
 
 	const svg = svgDocument({

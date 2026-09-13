@@ -12,7 +12,6 @@ import type { Palette } from "@/runtime/semantic-renderer/lib/theme";
 import { lines } from "@/runtime/semantic-renderer/lib/svg/primitives";
 import { timedPulse, PULSE_RADIUS, TRAIN_RADIUS } from "@/runtime/semantic-renderer/lib/svg/pulse";
 import type { SubjectStanding } from "@/runtime/semantic-renderer/lib/svg/standing";
-import { STEP_WEIGHT } from "@/runtime/semantic-renderer/lib/dataflow-design";
 import { lineColour } from "@/runtime/semantic-renderer/lib/svg/styles";
 
 /**
@@ -55,7 +54,7 @@ function timedCrossings(
 		return "";
 	}
 	const width = 1 / turns;
-	const colour = lineColour(palette, STEP_WEIGHT, crossing.standing);
+	const colour = lineColour(palette, crossing.standing);
 	const radius = placed.slot.count > 1 ? TRAIN_RADIUS : PULSE_RADIUS;
 	return lines(
 		Array.from({ length: placed.slot.count }, (_, index) => {

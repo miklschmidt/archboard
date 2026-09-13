@@ -1,5 +1,6 @@
 {
 	"name": "archboard/write-path",
+	"level": "module",
 	"variant": "One write, as it is",
 	"summary": "The level below the pipeline: what actually happens between an agent's command and every pane seeing it",
 	"nodes": [

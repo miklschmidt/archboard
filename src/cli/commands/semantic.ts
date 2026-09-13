@@ -27,7 +27,7 @@ import {
 	editSemanticBoardOnCanvas,
 	listSemanticBoardsOnCanvas,
 	SemanticBoardEntrySchema,
-	readSemanticBoardOnCanvas,
+	readSemanticBoardAnswerOnCanvas,
 	renderSemanticBoardOnCanvas,
 } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
@@ -130,6 +130,7 @@ const semanticNewContract = defineCommand({
 		return {
 			result: writeResult(written),
 			diagnostics: [
+				...written.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),
 				`Semantic board "${board.name}" is at version ${board.version} with ` +
 					`${board.variants[0]?.content.nodes.length ?? 0} nodes.`,
 			],
@@ -145,8 +146,8 @@ const semanticEditContract = defineCommand({
 	usage: "semantic edit <name> --expect-version <n> [--input <file.json>]",
 	description:
 		"Applies one batch of stated changes to a semantic board in one write. The batch is JSON with " +
-			"optional board `level` metadata, `nodes`, `edges`, `flows`, `views` and the matching " +
-			"`remove...` lists, read from --input or " +
+		"optional board `level` metadata, `nodes`, `edges`, `flows`, `views` and the matching " +
+		"`remove...` lists, read from --input or " +
 		"standard input, and it lands whole or not at all. Architectural content targets the selected " +
 		"variant; views are shared by the whole board. --expect-version is required: state the " +
 		"version the board reported when you read it, and the write is refused if somebody has changed " +
@@ -334,6 +335,7 @@ const semanticBranchContract = defineCommand({
 		return {
 			result: writeResult(written),
 			diagnostics: [
+				...written.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),
 				`Semantic board "${board.name}" is now at version ${board.version} with ` +
 					`"${input.as}" derived from ${proposal?.parent ?? "its predecessor"}.`,
 			],
@@ -443,8 +445,10 @@ const semanticShowContract = defineCommand({
 	 */
 	async handler(input, context) {
 		await context.require("server", "semantic show");
+		const answer = await readSemanticBoardAnswerOnCanvas(input.name);
 		return {
-			result: { success: true as const, board: await readSemanticBoardOnCanvas(input.name) },
+			result: answer,
+			diagnostics: answer.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),
 		};
 	},
 });

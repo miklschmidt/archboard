@@ -5,12 +5,11 @@ status: Done
 assignee:
   - '@codex'
 created_date: '2026-09-13 12:13'
-updated_date: '2026-09-13 14:50'
+updated_date: '2026-09-13 19:02'
 labels: []
 dependencies: []
 references:
   - CONTEXT.md
-  - src/runtime/semantic-renderer/lib/group-palette.ts
   - src/runtime/semantic-renderer/lib/svg/styles.ts
   - docs/adr/0023-semantic-boards-own-meaning-renderers-own-presentation.md
   - docs/adr/0024-vault-configuration-owns-vocabulary-and-presentation.md
@@ -38,7 +37,7 @@ The level badge request exposed missing schema metadata and expanded into requir
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Design record: CONTEXT.md owns definitions; accepted ADR0024–0027 own decisions and rationale. Q1–Q32 are settled. The consolidated plan below awaits the user's final shared-understanding confirmation before production work resumes.
+Design record: CONTEXT.md owns definitions; accepted ADR0024–0027 own decisions and rationale. Q1–Q32 are settled. The user confirmed shared understanding and authorized this implementation in isolated worktree e0c6.
 
 1. Establish the vault configuration and vocabulary contract.
 Replace the partial JSON configuration in TASK-202 with version-controlled YAML, a canonical validation schema and generated editor schema. Require consumer-defined board levels and configure node/relationship kinds; keep palette values centrally curated with named references only. Use one interpreted policy and validation result across store, server, renderer and CLI. Valid policy rejects newly authored unknown references while existing removed definitions warn and remain readable; invalid policy uses coherent bundled defaults and permits structurally valid edits with warnings. Preserve required-metadata validation regardless of policy health.
@@ -49,7 +48,7 @@ Replace kind/group hashes with mandatory containment scopes, separate type-color
 Evidence: Azure/Kubernetes/API examples including collapsed Kubernetes, expanded Kubernetes, nested uncolored container and AWS host; current/proposed/history, light/dark, selected changed subjects, and a config edit/recovery in open panes.
 
 3. Add explicit traffic and remove inferred motion.
-Optional traffic object only; presence enables defaults of speed40 diagram units/s and volume0.5 dots/s. Supplied values positive finite, omission the only off state. Compute travel timing from the final routed path including curves and place dots at consistent entry intervals with pre-populated traffic. Remove emphasis/kind-triggered dots. Suppress dots on removed edges and reduced-motion; keep supported SVG export animation. Do not expose animation numbers in the inspector or add telemetry fields. Include normalized traffic in comparison, count the whole object once in identity validation, and compare structured values by value rather than object identity.
+Optional traffic object only; presence enables defaults of speed40 diagram units/s and volume0.5 dots/s. Supplied values positive finite, omission the only off state. Use one round-cap dashed path per traffic stream: spacing is speed/volume, animated dash offset travels one spacing in 1/volume seconds. This follows the final routed curves at equal speed with pre-populated traffic and bounded SVG allocation. Remove emphasis/kind-triggered dots. Suppress dots on removed edges and reduced-motion; keep supported SVG export animation. Do not expose animation numbers in the inspector or add telemetry fields. Include normalized traffic in comparison, count the whole object once in identity validation, and compare structured values by value rather than object identity.
 Evidence: short/long routes with equal speed/entry rate; defaults versus explicit equivalent values; positive-value validation; traffic-only versus traffic-plus-destination identity behavior; removed edges, reduced motion and exported SVG. Include no new file-content tests.
 
 4. Deliver shared vault diagnostics and CLI check.
@@ -61,9 +60,9 @@ Render an aesthetically spacious browser legend, visible by default and hideable
 Evidence: browser legend visibility and theme cases, CLI checker clean on repaired dogfood boards, and accurate skill/installation examples for the implemented CLI.
 
 6. Complete integration and visual polish.
-Run targeted behavior checks at the steps above, then bun run check. Restart the source-loaded server only once the integrated source is coherent, and verify the real dogfood boards in the browser at the desktop target size. Inspect whitespace, labels, icon chips, selection/comparison legibility and animation across representative routes. Simplify redundant resolver/validation/compatibility paths before accepting the implementation.
+Run targeted behavior checks at the steps above, then bun run check. Run an isolated source-loaded server on port3031 with a disposable QA vault, and verify copied dogfood boards in the browser at the desktop target size. Leave the source checkout and its port3000 server untouched. Inspect whitespace, labels, icon chips, selection/comparison legibility and animation across representative routes. Simplify redundant resolver/validation/compatibility paths before accepting the implementation.
 
-Planning gate: TASK-203 stays In Progress and TASK-202 stays paused until final confirmation. These steps describe intended work and evidence; none is a claim of implementation or completed verification.
+Authorization: final confirmation was received before implementation. TASK-202 level work is integrated under this YAML and fallback contract; completion waits for the full gate and final visual verification.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -94,10 +93,28 @@ Q25–Q30 answers: presence enables traffic (no enabled flag); diagram-coordinat
 Q31/Q32 accepted: default speed40 diagram units/s, volume0.5 dots/s; supplied values positive finite, absent traffic only off state. ADR0027 is now accepted and has no open product decisions. Consolidated six-step implementation plan and runtime evidence recorded for final shared-understanding confirmation. Production changes, server restart and TASK-202 remain paused.
 
 User explicitly confirmed the consolidated design and authorized implementation, but prioritized diagnosing/fixing the live Semantic renderer proposal routing first. No further design approval is needed; configuration implementation remains queued behind that fix.
+
+Implementation explicitly authorized in isolated worktree e0c6. Fast-forwarded to source committed baseline 252126ef and copied its uncommitted planning and prerequisite changes without modifying the source checkout. Implement accepted ADR0024–0027; preserve port 3000 and verify on a separate port.
+
+Integrated source baseline and the partial required-level implementation. Authored vault policy migrated from interim JSON to .archboard/config.yaml; shared checker currently reports no diagnostics across all eleven dogfood board families. Updated INSTALL.md, TESTING.md, tracked archboard skill and pipeline example inputs for required level/config discovery/checker/explicit traffic, and synced derived skills. Separate QA vault prepared under /tmp for containment and traffic verification; source port 3000 remains untouched.
+
+Live QA at CSS1920x1080 verified collapsed Kubernetes inherits enclosing body color, type-chip independence, valid-policy edits preserve exact camera transform and selection, malformed YAML fallback and recovery, same checker findings in CLI/browser, signed-out repair refusal, historical/current/proposal navigation, and exported traffic without legends. Visual polish moved legend into its own measured side region to avoid obscuring cards. Independent review caught and is fixing JSON absent/undefined comparison equivalence, predecessor container-to-card size retention, and cross-pane marker ID collisions; full gate iteration ongoing.
+
+Final review fixes verified: JSON absent/undefined equivalence avoids false reconciliation conflicts; container-to-card size resets; SVG marker IDs isolate shape/color across panes; removed prototype-named kinds stay neutral; duplicate board identities and Windows paths are diagnosed correctly; first checker success invalidates stale renders; duplicate display names retain distinct legend entries. Simplified traffic to one animated dashed path per stream and kept the full icon registry in runtime authoring validation rather than the browser bundle. Latest live QA at CSS1920x1080 confirmed final card sizing, selected changed-container styling in dark theme, and one 0/80 dash stream with a 2s offset cycle while the removed edge has no traffic. All 11 tracked board families check clean and their saved names, levels, variant IDs/lifecycles/edge counts and views match the imported baseline. Full gate passed lint/format and 2879 module tests, then was externally interrupted (SIGTERM143) during system tests without an assertion failure; clean rerun underway.
+
+Final serial browser lane passes. Repaired the standing-color probe to inspect direct route paths instead of nested marker geometry and strengthened removed-arrowhead color coverage; replaced obsolete group-hash assertions with explicit configured type-color cases in both themes. Independent review found no weakening. Added the missing required level to the drill-address browser fixture; all browser create/edge fixtures audited. A final complete bun run check is running on the settled source.
+
+Final settled-source bun run check PASSED exit0: lint, formatting, TypeScript, module, system, repository and serial browser lanes all pass. Full log /tmp/archboard-task203-check.log; independent final browser lane /tmp/archboard-task203-browser-final.log. Temporary QA server stopped cleanly and port3031 is free. Source checkout and port3000 were never modified or restarted. Diff whitespace is clean except the already imported upstream elkjs patch whitespace, preserved verbatim. No unresolved implementation review findings.
+
+Merge review against the preserved feat/semantic-boards snapshot: independent backend and presentation spec reviews found no actionable issues. Boundary review reproduced a policy refresh race when the initial render was still pending; the refresh hook now cancels pending render queries before invalidating them. Regression verifies both completion orders and prevents a late stale response from replacing the updated drawing. Manual preview confirmed side-by-side rendering, hideable legends, correct pane markers/level badges, and an empty shared diagnostics result for the dogfood vault. Final complete gate is running before integration.
+
+Final standards review fixed the semantic-board/semantic-policy module cycle by moving renderer-only appearance resolution into the renderer private implementation (21 focused tests passed). The DOM-testing finding was withdrawn after confirming commit 65eb3c59 intentionally removed the documented helper; both new tests follow current isolated DOM ownership and cleanup. Corrected the stale testing guide rather than resurrecting deleted infrastructure. Fresh full check passed after the refresh-race fix; final check is rerunning after the ownership-only move.
+
+Final merge gate passed on the settled implementation: bun run check exit 0, all module/system/repository and twelve serial browser owners green (/tmp/task203-review-final-check.log). Standards: renderer-policy module cycle fixed; stale test-helper finding withdrawn and guide corrected. Spec: initial-render policy refresh race fixed and regression covered; no unresolved findings. Ready for integration into feat/semantic-boards, preserving the earlier navigation and renderer work in separate prerequisite commit 78872b6f.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Completed the Q1–Q32 design interview, recorded accepted ADR0024–0027 and glossary definitions, audited glossary/ADR ownership, and captured a bounded six-step implementation plan with runtime evidence. User explicitly confirmed shared understanding and implementation authorization; delivery is deferred behind the newly reported routing issue.
+Delivered accepted ADR0024–0027: YAML vault vocabulary and visual policy with canonical schema, required levels and sidebar badges, deterministic containment/type/relationship appearance, live policy refresh, hideable legend and inspector explanations, shared CLI/browser diagnostics and Codex repair dispatch, and explicit distance-based traffic. Simplified traffic to one path per stream and kept icon authoring validation out of the browser bundle. Updated eleven dogfood board families, installation documentation, pipeline inputs, tracked skill and fixtures. Verified with independent scope/boundary reviews, live 1920x1080 browser QA including config fallback/recovery and preserved camera/selection, clean dogfood checker with preserved board identities, and complete bun run check exit0. All work is isolated in e0c6; source checkout and port3000 remain untouched.
 <!-- SECTION:FINAL_SUMMARY:END -->

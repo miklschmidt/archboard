@@ -18,15 +18,21 @@ a short semantic name describing its subject, such as `Payment processing`,
 `Board persistence` or `Renderer layout`. Board names are human navigation labels,
 not repository paths or directory hierarchies. Put code paths in node bindings.
 Every board requires a `level` chosen from the consumer's configured vocabulary.
-Read the listing's `levels` with `archboard semantic` before creating boards.
+Discover the vault's configured levels, node kinds and relationship kinds before
+creating boards with `archboard semantic config`. Run `archboard check` before
+work and again after board edits;
+resolve its actionable diagnostics before presenting the result.
 The usual values are `system` (collaborating services), `service` (modules within
 one service), and `module` (functions within a module). The level belongs to the
 board, is shared by every variant, and appears beside its name in navigation.
 Use separate linked boards when exploring deeper.
 
-The consumer owns the enum in `<vault>/.archboard/config.json`, for example
-`{ "levels": ["system", "service", "module"] }`. Use a configured value; do not
-invent one, omit the field, or change the vocabulary merely to make a write pass.
+The consumer owns the vocabulary and visual policy in
+`<vault>/.archboard/config.yaml`. Use configured values; do not invent one, omit
+required metadata, or change the vocabulary merely to make a write pass. Missing
+or invalid configuration activates bundled presentation defaults and warnings.
+Existing removed definitions remain readable; new unknown references are refused
+when the configuration is valid.
 
 ```bash
 archboard semantic new payments --doing "describing payment processing" <<'JSON'
@@ -50,9 +56,9 @@ archboard semantic render payments --out payments.svg
 ## Choose the meaning
 
 - **Nodes:** give each part a `name`, `kind` and short `responsibility`. Use
-  `description` for detail. Kinds are `service`, `app`, `module`, `function`,
-  `route`, `job`, `queue`, `datastore`, `cache`, `external`, `ui`, `config`,
-  `test`, `package`, `other`.
+  `description` for detail. Choose `kind` from the vault's `nodeKinds`. A kind
+  identifies the architectural unit, independent of whether this view depicts it
+  as a card or a container.
 - **Containment:** `parent` names the containing node, such as a module's
   service. Each node has at most one parent; containment is acyclic.
 - **Boundaries and entry points:** when a caller reaches an internal function,
@@ -70,15 +76,19 @@ archboard semantic render payments --out payments.svg
   and endpoint IDs alone cannot verify it.
 - **Groups:** `group` labels a shared domain or concern, such as `Fulfillment`.
   It can span containers. Each node has one optional group, set explicitly;
-  children do not inherit it.
+  children do not inherit it. Groups do not assign colors. Containers establish
+  the body color of their contents; each node's icon chip identifies its own kind.
 - **Code:** `binding: { "repo": "github.com/acme/payments", "path": "src/orders" }`
   points to the code implementing that node. Register the checkout with
   `archboard repo add /path/to/payments`; use its repository identity and a
   repo-relative path in the binding.
-- **Edges:** name `from`, `to` and the relationship `kind`: `call`, `http`, `rpc`,
-  `event`, `queue`, `data`, `dependency`, `render`, `other`. Add a short `label`
+- **Edges:** name `from`, `to` and a `kind` from the vault's `relationshipKinds`.
+  Add a short `label`
   for what crosses. Use `emphasis: "hero"` for the few relationships central
-  to the explanation.
+  to the explanation; emphasis affects line weight only. Explicit `traffic: {}`
+  illustrates flow at 40 diagram units per second and 0.5 dots per second.
+  Optional `speed` and `volume` must be positive finite numbers. Omit `traffic`
+  to show no moving dots. These values illustrate flow, not measured telemetry.
 - **Flows:** name the exchange, list its `participants`, then ordered `steps`
   with `from`, `to`, `label` and message `kind`: `sync`, `async`, `return`, `self`.
 - **Views:** the board owns one shared set of named readings. Give each a `name`,
@@ -111,7 +121,9 @@ Before editing, map the intended changes to the subjects you read:
   every card appear changed and hides the actual architectural delta.
 
 For connections, count changed authored properties against the direct predecessor:
-`from`, `to`, `kind`, `label`, `description` and `emphasis`. The CLI enforces this
+`from`, `to`, `kind`, `label`, `description`, `emphasis` and `traffic`. Traffic
+counts once as a whole object, comparing effective values including defaults.
+The CLI enforces this
 after resolving node references and defaults, including changes spread across
 separate edits:
 

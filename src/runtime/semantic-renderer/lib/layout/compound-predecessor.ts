@@ -27,7 +27,8 @@ const PREDECESSOR_OPTIONS: LayoutOptions = {
 };
 
 /**
- * Preserve room already allocated to existing subjects when their text shrinks.
+ * Preserve allocated room when text shrinks within the same depiction.
+ * A former container becomes an intrinsic card when its last visible child moves.
  * @param measured Current text and minimum dimensions.
  * @param predecessor The previous drawing of the same view.
  * @returns Current text with nonshrinking card and frame dimensions.
@@ -46,7 +47,8 @@ function preserveSizes(
 				const before = previous.get(id);
 				return [
 					id,
-					before === undefined
+					before === undefined ||
+					(value.headerHeight === 0) !== (before.measured.headerHeight === 0)
 						? value
 						: {
 								...value,

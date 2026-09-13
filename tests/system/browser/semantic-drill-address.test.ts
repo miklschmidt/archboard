@@ -38,6 +38,7 @@ const withAView = (
 	view: string,
 	nodes: readonly Record<string, unknown>[],
 ): Record<string, unknown> => ({
+	level: "system",
 	nodes,
 	edges: [],
 	views: [{ name: view, grammar: "architecture", scope: { kind: "all" } }],

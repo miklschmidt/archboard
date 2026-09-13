@@ -135,7 +135,10 @@ describe.serial("actual production Codex composition", () => {
 			const seeded = await request<{ board: { version: number } }>("/api/semantic-boards/create", {
 				method: "POST",
 				doing: "seeding the production semantic proof",
-				body: { board: "scratch", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
+				body: {
+					board: "scratch",
+					create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
+				},
 			});
 			expect(seeded.status).toBe(200);
 			// Somebody else's write to the board this thread is bound to: the news

@@ -5,11 +5,8 @@ import path from "node:path";
 import { startOwnedCanvas, type OwnedCanvas } from "../support/owned-canvas.ts";
 import { runCanvasCli } from "../support/run-cli.ts";
 
-// The whole path a person and an agent actually use: a command makes a board,
-// a command changes it, a command reads it back, the canvas is restarted, and
-// the picture is drawn — all through the public surface, with nothing reaching
-// into the store. What this owner is for is the claim that those five things
-// join up; the store's own contract tests own the guarantees inside them.
+// The public path a person and an agent use: commands create, change, read and
+// draw a board across a canvas restart. Store tests own the guarantees inside.
 
 const repoRoot = path.resolve(import.meta.dir, "../../..");
 const vault = fs.mkdtempSync(path.join(os.tmpdir(), "archboard-semantic-workflow-"));
@@ -26,6 +23,7 @@ const cli = (args: readonly string[], input?: string) =>
 
 /** The architecture this feature's own pipeline has today. */
 const currentPipeline = {
+	level: "system",
 	nodes: [
 		{
 			name: "Canvas server",
@@ -138,7 +136,10 @@ describe("authoring and opening a semantic board", () => {
 	});
 
 	test("an empty statement is an empty board, which is a board somebody meant to start", () => {
-		const created = cli(["semantic", "new", "blank", "--doing", "starting a board"], "");
+		const created = cli(
+			["semantic", "new", "blank", "--doing", "starting a board"],
+			JSON.stringify({ level: "system" }),
+		);
 		expect(created.status).toBe(0);
 		expect(JSON.parse(created.stdout).board.variants[0].content.nodes).toEqual([]);
 	});
@@ -201,7 +202,7 @@ describe("authoring and opening a semantic board", () => {
 	test("a board whose name has a path lives in a directory and still lists", () => {
 		const created = cli(
 			["semantic", "new", "services/payments", "--doing", "starting the payments board"],
-			JSON.stringify({ nodes: [{ name: "Charges", kind: "module" }] }),
+			JSON.stringify({ level: "system", nodes: [{ name: "Charges", kind: "module" }] }),
 		);
 		expect(created.stderr, created.stderr).toContain("version 1");
 		expect(created.status).toBe(0);
@@ -408,6 +409,7 @@ describe("authoring and opening a semantic board", () => {
 		const made = cli(
 			["semantic", "new", "two-roots", "--doing", "starting a board with two roots"],
 			JSON.stringify({
+				level: "system",
 				nodes: [
 					{ name: "Intake", kind: "service" },
 					{ name: "Reporting", kind: "service" },

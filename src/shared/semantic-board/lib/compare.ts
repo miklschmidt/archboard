@@ -45,6 +45,7 @@ import type {
 } from "@/shared/semantic-board/lib/content";
 import type { FlowStep, SemanticFlow } from "@/shared/semantic-board/lib/views";
 import type { SemanticWalkthrough, WalkthroughBeat } from "@/shared/semantic-board/lib/walkthrough";
+import { sameSemanticValue } from "@/shared/semantic-board/lib/semantic-value";
 
 /**
  * One step, with where it stands: which flow tells it and how far into that
@@ -131,8 +132,10 @@ interface VariantComparison {
  * `emphasis` is deliberately absent from the relationship list. It is authored
  * presentation intent — how loudly to draw a connection — and a proposal whose
  * only difference is that one arrow got louder has changed nothing about the
- * architecture. Views are absent from the comparison entirely, for the same
- * reason: naming a second way to read a board is not a redesign of it.
+ * architecture. Traffic is the explicit exception: ADR 0027 makes enabling or
+ * retuning ongoing flow a connection change, compared as one normalized field.
+ * Views are absent from the comparison entirely: naming a second way to read a
+ * board is not a redesign of it.
  *
  * A walkthrough does not compare its `beats`, and a flow does not compare its
  * `steps`, for one reason: each of those is a subject with an identity of its
@@ -151,7 +154,7 @@ const COMPARED = {
 		"binding",
 		"drillDown",
 	],
-	edge: ["from", "to", "kind", "label", "description"],
+	edge: ["from", "to", "kind", "label", "description", "traffic"],
 	flow: ["name", "summary", "participants"],
 	step: ["from", "to", "label", "kind", "note", "repeat", "flow", "position"],
 	walkthrough: ["name", "summary"],
@@ -200,15 +203,7 @@ function comparable(field: string, value: unknown): unknown {
  * @param after What this variant says.
  * @returns True when nothing moved.
  */
-function same(before: unknown, after: unknown): boolean {
-	if (before === after) {
-		return true;
-	}
-	if (before === undefined || after === undefined) {
-		return false;
-	}
-	return JSON.stringify(before) === JSON.stringify(after);
-}
+const same = sameSemanticValue;
 
 /**
  * The fields that moved between two versions of one subject.

@@ -247,8 +247,9 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const flat = [shell, header, nav, stages, dock, navControl, pane];
 		// Human labels: the board group's name and the header's board name. The
 		// section label beside them is a kicker, checked on its own terms.
-		const groupName = nav.querySelector('[data-sidebar="menu-item"] button span:last-child')
-			?? nav.querySelector('[data-sidebar="menu-item"]') ?? groupLabel;
+		const groupName = [...nav.querySelectorAll('[role="treeitem"][aria-level="1"] span')]
+			.find(node => node.textContent.trim() === board.textContent.trim());
+		if (!groupName) throw new Error('shell matrix probe found no board-group name');
 		const paneSection = document.querySelector('section[aria-label^="Pane "]');
 		if (!paneSection) {
 			throw new Error('shell matrix probe found no pane section on screen');

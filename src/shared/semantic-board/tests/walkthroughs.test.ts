@@ -38,6 +38,7 @@ const board = (content: Record<string, unknown>) => ({
 	kind: "semantic-board",
 	id: "bd1",
 	name: "Pipeline",
+	level: "system",
 	version: 1,
 	createdAt: "2026-09-11T00:00:00.000Z",
 	updatedAt: "2026-09-11T00:00:00.000Z",

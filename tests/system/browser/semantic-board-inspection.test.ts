@@ -130,6 +130,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 			origin: "agent",
 			writerId: "browser-owner",
 			create: {
+				level: "module",
 				variant: "as built",
 				nodes: [
 					{ name: "atomic-write", kind: "module", responsibility: "Writes and fsyncs" },
@@ -151,6 +152,7 @@ test("a person reads containment, code and the level below it, and writes nothin
 			origin: "agent",
 			writerId: "browser-owner",
 			create: {
+				level: "system",
 				nodes: [
 					{ name: "Board Runtime", kind: "service", responsibility: "Owns every write" },
 					{ name: "Engine", kind: "package", parent: "Board Runtime" },

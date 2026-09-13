@@ -84,3 +84,30 @@ test("reused placement paints current words and keeps the room allocated by its 
 	expect(proposal.svg).toContain(">Measure</text>");
 	expect(proposal.svg).not.toContain("Architecture measurement");
 });
+
+test("moving the last visible child gives its former container intrinsic card dimensions", async () => {
+	const before = VariantContentSchema.parse({
+		nodes: [
+			{ id: "azure", name: "Azure", kind: "external" },
+			{ id: "aws", name: "AWS", kind: "external" },
+			{ id: "cluster", name: "Kubernetes", kind: "service", parent: "azure" },
+			{ id: "api", name: "API", kind: "module", parent: "cluster" },
+			{ id: "worker", name: "Worker", kind: "module", parent: "cluster" },
+		],
+		edges: [{ id: "calls", from: "api", to: "worker", kind: "call" }],
+	});
+	const after = structuredClone(before);
+	after.nodes.find((node) => node.id === "cluster")!.parent = "aws";
+	const expanded = await renderArchitecture({ content: before, theme: "light" });
+	const intrinsic = await renderArchitecture({ content: after, theme: "light" });
+	const proposal = await renderArchitecture({
+		content: after,
+		predecessors: [before],
+		theme: "light",
+	});
+	expect(expanded.atlas.regions["azure"]).toBeDefined();
+	expect(proposal.atlas.regions["azure"]).toBeUndefined();
+	expect(proposal.atlas.nodes["azure"]!.width).toBe(intrinsic.atlas.nodes["azure"]!.width);
+	expect(proposal.atlas.nodes["azure"]!.height).toBe(intrinsic.atlas.nodes["azure"]!.height);
+	expect(proposal.atlas.regions["aws"]).toBeDefined();
+});

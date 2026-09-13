@@ -33,6 +33,7 @@ const SIDEBAR_STYLE: CSSProperties = { "--sidebar-width": "var(--shell-navigator
 
 /** Inputs for the shell. */
 interface ShellProps {
+	diagnostics?: ReactNode;
 	view: ShellView;
 	actions: ShellActions;
 	/** Live voice controls for the presentation bar, when the voice workbench supplies them. */
@@ -67,7 +68,13 @@ function Shell(props: ShellProps): JSX.Element {
 	const active = paneById(view, view.activePaneId);
 	return (
 		<div className="bg-background flex h-full min-w-0 flex-col">
-			<Header current={view.current} theme={view.theme} pane={active} actions={actions} />
+			<Header
+				current={view.current}
+				theme={view.theme}
+				pane={active}
+				actions={actions}
+				diagnostics={props.diagnostics}
+			/>
 			<SidebarProvider style={SIDEBAR_STYLE} className="min-h-0 min-w-0 flex-1">
 				<Navigator view={view} actions={actions} />
 				<div className="flex min-h-0 min-w-0 flex-1 flex-col">
