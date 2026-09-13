@@ -111,6 +111,72 @@ function routePoints(svg: string): Map<string, DrawnPoint[]> {
 }
 
 /**
+ * Recognize two circular quarter-arcs, optionally joined by a level crest.
+ * Ordinary route corners do not leave and return to the same straight line.
+ * @param path A rendered route's path commands.
+ * @returns The exact inserted spans and their control points.
+ */
+function roundBridges(path: string) {
+	return [...path.matchAll(/ L[-\d.,]+ C[-\d., ]+(?: L[-\d.,]+)? C[-\d., ]+/gu)].flatMap(
+		(match) => {
+			const span = match[0].trimEnd();
+			const points = pointsOf(span);
+			if (points.length !== 7 && points.length !== 8) return [];
+			const start = points[0]!;
+			const end = points.at(-1)!;
+			if ((start.x === end.x) === (start.y === end.y)) return [];
+			const horizontal = start.y === end.y;
+			const direction = Math.sign(horizontal ? end.x - start.x : end.y - start.y);
+			const local = points.map((point) => ({
+				x: direction * (horizontal ? point.x - start.x : point.y - start.y),
+				y: horizontal ? point.y - start.y : point.x - start.x,
+			}));
+			const radius = Math.abs(local[3]!.y);
+			// Crossing arcs are seven units; ordinary route corners are larger.
+			if (Math.abs(radius - 7) > 0.03) return [];
+			const lift = Math.sign(local[3]!.y);
+			const width = local.at(-1)!.x;
+			const kappa = (4 * (Math.sqrt(2) - 1)) / 3;
+			const expected = [
+				[0, 0],
+				[0, kappa * radius],
+				[(1 - kappa) * radius, radius],
+				[radius, radius],
+				...(points.length === 8 ? [[width - radius, radius]] : []),
+				[width - (1 - kappa) * radius, radius],
+				[width, kappa * radius],
+				[width, 0],
+			];
+			if (
+				width < 2 * radius - 0.03 ||
+				!local.every(
+					(point, index) =>
+						Math.abs(point.x - expected[index]![0]!) < 0.03 &&
+						Math.abs(lift * point.y - expected[index]![1]!) < 0.03,
+				)
+			)
+				return [];
+			return [{ span, points, start, end }];
+		},
+	);
+}
+
+/**
+ * Read routing corridors without circular crossing hops.
+ * This is only for corridor comparisons: clearance checks use the actual ink.
+ * @param svg The rendered document.
+ * @returns Each route's points before its crossing decorations.
+ */
+function corridorPoints(svg: string): Map<string, DrawnPoint[]> {
+	const corridors = svg.replace(/ d="([^"]+)"/gu, (attribute, path: string) => {
+		let corridor = path;
+		for (const bridge of roundBridges(path)) corridor = corridor.replaceAll(bridge.span, "");
+		return attribute.replace(path, corridor);
+	});
+	return routePoints(corridors);
+}
+
+/**
  * Whether a segment and a box overlap at all.
  *
  * A cheap separating-axis test on the segment's own bounding box. It is a
@@ -259,6 +325,8 @@ export {
 	type DrawnPoint,
 	bodyShift,
 	boxesOverlap,
+	corridorPoints,
+	roundBridges,
 	distanceToFrame,
 	distanceToRoute,
 	routeCrosses,
