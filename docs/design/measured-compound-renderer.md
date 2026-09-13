@@ -38,14 +38,22 @@ and unrelated routes. Stable subject and segment ordering breaks ties. If a labe
 cannot fit, the next engine solve reserves space for that label. Each retry adds
 reservations, so the measured label count bounds the process; reserved engine
 boxes provide the fallback. The renderer returns only the complete drawing.
-Painting and the atlas consume its final boxes and curves without repairing them.
+Painting and the atlas consume its final boxes and routes.
 
 Flank route hints reserve room for the measured badge beside intersecting route
 guides. If clearance requires a wider corridor, the whole guide moves with its
 label, avoiding a short sideways jog around the badge.
 
 `lib/svg/architecture.ts` paints the supplied drawing. It does not fit text,
-move cards, or repair routes. The atlas uses those same boxes and curves, with
+move cards, or choose new route corridors. At clear perpendicular crossings,
+the later-painted connection receives a small semicircular bridge from `lib/layout/crossings.ts`.
+Nearby crossings share a raised section; shared endpoints, collinear overlaps,
+and crossings too close to labels, cards, corners or other routes remain untouched.
+Narrow SVG masks clear lower ink by 1.5 drawing units on each side of the upper arc,
+revealing the actual container background without a painted patch.
+Lines, traffic, selection halos and the atlas all consume
+the bridged curve, and exports retain the same treatment.
+The atlas uses those same boxes and curves, with
 the same document translation. Change standings and reconciliation marks do not
 affect layout. The old grid, corridor, congestion, and label repair passes have
 been removed.

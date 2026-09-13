@@ -126,6 +126,11 @@ const BEND_RADIUS_MIN = 8;
  */
 const APPROACH_STRAIGHT = 12;
 
+/** Small raised shoulders distinguish a crossing without rerouting its corridor. */
+const BRIDGE_RADIUS = 7;
+/** Clear air between bridge ink and unrelated turns, labels or cards. */
+const BRIDGE_CLEARANCE = 3;
+
 export {
 	DIAGRAM_MARGIN,
 	BAND_RADIUS,
@@ -158,6 +163,8 @@ export {
 	PILL_TEXT_SIZE,
 	PILL_RADIUS,
 	APPROACH_STRAIGHT,
+	BRIDGE_RADIUS,
+	BRIDGE_CLEARANCE,
 	BEND_RADIUS_MAX,
 	BEND_RADIUS_MIN,
 	HEAD_REACH,

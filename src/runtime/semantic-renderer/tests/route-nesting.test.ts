@@ -3,7 +3,11 @@
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { routePoints, routeCrosses } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	corridorPoints,
+	routePoints,
+	routeCrosses,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 import {
 	detached,
 	covering,
@@ -59,7 +63,7 @@ describe("same-destination routes", () => {
 					},
 				],
 			});
-			const other = routePoints(
+			const other = corridorPoints(
 				(await renderArchitecture({ content: base, theme: "light" })).svg,
 			).get("other");
 			for (const edges of [base.edges, base.edges.toReversed()]) {
@@ -109,7 +113,7 @@ describe("same-destination routes", () => {
 					expect(masking(drawn)).toEqual([]);
 					if (unrelated) {
 						expect(other).toBeDefined();
-						expect(paths.get("other")).toEqual(other);
+						expect(corridorPoints(drawn.svg).get("other")).toEqual(other);
 					}
 				}
 			}
