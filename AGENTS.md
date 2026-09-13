@@ -84,13 +84,17 @@ with the reason). These are the rules that will not stop you:
 
 ## Test policy
 
-**Mandatory: Never write tests that test contents of files. Tests should test
-runtime behavior, not static content.**
+**Test runtime behavior, not repository file contents.** Do not inspect source,
+documentation or configuration files to assert how the repository is written.
+Fixtures, recorded inputs and expected outputs are welcome when they exercise
+product behavior, including reading and writing files or machine-readable
+contracts. The restriction is on what a test proves, not where its data lives.
 
 **Test behavior and contracts, not human-readable wording.** For CLI help,
 diagnostics and UI copy, verify routing, exit status, side effects, structure
-and formatting. Never assert prose matches, snapshots, golden output or
-full-output text equality—even between two live invocations.
+and formatting. Do not lock that copy down with text matching, prose snapshots
+or full-output equality—even between two live invocations. This does not ban
+fixtures or expected-output comparisons for functional results.
 
 Discover commands and options from authoritative runtime metadata when
 testing generic CLI behavior. Adding or renaming a flag, or editing a
