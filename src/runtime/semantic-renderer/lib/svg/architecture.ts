@@ -11,6 +11,8 @@ import { canvasFor, coord, inflate, union } from "@/runtime/semantic-renderer/li
 import type { Palette } from "@/runtime/semantic-renderer/lib/theme";
 import { atlasBoxes } from "@/runtime/semantic-renderer/lib/atlas";
 import { curveBounds, labelAnchorOf } from "@/runtime/semantic-renderer/lib/layout/curves";
+import { bridgeCrossings } from "@/runtime/semantic-renderer/lib/layout/crossings";
+import { crossingMasks } from "@/runtime/semantic-renderer/lib/svg/crossings";
 import {
 	paintMeasuredCard,
 	paintMeasuredFrame,
@@ -81,6 +83,7 @@ function edgeMarker(id: string, head: "filled" | "open" | "none", ink: string): 
  * @param palette The selected theme.
  * @param standing Its architectural change.
  * @param policy Current vault policy.
+ * @param mask Optional narrow cutouts beneath higher connections.
  * @returns The connection group.
  */
 function paintEdgeLine(
@@ -88,6 +91,7 @@ function paintEdgeLine(
 	palette: Palette,
 	standing: SubjectStanding | undefined,
 	policy: SemanticPolicy,
+	mask: string | undefined,
 ): string {
 	const { edge, path } = routed;
 	const styles = stylesFor(palette);
@@ -104,6 +108,7 @@ function paintEdgeLine(
 		"g",
 		{
 			...subjectGroup("edge", edge.id, standing),
+			mask: mask === undefined ? undefined : `url(#${mask})`,
 			"data-type-name": appearance.name,
 			"data-type-kind": edge.kind,
 			"data-line-color": appearance.color ?? "neutral",
@@ -206,7 +211,9 @@ function paintArchitecture(
 	unsettledOf: UnsettledOf,
 	policy: SemanticPolicy,
 ): ArchitecturePainting {
-	const { cards, containers, edges } = drawing;
+	const { cards, containers } = drawing;
+	const { edges, bridges } = bridgeCrossings(drawing);
+	const { definitions, masks } = crossingMasks(edges, bridges);
 	const appearances = nodeAppearances(
 		[...cards, ...containers].map(({ measured }) => measured.node),
 		policy,
@@ -227,6 +234,7 @@ function paintArchitecture(
 	);
 	const boxes = containers.toSorted((a, b) => a.depth - b.depth);
 	const painted = lines([
+		definitions,
 		...boxes.map((held) =>
 			paintMeasuredFrame(
 				held,
@@ -235,7 +243,9 @@ function paintArchitecture(
 				appearances.get(held.measured.node.id)!,
 			),
 		),
-		...edges.map((edge) => paintEdgeLine(edge, palette, standingOf(edge.edge.id), policy)),
+		...edges.map((edge) =>
+			paintEdgeLine(edge, palette, standingOf(edge.edge.id), policy, masks.get(edge.edge.id)),
+		),
 		...cards.map((card) =>
 			paintMeasuredCard(
 				card,

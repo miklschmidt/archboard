@@ -1,7 +1,11 @@
 import { expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
-import { routeCrosses, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
+import {
+	corridorPoints,
+	routeCrosses,
+	routePoints,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 test("a direct route label follows the current attachments after a branch is added", async () => {
 	const before = VariantContentSchema.parse({
@@ -212,10 +216,14 @@ test("a flank label clears an unrelated corridor without bending away from its r
 	});
 	const drawing = await renderArchitecture({ content, predecessors: [before], theme: "light" });
 	const points = routePoints(drawing.svg).get("6zcjVgzh")!;
-	const vertical = points
+	// Crossing bridges are local hops, not a label-induced lane change. Collapse
+	// only the circular hops recognized in the rendered route; keep all
+	// other bends, and check card clearance against the actual ink below.
+	const lanePoints = corridorPoints(drawing.svg).get("6zcjVgzh")!;
+	const vertical = lanePoints
 		.slice(1)
 		.flatMap((point, index) =>
-			point.x === points[index]!.x && point.y !== points[index]!.y ? [point.x] : [],
+			point.x === lanePoints[index]!.x && point.y !== lanePoints[index]!.y ? [point.x] : [],
 		);
 	expect(vertical.length).toBeGreaterThan(0);
 	expect(new Set(vertical).size, "one continuous flank through the label").toBe(1);
