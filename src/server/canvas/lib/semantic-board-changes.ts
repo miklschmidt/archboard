@@ -92,6 +92,31 @@ function drawingOf(
 }
 
 /**
+ * Every predecessor picture that led to this variant, oldest first.
+ *
+ * Each ancestor is drawn against its own predecessor before the shared scope
+ * narrows it. Its entry therefore holds the exact visible reference a reader
+ * saw at that point, including any removed subjects restored as context.
+ * @param board The board holding the complete family.
+ * @param variant The variant whose placement needs recognizable history.
+ * @param scope The same view selection used for the variant itself.
+ * @returns Ancestor drawings, ending with the direct predecessor when one exists.
+ */
+function predecessorDrawingsOf(
+	board: SemanticBoard,
+	variant: SemanticVariant,
+	scope: ViewScope = { kind: "all" },
+): VariantContent[] {
+	const drawings: VariantContent[] = [];
+	let ancestor = predecessorOf(board, variant);
+	while (ancestor !== undefined) {
+		drawings.push(drawingOf(board, ancestor, scope).content);
+		ancestor = predecessorOf(board, ancestor);
+	}
+	return drawings.toReversed();
+}
+
+/**
  * How every subject the picture shows stands against the predecessor.
  * @param comparison What the variant changed.
  * @param drawn The content being drawn.
@@ -133,4 +158,4 @@ function against(
 	return standing;
 }
 
-export { drawingOf, predecessorOf, type DrawnChanges, type DrawnProposal };
+export { drawingOf, predecessorDrawingsOf, predecessorOf, type DrawnChanges, type DrawnProposal };

@@ -57,7 +57,7 @@ function spell(group: string | undefined): Record<string, string> {
 function drawn(
 	groups: Readonly<Record<string, string>> = {},
 	theme: DiagramTheme = "light",
-): RenderedDiagram {
+): Promise<RenderedDiagram> {
 	return renderArchitecture({ content: content(groups), theme });
 }
 
@@ -103,15 +103,15 @@ function iconShape(group: DrawnGroup): string {
 }
 
 describe("a group is a colour and a kind is a shape", () => {
-	test("two parts of one group share an ink, and a third part does not", () => {
-		const picture = drawn({ gw: "payments", io: "payments", pay: "billing" });
+	test("two parts of one group share an ink, and a third part does not", async () => {
+		const picture = await drawn({ gw: "payments", io: "payments", pay: "billing" });
 		expect(iconInk(card(picture, "io"))).toBe(iconInk(card(picture, "gw")));
 		expect(iconInk(card(picture, "pay"))).not.toBe(iconInk(card(picture, "gw")));
 	});
 
-	test("the same two parts keep their own shapes, which is what they are", () => {
-		const grouped = drawn({ gw: "payments", io: "payments" });
-		const plain = drawn();
+	test("the same two parts keep their own shapes, which is what they are", async () => {
+		const grouped = await drawn({ gw: "payments", io: "payments" });
+		const plain = await drawn();
 		// A route and a module are different things in the same effort: one colour
 		// between them, two silhouettes.
 		expect(iconShape(card(grouped, "gw"))).not.toBe(iconShape(card(grouped, "io")));
@@ -119,14 +119,14 @@ describe("a group is a colour and a kind is a shape", () => {
 		expect(iconShape(card(grouped, "gw"))).toBe(iconShape(card(plain, "gw")));
 	});
 
-	test("a part with no group is coloured by what it is", () => {
-		const plain = drawn();
+	test("a part with no group is coloured by what it is", async () => {
+		const plain = await drawn();
 		// Every icon is coloured one way or the other — a page of grey chips says
 		// nothing — and two kinds are not one colour.
 		expect(iconInk(card(plain, "gw"))).not.toBe(iconInk(card(plain, "vault")));
 		// The same kind, on a different board, is the same colour: the fallback is
 		// derived from the kind exactly as a group is derived from its label.
-		const other = renderArchitecture({
+		const other = await renderArchitecture({
 			content: VariantContentSchema.parse({
 				nodes: [{ id: "x1", name: "Something else", kind: "route" }],
 			}),
@@ -135,36 +135,41 @@ describe("a group is a colour and a kind is a shape", () => {
 		expect(iconInk(card(other, "x1"))).toBe(iconInk(card(plain, "gw")));
 	});
 
-	test("stating a group overrides what the kind would have said", () => {
-		const plain = drawn();
-		const grouped = drawn({ gw: "payments" });
+	test("stating a group overrides what the kind would have said", async () => {
+		const plain = await drawn();
+		const grouped = await drawn({ gw: "payments" });
 		expect(iconInk(card(grouped, "gw"))).not.toBe(iconInk(card(plain, "gw")));
 	});
 });
 
 describe("one label draws one colour, everywhere", () => {
-	test("the same label survives spelling, order and neighbours", () => {
-		const one = drawn({ gw: "Payments" });
-		const two = drawn({ io: "  payments  ", pay: "billing" });
-		const three = drawn({ vault: "PAYMENTS" });
+	test("the same label survives spelling, order and neighbours", async () => {
+		const one = await drawn({ gw: "Payments" });
+		const two = await drawn({ io: "  payments  ", pay: "billing" });
+		const three = await drawn({ vault: "PAYMENTS" });
 		expect(iconInk(card(two, "io"))).toBe(iconInk(card(one, "gw")));
 		expect(iconInk(card(three, "vault"))).toBe(iconInk(card(one, "gw")));
 	});
 
-	test("both grounds get a colour of their own, and neither borrows the other's", () => {
-		const light = drawn({ gw: "payments" });
-		const dark = drawn({ gw: "payments" }, "dark");
+	test("both grounds get a colour of their own, and neither borrows the other's", async () => {
+		const light = await drawn({ gw: "payments" });
+		const dark = await drawn({ gw: "payments" }, "dark");
 		expect(iconInk(card(dark, "gw"))).not.toBe(iconInk(card(light, "gw")));
 		// Two labels that differ on one ground differ on the other as well: a pair
 		// is one hue picked twice, not two unrelated colours.
-		const otherLight = drawn({ gw: "billing" });
-		const otherDark = drawn({ gw: "billing" }, "dark");
+		const otherLight = await drawn({ gw: "billing" });
+		const otherDark = await drawn({ gw: "billing" }, "dark");
 		expect(iconInk(card(otherLight, "gw"))).not.toBe(iconInk(card(light, "gw")));
 		expect(iconInk(card(otherDark, "gw"))).not.toBe(iconInk(card(dark, "gw")));
 	});
 
-	test("a group never lends its colour to a card, a border or a line", () => {
-		const picture = drawn({ gw: "payments", io: "payments", pay: "billing", vault: "storage" });
+	test("a group never lends its colour to a card, a border or a line", async () => {
+		const picture = await drawn({
+			gw: "payments",
+			io: "payments",
+			pay: "billing",
+			vault: "storage",
+		});
 		const inks = new Set(["gw", "io", "pay", "vault"].map((id) => iconInk(card(picture, id))));
 		for (const id of ["gw", "io", "pay", "vault"]) {
 			const box = /<rect [^>]*rx="6"[^>]*fill="(#[0-9a-f]{6})" stroke="(#[0-9a-f]{6})"/.exec(
@@ -180,9 +185,9 @@ describe("one label draws one colour, everywhere", () => {
 		expect(inks.has(line[1]!)).toBe(false);
 	});
 
-	test("grouping moves nothing on the page", () => {
-		const plain = drawn();
-		const grouped = drawn({ gw: "payments", io: "payments", pay: "billing" });
+	test("grouping moves nothing on the page", async () => {
+		const plain = await drawn();
+		const grouped = await drawn({ gw: "payments", io: "payments", pay: "billing" });
 		expect(grouped.width).toBe(plain.width);
 		expect(grouped.height).toBe(plain.height);
 		expect(grouped.atlas).toEqual(plain.atlas);

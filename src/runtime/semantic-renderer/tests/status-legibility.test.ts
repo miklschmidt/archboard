@@ -32,13 +32,16 @@ import {
 	subjectGroups,
 	type DrawnGroup,
 } from "@/runtime/semantic-renderer/tests/drawn-subjects";
-import { routeCrosses, routePoints } from "@/runtime/semantic-renderer/tests/drawn-routes";
 import {
 	drawnSpan,
 	drawnTexts,
-	labelPlates,
 	registeredFaces,
 } from "@/runtime/semantic-renderer/tests/drawn-text";
+import {
+	bodyShift,
+	distanceToRoute,
+	routePoints,
+} from "@/runtime/semantic-renderer/tests/drawn-routes";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
 const CONTENT: VariantContent = VariantContentSchema.parse({
@@ -66,27 +69,6 @@ const CONTENT: VariantContent = VariantContentSchema.parse({
 	],
 });
 
-/**
- * Six parts, every part wired to every later one, and a label on each.
- *
- * The reviewer's reproduction. It is here rather than in prose because the
- * crossing it produces is a property of the router and the label pass, so the
- * only honest way to hold the layering is to lay out a page that really has one.
- */
-const PARTS = [0, 1, 2, 3, 4, 5];
-const CROSSING: VariantContent = VariantContentSchema.parse({
-	nodes: PARTS.map((index) => ({ id: `n${index}`, name: `Part${index}`, kind: "module" })),
-	edges: PARTS.flatMap((from) =>
-		PARTS.filter((to) => to > from).map((to) => ({
-			id: `e${from}${to}`,
-			from: `n${from}`,
-			to: `n${to}`,
-			kind: "call",
-			label: `calls Part${to}`,
-		})),
-	),
-});
-
 /** One standing of each kind, on subjects of every drawn shape. */
 const STANDING: StatedStandings = {
 	moved: "changed",
@@ -107,7 +89,7 @@ const STANDING: StatedStandings = {
 function architecture(
 	unsettled?: readonly string[],
 	theme: DiagramTheme = "light",
-): RenderedDiagram {
+): Promise<RenderedDiagram> {
 	return renderArchitecture({
 		content: CONTENT,
 		theme,
@@ -295,8 +277,8 @@ function badges(rendered: RenderedDiagram): Map<string, At> {
 }
 
 describe("a relationship is drawn in one ink from end to end", () => {
-	test("the line, the arrowhead it ends in and the dots that ride it agree", () => {
-		const drawn = architecture();
+	test("the line, the arrowhead it ends in and the dots that ride it agree", async () => {
+		const drawn = await architecture();
 		for (const id of ["moved", "new"]) {
 			const drawnLine = line(subject(drawn, "edge", id));
 			// Every channel of the same relationship, asked separately.
@@ -305,11 +287,9 @@ describe("a relationship is drawn in one ink from end to end", () => {
 				expect(dot).toBe(drawnLine.ink);
 			}
 		}
-		// And the ink says something: the same relationship drawn on a board that
-		// is not a proposal is a different colour, and two standings are not one
-		// colour between them. An ink they all agree on that never changes would
-		// be three channels agreeing to say nothing.
-		const plain = renderArchitecture({ content: CONTENT, theme: "light" });
+		// A plain board uses another colour, and two standings do not share one;
+		// otherwise three agreeing channels would say nothing.
+		const plain = await renderArchitecture({ content: CONTENT, theme: "light" });
 		expect(line(subject(drawn, "edge", "moved")).ink).not.toBe(
 			line(subject(plain, "edge", "moved")).ink,
 		);
@@ -318,19 +298,20 @@ describe("a relationship is drawn in one ink from end to end", () => {
 		);
 	});
 
-	test("a relationship nothing happened to is drawn in the ink of its weight", () => {
-		const marked = line(subject(architecture(), "edge", "same"));
+	test("a relationship nothing happened to is drawn in the ink of its weight", async () => {
+		const marked = line(subject(await architecture(), "edge", "same"));
 		const plain = line(
-			subject(renderArchitecture({ content: CONTENT, theme: "light" }), "edge", "same"),
+			subject(await renderArchitecture({ content: CONTENT, theme: "light" }), "edge", "same"),
 		);
 		expect(marked.ink).toBe(plain.ink);
 		expect(marked.head).toBe(plain.head);
 	});
 
-	test("the standing takes the colour and leaves the dash and the weight alone", () => {
-		const plain = renderArchitecture({ content: CONTENT, theme: "light" });
+	test("the standing takes the colour and leaves the dash and the weight alone", async () => {
+		const plain = await renderArchitecture({ content: CONTENT, theme: "light" });
+		const markedDrawing = await architecture();
 		for (const id of ["moved", "new", "gone", "same"]) {
-			const marked = LINE.exec(subject(architecture(), "edge", id).markup)![0];
+			const marked = LINE.exec(subject(markedDrawing, "edge", id).markup)![0];
 			const bare = LINE.exec(subject(plain, "edge", id).markup)![0];
 			// What sort of relationship it is, and how much attention it asked for:
 			// both are still said by the same line, exactly as they were.
@@ -338,8 +319,8 @@ describe("a relationship is drawn in one ink from end to end", () => {
 		}
 	});
 
-	test("the band behind the line is untouched, and still wider than it", () => {
-		const group = subject(architecture(), "edge", "moved");
+	test("the band behind the line is untouched, and still wider than it", async () => {
+		const group = subject(await architecture(), "edge", "moved");
 		const band =
 			/<path d="[^"]*" fill="none" stroke="(#[0-9a-f]{6})" stroke-width="([\d.]+)" stroke-opacity="([\d.]+)"[^>]*stroke-dasharray="([^"]*)"/.exec(
 				group.markup,
@@ -351,8 +332,8 @@ describe("a relationship is drawn in one ink from end to end", () => {
 		expect(band![4]).toBe("11 6");
 	});
 
-	test("a relationship the proposal no longer has sends no dots", () => {
-		expect(dotInks(subject(architecture(), "edge", "gone"))).toHaveLength(0);
+	test("a relationship the proposal no longer has sends no dots", async () => {
+		expect(dotInks(subject(await architecture(), "edge", "gone"))).toHaveLength(0);
 		expect(dotInks(subject(sequence(), "step", "answers"))).toHaveLength(0);
 	});
 });
@@ -368,45 +349,35 @@ describe("the words a relationship carries are on top of every dot", () => {
 		expect(lastRouteMark(svg)).toBeLessThan(firstWordsAt(svg, "step"));
 	});
 
-	test("an architecture's words are painted after every route on the page", () => {
+	test("an architecture's words are painted after every route on the page", async () => {
 		// Not after its own route: after all of them. Routes cross, and a page
 		// where each relationship carried its own words would hand the crossing to
 		// whichever of the two happened to be drawn second — a line and a train of
 		// dots straight through the middle of somebody else's label.
-		const svg = architecture().svg;
+		const svg = (await architecture()).svg;
 		expect(lastRouteMark(svg)).toBeLessThan(firstWordsAt(svg));
-	});
-
-	test("a route that crosses another relationship's pill passes under its words", () => {
-		// Six parts retain a real crossing after measured track spacing cleared
-		// every pill in the reviewer's original five-part case.
-		const drawn = renderArchitecture({ content: CROSSING, theme: "light" });
-		const plates = labelPlates(drawn.svg);
-		const routes = routePoints(drawn.svg);
-		const crossed = [...plates].filter(([id, box]) =>
-			[...routes].some(([other, points]) => other !== id && routeCrosses(points, box)),
-		);
-		// If the layout ever stops producing a crossing here, this owner has
-		// stopped covering what it was written for, and says so rather than
-		// passing on an empty page.
-		expect(crossed.length, "no route crosses another relationship's pill").toBeGreaterThan(0);
-		for (const [id] of crossed) {
-			const words = subjectGroups(drawn.svg).filter(
-				(group) => group.kind === "edge" && group.id === id && group.markup.includes("<text"),
-			);
-			expect(words, `${id} drew its words in no group of its own`).toHaveLength(1);
-			// The words are on the layer above every route, so the crossing route
-			// cannot be painted over them whatever order the edges were drawn in.
-			expect(lastRouteMark(drawn.svg)).toBeLessThan(drawn.svg.indexOf(words[0]!.markup));
-		}
 	});
 });
 
 describe("what nobody has decided is said in its own corner", () => {
-	test("every drawn shape of subject can wear the badge", () => {
+	test("an unlabelled return carries its warning on the route", async () => {
+		const content = { ...CONTENT, edges: CONTENT.edges.map(({ label: _label, ...edge }) => edge) };
+		const drawn = await renderArchitecture({ content, theme: "light", unsettled: ["same"] });
+		const badge = badges(drawn).get("same")!;
+		const shift = bodyShift(drawn.svg);
+		const routes = routePoints(drawn.svg);
+		expect(
+			distanceToRoute(
+				{ x: badge.x + shift.x, y: badge.y + shift.y, width: 0, height: 0 },
+				routes.get("same")!,
+			),
+		).toBeLessThan(0.02);
+	});
+
+	test("every drawn shape of subject can wear the badge", async () => {
 		// A card, a relationship, a relationship drawn for context, an exchange's
 		// frame, one message of it, and a participant at the head of a column.
-		expect([...badges(architecture(["io", "gone", "moved"])).keys()].toSorted()).toEqual([
+		expect([...badges(await architecture(["io", "gone", "moved"])).keys()].toSorted()).toEqual([
 			"gone",
 			"io",
 			"moved",
@@ -418,14 +389,15 @@ describe("what nobody has decided is said in its own corner", () => {
 		]);
 	});
 
-	test("a subject the board has settled wears none, and nor does a picture with nothing open", () => {
-		expect(badges(architecture(["io"])).has("store")).toBe(false);
-		expect(badges(architecture()).size).toBe(0);
-		expect(architecture().svg).not.toContain("M0,-5.2");
+	test("a subject the board has settled wears none, and nor does a picture with nothing open", async () => {
+		expect(badges(await architecture(["io"])).has("store")).toBe(false);
+		const plain = await architecture();
+		expect(badges(plain).size).toBe(0);
+		expect(plain.svg).not.toContain("M0,-5.2");
 	});
 
-	test("the badge and the change's own pin are in opposite corners of the same card", () => {
-		const drawn = architecture(["io"]);
+	test("the badge and the change's own pin are in opposite corners of the same card", async () => {
+		const drawn = await architecture(["io"]);
 		const card = subject(drawn, "node", "io");
 		const badge = badgeAt(card)!;
 		const pin = /<g transform="translate\(([\d.-]+),([\d.-]+)\)"><circle/.exec(card.markup)!;
@@ -438,9 +410,12 @@ describe("what nobody has decided is said in its own corner", () => {
 		expect(badge.x).toBeGreaterThan(box.x + box.width / 2);
 	});
 
-	test("no badge lands on a word, in either grammar", () => {
+	test("no badge lands on a word, in either grammar", async () => {
 		let checked = 0;
-		for (const drawn of [architecture(["io", "gw", "moved"]), sequence(["f1", "asks", "io"])]) {
+		for (const drawn of [
+			await architecture(["io", "gw", "moved"]),
+			sequence(["f1", "asks", "io"]),
+		]) {
 			const faces = registeredFaces(drawn.svg);
 			const where = badges(drawn);
 			for (const text of drawnTexts(drawn.svg)) {
@@ -462,9 +437,9 @@ describe("what nobody has decided is said in its own corner", () => {
 		expect(checked).toBeGreaterThan(3);
 	});
 
-	test("what the board has not decided does not move anything", () => {
-		const plain = architecture();
-		const badged = architecture(["io", "gw", "moved", "gone", "store"]);
+	test("what the board has not decided does not move anything", async () => {
+		const plain = await architecture();
+		const badged = await architecture(["io", "gw", "moved", "gone", "store"]);
 		// The same page at the same size with the same subjects in the same
 		// places: a mark that reflowed the drawing would mean two readers of one
 		// board comparing two different pictures.
@@ -473,9 +448,9 @@ describe("what nobody has decided is said in its own corner", () => {
 		expect(badged.atlas).toEqual(plain.atlas);
 	});
 
-	test("the badge can be read on both grounds, and so can the mark inside it", () => {
+	test("the badge can be read on both grounds, and so can the mark inside it", async () => {
 		for (const theme of ["light", "dark"] as const) {
-			const drawn = architecture(["io"], theme);
+			const drawn = await architecture(["io"], theme);
 			const card = subject(drawn, "node", "io");
 			const ink = /<path d="M0,-5.2[^"]*" fill="(#[0-9a-f]{6})"/.exec(card.markup)![1]!;
 			// An eleven-unit badge is a small thing to notice, so it has to carry

@@ -194,8 +194,8 @@ test("a person reads containment, code and the level below it, and writes nothin
 			` const found = {};` +
 			` for (const group of document.querySelectorAll("${SURFACE} [data-semantic-id]")) {` +
 			`   const words = group.textContent.trim();` +
-			`   if (words.startsWith("BOARD RUNTIME")) found.system = group.dataset.semanticId;` +
-			`   if (words.startsWith("ENGINE")) found.service = group.dataset.semanticId;` +
+			`   if (words.startsWith("Board Runtime")) found.system = group.dataset.semanticId;` +
+			`   if (words.startsWith("Engine")) found.service = group.dataset.semanticId;` +
 			`   if (words.endsWith("board-io")) found.module = group.dataset.semanticId;` +
 			`   if (words.endsWith("Write Lease")) found.planned = group.dataset.semanticId;` +
 			`   if (words.endsWith("Voice Bridge")) found.other = group.dataset.semanticId; }` +

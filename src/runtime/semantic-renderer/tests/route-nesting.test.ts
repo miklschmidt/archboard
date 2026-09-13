@@ -13,7 +13,7 @@ import {
 
 describe("same-destination routes", () => {
 	for (const shape of ["forward", "blocked left", "return", "with unrelated"] as const) {
-		test(`same-destination ${shape} routes nest their lanes and arrival ports`, () => {
+		test(`same-destination ${shape} routes nest their lanes and arrival ports`, async () => {
 			const returning = shape === "return";
 			const paired = shape === "blocked left";
 			const unrelated = shape === "with unrelated";
@@ -59,21 +59,35 @@ describe("same-destination routes", () => {
 					},
 				],
 			});
-			const other = routePoints(renderArchitecture({ content: base, theme: "light" }).svg).get(
-				"other",
-			);
+			const other = routePoints(
+				(await renderArchitecture({ content: base, theme: "light" })).svg,
+			).get("other");
 			for (const edges of [base.edges, base.edges.toReversed()]) {
 				for (const theme of ["light", "dark"] as const) {
 					const content = { ...base, edges };
-					const drawn = renderArchitecture({ content, theme });
+					const drawn = await renderArchitecture({ content, theme });
 					const paths = routePoints(drawn.svg);
 					const far = paths.get("far")!;
 					const near = paths.get("near")!;
-					const outside = returning || paired ? Math.max : Math.min;
-					const side = returning || paired ? 1 : -1;
-					expect(
-						side * (outside(...far.map((p) => p.x)) - outside(...near.map((p) => p.x))),
-					).toBeGreaterThan(0);
+					if (!paired) {
+						const outside = returning ? Math.max : Math.min;
+						const side = returning ? 1 : -1;
+						expect(
+							side * (outside(...far.map((p) => p.x)) - outside(...near.map((p) => p.x))),
+						).toBeGreaterThan(0);
+					}
+					// A peer may move to either side under compound placement. The
+					// routes must clear every card, without assuming old paired seating.
+					for (const box of Object.values(drawn.atlas.nodes)) {
+						const inside = {
+							x: box.x + 1,
+							y: box.y + 1,
+							width: box.width - 2,
+							height: box.height - 2,
+						};
+						expect(routeCrosses(far, inside)).toBe(false);
+						expect(routeCrosses(near, inside)).toBe(false);
+					}
 					expect((returning ? -1 : 1) * (far.at(-1)!.y - near.at(-1)!.y)).toBeGreaterThan(0);
 					expect(
 						far.some((point, index) => {

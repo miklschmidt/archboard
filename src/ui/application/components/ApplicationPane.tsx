@@ -11,11 +11,11 @@ import { useCallback, useEffect, useMemo, useState, type JSX } from "react";
 
 import type { PaneHost } from "@/ui/application/hooks/use-panes";
 import type { PickedSubject } from "@/ui/application/hooks/use-pane-reading";
+import { readingOf } from "@/ui/application/pane-reading";
 import type { PaneHandles } from "@/ui/application/lib/pane-handles";
 import {
 	NOTHING_READ,
 	usePaneSession,
-	type PaneReading,
 	type PaneSessionOptions,
 	type PaneTheme,
 } from "@/ui/pane-session";
@@ -25,7 +25,6 @@ import {
 } from "@/ui/pane-session/workbench-socket";
 import {
 	boardAddressOf,
-	boardKeyFor,
 	SemanticBoardStage,
 	type SelectedSubject,
 	type SemanticPaneReading,
@@ -103,63 +102,6 @@ function optionsFor(
 		onLayoutRequest: bound.onLayoutRequest,
 		createWorkbenchSockets: bound.createWorkbenchSockets,
 	};
-}
-
-/**
- * What this pane is reading, as the server records it.
- *
- * Built from what the STAGE says is on screen, not from the pane's address.
- * They differ exactly when it matters: following a drill-down puts another
- * board there, and a beat of a walkthrough reads its variant through a view
- * nobody chose. A reading derived from the address would name the board the
- * pane was opened on and the view the person last picked, so an agent asked
- * "what is this?" would be told about a board nobody is looking at.
- * @param reading What the stage says is on screen.
- * @param picked What the person picked out, or null.
- * @returns The reading.
- */
-function readingOf(reading: SemanticPaneReading | null, picked: PickedSubject | null): PaneReading {
-	const address = reading === null ? null : boardAddressOf(reading.board);
-	if (reading === null || address === null) {
-		return NOTHING_READ;
-	}
-	return {
-		board: { name: address.board, key: addressOf(reading) },
-		...drawingOf(reading.drawn),
-		selection: picked === null ? [] : [picked],
-	};
-}
-
-/**
- * The address that reopens what the pane is drawing.
- *
- * A bare name for the board as it stands, `name@variant` for anything else. The
- * spelling is the difference between a pane that follows the architecture and
- * one pinned to a reading of it: a pane showing the current variant by its id
- * would go on showing it after somebody adopted a proposal, which is the one
- * thing an address naming no variant promises not to do (ADR 0009).
- * @param reading What the stage says is on screen.
- * @returns The board key.
- */
-function addressOf(reading: SemanticPaneReading): string {
-	const drawn = reading.drawn;
-	return drawn === null || drawn.variant.lifecycle === "current"
-		? reading.board
-		: boardKeyFor(reading.board, drawn.variant.id);
-}
-
-/**
- * What the picture the pane is showing says it is of.
- * @param drawn The drawing's identity, or null before anything is drawn.
- * @returns The variant, the view and the version, each null when nothing is drawn.
- */
-function drawingOf(
-	drawn: SemanticPaneReading["drawn"],
-): Pick<PaneReading, "variant" | "view" | "version"> {
-	if (drawn === null) {
-		return { variant: null, view: null, version: null };
-	}
-	return { variant: drawn.variant, view: drawn.view, version: drawn.version };
 }
 
 /**

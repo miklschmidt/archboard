@@ -141,31 +141,34 @@ function asEdit(says: Record<string, unknown>): Record<string, unknown> {
  * @param board The board's name.
  * @returns What was drawn, one line each.
  */
-function draw(board: string): string[] {
+async function draw(board: string): Promise<string[]> {
 	const read = readSemanticBoard(board);
 	if (!read.ok) {
 		throw new Error(`${board}: ${read.problem}`);
 	}
-	const drawn: string[] = [];
-	for (const variant of read.board.variants) {
-		for (const view of read.board.views) {
-			// The route and artifact use the same scoped comparison depiction.
-			const proposal = drawingOf(read.board, variant, view.scope);
-			const picture = renderSemanticView({
-				content: proposal.content,
-				grammar: view.grammar,
-				theme: "light",
-				// The file outlives the canvas that drew it, so it carries its faces.
-				fonts: "embedded",
-				...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
-			});
-			const file = path.join(DRAWN, `${fileName(board, variant.name, view.name)}.svg`);
-			mkdirSync(path.dirname(file), { recursive: true });
-			writeFileSync(file, picture.svg);
-			drawn.push(`${file} (${picture.width}x${picture.height})`);
-		}
-	}
-	return drawn;
+	const pictures = await Promise.all(
+		read.board.variants.flatMap((variant) =>
+			read.board.views.map(async (view) => {
+				// The route and artifact use the same scoped comparison depiction.
+				const proposal = drawingOf(read.board, variant, view.scope);
+				const picture = await renderSemanticView({
+					content: proposal.content,
+					grammar: view.grammar,
+					theme: "light",
+					// The file outlives the canvas that drew it, so it carries its faces.
+					fonts: "embedded",
+					...(proposal.changes === null ? {} : { standing: proposal.changes.standing }),
+				});
+				return { variant, view, picture };
+			}),
+		),
+	);
+	return pictures.map(({ variant, view, picture }) => {
+		const file = path.join(DRAWN, `${fileName(board, variant.name, view.name)}.svg`);
+		mkdirSync(path.dirname(file), { recursive: true });
+		writeFileSync(file, picture.svg);
+		return `${file} (${picture.width}x${picture.height})`;
+	});
 }
 
 /**
@@ -203,7 +206,8 @@ async function buildAll(): Promise<string[]> {
 const lines = await buildAll();
 lines.push(await propose());
 for (const name of BOARDS) {
-	lines.push(...draw(String(stated(name)["name"])));
+	// oxlint-disable-next-line no-await-in-loop -- artifacts stay in board order
+	lines.push(...(await draw(String(stated(name)["name"]))));
 }
 for (const line of lines) {
 	process.stdout.write(`${line}\n`);

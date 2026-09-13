@@ -29,8 +29,10 @@ import type {
 	FontSource,
 	VariantContent,
 } from "@/shared/semantic-board/index";
+import { layoutCompound } from "@/runtime/semantic-renderer/lib/layout/compound";
+import type { ArchitectureDrawing } from "@/runtime/semantic-renderer/lib/drawing";
+import { measureArchitecture } from "@/runtime/semantic-renderer/lib/measurement";
 import { paletteFor } from "@/runtime/semantic-renderer/lib/theme";
-import { containersIn, regionsOf } from "@/runtime/semantic-renderer/lib/regions";
 import { paintArchitecture } from "@/runtime/semantic-renderer/lib/svg/architecture";
 import { paintDataFlow } from "@/runtime/semantic-renderer/lib/svg/dataflow";
 import { svgDocument } from "@/runtime/semantic-renderer/lib/svg/document";
@@ -72,6 +74,8 @@ class SemanticRenderError extends Error {
 interface DiagramRenderRequest {
 	/** The content, already cut down to what the caller wants drawn. */
 	readonly content: VariantContent;
+	/** Same-view ancestor drawings, oldest first and ending at the direct predecessor. */
+	readonly predecessors?: readonly VariantContent[];
 	/** Which of the two grounds to draw it on. */
 	readonly theme: DiagramTheme;
 	/**
@@ -159,12 +163,28 @@ function descriptionFor(names: readonly string[]): string | undefined {
 }
 
 /**
+ * Resolve each ancestor from the geometry of its own predecessor.
+ * @param predecessors The same-view lineage, oldest first.
+ * @param index The ancestor whose drawing is needed.
+ * @returns Its derived geometry, or no anchor for an empty predecessor view.
+ */
+async function layoutPredecessors(
+	predecessors: readonly VariantContent[],
+	index = predecessors.length - 1,
+): Promise<ArchitectureDrawing | undefined> {
+	const content = predecessors[index];
+	if (content === undefined || content.nodes.length === 0) return undefined;
+	const before = await layoutPredecessors(predecessors, index - 1);
+	return await layoutCompound(content, measureArchitecture(content), before);
+}
+
+/**
  * A semantic architecture in, one self-contained SVG plus its geometry out.
  * @param request What to draw, and on which ground.
  * @returns The document, its size and its atlas.
  * @throws {SemanticRenderError} When there is nothing to draw.
  */
-function renderArchitecture(request: DiagramRenderRequest): RenderedDiagram {
+async function renderArchitecture(request: DiagramRenderRequest): Promise<RenderedDiagram> {
 	const { content, theme } = request;
 	if (content.nodes.length === 0) {
 		throw new SemanticRenderError(
@@ -173,11 +193,12 @@ function renderArchitecture(request: DiagramRenderRequest): RenderedDiagram {
 		);
 	}
 
-	const regions = regionsOf(content);
+	const predecessor = await layoutPredecessors(request.predecessors ?? []);
+	const measured = measureArchitecture(content);
+	const drawing = await layoutCompound(content, measured, predecessor);
 	const palette = paletteFor(theme);
 	const painting = paintArchitecture(
-		regions,
-		content,
+		drawing,
 		palette,
 		standingsFrom(request.standing),
 		unsettledFrom(request.unsettled),
@@ -188,12 +209,7 @@ function renderArchitecture(request: DiagramRenderRequest): RenderedDiagram {
 		height: painting.height,
 		palette,
 		title: titleFor(content),
-		description: descriptionFor(
-			regions.flatMap((region) => [
-				...(region.container === undefined ? [] : [region.container.name]),
-				...containersIn(region.blocks).map((held) => held.name),
-			]),
-		),
+		description: descriptionFor(drawing.containers.map((held) => held.measured.node.name)),
 		fonts: request.fonts ?? "linked",
 		body: painting.body,
 	});
@@ -276,8 +292,10 @@ function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
  * @returns The document, its size and its atlas.
  * @throws {SemanticRenderError} When that grammar has nothing to draw.
  */
-function renderSemanticView(request: SemanticViewRenderRequest): RenderedDiagram {
-	return request.grammar === "data-flow" ? renderDataFlow(request) : renderArchitecture(request);
+async function renderSemanticView(request: SemanticViewRenderRequest): Promise<RenderedDiagram> {
+	return request.grammar === "data-flow"
+		? renderDataFlow(request)
+		: await renderArchitecture(request);
 }
 
 export {

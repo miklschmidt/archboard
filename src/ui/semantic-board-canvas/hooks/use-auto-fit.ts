@@ -7,16 +7,21 @@
 // that no longer exists. So the stage fits itself again every time its size
 // changes, and stops the moment a person pans or zooms: from then on the camera
 // is theirs, and widening the pane leaves it exactly where they put it. A new
-// board or variant starts the whole arrangement over.
+// board or view starts the whole arrangement over. Variant changes preserve it.
 //
 // A walkthrough beat is a new subject in exactly that sense. What the pane is
 // meant to be showing has changed because the reader moved, so the camera is
 // taken back and fitted to the beat — and then it is theirs again: panning
 // inside one beat sticks, and only moving to another beat takes it back.
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
-import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
+import {
+	useBoardCamera,
+	type BoardCamera,
+} from "@/ui/semantic-board-canvas/hooks/use-board-camera";
+import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import type { BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
 import type { FitTarget, Size } from "@/ui/semantic-board-canvas/lib/camera";
 
 /**
@@ -29,19 +34,34 @@ function roomKey(room: Size | null): string {
 }
 
 /**
- * Keep one diagram fitted to its pane until the person takes the camera over.
- * @param camera The pane's camera.
- * @param target What the pane is meant to be showing: the whole diagram, or a
- *   region of it the reader is being shown.
- * @param subject What is on screen — the board, the variant and, while a
- *   walkthrough is open, the beat and the region it asks for. A new one fits
- *   again.
+ * Own the stage camera across loading, empty and drawn states. Variants share
+ * the camera; another board, view or walkthrough focus fits afresh.
+ * @param drawing The resolved drawing, or null while no picture is available.
+ * @param focus The walkthrough's focus, when one is being read.
+ * @returns The camera, including explicit pan, zoom and fit controls.
  */
-function useAutoFit(camera: BoardCamera, target: FitTarget, subject: string): void {
+function useAutoFit(drawing: SemanticDrawing | null, focus: BeatFocus): BoardCamera {
+	const camera = useBoardCamera();
+	const target = useMemo<FitTarget | null>(
+		() =>
+			drawing === null || camera.room === null
+				? null
+				: (focus.target ?? {
+						kind: "whole",
+						content: { width: drawing.width, height: drawing.height },
+					}),
+		[drawing, focus.target, camera.room],
+	);
+	const subject =
+		drawing === null ? null : JSON.stringify([drawing.board, drawing.view?.id, focus.key]);
 	const fittedSubject = useRef<string | null>(null);
 	const fittedRoom = useRef<string | null>(null);
 	const room = roomKey(camera.room);
 	useEffect(() => {
+		// Loading removes the viewport temporarily, not the reader’s camera.
+		if (target === null) {
+			return;
+		}
 		const same = fittedSubject.current === subject;
 		if (same && (fittedRoom.current === room || camera.handled())) {
 			fittedRoom.current = room;
@@ -52,6 +72,7 @@ function useAutoFit(camera: BoardCamera, target: FitTarget, subject: string): vo
 			fittedRoom.current = room;
 		}
 	}, [camera, target, subject, room]);
+	return camera;
 }
 
 export { useAutoFit };

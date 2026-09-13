@@ -9,9 +9,7 @@ the `pr-lens` project at revision
 reads). It is a fork rather than a dependency because almost every adaptation
 below changes behaviour inside the renderer rather than around it.
 
-What was carried across, largely intact: the rank-and-seating layout that derives
-rows from the edge graph, the orthogonal edge router with its corridors, bands,
-ports, tracks, braid guard and label-pill settling, the sequence skeleton of shared-width
+What remains from that fork: graph ranking for connection direction, the sequence skeleton of shared-width
 participant columns over hanging lifelines, its derivation of activation bars from
 synchronous calls and the replies that answer them, its self-message loop, the kind
 glyphs, the deterministic coordinate rounding, and the XML-escaping SVG primitives.
@@ -20,11 +18,13 @@ What was changed, and what that change is:
 
 **Adapted to Archboard's contract — these are permanent.**
 
-- **Lanes became regions derived from containment.** PR Lens requires every node to
-  name a lane. Archboard has structural containment instead (ADR 0023), so the bands
-  are derived from the containment forest. The rule is written down in
-  `lib/regions.ts`. Nesting deeper than one level is drawn flat for now; TASK-172
-  owns rendering real nested containment.
+- **Architecture layout uses ELK.** The former fixed seats, indexed corridors,
+  braid guards and late label settlement were removed. `elkjs` lays out the
+  semantic containment graph using measured cards and labels. Its final boxes,
+  ports and routes feed the SVG painter and interaction atlas together.
+- **Architecture text wraps with Pretext.** A pinned measurement adapter connects
+  Pretext to the existing bundled-font engine. Prepared lines are supplied to
+  the painter; the architecture painter neither shrinks fonts nor truncates text.
 - **Text is measured, not estimated.** PR Lens's glyph-advance table in `text.ts` was
   deleted outright. Widths come from `@/runtime/engine/measure-text`, which reads the
   real font files, because "text width is measured, not estimated" is a standing

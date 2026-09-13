@@ -66,8 +66,8 @@ import { fittedSize, measure } from "@/runtime/semantic-renderer/lib/text";
 import {
 	cardHeight,
 	cardTextWidth,
-	type PlacedNode,
-} from "@/runtime/semantic-renderer/lib/layout/architecture";
+	type SequenceCard,
+} from "@/runtime/semantic-renderer/lib/layout/sequence-card";
 
 /** A stretch of one column where its participant is busy. */
 interface ActivationBar {
@@ -80,7 +80,7 @@ interface ActivationBar {
 /** One participant, as a column of the drawing. */
 interface PlacedColumn {
 	/** The card heading the column. */
-	readonly card: PlacedNode;
+	readonly card: SequenceCard;
 	/** Where its lifeline runs. */
 	readonly centreX: number;
 	/** The stretches where it is working on a call it received. */
@@ -272,7 +272,7 @@ function answers(candidate: PlacedStep, node: string, caller: string): boolean {
 /**
  * The first later reply that answers a call and has not already answered one.
  * @param steps Every message of the flow, in order.
- * @param index Which message is the call.
+ * @param index The call being answered.
  * @param claimed Which messages have already been spent answering a call.
  * @returns Its position, or -1 when nothing answers the call.
  */
@@ -382,7 +382,6 @@ function activationLookup(columns: readonly PlacedColumn[]): ActiveAt {
  * @param centreX Where its column sits.
  * @param top The height every card in this flow's header row starts at.
  * @param width The shared column width.
- * @param index Which column it is.
  * @returns The placed card.
  */
 function placeColumnCard(
@@ -390,13 +389,11 @@ function placeColumnCard(
 	centreX: number,
 	top: number,
 	width: number,
-	index: number,
-): PlacedNode {
+): SequenceCard {
 	const box = { x: centreX - width / 2, y: top, width, height: cardHeight(node) };
 	return {
 		node,
 		box,
-		chrome: "card",
 		titleSize: fittedSize(
 			node.name,
 			CARD_TITLE_FONT,
@@ -405,8 +402,6 @@ function placeColumnCard(
 			TITLE_SIZE_MIN,
 			TITLE_SIZE_STEP,
 		),
-		row: 0,
-		regionIndex: index,
 	};
 }
 
@@ -500,7 +495,7 @@ function layoutFlow(
 	const columns = nodes.map((node, index) => {
 		const centreX = centres[index] ?? 0;
 		return {
-			card: placeColumnCard(node, centreX, cardsTop, columnWidth, index),
+			card: placeColumnCard(node, centreX, cardsTop, columnWidth),
 			centreX,
 			activations: activationsFor(node.id, steps),
 		};

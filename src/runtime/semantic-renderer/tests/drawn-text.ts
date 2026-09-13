@@ -20,6 +20,8 @@ interface DrawnText {
 	readonly subject: { readonly kind: string; readonly id: string };
 	/** Its `x`. */
 	readonly x: number;
+	/** Its baseline `y`, in drawing coordinates. */
+	readonly y: number;
 	/** Its `font-size`. */
 	readonly size: number;
 	/** The first family its `font-family` names, unquoted. */
@@ -96,13 +98,18 @@ function firstFamily(stack: string): string {
  * @param shift How far the document moved its whole body onto the page.
  * @returns Its text elements, in page coordinates.
  */
-function textsIn(chunk: string, subject: { kind: string; id: string }, shift: number): DrawnText[] {
+function textsIn(
+	chunk: string,
+	subject: { kind: string; id: string },
+	shift: ReturnType<typeof bodyShift>,
+): DrawnText[] {
 	const drawn: DrawnText[] = [];
 	for (const [, tag, body] of chunk.matchAll(/<text([^>]*)>([^<]*)<\/text>/g)) {
 		const spacing = attr(tag ?? "", "letter-spacing");
 		drawn.push({
 			subject,
-			x: Number(attr(tag ?? "", "x")) + shift,
+			x: Number(attr(tag ?? "", "x")) + shift.x,
+			y: Number(attr(tag ?? "", "y")) + shift.y,
 			size: Number(attr(tag ?? "", "font-size")),
 			family: firstFamily(attr(tag ?? "", "font-family") ?? ""),
 			weight: Number(attr(tag ?? "", "font-weight")),
@@ -130,7 +137,7 @@ function drawnTexts(svg: string): DrawnText[] {
 	// browser lays the text out at: the document moves its whole body onto the
 	// page with one transform, and reading the `x` attribute without it would
 	// compare two different frames of reference.
-	const shift = bodyShift(svg).x;
+	const shift = bodyShift(svg);
 	const chunks = svg.split(/(?=<g data-semantic-kind=)/);
 	const drawn: DrawnText[] = [];
 	for (const chunk of chunks) {
