@@ -31,6 +31,7 @@ import {
 	NodeKindSchema,
 } from "@/shared/semantic-board/lib/vocabulary";
 import { CodeBindingSchema } from "@/shared/code-target/index";
+import { SemanticBoardLevelSchema } from "@/shared/semantic-board/lib/aggregate";
 
 /**
  * A reference to a node: its id, or the name it was written under. Which one
@@ -199,6 +200,8 @@ type SemanticViewInput = z.infer<typeof SemanticViewInputSchema>;
  */
 const VariantEditInputSchema = z
 	.object({
+		/** Board metadata: omit to preserve it, or state a configured value to change it. */
+		level: SemanticBoardLevelSchema.optional(),
 		variant: NodeReferenceSchema.optional(),
 		nodes: z.array(SemanticNodeInputSchema).default([]),
 		edges: z.array(SemanticEdgeInputSchema).default([]),
@@ -242,6 +245,7 @@ type BoardBranchInput = z.infer<typeof BoardBranchInputSchema>;
 const BoardCreateInputSchema = z
 	.object({
 		name: DisplayNameSchema,
+		level: SemanticBoardLevelSchema,
 		variant: DisplayNameSchema.optional(),
 		summary: DescriptionSchema.optional(),
 		nodes: z.array(SemanticNodeInputSchema).default([]),

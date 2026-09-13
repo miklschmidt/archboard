@@ -97,6 +97,8 @@ export {
 	FIRST_BOARD_VERSION,
 	SemanticVariantSchema,
 	type SemanticVariant,
+	SemanticBoardLevelSchema,
+	type SemanticBoardLevel,
 	SemanticBoardSchema,
 	type SemanticBoard,
 	currentVariant,

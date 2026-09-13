@@ -30,6 +30,7 @@ import type {
 	Generation,
 	StoppableGeneration,
 } from "./owned-canvas-lifecycle-types.ts";
+import { ensureSemanticVaultConfiguration } from "./semantic-vault.ts";
 
 type Environment = Readonly<Record<string, string | undefined>>;
 interface StartOwnedCanvasOptions {
@@ -120,6 +121,7 @@ async function startOwnedCanvas({
 	vault,
 	env = {},
 }: Readonly<StartOwnedCanvasOptions>): Promise<OwnedCanvas> {
+	ensureSemanticVaultConfiguration(vault);
 	const paths = createOwnedCanvasPaths();
 	const pathsDiagnostic = `\nOwned canvas paths: ${JSON.stringify(paths)}`;
 	let currentGeneration: Generation | null = null;

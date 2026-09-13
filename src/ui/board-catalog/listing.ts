@@ -25,12 +25,14 @@ function vaultHalf(boards: readonly SemanticBoardEntry[] | undefined): BoardList
 					{
 						key: board.key,
 						identity: { board: board.name, variant: "Unavailable" },
+						...(board.level === undefined ? {} : { level: board.level }),
 						...(board.error === undefined ? {} : { error: board.error }),
 					},
 				]
 			: board.variants.map((variant) => ({
 					key: boardKeyFor(board.key, variant.lifecycle === "current" ? undefined : variant.id),
 					identity: { board: board.name, variant: variant.name },
+					...(board.level === undefined ? {} : { level: board.level }),
 					variant,
 				})),
 	);

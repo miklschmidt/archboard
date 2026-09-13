@@ -13,6 +13,12 @@ import type { RovingList } from "@/ui/shell/hooks/use-roving-list";
 import type { NavigatorBranch, NavigatorGroup } from "@/ui/shell/lib/navigator-entries";
 import type { ShellActions } from "@/ui/shell/types/contracts";
 
+/** Keep a 21px ancestry step; each branch draws its own terminating guide. */
+const BRANCH_GROUP_CLASS = "mx-0 ml-3 translate-x-0 gap-0 border-l-0 py-0 pr-0 pl-[9px]";
+
+/** Short names for the board's authored architecture level. */
+const LEVEL_LABELS = { system: "System", service: "Service", module: "Module" } as const;
+
 /** Selection and roving focus shared by one tree. */
 interface TreeProps {
 	selectedKey: string | null;
@@ -53,10 +59,17 @@ function BoardTree(props: BoardTreeProps): JSX.Element {
 				onKeyDown={onKeyDown}
 				onClick={toggle}
 				{...list.item(id)}
-				className="h-auto min-h-8 items-start gap-1.5 rounded-[2px] px-2 py-1.5 font-medium [&>span:last-child]:whitespace-normal!"
+				className="h-auto min-h-8 items-start gap-0 rounded-[2px] py-2 pr-2 pl-0 font-semibold"
 			>
-				<Chevron open={open} />
-				<span>{group.board}</span>
+				<span className="flex h-4 w-6 shrink-0 items-center justify-center">
+					<Chevron open={open} />
+				</span>
+				<span className="min-w-0 flex-1 wrap-anywhere whitespace-normal!">{group.board}</span>
+				{group.level !== undefined && (
+					<span className="text-technical text-muted-foreground border-border ml-2 inline-flex h-4 shrink-0 items-center rounded-[2px] border px-1 font-normal">
+						{levelLabel(group.level)}
+					</span>
+				)}
 			</SidebarMenuButton>
 			{/* An ARIA tree requires a list group; a fieldset would change the list semantics. */}
 			<SidebarMenuSub
@@ -64,7 +77,7 @@ function BoardTree(props: BoardTreeProps): JSX.Element {
 				role="group"
 				id={childrenId}
 				hidden={!open}
-				className="mx-0 translate-x-0 gap-1 border-l-0 py-0 pr-0 pl-1"
+				className={BRANCH_GROUP_CLASS}
 			>
 				{group.roots.map((branch, index) => (
 					<VariantBranch
@@ -108,7 +121,10 @@ function VariantBranch(props: VariantBranchProps): JSX.Element {
 	);
 	const select = useCallback(() => actions.selectBoard(entry.key), [actions, entry.key]);
 	return (
-		<SidebarMenuSubItem role="none" className="relative">
+		<SidebarMenuSubItem
+			role="none"
+			className="before:border-muted-foreground/40 after:border-muted-foreground/40 relative before:absolute before:top-0 before:bottom-0 before:-left-[9px] before:border-l after:absolute after:top-4 after:-left-[9px] after:w-[9px] after:border-t first:before:-top-2 last:before:bottom-[calc(100%-1rem)]"
+		>
 			<div className="relative">
 				{children.length > 0 && (
 					<button
@@ -116,7 +132,7 @@ function VariantBranch(props: VariantBranchProps): JSX.Element {
 						tabIndex={-1}
 						aria-label={`${open ? "Collapse" : "Expand"} ${entry.identity.variant}`}
 						onClick={toggle}
-						className="text-muted-foreground absolute top-1 left-0 z-10 flex size-6 items-center justify-center rounded-[2px]"
+						className="text-muted-foreground hover:text-foreground absolute top-1 left-0 z-10 flex size-6 items-center justify-center rounded-[2px]"
 					>
 						<Chevron open={open} />
 					</button>
@@ -137,10 +153,12 @@ function VariantBranch(props: VariantBranchProps): JSX.Element {
 					onKeyDown={onKeyDown}
 					onClick={select}
 					{...list.item(`row:${entry.key}`)}
-					className="data-active:ring-primary data-active:bg-accent hover:bg-sidebar-accent h-auto w-full flex-col items-stretch gap-1 rounded-[2px] py-1.5 pr-2 pl-6 data-active:ring-1 data-active:ring-inset"
+					className="data-active:ring-primary data-active:bg-accent hover:bg-sidebar-accent h-auto min-h-8 w-full flex-col items-stretch gap-1 rounded-[2px] py-2 pr-2 pl-6 data-active:ring-1 data-active:ring-inset"
 				>
-					<span className="min-w-0 whitespace-normal!">{entry.identity.variant}</span>
-					<EntryMarkers entry={entry} />
+					<span className="flex min-w-0 items-start gap-2 whitespace-normal!">
+						<span className="min-w-0 flex-1 wrap-anywhere">{entry.identity.variant}</span>
+						<EntryMarkers entry={entry} />
+					</span>
 					<DoingLine entry={entry} />
 				</SidebarMenuButton>
 			</div>
@@ -149,7 +167,7 @@ function VariantBranch(props: VariantBranchProps): JSX.Element {
 				role="group"
 				id={childrenId}
 				hidden={!open}
-				className="border-border mx-0 ml-3 translate-x-0 gap-1 py-0 pr-0 pl-2"
+				className={BRANCH_GROUP_CLASS}
 			>
 				{children.map((child, index) => (
 					<VariantBranch
@@ -174,6 +192,17 @@ interface ChevronProps {
 }
 
 /**
+ * Standard levels have display names; project-specific levels retain their wording.
+ * @param level The board's authored abstraction level.
+ * @returns The compact badge label.
+ */
+function levelLabel(level: NonNullable<NavigatorGroup["level"]>): string {
+	return Object.hasOwn(LEVEL_LABELS, level)
+		? LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]
+		: level;
+}
+
+/**
  * The direction in which a row's children are open.
  * @param props Whether its descendants are visible.
  * @returns The disclosure mark.
@@ -181,7 +210,7 @@ interface ChevronProps {
 function Chevron(props: ChevronProps): JSX.Element {
 	return (
 		<RiArrowDownSLine
-			className={`text-muted-foreground mt-0.5 size-3! shrink-0 ${props.open ? "" : "-rotate-90"}`}
+			className={`text-muted-foreground size-3! shrink-0 ${props.open ? "" : "-rotate-90"}`}
 		/>
 	);
 }

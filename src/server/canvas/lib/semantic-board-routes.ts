@@ -28,7 +28,11 @@ import {
 	type SemanticView,
 	type ViewScope,
 } from "@/shared/semantic-board/index";
-import { listSemanticBoards, readSemanticBoard } from "@/runtime/semantic-board-store/index";
+import {
+	listSemanticBoards,
+	readSemanticBoard,
+	readSemanticBoardConfiguration,
+} from "@/runtime/semantic-board-store/index";
 import {
 	renderSemanticView,
 	SemanticRenderError,
@@ -85,8 +89,14 @@ function refuseUnnamedBoard(res: Response): void {
  */
 function listRoute(_req: Request, res: Response): void {
 	try {
+		const configured = readSemanticBoardConfiguration();
+		if (!configured.ok) {
+			res.status(422).json({ success: false, code: "INVALID_CONFIG", error: configured.problem });
+			return;
+		}
 		res.json({
 			success: true,
+			levels: configured.configuration.levels,
 			boards: listSemanticBoards().map((location) => {
 				const { name, key } = location;
 				const read = readSemanticBoard(name);
@@ -94,6 +104,7 @@ function listRoute(_req: Request, res: Response): void {
 					? {
 							name,
 							key,
+							level: read.board.level,
 							variants: read.board.variants.map(({ id, name: variantName, lifecycle, parent }) => ({
 								id,
 								name: variantName,

@@ -17,13 +17,21 @@ Choose one diagram or architectural question and level of detail. Give the board
 a short semantic name describing its subject, such as `Payment processing`,
 `Board persistence` or `Renderer layout`. Board names are human navigation labels,
 not repository paths or directory hierarchies. Put code paths in node bindings.
-A system board shows collaborating
-services; a service board shows modules within one service; a module board can
-show its functions. Use separate linked boards when exploring deeper.
+Every board requires a `level` chosen from the consumer's configured vocabulary.
+Read the listing's `levels` with `archboard semantic` before creating boards.
+The usual values are `system` (collaborating services), `service` (modules within
+one service), and `module` (functions within a module). The level belongs to the
+board, is shared by every variant, and appears beside its name in navigation.
+Use separate linked boards when exploring deeper.
+
+The consumer owns the enum in `<vault>/.archboard/config.json`, for example
+`{ "levels": ["system", "service", "module"] }`. Use a configured value; do not
+invent one, omit the field, or change the vocabulary merely to make a write pass.
 
 ```bash
 archboard semantic new payments --doing "describing payment processing" <<'JSON'
 {
+  "level": "system",
   "nodes": [
     { "name": "Gateway", "kind": "service", "responsibility": "Routes incoming requests" },
     { "name": "Orders", "kind": "service", "responsibility": "Accepts and tracks orders", "group": "Fulfillment" },
@@ -47,6 +55,19 @@ archboard semantic render payments --out payments.svg
   `test`, `package`, `other`.
 - **Containment:** `parent` names the containing node, such as a module's
   service. Each node has at most one parent; containment is acyclic.
+- **Boundaries and entry points:** when a caller reaches an internal function,
+  route or component, connect to that subject inside its `parent`. The renderer
+  carries the edge across the boundary. Do not split one interaction into
+  caller → container and container → child: containment does not make the
+  container a caller. For example, model Browser client → Viewer entry point
+  → Fetch semantic reads, with both internal subjects parented to Semantic
+  viewer. Reuse an existing entry-point subject, or add the actual code-backed
+  responsibility; never invent a relay node just to steer a line. A container
+  endpoint is appropriate for a relationship to the whole module (such as a
+  dependency in a higher-level view). Before presenting, trace each incoming
+  call to its actual receiver and check that each container endpoint has that
+  whole-module meaning. This requires semantic judgment; valid containment
+  and endpoint IDs alone cannot verify it.
 - **Groups:** `group` labels a shared domain or concern, such as `Fulfillment`.
   It can span containers. Each node has one optional group, set explicitly;
   children do not inherit it.

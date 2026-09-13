@@ -15,6 +15,7 @@ import { z } from "zod";
 import {
 	SemanticRenderReplySchema,
 	RenderedVariantSchema,
+	SemanticBoardLevelSchema,
 	type DiagramAtlas,
 	type DiagramBox,
 	type DiagramTheme,
@@ -53,6 +54,7 @@ type SemanticOfferedView = OfferedView;
 const BoardEntrySchema = z.object({
 	name: z.string(),
 	key: z.string(),
+	level: SemanticBoardLevelSchema.optional(),
 	variants: z.array(RenderedVariantSchema.extend({ parentId: z.string().nullable() })),
 	error: z.string().optional(),
 });

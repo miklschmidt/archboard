@@ -147,6 +147,19 @@ started with. `archboard status` prints the vault in use, and
 `archboard stop` is how you switch. That is the one that bites when you move
 between two repos that each keep their own boards.
 
+The consumer defines the allowed architecture levels in
+`<vault>/.archboard/config.json`:
+
+```json
+{ "levels": ["system", "service", "module"] }
+```
+
+Every board must carry a `level` from this list. These values are shared across
+the vault; use your own vocabulary when these names do not fit. `archboard
+semantic` reports the configured values. Missing configuration, a missing board
+level, or a value outside the list is an error, with no inferred default.
+Keep this configuration under version control with the boards.
+
 ## Working in a repo
 
 Start the canvas from anywhere and state what the architecture is:

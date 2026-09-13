@@ -159,7 +159,7 @@ function BoardsGroup(props: BoardsGroupProps): JSX.Element {
 			<SidebarMenu
 				role="tree"
 				aria-label="Boards and variants"
-				className="gap-1"
+				className="gap-2"
 				onKeyDown={list.onKeyDown}
 			>
 				{groups.map((group, index) => (
