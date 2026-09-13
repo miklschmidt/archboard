@@ -108,11 +108,6 @@ agent runs the command. It takes the offered vault and prints what it chose.
 | `--doc <file>`        | write the block somewhere other than the repo root                                     |
 | `--no-doc`            | install the skill and touch nothing in the repo                                        |
 
-**Then fill in "Boards for this repo".** The installer cannot know which board
-covers this code, what your levels mean, or the gotcha that will cost the next
-agent an hour. That section is where those go, and an agent that finds it empty
-has to stop and ask.
-
 On the machine archboard was developed on, `~/.agents/skills/archboard`
 is a symlink into the checkout, so the skill tracks the build and cannot go
 stale. `install-skill` refuses to replace a symlink, which is what you want
@@ -163,7 +158,14 @@ relationshipKinds:
 ```
 
 Every board must declare a `level`. Nodes and edges reference the configured
-kind keys. Icons use RemixIcon export names; colors reference the curated palette:
+kind keys. Icons use Remix Icon React export names, such as `RiServerLine`.
+Browse the [Remix Icon catalog](https://remixicon.com/) visually, or search the
+[complete export-name list for the installed version](https://unpkg.com/@remixicon/react@4.9.0/index.d.ts)
+as plain text — agents can search its `declare const Ri...` entries directly.
+Use the React export name in `icon`, not the catalog's kebab-case name
+(`server-line` becomes `RiServerLine`).
+
+Colors reference the curated palette:
 red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo,
 violet, purple, fuchsia, pink and rose. Omit `color` for neutral type styling.
 Relationship `dash` is solid, dashed or dotted; `arrowhead` is filled, open or none.
@@ -286,27 +288,11 @@ while note filenames preserve their original casing (ADR 0010). A legacy vault
 containing names that differ only in case must have those collisions resolved;
 `archboard semantic` on its own reports them.
 
-## Telling an agent which board covers this repo
+## Finding boards
 
-Nothing connects a repository to its board automatically. An agent in a fresh
-repo knows archboard exists, from the skill, but not which persisted board
-describes the repository.
-
-That is what the "Boards for this repo" section of the installed block is for.
-Fill it in once the repo has a board:
-
-```markdown
-### Boards for this repo
-
-- Boards: `payments` is the architecture as it stands, `payments@*` are
-  proposals.
-- Level vocabulary: `service` means one deployable here, not one class.
-- Conventions and gotchas: the worker boxes are drawn from the queue's side,
-  because that is how the on-call runbook reads.
-```
-
-Every agent that reads the file then knows where to look, and what the drawing
-conventions are before it starts adding to them.
+Use `archboard semantic` to discover boards in the configured vault and
+`archboard semantic show <name>` to read a board. No manual repository-to-board
+list is needed in the installed setup block.
 
 ### Optional live session
 
