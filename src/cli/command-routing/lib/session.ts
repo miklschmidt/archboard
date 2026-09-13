@@ -160,12 +160,12 @@ function reportUnknownCommand(name: string): void {
 }
 
 /**
- * Whether the first argument asks for help in any of its spellings.
- * @param name - The first argument.
- * @returns True for `help`, `--help` or `-h`.
+ * Whether an argument is a help flag, wherever it appears.
+ * @param name - An argument.
+ * @returns True for `--help` or `-h`.
  */
 function isHelpRequest(name: string): boolean {
-	return name === "help" || name === "--help" || name === "-h";
+	return name === "--help" || name === "-h";
 }
 
 /**
@@ -178,6 +178,22 @@ function isVersionRequest(name: string): boolean {
 }
 
 /**
+ * Resolves help flags to the named command, ignoring its ordinary arguments.
+ * @param routes - The command table.
+ * @param args - The invocation, including the command name.
+ * @returns The command help, or null for top-level help.
+ */
+function requestedHelp(routes: CommandRoutes, args: readonly string[]): string | null {
+	const topic = args.filter((token) => !isHelpRequest(token));
+	if (topic[0] === "help") {
+		topic.shift();
+	}
+	return args.some(isHelpRequest)
+		? (helpFor(routes, topic.slice(0, 2)) ?? helpFor(routes, topic.slice(0, 1)))
+		: helpFor(routes, topic);
+}
+
+/**
  * Handles the argv forms that print and exit before any command runs.
  * @param routes - The command table.
  * @param name - The first argument.
@@ -185,8 +201,9 @@ function isVersionRequest(name: string): boolean {
  * @returns True when help or the version was printed.
  */
 function printedInformation(routes: CommandRoutes, name: string, rest: readonly string[]): boolean {
-	if (isHelpRequest(name)) {
-		const help = name === "help" ? helpFor(routes, rest) : null;
+	const args = [name, ...rest];
+	if (name === "help" || args.some(isHelpRequest)) {
+		const help = requestedHelp(routes, args);
 		if (help) {
 			process.stdout.write(help);
 		} else {
