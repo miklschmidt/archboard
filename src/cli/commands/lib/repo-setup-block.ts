@@ -1,6 +1,6 @@
 // Installing the skill is only half of setting a repo up. The other half is
 // writing down what the next agent in that repo cannot discover: where the
-// vault is, how to invoke the binary, and which boards cover this code. That
+// vault is and how to invoke the binary. That
 // lives in the repo's own CLAUDE.md or AGENTS.md, between these markers so a
 // re-run replaces the block instead of appending a second copy.
 import fs from "node:fs";
@@ -86,8 +86,7 @@ function chooseDoc(repo: string, targetSpec: string): { file: string; existed: b
 }
 
 /**
- * Renders the managed setup block: the environment, how to run the CLI here, and the section
- * a human fills in about which boards cover the repo.
+ * Renders the managed setup block: the environment and how to run the CLI here.
  * @param options - What the block must tell a reader about this checkout.
  * @param options.vault - The vault path to export.
  * @param options.command - How the CLI is invoked when it is not on PATH.
@@ -112,8 +111,7 @@ function renderBlock(options: {
 
 	return [
 		BLOCK_BEGIN,
-		"<!-- Written by `archboard install-skill`. Re-running replaces this block, so keep",
-		'     your own notes under "Boards for this repo" and they will survive. -->',
+		"<!-- Written by `archboard install-skill`. Re-running replaces this block. -->",
 		"## Architecture canvas (archboard)",
 		"",
 		"This repo's architecture lives on archboard boards: an agent states what the",
@@ -160,19 +158,6 @@ function renderBlock(options: {
 		`command line work without one, and \`${cli} semantic render <name> --out f.svg\``,
 		"draws a picture with no browser involved.",
 		"",
-		"### Boards for this repo",
-		"",
-		"Fill this in. Nothing links a repo to its boards automatically, so an agent",
-		"that finds nothing here has to ask.",
-		"",
-		"- Boards: none recorded yet. Make one with",
-		`  \`${cli} semantic new <name> --doing "starting the <name> board"\`, stating`,
-		"  the architecture as JSON on standard input, and read it back with",
-		`  \`${cli} semantic show <name>\`.`,
-		"- A proposal is a variant of the same board:",
-		`  \`${cli} semantic branch <name> --as "<proposal>" --expect-version <n> \\`,
-		'     --doing "proposing <what it proposes>"`.',
-		"- Conventions and gotchas an agent cannot read off the source: none recorded yet.",
 		BLOCK_END,
 		"",
 	].join("\n");
@@ -263,8 +248,7 @@ function canvasUrlOverride(): string | undefined {
 }
 
 /**
- * Tells the person what was written and what is left for them: the doc, the vault, a vault
- * inside the repo that git does not ignore, and the section to fill in.
+ * Reports the setup document, vault, and whether git ignores the vault.
  * @param options - The setup options.
  * @param result - The setup that was written.
  */
@@ -280,16 +264,13 @@ function reportSetup(options: SetupOptions, result: SetupResult): void {
 			`That vault is inside the repo and not ignored, so boards will show up in git status. Commit them, or add ${path.relative(result.repo, result.vault)}/ to .gitignore.`,
 		);
 	}
-	context.diagnostic(
-		`Now fill in "Boards for this repo" in ${path.basename(result.doc)}: which board covers this code, and any gotcha an agent cannot read off the source.`,
-	);
 }
 
 /**
  * Write the setup into the repo's own agent doc.
  *
  * Everything an agent needs beyond the skill is machine-specific: the vault
- * path, whether the binary is on PATH, which boards cover this code. Left in
+ * path and whether the binary is on PATH. Left in
  * the installing human's head it is invisible, so it goes in the file the next
  * agent reads before it does anything else.
  * @param options - Which repo, vault and doc to use, the installed skill path, and the context.

@@ -150,9 +150,6 @@ describe("install targets", () => {
 			),
 			firstDiagnostic,
 		).toBe(true);
-		expect(setupBytes.includes(Buffer.from("### Boards for this repo")), firstDiagnostic).toBe(
-			true,
-		);
 		expect(setupBytes.includes(Buffer.from("the `archboard` skill")), firstDiagnostic).toBe(true);
 		const firstBytes = readFileSync(doc);
 		const retired = join(fixture.skillRoot, "excalidraw-skill");
