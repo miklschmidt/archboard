@@ -9,7 +9,7 @@
 // of these fail, which is the property that makes the colours safe to edit.
 
 import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as StoreModule from "@/runtime/semantic-board-store/index";
@@ -353,67 +353,4 @@ test("adopting a proposal carries its grouping into the architecture", async () 
 	expect(nodeNamed("Orders").group).toBe("payments");
 	const held = read(board);
 	expect(held.variants.find((one) => one.id === held.current)?.name).toBe("Adopted");
-}, 20_000);
-
-test("a board written before the group existed is read as it stands and stamped when written", async () => {
-	// A 1.0.0 document, exactly as a board file written by an older build looks.
-	const older = `older-${boards}`;
-	const file = store.locateSemanticBoard(older).file;
-	writeFileSync(
-		file,
-		JSON.stringify({
-			schemaVersion: "1.0.0",
-			kind: "semantic-board",
-			id: "oLdBoArD",
-			name: older,
-			version: 4,
-			createdAt: "2026-01-01T00:00:00.000Z",
-			updatedAt: "2026-01-01T00:00:00.000Z",
-			current: "oLdVaRiA",
-			variants: [
-				{
-					id: "oLdVaRiA",
-					name: "As built",
-					lifecycle: "current",
-					content: {
-						nodes: [{ id: "oLdNoDe1", name: "Gateway", kind: "route" }],
-						edges: [],
-						flows: [],
-						views: [],
-						walkthroughs: [],
-					},
-				},
-			],
-		}),
-		"utf8",
-	);
-
-	// Read as it stands: no migration, no rewrite, nothing invented.
-	const asFound = store.readSemanticBoard(older);
-	expect(asFound.ok && asFound.board.schemaVersion).toBe("1.0.0");
-	expect(asFound.ok && asFound.board.version).toBe(4);
-	expect(readFileSync(file, "utf8")).toContain('"schemaVersion":"1.0.0"');
-
-	// And a write to it says which contract it was written under, so a document
-	// that now carries a group is not claiming a version that had no word for one.
-	expect(
-		(
-			await store.writeSemanticBoard({
-				board: older,
-				writer,
-				expectedVersion: 4,
-				transition: store.editVariantTransition(
-					contract.VariantEditInputSchema.parse({
-						nodes: [{ id: "oLdNoDe1", name: "Gateway", kind: "route", group: "the write path" }],
-					}),
-				),
-			})
-		).outcome,
-	).toBe("applied");
-	const written = store.readSemanticBoard(older);
-	expect(written.ok && written.board.schemaVersion).toBe(contract.SEMANTIC_BOARD_SCHEMA_VERSION);
-	expect(
-		written.ok &&
-			written.board.variants[0]?.content.nodes.find((one) => one.id === "oLdNoDe1")?.group,
-	).toBe("the write path");
 }, 20_000);

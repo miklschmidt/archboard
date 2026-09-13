@@ -81,13 +81,14 @@ const AFTER = {
  */
 function branched(): Record<string, unknown> {
 	return {
-		schemaVersion: "1.0.0",
+		schemaVersion: "2.0.0",
 		kind: "semantic-board",
 		id: "b1",
 		name: "pipeline",
 		version: 1,
 		createdAt: "2026-09-11T00:00:00.000Z",
 		updatedAt: "2026-09-11T00:00:00.000Z",
+		views: [],
 		current: "v1",
 		variants: [
 			{ id: "v1", name: "as it is", lifecycle: "current", content: BEFORE },

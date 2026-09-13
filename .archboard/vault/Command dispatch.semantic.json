@@ -1,0 +1,192 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "nAmiQ3Vc",
+	"name": "Command dispatch",
+	"version": 2,
+	"createdAt": "2026-09-12T22:28:19.604Z",
+	"updatedAt": "2026-09-13T00:47:03.485Z",
+	"views": [],
+	"variants": [
+		{
+			"id": "aRdKXdIj",
+			"name": "Current architecture",
+			"lifecycle": "current",
+			"summary": "Module level: how command-routing turns argv and a command table into one bounded invocation.",
+			"content": {
+				"nodes": [
+					{
+						"id": "VZjA1TbA",
+						"name": "CLI modules",
+						"kind": "external",
+						"responsibility": "Back to CLI internals",
+						"drillDown": {
+							"board": "Command interface",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "qHOothyT",
+						"name": "runCliWith",
+						"kind": "function",
+						"responsibility": "Owns one CLI invocation",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts"
+						}
+					},
+					{
+						"id": "45uNvMac",
+						"name": "Help and registry",
+						"kind": "function",
+						"responsibility": "Projects the command table",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/registry.ts"
+						}
+					},
+					{
+						"id": "zs4XwBa9",
+						"name": "Global flag readers",
+						"kind": "function",
+						"responsibility": "Captures board write context",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/global-flags.ts"
+						}
+					},
+					{
+						"id": "0R2ysy3p",
+						"name": "dispatchedCommand",
+						"kind": "function",
+						"responsibility": "Finds the selected contract",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/dispatch.ts"
+						}
+					},
+					{
+						"id": "ZXGh0YmG",
+						"name": "Interruptible run",
+						"kind": "function",
+						"responsibility": "Forwards cancellation signals",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/session.ts"
+						}
+					},
+					{
+						"id": "MmMnif7e",
+						"name": "runCommand",
+						"kind": "external",
+						"responsibility": "Executes the validated contract",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-contract/runner.ts"
+						}
+					},
+					{
+						"id": "bV1RPiKW",
+						"name": "Failure reporting",
+						"kind": "function",
+						"responsibility": "Maps errors to exit codes",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/cli/command-routing/lib/exit-codes.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "mVCMJYpN",
+						"from": "qHOothyT",
+						"to": "45uNvMac",
+						"kind": "call",
+						"label": "help / version",
+						"emphasis": "normal"
+					},
+					{
+						"id": "a4PkS2Do",
+						"from": "qHOothyT",
+						"to": "zs4XwBa9",
+						"kind": "call",
+						"label": "capture flags",
+						"emphasis": "normal"
+					},
+					{
+						"id": "GpvovZkt",
+						"from": "qHOothyT",
+						"to": "0R2ysy3p",
+						"kind": "call",
+						"label": "select",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Kbtdm1ew",
+						"from": "qHOothyT",
+						"to": "ZXGh0YmG",
+						"kind": "call",
+						"label": "execute",
+						"emphasis": "normal"
+					},
+					{
+						"id": "MFROOcqh",
+						"from": "ZXGh0YmG",
+						"to": "MmMnif7e",
+						"kind": "call",
+						"label": "contract + signal",
+						"emphasis": "normal"
+					},
+					{
+						"id": "HZqRR3f0",
+						"from": "qHOothyT",
+						"to": "bV1RPiKW",
+						"kind": "call",
+						"label": "on failure",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "zDZxpKbX",
+						"name": "Read this board",
+						"beats": [
+							{
+								"id": "Z2h2pBRk",
+								"heading": "Address one command",
+								"body": "The session receives a route table and argv. Help and registry are projections of that same table.",
+								"subjects": [
+									"qHOothyT",
+									"45uNvMac"
+								]
+							},
+							{
+								"id": "n5fln7Yb",
+								"heading": "Capture context before dispatch",
+								"body": "Global flags identify the board, version, doing text and session. Dispatch selects a command contract from the remaining arguments.",
+								"subjects": [
+									"zs4XwBa9",
+									"0R2ysy3p"
+								]
+							},
+							{
+								"id": "2cENlO7N",
+								"heading": "Bound the invocation lifetime",
+								"body": "The interruptible run forwards SIGINT/SIGTERM as cancellation. Failure reporting chooses a stable exit code and diagnostic.",
+								"subjects": [
+									"ZXGh0YmG",
+									"MmMnif7e",
+									"bV1RPiKW"
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "aRdKXdIj"
+}

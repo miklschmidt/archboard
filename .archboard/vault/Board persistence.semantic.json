@@ -1,0 +1,313 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "0T9enjhi",
+	"name": "Board persistence",
+	"version": 2,
+	"createdAt": "2026-09-12T22:28:19.828Z",
+	"updatedAt": "2026-09-13T00:47:03.484Z",
+	"views": [
+		{
+			"id": "jLQUM0Qo",
+			"name": "Durable write boundary",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"4P7YZdnj",
+					"1gdbsn6M",
+					"hoh4xPWb",
+					"tcwsrSQv",
+					"i2CrY6Xj",
+					"qTv7HuBw"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "UVWQowOA",
+			"name": "Variant reconciliation",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"i2CrY6Xj",
+					"xoapCJNG",
+					"8CAH6rSD",
+					"DJXluInA"
+				],
+				"edges": [],
+				"flows": []
+			}
+		}
+	],
+	"variants": [
+		{
+			"id": "tVCqUn1A",
+			"name": "Current architecture",
+			"lifecycle": "current",
+			"summary": "Module level: board-store as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"content": {
+				"nodes": [
+					{
+						"id": "4P7YZdnj",
+						"name": "Canvas server",
+						"kind": "external",
+						"responsibility": "Calls the board persistence boundary",
+						"description": "Parent service context: semantic routes and code-opening consume board reads and writes through the public store entrypoints.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas"
+						},
+						"drillDown": {
+							"board": "Canvas server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "hoh4xPWb",
+						"name": "Address and locate",
+						"kind": "function",
+						"responsibility": "Maps names to safe vault paths",
+						"description": "semanticBoardAddress normalizes board identity without I/O; locateSemanticBoard resolves the .semantic.json file and follows existing ancestors to refuse symlink paths that leave the configured vault.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/location.ts"
+						}
+					},
+					{
+						"id": "NM28UA5U",
+						"name": "List boards",
+						"kind": "function",
+						"responsibility": "Discovers semantic board files",
+						"description": "Recursively enumerates semantic board locations to a bounded depth, recognizing only .semantic.json aggregates and preserving their nested board names.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/listing.ts"
+						}
+					},
+					{
+						"id": "tcwsrSQv",
+						"name": "Read and validate",
+						"kind": "function",
+						"responsibility": "Reads a coherent aggregate from disk",
+						"description": "readSemanticBoardAt synchronously reads fresh bytes, parses JSON into the shared semantic schema, distinguishes missing from unreadable files, and rejects documents whose internal name disagrees with their address.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/read.ts"
+						}
+					},
+					{
+						"id": "i2CrY6Xj",
+						"name": "Lifecycle transitions",
+						"kind": "function",
+						"responsibility": "Defines board lifecycle changes",
+						"description": "Factories return pure create, edit, branch, settlement and adoption transitions. The write boundary executes the chosen transition against the board read under lease.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/transitions.ts"
+						}
+					},
+					{
+						"id": "xoapCJNG",
+						"name": "Edit semantic content",
+						"kind": "function",
+						"responsibility": "Resolves names into stable subjects",
+						"description": "editContent, editViews, and editWalkthroughs plan removals, mint identifiers centrally, resolve same-write handles and references, preserve replacement semantics, and refuse orphaned containment or stranded narrative references.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/edit-content.ts"
+						}
+					},
+					{
+						"id": "8CAH6rSD",
+						"name": "Propagate descendant edits",
+						"kind": "function",
+						"responsibility": "Carries parent changes into drafts",
+						"description": "propagateEdit walks descendants of an edited variant, automatically merges compatible changes, records reconciliation issues where meanings diverge, and blocks descendants behind unresolved ancestors.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/propagate.ts"
+						}
+					},
+					{
+						"id": "DJXluInA",
+						"name": "Settle and adopt",
+						"kind": "function",
+						"responsibility": "Resolves proposals into current",
+						"description": "settleVariant applies explicit reconciliation choices and ordering decisions; adoptVariant verifies a draft is fully settled before designating it current and retaining the prior current architecture as history.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/settle.ts"
+						}
+					},
+					{
+						"id": "1gdbsn6M",
+						"name": "Write under lease",
+						"kind": "function",
+						"responsibility": "Commits one durable version",
+						"description": "writeSemanticBoard locates the target, acquires the board-wide claim/lease, reads and validates under that lease, checks the expected version, applies one transition, validates the candidate, advances once, and persists once.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store/lib/write.ts"
+						}
+					},
+					{
+						"id": "qTv7HuBw",
+						"name": "Atomic file replacement",
+						"kind": "function",
+						"responsibility": "Fsyncs and replaces the aggregate",
+						"description": "writeFileAtomic writes a temporary sibling, fsyncs file content, renames it over the destination, and fsyncs the directory so accepted board writes are committed before callers receive success.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/engine/atomic-write.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "hx5UtSvH",
+						"from": "4P7YZdnj",
+						"to": "hoh4xPWb",
+						"kind": "call",
+						"label": "address board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "lcZxhHuv",
+						"from": "4P7YZdnj",
+						"to": "NM28UA5U",
+						"kind": "call",
+						"label": "catalogue boards",
+						"emphasis": "normal"
+					},
+					{
+						"id": "k1IwXpzd",
+						"from": "4P7YZdnj",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read current bytes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "i6pk24Ov",
+						"from": "4P7YZdnj",
+						"to": "i2CrY6Xj",
+						"kind": "call",
+						"label": "state requested change",
+						"emphasis": "normal"
+					},
+					{
+						"id": "kOdz3Hxq",
+						"from": "i2CrY6Xj",
+						"to": "xoapCJNG",
+						"kind": "call",
+						"label": "apply content edit",
+						"emphasis": "normal"
+					},
+					{
+						"id": "JRnj6xbQ",
+						"from": "i2CrY6Xj",
+						"to": "8CAH6rSD",
+						"kind": "call",
+						"label": "reconcile descendants",
+						"emphasis": "normal"
+					},
+					{
+						"id": "3yXrbLgg",
+						"from": "i2CrY6Xj",
+						"to": "DJXluInA",
+						"kind": "call",
+						"label": "resolve lifecycle",
+						"emphasis": "normal"
+					},
+					{
+						"id": "smLdyKlp",
+						"from": "4P7YZdnj",
+						"to": "1gdbsn6M",
+						"kind": "call",
+						"label": "submit transition",
+						"emphasis": "hero"
+					},
+					{
+						"id": "E4f3pKJb",
+						"from": "1gdbsn6M",
+						"to": "hoh4xPWb",
+						"kind": "call",
+						"label": "resolve target",
+						"emphasis": "normal"
+					},
+					{
+						"id": "9O4o9jcE",
+						"from": "1gdbsn6M",
+						"to": "tcwsrSQv",
+						"kind": "call",
+						"label": "read under lease",
+						"emphasis": "normal"
+					},
+					{
+						"id": "VWo4vJh0",
+						"from": "1gdbsn6M",
+						"to": "i2CrY6Xj",
+						"kind": "call",
+						"label": "apply transition",
+						"emphasis": "normal"
+					},
+					{
+						"id": "EqTEFYDa",
+						"from": "1gdbsn6M",
+						"to": "qTv7HuBw",
+						"kind": "data",
+						"label": "commit serialized board",
+						"emphasis": "hero"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "P7V1u4aN",
+						"name": "One requested change becomes one write",
+						"beats": [
+							{
+								"id": "xaTiUHzJ",
+								"heading": "Callers state a transition",
+								"body": "The server resolves the board and constructs a pure lifecycle transition from a create, edit, branch, settlement, or adoption request.",
+								"subjects": [
+									"4P7YZdnj",
+									"hoh4xPWb",
+									"i2CrY6Xj"
+								],
+								"view": "jLQUM0Qo"
+							},
+							{
+								"id": "oWVSSCzc",
+								"heading": "The aggregate changes under one lease",
+								"body": "The write boundary rereads the file, checks the expected version, applies semantic edits and descendant reconciliation, then validates the complete candidate before advancing its version.",
+								"subjects": [
+									"1gdbsn6M",
+									"tcwsrSQv",
+									"i2CrY6Xj",
+									"8CAH6rSD"
+								]
+							},
+							{
+								"id": "WtlDz9xU",
+								"heading": "Success follows durable replacement",
+								"body": "Only the validated whole-board candidate reaches atomic replacement; file and directory fsync complete before the applied result returns.",
+								"subjects": [
+									"1gdbsn6M",
+									"qTv7HuBw"
+								],
+								"view": "jLQUM0Qo"
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "tVCqUn1A"
+}

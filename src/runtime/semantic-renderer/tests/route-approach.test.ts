@@ -289,16 +289,18 @@ function endLegs(drawn: RenderedDiagram): Leg[] {
 	});
 }
 
-/** Three labelled crossings of one gap, which leaves short jogs between ports. */
+/** A labelled fork and return, with a skip route that must turn round the middle card. */
 const CROSSED: VariantContent = VariantContentSchema.parse({
 	nodes: [
 		{ id: "boundary", name: "Write boundary", kind: "service" },
 		{ id: "write", name: "Board write", kind: "module" },
+		{ id: "store", name: "Board store", kind: "module" },
 	],
 	edges: [
 		{ id: "lease", from: "boundary", to: "write", kind: "call", label: "under lease" },
-		{ id: "settled", from: "write", to: "boundary", kind: "event", label: "settled" },
-		{ id: "delta", from: "boundary", to: "write", kind: "data", label: "the delta" },
+		{ id: "settled", from: "store", to: "boundary", kind: "event", label: "settled" },
+		{ id: "delta", from: "boundary", to: "store", kind: "data", label: "the delta" },
+		{ id: "save", from: "write", to: "store", kind: "call", label: "save" },
 	],
 });
 

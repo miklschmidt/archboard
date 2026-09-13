@@ -1,0 +1,684 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "6E6hL0Zk",
+	"name": "Canvas server",
+	"version": 4,
+	"createdAt": "2026-09-12T22:28:19.714Z",
+	"updatedAt": "2026-09-13T00:47:03.482Z",
+	"views": [
+		{
+			"id": "FawxUEKE",
+			"name": "Board request path",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"2naazvac",
+					"K6P74fM7",
+					"Y70KOm9C",
+					"wYcdVszt",
+					"xP18j2Co",
+					"yiSc1qWU"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "ZyxNXY6t",
+			"name": "Live canvas state",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"yiSc1qWU",
+					"ZuLyutvj",
+					"9G6CmNgt",
+					"wYcdVszt"
+				],
+				"edges": [],
+				"flows": []
+			}
+		}
+	],
+	"variants": [
+		{
+			"id": "GC6SAtGL",
+			"name": "Current architecture",
+			"lifecycle": "current",
+			"summary": "Service level: server as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"content": {
+				"nodes": [
+					{
+						"id": "ghOazHEA",
+						"name": "Archboard system",
+						"kind": "external",
+						"responsibility": "Provides CLI, canvas, and viewer",
+						"description": "Parent system context for this backend service; the system-level board owns the relationship among the CLI, this server, and the browser viewer.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src"
+						},
+						"drillDown": {
+							"board": "Archboard",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "2naazvac",
+						"name": "HTTP application",
+						"kind": "module",
+						"responsibility": "Orders middleware and route mounts",
+						"description": "Builds the single Express application in execution order: mutation admission precedes body parsing, code-opening is preguarded, frontend assets are narrowly exposed, and route families mount before the final service/error routes.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/application.ts"
+						}
+					},
+					{
+						"id": "J7yOKraz",
+						"name": "Application lifetime",
+						"kind": "module",
+						"responsibility": "Starts and drains server resources",
+						"description": "Owns startup and orderly shutdown across HTTP, WebSocket, Codex workbench, checkout work, pid state and process handlers. Accepted board writes commit before their response.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/canvas-startup.ts"
+						}
+					},
+					{
+						"id": "K6P74fM7",
+						"name": "Mutation admission",
+						"kind": "module",
+						"responsibility": "Tracks writes through shutdown",
+						"description": "Admits mutation requests, propagates disconnect cancellation to waitable work, counts work that outlives an HTTP response, and exposes quiesce/resume state to controlled shutdown.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/application-lifetime.ts"
+						}
+					},
+					{
+						"id": "Y70KOm9C",
+						"name": "Semantic board routes",
+						"kind": "route",
+						"responsibility": "Serves board reads, writes, and SVG",
+						"description": "Validates HTTP inputs for create/edit/branch/settle/adopt operations, reads variants and views, renders diagrams on the server, and publishes accepted write outcomes to connected panes.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/semantic-board-routes.ts"
+						}
+					},
+					{
+						"id": "wYcdVszt",
+						"name": "Semantic board store",
+						"kind": "module",
+						"responsibility": "Owns durable board aggregates",
+						"description": "The sole read/write boundary for .semantic.json documents. It resolves safe vault paths, validates every read, serializes writes under a board lease, checks expected versions, propagates edits, and commits once with fsync-backed atomic replacement.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store"
+						},
+						"drillDown": {
+							"board": "Board persistence",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "xP18j2Co",
+						"name": "Semantic renderer",
+						"kind": "module",
+						"responsibility": "Turns board meaning into SVG",
+						"description": "Resolves architecture or data-flow view content, lays out nodes and exchanges, routes relationships, paints SVG with measured fonts and theme palettes, and returns a subject atlas for browser interaction.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "yiSc1qWU",
+						"name": "Pane routes and registry",
+						"kind": "module",
+						"responsibility": "Owns live presentation state",
+						"description": "Tracks connected pane registrations, authoritative board assignments, layout acknowledgements, selection context, and targeted or broadcast WebSocket delivery without retaining board content in memory.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/pane-registry.ts"
+						}
+					},
+					{
+						"id": "ZuLyutvj",
+						"name": "Disk change watcher",
+						"kind": "module",
+						"responsibility": "Refreshes externally changed boards",
+						"description": "Uses the board-lock sweep to compare inode, size and modification-time fingerprints for visible boards. Broadcasts board_note when a file changes; readers fetch fresh content through the store. It neither reads board content nor sends replacement scenes.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/semantic-disk-watch.ts"
+						}
+					},
+					{
+						"id": "6a2R1ddu",
+						"name": "Code opener",
+						"kind": "module",
+						"responsibility": "Resolves bindings into editors",
+						"description": "Accepts code-binding requests, guards browser-originated bodies and CSRF concerns, resolves registered repositories and safe paths, and launches the configured editor against a board node's persisted binding.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/code-opener"
+						}
+					},
+					{
+						"id": "9G6CmNgt",
+						"name": "Codex workbench",
+						"kind": "module",
+						"responsibility": "Coordinates bound agent sessions",
+						"description": "Composes the private Codex app-server session, browser gateway, coordinator, workhorse, approvals, timeline, and thread links used by the canvas while keeping their lifecycle under the server owner.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/codex-workbench-compose.ts"
+						},
+						"drillDown": {
+							"board": "Agent workbench",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "EJNFz91s",
+						"from": "ghOazHEA",
+						"to": "2naazvac",
+						"kind": "dependency",
+						"label": "runs backend",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4TwcHVXq",
+						"from": "J7yOKraz",
+						"to": "2naazvac",
+						"kind": "dependency",
+						"label": "owns listener",
+						"emphasis": "normal"
+					},
+					{
+						"id": "W2BXIpq7",
+						"from": "2naazvac",
+						"to": "K6P74fM7",
+						"kind": "dependency",
+						"label": "admits writes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "C9PQBOwg",
+						"from": "2naazvac",
+						"to": "Y70KOm9C",
+						"kind": "dependency",
+						"label": "mounts routes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "dHru8Ng6",
+						"from": "2naazvac",
+						"to": "yiSc1qWU",
+						"kind": "dependency",
+						"label": "mounts panes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ibCZHaRq",
+						"from": "2naazvac",
+						"to": "6a2R1ddu",
+						"kind": "dependency",
+						"label": "mounts opener",
+						"emphasis": "normal"
+					},
+					{
+						"id": "2SS8e4D0",
+						"from": "Y70KOm9C",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "read and commit",
+						"emphasis": "hero"
+					},
+					{
+						"id": "4jlBP8Y2",
+						"from": "Y70KOm9C",
+						"to": "xP18j2Co",
+						"kind": "render",
+						"label": "render selected view",
+						"emphasis": "hero"
+					},
+					{
+						"id": "FzpRaj2R",
+						"from": "Y70KOm9C",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "publish accepted write",
+						"emphasis": "normal"
+					},
+					{
+						"id": "sgeiS1Hj",
+						"from": "ZuLyutvj",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "locate watched file",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4c7u4tN8",
+						"from": "ZuLyutvj",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "announce file change",
+						"emphasis": "normal"
+					},
+					{
+						"id": "fISQ9jAX",
+						"from": "yiSc1qWU",
+						"to": "9G6CmNgt",
+						"kind": "event",
+						"label": "bridge browser session",
+						"emphasis": "normal"
+					},
+					{
+						"id": "oYfZ2qnC",
+						"from": "6a2R1ddu",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "resolve node binding",
+						"emphasis": "normal"
+					},
+					{
+						"id": "elH6AHHL",
+						"from": "J7yOKraz",
+						"to": "9G6CmNgt",
+						"kind": "dependency",
+						"label": "start and stop",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "rKhJWXwz",
+						"name": "How the backend serves a board",
+						"beats": [
+							{
+								"id": "V6wttd3K",
+								"heading": "Requests enter one ordered application",
+								"body": "The HTTP application establishes admission and parsing order before dispatching board, pane, code, or service routes.",
+								"subjects": [
+									"2naazvac",
+									"K6P74fM7"
+								],
+								"view": "FawxUEKE"
+							},
+							{
+								"id": "SCewKCv2",
+								"heading": "Meaning is read once and drawn server-side",
+								"body": "Semantic routes read the validated aggregate through the store and ask the renderer for the selected architecture or data-flow SVG.",
+								"subjects": [
+									"Y70KOm9C",
+									"wYcdVszt",
+									"xP18j2Co"
+								],
+								"view": "FawxUEKE"
+							},
+							{
+								"id": "HRtMJ3Oc",
+								"heading": "The file remains truth while panes stay live",
+								"body": "Accepted writes and external disk changes become board-keyed WebSocket news; the registry retains presentation state only, while the Codex workbench coordinates the bound agent session.",
+								"subjects": [
+									"ZuLyutvj",
+									"yiSc1qWU",
+									"9G6CmNgt"
+								],
+								"view": "ZyxNXY6t"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "nkFJIEAH",
+			"name": "Readable layout",
+			"lifecycle": "draft",
+			"parent": "GC6SAtGL",
+			"content": {
+				"nodes": [
+					{
+						"id": "ghOazHEA",
+						"name": "Archboard system",
+						"kind": "external",
+						"responsibility": "Provides CLI, canvas, and viewer",
+						"description": "Parent system context for this backend service; the system-level board owns the relationship among the CLI, this server, and the browser viewer.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src"
+						},
+						"drillDown": {
+							"board": "Archboard",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "2naazvac",
+						"name": "HTTP application",
+						"kind": "module",
+						"responsibility": "Orders middleware and route mounts",
+						"description": "Builds the single Express application in execution order: mutation admission precedes body parsing, code-opening is preguarded, frontend assets are narrowly exposed, and route families mount before the final service/error routes.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/application.ts"
+						}
+					},
+					{
+						"id": "J7yOKraz",
+						"name": "Application lifetime",
+						"kind": "module",
+						"responsibility": "Starts and drains server resources",
+						"description": "Owns startup and orderly shutdown across HTTP, WebSocket, Codex workbench, checkout work, pid state and process handlers. Accepted board writes commit before their response.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/canvas-startup.ts"
+						}
+					},
+					{
+						"id": "K6P74fM7",
+						"name": "Mutation admission",
+						"kind": "module",
+						"responsibility": "Tracks writes through shutdown",
+						"description": "Admits mutation requests, propagates disconnect cancellation to waitable work, counts work that outlives an HTTP response, and exposes quiesce/resume state to controlled shutdown.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/application-lifetime.ts"
+						}
+					},
+					{
+						"id": "Y70KOm9C",
+						"name": "Semantic board routes",
+						"kind": "route",
+						"responsibility": "Serves board reads, writes, and SVG",
+						"description": "Validates HTTP inputs for create/edit/branch/settle/adopt operations, reads variants and views, renders diagrams on the server, and publishes accepted write outcomes to connected panes.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/semantic-board-routes.ts"
+						}
+					},
+					{
+						"id": "wYcdVszt",
+						"name": "Semantic board store",
+						"kind": "module",
+						"responsibility": "Owns durable board aggregates",
+						"description": "The sole read/write boundary for .semantic.json documents. It resolves safe vault paths, validates every read, serializes writes under a board lease, checks expected versions, propagates edits, and commits once with fsync-backed atomic replacement.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-board-store"
+						},
+						"drillDown": {
+							"board": "Board persistence",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "xP18j2Co",
+						"name": "Semantic renderer",
+						"kind": "module",
+						"responsibility": "Turns board meaning into SVG",
+						"description": "PROPOSED internal layout replacement: measure readable cards, pass containment and connections into one compound layout owner, and paint its complete geometry. The semantic read/render interface still returns SVG and a matching interaction atlas; persistence and pane delivery remain as implemented. Open the named renderer proposal for the internal change and acceptance evidence.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer"
+						},
+						"drillDown": {
+							"board": "Semantic renderer",
+							"variant": {
+								"kind": "named",
+								"name": "Readable layout"
+							}
+						}
+					},
+					{
+						"id": "yiSc1qWU",
+						"name": "Pane routes and registry",
+						"kind": "module",
+						"responsibility": "Owns live presentation state",
+						"description": "Tracks connected pane registrations, authoritative board assignments, layout acknowledgements, selection context, and targeted or broadcast WebSocket delivery without retaining board content in memory.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/pane-registry.ts"
+						}
+					},
+					{
+						"id": "ZuLyutvj",
+						"name": "Disk change watcher",
+						"kind": "module",
+						"responsibility": "Refreshes externally changed boards",
+						"description": "Uses the board-lock sweep to compare inode, size and modification-time fingerprints for visible boards. Broadcasts board_note when a file changes; readers fetch fresh content through the store. It neither reads board content nor sends replacement scenes.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/semantic-disk-watch.ts"
+						}
+					},
+					{
+						"id": "6a2R1ddu",
+						"name": "Code opener",
+						"kind": "module",
+						"responsibility": "Resolves bindings into editors",
+						"description": "Accepts code-binding requests, guards browser-originated bodies and CSRF concerns, resolves registered repositories and safe paths, and launches the configured editor against a board node's persisted binding.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/code-opener"
+						}
+					},
+					{
+						"id": "9G6CmNgt",
+						"name": "Codex workbench",
+						"kind": "module",
+						"responsibility": "Coordinates bound agent sessions",
+						"description": "Composes the private Codex app-server session, browser gateway, coordinator, workhorse, approvals, timeline, and thread links used by the canvas while keeping their lifecycle under the server owner.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/codex-workbench-compose.ts"
+						},
+						"drillDown": {
+							"board": "Agent workbench",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "EJNFz91s",
+						"from": "ghOazHEA",
+						"to": "2naazvac",
+						"kind": "dependency",
+						"label": "runs backend",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4TwcHVXq",
+						"from": "J7yOKraz",
+						"to": "2naazvac",
+						"kind": "dependency",
+						"label": "owns listener",
+						"emphasis": "normal"
+					},
+					{
+						"id": "W2BXIpq7",
+						"from": "2naazvac",
+						"to": "K6P74fM7",
+						"kind": "dependency",
+						"label": "admits writes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "C9PQBOwg",
+						"from": "2naazvac",
+						"to": "Y70KOm9C",
+						"kind": "dependency",
+						"label": "mounts routes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "dHru8Ng6",
+						"from": "2naazvac",
+						"to": "yiSc1qWU",
+						"kind": "dependency",
+						"label": "mounts panes",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ibCZHaRq",
+						"from": "2naazvac",
+						"to": "6a2R1ddu",
+						"kind": "dependency",
+						"label": "mounts opener",
+						"emphasis": "normal"
+					},
+					{
+						"id": "2SS8e4D0",
+						"from": "Y70KOm9C",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "read and commit",
+						"emphasis": "hero"
+					},
+					{
+						"id": "4jlBP8Y2",
+						"from": "Y70KOm9C",
+						"to": "xP18j2Co",
+						"kind": "render",
+						"label": "render selected view",
+						"emphasis": "hero"
+					},
+					{
+						"id": "FzpRaj2R",
+						"from": "Y70KOm9C",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "publish accepted write",
+						"emphasis": "normal"
+					},
+					{
+						"id": "sgeiS1Hj",
+						"from": "ZuLyutvj",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "locate watched file",
+						"emphasis": "normal"
+					},
+					{
+						"id": "4c7u4tN8",
+						"from": "ZuLyutvj",
+						"to": "yiSc1qWU",
+						"kind": "event",
+						"label": "announce file change",
+						"emphasis": "normal"
+					},
+					{
+						"id": "fISQ9jAX",
+						"from": "yiSc1qWU",
+						"to": "9G6CmNgt",
+						"kind": "event",
+						"label": "bridge browser session",
+						"emphasis": "normal"
+					},
+					{
+						"id": "oYfZ2qnC",
+						"from": "6a2R1ddu",
+						"to": "wYcdVszt",
+						"kind": "call",
+						"label": "resolve node binding",
+						"emphasis": "normal"
+					},
+					{
+						"id": "elH6AHHL",
+						"from": "J7yOKraz",
+						"to": "9G6CmNgt",
+						"kind": "dependency",
+						"label": "start and stop",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "rKhJWXwz",
+						"name": "How the backend serves a board",
+						"beats": [
+							{
+								"id": "V6wttd3K",
+								"heading": "Requests enter one ordered application",
+								"body": "The HTTP application establishes admission and parsing order before dispatching board, pane, code, or service routes.",
+								"subjects": [
+									"2naazvac",
+									"K6P74fM7"
+								],
+								"view": "FawxUEKE"
+							},
+							{
+								"id": "SCewKCv2",
+								"heading": "Meaning is read once and drawn server-side",
+								"body": "Semantic routes read the validated aggregate through the store and ask the renderer for the selected architecture or data-flow SVG.",
+								"subjects": [
+									"Y70KOm9C",
+									"wYcdVszt",
+									"xP18j2Co"
+								],
+								"view": "FawxUEKE"
+							},
+							{
+								"id": "HRtMJ3Oc",
+								"heading": "The file remains truth while panes stay live",
+								"body": "Accepted writes and external disk changes become board-keyed WebSocket news; the registry retains presentation state only, while the Codex workbench coordinates the bound agent session.",
+								"subjects": [
+									"ZuLyutvj",
+									"yiSc1qWU",
+									"9G6CmNgt"
+								],
+								"view": "ZyxNXY6t"
+							}
+						]
+					},
+					{
+						"id": "oM0iW1s4",
+						"name": "Readable layout inside the renderer",
+						"beats": [
+							{
+								"id": "LWEgP6E4",
+								"heading": "The change sits behind the renderer interface",
+								"body": "The server continues to read the selected semantic content and request SVG plus an atlas. Select Semantic renderer and open its Readable layout variant to inspect the proposed replacement pipeline. No board schema or browser layout control is added.",
+								"subjects": [
+									"xP18j2Co"
+								],
+								"view": "FawxUEKE"
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "GC6SAtGL"
+}

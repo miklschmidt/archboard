@@ -8,6 +8,7 @@
 import type { JSX, ReactNode } from "react";
 
 import { Skeleton } from "@/ui/components/skeleton";
+import type { SemanticOfferedView } from "@/ui/semantic-board-canvas/api/semantic-boards";
 import { SemanticBoardError } from "@/ui/semantic-board-canvas/api/semantic-boards";
 
 /** The classes every state of the stage fills its pane with. */
@@ -61,6 +62,10 @@ function SemanticStageLoading(props: SemanticStateProps): JSX.Element {
 
 /** An empty board, and whatever the last refresh has to disclose about it. */
 interface SemanticEmptyProps extends SemanticStateProps {
+	/** The shared view, when this is a narrowed reading. */
+	view: SemanticOfferedView | null;
+	/** The variant the empty result belongs to. */
+	variant: string;
 	/** The refresh-failure strip, or null while the answer is known to be current. */
 	notice: ReactNode;
 }
@@ -84,9 +89,15 @@ function SemanticStageEmpty(props: SemanticEmptyProps): JSX.Element {
 			className={`${STAGE_CLASS} items-center justify-center gap-2 p-8 text-center`}
 		>
 			{props.notice}
-			<p className="text-title">{props.board} has nothing on it yet</p>
+			<p className="text-title">
+				{props.view === null
+					? `${props.board} has nothing on it yet`
+					: `${props.view.name} is empty on ${props.variant}`}
+			</p>
 			<p className="text-muted-foreground text-body max-w-prose">
-				The board is here and readable. Ask an agent to put some architecture on it.
+				{props.view === null
+					? "The board is here and readable. Ask an agent to put some architecture on it."
+					: "This variant has no subjects in this view. Choose another view or variant to continue."}
 			</p>
 		</section>
 	);

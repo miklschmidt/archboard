@@ -12,13 +12,14 @@ import {
  * @returns The board document.
  */
 const board = (over: Record<string, unknown> = {}) => ({
-	schemaVersion: "1.0.0",
+	schemaVersion: "2.0.0",
 	kind: "semantic-board",
 	id: "bd1",
 	name: "Pipeline",
 	version: 1,
 	createdAt: "2026-09-11T00:00:00.000Z",
 	updatedAt: "2026-09-11T00:00:00.000Z",
+	views: [],
 	current: "v1",
 	variants: [
 		{ id: "v1", name: "Initial", lifecycle: "current", content: { nodes: [], edges: [] } },
@@ -52,7 +53,7 @@ describe("what a board has to be before it is drawn", () => {
 
 	test("a document written for a different major contract is refused", () => {
 		expect(refusal(board({ schemaVersion: "999.0.0" }))).toContain("999.0.0");
-		expect(parseSemanticBoard(board({ schemaVersion: "1.7.0" })).ok).toBe(true);
+		expect(parseSemanticBoard(board({ schemaVersion: "2.7.0" })).ok).toBe(true);
 	});
 
 	test("two variants claiming to be the implemented architecture is refused", () => {
@@ -218,17 +219,22 @@ describe("what a reader can address by name", () => {
 	];
 	/**
 	 * A variant holding two nodes and whatever explanations are stated.
-	 * @param content The flows and views on it.
+	 * @param content The flows on it.
+	 * @param views The board-wide views.
 	 * @returns The board document.
 	 */
-	const explaining = (content: Record<string, unknown>) =>
+	const explaining = (
+		content: Record<string, unknown>,
+		views: readonly Record<string, unknown>[] = [],
+	) =>
 		board({
+			views,
 			variants: [
 				{
 					id: "v1",
 					name: "Initial",
 					lifecycle: "current",
-					content: { nodes: NODES, edges: [], flows: [], views: [], ...content },
+					content: { nodes: NODES, edges: [], flows: [], ...content },
 				},
 			],
 		});
@@ -259,12 +265,10 @@ describe("what a reader can address by name", () => {
 	test("two views called the same thing are refused, because the viewer asks for one by name", () => {
 		expect(
 			refusal(
-				explaining({
-					views: [
-						{ id: "w1", name: "The parts", grammar: "architecture" },
-						{ id: "w2", name: "The parts", grammar: "architecture" },
-					],
-				}),
+				explaining({}, [
+					{ id: "w1", name: "The parts", grammar: "architecture" },
+					{ id: "w2", name: "The parts", grammar: "architecture" },
+				]),
 			),
 		).toContain('two views are called "The parts"');
 	});
@@ -304,7 +308,7 @@ describe("one namespace for every subject of a variant", () => {
 	};
 
 	test("a flow may not answer to a node's id", () => {
-		expect(refusal(holding({ nodes: [NODE], edges: [], flows: [FLOW], views: [] }))).toContain(
+		expect(refusal(holding({ nodes: [NODE], edges: [], flows: [FLOW] }))).toContain(
 			'a flow and a node both answer to the id "n1"',
 		);
 	});
@@ -316,23 +320,20 @@ describe("one namespace for every subject of a variant", () => {
 					nodes: [NODE],
 					edges: [],
 					flows: [{ ...FLOW, id: "f1", steps: [{ ...FLOW.steps[0], id: "n1" }] }],
-					views: [],
 				}),
 			),
 		).toContain('a step and a node both answer to the id "n1"');
 	});
 
-	test("a view may not answer to a node's id", () => {
+	test("a board-wide view may not answer to a node's id", () => {
 		expect(
 			refusal(
-				holding({
-					nodes: [NODE],
-					edges: [],
-					flows: [],
+				board({
 					views: [{ id: "n1", name: "The parts", grammar: "architecture" }],
+					variants: withContent({ nodes: [NODE], edges: [], flows: [] }),
 				}),
 			),
-		).toContain('a view and a node both answer to the id "n1"');
+		).toContain('the view answers to "n1"');
 	});
 
 	test("two steps of different flows may not share an identity", () => {
@@ -348,7 +349,6 @@ describe("one namespace for every subject of a variant", () => {
 						{ ...FLOW, id: "f1" },
 						{ ...FLOW, id: "f2", name: "Another exchange" },
 					],
-					views: [],
 				}),
 			),
 		).toContain('two steps share the id "s1"');
@@ -369,7 +369,6 @@ describe("one namespace for every subject of a variant", () => {
 							steps: [{ ...FLOW.steps[0], id: "s2" }],
 						},
 					],
-					views: [],
 				}),
 			),
 		).toContain('two flows share the id "f1"');
@@ -385,7 +384,7 @@ describe("one namespace for every subject of a variant", () => {
 							id: "v1",
 							name: "Initial",
 							lifecycle: "current",
-							content: { nodes: [NODE], edges: [], flows: [], views: [] },
+							content: { nodes: [NODE], edges: [], flows: [] },
 						},
 					],
 				}),
@@ -402,7 +401,7 @@ describe("one namespace for every subject of a variant", () => {
 							id: "n1",
 							name: "Initial",
 							lifecycle: "current",
-							content: { nodes: [NODE], edges: [], flows: [], views: [] },
+							content: { nodes: [NODE], edges: [], flows: [] },
 						},
 					],
 					current: "n1",
@@ -420,14 +419,14 @@ describe("one namespace for every subject of a variant", () => {
 							id: "v1",
 							name: "Initial",
 							lifecycle: "current",
-							content: { nodes: [NODE], edges: [], flows: [], views: [] },
+							content: { nodes: [NODE], edges: [], flows: [] },
 						},
 						{
 							id: "v2",
 							name: "Proposed",
 							lifecycle: "draft",
 							parent: "v1",
-							content: { nodes: [NODE], edges: [], flows: [], views: [] },
+							content: { nodes: [NODE], edges: [], flows: [] },
 						},
 					],
 				}),

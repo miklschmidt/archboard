@@ -19,7 +19,6 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
-	scopedContent,
 	VariantEditInputSchema,
 } from "@/shared/semantic-board/index";
 import {
@@ -149,17 +148,9 @@ function draw(board: string): string[] {
 	}
 	const drawn: string[] = [];
 	for (const variant of read.board.variants) {
-		for (const view of variant.content.views) {
-			// Exactly what the render route draws, through the same owner: the view
-			// cut out first, because a view that hides a node is a narrower reading;
-			// and for a proposal, its content plus what its change took away, marked
-			// with how each subject stands.
-			const proposal = drawingOf(
-				read.board,
-				variant,
-				scopedContent(variant.content, view.scope),
-				view.scope.kind === "all",
-			);
+		for (const view of read.board.views) {
+			// The route and artifact use the same scoped comparison depiction.
+			const proposal = drawingOf(read.board, variant, view.scope);
 			const picture = renderSemanticView({
 				content: proposal.content,
 				grammar: view.grammar,

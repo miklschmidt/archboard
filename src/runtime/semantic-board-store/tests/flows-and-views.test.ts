@@ -79,11 +79,11 @@ test("flows and views land in one batch and read back resolved", () => {
 	if (!read.ok) return;
 	const content = read.board.variants[0]!.content;
 	expect(content.flows).toHaveLength(1);
-	expect(content.views.map((v) => v.grammar)).toEqual(["architecture", "data-flow"]);
+	expect(read.board.views.map((v) => v.grammar)).toEqual(["architecture", "data-flow"]);
 	// The self step is a self step whether or not it was said.
 	expect(content.flows[0]!.steps[1]!.kind).toBe("self");
 	// The view's scope names the flow by identity, not by the name it was written with.
-	const scope = content.views[1]!.scope;
+	const scope = read.board.views[1]!.scope;
 	expect(scope.kind === "selection" && scope.flows).toEqual([content.flows[0]!.id]);
 	// Every participant and endpoint is a node of this variant.
 	const nodeIds = new Set(content.nodes.map((n) => n.id));
@@ -109,10 +109,12 @@ test("a node cannot be taken out from under a flow without saying so", async () 
 	expect(refused.outcome === "rejected" && refused.code).toBe("NODE_IN_FLOW");
 }, 20_000);
 
-test("a view that would be left selecting nothing is refused", async () => {
+test("a board view keeps a stale selection and explicitly draws nothing", async () => {
 	const read = store.readSemanticBoard(board);
 	if (!read.ok) throw new Error("no board");
-	const refused = await store.writeSemanticBoard({
+	const view = read.board.views[1]!;
+	const selectedFlow = read.board.variants[0]!.content.flows[0]!.id;
+	const applied = await store.writeSemanticBoard({
 		board,
 		writer,
 		expectedVersion: read.board.version,
@@ -120,7 +122,17 @@ test("a view that would be left selecting nothing is refused", async () => {
 			contract.VariantEditInputSchema.parse({ removeFlows: ["One edit"] }),
 		),
 	});
-	expect(refused.outcome === "rejected" && refused.code).toBe("VIEW_LEFT_EMPTY");
+	expect(applied.outcome).toBe("applied");
+	if (applied.outcome !== "applied") return;
+	const content = applied.board.variants[0]!.content;
+	expect(applied.board.views).toEqual(read.board.views);
+	expect(view.scope.kind === "selection" && view.scope.flows).toEqual([selectedFlow]);
+	expect(contract.scopedContent(content, view.scope)).toEqual({
+		nodes: [],
+		edges: [],
+		flows: [],
+		walkthroughs: [],
+	});
 }, 20_000);
 
 test("a step keeps its id when its flow is rewritten, and a stated id must name one", async () => {
@@ -213,6 +225,94 @@ test("a stated flow or view id that names nothing is refused", async () => {
 		),
 	});
 	expect(noView.outcome === "rejected" && noView.code).toBe("UNKNOWN_VIEW");
+}, 20_000);
+
+test("a board view can select an identity held only by another variant without changing either", async () => {
+	const initial = store.readSemanticBoard(board);
+	if (!initial.ok) throw new Error(initial.problem);
+	const baseline = initial.board.variants[0]!;
+	const branched = await store.writeSemanticBoard({
+		board,
+		writer,
+		expectedVersion: initial.board.version,
+		transition: store.branchVariantTransition(
+			contract.BoardBranchInputSchema.parse({ from: baseline.name, name: "With queue" }),
+		),
+	});
+	expect(branched.outcome).toBe("applied");
+	if (branched.outcome !== "applied") return;
+
+	const extended = await store.writeSemanticBoard({
+		board,
+		writer,
+		expectedVersion: branched.board.version,
+		transition: store.editVariantTransition(
+			contract.VariantEditInputSchema.parse({
+				variant: "With queue",
+				nodes: [{ name: "Queue", kind: "queue" }],
+			}),
+		),
+	});
+	expect(extended.outcome).toBe("applied");
+	if (extended.outcome !== "applied") return;
+	const adopted = await store.writeSemanticBoard({
+		board,
+		writer,
+		expectedVersion: extended.board.version,
+		transition: store.adoptVariantTransition(
+			contract.BoardAdoptInputSchema.parse({ variant: "With queue", reason: "queue it" }),
+		),
+	});
+	expect(adopted.outcome).toBe("applied");
+	if (adopted.outcome !== "applied") return;
+	const before = adopted.board.variants.map((variant) => variant.content);
+	expect(adopted.board.variants.find((variant) => variant.id === baseline.id)?.lifecycle).toBe(
+		"historical",
+	);
+
+	const viewed = await store.writeSemanticBoard({
+		board,
+		writer,
+		expectedVersion: adopted.board.version,
+		transition: store.editVariantTransition(
+			contract.VariantEditInputSchema.parse({
+				variant: baseline.name,
+				views: [
+					{
+						name: "The proposed queue",
+						grammar: "architecture",
+						scope: { kind: "selection", nodes: ["Queue"], edges: [], flows: [] },
+					},
+				],
+			}),
+		),
+	});
+	expect(viewed.outcome).toBe("applied");
+	if (viewed.outcome !== "applied") return;
+	expect(viewed.board.variants.map((variant) => variant.content)).toEqual(before);
+	const queue = viewed.board.variants[1]!.content.nodes.find((node) => node.name === "Queue")!;
+	const view = viewed.board.views.find((one) => one.name === "The proposed queue")!;
+	expect(view.scope.kind === "selection" && view.scope.nodes).toEqual([queue.id]);
+
+	const historicalNode = viewed.board.variants.find((variant) => variant.id === baseline.id)!
+		.content.nodes[0]!;
+	const refused = await store.writeSemanticBoard({
+		board,
+		writer,
+		expectedVersion: viewed.board.version,
+		transition: store.editVariantTransition(
+			contract.VariantEditInputSchema.parse({
+				variant: baseline.name,
+				nodes: [{ ...historicalNode, name: "Historical CLI" }],
+				views: [{ name: "Must not land", grammar: "architecture" }],
+			}),
+		),
+	});
+	expect(refused.outcome === "rejected" && refused.code).toBe("VARIANT_HISTORICAL");
+	const unchanged = store.readSemanticBoard(board);
+	if (!unchanged.ok) throw new Error(unchanged.problem);
+	expect(unchanged.board.version).toBe(viewed.board.version);
+	expect(unchanged.board.views).toEqual(viewed.board.views);
 }, 20_000);
 
 test("a node keeps everything it was written with, including where it drills down to", async () => {

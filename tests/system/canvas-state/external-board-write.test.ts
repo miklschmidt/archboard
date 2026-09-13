@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@/shared/semantic-board/index";
 
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
 import { createRequester, waitFor } from "./support/http.ts";
@@ -34,7 +35,7 @@ const node = (name: string): Record<string, unknown> => ({
 function boardDocument(nodes: Array<Record<string, unknown>>): Record<string, unknown> {
 	const at = new Date().toISOString();
 	return {
-		schemaVersion: "1.0.0",
+		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "PreExist",
 		name: "payments",
@@ -42,13 +43,13 @@ function boardDocument(nodes: Array<Record<string, unknown>>): Record<string, un
 		createdAt: at,
 		updatedAt: at,
 		current: "Vinitial",
+		views: [],
 		variants: [
 			{
 				id: "Vinitial",
 				name: "Initial",
 				lifecycle: "current",
-				createdAt: at,
-				content: { nodes, edges: [], flows: [], views: [], walkthroughs: [] },
+				content: { nodes, edges: [], flows: [], walkthroughs: [] },
 			},
 		],
 	};

@@ -451,20 +451,17 @@ describe("renderArchitecture", () => {
 		// the atlas: a pill measured in the wrong face overflows this, not that.
 		expect(spanFits(span, labelPlates(rendered.svg).get("e2")!)).toBe(true);
 
-		// The route alone is narrower than the route plus its label, so the atlas
-		// box has to be the union rather than either one.
-		const unlabelled = renderArchitecture({
-			content: {
-				...SAMPLE,
-				edges: SAMPLE.edges.map((edge) =>
-					edge.id === "e2" ? { ...edge, label: undefined } : edge,
-				),
-			},
-			theme: "light",
-		});
-		expect(box.width * box.height).toBeGreaterThan(
-			unlabelled.atlas.edges["e2"]!.width * unlabelled.atlas.edges["e2"]!.height,
-		);
+		// The atlas holds both the route and its pill. Widening a corridor for a
+		// label can put the pill inside the route's bounding rectangle already.
+		const pill = labelPlates(rendered.svg).get("e2")!;
+		const points = routePoints(rendered.svg).get("e2")!;
+		expect(points.length).toBeGreaterThan(1);
+		for (const point of [...points, pill, { x: pill.x + pill.width, y: pill.y + pill.height }]) {
+			expect(point.x).toBeGreaterThanOrEqual(box.x - 0.1);
+			expect(point.y).toBeGreaterThanOrEqual(box.y - 0.1);
+			expect(point.x).toBeLessThanOrEqual(box.x + box.width + 0.1);
+			expect(point.y).toBeLessThanOrEqual(box.y + box.height + 0.1);
+		}
 	});
 
 	test("content with nothing in it is refused rather than drawn", () => {

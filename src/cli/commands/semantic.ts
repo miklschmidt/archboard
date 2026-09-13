@@ -144,7 +144,8 @@ const semanticEditContract = defineCommand({
 	description:
 		"Applies one batch of stated changes to a semantic board in one write. The batch is JSON with " +
 		"`nodes`, `edges`, `flows`, `views` and the matching `remove...` lists, read from --input or " +
-		"standard input, and it lands whole or not at all. --expect-version is required: state the " +
+		"standard input, and it lands whole or not at all. Architectural content targets the selected " +
+		"variant; views are shared by the whole board. --expect-version is required: state the " +
 		"version the board reported when you read it, and the write is refused if somebody has changed " +
 		"it since. A view's scope reads exactly as it is written: name relationships and the view shows " +
 		"those and no others, so one connection can be isolated; name none and it shows every " +
@@ -476,7 +477,7 @@ const semanticRenderContract = defineCommand({
 	usage:
 		"semantic render <name> --out <file.svg> [--variant <v>] [--view <v>] [--theme light|dark]",
 	description:
-		"Draws one variant of a semantic board, or one of its named views. Layout, typography and " +
+		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +
 		"routing belong to the renderer; nothing about the picture is authored on the board.",
 	examples: ["archboard semantic render pipeline --out pipeline.svg --theme dark"],
 	parameters: [
@@ -500,7 +501,7 @@ const semanticRenderContract = defineCommand({
 			key: "view",
 			spellings: ["--view"],
 			value: "required",
-			description: "Which of the variant's named views to draw; all of it when absent",
+			description: "Which shared board view to draw; the whole variant when absent",
 		},
 		{
 			kind: "option",

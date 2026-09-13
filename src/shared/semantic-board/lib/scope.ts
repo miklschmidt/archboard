@@ -23,6 +23,7 @@
 //   kept. Such a view is about a region — a service and what is inside it — and
 //   a region drawn with its parts unwired would be the broken drawing again.
 
+import type { SemanticBoard } from "@/shared/semantic-board/lib/aggregate";
 import type { VariantContent } from "@/shared/semantic-board/lib/content";
 import type { SemanticView, ViewScope } from "@/shared/semantic-board/lib/views";
 
@@ -54,7 +55,6 @@ function scopedContent(content: VariantContent, scope: ViewScope): VariantConten
 				scope.flows.includes(flow.id) &&
 				flow.participants.every((participant) => kept.has(participant)),
 		),
-		views: content.views,
 		// A view narrows what is drawn. It says nothing about what is explained,
 		// so the variant's explanations come through a view untouched.
 		walkthroughs: content.walkthroughs,
@@ -111,16 +111,15 @@ function withContainers(content: VariantContent, wanted: ReadonlySet<string>): S
  *
  * A reader who asked for no view is not asking for the first one: that is the
  * whole variant, and it is the caller's to say so. Nothing here guesses which
- * explanation was meant — a name fits at most one view, because a variant
+ * explanation was meant — a name fits at most one view, because a board
  * holding two views of one name is refused before it is ever read.
- * @param content The variant's content.
+ * @param board The board that owns the views.
  * @param asked The view's id or the name it was written under.
- * @returns The view, or undefined when nothing on this variant answers to it.
+ * @returns The view, or undefined when nothing on this board answers to it.
  */
-function findView(content: VariantContent, asked: string): SemanticView | undefined {
+function findView(board: Pick<SemanticBoard, "views">, asked: string): SemanticView | undefined {
 	return (
-		content.views.find((view) => view.id === asked) ??
-		content.views.find((view) => view.name === asked)
+		board.views.find((view) => view.id === asked) ?? board.views.find((view) => view.name === asked)
 	);
 }
 

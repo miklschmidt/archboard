@@ -13,9 +13,8 @@
 //   explanation somebody wrote, and deleting somebody's paragraph because a box
 //   moved is not a thing this program should do quietly.
 //
-//   A view whose selection named it simply stops naming it, because a view is a
-//   lens rather than content — unless that empties the selection, which would
-//   silently turn a view of two things into a view of everything.
+//   Board views keep their selections. Each variant draws the selected subjects
+//   it has, including an explicit empty reading when none are present.
 
 import type {
 	FlowStep,
@@ -324,11 +323,11 @@ function identified(
 ): { readonly ok: true; readonly ids: string[] } | SemanticRefusal {
 	const ids: string[] = [];
 	for (const reference of references) {
-		const found =
-			entities.find((one) => one.id === reference) ??
-			byHandle(entities, batch, reference) ??
-			entities.find((one) => one.name === reference);
-		if (found === undefined) {
+		const found = selectedIdentity(entities, reference, batch);
+		if (!found.ok) {
+			return found;
+		}
+		if (found.id === undefined) {
 			return refuse(code, `no ${what} called "${reference}" for a view to select`);
 		}
 		ids.push(found.id);
@@ -337,40 +336,26 @@ function identified(
 }
 
 /**
- * What a scope selects once the things that are gone have gone.
- * @param scope The scope as it stands.
- * @param present The ids of everything the variant still holds.
- * @returns The scope, narrowed.
- */
-function narrowed(scope: ViewScope, present: ReadonlySet<string>): ViewScope {
-	if (scope.kind === "all") {
-		return scope;
-	}
-	return {
-		kind: "selection",
-		nodes: scope.nodes.filter((id) => present.has(id)),
-		edges: scope.edges.filter((id) => present.has(id)),
-		flows: scope.flows.filter((id) => present.has(id)),
-	};
-}
-
-/**
  * Every flow and view the batch leaves behind.
  * @param before The content as it stood.
+ * @param viewsBefore The board views as they stood.
  * @param edit What the agent stated.
  * @param nodes The nodes the batch leaves behind.
  * @param edges The relationships the batch leaves behind, for a scope to name.
  * @param batch The batch; its ids and handles are extended.
+ * @param relatives Other variants of the board.
  * @returns The flows and views, or why the batch was refused.
  */
 function editViews(
 	before: VariantContent,
+	viewsBefore: readonly SemanticView[],
 	edit: VariantEditInput,
 	nodes: readonly SemanticNode[],
 	edges: readonly SemanticEdge[],
 	batch: Batch,
+	relatives: readonly VariantContent[],
 ): ViewEdit {
-	const removed = plannedRemovals(before, edit);
+	const removed = plannedRemovals(before, viewsBefore, edit);
 	if (!removed.ok) {
 		return removed;
 	}
@@ -382,25 +367,28 @@ function editViews(
 		}
 		flows = place(flows, built.flow);
 	}
-	let views = before.views.filter((view) => !removed.views.has(view.id));
+	const holds = familyHoldings({ nodes, edges, flows }, relatives);
+	let views = viewsBefore.filter((view) => !removed.views.has(view.id));
 	for (const stated of edit.views) {
-		const built = buildView(views, stated, { nodes, edges, flows }, batch);
+		const built = buildView(views, stated, holds, batch);
 		if (!built.ok) {
 			return built;
 		}
 		views = place(views, built.view);
 	}
-	return settled(flows, views, nodes, edges);
+	return settled(flows, views, nodes);
 }
 
 /**
  * What the batch takes off the board, resolved against the content as it stood.
  * @param before The content as it stood.
+ * @param viewsBefore The board views as they stood.
  * @param edit What the agent stated.
  * @returns The flow and view ids to remove, or the first reference that named nothing.
  */
 function plannedRemovals(
 	before: VariantContent,
+	viewsBefore: readonly SemanticView[],
 	edit: VariantEditInput,
 ):
 	| { readonly ok: true; readonly flows: ReadonlySet<string>; readonly views: ReadonlySet<string> }
@@ -415,7 +403,7 @@ function plannedRemovals(
 	}
 	const views = new Set<string>();
 	for (const reference of edit.removeViews) {
-		const view = namedOne(before.views, reference);
+		const view = namedOne(viewsBefore, reference);
 		if (view === undefined) {
 			return refuse("UNKNOWN_VIEW", `no view called "${reference}" to remove`);
 		}
@@ -429,14 +417,12 @@ function plannedRemovals(
  * @param flows The flows the batch leaves.
  * @param views The views the batch leaves.
  * @param nodes The nodes the batch leaves.
- * @param edges The relationships the batch leaves.
  * @returns The flows and views, narrowed, or why the batch was refused.
  */
 function settled(
 	flows: readonly SemanticFlow[],
 	views: readonly SemanticView[],
 	nodes: readonly SemanticNode[],
-	edges: readonly SemanticEdge[],
 ): ViewEdit {
 	const nodeIds = new Set(nodes.map((node) => node.id));
 	for (const flow of flows) {
@@ -449,43 +435,58 @@ function settled(
 			);
 		}
 	}
-	const present = new Set([
-		...nodeIds,
-		...edges.map((edge) => edge.id),
-		...flows.map((flow) => flow.id),
-	]);
-	return narrowedViews(flows, views, present);
+	return { ok: true, flows: [...flows], views: [...views] };
 }
 
 /**
- * Narrow every view's selection to what is left, and refuse one that would be
- * left selecting nothing.
- * @param flows The flows the batch leaves.
- * @param views The views the batch leaves.
- * @param present The ids of everything that survives.
- * @returns The flows and the narrowed views, or the refusal.
+ * All identities a board view can select, preferring the edited variant when shared.
+ * @param edited The variant after its edit.
+ * @param relatives Other variants of the board.
+ * @returns The combined family holdings.
  */
-function narrowedViews(
-	flows: readonly SemanticFlow[],
-	views: readonly SemanticView[],
-	present: ReadonlySet<string>,
-): ViewEdit {
-	const narrowedAll: SemanticView[] = [];
-	for (const view of views) {
-		const scope = narrowed(view.scope, present);
-		if (
-			scope.kind === "selection" &&
-			scope.nodes.length + scope.edges.length + scope.flows.length === 0
-		) {
-			return refuse(
-				"VIEW_LEFT_EMPTY",
-				`"${view.name}" selected only things this command takes away, and a view that selects ` +
-					"nothing would silently become a view of everything; give it something to show or remove it",
-			);
-		}
-		narrowedAll.push({ ...view, scope });
-	}
-	return { ok: true, flows: [...flows], views: narrowedAll };
+function familyHoldings(edited: Holdings, relatives: readonly VariantContent[]): Holdings {
+	const contents = [edited, ...relatives];
+	return {
+		nodes: distinct(contents.flatMap((content) => content.nodes)),
+		edges: distinct(contents.flatMap((content) => content.edges)),
+		flows: distinct(contents.flatMap((content) => content.flows)),
+	};
+}
+
+/**
+ * Keep the first spelling of each identity.
+ * @param entities The entities in priority order.
+ * @returns One entry per identity.
+ */
+function distinct<Entity extends { readonly id: string }>(entities: readonly Entity[]): Entity[] {
+	return [...new Map(entities.toReversed().map((entity) => [entity.id, entity])).values()];
 }
 
 export { type ViewEdit, editViews };
+
+/**
+ * Resolve a family-wide identity without guessing between namesakes.
+ * @param entities The board subjects a selection can name.
+ * @param reference The stated id, handle or name.
+ * @param batch The current command identity owner.
+ * @returns The matching identity, or an ambiguity refusal.
+ */
+function selectedIdentity(
+	entities: readonly { readonly id: string; readonly name?: string }[],
+	reference: string,
+	batch: Batch,
+): { readonly ok: true; readonly id: string | undefined } | SemanticRefusal {
+	const known =
+		entities.find((entity) => entity.id === reference) ?? byHandle(entities, batch, reference);
+	if (known !== undefined) {
+		return { ok: true, id: known.id };
+	}
+	const matches = entities.filter((entity) => entity.name === reference);
+	if (matches.length > 1) {
+		return refuse(
+			"AMBIGUOUS_REFERENCE",
+			`"${reference}" names several subjects across this board; select one by id (${matches.map((entity) => entity.id).join(", ")})`,
+		);
+	}
+	return { ok: true, id: matches[0]?.id };
+}

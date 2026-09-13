@@ -3,7 +3,7 @@
 //
 // It comes from the board document — the same read the inspector goes through —
 // because a render answer says which variant it drew and not which others the
-// board has, and carries the variant's views and not its narrative. The read is
+// board has, and carries the board's views and not the variant's narrative. The read is
 // cached per board and invalidated by the board's own change announcement, so
 // two panes on one board share it and a pane pays for it once.
 //

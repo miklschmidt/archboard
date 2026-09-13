@@ -1,4 +1,7 @@
 {
+	// Canonical vault files use semantic-board-store's deterministic serializer.
+	// Reformatting outside that owner would bypass board versions and live updates.
+	"ignorePatterns": [".archboard/vault/**/*.semantic.json"],
 	"useTabs": true,
 	"printWidth": 100,
 	"quoteStyle": "double",

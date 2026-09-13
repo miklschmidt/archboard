@@ -13,7 +13,11 @@ this checkout, use `./bin/canvas` in place of `archboard`.
 
 ## Write a board
 
-Choose one subject and level of detail. A system board shows collaborating
+Choose one diagram or architectural question and level of detail. Give the board
+a short semantic name describing its subject, such as `Payment processing`,
+`Board persistence` or `Renderer layout`. Board names are human navigation labels,
+not repository paths or directory hierarchies. Put code paths in node bindings.
+A system board shows collaborating
 services; a service board shows modules within one service; a module board can
 show its functions. Use separate linked boards when exploring deeper.
 
@@ -56,9 +60,11 @@ archboard semantic render payments --out payments.svg
   to the explanation.
 - **Flows:** name the exchange, list its `participants`, then ordered `steps`
   with `from`, `to`, `label` and message `kind`: `sync`, `async`, `return`, `self`.
-- **Views:** give a reading a `name`, a `grammar` (`architecture` or `data-flow`)
-  and a `scope`. An architecture view selects nodes or edges; a data-flow view
-  selects a flow.
+- **Views:** the board owns one shared set of named readings. Give each a `name`,
+  a `grammar` (`architecture` or `data-flow`) and a `scope`. An architecture view
+  selects nodes or edges; a data-flow view selects a flow. Every variant uses
+  these same views. A comparison includes selected subjects removed from its
+  predecessor; a view is empty when neither state contains its selected subjects.
 - **Walkthroughs:** explain the board through ordered `beats`, each with a
   `heading`, `body`, relevant `subjects` and optional `view`.
 
@@ -72,13 +78,48 @@ Read with `semantic show <board>`. Make one requested change in one
 current. Include `--expect-version` with the version you read and a short
 `--doing` description on each write.
 
-Keep existing subject IDs, including when renaming. Omit IDs on new subjects;
-references accept existing IDs or names. Each supplied subject replaces its
+Before editing, map the intended changes to the subjects you read:
+
+- **Continuation:** retain the ID when the same module, relationship, exchange or
+  action evolves. A renamed module or reordered call keeps its identity.
+- **Replacement:** remove the old subject and create its replacement without an
+  ID. Similar names, positions or source paths do not make two implementations
+  the same architectural unit. Keep bindings only when they implement that unit;
+  a planned replacement can have no binding yet.
+- **Untouched:** leave its definition alone. Rewording every responsibility makes
+  every card appear changed and hides the actual architectural delta.
+
+For connections, count changed authored properties against the predecessor,
+excluding the ID:
+
+- **One change:** the connection can retain its ID. A label clarification between
+  the same nodes, or the same labelled connection targeting a new node, can be a
+  continuation.
+- **Two or more changes:** treat it as a replacement. Put the old edge ID in
+  `removeEdges` and add the new edge without an ID in the same batch.
+
+For example, Render driver → Grid placement (“place grid”) becoming Render
+driver → Compound layout (“graph and measured sizes”) changes both destination
+and label: show one removed edge and one added edge. Compare endpoint IDs, not
+display names; renaming the same node does not count as changing the connection.
+
+For an evolving sequence, retain the flow ID for the same request or exchange.
+Match its steps by the action each represents, preserving IDs for continuing
+calls and returns even when their order or payload changes. Add genuinely new
+actions and remove obsolete ones. Recreating a flow or all its steps produces a
+wholesale deletion and addition, not a comparison of the exchange's evolution.
+
+References accept existing IDs or names. Each supplied subject replaces its
 previous definition, so retain its fields. Unmentioned subjects stay; use the
 matching `removeNodes`, `removeEdges`, `removeFlows`, `removeViews` or
 `removeWalkthroughs` list to delete them.
 
-Branch a proposal from the variant being discussed, then edit that proposal.
+Variants describe the evolution of the same diagram. Branch from the state being
+discussed, then edit that successor; competing successors form branches in the
+board's tree. A view edit changes the board's shared reading, even when
+the batch targets a particular variant. Use linked boards for different subjects
+or questions, rather than variants with unrelated diagrams.
+
 For the example board at version 1:
 
 ```bash
@@ -93,6 +134,20 @@ archboard semantic edit payments --expect-version 2 --doing "adding the read cac
 JSON
 archboard semantic render payments --variant "Read cache" --out proposal.svg
 ```
+
+Before presenting a proposal, read the saved family and render the predecessor
+and proposal through the **same board view**. Verify both the IDs and the picture:
+
+- Added, removed, changed and untouched subjects match your intended change map.
+- Selected deleted flows, calls and participants remain visibly marked as removed.
+  A subject absent from the picture is not evidence that its deletion is shown.
+- A continuing exchange has a meaningful step comparison. An entirely green
+  sequence or entirely changed cast needs an explanation grounded in the intended
+  change, not merely a successful render.
+
+Repair authoring errors before presenting. If the saved comparison is correct
+but the picture omits a change, report the renderer bug; keep the architecture
+truthful instead of adding fake subjects or changing IDs to force a visual result.
 
 Adopt when asked with `semantic adopt`: the proposal becomes current and the
 previous current variant becomes historical. For substantial work across

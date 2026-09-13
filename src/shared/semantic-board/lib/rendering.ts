@@ -72,7 +72,7 @@ const RenderedVariantSchema = z.object({
 type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
 
 /**
- * One of a variant's named views, as a reader needs to know it: enough to put
+ * One of a board's named views, as a reader needs to know it: enough to put
  * it in a switcher and ask for it, and nothing about what is inside it.
  */
 const OfferedViewSchema = z.object({
@@ -108,7 +108,7 @@ type RenderedChanges = z.infer<typeof RenderedChangesSchema>;
 /**
  * What every render answer says about what was drawn, before the picture.
  *
- * Every answer carries the variant's whole list of views, because a pane that
+ * Every answer carries the board's whole list of views, because a pane that
  * has just been given a picture is exactly the thing that needs to offer the
  * others, and a second round trip to find out what they are would be a second
  * chance for the two to disagree.
@@ -121,7 +121,7 @@ const RenderIdentitySchema = z.object({
 	theme: DiagramThemeSchema,
 	/** The view this picture is of, or null when it is of the whole variant. */
 	view: OfferedViewSchema.nullable(),
-	/** Every view this variant offers, in the order it states them. */
+	/** Every board view, in its authored order. */
 	views: z.array(OfferedViewSchema),
 	/**
 	 * What this variant changed about the one it came from, or null when it came

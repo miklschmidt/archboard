@@ -225,7 +225,8 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		if (!named(key)) {
 			return;
 		}
-		const changed = status.opened !== key;
+		const previousKey = status.opened;
+		const changed = previousKey !== key;
 		// Arriving sets both: the pane is showing the board it was pointed at,
 		// and that is also where any later drill starts from.
 		status.opened = key;
@@ -243,7 +244,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 			// is not; the server sends that immediately behind the board (ADR 0016).
 			setHolder(UNKNOWN_HOLDER);
 			reading.reset();
-			host.options().onBoardAdopted?.(paneId, key);
+			host.options().onBoardAdopted?.(paneId, key, previousKey);
 		}
 		publishStatus();
 		// Immediately, not on the debounce: `browser panes` is read every turn.

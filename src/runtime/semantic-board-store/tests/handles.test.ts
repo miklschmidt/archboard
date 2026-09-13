@@ -151,7 +151,7 @@ test("a handle resolves anywhere a reference does, not only in a beat", async ()
 	const content = held();
 	const queue = content.nodes.find((node) => node.name === "Queue")!;
 	const enqueue = content.edges.find((one) => one.to === queue.id)!;
-	const scope = content.views[0]!.scope;
+	const scope = readBack().views[0]!.scope;
 	expect(scope.kind === "selection" && scope.nodes).toEqual([queue.id]);
 	expect(scope.kind === "selection" && scope.edges).toEqual([enqueue.id]);
 }, 20_000);
