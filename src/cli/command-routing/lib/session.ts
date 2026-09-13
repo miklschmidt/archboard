@@ -72,7 +72,7 @@ function printHelp(routes: CommandRoutes): void {
 		"  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required,",
 		"               5 board write refused (held, claim revoked, version moved, or the",
 		"               note changed on disk).",
-		"               check only: 6 warnings, 7 errors, 8 indeterminate coverage.",
+		"               check: 0 means clean; 1 means vault warnings or errors remain.",
 		"  Canvas-driving commands auto-start the server (disable with EXCALIDRAW_NO_AUTOSTART=1).",
 		"  Canvas URL comes from EXPRESS_SERVER_URL (default http://127.0.0.1:3000) or --url.",
 		"",

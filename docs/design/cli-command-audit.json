@@ -3,8 +3,8 @@
 	"reviewedBase": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
 	"surface": {
 		"commands": 33,
-		"subcommands": 34,
-		"paths": 67
+		"subcommands": 35,
+		"paths": 68
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
@@ -978,21 +978,26 @@
 		{
 			"path": "check",
 			"parserOwner": "CommandContract concrete Commander parser",
-			"handlerOwner": "src/cli/commands/check.ts",
-			"stdout": "schema-v3 JSON report or deterministic text",
-			"result": "board plus closed inspection report",
-			"diagnostics": "usage and operational read errors only",
-			"exits": [0, 1, 2, 6, 7, 8],
-			"prerequisites": ["board"],
-			"relationships": [],
-			"semantics": "read the persisted note directly without canvas or browser state",
-			"ordering": "validate policy, read raw note, inspect whole board, validate result, present",
-			"nextFields": ["coverage", "findings", "affectedBBox", "focusBBox"],
+			"handlerOwner": "src/cli/commands/vault.ts",
+			"stdout": "JSON policy and diagnostics",
+			"result": "shared whole-vault check result",
+			"diagnostics": "actionable file locations and messages on stderr",
+			"exits": [0, 1, 2, 3],
+			"prerequisites": ["server"],
+			"relationships": ["GET /api/vault/check"],
+			"semantics": "checks YAML configuration and every semantic board family; invalid configuration activates defaults and warnings; unreadable families are errors",
+			"ordering": "read current policy, inspect every board, report all diagnostics; exit 1 if any remain",
+			"nextFields": ["configurationFile", "policy", "diagnostics", "fingerprint"],
 			"workflow": "necessary composition",
-			"effects": ["local-read"],
-			"refusals": [],
-			"introducedBy": "TASK-119",
-			"classification": "board"
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			],
+			"introducedBy": "TASK-203",
+			"classification": "neither"
 		},
 		{
 			"path": "render-findings",
@@ -2208,6 +2213,30 @@
 			"effects": ["local-read", "local-write"],
 			"refusals": [],
 			"classification": "neither"
+		},
+		{
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/vault.ts",
+			"stdout": "JSON policy and diagnostics",
+			"diagnostics": "actionable file locations and messages on stderr",
+			"exits": [0, 1, 2, 3],
+			"relationships": ["GET /api/vault/check"],
+			"nextFields": ["configurationFile", "policy", "diagnostics", "fingerprint"],
+			"workflow": "necessary composition",
+			"effects": ["read"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				}
+			],
+			"introducedBy": "TASK-203",
+			"path": "semantic config",
+			"result": "current interpreted policy or generated editor JSON Schema",
+			"prerequisites": [],
+			"semantics": "discover configured vocabulary and visual policy; --schema emits canonical editor schema without contacting the server",
+			"ordering": "generate schema locally or request the shared checker",
+			"classification": "board"
 		}
 	],
 	"workflows": [

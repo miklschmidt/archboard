@@ -66,7 +66,7 @@ async function seedSemanticBoard(
 			body: {
 				board,
 				origin: "agent",
-				create: { nodes: content.nodes, edges: content.edges ?? [] },
+				create: { level: "system", nodes: content.nodes, edges: content.edges ?? [] },
 			},
 		},
 	);

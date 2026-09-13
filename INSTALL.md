@@ -147,18 +147,50 @@ started with. `archboard status` prints the vault in use, and
 `archboard stop` is how you switch. That is the one that bites when you move
 between two repos that each keep their own boards.
 
-The consumer defines the allowed architecture levels in
-`<vault>/.archboard/config.json`:
+The consumer defines vocabulary and presentation in
+`<vault>/.archboard/config.yaml`. Keep this file under version control with the
+boards. For example:
 
-```json
-{ "levels": ["system", "service", "module"] }
+```yaml
+levels: [system, service, module]
+nodeKinds:
+  azure: { name: Azure, icon: RiCloudLine, color: blue }
+  kubernetes: { name: Kubernetes, icon: RiShip2Line, color: green }
+  api: { name: API, icon: RiServerLine, color: violet }
+relationshipKinds:
+  http: { name: HTTP, color: cyan, dash: solid, arrowhead: filled }
+  event: { name: Event, color: amber, dash: dashed, arrowhead: open }
 ```
 
-Every board must carry a `level` from this list. These values are shared across
-the vault; use your own vocabulary when these names do not fit. `archboard
-semantic` reports the configured values. Missing configuration, a missing board
-level, or a value outside the list is an error, with no inferred default.
-Keep this configuration under version control with the boards.
+Every board must declare a `level`. Nodes and edges reference the configured
+kind keys. Icons use RemixIcon export names; colors reference the curated palette:
+red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo,
+violet, purple, fuchsia, pink and rose. Omit `color` for neutral type styling.
+Relationship `dash` is solid, dashed or dotted; `arrowhead` is filled, open or none.
+
+Run `archboard semantic config` to discover the interpreted policy and
+`archboard semantic config --schema` to generate its editor validation schema.
+Run `archboard check` to check configuration and every board family in the vault.
+Missing required board metadata is always an error. Valid configuration rejects
+new unknown references; references to removed definitions remain readable with
+warnings. Missing or invalid YAML activates coherent bundled defaults and warns,
+while permitting structurally valid edits. Fix the configuration to restore
+vocabulary validation and configured appearance.
+
+Saving configuration restyles every variant and open pane without changing board
+content. A container establishes the body color for its contents; a nearer colored
+container wins, and an uncolored container passes its enclosing color through.
+Each node's icon chip independently shows its type. A collapsed Kubernetes card
+inside Azure therefore has an Azure-blue body and Kubernetes-green chip; expanded
+Kubernetes establishes green for itself and its children.
+
+The browser legend explains these channels and can be hidden. The diagnostics
+bell opens the same checker findings and offers **Fix with Codex** through the
+pane's workhorse. Findings clear only when a subsequent check confirms the repair.
+Exported diagrams have no legend. Explicit edge `traffic: {}` enables illustrative
+motion with defaults of 40 diagram units per second and 0.5 dots per second;
+optional `speed` and `volume` must be positive finite values. Omit `traffic` to
+disable it. Emphasis affects line weight only.
 
 ## Working in a repo
 

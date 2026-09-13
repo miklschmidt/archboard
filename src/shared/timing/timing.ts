@@ -374,8 +374,6 @@ export {
 	FLOW_CYCLE_CAP_MS,
 	FLOW_PULSE_RAMP,
 	FLOW_STEP_TRAVEL_MS,
-	HERO_PULSE_TRAVEL_MS,
-	PULSE_TRAVEL_MS,
 } from "@/shared/timing/lib/diagram-motion";
 export {
 	ACTIVITY_LINGER_MS,
@@ -434,3 +432,6 @@ export {
 	CODEX_WAIT_TARGET_POLL_MS,
 	CODEX_QUEUE_REREAD_FLOOR_MS,
 };
+
+/** Notice vault/configuration edits promptly without scanning the whole vault on every frame. */
+export const VAULT_CHECK_POLL_MS = 5_000;

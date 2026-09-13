@@ -1,3 +1,8 @@
+import {
+	nodeAppearances,
+	type NodeAppearance,
+} from "@/runtime/semantic-renderer/lib/semantic-appearance";
+import type { SemanticPolicy } from "@/shared/semantic-policy/index";
 // Painting a message sequence: the frame, then the columns of time, then the
 // cards at their heads, then the messages crossing between them.
 //
@@ -77,7 +82,6 @@ import {
 	markerFor,
 	stylesFor,
 	lineColour,
-	STROKE_OPACITY,
 	STROKE_WIDTH,
 	type Head,
 	type SvgStyles,
@@ -133,9 +137,8 @@ function stepAttributes(
 ): Attributes {
 	return {
 		fill: "none",
-		stroke: lineColour(palette, STEP_WEIGHT, standing),
+		stroke: lineColour(palette, standing),
 		"stroke-width": STROKE_WIDTH[STEP_WEIGHT],
-		"stroke-opacity": STROKE_OPACITY[STEP_WEIGHT],
 		"stroke-linecap": "round",
 		"stroke-linejoin": "round",
 		"stroke-dasharray": STEP_DASH[kind],
@@ -347,6 +350,7 @@ function paintFrame(
  * @param standingOf How each subject stands against the variant this one came from.
  * @param crossing The drawing's shared clock, which this flow takes its turns on.
  * @param unsettledOf Whether the board says a subject is still undecided.
+ * @param appearances Type channels for the depicted participant cards.
  * @returns Everything it draws, and the words that go above every flow's runs.
  */
 function paintFlow(
@@ -355,6 +359,7 @@ function paintFlow(
 	standingOf: StandingOf,
 	crossing: Crossing,
 	unsettledOf: UnsettledOf,
+	appearances: ReadonlyMap<string, NodeAppearance>,
 ): { readonly body: string; readonly words: string } {
 	const activeAt = activationLookup(layout.columns);
 	const body = lines([
@@ -378,6 +383,7 @@ function paintFlow(
 						palette,
 						standingOf(column.card.node.id),
 						unsettledOf(column.card.node.id),
+						appearances.get(column.card.node.id)!,
 					),
 				),
 			),
@@ -464,6 +470,7 @@ function stepSubjects(layout: FlowLayout): DrawnSubject[] {
  * @param palette The theme's colours.
  * @param standingOf How each subject stands against the variant this one came from.
  * @param unsettledOf Whether the board says a subject is still undecided.
+ * @param policy Current vault policy.
  * @returns The page, its body and its atlas.
  */
 function paintDataFlow(
@@ -472,8 +479,14 @@ function paintDataFlow(
 	palette: Palette,
 	standingOf: StandingOf,
 	unsettledOf: UnsettledOf,
+	policy: SemanticPolicy,
 ): DataFlowPainting {
 	const layout = layoutDataFlow(flows, nodes);
+	// Sequence columns are cards; containment is not depicted in this grammar.
+	const appearances = nodeAppearances(
+		nodes.map(({ parent: _parent, ...node }) => node),
+		policy,
+	);
 	// One clock for everything drawn, so the whole page is told in order. It
 	// grows with the number of turns and then stops growing: past the cap a
 	// reader who looked away would not see the beginning come round again.
@@ -482,7 +495,7 @@ function paintDataFlow(
 		cycle: Math.min(layout.turns * FLOW_STEP_TRAVEL_MS, FLOW_CYCLE_CAP_MS) / 1000,
 	};
 	const painted = layout.flows.map((laid) =>
-		paintFlow(laid, palette, standingOf, crossing, unsettledOf),
+		paintFlow(laid, palette, standingOf, crossing, unsettledOf, appearances),
 	);
 	const columns = layout.flows.flatMap(columnSubjects);
 	const steps = layout.flows.flatMap(stepSubjects);

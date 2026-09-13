@@ -50,7 +50,8 @@ import { refuse, type SemanticRefusalCode } from "@/runtime/semantic-board-store
 import type { SemanticTransition } from "@/runtime/semantic-board-store/lib/transitions";
 import type { DescendantOutcome } from "@/runtime/semantic-board-store/lib/propagate";
 import { edgeIdentityRefusal } from "@/runtime/semantic-board-store/lib/edge-identity";
-import { configuredSemanticBoardLevelProblem } from "@/runtime/semantic-board-store/lib/configuration";
+import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
+import { newVocabularyProblem } from "@/runtime/semantic-board-store/lib/vocabulary";
 
 /**
  * Who is writing.
@@ -362,7 +363,7 @@ function applyUnderLease(
 	if (!candidate.ok) {
 		return rejected(location, before.version, candidate.code, candidate.problem);
 	}
-	const checked = acceptable(location, command, {
+	const checked = acceptable(location, command, before.board, {
 		...candidate.board,
 		// Every accepted write stamps the contract it was written under. A board
 		// created before a field existed and then written to now holds what this
@@ -384,12 +385,14 @@ function applyUnderLease(
  * is the board this address names.
  * @param location Where it would be written.
  * @param command The stated command, for a refusal to say what it was doing.
+ * @param before The family before this command.
  * @param candidate The board the transition produced, already stamped.
  * @returns The board, or why it may not be written.
  */
 function acceptable(
 	location: SemanticBoardLocation,
 	command: SemanticWriteCommand,
+	before: SemanticBoard | null,
 	candidate: SemanticBoard,
 ): { readonly board: SemanticBoard } | Omit<SemanticWriteRejection, "version"> {
 	const parsed = parseSemanticBoard(candidate);
@@ -403,7 +406,10 @@ function acceptable(
 	}
 	const wrongAddress = misaddressedRefusal(location, parsed.board);
 	if (wrongAddress !== null) return wrongAddress;
-	const configuredLevel = configuredSemanticBoardLevelProblem(parsed.board.level);
+	const configured = readSemanticBoardConfiguration();
+	const configuredLevel = configured.ok
+		? newVocabularyProblem(parsed.board, before, configured.configuration)
+		: null;
 	if (configuredLevel !== null) {
 		return {
 			outcome: "rejected",

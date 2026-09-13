@@ -101,6 +101,7 @@ describe("machine-wide opener persistence", () => {
 					writer: { kind: "agent" },
 					transition: createBoardTransition({
 						name: "payments",
+						level: "system",
 						nodes: [
 							{
 								name: "Payments",

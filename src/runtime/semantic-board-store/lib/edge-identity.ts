@@ -1,5 +1,6 @@
 import {
 	SemanticEdgeSchema,
+	sameSemanticValue,
 	type SemanticBoard,
 	type SemanticVariant,
 } from "@/shared/semantic-board/index";
@@ -7,7 +8,8 @@ import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib
 
 // Identity counts every authored property, including presentation emphasis.
 // Derive the fields from the schema so adding an edge property cannot silently
-// leave it outside the rule. Defaults and endpoint references are resolved first.
+// leave it outside the rule. Defaults and endpoint references are resolved first,
+// and structured properties compare by semantic value rather than object identity.
 const AUTHORED_FIELDS = SemanticEdgeSchema.omit({ id: true }).keyof().options;
 
 /**
@@ -44,7 +46,9 @@ function variantEdgeIdentityRefusal(
 	for (const edge of variant.content.edges) {
 		const before = inherited.get(edge.id);
 		if (before === undefined) continue;
-		const changed = AUTHORED_FIELDS.filter((field) => before[field] !== edge[field]);
+		const changed = AUTHORED_FIELDS.filter(
+			(field) => !sameSemanticValue(before[field], edge[field]),
+		);
 		if (changed.length < 2) continue;
 		return refuse(
 			"EDGE_IDENTITY_REUSED",

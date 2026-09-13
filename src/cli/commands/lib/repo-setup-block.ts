@@ -314,9 +314,7 @@ async function writeSetup(options: SetupOptions): Promise<SetupResult | undefine
 	const vaultCreated = !fs.existsSync(vault);
 	fs.mkdirSync(vault, { recursive: true });
 	if (vaultCreated) {
-		initializeSemanticBoardConfiguration(vault, {
-			levels: ["system", "service", "module"],
-		});
+		initializeSemanticBoardConfiguration(vault);
 	}
 
 	const chosen = chooseSetupDoc(options, repo);

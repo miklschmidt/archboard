@@ -17,7 +17,11 @@ import type { ShellActions } from "@/ui/shell/types/contracts";
 const BRANCH_GROUP_CLASS = "mx-0 ml-3 translate-x-0 gap-0 border-l-0 py-0 pr-0 pl-[9px]";
 
 /** Short names for the board's authored architecture level. */
-const LEVEL_LABELS = { system: "System", service: "Service", module: "Module" } as const;
+const LEVEL_LABELS = new Map([
+	["system", "System"],
+	["service", "Service"],
+	["module", "Module"],
+]);
 
 /** Selection and roving focus shared by one tree. */
 interface TreeProps {
@@ -66,7 +70,7 @@ function BoardTree(props: BoardTreeProps): JSX.Element {
 				</span>
 				<span className="min-w-0 flex-1 wrap-anywhere whitespace-normal!">{group.board}</span>
 				{group.level !== undefined && (
-					<span className="text-technical text-muted-foreground border-border ml-2 inline-flex h-4 shrink-0 items-center rounded-[2px] border px-1 font-normal">
+					<span className="text-technical text-muted-foreground border-border ml-2 inline-flex h-4 shrink-0 items-center rounded-[2px] border px-1 font-mono font-medium">
 						{levelLabel(group.level)}
 					</span>
 				)}
@@ -197,9 +201,7 @@ interface ChevronProps {
  * @returns The compact badge label.
  */
 function levelLabel(level: NonNullable<NavigatorGroup["level"]>): string {
-	return Object.hasOwn(LEVEL_LABELS, level)
-		? LEVEL_LABELS[level as keyof typeof LEVEL_LABELS]
-		: level;
+	return LEVEL_LABELS.get(level) ?? level;
 }
 
 /**

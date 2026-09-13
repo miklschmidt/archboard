@@ -39,6 +39,7 @@ function boardDocument(nodes: Array<Record<string, unknown>>): Record<string, un
 		kind: "semantic-board",
 		id: "PreExist",
 		name: "payments",
+		level: "system",
 		version: 1,
 		createdAt: at,
 		updatedAt: at,
@@ -83,7 +84,10 @@ test("a board replaced by another writer reaches the pane showing it", async () 
 	const created = await request<{ version: number }>("/api/semantic-boards/create", {
 		method: "POST",
 		doing: "starting the payment path",
-		body: { board: "payments", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
+		body: {
+			board: "payments",
+			create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
+		},
 	});
 	expect(created.status).toBe(200);
 

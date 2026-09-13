@@ -56,7 +56,7 @@ and connector route. Every write says what it is doing, and every edit says
 which version it was written against:
 
 ```bash
-echo '{"nodes":[{"name":"API Gateway","kind":"service"},
+echo '{"level":"system","nodes":[{"name":"API Gateway","kind":"service"},
                {"name":"Orders","kind":"service"}],
       "edges":[{"from":"API Gateway","to":"Orders","kind":"http"}]}' |
   ./bin/canvas semantic new payments --doing "drawing the payment path"
@@ -68,6 +68,7 @@ echo '{"nodes":[{"name":"Orders Queue","kind":"queue"}]}' |
 ./bin/canvas semantic branch payments --as "Queued ingest" --expect-version 2 \
   --doing "proposing a queue"
 ./bin/canvas semantic render payments --out payments.svg
+./bin/canvas check
 ```
 
 The board is at `$ARCHBOARD_VAULT/payments.semantic.json`: one document holding

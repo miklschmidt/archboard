@@ -7,49 +7,23 @@
 // A field an agent could use to move a box would move that line, so there is
 // no such field, in any spelling.
 //
-// The kind and relationship vocabularies are PR Lens's, at the revision the
-// renderer was forked from (see `src/runtime/semantic-renderer`). They are
-// coarse on purpose: a kind drives a card's glyph, never an analysis, and
-// anything that does not fit is `other`, which still draws.
+// Node and relationship kinds are references into the consumer-authored vault
+// policy. Structural parsing preserves removed definitions; the store enforces
+// membership for newly authored references when configuration is valid.
 
 import { z } from "zod";
+import { VocabularyNameSchema } from "@/shared/semantic-policy/index";
 
 /**
- * What an architectural node is. Coarse: it picks a glyph, not a behaviour.
+ * What an architectural node is, named by the vault vocabulary.
  */
-const NodeKindSchema = z.enum([
-	"service",
-	"app",
-	"module",
-	"function",
-	"route",
-	"job",
-	"queue",
-	"datastore",
-	"cache",
-	"external",
-	"ui",
-	"config",
-	"test",
-	"package",
-	"other",
-]);
+const NodeKindSchema = VocabularyNameSchema;
 type NodeKind = z.infer<typeof NodeKindSchema>;
 
 /**
  * How one node reaches another.
  */
-const EdgeKindSchema = z.enum([
-	"call",
-	"http",
-	"rpc",
-	"event",
-	"queue",
-	"data",
-	"dependency",
-	"render",
-	"other",
-]);
+const EdgeKindSchema = VocabularyNameSchema;
 type EdgeKind = z.infer<typeof EdgeKindSchema>;
 
 /**

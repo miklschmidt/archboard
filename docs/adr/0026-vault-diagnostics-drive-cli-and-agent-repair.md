@@ -8,8 +8,7 @@ Vault vocabulary and presentation configuration is version-controlled YAML with 
 validated schema and CLI because it is shared product input, not private renderer
 state. Missing or invalid configuration uses the bundled renderer defaults and
 produces visible diagnostics; it must not crash rendering or silently preserve the
-last valid configuration. This design is accepted; implementation remains paused
-while TASK-203 completes the plan, including the partial work in TASK-202.
+last valid configuration. This design was accepted in TASK-203 on 2026-09-13.
 
 ## Contract
 

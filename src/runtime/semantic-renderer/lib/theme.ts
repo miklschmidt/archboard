@@ -1,3 +1,4 @@
+import { SEMANTIC_STANDING_PALETTE } from "@/shared/semantic-policy/standing";
 import type { DiagramTheme } from "@/shared/semantic-board/index";
 // Every colour the renderer can paint, resolved to a literal.
 //
@@ -56,8 +57,6 @@ interface Palette {
 	readonly faint: string;
 	/** An ordinary connection. */
 	readonly edge: string;
-	/** A connection asking for attention. */
-	readonly edgeHero: string;
 	/** A connection deliberately pushed into the background. */
 	readonly edgeMuted: string;
 	/** The tile a kind glyph sits on. */
@@ -119,18 +118,17 @@ const LIGHT: Palette = {
 	muted: "#5c5c59",
 	faint: "#83827e",
 	edge: "#7c7c78",
-	edgeHero: "#2a2a28",
 	edgeMuted: "#b4b3ae",
 	chip: "#f0efeb",
 	glyph: "#5c5c59",
 	pill: "#ffffff",
 	pillBorder: "#d6d4ce",
 	pillText: "#43433f",
-	selection: "#155eef",
+	selection: SEMANTIC_STANDING_PALETTE.light.selected,
 	warning: "#6e4a00",
-	standingAdded: "#1e7a4a",
-	standingChanged: "#9a5a06",
-	standingRemoved: "#a8322a",
+	standingAdded: SEMANTIC_STANDING_PALETTE.light.added,
+	standingChanged: SEMANTIC_STANDING_PALETTE.light.changed,
+	standingRemoved: SEMANTIC_STANDING_PALETTE.light.removed,
 };
 
 /** Deep charcoal cards on black panels, bone-white ink, the same cobalt. */
@@ -145,18 +143,17 @@ const DARK: Palette = {
 	muted: "#a6a6a3",
 	faint: "#82827f",
 	edge: "#797a7d",
-	edgeHero: "#e4e3e0",
 	edgeMuted: "#44464a",
 	chip: "#2e3033",
 	glyph: "#a6a6a3",
 	pill: "#232528",
 	pillBorder: "#3a3c40",
 	pillText: "#bcbbb8",
-	selection: "#4d86ff",
+	selection: SEMANTIC_STANDING_PALETTE.dark.selected,
 	warning: "#d29a1e",
-	standingAdded: "#4ec98c",
-	standingChanged: "#dda24a",
-	standingRemoved: "#e8756a",
+	standingAdded: SEMANTIC_STANDING_PALETTE.dark.added,
+	standingChanged: SEMANTIC_STANDING_PALETTE.dark.changed,
+	standingRemoved: SEMANTIC_STANDING_PALETTE.dark.removed,
 };
 
 /**

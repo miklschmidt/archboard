@@ -51,7 +51,7 @@ const MARKED: readonly SubjectStanding[] = ["added", "changed", "removed"];
  */
 function marker(head: Head, weight: Weight, palette: Palette, standing?: SubjectStanding): string {
 	const size = HEAD_SIZE[weight];
-	const colour = lineColour(palette, weight, standing);
+	const colour = lineColour(palette, standing);
 	const shape =
 		head === "filled"
 			? tag("path", { d: "M0,0 L10,5 L0,10 z", fill: colour })

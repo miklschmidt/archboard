@@ -118,7 +118,7 @@ function runsFor(
  */
 function measureNode(node: SemanticNode, container: boolean): MeasuredNode {
 	const padding = container ? 20 : 16;
-	const left = container ? padding : 52;
+	const left = container ? 56 : 52;
 	const title = prepare(node.name, TITLE);
 	const note = prepare(node.responsibility ?? "", NOTE);
 	const natural = Math.max(measureNaturalWidth(title), measureNaturalWidth(note));

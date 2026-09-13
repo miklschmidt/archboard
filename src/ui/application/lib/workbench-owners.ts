@@ -19,6 +19,10 @@ import {
 	createWorkbenchQueueController,
 	type WorkbenchQueueController,
 } from "@/ui/workbench-queue";
+import {
+	createWorkbenchComposerController,
+	type WorkbenchComposerController,
+} from "@/ui/workbench-composer";
 import type { WorkbenchRuntimeHost } from "@/ui/workbench-runtime";
 import { createThreadLinkController, workbenchThreadLinkActions } from "@/ui/workbench-thread-link";
 import type { ThreadLinkController } from "@/ui/workbench-thread-link/contracts";
@@ -37,6 +41,7 @@ interface WorkbenchOwners {
 	readonly transport: BrowserWorkbenchTransport;
 	readonly voice: VoiceSession;
 	readonly queue: WorkbenchQueueController;
+	readonly composer: WorkbenchComposerController;
 	readonly approvals: WorkbenchApprovalsController;
 	readonly threadLink: ThreadLinkController;
 	readonly threadLinkActions: WorkbenchThreadLinkActions;
@@ -147,6 +152,7 @@ function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners
 	const { paneId, transport, media, openAgentSettings } = options;
 	const voice = createVoiceSession({ realtime: media, transport, paneId });
 	const queue = createWorkbenchQueueController(transport);
+	const composer = createWorkbenchComposerController({ transport });
 	const approvals = createWorkbenchApprovalsController(transport);
 	const threadLink = createThreadLinkController({
 		/**
@@ -168,6 +174,7 @@ function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners
 		transport,
 		voice,
 		queue,
+		composer,
 		approvals,
 		threadLink,
 		threadLinkActions: workbenchThreadLinkActions(threadLink, { openChooser: openAgentSettings }),

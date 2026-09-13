@@ -1,3 +1,9 @@
+import {
+	VaultCheckSchema,
+	VaultDiagnosticSchema,
+	type VaultDiagnostic,
+	type VaultCheck,
+} from "@/shared/semantic-policy/index";
 // How the CLI reaches a semantic board: through the running canvas, never the
 // vault directly.
 //
@@ -40,7 +46,11 @@ const ListingReplySchema = z.object({
 });
 type SemanticBoardListing = z.infer<typeof ListingReplySchema>;
 
-const BoardReplySchema = z.object({ success: z.literal(true), board: SemanticBoardSchema });
+const BoardReplySchema = z.object({
+	success: z.literal(true),
+	board: SemanticBoardSchema,
+	warnings: z.array(VaultDiagnosticSchema).default([]),
+});
 
 /**
  * What a write left for somebody to settle.
@@ -75,6 +85,7 @@ const ReconciliationReportSchema = z.object({
 type ReconciliationReport = z.infer<typeof ReconciliationReportSchema>;
 
 const WriteReplySchema = z.object({
+	warnings: z.array(VaultDiagnosticSchema).default([]),
 	success: z.literal(true),
 	board: SemanticBoardSchema,
 	version: z.int(),
@@ -85,6 +96,7 @@ const WriteReplySchema = z.object({
 interface SemanticWriteAnswer {
 	readonly board: SemanticBoard;
 	readonly reconciliation: ReconciliationReport | null;
+	readonly warnings: VaultDiagnostic[];
 }
 
 /**
@@ -140,7 +152,11 @@ async function postSemantic(
 		body: JSON.stringify({ ...body, ...statedSession() }),
 	});
 	const answered = WriteReplySchema.parse(reply);
-	return { board: answered.board, reconciliation: answered.reconciliation };
+	return {
+		board: answered.board,
+		reconciliation: answered.reconciliation,
+		warnings: answered.warnings,
+	};
 }
 
 /**
@@ -289,3 +305,22 @@ export {
 	editSemanticBoardOnCanvas,
 	branchSemanticBoardOnCanvas,
 };
+
+/**
+ * Run the exact checker the browser uses.
+ * @returns The interpreted policy and vault diagnostics.
+ */
+async function checkSemanticVaultOnCanvas(): Promise<VaultCheck> {
+	return VaultCheckSchema.parse(await requestJson<unknown>("/api/vault/check"));
+}
+/**
+ * Read one board with current vocabulary warnings.
+ * @param board The board name.
+ * @returns The board and its warnings.
+ */
+async function readSemanticBoardAnswerOnCanvas(board: string) {
+	return BoardReplySchema.parse(
+		await requestJson<unknown>(`/api/semantic-boards/board?board=${encodeURIComponent(board)}`),
+	);
+}
+export { checkSemanticVaultOnCanvas, readSemanticBoardAnswerOnCanvas };

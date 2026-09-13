@@ -40,6 +40,7 @@ beforeEach(async () => {
 		transition: store.createBoardTransition(
 			contract.BoardCreateInputSchema.parse({
 				name: board,
+				level: "system",
 				nodes: [
 					{ name: "Gateway", kind: "route", group: "the write path" },
 					{ name: "Orders", kind: "service", group: "the write path" },

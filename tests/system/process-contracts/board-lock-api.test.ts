@@ -42,7 +42,7 @@ test("the public lock API preserves claims, refusals and told-once recovery", as
 		body: {
 			board: "payments",
 			origin: "agent",
-			create: { nodes: [{ name: "Gateway", kind: "service" }], edges: [] },
+			create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }], edges: [] },
 		},
 	});
 	expect(created.status).toBe(200);

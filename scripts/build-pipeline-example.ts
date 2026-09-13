@@ -26,6 +26,7 @@ import {
 	createBoardTransition,
 	editVariantTransition,
 	readSemanticBoard,
+	readSemanticBoardConfiguration,
 	writeSemanticBoard,
 } from "@/runtime/semantic-board-store/index";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
@@ -154,6 +155,7 @@ async function draw(board: string): Promise<string[]> {
 				const picture = await renderSemanticView({
 					content: proposal.content,
 					grammar: view.grammar,
+					policy: readSemanticBoardConfiguration().configuration,
 					theme: "light",
 					// The file outlives the canvas that drew it, so it carries its faces.
 					fonts: "embedded",

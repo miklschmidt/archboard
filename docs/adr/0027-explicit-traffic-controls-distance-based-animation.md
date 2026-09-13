@@ -8,7 +8,7 @@ Current moving dots use a fixed traversal duration, so long connections animate
 faster than short connections. TASK-203 separates traffic from emphasis and makes
 volume and speed independent, so agents can communicate traffic deliberately.
 The requirements below were accepted through Q32 of the TASK-203 interview on
-2026-09-13. Implementation remains pending the final review of the consolidated plan.
+2026-09-13.
 
 Traffic, traffic volume and traffic speed are defined in
 [CONTEXT.md](../../CONTEXT.md#meaning). The rates and rendering decisions belong here.

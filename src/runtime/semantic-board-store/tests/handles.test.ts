@@ -20,6 +20,7 @@ let boards = 0;
 
 /** The architecture every test in this file starts from. */
 const SEED = {
+	level: "system",
 	nodes: [
 		{ name: "Gateway", kind: "service" },
 		{ name: "Orders", kind: "service" },

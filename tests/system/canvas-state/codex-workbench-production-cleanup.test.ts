@@ -192,7 +192,10 @@ describe.serial("production Codex setup cleanup", () => {
 					await request("/api/semantic-boards/create", {
 						method: "POST",
 						doing: "persisting the census proof",
-						body: { board: "scratch", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
+						body: {
+							board: "scratch",
+							create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
+						},
 					})
 				).status,
 			).toBe(200);

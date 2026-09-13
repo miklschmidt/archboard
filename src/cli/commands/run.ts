@@ -1,3 +1,4 @@
+import { checkContract, semanticConfigContract } from "@/cli/commands/vault";
 import { statusContract } from "@/cli/command-contract/status";
 import { startContract, stopContract } from "@/cli/commands/server";
 import {
@@ -38,6 +39,7 @@ import {
 // The one command table: every top-level command, its subcommands, and the help wording the
 // table owns. Dispatch, registry projection and help rendering live under lib/.
 const COMMANDS: Record<string, CommandRoute> = {
+	check: { owner: contract(checkContract, "src/cli/commands/vault.ts") },
 	start: {
 		owner: contract(startContract, "src/cli/commands/server.ts"),
 	},
@@ -50,6 +52,7 @@ const COMMANDS: Record<string, CommandRoute> = {
 	semantic: {
 		owner: contract(semanticContract, "src/cli/commands/semantic.ts"),
 		children: {
+			config: child(contract(semanticConfigContract, "src/cli/commands/vault.ts")),
 			new: child(contract(semanticNewContract, "src/cli/commands/semantic.ts")),
 			edit: child(contract(semanticEditContract, "src/cli/commands/semantic.ts")),
 			branch: child(contract(semanticBranchContract, "src/cli/commands/semantic.ts")),

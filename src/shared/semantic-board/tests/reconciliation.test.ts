@@ -63,6 +63,29 @@ describe("a change nobody competed for", () => {
 		expect(settled.content.edges).toEqual([]);
 		expect(settled.issues).toEqual([]);
 	});
+
+	test("an inherited root edit does not make a nested edge removal look contested", () => {
+		const rootMoved = content({
+			nodes: [{ ...API, name: "Public API" }, STORE],
+			edges: [WIRE],
+		});
+		const proposal = reconcileVariant({ base: BASE, mine: BASE, theirs: rootMoved });
+		expect(proposal.issues).toEqual([]);
+		// Field-wise reconciliation materializes optional fields even though the
+		// relationship itself did not change.
+		expect(Object.hasOwn(proposal.content.edges[0]!, "traffic")).toBe(true);
+		expect(proposal.content.edges[0]?.traffic).toBeUndefined();
+
+		const nestedWithoutEdge = content({ nodes: [API, STORE], edges: [] });
+		const nested = reconcileVariant({
+			base: BASE,
+			mine: nestedWithoutEdge,
+			theirs: proposal.content,
+		});
+		expect(nested.issues).toEqual([]);
+		expect(nested.content.edges).toEqual([]);
+		expect(nested.content.nodes[0]?.name).toBe("Public API");
+	});
 });
 
 describe("two sides reaching the same conclusion", () => {

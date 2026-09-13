@@ -126,6 +126,7 @@ describe.serial("side-by-side proposal workflow", () => {
 		const made = await cli(
 			["semantic", "new", "payments", "--doing", "drawing the payment path"],
 			JSON.stringify({
+				level: "system",
 				nodes: [
 					{ name: "API Gateway", kind: "service" },
 					{ name: "Orders Service", kind: "service" },

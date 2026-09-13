@@ -6,23 +6,6 @@
 // They come from the renderer this repository forked.
 
 /**
- * One dot's trip along an ordinary relationship.
- *
- * Pulls against the hero duration below: far enough apart that a hero line
- * reads as busier rather than merely different, close enough that a diagram
- * with both does not look like two diagrams.
- */
-const PULSE_TRAVEL_MS = 1600;
-
-/**
- * One dot's trip along a relationship marked as a hero.
- *
- * Slower than an ordinary line, not faster, because three dots share it: the
- * train says "more traffic" by how many are on the wire.
- */
-const HERO_PULSE_TRAVEL_MS = 2100;
-
-/**
  * How long one message of an exchange holds the shared cycle.
  *
  * Every message takes its turn on one clock, so the cycle is this times the
@@ -49,10 +32,4 @@ const FLOW_CYCLE_CAP_MS = 16_000;
  */
 const FLOW_PULSE_RAMP = 0.08;
 
-export {
-	FLOW_CYCLE_CAP_MS,
-	FLOW_PULSE_RAMP,
-	FLOW_STEP_TRAVEL_MS,
-	HERO_PULSE_TRAVEL_MS,
-	PULSE_TRAVEL_MS,
-};
+export { FLOW_CYCLE_CAP_MS, FLOW_PULSE_RAMP, FLOW_STEP_TRAVEL_MS };
