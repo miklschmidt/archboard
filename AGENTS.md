@@ -87,6 +87,20 @@ with the reason). These are the rules that will not stop you:
 **Mandatory: Never write tests that test contents of files. Tests should test
 runtime behavior, not static content.**
 
+**Test behavior and contracts, not human-readable wording.** For CLI help,
+diagnostics and UI copy, verify routing, exit status, side effects, structure
+and formatting. Never assert prose matches, snapshots, golden output or
+full-output text equality—even between two live invocations.
+
+Discover commands and options from authoritative runtime metadata when
+testing generic CLI behavior. Adding or renaming a flag, or editing a
+description, must not require updating help-test expectations.
+
+Assert exact values only where they are the behavior under test, such as
+machine-readable results or protocol fields. Before adding an assertion,
+name the behavioral regression it catches; if it only detects a wording
+change or duplicates upstream library coverage, omit it.
+
 Give each non-obvious regression one cheapest credible owner: types and lint
 for structural rules, focused unit or integration owners for hidden behaviour,
 rendered or browser owners for visible workflows, process or system owners only
