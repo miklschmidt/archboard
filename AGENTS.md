@@ -86,18 +86,12 @@ with the reason). These are the rules that will not stop you:
 
 **Test runtime behavior, not repository file contents.** Do not inspect source,
 documentation or configuration files to assert how the repository is written.
-Fixtures, recorded inputs, configuration snapshots and expected outputs are
-welcome when they exercise behavior, including reading and writing files or
-machine-readable contracts. Unit tests of lint rules, tooling and test helpers
-are valid when they exercise their mechanics—for example, running a lint rule
-against valid and invalid fixtures and checking its findings or fixes. The
-restriction is on what a test proves, not where its data lives.
+The restriction is on what a test proves, not where its data lives.
 
 **Test behavior and contracts, not human-readable wording.** For CLI help,
 diagnostics and UI copy, verify routing, exit status, side effects, structure
 and formatting. Do not lock that copy down with text matching, prose snapshots
-or full-output equality—even between two live invocations. This does not ban
-fixtures or expected-output comparisons for functional results.
+or full-output equality—even between two live invocations.
 
 Discover commands and options from authoritative runtime metadata when
 testing generic CLI behavior. Adding or renaming a flag, or editing a
