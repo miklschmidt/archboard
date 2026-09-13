@@ -76,7 +76,10 @@ const SAMPLE: VariantContent = architecture(
  * @param theme Which ground to draw it on.
  * @returns The rendered architecture.
  */
-function render(content: VariantContent = SAMPLE, theme: DiagramTheme = "light"): RenderedDiagram {
+async function render(
+	content: VariantContent = SAMPLE,
+	theme: DiagramTheme = "light",
+): Promise<RenderedDiagram> {
 	return renderArchitecture({ content, theme });
 }
 
@@ -116,28 +119,28 @@ function within(inner: DiagramBox, outer: DiagramBox): boolean {
 }
 
 describe("renderArchitecture", () => {
-	test("the same content and theme produce the same bytes", () => {
-		expect(render().svg).toBe(render().svg);
+	test("the same content and theme produce the same bytes", async () => {
+		expect((await render()).svg).toBe((await render()).svg);
 	});
 
-	test("content that differs semantically renders differently", () => {
+	test("content that differs semantically renders differently", async () => {
 		const renamed: VariantContent = {
 			...SAMPLE,
 			nodes: SAMPLE.nodes.map((node) =>
 				node.id === "io" ? { ...node, name: "board-notes" } : node,
 			),
 		};
-		expect(render(renamed).svg).not.toBe(render().svg);
+		expect((await render(renamed)).svg).not.toBe((await render()).svg);
 
 		const unlinked: VariantContent = {
 			...SAMPLE,
 			edges: SAMPLE.edges.filter((edge) => edge.id !== "e5"),
 		};
-		expect(render(unlinked).svg).not.toBe(render().svg);
+		expect((await render(unlinked)).svg).not.toBe((await render()).svg);
 	});
 
-	test("every node and every edge lands somewhere on the page", () => {
-		const rendered = render();
+	test("every node and every edge lands somewhere on the page", async () => {
+		const rendered = await render();
 		const page: DiagramBox = { x: 0, y: 0, width: rendered.width, height: rendered.height };
 
 		for (const node of SAMPLE.nodes) {
@@ -157,8 +160,8 @@ describe("renderArchitecture", () => {
 		}
 	});
 
-	test("a container's children are drawn inside its region", () => {
-		const rendered = render();
+	test("a container's children are drawn inside its region", async () => {
+		const rendered = await render();
 		expect(Object.keys(rendered.atlas.regions).toSorted()).toEqual(["core", "edge", "store"]);
 
 		for (const [container, children] of [
@@ -174,8 +177,8 @@ describe("renderArchitecture", () => {
 		}
 	});
 
-	test("containment is drawn at every level, not flattened to the topmost one", () => {
-		const rendered = render(
+	test("containment is drawn at every level, not flattened to the topmost one", async () => {
+		const rendered = await render(
 			architecture([
 				{ id: "sys", name: "Platform", kind: "service" },
 				{ id: "svc", name: "Data Plane", kind: "package", parent: "sys" },
@@ -204,8 +207,8 @@ describe("renderArchitecture", () => {
 		expect(within(rendered.atlas.nodes["direct"]!, middle!)).toBe(false);
 	});
 
-	test("a container's box holds its own contents and nothing else", () => {
-		const rendered = render(
+	test("a container's box holds its own contents and nothing else", async () => {
+		const rendered = await render(
 			architecture([
 				{ id: "one", name: "First", kind: "service" },
 				{ id: "a", name: "Inside First", kind: "module", parent: "one" },
@@ -219,12 +222,12 @@ describe("renderArchitecture", () => {
 		expect(within(rendered.atlas.nodes["a"]!, rendered.atlas.regions["two"]!)).toBe(false);
 	});
 
-	test("a route between boxes that stand one inside the other goes round the cards", () => {
+	test("a route between boxes that stand one inside the other goes round the cards", async () => {
 		// Every one of these sits on the same row: the outer box, the box inside
 		// it, and the card inside that. A run straight from one to the next would
 		// be drawn through the card, and under it, since lines are painted below
 		// cards — a line that appears to stop in mid-air.
-		const rendered = render(
+		const rendered = await render(
 			architecture(
 				[
 					{ id: "sys", name: "Platform", kind: "service" },
@@ -246,8 +249,8 @@ describe("renderArchitecture", () => {
 		expect(routeCrosses((drawn.get("e2") ?? []).slice(0, -1), clear)).toBe(false);
 	});
 
-	test("no route crosses a container's title band", () => {
-		const rendered = render(
+	test("no route crosses a container's title band", async () => {
+		const rendered = await render(
 			architecture(
 				[
 					{ id: "sys", name: "Platform", kind: "service" },
@@ -264,17 +267,22 @@ describe("renderArchitecture", () => {
 				[{ id: "e1", from: "a", to: "mod", kind: "call" }],
 			),
 		);
-		// The band is the strip between a container's top edge and the first thing
-		// inside it: its title's, and nothing else's.
-		const box = rendered.atlas.regions["svc"]!;
-		const card = rendered.atlas.nodes["mod"]!;
-		const band = { x: box.x, y: box.y, width: box.width, height: card.y - box.y - 1 };
-
-		expect(band.height).toBeGreaterThan(10);
-		expect(routeCrosses(routePoints(rendered.svg).get("e1") ?? [], band)).toBe(false);
+		const header = drawnTexts(rendered.svg).filter((run) => run.subject.id === "svc");
+		const faces = registeredFaces(rendered.svg);
+		expect(header.length).toBeGreaterThan(1);
+		for (const run of header) {
+			const span = drawnSpan(run, faces);
+			const exclusion = {
+				x: span.left - 12,
+				y: run.y - run.size - 12,
+				width: span.right - span.left + 24,
+				height: run.size * 1.35 + 24,
+			};
+			expect(routeCrosses(routePoints(rendered.svg).get("e1") ?? [], exclusion)).toBe(false);
+		}
 	});
 
-	test("nesting widens the column rather than squeezing the card at the bottom of it", () => {
+	test("nesting widens the column rather than squeezing the card at the bottom of it", async () => {
 		const chain = architecture(
 			Array.from({ length: 12 }, (_, level) => ({
 				id: `d${level}`,
@@ -283,8 +291,8 @@ describe("renderArchitecture", () => {
 				...(level === 0 ? {} : { parent: `d${level - 1}` }),
 			})),
 		);
-		const deep = render(chain);
-		const shallow = render(architecture([{ id: "one", name: "Level 0", kind: "module" }]));
+		const deep = await render(chain);
+		const shallow = await render(architecture([{ id: "one", name: "Level 0", kind: "module" }]));
 
 		// The card at the bottom of a twelve-deep chain is as wide as a card that
 		// is in nothing at all, and every box the atlas knows is a box a click can
@@ -296,8 +304,8 @@ describe("renderArchitecture", () => {
 		}
 	});
 
-	test("an edge naming a container arrives on that container's frame", () => {
-		const rendered = render();
+	test("an edge naming a container arrives on that container's frame", async () => {
+		const rendered = await render();
 		const arrival = routeEnds(rendered.svg).get("e7");
 		expect(arrival).toBeDefined();
 
@@ -309,9 +317,9 @@ describe("renderArchitecture", () => {
 		expect(arrival!.y).toBeGreaterThanOrEqual(box.y - 2);
 	});
 
-	test("nodes belonging to nothing spread instead of stacking in one column", () => {
+	test("nodes belonging to nothing spread instead of stacking in one column", async () => {
 		const loose = ["Ingest", "Normaliser", "Scheduler", "Worker Pool", "Metrics", "Object Store"];
-		const rendered = render(
+		const rendered = await render(
 			architecture(loose.map((name, index) => ({ id: `n${index}`, name, kind: "service" }))),
 		);
 		const boxes = loose.map((_, index) => rendered.atlas.nodes[`n${index}`]!);
@@ -323,8 +331,8 @@ describe("renderArchitecture", () => {
 		expect(Object.keys(rendered.atlas.regions)).toHaveLength(0);
 	});
 
-	test("a chain of uncontained nodes still reads down the page", () => {
-		const rendered = render(
+	test("a chain of uncontained nodes still reads down the page", async () => {
+		const rendered = await render(
 			architecture(
 				[
 					{ id: "a", name: "Ingest", kind: "service" },
@@ -343,16 +351,16 @@ describe("renderArchitecture", () => {
 		expect(boxes[1]!.y).toBeLessThan(boxes[2]!.y);
 	});
 
-	test("a node with no container and no children is still drawn", () => {
-		const rendered = render();
+	test("a node with no container and no children is still drawn", async () => {
+		const rendered = await render();
 		expect(rendered.atlas.nodes["solo"]).toBeDefined();
 		expect(rendered.svg).toContain('data-semantic-id="solo"');
 		// It belongs to no container, so it contributes no region of its own.
 		expect(rendered.atlas.regions["solo"]).toBeUndefined();
 	});
 
-	test("every subject carries the hooks a viewer selects by", () => {
-		const rendered = render();
+	test("every subject carries the hooks a viewer selects by", async () => {
+		const rendered = await render();
 		expect(rendered.svg).toContain('data-semantic-kind="node" data-semantic-id="io"');
 		expect(rendered.svg).toContain('data-semantic-kind="edge" data-semantic-id="e2"');
 		expect(rendered.svg).toContain('data-semantic-kind="region" data-semantic-id="core"');
@@ -360,26 +368,29 @@ describe("renderArchitecture", () => {
 		expect(rendered.svg).not.toContain("<script");
 	});
 
-	test("a name longer than its card is cut rather than allowed to overflow", () => {
+	test("a long name is preserved across readable wrapped lines inside its card", async () => {
 		const long = "Extremely Long Architecture Node Name That Cannot Possibly Fit On One Card";
-		const rendered = render(
+		const rendered = await render(
 			architecture([
 				{ id: "box", name: "Box", kind: "service" },
 				{ id: "long", name: long, kind: "module", parent: "box" },
 			]),
 		);
 		const faces = registeredFaces(rendered.svg);
-		const title = drawnTexts(rendered.svg).find((drawn) => drawn.text.startsWith("Extremely"));
+		const title = drawnTexts(rendered.svg).filter(
+			(drawn) => drawn.subject.id === "long" && drawn.size === 14,
+		);
 
-		expect(title).toBeDefined();
-		expect(title!.text).not.toBe(long);
-		expect(title!.text.endsWith("…")).toBe(true);
-		expect(long.startsWith(title!.text.slice(0, 10))).toBe(true);
-		expect(spanFits(drawnSpan(title!, faces), rendered.atlas.nodes["long"]!)).toBe(true);
+		expect(title.length).toBeGreaterThan(1);
+		expect(title.map((run) => run.text).join("")).toBe(long);
+		expect(title.every((run) => run.size === 14)).toBe(true);
+		expect(
+			title.every((run) => spanFits(drawnSpan(run, faces), rendered.atlas.nodes["long"]!)),
+		).toBe(true);
 	});
 
-	test("every drawn word fits its subject, measured in the face it is drawn in", () => {
-		const rendered = render();
+	test("every drawn word fits its subject, measured in the face it is drawn in", async () => {
+		const rendered = await render();
 		const faces = registeredFaces(rendered.svg);
 		const drawn = drawnTexts(rendered.svg);
 		const plates = labelPlates(rendered.svg);
@@ -411,8 +422,8 @@ describe("renderArchitecture", () => {
 		expect(slack[0]!).toBeGreaterThan(0);
 	});
 
-	test("the document registers every face it draws in", () => {
-		const rendered = render();
+	test("the document registers every face it draws in", async () => {
+		const rendered = await render();
 		const faces = registeredFaces(rendered.svg);
 		expect(faces.size).toBe(4);
 		for (const text of drawnTexts(rendered.svg)) {
@@ -423,9 +434,13 @@ describe("renderArchitecture", () => {
 		expect(rendered.svg).not.toMatch(/font-weight="(600|700|bold)"/);
 	});
 
-	test("an embedded render carries its faces instead of pointing at them", () => {
-		const linked = renderArchitecture({ content: SAMPLE, theme: "light" });
-		const embedded = renderArchitecture({ content: SAMPLE, theme: "light", fonts: "embedded" });
+	test("an embedded render carries its faces instead of pointing at them", async () => {
+		const linked = await renderArchitecture({ content: SAMPLE, theme: "light" });
+		const embedded = await renderArchitecture({
+			content: SAMPLE,
+			theme: "light",
+			fonts: "embedded",
+		});
 
 		expect(linked.svg).toContain('url("/assets/diagram-fonts/');
 		expect(embedded.svg).not.toContain("/assets/diagram-fonts/");
@@ -436,8 +451,8 @@ describe("renderArchitecture", () => {
 		expect(embedded.width).toBe(linked.width);
 	});
 
-	test("a label belongs to its edge, in the markup and in the atlas", () => {
-		const rendered = render();
+	test("a label belongs to its edge, in the markup and in the atlas", async () => {
+		const rendered = await render();
 		const labelled = drawnTexts(rendered.svg).filter((text) => text.text === "read board");
 
 		expect(labelled).toHaveLength(1);
@@ -451,8 +466,7 @@ describe("renderArchitecture", () => {
 		// the atlas: a pill measured in the wrong face overflows this, not that.
 		expect(spanFits(span, labelPlates(rendered.svg).get("e2")!)).toBe(true);
 
-		// The atlas holds both the route and its pill. Widening a corridor for a
-		// label can put the pill inside the route's bounding rectangle already.
+		// The atlas encloses both the final route and its label.
 		const pill = labelPlates(rendered.svg).get("e2")!;
 		const points = routePoints(rendered.svg).get("e2")!;
 		expect(points.length).toBeGreaterThan(1);
@@ -464,20 +478,15 @@ describe("renderArchitecture", () => {
 		}
 	});
 
-	test("content with nothing in it is refused rather than drawn", () => {
-		let thrown: unknown;
-		try {
-			render(architecture([]));
-		} catch (error) {
-			thrown = error;
-		}
-		expect(thrown).toBeInstanceOf(SemanticRenderError);
-		expect((thrown as SemanticRenderError).code).toBe("NOTHING_TO_RENDER");
+	test("content with nothing in it is refused rather than drawn", async () => {
+		const rendering = render(architecture([]));
+		await expect(rendering).rejects.toBeInstanceOf(SemanticRenderError);
+		await expect(rendering).rejects.toMatchObject({ code: "NOTHING_TO_RENDER" });
 	});
 
-	test("the two themes are different pictures of the same geometry", () => {
-		const light = render(SAMPLE, "light");
-		const dark = render(SAMPLE, "dark");
+	test("the two themes are different pictures of the same geometry", async () => {
+		const light = await render(SAMPLE, "light");
+		const dark = await render(SAMPLE, "dark");
 		expect(dark.svg).not.toBe(light.svg);
 		expect(dark.width).toBe(light.width);
 		expect(dark.height).toBe(light.height);

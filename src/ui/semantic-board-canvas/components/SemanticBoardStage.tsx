@@ -8,17 +8,11 @@
 //   error    the board could not be drawn and there is nothing to show;
 //   stale    a picture is on screen and the read since then failed.
 //
-// The fourth is the one a live architecture viewer cannot do without. A
-// refresh that fails must not take the diagram away — showing nothing is worse
-// than showing something slightly old — but it must not pass unmentioned
-// either, because the whole point of the pane is that what is on it is what
-// the board says. So the diagram stays, a strip above it says the picture is
-// the last one that loaded and why, and a retry is offered; when a read
-// succeeds the strip goes by itself.
-//
-// The cache owns which state is true; the pane owns the camera and the
-// selection, which is the whole of what the browser decides (ADR 0023).
+// A failed refresh keeps the last picture with a disclosure and retry. Query
+// owns fetched state; the pane owns camera and selection across requests (ADR 0023).
 
+import { useAutoFit } from "@/ui/semantic-board-canvas/hooks/use-auto-fit";
+import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { SemanticStanding } from "@/ui/semantic-board-canvas/components/SemanticStanding";
 import type { SemanticPaneReading } from "@/ui/semantic-board-canvas/lib/address";
 import type { SelectedSubject } from "@/ui/semantic-board-canvas/lib/board-document";
@@ -136,6 +130,8 @@ interface SemanticBoardStageProps {
 
 /** What the view is assembled from. */
 interface RenderView extends SemanticBoardStageProps {
+	/** Camera retained while a different variant is being drawn. */
+	readonly camera: BoardCamera;
 	/** The cache's answer for this board, variant and theme. */
 	readonly render: UseQueryResult<SemanticRender>;
 	/** Ask the server for the picture again. */
@@ -394,6 +390,7 @@ function stageBody(view: RenderView): JSX.Element {
 	}
 	return (
 		<SemanticDiagram
+			camera={view.camera}
 			drawing={answer}
 			selection={view.selection}
 			onSelect={view.onPick}
@@ -512,6 +509,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 
 	const drawn = drawingIn(render.data);
 	const focus = useMemo(() => beatFocus(narrative.beat, drawn), [narrative.beat, drawn]);
+	const camera = useAutoFit(drawn, focus);
 	// A subject is named to a reader by its name. Which ones the picture could
 	// not find is settled against the atlas; what to call them is the board's.
 	const { choose, nameOf } = narrative;
@@ -581,6 +579,7 @@ function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
 
 	return renderedView({
 		...props,
+		camera,
 		render,
 		onRetry,
 		drill,

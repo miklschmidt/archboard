@@ -1,5 +1,4 @@
-// The two things a reader actually looks at: a card, and the container it sits
-// in — which may itself sit in another one.
+// Cards and frame headings for the message-sequence grammar.
 //
 // Forked from PR Lens's `svg/architecture.ts`, minus its badge strip and its
 // strike-through for a removed node. Two things were added: the selection halo
@@ -21,7 +20,6 @@
 // measured, and a fitted title would overflow the card it was fitted to.
 
 import {
-	BAND_RADIUS,
 	BASELINE_RATIO,
 	CARD_PADDING_X,
 	CARD_RADIUS,
@@ -31,7 +29,6 @@ import {
 	ICON_CHIP_GAP,
 	ICON_CHIP_RADIUS,
 	ICON_CHIP_SIZE,
-	NEST_RADIUS,
 	NOTE_SIZE,
 	TEXT_LINE_HEIGHT,
 } from "@/runtime/semantic-renderer/lib/design";
@@ -46,9 +43,8 @@ import {
 import type { Palette } from "@/runtime/semantic-renderer/lib/theme";
 import {
 	cardTextWidth,
-	type PlacedContainer,
-	type PlacedNode,
-} from "@/runtime/semantic-renderer/lib/layout/architecture";
+	type SequenceCard,
+} from "@/runtime/semantic-renderer/lib/layout/sequence-card";
 import { iconColour } from "@/runtime/semantic-renderer/lib/group-colour";
 import { glyphGroup } from "@/runtime/semantic-renderer/lib/svg/icons";
 import { lines, tag, textNode, wrap } from "@/runtime/semantic-renderer/lib/svg/primitives";
@@ -116,7 +112,7 @@ const CHIP_WASH = 0.14;
  * @param ink The colour this node's group is drawn in.
  * @returns The chip and glyph.
  */
-function chipOf(placed: PlacedNode, styles: SvgStyles, ink: string): string {
+function chipOf(placed: SequenceCard, styles: SvgStyles, ink: string): string {
 	const { box, node } = placed;
 	return (
 		tag("rect", {
@@ -151,7 +147,7 @@ function chipOf(placed: PlacedNode, styles: SvgStyles, ink: string): string {
  * @returns The card's group.
  */
 function paintCard(
-	placed: PlacedNode,
+	placed: SequenceCard,
 	palette: Palette,
 	standing?: SubjectStanding,
 	unsettled = false,
@@ -261,78 +257,4 @@ function paintHeader(
 	]);
 }
 
-/**
- * One container box, without its title.
- *
- * The outermost box of a column stands on the page; a box inside it is drawn on
- * the page's own ground rather than the column's, which puts the three surfaces
- * in order — column, container, card — in both themes without a second palette
- * entry. The implicit column has no container to name and so is drawn with no
- * box at all: giving it one would assert a container the architecture does not
- * have.
- * @param placed The container.
- * @param palette The theme's colours.
- * @param standing How this container stands against the variant it came from, when the caller said.
- * @returns The box's group.
- */
-function paintContainerBox(
-	placed: PlacedContainer,
-	palette: Palette,
-	standing?: SubjectStanding,
-): string {
-	const styles = stylesFor(palette);
-	const outermost = placed.depth < 0;
-	const radius = outermost ? BAND_RADIUS : NEST_RADIUS;
-	return wrap(
-		"g",
-		subjectGroup("region", placed.node.id, standing),
-		lines([
-			halo(placed.box, radius, styles),
-			tag("rect", {
-				x: coord(placed.box.x),
-				y: coord(placed.box.y),
-				width: coord(placed.box.width),
-				height: coord(placed.box.height),
-				rx: radius,
-				...(outermost ? styles.band : styles.nest),
-				...standingOutline(standing, palette),
-			}),
-			standingPin(placed.box, standing, palette),
-		]),
-	);
-}
-
-/**
- * One container's title, on its own layer above the lines.
- *
- * A route on its way into the first card of a container has to cross the strip
- * the title sits in, and a line through the middle of a word costs the reader
- * both the word and the line. So the title is painted last, for the same reason
- * a label pill is opaque: whatever else is happening, the words stay readable.
- * It carries the container's identity too, so clicking the name picks the
- * container out exactly as clicking its frame does.
- * @param placed The container.
- * @param palette The theme's colours.
- * @param standing How this container stands against the variant it came from, when the caller said.
- * @param unsettled Whether the board says nobody has decided this container yet.
- * @returns The title's group.
- */
-function paintContainerTitle(
-	placed: PlacedContainer,
-	palette: Palette,
-	standing?: SubjectStanding,
-	unsettled = false,
-): string {
-	return wrap(
-		"g",
-		subjectGroup("region", placed.node.id, standing),
-		paintHeader(placed.header, placed.node.name, placed.node.responsibility, stylesFor(palette)) +
-			// On this layer rather than with the box, for the same reason the title
-			// is: a route into the first card inside the frame crosses the top of it,
-			// and a warning with a line through it is a warning a reader has to
-			// decide whether to trust.
-			warningBadge(placed.box, unsettled, palette),
-	);
-}
-
-export { halo, paintCard, paintContainerBox, paintContainerTitle, paintHeader };
+export { halo, paintCard, paintHeader };

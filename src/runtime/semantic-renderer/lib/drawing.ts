@@ -1,0 +1,73 @@
+// Measurement and placement meet here; painters consume these values unchanged.
+import type { SemanticEdge, SemanticNode } from "@/shared/semantic-board/index";
+import type { DiagramFont } from "@/runtime/semantic-renderer/lib/fonts";
+import type { Box } from "@/runtime/semantic-renderer/lib/geometry";
+import type { Curve } from "@/runtime/semantic-renderer/lib/layout/curves";
+
+/** One measured line, positioned relative to its card or label box. */
+interface TextRun {
+	readonly text: string;
+	readonly x: number;
+	readonly y: number;
+	readonly width: number;
+	readonly font: DiagramFont;
+	readonly fontSize: number;
+	readonly role: "title" | "note" | "label";
+}
+
+/** Text and minimum dimensions supplied to the compound layout owner. */
+interface MeasuredNode {
+	readonly node: SemanticNode;
+	readonly width: number;
+	readonly height: number;
+	/** Zero for a card; the reserved title area for a containing node. */
+	readonly headerHeight: number;
+	readonly runs: readonly TextRun[];
+}
+
+/** A relationship label whose words and box are settled before routing. */
+interface MeasuredLabel {
+	readonly width: number;
+	readonly height: number;
+	readonly runs: readonly TextRun[];
+}
+
+/** All measured subjects, keyed by their existing architectural identities. */
+interface MeasuredArchitecture {
+	readonly nodes: ReadonlyMap<string, MeasuredNode>;
+	readonly labels: ReadonlyMap<string, MeasuredLabel>;
+}
+
+/** One card or containing frame, in the final drawing coordinate space. */
+interface DrawingNode {
+	readonly measured: MeasuredNode;
+	readonly box: Box;
+	readonly depth: number;
+}
+
+/** A final route and its optional measured label in the same coordinates. */
+interface DrawingEdge {
+	readonly edge: SemanticEdge;
+	readonly curve: Curve;
+	readonly path: string;
+	readonly label?: { readonly box: Box; readonly measured: MeasuredLabel };
+}
+
+/** The single geometry result consumed by both SVG painting and the atlas. */
+interface ArchitectureDrawing {
+	readonly width: number;
+	readonly height: number;
+	readonly cards: readonly DrawingNode[];
+	readonly containers: readonly DrawingNode[];
+	readonly edges: readonly DrawingEdge[];
+}
+
+export type {
+	TextRun,
+	MeasuredNode,
+	MeasuredLabel,
+	MeasuredArchitecture,
+	DrawingNode,
+	DrawingEdge,
+	ArchitectureDrawing,
+};

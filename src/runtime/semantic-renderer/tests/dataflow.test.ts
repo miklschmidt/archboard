@@ -189,9 +189,13 @@ describe("renderDataFlow", () => {
 		expect(column.y + column.height).toBeGreaterThan(last.y);
 	});
 
-	test("two grammars draw the same identities as two different pictures", () => {
-		const sequence = renderSemanticView({ content: SAMPLE, grammar: "data-flow", theme: "light" });
-		const architecture = renderSemanticView({
+	test("two grammars draw the same identities as two different pictures", async () => {
+		const sequence = await renderSemanticView({
+			content: SAMPLE,
+			grammar: "data-flow",
+			theme: "light",
+		});
+		const architecture = await renderSemanticView({
 			content: SAMPLE,
 			grammar: "architecture",
 			theme: "light",

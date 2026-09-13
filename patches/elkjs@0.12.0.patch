@@ -1,0 +1,45 @@
+diff --git a/lib/elk-api.d.ts b/lib/elk-api.d.ts
+index dd0ec5104a2ad502a0dc4354d9ca6c35919ac974..ab61bdcf4246c4b359d5a63aca4c3a9b08160340 100644
+--- a/lib/elk-api.d.ts
++++ b/lib/elk-api.d.ts
+@@ -121,7 +121,7 @@ export interface ELK {
+     layout<T extends ElkNode>(
+         graph: T,
+         args?: ElkLayoutArguments
+-    ): Promise<Omit<T, 'children'> & { children?: (T['children'][number] & ElkNode)[] }>;
++    ): Promise<Omit<T, 'children'> & { children?: (NonNullable<T['children']>[number] & ElkNode)[] }>;
+     knownLayoutAlgorithms(): Promise<ElkLayoutAlgorithmDescription[]>
+     knownLayoutOptions(): Promise<ElkLayoutOptionDescription[]>
+     knownLayoutCategories(): Promise<ElkLayoutCategoryDescription[]>
+diff --git a/lib/elk-worker.js b/lib/elk-worker.js
+index bfcccdc686274b8c7341d0fddf8861a987ec9894..350d8e9ea0ebb0877207adb9681ea2641e344d24 100644
+--- a/lib/elk-worker.js
++++ b/lib/elk-worker.js
+@@ -36732,6 +36732,13 @@ function $process_26(layeredGraph, monitor){
+               dummySize.x_0 = $wnd.Math.max(dummySize.x_0, label_0.size_0.x_0);
+               dummySize.y_0 += label_0.size_0.y_0 + labelLabelSpacing;
+             }
++            // Preserve an explicitly seeded inline label in interactive placement.
++            // Without this transfer the new dummy starts at the graph origin.
++            if (maskUndefined($getProperty(layeredGraph, NODE_PLACEMENT_STRATEGY_0)) === maskUndefined(($clinit_NodePlacementStrategy() , INTERACTIVE_4)) && (label_0.pos.x_0 !== 0 || label_0.pos.y_0 !== 0)) {
++              dummyNode.pos.x_0 = label_0.pos.x_0;
++              dummyNode.pos.y_0 = label_0.pos.y_0;
++              $setProperty_0(dummyNode, ORIGINAL_DUMMY_NODE_POSITION, label_0.pos.y_0);
++            }
+             push_1(representedLabels.array, label_0);
+             $remove_8(iterator);
+           }
+@@ -53290,6 +53297,13 @@ function $process_78(this$static, layeredGraph, monitor){
+   var layer, layer$iterator;
+   monitor.begin('Interactive node placement', 1);
+   this$static.spacings = castTo($getProperty(layeredGraph, ($clinit_InternalProperties_1() , SPACINGS)), 317);
++  for (const originalLayer of layeredGraph.layers.array) {
++    const realNodes = originalLayer.nodes.array.filter(node => node.type_0 === NORMAL);
++    const axis = realNodes.length ? realNodes.reduce((sum, node) => sum + node.pos.x_0 + node.size_0.x_0 / 2, 0) / realNodes.length : 0;
++    for (const originalNode of originalLayer.nodes.array) {
++      if (originalNode.type_0 === LONG_EDGE) $setProperty_0(originalNode, ORIGINAL_DUMMY_NODE_POSITION, $getPos(originalNode, axis));
++    }
++  }
+   for (layer$iterator = new ArrayList$1(layeredGraph.layers); layer$iterator.i < layer$iterator.this$01.array.length;) {
+     layer = castTo($next_6(layer$iterator), 25);
+     $placeNodes(this$static, layer);

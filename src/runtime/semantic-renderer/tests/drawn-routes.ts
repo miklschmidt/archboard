@@ -22,7 +22,10 @@ interface DrawnPoint {
  * @returns The shift, or the origin when the body was not moved.
  */
 function bodyShift(svg: string): DrawnPoint {
-	const found = /<g transform="translate\((-?[\d.]+),(-?[\d.]+)\)">/.exec(svg);
+	// Only the group immediately after the document background moves the body.
+	// A standing pin has its own translation inside a subject further down.
+	const found =
+		/<\/defs>\s*<rect[^>]*\/>\s*<g transform="translate\((-?[\d.]+),(-?[\d.]+)\)">/.exec(svg);
 	return found === null ? { x: 0, y: 0 } : { x: Number(found[1] ?? 0), y: Number(found[2] ?? 0) };
 }
 
@@ -64,7 +67,7 @@ function routeEnds(svg: string, kind: string = "edge"): Map<string, DrawnPoint> 
 		),
 	)) {
 		const id = group[1] ?? "";
-		const drawn = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"/g)];
+		const drawn = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end=/g)];
 		const last = pointsOf(drawn[drawn.length - 1]?.[1] ?? "").at(-1);
 		if (last !== undefined) {
 			ends.set(id, { x: last.x + shift.x, y: last.y + shift.y });
@@ -89,10 +92,10 @@ function routePoints(svg: string): Map<string, DrawnPoint[]> {
 	for (const group of svg.matchAll(
 		/<g data-semantic-kind="edge" data-semantic-id="([^"]+)"[^>]*>([\s\S]*?)<\/g>/g,
 	)) {
-		const drawn = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"/g)];
+		const drawn = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end=/g)];
 		// A relationship is drawn as more than one group — its route, and the words
-		// it says on the layer above every route — so a group with no path in it is
-		// not the one being asked about and must not replace the one that was.
+		// it says on the layer above every route. Only the arrow-bearing path is
+		// a route; warning glyphs in the words group must not replace it.
 		if (drawn.length === 0) {
 			continue;
 		}

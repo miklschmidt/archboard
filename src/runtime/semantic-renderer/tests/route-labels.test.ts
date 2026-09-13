@@ -154,10 +154,10 @@ const CROWDED: VariantContent = VariantContentSchema.parse({
 });
 
 describe("a label belongs to one line", () => {
-	test("badges keep twelve units of whitespace from cards while remaining on their routes", () => {
+	test("badges keep twelve units of whitespace from cards while remaining on their routes", async () => {
 		for (const content of [LABELLED_FORK, LIFECYCLE, PAIRED, CAMERA_FOCUS]) {
 			for (const theme of ["light", "dark"] as const) {
-				const drawn = renderArchitecture({ content, theme });
+				const drawn = await renderArchitecture({ content, theme });
 				const frames = new Set(content.nodes.map((node) => node.parent));
 				const cards = Object.entries(drawn.atlas.nodes).filter(([id]) => !frames.has(id));
 				const cramped: string[] = [];
@@ -181,7 +181,7 @@ describe("a label belongs to one line", () => {
 	});
 
 	for (const returning of [false, true]) {
-		test(`labelled fork${returning ? " with a return" : ""} branches keep separate departures and clear pills`, () => {
+		test(`labelled fork${returning ? " with a return" : ""} branches keep separate departures and clear pills`, async () => {
 			for (const order of [
 				[0, 1, 2],
 				[0, 2, 1],
@@ -208,7 +208,7 @@ describe("a label belongs to one line", () => {
 					],
 				});
 				for (const theme of ["light", "dark"] as const) {
-					const drawn = renderArchitecture({ content, theme });
+					const drawn = await renderArchitecture({ content, theme });
 					const routes = routePoints(drawn.svg);
 					expect(routeLabels(drawn.svg).size).toBe(returning ? 4 : 3);
 					expect(detached(drawn)).toEqual([]);
@@ -239,7 +239,7 @@ describe("a label belongs to one line", () => {
 		});
 	}
 
-	test("parallel labelled skips reserve measured room beside their tracks", () => {
+	test("parallel labelled skips reserve measured room beside their tracks", async () => {
 		const content = VariantContentSchema.parse({
 			...LABELLED_FORK,
 			edges: [
@@ -254,7 +254,7 @@ describe("a label belongs to one line", () => {
 			],
 		});
 		for (const theme of ["light", "dark"] as const) {
-			const drawn = renderArchitecture({ content, theme });
+			const drawn = await renderArchitecture({ content, theme });
 			expect(routeLabels(drawn.svg).size).toBe(4);
 			expect(detached(drawn)).toEqual([]);
 			expect(covering(drawn)).toEqual([]);
@@ -269,16 +269,16 @@ describe("a label belongs to one line", () => {
 		["a crowded architecture", CROWDED],
 		["the lifecycle fanout", LIFECYCLE],
 	] as const) {
-		test(`every pill of ${what} is drawn on its own route`, () => {
+		test(`every pill of ${what} is drawn on its own route`, async () => {
 			for (const theme of ["light", "dark"] as const) {
-				const drawn = renderArchitecture({ content, theme });
+				const drawn = await renderArchitecture({ content, theme });
 				expect(routeLabels(drawn.svg).size).toBeGreaterThan(1);
 				expect(detached(drawn)).toEqual([]);
 			}
 		});
 
-		test(`no pill of ${what} covers another pill or a card`, () => {
-			expect(overlaps(renderArchitecture({ content, theme: "light" }), content)).toEqual([]);
+		test(`no pill of ${what} covers another pill or a card`, async () => {
+			expect(overlaps(await renderArchitecture({ content, theme: "light" }), content)).toEqual([]);
 		});
 	}
 
@@ -286,24 +286,24 @@ describe("a label belongs to one line", () => {
 		["the reported pair", PAIRED],
 		["three crossings of one gap", THREE_WAYS],
 	] as const) {
-		test(`no pill of ${what} lies across a line it does not name`, () => {
+		test(`no pill of ${what} lies across a line it does not name`, async () => {
 			// Sitting on its own line is not enough: a pill wide enough to cover the
 			// neighbour's line names both of them as far as a reader can tell.
 			for (const theme of ["light", "dark"] as const) {
-				expect(covering(renderArchitecture({ content, theme }))).toEqual([]);
+				expect(covering(await renderArchitecture({ content, theme }))).toEqual([]);
 			}
 		});
 	}
 
-	test("no pill of the reported pair sits on its own arrowhead", () => {
+	test("no pill of the reported pair sits on its own arrowhead", async () => {
 		// A head hidden under the words stops saying which way the line runs.
 		for (const theme of ["light", "dark"] as const) {
-			expect(masking(renderArchitecture({ content: PAIRED, theme }))).toEqual([]);
+			expect(masking(await renderArchitecture({ content: PAIRED, theme }))).toEqual([]);
 		}
 	});
 
-	test("a forward adjacent connection is direct and its return travels to the right", () => {
-		const drawn = renderArchitecture({ content: PAIRED, theme: "light" });
+	test("a forward adjacent connection is direct and its return travels to the right", async () => {
+		const drawn = await renderArchitecture({ content: PAIRED, theme: "light" });
 		const up = routePoints(drawn.svg).get("drawing") ?? [];
 		const down = routePoints(drawn.svg).get("asks") ?? [];
 		expect(up.length).toBeGreaterThan(1);
