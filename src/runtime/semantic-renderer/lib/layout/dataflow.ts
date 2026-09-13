@@ -59,7 +59,7 @@ import {
 	MESSAGE_PITCH,
 	SELF_LOOP_EXTENT,
 	SELF_MESSAGE_PITCH,
-} from "@/runtime/semantic-renderer/lib/dataflow-design";
+} from "@/runtime/semantic-renderer/lib/sequence-design";
 import type { Box } from "@/runtime/semantic-renderer/lib/geometry";
 import { CARD_NOTE_FONT, CARD_TITLE_FONT } from "@/runtime/semantic-renderer/lib/fonts";
 import { fittedSize, measure } from "@/runtime/semantic-renderer/lib/text";

@@ -24,7 +24,7 @@ import {
 	SELF_LOOP_CORNER,
 	SELF_LOOP_EXTENT,
 	SELF_LOOP_REACH,
-} from "@/runtime/semantic-renderer/lib/dataflow-design";
+} from "@/runtime/semantic-renderer/lib/sequence-design";
 import { PILL_FONT } from "@/runtime/semantic-renderer/lib/fonts";
 import { covering, type Box } from "@/runtime/semantic-renderer/lib/geometry";
 import { measure } from "@/runtime/semantic-renderer/lib/text";

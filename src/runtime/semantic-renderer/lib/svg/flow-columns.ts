@@ -10,7 +10,7 @@ import {
 	ACTIVATION_HALF_WIDTH,
 	ACTIVATION_RADIUS,
 	LIFELINE_DASH,
-} from "@/runtime/semantic-renderer/lib/dataflow-design";
+} from "@/runtime/semantic-renderer/lib/sequence-design";
 import { coord, type Box } from "@/runtime/semantic-renderer/lib/geometry";
 import type { FlowLayout, PlacedColumn } from "@/runtime/semantic-renderer/lib/layout/dataflow";
 import type { Palette } from "@/runtime/semantic-renderer/lib/theme";
