@@ -84,14 +84,13 @@ with the reason). These are the rules that will not stop you:
 
 ## Test policy
 
-**Test runtime behavior, not repository file contents.** Do not inspect source,
-documentation or configuration files to assert how the repository is written.
-The restriction is on what a test proves, not where its data lives.
+**Test observable behavior and contracts.** A test should catch incorrect
+behavior, not merely a change to how repository files are worded or organized.
 
 **Test behavior and contracts, not human-readable wording.** For CLI help,
 diagnostics and UI copy, verify routing, exit status, side effects, structure
 and formatting. Do not lock that copy down with text matching, prose snapshots
-or full-output equality—even between two live invocations.
+or full-output equality.
 
 Discover commands and options from authoritative runtime metadata when
 testing generic CLI behavior. Adding or renaming a flag, or editing a
