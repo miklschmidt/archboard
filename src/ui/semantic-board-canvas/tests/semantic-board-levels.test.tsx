@@ -4,7 +4,7 @@
 // trail is local and the address still names where the reader started — but it
 // is still a board somebody is reading, so it offers what any board offers:
 // its own ways of being read, and its own states. What it must not offer is the
-// level above's: a view id belongs to one variant's content and a variant id to
+// level above's: a view id belongs to one board and a variant id to
 // one board, so the reading starts again at each level.
 
 import { act, fireEvent } from "@testing-library/react";
@@ -32,21 +32,24 @@ const PIPELINE_VIEW = { id: "pv1", name: "Where writes go", grammar: "architectu
  * @param name What the board is called.
  * @param variants Its variants, in the order it states them.
  * @param current Which variant is the current one.
+ * @param views The ways this board can be read.
  * @returns The document.
  */
 function boardOf(
 	name: string,
 	variants: readonly Record<string, unknown>[],
 	current: string,
+	views: readonly Record<string, unknown>[] = [],
 ): Record<string, unknown> {
 	return {
-		schemaVersion: "1.0.0",
+		schemaVersion: "2.0.0",
 		kind: "semantic-board",
 		id: name === "pipeline" ? "bd1" : "bd2",
 		name,
 		version: 1,
 		createdAt: "2026-09-11T00:00:00.000Z",
 		updatedAt: "2026-09-11T00:00:00.000Z",
+		views,
 		current,
 		variants,
 	};
@@ -70,11 +73,11 @@ const PIPELINE = boardOf(
 					},
 				],
 				edges: [],
-				views: [{ ...PIPELINE_VIEW, scope: { kind: "all" } }],
 			},
 		},
 	],
 	"v1",
+	[{ ...PIPELINE_VIEW, scope: { kind: "all" } }],
 );
 
 /** The board below: two states, two ways of reading it. */
@@ -99,7 +102,6 @@ const ENGINE = boardOf(
 						steps: [{ id: "s1", from: "m1", to: "m2", label: "flushes", kind: "sync" }],
 					},
 				],
-				views: ENGINE_VIEWS.map((view) => ({ ...view, scope: { kind: "all" } })),
 			},
 		},
 		{
@@ -110,6 +112,7 @@ const ENGINE = boardOf(
 		},
 	],
 	"e2",
+	ENGINE_VIEWS.map((view) => ({ ...view, scope: { kind: "all" } })),
 );
 
 /**
@@ -174,6 +177,10 @@ test("choosing at the level below asks for that reading of the board below", asy
 	await settle();
 	await openDown();
 
+	server.reply = {
+		status: 200,
+		body: { ...drawing(1, "engine"), view: ENGINE_VIEWS[1], views: [...ENGINE_VIEWS] },
+	};
 	await act(async () => {
 		fireEvent.click(buttons("semantic-view-choice")[2]!);
 	});
@@ -182,8 +189,9 @@ test("choosing at the level below asks for that reading of the board below", asy
 	expect(asked).toContain("board=engine");
 	expect(asked).toContain("view=ev2");
 
-	// A different state of the board below is read whole: a view chosen in one
-	// variant may name nothing in another, and a refusal is worse than a picture.
+	// A different state of the board below keeps the board-owned view. The view
+	// is one way of reading every state of the board, so changing state does not
+	// silently change the reading the person chose.
 	// The board below's current state is asked for as the absence of a variant,
 	// the same way the pane asks for its own.
 	await act(async () => {
@@ -192,9 +200,9 @@ test("choosing at the level below asks for that reading of the board below", asy
 	await settle();
 	const afterwards = renderCalls().at(-1) ?? "";
 	expect(afterwards).toContain("board=engine");
-	expect(afterwards).not.toContain("view=");
+	expect(afterwards).toContain("view=ev2");
 	expect(buttons("semantic-variant-choice")[1]?.getAttribute("aria-pressed")).toBe("true");
-	expect(buttons("semantic-view-choice")[0]?.getAttribute("aria-pressed")).toBe("true");
+	expect(buttons("semantic-view-choice")[2]?.getAttribute("aria-pressed")).toBe("true");
 });
 
 test("coming back up leaves the pane reading its own board as it was", async () => {

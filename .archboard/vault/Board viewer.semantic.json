@@ -1,0 +1,283 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "UOXNWLhR",
+	"name": "Board viewer",
+	"version": 2,
+	"createdAt": "2026-09-12T22:28:20.312Z",
+	"updatedAt": "2026-09-13T00:47:03.484Z",
+	"views": [],
+	"variants": [
+		{
+			"id": "mbDAkbS0",
+			"name": "Current architecture",
+			"lifecycle": "current",
+			"summary": "Module level: semantic-viewer as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"content": {
+				"nodes": [
+					{
+						"id": "xJIh6Jdp",
+						"name": "Browser client",
+						"kind": "external",
+						"responsibility": "Hosts the read-only viewer",
+						"description": "The parent browser service mounts this module in each semantic pane.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/application/components/ApplicationPane.tsx"
+						},
+						"drillDown": {
+							"board": "Browser application",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "pZRxBz2h",
+						"name": "Semantic viewer",
+						"kind": "module",
+						"responsibility": "Explores one rendered architecture",
+						"description": "The read-only semantic-board-canvas module. Server bytes define content and geometry; local state defines only how a person reads them.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/index.ts"
+						}
+					},
+					{
+						"id": "tmwUm8BL",
+						"name": "Fetch semantic reads",
+						"kind": "function",
+						"responsibility": "Decode list, board, and render",
+						"description": "Calls the three semantic HTTP read routes and converts refused, unreachable, or invalid replies into explicit viewer failures.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/api/semantic-boards.ts"
+						}
+					},
+					{
+						"id": "ntOE7caV",
+						"name": "Resolve board meaning",
+						"kind": "function",
+						"responsibility": "Inspect subjects and variants",
+						"description": "Parses the board document, resolves the shown variant, describes nodes, edges, flows, steps, bindings, containment, and proposal standing.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/board-document.ts"
+						}
+					},
+					{
+						"id": "3KqRuOEN",
+						"name": "Render stage states",
+						"kind": "function",
+						"responsibility": "Present every reachable state",
+						"description": "Composes loading, empty, error, stale, drawn, inspection, variant, view, walkthrough, and drill trail surfaces around query state.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
+						}
+					},
+					{
+						"id": "ijZRg0FU",
+						"name": "Control camera",
+						"kind": "function",
+						"responsibility": "Fit, pan, and zoom locally",
+						"description": "Computes clamped camera transforms for the server drawing without persisting or inventing board geometry.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/camera.ts"
+						}
+					},
+					{
+						"id": "UDkL7Tn6",
+						"name": "Select semantic subjects",
+						"kind": "function",
+						"responsibility": "Map gestures through the atlas",
+						"description": "Accepts only semantic IDs present in the server atlas and toggles the shared attention mark on rendered groups.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/subjects.ts"
+						}
+					},
+					{
+						"id": "yUjSLnkw",
+						"name": "Follow drill-downs",
+						"kind": "function",
+						"responsibility": "Navigate linked board levels",
+						"description": "Resolves exact current or named target variants, owns the local trail, and resets level-specific view and variant readings safely.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/drill-target.ts"
+						}
+					},
+					{
+						"id": "z0dvHsUt",
+						"name": "Drive walkthrough focus",
+						"kind": "function",
+						"responsibility": "Focus each narrative beat",
+						"description": "Maps beat subjects through the atlas to a focus rectangle and reports named subjects missing from the current view.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/lib/narrative.ts"
+						}
+					},
+					{
+						"id": "VC7yvPZB",
+						"name": "Refresh changed boards",
+						"kind": "function",
+						"responsibility": "Invalidate live cached drawings",
+						"description": "Hears board version announcements from the pane socket and invalidates matching semantic query keys while retaining usable stale drawings.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/hooks/use-semantic-board-changes.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "SBeG5Ns0",
+						"from": "xJIh6Jdp",
+						"to": "pZRxBz2h",
+						"kind": "render",
+						"label": "mount in pane",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ACKA5I1k",
+						"from": "pZRxBz2h",
+						"to": "tmwUm8BL",
+						"kind": "call",
+						"label": "request authoritative bytes",
+						"emphasis": "hero"
+					},
+					{
+						"id": "55rosWUN",
+						"from": "tmwUm8BL",
+						"to": "ntOE7caV",
+						"kind": "data",
+						"label": "decoded board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "IJQe6RQy",
+						"from": "tmwUm8BL",
+						"to": "3KqRuOEN",
+						"kind": "data",
+						"label": "render query state",
+						"emphasis": "normal"
+					},
+					{
+						"id": "axWdg78p",
+						"from": "ntOE7caV",
+						"to": "3KqRuOEN",
+						"kind": "data",
+						"label": "inspection and standing",
+						"emphasis": "normal"
+					},
+					{
+						"id": "cdwXdyXo",
+						"from": "3KqRuOEN",
+						"to": "ijZRg0FU",
+						"kind": "call",
+						"label": "frame drawing",
+						"emphasis": "normal"
+					},
+					{
+						"id": "I1b9UiOY",
+						"from": "3KqRuOEN",
+						"to": "UDkL7Tn6",
+						"kind": "call",
+						"label": "pick attention",
+						"emphasis": "normal"
+					},
+					{
+						"id": "EIAfMMlW",
+						"from": "ntOE7caV",
+						"to": "yUjSLnkw",
+						"kind": "data",
+						"label": "exact link target",
+						"emphasis": "normal"
+					},
+					{
+						"id": "6pPtofwF",
+						"from": "yUjSLnkw",
+						"to": "tmwUm8BL",
+						"kind": "call",
+						"label": "read target board",
+						"emphasis": "normal"
+					},
+					{
+						"id": "8HTCy24H",
+						"from": "3KqRuOEN",
+						"to": "z0dvHsUt",
+						"kind": "call",
+						"label": "advance explanation",
+						"emphasis": "normal"
+					},
+					{
+						"id": "ttcJkRoJ",
+						"from": "z0dvHsUt",
+						"to": "ijZRg0FU",
+						"kind": "call",
+						"label": "fit beat subjects",
+						"emphasis": "normal"
+					},
+					{
+						"id": "xpOUXS7t",
+						"from": "VC7yvPZB",
+						"to": "tmwUm8BL",
+						"kind": "event",
+						"label": "invalidate matching queries",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "ihcTPfel",
+						"name": "Read one semantic board",
+						"beats": [
+							{
+								"id": "8C2uAWTl",
+								"heading": "Obtain authoritative meaning",
+								"body": "The API decodes the board document and server-rendered picture; board-document resolution makes inspectable meaning available beside the SVG.",
+								"subjects": [
+									"tmwUm8BL",
+									"ntOE7caV"
+								]
+							},
+							{
+								"id": "24TKcwIn",
+								"heading": "Own only the reading",
+								"body": "The stage presents explicit states while camera and subject selection change local attention without changing board content or geometry.",
+								"subjects": [
+									"3KqRuOEN",
+									"ijZRg0FU",
+									"UDkL7Tn6"
+								]
+							},
+							{
+								"id": "PfoDtrad",
+								"heading": "Explain across levels",
+								"body": "Walkthrough beats focus atlas subjects, drill-down resolves the exact linked architecture, and change announcements refresh cached server reads.",
+								"subjects": [
+									"z0dvHsUt",
+									"yUjSLnkw",
+									"VC7yvPZB"
+								]
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "mbDAkbS0"
+}

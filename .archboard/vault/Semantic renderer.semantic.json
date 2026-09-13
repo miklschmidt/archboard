@@ -1,0 +1,805 @@
+{
+	"schemaVersion": "2.0.0",
+	"kind": "semantic-board",
+	"id": "gbyqW4H3",
+	"name": "Semantic renderer",
+	"version": 5,
+	"createdAt": "2026-09-12T22:28:19.940Z",
+	"updatedAt": "2026-09-13T00:47:03.483Z",
+	"views": [
+		{
+			"id": "hDJkR6K5",
+			"name": "Architecture drawing",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"LgbAlvMN",
+					"wpI1LbzG",
+					"y8vuJJKu",
+					"Y0smyqtZ",
+					"L51bfquE",
+					"J3yMo4ag",
+					"u1OXg3Yy",
+					"J7mPrUeP",
+					"eECDrhMc"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "srvJJgTA",
+			"name": "Data-flow drawing",
+			"grammar": "architecture",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"LgbAlvMN",
+					"wpI1LbzG",
+					"wLF1X11D",
+					"J3yMo4ag",
+					"u1OXg3Yy",
+					"J7mPrUeP",
+					"eECDrhMc"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "ySOqVAJv",
+			"name": "Layout pipeline",
+			"grammar": "architecture",
+			"summary": "Follow layout responsibilities through the selected architecture state.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"y8vuJJKu",
+					"g4QgxvtX",
+					"Y0smyqtZ",
+					"J7mPrUeP",
+					"eECDrhMc"
+				],
+				"edges": [
+					"BJAmGg5k",
+					"8c58qiNK",
+					"SIdU2g2Q",
+					"qDiEFiIT"
+				],
+				"flows": []
+			}
+		},
+		{
+			"id": "tXxlwAYP",
+			"name": "Renderer integration",
+			"grammar": "architecture",
+			"summary": "Stable caller and browser output around the changed internals.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [
+					"LgbAlvMN",
+					"wpI1LbzG",
+					"y8vuJJKu",
+					"g4QgxvtX",
+					"Y0smyqtZ",
+					"J7mPrUeP",
+					"eECDrhMc"
+				],
+				"edges": [],
+				"flows": []
+			}
+		},
+		{
+			"id": "OANefo74",
+			"name": "Render sequence",
+			"grammar": "data-flow",
+			"summary": "Calls and return values for the selected state; the linked Renderer layout board compares the current and proposed sequences.",
+			"scope": {
+				"kind": "selection",
+				"nodes": [],
+				"edges": [],
+				"flows": [
+					"wSdmI5dP"
+				]
+			}
+		}
+	],
+	"variants": [
+		{
+			"id": "1gSwIfid",
+			"name": "Current architecture",
+			"lifecycle": "current",
+			"summary": "Module level: renderer as implemented on 2026-09-13. Follow linked subjects for related levels.",
+			"content": {
+				"nodes": [
+					{
+						"id": "LgbAlvMN",
+						"name": "Canvas server",
+						"kind": "external",
+						"responsibility": "Requests a selected board drawing",
+						"description": "Parent service context: semantic board routes supply resolved variant content, selected view, theme, and subject standing, then return the renderer's SVG and atlas to the browser.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/semantic-board-routes.ts"
+						},
+						"drillDown": {
+							"board": "Canvas server",
+							"variant": {
+								"kind": "current"
+							}
+						}
+					},
+					{
+						"id": "wpI1LbzG",
+						"name": "View dispatcher",
+						"kind": "function",
+						"responsibility": "Selects architecture or data flow",
+						"description": "renderSemanticView is the public entry point. It examines the semantic view grammar and dispatches to architecture or data-flow rendering while preserving theme and per-subject standing.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/index.ts"
+						}
+					},
+					{
+						"id": "y8vuJJKu",
+						"name": "Region builder",
+						"kind": "function",
+						"responsibility": "Builds visible containment regions",
+						"description": "regionsOf and containersIn derive drawable roots, nested containers, groups, and visible relationships from selected semantic content before spatial layout begins.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/regions.ts"
+						}
+					},
+					{
+						"id": "Y0smyqtZ",
+						"name": "Architecture layout",
+						"kind": "function",
+						"responsibility": "Places cards and containers",
+						"description": "layoutArchitecture ranks and seats region nodes, measures card text and heights, allocates bands and corridors, places nested containers, and returns deterministic geometry for routing and painting.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/layout/architecture.ts"
+						}
+					},
+					{
+						"id": "L51bfquE",
+						"name": "Edge routing",
+						"kind": "function",
+						"responsibility": "Routes readable relationships",
+						"description": "The edge pipeline chooses ports and tracks, plans orthogonal routes, curves corners, reduces crossings and braids, relieves congestion, and places label pills clear of nodes and other marks.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/layout/edges.ts"
+						}
+					},
+					{
+						"id": "wLF1X11D",
+						"name": "Data-flow layout",
+						"kind": "function",
+						"responsibility": "Places participants and messages",
+						"description": "layoutDataFlow converts an ordered semantic flow into participant columns, step positions, return and self-message geometry, and a clock suitable for animated exchange pulses.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/layout/dataflow.ts"
+						}
+					},
+					{
+						"id": "J3yMo4ag",
+						"name": "Measured text",
+						"kind": "function",
+						"responsibility": "Fits labels to real font metrics",
+						"description": "Text helpers call the shared font measurement engine, apply tracking, truncate with measured ellipses, and choose fitted sizes so SVG text uses the same font geometry the layout reserved.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/text.ts"
+						}
+					},
+					{
+						"id": "u1OXg3Yy",
+						"name": "Theme palette",
+						"kind": "function",
+						"responsibility": "Resolves every drawn color",
+						"description": "paletteFor maps the requested diagram theme to literal surface, ink, group, relationship, selection, and status colors consumed by both architecture and data-flow painters.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/theme.ts"
+						}
+					},
+					{
+						"id": "J7mPrUeP",
+						"name": "SVG painters",
+						"kind": "function",
+						"responsibility": "Paints geometry and standing",
+						"description": "paintArchitecture and paintDataFlow turn placed nodes, containers, edges, steps, labels, groups, pulses, and current/proposed/changed standing into SVG marks with stable subject annotations.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/svg/architecture.ts"
+						}
+					},
+					{
+						"id": "eECDrhMc",
+						"name": "SVG document and atlas",
+						"kind": "function",
+						"responsibility": "Frames SVG and hit geometry",
+						"description": "svgDocument supplies font faces, canvas bounds, styles, accessibility metadata, and animation policy; atlas helpers report the final subject boxes and route geometry used for browser selection and focus.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/svg/document.ts"
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "fl3z5Duy",
+						"from": "LgbAlvMN",
+						"to": "wpI1LbzG",
+						"kind": "render",
+						"label": "render selected view",
+						"emphasis": "hero"
+					},
+					{
+						"id": "KtJOCzrZ",
+						"from": "wpI1LbzG",
+						"to": "y8vuJJKu",
+						"kind": "call",
+						"label": "derive architecture regions",
+						"emphasis": "normal"
+					},
+					{
+						"id": "v3e9dOLe",
+						"from": "y8vuJJKu",
+						"to": "Y0smyqtZ",
+						"kind": "data",
+						"label": "visible regions",
+						"emphasis": "normal"
+					},
+					{
+						"id": "qJrkH2Qg",
+						"from": "Y0smyqtZ",
+						"to": "L51bfquE",
+						"kind": "call",
+						"label": "route relationships",
+						"emphasis": "normal"
+					},
+					{
+						"id": "PjA6m5Ft",
+						"from": "wpI1LbzG",
+						"to": "wLF1X11D",
+						"kind": "call",
+						"label": "lay out exchange",
+						"emphasis": "normal"
+					},
+					{
+						"id": "Wn0XA35I",
+						"from": "Y0smyqtZ",
+						"to": "J3yMo4ag",
+						"kind": "call",
+						"label": "size cards",
+						"emphasis": "normal"
+					},
+					{
+						"id": "neQc1gXi",
+						"from": "L51bfquE",
+						"to": "J3yMo4ag",
+						"kind": "call",
+						"label": "fit labels",
+						"emphasis": "normal"
+					},
+					{
+						"id": "WwNFCjLE",
+						"from": "wpI1LbzG",
+						"to": "u1OXg3Yy",
+						"kind": "call",
+						"label": "resolve theme",
+						"emphasis": "normal"
+					},
+					{
+						"id": "SIdU2g2Q",
+						"from": "Y0smyqtZ",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "placed architecture",
+						"emphasis": "normal"
+					},
+					{
+						"id": "0s8raCUw",
+						"from": "L51bfquE",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "routed edges",
+						"emphasis": "normal"
+					},
+					{
+						"id": "eKqUHYSH",
+						"from": "wLF1X11D",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "placed exchange",
+						"emphasis": "normal"
+					},
+					{
+						"id": "I1lGjMES",
+						"from": "u1OXg3Yy",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "literal colors",
+						"emphasis": "normal"
+					},
+					{
+						"id": "qDiEFiIT",
+						"from": "J7mPrUeP",
+						"to": "eECDrhMc",
+						"kind": "render",
+						"label": "marks and hit boxes",
+						"emphasis": "hero"
+					},
+					{
+						"id": "8EDKem8V",
+						"from": "eECDrhMc",
+						"to": "LgbAlvMN",
+						"kind": "data",
+						"label": "SVG and subject atlas",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [],
+				"walkthroughs": [
+					{
+						"id": "Gyc03kQp",
+						"name": "Meaning becomes an interactive SVG",
+						"beats": [
+							{
+								"id": "TxUv8QT5",
+								"heading": "The selected grammar chooses a pipeline",
+								"body": "The public dispatcher receives already-resolved semantic content and chooses architecture regions or an ordered data-flow exchange.",
+								"subjects": [
+									"LgbAlvMN",
+									"wpI1LbzG",
+									"y8vuJJKu",
+									"wLF1X11D"
+								]
+							},
+							{
+								"id": "2XXwjrOX",
+								"heading": "Layout reserves measured space",
+								"body": "Architecture cards and routes or data-flow columns and messages are placed deterministically, using real font metrics for the text they must hold.",
+								"subjects": [
+									"Y0smyqtZ",
+									"L51bfquE",
+									"wLF1X11D",
+									"J3yMo4ag"
+								]
+							},
+							{
+								"id": "g5qAhKaY",
+								"heading": "Painting returns picture and interaction map",
+								"body": "The resolved palette and subject standing shape the SVG marks; document framing and atlas geometry let the browser display, select, and focus what the renderer actually drew.",
+								"subjects": [
+									"u1OXg3Yy",
+									"J7mPrUeP",
+									"eECDrhMc",
+									"LgbAlvMN"
+								],
+								"view": "hDJkR6K5"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": "IV2KX3GX",
+			"name": "Readable layout",
+			"lifecycle": "draft",
+			"parent": "1gSwIfid",
+			"content": {
+				"nodes": [
+					{
+						"id": "LgbAlvMN",
+						"name": "Canvas server",
+						"kind": "external",
+						"responsibility": "Requests a selected board drawing",
+						"description": "Parent service context: semantic board routes supply resolved variant content, selected view, theme, and subject standing, then return the renderer's SVG and atlas to the browser.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/server/canvas/lib/semantic-board-routes.ts"
+						},
+						"drillDown": {
+							"board": "Canvas server",
+							"variant": {
+								"kind": "named",
+								"name": "Readable layout"
+							}
+						}
+					},
+					{
+						"id": "wpI1LbzG",
+						"name": "View dispatcher",
+						"kind": "function",
+						"responsibility": "Own the render pipeline",
+						"description": "PROPOSED orchestration change behind the existing renderer entry point: resolve the selected grammar, derive its layout graph, measure cards, obtain one placed drawing, then paint it. The architecture pipeline changes; the ordered data-flow grammar keeps its existing behavior. Callers still supply semantic content, theme, fonts and standing and receive SVG, dimensions and a subject atlas.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/index.ts"
+						}
+					},
+					{
+						"id": "y8vuJJKu",
+						"name": "Layout graph",
+						"kind": "function",
+						"responsibility": "Preserve semantic structure",
+						"description": "PROPOSED replacement of spatial regions with a geometry-free compound graph. Preserve subject IDs, actual parent/child containment, every selected relationship, group membership and emphasis. Groups remain semantic annotation rather than forcing columns. Supply connections across containment boundaries to the layout owner; neither global rows nor column assignments are produced here.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/regions.ts"
+						}
+					},
+					{
+						"id": "Y0smyqtZ",
+						"name": "Compound layout",
+						"kind": "function",
+						"responsibility": "Place and route together",
+						"description": "PROPOSED one layout owner replaces global ranks, paired seats, indexed row bands and the separate corridor-routing pipeline. Input: semantic containment and connections plus measured card and edge-label dimensions. Output: a complete placed drawing: card boxes/text runs, container bounds, legal ports, orthogonal edge paths and label boxes. Arrange connected siblings locally and position enclosing groups with their cross-boundary connections in view. Containers enclose their actual children plus header and routing clearance. Route through geometric free space with short paths and few bends; protect cards, headers and labels from overlap. Canonical input ordering and stable-ID tie breaks make identical input deterministic. Local edits may legitimately rearrange nearby nodes; pixel-stable seating is not a requirement. Implementation should evaluate an established compound-graph layout engine before replacing these internals; library choice and performance remain unproven, not an added author control. The linked detail board contrasts Today with Proposed render and opens this responsibility in the Inside layout sequence.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/layout/architecture.ts"
+						},
+						"drillDown": {
+							"board": "Renderer layout",
+							"variant": {
+								"kind": "named",
+								"name": "Readable layout"
+							}
+						}
+					},
+					{
+						"id": "wLF1X11D",
+						"name": "Data-flow layout",
+						"kind": "function",
+						"responsibility": "Places participants and messages",
+						"description": "layoutDataFlow converts an ordered semantic flow into participant columns, step positions, return and self-message geometry, and a clock suitable for animated exchange pulses.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/layout/dataflow.ts"
+						}
+					},
+					{
+						"id": "J3yMo4ag",
+						"name": "Measured text",
+						"kind": "function",
+						"responsibility": "Fits labels to real font metrics",
+						"description": "Text helpers call the shared font measurement engine, apply tracking, truncate with measured ellipses, and choose fitted sizes so SVG text uses the same font geometry the layout reserved.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/text.ts"
+						}
+					},
+					{
+						"id": "u1OXg3Yy",
+						"name": "Theme palette",
+						"kind": "function",
+						"responsibility": "Resolves every drawn color",
+						"description": "paletteFor maps the requested diagram theme to literal surface, ink, group, relationship, selection, and status colors consumed by both architecture and data-flow painters.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/theme.ts"
+						}
+					},
+					{
+						"id": "J7mPrUeP",
+						"name": "SVG painters",
+						"kind": "function",
+						"responsibility": "Paint the placed drawing",
+						"description": "PROPOSED architecture painter consumes the complete drawing returned by Compound layout, including the exact measured wrapped text lines. It draws cards, containers, routes and semantic standing without placing nodes, shrinking titles, truncating responsibilities again, or finding new label positions. The data-flow painter remains unchanged. Existing node and edge identity annotations continue to drive inspection and focus. The linked Proposed render sequence shows the concrete drawing contract it consumes.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/svg/architecture.ts"
+						},
+						"drillDown": {
+							"board": "Renderer layout",
+							"variant": {
+								"kind": "named",
+								"name": "Readable layout"
+							}
+						}
+					},
+					{
+						"id": "eECDrhMc",
+						"name": "SVG document and atlas",
+						"kind": "function",
+						"responsibility": "Share one geometry",
+						"description": "PROPOSED invariant made explicit at output: derive the SVG bounds and interaction atlas from the same final drawing, including wrapped card text, container frames and routed edges. Selection and walkthrough focus must match painted geometry. Keep the existing SVG, width, height and atlas response fields; the browser receives the improved geometry through its existing read path.",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/runtime/semantic-renderer/lib/svg/document.ts"
+						}
+					},
+					{
+						"id": "g4QgxvtX",
+						"name": "Card measurement",
+						"kind": "function",
+						"responsibility": "Measure before placing",
+						"description": "PROPOSED: prepare and wrap card titles/responsibilities using Pretext as the preferred text-layout candidate, then add our padding, icons and readable width/line-height policy. Return card and label dimensions plus exact text runs before placement. prepareWithSegments caches preparation; layoutWithLines supplies wrapped lines at chosen width. Pretext currently needs Canvas2D font measurement; compatibility with our Bun server and exact bundled fonts must be proven. See the linked detail board Pretext sizing sequence. Source: https://github.com/chenglou/pretext",
+						"drillDown": {
+							"board": "Renderer layout",
+							"variant": {
+								"kind": "named",
+								"name": "Readable layout"
+							}
+						}
+					},
+					{
+						"id": "QlYHEFsZ",
+						"name": "Pretext",
+						"kind": "package",
+						"responsibility": "Prepare text and return wrapped lines",
+						"description": "Preferred candidate @chenglou/pretext. Prepares measured text once, then lays out lines for a chosen width and lineHeight. Server Canvas/font-host support is a required compatibility check. See linked detail board for calls and ownership. https://github.com/chenglou/pretext",
+						"drillDown": {
+							"board": "Renderer layout",
+							"variant": {
+								"kind": "named",
+								"name": "Readable layout"
+							}
+						}
+					}
+				],
+				"edges": [
+					{
+						"id": "fl3z5Duy",
+						"from": "LgbAlvMN",
+						"to": "wpI1LbzG",
+						"kind": "render",
+						"label": "render selected view",
+						"emphasis": "hero"
+					},
+					{
+						"id": "KtJOCzrZ",
+						"from": "wpI1LbzG",
+						"to": "y8vuJJKu",
+						"kind": "call",
+						"label": "derive architecture regions",
+						"emphasis": "normal"
+					},
+					{
+						"id": "v3e9dOLe",
+						"from": "y8vuJJKu",
+						"to": "Y0smyqtZ",
+						"kind": "data",
+						"label": "compound graph",
+						"emphasis": "normal"
+					},
+					{
+						"id": "PjA6m5Ft",
+						"from": "wpI1LbzG",
+						"to": "wLF1X11D",
+						"kind": "call",
+						"label": "lay out exchange",
+						"emphasis": "normal"
+					},
+					{
+						"id": "WwNFCjLE",
+						"from": "wpI1LbzG",
+						"to": "u1OXg3Yy",
+						"kind": "call",
+						"label": "resolve theme",
+						"emphasis": "normal"
+					},
+					{
+						"id": "SIdU2g2Q",
+						"from": "Y0smyqtZ",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "complete placed drawing",
+						"emphasis": "hero"
+					},
+					{
+						"id": "eKqUHYSH",
+						"from": "wLF1X11D",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "placed exchange",
+						"emphasis": "normal"
+					},
+					{
+						"id": "I1lGjMES",
+						"from": "u1OXg3Yy",
+						"to": "J7mPrUeP",
+						"kind": "data",
+						"label": "literal colors",
+						"emphasis": "normal"
+					},
+					{
+						"id": "qDiEFiIT",
+						"from": "J7mPrUeP",
+						"to": "eECDrhMc",
+						"kind": "render",
+						"label": "marks and hit boxes",
+						"emphasis": "hero"
+					},
+					{
+						"id": "8EDKem8V",
+						"from": "eECDrhMc",
+						"to": "LgbAlvMN",
+						"kind": "data",
+						"label": "SVG and subject atlas",
+						"emphasis": "normal"
+					},
+					{
+						"id": "BJAmGg5k",
+						"from": "y8vuJJKu",
+						"to": "g4QgxvtX",
+						"kind": "data",
+						"label": "subjects to measure",
+						"emphasis": "hero"
+					},
+					{
+						"id": "8c58qiNK",
+						"from": "g4QgxvtX",
+						"to": "Y0smyqtZ",
+						"kind": "data",
+						"label": "card and label sizes",
+						"emphasis": "hero"
+					},
+					{
+						"id": "LQhiBOCm",
+						"from": "g4QgxvtX",
+						"to": "QlYHEFsZ",
+						"kind": "call",
+						"label": "prepare and wrap text",
+						"emphasis": "normal"
+					}
+				],
+				"flows": [
+					{
+						"id": "wSdmI5dP",
+						"name": "Proposed render request",
+						"participants": [
+							"LgbAlvMN",
+							"wpI1LbzG",
+							"g4QgxvtX",
+							"Y0smyqtZ",
+							"J7mPrUeP"
+						],
+						"steps": [
+							{
+								"id": "Cyb88oh1",
+								"from": "LgbAlvMN",
+								"to": "wpI1LbzG",
+								"label": "Selected content, theme and standing",
+								"kind": "sync"
+							},
+							{
+								"id": "Dv6cKC6X",
+								"from": "wpI1LbzG",
+								"to": "wpI1LbzG",
+								"label": "Build graph with IDs and containment",
+								"kind": "self"
+							},
+							{
+								"id": "5Pk5gZcr",
+								"from": "wpI1LbzG",
+								"to": "g4QgxvtX",
+								"label": "Measure names, notes and edge labels",
+								"kind": "sync"
+							},
+							{
+								"id": "Q6GFlTN3",
+								"from": "g4QgxvtX",
+								"to": "wpI1LbzG",
+								"label": "Card sizes, wrapped lines, label sizes",
+								"kind": "return"
+							},
+							{
+								"id": "CjOwJ0uL",
+								"from": "wpI1LbzG",
+								"to": "Y0smyqtZ",
+								"label": "Graph + measured sizes + whitespace",
+								"kind": "sync"
+							},
+							{
+								"id": "eJvZE7GH",
+								"from": "Y0smyqtZ",
+								"to": "wpI1LbzG",
+								"label": "Final boxes, ports, routes and labels",
+								"kind": "return"
+							},
+							{
+								"id": "gFEXOCnC",
+								"from": "wpI1LbzG",
+								"to": "J7mPrUeP",
+								"label": "Paint final drawing and text runs",
+								"kind": "sync"
+							},
+							{
+								"id": "NDSJ1uTT",
+								"from": "J7mPrUeP",
+								"to": "wpI1LbzG",
+								"label": "SVG marks + matching atlas geometry",
+								"kind": "return"
+							},
+							{
+								"id": "hyljWKFd",
+								"from": "wpI1LbzG",
+								"to": "LgbAlvMN",
+								"label": "SVG document, dimensions and atlas",
+								"kind": "return"
+							}
+						]
+					}
+				],
+				"walkthroughs": [
+					{
+						"id": "JALUPXnI",
+						"name": "Why this layout model",
+						"summary": "Readable text, compact containment and one geometry owner. Proposed, not implemented.",
+						"beats": [
+							{
+								"id": "LIlwxaF3",
+								"heading": "Words set the card size",
+								"body": "Card measurement uses real font metrics and readable type. Names and responsibilities wrap inside measured boxes. This directly addresses the short cards with ellipses on the workbench board.",
+								"subjects": [
+									"g4QgxvtX"
+								],
+								"view": "ySOqVAJv"
+							},
+							{
+								"id": "dGQSHGjB",
+								"heading": "Connections shape the layout",
+								"body": "Compound layout sees both containment and cross-boundary edges. It keeps connected parts close and fits each container around its own children. It replaces the global row grid and forced half-width pairing.",
+								"subjects": [
+									"y8vuJJKu",
+									"Y0smyqtZ"
+								],
+								"view": "ySOqVAJv"
+							},
+							{
+								"id": "bWwDbOD7",
+								"heading": "One owner places and routes",
+								"body": "The same layout owner accounts for card sizes, ports, routing clearance and label boxes. It replaces the separate indexed-corridor router and returns a complete drawing, avoiding a second geometry model in the painter.",
+								"subjects": [
+									"Y0smyqtZ"
+								],
+								"view": "ySOqVAJv"
+							},
+							{
+								"id": "B7z1NujL",
+								"heading": "Paint and inspect the same geometry",
+								"body": "The painter draws the supplied wrapped text and paths; the atlas uses those same boxes and paths. Existing selection, code links and walkthrough focus continue to work.",
+								"subjects": [
+									"J7mPrUeP",
+									"eECDrhMc"
+								],
+								"view": "ySOqVAJv"
+							},
+							{
+								"id": "gj7gMeZf",
+								"heading": "Prove the result on the living vault",
+								"body": "Acceptance: the existing ten boards retain all selected subjects and links; the workbench responsibilities read without routine truncation; headers, cards and edge labels do not collide; long detours and empty container space visibly decrease. Compare at the same camera scale on the 1920×1080 shell. Identical input must produce identical geometry. Measure render latency before choosing an engine. This is a proposed architecture, displayed by the existing renderer.",
+								"subjects": [
+									"g4QgxvtX",
+									"Y0smyqtZ",
+									"eECDrhMc"
+								],
+								"view": "ySOqVAJv"
+							},
+							{
+								"id": "xCJHxziY",
+								"heading": "Follow the calls, then open the details",
+								"body": "Render sequence shows stage inputs and outputs. Open Card measurement or Compound layout and follow its linked detail board: compare Today with Proposed render, then inspect Pretext sizing and Inside layout. The library integration and compound engine choice remain proposals to validate.",
+								"subjects": [
+									"g4QgxvtX",
+									"Y0smyqtZ",
+									"J7mPrUeP"
+								],
+								"view": "OANefo74"
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"current": "1gSwIfid"
+}

@@ -9,7 +9,7 @@
 // purpose and the address still names where the reader started, so there is
 // nothing above to hold the level's reading and this holds it instead. It is
 // reset whenever the level changes, because the ids do not carry: a view is a
-// subject of one variant's content and a variant id belongs to one board, so
+// subject of one board and a variant id belongs to one board, so
 // what was being read a level up means nothing here. What replaces them is the
 // target's own — its views, its variants, its current state — because a board
 // one level down is still a board somebody is reading, and hiding its controls
@@ -101,12 +101,15 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 		},
 		[asked, board, depth],
 	);
-	// A view is a subject of the variant's own content, so an id chosen in one
-	// state may name nothing in another: a different state is read whole, and its
-	// own views are offered again. The shell keeps the same rule one level up.
+	// A board owns its views, so changing its state keeps the question being read.
 	const onVariant = useCallback(
 		(variant: string | null): void => {
-			setPlace({ depth, board, view: null, variant });
+			setPlace((current) => ({
+				depth,
+				board,
+				view: placeAt(current, depth, board)?.view ?? null,
+				variant,
+			}));
 		},
 		[board, depth],
 	);

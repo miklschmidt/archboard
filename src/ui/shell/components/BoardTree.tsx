@@ -1,0 +1,189 @@
+// Every variant keeps its place in ancestry when its lifecycle changes.
+import { RiArrowDownSLine } from "@remixicon/react";
+import { useCallback, useId, type JSX } from "react";
+import {
+	SidebarMenuButton,
+	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubItem,
+} from "@/ui/components/sidebar";
+import { EntryMarkers, DoingLine } from "@/ui/shell/components/NavigatorMarkers";
+import { useTreeRow } from "@/ui/shell/hooks/use-tree-row";
+import type { RovingList } from "@/ui/shell/hooks/use-roving-list";
+import type { NavigatorBranch, NavigatorGroup } from "@/ui/shell/lib/navigator-entries";
+import type { ShellActions } from "@/ui/shell/types/contracts";
+
+/** Selection and roving focus shared by one tree. */
+interface TreeProps {
+	selectedKey: string | null;
+	actions: ShellActions;
+	list: RovingList;
+	position: number;
+	count: number;
+}
+/** One named board and its variant roots. */
+interface BoardTreeProps extends TreeProps {
+	group: NavigatorGroup;
+}
+
+/**
+ * A board's name opens its ancestry, without changing the selected variant.
+ * @param props The board and the tree's selection and focus.
+ * @returns The board row and its variant roots.
+ */
+function BoardTree(props: BoardTreeProps): JSX.Element {
+	const { group, list } = props;
+	const id = `group:${group.board}`;
+	const childrenId = useId();
+	const first = group.roots[0];
+	const { open, toggle, onKeyDown, ref } = useTreeRow(
+		undefined,
+		first === undefined ? undefined : `row:${first.entry.key}`,
+	);
+	return (
+		<SidebarMenuItem role="none">
+			<SidebarMenuButton
+				role="treeitem"
+				aria-level={1}
+				aria-posinset={props.position}
+				aria-setsize={props.count}
+				aria-expanded={open}
+				aria-owns={childrenId}
+				ref={ref}
+				onKeyDown={onKeyDown}
+				onClick={toggle}
+				{...list.item(id)}
+				className="h-auto min-h-8 items-start gap-1.5 rounded-[2px] px-2 py-1.5 font-medium [&>span:last-child]:whitespace-normal!"
+			>
+				<Chevron open={open} />
+				<span>{group.board}</span>
+			</SidebarMenuButton>
+			{/* An ARIA tree requires a list group; a fieldset would change the list semantics. */}
+			<SidebarMenuSub
+				// eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- ARIA tree groups must preserve list semantics.
+				role="group"
+				id={childrenId}
+				hidden={!open}
+				className="mx-0 translate-x-0 gap-1 border-l-0 py-0 pr-0 pl-1"
+			>
+				{group.roots.map((branch, index) => (
+					<VariantBranch
+						key={branch.entry.key}
+						branch={branch}
+						parentId={id}
+						depth={2}
+						selectedKey={props.selectedKey}
+						actions={props.actions}
+						list={list}
+						position={index + 1}
+						count={group.roots.length}
+					/>
+				))}
+			</SidebarMenuSub>
+		</SidebarMenuItem>
+	);
+}
+
+/** A row's place in its board's ancestry. */
+interface VariantBranchProps extends TreeProps {
+	branch: NavigatorBranch;
+	parentId: string;
+	depth: number;
+}
+
+/**
+ * A selectable variant, with expansion distinct from selection.
+ * @param props The variant, its ancestry and shared tree controls.
+ * @returns The row and its descendants.
+ */
+function VariantBranch(props: VariantBranchProps): JSX.Element {
+	const { branch, actions, list } = props;
+	const { entry, children } = branch;
+	const selected = entry.key === props.selectedKey;
+	const childrenId = useId();
+	const first = children[0];
+	const { open, toggle, onKeyDown, ref } = useTreeRow(
+		props.parentId,
+		first === undefined ? undefined : `row:${first.entry.key}`,
+	);
+	const select = useCallback(() => actions.selectBoard(entry.key), [actions, entry.key]);
+	return (
+		<SidebarMenuSubItem role="none" className="relative">
+			<div className="relative">
+				{children.length > 0 && (
+					<button
+						type="button"
+						tabIndex={-1}
+						aria-label={`${open ? "Collapse" : "Expand"} ${entry.identity.variant}`}
+						onClick={toggle}
+						className="text-muted-foreground absolute top-1 left-0 z-10 flex size-6 items-center justify-center rounded-[2px]"
+					>
+						<Chevron open={open} />
+					</button>
+				)}
+				<SidebarMenuButton
+					role="treeitem"
+					aria-level={props.depth}
+					aria-posinset={props.position}
+					aria-setsize={props.count}
+					aria-expanded={children.length > 0 ? open : undefined}
+					aria-owns={childrenId}
+					aria-selected={selected}
+					aria-current={selected}
+					isActive={selected}
+					data-board-key={entry.key}
+					title={entry.error}
+					ref={ref}
+					onKeyDown={onKeyDown}
+					onClick={select}
+					{...list.item(`row:${entry.key}`)}
+					className="data-active:ring-primary data-active:bg-accent hover:bg-sidebar-accent h-auto w-full flex-col items-stretch gap-1 rounded-[2px] py-1.5 pr-2 pl-6 data-active:ring-1 data-active:ring-inset"
+				>
+					<span className="min-w-0 whitespace-normal!">{entry.identity.variant}</span>
+					<EntryMarkers entry={entry} />
+					<DoingLine entry={entry} />
+				</SidebarMenuButton>
+			</div>
+			<SidebarMenuSub
+				// eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- ARIA tree groups must preserve list semantics.
+				role="group"
+				id={childrenId}
+				hidden={!open}
+				className="border-border mx-0 ml-3 translate-x-0 gap-1 py-0 pr-0 pl-2"
+			>
+				{children.map((child, index) => (
+					<VariantBranch
+						key={child.entry.key}
+						branch={child}
+						parentId={`row:${entry.key}`}
+						depth={props.depth + 1}
+						selectedKey={props.selectedKey}
+						actions={actions}
+						list={list}
+						position={index + 1}
+						count={children.length}
+					/>
+				))}
+			</SidebarMenuSub>
+		</SidebarMenuSubItem>
+	);
+}
+
+interface ChevronProps {
+	open: boolean;
+}
+
+/**
+ * The direction in which a row's children are open.
+ * @param props Whether its descendants are visible.
+ * @returns The disclosure mark.
+ */
+function Chevron(props: ChevronProps): JSX.Element {
+	return (
+		<RiArrowDownSLine
+			className={`text-muted-foreground mt-0.5 size-3! shrink-0 ${props.open ? "" : "-rotate-90"}`}
+		/>
+	);
+}
+
+export { BoardTree };

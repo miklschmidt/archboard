@@ -3,6 +3,8 @@
 // them failing leaves the other on screen, and this is the only place they
 // meet. Pure: no React, no fetching.
 
+import { asksForDesignation } from "@/shared/semantic-board/index";
+import { boardAddressOf, boardKeyFor, sameBoardName } from "@/ui/semantic-board-canvas";
 import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
 import type { BoardListing, BrowserPaneListing } from "@/ui/types";
 
@@ -17,10 +19,21 @@ const EMPTY_LISTING: BoardListing = Object.freeze({ boards: [], onScreen: [] });
  * @returns The listed boards.
  */
 function vaultHalf(boards: readonly SemanticBoardEntry[] | undefined): BoardListing["boards"] {
-	return (boards ?? []).map((board) => ({
-		key: board.key,
-		identity: { board: board.name, variant: "current" },
-	}));
+	return (boards ?? []).flatMap((board) =>
+		board.variants.length === 0
+			? [
+					{
+						key: board.key,
+						identity: { board: board.name, variant: "Unavailable" },
+						...(board.error === undefined ? {} : { error: board.error }),
+					},
+				]
+			: board.variants.map((variant) => ({
+					key: boardKeyFor(board.key, variant.lifecycle === "current" ? undefined : variant.id),
+					identity: { board: board.name, variant: variant.name },
+					variant,
+				})),
+	);
 }
 
 /**
@@ -74,4 +87,26 @@ function listingError(vault: unknown, panes: unknown, panesRead: boolean): strin
 	return null;
 }
 
-export { EMPTY_LISTING, composeListing, listingError };
+/**
+ * The listed row for a pane address, including the current designation and names.
+ * @param listing The persisted variant summaries.
+ * @param key The pane address.
+ * @returns The row key, or the original address when it is not listed.
+ */
+function listedBoardKey(listing: BoardListing, key: string | null): string | null {
+	const target = boardAddressOf(key);
+	if (target === null) {
+		return key;
+	}
+	const candidates = listing.boards.filter((entry) =>
+		sameBoardName(entry.identity.board, target.board),
+	);
+	const wanted = target.variant;
+	const entry = asksForDesignation(wanted ?? "current")
+		? candidates.find((candidate) => candidate.variant?.lifecycle === "current")
+		: (candidates.find((candidate) => candidate.variant?.id === wanted) ??
+			candidates.find((candidate) => candidate.variant?.name === wanted));
+	return entry === undefined ? key : entry.key;
+}
+
+export { EMPTY_LISTING, composeListing, listingError, listedBoardKey };

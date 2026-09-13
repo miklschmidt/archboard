@@ -14,7 +14,7 @@
 // badge, so the bar stays one row high beside the views.
 //
 // A board with one variant offers no choice, for the reason the view bar
-// offers none when a variant has no views: a choice between one thing and
+// offers none when a board has no views: a choice between one thing and
 // nothing is furniture. It still says which state is on screen, though, because
 // that is a different question from "what else could I read" — somebody who
 // followed a link into another board's "as built" has to be able to see that

@@ -61,6 +61,13 @@ beforeAll(async () => {
 					{ name: "Orders", kind: "service" },
 				],
 				edges: [{ from: "Gateway", to: "Orders", kind: "http", label: "places" }],
+				views: [
+					{
+						name: "Gateway only",
+						grammar: "architecture",
+						scope: { kind: "selection", nodes: ["Gateway"] },
+					},
+				],
 			}),
 		),
 	});
@@ -93,8 +100,13 @@ function board(): ContractModule.SemanticBoard {
  * @param selection The ids the person picked out.
  * @returns The report.
  */
-function reading(variant: string | null, selection: readonly string[]): SemanticPaneContext {
+function reading(
+	variant: string | null,
+	selection: readonly string[],
+	viewId: string | null = null,
+): SemanticPaneContext {
 	const found = variant === null ? null : contract.findVariant(board(), variant);
+	const view = viewId === null ? undefined : contract.findView(board(), viewId);
 	reported += 1;
 	return {
 		paneId: "pane-a",
@@ -104,7 +116,7 @@ function reading(variant: string | null, selection: readonly string[]): Semantic
 			found === undefined || found === null
 				? null
 				: { id: found.id, name: found.name, lifecycle: found.lifecycle },
-		view: null,
+		view: view === undefined ? null : { id: view.id, name: view.name, grammar: view.grammar },
 		selection: selection.map((id) => ({ id })),
 		version: board().version,
 		at: new Date().toISOString(),
@@ -213,6 +225,15 @@ test("a proposal reaches the agent with its differences derived, not authored", 
 		kind: "node",
 		id: expect.any(String),
 		name: "Queue",
+	});
+
+	const shared = board().views[0];
+	if (shared === undefined) throw new Error("Expected the shared Gateway only view");
+	const throughView = canvas.semanticBoardContext(board(), reading(PROPOSAL, [], shared.id));
+	expect(throughView.architecture.view).toEqual({
+		id: shared.id,
+		name: "Gateway only",
+		grammar: "architecture",
 	});
 });
 

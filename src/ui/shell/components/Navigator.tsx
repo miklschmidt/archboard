@@ -5,17 +5,10 @@
 // Nothing here makes a board. A person reads an architecture an agent wrote
 // (ADR 0023), so the navigator is a way of choosing which one to look at.
 
-import { RiArrowDownSLine, RiRefreshLine } from "@remixicon/react";
-import {
-	useCallback,
-	useMemo,
-	useState,
-	type ComponentPropsWithRef,
-	type JSX,
-	type KeyboardEvent,
-} from "react";
+import { RiRefreshLine } from "@remixicon/react";
+import { useCallback, useMemo, type ComponentPropsWithRef, type JSX } from "react";
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/components/collapsible";
+import { BoardTree } from "@/ui/shell/components/BoardTree";
 import {
 	Sidebar,
 	SidebarContent,
@@ -23,240 +16,22 @@ import {
 	SidebarGroupAction,
 	SidebarGroupLabel,
 	SidebarMenu,
-	SidebarMenuButton,
-	SidebarMenuItem,
-	SidebarMenuSub,
-	SidebarMenuSubButton,
-	SidebarMenuSubItem,
 } from "@/ui/components/sidebar";
 import { Skeleton } from "@/ui/components/skeleton";
 import { StatusDot } from "@/ui/shell/components/StatusDot";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/components/tooltip";
 import type { ShellActions, ShellView } from "@/ui/shell/types/contracts";
-import {
-	groupBoards,
-	type NavigatorEntry,
-	type NavigatorGroup,
-} from "@/ui/shell/lib/navigator-entries";
-import {
-	useRovingList,
-	type RovingItemProps,
-	type RovingList,
-} from "@/ui/shell/hooks/use-roving-list";
-import type { AgentActivityEntry } from "@/ui/types";
+import { groupBoards, type NavigatorGroup } from "@/ui/shell/lib/navigator-entries";
+import { useRovingList } from "@/ui/shell/hooks/use-roving-list";
+import { listedBoardKey } from "@/ui/board-catalog";
 
 /** A section label row: the group label already carries the kicker role. */
 const KICKER_CLASS = "text-muted-foreground h-8 rounded-none px-3";
 
-/** A small technical mark beside a name: two-pixel corners, mono, 16px tall. */
-const MARK_CLASS =
-	"text-technical border-border inline-flex h-4 shrink-0 items-center rounded-[2px] border px-1 font-mono";
-
-/** Inputs shared by the pieces that select an entry. */
+/** Inputs shared by board selection controls. */
 interface SelectableProps {
 	selectedKey: string | null;
 	actions: ShellActions;
-}
-
-/** Inputs for the small markers beside a name. */
-interface EntryMarkersProps {
-	entry: NavigatorEntry;
-}
-
-/**
- * What the live marker says of an agent's work on a board (ADR 0022).
- * @param activity The agent's activity on the board.
- * @returns The accessible name: the claim and its reason, or a passing write.
- */
-function activityLabel(activity: AgentActivityEntry): string {
-	if (activity.claim === null) {
-		return "Agent writing this board";
-	}
-	const reason = activity.claim.reason;
-	return reason === undefined ? "Agent claimed this board" : `Agent claimed this board: ${reason}`;
-}
-
-/**
- * The live marker beside a board an agent is working on: the lime dot the
- * header and dock use, pulsing, named for assistive technology and the pointer.
- * @param props The entry.
- * @returns The marker, or nothing while no agent is on the board.
- */
-function ActivityMarker(props: EntryMarkersProps): JSX.Element | null {
-	const { activity } = props.entry;
-	if (activity === null) {
-		return null;
-	}
-	const label = activityLabel(activity);
-	return (
-		<span
-			title={label}
-			data-slot="agent-activity"
-			className="inline-flex h-4 shrink-0 items-center px-0.5"
-		>
-			<StatusDot tone="live" className="motion-safe:animate-pulse" />
-			<span className="sr-only">{label}</span>
-		</span>
-	);
-}
-
-/**
- * The latest thing an agent said it was doing to a board, as a second line
- * under the name while the activity lingers (ADR 0022).
- * @param props The entry.
- * @returns The line, or nothing while nothing was said.
- */
-function DoingLine(props: EntryMarkersProps): JSX.Element | null {
-	const doing = props.entry.activity?.doing ?? null;
-	if (doing === null) {
-		return null;
-	}
-	return (
-		<span
-			data-slot="agent-doing"
-			className="text-muted-foreground text-technical line-clamp-1 min-w-0 whitespace-normal!"
-		>
-			{doing.doing}
-		</span>
-	);
-}
-
-/**
- * Draft and on-screen markers, right-aligned on the name line.
- * @param props The entry.
- * @returns The markers, or nothing when the entry is plain.
- */
-function EntryMarkers(props: EntryMarkersProps): JSX.Element | null {
-	const { draft, onScreen, activity } = props.entry;
-	if (!draft && onScreen === null && activity === null) {
-		return null;
-	}
-	return (
-		<span className="flex shrink-0 gap-1">
-			<ActivityMarker entry={props.entry} />
-			{draft && <span className={`${MARK_CLASS} text-muted-foreground`}>Draft</span>}
-			{onScreen !== null && (
-				<span
-					className={`${MARK_CLASS} bg-foreground text-background border-foreground font-medium`}
-				>
-					<span className="sr-only">on screen in pane </span>
-					{onScreen}
-				</span>
-			)}
-		</span>
-	);
-}
-
-/** Inputs for one variant row. */
-interface VariantRowProps extends SelectableProps, RovingItemProps {
-	entry: NavigatorEntry;
-	/** The row's name: the variant under its board group. */
-	label: string;
-}
-
-/**
- * A button element for the render prop of sub-menu entries, which default to
- * anchors. Hoisted so the same function identity is reused across renders.
- * @param props The merged props Base UI hands to the rendered element.
- * @returns A plain button.
- */
-function renderButton(props: ComponentPropsWithRef<"button">): JSX.Element {
-	return <button type="button" {...props} />;
-}
-
-/**
- * One row: the name and its markers. The selected row carries a one-pixel
- * cobalt ring; hover tints the row.
- * @param props The entry, its label, the selected key, the actions and its roving place.
- * @returns The sub-menu row.
- */
-function VariantRow(props: VariantRowProps): JSX.Element {
-	const { entry, actions } = props;
-	const selected = entry.key === props.selectedKey;
-	const handleClick = useCallback(() => actions.selectBoard(entry.key), [actions, entry.key]);
-	return (
-		<SidebarMenuSubItem className="relative">
-			<SidebarMenuSubButton
-				render={renderButton}
-				isActive={selected}
-				aria-current={selected ? "true" : undefined}
-				data-board-key={entry.key}
-				onClick={handleClick}
-				className="data-active:ring-primary data-active:bg-accent hover:bg-sidebar-accent h-auto w-full translate-x-0 flex-col items-stretch gap-1.5 rounded-[2px] px-2 py-1.5 data-active:ring-1 data-active:ring-inset"
-				{...props.roving}
-			>
-				<span className="flex items-start justify-between gap-2">
-					<span className="line-clamp-2 min-w-0 whitespace-normal!">{props.label}</span>
-					<EntryMarkers entry={entry} />
-				</span>
-				<DoingLine entry={entry} />
-			</SidebarMenuSubButton>
-		</SidebarMenuSubItem>
-	);
-}
-
-/**
- * The collapsible trigger for a board group, in the menu button's place.
- * @param props The merged props Base UI hands to the rendered element.
- * @returns The trigger element.
- */
-function renderCollapsibleTrigger(props: ComponentPropsWithRef<"button">): JSX.Element {
-	return <CollapsibleTrigger {...props} />;
-}
-
-/** Inputs for one board group. */
-interface BoardGroupProps extends SelectableProps {
-	group: NavigatorGroup;
-	list: RovingList;
-}
-
-/**
- * A board group: the plain board name as a collapsible trigger with a
- * twelve-pixel chevron, then its variants indented beneath. ArrowRight opens
- * the group and ArrowLeft closes it, as in a tree.
- * @param props The group, the selected key, the actions and the list.
- * @returns The group as a menu item.
- */
-function BoardGroup(props: BoardGroupProps): JSX.Element {
-	const { group, list } = props;
-	const [open, setOpen] = useState(true);
-	const groupId = `group:${group.board}`;
-	const handleKeyDown = useCallback((event: KeyboardEvent<HTMLButtonElement>) => {
-		if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
-			event.preventDefault();
-			setOpen(event.key === "ArrowRight");
-		}
-	}, []);
-	return (
-		<Collapsible open={open} onOpenChange={setOpen}>
-			<SidebarMenuItem>
-				<SidebarMenuButton
-					render={renderCollapsibleTrigger}
-					size="sm"
-					className="h-auto min-h-7 items-start gap-1.5 rounded-[2px] px-2 py-1.5 font-medium [&_svg]:size-3 [&>span:last-child]:line-clamp-2 [&>span:last-child]:whitespace-normal!"
-					onKeyDown={handleKeyDown}
-					{...list.item(groupId)}
-				>
-					<RiArrowDownSLine className="text-muted-foreground mt-0.5 -rotate-90 transition-transform group-data-panel-open/menu-button:rotate-0" />
-					<span>{group.board}</span>
-				</SidebarMenuButton>
-				<CollapsibleContent>
-					<SidebarMenuSub className="mx-0 translate-x-0 gap-1 border-l-0 py-0 pr-0 pl-3">
-						{group.variants.map((entry) => (
-							<VariantRow
-								key={entry.key}
-								entry={entry}
-								label={entry.identity.variant}
-								selectedKey={props.selectedKey}
-								actions={props.actions}
-								roving={list.item(`row:${entry.key}`)}
-							/>
-						))}
-					</SidebarMenuSub>
-				</CollapsibleContent>
-			</SidebarMenuItem>
-		</Collapsible>
-	);
 }
 
 /** Inputs for the boards group. */
@@ -381,10 +156,17 @@ function BoardsGroup(props: BoardsGroupProps): JSX.Element {
 			<SidebarGroupLabel className={KICKER_CLASS}>Boards</SidebarGroupLabel>
 			<RefreshAction actions={actions} />
 			<ListingState loading={props.loading} error={props.error} empty={groups.length === 0} />
-			<SidebarMenu className="gap-1" onKeyDown={list.onKeyDown}>
-				{groups.map((group) => (
-					<BoardGroup
+			<SidebarMenu
+				role="tree"
+				aria-label="Boards and variants"
+				className="gap-1"
+				onKeyDown={list.onKeyDown}
+			>
+				{groups.map((group, index) => (
+					<BoardTree
 						key={group.board}
+						position={index + 1}
+						count={groups.length}
 						group={group}
 						list={list}
 						selectedKey={props.selectedKey}
@@ -416,7 +198,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					groups={groupBoards(view)}
 					error={view.boardsError}
 					loading={view.boardsLoading}
-					selectedKey={view.selectedBoardKey}
+					selectedKey={listedBoardKey(view.boards, view.selectedBoardKey)}
 					actions={actions}
 				/>
 			</SidebarContent>

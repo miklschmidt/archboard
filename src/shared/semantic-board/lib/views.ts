@@ -100,7 +100,7 @@ const ViewScopeSchema = z.discriminatedUnion("kind", [
 type ViewScope = z.infer<typeof ViewScopeSchema>;
 
 /**
- * One named way of reading this variant: a grammar, and what to read with it.
+ * One board-owned way of reading every variant: a grammar, and what to read with it.
  *
  * A view is presentation intent and carries no geometry. Which view a pane is
  * showing is the browser's business and is never written down here.

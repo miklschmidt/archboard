@@ -36,7 +36,6 @@ type SemanticRefusalCode =
 	/** Something went away and a beat about it stayed. */
 	| "SUBJECT_IN_WALKTHROUGH"
 	/** A view would be left selecting nothing at all. */
-	| "VIEW_LEFT_EMPTY"
 	/** A name named more than one thing, and the edit must say which. */
 	| "AMBIGUOUS_REFERENCE"
 	/** A container went away and something is still inside it. */

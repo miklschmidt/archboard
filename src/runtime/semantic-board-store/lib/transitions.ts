@@ -122,7 +122,7 @@ function createBoardTransition(input: BoardCreateInput): SemanticTransition {
 			if (!content.ok) {
 				return content;
 			}
-			return { ok: true, board: newBoard(input, content.content, at) };
+			return { ok: true, board: newBoard(input, content.content, content.views, at) };
 		},
 	};
 }
@@ -132,19 +132,21 @@ function createBoardTransition(input: BoardCreateInput): SemanticTransition {
  * identities against each other so neither can collide with the other.
  * @param input The board as it was asked for.
  * @param content The first variant's content.
+ * @param views The board views.
  * @param at The timestamp the write is being made at.
  * @returns The board.
  */
 function newBoard(
 	input: BoardCreateInput,
 	content: SemanticVariant["content"],
+	views: SemanticBoard["views"],
 	at: string,
 ): SemanticBoard {
 	// Against every subject the first variant already holds, through the one
 	// collection that knows what a variant holds: a board or a variant that
 	// answered to a flow's id would be addressed by the same id as something on
 	// it, and nothing downstream carries the kind alongside.
-	const batch = openBatch(subjectIds(content));
+	const batch = openBatch([...subjectIds(content), ...views.map((view) => view.id)]);
 	const id = mintInto(batch);
 	const variantId = mintInto(batch);
 	return {
@@ -156,6 +158,7 @@ function newBoard(
 		createdAt: at,
 		updatedAt: at,
 		current: variantId,
+		views,
 		variants: [
 			{
 				id: variantId,
@@ -264,7 +267,17 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 					`this board has no variant called "${input.variant ?? before.current}"`,
 				);
 			}
-			if (variant.lifecycle === "historical") {
+			const changesContent = [
+				input.nodes,
+				input.edges,
+				input.flows,
+				input.walkthroughs,
+				input.removeNodes,
+				input.removeEdges,
+				input.removeFlows,
+				input.removeWalkthroughs,
+			].some((entries) => entries.length > 0);
+			if (editsHistoricalContent(variant, changesContent)) {
 				return refuse(
 					"VARIANT_HISTORICAL",
 					`"${variant.name}" is an architecture that was implemented and has since been ` +
@@ -280,14 +293,10 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 			// candidate, so the parent's new state and its consequences are one
 			// write and one version, never a parent that landed and children that
 			// have not caught up (ADR 0023).
-			const carried = propagateEdit(
-				before,
-				{ ...variant, content: content.content },
-				nextVersion(before),
-			);
+			const carried = editedFamily(before, variant, content.content, changesContent);
 			return {
 				ok: true,
-				board: { ...before, variants: [...carried.variants], updatedAt: at },
+				board: { ...before, views: content.views, variants: [...carried.variants], updatedAt: at },
 				descendants: carried.descendants,
 			};
 		},
@@ -407,3 +416,32 @@ export {
 	createBoardTransition,
 	editVariantTransition,
 };
+
+/**
+ * Whether an edit would change frozen architecture.
+ * @param variant The selected state.
+ * @param changesContent Whether variant content is being edited.
+ * @returns Whether the edit is prohibited.
+ */
+function editsHistoricalContent(variant: SemanticVariant, changesContent: boolean): boolean {
+	return variant.lifecycle === "historical" && changesContent;
+}
+
+/**
+ * Propagate content edits; changing board views leaves the variant family alone.
+ * @param board The board.
+ * @param variant The edited variant.
+ * @param content The resulting content.
+ * @param changesContent Whether the command edited variant content.
+ * @returns The variant family and effects.
+ */
+function editedFamily(
+	board: SemanticBoard,
+	variant: SemanticVariant,
+	content: SemanticVariant["content"],
+	changesContent: boolean,
+): ReturnType<typeof propagateEdit> {
+	return changesContent
+		? propagateEdit(board, { ...variant, content }, nextVersion(board))
+		: { variants: board.variants, descendants: [] };
+}

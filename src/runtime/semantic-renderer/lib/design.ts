@@ -115,13 +115,11 @@ const PILL_HEIGHT = 15;
 const PILL_PADDING_X = 8;
 const PILL_TEXT_SIZE = 9;
 const PILL_RADIUS = 4;
-/** How little air a pill needs against a card, an arrowhead or a port. */
+/** Clearance from a pill to an arrowhead, port or neighbouring wire. */
 const PILL_CLEARANCE = 2;
-/**
- * And how much two pills keep from each other. More than the clearance above,
- * because two labels a hair apart read as one block of text; against a card
- * there is nothing to tell apart, so that stays tight.
- */
+/** Whitespace between a relationship badge and a card or container title. */
+const PILL_CARD_AIR = 12;
+/** Two pills keep enough air to read as separate blocks of text. */
 const PILL_AIR = 6;
 
 /**
@@ -176,10 +174,9 @@ const APPROACH_STRAIGHT = 12;
  */
 const TRACK_CLEARANCE = APPROACH_STRAIGHT + BEND_RADIUS_MIN;
 /**
- * Neighbouring tracks in one gap sit this far apart at most; when a gap
- * carries more traffic than the room allows, the pitch shrinks to fit. An
- * added route therefore nudges its gap-mates proportionately — an accepted
- * trade, and one that never moves a card.
+ * Preferred maximum pitch for runs without labels. Measured badge widths can
+ * ask for more; congestion widens the gap when its tracks and card whitespace
+ * need that room, moving the neighbouring columns or rows with it.
  */
 const TRACK_PITCH_MAX = 16;
 /**
@@ -246,6 +243,7 @@ export {
 	PILL_RADIUS,
 	PILL_AIR,
 	PILL_CLEARANCE,
+	PILL_CARD_AIR,
 	TRACK_CLEARANCE,
 	TRACK_PITCH_MAX,
 	TRACK_PITCH_MIN,

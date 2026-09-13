@@ -1,17 +1,17 @@
 // Which way of reading this variant the pane is showing.
 //
-// A variant can be explained more than once — the parts and how they are
+// A board can be explained more than once — the parts and how they are
 // wired, one exchange between them in order — over the same nodes. Switching
 // between those is reading, not editing: it changes what this pane asks the
 // server to draw and nothing else. No board is written, no version moves, and
 // the other pane showing the other view is unaffected (ADR 0023).
 //
 // The whole variant is always one of the choices, and it is first. Without it a
-// variant whose views are all narrow would have no way back to itself: a person
+// board whose views are all narrow would have no way back to itself: a person
 // who picked one would be stuck inside it, and the board as a whole — the thing
 // every view is a reading of — would be the one thing they could not see.
 //
-// The bar is absent entirely when a variant names no view of its own. Offering
+// The bar is absent entirely when a board names no views. Offering
 // a choice between the whole board and nothing else is furniture.
 //
 // A button says the view's name and nothing else. The grammar a view is drawn
@@ -27,7 +27,7 @@ import type { SemanticOfferedView } from "@/ui/semantic-board-canvas/api/semanti
 
 /** Inputs for the view bar. */
 interface SemanticViewBarProps {
-	/** Every view this variant offers, in the order it states them. */
+	/** Every view this board offers, in the order it states them. */
 	views: readonly SemanticOfferedView[];
 	/** The view on screen, or null when the whole variant is drawn. */
 	showing: SemanticOfferedView | null;

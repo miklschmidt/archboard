@@ -1,12 +1,25 @@
 import { expect, test } from "bun:test";
 
-import { EMPTY_LISTING, composeListing, listingError } from "@/ui/board-catalog/listing";
+import {
+	EMPTY_LISTING,
+	composeListing,
+	listingError,
+	listedBoardKey,
+} from "@/ui/board-catalog/listing";
 import type { SemanticBoardEntry } from "@/ui/semantic-board-canvas";
 import type { BrowserPaneListing } from "@/ui/types";
 
 const VAULT: readonly SemanticBoardEntry[] = [
-	{ name: "Checkout", key: "checkout" },
-	{ name: "Payments", key: "payments" },
+	{
+		name: "Checkout",
+		key: "checkout",
+		variants: [{ id: "v1", name: "Initial", lifecycle: "current", parentId: null }],
+	},
+	{
+		name: "Payments",
+		key: "payments",
+		variants: [{ id: "v2", name: "Initial", lifecycle: "current", parentId: null }],
+	},
 ];
 
 const PANES: BrowserPaneListing = {
@@ -25,6 +38,47 @@ const PANES: BrowserPaneListing = {
 		},
 	],
 };
+
+test("named variants retain their addresses and every current spelling selects the designated row", () => {
+	const variants: SemanticBoardEntry["variants"] = [
+		{ id: "old", name: "Initial", lifecycle: "historical", parentId: null },
+		{ id: "now", name: "Queued ingest", lifecycle: "current", parentId: null },
+		{ id: "next", name: "Queue @ edge", lifecycle: "draft", parentId: "now" },
+	];
+	const listing = composeListing([{ name: "Checkout", key: "checkout", variants }], undefined);
+	expect(
+		listing.boards.map(({ key, identity, variant }) => [key, identity.variant, variant?.lifecycle]),
+	).toEqual([
+		["checkout@old", "Initial", "historical"],
+		["checkout", "Queued ingest", "current"],
+		["checkout@next", "Queue @ edge", "draft"],
+	]);
+	for (const address of [
+		"checkout",
+		"Checkout@current",
+		"checkout@now",
+		"checkout@Queued ingest",
+	]) {
+		expect(listedBoardKey(listing, address)).toBe("checkout");
+	}
+	expect(listedBoardKey(listing, "Checkout@Queue @ edge")).toBe("checkout@next");
+	expect(listedBoardKey(listing, "checkout@Initial")).toBe("checkout@old");
+	expect(listedBoardKey(listing, "checkout@unknown")).toBe("checkout@unknown");
+	expect(listedBoardKey(listing, null)).toBeNull();
+});
+
+test("an unreadable board remains openable without hiding healthy variants", () => {
+	const listing = composeListing(
+		[...VAULT, { name: "Broken", key: "broken", variants: [], error: "invalid board" }],
+		undefined,
+	);
+	expect(listing.boards).toHaveLength(3);
+	expect(listing.boards.at(-1)).toEqual({
+		key: "broken",
+		identity: { board: "Broken", variant: "Unavailable" },
+		error: "invalid board",
+	});
+});
 
 test("the vault and the live panes are listed independently of each other", () => {
 	const both = composeListing(VAULT, PANES);

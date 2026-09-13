@@ -152,9 +152,9 @@
 /* Light: chalk white, pale stone panels, near-black text, cobalt selection. */
 :root {
 	/* One width for the navigator and the header section above it, so their
-	   right-hand rules align. Narrow like the reference strip, wide enough for
-	   two-line board names. */
-	--shell-navigator-width: 200px;
+	   right-hand rules align. Semantic names and several ancestry levels remain
+	   readable at the desktop shell size. */
+	--shell-navigator-width: 320px;
 	--background: oklch(0.99 0.002 95);
 	--foreground: oklch(0.145 0 0);
 	--card: oklch(1 0 0);

@@ -103,8 +103,8 @@ interface SemanticPaneReading {
 	/** What is selected on that board, or null when nothing is. */
 	readonly selection: string | null;
 	/**
-	 * The drawing this reading is of, as the server named it, or null before
-	 * anything has been drawn.
+	 * The resolved reading, including an empty view, as the server named it;
+	 * null before the server has answered.
 	 *
 	 * The ids above are what an address is written from; this is what a reader
 	 * who has not got the board open needs to be told — a variant's lasting name

@@ -21,7 +21,7 @@ import {
 	simplify,
 	type Curve,
 } from "@/runtime/semantic-renderer/lib/layout/curves";
-import { crossedGap } from "@/runtime/semantic-renderer/lib/layout/pill";
+import { crossedGap, trackPillReach } from "@/runtime/semantic-renderer/lib/layout/pill";
 import { snapNeighbours } from "@/runtime/semantic-renderer/lib/layout/snap";
 import {
 	blockedFaces,
@@ -63,6 +63,10 @@ interface ChannelTraffic {
 	readonly corridorPills: ReadonlyMap<number, number>;
 	/** Pills stacking in each band's height, by index. */
 	readonly bandPills: ReadonlyMap<number, number>;
+	/** Half-pill clearance beside tracks travelling along each corridor. */
+	readonly corridorReach: ReadonlyMap<number, number>;
+	/** Half-pill clearance beside tracks travelling along each band. */
+	readonly bandReach: ReadonlyMap<number, number>;
 }
 
 /** An edge whose two ends were both placed. */
@@ -274,16 +278,23 @@ function channelTraffic(
 	const bands = new Map<number, number>();
 	const corridorPills = new Map<number, number>();
 	const bandPills = new Map<number, number>();
+	const corridorReach = new Map<number, number>();
+	const bandReach = new Map<number, number>();
 	for (const route of finalPass(edges, layout).plans) {
 		for (const channel of route.channels) {
-			count(channel.kind === "corridor" ? corridors : bands, channel.index);
+			const [counts, reaches] =
+				channel.kind === "corridor"
+					? ([corridors, corridorReach] as const)
+					: ([bands, bandReach] as const);
+			count(counts, channel.index);
+			widen(reaches, channel.index, trackPillReach(route, channel));
 		}
 		const crossed = crossedGap(route);
 		if (crossed !== undefined) {
 			count(crossed.kind === "corridor" ? corridorPills : bandPills, crossed.index);
 		}
 	}
-	return { corridors, bands, corridorPills, bandPills };
+	return { corridors, bands, corridorPills, bandPills, corridorReach, bandReach };
 }
 
 /**
@@ -293,6 +304,16 @@ function channelTraffic(
  */
 function count(counts: Map<number, number>, index: number): void {
 	counts.set(index, (counts.get(index) ?? 0) + 1);
+}
+
+/**
+ * Retain the widest pill reach requested in one gap.
+ * @param reaches The widest reach per gap, updated in place.
+ * @param index Which gap.
+ * @param reach The current route's request.
+ */
+function widen(reaches: Map<number, number>, index: number, reach: number): void {
+	reaches.set(index, Math.max(reaches.get(index) ?? 0, reach));
 }
 
 export { type RoutedEdge, type ChannelTraffic, routeEdges, channelTraffic };

@@ -357,21 +357,19 @@ describe("two sides adding to one sequence independently", () => {
 	});
 });
 
-describe("what the merged content may never be left holding", () => {
-	test("a view the predecessor removed stays while a beat still reads through it", () => {
-		const view = { id: "w1", name: "In order", grammar: "data-flow", scope: { kind: "all" } };
+describe("board-owned references in merged content", () => {
+	test("a beat keeps its board-view reference without making the view a variant subject", () => {
 		const flow = {
 			id: "f1",
 			name: "One request",
 			participants: ["n1", "n2"],
 			steps: [{ id: "s1", from: "n1", to: "n2", label: "ask", kind: "sync" }],
 		};
-		const base = content({ nodes: [API, STORE], edges: [WIRE], flows: [flow], views: [view] });
+		const base = content({ nodes: [API, STORE], edges: [WIRE], flows: [flow] });
 		const mine = content({
 			nodes: [API, STORE],
 			edges: [WIRE],
 			flows: [flow],
-			views: [view],
 			walkthroughs: [
 				{
 					id: "k1",
@@ -382,8 +380,8 @@ describe("what the merged content may never be left holding", () => {
 		});
 		const theirs = content({ nodes: [API, STORE], edges: [WIRE], flows: [flow] });
 		const settled = reconcileVariant({ base, mine, theirs });
-		expect(settled.content.views.map((one) => one.id)).toContain("w1");
-		expect(settled.issues.some((issue) => issue.kind === "reference-lost")).toBe(true);
+		expect(settled.content.walkthroughs[0]?.beats[0]?.view).toBe("w1");
+		expect(settled.issues).toEqual([]);
 	});
 });
 
