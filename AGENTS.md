@@ -86,9 +86,12 @@ with the reason). These are the rules that will not stop you:
 
 **Test runtime behavior, not repository file contents.** Do not inspect source,
 documentation or configuration files to assert how the repository is written.
-Fixtures, recorded inputs and expected outputs are welcome when they exercise
-product behavior, including reading and writing files or machine-readable
-contracts. The restriction is on what a test proves, not where its data lives.
+Fixtures, recorded inputs, configuration snapshots and expected outputs are
+welcome when they exercise behavior, including reading and writing files or
+machine-readable contracts. Unit tests of lint rules, tooling and test helpers
+are valid when they exercise their mechanics—for example, running a lint rule
+against valid and invalid fixtures and checking its findings or fixes. The
+restriction is on what a test proves, not where its data lives.
 
 **Test behavior and contracts, not human-readable wording.** For CLI help,
 diagnostics and UI copy, verify routing, exit status, side effects, structure
@@ -110,8 +113,7 @@ for structural rules, focused unit or integration owners for hidden behaviour,
 rendered or browser owners for visible workflows, process or system owners only
 when the bug needs that boundary. Remove an owner when normal use makes its
 failure obvious, another owner catches it, or it mostly simulates upstream
-tools. Never add repository-policy tests, configuration snapshots, or tests of
-lint rules, tooling or test helpers; the maintainer deletes them on sight.
+tools.
 
 <!-- BACKLOG.MD GUIDELINES START -->
 <!-- backlog.md-instructions-version: 1.50.1 -->
