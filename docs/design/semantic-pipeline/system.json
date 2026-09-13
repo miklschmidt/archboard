@@ -1,5 +1,6 @@
 {
 	"name": "archboard/pipeline",
+	"level": "system",
 	"variant": "Drawing is the board",
 	"summary": "What archboard was before semantic boards: a canvas of persisted geometry, with agents authoring the picture",
 	"nodes": [

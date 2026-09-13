@@ -46,7 +46,10 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			const seeded = await request("/api/semantic-boards/create", {
 				method: "POST",
 				doing: "starting the board this close is about",
-				body: { board: "scratch", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
+				body: {
+					board: "scratch",
+					create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
+				},
 			});
 			expect(seeded.status).toBe(200);
 

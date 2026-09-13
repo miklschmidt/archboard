@@ -39,6 +39,7 @@ function boardOf(
 		kind: "semantic-board",
 		id: "b1",
 		name,
+		level: "system",
 		version: 1,
 		createdAt: "2026-09-11T00:00:00.000Z",
 		updatedAt: "2026-09-11T00:00:00.000Z",

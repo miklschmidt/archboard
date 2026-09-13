@@ -3,6 +3,7 @@
 // transport, the runtime and the controllers are the state; this file only
 // connects them.
 
+import { VaultDiagnostics, useVaultPolicyRefresh } from "@/ui/vault-diagnostics";
 import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeTargetNotice } from "@/shared/code-target";
@@ -237,6 +238,7 @@ function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
  * @returns The shell, the settings dialogs and the workbench.
  */
 function ApplicationBody(): JSX.Element {
+	useVaultPolicyRefresh();
 	const [theme, setTheme] = useTheme();
 	const reducedMotion = useReducedMotion();
 	const notices = useNotices();
@@ -364,11 +366,16 @@ function ApplicationBody(): JSX.Element {
 	useStageEvents(fullscreen.stage, stageEvents);
 	const activity = useActivity(panes.active.status.doing);
 	const slots = useWorkbenchSlots(workbench.owners, reducedMotion, activity);
+	const diagnostics = useMemo(
+		() => <VaultDiagnostics target={workbench.owners} chooseThread={openAgentSettings} />,
+		[workbench.owners, openAgentSettings],
+	);
 	return (
 		<TooltipProvider>
 			<Shell
 				view={view}
 				actions={actions}
+				diagnostics={diagnostics}
 				voiceControls={slots.voice}
 				dockHeader={slots.header}
 				dockBody={slots.body}

@@ -1,0 +1,263 @@
+import { RiCloseLine, RiBookOpenLine } from "@remixicon/react";
+import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+
+import { PaletteColorSchema, SEMANTIC_PALETTE } from "@/shared/semantic-policy/index";
+import { SEMANTIC_STANDING_PALETTE } from "@/shared/semantic-policy/standing";
+import { Button } from "@/ui/components/button";
+import type { SemanticTheme } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import type { AppliedAppearance } from "@/ui/semantic-board-canvas/lib/appearance";
+
+/**
+ * A browser-only key to the channels in the current picture.
+ * @param props The appearance facts and theme of the drawing.
+ * @param props.appearances Facts emitted for its visible subjects.
+ * @param props.theme The palette the picture uses.
+ * @returns A spacious, hideable side legend that reserves its own canvas space.
+ */
+function SemanticLegend(props: {
+	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
+	readonly theme: SemanticTheme;
+}): JSX.Element {
+	const [visible, setVisible] = useState(true);
+	const hide = useCallback(() => setVisible(false), []);
+	const show = useCallback(() => setVisible(true), []);
+	if (!visible) {
+		return (
+			<Button
+				variant="outline"
+				size="sm"
+				className="absolute bottom-4 left-4 z-10 rounded-sm"
+				onClick={show}
+			>
+				<RiBookOpenLine />
+				Legend
+			</Button>
+		);
+	}
+	const standing = SEMANTIC_STANDING_PALETTE[props.theme];
+	const entries = [...props.appearances.values()];
+	const kinds = uniqueTypes(entries.filter((item) => item.depiction !== ""));
+	const relationships = uniqueTypes(entries.filter((item) => item.depiction === ""));
+	return (
+		<aside
+			aria-label="Diagram legend"
+			data-slot="semantic-legend"
+			className="border-border bg-card flex min-h-0 w-[256px] shrink-0 flex-col border-r"
+		>
+			<div className="flex shrink-0 items-center justify-between px-4 py-3">
+				<h2 className="text-control font-semibold">Legend</h2>
+				<Button variant="ghost" size="icon-sm" aria-label="Hide legend" onClick={hide}>
+					<RiCloseLine />
+				</Button>
+			</div>
+			<div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+				<LegendSection title="Containment">
+					<p className="text-muted-foreground text-body leading-relaxed">
+						Colored containers establish a body color for their contents. Cards inherit it; type
+						chips identify what each node is.
+					</p>
+				</LegendSection>
+				{kinds.length > 0 && (
+					<LegendSection title="Node types">
+						<ul className="space-y-2.5">
+							{kinds.map((item) => (
+								<li key={sampleKey(item)} className="text-body flex items-center gap-3">
+									<TypeSample appearance={item} theme={props.theme} />
+									{item.typeName}
+								</li>
+							))}
+						</ul>
+					</LegendSection>
+				)}
+				{relationships.length > 0 && (
+					<LegendSection title="Relationships">
+						<ul className="space-y-2.5">
+							{relationships.map((item) => (
+								<li key={sampleKey(item)} className="text-body flex items-center gap-3">
+									<RelationshipSample appearance={item} theme={props.theme} />
+									{item.typeName}
+								</li>
+							))}
+						</ul>
+						<p className="text-muted-foreground text-body mt-3 leading-relaxed">
+							Line weight shows emphasis. Moving dots illustrate authored traffic.
+						</p>
+					</LegendSection>
+				)}
+				<LegendSection title="Comparison and attention">
+					<div className="text-body grid grid-cols-2 gap-x-3 gap-y-2.5">
+						<StandingSample color={standing.added}>Added</StandingSample>
+						<StandingSample color={standing.changed}>Changed</StandingSample>
+						<StandingSample color={standing.removed}>Removed</StandingSample>
+						<StandingSample color={standing.selected} outer>
+							Selected
+						</StandingSample>
+					</div>
+				</LegendSection>
+			</div>
+		</aside>
+	);
+}
+
+/**
+ * One section in the legend with space between independent visual channels.
+ * @param props Its heading and content.
+ * @param props.title The channel explained.
+ * @param props.children Its key.
+ * @returns The section.
+ */
+function LegendSection(props: {
+	readonly title: string;
+	readonly children: ReactNode;
+}): JSX.Element {
+	return (
+		<section className="border-border border-t py-4 last:pb-0">
+			<h3 className="text-body mb-3 font-semibold">{props.title}</h3>
+			{props.children}
+		</section>
+	);
+}
+
+/**
+ * Resolve a curated color name, retaining a neutral fallback.
+ * @param color The renderer's color name.
+ * @param theme The picture's theme.
+ * @returns A CSS color.
+ */
+function ink(color: string, theme: SemanticTheme): string {
+	const parsed = PaletteColorSchema.safeParse(color);
+	return parsed.success ? SEMANTIC_PALETTE[parsed.data][theme] : "var(--muted-foreground)";
+}
+
+/**
+ * Keep each configured kind and its applied sample, even when display names repeat.
+ * @param appearances Visible appearance facts.
+ * @returns Unique types in drawing order.
+ */
+function uniqueTypes(appearances: readonly AppliedAppearance[]): AppliedAppearance[] {
+	return [...new Map(appearances.map((item) => [sampleKey(item), item])).values()];
+}
+
+/**
+ * Identify the configured kind and the visual meaning of its sample.
+ * @param item One depicted type.
+ * @returns A stable key independent of the subject or containment scope.
+ */
+function sampleKey(item: AppliedAppearance): string {
+	return JSON.stringify([
+		item.typeKind,
+		item.typeName,
+		item.iconSvg,
+		item.typeColor,
+		item.lineColor,
+		item.dash,
+		item.arrowhead,
+	]);
+}
+
+/**
+ * Show the configured relationship color, dash and arrowhead.
+ * @param props One applied relationship and the picture's theme.
+ * @param props.appearance The line appearance.
+ * @param props.theme The palette in force.
+ * @returns The line sample.
+ */
+function RelationshipSample(props: {
+	readonly appearance: AppliedAppearance;
+	readonly theme: SemanticTheme;
+}): JSX.Element {
+	const { appearance } = props;
+	const style = useMemo(
+		() => ({ color: ink(appearance.lineColor, props.theme) }),
+		[appearance.lineColor, props.theme],
+	);
+	const dash =
+		appearance.dash === "dotted" ? "1 4" : appearance.dash === "dashed" ? "6 4" : undefined;
+	return (
+		<svg
+			aria-hidden="true"
+			width="36"
+			height="20"
+			viewBox="0 0 36 20"
+			className="shrink-0"
+			style={style}
+		>
+			<path
+				d="M1 10H30"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="1.5"
+				strokeDasharray={dash}
+			/>
+			{appearance.arrowhead !== "none" && (
+				<path
+					d="m25 5 7 5-7 5"
+					fill={appearance.arrowhead === "filled" ? "currentColor" : "none"}
+					stroke="currentColor"
+					strokeWidth="1.5"
+				/>
+			)}
+		</svg>
+	);
+}
+
+/**
+ * Distinguish standing borders from a separate selection ring.
+ * @param props Color, label and whether this is the outer selection treatment.
+ * @param props.color The fixed standing color.
+ * @param props.children The meaning of the sample.
+ * @param props.outer Whether the color sits outside a neutral border.
+ * @returns The labeled sample.
+ */
+function StandingSample(props: {
+	readonly color: string;
+	readonly children: ReactNode;
+	readonly outer?: boolean;
+}): JSX.Element {
+	const style = useMemo(
+		() => ({
+			borderColor: props.outer === true ? "var(--border)" : props.color,
+			...(props.outer === true ? { outline: `2px solid ${props.color}`, outlineOffset: 2 } : {}),
+		}),
+		[props.outer, props.color],
+	);
+
+	return (
+		<span className="flex items-center gap-2">
+			<span aria-hidden="true" className="size-3 rounded-[2px] border-2" style={style} />
+			{props.children}
+		</span>
+	);
+}
+
+/**
+ * A sample of a type chip’s independently colored border and tint.
+ * @param props The type color and theme.
+ * @param props.appearance Applied type color and the renderer’s icon.
+ * @param props.theme Drawing theme.
+ * @returns The chip.
+ */
+function TypeSample(props: {
+	readonly appearance: AppliedAppearance;
+	readonly theme: SemanticTheme;
+}): JSX.Element {
+	const { appearance } = props;
+	const markup = useMemo(() => ({ __html: appearance.iconSvg }), [appearance.iconSvg]);
+	const style = useMemo(
+		() => ({
+			borderColor: ink(appearance.typeColor, props.theme),
+			backgroundColor: `color-mix(in srgb, ${ink(appearance.typeColor, props.theme)} 12%, transparent)`,
+		}),
+		[appearance.typeColor, props.theme],
+	);
+	return (
+		<span
+			aria-hidden="true"
+			className="flex size-6 shrink-0 items-center justify-center rounded-sm border"
+			style={style}
+			dangerouslySetInnerHTML={markup}
+		/>
+	);
+}
+
+export { SemanticLegend };

@@ -50,6 +50,7 @@ import {
 import type { SemanticFlow } from "@/shared/semantic-board/lib/views";
 import type { SemanticWalkthrough } from "@/shared/semantic-board/lib/walkthrough";
 import { reconcileTold, type OrderedIssue } from "@/shared/semantic-board/lib/reconcile-told";
+import { sameSemanticValue } from "@/shared/semantic-board/lib/semantic-value";
 
 /** What became of a proposal when its predecessor moved. */
 interface Reconciliation {
@@ -83,7 +84,7 @@ const MERGED = {
 		"binding",
 		"drillDown",
 	],
-	edge: ["from", "to", "kind", "label", "description", "emphasis"],
+	edge: ["from", "to", "kind", "label", "description", "emphasis", "traffic"],
 	flow: ["name", "summary", "participants"],
 	walkthrough: ["name", "summary"],
 } as const;
@@ -116,9 +117,7 @@ function stated(value: unknown): unknown {
  * @param other The other.
  * @returns True when nothing is between them.
  */
-function same(one: unknown, other: unknown): boolean {
-	return one === other || JSON.stringify(one) === JSON.stringify(other);
-}
+const same = sameSemanticValue;
 
 /** One kind of subject, in all three states, by id. */
 interface Sides<Entity> {

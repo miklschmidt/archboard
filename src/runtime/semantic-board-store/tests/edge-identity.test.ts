@@ -31,6 +31,7 @@ beforeEach(async () => {
 				transition: store.createBoardTransition(
 					contract.BoardCreateInputSchema.parse({
 						name: board,
+						level: "module",
 						nodes: [
 							{ name: "Driver", kind: "module" },
 							{ name: "Grid", kind: "module" },
@@ -121,6 +122,63 @@ test("endpoint names, renamed nodes and default emphasis do not create differenc
 		).outcome,
 	).toBe("applied");
 	expect(variant().content.edges[0]).toEqual({ ...edge, label: "place architecture" });
+});
+
+test("traffic is one identity property and is preserved whole", async () => {
+	const edge = variant().content.edges[0]!;
+	expect(
+		(
+			await edit({
+				variant: "Proposal",
+				edges: [{ ...edge, traffic: { speed: 72, volume: 2 } }],
+			})
+		).outcome,
+	).toBe("applied");
+	expect(variant().content.edges[0]).toMatchObject({
+		id: edge.id,
+		traffic: { speed: 72, volume: 2 },
+	});
+});
+
+test("equivalent traffic does not add an identity change", async () => {
+	const proposal = variant();
+	const predecessor = read().variants.find((one) => one.id === proposal.parent)!;
+	const edge = predecessor.content.edges[0]!;
+	expect(
+		(
+			await edit({
+				variant: predecessor.name,
+				edges: [{ ...edge, traffic: {} }],
+			})
+		).outcome,
+	).toBe("applied");
+	const changed = variant().content.edges[0]!;
+	expect(
+		(
+			await edit({
+				variant: "Proposal",
+				edges: [
+					{
+						...changed,
+						traffic: {
+							volume: contract.DEFAULT_TRAFFIC_VOLUME,
+							speed: contract.DEFAULT_TRAFFIC_SPEED,
+						},
+					},
+				],
+			})
+		).outcome,
+	).toBe("applied");
+});
+
+test("traffic plus destination requires a replacement identity", async () => {
+	const edge = variant().content.edges[0]!;
+	expect(
+		await edit({
+			variant: "Proposal",
+			edges: [{ ...edge, to: "Compound", traffic: { speed: 72, volume: 2 } }],
+		}),
+	).toMatchObject({ outcome: "rejected", code: "EDGE_IDENTITY_REUSED" });
 });
 
 test("two changes in one batch reject the whole write and explain replacement", async () => {

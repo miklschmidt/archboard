@@ -8,7 +8,7 @@ Dogfooding exposed missing board levels and visual styles whose meaning readers
 could not explain. Each vault will own one version-controlled YAML configuration
 defining its vocabulary and visual policy, so consumers can describe their domain
 without embedding drawing instructions in boards. These decisions were accepted
-in TASK-203 on 2026-09-13; implementation remains pending the completed design review.
+in TASK-203 on 2026-09-13.
 
 ## Ownership
 

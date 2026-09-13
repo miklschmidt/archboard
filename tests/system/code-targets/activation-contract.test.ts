@@ -64,6 +64,7 @@ async function boundBoard(repository: string, path: string): Promise<BoundBoard>
 		writer: { kind: "agent" },
 		transition: createBoardTransition({
 			name,
+			level: "system",
 			nodes: [{ name: "Payments", kind: "service", binding: { repo: repository, path } }],
 			edges: [],
 			flows: [],

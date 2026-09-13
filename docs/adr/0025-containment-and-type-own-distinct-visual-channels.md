@@ -7,7 +7,7 @@ status: accepted
 An API migrating from legacy IIS into Kubernetes should visibly change its hosting
 context while remaining recognizable as an API. Card bodies communicate containment,
 icon chips communicate node type, and comparison and selection use separate visual
-channels. These rules were accepted in TASK-203 on 2026-09-13; implementation is pending.
+channels. These rules were accepted in TASK-203 on 2026-09-13.
 
 Card, container and icon chip are defined in [CONTEXT.md](../../CONTEXT.md#the-surface);
 emphasis, color scope and comparison status are also glossary terms. The decisions
@@ -40,12 +40,12 @@ icon-chip background tint. An uncolored type has a neutral chip. Unknown configu
 references follow the explicit neutral fallback in
 [ADR 0026](0026-vault-diagnostics-drive-cli-and-agent-repair.md).
 
-| Depiction inside blue Azure | Body border and tint | Icon chip |
-| --- | --- | --- |
-| Kubernetes card, no visible children | Azure blue | Kubernetes green |
-| Kubernetes container with visible children | Kubernetes green | Kubernetes green |
-| API card inside Kubernetes | Kubernetes green | API type color |
-| Uncolored container inside Kubernetes | Kubernetes green | Neutral |
+| Depiction inside blue Azure                | Body border and tint | Icon chip        |
+| ------------------------------------------ | -------------------- | ---------------- |
+| Kubernetes card, no visible children       | Azure blue           | Kubernetes green |
+| Kubernetes container with visible children | Kubernetes green     | Kubernetes green |
+| API card inside Kubernetes                 | Kubernetes green     | API type color   |
+| Uncolored container inside Kubernetes      | Kubernetes green     | Neutral          |
 
 Kubernetes can instead be inside yellow AWS without changing its own type or
 requiring a platform tag. Group labels are not an alternative source of color

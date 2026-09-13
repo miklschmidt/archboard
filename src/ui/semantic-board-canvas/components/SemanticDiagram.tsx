@@ -23,6 +23,8 @@ import {
 } from "react";
 
 import type { SemanticDrawing } from "@/ui/semantic-board-canvas/api/semantic-boards";
+import { SemanticLegend } from "@/ui/semantic-board-canvas/components/SemanticLegend";
+import { pictureAppearances } from "@/ui/semantic-board-canvas/lib/appearance";
 import { SemanticInspector } from "@/ui/semantic-board-canvas/components/SemanticInspector";
 import { STAGE_CLASS } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
@@ -371,6 +373,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// has to hit-test its groups and toggle the class the embedded stylesheet
 	// draws a selection with. Nothing else is ever put through this attribute.
 	const markup = useMemo(() => ({ __html: drawing.svg }), [drawing.svg]);
+	const appearances = useMemo(() => pictureAppearances(drawing.svg), [drawing.svg]);
 
 	return (
 		<section
@@ -387,6 +390,9 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			    been picked out of it. The panel is the selection's detail rather
 			    than a second pane: it opens with a pick and closes with one. */}
 			<div className="relative flex min-h-0 min-w-0 flex-1">
+				{/* The legend participates in layout so fitting measures only the
+				    unobscured viewport. Hiding it gives that width back to the canvas. */}
+				<SemanticLegend appearances={appearances} theme={drawing.theme} />
 				{/* The viewport is the tab stop, and it is a plain box on purpose: a
 				    pan-and-zoom diagram is a keyboard surface that no native element
 				    and no ARIA role describes, and every role that would satisfy the
@@ -411,7 +417,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					}`}
 				>
 					<div
-						key={`${drawing.board}:${drawing.variant.id}:${drawing.version}:${drawing.theme}`}
+						key={drawing.svg}
 						ref={setSurface}
 						data-slot="semantic-board-surface"
 						style={surfaceStyle}
@@ -425,6 +431,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						board={drawing.board}
 						variant={drawing.variant.id}
 						selection={selection}
+						appearance={appearances.get(selection)}
 						onOpen={props.onOpenDown}
 						{...(props.onOpenCode === undefined ? {} : { onOpenCode: props.onOpenCode })}
 						onClose={clearSelection}

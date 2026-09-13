@@ -35,7 +35,7 @@ async function create(name: string, stated: Record<string, unknown> = {}) {
 		board: name,
 		writer,
 		transition: store.createBoardTransition(
-			contract.BoardCreateInputSchema.parse({ ...stated, name }),
+			contract.BoardCreateInputSchema.parse({ level: "system", ...stated, name }),
 		),
 	});
 }
@@ -391,7 +391,7 @@ describe("a board is the board its address names", () => {
 			board: "target-location",
 			writer,
 			transition: store.createBoardTransition(
-				contract.BoardCreateInputSchema.parse({ name: "declared-name" }),
+				contract.BoardCreateInputSchema.parse({ name: "declared-name", level: "system" }),
 			),
 		});
 		expect(refused.outcome === "rejected" && refused.code).toBe("BOARD_MISADDRESSED");

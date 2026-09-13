@@ -51,7 +51,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		expect(
 			cli(
 				["semantic", "new", "settling", "--doing", "starting a board to settle"],
-				JSON.stringify({ nodes: [{ name: "API", kind: "service" }] }),
+				JSON.stringify({ level: "system", nodes: [{ name: "API", kind: "service" }] }),
 			).status,
 		).toBe(0);
 		const start = JSON.parse(cli(["semantic", "show", "settling"]).stdout).board;
@@ -220,7 +220,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		expect(
 			cli(
 				["semantic", "new", "blocking", "--doing", "starting a chain"],
-				JSON.stringify({ nodes: [{ name: "API", kind: "service" }] }),
+				JSON.stringify({ level: "system", nodes: [{ name: "API", kind: "service" }] }),
 			).status,
 		).toBe(0);
 		const start = JSON.parse(cli(["semantic", "show", "blocking"]).stdout).board;
@@ -320,7 +320,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		expect(
 			cli(
 				["semantic", "new", "addressing", "--doing", "starting a board to address"],
-				JSON.stringify({ nodes: [{ name: "API", kind: "service" }] }),
+				JSON.stringify({ level: "system", nodes: [{ name: "API", kind: "service" }] }),
 			).status,
 		).toBe(0);
 		const start = JSON.parse(cli(["semantic", "show", "addressing"]).stdout).board;
@@ -354,7 +354,7 @@ describe("settling a proposal and adopting an architecture", () => {
 		expect(
 			cli(
 				["semantic", "new", "attributed", "--doing", "starting a board to attribute"],
-				JSON.stringify({ nodes: [{ name: "API", kind: "service" }] }),
+				JSON.stringify({ level: "system", nodes: [{ name: "API", kind: "service" }] }),
 			).status,
 		).toBe(0);
 		const endpoint = new URL(canvas.base);

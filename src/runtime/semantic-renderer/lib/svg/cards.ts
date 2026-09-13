@@ -27,7 +27,6 @@ import {
 	HEADER_NAME_TRACKING,
 	HEADER_NOTE_SIZE,
 	ICON_CHIP_GAP,
-	ICON_CHIP_RADIUS,
 	ICON_CHIP_SIZE,
 	NOTE_SIZE,
 	TEXT_LINE_HEIGHT,
@@ -45,8 +44,12 @@ import {
 	cardTextWidth,
 	type SequenceCard,
 } from "@/runtime/semantic-renderer/lib/layout/sequence-card";
-import { iconColour } from "@/runtime/semantic-renderer/lib/group-colour";
-import { glyphGroup } from "@/runtime/semantic-renderer/lib/svg/icons";
+import type { NodeAppearance } from "@/runtime/semantic-renderer/lib/semantic-appearance";
+import {
+	bodyAttributes,
+	appearanceAttributes,
+	typeChip,
+} from "@/runtime/semantic-renderer/lib/svg/appearance";
 import { lines, tag, textNode, wrap } from "@/runtime/semantic-renderer/lib/svg/primitives";
 import {
 	standingOutline,
@@ -90,67 +93,21 @@ function halo(box: Box, radius: number, styles: SvgStyles): string {
 }
 
 /**
- * How much of the group's colour the chip's own ground is worth.
- *
- * A wash rather than a fill: the colour has to read at a glance from across a
- * page of cards, and a saturated tile behind a glyph makes the glyph the
- * quietest thing in it. The rule around it is one pixel, like every other rule
- * in the picture.
- */
-const CHIP_WASH = 0.14;
-
-/**
- * The kind chip and its glyph, at the left of a card.
- *
- * Three things carry the colour and nothing else does: the glyph, the hairline
- * around the tile it sits on, and that tile's wash. Not the card, not the card's
- * border, and not a line — a group is a family of parts, and a coloured card
- * border would compete with the one thing a border already says, which is how
- * the node stands against the variant it came from.
- * @param placed The card.
- * @param styles The palette's attribute bundles.
- * @param ink The colour this node's group is drawn in.
- * @returns The chip and glyph.
- */
-function chipOf(placed: SequenceCard, styles: SvgStyles, ink: string): string {
-	const { box, node } = placed;
-	return (
-		tag("rect", {
-			x: coord(box.x + CARD_PADDING_X),
-			y: coord(box.y + (box.height - ICON_CHIP_SIZE) / 2),
-			width: ICON_CHIP_SIZE,
-			height: ICON_CHIP_SIZE,
-			rx: ICON_CHIP_RADIUS,
-			fill: ink,
-			"fill-opacity": CHIP_WASH,
-			stroke: ink,
-			"stroke-width": 1,
-			"stroke-opacity": 0.45,
-		}) +
-		glyphGroup(
-			node.kind,
-			box.x + CARD_PADDING_X + ICON_CHIP_SIZE / 2,
-			box.y + box.height / 2,
-			styles,
-			ink,
-		)
-	);
-}
-
-/**
  * One card: its name, the responsibility under it when there is one, and the
  * glyph that says what sort of thing it is.
  * @param placed The card.
  * @param palette The theme's colours.
  * @param standing How this node stands against the variant it came from, when the caller said.
  * @param unsettled Whether the board says nobody has decided this node yet.
+ * @param appearance Resolved containment and type channels.
  * @returns The card's group.
  */
 function paintCard(
 	placed: SequenceCard,
 	palette: Palette,
-	standing?: SubjectStanding,
-	unsettled = false,
+	standing: SubjectStanding | undefined,
+	unsettled: boolean,
+	appearance: NodeAppearance,
 ): string {
 	const styles = stylesFor(palette);
 	const { node, box, titleSize } = placed;
@@ -182,7 +139,7 @@ function paintCard(
 
 	return wrap(
 		"g",
-		subjectGroup("node", node.id, standing),
+		{ ...subjectGroup("node", node.id, standing), ...appearanceAttributes(appearance) },
 		lines([
 			halo(box, CARD_RADIUS, styles),
 			tag("rect", {
@@ -192,9 +149,15 @@ function paintCard(
 				height: coord(box.height),
 				rx: CARD_RADIUS,
 				...styles.card,
+				...bodyAttributes(appearance, palette),
 				...standingOutline(standing, palette),
 			}),
-			chipOf(placed, styles, iconColour(placed.node, palette.ground)),
+			typeChip(
+				box.x + CARD_PADDING_X,
+				box.y + (box.height - ICON_CHIP_SIZE) / 2,
+				appearance,
+				palette,
+			),
 			title,
 			note,
 			standingPin(box, standing, palette),

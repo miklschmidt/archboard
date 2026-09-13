@@ -30,6 +30,7 @@ import {
 } from "@/shared/semantic-board/index";
 import {
 	listSemanticBoards,
+	checkSemanticVault,
 	readSemanticBoard,
 	readSemanticBoardConfiguration,
 } from "@/runtime/semantic-board-store/index";
@@ -90,10 +91,6 @@ function refuseUnnamedBoard(res: Response): void {
 function listRoute(_req: Request, res: Response): void {
 	try {
 		const configured = readSemanticBoardConfiguration();
-		if (!configured.ok) {
-			res.status(422).json({ success: false, code: "INVALID_CONFIG", error: configured.problem });
-			return;
-		}
 		res.json({
 			success: true,
 			levels: configured.configuration.levels,
@@ -141,7 +138,7 @@ function readRoute(req: Request, res: Response): void {
 			});
 			return;
 		}
-		res.json({ success: true, board: read.board });
+		res.json({ success: true, board: read.board, warnings: read.warnings });
 	} catch (error) {
 		res.status(400).json({ success: false, error: errorMessage(error) });
 	}
@@ -425,6 +422,7 @@ async function answerDrawn(
 	};
 	try {
 		const picture = await renderSemanticView({
+			policy: readSemanticBoardConfiguration().configuration,
 			content: proposal.content,
 			grammar: reading.grammar,
 			theme: how.theme,
@@ -490,6 +488,9 @@ function readingOf(view: SemanticView | undefined): { scope: ViewScope; grammar:
  * @param app The express application.
  */
 function mountSemanticBoardRoutes(app: Express): void {
+	app.get("/api/vault/check", (_req, res) => {
+		res.json({ success: true, ...checkSemanticVault() });
+	});
 	app.get("/api/semantic-boards", listRoute);
 	app.get("/api/semantic-boards/board", readRoute);
 	app.get("/api/semantic-boards/render", renderRoute);

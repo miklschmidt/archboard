@@ -101,7 +101,10 @@ describe.serial("production canvas Codex WebSocket ownership", () => {
 					await request("/api/semantic-boards/create", {
 						method: "POST",
 						doing: "starting the board this pane shows",
-						body: { board: "scratch", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
+						body: {
+							board: "scratch",
+							create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
+						},
 					})
 				).status,
 			).toBe(200);

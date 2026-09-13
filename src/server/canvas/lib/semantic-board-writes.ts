@@ -1,3 +1,4 @@
+import { readSemanticBoard } from "@/runtime/semantic-board-store/index";
 // The routes that change a semantic board.
 //
 // They are deliberately outside the Excalidraw write boundary in
@@ -144,7 +145,9 @@ function answerWrite(
 ): void {
 	if (result.outcome === "applied") {
 		announce(result, envelope);
+		const current = readSemanticBoard(result.board.name);
 		res.json({
+			warnings: current.ok ? current.warnings : [],
 			success: true,
 			board: result.board,
 			version: result.board.version,

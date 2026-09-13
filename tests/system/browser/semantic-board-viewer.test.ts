@@ -89,6 +89,7 @@ test("a semantic board opens in a real pane, and the vault gets no note for it",
 			origin: "agent",
 			writerId: "browser-owner",
 			create: {
+				level: "system",
 				nodes: [
 					{ name: "Ingest", kind: "service", responsibility: "Takes the feed" },
 					{ name: "Warehouse", kind: "datastore", responsibility: "Keeps the rows" },
@@ -200,14 +201,14 @@ test("a semantic board opens in a real pane, and the vault gets no note for it",
 	await canvas.assertRunning();
 }, 30_000);
 
-/** How many travelling dots the drawn picture carries. */
-const dotsDrawn = (browser: AgentBrowserSession): Promise<number> =>
-	browser.eval<number>(`document.querySelectorAll("${SURFACE} circle.ab-pulse").length`);
+/** How many travelling traffic paths the drawn picture carries. */
+const trafficPathsDrawn = (browser: AgentBrowserSession): Promise<number> =>
+	browser.eval<number>(`document.querySelectorAll("${SURFACE} path.ab-pulse").length`);
 
 /** How many of them the browser actually shows. */
-const dotsShown = (browser: AgentBrowserSession): Promise<number> =>
+const trafficPathsShown = (browser: AgentBrowserSession): Promise<number> =>
 	browser.eval<number>(
-		`[...document.querySelectorAll("${SURFACE} circle.ab-pulse")]` +
+		`[...document.querySelectorAll("${SURFACE} path.ab-pulse")]` +
 			`.filter((dot) => getComputedStyle(dot).display !== "none").length`,
 	);
 
@@ -232,12 +233,20 @@ test("a relationship that carries traffic moves, unless the reader asked it not 
 					board: "moving",
 					origin: "agent",
 					create: {
+						level: "system",
 						nodes: [
 							{ name: "API", kind: "service", responsibility: "Takes requests" },
 							{ name: "Store", kind: "datastore" },
 						],
 						edges: [
-							{ from: "API", to: "Store", kind: "call", label: "reads", emphasis: "hero" },
+							{
+								from: "API",
+								to: "Store",
+								kind: "call",
+								label: "reads",
+								emphasis: "hero",
+								traffic: {},
+							},
 							{ from: "API", to: "Store", kind: "dependency" },
 						],
 					},
@@ -256,9 +265,9 @@ test("a relationship that carries traffic moves, unless the reader asked it not 
 		WAIT,
 	);
 
-	// Three dots on the hero line and none on the dependency: the picture says
+	// One traffic stream on the call and none on the dependency: the picture says
 	// which of the two carries traffic, which is the whole point of the marks.
-	expect(await dotsDrawn(browser)).toBe(3);
+	expect(await trafficPathsDrawn(browser)).toBe(1);
 
 	// The same picture, for somebody whose system says they want less motion:
 	// none of the dots is shown. The picture itself answers that — its own
@@ -267,7 +276,7 @@ test("a relationship that carries traffic moves, unless the reader asked it not 
 	const restore = await emulateMedia(browser, "light", "reduced-motion");
 	try {
 		await pollUntil(
-			() => dotsShown(browser),
+			() => trafficPathsShown(browser),
 			(shown) => shown === 0,
 			"the drawn dots to be hidden from a reader who asked for less motion",
 			WAIT,
@@ -278,8 +287,8 @@ test("a relationship that carries traffic moves, unless the reader asked it not 
 	}
 	// And back, without a round trip: the preference is read by the document.
 	await pollUntil(
-		() => dotsShown(browser),
-		(shown) => shown === 3,
+		() => trafficPathsShown(browser),
+		(shown) => shown === 1,
 		"the dots to come back for a reader who has asked for nothing",
 		WAIT,
 	);

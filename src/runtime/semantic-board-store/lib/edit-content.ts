@@ -255,9 +255,8 @@ function buildEdge(
 			id: id.id,
 			from: from.node.id,
 			to: to.node.id,
-			kind: input.kind,
+			...saidOfEdge(input),
 			emphasis: input.emphasis ?? "normal",
-			...edgeProse(input),
 		},
 	};
 }
@@ -284,15 +283,20 @@ function edgeId(edges: readonly SemanticEdge[], input: SemanticEdgeInput, batch:
 }
 
 /**
- * The optional prose an edge carries, present only where the agent wrote it.
+ * What a stated edge says about itself, except for the input-only fields the
+ * write boundary resolves or spends.
  * @param input The edge as the agent wrote it.
- * @returns The label and description fields it actually has.
+ * @returns Its authored fields, ready to persist.
  */
-function edgeProse(input: SemanticEdgeInput): Pick<SemanticEdge, "label" | "description"> {
-	return {
-		...(input.label === undefined ? {} : { label: input.label }),
-		...(input.description === undefined ? {} : { description: input.description }),
-	};
+function saidOfEdge(
+	input: SemanticEdgeInput,
+): Omit<SemanticEdgeInput, "id" | "as" | "from" | "to"> {
+	const said = { ...input };
+	Reflect.deleteProperty(said, "id");
+	Reflect.deleteProperty(said, "as");
+	Reflect.deleteProperty(said, "from");
+	Reflect.deleteProperty(said, "to");
+	return said;
 }
 
 /**

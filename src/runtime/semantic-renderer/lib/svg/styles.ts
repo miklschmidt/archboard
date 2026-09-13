@@ -16,8 +16,10 @@
 // whole reason the roles exist: a bundle that carried a size but no face would
 // let a painter and a measurement disagree about what they were talking about.
 
-import type { EdgeEmphasis, EdgeKind, SemanticEdge } from "@/shared/semantic-board/index";
-import { HERO_PULSE_COUNT } from "@/runtime/semantic-renderer/lib/design";
+import type { EdgeEmphasis, SemanticEdge } from "@/shared/semantic-board/index";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@/shared/semantic-policy/index";
+import { relationshipAppearance } from "@/runtime/semantic-renderer/lib/semantic-appearance";
+import { semanticInk } from "@/runtime/semantic-renderer/lib/svg/appearance";
 import {
 	HEADER_NAME_SIZE,
 	HEADER_NAME_TRACKING,
@@ -38,77 +40,19 @@ import type { Attributes } from "@/runtime/semantic-renderer/lib/svg/primitives"
 import { standingInk, type SubjectStanding } from "@/runtime/semantic-renderer/lib/svg/standing";
 
 /** How loudly a line speaks. */
-type Weight = "hero" | "normal" | "muted";
+type Weight = EdgeEmphasis;
 
 /** Which arrowhead a line ends in. */
 type Head = "filled" | "open";
 
 const WEIGHTS: readonly Weight[] = ["hero", "normal", "muted"];
 
-/**
- * What sort of relationship each edge kind is, said in dashes.
- *
- * Three classes, not nine: a reader can tell three line textures apart at a
- * glance and cannot tell nine, and the specific kind is what the label is for.
- * Solid is something happening now, dashed is something handed off, dotted is
- * a structural fact rather than a runtime one.
- */
-const DASH_OF: Readonly<Record<EdgeKind, string | undefined>> = {
-	call: undefined,
-	http: undefined,
-	rpc: undefined,
-	render: undefined,
-	data: undefined,
-	other: undefined,
-	event: "6 4",
-	queue: "6 4",
-	dependency: "1.5 3.5",
-};
-
-/** A handed-off message gets the open arrowhead; everything else the filled one. */
-const HEAD_OF: Readonly<Record<EdgeKind, Head>> = {
-	call: "filled",
-	http: "filled",
-	rpc: "filled",
-	render: "filled",
-	data: "filled",
-	other: "filled",
-	event: "open",
-	queue: "open",
-	dependency: "open",
-};
-
-const WEIGHT_OF: Readonly<Record<EdgeEmphasis, Weight>> = {
-	hero: "hero",
-	normal: "normal",
-	muted: "muted",
-};
-
 const STROKE_WIDTH: Readonly<Record<Weight, number>> = { hero: 2.2, normal: 1.4, muted: 1.2 };
-const STROKE_OPACITY: Readonly<Record<Weight, number | undefined>> = {
-	hero: undefined,
-	normal: 0.9,
-	muted: 0.55,
-};
-
-/**
- * The colour a line of each weight is drawn in.
- * @param palette The theme's colours.
- * @param weight How loudly the line speaks.
- * @returns The stroke colour.
- */
-function weightColour(palette: Palette, weight: Weight): string {
-	if (weight === "hero") {
-		return palette.edgeHero;
-	}
-	return weight === "muted" ? palette.edgeMuted : palette.edge;
-}
-
 /**
  * The ink a line, its arrowhead and its dots are all drawn in.
  *
  * A relationship that stands for something takes the standing's ink; everything
- * else is drawn in the ink of its weight. One function, asked by all three, so
+ * else is drawn in the neutral relationship ink. One function, asked by all three, so
  * a changed relationship cannot end up amber in one of them and grey in the
  * other two — which is exactly what it did, and it read as a coloured glow
  * behind a line that had nothing to do with it.
@@ -119,17 +63,12 @@ function weightColour(palette: Palette, weight: Weight): string {
  * either would be answering a question nobody asked at the cost of one somebody
  * did.
  * @param palette The theme's colours.
- * @param weight How loudly the line speaks.
  * @param standing How it stands, when this is a proposal and it moved.
  * @returns The stroke colour.
  */
-function lineColour(
-	palette: Palette,
-	weight: Weight,
-	standing: SubjectStanding | undefined,
-): string {
+function lineColour(palette: Palette, standing: SubjectStanding | undefined): string {
 	const marked = standing === undefined ? undefined : standingInk(standing, palette);
-	return marked ?? weightColour(palette, weight);
+	return marked ?? palette.edge;
 }
 
 /**
@@ -138,56 +77,7 @@ function lineColour(
  * @returns Its weight.
  */
 function weightOf(edge: SemanticEdge): Weight {
-	return WEIGHT_OF[edge.emphasis];
-}
-
-/**
- * Relationships along which something actually travels.
- *
- * Motion is the renderer's, derived from what the relationship IS rather than
- * from a flag an agent set: a call, a request, a message, a queued item, a read
- * and a render all carry something from one part to another, and a dependency
- * does not — it is a fact about how the two are built, true whether or not
- * anything is happening. `other` is the kind somebody reached for when none of
- * these fitted, so it says nothing about traffic and gets no dot.
- */
-const CARRIES_TRAFFIC: Readonly<Record<EdgeKind, boolean>> = Object.freeze({
-	call: true,
-	http: true,
-	rpc: true,
-	event: true,
-	queue: true,
-	data: true,
-	render: true,
-	dependency: false,
-	other: false,
-});
-
-/**
- * How many dots ride one relationship at once.
- *
- * A hero line carries a train, which is how it says it is busier than its
- * neighbours — three dots on the wire rather than a faster single one, because
- * speed reads as urgency and a count reads as volume. A muted line carries
- * none: it has been pushed into the background on purpose, and a moving dot is
- * the least background thing a picture can do.
- * @param edge The relationship.
- * @returns How many dots, or zero when it does not carry traffic at all.
- */
-function pulseCountOf(edge: SemanticEdge): number {
-	if (!CARRIES_TRAFFIC[edge.kind] || edge.emphasis === "muted") {
-		return 0;
-	}
-	return edge.emphasis === "hero" ? HERO_PULSE_COUNT : 1;
-}
-
-/**
- * Which arrowhead one edge ends in.
- * @param edge The relationship.
- * @returns Its arrowhead form.
- */
-function headOf(edge: SemanticEdge): Head {
-	return HEAD_OF[edge.kind];
+	return edge.emphasis;
 }
 
 /**
@@ -221,22 +111,25 @@ function strokeWidthOf(edge: SemanticEdge): number {
  * @param edge The relationship.
  * @param palette The theme's colours.
  * @param standing How it stands, when this is a proposal and it moved.
+ * @param policy Current vault policy.
  * @returns The path's attributes.
  */
 function edgeAttributes(
 	edge: SemanticEdge,
 	palette: Palette,
 	standing?: SubjectStanding,
+	policy: SemanticPolicy = DEFAULT_SEMANTIC_POLICY,
 ): Attributes {
 	const weight = weightOf(edge);
+	const appearance = relationshipAppearance(edge.kind, policy);
+	const ink = semanticInk(appearance.color, palette) ?? palette.edge;
 	return {
 		fill: "none",
-		stroke: lineColour(palette, weight, standing),
+		stroke: (standing === undefined ? undefined : standingInk(standing, palette)) ?? ink,
 		"stroke-width": STROKE_WIDTH[weight],
-		"stroke-opacity": STROKE_OPACITY[weight],
 		"stroke-linecap": "round",
 		"stroke-linejoin": "round",
-		"stroke-dasharray": DASH_OF[edge.kind],
+		"stroke-dasharray": { solid: undefined, dashed: "6 4", dotted: "1.5 3.5" }[appearance.dash],
 	};
 }
 
@@ -290,14 +183,10 @@ export {
 	type SvgStyles,
 	WEIGHTS,
 	lineColour,
-	weightColour,
 	weightOf,
-	headOf,
 	markerFor,
 	strokeWidthOf,
 	edgeAttributes,
-	pulseCountOf,
 	stylesFor,
 	STROKE_WIDTH,
-	STROKE_OPACITY,
 };

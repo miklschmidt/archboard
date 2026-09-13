@@ -18,8 +18,41 @@ import { z } from "zod";
 
 const MAX_EDGE_LABEL = 60;
 
+/** Effective traffic speed when an author enables traffic without stating one. */
+const DEFAULT_TRAFFIC_SPEED = 40;
+/** Effective dot-entry rate when an author enables traffic without stating one. */
+const DEFAULT_TRAFFIC_VOLUME = 0.5;
+
 /** What one relationship carries, stated once for both spellings of an edge. */
 const EdgeLabelSchema = z.string().trim().min(1).max(MAX_EDGE_LABEL);
+
+/**
+ * Illustration-only traffic on a relationship. Presence enables motion;
+ * omission is the one off state.
+ */
+const EdgeTrafficSchema = z
+	.object({
+		speed: z.number().finite().positive().default(DEFAULT_TRAFFIC_SPEED),
+		volume: z.number().finite().positive().default(DEFAULT_TRAFFIC_VOLUME),
+	})
+	.strict();
+type EdgeTraffic = z.infer<typeof EdgeTrafficSchema>;
+
+/**
+ * Effective traffic values, or the off state when traffic is absent.
+ * @param traffic Traffic as written, possibly before schema normalization.
+ * @returns Both effective values, or undefined when traffic is off.
+ */
+function effectiveTraffic(
+	traffic: Readonly<Partial<EdgeTraffic>> | undefined,
+): EdgeTraffic | undefined {
+	return traffic === undefined
+		? undefined
+		: {
+				speed: traffic.speed ?? DEFAULT_TRAFFIC_SPEED,
+				volume: traffic.volume ?? DEFAULT_TRAFFIC_VOLUME,
+			};
+}
 import { CodeBindingSchema } from "@/shared/code-target/index";
 import {
 	DescriptionSchema,
@@ -81,9 +114,9 @@ type DrillDown = z.infer<typeof DrillDownSchema>;
  * the same effort. Not `kind`: what a thing IS and what it is PART OF are
  * different questions, and a picture that answered only the first cannot show
  * an architecture organised around anything else. And not presentation: what
- * colour a group is drawn in is the renderer's, derived from the label and
- * stored nowhere (ADR 0023), so a board carries the grouping and never the
- * palette.
+ * how that membership is presented is resolved from the vault policy by the
+ * renderer and stored nowhere (ADR 0023), so the board carries the grouping
+ * and never its appearance.
  */
 const SemanticNodeSchema = z
 	.object({
@@ -102,8 +135,10 @@ type SemanticNode = z.infer<typeof SemanticNodeSchema>;
 
 /**
  * One directed relationship. `label` is what the connection carries, not where
- * the line goes; `emphasis` is how much attention it is asking for, and what
- * that looks like is the renderer's to decide.
+ * the line goes; `emphasis` is how much attention it is asking for. Optional
+ * `traffic` asks for ongoing illustrative flow at a distance-based speed and
+ * entry rate. What either presentation signal looks like is the renderer's to
+ * decide.
  */
 const SemanticEdgeSchema = z
 	.object({
@@ -114,6 +149,7 @@ const SemanticEdgeSchema = z
 		label: EdgeLabelSchema.optional(),
 		description: DescriptionSchema.optional(),
 		emphasis: EdgeEmphasisSchema.default("normal"),
+		traffic: EdgeTrafficSchema.optional(),
 	})
 	.strict();
 type SemanticEdge = z.infer<typeof SemanticEdgeSchema>;
@@ -234,6 +270,11 @@ function subjectIds(content: VariantContent): string[] {
 
 export {
 	EdgeLabelSchema,
+	DEFAULT_TRAFFIC_SPEED,
+	DEFAULT_TRAFFIC_VOLUME,
+	EdgeTrafficSchema,
+	type EdgeTraffic,
+	effectiveTraffic,
 	DrillDownVariantSchema,
 	type DrillDownVariant,
 	DrillDownSchema,

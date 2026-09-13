@@ -102,38 +102,33 @@ listeners, sockets, vaults, and temporary roots on success, failure, or signal.
 
 ## Rendered UI owners
 
-A module owner that must _mount_ React — focus, roles, pointer and keyboard
-sequences — opts into a real DOM per file through the `src/ui/dom-testing`
-module root. Happy DOM is never registered for the whole suite: the
+A module owner that must mount React — focus, roles, pointer and keyboard
+sequences — registers Happy DOM for its own isolated test file and unregisters
+it in `afterAll`. Happy DOM is never registered for the whole suite: the
 `bunfig.toml` preload stays the wall-clock reporter, and server, process, and
 system owners keep a plain Node-like global, because a suite-wide `document`
-would change what those owners prove. The pinned stack is `happy-dom` and
-`@happy-dom/global-registrator` for the window, and `@testing-library/react`
-with `@testing-library/dom` and `@testing-library/user-event` for mounting and
-input.
+would change what those owners prove.
 
-```ts
-import { afterAll, expect, test } from "bun:test";
-import { createElement } from "react";
+Reuse the module's existing rendered-test harness when one exists. Semantic
+board stage tests use `src/ui/semantic-board-canvas/tests/stage-harness.tsx`,
+which owns DOM registration, measured viewport setup, fetch restoration and
+Testing Library cleanup. Other rendered owners use `GlobalRegistrator` from
+`@happy-dom/global-registrator` with React's `act` and `createRoot`, or
+Testing Library's `render`. Unmount every root or call Testing Library's
+`cleanup` after each test, including on failure, before unregistering the
+window. Restore replaced globals and dispose query clients and subscriptions
+owned by the test.
 
-import { loadRenderedUiTools, registerHappyDom, unregisterHappyDom } from "@/ui/dom-testing";
+Import order matters when using `@testing-library/user-event`: it reads
+`globalThis.document` while its module body evaluates. Dynamically import it
+only after registering Happy DOM; a static import runs before the registration
+statement. Keep queries scoped to the mounted container, or obtain document-bound
+query helpers after registration. Existing stage tests use `act` and
+`fireEvent` without introducing another DOM lifecycle owner.
 
-registerHappyDom();
-const { render, screen, userEvent } = await loadRenderedUiTools();
-
-afterAll(unregisterHappyDom);
-```
-
-`loadRenderedUiTools()` exists because import order is not a style choice:
-`@testing-library/user-event` reads `globalThis.document` while its module body
-evaluates, and ES module imports run before any statement in the importing
-file. Never import `@testing-library/*` directly from a test file — await the
-loader after `registerHappyDom()`, and release the window in `afterAll` so the
-next isolated file starts from the plain global.
-`src/ui/dom-testing/tests/mounted-button.test.ts` is the owner for the harness
-itself. The hand-written harnesses under `src/ui/workbench-runtime/tests/` and
-the `renderToStaticMarkup` owners elsewhere in `src/ui/` still stand; migrating
-one is its own leaf owner's work, not a side effect of touching this module.
+The `renderToStaticMarkup` owners elsewhere in `src/ui/` do not need a DOM.
+Do not add a shared harness or migrate unrelated owners solely to change their
+test setup.
 
 ## Former check inventory
 

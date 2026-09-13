@@ -48,7 +48,10 @@ test("live voice receives selection and board switches from production pane rout
 				await request("/api/semantic-boards/create", {
 					method: "POST",
 					doing: "starting the board this pane shows",
-					body: { board: "scratch", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
+					body: {
+						board: "scratch",
+						create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
+					},
 				})
 			).status,
 		).toBe(200);
@@ -141,7 +144,10 @@ test("live voice receives selection and board switches from production pane rout
 				await request("/api/semantic-boards/create", {
 					method: "POST",
 					doing: "starting the board this pane moves to",
-					body: { board: "payments", create: { nodes: [{ name: "Ledger", kind: "datastore" }] } },
+					body: {
+						board: "payments",
+						create: { level: "system", nodes: [{ name: "Ledger", kind: "datastore" }] },
+					},
 				})
 			).status,
 		).toBe(200);

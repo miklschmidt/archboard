@@ -25,6 +25,7 @@ function WorkbenchDockBody(props: WorkbenchDockBodyProps): JSX.Element {
 			<WorkbenchActivityContext.Provider value={props.activity}>
 				<WorkbenchRuntimeProvider
 					transport={owners.transport}
+					composer={owners.composer}
 					host={owners.host}
 					voice={voice}
 					reducedMotion={props.reducedMotion}

@@ -21,6 +21,7 @@ let boards = 0;
 
 /** The architecture, the flow and the two readings every test starts from. */
 const SEED = {
+	level: "system",
 	nodes: [
 		{ name: "CLI", kind: "app" },
 		{ name: "Canvas", kind: "service" },
@@ -324,6 +325,7 @@ test("a node keeps everything it was written with, including where it drills dow
 		transition: store.createBoardTransition(
 			contract.BoardCreateInputSchema.parse({
 				name: "drilling",
+				level: "system",
 				nodes: [
 					{ id: undefined, name: "Canvas", kind: "service", description: "serves the panes" },
 				],

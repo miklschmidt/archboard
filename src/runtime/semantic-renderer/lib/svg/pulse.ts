@@ -1,25 +1,6 @@
-// The travelling dot: the mark that says a line carries traffic rather than
-// merely existing.
-//
-// Forked from PR Lens's `svg/pulse.ts`. Both grammars draw it from here,
-// because a reader moving between them is reading one language — an
-// architecture relationship and a sequence message differ in what they connect,
-// not in how they live.
-//
-// Nothing about motion is on a board. Which lines move is decided from the
-// meaning the schema already carries — what kind of relationship it is, how
-// much attention it asks for, what a step repeats — because presentation is the
-// renderer's (ADR 0023) and an authored `animated` flag would be an agent
-// deciding how its architecture looks.
-//
-// A line running behind the drawing's clock says so with a negative `begin`,
-// which starts its motion that far into its own turn. A positive delay would
-// describe the same steady state and lie for the seconds after load: an
-// animation has no effect before it begins, so a dot waiting for its turn would
-// sit at the canvas origin, in the corner, in full view.
-
+import { type SemanticEdge } from "@/shared/semantic-board/index";
 import { coord } from "@/runtime/semantic-renderer/lib/geometry";
-import { lines, tag, wrap } from "@/runtime/semantic-renderer/lib/svg/primitives";
+import { tag, wrap } from "@/runtime/semantic-renderer/lib/svg/primitives";
 
 /**
  * The class every moving mark carries.
@@ -37,48 +18,53 @@ const PULSE_RADIUS = 2.6;
 /** A dot's radius where several share one line, so the train reads as heavier. */
 const TRAIN_RADIUS = 3;
 
-/** One line's worth of travelling dots. */
+/** One connection's routed path and explicit illustrated traffic. */
 interface Pulse {
-	/** The path the dots ride, in the same coordinates the line was drawn in. */
 	readonly path: string;
-	/** What colour they are, which is the line's own. */
 	readonly colour: string;
-	/** How many ride this line at once, spread evenly around the turn. */
-	readonly count: number;
-	/** How long one trip takes, in seconds. */
-	readonly duration: number;
-	/** How far this line runs behind the drawing's clock, in seconds. */
-	readonly lag: number;
+	readonly traffic: NonNullable<SemanticEdge["traffic"]>;
 }
 
 /**
- * The dots riding one line.
- *
- * They are drawn without an id and without pointer events on purpose: a pane
- * hit-tests subjects, and a dot is not one. Putting it in the way of a click
- * would make a relationship pickable only between crossings.
- * @param pulse The line, its colour, and how many dots at what pace.
- * @returns The markup, or nothing when no dot rides this line.
+ * A steady stream measured directly along the final SVG path.
+ * Round-capped zero-length dashes are dots, spaced speed/volume units apart.
+ * Advancing the pattern by one spacing every 1/volume seconds gives fixed
+ * distance per second on straight and curved routes, already populated at load.
+ * One path handles any volume without allocating one element per dot.
+ * @param pulse Route, line ink and authored traffic.
+ * @returns The animated traffic path, retained in exported SVGs.
  */
 function travellingPulses(pulse: Pulse): string {
-	const { path, colour, count, duration, lag } = pulse;
-	if (count < 1) {
-		return "";
-	}
-	const radius = count > 1 ? TRAIN_RADIUS : PULSE_RADIUS;
-	return lines(
-		Array.from({ length: count }, (_, index) => {
-			const behind = (lag + (duration / count) * index) % duration;
-			return wrap(
-				"circle",
-				{ class: PULSE_CLASS, r: radius, fill: colour, "pointer-events": "none" },
-				tag("animateMotion", {
-					dur: `${coord(duration)}s`,
-					begin: behind === 0 ? undefined : `${coord(behind - duration)}s`,
-					repeatCount: "indefinite",
-					path,
-				}),
-			);
+	const { path, colour, traffic } = pulse;
+	const spacing = Math.max(
+		Number.MIN_VALUE,
+		Math.min(Number.MAX_VALUE, traffic.speed / traffic.volume),
+	);
+	const interval = Math.min(Number.MAX_VALUE, 1 / traffic.volume);
+	// SMIL timecounts require decimal spelling; SVG geometric numbers may use exponents.
+	const seconds = interval.toLocaleString("en-US", {
+		useGrouping: false,
+		maximumSignificantDigits: 21,
+	});
+	return wrap(
+		"path",
+		{
+			class: PULSE_CLASS,
+			d: path,
+			fill: "none",
+			stroke: colour,
+			"stroke-width": PULSE_RADIUS * 2,
+			"stroke-linecap": "round",
+			"stroke-dasharray": `0 ${spacing}`,
+			"pointer-events": "none",
+		},
+		tag("animate", {
+			attributeName: "stroke-dashoffset",
+			from: 0,
+			to: -spacing,
+			dur: `${seconds}s`,
+			repeatCount: "indefinite",
+			calcMode: "linear",
 		}),
 	);
 }

@@ -49,7 +49,7 @@ describe.serial("doing write boundary", () => {
 		const silent = await request<Refusal>("/api/semantic-boards/create", {
 			method: "POST",
 			doing: false,
-			body: { board: "payments", create: { nodes: [], edges: [] } },
+			body: { board: "payments", create: { level: "system", nodes: [], edges: [] } },
 		});
 		expect(silent.status).toBe(400);
 		expect(silent.body.code).toBe("DOING_REQUIRED");
@@ -63,7 +63,10 @@ describe.serial("doing write boundary", () => {
 		const created = await request("/api/semantic-boards/create", {
 			method: "POST",
 			doing: "starting the payment path",
-			body: { board: "payments", create: { nodes: [{ name: "Gateway", kind: "service" }] } },
+			body: {
+				board: "payments",
+				create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
+			},
 		});
 		expect(created.status).toBe(200);
 		const beforeClaim = readFileSync(boardFile);
@@ -111,7 +114,7 @@ describe.serial("doing write boundary", () => {
 
 		// Every write route, not just the one that happened to be tested.
 		const routes: Array<[string, unknown]> = [
-			["/api/semantic-boards/create", { board: "ledger", create: {} }],
+			["/api/semantic-boards/create", { board: "ledger", create: { level: "system" } }],
 			[
 				"/api/semantic-boards/edit?expectVersion=1",
 				{ board: "payments", edit: { nodes: [{ name: "Queue", kind: "queue" }] } },
@@ -146,11 +149,14 @@ describe.serial("doing write boundary", () => {
 					LOG_LEVEL: "error",
 				},
 			});
-		const bare = cli(["semantic", "new", "orders"]);
+		const bare = cli(["semantic", "new", "orders"], JSON.stringify({ level: "system" }));
 		expect(bare.status).not.toBe(0);
 		expect(`${bare.stdout}${bare.stderr}`).toMatch(/says nothing about what it is doing/);
 		expect(existsSync(join(vault, "orders.semantic.json"))).toBeFalse();
-		const said = cli(["semantic", "new", "orders", "--doing", "starting the orders board"]);
+		const said = cli(
+			["semantic", "new", "orders", "--doing", "starting the orders board"],
+			JSON.stringify({ level: "system" }),
+		);
 		expect(said.status).toBe(0);
 		expect(existsSync(join(vault, "orders.semantic.json"))).toBeTrue();
 		expect(cli(["help"]).stdout).toContain("--doing");

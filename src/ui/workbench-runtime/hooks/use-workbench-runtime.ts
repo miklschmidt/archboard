@@ -245,10 +245,10 @@ function useWorkbenchRuntime(
 	const owners = useMemo<TransportOwners>(
 		() => ({
 			transport,
-			composer: createWorkbenchComposerController({ transport }),
+			composer: options.composer ?? createWorkbenchComposerController({ transport }),
 			store: createWorkbenchRuntimeStore(),
 		}),
-		[transport],
+		[transport, options.composer],
 	);
 	const mounted = useRef<TransportOwners | null>(null);
 	useEffect(() => {

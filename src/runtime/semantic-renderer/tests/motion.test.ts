@@ -1,17 +1,3 @@
-// Whether a drawn diagram moves, and what decides it.
-//
-// A relationship that carries traffic is drawn with a dot travelling along it,
-// and a message of an exchange with a dot crossing at its turn. That motion was
-// dropped when this renderer was forked and the drawing went still in both
-// grammars — a `call` looked exactly like a `dependency`, and a sequence read as
-// a ladder rather than as something happening.
-//
-// What these hold to is that nothing about it is authored: the board says what
-// the relationship IS, and this decides whether that means traffic. That a page
-// of exchanges is told on one clock rather than several running at once. And
-// that a reader who has asked their system for less motion gets a still
-// picture, in a file that has no viewer around it to ask.
-
 import { describe, expect, test } from "bun:test";
 import { VariantContentSchema, type VariantContent } from "@/shared/semantic-board/index";
 import { renderSemanticView } from "@/runtime/semantic-renderer/index";
@@ -36,9 +22,9 @@ const SAMPLE = variant({
 	],
 	edges: [
 		{ id: "hero", from: "api", to: "store", kind: "call", label: "reads", emphasis: "hero" },
-		{ id: "plain", from: "store", to: "api", kind: "data", label: "rows" },
+		{ id: "plain", from: "store", to: "api", kind: "data", label: "rows", traffic: {} },
 		{ id: "built", from: "api", to: "store", kind: "dependency", emphasis: "normal" },
-		{ id: "quiet", from: "store", to: "api", kind: "http", emphasis: "muted" },
+		{ id: "quiet", from: "store", to: "api", kind: "http", emphasis: "muted", traffic: {} },
 	],
 	flows: [
 		{
@@ -121,7 +107,7 @@ function cyclesIn(svg: string): (string | undefined)[] {
  * @returns How many dots were drawn.
  */
 function dotsIn(svg: string): number {
-	return svg.split('<circle class="ab-pulse"').length - 1;
+	return [...svg.matchAll(/<(?:circle|path) class="ab-pulse"/gu)].length;
 }
 
 /**
@@ -137,37 +123,81 @@ function dotsIn(svg: string): number {
 function pulsesOn(svg: string, id: string): number {
 	const after = svg.split(`data-semantic-id="${id}"`)[1] ?? "";
 	const own = after.split("data-semantic-id=")[0] ?? "";
-	return own.split("<animateMotion").length - 1;
+	return [...own.matchAll(/<(?:circle|path) class="ab-pulse"/gu)].length;
 }
 
-describe("an architecture says which relationships carry traffic", () => {
-	test("a relationship something travels along moves, and one that is a fact does not", async () => {
+describe("explicit traffic is independent of relationship kind and emphasis", () => {
+	test("only presence enables a stream, including on a muted edge", async () => {
 		const svg = await drawn("architecture");
-		expect(MOTION.test(svg)).toBe(true);
-		// A call carries something from one part to another; a dependency is true
-		// whether or not anything is happening, so nothing travels along it.
-		expect(pulsesOn(svg, "plain")).toBe(1);
+		expect(pulsesOn(svg, "plain")).toBeGreaterThan(0);
+		expect(pulsesOn(svg, "quiet")).toBeGreaterThan(0);
+		expect(pulsesOn(svg, "hero")).toBe(0);
 		expect(pulsesOn(svg, "built")).toBe(0);
-		// Muted is a line pushed into the background on purpose, and a moving dot
-		// is the least background thing a picture can do.
-		expect(pulsesOn(svg, "quiet")).toBe(0);
 	});
 
-	test("a hero relationship carries a train, which is how it reads as busier", async () => {
-		const svg = await drawn("architecture");
-		// Three dots rather than one faster one: a count reads as volume where
-		// speed would read as urgency.
-		expect(pulsesOn(svg, "hero")).toBe(3);
-		expect(pulsesOn(svg, "hero")).toBeGreaterThan(pulsesOn(svg, "plain"));
+	test("removed edges retain their line but never draw traffic", async () => {
+		const rendered = await renderSemanticView({
+			content: SAMPLE,
+			grammar: "architecture",
+			theme: "light",
+			standing: { plain: "removed" },
+		});
+		expect(pulsesOn(rendered.svg, "plain")).toBe(0);
 	});
 
-	test("nothing about the motion is authored on the board", async () => {
-		// The same content parsed by its own contract, with no motion field of any
-		// kind on a relationship — if one were needed, this would not compile and
-		// an agent would be deciding how its architecture looks.
-		expect(Object.keys(SAMPLE.edges[0] ?? {})).not.toContain("animated");
-		expect(MOTION.test(await drawn("architecture"))).toBe(true);
+	test("equal defaults use fixed entry intervals and prepopulate different route lengths", async () => {
+		const content = variant({
+			nodes: [
+				{ id: "a", name: "A", kind: "service" },
+				{ id: "b", name: "B", kind: "service" },
+				{ id: "c", name: "C", kind: "service" },
+			],
+			edges: [
+				{ id: "ab", from: "a", to: "b", kind: "call", traffic: {} },
+				{ id: "bc", from: "b", to: "c", kind: "call" },
+				{ id: "ac", from: "a", to: "c", kind: "call", traffic: { speed: 40, volume: 0.5 } },
+			],
+		});
+		const { svg } = await renderSemanticView({ content, grammar: "architecture", theme: "light" });
+		for (const id of ["ab", "ac"]) {
+			const group = svg.split(`data-semantic-id="${id}"`)[1]!.split("data-semantic-id=")[0]!;
+			const traffic = group.match(/<path class="ab-pulse"[^>]+>/u)![0];
+			const animation = group.match(/<animate[^>]*attributeName="stroke-dashoffset"[^>]+>/u)![0];
+			const spacing = Number(traffic.match(/stroke-dasharray="0 ([^"]+)"/u)![1]);
+			const interval = Number(animation.match(/dur="([^s]+)s"/u)![1]);
+			expect(spacing).toBe(80);
+			expect(interval).toBe(2);
+			expect(spacing / interval).toBe(40);
+			expect(animation).toContain('to="-80"');
+			expect(traffic).toContain('stroke-linecap="round"');
+			expect(animation).toContain('calcMode="linear"');
+		}
 	});
+	for (const traffic of [
+		{ speed: 40, volume: 1e12 },
+		{ speed: Number.MIN_VALUE, volume: Number.MAX_VALUE },
+		{ speed: Number.MAX_VALUE, volume: Number.MIN_VALUE },
+	]) {
+		test(`positive finite traffic stays bounded with valid SVG timing (${traffic.speed}/${traffic.volume})`, async () => {
+			const content = variant({
+				nodes: SAMPLE.nodes,
+				edges: [{ id: "busy", from: "api", to: "store", kind: "call", traffic }],
+			});
+			const { svg } = await renderSemanticView({
+				content,
+				grammar: "architecture",
+				theme: "light",
+			});
+			expect(pulsesOn(svg, "busy")).toBe(1);
+			expect(svg.length).toBeLessThan(20000);
+			const duration = svg.match(/dur="([^s]+)s"/u)![1]!;
+			expect(duration).not.toContain("e");
+			expect(Number(duration)).toBeGreaterThan(0);
+			const spacing = Number(svg.match(/stroke-dasharray="0 ([^"]+)"/u)![1]);
+			expect(spacing).toBeGreaterThan(0);
+			expect(Number.isFinite(spacing)).toBe(true);
+		});
+	}
 });
 
 describe("an exchange is told on one clock", () => {

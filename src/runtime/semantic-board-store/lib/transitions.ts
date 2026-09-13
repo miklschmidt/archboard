@@ -248,6 +248,7 @@ function branchVariantTransition(input: BoardBranchInput): SemanticTransition {
  * @returns The transition.
  */
 function editVariantTransition(input: VariantEditInput): SemanticTransition {
+	const wanted = input.variant ?? "current";
 	return {
 		summary: "edit the board",
 		changesExistingBoard: true,
@@ -261,12 +262,9 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 			if (before === null) {
 				return refuse("BOARD_MISSING", "there is no such board in the vault");
 			}
-			const variant = resolveVariant(before, input.variant);
+			const variant = resolveVariant(before, wanted);
 			if (variant === undefined) {
-				return refuse(
-					"UNKNOWN_VARIANT",
-					`this board has no variant called "${input.variant ?? before.current}"`,
-				);
+				return refuse("UNKNOWN_VARIANT", `this board has no variant called "${wanted}"`);
 			}
 			const changesContent = [
 				input.nodes,

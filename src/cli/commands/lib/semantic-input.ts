@@ -1,3 +1,4 @@
+import { VaultDiagnosticSchema, type VaultDiagnostic } from "@/shared/semantic-policy/index";
 // What a person types into a semantic board command, before it is a command.
 //
 // Reading a stated architecture off a file or standard input, refusing what is
@@ -158,11 +159,13 @@ function editedVersion(board: string): number {
  * check a field that can never say anything.
  */
 const SemanticBoardReadSchema = z.object({
+	warnings: z.array(VaultDiagnosticSchema).default([]),
 	success: z.literal(true),
 	board: SemanticBoardSchema,
 });
 
 const SemanticBoardResultSchema = z.object({
+	warnings: z.array(VaultDiagnosticSchema).default([]),
 	success: z.literal(true),
 	board: SemanticBoardSchema,
 	/** The version the board landed at. */
@@ -181,12 +184,14 @@ function writeResult(written: SemanticWriteAnswer): {
 	board: SemanticWriteAnswer["board"];
 	version: number;
 	reconciliation: ReconciliationReport | null;
+	warnings: VaultDiagnostic[];
 } {
 	return {
 		success: true,
 		board: written.board,
 		version: written.board.version,
 		reconciliation: written.reconciliation,
+		warnings: written.warnings,
 	};
 }
 
@@ -204,7 +209,10 @@ function writeResult(written: SemanticWriteAnswer): {
  */
 function describedWrite(written: SemanticWriteAnswer): string[] {
 	const board = written.board;
-	const lines = [`Semantic board "${board.name}" is now at version ${board.version}.`];
+	const lines = [
+		`Semantic board "${board.name}" is now at version ${board.version}.`,
+		...written.warnings.map((warning) => `Warning: ${warning.file}: ${warning.message}`),
+	];
 	const report = written.reconciliation;
 	if (report === null) {
 		return lines;

@@ -14,7 +14,11 @@
 // not leave out a name, a kind, or anything else that carries meaning.
 
 import { z } from "zod";
-import { DrillDownSchema, EdgeLabelSchema } from "@/shared/semantic-board/lib/content";
+import {
+	DrillDownSchema,
+	EdgeLabelSchema,
+	EdgeTrafficSchema,
+} from "@/shared/semantic-board/lib/content";
 import {
 	DescriptionSchema,
 	DisplayNameSchema,
@@ -96,10 +100,11 @@ const SemanticEdgeInputSchema = z
 		as: HandleSchema.optional(),
 		from: NodeReferenceSchema,
 		to: NodeReferenceSchema,
-		kind: EdgeKindSchema.default("call"),
+		kind: EdgeKindSchema,
 		label: EdgeLabelSchema.optional(),
 		description: DescriptionSchema.optional(),
 		emphasis: EdgeEmphasisSchema.optional(),
+		traffic: EdgeTrafficSchema.optional(),
 	})
 	.strict();
 type SemanticEdgeInput = z.infer<typeof SemanticEdgeInputSchema>;

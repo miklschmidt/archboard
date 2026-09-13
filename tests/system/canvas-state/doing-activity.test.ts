@@ -74,13 +74,13 @@ describe.serial("doing activity", () => {
 		const created = await request<{ version: number }>("/api/semantic-boards/create", {
 			method: "POST",
 			doing: "starting the payment path",
-			body: { board: "payments", create: { nodes: [] } },
+			body: { board: "payments", create: { level: "system", nodes: [] } },
 		});
 		expect(created.status).toBe(200);
 		await request("/api/semantic-boards/create", {
 			method: "POST",
 			doing: "starting the ledger",
-			body: { board: "ledger", create: { nodes: [] } },
+			body: { board: "ledger", create: { level: "system", nodes: [] } },
 		});
 		let version = created.body.version;
 

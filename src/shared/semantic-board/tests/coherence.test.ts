@@ -16,6 +16,7 @@ const board = (over: Record<string, unknown> = {}) => ({
 	kind: "semantic-board",
 	id: "bd1",
 	name: "Pipeline",
+	level: "system",
 	version: 1,
 	createdAt: "2026-09-11T00:00:00.000Z",
 	updatedAt: "2026-09-11T00:00:00.000Z",
@@ -206,9 +207,10 @@ describe("what an agent may write, against what a board may hold", () => {
 	});
 
 	test("a relationship label is held to the same length in both spellings", () => {
-		expect(SemanticEdgeInputSchema.safeParse({ from: "a", to: "b", label: TOO_LONG }).success).toBe(
-			false,
-		);
+		expect(
+			SemanticEdgeInputSchema.safeParse({ from: "a", to: "b", kind: "call", label: TOO_LONG })
+				.success,
+		).toBe(false);
 	});
 });
 

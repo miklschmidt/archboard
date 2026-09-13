@@ -20,6 +20,7 @@ const board: SemanticBoard = SemanticBoardSchema.parse({
 	kind: "semantic-board",
 	id: "bd",
 	name: "payments",
+	level: "system",
 	version: 3,
 	createdAt: "2026-09-13T00:00:00.000Z",
 	updatedAt: "2026-09-13T00:00:00.000Z",

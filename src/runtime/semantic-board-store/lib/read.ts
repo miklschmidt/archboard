@@ -18,11 +18,18 @@ import {
 	semanticBoardAddress,
 	type SemanticBoardLocation,
 } from "@/runtime/semantic-board-store/lib/location";
-import { configuredSemanticBoardLevelProblem } from "@/runtime/semantic-board-store/lib/configuration";
+import { readSemanticBoardConfiguration } from "@/runtime/semantic-board-store/lib/configuration";
+import { semanticVocabularyDiagnostics } from "@/runtime/semantic-board-store/lib/vocabulary";
+import type { VaultDiagnostic } from "@/shared/semantic-policy/index";
 
 /** A board that was there and was coherent, or why it was neither. */
 type SemanticBoardRead =
-	| { readonly ok: true; readonly board: SemanticBoard; readonly location: SemanticBoardLocation }
+	| {
+			readonly ok: true;
+			readonly board: SemanticBoard;
+			readonly warnings: VaultDiagnostic[];
+			readonly location: SemanticBoardLocation;
+	  }
 	| {
 			readonly ok: false;
 			readonly code: "BOARD_MISSING" | "BOARD_UNREADABLE";
@@ -62,10 +69,19 @@ function unreadable(location: SemanticBoardLocation, problem: string): SemanticB
 /**
  * Read the board at a known location.
  * @param location Where the board lives.
+ * @param configured Current interpreted vault configuration.
  * @returns The board, or why it could not be read.
  */
-function readSemanticBoardAt(location: SemanticBoardLocation): SemanticBoardRead {
-	const text = textAt(location.file);
+function readSemanticBoardAt(
+	location: SemanticBoardLocation,
+	configured = readSemanticBoardConfiguration(),
+): SemanticBoardRead {
+	let text: string | undefined;
+	try {
+		text = textAt(location.file);
+	} catch (error) {
+		return unreadable(location, `${location.file}: ${errorMessage(error)}`);
+	}
 	if (text === undefined) {
 		return {
 			ok: false,
@@ -74,6 +90,20 @@ function readSemanticBoardAt(location: SemanticBoardLocation): SemanticBoardRead
 			location,
 		};
 	}
+	return interpretBoard(text, location, configured);
+}
+/**
+ * Interpret readable bytes without treating removed vocabulary as structural corruption.
+ * @param text Board bytes.
+ * @param location Board address.
+ * @param configured Current interpreted policy.
+ * @returns The readable board or actionable error.
+ */
+function interpretBoard(
+	text: string,
+	location: SemanticBoardLocation,
+	configured: ReturnType<typeof readSemanticBoardConfiguration>,
+): SemanticBoardRead {
 	let value: unknown;
 	try {
 		value = JSON.parse(text);
@@ -94,11 +124,17 @@ function readSemanticBoardAt(location: SemanticBoardLocation): SemanticBoardRead
 				`different board from "${location.name}"`,
 		);
 	}
-	const configuredLevel = configuredSemanticBoardLevelProblem(parsed.board.level);
-	if (configuredLevel !== null) {
-		return unreadable(location, `${location.file} cannot be read: ${configuredLevel}`);
-	}
-	return { ok: true, board: parsed.board, location };
+	return {
+		ok: true,
+		board: parsed.board,
+		location,
+		warnings: [
+			...configured.diagnostics,
+			...(configured.ok
+				? semanticVocabularyDiagnostics(parsed.board, location.file, configured.configuration)
+				: []),
+		],
+	};
 }
 
 /**

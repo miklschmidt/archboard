@@ -1,20 +1,3 @@
-// Whether a reader can tell, from the picture alone, what a proposal did to a
-// relationship and which parts of it nobody has decided yet.
-//
-// A person reading a proposal reported three things, with a screenshot. A
-// changed relationship was a green, amber or red band behind a grey line with a
-// grey arrowhead and grey dots riding it, so the colour read as a glow behind
-// something unrelated rather than as the line's own standing. A card could wear
-// a solid ring, a dashed ring and a dashed outline at once, and nothing said
-// which of the three was selection, which was the change and which was the
-// argument nobody had settled. And a travelling dot passed over the opaque pill
-// on a relationship, putting a hole in the middle of the one thing on it that
-// is spelled out in words.
-//
-// What these hold to: one ink through the whole relationship, the words on top
-// of the dots, and the undecided said in a corner of its own where it cannot be
-// mistaken for either the change or the reader's own attention.
-
 import { describe, expect, test } from "bun:test";
 import {
 	VariantContentSchema,
@@ -51,10 +34,42 @@ const CONTENT: VariantContent = VariantContentSchema.parse({
 		{ id: "store", name: "Vault", kind: "datastore" },
 	],
 	edges: [
-		{ id: "moved", from: "gw", to: "io", kind: "call", label: "reads the board", emphasis: "hero" },
-		{ id: "new", from: "io", to: "store", kind: "data", label: "writes", emphasis: "normal" },
-		{ id: "gone", from: "gw", to: "store", kind: "http", label: "went direct", emphasis: "normal" },
-		{ id: "same", from: "store", to: "gw", kind: "event", label: "changed", emphasis: "normal" },
+		{
+			id: "moved",
+			from: "gw",
+			to: "io",
+			kind: "call",
+			label: "reads the board",
+			emphasis: "hero",
+			traffic: {},
+		},
+		{
+			id: "new",
+			from: "io",
+			to: "store",
+			kind: "data",
+			label: "writes",
+			emphasis: "normal",
+			traffic: {},
+		},
+		{
+			id: "gone",
+			from: "gw",
+			to: "store",
+			kind: "http",
+			label: "went direct",
+			emphasis: "normal",
+			traffic: {},
+		},
+		{
+			id: "same",
+			from: "store",
+			to: "gw",
+			kind: "event",
+			label: "changed",
+			emphasis: "normal",
+			traffic: {},
+		},
 	],
 	flows: [
 		{
@@ -134,7 +149,9 @@ function subject(rendered: RenderedDiagram, kind: string, id: string): DrawnGrou
  * @returns The tag with its inks replaced.
  */
 function withoutInk(tag: string): string {
-	return tag.replace(/#[0-9a-f]{6}/gu, "#ink").replace(/#ah-[a-z]+-[a-z]+(-[a-z]+)?/gu, "#ah");
+	return tag
+		.replace(/#[0-9a-f]{6}/gu, "#ink")
+		.replace(/marker-end="url\([^)]+\)"/gu, 'marker-end="head"');
 }
 
 /** The line itself: the one path of a relationship that ends in an arrowhead. */
@@ -172,9 +189,11 @@ function headInk(svg: string, id: string): string {
  * @returns The colours, one per dot.
  */
 function dotInks(group: DrawnGroup): string[] {
-	return [...group.markup.matchAll(/<circle class="ab-pulse"[^>]*fill="(#[0-9a-f]{6})"/gu)].map(
-		(found) => found[1]!,
-	);
+	return [
+		...group.markup.matchAll(
+			/<(?:circle|path) class="ab-pulse"[^>]*(?:fill|stroke)="(#[0-9a-f]{6})"/gu,
+		),
+	].map((found) => found[1]!);
 }
 
 /**
@@ -223,7 +242,7 @@ const BADGE =
  * @returns Its position in the document.
  */
 function lastRouteMark(svg: string): number {
-	return Math.max(svg.lastIndexOf("marker-end"), svg.lastIndexOf('<circle class="ab-pulse"'));
+	return Math.max(svg.lastIndexOf("marker-end"), svg.lastIndexOf('class="ab-pulse"'));
 }
 
 /**

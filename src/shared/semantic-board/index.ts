@@ -77,6 +77,11 @@ export {
 	type DrillDownVariant,
 	DrillDownSchema,
 	type DrillDown,
+	DEFAULT_TRAFFIC_SPEED,
+	DEFAULT_TRAFFIC_VOLUME,
+	EdgeTrafficSchema,
+	type EdgeTraffic,
+	effectiveTraffic,
 	SemanticNodeSchema,
 	type SemanticNode,
 	SemanticEdgeSchema,
@@ -90,6 +95,7 @@ export {
 	subjectIds,
 	emptyContent,
 } from "@/shared/semantic-board/lib/content";
+export { sameSemanticValue } from "@/shared/semantic-board/lib/semantic-value";
 export {
 	AdoptionSchema,
 	type Adoption,

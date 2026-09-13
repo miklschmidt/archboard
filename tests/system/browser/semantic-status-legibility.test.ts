@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { DEFAULT_SEMANTIC_POLICY } from "@/shared/semantic-policy/index";
 
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedCanvas } from "../support/owned-canvas.ts";
@@ -50,13 +51,13 @@ const stageState = (browser: AgentBrowserSession): Promise<string | null> =>
 const edgeInks = (
 	browser: AgentBrowserSession,
 	id: string,
-): Promise<{ line: string; band: string; head: string; dots: string[] }> =>
+): Promise<{ line: string; band: string; head: string; streams: string[] }> =>
 	browser.eval(
 		`(() => {` +
 			` const group = document.querySelector("${SURFACE} [data-semantic-id='${id}']");` +
-			` const paths = [...group.querySelectorAll("path")];` +
+			` const paths = [...group.querySelectorAll(":scope > path")];` +
 			` const line = paths.find((path) => path.getAttribute("marker-end") !== null);` +
-			` const band = paths.find((path) => path !== line && !path.classList.contains("ab-halo"));` +
+			` const band = paths.find((path) => path !== line && !path.classList.contains("ab-halo") && !path.classList.contains("ab-pulse"));` +
 			` const marker = "#" + line.getAttribute("marker-end").slice(5, -1);` +
 			` const head = document.querySelector(marker + " path");` +
 			` return {` +
@@ -64,7 +65,7 @@ const edgeInks = (
 			`  band: getComputedStyle(band).stroke,` +
 			`  head: getComputedStyle(head).fill === "none"` +
 			`   ? getComputedStyle(head).stroke : getComputedStyle(head).fill,` +
-			`  dots: [...group.querySelectorAll("circle.ab-pulse")].map((dot) => getComputedStyle(dot).fill),` +
+			`  streams: [...group.querySelectorAll("path.ab-pulse")].map((path) => getComputedStyle(path).stroke),` +
 			` }; })()`,
 	);
 
@@ -157,26 +158,26 @@ const pick = (browser: AgentBrowserSession, id: string): Promise<unknown> =>
  * would find over the words.
  * @param browser The page.
  * @param id The relationship's or message's semantic id.
- * @returns What is hit at the centre of the pill, how many dots there are, and whether all of them are painted first.
+ * @returns What is hit at the centre of the pill, how many traffic marks there are, and whether all are painted first.
  */
 const overThePill = (
 	browser: AgentBrowserSession,
 	id: string,
-): Promise<{ hit: string; dots: number; dotsFirst: boolean }> =>
+): Promise<{ hit: string; traffic: number; trafficFirst: boolean }> =>
 	browser.eval(
 		`(() => {` +
 			` const pill = [...document.querySelectorAll("${SURFACE} [data-semantic-id='${id}'] rect")]` +
 			`  .find((rect) => !rect.classList.contains("ab-halo"));` +
-			` const dots = [...document.querySelectorAll("${SURFACE} circle.ab-pulse")];` +
+			` const traffic = [...document.querySelectorAll("${SURFACE} .ab-pulse")];` +
 			` const at = pill.getBoundingClientRect();` +
 			` const under = document.elementFromPoint(` +
 			`   Math.round(at.x + at.width / 2), Math.round(at.y + at.height / 2));` +
 			` return {` +
 			`  hit: under === null ? "nothing" : under.tagName.toLowerCase() +` +
 			`   (under.classList.contains("ab-pulse") ? ".ab-pulse" : ""),` +
-			`  dots: dots.length,` +
-			`  dotsFirst: dots.length > 0 && dots.every((dot) =>` +
-			`   (pill.compareDocumentPosition(dot) & Node.DOCUMENT_POSITION_PRECEDING) !== 0),` +
+			`  traffic: traffic.length,` +
+			`  trafficFirst: traffic.length > 0 && traffic.every((mark) =>` +
+			`   (pill.compareDocumentPosition(mark) & Node.DOCUMENT_POSITION_PRECEDING) !== 0),` +
 			` }; })()`,
 	);
 
@@ -184,7 +185,12 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const vault = join(ownerRoot, "semantic-legibility-vault");
-	mkdirSync(vault, { recursive: true });
+	mkdirSync(join(vault, ".archboard"), { recursive: true });
+	const policy = structuredClone(DEFAULT_SEMANTIC_POLICY);
+	policy.nodeKinds["route"]!.color = "blue";
+	policy.nodeKinds["queue"]!.color = "green";
+	policy.nodeKinds["datastore"]!.color = "amber";
+	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(policy));
 	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
 	resources.defer(() => canvas.dispose());
 	registerCanvasBase(canvas.base);
@@ -201,6 +207,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 					board: "legible",
 					origin: "agent",
 					create: {
+						level: "system",
 						variant: "As built",
 						nodes: [
 							{ name: "Gateway", kind: "route", group: "the write path" },
@@ -219,8 +226,15 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 								kind: "call",
 								label: "hands it over",
 								emphasis: "hero",
+								traffic: {},
 							},
-							{ from: "Writer", to: "Ledger", kind: "data", label: "writes" },
+							{
+								from: "Writer",
+								to: "Ledger",
+								kind: "data",
+								label: "writes",
+								traffic: {},
+							},
 						],
 						flows: [
 							{
@@ -303,7 +317,15 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 							},
 							{ name: "Queue", kind: "queue", group: "the write path" },
 						],
-						edges: [{ from: "Gateway", to: "Queue", kind: "queue", label: "enqueues" }],
+						edges: [
+							{
+								from: "Gateway",
+								to: "Queue",
+								kind: "queue",
+								label: "enqueues",
+								traffic: {},
+							},
+						],
 						removeEdges: [await edgeCalled("writes")],
 					},
 				},
@@ -368,27 +390,28 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	const added = await edgeInks(browser, ids["added"] ?? "");
 	expect(added.line).toBe(added.band);
 	expect(added.head).toBe(added.line);
-	expect(added.dots.length).toBeGreaterThan(0);
-	for (const dot of added.dots) {
-		expect(dot).toBe(added.line);
+	expect(added.streams.length).toBe(1);
+	for (const stream of added.streams) {
+		expect(stream).toBe(added.line);
 	}
 	// A relationship the proposal dropped is still drawn, in its own ink, and
 	// sends nothing: a removed line that looked like live traffic would be the
 	// picture claiming the proposal still has it.
 	const gone = await edgeInks(browser, ids["gone"] ?? "");
 	expect(gone.line).toBe(gone.band);
-	expect(gone.dots).toHaveLength(0);
+	expect(gone.head).toBe(gone.line);
+	expect(gone.streams).toHaveLength(0);
 	expect(gone.line).not.toBe(added.line);
 
 	// The words on a relationship are on top of the dots crossing it.
 	const words = await overThePill(browser, ids["hero"] ?? "");
-	expect(words.dots).toBeGreaterThan(0);
-	expect(words.dotsFirst).toBe(true);
-	expect(words.hit).not.toBe("circle.ab-pulse");
+	expect(words.traffic).toBeGreaterThan(0);
+	expect(words.trafficFirst).toBe(true);
+	expect(words.hit).not.toBe("path.ab-pulse");
 
-	// Two parts of one effort share an icon colour; a part of another does not.
+	// Configured types keep distinct chips even when the nodes share a group.
 	const writePath = await iconInk(browser, "Gateway");
-	expect(await iconInk(browser, "Queue")).toBe(writePath);
+	expect(await iconInk(browser, "Queue")).not.toBe(writePath);
 	expect(await iconInk(browser, "Ledger")).not.toBe(writePath);
 
 	// What nobody has decided is on the card, with nothing selected — and
@@ -434,8 +457,8 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 		`document.querySelector("${SURFACE} [data-semantic-kind='step']").dataset.semanticId`,
 	);
 	const message = await overThePill(browser, stepId);
-	expect(message.dots).toBeGreaterThan(0);
-	expect(message.dotsFirst).toBe(true);
+	expect(message.traffic).toBeGreaterThan(0);
+	expect(message.trafficFirst).toBe(true);
 	expect(message.hit).not.toBe("circle.ab-pulse");
 
 	// And all of it again on the other ground. The inks change, because they are
@@ -466,7 +489,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	expect(darkAdded.head).toBe(darkAdded.line);
 	expect(darkAdded.line).not.toBe(added.line);
 	const darkWritePath = await iconInk(browser, "Gateway");
-	expect(await iconInk(browser, "Queue")).toBe(darkWritePath);
+	expect(await iconInk(browser, "Queue")).not.toBe(darkWritePath);
 	expect(await iconInk(browser, "Ledger")).not.toBe(darkWritePath);
 
 	await canvas.assertRunning();
