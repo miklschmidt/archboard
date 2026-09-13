@@ -45,7 +45,11 @@ test("named variants retain their addresses and every current spelling selects t
 		{ id: "now", name: "Queued ingest", lifecycle: "current", parentId: null },
 		{ id: "next", name: "Queue @ edge", lifecycle: "draft", parentId: "now" },
 	];
-	const listing = composeListing([{ name: "Checkout", key: "checkout", variants }], undefined);
+	const listing = composeListing(
+		[{ name: "Checkout", key: "checkout", level: "service", variants }],
+		undefined,
+	);
+	expect(listing.boards.map((board) => board.level)).toEqual(["service", "service", "service"]);
 	expect(
 		listing.boards.map(({ key, identity, variant }) => [key, identity.variant, variant?.lifecycle]),
 	).toEqual([

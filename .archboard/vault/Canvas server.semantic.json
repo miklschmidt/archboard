@@ -1,11 +1,12 @@
 {
-	"schemaVersion": "2.0.0",
+	"schemaVersion": "2.1.0",
 	"kind": "semantic-board",
 	"id": "6E6hL0Zk",
 	"name": "Canvas server",
-	"version": 4,
+	"level": "service",
+	"version": 5,
 	"createdAt": "2026-09-12T22:28:19.714Z",
-	"updatedAt": "2026-09-13T00:47:03.482Z",
+	"updatedAt": "2026-09-13T12:08:40.692Z",
 	"views": [
 		{
 			"id": "FawxUEKE",

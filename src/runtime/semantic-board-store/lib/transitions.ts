@@ -154,6 +154,7 @@ function newBoard(
 		kind: "semantic-board",
 		id,
 		name: input.name,
+		level: input.level,
 		version: FIRST_BOARD_VERSION,
 		createdAt: at,
 		updatedAt: at,
@@ -296,7 +297,13 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 			const carried = editedFamily(before, variant, content.content, changesContent);
 			return {
 				ok: true,
-				board: { ...before, views: content.views, variants: [...carried.variants], updatedAt: at },
+				board: {
+					...before,
+					...(input.level === undefined ? {} : { level: input.level }),
+					views: content.views,
+					variants: [...carried.variants],
+					updatedAt: at,
+				},
 				descendants: carried.descendants,
 			};
 		},

@@ -44,6 +44,20 @@ _Avoid_: box, component, entity, vertex, block
 A connection between two nodes standing for a dependency, call, or flow.
 _Avoid_: arrow, link, connector, relation, line
 
+**Card**:
+The compact depiction of a node with no children shown inside it in the selected
+reading. It is a presentation of a node, not a node kind.
+_Avoid_: node, leaf kind
+
+**Container**:
+The expanded depiction of a node enclosing its visible children. It represents
+structural containment without changing the node's kind or identity.
+_Avoid_: container kind, group, platform tag
+
+**Icon chip**:
+The icon and its surrounding tile identifying a node's kind on a card or container.
+_Avoid_: comparison badge, card body
+
 **Library**:
 The palette of stencils available to drag onto any board. One per canvas
 server, shared by every pane and every tab (ADR 0007). Never a synonym for the
@@ -83,10 +97,39 @@ _Avoid_: board render, export, unqualified screenshot
 
 ### Meaning
 
+**Vault vocabulary**:
+The consumer-defined set of board levels, node kinds and relationship kinds used
+to describe architecture across a vault. It names architectural meaning independently
+of the visual policy used to depict it.
+_Avoid_: palette, theme, board content
+
 **Kind**:
-What sort of architectural unit a node stands for — service, queue, datastore,
-gateway, or external system.
-_Avoid_: type, category, role, class
+The consumer-defined node type: what sort of architectural unit a node stands
+for, such as an API, Kubernetes cluster, queue or external system.
+_Avoid_: category, role, class, drawing shape
+
+**Relationship kind**:
+The consumer-defined type of architectural relationship represented by an edge.
+_Avoid_: line style, arrowhead, emphasis
+
+**Traffic**:
+An optional illustration of flow along a connection, with independent animation
+volume and speed; it is neither measured real-world activity nor connection importance.
+_Avoid_: emphasis, pulse count
+
+**Traffic volume**:
+The rate at which illustrated traffic dots enter a connection, expressed in dots
+per second.
+_Avoid_: dot count, traffic speed
+
+**Traffic speed**:
+The distance an illustrated traffic dot travels along a connection per second.
+_Avoid_: traversal duration, traffic volume
+
+**Emphasis**:
+The author-declared importance of a connection in the board's explanation,
+independent of its relationship kind and traffic.
+_Avoid_: traffic volume, line weight
 
 **Binding**:
 The optional association between a node and its primary code location. Each node
@@ -137,11 +180,22 @@ _Avoid_: lane, frame, rectangle
 **Group**:
 What a node belongs to, as one optional short label: an effort, a team, a
 migration, a family of parts. It is independent of containment and of kind, is
-never inherited from a parent, and a node is in at most one. A renderer owns
-what a group looks like — it derives a colour from the label and stores none —
-so moving a part between groups changes the architecture and retuning the
-colours changes nothing.
+never inherited from a parent, and a node is in at most one.
 _Avoid_: tag, category, layer, swimlane, colour
+
+**Visual policy**:
+The vault-wide interpretation of semantic vocabulary as appearance, shared by
+all boards and variants without changing their architectural meaning.
+_Avoid_: board content, variant, style override
+
+**Color palette**:
+The curated set of named colors available to a visual policy.
+_Avoid_: vault vocabulary, group, stencil library
+
+**Color scope**:
+The inherited color context established by a depicted container for itself and
+its contents, distinct from each node's kind identification.
+_Avoid_: group, platform tag, node kind
 
 **Presentation intent**:
 What a board's depiction should explain: its focal subject, main flow, and
@@ -150,8 +204,8 @@ or styling.
 _Avoid_: coordinates, theme, layout settings
 
 **Level**:
-The abstraction tier a board sits at, drawn from a controlled vocabulary that
-grows as new tiers are genuinely needed — initially system, service, module. A
+The required abstraction classification of a board, chosen from the vocabulary
+defined by the vault's consumer — commonly system, service, module. A
 system board shows interactions between services; a service board shows interactions
 between its modules, with navigation connecting these separate boards. A
 node carries one only to say it differs from its board; a node that says
@@ -202,6 +256,11 @@ The differences between two board variants, identified by the stable identities
 of their architectural content. A proposal's views show its comparison with its baseline
 as derived change labels, rather than authored content.
 _Avoid_: variant, change report
+
+**Comparison status**:
+The derived added, changed, removed or unchanged standing of a subject relative
+to a variant's comparison baseline.
+_Avoid_: authored flag, selection, current designation
 
 **Note**:
 The file in the vault holding one board and its variants. The note is the
