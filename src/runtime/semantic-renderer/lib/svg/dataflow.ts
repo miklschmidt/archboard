@@ -37,7 +37,7 @@ import {
 	SELF_LOOP_CORNER,
 	SELF_LOOP_DROP,
 	SELF_LOOP_REACH,
-} from "@/runtime/semantic-renderer/lib/dataflow-design";
+} from "@/runtime/semantic-renderer/lib/sequence-design";
 import { atlasBoxes } from "@/runtime/semantic-renderer/lib/atlas";
 import { canvasFor, coord, union, type Box } from "@/runtime/semantic-renderer/lib/geometry";
 import type { Palette } from "@/runtime/semantic-renderer/lib/theme";
