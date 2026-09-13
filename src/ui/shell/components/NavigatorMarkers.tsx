@@ -3,10 +3,6 @@ import { StatusDot } from "@/ui/shell/components/StatusDot";
 import type { NavigatorEntry } from "@/ui/shell/lib/navigator-entries";
 import type { AgentActivityEntry } from "@/ui/types";
 
-/** A small technical mark beside a name: two-pixel corners, mono, 16px tall. */
-const MARK_CLASS =
-	"text-technical border-border inline-flex h-4 shrink-0 items-center rounded-[2px] border px-1 font-mono";
-
 const VARIANT_LABELS = { current: "Current", draft: "Draft", historical: "Historical" } as const;
 
 /** Inputs for the small markers beside a name. */
@@ -80,21 +76,22 @@ function DoingLine(props: EntryMarkersProps): JSX.Element | null {
 function EntryMarkers(props: EntryMarkersProps): JSX.Element {
 	const { draft, variant, onScreen } = props.entry;
 	return (
-		<span className="flex shrink-0 gap-1">
+		<span className="text-technical flex h-4 shrink-0 items-center gap-1.5 font-normal">
 			<ActivityMarker entry={props.entry} />
 			{(draft || variant !== undefined) && (
-				<span className={`${MARK_CLASS} text-muted-foreground`}>
+				<span className="text-muted-foreground">
 					{variant === undefined ? "Draft" : VARIANT_LABELS[variant.lifecycle]}
 				</span>
 			)}
-			{onScreen !== null && (
+			{onScreen.map((pane) => (
 				<span
-					className={`${MARK_CLASS} bg-foreground text-background border-foreground font-medium`}
+					key={pane}
+					className="bg-foreground text-background inline-flex h-4 min-w-4 items-center justify-center rounded-[2px] px-1 font-mono font-medium"
 				>
 					<span className="sr-only">on screen in pane </span>
-					{onScreen}
+					{pane}
 				</span>
-			)}
+			))}
 		</span>
 	);
 }

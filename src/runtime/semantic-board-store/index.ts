@@ -15,6 +15,16 @@ export {
 } from "@/runtime/semantic-board-store/lib/location";
 export { listSemanticBoards } from "@/runtime/semantic-board-store/lib/listing";
 export {
+	SEMANTIC_BOARD_CONFIG_PATH,
+	SemanticBoardConfigurationSchema,
+	type SemanticBoardConfiguration,
+	type SemanticBoardConfigurationRead,
+	semanticBoardConfigurationPath,
+	readSemanticBoardConfiguration,
+	configuredSemanticBoardLevelProblem,
+	initializeSemanticBoardConfiguration,
+} from "@/runtime/semantic-board-store/lib/configuration";
+export {
 	type SemanticBoardRead,
 	readSemanticBoard,
 	readSemanticBoardAt,

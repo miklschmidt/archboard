@@ -18,6 +18,7 @@ import {
 	semanticBoardAddress,
 	type SemanticBoardLocation,
 } from "@/runtime/semantic-board-store/lib/location";
+import { configuredSemanticBoardLevelProblem } from "@/runtime/semantic-board-store/lib/configuration";
 
 /** A board that was there and was coherent, or why it was neither. */
 type SemanticBoardRead =
@@ -92,6 +93,10 @@ function readSemanticBoardAt(location: SemanticBoardLocation): SemanticBoardRead
 			`${location.file} holds a board that calls itself "${parsed.board.name}", which is a ` +
 				`different board from "${location.name}"`,
 		);
+	}
+	const configuredLevel = configuredSemanticBoardLevelProblem(parsed.board.level);
+	if (configuredLevel !== null) {
+		return unreadable(location, `${location.file} cannot be read: ${configuredLevel}`);
 	}
 	return { ok: true, board: parsed.board, location };
 }

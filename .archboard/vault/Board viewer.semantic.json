@@ -1,11 +1,12 @@
 {
-	"schemaVersion": "2.0.0",
+	"schemaVersion": "2.1.0",
 	"kind": "semantic-board",
 	"id": "UOXNWLhR",
 	"name": "Board viewer",
-	"version": 2,
+	"level": "module",
+	"version": 4,
 	"createdAt": "2026-09-12T22:28:20.312Z",
-	"updatedAt": "2026-09-13T00:47:03.484Z",
+	"updatedAt": "2026-09-13T12:08:40.369Z",
 	"views": [],
 	"variants": [
 		{
@@ -72,7 +73,7 @@
 						"name": "Render stage states",
 						"kind": "function",
 						"responsibility": "Present every reachable state",
-						"description": "Composes loading, empty, error, stale, drawn, inspection, variant, view, walkthrough, and drill trail surfaces around query state.",
+						"description": "The renderedView and stageBody functions in SemanticBoardStage.tsx present loading, empty, error, stale, drawn, inspection, variant, view, walkthrough, and drill trail surfaces from the entry point’s query and reading state.",
 						"parent": "pZRxBz2h",
 						"binding": {
 							"repo": "github.com/miklschmidt/archboard",
@@ -138,20 +139,32 @@
 							"repo": "github.com/miklschmidt/archboard",
 							"path": "src/ui/semantic-board-canvas/hooks/use-semantic-board-changes.ts"
 						}
+					},
+					{
+						"id": "aYC7if1N",
+						"name": "Viewer entry point",
+						"kind": "function",
+						"responsibility": "Mount queries and reading state",
+						"description": "SemanticBoardStage is the public component mounted by ApplicationPane. It starts the render query through semanticRenderQuery/useQuery, owns the reading hooks, and supplies query state to renderedView.",
+						"parent": "pZRxBz2h",
+						"binding": {
+							"repo": "github.com/miklschmidt/archboard",
+							"path": "src/ui/semantic-board-canvas/components/SemanticBoardStage.tsx"
+						}
 					}
 				],
 				"edges": [
 					{
 						"id": "SBeG5Ns0",
 						"from": "xJIh6Jdp",
-						"to": "pZRxBz2h",
+						"to": "aYC7if1N",
 						"kind": "render",
 						"label": "mount in pane",
 						"emphasis": "normal"
 					},
 					{
 						"id": "ACKA5I1k",
-						"from": "pZRxBz2h",
+						"from": "aYC7if1N",
 						"to": "tmwUm8BL",
 						"kind": "call",
 						"label": "request authoritative bytes",
@@ -247,8 +260,10 @@
 							{
 								"id": "8C2uAWTl",
 								"heading": "Obtain authoritative meaning",
-								"body": "The API decodes the board document and server-rendered picture; board-document resolution makes inspectable meaning available beside the SVG.",
+								"body": "ApplicationPane mounts SemanticBoardStage inside the Semantic viewer boundary. This entry point initiates semantic queries; the API decodes the board and server-rendered picture, and board-document resolution makes inspectable meaning available beside the SVG.",
 								"subjects": [
+									"xJIh6Jdp",
+									"aYC7if1N",
 									"tmwUm8BL",
 									"ntOE7caV"
 								]

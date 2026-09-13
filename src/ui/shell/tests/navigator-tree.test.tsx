@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, expect, test } from "bun:test";
 import { act, createElement } from "react";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { createRoot, type Root } from "react-dom/client";
-import { Shell, type ShellActions, type ShellView } from "@/ui/shell";
+import { Shell, type ShellActions, type ShellPane, type ShellView } from "@/ui/shell";
 import type { BoardEntry } from "@/ui/types";
 
 let root: Root;
@@ -55,9 +55,10 @@ function ignore(): void {
 
 /**
  * Mount the real navigator over a fixed server listing.
+ * @param overrides Workspace state for the behavior under test.
  * @returns The selected board keys.
  */
-function mountNavigator(): string[] {
+function mountNavigator(overrides: Partial<ShellView> = {}): string[] {
 	const selected: string[] = [];
 	const actions: ShellActions = {
 		setTheme: ignore,
@@ -88,11 +89,12 @@ function mountNavigator(): string[] {
 		boardsError: null,
 		boardsLoading: false,
 		selectedBoardKey: "Message delivery@Queued delivery",
-		panes: [],
+		panes: [pane("local-left", "Message delivery@now")],
 		activePaneId: "A",
 		presentation: null,
 		notices: [],
 		agentActivity: {},
+		...overrides,
 	};
 	const container = document.createElement("div");
 	document.body.append(container);
@@ -100,6 +102,93 @@ function mountNavigator(): string[] {
 	act(() => root.render(createElement(Shell, { view, actions })));
 	return selected;
 }
+
+/**
+ * One local pane; its server ID need not be its displayed letter.
+ * @param paneId The server-assigned pane identity.
+ * @param boardKey The board address this pane is displaying, or null when empty.
+ * @returns The shell's local pane state.
+ */
+function pane(paneId: string, boardKey: string | null): ShellPane {
+	return {
+		status: {
+			paneId,
+			clientId: `${paneId}-client`,
+			connected: true,
+			registered: true,
+			boardKey,
+			opened: boardKey,
+			board: null,
+			view: null,
+			lastChangeAt: null,
+			doing: [],
+			version: null,
+		},
+		stage: null,
+		holder: null,
+		takeBack: { kind: "idle" },
+	};
+}
+
+test("architecture level appears once on the board heading, shared across its variant tree", () => {
+	mountNavigator({
+		boards: {
+			boards: BOARDS.map((entry) => ({ ...entry, level: "module" })),
+			onScreen: [],
+		},
+	});
+	const rows = [...document.querySelectorAll<HTMLElement>('[role="treeitem"]')];
+	expect(rows.filter((row) => row.textContent.includes("Module"))).toHaveLength(1);
+	expect(treeRow("Message delivery").textContent).toBe("Message deliveryModule");
+	expect(treeRow("Message delivery").getAttribute("aria-level")).toBe("1");
+});
+
+test("pane badges describe this workspace even when other browser tabs hold boards", () => {
+	mountNavigator({
+		boards: {
+			boards: [
+				...BOARDS,
+				{
+					key: "Agent workbench",
+					identity: { board: "Agent workbench", variant: "Current architecture" },
+					variant: {
+						id: "work",
+						name: "Current architecture",
+						parentId: null,
+						lifecycle: "current",
+					},
+				},
+			],
+			onScreen: [
+				{ paneId: "remote", place: "left", board: "Agent workbench" },
+				{ paneId: "local-left", place: "left", board: "Message delivery@old" },
+				{ paneId: "local-right", place: "right", board: "Message delivery" },
+			],
+		},
+		panes: [pane("local-left", "Message delivery@old"), pane("local-right", "Message delivery")],
+	});
+	expect(treeRow("Current architecture").textContent).not.toContain("on screen in pane");
+	expect(treeRow("Initial").textContent).toContain("on screen in pane A");
+	expect(treeRow("Queued delivery").textContent).toContain("on screen in pane B");
+});
+
+test("current ID and name aliases can mark the same variant in both local panes", () => {
+	mountNavigator({
+		panes: [
+			pane("left", "Message delivery@now"),
+			pane("right", "Message delivery@Queued delivery"),
+		],
+	});
+	const row = treeRow("Queued delivery");
+	expect(row.textContent).toContain("on screen in pane A");
+	expect(row.textContent).toContain("on screen in pane B");
+});
+
+test("an empty first pane leaves the second pane labelled B", () => {
+	mountNavigator({ panes: [pane("left", null), pane("right", "Message delivery@old")] });
+	expect(treeRow("Initial").textContent).toContain("on screen in pane B");
+	expect(treeRow("Queued delivery").textContent).not.toContain("on screen in pane");
+});
 
 test("variant ancestry stays rooted across lifecycle changes and keyboard navigation follows it", () => {
 	const selected = mountNavigator();

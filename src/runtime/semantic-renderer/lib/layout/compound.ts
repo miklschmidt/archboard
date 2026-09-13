@@ -1,4 +1,4 @@
-// One layout run settles cards, frames, ports, routes and label boxes together.
+// One layout owner settles cards, frames, ports, routes and label boxes together.
 // No subsequent paint or atlas pass is allowed to repair these coordinates.
 import ELK from "elkjs/lib/elk-api.js";
 import type { ElkExtendedEdge, ElkNode, ElkShape } from "elkjs/lib/elk-api";
@@ -15,6 +15,7 @@ import {
 	reuseDrawing,
 	seedPredecessor,
 } from "@/runtime/semantic-renderer/lib/layout/compound-predecessor";
+import { placeLabelsOnRuns } from "@/runtime/semantic-renderer/lib/layout/label-runs";
 import { curveThrough, pathOf, simplify } from "@/runtime/semantic-renderer/lib/layout/curves";
 import {
 	COMPOUND_OPTIONS,
@@ -84,14 +85,43 @@ function engineForDrawing(): LayoutEngine {
 /**
  * Keep the process alive only while a layout request still needs its worker.
  * @param graph The complete measured graph.
+ * @param measured Label heights that leave room on ordinary route runs.
  * @returns Its solved geometry.
  */
-async function solveGraph(graph: ElkNode): Promise<ElkNode> {
+async function solveGraph(graph: ElkNode, measured: MeasuredArchitecture): Promise<ElkNode> {
 	const owner = engineForDrawing();
 	owner.pending += 1;
 	owner.worker.ref();
 	try {
-		return await owner.engine.layout(graph, { layoutOptions: COMPOUND_OPTIONS });
+		const height = Math.max(0, ...[...measured.labels.values()].map((label) => label.height));
+		const nodeAir = Number(COMPOUND_OPTIONS["elk.spacing.labelNode"]);
+		const labelAir = Number(COMPOUND_OPTIONS["elk.spacing.labelLabel"]);
+		return await owner.engine.layout(graph, {
+			layoutOptions:
+				height === 0
+					? COMPOUND_OPTIONS
+					: {
+							...COMPOUND_OPTIONS,
+							"elk.layered.spacing.nodeNodeBetweenLayers": String(
+								Math.max(
+									Number(COMPOUND_OPTIONS["elk.layered.spacing.nodeNodeBetweenLayers"]),
+									height + 2 * nodeAir,
+								),
+							),
+							"elk.layered.spacing.edgeNodeBetweenLayers": String(
+								Math.max(
+									Number(COMPOUND_OPTIONS["elk.layered.spacing.edgeNodeBetweenLayers"]),
+									Math.ceil(height / 2 + nodeAir),
+								),
+							),
+							"elk.layered.spacing.edgeEdgeBetweenLayers": String(
+								Math.max(
+									Number(COMPOUND_OPTIONS["elk.layered.spacing.edgeEdgeBetweenLayers"]),
+									height + labelAir,
+								),
+							),
+						},
+		});
 	} finally {
 		owner.pending -= 1;
 		if (owner.pending === 0) {
@@ -165,7 +195,7 @@ function curveOf(result: readonly ElkExtendedEdge[]): DrawingEdge["curve"] {
 }
 
 /**
- * A measured label must have a final box; dropping its words is never recovery.
+ * Read a reserved label box; other measured labels will use clear route runs.
  * @param result The laid-out relationship.
  * @param measured The measured words and dimensions.
  * @returns Its final label when the relationship carries one.
@@ -180,7 +210,7 @@ function drawingLabel(
 	}
 	const shape = result.labels?.[0];
 	if (shape === undefined) {
-		throw new Error(`Layout omitted the label for relationship ${result.id}`);
+		return {};
 	}
 	return { label: { measured: label, box: boxOf(shape) } };
 }
@@ -215,7 +245,7 @@ function drawingEdges(
 }
 
 /**
- * Solve the complete measured compound graph once, then expose final geometry.
+ * Route with measured spacing, reserving only labels that need their own layer.
  * @param content The architecture meaning, including its containment links.
  * @param measured Fixed card and label dimensions and minimum frame dimensions.
  * @param predecessor Geometry inherited from the preceding reading of this view.
@@ -231,18 +261,72 @@ async function layoutCompound(
 		const reused = reuseDrawing(content, measured, predecessor);
 		if (reused !== undefined) return reused;
 	}
+	return settleLabels(content, measured, predecessor, new Set());
+}
+
+/**
+ * Seed all measured relationships before omitting unneeded label reservations.
+ * @param content Current semantic subjects.
+ * @param measured Their measured dimensions.
+ * @param predecessor The immediately preceding drawing.
+ * @param reserved Relationships that could not fit a badge on an ordinary run.
+ * @returns The next complete engine input.
+ */
+function graphForLabels(
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	predecessor: ArchitectureDrawing | undefined,
+	reserved: ReadonlySet<string>,
+): ElkNode {
 	const graph = compoundGraph(content, measured, predecessor);
 	if (predecessor !== undefined) seedPredecessor(graph, content, predecessor);
-	const laidOut = await solveGraph(graph);
+	for (const edge of graph.edges ?? []) {
+		if (!reserved.has(edge.id)) edge.labels = [];
+	}
+	return graph;
+}
+
+/**
+ * Add reservations monotonically until every measured label has a final box.
+ * @param content Current semantic subjects.
+ * @param measured Their fixed measured dimensions.
+ * @param predecessor The same inherited drawing for every attempt.
+ * @param reserved Labels already found to require dedicated engine space.
+ * @returns One final drawing with every relationship and label present.
+ */
+async function settleLabels(
+	content: VariantContent,
+	measured: MeasuredArchitecture,
+	predecessor: ArchitectureDrawing | undefined,
+	reserved: Set<string>,
+): Promise<ArchitectureDrawing> {
+	const laidOut = await solveGraph(
+		graphForLabels(content, measured, predecessor, reserved),
+		measured,
+	);
 	const nodes = drawingNodes(laidOut.children ?? [], measured, 0);
 	const extent = boxOf(laidOut);
-	return {
-		width: extent.width,
-		height: extent.height,
-		cards: nodes.filter((node) => node.measured.headerHeight === 0),
-		containers: nodes.filter((node) => node.measured.headerHeight > 0),
-		edges: drawingEdges(content, laidOut, measured),
-	};
+	const drawing = placeLabelsOnRuns(
+		{
+			width: extent.width,
+			height: extent.height,
+			cards: nodes.filter((node) => node.measured.headerHeight === 0),
+			containers: nodes.filter((node) => node.measured.headerHeight > 0),
+			edges: drawingEdges(content, laidOut, measured),
+		},
+		measured.labels,
+	);
+	const missing = drawing.edges.filter(
+		({ edge, label }) => measured.labels.has(edge.id) && label === undefined,
+	);
+	if (missing.length === 0) return drawing;
+	// Each retry adds a reservation; the measured label count bounds the work.
+	for (const { edge } of missing) {
+		if (reserved.has(edge.id))
+			throw new Error(`Layout omitted the reserved label for relationship ${edge.id}`);
+		reserved.add(edge.id);
+	}
+	return settleLabels(content, measured, predecessor, reserved);
 }
 
 export { layoutCompound };

@@ -20,6 +20,8 @@ export interface BoardEntry {
 	/** The board key a pane is addressed with: `pipeline`, or `pipeline@variant`. */
 	key: string;
 	identity: BoardIdentity;
+	/** Architecture level shared by every variant of this board. */
+	level?: SemanticBoardEntry["level"];
 	/** The persisted variant, absent for an unreadable board. */
 	variant?: SemanticBoardEntry["variants"][number];
 	error?: string;

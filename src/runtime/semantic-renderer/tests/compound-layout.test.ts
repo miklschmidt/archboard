@@ -3,6 +3,7 @@ import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import {
 	distanceToFrame,
+	routeCrosses,
 	routeLabels,
 	routePoints,
 } from "@/runtime/semantic-renderer/tests/drawn-routes";
@@ -24,6 +25,28 @@ const NESTED = VariantContentSchema.parse({
 });
 
 describe("compound architecture layout", () => {
+	test("predecessor boundary routes avoid cards after a nested insertion", async () => {
+		const content = VariantContentSchema.parse({
+			nodes: [
+				...NESTED.nodes,
+				{ id: "added", name: "Additional processing", kind: "module", parent: "inner" },
+			],
+			edges: [
+				...NESTED.edges,
+				{ id: "newedge", from: "worker", to: "added", kind: "call" },
+				{ id: "newout", from: "added", to: "sink", kind: "call" },
+			],
+		});
+		const drawing = await renderArchitecture({ content, predecessors: [NESTED], theme: "light" });
+		const routes = routePoints(drawing.svg);
+		for (const edge of content.edges) {
+			for (const id of ["entry", "worker", "added", "sink"]) {
+				if (id === edge.from || id === edge.to) continue;
+				expect(routeCrosses(routes.get(edge.id)!, drawing.atlas.nodes[id]!)).toBe(false);
+			}
+		}
+	});
+
 	test("ancestor and cross-container routes attach to their own semantic endpoints", async () => {
 		const drawing = await renderArchitecture({ content: NESTED, theme: "light" });
 		const routes = routePoints(drawing.svg);

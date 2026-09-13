@@ -5,6 +5,7 @@
 // re-run replaces the block instead of appending a second copy.
 import fs from "node:fs";
 import path from "node:path";
+import { initializeSemanticBoardConfiguration } from "@/runtime/semantic-board-store/index";
 import { execFileSync } from "node:child_process";
 import type { CommandContext } from "@/cli/command-contract/contract";
 import { expandHome, packageRoot, resolveInvocation } from "@/cli/commands/lib/skill-destination";
@@ -312,6 +313,11 @@ async function writeSetup(options: SetupOptions): Promise<SetupResult | undefine
 	const vault = await chooseVault(options, repo);
 	const vaultCreated = !fs.existsSync(vault);
 	fs.mkdirSync(vault, { recursive: true });
+	if (vaultCreated) {
+		initializeSemanticBoardConfiguration(vault, {
+			levels: ["system", "service", "module"],
+		});
+	}
 
 	const chosen = chooseSetupDoc(options, repo);
 	const existing = chosen.existed ? fs.readFileSync(chosen.file, "utf-8") : "";

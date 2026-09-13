@@ -50,6 +50,7 @@ import { refuse, type SemanticRefusalCode } from "@/runtime/semantic-board-store
 import type { SemanticTransition } from "@/runtime/semantic-board-store/lib/transitions";
 import type { DescendantOutcome } from "@/runtime/semantic-board-store/lib/propagate";
 import { edgeIdentityRefusal } from "@/runtime/semantic-board-store/lib/edge-identity";
+import { configuredSemanticBoardLevelProblem } from "@/runtime/semantic-board-store/lib/configuration";
 
 /**
  * Who is writing.
@@ -402,6 +403,15 @@ function acceptable(
 	}
 	const wrongAddress = misaddressedRefusal(location, parsed.board);
 	if (wrongAddress !== null) return wrongAddress;
+	const configuredLevel = configuredSemanticBoardLevelProblem(parsed.board.level);
+	if (configuredLevel !== null) {
+		return {
+			outcome: "rejected",
+			code: "INVALID_CONTENT",
+			problem: `refusing to ${command.transition.summary}: ${configuredLevel}`,
+			location,
+		};
+	}
 	const identity = edgeIdentityRefusal(parsed.board);
 	return identity === null
 		? { board: parsed.board }

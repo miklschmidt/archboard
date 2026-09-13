@@ -1,11 +1,12 @@
 {
-	"schemaVersion": "2.0.0",
+	"schemaVersion": "2.1.0",
 	"kind": "semantic-board",
 	"id": "9ncuT5DP",
 	"name": "Agent workbench",
-	"version": 3,
+	"level": "service",
+	"version": 4,
 	"createdAt": "2026-09-12T22:28:20.199Z",
-	"updatedAt": "2026-09-13T00:47:03.481Z",
+	"updatedAt": "2026-09-13T12:08:40.047Z",
 	"views": [],
 	"variants": [
 		{

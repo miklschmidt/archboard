@@ -1,11 +1,12 @@
 {
-	"schemaVersion": "2.0.0",
+	"schemaVersion": "2.1.0",
 	"kind": "semantic-board",
 	"id": "gbyqW4H3",
 	"name": "Semantic renderer",
-	"version": 6,
+	"level": "module",
+	"version": 7,
 	"createdAt": "2026-09-12T22:28:19.940Z",
-	"updatedAt": "2026-09-13T11:07:15.433Z",
+	"updatedAt": "2026-09-13T12:08:39.603Z",
 	"views": [
 		{
 			"id": "hDJkR6K5",

@@ -1,11 +1,12 @@
 {
-	"schemaVersion": "2.0.0",
+	"schemaVersion": "2.1.0",
 	"kind": "semantic-board",
 	"id": "OjRLKb74",
 	"name": "Renderer layout",
-	"version": 11,
+	"level": "module",
+	"version": 13,
 	"createdAt": "2026-09-13T00:02:13.555Z",
-	"updatedAt": "2026-09-13T10:54:00.446Z",
+	"updatedAt": "2026-09-13T12:08:40.153Z",
 	"views": [
 		{
 			"id": "gKxiRSCO",
@@ -62,7 +63,7 @@
 		{
 			"id": "2fmxYVJ6",
 			"name": "Initial",
-			"lifecycle": "current",
+			"lifecycle": "historical",
 			"content": {
 				"nodes": [
 					{
@@ -316,7 +317,7 @@
 		{
 			"id": "8JVuwOvJ",
 			"name": "Readable layout",
-			"lifecycle": "draft",
+			"lifecycle": "current",
 			"parent": "2fmxYVJ6",
 			"content": {
 				"nodes": [
@@ -690,5 +691,13 @@
 			}
 		}
 	],
-	"current": "2fmxYVJ6"
+	"current": "8JVuwOvJ",
+	"adoptions": [
+		{
+			"variant": "8JVuwOvJ",
+			"from": "2fmxYVJ6",
+			"at": "2026-09-13T11:27:05.775Z",
+			"reason": "The readable renderer is implemented, validated, and merged into feat/semantic-boards."
+		}
+	]
 }

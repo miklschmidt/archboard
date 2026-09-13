@@ -56,6 +56,24 @@ const SemanticVersionFieldSchema = z
 const TimestampSchema = z.iso.datetime();
 
 /**
+ * The abstraction level a board says it covers.
+ *
+ * `system`, `service` and `module` are the vocabulary in use, rather than a
+ * closed enum: a project may add a level when its architecture actually needs
+ * one. Keeping the value slug-shaped makes authored levels stable in JSON,
+ * commands and the compact label shown to a reader.
+ */
+const SemanticBoardLevelSchema = z
+	.string()
+	.trim()
+	.min(1, "level is required")
+	.regex(
+		/^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/iu,
+		'level must use letters, digits, "-", "_" or "." (the vocabulary in use is system, service, module)',
+	);
+type SemanticBoardLevel = z.infer<typeof SemanticBoardLevelSchema>;
+
+/**
  * One architectural state.
  *
  * `parent` is the variant this one was derived from — its actual predecessor,
@@ -124,6 +142,7 @@ const SemanticBoardSchema = z
 		kind: z.literal("semantic-board"),
 		id: SemanticIdSchema,
 		name: DisplayNameSchema,
+		level: SemanticBoardLevelSchema,
 		version: z.int().min(FIRST_BOARD_VERSION),
 		createdAt: TimestampSchema,
 		updatedAt: TimestampSchema,
@@ -227,6 +246,8 @@ export {
 	FIRST_BOARD_VERSION,
 	SemanticVariantSchema,
 	type SemanticVariant,
+	SemanticBoardLevelSchema,
+	type SemanticBoardLevel,
 	SemanticBoardSchema,
 	type SemanticBoard,
 	currentVariant,

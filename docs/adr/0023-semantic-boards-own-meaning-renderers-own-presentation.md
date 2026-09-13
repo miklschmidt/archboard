@@ -154,6 +154,13 @@ the board and its nodes, independently of their graphical representation.
 
 ## Delivery
 
+The later TASK-203 decisions refine consumer vocabulary and appearance in
+[ADR 0024](0024-vault-configuration-owns-vocabulary-and-presentation.md),
+[ADR 0025](0025-containment-and-type-own-distinct-visual-channels.md), and
+[ADR 0026](0026-vault-diagnostics-drive-cli-and-agent-repair.md).
+Their acceptance records product decisions; implementation of that work remains
+subject to completing the TASK-203 plan.
+
 The product decisions above were accepted through Q34 of the TASK-169 interview.
 The accepted implementation design is in
 [semantic-boards-implementation.md](../design/semantic-boards-implementation.md),

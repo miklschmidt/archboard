@@ -17,6 +17,7 @@ import {
 } from "@/runtime/engine/canvas-client";
 import {
 	SemanticBoardSchema,
+	SemanticBoardLevelSchema,
 	ReconciliationIssueSchema,
 	SemanticRenderReplySchema,
 	type FontSource,
@@ -25,12 +26,19 @@ import {
 } from "@/shared/semantic-board/index";
 
 /** One board in the vault's semantic listing. */
-const SemanticBoardEntrySchema = z.object({ name: z.string(), key: z.string() });
+const SemanticBoardEntrySchema = z.object({
+	name: z.string(),
+	key: z.string(),
+	level: SemanticBoardLevelSchema.optional(),
+});
+type SemanticBoardEntry = z.infer<typeof SemanticBoardEntrySchema>;
 
 const ListingReplySchema = z.object({
 	success: z.literal(true),
+	levels: z.array(SemanticBoardLevelSchema),
 	boards: z.array(SemanticBoardEntrySchema),
 });
+type SemanticBoardListing = z.infer<typeof ListingReplySchema>;
 
 const BoardReplySchema = z.object({ success: z.literal(true), board: SemanticBoardSchema });
 
@@ -139,8 +147,8 @@ async function postSemantic(
  * Every semantic board the canvas's vault holds.
  * @returns The boards, by name.
  */
-async function listSemanticBoardsOnCanvas(): Promise<Array<{ name: string; key: string }>> {
-	return ListingReplySchema.parse(await requestJson<unknown>("/api/semantic-boards")).boards;
+async function listSemanticBoardsOnCanvas(): Promise<SemanticBoardListing> {
+	return ListingReplySchema.parse(await requestJson<unknown>("/api/semantic-boards"));
 }
 
 /**
@@ -266,6 +274,9 @@ async function branchSemanticBoardOnCanvas(
 }
 
 export {
+	SemanticBoardEntrySchema,
+	type SemanticBoardEntry,
+	type SemanticBoardListing,
 	ReconciliationReportSchema,
 	type ReconciliationReport,
 	type SemanticWriteAnswer,

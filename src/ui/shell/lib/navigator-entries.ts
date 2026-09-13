@@ -6,7 +6,7 @@
 import { listedBoardKey } from "@/ui/board-catalog";
 import { boardAddressOf } from "@/ui/semantic-board-canvas";
 import type { ShellView } from "@/ui/shell/types/contracts";
-import type { AgentActivityEntry, BoardEntry, BoardIdentity, BoardListing } from "@/ui/types";
+import type { AgentActivityEntry, BoardEntry, BoardIdentity } from "@/ui/types";
 
 /** Pane letters in reading order; a third pane would be a number. */
 const PANE_LETTERS = ["A", "B"] as const;
@@ -24,8 +24,8 @@ function paneLetter(index: number): string {
 interface NavigatorEntry extends BoardEntry {
 	/** Being worked on but not listed by the vault yet. */
 	draft: boolean;
-	/** The letter of the pane showing this board, or null when no pane holds it. */
-	onScreen: string | null;
+	/** Local pane letters showing this board, in the same order as the pane bar. */
+	onScreen: readonly string[];
 	/** What an agent is doing to this board right now, or null (ADR 0022). */
 	activity: AgentActivityEntry | null;
 }
@@ -57,22 +57,23 @@ interface NavigatorBranch {
 /** A named board and its variant ancestry. */
 interface NavigatorGroup {
 	board: string;
+	level: BoardEntry["level"];
 	variants: NavigatorEntry[];
 	roots: NavigatorBranch[];
 }
 
 /**
- * Which pane letter shows each board key.
- * @param listing The listing with its on-screen panes in reading order.
- * @returns Board key to pane letter.
+ * Which local panes show each board key. The server inventory includes other
+ * browser tabs, so its order cannot name the panes in this workspace.
+ * @param view The local shell panes and the catalog used to resolve variant aliases.
+ * @returns Board key to all local pane letters showing it.
  */
-function onScreenLetters(listing: BoardListing): ReadonlyMap<string, string> {
-	const letters = new Map<string, string>();
-	listing.onScreen.forEach((pane, index) => {
-		const key = listedBoardKey(listing, pane.board) ?? pane.board;
-		if (!letters.has(key)) {
-			letters.set(key, paneLetter(index));
-		}
+function onScreenLetters(view: ShellView): ReadonlyMap<string, readonly string[]> {
+	const letters = new Map<string, string[]>();
+	view.panes.forEach((pane, index) => {
+		const key = listedBoardKey(view.boards, pane.status.boardKey);
+		if (key === null) return;
+		letters.set(key, [...(letters.get(key) ?? []), paneLetter(index)]);
 	});
 	return letters;
 }
@@ -92,11 +93,11 @@ interface EntrySource extends BoardEntry {
 function toEntry(
 	source: EntrySource,
 	view: ShellView,
-	letters: ReadonlyMap<string, string>,
+	letters: ReadonlyMap<string, readonly string[]>,
 ): NavigatorEntry {
 	return {
 		...source,
-		onScreen: letters.get(source.key) ?? null,
+		onScreen: letters.get(source.key) ?? [],
 		activity: view.agentActivity[boardAddressOf(source.key)?.board ?? source.key] ?? null,
 	};
 }
@@ -128,11 +129,12 @@ function boardSources(view: ShellView): EntrySource[] {
  * @returns Groups by board name with siblings ordered by variant name.
  */
 function groupBoards(view: ShellView): NavigatorGroup[] {
-	const letters = onScreenLetters(view.boards);
+	const letters = onScreenLetters(view);
 	const groups = new Map<string, NavigatorGroup>();
 	for (const source of boardSources(view)) {
 		const group = groups.get(source.identity.board) ?? {
 			board: source.identity.board,
+			level: source.level,
 			variants: [],
 			roots: [],
 		};

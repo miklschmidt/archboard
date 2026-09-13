@@ -26,6 +26,7 @@ import {
 	createSemanticBoardOnCanvas,
 	editSemanticBoardOnCanvas,
 	listSemanticBoardsOnCanvas,
+	SemanticBoardEntrySchema,
 	readSemanticBoardOnCanvas,
 	renderSemanticBoardOnCanvas,
 } from "@/runtime/semantic-board-client/index";
@@ -61,7 +62,8 @@ const semanticNewContract = defineCommand({
 	usage: "semantic new <name> [--input <file.json>]",
 	description:
 		"Creates one persisted semantic board, empty or populated from a stated architecture. " +
-		"The stated architecture is JSON with `nodes` and `edges`, read from --input or standard input.",
+		"The stated architecture is JSON with required board `level` metadata plus `nodes` and `edges`, " +
+		"read from --input or standard input.",
 	examples: [
 		'archboard semantic new pipeline --doing "starting the pipeline board"',
 		'archboard semantic new pipeline --input arch.json --doing "drawing the current pipeline"',
@@ -143,7 +145,8 @@ const semanticEditContract = defineCommand({
 	usage: "semantic edit <name> --expect-version <n> [--input <file.json>]",
 	description:
 		"Applies one batch of stated changes to a semantic board in one write. The batch is JSON with " +
-		"`nodes`, `edges`, `flows`, `views` and the matching `remove...` lists, read from --input or " +
+			"optional board `level` metadata, `nodes`, `edges`, `flows`, `views` and the matching " +
+			"`remove...` lists, read from --input or " +
 		"standard input, and it lands whole or not at all. Architectural content targets the selected " +
 		"variant; views are shared by the whole board. --expect-version is required: state the " +
 		"version the board reported when you read it, and the write is refused if somebody has changed " +
@@ -340,7 +343,8 @@ const semanticBranchContract = defineCommand({
 
 const SemanticListingResultSchema = z.object({
 	success: z.literal(true),
-	boards: z.array(z.object({ name: z.string(), key: z.string() })),
+	levels: z.array(z.string()),
+	boards: z.array(SemanticBoardEntrySchema),
 });
 
 const semanticContract = defineCommand({
@@ -388,7 +392,7 @@ const semanticContract = defineCommand({
 	 */
 	async handler(_input, context) {
 		await context.require("server", "semantic");
-		return { result: { success: true as const, boards: await listSemanticBoardsOnCanvas() } };
+		return { result: await listSemanticBoardsOnCanvas() };
 	},
 });
 
