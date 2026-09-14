@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { VariantContentSchema } from "@/shared/semantic-board/index";
 import { renderArchitecture } from "@/runtime/semantic-renderer/index";
 import { bodyShift, roundBridges } from "./drawn-routes";
+import cornerCrossing from "./corner-crossing.json";
 
 // Complete bipartite connections cannot all be drawn without crossings. Equal
 // node names keep text measurement from choosing a special-case layout.
@@ -10,6 +11,27 @@ const CROSSED = VariantContentSchema.parse({
 	edges: ["a", "b", "c"].flatMap((from) =>
 		["x", "y", "z"].map((to) => ({ id: from + to, from, to, kind: "call", traffic: {} })),
 	),
+});
+
+test("a crossing beside a rounded turn bridges the other route when that side has room", async () => {
+	const [before, content] = cornerCrossing.map((value) => VariantContentSchema.parse(value));
+	const drawing = await renderArchitecture({
+		content: content!,
+		predecessors: [before!],
+		theme: "dark",
+	});
+	const lines = routes(drawing.svg);
+	const upper = lines.find((line) => line.id === "eKqUHYSH")!;
+	const lower = lines.find((line) => line.id === "I1lGjMES")!;
+	const cutouts = masks(drawing.svg).get(lower.mask ?? "") ?? [];
+	expect(
+		cutouts.some((cutout) => {
+			const span = cutout.path.replace(/^M/u, "L");
+			return (
+				roundBridges(` ${span}`).length === 1 && upper.paths.every((path) => path.includes(span))
+			);
+		}),
+	).toBe(true);
 });
 
 /** Read only the route groups, excluding separately painted relationship words. */
@@ -44,7 +66,7 @@ function masks(svg: string) {
 	);
 }
 
-test("round bridges lift the later connection with a narrow clearance on lower ink", async () => {
+test("round bridges share one curve and narrowly clear the ink beneath them", async () => {
 	const light = await renderArchitecture({ content: CROSSED, theme: "light" });
 	const dark = await renderArchitecture({ content: CROSSED, theme: "dark" });
 	const lines = routes(light.svg);
@@ -52,7 +74,7 @@ test("round bridges lift the later connection with a narrow clearance on lower i
 	const cutouts = masks(light.svg);
 	expect(lines).toHaveLength(9);
 	let crossings = 0;
-	for (const [upperIndex, upper] of lines.entries()) {
+	for (const upper of lines) {
 		// The only route paths are line, halo and traffic: no background patch.
 		expect(upper.paths).toHaveLength(3);
 		expect(new Set(upper.paths).size).toBe(1);
@@ -60,13 +82,13 @@ test("round bridges lift the later connection with a narrow clearance on lower i
 			crossings += 1;
 			const localCurve = bridge.span.trim().replace(/^L/u, "M");
 			const matchingCutouts = lines
-				.slice(0, upperIndex)
+				.filter((lower) => lower.id !== upper.id)
 				.flatMap((lower) =>
 					lower.mask === undefined
 						? []
 						: (cutouts.get(lower.mask) ?? []).filter((cutout) => cutout.path === localCurve),
 				);
-			expect(matchingCutouts.length, "the bridge cuts only earlier-painted ink").toBeGreaterThan(0);
+			expect(matchingCutouts.length, "the bridge clears the crossed connection").toBeGreaterThan(0);
 			for (const cutout of matchingCutouts) {
 				expect(cutout.width - upper.width).toBeCloseTo(3, 5);
 			}
