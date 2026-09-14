@@ -12,6 +12,7 @@ import {
 	RASTER_MIN_SCALE,
 	SemanticRasterError,
 	createSemanticRasterizer,
+	type PageRegion,
 } from "@/runtime/semantic-rasterizer/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
 import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
@@ -26,7 +27,29 @@ const RasterizeInputSchema = z.object({
 	view: SelectorSchema.optional(),
 	theme: z.enum(THEMES).default("light"),
 	scale: z.coerce.number().min(RASTER_MIN_SCALE).max(RASTER_MAX_SCALE).default(1),
+	region: z
+		.string()
+		.regex(
+			/^\d+,\d+,[1-9]\d*,[1-9]\d*$/u,
+			"--region takes x,y,width,height in whole diagram pixels",
+		)
+		.transform((text) => {
+			const [x = 0, y = 0, width = 1, height = 1] = text.split(",").map(Number);
+			return { x, y, width, height };
+		})
+		.optional(),
 	out: z.string(),
+});
+
+/** The diagram's page, in the CSS pixels the renderer states. */
+type PageSize = z.infer<typeof PageSizeSchema>;
+const PageSizeSchema = z.object({ width: z.number(), height: z.number() });
+
+const RegionSchema = z.object({
+	x: z.int(),
+	y: z.int(),
+	width: z.int(),
+	height: z.int(),
 });
 
 const SemanticRasterizeResultSchema = z.object({
@@ -45,7 +68,9 @@ const SemanticRasterizeResultSchema = z.object({
 	/** Bitmap pixels per diagram pixel. */
 	scale: z.number(),
 	/** The diagram's own page, in the CSS pixels the renderer states; the bitmap is this times the scale. */
-	diagram: z.object({ width: z.number(), height: z.number() }),
+	diagram: PageSizeSchema,
+	/** The rectangle of the page that was drawn, or null for the whole diagram. */
+	region: RegionSchema.nullable(),
 	/**
 	 * Where the picture came from: the renderer's document as it was drawn,
 	 * identified by content so a capture can be tied to exactly one saved
@@ -82,6 +107,24 @@ const rasterFailedRefusal = {
 	stream: "stderr" as const,
 	description: "The browser did not produce the bitmap the diagram asks for; nothing was written.",
 };
+
+/**
+ * The requested region, refused when it reaches outside the page: a tile
+ * that is partly ground would be a picture of nothing anybody asked for.
+ * @param region What was asked for, if anything.
+ * @param page The diagram's page.
+ * @returns The region, or undefined for the whole page.
+ * @throws {CliUsageError} When the region leaves the page.
+ */
+function regionWithin(region: PageRegion | undefined, page: PageSize): PageRegion | undefined {
+	if (region === undefined) return undefined;
+	if (region.x + region.width > page.width || region.y + region.height > page.height) {
+		throw new CliUsageError(
+			`--region ${region.x},${region.y},${region.width},${region.height} reaches outside the ${page.width}×${page.height} diagram.`,
+		);
+	}
+	return region;
+}
 
 const semanticRasterizeContract = defineCommand({
 	path: ["semantic", "rasterize"],
@@ -149,6 +192,15 @@ const semanticRasterizeContract = defineCommand({
 			default: "1",
 			description: `Bitmap pixels per diagram pixel, ${RASTER_MIN_SCALE} to ${RASTER_MAX_SCALE}; 1 is native`,
 		},
+		{
+			kind: "option",
+			key: "region",
+			spellings: ["--region"],
+			value: "required",
+			placeholder: "x,y,width,height",
+			description:
+				"Draw only this rectangle of the diagram's page, in diagram pixels: a native-detail tile of a large diagram, never the diagram itself",
+		},
 	],
 	input: { ingress: RasterizeInputSchema },
 	result: SemanticRasterizeResultSchema,
@@ -205,7 +257,13 @@ const semanticRasterizeContract = defineCommand({
 		let capture;
 		try {
 			capture = await rasterizer.rasterize(
-				{ svg: drawn.svg, width: drawn.width, height: drawn.height, scale: input.scale },
+				{
+					svg: drawn.svg,
+					width: drawn.width,
+					height: drawn.height,
+					scale: input.scale,
+					region: regionWithin(input.region, drawn),
+				},
 				context.signal,
 			);
 		} finally {
@@ -228,6 +286,7 @@ const semanticRasterizeContract = defineCommand({
 				height: capture.height,
 				scale: input.scale,
 				diagram: { width: drawn.width, height: drawn.height },
+				region: input.region ?? null,
 				source: {
 					renderer: "semantic-renderer" as const,
 					fonts: "embedded" as const,

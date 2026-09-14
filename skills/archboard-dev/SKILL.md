@@ -121,12 +121,25 @@ Two facts about the evidence that the first batch had to teach:
   command.** The harness keeps every file change of the stream, fails the
   write guardrail on a board file under the vault, and shows the grader the
   list; a final board that is right proves nothing about how it got there. A
-  command that reads a board file — `sed -n`, `jq`, `python -m json.tool …
+  command that reads a board file (`sed -n`, `jq`, `python -m json.tool`
+  with its output discarded) is a read, and `semantic edit --help` is not a
+  write attempt. Commands that reach for `evals/`, the harness source or
+  another run's directory are recorded as exposure; a contaminated run is
+  listed apart and blocks the token comparison without being called a board
+  failure.
 
-> /dev/null`— is a read, and`semantic edit --help`is not a write attempt.
-  Commands that reach for`evals/`, the harness source or another run's
-> directory are recorded as exposure; a contaminated run is listed apart and
-> blocks the token comparison without being called a board failure.
+- **The harness takes the pictures; the author never supplies one.** Every
+  scenario declares `captures`: the boards, views and variants its request
+  names, both sides of a comparison, the data-flow view of a sequence. After
+  the author ran, and after a failed run where the canvas is still up, the
+  harness draws each through `archboard semantic rasterize` at native scale,
+  records provenance (version, variant, view, size, SVG digest), cuts a large
+  one into native-scale tiles, and lists a capture it could not take as
+  failed with the reason; a declared view the author never made is a failed
+  capture, never a default picture. The grader is told to open every capture
+  as an image and to name the ones it opened; the report downgrades a visual
+  pass the harness cannot corroborate to incomplete. Rasterizing needs a
+  Chromium-family executable (`ARCHBOARD_RENDERER_CHROMIUM` names one).
 
 - **Codex's `turn.completed` usage is the thread's cumulative total.** A
   resumed grading call reports everything the session has cost so far, so a

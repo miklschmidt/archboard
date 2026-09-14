@@ -204,6 +204,7 @@ const READING: Reading = {
 			file: "/x.svg",
 		},
 	],
+	captures: [],
 	inspections: [
 		{
 			board: "Flask",

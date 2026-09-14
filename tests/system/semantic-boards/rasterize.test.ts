@@ -216,6 +216,31 @@ describe("semantic rasterize", () => {
 		const badScale = cli(["semantic", "rasterize", "transfers", "--scale", "9", "--out", out]);
 		expect(badScale.status).toBe(2);
 		expect(fs.existsSync(out)).toBe(false);
+		// A region is a native-detail tile of the page and never reaches past it.
+		const outside = cli([
+			"semantic",
+			"rasterize",
+			"transfers",
+			"--region",
+			"100000,0,10,10",
+			"--out",
+			out,
+		]);
+		expect(outside.status).toBe(2);
+		expect(fs.existsSync(out)).toBe(false);
+		const tile = path.join(vault, "tile.png");
+		const region = cli([
+			"semantic",
+			"rasterize",
+			"transfers",
+			"--region",
+			"0,0,120,80",
+			"--out",
+			tile,
+		]);
+		expect(region.status, region.stderr).toBe(0);
+		expect(JSON.parse(region.stdout).region).toEqual({ x: 0, y: 0, width: 120, height: 80 });
+		expect(pngSize(tile)).toEqual({ width: 120, height: 80 });
 		const empty = cli(
 			["semantic", "new", "blank", "--doing", "starting an empty board"],
 			JSON.stringify({ level: "system" }),

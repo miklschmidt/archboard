@@ -97,12 +97,36 @@ to change and on what it changed.
 
 ## What you can and cannot see
 
-The bundle lists the renders the harness drew; a run whose list is empty has
-no picture for you, whatever its final message says about rendering. Score
-readability from the saved names, responsibilities and views, say in the
-summary that no render was supplied, and never describe a picture you did
-not open. A render that shows the architecture grammar is not evidence about
-a sequence the request asked for.
+The bundle's `captures` list is what you can see: one PNG per diagram the
+request asked for (every board, view and variant it named, both sides of a
+comparison, the data-flow view of a sequence), taken by the harness from the
+final saved board at native scale, each with its provenance (board version,
+variant, view, dimensions, the digest of the SVG it was drawn from). Open
+every capture with your image viewing tool and look at it; a large capture
+also lists native-scale tiles under `tiles`, and where the whole image is too
+small to read a label, open the tiles. Reading the SVG text or the board
+JSON, seeing that a file exists, or the author's claim to have looked is not
+looking at a diagram; only a picture you opened counts, and you say which in
+`visual.inspectedCaptures`.
+
+A capture whose `ok` is false has no picture, and its `detail` says why (a
+view the author never made, a variant that does not exist, a rasterizer
+failure). Never describe it, and never let the architecture picture stand in
+for the sequence the request asked for: a capture of the wrong view is a
+missing capture. Older `renders/` SVGs are the deterministic checks' own
+evidence, not yours.
+
+What to look for, per capture, and to write in `visual.observations`:
+names and labels readable at native scale; nothing cut off at the page edge;
+no cards, labels or lines drawn over one another; every relationship's
+endpoints on the parts it names, arrowheads where the meaning says; for a
+sequence, the participants in the stated order with every message readable
+in order, returns and repeats distinguishable. The visual verdict is `pass`
+only for a run whose every listed capture you opened and found legible;
+`fail` when you saw a defect; `incomplete` when a capture was not taken or
+you did not open one. The harness records which captures it took and
+downgrades a pass it cannot corroborate to incomplete. A still capture shows
+traffic marks at their first frame and proves nothing about animation.
 
 ## Scores (0-10 each)
 
@@ -111,9 +135,12 @@ a sequence the request asked for.
 - **architecturalTruth**: does it match what the Flask source at that revision
   actually does, at the level the request asked for, with fewer truer parts
   over many?
-- **readability**: is the rendered diagram legible and organised: sensible
-  names, one-line responsibilities, no unexplained parts, views that isolate
-  what they claim to?
+- **readability**: is the captured diagram legible and organised, as you saw
+  it: sensible names, one-line responsibilities, no unexplained parts, views
+  that isolate what they claim to, nothing clipped or overlapping? Score it
+  from the captures you opened; a run with no capture you could open scores
+  what the saved names and views support and no more, and its summary says
+  no picture was seen.
 
 10 is a board an expert would sign; 5 is usable with corrections; 0 is wrong
 or absent. Score the work, not the effort: a longer transcript earns nothing.

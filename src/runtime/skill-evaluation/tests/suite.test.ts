@@ -130,6 +130,43 @@ describe("the canonical suite", () => {
 		expect([...traffic].toSorted()).toEqual(["custom", "default", "off"]);
 	});
 
+	test("every scenario declares the captures of what its request asks to see, sequences through their data-flow view and comparisons on both sides", () => {
+		for (const scenario of loaded.suite.evals) {
+			expect(scenario.captures.length, scenario.id).toBeGreaterThan(0);
+			const labels = scenario.captures.map((capture) => capture.label);
+			expect(new Set(labels).size, scenario.id).toBe(labels.length);
+			// A capture names what the prompt asks for or what the fixture lays:
+			// never a picture nobody asked to see.
+			const known = `${scenario.prompt}\n${JSON.stringify(loaded.fixtures.get(scenario.id))}`;
+			for (const capture of scenario.captures) {
+				for (const name of [capture.board, capture.view, capture.variant]) {
+					if (name !== undefined) expect(known, `${scenario.id} ${capture.label}`).toContain(name);
+				}
+			}
+			if (scenario.workflow === "sequence-create") {
+				expect(
+					scenario.captures.some(
+						(capture) => capture.grammar === "data-flow" && capture.view !== undefined,
+					),
+					scenario.id,
+				).toBe(true);
+			}
+			// A proposal that is rendered on both sides is captured on both sides
+			// through the same view, so a removal stays visible.
+			for (const check of scenario.outcomes) {
+				if (check.check !== "render-ok" || check.variant === undefined) continue;
+				const proposal = scenario.captures.find(
+					(capture) => capture.variant === check.variant && capture.view === check.view,
+				);
+				const predecessor = scenario.captures.find(
+					(capture) => capture.variant === undefined && capture.view === check.view,
+				);
+				expect(proposal, `${scenario.id} proposal capture`).toBeDefined();
+				expect(predecessor, `${scenario.id} predecessor capture`).toBeDefined();
+			}
+		}
+	});
+
 	test("render and inspection requests derive from the checks, so the harness gathers exactly what the checks read", () => {
 		for (const scenario of loaded.suite.evals) {
 			expect(renderRequests(scenario.outcomes).length).toBe(

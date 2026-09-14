@@ -63,9 +63,21 @@ incoming and outgoing boundary relationships, and their immediate neighbours.
 
 Register the checkout once with `archboard repo add <dir>`; the answer's `repo`
 is the identity (`github.com/pallets/flask`) and every binding on every machine
-uses it with a repo-relative `path`. A planned part has no binding. `branch`,
-`commit` and `confirmedAt` record what you actually confirmed; restating the
-node keeps them only if you restate them.
+uses it with a repo-relative `path`. `branch`, `commit` and `confirmedAt`
+record what you actually confirmed; restating the node keeps them only if you
+restate them.
+
+A binding names the implementation owner of the node's stated responsibility:
+the file whose body does what the responsibility says. It is not the file
+that imports the unit, registers it (a blueprint registration, a plugin
+table, a CLI group), or calls it. `DefaultJSONProvider` binds to
+`src/flask/json/provider.py`, where its class is written, not to
+`src/flask/app.py`, which holds it as `app.json`, and not to `json/__init__.py`,
+whose helpers call it. A part outside the checkout (a WSGI server, werkzeug,
+a database), a planned part, or a part whose implementation you did not find
+stays unbound. When one node's responsibility is implemented across files,
+say less (narrow the responsibility to what one file owns) or say more (split
+the node) rather than bind to a file that does only part of it.
 
 ### Drill-down
 
@@ -88,6 +100,31 @@ rather than creating a second one for the same subject.
 Traffic illustrates flow. It is authored intent, not measurement, and a static
 render cannot show it moving: when you report it, say it illustrates.
 
+### Evidence for a relationship
+
+Every relationship is a claim that one part's code reaches another's. Before
+it goes in a payload, hold one line for it: `from` → `to`, the `kind`, and the
+source location where the call, import, read or send happens (file and
+function). `from` is the part whose body makes the call and `to` is the part
+whose body runs; the direction of an answer travelling back is not a second
+relationship. The record decides three things a valid payload cannot:
+
+- **Siblings are not a chain.** When `full_dispatch_request` calls
+  `preprocess_request` and then `dispatch_request`, the evidence is two lines
+  from `full_dispatch_request`. Drawing `preprocess_request → dispatch_request`
+  because they run in that order states a call the source does not make.
+- **The receiver is the part, not its container**, unless the source addresses
+  the whole module. Containment says nothing about calls.
+- **The kind follows the mechanism.** A function call is a `call`; a value
+  read or handed over is `data`; an HTTP request is `http`; a dependency the
+  source imports but never calls at this level is a `dependency`. Use the
+  configured kind that names what the source does.
+
+After the write, read the saved `edges` against the record: every relationship
+has a line, every line has a relationship, and no relationship exists without
+one. A picture that needs a relationship the source lacks is wrong however
+readable it is.
+
 ## Handles and removals
 
 `as` on a new node, relationship, flow or step gives it a name for this one
@@ -101,8 +138,17 @@ flow or walkthrough without it.
 
 ## What the CLI refuses, and what to do
 
-Every refusal names the rule and the subject. Repair the payload; do not change
-the vocabulary or invent an id to get past it.
+Every refusal names the rule and the subject. Repair the payload from that
+reason; do not change the vocabulary or invent an id to get past it, and never
+open the board's file in the vault to change ids, `version`, `lifecycle`,
+`adoptions` or `reconciliation` by hand: the server owns the file, and a
+board patched outside the CLI is a board the product no longer vouches for.
+A second attempt at the same write needs new evidence (a different id you
+read, a field the refusal named, a version you re-read); the same payload
+sent again is refused again. When the supported commands cannot satisfy the
+request (an operation the CLI does not offer, an id nothing on the board can
+name), stop with the board valid as it stands and report what remains
+unresolved and why, rather than approximate it another way.
 
 | Refusal                              | Meaning and repair                                                                                                                                                                                                           |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

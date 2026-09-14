@@ -28,6 +28,8 @@ interface RunPaths {
 	readonly snapshot: string;
 	readonly boards: string;
 	readonly renders: string;
+	/** The PNGs of every diagram the scenario declared, plus their tiles. */
+	readonly captures: string;
 	readonly manifest: string;
 }
 
@@ -64,6 +66,7 @@ function prepareRunDirectory(root: string): RunPaths {
 		snapshot: path.join(root, "snapshot"),
 		boards: path.join(root, "boards"),
 		renders: path.join(root, "renders"),
+		captures: path.join(root, "captures"),
 		manifest: path.join(root, "run.json"),
 	};
 	fs.rmSync(root, { recursive: true, force: true });
@@ -78,6 +81,7 @@ function prepareRunDirectory(root: string): RunPaths {
 		paths.snapshot,
 		paths.boards,
 		paths.renders,
+		paths.captures,
 	]) {
 		fs.mkdirSync(directory, { recursive: true });
 	}

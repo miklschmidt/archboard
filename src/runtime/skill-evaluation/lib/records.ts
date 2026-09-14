@@ -11,6 +11,7 @@ import {
 	semanticallyCompliant,
 	type RunVerdict,
 } from "@/runtime/skill-evaluation/lib/grader";
+import { visualStandingOf } from "@/runtime/skill-evaluation/lib/grader";
 import { filedVerdict, graderUsage } from "@/runtime/skill-evaluation/lib/grading-run";
 import { assertBatchInputs } from "@/runtime/skill-evaluation/lib/provenance";
 import {
@@ -60,6 +61,15 @@ const RunManifestSchema = z
 				"other-run": z.number(),
 			})
 			.optional(),
+		// Absent from manifests written before captures were taken (TASK-214);
+		// such a run has no picture the grader could have looked at.
+		captures: z
+			.object({
+				declared: z.array(z.string()),
+				captured: z.array(z.string()),
+				failed: z.array(z.string()),
+			})
+			.optional(),
 		outcomesPassed: z.boolean(),
 		guardrailsPassed: z.boolean(),
 	})
@@ -105,6 +115,21 @@ function gradedOf(
 }
 
 /**
+ * What the record says of the pictures: the captures the manifest recorded,
+ * and the visual verdict as it stands against them.
+ * @param manifest The manifest.
+ * @param verdict The filed verdict, or null.
+ * @returns The two fields.
+ */
+function visualOf(
+	manifest: RunManifest,
+	verdict: RunVerdict | null,
+): Pick<RunRecord, "captures" | "visual"> {
+	const captures = manifest.captures ?? null;
+	return { captures, visual: visualStandingOf(captures, verdict) };
+}
+
+/**
  * One run's record, its verdict joined in.
  * @param batchRoot The batch.
  * @param loaded The suite, for the expected features.
@@ -127,6 +152,7 @@ function recordOf(batchRoot: string, loaded: LoadedSuite, manifest: RunManifest)
 		commandCounts: manifest.commandCounts,
 		directWrites: manifest.directWrites ?? null,
 		exposure: manifest.exposure ?? null,
+		...visualOf(manifest, verdict),
 		outcomesPassed: manifest.outcomesPassed,
 		guardrailsPassed: manifest.guardrailsPassed,
 		verdict,

@@ -13,6 +13,7 @@ import {
 	type VariantContent,
 } from "@/shared/semantic-board/index";
 import type { SemanticPolicy, VaultDiagnostic } from "@/shared/semantic-policy/index";
+import type { CaptureAttempt } from "@/runtime/skill-evaluation/lib/captures";
 
 /** One render the harness attempted because a check asked for it. */
 interface RenderAttempt {
@@ -54,6 +55,8 @@ interface Reading {
 	readonly diagnostics: readonly VaultDiagnostic[];
 	readonly renders: readonly RenderAttempt[];
 	readonly inspections: readonly InspectionAttempt[];
+	/** Every bitmap the scenario declared, taken after the author ran, failed ones included. */
+	readonly captures: readonly CaptureAttempt[];
 }
 
 /** What one check concluded. */

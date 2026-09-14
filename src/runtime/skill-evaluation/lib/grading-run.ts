@@ -11,8 +11,8 @@ import { parseTrace, type Usage } from "@/runtime/skill-evaluation/lib/events";
 import { codexVersion } from "@/runtime/skill-evaluation/lib/batch";
 import { checkoutFlask } from "@/runtime/skill-evaluation/lib/flask";
 import {
+	FiledVerdictSchema,
 	GRADER_OUTPUT_JSON_SCHEMA,
-	GraderOutputSchema,
 	graderPrompt,
 	parseGraderOutput,
 	type RunVerdict,
@@ -73,7 +73,8 @@ type GradingCall = z.infer<typeof CallSchema>;
 const SessionSchema = z.object({ threadId: z.string().nullable(), calls: z.array(CallSchema) });
 type GradingSession = z.infer<typeof SessionSchema>;
 const BundleHeadSchema = z.object({ run: z.string(), revision: z.string() }).passthrough();
-const RunVerdictSchema = GraderOutputSchema.shape.runs.element;
+/** A filed verdict, read leniently: one filed before captures existed carries no visual answer. */
+const RunVerdictSchema = FiledVerdictSchema;
 
 /** Where a grading pass keeps things. */
 interface GradingPaths {
@@ -144,7 +145,7 @@ function stageRun(run: BundledRun, workspace: string): void {
 	fs.rmSync(target, { recursive: true, force: true });
 	fs.mkdirSync(target, { recursive: true });
 	fs.copyFileSync(path.join(run.directory, "bundle.json"), path.join(target, "bundle.json"));
-	for (const sub of ["boards", "renders"]) {
+	for (const sub of ["boards", "renders", "captures"]) {
 		const source = path.join(run.directory, sub);
 		if (fs.existsSync(source)) fs.cpSync(source, path.join(target, sub), { recursive: true });
 	}
@@ -484,15 +485,25 @@ function callUsageFrom(
  * @returns The session's usage, or null when no call reported any.
  */
 function sessionUsage(calls: readonly { readonly usage: Usage | null }[]): Usage | null {
+	const ends = threadEnds(calls.map((call) => call.usage).filter((usage) => usage !== null));
+	return ends.length === 0 ? null : sumUsage(ends);
+}
+
+/**
+ * The last reading of each thread in a run of cumulative readings: a reading
+ * smaller than the one before it begins a new thread.
+ * @param readings The readings, in order.
+ * @returns One usage per thread, its last.
+ */
+function threadEnds(readings: readonly Usage[]): Usage[] {
 	const ends: Usage[] = [];
 	let running: Usage | null = null;
-	for (const call of calls) {
-		if (call.usage === null) continue;
-		if (running !== null && call.usage.total < running.total) ends.push(running);
-		running = call.usage;
+	for (const reading of readings) {
+		if (running !== null && reading.total < running.total) ends.push(running);
+		running = reading;
 	}
 	if (running !== null) ends.push(running);
-	return ends.length === 0 ? null : sumUsage(ends);
+	return ends;
 }
 
 /**

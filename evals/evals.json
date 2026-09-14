@@ -1,6 +1,6 @@
 {
 	"skill_name": "archboard",
-	"schemaVersion": 2,
+	"schemaVersion": 3,
 	"grading": "Deterministic runtime checks own metadata, coherence and fixture-specific outcomes. One blinded gpt-6-astra session at high reasoning grades every run of a comparison batch itself, against rubric.md, and returns a per-run feature checklist, scores and evidence. Author runs use gpt-5.6-luna at high reasoning, three repetitions per scenario per skill version, in parallel with isolated state. Run with `bun run eval:skill` as README.md describes; never as part of bun run check.",
 	"pins": "pins.json",
 	"coverage": "coverage.json",
@@ -85,7 +85,13 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "pipeline",
+					"board": "Flask request pipeline"
+				}
+			]
 		},
 		{
 			"id": "S01",
@@ -173,7 +179,13 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "json",
+					"board": "Flask JSON"
+				}
+			]
 		},
 		{
 			"id": "S02",
@@ -258,7 +270,22 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "contexts-current",
+					"board": "Flask contexts",
+					"view": "Contexts",
+					"grammar": "architecture"
+				},
+				{
+					"label": "contexts-proposal",
+					"board": "Flask contexts",
+					"variant": "Context variables",
+					"view": "Contexts",
+					"grammar": "architecture"
+				}
+			]
 		},
 		{
 			"id": "S03",
@@ -345,7 +372,13 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "application",
+					"board": "Flask application"
+				}
+			]
 		},
 		{
 			"id": "S04",
@@ -415,7 +448,18 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "application",
+					"board": "Flask application"
+				},
+				{
+					"label": "application-proposal",
+					"board": "Flask application",
+					"variant": "Follow the blueprint draft"
+				}
+			]
 		},
 		{
 			"id": "S05",
@@ -477,7 +521,19 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "dispatch-exchange",
+					"board": "Flask request pipeline",
+					"view": "Dispatch exchange",
+					"grammar": "data-flow"
+				},
+				{
+					"label": "pipeline",
+					"board": "Flask request pipeline"
+				}
+			]
 		},
 		{
 			"id": "S06",
@@ -529,7 +585,18 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "contexts-current",
+					"board": "Flask contexts"
+				},
+				{
+					"label": "contexts-previous",
+					"board": "Flask contexts",
+					"variant": "Local stacks"
+				}
+			]
 		},
 		{
 			"id": "S07",
@@ -539,7 +606,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S07.json",
 			"sources": ["src/flask/cli.py"],
-			"prompt": "Create a board named `Flask CLI startup` at the module level that explains, as one exchange named `flask run`, how the `flask run` command starts a server in Flask 3.0.0 (src/flask/cli.py): the `Shell` invokes `FlaskGroup`, which dispatches `run_command`; `run_command` asks `ScriptInfo` to load the app; `ScriptInfo` locates and imports it (a repeated attempt over the default candidate modules or names, at least two) and returns it to `run_command`; `run_command` calls werkzeug's `run_simple` (an external), and `run_simple` serves requests until interrupted. Include a note on the loading step about `FLASK_APP`. The board needs the participating parts as nodes; no other relationships are required.",
+			"prompt": "Create a board named `Flask CLI startup` at the module level that explains, as one exchange named `flask run`, how the `flask run` command starts a server in Flask 3.0.0 (src/flask/cli.py): the `Shell` invokes `FlaskGroup`, which dispatches `run_command`; `run_command` asks `ScriptInfo` to load the app; `ScriptInfo` locates and imports it (a repeated attempt over the default candidate modules or names, at least two) and returns it to `run_command`; `run_command` calls werkzeug's `run_simple` (an external), and `run_simple` serves requests until interrupted. Include a note on the loading step about `FLASK_APP`. Add a board view named `Startup exchange` that shows that exchange as a sequence. The board needs the participating parts as nodes; no other relationships are required.",
 			"expectedFeatures": [
 				{
 					"feature": "board.create",
@@ -560,6 +627,10 @@
 				{
 					"feature": "node.kind-external",
 					"requirement": "`run_simple` is `external`"
+				},
+				{
+					"feature": "view.data-flow",
+					"requirement": "a board view named Startup exchange draws the flask run exchange in the data-flow grammar"
 				}
 			],
 			"outcomes": [
@@ -590,13 +661,32 @@
 				},
 				{
 					"check": "render-ok",
-					"board": "Flask CLI startup"
+					"board": "Flask CLI startup",
+					"view": "Startup exchange"
 				},
 				{
 					"check": "check-clean"
+				},
+				{
+					"check": "view-exists",
+					"board": "Flask CLI startup",
+					"view": "Startup exchange",
+					"grammar": "data-flow"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "startup-exchange",
+					"board": "Flask CLI startup",
+					"view": "Startup exchange",
+					"grammar": "data-flow"
+				},
+				{
+					"label": "startup",
+					"board": "Flask CLI startup"
+				}
+			]
 		},
 		{
 			"id": "S08",
@@ -668,7 +758,13 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "signals",
+					"board": "Flask signals"
+				}
+			]
 		},
 		{
 			"id": "S09",
@@ -716,6 +812,18 @@
 				"adopt-only-when-asked",
 				"doing-on-writes",
 				"no-writes"
+			],
+			"captures": [
+				{
+					"label": "application",
+					"board": "Flask application"
+				},
+				{
+					"label": "overview",
+					"board": "Flask application",
+					"view": "Overview",
+					"grammar": "architecture"
+				}
 			]
 		},
 		{
@@ -782,7 +890,13 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "pipeline",
+					"board": "Flask request pipeline"
+				}
+			]
 		},
 		{
 			"id": "S11",
@@ -853,7 +967,18 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "json-current",
+					"board": "Flask JSON"
+				},
+				{
+					"label": "json-draft",
+					"board": "Flask JSON",
+					"variant": "Provider rewrite"
+				}
+			]
 		},
 		{
 			"id": "S12",
@@ -927,7 +1052,28 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "session-path-current",
+					"board": "Flask request pipeline",
+					"view": "Session path",
+					"grammar": "architecture"
+				},
+				{
+					"label": "session-path-proposal",
+					"board": "Flask request pipeline",
+					"variant": "No session interface",
+					"view": "Session path",
+					"grammar": "architecture"
+				},
+				{
+					"label": "dispatch-only",
+					"board": "Flask request pipeline",
+					"view": "Dispatch only",
+					"grammar": "architecture"
+				}
+			]
 		},
 		{
 			"id": "S13",
@@ -973,7 +1119,13 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "application",
+					"board": "Flask application"
+				}
+			]
 		},
 		{
 			"id": "S14",
@@ -1032,7 +1184,13 @@
 					"check": "check-clean"
 				}
 			],
-			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"]
+			"guardrails": ["ids-stable", "config-untouched", "adopt-only-when-asked", "doing-on-writes"],
+			"captures": [
+				{
+					"label": "flask",
+					"board": "Flask"
+				}
+			]
 		}
 	]
 }

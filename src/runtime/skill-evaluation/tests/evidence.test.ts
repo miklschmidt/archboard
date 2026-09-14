@@ -313,6 +313,8 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
 		outcomesPassed: true,
 		guardrailsPassed: true,
+		captures: null,
+		visual: null,
 		verdict: {
 			run: "run-0000000000",
 			features: [],

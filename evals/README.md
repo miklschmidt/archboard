@@ -62,8 +62,26 @@ and `grader/`.
 7. Every board read back, renders and inspections the checks asked for, the
    checker's report, the deterministic outcome checks and guardrails, the
    command classification, and the blinded `bundle.json`.
-8. The canvas stopped, whatever happened. A failed or cancelled run is still a
-   row with its error.
+8. Every capture the scenario declares, taken by the harness through
+   `archboard semantic rasterize` from the final saved board at native scale
+   into `captures/`: one PNG per declared board, view and variant, with its
+   provenance (board version, variant, view, dimensions, the SVG digest), and
+   for a bitmap wider or taller than 1600 px a grid of native-scale tiles
+   drawn with `--region`. A capture the harness could not take (a view the
+   author never made, a variant that does not exist, no Chromium) is listed
+   as failed with the reason; a declared view is never replaced by the
+   whole-board picture. The author never supplies a capture, and its own
+   SVG or PNG files are not evidence.
+9. The canvas stopped, whatever happened. A failed or cancelled run is still a
+   row with its error; where its canvas was still up, the declared captures
+   are taken of the partial state and recorded like any other, and where
+   they could not be, they are recorded as not taken. Nothing stands in for
+   a picture.
+
+Rasterizing needs a Chromium or Google Chrome executable on `PATH`, or one
+named by `ARCHBOARD_RENDERER_CHROMIUM`, which the harness forwards into every
+run; without one every capture of the batch fails by name and no visual
+verdict can stand.
 
 Runs of one batch execute in parallel with bounded concurrency; nothing is
 shared between them but the read-only Flask cache.
@@ -100,6 +118,23 @@ both skill packages and the implementation/dependency files, plus its Bun
 version. Resume refuses changed content or a different job selection before
 touching saved results; concurrency may change. Grade and report refuse changed
 scenario inputs so earlier results cannot be assessed against a new checklist.
+
+## What the grader sees, and what it must look at
+
+The grading workspace stages each run's `bundle.json`, `boards/`, `renders/`
+and `captures/`. The bundle's `captures` list carries, per declared capture,
+its label, board, variant, view and grammar, whether it was taken, why not
+when it was not, the file under `captures/`, its provenance and its tiles;
+the file paths are relative, so nothing about the arm survives. The grader
+is told to open every capture as an image (and the tiles where the whole
+image is too small to read), to record the labels it opened in
+`visual.inspectedCaptures`, and to answer `visual.verdict` and
+`visual.observations` beside the semantic checklist. The harness then
+downgrades a `pass` to `incomplete` for any run with a capture not taken or
+not opened, so a file that exists but was never looked at cannot pass, and
+the report counts visual pass, fail and incomplete apart from semantic
+compliance. A still capture pauses traffic animation at its first frame and
+proves nothing about motion.
 
 ## Evidence the harness keeps, and what it refuses to infer
 
