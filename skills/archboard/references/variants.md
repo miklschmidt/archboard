@@ -10,6 +10,13 @@ ordinary `semantic edit` batches that name it in `variant`. Competing proposals
 are two drafts off the same predecessor; a proposal on a proposal names its
 draft in `--from`.
 
+A batch that names no `variant` edits the current architecture. When the
+request is a proposal, every edit after the branch names the draft, and the
+check before you report is that the current variant's content is what it was
+when you read it; a change that was meant as a proposal and landed on the
+current architecture is not repaired by editing the file, but by reading the
+family again and moving the meaning with ordinary writes.
+
 ## What a comparison counts
 
 A proposal is read against its direct predecessor, subject by subject, by id:
@@ -47,11 +54,14 @@ A flow rewritten without ids compares as a deletion beside an addition.
 
 ## Comparing before you report
 
-Read the saved family and render predecessor and proposal through the same
-board view. Check both the ids and the picture: the added, removed, changed and
+Read the saved family and draw predecessor and proposal through the same
+board view (`semantic rasterize <board> --view <view> --out current.png`,
+then the same with `--variant <draft>` to `proposal.png`), and open both.
+Check both the ids and the pictures: the added, removed, changed and
 untouched subjects match the change you meant; a removed flow, call or
-participant is drawn as removed (absence from the picture is not evidence of a
-shown deletion); a continuing exchange compares step by step, so an entirely
+participant is drawn as removed in the proposal's picture (absence from the
+picture is not evidence of a shown deletion); the current picture shows what
+it showed before; a continuing exchange compares step by step, so an entirely
 new sequence needs an explanation grounded in the change. Repair authoring
 errors first. When the saved comparison is right and the picture omits a
 change, report the renderer defect and leave the meaning as it is.

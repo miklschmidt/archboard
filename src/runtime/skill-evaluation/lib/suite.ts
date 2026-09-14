@@ -141,6 +141,24 @@ const OutcomeCheckSchema = z
 	.strict();
 type OutcomeCheck = z.infer<typeof OutcomeCheckSchema>;
 
+/**
+ * One bitmap the harness takes of a final diagram after the author ran,
+ * whatever the checks ask for: the boards, views and variants the request
+ * names, so the grader looks at what was asked for and never at a default
+ * picture in its place. `grammar` states which picture the view must draw;
+ * a capture that answers another grammar is a failed capture.
+ */
+const CaptureDeclarationSchema = z
+	.object({
+		label: z.string().regex(/^[a-z0-9][a-z0-9-]*$/u),
+		board: z.string().min(1),
+		variant: z.string().min(1).optional(),
+		view: z.string().min(1).optional(),
+		grammar: z.enum(["architecture", "data-flow"]).optional(),
+	})
+	.strict();
+type CaptureDeclaration = z.infer<typeof CaptureDeclarationSchema>;
+
 const ScenarioSchema = z
 	.object({
 		id: ScenarioIdSchema,
@@ -154,6 +172,7 @@ const ScenarioSchema = z
 		expectedFeatures: z.array(ExpectedFeatureSchema).min(1),
 		outcomes: z.array(OutcomeCheckSchema).min(1),
 		guardrails: z.array(z.enum(GUARDRAILS)),
+		captures: z.array(CaptureDeclarationSchema).min(1),
 	})
 	.strict();
 type Scenario = z.infer<typeof ScenarioSchema>;
@@ -161,7 +180,7 @@ type Scenario = z.infer<typeof ScenarioSchema>;
 const SuiteSchema = z
 	.object({
 		skill_name: z.literal("archboard"),
-		schemaVersion: z.literal(2),
+		schemaVersion: z.literal(3),
 		grading: z.string(),
 		pins: z.string(),
 		coverage: z.string(),
@@ -393,6 +412,8 @@ export {
 	FLASK_REVISIONS,
 	GUARDRAILS,
 	WORKFLOWS,
+	CaptureDeclarationSchema,
+	type CaptureDeclaration,
 	CoverageSchema,
 	FixtureSchema,
 	FixtureStepSchema,

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-14 22:47'
-updated_date: '2026-09-14 23:23'
+updated_date: '2026-09-14 23:41'
 labels: []
 dependencies: []
 references:
@@ -50,3 +50,9 @@ The user requests archboard semantic rasterize: a headless 1:1 bitmap of the fin
 4. Tests: module owner (pixels, native and scaled size, tall page, data-flow, region tile, refusals, fonts, ownership, cancellation) and a system owner driving the CLI against a real canvas (selectors, proposal, unchanged board file, refusals leave no file).
 5. Docs: INSTALL.md bitmap section, TESTING.md walkthrough, test-suite.md owners, server-rendering-boundary.md status note, .gitignore for generated PNGs; skill guidance lands with TASK-214.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Implemented on branch claude/task-214-215-rasterize: src/runtime/semantic-rasterizer (DevTools client, Chromium session owner, page readiness with SMIL paused at t=0 and every face loaded, PNG header check, bounds), src/cli/commands/semantic-rasterize.ts (--variant/--view/--theme/--scale/--region, binary receipt with diagram page, scale, variant, view and SVG digest; refusals RASTERIZER_UNAVAILABLE 4, RASTER_BOUNDS_EXCEEDED 2, RASTER_FAILED 1), audit entry, timing constants renamed to SEMANTIC_RASTER_*. Owners: src/runtime/semantic-rasterizer/tests/rasterizer.test.ts (11 cases, ~3 s) and tests/system/semantic-boards/rasterize.test.ts (3 cases). Docs: INSTALL.md Rendering to a bitmap, TESTING.md, docs/agents/test-suite.md, server-rendering-boundary.md status note, .gitignore. Measured: cold Chromium start plus three captures 525 ms; a 1199x712 board at scale 2 answers 2398x1424.
+<!-- SECTION:NOTES:END -->

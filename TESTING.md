@@ -123,5 +123,8 @@ bun run eval:skill report .skill-evals/<batch>
 
 [`evals/README.md`](evals/README.md) says
 what one run is, how the grader is blinded, and how a baseline is reproduced.
+Every run captures the diagrams its scenario declares through `semantic
+rasterize`, so the machine that runs a batch needs a Chromium-family
+executable as well (see [INSTALL.md](INSTALL.md#rendering-to-a-bitmap)).
 The fast owners for the harness's deterministic parts live in
 `src/runtime/skill-evaluation/tests`.

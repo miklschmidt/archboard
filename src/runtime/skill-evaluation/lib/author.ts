@@ -18,6 +18,11 @@ import {
 } from "@/runtime/skill-evaluation/lib/blind";
 import { startCanvas, type OwnedCanvas } from "@/runtime/skill-evaluation/lib/canvas";
 import {
+	captureDeclared,
+	captureSummary,
+	type CaptureAttempt,
+} from "@/runtime/skill-evaluation/lib/captures";
+import {
 	classCounts,
 	classifyCommands,
 	exposureCounts,
@@ -229,6 +234,9 @@ async function readAfter(
 	const inspections = await sequentially(inspectionRequests(scenario.outcomes), (request) =>
 		inspectGroup(world.cli, request),
 	);
+	// Every diagram the scenario declared, as it was finally saved: the harness
+	// takes the picture, the author never supplies one.
+	const captures = await captureDeclared(world.cli, scenario.captures, world.paths.captures);
 	return {
 		boards,
 		snapshot,
@@ -236,6 +244,7 @@ async function readAfter(
 		diagnostics: await vaultDiagnostics(world.cli),
 		renders,
 		inspections,
+		captures,
 	};
 }
 
@@ -297,7 +306,7 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 		});
 		return completed;
 	} catch (error) {
-		return failedRun(job, id, world, error, startedAt);
+		return await failedRun(job, id, world, error, startedAt);
 	} finally {
 		await world?.canvas.stop();
 	}
@@ -363,6 +372,7 @@ function assemble(
 		policy: reading.policy,
 		inspections: reading.inspections,
 		renders: reading.renders.filter((render) => render.ok),
+		captures: reading.captures,
 		outcomes,
 		guardrails,
 		privatePaths: [world.paths.root, install.skillRoot, world.paths.home],
@@ -407,10 +417,34 @@ function assemble(
 		commandCounts: classCounts(commands),
 		directWrites,
 		exposure: exposureCounts(commands),
+		captures: captureSummary(reading.captures),
 		outcomesPassed: outcomes.every((verdict) => verdict.passed),
 		guardrailsPassed: guardrails.every((verdict) => verdict.passed),
 	});
 	return run;
+}
+
+/**
+ * What a failed run can still show: the declared diagrams as the vault holds
+ * them at the point of failure, when the canvas is still there to draw them.
+ * A capture that cannot be taken is recorded as such, never invented.
+ * @param job The job.
+ * @param world The world, if it got that far.
+ * @returns The attempts, or none when there was no world to ask.
+ */
+async function partialCaptures(job: RunJob, world: RunWorld | null): Promise<CaptureAttempt[]> {
+	if (world === null || job.signal.aborted) return [];
+	try {
+		return await captureDeclared(world.cli, job.scenario.captures, world.paths.captures);
+	} catch (error) {
+		const detail = error instanceof Error ? error.message : String(error);
+		return job.scenario.captures.map((declaration) => ({
+			...declaration,
+			ok: false,
+			detail: `not captured after the run failed: ${detail}`,
+			tiles: [],
+		}));
+	}
 }
 
 /**
@@ -422,19 +456,20 @@ function assemble(
  * @param startedAt When it started.
  * @returns The failed run.
  */
-function failedRun(
+async function failedRun(
 	job: RunJob,
 	id: string,
 	world: RunWorld | null,
 	error: unknown,
 	startedAt: string,
-): CompletedRun {
+): Promise<CompletedRun> {
 	const message = error instanceof Error ? error.message : String(error);
 	const status: RunStatus = job.signal.aborted ? "cancelled" : "failed";
+	const captures = await partialCaptures(job, world);
 	fs.mkdirSync(job.root, { recursive: true });
 	fs.writeFileSync(
 		path.join(job.root, "run.json"),
-		`${JSON.stringify({ run: id, arm: job.arm, scenario: job.scenario.id, workflow: job.scenario.workflow, report: job.scenario.report, repetition: job.repetition, status, error: message, startedAt, finishedAt: new Date().toISOString(), usage: null, commandCounts: classCounts([]), directWrites: 0, exposure: exposureCounts([]), outcomesPassed: false, guardrailsPassed: false }, null, "\t")}\n`,
+		`${JSON.stringify({ run: id, arm: job.arm, scenario: job.scenario.id, workflow: job.scenario.workflow, report: job.scenario.report, repetition: job.repetition, status, error: message, startedAt, finishedAt: new Date().toISOString(), usage: null, commandCounts: classCounts([]), directWrites: 0, exposure: exposureCounts([]), captures: captureSummary(captures), outcomesPassed: false, guardrailsPassed: false }, null, "\t")}\n`,
 	);
 	return {
 		arm: job.arm,
@@ -452,6 +487,7 @@ function failedRun(
 		policy: null,
 		inspections: [],
 		renders: [],
+		captures,
 		outcomes: [{ check: "run", passed: false, detail: message }],
 		guardrails: [],
 		privatePaths: world === null ? [job.root] : [world.paths.root, world.paths.home],

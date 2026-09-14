@@ -64,6 +64,7 @@ const SCENARIO: Scenario = {
 	],
 	outcomes: [{ check: "check-clean" }],
 	guardrails: [],
+	captures: [{ label: "board", board: "Flask" }],
 };
 
 const RUN: CompletedRun = {
@@ -100,6 +101,45 @@ const RUN: CompletedRun = {
 		},
 	],
 	renders: [{ board: "Flask", file: "/run/renders/render-0.svg" }],
+	captures: [
+		{
+			label: "board",
+			board: "Flask",
+			ok: true,
+			detail: "captured 900×400 of version 2 to capture-0-board.png",
+			file: "/batch/runs/candidate/S00/1/captures/capture-0-board.png",
+			provenance: {
+				version: 2,
+				variant: { id: "v1", name: "Initial", lifecycle: "current" },
+				view: null,
+				theme: "light",
+				scale: 1,
+				width: 900,
+				height: 400,
+				diagram: { width: 900, height: 400 },
+				svgSha256: "ab".repeat(32),
+				facesLoaded: 4,
+				motion: "paused-at-start",
+			},
+			tiles: [
+				{
+					x: 0,
+					y: 0,
+					width: 900,
+					height: 400,
+					file: "/batch/runs/candidate/S00/1/captures/capture-0-board-tile-0.png",
+				},
+			],
+		},
+		{
+			label: "missing",
+			board: "Flask",
+			view: "Nowhere",
+			ok: false,
+			detail: "rasterize failed (exit 1): no such view",
+			tiles: [],
+		},
+	],
 	outcomes: [{ check: "check-clean", passed: true, detail: "clean" }],
 	guardrails: [],
 	privatePaths: ["/run/home/.agents/skills/archboard", "/run/home", "/run"],
@@ -126,6 +166,27 @@ describe("blinding", () => {
 		expect(bundle.policy).toEqual(RUN.policy);
 		expect(bundle.inspections).toEqual(RUN.inspections);
 		expect(bundle.renders[0]?.file).toBe("renders/render-0.svg");
+	});
+
+	test("captures reach the grader with their provenance and tiles, by relative path, failed ones listed with why", () => {
+		const bundle = bundleForGrader(RUN, "run-0123456789");
+		expect(JSON.stringify(bundle.captures)).not.toContain("candidate");
+		expect(bundle.captures).toHaveLength(2);
+		expect(bundle.captures[0]).toMatchObject({
+			label: "board",
+			ok: true,
+			file: "captures/capture-0-board.png",
+			provenance: { version: 2, width: 900, height: 400, svgSha256: "ab".repeat(32) },
+		});
+		expect(bundle.captures[0]?.tiles[0]?.file).toBe("captures/capture-0-board-tile-0.png");
+		expect(bundle.captures[1]).toMatchObject({
+			label: "missing",
+			view: "Nowhere",
+			ok: false,
+			file: null,
+			provenance: null,
+		});
+		expect(bundle.captures[1]?.detail).toContain("no such view");
 	});
 
 	test("render references survive staging without exposing the source arm", () => {
@@ -189,10 +250,18 @@ describe("the grader contract", () => {
 			readability: 9,
 			summary: "fine",
 			concerns: [],
+			visual: {
+				inspectedCaptures: ["board"],
+				verdict: "pass",
+				observations: "labels readable, nothing clipped",
+			},
 		};
 		expect(parseGraderOutput(JSON.stringify({ runs: [verdict] })).runs[0]?.run).toBe(
 			"run-0123456789",
 		);
+		// The grader must say what it saw: a verdict without a visual answer is no verdict.
+		const { visual: _visual, ...blind } = verdict;
+		expect(() => parseGraderOutput(JSON.stringify({ runs: [blind] }))).toThrow(/visual/u);
 		expect(() =>
 			parseGraderOutput(JSON.stringify({ runs: [{ ...verdict, semanticCorrectness: 11 }] })),
 		).toThrow();
@@ -234,6 +303,8 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
 		outcomesPassed: true,
 		guardrailsPassed: true,
+		captures: null,
+		visual: null,
 		verdict: {
 			run: "run-0000000000",
 			features: [],

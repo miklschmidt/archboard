@@ -46,6 +46,13 @@
 					"scenarios": ["S01", "S03", "S10"],
 					"evidence": "harness-check",
 					"owner": "node-field-retained, edge-ids-retained"
+				},
+				{
+					"path": "semantic rasterize: the saved board as a native-scale PNG, same selectors as render",
+					"expectedUse": "an author renders SVG to read; the harness captures every requested board, view and variant as a PNG; a bitmap is never authored or supplied by the author",
+					"scenarios": ["S00", "S02", "S05", "S07", "S09", "S12"],
+					"evidence": "harness-check",
+					"owner": "captures declared per scenario, taken after every run; src/runtime/semantic-rasterizer/tests and tests/system/semantic-boards/rasterize.test.ts own pixels, size and selectors"
 				}
 			]
 		},
@@ -300,6 +307,13 @@
 					"scenarios": [],
 					"evidence": "runtime-owner",
 					"owner": "src/runtime/semantic-renderer/tests (NothingDrawn) and scope tests"
+				},
+				{
+					"path": "a declared view captured as itself, never the whole variant in its place",
+					"expectedUse": "a sequence scenario's data-flow view and a comparison's shared view are captured by name; a view the author never made is a failed capture",
+					"scenarios": ["S02", "S05", "S07", "S12"],
+					"evidence": "harness-check",
+					"owner": "captureFromReceipt refuses a receipt without the declared view or grammar; src/runtime/skill-evaluation/tests/captures.test.ts"
 				}
 			]
 		},
@@ -754,6 +768,13 @@
 					"scenarios": ["S02", "S12"],
 					"evidence": "harness-check",
 					"owner": "render-ok with and without --view; src/runtime/semantic-renderer/tests"
+				},
+				{
+					"path": "visual verification by looking: readability, clipping, overlap, endpoints, sequence order",
+					"expectedUse": "the grader opens every capture as an image and names what it opened; a pass without every capture opened is downgraded to incomplete; a still proves no animation",
+					"scenarios": ["S00", "S05", "S07", "S10", "S12", "S14"],
+					"evidence": "grader",
+					"owner": "visualStandingOf (src/runtime/skill-evaluation/tests/captures.test.ts); rubric.md What you can and cannot see"
 				}
 			]
 		}

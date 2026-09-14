@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-14 22:44'
-updated_date: '2026-09-14 23:01'
+updated_date: '2026-09-14 23:40'
 labels: []
 dependencies:
   - TASK-212
@@ -52,3 +52,13 @@ Claude is implementing TASK-212 and TASK-213 concurrently. Build on their correc
 - [ ] #10 Missing/failed capture, unreadable image or omitted visual inspection is an explicit incomplete/failed visual evaluation and cannot receive an unqualified successful visual verdict. Failed author runs retain available final/partial-state captures where possible and explain absent diagrams; no placeholder counts as a capture. Static captures do not claim to prove traffic animation.
 - [ ] #11 The task records hypotheses separately from demonstrated improvement; corrected inputs and the same CLI are used for future human-run comparisons, with success and semantic/visual quality primary and token usage secondary. Focused model-free behavior/contract tests, skill synchronization and the normal check gate validate implementation without agent-run evals or grading.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Skill guidance (skills/archboard): CLI-only persistence and evidence-driven refusal recovery near the top of SKILL.md; an Evidence-before-a-write section (request-to-checks translation, source evidence per relationship and step with the sibling-versus-chain example, deliberate boundary discovery, binding to the implementation owner); recipes justify every semantic claim from inspected source, drop the fixed repeat count, and verify by opening a PNG or SVG picture of the intended view; references sharpen node-region versus explicit-edge selection, proposal-only versus current-state edits, repeat versus note, bindings and refusal repair.
+2. Harness: every scenario declares captures (evals.json, schemaVersion 3; S07 asks for a Startup exchange view); after every run, and after a failed run where the canvas is up, the harness takes each declared capture through archboard semantic rasterize at native scale with provenance and native-scale tiles (--region) for large bitmaps, records failed captures with the reason, blinds paths, stages captures/ for the grader, and downgrades a visual pass the captures cannot corroborate.
+3. Grader contract: a required visual answer (inspectedCaptures, verdict, observations), a prompt and rubric that demand opening every capture image and forbid SVG or JSON reading as inspection; report columns for visual pass/fail/incomplete beside semantic compliance.
+4. Fast owners: captures.test.ts (receipt to record, grammar and view mismatch, tiles, visual standing), suite.test.ts (captures declared, sequence views, both comparison sides), blinding and grader contract tests; sync skills; bun run check without model runs.
+5. Record hypotheses apart from demonstrated improvement in docs/design/skill-evals/2026-09-15-evidence-and-bitmap-grading.md; extend coverage.json, evals/README.md, rubric.md, TESTING.md and the archboard-dev skill.
+<!-- SECTION:PLAN:END -->
