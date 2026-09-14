@@ -1,11 +1,11 @@
 ---
 id: TASK-214
 title: Improve skill success through evidence checks and bitmap grading
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-09-14 22:44'
-updated_date: '2026-09-14 23:40'
+updated_date: '2026-09-14 23:46'
 labels: []
 dependencies:
   - TASK-212
@@ -40,17 +40,17 @@ Claude is implementing TASK-212 and TASK-213 concurrently. Build on their correc
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Canonical skill guidance requires a concise source-evidence record for authored relationships and sequence steps: caller/receiver or other relationship direction, semantic kind and supporting source location; ordering, branching, returns and repeat counts are checked where applicable, then saved results are audited against that evidence. Include a transferable example distinguishing sibling calls from a fictitious call chain.
-- [ ] #2 Architecture creation explicitly considers inbound callers, important external libraries/services, application callbacks/plugins and relevant persistence/messaging boundaries; only dependencies material to the board question are included, with scope intentional rather than forced coverage.
-- [ ] #3 Binding guidance requires the implementation owner of the stated responsibility, not an import, registration or invocation site. Unavailable external/application implementations remain unbound; mismatched responsibility and binding scope are narrowed or split truthfully.
-- [ ] #4 Before writing, agents translate the request into applicable checks for board/version, target variant, preserved IDs/fields and exact view grammar/selectors, then verify the saved answer. The skill makes explicit-edge isolation distinct from node-region inclusion and proposal-only edits distinct from current-state edits.
-- [ ] #5 The skill explicitly prohibits direct persisted-board repair, including IDs, versions and reconciliation metadata. Further refusal attempts require new evidence; when the supported workflow cannot satisfy the request, preserve valid state and report the unresolved requirement rather than bypassing the CLI. Follow TASK-213 for legitimate restoration.
-- [ ] #6 Examples justify semantic claims from inspected source and avoid unsupported fixed repeat counts or implied mandatory paths. Visual verification checks the intended view, labels, clipping, relationships and sequence details; text inspection of SVG is not presented as looking at a diagram. Evaluation authors are not responsible for producing harness bitmap captures.
-- [ ] #7 For every scenario, both arms and every repetition, the harness records real raster captures of the final saved diagrams at native scale, including read-only scenarios. A declared capture set covers all requested boards/views/variants, both predecessor/current and proposal where compared, and the selected data-flow view for sequences; it never silently substitutes a default view.
-- [ ] #8 Capture provenance identifies the saved board version/content, variant, view, scale and image dimensions. Capture uses canonical renderer output and fonts with stable presentation state, contains complete diagram bounds, and is not an author-supplied substitute or unrelated screenshot. Images and optional full-resolution detail tiles remain ignored derived run artifacts and are provided without revealing the evaluation arm.
-- [ ] #9 The grader is supplied image-capable access to every required bitmap and explicitly visually inspects each. Verdicts identify inspected capture IDs and image-grounded observations about readability, clipping, overlap, endpoints and sequence legibility; SVG parsing, file existence, board JSON and claimed author inspection cannot substitute. Large diagrams retain native-resolution detail through appropriate image access or supplemental tiles.
-- [ ] #10 Missing/failed capture, unreadable image or omitted visual inspection is an explicit incomplete/failed visual evaluation and cannot receive an unqualified successful visual verdict. Failed author runs retain available final/partial-state captures where possible and explain absent diagrams; no placeholder counts as a capture. Static captures do not claim to prove traffic animation.
-- [ ] #11 The task records hypotheses separately from demonstrated improvement; corrected inputs and the same CLI are used for future human-run comparisons, with success and semantic/visual quality primary and token usage secondary. Focused model-free behavior/contract tests, skill synchronization and the normal check gate validate implementation without agent-run evals or grading.
+- [x] #1 Canonical skill guidance requires a concise source-evidence record for authored relationships and sequence steps: caller/receiver or other relationship direction, semantic kind and supporting source location; ordering, branching, returns and repeat counts are checked where applicable, then saved results are audited against that evidence. Include a transferable example distinguishing sibling calls from a fictitious call chain.
+- [x] #2 Architecture creation explicitly considers inbound callers, important external libraries/services, application callbacks/plugins and relevant persistence/messaging boundaries; only dependencies material to the board question are included, with scope intentional rather than forced coverage.
+- [x] #3 Binding guidance requires the implementation owner of the stated responsibility, not an import, registration or invocation site. Unavailable external/application implementations remain unbound; mismatched responsibility and binding scope are narrowed or split truthfully.
+- [x] #4 Before writing, agents translate the request into applicable checks for board/version, target variant, preserved IDs/fields and exact view grammar/selectors, then verify the saved answer. The skill makes explicit-edge isolation distinct from node-region inclusion and proposal-only edits distinct from current-state edits.
+- [x] #5 The skill explicitly prohibits direct persisted-board repair, including IDs, versions and reconciliation metadata. Further refusal attempts require new evidence; when the supported workflow cannot satisfy the request, preserve valid state and report the unresolved requirement rather than bypassing the CLI. Follow TASK-213 for legitimate restoration.
+- [x] #6 Examples justify semantic claims from inspected source and avoid unsupported fixed repeat counts or implied mandatory paths. Visual verification checks the intended view, labels, clipping, relationships and sequence details; text inspection of SVG is not presented as looking at a diagram. Evaluation authors are not responsible for producing harness bitmap captures.
+- [x] #7 For every scenario, both arms and every repetition, the harness records real raster captures of the final saved diagrams at native scale, including read-only scenarios. A declared capture set covers all requested boards/views/variants, both predecessor/current and proposal where compared, and the selected data-flow view for sequences; it never silently substitutes a default view.
+- [x] #8 Capture provenance identifies the saved board version/content, variant, view, scale and image dimensions. Capture uses canonical renderer output and fonts with stable presentation state, contains complete diagram bounds, and is not an author-supplied substitute or unrelated screenshot. Images and optional full-resolution detail tiles remain ignored derived run artifacts and are provided without revealing the evaluation arm.
+- [x] #9 The grader is supplied image-capable access to every required bitmap and explicitly visually inspects each. Verdicts identify inspected capture IDs and image-grounded observations about readability, clipping, overlap, endpoints and sequence legibility; SVG parsing, file existence, board JSON and claimed author inspection cannot substitute. Large diagrams retain native-resolution detail through appropriate image access or supplemental tiles.
+- [x] #10 Missing/failed capture, unreadable image or omitted visual inspection is an explicit incomplete/failed visual evaluation and cannot receive an unqualified successful visual verdict. Failed author runs retain available final/partial-state captures where possible and explain absent diagrams; no placeholder counts as a capture. Static captures do not claim to prove traffic animation.
+- [x] #11 The task records hypotheses separately from demonstrated improvement; corrected inputs and the same CLI are used for future human-run comparisons, with success and semantic/visual quality primary and token usage secondary. Focused model-free behavior/contract tests, skill synchronization and the normal check gate validate implementation without agent-run evals or grading.
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -62,3 +62,15 @@ Claude is implementing TASK-212 and TASK-213 concurrently. Build on their correc
 4. Fast owners: captures.test.ts (receipt to record, grammar and view mismatch, tiles, visual standing), suite.test.ts (captures declared, sequence views, both comparison sides), blinding and grader contract tests; sync skills; bun run check without model runs.
 5. Record hypotheses apart from demonstrated improvement in docs/design/skill-evals/2026-09-15-evidence-and-bitmap-grading.md; extend coverage.json, evals/README.md, rubric.md, TESTING.md and the archboard-dev skill.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Validation: bun test src/runtime/skill-evaluation (80 pass incl. captures.test.ts, suite captures test, blinding captures test, strict visual verdict parsing), tests/system/cli/install-targets.test.ts (9 pass after bun scripts/sync-skills.ts), bun run lint clean, type-check clean, fmt:check clean, test:modules 3025 pass, test:repository 8 pass, test:system 159 pass with only the 4 pre-existing resource-cleanup failures. No model was run. Hypotheses are recorded apart from evidence in docs/design/skill-evals/2026-09-15-evidence-and-bitmap-grading.md; the preservation assessment gained six rows. Inherited snapshot code (sessionUsage, comparisonStanding) was split to pass the complexity ceiling. Input correction: S07 now asks for a Startup exchange view and checks it exists, so its sequence has a data-flow capture. evals.json schemaVersion is 3; the 2026-09-14 batch stays a frozen baseline and cannot be re-graded on the new inputs by design.
+<!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Skill guidance now leads with CLI-only persistence and evidence-driven refusal recovery, adds an evidence-before-a-write procedure (request-to-checks, source proof per relationship and step with siblings never a chain, deliberate boundary discovery, binding to the implementation owner), separates node-region inclusion from explicit-edge isolation and proposal-only from current-state edits, drops the unsupported repeat count, and describes visual verification as opening a picture of the intended view. The harness declares captures per scenario, takes every one through semantic rasterize at native scale with provenance and tiles after every run (partial state after a failed one), lists failed captures with the reason, stages them blinded for the grader, requires a visual verdict naming the captures opened, downgrades an uncorroborated pass to incomplete, and reports visual pass/fail/incomplete beside semantic compliance. Verified by model-free owners, skill sync and the normal gates; improvement remains a hypothesis until the next human-run batch.
+<!-- SECTION:FINAL_SUMMARY:END -->
