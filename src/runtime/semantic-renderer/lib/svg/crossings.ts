@@ -11,7 +11,7 @@ const BRIDGE_INK_GAP = 1.5;
 
 /**
  * Clear lower ink narrowly beneath each upper arc, revealing the actual backdrop.
- * @param edges Final bridged routes, in paint order.
+ * @param edges Final bridged routes; local masks also allow an earlier route to rise.
  * @param bridges Local upper curves and the lower connections they cross.
  * @returns Mask definitions and the mask identity for each affected lower route.
  */

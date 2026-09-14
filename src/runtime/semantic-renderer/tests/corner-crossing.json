@@ -1,0 +1,238 @@
+[
+	{
+		"nodes": [
+			{
+				"id": "wpI1LbzG",
+				"name": "View dispatcher",
+				"kind": "function",
+				"responsibility": "Selects architecture or data flow"
+			},
+			{
+				"id": "y8vuJJKu",
+				"name": "Region builder",
+				"kind": "function",
+				"responsibility": "Builds visible containment regions"
+			},
+			{
+				"id": "Y0smyqtZ",
+				"name": "Architecture layout",
+				"kind": "function",
+				"responsibility": "Places cards and containers"
+			},
+			{
+				"id": "L51bfquE",
+				"name": "Edge routing",
+				"kind": "function",
+				"responsibility": "Routes readable relationships"
+			},
+			{
+				"id": "wLF1X11D",
+				"name": "Data-flow layout",
+				"kind": "function",
+				"responsibility": "Places participants and messages"
+			},
+			{
+				"id": "u1OXg3Yy",
+				"name": "Theme palette",
+				"kind": "function",
+				"responsibility": "Resolves every drawn color"
+			},
+			{
+				"id": "J7mPrUeP",
+				"name": "SVG painters",
+				"kind": "function",
+				"responsibility": "Paints geometry and standing"
+			}
+		],
+		"edges": [
+			{
+				"id": "v3e9dOLe",
+				"from": "y8vuJJKu",
+				"to": "Y0smyqtZ",
+				"kind": "data",
+				"label": "visible regions",
+				"emphasis": "normal"
+			},
+			{
+				"id": "qJrkH2Qg",
+				"from": "Y0smyqtZ",
+				"to": "L51bfquE",
+				"kind": "call",
+				"label": "route relationships",
+				"emphasis": "normal"
+			},
+			{
+				"id": "PjA6m5Ft",
+				"from": "wpI1LbzG",
+				"to": "wLF1X11D",
+				"kind": "call",
+				"label": "lay out exchange",
+				"emphasis": "normal"
+			},
+			{
+				"id": "WwNFCjLE",
+				"from": "wpI1LbzG",
+				"to": "u1OXg3Yy",
+				"kind": "call",
+				"label": "resolve theme",
+				"emphasis": "normal"
+			},
+			{
+				"id": "SIdU2g2Q",
+				"from": "Y0smyqtZ",
+				"to": "J7mPrUeP",
+				"kind": "data",
+				"label": "placed architecture",
+				"emphasis": "normal"
+			},
+			{
+				"id": "0s8raCUw",
+				"from": "L51bfquE",
+				"to": "J7mPrUeP",
+				"kind": "data",
+				"label": "routed edges",
+				"emphasis": "normal"
+			},
+			{
+				"id": "eKqUHYSH",
+				"from": "wLF1X11D",
+				"to": "J7mPrUeP",
+				"kind": "data",
+				"label": "placed exchange",
+				"emphasis": "normal"
+			},
+			{
+				"id": "I1lGjMES",
+				"from": "u1OXg3Yy",
+				"to": "J7mPrUeP",
+				"kind": "data",
+				"label": "literal colors",
+				"emphasis": "normal"
+			}
+		],
+		"flows": [],
+		"walkthroughs": []
+	},
+	{
+		"nodes": [
+			{
+				"id": "wpI1LbzG",
+				"name": "View dispatcher",
+				"kind": "function",
+				"responsibility": "Own the render pipeline"
+			},
+			{
+				"id": "y8vuJJKu",
+				"name": "Layout graph",
+				"kind": "function",
+				"responsibility": "Preserve semantic structure"
+			},
+			{
+				"id": "Y0smyqtZ",
+				"name": "Compound layout",
+				"kind": "function",
+				"responsibility": "Place and route together"
+			},
+			{
+				"id": "wLF1X11D",
+				"name": "Data-flow layout",
+				"kind": "function",
+				"responsibility": "Places participants and messages"
+			},
+			{
+				"id": "u1OXg3Yy",
+				"name": "Theme palette",
+				"kind": "function",
+				"responsibility": "Resolves every drawn color"
+			},
+			{
+				"id": "J7mPrUeP",
+				"name": "SVG painters",
+				"kind": "function",
+				"responsibility": "Paint the placed drawing"
+			},
+			{
+				"id": "L51bfquE",
+				"name": "Edge routing",
+				"kind": "function",
+				"responsibility": "Routes readable relationships"
+			}
+		],
+		"edges": [
+			{
+				"id": "v3e9dOLe",
+				"from": "y8vuJJKu",
+				"to": "Y0smyqtZ",
+				"kind": "data",
+				"label": "compound graph",
+				"emphasis": "normal"
+			},
+			{
+				"id": "PjA6m5Ft",
+				"from": "wpI1LbzG",
+				"to": "wLF1X11D",
+				"kind": "call",
+				"label": "lay out exchange",
+				"emphasis": "normal"
+			},
+			{
+				"id": "WwNFCjLE",
+				"from": "wpI1LbzG",
+				"to": "u1OXg3Yy",
+				"kind": "call",
+				"label": "resolve theme",
+				"emphasis": "normal"
+			},
+			{
+				"id": "eKqUHYSH",
+				"from": "wLF1X11D",
+				"to": "J7mPrUeP",
+				"kind": "data",
+				"label": "placed exchange",
+				"emphasis": "normal"
+			},
+			{
+				"id": "I1lGjMES",
+				"from": "u1OXg3Yy",
+				"to": "J7mPrUeP",
+				"kind": "data",
+				"label": "literal colors",
+				"emphasis": "normal"
+			},
+			{
+				"id": "6zcjVgzh",
+				"from": "Y0smyqtZ",
+				"to": "J7mPrUeP",
+				"kind": "data",
+				"label": "complete placed drawing",
+				"emphasis": "hero"
+			},
+			{
+				"id": "qJrkH2Qg",
+				"from": "Y0smyqtZ",
+				"to": "L51bfquE",
+				"kind": "call",
+				"label": "route relationships",
+				"emphasis": "normal"
+			},
+			{
+				"id": "SIdU2g2Q",
+				"from": "Y0smyqtZ",
+				"to": "J7mPrUeP",
+				"kind": "data",
+				"label": "placed architecture",
+				"emphasis": "normal"
+			},
+			{
+				"id": "0s8raCUw",
+				"from": "L51bfquE",
+				"to": "J7mPrUeP",
+				"kind": "data",
+				"label": "routed edges",
+				"emphasis": "normal"
+			}
+		],
+		"flows": [],
+		"walkthroughs": []
+	}
+]
