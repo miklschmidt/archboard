@@ -24,6 +24,7 @@ import {
 import { semanticAdoptContract, semanticResolveContract } from "@/cli/commands/semantic-lifecycle";
 import { semanticInspectContract } from "@/cli/commands/semantic-inspect";
 import { semanticRenderContract } from "@/cli/commands/semantic-render";
+import { semanticRasterizeContract } from "@/cli/commands/semantic-rasterize";
 import { claimContract, releaseContract } from "@/cli/commands/claim";
 import { installSkillContract } from "@/cli/commands/install-skill";
 import {
@@ -64,6 +65,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 			show: child(contract(semanticShowContract, "src/cli/commands/semantic.ts")),
 			inspect: child(contract(semanticInspectContract, "src/cli/commands/semantic-inspect.ts")),
 			render: child(contract(semanticRenderContract, "src/cli/commands/semantic-render.ts")),
+			rasterize: child(
+				contract(semanticRasterizeContract, "src/cli/commands/semantic-rasterize.ts"),
+			),
 		},
 	},
 	browser: {

@@ -187,7 +187,7 @@ const BROWSER_VIEWPORT_SETTLEMENT_MS = 10_000;
  * fault deadline. Product work renders one immutable request and reports its
  * named page phase when this bound expires.
  */
-const BOARD_RENDER_JOB_TIMEOUT_MS = 10_000;
+const SEMANTIC_RASTER_JOB_TIMEOUT_MS = 10_000;
 
 /**
  * Bound for the private Chromium control port, target, and renderer page to
@@ -196,14 +196,14 @@ const BOARD_RENDER_JOB_TIMEOUT_MS = 10_000;
  * expired under a half-CPU quota; ten seconds completed three cold starts
  * with valid PNG/SVG output (TASK-162).
  */
-const BOARD_RENDER_STARTUP_TIMEOUT_MS = 10_000;
+const SEMANTIC_RASTER_STARTUP_TIMEOUT_MS = 10_000;
 
 /**
  * Shared deadline for renderer group termination, output-pipe settlement,
  * profile removal, and fixture-server closure. Cleanup proves the dedicated
  * process group absent before deleting its private profile.
  */
-const BOARD_RENDER_CLEANUP_MS = 5000;
+const SEMANTIC_RASTER_CLEANUP_MS = 5000;
 
 // ── When a board is considered still ──────────────────────────────────────
 
@@ -404,9 +404,9 @@ export {
 	BROWSER_CAPTURE_DISPATCH_MS,
 	BROWSER_CAPTURE_COLLECTION_MS,
 	BROWSER_VIEWPORT_SETTLEMENT_MS,
-	BOARD_RENDER_JOB_TIMEOUT_MS,
-	BOARD_RENDER_STARTUP_TIMEOUT_MS,
-	BOARD_RENDER_CLEANUP_MS,
+	SEMANTIC_RASTER_JOB_TIMEOUT_MS,
+	SEMANTIC_RASTER_STARTUP_TIMEOUT_MS,
+	SEMANTIC_RASTER_CLEANUP_MS,
 	DEFAULT_SETTLE_MS,
 	DEFAULT_SETTLE_MAX_MS,
 	CANVAS_MUTATION_DRAIN_TIMEOUT_MS,

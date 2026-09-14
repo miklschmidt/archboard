@@ -68,11 +68,14 @@ The opt-in renderer-tooling owners load `dist/frontend/renderer.html`. Run
 `bun run build:frontend` first in a clean checkout. The normal package test
 still builds the frontend before product owners.
 
-`tests/system/boards/vault-only-production-interfaces.test.ts` owns the
-zero-client product workflow. It uses named persisted boards with no open,
-load, show, pane, or capture setup. `tests/system/boards/server-rendering.test.ts`
-owns renderer lifecycle and immutable snapshot details. Real-browser owners
-cover only live `browser` commands and Excalidraw fidelity.
+`tests/system/semantic-boards/rasterize.test.ts` owns the zero-client bitmap
+workflow: `semantic rasterize` against a real canvas, the same selectors as
+`semantic render`, and a board file that does not move. The rasterizer's own
+owner, `src/runtime/semantic-rasterizer/tests`, proves real pixels, native and
+scaled dimensions, full bounds past a display, font readiness, bounds refusals,
+cancellation and a Chromium that is provably gone; both need a Chromium-family
+executable (`ARCHBOARD_RENDERER_CHROMIUM` names one). Real-browser owners cover
+only live `browser` commands.
 
 Run browser diagnosis only through the adapter:
 
