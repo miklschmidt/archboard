@@ -66,6 +66,6 @@ skills/archboard/references/generated/
 
 # Skill evaluation output (TASK-209): fetched Flask checkouts, run traces,
 # renders, boards, verdicts and reports. The canonical inputs are tracked under
-# skills/archboard/evals; everything here reproduces from them with
+# evals; everything here reproduces from them with
 # `bun run eval:skill`.
 .skill-evals/

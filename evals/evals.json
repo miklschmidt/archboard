@@ -14,7 +14,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S00.json",
 			"sources": ["src/flask/app.py", "src/flask/ctx.py", "src/flask/wrappers.py"],
-			"prompt": "Create a semantic board named `Flask request pipeline` at the service level describing how one HTTP request travels through Flask 3.0.0 as implemented in this checkout: the WSGI entry (Flask.wsgi_app in src/flask/app.py), the request context it pushes (src/flask/ctx.py), the dispatch path (full_dispatch_request -> preprocess_request -> dispatch_request -> the matched view), and the response path (make_response -> process_response -> finalize_request) back to the WSGI server. Give each part a configured kind and a one-line responsibility, bind each part to its source file, and put the app-internal parts inside a `Flask app` container. Read the board back and render it to pipeline.svg.",
+			"prompt": "Create a semantic board named `Flask request pipeline` at the service level describing how one HTTP request travels through Flask 3.0.0 as implemented in this checkout. The WSGI server calls Flask.wsgi_app (src/flask/app.py), which pushes the request context (src/flask/ctx.py) and calls full_dispatch_request. full_dispatch_request itself calls preprocess_request, then dispatch_request (which calls the matched view function), then finalize_request; finalize_request calls make_response and then process_response, and the response returns to the WSGI server. Draw the calls as the source makes them: the caller of each function is the function whose body calls it, so preprocess_request does not call dispatch_request and make_response does not call process_response. Give each part a configured kind and a one-line responsibility, put the app-internal parts inside a `Flask app` container, and bind each Flask-internal part to its source file; the WSGI server and the matched view function are outside this checkout and stay unbound. Read the board back and render it to pipeline.svg.",
 			"expectedFeatures": [
 				{
 					"feature": "board.create",
@@ -34,11 +34,11 @@
 				},
 				{
 					"feature": "edge.actual-receiver",
-					"requirement": "calls land on the internal receivers (wsgi_app, context, dispatch, view), not on the container"
+					"requirement": "each call lands on the internal function the source actually calls, from the function whose body calls it: full_dispatch_request calls preprocess_request, dispatch_request and finalize_request; finalize_request calls make_response and process_response; nothing lands on the container"
 				},
 				{
 					"feature": "binding.repo-path",
-					"requirement": "bound nodes use the registered repository identity and repo-relative src/flask paths"
+					"requirement": "every Flask-internal part is bound with the registered repository identity and a repo-relative src/flask path; the WSGI server and the matched view function, which are outside the checkout, carry no binding"
 				},
 				{
 					"feature": "render.svg",
@@ -203,7 +203,7 @@
 				},
 				{
 					"feature": "compare.reading",
-					"requirement": "the reported comparison names the two removed nodes, the added node and the rewired edges"
+					"requirement": "the answer reports what the saved comparison shows: the two stack nodes removed, the context-variables node added and the two context relationships now landing on it (by name or id; the phrasing is free)"
 				}
 			],
 			"outcomes": [
@@ -245,8 +245,8 @@
 					"check": "comparison-standing",
 					"board": "Flask contexts",
 					"variant": "Context variables",
-					"removed": 2,
-					"addedAtLeast": 1
+					"removedNodes": 2,
+					"addedNodesAtLeast": 1
 				},
 				{
 					"check": "render-ok",
@@ -268,7 +268,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S03.json",
 			"sources": ["src/flask/app.py", "src/flask/cli.py", "src/flask/sansio/app.py"],
-			"prompt": "On the `Flask application` board, `Flask app` contains `Dispatch` and `CLI` contains `Run command`. Both `Dispatch` and `Run command` belong to the configured `request-lifecycle` group, and `Dispatch` also belongs to `sansio-core`. Record those memberships, then bind `Dispatch` to src/flask/app.py in this checkout after registering it as a repository. Nothing else changes.",
+			"prompt": "On the `Flask application` board, `Flask app` contains `Dispatch` and `CLI` contains `Run command`. Both `Dispatch` and `Run command` belong to the configured `request-lifecycle` group, and `Dispatch` also belongs to `wsgi-layer` (its functions live in the WSGI subclass in src/flask/app.py). Record those memberships, then bind `Dispatch` to src/flask/app.py in this checkout after registering it as a repository. Nothing else changes.",
 			"expectedFeatures": [
 				{
 					"feature": "groups.multi-membership",
@@ -296,7 +296,7 @@
 					"check": "node-groups",
 					"board": "Flask application",
 					"node": "Dispatch",
-					"groups": ["request-lifecycle", "sansio-core"]
+					"groups": ["request-lifecycle", "wsgi-layer"]
 				},
 				{
 					"check": "node-groups",
@@ -606,7 +606,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S08.json",
 			"sources": ["src/flask/signals.py", "src/flask/app.py"],
-			"prompt": "This vault's configuration knows no `signal` relationship kind and no `extension` node kind. Add both to .archboard/config.yaml (signals drawn dashed with an open arrowhead, extensions with the RiPlugLine icon) and a group named `Observability` under the id `observability`, then create a `Flask signals` board at the service level with `Flask app` sending `request_started` and `request_finished` signals (src/flask/signals.py) to a `Metrics extension` node that belongs to the observability group. Run the checker and leave the vault clean.",
+			"prompt": "This vault's configuration knows no `signal` relationship kind and no `extension` node kind. Add both to .archboard/config.yaml (signals drawn dashed with an open arrowhead, extensions with the RiPlugLine icon) and a group named `Observability` under the id `observability`, then create a `Flask signals` board at the service level with `Flask app` (bound to src/flask/app.py, whose full_dispatch_request and finalize_request send the signals defined in src/flask/signals.py) sending `request_started` and `request_finished` signals to a `Metrics extension` node that belongs to the observability group; the extension is hypothetical and stays unbound. Run the checker and leave the vault clean.",
 			"expectedFeatures": [
 				{
 					"feature": "config.vocabulary",
@@ -617,8 +617,8 @@
 					"requirement": "the edited configuration validates; icon is a real RemixIcon export"
 				},
 				{
-					"feature": "refusal.recovery",
-					"requirement": "a write refused for an unknown kind is repaired by configuring, not by changing the meaning"
+					"feature": "config.before-board",
+					"requirement": "the board says what the request means in the new vocabulary: either the configuration is extended before the write that needs it, or a write refused for the unknown kind is repaired by configuring; a run that bends the meaning to the old vocabulary (a `call` instead of a `signal`, a `module` instead of an `extension`) fails this feature"
 				},
 				{
 					"feature": "check.clean",
@@ -686,7 +686,7 @@
 				},
 				{
 					"feature": "inspect.hidden-members",
-					"requirement": "the answer says the `Overview` view collapses `CLI`, so `Run command` is a member the view does not draw"
+					"requirement": "the answer names `Run command` as a member the `Overview` view does not draw (the view selects its container `CLI` and not the command inside it); how that is phrased is free"
 				},
 				{
 					"feature": "read-only",
@@ -726,7 +726,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S10.json",
 			"sources": ["src/flask/app.py"],
-			"prompt": "On the `Flask request pipeline` board, illustrate flow on the hot path: the WSGI server -> `Flask.wsgi_app` call gets default traffic, `Flask.wsgi_app` -> `full_dispatch_request` gets faster and denser traffic (speed 80, volume 2), and the existing traffic on `make_response` -> `process_response` is turned off. Keep every relationship's identity and other fields. Say plainly that the animation illustrates flow and is not measured.",
+			"prompt": "On the `Flask request pipeline` board, illustrate flow on the hot path: the WSGI server -> `Flask.wsgi_app` call gets default traffic, `Flask.wsgi_app` -> `full_dispatch_request` gets faster and denser traffic (speed 80, volume 2), and the existing traffic on `finalize_request` -> `process_response` is turned off. Keep every relationship's identity and other fields. Say plainly that the animation illustrates flow and is not measured.",
 			"expectedFeatures": [
 				{
 					"feature": "traffic.default",
@@ -770,7 +770,7 @@
 				{
 					"check": "edge-traffic",
 					"board": "Flask request pipeline",
-					"from": "make_response",
+					"from": "finalize_request",
 					"to": "process_response",
 					"traffic": "off"
 				},
@@ -804,7 +804,7 @@
 				},
 				{
 					"feature": "resolve.third-answer",
-					"requirement": "the removed node is restored by an ordinary edit with its original id, which settles the deletion"
+					"requirement": "the removed node is restored by an ordinary edit with its original id and the current variant's description (Serializes tagged values in signed session cookies), which settles the deletion"
 				},
 				{
 					"feature": "lifecycle.no-adopt",
@@ -838,6 +838,14 @@
 					"expected": "Owns the JSON provider and the request lifecycle"
 				},
 				{
+					"check": "node-field-equals",
+					"board": "Flask JSON",
+					"variant": "Provider rewrite",
+					"node": "Tagged JSON",
+					"field": "description",
+					"expected": "Serializes tagged values in signed session cookies"
+				},
+				{
 					"check": "node-id-retained",
 					"board": "Flask JSON",
 					"variant": "Provider rewrite",
@@ -863,15 +871,15 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S12.json",
 			"sources": ["src/flask/app.py", "src/flask/sessions.py"],
-			"prompt": "On the `Flask request pipeline` board, add two board views: `Session path`, an architecture view showing only `Request context`, `Session interface` and the single relationship between them, and `Dispatch only`, an architecture view of the `Flask app` container's dispatch parts (`full_dispatch_request`, `dispatch_request`, `View function`) with every relationship between them. Then propose a variant named `No session interface` that removes the `Session interface` node, and render both the current variant and the proposal through `Session path` so the removal stays visible.",
+			"prompt": "On the `Flask request pipeline` board, add two board views. `Session path` is an architecture view of how the session is opened: it shows `Request context`, `Session interface`, `process_response` and only the `open_session` relationship between the context and the interface; the `save_session` call from `process_response` must not be drawn, so select that one relationship (by id) rather than listing every relationship between those parts. `Dispatch only` is an architecture view of the `Flask app` container's dispatch parts (`full_dispatch_request`, `dispatch_request`, `View function`) with every relationship among them; select the parts and no relationships, so that whatever connects them is drawn. Then propose a variant named `No session interface` that removes the `Session interface` node, and render both the current variant and the proposal through `Session path` so the removal stays visible.",
 			"expectedFeatures": [
 				{
 					"feature": "view.edge-isolation",
-					"requirement": "`Session path` selects the relationship by id (or same-write handle) so only that one is shown"
+					"requirement": "`Session path` selects exactly the `open_session` relationship (by id or same-write handle) and shows `process_response` without its `save_session` call; the saved scope names one relationship"
 				},
 				{
 					"feature": "view.node-region",
-					"requirement": "`Dispatch only` selects nodes with no edges so every relationship among them is shown"
+					"requirement": "`Dispatch only` selects the three parts and names no relationship, so its saved scope has an empty relationship list and the render draws both calls among them"
 				},
 				{
 					"feature": "view.board-owned",
@@ -888,7 +896,8 @@
 					"board": "Flask request pipeline",
 					"view": "Session path",
 					"grammar": "architecture",
-					"edgesSelected": 1
+					"edgesSelected": 1,
+					"nodesSelectedAtLeast": 1
 				},
 				{
 					"check": "view-exists",
@@ -914,7 +923,7 @@
 					"check": "comparison-standing",
 					"board": "Flask request pipeline",
 					"variant": "No session interface",
-					"removed": 1
+					"removedNodes": 1
 				},
 				{
 					"check": "render-ok",
@@ -982,7 +991,7 @@
 			"flask": "3.0.0",
 			"fixture": "fixtures/S14.json",
 			"sources": ["src/flask"],
-			"prompt": "Map the architecture of Flask 3.0.0 in this checkout onto a system-level board named `Flask`: the major parts (the sans-IO core, the WSGI application, contexts and globals, routing and blueprints, the CLI, sessions, templating, JSON, signals and testing), how they depend on or call each other, and what each is responsible for. Bind each part to its source. Keep it readable: fewer, truer parts over many.",
+			"prompt": "Map the architecture of Flask 3.0.0 in this checkout onto a system-level board named `Flask`: the major parts (the sans-IO core, the WSGI application, contexts and globals, routing and blueprints, the CLI, sessions, templating, JSON, signals and testing), the three libraries Flask is built on (werkzeug, jinja and click) as external parts, how the parts depend on or call each other, and what each is responsible for. Bind each Flask part to its source; the externals stay unbound. Keep it readable: between eight and twenty parts, fewer and truer over many.",
 			"expectedFeatures": [
 				{
 					"feature": "board.create",
@@ -990,19 +999,19 @@
 				},
 				{
 					"feature": "node.kind",
-					"requirement": "configured kinds throughout; externals for werkzeug/jinja/click"
+					"requirement": "configured kinds throughout; werkzeug, jinja and click are present as `external` parts"
 				},
 				{
 					"feature": "binding.repo-path",
-					"requirement": "every internal part bound to src/flask paths"
+					"requirement": "every Flask part bound to a src/flask path; the externals unbound"
 				},
 				{
 					"feature": "edge.actual-receiver",
-					"requirement": "relationships between the parts that actually depend on each other in the source"
+					"requirement": "relationships between the parts that actually depend on each other in the source, in the direction the source has them (Flask extends the sans-IO App; the request context, not the blueprint registry, matches the URL)"
 				},
 				{
 					"feature": "readability",
-					"requirement": "between eight and sixteen nodes; containment used only where the source has it"
+					"requirement": "between eight and twenty nodes, externals included; containment used only where the source has it"
 				}
 			],
 			"outcomes": [

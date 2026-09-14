@@ -4,8 +4,11 @@
 // that exist. None of this runs a model.
 
 import { describe, expect, test } from "bun:test";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { prepareSkillArtifacts } from "@/runtime/skill-distribution/index";
 import { SemanticBoardSchema } from "@/shared/semantic-board/index";
 import {
 	FixtureStepSchema,
@@ -18,7 +21,7 @@ import {
 } from "@/runtime/skill-evaluation/index";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
-const loaded = loadSuite(join(root, "skills", "archboard", "evals"));
+const loaded = loadSuite(join(root, "evals"));
 
 const BOARD = SemanticBoardSchema.parse({
 	schemaVersion: "2.2.0",
@@ -67,6 +70,26 @@ const BOARD = SemanticBoardSchema.parse({
 });
 
 describe("the canonical suite", () => {
+	test("lives outside every skill package: neither the consumer skill, the frozen baseline nor a prepared copy carries it", () => {
+		// An author reads the installed skill. The 2026-09-14 batch showed that
+		// evaluation inputs shipped inside it are read too (TASK-212).
+		expect(existsSync(join(root, "evals", "evals.json"))).toBe(true);
+		for (const skill of [
+			join(root, "skills", "archboard"),
+			join(root, loaded.pins.baselineSkill.location),
+		]) {
+			expect(existsSync(join(skill, "evals")), skill).toBe(false);
+		}
+		const copy = mkdtempSync(join(tmpdir(), "archboard-prepared-skill-"));
+		try {
+			const prepared = prepareSkillArtifacts(copy, { root, revision: "test" });
+			expect(prepared.files.some((file) => file.includes("evals"))).toBe(false);
+			expect(existsSync(join(copy, "evals"))).toBe(false);
+		} finally {
+			rmSync(copy, { recursive: true, force: true });
+		}
+	});
+
 	test("loads whole: every scenario has a fixture, every coverage part and scenario reference exists", () => {
 		expect(suiteProblems(loaded)).toEqual([]);
 		expect(loaded.suite.evals.length).toBeGreaterThanOrEqual(15);

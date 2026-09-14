@@ -59,12 +59,18 @@ When it fires, in the same change:
 1. Update the recipe, reference, example and schema link the change touches
    (`skills/archboard/SKILL.md` and `references/`). A recipe that the CLI
    would now refuse is a defect, not a token saving.
-2. Update the evaluation inputs under `skills/archboard/evals/`: the scenario
-   whose `expectedFeatures` or `outcomes` the change alters, its fixture, and
-   the row of `coverage.json` that maps the feature. A new user-facing feature
-   or a new branch of a closed enum needs a scenario, an expected use and an
-   evidence owner; mechanical validation and generated metadata get a runtime
-   owner (a fast test), never a forced authored decoration.
+2. Update the evaluation inputs under `evals/` at the repository root: the
+   scenario whose `expectedFeatures` or `outcomes` the change alters, its
+   fixture, and the row of `coverage.json` that maps the feature. A new
+   user-facing feature or a new branch of a closed enum needs a scenario, an
+   expected use and an evidence owner; mechanical validation and generated
+   metadata get a runtime owner (a fast test), never a forced authored
+   decoration. The inputs live outside every skill package on purpose: an
+   author reads whatever the installed skill carries, and the batch of
+   2026-09-14 showed authors reading the scenario, the fixture and the rubric
+   they were being measured against (TASK-212); a fast test refuses an
+   `evals/` directory inside the consumer skill, the frozen baseline or a
+   prepared copy.
 3. `bun scripts/sync-skills.ts`, then `bun test src/runtime/skill-evaluation
 tests/system/cli/install-targets.test.ts` and `bun run check`.
 
@@ -83,8 +89,8 @@ evidence owner.
 
 ### Evaluating a change
 
-`skills/archboard/evals/README.md` is the manual; `bun run eval:skill` is
-the command; `rubric.md` is what the grader reads. The harness runs real
+`evals/README.md` is the manual; `bun run eval:skill` is the command;
+`evals/rubric.md` is what the grader reads. The harness runs real
 Codex authors (gpt-5.6-luna, high reasoning) on pinned Flask checkouts, three
 repetitions per scenario per skill version in parallel with isolated state, an
 installed baseline (`docs/design/skill-evals/baseline/archboard`) against an
@@ -108,6 +114,27 @@ containment, configured kinds, TASK-207 grouping and the rest of the
 checklist); a missing or incorrect required feature fails the run whatever the
 picture looks like, and the report surfaces every waived feature. Percentage
 targets come from a measured baseline, never from a plan.
+
+Two facts about the evidence that the first batch had to teach:
+
+- **A board patched with Codex's editing tool is a `file_change` item, not a
+  command.** The harness keeps every file change of the stream, fails the
+  write guardrail on a board file under the vault, and shows the grader the
+  list; a final board that is right proves nothing about how it got there. A
+  command that reads a board file with `sed -n`, `jq` or
+  `python -m json.tool board.semantic.json > /dev/null` is a read, and
+  `semantic edit --help` is not a write attempt. Commands that reach for
+  `evals/`, the harness source or another run's directory are recorded as
+  exposure; a contaminated run is listed apart and blocks the token
+  comparison without being called a board failure.
+
+- **Codex's `turn.completed` usage is the thread's cumulative total.** A
+  resumed grading call reports everything the session has cost so far, so a
+  session costs its last reading and each call's share is the growth since the
+  previous one; summing the calls counted the first call fifteen times over in
+  the 2026-09-14 batch. `evals/pins.json` pins this, and
+  `docs/design/skill-evals/2026-09-14-batch-corrections.md` records what it
+  changed.
 
 ## Facts that will mislead you
 

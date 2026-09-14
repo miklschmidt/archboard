@@ -3,8 +3,14 @@
 // about it, nothing is adopted unasked, every write says what it is doing, and
 // a read-only task writes nothing.
 
+import path from "node:path";
 import type { SemanticBoard, SemanticVariant } from "@/shared/semantic-board/index";
-import { unwrapped, type ClassifiedCommand } from "@/runtime/skill-evaluation/lib/events";
+import {
+	simpleCommands,
+	unwrapped,
+	type ClassifiedCommand,
+	type FileChange,
+} from "@/runtime/skill-evaluation/lib/events";
 import type { CheckVerdict } from "@/runtime/skill-evaluation/lib/reading";
 
 /** What the guardrails are judged from. */
@@ -14,6 +20,8 @@ interface GuardrailContext {
 	readonly configBefore: string;
 	readonly configAfter: string;
 	readonly commands: readonly ClassifiedCommand[];
+	/** What the author changed through Codex's editing tool, outside any command. */
+	readonly fileChanges: readonly FileChange[];
 	readonly vault: string;
 }
 
@@ -97,40 +105,129 @@ const adoptOnlyWhenAsked: Guardrail = (context) => {
 
 /**
  * Whether every write went through the CLI, and nothing touched the vault's
- * files directly. Write attempts without --doing are counted as evidence; the
- * CLI refuses them, so they cost the author a turn and nothing else.
+ * board files directly: neither a file the author patched with Codex's editing
+ * tool nor a shell command that writes into the vault. Write attempts without
+ * --doing are counted as evidence; the CLI refuses them, so they cost the
+ * author a turn and nothing else.
  * @param context The context.
  * @returns The verdict.
  */
 const doingOnWrites: Guardrail = (context) => {
-	const direct = context.commands.filter(
-		(command) =>
-			command.class !== "operation" &&
-			command.command.includes(context.vault) &&
-			hasBoardMutationEvidence(command.command),
+	const patched = context.fileChanges.filter((change) => isBoardFile(change.path, context.vault));
+	const direct = context.commands.filter((command) =>
+		mutatesBoardFile(command.command, context.vault),
 	);
 	const undeclared = context.commands.filter(
 		(command) => command.write && !command.command.includes("--doing"),
 	);
+	const found = [
+		...(patched.length === 0 ? [] : [`${patched.length} board files patched directly`]),
+		...(direct.length === 0 ? [] : [`${direct.length} commands wrote into the vault`]),
+	];
 	return {
-		passed: direct.length === 0,
-		detail: `${direct.length === 0 ? "no direct vault mutation detected" : `${direct.length} commands require review for direct vault mutation`}; ${undeclared.length} write attempts lacked --doing`,
+		passed: found.length === 0,
+		detail: `${found.length === 0 ? "no direct vault mutation" : found.join(", ")}; ${undeclared.length} write attempts lacked --doing`,
 	};
 };
 
 /**
- * Recognize direct mutation evidence without treating an arbitrary read as a write.
- * Configuration changes have their own guardrail and are allowed in vocabulary scenarios.
- * Other ambiguous commands remain in the grader's trace for source-level inspection.
- * @param command The recorded command, possibly wrapped by the shell.
- * @returns Whether the trace supplies evidence of a direct board-file mutation.
+ * How many direct board-file writes the trace records, whether they came from
+ * Codex's editing tool or a shell command.
+ * @param context The evidence for one run.
+ * @returns The number of recorded direct writes.
  */
-function hasBoardMutationEvidence(command: string): boolean {
-	const script = unwrapped(command);
-	if (script.includes("config.yaml") && !script.includes(".semantic.json")) return false;
-	return />|\b(?:rm|mv|cp|tee|touch|truncate|writeFileSync|writeFile|unlink|rmdir)\b|\bsed\s+-i|\bopen\([^)]*,\s*['"][wax]/u.test(
-		script,
+function countDirectBoardWrites(
+	context: Pick<GuardrailContext, "commands" | "fileChanges" | "vault">,
+): number {
+	return (
+		context.fileChanges.filter((change) => isBoardFile(change.path, context.vault)).length +
+		context.commands.filter((command) => mutatesBoardFile(command.command, context.vault)).length
 	);
+}
+
+/**
+ * Whether a path is a board document of the vault. Configuration changes have
+ * their own guardrail and are allowed in vocabulary scenarios.
+ * @param file The path.
+ * @param vault The run's vault.
+ * @returns True for a `.semantic.json` under the vault.
+ */
+function isBoardFile(file: string, vault: string): boolean {
+	const relative = path.relative(vault, file);
+	return (
+		relative !== "" &&
+		!relative.startsWith("..") &&
+		!path.isAbsolute(relative) &&
+		file.endsWith(".semantic.json")
+	);
+}
+
+/**
+ * The files a script redirects output into.
+ * @param script The unwrapped script.
+ * @returns The redirect targets, as written.
+ */
+function redirectTargets(script: string): string[] {
+	return [
+		...script.matchAll(/(?:^|[^\d&<>])\d?>{1,2}\s*(?!&)(?:'([^']*)'|"([^"]*)"|([^\s'"|;&]+))/gu),
+	].map((match) => match[1] ?? match[2] ?? match[3] ?? "");
+}
+
+/**
+ * Whether a shell command writes a board file of the vault: it redirects
+ * into one, or a writing command names one. A read that names a board file
+ * — `sed -n`, `jq`, `python -m json.tool ... >/dev/null`, `2>&1` — is a read,
+ * whatever else is on the line.
+ * @param command The recorded command, possibly wrapped by the shell.
+ * @param vault The run's vault.
+ * @returns True when the command changes a board file.
+ */
+function mutatesBoardFile(command: string, vault: string): boolean {
+	const script = unwrapped(command);
+	if (redirectTargets(script).some((target) => isBoardFile(unquoted(target), vault))) return true;
+	if (!script.includes(vault) || !script.includes(".semantic.json")) return false;
+	// A script that opens a file for writing, however it is spelled, and names
+	// a board file somewhere: a heredoc handed to python or node is one script.
+	if (
+		/\b(?:writeFileSync|writeFile)\b|\bopen\([^)]*,\s*['"][wax]|\bjson\.dump\(|\bsed\s+-i\b/u.test(
+			script,
+		)
+	)
+		return true;
+	return simpleCommands(script).some((simple) => writesNamedFile(simple, vault));
+}
+
+/**
+ * A shell word without the quotes around it.
+ * @param word The word as written.
+ * @returns The word's text.
+ */
+function unquoted(word: string): string {
+	return word.replace(/^(['"])(.*)\1$/su, "$2");
+}
+
+/**
+ * The words of one simple command, a quoted path with spaces being one word.
+ * @param simple The simple command.
+ * @returns Its words, unquoted.
+ */
+function wordsOf(simple: string): string[] {
+	return [...simple.matchAll(/'[^']*'|"[^"]*"|\S+/gu)].map((match) => unquoted(match[0]));
+}
+
+/**
+ * Whether one simple command is a write to a board file it names: a file
+ * command whose target is one, or a copy or move that lands on one.
+ * @param simple The simple command.
+ * @param vault The run's vault.
+ * @returns True for a writer whose target is a board file.
+ */
+function writesNamedFile(simple: string, vault: string): boolean {
+	const words = wordsOf(simple);
+	if (!words.some((word) => isBoardFile(word, vault))) return false;
+	const verb = words[0] ?? "";
+	if (/^(?:rm|unlink|truncate|touch|tee|rmdir)$/u.test(verb)) return true;
+	return /^(?:cp|mv)$/u.test(verb) && isBoardFile(words.at(-1) ?? "", vault);
 }
 
 /**
@@ -174,4 +271,4 @@ function evaluateGuardrails(names: readonly string[], context: GuardrailContext)
 	});
 }
 
-export { evaluateGuardrails, type GuardrailContext };
+export { countDirectBoardWrites, evaluateGuardrails, type GuardrailContext };

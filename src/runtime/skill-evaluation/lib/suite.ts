@@ -99,8 +99,12 @@ const OutcomeCheckSchema = z
 		to: z.string().optional(),
 		kind: z.string().optional(),
 		lifecycle: z.enum(["current", "draft", "historical"]).optional(),
+		/** Subjects of every kind: nodes, relationships, flows and walkthroughs together. */
 		removed: z.number().optional(),
 		addedAtLeast: z.number().optional(),
+		/** Nodes alone, so a replaced relationship does not count as a removed part. */
+		removedNodes: z.number().optional(),
+		addedNodesAtLeast: z.number().optional(),
 		withReason: z.boolean().optional(),
 		view: z.string().optional(),
 		grammar: z.enum(["architecture", "data-flow"]).optional(),
