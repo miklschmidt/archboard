@@ -1,5 +1,5 @@
 {
-	"$comment": "The pipeline with the session interface reachable from the request context, and no views yet.",
+	"$comment": "The pipeline with the session interface reached from two places, as Flask 3.0.0 has it: the request context opens the session and process_response saves it. No views yet.",
 	"registerRepo": true,
 	"steps": [
 		{
@@ -23,7 +23,7 @@
 						"name": "Request context",
 						"kind": "module",
 						"parent": "Flask app",
-						"responsibility": "Binds request and session for one request",
+						"responsibility": "Binds request and session for one request and matches the URL",
 						"binding": { "repo": "$FLASK", "path": "src/flask/ctx.py" }
 					},
 					{
@@ -44,7 +44,7 @@
 						"name": "dispatch_request",
 						"kind": "function",
 						"parent": "Flask app",
-						"responsibility": "Matches the rule and calls the view",
+						"responsibility": "Calls the view function of the matched rule",
 						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
 					},
 					{
@@ -52,6 +52,13 @@
 						"kind": "function",
 						"parent": "Flask app",
 						"responsibility": "The matched endpoint's function"
+					},
+					{
+						"name": "process_response",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Runs after_request functions and saves the session",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
 					}
 				],
 				"edges": [
@@ -69,6 +76,12 @@
 					},
 					{
 						"from": "full_dispatch_request",
+						"to": "process_response",
+						"kind": "call",
+						"label": "via finalize_request"
+					},
+					{
+						"from": "process_response",
 						"to": "Session interface",
 						"kind": "call",
 						"label": "save_session"

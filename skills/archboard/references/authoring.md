@@ -104,20 +104,20 @@ flow or walkthrough without it.
 Every refusal names the rule and the subject. Repair the payload; do not change
 the vocabulary or invent an id to get past it.
 
-| Refusal                              | Meaning and repair                                                                                                                   |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| unknown field                        | The payload has a key the schema lacks; check the spelling against [schemas](schemas.md).                                            |
-| unknown kind, level or group         | Not a key of `config.yaml`. Use a configured one; extend the file only when the request is about vocabulary, then `archboard check`. |
-| ambiguous name                       | Two nodes share the name; use the id from the family you read.                                                                       |
-| unknown id                           | A stated `id` names nothing on that variant; new subjects leave `id` out.                                                            |
-| dangling reference                   | An edge end, participant, step end, view selection or beat subject names nothing; fix the reference.                                 |
-| containment cycle                    | A `parent` chain loops.                                                                                                              |
-| self step                            | `kind: "self"` exactly when `from` and `to` are the same node.                                                                       |
-| empty selection or empty walkthrough | A selection view names nothing; a walkthrough has no beats.                                                                          |
-| invalid traffic or repeat            | `speed`/`volume` are positive finite; `repeat` is an integer of 2 or more.                                                           |
-| too long                             | Names, responsibilities, labels and handles are one line and bounded; descriptions are bounded.                                      |
-| version moved (exit 5)               | Somebody wrote since you read; `semantic show` again and redo the change on what is there.                                           |
-| held or claim revoked (exit 5)       | Another writer holds the board, or a person released your claim; stop and say so.                                                    |
+| Refusal                              | Meaning and repair                                                                                                                                                                                                           |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| unknown field                        | The payload has a key the schema lacks; check the spelling against [schemas](schemas.md).                                                                                                                                    |
+| unknown kind, level or group         | Not a key of `config.yaml`. Use a configured one; extend the file only when the request is about vocabulary, then `archboard check`.                                                                                         |
+| ambiguous name                       | Two nodes share the name; use the id from the family you read.                                                                                                                                                               |
+| unknown id                           | A stated `id` names nothing on that variant; new subjects leave `id` out. The one exception: a draft may restate a node it removed under the `subject` id of its open `deleted-and-changed` issue ([variants](variants.md)). |
+| dangling reference                   | An edge end, participant, step end, view selection or beat subject names nothing; fix the reference.                                                                                                                         |
+| containment cycle                    | A `parent` chain loops.                                                                                                                                                                                                      |
+| self step                            | `kind: "self"` exactly when `from` and `to` are the same node.                                                                                                                                                               |
+| empty selection or empty walkthrough | A selection view names nothing; a walkthrough has no beats.                                                                                                                                                                  |
+| invalid traffic or repeat            | `speed`/`volume` are positive finite; `repeat` is an integer of 2 or more.                                                                                                                                                   |
+| too long                             | Names, responsibilities, labels and handles are one line and bounded; descriptions are bounded.                                                                                                                              |
+| version moved (exit 5)               | Somebody wrote since you read; `semantic show` again and redo the change on what is there.                                                                                                                                   |
+| held or claim revoked (exit 5)       | Another writer holds the board, or a person released your claim; stop and say so.                                                                                                                                            |
 
 A `warnings` list on a successful answer means the board references vocabulary
 the configuration no longer defines; `archboard check` names each reference.

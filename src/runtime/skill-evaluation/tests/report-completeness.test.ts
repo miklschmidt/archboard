@@ -33,6 +33,8 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 		durationMs: 10,
 		usage: { input: 100, cached: 20, cacheWrite: null, output: 10, reasoning: null, total: 110 },
 		commandCounts: { discovery: 1, operation: 2, "code-investigation": 1, setup: 0, ambiguous: 0 },
+		directWrites: 0,
+		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
 		outcomesPassed: true,
 		guardrailsPassed: true,
 		verdict,
