@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-09-13 23:15'
-updated_date: '2026-09-14 02:55'
+updated_date: '2026-09-14 22:26'
 labels: []
 dependencies:
   - TASK-207
@@ -20,6 +20,8 @@ references:
   - TASK-208
   - skills/archboard-dev/SKILL.md
   - TASK-207
+  - TASK-212
+  - TASK-213
 type: enhancement
 ordinal: 370000
 ---
@@ -86,6 +88,8 @@ The maintained evaluation instructions must specify one gpt-6-astra session at h
 6. Sync skills, run bun run check. AC#6 (measured comparison) is a human-run step: the baseline package is frozen and the harness is ready; the runs are not executed here.
 
 Review follow-up: repair the canonical primary recipes where a command is not executable or the Flask example contradicts source; update the corresponding preservation/eval contract if the same false expectation is encoded there; synchronize derived skills; validate with the no-model eval input check and focused skill-distribution/install tests.
+
+Proposed follow-up after human batch 2026-09-14T13-50-10-617Z: TASK-212 repairs evaluation validity and moves canonical inputs to repository-root evals/; TASK-213 repairs the documented reconciliation restoration contract. Once those contracts are executable, update only the affected general skill guidance (actual call receivers versus ordered sequence, external bindings, explicit-edge versus node-region views, reconciliation restoration); do not optimize for hidden rubric wording. Preserve the frozen baseline and original batch. Behavioral evidence and efficiency acceptance remain pending a new human-run comparison on identical corrected inputs and CLI for both arms. Global-home isolation remains deferred. This turn records a plan only.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
