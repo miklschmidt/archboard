@@ -62,8 +62,20 @@ function installFailure(result: InstallSpawn): string {
 
 const trackedSkillFiles = [
 	"SKILL.md",
-	"references/architecture-workflow.md",
+	"references/authoring.md",
+	"references/sequences-views-walkthroughs.md",
+	"references/variants.md",
+	"references/schemas.md",
 	"evals/evals.json",
+] as const;
+
+/** The derived files every prepared copy of the skill carries beside the tracked ones. */
+const generatedSkillFiles = [
+	"references/generated/semantic-board.schema.json",
+	"references/generated/vault-config.schema.json",
+	"references/generated/semantic-create-input.schema.json",
+	"references/generated/semantic-edit-input.schema.json",
+	"references/generated/INSTALL.md",
 ] as const;
 
 function createInstallFixture(): InstallFixture {
@@ -167,6 +179,11 @@ function createInstallFixture(): InstallFixture {
 				const source = join(checkoutRoot, "skills", "archboard", relative);
 				if (!readFileSync(installed).equals(readFileSync(source))) {
 					throw new Error(`Installed skill bytes differ: ${relative}`);
+				}
+			}
+			for (const relative of generatedSkillFiles) {
+				if (!existsSync(join(target, relative))) {
+					throw new Error(`Missing generated skill file ${join(target, relative)}`);
 				}
 			}
 		},

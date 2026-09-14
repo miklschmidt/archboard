@@ -48,7 +48,9 @@ const server: {
 	reply: Reply;
 	calls: string[];
 	documents: Record<string, unknown>;
-} = { reply: "pending", calls: [], documents: {} };
+	/** What the vault checker answers, or undefined for a checker that refuses. */
+	vault: unknown;
+} = { reply: "pending", calls: [], documents: {}, vault: undefined };
 
 const realFetch = globalThis.fetch;
 
@@ -58,7 +60,11 @@ afterEach(() => {
 	server.reply = "pending";
 	server.calls = [];
 	server.documents = {};
+	server.vault = undefined;
 });
+
+/** The route the shared vault checker answers on. */
+const VAULT_ROUTE = "/api/vault/check";
 
 /** The route a pane reads a whole board through. */
 const BOARD_ROUTE = "/api/semantic-boards/board";
@@ -184,6 +190,13 @@ function fakeFetch(input: RequestInfo | URL): Promise<Response> {
 	const board = documentAsked(url);
 	if (board !== null) {
 		return answered(documentReply(board));
+	}
+	if (url.startsWith(VAULT_ROUTE)) {
+		return answered(
+			server.vault === undefined
+				? { status: 503, body: { success: false, error: "no checker" } }
+				: { status: 200, body: server.vault },
+		);
 	}
 	const reply = server.reply;
 	return reply === "pending" ? new Promise<Response>(() => undefined) : answered(reply);

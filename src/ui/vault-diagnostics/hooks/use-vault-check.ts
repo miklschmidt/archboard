@@ -1,35 +1,19 @@
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
-import { VaultCheckSchema, type VaultCheck } from "@/shared/semantic-policy";
-import { semanticBoardKeys } from "@/ui/semantic-board-canvas";
-import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
+import type { VaultCheck } from "@/shared/semantic-policy";
+import { semanticBoardKeys, vaultCheckQuery } from "@/ui/semantic-board-canvas";
 
 /**
  * Read the shared checker; disk edits become visible without reopening the vault.
+ *
+ * The query itself is owned by the semantic canvas, which draws under the same
+ * policy and names groups out of it; this is the diagnostics bell's reader of
+ * that one cache entry.
  * @returns The shared vault check query.
  */
 function useVaultCheck(): UseQueryResult<VaultCheck> {
-	return useQuery({
-		queryKey: ["vault-check"],
-		/**
-		 * Read and validate the server response.
-		 * @param context The query cancellation signal.
-		 * @returns The shared checker snapshot.
-		 */
-		queryFn: async (context): Promise<VaultCheck> => {
-			const { signal } = context;
-			const response = await fetch("/api/vault/check", { signal });
-			if (!response.ok)
-				throw new Error("The vault check failed. Check the server connection and try again.");
-			return VaultCheckSchema.parse(await response.json());
-		},
-		staleTime: VAULT_CHECK_POLL_MS,
-		refetchInterval: VAULT_CHECK_POLL_MS,
-		refetchOnWindowFocus: true,
-		refetchOnReconnect: true,
-		retry: false,
-	});
+	return useQuery(vaultCheckQuery());
 }
 
 /**

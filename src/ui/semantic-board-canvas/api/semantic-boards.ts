@@ -12,6 +12,7 @@
 // shrug for all of them.
 
 import { z } from "zod";
+import { VaultCheckSchema, type VaultCheck } from "@/shared/semantic-policy/index";
 import {
 	SemanticRenderReplySchema,
 	RenderedVariantSchema,
@@ -273,11 +274,28 @@ async function fetchSemanticBoardDocument(board: string, signal?: AbortSignal): 
 	return parsed.data.board;
 }
 
+/** The route the shared vault checker answers on. */
+const VAULT_CHECK_URL = "/api/vault/check";
+
+/**
+ * The vault's policy and diagnostics, as the shared checker reports them.
+ * @param signal Cancels the read.
+ * @returns The checked policy and diagnostics.
+ */
+async function fetchVaultCheck(signal?: AbortSignal): Promise<VaultCheck> {
+	const response = await requestRoute(VAULT_CHECK_URL, signal);
+	if (!response.ok) {
+		throw new Error("The vault check failed. Check the server connection and try again.");
+	}
+	return VaultCheckSchema.parse(await response.json());
+}
+
 export {
 	SemanticBoardError,
 	fetchSemanticBoardDocument,
 	fetchSemanticBoards,
 	fetchSemanticRender,
+	fetchVaultCheck,
 	type SemanticAtlas,
 	type SemanticBoardEntry,
 	type SemanticBox,

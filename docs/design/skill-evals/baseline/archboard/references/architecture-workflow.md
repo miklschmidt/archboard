@@ -4,23 +4,39 @@ Use these fragments in the JSON for `semantic new` or `semantic edit`.
 
 ## Containment and groups
 
-Here the service contains a module. Both explicitly belong to Fulfillment.
+Here two services each contain a module. Both modules explicitly belong to the
+configured `fulfillment` group across their containers; the dispatcher is also
+`billing`'s. Neither service is a member: membership is never inherited in either
+direction.
 
 ```json
 {
 	"nodes": [
-		{ "name": "Orders", "kind": "service", "group": "Fulfillment" },
+		{ "name": "Orders", "kind": "service" },
+		{ "name": "Shipping", "kind": "service" },
 		{
 			"name": "Order validation",
 			"kind": "module",
 			"parent": "Orders",
 			"responsibility": "Checks whether an order can be accepted",
-			"group": "Fulfillment",
+			"groups": ["fulfillment"],
 			"binding": { "repo": "github.com/acme/payments", "path": "src/orders/validation.ts" }
+		},
+		{
+			"name": "Dispatch",
+			"kind": "module",
+			"parent": "Shipping",
+			"groups": ["billing", "fulfillment"]
 		}
 	]
 }
 ```
+
+The ids must exist under `groups` in `.archboard/config.yaml`; a new unknown id
+is refused while the configuration is valid. Then
+`archboard semantic inspect payments --group fulfillment` lists the two modules,
+the relationships between them, the relationships crossing the group's boundary
+with their direction, and the immediate neighbors outside it.
 
 ## Link levels
 
@@ -35,7 +51,7 @@ an Orders node on `payments` can link to a service board named `Order processing
 			"name": "Orders",
 			"kind": "service",
 			"responsibility": "Accepts and tracks orders",
-			"group": "Fulfillment",
+			"groups": ["fulfillment"],
 			"drillDown": {
 				"board": "Order processing",
 				"variant": { "kind": "current" }

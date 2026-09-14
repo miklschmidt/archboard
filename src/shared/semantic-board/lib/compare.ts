@@ -123,11 +123,11 @@ interface VariantComparison {
  * The fields of each kind that say what a thing *is*, as opposed to how much
  * attention it is asking for or how it is being read.
  *
- * `group` is in the node list, and belongs there: moving a part from one
- * effort to another is a statement about the architecture, not about how it is
- * drawn. The colour the group ends up wearing is not compared, because the
- * colour is not on the board — it is derived from the label, so retuning the
- * palette can never make a variant read as changed.
+ * `groups` is in the node list, and belongs there: moving a part into or out
+ * of an effort is a statement about the architecture, not about how it is
+ * drawn. What a group is called is not compared, because the name is not on
+ * the board — it is in the vault policy under the id — so renaming a group can
+ * never make a variant read as changed.
  *
  * `emphasis` is deliberately absent from the relationship list. It is authored
  * presentation intent — how loudly to draw a connection — and a proposal whose
@@ -150,7 +150,7 @@ const COMPARED = {
 		"responsibility",
 		"description",
 		"parent",
-		"group",
+		"groups",
 		"binding",
 		"drillDown",
 	],
@@ -175,8 +175,11 @@ const COMPARED = {
  * about, all at once, and the viewer decides what highlighting them looks like.
  * A beat's own place in its walkthrough is emphatically not in here — that one
  * is order that means something, and it is compared.
+ *
+ * A node's groups are a set by contract, and a node in no group may spell that
+ * as no field or as an empty list: both are the empty set, and compared as it.
  */
-const UNORDERED: ReadonlySet<string> = new Set(["participants", "subjects"]);
+const UNORDERED: ReadonlySet<string> = new Set(["participants", "subjects", "groups"]);
 
 /**
  * One field's value as it is compared, which is not always as it is written.
@@ -185,10 +188,10 @@ const UNORDERED: ReadonlySet<string> = new Set(["participants", "subjects"]);
  * @returns The value to compare by.
  */
 function comparable(field: string, value: unknown): unknown {
-	if (!UNORDERED.has(field) || !Array.isArray(value)) {
+	if (!UNORDERED.has(field)) {
 		return value;
 	}
-	const written: readonly unknown[] = value;
+	const written: readonly unknown[] = Array.isArray(value) ? value : [];
 	return written.map((one) => JSON.stringify(one)).toSorted();
 }
 

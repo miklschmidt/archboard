@@ -48,7 +48,7 @@ references follow the explicit neutral fallback in
 | Uncolored container inside Kubernetes      | Kubernetes green     | Neutral          |
 
 Kubernetes can instead be inside yellow AWS without changing its own type or
-requiring a platform tag. Group labels are not an alternative source of color
+requiring a platform tag. Group memberships are not an alternative source of color
 scope; structural containment supplies the membership being communicated here.
 
 ## Relationship, comparison and selection

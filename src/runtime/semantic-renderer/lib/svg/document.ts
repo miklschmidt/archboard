@@ -127,6 +127,18 @@ function stylesheet(palette: Palette, fonts: FontSource): string {
 			"[data-semantic-kind]{cursor:pointer}",
 			".ab-halo{opacity:0}",
 			`.is-selected .ab-halo{opacity:1;stroke:${palette.selection}}`,
+			// Group emphasis is a viewer's reading, toggled on the picture the way
+			// selection is: the surface says one group is under inspection, its
+			// members and the wiring between them stand as drawn, its immediate
+			// neighbours and the connections that cross its boundary stay
+			// readable, and everything else recedes. Ancestors of a member are
+			// context: readable, but never lit as members.
+			".is-group-focus [data-semantic-id]{opacity:.28}",
+			".is-group-focus .is-group-member,.is-group-focus .is-group-member [data-semantic-id]{opacity:1}",
+			".is-group-focus .is-group-boundary,.is-group-focus .is-group-context{opacity:.7}",
+			".is-group-focus .is-group-context [data-semantic-id]{opacity:.28}",
+			`.is-group-focus .is-group-member>.ab-halo{opacity:1;stroke:${palette.selection};stroke-dasharray:4 3}`,
+			`.is-group-focus .is-group-member.is-selected>.ab-halo{stroke-dasharray:none}`,
 			// A reader who has asked their system for less motion gets a still
 			// picture even when nobody asked this renderer for one. CSS cannot stop
 			// a SMIL animation, so the layer it moves is hidden instead: the dots go

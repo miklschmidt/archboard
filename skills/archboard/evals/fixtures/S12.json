@@ -1,0 +1,87 @@
+{
+	"$comment": "The pipeline with the session interface reachable from the request context, and no views yet.",
+	"registerRepo": true,
+	"steps": [
+		{
+			"op": "new",
+			"board": "Flask request pipeline",
+			"input": {
+				"level": "service",
+				"nodes": [
+					{
+						"name": "WSGI server",
+						"kind": "external",
+						"responsibility": "Calls the application once per request"
+					},
+					{
+						"name": "Flask app",
+						"kind": "app",
+						"responsibility": "The WSGI application object",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "Request context",
+						"kind": "module",
+						"parent": "Flask app",
+						"responsibility": "Binds request and session for one request",
+						"binding": { "repo": "$FLASK", "path": "src/flask/ctx.py" }
+					},
+					{
+						"name": "Session interface",
+						"kind": "module",
+						"parent": "Flask app",
+						"responsibility": "Opens and saves the signed cookie session",
+						"binding": { "repo": "$FLASK", "path": "src/flask/sessions.py" }
+					},
+					{
+						"name": "full_dispatch_request",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Preprocess, dispatch and finalize one request",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "dispatch_request",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Matches the rule and calls the view",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "View function",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "The matched endpoint's function"
+					}
+				],
+				"edges": [
+					{
+						"from": "WSGI server",
+						"to": "full_dispatch_request",
+						"kind": "call",
+						"label": "via wsgi_app"
+					},
+					{
+						"from": "Request context",
+						"to": "Session interface",
+						"kind": "call",
+						"label": "open_session"
+					},
+					{
+						"from": "full_dispatch_request",
+						"to": "Session interface",
+						"kind": "call",
+						"label": "save_session"
+					},
+					{ "from": "full_dispatch_request", "to": "dispatch_request", "kind": "call" },
+					{
+						"from": "dispatch_request",
+						"to": "View function",
+						"kind": "call",
+						"label": "view_functions[endpoint]"
+					}
+				]
+			}
+		}
+	]
+}

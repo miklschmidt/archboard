@@ -1,0 +1,761 @@
+{
+	"$comment": "The behavioural coverage inventory: every user-facing schema path and closed branch of the audited schemas plus TASK-207, the scenarios that exercise it, what correct use is, and who owns the evidence. author-run: a model run proves it (graded by the blinded grader against source); harness-check: the deterministic outcome checks prove it from the saved board; grader: only the grader can judge it; runtime-owner: an existing fast test owns it and no model run is asked to. An entry with no scenarios is uncovered by model runs and says so.",
+	"parts": [
+		{
+			"part": 1,
+			"title": "Architecture creation and editing",
+			"entries": [
+				{
+					"path": "board.name, board.level (configured)",
+					"expectedUse": "one board named as asked at the configured level",
+					"scenarios": ["S00", "S07", "S08", "S14"],
+					"evidence": "harness-check",
+					"owner": "board-level, board-count"
+				},
+				{
+					"path": "create.variant, create.summary (initial variant name/summary)",
+					"expectedUse": "fixtures name the initial variant; an author may",
+					"scenarios": ["S02", "S06"],
+					"evidence": "harness-check",
+					"owner": "variant-exists on the fixture-named variant; src/runtime/semantic-board-store/tests"
+				},
+				{
+					"path": "empty board then population",
+					"expectedUse": "a board may start empty and be filled by edits",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests (create with empty content, then edit)"
+				},
+				{
+					"path": "edit.level (board-level level change)",
+					"expectedUse": "level moves with the board, not a variant",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests level change"
+				},
+				{
+					"path": "node.name, node.kind, node.responsibility, node.description",
+					"expectedUse": "configured kind, one-line responsibility grounded in source, longer description where useful",
+					"scenarios": ["S00", "S01", "S14"],
+					"evidence": "author-run",
+					"owner": "grader feature node.kind, node.responsibility; harness node-kind"
+				},
+				{
+					"path": "optional field preservation or intentional clearing on restate",
+					"expectedUse": "a restated node keeps responsibility and binding unless the change is about them",
+					"scenarios": ["S01", "S03", "S10"],
+					"evidence": "harness-check",
+					"owner": "node-field-retained, edge-ids-retained"
+				}
+			]
+		},
+		{
+			"part": 2,
+			"title": "Containment and relationships",
+			"entries": [
+				{
+					"path": "node.parent (single, optional, nested)",
+					"expectedUse": "truthful containment; nested where the source nests",
+					"scenarios": ["S00", "S03", "S05", "S12"],
+					"evidence": "harness-check",
+					"owner": "container-has-children, node-parent"
+				},
+				{
+					"path": "containment acyclic",
+					"expectedUse": "refused at the boundary",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests integrity (cycle)"
+				},
+				{
+					"path": "edge.from/to on real receivers, not containers",
+					"expectedUse": "calls land on the internal part that receives them",
+					"scenarios": ["S00", "S05", "S14"],
+					"evidence": "harness-check",
+					"owner": "no-edge-to-container-with-children; grader edge.actual-receiver"
+				},
+				{
+					"path": "whole-module endpoints where appropriate",
+					"expectedUse": "a leaf module is a fine endpoint",
+					"scenarios": ["S01", "S02", "S13"],
+					"evidence": "author-run",
+					"owner": "grader edge.actual-receiver"
+				},
+				{
+					"path": "edge.kind (configured), edge.label, edge.description",
+					"expectedUse": "configured kinds; label says what is carried",
+					"scenarios": ["S01", "S08", "S10"],
+					"evidence": "harness-check",
+					"owner": "edge-between with kind; fixtures S10 carry description"
+				},
+				{
+					"path": "edge.emphasis normal (default) | hero | muted",
+					"expectedUse": "presentation intent, excluded from semantic change badges",
+					"scenarios": ["S10"],
+					"evidence": "harness-check",
+					"owner": "fixture S10 holds hero and muted; edge-ids-retained shows they survive restate; src/shared/semantic-board/tests compare (emphasis not a change)"
+				}
+			]
+		},
+		{
+			"part": 3,
+			"title": "Illustrative traffic",
+			"entries": [
+				{
+					"path": "edge.traffic omitted (off)",
+					"expectedUse": "turning traffic off is omitting it",
+					"scenarios": ["S10"],
+					"evidence": "harness-check",
+					"owner": "edge-traffic off"
+				},
+				{
+					"path": "edge.traffic {} (defaults)",
+					"expectedUse": "enable with defaults",
+					"scenarios": ["S10"],
+					"evidence": "harness-check",
+					"owner": "edge-traffic default"
+				},
+				{
+					"path": "edge.traffic.speed, edge.traffic.volume (positive finite)",
+					"expectedUse": "stated values where justified",
+					"scenarios": ["S10"],
+					"evidence": "harness-check",
+					"owner": "edge-traffic custom; grader traffic.custom"
+				},
+				{
+					"path": "effective-default equivalence in identity/comparison",
+					"expectedUse": "{} and explicit defaults compare equal",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests compare (effectiveTraffic)"
+				},
+				{
+					"path": "illustration is not telemetry",
+					"expectedUse": "the answer says the animation illustrates flow",
+					"scenarios": ["S10"],
+					"evidence": "grader",
+					"owner": "grader feature traffic.illustrative; rubric"
+				}
+			]
+		},
+		{
+			"part": 4,
+			"title": "Code binding and linked detail",
+			"entries": [
+				{
+					"path": "node.binding absent (planned/unbound node)",
+					"expectedUse": "a part with no code stays unbound",
+					"scenarios": ["S00", "S05"],
+					"evidence": "author-run",
+					"owner": "grader binding.repo-path (WSGI server, View function unbound)"
+				},
+				{
+					"path": "node.binding.repo (registered identity), node.binding.path (repo-relative)",
+					"expectedUse": "repo add, then bind through the identity",
+					"scenarios": ["S00", "S01", "S03", "S14"],
+					"evidence": "harness-check",
+					"owner": "node-binding, binding-count-at-least"
+				},
+				{
+					"path": "node.binding.branch, .commit, .confirmedAt",
+					"expectedUse": "only when confirmed; preserved on restate",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/code-target/tests and semantic-board-store tests (binding fields round-trip)"
+				},
+				{
+					"path": "node.drillDown.board + variant {kind: current}",
+					"expectedUse": "link to the detail board's designation",
+					"scenarios": ["S04"],
+					"evidence": "harness-check",
+					"owner": "node-drilldown current"
+				},
+				{
+					"path": "node.drillDown.variant {kind: named, name}",
+					"expectedUse": "link to a named variant; never falls back to current",
+					"scenarios": ["S04"],
+					"evidence": "harness-check",
+					"owner": "node-drilldown named; src/ui/semantic-board-canvas/tests drill address (missing named target refused)"
+				},
+				{
+					"path": "detail boards separate from proposals",
+					"expectedUse": "the existing detail board is reused, not recreated",
+					"scenarios": ["S04"],
+					"evidence": "harness-check",
+					"owner": "board-count 2"
+				}
+			]
+		},
+		{
+			"part": 5,
+			"title": "Ordered sequences",
+			"entries": [
+				{
+					"path": "flow.name, flow.summary, flow.participants (identity and column order)",
+					"expectedUse": "participants in reading order",
+					"scenarios": ["S05", "S07"],
+					"evidence": "harness-check",
+					"owner": "flow-with-steps; grader flow.participants-and-steps"
+				},
+				{
+					"path": "step.from/to/label, step identity",
+					"expectedUse": "steps in order with what they carry",
+					"scenarios": ["S05", "S07"],
+					"evidence": "harness-check",
+					"owner": "flow-with-steps"
+				},
+				{
+					"path": "step.kind sync (default) | async | return | self",
+					"expectedUse": "as the source justifies; self exactly when both ends are one node",
+					"scenarios": ["S05", "S07"],
+					"evidence": "harness-check",
+					"owner": "flow-with-steps kinds [sync, return, self]; grader flow.message-kinds"
+				},
+				{
+					"path": "step.note, step.repeat >= 2",
+					"expectedUse": "annotated, repeated attempts",
+					"scenarios": ["S07"],
+					"evidence": "harness-check",
+					"owner": "flow-step-repeat withNote"
+				},
+				{
+					"path": "single-participant self flow",
+					"expectedUse": "a component's own steps as one flow",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests views (one participant, self steps)"
+				},
+				{
+					"path": "step insert/delete/reorder with continuing identity",
+					"expectedUse": "restating a flow keeps step ids where stated",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests (flow restate keeps step ids); compare tests (sequence position meaningful)"
+				}
+			]
+		},
+		{
+			"part": 6,
+			"title": "Shared views",
+			"entries": [
+				{
+					"path": "view.name, view.summary, view.grammar architecture | data-flow",
+					"expectedUse": "a data-flow view over a flow; architecture views over regions",
+					"scenarios": ["S05", "S12"],
+					"evidence": "harness-check",
+					"owner": "view-exists grammar"
+				},
+				{
+					"path": "view.scope {kind: all}",
+					"expectedUse": "the whole board",
+					"scenarios": ["S02"],
+					"evidence": "harness-check",
+					"owner": "fixture S02 Contexts view; render-ok through it"
+				},
+				{
+					"path": "view.scope selection.nodes with no edges (node region: every relationship among them)",
+					"expectedUse": "a region view",
+					"scenarios": ["S12"],
+					"evidence": "harness-check",
+					"owner": "view-exists edgesSelected 0"
+				},
+				{
+					"path": "view.scope selection.edges (explicit edge isolation)",
+					"expectedUse": "one relationship isolated by id or handle",
+					"scenarios": ["S12"],
+					"evidence": "harness-check",
+					"owner": "view-exists edgesSelected 1"
+				},
+				{
+					"path": "view.scope selection.flows",
+					"expectedUse": "a data-flow view scoped to a flow",
+					"scenarios": ["S05"],
+					"evidence": "author-run",
+					"owner": "grader view.data-flow; src/shared/semantic-board/tests scope"
+				},
+				{
+					"path": "automatic endpoints, participants and ancestor context",
+					"expectedUse": "come with the selection",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests scope (withContainers, endpointsOf)"
+				},
+				{
+					"path": "board-owned view edits across variants",
+					"expectedUse": "a view added once applies to both variants",
+					"scenarios": ["S12"],
+					"evidence": "harness-check",
+					"owner": "render-ok of the draft through Session path"
+				},
+				{
+					"path": "selected subject removed on one comparison side",
+					"expectedUse": "the removal stays visible through the view",
+					"scenarios": ["S12"],
+					"evidence": "harness-check",
+					"owner": "comparison-standing removed 1 + render-ok; src/shared/semantic-board/tests compare withRemoved"
+				},
+				{
+					"path": "view empty on both sides without falling back to all",
+					"expectedUse": "an empty selection draws nothing",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests (NothingDrawn) and scope tests"
+				}
+			]
+		},
+		{
+			"part": 7,
+			"title": "Walkthroughs",
+			"entries": [
+				{
+					"path": "walkthrough.name, walkthrough.summary, beats ordered with heading and body",
+					"expectedUse": "an explanation in beats",
+					"scenarios": ["S05", "S13"],
+					"evidence": "harness-check",
+					"owner": "walkthrough-beat-references, walkthrough-beats-retained"
+				},
+				{
+					"path": "beat.subjects referencing node | edge | flow | step",
+					"expectedUse": "each allowed class",
+					"scenarios": ["S05", "S13"],
+					"evidence": "harness-check",
+					"owner": "walkthrough-beat-references subjectKinds [step, node]; fixture S13 references nodes; runtime tests for edge and flow subjects"
+				},
+				{
+					"path": "introductory beat with no subjects",
+					"expectedUse": "an opening beat about the whole picture",
+					"scenarios": ["S13"],
+					"evidence": "harness-check",
+					"owner": "fixture S13 beat 1; walkthrough-beats-retained"
+				},
+				{
+					"path": "beat.view stated versus omitted",
+					"expectedUse": "a beat told through a named view; others through the current presentation",
+					"scenarios": ["S05"],
+					"evidence": "author-run",
+					"owner": "grader walkthrough.beat-subjects; src/ui/semantic-board-canvas/tests narrative (omitted view keeps the presentation)"
+				},
+				{
+					"path": "stable beat identity across reword/reorder/add/remove",
+					"expectedUse": "ids kept in order when a body is reworded",
+					"scenarios": ["S13"],
+					"evidence": "harness-check",
+					"owner": "walkthrough-beats-retained"
+				},
+				{
+					"path": "repair when referenced subjects change",
+					"expectedUse": "the beat about a removed part is pointed at its successor",
+					"scenarios": ["S13"],
+					"evidence": "harness-check",
+					"owner": "walkthrough-beat-references subjectNames [Jinja environment]"
+				}
+			]
+		},
+		{
+			"part": 8,
+			"title": "Efficient authoring inputs",
+			"entries": [
+				{
+					"path": "references by existing id and by name",
+					"expectedUse": "restate by id; refer by name",
+					"scenarios": ["S01", "S03", "S11"],
+					"evidence": "harness-check",
+					"owner": "node-id-retained"
+				},
+				{
+					"path": "missing ids minted by the product",
+					"expectedUse": "new subjects leave id out",
+					"scenarios": ["S00", "S01"],
+					"evidence": "harness-check",
+					"owner": "nodes-named after creation; grader edge.replacement-rule"
+				},
+				{
+					"path": "same-write `as` handles on node/edge/flow/step and their consumers",
+					"expectedUse": "a beat references a step created in the same write",
+					"scenarios": ["S05", "S12"],
+					"evidence": "author-run",
+					"owner": "grader authoring.handles, view.edge-isolation; src/runtime/semantic-board-store/tests handles"
+				},
+				{
+					"path": "one batched edit; full-definition replacement with field preservation",
+					"expectedUse": "one semantic edit for a related change",
+					"scenarios": ["S01", "S03"],
+					"evidence": "harness-check",
+					"owner": "version-advanced-by max 1; node-field-retained"
+				},
+				{
+					"path": "removeNodes, removeEdges, removeFlows, removeViews, removeWalkthroughs",
+					"expectedUse": "each collection",
+					"scenarios": ["S01", "S02", "S13"],
+					"evidence": "harness-check",
+					"owner": "no-edge-between (removeEdges), nodes-absent (removeNodes); removeFlows/removeViews/removeWalkthroughs owned by src/runtime/semantic-board-store/tests"
+				},
+				{
+					"path": "nested steps/beats removed through the enclosing definition",
+					"expectedUse": "restate the flow or walkthrough without them",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests"
+				},
+				{
+					"path": "untouched subjects remain untouched",
+					"expectedUse": "an edit changes only what it states",
+					"scenarios": ["S10", "S13"],
+					"evidence": "harness-check",
+					"owner": "edge-ids-retained, walkthrough-beats-retained"
+				},
+				{
+					"path": "same-batch forward parent references and handles",
+					"expectedUse": "a child names a parent created in the same write",
+					"scenarios": ["S00"],
+					"evidence": "harness-check",
+					"owner": "container-has-children after one semantic new"
+				}
+			]
+		},
+		{
+			"part": 9,
+			"title": "Variants and adoption",
+			"entries": [
+				{
+					"path": "initial current variant",
+					"expectedUse": "the first variant is current",
+					"scenarios": ["S00", "S07"],
+					"evidence": "harness-check",
+					"owner": "board-level implies a current variant; runtime tests"
+				},
+				{
+					"path": "branch from current and from a named predecessor (--from)",
+					"expectedUse": "a proposal derived from a stated variant",
+					"scenarios": ["S02", "S04", "S12"],
+					"evidence": "harness-check",
+					"owner": "variant-exists draft; --from owned by src/runtime/semantic-board-store/tests"
+				},
+				{
+					"path": "competing branches / descendants",
+					"expectedUse": "two drafts off one parent",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests lifecycle"
+				},
+				{
+					"path": "proposal summary",
+					"expectedUse": "one line saying what the proposal is for",
+					"scenarios": ["S04", "S06"],
+					"evidence": "harness-check",
+					"owner": "fixtures carry --summary; variant-exists"
+				},
+				{
+					"path": "lifecycle draft | current | historical",
+					"expectedUse": "adoption moves current and leaves historical",
+					"scenarios": ["S06"],
+					"evidence": "harness-check",
+					"owner": "current-variant, variant-exists historical"
+				},
+				{
+					"path": "current designation versus lasting identity",
+					"expectedUse": "adoption renames nothing",
+					"scenarios": ["S06"],
+					"evidence": "harness-check",
+					"owner": "variant-exists by fixture name after adoption"
+				},
+				{
+					"path": "adoption with reason and history",
+					"expectedUse": "adopt --reason recorded",
+					"scenarios": ["S06"],
+					"evidence": "harness-check",
+					"owner": "adoptions-count withReason"
+				},
+				{
+					"path": "comparison against direct predecessor: added/removed/changed/unchanged, continuing versus replacement edges, sequence subjects",
+					"expectedUse": "a proposal reads as its real delta",
+					"scenarios": ["S02", "S12"],
+					"evidence": "harness-check",
+					"owner": "comparison-standing; grader compare.reading; src/shared/semantic-board/tests compare"
+				},
+				{
+					"path": "consistent shared-view comparison",
+					"expectedUse": "both states through one view",
+					"scenarios": ["S02", "S12"],
+					"evidence": "harness-check",
+					"owner": "render-ok of both variants through the same view"
+				}
+			]
+		},
+		{
+			"part": 10,
+			"title": "Family reconciliation",
+			"entries": [
+				{
+					"path": "noncompeting inheritance and agreement",
+					"expectedUse": "a parent edit reaches a draft that did not touch the subject",
+					"scenarios": ["S11"],
+					"evidence": "harness-check",
+					"owner": "fixture S11 (helpers edge untouched by both); reconciliation-settled"
+				},
+				{
+					"path": "issue kind competing-field",
+					"expectedUse": "two answers to one field, settled mine/theirs",
+					"scenarios": ["S11"],
+					"evidence": "harness-check",
+					"owner": "nodes-named JSON helper functions (theirs), node-field-equals responsibility (mine)"
+				},
+				{
+					"path": "issue kind deleted-and-changed",
+					"expectedUse": "settled by a third answer: an ordinary edit restoring the id",
+					"scenarios": ["S11"],
+					"evidence": "harness-check",
+					"owner": "node-id-retained Tagged JSON on the draft"
+				},
+				{
+					"path": "issue kinds competing-order, reference-lost, left-empty",
+					"expectedUse": "reported and settleable",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests reconcile"
+				},
+				{
+					"path": "blocked descendants and atomic family outcomes",
+					"expectedUse": "a draft under an unsettled draft waits; the family lands whole",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests family"
+				},
+				{
+					"path": "choices with subject and optional field; partial resolution leaving outstanding issues",
+					"expectedUse": "answer part, report the rest",
+					"scenarios": ["S11"],
+					"evidence": "author-run",
+					"owner": "grader resolve.partial"
+				},
+				{
+					"path": "adoption only after settlement",
+					"expectedUse": "adopt refused while disagreements are open",
+					"scenarios": ["S11"],
+					"evidence": "harness-check",
+					"owner": "variant-exists draft (not adopted); runtime tests refuse adoption"
+				}
+			]
+		},
+		{
+			"part": 11,
+			"title": "Vault vocabulary and presentation policy",
+			"entries": [
+				{
+					"path": "config.levels",
+					"expectedUse": "boards at configured levels",
+					"scenarios": ["S00", "S07", "S14"],
+					"evidence": "harness-check",
+					"owner": "board-level"
+				},
+				{
+					"path": "config.nodeKinds.<key>.name/icon/color",
+					"expectedUse": "a new kind with a real RemixIcon; palette color optional",
+					"scenarios": ["S08"],
+					"evidence": "harness-check",
+					"owner": "config-has nodeKinds extension; vault-config.schema.json icon enum"
+				},
+				{
+					"path": "config.relationshipKinds.<key>.name/color/dash solid|dashed|dotted/arrowhead filled|open|none",
+					"expectedUse": "a new kind with a stated dash and arrowhead",
+					"scenarios": ["S08"],
+					"evidence": "harness-check",
+					"owner": "config-has relationshipKinds signal (dashed, open); dotted/none owned by src/runtime/semantic-renderer/tests policy"
+				},
+				{
+					"path": "omitted color / defaults versus explicit policy; container body color versus node icon identity",
+					"expectedUse": "presentation from policy, not from the board",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-renderer/tests policy and grouping"
+				},
+				{
+					"path": "consumer-defined vocabularies, not a closed list",
+					"expectedUse": "extend rather than invent",
+					"scenarios": ["S08"],
+					"evidence": "author-run",
+					"owner": "grader config.vocabulary"
+				},
+				{
+					"path": "missing/invalid config warnings; unknown new references refused; removed definitions readable; repair",
+					"expectedUse": "read the refusal, configure, retry",
+					"scenarios": ["S08"],
+					"evidence": "author-run",
+					"owner": "grader refusal.recovery; src/runtime/semantic-board-store/tests policy (UNKNOWN_VOCABULARY)"
+				}
+			]
+		},
+		{
+			"part": 12,
+			"title": "TASK-207 configured grouping",
+			"entries": [
+				{
+					"path": "config.groups.<id>.name; empty default",
+					"expectedUse": "stable ids configured; display names free to change",
+					"scenarios": ["S03", "S08", "S09"],
+					"evidence": "harness-check",
+					"owner": "config-has configuredGroups; fixtures S03/S09 policy"
+				},
+				{
+					"path": "node.groups explicit set memberships, overlapping across containers",
+					"expectedUse": "Dispatch in two groups, Run command in one, across two containers",
+					"scenarios": ["S03", "S09"],
+					"evidence": "harness-check",
+					"owner": "node-groups"
+				},
+				{
+					"path": "no inherited membership",
+					"expectedUse": "containers gain nothing",
+					"scenarios": ["S03"],
+					"evidence": "harness-check",
+					"owner": "node-groups [] on Flask app and CLI"
+				},
+				{
+					"path": "omitted/empty equivalence; reorder/dedup normalization",
+					"expectedUse": "the document stores a sorted set or omits it",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests groups; src/runtime/semantic-board-store/tests grouping"
+				},
+				{
+					"path": "display-name change without semantic delta; independent membership reconciliation",
+					"expectedUse": "renaming a group changes no board",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests reconcile memberships; compare tests"
+				},
+				{
+					"path": "semantic inspect --group: members, internal edges, directed boundary edges, immediate neighbours",
+					"expectedUse": "answer a membership question from the CLI",
+					"scenarios": ["S09"],
+					"evidence": "harness-check",
+					"owner": "inspect-group; tests/system/semantic-boards/groups.test.ts"
+				},
+				{
+					"path": "configured-empty versus unknown group",
+					"expectedUse": "an unknown id is refused, an empty configured group is empty",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/semantic-boards/groups.test.ts UNKNOWN_GROUP"
+				},
+				{
+					"path": "hidden/collapsed members versus contextual ancestors",
+					"expectedUse": "the answer names a member the view does not draw",
+					"scenarios": ["S09"],
+					"evidence": "grader",
+					"owner": "grader inspect.hidden-members; src/ui/semantic-board-canvas/tests/semantic-board-groups.test.tsx"
+				},
+				{
+					"path": "browser selection/emphasis/clear, pane-local refresh, coexistence with other presentation state",
+					"expectedUse": "viewer behaviour, not authored JSON",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "tests/system/browser/semantic-board-groups.test.ts; src/ui/semantic-board-canvas/tests/semantic-board-groups.test.tsx"
+				},
+				{
+					"path": "legacy singular group field refused",
+					"expectedUse": "never written",
+					"scenarios": ["S03"],
+					"evidence": "harness-check",
+					"owner": "check-clean (legacy group is unreadable); src/runtime/semantic-board-store/tests grouping"
+				}
+			]
+		},
+		{
+			"part": 13,
+			"title": "System-owned document state",
+			"entries": [
+				{
+					"path": "schemaVersion, kind, board id, version, createdAt, updatedAt",
+					"expectedUse": "outcomes of writes, never authored",
+					"scenarios": ["S00", "S01"],
+					"evidence": "harness-check",
+					"owner": "version-advanced-by; check-clean; src/shared/semantic-board/tests aggregate"
+				},
+				{
+					"path": "variant ids, parent, current, lifecycle",
+					"expectedUse": "outcomes of branch and adopt",
+					"scenarios": ["S02", "S06"],
+					"evidence": "harness-check",
+					"owner": "variant-exists, current-variant"
+				},
+				{
+					"path": "adoptions[].variant/from/at/reason",
+					"expectedUse": "recorded by adopt",
+					"scenarios": ["S06"],
+					"evidence": "harness-check",
+					"owner": "adoptions-count"
+				},
+				{
+					"path": "reconciliation.against/atVersion/base/issues/blockedBy",
+					"expectedUse": "recorded by the store on a parent edit",
+					"scenarios": ["S11"],
+					"evidence": "harness-check",
+					"owner": "reconciliation-settled; src/shared/semantic-board/tests reconcile-standing"
+				},
+				{
+					"path": "schema refinements and cross-reference rules",
+					"expectedUse": "runtime evidence, not shape coverage",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests integrity; src/runtime/skill-distribution/tests/artifacts.test.ts (obligations named)"
+				}
+			]
+		},
+		{
+			"part": 14,
+			"title": "Authoring constraints and recovery",
+			"entries": [
+				{
+					"path": "strict unknown-field rejection",
+					"expectedUse": "refused with the field named",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/skill-distribution/tests/artifacts.test.ts; semantic-board input tests"
+				},
+				{
+					"path": "bounded single-line names/responsibilities/labels/handles; description limits",
+					"expectedUse": "mechanical limits",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests primitives"
+				},
+				{
+					"path": "ambiguous name references versus ids",
+					"expectedUse": "a name matching two nodes is refused; use the id",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/runtime/semantic-board-store/tests edit-content (ambiguous name)"
+				},
+				{
+					"path": "dangling or wrong-kind references, identity collisions, participant membership, empty selections, empty walkthroughs, invalid traffic/repeat",
+					"expectedUse": "refused at the boundary",
+					"scenarios": [],
+					"evidence": "runtime-owner",
+					"owner": "src/shared/semantic-board/tests integrity and input"
+				},
+				{
+					"path": "interpret a refusal and repair meaning",
+					"expectedUse": "configure the vocabulary the request asked for rather than bend the board",
+					"scenarios": ["S08"],
+					"evidence": "author-run",
+					"owner": "grader refusal.recovery"
+				},
+				{
+					"path": "default versus explicit values; partial traffic overrides",
+					"expectedUse": "one of each, no matrix",
+					"scenarios": ["S10"],
+					"evidence": "harness-check",
+					"owner": "edge-traffic default and custom"
+				},
+				{
+					"path": "named view versus omitted view never conflated with the first view",
+					"expectedUse": "render --view names a view; absent draws the variant",
+					"scenarios": ["S02", "S12"],
+					"evidence": "harness-check",
+					"owner": "render-ok with and without --view; src/runtime/semantic-renderer/tests"
+				}
+			]
+		}
+	]
+}

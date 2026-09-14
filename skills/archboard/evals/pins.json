@@ -1,0 +1,57 @@
+{
+	"$comment": "Everything a comparison holds constant. Baseline and candidate runs of one batch use exactly these; a change to any of them starts a new baseline.",
+	"flask": {
+		"repository": "https://github.com/pallets/flask.git",
+		"revisions": {
+			"2.1.3": "187d7179f605d28c3d24e9f4d65d3295fb099afe",
+			"2.2.0": "b17bb9ed563ab2857c0db9a07ec4e6407404c7be",
+			"3.0.0": "735a4701d6d5e848241e7d7535db898efb62d400"
+		},
+		"verifiedSources": {
+			"2.1.3": [
+				"src/flask/ctx.py (LocalStack-backed _app_ctx_stack and _request_ctx_stack)",
+				"src/flask/json/__init__.py (JSONEncoder-based helpers; no json/provider.py)",
+				"src/flask/scaffold.py (Scaffold shared by Flask and Blueprint)"
+			],
+			"2.2.0": [
+				"src/flask/ctx.py (contextvars via globals._cv_app and _cv_request)",
+				"src/flask/globals.py (LocalProxy over context variables)",
+				"src/flask/json/provider.py (JSONProvider, DefaultJSONProvider: dumps, loads, response)"
+			],
+			"3.0.0": [
+				"src/flask/sansio/app.py (class App(Scaffold): add_url_rule, register_blueprint)",
+				"src/flask/sansio/scaffold.py, src/flask/sansio/blueprints.py",
+				"src/flask/app.py (class Flask(App): wsgi_app, request_context, full_dispatch_request, preprocess_request, dispatch_request, finalize_request, make_response, process_response)",
+				"src/flask/cli.py (FlaskGroup, ScriptInfo, run_command, shell_command, routes_command)",
+				"src/flask/sessions.py, src/flask/wrappers.py, src/flask/templating.py, src/flask/signals.py"
+			]
+		}
+	},
+	"codex": {
+		"executable": "codex",
+		"version": "0.154.0",
+		"exec": "codex exec --json --skip-git-repo-check -C <checkout>",
+		"author": {
+			"model": "gpt-5.6-luna",
+			"reasoningEffort": "high",
+			"sandbox": "workspace-write",
+			"approvalPolicy": "never"
+		},
+		"grader": {
+			"model": "gpt-6-astra",
+			"reasoningEffort": "high",
+			"sandbox": "read-only",
+			"approvalPolicy": "never",
+			"sessions": "one per comparison batch, resumed rather than recreated",
+			"subagents": "prohibited by prompt"
+		}
+	},
+	"repetitions": 3,
+	"defaultConcurrency": 3,
+	"baselineSkill": {
+		"location": "docs/design/skill-evals/baseline/archboard",
+		"frozenAt": "TASK-210 completion, before the TASK-211 rewrite; frozen from skills/archboard at that revision",
+		"note": "The frozen copy already carries the TASK-207 groups contract, TASK-208 help contract and TASK-210 schema links, so both arms run on the same supporting CLI."
+	},
+	"usageSemantics": "cached_input_tokens is a subset of input_tokens (codex token_count); total = input + output. Never add cached to input."
+}

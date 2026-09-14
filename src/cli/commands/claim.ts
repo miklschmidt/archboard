@@ -62,24 +62,38 @@ const ClaimResultSchema = z.looseObject({
 type ClaimResult = z.infer<typeof ClaimResultSchema>;
 const claimContract = defineCommand({
 	path: ["claim"],
+	shared: ["url", "board"],
 	summary: "Take a board for a stretch of work, so twenty writes are one uninterrupted act",
-	usage: "claim --board <key> --reason <reason> [--for 10m]",
-	description: "Takes or extends a board lease for substantial work.",
-	examples: ['archboard claim --board payments --reason "redrawing payment path"'],
+	description:
+		"Takes or extends a board lease for work you know in advance is substantial. An ordinary " +
+		"write already takes the board for as long as it takes; a claim keeps it between the writes, " +
+		"so nobody else writes into the gaps. Every write to the board while the claim stands goes " +
+		"under it, and a write does not extend it. A person can release the claim with one control: " +
+		"your next act is then refused once, nothing is rolled back, and you stop.",
+	examples: [
+		'archboard claim --board payments --reason "redrawing the payment path"',
+		'archboard claim --board payments --reason "redrawing the payment path" --for 1h',
+	],
 	parameters: [
 		{
 			kind: "option",
 			key: "reason",
 			spellings: ["--reason"],
 			value: "required",
-			description: "Campaign shown on the pane",
+			placeholder: "reason",
+			required: true,
+			description:
+				"What the board is taken for, shown on every pane holding it: the campaign, where " +
+				"--doing on each write is the step",
 		},
 		{
 			kind: "option",
 			key: "for",
 			spellings: ["--for"],
 			value: "required",
-			description: "Lease duration",
+			placeholder: "duration",
+			default: "10m",
+			description: "How long the claim lasts, with a unit: 90s, 10m, 1h. Claim again to extend",
 		},
 		{
 			kind: "positional",
@@ -87,6 +101,7 @@ const claimContract = defineCommand({
 			name: "ignored",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Legacy ignored positional content",
 		},
 	],
@@ -153,9 +168,12 @@ const ReleaseResultSchema = z.looseObject({
 type ReleaseResult = z.infer<typeof ReleaseResultSchema>;
 const releaseContract = defineCommand({
 	path: ["release"],
+	shared: ["url", "board"],
 	summary: "Give back a board you claimed",
-	usage: "release --board <key>",
-	description: "Ends this caller's board claim if one remains.",
+	description:
+		"Ends this caller's claim on the board. The board goes back to being taken one write at a " +
+		"time and everything written stays. Releasing a claim that has run out, or that somebody took " +
+		"back, is not an error: it answers released: false.",
 	examples: ["archboard release --board payments"],
 	parameters: [
 		{
@@ -164,6 +182,7 @@ const releaseContract = defineCommand({
 			name: "ignored",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Legacy ignored positional content",
 		},
 	],

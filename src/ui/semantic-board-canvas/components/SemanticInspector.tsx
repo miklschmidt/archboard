@@ -18,8 +18,6 @@ import { useCallback, type JSX } from "react";
 
 import {
 	resolveVariant,
-	type ChangeKind,
-	type FieldChange,
 	type ReconciliationIssue,
 	type SemanticBoard,
 	type SemanticVariant,
@@ -32,19 +30,24 @@ import type { CodeBinding } from "@/shared/code-target";
 import {
 	BindingBody,
 	Described,
+	Memberships,
 	Row,
 	Section,
 	TitleBlock,
 	namesOf,
+	type GroupControls,
 } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
+import {
+	StandingBlock,
+	WaitingBlock,
+	type StandingProps,
+} from "@/ui/semantic-board-canvas/components/SemanticInspectorStanding";
 import { useSemanticBoardChanges } from "@/ui/semantic-board-canvas/hooks/use-semantic-board-changes";
 import { semanticBoardDocumentQuery } from "@/ui/semantic-board-canvas/lib/queries";
 import {
 	depictionOf,
 	readBoard,
-	standingSentence,
 	subjectOf,
-	valueText,
 	type EdgeSubject,
 	type FlowSubject,
 	type NodeSubject,
@@ -54,107 +57,6 @@ import {
 
 /** The close control: a 28px ghost icon button inside a 32px hit area. */
 const CLOSE_BUTTON_CLASS = "hit-area text-muted-foreground -mr-2";
-
-/** How the selected subject stands against the variant this one came from. */
-interface StandingProps {
-	/** Its standing. */
-	standing: ChangeKind;
-	/** What the variant it came from is called. */
-	predecessor: string;
-	/** The fields that moved; empty for anything but a change. */
-	moved: readonly FieldChange[];
-}
-
-/**
- * What the change did to the selected subject, and what moved.
- *
- * The picture already says which is which without words. This answers what the
- * picture cannot: a card drawn as changed does not say *what* changed, and a
- * standing without a before and an after is a badge rather than information.
- * Nothing at all for a subject that stands unchanged — most of a proposal does,
- * and saying so on every panel would bury the few that moved.
- * @param props The standing, what it is compared against, and what moved.
- * @returns The block, or nothing.
- */
-function StandingBlock(props: StandingProps): JSX.Element | null {
-	const sentence = standingSentence(props.standing, props.predecessor);
-	if (sentence === undefined) {
-		return null;
-	}
-	return (
-		<Section title="Against this proposal's source">
-			<p
-				className="text-body"
-				data-slot="semantic-inspector-standing"
-				data-standing={props.standing}
-			>
-				{sentence}
-			</p>
-			{props.moved.length > 0 && (
-				<dl
-					className="grid grid-cols-[auto_1fr] items-baseline gap-x-3 gap-y-2.5"
-					data-slot="semantic-inspector-moved"
-				>
-					{props.moved.map((change) => (
-						<Row
-							key={change.field}
-							field={change.field}
-							label={change.field}
-							value={
-								change.field === "traffic"
-									? "Illustrated traffic changed"
-									: `${valueText(change.before)} → ${valueText(change.after)}`
-							}
-						/>
-					))}
-				</dl>
-			)}
-		</Section>
-	);
-}
-
-/** Inputs for the undecided block. */
-interface WaitingProps {
-	/** The disagreements this subject is held up by; never empty when shown. */
-	open: readonly ReconciliationIssue[];
-}
-
-/**
- * What nobody has decided about the selected subject.
- *
- * The picture says there is something open — a warning badge in the subject's
- * corner — and this is where that badge is cashed in. A badge a reader cannot
- * turn into a sentence is a badge that only tells them to worry, so the words
- * are the reconciliation's own: which field, what each side says, and the
- * repair it suggested. Quoted rather than rewritten, because the thing that
- * found the disagreement is the thing that knows what it is.
- * @param props The open disagreements.
- * @returns The block.
- */
-function WaitingBlock(props: WaitingProps): JSX.Element | null {
-	if (props.open.length === 0) {
-		return null;
-	}
-	return (
-		<Section title="Nobody has decided this yet">
-			<ul className="flex flex-col gap-2.5" data-slot="semantic-inspector-waiting">
-				{props.open.map((issue) => (
-					// The repair is part of the identity, not decoration. One subject can
-					// hold two disagreements of the same kind about no field at all — a
-					// relationship whose predecessor took both of its endpoints away
-					// reports one for each end — and a key built from the kind and the
-					// field alone is the same key twice.
-					<li key={`${issue.kind}|${issue.field ?? ""}|${issue.repair}`}>
-						<p className="text-body">
-							{issue.field === undefined ? issue.what : `${issue.what} — ${issue.field}`}
-						</p>
-						<p className="text-muted-foreground text-body">{issue.repair}</p>
-					</li>
-				))}
-			</ul>
-		</Section>
-	);
-}
 
 /** Inputs for the flow body. */
 interface FlowBodyProps {
@@ -236,6 +138,8 @@ interface NodeBodyProps {
 	 * @param binding Where the code is.
 	 */
 	onOpenCode?: (binding: CodeBinding) => void;
+	/** How to name and inspect the groups the node belongs to. */
+	groups: GroupControls;
 }
 
 /**
@@ -252,8 +156,8 @@ function NodeBody(props: NodeBodyProps): JSX.Element {
 				kind={node.kind}
 				id={node.id}
 				responsibility={node.responsibility}
-				group={node.group}
 			/>
+			<Memberships groups={node.groups} controls={props.groups} />
 			<Section title="Containment">
 				<p className="text-body" data-slot="semantic-inspector-ancestry">
 					{ancestry.length === 0 ? "Nothing contains it." : `In ${namesOf(ancestry)}`}
@@ -312,21 +216,23 @@ function EdgeBody(props: EdgeBodyProps): JSX.Element {
 /**
  * Whichever of the four bodies the selected subject calls for.
  * @param subject What the board says the selection is.
- * @param onOpen Open the board one level down, given its board and variant.
- * @param onOpenCode Open the code a node is bound to, when the shell can.
+ * @param props What a node body needs beyond the subject.
+ * @param props.onOpen Open the board one level down, given its board and variant.
+ * @param props.onOpenCode Open the code a node is bound to, when the shell can.
+ * @param props.groups How to name and inspect groups.
  * @returns The body.
  */
 function bodyFor(
 	subject: Subject,
-	onOpen: (board: string, variant: string) => void,
-	onOpenCode?: (binding: CodeBinding) => void,
+	props: Pick<BodyProps, "onOpen" | "onOpenCode" | "groups">,
 ): JSX.Element {
 	if (subject.kind === "node") {
 		return (
 			<NodeBody
 				subject={subject}
-				onOpen={onOpen}
-				{...(onOpenCode === undefined ? {} : { onOpenCode })}
+				onOpen={props.onOpen}
+				groups={props.groups}
+				{...(props.onOpenCode === undefined ? {} : { onOpenCode: props.onOpenCode })}
 			/>
 		);
 	}
@@ -357,6 +263,8 @@ interface BodyProps {
 	 * @param variant The variant to open, by id.
 	 */
 	onOpen: (board: string, variant: string) => void;
+	/** How to name and inspect the groups a node belongs to. */
+	groups: GroupControls;
 }
 
 /**
@@ -375,7 +283,7 @@ function InspectorBody(props: BodyProps): JSX.Element {
 	}
 	return (
 		<>
-			{bodyFor(subject, props.onOpen, props.onOpenCode)}
+			{bodyFor(subject, props)}
 			<WaitingBlock open={props.open} />
 			{against !== null && (
 				<StandingBlock
@@ -524,6 +432,8 @@ interface SemanticInspectorProps {
 	 * @param variant The variant to open, by id.
 	 */
 	onOpen: (board: string, variant: string) => void;
+	/** How to name and inspect the groups a node belongs to. */
+	groups: GroupControls;
 	/** Clear the selection, which closes the inspector. */
 	onClose: () => void;
 }
@@ -578,6 +488,7 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 				open={explained.open}
 				notice={explained.notice}
 				onOpen={props.onOpen}
+				groups={props.groups}
 				{...(props.onOpenCode === undefined ? {} : { onOpenCode: props.onOpenCode })}
 			/>
 			<SemanticAppearance

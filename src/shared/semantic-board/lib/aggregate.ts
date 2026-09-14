@@ -33,8 +33,11 @@ import { VariantLifecycleSchema } from "@/shared/semantic-board/lib/vocabulary";
  * implement a version says so instead of guessing at the fields it knows.
  *
  * `2.0.0` makes views board-owned. Variant content never holds views.
+ * `2.2.0` replaces a node's singular `group` label with `groups`, a set of
+ * configured group ids. A document still carrying `group` is refused with
+ * the one-time conversion it needs, never rewritten in silence.
  */
-const SEMANTIC_BOARD_SCHEMA_VERSION = "2.0.0";
+const SEMANTIC_BOARD_SCHEMA_VERSION = "2.2.0";
 
 /**
  * The major version this build implements. A document whose major differs is

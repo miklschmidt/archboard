@@ -5,7 +5,7 @@ interface Reference {
 	key: string;
 	path: string;
 	value: string;
-	vocabulary: "levels" | "nodeKinds" | "relationshipKinds";
+	vocabulary: "levels" | "nodeKinds" | "relationshipKinds" | "groups";
 	variant?: string;
 }
 
@@ -50,6 +50,18 @@ function contentReferences(content: VariantContent, variant: string, prefix: str
 			vocabulary: "nodeKinds" as const,
 			variant,
 		})),
+		// One reference per membership, keyed by the node and the group rather
+		// than by where the id sits in the array: a membership is the same
+		// membership after the list beside it changes.
+		...content.nodes.flatMap((node) =>
+			(node.groups ?? []).map((group) => ({
+				key: `node:${node.id}:groups:${group}`,
+				path: `${prefix}.nodes.${node.id}.groups.${group}`,
+				value: group,
+				vocabulary: "groups" as const,
+				variant,
+			})),
+		),
 		...content.edges.map((edge) => ({
 			key: `edge:${edge.id}:kind`,
 			path: `${prefix}.edges.${edge.id}.kind`,

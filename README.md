@@ -71,29 +71,36 @@ refuses to start until `ARCHBOARD_VAULT` points to the place where those notes
 should live. Set it before starting the server. Obsidian itself is optional;
 the vault is simply the directory that holds the board notes.
 
-Open <http://127.0.0.1:3000>, then create and inspect a first board:
+Open <http://127.0.0.1:3000>, then state a first board and read it back:
 
 ```bash
-./bin/canvas board new payments --level service
+./bin/canvas semantic new payments --doing "describing payment processing" <<'JSON'
+{
+  "level": "system",
+  "nodes": [
+    { "name": "Gateway", "kind": "service", "responsibility": "Routes incoming requests" },
+    { "name": "Orders", "kind": "service", "responsibility": "Accepts and tracks orders" }
+  ],
+  "edges": [{ "from": "Gateway", "to": "Orders", "kind": "http", "label": "place order" }]
+}
+JSON
 
-./bin/canvas add --board payments \
-  --doing "adding the API gateway" \
-  --one '{"type":"rectangle","x":100,"y":100,"width":240,"height":80,"label":{"text":"API Gateway"}}'
-
-./bin/canvas describe --board payments
-./bin/canvas query --board payments --type rectangle
+./bin/canvas semantic show payments
+./bin/canvas semantic render payments --out payments.svg
 ```
 
 Two rules make collaboration visible and unambiguous:
 
-1. Every command that touches board content names it with `--board`.
-2. Every write includes a short present-tense `--doing` message, which appears
-   on the canvas while the change lands.
+1. Every write says what it is doing with a short present-tense `--doing` line,
+   which appears on the canvas while the change lands.
+2. Every change to an existing board states the version it was read against
+   with `--expect-version`, and is refused if the board has moved since.
 
-Run `./bin/canvas --help` for the complete command surface. Named-board Mermaid
-conversion and PNG/SVG rendering are server-owned and work with zero browser
-clients. Live-pane capture, viewport control, and pane operations require a
-connected browser session.
+Run `./bin/canvas --help` for the complete command surface, and
+`./bin/canvas help <command>` for one command: each command's help lists the
+arguments and options it reads, including which of the shared options apply to
+it. Reading, writing and rendering a board need no browser; only `browser ...`
+commands inspect or control a connected browser session.
 
 ## Use it from another repository
 
@@ -115,15 +122,14 @@ agent instructions. See [INSTALL.md](INSTALL.md) for target options, shared
 vaults and repository bindings.
 
 Once installed, ask the agent to map the current architecture onto a named
-board. A typical comparison branches that board into a variant and opens the
+board. A typical comparison branches that board into a proposal and opens the
 two side by side:
 
 ```bash
-archboard board save --board payments --variant option-a \
-  --doing "branching the queue proposal"
+archboard semantic branch payments --as "Queued ingest" --expect-version 1 \
+  --doing "proposing a queue"
 archboard browser open
-archboard browser show payments@option-a --pane right
-archboard compare payments payments@option-a
+archboard browser show "payments@Queued ingest" --pane right
 ```
 
 Moving a box on either side is part of the conversation: ask the agent to read

@@ -18,8 +18,8 @@ type StartResult = z.infer<typeof StartResultSchema>;
 
 const startContract = defineCommand({
 	path: ["start"],
+	shared: ["url"],
 	summary: "Start the canvas server (detached)",
-	usage: "start",
 	description: "Explicitly starts the local canvas, overriding automatic-start opt-outs.",
 	examples: ["archboard start"],
 	parameters: [
@@ -29,6 +29,7 @@ const startContract = defineCommand({
 			name: "ignored",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Legacy ignored positional content",
 		},
 	],
@@ -101,8 +102,8 @@ type StopResult = z.infer<typeof StopResultSchema>;
 
 const stopContract = defineCommand({
 	path: ["stop"],
+	shared: ["url"],
 	summary: "Stop the canvas server",
-	usage: "stop",
 	description: "Stops only a live process that identifies itself as this canvas service.",
 	examples: ["archboard stop"],
 	parameters: [
@@ -112,6 +113,7 @@ const stopContract = defineCommand({
 			name: "ignored",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Legacy ignored positional content",
 		},
 	],

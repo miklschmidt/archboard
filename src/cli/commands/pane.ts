@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { closePane, getPanes, openPane, showBoardInPane } from "@/runtime/engine/canvas-client";
 import { paneWords } from "@/runtime/engine/panes";
-import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
+import { CliUsageError, defineCommand, type TokenParameter } from "@/cli/command-contract/contract";
 import { PaneRefSchema } from "@/cli/command-contract/schemas";
 import { serverBrowserRefusals } from "@/cli/command-contract/common";
-import { parseStage } from "@/cli/commands/lib/staged-tokens";
+import { parseStage, stagedFlags, stagedTokens } from "@/cli/commands/lib/staged-tokens";
 
 const usage = "browser needs a subcommand: panes, open, close, or show.";
 const tokens = z.array(z.string()).default([]);
@@ -30,8 +30,8 @@ const PaneNamespaceResultSchema = z.never();
 type PaneNamespaceResult = z.infer<typeof PaneNamespaceResultSchema>;
 const browserContract = defineCommand({
 	path: ["browser"],
+	shared: ["url"],
 	summary: "Inspect or control the connected browser session",
-	usage: "browser panes|open|close|show ...",
 	description: "Routes live browser inspection and control commands; none writes a board.",
 	examples: ["archboard browser panes"],
 	parameters: [
@@ -41,6 +41,7 @@ const browserContract = defineCommand({
 			name: "arguments",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Namespace arguments",
 		},
 	],
@@ -80,20 +81,11 @@ const PaneOpenResultSchema = z.looseObject({
 type PaneOpenResult = z.infer<typeof PaneOpenResultSchema>;
 const paneOpenContract = defineCommand({
 	path: ["browser", "open"],
+	shared: ["url"],
 	summary: "Open a second browser pane",
-	usage: "browser open",
 	description: "Splits the connected browser canvas; the new pane inherits the displayed board.",
 	examples: ["archboard browser open"],
-	parameters: [
-		{
-			kind: "positional",
-			key: "tokens",
-			name: "open-token",
-			repeatable: true,
-			route: "staged-tokens",
-			description: "Validated after server contact",
-		},
-	],
+	parameters: [stagedTokens("open-token")],
 	input: {
 		ingress: PaneOpenInputSchema,
 		stages: [
@@ -170,19 +162,21 @@ const PaneCloseResultSchema = z.looseObject({
 type PaneCloseResult = z.infer<typeof PaneCloseResultSchema>;
 const paneCloseContract = defineCommand({
 	path: ["browser", "close"],
+	shared: ["url"],
 	summary: "Close one browser pane",
-	usage: "browser close <spec>",
 	description: "Takes one board off screen without changing the board itself.",
 	examples: ["archboard browser close right"],
 	parameters: [
 		{
 			kind: "positional",
-			key: "tokens",
-			name: "close-token",
-			repeatable: true,
-			route: "staged-tokens",
-			description: "Validated after server contact",
+			key: "spec",
+			name: "pane",
+			required: true,
+			route: "staged",
+			description:
+				"Which pane to close: left, right, top, bottom, focused, primary, a position or a pane id",
 		},
+		stagedTokens("close-token"),
 	],
 	input: {
 		ingress: PaneCloseInputSchema,
@@ -258,8 +252,8 @@ const PanesResultSchema = z.looseObject({
 type PanesResult = z.infer<typeof PanesResultSchema>;
 const panesContract = defineCommand({
 	path: ["browser", "panes"],
+	shared: ["url"],
 	summary: "What every pane is showing and reading",
-	usage: "browser panes [--text]",
 	description:
 		"Reports where each pane sits, which board and variant it shows, which view it is read " +
 		"through, and what the person has picked out. View state only: never board content.",
@@ -272,14 +266,7 @@ const panesContract = defineCommand({
 			value: "none",
 			description: "Print the human-readable read-out",
 		},
-		{
-			kind: "positional",
-			key: "tokens",
-			name: "panes-token",
-			repeatable: true,
-			route: "staged-tokens",
-			description: "Validated after server contact",
-		},
+		stagedTokens("panes-token"),
 	],
 	input: {
 		ingress: PanesInputSchema,
@@ -340,13 +327,39 @@ const panesContract = defineCommand({
 
 const ShowInputSchema = z.object({ tokens });
 type ShowInput = z.infer<typeof ShowInputSchema>;
-// The tokens carry `--pane` rather than the parser taking it, because a staged
-// command passes everything after its first word through: what a show is
-// allowed to say is decided here, after the canvas has answered, so the
-// refusal can name what is actually on screen.
+/**
+ * What a show accepts, declared once for help and for the stage. The tokens
+ * carry the board and `--pane` rather than the parser taking them, because a
+ * staged command passes everything after its first word through: what a show
+ * is allowed to say is decided after the canvas has answered, so the refusal
+ * can name what is actually on screen.
+ */
+const SHOW_PARAMETERS: readonly TokenParameter[] = [
+	{
+		kind: "positional",
+		key: "board",
+		name: "board",
+		placeholder: "board[@variant]",
+		required: true,
+		route: "staged",
+		description:
+			"The board to show, optionally at one variant; refused when the vault has no such board",
+	},
+	{
+		kind: "option",
+		key: "pane",
+		spellings: ["--pane"],
+		value: "required",
+		placeholder: "spec",
+		route: "staged",
+		requiredWhen: "once two panes are open",
+		description: "Which pane: left, right, top, bottom, focused, primary, a position or a pane id",
+	},
+	stagedTokens("show-token"),
+];
 const ShowStageSchema = z
 	.array(z.string())
-	.transform((values, context) => parseStage(values, { pane: "value" }, context))
+	.transform((values, context) => parseStage(values, stagedFlags(SHOW_PARAMETERS), context))
 	.transform((stage, context) => {
 		const board = stage.positionals[0];
 		if (board === undefined || board === "") {
@@ -370,8 +383,8 @@ const ShowResultSchema = z.looseObject({
 type ShowResult = z.infer<typeof ShowResultSchema>;
 const browserShowContract = defineCommand({
 	path: ["browser", "show"],
+	shared: ["url"],
 	summary: "Show a board in one pane",
-	usage: "browser show <board>[@<variant>] --pane <spec>",
 	description:
 		"Points one pane at one board. Nothing is written: a board is shown, not created, and a " +
 		"name the vault does not hold is refused rather than made.",
@@ -379,16 +392,7 @@ const browserShowContract = defineCommand({
 		"archboard browser show pipeline --pane left",
 		"archboard browser show pipeline@proposed --pane right",
 	],
-	parameters: [
-		{
-			kind: "positional",
-			key: "tokens",
-			name: "show-token",
-			repeatable: true,
-			route: "staged-tokens",
-			description: "Validated after server contact",
-		},
-	],
+	parameters: SHOW_PARAMETERS,
 	input: {
 		ingress: ShowInputSchema,
 		stages: [
