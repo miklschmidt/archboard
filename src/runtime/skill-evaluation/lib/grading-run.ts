@@ -58,7 +58,14 @@ const CallSchema = z.object({
 	verdictFile: z.string(),
 	eventsFile: z.string(),
 	exitCode: z.number().nullable(),
+	/**
+	 * What the call's turn.completed reported. In a resumed thread that is the
+	 * thread's cumulative usage so far, not this call's own (pins.json,
+	 * usageSemantics); `callUsage` is this call's share.
+	 */
 	usage: UsageSchema.nullable(),
+	/** This call's own usage: the difference from the previous reading of the same thread. Absent in sessions recorded before TASK-212. */
+	callUsage: UsageSchema.nullable().optional(),
 	graded: z.array(z.string()),
 	error: z.string().nullable(),
 });
@@ -343,6 +350,7 @@ async function gradeChunk(
 		eventsFile: files.events,
 		exitCode: result.exitCode,
 		usage: trace.usage,
+		callUsage: callUsageFrom(session.calls, trace.usage),
 		graded: filing.graded,
 		error: callError(filing, trace.failure, result),
 	};
@@ -403,9 +411,86 @@ async function gradeBatch(
 	await sequentially(chunked(pending, options.chunkSize), async (chunk) => {
 		if (!options.signal.aborted) await gradeChunk(options, paths, session, chunk);
 	});
-	const usage = sumUsage(session.calls.map((call) => call.usage));
+	const usage = sessionUsage(session.calls);
 	fs.writeFileSync(path.join(paths.root, "usage.json"), `${JSON.stringify(usage, null, "\t")}\n`);
 	return { session, usage };
+}
+
+/**
+ * The difference between two cumulative readings, field by field.
+ * @param now The later reading.
+ * @param before The earlier one.
+ * @returns What happened in between.
+ */
+function usageSince(now: Usage, before: Usage): Usage {
+	/**
+	 * One optional field's difference, unavailable when either side is.
+	 * @param pick The field.
+	 * @returns The difference or null.
+	 */
+	const optional = (pick: (usage: Usage) => number | null): number | null => {
+		const later = pick(now);
+		const earlier = pick(before);
+		return later === null || earlier === null ? null : later - earlier;
+	};
+	return {
+		input: now.input - before.input,
+		cached: now.cached - before.cached,
+		cacheWrite: optional((usage) => usage.cacheWrite),
+		output: now.output - before.output,
+		reasoning: optional((usage) => usage.reasoning),
+		total: now.total - before.total,
+	};
+}
+
+/**
+ * The last cumulative reading a session's earlier calls gave.
+ * @param calls The calls so far.
+ * @returns The reading, or null when none gave one.
+ */
+function lastReading(calls: readonly { readonly usage: Usage | null }[]): Usage | null {
+	return calls.map((call) => call.usage).findLast((usage) => usage !== null) ?? null;
+}
+
+/**
+ * One call's own usage, read off the thread's cumulative counter.
+ *
+ * Codex's `turn.completed` usage is the thread's `total_token_usage`: a resumed
+ * call reports everything the thread has cost so far, itself included. This
+ * call's share is therefore the growth since the previous reading. A reading
+ * smaller than the previous one is not a continuation — the thread was
+ * started afresh — and then the reading is the call's own.
+ * @param earlier The session's earlier calls.
+ * @param reported What this call reported.
+ * @returns This call's usage, or null when it reported none.
+ */
+function callUsageFrom(
+	earlier: readonly { readonly usage: Usage | null }[],
+	reported: Usage | null,
+): Usage | null {
+	if (reported === null) return null;
+	const previous = lastReading(earlier);
+	return previous === null || reported.total < previous.total
+		? reported
+		: usageSince(reported, previous);
+}
+
+/**
+ * What one grading session cost in total, under the same semantics: the last
+ * reading of each run of cumulative readings, added up. One thread resumed
+ * throughout is one reading, its last; summing the calls would count the
+ * first call's tokens once per call.
+ * @param calls The session's calls, in order.
+ * @returns The session's usage, or null when no call reported any.
+ */
+function sessionUsage(calls: readonly { readonly usage: Usage | null }[]): Usage | null {
+	const readings = calls.map((call) => call.usage).filter((usage) => usage !== null);
+	// A reading ends a run of cumulative readings when the next one is smaller.
+	const ends = readings.filter((reading, index) => {
+		const next = readings[index + 1];
+		return next === undefined || next.total < reading.total;
+	});
+	return ends.length === 0 ? null : sumUsage(ends);
 }
 
 /**
@@ -427,10 +512,24 @@ function filedVerdict(batchRoot: string, id: string): RunVerdict | null {
  * @returns The usage, or null.
  */
 function graderUsage(batchRoot: string): Usage | null {
+	const sessionFile = path.join(batchRoot, "grader", "session.json");
+	if (fs.existsSync(sessionFile)) {
+		const session = readSession(sessionFile);
+		return sessionUsage(session.calls);
+	}
 	const file = path.join(batchRoot, "grader", "usage.json");
 	return fs.existsSync(file)
 		? UsageSchema.nullable().parse(JSON.parse(fs.readFileSync(file, "utf8")))
 		: null;
 }
 
-export { bundledRuns, chunked, filedVerdict, gradeBatch, graderUsage, type GradingOptions };
+export {
+	bundledRuns,
+	callUsageFrom,
+	chunked,
+	filedVerdict,
+	gradeBatch,
+	graderUsage,
+	sessionUsage,
+	type GradingOptions,
+};

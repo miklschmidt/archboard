@@ -66,7 +66,6 @@ const trackedSkillFiles = [
 	"references/sequences-views-walkthroughs.md",
 	"references/variants.md",
 	"references/schemas.md",
-	"evals/evals.json",
 ] as const;
 
 /** The derived files every prepared copy of the skill carries beside the tracked ones. */

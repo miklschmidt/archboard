@@ -3,9 +3,17 @@
 // metric a run could not supply is reported as unavailable, and a run that
 // failed is a row, not a gap.
 
-import type { CommandClass, Usage } from "@/runtime/skill-evaluation/lib/events";
+import type { CommandClass, ExposureKind, Usage } from "@/runtime/skill-evaluation/lib/events";
 import type { Arm, RunStatus } from "@/runtime/skill-evaluation/lib/blind";
 import type { RunVerdict } from "@/runtime/skill-evaluation/lib/grader";
+import {
+	auditReasons,
+	contaminated,
+	contaminationLine,
+	unaudited,
+	unauditedLine,
+	wroteDirectly,
+} from "@/runtime/skill-evaluation/lib/report-audit";
 
 /** One run as the report reads it. */
 interface RunRecord {
@@ -19,6 +27,10 @@ interface RunRecord {
 	readonly durationMs: number;
 	readonly usage: Usage | null;
 	readonly commandCounts: Readonly<Record<CommandClass, number>>;
+	/** Direct board-file writes outside the CLI; null when the run did not record them. */
+	readonly directWrites: number | null;
+	/** Commands that reached for evaluation material, by kind; null when the run did not record exposure. */
+	readonly exposure: Readonly<Record<ExposureKind, number>> | null;
 	readonly outcomesPassed: boolean;
 	readonly guardrailsPassed: boolean;
 	readonly verdict: RunVerdict | null;
@@ -43,6 +55,12 @@ interface ArmSummary {
 	readonly outcomeFailures: number;
 	readonly semanticFailures: number;
 	readonly waived: number;
+	/** Runs whose author read evaluation material or another run's world. */
+	readonly contaminated: number;
+	/** Runs whose author wrote a board file outside the CLI. */
+	readonly directWrites: number;
+	/** Runs recorded before the harness kept file changes and exposure, which can say neither. */
+	readonly unaudited: number;
 	readonly medianTotalTokens: Maybe;
 	readonly medianInputTokens: Maybe;
 	readonly medianCachedTokens: Maybe;
@@ -71,6 +89,8 @@ interface Report {
 	readonly workflows: readonly ComparisonRow[];
 	readonly broad: readonly ComparisonRow[];
 	readonly failures: readonly RunRecord[];
+	/** Runs that read evaluation material, reached another run, or wrote directly to the vault: kept apart from every comparison. */
+	readonly contamination: readonly RunRecord[];
 	readonly graderUsage: Usage | null;
 	readonly authorUsage: { readonly baseline: Usage | null; readonly candidate: Usage | null };
 }
@@ -207,6 +227,9 @@ function summarize(runs: readonly RunRecord[], planned = runs.length): ArmSummar
 		outcomeFailures: runs.filter((run) => !run.outcomesPassed).length,
 		semanticFailures: runs.filter((run) => run.semanticallyCompliant === false).length,
 		waived: runs.filter((run) => run.waivedFeatures.length > 0).length,
+		contaminated: runs.filter(contaminated).length,
+		directWrites: runs.filter(wroteDirectly).length,
+		unaudited: runs.filter(unaudited).length,
 		medianTotalTokens: medianUsage(runs, (usage) => usage.total),
 		medianInputTokens: medianUsage(runs, (usage) => usage.input),
 		medianCachedTokens: medianUsage(runs, (usage) => usage.cached),
@@ -293,18 +316,23 @@ function compare(
 		planned.filter((run) => run.arm === "candidate").length,
 	);
 	const complete = completePair(runs, planned);
+	const comparableAudit = runs.every(
+		(run) => !contaminated(run) && !wroteDirectly(run) && !unaudited(run),
+	);
+	const comparable = complete && comparableAudit;
+	const allSucceeded = [baseline, candidate].every((arm) => arm.succeeded === arm.runs);
 	return {
 		key,
 		baseline,
 		candidate,
+		// A run whose author read the checklist it is measured against, or
+		// another run's answer, measures nothing about the skill; a change
+		// computed over it would be a change in what was read, not in the skill.
 		tokenChangePercent:
-			complete &&
-			baseline.succeeded === baseline.runs &&
-			candidate.succeeded === candidate.runs &&
-			runs.every((run) => run.usage !== null)
+			comparable && allSucceeded && runs.every((run) => run.usage !== null)
 				? percentChange(baseline.medianTotalTokens, candidate.medianTotalTokens)
 				: null,
-		qualityRegressed: complete ? qualityRegressed(baseline, candidate) : null,
+		qualityRegressed: comparable ? qualityRegressed(baseline, candidate) : null,
 	};
 }
 
@@ -382,6 +410,7 @@ function buildReport(
 			(run) => run.scenario,
 		),
 		failures: runs.filter((run) => !succeeded(run)),
+		contamination: runs.filter((run) => contaminated(run) || wroteDirectly(run)),
 		graderUsage,
 		authorUsage: {
 			baseline: sumUsage(runs.filter((run) => run.arm === "baseline").map((run) => run.usage)),
@@ -408,7 +437,9 @@ function cell(value: Maybe, digits = 0): string {
  * @returns The markdown line.
  */
 function armLine(key: string, arm: Arm, s: ArmSummary): string {
-	return `| ${key} | ${arm} | ${s.runs}/${s.planned} | ${s.graded} | ${s.succeeded} | ${s.guardrailViolations} | ${s.outcomeFailures} | ${s.semanticFailures} | ${s.waived} | ${cell(s.medianTotalTokens)} | ${cell(s.medianCachedTokens)} | ${cell(s.medianOutputTokens)} | ${cell(s.medianDiscoveryCommands)} | ${cell(s.medianOperationCommands)} | ${cell(s.medianInvestigationCommands)} | ${cell(s.meanSemanticCorrectness, 1)} | ${cell(s.meanArchitecturalTruth, 1)} | ${cell(s.meanReadability, 1)} |`;
+	const audit =
+		s.unaudited === s.runs && s.runs > 0 ? "unaudited" : `${s.contaminated}/${s.directWrites}`;
+	return `| ${key} | ${arm} | ${s.runs}/${s.planned} | ${s.graded} | ${s.succeeded} | ${s.guardrailViolations} | ${s.outcomeFailures} | ${s.semanticFailures} | ${s.waived} | ${audit} | ${cell(s.medianTotalTokens)} | ${cell(s.medianCachedTokens)} | ${cell(s.medianOutputTokens)} | ${cell(s.medianDiscoveryCommands)} | ${cell(s.medianOperationCommands)} | ${cell(s.medianInvestigationCommands)} | ${cell(s.meanSemanticCorrectness, 1)} | ${cell(s.meanArchitecturalTruth, 1)} | ${cell(s.meanReadability, 1)} |`;
 }
 
 /**
@@ -418,7 +449,7 @@ function armLine(key: string, arm: Arm, s: ArmSummary): string {
  */
 function changeLine(row: ComparisonRow): string {
 	const tokens = row.tokenChangePercent === null ? "n/a" : `${row.tokenChangePercent.toFixed(1)}%`;
-	return `| ${row.key} | change | | | | | | | | ${tokens} | | | | | | ${row.qualityRegressed === null ? "unassessed" : row.qualityRegressed ? "REGRESSED" : "held"} | | |`;
+	return `| ${row.key} | change | | | | | | | | | ${tokens} | | | | | | ${row.qualityRegressed === null ? "unassessed" : row.qualityRegressed ? "REGRESSED" : "held"} | | |`;
 }
 
 /**
@@ -431,8 +462,8 @@ function tableLines(title: string, table: readonly ComparisonRow[]): string[] {
 	return [
 		`## ${title}`,
 		"",
-		"| key | arm | runs/planned | graded | ok | guardrail viol. | outcome fail | semantic fail | waived | median total | median cached | median output | discovery | ops | investigation | correctness | truth | readability |",
-		"| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+		"| key | arm | runs/planned | graded | ok | guardrail viol. | outcome fail | semantic fail | waived | contaminated/direct | median total | median cached | median output | discovery | ops | investigation | correctness | truth | readability |",
+		"| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
 		...table.flatMap((row) => [
 			armLine(row.key, "baseline", row.baseline),
 			armLine(row.key, "candidate", row.candidate),
@@ -467,6 +498,7 @@ function failureLine(run: RunRecord): string {
 		...(run.verdict === null ? ["awaiting grading"] : []),
 		...(run.semanticallyCompliant === false ? ["semantic compliance failed"] : []),
 		...(run.waivedFeatures.length === 0 ? [] : [`waived: ${run.waivedFeatures.join(", ")}`]),
+		...auditReasons(run),
 	];
 	return `- ${run.run} (${run.arm}, ${run.scenario} rep ${run.repetition}): ${reasons.join(", ")}`;
 }
@@ -480,7 +512,7 @@ function renderReportMarkdown(report: Report): string {
 	return [
 		"# Skill evaluation comparison",
 		"",
-		"Token medians are per run; cached input is a subset of input and is never added to it. Percentage changes require equally sized, fully successful graded arms with complete usage; incomplete or failed runs cannot establish an efficiency improvement. Percentage targets are set only after a baseline is measured.",
+		"Token medians and quality scores are descriptive per-arm measurements; cached input is a subset of input and is never added to it. Quality comparisons require complete, equally sized graded arms and a clean audit. Efficiency comparisons additionally require every run to succeed and complete usage. Contaminated, directly written or unaudited runs cannot establish either comparison. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author wrote a board file outside the CLI.",
 		"",
 		...tableLines("Per scenario (primary)", report.scenarios),
 		...tableLines("Per primary workflow", report.workflows),
@@ -489,7 +521,17 @@ function renderReportMarkdown(report: Report): string {
 		"",
 		usageLine("authors, baseline (sum)", report.authorUsage.baseline),
 		usageLine("authors, candidate (sum)", report.authorUsage.candidate),
-		usageLine("grader (one session, kept apart)", report.graderUsage),
+		usageLine(
+			"grader (one session, kept apart): the thread's last cumulative reading",
+			report.graderUsage,
+		),
+		"",
+		"## Contaminated runs (kept apart from every comparison)",
+		"",
+		...(report.contamination.length === 0
+			? ["- none"]
+			: report.contamination.map(contaminationLine)),
+		...unauditedLine(report),
 		"",
 		"## Runs that did not succeed",
 		"",

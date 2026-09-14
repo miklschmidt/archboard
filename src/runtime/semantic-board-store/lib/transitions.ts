@@ -29,7 +29,9 @@ import {
 	unsettledAncestor,
 	type DescendantOutcome,
 } from "@/runtime/semantic-board-store/lib/propagate";
-import { adoptVariant, settleVariant } from "@/runtime/semantic-board-store/lib/settle";
+import { adoptVariant } from "@/runtime/semantic-board-store/lib/adopt";
+import { restorableNodes, settleByRestoring } from "@/runtime/semantic-board-store/lib/restore";
+import { settleVariant } from "@/runtime/semantic-board-store/lib/settle";
 import { idsInUse, mintInto, openBatch } from "@/runtime/semantic-board-store/lib/batch";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 
@@ -262,37 +264,26 @@ function editVariantTransition(input: VariantEditInput): SemanticTransition {
 			if (before === null) {
 				return refuse("BOARD_MISSING", "there is no such board in the vault");
 			}
-			const variant = resolveVariant(before, wanted);
-			if (variant === undefined) {
-				return refuse("UNKNOWN_VARIANT", `this board has no variant called "${wanted}"`);
+			const changesContent = editsContent(input);
+			const editable = editableVariant(before, wanted, changesContent);
+			if (!editable.ok) {
+				return editable;
 			}
-			const changesContent = [
-				input.nodes,
-				input.edges,
-				input.flows,
-				input.walkthroughs,
-				input.removeNodes,
-				input.removeEdges,
-				input.removeFlows,
-				input.removeWalkthroughs,
-			].some((entries) => entries.length > 0);
-			if (editsHistoricalContent(variant, changesContent)) {
-				return refuse(
-					"VARIANT_HISTORICAL",
-					`"${variant.name}" is an architecture that was implemented and has since been ` +
-						"superseded. What was true then does not change: branch a proposal from it if you " +
-						"want to say something different.",
-				);
-			}
-			const content = editContent(variant.content, input, before);
+			const { variant } = editable;
+			// A draft holding a disagreement about a node it removed may state that
+			// node's id again: the third answer the reconciliation contract promises.
+			const restorable = restorableNodes(before, variant);
+			const content = editContent(variant.content, input, before, restorable);
 			if (!content.ok) {
 				return content;
 			}
-			// Every draft derived from this variant answers the change in the same
-			// candidate, so the parent's new state and its consequences are one
-			// write and one version, never a parent that landed and children that
-			// have not caught up (ADR 0023).
-			const carried = editedFamily(before, variant, content.content, changesContent);
+			const carried = carriedFamily(before, variant, content.content, {
+				restorable,
+				changesContent,
+			});
+			if (!carried.ok) {
+				return carried;
+			}
 			return {
 				ok: true,
 				board: {
@@ -423,13 +414,80 @@ export {
 };
 
 /**
- * Whether an edit would change frozen architecture.
- * @param variant The selected state.
- * @param changesContent Whether variant content is being edited.
- * @returns Whether the edit is prohibited.
+ * Whether a stated batch edits variant content at all, as opposed to the
+ * board's views or level alone.
+ * @param input The batch as stated.
+ * @returns True when any content collection is stated or removed.
  */
-function editsHistoricalContent(variant: SemanticVariant, changesContent: boolean): boolean {
-	return variant.lifecycle === "historical" && changesContent;
+function editsContent(input: VariantEditInput): boolean {
+	return [
+		input.nodes,
+		input.edges,
+		input.flows,
+		input.walkthroughs,
+		input.removeNodes,
+		input.removeEdges,
+		input.removeFlows,
+		input.removeWalkthroughs,
+	].some((entries) => entries.length > 0);
+}
+
+/**
+ * The variant an edit names, when it exists and may be edited: a state that
+ * was implemented and superseded is a record, and records are not edited.
+ * @param board The board as it stands.
+ * @param wanted The variant's id or name.
+ * @param changesContent Whether variant content is being edited.
+ * @returns The variant, or why it cannot be edited.
+ */
+function editableVariant(
+	board: SemanticBoard,
+	wanted: string,
+	changesContent: boolean,
+): { readonly ok: true; readonly variant: SemanticVariant } | SemanticRefusal {
+	const variant = resolveVariant(board, wanted);
+	if (variant === undefined) {
+		return refuse("UNKNOWN_VARIANT", `this board has no variant called "${wanted}"`);
+	}
+	if (variant.lifecycle === "historical" && changesContent) {
+		return refuse(
+			"VARIANT_HISTORICAL",
+			`"${variant.name}" is an architecture that was implemented and has since been ` +
+				"superseded. What was true then does not change: branch a proposal from it if you " +
+				"want to say something different.",
+		);
+	}
+	return { ok: true, variant };
+}
+
+/**
+ * The family after one edit: every draft derived from this variant answers the
+ * change in the same candidate, so the parent's new state and its consequences
+ * are one write and one version, never a parent that landed and children that
+ * have not caught up (ADR 0023). An edit that restores a node this draft was
+ * arguing about answers the draft's own disagreement, and that settlement is
+ * part of the same write too: the restored node, the settled standing and the
+ * descendants' answers land as one version.
+ * @param board The board as it stands.
+ * @param variant The edited variant, as it stood.
+ * @param content Its content as the edit leaves it.
+ * @param edit What the edit could and did do.
+ * @param edit.restorable The ids the draft's standing let the edit restore.
+ * @param edit.changesContent Whether the command edited variant content.
+ * @returns The variant family and effects, or the refusal.
+ */
+function carriedFamily(
+	board: SemanticBoard,
+	variant: SemanticVariant,
+	content: SemanticVariant["content"],
+	edit: { readonly restorable: ReadonlySet<string>; readonly changesContent: boolean },
+): ReturnType<typeof settleByRestoring> {
+	const restored = new Set(
+		content.nodes.map((node) => node.id).filter((id) => edit.restorable.has(id)),
+	);
+	return restored.size > 0
+		? settleByRestoring(board, variant, content, restored, nextVersion(board))
+		: editedFamily(board, variant, content, edit.changesContent);
 }
 
 /**
@@ -445,8 +503,11 @@ function editedFamily(
 	variant: SemanticVariant,
 	content: SemanticVariant["content"],
 	changesContent: boolean,
-): ReturnType<typeof propagateEdit> {
-	return changesContent
-		? propagateEdit(board, { ...variant, content }, nextVersion(board))
-		: { variants: board.variants, descendants: [] };
+): { readonly ok: true } & ReturnType<typeof propagateEdit> {
+	return {
+		ok: true,
+		...(changesContent
+			? propagateEdit(board, { ...variant, content }, nextVersion(board))
+			: { variants: board.variants, descendants: [] }),
+	};
 }

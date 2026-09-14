@@ -7,7 +7,13 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
 import type { SemanticBoard } from "@/shared/semantic-board/index";
-import type { ClassifiedCommand, Usage } from "@/runtime/skill-evaluation/lib/events";
+import {
+	exposureCounts,
+	type ClassifiedCommand,
+	type ExposureKind,
+	type FileChange,
+	type Usage,
+} from "@/runtime/skill-evaluation/lib/events";
 import type { CheckVerdict, Reading } from "@/runtime/skill-evaluation/lib/reading";
 import type { Scenario } from "@/runtime/skill-evaluation/lib/suite";
 
@@ -25,6 +31,8 @@ interface CompletedRun {
 	readonly finalMessage: string | null;
 	readonly usage: Usage | null;
 	readonly commands: readonly ClassifiedCommand[];
+	/** Files the author changed with Codex's editing tool, outside any command. */
+	readonly fileChanges: readonly FileChange[];
 	readonly boards: ReadonlyMap<string, SemanticBoard>;
 	readonly snapshot: ReadonlyMap<string, SemanticBoard>;
 	readonly policy: Reading["policy"] | null;
@@ -67,7 +75,17 @@ interface RunBundle {
 		readonly class: string;
 		readonly command: string;
 		readonly exitCode: number | null;
+		/** The evaluation material the command reached for, when it did. */
+		readonly exposure: ExposureKind | null;
 	}[];
+	/**
+	 * Files the author changed outside any command. A board file here is a
+	 * write the CLI never saw, and the final board proves nothing about how it
+	 * got there.
+	 */
+	readonly fileChanges: readonly { readonly path: string; readonly kind: string }[];
+	/** How many commands reached for each kind of evaluation material. */
+	readonly exposure: Readonly<Record<ExposureKind, number>>;
 }
 
 /**
@@ -142,7 +160,10 @@ function bundleForGrader(run: CompletedRun, id: string): RunBundle {
 			class: command.class,
 			command: hide(command.command),
 			exitCode: command.exitCode,
+			exposure: command.exposure,
 		})),
+		fileChanges: run.fileChanges.map((change) => ({ path: hide(change.path), kind: change.kind })),
+		exposure: exposureCounts(run.commands),
 	};
 }
 

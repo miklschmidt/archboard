@@ -200,16 +200,22 @@ function writeBatchFiles(
  * One job run, unless the batch is being resumed and it already completed.
  * @param options The batch.
  * @param job The job.
- * @param facts The salt, cache and frozen skill.
+ * @param facts The salt, cache, frozen skill and batch directory.
  * @param facts.salt The batch salt.
  * @param facts.cache The Flask cache.
  * @param facts.frozenSkill The frozen baseline package.
+ * @param facts.batchRoot The batch directory every run lives under.
  * @returns The run, or null when kept from before.
  */
 async function runJob(
 	options: BatchOptions,
 	job: PlannedJob,
-	facts: { readonly salt: string; readonly cache: string; readonly frozenSkill: string },
+	facts: {
+		readonly salt: string;
+		readonly cache: string;
+		readonly frozenSkill: string;
+		readonly batchRoot: string;
+	},
 ): Promise<CompletedRun | null> {
 	const scenario = options.loaded.suite.evals.find((candidate) => candidate.id === job.scenario);
 	const fixture = options.loaded.fixtures.get(job.scenario);
@@ -226,6 +232,7 @@ async function runJob(
 		fixture,
 		repetition: job.repetition,
 		root: job.root,
+		batchRoot: facts.batchRoot,
 		salt: facts.salt,
 		checkout: options.checkout,
 		cache: facts.cache,
@@ -326,6 +333,7 @@ async function runBatch(
 		salt,
 		cache,
 		frozenSkill: path.join(options.checkout, loaded.pins.baselineSkill.location),
+		batchRoot: root,
 	};
 	const runs = await pool(
 		jobs,

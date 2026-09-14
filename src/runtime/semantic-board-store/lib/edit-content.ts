@@ -111,24 +111,29 @@ function planRemovals(
  * mistake would only show up as a duplicate in the picture. Identities for new
  * things come from the mint owner, which is also what keeps them unique across
  * the whole variant family rather than only this variant.
+ *
+ * The one id that may be stated without being on the variant is one the
+ * variant is holding a disagreement about: a draft that removed a node its
+ * predecessor went on to change is asked to keep the removal or take the
+ * change, and the third answer — the node back, under the identity the whole
+ * family knows it by, saying what this draft wants it to say — is an ordinary
+ * edit stating that id. Which ids those are is decided by the transition from
+ * the draft's recorded standing; here they are simply the ids allowed back.
  * @param nodes The nodes as they stand after removals.
  * @param batch The batch; its ids and handles are extended.
  * @param stated The node as the agent wrote it.
+ * @param restorable Ids absent from this variant that an open disagreement lets
+ * an edit restore.
  * @returns The id to write it under, or why the reference could not be resolved.
  */
 function idForNode(
 	nodes: readonly SemanticNode[],
 	batch: Batch,
 	stated: SemanticNodeInput,
+	restorable: ReadonlySet<string>,
 ): MintedId {
 	if (stated.id !== undefined) {
-		return nodes.some((node) => node.id === stated.id)
-			? held(batch, stated.as, stated.id)
-			: refuse(
-					"UNKNOWN_NODE",
-					`there is no node "${stated.id}" on this variant to replace. Leave the id out to add ` +
-						`"${stated.name}" as a new node, or state the id of the one you meant to change`,
-				);
+		return statedId(nodes, batch, stated, stated.id, restorable);
 	}
 	const byName = nodes.filter((node) => node.name === stated.name);
 	const only = byName[0];
@@ -143,22 +148,51 @@ function idForNode(
 }
 
 /**
+ * The id a stated node names, when it is on the variant or an open
+ * disagreement lets it come back.
+ * @param nodes The nodes as they stand after removals.
+ * @param batch The batch; its handles are extended.
+ * @param stated The node as the agent wrote it.
+ * @param id The id it stated.
+ * @param restorable Ids an open disagreement lets an edit restore.
+ * @returns The id, or why it names nothing.
+ */
+function statedId(
+	nodes: readonly SemanticNode[],
+	batch: Batch,
+	stated: SemanticNodeInput,
+	id: string,
+	restorable: ReadonlySet<string>,
+): MintedId {
+	if (nodes.some((node) => node.id === id) || restorable.has(id)) {
+		return held(batch, stated.as, id);
+	}
+	return refuse(
+		"UNKNOWN_NODE",
+		`there is no node "${id}" on this variant to replace. Leave the id out to add ` +
+			`"${stated.name}" as a new node, or state the id of the one you meant to change`,
+	);
+}
+
+/**
  * Apply every stated node, leaving containment to a second pass so that a
  * batch may state a child before the parent it names.
  * @param start The nodes as they stand after removals.
  * @param stated The nodes the agent wrote.
  * @param batch The batch; its ids and handles are extended.
+ * @param restorable Ids an open disagreement lets this batch restore.
  * @returns The nodes with containment still unresolved, or the refusal.
  */
 function placeStatedNodes(
 	start: readonly SemanticNode[],
 	stated: readonly SemanticNodeInput[],
 	batch: Batch,
+	restorable: ReadonlySet<string>,
 ): { readonly ok: true; readonly nodes: SemanticNode[]; readonly ids: string[] } | SemanticRefusal {
 	let nodes = [...start];
 	const ids: string[] = [];
 	for (const input of stated) {
-		const chosen = idForNode(nodes, batch, input);
+		const chosen = idForNode(nodes, batch, input, restorable);
 		if (!chosen.ok) {
 			return chosen;
 		}
@@ -374,23 +408,65 @@ function orphanRefusal(
  * @param before The content as it stands.
  * @param edit What the agent stated.
  * @param board The board the content belongs to, for the ids already in use.
+ * @param restorable Node ids absent from this content that an open
+ * disagreement lets the batch restore under their original identity; none
+ * unless the transition found some in the variant's recorded standing.
  * @returns The content after the edit, or why it was refused.
  */
 function editContent(
 	before: VariantContent,
 	edit: VariantEditInput,
 	board: SemanticBoard | null,
+	restorable: ReadonlySet<string> = new Set(),
 ): ContentEdit {
 	const batch = editBatch(board, before, edit);
 	const planned = planRemovals(before, edit, batch);
 	if (!planned.ok) {
 		return planned;
 	}
-	const kept = {
-		nodes: before.nodes.filter((node) => !planned.removals.nodes.has(node.id)),
-		edges: before.edges.filter((edge) => !planned.removals.edges.has(edge.id)),
+	const kept = remaining(before, planned.removals);
+	const nodes = statedNodes(before, kept.nodes, edit, batch, restorable);
+	if (!nodes.ok) {
+		return nodes;
+	}
+	const edges = placeStatedEdges(kept.edges, nodes.nodes, edit.edges, batch);
+	return edges.ok ? withViews(before, board, edit, nodes.nodes, edges.edges, batch) : edges;
+}
+
+/**
+ * The content less what the batch removes.
+ * @param before The content as it stood.
+ * @param removals What to take off.
+ * @returns The nodes and edges that remain.
+ */
+function remaining(
+	before: VariantContent,
+	removals: Removals,
+): { readonly nodes: SemanticNode[]; readonly edges: SemanticEdge[] } {
+	return {
+		nodes: before.nodes.filter((node) => !removals.nodes.has(node.id)),
+		edges: before.edges.filter((edge) => !removals.edges.has(edge.id)),
 	};
-	const placed = placeStatedNodes(kept.nodes, edit.nodes, batch);
+}
+
+/**
+ * The nodes the batch leaves behind: every stated node placed, its containment
+ * resolved, and nothing left inside a container the batch took away.
+ * @param before The content as it stood, for naming what was removed.
+ * @param kept The nodes that survive the removals.
+ * @param edit The batch as stated.
+ * @param batch The batch; its ids and handles are extended.
+ * @param restorable Ids an open disagreement lets this batch restore.
+ * @returns The nodes, or the first refusal.
+ */
+function statedNodes(
+	before: VariantContent,
+	kept: readonly SemanticNode[],
+	edit: VariantEditInput,
+	batch: Batch,
+	restorable: ReadonlySet<string>,
+): { readonly ok: true; readonly nodes: SemanticNode[] } | SemanticRefusal {
+	const placed = placeStatedNodes(kept, edit.nodes, batch, restorable);
 	if (!placed.ok) {
 		return placed;
 	}
@@ -399,11 +475,7 @@ function editContent(
 		return contained;
 	}
 	const orphan = orphanRefusal(before, contained.nodes);
-	if (orphan !== null) {
-		return orphan;
-	}
-	const edges = placeStatedEdges(kept.edges, contained.nodes, edit.edges, batch);
-	return edges.ok ? withViews(before, board, edit, contained.nodes, edges.edges, batch) : edges;
+	return orphan ?? contained;
 }
 
 /**

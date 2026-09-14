@@ -77,8 +77,12 @@ Settle with `archboard semantic resolve <board> --variant <draft>
 `subject` (and `field` where the issue has one) and a `side`: `mine` keeps the
 draft's answer, `theirs` takes the predecessor's. Answer part of it and the
 rest stays open, reported in the answer. A third answer is not a side: write it
-as an ordinary edit (restore a removed subject under its original id with the
-wording you want). Settling also catches the draft up with everything else the
+as an ordinary edit. For a `deleted-and-changed` node the draft removed, state
+the node again with its original `id` (the `subject` of the issue) and the
+fields you want; that one write restores the identity, settles that issue and
+leaves the others open, and the answer reports what is still open. Only an id
+an open disagreement names may come back this way; any other absent id is
+refused. Settling also catches the draft up with everything else the
 predecessor decided.
 
 ## Adoption

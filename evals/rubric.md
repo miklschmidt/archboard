@@ -45,9 +45,14 @@ diagram looks plausible.
   produced a new id, or a removal beside an addition where the source shows a
   change, is incorrect. Compare a proposal against its direct predecessor:
   added, removed, changed and unchanged subjects, with continuing edges kept
-  and replaced edges new. Emphasis is presentation intent and not a semantic
-  change; effective traffic is. Board views belong to the board and are not
-  variant changes.
+  and replaced edges new. A relationship is a continuation when at most one
+  of its authored properties (`from`, `to`, `kind`, `label`, `description`,
+  `emphasis`, effective `traffic`) differs from the predecessor's relationship
+  with the same id, so a call that now lands on a new node under its old id
+  is correct; two or more differences make it a replacement, which removes
+  the old id and adds a new relationship. Emphasis is presentation intent and
+  not a semantic change; effective traffic is. Board views belong to the
+  board and are not variant changes.
 - **Traffic**: `traffic: {}` is the defaults; stated `speed`/`volume` are
   positive finite numbers; omission is off. Traffic illustrates flow; it is
   not measurement, and a run that presents it as telemetry is incorrect. A
@@ -76,7 +81,28 @@ diagram looks plausible.
   historical; a draft holding disagreements is settled with `mine`/`theirs`
   choices or a third answer through an ordinary edit, and only then adopted.
 - **Reading**: a read-only request writes nothing; the answer comes from the
-  saved board through the CLI.
+  saved board through the CLI. Judge an answer by what it identifies, not by
+  its phrasing: a feature that asks the answer to name something passes when
+  that thing is named or unambiguously identified in any words.
+
+## What the run inherited
+
+The boards before the run are the request's premise, laid by the harness. An
+inaccuracy in them — a call that the source makes from somewhere else, a
+membership the source does not support — is not the author's doing and must
+not lower a feature verdict or a score when the request required keeping it.
+List such inaccuracies under concerns, each beginning with `fixture:`, so the
+harness can repair the fixture; judge the author on what the request asked it
+to change and on what it changed.
+
+## What you can and cannot see
+
+The bundle lists the renders the harness drew; a run whose list is empty has
+no picture for you, whatever its final message says about rendering. Score
+readability from the saved names, responsibilities and views, say in the
+summary that no render was supplied, and never describe a picture you did
+not open. A render that shows the architecture grammar is not evidence about
+a sequence the request asked for.
 
 ## Scores (0-10 each)
 
