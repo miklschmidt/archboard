@@ -14,6 +14,11 @@ import {
 	type FileChange,
 	type Usage,
 } from "@/runtime/skill-evaluation/lib/events";
+import type {
+	CaptureAttempt,
+	CaptureProvenance,
+	PageRegion,
+} from "@/runtime/skill-evaluation/lib/captures";
 import type { CheckVerdict, Reading } from "@/runtime/skill-evaluation/lib/reading";
 import type { Scenario } from "@/runtime/skill-evaluation/lib/suite";
 
@@ -43,10 +48,26 @@ interface CompletedRun {
 		readonly view?: string | undefined;
 		readonly file?: string | undefined;
 	}[];
+	/** Every declared bitmap, taken by the harness after the author ran; failed ones stay listed. */
+	readonly captures: readonly CaptureAttempt[];
 	readonly outcomes: readonly CheckVerdict[];
 	readonly guardrails: readonly CheckVerdict[];
 	/** Paths that must not reach the grader as themselves: the home, the skill root, the vault. */
 	readonly privatePaths: readonly string[];
+}
+
+/** One capture as the grader sees it: what it is of, where it is, and whether it exists. */
+interface BundledCapture {
+	readonly label: string;
+	readonly board: string;
+	readonly variant: string | null;
+	readonly view: string | null;
+	readonly grammar: "architecture" | "data-flow" | null;
+	readonly ok: boolean;
+	readonly detail: string;
+	readonly file: string | null;
+	readonly provenance: CaptureProvenance | null;
+	readonly tiles: readonly (PageRegion & { readonly file: string })[];
 }
 
 /** What the grader receives for one run. */
@@ -69,6 +90,13 @@ interface RunBundle {
 		readonly view: string | null;
 		readonly file: string | null;
 	}[];
+	/**
+	 * The bitmaps to look at: one per declared diagram, with what it is a
+	 * picture of and, for a large one, native-scale tiles. A capture that
+	 * failed is listed with why, so an absent picture is never mistaken for
+	 * an empty diagram.
+	 */
+	readonly captures: readonly BundledCapture[];
 	readonly harnessOutcomes: readonly CheckVerdict[];
 	readonly harnessGuardrails: readonly CheckVerdict[];
 	readonly commands: readonly {
@@ -151,6 +179,24 @@ function bundleForGrader(run: CompletedRun, id: string): RunBundle {
 			view: render.view ?? null,
 			file: render.file === undefined ? null : `renders/${path.basename(render.file)}`,
 		})),
+		captures: run.captures.map((capture) => ({
+			label: capture.label,
+			board: capture.board,
+			variant: capture.variant ?? null,
+			view: capture.view ?? null,
+			grammar: capture.grammar ?? null,
+			ok: capture.ok,
+			detail: hide(capture.detail),
+			file: capture.file === undefined ? null : `captures/${path.basename(capture.file)}`,
+			provenance: capture.provenance ?? null,
+			tiles: capture.tiles.map((tile) => ({
+				x: tile.x,
+				y: tile.y,
+				width: tile.width,
+				height: tile.height,
+				file: `captures/${path.basename(tile.file)}`,
+			})),
+		})),
 		harnessOutcomes: run.outcomes.map((verdict) => ({ ...verdict, detail: hide(verdict.detail) })),
 		harnessGuardrails: run.guardrails.map((verdict) => ({
 			...verdict,
@@ -172,6 +218,7 @@ export {
 	bundleForGrader,
 	redacted,
 	type Arm,
+	type BundledCapture,
 	type CompletedRun,
 	type RunBundle,
 	type RunStatus,

@@ -5,7 +5,14 @@
 
 import type { CommandClass, ExposureKind, Usage } from "@/runtime/skill-evaluation/lib/events";
 import type { Arm, RunStatus } from "@/runtime/skill-evaluation/lib/blind";
-import type { RunVerdict } from "@/runtime/skill-evaluation/lib/grader";
+import type { CaptureSummary } from "@/runtime/skill-evaluation/lib/captures";
+import type { RunVerdict, VisualStanding } from "@/runtime/skill-evaluation/lib/grader";
+import {
+	mean,
+	median,
+	summedField,
+	type Maybe,
+} from "@/runtime/skill-evaluation/lib/report-numbers";
 
 /** One run as the report reads it. */
 interface RunRecord {
@@ -23,6 +30,14 @@ interface RunRecord {
 	readonly directWrites: number | null;
 	/** Commands that reached for evaluation material, by kind; null when the run did not record exposure. */
 	readonly exposure: Readonly<Record<ExposureKind, number>> | null;
+	/** Which declared captures were taken and which were not; null when the run recorded none. */
+	readonly captures: CaptureSummary | null;
+	/**
+	 * The visual verdict as it stands once the captures are counted: the
+	 * grader's own answer, downgraded to incomplete when a capture failed or
+	 * the grader did not open one; null when the run is not graded.
+	 */
+	readonly visual: VisualStanding | null;
 	readonly outcomesPassed: boolean;
 	readonly guardrailsPassed: boolean;
 	readonly verdict: RunVerdict | null;
@@ -32,9 +47,6 @@ interface RunRecord {
 
 /** One job expected in the saved batch, before a run has produced a manifest. */
 type PlannedRun = Pick<RunRecord, "arm" | "scenario" | "workflow" | "report" | "repetition">;
-
-/** A number the runs could not all supply is null. */
-type Maybe = number | null;
 
 /** What one arm did on one scenario. */
 interface ArmSummary {
@@ -53,6 +65,12 @@ interface ArmSummary {
 	readonly directWrites: number;
 	/** Runs recorded before the harness kept file changes and exposure, which can say neither. */
 	readonly unaudited: number;
+	/** Graded runs whose every capture was taken, opened by the grader and found legible. */
+	readonly visualPassed: number;
+	/** Graded runs the grader looked at and found wanting. */
+	readonly visualFailed: number;
+	/** Graded runs with a capture missing, failed or not opened: no visual verdict stands. */
+	readonly visualIncomplete: number;
 	readonly medianTotalTokens: Maybe;
 	readonly medianInputTokens: Maybe;
 	readonly medianCachedTokens: Maybe;
@@ -116,41 +134,6 @@ function unaudited(run: RunRecord): boolean {
 }
 
 /**
- * The values that exist, sorted.
- * @param values The values, some possibly null.
- * @returns The numbers.
- */
-function present(values: readonly Maybe[]): number[] {
-	return values.filter((value): value is number => value !== null).toSorted((a, b) => a - b);
-}
-
-/**
- * The median of the values that exist; null when none do.
- * @param values The values, some possibly null.
- * @returns The median.
- */
-function median(values: readonly Maybe[]): Maybe {
-	const sorted = present(values);
-	if (sorted.length === 0) return null;
-	const middle = Math.floor(sorted.length / 2);
-	return sorted.length % 2 === 1
-		? (sorted[middle] ?? null)
-		: ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
-}
-
-/**
- * The mean of the values that exist; null when none do.
- * @param values The values.
- * @returns The mean.
- */
-function mean(values: readonly Maybe[]): Maybe {
-	const numbers = present(values);
-	return numbers.length === 0
-		? null
-		: numbers.reduce((sum, value) => sum + value, 0) / numbers.length;
-}
-
-/**
  * Whether a run counts as a success: it completed, every deterministic check
  * held, and the grader found every expected feature when it graded.
  * @param run The run.
@@ -164,22 +147,6 @@ function succeeded(run: RunRecord): boolean {
 		run.verdict !== null &&
 		run.semanticallyCompliant === true
 	);
-}
-
-/**
- * One usage field summed across usages, or null when any usage lacks it.
- * @param usages The usages.
- * @param pick The field.
- * @returns The sum or null.
- */
-function summedField(
-	usages: readonly Usage[],
-	pick: (usage: Usage) => number | null,
-): number | null {
-	const values = usages.map(pick);
-	return values.some((value) => value === null)
-		? null
-		: values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
 }
 
 /**
@@ -250,6 +217,9 @@ function summarize(runs: readonly RunRecord[], planned = runs.length): ArmSummar
 		contaminated: runs.filter(contaminated).length,
 		directWrites: runs.filter(wroteDirectly).length,
 		unaudited: runs.filter(unaudited).length,
+		visualPassed: runs.filter((run) => run.visual === "pass").length,
+		visualFailed: runs.filter((run) => run.visual === "fail").length,
+		visualIncomplete: runs.filter((run) => run.visual === "incomplete").length,
 		medianTotalTokens: medianUsage(runs, (usage) => usage.total),
 		medianInputTokens: medianUsage(runs, (usage) => usage.input),
 		medianCachedTokens: medianUsage(runs, (usage) => usage.cached),
@@ -457,7 +427,8 @@ function cell(value: Maybe, digits = 0): string {
 function armLine(key: string, arm: Arm, s: ArmSummary): string {
 	const audit =
 		s.unaudited === s.runs && s.runs > 0 ? "unaudited" : `${s.contaminated}/${s.directWrites}`;
-	return `| ${key} | ${arm} | ${s.runs}/${s.planned} | ${s.graded} | ${s.succeeded} | ${s.guardrailViolations} | ${s.outcomeFailures} | ${s.semanticFailures} | ${s.waived} | ${audit} | ${cell(s.medianTotalTokens)} | ${cell(s.medianCachedTokens)} | ${cell(s.medianOutputTokens)} | ${cell(s.medianDiscoveryCommands)} | ${cell(s.medianOperationCommands)} | ${cell(s.medianInvestigationCommands)} | ${cell(s.meanSemanticCorrectness, 1)} | ${cell(s.meanArchitecturalTruth, 1)} | ${cell(s.meanReadability, 1)} |`;
+	const visual = `${s.visualPassed}/${s.visualFailed}/${s.visualIncomplete}`;
+	return `| ${key} | ${arm} | ${s.runs}/${s.planned} | ${s.graded} | ${s.succeeded} | ${s.guardrailViolations} | ${s.outcomeFailures} | ${s.semanticFailures} | ${s.waived} | ${visual} | ${audit} | ${cell(s.medianTotalTokens)} | ${cell(s.medianCachedTokens)} | ${cell(s.medianOutputTokens)} | ${cell(s.medianDiscoveryCommands)} | ${cell(s.medianOperationCommands)} | ${cell(s.medianInvestigationCommands)} | ${cell(s.meanSemanticCorrectness, 1)} | ${cell(s.meanArchitecturalTruth, 1)} | ${cell(s.meanReadability, 1)} |`;
 }
 
 /**
@@ -467,7 +438,7 @@ function armLine(key: string, arm: Arm, s: ArmSummary): string {
  */
 function changeLine(row: ComparisonRow): string {
 	const tokens = row.tokenChangePercent === null ? "n/a" : `${row.tokenChangePercent.toFixed(1)}%`;
-	return `| ${row.key} | change | | | | | | | | | ${tokens} | | | | | | ${row.qualityRegressed === null ? "unassessed" : row.qualityRegressed ? "REGRESSED" : "held"} | | |`;
+	return `| ${row.key} | change | | | | | | | | | | ${tokens} | | | | | | ${row.qualityRegressed === null ? "unassessed" : row.qualityRegressed ? "REGRESSED" : "held"} | | |`;
 }
 
 /**
@@ -480,8 +451,8 @@ function tableLines(title: string, table: readonly ComparisonRow[]): string[] {
 	return [
 		`## ${title}`,
 		"",
-		"| key | arm | runs/planned | graded | ok | guardrail viol. | outcome fail | semantic fail | waived | contaminated/direct | median total | median cached | median output | discovery | ops | investigation | correctness | truth | readability |",
-		"| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+		"| key | arm | runs/planned | graded | ok | guardrail viol. | outcome fail | semantic fail | waived | visual pass/fail/incomplete | contaminated/direct | median total | median cached | median output | discovery | ops | investigation | correctness | truth | readability |",
+		"| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
 		...table.flatMap((row) => [
 			armLine(row.key, "baseline", row.baseline),
 			armLine(row.key, "candidate", row.candidate),
@@ -573,7 +544,7 @@ function renderReportMarkdown(report: Report): string {
 	return [
 		"# Skill evaluation comparison",
 		"",
-		"Token medians are per run; cached input is a subset of input and is never added to it. Percentage changes require equally sized, fully successful graded arms with complete usage and no contaminated run; incomplete, failed or contaminated runs cannot establish an efficiency improvement. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author patched a board file outside the CLI.",
+		"Token medians are per run; cached input is a subset of input and is never added to it. Percentage changes require equally sized, fully successful graded arms with complete usage and no contaminated run; incomplete, failed or contaminated runs cannot establish an efficiency improvement. Percentage targets are set only after a baseline is measured. The contaminated/direct column counts runs whose author read evaluation material or another run, and runs whose author patched a board file outside the CLI. The visual column counts graded runs whose bitmap captures the grader opened and passed, failed, or could not judge because a capture was missing, failed or not opened; a visual pass is never unqualified, and a still capture proves nothing about animation.",
 		"",
 		...tableLines("Per scenario (primary)", report.scenarios),
 		...tableLines("Per primary workflow", report.workflows),

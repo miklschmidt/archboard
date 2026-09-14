@@ -29,6 +29,7 @@ export {
 	bundleForGrader,
 	redacted,
 	type Arm,
+	type BundledCapture,
 	type CompletedRun,
 	type RunBundle,
 	type RunStatus,
@@ -58,9 +59,11 @@ export {
 	graderPrompt,
 	parseGraderOutput,
 	semanticallyCompliant,
+	visualStandingOf,
 	type GraderBrief,
 	type GraderOutput,
 	type RunVerdict,
+	type VisualStanding,
 } from "@/runtime/skill-evaluation/lib/grader";
 export {
 	bundledRuns,
@@ -116,10 +119,23 @@ export {
 	type RunRecord,
 } from "@/runtime/skill-evaluation/lib/report";
 export {
+	CAPTURE_TILE_SIDE_PX,
+	captureDeclared,
+	captureFromReceipt,
+	captureSummary,
+	tileRegions,
+	type CaptureAttempt,
+	type CaptureProvenance,
+	type CaptureSummary,
+	type CaptureTile,
+} from "@/runtime/skill-evaluation/lib/captures";
+export {
 	ARMS,
 	FLASK_REVISIONS,
 	GUARDRAILS,
 	WORKFLOWS,
+	CaptureDeclarationSchema,
+	type CaptureDeclaration,
 	CoverageSchema,
 	FixtureSchema,
 	FixtureStepSchema,

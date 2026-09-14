@@ -323,11 +323,17 @@ const comparisonStanding: Check = (check, reading) =>
 		const counts = standingCounts(at.board, at.variant);
 		if (counts === undefined)
 			return finding(false, `"${check.variant}" has no predecessor to compare against`);
+		const exact: [number | undefined, number][] = [
+			[check.removed, counts.all.removed],
+			[check.removedNodes, counts.nodes.removed],
+		];
+		const floors: [number | undefined, number][] = [
+			[check.addedAtLeast, counts.all.added],
+			[check.addedNodesAtLeast, counts.nodes.added],
+		];
 		const held =
-			(check.removed === undefined || counts.all.removed === check.removed) &&
-			counts.all.added >= (check.addedAtLeast ?? 0) &&
-			(check.removedNodes === undefined || counts.nodes.removed === check.removedNodes) &&
-			counts.nodes.added >= (check.addedNodesAtLeast ?? 0);
+			exact.every(([want, have]) => want === undefined || have === want) &&
+			floors.every(([want, have]) => have >= (want ?? 0));
 		return finding(
 			held,
 			`${counts.nodes.removed} nodes removed, ${counts.nodes.added} added (${counts.all.removed} subjects removed, ${counts.all.added} added) against the predecessor`,
