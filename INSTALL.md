@@ -261,10 +261,50 @@ to it. If you want a picture in the repo as well, render one:
 
 ```bash
 archboard semantic render payments --out docs/architecture.svg
+archboard semantic rasterize payments --out docs/architecture.png
 ```
+
+`semantic render` writes the SVG with its fonts embedded. `semantic rasterize`
+draws the same picture to a PNG in a private headless Chromium at native scale:
+one bitmap pixel per diagram pixel, the whole diagram, whatever any display or
+open pane is doing; `--scale 2` doubles it, and a bitmap past 16384 pixels on
+a side is refused rather than shrunk. Both take the same `--variant`, `--view`
+and `--theme` selectors. Rasterizing needs a Chromium or Google Chrome
+executable (see [Rendering to a bitmap](#rendering-to-a-bitmap)).
 
 The picture is derived, so commit it only where somebody reads the repo without
 archboard; the board is the thing that is kept.
+
+## Rendering to a bitmap
+
+`archboard semantic rasterize <board> --out <file.png>` draws in a Chromium or
+Google Chrome it starts itself: headless, on a private temporary profile, in
+its own process group, stopped and removed before the command answers. Nothing
+else in archboard needs a browser installed; `semantic render` writes SVG
+without one. The executable is the first of `chromium`, `chromium-browser`,
+`google-chrome` and `google-chrome-stable` on `PATH` (on macOS also the
+standard `/Applications` bundles); set `ARCHBOARD_RENDERER_CHROMIUM` to use
+another. Without one the command refuses by name (exit 4) and writes nothing.
+
+What the bitmap is:
+
+- **Native scale by default.** One bitmap pixel per diagram pixel at `--scale
+1`, independent of the display's pixel ratio, any device scale or any pane's
+  camera. `--scale` takes 0.25 to 4; the bitmap is the diagram's page times the
+  scale, rounded to whole pixels. The renderer states an integer page; a
+  fractional one would round up so no edge is clipped.
+- **The whole diagram.** The page is captured beyond any viewport, never fitted
+  or cropped, with the renderer's own 20 px margin and opaque ground. A bitmap
+  past 16384 px on a side or 80 million pixels is refused (exit 2) rather than
+  tiled, shrunk or left as a wrong file.
+- **Stable and complete.** Every embedded face is loaded before the shot, or
+  the command fails rather than drawing a fallback font. Traffic animation is
+  SMIL in the SVG; the capture pauses it at time zero, so moving marks sit at
+  their first frame, and a still never proves motion.
+- **Verified.** The PNG's header is checked against the size the diagram asks
+  for before the file is written. The receipt states the file, bitmap width
+  and height, scale, the diagram's page, the board, version, variant and
+  view drawn, and the SHA-256 of the SVG document that was rasterized.
 
 ## On macOS
 
@@ -273,19 +313,13 @@ Archboard supports Linux and macOS. On macOS, machine-local state lives under
 `~/Library/Logs/archboard.log`. Process ownership is verified through the native
 macOS process API; Linux uses `/proc`.
 
-Server-side rendering uses Chromium or Google Chrome. On macOS it discovers
-their standard `/Applications` installs as well as executable names on `PATH`.
-Set `ARCHBOARD_RENDERER_CHROMIUM` to use another executable location. It starts
-its own headless browser with a temporary profile; `setsid` is not required.
-The macOS browser child uses the native account home for operating-system
-services while keeping its profile and temporary files private. It uses a mock
-keychain so temporary browser launches do not open macOS keychain dialogs.
-
-A managed Chrome installation can enforce becoming the default browser even
-for temporary profiles. If it opens system prompts, use Chrome for Testing
-and set `ARCHBOARD_RENDERER_CHROMIUM` to its executable before starting
-archboard. This keeps the managed browser's policy and your default browser
-unchanged.
+The macOS browser child of `semantic rasterize` uses the native account home
+for operating-system services while keeping its profile and temporary files
+private, and a mock keychain so temporary browser launches do not open macOS
+keychain dialogs. A managed Chrome installation can enforce becoming the
+default browser even for temporary profiles. If it opens system prompts, use
+Chrome for Testing and set `ARCHBOARD_RENDERER_CHROMIUM` to its executable.
+This keeps the managed browser's policy and your default browser unchanged.
 
 `bin/canvas` calls `realpath`, which modern macOS has but older versions do
 not. If the symlink route above gives you `realpath: command not found`, either

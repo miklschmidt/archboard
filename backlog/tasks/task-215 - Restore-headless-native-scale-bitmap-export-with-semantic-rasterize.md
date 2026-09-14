@@ -1,9 +1,11 @@
 ---
 id: TASK-215
 title: Restore headless native-scale bitmap export with semantic rasterize
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-14 22:47'
+updated_date: '2026-09-14 23:23'
 labels: []
 dependencies: []
 references:
@@ -38,3 +40,13 @@ The user requests archboard semantic rasterize: a headless 1:1 bitmap of the fin
 - [ ] #6 Focused model-free tests adapt useful main-branch coverage to prove actual PNG pixels, native dimensions, full bounds beyond a typical viewport, fonts, selectors, sequence/comparison output and no board/UI mutation, using the cheapest credible test owners.
 - [ ] #7 CLI help, skill guidance and installation/runtime requirements document the restored command and scale semantics. Raster artifacts are ignored derived outputs. TASK-214 can use the shared rasterization capability; no duplicate evaluation-only renderer is introduced. Normal checks pass without running model evaluations or grading.
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. New runtime module src/runtime/semantic-rasterizer: DevTools client, Chromium process helpers, one lazy session in a private profile and process group, serialised cancellable jobs, provable teardown; captures the renderer's embedded-font SVG loaded from a file at deviceScaleFactor=scale with SMIL paused at t=0 and every face loaded, and checks the PNG header against the requested size.
+2. CLI: semantic rasterize <board> --out <file.png> [--variant --view --theme --scale] reusing the render client; binary artifact receipt with bitmap size, scale, diagram page, variant, view and the SVG digest; refusals RASTERIZER_UNAVAILABLE (4), RASTER_BOUNDS_EXCEEDED (2), RASTER_FAILED (1); audit entry.
+3. Timing: rename the unreferenced BOARD_RENDER_* constants to SEMANTIC_RASTER_*.
+4. Tests: module owner (pixels, native and scaled size, tall page, data-flow, region tile, refusals, fonts, ownership, cancellation) and a system owner driving the CLI against a real canvas (selectors, proposal, unchanged board file, refusals leave no file).
+5. Docs: INSTALL.md bitmap section, TESTING.md walkthrough, test-suite.md owners, server-rendering-boundary.md status note, .gitignore for generated PNGs; skill guidance lands with TASK-214.
+<!-- SECTION:PLAN:END -->

@@ -68,8 +68,14 @@ echo '{"nodes":[{"name":"Orders Queue","kind":"queue"}]}' |
 ./bin/canvas semantic branch payments --as "Queued ingest" --expect-version 2 \
   --doing "proposing a queue"
 ./bin/canvas semantic render payments --out payments.svg
+./bin/canvas semantic rasterize payments --out payments.png
 ./bin/canvas check
 ```
+
+`semantic rasterize` needs a Chromium or Google Chrome executable on `PATH`,
+or one named by `ARCHBOARD_RENDERER_CHROMIUM`; it starts its own headless
+browser and stops it before answering. The PNG is the SVG at native scale, so
+the two receipts state the same width and height.
 
 The board is at `$ARCHBOARD_VAULT/payments.semantic.json`: one document holding
 the current architecture and every proposal derived from it. A proposal is a

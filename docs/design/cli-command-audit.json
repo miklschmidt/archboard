@@ -3,8 +3,8 @@
 	"reviewedBase": "dfb589bd28f6dc95289f5271ba389bfcc48bafbe",
 	"surface": {
 		"commands": 33,
-		"subcommands": 36,
-		"paths": 69
+		"subcommands": 37,
+		"paths": 70
 	},
 	"globalContract": {
 		"bootstrap": "src/bin.ts removes one --url before importing runtime configuration",
@@ -1588,6 +1588,42 @@
 				{
 					"code": "CANVAS_UNREACHABLE",
 					"exit": 3
+				}
+			],
+			"classification": "board"
+		},
+		{
+			"path": "semantic rasterize",
+			"introducedBy": "TASK-215",
+			"parserOwner": "CommandContract concrete Commander parser",
+			"handlerOwner": "src/cli/commands/semantic-rasterize.ts",
+			"stdout": "file receipt",
+			"result": "the PNG that was written: bitmap size, scale, the diagram's own page, the drawn variant and view, and the rasterized document's digest",
+			"diagnostics": "file receipt note on stderr",
+			"exits": [0, 1, 2, 3, 4],
+			"prerequisites": ["server"],
+			"relationships": ["GET /api/semantic-boards/render"],
+			"semantics": "the same picture semantic render draws, rasterized in a private headless Chromium at one bitmap pixel per diagram pixel by default; the whole diagram, never fitted, cropped or a substituted view; traffic animation paused at its first frame",
+			"ordering": "render on the server, rasterize locally, verify the bitmap is the size the diagram asks for, then stage the file as an artifact",
+			"nextFields": ["file", "width", "height", "scale", "version", "source.svgSha256"],
+			"workflow": "necessary composition",
+			"effects": ["read", "local-write"],
+			"refusals": [
+				{
+					"code": "CANVAS_UNREACHABLE",
+					"exit": 3
+				},
+				{
+					"code": "RASTERIZER_UNAVAILABLE",
+					"exit": 4
+				},
+				{
+					"code": "RASTER_BOUNDS_EXCEEDED",
+					"exit": 2
+				},
+				{
+					"code": "RASTER_FAILED",
+					"exit": 1
 				}
 			],
 			"classification": "board"
