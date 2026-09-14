@@ -21,6 +21,9 @@ docs/design/generated/command-contract-proof.md
 # own directory.
 docs/design/generated/**/*.svg
 docs/design/generated/*.svg
+# Bitmaps `semantic rasterize` draws from the same boards are derived too.
+docs/design/generated/**/*.png
+docs/design/generated/*.png
 
 # Exact-version Codex app-server bindings are reproducible derived output.
 src/shared/codex-app-server-contract/generated/

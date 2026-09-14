@@ -5,6 +5,15 @@ implements: 0020
 
 # Server rendering boundary
 
+> **Where this stands now.** The Excalidraw export stack this measured was
+> removed in the semantic migration. What survived it is the ownership
+> design: TASK-215's `src/runtime/semantic-rasterizer` keeps one lazy
+> headless Chromium in a private profile and process group, serialised
+> capture jobs, caller cancellation and a provable teardown, and replaces the
+> Excalidraw export step with a screenshot of the semantic renderer's own SVG
+> at a stated device scale. There is no page fixture, no Mermaid and no
+> server route: the CLI rasterizes what the canvas rendered.
+
 TASK-143.08.06.01 asks whether the pinned Excalidraw export and Mermaid
 conversion stack can render an Archboard board without an Archboard browser
 client. The answer is split: Bun DOM/canvas emulation renders the representative

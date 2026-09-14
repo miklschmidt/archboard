@@ -1,10 +1,11 @@
 ---
 id: TASK-214
 title: Improve skill success through evidence checks and bitmap grading
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-09-14 22:44'
-updated_date: '2026-09-14 22:47'
+updated_date: '2026-09-14 23:01'
 labels: []
 dependencies:
   - TASK-212
