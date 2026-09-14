@@ -33,6 +33,8 @@ function record(overrides: Partial<RunRecord> = {}): RunRecord {
 		durationMs: 10,
 		usage: { input: 100, cached: 20, cacheWrite: null, output: 10, reasoning: null, total: 110 },
 		commandCounts: { discovery: 1, operation: 2, "code-investigation": 1, setup: 0, ambiguous: 0 },
+		directWrites: 0,
+		exposure: { "evaluation-inputs": 0, "harness-source": 0, "other-run": 0 },
 		outcomesPassed: true,
 		guardrailsPassed: true,
 		verdict,
@@ -71,6 +73,22 @@ test("complete passing arms report measured token changes and assessed quality",
 	expect(report.scenarios[0]?.candidate.succeeded).toBe(1);
 	expect(report.scenarios[0]?.qualityRegressed).toBe(false);
 	expect(report.scenarios[0]?.tokenChangePercent).toBe(0);
+});
+
+test("legacy unaudited and contaminated arms keep raw measurements but withhold comparisons", () => {
+	for (const candidate of [
+		record({ arm: "candidate", directWrites: null, exposure: null }),
+		record({
+			arm: "candidate",
+			exposure: { "evaluation-inputs": 1, "harness-source": 0, "other-run": 0 },
+		}),
+		record({ arm: "candidate", directWrites: 1 }),
+	]) {
+		const row = buildReport([record(), candidate], null).scenarios[0];
+		expect(row?.candidate.meanSemanticCorrectness).toBe(9);
+		expect(row?.tokenChangePercent).toBeNull();
+		expect(row?.qualityRegressed).toBeNull();
+	}
 });
 
 test("equally sized partial arms cannot replace the batch's planned repetitions", () => {

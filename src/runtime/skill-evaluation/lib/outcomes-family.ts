@@ -3,7 +3,6 @@
 // the predecessor, reconciliation, adoption, flows, views and walkthroughs.
 
 import {
-	compareVariants,
 	currentVariant,
 	findVariant,
 	resolveVariant,
@@ -15,6 +14,7 @@ import {
 	type VariantContent,
 } from "@/shared/semantic-board/index";
 import { fieldOf } from "@/runtime/skill-evaluation/lib/outcomes-board";
+import { comparisonStanding } from "@/runtime/skill-evaluation/lib/outcomes-comparison";
 import {
 	finding,
 	isFinding,
@@ -261,49 +261,6 @@ const currentUntouched: Check = (check, reading) =>
 		return finding(
 			same,
 			same ? "the current variant is unchanged" : "the current variant's content changed",
-		);
-	});
-
-/**
- * The comparison of a variant against its direct predecessor.
- * @param board The board.
- * @param variant The variant.
- * @returns The counts of removed and added subjects, or undefined without a predecessor.
- */
-function standingCounts(
-	board: SemanticBoard,
-	variant: SemanticVariant,
-): { removed: number; added: number } | undefined {
-	const parent = board.variants.find((candidate) => candidate.id === variant.parent);
-	if (parent === undefined) return undefined;
-	const comparison = compareVariants(parent.content, variant.content);
-	const kinds = [
-		...comparison.nodes.values(),
-		...comparison.edges.values(),
-		...comparison.flows.values(),
-		...comparison.walkthroughs.values(),
-	].map((change) => change.kind);
-	return {
-		removed: kinds.filter((kind) => kind === "removed").length,
-		added: kinds.filter((kind) => kind === "added").length,
-	};
-}
-
-/**
- * Whether a proposal reads as the stated removals and additions against its predecessor.
- * @param check The board, variant and counts.
- * @param reading The reading.
- * @returns The finding.
- */
-const comparisonStanding: Check = (check, reading) =>
-	onLocated(check, reading, (at) => {
-		const counts = standingCounts(at.board, at.variant);
-		if (counts === undefined)
-			return finding(false, `"${check.variant}" has no predecessor to compare against`);
-		const removedOk = check.removed === undefined || counts.removed === check.removed;
-		return finding(
-			removedOk && counts.added >= (check.addedAtLeast ?? 0),
-			`${counts.removed} removed, ${counts.added} added against the predecessor`,
 		);
 	});
 
