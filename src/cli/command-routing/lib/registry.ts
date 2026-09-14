@@ -1,13 +1,11 @@
 // Projects the command table into the contract registry, the CLI surface, and per-command
 // help, and asserts the board/browser architecture rule over every registered command.
 import type { AnyCommandContract } from "@/cli/command-contract/contract";
-import {
-	type CliRegistryEntry,
-	type CommandRoute,
-	type CommandRoutes,
-	type RouteOwner,
-	commandSummary,
-	commandUsage,
+import type {
+	CliRegistryEntry,
+	CommandRoute,
+	CommandRoutes,
+	RouteOwner,
 } from "@/cli/command-routing/lib/route";
 
 // `semantic` joins these because a semantic board is a board: the commands in
@@ -188,54 +186,4 @@ function childOf(root: CommandRoute, name: string): CommandRoute | undefined {
 	return root.children ? root.children[name] : undefined;
 }
 
-/**
- * Resolves a help topic of one or two words to the route it names.
- * @param routes - The command table.
- * @param topic - The words after `help`.
- * @returns The route and whether it is a subcommand, or null when the topic names nothing.
- */
-function helpRoute(
-	routes: CommandRoutes,
-	topic: readonly string[],
-): { route: CommandRoute; nested: boolean } | null {
-	const [name, childName, ...tail] = topic;
-	if (!name || tail.length > 0) {
-		return null;
-	}
-	const root = routes[name];
-	if (root === undefined) {
-		return null;
-	}
-	if (childName === undefined) {
-		return { route: root, nested: false };
-	}
-	const nested = childOf(root, childName);
-	return nested === undefined ? null : { route: nested, nested: true };
-}
-
-/**
- * Renders one help topic from the same route and contract registry used for dispatch. A
- * subcommand's help adds the contract description, prerequisites and effects.
- * @param routes - The command table.
- * @param topic - The words after `help`.
- * @returns The help text, or null when the topic names no command.
- */
-function helpFor(routes: CommandRoutes, topic: readonly string[]): string | null {
-	const found = helpRoute(routes, topic);
-	if (found === null) {
-		return null;
-	}
-	const { route, nested } = found;
-	const base = `Usage: archboard ${commandUsage(route)}\n  ${commandSummary(route)}\n`;
-	if (!nested) {
-		return base;
-	}
-	const prerequisites = route.owner.contract.prerequisites.join(", ") || "none";
-	const effects = route.owner.contract.effects.join(", ") || "none";
-	return (
-		`${base}  ${route.owner.contract.description}\n` +
-		`  Prerequisites: ${prerequisites}. Effects: ${effects}.\n`
-	);
-}
-
-export { cliSurfaceOf, registryOf, helpFor, childOf };
+export { cliSurfaceOf, registryOf, childOf };

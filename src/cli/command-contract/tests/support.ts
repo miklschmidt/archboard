@@ -35,8 +35,8 @@ function proofContract(options: {
 }) {
 	return defineCommand({
 		path: ["proof"],
+		shared: [],
 		summary: "proof",
-		usage: "proof",
 		description: "proof",
 		examples: [],
 		parameters: [

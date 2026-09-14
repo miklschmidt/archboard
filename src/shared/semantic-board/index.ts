@@ -53,9 +53,21 @@ export {
 export {
 	SemanticIdSchema,
 	DisplayNameSchema,
+	GroupIdSchema,
+	GroupMembershipsSchema,
+	normalizeGroupIds,
+	persistedGroupIds,
 	ResponsibilitySchema,
 	DescriptionSchema,
 } from "@/shared/semantic-board/lib/primitives";
+export {
+	type BoundaryDirection,
+	type BoundaryEdge,
+	type GroupInspection,
+	groupsUsed,
+	inspectGroup,
+	isMemberOf,
+} from "@/shared/semantic-board/lib/groups";
 export {
 	FlowStepSchema,
 	type FlowStep,

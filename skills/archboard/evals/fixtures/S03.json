@@ -1,0 +1,39 @@
+{
+	"$comment": "Two containers with one module each, and two configured groups nobody belongs to yet. The checkout is deliberately not registered.",
+	"registerRepo": false,
+	"policy": {
+		"groups": {
+			"request-lifecycle": { "name": "Request lifecycle" },
+			"sansio-core": { "name": "Sans-IO core" }
+		}
+	},
+	"steps": [
+		{
+			"op": "new",
+			"board": "Flask application",
+			"input": {
+				"level": "service",
+				"nodes": [
+					{ "name": "Flask app", "kind": "app", "responsibility": "The WSGI application object" },
+					{
+						"name": "Dispatch",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "full_dispatch_request through finalize_request"
+					},
+					{ "name": "CLI", "kind": "module", "responsibility": "The flask command group" },
+					{
+						"name": "Run command",
+						"kind": "function",
+						"parent": "CLI",
+						"responsibility": "flask run: load the app and serve it"
+					}
+				],
+				"edges": [
+					{ "from": "Flask app", "to": "Dispatch", "kind": "call", "label": "dispatches" },
+					{ "from": "Run command", "to": "Flask app", "kind": "call", "label": "serves" }
+				]
+			}
+		}
+	]
+}

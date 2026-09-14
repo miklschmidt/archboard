@@ -1,6 +1,7 @@
 // Board commands accept their options as staged tokens that are only parsed
 // after server contact, so a usage mistake never masks a missing server.
 import { z } from "zod";
+import type { TokenParameter } from "@/cli/command-contract/contract";
 
 type Stage = { positionals: string[]; flags: Record<string, string | boolean> };
 type FlagSpecs = Readonly<Record<string, "flag" | "value">>;
@@ -119,3 +120,43 @@ function parseStage(
 }
 
 export { parseStage, type Stage };
+
+/**
+ * The hidden collection a staged command receives everything after its name
+ * in. It is parsed by the stage, never advertised: what a person may write is
+ * declared as the command's own `staged` parameters, which help shows.
+ * @param name - What the collection is called in the contract.
+ * @returns The positional that collects the tokens.
+ */
+function stagedTokens(name: string): TokenParameter {
+	return {
+		kind: "positional",
+		key: "tokens",
+		name,
+		repeatable: true,
+		route: "staged-tokens",
+		hidden: true,
+		description: "Everything after the command name, validated after its prerequisites",
+	};
+}
+
+/**
+ * The flags a stage parses, read off the command's declared staged options so
+ * help and the stage cannot disagree about which flags exist and which take a
+ * value.
+ * @param parameters - The command's parameters.
+ * @returns The flag specification, by flag name without dashes.
+ */
+function stagedFlags(parameters: readonly TokenParameter[]): FlagSpecs {
+	const specs: Record<string, "flag" | "value"> = {};
+	for (const parameter of parameters) {
+		if (parameter.kind === "option" && parameter.route === "staged") {
+			for (const spelling of parameter.spellings) {
+				specs[spelling.replace(/^--/u, "")] = parameter.value === "none" ? "flag" : "value";
+			}
+		}
+	}
+	return specs;
+}
+
+export { stagedFlags, stagedTokens };

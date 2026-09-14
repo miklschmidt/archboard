@@ -190,6 +190,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	policy.nodeKinds["route"]!.color = "blue";
 	policy.nodeKinds["queue"]!.color = "green";
 	policy.nodeKinds["datastore"]!.color = "amber";
+	policy.groups = { "write-path": { name: "the write path" }, payments: { name: "payments" } };
 	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(policy));
 	const canvas = await startOwnedCanvas({ serverPath, vault, env: canvasTestEnvironment() });
 	resources.defer(() => canvas.dispose());
@@ -210,14 +211,14 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 						level: "system",
 						variant: "As built",
 						nodes: [
-							{ name: "Gateway", kind: "route", group: "the write path" },
+							{ name: "Gateway", kind: "route", groups: ["write-path"] },
 							{
 								name: "Writer",
 								kind: "module",
-								group: "the write path",
+								groups: ["write-path"],
 								responsibility: "Takes the lease",
 							},
-							{ name: "Ledger", kind: "datastore", group: "payments" },
+							{ name: "Ledger", kind: "datastore", groups: ["payments"] },
 						],
 						edges: [
 							{
@@ -312,10 +313,10 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 							{
 								name: "Writer",
 								kind: "module",
-								group: "the write path",
+								groups: ["write-path"],
 								responsibility: "Drains the queue",
 							},
-							{ name: "Queue", kind: "queue", group: "the write path" },
+							{ name: "Queue", kind: "queue", groups: ["write-path"] },
 						],
 						edges: [
 							{
@@ -349,7 +350,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 							{
 								name: "Writer",
 								kind: "module",
-								group: "the write path",
+								groups: ["write-path"],
 								responsibility: "Writes the note",
 							},
 						],
@@ -433,8 +434,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	// And the badge is cashed in for words where the reader clicked.
 	await pollUntil(
 		() => browser.eval<string>(`document.querySelector("${INSPECTOR}")?.textContent ?? ""`),
-		(said) =>
-			said.includes("Nobody has decided this yet") && said.includes("Part of the write path"),
+		(said) => said.includes("Nobody has decided this yet") && said.includes("the write path"),
 		"the inspector to explain the warning and name the group",
 		WAIT,
 	);

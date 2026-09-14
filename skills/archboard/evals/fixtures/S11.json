@@ -1,0 +1,98 @@
+{
+	"$comment": "S01's board with a draft that renamed, reworded and removed, and then a parent edit that touched the same three nodes: three reachable disagreements of three kinds.",
+	"registerRepo": true,
+	"steps": [
+		{
+			"op": "new",
+			"board": "Flask JSON",
+			"input": {
+				"level": "service",
+				"nodes": [
+					{
+						"name": "Flask app",
+						"kind": "app",
+						"responsibility": "Creates the app and dispatches requests",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "JSON helpers",
+						"kind": "module",
+						"responsibility": "dumps, loads and jsonify for responses",
+						"binding": { "repo": "$FLASK", "path": "src/flask/json/__init__.py" }
+					},
+					{
+						"name": "Tagged JSON",
+						"kind": "module",
+						"responsibility": "Serializes tagged values for signed sessions",
+						"description": "Serializes tagged values in sessions",
+						"binding": { "repo": "$FLASK", "path": "src/flask/json/tag.py" }
+					}
+				],
+				"edges": [
+					{ "from": "Flask app", "to": "JSON helpers", "kind": "call", "label": "jsonify" },
+					{ "from": "JSON helpers", "to": "Tagged JSON", "kind": "call", "label": "tag" }
+				]
+			}
+		},
+		{
+			"op": "branch",
+			"board": "Flask JSON",
+			"as": "Provider rewrite",
+			"summary": "Route JSON through the provider and drop tagging from this board"
+		},
+		{
+			"op": "edit",
+			"board": "Flask JSON",
+			"input": {
+				"variant": "Provider rewrite",
+				"nodes": [
+					{
+						"id": "$node(JSON helpers)",
+						"name": "Provider-backed helpers",
+						"kind": "module",
+						"responsibility": "dumps, loads and jsonify for responses",
+						"binding": { "repo": "$FLASK", "path": "src/flask/json/__init__.py" }
+					},
+					{
+						"id": "$node(Flask app)",
+						"name": "Flask app",
+						"kind": "app",
+						"responsibility": "Owns the JSON provider and the request lifecycle",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					}
+				],
+				"removeNodes": ["Tagged JSON"]
+			}
+		},
+		{
+			"op": "edit",
+			"board": "Flask JSON",
+			"input": {
+				"nodes": [
+					{
+						"id": "$node(JSON helpers)",
+						"name": "JSON helper functions",
+						"kind": "module",
+						"responsibility": "dumps, loads and jsonify for responses",
+						"binding": { "repo": "$FLASK", "path": "src/flask/json/__init__.py" }
+					},
+					{
+						"id": "$node(Flask app)",
+						"name": "Flask app",
+						"kind": "app",
+						"responsibility": "Creates the app, dispatches requests and holds the provider",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"id": "$node(Tagged JSON)",
+						"name": "Tagged JSON",
+						"kind": "module",
+						"responsibility": "Serializes tagged values for signed sessions",
+						"description": "Serializes tagged values in signed session cookies",
+						"binding": { "repo": "$FLASK", "path": "src/flask/json/tag.py" }
+					}
+				]
+			}
+		}
+	]
+}

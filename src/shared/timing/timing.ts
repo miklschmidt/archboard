@@ -435,3 +435,28 @@ export {
 
 /** Notice vault/configuration edits promptly without scanning the whole vault on every frame. */
 export const VAULT_CHECK_POLL_MS = 5_000;
+
+// ── Skill evaluation harness (TASK-209) ──────────────────────────────────
+// Every duration the on-demand skill evaluation pulls against. None of them is
+// reached from the product: the harness owns its own canvas per run, spawns the
+// archboard CLI to lay fixtures, and runs Codex authors and one grader, and
+// each of those has a point past which waiting longer is a hang, not patience.
+
+/** An owned evaluation canvas answering /health after spawn; a cold bun start on a busy box. */
+export const SKILL_EVAL_CANVAS_STARTUP_MS = 20_000;
+/** Between /health probes while an evaluation canvas starts. */
+export const SKILL_EVAL_HEALTH_POLL_MS = 100;
+/** One /health probe; a listener that cannot answer in this time is treated as not up yet. */
+export const SKILL_EVAL_HEALTH_REQUEST_MS = 1000;
+/** Let the canvas finish its separately owned Codex shutdown before harness escalation, with one composed budget of margin. */
+export const SKILL_EVAL_CANVAS_SHUTDOWN_MS = CODEX_COMPOSED_SHUTDOWN_MS * 2;
+/** One archboard CLI call laying a fixture or reading an outcome; each is one HTTP round trip. */
+export const SKILL_EVAL_CLI_TIMEOUT_MS = 60_000;
+/** One git command fetching or checking out Flask; a first clone from the network is the slow case. */
+export const SKILL_EVAL_GIT_TIMEOUT_MS = 10 * 60_000;
+/** One author run end to end; a run still going after this is killed and recorded as timed out. */
+export const SKILL_EVAL_AUTHOR_TIMEOUT_MS = 40 * 60_000;
+/** The one grading session over a whole batch; it reads three Flask revisions and every run. */
+export const SKILL_EVAL_GRADER_TIMEOUT_MS = 4 * 60 * 60_000;
+/** From SIGTERM to SIGKILL for a Codex process the harness gives up on. */
+export const SKILL_EVAL_CODEX_TERM_GRACE_MS = 10_000;

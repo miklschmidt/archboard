@@ -1,0 +1,113 @@
+{
+	"$comment": "S02 with the contextvars proposal already drafted, so adoption is the only thing left to do.",
+	"registerRepo": true,
+	"steps": [
+		{
+			"op": "new",
+			"board": "Flask contexts",
+			"input": {
+				"level": "module",
+				"variant": "Local stacks",
+				"summary": "Contexts pushed onto werkzeug LocalStacks, as Flask 2.1 did",
+				"nodes": [
+					{
+						"name": "App context",
+						"kind": "module",
+						"responsibility": "Binds current_app and g for one unit of work",
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/ctx.py"
+						}
+					},
+					{
+						"name": "Request context",
+						"kind": "module",
+						"responsibility": "Binds request and session for one request",
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/ctx.py"
+						}
+					},
+					{
+						"name": "App context stack",
+						"kind": "module",
+						"responsibility": "werkzeug LocalStack holding pushed app contexts"
+					},
+					{
+						"name": "Request context stack",
+						"kind": "module",
+						"responsibility": "werkzeug LocalStack holding pushed request contexts"
+					}
+				],
+				"edges": [
+					{
+						"from": "App context",
+						"to": "App context stack",
+						"kind": "data",
+						"label": "push / pop"
+					},
+					{
+						"from": "Request context",
+						"to": "Request context stack",
+						"kind": "data",
+						"label": "push / pop"
+					},
+					{
+						"from": "Request context",
+						"to": "App context",
+						"kind": "call",
+						"label": "pushes an app context when none is active"
+					}
+				],
+				"views": [
+					{
+						"name": "Contexts",
+						"grammar": "architecture",
+						"scope": {
+							"kind": "all"
+						}
+					}
+				]
+			}
+		},
+		{
+			"op": "branch",
+			"board": "Flask contexts",
+			"as": "Context variables",
+			"summary": "Replace the LocalStacks with contextvars as Flask 2.2 did"
+		},
+		{
+			"op": "edit",
+			"board": "Flask contexts",
+			"input": {
+				"variant": "Context variables",
+				"nodes": [
+					{
+						"name": "Context variables",
+						"kind": "module",
+						"responsibility": "_cv_app and _cv_request hold the active contexts",
+						"binding": {
+							"repo": "$FLASK",
+							"path": "src/flask/globals.py"
+						}
+					}
+				],
+				"edges": [
+					{
+						"from": "App context",
+						"to": "Context variables",
+						"kind": "data",
+						"label": "set / reset _cv_app"
+					},
+					{
+						"from": "Request context",
+						"to": "Context variables",
+						"kind": "data",
+						"label": "set / reset _cv_request"
+					}
+				],
+				"removeNodes": ["App context stack", "Request context stack"]
+			}
+		}
+	]
+}

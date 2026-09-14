@@ -29,8 +29,14 @@ import { SemanticInspector } from "@/ui/semantic-board-canvas/components/Semanti
 import { STAGE_CLASS } from "@/ui/semantic-board-canvas/components/SemanticStageStates";
 import type { BoardCamera } from "@/ui/semantic-board-canvas/hooks/use-board-camera";
 import { PAN_STEP, cameraTransform, type Size } from "@/ui/semantic-board-canvas/lib/camera";
+import type { GroupControls } from "@/ui/semantic-board-canvas/components/SemanticInspectorParts";
 import { NO_FOCUS, subjectMarks, type BeatFocus } from "@/ui/semantic-board-canvas/lib/narrative";
-import { markSubjects, subjectAt } from "@/ui/semantic-board-canvas/lib/subjects";
+import {
+	markGroupFocus,
+	markSubjects,
+	subjectAt,
+	type GroupMarks,
+} from "@/ui/semantic-board-canvas/lib/subjects";
 
 /** Which way each arrow key moves the diagram under the viewport. */
 const PAN_KEYS: Readonly<Record<string, readonly [number, number]>> = {
@@ -208,6 +214,12 @@ interface SemanticDiagramProps {
 	 * walkthrough is open beside it.
 	 */
 	focus?: BeatFocus | undefined;
+	/** The group under inspection, or null for none. */
+	groupId: string | null;
+	/** What that inspection lights, keeps readable and treats as context, or null. */
+	groupMarks: GroupMarks | null;
+	/** How the inspector names memberships and inspects one. */
+	groupControls: GroupControls;
 }
 
 /**
@@ -249,6 +261,14 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			markSubjects(surface, marked);
 		}
 	}, [surface, marked]);
+	// A group under inspection is its own set of marks, independent of
+	// attention: a member the person also picked out says both.
+	const { groupMarks } = props;
+	useEffect(() => {
+		if (surface !== null) {
+			markGroupFocus(surface, groupMarks);
+		}
+	}, [surface, groupMarks]);
 
 	const onPointerDown = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
@@ -383,6 +403,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			data-board={drawing.board}
 			data-variant={drawing.variant.name}
 			data-version={drawing.version}
+			data-group={props.groupId}
 			className={STAGE_CLASS}
 		>
 			{props.notice}
@@ -434,6 +455,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						appearance={appearances.get(selection)}
 						onOpen={props.onOpenDown}
 						{...(props.onOpenCode === undefined ? {} : { onOpenCode: props.onOpenCode })}
+						groups={props.groupControls}
 						onClose={clearSelection}
 					/>
 				)}

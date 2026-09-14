@@ -25,15 +25,16 @@
 // stood, additions apply on top, and the only thing that has to hold is what
 // is left at the end.
 
-import type {
-	SemanticBoard,
-	SemanticView,
-	SemanticEdge,
-	SemanticEdgeInput,
-	SemanticNode,
-	SemanticNodeInput,
-	VariantContent,
-	VariantEditInput,
+import {
+	persistedGroupIds,
+	type SemanticBoard,
+	type SemanticView,
+	type SemanticEdge,
+	type SemanticEdgeInput,
+	type SemanticNode,
+	type SemanticNodeInput,
+	type VariantContent,
+	type VariantEditInput,
 } from "@/shared/semantic-board/index";
 import { refuse, type SemanticRefusal } from "@/runtime/semantic-board-store/lib/outcome";
 import { place, resolveNode } from "@/runtime/semantic-board-store/lib/references";
@@ -162,9 +163,21 @@ function placeStatedNodes(
 			return chosen;
 		}
 		ids.push(chosen.id);
-		nodes = place(nodes, { ...saidOfNode(input), id: chosen.id });
+		nodes = place(nodes, { ...saidOfNode(input), ...membershipsOf(input), id: chosen.id });
 	}
 	return { ok: true, nodes, ids };
+}
+
+/**
+ * The memberships a stated node lands with: the set it named, spelled the one
+ * way the document spells a set, and no field at all when it named none. An
+ * agent may write the ids in any order and repeat one; the board never does.
+ * @param input The node as the agent stated it.
+ * @returns The `groups` field to persist, or nothing.
+ */
+function membershipsOf(input: SemanticNodeInput): Pick<SemanticNode, "groups"> {
+	const groups = persistedGroupIds(input.groups);
+	return groups === undefined ? { groups: undefined } : { groups };
 }
 
 /**

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AnyCommandContract } from "@/cli/command-contract/contract";
+import { usageOf } from "@/cli/command-contract/commander";
 
 interface RegistryContractEntry {
 	name: string;
@@ -59,7 +60,7 @@ function introspectContracts(entries: readonly RegistryContractEntry[]) {
 			classification,
 			path: contract.path,
 			summary: contract.summary,
-			usage: contract.usage,
+			usage: usageOf(contract),
 			description: contract.description,
 			examples: contract.examples,
 			parameters: contract.parameters,

@@ -21,6 +21,7 @@ const policy: SemanticPolicy = {
 		worker: { name: "Worker", icon: "RiTerminalLine" },
 	},
 	relationshipKinds: { request: { name: "Request", dash: "solid", arrowhead: "filled" } },
+	groups: {},
 };
 beforeAll(async () => {
 	store = await import("@/runtime/semantic-board-store/index");

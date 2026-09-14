@@ -25,6 +25,11 @@ docs/design/generated/*.svg
 # Exact-version Codex app-server bindings are reproducible derived output.
 src/shared/codex-app-server-contract/generated/
 
+# The consumer skill's generated JSON Schemas and portable INSTALL.md copy.
+# Every skill sync and install regenerates them from the Zod authorities with
+# `bun run generate:skill-artifacts`; the authored skill is skills/archboard.
+skills/archboard/references/generated/
+
 # Environment files
 .env
 
@@ -58,3 +63,9 @@ src/shared/codex-app-server-contract/generated/
 
 # TASK-150 local reference snapshot; never stage or import it.
 /legacy/
+
+# Skill evaluation output (TASK-209): fetched Flask checkouts, run traces,
+# renders, boards, verdicts and reports. The canonical inputs are tracked under
+# skills/archboard/evals; everything here reproduces from them with
+# `bun run eval:skill`.
+.skill-evals/

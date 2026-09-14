@@ -1,0 +1,38 @@
+{
+	"$comment": "The board still reflects the pre-provider design, with a direct app-to-helpers relationship to replace.",
+	"registerRepo": true,
+	"steps": [
+		{
+			"op": "new",
+			"board": "Flask JSON",
+			"input": {
+				"level": "service",
+				"nodes": [
+					{
+						"name": "Flask app",
+						"kind": "app",
+						"responsibility": "Creates the app and dispatches requests",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
+						"name": "JSON helpers",
+						"kind": "module",
+						"responsibility": "dumps, loads and jsonify for responses",
+						"binding": { "repo": "$FLASK", "path": "src/flask/json/__init__.py" }
+					},
+					{
+						"name": "Tagged JSON",
+						"kind": "module",
+						"responsibility": "Serializes tagged values for signed sessions",
+						"description": "Serializes tagged values in sessions",
+						"binding": { "repo": "$FLASK", "path": "src/flask/json/tag.py" }
+					}
+				],
+				"edges": [
+					{ "from": "Flask app", "to": "JSON helpers", "kind": "call", "label": "jsonify" },
+					{ "from": "JSON helpers", "to": "Tagged JSON", "kind": "call", "label": "tag" }
+				]
+			}
+		}
+	]
+}

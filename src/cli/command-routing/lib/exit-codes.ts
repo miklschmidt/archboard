@@ -104,7 +104,7 @@ function reportFailure(error: unknown, usage: string): void {
 		process.stderr.write(`Error: ${formatBoardRefusal(error) ?? errorMessage(error)}\n`);
 	}
 	if (error instanceof CliUsageError) {
-		process.stderr.write(`Usage: archboard ${usage}\n`);
+		process.stderr.write(`Usage: ${usage}\n`);
 	}
 }
 

@@ -1,5 +1,7 @@
-// The shape of one entry in the CLI command table: which contract owns it, how it is
-// summarised in help, and how its subcommands are found. The table itself lives in run.ts.
+// The shape of one entry in the CLI command table: which contract owns it and
+// how its subcommands are found. What a command is called and what it accepts
+// come from the contract, so the table holds no wording of its own. The table
+// itself lives in run.ts.
 import type { AnyCommandContract } from "@/cli/command-contract/contract";
 
 interface ContractCommand {
@@ -11,8 +13,6 @@ type RouteOwner = ContractCommand;
 
 interface CommandRoute {
 	owner: RouteOwner;
-	summary?: string;
-	usage?: string;
 	children?: Readonly<Record<string, CommandRoute>>;
 	bare?:
 		| { kind: "default"; child: string; withLeadingOptions: boolean }
@@ -38,23 +38,6 @@ interface CliRegistryEntry {
 }
 
 /**
- * The one-line summary help prints for a route: the table's own wording when it has one,
- * otherwise the contract's.
- * @param route - The command route.
- * @returns The summary line.
- */
-const commandSummary = (route: CommandRoute): string =>
-	route.summary ?? route.owner.contract.summary;
-
-/**
- * The usage text help prints for a route: the table's own wording when it has one, otherwise
- * the contract's.
- * @param route - The command route.
- * @returns The usage text.
- */
-const commandUsage = (route: CommandRoute): string => route.usage ?? route.owner.contract.usage;
-
-/**
  * Pairs a contract with the source file that owns its handler, which the registry reports.
  * @param value - The command contract.
  * @param handlerOwner - Repository-relative path of the file defining the contract.
@@ -66,7 +49,7 @@ const contract = (value: AnyCommandContract, handlerOwner: string): ContractComm
 });
 
 /**
- * A subcommand route with no table-level summary or usage of its own.
+ * A subcommand route with nothing but its contract.
  * @param owner - The contract owner of the subcommand.
  * @returns The child route.
  */
@@ -78,8 +61,6 @@ export {
 	type CommandRoute,
 	type CommandRoutes,
 	type CliRegistryEntry,
-	commandSummary,
-	commandUsage,
 	contract,
 	child,
 };

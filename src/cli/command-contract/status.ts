@@ -123,8 +123,8 @@ function runningStatus(
 
 const statusContract = defineCommand({
 	path: ["status"],
+	shared: ["url"],
 	summary: "Canvas health, element count, browser clients",
-	usage: "status",
 	description:
 		"Reports canvas availability, identity, source freshness, and synchronization state.",
 	examples: ["archboard status"],
@@ -135,6 +135,7 @@ const statusContract = defineCommand({
 			name: "ignored",
 			repeatable: true,
 			route: "pass-through",
+			hidden: true,
 			description: "Legacy ignored positional content",
 		},
 	],

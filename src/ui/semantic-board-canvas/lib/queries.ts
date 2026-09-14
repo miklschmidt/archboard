@@ -5,10 +5,12 @@
 
 import { queryOptions } from "@tanstack/react-query";
 
+import { VAULT_CHECK_POLL_MS } from "@/shared/timing/timing";
 import {
 	fetchSemanticBoardDocument,
 	fetchSemanticBoards,
 	fetchSemanticRender,
+	fetchVaultCheck,
 	type SemanticRenderRequest,
 } from "@/ui/semantic-board-canvas/api/semantic-boards";
 
@@ -19,6 +21,8 @@ const SEMANTIC_KEY = "semantic-board";
 const semanticBoardKeys = {
 	/** Everything this module caches. */
 	all: [SEMANTIC_KEY] as const,
+	/** The vault's checked policy and diagnostics, which every picture is drawn under. */
+	vaultCheck: ["vault-check"] as const,
 	/** The vault's semantic boards. */
 	boards: [SEMANTIC_KEY, "boards"] as const,
 	/** Every drawing of every board. */
@@ -140,9 +144,37 @@ function semanticBoardDocumentQuery(board: string) {
 	});
 }
 
+/**
+ * The vault's policy and diagnostics, as the shared checker reports them.
+ *
+ * Owned here rather than beside the diagnostics bell because a picture is
+ * drawn under this policy and a pane names groups out of it: the policy is one
+ * resource with two readers, and one cache entry serves both. It is re-read on
+ * a timer, because the file it comes from is edited on disk by a person and
+ * nothing announces that.
+ * @returns The query options.
+ */
+function vaultCheckQuery() {
+	return queryOptions({
+		queryKey: semanticBoardKeys.vaultCheck,
+		/**
+		 * Read and validate the checker's answer.
+		 * @param context The query context, carrying this read's cancellation.
+		 * @returns The checked policy and diagnostics.
+		 */
+		queryFn: (context) => fetchVaultCheck(context.signal),
+		staleTime: VAULT_CHECK_POLL_MS,
+		refetchInterval: VAULT_CHECK_POLL_MS,
+		refetchOnWindowFocus: true,
+		refetchOnReconnect: true,
+		retry: false,
+	});
+}
+
 export {
 	semanticBoardKeys,
 	semanticBoardDocumentQuery,
 	semanticBoardListQuery,
 	semanticRenderQuery,
+	vaultCheckQuery,
 };

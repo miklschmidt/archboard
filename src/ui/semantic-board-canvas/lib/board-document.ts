@@ -277,64 +277,6 @@ function depictionOf(board: SemanticBoard, variant: SemanticVariant): Depiction 
 	return { predecessor: parent, standing, moved };
 }
 
-/**
- * One compared value that is not a list, in words a person reads.
- * @param value What the field said.
- * @returns The words to show.
- */
-function plainText(value: unknown): string {
-	if (typeof value === "string") {
-		return value;
-	}
-	if (typeof value === "number" || typeof value === "boolean") {
-		return String(value);
-	}
-	return value === undefined || value === null ? "not set" : JSON.stringify(value);
-}
-
-/**
- * One compared value, in words a person reads.
- *
- * A field's two values arrive as whatever the contract writes there — a string,
- * a number, a list of ids, a code binding, a drill-down target — and all of
- * them have to be shown. The small closed records are written out as they are
- * spelled rather than summarised, because which part of a binding moved is
- * exactly what a reader is asking; a field nobody has filled in says so in
- * words rather than showing an empty cell, which reads as a rendering fault.
- * @param value What the field said.
- * @returns The words to show.
- */
-function valueText(value: unknown): string {
-	if (!Array.isArray(value)) {
-		return plainText(value);
-	}
-	const written: readonly unknown[] = value;
-	return written.length === 0 ? "nothing" : written.map((one) => valueText(one)).join(", ");
-}
-
-/**
- * What a subject's standing says, in a sentence.
- *
- * The picture says which is which in shape, lightness and texture; this says it
- * in words, and names the state being compared against so that "changed" is
- * never changed-from-nowhere. Nothing is said about a subject that stands
- * unchanged: most of a proposal does, and a line on every card saying so would
- * bury the handful that did move.
- * @param standing How the subject stands.
- * @param predecessor What the variant it came from is called.
- * @returns The sentence, or undefined when there is nothing to say.
- */
-function standingSentence(standing: ChangeKind, predecessor: string): string | undefined {
-	if (standing === "added") {
-		return `New in this proposal. It was not on ${predecessor}.`;
-	}
-	if (standing === "removed") {
-		return `Not on this proposal. It is shown from ${predecessor} to say what the change takes away.`;
-	}
-	return standing === "changed" ? `Changed since ${predecessor}.` : undefined;
-}
-
-/** A board the viewer has read, or the reason it could not. */
 type BoardReading =
 	| { readonly ok: true; readonly board: SemanticBoard }
 	| { readonly ok: false; readonly problem: string };
@@ -366,6 +308,8 @@ interface VariantReading {
 	readonly variants: readonly OfferedVariant[];
 	/** The one this pane is showing, or null when the board has no such variant. */
 	readonly showing: OfferedVariant | null;
+	/** That variant whole, or null when the board has no such variant. */
+	readonly variant: SemanticVariant | null;
 	/** Every explanation the variant states, in the order it states them. */
 	readonly walkthroughs: readonly SemanticWalkthrough[];
 	/**
@@ -487,6 +431,7 @@ function readingOf(variants: readonly OfferedVariant[], variant: SemanticVariant
 	return {
 		variants,
 		showing: offeredVariant(variant),
+		variant,
 		walkthroughs: variant.content.walkthroughs,
 		nameOf,
 		subject,
@@ -520,9 +465,7 @@ function readVariant(document: unknown, asked: string | undefined): VariantReadi
 	// The board reads even when the variant asked for is not one of its own: the
 	// picker is how somebody recovers from an address naming a variant that has
 	// been renamed, so the choice has to be on screen for them to make it.
-	return variant === undefined
-		? { variants, showing: null, walkthroughs: [], nameOf: idItself, subject: nothingHeld }
-		: readingOf(variants, variant);
+	return variant === undefined ? { variants, ...NOTHING_SHOWN } : readingOf(variants, variant);
 }
 
 /** What a selected subject is, for whoever reports it rather than draws it. */
@@ -538,6 +481,15 @@ interface SelectedSubject {
 function nothingHeld(): SelectedSubject | undefined {
 	return undefined;
 }
+
+/** A reading of a board whose asked-for variant is not one of its own. */
+const NOTHING_SHOWN: Omit<VariantReading, "variants"> = Object.freeze({
+	showing: null,
+	variant: null,
+	walkthroughs: [],
+	nameOf: idItself,
+	subject: nothingHeld,
+});
 
 /**
  * What a selected subject is, for whoever has to report it rather than draw it.
@@ -592,8 +544,6 @@ export {
 	depictionOf,
 	readBoard,
 	readVariant,
-	standingSentence,
 	selectedSubject,
 	subjectOf,
-	valueText,
 };

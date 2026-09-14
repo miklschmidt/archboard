@@ -55,11 +55,14 @@ describe.serial("side-by-side proposal workflow", () => {
 		);
 		let serial = 0;
 
+		// A write says what it is doing; a read or a pane command reads no such
+		// line and refuses one, so it is stated only where it applies.
+		const writes = new Set(["new", "edit", "branch", "resolve", "adopt"]);
 		const cli = <T = unknown>(args: string[], input = "") =>
 			new Promise<CliResult<T>>((resolveCli, rejectCli) => {
 				const child = spawn(
 					executable,
-					args.includes("--doing")
+					args.includes("--doing") || args[0] !== "semantic" || !writes.has(args[1] ?? "")
 						? args
 						: [...args, "--doing", "checking a proposal beside its source"],
 					{

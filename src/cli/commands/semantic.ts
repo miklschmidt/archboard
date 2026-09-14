@@ -17,8 +17,6 @@ import { z } from "zod";
 import {
 	BoardBranchInputSchema,
 	BoardCreateInputSchema,
-	OfferedViewSchema,
-	RenderedVariantSchema,
 	VariantEditInputSchema,
 } from "@/shared/semantic-board/index";
 import {
@@ -28,10 +26,8 @@ import {
 	listSemanticBoardsOnCanvas,
 	SemanticBoardEntrySchema,
 	readSemanticBoardAnswerOnCanvas,
-	renderSemanticBoardOnCanvas,
 } from "@/runtime/semantic-board-client/index";
 import { CliUsageError, defineCommand } from "@/cli/command-contract/contract";
-import { PendingArtifactSchema } from "@/cli/command-contract/schemas";
 import {
 	SemanticBoardReadSchema,
 	SemanticBoardResultSchema,
@@ -52,29 +48,41 @@ import {
 	serverRefusal,
 } from "@/cli/command-contract/common";
 
-const THEMES = ["light", "dark"] as const;
-
 const NewInputSchema = z.object({ name: z.string(), input: z.string().optional() });
+const statedArchitectureKeys = BoardCreateInputSchema.keyof().options.filter(
+	(key) => key !== "name",
+);
 
 const semanticNewContract = defineCommand({
 	path: ["semantic", "new"],
+	shared: ["url", "doing", "as-session"],
 	summary: "Create a semantic architecture board",
-	usage: "semantic new <name> [--input <file.json>]",
 	description:
 		"Creates one persisted semantic board, empty or populated from a stated architecture. " +
-		"The stated architecture is JSON with required board `level` metadata plus `nodes` and `edges`, " +
-		"read from --input or standard input.",
+		`The stated architecture JSON accepts ${statedArchitectureKeys
+			.map((key) => `\`${key}\``)
+			.join(
+				", ",
+			)}; \`level\` is required, all other fields are optional, and omitted collections default empty. ` +
+		"It is read from --input or standard input.",
 	examples: [
 		'archboard semantic new pipeline --doing "starting the pipeline board"',
 		'archboard semantic new pipeline --input arch.json --doing "drawing the current pipeline"',
 	],
 	parameters: [
-		{ kind: "positional", key: "name", name: "name", description: "The board's name" },
+		{
+			kind: "positional",
+			key: "name",
+			name: "name",
+			required: true,
+			description: "The board's name",
+		},
 		{
 			kind: "option",
 			key: "input",
 			spellings: ["--input"],
 			value: "required",
+			placeholder: "file.json",
 			description: "A JSON file stating the architecture; standard input when absent",
 		},
 	],
@@ -142,8 +150,8 @@ const EditInputSchema = z.object({ name: z.string(), input: z.string().optional(
 
 const semanticEditContract = defineCommand({
 	path: ["semantic", "edit"],
+	shared: ["url", "doing", "expect-version", "as-session"],
 	summary: "Change a semantic architecture board",
-	usage: "semantic edit <name> --expect-version <n> [--input <file.json>]",
 	description:
 		"Applies one batch of stated changes to a semantic board in one write. The batch is JSON with " +
 		"optional board `level` metadata, `nodes`, `edges`, `flows`, `views` and the matching " +
@@ -159,12 +167,19 @@ const semanticEditContract = defineCommand({
 		'archboard semantic edit pipeline --expect-version 3 --input change.json --doing "adding the renderer"',
 	],
 	parameters: [
-		{ kind: "positional", key: "name", name: "name", description: "The board's name" },
+		{
+			kind: "positional",
+			key: "name",
+			name: "name",
+			required: true,
+			description: "The board's name",
+		},
 		{
 			kind: "option",
 			key: "input",
 			spellings: ["--input"],
 			value: "required",
+			placeholder: "file.json",
 			description: "A JSON file stating the change; standard input when absent",
 		},
 	],
@@ -240,8 +255,8 @@ const BranchInputSchema = z.object({
 
 const semanticBranchContract = defineCommand({
 	path: ["semantic", "branch"],
+	shared: ["url", "doing", "expect-version", "as-session"],
 	summary: "Derive a proposal from a variant of a semantic board",
-	usage: "semantic branch <name> --as <proposal> [--from <variant>] --expect-version <n>",
 	description:
 		"Adds a proposal derived from a variant this board already has. The predecessor's architecture " +
 		"is carried over whole, with every entity keeping the identity it already had, which is what " +
@@ -254,12 +269,20 @@ const semanticBranchContract = defineCommand({
 		'archboard semantic branch pipeline --as "Queued ingest" --expect-version 4 --doing "proposing a queue"',
 	],
 	parameters: [
-		{ kind: "positional", key: "name", name: "name", description: "The board's name" },
+		{
+			kind: "positional",
+			key: "name",
+			name: "name",
+			required: true,
+			description: "The board's name",
+		},
 		{
 			kind: "option",
 			key: "as",
 			spellings: ["--as"],
 			value: "required",
+			placeholder: "proposal",
+			required: true,
 			description: "What to call the proposal",
 		},
 		{
@@ -267,13 +290,15 @@ const semanticBranchContract = defineCommand({
 			key: "from",
 			spellings: ["--from"],
 			value: "required",
-			description: "The variant to derive from; the current one when absent",
+			placeholder: "variant",
+			description: "The variant to derive from, by id or name; the current one when absent",
 		},
 		{
 			kind: "option",
 			key: "summary",
 			spellings: ["--summary"],
 			value: "required",
+			placeholder: "line",
 			description: "One line saying what this proposal is for",
 		},
 	],
@@ -351,8 +376,8 @@ const SemanticListingResultSchema = z.object({
 
 const semanticContract = defineCommand({
 	path: ["semantic"],
+	shared: ["url"],
 	summary: "Every semantic architecture board in the vault",
-	usage: "semantic",
 	description:
 		"Lists the semantic boards the vault holds. Semantic boards and Excalidraw notes live side " +
 		"by side and are listed separately, because they are different kinds of file.",
@@ -402,13 +427,21 @@ const ShowInputSchema = z.object({ name: z.string() });
 
 const semanticShowContract = defineCommand({
 	path: ["semantic", "show"],
+	shared: ["url"],
 	summary: "Read one semantic board",
-	usage: "semantic show <name>",
 	description:
 		"Prints one semantic board's whole aggregate: every variant, its lifecycle, its ancestry and " +
 		"its content. Use `semantic` on its own to list the boards.",
 	examples: ["archboard semantic show pipeline"],
-	parameters: [{ kind: "positional", key: "name", name: "name", description: "The board to read" }],
+	parameters: [
+		{
+			kind: "positional",
+			key: "name",
+			name: "name",
+			required: true,
+			description: "The board to read",
+		},
+	],
 	input: { ingress: ShowInputSchema },
 	result: SemanticBoardReadSchema,
 	output: {
@@ -453,148 +486,10 @@ const semanticShowContract = defineCommand({
 	},
 });
 
-const RenderInputSchema = z.object({
-	name: z.string(),
-	variant: SelectorSchema.optional(),
-	view: SelectorSchema.optional(),
-	theme: z.enum(THEMES).default("light"),
-	out: z.string().optional(),
-});
-
-const SemanticRenderResultSchema = z.object({
-	success: z.literal(true),
-	board: z.string(),
-	version: z.int(),
-	/**
-	 * What was drawn, in the shapes the render answer already uses. A receipt
-	 * that reduced either of them to a name would be a receipt somebody cannot
-	 * act on: names move between variants and are what a person types, ids are
-	 * what asks for exactly this picture again.
-	 */
-	variant: RenderedVariantSchema,
-	/** The view that was drawn, or null when the whole variant was. */
-	view: OfferedViewSchema.nullable(),
-	file: z.string(),
-	width: z.number(),
-	height: z.number(),
-});
-
-const semanticRenderContract = defineCommand({
-	path: ["semantic", "render"],
-	summary: "Draw a semantic board to an SVG file",
-	usage:
-		"semantic render <name> --out <file.svg> [--variant <v>] [--view <v>] [--theme light|dark]",
-	description:
-		"Draws a semantic board at one variant, optionally through a board-owned named view. Layout, typography and " +
-		"routing belong to the renderer; nothing about the picture is authored on the board.",
-	examples: ["archboard semantic render pipeline --out pipeline.svg --theme dark"],
-	parameters: [
-		{ kind: "positional", key: "name", name: "name", description: "The board's name" },
-		{
-			kind: "option",
-			key: "out",
-			spellings: ["--out"],
-			value: "required",
-			description: "Where to write the SVG",
-		},
-		{
-			kind: "option",
-			key: "variant",
-			spellings: ["--variant"],
-			value: "required",
-			description: "Which variant to draw; the current one when absent",
-		},
-		{
-			kind: "option",
-			key: "view",
-			spellings: ["--view"],
-			value: "required",
-			description: "Which shared board view to draw; the whole variant when absent",
-		},
-		{
-			kind: "option",
-			key: "theme",
-			spellings: ["--theme"],
-			value: "required",
-			description: "light or dark",
-		},
-	],
-	input: { ingress: RenderInputSchema },
-	result: SemanticRenderResultSchema,
-	output: {
-		cases: [
-			{
-				id: "file",
-				when: {},
-				mode: "file-receipt",
-				description: "The SVG that was written",
-				artifact: PendingArtifactSchema,
-			},
-		],
-		/**
-		 * One answer: the file.
-		 * @returns The output case's id.
-		 */
-		select: () => "file",
-	},
-	prerequisites: ["server"],
-	effects: ["read", "local-write"],
-	refusals: [serverRefusal],
-	relationships: [
-		{
-			method: "GET",
-			path: "/api/semantic-boards/render",
-			cardinality: "one",
-			description: "Draw the variant",
-		},
-	],
-	/**
-	 * Draw the board.
-	 * @param input What the command was given.
-	 * @param context The command context.
-	 * @returns The file receipt.
-	 * @throws {CliUsageError} When no destination was named, or the board has nothing on it.
-	 */
-	async handler(input, context) {
-		if (input.out === undefined) {
-			throw new CliUsageError("semantic render needs --out <file.svg>");
-		}
-		await context.require("server", "semantic render");
-		const drawn = await renderSemanticBoardOnCanvas(input.name, {
-			...(input.variant === undefined ? {} : { variant: input.variant }),
-			...(input.view === undefined ? {} : { view: input.view }),
-			theme: input.theme,
-			// The file outlives the canvas that drew it, so it carries its faces
-			// rather than pointing at a server that may not be running.
-			fonts: "embedded",
-		});
-		if ("empty" in drawn) {
-			throw new CliUsageError(
-				`Semantic board "${drawn.board}" has nothing on it yet, so there is nothing to draw.`,
-			);
-		}
-		const file = context.resolvePath(input.out);
-		return {
-			result: {
-				success: true as const,
-				board: drawn.board,
-				version: drawn.version,
-				variant: drawn.variant,
-				view: drawn.view,
-				file,
-				width: drawn.width,
-				height: drawn.height,
-			},
-			pendingArtifact: { path: file, content: drawn.svg, encoding: "utf8" as const },
-		};
-	},
-});
-
 export {
 	semanticContract,
 	semanticNewContract,
 	semanticEditContract,
 	semanticBranchContract,
 	semanticShowContract,
-	semanticRenderContract,
 };
