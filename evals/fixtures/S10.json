@@ -1,5 +1,5 @@
 {
-	"$comment": "S05's pipeline with traffic already illustrated on the response path, so turning it off is a real change.",
+	"$comment": "S05's pipeline as Flask 3.0.0 calls it: full_dispatch_request calls finalize_request, which calls make_response and then process_response. Traffic is already illustrated on the response path, so turning it off is a real change.",
 	"registerRepo": true,
 	"steps": [
 		{
@@ -34,6 +34,13 @@
 						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
 					},
 					{
+						"name": "finalize_request",
+						"kind": "function",
+						"parent": "Flask app",
+						"responsibility": "Turns the view's return value into the response and post-processes it",
+						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
+					},
+					{
 						"name": "make_response",
 						"kind": "function",
 						"parent": "Flask app",
@@ -64,12 +71,19 @@
 					},
 					{
 						"from": "full_dispatch_request",
-						"to": "make_response",
+						"to": "finalize_request",
 						"kind": "call",
+						"label": "rv",
 						"emphasis": "muted"
 					},
 					{
-						"from": "make_response",
+						"from": "finalize_request",
+						"to": "make_response",
+						"kind": "call",
+						"label": "rv"
+					},
+					{
+						"from": "finalize_request",
 						"to": "process_response",
 						"kind": "call",
 						"label": "response",

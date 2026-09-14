@@ -53,5 +53,5 @@
 		"frozenAt": "TASK-210 completion, before the TASK-211 rewrite; frozen from skills/archboard at that revision",
 		"note": "The frozen copy already carries the TASK-207 groups contract, TASK-208 help contract and TASK-210 schema links, so both arms run on the same supporting CLI."
 	},
-	"usageSemantics": "cached_input_tokens is a subset of input_tokens (codex token_count); total = input + output. Never add cached to input."
+	"usageSemantics": "cached_input_tokens is a subset of input_tokens (codex token_count); total = input + output. Never add cached to input. A turn.completed usage is the thread's total_token_usage: in a resumed thread it is cumulative over every call so far, so a call's own share is the growth since the previous reading and a session costs its last reading, never the sum of its calls. Verified without a model from the retained rollout of the 2026-09-14 batch (docs/design/skill-evals/2026-09-14-batch-corrections.md)."
 }

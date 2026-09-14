@@ -3,8 +3,9 @@ id: TASK-212
 title: 'Repair skill evaluation packaging, evidence and scenario validity'
 status: In Progress
 assignee:
-  - '@codex'
+  - '@claude'
 created_date: '2026-09-14 22:26'
+updated_date: '2026-09-14 22:35'
 labels: []
 dependencies: []
 references:
@@ -35,11 +36,10 @@ Planning only after the human-run batch .skill-evals/2026-09-14T13-50-10-617Z. C
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-Proposed plan for user review before implementation:
-1. Move skills/archboard/evals/ to evals/. Update loader, provenance/fixture tests, install expectations, development guidance and documentation. Test that distribution and synchronization exclude evaluation material. Leave .skill-evals/ output ignored and the frozen baseline unchanged.
-2. Preserve Codex file-change events in author evidence and audit direct board mutations. Fix read-only redirection false positives. Record observed eval-material exposure and distinguish audit failure from final board correctness. Cover sanitized recorded event shapes with fast tests.
-3. Repair S02 subject counts; give S08 an honest recovery contract or deterministic refusal owner; remove hidden S09 wording requirements; correct S00 call/sequence ambiguity and bindings, S10 fixture inaccuracies/scoring attribution, S12 selection intent and S14 external expectations. Apply identical contracts to both arms.
-4. Verify pinned resumed usage semantics and normalize accounting; retain separate author/grader usage and explicit visual-evidence availability.
-5. Preserve existing evidence and document invalidated conclusions. Coordinate the separate S11 restoration product fix and TASK-211 guidance before a human reruns affected scenarios, then the full comparison.
-6. Review independent scopes and packaging/provenance, evidence/guardrails/grading and scenario/product interfaces. Run focused ordinary tests and bun run check. No model calls; home isolation remains deferred.
+1. Move skills/archboard/evals to evals/ at the repository root; update the eval script, provenance, suite/provenance tests, TESTING.md, archboard-dev skill, preservation assessment and .gitignore comment; add a fast test that the tracked consumer skill, the frozen baseline and a prepared copy hold no evals directory.
+2. Evidence: parse file_change items into the trace; classify commands and file changes with an exposure context (evaluation inputs, harness source, other runs); doing-on-writes fails on a recorded vault file change, redirects count only when they target the vault, --doing accounting ignores help calls and text searches; bundle, run.json and report carry direct writes and evaluation-material exposure; report lists contaminated runs.
+3. Scenarios: S00 call structure and unbound externals; S02/S12 comparison counts by kind; S03/S09 truthful groups and edges, observable hidden-member answer; S08 honest vocabulary-before-write contract with the refusal owned by policy.test.ts; S10 finalize_request in the fixture; S11 tag edge direction; S12 selection intent observable; S14 externals asked for and counts aligned; rubric: edge replacement rule, inherited fixture content judged as premise, render availability stated.
+4. Usage: pinned semantics verified from the retained rollout (turn.completed usage in a resumed thread is the thread's cumulative total); session usage is the last cumulative reading per thread, per-call usage the difference; synthetic regression tests; pins.json usageSemantics updated.
+5. Original batch untouched; write docs/design/skill-evals/2026-09-14-batch-corrections.md naming the source batch, every correction, contaminated runs and comparability limits; note the S11 product fix (TASK-213).
+6. bun test src/runtime/skill-evaluation, store tests, bun run check. No author or grader runs.
 <!-- SECTION:PLAN:END -->

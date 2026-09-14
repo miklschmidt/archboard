@@ -86,13 +86,26 @@ describe("family checks", () => {
 		]);
 	});
 
-	test("the comparison says what was removed and added", () => {
-		const verdict = evaluateOutcomes(
-			[{ check: "comparison-standing", board: "Flask", variant: "No provider", removed: 0 }],
+	test("the comparison counts nodes on their own and every subject together", () => {
+		// The proposal removed one node, and the relationship that touched it went
+		// with it: one node removed, two subjects removed.
+		const verdicts = evaluateOutcomes(
+			[
+				{ check: "comparison-standing", board: "Flask", variant: "No provider", removed: 0 },
+				{ check: "comparison-standing", board: "Flask", variant: "No provider", removed: 2 },
+				{ check: "comparison-standing", board: "Flask", variant: "No provider", removedNodes: 1 },
+				{ check: "comparison-standing", board: "Flask", variant: "No provider", removedNodes: 2 },
+				{
+					check: "comparison-standing",
+					board: "Flask",
+					variant: "No provider",
+					removedNodes: 1,
+					addedNodesAtLeast: 1,
+				},
+			],
 			READING,
-		)[0];
-		expect(verdict?.passed).toBe(false);
-		expect(verdict?.detail).toBe("2 removed, 0 added against the predecessor");
+		);
+		expect(verdicts.map((verdict) => verdict.passed)).toEqual([false, true, true, false, false]);
 	});
 });
 
@@ -158,6 +171,7 @@ describe("guardrails", () => {
 			class: "operation" as const,
 			rule: "runs an archboard command",
 			write: true,
+			exposure: null,
 		},
 		{
 			command: "archboard semantic edit Flask --expect-version 1",
@@ -167,6 +181,7 @@ describe("guardrails", () => {
 			class: "operation" as const,
 			rule: "runs an archboard command",
 			write: true,
+			exposure: null,
 		},
 	];
 	const context = {
@@ -175,6 +190,7 @@ describe("guardrails", () => {
 		configBefore: "a",
 		configAfter: "a",
 		commands,
+		fileChanges: [],
 		vault: "/run/vault",
 	};
 
@@ -204,6 +220,7 @@ describe("guardrails", () => {
 					class: "code-investigation" as const,
 					rule: "reads the checkout",
 					write: false,
+					exposure: null,
 				},
 			],
 		});
@@ -231,6 +248,7 @@ describe("guardrails", () => {
 						class: "discovery",
 						rule: "",
 						write: false,
+						exposure: null,
 					},
 				],
 			});

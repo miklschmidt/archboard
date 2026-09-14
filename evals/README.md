@@ -4,6 +4,12 @@ These files are the canonical inputs of an on-demand, human-triggered model
 evaluation. Nothing here runs under `bun run check`; every author run and the
 grading session calls a model, and a person decides when.
 
+They live here, at the repository root, and in no skill package: an author
+reads whatever the installed skill carries, and inputs shipped inside it were
+read (TASK-212). A fast test refuses an
+`evals/` directory inside `skills/archboard`, the frozen baseline or an
+install.
+
 | File               | Holds                                                                                                                                                  |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `evals.json`       | The scenarios: prompt, Flask revision, source paths, expected-feature checklist, deterministic outcome checks, guardrails, report group.               |
@@ -94,3 +100,50 @@ both skill packages and the implementation/dependency files, plus its Bun
 version. Resume refuses changed content or a different job selection before
 touching saved results; concurrency may change. Grade and report refuse changed
 scenario inputs so earlier results cannot be assessed against a new checklist.
+
+## Evidence the harness keeps, and what it refuses to infer
+
+An author has two ways to change a file: a shell command, recorded as a
+`command_execution` item, and Codex's own editing tool, recorded as a
+`file_change` item and nothing else. The harness keeps both. Every file
+change lands in `file-changes.json` and in the bundle; a `.semantic.json`
+under the run's vault fails the `doing-on-writes` guardrail, and the manifest
+counts it as `directWrites`. A command that reads a board file (`sed -n`,
+`jq`, `python -m json.tool … >/dev/null`, `2>&1`) is a read; only a redirect
+into a board file, an in-place editor, a file command whose target is one, or
+a script that opens one for writing counts as a direct write. `semantic edit
+--help` and a text search for the words `semantic edit` are not write
+attempts.
+
+Commands that reach for material an author must not see are recorded as
+exposure, by kind: `evaluation-inputs` (this directory, by path or by the
+canonical file names), `harness-source` (`src/runtime/skill-evaluation`), and
+`other-run` (another run's directory under the batch). The bundle carries the
+kind beside each command and the counts; the report lists every contaminated
+run apart, and a scenario with a contaminated run reports no token change,
+because a run that read the checklist it is measured against measures the
+reading, not the skill. Contamination is an audit finding and is kept
+distinct from the board's correctness: the outcome checks and the grader's
+feature verdicts still say what the board is.
+
+## Usage semantics
+
+`turn.completed` carries the thread's `total_token_usage`. In a resumed thread
+that is cumulative: the second grading call reports the first call's tokens
+again, plus its own. So a call's own usage is the growth since the previous
+reading (`callUsage` in `grader/session.json`), and the session costs its last
+reading (`grader/usage.json`), never the sum of its calls. Verified without a
+model from the retained rollout of the 2026-09-14 batch, whose per-step
+`token_count` events show `total_token_usage` climbing through the resumed
+calls; `pins.json` pins the rule and the fast tests hold it.
+
+## Correcting a report
+
+A batch's artifacts are never rewritten. When the harness's reading of the
+evidence changes, the batch stays as it was measured and a corrections
+document beside the design notes names the batch, each correction, every
+contaminated run and what remains comparable; the first is
+`docs/design/skill-evals/2026-09-14-batch-corrections.md`. `report` refuses a
+batch whose inputs no longer match the checked-in inputs, so a corrected
+reading of an old batch is written by hand from the retained files, not by
+re-running `report` against a changed checklist.

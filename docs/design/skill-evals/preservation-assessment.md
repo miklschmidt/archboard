@@ -4,7 +4,7 @@ TASK-211 rewrote `skills/archboard` around four common workflows. This table
 records where each material do/don't of the pre-overhaul skill (frozen under
 `baseline/archboard`) and each guardrail the task recorded now lives, and what
 evidence holds the candidate to it. Evidence owners are TASK-209 scenario
-checks (`skills/archboard/evals/evals.json`), harness guardrails, the grader's
+checks (`evals/evals.json`), harness guardrails, the grader's
 per-feature verdicts, or an existing fast test.
 
 | Guardrail (baseline wording, condensed)                                                                                               | New home                                                                      | Evidence owner                                                                             |
@@ -47,4 +47,4 @@ answers; the eval classifies them as `discovery` so the comparison shows
 whether the candidate stops making them.
 
 Not measured here: the baseline/candidate comparison (TASK-211 AC #6) is a
-human-run step; see `skills/archboard/evals/README.md`.
+human-run step; see `evals/README.md`.

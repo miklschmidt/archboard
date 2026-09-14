@@ -1,22 +1,17 @@
-// Settling a disagreement, and adopting an architecture.
+// Settling a disagreement.
 //
-// Both are commands that change what a board says about itself rather than what
-// it draws, and both go through the one write boundary every other change does:
-// the same board-global lease, the same expected version, one atomic write, one
-// version advance (ADR 0016, ADR 0023).
+// A command that changes what a board says about itself rather than what it
+// draws, and one that goes through the one write boundary every other change
+// does: the same board-global lease, the same expected version, one atomic
+// write, one version advance (ADR 0016, ADR 0023).
 //
 // Settling answers disagreements a proposal is holding, one at a time or all at
 // once, and then carries the answer down: a draft that was waiting on this one
 // stops waiting, is merged, and reports whatever it finds — which may be a new
 // disagreement of its own, discovered only now that its parent has decided.
-//
-// Adopting moves the `current` designation. It renames nothing, reparents
-// nothing, and rewrites no history: the variant that was current becomes a
-// historical state under its own name, the adopted one becomes current under
-// its own name, and the move itself is written down. A proposal that was
-// derived from either of them still says so, because ancestry is a record of
-// where a state came from and adoption does not change where anything came
-// from.
+// The two ways an answer is given — a `resolve` choosing a side, and an
+// ordinary edit restoring what the proposal removed (`restore.ts`) — share
+// one catch-up, `caughtUp`. Adoption lives in `adopt.ts`.
 
 import {
 	halfOrdered,
@@ -25,7 +20,6 @@ import {
 } from "@/runtime/semantic-board-store/lib/settle-order";
 import {
 	reconcileVariant,
-	type Adoption,
 	type Choice,
 	type ReconciliationIssue,
 	type ResolutionInput,
@@ -35,7 +29,6 @@ import {
 } from "@/shared/semantic-board/index";
 import {
 	propagateEdit,
-	unsettledAncestor,
 	withoutStanding,
 	type DescendantOutcome,
 } from "@/runtime/semantic-board-store/lib/propagate";
@@ -185,18 +178,55 @@ function applyChoices(board: SemanticBoard, settling: Settling): Settlement {
 	if (!content.ok) {
 		return content;
 	}
-	// Answering the disagreements is half of it. The other half is everything the
-	// predecessor decided while this proposal was unsettled: measured from the
-	// state it last agreed with, which is what the standing has been keeping for
-	// exactly this moment, so nothing that happened in between is skipped.
-	// A decision is durable. The base moves for exactly the fields that were
-	// answered — to what the predecessor says about them — so the next merge sees
-	// a field the two have settled rather than recomputing the same argument and
-	// reopening it. Everything else stays where it was, still holding whatever
-	// the predecessor has done since.
-	const base = settledInto(standing.base, parent.content, taken);
-	const caught = reconcileVariant({ base, mine: content.content, theirs: parent.content });
-	const open = stillOpen(kept, caught.issues, taken);
+	return caughtUp(board, { draft, parent, standing, atVersion }, content.content, { taken, kept });
+}
+
+/** What one answer to a proposal's standing works from. */
+interface Answering {
+	readonly draft: SemanticVariant;
+	readonly parent: SemanticVariant;
+	readonly standing: VariantStanding;
+	readonly atVersion: number;
+}
+
+/**
+ * The proposal after an answer: caught up with its predecessor, holding what
+ * is still open, and carried down when nothing is.
+ *
+ * Answering the disagreements is half of it. The other half is everything the
+ * predecessor decided while this proposal was unsettled: measured from the
+ * state it last agreed with, which is what the standing has been keeping for
+ * exactly this moment, so nothing that happened in between is skipped.
+ * A decision is durable. The base moves for exactly what was answered — to
+ * what the predecessor says about it — so the next merge sees something the
+ * two have settled rather than recomputing the same argument and reopening it.
+ * Everything else stays where it was, still holding whatever the predecessor
+ * has done since.
+ *
+ * Shared by the two ways an answer is given: a `resolve` choosing a side, and
+ * an ordinary edit giving the third answer the documented contract promises,
+ * a removed subject restored under its original id (TASK-213).
+ * @param board The board as it stands.
+ * @param answering The proposal, its predecessor, what it holds and the version in flight.
+ * @param content The proposal's content once the answer is applied.
+ * @param issues What this answer decided and what it left alone.
+ * @param issues.taken The issues answered.
+ * @param issues.kept The issues nobody answered.
+ * @returns The family afterwards.
+ */
+function caughtUp(
+	board: SemanticBoard,
+	answering: Answering,
+	content: SemanticVariant["content"],
+	issues: {
+		readonly taken: readonly ReconciliationIssue[];
+		readonly kept: readonly ReconciliationIssue[];
+	},
+): Settlement {
+	const { draft, parent, standing, atVersion } = answering;
+	const base = settledInto(standing.base, parent.content, issues.taken);
+	const caught = reconcileVariant({ base, mine: content, theirs: parent.content });
+	const open = stillOpen(issues.kept, caught.issues, issues.taken);
 	const settled = withoutStanding(draft, caught.content);
 	if (open.length > 0) {
 		return {
@@ -227,7 +257,6 @@ function applyChoices(board: SemanticBoard, settling: Settling): Settlement {
 	const carried = propagateEdit(board, settled, atVersion);
 	return { ok: true, variants: carried.variants, descendants: carried.descendants };
 }
-
 /**
  * What is left to settle after this command.
  *
@@ -281,8 +310,62 @@ function settledInto(
 	// proposal's own order as this proposal's own change and leaves it alone.
 	const fields = taken.filter((issue) => issue.field !== undefined && !isOrder(issue));
 	const moved = taken.filter(isOrder);
+	const whole = taken.filter((issue) => issue.kind === "deleted-and-changed");
 	const settled = fields.length === 0 ? base : taking(base, fields);
-	return moved.length === 0 ? settled : reorderedInto(settled, theirs, moved);
+	const agreed = whole.length === 0 ? settled : subjectsFrom(settled, theirs, whole);
+	return moved.length === 0 ? agreed : reorderedInto(agreed, theirs, moved);
+}
+
+/**
+ * The base with whole subjects moved to what the predecessor holds.
+ *
+ * A disagreement about a subject's existence has no field to move: the whole
+ * subject is the answer. Whichever way it was answered — the removal kept, the
+ * change taken, or the subject restored with a third wording — the base takes
+ * the predecessor's subject, present or absent, so the next merge reads this
+ * proposal's state as this proposal's own decision instead of finding the
+ * same removal-against-change again.
+ * @param base The state this proposal last agreed with.
+ * @param theirs The predecessor's content.
+ * @param answered The existence disagreements this command answered.
+ * @returns The base to keep.
+ */
+function subjectsFrom(
+	base: SemanticVariant["content"],
+	theirs: SemanticVariant["content"],
+	answered: readonly ReconciliationIssue[],
+): SemanticVariant["content"] {
+	const subjects = new Set(answered.map((issue) => issue.subject));
+	/**
+	 * One collection with the answered subjects as the predecessor holds them.
+	 * @param mine The base's collection.
+	 * @param yours The predecessor's collection.
+	 * @returns The collection to keep.
+	 */
+	const moved = <Entity extends { readonly id: string }>(
+		mine: readonly Entity[],
+		yours: readonly Entity[],
+	): Entity[] => {
+		const held = new Map(yours.map((entity) => [entity.id, entity]));
+		const kept = mine.flatMap((entity) => {
+			if (!subjects.has(entity.id)) {
+				return [entity];
+			}
+			const now = held.get(entity.id);
+			return now === undefined ? [] : [now];
+		});
+		const present = new Set(kept.map((entity) => entity.id));
+		return [
+			...kept,
+			...yours.filter((entity) => subjects.has(entity.id) && !present.has(entity.id)),
+		];
+	};
+	return {
+		nodes: moved(base.nodes, theirs.nodes),
+		edges: moved(base.edges, theirs.edges),
+		flows: moved(base.flows, theirs.flows),
+		walkthroughs: moved(base.walkthroughs, theirs.walkthroughs),
+	};
 }
 
 /**
@@ -413,117 +496,4 @@ function withField<Entity extends { readonly id: string }>(
 	return next;
 }
 
-/** A board with the designation moved, or why it cannot move. */
-type AdoptionResult = { readonly ok: true; readonly board: SemanticBoard } | SemanticRefusal;
-
-/**
- * Move the designation to a variant that is coherent and settled.
- * @param board The board as it stands.
- * @param adopting The variant to adopt.
- * @param at The timestamp the write is being made at.
- * @param reason Why, when whoever adopted it said so.
- * @returns The board afterwards, or the refusal.
- */
-function adoptVariant(
-	board: SemanticBoard,
-	adopting: SemanticVariant,
-	at: string,
-	reason?: string,
-): AdoptionResult {
-	const refused = adoptable(board, adopting);
-	if (refused !== null) {
-		return refused;
-	}
-	const entry: Adoption = {
-		variant: adopting.id,
-		from: board.current,
-		at,
-		...(reason === undefined ? {} : { reason }),
-	};
-	return {
-		ok: true,
-		board: {
-			...board,
-			current: adopting.id,
-			variants: board.variants.map((one) => designated(one, adopting.id, board.current)),
-			adoptions: [...(board.adoptions ?? []), entry],
-		},
-	};
-}
-
-/**
- * Whether this variant may become the architecture of record, and why not.
- * @param board The board as it stands.
- * @param adopting The variant to adopt.
- * @returns The refusal, or null when it may be adopted.
- */
-function adoptable(board: SemanticBoard, adopting: SemanticVariant): SemanticRefusal | null {
-	if (adopting.id === board.current) {
-		return refuse(
-			"ALREADY_CURRENT",
-			`"${adopting.name}" is already the architecture this board says is implemented`,
-		);
-	}
-	if (adopting.lifecycle === "historical") {
-		return refuse(
-			"VARIANT_HISTORICAL",
-			`"${adopting.name}" is an architecture that was implemented and has since been superseded. ` +
-				"What was true then does not change, and making it current again would rewrite that " +
-				"record rather than add to it. Branch a proposal from it and adopt that.",
-		);
-	}
-	if (adopting.reconciliation !== undefined) {
-		return refuse(
-			"VARIANT_UNSETTLED",
-			`"${adopting.name}" is still waiting on the variant it came from, so adopting it would ` +
-				"make an unsettled proposal the implemented architecture; settle it first",
-		);
-	}
-	return unsettledAbove(board, adopting);
-}
-
-/**
- * Whether something this variant was built on is itself still in dispute.
- *
- * An ancestor nobody has agreed to is a state this proposal is standing on, and
- * adopting on top of it would make an argument nobody finished into the
- * architecture of record.
- * @param board The board as it stands.
- * @param adopting The variant to adopt.
- * @returns The refusal, or null when the line above it is settled.
- */
-function unsettledAbove(board: SemanticBoard, adopting: SemanticVariant): SemanticRefusal | null {
-	const above = unsettledAncestor(board.variants, adopting);
-	if (above === undefined) {
-		return null;
-	}
-	const named = board.variants.find((one) => one.id === above);
-	return refuse(
-		"VARIANT_UNSETTLED",
-		`"${adopting.name}" is derived from "${named?.name ?? above}", which is still waiting on the ` +
-			"variant it came from. Settle that first: adopting this would make an unfinished argument " +
-			"the implemented architecture.",
-	);
-}
-
-/**
- * One variant's lifecycle after the designation moved.
- *
- * The variant that was current becomes historical: it is the architecture that
- * was implemented until now, and saying so is the whole point of keeping it.
- * The adopted one becomes current. Every other variant is untouched — a draft
- * derived from either of them is still a draft derived from where it came from,
- * because adoption moves a designation and not a lineage.
- * @param variant The variant.
- * @param becoming Which variant is taking the designation.
- * @param was Which variant was current.
- * @returns The variant as it should now be.
- */
-function designated(variant: SemanticVariant, becoming: string, was: string): SemanticVariant {
-	if (variant.id === becoming) {
-		return { ...variant, lifecycle: "current" };
-	}
-	return variant.id === was ? { ...variant, lifecycle: "historical" } : variant;
-}
-
-export { adoptVariant, settleVariant, type AdoptionResult, type Settlement };
+export { caughtUp, settleVariant, type Settlement };

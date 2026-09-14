@@ -20,6 +20,7 @@ import { startCanvas, type OwnedCanvas } from "@/runtime/skill-evaluation/lib/ca
 import {
 	classCounts,
 	classifyCommands,
+	exposureCounts,
 	parseTrace,
 	type ClassifiedCommand,
 } from "@/runtime/skill-evaluation/lib/events";
@@ -66,6 +67,8 @@ interface RunJob {
 	readonly fixture: Fixture;
 	readonly repetition: number;
 	readonly root: string;
+	/** The batch this run belongs to; every other run under it is off limits. */
+	readonly batchRoot: string;
 	readonly salt: string;
 	readonly checkout: string;
 	readonly cache: string;
@@ -274,6 +277,12 @@ async function executeRun(job: RunJob): Promise<CompletedRun> {
 			skillRoot: install.skillRoot,
 			checkoutRoot: world.paths.flask,
 			vault: world.paths.vault,
+			exposure: {
+				evaluationInputs: path.join(job.checkout, "evals"),
+				harnessSource: path.join(job.checkout, "src", "runtime", "skill-evaluation"),
+				batchRoot: job.batchRoot,
+				runRoot: job.root,
+			},
 		});
 		const reading = await readAfter(world, job.scenario, snapshot);
 		writeBoards(reading.boards, world.paths.boards);
@@ -329,8 +338,12 @@ function assemble(
 		configBefore: gathered.configBefore,
 		configAfter: readConfigurationText(world.paths.vault),
 		commands,
+		fileChanges: trace.fileChanges,
 		vault: world.paths.vault,
 	});
+	const directWrites = trace.fileChanges.filter(
+		(change) => change.path.startsWith(world.paths.vault) && change.path.endsWith(".semantic.json"),
+	).length;
 	const finalMessage = fs.existsSync(world.paths.lastMessage)
 		? fs.readFileSync(world.paths.lastMessage, "utf8")
 		: (trace.messages.at(-1) ?? null);
@@ -344,6 +357,7 @@ function assemble(
 		finalMessage,
 		usage: trace.usage,
 		commands,
+		fileChanges: trace.fileChanges,
 		boards: reading.boards,
 		snapshot: reading.snapshot,
 		policy: reading.policy,
@@ -367,6 +381,7 @@ function assemble(
 	writeJson(world.paths, "outcomes.json", outcomes);
 	writeJson(world.paths, "guardrails.json", guardrails);
 	writeJson(world.paths, "commands.json", commands);
+	writeJson(world.paths, "file-changes.json", trace.fileChanges);
 	writeJson(world.paths, "bundle.json", bundleForGrader(run, id));
 	writeJson(world.paths, "run.json", {
 		run: id,
@@ -390,6 +405,8 @@ function assemble(
 		author,
 		usage: run.usage,
 		commandCounts: classCounts(commands),
+		directWrites,
+		exposure: exposureCounts(commands),
 		outcomesPassed: outcomes.every((verdict) => verdict.passed),
 		guardrailsPassed: guardrails.every((verdict) => verdict.passed),
 	});
@@ -417,7 +434,7 @@ function failedRun(
 	fs.mkdirSync(job.root, { recursive: true });
 	fs.writeFileSync(
 		path.join(job.root, "run.json"),
-		`${JSON.stringify({ run: id, arm: job.arm, scenario: job.scenario.id, workflow: job.scenario.workflow, report: job.scenario.report, repetition: job.repetition, status, error: message, startedAt, finishedAt: new Date().toISOString(), usage: null, commandCounts: classCounts([]), outcomesPassed: false, guardrailsPassed: false }, null, "\t")}\n`,
+		`${JSON.stringify({ run: id, arm: job.arm, scenario: job.scenario.id, workflow: job.scenario.workflow, report: job.scenario.report, repetition: job.repetition, status, error: message, startedAt, finishedAt: new Date().toISOString(), usage: null, commandCounts: classCounts([]), directWrites: 0, exposure: exposureCounts([]), outcomesPassed: false, guardrailsPassed: false }, null, "\t")}\n`,
 	);
 	return {
 		arm: job.arm,
@@ -429,6 +446,7 @@ function failedRun(
 		finalMessage: null,
 		usage: null,
 		commands: [],
+		fileChanges: [],
 		boards: new Map(),
 		snapshot: new Map(),
 		policy: null,

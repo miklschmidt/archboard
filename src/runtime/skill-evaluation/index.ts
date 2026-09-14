@@ -36,6 +36,7 @@ export {
 export {
 	classCounts,
 	classifyCommands,
+	exposureCounts,
 	parseTrace,
 	unwrapped,
 	usageFrom,
@@ -44,6 +45,9 @@ export {
 	type ClassifiedCommand,
 	type CommandClass,
 	type CommandRecord,
+	type ExposureKind,
+	type ExposureRoots,
+	type FileChange,
 	type Usage,
 } from "@/runtime/skill-evaluation/lib/events";
 export {
@@ -60,9 +64,11 @@ export {
 } from "@/runtime/skill-evaluation/lib/grader";
 export {
 	bundledRuns,
+	callUsageFrom,
 	filedVerdict,
 	gradeBatch,
 	graderUsage,
+	sessionUsage,
 	type GradingOptions,
 } from "@/runtime/skill-evaluation/lib/grading-run";
 export {
